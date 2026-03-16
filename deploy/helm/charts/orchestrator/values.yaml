@@ -1,29 +1,24 @@
+global: {}
+replicaCount: 1
 image:
-  repository: ghcr.io/agi/jobs/orchestrator
-  tag: ""
+  repository: orchestrator
+  tag: latest
   digest: ""
   pullPolicy: IfNotPresent
 service:
   type: ClusterIP
-  port: 8000
-env:
-  logLevel: info
-  corsOrigins: []
-  kmsKey: ""
-  maxRequestBytes: 1048576
+  port: 8080
+podAnnotations: {}
 resources: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}
 autoscaling:
-  enabled: false
-  minReplicas: 2
-  maxReplicas: 5
-  cpuTargetPercentage: 60
-ingress:
-  enabled: false
-  className: nginx
-  host: orchestrator.example.com
-  tlsSecret: orchestrator-tls
-rateLimit:
-  requestsPerMinute: 300
-  burst: 50
-monitoring:
   enabled: true
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: null
+env: {}
+eas: {}
+extraEnvFrom: []
+serviceAccountRoleArn: null

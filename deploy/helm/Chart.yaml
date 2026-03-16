@@ -1,9 +1,21 @@
 apiVersion: v2
-name: agi-stack
-description: Helm chart for deploying the AGI jobs stack in a single pass.
-type: application
+name: full-stack
 version: 0.1.0
-appVersion: "0.1.0"
+kubeVersion: ">=1.26.0"
+description: Helm umbrella chart for the modular account abstraction stack
+keywords:
+  - aa
+  - bundler
+  - paymaster
+  - orchestrator
+  - ipfs
+  - subgraph
+home: https://github.com/organization/project
+sources:
+  - https://github.com/organization/project
+maintainers:
+  - name: SRE Team
+    email: sre@example.com
 dependencies:
   - name: orchestrator
     version: 0.1.0

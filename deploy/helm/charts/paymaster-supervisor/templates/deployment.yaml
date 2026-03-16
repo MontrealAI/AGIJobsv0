@@ -1,46 +1,85 @@
+{{- $global := default (dict) .Values.global -}}
+{{- $contracts := default (dict) $global.contracts -}}
+{{- $eas := default (dict) $global.eas -}}
+{{- $observability := default (dict) $global.observability -}}
+{{- $secrets := default (dict) $global.secrets -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "paymasterSupervisor.fullname" . }}
+  name: {{ include "paymaster-supervisor.fullname" . }}
   labels:
-    app.kubernetes.io/name: paymaster-supervisor
+    app.kubernetes.io/name: {{ .Chart.Name }}
     app.kubernetes.io/instance: {{ .Release.Name }}
-    app.kubernetes.io/component: paymaster
+    app.kubernetes.io/component: paymaster-supervisor
 spec:
-  replicas: {{ default 1 .Values.replicaCount }}
+  replicas: {{ .Values.replicaCount | default 1 }}
   selector:
     matchLabels:
-      app.kubernetes.io/name: paymaster-supervisor
+      app.kubernetes.io/name: {{ .Chart.Name }}
       app.kubernetes.io/instance: {{ .Release.Name }}
   template:
     metadata:
       annotations:
-        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- if (default false $observability.prometheusScrape) }}
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "{{ .Values.service.port }}"
+        {{- end }}
+        {{- range $k, $v := .Values.podAnnotations }}
+        {{ $k }}: {{ $v | quote }}
+        {{- end }}
       labels:
-        app.kubernetes.io/name: paymaster-supervisor
+        app.kubernetes.io/name: {{ .Chart.Name }}
         app.kubernetes.io/instance: {{ .Release.Name }}
     spec:
+      {{- if .Values.pauseConfigMap }}
+      initContainers:
+        - name: wait-for-unpause
+          image: public.ecr.aws/bitnami/kubectl:1.28
+          command:
+            - /bin/sh
+            - -c
+            - |
+              until [ "$(kubectl get cm {{ .Values.pauseConfigMap }} -n {{ .Release.Namespace }} -o jsonpath='{.data.pause}')" = "false" ]; do
+                echo "Waiting for pause switch to be disabled";
+                sleep 5;
+              done
+          volumeMounts:
+            - name: kms-secrets
+              mountPath: /var/run/secrets/kms
+              readOnly: true
+      {{- end }}
       containers:
         - name: paymaster-supervisor
-          {{- $repoPrefix := default "" (dig "image" "repositoryPrefix" .Values.global) }}
-          {{- $repository := default (printf "%s/paymaster-supervisor" $repoPrefix | trimPrefix "/") .Values.image.repository }}
-          {{- $digest := coalesce .Values.image.digest (dig "image" "digestOverrides" "paymaster-supervisor" .Values.global) }}
-          {{- $tag := coalesce .Values.image.tag (dig "image" "tag" .Values.global) }}
-          image: {{ $repository }}{{- if $digest -}}@{{ $digest }}{{- else -}}:{{ required "image.tag must be provided when no digest is configured for paymaster-supervisor" $tag }}{{- end }}
+          image: {{ include "paymaster-supervisor.imageWithDigest" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          env:
-            - name: RPC_URL
-              value: {{ default (dig "rpc" "primary" .Values.global) .Values.config.rpcUrl | required "config.rpcUrl or global.rpc.primary must be set" | quote }}
-            - name: PAYMASTER_ADDRESS
-              value: {{ default (dig "contracts" "paymaster" .Values.global) .Values.config.paymasterAddress | required "config.paymasterAddress or global.contracts.paymaster must be set" | quote }}
-            - name: TREASURY_ADDRESS
-              value: {{ default (dig "secrets" "paymaster" "treasuryAddress" .Values.global) .Values.config.treasuryAddress | required "config.treasuryAddress or global.secrets.paymaster.treasuryAddress must be set" | quote }}
-            - name: SPONSORSHIP_BUDGET_USD
-              value: {{ default 100.0 .Values.config.sponsorshipBudgetUsd | quote }}
-            - name: KMS_KEY_URI
-              value: {{ default (dig "secrets" "paymaster" "kmsKeyUri" .Values.global) .Values.config.kmsKey | required "config.kmsKey or global.secrets.paymaster.kmsKeyUri must be set" | quote }}
           ports:
             - containerPort: {{ .Values.service.port }}
               name: http
+          env:
+            - name: PAYMASTER_ADDRESS
+              value: {{ default "" $contracts.paymaster | quote }}
+            - name: EAS_SCHEMA_UID
+              value: {{ default (default "" $eas.schemaUid) .Values.eas.schemaUid | quote }}
+            - name: GAS_TOP_UP_THRESHOLD_USD
+              value: {{ .Values.gasTopUpThresholdUsd | quote }}
+            - name: TREASURY_ADDRESS
+              value: {{ default "" $contracts.treasury | quote }}
+          envFrom:
+            - secretRef:
+                name: {{ default (printf "%s-runtime" (include "paymaster-supervisor.fullname" .)) $secrets.runtimeSecretName }}
+            {{- range .Values.extraEnvFrom }}
+            - {{ toYaml . | nindent 12 }}
+            {{- end }}
+          volumeMounts:
+            - name: kms-secrets
+              mountPath: /var/run/secrets/kms
+              readOnly: true
           resources:
-{{ toYaml .Values.resources | indent 12 }}
+            {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: kms-secrets
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: {{ default "" $secrets.secretProviderClass | quote }}

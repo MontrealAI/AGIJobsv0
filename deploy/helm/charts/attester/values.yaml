@@ -1,17 +1,16 @@
+global: {}
+replicaCount: 1
 image:
-  repository: ghcr.io/agi/jobs/attester
+  repository: attester
   tag: latest
   digest: ""
   pullPolicy: IfNotPresent
 service:
   type: ClusterIP
-  port: 7000
+  port: 8060
 resources: {}
-config:
-  rpcUrl: https://ethereum-sepolia.publicnode.com
-  easSchemaUid: "0x0000000000000000000000000000000000000000000000000000000000000000"
-  kmsKey: projects/example/locations/global/keyRings/agi/cryptoKeys/attester
-  corsOrigins:
-    - https://operator.example.com
-monitoring:
-  enabled: true
+podAnnotations: {}
+autoscaling:
+  enabled: false
+eas: {}
+extraEnvFrom: []

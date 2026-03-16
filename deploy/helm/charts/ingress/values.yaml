@@ -1,18 +1,8 @@
-enabled: true
-ingressClassName: nginx
-defaultTlsSecret: agi-stack-tls
-hosts:
-  - host: orchestrator.example.com
-    serviceName: orchestrator
-    servicePort: 8000
-  - host: bundler.example.com
-    serviceName: bundler
-    servicePort: 3000
-  - host: attester.example.com
-    serviceName: attester
-    servicePort: 7000
-security:
-  hstsMaxAge: 63072000
-  includeSubdomains: true
-  preload: true
-  wafAnnotation: "true"
+global: {}
+className: nginx
+hosts: []
+waf:
+  enabled: false
+  provider: ""
+  policy: ""
+extraTls: []

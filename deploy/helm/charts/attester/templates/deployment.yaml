@@ -1,44 +1,55 @@
+{{- $global := default (dict) .Values.global -}}
+{{- $observability := default (dict) $global.observability -}}
+{{- $contracts := default (dict) $global.contracts -}}
+{{- $eas := default (dict) $global.eas -}}
+{{- $secrets := default (dict) $global.secrets -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "attester.fullname" . }}
   labels:
-    app.kubernetes.io/name: attester
+    app.kubernetes.io/name: {{ .Chart.Name }}
     app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/component: attester
 spec:
-  replicas: {{ default 1 .Values.replicaCount }}
+  replicas: {{ .Values.replicaCount | default 1 }}
   selector:
     matchLabels:
-      app.kubernetes.io/name: attester
+      app.kubernetes.io/name: {{ .Chart.Name }}
       app.kubernetes.io/instance: {{ .Release.Name }}
   template:
     metadata:
       annotations:
-        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- if (default false $observability.prometheusScrape) }}
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "{{ .Values.service.port }}"
+        {{- end }}
+        {{- range $k, $v := .Values.podAnnotations }}
+        {{ $k }}: {{ $v | quote }}
+        {{- end }}
       labels:
-        app.kubernetes.io/name: attester
+        app.kubernetes.io/name: {{ .Chart.Name }}
         app.kubernetes.io/instance: {{ .Release.Name }}
     spec:
       containers:
         - name: attester
-          {{- $repoPrefix := default "" (dig "image" "repositoryPrefix" .Values.global) }}
-          {{- $repository := default (printf "%s/attester" $repoPrefix | trimPrefix "/") .Values.image.repository }}
-          {{- $digest := coalesce .Values.image.digest (dig "image" "digestOverrides" "attester" .Values.global) }}
-          {{- $tag := coalesce .Values.image.tag (dig "image" "tag" .Values.global) }}
-          image: {{ $repository }}{{- if $digest -}}@{{ $digest }}{{- else -}}:{{ required "image.tag must be provided when no digest is configured for attester" $tag }}{{- end }}
+          image: {{ include "attester.imageWithDigest" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          env:
-            - name: RPC_URL
-              value: {{ default (dig "rpc" "primary" .Values.global) .Values.config.rpcUrl | required "config.rpcUrl or global.rpc.primary must be set" | quote }}
-            - name: EAS_SCHEMA_UID
-              value: {{ default (dig "eas" "schemaUID" .Values.global) .Values.config.easSchemaUid | required "config.easSchemaUid or global.eas.schemaUID must be set" | quote }}
-            - name: KMS_KEY_URI
-              value: {{ default (dig "secrets" "attester" "kmsKeyUri" .Values.global) .Values.config.kmsKey | required "config.kmsKey or global.secrets.attester.kmsKeyUri must be set" | quote }}
-            - name: CORS_ALLOWED_ORIGINS
-              value: {{ join "," (default (.Values.global.cors.allowedOrigins | default (list)) .Values.config.corsOrigins) | quote }}
           ports:
             - containerPort: {{ .Values.service.port }}
               name: http
+          env:
+            - name: ATTESTER_ADDRESS
+              value: {{ default "" $contracts.attester | quote }}
+            - name: ENTRYPOINT_ADDRESS
+              value: {{ default "" $contracts.entryPoint | quote }}
+            - name: EAS_SCHEMA_UID
+              value: {{ default (default "" $eas.schemaUid) .Values.eas.schemaUid | quote }}
+          envFrom:
+            - secretRef:
+                name: {{ default (printf "%s-runtime" (include "attester.fullname" .)) $secrets.runtimeSecretName }}
+            {{- range .Values.extraEnvFrom }}
+            - {{ toYaml . | nindent 12 }}
+            {{- end }}
           resources:
-{{ toYaml .Values.resources | indent 12 }}
+            {{- toYaml .Values.resources | nindent 12 }}

@@ -1,17 +1,18 @@
+global: {}
+replicaCount: 1
 image:
-  repository: ghcr.io/agi/jobs/paymaster-supervisor
+  repository: paymaster-supervisor
   tag: latest
   digest: ""
   pullPolicy: IfNotPresent
 service:
   type: ClusterIP
-  port: 8080
+  port: 8070
 resources: {}
-config:
-  rpcUrl: https://ethereum-sepolia.publicnode.com
-  paymasterAddress: "0x0000000000000000000000000000000000000000"
-  kmsKey: projects/example/locations/global/keyRings/agi/cryptoKeys/paymaster
-  treasuryAddress: "0x0000000000000000000000000000000000000000"
-  sponsorshipBudgetUsd: 100.0
-monitoring:
-  enabled: true
+autoscaling:
+  enabled: false
+podAnnotations: {}
+gasTopUpThresholdUsd: 150
+pauseConfigMap: null
+eas: {}
+extraEnvFrom: []

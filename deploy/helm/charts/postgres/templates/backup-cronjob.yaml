@@ -1,0 +1,24 @@
+{{- if .Values.backup.enabled }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "postgres.fullname" . }}-backup
+spec:
+  schedule: {{ .Values.backup.schedule | quote }}
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: pgdump
+              image: ghcr.io/agi/protocol/pg-backup:latest
+              env:
+                - name: DATABASE_URL
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .Values.primary.credentialsSecretName }}
+                      key: database-url
+                - name: RETENTION
+                  value: {{ .Values.backup.retention | quote }}
+{{- end }}

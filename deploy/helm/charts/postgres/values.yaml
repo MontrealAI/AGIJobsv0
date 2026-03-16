@@ -1,16 +1,21 @@
+global: {}
 image:
   repository: postgres
-  tag: "14"
+  tag: "15"
+  digest: ""
   pullPolicy: IfNotPresent
-service:
-  type: ClusterIP
-  port: 5432
-resources: {}
 persistence:
-  size: 20Gi
-config:
-  database: subgraph
-  username: graph
-  existingSecret: graph-node-postgres
-monitoring:
   enabled: true
+  size: 200Gi
+  storageClassName: null
+resources: {}
+primary:
+  service:
+    port: 5432
+  annotations: {}
+  podAnnotations: {}
+  credentialsSecretName: ""
+backup:
+  enabled: true
+  schedule: "0 * * * *"
+  retention: 48h

@@ -1,50 +1,72 @@
+{{- $global := default (dict) .Values.global -}}
+{{- $observability := default (dict) $global.observability -}}
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: {{ include "postgres.fullname" . }}
   labels:
-    app.kubernetes.io/name: postgres
+    app.kubernetes.io/name: {{ .Chart.Name }}
     app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: postgres
 spec:
-  serviceName: {{ include "postgres.fullname" . }}
-  replicas: 1
   selector:
     matchLabels:
-      app.kubernetes.io/name: postgres
+      app.kubernetes.io/name: {{ .Chart.Name }}
       app.kubernetes.io/instance: {{ .Release.Name }}
+  serviceName: {{ include "postgres.fullname" . }}
+  replicas: 1
   template:
     metadata:
+      annotations:
+        {{- range $k, $v := .Values.primary.podAnnotations }}
+        {{ $k }}: {{ $v | quote }}
+        {{- end }}
+        {{- if (default false $observability.prometheusScrape) }}
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9187"
+        {{- end }}
       labels:
-        app.kubernetes.io/name: postgres
+        app.kubernetes.io/name: {{ .Chart.Name }}
         app.kubernetes.io/instance: {{ .Release.Name }}
     spec:
       containers:
         - name: postgres
-          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+          image: {{ include "postgres.imageWithDigest" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.primary.service.port }}
+              name: postgres
           env:
             - name: POSTGRES_DB
-              value: {{ .Values.config.database | quote }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.primary.credentialsSecretName }}
+                  key: database
             - name: POSTGRES_USER
-              value: {{ .Values.config.username | quote }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.primary.credentialsSecretName }}
+                  key: username
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.config.existingSecret }}
-                  key: POSTGRES_PASSWORD
-          ports:
-            - containerPort: {{ .Values.service.port }}
-              name: postgres
+                  name: {{ .Values.primary.credentialsSecretName }}
+                  key: password
           volumeMounts:
             - name: data
               mountPath: /var/lib/postgresql/data
           resources:
-{{ toYaml .Values.resources | indent 12 }}
+            {{- toYaml .Values.resources | nindent 12 }}
+{{- if .Values.persistence.enabled }}
   volumeClaimTemplates:
     - metadata:
         name: data
       spec:
         accessModes: ["ReadWriteOnce"]
+        {{- if .Values.persistence.storageClassName }}
+        storageClassName: {{ .Values.persistence.storageClassName }}
+        {{- end }}
         resources:
           requests:
             storage: {{ .Values.persistence.size }}
+{{- end }}

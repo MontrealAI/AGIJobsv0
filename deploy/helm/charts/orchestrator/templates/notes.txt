@@ -1,0 +1,5 @@
+1. Wait for the orchestrator deployment to become available:
+   kubectl rollout status deploy/{{ include "orchestrator.fullname" . }} -n {{ .Release.Namespace }}
+
+2. Confirm Prometheus annotations are present if scraping is enabled:
+   kubectl get pod -n {{ .Release.Namespace }} -l app.kubernetes.io/name={{ .Chart.Name }} -o yaml | grep prometheus.io/scrape
