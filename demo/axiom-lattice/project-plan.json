@@ -1,0 +1,230 @@
+{
+  "initiative": "Intercontinental Prosperity Alignment Network",
+  "objective": "Demonstrate fully-automated coordination of multi-coalition energy, food, health, climate, and trade programs using AGI Jobs v0 (v2).",
+  "budget": {
+    "currency": "AGIALPHA",
+    "total": "1250000",
+    "notes": "Budget spans three regional coalitions with dedicated contingency buffers."
+  },
+  "governance": {
+    "owner": "0xAXIOM-GOVERNOR",
+    "pauseAuthority": "SystemPause",
+    "treasury": "0xTREASURY-LATTICE",
+    "thermostat": {
+      "initialTemperature": "0.22",
+      "emergencyTemperature": "0.41",
+      "updateScript": "scripts/v2/updateThermodynamics.ts"
+    },
+    "councils": [
+      "Atlantic Prosperity Council",
+      "Equatorial Cooperative Council",
+      "Polar Resilience Council"
+    ]
+  },
+  "participants": {
+    "agents": [
+      {
+        "handle": "orchestrator.nexus.agi.eth",
+        "role": "Macro Mission Synthesis",
+        "capabilities": ["Cross-sector planning", "Thermostat stewardship", "Validator routing"]
+      },
+      {
+        "handle": "atlantic.operator.agi.eth",
+        "role": "Atlantic Coalition Lead",
+        "capabilities": ["Energy retrofits", "Agro mesh logistics", "Telehealth deployment"]
+      },
+      {
+        "handle": "equatorial.operator.agi.eth",
+        "role": "Equatorial Coalition Lead",
+        "capabilities": ["Microgrid rollout", "Climate adaptation", "Port automation"]
+      },
+      {
+        "handle": "polar.operator.agi.eth",
+        "role": "Polar Coalition Lead",
+        "capabilities": ["Hydrogen supply chain", "Resilience hub", "Arctic logistics"]
+      },
+      {
+        "handle": "treasury.steward.agi.eth",
+        "role": "Treasury Steward",
+        "capabilities": ["Capital allocation", "Thermal auditing", "Emergency override"]
+      }
+    ],
+    "validators": [
+      {
+        "handle": "thermal.validator.agi.eth",
+        "stake": "210000",
+        "mandate": "Entropy tracking and thermostat adjustments"
+      },
+      {
+        "handle": "civic.validator.agi.eth",
+        "stake": "150000",
+        "mandate": "Community impact review"
+      },
+      {
+        "handle": "treasury.validator.agi.eth",
+        "stake": "180000",
+        "mandate": "Payout assurance and treasury reconciliation"
+      },
+      {
+        "handle": "orbital.validator.agi.eth",
+        "stake": "120000",
+        "mandate": "Supply chain resilience and dispute arbitration"
+      }
+    ]
+  },
+  "alliances": [
+    {
+      "name": "Decentralized Cities Network",
+      "focus": "Urban retrofits and distributed manufacturing",
+      "integration": "Feeds telemetry into the lattice reputation engine."
+    },
+    {
+      "name": "Global Cooperative Health Alliance",
+      "focus": "Telehealth, vaccine cold-chain, and genomic surveillance",
+      "integration": "Supplies milestone proofs to validator mesh."
+    }
+  ],
+  "jobs": [
+    {
+      "id": "ENERGY-ATLANTIC",
+      "title": "Atlantic coalition deep energy retrofit wave",
+      "reward": "185000",
+      "deadlineDays": 45,
+      "dependencies": [],
+      "energyBudget": "88000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.14",
+        "adjustmentOnDelay": "raise-temperature"
+      },
+      "telemetry": {
+        "region": "Atlantic",
+        "kpis": ["Buildings retrofitted", "Energy intensity delta"]
+      }
+    },
+    {
+      "id": "AGRO-MESH",
+      "title": "Intercontinental agro supply mesh synchronization",
+      "reward": "165000",
+      "deadlineDays": 60,
+      "dependencies": ["ENERGY-ATLANTIC"],
+      "energyBudget": "72000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.18",
+        "adjustmentOnDelay": "increase-agent-share"
+      },
+      "telemetry": {
+        "region": "Atlantic",
+        "kpis": ["Yield variance", "Cold-chain uptime"]
+      }
+    },
+    {
+      "id": "HEALTH-EQUATORIAL",
+      "title": "Equatorial coalition telehealth and climate resilience rollout",
+      "reward": "190000",
+      "deadlineDays": 75,
+      "dependencies": [],
+      "energyBudget": "96000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.16",
+        "adjustmentOnDelay": "double-validator-bonus"
+      },
+      "telemetry": {
+        "region": "Equatorial",
+        "kpis": ["Clinics onboarded", "Heatwave response time"]
+      }
+    },
+    {
+      "id": "PORT-AUTOMATION",
+      "title": "Autonomous port logistics modernization",
+      "reward": "155000",
+      "deadlineDays": 90,
+      "dependencies": ["HEALTH-EQUATORIAL"],
+      "energyBudget": "78000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.19",
+        "adjustmentOnDelay": "raise-temperature"
+      },
+      "telemetry": {
+        "region": "Equatorial",
+        "kpis": ["Throughput uplift", "Carbon emissions avoided"]
+      }
+    },
+    {
+      "id": "HYDROGEN-POLAR",
+      "title": "Polar hydrogen spine commissioning",
+      "reward": "205000",
+      "deadlineDays": 120,
+      "dependencies": ["ENERGY-ATLANTIC"],
+      "energyBudget": "112000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.21",
+        "adjustmentOnDelay": "trigger-pause-check"
+      },
+      "telemetry": {
+        "region": "Polar",
+        "kpis": ["Hydrogen tonnage", "Ice-road uptime"]
+      }
+    },
+    {
+      "id": "RESILIENCE-HUB",
+      "title": "Polar resilience hub and evacuation lattice",
+      "reward": "145000",
+      "deadlineDays": 105,
+      "dependencies": ["HYDROGEN-POLAR"],
+      "energyBudget": "68000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.12",
+        "adjustmentOnDelay": "increase-agent-share"
+      },
+      "telemetry": {
+        "region": "Polar",
+        "kpis": ["Shelter capacity", "Supply corridor uptime"]
+      }
+    },
+    {
+      "id": "TREASURY-SYNTH",
+      "title": "Macro treasury synthesis and dividend routing",
+      "reward": "110000",
+      "deadlineDays": 50,
+      "dependencies": ["AGRO-MESH", "PORT-AUTOMATION", "RESILIENCE-HUB"],
+      "energyBudget": "54000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.09",
+        "adjustmentOnDelay": "double-validator-bonus"
+      },
+      "telemetry": {
+        "region": "Global",
+        "kpis": ["Dividend coverage", "Treasury buffer"]
+      }
+    },
+    {
+      "id": "VALIDATION-SUPERSTRUCTURE",
+      "title": "Validator superstructure and dispute rehearsal",
+      "reward": "95000",
+      "deadlineDays": 40,
+      "dependencies": ["ENERGY-ATLANTIC", "HEALTH-EQUATORIAL"],
+      "energyBudget": "36000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.07",
+        "adjustmentOnDelay": "trigger-pause-check"
+      },
+      "telemetry": {
+        "region": "Cross-coalition",
+        "kpis": ["Validator uptime", "Dispute resolution time"]
+      }
+    }
+  ],
+  "reporting": {
+    "artifacts": {
+      "dryRun": "reports/asi-takeoff/dry-run.json",
+      "thermodynamics": "reports/asi-takeoff/thermodynamics.json",
+      "missionControl": "reports/asi-takeoff/mission-control.md",
+      "summary": "reports/asi-takeoff/summary.md"
+    },
+    "dashboards": [
+      "reports/asi-takeoff/mission-control.md",
+      "reports/asi-takeoff/thermodynamics.json",
+      "reports/asi-takeoff/summary.md"
+    ]
+  }
+}
