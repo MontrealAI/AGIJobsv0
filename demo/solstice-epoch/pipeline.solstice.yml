@@ -1,0 +1,33 @@
+# Declarative instructions for the CI job that executes the Solstice Epoch playbook.
+# Consumed by maintainers who extend ci.yml with a matrix-driven job similar to demo/asi-takeoff.yml.
+stages:
+  - name: toolchain-integrity
+    checks:
+      - npm run ci:verify-toolchain
+      - npm run ci:verify-signers
+  - name: preflight-sentinels
+    checks:
+      - npm run monitoring:validate
+      - npm run monitoring:sentinels
+  - name: governance-dry-run
+    checks:
+      - npm run owner:plan -- --network sepolia
+      - npm run reward-engine:update -- --network sepolia
+      - npm run deploy:oneclick:auto -- --network sepolia --no-compose
+  - name: mainnet-commit
+    requires:
+      - toolchain-integrity
+      - preflight-sentinels
+      - governance-dry-run
+    checks:
+      - npm run compile:mainnet
+      - bash -lc "npm run reward-engine:update -- --network mainnet --execute | tee demo/solstice-epoch/manifests/thermodynamics.mainnet.log"
+      - bash -lc "npm run thermostat:update -- --network mainnet --execute | tee demo/solstice-epoch/manifests/thermostat.mainnet.log"
+      - bash -lc "npm run platform:registry:update -- --network mainnet --execute | tee demo/solstice-epoch/manifests/platform.mainnet.log"
+  - name: observability
+    requires:
+      - mainnet-commit
+    checks:
+      - npm run monitoring:sentinels
+      - npm run incident:tabletop -- --scenario solstice-epoch
+      - npm run audit:dossier
