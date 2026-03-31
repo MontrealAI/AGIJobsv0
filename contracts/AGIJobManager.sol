@@ -18,6 +18,8 @@ contract AGIJobManager is Ownable, Pausable, ReentrancyGuard {
     error InvalidBurnBps();
     error InvalidJob();
     error InvalidState();
+    error UnauthorizedDisputeCaller();
+    error AgentNotAssigned();
     error InsolventEscrowBalance();
     error InsufficientWithdrawableBalance(uint256 requested, uint256 available);
     error UseWithdrawAGIForSurplus();
@@ -57,6 +59,7 @@ contract AGIJobManager is Ownable, Pausable, ReentrancyGuard {
     event JobRefunded(uint256 indexed jobId, uint256 payout);
     event JobCancelled(uint256 indexed jobId, JobState state, uint256 payout);
     event JobDisputeResolved(uint256 indexed jobId, bool employerWins, uint256 employerAmount, uint256 agentAmount);
+    event JobAgentAssigned(uint256 indexed jobId, address indexed agent);
     event AGISurplusWithdrawn(address indexed to, uint256 amount);
     event EmployerBurnBpsUpdated(uint16 oldBps, uint16 newBps);
 
@@ -171,15 +174,26 @@ contract AGIJobManager is Ownable, Pausable, ReentrancyGuard {
             require(agiToken.transfer(job.employer, job.payout), "DISPUTE_REFUND_FAILED");
             emit JobDisputeResolved(jobId, true, job.payout, 0);
         } else {
-            address payee = job.agent == address(0) ? job.employer : job.agent;
+            address payee = job.agent;
+            if (payee == address(0)) revert AgentNotAssigned();
             require(agiToken.transfer(payee, job.payout), "DISPUTE_PAYOUT_FAILED");
             emit JobDisputeResolved(jobId, false, 0, job.payout);
         }
     }
 
+    function assignAgent(uint256 jobId, address agent) external whenNotPaused {
+        Job storage job = jobs[jobId];
+        if (job.state != JobState.Open || job.employer != msg.sender || agent == address(0)) revert InvalidState();
+        job.agent = agent;
+        emit JobAgentAssigned(jobId, agent);
+    }
+
     function markDisputed(uint256 jobId) external whenNotPaused {
         Job storage job = jobs[jobId];
         if (job.state != JobState.Open) revert InvalidState();
+        if (msg.sender != owner() && msg.sender != job.employer && msg.sender != job.agent) {
+            revert UnauthorizedDisputeCaller();
+        }
         job.state = JobState.Disputed;
     }
 

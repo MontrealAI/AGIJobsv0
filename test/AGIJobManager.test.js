@@ -75,8 +75,9 @@ describe('AGIJobManager corrective release', function () {
     await manager.expireJob(4n);
 
     await manager.connect(employer).createJob(payout, deadline + 3000n, 'ipfs://e');
+    await manager.connect(employer).assignAgent(5n, agent.address);
     await manager.markDisputed(5n);
-    await manager.resolveDispute(5n, true);
+    await manager.resolveDispute(5n, false);
 
     const employerBalFinal = await token.balanceOf(employer.address);
     expect(employerBalFinal).to.be.lt(employerBalAfterCreate); // only create-time burns reduced funds
@@ -106,5 +107,23 @@ describe('AGIJobManager corrective release', function () {
   it('token mutability is disabled', async function () {
     const { manager } = await fixture();
     await expect(manager.updateAGITokenAddress(ethers.ZeroAddress)).to.be.revertedWithCustomError(manager, 'AGIALPHATokenPinned');
+  });
+
+  it('restricts dispute initiation and requires an assigned agent for employer-loss payout', async function () {
+    const { employer, agent, manager } = await fixture();
+    const [, , , stranger] = await ethers.getSigners();
+    const payout = ethers.parseEther('1');
+    const deadline = BigInt((await ethers.provider.getBlock('latest')).timestamp + 3600);
+
+    await manager.connect(employer).createJob(payout, deadline, 'ipfs://job');
+    await expect(manager.connect(stranger).markDisputed(1n)).to.be.revertedWithCustomError(manager, 'UnauthorizedDisputeCaller');
+
+    await manager.connect(employer).markDisputed(1n);
+    await expect(manager.resolveDispute(1n, false)).to.be.revertedWithCustomError(manager, 'AgentNotAssigned');
+
+    await manager.connect(employer).createJob(payout, deadline + 1n, 'ipfs://job2');
+    await manager.connect(employer).assignAgent(2n, agent.address);
+    await manager.connect(agent).markDisputed(2n);
+    await expect(manager.resolveDispute(2n, false)).to.not.be.reverted;
   });
 });
