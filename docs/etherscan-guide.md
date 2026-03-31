@@ -339,3 +339,13 @@ Linking enables ENS subdomain checks and membership proofs through a shared regi
 ---
 
 _Regulatory note: this guide is informational only and does not constitute legal or tax advice. See [tax-obligations.md](tax-obligations.md) for details on participant responsibilities._
+
+## Corrective successor Etherscan flow (AGIJobManager)
+
+Before `createJob`, call read helpers:
+- `quoteCreateJobBurn(payout)`
+- `getCreateJobFundingRequirement(payout)`
+- `getCreateJobAllowanceRequirement(payout)`
+- `getJobBurnAmountSnapshot(jobId)`
+
+Employers must approve and fund both payout escrow and burn at creation. Burned AGIALPHA is permanently removed from circulation and is not received by the protocol, owner, or third parties.
