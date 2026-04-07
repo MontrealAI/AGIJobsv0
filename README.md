@@ -35,6 +35,11 @@ The loop above is enforced in automation: CI v2 verifies the owner authority man
 
 The repository’s manuals, runbooks, and subsystem READMEs are catalogued in [`docs/readme-catalog.md`](docs/readme-catalog.md). The inventory spans 169 markdown guides (129 READMEs, 40 runbooks) so release captains can locate operator instructions, demo briefings, and subsystem diagrams without spelunking through the tree. Every document is synchronised with the repository tree; CI fails fast if a referenced README is missing, keeping the narrative aligned with the code that powers it.【F:docs/readme-catalog.md†L1-L71】【F:docs/readme-catalog.md†L73-L169】【F:.github/workflows/ci.yml†L34-L1181】
 
+### Documentation
+
+- [AGIJobManager v1 mainnet deployment & security overview](docs/security/mainnet-deployment-and-trust-model.md)
+- [Local Truffle test status](docs/test-status.md)
+
 ```mermaid
 mindmap
   root((Knowledge lattice))

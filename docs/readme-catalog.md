@@ -206,6 +206,8 @@ briefings, and subsystem manuals when coordinating releases or audits.
 | `docs/production/mainnet-etherscan-runbook.md` | AGI Jobs v2 — Mainnet Etherscan Deployment & Owner Control Runbook | RUNBOOK |
 | `docs/sre-runbooks.md` | SRE Runbooks | RUNBOOK |
 | `docs/user-guides/README.md` | AGI Jobs v0 (v2) — Docs → User Guides | README |
+| `docs/security/mainnet-deployment-and-trust-model.md` | AGIJobManager v1 — Mainnet Deployment & Security Overview | DOC |
+| `docs/test-status.md` | Test Status (Local Truffle) | DOC |
 
 ## internal_docs
 
@@ -253,4 +255,3 @@ briefings, and subsystem manuals when coordinating releases or audits.
 | `services/culture-graph-indexer/README.md` | AGI Jobs v0 (v2) — Services → Culture Graph Indexer | README |
 | `services/sentinel/README.md` | AGI Jobs v0 (v2) — Sentinel Monitor | README |
 | `services/thermostat/README.md` | AGI Jobs v0 (v2) — Thermostat Service | README |
-
