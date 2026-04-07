@@ -56,8 +56,7 @@ jobs:
           key: ${{ runner.os }}-foundry-${{ hashFiles('foundry.toml') }}
           restore-keys: ${{ runner.os }}-foundry-
 
-      - name: Install forge libraries
-        if: steps.cache.outputs.cache-hit != 'true'
+      - name: Ensure forge libraries
         run: |
           mkdir -p lib
           if [ ! -d lib/forge-std ]; then
