@@ -649,3 +649,7 @@ flowchart TD
 
 ## License
 Released under the MIT License. See [`LICENSE`](LICENSE) for details.
+
+## AGIJobManager Corrective Successor (Employer Burn at Create Only)
+
+The corrected successor release enforces that employers fund two amounts at `createJob`: (1) payout escrow and (2) a non-refundable AGIALPHA burn charged from the employer wallet in the same transaction. AGIALPHA burned during job creation is permanently removed from circulation and is not received by the protocol, its owner, or any third party. The protocol does not derive revenue from this burn. Users are solely responsible for any tax consequences arising from token burns, transfers, or usage.
