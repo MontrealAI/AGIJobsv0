@@ -156,7 +156,21 @@ contract ValidatorSelectionFuzz is Test {
             uint256 a = counts[i];
             uint256 b = countsRev[i];
             uint256 diff = a > b ? a - b : b - a;
-            assertLt(diff, iterations / 5);
+            assertLt(
+                diff,
+                iterations / 5,
+                string.concat(
+                    "order-independence drift at index ",
+                    vm.toString(i),
+                    " (forward=",
+                    vm.toString(a),
+                    ", reverse=",
+                    vm.toString(b),
+                    ", diff=",
+                    vm.toString(diff),
+                    ")"
+                )
+            );
         }
     }
 
@@ -196,7 +210,27 @@ contract ValidatorSelectionFuzz is Test {
         for (uint256 i; i < poolSize; i++) {
             uint256 a = counts[i];
             uint256 diff = a > expected ? a - expected : expected - a;
-            assertLe(diff, expected);
+            assertLe(
+                diff,
+                expected,
+                string.concat(
+                    "uniformity drift at index ",
+                    vm.toString(i),
+                    " (count=",
+                    vm.toString(a),
+                    ", expected=",
+                    vm.toString(expected),
+                    ", diff=",
+                    vm.toString(diff),
+                    ", iterations=",
+                    vm.toString(iterations),
+                    ", pool=",
+                    vm.toString(poolSize),
+                    ", select=",
+                    vm.toString(selectCount),
+                    ")"
+                )
+            );
         }
     }
 }

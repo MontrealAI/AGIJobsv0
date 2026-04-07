@@ -95,6 +95,14 @@ jobs:
       - name: Purge Foundry compiler cache
         run: rm -rf ~/.foundry/cache ~/.cache/foundry
 
+      - name: Ensure forge-std dependency
+        run: |
+          if [ ! -d lib/forge-std ]; then
+            forge install foundry-rs/forge-std --no-git
+          else
+            echo 'forge-std already present; skipping install.'
+          fi
+
       - name: Foundry tests
         run: forge test -vvvv --ffi --fuzz-runs 256 --match-contract 'CommitReveal|Stake|Fee|Slashing'
 
