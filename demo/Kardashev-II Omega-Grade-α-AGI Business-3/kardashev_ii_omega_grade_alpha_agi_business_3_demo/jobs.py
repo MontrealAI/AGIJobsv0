@@ -136,6 +136,7 @@ class JobRecord:
     energy_used: float = 0.0
     compute_used: float = 0.0
     stake_locked: float = 0.0
+    validator_reward_pool: float = 0.0
     reserved_energy: float = 0.0
     reserved_compute: float = 0.0
     result_summary: Optional[str] = None
@@ -158,6 +159,7 @@ class JobRecord:
             "energy_used": self.energy_used,
             "compute_used": self.compute_used,
             "stake_locked": self.stake_locked,
+            "validator_reward_pool": self.validator_reward_pool,
             "reserved_energy": self.reserved_energy,
             "reserved_compute": self.reserved_compute,
             "result_summary": self.result_summary,
