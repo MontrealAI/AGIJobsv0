@@ -12,6 +12,13 @@
 
 AGI Jobs v0 (v2) operates as the unified intelligence engine for the ecosystem—an always-on command lattice that synthesises agents, contracts, paymasters, orchestrators, simulations, and demos into a single, production-grade surface. Every subsystem is instrumented, audit-backed, and continuously enforced by CI v2 so launch captains treat `main` as deployable truth. Ownership is never ceded: the contract owner wields deterministic control over all vectors (pausing, upgrades, economic parameters, orchestration mesh, telemetry exports) through the verified command center described below.
 
+### Local development prerequisites
+
+- **Node.js 20.18.x** — match the enforced engine in `package.json` to avoid toolchain drift. With `nvm`, run `nvm install && nvm use` from the repo root to pin the version before `npm ci`.
+- **npm 10.8+** — ships with the Node 20.18 toolchain; `npm -v` should report 10.8.x before running any scripts.
+
+The pinned runtime eliminates “command not found” and miscompiled dependency errors when executing the CI-equivalent commands locally (`npm run pretest`, `npm run webapp:build`, etc.).
+
 ```mermaid
 flowchart LR
     classDef core fill:#f3e8ff,stroke:#7c3aed,color:#2e1065,stroke-width:1px;
