@@ -33,6 +33,8 @@ class StakeManagerClient:
         self.ledger = ledger or MockLedger()
 
     def deposit(self, address: str, amount: int) -> str:
+        if amount <= 0:
+            raise ValueError("Deposit amount must be greater than zero")
         logger.info("Depositing stake", extra={"context": {"address": address, "amount": amount}})
         self.ledger.stakes[address] = self.ledger.stakes.get(address, 0) + amount
         tx_hash = f"0x{abs(hash((address, amount))) % (10**64):064x}"
