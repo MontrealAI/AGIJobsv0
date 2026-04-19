@@ -1,0 +1,305 @@
+---
+# yamllint disable rule:line-length rule:truthy
+name: ci / test lattice
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/ci-tests.yml'
+      - 'hardhat.config.js'
+      - 'foundry.toml'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'contracts/**'
+      - 'test/**'
+      - 'tests/**'
+      - 'scripts/**'
+  pull_request:
+    paths:
+      - '.github/workflows/ci-tests.yml'
+      - 'hardhat.config.js'
+      - 'foundry.toml'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'contracts/**'
+      - 'test/**'
+      - 'tests/**'
+      - 'scripts/**'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  actions: read
+  checks: read
+
+concurrency:
+  group: test-lattice-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  COVERAGE_MIN: '90'
+
+jobs:
+  tests:
+    name: Tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            **/package-lock.json
+      - name: Cache Hardhat compilers
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
+        with:
+          path: ~/.cache/hardhat-nodejs
+          key: hardhat-${{ runner.os }}-${{ hashFiles('hardhat.config.js', 'package-lock.json') }}
+          restore-keys: |
+            hardhat-${{ runner.os }}-
+      - name: Preflight toolchain locks
+        run: npm run ci:preflight
+      - name: Install dependencies
+        run: ./scripts/ci/npm-ci.sh --no-audit --prefer-offline --progress=false
+      - name: Compile contracts
+        run: |
+          npx ts-node --compiler-options '{"module":"commonjs"}' scripts/generate-constants.ts
+          npx hardhat compile
+      - name: Regenerate constants for tests
+        run: npx ts-node --compiler-options '{"module":"commonjs"}' scripts/generate-constants.ts
+      - name: Hardhat tests
+        run: npm test
+      - name: ABI diff check
+        run: npm run abi:diff
+
+  foundry:
+    name: Foundry
+    needs: tests
+    if: ${{ always() }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            **/package-lock.json
+      - name: Preflight toolchain locks
+        run: npm run ci:preflight
+      - name: Install dependencies
+        run: ./scripts/ci/npm-ci.sh --no-audit --prefer-offline --progress=false
+      - name: Regenerate constants for Foundry
+        run: npx ts-node --compiler-options '{"module":"commonjs"}' scripts/generate-constants.ts
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@50d5a8956f2e319df19e6b57539d7e2acb9f8c1e
+        with:
+          version: 'v1.4.4'
+      - name: Cache Foundry build artifacts
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
+        with:
+          path: |
+            ~/.foundry/cache
+            ~/.cache/foundry
+          key: foundry-${{ runner.os }}-${{ hashFiles('foundry.toml') }}
+          restore-keys: |
+            foundry-${{ runner.os }}-
+      - name: Ensure forge-std dependency
+        run: |
+          if [ ! -d lib/forge-std ]; then
+            forge install foundry-rs/forge-std;
+          else
+            echo 'forge-std already present; skipping install.';
+          fi
+      - name: Foundry tests
+        run: forge test -vvvv --ffi --fuzz-runs 256
+
+  coverage:
+    name: Coverage thresholds
+    needs: tests
+    if: ${{ always() }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            **/package-lock.json
+      - name: Cache Hardhat compilers
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
+        with:
+          path: ~/.cache/hardhat-nodejs
+          key: hardhat-${{ runner.os }}-${{ hashFiles('hardhat.config.js', 'package-lock.json') }}
+          restore-keys: |
+            hardhat-${{ runner.os }}-
+      - name: Preflight toolchain locks
+        run: npm run ci:preflight
+      - name: Install dependencies
+        run: ./scripts/ci/npm-ci.sh --no-audit --prefer-offline --progress=false
+      - name: Regenerate constants for coverage
+        run: npx ts-node --compiler-options '{"module":"commonjs"}' scripts/generate-constants.ts
+      - name: Generate coverage report
+        run: npm run coverage
+      - name: Map coverage entries to access-control modules
+        run: node scripts/ci/remap-coverage-paths.js
+      - name: Check access control coverage
+        run: npm run check:access-control
+      - name: Upload coverage artifact
+        if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: coverage-lcov
+          path: coverage/lcov.info
+          if-no-files-found: error
+      - name: Enforce coverage threshold
+        run: node scripts/check-coverage.js "$COVERAGE_MIN"
+
+  invariants:
+    name: Invariant tests
+    needs: tests
+    if: ${{ always() }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            **/package-lock.json
+      - name: Preflight toolchain locks
+        run: npm run ci:preflight
+      - name: Install dependencies
+        run: ./scripts/ci/npm-ci.sh --no-audit --prefer-offline --progress=false
+      - name: Regenerate constants for invariants
+        run: npx ts-node --compiler-options '{"module":"commonjs"}' scripts/generate-constants.ts
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@50d5a8956f2e319df19e6b57539d7e2acb9f8c1e
+        with:
+          version: 'v1.4.4'
+      - name: Cache Foundry build artifacts
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
+        with:
+          path: |
+            ~/.foundry/cache
+            ~/.cache/foundry
+          key: foundry-invariant-${{ runner.os }}-${{ hashFiles('foundry.toml', 'test/v2/invariant/**/*.sol') }}
+          restore-keys: |
+            foundry-invariant-${{ runner.os }}-
+      - name: Ensure forge-std dependency
+        run: |
+          if [ ! -d lib/forge-std ]; then
+            forge install foundry-rs/forge-std;
+          else
+            echo 'forge-std already present; skipping install.';
+          fi
+      - name: Run invariant suite
+        run: forge test -vvvv --ffi --match-path 'test/v2/invariant/**' --fuzz-runs 512
+
+  summary:
+    name: CI summary
+    runs-on: ubuntu-24.04
+    if: ${{ always() }}
+    needs:
+      - tests
+      - foundry
+      - coverage
+      - invariants
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+        with:
+          egress-policy: audit
+      - name: Publish test lattice summary
+        env:
+          NEEDS_CONTEXT: ${{ toJson(needs) }}
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+          const needs = JSON.parse(process.env.NEEDS_CONTEXT);
+          const prettyNames = {
+            tests: 'Tests',
+            foundry: 'Foundry',
+            coverage: 'Coverage thresholds',
+            invariants: 'Invariant tests'
+          };
+          const lines = ['# Test lattice status', '', '| Job | Result |', '| --- | --- |'];
+          let failed = false;
+          for (const [jobId, info] of Object.entries(needs)) {
+            const status = String(info.result || 'unknown').toUpperCase();
+            const conclusion = info.conclusion ? String(info.conclusion).toUpperCase() : '';
+            let displayStatus = status;
+            if (conclusion && conclusion !== status) {
+              displayStatus = `${status} (${conclusion})`;
+            }
+            if (status !== 'SUCCESS' && status !== 'SKIPPED') {
+              failed = true;
+            }
+            lines.push(`| ${prettyNames[jobId] || jobId} | ${displayStatus} |`);
+          }
+          const markdown = lines.join('\n') + '\n';
+          const outDir = path.join('reports', 'ci');
+          fs.mkdirSync(outDir, { recursive: true });
+          fs.writeFileSync(path.join(outDir, 'test-lattice.md'), markdown, 'utf8');
+          if (failed) {
+            console.error('One or more test lattice jobs failed.');
+            process.exit(1);
+          }
+          NODE
+      - name: Upload test lattice artefact
+        if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: test-lattice-status
+          path: reports/ci/test-lattice.md
+          if-no-files-found: error
+# yamllint enable rule:line-length rule:truthy
