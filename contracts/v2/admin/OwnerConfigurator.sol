@@ -27,6 +27,7 @@ contract OwnerConfigurator is Ownable2Step {
     );
 
     error OwnerConfigurator__ZeroTarget();
+    error OwnerConfigurator__ValueMismatch(uint256 expected, uint256 supplied);
 
     /// @notice Deploys the configurator and optionally re-assigns ownership to
     ///         a Safe or administrative EOA. Ownership can later be migrated
@@ -47,15 +48,29 @@ contract OwnerConfigurator is Ownable2Step {
         bytes newValue;
     }
 
-    function _applyConfiguration(ConfigurationCall memory call)
-        internal
-        returns (bytes memory returnData)
-    {
+    struct ValueConfigurationCall {
+        address target;
+        bytes callData;
+        bytes32 moduleKey;
+        bytes32 parameterKey;
+        bytes oldValue;
+        bytes newValue;
+        uint256 value;
+    }
+
+    function _applyConfiguration(
+        ConfigurationCall memory call,
+        uint256 value
+    ) internal returns (bytes memory returnData) {
         if (call.target == address(0)) {
             revert OwnerConfigurator__ZeroTarget();
         }
 
-        returnData = call.target.functionCall(call.callData);
+        if (value == 0) {
+            returnData = call.target.functionCall(call.callData);
+        } else {
+            returnData = call.target.functionCallWithValue(call.callData, value);
+        }
         emit ParameterUpdated(
             call.moduleKey,
             call.parameterKey,
@@ -95,7 +110,27 @@ contract OwnerConfigurator is Ownable2Step {
             newValue: newValue
         });
 
-        returnData = _applyConfiguration(call);
+        returnData = _applyConfiguration(call, 0);
+    }
+
+    function configureWithValue(
+        address target,
+        bytes calldata callData,
+        bytes32 moduleKey,
+        bytes32 parameterKey,
+        bytes calldata oldValue,
+        bytes calldata newValue
+    ) external payable onlyOwner returns (bytes memory returnData) {
+        ConfigurationCall memory call = ConfigurationCall({
+            target: target,
+            callData: callData,
+            moduleKey: moduleKey,
+            parameterKey: parameterKey,
+            oldValue: oldValue,
+            newValue: newValue
+        });
+
+        returnData = _applyConfiguration(call, msg.value);
     }
 
     function configureBatch(ConfigurationCall[] calldata calls)
@@ -107,7 +142,40 @@ contract OwnerConfigurator is Ownable2Step {
         returnData = new bytes[](length);
 
         for (uint256 i = 0; i < length; i++) {
-            returnData[i] = _applyConfiguration(calls[i]);
+            returnData[i] = _applyConfiguration(calls[i], 0);
+        }
+    }
+
+    function configureBatchWithValue(ValueConfigurationCall[] calldata calls)
+        external
+        payable
+        onlyOwner
+        returns (bytes[] memory returnData)
+    {
+        uint256 length = calls.length;
+        returnData = new bytes[](length);
+        uint256 valueAccumulator = 0;
+
+        for (uint256 i = 0; i < length; i++) {
+            valueAccumulator += calls[i].value;
+        }
+
+        if (valueAccumulator != msg.value) {
+            revert OwnerConfigurator__ValueMismatch(valueAccumulator, msg.value);
+        }
+
+        for (uint256 i = 0; i < length; i++) {
+            ValueConfigurationCall calldata enrichedCall = calls[i];
+            ConfigurationCall memory baseCall = ConfigurationCall({
+                target: enrichedCall.target,
+                callData: enrichedCall.callData,
+                moduleKey: enrichedCall.moduleKey,
+                parameterKey: enrichedCall.parameterKey,
+                oldValue: enrichedCall.oldValue,
+                newValue: enrichedCall.newValue
+            });
+
+            returnData[i] = _applyConfiguration(baseCall, enrichedCall.value);
         }
     }
 }
