@@ -10,10 +10,18 @@ pragma solidity ^0.8.25;
 contract ConfigurableModuleMock {
     uint256 private _value;
     address public lastCaller;
+    uint256 public totalReceived;
 
     error ValueMismatch(uint256 expected, uint256 actual);
+    error MissingValue(uint256 expected, uint256 actual);
 
     event ValueChanged(uint256 previousValue, uint256 newValue, address caller);
+    event ValueChangedWithDeposit(
+        uint256 previousValue,
+        uint256 newValue,
+        uint256 valueReceived,
+        address caller
+    );
 
     function setValue(uint256 newValue) external {
         _setValue(newValue);
@@ -25,6 +33,18 @@ contract ConfigurableModuleMock {
         }
 
         _setValue(newValue);
+    }
+
+    function setValueWithDeposit(uint256 newValue, uint256 minimumValue) external payable {
+        if (msg.value < minimumValue) {
+            revert MissingValue(minimumValue, msg.value);
+        }
+
+        uint256 previousValue = _value;
+        _setValue(newValue);
+        totalReceived += msg.value;
+
+        emit ValueChangedWithDeposit(previousValue, newValue, msg.value, msg.sender);
     }
 
     function currentValue() external view returns (uint256) {
