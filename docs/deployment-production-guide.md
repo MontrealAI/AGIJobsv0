@@ -80,7 +80,7 @@ Invoke the following setters from the owner account:
 - `StakeManager.setJobRegistry(jobRegistry)`
 - `ValidationModule.setJobRegistry(jobRegistry)`
 - `DisputeModule.setJobRegistry(jobRegistry)`
-- `CertificateNFT.setJobRegistry(jobRegistry)`
+- `CertificateNFT.setJobRegistry(jobRegistry)` (requires `JobRegistry.version() == 2`)
 - `CertificateNFT.setStakeManager(stakeManager)`
 - `StakeManager.setDisputeModule(disputeModule)`
 - `JobRegistry.setIdentityRegistry(identityRegistry)` and `ValidationModule.setIdentityRegistry(identityRegistry)` (if used)

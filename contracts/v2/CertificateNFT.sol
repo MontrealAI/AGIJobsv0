@@ -9,6 +9,7 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {ICertificateNFT} from "./interfaces/ICertificateNFT.sol";
+import {IJobRegistry} from "./interfaces/IJobRegistry.sol";
 import {IStakeManager} from "./interfaces/IStakeManager.sol";
 import {AGIALPHA} from "./Constants.sol";
 
@@ -32,6 +33,7 @@ contract CertificateNFT is ERC721, Ownable, Pausable, ReentrancyGuard, ICertific
     error NotListed();
     error SelfPurchase();
     error InsufficientAllowance();
+    error InvalidJobRegistryVersion();
     error InvalidStakeManagerVersion();
     error InvalidStakeManagerToken();
     error EmptyBaseURI();
@@ -81,6 +83,9 @@ contract CertificateNFT is ERC721, Ownable, Pausable, ReentrancyGuard, ICertific
 
     function setJobRegistry(address registry) external onlyOwner {
         if (registry == address(0)) revert ZeroAddress();
+        if (IJobRegistry(registry).version() != version) {
+            revert InvalidJobRegistryVersion();
+        }
         jobRegistry = registry;
         emit JobRegistryUpdated(registry);
     }
