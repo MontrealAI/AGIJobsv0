@@ -66,7 +66,9 @@ async function deploySystem() {
 
   const ENS = await ethers.getContractFactory('MockENS');
   const ens = await ENS.deploy();
-  const Wrapper = await ethers.getContractFactory('MockNameWrapper');
+  const Wrapper = await ethers.getContractFactory(
+    'contracts/mocks/MockNameWrapper.sol:MockNameWrapper'
+  );
   const wrapper = await Wrapper.deploy();
 
   const Identity = await ethers.getContractFactory(

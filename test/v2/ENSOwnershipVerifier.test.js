@@ -120,7 +120,9 @@ describe('ENSOwnershipVerifier verification', function () {
     ens = await ENS.deploy();
     const Resolver = await ethers.getContractFactory('MockResolver');
     resolver = await Resolver.deploy();
-    const Wrapper = await ethers.getContractFactory('MockNameWrapper');
+    const Wrapper = await ethers.getContractFactory(
+      'contracts/mocks/MockNameWrapper.sol:MockNameWrapper'
+    );
     wrapper = await Wrapper.deploy();
     await ens.setResolver(root, await resolver.getAddress());
     const Verifier = await ethers.getContractFactory(
