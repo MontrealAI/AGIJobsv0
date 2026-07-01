@@ -16,7 +16,6 @@ import {ICertificateNFT} from "./interfaces/ICertificateNFT.sol";
 import {IJobRegistryAck} from "./interfaces/IJobRegistryAck.sol";
 import {IAuditModule} from "./interfaces/IAuditModule.sol";
 import {TOKEN_SCALE} from "./Constants.sol";
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /// @title JobRegistry
 /// @notice Coordinates job lifecycle and external modules.

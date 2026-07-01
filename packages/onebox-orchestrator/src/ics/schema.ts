@@ -175,7 +175,7 @@ const AdminSetIntentSchema = baseIntentSchema.extend({
     key: z
       .string({ invalid_type_error: 'Admin setting key must be provided' })
       .min(1),
-    value: z.any(),
+    value: z.unknown(),
   }),
 });
 

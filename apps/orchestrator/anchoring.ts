@@ -135,7 +135,7 @@ export class AuditAnchoringService {
       }
       const parsed = JSON.parse(raw) as AnchorState;
       return { anchored: parsed.anchored ?? {} };
-    } catch (err: any) {
+    } catch (err) {
       if (err.code === 'ENOENT') {
         await ensureDirectory(path.dirname(this.stateFile));
         return { anchored: {} };

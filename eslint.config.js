@@ -48,7 +48,7 @@ module.exports = [
     rules: {
       ...tsPlugin.configs.recommended.rules,
       '@typescript-eslint/no-unused-vars': 'warn',
-      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-explicit-any': 'error',
       'prettier/prettier': 'error',
       'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'warn',
@@ -58,11 +58,14 @@ module.exports = [
     files: [
       'examples/**/*.{js,ts,tsx}',
       'test/**/*.{js,ts,tsx}',
+      'tests/**/*.{js,ts,tsx}',
+      'demo/**/*.{js,ts,tsx}',
       'scripts/**/*.ts',
     ],
     rules: {
       'no-unused-vars': 'off',
       '@typescript-eslint/no-unused-vars': 'off',
+      '@typescript-eslint/no-explicit-any': 'off',
     },
   },
 ];

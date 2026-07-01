@@ -38,8 +38,31 @@ const SCOREBOARD_QUERY = gql`
   }
 `;
 
+interface ArtifactScore {
+  id: string;
+  name: string;
+  elo: number;
+  difficultyTrend: number[];
+  successRate: number;
+}
+
+interface HonestySample {
+  label: string;
+  honesty: number;
+}
+
+interface ValidatorHonesty {
+  median: number;
+  latestSample: HonestySample[];
+}
+
+interface ScoreboardData {
+  artifacts: ArtifactScore[];
+  validatorHonesty: ValidatorHonesty;
+}
+
 export function ScoreboardView() {
-  const { data } = useQuery(SCOREBOARD_QUERY, { fetchPolicy: 'cache-first' });
+  const { data } = useQuery<ScoreboardData>(SCOREBOARD_QUERY, { fetchPolicy: 'cache-first' });
   const artifacts = data?.artifacts ?? [];
   const validatorHonesty = data?.validatorHonesty ?? { median: 0, latestSample: [] };
 
@@ -62,7 +85,7 @@ export function ScoreboardView() {
               </Tr>
             </Thead>
             <Tbody>
-              {artifacts.map((artifact: any) => (
+              {artifacts.map((artifact) => (
                 <Tr key={artifact.id}>
                   <Td>{artifact.name}</Td>
                   <Td>{artifact.elo}</Td>
@@ -93,7 +116,7 @@ export function ScoreboardView() {
         </CardHeader>
         <CardBody>
           <ResponsiveContainer width="100%" height={260}>
-            <AreaChart data={artifacts.map((artifact: any) => ({ name: artifact.name, success: artifact.successRate * 100 }))}>
+            <AreaChart data={artifacts.map((artifact) => ({ name: artifact.name, success: artifact.successRate * 100 }))}>
               <defs>
                 <linearGradient id="colorSuccess" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#38bdf8" stopOpacity={0.7} />

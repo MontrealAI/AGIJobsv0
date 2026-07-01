@@ -3,8 +3,10 @@ import { Snapshotter } from '../src/ipfs.js';
 import { ArenaService } from '../src/arena.service.js';
 import { MockPrismaClient } from './__mocks__/prisma-client.js';
 import { toCommitHash } from '../src/utils.js';
+import type { PrismaClient } from '@prisma/client';
+import type { JobsClient } from '../src/jobs.client.js';
 
-const jobsClient = {
+const jobsClient: Pick<JobsClient, 'fetchTasks' | 'submitResult' | 'triggerOnChainAction'> = {
   fetchTasks: jest.fn(),
   submitResult: jest.fn(),
   triggerOnChainAction: jest.fn().mockResolvedValue(undefined)
@@ -12,8 +14,8 @@ const jobsClient = {
 
 describe('ArenaService', () => {
   it('runs a full round lifecycle', async () => {
-    const prisma = new MockPrismaClient() as any;
-    const service = new ArenaService(prisma, new DifficultyController({ targetSeconds: 60 }), new Snapshotter(false), jobsClient as any);
+    const prisma = new MockPrismaClient() as unknown as PrismaClient;
+    const service = new ArenaService(prisma, new DifficultyController({ targetSeconds: 60 }), new Snapshotter(false), jobsClient);
 
     const round = await service.startRound({
       contestantIds: ['agent-1'],
@@ -39,8 +41,8 @@ describe('ArenaService', () => {
   });
 
   it('handles concurrent commits without race conditions', async () => {
-    const prisma = new MockPrismaClient() as any;
-    const service = new ArenaService(prisma, new DifficultyController({ targetSeconds: 60 }), new Snapshotter(false), jobsClient as any);
+    const prisma = new MockPrismaClient() as unknown as PrismaClient;
+    const service = new ArenaService(prisma, new DifficultyController({ targetSeconds: 60 }), new Snapshotter(false), jobsClient);
 
     const round = await service.startRound({
       contestantIds: ['agent-1', 'agent-2'],
@@ -53,7 +55,7 @@ describe('ArenaService', () => {
     ]);
 
     const status = await service.getStatus(round.id);
-    const committedAgents = status.committee.filter((member: any) => member.commitHash);
+    const committedAgents = status.committee.filter((member) => member.commitHash);
     expect(committedAgents).toHaveLength(2);
   });
 });

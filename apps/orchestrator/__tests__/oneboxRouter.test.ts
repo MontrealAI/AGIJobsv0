@@ -6,6 +6,10 @@ import type { Wallet } from 'ethers';
 import express from 'express';
 import request from 'supertest';
 import type { IntentEnvelope } from '../../../packages/onebox-orchestrator/src/ics/types';
+import type {
+  PlannerClient,
+  PlannerPlanResult,
+} from '../../../packages/onebox-orchestrator/src';
 import {
   createOneboxRouter,
   plannerIntentToJobIntent,
@@ -304,7 +308,14 @@ test('DefaultOneboxService produces calldata for wallet mode', async () => {
     },
   } as unknown as ethers.AbstractProvider;
 
-  const plannerStub = { plan: async () => ({}) } as unknown as any;
+  const plannerStub: Pick<PlannerClient, 'plan'> = {
+    plan: async () =>
+      ({
+        source: 'fallback',
+        rawText: '',
+        intent: { ok: false, issues: [] },
+      } satisfies PlannerPlanResult),
+  };
 
   const service = new DefaultOneboxService({
     planner: plannerStub,
@@ -338,13 +349,19 @@ test('DefaultOneboxService produces calldata for wallet mode', async () => {
 
 test('finalizeJob invokes registry finalize function', async () => {
   const finalizeCall = mock.fn(async () => ({ hash: '0xabc', wait: async () => undefined }));
-  const ethersModule = require('ethers') as { ethers: { Contract: new (...args: any[]) => unknown } };
+  type ContractConstructor = new (
+    ...args: ConstructorParameters<typeof ethers.Contract>
+  ) => { finalize: typeof finalizeCall };
+  const ethersModule = require('ethers') as { ethers: { Contract: ContractConstructor } };
   const originalDescriptor = Object.getOwnPropertyDescriptor(ethersModule.ethers, 'Contract');
+  const ContractMock: ContractConstructor = class {
+    constructor(..._args: ConstructorParameters<typeof ethers.Contract>) {}
+
+    finalize = finalizeCall;
+  };
   Object.defineProperty(ethersModule.ethers, 'Contract', {
     configurable: true,
-    value: function () {
-      return { finalize: finalizeCall };
-    } as unknown as new (...args: any[]) => unknown,
+    value: ContractMock,
   });
 
   const loadStateMock = mock.method(execution, 'loadState', () => ({}));

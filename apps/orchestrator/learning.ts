@@ -74,7 +74,13 @@ function toBigIntOrNull(value: unknown): bigint | null {
   if (value === null || value === undefined) return null;
   try {
     if (typeof value === 'bigint') return value;
-    return ethers.getBigInt(value as any);
+    if (typeof value === 'string' || typeof value === 'number') {
+      return ethers.getBigInt(value);
+    }
+    if (value instanceof Uint8Array) {
+      return ethers.getBigInt(value);
+    }
+    return null;
   } catch {
     return null;
   }

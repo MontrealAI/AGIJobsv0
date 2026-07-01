@@ -98,44 +98,46 @@ function callRaiseDispute(
   }
 
   if (params.evidenceHash) {
-    const method =
-      (jobRegistry as unknown as Record<string, unknown>)[
-        "raiseDispute(uint256,bytes32)"
-      ];
+    const method = Reflect.get(jobRegistry, "raiseDispute(uint256,bytes32)");
     if (typeof method !== "function") {
       throw new Error("raiseDispute(uint256,bytes32) overload unavailable");
     }
     const args: unknown[] = [params.jobId, params.evidenceHash];
     if (mode === "populate") {
+      const populate = Reflect.get(method, "populateTransaction");
+      if (typeof populate !== "function") {
+        throw new Error("raiseDispute populateTransaction unavailable");
+      }
       return hasOverrides
-        ? (method as any).populateTransaction(...args, overrides)
-        : (method as any).populateTransaction(...args);
+        ? populate(...args, overrides)
+        : populate(...args);
     }
     return hasOverrides
-      ? (method as any)(...args, overrides)
-      : (method as any)(...args);
+      ? method(...args, overrides)
+      : method(...args);
   }
 
   if (!params.reason) {
     throw new Error("Dispute intent requires textual reason or evidence hash");
   }
 
-  const method =
-    (jobRegistry as unknown as Record<string, unknown>)[
-      "raiseDispute(uint256,string)"
-    ];
+  const method = Reflect.get(jobRegistry, "raiseDispute(uint256,string)");
   if (typeof method !== "function") {
     throw new Error("raiseDispute(uint256,string) overload unavailable");
   }
   const args: unknown[] = [params.jobId, params.reason];
   if (mode === "populate") {
+    const populate = Reflect.get(method, "populateTransaction");
+    if (typeof populate !== "function") {
+      throw new Error("raiseDispute populateTransaction unavailable");
+    }
     return hasOverrides
-      ? (method as any).populateTransaction(...args, overrides)
-      : (method as any).populateTransaction(...args);
+      ? populate(...args, overrides)
+      : populate(...args);
   }
   return hasOverrides
-    ? (method as any)(...args, overrides)
-    : (method as any)(...args);
+    ? method(...args, overrides)
+    : method(...args);
 }
 
 export async function disputeDryRun(ics: ICSType): Promise<DryRunResult> {

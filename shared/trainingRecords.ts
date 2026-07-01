@@ -303,7 +303,7 @@ export async function readTrainingRecords(): Promise<TrainingRecord[]> {
       .map((line) => line.trim())
       .filter((line) => line.length > 0)
       .map((line) => JSON.parse(line) as TrainingRecord);
-  } catch (err: any) {
+    } catch (err) {
     if (err.code === 'ENOENT') {
       return [];
     }
