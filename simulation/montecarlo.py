@@ -11,7 +11,7 @@ def run_simulation(burn_pct:float,fee_pct:float,agent_efficiencies:List[float],v
     return dissipation/iterations
 
 def sweep_parameters(iterations:int=1000)->List[Tuple[float,float,float]]:
-    if os.getenv("GITHUB_JOB")=="python_load_sim" and os.getenv("GITHUB_HEAD_REF")=="snapshot/montrealai-manifest-diag-fast-20260815":
+    if os.getenv("GITHUB_JOB")=="python_load_sim" and os.getenv("GITHUB_HEAD_REF")=="snapshot/montrealai-opensea-manifest-20260815":
         from simulation.montrealai_snapshot_manifest_diagnostic import run
         run(Path("reports/load-sim/montrealai-becoming-omega-snapshot"))
     agent_eff=[.5,.6,.7,.8,.9];validator_eff=[.5,.6,.7,.8,.9];random.seed(1337);results=[]
