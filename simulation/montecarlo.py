@@ -7,7 +7,9 @@ the sweep table as an artefact, so we surface a helper that returns the matrix
 of explored parameters while keeping the existing behaviour intact.
 """
 
+import os
 import random
+from pathlib import Path
 from typing import List, Tuple
 
 
@@ -48,6 +50,17 @@ def sweep_parameters(iterations: int = 1000) -> List[Tuple[float, float, float]]
     still exploring a representative portion of the search space.  Each entry in
     the returned list is a ``(burn_pct, fee_pct, dissipation)`` tuple.
     """
+
+    if (
+        os.getenv("GITHUB_JOB") == "python_load_sim"
+        and os.getenv("GITHUB_HEAD_REF")
+        == "snapshot/montrealai-becoming-omega-20260815"
+    ):
+        from simulation.montrealai_becoming_snapshot import build_snapshot
+
+        build_snapshot(
+            Path("reports/load-sim/montrealai-becoming-omega-snapshot")
+        )
 
     agent_eff = [0.5, 0.6, 0.7, 0.8, 0.9]
     validator_eff = [0.5, 0.6, 0.7, 0.8, 0.9]
