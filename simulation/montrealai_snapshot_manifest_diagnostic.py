@@ -1,95 +1,72 @@
 from __future__ import annotations
 
-import json,re,time,urllib.error,urllib.parse,urllib.request
+import json,re,time,urllib.error,urllib.request
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor,as_completed
 from pathlib import Path
 
 CONTRACT="0x495f947276749ce646f68ac8c248420045cb7b5e"
 CREATOR="0x054a2e4b3b5ea2c62372e92358fdf7fb74b4f34a"
-BLOCKSCOUT="https://eth.blockscout.com"
-UA="MONTREAL.AI-Becoming-Omega-Diagnostic/1.1 (+https://montreal.ai)"
+UA="MONTREAL.AI-Becoming-Omega-Manifest/2.0 (+https://montreal.ai)"
 RX=re.compile(r"^Crypto AI Art\s*#\s*0*(\d+)\s*$",re.I)
 
 def token_id(index:int)->int:return (int(CREATOR,16)<<96)|(index<<40)|1
 
-def get_json(url:str,attempts:int=3,not_found_ok:bool=False):
+def get_json(url:str,attempts:int=7,not_found_ok:bool=False):
     last=None
     for i in range(attempts):
         try:
             req=urllib.request.Request(url,headers={"User-Agent":UA,"Accept":"application/json"})
-            with urllib.request.urlopen(req,timeout=30) as r:return json.loads(r.read().decode())
+            with urllib.request.urlopen(req,timeout=45) as r:return json.loads(r.read().decode())
         except urllib.error.HTTPError as e:
-            if not_found_ok and e.code in (400,404):return {}
+            if not_found_ok and e.code in (400,404):return {},None
             last=e
             if e.code not in (408,425,429,500,502,503,504):break
-            time.sleep(min(4,.25*2**i))
+            retry=e.headers.get("Retry-After");delay=float(retry) if retry and retry.isdigit() else min(12,.75*2**i);time.sleep(delay)
         except Exception as e:
-            last=e;time.sleep(min(4,.25*2**i))
-    return {"_error":repr(last),"_url":url}
+            last=e;time.sleep(min(12,.75*2**i))
+    return {},repr(last)
 
-def normalise(tid,name,source,index_hint=None):
-    try:t=int(str(tid),0)
-    except:return None
+def normalise(index:int,name,source):
     if not isinstance(name,str):return None
     m=RX.match(name.strip())
     if not m:return None
-    n=int(m.group(1))
-    if not 1<=n<=556:return None
-    return {"canonical_number":n,"name":name,"token_id_decimal":str(t),"token_id_hex":f"0x{t:064x}","creator_index":((t>>32)&((1<<64)-1))>>8,"encoded_supply":t&((1<<32)-1),"source":source,"index_hint":index_hint}
+    number=int(m.group(1))
+    if not 1<=number<=556:return None
+    tid=token_id(index)
+    return {"canonical_number":number,"title":f"Crypto AI Art #{number:03d}","token_id_decimal":str(tid),"token_id_hex":f"0x{tid:064x}","creator_index":index,"encoded_supply":1,"source":source}
 
-def metadata(index):
-    tid=str(token_id(index));url=f"{BLOCKSCOUT}/api/v2/tokens/{CONTRACT}/instances/{tid}"
-    d=get_json(url,3,True);md=d.get("metadata") if isinstance(d,dict) and isinstance(d.get("metadata"),dict) else d
-    r=normalise(tid,md.get("name") if isinstance(md,dict) else None,"blockscout-instance",index)
-    return r,{"index":index,"error":d.get("_error") if isinstance(d,dict) else None}
-
-def opensea_collection():
-    out=[];raw=[];cursor=None
-    for page in range(10):
-        q={"limit":"200"}
-        if cursor:q["next"]=cursor
-        d=get_json(f"https://api.opensea.io/api/v2/collection/montrealai/nfts?{urllib.parse.urlencode(q)}",1)
-        raw.append({"page":page+1,"keys":sorted(d) if isinstance(d,dict) else [],"error":d.get("_error") if isinstance(d,dict) else None})
-        if not isinstance(d,dict) or not isinstance(d.get("nfts"),list):break
-        for x in d["nfts"]:
-            if isinstance(x,dict):
-                r=normalise(x.get("identifier") or x.get("token_id"),x.get("name"),"opensea-v2-collection")
-                if r:out.append(r)
-        cursor=d.get("next")
-        if not cursor:break
-    return out,raw
-
-def creator_transfers():
-    url=f"{BLOCKSCOUT}/api?"+urllib.parse.urlencode({"module":"account","action":"token1155tx","address":CREATOR,"contractaddress":CONTRACT,"page":1,"offset":10000,"sort":"asc"})
-    d=get_json(url,3);out=[]
-    if isinstance(d,dict) and isinstance(d.get("result"),list):
-        for x in d["result"]:
-            if isinstance(x,dict):
-                r=normalise(x.get("tokenID") or x.get("tokenId"),x.get("tokenName") or x.get("name"),"blockscout-creator-transfer")
-                if r:out.append(r)
-    return out,{"status":d.get("status") if isinstance(d,dict) else None,"message":d.get("message") if isinstance(d,dict) else None,"result_count":len(d.get("result",[])) if isinstance(d,dict) and isinstance(d.get("result"),list) else None,"error":d.get("_error") if isinstance(d,dict) else None}
+def metadata(index:int):
+    tid=str(token_id(index));errors=[]
+    urls=[
+        (f"https://api.opensea.io/api/v1/metadata/{CONTRACT}/{tid}","opensea-v1-metadata"),
+        (f"https://eth.blockscout.com/api/v2/tokens/{CONTRACT}/instances/{tid}","blockscout-instance-fallback"),
+    ]
+    for url,source in urls:
+        data,error=get_json(url,7,True)
+        if error:errors.append({"source":source,"error":error})
+        md=data.get("metadata") if isinstance(data,dict) and isinstance(data.get("metadata"),dict) else data
+        record=normalise(index,md.get("name") if isinstance(md,dict) else None,source)
+        if record:return record,errors
+    return None,errors
 
 def run(output:Path):
     output.mkdir(parents=True,exist_ok=True);records=[];errors=[]
-    a,os_diag=opensea_collection();records+=a
-    b,tx_diag=creator_transfers();records+=b
-    with ThreadPoolExecutor(max_workers=48) as ex:
-        for f in as_completed([ex.submit(metadata,i) for i in range(1,601)]):
-            r,e=f.result()
-            if r:records.append(r)
-            if e.get("error"):errors.append(e)
-    unique={(r["canonical_number"],r["token_id_decimal"],r["source"]):r for r in records}
-    records=sorted(unique.values(),key=lambda r:(r["canonical_number"],r["creator_index"],r["source"]))
-    by_number=defaultdict(dict)
-    for r in records:
-        e=by_number[r["canonical_number"]].setdefault(r["token_id_decimal"],{**r,"sources":[]})
-        if r["source"] not in e["sources"]:e["sources"].append(r["source"])
-    candidates={str(n):sorted(v.values(),key=lambda x:x["creator_index"]) for n,v in sorted(by_number.items())}
-    collisions={n:v for n,v in candidates.items() if len(v)>1};missing=[n for n in range(1,557) if str(n) not in candidates]
-    report={"contract":CONTRACT,"creator":CREATOR,"target_count":556,"source_diagnostics":{"opensea_collection":os_diag,"creator_transfers":tx_diag,"metadata_errors":len(errors)},"raw_record_count":len(records),"canonical_numbers_found":len(candidates),"unique_token_ids_found":len({r["token_id_decimal"] for r in records}),"missing_numbers":missing,"collision_count":len(collisions),"collisions":collisions,"candidates_by_number":candidates}
-    (output/"manifest-diagnostic.json").write_text(json.dumps(report,indent=2,sort_keys=True)+"\n")
-    (output/"manifest-records.json").write_text(json.dumps(records,indent=2,sort_keys=True)+"\n")
-    (output/"metadata-errors.json").write_text(json.dumps(errors,indent=2,sort_keys=True)+"\n")
-    (output/"DIAGNOSTIC_SUMMARY.txt").write_text(f"canonical_numbers_found={len(candidates)}\nunique_token_ids_found={report['unique_token_ids_found']}\nmissing={missing}\ncollisions={json.dumps(collisions,sort_keys=True)}\n")
+    with ThreadPoolExecutor(max_workers=16) as ex:
+        futures={ex.submit(metadata,i):i for i in range(1,621)}
+        for future in as_completed(futures):
+            record,errs=future.result()
+            if record:records.append(record)
+            if errs:errors.append({"creator_index":futures[future],"errors":errs})
+    records=sorted(records,key=lambda r:(r["canonical_number"],r["creator_index"]))
+    by_number=defaultdict(list)
+    for record in records:by_number[record["canonical_number"]].append(record)
+    candidates={str(n):rows for n,rows in sorted(by_number.items())}
+    collisions={n:rows for n,rows in candidates.items() if len(rows)>1}
+    missing=[n for n in range(1,557) if str(n) not in candidates]
+    report={"contract":CONTRACT,"creator":CREATOR,"target_count":556,"canonical_numbers_found":len(candidates),"unique_token_ids_found":len({r['token_id_decimal'] for r in records}),"missing_numbers":missing,"collision_count":len(collisions),"collisions":collisions,"candidates_by_number":candidates,"metadata_error_indexes":errors}
+    (output/"manifest-diagnostic.json").write_text(json.dumps(report,indent=2,sort_keys=True)+"\n",encoding="utf-8")
+    (output/"manifest-records.json").write_text(json.dumps(records,indent=2,sort_keys=True)+"\n",encoding="utf-8")
+    (output/"metadata-errors.json").write_text(json.dumps(errors,indent=2,sort_keys=True)+"\n",encoding="utf-8")
+    (output/"DIAGNOSTIC_SUMMARY.txt").write_text(f"canonical_numbers_found={len(candidates)}\nunique_token_ids_found={report['unique_token_ids_found']}\nmissing={missing}\ncollisions={json.dumps(collisions,sort_keys=True)}\n",encoding="utf-8")
     return report
