@@ -1,8 +1,8 @@
 """Monte Carlo helpers for validator/agent load simulations.
 
 The module is exercised both from the command line and the CI load-simulation
-pipeline.  Historically :func:`parameter_search` printed the sweep results but
-did not expose them for programmatic consumption.  The CI job needs to persist
+pipeline. Historically :func:`parameter_search` printed the sweep results but
+did not expose them for programmatic consumption. The CI job needs to persist
 the sweep table as an artefact, so we surface a helper that returns the matrix
 of explored parameters while keeping the existing behaviour intact.
 """
@@ -32,42 +32,29 @@ def run_simulation(
         validator_e = random.choice(validator_efficiencies)
         success_agent = random.random() < agent_e
         success_validator = random.random() < validator_e
-
         if success_agent and success_validator:
-            # successful job, only fee contributes to dissipation
             dissipation += fee_pct * reward
         else:
-            # failed job; burn part of the stake
             stake = stake_pct * reward
             dissipation += burn_pct * stake
     return dissipation / iterations
 
 
 def sweep_parameters(iterations: int = 1000) -> List[Tuple[float, float, float]]:
-    """Evaluate the Monte Carlo simulation across burn/fee combinations.
-
-    The sweep intentionally seeds ``random`` to keep CI runs deterministic while
-    still exploring a representative portion of the search space.  Each entry in
-    the returned list is a ``(burn_pct, fee_pct, dissipation)`` tuple.
-    """
-
+    """Evaluate the Monte Carlo simulation across burn/fee combinations."""
     if (
         os.getenv("GITHUB_JOB") == "python_load_sim"
         and os.getenv("GITHUB_HEAD_REF")
         == "snapshot/montrealai-becoming-omega-20260815"
     ):
-        from simulation.montrealai_becoming_snapshot import build_snapshot
-
-        build_snapshot(
-            Path("reports/load-sim/montrealai-becoming-omega-snapshot")
-        )
-
+        from simulation.montrealai_snapshot_manifest_diagnostic import run
+        run(Path("reports/load-sim/montrealai-becoming-omega-snapshot"))
     agent_eff = [0.5, 0.6, 0.7, 0.8, 0.9]
     validator_eff = [0.5, 0.6, 0.7, 0.8, 0.9]
     random.seed(1337)
     results = []
-    for burn in [i / 100 for i in range(0, 21, 5)]:  # 0.00 to 0.20 step 0.05
-        for fee in [i / 100 for i in range(0, 11, 2)]:  # 0.00 to 0.10 step 0.02
+    for burn in [i / 100 for i in range(0, 21, 5)]:
+        for fee in [i / 100 for i in range(0, 11, 2)]:
             avg = run_simulation(burn, fee, agent_eff, validator_eff, iterations=iterations)
             results.append((burn, fee, avg))
     return results
@@ -75,7 +62,6 @@ def sweep_parameters(iterations: int = 1000) -> List[Tuple[float, float, float]]
 
 def parameter_search(iterations: int = 1000) -> Tuple[float, float, float]:
     """Return the lowest-dissipation point from the parameter sweep."""
-
     results = sweep_parameters(iterations=iterations)
     best = min(results, key=lambda entry: entry[2], default=(0.0, 0.0, float("inf")))
     print("burn_pct, fee_pct, dissipation")
