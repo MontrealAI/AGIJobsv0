@@ -415,6 +415,11 @@ class SupremeOrchestrator(SupremeOrchestratorProtocol):
                         "energy_output": state.energy_output,
                         "compute_output": state.compute_output,
                         "stress_index": state.stress_index,
+                        "gibbs_free_energy": state.gibbs_free_energy,
+                        "entropy": state.entropy,
+                        "hamiltonian": state.hamiltonian,
+                        "coordination_index": state.coordination_index,
+                        "temperature": state.temperature,
                         "narrative": state.narrative,
                     },
                 )

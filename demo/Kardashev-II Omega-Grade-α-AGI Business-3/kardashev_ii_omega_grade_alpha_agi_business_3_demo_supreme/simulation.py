@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import math
 import random
 import time
 from dataclasses import dataclass, field
@@ -17,6 +18,11 @@ class PlanetaryState:
     energy_output: float
     compute_output: float
     stress_index: float
+    gibbs_free_energy: float
+    entropy: float
+    hamiltonian: float
+    coordination_index: float
+    temperature: float
     narrative: str = ""
 
     def to_dict(self) -> Dict[str, float | str]:
@@ -26,6 +32,11 @@ class PlanetaryState:
             "energy_output": self.energy_output,
             "compute_output": self.compute_output,
             "stress_index": self.stress_index,
+            "gibbs_free_energy": self.gibbs_free_energy,
+            "entropy": self.entropy,
+            "hamiltonian": self.hamiltonian,
+            "coordination_index": self.coordination_index,
+            "temperature": self.temperature,
             "narrative": self.narrative,
         }
 
@@ -60,6 +71,7 @@ class SyntheticEconomySim(PlanetarySim):
         self.energy_output = max(0.0, self.energy_output + energy_delta)
         self.compute_output = max(0.0, self.compute_output + compute_delta)
         self.stress_index = max(0.0, min(1.0, self.stress_index - resilience_delta + random.random() * 0.02))
+        metrics = self._compute_thermodynamic_metrics()
         narrative = self._build_narrative(action)
         state = PlanetaryState(
             epoch=time.time(),
@@ -67,18 +79,29 @@ class SyntheticEconomySim(PlanetarySim):
             energy_output=self.energy_output,
             compute_output=self.compute_output,
             stress_index=self.stress_index,
+            gibbs_free_energy=metrics["gibbs_free_energy"],
+            entropy=metrics["entropy"],
+            hamiltonian=metrics["hamiltonian"],
+            coordination_index=metrics["coordination_index"],
+            temperature=metrics["temperature"],
             narrative=narrative,
         )
         self._write_state(state)
         return state
 
     def get_state(self) -> PlanetaryState:
+        metrics = self._compute_thermodynamic_metrics()
         return PlanetaryState(
             epoch=time.time(),
             population=self.population,
             energy_output=self.energy_output,
             compute_output=self.compute_output,
             stress_index=self.stress_index,
+            gibbs_free_energy=metrics["gibbs_free_energy"],
+            entropy=metrics["entropy"],
+            hamiltonian=metrics["hamiltonian"],
+            coordination_index=metrics["coordination_index"],
+            temperature=metrics["temperature"],
             narrative="Status checkpoint",
         )
 
@@ -100,7 +123,33 @@ class SyntheticEconomySim(PlanetarySim):
             segments.append("Planetary resilience frameworks fortified.")
         if not segments:
             segments.append("Steady-state optimization underway.")
-        return " " .join(segments)
+        return " ".join(segments)
+
+    def _compute_thermodynamic_metrics(self) -> dict[str, float]:
+        order_parameter = 1.0 - self.stress_index
+        order_parameter = min(1.0 - 1e-6, max(1e-6, order_parameter))
+        entropy = -(
+            order_parameter * math.log(order_parameter)
+            + (1.0 - order_parameter) * math.log(1.0 - order_parameter)
+        )
+        temperature = 1.0 + self.stress_index
+        internal_energy = (self.energy_output / 1_000_000.0) + (self.compute_output / 2_000_000.0)
+        gibbs_free_energy = internal_energy - temperature * entropy
+        hamiltonian = -internal_energy * order_parameter
+        total_output = self.energy_output + self.compute_output
+        if total_output <= 0:
+            coordination_index = 1.0
+        else:
+            balance = self.energy_output / total_output
+            coordination_index = 1.0 - abs(balance - 0.5) * 2.0
+            coordination_index = min(1.0, max(0.0, coordination_index))
+        return {
+            "gibbs_free_energy": gibbs_free_energy,
+            "entropy": entropy,
+            "hamiltonian": hamiltonian,
+            "coordination_index": coordination_index,
+            "temperature": temperature,
+        }
 
 
 __all__ = ["PlanetarySim", "PlanetaryState", "SyntheticEconomySim"]

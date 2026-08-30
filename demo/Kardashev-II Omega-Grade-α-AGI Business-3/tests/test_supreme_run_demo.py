@@ -74,16 +74,22 @@ def test_run_as_script_uses_package_main(monkeypatch):
     def fake_main(argv):
         captured["argv"] = argv
 
+    real_import_module = importlib.import_module
+
     def fake_import(name):
-        assert name == "demo.kardashev_ii_omega_grade_alpha_agi_business_3_demo_supreme"
-        return SimpleNamespace(main=fake_main)
+        if name == "demo.kardashev_ii_omega_grade_alpha_agi_business_3_demo_supreme":
+            return SimpleNamespace(main=fake_main)
+        return real_import_module(name)
 
     monkeypatch.setattr(importlib, "import_module", fake_import)
     monkeypatch.setattr(sys, "argv", [str(script_path)])
 
+    module = importlib.import_module(
+        "demo.kardashev_ii_omega_grade_alpha_agi_business_3_demo_supreme.run_demo"
+    )
     runpy.run_path(str(script_path), run_name="__main__")
 
-    assert captured["argv"] == []
+    assert captured["argv"] == module.DEFAULT_DEMO_ARGS
     assert str(repo_root) in sys.path
 
 
