@@ -10,6 +10,17 @@ contract OwnerConfiguratorHarness is OwnerConfigurator {
         external
         returns (bytes memory)
     {
-        return _applyConfiguration(call);
+        return _applyConfiguration(call, 0);
+    }
+
+    function applyConfigurationWithValue(
+        ConfigurationCall memory call,
+        uint256 value
+    ) external payable returns (bytes memory) {
+        if (msg.value != value) {
+            revert OwnerConfigurator__ValueMismatch(value, msg.value);
+        }
+
+        return _applyConfiguration(call, value);
     }
 }
