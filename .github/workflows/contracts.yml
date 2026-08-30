@@ -78,7 +78,7 @@ jobs:
         env:
           COVERAGE_MIN: 90
         run: |
-          npx ts-node --compiler-options '{"module":"commonjs"}' scripts/generate-constants.ts
+          node --loader ts-node/esm scripts/generate-constants.ts
           npx hardhat compile
 
       - name: Regenerate constants for tests
