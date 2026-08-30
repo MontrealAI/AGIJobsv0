@@ -77,6 +77,7 @@ jobs:
         run: npm run demo:zenith-sapience-planetary-os:local
 
       - name: Upload Zenith Sapience Planetary OS artefacts
+        if: ${{ always() && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false) }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: zenith-planetary-os-reports
