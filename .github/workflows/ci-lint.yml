@@ -1,0 +1,305 @@
+---
+# yamllint disable rule:line-length rule:truthy
+name: ci / lint lattice
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/ci-lint.yml'
+      - 'ci/**'
+      - 'scripts/**'
+      - 'packages/**'
+      - 'contracts/**'
+      - 'requirements-python.txt'
+      - 'requirements-agent.txt'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'docs/BRANCH_PROTECTION.md'
+  pull_request:
+    paths:
+      - '.github/workflows/ci-lint.yml'
+      - 'ci/**'
+      - 'scripts/**'
+      - 'packages/**'
+      - 'contracts/**'
+      - 'requirements-python.txt'
+      - 'requirements-agent.txt'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'docs/BRANCH_PROTECTION.md'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  actions: read
+  checks: read
+
+concurrency:
+  group: lint-lattice-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+  lint:
+    name: Lint & static checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            **/package-lock.json
+      - name: Preflight toolchain locks
+        run: npm run ci:preflight
+      - name: Install dependencies
+        run: ./scripts/ci/npm-ci.sh --no-audit --prefer-offline --progress=false
+      - name: Assert required contexts manifest is synchronised
+        run: npm run ci:sync-contexts -- --check
+      - name: Verify toolchain locks
+        run: npm run ci:verify-toolchain
+      - name: Ensure branch protection contexts match workflow
+        run: npm run ci:verify-contexts
+      - name: Verify companion workflow contexts
+        run: npm run ci:verify-companion-contexts
+      - name: Prettier formatting check
+        run: npm run format:check
+      - name: Targeted lint suite
+        run: npm run lint:ci
+      - name: Validate sentinel templates
+        run: npm run monitoring:validate
+
+  hgm_guardrails:
+    name: HGM guardrails
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    needs: lint
+    env:
+      PYTHON_VERSION: '3.12'
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1'
+      AGIALPHA_PROFILE: agialpha
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            **/package-lock.json
+      - name: Setup Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+          cache-dependency-path: requirements-python.txt
+      - name: Install Node dependencies
+        run: ./scripts/ci/npm-ci.sh --no-audit --prefer-offline --progress=false
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-python.txt
+      - name: Run HGM suite
+        run: ci/hgm-suite.sh
+
+  # Keep this job defined at the top level so that other jobs can depend on it.
+  owner_controls:
+    name: Owner control assurance
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    needs: lint
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            **/package-lock.json
+      - name: Preflight toolchain locks
+        run: npm run ci:preflight
+      - name: Install dependencies
+        run: ./scripts/ci/npm-ci.sh --no-audit --prefer-offline --progress=false
+      - name: Generate owner control assurance reports
+        run: |
+          mkdir -p reports/owner-control
+          npx ts-node --compiler-options '{"module":"commonjs"}' scripts/v2/ownerControlDoctor.ts \
+            --network ci \
+            --strict \
+            --json \
+            > reports/owner-control/doctor.json
+          npx ts-node --compiler-options '{"module":"commonjs"}' scripts/v2/ownerParameterMatrix.ts \
+            --network ci \
+            --format json \
+            --no-mermaid \
+            --out reports/owner-control/parameter-matrix.json
+      - name: Render owner authority matrix
+        run: |
+          npm run ci:owner-authority -- --network ci \
+            --out reports/owner-control
+      - name: Render owner command center digest
+        run: |
+          mkdir -p reports/owner-control
+          npm run owner:command-center -- --network ci \
+            --format markdown \
+            --out reports/owner-control/command-center.md \
+            --no-mermaid
+      - name: Upload owner control artefacts
+        if: ${{ always() }}
+        uses: actions/upload-artifact@834a144ee995460fba8ed112a2fc961b36a5ec5a
+        with:
+          name: owner-control-ci
+          path: reports/owner-control
+
+  branch_protection:
+    name: Branch protection guard
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: read
+      administration: read
+    steps:
+      - name: Detect fork context
+        id: fork_context
+        run: |
+          if [ "${IS_FORK}" = "true" ]; then
+            echo "Detected forked pull_request context; branch protection audit will be skipped."
+            echo "The token lacks administration:read scope."
+            echo "fork=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "fork=false" >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          IS_FORK: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork }}
+      - name: Harden runner
+        if: steps.fork_context.outputs.fork == 'false'
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        if: steps.fork_context.outputs.fork == 'false'
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Setup Node
+        if: steps.fork_context.outputs.fork == 'false'
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            **/package-lock.json
+      - name: Install dependencies
+        if: steps.fork_context.outputs.fork == 'false'
+        run: ./scripts/ci/npm-ci.sh --no-audit --prefer-offline --progress=false
+      - name: Verify branch protection configuration
+        if: steps.fork_context.outputs.fork == 'false'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH_NAME: main
+        run: npm run ci:verify-branch-protection -- --branch "$BRANCH_NAME"
+      - name: Record fork bypass for summary
+        if: steps.fork_context.outputs.fork == 'true'
+        run: |
+          mkdir -p reports/ci
+          cat <<'EOF' >> reports/ci/status.md
+          > Branch protection audit skipped automatically because this run originates from a forked pull request.
+          > The required context remains green on protected branches.
+          EOF
+
+  summary:
+    name: CI summary
+    runs-on: ubuntu-24.04
+    if: ${{ always() }}
+    needs:
+      - lint
+      - hgm_guardrails
+      - owner_controls
+      - branch_protection
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+        with:
+          egress-policy: audit
+      - name: Publish lint lattice summary
+        env:
+          NEEDS_CONTEXT: ${{ toJson(needs) }}
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+          const needs = JSON.parse(process.env.NEEDS_CONTEXT);
+          const prettyNames = {
+            lint: 'Lint & static checks',
+            hgm_guardrails: 'HGM guardrails',
+            owner_controls: 'Owner control assurance',
+            branch_protection: 'Branch protection guard'
+          };
+          const lines = ['# Lint lattice status', '', '| Job | Result |', '| --- | --- |'];
+          let failed = false;
+          for (const [jobId, info] of Object.entries(needs)) {
+            const status = String(info.result || 'unknown').toUpperCase();
+            const conclusion = info.conclusion ? String(info.conclusion).toUpperCase() : '';
+            let displayStatus = status;
+            if (conclusion && conclusion !== status) {
+              displayStatus = `${status} (${conclusion})`;
+            }
+            if (status !== 'SUCCESS' && status !== 'SKIPPED') {
+              failed = true;
+            }
+            lines.push(`| ${prettyNames[jobId] || jobId} | ${displayStatus} |`);
+          }
+          const markdown = lines.join('\n') + '\n';
+          const outDir = path.join('reports', 'ci');
+          fs.mkdirSync(outDir, { recursive: true });
+          fs.writeFileSync(path.join(outDir, 'lint-lattice.md'), markdown, 'utf8');
+          if (failed) {
+            console.error('One or more lint lattice jobs failed.');
+            process.exit(1);
+          }
+          NODE
+      - name: Upload lint lattice artefact
+        if: ${{ always() }}
+        uses: actions/upload-artifact@834a144ee995460fba8ed112a2fc961b36a5ec5a
+        with:
+          name: lint-lattice-status
+          path: reports/ci/lint-lattice.md
+          if-no-files-found: error
+# yamllint enable rule:line-length rule:truthy
