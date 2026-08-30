@@ -1,20 +1,20 @@
+global: {}
+replicaCount: 1
 image:
-  repository: ghcr.io/graphprotocol/graph-node
-  tag: v0.32.0
+  repository: graph-node
+  tag: latest
+  digest: ""
   pullPolicy: IfNotPresent
 service:
   type: ClusterIP
   port: 8000
+indexer:
+  adminPort: 8030
+  metricsPort: 8040
+postgres:
+  connectionSecretName: ""
+ipfsEndpoint: "http://ipfs:5001"
 resources: {}
-config:
-  ethereumNetworks:
-    - name: sepolia
-      rpc: https://ethereum-sepolia.publicnode.com
-  postgres:
-    host: ""
-    database: subgraph
-    userSecret: graph-node-postgres
-  ipfs:
-    endpoint: ""
-monitoring:
-  enabled: true
+podAnnotations: {}
+autoscaling:
+  enabled: false

@@ -1,71 +1,111 @@
+{{- $global := default (dict) .Values.global -}}
+{{- $cors := default (dict) $global.cors -}}
+{{- $ratelimits := default (dict) $global.ratelimits -}}
+{{- $rpc := default (dict) $global.rpc -}}
+{{- $contracts := default (dict) $global.contracts -}}
+{{- $eas := default (dict) $global.eas -}}
+{{- $observability := default (dict) $global.observability -}}
+{{- $secrets := default (dict) $global.secrets -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "orchestrator.fullname" . }}
   labels:
-    app.kubernetes.io/name: orchestrator
+    app.kubernetes.io/name: {{ .Chart.Name }}
     app.kubernetes.io/instance: {{ .Release.Name }}
-    app.kubernetes.io/component: api
+    app.kubernetes.io/version: {{ .Chart.AppVersion }}
+    app.kubernetes.io/component: orchestrator
 spec:
-  replicas: {{ default 1 .Values.replicaCount }}
+  replicas: {{ .Values.replicaCount | default 1 }}
   selector:
     matchLabels:
-      app.kubernetes.io/name: orchestrator
+      app.kubernetes.io/name: {{ .Chart.Name }}
       app.kubernetes.io/instance: {{ .Release.Name }}
   template:
     metadata:
       annotations:
-        checksum/config: {{ include (print $.Template.BasePath "/env-config.yaml") . | sha256sum }}
+        {{- if (default false $observability.prometheusScrape) }}
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "{{ .Values.service.port }}"
+        {{- end }}
+        {{- range $k, $v := .Values.podAnnotations }}
+        {{ $k }}: {{ $v | quote }}
+        {{- end }}
       labels:
-        app.kubernetes.io/name: orchestrator
+        app.kubernetes.io/name: {{ .Chart.Name }}
         app.kubernetes.io/instance: {{ .Release.Name }}
     spec:
+      serviceAccountName: {{ include "orchestrator.serviceAccountName" . }}
+      securityContext:
+        fsGroup: 1000
       containers:
         - name: orchestrator
-          {{- $repoPrefix := default "" (dig "image" "repositoryPrefix" .Values.global) }}
-          {{- $repository := default (printf "%s/orchestrator" $repoPrefix | trimPrefix "/") .Values.image.repository }}
-          {{- $digest := coalesce .Values.image.digest (dig "image" "digestOverrides" "orchestrator" .Values.global) }}
-          {{- $tag := coalesce .Values.image.tag (dig "image" "tag" .Values.global) }}
-          image: {{ $repository }}{{- if $digest -}}@{{ $digest }}{{- else -}}:{{ required "image.tag must be provided when no digest is configured for orchestrator" $tag }}{{- end }}
+          image: {{ include "orchestrator.imageWithDigest" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          env:
-            - name: LOG_LEVEL
-              value: {{ .Values.env.logLevel | quote }}
-            - name: CORS_ALLOWED_ORIGINS
-              value: {{ join "," (default (.Values.global.cors.allowedOrigins | default (list)) .Values.env.corsOrigins) | quote }}
-            - name: CORS_ALLOWED_HEADERS
-              value: {{ join "," (default (.Values.global.cors.allowedHeaders | default (list)) .Values.env.corsHeaders) | quote }}
-            - name: KMS_KEY_URI
-              value: {{ .Values.env.kmsKey | quote }}
-            - name: ENTRY_POINT_ADDRESS
-              value: {{ required "contracts.entryPoint is required" (dig "contracts" "entryPoint" .Values.global) | quote }}
-            - name: PAYMASTER_ADDRESS
-              value: {{ required "contracts.paymaster is required" (dig "contracts" "paymaster" .Values.global) | quote }}
-            - name: EAS_SCHEMA_UID
-              value: {{ required "eas.schemaUID is required" (dig "eas" "schemaUID" .Values.global) | quote }}
-            - name: RPC_URL
-              value: {{ required "rpc.primary is required" (dig "rpc" "primary" .Values.global) | quote }}
-            - name: STACK_PAUSED
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ .Values.global.pauseSwitch.configMap }}
-                  key: {{ .Values.global.pauseSwitch.key }}
-                  optional: true
-            - name: MAX_REQUEST_BYTES
-              value: {{ .Values.env.maxRequestBytes | quote }}
           ports:
             - containerPort: {{ .Values.service.port }}
+              name: http
+          env:
+            - name: CHAIN_ID
+              value: {{ default "0" $global.chainId | quote }}
+            - name: PRIMARY_RPC_URL
+              value: {{ default "" $rpc.primary | quote }}
+            - name: FALLBACK_RPC_URL
+              value: {{ default "" $rpc.fallback | quote }}
+            - name: ENTRYPOINT_ADDRESS
+              value: {{ default "" $contracts.entryPoint | quote }}
+            - name: PAYMASTER_ADDRESS
+              value: {{ default "" $contracts.paymaster | quote }}
+            - name: BUNDLER_ADDRESS
+              value: {{ default "" $contracts.bundler | quote }}
+            - name: EAS_SCHEMA_UID
+              value: {{ default (default "" $eas.schemaUid) .Values.eas.schemaUid | quote }}
+            - name: CORS_ALLOW_ORIGINS
+              value: {{ join "," (default (list "*") $cors.allowOrigins) | quote }}
+            - name: CORS_ALLOW_METHODS
+              value: {{ join "," (default (list "GET" "POST") $cors.allowMethods) | quote }}
+            - name: CORS_ALLOW_HEADERS
+              value: {{ join "," (default (list "Authorization" "Content-Type") $cors.allowHeaders) | quote }}
+            - name: RATE_LIMIT_ENABLED
+              value: {{ default false $ratelimits.enabled | quote }}
+            - name: RATE_LIMIT_BURST
+              value: {{ default 20 $ratelimits.burst | quote }}
+            - name: RATE_LIMIT_RPS
+              value: {{ default 10 $ratelimits.requestsPerSecond | quote }}
+            - name: RATE_LIMIT_REDIS_DSN
+              value: {{ default "" $ratelimits.redisDsn | quote }}
+            - name: MAX_REQUEST_BODY
+              value: {{ default "1m" .Values.env.MAX_REQUEST_BODY | quote }}
+            - name: FEATURE_FLAGS
+              value: {{ default "" .Values.env.FEATURE_FLAGS | quote }}
+          envFrom:
+            - secretRef:
+                name: {{ default (printf "%s-runtime" (include "orchestrator.fullname" .)) $secrets.runtimeSecretName }}
+            {{- range .Values.extraEnvFrom }}
+            - {{ toYaml . | nindent 12 }}
+            {{- end }}
           resources:
-{{ toYaml .Values.resources | indent 12 }}
+            {{- toYaml .Values.resources | nindent 12 }}
           readinessProbe:
             httpGet:
               path: /healthz
-              port: {{ .Values.service.port }}
+              port: http
             initialDelaySeconds: 5
             periodSeconds: 10
           livenessProbe:
             httpGet:
               path: /healthz
-              port: {{ .Values.service.port }}
-            initialDelaySeconds: 15
+              port: http
+            initialDelaySeconds: 20
             periodSeconds: 20
+          volumeMounts:
+            - name: kms-secrets
+              mountPath: /var/run/secrets/kms
+              readOnly: true
+      volumes:
+        - name: kms-secrets
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: {{ default "" $secrets.secretProviderClass | quote }}

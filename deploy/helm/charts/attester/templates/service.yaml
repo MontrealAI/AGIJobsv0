@@ -3,14 +3,16 @@ kind: Service
 metadata:
   name: {{ include "attester.fullname" . }}
   labels:
-    app.kubernetes.io/name: attester
+    app.kubernetes.io/name: {{ .Chart.Name }}
     app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: attester
 spec:
   type: {{ .Values.service.type }}
   ports:
     - port: {{ .Values.service.port }}
       targetPort: http
       name: http
+      protocol: TCP
   selector:
-    app.kubernetes.io/name: attester
+    app.kubernetes.io/name: {{ .Chart.Name }}
     app.kubernetes.io/instance: {{ .Release.Name }}

@@ -1,43 +1,49 @@
-{{- if .Values.enabled }}
+{{- if .Values.hosts }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ printf "%s-shared" .Release.Name }}
+  name: {{ include "ingress.fullname" . }}
   annotations:
-    kubernetes.io/tls-acme: "true"
-    nginx.ingress.kubernetes.io/hsts: "true"
-    nginx.ingress.kubernetes.io/hsts-max-age: "{{ .Values.security.hstsMaxAge }}"
-    nginx.ingress.kubernetes.io/hsts-include-subdomains: "{{ ternary "true" "false" (.Values.security.includeSubdomains | default true) }}"
-    nginx.ingress.kubernetes.io/hsts-preload: "{{ ternary "true" "false" (.Values.security.preload | default true) }}"
-    nginx.ingress.kubernetes.io/enable-access-log: "true"
-    nginx.ingress.kubernetes.io/limit-rpm: "{{ default 300 .Values.rateLimitRpm }}"
-    nginx.ingress.kubernetes.io/limit-burst-multiplier: "1"
-    nginx.ingress.kubernetes.io/enable-modsecurity: {{ .Values.security.wafAnnotation | quote }}
-    nginx.ingress.kubernetes.io/enable-cors: "true"
-    nginx.ingress.kubernetes.io/cors-allow-origin: "{{ .Values.security.corsAllowOrigin }}"
-    nginx.ingress.kubernetes.io/cors-allow-headers: "{{ join "," (.Values.security.corsAllowHeaders | default (list "Authorization" "Content-Type")) }}"
-    nginx.ingress.kubernetes.io/cors-allow-methods: "{{ join "," (.Values.security.corsAllowMethods | default (list "GET" "POST")) }}"
-    nginx.ingress.kubernetes.io/proxy-body-size: "{{ default "1m" .Values.security.proxyBodySize }}"
-    nginx.ingress.kubernetes.io/proxy-read-timeout: "{{ default "60s" .Values.security.requestTimeout }}"
+    kubernetes.io/ingress.class: {{ .Values.className | quote }}
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/server-snippet: |
+      add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+      add_header X-Frame-Options "DENY" always;
+      add_header X-Content-Type-Options "nosniff" always;
+      add_header Referrer-Policy "no-referrer" always;
+      add_header Content-Security-Policy "default-src 'none'; frame-ancestors 'none';" always;
+    {{- range $host := .Values.hosts }}
+    {{- range $k, $v := $host.annotations }}
+    {{ $k }}: {{ $v | quote }}
+    {{- end }}
+    {{- end }}
+    {{- if .Values.waf.enabled }}
+    cloud.google.com/load-balancer-type: external
+    networking.gke.io/security-policy: {{ .Values.waf.policy | quote }}
+    {{- end }}
 spec:
-  ingressClassName: {{ .Values.ingressClassName }}
+  ingressClassName: {{ .Values.className | quote }}
   tls:
-    - secretName: {{ .Values.defaultTlsSecret }}
-      hosts:
-{{- range .Values.hosts }}
-        - {{ .host }}
-{{- end }}
+    {{- range .Values.hosts }}
+    - hosts:
+        - {{ .host | quote }}
+      secretName: {{ .tlsSecret | quote }}
+    {{- end }}
+    {{- range .Values.extraTls }}
+    - hosts: {{ toYaml .hosts | nindent 8 }}
+      secretName: {{ .secretName | quote }}
+    {{- end }}
   rules:
-{{- range .Values.hosts }}
-    - host: {{ .host }}
+    {{- range .Values.hosts }}
+    - host: {{ .host | quote }}
       http:
         paths:
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: {{ printf "%s-%s" $.Release.Name .serviceName }}
+                name: {{ printf "%s-%s" $.Release.Name .service | trunc 63 | trimSuffix "-" }}
                 port:
-                  number: {{ .servicePort }}
-{{- end }}
+                  number: {{ .port }}
+    {{- end }}
 {{- end }}

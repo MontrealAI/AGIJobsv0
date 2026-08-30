@@ -1,52 +1,52 @@
-# One-Pass Bootstrap with Helm
+# One-Pass Bootstrap (Helm)
 
-This guide bootstraps the entire AGI stack using the aggregated Helm chart located in `deploy/helm`.
+This procedure installs the entire stack in a brand new Kubernetes cluster.
 
 ## Prerequisites
-- Kubernetes cluster >= v1.26 with cert-manager and nginx ingress controller installed.
-- `helm` >= v3.12.
-- Access to the secrets referenced in `values.yaml` (KMS-backed secrets delivered via your secret manager).
-- Docker registry credentials for GHCR images.
+- kubectl access to the target cluster
+- `helm` v3.11+
+- Access to the artifact registry containing signed container images
+- Cosign public key (see `.cosign.pub` in the security vault)
 
 ## Steps
-1. **Clone and configure values**
+1. **Prepare secrets**
    ```bash
-   git clone https://github.com/agi/jobs.git
-   cd AGIJobsv0/deploy/helm
-   cp values.yaml override.yaml
+   kubectl create ns aa
+   kubectl create secret generic subgraph-postgres-credentials \
+     --from-literal=database=aa \
+     --from-literal=username=aa \
+     --from-literal=password=$(openssl rand -base64 32) \
+     --from-literal=database-url=postgres://aa:...@postgres:5432/aa \
+     -n aa
    ```
-   Update `override.yaml` with:
-   - Correct RPC URLs and contract addresses.
-   - KMS key resource IDs for orchestrator, attester, and paymaster.
-   - TLS secret name if using an existing certificate.
+   Configure the CSI `SecretProviderClass` referenced in `values.yaml` to retrieve runtime secrets via KMS.
 
-2. **Install dependencies**
+2. **Update dependencies**
    ```bash
-   helm dependency update
+   helm dependency update deploy/helm
    ```
 
-3. **Install the stack**
+3. **Validate image signatures and digests**
    ```bash
-   helm install agi-stack . -f override.yaml --create-namespace --namespace agi
+   cosign verify --key cosign.pub ghcr.io/agi/protocol/orchestrator@sha256:...
    ```
-   Within ~2 minutes all Deployments should report `AVAILABLE=1`. Validate with `kubectl get pods -n agi`.
+   Paste the verified digests into `deploy/helm/values.yaml` or supply via `--set` flags.
 
-4. **Post-install checks**
-   - Confirm ingress routes issue valid certificates (`curl -I https://orchestrator.example.com/healthz`).
-   - Verify `ServiceMonitor` objects exist in the monitoring namespace.
-   - Ensure the pause switch ConfigMap is created: `kubectl get cm agi-operations -n agi`.
-
-5. **Uninstall**
+4. **Install**
    ```bash
-   helm uninstall agi-stack -n agi
-   kubectl delete namespace agi --wait
+   helm install aa-stack deploy/helm -n aa \
+     --set global.environment=testnet \
+     --set orchestrator.image.digest=sha256:... \
+     --set bundler.image.digest=sha256:...
    ```
-   This removes all workloads and volumes. Persistent volumes are deleted because the chart provisions them as part of the release.
 
-## Troubleshooting
-- If cosigned images fail to pull, ensure the cluster trusts Sigstore fulcio roots.
-- When RPC endpoints rate-limit, set `global.rpc.fallback` to a list of additional providers before reinstalling.
-- To pause sponsorships during bootstrap, edit the `agi-operations` ConfigMap and set `pause=true`.
+5. **Post-install checks**
+   - `kubectl get pods -n aa` should show all workloads in `Running` or `Completed`.
+   - Access Grafana → "AA Stack Overview". All panels should display data within 5 minutes.
 
-## Change Log
-- v1.0 – Initial bootstrap guide.
+6. **Uninstall**
+   ```bash
+   helm uninstall aa-stack -n aa
+   kubectl delete ns aa
+   ```
+   Confirm that persistent volumes are gone or manually clean them up if retained.

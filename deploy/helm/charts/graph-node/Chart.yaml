@@ -1,5 +1,6 @@
 apiVersion: v2
 name: graph-node
-description: Graph Node for subgraph indexing
 version: 0.1.0
-appVersion: "0.1.0"
+description: Graph Node indexing service for sponsorship subgraph
+appVersion: "0.31.0"
+type: application

@@ -3,20 +3,17 @@ kind: Service
 metadata:
   name: {{ include "ipfs.fullname" . }}
   labels:
-    app.kubernetes.io/name: ipfs
+    app.kubernetes.io/name: {{ .Chart.Name }}
     app.kubernetes.io/instance: {{ .Release.Name }}
 spec:
-  clusterIP: None
+  type: ClusterIP
   ports:
     - name: api
       port: {{ .Values.service.apiPort }}
       targetPort: api
-    - name: swarm
-      port: {{ .Values.service.swarmPort }}
-      targetPort: swarm
     - name: gateway
       port: {{ .Values.service.gatewayPort }}
       targetPort: gateway
   selector:
-    app.kubernetes.io/name: ipfs
+    app.kubernetes.io/name: {{ .Chart.Name }}
     app.kubernetes.io/instance: {{ .Release.Name }}

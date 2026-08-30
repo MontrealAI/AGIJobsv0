@@ -1,53 +1,63 @@
+{{- $global := default (dict) .Values.global -}}
+{{- $observability := default (dict) $global.observability -}}
+{{- $secrets := default (dict) $global.secrets -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "graphNode.fullname" . }}
+  name: {{ include "graph-node.fullname" . }}
   labels:
-    app.kubernetes.io/name: graph-node
+    app.kubernetes.io/name: {{ .Chart.Name }}
     app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: graph-node
 spec:
-  replicas: {{ default 1 .Values.replicaCount }}
+  replicas: {{ .Values.replicaCount | default 1 }}
   selector:
     matchLabels:
-      app.kubernetes.io/name: graph-node
+      app.kubernetes.io/name: {{ .Chart.Name }}
       app.kubernetes.io/instance: {{ .Release.Name }}
   template:
     metadata:
       annotations:
-        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- if (default false $observability.prometheusScrape) }}
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "{{ .Values.indexer.metricsPort }}"
+        {{- end }}
+        {{- range $k, $v := .Values.podAnnotations }}
+        {{ $k }}: {{ $v | quote }}
+        {{- end }}
       labels:
-        app.kubernetes.io/name: graph-node
+        app.kubernetes.io/name: {{ .Chart.Name }}
         app.kubernetes.io/instance: {{ .Release.Name }}
     spec:
       containers:
         - name: graph-node
-          {{- $digest := coalesce .Values.image.digest (dig "image" "digestOverrides" "graph-node" .Values.global) }}
-          {{- $tag := coalesce .Values.image.tag (dig "image" "tag" .Values.global) }}
-          image: {{ .Values.image.repository }}{{- if $digest -}}@{{ $digest }}{{- else -}}:{{ required "image.tag must be provided when no digest is configured for graph-node" $tag }}{{- end }}
+          image: {{ include "graph-node.imageWithDigest" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.service.port }}
+              name: query
+            - containerPort: {{ .Values.indexer.adminPort }}
+              name: admin
+            - containerPort: {{ .Values.indexer.metricsPort }}
+              name: metrics
           env:
             - name: GRAPH_LOG
               value: info
-            - name: RUST_LOG
-              value: info
-            - name: POSTGRES_PASSWORD
+            - name: GRAPH_ALLOW_NON_DETERMINISTIC_IPFS
+              value: "true"
+            - name: GRAPH_ALLOW_NON_DETERMINISTIC_IPFS_TIMEOUT
+              value: "30"
+            - name: GRAPH_NODE_ID
+              value: {{ include "graph-node.fullname" . | quote }}
+            - name: POSTGRESQL_CONNECTION
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.config.postgres.userSecret }}
-                  key: POSTGRES_PASSWORD
-          args:
-            - run
-            - --config
-            - /etc/graph/config.toml
-          ports:
-            - containerPort: {{ .Values.service.port }}
-              name: http
-          volumeMounts:
-            - name: config
-              mountPath: /etc/graph
+                  name: {{ default "" .Values.postgres.connectionSecretName }}
+                  key: database-url
+            - name: IPFS
+              value: {{ .Values.ipfsEndpoint | quote }}
+          envFrom:
+            - secretRef:
+                name: {{ default (printf "%s-runtime" (include "graph-node.fullname" .)) $secrets.runtimeSecretName }}
           resources:
-{{ toYaml .Values.resources | indent 12 }}
-      volumes:
-        - name: config
-          configMap:
-            name: {{ include "graphNode.fullname" . }}-config
+            {{- toYaml .Values.resources | nindent 12 }}

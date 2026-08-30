@@ -3,14 +3,22 @@ kind: Service
 metadata:
   name: {{ include "postgres.fullname" . }}
   labels:
-    app.kubernetes.io/name: postgres
+    app.kubernetes.io/name: {{ .Chart.Name }}
     app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: postgres
+  {{- $annotations := default (dict) .Values.primary.service.annotations }}
+  {{- if $annotations }}
+  annotations:
+    {{- range $k, $v := $annotations }}
+    {{ $k }}: {{ $v | quote }}
+    {{- end }}
+  {{- end }}
 spec:
-  type: {{ .Values.service.type }}
+  clusterIP: None
   ports:
-    - port: {{ .Values.service.port }}
+    - port: {{ .Values.primary.service.port }}
       targetPort: postgres
       name: postgres
   selector:
-    app.kubernetes.io/name: postgres
+    app.kubernetes.io/name: {{ .Chart.Name }}
     app.kubernetes.io/instance: {{ .Release.Name }}

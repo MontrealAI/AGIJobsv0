@@ -1,50 +1,39 @@
 # Node Operator Runbook (Browser-Only)
 
-This runbook documents the end-to-end operating procedures for an AGI stack node operator without requiring shell access.
+This guide assumes operators do not have shell or `kubectl` access. All actions are performed via the Operator Console (https://operators.example.com) and Grafana.
 
-## Prerequisites
-- Access to the Operator Control Plane (OCP) at `https://operator.example.com`.
-- Permissions to manage the AGI cluster namespace in Argo CD or Lens (view-only).
-- Hardware security key for SSO and WebAuthn prompts.
+## Monitor health
+1. Open the "AA Stack Overview" Grafana dashboard.
+2. Verify that the **Success Rate** panel remains above 99%. If it drops:
+   - Check the **Time To Operation (p95)** panel for latency spikes.
+   - Review the alert banner within the console.
+3. Confirm the **Treasury Balance (USD)** panel is above the `Gas Top-up` threshold configured in the console settings page.
 
-## Daily Checklist
-1. Log into the OCP dashboard and verify all service widgets are **green**.
-2. Review the "Gas Balance" card. If the balance is below 0.1 ETH, follow the gas top-up procedure.
-3. Confirm the "Pause Switch" indicator is **OFF** unless there is an active incident.
-4. Review the latest attestation receipts in the Receipts tab.
+## Adjust sponsorship fees
+1. Navigate to **Operator Console → Economics → Fees**.
+2. Set the **Base Sponsorship Fee** slider to the desired value in USD.
+3. Click **Preview impact** to view projected margins.
+4. Hit **Commit update**. Changes propagate through the paymaster supervisor via the management API.
 
-## Adjust Fees and Treasury Address
-1. Navigate to **Policy > Sponsorship Profile** in OCP.
-2. Click **Edit** and update:
-   - **Flat Fee (USD)** or **% of Sponsored Gas** as required.
-   - **Treasury Address** — paste the checksummed address.
-3. Submit the change and approve the WebAuthn prompt to sign the policy update transaction.
-4. Validate the change landed by checking the "Pending Changes" drawer and ensuring the status becomes `Applied`.
+## Top-up gas / treasury
+1. Visit **Operator Console → Treasury**.
+2. Review the **Current balance** card and compare against the minimum safe threshold (displayed inline).
+3. Click **Top-up via Safe**.
+4. The console opens the Safe App with the recommended amount. Approve the transaction using your wallet.
+5. Watch the balance card for confirmation.
 
-## Top Up Paymaster Gas Wallet
-1. From **Finance > Wallets**, locate the **Paymaster Gas Wallet**.
-2. Click **Deposit** and copy the wallet address.
-3. Using the hosted wallet UI (e.g., Fireblocks console), initiate a transfer to the copied address.
-4. Back in the OCP dashboard, watch the balance auto-refresh (should update within 2 blocks). The Alert feed clears when the balance exceeds 0.05 ETH.
+## Flip the pause switch
+1. Navigate to **Operator Console → Controls**.
+2. Locate the **Pause sponsorships** toggle.
+3. Toggle **ON** to halt new sponsorships. Confirm the modal prompt.
+4. When safe to resume, toggle **OFF**. The console waits for cluster reconciliation and shows a green "Resumed" badge when complete.
 
-## Flip the Pause Switch
-1. Go to **Operations > Safeguards**.
-2. Review the checklist (ensure all in-flight sponsorships are settled).
-3. Toggle **Pause Sponsorships** to ON. Confirm the modal and WebAuthn signature.
-4. To resume, repeat the steps and toggle OFF.
-5. Verify the pause flag is propagated by checking the "Stack Status" widget and ensuring bundler queue drains.
+## View receipts & verify attestations
+1. From **Operator Console → Receipts**, select the relevant User Operation hash.
+2. Click **Download receipt** to fetch the IPFS-backed JSON receipt.
+3. Click **Verify EAS attestation**. The console automatically checks the schema UID and status via the EAS API and displays a green check when valid.
 
-## View Receipts and EAS Proofs
-1. Navigate to **Receipts** in the sidebar.
-2. Filter by job ID, request hash, or attester.
-3. Click a row to open the drawer:
-   - View the **EAS Schema UID** and on-chain attestation link.
-   - Download the JSON receipt for auditing.
-4. Use the **Share** button to generate a read-only link for external auditors.
-
-## Escalation
-- For critical alerts, page the on-call SRE via Opsgenie (button in the top bar).
-- For policy changes requiring sign-off, tag the policy owner in the OCP comments.
-
-## Change Log
-- v1.0 – Initial browser-only workflow documentation.
+## Escalation matrix
+- **Critical alerts (PagerDuty)**: acknowledge within 5 minutes.
+- **Finance questions**: email treasury@example.com.
+- **Security incidents**: call the on-call security engineer per the incident response card.
