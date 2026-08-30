@@ -38,7 +38,9 @@ describe('Validator ENS integration', function () {
     resolver = await Resolver.deploy();
     await resolver.waitForDeployment();
 
-    const Wrapper = await ethers.getContractFactory('MockNameWrapper');
+    const Wrapper = await ethers.getContractFactory(
+      'contracts/mocks/MockNameWrapper.sol:MockNameWrapper'
+    );
     wrapper = await Wrapper.deploy();
     await wrapper.waitForDeployment();
 
