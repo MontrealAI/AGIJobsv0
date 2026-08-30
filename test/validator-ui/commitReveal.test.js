@@ -1,9 +1,16 @@
+require('ts-node').register({
+  project: require('path').resolve(
+    __dirname,
+    '../../apps/validator-ui/tsconfig.json'
+  ),
+  compilerOptions: { module: 'commonjs', target: 'es2020' },
+});
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
 const {
   generateCommit,
   scheduleReveal,
-} = require('../../apps/validator-ui/lib/commit');
+} = require('../../apps/validator-ui/lib/commit.ts');
 
 describe('validator-ui commit/reveal', function () {
   it('commits and reveals a vote', async function () {
