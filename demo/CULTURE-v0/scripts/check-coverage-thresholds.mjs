@@ -1,98 +1,17 @@
 #!/usr/bin/env node
-import { readFile } from 'node:fs/promises';
 import path from 'node:path';
+import { readContractCoverage, readSummaryPct } from './coverage-utils.mjs';
 
 const MIN = Number(process.env.COVERAGE_MIN ?? '90');
 
-async function readLcovPct(lcovPath) {
-  const raw = await readFile(lcovPath, 'utf8');
-  let totalFound = 0;
-  let totalHit = 0;
-  let blockFound = 0;
-  let blockHit = 0;
-  let seenBlock = false;
-  let currentFile = '';
-  let include = false;
-  for (const line of raw.split(/\r?\n/)) {
-    if (line.startsWith('SF:')) {
-      currentFile = line.slice(3);
-      include =
-        currentFile.includes('/contracts/') &&
-        !currentFile.includes('/contracts/test/') &&
-        !currentFile.includes('/node_modules/');
-      continue;
-    }
-    if (line.startsWith('LF:')) {
-      blockFound = Number(line.slice(3));
-      continue;
-    }
-    if (line.startsWith('LH:')) {
-      blockHit = Number(line.slice(3));
-      continue;
-    }
-    if (line.startsWith('DA:')) {
-      if (!include) {
-        seenBlock = true; // prevent block fallback
-        continue;
-      }
-      const [, hits] = line.slice(3).split(',');
-      const hit = Number(hits);
-      if (Number.isFinite(hit)) {
-        totalFound += 1;
-        if (hit > 0) totalHit += 1;
-        seenBlock = true;
-      }
-      continue;
-    }
-    if (line === 'end_of_record') {
-      if (!seenBlock && blockFound > 0) {
-        if (include) {
-          totalFound += blockFound;
-          totalHit += blockHit;
-        }
-      }
-      blockFound = 0;
-      blockHit = 0;
-      seenBlock = false;
-      currentFile = '';
-      include = false;
-    }
-  }
-  if (totalFound === 0) return 0;
-  return (totalHit / totalFound) * 100;
-}
-
-async function readSummaryPct(summaryPath) {
-  const raw = await readFile(summaryPath, 'utf8');
-  const json = JSON.parse(raw);
-  const total = json.total ?? {};
-  const pct = total.lines?.pct ?? total.lines?.pct ?? total.lines;
-  if (typeof pct === 'number') {
-    return pct;
-  }
-  if (typeof total.lines === 'object' && typeof total.lines.pct === 'number') {
-    return total.lines.pct;
-  }
-  throw new Error(`Unable to read coverage percentage from ${summaryPath}`);
-}
-
 async function main() {
   const root = path.resolve(process.cwd());
-  const foundryCoveragePath = await (async () => {
-    const preferred = path.join(root, 'coverage/lcov.info');
-    try {
-      await readFile(preferred, 'utf8');
-      return preferred;
-    } catch (error) {
-      if (error && error.code === 'ENOENT') {
-        return path.join(root, 'lcov.info');
-      }
-      throw error;
-    }
-  })();
-
+  if (!Number.isFinite(MIN) || MIN < 0 || MIN > 100) {
+    throw new Error('COVERAGE_MIN must be a finite percentage from 0 to 100');
+  }
+  // Foundry writes lcov.info; Hardhat's coverage/lcov.info is a separate report.
+  const checks = await readContractCoverage(path.join(root, 'lcov.info'));
   const definitions = [
-    ['Foundry lcov', foundryCoveragePath, readLcovPct],
     [
       'Arena orchestrator',
       path.join(root, 'backend/arena-orchestrator/coverage/coverage-summary.json'),
@@ -110,7 +29,6 @@ async function main() {
     ]
   ];
 
-  const checks = [];
   for (const [name, file, reader] of definitions) {
     try {
       const pct = await reader(file);

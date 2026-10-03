@@ -59,7 +59,20 @@ Run `pnpm test` for the module gates. Foundry **v1.4.4** is required for contrac
 
 This module is a working preview and development integration, not a completed production deployment. The arena HTTP API implements round operations and telemetry; the studio's LLM, IPFS upload, artifact mint, job creation, and owner-control requests still require real provider implementations. Some backend adapters are simulations even when an on-chain arena client is selected. A configured address alone does not establish end-to-end settlement.
 
-The indexer and studio now pass their configured 90% coverage gates. The indexer has 25 tests with 93.40% lines, 91.76% branches, and 95.94% functions; these cover API queries, pagination, recovery, contract event signatures, external-validator failures, and analytics. Its bootstrap and packaging scripts remain outside the exercised paths, so this is not whole-deployment assurance. Two Foundry scenarios still exceed the committed gas budgets, and the gas snapshot needs review. The Compose/Cypress deployment path needs commissioning, including real dependency contracts and operator roles. Keep these checks enabled; do not interpret an isolated build or preview walkthrough as a passing full release. See the [production-readiness record](../../docs/production/readiness-2026-10-03.md) for measured results and the remaining work.
+The contract and service coverage gates pass locally. The 39 Foundry tests cover lifecycle, authorization, ownership transfer, configuration, and signed-difficulty boundaries; contract line coverage is 94.06% for CultureRegistry and 97.44% for SelfPlayArena. The indexer has 27 tests with 92.50% lines, 90.24% branches, and 94.66% functions, including ordered live replay, graph growth, and validator outages. A separate compiled-runtime rehearsal verifies database migration, three real local-chain artifact events, graceful shutdown, and idempotent restart. The [gas baseline review](gas-snapshots/REVIEW-2026-10-03.md) explicitly records the two revised scenario ceilings and restored tests. These checks do not establish mainnet settlement or complete provider integration; see the [production-readiness record](../../docs/production/readiness-2026-10-03.md).
+
+### Start the local fixture stack
+
+With Docker Compose, Node 22.23.3, and pnpm 10.5.2 installed, run from `demo/CULTURE-v0`:
+
+```bash
+pnpm install --frozen-lockfile
+pnpm run local:up
+```
+
+Open <http://localhost:4173>. Setup writes a separate `.env.local`, deploys the CULTURE contracts with explicitly labeled test dependency contracts on chain 31337, and seeds three artifacts. RPC and service ports bind to localhost. Existing local deployments are reused; shutdown with `pnpm run e2e:down` preserves volumes. If the chain was reset independently, setup stops rather than silently associating an old indexer database with a new deployment.
+
+Run `pnpm run test:e2e` for the Compose health/ingestion checks and the Cypress UI walkthrough. Cypress uses explicit UI response fixtures; the separate health check verifies actual seeded-chain ingestion and rejects unauthenticated arena writes. LLM generation, IPFS upload/minting, job creation, paid settlement, and production dependency adapters still require their intended provider integrations. Local fixture keys must never be used on a funded network.
 
 ## Directory Guide
 ### Key Directories

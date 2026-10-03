@@ -1,9 +1,10 @@
-import 'dotenv/config';
+import dotenv from 'dotenv';
 import path from 'node:path';
 import fs from 'node:fs/promises';
 import { z } from 'zod';
 import { ethers } from 'ethers';
 import { loadContractArtifact, type ArtifactDescriptor } from './hardhat-utils';
+import { CULTURE_ROOT } from './utils';
 
 const CULTURE_ARTIFACT: ArtifactDescriptor = {
   qualified: 'demo/CULTURE-v0/contracts/CultureRegistry.sol:CultureRegistry',
@@ -30,7 +31,7 @@ const SeedArtifactSchema = z.object({
 type SeedArtifact = z.infer<typeof SeedArtifactSchema>;
 
 async function loadSeedArtifacts(): Promise<SeedArtifact[]> {
-  const seedPath = path.resolve('demo/CULTURE-v0/data/seed-artifacts.json');
+  const seedPath = path.join(CULTURE_ROOT, 'data/seed-artifacts.json');
   try {
     const payload = await fs.readFile(seedPath, 'utf-8');
     const parsed = JSON.parse(payload) as unknown[];
@@ -61,15 +62,20 @@ async function seedOnChain(signer: ethers.Wallet, registryAddress: string, artif
       await tx.wait();
       console.log(`✨ Minted artifact #${item.id} (${item.kind}) to ${item.cid}`);
     } catch (error) {
-      console.warn(`⚠️  Failed to mint artifact #${item.id}: ${(error as Error).message}`);
+      throw new Error(`Failed to mint artifact #${item.id}: ${(error as Error).message}`);
     }
   }
 }
 
 async function seedIndexer(indexerUrl: string, artifacts: SeedArtifact[]) {
+  const checkedFetch = async (url: string, init: RequestInit) => {
+    const response = await fetch(url, { ...init, signal: AbortSignal.timeout(30_000) });
+    if (!response.ok) throw new Error(`Indexer seeding failed: HTTP ${response.status}`);
+    return response;
+  };
   const adminEndpoint = indexerUrl.endsWith('/event') ? indexerUrl : `${indexerUrl.replace(/\/$/, '')}/event`;
   for (const artifact of artifacts) {
-    await fetch(adminEndpoint, {
+    await checkedFetch(adminEndpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -86,7 +92,7 @@ async function seedIndexer(indexerUrl: string, artifacts: SeedArtifact[]) {
     });
     if (artifact.cites) {
       for (const cited of artifact.cites) {
-        await fetch(adminEndpoint, {
+        await checkedFetch(adminEndpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ type: 'artifactCited', payload: { id: artifact.id, citedId: cited } })
@@ -95,11 +101,12 @@ async function seedIndexer(indexerUrl: string, artifacts: SeedArtifact[]) {
     }
   }
   const recomputeEndpoint = adminEndpoint.replace(/\/event$/, '/recompute');
-  await fetch(recomputeEndpoint, { method: 'POST' });
+  await checkedFetch(recomputeEndpoint, { method: 'POST' });
   console.log(`📊 Seeded ${artifacts.length} artifacts into culture indexer.`);
 }
 
 async function main() {
+  dotenv.config({ path: process.env.CULTURE_ENV_FILE });
   const env = EnvSchema.parse(process.env);
   const artifacts = await loadSeedArtifacts();
   const provider = new ethers.JsonRpcProvider(env.RPC_URL);

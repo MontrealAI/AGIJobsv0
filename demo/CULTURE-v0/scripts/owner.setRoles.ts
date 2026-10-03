@@ -1,4 +1,5 @@
-import 'dotenv/config';
+import dotenv from 'dotenv';
+import type { Wallet } from 'ethers';
 import { ethers } from 'hardhat';
 import { z } from 'zod';
 import { loadCultureConfig, parseAddressesBlob } from './utils';
@@ -30,7 +31,7 @@ const IDENTITY_ABI = [
   'function hasRole(bytes32 role, address account) view returns (bool)'
 ];
 
-async function configureIdentity(identityAddress: string, wallet: ethers.Wallet, config: Awaited<ReturnType<typeof loadCultureConfig>>) {
+async function configureIdentity(identityAddress: string, wallet: Wallet, config: Awaited<ReturnType<typeof loadCultureConfig>>) {
   if (!identityAddress || identityAddress === ethers.ZeroAddress) {
     console.warn('⚠️  No identity registry configured; skipping role provisioning.');
     return;
@@ -60,12 +61,12 @@ async function configureIdentity(identityAddress: string, wallet: ethers.Wallet,
       await tx.wait();
       console.log(`✅ Granted ${update.label} role to ${update.account}`);
     } catch (error) {
-      console.warn(`⚠️  Failed to set ${update.label} role for ${update.account}: ${(error as Error).message}`);
+      throw new Error(`Failed to set ${update.label} role for ${update.account}: ${(error as Error).message}`);
     }
   }
 }
 
-async function configureOrchestrators(arenaAddress: string, wallet: ethers.Wallet, orchestrators: readonly string[]) {
+async function configureOrchestrators(arenaAddress: string, wallet: Wallet, orchestrators: readonly string[]) {
   if (!orchestrators.length) {
     return;
   }
@@ -84,6 +85,7 @@ async function configureOrchestrators(arenaAddress: string, wallet: ethers.Walle
 }
 
 async function main() {
+  dotenv.config({ path: process.env.CULTURE_ENV_FILE });
   const env = EnvSchema.parse(process.env);
   const config = await loadCultureConfig();
   const addresses = parseAddressesBlob(env.AGI_JOBS_CORE_ADDRESSES);

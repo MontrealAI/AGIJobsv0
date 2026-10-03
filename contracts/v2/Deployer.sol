@@ -190,7 +190,8 @@ contract Deployer is Ownable {
             address systemPause
         )
     {
-        return _deploy(true, econ, ids, governance);
+        _checkDeploymentMode(true);
+        return _deploy(econ, ids, governance);
     }
 
     /// @notice Deploy and wire all modules without the TaxPolicy.
@@ -225,7 +226,8 @@ contract Deployer is Ownable {
             address systemPause
         )
     {
-        return _deploy(false, econ, ids, governance);
+        _checkDeploymentMode(false);
+        return _deploy(econ, ids, governance);
     }
 
     /// @notice Deploy and wire all modules using module defaults.
@@ -261,7 +263,8 @@ contract Deployer is Ownable {
         )
     {
         EconParams memory econ;
-        return _deploy(true, econ, ids, governance);
+        _checkDeploymentMode(true);
+        return _deploy(econ, ids, governance);
     }
 
     /// @notice Deploy and wire modules with defaults and no TaxPolicy.
@@ -297,10 +300,19 @@ contract Deployer is Ownable {
         )
     {
         EconParams memory econ;
-        return _deploy(false, econ, ids, governance);
+        _checkDeploymentMode(false);
+        return _deploy(econ, ids, governance);
     }
 
-    function _deploy(bool withTaxPolicy, EconParams memory econ, IdentityParams memory ids, address governance)
+    // Keep mode checks outside the common wiring routine so viaIR does not
+    // specialize and duplicate the complete deployment body for each mode.
+    function _checkDeploymentMode(bool withTaxPolicy) private view {
+        require(!deployed, "deployed");
+        if (!registered) revert ModulesNotRegistered();
+        require(withTaxPolicy == (_staged[10] != address(0)), "tax policy mode");
+    }
+
+    function _deploy(EconParams memory econ, IdentityParams memory ids, address governance)
         internal
         returns (
             address stakeManager,
@@ -352,7 +364,6 @@ contract Deployer is Ownable {
         IdentityRegistry identity = IdentityRegistry(payable(_staged[11]));
         SystemPause pause = SystemPause(payable(_staged[12]));
         ArbitratorCommittee committee = ArbitratorCommittee(payable(_staged[13]));
-        require(withTaxPolicy == (address(policy) != address(0)), "tax policy mode");
         require(pause.owner() == governance, "pause governance");
         require(
             address(pause.jobRegistry()) == address(registry) && address(pause.stakeManager()) == address(stake)
@@ -395,6 +406,7 @@ contract Deployer is Ownable {
             acks
         );
         if (address(policy) != address(0)) {
+            policy.setAcknowledger(address(registry), true);
             registry.setTaxPolicy(ITaxPolicy(address(policy)));
         }
 
@@ -409,6 +421,7 @@ contract Deployer is Ownable {
 
         validation.setReputationEngine(repInterface);
         stake.setModules(address(registry), address(dispute));
+        stake.setValidationModule(address(validation));
         incentives.setModules(
             IStakeManager(address(stake)), IPlatformRegistryFull(address(pRegistry)), IJobRouter(address(router))
         );

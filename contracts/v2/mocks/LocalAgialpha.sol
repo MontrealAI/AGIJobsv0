@@ -24,6 +24,14 @@ contract LocalAgialpha {
         emit Transfer(address(0), to, amount);
     }
 
+    function burn(uint256 amount) external {
+        uint256 balance = balanceOf[msg.sender];
+        require(balance >= amount, "balance");
+        balanceOf[msg.sender] = balance - amount;
+        totalSupply -= amount;
+        emit Transfer(msg.sender, address(0), amount);
+    }
+
     function transfer(address to, uint256 amount) external returns (bool) {
         _transfer(msg.sender, to, amount);
         return true;

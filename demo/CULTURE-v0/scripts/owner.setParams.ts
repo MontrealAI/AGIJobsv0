@@ -1,4 +1,5 @@
-import 'dotenv/config';
+import dotenv from 'dotenv';
+import type { Wallet } from 'ethers';
 import { ethers } from 'hardhat';
 import { z } from 'zod';
 import { loadCultureConfig } from './utils';
@@ -22,7 +23,7 @@ const EnvSchema = z.object({
   OWNER_ADMIN_PRIVATE_KEY: z.string().optional()
 });
 
-async function configureCultureParameters(cultureAddress: string, wallet: ethers.Wallet, config: Awaited<ReturnType<typeof loadCultureConfig>>) {
+async function configureCultureParameters(cultureAddress: string, wallet: Wallet, config: Awaited<ReturnType<typeof loadCultureConfig>>) {
   const artifact = await loadContractArtifact(CULTURE_ARTIFACT);
   const culture = new ethers.Contract(cultureAddress, artifact.abi, wallet);
   const maxCitations = await culture.maxCitations();
@@ -50,7 +51,7 @@ async function configureCultureParameters(cultureAddress: string, wallet: ethers
   }
 }
 
-async function configureArenaParameters(arenaAddress: string, wallet: ethers.Wallet, config: Awaited<ReturnType<typeof loadCultureConfig>>) {
+async function configureArenaParameters(arenaAddress: string, wallet: Wallet, config: Awaited<ReturnType<typeof loadCultureConfig>>) {
   const artifact = await loadContractArtifact(ARENA_ARTIFACT);
   const arena = new ethers.Contract(arenaAddress, artifact.abi, wallet);
 
@@ -107,6 +108,7 @@ async function configureArenaParameters(arenaAddress: string, wallet: ethers.Wal
 }
 
 async function main() {
+  dotenv.config({ path: process.env.CULTURE_ENV_FILE });
   const env = EnvSchema.parse(process.env);
   const config = await loadCultureConfig();
   const provider = new ethers.JsonRpcProvider(env.RPC_URL);

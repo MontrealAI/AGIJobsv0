@@ -19,7 +19,7 @@ async function readBudgets(): Promise<BudgetsConfig> {
 async function assertBytecodeBudgets(budgets: Record<string, number>) {
   const failures: string[] = [];
   for (const [contract, maxBytes] of Object.entries(budgets)) {
-    const artifactPath = path.join(process.cwd(), 'out', `${contract}.sol`, `${contract}.json`);
+    const artifactPath = path.join(process.cwd(), 'out', 'forge', `${contract}.sol`, `${contract}.json`);
     const raw = await readFile(artifactPath, 'utf8');
     const artifact = JSON.parse(raw);
     const deployed: string = artifact.deployedBytecode?.object ?? '';

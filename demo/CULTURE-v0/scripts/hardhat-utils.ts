@@ -11,8 +11,12 @@ export async function loadContractArtifact(descriptor: ArtifactDescriptor) {
   try {
     return await artifacts.readArtifact(descriptor.qualified);
   } catch {
-    const relative = path.join('demo', 'CULTURE-v0', 'artifacts', `${descriptor.fallback}.json`);
-    const fallback = await fs.readFile(relative, 'utf-8');
-    return JSON.parse(fallback);
+    try {
+      return await artifacts.readArtifact(descriptor.fallback);
+    } catch {
+      const relative = path.resolve(__dirname, '..', 'artifacts', `${descriptor.fallback}.json`);
+      const fallback = await fs.readFile(relative, 'utf-8');
+      return JSON.parse(fallback);
+    }
   }
 }

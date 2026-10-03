@@ -30,7 +30,7 @@ export class InfluenceService {
     validator?: InfluenceValidator | null,
   ) {
     this.dampingFactor = config.dampingFactor ?? 0.85;
-    this.maxIterations = config.maxIterations ?? 25;
+    this.maxIterations = config.maxIterations ?? 100;
     this.tolerance = config.tolerance ?? 1e-6;
     this.validator = validator ?? null;
   }
@@ -75,10 +75,9 @@ export class InfluenceService {
     const inboundEdges = new Map<string, string[]>();
 
     for (const artifact of artifacts) {
-      previousScores.set(
-        artifact.id,
-        artifact.influence?.score ?? 1 / totalNodes,
-      );
+      // A growing graph invalidates the previous distribution's normalization.
+      // Match the independent validator's normalized, uniform starting state.
+      previousScores.set(artifact.id, 1 / totalNodes);
       outgoingCounts.set(artifact.id, artifact.citationsFrom.length);
       inboundEdges.set(
         artifact.id,
@@ -253,16 +252,16 @@ export class InfluenceService {
             : 'Unknown influence validation error',
       };
       if (error instanceof Error) {
-        console.warn('Influence validation skipped:', error.message);
+        console.warn('Influence validation unavailable:', error.message);
       } else {
-        console.warn('Influence validation skipped due to unknown error');
+        console.warn('Influence validation unavailable due to unknown error');
       }
-      return;
+      throw new Error(this.lastValidationReport.error);
     }
 
     this.lastValidationReport = report;
 
-    if (!report.skipped && !report.ok) {
+    if (!report.ok) {
       throw new Error(report.error ?? 'Influence validation failed');
     }
   }

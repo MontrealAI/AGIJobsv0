@@ -27,13 +27,14 @@ RUN npm run build
 
 FROM nginx:1.30.5-alpine3.24 AS runtime
 RUN apk upgrade --no-cache
-RUN sed -i 's|pid[[:space:]]*/var/run/nginx.pid;|pid /tmp/nginx.pid;|' /etc/nginx/nginx.conf \
+RUN sed -i 's|^[[:space:]]*pid[[:space:]][^;]*;|pid /tmp/nginx.pid;|' /etc/nginx/nginx.conf \
   && mkdir -p /var/cache/nginx \
   && chown -R nginx:nginx /var/cache/nginx /etc/nginx/conf.d
-COPY demo/CULTURE-v0/apps/culture-studio/nginx.conf /etc/nginx/conf.d/default.conf
+COPY --chown=nginx:nginx demo/CULTURE-v0/apps/culture-studio/nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /app/dist /usr/share/nginx/html
 
 USER nginx
+RUN nginx -t
 EXPOSE 4173
 
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 --start-period=20s \

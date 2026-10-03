@@ -292,6 +292,8 @@ contract SelfPlayArena is Ownable, AccessControl, Pausable, ReentrancyGuard {
     }
 
     /// @notice Updates the relayer responsible for orchestrating the arena lifecycle.
+    /// @dev Zero intentionally revokes the designated relayer; the owner retains control.
+    // slither-disable-next-line missing-zero-check
     function setRelayer(address newRelayer) external onlyOwner {
         address previous = relayer;
         if (previous != address(0)) {
@@ -423,6 +425,8 @@ contract SelfPlayArena is Ownable, AccessControl, Pausable, ReentrancyGuard {
 
         IValidationModule module = validationModule;
         if (address(module) == address(0)) revert ValidationModuleNotSet();
+        // The validation module owns validator selection; arena participants are registered separately.
+        // slither-disable-next-line unused-return
         module.start(teacherJobId, uint256(keccak256(abi.encodePacked(blockhash(block.number - 1), block.timestamp, roundId))));
 
         emit RoundStarted(roundId, teacherJobId, teacher, difficulty, round.startedAt);
@@ -491,7 +495,7 @@ contract SelfPlayArena is Ownable, AccessControl, Pausable, ReentrancyGuard {
         if (observedSuccessRateBps > 10_000) revert InvalidSuccessRate();
 
         uint32 previousDifficulty = round.difficulty;
-        if (_abs(difficultyDelta) > int32(uint32(maxDifficultyStep))) {
+        if (_abs(difficultyDelta) > uint256(maxDifficultyStep)) {
             revert DifficultyStepExceeded(difficultyDelta, maxDifficultyStep);
         }
         int256 updated = int256(uint256(previousDifficulty)) + int256(difficultyDelta);
@@ -702,7 +706,8 @@ contract SelfPlayArena is Ownable, AccessControl, Pausable, ReentrancyGuard {
         return false;
     }
 
-    function _abs(int32 value) internal pure returns (int32) {
-        return value >= 0 ? value : int32(-value);
+    function _abs(int32 value) internal pure returns (uint256) {
+        int256 widened = int256(value);
+        return uint256(widened >= 0 ? widened : -widened);
     }
 }

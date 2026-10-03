@@ -4,9 +4,13 @@ import 'solidity-coverage';
 import type { HardhatUserConfig } from 'hardhat/config';
 
 const config: HardhatUserConfig = {
+  networks: {
+    localhost: { url: process.env.RPC_URL ?? 'http://127.0.0.1:8545', chainId: 31337 }
+  },
   solidity: {
     version: '0.8.25',
     settings: {
+      evmVersion: 'cancun',
       optimizer: {
         enabled: true,
         runs: 200
@@ -26,7 +30,6 @@ const config: HardhatUserConfig = {
   },
   gasReporter: {
     enabled: true,
-    showTimeSpent: true,
     coinmarketcap: process.env.COINMARKETCAP_API_KEY ?? '',
     currency: 'USD',
     gasPrice: 21

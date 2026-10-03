@@ -5,6 +5,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const { execSync, spawnSync } = require('child_process');
+const implementationModules = require('../../config/implementation-modules.json');
 
 const KNOWN_NETWORKS = {
   mainnet: {
@@ -98,6 +99,11 @@ const CONTRACT_TARGETS = [
     artifact: path.join('contracts/v2/Thermostat.sol', 'Thermostat.json'),
     addressKey: 'thermostat',
   },
+  ...Object.values(implementationModules).flat().map((name) => ({
+    name,
+    artifact: path.join(`contracts/v2/implementation/${name}.sol`, `${name}.json`),
+    addressKey: name,
+  })),
 ];
 
 function resolveArtifactPath(relativePath) {
@@ -396,6 +402,9 @@ function collectContractMetadata(target, addressesSnapshot, deploymentSummary) {
   }
 
   const addressRecord = {};
+  if (addressesSnapshot?.implementations?.[target.name]) {
+    addressRecord.config = addressesSnapshot.implementations[target.name];
+  }
   if (addressesSnapshot && Object.prototype.hasOwnProperty.call(addressesSnapshot, target.addressKey)) {
     addressRecord.config = addressesSnapshot[target.addressKey];
     if (addressRecord.config === '0x0000000000000000000000000000000000000000') {
@@ -597,4 +606,5 @@ function main() {
   }
 }
 
-main();
+if (require.main === module) main();
+module.exports = { CONTRACT_TARGETS, collectContractMetadata, buildManifest };

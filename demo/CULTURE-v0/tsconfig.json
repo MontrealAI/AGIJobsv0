@@ -7,8 +7,9 @@
     "resolveJsonModule": true,
     "esModuleInterop": true,
     "allowJs": false,
-    "types": ["node"]
+    "types": ["node"],
+    "typeRoots": ["./node_modules/@types"]
   },
-  "include": ["scripts/**/*.ts"],
+  "include": ["hardhat.config.ts", "scripts/**/*.ts"],
   "exclude": ["node_modules", "dist"]
 }

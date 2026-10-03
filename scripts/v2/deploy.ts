@@ -1,4 +1,7 @@
-import { deployImplementations } from '../deploy/implementations.cjs';
+import {
+  deployImplementations,
+  readImplementationAddresses,
+} from '../deploy/implementations.cjs';
 import { ethers, run, network, artifacts } from 'hardhat';
 import { writeFileSync } from 'fs';
 import { join } from 'path';
@@ -127,6 +130,10 @@ async function main() {
   const treasuryArg = getArg('treasury');
   const treasury =
     typeof treasuryArg === 'string' ? treasuryArg : ethers.ZeroAddress;
+  const stakeImplementations = await deployImplementations(
+    'StakeManager',
+    Stake.runner
+  );
   const stake = await Stake.deploy(
     0,
     0,
@@ -135,12 +142,16 @@ async function main() {
     ethers.ZeroAddress,
     ethers.ZeroAddress,
     governance,
-    await deployImplementations('StakeManager', Stake.runner)
+    stakeImplementations
   );
   await stake.waitForDeployment();
 
   const Registry = await ethers.getContractFactory(
     'contracts/v2/JobRegistry.sol:JobRegistry'
+  );
+  const registryImplementations = await deployImplementations(
+    'JobRegistry',
+    Registry.runner
   );
   const registry = await Registry.deploy(
     ethers.ZeroAddress,
@@ -154,7 +165,7 @@ async function main() {
     0,
     [],
     governance,
-    await deployImplementations('JobRegistry', Registry.runner)
+    registryImplementations
   );
   await registry.waitForDeployment();
 
@@ -170,6 +181,10 @@ async function main() {
   const Validation = await ethers.getContractFactory(
     'contracts/v2/ValidationModule.sol:ValidationModule'
   );
+  const validationImplementations = await deployImplementations(
+    'ValidationModule',
+    Validation.runner
+  );
   const validation = await Validation.deploy(
     await registry.getAddress(),
     await stake.getAddress(),
@@ -178,7 +193,7 @@ async function main() {
     3,
     5,
     [],
-    await deployImplementations('ValidationModule', Validation.runner)
+    validationImplementations
   );
   await validation.waitForDeployment();
 
@@ -463,6 +478,11 @@ async function main() {
   console.log('PlatformIncentives:', await incentives.getAddress());
 
   const addresses = {
+    implementations: await readImplementationAddresses({
+      StakeManager: await stake.getAddress(),
+      JobRegistry: await registry.getAddress(),
+      ValidationModule: await validation.getAddress(),
+    }),
     token: tokenAddress,
     stakeManager: await stake.getAddress(),
     jobRegistry: await registry.getAddress(),
@@ -493,6 +513,7 @@ async function main() {
     ethers.ZeroAddress,
     ethers.ZeroAddress,
     governance,
+    stakeImplementations,
   ]);
   await verify(await registry.getAddress(), [
     ethers.ZeroAddress,
@@ -506,18 +527,24 @@ async function main() {
     0,
     [],
     governance,
+    registryImplementations,
   ]);
   await verify(await validation.getAddress(), [
     await registry.getAddress(),
     await stake.getAddress(),
-    governance,
+    60,
+    60,
+    3,
+    5,
+    [],
+    validationImplementations,
   ]);
-  await verify(await reputation.getAddress(), [governance]);
+  await verify(await reputation.getAddress(), [await stake.getAddress()]);
   await verify(await dispute.getAddress(), [
     await registry.getAddress(),
     appealFee,
     disputeWindow,
-    moderator,
+    ethers.ZeroAddress,
     governance,
   ]);
   await verify(await attestation.getAddress(), [
@@ -538,7 +565,7 @@ async function main() {
       governance,
     ]);
   }
-  await verify(await nft.getAddress(), ['Cert', 'CERT', governance]);
+  await verify(await nft.getAddress(), ['Cert', 'CERT']);
   await verify(await tax.getAddress(), [
     'ipfs://policy',
     'All taxes on participants; contract and owner exempt',
@@ -547,22 +574,20 @@ async function main() {
     await stake.getAddress(),
     burnPct,
     treasury,
+    await tax.getAddress(),
   ]);
   await verify(await platformRegistry.getAddress(), [
     await stake.getAddress(),
     await reputation.getAddress(),
     minPlatformStake,
-    governance,
   ]);
   await verify(await jobRouter.getAddress(), [
     await platformRegistry.getAddress(),
-    governance,
   ]);
   await verify(await incentives.getAddress(), [
     await stake.getAddress(),
     await platformRegistry.getAddress(),
     await jobRouter.getAddress(),
-    governance,
   ]);
   await verify(await pause.getAddress(), [
     await registry.getAddress(),
@@ -576,6 +601,13 @@ async function main() {
     governance,
   ]);
   await verify(await installer.getAddress(), []);
+  await verify(await committee.getAddress(), [
+    await registry.getAddress(),
+    await dispute.getAddress(),
+  ]);
+  for (const address of Object.values(addresses.implementations)) {
+    await verify(address as string, []);
+  }
 
   await incentives.connect(governanceSigner).stakeAndActivate(0);
 }

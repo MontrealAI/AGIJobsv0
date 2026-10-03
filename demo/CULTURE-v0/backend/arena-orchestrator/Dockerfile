@@ -36,7 +36,8 @@ RUN npm prune --omit=dev
 
 RUN groupadd --system app \
   && useradd --system --create-home --gid app app \
-  && chown -R app:app /workspace
+  && mkdir -p /data/elo /var/log/culture-orchestrator \
+  && chown -R app:app /workspace /data /var/log/culture-orchestrator
 USER app
 EXPOSE 4005
 

@@ -4,7 +4,16 @@ All notable changes to this project will be documented in this file.
 
 ## v2.0.0
 
+- Include all ten fixed implementations in release manifests and explorer verification; reject incomplete or cross-network verification inventories and label dry runs as plans.
+
 Release candidate prepared on 2026-10-03; publication remains subject to the release gates.
+
+- Complete staged tax-policy authorization and validator-stake wiring. Keep Deployer's mode guards separate from common wiring to avoid duplicated bytecode. Make the AURORA/ASI Take-Off local driver complete identity handoff, validator selection, committed-salt reveal, and employer settlement; reject skipped missions and missing job receipts.
+- Address CULTURE review findings around environment precedence, credential ignores, startup database selection, and empty-block checkpoints; preserve failed-batch retry safety. Export all fixed implementation addresses and exact staged creation arguments for release verification.
+- Repair duplicated Omega scenario validation declarations from a historical merge; retain positive reward validation and all diagrams.
+- Repair CULTURE signed-difficulty boundaries, restore lifecycle/security tests, enforce per-contract coverage, and refresh the gas baseline with an explicit historical review.
+- Make live indexing ordered and confirmation-aware, normalize growing-graph influence, stop on validator outages, and verify migration/ingestion/restart against real local-chain events.
+- Repair CULTURE deployment configuration and runtime startup; provide an explicit local fixture stack with persistent state, localhost bindings, and actual ingestion/authentication checks alongside the UI walkthrough.
 
 - Split JobRegistry, StakeManager, and ValidationModule into fixed implementations while preserving their runtime APIs and storage offsets. Constructor setup now includes implementation addresses.
 - Replace the oversized one-transaction deployer with paused, resumable component deployment and atomic final wiring.

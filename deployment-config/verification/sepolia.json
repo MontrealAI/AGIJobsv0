@@ -6,7 +6,10 @@
     "type": "etherscan",
     "apiUrl": "https://api-sepolia.etherscan.io/api",
     "browserUrl": "https://sepolia.etherscan.io/address/",
-    "apiKeyEnv": ["ETHERSCAN_API_KEY_SEPOLIA", "ETHERSCAN_API_KEY"]
+    "apiKeyEnv": [
+      "ETHERSCAN_API_KEY_SEPOLIA",
+      "ETHERSCAN_API_KEY"
+    ]
   },
   "contracts": [
     {
@@ -98,6 +101,66 @@
       "manifestKey": "Thermostat",
       "fullyQualified": "contracts/v2/Thermostat.sol:Thermostat",
       "constructorArgsFile": "deployment-config/verification/args/sepolia/thermostat.js"
+    },
+    {
+      "name": "JobRegistryConfiguration",
+      "manifestKey": "JobRegistryConfiguration",
+      "fullyQualified": "contracts/v2/implementation/JobRegistryConfiguration.sol:JobRegistryConfiguration",
+      "constructorArgs": []
+    },
+    {
+      "name": "JobRegistryLifecycle",
+      "manifestKey": "JobRegistryLifecycle",
+      "fullyQualified": "contracts/v2/implementation/JobRegistryLifecycle.sol:JobRegistryLifecycle",
+      "constructorArgs": []
+    },
+    {
+      "name": "JobRegistrySettlement",
+      "manifestKey": "JobRegistrySettlement",
+      "fullyQualified": "contracts/v2/implementation/JobRegistrySettlement.sol:JobRegistrySettlement",
+      "constructorArgs": []
+    },
+    {
+      "name": "StakeManagerConfiguration",
+      "manifestKey": "StakeManagerConfiguration",
+      "fullyQualified": "contracts/v2/implementation/StakeManagerConfiguration.sol:StakeManagerConfiguration",
+      "constructorArgs": []
+    },
+    {
+      "name": "StakeManagerStaking",
+      "manifestKey": "StakeManagerStaking",
+      "fullyQualified": "contracts/v2/implementation/StakeManagerStaking.sol:StakeManagerStaking",
+      "constructorArgs": []
+    },
+    {
+      "name": "StakeManagerEscrow",
+      "manifestKey": "StakeManagerEscrow",
+      "fullyQualified": "contracts/v2/implementation/StakeManagerEscrow.sol:StakeManagerEscrow",
+      "constructorArgs": []
+    },
+    {
+      "name": "StakeManagerSlashing",
+      "manifestKey": "StakeManagerSlashing",
+      "fullyQualified": "contracts/v2/implementation/StakeManagerSlashing.sol:StakeManagerSlashing",
+      "constructorArgs": []
+    },
+    {
+      "name": "ValidationModuleConfiguration",
+      "manifestKey": "ValidationModuleConfiguration",
+      "fullyQualified": "contracts/v2/implementation/ValidationModuleConfiguration.sol:ValidationModuleConfiguration",
+      "constructorArgs": []
+    },
+    {
+      "name": "ValidationModuleVoting",
+      "manifestKey": "ValidationModuleVoting",
+      "fullyQualified": "contracts/v2/implementation/ValidationModuleVoting.sol:ValidationModuleVoting",
+      "constructorArgs": []
+    },
+    {
+      "name": "ValidationModuleSelection",
+      "manifestKey": "ValidationModuleSelection",
+      "fullyQualified": "contracts/v2/implementation/ValidationModuleSelection.sol:ValidationModuleSelection",
+      "constructorArgs": []
     }
   ]
 }

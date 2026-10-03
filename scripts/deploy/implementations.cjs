@@ -45,4 +45,28 @@ async function deployImplementations(contractName, signer, runtime) {
   return addresses;
 }
 
-module.exports = { deployImplementations };
+/** Read the fixed module inventory from deployed controllers for release evidence. */
+async function readImplementationAddresses(controllers, runtime) {
+  const ethers = runtime || require('hardhat').ethers;
+  const inventory = {};
+  for (const [controller, names] of Object.entries(modules)) {
+    const contract = await ethers.getContractAt(
+      `contracts/v2/${controller}.sol:${controller}`,
+      controllers[controller]
+    );
+    const addresses = await contract.implementationModules();
+    if (addresses.length !== names.length)
+      throw new Error(`Invalid implementation inventory for ${controller}`);
+    for (let i = 0; i < names.length; i += 1) {
+      if (
+        !ethers.isAddress(addresses[i]) ||
+        addresses[i] === ethers.ZeroAddress
+      )
+        throw new Error(`Missing deployed implementation: ${names[i]}`);
+      inventory[names[i]] = addresses[i];
+    }
+  }
+  return inventory;
+}
+
+module.exports = { deployImplementations, readImplementationAddresses };

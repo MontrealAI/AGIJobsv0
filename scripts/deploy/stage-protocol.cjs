@@ -5,8 +5,7 @@ const { deployImplementations } = require('./implementations.cjs');
 /** Deploy each component in its own transaction, then register the stack for atomic wiring. */
 async function stageProtocol(deployer, ids, governance, options = {}) {
   const ethers = options.runtime || require('hardhat').ethers;
-  if (await deployer.registered())
-    return Array.from(await deployer.stagedModules());
+  const alreadyRegistered = await deployer.registered();
   const signer = deployer.runner;
   const coordinator = await deployer.getAddress();
   const zero = ethers.ZeroAddress;
@@ -61,7 +60,8 @@ async function stageProtocol(deployer, ids, governance, options = {}) {
       );
     }
     const contract = factory.attach(address);
-    if (options.onDeployed) await options.onDeployed(name, contract);
+    if (options.onDeployed)
+      await options.onDeployed(name, contract, args, `${source}:${name}`);
     return contract.getAddress();
   }
   const stake = await create('StakeManager', [
@@ -156,7 +156,9 @@ async function stageProtocol(deployer, ids, governance, options = {}) {
     pause,
     committee,
   ];
-  await (await deployer.registerModules(addresses, overrides)).wait();
+  if (!alreadyRegistered) {
+    await (await deployer.registerModules(addresses, overrides)).wait();
+  }
   return addresses;
 }
 

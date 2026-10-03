@@ -5,8 +5,9 @@ WORKDIR /app
 ENV NODE_ENV=production
 
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends ca-certificates curl \
-  && rm -rf /var/lib/apt/lists/*
+  && apt-get install -y --no-install-recommends ca-certificates curl python3 python3-networkx python3-scipy \
+  && rm -rf /var/lib/apt/lists/* \
+  && python3 -c 'import networkx as nx; assert abs(sum(nx.pagerank(nx.path_graph(3)).values()) - 1) < 1e-8'
 
 FROM base AS build
 ENV NODE_ENV=development
@@ -44,11 +45,12 @@ RUN npm prune --omit=dev
 
 RUN groupadd --system app \
   && useradd --system --create-home --gid app app \
-  && chown -R app:app /app
+  && mkdir -p /data/db \
+  && chown -R app:app /app /data
 USER app
 EXPOSE 4100
 
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 --start-period=15s \
   CMD node scripts/healthcheck.mjs || exit 1
 
-CMD ["node", "dist/index.js"]
+CMD ["node", "scripts/start.mjs"]

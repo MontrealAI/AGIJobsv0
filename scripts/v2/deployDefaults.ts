@@ -1,4 +1,5 @@
 import { stageProtocol } from '../deploy/stage-protocol.cjs';
+import { readImplementationAddresses } from '../deploy/implementations.cjs';
 import * as fs from 'fs';
 import * as path from 'path';
 import { artifacts, ethers, network, run } from 'hardhat';
@@ -381,11 +382,12 @@ function parseBytes32(value: unknown, label: string): string {
   }
 }
 
-async function verify(address: string, args: any[] = []) {
+async function verify(address: string, args: any[] = [], contract?: string) {
   try {
     await run('verify:verify', {
       address,
       constructorArguments: args,
+      ...(contract ? { contract } : {}),
     });
   } catch (err) {
     console.error(`verification failed for ${address}`, err);
@@ -595,12 +597,19 @@ async function main() {
     `To resume an interrupted run, use DEPLOYER_ADDRESS=${deployerAddress} with the same configuration.`
   );
 
+  const creationRecords: Record<
+    string,
+    { address: string; args: unknown[]; source: string }
+  > = {};
   await stageProtocol(deployer, identity, governance, {
     econ,
     withTaxPolicy: withTax,
     overrides: txOverrides,
-    onDeployed: async (name, contract) =>
-      console.log(`${name} deployed at ${await contract.getAddress()}`),
+    onDeployed: async (name, contract, args, source) => {
+      const address = await contract.getAddress();
+      creationRecords[name] = { address, args, source };
+      console.log(`${name} deployed at ${address}`);
+    },
   });
 
   const tx = withTax
@@ -698,74 +707,18 @@ async function main() {
     }).map(([parameter, value]) => ({ parameter, value }))
   );
 
+  const implementations = await readImplementationAddresses({
+    StakeManager: stakeManager,
+    JobRegistry: jobRegistry,
+    ValidationModule: validationModule,
+  });
   if (!skipVerify) {
     await verify(deployerAddress);
-    await verify(stakeManager, [
-      effectiveMinStake,
-      effectiveEmployerSlash,
-      effectiveTreasurySlash,
-      governance,
-      ethers.ZeroAddress,
-      ethers.ZeroAddress,
-      deployerAddress,
-    ]);
-    await verify(jobRegistry, [
-      ethers.ZeroAddress,
-      ethers.ZeroAddress,
-      ethers.ZeroAddress,
-      ethers.ZeroAddress,
-      ethers.ZeroAddress,
-      ethers.ZeroAddress,
-      ethers.ZeroAddress,
-      effectiveFeePct,
-      effectiveJobStake,
-      [stakeManager],
-      deployerAddress,
-    ]);
-    await verify(validationModule, [
-      jobRegistry,
-      stakeManager,
-      effectiveCommitWindow,
-      effectiveRevealWindow,
-      0,
-      0,
-      [],
-    ]);
-    await verify(reputationEngine, [stakeManager]);
-    await verify(disputeModule, [jobRegistry, 0, 0, ethers.ZeroAddress]);
-    await verify(certificateNFT, ['Cert', 'CERT']);
-    await verify(platformRegistry, [stakeManager, reputationEngine, 0]);
-    await verify(jobRouter, [platformRegistry]);
-    await verify(platformIncentives, [
-      stakeManager,
-      platformRegistry,
-      jobRouter,
-    ]);
-    await verify(feePool, [
-      stakeManager,
-      effectiveBurnPct,
-      ethers.ZeroAddress,
-      withTax ? taxPolicy : ethers.ZeroAddress,
-    ]);
-    await verify(identityRegistry, [
-      identity.ens,
-      identity.nameWrapper,
-      reputationEngine,
-      identity.agentRootNode,
-      identity.clubRootNode,
-    ]);
-    await verify(systemPause, [
-      jobRegistry,
-      stakeManager,
-      validationModule,
-      disputeModule,
-      platformRegistry,
-      feePool,
-      reputationEngine,
-      governance,
-    ]);
-    if (withTax) {
-      await verify(taxPolicy, [DEFAULT_TAX_URI, DEFAULT_TAX_DESCRIPTION]);
+    for (const { address, args, source } of Object.values(creationRecords)) {
+      await verify(address, args, source);
+    }
+    for (const address of Object.values(implementations)) {
+      await verify(address as string, []);
     }
   } else {
     console.log(
@@ -888,9 +841,18 @@ async function main() {
       },
       identity,
       contracts: summary,
+      implementations,
+      creationRecords,
     };
     fs.mkdirSync(path.dirname(outputPath), { recursive: true });
-    fs.writeFileSync(outputPath, JSON.stringify(payload, null, 2));
+    fs.writeFileSync(
+      outputPath,
+      JSON.stringify(
+        payload,
+        (_key, value) => (typeof value === 'bigint' ? value.toString() : value),
+        2
+      )
+    );
     console.log(`Deployment summary written to ${outputPath}`);
   }
 
