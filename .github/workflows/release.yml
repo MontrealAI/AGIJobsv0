@@ -21,7 +21,7 @@ on:
 
 permissions:
   contents: write
-  actions: write
+  actions: read
   packages: write
   id-token: write
 
@@ -67,14 +67,28 @@ jobs:
           fi
           if [[ -z "$VERSION" ]]; then
             echo "::error::Version is required."; exit 1; fi
-          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
-            echo "::error::Version must follow semver."; exit 1; fi
+          if ! node -e 'const v = process.argv[1]; if (require("semver").valid(v) !== v || v.includes("+") || v.length > 128) process.exit(1)' "$VERSION"; then
+            echo "::error::Version must be semver without build metadata and fit a Docker tag."; exit 1; fi
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Require the release tag as the workflow ref
+        env:
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          test "$GITHUB_REF" = "refs/tags/v${RELEASE_VERSION}" || {
+            echo "::error::Run this workflow on the matching signed tag, not a branch."
+            exit 1
+          }
 
       - name: Enforce signed release tag and checkout
         env:
           RELEASE_VERSION: ${{ steps.version.outputs.version }}
         run: node scripts/ci/ensure-tag-signature.js "refs/tags/v${RELEASE_VERSION}"
+
+      - name: Require successful CI for the release commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/release/check-release-ci.js
 
       - name: Determine network
         id: network
@@ -88,7 +102,7 @@ jobs:
       - name: Verify changelog contains version
         run: |
           VERSION="${{ steps.version.outputs.version }}"
-          if ! grep -q "^## v$VERSION" CHANGELOG.md; then
+          if ! grep -Fqx "## v$VERSION" CHANGELOG.md; then
             echo "::error::CHANGELOG.md missing section for v$VERSION";
             exit 1;
           fi
@@ -299,7 +313,7 @@ jobs:
           if-no-files-found: warn
 
   npm-publish:
-    needs: prepare
+    needs: [prepare, verify-contracts, docker-publish]
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -358,7 +372,7 @@ jobs:
           done
 
   docker-publish:
-    needs: prepare
+    needs: [prepare, verify-contracts]
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     env:
@@ -415,30 +429,32 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
-            ghcr.io/${{ env.REGISTRY_OWNER }}/${{ matrix.name }}:latest
-            ghcr.io/${{ env.REGISTRY_OWNER }}/${{ matrix.name }}:${{ needs.prepare.outputs.version }}
+            ghcr.io/${{ env.REGISTRY_OWNER }}/${{ matrix.name }}:release-candidate-${{ github.sha }}
           provenance: mode=max
           sbom: true
 
-      - name: Install cosign
-        uses: sigstore/cosign-installer@398d4b0eeef1380460a10c8013a76f728fb906ac
-
-      - name: Sign container images
-        env:
-          COSIGN_EXPERIMENTAL: '1'
-        run: |
-          cosign sign --yes --keyless ghcr.io/${{ env.REGISTRY_OWNER }}/${{ matrix.name }}:${{ needs.prepare.outputs.version }}
-          cosign sign --yes --keyless ghcr.io/${{ env.REGISTRY_OWNER }}/${{ matrix.name }}:latest
-
-      - name: Trivy scan
+      - name: Scan candidate on both architectures
         env:
           IMAGE_REF: ghcr.io/${{ env.REGISTRY_OWNER }}/${{ matrix.name }}@${{ steps.build.outputs.digest }}
         run: |
-          docker run --rm \
-            -v /var/run/docker.sock:/var/run/docker.sock \
-            aquasec/trivy:0.53.0 \
-            image --exit-code 1 --severity HIGH,CRITICAL \
-            "$IMAGE_REF"
+          set -euo pipefail
+          for PLATFORM in linux/amd64 linux/arm64; do
+            docker run --rm \
+              -v /var/run/docker.sock:/var/run/docker.sock \
+              aquasec/trivy:0.75.0 image --scanners vuln \
+              --platform "$PLATFORM" --severity HIGH,CRITICAL --exit-code 1 \
+              "$IMAGE_REF"
+          done
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6
+        with:
+          cosign-release: v3.1.3
+
+      - name: Sign scanned image by digest
+        env:
+          IMAGE_REF: ghcr.io/${{ env.REGISTRY_OWNER }}/${{ matrix.name }}@${{ steps.build.outputs.digest }}
+        run: cosign sign --yes "$IMAGE_REF"
 
       - name: Write image digest file
         run: echo "${{ steps.build.outputs.digest }}" > digest.txt
@@ -453,11 +469,15 @@ jobs:
     needs:
       - prepare
       - docker-publish
+      - verify-contracts
+      - npm-publish
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     permissions:
       contents: write
       id-token: write
+      attestations: write
+      packages: write
     steps:
       - name: Harden runner
         uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
@@ -488,22 +508,27 @@ jobs:
             reports/release \
             typechain-types \
             deployment-config
-          sha256sum "dist/agi-jobs-v${VERSION}-artifacts.tar.gz" > "dist/agi-jobs-v${VERSION}-artifacts.tar.gz.sha256"
+          (cd dist && sha256sum "agi-jobs-v${VERSION}-artifacts.tar.gz" > "agi-jobs-v${VERSION}-artifacts.tar.gz.sha256")
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Install cosign
-        uses: sigstore/cosign-installer@398d4b0eeef1380460a10c8013a76f728fb906ac
+        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6
+        with:
+          cosign-release: v3.1.3
 
       - name: Sign release bundle
-        env:
-          COSIGN_EXPERIMENTAL: '1'
         run: |
           set -euo pipefail
           VERSION="${{ steps.bundle.outputs.version }}"
-          cosign sign-blob --yes --keyless \
-            --output-signature "dist/agi-jobs-v${VERSION}-artifacts.tar.gz.sig" \
-            --output-certificate "dist/agi-jobs-v${VERSION}-artifacts.tar.gz.pem" \
+          cosign sign-blob --yes \
+            --bundle "dist/agi-jobs-v${VERSION}-artifacts.tar.gz.sigstore.json" \
             "dist/agi-jobs-v${VERSION}-artifacts.tar.gz"
+          # Preserve the detached signature/certificate assets for existing users.
+          BUNDLE="dist/agi-jobs-v${VERSION}-artifacts.tar.gz.sigstore.json"
+          jq -er '.messageSignature.signature' "$BUNDLE" > "dist/agi-jobs-v${VERSION}-artifacts.tar.gz.sig"
+          jq -er '.verificationMaterial.certificate.rawBytes // .verificationMaterial.x509CertificateChain.certificates[0].rawBytes' "$BUNDLE" \
+            | base64 --decode \
+            | openssl x509 -inform DER -out "dist/agi-jobs-v${VERSION}-artifacts.tar.gz.pem"
 
       - name: Generate build provenance
         id: provenance
@@ -511,17 +536,63 @@ jobs:
         with:
           subject-path: dist/agi-jobs-v${{ steps.bundle.outputs.version }}-artifacts.tar.gz
 
-      - name: Publish signed release assets
+      - name: Stage signed release assets as a draft
         uses: softprops/action-gh-release@39a9d95fda3fcb043b4d29d79d046a9e12dfc2a7
         with:
           tag_name: v${{ steps.bundle.outputs.version }}
           name: AGI Jobs v${{ steps.bundle.outputs.version }}
-          draft: false
+          draft: true
           prerelease: ${{ contains(steps.bundle.outputs.version, '-') }}
           body_path: release-prep/reports/release/notes.md
+          fail_on_unmatched_files: true
+          make_latest: 'false'
           files: |
             dist/agi-jobs-v${{ steps.bundle.outputs.version }}-artifacts.tar.gz
             dist/agi-jobs-v${{ steps.bundle.outputs.version }}-artifacts.tar.gz.sha256
             dist/agi-jobs-v${{ steps.bundle.outputs.version }}-artifacts.tar.gz.sig
             dist/agi-jobs-v${{ steps.bundle.outputs.version }}-artifacts.tar.gz.pem
+            dist/agi-jobs-v${{ steps.bundle.outputs.version }}-artifacts.tar.gz.sigstore.json
             ${{ steps.provenance.outputs.bundle-path }}
+
+      - name: Download verified image digests
+        uses: actions/download-artifact@cc203385981b70ca67e1cc392babf9cc229d5806
+        with:
+          pattern: '*-release-digest'
+          path: image-digests
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435
+
+      - name: Log in to GHCR
+        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Promote verified release images
+        env:
+          VERSION: ${{ needs.prepare.outputs.version }}
+        run: |
+          set -euo pipefail
+          OWNER="${GITHUB_REPOSITORY_OWNER,,}"
+          for NAME in node-runner validator-runner gateway webapp owner-console; do
+            DIGEST=$(cat "image-digests/${NAME}-release-digest/digest.txt")
+            [[ "$DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]
+            IMAGE="ghcr.io/${OWNER}/${NAME}"
+            TAGS=(--tag "${IMAGE}:${VERSION}")
+            if [[ "$VERSION" != *-* ]]; then
+              TAGS+=(--tag "${IMAGE}:latest")
+            fi
+            docker buildx imagetools create "${TAGS[@]}" "${IMAGE}@${DIGEST}"
+          done
+
+      - name: Publish the verified release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.prepare.outputs.version }}
+        run: |
+          set -euo pipefail
+          LATEST=true
+          if [[ "$VERSION" == *-* ]]; then LATEST=false; fi
+          gh release edit "v${VERSION}" --repo "$GITHUB_REPOSITORY" --draft=false --latest="$LATEST"

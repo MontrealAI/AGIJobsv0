@@ -1,4 +1,4 @@
-import { describe, expect, beforeEach, vi, test } from 'vitest';
+import { describe, expect, beforeEach, afterEach, vi, test } from 'vitest';
 import {
   fetchArtifacts,
   streamLLMCompletion,
@@ -13,6 +13,9 @@ import {
 } from './api';
 
 const fetchMock = vi.fn();
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 function mockJsonResponse(body: unknown, ok = true) {
   const payload = JSON.stringify(body);
@@ -242,6 +245,61 @@ describe('service mode failure handling', () => {
     await mintCultureArtifact({ title: 'Test', kind: 'book', cid: 'cid' });
     await updateOwnerControls({ paused: true });
     await launchArena({ artifactId: 1, studentCount: 2 });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
+
+describe('read errors and optional service metadata', () => {
+  test('surfaces HTTP errors from public telemetry reads', async () => {
+    fetchMock.mockResolvedValue(mockJsonResponse({}, false));
+    await expect(fetchScoreboard()).rejects.toThrow('500');
+  });
+  test('accepts public telemetry without requiring an operator token', async () => {
+    const telemetry = {
+      agents: [],
+      rounds: [],
+      currentDifficulty: 1,
+      currentSuccessRate: 0,
+    };
+    fetchMock.mockResolvedValue(mockJsonResponse(telemetry));
+    await expect(fetchScoreboard()).resolves.toEqual(telemetry);
+    expect(fetchMock.mock.calls[0][1]).toBeUndefined();
+  });
+  test('renders incomplete optional artifact metadata without NaN', async () => {
+    fetchMock.mockResolvedValue(
+      mockJsonResponse({ data: { artifacts: [{ id: '9' }] } }),
+    );
+    await expect(fetchArtifacts()).resolves.toMatchObject([
+      {
+        id: 9,
+        title: 'Untitled Artifact',
+        kind: 'book',
+        cid: '',
+        influence: 0,
+        cites: [],
+      },
+    ]);
+  });
+  test('preview works in browsers without crypto.randomUUID', async () => {
+    vi.stubEnv('VITE_DEMO_MODE', 'true');
+    vi.stubGlobal('crypto', undefined);
+    const mint = await mintCultureArtifact({
+      title: 'Preview',
+      kind: 'book',
+      cid: 'cid',
+    });
+    expect(mint.transactionHash).toMatch(/^0x[0-9a-f]{64}$/);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+  test('preview preserves explicitly configured owner controls', async () => {
+    vi.stubEnv('VITE_DEMO_MODE', 'true');
+    const controls = {
+      paused: false,
+      autoDifficulty: false,
+      maxConcurrentJobs: 1,
+      targetSuccessRate: 0.8,
+    };
+    await expect(updateOwnerControls(controls)).resolves.toEqual(controls);
     expect(fetchMock).not.toHaveBeenCalled();
   });
 });

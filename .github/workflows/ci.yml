@@ -67,7 +67,7 @@ jobs:
       - name: Verify CI summary coverage vs workflow
         run: npm run ci:verify-summary-needs
       - name: Release provenance regression tests
-        run: node --test test/scripts/release-provenance.test.cjs test/scripts/contract-size.test.cjs
+        run: node --test test/scripts/release-provenance.test.cjs test/scripts/contract-size.test.cjs test/scripts/release-ci.test.cjs
       - name: Prettier formatting check
         run: npm run format:check
       - name: Targeted lint suite

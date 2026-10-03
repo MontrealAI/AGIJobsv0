@@ -1,6 +1,8 @@
 # Release checklist
 
-Use this list before tagging a new production release.
+Use this list before tagging a new production release. The current [readiness record](production/readiness-2026-10-03.md) lists unresolved blockers; completing this checklist is a requirement, not a statement that the repository already satisfies it.
+
+Before tagging, merge the reviewed changes, wait for successful CI on that exact `main` commit, and run `npm run ci:verify-signers` and `npm run release:check-size` after a fresh compile. The expected workflow list is in `scripts/release/check-release-ci.js`; run path-filtered workflows manually on `main` when that commit has no result. Do not tag a different commit after checking CI.
 
 1. **Compile and lint**
    ```bash
@@ -68,12 +70,14 @@ Use this list before tagging a new production release.
    - Prefer storing explorer credentials in AWS Secrets Manager and expose them to the workflow via:
      - `AWS_ETHERSCAN_ROLE_ARN` / `AWS_ETHERSCAN_REGION` – GitHub OIDC role assumption parameters.
      - `AWS_ETHERSCAN_SECRET_NAME` – Secrets Manager identifier containing the API key payload.
-     - `AWS_ETHERSCAN_SECRET_JSON_KEY` *(optional)* – selector when storing multiple credentials in a single JSON blob.
+     - `AWS_ETHERSCAN_SECRET_JSON_KEY` _(optional)_ – selector when storing multiple credentials in a single JSON blob.
    - Fallback environment secrets (`ETHERSCAN_API_KEY_MAINNET`, `ETHERSCAN_API_KEY_SEPOLIA`, or `ETHERSCAN_API_KEY`) remain supported for self-hosted deployments.
 10. **Transfer ownership to governance**
-   - Use the calls file as a guide for final `setGovernance` or `transferOwnership` transactions.
+
+- Use the calls file as a guide for final `setGovernance` or `transferOwnership` transactions.
 
 11. **Final production checks**
+
     - Confirm `$AGIALPHA` exposes a public `burn` and that fee burning reduces total supply.
     - Run an employer‑initiated burn through `FeePool.distributeFees` and verify the burn receipt.
     - Ensure all entry points enforcing `TaxPolicy` acknowledgement are covered by tests.
@@ -86,14 +90,16 @@ Use this list before tagging a new production release.
     - Package audit artefacts (coverage HTML, Slither SARIF, Echidna logs, fork drill outputs) for hand-off.
 
 12. **Sign and verify the release tag**
+
     ```bash
     git tag -s vX.Y.Z -m "vX.Y.Z"
     git tag -v vX.Y.Z
     git push origin vX.Y.Z
     ```
+
     - Ensure the hardware-backed key used above appears in `.github/signers/allowed_signers`.
-    - The CI gate fails if that file is empty or contains only comments, so populate it before tagging.
-    - Confirm the release workflow reports “git tag -v succeeded” to guarantee provenance. 【F:scripts/ci/ensure-tag-signature.js†L1-L86】
+    - The CI gate rejects invalid or illustrative key bytes as well as an empty registry. Configure verified maintainer public keys before tagging.
+    - Confirm `scripts/ci/ensure-tag-signature.js` reports a verified SSH signature and checkout commit. Manual release invocations must select the matching signed tag as their workflow ref.
 
 13. **Refresh monitoring sentinels**
     ```bash

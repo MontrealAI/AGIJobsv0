@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased — 2026-10-03 readiness hardening
 
+- Enforce exact-commit release CI, contract verification, scan-before-signing, draft-before-publication, and prerelease-safe image promotion; update Cosign/provenance verification and portable checksums.
+- Close the CULTURE studio API coverage gap with error/default-path tests and fix arena lint in clean installations.
+
 - Update Next.js applications to 15.5.27 and repair independent application-image builds and provenance subjects.
 - Repair CULTURE service builds, lint integration, lockfiles, Prisma generation, and packaging; add authenticated arena writes, receipt-derived round IDs, atomic state persistence, and explicit preview/service modes.
 - Correct CULTURE coverage percentages and document its remaining gas, coverage, provider, and deployment-integration blockers without weakening the gates.

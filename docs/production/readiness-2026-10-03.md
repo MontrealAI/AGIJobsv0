@@ -48,6 +48,21 @@ The corrected Vitest thresholds use **90**, not **0.9** (which meant 0.9%). Inde
 
 The CULTURE gas snapshot is stale, and the lifecycle (682,540 gas versus 500,000 budget) and misconduct (612,729 versus 520,000) scenarios exceed committed budgets. Those budgets were not raised. Its Compose/Cypress commissioning still requires deployment to real dependency contracts, valid operator roles, and resolution of the existing duplicate-service/environment setup. Studio requests for LLM generation, IPFS upload, artifact minting, job creation, and owner controls need real provider implementations; several backend adapters also remain simulations. These are release blockers in addition to the mainnet items below.
 
+## Release publication follow-up
+
+A subsequent release review confirmed that the authorized-signers check and production size gate still fail. No tag or release was published, and the changes remain in PR #3876. The current public repository has no release records or remote tags; no version has been invented to conceal the blocked state.
+
+The release workflow now requires successful main-branch CI for its exact commit, a matching signed-tag workflow ref, contract verification before container/npm publication, and scans of both image architectures before signing immutable digests. GitHub assets stay in draft until image promotion succeeds. Prereleases cannot move `latest`, and the separate container workflow no longer promotes tag builds. Current Cosign 3.1.3 bundle signing preserves the detached signature/certificate assets, adds the complete verification bundle, and uses the required attestation permission. Downloaded checksums no longer require a `dist/` subdirectory. The signing guide now uses valid SSH registry instructions and the correct GitHub provenance verification command.
+
+Additional validation:
+
+- CULTURE installs, lints, and builds in a clean temporary tree without the root npm dependencies. The GitHub arena lint failure came from an undeclared body-parser type dependency; the server now uses Express's built-in JSON parser with the same 1 MiB limit.
+- Studio API coverage now **passes**: 25 tests, 100% lines, 95.23% branches, 100% functions. This supersedes the earlier studio branch failure above; indexer coverage and gas failures remain open.
+- All 30 release regressions pass (12 prior signing/size checks plus 18 CI/publication checks). They cover stale/foreign/missing/pending/failed evidence, pagination and API failures, dependency ordering, prerelease promotion, draft publication, and portable checksums.
+- Application-image CI at `dab6bae0b37ae2996bc3f02a52ec7c2c1f243f05` passed both console and portal builds/scans ([run](https://github.com/MontrealAI/AGIJobsv0/actions/runs/37132344290)). Its CULTURE job still failed on the gas snapshot and the arena lint issue repaired here. New-head CI must be checked independently.
+
+Publishing a production release still requires the contract-size refactor, a verified maintainer public key and maintainer-signed tag, real deployment/governance configuration, completed integration/coverage/gas work, and passing CI. The private signing key must remain with the maintainer.
+
 ## Repairs included
 
 - The scheduled Torch workflow installed the optional Streamlit dashboard after FastAPI. That second installation replaced Starlette 0.41.3 with an incompatible 1.7.0 and caused nine collection errors. Headless model requirements are now separate, installed with the platform requirements in one resolver invocation, followed by `pip check`. Relevant pull requests trigger this check.

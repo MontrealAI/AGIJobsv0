@@ -9,17 +9,18 @@ validate those files before you promote a release to production.
 
 Each release upload includes the following files:
 
-| File | Purpose |
-| --- | --- |
-| `agi-jobs-v<version>-artifacts.tar.gz` | Canonical bundle of ABIs, SBOM, TypeChain output, and deployment manifests prepared by CI. |
-| `agi-jobs-v<version>-artifacts.tar.gz.sha256` | SHA-256 checksum for offline integrity verification. |
-| `agi-jobs-v<version>-artifacts.tar.gz.sig` | Cosign signature, created via keyless signing with GitHub OIDC. |
-| `agi-jobs-v<version>-artifacts.tar.gz.pem` | Sigstore certificate containing the signing identity metadata. |
-| `<hash>.intoto.jsonl` | SLSA provenance bundle emitted by `actions/attest-build-provenance`. |
+| File                                                 | Purpose                                                                                    |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `agi-jobs-v<version>-artifacts.tar.gz`               | Canonical bundle of ABIs, SBOM, TypeChain output, and deployment manifests prepared by CI. |
+| `agi-jobs-v<version>-artifacts.tar.gz.sha256`        | SHA-256 checksum for offline integrity verification.                                       |
+| `agi-jobs-v<version>-artifacts.tar.gz.sig`           | Cosign signature, created via keyless signing with GitHub OIDC.                            |
+| `agi-jobs-v<version>-artifacts.tar.gz.pem`           | Sigstore certificate containing the signing identity metadata.                             |
+| `agi-jobs-v<version>-artifacts.tar.gz.sigstore.json` | Cosign signature bundle containing verification material and the transparency-log proof.   |
+| `<hash>.intoto.jsonl`                                | SLSA provenance bundle emitted by `actions/attest-build-provenance`.                       |
 
 ## Verification prerequisites
 
-1. Install [Cosign](https://github.com/sigstore/cosign) v2.2.0 or later.
+1. Install [Cosign](https://github.com/sigstore/cosign) v3.1.3 or later.
 2. Trust the Sigstore transparency log root certificates. Cosign manages this
    automatically when using keyless verification.
 3. Download every artefact listed above from the matching GitHub release tag.
@@ -38,8 +39,7 @@ Each release upload includes the following files:
 
    ```bash
    cosign verify-blob \
-     --certificate agi-jobs-v<version>-artifacts.tar.gz.pem \
-     --signature agi-jobs-v<version>-artifacts.tar.gz.sig \
+     --bundle agi-jobs-v<version>-artifacts.tar.gz.sigstore.json \
      --certificate-identity "https://github.com/MontrealAI/AGIJobsv0/.github/workflows/release.yml@refs/tags/v<version>" \
      --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
      agi-jobs-v<version>-artifacts.tar.gz
@@ -51,17 +51,18 @@ Each release upload includes the following files:
 3. **SLSA provenance inspection**
 
    ```bash
-   cosign verify-attestation \
-     --type slsaprovenance.dev/attestation/v1 \
-     --certificate-identity "https://github.com/MontrealAI/AGIJobsv0/.github/workflows/release.yml@refs/tags/v<version>" \
-     --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
+   gh attestation verify agi-jobs-v<version>-artifacts.tar.gz \
+     --repo MontrealAI/AGIJobsv0 \
+     --signer-workflow MontrealAI/AGIJobsv0/.github/workflows/release.yml \
+     --source-ref refs/tags/v<version> \
      --bundle <hash>.intoto.jsonl
    ```
 
    Replace `<hash>.intoto.jsonl` with the provenance bundle name from the
-   release assets. Cosign validates the bundle signature and prints the
-   attested subject digest. Confirm the digest matches the checksum from the
-   previous step.
+   release assets. GitHub CLI verifies the provenance against the artifact, repository,
+   workflow, and source tag. See the [official CLI reference](https://cli.github.com/manual/gh_attestation_verify).
+   Keep the detached `.sig` and `.pem` assets for compatibility; use the complete
+   `.sigstore.json` bundle for current Cosign verification.
 
 ## Operational expectations
 

@@ -1,6 +1,7 @@
 name: apps-images
 
 on:
+  workflow_dispatch:
   pull_request:
     paths:
       - 'apps/**'
