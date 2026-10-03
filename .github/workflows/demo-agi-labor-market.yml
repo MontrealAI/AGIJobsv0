@@ -5,6 +5,9 @@ on:
     paths:
       - 'scripts/v2/agiLaborMarketGrandDemo.ts'
       - 'scripts/v2/launchAgiLaborMarketControlRoom.ts'
+      - 'scripts/v2/lib/prebuilt/**'
+      - 'scripts/deploy/**'
+      - 'config/implementation-modules.json'
       - 'demo/agi-labor-market-grand-demo/**'
       - '.github/workflows/demo-agi-labor-market.yml'
   workflow_dispatch:

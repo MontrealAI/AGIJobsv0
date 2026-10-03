@@ -1,43 +1,51 @@
 [
   {
-    "ruleId": "arbitrary-from",
-    "relativeUri": "contracts/v2/StakeManager.sol",
-    "messageContains": "lockReward(bytes32,address,uint256)"
+    "ruleId": "arbitrary-send-erc20",
+    "relativeUri": "contracts/v2/implementation/StakeManagerBase.sol",
+    "messageContains": "StakeManagerBase._entry_lockReward(bytes32,address,uint256)",
+    "justification": "Existing approved escrow operation: only the configured registry/dispute module (or kernel controller) may collect previously approved funds. The implementation retains the original caller checks; arbitrary public callers cannot select a payer."
   },
   {
-    "ruleId": "arbitrary-from",
-    "relativeUri": "contracts/v2/StakeManager.sol",
-    "messageContains": "lock(address,uint256)"
+    "ruleId": "arbitrary-send-erc20",
+    "relativeUri": "contracts/v2/implementation/StakeManagerBase.sol",
+    "messageContains": "StakeManagerBase._entry_lock(address,uint256)",
+    "justification": "Existing approved escrow operation: only the configured registry/dispute module (or kernel controller) may collect previously approved funds. The implementation retains the original caller checks; arbitrary public callers cannot select a payer."
   },
   {
-    "ruleId": "arbitrary-from",
-    "relativeUri": "contracts/v2/StakeManager.sol",
-    "messageContains": "lockDisputeFee(address,uint256)"
+    "ruleId": "arbitrary-send-erc20",
+    "relativeUri": "contracts/v2/implementation/StakeManagerBase.sol",
+    "messageContains": "StakeManagerBase._entry_lockDisputeFee(address,uint256)",
+    "justification": "Existing approved escrow operation: only the configured registry/dispute module (or kernel controller) may collect previously approved funds. The implementation retains the original caller checks; arbitrary public callers cannot select a payer."
   },
   {
-    "ruleId": "arbitrary-from",
+    "ruleId": "arbitrary-send-erc20",
     "relativeUri": "contracts/v2/kernel/EscrowVault.sol",
-    "messageContains": "EscrowVault.deposit"
+    "messageContains": "EscrowVault.deposit",
+    "justification": "Existing approved escrow operation: only the configured registry/dispute module (or kernel controller) may collect previously approved funds. The implementation retains the original caller checks; arbitrary public callers cannot select a payer."
   },
   {
     "ruleId": "weak-prng",
     "relativeUri": "contracts/v2/AuditModule.sol",
-    "messageContains": "AuditModule.onJobFinalized"
+    "messageContains": "AuditModule.onJobFinalized",
+    "justification": "Retained pre-existing exception, not a claim of cryptographic unpredictability. Block-derived selection remains susceptible to proposer influence and requires explicit risk review before production. See docs/production/static-analysis-review.md."
   },
   {
     "ruleId": "weak-prng",
-    "relativeUri": "contracts/v2/ValidationModule.sol",
-    "messageContains": "ValidationModule.selectValidators"
+    "relativeUri": "contracts/v2/implementation/ValidationModuleBase.sol",
+    "messageContains": "ValidationModuleBase._entry_selectValidators",
+    "justification": "Retained pre-existing exception, not a claim of cryptographic unpredictability. Block-derived selection remains susceptible to proposer influence and requires explicit risk review before production. See docs/production/static-analysis-review.md."
   },
   {
     "ruleId": "weak-prng",
     "relativeUri": "contracts/v2/modules/JobRouter.sol",
-    "messageContains": "JobRouter.selectPlatform"
+    "messageContains": "JobRouter.selectPlatform",
+    "justification": "Retained pre-existing exception, not a claim of cryptographic unpredictability. Block-derived selection remains susceptible to proposer influence and requires explicit risk review before production. See docs/production/static-analysis-review.md."
   },
   {
     "ruleId": "weak-prng",
     "relativeUri": "contracts/v2/modules/RoutingModule.sol",
-    "messageContains": "RoutingModule.selectOperator"
+    "messageContains": "RoutingModule.selectOperator",
+    "justification": "Retained pre-existing exception, not a claim of cryptographic unpredictability. Block-derived selection remains susceptible to proposer influence and requires explicit risk review before production. See docs/production/static-analysis-review.md."
   },
   {
     "ruleId": "reentrancy-no-eth",
@@ -46,38 +54,38 @@
   },
   {
     "ruleId": "reentrancy-no-eth",
-    "relativeUri": "contracts/v2/JobRegistry.sol",
-    "messageContains": "JobRegistry._applyForJob"
+    "relativeUri": "contracts/v2/implementation/JobRegistryBase.sol",
+    "messageContains": "JobRegistryBase._applyForJob"
   },
   {
     "ruleId": "reentrancy-no-eth",
-    "relativeUri": "contracts/v2/ValidationModule.sol",
-    "messageContains": "ValidationModule._cleanup"
+    "relativeUri": "contracts/v2/implementation/ValidationModuleBase.sol",
+    "messageContains": "ValidationModuleBase._cleanup"
   },
   {
     "ruleId": "reentrancy-no-eth",
-    "relativeUri": "contracts/v2/JobRegistry.sol",
-    "messageContains": "JobRegistry._finalize"
+    "relativeUri": "contracts/v2/implementation/JobRegistryBase.sol",
+    "messageContains": "JobRegistryBase._finalize"
   },
   {
     "ruleId": "reentrancy-no-eth",
-    "relativeUri": "contracts/v2/ValidationModule.sol",
-    "messageContains": "ValidationModule._finalize"
+    "relativeUri": "contracts/v2/implementation/ValidationModuleBase.sol",
+    "messageContains": "ValidationModuleBase._finalize"
   },
   {
     "ruleId": "reentrancy-no-eth",
-    "relativeUri": "contracts/v2/ValidationModule.sol",
-    "messageContains": "ValidationModule._revealValidation"
+    "relativeUri": "contracts/v2/implementation/ValidationModuleBase.sol",
+    "messageContains": "ValidationModuleBase._revealValidation"
   },
   {
     "ruleId": "reentrancy-no-eth",
-    "relativeUri": "contracts/v2/StakeManager.sol",
-    "messageContains": "StakeManager._redistributeEscrowBatched"
+    "relativeUri": "contracts/v2/implementation/StakeManagerBase.sol",
+    "messageContains": "StakeManagerBase._redistributeEscrowBatched"
   },
   {
     "ruleId": "reentrancy-no-eth",
-    "relativeUri": "contracts/v2/StakeManager.sol",
-    "messageContains": "StakeManager._slashBatched"
+    "relativeUri": "contracts/v2/implementation/StakeManagerBase.sol",
+    "messageContains": "StakeManagerBase._slashBatched"
   },
   {
     "ruleId": "reentrancy-no-eth",
@@ -101,12 +109,96 @@
   },
   {
     "ruleId": "reentrancy-no-eth",
-    "relativeUri": "contracts/v2/JobRegistry.sol",
-    "messageContains": "JobRegistry.applyConfiguration"
+    "relativeUri": "contracts/v2/implementation/JobRegistryBase.sol",
+    "messageContains": "JobRegistryBase._entry_applyConfiguration"
   },
   {
     "ruleId": "mapping-deletion",
     "relativeUri": "contracts/v2/ArbitratorCommittee.sol",
     "messageContains": "ArbitratorCommittee.finalize"
+  },
+  {
+    "ruleId": "encode-packed-collision",
+    "relativeUri": "contracts/v2/modules/CertificateNFT.sol",
+    "messageContains": "CertificateNFT.tokenURI(uint256)",
+    "justification": "This function only concatenates the configured URI prefix and decimal token ID to return display metadata. The bytes are not hashed, signed, decoded as separate arguments, or used for authorization; tuple collision resistance is not required."
+  },
+  {
+    "ruleId": "encode-packed-collision",
+    "relativeUri": "contracts/v2/CertificateNFT.sol",
+    "messageContains": "CertificateNFT.tokenURI(uint256)",
+    "justification": "This function only concatenates the configured URI prefix and decimal token ID to return display metadata. The bytes are not hashed, signed, decoded as separate arguments, or used for authorization; tuple collision resistance is not required."
+  },
+  {
+    "ruleId": "incorrect-return",
+    "relativeUri": "contracts/v2/JobRegistry.sol",
+    "messageContains": "JobRegistry.acknowledgeTaxPolicy()",
+    "justification": "Intentional terminal proxy forwarding: this explicit wrapper contains only _delegate; authorization, pause checks, reentrancy cleanup, and return encoding run inside the implementation before returning. No controller code or modifier cleanup is skipped. Reviewed against FixedImplementations ABI/caller tests and full lifecycle tests."
+  },
+  {
+    "ruleId": "incorrect-return",
+    "relativeUri": "contracts/v2/JobRegistry.sol",
+    "messageContains": "JobRegistry.acknowledgeAndCreateJob(uint256,uint64,bytes32,string)",
+    "justification": "Intentional terminal proxy forwarding: this explicit wrapper contains only _delegate; authorization, pause checks, reentrancy cleanup, and return encoding run inside the implementation before returning. No controller code or modifier cleanup is skipped. Reviewed against FixedImplementations ABI/caller tests and full lifecycle tests."
+  },
+  {
+    "ruleId": "incorrect-return",
+    "relativeUri": "contracts/v2/JobRegistry.sol",
+    "messageContains": "JobRegistry.createJobWithAgentTypes(uint256,uint64,uint8,bytes32,string)",
+    "justification": "Intentional terminal proxy forwarding: this explicit wrapper contains only _delegate; authorization, pause checks, reentrancy cleanup, and return encoding run inside the implementation before returning. No controller code or modifier cleanup is skipped. Reviewed against FixedImplementations ABI/caller tests and full lifecycle tests."
+  },
+  {
+    "ruleId": "incorrect-return",
+    "relativeUri": "contracts/v2/ValidationModule.sol",
+    "messageContains": "ValidationModule.finalize(uint256)",
+    "justification": "Intentional terminal proxy forwarding: this explicit wrapper contains only _delegate; authorization, pause checks, reentrancy cleanup, and return encoding run inside the implementation before returning. No controller code or modifier cleanup is skipped. Reviewed against FixedImplementations ABI/caller tests and full lifecycle tests."
+  },
+  {
+    "ruleId": "incorrect-return",
+    "relativeUri": "contracts/v2/JobRegistry.sol",
+    "messageContains": "JobRegistry.acknowledgeAndCreateJobWithAgentTypes(uint256,uint64,uint8,bytes32,string)",
+    "justification": "Intentional terminal proxy forwarding: this explicit wrapper contains only _delegate; authorization, pause checks, reentrancy cleanup, and return encoding run inside the implementation before returning. No controller code or modifier cleanup is skipped. Reviewed against FixedImplementations ABI/caller tests and full lifecycle tests."
+  },
+  {
+    "ruleId": "incorrect-return",
+    "relativeUri": "contracts/v2/JobRegistry.sol",
+    "messageContains": "JobRegistry.acknowledgeFor(address)",
+    "justification": "Intentional terminal proxy forwarding: this explicit wrapper contains only _delegate; authorization, pause checks, reentrancy cleanup, and return encoding run inside the implementation before returning. No controller code or modifier cleanup is skipped. Reviewed against FixedImplementations ABI/caller tests and full lifecycle tests."
+  },
+  {
+    "ruleId": "incorrect-return",
+    "relativeUri": "contracts/v2/ValidationModule.sol",
+    "messageContains": "ValidationModule.selectValidators(uint256,uint256)",
+    "justification": "Intentional terminal proxy forwarding: this explicit wrapper contains only _delegate; authorization, pause checks, reentrancy cleanup, and return encoding run inside the implementation before returning. No controller code or modifier cleanup is skipped. Reviewed against FixedImplementations ABI/caller tests and full lifecycle tests."
+  },
+  {
+    "ruleId": "incorrect-return",
+    "relativeUri": "contracts/v2/JobRegistry.sol",
+    "messageContains": "JobRegistry.createJob(uint256,uint64,bytes32,string)",
+    "justification": "Intentional terminal proxy forwarding: this explicit wrapper contains only _delegate; authorization, pause checks, reentrancy cleanup, and return encoding run inside the implementation before returning. No controller code or modifier cleanup is skipped. Reviewed against FixedImplementations ABI/caller tests and full lifecycle tests."
+  },
+  {
+    "ruleId": "incorrect-return",
+    "relativeUri": "contracts/v2/ValidationModule.sol",
+    "messageContains": "ValidationModule.finalizeValidation(uint256)",
+    "justification": "Intentional terminal proxy forwarding: this explicit wrapper contains only _delegate; authorization, pause checks, reentrancy cleanup, and return encoding run inside the implementation before returning. No controller code or modifier cleanup is skipped. Reviewed against FixedImplementations ABI/caller tests and full lifecycle tests."
+  },
+  {
+    "ruleId": "incorrect-return",
+    "relativeUri": "contracts/v2/StakeManager.sol",
+    "messageContains": "StakeManager.governanceSlash(address,StakeManagerBase.Role,uint256,address)",
+    "justification": "Intentional terminal proxy forwarding: this explicit wrapper contains only _delegate; authorization, pause checks, reentrancy cleanup, and return encoding run inside the implementation before returning. No controller code or modifier cleanup is skipped. Reviewed against FixedImplementations ABI/caller tests and full lifecycle tests."
+  },
+  {
+    "ruleId": "incorrect-return",
+    "relativeUri": "contracts/v2/ValidationModule.sol",
+    "messageContains": "ValidationModule.forceFinalize(uint256)",
+    "justification": "Intentional terminal proxy forwarding: this explicit wrapper contains only _delegate; authorization, pause checks, reentrancy cleanup, and return encoding run inside the implementation before returning. No controller code or modifier cleanup is skipped. Reviewed against FixedImplementations ABI/caller tests and full lifecycle tests."
+  },
+  {
+    "ruleId": "uninitialized-state",
+    "relativeUri": "contracts/v2/implementation/ValidationModuleBase.sol",
+    "messageContains": "ValidationModuleBase.DOMAIN_SEPARATOR",
+    "justification": "The shared base is abstract; the ValidationModule controller constructor initializes the appended DOMAIN_SEPARATOR slot. Implementations are only called through the controller and direct write calls revert. FixedImplementations tests verify the controller-specific domain and identical layouts."
   }
 ]

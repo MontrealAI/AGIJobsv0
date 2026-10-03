@@ -63,6 +63,8 @@ const stake = await factory.deploy(
 
 The Solidity type and event declarations shared by implementations live in `JobRegistryBase`, `StakeManagerBase`, and `ValidationModuleBase`. Solidity callers using expressions such as `StakeManager.Role.Agent` or `emit StakeManager.FeePctUpdated(...)` should import the corresponding base declaration. Their ABI encodings and event topics remain unchanged.
 
+The labour-market and national supply-chain demos keep their no-compile startup. Their bundled controller and implementation artifacts are refreshed after `npm run compile` with `node scripts/deploy/export-prebuilt.cjs`. Compatibility tests require those bundles to match the compiled ABI and creation bytecode. Production deployment helpers continue to use freshly compiled artifacts.
+
 This is for new deployments. Matching storage offsets does not turn an existing non-upgradeable deployment into an upgradeable one. Any migration of existing jobs, balances, or commitments needs an explicit, reviewed migration procedure.
 
 ## Whole-stack deployment and recovery

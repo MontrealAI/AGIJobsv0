@@ -5,6 +5,9 @@ on:
     paths:
       - 'scripts/v2/nationalSupplyChainGrandDemo.ts'
       - 'scripts/v2/launchNationalSupplyChainControlRoom.ts'
+      - 'scripts/v2/lib/prebuilt/**'
+      - 'scripts/deploy/**'
+      - 'config/implementation-modules.json'
       - 'demo/National-Supply-Chain-v0/**'
       - 'package.json'
       - '.github/workflows/demo-national-supply-chain.yml'

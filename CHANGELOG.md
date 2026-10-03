@@ -10,6 +10,8 @@ Release candidate prepared on 2026-10-03; publication remains subject to the rel
 - Replace the oversized one-transaction deployer with paused, resumable component deployment and atomic final wiring.
 - Enforce Ethereum contract-size limits in the normal Hardhat network and contract CI; preserve existing features and flowcharts.
 - Add public-ABI, storage-layout, domain-separation, authorization, direct-call, and deployment-resumption regressions.
+- Preserve no-compile demos with bundled implementation bytecode and artifact-drift checks; repair the owner rehearsal CLI entrypoint.
+- Enforce Slither's actual SARIF security severity and document scoped delegation exceptions and existing randomness risks.
 
 - Enforce exact-commit release CI, contract verification, scan-before-signing, draft-before-publication, and prerelease-safe image promotion; update Cosign/provenance verification and portable checksums.
 - Close the CULTURE studio API coverage gap with error/default-path tests and fix arena lint in clean installations.

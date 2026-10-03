@@ -161,6 +161,32 @@ describe('Fixed implementations production compatibility', function () {
     );
   });
 
+  it('keeps no-compile demo bytecode in sync with the compiled modular contracts', async function () {
+    const prebuilt = require('../../scripts/v2/lib/prebuilt/ImplementationModules.json');
+    expect(Object.keys(prebuilt).sort()).to.deep.equal(
+      Object.values(modules).flat().sort()
+    );
+    for (const [controller, names] of Object.entries(modules)) {
+      const bundledController = require(`../../scripts/v2/lib/prebuilt/${controller}.json`);
+      const compiledController = await artifacts.readArtifact(
+        `contracts/v2/${controller}.sol:${controller}`
+      );
+      expect(bundledController).to.deep.equal({
+        abi: compiledController.abi,
+        bytecode: compiledController.bytecode,
+      });
+      for (const name of names) {
+        const compiled = await artifacts.readArtifact(
+          `contracts/v2/implementation/${name}.sol:${name}`
+        );
+        expect(prebuilt[name], name).to.deep.equal({
+          abi: compiled.abi,
+          bytecode: compiled.bytecode,
+        });
+      }
+    }
+  });
+
   for (const [controller, implementations] of Object.entries(modules)) {
     it(`${controller} preserves every previous function, event, and error signature`, async function () {
       const baseline = require(`../fixtures/modular-baseline/${controller}.json`);

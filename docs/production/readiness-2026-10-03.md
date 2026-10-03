@@ -99,6 +99,13 @@ The final clean default build and `npm test` pass: **267 Solidity sources** and 
 - Foundry output and cache are isolated from Hardhat artifacts, avoiding incompatible build-info files in subsequent test runs.
 - All **17** root README flowcharts remain byte-for-byte identical to the reviewed baseline.
 
+Fresh-checkout CI follow-up:
+
+- Both prebuilt demos now bundle the ten fixed implementations and pass with an empty Hardhat artifacts directory. The supply-chain transcript passes both schema checks; the labour-market transcript retains its timeline, owner controls, scenarios, and portfolios. A compatibility regression requires the bundled ABI and creation bytecode to match the compiled contracts.
+- The owner CLI shebang is restored to the first line; its complete local deployment, governance, pause, and resume rehearsal passes. This repairs the shared cause of seven deterministic-demo workflow failures.
+- All **13** focused modular/deployer tests and **6** Slither-policy regressions pass. The earlier full-suite result remains 581 tests; the new bundle regression adds one test.
+- Slither 0.10.4 analyzes 266 contracts with 92 detectors. The validator now reads rule-level security severity; previously, all 816 results were labeled warnings and high-impact findings escaped enforcement. The 27 high-severity findings match scoped, documented exceptions. See the [static-analysis review](static-analysis-review.md), including the existing randomness risk and required production review.
+
 The root version and changelog prepare **v2.0.0** because constructor setup and whole-stack deployment change. No release or signed tag has been published. The authorized-signers check still rejects the committed example keys. At the prior PR head `c420ecc7caf2b731eaa40d48fccebcc03dbd82a4`, CULTURE CI still failed; new candidate CI must be evaluated on its own commit.
 
 ## Remaining production work
