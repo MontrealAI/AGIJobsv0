@@ -155,6 +155,7 @@ describe('Deployer', function () {
     // wiring
     expect(await stakeC.jobRegistry()).to.equal(registry);
     expect(await stakeC.disputeModule()).to.equal(dispute);
+    expect(await stakeC.validationModule()).to.equal(validation);
     expect(await registryC.stakeManager()).to.equal(stake);
     expect(await registryC.validationModule()).to.equal(validation);
     expect(await registryC.reputationEngine()).to.equal(reputation);
@@ -163,6 +164,8 @@ describe('Deployer', function () {
     expect(await registryC.feePool()).to.equal(feePool);
     expect(await stakeC.validatorSlashRewardPct()).to.equal(0);
     expect(await registryC.taxPolicy()).to.equal(taxPolicy);
+    await registryC.connect(governance).acknowledgeTaxPolicy();
+    expect(await taxPolicyC.hasAcknowledged(governance.address)).to.equal(true);
     expect(await registryC.identityRegistry()).to.equal(identityRegistryAddr);
     expect(await validationC.jobRegistry()).to.equal(registry);
     expect(await validationC.stakeManager()).to.equal(stake);
@@ -215,6 +218,10 @@ describe('Deployer', function () {
       withTaxPolicy: false,
       econ,
     });
+    await expect(
+      deployer.deploy(econ, ids, governance.address)
+    ).to.be.revertedWith('tax policy mode');
+    expect(await deployer.deployed()).to.equal(false);
     const tx2 = await deployer.deployWithoutTaxPolicy(
       econ,
       ids,

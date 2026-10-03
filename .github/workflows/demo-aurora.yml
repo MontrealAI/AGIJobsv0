@@ -4,6 +4,13 @@ on:
   pull_request:
     paths:
       - 'demo/**'
+      - 'contracts/**'
+      - 'scripts/v2/**'
+      - 'config/**'
+      - 'hardhat.config.js'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.nvmrc'
       - '.github/workflows/demo-aurora.yml'
   workflow_dispatch:
 
@@ -60,6 +67,7 @@ jobs:
         run: bash demo/aurora/bin/aurora-local.sh
 
       - name: Upload demo receipts
+        if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: aurora-receipts

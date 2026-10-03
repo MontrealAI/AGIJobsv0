@@ -7,6 +7,18 @@
 - **Module Focus:** Anchors Demo → Aurora inside the AGI Jobs v0 (v2) lattice so teams can orchestrate economic, governance, and operational missions with deterministic guardrails.
 - **Integration Role:** Interfaces with the unified owner control plane, telemetry mesh, and contract registry to deliver end-to-end resilience.
 
+## Run the local job lifecycle
+
+Complete the [root setup](../../docs/START_HERE.md#reproduce-the-local-baseline), then run:
+
+```bash
+npm run demo:aurora:local
+```
+
+This deploys the v2 stack to a disposable local chain, executes one job through validator commit/reveal and employer settlement, exercises owner controls, and writes `reports/localhost/aurora/aurora-report.md`. Per-stage receipts and token balance changes are in `reports/localhost/aurora/receipts/`. The tokens, identities, and submitted work are demonstration fixtures; transactions are executed by the actual local contracts.
+
+Anvil is preferred and Hardhat is the fallback. The node is bound to localhost with chain ID 31337. An occupied port is refused without stopping existing processes; select another with `DEMO_PORT=18545 npm run demo:aurora:local`. The launcher stops only its own node when finished. For three related jobs and a consolidated report, use the [ASI Take-Off walkthrough](../asi-takeoff/README.md#run-the-three-job-local-walkthrough).
+
 ## Capabilities
 - Provides opinionated configuration and assets tailored to `demo/aurora` while remaining interoperable with the global AGI Jobs v0 (v2) runtime.
 - Ships with safety-first defaults so non-technical operators can activate the experience without compromising security or compliance.
@@ -22,9 +34,9 @@ flowchart LR
 ```
 
 ## Working With This Module
-1. From the repository root run `npm install` once to hydrate all workspaces.
+1. Follow the [root setup](../../docs/START_HERE.md#reproduce-the-local-baseline) to install the pinned toolchain and locked dependencies.
 2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `demo/aurora`.
-3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
+3. Run `npm test` and `npm run lint --if-present`, then check the workflows for the exact pull-request commit.
 4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../../OperatorRunbook.md).
 
 ## Directory Guide

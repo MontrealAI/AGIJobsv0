@@ -8,6 +8,9 @@ All notable changes to this project will be documented in this file.
 
 Release candidate prepared on 2026-10-03; publication remains subject to the release gates.
 
+- Keep default AURORA and ASI Take-Off report directories separate so running one demo does not overwrite the other's receipts.
+- Make AURORA and ASI Take-Off launchers verify a disposable localhost chain, refuse occupied ports without killing other processes, support an alternate port, and stop only their own node. Add direct walkthroughs and retain every existing flowchart.
+- Complete staged tax-policy authorization and validator-stake wiring. Keep Deployer's mode guards separate from common wiring to avoid duplicated bytecode. Make the AURORA/ASI Take-Off local driver complete identity handoff, validator selection, committed-salt reveal, and employer settlement; reject skipped missions and missing job receipts.
 - Repair CULTURE signed-difficulty boundaries, restore lifecycle/security tests, enforce per-contract coverage, and refresh the gas baseline with an explicit historical review.
 - Make live indexing ordered and confirmation-aware, normalize growing-graph influence, stop on validator outages, and verify migration/ingestion/restart against real local-chain events.
 - Repair CULTURE deployment configuration and runtime startup; provide an explicit local fixture stack with persistent state, localhost bindings, and actual ingestion/authentication checks alongside the UI walkthrough.

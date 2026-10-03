@@ -4,6 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import { randomBytes } from 'crypto';
 import { ethers } from 'ethers';
+import { resolveNamespace } from './bin/report-paths.cjs';
 
 type DeploySummary = {
   contracts: Record<string, string>;
@@ -86,17 +87,7 @@ type MissionJob = {
 };
 
 function resolveReportNamespace(): string {
-  const raw = process.env.AURORA_REPORT_NAMESPACE?.trim();
-  if (!raw) return 'aurora';
-  if (!/^[A-Za-z0-9_.-]+$/.test(raw)) {
-    throw new Error(
-      `Invalid AURORA_REPORT_NAMESPACE value: ${raw}. Allowed: alphanumeric, '-', '_', '.'`
-    );
-  }
-  if (raw === '.' || raw === '..') {
-    throw new Error('AURORA_REPORT_NAMESPACE cannot be a relative path token.');
-  }
-  return raw;
+  return resolveNamespace(REPORT_SCOPE);
 }
 
 function resolveMissionSegments(): string[] {
@@ -204,8 +195,9 @@ function resolveReportBaseDir(net: string): string {
 function writeReceipt(net: string, name: string, data: unknown) {
   const baseDir = resolveReportBaseDir(net);
   const dir = path.join(baseDir, 'receipts');
-  fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(path.join(dir, name), JSON.stringify(data, null, 2));
+  const primaryPath = path.join(dir, name);
+  fs.mkdirSync(path.dirname(primaryPath), { recursive: true });
+  fs.writeFileSync(primaryPath, JSON.stringify(data, null, 2));
   const legacyDir = path.join('reports', net, REPORT_SCOPE, 'receipts');
   const outputPath = path.join(legacyDir, name);
   fs.mkdirSync(path.dirname(outputPath), { recursive: true });
@@ -284,11 +276,18 @@ function normaliseArg(value: unknown): unknown {
 
 type AddressedSigner = ethers.Signer & { address: string };
 
+function bufferGasEstimates(signer: ethers.Signer) {
+  // Selection and voting can cost more in the mined block than the RPC estimate.
+  const estimateGas = signer.estimateGas.bind(signer);
+  signer.estimateGas = async (tx) => ((await estimateGas(tx)) * 120n + 99n) / 100n;
+}
+
 function createNonceManagedSigner(
   provider: ethers.JsonRpcProvider,
   privateKey: string
 ): AddressedSigner {
   const wallet = new ethers.Wallet(privateKey, provider);
+  bufferGasEstimates(wallet);
   const manager = new ethers.NonceManager(wallet);
   return Object.assign(manager, { address: wallet.address }) as AddressedSigner;
 }
@@ -316,12 +315,13 @@ async function impersonateSigner(
   }
   let signer;
   try {
-    signer = provider.getSigner(normalised);
+    signer = await provider.getSigner(normalised);
   } catch (err) {
     throw new Error(
       `Provider cannot supply signer for ${normalised}: ${(err as Error).message}`
     );
   }
+  bufferGasEstimates(signer);
   const manager = new ethers.NonceManager(signer);
   return Object.assign(manager, { address: normalised }) as AddressedSigner;
 }
@@ -689,8 +689,13 @@ async function applyThermostatConfig(
 async function main() {
   const networkName = parseNetworkArg();
   const rpcUrl = process.env.RPC_URL || 'http://127.0.0.1:8545';
-  const provider = new ethers.JsonRpcProvider(rpcUrl);
+  // Instant local blocks can invalidate ethers' 250 ms nonce cache between
+  // consecutive transactions, including the wrapped signer's gas estimate.
+  const provider = new ethers.JsonRpcProvider(rpcUrl, undefined, {
+    cacheTimeout: -1,
+  });
   const chain = await provider.getNetwork();
+  if (chain.chainId === 31337n) provider.pollingInterval = 100;
   const decimals = Number(AGIALPHA_CONFIG.decimals || 18);
 
   const governanceActions: GovernanceAction[] = [];
@@ -1045,9 +1050,7 @@ async function main() {
   const originalJobStake = await jobRegistry.jobStake();
   const fallbackJobStake = maxReward / 10n > 0n ? maxReward / 10n : 1n;
   const adjustedJobStake =
-    originalJobStake === 0n
-      ? fallbackJobStake
-      : originalJobStake + (fallbackJobStake > 0n ? fallbackJobStake : 1n);
+    fallbackJobStake > maxWorkerStake ? maxWorkerStake : fallbackJobStake;
 
   await recordForwardGovernanceCall(
     'JobRegistry',
@@ -1056,7 +1059,7 @@ async function main() {
     'setJobStake',
     [adjustedJobStake],
     {
-      notes: 'Tune employer escrow requirements for the flagship mission',
+      notes: 'Set worker collateral within the funded demo stake',
       before: { stake: formatUnits(originalJobStake, decimals) },
       after: { stake: formatUnits(adjustedJobStake, decimals) },
     }
@@ -1081,6 +1084,15 @@ async function main() {
   let identityCleanup: (() => Promise<void>) | null = null;
   let identityReady = true;
   try {
+    const pendingIdentityOwner = await identityRegistry.pendingOwner();
+    if (pendingIdentityOwner.toLowerCase() === employer.address.toLowerCase()) {
+      await recordDirectGovernanceCall(
+        'IdentityRegistry',
+        'acceptOwnership',
+        () => identityRegistry.acceptOwnership(),
+        'Accept the staged two-step handoff to the configured governance signer'
+      );
+    }
     const identityOwnerAddress = await identityRegistry.owner();
     const normalisedIdentityOwner = identityOwnerAddress
       ? identityOwnerAddress.toLowerCase()
@@ -1140,10 +1152,9 @@ async function main() {
       description: missionConfig?.description,
       jobs: [],
     });
-    console.warn(
-      '⚠️  Skipping mission execution because identity overrides could not be applied.'
+    throw new Error(
+      'Mission execution blocked: identity overrides could not be applied.'
     );
-    return;
   }
 
   const validationInterface = new ethers.Interface(
@@ -1280,10 +1291,10 @@ async function main() {
   const legacySingleJob = resolvedJobs.length === 1;
 
   for (const job of resolvedJobs) {
+    console.log(`Starting job: ${job.name}`);
     const jobDir = path.join('jobs', job.slug);
-    const sortedKeys = Object.keys(job.spec).sort();
     const specHash = ethers.keccak256(
-      ethers.toUtf8Bytes(JSON.stringify(job.spec, sortedKeys))
+      ethers.toUtf8Bytes(JSON.stringify(job.spec))
     );
     const specUri = job.spec.acceptanceCriteriaURI || 'ipfs://aurora-demo-spec';
     const deadline = BigInt(Math.floor(Date.now() / 1000) + job.deadlineOffset);
@@ -1312,7 +1323,7 @@ async function main() {
       }
     }
     if (jobId === 0n) {
-      jobId = 1n;
+      throw new Error('Job creation receipt is missing its JobCreated event');
     }
     const postRecord = {
       jobId: jobId.toString(),
@@ -1338,6 +1349,24 @@ async function main() {
       .connect(worker)
       .submit(jobId, resultHash, job.resultUri, job.agentSubdomain, []);
     const submitReceipt = await submitTx.wait();
+
+    // Submission seeds a future block; selection must finish before commits.
+    console.log(`Job ${jobId}: selecting the validator committee`);
+    const selectionTarget = await validationModule.selectionBlock(jobId);
+    const selectionTimeout = Date.now() + 120_000;
+    while (BigInt(await provider.getBlockNumber()) <= selectionTarget) {
+      if (Date.now() > selectionTimeout) {
+        throw new Error(`Timed out waiting for validator selection for job ${jobId}`);
+      }
+      if (chain.chainId === 31337n) {
+        await provider.send('evm_mine', []);
+      } else {
+        await new Promise((resolve) => setTimeout(resolve, 1_000));
+      }
+    }
+    await (
+      await validationModule.selectValidators(jobId, ethers.toBigInt(randomBytes(32)))
+    ).wait();
 
     const submitRecord = {
       worker: worker.address,
@@ -1387,27 +1416,19 @@ async function main() {
       });
     }
 
+    console.log(`Job ${jobId}: ${commitRecords.length} votes committed; entering reveal`);
     const commitWindowSeconds = Number(await validationModule.commitWindow());
     await advanceTime(provider, commitWindowSeconds + 1);
 
     for (let i = 0; i < validators.length; i++) {
       const validator = validators[i];
-      const plan = deriveCommitPlan(
-        jobId,
-        true,
-        validator.address,
-        nonce,
-        specHashOnChain,
-        chain.chainId,
-        domainSeparator
-      );
       const revealTx = await validationModule
         .connect(validator)
         .revealValidation(
           jobId,
           true,
-          plan.burnTxHash,
-          plan.salt,
+          ethers.ZeroHash,
+          commitRecords[i].salt,
           validatorSubdomain,
           []
         );
@@ -1424,6 +1445,14 @@ async function main() {
       .connect(validators[0])
       .finalize(jobId);
     const finalizeReceipt = await finalizeTx.wait();
+    console.log(`Job ${jobId}: validation complete; settling employer escrow`);
+    const settlementTx = await jobRegistry.connect(employer).finalize(jobId);
+    const settlementReceipt = await settlementTx.wait();
+    const settledJob = await jobRegistry.jobs(jobId);
+    const settledMetadata = await jobRegistry.decodeJobMetadata(settledJob.packedMetadata);
+    if (settledMetadata.state !== 6n || !settledMetadata.success) {
+      throw new Error(`Job ${jobId} did not reach successful finalized settlement`);
+    }
 
     const payouts: Record<
       string,
@@ -1456,7 +1485,12 @@ async function main() {
     }
 
     const finalizeRecord = {
-      txHash: finalizeReceipt?.hash || finalizeTx.hash,
+      jobId: jobId.toString(),
+      chainId: chain.chainId.toString(),
+      status: 'Finalized',
+      success: settledMetadata.success,
+      txHash: settlementReceipt?.hash || settlementTx.hash,
+      blockNumber: settlementReceipt?.blockNumber,
       payouts,
     };
     writeReceipt(

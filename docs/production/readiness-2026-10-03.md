@@ -83,7 +83,7 @@ Run `npm run compile`, then `npm run release:check-size`. The modular candidate 
 | JobRegistry | 48,855 | 8,004 | 11,847 |
 | StakeManager | 45,337 | 7,881 | 10,396 |
 | ValidationModule | 28,199 | 6,368 | 8,980 |
-| Deployer | 234,082 | 20,864 | 20,987 |
+| Deployer | 234,082 | 10,116 | 10,239 |
 
 Normal Hardhat tests now set `allowUnlimitedContractSize: false`, use automatic gas estimation, and enforce a 30 million block gas limit. Constructor arguments also contribute to actual initcode size. Existing job, staking, validator, dispute, settlement, tax, and governance features remain. The original 17 root README Mermaid blocks remain unchanged.
 
@@ -108,6 +108,18 @@ Fresh-checkout CI follow-up:
 
 The root version and changelog prepare **v2.0.0** because constructor setup and whole-stack deployment change. No release or signed tag has been published. The authorized-signers check still rejects the committed example keys. At the prior PR head `c420ecc7caf2b731eaa40d48fccebcc03dbd82a4`, CULTURE CI still failed; new candidate CI must be evaluated on its own commit.
 
+## Local lifecycle completion and launcher safety
+
+The follow-up to PR #3878 repairs the separate ASI Take-Off local failure and exercises employer settlement. Staged deployment now authorizes JobRegistry tax acknowledgements and connects StakeManager to ValidationModule. The driver preserves the committed reveal salt, completes identity ownership acceptance and validator selection, uses fresh RPC state with buffered gas estimates, and checks the decoded final job state. Its mock token supports the burn needed by the configured settlement path. A missing creation event or blocked identity setup fails the run instead of producing a successful empty mission.
+
+Report namespaces default to the mission scope, so running ASI Take-Off preserves AURORA receipts. Explicit namespace overrides remain available, with traversal rejected. Local launchers refuse occupied ports, validate a localhost RPC endpoint and chain ID 31337, bind explicitly to localhost, and stop only the node they started. `DEMO_PORT` selects an alternate port. Compilation is incremental and serialized. The workflows also run when contract/deployment dependencies change and retain receipts when a demo fails. [AURORA](../../demo/aurora/README.md#run-the-local-job-lifecycle) and [ASI Take-Off](../../demo/asi-takeoff/README.md#run-the-three-job-local-walkthrough) now provide direct walkthroughs and report locations.
+
+Verification uses Node 22.23.3 and npm 10.8.2 with the production compiler profile. Contract-size checks pass; Deployer runtime/initcode are **10,116 / 10,239 bytes**. The **54 standalone Node checks** pass, including occupied-port preservation, endpoint/chain validation, and existing release safeguards. Toolchain/lock checks, required formatting, shell syntax, workflow lint, and focused Solidity lint pass. All **17 root README flowcharts**, plus the two edited demo diagrams, are unchanged.
+
+**14 focused contract tests pass**, covering deployment wiring/mode checks, immutable-implementation compatibility, and mock-token burn accounting. The three-job ASI Take-Off run passes on Anvil; the one-job AURORA run passes using the Hardhat fallback. Both generate reports and per-stage receipts after checking successful final settlement. These runs use mock tokens, configured identities, and demonstration work/results, while executing actual local v2 contracts.
+
+The full root test attempt ended with exit **137** at the validator reservoir tests under local memory pressure; it is not a passing full-suite result. Exact-commit CI remains required. Maintainer signing validation still rejects the committed example key. These fixes do not establish independent security review, real provider execution, production identities, or paid settlement on the intended network.
+
 ## Remaining production work
 
 ### CULTURE gate repairs after PR #3877
@@ -119,7 +131,9 @@ The review continued from merged main `ff8db39d4e2a47885d1a63a24925a8764aa1181f`
 - Refresh the obsolete gas snapshot and explicitly revise the lifecycle/misconduct ceilings to **750,000 / 675,000** for the existing integrated scenarios. Measured costs are **682,641 / 612,935**. The prior ceilings predated the JobRegistry/ValidationModule fixture integration. The [gas review](../../demo/CULTURE-v0/gas-snapshots/REVIEW-2026-10-03.md) preserves the old values and rationale. Fuzz tests still run; exact gas comparison covers deterministic tests.
 - Slither 0.10.4 reports zero findings after narrow source annotations explain four reviewed findings: validation selection remains owned by the ValidationModule, zero revokes the designated relayer, and artifact timestamps are metadata rather than authorization/existence conditions. Existing entropy and governance assumptions remain subject to independent review.
 - **27 indexer tests** pass with **92.50% lines/statements, 90.24% branches, and 94.66% functions**, including ordered finality-aware live replay and failure retries. Normalize PageRank when the graph grows and stop on external-validator failure; preserve the previous verified metrics. A compiled runtime against a localhost chain verifies migrations, ingestion of three actual artifact events, graceful shutdown, and restart without duplicates. Deep reorganization/orphan reconciliation is still not established.
-- Repair deployment-script config compatibility, module-relative paths, artifact lookup, ethers v6 chain lookup, dependency-code checks, strict failure reporting, and comment-preserving atomic environment updates. Six helper regressions and script type-checking pass. Add an explicitly local fixture bootstrap and repair the single-stack Compose/Cypress path, pinned dependency images, localhost bindings, writable data volumes, Python runtime, and Prisma migrations. Docker execution still requires CI confirmation in this environment.
+- Repair deployment-script config compatibility, module-relative paths, artifact lookup, ethers v6 chain lookup, dependency-code checks, strict failure reporting, and comment-preserving atomic environment updates. Six helper regressions and script type-checking pass. Add an explicitly local fixture bootstrap and repair the single-stack Compose/Cypress path, pinned dependency images, localhost bindings, writable data volumes, Python runtime, and Prisma migrations.
+
+At `a87ff65b813f4ba2326eadc6353943fd17555001`, [CULTURE CI](https://github.com/MontrealAI/AGIJobsv0/actions/runs/37150017071) passes all six jobs. The actual Docker stack starts five healthy services, validates NetworkX influence results, indexes three on-chain seed artifacts, and rejects unauthenticated writes. The Chrome 154 UI smoke passes; its provider responses are explicitly intercepted fixtures. [Core CI](https://github.com/MontrealAI/AGIJobsv0/actions/runs/37150017016), contract CI, fuzzing, static analysis, container builds, and the root browser workflows also pass at that commit. The separate ASI Take-Off local workflow exposed a stale RPC nonce during rapid transactions; the shared AURORA driver now disables the provider's short-lived cache and awaits asynchronous impersonated-signer lookup. Subsequent-head CI must be evaluated separately.
 
 These results supersede the earlier gas and coverage failures below. They do not establish real provider integrations, paid settlement, independent validator operation, an authorized release signature, or a mainnet deployment.
 

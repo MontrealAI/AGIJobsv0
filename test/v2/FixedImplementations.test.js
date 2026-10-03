@@ -133,6 +133,16 @@ describe('Fixed implementations production compatibility', function () {
     expect(await ethers.provider.getTransactionCount(owner.address)).to.equal(
       before
     );
+    await expect(
+      deployer.deployWithoutTaxPolicy(econ, ids, governance.address)
+    ).to.be.revertedWith('tax policy mode');
+    expect(await deployer.deployed()).to.equal(false);
+    expect(await registry.paused()).to.equal(true);
+    expect(
+      Array.from(
+        await deployer.deploy.staticCall(econ, ids, governance.address)
+      )
+    ).to.deep.equal(staged.slice(0, 13));
     const receipt = await (
       await deployer.deploy(econ, ids, governance.address)
     ).wait();
