@@ -1,6 +1,8 @@
 name: torch-tests
 
 on:
+  push:
+    branches: [main]
   pull_request:
     paths:
       - 'demo/Tiny-Recursive-Model-v0/**'

@@ -4,5 +4,5 @@ export const cultureRegistryAbi = [
 ];
 
 export const selfPlayArenaAbi = [
-  'event RoundFinalized(uint256 indexed roundId, uint32 previousDifficulty, int32 difficultyDelta, uint32 newDifficulty, uint64 finalizedAt)',
+  'event RoundFinalized(uint256 indexed roundId, uint32 previousDifficulty, int32 difficultyDelta, uint32 newDifficulty, uint32 observedSuccessRateBps, uint256 rewardsDistributed, uint32 eloEventId, bool validationPassed, uint64 finalizedAt)',
 ];

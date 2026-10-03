@@ -141,8 +141,8 @@ export const resolvers: {
     },
 
     async artifacts(_parent, args, context) {
-      const limit = args.limit ?? 20;
-      const offset = args.offset ?? 0;
+      const limit = Math.min(Math.max(args.limit ?? 20, 1), 100);
+      const offset = Math.max(args.offset ?? 0, 0);
       const where = args.kind ? { kind: args.kind } : undefined;
       const records = await context.prisma.artifact.findMany({
         where,
@@ -206,8 +206,12 @@ export const resolvers: {
       const nodes: LineageNodeDTO[] = [];
       let currentId: string | null = args.artifactId;
       let depth = 0;
+      const visited = new Set<string>();
 
       while (currentId) {
+        if (visited.has(currentId))
+          throw new Error('Artifact lineage contains a cycle');
+        visited.add(currentId);
         const artifact = await fetchArtifact(context.prisma, currentId);
         if (!artifact) {
           break;
@@ -221,7 +225,7 @@ export const resolvers: {
     },
 
     async topInfluential(_parent, args, context) {
-      const limit = args.limit ?? 10;
+      const limit = Math.min(Math.max(args.limit ?? 10, 1), 100);
       const records = await context.prisma.artifact.findMany({
         take: limit,
         include: { influence: true },
@@ -398,9 +402,17 @@ function decodeArtifactCursor(
   try {
     const json = Buffer.from(cursor, 'base64url').toString('utf8');
     const payload = JSON.parse(json) as { id: string; timestamp: string };
+    if (
+      typeof payload?.id !== 'string' ||
+      !payload.id ||
+      typeof payload.timestamp !== 'string' ||
+      !Number.isFinite(Date.parse(payload.timestamp))
+    ) {
+      throw new Error('Invalid artifact cursor');
+    }
     return { id: payload.id, timestamp: new Date(payload.timestamp) };
   } catch {
-    return null;
+    throw new Error('Invalid artifact cursor');
   }
 }
 
@@ -443,8 +455,17 @@ function decodeInfluencerCursor(
   try {
     const json = Buffer.from(cursor, 'base64url').toString('utf8');
     const payload = JSON.parse(json) as { artifactId: string; score: number };
+    if (
+      typeof payload?.artifactId !== 'string' ||
+      !payload.artifactId ||
+      typeof payload.score !== 'number' ||
+      !Number.isFinite(payload.score) ||
+      payload.score < 0
+    ) {
+      throw new Error('Invalid influence cursor');
+    }
     return { artifactId: payload.artifactId, score: payload.score };
   } catch {
-    return null;
+    throw new Error('Invalid influence cursor');
   }
 }

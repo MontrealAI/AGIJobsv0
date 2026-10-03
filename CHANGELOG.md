@@ -12,6 +12,8 @@ Release candidate prepared on 2026-10-03; publication remains subject to the rel
 - Add public-ABI, storage-layout, domain-separation, authorization, direct-call, and deployment-resumption regressions.
 - Preserve no-compile demos with bundled implementation bytecode and artifact-drift checks; repair the owner rehearsal CLI entrypoint.
 - Enforce Slither's actual SARIF security severity and document scoped delegation exceptions and existing randomness risks.
+- Align CI tests with the production compiler profile, isolate Node test suites from Mocha, and use portable provenance artifact names for application images.
+- Repair CULTURE indexer event decoding and recovery, reject cyclic lineage and malformed cursors, bound external validation, and compute inequality across the full graph; raise measured indexer coverage above the existing 90% gate through behavioral tests.
 
 - Enforce exact-commit release CI, contract verification, scan-before-signing, draft-before-publication, and prerelease-safe image promotion; update Cosign/provenance verification and portable checksums.
 - Close the CULTURE studio API coverage gap with error/default-path tests and fix arena lint in clean installations.

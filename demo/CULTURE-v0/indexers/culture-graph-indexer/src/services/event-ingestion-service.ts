@@ -103,7 +103,8 @@ export class EventIngestionService {
       return;
     }
 
-    this.provider.removeAllListeners();
+    await this.provider.removeAllListeners();
+    this.provider.destroy();
     this.provider = null;
   }
 
@@ -133,11 +134,11 @@ export class EventIngestionService {
       },
     });
 
-    await this.recordCursor(event.blockNumber, event.logIndex);
     const affected = [event.artifactId, event.parentId ?? undefined].filter(
       (value): value is string => typeof value === 'string',
     );
     await this.influence.recompute(affected);
+    await this.recordCursor(event.blockNumber, event.logIndex);
   }
 
   async handleArtifactCited(event: ArtifactCitedEvent): Promise<void> {
@@ -162,8 +163,8 @@ export class EventIngestionService {
       },
     });
 
-    await this.recordCursor(event.blockNumber, event.logIndex);
     await this.influence.recompute([event.fromArtifactId, event.toArtifactId]);
+    await this.recordCursor(event.blockNumber, event.logIndex);
   }
 
   async handleRoundFinalized(event: RoundFinalizedEvent): Promise<void> {
@@ -385,6 +386,8 @@ export class EventIngestionService {
           }
         } catch (error) {
           console.error('Failed to backfill log', error);
+          // Do not advance beyond a failed event: the next attempt must replay it.
+          throw error;
         }
       }
     }

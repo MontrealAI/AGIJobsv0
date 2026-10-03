@@ -35,7 +35,7 @@ const configSchema = z.object({
   influenceDampingFactor: z
     .string()
     .transform((value) => Number.parseFloat(value))
-    .pipe(z.number().positive())
+    .pipe(z.number().positive().max(1))
     .optional(),
   influenceIterations: z
     .string()

@@ -1,5 +1,7 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
+import type { PrismaClient } from '@prisma/client';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import { prisma } from '../db/prisma.js';
@@ -38,34 +40,43 @@ interface WeeklyMetrics {
   };
 }
 
-async function main(): Promise<void> {
-  const argv = await yargs(hideBin(process.argv))
-    .option('output', {
-      type: 'string',
-      describe: 'Output path for weekly metrics JSON file',
-    })
-    .help()
-    .parseAsync();
+export async function main(
+  args = hideBin(process.argv),
+  client: PrismaClient = prisma,
+): Promise<void> {
+  try {
+    const argv = await yargs(args)
+      .option('output', {
+        type: 'string',
+        describe: 'Output path for weekly metrics JSON file',
+      })
+      .help()
+      .parseAsync();
 
-  const config = loadConfig();
-  const influence = new InfluenceService(
-    prisma,
-    {},
-    new NetworkXInfluenceValidator(),
-  );
-  await influence.recompute();
+    const config = loadConfig();
+    const influence = new InfluenceService(
+      client,
+      {},
+      new NetworkXInfluenceValidator(),
+    );
+    await influence.recompute();
 
-  const outputPath = resolve(argv.output ?? config.weeklyMetricsOutput);
-  const metrics = await computeMetrics(config.networkName);
+    const outputPath = resolve(argv.output ?? config.weeklyMetricsOutput);
+    const metrics = await computeMetrics(config.networkName, client);
 
-  await mkdir(dirname(outputPath), { recursive: true });
-  await writeFile(outputPath, JSON.stringify(metrics, null, 2));
-  console.log(`✅ wrote culture weekly metrics to ${outputPath}`);
-  await prisma.$disconnect();
+    await mkdir(dirname(outputPath), { recursive: true });
+    await writeFile(outputPath, JSON.stringify(metrics, null, 2));
+    console.log(`✅ wrote culture weekly metrics to ${outputPath}`);
+  } finally {
+    await client.$disconnect();
+  }
 }
 
-async function computeMetrics(network: string): Promise<WeeklyMetrics> {
-  const now = new Date();
+export async function computeMetrics(
+  network: string,
+  client: PrismaClient = prisma,
+  now = new Date(),
+): Promise<WeeklyMetrics> {
   const { year, week } = isoWeek(now);
   const weekString = `${year}-W${String(week).padStart(2, '0')}`;
   const weekStart = new Date(
@@ -81,27 +92,29 @@ async function computeMetrics(network: string): Promise<WeeklyMetrics> {
     kindGroups,
     topArtifacts,
     roundStats,
+    allInfluence,
   ] = await Promise.all([
-    prisma.artifact.count(),
-    prisma.artifact.count({ where: { timestamp: { gte: weekStart } } }),
-    prisma.artifact.count({ where: { parentId: { not: null } } }),
-    prisma.influenceMetric.aggregate({
+    client.artifact.count(),
+    client.artifact.count({ where: { timestamp: { gte: weekStart } } }),
+    client.artifact.count({ where: { parentId: { not: null } } }),
+    client.influenceMetric.aggregate({
       _avg: { citationCount: true },
       _max: { lineageDepth: true },
     }),
-    prisma.artifact.groupBy({ by: ['kind'], _count: { kind: true } }),
-    prisma.artifact.findMany({
+    client.artifact.groupBy({ by: ['kind'], _count: { kind: true } }),
+    client.artifact.findMany({
       take: 10,
       orderBy: { influence: { score: 'desc' } },
       include: { influence: true },
     }),
-    prisma.roundFinalization.findMany({
+    client.roundFinalization.findMany({
       where: { finalizedAt: { gte: weekStart } },
       orderBy: { finalizedAt: 'desc' },
     }),
+    client.influenceMetric.findMany({ select: { score: true } }),
   ]);
 
-  const scores = topArtifacts.map((artifact) => artifact.influence?.score ?? 0);
+  const scores = allInfluence.map((metric) => metric.score);
   const gini = scores.length > 0 ? giniCoefficient(scores) : 0;
   const avgCitations = influenceAggregate._avg.citationCount ?? 0;
   const maxLineage = influenceAggregate._max.lineageDepth ?? 0;
@@ -177,8 +190,12 @@ function isoWeek(date: Date): { year: number; week: number } {
   return { year: target.getUTCFullYear(), week };
 }
 
-main().catch(async (error) => {
-  console.error('Failed to generate weekly metrics', error);
-  await prisma.$disconnect();
-  process.exit(1);
-});
+if (
+  process.argv[1] &&
+  import.meta.url === pathToFileURL(resolve(process.argv[1])).href
+) {
+  main().catch((error) => {
+    console.error('Failed to generate weekly metrics', error);
+    process.exitCode = 1;
+  });
+}

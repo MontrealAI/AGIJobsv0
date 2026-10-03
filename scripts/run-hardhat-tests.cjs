@@ -161,11 +161,10 @@ const hardhatTimeoutMs = Number.isFinite(parsedHardhatTimeout) && parsedHardhatT
   ? parsedHardhatTimeout
   : 900000;
 
-// Speed up test-time compilation by allowing the Solidity optimizer and viaIR
-// settings to be relaxed when HARDHAT_FAST_COMPILE is set. Default to the
-// faster profile during CI/unit runs to keep the suite responsive.
+// Test the same optimizer profile that is deployed and bundled in demos.
+// A faster profile remains an explicit local opt-in.
 if (!env.HARDHAT_FAST_COMPILE) {
-  env.HARDHAT_FAST_COMPILE = '1';
+  env.HARDHAT_FAST_COMPILE = '0';
 }
 if (
   env.HARDHAT_JOBREGISTRY_VIA_IR === undefined

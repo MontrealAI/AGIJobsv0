@@ -114,15 +114,21 @@ if __name__ == "__main__":
 export interface NetworkXInfluenceValidatorOptions {
   readonly pythonCommand?: string;
   readonly toleranceMultiplier?: number;
+  readonly timeoutMs?: number;
+  readonly maxOutputBytes?: number;
 }
 
 export class NetworkXInfluenceValidator implements InfluenceValidator {
   private readonly pythonCommand: string;
   private readonly toleranceMultiplier: number;
+  private readonly timeoutMs: number;
+  private readonly maxOutputBytes: number;
 
   constructor(options: NetworkXInfluenceValidatorOptions = {}) {
     this.pythonCommand = options.pythonCommand ?? 'python3';
     this.toleranceMultiplier = options.toleranceMultiplier ?? 5;
+    this.timeoutMs = options.timeoutMs ?? 30_000;
+    this.maxOutputBytes = options.maxOutputBytes ?? 1_048_576;
   }
 
   async validate(
@@ -132,15 +138,36 @@ export class NetworkXInfluenceValidator implements InfluenceValidator {
   ): Promise<InfluenceValidationReport> {
     try {
       const result = await this.runPython(graph, config);
+      if (
+        !result ||
+        typeof result.engine !== 'string' ||
+        !result.engine ||
+        !result.scores ||
+        typeof result.scores !== 'object' ||
+        Array.isArray(result.scores)
+      ) {
+        throw new Error('Invalid NetworkX validator response');
+      }
       const externalScores = new Map<string, number>();
       for (const [artifactId, value] of Object.entries(result.scores)) {
-        externalScores.set(artifactId, Number(value));
+        if (
+          typeof value !== 'number' ||
+          !Number.isFinite(value) ||
+          value < 0 ||
+          value > 1
+        ) {
+          throw new Error('Invalid NetworkX score');
+        }
+        externalScores.set(artifactId, value);
       }
 
       let maxDelta = 0;
       for (const node of graph.nodes) {
         const internal = scores.get(node) ?? 0;
-        const external = externalScores.get(node) ?? 0;
+        const external = externalScores.get(node);
+        if (external === undefined || !Number.isFinite(internal)) {
+          throw new Error(`Missing or non-finite influence score for ${node}`);
+        }
         const delta = Math.abs(internal - external);
         if (delta > maxDelta) {
           maxDelta = delta;
@@ -184,25 +211,50 @@ export class NetworkXInfluenceValidator implements InfluenceValidator {
 
       let stdout = '';
       let stderr = '';
+      let outputBytes = 0;
+      let settled = false;
+      const finish = (error?: Error, result?: PythonValidationResult) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        if (error) reject(error);
+        else resolve(result!);
+      };
+      const fail = (error: Error) => {
+        finish(error);
+        child.kill('SIGKILL');
+      };
+      const timer = setTimeout(
+        () => fail(new Error('NetworkX validator timed out')),
+        this.timeoutMs,
+      );
+      timer.unref();
+      const acceptOutput = (chunk: string) => {
+        outputBytes += Buffer.byteLength(chunk);
+        if (outputBytes <= this.maxOutputBytes) return true;
+        fail(new Error('NetworkX validator output exceeded limit'));
+        return false;
+      };
 
       child.stdout.setEncoding('utf8');
       child.stderr.setEncoding('utf8');
 
       child.stdout.on('data', (chunk) => {
-        stdout += chunk;
+        if (acceptOutput(chunk)) stdout += chunk;
       });
 
       child.stderr.on('data', (chunk) => {
-        stderr += chunk;
+        if (acceptOutput(chunk)) stderr += chunk;
       });
 
       child.on('error', (processError) => {
-        reject(processError);
+        finish(processError);
       });
+      child.stdin.on('error', (error) => fail(error));
 
       child.on('close', (code) => {
         if (code !== 0) {
-          reject(
+          finish(
             new Error(`NetworkX validator exited with code ${code}: ${stderr}`),
           );
           return;
@@ -210,9 +262,9 @@ export class NetworkXInfluenceValidator implements InfluenceValidator {
 
         try {
           const parsed = JSON.parse(stdout) as PythonValidationResult;
-          resolve(parsed);
+          finish(undefined, parsed);
         } catch (parseError) {
-          reject(
+          finish(
             new Error(
               `Failed to parse NetworkX validator output: ${
                 stdout || '[empty]'
