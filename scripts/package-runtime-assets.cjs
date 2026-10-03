@@ -16,6 +16,7 @@ const out = path.join(root, outputs[target]);
 const assets = ['config/agents.json', 'config/agialpha.json'];
 if (target === 'gateway')
   assets.push(
+    'agent-gateway/ipfs-runtime.cjs',
     'scripts/config/index.js',
     'scripts/utils/parseDuration.js',
     'agent-gateway/protos/agent_gateway.proto',

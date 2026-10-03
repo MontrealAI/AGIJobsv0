@@ -118,6 +118,8 @@
     "ws": "^8.18.3"
   },
   "scripts": {
+    "production:rehearse": "node scripts/production/rehearse.cjs",
+    "production:verify-rehearsal": "node scripts/production/evidence.cjs",
     "abi:diff": "node scripts/ci/check-abi-diff.js",
     "abi:export": "node scripts/ci/export-abis.js",
     "doctor:node": "node scripts/check-node.js",

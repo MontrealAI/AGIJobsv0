@@ -18,6 +18,7 @@ config/*.hardhat.json
 reports/sbom/
 reports/load-sim/
 reports/python-coverage/
+reports/production-rehearsal/
 monitoring/sentinel-alerts.log
 
 .next/
