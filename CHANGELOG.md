@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## v2.0.0
 
+- Include all ten fixed implementations in release manifests and explorer verification; reject incomplete or cross-network verification inventories and label dry runs as plans.
+
 Release candidate prepared on 2026-10-03; publication remains subject to the release gates.
 
 - Repair CULTURE signed-difficulty boundaries, restore lifecycle/security tests, enforce per-contract coverage, and refresh the gas baseline with an explicit historical review.

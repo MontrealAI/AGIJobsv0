@@ -6,6 +6,30 @@ const os = require('os');
 const path = require('path');
 const { spawnSync } = require('child_process');
 
+function validateVerificationInventory(manifest, config, network) {
+  if (manifest.network?.name !== network || config.network !== network) {
+    throw new Error('Verification network must match both the manifest and configuration');
+  }
+  const contracts = Array.isArray(config.contracts) ? config.contracts : [];
+  const entries = Object.keys(manifest.contracts || {});
+  if (!contracts.length || !entries.length) throw new Error('Verification inventory must not be empty');
+  const covered = new Set();
+  for (const contract of contracts) {
+    const key = contract.manifestKey || contract.name;
+    if (!entries.includes(key)) throw new Error(`Verification contract absent from manifest: ${key}`);
+    if (covered.has(key)) throw new Error(`Duplicate verification contract: ${key}`);
+    if (contract.skip) throw new Error(`Release verification cannot skip ${key}`);
+    const address = resolveAddress(contract, manifest);
+    if (!/^0x[0-9a-fA-F]{40}$/.test(address || '') || isZeroAddress(address)) {
+      throw new Error(`Verification address missing, malformed, or zero: ${key}`);
+    }
+    covered.add(key);
+  }
+  for (const key of entries) {
+    if (!covered.has(key)) throw new Error(`Contract omitted from verification: ${key}`);
+  }
+}
+
 function parseArgs(argv) {
   const args = {
     network: 'mainnet',
@@ -204,6 +228,7 @@ function main() {
     const options = parseArgs(process.argv.slice(2));
     const manifest = loadJson(options.manifest);
     const config = loadJson(options.config);
+    validateVerificationInventory(manifest, config, options.network);
 
     const explorer = config.explorer || {};
     const apiKey = resolveApiKey(explorer);
@@ -308,7 +333,7 @@ function main() {
 
       summary.contracts.push({
         name: contract.name,
-        status: alreadyVerified ? 'already_verified' : 'verified',
+        status: options.dryRun ? 'planned' : alreadyVerified ? 'already_verified' : 'verified',
         address,
         fullyQualified: contract.fullyQualified || null,
       });
@@ -323,4 +348,5 @@ function main() {
   }
 }
 
-main();
+if (require.main === module) main();
+module.exports = { validateVerificationInventory };

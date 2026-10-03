@@ -3,6 +3,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const implementationModules = require('../../config/implementation-modules.json');
 
 function usage() {
   return `Usage: node scripts/release/validate-manifest.js [options]\n\n` +
@@ -152,6 +153,12 @@ function ensureContracts(manifest, options, errors) {
     errors.push('Manifest contract inventory is empty.');
     return;
   }
+  for (const [controller, modules] of Object.entries(implementationModules)) {
+    if (!names.includes(controller)) continue;
+    for (const name of modules) {
+      if (!names.includes(name)) errors.push(`Manifest omits ${controller} implementation ${name}.`);
+    }
+  }
   for (const name of names.sort()) {
     const entry = manifest.contracts[name];
     if (!entry || typeof entry !== 'object') {
@@ -174,8 +181,8 @@ function ensureContracts(manifest, options, errors) {
     if (options.requireAddresses && !options.optionalContracts.has(name)) {
       if (!entry.addresses || typeof entry.addresses !== 'object') {
         errors.push(`Manifest missing address records for ${name}.`);
-      } else if (!isNonEmptyString(entry.addresses.config) || isZeroAddress(entry.addresses.config)) {
-        errors.push(`Manifest config address for ${name} is missing or zero.`);
+      } else if (!/^0x[0-9a-fA-F]{40}$/.test(entry.addresses.config || '') || isZeroAddress(entry.addresses.config)) {
+        errors.push(`Manifest config address for ${name} is missing, malformed, or zero.`);
       }
     }
   }
@@ -229,4 +236,5 @@ function main() {
   }
 }
 
-main();
+if (require.main === module) main();
+module.exports = { ensureContracts };

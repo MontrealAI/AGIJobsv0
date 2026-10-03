@@ -123,6 +123,8 @@ The review continued from merged main `ff8db39d4e2a47885d1a63a24925a8764aa1181f`
 
 These results supersede the earlier gas and coverage failures below. They do not establish real provider integrations, paid settlement, independent validator operation, an authorized release signature, or a mainnet deployment.
 
+The release inventory now includes all ten fixed implementations, and both explorer configurations verify them with their empty constructor arguments. Record their actual addresses under `implementations` (keyed by contract name) in `docs/deployment-addresses.json`. Manifest validation rejects omitted implementations and malformed addresses; explorer verification rejects empty, partial, duplicate, skipped, or cross-network inventories. Dry-run results are labeled `planned`, never `verified`. Six release-inventory regressions cover these gates. Existing example address books and controller constructor-argument files still require reviewed deployment evidence; the legacy deployment scripts' verification argument lists also require reconciliation with actual creation transactions before commissioning.
+
 ### Main-branch follow-up after PR #3876
 
 PR #3876 was merged at `f83334bdb636cbe77f17d5b510da198ccf8d061f`, whose tree exactly matches the reviewed `348a9235` candidate. No release or tag was created. Main-branch checks exposed two further CI-specific defects: the test launcher silently switched to a 50-run optimizer profile after the production build, and SLSA's default artifact filename inherited a forbidden colon from image tags. The follow-up makes the production profile the test default, keeps Node test suites in their dedicated CI runners, and supplies valid provenance filenames without changing the attested image subjects.
