@@ -6,19 +6,19 @@ Reviewed baseline: `7049353e1ee13c19b97365b269f9a9ac1800434c`, with the accompan
 
 ## Verified locally
 
-| Check | Result |
-| --- | --- |
-| Supported root toolchain | Node 22.23.3, npm 10.8.2; toolchain and lockfile checks pass |
-| Solidity compilation | 253 source files compile with the repository's default optimizer/viaIR settings |
-| Full `npm test` | Pretest checks and 571 Hardhat tests pass |
-| Python repository suite | 246 passed, 1 skipped |
-| Focused recursive-model suite | 13 passed |
-| New release guard regressions | 12 passed: signed/unsigned/untrusted/wrong-commit tags, shell metacharacters, malformed keys, and bytecode-size boundaries and empty artifacts |
-| Gateway and orchestrator builds and runtime packaging | Pass; 4 packaging regressions pass |
-| Owner console production build | Pass |
-| CI context synchronization, summary coverage, formatting and targeted lint | Pass |
-| Demo gallery | 41 runnable suites exercised; three initial failures repaired and all affected suites pass on rerun |
-| Root README flowcharts | All 17 Mermaid blocks identical to the reviewed baseline |
+| Check                                                                      | Result                                                                                                                                         |
+| -------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| Supported root toolchain                                                   | Node 22.23.3, npm 10.8.2; toolchain and lockfile checks pass                                                                                   |
+| Solidity compilation                                                       | 253 source files compile with the repository's default optimizer/viaIR settings                                                                |
+| Full `npm test`                                                            | Pretest checks and 571 Hardhat tests pass                                                                                                      |
+| Python repository suite                                                    | 246 passed, 1 skipped                                                                                                                          |
+| Focused recursive-model suite                                              | 13 passed                                                                                                                                      |
+| New release guard regressions                                              | 12 passed: signed/unsigned/untrusted/wrong-commit tags, shell metacharacters, malformed keys, and bytecode-size boundaries and empty artifacts |
+| Gateway and orchestrator builds and runtime packaging                      | Pass; 4 packaging regressions pass                                                                                                             |
+| Owner console production build                                             | Pass                                                                                                                                           |
+| CI context synchronization, summary coverage, formatting and targeted lint | Pass                                                                                                                                           |
+| Demo gallery                                                               | 41 runnable suites exercised; three initial failures repaired and all affected suites pass on rerun                                            |
+| Root README flowcharts                                                     | All 17 Mermaid blocks identical to the reviewed baseline                                                                                       |
 
 The demo runner skips some suites when their independent toolchains are absent. Foundry and Prisma-dependent tests were not run here; the Phase-8 browser tests were skipped because Chromium was unavailable. A successful aggregate run must not be described as browser or Foundry validation. Docker is unavailable in the local environment, so container builds and vulnerability scans require the pull request's container workflow.
 
@@ -30,18 +30,19 @@ The demo runner skips some suites when their independent toolchains are absent. 
 - The container workflow now uses supported primary base images and a current Trivy scanner, gives its matrix jobs stable required-context names, scans PR builds, and scans both published architectures before promoting a candidate to `latest`. Existing application-library scans remain advisory; green OS scans are not a complete dependency-security sign-off.
 - Release verification parses actual OpenSSH public keys, invokes Git without shell interpolation, checks trust and the checkout commit, and applies to manual releases too. Invalid placeholder signing bytes no longer pass validation.
 - Production releases and mainnet preparation enforce EIP-170 runtime and EIP-3860 initcode limits. Invalid or empty Safe-plan JSON is no longer replaced with a successful-looking empty object.
+- The CULTURE CI dependency cache now resolves pnpm inside its own workspace, after Node and Corepack setup. The root npm package-manager declaration had blocked setup before any demo checks ran.
 - Demo tests isolate inherited environment variables and network probes. The reasoner subprocess disables host startup customizations with Python `-I -S`. Its tests use the configured default memory allowance and separately assert failure under memory exhaustion. This subprocess is still a trusted demonstration harness, not a security boundary for arbitrary hostile programs.
 
 ## Mainnet size gate
 
 Run `npm run compile`, then `npm run release:check-size`. The latter currently exits **1**, intentionally. It examines 56 non-mock deployable v2 artifacts from this build.
 
-| Contract | Runtime bytes | Runtime limit | Initcode bytes | Initcode limit |
-| --- | ---: | ---: | ---: | ---: |
-| JobRegistry | 48,855 | 24,576 | 51,813 | 49,152 |
-| StakeManager | 45,337 | 24,576 | 46,928 | 49,152 |
-| ValidationModule | 28,199 | 24,576 | 29,925 | 49,152 |
-| Deployer | 234,082 | 24,576 | 234,207 | 49,152 |
+| Contract         | Runtime bytes | Runtime limit | Initcode bytes | Initcode limit |
+| ---------------- | ------------: | ------------: | -------------: | -------------: |
+| JobRegistry      |        48,855 |        24,576 |         51,813 |         49,152 |
+| StakeManager     |        45,337 |        24,576 |         46,928 |         49,152 |
+| ValidationModule |        28,199 |        24,576 |         29,925 |         49,152 |
+| Deployer         |       234,082 |        24,576 |        234,207 |         49,152 |
 
 The local Hardhat network sets `allowUnlimitedContractSize: true`. This supports development tests but masks an Ethereum deployment constraint. Constructor arguments also contribute to actual initcode size; passing the artifact-only size gate is necessary, not sufficient. The gate does not verify artifact freshness: release workflows compile first.
 
