@@ -5,8 +5,9 @@ WORKDIR /app
 ENV NODE_ENV=production
 
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends ca-certificates curl python3 python3-networkx \
-  && rm -rf /var/lib/apt/lists/*
+  && apt-get install -y --no-install-recommends ca-certificates curl python3 python3-networkx python3-scipy \
+  && rm -rf /var/lib/apt/lists/* \
+  && python3 -c 'import networkx as nx; assert abs(sum(nx.pagerank(nx.path_graph(3)).values()) - 1) < 1e-8'
 
 FROM base AS build
 ENV NODE_ENV=development
