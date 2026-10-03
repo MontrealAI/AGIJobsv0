@@ -73,6 +73,10 @@ services:
       CYPRESS_INSTALL_BINARY: '0'
       COREPACK_HOME: /tmp/culture-corepack
       NPM_CONFIG_CACHE: /tmp/culture-npm-cache
+      XDG_CACHE_HOME: /tmp/culture-cache
+      XDG_DATA_HOME: /tmp/culture-data
+      XDG_CONFIG_HOME: /tmp/culture-config
+      CI: 'true'
     volumes:
       - ../..:/workspace
       - culture_node_modules:/workspace/node_modules
