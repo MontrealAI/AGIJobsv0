@@ -207,6 +207,7 @@ jobs:
     uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.0.0
     with:
       base64-subjects: ${{ needs.console.outputs.subjects }}
+      provenance-name: owner-console-${{ github.sha }}.intoto.jsonl
 
   provenance-portal:
     if: github.ref == 'refs/heads/main'
@@ -218,3 +219,4 @@ jobs:
     uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.0.0
     with:
       base64-subjects: ${{ needs.portal.outputs.subjects }}
+      provenance-name: webapp-${{ github.sha }}.intoto.jsonl

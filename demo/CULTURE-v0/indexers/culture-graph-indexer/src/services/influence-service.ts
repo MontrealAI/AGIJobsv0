@@ -55,9 +55,8 @@ export class InfluenceService {
     const citationCounts = this.computeCitationCounts(artifacts);
     const lineageDepths = this.computeLineageDepths(artifacts);
 
-    await this.persistMetrics(artifacts, scores, citationCounts, lineageDepths);
-
     await this.runValidation(artifacts, scores);
+    await this.persistMetrics(artifacts, scores, citationCounts, lineageDepths);
 
     return { scores, citationCounts, lineageDepths };
   }

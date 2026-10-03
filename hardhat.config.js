@@ -4,6 +4,30 @@ require('@nomicfoundation/hardhat-toolbox');
 require('hardhat-gas-reporter');
 require('solidity-coverage');
 require('hardhat-contract-sizer');
+const path = require('node:path');
+const { subtask } = require('hardhat/config');
+const {
+  TASK_TEST_GET_TEST_FILES,
+} = require('hardhat/builtin-tasks/task-names');
+
+// node:test suites have their own CI steps and must not be loaded by Mocha.
+// In particular, packaging tests run only after both services are built.
+subtask(TASK_TEST_GET_TEST_FILES).setAction(async (args, _hre, runSuper) => {
+  const files = await runSuper(args);
+  const scriptTests = path.join(__dirname, 'test', 'scripts') + path.sep;
+  return files.filter((file) => {
+    if (
+      file ===
+      path.join(__dirname, 'test', 'hamiltonian-monitor.config.test.js')
+    )
+      return false;
+    if (!file.startsWith(scriptTests)) return true;
+    return (
+      !file.endsWith('.cjs') &&
+      path.basename(file) !== 'dispute-overloads.test.js'
+    );
+  });
+});
 
 function parseMochaReporterOptions(name) {
   const raw = process.env[name];

@@ -50,7 +50,7 @@ The CULTURE gas snapshot is stale, and the lifecycle (682,540 gas versus 500,000
 
 ## Release publication follow-up
 
-Before the modular refactor below, a subsequent release review confirmed that the authorized-signers check and production size gate both failed. No tag or release was published, and the changes remain in PR #3876. The current public repository has no release records or remote tags; no version has been invented to conceal the blocked state.
+Before the modular refactor below, a subsequent release review confirmed that the authorized-signers check and production size gate both failed. At that stage, no tag or release was published and the changes were still in PR #3876. The public repository had no release records or remote tags; no version was invented to conceal the blocked state. The main-branch follow-up below records the subsequent merge.
 
 The release workflow now requires successful main-branch CI for its exact commit, a matching signed-tag workflow ref, contract verification before container/npm publication, and scans of both image architectures before signing immutable digests. GitHub assets stay in draft until image promotion succeeds. Prereleases cannot move `latest`, and the separate container workflow no longer promotes tag builds. Current Cosign 3.1.3 bundle signing preserves the detached signature/certificate assets, adds the complete verification bundle, and uses the required attestation permission. Downloaded checksums no longer require a `dist/` subdirectory. The signing guide now uses valid SSH registry instructions and the correct GitHub provenance verification command.
 
@@ -109,6 +109,18 @@ Fresh-checkout CI follow-up:
 The root version and changelog prepare **v2.0.0** because constructor setup and whole-stack deployment change. No release or signed tag has been published. The authorized-signers check still rejects the committed example keys. At the prior PR head `c420ecc7caf2b731eaa40d48fccebcc03dbd82a4`, CULTURE CI still failed; new candidate CI must be evaluated on its own commit.
 
 ## Remaining production work
+
+### Main-branch follow-up after PR #3876
+
+PR #3876 was merged at `f83334bdb636cbe77f17d5b510da198ccf8d061f`, whose tree exactly matches the reviewed `348a9235` candidate. No release or tag was created. Main-branch checks exposed two further CI-specific defects: the test launcher silently switched to a 50-run optimizer profile after the production build, and SLSA's default artifact filename inherited a forbidden colon from image tags. The follow-up makes the production profile the test default, keeps Node test suites in their dedicated CI runners, and supplies valid provenance filenames without changing the attested image subjects.
+
+The CULTURE indexer now passes its existing coverage thresholds with **25 tests**, **93.40% lines/statements**, **91.76% branches**, and **95.94% functions**. Its production build and lint pass. Tests exercise the real Fastify/GraphQL API and SQLite migrations/data, pagination and lineage, ordered history replay and retries, checksums/timers, external-process failures, and weekly analytics. Startup and packaging entry scripts are still not exercised by this suite.
+
+These tests accompany concrete corrections: the current nine-field `RoundFinalized` ABI replaces the stale five-field signature; failed backfills stop before later events and advance their cursor only after successful computation; rejected influence results are not persisted; cyclic lineage and malformed cursors fail explicitly; Python validation has time/output limits and rejects invalid scores; and influence inequality uses all metrics instead of only the displayed top ten.
+
+The follow-up passes all root pretest checks and **582 Hardhat tests** with the production compiler profile, plus **42 standalone Node regressions**. The targeted bytecode/bundle compatibility checks also pass after a clean 267-source compile. Torch CI now runs on every main-branch push so the release gate can obtain evidence for the exact commit. Live event ordering and orphaned-event reconciliation still need commissioning; the historical replay tests do not establish reorganization safety.
+
+The CULTURE Solidity contracts and tests are unchanged from the reviewed main baseline. Re-measurement confirms the existing lifecycle and misconduct costs (682,540 and 612,729 gas), and the committed snapshot references several tests no longer present in that baseline. Gas limits have not been raised to conceal these failures. The snapshot/budget review, contract coverage, real provider integrations, and Compose commissioning remain required, alongside authentic release signing and deployment configuration.
 
 1. **Review the modular deployment architecture.** The four oversized contracts are split and the size gate passes. Review the fixed delegation boundaries and staged deployment, and complete any migration and independent security review required for the intended network. The test evidence does not replace that review.
 2. **Configure authentic release trust.** Replace the example registry with authorized SSH public keys, verify fingerprints through the maintainer's process, and sign the reviewed tag. No signing identity has been invented or installed by this change.
