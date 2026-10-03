@@ -334,7 +334,7 @@ jobs:
     needs:
       - python_unit
       - python_integration
-    if: ${{ always() }}
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     env:
@@ -434,7 +434,7 @@ jobs:
     name: Owner control assurance
     needs:
       - lint
-    if: ${{ always() }}
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
@@ -499,7 +499,7 @@ jobs:
   foundry:
     name: Foundry
     needs: tests
-    if: ${{ always() }}
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
@@ -544,7 +544,7 @@ jobs:
   coverage:
     name: Coverage thresholds
     needs: tests
-    if: ${{ always() }}
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
@@ -1204,7 +1204,7 @@ jobs:
     name: Invariant tests
     runs-on: ubuntu-24.04
     needs: tests
-    if: ${{ always() }}
+    if: ${{ !cancelled() }}
     timeout-minutes: 60
     steps:
       - name: Harden runner

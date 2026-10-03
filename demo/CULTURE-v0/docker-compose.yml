@@ -173,7 +173,7 @@ services:
     ports:
       - "127.0.0.1:4173:4173"
     healthcheck:
-      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:4173/healthz"]
+      test: ["CMD", "wget", "-q", "-O", "-", "http://127.0.0.1:4173/healthz"]
       interval: 15s
       timeout: 5s
       retries: 10

@@ -20,6 +20,10 @@ permissions:
   actions: write
   checks: read
 
+concurrency:
+  group: culture-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   FORCE_COLOR: '1'
   COVERAGE_MIN: '90'
@@ -312,7 +316,11 @@ jobs:
         env:
           COMPOSE_PROJECT_NAME: culture-ci
           CULTURE_ENV_FILE: .env.local
-        run: docker compose --env-file .env.local logs --no-color
+        run: |
+          docker compose --env-file .env.local logs --no-color
+          for CONTAINER in $(docker compose --env-file .env.local ps --all --quiet); do
+            docker inspect --format '{{.Name}} {{json .State.Health}}' "$CONTAINER"
+          done
       - name: Shutdown stack
         if: always()
         working-directory: demo/CULTURE-v0
