@@ -2,22 +2,20 @@ import { copyFile, chmod, access } from 'node:fs/promises';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import { readFileSync } from 'node:fs';
+import { localStackEnv } from './local-stack-env.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const file = '.env.local';
-const env = {
-  ...process.env,
-  CULTURE_LOCAL_FIXTURES: '1',
-  CULTURE_ENV_FILE: file,
-  LOCAL_UID: String(process.getuid?.() ?? 1000),
-  LOCAL_GID: String(process.getgid?.() ?? 1000),
-  CULTURE_DEPLOY_OUTPUT:
-    '/workspace/demo/CULTURE-v0/config/deployments.local.json',
-};
 const compose = (...args) => {
   const result = spawnSync('docker', ['compose', '--env-file', file, ...args], {
     cwd: root,
-    env,
+    env: localStackEnv(
+      process.env,
+      readFileSync(path.join(root, '.env.example'), 'utf8'),
+      readFileSync(path.join(root, file), 'utf8'),
+      readFileSync(path.join(root, 'docker-compose.yml'), 'utf8')
+    ),
     stdio: 'inherit',
   });
   if (result.error) throw result.error;

@@ -1,6 +1,8 @@
 node_modules/
 # Keep local environment overrides out of version control.
 .env
+demo/CULTURE-v0/.env.local
+demo/CULTURE-v0/config/deployments.local.json
 .venv*/
 artifacts/
 cache/

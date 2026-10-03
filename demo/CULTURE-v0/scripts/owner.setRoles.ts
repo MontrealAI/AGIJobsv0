@@ -85,7 +85,7 @@ async function configureOrchestrators(arenaAddress: string, wallet: Wallet, orch
 }
 
 async function main() {
-  dotenv.config({ path: process.env.CULTURE_ENV_FILE, override: true });
+  dotenv.config({ path: process.env.CULTURE_ENV_FILE });
   const env = EnvSchema.parse(process.env);
   const config = await loadCultureConfig();
   const addresses = parseAddressesBlob(env.AGI_JOBS_CORE_ADDRESSES);

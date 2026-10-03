@@ -4,6 +4,7 @@ const { ethers, artifacts, config } = require('hardhat');
 const modules = require('../../config/implementation-modules.json');
 const {
   deployImplementations,
+  readImplementationAddresses,
 } = require('../../scripts/deploy/implementations.cjs');
 const {
   checkArtifacts,
@@ -127,12 +128,49 @@ describe('Fixed implementations production compatibility', function () {
     expect(await registry.paused()).to.equal(true);
     expect(await stake.minStakeFloor()).to.equal(econ.minStake);
     const before = await ethers.provider.getTransactionCount(owner.address);
+    const creationNames = [];
     expect(
-      await stageProtocol(deployer, ids, governance.address, { econ })
+      await stageProtocol(deployer, ids, governance.address, {
+        econ,
+        onDeployed: async (name, contract, args, source) => {
+          creationNames.push(name);
+          const factory = await ethers.getContractFactory(source);
+          const { data } = await factory.getDeployTransaction(...args);
+          expect(await deployer.componentCodeHashes(ethers.id(name))).to.equal(
+            ethers.keccak256(data)
+          );
+          expect(await contract.getAddress()).to.equal(
+            await deployer.components(ethers.id(name))
+          );
+        },
+      })
     ).to.deep.equal(staged);
+    expect(creationNames).to.have.length(14);
     expect(await ethers.provider.getTransactionCount(owner.address)).to.equal(
       before
     );
+    await expect(
+      deployer.deployWithoutTaxPolicy(econ, ids, governance.address)
+    ).to.be.revertedWith('tax policy mode');
+    expect(await deployer.deployed()).to.equal(false);
+    expect(await registry.paused()).to.equal(true);
+    const inventory = await readImplementationAddresses({
+      StakeManager: staged[0],
+      JobRegistry: staged[1],
+      ValidationModule: staged[2],
+    });
+    expect(Object.keys(inventory).sort()).to.deep.equal(
+      Object.values(modules).flat().sort()
+    );
+    for (const [name, address] of Object.entries(inventory)) {
+      const implementation = await ethers.getContractAt(name, address);
+      expect(await implementation.moduleId()).to.equal(ethers.id(`${name}:v1`));
+    }
+    expect(
+      Array.from(
+        await deployer.deploy.staticCall(econ, ids, governance.address)
+      )
+    ).to.deep.equal(staged.slice(0, 13));
     const receipt = await (
       await deployer.deploy(econ, ids, governance.address)
     ).wait();

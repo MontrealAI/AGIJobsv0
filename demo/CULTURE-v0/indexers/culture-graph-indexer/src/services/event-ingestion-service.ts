@@ -285,14 +285,23 @@ export class EventIngestionService {
     const cursor = await this.prisma.eventCursor.findUnique({
       where: { id: 1 },
     });
+    // Row 1 tracks the last processed event; row 2 tracks fully scanned blocks,
+    // including empty ranges. Never write row 2 until the entire batch succeeds.
+    const scanned = await this.prisma.eventCursor.findUnique({
+      where: { id: 2 },
+    });
     const reorgBuffer = this.config.finalityDepth ?? 0;
     const batchSize = this.config.blockBatchSize ?? 1_000;
     const latestBlock = await this.provider.getBlockNumber();
     const targetBlock = Math.max(latestBlock - reorgBuffer, 0);
 
-    const startingBlock = cursor
-      ? Math.max(cursor.blockNumber - reorgBuffer, 0)
-      : 0;
+    const startingBlock = options.force
+      ? 0
+      : Math.max(
+          (scanned ? scanned.blockNumber + 1 : 0) - reorgBuffer,
+          (cursor?.blockNumber ?? 0) - reorgBuffer,
+          0,
+        );
 
     if (startingBlock > targetBlock) {
       return;
@@ -351,8 +360,8 @@ export class EventIngestionService {
 
         if (
           shouldSkipDuplicates &&
-          blockNumber === cursor?.blockNumber &&
-          logIndex <= (cursor?.logIndex ?? -1)
+          (blockNumber < cursor.blockNumber ||
+            (blockNumber === cursor.blockNumber && logIndex <= cursor.logIndex))
         ) {
           continue;
         }
@@ -378,6 +387,11 @@ export class EventIngestionService {
           throw error;
         }
       }
+      await this.prisma.eventCursor.upsert({
+        where: { id: 2 },
+        create: { id: 2, blockNumber: toBlock, logIndex: -1 },
+        update: { blockNumber: toBlock, logIndex: -1 },
+      });
     }
   }
 }

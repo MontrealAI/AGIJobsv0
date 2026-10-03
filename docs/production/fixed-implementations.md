@@ -27,7 +27,7 @@ With Solidity 0.8.25, viaIR, 200 optimizer runs, and the Cancun EVM target:
 | JobRegistry | 48,855 | 8,004 | 11,847 |
 | StakeManager | 45,337 | 7,881 | 10,396 |
 | ValidationModule | 28,199 | 6,368 | 8,980 |
-| Deployer | 234,082 | 20,864 | 20,987 |
+| Deployer | 234,082 | 10,116 | 10,239 |
 
 All 66 non-mock deployable v2 artifacts, including the ten implementations, fit the 24,576-byte runtime and 49,152-byte initcode limits. Constructor arguments add to initcode and must also fit. Normal Hardhat tests enforce these limits, with a 30 million block gas limit and automatic transaction gas estimation. Staged deployment tests additionally require every component transaction and final wiring to use less than 16,777,216 gas.
 
