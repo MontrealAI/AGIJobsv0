@@ -16,6 +16,7 @@ const requiredChecks = [
   'contract-size',
   'adversarial-controls',
   'execution-gates',
+  'gateway-settlement',
   'local-commissioning',
   'commissioning-evidence',
 ];

@@ -38,6 +38,8 @@ Failed stages return a nonzero exit code and retain their logs in a signed **fai
 
 The mission names and macroeconomic objectives are demonstration narratives. The performed work is synthetic; the measured result is the local protocol lifecycle, not delivery of a healthcare, agriculture, or infrastructure project.
 
+A separate gateway-to-registry integration test verifies that the submitted result is the configured fixture provider's output, rather than a fallback. It uses the existing simplified local registry fixture; the three-job commissioning stage separately exercises the production modular contracts. Large integer quantities in provider requests are serialized as decimal strings without losing precision.
+
 ## Evidence and trust
 
 The report records the exact committed source tree, stage commands, timestamps, exit codes, limitations, and commissioning observations. Logs and transaction receipts are retained. A patch records tracked configuration changes made inside the isolated local fixture checkout. The runner removes only its own worktree and temporary keys; it does not change production signer registries or deploy address books.

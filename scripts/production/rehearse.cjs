@@ -272,6 +272,16 @@ async function main() {
       'Reject failed-provider and unauthorized synthetic submissions',
       [...hardhat, 'test', '--no-compile', 'test/taskExecution.test.ts']
     );
+    await stage(
+      'gateway-settlement',
+      'Submit fixture provider work through the gateway and local registry',
+      [
+        ...hardhat,
+        'test',
+        '--no-compile',
+        'test/e2e/localnet.gateway.e2e.test.ts',
+      ]
+    );
     const port = await availablePort();
     await stage(
       'local-commissioning',

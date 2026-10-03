@@ -15,7 +15,9 @@ export async function invokeAgentEndpoint(
     const res = await fetch(endpoint, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(payload, (_key, value) =>
+        typeof value === 'bigint' ? value.toString() : value
+      ),
       redirect: 'error',
       signal: controller.signal,
     });

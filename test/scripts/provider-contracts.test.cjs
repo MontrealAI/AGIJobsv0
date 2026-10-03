@@ -93,9 +93,19 @@ after(async () => {
 
 test('compiled gateway sends real HTTP requests and accepts JSON and text deliverables', async () => {
   assert.deepEqual(
-    await invokeAgentEndpoint(`${origin}/ok`, { jobId: 'fixture-1' }, 2000),
+    await invokeAgentEndpoint(
+      `${origin}/ok`,
+      {
+        jobId: 'fixture-1',
+        analysis: { reward: 9007199254740993n, stake: 0n },
+      },
+      2000
+    ),
     {
-      received: { jobId: 'fixture-1' },
+      received: {
+        jobId: 'fixture-1',
+        analysis: { reward: '9007199254740993', stake: '0' },
+      },
       simulation: true,
     }
   );

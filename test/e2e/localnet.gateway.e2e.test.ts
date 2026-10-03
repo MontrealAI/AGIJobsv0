@@ -62,6 +62,7 @@ import * as energyMonitor from '../../shared/energyMonitor';
 import * as telemetry from '../../agent-gateway/telemetry';
 import * as learning from '../../agent-gateway/learning';
 import * as auditLogger from '../../shared/auditLogger';
+import * as certificateMetadata from '../../agent-gateway/certificateMetadata';
 
 const { token: tokenFixture, job, agent: agentFixture, timestamps, expected } = fixture;
 
@@ -75,6 +76,7 @@ const originalEnergyEnd = energyMonitor.endEnergySpan;
 const originalTelemetryPublish = telemetry.publishEnergySample;
 const originalLearningNotify = learning.notifyTrainingOutcome;
 const originalAuditRecord = auditLogger.recordAuditEvent;
+const originalPublishCertificate = certificateMetadata.publishCertificateMetadata;
 
 function createAgentProfile(agent: Wallet): AgentProfile {
   return {
@@ -82,6 +84,7 @@ function createAgentProfile(agent: Wallet): AgentProfile {
     ensName: `${job.subdomain}.${agentFixture.ensRoot}`,
     label: job.subdomain,
     role: 'agent',
+    endpoint: 'http://127.0.0.1:65535/agent-fixture',
     categories: ['analysis'],
     skills: ['nlp'],
     reputationScore: 0,
@@ -150,6 +153,9 @@ describe('Agent gateway localnet E2E', function () {
     (telemetry as any).publishEnergySample = async () => {};
     (learning as any).notifyTrainingOutcome = async () => {};
     (auditLogger as any).recordAuditEvent = async () => ({}) as any;
+    // Certificate publication is a separate integration; keep this local
+    // registry fixture from contacting an external IPFS gateway.
+    (certificateMetadata as any).publishCertificateMetadata = async () => null;
   });
 
   after(() => {
@@ -158,6 +164,7 @@ describe('Agent gateway localnet E2E', function () {
     (telemetry as any).publishEnergySample = originalTelemetryPublish;
     (learning as any).notifyTrainingOutcome = originalLearningNotify;
     (auditLogger as any).recordAuditEvent = originalAuditRecord;
+    (certificateMetadata as any).publishCertificateMetadata = originalPublishCertificate;
   });
 
   afterEach(() => {
@@ -310,6 +317,8 @@ describe('Agent gateway localnet E2E', function () {
 
     const execution = await executeJob(context);
 
+    expect(execution.executionMode).to.equal('provider');
+    expect(execution.rawOutput).to.have.property('summary', agentFixture.summary);
     expect(execution.resultURI).to.equal(expected.resultURI);
     expect(execution.submissionMethod).to.equal(expected.submissionMethod);
 
@@ -377,4 +386,3 @@ describe('Agent gateway localnet E2E', function () {
     expect(agentBalance).to.equal(initialAgentBalance + reward);
   });
 });
-
