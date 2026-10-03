@@ -4,7 +4,7 @@ This gateway listens to on-chain job events and routes work to registered AI age
 
 ## Prerequisites
 
-- Node.js v20.18.1 LTS
+- Node.js v22.23.3 LTS
 - A running Ethereum RPC endpoint
 - Deployed `JobRegistry` and `ValidationModule` contracts
 - Private keys for agent or validator wallets

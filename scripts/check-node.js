@@ -61,7 +61,7 @@ function main() {
   const nodeVersion = parseVersion(process.versions.node);
   const npmVersion = parseVersion(execSync('npm -v').toString());
 
-  if (pinnedNodeFile && !nodeVersion.raw.startsWith(`${pinnedNodeFile}.`)) {
+  if (pinnedNodeFile && !satisfiesRange(pinnedNodeFile, nodeVersion)) {
     console.warn(
       `⚠️  .node-version expects ${pinnedNodeFile} but detected ${nodeVersion.raw}. Aligning to the pinned version avoids flaky Hardhat builds.`,
     );

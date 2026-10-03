@@ -1,4 +1,4 @@
-FROM node:20-bookworm-slim AS base
+FROM node:22.23.3-bookworm-slim AS base
 
 WORKDIR /app
 
@@ -10,7 +10,7 @@ COPY apps ./apps
 RUN npx tsc -p apps/operator/tsconfig.json \
   && npm prune --omit=dev
 
-FROM node:20-bookworm-slim
+FROM node:22.23.3-bookworm-slim
 
 WORKDIR /app
 

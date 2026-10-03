@@ -1,90 +1,64 @@
 #!/usr/bin/env node
-/*
- * Enforce that release tags carry a cryptographic signature before
- * the release workflow proceeds. The script verifies that the tag
- * contains a signature block and, when an allowed signers file is
- * present, validates the signature using `git tag -v`.
- */
+'use strict';
 
-const { execSync } = require('child_process');
-const fs = require('fs');
-const path = require('path');
+const { execFileSync } = require('node:child_process');
+const fs = require('node:fs');
+const path = require('node:path');
 
 function fail(message) {
   console.error(`::error::${message}`);
   process.exit(1);
 }
 
-function run(command, options = {}) {
-  return execSync(command, {
-    stdio: 'pipe',
-    encoding: 'utf8',
-    ...options,
-  }).trim();
+function git(args) {
+  return execFileSync('git', args, { encoding: 'utf8', stdio: 'pipe' }).trim();
 }
 
 const ref = process.argv[2];
-if (!ref) {
-  fail('Tag reference argument is required.');
-}
-
-const tagName = ref.startsWith('refs/tags/')
-  ? ref.slice('refs/tags/'.length)
-  : ref;
-
-try {
-  run(`git rev-parse --verify refs/tags/${tagName}`);
-} catch (error) {
-  fail(`Tag ${tagName} not found in checkout: ${error.message}`);
-}
-
-let signatureBlock = '';
-try {
-  signatureBlock = run(
-    `git for-each-ref --format='%(contents:signature)' refs/tags/${tagName}`
-  );
-} catch (error) {
-  fail(`Unable to inspect tag signature metadata: ${error.message}`);
-}
-
-if (!signatureBlock) {
-  fail(`Tag ${tagName} is missing a cryptographic signature.`);
-}
-
-console.log(`✅ Detected signature payload on tag ${tagName}.`);
-
-const allowedSignersFromEnv = process.env.GIT_ALLOWED_SIGNERS;
-const defaultAllowedSigners = path.join(
-  '.github',
-  'signers',
-  'allowed_signers'
+if (!ref) fail('Tag reference argument is required.');
+const tagName = ref.startsWith('refs/tags/') ? ref.slice(10) : ref;
+const tagRef = `refs/tags/${tagName}`;
+const signersPath = path.resolve(
+  process.env.GIT_ALLOWED_SIGNERS || '.github/signers/allowed_signers'
 );
-const allowedSignersPath = allowedSignersFromEnv || defaultAllowedSigners;
 
-if (fs.existsSync(allowedSignersPath)) {
-  const allowedSignersContents = fs
-    .readFileSync(allowedSignersPath, 'utf8')
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter((line) => line && !line.startsWith('#'));
-
-  if (allowedSignersContents.length === 0) {
+try {
+  git(['check-ref-format', tagRef]);
+  if (!fs.existsSync(signersPath)) {
+    fail(`Maintainer signing keys not found at ${signersPath}.`);
+  }
+  execFileSync(
+    process.execPath,
+    [path.join(__dirname, 'check-signers.js'), signersPath],
+    {
+      stdio: 'pipe',
+    }
+  );
+  if (git(['cat-file', '-t', tagRef]) !== 'tag') {
+    fail(`Tag ${tagName} must be an annotated, SSH-signed release tag.`);
+  }
+  const payload = git(['cat-file', 'tag', tagRef]);
+  if (!payload.includes('-----BEGIN SSH SIGNATURE-----')) {
     fail(
-      `Signature verification file ${allowedSignersPath} does not list any maintainer keys. ` +
-        'Populate it with the SSH or GPG keys that sign release tags so git tag -v can attest provenance.'
+      `Tag ${tagName} needs an SSH signature authorized by the maintainer registry.`
     );
   }
-
-  try {
-    run(`git config gpg.ssh.allowedSignersFile "${allowedSignersPath}"`);
-    execSync(`git tag -v ${tagName}`, { stdio: 'inherit' });
-    console.log(`✅ git tag -v succeeded using ${allowedSignersPath}.`);
-  } catch (error) {
-    fail(`Signature verification failed for tag ${tagName}: ${error.message}`);
+  const tagCommit = git(['rev-parse', '--verify', `${tagRef}^{commit}`]);
+  const checkoutCommit = git(['rev-parse', '--verify', 'HEAD']);
+  if (tagCommit !== checkoutCommit) {
+    fail(
+      `Tag ${tagName} does not point to the checked-out commit. Check out the signed tag before releasing.`
+    );
   }
-} else {
-  fail(
-    `Signature verification requires maintainer keys, but ${allowedSignersPath} was not found. ` +
-      'Add maintainer signing keys so release CI can verify tag provenance.'
-  );
+  git([
+    '-c',
+    `gpg.ssh.allowedSignersFile=${signersPath}`,
+    'verify-tag',
+    '--',
+    tagRef,
+  ]);
+  console.log(`✅ Verified SSH signature and checkout commit for ${tagName}.`);
+} catch (error) {
+  const detail = error.stderr?.toString().trim() || error.message;
+  fail(`Release provenance verification failed: ${detail}`);
 }

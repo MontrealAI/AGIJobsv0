@@ -52,27 +52,29 @@ jobs:
           node-version-file: '.nvmrc'
           cache: npm
 
-      - name: Enforce signed release tag
-        if: startsWith(github.ref, 'refs/tags/')
-        run: |
-          node scripts/ci/ensure-tag-signature.js "${GITHUB_REF}"
-
       - name: Install dependencies
         run: ./scripts/ci/npm-ci.sh
 
       - name: Determine version
         id: version
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
         run: |
           if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
             VERSION="${GITHUB_REF#refs/tags/v}"
           else
-            VERSION="${{ github.event.inputs.version }}"
+            VERSION="$INPUT_VERSION"
           fi
           if [[ -z "$VERSION" ]]; then
             echo "::error::Version is required."; exit 1; fi
           if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
             echo "::error::Version must follow semver."; exit 1; fi
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Enforce signed release tag and checkout
+        env:
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
+        run: node scripts/ci/ensure-tag-signature.js "refs/tags/v${RELEASE_VERSION}"
 
       - name: Determine network
         id: network
@@ -97,6 +99,9 @@ jobs:
         run: |
           npx ts-node --compiler-options '{"module":"commonjs"}' scripts/generate-constants.ts
           npx hardhat compile
+
+      - name: Enforce production contract size limits
+        run: npm run release:check-size
 
       - name: Package TypeChain artifacts
         run: |

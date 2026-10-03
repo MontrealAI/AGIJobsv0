@@ -66,7 +66,7 @@ class SafeExecutor:
             program_path = pathlib.Path(tmpdir) / "program.py"
             program_path.write_text(source, encoding="utf-8")
             input_payload = json.dumps(input_data)
-            cmd = [sys.executable, str(program_path)]
+            cmd = [sys.executable, "-I", "-S", str(program_path)]
             return self._run_with_limits(cmd, input_payload)
 
     def execute_deterministic(self, source: str, input_data: Any, repetitions: int = 2) -> ExecutionResult:

@@ -7,6 +7,8 @@
 
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
+const { execFileSync } = require('node:child_process');
 
 function fail(message) {
   console.error(`\u001b[31m✖ ${message}\u001b[0m`);
@@ -24,7 +26,7 @@ const signersPath =
 if (!fs.existsSync(signersPath)) {
   fail(
     `Maintainer signing key file not found at ${signersPath}. ` +
-      'Populate the path with hardware-backed SSH or GPG keys so release CI can verify signed tags.'
+      'Populate the path with SSH public keys so release CI can verify signed tags.'
   );
 }
 
@@ -95,7 +97,7 @@ lines.forEach((line, index) => {
   const namespaceValue = namespaceToken.slice('namespaces='.length);
   const namespaces = namespaceValue.replace(/^"|"$/g, '');
 
-  if (!namespaces.split(/\s+/).includes('git')) {
+  if (!namespaces.split(',').includes('git')) {
     fail(
       `Line ${
         index + 1
@@ -124,6 +126,21 @@ lines.forEach((line, index) => {
       normalized.replace(/=+$/, '') !== normalizedKeyData.replace(/=+$/, '')
     ) {
       throw new Error('round-trip encoding mismatch');
+    }
+
+    const keyDir = fs.mkdtempSync(path.join(os.tmpdir(), 'agi-release-key-'));
+    try {
+      const publicKey = path.join(keyDir, 'key.pub');
+      fs.writeFileSync(publicKey, `${keyType} ${normalized}\n`, {
+        mode: 0o600,
+      });
+      execFileSync('ssh-keygen', ['-l', '-f', publicKey], { stdio: 'pipe' });
+    } catch {
+      throw new Error(
+        'not a valid OpenSSH public key (ssh-keygen must be installed)'
+      );
+    } finally {
+      fs.rmSync(keyDir, { recursive: true, force: true });
     }
 
     const fingerprint = `${keyType}:${normalized}`;

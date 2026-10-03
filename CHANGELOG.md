@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased — 2026-10-03 readiness hardening
+
+- Repair compiled gateway/orchestrator entrypoints and package required config helpers, public config, and the gRPC schema.
+- Move the pinned root toolchain and primary container builds to Node 22.23.3 LTS; fix the Node doctor's false mismatch warning.
+- Separate headless recursive-model dependencies from the optional dashboard, resolve platform and model requirements together, check dependency consistency, and test relevant pull requests.
+- Verify real SSH public keys and signed tags without shell interpolation; require the signed tag to match the checkout for both automatic and manual releases.
+- Add a production bytecode-size gate to release and mainnet preparation. Four existing contracts exceed Ethereum limits; local tests permit oversized contracts and do not establish deployability.
+- Scan container candidates before promoting `latest`, including both published architectures, refresh the OS scanner and primary base images, and align matrix job names with the required-context manifest.
+- Add an operator entry guide and dated evidence report; preserve existing features, diagrams, and examples.
+
 ## v2
 
 - Hardened the CI workflow so the Tests, Foundry, and Coverage thresholds jobs run on Ubuntu 24.04, regenerate generated constants when needed, enforce the 90% coverage gate without being skippable, publish `coverage/lcov.info` artifacts for inspection, and execute the full Hardhat coverage suite so access-control modules are accounted for.

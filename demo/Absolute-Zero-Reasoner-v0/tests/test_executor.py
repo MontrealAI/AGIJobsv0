@@ -6,7 +6,7 @@ from absolute_zero_reasoner_demo.executor import NonDeterministicProgram, SafeEx
 
 
 def test_executor_blocks_forbidden_import() -> None:
-    executor = SafeExecutor(time_limit=1.0, memory_limit_mb=32)
+    executor = SafeExecutor(time_limit=1.0, memory_limit_mb=256)
     code = "import os\nprint('oops')\n"
     try:
         executor.execute(code, {})
@@ -17,7 +17,7 @@ def test_executor_blocks_forbidden_import() -> None:
 
 
 def test_executor_detects_nondeterminism() -> None:
-    executor = SafeExecutor(time_limit=1.0, memory_limit_mb=32)
+    executor = SafeExecutor(time_limit=1.0, memory_limit_mb=256)
     code = "import json\nimport sys\nprint(json.dumps(__import__('random').random()))\n"
     try:
         executor.execute_deterministic(code, {})
@@ -27,8 +27,25 @@ def test_executor_detects_nondeterminism() -> None:
 
 
 def test_executor_runs_deterministic_program() -> None:
-    executor = SafeExecutor(time_limit=1.0, memory_limit_mb=32)
+    executor = SafeExecutor(time_limit=1.0, memory_limit_mb=256)
     code = "import json\nimport sys\ndata=json.loads(sys.stdin.read())\nprint(json.dumps(data['x']+1))\n"
     result = executor.execute_deterministic(code, {"x": 2})
     assert result.succeeded
     assert result.output == 3
+
+
+def test_executor_does_not_load_host_sitecustomize(tmp_path, monkeypatch) -> None:
+    (tmp_path / "sitecustomize.py").write_text("raise SystemExit('host startup injected')\n")
+    monkeypatch.setenv("PYTHONPATH", str(tmp_path))
+    result = SafeExecutor().execute("print(3)", {})
+    assert result.succeeded
+    assert result.output == 3
+
+
+def test_executor_reports_startup_memory_exhaustion() -> None:
+    import sys
+    import pytest
+    if sys.platform != "linux":
+        pytest.skip("RLIMIT_AS enforcement is Linux-specific in this regression")
+    result = SafeExecutor(time_limit=1.0, memory_limit_mb=1).execute("print(3)", {})
+    assert not result.succeeded

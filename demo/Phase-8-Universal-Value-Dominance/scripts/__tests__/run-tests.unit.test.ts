@@ -291,6 +291,7 @@ describe('isOptionalE2E', () => {
     process.env = { ...originalEnv };
     delete process.env.PLAYWRIGHT_OPTIONAL_E2E;
     delete process.env.PLAYWRIGHT_INSTALL_WITH_DEPS;
+    delete process.env.DEMO_RUNTIME_ROOT;
   });
 
   afterEach(() => {
@@ -344,6 +345,7 @@ describe('shouldInstallPlaywrightDeps', () => {
     process.env = { ...originalEnv };
     delete process.env.PLAYWRIGHT_OPTIONAL_E2E;
     delete process.env.PLAYWRIGHT_INSTALL_WITH_DEPS;
+    delete process.env.DEMO_RUNTIME_ROOT;
   });
 
   afterEach(() => {

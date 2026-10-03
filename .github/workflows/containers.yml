@@ -20,6 +20,7 @@ concurrency:
 
 jobs:
   build:
+    name: build (${{ matrix.image.name }})
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     strategy:
@@ -87,7 +88,7 @@ jobs:
           outputs: type=docker
           tags: ghcr.io/${{ env.REPO_OWNER_LC }}/${{ matrix.image.tag }}
 
-      - name: Build & Push (main/tags, multi-arch, attestations)
+      - name: Build candidate (main/tags, multi-arch, attestations)
         if: github.event_name != 'pull_request'
         id: build-push
         uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83
@@ -99,32 +100,56 @@ jobs:
           push: true
           provenance: mode=max
           sbom: true
-          tags: ghcr.io/${{ env.REPO_OWNER_LC }}/${{ matrix.image.tag }}
+          tags: ghcr.io/${{ env.REPO_OWNER_LC }}/${{ matrix.image.name }}:candidate-${{ github.sha }}
 
-      - name: Trivy scan (OS packages)
-        if: github.event_name != 'pull_request' && steps.build-push.outputs.digest
+      - name: Trivy scan (OS packages, every built architecture)
         env:
-          IMAGE_REF: ghcr.io/${{ env.REPO_OWNER_LC }}/${{ matrix.image.tag }}@${{ steps.build-push.outputs.digest }}
+          IMAGE_NAME: ghcr.io/${{ env.REPO_OWNER_LC }}/${{ matrix.image.name }}
+          IMAGE_DIGEST: ${{ steps.build-push.outputs.digest }}
         run: |
-          docker run --rm \
-            -v /var/run/docker.sock:/var/run/docker.sock \
-            -v "$PWD/.trivyignore":/etc/trivy/.trivyignore:ro \
-            aquasec/trivy:0.53.0 \
-            image --vuln-type os --severity HIGH,CRITICAL --exit-code 1 \
-            "$IMAGE_REF"
+          IMAGE_REF="${IMAGE_NAME}:latest"
+          PLATFORMS="linux/amd64"
+          if [ -n "$IMAGE_DIGEST" ]; then
+            IMAGE_REF="${IMAGE_NAME}@${IMAGE_DIGEST}"
+            PLATFORMS="linux/amd64 linux/arm64"
+          fi
+          for PLATFORM in $PLATFORMS; do
+            docker run --rm \
+              -v /var/run/docker.sock:/var/run/docker.sock \
+              -v "$PWD/.trivyignore":/etc/trivy/.trivyignore:ro \
+              aquasec/trivy:0.75.0 \
+              image --scanners vuln --pkg-types os --platform "$PLATFORM" \
+              --ignorefile /etc/trivy/.trivyignore \
+              --severity HIGH,CRITICAL --exit-code 1 "$IMAGE_REF"
+          done
 
-      - name: Trivy scan (application packages)
-        if: github.event_name != 'pull_request' && steps.build-push.outputs.digest
+      - name: Trivy scan (application packages, advisory)
         continue-on-error: true
         env:
-          IMAGE_REF: ghcr.io/${{ env.REPO_OWNER_LC }}/${{ matrix.image.tag }}@${{ steps.build-push.outputs.digest }}
+          IMAGE_NAME: ghcr.io/${{ env.REPO_OWNER_LC }}/${{ matrix.image.name }}
+          IMAGE_DIGEST: ${{ steps.build-push.outputs.digest }}
         run: |
+          IMAGE_REF="${IMAGE_NAME}:latest"
+          if [ -n "$IMAGE_DIGEST" ]; then
+            IMAGE_REF="${IMAGE_NAME}@${IMAGE_DIGEST}"
+          fi
           docker run --rm \
             -v /var/run/docker.sock:/var/run/docker.sock \
             -v "$PWD/.trivyignore":/etc/trivy/.trivyignore:ro \
-            aquasec/trivy:0.53.0 \
-            image --vuln-type library --severity HIGH,CRITICAL --exit-code 0 \
-            "$IMAGE_REF"
+            aquasec/trivy:0.75.0 \
+            image --scanners vuln --pkg-types library \
+            --ignorefile /etc/trivy/.trivyignore \
+            --severity HIGH,CRITICAL --exit-code 0 "$IMAGE_REF"
+
+      - name: Promote scanned candidate to latest
+        if: github.event_name != 'pull_request'
+        env:
+          IMAGE_NAME: ghcr.io/${{ env.REPO_OWNER_LC }}/${{ matrix.image.name }}
+          IMAGE_DIGEST: ${{ steps.build-push.outputs.digest }}
+        run: |
+          test -n "$IMAGE_DIGEST"
+          docker buildx imagetools create \
+            --tag "${IMAGE_NAME}:latest" "${IMAGE_NAME}@${IMAGE_DIGEST}"
 
       - name: Upload container digest
         if: github.event_name != 'pull_request'

@@ -62,13 +62,16 @@ jobs:
           npx ts-node --compiler-options '{"module":"commonjs"}' scripts/generate-constants.ts
           npx hardhat compile
 
+      - name: Enforce production contract size limits
+        run: npm run release:check-size
+
       - name: Build Safe execution plan
         env:
           RPC_URL: ${{ inputs.network == 'mainnet' && secrets.MAINNET_RPC_URL || secrets.SEPOLIA_RPC_URL }}
           SAFE_ADDRESS: ${{ secrets.SAFE_ADDRESS }}
         run: |
           npx hardhat run scripts/v2/plan-deploy.ts --network ${{ inputs.network }} > plan.json
-          jq -r . plan.json >/dev/null 2>&1 || echo "{}" > plan.json
+          jq -e 'type == "object" and (.transactions | type == "array" and length > 0)' plan.json >/dev/null
 
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:

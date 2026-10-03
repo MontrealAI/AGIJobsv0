@@ -6,8 +6,8 @@ briefings, and subsystem manuals when coordinating releases or audits.
 
 ## Summary
 
-- Total README-like files: 169
-- README documents: 129
+- Total README-like files: 170
+- README documents: 130
 - Runbooks and emergency guides: 40
 
 ## Root
@@ -28,6 +28,7 @@ briefings, and subsystem manuals when coordinating releases or audits.
 
 | Path | Title | Type |
 | ---- | ----- | ---- |
+| [`apps/console/README.md`](../apps/console/README.md) | Owner console | README |
 | `apps/onebox-static/README.md` | AGI Jobs v0 (v2) — Onebox Static Console | README |
 | `apps/onebox-static/v2/README.md` | AGI Jobs v0 (v2) — Onebox Static Console v2 | README |
 | `apps/onebox/README.md` | AGI Jobs v0 (v2) — Onebox Next.js Console | README |

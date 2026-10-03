@@ -66,6 +66,8 @@ jobs:
         run: npm run ci:verify-companion-contexts
       - name: Verify CI summary coverage vs workflow
         run: npm run ci:verify-summary-needs
+      - name: Release provenance regression tests
+        run: node --test test/scripts/release-provenance.test.cjs test/scripts/contract-size.test.cjs
       - name: Prettier formatting check
         run: npm run format:check
       - name: Targeted lint suite
@@ -140,6 +142,11 @@ jobs:
           npx hardhat compile
       - name: Regenerate constants for tests
         run: npx ts-node --compiler-options '{"module":"commonjs"}' scripts/generate-constants.ts
+      - name: Build services and verify runtime packaging
+        run: |
+          npm run build:gateway
+          npm run build:orchestrator
+          node --test test/scripts/runtime-packaging.test.cjs
       - name: Hardhat tests
         run: npm test
       - name: ABI diff check
