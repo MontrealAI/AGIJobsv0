@@ -106,7 +106,7 @@ async function seedIndexer(indexerUrl: string, artifacts: SeedArtifact[]) {
 }
 
 async function main() {
-  dotenv.config({ path: process.env.CULTURE_ENV_FILE, override: true });
+  dotenv.config({ path: process.env.CULTURE_ENV_FILE });
   const env = EnvSchema.parse(process.env);
   const artifacts = await loadSeedArtifacts();
   const provider = new ethers.JsonRpcProvider(env.RPC_URL);

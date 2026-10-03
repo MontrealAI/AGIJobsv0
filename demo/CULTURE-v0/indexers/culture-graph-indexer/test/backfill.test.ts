@@ -97,6 +97,43 @@ beforeEach(() => {
 afterEach(() => vi.restoreAllMocks());
 
 describe('Historical and live event ingestion', () => {
+  it('persists empty confirmed ranges and resumes after restart without rescanning history', async () => {
+    const { prisma, ingestion } = setup({ blockBatchSize: 1000 });
+    rpc.getBlockNumber.mockResolvedValue(1500);
+    await ingestion.start();
+    expect(
+      await prisma.eventCursor.findUnique({ where: { id: 1 } }),
+    ).toBeNull();
+    expect(
+      await prisma.eventCursor.findUnique({ where: { id: 2 } }),
+    ).toMatchObject({ blockNumber: 1500 });
+    rpc.getLogs.mockClear();
+    await ingestion.backfillHistoricalEvents();
+    expect(rpc.getLogs).not.toHaveBeenCalled();
+    await ingestion.stop();
+    rpc.getBlockNumber.mockResolvedValue(1501);
+    await ingestion.start();
+    expect(rpc.getLogs).toHaveBeenCalledTimes(3);
+    for (const [filter] of rpc.getLogs.mock.calls) {
+      expect(filter).toMatchObject({ fromBlock: 1501, toBlock: 1501 });
+    }
+    await ingestion.stop();
+  });
+  it('does not checkpoint a failed RPC batch and retries that range', async () => {
+    const { prisma, ingestion } = setup();
+    rpc.getLogs.mockRejectedValueOnce(new Error('RPC unavailable'));
+    await expect(ingestion.start()).rejects.toThrow('RPC unavailable');
+    expect(
+      await prisma.eventCursor.findUnique({ where: { id: 2 } }),
+    ).toBeNull();
+    rpc.getLogs.mockClear();
+    await ingestion.start();
+    expect(rpc.getLogs.mock.calls[0][0]).toMatchObject({ fromBlock: 0 });
+    expect(
+      await prisma.eventCursor.findUnique({ where: { id: 2 } }),
+    ).toMatchObject({ blockNumber: 3 });
+    await ingestion.stop();
+  });
   it('matches the real contract event ABI and restores ordered, idempotent history', async () => {
     expect(
       new Interface(selfPlayArenaAbi).getEvent('RoundFinalized')!.topicHash,
@@ -141,6 +178,37 @@ describe('Historical and live event ingestion', () => {
     await ingestion.start();
     expect(await prisma.artifact.count()).toBe(2);
     expect(await prisma.roundFinalization.count()).toBe(1);
+    await ingestion.stop();
+  });
+  it('retains a completed empty-range checkpoint when a later event fails mid-batch', async () => {
+    seedLogs();
+    const { prisma, influence, ingestion } = setup();
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const original = influence.recompute.bind(influence);
+    const recompute = vi
+      .spyOn(influence, 'recompute')
+      .mockImplementation(async (affected) => {
+        if (affected?.length === 2 && (await prisma.citation.count()))
+          throw new Error('citation metrics unavailable');
+        return original(affected);
+      });
+    await expect(ingestion.start()).rejects.toThrow(
+      'citation metrics unavailable',
+    );
+    expect(
+      await prisma.eventCursor.findUnique({ where: { id: 2 } }),
+    ).toMatchObject({ blockNumber: 1 });
+    expect(
+      await prisma.eventCursor.findUnique({ where: { id: 1 } }),
+    ).toMatchObject({ blockNumber: 2, logIndex: 0 });
+    recompute.mockRestore();
+    await ingestion.start();
+    expect(await prisma.artifact.count()).toBe(2);
+    expect(await prisma.citation.count()).toBe(1);
+    expect(await prisma.roundFinalization.count()).toBe(1);
+    expect(
+      await prisma.eventCursor.findUnique({ where: { id: 2 } }),
+    ).toMatchObject({ blockNumber: 3 });
     await ingestion.stop();
   });
   it('respects finality, coalesces concurrent backfills, and handles future cursors', async () => {

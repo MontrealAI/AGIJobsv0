@@ -276,9 +276,10 @@ function normaliseArg(value: unknown): unknown {
 
 type AddressedSigner = ethers.Signer & { address: string };
 
-function bufferGasEstimates(signer: ethers.Signer) {
-  // Selection and voting can cost more in the mined block than the RPC estimate.
+function bufferGasEstimates(signer: ethers.Signer): void {
   const estimateGas = signer.estimateGas.bind(signer);
+  // Identity-cache writes can change between estimation and the mined block.
+  // Keep RPC estimation (including revert checks), with 20% execution headroom.
   signer.estimateGas = async (tx) => ((await estimateGas(tx)) * 120n + 99n) / 100n;
 }
 
