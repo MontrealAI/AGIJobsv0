@@ -1,3 +1,6 @@
+const {
+  deployImplementations,
+} = require('../../scripts/deploy/implementations.cjs');
 const { expect } = require('chai');
 const { ethers, artifacts, network } = require('hardhat');
 const { time } = require('@nomicfoundation/hardhat-network-helpers');
@@ -43,7 +46,8 @@ describe('Employer reputation', function () {
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
-      owner.address
+      owner.address,
+      await deployImplementations('StakeManager', StakeManager.runner)
     );
     await stakeManager.connect(owner).setMinStake(1);
     await stakeManager.connect(owner).setSlashingPercentages(100, 0);
@@ -82,7 +86,8 @@ describe('Employer reputation', function () {
       0,
       0,
       [],
-      owner.address
+      owner.address,
+      await deployImplementations('JobRegistry', Registry.runner)
     );
     const Dispute = await ethers.getContractFactory(
       'contracts/v2/modules/DisputeModule.sol:DisputeModule'
@@ -143,10 +148,7 @@ describe('Employer reputation', function () {
 
     await token
       .connect(agent)
-      .approve(
-        await stakeManager.getAddress(),
-        BigInt(stake) + disputeFee
-      );
+      .approve(await stakeManager.getAddress(), BigInt(stake) + disputeFee);
     await stakeManager.connect(agent).depositStake(0, stake);
     await stakeManager
       .connect(owner)

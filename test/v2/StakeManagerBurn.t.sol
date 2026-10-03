@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
+import {StakeManagerBase} from "../../contracts/v2/implementation/StakeManagerBase.sol";
+
+import {FixedImplementationFixtures} from "./helpers/FixedImplementationFixtures.sol";
 
 import "forge-std/Test.sol";
 import {StakeManager, TokenNotBurnable, InvalidMinStake} from "../../contracts/v2/StakeManager.sol";
@@ -8,7 +11,7 @@ import {AGIALPHA, BURN_ADDRESS} from "../../contracts/v2/Constants.sol";
 
 contract StakeManagerBurnHarness is StakeManager {
     constructor(address gov)
-        StakeManager(1e18, 0, 10_000, address(0), address(0), address(0), gov)
+        StakeManager(1e18, 0, 10_000, address(0), address(0), address(0), gov, FixedImplementationFixtures.stakeManager())
     {}
 
     function exposedBurn(uint256 amt) external {
@@ -63,7 +66,7 @@ contract StakeManagerBurnTest is Test {
     function testSetFeePctEmitsWhenValueChanges() public {
         uint256 target = 12;
         vm.expectEmit(false, false, false, true, address(stake));
-        emit StakeManager.FeePctUpdated(target);
+        emit StakeManagerBase.FeePctUpdated(target);
         stake.setFeePct(target);
         assertEq(stake.feePct(), target, "fee pct not updated");
     }
@@ -80,7 +83,7 @@ contract StakeManagerBurnTest is Test {
     function testSetMinStakeEmitsAndUpdates() public {
         uint256 target = 2e18;
         vm.expectEmit(false, false, false, true, address(stake));
-        emit StakeManager.MinStakeUpdated(target);
+        emit StakeManagerBase.MinStakeUpdated(target);
         stake.setMinStake(target);
         assertEq(stake.minStake(), target, "min stake not updated");
     }

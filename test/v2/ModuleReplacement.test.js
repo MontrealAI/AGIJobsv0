@@ -1,3 +1,6 @@
+const {
+  deployImplementations,
+} = require('../../scripts/deploy/implementations.cjs');
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
 const { time } = require('@nomicfoundation/hardhat-network-helpers');
@@ -30,7 +33,8 @@ async function deploySystem() {
     ethers.ZeroAddress,
     ethers.ZeroAddress,
     ethers.ZeroAddress,
-    owner.address
+    owner.address,
+    await deployImplementations('StakeManager', Stake.runner)
   );
   await stake.waitForDeployment();
   await stake.setMinStake(1);
@@ -74,7 +78,8 @@ async function deploySystem() {
     0,
     0,
     [],
-    owner.address
+    owner.address,
+    await deployImplementations('JobRegistry', Registry.runner)
   );
   await registry.waitForDeployment();
 

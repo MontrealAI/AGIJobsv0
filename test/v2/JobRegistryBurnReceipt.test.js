@@ -1,3 +1,6 @@
+const {
+  deployImplementations,
+} = require('../../scripts/deploy/implementations.cjs');
 const { expect } = require('chai');
 const { ethers, artifacts, network } = require('hardhat');
 const { time } = require('@nomicfoundation/hardhat-network-helpers');
@@ -35,7 +38,8 @@ describe('JobRegistry burn receipt validation', function () {
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
-      owner.address
+      owner.address,
+      await deployImplementations('StakeManager', StakeManager.runner)
     );
     const Validation = await ethers.getContractFactory(
       'contracts/v2/mocks/ValidationStub.sol:ValidationStub'
@@ -55,7 +59,8 @@ describe('JobRegistry burn receipt validation', function () {
       0,
       0,
       [],
-      owner.address
+      owner.address,
+      await deployImplementations('JobRegistry', Registry.runner)
     );
     const registryAddress = await registry.getAddress();
     await network.provider.send('hardhat_setBalance', [
@@ -105,7 +110,9 @@ describe('JobRegistry burn receipt validation', function () {
 
     await registry.connect(agent).applyForJob(jobId, 'agent', []);
     const resHash = ethers.keccak256(ethers.toUtf8Bytes('result'));
-    await registry.connect(agent).submit(jobId, resHash, 'ipfs://res', 'agent', []);
+    await registry
+      .connect(agent)
+      .submit(jobId, resHash, 'ipfs://res', 'agent', []);
     await validation.setResult(true);
     await validation.finalize(jobId);
 
@@ -219,7 +226,8 @@ describe('Validation burn evidence gating', function () {
       60,
       3,
       3,
-      []
+      [],
+      await deployImplementations('ValidationModule', Validation.runner)
     );
     await validation.waitForDeployment();
 
@@ -237,7 +245,8 @@ describe('Validation burn evidence gating', function () {
       0,
       0,
       [],
-      owner.address
+      owner.address,
+      await deployImplementations('JobRegistry', Registry.runner)
     );
     await registry.waitForDeployment();
 

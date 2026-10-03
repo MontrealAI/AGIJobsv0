@@ -1,3 +1,6 @@
+const {
+  deployImplementations,
+} = require('../../scripts/deploy/implementations.cjs');
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
 
@@ -15,7 +18,8 @@ describe('ValidationModule max pool size', function () {
       1,
       3,
       10,
-      []
+      [],
+      await deployImplementations('ValidationModule', Validation.runner)
     );
     await validation.waitForDeployment();
   });

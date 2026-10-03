@@ -1,0 +1,4603 @@
+{
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "contract IValidationModule",
+          "name": "_validation",
+          "type": "address"
+        },
+        {
+          "internalType": "contract IStakeManager",
+          "name": "_stakeMgr",
+          "type": "address"
+        },
+        {
+          "internalType": "contract IReputationEngine",
+          "name": "_reputation",
+          "type": "address"
+        },
+        {
+          "internalType": "contract IDisputeModule",
+          "name": "_disputeModule",
+          "type": "address"
+        },
+        {
+          "internalType": "contract ICertificateNFT",
+          "name": "_certNFT",
+          "type": "address"
+        },
+        {
+          "internalType": "contract IFeePool",
+          "name": "_feePool",
+          "type": "address"
+        },
+        {
+          "internalType": "contract ITaxPolicy",
+          "name": "_policy",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_feePct",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint96",
+          "name": "_jobStake",
+          "type": "uint96"
+        },
+        {
+          "internalType": "address[]",
+          "name": "_ackModules",
+          "type": "address[]"
+        },
+        {
+          "internalType": "address",
+          "name": "_timelock",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "inputs": [],
+      "name": "AgentTypeNotAllowed",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "Blacklisted",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "BlacklistedAgent",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "BlacklistedEmployer",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "BurnAmountTooLow",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "BurnNotConfirmed",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "BurnReceiptMissing",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "CannotCancel",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "CannotDispute",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "CannotExpire",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "DeadlineNotReached",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "DeadlinePassed",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "DurationTooLong",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "EmptySubdomain",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "EnforcedPause",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "EvidenceMissing",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "ExpectedPause",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "IdentityRegistryNotSet",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "required",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "actual",
+          "type": "uint256"
+        }
+      ],
+      "name": "InsufficientAgentStake",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InvalidAckModule",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InvalidAgentTypes",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InvalidAuditModule",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InvalidCertificateNFT",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InvalidDeadline",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InvalidDisputeModule",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "state",
+          "type": "uint8"
+        }
+      ],
+      "name": "InvalidEscalationState",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InvalidFeePool",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InvalidIdentityRegistry",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InvalidJobState",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InvalidPercentage",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InvalidPercentages",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InvalidReputationModule",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InvalidSpecHash",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InvalidStakeManager",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InvalidTaxPolicy",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InvalidTreasury",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InvalidValidationModule",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "JobParametersUnset",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "limit",
+          "type": "uint256"
+        }
+      ],
+      "name": "MaxActiveJobsReached",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "NoDispute",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "NotAcknowledger",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "NotAuthorizedAgent",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "NotGovernance",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "NotGovernanceOrPauser",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "NotGovernanceOrPauserManager",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "NotOpen",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "NotReady",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "NotSubmitted",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "OnlyAgent",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "OnlyDisputeModule",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "OnlyEmployer",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "OnlyParticipant",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "OnlyValidationModule",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "PolicyNotTaxExempt",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "ReentrancyGuardReentrantCall",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "RewardOverflow",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "RewardTooHigh",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "StakeOverflow",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "TaxPolicyNotAcknowledged",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "ZeroAcknowledgerAddress",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "ZeroAddress",
+      "type": "error"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "acknowledger",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "bool",
+          "name": "allowed",
+          "type": "bool"
+        }
+      ],
+      "name": "AcknowledgerUpdated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "jobId",
+          "type": "uint256"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "agent",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "subdomain",
+          "type": "string"
+        }
+      ],
+      "name": "AgentAssigned",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "duration",
+          "type": "uint256"
+        }
+      ],
+      "name": "AgentAuthCacheDurationUpdated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "agent",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "bool",
+          "name": "authorized",
+          "type": "bool"
+        }
+      ],
+      "name": "AgentAuthCacheUpdated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "version",
+          "type": "uint256"
+        }
+      ],
+      "name": "AgentAuthCacheVersionBumped",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "agent",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "node",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "label",
+          "type": "string"
+        },
+        {
+          "indexed": false,
+          "internalType": "bool",
+          "name": "viaWrapper",
+          "type": "bool"
+        },
+        {
+          "indexed": false,
+          "internalType": "bool",
+          "name": "viaMerkle",
+          "type": "bool"
+        }
+      ],
+      "name": "AgentIdentityVerified",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "bytes32",
+          "name": "root",
+          "type": "bytes32"
+        }
+      ],
+      "name": "AgentMerkleRootUpdated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "bytes32",
+          "name": "node",
+          "type": "bytes32"
+        }
+      ],
+      "name": "AgentRootNodeUpdated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "agent",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "subdomain",
+          "type": "string"
+        }
+      ],
+      "name": "AgentSubdomainUpdated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "jobId",
+          "type": "uint256"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "applicant",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "subdomain",
+          "type": "string"
+        }
+      ],
+      "name": "ApplicationSubmitted",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "jobId",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes",
+          "name": "data",
+          "type": "bytes"
+        }
+      ],
+      "name": "AuditModuleCallbackFailed",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "module",
+          "type": "address"
+        }
+      ],
+      "name": "AuditModuleUpdated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "jobId",
+          "type": "uint256"
+        },
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "burnTxHash",
+          "type": "bytes32"
+        }
+      ],
+      "name": "BurnConfirmed",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "jobId",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "receiptAmount",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "expectedAmount",
+          "type": "uint256"
+        }
+      ],
+      "name": "BurnDiscrepancy",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "jobId",
+          "type": "uint256"
+        },
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "burnTxHash",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "blockNumber",
+          "type": "uint256"
+        }
+      ],
+      "name": "BurnReceiptSubmitted",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "nft",
+          "type": "address"
+        }
+      ],
+      "name": "CertificateNFTUpdated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "caller",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "flags",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "acknowledgerUpdates",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "ackModulesAdded",
+          "type": "uint256"
+        }
+      ],
+      "name": "ConfigurationApplied",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "module",
+          "type": "address"
+        }
+      ],
+      "name": "DisputeModuleUpdated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "jobId",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "bool",
+          "name": "employerWins",
+          "type": "bool"
+        }
+      ],
+      "name": "DisputeResolved",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "period",
+          "type": "uint256"
+        }
+      ],
+      "name": "ExpirationGracePeriodUpdated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "feePct",
+          "type": "uint256"
+        }
+      ],
+      "name": "FeePctUpdated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "pool",
+          "type": "address"
+        }
+      ],
+      "name": "FeePoolUpdated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "jobId",
+          "type": "uint256"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "caller",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "bool",
+          "name": "fundsRedirected",
+          "type": "bool"
+        }
+      ],
+      "name": "GovernanceFinalized",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "newGovernance",
+          "type": "address"
+        }
+      ],
+      "name": "GovernanceUpdated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "identityRegistry",
+          "type": "address"
+        }
+      ],
+      "name": "IdentityRegistryUpdated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "jobId",
+          "type": "uint256"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "agent",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "subdomain",
+          "type": "string"
+        }
+      ],
+      "name": "JobApplied",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "jobId",
+          "type": "uint256"
+        }
+      ],
+      "name": "JobCancelled",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "jobId",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "bool",
+          "name": "success",
+          "type": "bool"
+        }
+      ],
+      "name": "JobCompleted",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "jobId",
+          "type": "uint256"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "employer",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "agent",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "reward",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "stake",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "fee",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes32",
+          "name": "specHash",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "uri",
+          "type": "string"
+        }
+      ],
+      "name": "JobCreated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "jobId",
+          "type": "uint256"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "caller",
+          "type": "address"
+        }
+      ],
+      "name": "JobDisputed",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "jobId",
+          "type": "uint256"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "caller",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "reason",
+          "type": "string"
+        }
+      ],
+      "name": "JobEscalatedByGovernance",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "jobId",
+          "type": "uint256"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "caller",
+          "type": "address"
+        }
+      ],
+      "name": "JobExpired",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "jobId",
+          "type": "uint256"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "worker",
+          "type": "address"
+        }
+      ],
+      "name": "JobFinalized",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "jobId",
+          "type": "uint256"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "employer",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "reward",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "fee",
+          "type": "uint256"
+        }
+      ],
+      "name": "JobFunded",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "reward",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "stake",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "maxJobReward",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "maxJobDuration",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "minAgentStake",
+          "type": "uint256"
+        }
+      ],
+      "name": "JobParametersUpdated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "jobId",
+          "type": "uint256"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "worker",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "base",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "bonus",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "fee",
+          "type": "uint256"
+        }
+      ],
+      "name": "JobPayout",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "jobId",
+          "type": "uint256"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "worker",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes32",
+          "name": "resultHash",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "resultURI",
+          "type": "string"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "subdomain",
+          "type": "string"
+        }
+      ],
+      "name": "JobSubmitted",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "jobId",
+          "type": "uint256"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "caller",
+          "type": "address"
+        }
+      ],
+      "name": "JobTimedOut",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "limit",
+          "type": "uint256"
+        }
+      ],
+      "name": "MaxActiveJobsPerAgentUpdated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "module",
+          "type": "string"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "newAddress",
+          "type": "address"
+        }
+      ],
+      "name": "ModuleUpdated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "previousOwner",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "newOwner",
+          "type": "address"
+        }
+      ],
+      "name": "OwnershipTransferred",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "Paused",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "pauserManager",
+          "type": "address"
+        }
+      ],
+      "name": "PauserManagerUpdated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "pauser",
+          "type": "address"
+        }
+      ],
+      "name": "PauserUpdated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "engine",
+          "type": "address"
+        }
+      ],
+      "name": "ReputationEngineUpdated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "jobId",
+          "type": "uint256"
+        }
+      ],
+      "name": "ReputationProcessingMarked",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "jobId",
+          "type": "uint256"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "worker",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes32",
+          "name": "resultHash",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "resultURI",
+          "type": "string"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "subdomain",
+          "type": "string"
+        }
+      ],
+      "name": "ResultSubmitted",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "manager",
+          "type": "address"
+        }
+      ],
+      "name": "StakeManagerUpdated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "user",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "version",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "acknowledgement",
+          "type": "string"
+        }
+      ],
+      "name": "TaxAcknowledged",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "policy",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "version",
+          "type": "uint256"
+        }
+      ],
+      "name": "TaxPolicyUpdated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "treasury",
+          "type": "address"
+        }
+      ],
+      "name": "TreasuryUpdated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "Unpaused",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "module",
+          "type": "address"
+        }
+      ],
+      "name": "ValidationModuleUpdated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "jobId",
+          "type": "uint256"
+        }
+      ],
+      "name": "ValidationStartPending",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "jobId",
+          "type": "uint256"
+        }
+      ],
+      "name": "ValidationStartTriggered",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "bytes32",
+          "name": "root",
+          "type": "bytes32"
+        }
+      ],
+      "name": "ValidatorMerkleRootUpdated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "pct",
+          "type": "uint256"
+        }
+      ],
+      "name": "ValidatorRewardPctUpdated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "bytes32",
+          "name": "node",
+          "type": "bytes32"
+        }
+      ],
+      "name": "ValidatorRootNodeUpdated",
+      "type": "event"
+    },
+    {
+      "stateMutability": "payable",
+      "type": "fallback"
+    },
+    {
+      "inputs": [],
+      "name": "DEFAULT_FEE_PCT",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "DEFAULT_JOB_STAKE",
+      "outputs": [
+        {
+          "internalType": "uint96",
+          "name": "",
+          "type": "uint96"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "DEFAULT_VALIDATOR_REWARD_PCT",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "jobId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "string",
+          "name": "subdomain",
+          "type": "string"
+        },
+        {
+          "internalType": "bytes32[]",
+          "name": "proof",
+          "type": "bytes32[]"
+        }
+      ],
+      "name": "acknowledgeAndApply",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "jobId",
+          "type": "uint256"
+        }
+      ],
+      "name": "acknowledgeAndCancel",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "reward",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint64",
+          "name": "deadline",
+          "type": "uint64"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "specHash",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "string",
+          "name": "uri",
+          "type": "string"
+        }
+      ],
+      "name": "acknowledgeAndCreateJob",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "jobId",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "reward",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint64",
+          "name": "deadline",
+          "type": "uint64"
+        },
+        {
+          "internalType": "uint8",
+          "name": "agentTypes",
+          "type": "uint8"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "specHash",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "string",
+          "name": "uri",
+          "type": "string"
+        }
+      ],
+      "name": "acknowledgeAndCreateJobWithAgentTypes",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "jobId",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "jobId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "evidenceHash",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "string",
+          "name": "reason",
+          "type": "string"
+        }
+      ],
+      "name": "acknowledgeAndDispute",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "jobId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "evidenceHash",
+          "type": "bytes32"
+        }
+      ],
+      "name": "acknowledgeAndDispute",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "jobId",
+          "type": "uint256"
+        }
+      ],
+      "name": "acknowledgeAndFinalize",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "jobId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "resultHash",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "string",
+          "name": "resultURI",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "subdomain",
+          "type": "string"
+        },
+        {
+          "internalType": "bytes32[]",
+          "name": "proof",
+          "type": "bytes32[]"
+        }
+      ],
+      "name": "acknowledgeAndSubmit",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "user",
+          "type": "address"
+        }
+      ],
+      "name": "acknowledgeFor",
+      "outputs": [
+        {
+          "internalType": "string",
+          "name": "ack",
+          "type": "string"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "acknowledgeTaxPolicy",
+      "outputs": [
+        {
+          "internalType": "string",
+          "name": "ack",
+          "type": "string"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "acknowledgers",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "activeJobs",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "agentAuthCache",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "agentAuthCacheDuration",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "agentAuthCacheVersion",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "agentAuthExpiry",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "agentAuthVersion",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "agentSubdomains",
+      "outputs": [
+        {
+          "internalType": "string",
+          "name": "",
+          "type": "string"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "bool",
+              "name": "setPauser",
+              "type": "bool"
+            },
+            {
+              "internalType": "address",
+              "name": "pauser",
+              "type": "address"
+            },
+            {
+              "internalType": "bool",
+              "name": "setPauserManager",
+              "type": "bool"
+            },
+            {
+              "internalType": "address",
+              "name": "pauserManager",
+              "type": "address"
+            },
+            {
+              "internalType": "bool",
+              "name": "setModuleBundle",
+              "type": "bool"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "contract IValidationModule",
+                  "name": "validation",
+                  "type": "address"
+                },
+                {
+                  "internalType": "contract IStakeManager",
+                  "name": "stakeManager",
+                  "type": "address"
+                },
+                {
+                  "internalType": "contract IReputationEngine",
+                  "name": "reputation",
+                  "type": "address"
+                },
+                {
+                  "internalType": "contract IDisputeModule",
+                  "name": "dispute",
+                  "type": "address"
+                },
+                {
+                  "internalType": "contract ICertificateNFT",
+                  "name": "certificateNFT",
+                  "type": "address"
+                },
+                {
+                  "internalType": "contract IFeePool",
+                  "name": "feePool",
+                  "type": "address"
+                }
+              ],
+              "internalType": "struct JobRegistry.ModuleBundle",
+              "name": "modules",
+              "type": "tuple"
+            },
+            {
+              "internalType": "bool",
+              "name": "setIdentityRegistry",
+              "type": "bool"
+            },
+            {
+              "internalType": "address",
+              "name": "identityRegistry",
+              "type": "address"
+            },
+            {
+              "internalType": "bool",
+              "name": "setDisputeModule",
+              "type": "bool"
+            },
+            {
+              "internalType": "address",
+              "name": "disputeModule",
+              "type": "address"
+            },
+            {
+              "internalType": "bool",
+              "name": "setValidationModule",
+              "type": "bool"
+            },
+            {
+              "internalType": "address",
+              "name": "validationModule",
+              "type": "address"
+            },
+            {
+              "internalType": "bool",
+              "name": "setAuditModule",
+              "type": "bool"
+            },
+            {
+              "internalType": "address",
+              "name": "auditModule",
+              "type": "address"
+            },
+            {
+              "internalType": "bool",
+              "name": "setStakeManager",
+              "type": "bool"
+            },
+            {
+              "internalType": "address",
+              "name": "stakeManager",
+              "type": "address"
+            },
+            {
+              "internalType": "bool",
+              "name": "setReputationModule",
+              "type": "bool"
+            },
+            {
+              "internalType": "address",
+              "name": "reputationModule",
+              "type": "address"
+            },
+            {
+              "internalType": "bool",
+              "name": "setCertificateNFT",
+              "type": "bool"
+            },
+            {
+              "internalType": "address",
+              "name": "certificateNFT",
+              "type": "address"
+            },
+            {
+              "internalType": "bool",
+              "name": "setFeePool",
+              "type": "bool"
+            },
+            {
+              "internalType": "address",
+              "name": "feePool",
+              "type": "address"
+            },
+            {
+              "internalType": "bool",
+              "name": "setTaxPolicy",
+              "type": "bool"
+            },
+            {
+              "internalType": "address",
+              "name": "taxPolicy",
+              "type": "address"
+            },
+            {
+              "internalType": "bool",
+              "name": "setTreasury",
+              "type": "bool"
+            },
+            {
+              "internalType": "address",
+              "name": "treasury",
+              "type": "address"
+            },
+            {
+              "internalType": "bool",
+              "name": "setJobStake",
+              "type": "bool"
+            },
+            {
+              "internalType": "uint96",
+              "name": "jobStake",
+              "type": "uint96"
+            },
+            {
+              "internalType": "bool",
+              "name": "setMinAgentStake",
+              "type": "bool"
+            },
+            {
+              "internalType": "uint256",
+              "name": "minAgentStake",
+              "type": "uint256"
+            },
+            {
+              "internalType": "bool",
+              "name": "setFeePct",
+              "type": "bool"
+            },
+            {
+              "internalType": "uint256",
+              "name": "feePct",
+              "type": "uint256"
+            },
+            {
+              "internalType": "bool",
+              "name": "setValidatorRewardPct",
+              "type": "bool"
+            },
+            {
+              "internalType": "uint256",
+              "name": "validatorRewardPct",
+              "type": "uint256"
+            },
+            {
+              "internalType": "bool",
+              "name": "setMaxJobReward",
+              "type": "bool"
+            },
+            {
+              "internalType": "uint256",
+              "name": "maxJobReward",
+              "type": "uint256"
+            },
+            {
+              "internalType": "bool",
+              "name": "setJobDurationLimit",
+              "type": "bool"
+            },
+            {
+              "internalType": "uint256",
+              "name": "jobDurationLimit",
+              "type": "uint256"
+            },
+            {
+              "internalType": "bool",
+              "name": "setMaxActiveJobsPerAgent",
+              "type": "bool"
+            },
+            {
+              "internalType": "uint256",
+              "name": "maxActiveJobsPerAgent",
+              "type": "uint256"
+            },
+            {
+              "internalType": "bool",
+              "name": "setExpirationGracePeriod",
+              "type": "bool"
+            },
+            {
+              "internalType": "uint256",
+              "name": "expirationGracePeriod",
+              "type": "uint256"
+            },
+            {
+              "internalType": "bool",
+              "name": "setAgentRootNode",
+              "type": "bool"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "agentRootNode",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "bool",
+              "name": "setAgentMerkleRoot",
+              "type": "bool"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "agentMerkleRoot",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "bool",
+              "name": "setValidatorRootNode",
+              "type": "bool"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "validatorRootNode",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "bool",
+              "name": "setValidatorMerkleRoot",
+              "type": "bool"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "validatorMerkleRoot",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "bool",
+              "name": "setAgentAuthCacheDuration",
+              "type": "bool"
+            },
+            {
+              "internalType": "uint256",
+              "name": "agentAuthCacheDuration",
+              "type": "uint256"
+            },
+            {
+              "internalType": "bool",
+              "name": "bumpAgentAuthCacheVersion",
+              "type": "bool"
+            }
+          ],
+          "internalType": "struct JobRegistry.ConfigUpdate",
+          "name": "config",
+          "type": "tuple"
+        },
+        {
+          "components": [
+            {
+              "internalType": "address",
+              "name": "acknowledger",
+              "type": "address"
+            },
+            {
+              "internalType": "bool",
+              "name": "allowed",
+              "type": "bool"
+            }
+          ],
+          "internalType": "struct JobRegistry.AcknowledgerUpdate[]",
+          "name": "acknowledgerUpdates",
+          "type": "tuple[]"
+        },
+        {
+          "internalType": "address[]",
+          "name": "ackModules",
+          "type": "address[]"
+        }
+      ],
+      "name": "applyConfiguration",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "jobId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "string",
+          "name": "subdomain",
+          "type": "string"
+        },
+        {
+          "internalType": "bytes32[]",
+          "name": "proof",
+          "type": "bytes32[]"
+        }
+      ],
+      "name": "applyForJob",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "auditModule",
+      "outputs": [
+        {
+          "internalType": "contract IAuditModule",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "bumpAgentAuthCacheVersion",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "jobId",
+          "type": "uint256"
+        }
+      ],
+      "name": "burnEvidenceStatus",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "burnRequired",
+          "type": "bool"
+        },
+        {
+          "internalType": "bool",
+          "name": "burnSatisfied",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "jobId",
+          "type": "uint256"
+        }
+      ],
+      "name": "cancel",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "jobId",
+          "type": "uint256"
+        }
+      ],
+      "name": "cancelExpiredJob",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "jobId",
+          "type": "uint256"
+        }
+      ],
+      "name": "cancelJob",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "certificateNFT",
+      "outputs": [
+        {
+          "internalType": "contract ICertificateNFT",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "jobId",
+          "type": "uint256"
+        }
+      ],
+      "name": "claimTimeout",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "jobId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "burnTxHash",
+          "type": "bytes32"
+        }
+      ],
+      "name": "confirmEmployerBurn",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "reward",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint64",
+          "name": "deadline",
+          "type": "uint64"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "specHash",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "string",
+          "name": "uri",
+          "type": "string"
+        }
+      ],
+      "name": "createJob",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "jobId",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "reward",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint64",
+          "name": "deadline",
+          "type": "uint64"
+        },
+        {
+          "internalType": "uint8",
+          "name": "agentTypes",
+          "type": "uint8"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "specHash",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "string",
+          "name": "uri",
+          "type": "string"
+        }
+      ],
+      "name": "createJobWithAgentTypes",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "jobId",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "packed",
+          "type": "uint256"
+        }
+      ],
+      "name": "decodeJobMetadata",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "enum JobRegistry.State",
+              "name": "state",
+              "type": "uint8"
+            },
+            {
+              "internalType": "bool",
+              "name": "success",
+              "type": "bool"
+            },
+            {
+              "internalType": "bool",
+              "name": "burnConfirmed",
+              "type": "bool"
+            },
+            {
+              "internalType": "uint8",
+              "name": "agentTypes",
+              "type": "uint8"
+            },
+            {
+              "internalType": "uint32",
+              "name": "feePct",
+              "type": "uint32"
+            },
+            {
+              "internalType": "uint32",
+              "name": "agentPct",
+              "type": "uint32"
+            },
+            {
+              "internalType": "uint64",
+              "name": "deadline",
+              "type": "uint64"
+            },
+            {
+              "internalType": "uint64",
+              "name": "assignedAt",
+              "type": "uint64"
+            }
+          ],
+          "internalType": "struct JobRegistry.JobMetadata",
+          "name": "",
+          "type": "tuple"
+        }
+      ],
+      "stateMutability": "pure",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "jobId",
+          "type": "uint256"
+        }
+      ],
+      "name": "delistJob",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "jobId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "evidenceHash",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "string",
+          "name": "reason",
+          "type": "string"
+        }
+      ],
+      "name": "dispute",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "disputeModule",
+      "outputs": [
+        {
+          "internalType": "contract IDisputeModule",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "employerStats",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "successful",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "failed",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "jobId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "string",
+          "name": "reason",
+          "type": "string"
+        }
+      ],
+      "name": "escalateToDispute",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "expirationGracePeriod",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "feePct",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "feePool",
+      "outputs": [
+        {
+          "internalType": "contract IFeePool",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "jobId",
+          "type": "uint256"
+        }
+      ],
+      "name": "finalize",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "jobId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "bool",
+          "name": "success",
+          "type": "bool"
+        }
+      ],
+      "name": "finalizeAfterValidation",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "jobId",
+          "type": "uint256"
+        }
+      ],
+      "name": "forceFinalize",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "employer",
+          "type": "address"
+        }
+      ],
+      "name": "getEmployerReputation",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "successful",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "failed",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "employer",
+          "type": "address"
+        }
+      ],
+      "name": "getEmployerScore",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "score",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "jobId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "address",
+          "name": "validator",
+          "type": "address"
+        }
+      ],
+      "name": "getJobValidatorVote",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "jobId",
+          "type": "uint256"
+        }
+      ],
+      "name": "getJobValidators",
+      "outputs": [
+        {
+          "internalType": "address[]",
+          "name": "",
+          "type": "address[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "jobId",
+          "type": "uint256"
+        }
+      ],
+      "name": "getSpecHash",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "governance",
+      "outputs": [
+        {
+          "internalType": "contract TimelockController",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "jobId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "burnTxHash",
+          "type": "bytes32"
+        }
+      ],
+      "name": "hasBurnReceipt",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "identityRegistry",
+      "outputs": [
+        {
+          "internalType": "contract IIdentityRegistry",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "isTaxExempt",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "pure",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "jobStake",
+      "outputs": [
+        {
+          "internalType": "uint96",
+          "name": "",
+          "type": "uint96"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "name": "jobs",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "employer",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "agent",
+          "type": "address"
+        },
+        {
+          "internalType": "uint128",
+          "name": "reward",
+          "type": "uint128"
+        },
+        {
+          "internalType": "uint96",
+          "name": "stake",
+          "type": "uint96"
+        },
+        {
+          "internalType": "uint128",
+          "name": "burnReceiptAmount",
+          "type": "uint128"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "uriHash",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "resultHash",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "specHash",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "uint256",
+          "name": "packedMetadata",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "jobId",
+          "type": "uint256"
+        }
+      ],
+      "name": "markReputationProcessed",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "maxActiveJobsPerAgent",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "maxJobDuration",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "maxJobReward",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "minAgentStake",
+      "outputs": [
+        {
+          "internalType": "uint96",
+          "name": "",
+          "type": "uint96"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "nextJobId",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "jobId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "bool",
+          "name": "success",
+          "type": "bool"
+        },
+        {
+          "internalType": "address[]",
+          "name": "validators",
+          "type": "address[]"
+        }
+      ],
+      "name": "onValidationResult",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "owner",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "pause",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "paused",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "pauser",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "pauserManager",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "name": "pendingValidationEntropy",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "jobId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "string",
+          "name": "reason",
+          "type": "string"
+        }
+      ],
+      "name": "raiseDispute",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "jobId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "evidenceHash",
+          "type": "bytes32"
+        }
+      ],
+      "name": "raiseDispute",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "reputationEngine",
+      "outputs": [
+        {
+          "internalType": "contract IReputationEngine",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "name": "reputationProcessed",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "jobId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "bool",
+          "name": "employerWins",
+          "type": "bool"
+        }
+      ],
+      "name": "resolveDispute",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "acknowledger",
+          "type": "address"
+        },
+        {
+          "internalType": "bool",
+          "name": "allowed",
+          "type": "bool"
+        }
+      ],
+      "name": "setAcknowledger",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "duration",
+          "type": "uint256"
+        }
+      ],
+      "name": "setAgentAuthCacheDuration",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "root",
+          "type": "bytes32"
+        }
+      ],
+      "name": "setAgentMerkleRoot",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "node",
+          "type": "bytes32"
+        }
+      ],
+      "name": "setAgentRootNode",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "contract IAuditModule",
+          "name": "module",
+          "type": "address"
+        }
+      ],
+      "name": "setAuditModule",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "contract ICertificateNFT",
+          "name": "nft",
+          "type": "address"
+        }
+      ],
+      "name": "setCertificateNFT",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "contract IDisputeModule",
+          "name": "module",
+          "type": "address"
+        }
+      ],
+      "name": "setDisputeModule",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "period",
+          "type": "uint256"
+        }
+      ],
+      "name": "setExpirationGracePeriod",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "_feePct",
+          "type": "uint256"
+        }
+      ],
+      "name": "setFeePct",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "contract IFeePool",
+          "name": "_feePool",
+          "type": "address"
+        }
+      ],
+      "name": "setFeePool",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_governance",
+          "type": "address"
+        }
+      ],
+      "name": "setGovernance",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "contract IIdentityRegistry",
+          "name": "registry",
+          "type": "address"
+        }
+      ],
+      "name": "setIdentityRegistry",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "limit",
+          "type": "uint256"
+        }
+      ],
+      "name": "setJobDurationLimit",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "maxReward",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "stake",
+          "type": "uint256"
+        }
+      ],
+      "name": "setJobParameters",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint96",
+          "name": "stake",
+          "type": "uint96"
+        }
+      ],
+      "name": "setJobStake",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "limit",
+          "type": "uint256"
+        }
+      ],
+      "name": "setMaxActiveJobsPerAgent",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "maxReward",
+          "type": "uint256"
+        }
+      ],
+      "name": "setMaxJobReward",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "stake",
+          "type": "uint256"
+        }
+      ],
+      "name": "setMinAgentStake",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "contract IValidationModule",
+          "name": "_validation",
+          "type": "address"
+        },
+        {
+          "internalType": "contract IStakeManager",
+          "name": "_stakeMgr",
+          "type": "address"
+        },
+        {
+          "internalType": "contract IReputationEngine",
+          "name": "_reputation",
+          "type": "address"
+        },
+        {
+          "internalType": "contract IDisputeModule",
+          "name": "_disputeModule",
+          "type": "address"
+        },
+        {
+          "internalType": "contract ICertificateNFT",
+          "name": "_certNFT",
+          "type": "address"
+        },
+        {
+          "internalType": "contract IFeePool",
+          "name": "_feePool",
+          "type": "address"
+        },
+        {
+          "internalType": "address[]",
+          "name": "_ackModules",
+          "type": "address[]"
+        }
+      ],
+      "name": "setModules",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_pauser",
+          "type": "address"
+        }
+      ],
+      "name": "setPauser",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "manager",
+          "type": "address"
+        }
+      ],
+      "name": "setPauserManager",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "contract IReputationEngine",
+          "name": "engine",
+          "type": "address"
+        }
+      ],
+      "name": "setReputationEngine",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "contract IStakeManager",
+          "name": "manager",
+          "type": "address"
+        }
+      ],
+      "name": "setStakeManager",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "contract ITaxPolicy",
+          "name": "_policy",
+          "type": "address"
+        }
+      ],
+      "name": "setTaxPolicy",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_treasury",
+          "type": "address"
+        }
+      ],
+      "name": "setTreasury",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "contract IValidationModule",
+          "name": "module",
+          "type": "address"
+        }
+      ],
+      "name": "setValidationModule",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "root",
+          "type": "bytes32"
+        }
+      ],
+      "name": "setValidatorMerkleRoot",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "pct",
+          "type": "uint256"
+        }
+      ],
+      "name": "setValidatorRewardPct",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "node",
+          "type": "bytes32"
+        }
+      ],
+      "name": "setValidatorRootNode",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "jobId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        },
+        {
+          "internalType": "string",
+          "name": "subdomain",
+          "type": "string"
+        },
+        {
+          "internalType": "bytes32[]",
+          "name": "proof",
+          "type": "bytes32[]"
+        }
+      ],
+      "name": "stakeAndApply",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "stakeManager",
+      "outputs": [
+        {
+          "internalType": "contract IStakeManager",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "jobId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "resultHash",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "string",
+          "name": "resultURI",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "subdomain",
+          "type": "string"
+        },
+        {
+          "internalType": "bytes32[]",
+          "name": "proof",
+          "type": "bytes32[]"
+        }
+      ],
+      "name": "submit",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "jobId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "burnTxHash",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "blockNumber",
+          "type": "uint256"
+        }
+      ],
+      "name": "submitBurnReceipt",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "taxAcknowledgement",
+      "outputs": [
+        {
+          "internalType": "string",
+          "name": "",
+          "type": "string"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "taxPolicy",
+      "outputs": [
+        {
+          "internalType": "contract ITaxPolicy",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "taxPolicyDetails",
+      "outputs": [
+        {
+          "internalType": "string",
+          "name": "ack",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "uri",
+          "type": "string"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "taxPolicyURI",
+      "outputs": [
+        {
+          "internalType": "string",
+          "name": "",
+          "type": "string"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "newOwner",
+          "type": "address"
+        }
+      ],
+      "name": "transferOwnership",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "treasury",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "unpause",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "agent",
+          "type": "address"
+        },
+        {
+          "internalType": "bool",
+          "name": "authorized",
+          "type": "bool"
+        }
+      ],
+      "name": "updateAgentAuthCache",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "jobId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "bool",
+          "name": "success",
+          "type": "bool"
+        }
+      ],
+      "name": "validationComplete",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "validationModule",
+      "outputs": [
+        {
+          "internalType": "contract IValidationModule",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "name": "validationStartPending",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "jobId",
+          "type": "uint256"
+        }
+      ],
+      "name": "validatorCommittee",
+      "outputs": [
+        {
+          "internalType": "address[]",
+          "name": "validators",
+          "type": "address[]"
+        },
+        {
+          "internalType": "bool[]",
+          "name": "approvals",
+          "type": "bool[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "validatorRewardPct",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "version",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "stateMutability": "payable",
+      "type": "receive"
+    }
+  ],
+  "storageLayout": {
+    "storage": [
+      {
+        "astId": 45282,
+        "contract": "contracts/v2/JobRegistry.sol:JobRegistry",
+        "label": "governance",
+        "offset": 0,
+        "slot": "0",
+        "type": "t_contract(TimelockController)3962"
+      },
+      {
+        "astId": 10504,
+        "contract": "contracts/v2/JobRegistry.sol:JobRegistry",
+        "label": "_status",
+        "offset": 0,
+        "slot": "1",
+        "type": "t_uint256"
+      },
+      {
+        "astId": 10394,
+        "contract": "contracts/v2/JobRegistry.sol:JobRegistry",
+        "label": "_paused",
+        "offset": 0,
+        "slot": "2",
+        "type": "t_bool"
+      },
+      {
+        "astId": 51285,
+        "contract": "contracts/v2/JobRegistry.sol:JobRegistry",
+        "label": "nextJobId",
+        "offset": 0,
+        "slot": "3",
+        "type": "t_uint256"
+      },
+      {
+        "astId": 51290,
+        "contract": "contracts/v2/JobRegistry.sol:JobRegistry",
+        "label": "jobs",
+        "offset": 0,
+        "slot": "4",
+        "type": "t_mapping(t_uint256,t_struct(Job)50643_storage)"
+      },
+      {
+        "astId": 51304,
+        "contract": "contracts/v2/JobRegistry.sol:JobRegistry",
+        "label": "burnReceipts",
+        "offset": 0,
+        "slot": "5",
+        "type": "t_mapping(t_uint256,t_mapping(t_bytes32,t_struct(BurnReceipt)51297_storage))"
+      },
+      {
+        "astId": 51308,
+        "contract": "contracts/v2/JobRegistry.sol:JobRegistry",
+        "label": "pendingValidationEntropy",
+        "offset": 0,
+        "slot": "6",
+        "type": "t_mapping(t_uint256,t_uint256)"
+      },
+      {
+        "astId": 51312,
+        "contract": "contracts/v2/JobRegistry.sol:JobRegistry",
+        "label": "validationStartPending",
+        "offset": 0,
+        "slot": "7",
+        "type": "t_mapping(t_uint256,t_bool)"
+      },
+      {
+        "astId": 51317,
+        "contract": "contracts/v2/JobRegistry.sol:JobRegistry",
+        "label": "jobValidators",
+        "offset": 0,
+        "slot": "8",
+        "type": "t_mapping(t_uint256,t_array(t_address)dyn_storage)"
+      },
+      {
+        "astId": 51323,
+        "contract": "contracts/v2/JobRegistry.sol:JobRegistry",
+        "label": "jobValidatorVotes",
+        "offset": 0,
+        "slot": "9",
+        "type": "t_mapping(t_uint256,t_mapping(t_address,t_bool))"
+      },
+      {
+        "astId": 51327,
+        "contract": "contracts/v2/JobRegistry.sol:JobRegistry",
+        "label": "reputationProcessed",
+        "offset": 0,
+        "slot": "10",
+        "type": "t_mapping(t_uint256,t_bool)"
+      },
+      {
+        "astId": 51340,
+        "contract": "contracts/v2/JobRegistry.sol:JobRegistry",
+        "label": "employerStats",
+        "offset": 0,
+        "slot": "11",
+        "type": "t_mapping(t_address,t_struct(EmployerStats)51335_storage)"
+      },
+      {
+        "astId": 51659,
+        "contract": "contracts/v2/JobRegistry.sol:JobRegistry",
+        "label": "activeJobs",
+        "offset": 0,
+        "slot": "12",
+        "type": "t_mapping(t_address,t_uint256)"
+      },
+      {
+        "astId": 51662,
+        "contract": "contracts/v2/JobRegistry.sol:JobRegistry",
+        "label": "maxActiveJobsPerAgent",
+        "offset": 0,
+        "slot": "13",
+        "type": "t_uint256"
+      },
+      {
+        "astId": 52292,
+        "contract": "contracts/v2/JobRegistry.sol:JobRegistry",
+        "label": "validationModule",
+        "offset": 0,
+        "slot": "14",
+        "type": "t_contract(IValidationModule)99243"
+      },
+      {
+        "astId": 52295,
+        "contract": "contracts/v2/JobRegistry.sol:JobRegistry",
+        "label": "stakeManager",
+        "offset": 0,
+        "slot": "15",
+        "type": "t_contract(IStakeManager)98700"
+      },
+      {
+        "astId": 52298,
+        "contract": "contracts/v2/JobRegistry.sol:JobRegistry",
+        "label": "reputationEngine",
+        "offset": 0,
+        "slot": "16",
+        "type": "t_contract(IReputationEngine)97154"
+      },
+      {
+        "astId": 52301,
+        "contract": "contracts/v2/JobRegistry.sol:JobRegistry",
+        "label": "disputeModule",
+        "offset": 0,
+        "slot": "17",
+        "type": "t_contract(IDisputeModule)95445"
+      },
+      {
+        "astId": 52304,
+        "contract": "contracts/v2/JobRegistry.sol:JobRegistry",
+        "label": "certificateNFT",
+        "offset": 0,
+        "slot": "18",
+        "type": "t_contract(ICertificateNFT)95375"
+      },
+      {
+        "astId": 52307,
+        "contract": "contracts/v2/JobRegistry.sol:JobRegistry",
+        "label": "auditModule",
+        "offset": 0,
+        "slot": "19",
+        "type": "t_contract(IAuditModule)95332"
+      },
+      {
+        "astId": 52310,
+        "contract": "contracts/v2/JobRegistry.sol:JobRegistry",
+        "label": "taxPolicy",
+        "offset": 0,
+        "slot": "20",
+        "type": "t_contract(ITaxPolicy)98886"
+      },
+      {
+        "astId": 52313,
+        "contract": "contracts/v2/JobRegistry.sol:JobRegistry",
+        "label": "feePool",
+        "offset": 0,
+        "slot": "21",
+        "type": "t_contract(IFeePool)95601"
+      },
+      {
+        "astId": 52316,
+        "contract": "contracts/v2/JobRegistry.sol:JobRegistry",
+        "label": "identityRegistry",
+        "offset": 0,
+        "slot": "22",
+        "type": "t_contract(IIdentityRegistry)95830"
+      },
+      {
+        "astId": 52318,
+        "contract": "contracts/v2/JobRegistry.sol:JobRegistry",
+        "label": "treasury",
+        "offset": 0,
+        "slot": "23",
+        "type": "t_address"
+      },
+      {
+        "astId": 52320,
+        "contract": "contracts/v2/JobRegistry.sol:JobRegistry",
+        "label": "pauser",
+        "offset": 0,
+        "slot": "24",
+        "type": "t_address"
+      },
+      {
+        "astId": 52322,
+        "contract": "contracts/v2/JobRegistry.sol:JobRegistry",
+        "label": "pauserManager",
+        "offset": 0,
+        "slot": "25",
+        "type": "t_address"
+      },
+      {
+        "astId": 52327,
+        "contract": "contracts/v2/JobRegistry.sol:JobRegistry",
+        "label": "acknowledgers",
+        "offset": 0,
+        "slot": "26",
+        "type": "t_mapping(t_address,t_bool)"
+      },
+      {
+        "astId": 53597,
+        "contract": "contracts/v2/JobRegistry.sol:JobRegistry",
+        "label": "agentAuthCache",
+        "offset": 0,
+        "slot": "27",
+        "type": "t_mapping(t_address,t_bool)"
+      },
+      {
+        "astId": 53601,
+        "contract": "contracts/v2/JobRegistry.sol:JobRegistry",
+        "label": "agentAuthExpiry",
+        "offset": 0,
+        "slot": "28",
+        "type": "t_mapping(t_address,t_uint256)"
+      },
+      {
+        "astId": 53605,
+        "contract": "contracts/v2/JobRegistry.sol:JobRegistry",
+        "label": "agentAuthVersion",
+        "offset": 0,
+        "slot": "29",
+        "type": "t_mapping(t_address,t_uint256)"
+      },
+      {
+        "astId": 53607,
+        "contract": "contracts/v2/JobRegistry.sol:JobRegistry",
+        "label": "agentAuthCacheVersion",
+        "offset": 0,
+        "slot": "30",
+        "type": "t_uint256"
+      },
+      {
+        "astId": 53609,
+        "contract": "contracts/v2/JobRegistry.sol:JobRegistry",
+        "label": "agentAuthCacheDuration",
+        "offset": 0,
+        "slot": "31",
+        "type": "t_uint256"
+      },
+      {
+        "astId": 53613,
+        "contract": "contracts/v2/JobRegistry.sol:JobRegistry",
+        "label": "agentSubdomains",
+        "offset": 0,
+        "slot": "32",
+        "type": "t_mapping(t_address,t_string_storage)"
+      },
+      {
+        "astId": 53658,
+        "contract": "contracts/v2/JobRegistry.sol:JobRegistry",
+        "label": "jobStake",
+        "offset": 0,
+        "slot": "33",
+        "type": "t_uint96"
+      },
+      {
+        "astId": 53660,
+        "contract": "contracts/v2/JobRegistry.sol:JobRegistry",
+        "label": "minAgentStake",
+        "offset": 12,
+        "slot": "33",
+        "type": "t_uint96"
+      },
+      {
+        "astId": 53668,
+        "contract": "contracts/v2/JobRegistry.sol:JobRegistry",
+        "label": "feePct",
+        "offset": 0,
+        "slot": "34",
+        "type": "t_uint256"
+      },
+      {
+        "astId": 53673,
+        "contract": "contracts/v2/JobRegistry.sol:JobRegistry",
+        "label": "maxJobReward",
+        "offset": 0,
+        "slot": "35",
+        "type": "t_uint256"
+      },
+      {
+        "astId": 53675,
+        "contract": "contracts/v2/JobRegistry.sol:JobRegistry",
+        "label": "maxJobDuration",
+        "offset": 0,
+        "slot": "36",
+        "type": "t_uint256"
+      },
+      {
+        "astId": 53677,
+        "contract": "contracts/v2/JobRegistry.sol:JobRegistry",
+        "label": "validatorRewardPct",
+        "offset": 0,
+        "slot": "37",
+        "type": "t_uint256"
+      },
+      {
+        "astId": 53682,
+        "contract": "contracts/v2/JobRegistry.sol:JobRegistry",
+        "label": "expirationGracePeriod",
+        "offset": 0,
+        "slot": "38",
+        "type": "t_uint256"
+      }
+    ],
+    "types": {
+      "t_address": {
+        "encoding": "inplace",
+        "label": "address",
+        "numberOfBytes": "20"
+      },
+      "t_array(t_address)dyn_storage": {
+        "base": "t_address",
+        "encoding": "dynamic_array",
+        "label": "address[]",
+        "numberOfBytes": "32"
+      },
+      "t_bool": {
+        "encoding": "inplace",
+        "label": "bool",
+        "numberOfBytes": "1"
+      },
+      "t_bytes32": {
+        "encoding": "inplace",
+        "label": "bytes32",
+        "numberOfBytes": "32"
+      },
+      "t_contract(IAuditModule)95332": {
+        "encoding": "inplace",
+        "label": "contract IAuditModule",
+        "numberOfBytes": "20"
+      },
+      "t_contract(ICertificateNFT)95375": {
+        "encoding": "inplace",
+        "label": "contract ICertificateNFT",
+        "numberOfBytes": "20"
+      },
+      "t_contract(IDisputeModule)95445": {
+        "encoding": "inplace",
+        "label": "contract IDisputeModule",
+        "numberOfBytes": "20"
+      },
+      "t_contract(IFeePool)95601": {
+        "encoding": "inplace",
+        "label": "contract IFeePool",
+        "numberOfBytes": "20"
+      },
+      "t_contract(IIdentityRegistry)95830": {
+        "encoding": "inplace",
+        "label": "contract IIdentityRegistry",
+        "numberOfBytes": "20"
+      },
+      "t_contract(IReputationEngine)97154": {
+        "encoding": "inplace",
+        "label": "contract IReputationEngine",
+        "numberOfBytes": "20"
+      },
+      "t_contract(IStakeManager)98700": {
+        "encoding": "inplace",
+        "label": "contract IStakeManager",
+        "numberOfBytes": "20"
+      },
+      "t_contract(ITaxPolicy)98886": {
+        "encoding": "inplace",
+        "label": "contract ITaxPolicy",
+        "numberOfBytes": "20"
+      },
+      "t_contract(IValidationModule)99243": {
+        "encoding": "inplace",
+        "label": "contract IValidationModule",
+        "numberOfBytes": "20"
+      },
+      "t_contract(TimelockController)3962": {
+        "encoding": "inplace",
+        "label": "contract TimelockController",
+        "numberOfBytes": "20"
+      },
+      "t_mapping(t_address,t_bool)": {
+        "encoding": "mapping",
+        "key": "t_address",
+        "label": "mapping(address => bool)",
+        "numberOfBytes": "32",
+        "value": "t_bool"
+      },
+      "t_mapping(t_address,t_string_storage)": {
+        "encoding": "mapping",
+        "key": "t_address",
+        "label": "mapping(address => string)",
+        "numberOfBytes": "32",
+        "value": "t_string_storage"
+      },
+      "t_mapping(t_address,t_struct(EmployerStats)51335_storage)": {
+        "encoding": "mapping",
+        "key": "t_address",
+        "label": "mapping(address => struct JobRegistry.EmployerStats)",
+        "numberOfBytes": "32",
+        "value": "t_struct(EmployerStats)51335_storage"
+      },
+      "t_mapping(t_address,t_uint256)": {
+        "encoding": "mapping",
+        "key": "t_address",
+        "label": "mapping(address => uint256)",
+        "numberOfBytes": "32",
+        "value": "t_uint256"
+      },
+      "t_mapping(t_bytes32,t_struct(BurnReceipt)51297_storage)": {
+        "encoding": "mapping",
+        "key": "t_bytes32",
+        "label": "mapping(bytes32 => struct JobRegistry.BurnReceipt)",
+        "numberOfBytes": "32",
+        "value": "t_struct(BurnReceipt)51297_storage"
+      },
+      "t_mapping(t_uint256,t_array(t_address)dyn_storage)": {
+        "encoding": "mapping",
+        "key": "t_uint256",
+        "label": "mapping(uint256 => address[])",
+        "numberOfBytes": "32",
+        "value": "t_array(t_address)dyn_storage"
+      },
+      "t_mapping(t_uint256,t_bool)": {
+        "encoding": "mapping",
+        "key": "t_uint256",
+        "label": "mapping(uint256 => bool)",
+        "numberOfBytes": "32",
+        "value": "t_bool"
+      },
+      "t_mapping(t_uint256,t_mapping(t_address,t_bool))": {
+        "encoding": "mapping",
+        "key": "t_uint256",
+        "label": "mapping(uint256 => mapping(address => bool))",
+        "numberOfBytes": "32",
+        "value": "t_mapping(t_address,t_bool)"
+      },
+      "t_mapping(t_uint256,t_mapping(t_bytes32,t_struct(BurnReceipt)51297_storage))": {
+        "encoding": "mapping",
+        "key": "t_uint256",
+        "label": "mapping(uint256 => mapping(bytes32 => struct JobRegistry.BurnReceipt))",
+        "numberOfBytes": "32",
+        "value": "t_mapping(t_bytes32,t_struct(BurnReceipt)51297_storage)"
+      },
+      "t_mapping(t_uint256,t_struct(Job)50643_storage)": {
+        "encoding": "mapping",
+        "key": "t_uint256",
+        "label": "mapping(uint256 => struct JobRegistry.Job)",
+        "numberOfBytes": "32",
+        "value": "t_struct(Job)50643_storage"
+      },
+      "t_mapping(t_uint256,t_uint256)": {
+        "encoding": "mapping",
+        "key": "t_uint256",
+        "label": "mapping(uint256 => uint256)",
+        "numberOfBytes": "32",
+        "value": "t_uint256"
+      },
+      "t_string_storage": {
+        "encoding": "bytes",
+        "label": "string",
+        "numberOfBytes": "32"
+      },
+      "t_struct(BurnReceipt)51297_storage": {
+        "encoding": "inplace",
+        "label": "struct JobRegistry.BurnReceipt",
+        "members": [
+          {
+            "astId": 51292,
+            "contract": "contracts/v2/JobRegistry.sol:JobRegistry",
+            "label": "amount",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_uint256"
+          },
+          {
+            "astId": 51294,
+            "contract": "contracts/v2/JobRegistry.sol:JobRegistry",
+            "label": "blockNumber",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_uint256"
+          },
+          {
+            "astId": 51296,
+            "contract": "contracts/v2/JobRegistry.sol:JobRegistry",
+            "label": "exists",
+            "offset": 0,
+            "slot": "2",
+            "type": "t_bool"
+          }
+        ],
+        "numberOfBytes": "96"
+      },
+      "t_struct(EmployerStats)51335_storage": {
+        "encoding": "inplace",
+        "label": "struct JobRegistry.EmployerStats",
+        "members": [
+          {
+            "astId": 51331,
+            "contract": "contracts/v2/JobRegistry.sol:JobRegistry",
+            "label": "successful",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_uint256"
+          },
+          {
+            "astId": 51334,
+            "contract": "contracts/v2/JobRegistry.sol:JobRegistry",
+            "label": "failed",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_uint256"
+          }
+        ],
+        "numberOfBytes": "64"
+      },
+      "t_struct(Job)50643_storage": {
+        "encoding": "inplace",
+        "label": "struct JobRegistry.Job",
+        "members": [
+          {
+            "astId": 50626,
+            "contract": "contracts/v2/JobRegistry.sol:JobRegistry",
+            "label": "employer",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_address"
+          },
+          {
+            "astId": 50628,
+            "contract": "contracts/v2/JobRegistry.sol:JobRegistry",
+            "label": "agent",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_address"
+          },
+          {
+            "astId": 50630,
+            "contract": "contracts/v2/JobRegistry.sol:JobRegistry",
+            "label": "reward",
+            "offset": 0,
+            "slot": "2",
+            "type": "t_uint128"
+          },
+          {
+            "astId": 50632,
+            "contract": "contracts/v2/JobRegistry.sol:JobRegistry",
+            "label": "stake",
+            "offset": 16,
+            "slot": "2",
+            "type": "t_uint96"
+          },
+          {
+            "astId": 50634,
+            "contract": "contracts/v2/JobRegistry.sol:JobRegistry",
+            "label": "burnReceiptAmount",
+            "offset": 0,
+            "slot": "3",
+            "type": "t_uint128"
+          },
+          {
+            "astId": 50636,
+            "contract": "contracts/v2/JobRegistry.sol:JobRegistry",
+            "label": "uriHash",
+            "offset": 0,
+            "slot": "4",
+            "type": "t_bytes32"
+          },
+          {
+            "astId": 50638,
+            "contract": "contracts/v2/JobRegistry.sol:JobRegistry",
+            "label": "resultHash",
+            "offset": 0,
+            "slot": "5",
+            "type": "t_bytes32"
+          },
+          {
+            "astId": 50640,
+            "contract": "contracts/v2/JobRegistry.sol:JobRegistry",
+            "label": "specHash",
+            "offset": 0,
+            "slot": "6",
+            "type": "t_bytes32"
+          },
+          {
+            "astId": 50642,
+            "contract": "contracts/v2/JobRegistry.sol:JobRegistry",
+            "label": "packedMetadata",
+            "offset": 0,
+            "slot": "7",
+            "type": "t_uint256"
+          }
+        ],
+        "numberOfBytes": "256"
+      },
+      "t_uint128": {
+        "encoding": "inplace",
+        "label": "uint128",
+        "numberOfBytes": "16"
+      },
+      "t_uint256": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      },
+      "t_uint96": {
+        "encoding": "inplace",
+        "label": "uint96",
+        "numberOfBytes": "12"
+      }
+    }
+  }
+}

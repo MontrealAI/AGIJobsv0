@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
+import {StakeManagerBase} from "../../contracts/v2/implementation/StakeManagerBase.sol";
+
+import {FixedImplementationFixtures} from "./helpers/FixedImplementationFixtures.sol";
 
 import "forge-std/Test.sol";
 import {StakeManager, MaxStakeExceeded, BelowMinimumStake, InvalidParams} from "../../contracts/v2/StakeManager.sol";
@@ -17,7 +20,7 @@ contract StakeManagerFuzz is Test {
         vm.etch(AGIALPHA, address(impl).code);
         vm.store(AGIALPHA, bytes32(uint256(5)), bytes32(uint256(uint160(address(this)))));
         token = AGIALPHAToken(payable(AGIALPHA));
-        stake = new StakeManager(1e18, 5_000, 5_000, address(0), address(this), address(this), address(this));
+        stake = new StakeManager(1e18, 5_000, 5_000, address(0), address(this), address(this), address(this), FixedImplementationFixtures.stakeManager());
         stake.setMinStake(1);
         vm.prank(address(stake));
         token.acceptTerms();
@@ -38,10 +41,10 @@ contract StakeManagerFuzz is Test {
     function testFuzz_slashWithinStake(uint256 deposit, uint256 slash) public {
         vm.assume(deposit >= stake.minStake() && deposit < 1e24);
         vm.assume(slash <= deposit);
-        _deposit(address(1), deposit, StakeManager.Role.Validator);
+        _deposit(address(1), deposit, StakeManagerBase.Role.Validator);
         vm.prank(address(this));
-        stake.slash(address(1), StakeManager.Role.Validator, slash, address(this));
-        assertEq(stake.stakeOf(address(1), StakeManager.Role.Validator), deposit - slash);
+        stake.slash(address(1), StakeManagerBase.Role.Validator, slash, address(this));
+        assertEq(stake.stakeOf(address(1), StakeManagerBase.Role.Validator), deposit - slash);
     }
 
     function testFuzz_maxStakePerAddress(uint256 limit, uint256 first, uint256 second) public {
@@ -53,7 +56,7 @@ contract StakeManagerFuzz is Test {
         vm.assume(second < 1e24);
         stake.setMaxStakePerAddress(limit);
         vm.assume(first <= limit);
-        _deposit(address(2), first, StakeManager.Role.Agent);
+        _deposit(address(2), first, StakeManagerBase.Role.Agent);
         uint256 remaining = limit - first;
         vm.assume(second > remaining);
         token.mint(address(2), second);
@@ -61,7 +64,7 @@ contract StakeManagerFuzz is Test {
         token.approve(address(stake), second);
         vm.prank(address(2));
         vm.expectRevert(MaxStakeExceeded.selector);
-        stake.depositStake(StakeManager.Role.Agent, second);
+        stake.depositStake(StakeManagerBase.Role.Agent, second);
     }
 
     function testFuzz_setStakeRecommendations_reverts(uint256 minRec, uint256 maxRec) public {
@@ -90,7 +93,7 @@ contract StakeManagerFuzz is Test {
         token.approve(address(stake), below);
         vm.prank(address(3));
         vm.expectRevert(BelowMinimumStake.selector);
-        stake.depositStake(StakeManager.Role.Agent, below);
+        stake.depositStake(StakeManagerBase.Role.Agent, below);
 
         // above max should revert
         uint256 above = maxRec + 1;
@@ -99,6 +102,6 @@ contract StakeManagerFuzz is Test {
         token.approve(address(stake), above);
         vm.prank(address(4));
         vm.expectRevert(MaxStakeExceeded.selector);
-        stake.depositStake(StakeManager.Role.Agent, above);
+        stake.depositStake(StakeManagerBase.Role.Agent, above);
     }
 }

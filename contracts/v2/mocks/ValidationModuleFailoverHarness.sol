@@ -4,15 +4,9 @@ pragma solidity ^0.8.25;
 import {ValidationModule, IJobRegistry, IStakeManager} from "../ValidationModule.sol";
 
 contract ValidationModuleFailoverHarness is ValidationModule {
-    constructor()
+    constructor(address[3] memory implementations)
         ValidationModule(
-            IJobRegistry(address(0)),
-            IStakeManager(address(0)),
-            60,
-            60,
-            3,
-            3,
-            new address[](0)
+            IJobRegistry(address(0)), IStakeManager(address(0)), 60, 60, 3, 3, new address[](0), implementations
         )
     {}
 
@@ -20,11 +14,7 @@ contract ValidationModuleFailoverHarness is ValidationModule {
         jobRegistry = IJobRegistry(registry);
     }
 
-    function seedRound(
-        uint256 jobId,
-        uint256 commitDeadline,
-        uint256 revealDeadline
-    ) external {
+    function seedRound(uint256 jobId, uint256 commitDeadline, uint256 revealDeadline) external {
         Round storage r = rounds[jobId];
         r.commitDeadline = commitDeadline;
         r.revealDeadline = revealDeadline;

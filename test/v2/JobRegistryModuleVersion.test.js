@@ -1,3 +1,6 @@
+const {
+  deployImplementations,
+} = require('../../scripts/deploy/implementations.cjs');
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
 
@@ -20,7 +23,8 @@ describe('JobRegistry module version checks', function () {
       0,
       0,
       [],
-      owner.address
+      owner.address,
+      await deployImplementations('JobRegistry', Registry.runner)
     );
     const Version = await ethers.getContractFactory(
       'contracts/v2/mocks/VersionMock.sol:VersionMock'

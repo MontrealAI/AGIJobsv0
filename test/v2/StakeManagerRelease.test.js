@@ -1,3 +1,6 @@
+const {
+  deployImplementations,
+} = require('../../scripts/deploy/implementations.cjs');
 const { expect } = require('chai');
 const { ethers, network, artifacts } = require('hardhat');
 
@@ -37,7 +40,8 @@ describe('StakeManager release', function () {
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
-      owner.address
+      owner.address,
+      await deployImplementations('StakeManager', StakeManager.runner)
     );
     await stakeManager.connect(owner).setMinStake(1);
 
@@ -55,7 +59,8 @@ describe('StakeManager release', function () {
       0,
       0,
       [],
-      owner.address
+      owner.address,
+      await deployImplementations('JobRegistry', JobRegistry.runner)
     );
     const TaxPolicy = await ethers.getContractFactory(
       'contracts/v2/TaxPolicy.sol:TaxPolicy'
@@ -112,12 +117,7 @@ describe('StakeManager release', function () {
     await expect(
       stakeManager
         .connect(registrySigner)
-        .release(
-          user2.address,
-          user1.address,
-          ethers.parseEther('100'),
-          true
-        )
+        .release(user2.address, user1.address, ethers.parseEther('100'), true)
     )
       .to.emit(stakeManager, 'StakeReleased')
       .withArgs(
@@ -245,9 +245,7 @@ describe('StakeManager release', function () {
       .to.emit(stakeManager, 'RewardPaid')
       .withArgs(jobId, user2.address, ethers.parseEther('100'));
 
-    expect(await token.balanceOf(user2.address)).to.equal(
-      balanceBeforeLock
-    );
+    expect(await token.balanceOf(user2.address)).to.equal(balanceBeforeLock);
   });
 
   it('reverts when setting fee pool to zero', async () => {

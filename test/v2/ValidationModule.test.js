@@ -1,3 +1,6 @@
+const {
+  deployImplementations,
+} = require('../../scripts/deploy/implementations.cjs');
 const { expect } = require('chai');
 const { ethers, network, artifacts } = require('hardhat');
 const { AGIALPHA } = require('../../scripts/constants');
@@ -34,7 +37,8 @@ describe('ValidationModule V2', function () {
       60,
       3,
       3,
-      []
+      [],
+      await deployImplementations('ValidationModule', Validation.runner)
     );
     await validation.waitForDeployment();
     await validation
@@ -184,7 +188,8 @@ describe('ValidationModule V2', function () {
       60,
       3,
       3,
-      []
+      [],
+      await deployImplementations('ValidationModule', Validation.runner)
     );
     await unconfigured.waitForDeployment();
     await unconfigured
@@ -411,7 +416,9 @@ describe('ValidationModule V2', function () {
     ).wait();
     await advance(61);
     await expect(
-      validation.connect(v1).revealValidation(1, true, burnTxHash, salt, 'validator', [])
+      validation
+        .connect(v1)
+        .revealValidation(1, true, burnTxHash, salt, 'validator', [])
     ).to.be.revertedWithCustomError(validation, 'InvalidReveal');
   });
 
@@ -494,8 +501,9 @@ describe('ValidationModule V2', function () {
       ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32', 'bytes32'],
       [1n, nonce2, true, burnTxHash, salt, ethers.ZeroHash]
     );
-    await expect(validation.connect(v1).commitValidation(1, commit2, 'validator', [])).to
-      .not.be.reverted;
+    await expect(
+      validation.connect(v1).commitValidation(1, commit2, 'validator', [])
+    ).to.not.be.reverted;
   });
 
   it('removes validators from lookup on nonce reset', async () => {
@@ -586,12 +594,16 @@ describe('ValidationModule V2', function () {
       [1n, nonce, true, burnTxHash, salt, ethers.ZeroHash]
     );
 
-    await expect(validation.connect(val).commitValidation(1, commit, 'validator', []))
+    await expect(
+      validation.connect(val).commitValidation(1, commit, 'validator', [])
+    )
       .to.be.revertedWithCustomError(validation, 'TaxPolicyNotAcknowledged')
       .withArgs(val.address);
 
     await policy.connect(val).acknowledge();
-    await expect(validation.connect(val).commitValidation(1, commit, 'validator', []))
+    await expect(
+      validation.connect(val).commitValidation(1, commit, 'validator', [])
+    )
       .to.emit(validation, 'ValidatorIdentityVerified')
       .withArgs(val.address, ethers.ZeroHash, 'validator', false, false)
       .and.to.emit(validation, 'ValidationCommitted')
@@ -638,19 +650,13 @@ describe('ValidationModule V2', function () {
       jobRegistryReal,
       validationReal,
       identityReal;
-    let admin,
-      employerAccount,
-      validatorA,
-      validatorB,
-      validatorC;
+    let admin, employerAccount, validatorA, validatorB, validatorC;
     let burnHashReal;
 
     beforeEach(async () => {
       [admin, employerAccount, validatorA, validatorB, validatorC] =
         await ethers.getSigners();
-      burnHashReal = ethers.keccak256(
-        ethers.toUtf8Bytes('real-stake-burn')
-      );
+      burnHashReal = ethers.keccak256(ethers.toUtf8Bytes('real-stake-burn'));
 
       const erc20Artifact = await artifacts.readArtifact(
         'contracts/test/MockERC20.sol:MockERC20'
@@ -685,7 +691,8 @@ describe('ValidationModule V2', function () {
         ethers.ZeroAddress,
         ethers.ZeroAddress,
         ethers.ZeroAddress,
-        admin.address
+        admin.address,
+        await deployImplementations('StakeManager', Stake.runner)
       );
       await stakeManagerReal.waitForDeployment();
 
@@ -705,7 +712,8 @@ describe('ValidationModule V2', function () {
         60,
         3,
         3,
-        []
+        [],
+        await deployImplementations('ValidationModule', Validation.runner)
       );
       await validationReal.waitForDeployment();
 
@@ -753,10 +761,7 @@ describe('ValidationModule V2', function () {
       for (let i = 0; i < validators.length; i++) {
         await tokenReal
           .connect(validators[i])
-          .approve(
-            await stakeManagerReal.getAddress(),
-            stakes[i]
-          );
+          .approve(await stakeManagerReal.getAddress(), stakes[i]);
         await stakeManagerReal
           .connect(validators[i])
           .depositStake(1, stakes[i]);
@@ -779,21 +784,19 @@ describe('ValidationModule V2', function () {
     });
 
     async function selectReal(jobId, entropy = 0) {
-      await validationReal
-        .connect(validatorA)
-        .selectValidators(jobId, entropy);
+      await validationReal.connect(validatorA).selectValidators(jobId, entropy);
       const selectionTarget = await validationReal.selectionBlock(jobId);
       await validationReal
         .connect(validatorB)
         .selectValidators(jobId, entropy + 1);
 
-      while (BigInt(await ethers.provider.getBlockNumber()) <= selectionTarget) {
+      while (
+        BigInt(await ethers.provider.getBlockNumber()) <= selectionTarget
+      ) {
         await ethers.provider.send('evm_mine', []);
       }
 
-      return validationReal
-        .connect(validatorA)
-        .selectValidators(jobId, 0);
+      return validationReal.connect(validatorA).selectValidators(jobId, 0);
     }
 
     it('slashes validators through real StakeManager access control', async () => {
@@ -832,10 +835,7 @@ describe('ValidationModule V2', function () {
       ).wait();
 
       await advance(61);
-      const before = await stakeManagerReal.stakeOf(
-        validatorC.address,
-        1
-      );
+      const before = await stakeManagerReal.stakeOf(validatorC.address, 1);
 
       await validationReal
         .connect(validatorA)

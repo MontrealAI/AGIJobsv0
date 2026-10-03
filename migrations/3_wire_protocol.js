@@ -3,6 +3,7 @@ const path = require('path');
 const { ethers } = require('ethers');
 const Deployer = artifacts.require('Deployer');
 const { loadEnsConfig, loadDeploymentPlan } = require('../scripts/config');
+const { stageProtocol } = require('../scripts/deploy/stage-protocol.cjs');
 
 const ADDRESSES_PATH = path.join(
   __dirname,
@@ -158,6 +159,7 @@ module.exports = async function (_deployer, network, accounts) {
     burnPct,
     employerSlashPct: planEcon.employerSlashPct ?? 0,
     treasurySlashPct: planEcon.treasurySlashPct ?? 0,
+    validatorSlashRewardPct: planEcon.validatorSlashRewardPct ?? 0,
     commitWindow: planEcon.commitWindow ?? 0,
     revealWindow: planEcon.revealWindow ?? 0,
     minStake:
@@ -166,7 +168,45 @@ module.exports = async function (_deployer, network, accounts) {
       planEcon.jobStake !== undefined ? planEcon.jobStake.toString() : 0,
   };
 
-  console.log('Executing deterministic module deployment via Deployer...');
+  // Reuse Truffle's configured signer/provider for the staged deployment.
+  const provider = new ethers.BrowserProvider({
+    request: ({ method, params }) =>
+      new Promise((resolve, reject) => {
+        web3.currentProvider.send(
+          { jsonrpc: '2.0', id: Date.now(), method, params },
+          (error, response) => {
+            if (error || response?.error)
+              reject(error || new Error(response.error.message));
+            else resolve(response.result);
+          }
+        );
+      }),
+  });
+  const signer = await provider.getSigner(await deployerInstance.owner());
+  const runtime = {
+    ...ethers,
+    getContractFactory: async (fqn, runner) => {
+      const artifact = artifacts.require(fqn.split(':').pop());
+      return new ethers.ContractFactory(
+        artifact.abi,
+        artifact.bytecode,
+        runner
+      );
+    },
+    getContractAt: async (abi, address, runner) =>
+      new ethers.Contract(address, abi, runner),
+  };
+  const coordinator = new ethers.Contract(
+    deployerInstance.address,
+    Deployer.abi,
+    signer
+  );
+  await stageProtocol(coordinator, ids, governance, {
+    econ,
+    withTaxPolicy: withTax,
+    runtime,
+  });
+  console.log('Finalizing the staged module deployment via Deployer...');
   let receipt;
   if (withTax) {
     if (customEcon) {

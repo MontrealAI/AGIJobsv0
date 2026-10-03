@@ -1,3 +1,4 @@
+import { deployImplementations } from './deploy/implementations.cjs';
 import { ethers } from 'hardhat';
 
 // Mainnet ENS registry and NameWrapper addresses
@@ -19,7 +20,8 @@ async function main() {
     deployer.address,
     ethers.ZeroAddress,
     ethers.ZeroAddress,
-    deployer.address
+    deployer.address,
+    await deployImplementations('StakeManager', Stake.runner)
   );
   await stake.waitForDeployment();
 
@@ -56,7 +58,8 @@ async function main() {
     0,
     0,
     [],
-    deployer.address
+    deployer.address,
+    await deployImplementations('JobRegistry', Registry.runner)
   );
   await registry.waitForDeployment();
 

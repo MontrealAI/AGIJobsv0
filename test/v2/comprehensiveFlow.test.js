@@ -1,3 +1,6 @@
+const {
+  deployImplementations,
+} = require('../../scripts/deploy/implementations.cjs');
 const { expect } = require('chai');
 const { ethers, artifacts, network } = require('hardhat');
 const { time } = require('@nomicfoundation/hardhat-network-helpers');
@@ -53,7 +56,8 @@ describe('comprehensive job flows', function () {
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
-      owner.address
+      owner.address,
+      await deployImplementations('StakeManager', Stake.runner)
     );
 
     await stakeManager.connect(owner).setMinStake(1);
@@ -87,7 +91,8 @@ describe('comprehensive job flows', function () {
       0,
       0,
       [],
-      owner.address
+      owner.address,
+      await deployImplementations('JobRegistry', Registry.runner)
     );
 
     const Dispute = await ethers.getContractFactory(
@@ -165,10 +170,7 @@ describe('comprehensive job flows', function () {
     await identity.addAdditionalAgent(agent.address);
     await token
       .connect(agent)
-      .approve(
-        await stakeManager.getAddress(),
-        stakeRequired + disputeFee
-      );
+      .approve(await stakeManager.getAddress(), stakeRequired + disputeFee);
     await stakeManager.connect(agent).depositStake(0, stakeRequired);
     await token
       .connect(employer)

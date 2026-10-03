@@ -1,3 +1,6 @@
+const {
+  deployImplementations,
+} = require('../../scripts/deploy/implementations.cjs');
 const { expect } = require('chai');
 const { ethers, artifacts, network } = require('hardhat');
 const { AGIALPHA, AGIALPHA_DECIMALS } = require('../../scripts/constants');
@@ -34,7 +37,8 @@ describe('CertificateNFT marketplace', function () {
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
-      owner.address
+      owner.address,
+      await deployImplementations('StakeManager', Stake.runner)
     );
     await stake.setMinStake(1);
 
@@ -260,10 +264,9 @@ describe('CertificateNFT marketplace', function () {
       .to.emit(nft, 'BaseURILocked')
       .withArgs('ipfs://certificates-v2/');
 
-    await expect(nft.updateBaseURI('ipfs://certificates-v3/')).to.be.revertedWithCustomError(
-      nft,
-      'BaseURIAlreadyLocked'
-    );
+    await expect(
+      nft.updateBaseURI('ipfs://certificates-v3/')
+    ).to.be.revertedWithCustomError(nft, 'BaseURIAlreadyLocked');
     await expect(nft.lockBaseURI()).to.be.revertedWithCustomError(
       nft,
       'BaseURIAlreadyLocked'

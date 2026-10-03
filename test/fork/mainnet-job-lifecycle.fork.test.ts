@@ -1,3 +1,4 @@
+import { deployImplementations } from '../../scripts/deploy/implementations.cjs';
 import { expect } from 'chai';
 import { ethers, network } from 'hardhat';
 import { time } from '@nomicfoundation/hardhat-network-helpers';
@@ -119,7 +120,8 @@ describeFork('Mainnet fork · job lifecycle drill', function () {
       treasury.address,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
-      owner.address
+      owner.address,
+      await deployImplementations('StakeManager', Stake.runner)
     );
 
     const TaxPolicy = await ethers.getContractFactory(
@@ -171,7 +173,8 @@ describeFork('Mainnet fork · job lifecycle drill', function () {
       0,
       0,
       [],
-      owner.address
+      owner.address,
+      await deployImplementations('JobRegistry', Registry.runner)
     );
 
     const Dispute = await ethers.getContractFactory(

@@ -1,3 +1,6 @@
+const {
+  deployImplementations,
+} = require('../../scripts/deploy/implementations.cjs');
 const { ethers } = require('hardhat');
 const { expect } = require('chai');
 
@@ -26,7 +29,8 @@ describe('JobRegistry validator auth cache', function () {
       60,
       3,
       3,
-      []
+      [],
+      await deployImplementations('ValidationModule', Validation.runner)
     );
     await validation.waitForDeployment();
 
@@ -53,7 +57,8 @@ describe('JobRegistry validator auth cache', function () {
       0,
       0,
       [],
-      owner.address
+      owner.address,
+      await deployImplementations('JobRegistry', Registry.runner)
     );
     await registry.waitForDeployment();
 
@@ -66,10 +71,12 @@ describe('JobRegistry validator auth cache', function () {
     await validation
       .connect(owner)
       .setValidatorPool([v1.address, v2.address, v3.address]);
-    await validation.connect(owner).setValidatorSubdomains(
-      [v1.address, v2.address, v3.address],
-      ['validator-1', 'validator-2', 'validator-3']
-    );
+    await validation
+      .connect(owner)
+      .setValidatorSubdomains(
+        [v1.address, v2.address, v3.address],
+        ['validator-1', 'validator-2', 'validator-3']
+      );
     await validation.connect(owner).setValidatorAuthCacheDuration(1000);
 
     await stakeManager.setStake(v1.address, 1, ethers.parseEther('100'));

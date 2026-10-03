@@ -120,6 +120,7 @@ const solidityCompilers = solidityVersions.map((version) => ({
     },
     viaIR: compilerViaIR,
     evmVersion: 'cancun',
+    outputSelection: { '*': { '*': ['storageLayout'] } },
     metadata: isFastCompile ? { bytecodeHash: 'none' } : undefined,
   },
 }));
@@ -156,9 +157,9 @@ module.exports = {
   paths: pathsConfig,
   networks: {
     hardhat: {
-      allowUnlimitedContractSize: true,
-      gas: 100000000,
-      blockGasLimit: 100000000,
+      allowUnlimitedContractSize: false,
+      gas: 'auto',
+      blockGasLimit: 30000000,
     },
     anvil: {
       url: process.env.ANVIL_RPC_URL || 'http://127.0.0.1:8545',

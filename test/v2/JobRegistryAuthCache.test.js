@@ -1,3 +1,6 @@
+const {
+  deployImplementations,
+} = require('../../scripts/deploy/implementations.cjs');
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
 const { time } = require('@nomicfoundation/hardhat-network-helpers');
@@ -32,7 +35,8 @@ describe('JobRegistry agent auth cache', function () {
       0,
       0,
       [],
-      owner.address
+      owner.address,
+      await deployImplementations('JobRegistry', Registry.runner)
     );
     await registry.waitForDeployment();
     await registry
@@ -69,9 +73,7 @@ describe('JobRegistry agent auth cache', function () {
 
   it('records agent subdomains on initial verification', async () => {
     const first = await createJob();
-    await expect(
-      registry.connect(agent).applyForJob(first, 'alpha', [])
-    )
+    await expect(registry.connect(agent).applyForJob(first, 'alpha', []))
       .to.emit(registry, 'AgentSubdomainUpdated')
       .withArgs(agent.address, 'alpha');
     expect(await registry.agentSubdomains(agent.address)).to.equal('alpha');
@@ -87,9 +89,7 @@ describe('JobRegistry agent auth cache', function () {
     await registry.connect(agent).applyForJob(first, 'alpha', []);
 
     const second = await createJob();
-    await expect(
-      registry.connect(agent).applyForJob(second, 'beta', [])
-    )
+    await expect(registry.connect(agent).applyForJob(second, 'beta', []))
       .to.emit(registry, 'AgentSubdomainUpdated')
       .withArgs(agent.address, 'beta');
   });
@@ -161,7 +161,8 @@ describe('JobRegistry agent auth cache', function () {
       0,
       0,
       [],
-      owner.address
+      owner.address,
+      await deployImplementations('JobRegistry', Registry.runner)
     );
     await registry2.waitForDeployment();
     await verifier2.connect(owner).setResult(true);
@@ -251,7 +252,8 @@ describe('JobRegistry agent auth cache', function () {
       0,
       0,
       [],
-      owner.address
+      owner.address,
+      await deployImplementations('JobRegistry', Registry.runner)
     );
     await reg.waitForDeployment();
     await reg.connect(owner).setIdentityRegistry(await identity.getAddress());
@@ -314,7 +316,8 @@ describe('JobRegistry agent auth cache', function () {
       0,
       0,
       [],
-      owner.address
+      owner.address,
+      await deployImplementations('JobRegistry', Registry.runner)
     );
     await reg.waitForDeployment();
     await reg.connect(owner).setIdentityRegistry(await identity.getAddress());
@@ -375,7 +378,8 @@ describe('JobRegistry agent auth cache', function () {
       0,
       0,
       [],
-      owner.address
+      owner.address,
+      await deployImplementations('JobRegistry', Registry.runner)
     );
     await registry2.waitForDeployment();
     await verifier2.connect(owner).setResult(true);
@@ -438,7 +442,8 @@ describe('JobRegistry agent auth cache', function () {
       0,
       0,
       [],
-      owner.address
+      owner.address,
+      await deployImplementations('JobRegistry', Registry.runner)
     );
     await registry2.waitForDeployment();
     await verifier2.connect(owner).setResult(true);

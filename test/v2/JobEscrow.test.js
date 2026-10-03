@@ -1,3 +1,6 @@
+const {
+  deployImplementations,
+} = require('../../scripts/deploy/implementations.cjs');
 const { expect } = require('chai');
 const { ethers, artifacts, network } = require('hardhat');
 const { time } = require('@nomicfoundation/hardhat-network-helpers');
@@ -110,9 +113,7 @@ describe('JobEscrow', function () {
   it('owner can adjust the timeout window', async () => {
     const reward = ethers.parseUnits('0.0004', decimals);
     const newTimeout = 12n * 60n * 60n; // 12 hours
-    await expect(
-      escrow.connect(owner).setResultTimeout(newTimeout)
-    )
+    await expect(escrow.connect(owner).setResultTimeout(newTimeout))
       .to.emit(escrow, 'ResultTimeoutUpdated')
       .withArgs(newTimeout);
     expect(await escrow.resultTimeout()).to.equal(newTimeout);
@@ -156,7 +157,8 @@ describe('JobEscrow', function () {
       0,
       0,
       [],
-      owner.address
+      owner.address,
+      await deployImplementations('JobRegistry', JobRegistry.runner)
     );
     const TaxPolicy = await ethers.getContractFactory(
       'contracts/v2/TaxPolicy.sol:TaxPolicy'

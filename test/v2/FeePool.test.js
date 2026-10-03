@@ -1,3 +1,6 @@
+const {
+  deployImplementations,
+} = require('../../scripts/deploy/implementations.cjs');
 const { expect } = require('chai');
 const { ethers, artifacts, network } = require('hardhat');
 
@@ -41,7 +44,8 @@ describe('FeePool', function () {
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
-      owner.address
+      owner.address,
+      await deployImplementations('StakeManager', StakeManager.runner)
     );
     await stakeManager.connect(owner).setMinStake(1);
 
@@ -59,7 +63,8 @@ describe('FeePool', function () {
       0,
       0,
       [],
-      owner.address
+      owner.address,
+      await deployImplementations('JobRegistry', JobRegistry.runner)
     );
     const TaxPolicy = await ethers.getContractFactory(
       'contracts/v2/TaxPolicy.sol:TaxPolicy'
@@ -394,7 +399,8 @@ describe('FeePool', function () {
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
-      owner.address
+      owner.address,
+      await deployImplementations('StakeManager', StakeManager.runner)
     );
     const FeePool = await ethers.getContractFactory(
       'contracts/v2/FeePool.sol:FeePool'
@@ -565,7 +571,8 @@ describe('FeePool with no stakers', function () {
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
-      owner.address
+      owner.address,
+      await deployImplementations('StakeManager', StakeManager.runner)
     );
     await stakeManager.connect(owner).setMinStake(1);
 

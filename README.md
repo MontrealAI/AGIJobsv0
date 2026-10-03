@@ -14,7 +14,7 @@ AGI Jobs v0 (v2) brings together job contracts, agent gateways, validators, oper
 
 **Start here:** [Local setup and role guide](docs/START_HERE.md) · [Production readiness and remaining blockers](docs/production/readiness-2026-10-03.md) · [Demo and documentation catalog](docs/readme-catalog.md).
 
-**Deployment status:** local tests are not a mainnet certification. Four production contracts currently exceed Ethereum bytecode limits, and the committed signing registry contains examples that must be replaced with authorized public keys. `npm run release:check-size` and the release-signature guard fail closed until these requirements are met. All existing architectural diagrams and demonstration surfaces are retained.
+**Deployment status:** local tests are not a mainnet certification. The four previously oversized contracts now use [fixed implementations and staged deployment](docs/production/fixed-implementations.md), and the size gate passes with normal Ethereum limits enforced. Release still requires authorized signing keys, completed deployment configuration, and passing CI. All existing architectural diagrams and demonstration surfaces are retained.
 
 ```mermaid
 flowchart LR

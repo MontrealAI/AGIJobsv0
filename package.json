@@ -463,5 +463,5 @@
     "build:orchestrator": "tsc -p apps/orchestrator/tsconfig.json && node scripts/package-runtime-assets.cjs orchestrator"
   },
   "type": "commonjs",
-  "version": "1.0.0"
+  "version": "2.0.0"
 }

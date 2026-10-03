@@ -1,3 +1,6 @@
+const {
+  deployImplementations,
+} = require('../../scripts/deploy/implementations.cjs');
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
 
@@ -16,7 +19,9 @@ describe('ValidationModule failover controls', function () {
     const Harness = await ethers.getContractFactory(
       'contracts/v2/mocks/ValidationModuleFailoverHarness.sol:ValidationModuleFailoverHarness'
     );
-    harness = await Harness.deploy();
+    harness = await Harness.deploy(
+      await deployImplementations('ValidationModule', Harness.runner)
+    );
   });
 
   it('extends the reveal window and records state', async () => {
@@ -30,7 +35,12 @@ describe('ValidationModule failover controls', function () {
     await expect(
       harness
         .connect(owner)
-        .triggerFailover(jobId, FailoverAction.ExtendReveal, extension, 'network outage')
+        .triggerFailover(
+          jobId,
+          FailoverAction.ExtendReveal,
+          extension,
+          'network outage'
+        )
     )
       .to.emit(harness, 'ValidationFailover')
       .withArgs(
@@ -85,7 +95,9 @@ describe('ValidationModule failover controls', function () {
       'contracts/v2/mocks/ValidationModuleFailoverHarness.sol:FailoverJobRegistryMock'
     );
 
-    harness = await Harness.deploy();
+    harness = await Harness.deploy(
+      await deployImplementations('ValidationModule', Harness.runner)
+    );
     const registry = await RegistryMock.deploy();
     await harness.seedRound(11, 100, 200);
     await harness.forceJobRegistry(await registry.getAddress());
@@ -96,12 +108,7 @@ describe('ValidationModule failover controls', function () {
         .triggerFailover(11, FailoverAction.EscalateDispute, 0, 'escalate')
     )
       .to.emit(harness, 'ValidationFailover')
-      .withArgs(
-        11,
-        FailoverAction.EscalateDispute,
-        200,
-        'escalate'
-      );
+      .withArgs(11, FailoverAction.EscalateDispute, 200, 'escalate');
 
     expect(await registry.lastJobId()).to.equal(11);
     expect(await registry.lastReason()).to.equal('escalate');

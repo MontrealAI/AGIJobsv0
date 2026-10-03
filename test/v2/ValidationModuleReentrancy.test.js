@@ -1,3 +1,6 @@
+const {
+  deployImplementations,
+} = require('../../scripts/deploy/implementations.cjs');
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
 
@@ -33,7 +36,8 @@ async function setup() {
     60,
     3,
     3,
-    []
+    [],
+    await deployImplementations('ValidationModule', Validation.runner)
   );
   await validation.waitForDeployment();
   await validation
@@ -113,7 +117,9 @@ describe('ValidationModule reentrancy', function () {
     );
     await identity.attackCommit(1, commitHash);
     await expect(
-      validation.connect(validator).commitValidation(1, commitHash, 'validator', [])
+      validation
+        .connect(validator)
+        .commitValidation(1, commitHash, 'validator', [])
     ).to.be.revertedWithCustomError(validation, 'ReentrancyGuardReentrantCall');
   });
 
@@ -127,7 +133,9 @@ describe('ValidationModule reentrancy', function () {
       ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32', 'bytes32'],
       [1n, nonce, true, burnTxHash, salt, ethers.ZeroHash]
     );
-    await validation.connect(validator).commitValidation(1, commitHash, 'validator', []);
+    await validation
+      .connect(validator)
+      .commitValidation(1, commitHash, 'validator', []);
     await advance(61);
     await identity.attackReveal(1, true, burnTxHash, salt);
     await expect(

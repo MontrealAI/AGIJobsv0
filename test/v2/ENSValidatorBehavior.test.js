@@ -1,3 +1,6 @@
+const {
+  deployImplementations,
+} = require('../../scripts/deploy/implementations.cjs');
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
 
@@ -78,7 +81,8 @@ describe('Validator ENS integration', function () {
       60,
       3,
       3,
-      []
+      [],
+      await deployImplementations('ValidationModule', Validation.runner)
     );
     await validation.waitForDeployment();
     await validation.setReputationEngine(await reputation.getAddress());

@@ -1,3 +1,4 @@
+const { stageProtocol } = require('../../scripts/deploy/stage-protocol.cjs');
 const { expect } = require('chai');
 const { ethers, artifacts, network } = require('hardhat');
 const { AGIALPHA } = require('../../scripts/constants');
@@ -34,6 +35,7 @@ async function deploySystem(governanceAddress) {
     AGIALPHA,
     artifact.deployedBytecode,
   ]);
+  await stageProtocol(deployer, ids, governanceAddress, { econ });
   const tx = await deployer.deploy(econ, ids, governanceAddress);
   const receipt = await tx.wait();
   const deployerAddress = await deployer.getAddress();
@@ -197,9 +199,7 @@ describe('SystemPause', function () {
         addresses.arbitratorCommittee
       );
 
-    await expect(tx)
-      .to.emit(pause, 'PausersUpdated')
-      .withArgs(pauseAddress);
+    await expect(tx).to.emit(pause, 'PausersUpdated').withArgs(pauseAddress);
 
     expect(await pause.activePauser()).to.equal(pauseAddress);
     expect(await stake.pauser()).to.equal(pauseAddress);
@@ -411,9 +411,7 @@ describe('SystemPause', function () {
         addresses.arbitratorCommittee
       );
 
-    await expect(
-      pause.connect(owner).setGlobalPauser(delegate.address)
-    )
+    await expect(pause.connect(owner).setGlobalPauser(delegate.address))
       .to.emit(pause, 'PausersUpdated')
       .withArgs(delegate.address);
 
@@ -427,10 +425,9 @@ describe('SystemPause', function () {
     expect(await reputation.pauser()).to.equal(delegate.address);
     expect(await committee.pauser()).to.equal(delegate.address);
 
-    await expect(pause.connect(delegate).refreshPausers()).to.be.revertedWithCustomError(
-      pause,
-      'NotGovernance'
-    );
+    await expect(
+      pause.connect(delegate).refreshPausers()
+    ).to.be.revertedWithCustomError(pause, 'NotGovernance');
 
     await expect(pause.connect(owner).refreshPausers())
       .to.emit(pause, 'PausersUpdated')
@@ -496,9 +493,7 @@ describe('SystemPause', function () {
       pause.connect(owner).setGlobalPauser(ethers.ZeroAddress)
     ).to.be.revertedWithCustomError(pause, 'InvalidPauser');
 
-    await expect(
-      pause.connect(owner).refreshPausers()
-    )
+    await expect(pause.connect(owner).refreshPausers())
       .to.emit(pause, 'PausersUpdated')
       .withArgs(pauseAddress);
 
@@ -559,7 +554,9 @@ describe('SystemPause', function () {
       );
 
     const newMinStake = ethers.parseUnits('3', 18);
-    const callData = stake.interface.encodeFunctionData('setMinStake', [newMinStake]);
+    const callData = stake.interface.encodeFunctionData('setMinStake', [
+      newMinStake,
+    ]);
     const selector = stake.interface.getFunction('setMinStake').selector;
 
     await expect(
@@ -616,7 +613,9 @@ describe('SystemPause', function () {
         addresses.arbitratorCommittee
       );
 
-    const callData = stake.interface.encodeFunctionData('setMinStake', [ethers.parseUnits('2', 18)]);
+    const callData = stake.interface.encodeFunctionData('setMinStake', [
+      ethers.parseUnits('2', 18),
+    ]);
 
     await expect(
       pause.connect(owner).executeGovernanceCall(owner.address, callData)
@@ -800,8 +799,13 @@ describe('SystemPause', function () {
       .to.emit(pause, 'ValidationFailoverForwarded')
       .withArgs(jobId, action, extension, reason);
 
-    const [recordedJobId, recordedAction, recordedExtension, recordedReason, callCount] =
-      await spy.lastFailover();
+    const [
+      recordedJobId,
+      recordedAction,
+      recordedExtension,
+      recordedReason,
+      callCount,
+    ] = await spy.lastFailover();
 
     expect(recordedJobId).to.equal(jobId);
     expect(recordedAction).to.equal(action);

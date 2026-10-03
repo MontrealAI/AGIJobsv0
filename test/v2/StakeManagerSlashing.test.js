@@ -1,3 +1,7 @@
+const { stageProtocol } = require('../../scripts/deploy/stage-protocol.cjs');
+const {
+  deployImplementations,
+} = require('../../scripts/deploy/implementations.cjs');
 const { expect } = require('chai');
 const { ethers, artifacts, network } = require('hardhat');
 const { AGIALPHA } = require('../../scripts/constants');
@@ -24,7 +28,8 @@ describe('StakeManager slashing configuration', function () {
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
-      owner.address
+      owner.address,
+      await deployImplementations('StakeManager', StakeManager.runner)
     );
   });
 
@@ -47,15 +52,11 @@ describe('StakeManager slashing configuration', function () {
   });
 
   it('updates operator slash percentage via governance', async () => {
-    await expect(
-      stakeManager.connect(owner).setSlashingPercentages(40, 40)
-    )
+    await expect(stakeManager.connect(owner).setSlashingPercentages(40, 40))
       .to.emit(stakeManager, 'SlashingPercentagesUpdated')
       .withArgs(40, 40);
 
-    await expect(
-      stakeManager.connect(owner).setOperatorSlashPct(10)
-    )
+    await expect(stakeManager.connect(owner).setOperatorSlashPct(10))
       .to.emit(stakeManager, 'OperatorSlashPctUpdated')
       .withArgs(10);
 
@@ -68,9 +69,7 @@ describe('StakeManager slashing configuration', function () {
 
   it('supports updating the full slash distribution in one call', async () => {
     await expect(
-      stakeManager
-        .connect(owner)
-        .setSlashDistribution(25, 25, 20, 30)
+      stakeManager.connect(owner).setSlashDistribution(25, 25, 20, 30)
     )
       .to.emit(stakeManager, 'SlashDistributionUpdated')
       .withArgs(25, 25, 20, 30);
@@ -103,7 +102,12 @@ describe('StakeManager multi-validator slashing', function () {
       AGIALPHA
     );
 
-    const addresses = [agent.address, val1.address, val2.address, employer.address];
+    const addresses = [
+      agent.address,
+      val1.address,
+      val2.address,
+      employer.address,
+    ];
     const supplySlot = '0x' + (2).toString(16).padStart(64, '0');
     await network.provider.send('hardhat_setStorageAt', [
       AGIALPHA,
@@ -178,7 +182,8 @@ describe('StakeManager multi-validator slashing', function () {
       treasury.address,
       regAddr,
       ethers.ZeroAddress,
-      owner.address
+      owner.address,
+      await deployImplementations('StakeManager', StakeManager.runner)
     );
     await stakeManager.connect(owner).setValidatorRewardPct(20);
     await stakeManager
@@ -240,7 +245,9 @@ describe('StakeManager multi-validator slashing', function () {
 
     expect(await token.balanceOf(val1.address)).to.equal(902n * ONE);
     expect(await token.balanceOf(val2.address)).to.equal(706n * ONE);
-    expect(await token.balanceOf(treasury.address)).to.equal(expectedTreasuryShare);
+    expect(await token.balanceOf(treasury.address)).to.equal(
+      expectedTreasuryShare
+    );
 
     const agentGain = 100n;
     await engine
@@ -294,9 +301,7 @@ describe('StakeManager multi-validator slashing', function () {
 
   it('routes operator slash share into the reward pool', async () => {
     await stakeManager.connect(owner).setValidatorRewardPct(0);
-    await stakeManager
-      .connect(owner)
-      .setSlashDistribution(30, 30, 40, 0);
+    await stakeManager.connect(owner).setSlashDistribution(30, 30, 40, 0);
 
     const amount = 50n * ONE;
     const operatorShare = (amount * 40n) / 100n;
@@ -321,14 +326,14 @@ describe('StakeManager multi-validator slashing', function () {
   });
 
   it('redistributes escrow according to slash distribution', async () => {
-    await stakeManager
-      .connect(owner)
-      .setSlashDistribution(60, 20, 10, 10);
+    await stakeManager.connect(owner).setSlashDistribution(60, 20, 10, 10);
 
     const jobId = ethers.encodeBytes32String('escrow-slash');
     const amount = 100n * ONE;
 
-    await token.connect(employer).approve(await stakeManager.getAddress(), amount);
+    await token
+      .connect(employer)
+      .approve(await stakeManager.getAddress(), amount);
     await stakeManager
       .connect(registrySigner)
       .lockReward(jobId, employer.address, amount);
@@ -352,7 +357,11 @@ describe('StakeManager multi-validator slashing', function () {
     const validatorDistributed = val1Reward + val2Reward;
     const burnRemainder = validatorTarget - validatorDistributed;
     const expectedBurn =
-      baseAmount - expectedEmployer - expectedTreasury - expectedOperator + burnRemainder;
+      baseAmount -
+      expectedEmployer -
+      expectedTreasury -
+      expectedOperator +
+      burnRemainder;
 
     await expect(
       stakeManager
@@ -387,8 +396,12 @@ describe('StakeManager multi-validator slashing', function () {
       treasuryStart + expectedTreasury
     );
     expect(await stakeManager.operatorRewardPool()).to.equal(expectedOperator);
-    expect(await token.balanceOf(val1.address)).to.equal(val1Start + val1Reward);
-    expect(await token.balanceOf(val2.address)).to.equal(val2Start + val2Reward);
+    expect(await token.balanceOf(val1.address)).to.equal(
+      val1Start + val1Reward
+    );
+    expect(await token.balanceOf(val2.address)).to.equal(
+      val2Start + val2Reward
+    );
     expect(await stakeManager.jobEscrows(jobId)).to.equal(0);
   });
 });
@@ -472,14 +485,20 @@ describe('StakeManager validator slashing via validation module', function () {
       treasury.address,
       regAddr,
       ethers.ZeroAddress,
-      owner.address
+      owner.address,
+      await deployImplementations('StakeManager', StakeManager.runner)
     );
-    await stakeManager.connect(owner).setTreasuryAllowlist(treasury.address, true);
+    await stakeManager
+      .connect(owner)
+      .setTreasuryAllowlist(treasury.address, true);
     await stakeManager.connect(owner).setSlashingDistribution(40, 40, 20);
 
     const stakeAddr = await stakeManager.getAddress();
     const stakeAck = ethers.keccak256(
-      ethers.AbiCoder.defaultAbiCoder().encode(['address', 'uint256'], [stakeAddr, 6])
+      ethers.AbiCoder.defaultAbiCoder().encode(
+        ['address', 'uint256'],
+        [stakeAddr, 6]
+      )
     );
     await network.provider.send('hardhat_setStorageAt', [
       AGIALPHA,
@@ -491,7 +510,9 @@ describe('StakeManager validator slashing via validation module', function () {
     await token.connect(goodValidator1).approve(stakeAddr, 1000n * ONE);
     await token.connect(goodValidator2).approve(stakeAddr, 1000n * ONE);
 
-    await stakeManager.connect(badValidator).depositStake(Role.Validator, 100n * ONE);
+    await stakeManager
+      .connect(badValidator)
+      .depositStake(Role.Validator, 100n * ONE);
     await stakeManager
       .connect(goodValidator1)
       .depositStake(Role.Validator, 30n * ONE);
@@ -523,7 +544,8 @@ describe('StakeManager validator slashing via validation module', function () {
     const baseAmount = amount - expectedValidatorReward;
     const expectedEmployerShare = (baseAmount * 40n) / 100n;
     const expectedTreasuryShare = (baseAmount * 40n) / 100n;
-    const expectedBurnShare = baseAmount - expectedEmployerShare - expectedTreasuryShare;
+    const expectedBurnShare =
+      baseAmount - expectedEmployerShare - expectedTreasuryShare;
 
     const validatorStakeBefore = await stakeManager.stakeOf(
       badValidator.address,
@@ -577,7 +599,8 @@ describe('StakeManager validator slashing via validation module', function () {
     expect(treasuryBalance - treasuryBefore).to.equal(expectedTreasuryShare);
     expect(employerBalance - employerBefore).to.equal(expectedEmployerShare);
 
-    const validatorRewardPaid = val1Balance - val1Before + (val2Balance - val2Before);
+    const validatorRewardPaid =
+      val1Balance - val1Before + (val2Balance - val2Before);
     expect(validatorRewardPaid).to.equal(expectedValidatorReward);
   });
 });
@@ -650,6 +673,7 @@ describe('StakeManager deployer integration', function () {
       agentMerkleRoot: ethers.ZeroHash,
     };
 
+    await stageProtocol(deployer, ids, governance.address);
     const deployment = await deployer.deployDefaults.staticCall(
       ids,
       governance.address
@@ -697,9 +721,9 @@ describe('StakeManager deployer integration', function () {
 
   it('allowlists the treasury during deployment', async () => {
     expect(await stakeManager.treasury()).to.equal(governance.address);
-    expect(
-      await stakeManager.treasuryAllowlist(governance.address)
-    ).to.equal(true);
+    expect(await stakeManager.treasuryAllowlist(governance.address)).to.equal(
+      true
+    );
 
     const slashAmount = 40n * ONE;
     const beforeBalance = await token.balanceOf(governance.address);
@@ -755,7 +779,10 @@ describe('StakeManager governance emergency slash', function () {
     ];
     for (const addr of addresses) {
       const balSlot = ethers.keccak256(
-        ethers.AbiCoder.defaultAbiCoder().encode(['address', 'uint256'], [addr, 0])
+        ethers.AbiCoder.defaultAbiCoder().encode(
+          ['address', 'uint256'],
+          [addr, 0]
+        )
       );
       await network.provider.send('hardhat_setStorageAt', [
         AGIALPHA,
@@ -763,7 +790,10 @@ describe('StakeManager governance emergency slash', function () {
         ethers.toBeHex(1_000n * ONE, 32),
       ]);
       const ackSlot = ethers.keccak256(
-        ethers.AbiCoder.defaultAbiCoder().encode(['address', 'uint256'], [addr, 6])
+        ethers.AbiCoder.defaultAbiCoder().encode(
+          ['address', 'uint256'],
+          [addr, 6]
+        )
       );
       await network.provider.send('hardhat_setStorageAt', [
         AGIALPHA,
@@ -782,23 +812,31 @@ describe('StakeManager governance emergency slash', function () {
       treasury.address,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
-      owner.address
+      owner.address,
+      await deployImplementations('StakeManager', StakeManager.runner)
     );
 
     const JobMock = await ethers.getContractFactory(
       'contracts/legacy/MockV2.sol:MockJobRegistry'
     );
     const jobRegistry = await JobMock.deploy();
-    await stakeManager.connect(owner).setJobRegistry(await jobRegistry.getAddress());
+    await stakeManager
+      .connect(owner)
+      .setJobRegistry(await jobRegistry.getAddress());
 
-    await stakeManager.connect(owner).setTreasuryAllowlist(treasury.address, true);
+    await stakeManager
+      .connect(owner)
+      .setTreasuryAllowlist(treasury.address, true);
     await stakeManager.connect(owner).setSlashingPercentages(60, 40);
     await stakeManager.connect(owner).setValidatorRewardPct(0);
     await stakeManager.connect(owner).setOperatorSlashPct(0);
 
     const stakeAddr = await stakeManager.getAddress();
     const stakeAckSlot = ethers.keccak256(
-      ethers.AbiCoder.defaultAbiCoder().encode(['address', 'uint256'], [stakeAddr, 6])
+      ethers.AbiCoder.defaultAbiCoder().encode(
+        ['address', 'uint256'],
+        [stakeAddr, 6]
+      )
     );
     await network.provider.send('hardhat_setStorageAt', [
       AGIALPHA,
@@ -807,7 +845,9 @@ describe('StakeManager governance emergency slash', function () {
     ]);
 
     await token.connect(validator).approve(stakeAddr, 1_000n * ONE);
-    await stakeManager.connect(validator).depositStake(Role.Validator, 200n * ONE);
+    await stakeManager
+      .connect(validator)
+      .depositStake(Role.Validator, 200n * ONE);
   });
 
   it('slashes a validator stake and routes funds to the beneficiary', async () => {
@@ -819,7 +859,12 @@ describe('StakeManager governance emergency slash', function () {
     await expect(
       stakeManager
         .connect(owner)
-        .governanceSlash(validator.address, Role.Validator, pct, beneficiary.address)
+        .governanceSlash(
+          validator.address,
+          Role.Validator,
+          pct,
+          beneficiary.address
+        )
     )
       .to.emit(stakeManager, 'GovernanceSlash')
       .withArgs(
@@ -831,7 +876,10 @@ describe('StakeManager governance emergency slash', function () {
         owner.address
       );
 
-    const finalStake = await stakeManager.stakes(validator.address, Role.Validator);
+    const finalStake = await stakeManager.stakes(
+      validator.address,
+      Role.Validator
+    );
     expect(finalStake).to.equal(200n * ONE - slashAmount);
 
     const totalStake = await stakeManager.totalStake(Role.Validator);
@@ -850,19 +898,34 @@ describe('StakeManager governance emergency slash', function () {
     await expect(
       stakeManager
         .connect(owner)
-        .governanceSlash(validator.address, Role.Validator, 0, beneficiary.address)
+        .governanceSlash(
+          validator.address,
+          Role.Validator,
+          0,
+          beneficiary.address
+        )
     ).to.be.revertedWithCustomError(stakeManager, 'InvalidPercentage');
 
     await expect(
       stakeManager
         .connect(owner)
-        .governanceSlash(validator.address, Role.Validator, 100, ethers.ZeroAddress)
+        .governanceSlash(
+          validator.address,
+          Role.Validator,
+          100,
+          ethers.ZeroAddress
+        )
     ).to.be.revertedWithCustomError(stakeManager, 'InvalidRecipient');
 
     await expect(
       stakeManager
         .connect(owner)
-        .governanceSlash(owner.address, Role.Validator, 1_000, beneficiary.address)
+        .governanceSlash(
+          owner.address,
+          Role.Validator,
+          1_000,
+          beneficiary.address
+        )
     ).to.be.revertedWithCustomError(stakeManager, 'InsufficientStake');
   });
 });

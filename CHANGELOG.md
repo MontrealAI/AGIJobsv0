@@ -2,7 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
-## Unreleased — 2026-10-03 readiness hardening
+## v2.0.0
+
+Release candidate prepared on 2026-10-03; publication remains subject to the release gates.
+
+- Split JobRegistry, StakeManager, and ValidationModule into fixed implementations while preserving their runtime APIs and storage offsets. Constructor setup now includes implementation addresses.
+- Replace the oversized one-transaction deployer with paused, resumable component deployment and atomic final wiring.
+- Enforce Ethereum contract-size limits in the normal Hardhat network and contract CI; preserve existing features and flowcharts.
+- Add public-ABI, storage-layout, domain-separation, authorization, direct-call, and deployment-resumption regressions.
 
 - Enforce exact-commit release CI, contract verification, scan-before-signing, draft-before-publication, and prerelease-safe image promotion; update Cosign/provenance verification and portable checksums.
 - Close the CULTURE studio API coverage gap with error/default-path tests and fix arena lint in clean installations.
@@ -14,7 +21,7 @@ All notable changes to this project will be documented in this file.
 - Move the pinned root toolchain and primary container builds to Node 22.23.3 LTS; fix the Node doctor's false mismatch warning.
 - Separate headless recursive-model dependencies from the optional dashboard, resolve platform and model requirements together, check dependency consistency, and test relevant pull requests.
 - Verify real SSH public keys and signed tags without shell interpolation; require the signed tag to match the checkout for both automatic and manual releases.
-- Add a production bytecode-size gate to release and mainnet preparation. Four existing contracts exceed Ethereum limits; local tests permit oversized contracts and do not establish deployability.
+- Add a production bytecode-size gate to release and mainnet preparation. The four previously oversized contracts now fit Ethereum limits; deployment and lifecycle tests run with those limits enforced.
 - Scan container candidates before promoting `latest`, including both published architectures, refresh the OS scanner and primary base images, and align matrix job names with the required-context manifest.
 - Add an operator entry guide and dated evidence report; preserve existing features, diagrams, and examples.
 

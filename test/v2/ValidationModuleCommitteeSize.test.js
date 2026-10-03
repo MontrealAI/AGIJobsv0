@@ -1,3 +1,6 @@
+const {
+  deployImplementations,
+} = require('../../scripts/deploy/implementations.cjs');
 const { ethers } = require('hardhat');
 const { expect } = require('chai');
 
@@ -27,7 +30,8 @@ describe('ValidationModule committee size', function () {
       60,
       3,
       4,
-      []
+      [],
+      await deployImplementations('ValidationModule', Validation.runner)
     );
     await validation.waitForDeployment();
 

@@ -1,3 +1,6 @@
+const {
+  deployImplementations,
+} = require('../../scripts/deploy/implementations.cjs');
 require('../setup');
 const { expect } = require('chai');
 const { ethers, network } = require('hardhat');
@@ -135,10 +138,9 @@ describe('RandaoCoordinator', function () {
     );
     const randao = await Randao.deploy(10, 20, 1n, initialTreasury.address);
 
-    await expect(randao.connect(participant).setCommitWindow(15)).to.be.revertedWithCustomError(
-      randao,
-      'OwnableUnauthorizedAccount'
-    );
+    await expect(
+      randao.connect(participant).setCommitWindow(15)
+    ).to.be.revertedWithCustomError(randao, 'OwnableUnauthorizedAccount');
 
     await expect(randao.setCommitWindow(15))
       .to.emit(randao, 'CommitWindowUpdated')
@@ -195,13 +197,13 @@ describe('RandaoCoordinator', function () {
       'contracts/v2/RandaoCoordinator.sol:RandaoCoordinator'
     );
 
-    await expect(Randao.deploy(0, 10, DEPOSIT, treasury.address)).to.be.revertedWith(
-      'Commit window must be greater than zero'
-    );
+    await expect(
+      Randao.deploy(0, 10, DEPOSIT, treasury.address)
+    ).to.be.revertedWith('Commit window must be greater than zero');
 
-    await expect(Randao.deploy(10, 0, DEPOSIT, treasury.address)).to.be.revertedWith(
-      'Reveal window must be greater than zero'
-    );
+    await expect(
+      Randao.deploy(10, 0, DEPOSIT, treasury.address)
+    ).to.be.revertedWith('Reveal window must be greater than zero');
 
     const randao = await Randao.deploy(10, 10, DEPOSIT, treasury.address);
 
@@ -283,14 +285,17 @@ describe('RandaoCoordinator', function () {
     );
     const newToken = await MockToken.deploy();
 
-    await expect(randao.setToken(await newToken.getAddress()))
-      .to.be.revertedWithCustomError(randao, 'OutstandingDeposits');
+    await expect(
+      randao.setToken(await newToken.getAddress())
+    ).to.be.revertedWithCustomError(randao, 'OutstandingDeposits');
 
     await time.increase(11);
     await randao.connect(participant).reveal(tag, secret);
 
-    await expect(randao.setToken(await newToken.getAddress()))
-      .to.emit(randao, 'TokenUpdated');
+    await expect(randao.setToken(await newToken.getAddress())).to.emit(
+      randao,
+      'TokenUpdated'
+    );
   });
 
   it('validates token metadata during updates', async () => {
@@ -300,10 +305,9 @@ describe('RandaoCoordinator', function () {
     );
     const randao = await Randao.deploy(10, 20, 1n, treasury.address);
 
-    await expect(randao.setToken(ethers.ZeroAddress)).to.be.revertedWithCustomError(
-      randao,
-      'ZeroTokenAddress'
-    );
+    await expect(
+      randao.setToken(ethers.ZeroAddress)
+    ).to.be.revertedWithCustomError(randao, 'ZeroTokenAddress');
 
     const Token6 = await ethers.getContractFactory(
       'contracts/test/MockERC206Decimals.sol:MockERC206Decimals'
@@ -319,8 +323,9 @@ describe('RandaoCoordinator', function () {
     );
     const tokenNoMeta = await TokenNoMeta.deploy();
 
-    await expect(randao.setToken(await tokenNoMeta.getAddress()))
-      .to.be.revertedWithCustomError(randao, 'TokenMetadataUnavailable');
+    await expect(
+      randao.setToken(await tokenNoMeta.getAddress())
+    ).to.be.revertedWithCustomError(randao, 'TokenMetadataUnavailable');
   });
 });
 
@@ -368,7 +373,8 @@ describe('ValidationModule fairness', function () {
       1,
       3,
       3,
-      []
+      [],
+      await deployImplementations('ValidationModule', Validation.runner)
     );
 
     await validation.setIdentityRegistry(await identity.getAddress());

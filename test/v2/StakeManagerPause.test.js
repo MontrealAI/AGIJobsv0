@@ -1,3 +1,6 @@
+const {
+  deployImplementations,
+} = require('../../scripts/deploy/implementations.cjs');
 const { expect } = require('chai');
 const { ethers, artifacts, network } = require('hardhat');
 
@@ -32,7 +35,8 @@ describe('StakeManager pause', function () {
       ethers.ZeroAddress,
       await mockReg.getAddress(),
       owner.address,
-      owner.address
+      owner.address,
+      await deployImplementations('StakeManager', StakeManager.runner)
     );
     await stakeManager.connect(owner).setMinStake(1);
     await token.mint(user.address, ethers.parseEther('1000'));

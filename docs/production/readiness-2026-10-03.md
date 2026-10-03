@@ -2,15 +2,15 @@
 
 Reviewed baseline: `7049353e1ee13c19b97365b269f9a9ac1800434c`, with the accompanying readiness-hardening changes. This is an engineering verification record, not an independent security audit or a claim that the full vision has been proven in production.
 
-**Decision: suitable for continued local development and demonstration; not ready for a mainnet release.** Mainnet deployability fails on compiled bytecode size, and release trust is not configured. Existing features, examples, and diagrams are preserved.
+**Decision: suitable for continued local development and demonstration; not ready for a mainnet release.** The modular candidate passes the contract-size gate; release trust and the remaining integration/configuration gates are not complete. Existing features, examples, and diagrams are preserved.
 
 ## Verified locally
 
 | Check                                                                      | Result                                                                                                                                         |
 | -------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
 | Supported root toolchain                                                   | Node 22.23.3, npm 10.8.2; toolchain and lockfile checks pass                                                                                   |
-| Solidity compilation                                                       | 253 source files compile with the repository's default optimizer/viaIR settings                                                                |
-| Full `npm test`                                                            | Pretest checks and 571 Hardhat tests pass                                                                                                      |
+| Solidity compilation                                                       | 267 source files compile with the repository's default optimizer/viaIR settings                                                                |
+| Full `npm test`                                                            | Pretest checks and 581 Hardhat tests pass with contract-size limits enforced                                                                                                      |
 | Python repository suite                                                    | 246 passed, 1 skipped                                                                                                                          |
 | Focused recursive-model suite                                              | 13 passed                                                                                                                                      |
 | New release guard regressions                                              | 12 passed: signed/unsigned/untrusted/wrong-commit tags, shell metacharacters, malformed keys, and bytecode-size boundaries and empty artifacts |
@@ -50,7 +50,7 @@ The CULTURE gas snapshot is stale, and the lifecycle (682,540 gas versus 500,000
 
 ## Release publication follow-up
 
-A subsequent release review confirmed that the authorized-signers check and production size gate still fail. No tag or release was published, and the changes remain in PR #3876. The current public repository has no release records or remote tags; no version has been invented to conceal the blocked state.
+Before the modular refactor below, a subsequent release review confirmed that the authorized-signers check and production size gate both failed. No tag or release was published, and the changes remain in PR #3876. The current public repository has no release records or remote tags; no version has been invented to conceal the blocked state.
 
 The release workflow now requires successful main-branch CI for its exact commit, a matching signed-tag workflow ref, contract verification before container/npm publication, and scans of both image architectures before signing immutable digests. GitHub assets stay in draft until image promotion succeeds. Prereleases cannot move `latest`, and the separate container workflow no longer promotes tag builds. Current Cosign 3.1.3 bundle signing preserves the detached signature/certificate assets, adds the complete verification bundle, and uses the required attestation permission. Downloaded checksums no longer require a `dist/` subdirectory. The signing guide now uses valid SSH registry instructions and the correct GitHub provenance verification command.
 
@@ -61,7 +61,7 @@ Additional validation:
 - All 30 release regressions pass (12 prior signing/size checks plus 18 CI/publication checks). They cover stale/foreign/missing/pending/failed evidence, pagination and API failures, dependency ordering, prerelease promotion, draft publication, and portable checksums.
 - Application-image CI at `dab6bae0b37ae2996bc3f02a52ec7c2c1f243f05` passed both console and portal builds/scans ([run](https://github.com/MontrealAI/AGIJobsv0/actions/runs/37132344290)). Its CULTURE job still failed on the gas snapshot and the arena lint issue repaired here. New-head CI must be checked independently.
 
-Publishing a production release still requires the contract-size refactor, a verified maintainer public key and maintainer-signed tag, real deployment/governance configuration, completed integration/coverage/gas work, and passing CI. The private signing key must remain with the maintainer.
+Publishing a production release still requires review of the modular refactor, a verified maintainer public key and maintainer-signed tag, real deployment/governance configuration, completed integration/coverage/gas work, and passing CI. The private signing key must remain with the maintainer.
 
 ## Repairs included
 
@@ -76,20 +76,34 @@ Publishing a production release still requires the contract-size refactor, a ver
 
 ## Mainnet size gate
 
-Run `npm run compile`, then `npm run release:check-size`. The latter currently exits **1**, intentionally. It examines 56 non-mock deployable v2 artifacts from this build.
+Run `npm run compile`, then `npm run release:check-size`. The modular candidate passes for **66** non-mock deployable v2 artifacts, including ten fixed implementations. The [deployment architecture guide](fixed-implementations.md) explains the constructor changes, shared layouts, direct-call protections, domain separators, and paused/resumable staging.
 
-| Contract         | Runtime bytes | Runtime limit | Initcode bytes | Initcode limit |
-| ---------------- | ------------: | ------------: | -------------: | -------------: |
-| JobRegistry      |        48,855 |        24,576 |         51,813 |         49,152 |
-| StakeManager     |        45,337 |        24,576 |         46,928 |         49,152 |
-| ValidationModule |        28,199 |        24,576 |         29,925 |         49,152 |
-| Deployer         |       234,082 |        24,576 |        234,207 |         49,152 |
+| Contract | Previous runtime bytes | Candidate runtime bytes | Candidate initcode bytes |
+| --- | ---: | ---: | ---: |
+| JobRegistry | 48,855 | 8,004 | 11,847 |
+| StakeManager | 45,337 | 7,881 | 10,396 |
+| ValidationModule | 28,199 | 6,368 | 8,980 |
+| Deployer | 234,082 | 20,864 | 20,987 |
 
-The local Hardhat network sets `allowUnlimitedContractSize: true`. This supports development tests but masks an Ethereum deployment constraint. Constructor arguments also contribute to actual initcode size; passing the artifact-only size gate is necessary, not sufficient. The gate does not verify artifact freshness: release workflows compile first.
+Normal Hardhat tests now set `allowUnlimitedContractSize: false`, use automatic gas estimation, and enforce a 30 million block gas limit. Constructor arguments also contribute to actual initcode size. Existing job, staking, validator, dispute, settlement, tax, and governance features remain. The original 17 root README Mermaid blocks remain unchanged.
+
+## Modular candidate verification
+
+The final clean default build and `npm test` pass: **267 Solidity sources** and **581 Hardhat tests**, including the complete pretest sequence. The ten new compatibility/deployment tests preserve all prior controller functions, events, errors, and storage offsets; verify identical implementation layouts and controller-specific voting domains; enforce direct-call and governance checks; and exercise paused, interrupted, resumed, and completed staging with per-transaction gas limits.
+
+- **66** non-mock deployable v2 artifacts pass EIP-170/EIP-3860 size checks.
+- **59** selected Foundry staking/slashing/validator/deadline regressions pass with 256 fuzz runs.
+- **13** tests across all five invariant suites pass, covering escrow, fee pools, staking accounting, and pause/governance controls.
+- **4** validation-finalization tests pass, including both finalization gas scenarios.
+- **30** release/signing/size regression tests pass. Toolchain/lock integrity, Solidity lint, workflow syntax, and required formatting checks pass.
+- Foundry output and cache are isolated from Hardhat artifacts, avoiding incompatible build-info files in subsequent test runs.
+- All **17** root README flowcharts remain byte-for-byte identical to the reviewed baseline.
+
+The root version and changelog prepare **v2.0.0** because constructor setup and whole-stack deployment change. No release or signed tag has been published. The authorized-signers check still rejects the committed example keys. At the prior PR head `c420ecc7caf2b731eaa40d48fccebcc03dbd82a4`, CULTURE CI still failed; new candidate CI must be evaluated on its own commit.
 
 ## Remaining production work
 
-1. **Refactor the oversized contracts.** Split responsibilities into deployable modules/libraries or another explicitly reviewed architecture while preserving accounting, access control, storage/migration rules, and required ABI behavior. Re-run lifecycle, invariant, gas, and strict-size deployment tests. Simply changing a badge or raising a local limit cannot repair this.
+1. **Review the modular deployment architecture.** The four oversized contracts are split and the size gate passes. Review the fixed delegation boundaries and staged deployment, and complete any migration and independent security review required for the intended network. The test evidence does not replace that review.
 2. **Configure authentic release trust.** Replace the example registry with authorized SSH public keys, verify fingerprints through the maintainer's process, and sign the reviewed tag. No signing identity has been invented or installed by this change.
 3. **Complete deployment configuration and planning.** `deployment-config/mainnet.json` still has a zero governance address. `release-mainnet.yml` references `scripts/v2/plan-deploy.ts`, which is absent from the reviewed baseline. Implement and review the intended deployment-plan generator before using that workflow; a configuration-update plan is not a substitute for a deployment plan.
 4. **Require current CI and security evidence.** Validate the PR's actual container builds, OS and application dependencies, browser suites, Foundry checks, branch rules, and release workflow. The baseline's August container run failed OS vulnerability scans; the October scheduled Torch run failed collection. Historical green badges are insufficient.

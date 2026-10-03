@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
+import {StakeManagerBase} from "../../contracts/v2/implementation/StakeManagerBase.sol";
+
+import {FixedImplementationFixtures} from "./helpers/FixedImplementationFixtures.sol";
 
 import "forge-std/Test.sol";
 import {StakeManager, InvalidPercentage} from "../../contracts/v2/StakeManager.sol";
@@ -16,7 +19,7 @@ contract StakeManagerHarness is StakeManager {
         address _jobRegistry,
         address _disputeModule,
         address _timelock
-    ) StakeManager(_minStake, _employerPct, _treasuryPct, _treasury, _jobRegistry, _disputeModule, _timelock) {}
+    ) StakeManager(_minStake, _employerPct, _treasuryPct, _treasury, _jobRegistry, _disputeModule, _timelock, FixedImplementationFixtures.stakeManager()) {}
 
     function slashInternal(address user, Role role, uint256 amount, address recipient, address[] memory validators)
         external
@@ -50,7 +53,7 @@ contract StakeManagerSlashTest is Test {
         vm.prank(val);
         token.approve(address(stake), 1e18);
         vm.prank(val);
-        stake.depositStake(StakeManager.Role.Validator, 1e18);
+        stake.depositStake(StakeManagerBase.Role.Validator, 1e18);
     }
 
     function test_slash_limit() public {
@@ -67,10 +70,10 @@ contract StakeManagerSlashTest is Test {
         vm.prank(user);
         token.approve(address(stake), amount);
         vm.prank(user);
-        stake.depositStake(StakeManager.Role.Validator, amount);
+        stake.depositStake(StakeManagerBase.Role.Validator, amount);
 
         vm.expectRevert("too many validators");
-        stake.slashInternal(user, StakeManager.Role.Validator, amount, address(0), validators);
+        stake.slashInternal(user, StakeManagerBase.Role.Validator, amount, address(0), validators);
     }
 
     function test_slash_batched_distribution() public {
@@ -88,7 +91,7 @@ contract StakeManagerSlashTest is Test {
         vm.prank(user);
         token.approve(address(stake), amount);
         vm.prank(user);
-        stake.depositStake(StakeManager.Role.Validator, amount);
+        stake.depositStake(StakeManagerBase.Role.Validator, amount);
 
         uint256[] memory beforeBal = new uint256[](n);
         for (uint256 i; i < n; ++i) {
@@ -96,7 +99,7 @@ contract StakeManagerSlashTest is Test {
         }
 
         vm.prank(address(this));
-        stake.slash(user, StakeManager.Role.Validator, amount, address(0), validators);
+        stake.slash(user, StakeManagerBase.Role.Validator, amount, address(0), validators);
 
         uint256 expected = (amount * stake.validatorSlashRewardPct()) / 10_000 / n;
         for (uint256 i; i < n; ++i) {
@@ -113,9 +116,9 @@ contract StakeManagerSlashTest is Test {
         uint16 burn = 500;
 
         vm.expectEmit(false, false, false, true);
-        emit StakeManager.SlashDistributionUpdated(employer, treasury, operators, validators);
+        emit StakeManagerBase.SlashDistributionUpdated(employer, treasury, operators, validators);
         vm.expectEmit(false, false, false, true);
-        emit StakeManager.SlashPercentsUpdated(employer, treasury, validators, operators, burn);
+        emit StakeManagerBase.SlashPercentsUpdated(employer, treasury, validators, operators, burn);
 
         stake.setSlashPercents(employer, treasury, validators, operators, burn);
 

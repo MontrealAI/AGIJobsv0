@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
+import {JobRegistryBase} from "../../contracts/v2/implementation/JobRegistryBase.sol";
+
+import {FixedImplementationFixtures} from "./helpers/FixedImplementationFixtures.sol";
 
 import "forge-std/Test.sol";
 import {TimelockController} from "@openzeppelin/contracts/governance/TimelockController.sol";
@@ -36,7 +39,7 @@ contract JobRegistryDeadlineFuzz is Test {
             0,
             new address[](0),
             address(governance)
-        );
+        , FixedImplementationFixtures.jobRegistry());
     }
 
     function testFuzz_deadline(uint64 deadline) public {
@@ -52,7 +55,7 @@ contract JobRegistryDeadlineFuzz is Test {
     function testSetFeePctEmitsWhenValueChanges() public {
         uint256 target = 15;
         vm.expectEmit(false, false, false, true, address(registry));
-        emit JobRegistry.FeePctUpdated(target);
+        emit JobRegistryBase.FeePctUpdated(target);
         vm.prank(address(governance));
         registry.setFeePct(target);
         assertEq(registry.feePct(), target, "fee pct not updated");

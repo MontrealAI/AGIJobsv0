@@ -1,4 +1,6 @@
+import { stageProtocol } from '../deploy/stage-protocol.cjs';
 #!/usr/bin/env ts-node
+import { deployImplementations } from '../deploy/implementations.cjs';
 
 interface EarlyCliParseResult {
   network?: string;
@@ -248,7 +250,7 @@ async function deployJobFixture(): Promise<JobFixture> {
     ethers.ZeroAddress,
     ethers.ZeroAddress,
     owner.address
-  );
+  , await deployImplementations('StakeManager', Stake.runner));
   await token.mint(await stake.getAddress(), 0);
 
   const FeePool = await ethers.getContractFactory(
@@ -309,7 +311,7 @@ async function deployJobFixture(): Promise<JobFixture> {
     0,
     [],
     owner.address
-  );
+  , await deployImplementations('JobRegistry', Registry.runner));
   await token.mint(await registry.getAddress(), 0);
 
   const Dispute = await ethers.getContractFactory(
@@ -597,6 +599,7 @@ async function runSystemPauseScenario(): Promise<ScenarioReport> {
         agentMerkleRoot: ethers.ZeroHash,
       };
 
+      await stageProtocol(deployer, ids, governance.address, { econ });
       const tx = await deployer.deploy(econ, ids, governance.address);
       const receipt = await tx.wait();
       const deployerAddress = await deployer.getAddress();

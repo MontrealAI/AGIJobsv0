@@ -1,3 +1,4 @@
+import { stageProtocol } from '../deploy/stage-protocol.cjs';
 import * as fs from 'fs';
 import * as path from 'path';
 import { artifacts, ethers, network, run } from 'hardhat';
@@ -63,9 +64,9 @@ async function ensureAgialphaToken(): Promise<void> {
   } catch (error) {
     // Fall through to install a local stub.
     console.warn(
-      `⚠️  AGIALPHA token missing on ${network.name}; installing LocalAgialpha stub (${String(
-        error
-      )})`
+      `⚠️  AGIALPHA token missing on ${
+        network.name
+      }; installing LocalAgialpha stub (${String(error)})`
     );
   }
 
@@ -97,7 +98,10 @@ async function ensureAgialphaToken(): Promise<void> {
 
   const [defaultSigner] = await ethers.getSigners();
   const token = await ethers.getContractAt(
-    ['function mint(address to,uint256 amount) external', 'function decimals() view returns (uint8)'],
+    [
+      'function mint(address to,uint256 amount) external',
+      'function decimals() view returns (uint8)',
+    ],
     AGIALPHA
   );
   const mintAmount = ethers.parseUnits('1000000', AGIALPHA_DECIMALS);
@@ -392,7 +396,9 @@ async function main() {
   const [owner] = await ethers.getSigners();
   const cli = parseArgs(process.argv.slice(2));
   const envOutput = toStringOrUndefined(process.env.DEPLOY_DEFAULTS_OUTPUT);
-  const skipVerifyEnv = (process.env.DEPLOY_DEFAULTS_SKIP_VERIFY || '').toLowerCase();
+  const skipVerifyEnv = (
+    process.env.DEPLOY_DEFAULTS_SKIP_VERIFY || ''
+  ).toLowerCase();
   const skipVerify =
     cli['skip-verify'] === true ||
     skipVerifyEnv === '1' ||
@@ -565,20 +571,54 @@ async function main() {
   const Deployer = await ethers.getContractFactory(
     'contracts/v2/Deployer.sol:Deployer'
   );
-  const deployer = await Deployer.deploy({
-    ...txOverrides,
-  });
+  const resumeAddress =
+    toStringOrUndefined(cli['resume-deployer']) ?? process.env.DEPLOYER_ADDRESS;
+  const deployer = resumeAddress
+    ? Deployer.attach(ethers.getAddress(resumeAddress))
+    : await Deployer.deploy({ ...txOverrides });
   await deployer.waitForDeployment();
   const deployerAddress = await deployer.getAddress();
-  console.log('Deployer deployed at', deployerAddress);
+  if ((await deployer.owner()).toLowerCase() !== owner.address.toLowerCase()) {
+    throw new Error(
+      'The connected signer does not own the deployment coordinator'
+    );
+  }
+  if (await deployer.deployed()) {
+    console.log(
+      'Coordinator already finalized. Component addresses:',
+      Array.from(await deployer.stagedModules())
+    );
+    return;
+  }
+  console.log('Deployment coordinator:', deployerAddress);
+  console.log(
+    `To resume an interrupted run, use DEPLOYER_ADDRESS=${deployerAddress} with the same configuration.`
+  );
+
+  await stageProtocol(deployer, identity, governance, {
+    econ,
+    withTaxPolicy: withTax,
+    overrides: txOverrides,
+    onDeployed: async (name, contract) =>
+      console.log(`${name} deployed at ${await contract.getAddress()}`),
+  });
 
   const tx = withTax
     ? hasEconOverrides
       ? await deployer.deploy(econ, identity, governance, txOverrides)
       : await deployer.deployDefaults(identity, governance, txOverrides)
     : hasEconOverrides
-    ? await deployer.deployWithoutTaxPolicy(econ, identity, governance, txOverrides)
-    : await deployer.deployDefaultsWithoutTaxPolicy(identity, governance, txOverrides);
+    ? await deployer.deployWithoutTaxPolicy(
+        econ,
+        identity,
+        governance,
+        txOverrides
+      )
+    : await deployer.deployDefaultsWithoutTaxPolicy(
+        identity,
+        governance,
+        txOverrides
+      );
 
   const receipt = await tx.wait();
   const deployLog = receipt.logs.find((log) => log.address === deployerAddress);
@@ -696,7 +736,11 @@ async function main() {
     await verify(certificateNFT, ['Cert', 'CERT']);
     await verify(platformRegistry, [stakeManager, reputationEngine, 0]);
     await verify(jobRouter, [platformRegistry]);
-    await verify(platformIncentives, [stakeManager, platformRegistry, jobRouter]);
+    await verify(platformIncentives, [
+      stakeManager,
+      platformRegistry,
+      jobRouter,
+    ]);
     await verify(feePool, [
       stakeManager,
       effectiveBurnPct,
@@ -724,7 +768,9 @@ async function main() {
       await verify(taxPolicy, [DEFAULT_TAX_URI, DEFAULT_TAX_DESCRIPTION]);
     }
   } else {
-    console.log('\nSkipping contract verification (DEPLOY_DEFAULTS_SKIP_VERIFY enabled).');
+    console.log(
+      '\nSkipping contract verification (DEPLOY_DEFAULTS_SKIP_VERIFY enabled).'
+    );
   }
 
   let appliedTaxUri = DEFAULT_TAX_URI;

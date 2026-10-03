@@ -1,3 +1,6 @@
+const {
+  deployImplementations,
+} = require('../../scripts/deploy/implementations.cjs');
 const { expect } = require('chai');
 const { ethers, network, artifacts } = require('hardhat');
 const { AGIALPHA } = require('../../scripts/constants');
@@ -48,7 +51,8 @@ describe('Timelock access control', function () {
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
-      await timelock.getAddress()
+      await timelock.getAddress(),
+      await deployImplementations('StakeManager', Stake.runner)
     );
     await stake.waitForDeployment();
 

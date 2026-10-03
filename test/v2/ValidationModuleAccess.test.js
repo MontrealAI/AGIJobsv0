@@ -1,3 +1,6 @@
+const {
+  deployImplementations,
+} = require('../../scripts/deploy/implementations.cjs');
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
 const { enrichJob } = require('../utils/jobMetadata');
@@ -32,7 +35,8 @@ describe('ValidationModule access controls', function () {
       60,
       3,
       3,
-      []
+      [],
+      await deployImplementations('ValidationModule', Validation.runner)
     );
     await validation.waitForDeployment();
     await validation
@@ -134,7 +138,9 @@ describe('ValidationModule access controls', function () {
     await identity.addAdditionalValidator(val);
     await toggle.setResult(true);
     await (
-      await validation.connect(signer).commitValidation(1, commit, 'validator', [])
+      await validation
+        .connect(signer)
+        .commitValidation(1, commit, 'validator', [])
     ).wait();
     await advance(61);
     await identity.removeAdditionalValidator(val);
@@ -173,7 +179,9 @@ describe('ValidationModule access controls', function () {
 
     await reputation.setBlacklist(val, false);
     await (
-      await validation.connect(signer).commitValidation(1, commit, 'validator', [])
+      await validation
+        .connect(signer)
+        .commitValidation(1, commit, 'validator', [])
     ).wait();
     await advance(61);
     await reputation.setBlacklist(val, true);
