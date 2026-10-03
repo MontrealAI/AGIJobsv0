@@ -309,20 +309,20 @@ async function main() {
     process.exitCode = 1;
   } finally {
     report.finishedAt = new Date().toISOString();
-    if (added)
-      fs.writeFileSync(
-        path.join(output, 'local-fixture-changes.patch'),
-        execFileSync('git', ['-C', checkout, 'diff', '--binary'], {
-          env: environment,
-          encoding: 'utf8',
-        })
-      );
-    fs.writeFileSync(
-      path.join(output, 'report.json'),
-      JSON.stringify(report, null, 2) + '\n'
-    );
-    fs.writeFileSync(path.join(output, 'index.html'), html(report));
     try {
+      if (added)
+        fs.writeFileSync(
+          path.join(output, 'local-fixture-changes.patch'),
+          execFileSync('git', ['-C', checkout, 'diff', '--binary'], {
+            env: environment,
+            encoding: 'utf8',
+          })
+        );
+      fs.writeFileSync(
+        path.join(output, 'report.json'),
+        JSON.stringify(report, null, 2) + '\n'
+      );
+      fs.writeFileSync(path.join(output, 'index.html'), html(report));
       sealBundle(output, temp);
     } finally {
       try {
