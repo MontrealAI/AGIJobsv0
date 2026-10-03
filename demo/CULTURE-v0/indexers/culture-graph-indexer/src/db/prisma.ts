@@ -12,6 +12,6 @@ if (url.startsWith('file:')) {
   }
 }
 
-export const prisma = new PrismaClient();
+export const prisma = new PrismaClient({ datasources: { db: { url } } });
 
 export type PrismaClientType = typeof prisma;

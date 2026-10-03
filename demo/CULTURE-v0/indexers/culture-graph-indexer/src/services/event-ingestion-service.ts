@@ -25,6 +25,8 @@ export class EventIngestionService {
   private readonly artifactCitedTopic: string;
   private readonly roundFinalizedTopic: string;
   private backfillInFlight: Promise<void> | null = null;
+  private backfillRequested = false;
+  private forceRequested = false;
 
   constructor(
     private readonly prisma: PrismaClient,
@@ -53,59 +55,38 @@ export class EventIngestionService {
       this.provider.pollingInterval = this.config.pollIntervalMs;
     }
 
-    await this.backfillHistoricalEvents();
-
-    const mintedFilter = {
-      address: this.config.cultureRegistryAddress,
-      topics: [this.artifactMintedTopic],
-    };
-    const citedFilter = {
-      address: this.config.cultureRegistryAddress,
-      topics: [this.artifactCitedTopic],
-    };
-
-    this.provider.on(mintedFilter, async (log) => {
-      try {
-        const event = await this.parseArtifactMinted(log);
-        await this.handleArtifactMinted(event);
-      } catch (error) {
-        console.error('Failed to handle ArtifactMinted event', error);
-      }
-    });
-
-    this.provider.on(citedFilter, async (log) => {
-      try {
-        const event = await this.parseArtifactCited(log);
-        await this.handleArtifactCited(event);
-      } catch (error) {
-        console.error('Failed to handle ArtifactCited event', error);
-      }
-    });
-
-    if (this.config.selfPlayArenaAddress) {
-      const finalizedFilter = {
-        address: this.config.selfPlayArenaAddress,
-        topics: [this.roundFinalizedTopic],
-      };
-      this.provider.on(finalizedFilter, async (log) => {
+    try {
+      // Use one ordered, finality-aware stream for historical and live events.
+      // Independent log callbacks can race and advance past a failed earlier event.
+      await this.provider.on('block', async () => {
         try {
-          const event = await this.parseRoundFinalized(log);
-          await this.handleRoundFinalized(event);
+          await this.backfillHistoricalEvents();
         } catch (error) {
-          console.error('Failed to handle RoundFinalized event', error);
+          console.error(
+            'Failed to ingest confirmed block; replay will retry',
+            error,
+          );
         }
       });
+      await this.backfillHistoricalEvents();
+    } catch (error) {
+      await this.stop();
+      throw error;
     }
   }
 
   async stop(): Promise<void> {
-    if (!this.provider) {
-      return;
+    const provider = this.provider;
+    if (!provider) return;
+    await provider.removeAllListeners();
+    try {
+      await this.backfillInFlight;
+    } catch {
+      // Preserve the failed-event cursor; shutdown still releases the RPC connection.
+    } finally {
+      provider.destroy();
+      this.provider = null;
     }
-
-    await this.provider.removeAllListeners();
-    this.provider.destroy();
-    this.provider = null;
   }
 
   async handleArtifactMinted(event: ArtifactMintedEvent): Promise<void> {
@@ -224,9 +205,11 @@ export class EventIngestionService {
       throw new Error('Unable to parse ArtifactMinted log');
     }
     const block = await this.provider.getBlock(log.blockNumber);
-    const timestamp = block
-      ? new Date(Number(block.timestamp) * 1000)
-      : new Date();
+    if (!block) throw new Error('Event block unavailable; replay must retry');
+    if (block.hash && log.blockHash && block.hash !== log.blockHash) {
+      throw new Error('Event block changed; replay must retry');
+    }
+    const timestamp = new Date(Number(block.timestamp) * 1000);
     const parentValue = parsed.args.parentId as bigint;
 
     return {
@@ -277,15 +260,20 @@ export class EventIngestionService {
   async backfillHistoricalEvents(
     options: { force?: boolean } = {},
   ): Promise<void> {
-    if (this.backfillInFlight) {
-      await this.backfillInFlight;
-      return;
+    this.backfillRequested = true;
+    this.forceRequested ||= options.force === true;
+    if (!this.backfillInFlight) {
+      this.backfillInFlight = (async () => {
+        do {
+          const force = this.forceRequested;
+          this.backfillRequested = false;
+          this.forceRequested = false;
+          await this.performBackfill({ force });
+        } while (this.backfillRequested);
+      })().finally(() => {
+        this.backfillInFlight = null;
+      });
     }
-
-    this.backfillInFlight = this.performBackfill(options).finally(() => {
-      this.backfillInFlight = null;
-    });
-
     await this.backfillInFlight;
   }
 

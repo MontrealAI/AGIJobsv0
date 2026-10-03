@@ -138,7 +138,7 @@ describe('Historical and live event ingestion', () => {
     expect(await prisma.eventCursor.count()).toBe(0);
     expect(await prisma.artifact.count()).toBe(1);
     recompute.mockRestore();
-    await ingestion.backfillHistoricalEvents();
+    await ingestion.start();
     expect(await prisma.artifact.count()).toBe(2);
     expect(await prisma.roundFinalization.count()).toBe(1);
     await ingestion.stop();
@@ -151,13 +151,13 @@ describe('Historical and live event ingestion', () => {
     });
     await ingestion.start();
     expect(await prisma.roundFinalization.count()).toBe(0);
-    expect(rpc.on).toHaveBeenCalledTimes(2);
+    expect(rpc.on).toHaveBeenCalledTimes(1);
     rpc.getLogs.mockClear();
     await Promise.all([
       ingestion.backfillHistoricalEvents(),
       ingestion.backfillHistoricalEvents(),
     ]);
-    expect(rpc.getLogs).toHaveBeenCalledTimes(2);
+    expect(rpc.getLogs).toHaveBeenCalledTimes(4);
     await prisma.eventCursor.update({
       where: { id: 1 },
       data: { blockNumber: 99 },
@@ -175,61 +175,61 @@ describe('Historical and live event ingestion', () => {
     await offline.backfillHistoricalEvents();
     await offline.stop();
   });
-  it('ingests live event updates and contains malformed callback failures', async () => {
-    const { prisma, ingestion } = setup();
+  it('uses ordered, confirmed RPC history for live updates and retries failures', async () => {
+    const { prisma, influence, ingestion } = setup({ finalityDepth: 2 });
     await ingestion.start();
-    const handlers = new Map(
-      rpc.on.mock.calls.map(([filter, callback]) => [
-        filter.topics[0],
-        callback,
-      ]),
+    expect(rpc.on.mock.calls[0][0]).toBe('block');
+    const tick = rpc.on.mock.calls[0][1];
+    const logs = seedLogs();
+    rpc.getBlockNumber.mockResolvedValue(4);
+    await tick(4);
+    expect(await prisma.artifact.count()).toBe(2);
+    expect(await prisma.roundFinalization.count()).toBe(0);
+    rpc.getBlockNumber.mockResolvedValue(5);
+    await tick(5);
+    expect(await prisma.roundFinalization.count()).toBe(1);
+    logs.push(
+      log(culture, 'ArtifactMinted', [3, author, 'book', 'new', 2], 4, 0),
     );
-    const minted = handlers.get(culture.getEvent('ArtifactMinted')!.topicHash)!;
-    const cited = handlers.get(culture.getEvent('ArtifactCited')!.topicHash)!;
-    const finalized = handlers.get(
-      rounds.getEvent('RoundFinalized')!.topicHash,
-    )!;
-    await minted(
-      log(culture, 'ArtifactMinted', [1, author, 'book', 'old', 0], 4, 0),
+    logs.push(
+      log(
+        rounds,
+        'RoundFinalized',
+        [2, 3, 1, 4, 8000, 100, 42, true, 200],
+        5,
+        0,
+        arena,
+      ),
     );
-    await minted(
-      log(culture, 'ArtifactMinted', [1, author, 'book', 'corrected', 0], 4, 0),
-    );
-    rpc.getBlock.mockResolvedValueOnce(null);
-    await minted(
-      log(culture, 'ArtifactMinted', [2, author, 'book', 'child', 1], 5, 0),
-    );
-    const citation = log(culture, 'ArtifactCited', [2, 1], 5, 1);
-    await cited(citation);
-    await cited({ ...citation, blockHash: 'canonical' });
-    const round = log(
-      rounds,
-      'RoundFinalized',
-      [1, 3, -1, 2, 7000, 100, 1, true, 200],
-      6,
-      0,
-      arena,
-    );
-    await finalized(round);
-    await finalized({ ...round, blockHash: 'canonical' });
-    expect(
-      await prisma.artifact.findUnique({ where: { id: '1' } }),
-    ).toMatchObject({ cid: 'corrected' });
-    expect(await prisma.citation.findFirst()).toMatchObject({
-      blockHash: 'canonical',
-    });
-    expect(await prisma.roundFinalization.findFirst()).toMatchObject({
-      blockHash: 'canonical',
-      newDifficulty: 2,
-    });
+    rpc.getBlockNumber.mockResolvedValue(7);
+    const original = influence.recompute.bind(influence);
+    const recompute = vi
+      .spyOn(influence, 'recompute')
+      .mockImplementation(async (affected) => {
+        if (affected?.includes('3')) throw new Error('validator unavailable');
+        return original(affected);
+      });
     const error = vi.spyOn(console, 'error').mockImplementation(() => {});
-    for (const callback of [minted, cited, finalized])
-      await callback({ topics: [], data: '0x' });
-    expect(error).toHaveBeenCalledTimes(3);
+    await tick(7);
+    expect(error).toHaveBeenCalled();
+    expect(await prisma.roundFinalization.count()).toBe(1);
+    recompute.mockRestore();
+    await tick(7);
+    expect(await prisma.roundFinalization.count()).toBe(2);
+    expect(await prisma.artifact.count()).toBe(3);
     await ingestion.stop();
-    await minted(
-      log(culture, 'ArtifactMinted', [3, author, 'book', 'late', 0], 7, 0),
-    );
-    expect(error).toHaveBeenCalledTimes(4);
+    await tick(8);
+    expect(await prisma.artifact.count()).toBe(3);
+  });
+  it('retries unavailable blocks instead of inventing event timestamps', async () => {
+    seedLogs();
+    const { prisma, ingestion } = setup();
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    rpc.getBlock.mockResolvedValueOnce(null);
+    await expect(ingestion.start()).rejects.toThrow('Event block unavailable');
+    expect(await prisma.artifact.count()).toBe(0);
+    await ingestion.start();
+    expect(await prisma.artifact.count()).toBe(2);
+    await ingestion.stop();
   });
 });

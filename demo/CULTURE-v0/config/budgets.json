@@ -6,7 +6,7 @@
   "gas": {
     "CultureRegistryTest:testOwnerCanConfigureMaxCitations()": 560000,
     "SelfPlayArenaTest:testRandomisedOperationSequence()": 900000,
-    "SelfPlayArenaTest:testRoundLifecycleHappyPath()": 500000,
-    "SelfPlayArenaTest:testValidatorMisconductReportsSlash()": 520000
+    "SelfPlayArenaTest:testRoundLifecycleHappyPath()": 750000,
+    "SelfPlayArenaTest:testValidatorMisconductReportsSlash()": 675000
   }
 }

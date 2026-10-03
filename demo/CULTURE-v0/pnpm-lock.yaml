@@ -20,6 +20,9 @@ importers:
       cypress:
         specifier: ^13.15.0
         version: 13.17.0
+      dotenv:
+        specifier: ^16.4.7
+        version: 16.6.1
       hardhat:
         specifier: ^2.26.1
         version: 2.26.3(ts-node@10.9.2(@types/node@22.7.5)(typescript@5.9.3))(typescript@5.9.3)
@@ -235,6 +238,9 @@ importers:
       graphql-tag:
         specifier: ^2.12.6
         version: 2.12.6(graphql@16.11.0)
+      prisma:
+        specifier: ^6.17.1
+        version: 6.18.0(magicast@0.3.5)(typescript@5.9.3)
       prom-client:
         specifier: ^15.1.3
         version: 15.1.3
@@ -275,9 +281,6 @@ importers:
       prettier:
         specifier: ^3.3.3
         version: 3.6.2
-      prisma:
-        specifier: ^6.17.1
-        version: 6.18.0(magicast@0.3.5)(typescript@5.9.3)
       ts-node:
         specifier: ^10.9.2
         version: 10.9.2(@types/node@20.19.23)(typescript@5.9.3)

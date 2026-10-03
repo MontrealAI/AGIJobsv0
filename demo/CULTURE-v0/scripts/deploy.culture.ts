@@ -1,14 +1,15 @@
-import 'dotenv/config';
+import dotenv from 'dotenv';
 import { ethers, network } from 'hardhat';
 import { z } from 'zod';
 import path from 'node:path';
-import { loadCultureConfig, parseAddressesBlob, updateEnvFile, writeDeployments } from './utils';
+import { CULTURE_ROOT, loadCultureConfig, parseAddressesBlob, updateEnvFile, writeDeployments } from './utils';
 import { loadContractArtifact, type ArtifactDescriptor } from './hardhat-utils';
 
 const EnvSchema = z.object({
   RPC_URL: z.string().min(1),
   DEPLOYER_PRIVATE_KEY: z.string().min(1),
   OWNER_ADDRESS: z.string().min(1),
+  CHAIN_ID: z.coerce.number().int().positive().default(31337),
   AGI_JOBS_CORE_ADDRESSES: z.string().optional(),
   CULTURE_DEPLOY_OUTPUT: z.string().optional(),
   CULTURE_ENV_FILE: z.string().optional()
@@ -24,12 +25,19 @@ const ARENA_ARTIFACT: ArtifactDescriptor = {
 };
 
 async function main() {
+  dotenv.config({ path: process.env.CULTURE_ENV_FILE, override: true });
   const env = EnvSchema.parse(process.env);
   const config = await loadCultureConfig();
   const provider = new ethers.JsonRpcProvider(env.RPC_URL);
-  const wallet = new ethers.Wallet(env.DEPLOYER_PRIVATE_KEY, provider);
+  const chainId = Number((await provider.getNetwork()).chainId);
+  if (chainId !== env.CHAIN_ID) throw new Error(`RPC chain ${chainId} does not match CHAIN_ID ${env.CHAIN_ID}`);
+  if (ethers.getAddress(env.OWNER_ADDRESS) !== ethers.getAddress(config.owner.address)) {
+    throw new Error('OWNER_ADDRESS must match the reviewed culture configuration');
+  }
+  const signer = new ethers.Wallet(env.DEPLOYER_PRIVATE_KEY, provider);
+  const wallet = new ethers.NonceManager(signer);
 
-  console.log(`📦 Deploying CULTURE stack from ${wallet.address}`);
+  console.log(`📦 Deploying CULTURE stack from ${signer.address}`);
   const overrides = parseAddressesBlob(env.AGI_JOBS_CORE_ADDRESSES);
   const identityRegistry = overrides.identityRegistry ?? config.dependencies.identityRegistry;
   const jobRegistry = overrides.jobRegistry ?? config.dependencies.jobRegistry;
@@ -37,6 +45,11 @@ async function main() {
   const validationModule = overrides.validationModule ?? config.dependencies.validationModule;
   if (!identityRegistry || !jobRegistry || !stakeManager || !validationModule) {
     throw new Error('IdentityRegistry, JobRegistry, StakeManager, and ValidationModule addresses must be configured.');
+  }
+  for (const [name, address] of Object.entries({ identityRegistry, jobRegistry, stakeManager, validationModule })) {
+    if (!ethers.isAddress(address) || address === ethers.ZeroAddress || await provider.getCode(address) === '0x') {
+      throw new Error(`${name} must be a deployed contract on chain ${chainId}`);
+    }
   }
 
   const cultureArtifact = await loadContractArtifact(CULTURE_ARTIFACT);
@@ -74,10 +87,10 @@ async function main() {
   const arenaAddress = await arena.getAddress();
   console.log(`✅ SelfPlayArena deployed at ${arenaAddress}`);
 
-  const outputPath = env.CULTURE_DEPLOY_OUTPUT ?? path.resolve('demo/CULTURE-v0/config/deployments.local.json');
+  const outputPath = env.CULTURE_DEPLOY_OUTPUT ?? path.join(CULTURE_ROOT, 'config/deployments.local.json');
   await writeDeployments(outputPath, {
     network: network.name,
-    chainId: await wallet.provider.getChainId(),
+    chainId,
     cultureRegistry: cultureAddress,
     selfPlayArena: arenaAddress,
     identityRegistry,

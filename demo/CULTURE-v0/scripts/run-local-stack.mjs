@@ -1,0 +1,67 @@
+import { copyFile, chmod, access } from 'node:fs/promises';
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
+
+const root = fileURLToPath(new URL('../', import.meta.url));
+const file = '.env.local';
+const env = {
+  ...process.env,
+  CULTURE_LOCAL_FIXTURES: '1',
+  CULTURE_ENV_FILE: file,
+  LOCAL_UID: String(process.getuid?.() ?? 1000),
+  LOCAL_GID: String(process.getgid?.() ?? 1000),
+  CULTURE_DEPLOY_OUTPUT:
+    '/workspace/demo/CULTURE-v0/config/deployments.local.json',
+};
+const compose = (...args) => {
+  const result = spawnSync('docker', ['compose', '--env-file', file, ...args], {
+    cwd: root,
+    env,
+    stdio: 'inherit',
+  });
+  if (result.error) throw result.error;
+  if (result.status !== 0)
+    throw new Error(`Docker Compose failed (${result.status})`);
+};
+
+try {
+  try {
+    await access(path.join(root, file));
+  } catch (error) {
+    if (error.code !== 'ENOENT') throw error;
+    await copyFile(path.join(root, '.env.example'), path.join(root, file));
+    await chmod(path.join(root, file), 0o600);
+  }
+  if (process.argv.includes('--down')) {
+    compose('down');
+  } else {
+    compose(
+      '--profile',
+      'setup',
+      'up',
+      '-d',
+      '--wait',
+      'culture-chain',
+      'culture-ipfs'
+    );
+    compose('--profile', 'setup', 'run', '--rm', 'culture-contracts');
+    compose(
+      'up',
+      '--build',
+      '-d',
+      '--wait',
+      '--wait-timeout',
+      '180',
+      'culture-orchestrator',
+      'culture-indexer',
+      'culture-studio'
+    );
+    console.log(
+      'Local fixture stack ready at http://localhost:4173. Test doubles do not prove mainnet settlement.'
+    );
+  }
+} catch (error) {
+  console.error(error.message);
+  process.exitCode = 1;
+}

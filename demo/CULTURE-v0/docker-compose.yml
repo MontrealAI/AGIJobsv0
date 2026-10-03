@@ -2,7 +2,7 @@ version: "3.9"
 
 x-default-env: &default-env
   env_file:
-    - .env
+    - ${CULTURE_ENV_FILE:-.env}
   environment: &default-environment
     RPC_URL: ${RPC_URL-http://culture-chain:8545}
     CHAIN_ID: ${CHAIN_ID-31337}
@@ -13,9 +13,9 @@ x-default-env: &default-env
 
 services:
   culture-chain:
-    image: ghcr.io/foundry-rs/foundry:latest
+    image: ghcr.io/foundry-rs/foundry:v1.4.4@sha256:9584dfbb0e2e9bda80332b66a7cebed635fc9786638871df6b7594e39e678578
+    entrypoint: ["anvil"]
     command:
-      - anvil
       - --host
       - 0.0.0.0
       - --port
@@ -24,10 +24,14 @@ services:
       - "31337"
       - --block-time
       - "2"
+      - --state
+      - /root/.anvil/state.json
+      - --state-interval
+      - "1"
     environment:
       ETH_RPC_URL: http://127.0.0.1:8545
     ports:
-      - "8545:8545"
+      - "127.0.0.1:8545:8545"
     volumes:
       - culture_chain_data:/root/.anvil
     healthcheck:
@@ -38,13 +42,12 @@ services:
       start_period: 5s
 
   culture-ipfs:
-    image: ipfs/kubo:latest
+    image: ipfs/kubo:v0.43.1@sha256:b293923d66e490e70ced64df42ea7a6cf7eac2740e3fb29101df18070fa7be48
     ports:
-      - "8080:8080"
-      - "5001:5001"
+      - "127.0.0.1:8080:8080"
+      - "127.0.0.1:5001:5001"
     environment:
       IPFS_PROFILE: server
-      LIBP2P_FORCE_PNET: "true"
     volumes:
       - culture_ipfs_data:/data/ipfs
       - culture_ipfs_exports:/export
@@ -58,24 +61,34 @@ services:
   culture-contracts:
     image: node:22.23.3
     profiles: [setup]
-    working_dir: /workspace
+    user: "${LOCAL_UID:-1000}:${LOCAL_GID:-1000}"
+    working_dir: /workspace/demo/CULTURE-v0
     <<: *default-env
     environment:
       <<: *default-environment
       RPC_URL: http://culture-chain:8545
       CULTURE_DEPLOY_OUTPUT: ${CULTURE_DEPLOY_OUTPUT-/workspace/demo/CULTURE-v0/config/deployments.local.json}
       CULTURE_ENV_FILE: ${CULTURE_ENV_FILE-/workspace/demo/CULTURE-v0/.env}
+      CULTURE_LOCAL_FIXTURES: ${CULTURE_LOCAL_FIXTURES-0}
+      CYPRESS_INSTALL_BINARY: '0'
+      COREPACK_HOME: /tmp/culture-corepack
+      NPM_CONFIG_CACHE: /tmp/culture-npm-cache
     volumes:
       - ../..:/workspace
       - culture_node_modules:/workspace/node_modules
-      - culture_artifacts:/workspace/demo/CULTURE-v0/artifacts
     command: >-
-      bash -lc "set -euo pipefail && npm install --legacy-peer-deps &&
-      npx hardhat compile &&
-      npx hardhat run --network localhost demo/CULTURE-v0/scripts/deploy.culture.ts &&
-      npx hardhat run --network localhost demo/CULTURE-v0/scripts/owner.setParams.ts &&
-      npx hardhat run --network localhost demo/CULTURE-v0/scripts/owner.setRoles.ts &&
-      npx hardhat run --network localhost demo/CULTURE-v0/scripts/seed.culture.ts"
+      bash -lc 'set -euo pipefail;
+      corepack prepare pnpm@10.5.2 --activate;
+      corepack pnpm install --frozen-lockfile;
+      corepack pnpm exec hardhat compile;
+      if [ "$${CULTURE_LOCAL_FIXTURES}" = "1" ]; then
+        corepack pnpm exec hardhat run --network localhost scripts/bootstrap.local.ts;
+      else
+        corepack pnpm exec hardhat run --network localhost scripts/deploy.culture.ts;
+        corepack pnpm exec hardhat run --network localhost scripts/owner.setParams.ts;
+        corepack pnpm exec hardhat run --network localhost scripts/owner.setRoles.ts;
+        corepack pnpm exec hardhat run --network localhost scripts/seed.culture.ts;
+      fi'
     depends_on:
       culture-chain:
         condition: service_healthy
@@ -89,6 +102,9 @@ services:
       <<: *default-environment
       ORCHESTRATOR_PORT: ${ORCHESTRATOR_PORT-4005}
       ELO_STATE_PATH: /data/elo/ratings.json
+      ROUND_STATE_PATH: /data/elo/rounds.json
+      ORCHESTRATOR_PRIVATE_KEY: ${ORCHESTRATOR_PRIVATE_KEY-}
+      ORCHESTRATOR_API_TOKEN: ${ORCHESTRATOR_API_TOKEN-}
       IPFS_GATEWAY: ${IPFS_GATEWAY-http://culture-ipfs:8080}
       IPFS_API_ENDPOINT: ${IPFS_API_ENDPOINT-http://culture-ipfs:5001}
     depends_on:
@@ -97,7 +113,7 @@ services:
       culture-ipfs:
         condition: service_healthy
     ports:
-      - "${ORCHESTRATOR_PORT:-4005}:4005"
+      - "127.0.0.1:${ORCHESTRATOR_PORT:-4005}:4005"
     volumes:
       - culture_orchestrator_state:/data/elo
       - culture_orchestrator_logs:/var/log/culture-orchestrator
@@ -117,13 +133,14 @@ services:
       <<: *default-environment
       INDEXER_PORT: ${INDEXER_PORT-4100}
       SQLITE_PATH: /data/db/culture-graph.db
+      DATABASE_URL: file:/data/db/culture-graph.db
     depends_on:
       culture-chain:
         condition: service_healthy
       culture-orchestrator:
         condition: service_started
     ports:
-      - "${INDEXER_PORT:-4100}:4100"
+      - "127.0.0.1:${INDEXER_PORT:-4100}:4100"
     volumes:
       - culture_indexer_db:/data/db
       - culture_indexer_logs:/var/log/culture-indexer
@@ -150,7 +167,7 @@ services:
       culture-indexer:
         condition: service_healthy
     ports:
-      - "4173:4173"
+      - "127.0.0.1:4173:4173"
     healthcheck:
       test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:4173/healthz"]
       interval: 15s

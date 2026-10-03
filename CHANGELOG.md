@@ -6,6 +6,10 @@ All notable changes to this project will be documented in this file.
 
 Release candidate prepared on 2026-10-03; publication remains subject to the release gates.
 
+- Repair CULTURE signed-difficulty boundaries, restore lifecycle/security tests, enforce per-contract coverage, and refresh the gas baseline with an explicit historical review.
+- Make live indexing ordered and confirmation-aware, normalize growing-graph influence, stop on validator outages, and verify migration/ingestion/restart against real local-chain events.
+- Repair CULTURE deployment configuration and runtime startup; provide an explicit local fixture stack with persistent state, localhost bindings, and actual ingestion/authentication checks alongside the UI walkthrough.
+
 - Split JobRegistry, StakeManager, and ValidationModule into fixed implementations while preserving their runtime APIs and storage offsets. Constructor setup now includes implementation addresses.
 - Replace the oversized one-transaction deployer with paused, resumable component deployment and atomic final wiring.
 - Enforce Ethereum contract-size limits in the normal Hardhat network and contract CI; preserve existing features and flowcharts.

@@ -3,6 +3,7 @@ pragma solidity ^0.8.25;
 
 import "forge-std/Test.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {CultureRegistry, IIdentityRegistry} from "../contracts/CultureRegistry.sol";
 
 contract MockIdentityRegistry is IIdentityRegistry {
@@ -107,6 +108,70 @@ contract CultureRegistryTest is Test {
         vm.prank(author);
         uint256 id = registry.mintArtifact("dataset", "cid://dataset", 0, new uint256[](0));
         assertEq(id, 1);
+    }
+
+    function testOwnerConfigurationAndOpenKinds() public {
+        CultureRegistry open = new CultureRegistry(owner, address(0), new string[](0), 2);
+        assertTrue(open.isAllowedKind("dataset"));
+        vm.startPrank(owner);
+        uint256 id = open.mintArtifact("dataset", "cid://owner", 0, new uint256[](0));
+        assertEq(open.totalArtifacts(), 1);
+        assertEq(open.getArtifact(id).author, owner);
+        string[] memory kinds = new string[](1);
+        kinds[0] = "book";
+        open.setAllowedKinds(kinds, true);
+        assertFalse(open.isAllowedKind("dataset"));
+        assertTrue(open.isAllowedKind("book"));
+        open.setAllowedKinds(kinds, false);
+        assertFalse(open.isAllowedKind("book"));
+        open.setIdentityRegistry(address(identity));
+        open.pause();
+        open.unpause();
+        vm.stopPrank();
+        vm.prank(author);
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, author));
+        open.setMaxCitations(3);
+        vm.startPrank(owner);
+        vm.expectRevert("NoKindsSupplied");
+        open.setAllowedKinds(new string[](0), true);
+        vm.expectRevert("MaxTooLow");
+        open.setMaxCitations(0);
+        vm.stopPrank();
+        assertEq(open.maxCitations(), 2);
+    }
+
+    function testMalformedMintsAndUnknownArtifacts() public {
+        vm.startPrank(author);
+        vm.expectRevert(CultureRegistry.InvalidKind.selector);
+        registry.mintArtifact("", "cid://a", 0, new uint256[](0));
+        vm.expectRevert(CultureRegistry.InvalidKind.selector);
+        registry.mintArtifact("unknown", "cid://a", 0, new uint256[](0));
+        vm.expectRevert(CultureRegistry.InvalidCID.selector);
+        registry.mintArtifact("book", "", 0, new uint256[](0));
+        vm.expectRevert(CultureRegistry.InvalidParent.selector);
+        registry.mintArtifact("book", "cid://a", 1, new uint256[](0));
+        vm.expectRevert(abi.encodeWithSelector(CultureRegistry.TooManyCitations.selector, 9, 8));
+        registry.mintArtifact("book", "cid://a", 0, new uint256[](9));
+        uint256[] memory self = new uint256[](1);
+        self[0] = 1;
+        vm.expectRevert(abi.encodeWithSelector(CultureRegistry.SelfCitation.selector, 1));
+        registry.mintArtifact("book", "cid://a", 0, self);
+        vm.expectRevert(CultureRegistry.InvalidParent.selector);
+        registry.cite(99, 1);
+        vm.expectRevert("ArtifactNotFound");
+        registry.getArtifact(99);
+        vm.stopPrank();
+        assertEq(registry.totalArtifacts(), 0);
+    }
+
+    function testRevokedRegistryBlocksAuthorsButPreservesOwner() public {
+        vm.prank(owner);
+        registry.setIdentityRegistry(address(0));
+        vm.prank(author);
+        vm.expectRevert(CultureRegistry.NotAuthorised.selector);
+        registry.mintArtifact("book", "cid://a", 0, new uint256[](0));
+        vm.prank(owner);
+        assertEq(registry.mintArtifact("book", "cid://owner", 0, new uint256[](0)), 1);
     }
 
     function testCiteRejectsDuplicates() public {

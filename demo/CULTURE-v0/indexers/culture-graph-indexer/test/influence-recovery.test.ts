@@ -1,6 +1,7 @@
 import { afterEach, expect, it, vi } from 'vitest';
 import { createPrismaTestContext } from './helpers.js';
 import { InfluenceService } from '../src/services/influence-service.js';
+import { NetworkXInfluenceValidator } from '../src/services/networkx-validator.js';
 afterEach(() => vi.restoreAllMocks());
 it('handles empty graphs, dangling nodes, lineage cycles, and repeat computations', async () => {
   const { prisma } = createPrismaTestContext();
@@ -72,15 +73,74 @@ it('keeps previous metrics when independent validation disagrees, and exposes un
   await expect(service.recompute()).rejects.toThrow('disagreement');
   vi.spyOn(console, 'warn').mockImplementation(() => {});
   validate.mockRejectedValue(new Error('python unavailable'));
-  await service.recompute();
+  await expect(service.recompute()).rejects.toThrow('python unavailable');
   expect(service.getLastValidation()).toMatchObject({
     ok: false,
     skipped: true,
     error: 'python unavailable',
   });
   validate.mockRejectedValue('unknown');
-  await service.recompute();
+  await expect(service.recompute()).rejects.toThrow(
+    'Unknown influence validation error',
+  );
   expect(service.getLastValidation()?.error).toBe(
     'Unknown influence validation error',
   );
+  validate.mockResolvedValue({
+    ok: false,
+    skipped: true,
+    error: 'timeout',
+    engine: null,
+    maxDelta: 0,
+    externalScores: null,
+  });
+  await expect(service.recompute()).rejects.toThrow('timeout');
+  expect(
+    await prisma.influenceMetric.findUnique({ where: { artifactId: '1' } }),
+  ).toEqual(prior);
+});
+
+it('keeps scores normalized and independently validated as new artifacts and citations arrive', async () => {
+  const { prisma } = createPrismaTestContext();
+  const service = new InfluenceService(
+    prisma,
+    {},
+    new NetworkXInfluenceValidator(),
+  );
+  for (const id of ['1', '2', '3']) {
+    await prisma.artifact.create({
+      data: {
+        id,
+        author: 'a',
+        kind: 'book',
+        cid: id,
+        parentId: null,
+        timestamp: new Date(),
+        blockNumber: Number(id),
+        blockHash: id,
+        logIndex: 0,
+      },
+    });
+    const result = await service.recompute();
+    expect(
+      [...result!.scores.values()].reduce((sum, score) => sum + score, 0),
+    ).toBeCloseTo(1, 8);
+    expect(service.getLastValidation()).toMatchObject({
+      ok: true,
+      skipped: false,
+    });
+    if (id !== '1') {
+      await prisma.citation.create({
+        data: {
+          fromId: id,
+          toId: '1',
+          blockNumber: Number(id),
+          blockHash: id,
+          logIndex: 1,
+        },
+      });
+      await service.recompute();
+      expect(service.getLastValidation()?.ok).toBe(true);
+    }
+  }
 });

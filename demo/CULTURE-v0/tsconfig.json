@@ -9,6 +9,6 @@
     "allowJs": false,
     "types": ["node"]
   },
-  "include": ["scripts/**/*.ts"],
+  "include": ["hardhat.config.ts", "scripts/**/*.ts"],
   "exclude": ["node_modules", "dist"]
 }

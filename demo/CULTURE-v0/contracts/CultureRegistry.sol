@@ -117,6 +117,8 @@ contract CultureRegistry is Ownable, Pausable, ReentrancyGuard {
     }
 
     /// @notice Mint a new artifact.
+    // Timestamp is recorded as metadata only; authorization and existence checks do not compare it.
+    // slither-disable-next-line timestamp
     function mintArtifact(
         string calldata kind,
         string calldata cid,
@@ -246,6 +248,8 @@ contract CultureRegistry is Ownable, Pausable, ReentrancyGuard {
         }
     }
 
+    // Existence uses the identifier and author, never the creation timestamp.
+    // slither-disable-next-line timestamp
     function _artifactExists(uint256 artifactId) internal view returns (bool) {
         return artifactId != 0 && artifactId <= _artifactIdCounter && _artifacts[artifactId].author != address(0);
     }
