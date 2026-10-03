@@ -229,7 +229,9 @@ jobs:
           exit 1
       - name: Run Cypress (headless)
         working-directory: demo/CULTURE-v0
-        run: pnpm exec cypress run --config-file cypress.config.ts
+        run: |
+          google-chrome --version
+          pnpm exec cypress run --browser chrome --config-file cypress.config.ts
       - name: Shutdown stack
         if: always()
         working-directory: demo/CULTURE-v0

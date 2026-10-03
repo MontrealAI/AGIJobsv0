@@ -309,7 +309,9 @@ jobs:
         run: node scripts/check-local-stack.mjs
       - name: Run Cypress (headless)
         working-directory: demo/CULTURE-v0
-        run: pnpm exec cypress run --config-file cypress.config.ts
+        run: |
+          google-chrome --version
+          pnpm exec cypress run --browser chrome --config-file cypress.config.ts
       - name: Capture stack logs on failure
         if: failure()
         working-directory: demo/CULTURE-v0
