@@ -4,9 +4,15 @@ on:
   push:
     paths:
       - 'demo/CULTURE-v0/**'
+      - 'shared/structuredLogger.ts'
+      - '.nvmrc'
+      - '.github/workflows/culture-ci.yml'
   pull_request:
     paths:
       - 'demo/CULTURE-v0/**'
+      - 'shared/structuredLogger.ts'
+      - '.nvmrc'
+      - '.github/workflows/culture-ci.yml'
   workflow_dispatch:
 
 permissions:
@@ -84,7 +90,7 @@ jobs:
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@50d5a8956f2e319df19e6b57539d7e2acb9f8c1e
         with:
-          version: stable
+          version: v1.4.4
       - name: Solhint lint
         working-directory: demo/CULTURE-v0
         run: pnpm exec solhint "contracts/**/*.sol"
@@ -109,6 +115,7 @@ jobs:
           path: |
             demo/CULTURE-v0/coverage
             demo/CULTURE-v0/lcov.info
+            demo/CULTURE-v0/out
 
   static-analysis:
     name: Static analyzers
@@ -145,7 +152,7 @@ jobs:
         run: |
           docker run --rm \
             -v "${PWD}":/workspace \
-            -w /workspace/demo/CULTURE-v0 \
+            -w /workspace \
             ghcr.io/crytic/slither:0.10.4 \
             . --config-file slither.config.json
       - name: MythX analysis
@@ -157,7 +164,7 @@ jobs:
           docker run --rm \
             -e MYTHX_API_KEY \
             -v "${PWD}":/workspace \
-            -w /workspace/demo/CULTURE-v0 \
+            -w /workspace \
             mythx/mythx-cli:latest analyze contracts/CultureRegistry.sol contracts/SelfPlayArena.sol
       - name: MythX notice
         if: ${{ env.MYTHX_API_KEY == '' }}
@@ -191,6 +198,9 @@ jobs:
       - name: Install dependencies
         working-directory: demo/CULTURE-v0
         run: pnpm install --frozen-lockfile
+      - name: Build services
+        working-directory: demo/CULTURE-v0
+        run: pnpm -r run build
       - name: Service coverage
         working-directory: demo/CULTURE-v0
         run: pnpm run test:services

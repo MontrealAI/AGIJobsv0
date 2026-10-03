@@ -12,20 +12,31 @@ type ArtifactMetadata = {
 
 const ARTIFACT_DIR = path.resolve(process.cwd(), 'storage/culture/artifacts');
 
-async function readMetadataFromDisk(artifactId: number): Promise<ArtifactMetadata | undefined> {
+async function readMetadataFromDisk(
+  artifactId: number,
+): Promise<ArtifactMetadata | undefined> {
   const file = path.join(ARTIFACT_DIR, `${artifactId}.json`);
   try {
     const raw = await fs.readFile(file, 'utf8');
     return JSON.parse(raw) as ArtifactMetadata;
-  } catch (error: any) {
-    if (error?.code !== 'ENOENT') {
+  } catch (error: unknown) {
+    if (
+      !(
+        typeof error === 'object' &&
+        error !== null &&
+        'code' in error &&
+        error.code === 'ENOENT'
+      )
+    ) {
       console.warn('Failed to read artifact metadata', { artifactId, error });
     }
     return undefined;
   }
 }
 
-export async function loadArtifactMetadata(artifactId: number): Promise<ArtifactMetadata> {
+export async function loadArtifactMetadata(
+  artifactId: number,
+): Promise<ArtifactMetadata> {
   const diskMetadata = await readMetadataFromDisk(artifactId);
   if (diskMetadata) {
     return diskMetadata;
@@ -35,6 +46,6 @@ export async function loadArtifactMetadata(artifactId: number): Promise<Artifact
     id: artifactId,
     title: `Artifact ${artifactId}`,
     summary: 'No metadata available; using fallback description.',
-    tags: ['fallback']
+    tags: ['fallback'],
   };
 }

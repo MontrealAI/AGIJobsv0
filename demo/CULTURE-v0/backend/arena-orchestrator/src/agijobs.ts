@@ -44,18 +44,27 @@ export interface JobRegistryEvents {
 type EventNames = keyof JobRegistryEvents;
 
 class TypedEmitter extends EventEmitter {
-  override on<T extends EventNames>(event: T, listener: JobRegistryEvents[T]): this {
-    return super.on(event, listener) as this;
+  override on<T extends EventNames>(
+    event: T,
+    listener: JobRegistryEvents[T],
+  ): this {
+    return super.on(event, listener);
   }
 
-  override emit<T extends EventNames>(event: T, ...args: Parameters<JobRegistryEvents[T]>): boolean {
+  override emit<T extends EventNames>(
+    event: T,
+    ...args: Parameters<JobRegistryEvents[T]>
+  ): boolean {
     return super.emit(event, ...args);
   }
 }
 
 let nextJobId = 1;
 const records = new Map<number, JobRecord>();
-const submissionWaiters = new Map<number, Array<(update: SubmissionUpdate) => void>>();
+const submissionWaiters = new Map<
+  number,
+  Array<(update: SubmissionUpdate) => void>
+>();
 
 export class JobRegistryClient extends TypedEmitter {
   async createJob(input: CreateJobInput): Promise<JobHandle> {
@@ -70,12 +79,12 @@ export class JobRegistryClient extends TypedEmitter {
       artifactId: input.artifactId,
       status: 'created',
       createdAt: new Date(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
     };
     records.set(jobId, record);
     this.emit('job:created', record);
     this.log('created', record);
-    return handle;
+    return await Promise.resolve(handle);
   }
 
   async markSubmitted(jobId: number, cid: string): Promise<void> {
@@ -83,10 +92,15 @@ export class JobRegistryClient extends TypedEmitter {
     record.status = 'submitted';
     record.submissionCid = cid;
     record.updatedAt = new Date();
-    const update: SubmissionUpdate = { jobId, cid, submittedAt: record.updatedAt };
+    const update: SubmissionUpdate = {
+      jobId,
+      cid,
+      submittedAt: record.updatedAt,
+    };
     this.emit('job:submitted', update);
     this.notifyWaiters(jobId, update);
     this.log('submitted', record, { cid });
+    await Promise.resolve();
   }
 
   async finalizeJob(jobId: number): Promise<void> {
@@ -98,6 +112,7 @@ export class JobRegistryClient extends TypedEmitter {
     record.updatedAt = new Date();
     this.emit('job:finalized', record);
     this.log('finalized', record);
+    await Promise.resolve();
   }
 
   updateRound(jobId: number, roundId: number): void {
@@ -111,23 +126,30 @@ export class JobRegistryClient extends TypedEmitter {
   }
 
   listJobsByRound(roundId: number): JobRecord[] {
-    return Array.from(records.values()).filter((record) => record.roundId === roundId);
+    return Array.from(records.values()).filter(
+      (record) => record.roundId === roundId,
+    );
   }
 
-  async waitForSubmission(jobId: number, timeoutMs: number): Promise<SubmissionUpdate> {
+  async waitForSubmission(
+    jobId: number,
+    timeoutMs: number,
+  ): Promise<SubmissionUpdate> {
     const record = this.requireJob(jobId);
     if (record.status !== 'created' && record.submissionCid) {
       return {
         jobId,
         cid: record.submissionCid,
-        submittedAt: record.updatedAt
+        submittedAt: record.updatedAt,
       };
     }
 
     return await new Promise<SubmissionUpdate>((resolve, reject) => {
       const timeout = setTimeout(() => {
         cleanup();
-        reject(new Error(`Job ${jobId} submission timed out after ${timeoutMs}ms`));
+        reject(
+          new Error(`Job ${jobId} submission timed out after ${timeoutMs}ms`),
+        );
       }, timeoutMs);
 
       const handler = (update: SubmissionUpdate) => {
@@ -183,7 +205,11 @@ export class JobRegistryClient extends TypedEmitter {
     }
   }
 
-  private log(action: string, record: JobRecord, extra: Record<string, unknown> = {}): void {
+  private log(
+    action: string,
+    record: JobRecord,
+    extra: Record<string, unknown> = {},
+  ): void {
     const log = buildStructuredLogRecord({
       component: 'job-registry',
       action,
@@ -194,8 +220,8 @@ export class JobRegistryClient extends TypedEmitter {
         role: record.role,
         artifactId: record.artifactId,
         status: record.status,
-        ...extra
-      }
+        ...extra,
+      },
     });
     console.log(JSON.stringify(log));
   }

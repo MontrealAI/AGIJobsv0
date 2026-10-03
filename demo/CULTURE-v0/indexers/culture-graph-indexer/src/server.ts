@@ -2,7 +2,9 @@ import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import rateLimit from '@fastify/rate-limit';
 import { ApolloServer } from '@apollo/server';
-import fastifyApollo, { fastifyApolloDrainPlugin } from '@as-integrations/fastify';
+import fastifyApollo, {
+  fastifyApolloDrainPlugin,
+} from '@as-integrations/fastify';
 import type { PrismaClient } from '@prisma/client';
 import { collectDefaultMetrics, Registry } from 'prom-client';
 import { typeDefs } from './graphql/schema.js';
@@ -20,7 +22,10 @@ export interface ServerOptions {
 const metricsRegistry = new Registry();
 collectDefaultMetrics({ register: metricsRegistry });
 
-export async function createServer(prisma: PrismaClient, options: ServerOptions = {}) {
+export async function createServer(
+  prisma: PrismaClient,
+  options: ServerOptions = {},
+) {
   const app = Fastify({ logger: false });
   await app.register(cors, { origin: true });
 
@@ -45,7 +50,9 @@ export async function createServer(prisma: PrismaClient, options: ServerOptions 
     status: 'ok',
     timestamp: new Date().toISOString(),
     integrity: options.integrityStatusProvider?.(),
-    influenceValidation: serializeValidation(options.validationStatusProvider?.()),
+    influenceValidation: serializeValidation(
+      options.validationStatusProvider?.(),
+    ),
   }));
 
   app.get('/metrics', async (_request, reply) => {
@@ -56,7 +63,9 @@ export async function createServer(prisma: PrismaClient, options: ServerOptions 
   return { app, apollo };
 }
 
-function serializeValidation(report: InfluenceValidationReport | null | undefined) {
+function serializeValidation(
+  report: InfluenceValidationReport | null | undefined,
+) {
   if (!report) {
     return null;
   }

@@ -15,7 +15,7 @@ export interface InfluenceValidator {
   validate(
     graph: InfluenceValidationGraph,
     scores: Map<string, number>,
-    config: InfluenceValidationConfig
+    config: InfluenceValidationConfig,
   ): Promise<InfluenceValidationReport>;
 }
 
@@ -128,7 +128,7 @@ export class NetworkXInfluenceValidator implements InfluenceValidator {
   async validate(
     graph: InfluenceValidationGraph,
     scores: Map<string, number>,
-    config: InfluenceValidationConfig
+    config: InfluenceValidationConfig,
   ): Promise<InfluenceValidationReport> {
     try {
       const result = await this.runPython(graph, config);
@@ -156,7 +156,9 @@ export class NetworkXInfluenceValidator implements InfluenceValidator {
         engine: result.engine,
         maxDelta,
         externalScores,
-        error: ok ? undefined : `Maximum delta ${maxDelta} exceeded tolerance ${tolerance}`,
+        error: ok
+          ? undefined
+          : `Maximum delta ${maxDelta} exceeded tolerance ${tolerance}`,
       };
     } catch (error) {
       return {
@@ -165,14 +167,15 @@ export class NetworkXInfluenceValidator implements InfluenceValidator {
         engine: null,
         maxDelta: 0,
         externalScores: null,
-        error: error instanceof Error ? error.message : 'Unknown validation error',
+        error:
+          error instanceof Error ? error.message : 'Unknown validation error',
       };
     }
   }
 
   private runPython(
     graph: InfluenceValidationGraph,
-    config: InfluenceValidationConfig
+    config: InfluenceValidationConfig,
   ): Promise<PythonValidationResult> {
     return new Promise((resolve, reject) => {
       const child = spawn(this.pythonCommand, ['-c', PYTHON_SNIPPET], {
@@ -199,7 +202,9 @@ export class NetworkXInfluenceValidator implements InfluenceValidator {
 
       child.on('close', (code) => {
         if (code !== 0) {
-          reject(new Error(`NetworkX validator exited with code ${code}: ${stderr}`));
+          reject(
+            new Error(`NetworkX validator exited with code ${code}: ${stderr}`),
+          );
           return;
         }
 
@@ -209,8 +214,10 @@ export class NetworkXInfluenceValidator implements InfluenceValidator {
         } catch (parseError) {
           reject(
             new Error(
-              `Failed to parse NetworkX validator output: ${stdout || '[empty]'}`
-            )
+              `Failed to parse NetworkX validator output: ${
+                stdout || '[empty]'
+              }`,
+            ),
           );
         }
       });
@@ -233,7 +240,7 @@ export class NoopInfluenceValidator implements InfluenceValidator {
   async validate(
     _graph: InfluenceValidationGraph,
     _scores: Map<string, number>,
-    _config: InfluenceValidationConfig
+    _config: InfluenceValidationConfig,
   ): Promise<InfluenceValidationReport> {
     return {
       ok: true,

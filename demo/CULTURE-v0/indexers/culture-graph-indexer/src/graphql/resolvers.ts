@@ -1,4 +1,10 @@
-import type { Artifact, Citation, InfluenceMetric, PrismaClient, RoundFinalization } from '@prisma/client';
+import type {
+  Artifact,
+  Citation,
+  InfluenceMetric,
+  PrismaClient,
+  RoundFinalization,
+} from '@prisma/client';
 
 type Context = {
   readonly prisma: PrismaClient;
@@ -14,30 +20,50 @@ type CitationWithArtifacts = Citation & {
 };
 
 type QueryResolvers = {
-  readonly artifact: (_: unknown, args: { id: string }, context: Context) => Promise<ArtifactDTO | null>;
+  readonly artifact: (
+    _: unknown,
+    args: { id: string },
+    context: Context,
+  ) => Promise<ArtifactDTO | null>;
   readonly artifacts: (
     _: unknown,
     args: { limit?: number; offset?: number; kind?: string | null },
-    context: Context
+    context: Context,
   ) => Promise<ArtifactDTO[]>;
   readonly artifactsConnection: (
     _: unknown,
-    args: { first?: number | null; after?: string | null; kind?: string | null },
-    context: Context
+    args: {
+      first?: number | null;
+      after?: string | null;
+      kind?: string | null;
+    },
+    context: Context,
   ) => Promise<ArtifactConnectionDTO>;
   readonly citations: (
     _: unknown,
     args: { artifactId: string; direction?: 'INCOMING' | 'OUTGOING' },
-    context: Context
+    context: Context,
   ) => Promise<CitationDTO[]>;
-  readonly lineage: (_: unknown, args: { artifactId: string }, context: Context) => Promise<LineageNodeDTO[]>;
-  readonly topInfluential: (_: unknown, args: { limit?: number }, context: Context) => Promise<ArtifactDTO[]>;
+  readonly lineage: (
+    _: unknown,
+    args: { artifactId: string },
+    context: Context,
+  ) => Promise<LineageNodeDTO[]>;
+  readonly topInfluential: (
+    _: unknown,
+    args: { limit?: number },
+    context: Context,
+  ) => Promise<ArtifactDTO[]>;
   readonly influencers: (
     _: unknown,
     args: { first?: number | null; after?: string | null },
-    context: Context
+    context: Context,
   ) => Promise<ArtifactConnectionDTO>;
-  readonly cultureStats: (_: unknown, args: Record<string, never>, context: Context) => Promise<CultureStatsDTO>;
+  readonly cultureStats: (
+    _: unknown,
+    args: Record<string, never>,
+    context: Context,
+  ) => Promise<CultureStatsDTO>;
 };
 
 type ArtifactDTO = {
@@ -100,11 +126,14 @@ type ArtifactFieldResolvers = {
   readonly citations: (
     parent: ArtifactDTO,
     args: { direction?: 'INCOMING' | 'OUTGOING' },
-    context: Context
+    context: Context,
   ) => Promise<CitationDTO[]>;
 };
 
-export const resolvers: { Query: QueryResolvers; Artifact: ArtifactFieldResolvers } = {
+export const resolvers: {
+  Query: QueryResolvers;
+  Artifact: ArtifactFieldResolvers;
+} = {
   Query: {
     async artifact(_parent, args, context) {
       const record = await fetchArtifact(context.prisma, args.id);
@@ -139,7 +168,9 @@ export const resolvers: { Query: QueryResolvers; Artifact: ArtifactFieldResolver
         include: { influence: true },
       });
 
-      const totalCount = await context.prisma.artifact.count({ where: kindFilter });
+      const totalCount = await context.prisma.artifact.count({
+        where: kindFilter,
+      });
 
       const edges = records.slice(0, first).map((record) => ({
         cursor: encodeArtifactCursor(record),
@@ -159,7 +190,10 @@ export const resolvers: { Query: QueryResolvers; Artifact: ArtifactFieldResolver
 
     async citations(_parent, args, context) {
       const direction = args.direction ?? 'OUTGOING';
-      const where = direction === 'INCOMING' ? { toId: args.artifactId } : { fromId: args.artifactId };
+      const where =
+        direction === 'INCOMING'
+          ? { toId: args.artifactId }
+          : { fromId: args.artifactId };
       const citations = await context.prisma.citation.findMany({
         where,
         orderBy: [{ blockNumber: 'asc' }, { logIndex: 'asc' }],
@@ -243,11 +277,20 @@ export const resolvers: { Query: QueryResolvers; Artifact: ArtifactFieldResolver
     },
 
     async cultureStats(_parent, _args, context) {
-      const [artifactCount, citationCount, roundCount, influenceAggregate, latestRound] = await Promise.all([
+      const [
+        artifactCount,
+        citationCount,
+        roundCount,
+        influenceAggregate,
+        latestRound,
+      ] = await Promise.all([
         context.prisma.artifact.count(),
         context.prisma.citation.count(),
         context.prisma.roundFinalization.count(),
-        context.prisma.influenceMetric.aggregate({ _avg: { score: true }, _max: { lineageDepth: true } }),
+        context.prisma.influenceMetric.aggregate({
+          _avg: { score: true },
+          _max: { lineageDepth: true },
+        }),
         context.prisma.roundFinalization.findFirst({
           orderBy: [{ blockNumber: 'desc' }, { logIndex: 'desc' }],
         }),
@@ -266,7 +309,8 @@ export const resolvers: { Query: QueryResolvers; Artifact: ArtifactFieldResolver
   Artifact: {
     async citations(parent, args, context) {
       const direction = args.direction ?? 'OUTGOING';
-      const where = direction === 'INCOMING' ? { toId: parent.id } : { fromId: parent.id };
+      const where =
+        direction === 'INCOMING' ? { toId: parent.id } : { fromId: parent.id };
       const citations = await context.prisma.citation.findMany({
         where,
         orderBy: [{ blockNumber: 'asc' }, { logIndex: 'asc' }],
@@ -309,7 +353,9 @@ function formatRound(round: RoundFinalization): string {
   return [
     round.roundId,
     round.newDifficulty,
-    round.difficultyDelta >= 0 ? `+${round.difficultyDelta}` : `${round.difficultyDelta}`,
+    round.difficultyDelta >= 0
+      ? `+${round.difficultyDelta}`
+      : `${round.difficultyDelta}`,
     round.finalizedAt.toISOString(),
   ].join(':');
 }
@@ -319,7 +365,10 @@ const citationInclude = {
   to: { include: { influence: true } },
 } as const;
 
-async function fetchArtifact(prisma: PrismaClient, id: string): Promise<ArtifactGraphRecord | null> {
+async function fetchArtifact(
+  prisma: PrismaClient,
+  id: string,
+): Promise<ArtifactGraphRecord | null> {
   const record = await prisma.artifact.findUnique({
     where: { id },
     include: { influence: true },
@@ -327,7 +376,9 @@ async function fetchArtifact(prisma: PrismaClient, id: string): Promise<Artifact
   return record as ArtifactGraphRecord | null;
 }
 
-export const contextFactory = (prisma: PrismaClient) => async () => ({ prisma });
+export const contextFactory = (prisma: PrismaClient) => async () => ({
+  prisma,
+});
 
 export type ResolverContextFactory = ReturnType<typeof contextFactory>;
 
@@ -341,7 +392,9 @@ function encodeArtifactCursor(record: ArtifactGraphRecord): string {
   return Buffer.from(payload, 'utf8').toString('base64url');
 }
 
-function decodeArtifactCursor(cursor: string): { id: string; timestamp: Date } | null {
+function decodeArtifactCursor(
+  cursor: string,
+): { id: string; timestamp: Date } | null {
   try {
     const json = Buffer.from(cursor, 'base64url').toString('utf8');
     const payload = JSON.parse(json) as { id: string; timestamp: string };
@@ -353,7 +406,7 @@ function decodeArtifactCursor(cursor: string): { id: string; timestamp: Date } |
 
 function buildArtifactCursorWhere(
   kindFilter: { kind: string } | undefined,
-  cursor: { id: string; timestamp: Date } | null
+  cursor: { id: string; timestamp: Date } | null,
 ) {
   if (!cursor) {
     return kindFilter;
@@ -374,7 +427,9 @@ function buildArtifactCursorWhere(
   return { AND: clauses };
 }
 
-function encodeInfluencerCursor(metric: InfluenceMetric & { artifactId: string }): string {
+function encodeInfluencerCursor(
+  metric: InfluenceMetric & { artifactId: string },
+): string {
   const payload = JSON.stringify({
     artifactId: metric.artifactId,
     score: metric.score,
@@ -382,7 +437,9 @@ function encodeInfluencerCursor(metric: InfluenceMetric & { artifactId: string }
   return Buffer.from(payload, 'utf8').toString('base64url');
 }
 
-function decodeInfluencerCursor(cursor: string): { artifactId: string; score: number } | null {
+function decodeInfluencerCursor(
+  cursor: string,
+): { artifactId: string; score: number } | null {
   try {
     const json = Buffer.from(cursor, 'base64url').toString('utf8');
     const payload = JSON.parse(json) as { artifactId: string; score: number };

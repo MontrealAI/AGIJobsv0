@@ -1,11 +1,9 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
-import * as matchers from '@testing-library/jest-dom/matchers';
+import '@testing-library/jest-dom/vitest';
 import { ErrorProvider, useError } from '../lib/error';
 import Toast from '../components/Toast';
-
-expect.extend(matchers);
 
 function Trigger() {
   const { setError } = useError();

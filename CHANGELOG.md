@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased — 2026-10-03 readiness hardening
 
+- Update Next.js applications to 15.5.27 and repair independent application-image builds and provenance subjects.
+- Repair CULTURE service builds, lint integration, lockfiles, Prisma generation, and packaging; add authenticated arena writes, receipt-derived round IDs, atomic state persistence, and explicit preview/service modes.
+- Correct CULTURE coverage percentages and document its remaining gas, coverage, provider, and deployment-integration blockers without weakening the gates.
 - Repair compiled gateway/orchestrator entrypoints and package required config helpers, public config, and the gRPC schema.
 - Move the pinned root toolchain and primary container builds to Node 22.23.3 LTS; fix the Node doctor's false mismatch warning.
 - Separate headless recursive-model dependencies from the optional dashboard, resolve platform and model requirements together, check dependency consistency, and test relevant pull requests.

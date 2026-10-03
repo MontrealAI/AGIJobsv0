@@ -6,10 +6,10 @@ export default defineConfig({
     coverage: {
       reporter: ["text", "lcov", "json-summary"],
       thresholds: {
-        lines: 0.9,
-        statements: 0.9,
-        branches: 0.9,
-        functions: 0.9,
+        lines: 90,
+        statements: 90,
+        branches: 90,
+        functions: 90,
       },
     },
   },

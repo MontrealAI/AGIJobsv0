@@ -14,7 +14,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <header className="onebox-header">
             <h1 className="onebox-title">AGI Jobs One-Box</h1>
             <p className="onebox-subtitle">
-              Chat with the orchestrator to post, validate, and finalize jobs without touching a wallet.
+              Chat with the orchestrator to post, validate, and finalize jobs
+              without touching a wallet.
             </p>
           </header>
           {children}

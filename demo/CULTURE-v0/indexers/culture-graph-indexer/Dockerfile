@@ -23,6 +23,7 @@ RUN npm ci
 
 COPY demo/CULTURE-v0/indexers/culture-graph-indexer/tsconfig.json ./
 COPY demo/CULTURE-v0/indexers/culture-graph-indexer/prisma ./prisma
+COPY demo/CULTURE-v0/indexers/culture-graph-indexer/scripts ./scripts
 RUN npm run prisma:generate
 COPY demo/CULTURE-v0/indexers/culture-graph-indexer/src ./src
 RUN npm run build

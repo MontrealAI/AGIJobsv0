@@ -1,4 +1,4 @@
-import { execSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -6,19 +6,16 @@ import { createRequire } from 'node:module';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(__dirname, '..');
-const clientIndex = path.join(projectRoot, 'node_modules', '.prisma', 'client', 'index.js');
-const clientPackage = path.join(projectRoot, 'node_modules', '@prisma', 'client', 'index.js');
 const defaultDbPath = path.join(projectRoot, '.tmp', 'dev.db');
 const databaseUrl = process.env.DATABASE_URL ?? `file:${defaultDbPath}`;
 const requireFromProject = createRequire(import.meta.url);
 
 function prismaClientExists() {
   try {
-    if (fs.existsSync(clientIndex) || fs.existsSync(clientPackage)) {
-      return true;
-    }
-    requireFromProject.resolve('@prisma/client');
-    return true;
+    const { Prisma, PrismaClient } = requireFromProject('@prisma/client');
+    return typeof PrismaClient === 'function' &&
+      Array.isArray(Prisma?.dmmf?.datamodel?.models) &&
+      Prisma.dmmf.datamodel.models.some((model) => model.name === 'Artifact');
   } catch {
     return false;
   }
@@ -36,7 +33,7 @@ function ensureDefaultDbDir() {
 function generatePrismaClient() {
   console.log('→ Prisma client artifacts missing; generating with prisma generate...');
   ensureDefaultDbDir();
-  execSync('npx prisma generate', {
+  execFileSync(process.execPath, [requireFromProject.resolve('prisma/build/index.js'), 'generate'], {
     cwd: projectRoot,
     stdio: 'inherit',
     env: {

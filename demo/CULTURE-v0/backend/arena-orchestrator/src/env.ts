@@ -7,11 +7,16 @@ const privateKeyRegex = /^0x[a-fA-F0-9]{64}$/;
 
 const envSchema = z.object({
   ORCHESTRATOR_PORT: z.coerce.number().int().positive().default(4005),
+  ORCHESTRATOR_API_TOKEN: z.string().min(32).optional(),
   TARGET_SUCCESS_RATE: z.coerce.number().min(0).max(1).default(0.6),
   MAX_DIFFICULTY_STEP: z.coerce.number().int().nonnegative().default(2),
   MIN_DIFFICULTY: z.coerce.number().int().nonnegative().default(1),
   MAX_DIFFICULTY: z.coerce.number().int().min(1).default(9),
-  ROUND_TIMEOUT_MS: z.coerce.number().int().positive().default(15 * 60_000),
+  ROUND_TIMEOUT_MS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(15 * 60_000),
   OPERATION_TIMEOUT_MS: z.coerce.number().int().positive().default(10_000),
   OPERATION_MAX_RETRIES: z.coerce.number().int().nonnegative().default(3),
   DIFFICULTY_KI: z.coerce.number().optional(),
@@ -31,9 +36,12 @@ const envSchema = z.object({
     .optional(),
   ORCHESTRATOR_PRIVATE_KEY: z
     .string()
-    .regex(privateKeyRegex, 'ORCHESTRATOR_PRIVATE_KEY must be a 32-byte hex key')
+    .regex(
+      privateKeyRegex,
+      'ORCHESTRATOR_PRIVATE_KEY must be a 32-byte hex key',
+    )
     .optional(),
-  SLASH_RECIPIENT: z.string().regex(addressRegex).optional()
+  SLASH_RECIPIENT: z.string().regex(addressRegex).optional(),
 });
 
 export interface EnvironmentConfig {
@@ -41,6 +49,7 @@ export interface EnvironmentConfig {
   readonly arena: ArenaConfig;
   readonly rpcUrl: string;
   readonly operatorKey?: string;
+  readonly apiToken?: string;
   readonly arenaAddress?: string;
   readonly slashRecipient?: string;
   readonly persistence: {
@@ -50,7 +59,23 @@ export interface EnvironmentConfig {
 }
 
 export function loadEnvironment(): EnvironmentConfig {
-  const parsed = envSchema.safeParse(process.env);
+  const canonicalAddress = process.env.SELF_PLAY_ARENA_ADDRESS || undefined;
+  const legacyAddress = process.env.SELFPLAY_ARENA_ADDRESS || undefined;
+  if (
+    canonicalAddress &&
+    legacyAddress &&
+    canonicalAddress.toLowerCase() !== legacyAddress.toLowerCase()
+  ) {
+    throw new Error(
+      'SELF_PLAY_ARENA_ADDRESS and SELFPLAY_ARENA_ADDRESS disagree',
+    );
+  }
+  const parsed = envSchema.safeParse({
+    ...process.env,
+    SELFPLAY_ARENA_ADDRESS: canonicalAddress ?? legacyAddress,
+    ORCHESTRATOR_PRIVATE_KEY: process.env.ORCHESTRATOR_PRIVATE_KEY || undefined,
+    ORCHESTRATOR_API_TOKEN: process.env.ORCHESTRATOR_API_TOKEN || undefined,
+  });
   if (!parsed.success) {
     const flattened = parsed.error.flatten();
     const message = JSON.stringify(flattened.fieldErrors, null, 2);
@@ -58,6 +83,27 @@ export function loadEnvironment(): EnvironmentConfig {
   }
 
   const values = parsed.data;
+  if (
+    Boolean(values.SELFPLAY_ARENA_ADDRESS) !==
+    Boolean(values.ORCHESTRATOR_PRIVATE_KEY)
+  ) {
+    throw new Error(
+      'Configure both SELF_PLAY_ARENA_ADDRESS and ORCHESTRATOR_PRIVATE_KEY, or neither for the local simulation',
+    );
+  }
+  if (values.ORCHESTRATOR_PRIVATE_KEY && !values.ORCHESTRATOR_API_TOKEN) {
+    throw new Error(
+      'On-chain operation requires ORCHESTRATOR_API_TOKEN (at least 32 characters)',
+    );
+  }
+  if (
+    values.SELFPLAY_ARENA_ADDRESS ===
+    '0x0000000000000000000000000000000000000000'
+  ) {
+    throw new Error(
+      'SELF_PLAY_ARENA_ADDRESS must be a deployed, nonzero arena address',
+    );
+  }
   const arena: ArenaConfig = {
     targetSuccessRate: values.TARGET_SUCCESS_RATE,
     maxStep: values.MAX_DIFFICULTY_STEP,
@@ -76,10 +122,10 @@ export function loadEnvironment(): EnvironmentConfig {
       kFactor: values.ELO_K_FACTOR,
       defaultRating: values.ELO_DEFAULT_RATING,
       floor: values.ELO_MIN_RATING,
-      ceiling: values.ELO_MAX_RATING
+      ceiling: values.ELO_MAX_RATING,
     },
     persistencePath: values.ELO_STATE_PATH,
-    roundStatePath: values.ROUND_STATE_PATH
+    roundStatePath: values.ROUND_STATE_PATH,
   };
 
   return {
@@ -87,11 +133,12 @@ export function loadEnvironment(): EnvironmentConfig {
     arena,
     rpcUrl: values.RPC_URL,
     operatorKey: values.ORCHESTRATOR_PRIVATE_KEY,
+    apiToken: values.ORCHESTRATOR_API_TOKEN,
     arenaAddress: values.SELFPLAY_ARENA_ADDRESS,
     slashRecipient: values.SLASH_RECIPIENT,
     persistence: {
       eloPath: values.ELO_STATE_PATH,
-      roundPath: values.ROUND_STATE_PATH
-    }
+      roundPath: values.ROUND_STATE_PATH,
+    },
   };
 }

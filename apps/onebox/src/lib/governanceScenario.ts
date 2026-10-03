@@ -124,7 +124,9 @@ const describeActorList = (actors: GovernanceActor[]): string =>
     .map((actor) => `${actor.icon} ${actor.name} — ${formatWallet(actor)}`)
     .join('\n');
 
-export const normalizeWalletAddress = (value?: string | null): string | null => {
+export const normalizeWalletAddress = (
+  value?: string | null
+): string | null => {
   if (!value || value.trim().length === 0) {
     return null;
   }
@@ -200,9 +202,7 @@ const validatorOperations = (
   ].join('\n');
 };
 
-const ownerCommandDeck = (
-  context: GovernanceScenarioContext
-): string[] => {
+const ownerCommandDeck = (context: GovernanceScenarioContext): string[] => {
   const networkSlug = resolveNetworkSlug(context.network);
   return [
     `npm run owner:command-center -- --network ${networkSlug} --config config/owner.mission.json`,
@@ -258,13 +258,14 @@ export const DEFAULT_MILESTONES: GovernanceMilestone[] = [
       'Commitments recorded locally and on-chain; salts stored securely for reveal phase.',
       'Identity proofs (ENS / Merkle) verified for every validator.',
     ],
-    promptTemplate: (context) => [
-      'Initiate validator commit phase for the active governance job.',
-      `Sponsor nation: ${context.sponsor.name}.`,
-      `Validators: ${describeActorList(context.validators)}.`,
-      validatorOperations(context, 'commit'),
-      'Only proceed once commit windows and quorum thresholds from ValidationModule are confirmed via owner:dashboard.',
-    ].join('\n'),
+    promptTemplate: (context) =>
+      [
+        'Initiate validator commit phase for the active governance job.',
+        `Sponsor nation: ${context.sponsor.name}.`,
+        `Validators: ${describeActorList(context.validators)}.`,
+        validatorOperations(context, 'commit'),
+        'Only proceed once commit windows and quorum thresholds from ValidationModule are confirmed via owner:dashboard.',
+      ].join('\n'),
   },
   {
     id: 'validator-reveal',
@@ -277,11 +278,12 @@ export const DEFAULT_MILESTONES: GovernanceMilestone[] = [
       'Mismatch handling plan ready (invoke dispute module if inconsistent).',
       'Receipts archived to storage/validator-cli for audit + owner review.',
     ],
-    promptTemplate: (context) => [
-      'Trigger the reveal phase for every validator who committed.',
-      validatorOperations(context, 'reveal'),
-      'Cross-check reveal vs commit hashes before finalise. Any mismatch should trigger dispute protocols and owner pause authority.',
-    ].join('\n'),
+    promptTemplate: (context) =>
+      [
+        'Trigger the reveal phase for every validator who committed.',
+        validatorOperations(context, 'reveal'),
+        'Cross-check reveal vs commit hashes before finalise. Any mismatch should trigger dispute protocols and owner pause authority.',
+      ].join('\n'),
   },
   {
     id: 'finalise-outcome',
@@ -316,16 +318,19 @@ export const DEFAULT_MILESTONES: GovernanceMilestone[] = [
       'Pause + resume rehearsals executed to prove emergency stop authority.',
       'Parameter sweeps logged with change tickets for future audits.',
     ],
-    promptTemplate: (context) => [
-      'Activate the owner command deck to supervise the Solving α-AGI Governance mission.',
-      `Owner authority: ${context.owner.name} (${formatWallet(context.owner)}).`,
-      `Sponsor: ${context.sponsor.name}. Validators online: ${context.validators
-        .map((actor) => actor.name)
-        .join(', ') || 'none'}.`,
-      'Ensure the owner executes the following controls as needed:',
-      ownerCommandDeck(context).join('\n'),
-      'Document every owner action with timestamped receipts and share with the multinational stakeholders.',
-    ].join('\n'),
+    promptTemplate: (context) =>
+      [
+        'Activate the owner command deck to supervise the Solving α-AGI Governance mission.',
+        `Owner authority: ${context.owner.name} (${formatWallet(
+          context.owner
+        )}).`,
+        `Sponsor: ${context.sponsor.name}. Validators online: ${
+          context.validators.map((actor) => actor.name).join(', ') || 'none'
+        }.`,
+        'Ensure the owner executes the following controls as needed:',
+        ownerCommandDeck(context).join('\n'),
+        'Document every owner action with timestamped receipts and share with the multinational stakeholders.',
+      ].join('\n'),
     ownerCalls: (context) => {
       const networkSlug = resolveNetworkSlug(context.network);
       return [
@@ -359,24 +364,33 @@ export function sanitiseActors(value: unknown): GovernanceActor[] {
     }
     return 'validator';
   };
-  const filtered = (value as unknown[]).reduce<GovernanceActor[]>((acc, entry) => {
-    if (!entry || typeof entry !== 'object') {
+  const filtered = (value as unknown[]).reduce<GovernanceActor[]>(
+    (acc, entry) => {
+      if (!entry || typeof entry !== 'object') {
+        return acc;
+      }
+      const candidate = entry as Partial<GovernanceActor>;
+      if (
+        !candidate.id ||
+        !candidate.name ||
+        !candidate.icon ||
+        !candidate.mission
+      ) {
+        return acc;
+      }
+      acc.push({
+        id: String(candidate.id),
+        role: mapRole(candidate.role),
+        name: String(candidate.name),
+        icon: String(candidate.icon),
+        mission: String(candidate.mission),
+        wallet:
+          typeof candidate.wallet === 'string' ? candidate.wallet : undefined,
+      });
       return acc;
-    }
-    const candidate = entry as Partial<GovernanceActor>;
-    if (!candidate.id || !candidate.name || !candidate.icon || !candidate.mission) {
-      return acc;
-    }
-    acc.push({
-      id: String(candidate.id),
-      role: mapRole(candidate.role),
-      name: String(candidate.name),
-      icon: String(candidate.icon),
-      mission: String(candidate.mission),
-      wallet: typeof candidate.wallet === 'string' ? candidate.wallet : undefined,
-    });
-    return acc;
-  }, []);
+    },
+    []
+  );
   if (filtered.length === 0) {
     return cloneActors(DEFAULT_ACTORS);
   }

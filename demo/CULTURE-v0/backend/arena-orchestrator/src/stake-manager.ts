@@ -16,21 +16,25 @@ function emitStakeLog(action: string, input: StakeActionInput): void {
     details: {
       roundId: input.roundId,
       role: input.role,
-      amount: input.amount.toString()
-    }
+      amount: input.amount.toString(),
+    },
   });
   console.log(JSON.stringify(log));
 }
 
 export async function lockStake(input: StakeActionInput): Promise<void> {
   emitStakeLog('lock', input);
+  await Promise.resolve();
 }
 
 export async function releaseStake(input: StakeActionInput): Promise<void> {
   emitStakeLog('release', input);
+  await Promise.resolve();
 }
 
-export async function slashStake(input: StakeActionInput & { readonly reason: string }): Promise<void> {
+export async function slashStake(
+  input: StakeActionInput & { readonly reason: string },
+): Promise<void> {
   const log = buildStructuredLogRecord({
     component: 'stake-manager',
     action: 'slash',
@@ -40,8 +44,9 @@ export async function slashStake(input: StakeActionInput & { readonly reason: st
       roundId: input.roundId,
       role: input.role,
       amount: input.amount.toString(),
-      reason: input.reason
-    }
+      reason: input.reason,
+    },
   });
   console.warn(JSON.stringify(log));
+  await Promise.resolve();
 }

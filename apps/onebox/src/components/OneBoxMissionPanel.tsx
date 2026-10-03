@@ -154,16 +154,19 @@ export function OneBoxMissionPanel({
     setGovernanceError(null);
 
     try {
-      const response = await fetch(joinPath(orchestratorBase, 'governance/snapshot'), {
-        method: 'GET',
-        headers: apiToken
-          ? {
-              Authorization: `Bearer ${apiToken}`,
-              Accept: 'application/json',
-            }
-          : { Accept: 'application/json' },
-        signal: controller.signal,
-      });
+      const response = await fetch(
+        joinPath(orchestratorBase, 'governance/snapshot'),
+        {
+          method: 'GET',
+          headers: apiToken
+            ? {
+                Authorization: `Bearer ${apiToken}`,
+                Accept: 'application/json',
+              }
+            : { Accept: 'application/json' },
+          signal: controller.signal,
+        }
+      );
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
@@ -200,56 +203,54 @@ export function OneBoxMissionPanel({
     return new Date(lastChecked).toLocaleTimeString();
   }, [lastChecked]);
 
-  const checklist = useMemo(
-    () => {
-      const orchestratorStatus: ChecklistStatus =
-        health === 'ready'
-          ? 'ready'
-          : health === 'checking'
-          ? 'checking'
-          : health === 'error'
-          ? 'error'
-          : 'pending';
-      const apiTokenStatus: ChecklistStatus = apiToken ? 'ready' : 'pending';
-      const explorerStatus: ChecklistStatus = explorerTxBase
+  const checklist = useMemo(() => {
+    const orchestratorStatus: ChecklistStatus =
+      health === 'ready'
         ? 'ready'
+        : health === 'checking'
+        ? 'checking'
+        : health === 'error'
+        ? 'error'
         : 'pending';
-      const ipfsStatus: ChecklistStatus = ipfsGatewayBase
-        ? 'ready'
-        : 'pending';
-      return [
-        {
-          id: 'orchestrator',
-          label: 'Orchestrator',
-          status: orchestratorStatus,
-          detail: orchestratorBase ?? 'Configure NEXT_PUBLIC_ONEBOX_ORCHESTRATOR_URL.',
-        },
-        {
-          id: 'token',
-          label: 'API token',
-          status: apiTokenStatus,
-          detail: apiToken ? 'Authentication configured.' : 'Set ONEBOX_API_TOKEN for protected deployments.',
-        },
-        {
-          id: 'explorer',
-          label: 'Explorer link',
-          status: explorerStatus,
-          detail: explorerTxBase
-            ? `Using ${explorerTxBase}`
-            : 'Optional. Configure NEXT_PUBLIC_ONEBOX_EXPLORER_TX_BASE to surface tx links.',
-        },
-        {
-          id: 'ipfs',
-          label: 'IPFS gateway',
-          status: ipfsStatus,
-          detail: ipfsGatewayBase
-            ? `Using ${ipfsGatewayBase}`
-            : 'Defaulting to ipfs.io/ipfs/ for artefact previews.',
-        },
-      ];
-    },
-    [apiToken, explorerTxBase, health, ipfsGatewayBase, orchestratorBase]
-  );
+    const apiTokenStatus: ChecklistStatus = apiToken ? 'ready' : 'pending';
+    const explorerStatus: ChecklistStatus = explorerTxBase
+      ? 'ready'
+      : 'pending';
+    const ipfsStatus: ChecklistStatus = ipfsGatewayBase ? 'ready' : 'pending';
+    return [
+      {
+        id: 'orchestrator',
+        label: 'Orchestrator',
+        status: orchestratorStatus,
+        detail:
+          orchestratorBase ?? 'Configure NEXT_PUBLIC_ONEBOX_ORCHESTRATOR_URL.',
+      },
+      {
+        id: 'token',
+        label: 'API token',
+        status: apiTokenStatus,
+        detail: apiToken
+          ? 'Authentication configured.'
+          : 'Set ONEBOX_API_TOKEN for protected deployments.',
+      },
+      {
+        id: 'explorer',
+        label: 'Explorer link',
+        status: explorerStatus,
+        detail: explorerTxBase
+          ? `Using ${explorerTxBase}`
+          : 'Optional. Configure NEXT_PUBLIC_ONEBOX_EXPLORER_TX_BASE to surface tx links.',
+      },
+      {
+        id: 'ipfs',
+        label: 'IPFS gateway',
+        status: ipfsStatus,
+        detail: ipfsGatewayBase
+          ? `Using ${ipfsGatewayBase}`
+          : 'Defaulting to ipfs.io/ipfs/ for artefact previews.',
+      },
+    ];
+  }, [apiToken, explorerTxBase, health, ipfsGatewayBase, orchestratorBase]);
 
   const handlePromptSelect = useCallback(
     (text: string) => {
@@ -336,7 +337,9 @@ export function OneBoxMissionPanel({
       <header className={styles.header}>
         <h1 className={styles.title}>AGI Jobs One‑Box 👁️✨</h1>
         <p className={styles.subtitle}>
-          A single conversational surface that lets non-technical operators launch, simulate, and settle institution-grade labour missions on-chain.
+          A single conversational surface that lets non-technical operators
+          launch, simulate, and settle institution-grade labour missions
+          on-chain.
         </p>
         <button
           type="button"
@@ -353,7 +356,8 @@ export function OneBoxMissionPanel({
         <div className={styles.sectionHeader}>
           <h2 className={styles.sectionTitle}>Launch readiness</h2>
           <p className={styles.sectionSubtitle}>
-            Check these guardrails before dispatching funds. Last check: {formattedLastChecked}.
+            Check these guardrails before dispatching funds. Last check:{' '}
+            {formattedLastChecked}.
           </p>
         </div>
         <ul className={styles.checklist}>
@@ -366,7 +370,9 @@ export function OneBoxMissionPanel({
                 <span className={styles.checklistLabel}>{item.label}</span>
                 <span className={styles.checklistDetail}>{item.detail}</span>
               </div>
-              <span className={styles.checklistStatus}>{statusLabel[item.status]}</span>
+              <span className={styles.checklistStatus}>
+                {statusLabel[item.status]}
+              </span>
             </li>
           ))}
         </ul>
@@ -381,7 +387,9 @@ export function OneBoxMissionPanel({
             Re-run diagnostics
           </button>
           {healthError ? (
-            <span className={styles.healthError}>Last error: {healthError}</span>
+            <span className={styles.healthError}>
+              Last error: {healthError}
+            </span>
           ) : null}
         </div>
       </section>
@@ -390,7 +398,8 @@ export function OneBoxMissionPanel({
         <div className={styles.sectionHeader}>
           <h2 className={styles.sectionTitle}>One‑Box flow</h2>
           <p className={styles.sectionSubtitle}>
-            The assistant plans, simulates, and executes on your behalf while preserving owner overrides and escrow safety.
+            The assistant plans, simulates, and executes on your behalf while
+            preserving owner overrides and escrow safety.
           </p>
         </div>
         <MermaidDiagram
@@ -406,7 +415,8 @@ export function OneBoxMissionPanel({
           <div className={styles.sectionHeader}>
             <h2 className={styles.sectionTitle}>Live contract map</h2>
             <p className={styles.sectionSubtitle}>
-              Verify the deployment footprint before dispatching capital. All endpoints remain owner-governed.
+              Verify the deployment footprint before dispatching capital. All
+              endpoints remain owner-governed.
             </p>
           </div>
           {networkSummary ? (
@@ -431,13 +441,16 @@ export function OneBoxMissionPanel({
                       {copiedContractId === entry.id ? 'Copied' : 'Copy'}
                     </button>
                   </div>
-                  <code className={styles.contractAddress}>{entry.address}</code>
+                  <code className={styles.contractAddress}>
+                    {entry.address}
+                  </code>
                 </li>
               ))}
             </ul>
           ) : (
             <p className={styles.contractEmpty}>
-              Provide contract addresses through deployment-config/oneclick.env or NEXT_PUBLIC overrides to surface the full map.
+              Provide contract addresses through deployment-config/oneclick.env
+              or NEXT_PUBLIC overrides to surface the full map.
             </p>
           )}
         </section>
@@ -447,7 +460,8 @@ export function OneBoxMissionPanel({
         <div className={styles.sectionHeader}>
           <h2 className={styles.sectionTitle}>Operator playbook</h2>
           <p className={styles.sectionSubtitle}>
-            Drop these straight into the chat to experience full-lifecycle automation.
+            Drop these straight into the chat to experience full-lifecycle
+            automation.
           </p>
         </div>
         <div className={styles.promptGrid}>
@@ -500,12 +514,15 @@ export function OneBoxMissionPanel({
         <div className={styles.sectionHeader}>
           <h2 className={styles.sectionTitle}>Owner telemetry</h2>
           <p className={styles.sectionSubtitle}>
-            Live governance snapshot confirming that owner-controlled guardrails remain active.
+            Live governance snapshot confirming that owner-controlled guardrails
+            remain active.
           </p>
         </div>
         <div className={styles.ownerSnapshotMeta}>
           <div className={styles.ownerSnapshotSummary}>
-            <span>Last snapshot: {ownerSnapshotTime ?? 'Not yet collected'}</span>
+            <span>
+              Last snapshot: {ownerSnapshotTime ?? 'Not yet collected'}
+            </span>
             {ownerSnapshotChain ? <span>{ownerSnapshotChain}</span> : null}
           </div>
           {orchestratorBase ? (
@@ -550,7 +567,9 @@ export function OneBoxMissionPanel({
                   ))}
                 </dl>
                 {card.footnote ? (
-                  <p className={styles.ownerTelemetryFootnote}>{card.footnote}</p>
+                  <p className={styles.ownerTelemetryFootnote}>
+                    {card.footnote}
+                  </p>
                 ) : null}
               </article>
             ))}
@@ -558,12 +577,14 @@ export function OneBoxMissionPanel({
         ) : null}
         {governanceStatus === 'ready' && ownerTelemetryCards.length === 0 ? (
           <p className={styles.ownerTelemetryHint}>
-            Snapshot available but no owner policy metrics were published. Confirm governance tooling is configured.
+            Snapshot available but no owner policy metrics were published.
+            Confirm governance tooling is configured.
           </p>
         ) : null}
         {governanceStatus === 'missing' ? (
           <p className={styles.ownerTelemetryHint}>
-            Configure the orchestrator URL and API token to surface live owner controls.
+            Configure the orchestrator URL and API token to surface live owner
+            controls.
           </p>
         ) : null}
       </section>
@@ -577,13 +598,17 @@ export function OneBoxMissionPanel({
         </div>
         <ul className={styles.ownerList}>
           <li>
-            Pause instantly with <code>npm run owner:system-pause -- --pause</code> and resume when ready.
+            Pause instantly with{' '}
+            <code>npm run owner:system-pause -- --pause</code> and resume when
+            ready.
           </li>
           <li>
-            Update protocol economics via <code>npm run owner:parameters</code> followed by <code>npm run owner:update-all</code>.
+            Update protocol economics via <code>npm run owner:parameters</code>{' '}
+            followed by <code>npm run owner:update-all</code>.
           </li>
           <li>
-            Rotate relayer keys or governance signers with the <code>owner:rotate</code> toolkit to maintain operational hygiene.
+            Rotate relayer keys or governance signers with the{' '}
+            <code>owner:rotate</code> toolkit to maintain operational hygiene.
           </li>
         </ul>
       </section>

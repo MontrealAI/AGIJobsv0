@@ -20,7 +20,33 @@ Reviewed baseline: `7049353e1ee13c19b97365b269f9a9ac1800434c`, with the accompan
 | Demo gallery                                                               | 41 runnable suites exercised; three initial failures repaired and all affected suites pass on rerun                                            |
 | Root README flowcharts                                                     | All 17 Mermaid blocks identical to the reviewed baseline                                                                                       |
 
-The demo runner skips some suites when their independent toolchains are absent. Foundry and Prisma-dependent tests were not run here; the Phase-8 browser tests were skipped because Chromium was unavailable. A successful aggregate run must not be described as browser or Foundry validation. Docker is unavailable in the local environment, so container builds and vulnerability scans require the pull request's container workflow.
+The initial demo runner skipped some suites when their independent toolchains were absent. The follow-up below adds specific Foundry, Prisma, and browser checks; it does not establish that every skipped suite passed. Docker is unavailable locally, so container builds and vulnerability scans require the pull request's workflows.
+
+## Follow-up verification and repairs
+
+The first CI cycle at `00fa77e4b6282dde4ead8ce1dcfc28c34f365296` passed 38 workflows, including the primary containers, Torch tests, contract CI, fuzzing, static analysis, and root browser workflows. Application-image builds and CULTURE failed; two long-running demo workflows were cancelled, and core CI was still running when checked. These results belong to that commit, not to subsequent fixes.
+
+- Upgrade all four Next.js manifests/locks to the September security release **15.5.27**. Enterprise portal, Onebox, and validator UI production builds pass. Validator UI now uses strict TypeScript checking. Repair the application-image build contexts, portal dependency installation, digest/provenance subjects, and promotion order so `latest` follows the OS scan.
+- Repair CULTURE's independent pnpm dependencies, ESLint 9 compatibility, npm image lockfiles, shared-code bundle, Prisma generation checks, Compose anchors/build contexts, and static-server packaging. Its three service builds and lint checks pass. Existing source-format checks required mechanical formatting changes; no workflow screens or diagrams were removed.
+- Require authenticated write requests when configuring an on-chain arena operator. Validate paired operator/address settings and canonical/legacy address aliases. Obtain round IDs from the confirmed transaction's `RoundStarted` event instead of a preflight call that could race another transaction.
+- Forward rejected Express 4 handlers, await startup recovery, clear completed-operation timers, and write persistent state through serialized atomic replacements. Corrupt or unreadable state now blocks startup. Failed replacement preserves the previous state file and does not poison subsequent saves.
+- Make studio preview mode explicit (`VITE_DEMO_MODE=true`), label simulated results, and make it issue no service requests. Service mode exposes failures rather than inventing successful uploads, mint receipts, jobs, or owner changes. Correct the GraphQL artifact query, escape tooltip content, and improve graph-label contrast. The operator token is kept in tab memory and sent only to the orchestrator.
+
+| Follow-up check                       | Result                                                                                                                         |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| Root pretest checks and Hardhat suite | Pass; 571 Hardhat tests                                                                                                        |
+| CULTURE Foundry v1.4.4                | 26 tests pass                                                                                                                  |
+| CULTURE Hardhat                       | 3 tests pass                                                                                                                   |
+| CULTURE arena                         | 58 tests pass; 100% lines and 96.51% branches in its configured coverage scope                                                 |
+| Compiled arena runtime                | Startup, health endpoint, rejected missing/wrong credentials, authenticated validation, and graceful SIGTERM pass              |
+| CULTURE indexer                       | 2 tests pass; coverage gate fails                                                                                              |
+| CULTURE studio API                    | 20 tests pass; 98.07% lines, 82.14% branches in the configured API-helper scope; branch gate fails                             |
+| CULTURE browser walkthrough           | Draft, preview upload/mint/job, arena, and error-state checks pass; zero uncaught browser errors and zero preview API requests |
+| Workflow syntax                       | Actionlint passes for both edited workflows                                                                                    |
+
+The corrected Vitest thresholds use **90**, not **0.9** (which meant 0.9%). Indexer coverage is 24.54% lines, 57.74% branches, and 43.24% functions. Arena coverage excludes several adapters and the service implementation in the existing configuration; its percentage must not be presented as whole-service assurance. Browser walkthroughs exercise the explicit preview and error behavior, not real economic settlement.
+
+The CULTURE gas snapshot is stale, and the lifecycle (682,540 gas versus 500,000 budget) and misconduct (612,729 versus 520,000) scenarios exceed committed budgets. Those budgets were not raised. Its Compose/Cypress commissioning still requires deployment to real dependency contracts, valid operator roles, and resolution of the existing duplicate-service/environment setup. Studio requests for LLM generation, IPFS upload, artifact minting, job creation, and owner controls need real provider implementations; several backend adapters also remain simulations. These are release blockers in addition to the mainnet items below.
 
 ## Repairs included
 
@@ -60,6 +86,10 @@ The local Hardhat network sets `allowUnlimitedContractSize: true`. This supports
 - [Baseline container failure](https://github.com/MontrealAI/AGIJobsv0/actions/runs/33083499117)
 - [Node 22.23.3 release](https://nodejs.org/en/blog/release/v22.23.3)
 - [Node support schedule](https://github.com/nodejs/Release#release-schedule)
+- [Next.js September 2026 security release](https://nextjs.org/blog/september-2026-security-release)
+- [Passing primary-container CI at the earlier PR commit](https://github.com/MontrealAI/AGIJobsv0/actions/runs/37128420970)
+- [Application-image failure that prompted the follow-up](https://github.com/MontrealAI/AGIJobsv0/actions/runs/37128421393)
+- [CULTURE failure that prompted the follow-up](https://github.com/MontrealAI/AGIJobsv0/actions/runs/37128420924)
 - [EIP-170: contract code size limit](https://eips.ethereum.org/EIPS/eip-170)
 - [EIP-3860: initcode limit](https://eips.ethereum.org/EIPS/eip-3860)
 

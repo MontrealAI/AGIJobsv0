@@ -50,7 +50,9 @@ export default function Page() {
       return;
     }
     try {
-      const dismissed = window.localStorage.getItem('onebox:onboarding:dismissed');
+      const dismissed = window.localStorage.getItem(
+        'onebox:onboarding:dismissed'
+      );
       if (!dismissed) {
         setIsOnboardingOpen(true);
       }

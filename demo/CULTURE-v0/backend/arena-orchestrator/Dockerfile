@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.7
 
 FROM node:22.23.3-slim AS base
-WORKDIR /app
+WORKDIR /workspace/demo/CULTURE-v0/backend/arena-orchestrator
 ENV NODE_ENV=production
 
 RUN apt-get update \
@@ -9,10 +9,10 @@ RUN apt-get update \
   && rm -rf /var/lib/apt/lists/*
 
 FROM base AS deps
-WORKDIR /app
+WORKDIR /workspace/demo/CULTURE-v0/backend/arena-orchestrator
 ENV NODE_ENV=development
 COPY demo/CULTURE-v0/.npmrc .npmrc
-COPY .npmrc /app/.npmrc.root
+COPY .npmrc /workspace/.npmrc
 COPY demo/CULTURE-v0/backend/arena-orchestrator/package.json \
      demo/CULTURE-v0/backend/arena-orchestrator/package-lock.json ./
 RUN npm ci --ignore-scripts
@@ -20,12 +20,13 @@ RUN npm ci --ignore-scripts
 FROM deps AS build
 COPY demo/CULTURE-v0/backend/arena-orchestrator/tsconfig.json ./
 COPY demo/CULTURE-v0/backend/arena-orchestrator/src ./src
+COPY shared/structuredLogger.ts /workspace/shared/structuredLogger.ts
 RUN npm run build
 
 FROM base AS runtime
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=build /app/dist ./dist
+WORKDIR /workspace/demo/CULTURE-v0/backend/arena-orchestrator
+COPY --from=deps /workspace/demo/CULTURE-v0/backend/arena-orchestrator/node_modules ./node_modules
+COPY --from=build /workspace/demo/CULTURE-v0/backend/arena-orchestrator/dist ./dist
 COPY demo/CULTURE-v0/backend/arena-orchestrator/package.json ./package.json
 COPY demo/CULTURE-v0/backend/arena-orchestrator/package-lock.json ./package-lock.json
 COPY demo/CULTURE-v0/backend/arena-orchestrator/healthcheck.js ./healthcheck.js
@@ -35,7 +36,7 @@ RUN npm prune --omit=dev
 
 RUN groupadd --system app \
   && useradd --system --create-home --gid app app \
-  && chown -R app:app /app
+  && chown -R app:app /workspace
 USER app
 EXPOSE 4005
 

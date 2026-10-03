@@ -4,11 +4,13 @@ on:
   pull_request:
     paths:
       - 'apps/**'
+      - '.nvmrc'
       - '.github/workflows/apps-images.yml'
   push:
     branches: [main]
     paths:
       - 'apps/**'
+      - '.nvmrc'
       - '.github/workflows/apps-images.yml'
 
 permissions:
@@ -27,6 +29,7 @@ jobs:
     outputs:
       digest: ${{ steps.get_digest.outputs.digest }}
       registry_owner: ${{ steps.registry_owner.outputs.value }}
+      subjects: ${{ steps.get_digest.outputs.subjects }}
     steps:
       - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
         with:
@@ -46,36 +49,39 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435
+
       - name: Build Console image
         id: build_console
         uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83
         with:
-          context: .
+          context: apps/console
           file: apps/console/Dockerfile
           platforms: linux/amd64
           push: ${{ github.ref == 'refs/heads/main' }}
           load: ${{ github.ref != 'refs/heads/main' }}
           tags: |
             ghcr.io/${{ env.REGISTRY_OWNER }}/owner-console:${{ github.sha }}
-            ghcr.io/${{ env.REGISTRY_OWNER }}/owner-console:latest
           provenance: false
           sbom: false
-          outputs: type=docker
 
       - name: Get Console digest (main)
         id: get_digest
         if: github.ref == 'refs/heads/main'
         run: |
           REF="ghcr.io/${{ env.REGISTRY_OWNER }}/owner-console:${{ github.sha }}"
-          DIGEST=$(docker buildx imagetools inspect "$REF" | awk -F'[: ]+' '/Digest:/ {print $2; exit}')
+          DIGEST="${{ steps.build_console.outputs.digest }}"
+          test -n "$DIGEST"
           echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
+          SUBJECTS=$(printf '%s  %s\n' "${DIGEST#sha256:}" "$REF" | base64 -w0)
+          echo "subjects=$SUBJECTS" >> "$GITHUB_OUTPUT"
 
       - name: Trivy (OS – enforce)
         run: |
           docker run --rm \
             -v /var/run/docker.sock:/var/run/docker.sock \
-            aquasec/trivy:0.53.0 image \
-              --vuln-type os \
+            aquasec/trivy:0.75.0 image --scanners vuln \
+              --pkg-types os \
               --severity HIGH,CRITICAL \
               --exit-code 1 \
               ghcr.io/${{ env.REGISTRY_OWNER }}/owner-console:${{ github.sha }}
@@ -85,17 +91,25 @@ jobs:
         run: |
           docker run --rm \
             -v /var/run/docker.sock:/var/run/docker.sock \
-            aquasec/trivy:0.53.0 image \
-              --vuln-type library \
+            aquasec/trivy:0.75.0 image --scanners vuln \
+              --pkg-types library \
               --severity HIGH,CRITICAL \
               --exit-code 0 \
               ghcr.io/${{ env.REGISTRY_OWNER }}/owner-console:${{ github.sha }}
+
+      - name: Promote scanned image (main)
+        if: github.ref == 'refs/heads/main'
+        env:
+          IMAGE_REF: ghcr.io/${{ env.REGISTRY_OWNER }}/owner-console
+          IMAGE_DIGEST: ${{ steps.build_console.outputs.digest }}
+        run: docker buildx imagetools create --tag "$IMAGE_REF:latest" "$IMAGE_REF@$IMAGE_DIGEST"
 
   portal:
     runs-on: ubuntu-24.04
     outputs:
       digest: ${{ steps.get_digest.outputs.digest }}
       registry_owner: ${{ steps.registry_owner.outputs.value }}
+      subjects: ${{ steps.get_digest.outputs.subjects }}
     steps:
       - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
         with:
@@ -113,8 +127,8 @@ jobs:
           node-version-file: '.nvmrc'
           cache: 'npm'
 
-      - name: Install root deps
-        run: ./scripts/ci/npm-ci.sh
+      - name: Install portal dependencies
+        run: npm ci --prefix apps/enterprise-portal
 
       - name: Webapp build
         run: npm --prefix apps/enterprise-portal run build
@@ -127,6 +141,8 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435
+
       - name: Build Portal image
         id: build_portal
         uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83
@@ -138,25 +154,26 @@ jobs:
           load: ${{ github.ref != 'refs/heads/main' }}
           tags: |
             ghcr.io/${{ env.REGISTRY_OWNER }}/webapp:${{ github.sha }}
-            ghcr.io/${{ env.REGISTRY_OWNER }}/webapp:latest
           provenance: false
           sbom: false
-          outputs: type=docker
 
       - name: Get Portal digest (main)
         id: get_digest
         if: github.ref == 'refs/heads/main'
         run: |
           REF="ghcr.io/${{ env.REGISTRY_OWNER }}/webapp:${{ github.sha }}"
-          DIGEST=$(docker buildx imagetools inspect "$REF" | awk -F'[: ]+' '/Digest:/ {print $2; exit}')
+          DIGEST="${{ steps.build_portal.outputs.digest }}"
+          test -n "$DIGEST"
           echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
+          SUBJECTS=$(printf '%s  %s\n' "${DIGEST#sha256:}" "$REF" | base64 -w0)
+          echo "subjects=$SUBJECTS" >> "$GITHUB_OUTPUT"
 
       - name: Trivy (OS – enforce)
         run: |
           docker run --rm \
             -v /var/run/docker.sock:/var/run/docker.sock \
-            aquasec/trivy:0.53.0 image \
-              --vuln-type os \
+            aquasec/trivy:0.75.0 image --scanners vuln \
+              --pkg-types os \
               --severity HIGH,CRITICAL \
               --exit-code 1 \
               ghcr.io/${{ env.REGISTRY_OWNER }}/webapp:${{ github.sha }}
@@ -166,11 +183,18 @@ jobs:
         run: |
           docker run --rm \
             -v /var/run/docker.sock:/var/run/docker.sock \
-            aquasec/trivy:0.53.0 image \
-              --vuln-type library \
+            aquasec/trivy:0.75.0 image --scanners vuln \
+              --pkg-types library \
               --severity HIGH,CRITICAL \
               --exit-code 0 \
               ghcr.io/${{ env.REGISTRY_OWNER }}/webapp:${{ github.sha }}
+
+      - name: Promote scanned image (main)
+        if: github.ref == 'refs/heads/main'
+        env:
+          IMAGE_REF: ghcr.io/${{ env.REGISTRY_OWNER }}/webapp
+          IMAGE_DIGEST: ${{ steps.build_portal.outputs.digest }}
+        run: docker buildx imagetools create --tag "$IMAGE_REF:latest" "$IMAGE_REF@$IMAGE_DIGEST"
 
   provenance-console:
     if: github.ref == 'refs/heads/main'
@@ -181,7 +205,7 @@ jobs:
       contents: write
     uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.0.0
     with:
-      base64-subjects: ${{ toJson(format('ghcr.io/{0}/owner-console@{1}', needs.console.outputs.registry_owner, needs.console.outputs.digest)) }}
+      base64-subjects: ${{ needs.console.outputs.subjects }}
 
   provenance-portal:
     if: github.ref == 'refs/heads/main'
@@ -192,4 +216,4 @@ jobs:
       contents: write
     uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.0.0
     with:
-      base64-subjects: ${{ toJson(format('ghcr.io/{0}/webapp@{1}', needs.portal.outputs.registry_owner, needs.portal.outputs.digest)) }}
+      base64-subjects: ${{ needs.portal.outputs.subjects }}

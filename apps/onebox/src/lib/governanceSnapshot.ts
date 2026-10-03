@@ -102,8 +102,7 @@ export const buildOwnerTelemetryCards = (
   const stakeManager = getRecord(onChain, 'stakeManager');
   const feePool = getRecord(onChain, 'feePool');
   const identityRegistry =
-    getRecord(onChain, 'identityRegistry') ??
-    getRecord(configs, 'identity');
+    getRecord(onChain, 'identityRegistry') ?? getRecord(configs, 'identity');
 
   const cards: OwnerTelemetryCard[] = [];
 
@@ -127,11 +126,7 @@ export const buildOwnerTelemetryCards = (
     appendMetric(
       metrics,
       'Validator reward %',
-      labelOrValue(
-        jobRegistry,
-        'validatorRewardPctLabel',
-        'validatorRewardPct'
-      )
+      labelOrValue(jobRegistry, 'validatorRewardPctLabel', 'validatorRewardPct')
     );
     appendMetric(
       metrics,
@@ -180,11 +175,7 @@ export const buildOwnerTelemetryCards = (
       'Burn %',
       labelOrValue(stakeManager, 'burnPctLabel', 'burnPct')
     );
-    appendMetric(
-      metrics,
-      'Treasury',
-      readString(stakeManager, 'treasury')
-    );
+    appendMetric(metrics, 'Treasury', readString(stakeManager, 'treasury'));
 
     if (metrics.length > 0) {
       cards.push({
@@ -207,11 +198,7 @@ export const buildOwnerTelemetryCards = (
       'Burn %',
       labelOrValue(feePool, 'burnPctLabel', 'burnPct')
     );
-    appendMetric(
-      metrics,
-      'Treasury',
-      readString(feePool, 'treasury')
-    );
+    appendMetric(metrics, 'Treasury', readString(feePool, 'treasury'));
 
     if (metrics.length > 0) {
       cards.push({
@@ -249,11 +236,7 @@ export const buildOwnerTelemetryCards = (
       'Validator Merkle root',
       readString(identityRegistry, 'validatorMerkleRoot')
     );
-    appendMetric(
-      metrics,
-      'ENS registry',
-      readString(identityRegistry, 'ens')
-    );
+    appendMetric(metrics, 'ENS registry', readString(identityRegistry, 'ens'));
     appendMetric(
       metrics,
       'Name wrapper',
@@ -277,4 +260,3 @@ export const buildOwnerTelemetryCards = (
 
   return cards;
 };
-

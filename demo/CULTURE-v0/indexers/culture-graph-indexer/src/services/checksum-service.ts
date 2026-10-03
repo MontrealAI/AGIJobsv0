@@ -33,7 +33,11 @@ export class ChecksumService {
 
     const hash = createHash('sha256');
     for (const artifact of artifacts) {
-      hash.update(`${artifact.id}|${artifact.parentId ?? ''}|${artifact.author}|${artifact.kind}|${artifact.cid}\n`);
+      hash.update(
+        `${artifact.id}|${artifact.parentId ?? ''}|${artifact.author}|${
+          artifact.kind
+        }|${artifact.cid}\n`,
+      );
     }
 
     return this.persistChecksum('artifact', hash.digest('hex'));
@@ -41,7 +45,12 @@ export class ChecksumService {
 
   private async computeCitationChecksum(): Promise<ChecksumResult> {
     const citations = await this.prisma.citation.findMany({
-      orderBy: [{ fromId: 'asc' }, { toId: 'asc' }, { blockNumber: 'asc' }, { logIndex: 'asc' }],
+      orderBy: [
+        { fromId: 'asc' },
+        { toId: 'asc' },
+        { blockNumber: 'asc' },
+        { logIndex: 'asc' },
+      ],
       select: { fromId: true, toId: true },
     });
 
@@ -53,7 +62,9 @@ export class ChecksumService {
     return this.persistChecksum('citation', hash.digest('hex'));
   }
 
-  private async combineChecksums(entries: readonly [string, ChecksumResult][]): Promise<ChecksumResult> {
+  private async combineChecksums(
+    entries: readonly [string, ChecksumResult][],
+  ): Promise<ChecksumResult> {
     const hash = createHash('sha256');
     for (const [key, result] of entries) {
       hash.update(`${key}:${result.hash}\n`);
@@ -61,8 +72,13 @@ export class ChecksumService {
     return this.persistChecksum('graph', hash.digest('hex'));
   }
 
-  private async persistChecksum(key: string, hash: string): Promise<ChecksumResult> {
-    const previous = await this.prisma.datasetChecksum.findUnique({ where: { key } });
+  private async persistChecksum(
+    key: string,
+    hash: string,
+  ): Promise<ChecksumResult> {
+    const previous = await this.prisma.datasetChecksum.findUnique({
+      where: { key },
+    });
     const changed = !previous || previous.hash !== hash;
 
     const record = await this.prisma.datasetChecksum.upsert({
@@ -78,5 +94,4 @@ export class ChecksumService {
       verifiedAt: record.updatedAt,
     };
   }
-
 }

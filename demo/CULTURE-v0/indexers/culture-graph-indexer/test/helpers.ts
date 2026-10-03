@@ -21,7 +21,9 @@ export function createPrismaTestContext(): TestPrismaContext {
     stdio: 'inherit',
   });
 
-  const prisma = new PrismaClient({ datasources: { db: { url: databaseUrl } } });
+  const prisma = new PrismaClient({
+    datasources: { db: { url: databaseUrl } },
+  });
 
   const cleanup = async () => {
     await prisma.$disconnect();

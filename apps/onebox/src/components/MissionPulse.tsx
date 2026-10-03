@@ -43,7 +43,10 @@ function computePlanCard({
   orchestratorReady,
   hasPlan,
   planError,
-}: Pick<MissionPulseProps, 'stage' | 'orchestratorReady' | 'hasPlan' | 'planError'>): PulseCard {
+}: Pick<
+  MissionPulseProps,
+  'stage' | 'orchestratorReady' | 'hasPlan' | 'planError'
+>): PulseCard {
   if (planError) {
     return {
       id: 'planner',
@@ -90,7 +93,10 @@ function computeSimulationCard({
   hasPlan,
   hasSimulation,
   simulateError,
-}: Pick<MissionPulseProps, 'stage' | 'hasPlan' | 'hasSimulation' | 'simulateError'>): PulseCard {
+}: Pick<
+  MissionPulseProps,
+  'stage' | 'hasPlan' | 'hasSimulation' | 'simulateError'
+>): PulseCard {
   if (simulateError) {
     return {
       id: 'simulation',
@@ -107,7 +113,8 @@ function computeSimulationCard({
       title: 'Simulation',
       caption: 'Risk + policy engine',
       status: 'active',
-      detail: 'Stress-testing rewards, fees, and guardrails before any capital moves.',
+      detail:
+        'Stress-testing rewards, fees, and guardrails before any capital moves.',
     };
   }
 
@@ -117,7 +124,8 @@ function computeSimulationCard({
       title: 'Simulation',
       caption: 'Risk + policy engine',
       status: 'complete',
-      detail: 'All guardrails satisfied. You can execute with one confirmation.',
+      detail:
+        'All guardrails satisfied. You can execute with one confirmation.',
     };
   }
 
@@ -136,7 +144,10 @@ function computeExecutionCard({
   stage,
   hasSimulation,
   executeError,
-}: Pick<MissionPulseProps, 'stage' | 'hasSimulation' | 'executeError'>): PulseCard {
+}: Pick<
+  MissionPulseProps,
+  'stage' | 'hasSimulation' | 'executeError'
+>): PulseCard {
   if (executeError) {
     return {
       id: 'execution',
@@ -153,7 +164,8 @@ function computeExecutionCard({
       title: 'Execution',
       caption: 'Relayer + escrow',
       status: 'active',
-      detail: 'Escrowing funds, posting job specs to IPFS, and broadcasting transactions.',
+      detail:
+        'Escrowing funds, posting job specs to IPFS, and broadcasting transactions.',
     };
   }
 
@@ -200,7 +212,8 @@ export function MissionPulse({
       <header className="chat-pulse-header">
         <h3 className="chat-pulse-title">Intelligence pulse</h3>
         <p className="chat-pulse-subtitle">
-          Real-time orchestration status across planning, policy simulation, and unstoppable execution.
+          Real-time orchestration status across planning, policy simulation, and
+          unstoppable execution.
         </p>
       </header>
       <ul className="chat-pulse-grid" role="list">
@@ -226,7 +239,8 @@ export function MissionPulse({
         </p>
       ) : runState ? (
         <p className="chat-pulse-footer">
-          <strong>Run telemetry:</strong> Mission state {runState}. Awaiting orchestrator updates.
+          <strong>Run telemetry:</strong> Mission state {runState}. Awaiting
+          orchestrator updates.
         </p>
       ) : null}
     </section>

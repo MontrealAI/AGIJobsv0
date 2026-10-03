@@ -18,7 +18,7 @@ async function main(): Promise<void> {
       maxIterations: config.influenceIterations,
       tolerance: config.influenceTolerance,
     },
-    validator
+    validator,
   );
   const eventIngestion = new EventIngestionService(prisma, influence, {
     rpcUrl: config.rpcUrl,

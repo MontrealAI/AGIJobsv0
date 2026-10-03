@@ -10,7 +10,7 @@ describe('Event ingestion', () => {
     const influence = new InfluenceService(
       prisma,
       { maxIterations: 10, tolerance: 1e-8 },
-      new NoopInfluenceValidator()
+      new NoopInfluenceValidator(),
     );
     const ingestion = new EventIngestionService(prisma, influence, {});
 
@@ -55,7 +55,9 @@ describe('Event ingestion', () => {
     const [first, second] = artifacts;
     expect(first.influence?.citationCount).toBe(1);
     expect(second.influence?.lineageDepth).toBe(1);
-    expect((first.influence?.score ?? 0) > (second.influence?.score ?? 0)).toBe(true);
+    expect((first.influence?.score ?? 0) > (second.influence?.score ?? 0)).toBe(
+      true,
+    );
 
     const citations = await prisma.citation.findMany();
     expect(citations).toHaveLength(1);

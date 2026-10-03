@@ -1,4 +1,7 @@
-import { computeNextDifficulty, DifficultyController } from '../src/difficulty.js';
+import {
+  computeNextDifficulty,
+  DifficultyController,
+} from '../src/difficulty.js';
 
 describe('computeNextDifficulty', () => {
   const baseConfig = {
@@ -8,7 +11,7 @@ describe('computeNextDifficulty', () => {
     maxStep: 2,
     proportionalGain: 5,
     integralGain: 0.2,
-    derivativeGain: 0.1
+    derivativeGain: 0.1,
   };
 
   beforeEach(() => {
@@ -37,7 +40,7 @@ describe('computeNextDifficulty', () => {
       minDifficulty: 0,
       maxDifficulty: 10,
       maxStep: 4,
-      proportionalGain: 3
+      proportionalGain: 3,
     };
     const result = computeNextDifficulty(4, -0.5, config);
     expect(result.nextDifficulty).toBeGreaterThanOrEqual(config.minDifficulty);
@@ -53,7 +56,12 @@ describe('computeNextDifficulty', () => {
   });
 
   it('honours absolute min and max difficulty bounds', () => {
-    const config = { ...baseConfig, maxDifficulty: 6, minDifficulty: 2, proportionalGain: 50 };
+    const config = {
+      ...baseConfig,
+      maxDifficulty: 6,
+      minDifficulty: 2,
+      proportionalGain: 50,
+    };
     const nearTop = computeNextDifficulty(6, 1, config);
     const nearBottom = computeNextDifficulty(2, 0, config);
     expect(nearTop.nextDifficulty).toBe(config.maxDifficulty);
@@ -63,7 +71,11 @@ describe('computeNextDifficulty', () => {
   it('handles streaks without runaway escalation', () => {
     let difficulty = 4;
     for (let i = 0; i < 20; i += 1) {
-      const { nextDifficulty } = computeNextDifficulty(difficulty, i % 2 === 0 ? 1 : 0, baseConfig);
+      const { nextDifficulty } = computeNextDifficulty(
+        difficulty,
+        i % 2 === 0 ? 1 : 0,
+        baseConfig,
+      );
       expect(nextDifficulty).toBeGreaterThanOrEqual(baseConfig.minDifficulty);
       expect(nextDifficulty).toBeLessThanOrEqual(baseConfig.maxDifficulty);
       difficulty = nextDifficulty;
@@ -73,7 +85,11 @@ describe('computeNextDifficulty', () => {
   it('stabilises near target success rate', () => {
     let difficulty = 5;
     for (let i = 0; i < 10; i += 1) {
-      const { nextDifficulty } = computeNextDifficulty(difficulty, 0.6, baseConfig);
+      const { nextDifficulty } = computeNextDifficulty(
+        difficulty,
+        0.6,
+        baseConfig,
+      );
       difficulty = nextDifficulty;
     }
     expect(Math.abs(difficulty - 5)).toBeLessThanOrEqual(1);
@@ -85,11 +101,15 @@ describe('computeNextDifficulty', () => {
       integralGain: 1,
       derivativeGain: 0.5,
       integralDecay: 0,
-      maxIntegral: 0.25
+      maxIntegral: 0.25,
     };
     let difficulty = 4;
     for (let i = 0; i < 8; i += 1) {
-      const { nextDifficulty } = computeNextDifficulty(difficulty, i % 2 === 0 ? 1 : 0, config);
+      const { nextDifficulty } = computeNextDifficulty(
+        difficulty,
+        i % 2 === 0 ? 1 : 0,
+        config,
+      );
       difficulty = nextDifficulty;
     }
     expect(difficulty).toBeGreaterThanOrEqual(config.minDifficulty);
@@ -104,7 +124,7 @@ describe('computeNextDifficulty', () => {
       derivativeGain: 0,
       integralDecay: 0,
       maxIntegral: 0.1,
-      maxStep: 5
+      maxStep: 5,
     };
 
     let difficulty = 5;
@@ -131,7 +151,7 @@ describe('DifficultyController', () => {
     proportionalGain: 4,
     integralGain: 0.5,
     derivativeGain: 0.25,
-    integralDecay: 0.3
+    integralDecay: 0.3,
   };
 
   beforeEach(() => {
@@ -140,18 +160,26 @@ describe('DifficultyController', () => {
 
   it('tracks integral error to avoid oscillation', () => {
     const controller = new DifficultyController(config);
-    let result: { nextDifficulty: number } = { nextDifficulty: config.minDifficulty };
+    let result: { nextDifficulty: number } = {
+      nextDifficulty: config.minDifficulty,
+    };
     let difficulty = 5;
     for (let i = 0; i < 5; i += 1) {
       result = controller.update(difficulty, 1);
       difficulty = result.nextDifficulty;
     }
     const afterFailures = controller.update(difficulty, 0);
-    expect(afterFailures.nextDifficulty).toBeLessThanOrEqual(result.nextDifficulty);
+    expect(afterFailures.nextDifficulty).toBeLessThanOrEqual(
+      result.nextDifficulty,
+    );
   });
 
   it('clamps controller integral to configured bounds', () => {
-    const controller = new DifficultyController({ ...config, maxIntegral: 0.2, integralDecay: 0 });
+    const controller = new DifficultyController({
+      ...config,
+      maxIntegral: 0.2,
+      integralDecay: 0,
+    });
     let difficulty = 6;
     for (let i = 0; i < 6; i += 1) {
       difficulty = controller.update(difficulty, 1).nextDifficulty;
@@ -174,7 +202,10 @@ describe('DifficultyController', () => {
   });
 
   it('clamps controller input domain via decay limits', () => {
-    const controller = new DifficultyController({ ...config, integralDecay: 5 });
+    const controller = new DifficultyController({
+      ...config,
+      integralDecay: 5,
+    });
     const result = controller.update(5, -1);
     expect(result.nextDifficulty).toBeGreaterThanOrEqual(config.minDifficulty);
     expect(result.nextDifficulty).toBeLessThanOrEqual(config.maxDifficulty);

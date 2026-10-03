@@ -1,42 +1,55 @@
-const orchestratorUrl = import.meta.env.VITE_ORCHESTRATOR_URL ?? 'http://localhost:4005';
-const indexerUrl = import.meta.env.VITE_INDEXER_URL ?? 'http://localhost:4100/graphql';
+const orchestratorUrl =
+  import.meta.env.VITE_ORCHESTRATOR_URL ?? 'http://localhost:4005';
+const indexerUrl =
+  import.meta.env.VITE_INDEXER_URL ?? 'http://localhost:4100/graphql';
+
+export function isDemoMode(): boolean {
+  return import.meta.env.VITE_DEMO_MODE === 'true';
+}
+
+let serviceToken = '';
+export function setServiceToken(token: string): void {
+  serviceToken = token.trim();
+}
 
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function postJson<T>(url: string, body: unknown, fallback: T): Promise<T> {
-  try {
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    });
-    if (!response.ok) {
-      throw new Error(`Request failed: ${response.status}`);
-    }
-    const raw = await response.text();
-    if (!raw) {
-      return fallback;
-    }
-    return JSON.parse(raw) as T;
-  } catch (error) {
-    console.warn(`Falling back for ${url}:`, error);
-    return fallback;
+async function postJson<T>(
+  url: string,
+  body: unknown,
+  fallback: T,
+): Promise<T> {
+  if (isDemoMode()) return fallback;
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(serviceToken &&
+      url.startsWith(`${orchestratorUrl.replace(/\/+$/, '')}/`)
+        ? { Authorization: `Bearer ${serviceToken}` }
+        : {}),
+    },
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) {
+    throw new Error(`Request failed: ${response.status}`);
   }
+  const raw = await response.text();
+  if (!raw) {
+    throw new Error(`Service returned an empty response: ${url}`);
+  }
+  return JSON.parse(raw) as T;
 }
 
 async function getJson<T>(url: string, fallback: T): Promise<T> {
-  try {
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(`Request failed: ${response.status}`);
-    }
-    return (await response.json()) as T;
-  } catch (error) {
-    console.warn(`Falling back for ${url}:`, error);
-    return fallback;
+  if (isDemoMode()) return fallback;
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Request failed: ${response.status}`);
   }
+  return (await response.json()) as T;
 }
 
 export interface ArtifactInput {
@@ -65,9 +78,9 @@ export async function fetchArtifacts(): Promise<Artifact[]> {
         kind
         cid
         parentId
-        cites
-        influence
-        mintedAt
+        citations { to { id } }
+        influence: influenceScore
+        mintedAt: timestamp
       }
     }
   `;
@@ -78,24 +91,34 @@ export async function fetchArtifacts(): Promise<Artifact[]> {
       cid: 'bafybookdemo',
       title: 'Artifact bafybo…',
       cites: [],
-      influence: 0.92
-    }
+      influence: 0.92,
+    },
   ];
   const response = await postJson<{ data?: { artifacts?: any[] } }>(
     indexerUrl,
     { query },
-    { data: { artifacts: fallback } }
+    { data: { artifacts: fallback } },
   );
 
-  return (response.data?.artifacts ?? fallback).map((artifact: any) => ({
+  if (!Array.isArray(response.data?.artifacts)) {
+    throw new Error(
+      'Indexer returned no artifact data; check its GraphQL response',
+    );
+  }
+  return response.data.artifacts.map((artifact: any) => ({
     id: Number(artifact.id),
     title: deriveTitle(artifact.cid),
     kind: artifact.kind ?? 'book',
     cid: artifact.cid ?? '',
-    parentId: artifact.parentId ?? undefined,
-    cites: artifact.cites ?? [],
+    parentId: artifact.parentId == null ? undefined : Number(artifact.parentId),
+    cites:
+      artifact.citations?.map((citation: { to: { id: string } }) =>
+        Number(citation.to.id),
+      ) ??
+      artifact.cites ??
+      [],
     influence: Number(artifact.influence ?? 0),
-    mintedAt: artifact.mintedAt ?? undefined
+    mintedAt: artifact.mintedAt ?? undefined,
   }));
 }
 
@@ -115,18 +138,20 @@ export interface StreamRequest {
   readonly persona?: string;
 }
 
-export async function* streamLLMCompletion(request: StreamRequest): AsyncGenerator<string> {
+export async function* streamLLMCompletion(
+  request: StreamRequest,
+): AsyncGenerator<string> {
   const fallback = {
     segments: [
-      'Let\'s sketch an inviting outline that explains the cultural playbook in clear language. ',
-      'We will cover goals, personas, workflows, and checkpoints readers can copy immediately. '
-    ]
+      "Let's sketch an inviting outline that explains the cultural playbook in clear language. ",
+      'We will cover goals, personas, workflows, and checkpoints readers can copy immediately. ',
+    ],
   };
 
   const response = await postJson<{ segments: string[] }>(
     `${orchestratorUrl}/llm/generate`,
     request,
-    fallback
+    fallback,
   );
 
   for (const segment of response.segments) {
@@ -142,12 +167,15 @@ export interface IpfsUploadResult {
 
 export async function uploadToIpfs(content: string): Promise<IpfsUploadResult> {
   const fallbackCid = `bafy${Math.random().toString(36).slice(2, 10)}`;
-  const fallback: IpfsUploadResult = { cid: fallbackCid, bytes: new TextEncoder().encode(content).length };
+  const fallback: IpfsUploadResult = {
+    cid: fallbackCid,
+    bytes: new TextEncoder().encode(content).length,
+  };
 
   return postJson<IpfsUploadResult>(
     `${orchestratorUrl}/ipfs/upload`,
     { content },
-    fallback
+    fallback,
   );
 }
 
@@ -156,16 +184,18 @@ export interface MintResult {
   readonly transactionHash: string;
 }
 
-export async function mintCultureArtifact(input: ArtifactInput): Promise<MintResult> {
+export async function mintCultureArtifact(
+  input: ArtifactInput,
+): Promise<MintResult> {
   const fallback: MintResult = {
     artifactId: Math.floor(Math.random() * 10_000),
-    transactionHash: generateTxHash()
+    transactionHash: generateTxHash(),
   };
 
   return postJson<MintResult>(
     `${orchestratorUrl}/culture/mint`,
     input,
-    fallback
+    fallback,
   );
 }
 
@@ -174,16 +204,18 @@ export interface DerivativeJobResult {
   readonly title: string;
 }
 
-export async function createDerivativeJob(artifactId: number): Promise<DerivativeJobResult> {
+export async function createDerivativeJob(
+  artifactId: number,
+): Promise<DerivativeJobResult> {
   const fallback: DerivativeJobResult = {
     jobId: `job-${artifactId}-${Date.now()}`,
-    title: `Follow-on evaluation for artifact ${artifactId}`
+    title: `Follow-on evaluation for artifact ${artifactId}`,
   };
 
   return postJson<DerivativeJobResult>(
     `${orchestratorUrl}/jobs/derive`,
     { artifactId },
-    fallback
+    fallback,
   );
 }
 
@@ -201,8 +233,13 @@ export interface ArenaSummary {
   readonly difficultyDelta: number;
 }
 
-export async function launchArena(options: ArenaStartOptions): Promise<ArenaSummary> {
-  const students = Array.from({ length: options.studentCount }, (_, idx) => `0xstudent${idx.toString().padStart(2, '0')}`);
+export async function launchArena(
+  options: ArenaStartOptions,
+): Promise<ArenaSummary> {
+  const students = Array.from(
+    { length: options.studentCount },
+    (_, idx) => `0xstudent${idx.toString().padStart(2, '0')}`,
+  );
   const validators = ['0xvalidator01', '0xvalidator02', '0xvalidator03'];
   const { round } = await postJson<{ round: { id: number } }>(
     `${orchestratorUrl}/arena/start`,
@@ -211,12 +248,16 @@ export async function launchArena(options: ArenaStartOptions): Promise<ArenaSumm
       targetDifficulty: options.difficultyTarget ?? null,
       teacher: '0xteacher',
       students,
-      validators
+      validators,
     },
-    { round: { id: Date.now() } }
+    { round: { id: Date.now() } },
   );
 
-  await postJson(`${orchestratorUrl}/arena/close/${round.id}`, {}, { ok: true });
+  await postJson(
+    `${orchestratorUrl}/arena/close/${round.id}`,
+    {},
+    { ok: true },
+  );
 
   const winners = students.filter((_, idx) => idx % 2 === 0);
   const summary = await postJson<ArenaSummary>(
@@ -227,8 +268,8 @@ export async function launchArena(options: ArenaStartOptions): Promise<ArenaSumm
       winners,
       difficulty: options.difficultyTarget ?? 0.65,
       observedSuccessRate: 0.58,
-      difficultyDelta: 0.05
-    }
+      difficultyDelta: 0.05,
+    },
   );
 
   return summary;
@@ -268,13 +309,37 @@ export interface ScoreboardResponse {
 
 export async function fetchScoreboard(): Promise<ScoreboardResponse> {
   const fallbackRounds: ScoreboardRound[] = [
-    { id: 101, difficulty: 0.62, successRate: 0.54, difficultyDelta: 0.04, status: 'completed' },
-    { id: 102, difficulty: 0.66, successRate: 0.59, difficultyDelta: 0.03, status: 'completed' }
+    {
+      id: 101,
+      difficulty: 0.62,
+      successRate: 0.54,
+      difficultyDelta: 0.04,
+      status: 'completed',
+    },
+    {
+      id: 102,
+      difficulty: 0.66,
+      successRate: 0.59,
+      difficultyDelta: 0.03,
+      status: 'completed',
+    },
   ];
   const fallback: ScoreboardResponse = {
     agents: [
-      { address: '0xteacher', rating: 1620, wins: 24, losses: 6, role: 'teacher' },
-      { address: '0xstudent00', rating: 1488, wins: 12, losses: 14, role: 'student' }
+      {
+        address: '0xteacher',
+        rating: 1620,
+        wins: 24,
+        losses: 6,
+        role: 'teacher',
+      },
+      {
+        address: '0xstudent00',
+        rating: 1488,
+        wins: 12,
+        losses: 14,
+        role: 'student',
+      },
     ],
     rounds: fallbackRounds,
     currentDifficulty: fallbackRounds.at(-1)?.difficulty ?? 0.6,
@@ -283,11 +348,14 @@ export async function fetchScoreboard(): Promise<ScoreboardResponse> {
       paused: false,
       autoDifficulty: true,
       maxConcurrentJobs: 3,
-      targetSuccessRate: 0.6
-    }
+      targetSuccessRate: 0.6,
+    },
   };
 
-  return getJson<ScoreboardResponse>(`${orchestratorUrl}/arena/scoreboard`, fallback);
+  return getJson<ScoreboardResponse>(
+    `${orchestratorUrl}/arena/scoreboard`,
+    fallback,
+  );
 }
 
 export interface TelemetrySeriesPoint {
@@ -303,28 +371,43 @@ export interface ArenaTelemetry {
 
 export function buildTelemetry(scoreboard: ScoreboardResponse): ArenaTelemetry {
   const rounds = scoreboard.rounds.slice(-8);
-  const difficultyTrend = rounds.map((round) => ({ label: `#${round.id}`, value: round.difficulty }));
-  const successTrend = rounds.map((round) => ({ label: `#${round.id}`, value: round.successRate }));
+  const difficultyTrend = rounds.map((round) => ({
+    label: `#${round.id}`,
+    value: round.difficulty,
+  }));
+  const successTrend = rounds.map((round) => ({
+    label: `#${round.id}`,
+    value: round.successRate,
+  }));
   return {
     scoreboard,
     difficultyTrend,
-    successTrend
+    successTrend,
   };
 }
 
-export async function updateOwnerControls(update: Partial<OwnerControlState>): Promise<OwnerControlState> {
+export async function updateOwnerControls(
+  update: Partial<OwnerControlState>,
+): Promise<OwnerControlState> {
   const fallback = {
     paused: update.paused ?? false,
     autoDifficulty: update.autoDifficulty ?? true,
     maxConcurrentJobs: update.maxConcurrentJobs ?? 3,
-    targetSuccessRate: update.targetSuccessRate ?? 0.6
+    targetSuccessRate: update.targetSuccessRate ?? 0.6,
   } satisfies OwnerControlState;
 
-  return postJson<OwnerControlState>(`${orchestratorUrl}/arena/controls`, update, fallback);
+  return postJson<OwnerControlState>(
+    `${orchestratorUrl}/arena/controls`,
+    update,
+    fallback,
+  );
 }
 
 function generateTxHash(): string {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+  if (
+    typeof crypto !== 'undefined' &&
+    typeof crypto.randomUUID === 'function'
+  ) {
     const hex = crypto.randomUUID().replace(/-/g, '');
     return `0x${hex.padEnd(64, '0')}`;
   }

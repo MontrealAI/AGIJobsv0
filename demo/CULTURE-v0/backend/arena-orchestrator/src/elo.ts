@@ -26,15 +26,20 @@ export interface MatchResult {
   readonly participants: readonly string[];
 }
 
-export function eloUpdate(ratingA: number, ratingB: number, scoreA: 0 | 0.5 | 1, k = 24): EloResult {
+export function eloUpdate(
+  ratingA: number,
+  ratingB: number,
+  scoreA: 0 | 0.5 | 1,
+  k = 24,
+): EloResult {
   const qA = Math.pow(10, ratingA / 400);
   const qB = Math.pow(10, ratingB / 400);
   const expectedA = qA / (qA + qB);
   const newRA = ratingA + k * (scoreA - expectedA);
-  const newRB = ratingB + k * ((1 - scoreA) - (1 - expectedA));
+  const newRB = ratingB + k * (1 - scoreA - (1 - expectedA));
   return {
     ratingA: Math.round(newRA),
-    ratingB: Math.round(newRB)
+    ratingB: Math.round(newRB),
   };
 }
 
@@ -43,7 +48,7 @@ export class EloEngine {
 
   constructor(
     private readonly config: EloConfig,
-    private readonly persistence: PersistenceAdapter<Record<string, EloPlayer>>
+    private readonly persistence: PersistenceAdapter<Record<string, EloPlayer>>,
   ) {}
 
   async load(): Promise<void> {
@@ -67,7 +72,7 @@ export class EloEngine {
         games: 0,
         wins: 0,
         losses: 0,
-        draws: 0
+        draws: 0,
       };
       this.players.set(address, player);
     }
@@ -81,7 +86,12 @@ export class EloEngine {
   recordMatch(playerA: string, playerB: string, scoreA: 0 | 0.5 | 1): void {
     const participantA = this.ensurePlayer(playerA);
     const participantB = this.ensurePlayer(playerB);
-    const { ratingA, ratingB } = eloUpdate(participantA.rating, participantB.rating, scoreA, this.config.kFactor);
+    const { ratingA, ratingB } = eloUpdate(
+      participantA.rating,
+      participantB.rating,
+      scoreA,
+      this.config.kFactor,
+    );
     participantA.rating = this.clampRating(ratingA);
     participantB.rating = this.clampRating(ratingB);
     participantA.games += 1;
@@ -98,7 +108,11 @@ export class EloEngine {
     }
   }
 
-  applyRoundOutcome(teacher: string, students: readonly string[], winners: Set<string>): void {
+  applyRoundOutcome(
+    teacher: string,
+    students: readonly string[],
+    winners: Set<string>,
+  ): void {
     for (const student of students) {
       const studentWon = winners.has(student);
       this.recordMatch(student, teacher, studentWon ? 1 : 0);

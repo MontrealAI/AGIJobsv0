@@ -32,7 +32,7 @@ export class DataIntegrityService {
   constructor(
     private readonly ingestion: EventIngestionService,
     prisma: PrismaClient,
-    options: DataIntegrityServiceOptions = {}
+    options: DataIntegrityServiceOptions = {},
   ) {
     this.checksumService = new ChecksumService(prisma);
     this.backfillIntervalMs = options.backfillIntervalMs ?? 5 * 60 * 1000;
@@ -85,7 +85,8 @@ export class DataIntegrityService {
         lastBackfill: {
           at: new Date(started).toISOString(),
           durationMs: Date.now() - started,
-          error: error instanceof Error ? error.message : 'Unknown backfill failure',
+          error:
+            error instanceof Error ? error.message : 'Unknown backfill failure',
         },
       };
       throw error;
@@ -109,7 +110,8 @@ export class DataIntegrityService {
         ...this.status,
         lastChecksum: {
           at: new Date(started).toISOString(),
-          error: error instanceof Error ? error.message : 'Unknown checksum failure',
+          error:
+            error instanceof Error ? error.message : 'Unknown checksum failure',
         },
       };
       throw error;

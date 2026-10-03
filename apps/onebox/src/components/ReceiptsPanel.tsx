@@ -11,7 +11,9 @@ const formatHash = (hash: string) =>
   hash.length > 16 ? `${hash.slice(0, 10)}…${hash.slice(-6)}` : hash;
 
 const formatTimestamp = (timestamp: number | undefined) =>
-  typeof timestamp === 'number' ? new Date(timestamp).toLocaleString() : undefined;
+  typeof timestamp === 'number'
+    ? new Date(timestamp).toLocaleString()
+    : undefined;
 
 export function ReceiptsPanel({ receipts }: ReceiptsPanelProps) {
   if (receipts.length === 0) {
@@ -58,11 +60,7 @@ export function ReceiptsPanel({ receipts }: ReceiptsPanelProps) {
                 <span className="chat-receipt-label">Spec CID</span>
                 <span className="chat-receipt-value chat-receipt-monospace">
                   {receipt.specUrl ? (
-                    <a
-                      href={receipt.specUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
+                    <a href={receipt.specUrl} target="_blank" rel="noreferrer">
                       {formatCid(receipt.specCid)}
                     </a>
                   ) : (
