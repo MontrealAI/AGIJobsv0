@@ -10,7 +10,11 @@
 [![E2E](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/e2e.yml/badge.svg?branch=main)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/e2e.yml)
 [![Security Scorecard](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/scorecard.yml/badge.svg?branch=main)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/scorecard.yml)
 
-AGI Jobs v0 (v2) operates as the unified intelligence engine for the ecosystem—an always-on command lattice that synthesises agents, contracts, paymasters, orchestrators, simulations, and demos into a single, production-grade surface. Every subsystem is instrumented, audit-backed, and continuously enforced by CI v2 so launch captains treat `main` as deployable truth. Ownership is never ceded: the contract owner wields deterministic control over all vectors (pausing, upgrades, economic parameters, orchestration mesh, telemetry exports) through the verified command center described below.
+AGI Jobs v0 (v2) brings together job contracts, agent gateways, validators, operator consoles, orchestration, simulations, and demos. The architecture aims to support verifiable agent work with owner-controlled governance and observable execution.
+
+**Start here:** [Local setup and role guide](docs/START_HERE.md) · [Production readiness and remaining blockers](docs/production/readiness-2026-10-03.md) · [Demo and documentation catalog](docs/readme-catalog.md).
+
+**Deployment status:** local tests are not a mainnet certification. The four previously oversized contracts now use [fixed implementations and staged deployment](docs/production/fixed-implementations.md), and the size gate passes with normal Ethereum limits enforced. Release still requires authorized signing keys, completed deployment configuration, and passing CI. All existing architectural diagrams and demonstration surfaces are retained.
 
 ```mermaid
 flowchart LR
@@ -29,11 +33,11 @@ flowchart LR
     BranchProtection --> OwnerConsole
 ```
 
-The loop above is enforced in automation: CI v2 verifies the owner authority manifests, generates telemetry artefacts, and blocks merges when anything drifts. Operators inherit a continuously self-auditing intelligence platform rather than a loose toolkit.
+The loop above describes the intended verification path. CI checks owner authority manifests and generates telemetry artifacts; effective merge protection also depends on the repository rules. A passing test run does not replace contract deployability checks, deployment verification, or operational commissioning.
 
 ## Documentation lattice
 
-The repository’s manuals, runbooks, and subsystem READMEs are catalogued in [`docs/readme-catalog.md`](docs/readme-catalog.md). The inventory spans 169 markdown guides (129 READMEs, 40 runbooks) so release captains can locate operator instructions, demo briefings, and subsystem diagrams without spelunking through the tree. Every document is synchronised with the repository tree; CI fails fast if a referenced README is missing, keeping the narrative aligned with the code that powers it.【F:docs/readme-catalog.md†L1-L71】【F:docs/readme-catalog.md†L73-L169】【F:.github/workflows/ci.yml†L34-L1181】
+The repository’s manuals, runbooks, and subsystem READMEs are catalogued in [`docs/readme-catalog.md`](docs/readme-catalog.md). The inventory spans 170 markdown guides (130 READMEs, 40 runbooks) so release captains can locate operator instructions, demo briefings, and subsystem diagrams without spelunking through the tree. Every document is synchronised with the repository tree; CI fails fast if a referenced README is missing, keeping the narrative aligned with the code that powers it. ([readme-catalog.md](docs/readme-catalog.md)) ([ci.yml](.github/workflows/ci.yml))
 
 ```mermaid
 mindmap
@@ -63,13 +67,13 @@ The contract owner maintains unilateral, auditable control over the entire platf
 
 | Capability | Command | Output |
 | ---------- | ------- | ------ |
-| Prove governance posture | `npm run owner:verify-control` | Authority matrix, role bindings, guardian quorum reports.【F:package.json†L365-L397】【F:.github/workflows/ci.yml†L393-L440】 |
-| Pause or resume execution | `npm run owner:system-pause` / `npm run owner:emergency` | Transaction scripts + pause certificates ready for multisig execution.【F:package.json†L376-L390】【F:scripts/v2/systemPauseAction.ts†L1-L162】 |
-| Reconfigure parameters | `npm run owner:parameters` | Parameter matrix CSV/JSON for rapid reprogramming across contracts, agents, and paymasters.【F:package.json†L381-L383】【F:scripts/v2/ownerParameterMatrix.ts†L1-L210】 |
-| Stage upgrades | `npm run owner:upgrade` / `npm run owner:upgrade-status` | Upgrade queue diffs, bytecode fingerprints, upgrade state proofs.【F:package.json†L393-L396】【F:scripts/v2/ownerUpgradeQueue.ts†L1-L188】 |
-| Generate dashboards | `npm run owner:dashboard` / `npm run owner:command-center` | Owner dashboards, command plans, and compliance briefings for non-technical operators.【F:package.json†L372-L375】【F:scripts/v2/ownerCommandCenter.ts†L1-L212】 |
+| Prove governance posture | `npm run owner:verify-control` | Authority matrix, role bindings, guardian quorum reports. ([package.json](package.json)) ([ci.yml](.github/workflows/ci.yml)) |
+| Pause or resume execution | `npm run owner:system-pause` / `npm run owner:emergency` | Transaction scripts + pause certificates ready for multisig execution. ([package.json](package.json)) ([systemPauseAction.ts](scripts/v2/systemPauseAction.ts)) |
+| Reconfigure parameters | `npm run owner:parameters` | Parameter matrix CSV/JSON for rapid reprogramming across contracts, agents, and paymasters. ([package.json](package.json)) ([ownerParameterMatrix.ts](scripts/v2/ownerParameterMatrix.ts)) |
+| Stage upgrades | `npm run owner:upgrade` / `npm run owner:upgrade-status` | Upgrade queue diffs, bytecode fingerprints, upgrade state proofs. ([package.json](package.json)) ([ownerUpgradeQueue.ts](scripts/v2/ownerUpgradeQueue.ts)) |
+| Generate dashboards | `npm run owner:dashboard` / `npm run owner:command-center` | Owner dashboards, command plans, and compliance briefings for non-technical operators. ([package.json](package.json)) ([ownerCommandCenter.ts](scripts/v2/ownerCommandCenter.ts)) |
 
-Every CLI entrypoint is safe to execute from air-gapped control rooms or automated pipelines; commands support `--out` targets so artefacts can be archived alongside governance approvals. Combine them with `npm run owner:plan:safe` to produce multisig-ready transaction bundles when deploying from custodial safes.【F:package.json†L381-L385】【F:scripts/v2/run-owner-plan.js†L1-L118】
+Owner commands have different side effects and prerequisites. Read the command-specific runbook before execution: live checks require RPC access, and transaction commands may write on-chain. Use only the preview and output flags supported by that command. Combine them with `npm run owner:plan:safe` to produce multisig-ready transaction bundles when deploying from custodial safes. ([package.json](package.json)) ([run-owner-plan.js](scripts/v2/run-owner-plan.js))
 
 ```mermaid
 sequenceDiagram
@@ -87,11 +91,11 @@ sequenceDiagram
     CI-->>Owner: Gate merge until verification passes
 ```
 
-The resulting artefacts feed the `Owner control assurance` CI job and the branch protection guard so every production deployment is traceable back to an approved owner command path.【F:.github/workflows/ci.yml†L393-L440】【F:.github/workflows/ci.yml†L970-L1089】
+The resulting artefacts feed the `Owner control assurance` CI job and the branch protection guard so every production deployment is traceable back to an approved owner command path. ([ci.yml](.github/workflows/ci.yml))
 
 ## Release provenance lattice
 
-Every release tag must be cryptographically attributable to the guardians who shepherd AGI Jobs v0 (v2). The `.github/signers/allowed_signers` register now ships pre-populated with hardware-key ready examples so operators can bootstrap provenance checks instantly while still replacing the values with their own guardians’ keys before production cuts.【F:.github/signers/allowed_signers†L1-L3】 Execute `npm run ci:verify-signers` to enforce formatting, namespace scoping, and duplicate detection before CI ever attempts a release build.【F:package.json†L137-L143】【F:scripts/ci/check-signers.js†L1-L120】【F:scripts/ci/check-signers.js†L120-L183】
+Every release tag must be cryptographically attributable to the guardians who shepherd AGI Jobs v0 (v2). The `.github/signers/allowed_signers` register contains illustrative placeholders, not usable maintainer keys. Preserve the examples for reference and replace them with authorized SSH public keys before a production release. ([allowed_signers](.github/signers/allowed_signers)) Execute `npm run ci:verify-signers` to enforce actual OpenSSH key parsing, namespace scoping, and duplicate detection. This check intentionally fails on the shipped placeholders. ([package.json](package.json)) ([check-signers.js](scripts/ci/check-signers.js))
 
 ```mermaid
 flowchart LR
@@ -107,11 +111,11 @@ flowchart LR
     ReleaseTag --> Guardians
 ```
 
-The release workflow fails closed if a maintainer attempts to publish a tag without a registered key, preserving the intelligence engine’s audit trail while giving the owner full power to rotate, pause, or expand the guardian set at will.【F:scripts/ci/check-signers.js†L29-L120】【F:scripts/ci/check-signers.js†L120-L183】
+The release workflow fails closed if a maintainer attempts to publish a tag without a registered key, preserving the intelligence engine’s audit trail while giving the owner full power to rotate, pause, or expand the guardian set at will. ([check-signers.js](scripts/ci/check-signers.js))
 
 ## CI v2 status wall (live)
 
-The full mapping between wall entries, workflow job identifiers, and maintenance steps lives in [`docs/status-wall.md`](docs/status-wall.md). The wall is enforced twice: GitHub branch protection consumes `ci/required-contexts.json`, and the `CI summary` job fails fast when any upstream signal degrades. Release captains regenerate the wall locally with `npm run ci:status-wall -- --require-success --include-companion --format markdown` so this table mirrors the live GitHub truth at all times.【F:ci/README.md†L19-L129】【F:scripts/ci/check-ci-status-wall.ts†L73-L210】
+The full mapping between wall entries, workflow job identifiers, and maintenance steps lives in [`docs/status-wall.md`](docs/status-wall.md). The wall is enforced twice: GitHub branch protection consumes `ci/required-contexts.json`, and the `CI summary` job fails fast when any upstream signal degrades. Release captains regenerate the wall locally with `npm run ci:status-wall -- --require-success --include-companion --format markdown` so this table mirrors the live GitHub truth at all times. ([README.md](ci/README.md)) ([check-ci-status-wall.ts](scripts/ci/check-ci-status-wall.ts))
 
 | Required job | Status badge |
 | ------------ | ------------ |
@@ -142,16 +146,16 @@ The full mapping between wall entries, workflow job identifiers, and maintenance
 Companion workflows complete the assurance wall: [static analysis](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/static-analysis.yml), [fuzz](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/fuzz.yml), [webapp](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/webapp.yml), [containers](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/containers.yml), and [e2e](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/e2e.yml). Required contexts for those workflows are defined in [`ci/required-companion-contexts.json`](ci/required-companion-contexts.json) and enforced by `npm run ci:verify-companion-contexts`.
 
 ### Live verification CLI
-- Run `npm run ci:status-wall -- --token <github_token>` to confirm the latest `ci (v2)` run on `main` succeeded across every required job. The command inspects the GitHub Actions API, flags missing or red jobs, and prints a breakdown with direct links to each job log. Add `--format markdown` to render a README-ready table or `--format json` when you need structured output for dashboards or automated release gates.【F:scripts/ci/check-ci-status-wall.ts†L73-L100】【F:scripts/ci/check-ci-status-wall.ts†L312-L387】
-- Pass `--include-companion` to extend the check across the companion workflows (static-analysis, fuzz, webapp, containers, e2e) so the full assurance wall is verified in one sweep.【F:scripts/ci/check-ci-status-wall.ts†L262-L332】【F:ci/required-companion-contexts.json†L1-L10】
-- Use `--branch <name>` or `--workflow <file>` when validating release branches or pre-flight changes in forks. All options mirror the automation that the branch-protection guard enforces on protected branches.【F:scripts/ci/check-ci-status-wall.ts†L200-L332】
+- Run `npm run ci:status-wall -- --token <github_token>` to confirm the latest `ci (v2)` run on `main` succeeded across every required job. The command inspects the GitHub Actions API, flags missing or red jobs, and prints a breakdown with direct links to each job log. Add `--format markdown` to render a README-ready table or `--format json` when you need structured output for dashboards or automated release gates. ([check-ci-status-wall.ts](scripts/ci/check-ci-status-wall.ts))
+- Pass `--include-companion` to extend the check across the companion workflows (static-analysis, fuzz, webapp, containers, e2e) so the full assurance wall is verified in one sweep. ([check-ci-status-wall.ts](scripts/ci/check-ci-status-wall.ts)) ([required-companion-contexts.json](ci/required-companion-contexts.json))
+- Use `--branch <name>` or `--workflow <file>` when validating release branches or pre-flight changes in forks. All options mirror the automation that the branch-protection guard enforces on protected branches. ([check-ci-status-wall.ts](scripts/ci/check-ci-status-wall.ts))
 
 | Scenario | Command | Notes |
 | --- | --- | --- |
-| Enforce success on `main` | `npm run ci:status-wall -- --token $GITHUB_TOKEN --require-success` | Fails fast unless every job finished in `success` or `skipped` state.【F:scripts/ci/check-ci-status-wall.ts†L93-L199】 |
-| Include companion lattice | `npm run ci:status-wall -- --token $GITHUB_TOKEN --include-companion` | Adds static-analysis, fuzz, webapp, containers, and e2e to the report.【F:scripts/ci/check-ci-status-wall.ts†L262-L332】 |
-| Export dashboards | `npm run ci:status-wall -- --token $GITHUB_TOKEN --format json > reports/ci/status.wall.json` | Emits machine-readable payload for dashboards and alerting.【F:scripts/ci/check-ci-status-wall.ts†L312-L387】 |
-| Refresh README table | `npm run ci:status-wall -- --token $GITHUB_TOKEN --format markdown > reports/ci/status-wall.md` | Generates a GitHub-flavoured table matching the live status wall for direct embedding.【F:scripts/ci/check-ci-status-wall.ts†L73-L100】【F:scripts/ci/check-ci-status-wall.ts†L312-L387】 |
+| Enforce success on `main` | `npm run ci:status-wall -- --token $GITHUB_TOKEN --require-success` | Fails fast unless every job finished in `success` or `skipped` state. ([check-ci-status-wall.ts](scripts/ci/check-ci-status-wall.ts)) |
+| Include companion lattice | `npm run ci:status-wall -- --token $GITHUB_TOKEN --include-companion` | Adds static-analysis, fuzz, webapp, containers, and e2e to the report. ([check-ci-status-wall.ts](scripts/ci/check-ci-status-wall.ts)) |
+| Export dashboards | `npm run ci:status-wall -- --token $GITHUB_TOKEN --format json > reports/ci/status.wall.json` | Emits machine-readable payload for dashboards and alerting. ([check-ci-status-wall.ts](scripts/ci/check-ci-status-wall.ts)) |
+| Refresh README table | `npm run ci:status-wall -- --token $GITHUB_TOKEN --format markdown > reports/ci/status-wall.md` | Generates a GitHub-flavoured table matching the live status wall for direct embedding. ([check-ci-status-wall.ts](scripts/ci/check-ci-status-wall.ts)) |
 
 ```mermaid
 flowchart TD
@@ -169,7 +173,7 @@ flowchart TD
     verdict --> artefacts["reports/ci/status.{md,json}\nmission artefacts"]:::artefact
 ```
 
-The same manifest powers the branch-protection guard inside CI v2 and the local verification CLI, so green walls locally guarantee green walls on GitHub before merge.【F:.github/workflows/ci.yml†L966-L1089】【F:ci/required-contexts.json†L1-L24】
+The same manifest powers the branch-protection guard inside CI v2 and the local verification CLI, so green walls locally guarantee green walls on GitHub before merge. ([ci.yml](.github/workflows/ci.yml)) ([required-contexts.json](ci/required-contexts.json))
 
 #### API-level verification
 
@@ -193,12 +197,12 @@ curl -s "https://api.github.com/repos/MontrealAI/AGIJobsv0/actions/runs/${RUN_ID
   | jq -e 'all(.jobs[].conclusion == "success")'
 ```
 
-The final check returns `true` and a zero exit status only when each required context is green, enabling air-gapped compliance suites or third-party dashboards to verify the wall without invoking repository scripts. Combine the API snapshot with `npm run ci:status-wall -- --require-success --include-companion` to cross-check manifest-driven expectations against the live Actions event stream.【F:scripts/ci/check-ci-status-wall.ts†L73-L387】
+The final check returns `true` and a zero exit status only when each required context is green, enabling air-gapped compliance suites or third-party dashboards to verify the wall without invoking repository scripts. Combine the API snapshot with `npm run ci:status-wall -- --require-success --include-companion` to cross-check manifest-driven expectations against the live Actions event stream. ([check-ci-status-wall.ts](scripts/ci/check-ci-status-wall.ts))
 
 ### Double-green enforcement drill
-1. **Interrogate the wall:** `npm run ci:status-wall -- --token <github_token> --require-success --include-companion` must return all ✅ lines and regenerate both Markdown and JSON artefacts in `reports/ci/`. Cross-check the printed run ID with the Actions UI so the command and GitHub agree on the latest passing workflow.【F:scripts/ci/check-ci-status-wall.ts†L73-L100】【F:scripts/ci/check-ci-status-wall.ts†L312-L387】
-2. **Lock the manifest:** Immediately execute `npm run ci:sync-contexts -- --check` to prove that the required context manifest still mirrors `.github/workflows/ci.yml`. The command fails fast on any drift so branch protection cannot silently fall behind.【F:scripts/ci/update-ci-required-contexts.ts†L1-L83】【F:ci/required-contexts.json†L1-L24】
-3. **Audit the rule:** Finish with `npm run ci:verify-branch-protection -- --owner MontrealAI --repo AGIJobsv0 --branch main --require` and archive the console output. The script queries the GitHub REST API and enforces parity with the manifest, so a single invocation validates CI status, manifests, and the live protection rule in one sweep.【F:scripts/ci/verify-branch-protection.ts†L1-L239】
+1. **Interrogate the wall:** `npm run ci:status-wall -- --token <github_token> --require-success --include-companion` must return all ✅ lines and regenerate both Markdown and JSON artefacts in `reports/ci/`. Cross-check the printed run ID with the Actions UI so the command and GitHub agree on the latest passing workflow. ([check-ci-status-wall.ts](scripts/ci/check-ci-status-wall.ts))
+2. **Lock the manifest:** Immediately execute `npm run ci:sync-contexts -- --check` to prove that the required context manifest still mirrors `.github/workflows/ci.yml`. The command fails fast on any drift so branch protection cannot silently fall behind. ([update-ci-required-contexts.ts](scripts/ci/update-ci-required-contexts.ts)) ([required-contexts.json](ci/required-contexts.json))
+3. **Audit the rule:** Finish with `npm run ci:verify-branch-protection -- --owner MontrealAI --repo AGIJobsv0 --branch main --require` and archive the console output. The script queries the GitHub REST API and enforces parity with the manifest, so a single invocation validates CI status, manifests, and the live protection rule in one sweep. ([verify-branch-protection.ts](scripts/ci/verify-branch-protection.ts))
 
 ```mermaid
 flowchart TD
@@ -217,15 +221,15 @@ flowchart TD
     branchAudit --> enforcementReceipt[Archived enforcement log]:::artefact
 ```
 
-Running the drill before every release forces status verification, manifest locking, and branch protection auditing to agree, creating a triple-check loop that mirrors CI v2’s internal guard rails.【F:.github/workflows/ci.yml†L1026-L1155】【F:ci/required-contexts.json†L1-L24】
+Running the drill before every release forces status verification, manifest locking, and branch protection auditing to agree, creating a triple-check loop that mirrors CI v2’s internal guard rails. ([ci.yml](.github/workflows/ci.yml)) ([required-contexts.json](ci/required-contexts.json))
 
 ## Executive signal
-- **Unification:** Smart contracts, agent gateways, demos, and analytics are orchestrated as one lattice, keeping governance, telemetry, and delivery in lockstep for non-technical operators.【F:agent-gateway/README.md†L1-L53】【F:apps/validator-ui/README.md†L1-L40】【F:services/thermostat/README.md†L1-L60】
-- **Owner supremacy:** Every critical lever is surfaced through deterministic owner tooling so the contract owner can pause, upgrade, and retune parameters on demand, without redeploying or editing code.【F:contracts/v2/admin/OwnerConfigurator.sol†L7-L112】【F:package.json†L135-L226】
-- **Evergreen assurance:** CI v2 enforces a wall of 23 required contexts plus companion workflows, uploads audit artefacts, and verifies branch protection so every release inherits a fully green, enforceable policy.【F:.github/workflows/ci.yml†L22-L965】【F:.github/workflows/ci.yml†L970-L1181】【F:ci/required-contexts.json†L1-L24】【F:ci/required-companion-contexts.json†L1-L11】
+- **Unification:** Smart contracts, agent gateways, demos, and analytics are orchestrated as one lattice, keeping governance, telemetry, and delivery in lockstep for non-technical operators. ([README.md](agent-gateway/README.md)) ([README.md](apps/validator-ui/README.md)) ([README.md](services/thermostat/README.md))
+- **Owner supremacy:** Every critical lever is surfaced through deterministic owner tooling so the contract owner can pause, upgrade, and retune parameters on demand, without redeploying or editing code. ([OwnerConfigurator.sol](contracts/v2/admin/OwnerConfigurator.sol)) ([package.json](package.json))
+- **Evergreen assurance:** CI v2 enforces a wall of 23 required contexts plus companion workflows, uploads audit artefacts, and verifies branch protection so operators can inspect the required evidence before approving a release. Check the current run and repository rules rather than assuming all checks are green. ([ci.yml](.github/workflows/ci.yml)) ([required-contexts.json](ci/required-contexts.json)) ([required-companion-contexts.json](ci/required-companion-contexts.json))
 
 ## Owner dominion console
-The platform’s operator CLI renders full-spectrum control to the contract owner without touching Solidity or TypeScript. Each command combines deterministic manifests from [`config/`](config/README.md) with the governance façades inside [`contracts/v2/admin`](contracts/README.md) so pauses, treasury updates, and validator quotas can be reconfigured in minutes while CI records immutable artefacts.【F:config/README.md†L1-L117】【F:contracts/README.md†L38-L80】【F:.github/workflows/ci.yml†L393-L443】
+The platform’s operator CLI renders full-spectrum control to the contract owner without touching Solidity or TypeScript. Each command combines deterministic manifests from [`config/`](config/README.md) with the governance façades inside [`contracts/v2/admin`](contracts/README.md) so pauses, treasury updates, and validator quotas can be reconfigured in minutes while CI records immutable artefacts. ([README.md](config/README.md)) ([README.md](contracts/README.md)) ([ci.yml](.github/workflows/ci.yml))
 
 ```mermaid
 flowchart LR
@@ -243,30 +247,30 @@ flowchart LR
 
 | Command | Capability | Execution surface |
 | ------- | ---------- | ----------------- |
-| `npm run owner:parameters -- --network <net>` | Regenerates the full fee, treasury, validator, and thermostat matrix that CI stores under `reports/owner-control/`, ensuring executives can validate every toggle before signing transactions.【F:scripts/v2/ownerParameterMatrix.ts†L1-L612】【F:.github/workflows/ci.yml†L420-L439】 | Owner CLI + CI artefact wall |
-| `npm run owner:system-pause -- --network <net>` | Emits pause/unpause calldata, previews the transaction JSON, and enforces module ownership so a single command can freeze or resume the lattice safely.【F:scripts/v2/systemPauseAction.ts†L1-L289】【F:contracts/v2/SystemPause.sol†L15-L157】 | Owner CLI |
-| `npm run owner:update-all -- --network <net>` | Applies manifest diffs through `OwnerConfigurator` with dependency ordering and dry-run previews, matching the upgrades rehearsed in CI’s owner assurance job.【F:scripts/v2/updateAllModules.ts†L1-L1233】【F:.github/workflows/ci.yml†L393-L439】 | Owner CLI + CI |
-| `npm run ci:owner-authority -- --network <net> --out reports/owner-control` | Regenerates Markdown/JSON authority matrices so the contract owner and auditors both see a living, CI-backed digest of who controls every lever.【F:package.json†L135-L226】【F:.github/workflows/ci.yml†L420-L439】 | CI pipelines + local drill |
+| `npm run owner:parameters -- --network <net>` | Regenerates the full fee, treasury, validator, and thermostat matrix that CI stores under `reports/owner-control/`, ensuring executives can validate every toggle before signing transactions. ([ownerParameterMatrix.ts](scripts/v2/ownerParameterMatrix.ts)) ([ci.yml](.github/workflows/ci.yml)) | Owner CLI + CI artefact wall |
+| `npm run owner:system-pause -- --network <net>` | Emits pause/unpause calldata, previews the transaction JSON, and enforces module ownership so a single command can freeze or resume the lattice safely. ([systemPauseAction.ts](scripts/v2/systemPauseAction.ts)) ([SystemPause.sol](contracts/v2/SystemPause.sol)) | Owner CLI |
+| `npm run owner:update-all -- --network <net>` | Applies manifest diffs through `OwnerConfigurator` with dependency ordering and dry-run previews, matching the upgrades rehearsed in CI’s owner assurance job. ([updateAllModules.ts](scripts/v2/updateAllModules.ts)) ([ci.yml](.github/workflows/ci.yml)) | Owner CLI + CI |
+| `npm run ci:owner-authority -- --network <net> --out reports/owner-control` | Regenerates Markdown/JSON authority matrices so the contract owner and auditors both see a living, CI-backed digest of who controls every lever. ([package.json](package.json)) ([ci.yml](.github/workflows/ci.yml)) | CI pipelines + local drill |
 
-The same commands run automatically in the `Owner control assurance` job, so the checks wall refuses a merge unless the owner retains total dominion over pause switches, treasury routing, and upgrade paths.【F:.github/workflows/ci.yml†L393-L443】
+The same commands run automatically in the `Owner control assurance` job, so the checks wall refuses a merge unless the owner retains total dominion over pause switches, treasury routing, and upgrade paths. ([ci.yml](.github/workflows/ci.yml))
 
 ## Quickstart for operators
-1. Use Node.js 20.18.1 (`.nvmrc`/`.node-version`) and Python 3.12 to match the automated toolchain.【F:.nvmrc†L1-L1】【F:.github/workflows/ci.yml†L118-L145】 If your base image is missing `node`/`npm`, install the pinned version explicitly so tests don’t fall back to distro defaults, then validate the toolchain with `npm run doctor:node` so Hardhat builds don’t silently run under the wrong runtime.【F:scripts/check-node.js†L1-L90】【F:package.json†L125-L137】
+1. Use Node.js 22.23.3 (`.nvmrc`/`.node-version`) and Python 3.12 to match the automated toolchain. ([.nvmrc](.nvmrc)) ([ci.yml](.github/workflows/ci.yml)) If your base image is missing `node`/`npm`, install the pinned version explicitly so tests don’t fall back to distro defaults, then validate the toolchain with `npm run doctor:node` so Hardhat builds don’t silently run under the wrong runtime. ([check-node.js](scripts/check-node.js)) ([package.json](package.json))
    ```bash
-   # Debian/Ubuntu
-   curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
-   apt-get install -y nodejs
-
-   # or via nvm (honours .nvmrc)
-   command -v nvm >/dev/null || curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
+   # With nvm installed, use the repository's exact Node pin.
    nvm install
+   nvm use
+   npm install --global npm@10.8.2
    npm run doctor:node
    ```
 2. Hydrate dependencies (do **not** omit optional packages—the Hardhat toolbox requires the platform-specific `@nomicfoundation/solidity-analyzer-*` binary and will fail exactly like CI if you pass `--omit=optional`):
    ```bash
-   npm install
+   CYPRESS_INSTALL_BINARY=0 npm ci
+   python3.12 -m venv .venv
+   source .venv/bin/activate
    python -m pip install --upgrade pip
    python -m pip install -r requirements-python.txt
+   python -m pip check
    ```
 3. Confirm the deterministic toolchain locks before coding:
    ```bash
@@ -277,7 +281,7 @@ The same commands run automatically in the `Owner control assurance` job, so the
    npm run ci:verify-companion-contexts
    npm run ci:verify-summary-needs
    ```
-   The sync command confirms `ci/required-contexts.json` matches the workflow before the verification scripts enforce ordering, and the summary check proves the wall coverage is intact—keeping this quintet green locally mirrors branch protection expectations.【F:package.json†L135-L150】【F:scripts/ci/update-ci-required-contexts.ts†L1-L83】【F:scripts/ci/check-summary-needs.js†L1-L79】【F:.github/workflows/ci.yml†L34-L74】【F:.github/workflows/ci.yml†L1009-L1077】
+   The sync command confirms `ci/required-contexts.json` matches the workflow before the verification scripts enforce ordering, and the summary check proves the wall coverage is intact—keeping this quintet green locally mirrors branch protection expectations. ([package.json](package.json)) ([update-ci-required-contexts.ts](scripts/ci/update-ci-required-contexts.ts)) ([check-summary-needs.js](scripts/ci/check-summary-needs.js)) ([ci.yml](.github/workflows/ci.yml))
 4. Validate the critical suites (prime the Hardhat cache once so local runs mirror CI performance):
    ```bash
    npm run compile           # generates artifacts exactly like the tests job
@@ -286,8 +290,8 @@ The same commands run automatically in the `Owner control assurance` job, so the
    npm run coverage
    forge test -vvvv --ffi --fuzz-runs 256
    ```
-   Compiling first avoids the local fallback where `hardhat test --no-compile` triggers a fresh Solidity build, bringing the experience in line with the workflow’s dedicated compile step before `npm test`. These commands reproduce the Hardhat, linting, coverage, and Foundry stages the pipeline requires.【F:package.json†L233-L245】【F:.github/workflows/ci.yml†L75-L546】
-   The Python coverage harness additionally exercises the HGM worker dispatcher and sharded simulation CLI so CI’s 85% gate reflects the orchestrator workloads developers rehearse locally.【F:test/orchestrator/test_worker.py†L1-L41】【F:test/simulation/test_harness.py†L1-L19】【F:test/simulation/test_sharded_simulation.py†L1-L68】
+   Compiling first avoids the local fallback where `hardhat test --no-compile` triggers a fresh Solidity build, bringing the experience in line with the workflow’s dedicated compile step before `npm test`. These commands reproduce the Hardhat, linting, coverage, and Foundry stages the pipeline requires. ([package.json](package.json)) ([ci.yml](.github/workflows/ci.yml))
+   The Python coverage harness additionally exercises the HGM worker dispatcher and sharded simulation CLI so CI’s 85% gate reflects the orchestrator workloads developers rehearse locally. ([test_worker.py](test/orchestrator/test_worker.py)) ([test_harness.py](test/simulation/test_harness.py)) ([test_sharded_simulation.py](test/simulation/test_sharded_simulation.py))
 5. When the signal is green, push signed commits and open a pull request—CI v2 enforces the exact same contexts on `main` and PRs.
 
 ## Repository atlas
@@ -312,12 +316,12 @@ flowchart LR
 
 | Domain | Highlights |
 | ------ | ---------- |
-| Contracts (`contracts/`) | Solidity kernel, modules, admin façades, and invariant harnesses tested through Hardhat + Foundry with owner-first controls.【F:contracts/README.md†L1-L82】 |
-| Agent Gateway (`agent-gateway/`) | TypeScript service providing REST, WebSocket, and gRPC bridges into the contract stack with deterministic telemetry exports.【F:agent-gateway/README.md†L1-L86】 |
-| Apps (`apps/`) | Operator and validator UIs that consume the gateway and orchestrator APIs for mission dashboards.【F:apps/validator-ui/README.md†L1-L40】 |
-| Services (`services/`) | Sentinels, thermostat, culture indexers, and auxiliary control planes feeding observability and safeguards.【F:services/thermostat/README.md†L1-L60】 |
-| CI (`ci/` + `.github/workflows/`) | Scripts, manifests, and workflows that lock toolchains, enforce branch protection, and publish compliance artefacts.【F:ci/required-contexts.json†L1-L24】【F:.github/workflows/ci.yml†L24-L546】 |
-| Demo constellation (`demo/`) | High-stakes rehearsals (Kardashev, ASI take-off, Zenith sapience, etc.) codified as reproducible scripts and UI bundles.【F:.github/workflows/ci.yml†L548-L965】 |
+| Contracts (`contracts/`) | Solidity kernel, modules, admin façades, and invariant harnesses tested through Hardhat + Foundry with owner-first controls. ([README.md](contracts/README.md)) |
+| Agent Gateway (`agent-gateway/`) | TypeScript service providing REST, WebSocket, and gRPC bridges into the contract stack with deterministic telemetry exports. ([README.md](agent-gateway/README.md)) |
+| Apps (`apps/`) | Operator and validator UIs that consume the gateway and orchestrator APIs for mission dashboards. ([README.md](apps/validator-ui/README.md)) |
+| Services (`services/`) | Sentinels, thermostat, culture indexers, and auxiliary control planes feeding observability and safeguards. ([README.md](services/thermostat/README.md)) |
+| CI (`ci/` + `.github/workflows/`) | Scripts, manifests, and workflows that lock toolchains, enforce branch protection, and publish compliance artefacts. ([required-contexts.json](ci/required-contexts.json)) ([ci.yml](.github/workflows/ci.yml)) |
+| Demo constellation (`demo/`) | High-stakes rehearsals (Kardashev, ASI take-off, Zenith sapience, etc.) codified as reproducible scripts and UI bundles. ([ci.yml](.github/workflows/ci.yml)) |
 
 ### Control-plane architecture
 
@@ -361,7 +365,7 @@ flowchart TD
     reports --> consoles
 ```
 
-The control plane ties owners, operators, and automation into one verifiable surface: owners drive changes through deterministic CLI entry points, agent services marshal those commands into contract-safe transactions, and sentinel services plus CI pipelines export signed artefacts for audits.【F:package.json†L138-L215】【F:agent-gateway/README.md†L1-L86】【F:services/sentinel/README.md†L1-L67】【F:services/thermostat/README.md†L1-L60】
+The control plane ties owners, operators, and automation into one verifiable surface: owners drive changes through deterministic CLI entry points, agent services marshal those commands into contract-safe transactions, and sentinel services plus CI pipelines export signed artefacts for audits. ([package.json](package.json)) ([README.md](agent-gateway/README.md)) ([README.md](services/sentinel/README.md)) ([README.md](services/thermostat/README.md))
 
 ## Owner command authority
 ```mermaid
@@ -379,17 +383,17 @@ flowchart TD
 
 | Command | Purpose |
 | ------- | ------- |
-| `npm run owner:system-pause -- --network <network>` | Toggle pause levers across kernel and module contracts in one transaction, enforcing ownership checks before execution.【F:package.json†L180-L195】【F:contracts/v2/SystemPause.sol†L15-L157】 |
-| `npm run owner:update-all -- --network <network>` | Reconcile manifests against on-chain parameters through the `OwnerConfigurator`, emitting structured audit logs per change.【F:package.json†L195-L215】【F:contracts/v2/admin/OwnerConfigurator.sol†L7-L112】 |
-| `npm run owner:command-center` | Render a consolidated mission-control report (mermaid + JSON) so non-technical owners can approve operations before broadcasting.【F:package.json†L165-L190】 |
-| `npm run owner:parameters -- --network <network>` | Export the full parameter matrix referenced in CI and compliance reviews.【F:package.json†L165-L208】【F:scripts/v2/ownerParameterMatrix.ts†L1-L612】 |
-| `npm run ci:owner-authority -- --network ci --out reports/owner-control` | Regenerate the authority matrix consumed by CI artefacts and branch protection guards.【F:package.json†L138-L149】【F:.github/workflows/ci.yml†L393-L440】 |
+| `npm run owner:system-pause -- --network <network>` | Toggle pause levers across kernel and module contracts in one transaction, enforcing ownership checks before execution. ([package.json](package.json)) ([SystemPause.sol](contracts/v2/SystemPause.sol)) |
+| `npm run owner:update-all -- --network <network>` | Reconcile manifests against on-chain parameters through the `OwnerConfigurator`, emitting structured audit logs per change. ([package.json](package.json)) ([OwnerConfigurator.sol](contracts/v2/admin/OwnerConfigurator.sol)) |
+| `npm run owner:command-center` | Render a consolidated mission-control report (mermaid + JSON) so non-technical owners can approve operations before broadcasting. ([package.json](package.json)) |
+| `npm run owner:parameters -- --network <network>` | Export the full parameter matrix referenced in CI and compliance reviews. ([package.json](package.json)) ([ownerParameterMatrix.ts](scripts/v2/ownerParameterMatrix.ts)) |
+| `npm run ci:owner-authority -- --network ci --out reports/owner-control` | Regenerate the authority matrix consumed by CI artefacts and branch protection guards. ([package.json](package.json)) ([ci.yml](.github/workflows/ci.yml)) |
 
-Every command supports `--dry-run` and report exports, ensuring the contract owner retains absolute control while the automation stays auditable.【F:scripts/v2/ownerControlDoctor.ts†L1-L252】【F:scripts/v2/ownerControlQuickstart.ts†L1-L220】
+Preview and export support varies by command; confirm the documented flags before supplying RPC credentials or signing transactions. ([ownerControlDoctor.ts](scripts/v2/ownerControlDoctor.ts)) ([ownerControlQuickstart.ts](scripts/v2/ownerControlQuickstart.ts))
 
 ### Attestation registry safety lever
 
-- `AttestationRegistry.pause()` / `unpause()` — owner-only circuit breaker that halts ENS-backed delegation while responding to compromised subdomains. Use the OwnerConfigurator (`owner:update-all`) or Hardhat console to invoke the pause, then resume once the attestor set is remediated. The mutation path is guarded by OpenZeppelin `Ownable` + `Pausable`, and attestation calls revert with `Pausable: paused` until unpaused.【F:contracts/v2/AttestationRegistry.sol†L11-L108】
+- `AttestationRegistry.pause()` / `unpause()` — owner-only circuit breaker that halts ENS-backed delegation while responding to compromised subdomains. Use the OwnerConfigurator (`owner:update-all`) or Hardhat console to invoke the pause, then resume once the attestor set is remediated. The mutation path is guarded by OpenZeppelin `Ownable` + `Pausable`, and attestation calls revert with `Pausable: paused` until unpaused. ([AttestationRegistry.sol](contracts/v2/AttestationRegistry.sol))
 
 ### Governance oversight loop
 
@@ -410,7 +414,7 @@ flowchart LR
     Reports --> Operators[Operator consoles]:::auto
 ```
 
-The governance loop keeps owner supremacy verifiable: owner council scripts regenerate the authority matrix, CI v2 enforces branch protection parity, and the resulting artefacts cycle back into operator consoles and decision briefings.【F:.github/workflows/ci.yml†L393-L1155】【F:reports/audit/README.md†L1-L76】【F:scripts/v2/ownerControlDoctor.ts†L1-L252】
+The governance loop keeps owner supremacy verifiable: owner council scripts regenerate the authority matrix, CI v2 enforces branch protection parity, and the resulting artefacts cycle back into operator consoles and decision briefings. ([ci.yml](.github/workflows/ci.yml)) ([README.md](reports/audit/README.md)) ([ownerControlDoctor.ts](scripts/v2/ownerControlDoctor.ts))
 
 ## Parameter recalibration pipeline
 ```mermaid
@@ -428,13 +432,13 @@ flowchart LR
     updateAll --> contractsCore[contracts/v2 core modules]:::execution
 ```
 
-- **Surface scan:** `npm run owner:surface` fingerprints every config file, normalises addresses, and highlights drift against the deployed control plane so owners see exactly which modules need attention before touching the chain.【F:scripts/v2/ownerControlSurface.ts†L1-L120】【F:scripts/v2/ownerControlSurface.ts†L121-L248】
-- **Matrix export:** `npm run owner:parameters` renders markdown, JSON, and mermaid matrices that map every subsystem to its calibration commands and verification steps, ready to drop into compliance reports or mission reviews.【F:scripts/v2/ownerParameterMatrix.ts†L1-L120】【F:scripts/v2/ownerParameterMatrix.ts†L121-L240】
-- **Doctor triage:** `npm run owner:doctor` scores each subsystem with `pass/warn/fail`, escalates on missing keys, and recommends remediation commands, enforcing deterministic ownership of the entire lattice.【F:scripts/v2/ownerControlDoctor.ts†L1-L120】【F:scripts/v2/ownerControlDoctor.ts†L121-L248】
-- **Mission orchestration:** `npm run owner:mission-control` condenses the owner dossier, parameter diffs, and pause levers into a single decision brief for final sign-off.【F:scripts/v2/ownerMissionControl.ts†L1-L200】
-- **Deterministic execution:** `npm run owner:update-all` streams the plan into Hardhat transactions or Safe bundles so parameter updates and address rotations land atomically, with artifacts saved alongside the CI owner-control reports.【F:scripts/v2/updateAllModules.ts†L1-L120】【F:scripts/v2/updateAllModules.ts†L121-L240】
+- **Surface scan:** `npm run owner:surface` fingerprints every config file, normalises addresses, and highlights drift against the deployed control plane so owners see exactly which modules need attention before touching the chain. ([ownerControlSurface.ts](scripts/v2/ownerControlSurface.ts))
+- **Matrix export:** `npm run owner:parameters` renders markdown, JSON, and mermaid matrices that map every subsystem to its calibration commands and verification steps, ready to drop into compliance reports or mission reviews. ([ownerParameterMatrix.ts](scripts/v2/ownerParameterMatrix.ts))
+- **Doctor triage:** `npm run owner:doctor` scores each subsystem with `pass/warn/fail`, escalates on missing keys, and recommends remediation commands, enforcing deterministic ownership of the entire lattice. ([ownerControlDoctor.ts](scripts/v2/ownerControlDoctor.ts))
+- **Mission orchestration:** `npm run owner:mission-control` condenses the owner dossier, parameter diffs, and pause levers into a single decision brief for final sign-off. ([ownerMissionControl.ts](scripts/v2/ownerMissionControl.ts))
+- **Deterministic execution:** `npm run owner:update-all` streams the plan into Hardhat transactions or Safe bundles so parameter updates and address rotations land atomically, with artifacts saved alongside the CI owner-control reports. ([updateAllModules.ts](scripts/v2/updateAllModules.ts))
 
-Each stage emits markdown and JSON artefacts beneath `reports/owner-control/`, the same directory uploaded by CI v2 to prove the owner still wields ultimate authority while the automation remains fully transparent.【F:.github/workflows/ci.yml†L393-L440】
+Each stage emits markdown and JSON artefacts beneath `reports/owner-control/`, the same directory uploaded by CI v2 to prove the owner still wields ultimate authority while the automation remains fully transparent. ([ci.yml](.github/workflows/ci.yml))
 
 ## CI v2 orchestration
 ```mermaid
@@ -480,41 +484,41 @@ flowchart LR
     cliProbe[npm run ci:status-wall]:::cli --> statusJson
 ```
 
-- `reports/ci/status.json` exposes a machine-readable feed of the latest CI lattice; it is generated in every run and uploaded as an artefact so dashboards and compliance monitors can subscribe without scraping GitHub.【F:.github/workflows/ci.yml†L1026-L1155】
-- `reports/ci/status.md` mirrors the JSON feed in Markdown for direct inclusion in release notes, investor updates, or PR discussions.【F:.github/workflows/ci.yml†L1026-L1155】
-- `npm run ci:status-wall -- --token <github_token> --require-success --include-companion --format json` fetches the same data from the GitHub API on demand, giving mission owners and release captains a deterministic way to gate deployments or cut dashboards from their local terminal. Swap in `--format markdown` to reproduce the README tables programmatically.【F:scripts/ci/check-ci-status-wall.ts†L73-L100】【F:scripts/ci/check-ci-status-wall.ts†L312-L387】
-- The artefacts capture the full badge wall, including fork bypass annotations, so anyone consuming the feed has the same visibility as the GitHub checks tab without needing repo admin permissions.【F:.github/workflows/ci.yml†L966-L1155】
+- `reports/ci/status.json` exposes a machine-readable feed of the latest CI lattice; it is generated in every run and uploaded as an artefact so dashboards and compliance monitors can subscribe without scraping GitHub. ([ci.yml](.github/workflows/ci.yml))
+- `reports/ci/status.md` mirrors the JSON feed in Markdown for direct inclusion in release notes, investor updates, or PR discussions. ([ci.yml](.github/workflows/ci.yml))
+- `npm run ci:status-wall -- --token <github_token> --require-success --include-companion --format json` fetches the same data from the GitHub API on demand, giving mission owners and release captains a deterministic way to gate deployments or cut dashboards from their local terminal. Swap in `--format markdown` to reproduce the README tables programmatically. ([check-ci-status-wall.ts](scripts/ci/check-ci-status-wall.ts))
+- The artefacts capture the full badge wall, including fork bypass annotations, so anyone consuming the feed has the same visibility as the GitHub checks tab without needing repo admin permissions. ([ci.yml](.github/workflows/ci.yml))
 
 ### Required contexts
 The branch protection rule enforces the following `ci (v2)` contexts, guaranteeing a visible, fully green wall before merge:
 
 | Context | Description |
 | ------- | ----------- |
-| Lint & static checks | Hardhat/TypeScript linting, manifest validation, and lock enforcement.【F:.github/workflows/ci.yml†L34-L74】 |
-| Tests | Hardhat compilation, test execution, ABI drift detection.【F:.github/workflows/ci.yml†L75-L117】 |
-| Python unit tests | Unit-level analytics covering paymaster, tools, orchestrator, and simulation suites.【F:.github/workflows/ci.yml†L118-L167】 |
-| Python integration tests | Route-level API integration, demo rehearsal validation, and deterministic analytics.【F:.github/workflows/ci.yml†L168-L215】 |
-| Load-simulation reports | Monte Carlo sweeps producing CSV + JSON artefacts for economic stress tests.【F:.github/workflows/ci.yml†L216-L292】 |
-| Python coverage enforcement | Combines unit/integration coverage and enforces thresholds.【F:.github/workflows/ci.yml†L293-L349】 |
-| HGM guardrails | Higher Governance Machine regression suite spanning Node + Python controllers.【F:.github/workflows/ci.yml†L350-L392】 |
-| Owner control assurance | Owner doctor reports, command center digest, and parameter matrices proving the owner retains ultimate authority.【F:.github/workflows/ci.yml†L393-L440】 |
-| Foundry | Forge test harness with fuzz + invariant coverage for Solidity contracts.【F:.github/workflows/ci.yml†L444-L494】 |
-| Coverage thresholds | Solidity coverage plus access-control remapping and enforcement.【F:.github/workflows/ci.yml†L496-L546】 |
-| Phase 6 readiness | Scenario validation for the Phase 6 expansion demo.【F:.github/workflows/ci.yml†L548-L577】 |
-| Phase 8 readiness | Scenario validation for the Phase 8 dominance demo.【F:.github/workflows/ci.yml†L580-L608】 |
-| Kardashev II readiness | Kardashev II + Stellar rehearsals to keep planetary demos deployable.【F:.github/workflows/ci.yml†L610-L641】 |
-| ASI Take-Off Demonstration | Full-length ASI take-off run with artefact exports.【F:.github/workflows/ci.yml†L644-L684】 |
-| Zenith Sapience Demonstration | Deterministic + local rehearsal for Zenith Sapience initiatives.【F:.github/workflows/ci.yml†L686-L736】 |
-| AGI Labor Market Grand Demo | Exports transcripts for the labour market grand simulation.【F:.github/workflows/ci.yml†L742-L782】 |
-| Sovereign Mesh Demo — build | Builds sovereign mesh server + console bundles.【F:.github/workflows/ci.yml†L785-L819】 |
-| Sovereign Constellation Demo — build | Builds constellation orchestrator + console assets.【F:.github/workflows/ci.yml†L822-L858】 |
-| Celestial Archon Demonstration | Deterministic + local rehearsals for Celestial Archon governance.【F:.github/workflows/ci.yml†L860-L910】 |
-| Hypernova Governance Demonstration | Hypernova rehearsal with local deterministic replay.【F:.github/workflows/ci.yml†L911-L965】 |
-| Branch protection guard | Audits GitHub branch protection live against the manifests and fails on drift. Forked PRs log a bypass note yet keep the required context green so protected branches still enforce the policy.【F:.github/workflows/ci.yml†L966-L1089】【F:ci/required-contexts.json†L1-L24】 |
-| CI summary | Aggregates every job outcome, writes Markdown + JSON status artefacts, and fails if any job was red or artefacts are missing.【F:.github/workflows/ci.yml†L1026-L1155】 |
-| Invariant tests | Dedicated Forge invariant suite with cached build graph and fuzz tuning.【F:.github/workflows/ci.yml†L1157-L1181】 |
+| Lint & static checks | Hardhat/TypeScript linting, manifest validation, and lock enforcement. ([ci.yml](.github/workflows/ci.yml)) |
+| Tests | Hardhat compilation, test execution, ABI drift detection. ([ci.yml](.github/workflows/ci.yml)) |
+| Python unit tests | Unit-level analytics covering paymaster, tools, orchestrator, and simulation suites. ([ci.yml](.github/workflows/ci.yml)) |
+| Python integration tests | Route-level API integration, demo rehearsal validation, and deterministic analytics. ([ci.yml](.github/workflows/ci.yml)) |
+| Load-simulation reports | Monte Carlo sweeps producing CSV + JSON artefacts for economic stress tests. ([ci.yml](.github/workflows/ci.yml)) |
+| Python coverage enforcement | Combines unit/integration coverage and enforces thresholds. ([ci.yml](.github/workflows/ci.yml)) |
+| HGM guardrails | Higher Governance Machine regression suite spanning Node + Python controllers. ([ci.yml](.github/workflows/ci.yml)) |
+| Owner control assurance | Owner doctor reports, command center digest, and parameter matrices proving the owner retains ultimate authority. ([ci.yml](.github/workflows/ci.yml)) |
+| Foundry | Forge test harness with fuzz + invariant coverage for Solidity contracts. ([ci.yml](.github/workflows/ci.yml)) |
+| Coverage thresholds | Solidity coverage plus access-control remapping and enforcement. ([ci.yml](.github/workflows/ci.yml)) |
+| Phase 6 readiness | Scenario validation for the Phase 6 expansion demo. ([ci.yml](.github/workflows/ci.yml)) |
+| Phase 8 readiness | Scenario validation for the Phase 8 dominance demo. ([ci.yml](.github/workflows/ci.yml)) |
+| Kardashev II readiness | Kardashev II + Stellar rehearsals to keep planetary demos deployable. ([ci.yml](.github/workflows/ci.yml)) |
+| ASI Take-Off Demonstration | Full-length ASI take-off run with artefact exports. ([ci.yml](.github/workflows/ci.yml)) |
+| Zenith Sapience Demonstration | Deterministic + local rehearsal for Zenith Sapience initiatives. ([ci.yml](.github/workflows/ci.yml)) |
+| AGI Labor Market Grand Demo | Exports transcripts for the labour market grand simulation. ([ci.yml](.github/workflows/ci.yml)) |
+| Sovereign Mesh Demo — build | Builds sovereign mesh server + console bundles. ([ci.yml](.github/workflows/ci.yml)) |
+| Sovereign Constellation Demo — build | Builds constellation orchestrator + console assets. ([ci.yml](.github/workflows/ci.yml)) |
+| Celestial Archon Demonstration | Deterministic + local rehearsals for Celestial Archon governance. ([ci.yml](.github/workflows/ci.yml)) |
+| Hypernova Governance Demonstration | Hypernova rehearsal with local deterministic replay. ([ci.yml](.github/workflows/ci.yml)) |
+| Branch protection guard | Audits GitHub branch protection live against the manifests and fails on drift. Forked PRs log a bypass note yet keep the required context green so protected branches still enforce the policy. ([ci.yml](.github/workflows/ci.yml)) ([required-contexts.json](ci/required-contexts.json)) |
+| CI summary | Aggregates every job outcome, writes Markdown + JSON status artefacts, and fails if any job was red or artefacts are missing. ([ci.yml](.github/workflows/ci.yml)) |
+| Invariant tests | Dedicated Forge invariant suite with cached build graph and fuzz tuning. ([ci.yml](.github/workflows/ci.yml)) |
 
-Companion workflows are also required (`static-analysis`, `fuzz`, `webapp`, `containers`, `e2e`), guaranteeing the checks tab mirrors the entire assurance surface.【F:ci/required-companion-contexts.json†L1-L11】
+Companion workflows are also required (`static-analysis`, `fuzz`, `webapp`, `containers`, `e2e`), guaranteeing the checks tab mirrors the entire assurance surface. ([required-companion-contexts.json](ci/required-companion-contexts.json))
 
 ### Companion workflow lattice
 ```mermaid
@@ -535,7 +539,7 @@ flowchart TD
     e2eSuite[e2e / orchestrator-e2e]:::companion --> checksWall
 ```
 
-The manifest in `ci/required-companion-contexts.json` marks every companion workflow as required so the PR checks wall cannot go green unless they all pass beside the `ci (v2)` contexts, and `npm run ci:verify-companion-contexts` fails if the manifest drifts from GitHub's configuration.【F:ci/required-companion-contexts.json†L1-L11】【F:package.json†L135-L146】
+The manifest in `ci/required-companion-contexts.json` marks every companion workflow as required so the PR checks wall cannot go green unless they all pass beside the `ci (v2)` contexts, and `npm run ci:verify-companion-contexts` fails if the manifest drifts from GitHub's configuration. ([required-companion-contexts.json](ci/required-companion-contexts.json)) ([package.json](package.json))
 
 ### Branch protection autopilot
 
@@ -555,13 +559,13 @@ Run the manifest + enforcement bundle whenever you add or rename CI jobs to keep
 
 | Step | Command | Purpose |
 | ---- | ------- | ------- |
-| 1 | `npm run ci:sync-contexts -- --check` | Assert that `ci/required-contexts.json` mirrors `.github/workflows/ci.yml`; rerun without `--check` to regenerate after intentional changes.【F:ci/required-contexts.json†L1-L24】【F:package.json†L135-L146】 |
-| 2 | `npm run ci:verify-contexts` | Validate the friendly names used in branch protection so badge text and required contexts stay aligned.【F:package.json†L135-L146】 |
-| 3 | `npm run ci:verify-companion-contexts` | Confirm the companion workflows stay registered as required alongside the main CI lattice.【F:ci/required-companion-contexts.json†L1-L11】【F:package.json†L135-L146】 |
-| 4 | `npm run ci:verify-branch-protection -- --branch main` | Fetch the live branch protection rule via the GitHub API and fail on missing contexts before merges slip through.【F:package.json†L135-L146】【F:.github/workflows/ci.yml†L966-L1057】 |
-| 5 | `npm run ci:enforce-branch-protection -- --branch main` | Apply the manifest to GitHub branch protection so the checks wall must remain fully green on `main` and protected release branches.【F:package.json†L135-L146】 |
+| 1 | `npm run ci:sync-contexts -- --check` | Assert that `ci/required-contexts.json` mirrors `.github/workflows/ci.yml`; rerun without `--check` to regenerate after intentional changes. ([required-contexts.json](ci/required-contexts.json)) ([package.json](package.json)) |
+| 2 | `npm run ci:verify-contexts` | Validate the friendly names used in branch protection so badge text and required contexts stay aligned. ([package.json](package.json)) |
+| 3 | `npm run ci:verify-companion-contexts` | Confirm the companion workflows stay registered as required alongside the main CI lattice. ([required-companion-contexts.json](ci/required-companion-contexts.json)) ([package.json](package.json)) |
+| 4 | `npm run ci:verify-branch-protection -- --branch main` | Fetch the live branch protection rule via the GitHub API and fail on missing contexts before merges slip through. ([package.json](package.json)) ([ci.yml](.github/workflows/ci.yml)) |
+| 5 | `npm run ci:enforce-branch-protection -- --branch main` | Apply the manifest to GitHub branch protection so the checks wall must remain fully green on `main` and protected release branches. ([package.json](package.json)) |
 
-The `ci (v2) / Branch protection guard` job re-runs step 4 inside every workflow execution and writes a bypass notice when forks lack administrative scopes, while the `ci (v2) / CI summary` job fails the run if any required job or artefact is missing—ensuring the enforcement wall is both visible and blocking.【F:.github/workflows/ci.yml†L966-L1155】
+The `ci (v2) / Branch protection guard` job re-runs step 4 inside every workflow execution and writes a bypass notice when forks lack administrative scopes, while the `ci (v2) / CI summary` job fails the run if any required job or artefact is missing—ensuring the enforcement wall is both visible and blocking. ([ci.yml](.github/workflows/ci.yml))
 
 ### CI badge wall (ci (v2))
 
@@ -591,7 +595,7 @@ The `ci (v2) / Branch protection guard` job re-runs step 4 inside every workflow
 | CI summary | [![CI summary](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml/badge.svg?branch=main&job=CI%20summary)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml?query=workflow%3A%22ci+%28v2%29%22+is%3Asuccess+branch%3Amain+job%3A%22CI+summary%22) |
 | Invariant tests | [![Invariant tests](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml/badge.svg?branch=main&job=Invariant%20tests)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml?query=workflow%3A%22ci+%28v2%29%22+is%3Asuccess+branch%3Amain+job%3A%22Invariant+tests%22) |
 
-The badge query filters directly on the workflow run logs, so PR reviewers and release captains can confirm the fully green wall without leaving the repository homepage. Each job corresponds to the required contexts enumerated below and enforced by branch protection.【F:.github/workflows/ci.yml†L34-L1181】【F:ci/required-contexts.json†L1-L24】
+The badge query filters directly on the workflow run logs, so PR reviewers and release captains can confirm the fully green wall without leaving the repository homepage. Each job corresponds to the required contexts enumerated below and enforced by branch protection. ([ci.yml](.github/workflows/ci.yml)) ([required-contexts.json](ci/required-contexts.json))
 
 ### Enforcing branch protection
 1. Generate or refresh required contexts:
@@ -600,7 +604,7 @@ The badge query filters directly on the workflow run logs, so PR reviewers and r
    npm run ci:verify-contexts
    npm run ci:verify-companion-contexts
    ```
-   Use `npm run ci:sync-contexts` (without `--check`) if you add or rename CI jobs; it rewrites the manifest deterministically and fails when duplicates slip in.【F:package.json†L135-L146】【F:scripts/ci/update-ci-required-contexts.ts†L1-L83】
+   Use `npm run ci:sync-contexts` (without `--check`) if you add or rename CI jobs; it rewrites the manifest deterministically and fails when duplicates slip in. ([package.json](package.json)) ([update-ci-required-contexts.ts](scripts/ci/update-ci-required-contexts.ts))
 2. Audit the live rule without mutations:
    ```bash
    npm run ci:enforce-branch-protection -- --dry-run --branch main
@@ -609,17 +613,17 @@ The badge query filters directly on the workflow run logs, so PR reviewers and r
    ```bash
    GITHUB_TOKEN=<token> npm run ci:verify-branch-protection -- --owner MontrealAI --repo AGIJobsv0 --branch main
    ```
-   The script confirms the live protection rule matches `ci/required-contexts.json` and `ci/required-companion-contexts.json`, failing if the GitHub configuration is stale or missing contexts.【F:package.json†L138-L146】【F:scripts/ci/verify-branch-protection.ts†L1-L239】
+   The script confirms the live protection rule matches `ci/required-contexts.json` and `ci/required-companion-contexts.json`, failing if the GitHub configuration is stale or missing contexts. ([package.json](package.json)) ([verify-branch-protection.ts](scripts/ci/verify-branch-protection.ts))
 4. Apply the rule (requires repo admin token):
    ```bash
    npm run ci:enforce-branch-protection -- --branch main
    ```
-   The branch protection guard job revalidates these expectations on every push to `main`, keeping policy and automation in sync while gracefully bypassing forked PRs that lack administrative scope.【F:package.json†L135-L146】【F:.github/workflows/ci.yml†L966-L1089】
+   The branch protection guard job revalidates these expectations on every push to `main`, keeping policy and automation in sync while gracefully bypassing forked PRs that lack administrative scope. ([package.json](package.json)) ([ci.yml](.github/workflows/ci.yml))
 
 ### Artefacts
-- `reports/ci/status.{md,json}` – machine-readable run summaries consumed by release captains and compliance audits.【F:.github/workflows/ci.yml†L1026-L1155】
-- `reports/owner-control/**` – authority matrices, doctor reports, command-center digest, and parameter plans proving owner command coverage.【F:.github/workflows/ci.yml†L393-L440】
-- `reports/load-sim/**` – Monte Carlo CSV + JSON payloads with economic dissipation analysis.【F:.github/workflows/ci.yml†L216-L292】
+- `reports/ci/status.{md,json}` – machine-readable run summaries consumed by release captains and compliance audits. ([ci.yml](.github/workflows/ci.yml))
+- `reports/owner-control/**` – authority matrices, doctor reports, command-center digest, and parameter plans proving owner command coverage. ([ci.yml](.github/workflows/ci.yml))
+- `reports/load-sim/**` – Monte Carlo CSV + JSON payloads with economic dissipation analysis. ([ci.yml](.github/workflows/ci.yml))
 
 ## Architecture panorama
 ```mermaid

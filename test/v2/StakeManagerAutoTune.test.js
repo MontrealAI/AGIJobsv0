@@ -1,3 +1,6 @@
+const {
+  deployImplementations,
+} = require('../../scripts/deploy/implementations.cjs');
 const { expect } = require('chai');
 const { ethers, artifacts } = require('hardhat');
 const { time } = require('@nomicfoundation/hardhat-network-helpers');
@@ -33,7 +36,8 @@ describe('StakeManager auto stake tuning', function () {
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       dispute.address,
-      owner.address
+      owner.address,
+      await deployImplementations('StakeManager', StakeManager.runner)
     );
     await stakeManager.connect(owner).autoTuneStakes(true);
   });

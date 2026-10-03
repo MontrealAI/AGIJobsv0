@@ -39,24 +39,61 @@ describe('jsonFileAdapter', () => {
     expect(loaded).toEqual({ counter: 42 });
   });
 
-  it('warns and returns fallback on unexpected load errors', async () => {
+  it('refuses to replace unreadable state with an empty fallback', async () => {
     const target = path.join(tempDir, 'state.json');
     const adapter = jsonFileAdapter(target, fallback);
-    const error = Object.assign(new Error('permission denied'), { code: 'EACCES' });
+    const error = Object.assign(new Error('permission denied'), {
+      code: 'EACCES',
+    });
     const readSpy = jest.spyOn(fs, 'readFile').mockRejectedValueOnce(error);
-    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
 
     try {
-      const loaded = await adapter.load();
-      expect(loaded).toEqual(fallback);
-      expect(warnSpy).toHaveBeenCalledWith(
-        'Failed to load persistent state',
-        path.resolve(process.cwd(), target),
-        error
+      await expect(adapter.load()).rejects.toThrow(
+        'Cannot load persistent state',
       );
     } finally {
       readSpy.mockRestore();
-      warnSpy.mockRestore();
     }
+  });
+
+  it('preserves corrupt JSON for recovery instead of resetting it', async () => {
+    const target = path.join(tempDir, 'state.json');
+    await fs.writeFile(target, '{truncated');
+    await expect(jsonFileAdapter(target, fallback).load()).rejects.toThrow(
+      'Cannot load persistent state',
+    );
+    expect(await fs.readFile(target, 'utf8')).toBe('{truncated');
+  });
+
+  it('keeps the previous file intact if atomic replacement fails', async () => {
+    const target = path.join(tempDir, 'state.json');
+    const adapter = jsonFileAdapter(target, fallback);
+    await adapter.save({ counter: 1 });
+    const rename = jest
+      .spyOn(fs, 'rename')
+      .mockRejectedValueOnce(new Error('disk unavailable'));
+    try {
+      await expect(adapter.save({ counter: 2 })).rejects.toThrow(
+        'disk unavailable',
+      );
+      expect(JSON.parse(await fs.readFile(target, 'utf8'))).toEqual({
+        counter: 1,
+      });
+      expect(await fs.readdir(tempDir)).toEqual(['state.json']);
+    } finally {
+      rename.mockRestore();
+    }
+    await adapter.save({ counter: 3 });
+    expect(await adapter.load()).toEqual({ counter: 3 });
+  });
+
+  it('serializes concurrent saves and snapshots the data at submission', async () => {
+    const target = path.join(tempDir, 'state.json');
+    const adapter = jsonFileAdapter(target, fallback);
+    const data = { counter: 3 };
+    const saves = [adapter.save({ counter: 2 }), adapter.save(data)];
+    data.counter = 99;
+    await Promise.all(saves);
+    expect(await adapter.load()).toEqual({ counter: 3 });
   });
 });

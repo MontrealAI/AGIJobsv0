@@ -40,6 +40,11 @@ function checkNodeVersion() {
     return;
   }
 
+  const nodeVersionFile = readFileTrim('.node-version');
+  if (nodeVersionFile !== nvmrcVersion) {
+    problems.push('.node-version must match .nvmrc exactly');
+  }
+
   const packageJsonPath = path.join(repoRoot, 'package.json');
   let pkg;
   try {

@@ -10,17 +10,17 @@
   },
   "dependencies": {
     "ethers": "^6.15.0",
-    "next": "^14.2.3",
+    "next": "15.5.27",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
   "devDependencies": {
-    "@types/react": "^18.2.0",
-    "@types/react-dom": "^18.2.0",
-    "typescript": "^5.9.2",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.1.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
     "jsdom": "^24.0.0",
+    "typescript": "^5.9.2",
     "vitest": "^1.6.1"
   }
 }

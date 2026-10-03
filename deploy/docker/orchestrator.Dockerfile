@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.6
 
-FROM node:20-alpine AS build
+FROM node:22.23.3-alpine3.23 AS build
 WORKDIR /srv/app
 
 # Increase npm network resiliency to avoid transient registry outages during CI.
@@ -10,16 +10,16 @@ ENV \
     NPM_CONFIG_FETCH_RETRY_MAXTIMEOUT=300000 \
     NPM_CONFIG_FETCH_TIMEOUT=600000
 
-RUN apk add --no-cache python3 make g++
+RUN apk upgrade --no-cache && apk add --no-cache python3 make g++
 COPY package*.json .npmrc ./
 RUN --mount=type=cache,target=/root/.npm \
     set -eu; \
     npm ci --no-progress --registry=https://registry.npmjs.org/ \
     || (echo "npm ci failed once, retrying after short backoff" && sleep 5 && npm ci --no-progress --registry=https://registry.npmjs.org/)
 COPY . .
-RUN npx tsc -p apps/orchestrator/tsconfig.json
+RUN npm run build:orchestrator
 
-FROM node:20-alpine
+FROM node:22.23.3-alpine3.23
 WORKDIR /srv/app
 ENV NODE_ENV=production
 
@@ -30,12 +30,12 @@ ENV \
     NPM_CONFIG_FETCH_RETRY_MAXTIMEOUT=300000 \
     NPM_CONFIG_FETCH_TIMEOUT=600000
 
-RUN apk add --no-cache python3 make g++
+RUN apk upgrade --no-cache && apk add --no-cache python3 make g++
 COPY package*.json .npmrc ./
 RUN --mount=type=cache,target=/root/.npm \
     set -eu; \
     npm ci --omit=dev --no-progress --registry=https://registry.npmjs.org/ \
     || (echo "npm ci --omit=dev failed once, retrying after short backoff" && sleep 5 && npm ci --omit=dev --no-progress --registry=https://registry.npmjs.org/)
-COPY --from=build /srv/app/apps/orchestrator/dist ./apps/orchestrator/dist
+COPY --from=build /srv/app/apps/orchestrator/dist ./
 COPY --from=build /srv/app/apps/orchestrator/*.json ./apps/orchestrator/
-CMD ["node", "apps/orchestrator/dist/main.js"]
+CMD ["node", "apps/orchestrator/main.js"]

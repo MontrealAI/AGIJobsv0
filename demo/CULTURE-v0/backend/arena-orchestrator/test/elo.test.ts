@@ -30,7 +30,7 @@ describe('EloEngine', () => {
     kFactor: 24,
     defaultRating: 1200,
     floor: 800,
-    ceiling: 2000
+    ceiling: 2000,
   };
 
   beforeEach(async () => {
@@ -103,7 +103,12 @@ describe('EloEngine', () => {
   it('clamps ratings to explicit floor and ceiling bounds', async () => {
     const tightFile = path.join(os.tmpdir(), 'elo-engine-tight.json');
     await fs.rm(tightFile, { force: true });
-    const tightConfig = { kFactor: 200, defaultRating: 1500, floor: 1400, ceiling: 1600 } as const;
+    const tightConfig = {
+      kFactor: 200,
+      defaultRating: 1500,
+      floor: 1400,
+      ceiling: 1600,
+    } as const;
     const engine = new EloEngine(tightConfig, jsonFileAdapter(tightFile, {}));
     await engine.load();
     engine.recordMatch('down', 'opponent', 0);

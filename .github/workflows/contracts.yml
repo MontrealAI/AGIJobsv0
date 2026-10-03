@@ -1,6 +1,7 @@
 name: contracts-ci
 
 on:
+  workflow_dispatch:
   pull_request:
     paths:
       - 'contracts/**'
@@ -83,6 +84,9 @@ jobs:
 
       - name: Regenerate constants for tests
         run: npx ts-node --compiler-options '{"module":"commonjs"}' scripts/generate-constants.ts
+
+      - name: Enforce production contract sizes
+        run: npm run release:check-size
 
       - name: Node/Hardhat tests
         run: npm test

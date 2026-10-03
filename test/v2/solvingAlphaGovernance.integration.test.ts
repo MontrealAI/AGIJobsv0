@@ -1,3 +1,4 @@
+import { deployImplementations } from '../../scripts/deploy/implementations.cjs';
 import { expect } from 'chai';
 import { artifacts, ethers, network } from 'hardhat';
 import { time } from '@nomicfoundation/hardhat-network-helpers';
@@ -88,7 +89,8 @@ async function deploySolvingGovernanceFixture() {
     ethers.ZeroAddress,
     ethers.ZeroAddress,
     ethers.ZeroAddress,
-    owner.address
+    owner.address,
+    await deployImplementations('StakeManager', StakeManager.runner)
   );
   await stakeManager.connect(owner).setMinStake(1);
   await token.connect(owner).mint(await stakeManager.getAddress(), 0);
@@ -114,7 +116,8 @@ async function deploySolvingGovernanceFixture() {
     60,
     3,
     5,
-    []
+    [],
+    await deployImplementations('ValidationModule', Validation.runner)
   );
 
   const Certificate = await ethers.getContractFactory(
@@ -136,7 +139,8 @@ async function deploySolvingGovernanceFixture() {
     0,
     0,
     [],
-    owner.address
+    owner.address,
+    await deployImplementations('JobRegistry', Registry.runner)
   );
 
   const Dispute = await ethers.getContractFactory(
@@ -173,8 +177,12 @@ async function deploySolvingGovernanceFixture() {
   await stakeManager.connect(owner).setSlashingPercentages(100, 0);
 
   await validation.connect(owner).setJobRegistry(await registry.getAddress());
-  await validation.connect(owner).setIdentityRegistry(await identity.getAddress());
-  await validation.connect(owner).setStakeManager(await stakeManager.getAddress());
+  await validation
+    .connect(owner)
+    .setIdentityRegistry(await identity.getAddress());
+  await validation
+    .connect(owner)
+    .setStakeManager(await stakeManager.getAddress());
   await validation
     .connect(owner)
     .setReputationEngine(await reputation.getAddress());
@@ -190,43 +198,39 @@ async function deploySolvingGovernanceFixture() {
   await validation.connect(owner).setCommitWindow(60);
   await validation.connect(owner).setRevealWindow(60);
 
-  await registry.connect(owner).setModules(
-    await validation.getAddress(),
-    await stakeManager.getAddress(),
-    await reputation.getAddress(),
-    await dispute.getAddress(),
-    await certificates.getAddress(),
-    await feePool.getAddress(),
-    []
-  );
-  await registry.connect(owner).setIdentityRegistry(await identity.getAddress());
+  await registry
+    .connect(owner)
+    .setModules(
+      await validation.getAddress(),
+      await stakeManager.getAddress(),
+      await reputation.getAddress(),
+      await dispute.getAddress(),
+      await certificates.getAddress(),
+      await feePool.getAddress(),
+      []
+    );
+  await registry
+    .connect(owner)
+    .setIdentityRegistry(await identity.getAddress());
   await registry.connect(owner).setValidatorRewardPct(0);
   await registry.connect(owner).setJobParameters(0, 0);
 
-  await certificates
-    .connect(owner)
-    .setJobRegistry(await registry.getAddress());
+  await certificates.connect(owner).setJobRegistry(await registry.getAddress());
   await certificates
     .connect(owner)
     .setStakeManager(await stakeManager.getAddress());
   await reputation.connect(owner).setCaller(await registry.getAddress(), true);
-  await reputation.connect(owner).setCaller(await validation.getAddress(), true);
+  await reputation
+    .connect(owner)
+    .setCaller(await validation.getAddress(), true);
 
   await identity.connect(owner).addAdditionalAgent(nationA.address);
   await identity.connect(owner).addAdditionalAgent(nationB.address);
   await identity.connect(owner).addAdditionalAgent(policyAuthor.address);
-  await identity
-    .connect(owner)
-    .addAdditionalValidator(validatorA.address);
-  await identity
-    .connect(owner)
-    .addAdditionalValidator(validatorB.address);
-  await identity
-    .connect(owner)
-    .addAdditionalValidator(validatorC.address);
-  await identity
-    .connect(owner)
-    .setAgentType(policyAuthor.address, 0); // Human drafter
+  await identity.connect(owner).addAdditionalValidator(validatorA.address);
+  await identity.connect(owner).addAdditionalValidator(validatorB.address);
+  await identity.connect(owner).addAdditionalValidator(validatorC.address);
+  await identity.connect(owner).setAgentType(policyAuthor.address, 0); // Human drafter
 
   return {
     owner,
@@ -291,9 +295,7 @@ describe('Solving α-AGI governance integration', function () {
       .connect(nationA)
       .createJob(rewardA, deadlineA, specHashA, 'ipfs://proposal/nation-a');
 
-    await registry
-      .connect(policyAuthor)
-      .applyForJob(1, SUBDOMAIN_AGENT, []);
+    await registry.connect(policyAuthor).applyForJob(1, SUBDOMAIN_AGENT, []);
     await registry
       .connect(policyAuthor)
       .submit(
@@ -305,28 +307,47 @@ describe('Solving α-AGI governance integration', function () {
       );
 
     const burnHashA = ethers.keccak256(ethers.toUtf8Bytes('nation-a-burn'));
-    await registry
-      .connect(nationA)
-      .submitBurnReceipt(1, burnHashA, 0, 0);
+    await registry.connect(nationA).submitBurnReceipt(1, burnHashA, 0, 0);
 
     await time.increase(1);
     await validation.selectValidators(1, 0);
 
     const nonceA = await validation.jobNonce(1);
     const saltA1 = ethers.randomBytes(32);
-    const commitA1 = buildCommit(1n, nonceA, true, burnHashA, saltA1, specHashA);
+    const commitA1 = buildCommit(
+      1n,
+      nonceA,
+      true,
+      burnHashA,
+      saltA1,
+      specHashA
+    );
     await validation
       .connect(validatorA)
       .commitValidation(1, commitA1, SUBDOMAIN_VALIDATOR_A, []);
 
     const saltA2 = ethers.randomBytes(32);
-    const commitA2 = buildCommit(1n, nonceA, true, burnHashA, saltA2, specHashA);
+    const commitA2 = buildCommit(
+      1n,
+      nonceA,
+      true,
+      burnHashA,
+      saltA2,
+      specHashA
+    );
     await validation
       .connect(validatorB)
       .commitValidation(1, commitA2, SUBDOMAIN_VALIDATOR_B, []);
 
     const saltA3 = ethers.randomBytes(32);
-    const commitA3 = buildCommit(1n, nonceA, true, burnHashA, saltA3, specHashA);
+    const commitA3 = buildCommit(
+      1n,
+      nonceA,
+      true,
+      burnHashA,
+      saltA3,
+      specHashA
+    );
     await validation
       .connect(validatorC)
       .commitValidation(1, commitA3, SUBDOMAIN_VALIDATOR_C, []);
@@ -383,9 +404,7 @@ describe('Solving α-AGI governance integration', function () {
     ).to.be.revertedWithCustomError(registry, 'EnforcedPause');
 
     await registry.connect(owner).unpause();
-    await validation
-      .connect(owner)
-      .setRequiredValidatorApprovals(3);
+    await validation.connect(owner).setRequiredValidatorApprovals(3);
     expect(await validation.requiredValidatorApprovals()).to.equal(3);
 
     const rewardB = ethers.parseUnits('8000', AGIALPHA_DECIMALS);
@@ -399,9 +418,7 @@ describe('Solving α-AGI governance integration', function () {
       .connect(nationB)
       .createJob(rewardB, deadlineB, specHashB, 'ipfs://proposal/nation-b');
 
-    await registry
-      .connect(policyAuthor)
-      .applyForJob(2, SUBDOMAIN_AGENT, []);
+    await registry.connect(policyAuthor).applyForJob(2, SUBDOMAIN_AGENT, []);
     await registry
       .connect(policyAuthor)
       .submit(
@@ -413,28 +430,47 @@ describe('Solving α-AGI governance integration', function () {
       );
 
     const burnHashB = ethers.keccak256(ethers.toUtf8Bytes('nation-b-burn'));
-    await registry
-      .connect(nationB)
-      .submitBurnReceipt(2, burnHashB, 0, 0);
+    await registry.connect(nationB).submitBurnReceipt(2, burnHashB, 0, 0);
 
     await time.increase(1);
     await validation.selectValidators(2, 0);
 
     const nonceB = await validation.jobNonce(2);
     const saltB1 = ethers.randomBytes(32);
-    const commitB1 = buildCommit(2n, nonceB, true, burnHashB, saltB1, specHashB);
+    const commitB1 = buildCommit(
+      2n,
+      nonceB,
+      true,
+      burnHashB,
+      saltB1,
+      specHashB
+    );
     await validation
       .connect(validatorA)
       .commitValidation(2, commitB1, SUBDOMAIN_VALIDATOR_A, []);
 
     const saltB2 = ethers.randomBytes(32);
-    const commitB2 = buildCommit(2n, nonceB, true, burnHashB, saltB2, specHashB);
+    const commitB2 = buildCommit(
+      2n,
+      nonceB,
+      true,
+      burnHashB,
+      saltB2,
+      specHashB
+    );
     await validation
       .connect(validatorB)
       .commitValidation(2, commitB2, SUBDOMAIN_VALIDATOR_B, []);
 
     const saltB3 = ethers.randomBytes(32);
-    const commitB3 = buildCommit(2n, nonceB, true, burnHashB, saltB3, specHashB);
+    const commitB3 = buildCommit(
+      2n,
+      nonceB,
+      true,
+      burnHashB,
+      saltB3,
+      specHashB
+    );
     await validation
       .connect(validatorC)
       .commitValidation(2, commitB3, SUBDOMAIN_VALIDATOR_C, []);

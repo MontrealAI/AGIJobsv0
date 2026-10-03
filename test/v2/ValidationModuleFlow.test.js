@@ -1,3 +1,6 @@
+const {
+  deployImplementations,
+} = require('../../scripts/deploy/implementations.cjs');
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
 const { enrichJob } = require('../utils/jobMetadata');
@@ -54,7 +57,8 @@ async function setup() {
     60,
     3,
     3,
-    []
+    [],
+    await deployImplementations('ValidationModule', Validation.runner)
   );
   await validation.waitForDeployment();
   await validation
@@ -74,10 +78,12 @@ async function setup() {
   await identity.addAdditionalValidator(v1.address);
   await identity.addAdditionalValidator(v2.address);
   await identity.addAdditionalValidator(v3.address);
-  await validation.connect(owner).setValidatorSubdomains(
-    [v1.address, v2.address, v3.address],
-    ['validator', 'validator', 'validator']
-  );
+  await validation
+    .connect(owner)
+    .setValidatorSubdomains(
+      [v1.address, v2.address, v3.address],
+      ['validator', 'validator', 'validator']
+    );
 
   await stakeManager.setStake(v1.address, 1, ethers.parseEther('100'));
   await stakeManager.setStake(v2.address, 1, ethers.parseEther('50'));
@@ -336,7 +342,9 @@ describe('ValidationModule finalize flows', function () {
     await advance(61); // end commit
     await advance(61); // end reveal
     await expect(
-      validation.connect(v1).revealValidation(1, true, burnTxHash, salt, 'validator', [])
+      validation
+        .connect(v1)
+        .revealValidation(1, true, burnTxHash, salt, 'validator', [])
     ).to.be.revertedWithCustomError(validation, 'RevealPhaseClosed');
   });
 
@@ -492,10 +500,9 @@ describe('ValidationModule finalize flows', function () {
     await validation
       .connect(owner)
       .setValidatorPool([v1.address, v2.address, v3.address, v4.address]);
-    await validation.connect(owner).setValidatorSubdomains(
-      [v4.address],
-      ['validator']
-    );
+    await validation
+      .connect(owner)
+      .setValidatorSubdomains([v4.address], ['validator']);
     await select(1);
     const chosen = await validation.validators(1);
     const beforeV4 = await stakeManager.stakeOf(v4.address, 1);

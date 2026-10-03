@@ -1,3 +1,4 @@
+const { stageProtocol } = require('../../scripts/deploy/stage-protocol.cjs');
 const { expect } = require('chai');
 const { ethers, network, artifacts } = require('hardhat');
 const { AGIALPHA } = require('../../scripts/constants');
@@ -36,6 +37,7 @@ describe('Ownable modules', function () {
       AGIALPHA,
       artifact.deployedBytecode,
     ]);
+    await stageProtocol(deployer, ids, owner.address, { econ });
     const tx = await deployer.deploy(econ, ids, owner.address);
     const receipt = await tx.wait();
     const deployerAddress = await deployer.getAddress();

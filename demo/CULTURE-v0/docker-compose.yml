@@ -3,7 +3,7 @@ version: "3.9"
 x-default-env: &default-env
   env_file:
     - .env
-  environment:
+  environment: &default-environment
     RPC_URL: ${RPC_URL-http://culture-chain:8545}
     CHAIN_ID: ${CHAIN_ID-31337}
     CULTURE_REGISTRY_ADDRESS: ${CULTURE_REGISTRY_ADDRESS-}
@@ -56,17 +56,17 @@ services:
       start_period: 20s
 
   culture-contracts:
-    image: node:20.18.1
+    image: node:22.23.3
     profiles: [setup]
     working_dir: /workspace
     <<: *default-env
     environment:
-      <<: *default-env.environment
+      <<: *default-environment
       RPC_URL: http://culture-chain:8545
       CULTURE_DEPLOY_OUTPUT: ${CULTURE_DEPLOY_OUTPUT-/workspace/demo/CULTURE-v0/config/deployments.local.json}
       CULTURE_ENV_FILE: ${CULTURE_ENV_FILE-/workspace/demo/CULTURE-v0/.env}
     volumes:
-      - ..:/workspace
+      - ../..:/workspace
       - culture_node_modules:/workspace/node_modules
       - culture_artifacts:/workspace/demo/CULTURE-v0/artifacts
     command: >-
@@ -82,11 +82,11 @@ services:
 
   culture-orchestrator:
     build:
-      context: ..
+      context: ../..
       dockerfile: demo/CULTURE-v0/backend/arena-orchestrator/Dockerfile
     <<: *default-env
     environment:
-      <<: *default-env.environment
+      <<: *default-environment
       ORCHESTRATOR_PORT: ${ORCHESTRATOR_PORT-4005}
       ELO_STATE_PATH: /data/elo/ratings.json
       IPFS_GATEWAY: ${IPFS_GATEWAY-http://culture-ipfs:8080}
@@ -110,11 +110,11 @@ services:
 
   culture-indexer:
     build:
-      context: ..
+      context: ../..
       dockerfile: demo/CULTURE-v0/indexers/culture-graph-indexer/Dockerfile
     <<: *default-env
     environment:
-      <<: *default-env.environment
+      <<: *default-environment
       INDEXER_PORT: ${INDEXER_PORT-4100}
       SQLITE_PATH: /data/db/culture-graph.db
     depends_on:
@@ -136,9 +136,10 @@ services:
 
   culture-studio:
     build:
-      context: ..
+      context: ../..
       dockerfile: demo/CULTURE-v0/apps/culture-studio/Dockerfile
       args:
+        VITE_DEMO_MODE: ${VITE_DEMO_MODE-false}
         VITE_ORCHESTRATOR_URL: ${VITE_ORCHESTRATOR_URL-http://localhost:4005}
         VITE_INDEXER_URL: ${VITE_INDEXER_URL-http://localhost:4100/graphql}
         VITE_IPFS_GATEWAY: ${VITE_IPFS_GATEWAY-http://localhost:8080}
@@ -159,7 +160,7 @@ services:
 
   culture-smoke-tests:
     build:
-      context: ..
+      context: ../..
       dockerfile: demo/CULTURE-v0/scripts/Dockerfile.smoke-tests
     profiles: [test]
     <<: *default-env
@@ -176,26 +177,26 @@ services:
         condition: service_healthy
 
   culture-reports:
-    image: node:20.18.1
+    image: node:22.23.3
     profiles: [reports]
     working_dir: /workspace
     <<: *default-env
     volumes:
-      - ..:/workspace
+      - ../..:/workspace
       - culture_node_modules:/workspace/node_modules
     environment:
-      <<: *default-env.environment
+      <<: *default-environment
       CULTURE_REPORT_OUTPUT: ${CULTURE_REPORT_OUTPUT-/workspace/demo/CULTURE-v0/reports}
     command: >-
       bash -lc "set -euo pipefail && npm install --legacy-peer-deps &&
       npx ts-node --project tsconfig.json demo/CULTURE-v0/scripts/export.weekly.ts"
 
   culture-analytics:
-    image: node:20.18.1
+    image: node:22.23.3
     working_dir: /workspace
     <<: *default-env
     environment:
-      <<: *default-env.environment
+      <<: *default-environment
       CULTURE_ANALYTICS_OUTPUT: ${CULTURE_ANALYTICS_OUTPUT-/workspace/demo/CULTURE-v0/data/analytics}
       CULTURE_ANALYTICS_ALERT_LOG: ${CULTURE_ANALYTICS_ALERT_LOG-/workspace/demo/CULTURE-v0/logs/analytics.alerts.jsonl}
       CULTURE_ANALYTICS_DB: /data/db/culture-graph.db
@@ -212,7 +213,7 @@ services:
       culture-orchestrator:
         condition: service_healthy
     volumes:
-      - ..:/workspace
+      - ../..:/workspace
       - culture_node_modules:/workspace/node_modules
       - culture_indexer_db:/data/db
       - culture_orchestrator_logs:/var/log/culture-orchestrator
@@ -227,4 +228,3 @@ volumes:
   culture_orchestrator_logs:
   culture_indexer_db:
   culture_indexer_logs:
-

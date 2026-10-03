@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
+import {StakeManagerBase} from "../../contracts/v2/implementation/StakeManagerBase.sol";
+
+import {FixedImplementationFixtures} from "./helpers/FixedImplementationFixtures.sol";
 
 import "forge-std/Test.sol";
 import {StakeManager} from "../../contracts/v2/StakeManager.sol";
@@ -37,7 +40,7 @@ contract ValidatorSelectionFuzz is Test {
             address(0),
             address(0),
             address(this)
-        );
+        , FixedImplementationFixtures.stakeManager());
         stake.setTreasuryAllowlist(TREASURY, true);
         vm.prank(address(stake));
         token.acceptTerms();
@@ -52,7 +55,7 @@ contract ValidatorSelectionFuzz is Test {
             3,
             10,
             new address[](0)
-        );
+        , FixedImplementationFixtures.validationModule());
         validation.setIdentityRegistry(IIdentityRegistry(address(identity)));
         stake.setValidationModule(address(validation));
     }
@@ -91,7 +94,7 @@ contract ValidatorSelectionFuzz is Test {
             vm.prank(val);
             token.approve(address(stake), 1e18);
             vm.prank(val);
-            stake.depositStake(StakeManager.Role.Validator, 1e18);
+            stake.depositStake(StakeManagerBase.Role.Validator, 1e18);
         }
         validation.setValidatorPool(pool);
         validation.setValidatorsPerJob(selectCount);
@@ -121,7 +124,7 @@ contract ValidatorSelectionFuzz is Test {
             vm.prank(val);
             token.approve(address(stake), 1e18);
             vm.prank(val);
-            stake.depositStake(StakeManager.Role.Validator, 1e18);
+            stake.depositStake(StakeManagerBase.Role.Validator, 1e18);
         }
         validation.setValidatorsPerJob(selectCount);
         validation.setValidatorPoolSampleSize(sample);
@@ -190,7 +193,7 @@ contract ValidatorSelectionFuzz is Test {
             vm.prank(val);
             token.approve(address(stake), 1e18);
             vm.prank(val);
-            stake.depositStake(StakeManager.Role.Validator, 1e18);
+            stake.depositStake(StakeManagerBase.Role.Validator, 1e18);
         }
         validation.setValidatorsPerJob(selectCount);
         validation.setValidatorPoolSampleSize(sample);

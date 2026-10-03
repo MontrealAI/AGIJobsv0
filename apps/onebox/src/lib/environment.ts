@@ -44,12 +44,11 @@ const sanitizeUrl = (value: string | undefined | null): string | undefined => {
   return sanitized.replace(/\s+/g, '').replace(/\/+$/, '');
 };
 
-const sanitizeAddress = (value: string | undefined | null): string | undefined =>
-  sanitize(value);
+const sanitizeAddress = (
+  value: string | undefined | null
+): string | undefined => sanitize(value);
 
-const sanitizeContracts = (
-  contracts: unknown
-): OneboxContractDescriptor[] => {
+const sanitizeContracts = (contracts: unknown): OneboxContractDescriptor[] => {
   if (!Array.isArray(contracts)) {
     return [];
   }
@@ -167,10 +166,16 @@ export const readOneboxConfig = (): ResolvedOneboxConfig => {
   const runtimeContracts = sanitizeContracts(runtime.contracts);
   const envContracts = runtimeContracts.length > 0 ? [] : buildEnvContracts();
   return {
-    orchestratorUrl: sanitizeUrl(runtime.orchestratorUrl ?? envConfig.orchestratorUrl),
+    orchestratorUrl: sanitizeUrl(
+      runtime.orchestratorUrl ?? envConfig.orchestratorUrl
+    ),
     apiToken: sanitize(runtime.apiToken ?? envConfig.apiToken),
-    explorerTxBase: sanitizeUrl(runtime.explorerTxBase ?? envConfig.explorerTxBase),
-    ipfsGatewayBase: sanitizeUrl(runtime.ipfsGatewayBase ?? envConfig.ipfsGatewayBase),
+    explorerTxBase: sanitizeUrl(
+      runtime.explorerTxBase ?? envConfig.explorerTxBase
+    ),
+    ipfsGatewayBase: sanitizeUrl(
+      runtime.ipfsGatewayBase ?? envConfig.ipfsGatewayBase
+    ),
     networkName: sanitize(runtime.networkName ?? envConfig.networkName),
     chainId: sanitize(runtime.chainId ?? envConfig.chainId),
     contracts:

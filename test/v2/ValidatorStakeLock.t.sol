@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
+import {StakeManagerBase} from "../../contracts/v2/implementation/StakeManagerBase.sol";
+
+import {FixedImplementationFixtures} from "./helpers/FixedImplementationFixtures.sol";
 
 import "forge-std/Test.sol";
 import {ValidationModule} from "../../contracts/v2/ValidationModule.sol";
@@ -35,7 +38,7 @@ contract ValidatorStakeLockTest is Test {
         vm.store(AGIALPHA, bytes32(uint256(5)), bytes32(uint256(uint160(address(this)))));
         token = AGIALPHAToken(payable(AGIALPHA));
 
-        stake = new StakeManager(1e18, 0, 10_000, address(0), address(0), address(0), address(this));
+        stake = new StakeManager(1e18, 0, 10_000, address(0), address(0), address(0), address(this), FixedImplementationFixtures.stakeManager());
         stake.setMinStake(1);
         vm.prank(address(stake));
         token.acceptTerms();
@@ -54,7 +57,7 @@ contract ValidatorStakeLockTest is Test {
             token.mint(val, 1e18);
             vm.startPrank(val);
             token.approve(address(stake), 1e18);
-            stake.depositStake(StakeManager.Role.Validator, 1e18);
+            stake.depositStake(StakeManagerBase.Role.Validator, 1e18);
             vm.stopPrank();
         }
 
@@ -71,7 +74,7 @@ contract ValidatorStakeLockTest is Test {
             3,
             10,
             pool
-        );
+        , FixedImplementationFixtures.validationModule());
         validation.setIdentityRegistry(IIdentityRegistry(address(identity)));
         stake.setValidationModule(address(validation));
         string[] memory subs = new string[](validators.length);
@@ -169,7 +172,7 @@ contract ValidatorStakeLockTest is Test {
         address validator = validators[0];
 
         vm.prank(validator);
-        stake.requestWithdraw(StakeManager.Role.Validator, 1e18);
+        stake.requestWithdraw(StakeManagerBase.Role.Validator, 1e18);
 
         vm.warp(block.timestamp + stake.unbondingPeriod());
 
@@ -180,7 +183,7 @@ contract ValidatorStakeLockTest is Test {
 
         vm.prank(validator);
         vm.expectRevert(PendingPenalty.selector);
-        stake.finalizeWithdraw(StakeManager.Role.Validator);
+        stake.finalizeWithdraw(StakeManagerBase.Role.Validator);
 
         _commitAndReveal(jobId);
         bool success = validation.finalize(jobId);
@@ -190,7 +193,7 @@ contract ValidatorStakeLockTest is Test {
 
         uint256 beforeBal = token.balanceOf(validator);
         vm.prank(validator);
-        stake.finalizeWithdraw(StakeManager.Role.Validator);
+        stake.finalizeWithdraw(StakeManagerBase.Role.Validator);
         assertEq(token.balanceOf(validator), beforeBal + 1e18);
     }
 
@@ -203,7 +206,7 @@ contract ValidatorStakeLockTest is Test {
 
         vm.prank(validator);
         vm.expectRevert(InsufficientLocked.selector);
-        stake.withdrawStake(StakeManager.Role.Validator, 1e18);
+        stake.withdrawStake(StakeManagerBase.Role.Validator, 1e18);
 
         _commitAndReveal(jobId);
         bool success = validation.finalize(jobId);
@@ -215,7 +218,7 @@ contract ValidatorStakeLockTest is Test {
         address validator = validators[0];
 
         vm.prank(validator);
-        stake.requestWithdraw(StakeManager.Role.Validator, 1e18);
+        stake.requestWithdraw(StakeManagerBase.Role.Validator, 1e18);
         vm.warp(block.timestamp + 2);
 
         uint256 jobId = 2;
@@ -227,7 +230,7 @@ contract ValidatorStakeLockTest is Test {
         validation.forceFinalize(jobId);
 
         uint256 expected = 1e18 - ((1e18 * validation.nonRevealPenaltyBps()) / 10_000);
-        assertEq(stake.stakes(validator, StakeManager.Role.Validator), expected);
+        assertEq(stake.stakes(validator, StakeManagerBase.Role.Validator), expected);
         assertEq(stake.validatorModuleLockedStake(validator), 0);
     }
 }

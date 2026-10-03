@@ -1,6 +1,8 @@
 import express from 'express';
 import { z } from 'zod';
 import { ArenaService } from './arena.service.js';
+import { asyncHandler } from './async-handler.js';
+import { requireWriteToken } from './auth.js';
 import { buildStructuredLogRecord } from '../../../../../shared/structuredLogger.js';
 
 const startSchema = z.object({
@@ -8,66 +10,83 @@ const startSchema = z.object({
   teacher: z.string().min(1),
   students: z.array(z.string().min(1)).default([]),
   validators: z.array(z.string().min(1)).default([]),
-  difficultyOverride: z.number().int().optional()
+  difficultyOverride: z.number().int().optional(),
 });
 
 const finalizeSchema = z.object({
-  winners: z.array(z.string().min(1)).default([])
+  winners: z.array(z.string().min(1)).default([]),
 });
 
 const submissionSchema = z.object({
   participant: z.string().min(1),
-  cid: z.string().min(5)
+  cid: z.string().min(5),
 });
 
-export function buildRouter(service: ArenaService) {
+export function buildRouter(service: ArenaService, apiToken?: string) {
   const router = express.Router();
+  router.use(requireWriteToken(apiToken));
 
   router.get('/healthz', (_req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
   });
 
-  router.post('/arena/start', async (req, res, next) => {
-    try {
-      const payload = startSchema.parse(req.body);
-      const round = await service.startRound(payload);
-      res.status(201).json({ round });
-    } catch (error) {
-      next(error);
-    }
-  });
+  router.post(
+    '/arena/start',
+    asyncHandler(async (req, res, next) => {
+      try {
+        const payload = startSchema.parse(req.body);
+        const round = await service.startRound(payload);
+        res.status(201).json({ round });
+      } catch (error) {
+        next(error);
+      }
+    }),
+  );
 
-  router.post('/arena/close/:roundId', async (req, res, next) => {
-    try {
-      const roundId = Number(req.params.roundId);
-      const round = await service.closeRound(roundId);
-      res.json({ round });
-    } catch (error) {
-      next(error);
-    }
-  });
+  router.post(
+    '/arena/close/:roundId',
+    asyncHandler(async (req, res, next) => {
+      try {
+        const roundId = Number(req.params.roundId);
+        const round = await service.closeRound(roundId);
+        res.json({ round });
+      } catch (error) {
+        next(error);
+      }
+    }),
+  );
 
-  router.post('/arena/submit/:roundId', async (req, res, next) => {
-    try {
-      const roundId = Number(req.params.roundId);
-      const payload = submissionSchema.parse(req.body);
-      await service.recordSubmission(roundId, payload.participant, payload.cid);
-      res.json({ status: 'ok' });
-    } catch (error) {
-      next(error);
-    }
-  });
+  router.post(
+    '/arena/submit/:roundId',
+    asyncHandler(async (req, res, next) => {
+      try {
+        const roundId = Number(req.params.roundId);
+        const payload = submissionSchema.parse(req.body);
+        await service.recordSubmission(
+          roundId,
+          payload.participant,
+          payload.cid,
+        );
+        res.json({ status: 'ok' });
+      } catch (error) {
+        next(error);
+      }
+    }),
+  );
 
-  router.post('/arena/finalize/:roundId', async (req, res, next) => {
-    try {
-      const roundId = Number(req.params.roundId);
-      const payload = finalizeSchema.parse(req.body);
-      const summary = await service.finalizeRound(roundId, payload.winners);
-      res.json(summary);
-    } catch (error) {
-      next(error);
-    }
-  });
+  router.post(
+    '/arena/finalize/:roundId',
+    asyncHandler(async (req, res, next) => {
+      try {
+        const roundId = Number(req.params.roundId);
+        const payload = finalizeSchema.parse(req.body);
+        const summary = await service.finalizeRound(roundId, payload.winners);
+        res.json(summary);
+      } catch (error) {
+        next(error);
+      }
+    }),
+  );
 
   router.get('/arena/scoreboard', (_req, res) => {
     res.json(service.getScoreboard());
@@ -82,30 +101,43 @@ export function buildRouter(service: ArenaService) {
     }
   });
 
-  router.use((error: unknown, req: express.Request, res: express.Response, _next: express.NextFunction) => {
-    const log = buildStructuredLogRecord({
-      component: 'arena-router',
-      action: 'error',
-      level: 'error',
-      details: {
-        path: req.path,
-        method: req.method,
-        message: error instanceof Error ? error.message : 'unknown',
-        stack: error instanceof Error ? error.stack : undefined
+  router.use(
+    (
+      error: unknown,
+      req: express.Request,
+      res: express.Response,
+      next: express.NextFunction,
+    ) => {
+      if (res.headersSent) {
+        next(error);
+        return;
       }
-    });
-    console.error(JSON.stringify(log));
+      const log = buildStructuredLogRecord({
+        component: 'arena-router',
+        action: 'error',
+        level: 'error',
+        details: {
+          path: req.path,
+          method: req.method,
+          message: error instanceof Error ? error.message : 'unknown',
+          stack: error instanceof Error ? error.stack : undefined,
+        },
+      });
+      console.error(JSON.stringify(log));
 
-    if (error instanceof z.ZodError) {
-      res.status(400).json({ error: 'validation_error', details: error.flatten() });
-      return;
-    }
-    if (error instanceof Error) {
-      res.status(500).json({ error: error.message });
-      return;
-    }
-    res.status(500).json({ error: 'unknown_error' });
-  });
+      if (error instanceof z.ZodError) {
+        res
+          .status(400)
+          .json({ error: 'validation_error', details: error.flatten() });
+        return;
+      }
+      if (error instanceof Error) {
+        res.status(500).json({ error: error.message });
+        return;
+      }
+      res.status(500).json({ error: 'unknown_error' });
+    },
+  );
 
   return router;
 }

@@ -4,7 +4,7 @@ describe('Culture Studio smoke test', () => {
       body: {
         data: {
           artifacts: [
-            { id: 1, kind: 'book', cid: 'bafybookdemo', parentId: null, cites: [], influence: 0.92, mintedAt: null }
+            { id: '1', kind: 'book', cid: 'bafybookdemo', parentId: null, citations: [], influence: 0.92, mintedAt: null }
           ]
         }
       }
@@ -16,6 +16,14 @@ describe('Culture Studio smoke test', () => {
       cid: 'bafyfixedcid',
       bytes: 128
     }).as('ipfs');
+    // This UI smoke uses explicit fixtures; it does not prove live settlement.
+    cy.intercept('GET', '**/arena/scoreboard', {
+      agents: [{ address: 'demo-agent', role: 'student', rating: 1200, wins: 0, losses: 0 }],
+      rounds: [],
+      currentDifficulty: 1,
+      currentSuccessRate: 0,
+      ownerControls: { paused: false, autoDifficulty: true, maxConcurrentJobs: 3, targetSuccessRate: 0.6 }
+    }).as('scoreboard');
 
     cy.visit('/');
     cy.contains('h1', 'CULTURE').should('be.visible');

@@ -64,7 +64,11 @@ type StatusMessage = {
   status: StatusResponse;
 };
 
-type ChatMessage = TextMessage | PlanMessage | SimulationMessage | StatusMessage;
+type ChatMessage =
+  | TextMessage
+  | PlanMessage
+  | SimulationMessage
+  | StatusMessage;
 
 export type ChatStage =
   | 'idle'
@@ -107,10 +111,12 @@ const mapStatusToReceipt = (
     txHash: firstTx ?? undefined,
     txHashes: receipt.txes?.length ? receipt.txes : undefined,
     specCid: specCid ?? undefined,
-    specUrl: createIpfsGatewayUrl(specCid, options.ipfsGatewayBase) ?? undefined,
+    specUrl:
+      createIpfsGatewayUrl(specCid, options.ipfsGatewayBase) ?? undefined,
     deliverableCid: deliverableCid ?? undefined,
     deliverableUrl:
-      createIpfsGatewayUrl(deliverableCid, options.ipfsGatewayBase) ?? undefined,
+      createIpfsGatewayUrl(deliverableCid, options.ipfsGatewayBase) ??
+      undefined,
     createdAt: Date.now(),
     receiptCid: receiptCid ?? undefined,
     receiptUri:
@@ -123,7 +129,9 @@ const mapStatusToReceipt = (
 };
 
 const formatSimulationSummary = (simulation: SimulationResponse) => {
-  const budgetParts: string[] = [`Est. budget: ${simulation.estimatedBudget ?? '—'}`];
+  const budgetParts: string[] = [
+    `Est. budget: ${simulation.estimatedBudget ?? '—'}`,
+  ];
   const feeSegments: string[] = [];
   if (simulation.feeAmount) {
     feeSegments.push(
@@ -175,30 +183,27 @@ const QUICK_PROMPTS: ReadonlyArray<{
   {
     id: 'prompt-label-ops',
     label: 'Global research sprint',
-    description: 'Draft, label, and synthesise 500 market reports with 48h SLA.',
-    text:
-      'Coordinate a global research sprint producing 500 polished market briefs. Budget 45 AGIALPHA, deadline 48 hours, insist on validator review before final release.',
+    description:
+      'Draft, label, and synthesise 500 market reports with 48h SLA.',
+    text: 'Coordinate a global research sprint producing 500 polished market briefs. Budget 45 AGIALPHA, deadline 48 hours, insist on validator review before final release.',
   },
   {
     id: 'prompt-engineering',
     label: 'Machine learning audit',
     description: 'Spin up an adversarial red-team for a vision pipeline.',
-    text:
-      'Launch a machine learning audit: recruit three vetted agents to red-team our latest vision model, reward 32 AGIALPHA, include deliverable CID for findings, finalise within 5 days.',
+    text: 'Launch a machine learning audit: recruit three vetted agents to red-team our latest vision model, reward 32 AGIALPHA, include deliverable CID for findings, finalise within 5 days.',
   },
   {
     id: 'prompt-finance',
     label: 'Reconciliation swarm',
     description: 'Close 2,500 ledger anomalies with immutable receipts.',
-    text:
-      'Create a finance reconciliation mission to close 2,500 ledger anomalies. Reward pool 60 AGIALPHA, milestone-based payouts allowed, require validators to approve before final release.',
+    text: 'Create a finance reconciliation mission to close 2,500 ledger anomalies. Reward pool 60 AGIALPHA, milestone-based payouts allowed, require validators to approve before final release.',
   },
   {
     id: 'prompt-finalize',
     label: 'Finalize job #42',
     description: 'Release escrow once validators sign off.',
-    text:
-      'Finalize job 42 and release escrow if validator attestations confirm completion. Provide a closing receipt.',
+    text: 'Finalize job 42 and release escrow if validator attestations confirm completion. Provide a closing receipt.',
   },
 ];
 
@@ -206,10 +211,8 @@ export function ChatWindow({
   prefillRequest = null,
   onPrefillConsumed,
 }: ChatWindowProps = {}) {
-  const { orchestratorUrl, apiToken, explorerTxBase, ipfsGatewayBase } = useMemo(
-    () => readOneboxConfig(),
-    []
-  );
+  const { orchestratorUrl, apiToken, explorerTxBase, ipfsGatewayBase } =
+    useMemo(() => readOneboxConfig(), []);
   const orchestratorBase = useMemo(
     () => resolveOrchestratorBase(orchestratorUrl) ?? null,
     [orchestratorUrl]
@@ -231,12 +234,10 @@ export function ChatWindow({
   const [simulateError, setSimulateError] = useState<string | null>(null);
   const [executeError, setExecuteError] = useState<string | null>(null);
   const [activePlan, setActivePlan] = useState<PlanMessage | null>(null);
-  const [activeSimulation, setActiveSimulation] = useState<SimulationMessage | null>(
-    null
-  );
-  const [runStatusMessage, setRunStatusMessage] = useState<StatusMessage | null>(
-    null
-  );
+  const [activeSimulation, setActiveSimulation] =
+    useState<SimulationMessage | null>(null);
+  const [runStatusMessage, setRunStatusMessage] =
+    useState<StatusMessage | null>(null);
   const [receipts, setReceipts] = useState<ExecutionReceipt[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const bottomRef = useRef<HTMLDivElement | null>(null);
@@ -299,17 +300,20 @@ export function ChatWindow({
           return acc;
         }
         const createdAt =
-          typeof candidate.createdAt === 'number' && Number.isFinite(candidate.createdAt)
+          typeof candidate.createdAt === 'number' &&
+          Number.isFinite(candidate.createdAt)
             ? candidate.createdAt
             : Date.now();
         acc.push({
           id: candidate.id,
           jobId:
-            typeof candidate.jobId === 'number' && Number.isFinite(candidate.jobId)
+            typeof candidate.jobId === 'number' &&
+            Number.isFinite(candidate.jobId)
               ? candidate.jobId
               : undefined,
           planHash:
-            typeof candidate.planHash === 'string' && candidate.planHash.length > 0
+            typeof candidate.planHash === 'string' &&
+            candidate.planHash.length > 0
               ? candidate.planHash
               : undefined,
           txHash:
@@ -317,16 +321,18 @@ export function ChatWindow({
               ? candidate.txHash
               : undefined,
           txHashes: Array.isArray(candidate.txHashes)
-            ? (candidate.txHashes.filter((value): value is string =>
-                typeof value === 'string'
+            ? (candidate.txHashes.filter(
+                (value): value is string => typeof value === 'string'
               ) as string[])
             : undefined,
           specCid:
-            typeof candidate.specCid === 'string' && candidate.specCid.length > 0
+            typeof candidate.specCid === 'string' &&
+            candidate.specCid.length > 0
               ? candidate.specCid
               : undefined,
           specUrl:
-            typeof candidate.specUrl === 'string' && candidate.specUrl.length > 0
+            typeof candidate.specUrl === 'string' &&
+            candidate.specUrl.length > 0
               ? candidate.specUrl
               : undefined,
           deliverableCid:
@@ -340,24 +346,28 @@ export function ChatWindow({
               ? candidate.deliverableUrl
               : undefined,
           receiptCid:
-            typeof candidate.receiptCid === 'string' && candidate.receiptCid.length > 0
+            typeof candidate.receiptCid === 'string' &&
+            candidate.receiptCid.length > 0
               ? candidate.receiptCid
               : undefined,
           receiptUri:
-            typeof candidate.receiptUri === 'string' && candidate.receiptUri.length > 0
+            typeof candidate.receiptUri === 'string' &&
+            candidate.receiptUri.length > 0
               ? candidate.receiptUri
               : undefined,
           receiptGatewayUrls: Array.isArray(candidate.receiptGatewayUrls)
-            ? (candidate.receiptGatewayUrls.filter((value): value is string =>
-                typeof value === 'string'
+            ? (candidate.receiptGatewayUrls.filter(
+                (value): value is string => typeof value === 'string'
               ) as string[])
             : undefined,
           netPayout:
-            typeof candidate.netPayout === 'string' && candidate.netPayout.length > 0
+            typeof candidate.netPayout === 'string' &&
+            candidate.netPayout.length > 0
               ? candidate.netPayout
               : undefined,
           explorerUrl:
-            typeof candidate.explorerUrl === 'string' && candidate.explorerUrl.length > 0
+            typeof candidate.explorerUrl === 'string' &&
+            candidate.explorerUrl.length > 0
               ? candidate.explorerUrl
               : undefined,
           reward:
@@ -629,7 +639,9 @@ export function ChatWindow({
       setActiveSimulation(message);
       addTextMessage('assistant', formatSimulationSummary(simulation));
       if (hasBlockingRisks(simulation)) {
-        setSimulateError('Simulation flagged blockers. Adjust the plan and retry.');
+        setSimulateError(
+          'Simulation flagged blockers. Adjust the plan and retry.'
+        );
         setStage('error');
         return;
       }
@@ -665,7 +677,8 @@ export function ChatWindow({
 
   const pendingPlanId = activePlan?.id;
   const canSimulate = stage === 'planned' && !!activePlan;
-  const canExecute = stage === 'awaiting_execute' && !!activePlan && !!activeSimulation;
+  const canExecute =
+    stage === 'awaiting_execute' && !!activePlan && !!activeSimulation;
   const orchestratorReady = !!orchestratorBase;
 
   const handleQuickPrompt = useCallback(
@@ -701,15 +714,18 @@ export function ChatWindow({
           <div className="chat-intro-copy">
             <h2 className="chat-intro-title">🎖️ One‑Box Mission Control</h2>
             <p className="chat-intro-subtitle">
-              Describe what you need and the orchestrator will model the budget, execute on-chain, and archive the receipts for you.
+              Describe what you need and the orchestrator will model the budget,
+              execute on-chain, and archive the receipts for you.
             </p>
             {orchestratorReady ? (
               <p className="chat-intro-success" role="status">
-                ✅ Orchestrator channel armed. Draft a mission or tap a quick template to begin.
+                ✅ Orchestrator channel armed. Draft a mission or tap a quick
+                template to begin.
               </p>
             ) : (
               <p className="chat-intro-warning" role="status">
-                🔧 Point the mission panel at a live orchestrator endpoint to unlock execution.
+                🔧 Point the mission panel at a live orchestrator endpoint to
+                unlock execution.
               </p>
             )}
           </div>
@@ -722,7 +738,9 @@ export function ChatWindow({
                 onClick={() => handleQuickPrompt(prompt.text)}
               >
                 <span className="chat-quick-label">{prompt.label}</span>
-                <span className="chat-quick-description">{prompt.description}</span>
+                <span className="chat-quick-description">
+                  {prompt.description}
+                </span>
               </button>
             ))}
           </div>
@@ -742,7 +760,8 @@ export function ChatWindow({
           {messages.map((message) => {
             if (message.kind === 'plan') {
               const summary =
-                message.plan.preview_summary || 'Plan generated. Ready to simulate.';
+                message.plan.preview_summary ||
+                'Plan generated. Ready to simulate.';
               return (
                 <div key={message.id} className="chat-message">
                   <span className="chat-message-role">{message.role}</span>
@@ -751,7 +770,8 @@ export function ChatWindow({
                       <p>{summary}</p>
                       {message.plan.missing_fields.length > 0 ? (
                         <p>
-                          Missing fields: {message.plan.missing_fields.join(', ')}
+                          Missing fields:{' '}
+                          {message.plan.missing_fields.join(', ')}
                         </p>
                       ) : null}
                       {pendingPlanId === message.id && canSimulate ? (
@@ -791,7 +811,8 @@ export function ChatWindow({
                   <div className="chat-bubble">
                     <div className="plan-summary">
                       <p>{formatSimulationSummary(message.simulation)}</p>
-                      {pendingPlanId === activePlan?.id && message.id === activeSimulation?.id &&
+                      {pendingPlanId === activePlan?.id &&
+                      message.id === activeSimulation?.id &&
                       canExecute ? (
                         <div className="plan-actions">
                           <button
@@ -826,7 +847,9 @@ export function ChatWindow({
               return (
                 <div key={message.id} className="chat-message">
                   <span className="chat-message-role">{message.role}</span>
-                  <div className="chat-bubble">{statusSummary ?? 'Monitoring run…'}</div>
+                  <div className="chat-bubble">
+                    {statusSummary ?? 'Monitoring run…'}
+                  </div>
                 </div>
               );
             }

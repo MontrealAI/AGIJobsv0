@@ -29,7 +29,7 @@ function getOrCreateState(key: number): ControllerState {
 export function computeNextDifficulty(
   currentDifficulty: number,
   observedSuccessRate: number,
-  config: DifficultyConfig
+  config: DifficultyConfig,
 ): DifficultyResult {
   const target = clamp01(config.targetSuccessRate);
   const observed = clamp01(observedSuccessRate);
@@ -49,7 +49,9 @@ export function computeNextDifficulty(
   state.previousError = error;
 
   const rawAdjustment =
-    error * config.proportionalGain + state.integral * integralGain + derivative * derivativeGain;
+    error * config.proportionalGain +
+    state.integral * integralGain +
+    derivative * derivativeGain;
   let adjusted = currentDifficulty + rawAdjustment;
 
   const upperBound = currentDifficulty + config.maxStep;
@@ -76,7 +78,10 @@ export class DifficultyController {
 
   constructor(private readonly config: DifficultyConfig) {}
 
-  update(currentDifficulty: number, observedSuccessRate: number): DifficultyResult {
+  update(
+    currentDifficulty: number,
+    observedSuccessRate: number,
+  ): DifficultyResult {
     const target = clamp01(this.config.targetSuccessRate);
     const observed = clamp01(observedSuccessRate);
     const error = observed - target;
@@ -93,7 +98,11 @@ export class DifficultyController {
     const integralTerm = this.integral * (this.config.integralGain ?? 0);
     const derivativeTerm = derivative * (this.config.derivativeGain ?? 0);
     const totalAdjustment = proportionalTerm + integralTerm + derivativeTerm;
-    return computeNextDifficulty(currentDifficulty + totalAdjustment, observed, this.config);
+    return computeNextDifficulty(
+      currentDifficulty + totalAdjustment,
+      observed,
+      this.config,
+    );
   }
 
   static reset(): void {

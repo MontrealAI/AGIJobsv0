@@ -1,3 +1,6 @@
+const {
+  deployImplementations,
+} = require('../../scripts/deploy/implementations.cjs');
 const { expect } = require('chai');
 const { ethers, artifacts, network } = require('hardhat');
 
@@ -28,7 +31,8 @@ describe('Operator reward pool', function () {
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
-      owner.address
+      owner.address,
+      await deployImplementations('StakeManager', StakeManager.runner)
     );
     await stakeManager.connect(owner).setMinStake(1);
 
@@ -46,7 +50,8 @@ describe('Operator reward pool', function () {
       0,
       0,
       [],
-      owner.address
+      owner.address,
+      await deployImplementations('JobRegistry', JobRegistry.runner)
     );
     const TaxPolicy = await ethers.getContractFactory(
       'contracts/v2/TaxPolicy.sol:TaxPolicy'

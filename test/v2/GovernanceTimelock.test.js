@@ -1,3 +1,6 @@
+const {
+  deployImplementations,
+} = require('../../scripts/deploy/implementations.cjs');
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
 
@@ -32,7 +35,8 @@ describe('Governance via Timelock', function () {
       admin.address,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
-      await timelock.getAddress()
+      await timelock.getAddress(),
+      await deployImplementations('StakeManager', Stake.runner)
     );
     await stake.waitForDeployment();
 
@@ -50,7 +54,8 @@ describe('Governance via Timelock', function () {
       0,
       0,
       [],
-      await timelock.getAddress()
+      await timelock.getAddress(),
+      await deployImplementations('JobRegistry', Registry.runner)
     );
     await registry.waitForDeployment();
 

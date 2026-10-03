@@ -1,3 +1,6 @@
+const {
+  deployImplementations,
+} = require('../../scripts/deploy/implementations.cjs');
 const { expect } = require('chai');
 const { ethers, artifacts, network } = require('hardhat');
 const { time } = require('@nomicfoundation/hardhat-network-helpers');
@@ -45,7 +48,8 @@ describe('JobRegistry integration', function () {
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
-      owner.address
+      owner.address,
+      await deployImplementations('StakeManager', StakeManager.runner)
     );
     await stakeManager.connect(owner).setMinStake(1);
     await stakeManager.connect(owner).setSlashingPercentages(100, 0);
@@ -84,7 +88,8 @@ describe('JobRegistry integration', function () {
       0,
       0,
       [],
-      owner.address
+      owner.address,
+      await deployImplementations('JobRegistry', Registry.runner)
     );
     const Dispute = await ethers.getContractFactory(
       'contracts/v2/modules/DisputeModule.sol:DisputeModule'
@@ -145,10 +150,7 @@ describe('JobRegistry integration', function () {
 
     await token
       .connect(agent)
-      .approve(
-        await stakeManager.getAddress(),
-        BigInt(stake) + disputeFee
-      );
+      .approve(await stakeManager.getAddress(), BigInt(stake) + disputeFee);
     await stakeManager.connect(agent).depositStake(0, stake);
     await stakeManager
       .connect(owner)
@@ -233,9 +235,7 @@ describe('JobRegistry integration', function () {
       expect(await registry.getJobValidatorVote(jobId, member)).to.equal(false);
     }
 
-    expect(await token.balanceOf(agent.address)).to.equal(
-      disputeFee + 900n
-    );
+    expect(await token.balanceOf(agent.address)).to.equal(disputeFee + 900n);
     expect(await rep.reputation(agent.address)).to.equal(0);
     expect(await rep.isBlacklisted(agent.address)).to.equal(false);
     expect(await nft.balanceOf(agent.address)).to.equal(1);
@@ -638,9 +638,7 @@ describe('JobRegistry integration', function () {
       .connect(employer)
       .createJob(reward, deadline, specHash, 'uri');
     const employerAfterCreate = await token.balanceOf(employer.address);
-    expect(employerBeforeCreate - employerAfterCreate).to.equal(
-      BigInt(reward)
-    );
+    expect(employerBeforeCreate - employerAfterCreate).to.equal(BigInt(reward));
     const feePoolBeforeCancel = await token.balanceOf(feePoolAddress);
     const jobId = 1;
     await expect(registry.connect(employer).cancelJob(jobId))
@@ -666,9 +664,7 @@ describe('JobRegistry integration', function () {
       .connect(employer)
       .createJob(reward, deadline, specHash, 'uri');
     const employerAfterCreate = await token.balanceOf(employer.address);
-    expect(employerBeforeCreate - employerAfterCreate).to.equal(
-      BigInt(reward)
-    );
+    expect(employerBeforeCreate - employerAfterCreate).to.equal(BigInt(reward));
     const feePoolBeforeCancel = await token.balanceOf(feePoolAddress);
     const jobId = 1;
     await expect(registry.connect(owner).delistJob(jobId))

@@ -1,3 +1,4 @@
+import { deployImplementations } from '../../scripts/deploy/implementations.cjs';
 import { expect } from 'chai';
 import { artifacts, ethers } from 'hardhat';
 import { time } from '@nomicfoundation/hardhat-network-helpers';
@@ -47,16 +48,8 @@ describe('Planetary-scale ASI take-off demo', function () {
   const calculateFee = (reward: bigint, pct: bigint) => (reward * pct) / 100n;
 
   beforeEach(async function () {
-    [
-      owner,
-      asia,
-      europe,
-      planner,
-      validatorA,
-      validatorB,
-      treasury,
-      africa,
-    ] = await ethers.getSigners();
+    [owner, asia, europe, planner, validatorA, validatorB, treasury, africa] =
+      await ethers.getSigners();
 
     const artifact = await artifacts.readArtifact(
       'contracts/test/AGIALPHAToken.sol:AGIALPHAToken'
@@ -101,7 +94,8 @@ describe('Planetary-scale ASI take-off demo', function () {
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
-      owner.address
+      owner.address,
+      await deployImplementations('StakeManager', Stake.runner)
     );
     await stakeManager.waitForDeployment();
     await stakeManager.connect(owner).setMinStake(1);
@@ -152,7 +146,8 @@ describe('Planetary-scale ASI take-off demo', function () {
       0,
       0,
       [],
-      owner.address
+      owner.address,
+      await deployImplementations('JobRegistry', Registry.runner)
     );
     await registry.waitForDeployment();
 
@@ -207,9 +202,7 @@ describe('Planetary-scale ASI take-off demo', function () {
       .connect(owner)
       .setIdentityRegistry(await identity.getAddress());
     await registry.connect(owner).setTaxPolicy(await policy.getAddress());
-    await registry
-      .connect(owner)
-      .setJobParameters(0, stakeRequirement);
+    await registry.connect(owner).setJobParameters(0, stakeRequirement);
     await registry.connect(owner).setFeePct(Number(initialFeePct));
     await registry.connect(owner).setValidatorRewardPct(0);
     await reputation
@@ -232,29 +225,17 @@ describe('Planetary-scale ASI take-off demo', function () {
     await stakeManager
       .connect(owner)
       .setDisputeModule(await dispute.getAddress());
-    await stakeManager
-      .connect(owner)
-      .setFeePool(await feePool.getAddress());
-    await stakeManager
-      .connect(owner)
-      .setFeePct(Number(initialFeePct));
-    await stakeManager
-      .connect(owner)
-      .setSlashingPercentages(100, 0);
+    await stakeManager.connect(owner).setFeePool(await feePool.getAddress());
+    await stakeManager.connect(owner).setFeePct(Number(initialFeePct));
+    await stakeManager.connect(owner).setSlashingPercentages(100, 0);
     await stakeManager
       .connect(owner)
       .setTreasuryAllowlist(treasury.address, true);
     await stakeManager.connect(owner).setTreasury(treasury.address);
 
-    await nft
-      .connect(owner)
-      .setJobRegistry(await registry.getAddress());
-    await nft
-      .connect(owner)
-      .setStakeManager(await stakeManager.getAddress());
-    await nft
-      .connect(owner)
-      .transferOwnership(await registry.getAddress());
+    await nft.connect(owner).setJobRegistry(await registry.getAddress());
+    await nft.connect(owner).setStakeManager(await stakeManager.getAddress());
+    await nft.connect(owner).transferOwnership(await registry.getAddress());
 
     for (const agent of [asia, europe, africa, planner]) {
       await registry.connect(agent).acknowledgeTaxPolicy();
@@ -304,9 +285,7 @@ describe('Planetary-scale ASI take-off demo', function () {
     const jobId = Number(parsedLog.args.jobId);
 
     await registry.connect(agent).applyForJob(jobId, subdomain, []);
-    await registry
-      .connect(agent)
-      .submit(jobId, resultHash, uri, subdomain, []);
+    await registry.connect(agent).submit(jobId, resultHash, uri, subdomain, []);
     await validation.setResult(true);
     await validation.finalize(jobId);
     await registry.connect(owner).finalize(jobId);
@@ -372,16 +351,22 @@ describe('Planetary-scale ASI take-off demo', function () {
     const plannerBalance = await token.balanceOf(planner.address);
 
     const asiaExpected =
-      initialMint - stakeRequirement + asiaAssessment.netReward + liquidityExecution.netReward;
+      initialMint -
+      stakeRequirement +
+      asiaAssessment.netReward +
+      liquidityExecution.netReward;
     expect(asiaBalance).to.equal(asiaExpected);
 
-    const europeExpected = initialMint - stakeRequirement + europeAssessment.netReward;
+    const europeExpected =
+      initialMint - stakeRequirement + europeAssessment.netReward;
     expect(europeBalance).to.equal(europeExpected);
 
-    const africaExpected = initialMint - stakeRequirement + africaDeployment.netReward;
+    const africaExpected =
+      initialMint - stakeRequirement + africaDeployment.netReward;
     expect(africaBalance).to.equal(africaExpected);
 
-    const plannerExpected = initialMint - stakeRequirement + planetaryLedger.netReward;
+    const plannerExpected =
+      initialMint - stakeRequirement + planetaryLedger.netReward;
     expect(plannerBalance).to.equal(plannerExpected);
 
     const totalFees =
@@ -408,10 +393,18 @@ describe('Planetary-scale ASI take-off demo', function () {
       expect(metadata.feePct).to.equal(expectedFee);
     }
 
-    expect(await stakeManager.stakes(asia.address, Role.Agent)).to.equal(stakeRequirement);
-    expect(await stakeManager.stakes(europe.address, Role.Agent)).to.equal(stakeRequirement);
-    expect(await stakeManager.stakes(africa.address, Role.Agent)).to.equal(stakeRequirement);
-    expect(await stakeManager.stakes(planner.address, Role.Agent)).to.equal(stakeRequirement);
+    expect(await stakeManager.stakes(asia.address, Role.Agent)).to.equal(
+      stakeRequirement
+    );
+    expect(await stakeManager.stakes(europe.address, Role.Agent)).to.equal(
+      stakeRequirement
+    );
+    expect(await stakeManager.stakes(africa.address, Role.Agent)).to.equal(
+      stakeRequirement
+    );
+    expect(await stakeManager.stakes(planner.address, Role.Agent)).to.equal(
+      stakeRequirement
+    );
 
     expect(await stakeManager.treasury()).to.equal(treasury.address);
     expect(await registry.feePct()).to.equal(escalatedFeePct);

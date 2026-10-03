@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
+import {StakeManagerBase} from "../../contracts/v2/implementation/StakeManagerBase.sol";
+
+import {FixedImplementationFixtures} from "./helpers/FixedImplementationFixtures.sol";
 
 import {Test} from "forge-std/Test.sol";
 import {AGIALPHAToken} from "../../contracts/test/AGIALPHAToken.sol";
@@ -55,7 +58,7 @@ contract PlatformIncentivesTest is Test {
         vm.store(AGIALPHA, ackSlotOperator, bytes32(uint256(1)));
         jobRegistry = new EmployerScoreRegistry();
         jobRegistry.setTaxPolicyVersion(1);
-        stakeManager = new StakeManager(0, 0, 0, treasury, address(jobRegistry), address(0), address(this));
+        stakeManager = new StakeManager(0, 0, 0, treasury, address(jobRegistry), address(0), address(this), FixedImplementationFixtures.stakeManager());
         platformRegistry = new PlatformRegistry(
             IStakeManager(address(stakeManager)),
             PlatformReputationEngine(address(0)),
@@ -89,7 +92,7 @@ contract PlatformIncentivesTest is Test {
     function testStakeAndActivate() public {
         vm.prank(operator);
         incentives.stakeAndActivate(10e18);
-        assertEq(stakeManager.stakeOf(operator, StakeManager.Role.Platform), 10e18);
+        assertEq(stakeManager.stakeOf(operator, StakeManagerBase.Role.Platform), 10e18);
         assertTrue(platformRegistry.registered(operator));
         assertTrue(jobRouter.registered(operator));
 

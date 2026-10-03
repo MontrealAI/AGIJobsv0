@@ -1,3 +1,6 @@
+const {
+  deployImplementations,
+} = require('../../scripts/deploy/implementations.cjs');
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
 const { time } = require('@nomicfoundation/hardhat-network-helpers');
@@ -21,7 +24,8 @@ describe('JobRegistry tax policy integration', function () {
       0,
       0,
       [],
-      owner.address
+      owner.address,
+      await deployImplementations('JobRegistry', Registry.runner)
     );
     const Policy = await ethers.getContractFactory(
       'contracts/v2/TaxPolicy.sol:TaxPolicy'
@@ -110,9 +114,7 @@ describe('JobRegistry tax policy integration', function () {
       policy.connect(owner).setAcknowledgers([owner.address], [])
     ).to.be.revertedWithCustomError(policy, 'ArrayLengthMismatch');
     await expect(
-      policy
-        .connect(owner)
-        .setAcknowledgers([ethers.ZeroAddress], [true])
+      policy.connect(owner).setAcknowledgers([ethers.ZeroAddress], [true])
     ).to.be.revertedWithCustomError(policy, 'ZeroAcknowledgerAddress');
   });
 
@@ -214,9 +216,7 @@ describe('JobRegistry tax policy integration', function () {
     await policy.connect(user).acknowledge();
     await policy.connect(delegate).acknowledge();
 
-    await expect(
-      policy.connect(owner).revokeAcknowledgement(user.address)
-    )
+    await expect(policy.connect(owner).revokeAcknowledgement(user.address))
       .to.emit(policy, 'AcknowledgementRevoked')
       .withArgs(user.address, 1);
 
@@ -243,4 +243,3 @@ describe('JobRegistry tax policy integration', function () {
     ).to.be.revertedWithCustomError(policy, 'ZeroUserAddress');
   });
 });
-

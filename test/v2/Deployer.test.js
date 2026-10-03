@@ -1,3 +1,4 @@
+const { stageProtocol } = require('../../scripts/deploy/stage-protocol.cjs');
 const { expect } = require('chai');
 const { ethers, artifacts, network } = require('hardhat');
 const { AGIALPHA } = require('../../scripts/constants');
@@ -38,6 +39,7 @@ describe('Deployer', function () {
       agentMerkleRoot: ethers.ZeroHash,
     };
 
+    await stageProtocol(deployer, ids, governance.address, { econ });
     const tx = await deployer.deploy(econ, ids, governance.address);
     const receipt = await tx.wait();
     const deployerAddress = await deployer.getAddress();
@@ -209,6 +211,10 @@ describe('Deployer', function () {
       validatorMerkleRoot: ethers.ZeroHash,
       agentMerkleRoot: ethers.ZeroHash,
     };
+    await stageProtocol(deployer, ids, governance.address, {
+      withTaxPolicy: false,
+      econ,
+    });
     const tx2 = await deployer.deployWithoutTaxPolicy(
       econ,
       ids,

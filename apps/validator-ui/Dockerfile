@@ -1,16 +1,16 @@
-FROM node:20-alpine AS deps
+FROM node:22.23.3-alpine AS deps
 WORKDIR /app
 COPY apps/validator-ui/package.json apps/validator-ui/package-lock.json ./
 RUN npm ci
 
-FROM node:20-alpine AS builder
+FROM node:22.23.3-alpine AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY apps/validator-ui ./
 RUN mkdir -p public
 RUN npm run build
 
-FROM node:20-alpine AS runner
+FROM node:22.23.3-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production \
     PORT=3000

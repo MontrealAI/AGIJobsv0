@@ -168,7 +168,7 @@ def root_readme() -> str:
 
     body = f"""# AGI Jobs v0 (v2)
 
-AGI Jobs v0 (v2) is delivered as a production-hardened intelligence platform—a superintelligent machine engineered to compound value, command critical infrastructure, and realign global-scale operations with verifiable safety.
+AGI Jobs v0 (v2) combines contracts, agents, orchestration, operator consoles, and demonstration environments. Begin with [local setup](docs/START_HERE.md) and the [production readiness report](docs/production/readiness-2026-10-03.md); passing local tests does not certify mainnet deployability.
 
 ## Why It Matters
 - **Unified Intelligence:** Orchestrates smart contracts, agent gateways, validators, and observability into a cohesive mission fabric.
@@ -183,7 +183,7 @@ AGI Jobs v0 (v2) is delivered as a production-hardened intelligence platform—a
 {top_files}
 
 ## Getting Started
-1. Ensure you are running Node.js 20.18.1 (matching `.nvmrc`) and Python 3.11+.
+1. Ensure you are running Node.js 22.23.3 (matching `.nvmrc`) and Python 3.11+.
 2. Bootstrap dependencies:
    ```bash
    npm install

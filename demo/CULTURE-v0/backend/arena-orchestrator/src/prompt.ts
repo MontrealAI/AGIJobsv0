@@ -19,14 +19,19 @@ Provide a challenge for students operating at difficulty {{difficulty}}.
 Summarise the historical significance and reference the source URI when available.
 Ensure instructions are safe, constructive, and respect cultural sensitivities.`;
 
-function renderTemplate(context: PromptContext, metadata: TeacherPrompt['metadata']): string {
+function renderTemplate(
+  context: PromptContext,
+  metadata: TeacherPrompt['metadata'],
+): string {
   return BASE_TEMPLATE.replace('{{roundId}}', String(context.roundId))
     .replace('{{artifactId}}', String(context.artifactId))
     .replace('{{difficulty}}', String(context.difficulty))
     .replace('{{title}}', metadata.title);
 }
 
-export async function buildTeacherPrompt(context: PromptContext): Promise<TeacherPrompt> {
+export async function buildTeacherPrompt(
+  context: PromptContext,
+): Promise<TeacherPrompt> {
   const metadata = await loadArtifactMetadata(context.artifactId);
   const prompt = renderTemplate(context, metadata);
   return { prompt, metadata };

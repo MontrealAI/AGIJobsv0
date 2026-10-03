@@ -4,6 +4,7 @@ import { strict as assert } from 'node:assert';
 
 import type { ContractTransactionReceipt, InterfaceAbi } from 'ethers';
 import { ethers } from 'hardhat';
+import { deployPrebuiltImplementations } from '../deploy/prebuilt-implementations.cjs';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 
@@ -640,7 +641,9 @@ async function deployPrebuiltContract(
   factory: ethers.ContractFactory,
   args: readonly unknown[]
 ): Promise<ethers.Contract> {
-  const contract = await factory.deploy(...args);
+  const deploymentArgs = ['StakeManager', 'JobRegistry', 'ValidationModule'].includes(label)
+    ? [...args, await deployPrebuiltImplementations(label, factory.runner)] : [...args];
+  const contract = await factory.deploy(...deploymentArgs);
   const deploymentTx = contract.deploymentTransaction();
   if (deploymentTx) {
     await deploymentTx.wait();

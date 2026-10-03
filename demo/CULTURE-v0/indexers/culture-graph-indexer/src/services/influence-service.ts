@@ -27,7 +27,7 @@ export class InfluenceService {
   constructor(
     private readonly prisma: PrismaClient,
     config: InfluenceComputationConfig = {},
-    validator?: InfluenceValidator | null
+    validator?: InfluenceValidator | null,
   ) {
     this.dampingFactor = config.dampingFactor ?? 0.85;
     this.maxIterations = config.maxIterations ?? 25;
@@ -35,7 +35,9 @@ export class InfluenceService {
     this.validator = validator ?? null;
   }
 
-  async recompute(_affectedArtifacts?: readonly string[]): Promise<InfluenceComputationResult | null> {
+  async recompute(
+    _affectedArtifacts?: readonly string[],
+  ): Promise<InfluenceComputationResult | null> {
     const artifacts = await this.prisma.artifact.findMany({
       include: {
         citationsFrom: { select: { toId: true } },
@@ -74,11 +76,14 @@ export class InfluenceService {
     const inboundEdges = new Map<string, string[]>();
 
     for (const artifact of artifacts) {
-      previousScores.set(artifact.id, artifact.influence?.score ?? 1 / totalNodes);
+      previousScores.set(
+        artifact.id,
+        artifact.influence?.score ?? 1 / totalNodes,
+      );
       outgoingCounts.set(artifact.id, artifact.citationsFrom.length);
       inboundEdges.set(
         artifact.id,
-        artifact.citationsTo.map((citation) => citation.fromId)
+        artifact.citationsTo.map((citation) => citation.fromId),
       );
     }
 
@@ -88,7 +93,10 @@ export class InfluenceService {
       const nextScores = new Map<string, number>();
       let difference = 0;
 
-      const danglingSum = this.computeDanglingSum(currentScores, outgoingCounts);
+      const danglingSum = this.computeDanglingSum(
+        currentScores,
+        outgoingCounts,
+      );
       for (const artifact of artifacts) {
         const inbound = inboundEdges.get(artifact.id) ?? [];
         let influence = 0;
@@ -103,7 +111,9 @@ export class InfluenceService {
 
         const distributedDangling = danglingSum / totalNodes;
         const newScore = teleport + damping * (influence + distributedDangling);
-        difference += Math.abs(newScore - (currentScores.get(artifact.id) ?? 0));
+        difference += Math.abs(
+          newScore - (currentScores.get(artifact.id) ?? 0),
+        );
         nextScores.set(artifact.id, newScore);
       }
 
@@ -116,7 +126,10 @@ export class InfluenceService {
     return currentScores;
   }
 
-  private computeDanglingSum(scores: Map<string, number>, outgoingCounts: Map<string, number>): number {
+  private computeDanglingSum(
+    scores: Map<string, number>,
+    outgoingCounts: Map<string, number>,
+  ): number {
     let sum = 0;
     for (const [artifactId, score] of scores.entries()) {
       const outgoing = outgoingCounts.get(artifactId) ?? 0;
@@ -127,7 +140,9 @@ export class InfluenceService {
     return sum;
   }
 
-  private computeCitationCounts(artifacts: ArtifactWithGraph[]): Map<string, number> {
+  private computeCitationCounts(
+    artifacts: ArtifactWithGraph[],
+  ): Map<string, number> {
     const counts = new Map<string, number>();
     for (const artifact of artifacts) {
       counts.set(artifact.id, artifact.citationsTo.length);
@@ -135,7 +150,9 @@ export class InfluenceService {
     return counts;
   }
 
-  private computeLineageDepths(artifacts: ArtifactWithGraph[]): Map<string, number> {
+  private computeLineageDepths(
+    artifacts: ArtifactWithGraph[],
+  ): Map<string, number> {
     const parents = new Map<string, string | null>();
     for (const artifact of artifacts) {
       parents.set(artifact.id, artifact.parentId ?? null);
@@ -170,7 +187,7 @@ export class InfluenceService {
     artifacts: ArtifactWithGraph[],
     scores: Map<string, number>,
     citationCounts: Map<string, number>,
-    lineageDepths: Map<string, number>
+    lineageDepths: Map<string, number>,
   ): Promise<void> {
     const operations: Prisma.PrismaPromise<unknown>[] = [];
     for (const artifact of artifacts) {
@@ -192,7 +209,7 @@ export class InfluenceService {
             citationCount,
             lineageDepth,
           },
-        })
+        }),
       );
     }
 
@@ -201,7 +218,7 @@ export class InfluenceService {
 
   private async runValidation(
     artifacts: ArtifactWithGraph[],
-    scores: Map<string, number>
+    scores: Map<string, number>,
   ): Promise<void> {
     if (!this.validator) {
       this.lastValidationReport = null;
@@ -211,7 +228,9 @@ export class InfluenceService {
     const graph: InfluenceValidationGraph = {
       nodes: artifacts.map((artifact) => artifact.id),
       edges: artifacts.flatMap((artifact) =>
-        artifact.citationsFrom.map((citation) => [artifact.id, citation.toId] as [string, string])
+        artifact.citationsFrom.map(
+          (citation) => [artifact.id, citation.toId] as [string, string],
+        ),
       ),
     };
 
@@ -229,7 +248,10 @@ export class InfluenceService {
         engine: null,
         maxDelta: 0,
         externalScores: null,
-        error: error instanceof Error ? error.message : 'Unknown influence validation error',
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Unknown influence validation error',
       };
       if (error instanceof Error) {
         console.warn('Influence validation skipped:', error.message);

@@ -22,7 +22,7 @@
     "https-proxy-agent": "^5.0.1",
     "ipfs-http-client": "^60.0.0",
     "mermaid": "^11.12.1",
-    "next": "^14.2.15",
+    "next": "15.5.27",
     "ora": "^8.0.1",
     "parse-duration": "^2.1.4",
     "prom-client": "^15.1.3",
@@ -97,7 +97,7 @@
     "whatwg-fetch": "^3.6.20"
   },
   "engines": {
-    "node": "20.18.1",
+    "node": "22.23.3",
     "npm": ">=10.8.0 <11"
   },
   "keywords": [],
@@ -130,7 +130,7 @@
     "audit:freeze": "node scripts/audit/check-freeze.js",
     "audit:package": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/audit/package-kit.ts",
     "build": "truffle compile",
-    "build:gateway": "tsc -p agent-gateway/tsconfig.json",
+    "build:gateway": "tsc -p agent-gateway/tsconfig.json && node scripts/package-runtime-assets.cjs gateway",
     "check:access-control": "node scripts/ci/check-access-control-coverage.js",
     "check:coverage": "node scripts/check-coverage.js 90",
     "ci:verify-branch-protection": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/ci/verify-branch-protection.ts",
@@ -147,7 +147,7 @@
     "ci:lock-integrity": "node scripts/ci/check-lock-integrity.js",
     "ci:preflight": "npm run ci:verify-toolchain --silent && npm run ci:lock-integrity --silent",
     "compile": "ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/generate-constants.ts && hardhat compile",
-    "compile:mainnet": "npm run compile -- --network mainnet",
+    "compile:mainnet": "npm run compile -- --network mainnet && npm run release:check-size",
     "compile:sepolia": "npm run compile -- --network sepolia",
     "console:alpha-agi-mark": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/alpha-agi-mark/scripts/operatorConsole.ts",
     "contract:size": "npx hardhat size-contracts",
@@ -334,7 +334,7 @@
     "gas:check": "FOUNDRY_PROFILE=gas forge snapshot --match-contract CommitRevealGas --snap gas-snapshots/.gas-snapshot --check",
     "gas:report": "REPORT_GAS=true npx hardhat test --no-compile",
     "gas:snapshot": "FOUNDRY_PROFILE=gas forge snapshot --match-contract CommitRevealGas --snap gas-snapshots/.gas-snapshot",
-    "gateway": "npm run build:gateway && node agent-gateway/dist/index.js",
+    "gateway": "npm run build:gateway && node agent-gateway/dist/agent-gateway/index.js",
     "hamiltonian:report": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/hamiltonian-tracker.ts",
     "hamiltonian:update": "npx hardhat run scripts/v2/updateHamiltonianMonitor.ts",
     "identity:register": "npx ts-node scripts/identity/manageEnsKeys.ts",
@@ -458,8 +458,10 @@
     "wire:verify": "node scripts/run-wire-verify.js",
     "demo:meta-agentic-alpha": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/scripts/runDemo.ts",
     "test:meta-agentic-alpha": "node --import tsx demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/test/meta_agentic_demo.test.ts",
-    "owner:era-of-experience:controls": "node --import tsx demo/Era-Of-Experience-v0/scripts/updateOwnerControls.ts"
+    "owner:era-of-experience:controls": "node --import tsx demo/Era-Of-Experience-v0/scripts/updateOwnerControls.ts",
+    "release:check-size": "node scripts/release/check-contract-size.js",
+    "build:orchestrator": "tsc -p apps/orchestrator/tsconfig.json && node scripts/package-runtime-assets.cjs orchestrator"
   },
   "type": "commonjs",
-  "version": "1.0.0"
+  "version": "2.0.0"
 }

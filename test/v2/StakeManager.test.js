@@ -1,3 +1,6 @@
+const {
+  deployImplementations,
+} = require('../../scripts/deploy/implementations.cjs');
 const { expect } = require('chai');
 const { ethers, artifacts, network } = require('hardhat');
 const { time } = require('@nomicfoundation/hardhat-network-helpers');
@@ -55,7 +58,8 @@ describe('StakeManager', function () {
       treasury.address,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
-      owner.address
+      owner.address,
+      await deployImplementations('StakeManager', StakeManager.runner)
     );
     await stakeManager
       .connect(owner)
@@ -85,7 +89,8 @@ describe('StakeManager', function () {
       0,
       0,
       [],
-      owner.address
+      owner.address,
+      await deployImplementations('JobRegistry', JobRegistry.runner)
     );
     const TaxPolicy = await ethers.getContractFactory(
       'contracts/v2/TaxPolicy.sol:TaxPolicy'
@@ -145,7 +150,17 @@ describe('StakeManager', function () {
         )
     )
       .to.emit(stakeManager, 'StakeSlashed')
-      .withArgs(user.address, 0, employer.address, treasury.address, 50, 50, 0, 0, 0);
+      .withArgs(
+        user.address,
+        0,
+        employer.address,
+        treasury.address,
+        50,
+        50,
+        0,
+        0,
+        0
+      );
     expect(await stakeManager.stakes(user.address, 0)).to.equal(50n);
     expect(await stakeManager.totalStake(0)).to.equal(50n);
     expect(await token.balanceOf(employer.address)).to.equal(750n);
@@ -178,7 +193,8 @@ describe('StakeManager', function () {
       0,
       0,
       [],
-      owner.address
+      owner.address,
+      await deployImplementations('JobRegistry', JobRegistry.runner)
     );
     const TaxPolicy = await ethers.getContractFactory(
       'contracts/v2/TaxPolicy.sol:TaxPolicy'
@@ -241,7 +257,8 @@ describe('StakeManager', function () {
       0,
       0,
       [],
-      owner.address
+      owner.address,
+      await deployImplementations('JobRegistry', JobRegistry.runner)
     );
     const TaxPolicy = await ethers.getContractFactory(
       'contracts/v2/TaxPolicy.sol:TaxPolicy'
@@ -308,7 +325,8 @@ describe('StakeManager', function () {
       0,
       0,
       [],
-      owner.address
+      owner.address,
+      await deployImplementations('JobRegistry', JobRegistry.runner)
     );
     const TaxPolicy = await ethers.getContractFactory(
       'contracts/v2/TaxPolicy.sol:TaxPolicy'
@@ -362,7 +380,8 @@ describe('StakeManager', function () {
       0,
       0,
       [],
-      owner.address
+      owner.address,
+      await deployImplementations('JobRegistry', JobRegistry.runner)
     );
     const TaxPolicy = await ethers.getContractFactory(
       'contracts/v2/TaxPolicy.sol:TaxPolicy'
@@ -422,7 +441,8 @@ describe('StakeManager', function () {
       0,
       0,
       [],
-      owner.address
+      owner.address,
+      await deployImplementations('JobRegistry', JobRegistry.runner)
     );
     const TaxPolicy = await ethers.getContractFactory(
       'contracts/v2/TaxPolicy.sol:TaxPolicy'
@@ -478,7 +498,8 @@ describe('StakeManager', function () {
       0,
       0,
       [],
-      owner.address
+      owner.address,
+      await deployImplementations('JobRegistry', JobRegistry.runner)
     );
     const TaxPolicy = await ethers.getContractFactory(
       'contracts/v2/TaxPolicy.sol:TaxPolicy'
@@ -549,7 +570,8 @@ describe('StakeManager', function () {
       0,
       0,
       [],
-      owner.address
+      owner.address,
+      await deployImplementations('JobRegistry', JobRegistry.runner)
     );
     const TaxPolicy = await ethers.getContractFactory(
       'contracts/v2/TaxPolicy.sol:TaxPolicy'
@@ -608,7 +630,8 @@ describe('StakeManager', function () {
       0,
       0,
       [],
-      owner.address
+      owner.address,
+      await deployImplementations('JobRegistry', JobRegistry.runner)
     );
     const TaxPolicy = await ethers.getContractFactory(
       'contracts/v2/TaxPolicy.sol:TaxPolicy'
@@ -623,9 +646,7 @@ describe('StakeManager', function () {
       .setJobRegistry(await jobRegistry.getAddress());
     await taxPolicy.connect(user).acknowledge();
 
-    await expect(
-      stakeManager.connect(owner).setRoleMinimums(100, 1000, 0)
-    )
+    await expect(stakeManager.connect(owner).setRoleMinimums(100, 1000, 0))
       .to.emit(stakeManager, 'RoleMinimumUpdated')
       .withArgs(0, 100n)
       .and.to.emit(stakeManager, 'RoleMinimumUpdated')
@@ -638,9 +659,7 @@ describe('StakeManager', function () {
     expect(await stakeManager.roleMinimumStake(2)).to.equal(0n);
 
     await token.mint(user.address, 200);
-    await token
-      .connect(user)
-      .approve(await stakeManager.getAddress(), 2000);
+    await token.connect(user).approve(await stakeManager.getAddress(), 2000);
 
     await stakeManager.connect(user).depositStake(0, 100);
     await expect(
@@ -675,9 +694,7 @@ describe('StakeManager', function () {
       stakeManager.connect(user).setValidatorSlashRewardPct(15)
     ).to.be.revertedWithCustomError(stakeManager, 'NotGovernance');
     await stakeManager.connect(owner).setSlashingPercentages(60, 20);
-    await expect(
-      stakeManager.connect(owner).setValidatorSlashRewardPct(15)
-    )
+    await expect(stakeManager.connect(owner).setValidatorSlashRewardPct(15))
       .to.emit(stakeManager, 'ValidatorSlashRewardPctUpdated')
       .withArgs(15);
     expect(await stakeManager.validatorSlashRewardPct()).to.equal(15);
@@ -897,7 +914,8 @@ describe('StakeManager', function () {
       0,
       0,
       [],
-      owner.address
+      owner.address,
+      await deployImplementations('JobRegistry', JobRegistry.runner)
     );
     const TaxPolicy = await ethers.getContractFactory(
       'contracts/v2/TaxPolicy.sol:TaxPolicy'
@@ -953,7 +971,8 @@ describe('StakeManager', function () {
       0,
       0,
       [],
-      owner.address
+      owner.address,
+      await deployImplementations('JobRegistry', JobRegistry.runner)
     );
     const TaxPolicy = await ethers.getContractFactory(
       'contracts/v2/TaxPolicy.sol:TaxPolicy'
@@ -1017,7 +1036,8 @@ describe('StakeManager', function () {
       0,
       0,
       [],
-      owner.address
+      owner.address,
+      await deployImplementations('JobRegistry', JobRegistry.runner)
     );
     const TaxPolicy = await ethers.getContractFactory(
       'contracts/v2/TaxPolicy.sol:TaxPolicy'
@@ -1072,7 +1092,8 @@ describe('StakeManager', function () {
       0,
       0,
       [],
-      owner.address
+      owner.address,
+      await deployImplementations('JobRegistry', JobRegistry.runner)
     );
     const TaxPolicy = await ethers.getContractFactory(
       'contracts/v2/TaxPolicy.sol:TaxPolicy'
@@ -1112,7 +1133,17 @@ describe('StakeManager', function () {
         )
     )
       .to.emit(stakeManager, 'StakeSlashed')
-      .withArgs(user.address, 0, employer.address, treasury.address, 50, 50, 0, 0, 0)
+      .withArgs(
+        user.address,
+        0,
+        employer.address,
+        treasury.address,
+        50,
+        50,
+        0,
+        0,
+        0
+      )
       .and.to.emit(stakeManager, 'StakeUnlocked')
       .withArgs(user.address, 100);
 
@@ -1134,7 +1165,8 @@ describe('StakeManager', function () {
       0,
       0,
       [],
-      owner.address
+      owner.address,
+      await deployImplementations('JobRegistry', JobRegistry.runner)
     );
     const TaxPolicy = await ethers.getContractFactory(
       'contracts/v2/TaxPolicy.sol:TaxPolicy'
@@ -1169,7 +1201,8 @@ describe('StakeManager', function () {
       0,
       0,
       [],
-      owner.address
+      owner.address,
+      await deployImplementations('JobRegistry', JobRegistry.runner)
     );
     const TaxPolicy = await ethers.getContractFactory(
       'contracts/v2/TaxPolicy.sol:TaxPolicy'
@@ -1223,7 +1256,8 @@ describe('StakeManager', function () {
       0,
       0,
       [],
-      owner.address
+      owner.address,
+      await deployImplementations('JobRegistry', JobRegistry.runner)
     );
     const TaxPolicy = await ethers.getContractFactory(
       'contracts/v2/TaxPolicy.sol:TaxPolicy'
@@ -1302,7 +1336,8 @@ describe('StakeManager', function () {
       0,
       0,
       [],
-      owner.address
+      owner.address,
+      await deployImplementations('JobRegistry', JobRegistry.runner)
     );
     const TaxPolicy = await ethers.getContractFactory(
       'contracts/v2/TaxPolicy.sol:TaxPolicy'
@@ -1348,7 +1383,8 @@ describe('StakeManager', function () {
       0,
       0,
       [],
-      owner.address
+      owner.address,
+      await deployImplementations('JobRegistry', JobRegistry.runner)
     );
     const TaxPolicy = await ethers.getContractFactory(
       'contracts/v2/TaxPolicy.sol:TaxPolicy'
@@ -1406,7 +1442,8 @@ describe('StakeManager', function () {
       0,
       0,
       [],
-      owner.address
+      owner.address,
+      await deployImplementations('JobRegistry', JobRegistry.runner)
     );
     const TaxPolicy = await ethers.getContractFactory(
       'contracts/v2/TaxPolicy.sol:TaxPolicy'

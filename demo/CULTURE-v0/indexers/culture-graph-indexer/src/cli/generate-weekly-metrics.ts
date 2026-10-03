@@ -48,7 +48,11 @@ async function main(): Promise<void> {
     .parseAsync();
 
   const config = loadConfig();
-  const influence = new InfluenceService(prisma, {}, new NetworkXInfluenceValidator());
+  const influence = new InfluenceService(
+    prisma,
+    {},
+    new NetworkXInfluenceValidator(),
+  );
   await influence.recompute();
 
   const outputPath = resolve(argv.output ?? config.weeklyMetricsOutput);
@@ -64,32 +68,47 @@ async function computeMetrics(network: string): Promise<WeeklyMetrics> {
   const now = new Date();
   const { year, week } = isoWeek(now);
   const weekString = `${year}-W${String(week).padStart(2, '0')}`;
-  const weekStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  const weekStart = new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
+  );
   weekStart.setUTCDate(weekStart.getUTCDate() - 7);
 
-  const [totalArtifacts, mintedLast7Days, derivatives, influenceAggregate, kindGroups, topArtifacts, roundStats] =
-    await Promise.all([
-      prisma.artifact.count(),
-      prisma.artifact.count({ where: { timestamp: { gte: weekStart } } }),
-      prisma.artifact.count({ where: { parentId: { not: null } } }),
-      prisma.influenceMetric.aggregate({ _avg: { citationCount: true }, _max: { lineageDepth: true } }),
-      prisma.artifact.groupBy({ by: ['kind'], _count: { kind: true } }),
-      prisma.artifact.findMany({
-        take: 10,
-        orderBy: { influence: { score: 'desc' } },
-        include: { influence: true },
-      }),
-      prisma.roundFinalization.findMany({
-        where: { finalizedAt: { gte: weekStart } },
-        orderBy: { finalizedAt: 'desc' },
-      }),
-    ]);
+  const [
+    totalArtifacts,
+    mintedLast7Days,
+    derivatives,
+    influenceAggregate,
+    kindGroups,
+    topArtifacts,
+    roundStats,
+  ] = await Promise.all([
+    prisma.artifact.count(),
+    prisma.artifact.count({ where: { timestamp: { gte: weekStart } } }),
+    prisma.artifact.count({ where: { parentId: { not: null } } }),
+    prisma.influenceMetric.aggregate({
+      _avg: { citationCount: true },
+      _max: { lineageDepth: true },
+    }),
+    prisma.artifact.groupBy({ by: ['kind'], _count: { kind: true } }),
+    prisma.artifact.findMany({
+      take: 10,
+      orderBy: { influence: { score: 'desc' } },
+      include: { influence: true },
+    }),
+    prisma.roundFinalization.findMany({
+      where: { finalizedAt: { gte: weekStart } },
+      orderBy: { finalizedAt: 'desc' },
+    }),
+  ]);
 
   const scores = topArtifacts.map((artifact) => artifact.influence?.score ?? 0);
   const gini = scores.length > 0 ? giniCoefficient(scores) : 0;
   const avgCitations = influenceAggregate._avg.citationCount ?? 0;
   const maxLineage = influenceAggregate._max.lineageDepth ?? 0;
-  const cultureMaturityScore = Math.min(100, avgCitations * 20 + maxLineage * 10);
+  const cultureMaturityScore = Math.min(
+    100,
+    avgCitations * 20 + maxLineage * 10,
+  );
 
   const latestRound = roundStats[0]?.finalizedAt ?? null;
 
@@ -103,7 +122,9 @@ async function computeMetrics(network: string): Promise<WeeklyMetrics> {
       derivatives,
       averageCitations: avgCitations,
       maxLineageDepth: maxLineage,
-      byKind: Object.fromEntries(kindGroups.map((group) => [group.kind, group._count.kind])),
+      byKind: Object.fromEntries(
+        kindGroups.map((group) => [group.kind, group._count.kind]),
+      ),
     },
     influence: {
       cultureMaturityScore,
@@ -144,11 +165,15 @@ function giniCoefficient(values: readonly number[]): number {
 }
 
 function isoWeek(date: Date): { year: number; week: number } {
-  const target = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+  const target = new Date(
+    Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()),
+  );
   const dayNumber = target.getUTCDay() || 7;
   target.setUTCDate(target.getUTCDate() + 4 - dayNumber);
   const yearStart = new Date(Date.UTC(target.getUTCFullYear(), 0, 1));
-  const week = Math.ceil(((target.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+  const week = Math.ceil(
+    ((target.getTime() - yearStart.getTime()) / 86400000 + 1) / 7,
+  );
   return { year: target.getUTCFullYear(), week };
 }
 

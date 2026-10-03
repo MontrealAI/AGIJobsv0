@@ -12,16 +12,18 @@ function createMemoryPersistence<T>(initial: T): PersistenceAdapter<T> {
     },
     async save(data: T): Promise<void> {
       state = structuredClone(data);
-    }
+    },
   };
 }
 
 class MockArenaClient implements SelfPlayArenaClient {
   total = 0;
-  readonly startRound = jest.fn(async (_jobId: number, _teacher: string, _difficulty: number) => {
-    this.total += 1;
-    return this.total;
-  });
+  readonly startRound = jest.fn(
+    async (_jobId: number, _teacher: string, _difficulty: number) => {
+      this.total += 1;
+      return this.total;
+    },
+  );
   readonly registerStudent = jest.fn(async () => {});
   readonly registerValidator = jest.fn(async () => {});
   readonly closeRound = jest.fn(async () => {});
@@ -51,10 +53,10 @@ function buildConfig(): ArenaConfig {
       kFactor: 16,
       defaultRating: 1_200,
       floor: 800,
-      ceiling: 1_600
+      ceiling: 1_600,
     },
     persistencePath: undefined,
-    roundStatePath: undefined
+    roundStatePath: undefined,
   };
 }
 
@@ -77,14 +79,14 @@ describe('ArenaService', () => {
     const roundPersistence = createMemoryPersistence<any>({
       currentDifficulty: config.initialDifficulty,
       nextRoundId: 1,
-      rounds: []
+      rounds: [],
     });
     service = new ArenaService(config, {
       arenaContract: arenaClient,
       jobRegistry,
       pinJSON,
       eloPersistence,
-      roundPersistence
+      roundPersistence,
     });
     await flushPromises();
   });
@@ -94,17 +96,27 @@ describe('ArenaService', () => {
       artifactId: 7,
       teacher: '0x90f79bf6eb2c4f870365e785982e1f101e93b906',
       students: ['0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc'],
-      validators: ['0x9965507d1a55bcc2695c58ba16fb37d819b0a4dc']
+      validators: ['0x9965507d1a55bcc2695c58ba16fb37d819b0a4dc'],
     });
 
     expect(arenaClient.startRound).toHaveBeenCalledTimes(1);
     expect(arenaClient.registerStudent).toHaveBeenCalledTimes(1);
     expect(arenaClient.registerValidator).toHaveBeenCalledTimes(1);
     expect(round.status).toBe('open');
-    expect(service.getRound(round.id).teacher.address).toBe(round.teacher.address);
+    expect(service.getRound(round.id).teacher.address).toBe(
+      round.teacher.address,
+    );
 
-    await service.recordSubmission(round.id, round.teacher.address, 'cid:teacher');
-    await service.recordSubmission(round.id, round.students[0]!.address, 'cid:student');
+    await service.recordSubmission(
+      round.id,
+      round.teacher.address,
+      'cid:teacher',
+    );
+    await service.recordSubmission(
+      round.id,
+      round.students[0]!.address,
+      'cid:student',
+    );
     await flushPromises();
     await service.closeRound(round.id);
     await service.finalizeRound(round.id, [round.students[0]!.address]);
@@ -114,13 +126,13 @@ describe('ArenaService', () => {
     const teacher = '0x90f79bf6eb2c4f870365e785982e1f101e93b906';
     const students = [
       '0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc',
-      '0x15d34aaf54267db7d7c367839aaf71a00a2c6a65'
+      '0x15d34aaf54267db7d7c367839aaf71a00a2c6a65',
     ];
     const round = await service.startRound({
       artifactId: 12,
       teacher,
       students,
-      validators: []
+      validators: [],
     });
 
     await flushPromises();

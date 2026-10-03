@@ -1,13 +1,15 @@
 # syntax=docker/dockerfile:1.7
 
-FROM node:20.18.1-slim AS build
+FROM node:22.23.3-slim AS build
 WORKDIR /app
 ENV NODE_ENV=development
 
+ARG VITE_DEMO_MODE=false
 ARG VITE_ORCHESTRATOR_URL=http://localhost:4005
 ARG VITE_INDEXER_URL=http://localhost:4100/graphql
 ARG VITE_IPFS_GATEWAY=http://localhost:8080
-ENV VITE_ORCHESTRATOR_URL=$VITE_ORCHESTRATOR_URL \
+ENV VITE_DEMO_MODE=$VITE_DEMO_MODE \
+    VITE_ORCHESTRATOR_URL=$VITE_ORCHESTRATOR_URL \
     VITE_INDEXER_URL=$VITE_INDEXER_URL \
     VITE_IPFS_GATEWAY=$VITE_IPFS_GATEWAY
 
@@ -23,7 +25,11 @@ COPY demo/CULTURE-v0/apps/culture-studio/index.html ./index.html
 COPY demo/CULTURE-v0/apps/culture-studio/src ./src
 RUN npm run build
 
-FROM nginx:1.27-alpine AS runtime
+FROM nginx:1.30.5-alpine3.24 AS runtime
+RUN apk upgrade --no-cache
+RUN sed -i 's|pid[[:space:]]*/var/run/nginx.pid;|pid /tmp/nginx.pid;|' /etc/nginx/nginx.conf \
+  && mkdir -p /var/cache/nginx \
+  && chown -R nginx:nginx /var/cache/nginx /etc/nginx/conf.d
 COPY demo/CULTURE-v0/apps/culture-studio/nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /app/dist /usr/share/nginx/html
 

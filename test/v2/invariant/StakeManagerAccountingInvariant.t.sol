@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
+import {StakeManagerBase} from "../../../contracts/v2/implementation/StakeManagerBase.sol";
+
+import {FixedImplementationFixtures} from "../helpers/FixedImplementationFixtures.sol";
 
 import "forge-std/StdInvariant.sol";
 import "forge-std/Test.sol";
@@ -41,19 +44,19 @@ contract StakeManagerHandler {
     }
 
     function depositAgent(uint8 who, uint96 rawAmount) external {
-        _depositRole(who, rawAmount, StakeManager.Role.Agent);
+        _depositRole(who, rawAmount, StakeManagerBase.Role.Agent);
     }
 
     function depositValidator(uint8 who, uint96 rawAmount) external {
-        _depositRole(who, rawAmount, StakeManager.Role.Validator);
+        _depositRole(who, rawAmount, StakeManagerBase.Role.Validator);
     }
 
     function withdrawAgent(uint8 who, uint96 rawAmount) external {
-        _withdrawRole(who, rawAmount, StakeManager.Role.Agent);
+        _withdrawRole(who, rawAmount, StakeManagerBase.Role.Agent);
     }
 
     function withdrawValidator(uint8 who, uint96 rawAmount) external {
-        _withdrawRole(who, rawAmount, StakeManager.Role.Validator);
+        _withdrawRole(who, rawAmount, StakeManagerBase.Role.Validator);
     }
 
     function _depositRole(uint8 who, uint96 rawAmount, StakeManager.Role role) internal {
@@ -122,7 +125,7 @@ contract StakeManagerAccountingInvariant is StdInvariant, Test {
         taxPolicy = new TaxPolicy("ipfs://policy", "ack");
 
         JobRegistryAckRecorder ack = new JobRegistryAckRecorder(taxPolicy);
-        stake = new StakeManager(1e18, 5_000, 5_000, address(0), address(ack), address(0), address(timelock));
+        stake = new StakeManager(1e18, 5_000, 5_000, address(0), address(ack), address(0), address(timelock), FixedImplementationFixtures.stakeManager());
 
         handler = new StakeManagerHandler(stake, token, taxPolicy, address(this));
         taxPolicy.setAcknowledger(address(handler), true);
@@ -131,15 +134,15 @@ contract StakeManagerAccountingInvariant is StdInvariant, Test {
     }
 
     function invariant_totalStakeAccounting() public view {
-        uint256 agentSum = handler.totalTrackedStake(StakeManager.Role.Agent);
-        uint256 validatorSum = handler.totalTrackedStake(StakeManager.Role.Validator);
-        assertEq(agentSum, stake.totalStakes(StakeManager.Role.Agent), "agent stake mismatch");
-        assertEq(validatorSum, stake.totalStakes(StakeManager.Role.Validator), "validator stake mismatch");
+        uint256 agentSum = handler.totalTrackedStake(StakeManagerBase.Role.Agent);
+        uint256 validatorSum = handler.totalTrackedStake(StakeManagerBase.Role.Validator);
+        assertEq(agentSum, stake.totalStakes(StakeManagerBase.Role.Agent), "agent stake mismatch");
+        assertEq(validatorSum, stake.totalStakes(StakeManagerBase.Role.Validator), "validator stake mismatch");
     }
 
     function invariant_stakeManagerSolvent() public view {
-        uint256 liabilities = stake.totalStakes(StakeManager.Role.Agent)
-            + stake.totalStakes(StakeManager.Role.Validator) + stake.totalStakes(StakeManager.Role.Platform)
+        uint256 liabilities = stake.totalStakes(StakeManagerBase.Role.Agent)
+            + stake.totalStakes(StakeManagerBase.Role.Validator) + stake.totalStakes(StakeManagerBase.Role.Platform)
             + stake.operatorRewardPool();
         uint256 balance = token.balanceOf(address(stake));
         assertGe(balance, liabilities, "stake manager insolvent");

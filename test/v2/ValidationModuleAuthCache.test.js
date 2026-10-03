@@ -1,3 +1,6 @@
+const {
+  deployImplementations,
+} = require('../../scripts/deploy/implementations.cjs');
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
 const { time } = require('@nomicfoundation/hardhat-network-helpers');
@@ -27,7 +30,8 @@ describe('ValidationModule validator auth cache', function () {
       60,
       3,
       3,
-      []
+      [],
+      await deployImplementations('ValidationModule', Validation.runner)
     );
     await validation.waitForDeployment();
 
@@ -42,30 +46,20 @@ describe('ValidationModule validator auth cache', function () {
       .connect(owner)
       .setIdentityRegistry(await identity.getAddress());
 
-    await stakeManager.setStake(
-      v1.address,
-      1,
-      ethers.parseEther('100')
-    );
-    await stakeManager.setStake(
-      v2.address,
-      1,
-      ethers.parseEther('50')
-    );
-    await stakeManager.setStake(
-      v3.address,
-      1,
-      ethers.parseEther('25')
-    );
+    await stakeManager.setStake(v1.address, 1, ethers.parseEther('100'));
+    await stakeManager.setStake(v2.address, 1, ethers.parseEther('50'));
+    await stakeManager.setStake(v3.address, 1, ethers.parseEther('25'));
 
     await validation
       .connect(owner)
       .setValidatorPool([v1.address, v2.address, v3.address]);
 
-    await validation.connect(owner).setValidatorSubdomains(
-      [v1.address, v2.address, v3.address],
-      ['validator-1', 'validator-2', 'validator-3']
-    );
+    await validation
+      .connect(owner)
+      .setValidatorSubdomains(
+        [v1.address, v2.address, v3.address],
+        ['validator-1', 'validator-2', 'validator-3']
+      );
   });
 
   async function createJob(id) {

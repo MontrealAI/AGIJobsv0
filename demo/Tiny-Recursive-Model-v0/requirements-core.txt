@@ -1,0 +1,7 @@
+# Headless engine, CLI and tests; the optional dashboard lives in requirements.txt.
+numpy>=1.26,<3
+torch>=2.2,<3
+pyyaml>=6.0,<7
+rich>=13.7,<16
+typer>=0.12,<1
+pytest>=7.4,<9

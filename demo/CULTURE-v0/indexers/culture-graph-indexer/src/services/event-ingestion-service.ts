@@ -29,7 +29,7 @@ export class EventIngestionService {
   constructor(
     private readonly prisma: PrismaClient,
     private readonly influence: InfluenceService,
-    private readonly config: EventIngestionConfig
+    private readonly config: EventIngestionConfig,
   ) {
     const minted = this.cultureInterface.getEvent('ArtifactMinted');
     const cited = this.cultureInterface.getEvent('ArtifactCited');
@@ -135,7 +135,7 @@ export class EventIngestionService {
 
     await this.recordCursor(event.blockNumber, event.logIndex);
     const affected = [event.artifactId, event.parentId ?? undefined].filter(
-      (value): value is string => typeof value === 'string'
+      (value): value is string => typeof value === 'string',
     );
     await this.influence.recompute(affected);
   }
@@ -197,7 +197,10 @@ export class EventIngestionService {
     await this.recordCursor(event.blockNumber, event.logIndex);
   }
 
-  private async recordCursor(blockNumber: number, logIndex: number): Promise<void> {
+  private async recordCursor(
+    blockNumber: number,
+    logIndex: number,
+  ): Promise<void> {
     await this.prisma.eventCursor.upsert({
       where: { id: 1 },
       create: {
@@ -220,7 +223,9 @@ export class EventIngestionService {
       throw new Error('Unable to parse ArtifactMinted log');
     }
     const block = await this.provider.getBlock(log.blockNumber);
-    const timestamp = block ? new Date(Number(block.timestamp) * 1000) : new Date();
+    const timestamp = block
+      ? new Date(Number(block.timestamp) * 1000)
+      : new Date();
     const parentValue = parsed.args.parentId as bigint;
 
     return {
@@ -268,7 +273,9 @@ export class EventIngestionService {
     };
   }
 
-  async backfillHistoricalEvents(options: { force?: boolean } = {}): Promise<void> {
+  async backfillHistoricalEvents(
+    options: { force?: boolean } = {},
+  ): Promise<void> {
     if (this.backfillInFlight) {
       await this.backfillInFlight;
       return;
@@ -286,7 +293,9 @@ export class EventIngestionService {
       return;
     }
 
-    const cursor = await this.prisma.eventCursor.findUnique({ where: { id: 1 } });
+    const cursor = await this.prisma.eventCursor.findUnique({
+      where: { id: 1 },
+    });
     const reorgBuffer = this.config.finalityDepth ?? 0;
     const batchSize = this.config.blockBatchSize ?? 1_000;
     const latestBlock = await this.provider.getBlockNumber();
@@ -304,7 +313,11 @@ export class EventIngestionService {
     const cultureAddress = this.config.cultureRegistryAddress.toLowerCase();
     const arenaAddress = this.config.selfPlayArenaAddress?.toLowerCase();
 
-    for (let fromBlock = startingBlock; fromBlock <= targetBlock; fromBlock += batchSize) {
+    for (
+      let fromBlock = startingBlock;
+      fromBlock <= targetBlock;
+      fromBlock += batchSize
+    ) {
       const toBlock = Math.min(fromBlock + batchSize - 1, targetBlock);
 
       const mintedLogs = await this.provider.getLogs({
@@ -335,7 +348,8 @@ export class EventIngestionService {
         ...citedLogs.map((log) => ({ kind: 'cited' as const, log })),
         ...finalizedLogs.map((log) => ({ kind: 'finalized' as const, log })),
       ].sort((a, b) => {
-        const blockDelta = Number(a.log.blockNumber ?? 0) - Number(b.log.blockNumber ?? 0);
+        const blockDelta =
+          Number(a.log.blockNumber ?? 0) - Number(b.log.blockNumber ?? 0);
         if (blockDelta !== 0) {
           return blockDelta;
         }
@@ -346,7 +360,11 @@ export class EventIngestionService {
         const blockNumber = Number(log.blockNumber ?? 0);
         const logIndex = Number(log.index ?? 0);
 
-        if (shouldSkipDuplicates && blockNumber === cursor?.blockNumber && logIndex <= (cursor?.logIndex ?? -1)) {
+        if (
+          shouldSkipDuplicates &&
+          blockNumber === cursor?.blockNumber &&
+          logIndex <= (cursor?.logIndex ?? -1)
+        ) {
           continue;
         }
 
@@ -357,7 +375,11 @@ export class EventIngestionService {
           } else if (kind === 'cited') {
             const event = await this.parseArtifactCited(log);
             await this.handleArtifactCited(event);
-          } else if (kind === 'finalized' && arenaAddress && log.address?.toLowerCase() === arenaAddress) {
+          } else if (
+            kind === 'finalized' &&
+            arenaAddress &&
+            log.address?.toLowerCase() === arenaAddress
+          ) {
             const event = await this.parseRoundFinalized(log);
             await this.handleRoundFinalized(event);
           }

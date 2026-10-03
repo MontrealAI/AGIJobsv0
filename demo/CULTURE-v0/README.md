@@ -22,10 +22,44 @@ flowchart LR
 ```
 
 ## Working With This Module
-1. From the repository root run `npm install` once to hydrate all workspaces.
-2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `demo/CULTURE-v0`.
-3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
-4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../../OperatorRunbook.md).
+
+Use Node **22.23.3** from the root `.nvmrc`. This module is an independent **pnpm 10.5.2** workspace; a root npm installation does not install it.
+
+```sh
+cd demo/CULTURE-v0
+corepack enable
+pnpm install --frozen-lockfile
+pnpm -r run build
+pnpm run lint
+```
+
+For a browser-only preview, run:
+
+```sh
+VITE_DEMO_MODE=true pnpm --filter culture-studio dev --host 127.0.0.1
+```
+
+Open the URL printed by Vite. The visible **Interactive preview** banner identifies simulated drafting, uploads, minting, jobs, and rounds. This mode makes no service requests, spends no funds, and supplies illustrative results. All existing workflow screens remain available.
+
+For service integration, leave `VITE_DEMO_MODE` unset or `false`, configure `VITE_ORCHESTRATOR_URL` and `VITE_INDEXER_URL`, then rebuild/restart the UI. Failed requests remain visible and never turn into simulated successes. Open **Operator connection** to enter the operator API token; it stays in browser memory and is sent only to the orchestrator. Never enter a wallet private key there.
+
+The arena service can run locally after building:
+
+```sh
+pnpm --filter culture-arena-orchestrator start
+```
+
+Leave both arena address and operator key unset for its in-memory simulation. On-chain mode requires **all three** server settings: a deployed nonzero `SELF_PLAY_ARENA_ADDRESS`, its authorized `ORCHESTRATOR_PRIVATE_KEY`, and an independent `ORCHESTRATOR_API_TOKEN` of at least 32 characters. The legacy `SELFPLAY_ARENA_ADDRESS` alias is supported, but conflicting values stop startup. Use HTTPS and a secret store for remote deployments. Public reads remain available; writes require the token when configured. Corrupt state or failed chain initialization stops startup instead of silently resetting state.
+
+Copy `.env.example` to `.env` before using Compose and replace its local placeholders. Its public Anvil keys are for disposable local networks only. Vite settings are build-time values, so rebuild the studio image after changing them. The full Compose/deployment path still needs the integration work listed below.
+
+Run `pnpm test` for the module gates. Foundry **v1.4.4** is required for contract checks. Capture mission telemetry using the module runbooks and [`OperatorRunbook.md`](../../OperatorRunbook.md).
+
+## Integration and release status
+
+This module is a working preview and development integration, not a completed production deployment. The arena HTTP API implements round operations and telemetry; the studio's LLM, IPFS upload, artifact mint, job creation, and owner-control requests still require real provider implementations. Some backend adapters are simulations even when an on-chain arena client is selected. A configured address alone does not establish end-to-end settlement.
+
+The corrected 90% coverage gates currently expose insufficient indexer coverage and studio branch coverage. Two Foundry scenarios exceed the committed gas budgets, and the gas snapshot needs review. The Compose/Cypress deployment path needs commissioning, including real dependency contracts and operator roles. Keep these checks enabled; do not interpret an isolated build or preview walkthrough as a passing full release. See the [production-readiness record](../../docs/production/readiness-2026-10-03.md) for measured results and the remaining work.
 
 ## Directory Guide
 ### Key Directories

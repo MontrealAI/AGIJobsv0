@@ -1,4 +1,4 @@
-FROM node:20-alpine
+FROM node:22.23.3-alpine
 WORKDIR /srv/app
 RUN apk add --no-cache python3 make g++
 COPY package*.json ./

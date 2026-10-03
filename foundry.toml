@@ -1,4 +1,7 @@
 [profile.default]
+cache_path = "cache/forge"
+out = "out/forge"
+build_info_path = "out/forge/build-info"
 solc_version = "0.8.25"
 forge_version = "1.4.4"
 src = 'contracts/v2'

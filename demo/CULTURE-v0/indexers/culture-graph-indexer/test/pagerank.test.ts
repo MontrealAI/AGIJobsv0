@@ -9,7 +9,7 @@ describe('InfluenceService', () => {
     const influence = new InfluenceService(
       prisma,
       { maxIterations: 30, tolerance: 1e-9 },
-      new NoopInfluenceValidator()
+      new NoopInfluenceValidator(),
     );
 
     const baseTime = new Date();
@@ -53,24 +53,54 @@ describe('InfluenceService', () => {
 
     await prisma.citation.createMany({
       data: [
-        { fromId: 'A', toId: 'B', blockNumber: 4, blockHash: '0x4', logIndex: 0 },
-        { fromId: 'B', toId: 'C', blockNumber: 5, blockHash: '0x5', logIndex: 0 },
-        { fromId: 'C', toId: 'A', blockNumber: 6, blockHash: '0x6', logIndex: 0 },
-        { fromId: 'C', toId: 'B', blockNumber: 6, blockHash: '0x6', logIndex: 1 },
+        {
+          fromId: 'A',
+          toId: 'B',
+          blockNumber: 4,
+          blockHash: '0x4',
+          logIndex: 0,
+        },
+        {
+          fromId: 'B',
+          toId: 'C',
+          blockNumber: 5,
+          blockHash: '0x5',
+          logIndex: 0,
+        },
+        {
+          fromId: 'C',
+          toId: 'A',
+          blockNumber: 6,
+          blockHash: '0x6',
+          logIndex: 0,
+        },
+        {
+          fromId: 'C',
+          toId: 'B',
+          blockNumber: 6,
+          blockHash: '0x6',
+          logIndex: 1,
+        },
       ],
     });
 
     await influence.recompute();
 
-    const metrics = await prisma.influenceMetric.findMany({ orderBy: { score: 'desc' } });
+    const metrics = await prisma.influenceMetric.findMany({
+      orderBy: { score: 'desc' },
+    });
     expect(metrics).toHaveLength(3);
     expect(metrics[0].artifactId).toBe('B');
-    const lineage = new Map(metrics.map((metric) => [metric.artifactId, metric.lineageDepth]));
+    const lineage = new Map(
+      metrics.map((metric) => [metric.artifactId, metric.lineageDepth]),
+    );
     expect(lineage.get('A')).toBe(0);
     expect(lineage.get('B')).toBe(1);
     expect(lineage.get('C')).toBe(2);
 
-    const citationCounts = new Map(metrics.map((metric) => [metric.artifactId, metric.citationCount]));
+    const citationCounts = new Map(
+      metrics.map((metric) => [metric.artifactId, metric.citationCount]),
+    );
     expect(citationCounts.get('B')).toBe(2);
     expect(citationCounts.get('A')).toBe(1);
     expect(citationCounts.get('C')).toBe(1);

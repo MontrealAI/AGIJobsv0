@@ -1,3 +1,6 @@
+const {
+  deployImplementations,
+} = require('../../scripts/deploy/implementations.cjs');
 const { expect } = require('chai');
 const { ethers, artifacts, network } = require('hardhat');
 const { loadFixture } = require('@nomicfoundation/hardhat-network-helpers');
@@ -16,12 +19,18 @@ async function deployMockAgialpha() {
 
 async function feePoolFixture() {
   await deployMockAgialpha();
-  const [owner, pauser, treasury, newTreasury, rewarder] = await ethers.getSigners();
+  const [owner, pauser, treasury, newTreasury, rewarder] =
+    await ethers.getSigners();
 
   const Timelock = await ethers.getContractFactory(
     '@openzeppelin/contracts/governance/TimelockController.sol:TimelockController'
   );
-  const timelock = await Timelock.deploy(0, [owner.address], [owner.address], owner.address);
+  const timelock = await Timelock.deploy(
+    0,
+    [owner.address],
+    [owner.address],
+    owner.address
+  );
 
   const StakeManager = await ethers.getContractFactory(
     'contracts/v2/StakeManager.sol:StakeManager'
@@ -33,7 +42,8 @@ async function feePoolFixture() {
     ethers.ZeroAddress,
     ethers.ZeroAddress,
     ethers.ZeroAddress,
-    owner.address
+    owner.address,
+    await deployImplementations('StakeManager', StakeManager.runner)
   );
   const replacementStake = await StakeManager.deploy(
     0,
@@ -42,14 +52,19 @@ async function feePoolFixture() {
     ethers.ZeroAddress,
     ethers.ZeroAddress,
     ethers.ZeroAddress,
-    owner.address
+    owner.address,
+    await deployImplementations('StakeManager', StakeManager.runner)
   );
 
-  const TaxPolicy = await ethers.getContractFactory('contracts/v2/TaxPolicy.sol:TaxPolicy');
+  const TaxPolicy = await ethers.getContractFactory(
+    'contracts/v2/TaxPolicy.sol:TaxPolicy'
+  );
   const policy = await TaxPolicy.deploy('ipfs://policy-v1', 'ack');
   const newPolicy = await TaxPolicy.deploy('ipfs://policy-v2', 'ack-2');
 
-  const FeePool = await ethers.getContractFactory('contracts/v2/FeePool.sol:FeePool');
+  const FeePool = await ethers.getContractFactory(
+    'contracts/v2/FeePool.sol:FeePool'
+  );
   const pool = await FeePool.deploy(
     await initialStake.getAddress(),
     0,
@@ -86,10 +101,13 @@ async function stakeManagerFixture() {
     treasury.address,
     ethers.ZeroAddress,
     ethers.ZeroAddress,
-    owner.address
+    owner.address,
+    await deployImplementations('StakeManager', StakeManager.runner)
   );
 
-  const FeePool = await ethers.getContractFactory('contracts/v2/FeePool.sol:FeePool');
+  const FeePool = await ethers.getContractFactory(
+    'contracts/v2/FeePool.sol:FeePool'
+  );
   const pool = await FeePool.deploy(
     await stake.getAddress(),
     0,
@@ -127,7 +145,8 @@ async function stakeManagerFixture() {
 
 async function jobRegistryFixture() {
   await deployMockAgialpha();
-  const [owner, pauser, treasury, newTreasury, ackDelegate] = await ethers.getSigners();
+  const [owner, pauser, treasury, newTreasury, ackDelegate] =
+    await ethers.getSigners();
 
   const StakeManager = await ethers.getContractFactory(
     'contracts/v2/StakeManager.sol:StakeManager'
@@ -139,7 +158,8 @@ async function jobRegistryFixture() {
     ethers.ZeroAddress,
     ethers.ZeroAddress,
     ethers.ZeroAddress,
-    owner.address
+    owner.address,
+    await deployImplementations('StakeManager', StakeManager.runner)
   );
   await initialStake.connect(owner).setMinStake(1);
 
@@ -151,7 +171,9 @@ async function jobRegistryFixture() {
   const Reputation = await ethers.getContractFactory(
     'contracts/v2/ReputationEngine.sol:ReputationEngine'
   );
-  const initialReputation = await Reputation.deploy(await initialStake.getAddress());
+  const initialReputation = await Reputation.deploy(
+    await initialStake.getAddress()
+  );
 
   const DisputeModule = await ethers.getContractFactory(
     'contracts/v2/modules/DisputeModule.sol:DisputeModule'
@@ -169,10 +191,14 @@ async function jobRegistryFixture() {
   );
   const initialCertificate = await Certificate.deploy('Cert', 'CERT');
 
-  const TaxPolicy = await ethers.getContractFactory('contracts/v2/TaxPolicy.sol:TaxPolicy');
+  const TaxPolicy = await ethers.getContractFactory(
+    'contracts/v2/TaxPolicy.sol:TaxPolicy'
+  );
   const initialPolicy = await TaxPolicy.deploy('ipfs://policy-v1', 'ack');
 
-  const FeePool = await ethers.getContractFactory('contracts/v2/FeePool.sol:FeePool');
+  const FeePool = await ethers.getContractFactory(
+    'contracts/v2/FeePool.sol:FeePool'
+  );
   const initialFeePool = await FeePool.deploy(
     await initialStake.getAddress(),
     0,
@@ -194,7 +220,8 @@ async function jobRegistryFixture() {
     0,
     0,
     [],
-    owner.address
+    owner.address,
+    await deployImplementations('JobRegistry', JobRegistry.runner)
   );
 
   return {
@@ -233,9 +260,7 @@ describe('Governance configuration surfaces', function () {
         { treasury: treasury.address, allowed: true },
         { treasury: newTreasury.address, allowed: true },
       ];
-      const rewarderUpdates = [
-        { rewarder: rewarder.address, allowed: true },
-      ];
+      const rewarderUpdates = [{ rewarder: rewarder.address, allowed: true }];
 
       const config = {
         setStakeManager: true,
@@ -262,7 +287,9 @@ describe('Governance configuration surfaces', function () {
           .applyConfiguration(config, allowlistUpdates, rewarderUpdates)
       ).to.emit(pool, 'ConfigurationApplied');
 
-      expect(await pool.stakeManager()).to.equal(await replacementStake.getAddress());
+      expect(await pool.stakeManager()).to.equal(
+        await replacementStake.getAddress()
+      );
       expect(await pool.rewardRole()).to.equal(2n);
       expect(await pool.burnPct()).to.equal(6n);
       expect(await pool.treasury()).to.equal(newTreasury.address);
@@ -281,7 +308,9 @@ describe('Governance configuration surfaces', function () {
       const { owner, pauser, newTreasury, stake, pool, validation, dispute } =
         await loadFixture(stakeManagerFixture);
 
-      const allowlistUpdates = [{ treasury: newTreasury.address, allowed: true }];
+      const allowlistUpdates = [
+        { treasury: newTreasury.address, allowed: true },
+      ];
 
       const autoStakeSettings = {
         threshold: 3,
@@ -377,9 +406,15 @@ describe('Governance configuration surfaces', function () {
       expect(await stake.temperatureWeight()).to.equal(3n);
       expect(await stake.hamiltonianWeight()).to.equal(4n);
       expect(await stake.minStake()).to.equal(ethers.parseUnits('3', 18));
-      expect(await stake.roleMinimumStake(0)).to.equal(ethers.parseUnits('3', 18));
-      expect(await stake.roleMinimumStake(1)).to.equal(ethers.parseUnits('4', 18));
-      expect(await stake.roleMinimumStake(2)).to.equal(ethers.parseUnits('5', 18));
+      expect(await stake.roleMinimumStake(0)).to.equal(
+        ethers.parseUnits('3', 18)
+      );
+      expect(await stake.roleMinimumStake(1)).to.equal(
+        ethers.parseUnits('4', 18)
+      );
+      expect(await stake.roleMinimumStake(2)).to.equal(
+        ethers.parseUnits('5', 18)
+      );
       expect(await stake.employerSlashPct()).to.equal(60n);
       expect(await stake.treasurySlashPct()).to.equal(20n);
       expect(await stake.operatorSlashPct()).to.equal(5n);
@@ -388,13 +423,17 @@ describe('Governance configuration surfaces', function () {
       expect(await stake.treasury()).to.equal(newTreasury.address);
       expect(await stake.treasuryAllowlist(newTreasury.address)).to.equal(true);
       expect(await stake.disputeModule()).to.equal(await dispute.getAddress());
-      expect(await stake.validationModule()).to.equal(await validation.getAddress());
+      expect(await stake.validationModule()).to.equal(
+        await validation.getAddress()
+      );
       expect(await stake.feePct()).to.equal(3n);
       expect(await stake.feePool()).to.equal(await pool.getAddress());
       expect(await stake.burnPct()).to.equal(4n);
       expect(await stake.validatorRewardPct()).to.equal(6n);
       expect(await stake.unbondingPeriod()).to.equal(BigInt(14 * 24 * 3600));
-      expect(await stake.maxStakePerAddress()).to.equal(ethers.parseUnits('100', 18));
+      expect(await stake.maxStakePerAddress()).to.equal(
+        ethers.parseUnits('100', 18)
+      );
       expect(await stake.maxAGITypes()).to.equal(25n);
       expect(await stake.maxTotalPayoutPct()).to.equal(150n);
       expect(await stake.paused()).to.equal(true);
@@ -424,7 +463,8 @@ describe('Governance configuration surfaces', function () {
         ethers.ZeroAddress,
         ethers.ZeroAddress,
         ethers.ZeroAddress,
-        owner.address
+        owner.address,
+        await deployImplementations('StakeManager', StakeManager.runner)
       );
       await replacementStake.connect(owner).setMinStake(1);
 
@@ -456,10 +496,17 @@ describe('Governance configuration surfaces', function () {
       );
       const replacementCertificate = await Certificate.deploy('Cert2', 'CRT2');
 
-      const TaxPolicy = await ethers.getContractFactory('contracts/v2/TaxPolicy.sol:TaxPolicy');
-      const replacementPolicy = await TaxPolicy.deploy('ipfs://policy-v2', 'ack v2');
+      const TaxPolicy = await ethers.getContractFactory(
+        'contracts/v2/TaxPolicy.sol:TaxPolicy'
+      );
+      const replacementPolicy = await TaxPolicy.deploy(
+        'ipfs://policy-v2',
+        'ack v2'
+      );
 
-      const FeePool = await ethers.getContractFactory('contracts/v2/FeePool.sol:FeePool');
+      const FeePool = await ethers.getContractFactory(
+        'contracts/v2/FeePool.sol:FeePool'
+      );
       const replacementFeePool = await FeePool.deploy(
         await replacementStake.getAddress(),
         0,
@@ -483,7 +530,9 @@ describe('Governance configuration surfaces', function () {
       const AckStub = await ethers.getContractFactory(
         'contracts/v2/mocks/JobRegistryAckStub.sol:JobRegistryAckStub'
       );
-      const ackModule = await AckStub.deploy(await replacementPolicy.getAddress());
+      const ackModule = await AckStub.deploy(
+        await replacementPolicy.getAddress()
+      );
 
       const acknowledgerUpdates = [
         { acknowledger: ackDelegate.address, allowed: true },
@@ -545,9 +594,13 @@ describe('Governance configuration surfaces', function () {
         setAgentMerkleRoot: true,
         agentMerkleRoot: ethers.keccak256(ethers.toUtf8Bytes('agent.merkle')),
         setValidatorRootNode: true,
-        validatorRootNode: ethers.keccak256(ethers.toUtf8Bytes('validator.root')),
+        validatorRootNode: ethers.keccak256(
+          ethers.toUtf8Bytes('validator.root')
+        ),
         setValidatorMerkleRoot: true,
-        validatorMerkleRoot: ethers.keccak256(ethers.toUtf8Bytes('validator.merkle')),
+        validatorMerkleRoot: ethers.keccak256(
+          ethers.toUtf8Bytes('validator.merkle')
+        ),
         setAgentAuthCacheDuration: true,
         agentAuthCacheDuration: 86_400,
         bumpAgentAuthCacheVersion: true,
@@ -561,7 +614,9 @@ describe('Governance configuration surfaces', function () {
 
       expect(await registry.pauser()).to.equal(pauser.address);
       expect(await registry.pauserManager()).to.equal(owner.address);
-      expect(await registry.identityRegistry()).to.equal(await identity.getAddress());
+      expect(await registry.identityRegistry()).to.equal(
+        await identity.getAddress()
+      );
       expect(await registry.disputeModule()).to.equal(
         await replacementDispute.getAddress()
       );
@@ -595,7 +650,9 @@ describe('Governance configuration surfaces', function () {
       expect(await registry.agentAuthCacheDuration()).to.equal(86_400n);
       expect(await registry.agentAuthCacheVersion()).to.be.greaterThan(0n);
       expect(await registry.acknowledgers(ackDelegate.address)).to.equal(true);
-      expect(await registry.acknowledgers(await ackModule.getAddress())).to.equal(true);
+      expect(
+        await registry.acknowledgers(await ackModule.getAddress())
+      ).to.equal(true);
       expect(await identity.agentRootNode()).to.equal(config.agentRootNode);
       expect(await identity.agentMerkleRoot()).to.equal(config.agentMerkleRoot);
       expect(await identity.clubRootNode()).to.equal(config.validatorRootNode);

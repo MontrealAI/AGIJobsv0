@@ -66,7 +66,7 @@ flowchart TD
 
 ### Option A — GitHub Codespaces *(zero install, production parity)*
 1. Visit <https://github.com/MontrealAI/AGIJobsv0> → **Code → Codespaces → Create codespace on main**.
-2. The devcontainer provides Node.js 20.18.1, npm 10, Foundry (`forge`, `anvil`), Python 3.12, Docker CLI (DinD), and cached npm/pip layers matching CI.
+2. The devcontainer provides Node.js 22.23.3, npm 10, Foundry (`forge`, `anvil`), Python 3.12, Docker CLI (DinD), and cached npm/pip layers matching CI.
 3. Open the integrated terminal — you are in `/workspaces/AGIJobsv0` with GitHub CLI, `make`, and VS Code extensions preconfigured.
 4. Stop idle spaces to save credits; artefacts persist in GitHub Actions storage and Codespaces secrets remain scoped to your account.
 
@@ -74,7 +74,7 @@ flowchart TD
 1. Install prerequisites:
    - **Git**
    - **Docker Desktop** or **Podman** (compose v2 compatible)
-   - **Node.js 20.18.1** (`nvm install 20.18.1 && nvm alias default 20.18.1`)
+   - **Node.js 22.23.3** (`nvm install 22.23.3 && nvm alias default 22.23.3`)
    - **Python 3.12+** with `pip`
    - **Foundry** (`curl -L https://foundry.paradigm.xyz | bash` then `foundryup`)
    - Optional: **Git LFS** for cinematic artefacts.
@@ -357,7 +357,7 @@ These commands produce Markdown reports, JSON manifests, and Mermaid diagrams pa
 ## 🆘 Troubleshooting beacons
 | Symptom | Diagnostic | Remedy |
 | --- | --- | --- |
-| Build failure on TypeScript packages | `npm run lint` / `npm run build --workspaces` | Clear `node_modules`, rerun `npm ci`; ensure Node 20.18.1 active. |
+| Build failure on TypeScript packages | `npm run lint` / `npm run build --workspaces` | Clear `node_modules`, rerun `npm ci`; ensure Node 22.23.3 active. |
 | Hardhat deployment hangs | Check Anvil logs for `eth_sendRawTransaction` errors | Reset chain (`Ctrl+C`, rerun `anvil`), regenerate accounts, verify env variables. |
 | Demo missing artefacts | `ls demo/<name>/reports` | Ensure write permissions; some demos expect `PYTHONPATH` set to repo root. |
 | Docker compose container flaps | `docker compose logs -f <service>` | Inspect `.env` secrets; missing RPC/SAFE keys trigger retries. |

@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
+import {StakeManagerBase} from "../../contracts/v2/implementation/StakeManagerBase.sol";
+
+import {FixedImplementationFixtures} from "./helpers/FixedImplementationFixtures.sol";
 
 import "forge-std/Test.sol";
 import {ValidationModule} from "../../contracts/v2/ValidationModule.sol";
@@ -26,7 +29,7 @@ contract ValidationSlashingFuzz is Test {
         vm.etch(AGIALPHA, address(impl).code);
         vm.store(AGIALPHA, bytes32(uint256(5)), bytes32(uint256(uint160(address(this)))));
         token = AGIALPHAToken(payable(AGIALPHA));
-        stake = new StakeManager(1e18, 0, 10_000, address(0), address(0), address(0), address(this));
+        stake = new StakeManager(1e18, 0, 10_000, address(0), address(0), address(0), address(this), FixedImplementationFixtures.stakeManager());
         stake.setMinStake(1);
         vm.prank(address(stake));
         token.acceptTerms();
@@ -41,7 +44,7 @@ contract ValidationSlashingFuzz is Test {
             3,
             10,
             new address[](0)
-        );
+        , FixedImplementationFixtures.validationModule());
         validation.setIdentityRegistry(IIdentityRegistry(address(identity)));
     }
 
@@ -66,7 +69,7 @@ contract ValidationSlashingFuzz is Test {
             vm.prank(val);
             token.approve(address(stake), 1e18);
             vm.prank(val);
-            stake.depositStake(StakeManager.Role.Validator, 1e18);
+            stake.depositStake(StakeManagerBase.Role.Validator, 1e18);
         }
         string[] memory subs = new string[](size);
         for (uint8 i; i < size; i++) {

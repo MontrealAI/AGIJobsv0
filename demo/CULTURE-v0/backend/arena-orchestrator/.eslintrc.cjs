@@ -19,9 +19,11 @@ module.exports = {
     jest: true
   },
   rules: {
-    '@typescript-eslint/explicit-function-return-type': 'off'
+    '@typescript-eslint/explicit-function-return-type': 'off',
+    '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }]
   },
   settings: {
+    node: { version: '>=22.23.3' },
     'import/resolver': {
       typescript: {
         project: ['./tsconfig.json']

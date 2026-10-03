@@ -1,9 +1,4 @@
-const BLOCKED_TERMS = [
-  'violence',
-  'weapon',
-  'exploit',
-  'fraud'
-];
+const BLOCKED_TERMS = ['violence', 'weapon', 'exploit', 'fraud'];
 
 export interface SafetyReport {
   readonly blockedTerms: readonly string[];
@@ -15,15 +10,24 @@ export function runModerationCheck(content: string): string[] {
   return BLOCKED_TERMS.filter((term) => lower.includes(term));
 }
 
-export function runPlagiarismCheck(content: string, references: readonly string[]): boolean {
+export function runPlagiarismCheck(
+  content: string,
+  references: readonly string[],
+): boolean {
   const normalised = content.replace(/[^a-z0-9]+/gi, ' ').toLowerCase();
   return references.some((reference) => {
     const refNormalised = reference.replace(/[^a-z0-9]+/gi, ' ').toLowerCase();
-    return refNormalised.length > 32 && normalised.includes(refNormalised.slice(0, 32));
+    return (
+      refNormalised.length > 32 &&
+      normalised.includes(refNormalised.slice(0, 32))
+    );
   });
 }
 
-export function ensureContentSafe(content: string, references: readonly string[] = []): SafetyReport {
+export function ensureContentSafe(
+  content: string,
+  references: readonly string[] = [],
+): SafetyReport {
   const blocked = runModerationCheck(content);
   const plagiarismDetected = runPlagiarismCheck(content, references);
   if (blocked.length > 0) {

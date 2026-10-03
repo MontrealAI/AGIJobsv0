@@ -2,6 +2,23 @@
 
 > AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `demo/Tiny-Recursive-Model-v0`.
 
+## Run the headless demo
+
+From the repository root, use a Python 3.12 virtual environment:
+
+```bash
+python3.12 -m venv .venv-trm
+source .venv-trm/bin/activate
+python -m pip install -r demo/Tiny-Recursive-Model-v0/requirements-core.txt --extra-index-url https://download.pytorch.org/whl/cpu
+python -m pip check
+python demo/Tiny-Recursive-Model-v0/run_demo.py explain
+python demo/Tiny-Recursive-Model-v0/run_demo.py simulate --trials 24 --seed 7
+python -m pytest demo/Tiny-Recursive-Model-v0/tests test/demo/test_tiny_recursive_model_demo.py
+```
+
+The CLI reports synthetic task outcomes and simulated economics. These are not live paid settlements or measured production ROI. For the optional Streamlit dashboard, install `requirements.txt` in a separate virtual environment; its web dependencies must not overwrite the platform API's dependencies. When combining headless tests with the platform, install both requirement files in one pip invocation and run `python -m pip check`.
+
+
 ## Overview
 - **Path:** `demo/Tiny-Recursive-Model-v0/README.md`
 - **Module Focus:** Anchors Demo → Tiny Recursive Model v0 inside the AGI Jobs v0 (v2) lattice so teams can orchestrate economic, governance, and operational missions with deterministic guardrails.

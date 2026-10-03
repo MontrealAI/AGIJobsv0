@@ -1,6 +1,7 @@
 node_modules/
 # Keep local environment overrides out of version control.
 .env
+.venv*/
 artifacts/
 cache/
 coverage/
@@ -53,6 +54,7 @@ scripts/**/*.js
 !scripts/release/render-manifest-summary.js
 !scripts/release/run-etherscan-verification.js
 !scripts/release/validate-manifest.js
+!scripts/release/check-contract-size.js
 !scripts/utils/parseDuration.js
 build/
 lib/*
@@ -90,3 +92,6 @@ demo/Phase-8-Universal-Value-Dominance/test-results/
 demo/AGI-Alpha-Node-v0/.runtime/
 __pycache__/
 **/__pycache__/
+
+# Foundry output is isolated from Hardhat's artifacts directory.
+out/forge/

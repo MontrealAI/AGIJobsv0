@@ -1,3 +1,4 @@
+import { deployImplementations } from '../../scripts/deploy/implementations.cjs';
 import { expect } from 'chai';
 import { artifacts, ethers } from 'hardhat';
 import { time } from '@nomicfoundation/hardhat-network-helpers';
@@ -47,7 +48,8 @@ async function deployFullSystem() {
     ethers.ZeroAddress,
     ethers.ZeroAddress,
     ethers.ZeroAddress,
-    owner.address
+    owner.address,
+    await deployImplementations('StakeManager', Stake.runner)
   );
 
   const Reputation = await ethers.getContractFactory(
@@ -71,7 +73,8 @@ async function deployFullSystem() {
     1,
     1,
     5,
-    []
+    [],
+    await deployImplementations('ValidationModule', Validation.runner)
   );
 
   const NFT = await ethers.getContractFactory(
@@ -93,7 +96,8 @@ async function deployFullSystem() {
     0,
     0,
     [],
-    owner.address
+    owner.address,
+    await deployImplementations('JobRegistry', Registry.runner)
   );
 
   const Dispute = await ethers.getContractFactory(

@@ -10,6 +10,7 @@ const zodEntryPoint = require.resolve('zod');
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  outputFileTracingRoot: workspaceRoot,
   experimental: {
     forceSwcTransforms: true,
     externalDir: true

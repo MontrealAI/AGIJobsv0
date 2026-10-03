@@ -979,6 +979,8 @@ def test_phase8_honors_user_playwright_dep_preference(
     monkeypatch.setenv("PLAYWRIGHT_INSTALL_WITH_DEPS", "0")
     monkeypatch.setattr(run_demo_tests, "_can_install_playwright_deps", lambda: True)
     monkeypatch.setattr(run_demo_tests, "_playwright_system_deps_ready", lambda: False)
+    monkeypatch.setattr(run_demo_tests, "_apt_repos_reachable", lambda: True)
+    monkeypatch.setattr(run_demo_tests, "_playwright_downloads_reachable", lambda: True)
     monkeypatch.setattr(subprocess, "run", _fake_run)
 
     code, _ = run_demo_tests._run_suite(suite, {}, timeout=1)
@@ -1010,6 +1012,8 @@ def test_phase8_auto_installs_deps_when_host_ready(
     monkeypatch.delenv("PLAYWRIGHT_INSTALL_WITH_DEPS", raising=False)
     monkeypatch.setattr(run_demo_tests, "_can_install_playwright_deps", lambda: True)
     monkeypatch.setattr(run_demo_tests, "_playwright_system_deps_ready", lambda: False)
+    monkeypatch.setattr(run_demo_tests, "_apt_repos_reachable", lambda: True)
+    monkeypatch.setattr(run_demo_tests, "_playwright_downloads_reachable", lambda: True)
     monkeypatch.setattr(subprocess, "run", _fake_run)
 
     code, _ = run_demo_tests._run_suite(suite, {}, timeout=1)

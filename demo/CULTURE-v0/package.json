@@ -19,7 +19,9 @@
     "test": "pnpm run lint && pnpm run test:contracts && pnpm run test:contracts:hardhat && pnpm run test:services && pnpm run check:coverage && pnpm run check:budgets"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "3.3.1",
     "@nomicfoundation/hardhat-toolbox": "^6.1.0",
+    "@openzeppelin/contracts": "5.4.0",
     "cypress": "^13.15.0",
     "hardhat": "^2.26.1",
     "hardhat-contract-sizer": "^2.10.0",
@@ -28,5 +30,18 @@
     "solidity-coverage": "^0.8.14",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.2"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@apollo/protobufjs",
+      "@prisma/client",
+      "@prisma/engines",
+      "cypress",
+      "esbuild",
+      "keccak",
+      "prisma",
+      "secp256k1",
+      "unrs-resolver"
+    ]
   }
 }

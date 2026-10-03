@@ -1,3 +1,6 @@
+const {
+  deployImplementations,
+} = require('../../scripts/deploy/implementations.cjs');
 const { expect } = require('chai');
 const { ethers, artifacts, network } = require('hardhat');
 
@@ -116,7 +119,8 @@ describe('ValidationModule quorum penalties', function () {
       ethers.ZeroAddress,
       await jobRegistry.getAddress(),
       ethers.ZeroAddress,
-      owner.address
+      owner.address,
+      await deployImplementations('StakeManager', StakeManager.runner)
     );
     await stakeManager.waitForDeployment();
 
@@ -141,7 +145,8 @@ describe('ValidationModule quorum penalties', function () {
       REVEAL_WINDOW,
       3,
       3,
-      []
+      [],
+      await deployImplementations('ValidationModule', Validation.runner)
     );
     await validation.waitForDeployment();
 
@@ -170,7 +175,9 @@ describe('ValidationModule quorum penalties', function () {
     await validation.connect(owner).setRevealQuorum(100, 3);
 
     for (const signer of validators) {
-      await token.connect(signer).approve(await stakeManager.getAddress(), STAKE_AMOUNT);
+      await token
+        .connect(signer)
+        .approve(await stakeManager.getAddress(), STAKE_AMOUNT);
       await stakeManager
         .connect(signer)
         .depositStake(Role.Validator, STAKE_AMOUNT);
@@ -220,7 +227,9 @@ describe('ValidationModule quorum penalties', function () {
       chainId
     );
 
-    await validation.connect(v1).commitValidation(jobId, commitHash, 'validator', []);
+    await validation
+      .connect(v1)
+      .commitValidation(jobId, commitHash, 'validator', []);
 
     await advance(COMMIT_WINDOW + 1);
 

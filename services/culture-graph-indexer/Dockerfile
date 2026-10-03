@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 
-FROM node:20.18.1-slim AS base
+FROM node:22.23.3-slim AS base
 WORKDIR /app
 ENV NODE_ENV=production
 

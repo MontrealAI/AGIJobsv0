@@ -47,8 +47,12 @@ const buildHeaders = (apiToken?: string): HeadersInit | undefined => {
 export const checkOrchestratorHealth = async (
   options: OrchestratorHealthOptions
 ): Promise<OrchestratorHealthResult> => {
-  const { orchestratorBase, apiToken, fetchImpl = fetch, timeoutMs = DEFAULT_TIMEOUT_MS } =
-    options;
+  const {
+    orchestratorBase,
+    apiToken,
+    fetchImpl = fetch,
+    timeoutMs = DEFAULT_TIMEOUT_MS,
+  } = options;
 
   if (!orchestratorBase) {
     return { status: 'missing', error: null };

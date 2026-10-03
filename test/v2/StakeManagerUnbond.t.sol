@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
+import {StakeManagerBase} from "../../contracts/v2/implementation/StakeManagerBase.sol";
+
+import {FixedImplementationFixtures} from "./helpers/FixedImplementationFixtures.sol";
 
 import "forge-std/Test.sol";
 import {StakeManager} from "../../contracts/v2/StakeManager.sol";
@@ -24,7 +27,7 @@ contract StakeManagerUnbond is Test {
         vm.etch(AGIALPHA, address(impl).code);
         vm.store(AGIALPHA, bytes32(uint256(5)), bytes32(uint256(uint160(address(this)))));
         token = AGIALPHAToken(payable(AGIALPHA));
-        stake = new StakeManager(1e18, 5_000, 5_000, address(0), address(this), address(this), address(this));
+        stake = new StakeManager(1e18, 5_000, 5_000, address(0), address(this), address(this), address(this), FixedImplementationFixtures.stakeManager());
         stake.setMinStake(1);
         vm.prank(address(stake));
         token.acceptTerms();
@@ -32,7 +35,7 @@ contract StakeManagerUnbond is Test {
         vm.prank(user);
         token.approve(address(stake), 1e18);
         vm.prank(user);
-        stake.depositStake(StakeManager.Role.Validator, 1e18);
+        stake.depositStake(StakeManagerBase.Role.Validator, 1e18);
     }
 
     function taxPolicy() external pure returns (ITaxPolicy) {
@@ -41,33 +44,33 @@ contract StakeManagerUnbond is Test {
 
     function _request(uint256 amount) internal {
         vm.prank(user);
-        stake.requestWithdraw(StakeManager.Role.Validator, amount);
+        stake.requestWithdraw(StakeManagerBase.Role.Validator, amount);
     }
 
     function testUnbondDelay() public {
         _request(5e17);
         vm.prank(user);
         vm.expectRevert(UnbondLocked.selector);
-        stake.finalizeWithdraw(StakeManager.Role.Validator);
+        stake.finalizeWithdraw(StakeManagerBase.Role.Validator);
 
         vm.warp(block.timestamp + stake.unbondingPeriod());
         uint256 beforeBal = token.balanceOf(user);
         vm.prank(user);
-        stake.finalizeWithdraw(StakeManager.Role.Validator);
+        stake.finalizeWithdraw(StakeManagerBase.Role.Validator);
         assertEq(token.balanceOf(user), beforeBal + 5e17);
     }
 
     function testJailOnSlash() public {
         _request(5e17);
-        stake.slash(user, StakeManager.Role.Validator, 1e17, address(this));
+        stake.slash(user, StakeManagerBase.Role.Validator, 1e17, address(this));
         vm.prank(user);
         vm.expectRevert(UnbondLocked.selector);
-        stake.finalizeWithdraw(StakeManager.Role.Validator);
+        stake.finalizeWithdraw(StakeManagerBase.Role.Validator);
     }
 
     function testSlashWhileUnbondingAllowsNewWithdraw() public {
         _request(5e17);
-        stake.slash(user, StakeManager.Role.Validator, 1e17, address(this));
+        stake.slash(user, StakeManagerBase.Role.Validator, 1e17, address(this));
 
         (uint256 pending, uint64 unlockAt, bool jailed) = stake.unbonds(user);
         assertFalse(jailed);
@@ -77,14 +80,14 @@ contract StakeManagerUnbond is Test {
         vm.warp(block.timestamp + stake.unbondingPeriod());
         uint256 balanceBefore = token.balanceOf(user);
         vm.prank(user);
-        stake.finalizeWithdraw(StakeManager.Role.Validator);
+        stake.finalizeWithdraw(StakeManagerBase.Role.Validator);
         assertEq(token.balanceOf(user), balanceBefore + 45e16);
 
         (pending,,) = stake.unbonds(user);
         assertEq(pending, 0);
 
         vm.prank(user);
-        stake.requestWithdraw(StakeManager.Role.Validator, 2e17);
+        stake.requestWithdraw(StakeManagerBase.Role.Validator, 2e17);
     }
 
     function testPendingPenaltyRace() public {
@@ -93,12 +96,12 @@ contract StakeManagerUnbond is Test {
         vm.warp(block.timestamp + stake.unbondingPeriod());
         vm.prank(user);
         vm.expectRevert(PendingPenalty.selector);
-        stake.finalizeWithdraw(StakeManager.Role.Validator);
+        stake.finalizeWithdraw(StakeManagerBase.Role.Validator);
 
         stake.releaseStake(user, 1e17);
         uint256 balBefore = token.balanceOf(user);
         vm.prank(user);
-        stake.finalizeWithdraw(StakeManager.Role.Validator);
+        stake.finalizeWithdraw(StakeManagerBase.Role.Validator);
         assertEq(token.balanceOf(user), balBefore + 5e17);
     }
 

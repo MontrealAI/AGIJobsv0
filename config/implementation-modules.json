@@ -1,0 +1,18 @@
+{
+  "JobRegistry": [
+    "JobRegistryConfiguration",
+    "JobRegistryLifecycle",
+    "JobRegistrySettlement"
+  ],
+  "StakeManager": [
+    "StakeManagerConfiguration",
+    "StakeManagerStaking",
+    "StakeManagerEscrow",
+    "StakeManagerSlashing"
+  ],
+  "ValidationModule": [
+    "ValidationModuleConfiguration",
+    "ValidationModuleVoting",
+    "ValidationModuleSelection"
+  ]
+}

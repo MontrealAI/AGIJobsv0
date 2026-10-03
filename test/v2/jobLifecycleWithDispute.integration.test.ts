@@ -1,3 +1,4 @@
+import { deployImplementations } from '../../scripts/deploy/implementations.cjs';
 import { expect } from 'chai';
 import { artifacts, ethers } from 'hardhat';
 import { time } from '@nomicfoundation/hardhat-network-helpers';
@@ -49,7 +50,8 @@ async function deployFullSystem() {
     ethers.ZeroAddress,
     ethers.ZeroAddress,
     ethers.ZeroAddress,
-    owner.address
+    owner.address,
+    await deployImplementations('StakeManager', Stake.runner)
   );
 
   const Reputation = await ethers.getContractFactory(
@@ -77,7 +79,8 @@ async function deployFullSystem() {
     0,
     0,
     0,
-    []
+    [],
+    await deployImplementations('ValidationModule', Validation.runner)
   );
 
   const NFT = await ethers.getContractFactory(
@@ -99,7 +102,8 @@ async function deployFullSystem() {
     0,
     0,
     [],
-    owner.address
+    owner.address,
+    await deployImplementations('JobRegistry', Registry.runner)
   );
   await nft.connect(owner).setJobRegistry(await registry.getAddress());
   await nft.connect(owner).setStakeManager(await stake.getAddress());
@@ -130,13 +134,8 @@ async function deployFullSystem() {
 
   await stake
     .connect(owner)
-    .setModules(
-      await registry.getAddress(),
-      await dispute.getAddress()
-    );
-  await stake
-    .connect(owner)
-    .setValidationModule(await validation.getAddress());
+    .setModules(await registry.getAddress(), await dispute.getAddress());
+  await stake.connect(owner).setValidationModule(await validation.getAddress());
   await validation.connect(owner).setJobRegistry(await registry.getAddress());
   await validation
     .connect(owner)
@@ -312,7 +311,9 @@ describe('job lifecycle with dispute and validator failure', function () {
       )
     );
     const sigOwner = await owner.signMessage(ethers.getBytes(structHash));
-    const sigModerator = await moderator.signMessage(ethers.getBytes(structHash));
+    const sigModerator = await moderator.signMessage(
+      ethers.getBytes(structHash)
+    );
     await dispute
       .connect(moderator)
       .resolveWithSignatures(1, false, [sigOwner, sigModerator]);

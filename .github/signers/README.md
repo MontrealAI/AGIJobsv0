@@ -2,6 +2,17 @@
 
 > AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `.github/signers`.
 
+## Configure release trust
+
+The committed entries are examples containing invalid key payloads. They do not authorize a release. `npm run ci:verify-signers` must fail until a maintainer installs real SSH **public** keys. Never commit private keys.
+
+1. Obtain each authorized maintainer's public signing key through your established verification process.
+2. Replace the example entries with `<principal> namespaces="git" <key-type> <public-key-base64>`.
+3. Run `npm run ci:verify-signers`. The validator checks the key with OpenSSH; arbitrary base64 is rejected.
+4. Create an SSH-signed annotated release tag on the reviewed commit. Both tag-triggered and manually dispatched releases require this existing signed tag and an exact match to the checked-out commit.
+5. Verify with `node scripts/ci/ensure-tag-signature.js refs/tags/vX.Y.Z` before triggering a release. The registry authorizes SSH signatures; it is not a GPG trust store.
+
+
 ## Overview
 - **Path:** `.github/signers/README.md`
 - **Module Focus:** Anchors .github → Signers inside the AGI Jobs v0 (v2) lattice so teams can orchestrate economic, governance, and operational missions with deterministic guardrails.
@@ -29,7 +40,7 @@ flowchart LR
 
 ## Directory Guide
 ### Key Files
-- `allowed_signers` — production guardian registry consumed by release workflows and `git tag -v`.
+- `allowed_signers` — guardian registry template consumed by release workflows and `git tag -v`.
 
 | Principal | Key type | Notes |
 | --- | --- | --- |
@@ -43,6 +54,6 @@ flowchart LR
 - Keep secrets outside the tree; use the secure parameter stores wired to the AGI Jobs v0 (v2) guardian mesh.
 
 ## Next Steps
-- Run `npm run ci:verify-signers` after modifying the registry; CI enforces namespace scopes and base64 validity so only authentic guardians can sign releases.【F:package.json†L137-L143】【F:scripts/ci/check-signers.js†L1-L120】
+- Run `npm run ci:verify-signers` after modifying the registry; CI enforces namespace scopes and base64 validity and parses the OpenSSH public-key structure; tag verification then proves authorization.【F:package.json†L137-L143】【F:scripts/ci/check-signers.js†L1-L120】
 - Capture the updated hardware fingerprints inside your governance vault and update multisig playbooks accordingly.
 - Link new deliverables back to the central manifest via `npm run release:manifest` so provenance stays synchronised with mission telemetry.

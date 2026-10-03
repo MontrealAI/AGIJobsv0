@@ -1,3 +1,4 @@
+import { deployImplementations } from '../deploy/implementations.cjs';
 import { ethers, run, network, artifacts } from 'hardhat';
 import { writeFileSync } from 'fs';
 import { join } from 'path';
@@ -80,14 +81,14 @@ async function main() {
   try {
     const token = await ethers.getContractAt(
       ['function decimals() view returns (uint8)'],
-      tokenAddress,
+      tokenAddress
     );
     tokenDecimals = Number(await token.decimals());
     tokenAddress = await token.getAddress();
   } catch (error) {
     if (network.name === 'hardhat') {
       const agiArtifact = await artifacts.readArtifact(
-        'contracts/test/AGIALPHAToken.sol:AGIALPHAToken',
+        'contracts/test/AGIALPHAToken.sol:AGIALPHAToken'
       );
       await network.provider.send('hardhat_setCode', [
         AGIALPHA,
@@ -104,14 +105,16 @@ async function main() {
       tokenDecimals = AGIALPHA_DECIMALS;
       tokenAddress = AGIALPHA;
       console.warn(
-        `⚠️  AGIALPHA token not available on ${network.name}; injected mock bytecode at ${tokenAddress}`,
+        `⚠️  AGIALPHA token not available on ${network.name}; injected mock bytecode at ${tokenAddress}`
       );
     } else {
       throw error;
     }
   }
   if (tokenDecimals !== 18) {
-    throw new Error(`AGIALPHA token must have 18 decimals, got ${tokenDecimals}`);
+    throw new Error(
+      `AGIALPHA token must have 18 decimals, got ${tokenDecimals}`
+    );
   }
 
   // -------------------------------------------------------------------------
@@ -131,7 +134,8 @@ async function main() {
     treasury,
     ethers.ZeroAddress,
     ethers.ZeroAddress,
-    governance
+    governance,
+    await deployImplementations('StakeManager', Stake.runner)
   );
   await stake.waitForDeployment();
 
@@ -149,7 +153,8 @@ async function main() {
     0,
     0,
     [],
-    governance
+    governance,
+    await deployImplementations('JobRegistry', Registry.runner)
   );
   await registry.waitForDeployment();
 
@@ -172,7 +177,8 @@ async function main() {
     60,
     3,
     5,
-    []
+    [],
+    await deployImplementations('ValidationModule', Validation.runner)
   );
   await validation.waitForDeployment();
 
@@ -257,8 +263,7 @@ async function main() {
     'contracts/v2/FeePool.sol:FeePool'
   );
   const burnPctArg = getArg('burnPct');
-  const burnPct =
-    typeof burnPctArg === 'string' ? Number(burnPctArg) : 0;
+  const burnPct = typeof burnPctArg === 'string' ? Number(burnPctArg) : 0;
   const feePool = await FeePool.deploy(
     await stake.getAddress(),
     burnPct,
@@ -320,7 +325,9 @@ async function main() {
 
   if (network.name === 'hardhat') {
     const installerAddress = await installer.getAddress();
-    await network.provider.send('hardhat_impersonateAccount', [installerAddress]);
+    await network.provider.send('hardhat_impersonateAccount', [
+      installerAddress,
+    ]);
     const installerSigner = await ethers.getSigner(installerAddress);
     try {
       await network.provider.send('hardhat_setBalance', [
@@ -334,7 +341,9 @@ async function main() {
         console.warn('⚠️  Unable to auto-accept TaxPolicy ownership', taxError);
       }
     } finally {
-      await network.provider.send('hardhat_stopImpersonatingAccount', [installerAddress]);
+      await network.provider.send('hardhat_stopImpersonatingAccount', [
+        installerAddress,
+      ]);
     }
   }
 

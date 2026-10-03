@@ -1,3 +1,6 @@
+const {
+  deployImplementations,
+} = require('../../scripts/deploy/implementations.cjs');
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
 
@@ -56,7 +59,8 @@ describe('Identity verification enforcement', function () {
         0,
         0,
         [],
-        owner.address
+        owner.address,
+        await deployImplementations('JobRegistry', Registry.runner)
       );
       await registry
         .connect(owner)
@@ -133,7 +137,8 @@ describe('Identity verification enforcement', function () {
         60,
         3,
         3,
-        []
+        [],
+        await deployImplementations('ValidationModule', Validation.runner)
       );
       await validation.waitForDeployment();
       await validation
@@ -225,7 +230,9 @@ describe('Identity verification enforcement', function () {
 
       await identity.addAdditionalValidator(val);
       await (
-        await validation.connect(signer).commitValidation(1, commit, 'validator', [])
+        await validation
+          .connect(signer)
+          .commitValidation(1, commit, 'validator', [])
       ).wait();
       await advance(61);
       await identity.removeAdditionalValidator(val);
@@ -238,7 +245,11 @@ describe('Identity verification enforcement', function () {
 
     it('rejects node operators without allowlist or attestations', async () => {
       await identity.setNodeRootNode(ethers.namehash('node.agi.eth'));
-      const result = await identity.verifyNode.staticCall(v1.address, 'node1', []);
+      const result = await identity.verifyNode.staticCall(
+        v1.address,
+        'node1',
+        []
+      );
       expect(result[0]).to.equal(false);
     });
 

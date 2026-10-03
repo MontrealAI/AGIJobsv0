@@ -8,5 +8,7 @@ declare module '../../../../../shared/structuredLogger.js' {
     readonly jobId?: string;
   }
 
-  export function buildStructuredLogRecord(input: StructuredLogInput): Record<string, unknown>;
+  export function buildStructuredLogRecord(
+    input: StructuredLogInput,
+  ): Record<string, unknown>;
 }

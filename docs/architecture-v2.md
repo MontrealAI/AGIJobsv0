@@ -274,7 +274,7 @@ Reference Solidity interfaces are provided in `contracts/v2/interfaces` for inte
 
 ### Additional Gas Optimization Tips
 
-- Enable the Solidity optimizer with high `runs` to reduce bytecode size.
+- Measure optimized deployed bytecode with `npm run release:check-size`. Higher optimizer `runs` can increase code size; select settings using measured deployment size and execution costs.
 - Group related storage writes to minimise `SSTORE` operations.
 - Declare configuration constants as `immutable` or `constant` to cut storage reads.
 

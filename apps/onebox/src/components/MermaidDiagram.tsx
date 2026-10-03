@@ -77,5 +77,12 @@ export function MermaidDiagram({
     );
   }
 
-  return <div ref={containerRef} className={className} role="img" aria-label={ariaLabel} />;
+  return (
+    <div
+      ref={containerRef}
+      className={className}
+      role="img"
+      aria-label={ariaLabel}
+    />
+  );
 }

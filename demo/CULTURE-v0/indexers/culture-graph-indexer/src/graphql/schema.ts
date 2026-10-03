@@ -66,8 +66,15 @@ export const typeDefs = gql`
   type Query {
     artifact(id: ID!): Artifact
     artifacts(limit: Int = 20, offset: Int = 0, kind: String): [Artifact!]!
-    artifactsConnection(first: Int = 20, after: String, kind: String): ArtifactConnection!
-    citations(artifactId: ID!, direction: CitationDirection = OUTGOING): [Citation!]!
+    artifactsConnection(
+      first: Int = 20
+      after: String
+      kind: String
+    ): ArtifactConnection!
+    citations(
+      artifactId: ID!
+      direction: CitationDirection = OUTGOING
+    ): [Citation!]!
     lineage(artifactId: ID!): [LineageNode!]!
     topInfluential(limit: Int = 10): [Artifact!]!
     influencers(first: Int = 10, after: String): ArtifactConnection!

@@ -1,3 +1,6 @@
+const {
+  deployImplementations,
+} = require('../../scripts/deploy/implementations.cjs');
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
 
@@ -32,7 +35,8 @@ describe('Validator selection rotating strategy', function () {
       1,
       3,
       10,
-      []
+      [],
+      await deployImplementations('ValidationModule', Validation.runner)
     );
     await validation.waitForDeployment();
     await validation.setIdentityRegistry(await identity.getAddress());

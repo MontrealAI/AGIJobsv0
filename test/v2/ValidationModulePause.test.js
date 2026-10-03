@@ -1,3 +1,6 @@
+const {
+  deployImplementations,
+} = require('../../scripts/deploy/implementations.cjs');
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
 
@@ -30,7 +33,8 @@ describe('ValidationModule pause', function () {
       0,
       3,
       3,
-      [validator.address, v2.address, v3.address]
+      [validator.address, v2.address, v3.address],
+      await deployImplementations('ValidationModule', Validation.runner)
     );
     await validation.setIdentityRegistry(await identity.getAddress());
   });

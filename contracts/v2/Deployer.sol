@@ -37,12 +37,80 @@ import {IReputationEngine as IRInterface} from "./interfaces/IReputationEngine.s
 import {TOKEN_SCALE} from "./Constants.sol";
 
 /// @title Deployer
-/// @notice One shot helper that deploys and wires the core module set.
-/// @dev Each module is deployed with default parameters (zero values) and
+/// @notice Finalizes a staged deployment and atomically wires the core module set.
+/// @dev Modules are deployed separately, registered by the owner, and their
 ///      ownership is transferred to the supplied governance address once
 ///      wiring is complete.
 contract Deployer is Ownable {
     bool public deployed;
+    mapping(bytes32 => address) public components;
+    mapping(bytes32 => bytes32) public componentCodeHashes;
+    event ComponentDeployed(bytes32 indexed componentId, address indexed component, bytes32 creationCodeHash);
+
+    /// @notice Deploy one component per transaction, recording it for safe resumption.
+    /// @dev Controllers are paused atomically at creation until final wiring succeeds.
+    function deployComponent(bytes32 componentId, bytes calldata creationCode, bool pauseUntilWired)
+        external
+        onlyOwner
+        returns (address component)
+    {
+        require(!registered && !deployed, "registered");
+        require(componentId != bytes32(0), "component id");
+        require(creationCode.length != 0 && creationCode.length <= 49152, "initcode size");
+        bytes32 codeHash = keccak256(creationCode);
+        component = components[componentId];
+        if (component != address(0)) {
+            require(componentCodeHashes[componentId] == codeHash, "component configuration");
+            return component;
+        }
+        bytes memory code = creationCode;
+        assembly ("memory-safe") { component := create(0, add(code, 32), mload(code)) }
+        require(component != address(0) && component.code.length != 0, "component deployment");
+        if (pauseUntilWired) {
+            (bool ok, bytes memory reason) = component.call(abi.encodeWithSignature("pause()"));
+            if (!ok) assembly ("memory-safe") { revert(add(reason, 32), mload(reason)) }
+        }
+        components[componentId] = component;
+        componentCodeHashes[componentId] = codeHash;
+        emit ComponentDeployed(componentId, component, codeHash);
+    }
+
+    /// @dev Order matches Deployed, followed by ArbitratorCommittee. The pause controller is index 12.
+    address[14] private _staged;
+    bool public registered;
+    error InvalidStagedModule(uint256 index, address module);
+    error ModulesNotRegistered();
+    event ModulesRegistered(address[14] modules);
+
+    /// @notice Register a complete, separately deployed stack exactly once.
+    /// @dev All modules except SystemPause must be controlled by this coordinator.
+    ///      Two-step ownership transfers are accepted in this transaction.
+    function registerModules(address[14] calldata modules) external onlyOwner {
+        require(!registered && !deployed, "registered");
+        if (modules[10] != address(0) && TaxPolicy(payable(modules[10])).pendingOwner() == address(this)) {
+            TaxPolicy(payable(modules[10])).acceptOwnership();
+        }
+        if (modules[11] != address(0) && IdentityRegistry(payable(modules[11])).pendingOwner() == address(this)) {
+            IdentityRegistry(payable(modules[11])).acceptOwnership();
+        }
+        for (uint256 i; i < modules.length; ++i) {
+            if (i == 10 && modules[i] == address(0)) continue;
+            if (modules[i].code.length == 0) revert InvalidStagedModule(i, modules[i]);
+            for (uint256 j; j < i; ++j) {
+                if (modules[i] == modules[j]) revert InvalidStagedModule(i, modules[i]);
+            }
+            if (i != 12 && Ownable(modules[i]).owner() != address(this)) {
+                revert InvalidStagedModule(i, modules[i]);
+            }
+        }
+        _staged = modules;
+        registered = true;
+        emit ModulesRegistered(modules);
+    }
+
+    function stagedModules() external view returns (address[14] memory) {
+        return _staged;
+    }
 
     constructor() Ownable(msg.sender) {}
 
@@ -103,11 +171,10 @@ contract Deployer is Ownable {
     // Deployment entrypoints (use Etherscan's "Write Contract" tab)
     // ---------------------------------------------------------------------
 
-    function deploy(
-        EconParams calldata econ,
-        IdentityParams calldata ids,
-        address governance
-    ) external onlyOwner returns (
+    function deploy(EconParams calldata econ, IdentityParams calldata ids, address governance)
+        external
+        onlyOwner
+        returns (
             address stakeManager,
             address jobRegistry,
             address validationModule,
@@ -139,11 +206,10 @@ contract Deployer is Ownable {
     /// @return platformIncentives Address of the PlatformIncentives helper
     /// @return feePool Address of the FeePool
     /// @return taxPolicy Address of the TaxPolicy (always zero)
-    function deployWithoutTaxPolicy(
-        EconParams calldata econ,
-        IdentityParams calldata ids,
-        address governance
-    ) external onlyOwner returns (
+    function deployWithoutTaxPolicy(EconParams calldata econ, IdentityParams calldata ids, address governance)
+        external
+        onlyOwner
+        returns (
             address stakeManager,
             address jobRegistry,
             address validationModule,
@@ -211,10 +277,10 @@ contract Deployer is Ownable {
     /// @return platformIncentives Address of the PlatformIncentives helper
     /// @return feePool Address of the FeePool
     /// @return taxPolicy Address of the TaxPolicy (always zero)
-    function deployDefaultsWithoutTaxPolicy(
-        IdentityParams calldata ids,
-        address governance
-    ) external onlyOwner returns (
+    function deployDefaultsWithoutTaxPolicy(IdentityParams calldata ids, address governance)
+        external
+        onlyOwner
+        returns (
             address stakeManager,
             address jobRegistry,
             address validationModule,
@@ -234,12 +300,9 @@ contract Deployer is Ownable {
         return _deploy(false, econ, ids, governance);
     }
 
-    function _deploy(
-        bool withTaxPolicy,
-        EconParams memory econ,
-        IdentityParams memory ids,
-        address governance
-    ) internal returns (
+    function _deploy(bool withTaxPolicy, EconParams memory econ, IdentityParams memory ids, address governance)
+        internal
+        returns (
             address stakeManager,
             address jobRegistry,
             address validationModule,
@@ -256,15 +319,14 @@ contract Deployer is Ownable {
         )
     {
         require(!deployed, "deployed");
+        if (!registered) revert ModulesNotRegistered();
         deployed = true;
         require(governance != address(0), "governance");
 
         uint256 feePct = econ.feePct == 0 ? 5 : econ.feePct;
         uint256 burnPct = econ.burnPct == 0 ? 1 : econ.burnPct;
-        uint256 commitWindow =
-            econ.commitWindow == 0 ? 1 days : econ.commitWindow;
-        uint256 revealWindow =
-            econ.revealWindow == 0 ? 1 days : econ.revealWindow;
+        uint256 commitWindow = econ.commitWindow == 0 ? 1 days : econ.commitWindow;
+        uint256 revealWindow = econ.revealWindow == 0 ? 1 days : econ.revealWindow;
         uint256 minStake = econ.minStake == 0 ? TOKEN_SCALE : econ.minStake;
         uint256 employerSlashPct = econ.employerSlashPct;
         uint256 treasurySlashPct = econ.treasurySlashPct;
@@ -276,104 +338,50 @@ contract Deployer is Ownable {
             require(slashTotal <= 100, "invalid slash split");
         }
         uint96 jobStake = econ.jobStake;
-        StakeManager stake = new StakeManager(
-            minStake,
-            employerSlashPct,
-            treasurySlashPct,
-            governance,
-            address(0),
-            address(0),
-            address(this)
+        StakeManager stake = StakeManager(payable(payable(_staged[0])));
+        JobRegistry registry = JobRegistry(payable(payable(_staged[1])));
+        ValidationModule validation = ValidationModule(payable(payable(_staged[2])));
+        ReputationEngine reputation = ReputationEngine(payable(_staged[3]));
+        DisputeModule dispute = DisputeModule(payable(payable(_staged[4])));
+        CertificateNFT certificate = CertificateNFT(payable(_staged[5]));
+        PlatformRegistry pRegistry = PlatformRegistry(payable(_staged[6]));
+        JobRouter router = JobRouter(payable(_staged[7]));
+        PlatformIncentives incentives = PlatformIncentives(payable(_staged[8]));
+        FeePool pool = FeePool(payable(payable(_staged[9])));
+        TaxPolicy policy = TaxPolicy(payable(_staged[10]));
+        IdentityRegistry identity = IdentityRegistry(payable(_staged[11]));
+        SystemPause pause = SystemPause(payable(_staged[12]));
+        ArbitratorCommittee committee = ArbitratorCommittee(payable(_staged[13]));
+        require(withTaxPolicy == (address(policy) != address(0)), "tax policy mode");
+        require(pause.owner() == governance, "pause governance");
+        require(
+            address(pause.jobRegistry()) == address(registry) && address(pause.stakeManager()) == address(stake)
+                && address(pause.validationModule()) == address(validation)
+                && address(pause.disputeModule()) == address(dispute)
+                && address(pause.platformRegistry()) == address(pRegistry) && address(pause.feePool()) == address(pool)
+                && address(pause.reputationEngine()) == address(reputation)
+                && address(pause.arbitratorCommittee()) == address(committee),
+            "pause modules"
         );
-        if (validatorSlashPct != 0) {
-            stake.setValidatorSlashRewardPct(validatorSlashPct);
-        }
-        if (governance != address(0)) {
-            stake.setTreasuryAllowlist(governance, true);
-        }
-        address[] memory ackInit = new address[](1);
-        ackInit[0] = address(stake);
-        JobRegistry registry = new JobRegistry(
-            IValidationModule(address(0)),
-            IStakeManager(address(0)),
-            JIReputationEngine(address(0)),
-            JIDisputeModule(address(0)),
-            JICertificateNFT(address(0)),
-            IFeePool(address(0)),
-            ITaxPolicy(address(0)),
-            feePct,
-            jobStake,
-            ackInit,
-            address(this)
-        );
-
-        ValidationModule validation = new ValidationModule(
-            IJobRegistry(address(registry)),
-            IStakeManager(address(stake)),
-            commitWindow,
-            revealWindow,
-            0,
-            0,
-            new address[](0)
-        );
-
-        ReputationEngine reputation = new ReputationEngine(
-            IStakeManager(address(stake))
-        );
-
-        ArbitratorCommittee committee = new ArbitratorCommittee(
-            IJobRegistry(address(registry)),
-            IDisputeModule(address(0))
-        );
-        DisputeModule dispute = new DisputeModule(
-            IJobRegistry(address(registry)),
-            0,
-            0,
-            address(committee),
-            address(this)
-        );
+        stake.setMinStake(minStake);
+        require(stake.minStakeFloor() == minStake, "initial minimum stake");
+        stake.setSlashingPercentages(employerSlashPct, treasurySlashPct);
+        if (validatorSlashPct != 0) stake.setValidatorSlashRewardPct(validatorSlashPct);
+        stake.setTreasuryAllowlist(governance, true);
+        stake.setTreasury(governance);
+        registry.setFeePct(feePct);
+        registry.setJobStake(jobStake == 0 ? registry.DEFAULT_JOB_STAKE() : jobStake);
+        registry.setAcknowledger(address(stake), true);
+        validation.setTiming(commitWindow, revealWindow);
+        pool.setBurnPct(burnPct);
         committee.setDisputeModule(IDisputeModule(address(dispute)));
-
-        CertificateNFT certificate = new CertificateNFT("Cert", "CERT");
         certificate.setJobRegistry(address(registry));
-
-        TaxPolicy policy;
-        if (withTaxPolicy) {
-            policy = new TaxPolicy(
-                "ipfs://policy",
-                "All taxes on participants; contract and owner exempt"
-            );
-        }
-
-        FeePool pool = new FeePool(
-            IStakeManager(address(stake)),
-            burnPct,
-            address(0),
-            ITaxPolicy(address(policy))
+        require(
+            address(identity.ens()) == address(ids.ens) && address(identity.nameWrapper()) == address(ids.nameWrapper)
+                && identity.agentRootNode() == ids.agentRootNode && identity.clubRootNode() == ids.clubRootNode,
+            "identity configuration"
         );
-
-        IdentityRegistry identity = new IdentityRegistry(
-            ids.ens,
-            ids.nameWrapper,
-            IRInterface(address(reputation)),
-            ids.agentRootNode,
-            ids.clubRootNode
-        );
-
         IRInterface repInterface = IRInterface(address(reputation));
-        PlatformRegistry pRegistry = new PlatformRegistry(
-            IStakeManager(address(stake)),
-            PRReputationEngine(address(reputation)),
-            0
-        );
-
-        JobRouter router = new JobRouter(IPlatformRegistry(address(pRegistry)));
-
-        PlatformIncentives incentives = new PlatformIncentives(
-            IStakeManager(address(stake)),
-            IPlatformRegistryFull(address(pRegistry)),
-            IJobRouter(address(router))
-        );
 
         // Wire modules
         address[] memory acks = new address[](0);
@@ -402,44 +410,26 @@ contract Deployer is Ownable {
         validation.setReputationEngine(repInterface);
         stake.setModules(address(registry), address(dispute));
         incentives.setModules(
-            IStakeManager(address(stake)),
-            IPlatformRegistryFull(address(pRegistry)),
-            IJobRouter(address(router))
+            IStakeManager(address(stake)), IPlatformRegistryFull(address(pRegistry)), IJobRouter(address(router))
         );
         pRegistry.setRegistrar(address(incentives), true);
         router.setRegistrar(address(incentives), true);
         reputation.setAuthorizedCaller(address(registry), true);
         reputation.setAuthorizedCaller(address(validation), true);
 
-        SystemPause pause = new SystemPause(
-            registry,
-            stake,
-            validation,
-            dispute,
-            pRegistry,
-            pool,
-            reputation,
-            committee,
-            governance
-        );
-        // restore governance to the pause controller
-        stake.setGovernance(address(pause));
-        registry.setGovernance(address(pause));
-        dispute.setGovernance(address(pause));
+        registry.unpause();
+        stake.unpause();
+        validation.unpause();
 
-        // Transfer ownership
-        validation.transferOwnership(address(pause));
-        reputation.transferOwnership(address(pause));
-        committee.transferOwnership(address(pause));
-        certificate.transferOwnership(governance);
-        pRegistry.transferOwnership(address(pause));
-        router.transferOwnership(governance);
-        incentives.transferOwnership(governance);
-        pool.transferOwnership(address(pause));
-        if (address(policy) != address(0)) {
-            policy.transferOwnership(governance);
+        // Transfer governance/ownership through the common Ownable-compatible surface.
+        // IdentityRegistry and TaxPolicy retain their two-step acceptance requirements.
+        for (uint256 i; i < _staged.length; ++i) {
+            if (i == 12 || _staged[i] == address(0)) continue;
+            address destination = (i == 0 || i == 1 || i == 2 || i == 3 || i == 4 || i == 6 || i == 9 || i == 13)
+                ? address(pause)
+                : governance;
+            Ownable(_staged[i]).transferOwnership(destination);
         }
-        identity.transferOwnership(governance);
 
         emit Deployed(
             address(stake),

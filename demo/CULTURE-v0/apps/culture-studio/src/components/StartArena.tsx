@@ -10,7 +10,7 @@ import {
   type ArenaSummary,
   type ArenaTelemetry,
   type OwnerControlState,
-  type ScoreboardResponse
+  type ScoreboardResponse,
 } from '../lib/api.js';
 
 Chart.register(...registerables);
@@ -33,7 +33,9 @@ export function StartArena({ onRoundCompleted, onScoreboardUpdated }: Props) {
   const [studentCount, setStudentCount] = useState(6);
   const [difficultyTarget, setDifficultyTarget] = useState(0.62);
   const [step, setStep] = useState<Step>('configure');
-  const [status, setStatus] = useState<string>('Choose an artifact to anchor the arena round.');
+  const [status, setStatus] = useState<string>(
+    'Choose an artifact to anchor the arena round.',
+  );
   const [summary, setSummary] = useState<ArenaSummary | null>(null);
   const [telemetry, setTelemetry] = useState<ArenaTelemetry | null>(null);
   const [controls, setControls] = useState<OwnerControlState | null>(null);
@@ -41,30 +43,58 @@ export function StartArena({ onRoundCompleted, onScoreboardUpdated }: Props) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchArtifacts().then((items) => {
-      const mapped = items.map((item) => ({ id: item.id, title: item.title }));
-      setArtifacts(mapped);
-      if (mapped.length > 0) {
-        setSelectedArtifact(mapped[0].id);
-      }
-    });
-    fetchScoreboard().then((scoreboard) => {
-      setTelemetry(buildTelemetry(scoreboard));
-      setControls(scoreboard.ownerControls);
-      onScoreboardUpdated?.(scoreboard);
-    });
+    fetchArtifacts()
+      .then((items) => {
+        const mapped = items.map((item) => ({
+          id: item.id,
+          title: item.title,
+        }));
+        setArtifacts(mapped);
+        if (mapped.length > 0) {
+          setSelectedArtifact(mapped[0].id);
+        }
+      })
+      .catch((cause: unknown) => {
+        setError(
+          cause instanceof Error ? cause.message : 'Could not load artifacts.',
+        );
+      });
+    fetchScoreboard()
+      .then((scoreboard) => {
+        setTelemetry(buildTelemetry(scoreboard));
+        setControls(scoreboard.ownerControls);
+        onScoreboardUpdated?.(scoreboard);
+      })
+      .catch((cause: unknown) => {
+        setError(
+          cause instanceof Error
+            ? cause.message
+            : 'Could not load the scoreboard.',
+        );
+      });
   }, [onScoreboardUpdated]);
 
   useEffect(() => {
     if (!polling) return;
     let cancelled = false;
     const tick = async () => {
-      const scoreboard = await fetchScoreboard();
-      if (cancelled) return;
-      const telemetrySnapshot = buildTelemetry(scoreboard);
-      setTelemetry(telemetrySnapshot);
-      setControls(scoreboard.ownerControls);
-      onScoreboardUpdated?.(scoreboard);
+      try {
+        const scoreboard = await fetchScoreboard();
+        if (cancelled) return;
+        const telemetrySnapshot = buildTelemetry(scoreboard);
+        setTelemetry(telemetrySnapshot);
+        setControls(scoreboard.ownerControls);
+        onScoreboardUpdated?.(scoreboard);
+      } catch (cause) {
+        if (!cancelled) {
+          setError(
+            cause instanceof Error
+              ? cause.message
+              : 'Could not refresh the scoreboard.',
+          );
+          setPolling(false);
+        }
+      }
     };
     tick();
     const interval = setInterval(tick, 5000);
@@ -81,7 +111,11 @@ export function StartArena({ onRoundCompleted, onScoreboardUpdated }: Props) {
     setStep('launching');
     setStatus('Coordinating teacher, students, and validators…');
     try {
-      const arenaSummary = await launchArena({ artifactId: selectedArtifact, studentCount, difficultyTarget });
+      const arenaSummary = await launchArena({
+        artifactId: selectedArtifact,
+        studentCount,
+        difficultyTarget,
+      });
       setSummary(arenaSummary);
       setStatus(`Round ${arenaSummary.roundId} ready. Monitoring telemetry…`);
       onRoundCompleted?.(arenaSummary);
@@ -89,33 +123,49 @@ export function StartArena({ onRoundCompleted, onScoreboardUpdated }: Props) {
       setStep('monitoring');
     } catch (cause) {
       console.error(cause);
-      setError('Unable to start the arena. Please confirm the orchestrator is reachable.');
+      setError(
+        'Unable to start the arena. Please confirm the orchestrator is reachable.',
+      );
       setStep('configure');
+    }
+  };
+
+  const applyControlUpdate = async (update: Partial<OwnerControlState>) => {
+    try {
+      const next = await updateOwnerControls(update);
+      setControls(next);
+      setError(null);
+    } catch (cause) {
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : 'Owner controls were not updated.',
+      );
     }
   };
 
   const handleTogglePause = async () => {
     if (!controls) return;
-    const next = await updateOwnerControls({ paused: !controls.paused });
-    setControls(next);
+    await applyControlUpdate({ paused: !controls.paused });
   };
 
   const handleToggleAutoDifficulty = async () => {
     if (!controls) return;
-    const next = await updateOwnerControls({ autoDifficulty: !controls.autoDifficulty });
-    setControls(next);
+    await applyControlUpdate({
+      autoDifficulty: !controls.autoDifficulty,
+    });
   };
 
   const handleTargetChange = async (target: number) => {
-    const next = await updateOwnerControls({ targetSuccessRate: target });
-    setControls(next);
+    await applyControlUpdate({ targetSuccessRate: target });
   };
 
   useEffect(() => {
     if (step === 'monitoring' && summary) {
       setStatus(
-        `Round ${summary.roundId} running — watching success rate ${(summary.observedSuccessRate * 100).toFixed(1)}% and difficulty` +
-          ` ${summary.difficulty.toFixed(2)}.`
+        `Round ${summary.roundId} running — watching success rate ${(
+          summary.observedSuccessRate * 100
+        ).toFixed(1)}% and difficulty` + ` ${summary.difficulty.toFixed(2)}.`,
       );
     }
     if (step === 'monitoring' && telemetry) {
@@ -133,19 +183,20 @@ export function StartArena({ onRoundCompleted, onScoreboardUpdated }: Props) {
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
-        legend: { display: false }
+        legend: { display: false },
       },
       scales: {
         y: {
           min: 0,
           max: 1,
           ticks: {
-            callback: (value: string | number) => `${Math.round(Number(value) * 100)}%`
-          }
-        }
-      }
+            callback: (value: string | number) =>
+              `${Math.round(Number(value) * 100)}%`,
+          },
+        },
+      },
     }),
-    []
+    [],
   );
 
   const difficultyData = useMemo(() => {
@@ -158,9 +209,9 @@ export function StartArena({ onRoundCompleted, onScoreboardUpdated }: Props) {
           data: points.map((point) => point.value),
           borderColor: '#38bdf8',
           backgroundColor: 'rgba(56, 189, 248, 0.25)',
-          tension: 0.35
-        }
-      ]
+          tension: 0.35,
+        },
+      ],
     };
   }, [telemetry]);
 
@@ -174,9 +225,9 @@ export function StartArena({ onRoundCompleted, onScoreboardUpdated }: Props) {
           data: points.map((point) => point.value),
           borderColor: '#a855f7',
           backgroundColor: 'rgba(168, 85, 247, 0.2)',
-          tension: 0.35
-        }
-      ]
+          tension: 0.35,
+        },
+      ],
     };
   }, [telemetry]);
 
@@ -185,7 +236,10 @@ export function StartArena({ onRoundCompleted, onScoreboardUpdated }: Props) {
       <header className="section-header">
         <div>
           <h2>Start arena round</h2>
-          <p className="subtitle">Launch a self-play mission anchored to your latest artifact. Telemetry updates in real time.</p>
+          <p className="subtitle">
+            Launch a self-play mission anchored to your latest artifact.
+            Telemetry updates in real time.
+          </p>
         </div>
         <span className="status-pill">{status}</span>
       </header>
@@ -194,7 +248,12 @@ export function StartArena({ onRoundCompleted, onScoreboardUpdated }: Props) {
         <div>
           <label>
             1. Pick the anchor artifact
-            <select value={selectedArtifact ?? ''} onChange={(event) => setSelectedArtifact(Number(event.target.value))}>
+            <select
+              value={selectedArtifact ?? ''}
+              onChange={(event) =>
+                setSelectedArtifact(Number(event.target.value))
+              }
+            >
               {artifacts.map((artifact) => (
                 <option key={artifact.id} value={artifact.id}>
                   #{artifact.id} — {artifact.title}
@@ -220,26 +279,45 @@ export function StartArena({ onRoundCompleted, onScoreboardUpdated }: Props) {
               min={0.1}
               max={0.95}
               value={difficultyTarget}
-              onChange={(event) => setDifficultyTarget(Number(event.target.value))}
+              onChange={(event) =>
+                setDifficultyTarget(Number(event.target.value))
+              }
             />
           </label>
-          <button type="submit" disabled={step === 'launching' || step === 'monitoring'}>
+          <button
+            type="submit"
+            disabled={step === 'launching' || step === 'monitoring'}
+          >
             {step === 'launching' ? 'Starting…' : 'Launch arena'}
           </button>
         </div>
         <div className="wizard-summary">
           <h3>Round overview</h3>
           <ul>
-            <li>Selected artifact: {selectedArtifact ? `#${selectedArtifact}` : 'Choose an artifact'}</li>
+            <li>
+              Selected artifact:{' '}
+              {selectedArtifact ? `#${selectedArtifact}` : 'Choose an artifact'}
+            </li>
             <li>Students per round: {studentCount}</li>
             <li>Target success rate: {(difficultyTarget * 100).toFixed(0)}%</li>
           </ul>
           {summary && (
             <div className="summary-card">
               <h4>Latest summary</h4>
-              <p>Round {summary.roundId} • Difficulty {summary.difficulty.toFixed(2)}</p>
-              <p>Observed success {(summary.observedSuccessRate * 100).toFixed(1)}%</p>
-              <p>Winners: {summary.winners.length > 0 ? summary.winners.join(', ') : 'Teacher sweep'}</p>
+              <p>
+                Round {summary.roundId} • Difficulty{' '}
+                {summary.difficulty.toFixed(2)}
+              </p>
+              <p>
+                Observed success{' '}
+                {(summary.observedSuccessRate * 100).toFixed(1)}%
+              </p>
+              <p>
+                Winners:{' '}
+                {summary.winners.length > 0
+                  ? summary.winners.join(', ')
+                  : 'Teacher sweep'}
+              </p>
             </div>
           )}
           {error && <p className="error-text">{error}</p>}
@@ -291,13 +369,18 @@ export function StartArena({ onRoundCompleted, onScoreboardUpdated }: Props) {
       {controls && (
         <div className="owner-controls">
           <h3>Owner control panel</h3>
-          <p className="subtitle">Pause rounds, adjust pacing, and review the orchestrator&apos;s current settings.</p>
+          <p className="subtitle">
+            Pause rounds, adjust pacing, and review the orchestrator&apos;s
+            current settings.
+          </p>
           <div className="control-grid">
             <button type="button" onClick={handleTogglePause}>
               {controls.paused ? 'Resume arenas' : 'Pause arenas'}
             </button>
             <button type="button" onClick={handleToggleAutoDifficulty}>
-              {controls.autoDifficulty ? 'Hold difficulty steady' : 'Auto-balance difficulty'}
+              {controls.autoDifficulty
+                ? 'Hold difficulty steady'
+                : 'Auto-balance difficulty'}
             </button>
             <label>
               Target success rate
@@ -307,7 +390,9 @@ export function StartArena({ onRoundCompleted, onScoreboardUpdated }: Props) {
                 max={0.95}
                 step={0.05}
                 value={controls.targetSuccessRate}
-                onChange={(event) => handleTargetChange(Number(event.target.value))}
+                onChange={(event) =>
+                  handleTargetChange(Number(event.target.value))
+                }
               />
             </label>
             <div className="control-summary">

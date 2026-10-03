@@ -18,22 +18,31 @@ export function Scoreboard({ data }: Props) {
   };
 
   const latestRound = data.rounds.at(-1);
-  const difficulty = safeNumber(data.currentDifficulty, latestRound?.difficulty ?? 0);
-  const successRate = safeNumber(data.currentSuccessRate, latestRound?.successRate ?? 0);
-  const ownerControls = {
+  const difficulty = safeNumber(
+    data.currentDifficulty,
+    latestRound?.difficulty ?? 0,
+  );
+  const successRate = safeNumber(
+    data.currentSuccessRate,
+    latestRound?.successRate ?? 0,
+  );
+  const ownerControls = data.ownerControls ?? {
     paused: false,
     autoDifficulty: true,
     maxConcurrentJobs: 3,
     targetSuccessRate: successRate,
-    ...(data.ownerControls ?? {})
   };
-  const targetSuccessRate = safeNumber(ownerControls.targetSuccessRate, successRate);
+  const targetSuccessRate = safeNumber(
+    ownerControls.targetSuccessRate,
+    successRate,
+  );
 
   return (
     <section className="card">
       <h2>Telemetry snapshot</h2>
       <p className="subtitle">
-        Difficulty {difficulty.toFixed(2)} • Success {(successRate * 100).toFixed(1)}% • Target{' '}
+        Difficulty {difficulty.toFixed(2)} • Success{' '}
+        {(successRate * 100).toFixed(1)}% • Target{' '}
         {(targetSuccessRate * 100).toFixed(0)}%
       </p>
       <div className="grid two-columns">
@@ -67,7 +76,8 @@ export function Scoreboard({ data }: Props) {
           <ul>
             {data.rounds.slice(-5).map((round) => (
               <li key={round.id}>
-                Round {round.id}: diff {round.difficulty.toFixed(2)} (Δ {round.difficultyDelta.toFixed(2)}), success{' '}
+                Round {round.id}: diff {round.difficulty.toFixed(2)} (Δ{' '}
+                {round.difficultyDelta.toFixed(2)}), success{' '}
                 {(round.successRate * 100).toFixed(1)}% — {round.status}
               </li>
             ))}

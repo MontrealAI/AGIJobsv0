@@ -1,5 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
+import {StakeManagerBase} from "../../contracts/v2/implementation/StakeManagerBase.sol";
+import {ValidationModuleBase} from "../../contracts/v2/implementation/ValidationModuleBase.sol";
+
+import {FixedImplementationFixtures} from "./helpers/FixedImplementationFixtures.sol";
 
 import "forge-std/Test.sol";
 import {ValidationModule, InvalidCommitWindow} from "../../contracts/v2/ValidationModule.sol";
@@ -39,7 +43,7 @@ contract ValidationFinalizeGas is Test {
         vm.store(AGIALPHA, bytes32(uint256(5)), bytes32(uint256(uint160(address(this)))));
         token = AGIALPHAToken(payable(AGIALPHA));
 
-        stake = new StakeManager(1e18, 0, 10_000, TREASURY, address(0), address(0), address(this));
+        stake = new StakeManager(1e18, 0, 10_000, TREASURY, address(0), address(0), address(this), FixedImplementationFixtures.stakeManager());
         stake.setTreasuryAllowlist(TREASURY, true);
         vm.prank(address(stake));
         token.acceptTerms();
@@ -60,7 +64,7 @@ contract ValidationFinalizeGas is Test {
             vm.startPrank(validators[i]);
             token.acceptTerms();
             token.approve(address(stake), 1e18);
-            stake.depositStake(StakeManager.Role.Validator, 1e18);
+            stake.depositStake(StakeManagerBase.Role.Validator, 1e18);
             vm.stopPrank();
         }
 
@@ -77,7 +81,7 @@ contract ValidationFinalizeGas is Test {
             3,
             10,
             pool
-        );
+        , FixedImplementationFixtures.validationModule());
         validation.setIdentityRegistry(IIdentityRegistry(address(identity)));
         stake.setValidationModule(address(validation));
 
@@ -173,9 +177,9 @@ contract ValidationFinalizeGas is Test {
         uint256 newWindow = validation.commitWindow() + 5;
         uint256 reveal = validation.revealWindow();
         vm.expectEmit(false, false, false, true, address(validation));
-        emit ValidationModule.TimingUpdated(newWindow, reveal);
+        emit ValidationModuleBase.TimingUpdated(newWindow, reveal);
         vm.expectEmit(false, false, false, true, address(validation));
-        emit ValidationModule.CommitWindowUpdated(newWindow);
+        emit ValidationModuleBase.CommitWindowUpdated(newWindow);
         validation.setCommitWindow(newWindow);
         assertEq(validation.commitWindow(), newWindow, "commit window not updated");
     }

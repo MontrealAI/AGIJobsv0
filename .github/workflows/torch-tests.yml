@@ -1,6 +1,13 @@
 name: torch-tests
 
 on:
+  pull_request:
+    paths:
+      - 'demo/Tiny-Recursive-Model-v0/**'
+      - 'test/demo/test_tiny_recursive_model_demo.py'
+      - 'requirements-python.txt'
+      - 'services/meta_api/requirements.txt'
+      - '.github/workflows/torch-tests.yml'
   schedule:
     - cron: '0 3 * * *'
   workflow_dispatch:
@@ -40,12 +47,14 @@ jobs:
           cache: 'pip'
           cache-dependency-path: |
             requirements-python.txt
-            demo/Tiny-Recursive-Model-v0/requirements.txt
+            services/meta_api/requirements.txt
+            demo/Tiny-Recursive-Model-v0/requirements-core.txt
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements-python.txt
-          pip install -r demo/Tiny-Recursive-Model-v0/requirements.txt \
+          python -m pip install -r requirements-python.txt \
+            -r demo/Tiny-Recursive-Model-v0/requirements-core.txt \
             --extra-index-url https://download.pytorch.org/whl/cpu
+          python -m pip check
       - name: Run torch-marked tests
-        run: pytest -m requires_torch
+        run: python -m pytest -m requires_torch

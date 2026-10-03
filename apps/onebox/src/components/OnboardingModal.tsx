@@ -40,17 +40,23 @@ const prompts: readonly OnboardingPrompt[] = [
     id: 'finalise',
     title: 'Finalize delivery',
     description: 'Release escrow once the mission is complete.',
-    prompt: 'Finalize job 77 and release the escrowed AGIALPHA once validator approvals are recorded.',
+    prompt:
+      'Finalize job 77 and release the escrowed AGIALPHA once validator approvals are recorded.',
   },
   {
     id: 'audit',
     title: 'Audit receipts',
     description: 'Ask the assistant to surface attested history instantly.',
-    prompt: 'Show me the attested receipt and explorer link for the most recent mission.',
+    prompt:
+      'Show me the attested receipt and explorer link for the most recent mission.',
   },
 ];
 
-export function OnboardingModal({ open, onClose, onPromptSelect }: OnboardingModalProps) {
+export function OnboardingModal({
+  open,
+  onClose,
+  onPromptSelect,
+}: OnboardingModalProps) {
   const handleOverlayClick = useCallback(
     (event: MouseEvent<HTMLDivElement>) => {
       if (event.target === event.currentTarget) {
@@ -84,24 +90,38 @@ export function OnboardingModal({ open, onClose, onPromptSelect }: OnboardingMod
   }
 
   return (
-    <div className={styles.overlay} role="presentation" onClick={handleOverlayClick}>
+    <div
+      className={styles.overlay}
+      role="presentation"
+      onClick={handleOverlayClick}
+    >
       <div role="dialog" aria-modal="true" className={styles.modal}>
         <header className={styles.header}>
           <div className={styles.headerText}>
             <p className={styles.eyebrow}>🎖️ AGI Jobs One-Box</p>
-            <h2 className={styles.title}>Deploy unstoppable missions from a single command centre.</h2>
+            <h2 className={styles.title}>
+              Deploy unstoppable missions from a single command centre.
+            </h2>
             <p className={styles.subtitle}>
-              Describe what you need, approve the plan, and the orchestrator will escrow funds, publish specs, and stream back attested receipts—all without leaving this page.
+              Describe what you need, approve the plan, and the orchestrator
+              will escrow funds, publish specs, and stream back attested
+              receipts—all without leaving this page.
             </p>
           </div>
-          <button type="button" className={styles.closeButton} onClick={onClose} aria-label="Close onboarding">
+          <button
+            type="button"
+            className={styles.closeButton}
+            onClick={onClose}
+            aria-label="Close onboarding"
+          >
             ✕
           </button>
         </header>
         <section className={styles.section}>
           <h3 className={styles.sectionTitle}>Mission lifecycle</h3>
           <p className={styles.sectionIntro}>
-            Every mission flows through a verifiable pipeline with contract-owner guardrails enforced at each step.
+            Every mission flows through a verifiable pipeline with
+            contract-owner guardrails enforced at each step.
           </p>
           <div className={styles.diagramWrapper}>
             <MermaidDiagram
@@ -117,19 +137,23 @@ export function OnboardingModal({ open, onClose, onPromptSelect }: OnboardingMod
             <li>
               <span className={styles.checkEmoji}>✅</span>
               <span>
-                Confirm the orchestration banner is green—health checks and pause status stream directly from your contracts.
+                Confirm the orchestration banner is green—health checks and
+                pause status stream directly from your contracts.
               </span>
             </li>
             <li>
               <span className={styles.checkEmoji}>🛡️</span>
               <span>
-                Guardrails honour <code>ONEBOX_MAX_JOB_BUDGET_AGIA</code> and <code>ONEBOX_MAX_JOB_DURATION_DAYS</code>; increase or tighten them in seconds.
+                Guardrails honour <code>ONEBOX_MAX_JOB_BUDGET_AGIA</code> and{' '}
+                <code>ONEBOX_MAX_JOB_DURATION_DAYS</code>; increase or tighten
+                them in seconds.
               </span>
             </li>
             <li>
               <span className={styles.checkEmoji}>🧾</span>
               <span>
-                Each execution returns explorer links, IPFS CIDs, and signed receipts so you can prove compliance instantly.
+                Each execution returns explorer links, IPFS CIDs, and signed
+                receipts so you can prove compliance instantly.
               </span>
             </li>
           </ul>
@@ -137,7 +161,8 @@ export function OnboardingModal({ open, onClose, onPromptSelect }: OnboardingMod
         <section className={styles.section}>
           <h3 className={styles.sectionTitle}>Try it now</h3>
           <p className={styles.sectionIntro}>
-            Pick a ready-made instruction or type your own. The assistant will plan, simulate, and execute with production-grade safeguards.
+            Pick a ready-made instruction or type your own. The assistant will
+            plan, simulate, and execute with production-grade safeguards.
           </p>
           <div className={styles.promptGrid}>{promptButtons}</div>
         </section>

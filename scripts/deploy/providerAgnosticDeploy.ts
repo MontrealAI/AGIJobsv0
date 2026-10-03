@@ -1,3 +1,4 @@
+import { deployImplementations } from './implementations.cjs';
 import * as fs from 'fs';
 import * as path from 'path';
 import { ethers, network, artifacts } from 'hardhat';
@@ -189,7 +190,8 @@ async function deployContracts(ctx: DeploymentContext) {
     treasury,
     ethers.ZeroAddress,
     ethers.ZeroAddress,
-    deployerAddress
+    deployerAddress,
+    await deployImplementations('StakeManager', Stake.runner)
   );
   await stake.waitForDeployment();
 
@@ -235,7 +237,8 @@ async function deployContracts(ctx: DeploymentContext) {
     revealWindow,
     minValidators,
     maxValidators,
-    []
+    [],
+    await deployImplementations('ValidationModule', Validation.runner)
   );
   await validation.waitForDeployment();
 
@@ -310,7 +313,8 @@ async function deployContracts(ctx: DeploymentContext) {
     feePct,
     jobStake,
     [],
-    deployerAddress
+    deployerAddress,
+    await deployImplementations('JobRegistry', JobRegistry.runner)
   );
   await registry.waitForDeployment();
 

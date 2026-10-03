@@ -59,13 +59,11 @@ const arraysEqual = (a: string[], b: string[]) =>
 
 const uniqueStrings = (values: string[]) => Array.from(new Set(values));
 
-const DEFAULT_STATUS: Record<string, MilestoneStatus> = DEFAULT_MILESTONES.reduce(
-  (acc, milestone, index) => {
+const DEFAULT_STATUS: Record<string, MilestoneStatus> =
+  DEFAULT_MILESTONES.reduce((acc, milestone, index) => {
     acc[milestone.id] = index === 0 ? 'active' : 'todo';
     return acc;
-  },
-  {} as Record<string, MilestoneStatus>
-);
+  }, {} as Record<string, MilestoneStatus>);
 
 const statusLabels: Record<MilestoneStatus, string> = {
   todo: 'To do',
@@ -73,7 +71,9 @@ const statusLabels: Record<MilestoneStatus, string> = {
   done: 'Completed',
 };
 
-const fallbackActorByRole = (role: GovernanceActor['role']): GovernanceActor => {
+const fallbackActorByRole = (
+  role: GovernanceActor['role']
+): GovernanceActor => {
   const fallback = DEFAULT_ACTORS.find((actor) => actor.role === role);
   if (fallback) {
     return { ...fallback };
@@ -111,19 +111,25 @@ export function GovernanceCockpit() {
     const fallback = DEFAULT_ACTORS.find((actor) => actor.role === 'owner');
     return fallback ? fallback.id : '';
   });
-  const [selectedValidatorIds, setSelectedValidatorIds] = useState<string[]>(() => {
-    const stored = readStorage(VALIDATORS_KEY);
-    if (Array.isArray(stored)) {
-      const filtered = stored.filter((value): value is string => typeof value === 'string');
-      if (filtered.length > 0) {
-        return uniqueStrings(filtered);
+  const [selectedValidatorIds, setSelectedValidatorIds] = useState<string[]>(
+    () => {
+      const stored = readStorage(VALIDATORS_KEY);
+      if (Array.isArray(stored)) {
+        const filtered = stored.filter(
+          (value): value is string => typeof value === 'string'
+        );
+        if (filtered.length > 0) {
+          return uniqueStrings(filtered);
+        }
       }
+      const defaults = DEFAULT_ACTORS.filter(
+        (actor) => actor.role === 'validator'
+      )
+        .slice(0, 2)
+        .map((actor) => actor.id);
+      return defaults.length > 0 ? defaults : [];
     }
-    const defaults = DEFAULT_ACTORS.filter((actor) => actor.role === 'validator')
-      .slice(0, 2)
-      .map((actor) => actor.id);
-    return defaults.length > 0 ? defaults : [];
-  });
+  );
   const [connectedIds, setConnectedIds] = useState<string[]>(() => {
     const stored = readStorage(CONNECTIONS_KEY);
     if (Array.isArray(stored)) {
@@ -133,14 +139,16 @@ export function GovernanceCockpit() {
     }
     return [];
   });
-  const [milestoneState, setMilestoneState] = useState<Record<string, MilestoneStatus>>(
-    () => {
-      const stored = sanitiseMilestoneState(readStorage(MILESTONES_KEY));
-      const merged = { ...DEFAULT_STATUS, ...stored };
-      return merged;
-    }
+  const [milestoneState, setMilestoneState] = useState<
+    Record<string, MilestoneStatus>
+  >(() => {
+    const stored = sanitiseMilestoneState(readStorage(MILESTONES_KEY));
+    const merged = { ...DEFAULT_STATUS, ...stored };
+    return merged;
+  });
+  const [copiedMilestoneId, setCopiedMilestoneId] = useState<string | null>(
+    null
   );
-  const [copiedMilestoneId, setCopiedMilestoneId] = useState<string | null>(null);
   const [copyError, setCopyError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -247,12 +255,16 @@ export function GovernanceCockpit() {
 
   const sponsor = useMemo(() => {
     const selected = nations.find((actor) => actor.id === sponsorId);
-    return selected ? { ...selected } : cloneActors(nations)[0] ?? fallbackActorByRole('nation');
+    return selected
+      ? { ...selected }
+      : cloneActors(nations)[0] ?? fallbackActorByRole('nation');
   }, [nations, sponsorId]);
 
   const owner = useMemo(() => {
     const selected = owners.find((actor) => actor.id === ownerId);
-    return selected ? { ...selected } : cloneActors(owners)[0] ?? fallbackActorByRole('owner');
+    return selected
+      ? { ...selected }
+      : cloneActors(owners)[0] ?? fallbackActorByRole('owner');
   }, [owners, ownerId]);
 
   const selectedValidators = useMemo(() => {
@@ -294,15 +306,18 @@ export function GovernanceCockpit() {
 
   const connectedCount = connectedSet.size;
 
-  const updateJob = useCallback(<K extends keyof GovernanceJobBlueprint>(
-    key: K,
-    value: GovernanceJobBlueprint[K]
-  ) => {
-    setJob((current) => ({
-      ...current,
-      [key]: value,
-    }));
-  }, []);
+  const updateJob = useCallback(
+    <K extends keyof GovernanceJobBlueprint>(
+      key: K,
+      value: GovernanceJobBlueprint[K]
+    ) => {
+      setJob((current) => ({
+        ...current,
+        [key]: value,
+      }));
+    },
+    []
+  );
 
   const handleWalletChange = useCallback((id: string, wallet: string) => {
     setActors((current) =>
@@ -356,7 +371,10 @@ export function GovernanceCockpit() {
   const handleCopyPrompt = useCallback(
     async (milestone: GovernanceMilestone, prompt: string) => {
       try {
-        if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+        if (
+          navigator.clipboard &&
+          typeof navigator.clipboard.writeText === 'function'
+        ) {
           await navigator.clipboard.writeText(prompt);
         } else {
           const textarea = document.createElement('textarea');
@@ -403,7 +421,10 @@ export function GovernanceCockpit() {
           </div>
         </div>
         <p className={styles.actorMission}>{actor.mission}</p>
-        <label className={styles.actorWalletLabel} htmlFor={`wallet-${actor.id}`}>
+        <label
+          className={styles.actorWalletLabel}
+          htmlFor={`wallet-${actor.id}`}
+        >
           Wallet address
         </label>
         <input
@@ -463,7 +484,9 @@ export function GovernanceCockpit() {
           ) : null}
           <button
             type="button"
-            className={connected ? styles.connectedButton : styles.connectButton}
+            className={
+              connected ? styles.connectedButton : styles.connectButton
+            }
             onClick={() => handleToggleConnected(actor.id)}
           >
             {connected ? 'Mark as disconnected' : 'Mark as connected'}
@@ -478,7 +501,9 @@ export function GovernanceCockpit() {
       <header className={styles.header}>
         <h1 className={styles.title}>Solving α‑AGI Governance cockpit</h1>
         <p className={styles.subtitle}>
-          Configure multinational actors, craft the unstoppable governance proposal, and orchestrate commit-reveal execution using existing AGI Jobs tooling. Everything here is wallet-first and owner-governed.
+          Configure multinational actors, craft the unstoppable governance
+          proposal, and orchestrate commit-reveal execution using existing AGI
+          Jobs tooling. Everything here is wallet-first and owner-governed.
         </p>
       </header>
 
@@ -486,7 +511,8 @@ export function GovernanceCockpit() {
         <div className={styles.sectionHeader}>
           <h2 className={styles.sectionTitle}>Mission overview</h2>
           <p className={styles.sectionSubtitle}>
-            Select the execution network and ensure every participant wallet is funded, verified, and ready to act.
+            Select the execution network and ensure every participant wallet is
+            funded, verified, and ready to act.
           </p>
         </div>
         <label className={styles.inputLabel} htmlFor="network-input">
@@ -517,7 +543,9 @@ export function GovernanceCockpit() {
             <span className={styles.metricLabel}>Actors connected</span>
           </div>
           <div className={styles.metricCard}>
-            <span className={styles.metricValue}>{selectedValidators.length}</span>
+            <span className={styles.metricValue}>
+              {selectedValidators.length}
+            </span>
             <span className={styles.metricLabel}>Validators voting</span>
           </div>
         </div>
@@ -527,17 +555,23 @@ export function GovernanceCockpit() {
         <div className={styles.sectionHeader}>
           <h2 className={styles.sectionTitle}>Actor readiness</h2>
           <p className={styles.sectionSubtitle}>
-            Provide each actor’s controlling wallet. Toggle “connected” once the wallet is funded and authenticated with the validator CLI or owner console.
+            Provide each actor’s controlling wallet. Toggle “connected” once the
+            wallet is funded and authenticated with the validator CLI or owner
+            console.
           </p>
         </div>
-        <div className={styles.actorGrid}>{actors.map(renderActorControls)}</div>
+        <div className={styles.actorGrid}>
+          {actors.map(renderActorControls)}
+        </div>
       </section>
 
       <section className={styles.section}>
         <div className={styles.sectionHeader}>
           <h2 className={styles.sectionTitle}>Proposal blueprint</h2>
           <p className={styles.sectionSubtitle}>
-            These parameters feed directly into the mission prompt. They map to existing JobRegistry, StakeManager, ValidationModule, and DisputeModule controls.
+            These parameters feed directly into the mission prompt. They map to
+            existing JobRegistry, StakeManager, ValidationModule, and
+            DisputeModule controls.
           </p>
         </div>
         <div className={styles.formGrid}>
@@ -563,7 +597,8 @@ export function GovernanceCockpit() {
               className={styles.textareaControl}
             />
             <span className={styles.inputDescription}>
-              High-level problem statement used for simulation + validator context packets.
+              High-level problem statement used for simulation + validator
+              context packets.
             </span>
           </label>
           <label className={styles.inputGroup} htmlFor="job-reward">
@@ -571,7 +606,9 @@ export function GovernanceCockpit() {
             <input
               id="job-reward"
               value={job.rewardAgialpha}
-              onChange={(event) => updateJob('rewardAgialpha', event.target.value)}
+              onChange={(event) =>
+                updateJob('rewardAgialpha', event.target.value)
+              }
               className={styles.inputControl}
             />
             <span className={styles.inputDescription}>
@@ -579,15 +616,20 @@ export function GovernanceCockpit() {
             </span>
           </label>
           <label className={styles.inputGroup} htmlFor="job-stake">
-            <span className={styles.inputLabel}>Validator stake (AGIALPHA)</span>
+            <span className={styles.inputLabel}>
+              Validator stake (AGIALPHA)
+            </span>
             <input
               id="job-stake"
               value={job.validatorStakeAgialpha}
-              onChange={(event) => updateJob('validatorStakeAgialpha', event.target.value)}
+              onChange={(event) =>
+                updateJob('validatorStakeAgialpha', event.target.value)
+              }
               className={styles.inputControl}
             />
             <span className={styles.inputDescription}>
-              Mirrors StakeManager.setStakeAmount requirements for validator role.
+              Mirrors StakeManager.setStakeAmount requirements for validator
+              role.
             </span>
           </label>
           <label className={styles.inputGroup} htmlFor="job-quorum">
@@ -651,7 +693,9 @@ export function GovernanceCockpit() {
             <input
               id="job-reference"
               value={job.referenceUri ?? ''}
-              onChange={(event) => updateJob('referenceUri', event.target.value)}
+              onChange={(event) =>
+                updateJob('referenceUri', event.target.value)
+              }
               className={styles.inputControl}
               placeholder="ipfs://..."
             />
@@ -672,12 +716,17 @@ export function GovernanceCockpit() {
         <div className={styles.sectionHeader}>
           <h2 className={styles.sectionTitle}>Mission timeline</h2>
           <p className={styles.sectionSubtitle}>
-            Track every stage from proposal authoring to owner sign-off. Copy prompts directly into the Onebox chat or your own orchestrator runbooks.
+            Track every stage from proposal authoring to owner sign-off. Copy
+            prompts directly into the Onebox chat or your own orchestrator
+            runbooks.
           </p>
         </div>
         <ol className={styles.milestoneList}>
           {DEFAULT_MILESTONES.map((milestone) => {
-            const status = milestoneState[milestone.id] ?? DEFAULT_STATUS[milestone.id] ?? 'todo';
+            const status =
+              milestoneState[milestone.id] ??
+              DEFAULT_STATUS[milestone.id] ??
+              'todo';
             const prompt = buildMilestonePrompt(milestone, scenarioContext);
             const copied = copiedMilestoneId === milestone.id;
             const ownerCalls =
@@ -689,7 +738,9 @@ export function GovernanceCockpit() {
                 <div className={styles.milestoneHeader}>
                   <div>
                     <h3 className={styles.milestoneTitle}>{milestone.title}</h3>
-                    <p className={styles.milestoneSummary}>{milestone.summary}</p>
+                    <p className={styles.milestoneSummary}>
+                      {milestone.summary}
+                    </p>
                   </div>
                   <div className={styles.milestoneControls}>
                     <span
@@ -704,7 +755,9 @@ export function GovernanceCockpit() {
                       {statusLabels[status]}
                     </span>
                     <label className={styles.statusSelectLabel}>
-                      <span className={styles.statusSelectText}>Update status</span>
+                      <span className={styles.statusSelectText}>
+                        Update status
+                      </span>
                       <select
                         value={status}
                         onChange={(event) =>
@@ -727,7 +780,10 @@ export function GovernanceCockpit() {
                     <li key={criterion}>{criterion}</li>
                   ))}
                 </ul>
-                <label className={styles.promptLabel} htmlFor={`prompt-${milestone.id}`}>
+                <label
+                  className={styles.promptLabel}
+                  htmlFor={`prompt-${milestone.id}`}
+                >
                   Mission prompt
                 </label>
                 <textarea
@@ -735,19 +791,26 @@ export function GovernanceCockpit() {
                   value={prompt}
                   readOnly
                   className={styles.promptTextarea}
-                  rows={Math.min(16, Math.max(6, prompt.split('\n').length + 2))}
+                  rows={Math.min(
+                    16,
+                    Math.max(6, prompt.split('\n').length + 2)
+                  )}
                 />
                 <div className={styles.promptActions}>
                   <button
                     type="button"
-                    className={copied ? styles.copyButtonCopied : styles.copyButton}
+                    className={
+                      copied ? styles.copyButtonCopied : styles.copyButton
+                    }
                     onClick={() => handleCopyPrompt(milestone, prompt)}
                   >
                     {copied ? 'Copied' : 'Copy prompt'}
                   </button>
                   {ownerCalls.length > 0 ? (
                     <div className={styles.ownerCallouts}>
-                      <span className={styles.ownerCalloutsTitle}>Owner command deck</span>
+                      <span className={styles.ownerCalloutsTitle}>
+                        Owner command deck
+                      </span>
                       <ul className={styles.ownerCalloutsList}>
                         {ownerCalls.map((call) => (
                           <li key={call}>
