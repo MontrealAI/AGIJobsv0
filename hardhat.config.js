@@ -185,6 +185,10 @@ module.exports = {
       gas: 'auto',
       blockGasLimit: 30000000,
     },
+    localhost: {
+      url: process.env.LOCALHOST_RPC_URL || 'http://127.0.0.1:8545',
+      chainId: 31337,
+    },
     anvil: {
       url: process.env.ANVIL_RPC_URL || 'http://127.0.0.1:8545',
       chainId: 31337,

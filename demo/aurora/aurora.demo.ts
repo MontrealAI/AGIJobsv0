@@ -4,6 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import { randomBytes } from 'crypto';
 import { ethers } from 'ethers';
+import { resolveNamespace } from './bin/report-paths.cjs';
 
 type DeploySummary = {
   contracts: Record<string, string>;
@@ -86,17 +87,7 @@ type MissionJob = {
 };
 
 function resolveReportNamespace(): string {
-  const raw = process.env.AURORA_REPORT_NAMESPACE?.trim();
-  if (!raw) return 'aurora';
-  if (!/^[A-Za-z0-9_.-]+$/.test(raw)) {
-    throw new Error(
-      `Invalid AURORA_REPORT_NAMESPACE value: ${raw}. Allowed: alphanumeric, '-', '_', '.'`
-    );
-  }
-  if (raw === '.' || raw === '..') {
-    throw new Error('AURORA_REPORT_NAMESPACE cannot be a relative path token.');
-  }
-  return raw;
+  return resolveNamespace(REPORT_SCOPE);
 }
 
 function resolveMissionSegments(): string[] {
@@ -1301,6 +1292,7 @@ async function main() {
   const legacySingleJob = resolvedJobs.length === 1;
 
   for (const job of resolvedJobs) {
+    console.log(`Starting job: ${job.name}`);
     const jobDir = path.join('jobs', job.slug);
     const specHash = ethers.keccak256(
       ethers.toUtf8Bytes(JSON.stringify(job.spec))
@@ -1360,13 +1352,18 @@ async function main() {
     const submitReceipt = await submitTx.wait();
 
     // Submission seeds a future block; selection must finish before commits.
+    console.log(`Job ${jobId}: selecting the validator committee`);
     const selectionTarget = await validationModule.selectionBlock(jobId);
     const selectionTimeout = Date.now() + 120_000;
     while (BigInt(await provider.getBlockNumber()) <= selectionTarget) {
       if (Date.now() > selectionTimeout) {
         throw new Error(`Timed out waiting for validator selection for job ${jobId}`);
       }
-      await new Promise((resolve) => setTimeout(resolve, 1_000));
+      if (chain.chainId === 31337n) {
+        await provider.send('evm_mine', []);
+      } else {
+        await new Promise((resolve) => setTimeout(resolve, 1_000));
+      }
     }
     await (
       await validationModule.selectValidators(jobId, ethers.toBigInt(randomBytes(32)))
@@ -1420,6 +1417,7 @@ async function main() {
       });
     }
 
+    console.log(`Job ${jobId}: ${commitRecords.length} votes committed; entering reveal`);
     const commitWindowSeconds = Number(await validationModule.commitWindow());
     await advanceTime(provider, commitWindowSeconds + 1);
 
@@ -1448,6 +1446,7 @@ async function main() {
       .connect(validators[0])
       .finalize(jobId);
     const finalizeReceipt = await finalizeTx.wait();
+    console.log(`Job ${jobId}: validation complete; settling employer escrow`);
     const settlementTx = await jobRegistry.connect(employer).finalize(jobId);
     const settlementReceipt = await settlementTx.wait();
     const settledJob = await jobRegistry.jobs(jobId);
@@ -1487,7 +1486,12 @@ async function main() {
     }
 
     const finalizeRecord = {
+      jobId: jobId.toString(),
+      chainId: chain.chainId.toString(),
+      status: 'Finalized',
+      success: settledMetadata.success,
       txHash: settlementReceipt?.hash || settlementTx.hash,
+      blockNumber: settlementReceipt?.blockNumber,
       payouts,
     };
     writeReceipt(
