@@ -14,6 +14,7 @@ const requiredWorkflows = [
   'e2e.yml',
   'culture-ci.yml',
   'torch-tests.yml',
+  'production-rehearsal.yml',
 ];
 
 function checkRuns(runs, sha, required = requiredWorkflows) {

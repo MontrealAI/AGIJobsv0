@@ -1,0 +1,57 @@
+name: Production rehearsal
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    paths:
+      - 'agent-gateway/**'
+      - 'shared/**'
+      - 'contracts/**'
+      - 'config/**'
+      - 'scripts/**'
+      - 'test/**'
+      - 'demo/aurora/**'
+      - 'demo/asi-takeoff/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'hardhat.config.js'
+      - '.nvmrc'
+      - '.github/workflows/production-rehearsal.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-rehearsal-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  rehearsal:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+      - name: Install dependencies
+        env:
+          CYPRESS_INSTALL_BINARY: '0'
+        run: ./scripts/ci/npm-ci.sh --no-audit --prefer-offline --progress=false
+      - name: Check evidence tamper rejection
+        run: node --test test/scripts/rehearsal-evidence.test.cjs
+      - name: Run isolated production rehearsal
+        run: npm run production:rehearse
+      - name: Retain signed simulation evidence, including failures
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: production-rehearsal-${{ github.sha }}
+          path: reports/production-rehearsal/
+          if-no-files-found: error

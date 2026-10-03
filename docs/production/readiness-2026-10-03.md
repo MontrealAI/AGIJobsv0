@@ -6,6 +6,8 @@ Reviewed baseline: `7049353e1ee13c19b97365b269f9a9ac1800434c`, with the accompan
 
 ## Verified locally
 
+The subsequent [production rehearsal](rehearsal.md) executes signing rejection tests, real HTTP adapter fault injection, adversarial contract checks, and three local settled jobs as one isolated workflow. Its signed report explicitly records simulation evidence, `productionApproved: false`, and `independentReview: false`. It makes the remaining handoff reproducible without converting simulated evidence into production authorization.
+
 | Check                                                                      | Result                                                                                                                                         |
 | -------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
 | Supported root toolchain                                                   | Node 22.23.3, npm 10.8.2; toolchain and lockfile checks pass                                                                                   |

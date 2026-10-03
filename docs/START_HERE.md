@@ -12,6 +12,7 @@ This repository contains smart contracts, agent and validator services, operator
 | Explore a working model demo without a wallet | [Tiny Recursive Model setup](../demo/Tiny-Recursive-Model-v0/README.md#run-the-headless-demo) |
 | Execute a job from creation to local settlement | [AURORA walkthrough](../demo/aurora/README.md#run-the-local-job-lifecycle) |
 | Run a three-job local mission with receipts | [ASI Take-Off walkthrough](../demo/asi-takeoff/README.md#run-the-three-job-local-walkthrough) |
+| Rehearse release, provider failures, security controls, and commissioning | [Production rehearsal](production/rehearsal.md) |
 | Find a specific demo or subsystem | [Documentation catalog](readme-catalog.md) |
 | Run the browser console | [Console instructions](../apps/console/README.md) |
 | Develop agent integration | [Gateway guide](../agent-gateway/README.md) |

@@ -4,6 +4,13 @@ import path from 'path';
 import { ethers, Wallet } from 'ethers';
 import type { IPFSHTTPClient } from 'ipfs-http-client';
 
+// This suite stubs chain writes and uses local-only fixture configuration.
+process.env.RPC_URL = 'http://127.0.0.1:65535';
+process.env.JOB_REGISTRY_ADDRESS = '0x0000000000000000000000000000000000000001';
+process.env.VALIDATION_MODULE_ADDRESS =
+  '0x0000000000000000000000000000000000000002';
+process.env.KEYSTORE_URL = 'http://127.0.0.1:65535/keystore.json';
+
 import {
   runAgentTask,
   executeJob,
@@ -93,7 +100,9 @@ const originalAudit = auditLogger.recordAuditEvent;
 const registryAny = registry as any;
 const originalRegistryConnect = registryAny.connect;
 const originalRegistryTaxPolicy = registryAny.taxPolicy;
-const originalPublishCertificate = certificateMetadata.publishCertificateMetadata;
+const originalPublishCertificate =
+  certificateMetadata.publishCertificateMetadata;
+const originalSimulationMode = process.env.AGENT_ALLOW_SIMULATED_EXECUTION;
 
 before(() => {
   (energyMonitor as any).startEnergySpan = () => ({
@@ -138,6 +147,9 @@ after(() => {
 });
 
 afterEach(() => {
+  if (originalSimulationMode === undefined)
+    delete process.env.AGENT_ALLOW_SIMULATED_EXECUTION;
+  else process.env.AGENT_ALLOW_SIMULATED_EXECUTION = originalSimulationMode;
   setAgentEndpointInvoker(null);
   setIpfsClientFactory(null);
   clearAgentMemory();
@@ -204,6 +216,88 @@ describe('runAgentTask', () => {
 });
 
 describe('executeJob', () => {
+  for (const scenario of [
+    'provider failure',
+    'missing endpoint',
+    'simulation on mainnet',
+    'simulation without a chain',
+  ]) {
+    it(`rejects ${scenario} before uploading, signing, or submitting`, async () => {
+      delete process.env.AGENT_ALLOW_SIMULATED_EXECUTION;
+      const context = createExecutionContext(
+        'rejected',
+        scenario === 'provider failure'
+          ? 'https://agent.fixture/run'
+          : undefined
+      );
+      if (scenario.startsWith('simulation')) {
+        process.env.AGENT_ALLOW_SIMULATED_EXECUTION = 'true';
+        if (scenario === 'simulation on mainnet')
+          context.wallet = context.wallet.connect({
+            getNetwork: async () => ({ chainId: 1n }),
+          } as any);
+      }
+      setAgentEndpointInvoker(async () => {
+        throw new Error('provider unavailable');
+      });
+      let uploads = 0,
+        submissions = 0,
+        signatures = 0;
+      setIpfsClientFactory(
+        () =>
+          ({
+            add: async () => {
+              uploads++;
+              throw new Error('must not upload');
+            },
+          } as unknown as IPFSHTTPClient)
+      );
+      context.wallet.signMessage = async () => {
+        signatures++;
+        throw new Error('must not sign');
+      };
+      registryAny.connect = () => {
+        submissions++;
+        throw new Error('must not submit');
+      };
+      let rejected: unknown;
+      try {
+        await executeJob(context);
+      } catch (error) {
+        rejected = error;
+      }
+      expect(rejected).to.be.instanceOf(Error);
+      expect((rejected as Error).message).to.match(
+        /provider unavailable|synthetic execution is disabled|Synthetic execution requires/
+      );
+      expect([uploads, signatures, submissions]).to.deep.equal([0, 0, 0]);
+      expect(getAgentMemory(context.profile.address)[0].success).to.equal(
+        false
+      );
+    });
+  }
+
+  it('retains explicitly enabled synthetic execution only on a connected local chain', async () => {
+    process.env.AGENT_ALLOW_SIMULATED_EXECUTION = 'true';
+    const context = createExecutionContext('local-simulation');
+    context.wallet = context.wallet.connect({
+      getNetwork: async () => ({ chainId: 31337n }),
+    } as any);
+    setIpfsClientFactory(
+      () =>
+        ({
+          add: async () => ({ cid: { toString: () => 'bafysimulation' } }),
+        } as unknown as IPFSHTTPClient)
+    );
+    registryAny.taxPolicy = async () => ethers.ZeroAddress;
+    registryAny.connect = () => ({
+      submit: async () => ({ hash: '0xsimulation', wait: async () => ({}) }),
+    });
+    const result = await executeJob(context);
+    expect(result.executionMode).to.equal('simulation');
+    expect(result.rawOutput).to.have.property('simulation', true);
+  });
+
   it('uploads results to IPFS and finalizes when supported', async () => {
     const context = createExecutionContext('201', 'https://agent.finalize');
     setAgentEndpointInvoker(async () => ({ response: 'ok' }));

@@ -93,3 +93,12 @@ uses `registerEvents` to broadcast validator assignments and job changes.【F:ag
 
 The gateway is the connective tissue between owners, agents, and validators. Keep its configuration aligned with the manifests
 and the superintelligent machine remains fully responsive to contract owner directives.
+## Provider execution and local simulations
+
+An agent endpoint failure stops `executeJob` before result upload, signing, or submission. `runAgentTask` retains preview fallback output with `executionMode: 'failed'`; callers must inspect its error and mode. Missing endpoints produce an explicitly marked simulation, not a provider result.
+
+Synthetic submission requires `AGENT_ALLOW_SIMULATED_EXECUTION=true` **and** a wallet connected to chain ID **31337**. It is disabled by default and rejected on mainnet or without a connected provider. Execution results and receipt payloads include `executionMode`; synthetic output also includes `simulation: true`. An explicitly configured endpoint that fails remains a failure even when local simulation is enabled.
+
+The HTTP adapter rejects redirects, non-success status codes, empty responses, malformed declared JSON, and responses over 1 MiB. Its timeout covers response-body reading. JSON and ordinary text deliverables remain supported. The packaged IPFS adapter loads its ESM client through a shipped CommonJS bridge and uses a 30-second default timeout.
+
+Use the [production rehearsal](../docs/production/rehearsal.md) to exercise the compiled HTTP/IPFS adapters against actual local HTTP endpoints, including failure and recovery cases. These fixtures do not claim model quality, real IPFS persistence, or live-provider commissioning.

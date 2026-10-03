@@ -1,4 +1,7 @@
 import type { IPFSHTTPClient } from 'ipfs-http-client';
+const { createIpfsClient } = require('./ipfs-runtime.cjs') as {
+  createIpfsClient: (url: string) => Promise<IPFSHTTPClient>;
+};
 
 const IPFS_API_URL = process.env.IPFS_API_URL || 'http://127.0.0.1:5001';
 
@@ -10,15 +13,17 @@ let defaultFactoryPromise: Promise<IPFSHTTPClient> | null = null;
 
 async function resolveDefaultFactory(): Promise<IPFSHTTPClient> {
   if (!defaultFactoryPromise) {
-    defaultFactoryPromise = import('ipfs-http-client').then(({ create }) =>
-      create({ url: IPFS_API_URL })
-    );
+    defaultFactoryPromise = createIpfsClient(IPFS_API_URL).catch((error) => {
+      defaultFactoryPromise = null;
+      throw error;
+    });
   }
   return defaultFactoryPromise;
 }
 
 export function resetIpfsClient(): void {
   ipfsClient = null;
+  defaultFactoryPromise = null;
 }
 
 export function setIpfsClientFactory(factory: IpfsFactory | null): void {
