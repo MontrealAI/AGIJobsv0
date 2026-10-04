@@ -1,5 +1,12 @@
 # Changelog
 
+## Demo experience expansion — 2026-10-04
+
+- Add source-grounded walkthroughs, expected results, experiments, troubleshooting and verification links for all 76 demo/support entries.
+- Add read-only, searchable source inspection with exact downloads and SHA-256 provenance.
+- Publish all tracked demo Markdown documents and standalone flowcharts, expanding the site to 300 guides and 244 preserved diagrams.
+- Verify 16 selected Python demo recipes and expand browser coverage to every individual mobile experience.
+
 All notable changes to this project will be documented in this file.
 
 ## v2.0.0
