@@ -223,7 +223,7 @@ export function renderExperience(demo, profile, ctx) {
     )
     .join('');
   const deckSection = dashboards
-    ? `<section class="experience-intro"><p class="eyebrow">OPEN THE COMPLETE COMMAND DECKS</p><h2>Explore the model in your browser.</h2><p class="section-description">${escape(profile.dashboardDescription || 'Read-only dashboards with energy, governance, stress scenarios and preserved diagrams. No wallet or installation required; all values come from recorded simulations.')}</p><div class="hero-actions">${dashboards}</div></section>`
+    ? `<section class="experience-intro"><p class="eyebrow">OPEN THE COMPLETE COMMAND DECKS</p><h2>Explore the model in your browser.</h2><p class="section-description">${esc(profile.dashboardDescription || 'Read-only dashboards with energy, governance, stress scenarios and preserved diagrams. No wallet or installation required; all values come from recorded simulations.')}</p><div class="hero-actions">${dashboards}</div></section>`
     : '';
   return `${deckSection}<nav class="experience-nav" aria-label="On this demo page"><a href="#guided-tour">Guided tour</a><a href="#inspect">Inspect the sources</a><a href="#try-it">Try it locally</a><a href="#architecture">Architecture</a><a href="#library">Complete library</a></nav>
 <section id="guided-tour" class="experience-intro"><p class="eyebrow">A CLOSER LOOK</p><h2>${esc(

@@ -377,3 +377,22 @@ test('published Culture Studio uses the real workspace build with no provider co
     assert.ok(fs.existsSync(path.join(directory, asset)));
   }
 });
+
+test('dashboard descriptions remain readable text rather than URL-encoded strings', () => {
+  for (const name of [
+    'culture-v0',
+    'agi-jobs-platform-at-kardashev-ii-scale',
+  ]) {
+    const document = new JSDOM(
+      fs.readFileSync(
+        path.join(root, 'build/pages/demos', name, 'index.html'),
+        'utf8'
+      )
+    ).window.document;
+    const text = document.querySelector(
+      '.experience-intro .section-description'
+    ).textContent;
+    assert.ok(text.includes(' '));
+    assert.ok(!text.includes('%20'));
+  }
+});
