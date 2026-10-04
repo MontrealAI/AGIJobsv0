@@ -27,6 +27,7 @@ import { getWatchdog } from './monitor';
 import { postJob } from './employer';
 import { evaluateSubmission, needsIndependentReview } from './validation';
 import { SettlementJournal } from './settlementJournal';
+import { requireComputerWorkAdmission } from './computerWork';
 import { LearningCoordinator } from './learning';
 import {
   CompletedJobEvidence,
@@ -812,6 +813,11 @@ export class MetaOrchestrator {
       this.config.ipfsGateway
     );
     const classification = classifyJob(summary, spec ?? undefined);
+    if (classification.category === 'computer-work') {
+      // Admission must precede selection, stake deposits and applyForJob.
+      // The handler reloads operator policy before any eventual dispatch.
+      requireComputerWorkAdmission(summary.jobId, spec?.metadata?.computerWork);
+    }
     auditLog('job.detected', {
       jobId: summary.jobId,
       details: {

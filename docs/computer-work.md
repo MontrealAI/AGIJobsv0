@@ -34,7 +34,7 @@ flowchart TD
     Review -->|Rejected| Correction["Correction or dispute"]
 ```
 
-The adapter enforces exact task admission, provider destination, bearer-token lookup, unique sessions, bounded HTTP time and response size, expected artifact names/types, local hashes, and a persistent replay barrier. It does **not** enforce the remote desktop's network or action policy. Set those controls in the worker environment before admitting a task. Instructions to a model are not a sandbox.
+The adapter enforces exact task admission, provider destination, bearer-token lookup, unique sessions, bounded HTTP time and response size, expected artifact names/types, local hashes, and a persistent replay barrier. The orchestrator validates the committed task and current operator profile before selecting an agent, depositing stake or applying for the job. This read-only preflight creates no dispatch claim and contacts no worker; dispatch reloads the profile and checks admission again, so later revocation is respected. It does **not** enforce the remote desktop's network or action policy. Set those controls in the worker environment before admitting a task. Instructions to a model are not a sandbox.
 
 Each receipt has `status: "evidence-ready"`, `review.status: "required"`, `settlementApproved: false` and `productionApproved: false`. Provider completion means the provider returned its result; it does not establish correct work. Current deliverables are bounded UTF-8 JSON, CSV, Markdown or plain text. Screenshots and larger binary files need a separately commissioned artifact store and integrity checks; the fixture saves screenshots locally.
 
@@ -68,7 +68,7 @@ The meta-orchestrator now calls `submit` with the manifest's actual content hash
 
 | Observation | Meaning and next action |
 | --- | --- |
-| Job/task digest is not admitted | Nothing is dispatched. Inspect and approve the exact task through the operator configuration. |
+| Job/task digest is not admitted | Agent selection, staking, application and dispatch are blocked. Inspect and approve the exact task through the operator configuration, then replay discovery for that job. Revocation after a confirmed application blocks future dispatch but does not unlock an existing stake; reconcile that assignment on-chain. |
 | Missing token or invalid configuration | Nothing is dispatched. Repair the protected service configuration. Never paste credentials into a job. |
 | `COMPUTER_WORK_OUTCOME_UNKNOWN` | The provider may have acted. Stop and inspect the attempt UUID, gateway session and actual app state. No automatic retry occurs. |
 | Job already dispatched | The journal prevents duplicates across processes/restarts. Inspect the saved receipt or reconcile the earlier attempt. |

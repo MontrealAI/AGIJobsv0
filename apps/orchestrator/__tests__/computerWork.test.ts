@@ -7,8 +7,10 @@ import path from 'node:path';
 import { ethers } from 'ethers';
 import {
   computerTaskDigest,
+  computerWorkHandler,
   executeComputerWork,
   parseComputerWorkTask,
+  requireComputerWorkAdmission,
 } from '../computerWork';
 import { approveAgentEndpoint, invokeApprovedAgent } from '../agentPolicy';
 import { buildPipeline } from '../pipeline';
@@ -88,6 +90,24 @@ async function fixture(
     approvedJobs: [{ jobId: '1', taskSha256: computerTaskDigest(task) }],
   };
   return { endpoint, profile, options: { stateDirectory: dir } };
+}
+
+function configureWorker(t: any, f: Awaited<ReturnType<typeof fixture>>) {
+  const configFile = path.join(f.options.stateDirectory, 'profiles.json');
+  const stateDirectory = path.join(f.options.stateDirectory, 'dispatches');
+  const previousFile = process.env.COMPUTER_WORK_PROFILES_FILE;
+  const previousState = process.env.COMPUTER_WORK_STATE_DIR;
+  t.after(() => {
+    if (previousFile === undefined)
+      delete process.env.COMPUTER_WORK_PROFILES_FILE;
+    else process.env.COMPUTER_WORK_PROFILES_FILE = previousFile;
+    if (previousState === undefined) delete process.env.COMPUTER_WORK_STATE_DIR;
+    else process.env.COMPUTER_WORK_STATE_DIR = previousState;
+  });
+  process.env.COMPUTER_WORK_PROFILES_FILE = configFile;
+  process.env.COMPUTER_WORK_STATE_DIR = stateDirectory;
+  fs.writeFileSync(configFile, JSON.stringify({ isolated: f.profile }));
+  return { configFile, stateDirectory };
 }
 
 test('admitted task uses authenticated isolated OpenResponses and returns hashed evidence, never approval', async (t) => {
@@ -1074,7 +1094,11 @@ test('uncommitted task bytes are rejected before worker selection, stake or appl
 test('worker application receives exactly the hash-verified specification', async (t) => {
   const spec = { category: 'computer-work', metadata: { computerWork: task } };
   const body = JSON.stringify(spec);
-  const f = await fixture(t, (_, res) => res.end(body));
+  const f = await fixture(t, (req, res) => {
+    assert.equal(req.method, 'GET', 'Application must not dispatch the worker');
+    res.end(body);
+  });
+  const { stateDirectory } = configureWorker(t, f);
   let applied = false;
   const orchestrator: any = {
     config: { ipfsGateway: f.endpoint },
@@ -1105,6 +1129,103 @@ test('worker application receives exactly the hash-verified specification', asyn
     }
   );
   assert.equal(applied, true);
+  assert.equal(fs.existsSync(stateDirectory), false);
+});
+
+test('committed but unadmitted or malformed computer tasks never select, stake or apply', async (t) => {
+  let body = '';
+  const f = await fixture(t, (req, res) => {
+    assert.equal(req.method, 'GET', 'Admission must not dispatch the worker');
+    res.end(body);
+  });
+  const { stateDirectory } = configureWorker(t, f);
+  const orchestrator: any = {
+    config: { ipfsGateway: f.endpoint },
+    selectAgent: () =>
+      assert.fail('Unadmitted work must not select an identity'),
+    applyForJob: () => assert.fail('Unadmitted work must not stake or apply'),
+  };
+  const cases: [string, unknown, RegExp][] = [
+    ['2', task, /admission/],
+    ['1', { ...task, goal: 'Changed employer task' }, /admission/],
+    ['1', { ...task, workerProfile: 'unconfigured' }, /Unknown operator/],
+    ['1', { ...task, deliverables: [] }, /Invalid deliverables/],
+    ['1', undefined, /Expected an object/],
+  ];
+  for (const [jobId, computerWork, error] of cases) {
+    body = JSON.stringify({
+      category: 'computer-work',
+      metadata: { computerWork },
+    });
+    await assert.rejects(
+      (MetaOrchestrator.prototype as any).handleJobCreated.call(orchestrator, {
+        jobId,
+        uri: f.endpoint,
+        specHash: ethers.keccak256(ethers.toUtf8Bytes(body)),
+      }),
+      error
+    );
+  }
+  assert.equal(fs.existsSync(stateDirectory), false);
+});
+
+test('unavailable computer-worker configuration fails before economic commitment', async (t) => {
+  const body = JSON.stringify({
+    category: 'computer-work',
+    metadata: { computerWork: task },
+  });
+  const f = await fixture(t, (req, res) => {
+    assert.equal(req.method, 'GET');
+    res.end(body);
+  });
+  const { configFile, stateDirectory } = configureWorker(t, f);
+  const orchestrator: any = {
+    config: { ipfsGateway: f.endpoint },
+    selectAgent: () =>
+      assert.fail('Unconfigured work must not select an identity'),
+    applyForJob: () => assert.fail('Unconfigured work must not stake or apply'),
+  };
+  const handle = () =>
+    (MetaOrchestrator.prototype as any).handleJobCreated.call(orchestrator, {
+      jobId: '1',
+      uri: f.endpoint,
+      specHash: ethers.keccak256(ethers.toUtf8Bytes(body)),
+    });
+  delete process.env.COMPUTER_WORK_PROFILES_FILE;
+  await assert.rejects(handle(), /Configure absolute/);
+  process.env.COMPUTER_WORK_PROFILES_FILE = configFile;
+  process.env.COMPUTER_WORK_STATE_DIR = 'relative';
+  await assert.rejects(handle(), /absolute and persistent/);
+  process.env.COMPUTER_WORK_STATE_DIR = stateDirectory;
+  delete process.env.COMPUTER_WORK_TEST_TOKEN;
+  await assert.rejects(handle(), /token is missing/);
+  assert.equal(fs.existsSync(stateDirectory), false);
+});
+
+test('dispatch reloads operator admission after an application preflight', async (t) => {
+  let calls = 0;
+  const f = await fixture(t, (_req, res) => {
+    calls++;
+    res.end(JSON.stringify(completed()));
+  });
+  const { configFile, stateDirectory } = configureWorker(t, f);
+  requireComputerWorkAdmission('1', task);
+  fs.writeFileSync(
+    configFile,
+    JSON.stringify({ isolated: { ...f.profile, approvedJobs: [] } })
+  );
+  await assert.rejects(
+    computerWorkHandler({
+      context: {
+        jobId: '1',
+        category: 'computer-work',
+        metadata: { computerWork: task },
+      },
+    } as any),
+    /admission/
+  );
+  assert.equal(calls, 0);
+  assert.equal(fs.existsSync(stateDirectory), false);
 });
 
 test('mined submissions restore review and dispute evidence without rebroadcasting after restart', async () => {

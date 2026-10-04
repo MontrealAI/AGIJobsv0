@@ -189,12 +189,13 @@ export class ComputerWorkOutcomeUnknown extends Error {
   }
 }
 
-export async function executeComputerWork(
+/** Read-only admission: no network calls, dispatch claims or filesystem writes. */
+function validateComputerWorkAdmission(
   jobId: string,
   taskValue: unknown,
   profileValue: unknown,
-  options: { stateDirectory: string; signal?: AbortSignal }
-): Promise<RecordValue> {
+  stateDirectory: string
+) {
   if (!/^[1-9][0-9]*$/.test(jobId) || jobId.length > 80)
     throw new Error('Invalid job ID');
   const task = parseComputerWorkTask(taskValue);
@@ -209,8 +210,23 @@ export async function executeComputerWork(
   const token = process.env[profile.tokenEnv];
   if (!token || /[\r\n]/.test(token))
     throw new Error('Worker bearer token is missing or invalid');
-  if (!path.isAbsolute(options.stateDirectory))
+  if (!path.isAbsolute(stateDirectory))
     throw new Error('Worker state directory must be absolute and persistent');
+  return { task, profile, taskSha256, token };
+}
+
+export async function executeComputerWork(
+  jobId: string,
+  taskValue: unknown,
+  profileValue: unknown,
+  options: { stateDirectory: string; signal?: AbortSignal }
+): Promise<RecordValue> {
+  const { task, profile, taskSha256, token } = validateComputerWorkAdmission(
+    jobId,
+    taskValue,
+    profileValue,
+    options.stateDirectory
+  );
   if (options.signal?.aborted)
     throw new Error('Computer work cancelled before dispatch');
   fs.mkdirSync(options.stateDirectory, { recursive: true, mode: 0o700 });
@@ -372,12 +388,12 @@ export async function executeComputerWork(
   }
 }
 
-export async function computerWorkHandler(
-  input: AgentHandlerInput
-): Promise<RecordValue> {
-  if (input.context.category !== 'computer-work')
-    throw new Error('Computer work requires its dedicated category');
-  const task = parseComputerWorkTask(input.context.metadata?.computerWork);
+/** Load current operator policy before economic commitment and again at dispatch. */
+export function requireComputerWorkAdmission(
+  jobId: string,
+  taskValue: unknown
+) {
+  const task = parseComputerWorkTask(taskValue);
   const configFile = process.env.COMPUTER_WORK_PROFILES_FILE;
   const stateDirectory = process.env.COMPUTER_WORK_STATE_DIR;
   if (!configFile || !path.isAbsolute(configFile) || !stateDirectory)
@@ -395,10 +411,25 @@ export async function computerWorkHandler(
   }
   if (!Object.prototype.hasOwnProperty.call(profiles, task.workerProfile))
     throw new Error('Unknown operator worker profile');
-  return executeComputerWork(
-    input.context.jobId,
+  const { profile } = validateComputerWorkAdmission(
+    jobId,
     task,
     profiles[task.workerProfile],
-    { stateDirectory }
+    stateDirectory
   );
+  return { task, profile, stateDirectory };
+}
+
+export async function computerWorkHandler(
+  input: AgentHandlerInput
+): Promise<RecordValue> {
+  if (input.context.category !== 'computer-work')
+    throw new Error('Computer work requires its dedicated category');
+  const { task, profile, stateDirectory } = requireComputerWorkAdmission(
+    input.context.jobId,
+    input.context.metadata?.computerWork
+  );
+  return executeComputerWork(input.context.jobId, task, profile, {
+    stateDirectory,
+  });
 }
