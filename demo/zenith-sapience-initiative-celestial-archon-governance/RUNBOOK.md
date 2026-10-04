@@ -6,7 +6,7 @@ existing AGI Jobs v0 (v2) tooling — no bespoke scripts are introduced.
 
 ## 1. Pre-Flight Assurances
 
-- Confirm **Node.js 20.x** and **npm** are installed.
+- Confirm **Node.js 22.23.3 (the repository `.nvmrc`)** and **npm** are installed.
 - (Optional) Install **Foundry** to unlock the local rehearsal harness.
 - Verify contract wiring and SystemPause authority:
 

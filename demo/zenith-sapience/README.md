@@ -2,6 +2,10 @@
 
 > AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `demo/zenith-sapience`.
 
+## Execution status
+
+This directory contains design documentation and preserved architecture diagrams; it has no standalone executable. For a related runnable workflow, use [zenith-sapience-initiative-global-governance](../zenith-sapience-initiative-global-governance/README.md). See the [complete demo guide](../README.md) for setup and evidence boundaries.
+
 ## Overview
 - **Path:** `demo/zenith-sapience/README.md`
 - **Module Focus:** Anchors Demo → Zenith Sapience inside the AGI Jobs v0 (v2) lattice so teams can orchestrate economic, governance, and operational missions with deterministic guardrails.

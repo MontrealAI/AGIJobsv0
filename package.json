@@ -462,7 +462,9 @@
     "test:meta-agentic-alpha": "node --import tsx demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/test/meta_agentic_demo.test.ts",
     "owner:era-of-experience:controls": "node --import tsx demo/Era-Of-Experience-v0/scripts/updateOwnerControls.ts",
     "release:check-size": "node scripts/release/check-contract-size.js",
-    "build:orchestrator": "tsc -p apps/orchestrator/tsconfig.json && node scripts/package-runtime-assets.cjs orchestrator"
+    "build:orchestrator": "tsc -p apps/orchestrator/tsconfig.json && node scripts/package-runtime-assets.cjs orchestrator",
+    "demos": "node scripts/demo/catalog.cjs",
+    "demo:atlas-conductor:local": "bash demo/atlas-conductor/bin/atlas-conductor-local.sh"
   },
   "type": "commonjs",
   "version": "2.0.0"

@@ -7,6 +7,8 @@ with a mainnet signer.
 
 ---
 
+Start with the [local mission walkthrough](README.md#run-the-local-mission). The local launcher stops its node after producing receipts. The advanced owner and target-network commands below require a separately managed, reviewed deployment.
+
 ## 0. Pre-flight Integrity
 
 1. **Verify repository hygiene**

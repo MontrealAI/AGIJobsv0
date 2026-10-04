@@ -36,6 +36,7 @@ mkdir -p "$REPORT_DIR"
 
 source "$ROOT/demo/aurora/bin/local-node.sh"
 prepare_local_node
+node demo/aurora/bin/mission-plan.cjs "$MISSION_CONFIG"
 
 compile_contracts() {
   echo "⚙️  Precompiling contracts (fast=${HARDHAT_FAST_COMPILE}, viaIR=${HARDHAT_VIA_IR})" >&2
@@ -85,4 +86,5 @@ render_report() {
 
 dep_env
 run_demo
+node scripts/production/commissioning.cjs "$REPORT_DIR" "$MISSION_CONFIG" "$DEPLOY_OUTPUT"
 render_report

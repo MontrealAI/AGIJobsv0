@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## v2.0.0
 
+- Add a searchable catalog of all demo directories and registered commands, with setup, output paths, troubleshooting, and explicit design-guide labels. Preserve existing scenarios and flowcharts.
+- Make ASI Global and Atlas Conductor run actual local settlement with their original mixed validator committees; validate every configured job and payout, guard legacy placeholders behind explicit fixture opt-in, and preserve unrelated local processes.
+- Exercise all discovered Python demo suites in CI, isolate test-runtime selection, and handle optional dependency-probe timeouts without aborting the demo runner.
+
 - Include all ten fixed implementations in release manifests and explorer verification; reject incomplete or cross-network verification inventories and label dry runs as plans.
 
 Release candidate prepared on 2026-10-03; publication remains subject to the release gates.

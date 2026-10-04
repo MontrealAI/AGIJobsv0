@@ -7,7 +7,7 @@ function localEndpoint(env = process.env) {
   }
   const port = Number(raw);
   const url = `http://127.0.0.1:${port}`;
-  for (const key of ['RPC_URL', 'LOCALHOST_RPC_URL']) {
+  for (const key of ['RPC_URL', 'LOCALHOST_RPC_URL', 'AGI_RPC_URL']) {
     if (env[key] && env[key] !== url) {
       throw new Error(
         `${key} must equal ${url} for this disposable local demo.`

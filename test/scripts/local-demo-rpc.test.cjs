@@ -29,6 +29,10 @@ test('local demo validates its endpoint before any deployment', () => {
     /LOCALHOST_RPC_URL/
   );
   assert.throws(() => localEndpoint({ CHAIN_ID: '1' }), /31337/);
+  assert.throws(
+    () => localEndpoint({ AGI_RPC_URL: 'https://example.org' }),
+    /AGI_RPC_URL/
+  );
 });
 
 test('occupied ports are refused without stopping the existing server', async (t) => {
@@ -64,4 +68,40 @@ test('readiness requires a successful JSON-RPC response from the local chain', a
   }
   status = 503;
   await assert.rejects(assertLocalChain(url), /HTTP 503/);
+});
+
+test('both mission launchers preserve an occupied RPC server', async (t) => {
+  const { promisify } = require('node:util');
+  const execFile = promisify(require('node:child_process').execFile);
+  const path = require('node:path');
+  const root = path.resolve(__dirname, '../..');
+  const server = http.createServer((req, res) => res.end('unrelated service'));
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+  t.after(() => new Promise((resolve) => server.close(resolve)));
+  const port = server.address().port;
+  const env = {
+    ...process.env,
+    DEMO_PORT: String(port),
+    AURORA_REPORT_SCOPE: 'launcher-safety-test',
+  };
+  for (const key of ['RPC_URL', 'LOCALHOST_RPC_URL', 'AGI_RPC_URL', 'CHAIN_ID'])
+    delete env[key];
+  for (const demo of ['asi-global', 'atlas-conductor']) {
+    await assert.rejects(
+      execFile('bash', [`demo/${demo}/bin/${demo}-local.sh`], {
+        cwd: root,
+        env,
+        timeout: 10000,
+      }),
+      (error) => {
+        assert.equal(error.code, 1);
+        assert.match(error.stderr, /occupied or unavailable/);
+        return true;
+      }
+    );
+    assert.equal(
+      await (await fetch(`http://127.0.0.1:${port}`)).text(),
+      'unrelated service'
+    );
+  }
 });

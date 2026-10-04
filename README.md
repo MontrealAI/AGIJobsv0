@@ -12,7 +12,7 @@
 
 AGI Jobs v0 (v2) brings together job contracts, agent gateways, validators, operator consoles, orchestration, simulations, and demos. The architecture aims to support verifiable agent work with owner-controlled governance and observable execution.
 
-**Start here:** [Local setup and role guide](docs/START_HERE.md) · [Production readiness and remaining blockers](docs/production/readiness-2026-10-03.md) · [Demo and documentation catalog](docs/readme-catalog.md).
+**Start here:** [Local setup and role guide](docs/START_HERE.md) · [Production readiness and remaining blockers](docs/production/readiness-2026-10-03.md) · [Demo guide and complete catalog](demo/README.md) · [Documentation catalog](docs/readme-catalog.md).
 
 **Exercise the production gates locally:** run `npm run production:rehearse` after dependency setup in a clean committed checkout. The [production rehearsal](docs/production/rehearsal.md) combines real cryptographic checks, HTTP fault injection, adversarial contract tests, and three settled local jobs into an inspectable, signed simulation report.
 
@@ -39,7 +39,7 @@ The loop above describes the intended verification path. CI checks owner authori
 
 ## Documentation lattice
 
-The repository’s manuals, runbooks, and subsystem READMEs are catalogued in [`docs/readme-catalog.md`](docs/readme-catalog.md). The inventory spans 170 markdown guides (130 READMEs, 40 runbooks) so release captains can locate operator instructions, demo briefings, and subsystem diagrams without spelunking through the tree. Every document is synchronised with the repository tree; CI fails fast if a referenced README is missing, keeping the narrative aligned with the code that powers it. ([readme-catalog.md](docs/readme-catalog.md)) ([ci.yml](.github/workflows/ci.yml))
+The repository’s manuals, runbooks, and subsystem READMEs are catalogued in [`docs/readme-catalog.md`](docs/readme-catalog.md). Use it to locate operator instructions and subsystem diagrams. The [demo guide](demo/README.md) adds a generated inventory of every tracked demo directory and its nested guides; the [Demo gallery workflow](.github/workflows/demo-gallery.yml) rejects a stale demo inventory. Document indexing and test results establish their stated coverage, not automatic verification of every narrative claim.
 
 ```mermaid
 mindmap
