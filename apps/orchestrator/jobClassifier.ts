@@ -1,7 +1,9 @@
+import { ethers } from 'ethers';
 import { fetchArtifactBytes, resolveArtifactUri } from './artifactSource';
 
 export interface ChainJobSummary {
   jobId: string;
+  specHash?: string;
   agent?: string;
   agentTypes?: number;
   uri?: string;
@@ -86,6 +88,35 @@ function confidenceFromMatches(matches: number, totalSignals: number): number {
   if (totalSignals <= 0) return 0.1;
   const raw = matches / totalSignals;
   return Math.min(0.99, Math.max(0.05, raw));
+}
+
+/** Worker admission must use the bytes committed by the employer, not a mutable URI alone. */
+export async function fetchCommittedJobSpec(
+  uri: string | undefined,
+  specHash: string | undefined,
+  gateway?: string
+): Promise<JobSpec | null> {
+  if (!uri) {
+    if (specHash && specHash !== ethers.ZeroHash)
+      throw new Error('Committed specification URI is missing');
+    return null;
+  }
+  if (
+    !specHash ||
+    !ethers.isHexString(specHash, 32) ||
+    specHash === ethers.ZeroHash
+  )
+    throw new Error('Authoritative job specification hash is missing');
+  const bytes = await fetchArtifactBytes(
+    resolveArtifactUri(uri, gateway),
+    gateway || process.env.IPFS_GATEWAY_URL
+  );
+  if (ethers.keccak256(bytes).toLowerCase() !== specHash.toLowerCase())
+    throw new Error('Authoritative job specification hash mismatch');
+  const spec: unknown = JSON.parse(Buffer.from(bytes).toString('utf8'));
+  if (!spec || typeof spec !== 'object' || Array.isArray(spec))
+    throw new Error('Invalid job specification');
+  return spec as JobSpec;
 }
 
 export async function fetchJobSpec(
