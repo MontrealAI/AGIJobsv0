@@ -9,6 +9,17 @@ export const fallbackLocale: SupportedLocale = 'en';
 
 export const messages: Record<SupportedLocale, MessageTree> = {
   en: {
+    publication: {
+      title: "Publish the job specification",
+      instructions: "1. Download this exact JSON. 2. Publish it to your approved durable storage. 3. Paste its URI below. We verify the published bytes again before requesting a wallet transaction.",
+      download: "Download exact specification",
+      uri: "Published specification URI",
+      verify: "Verify published specification",
+      verifying: "Checking published bytes…",
+      verified: "Verified: published bytes match this draft. Any edit requires publishing the updated file.",
+      attachments: "Selected attachments stay on your device. Publish the referenced files separately and include their accessible reference link.",
+      missingReference: "Publish selected attachments and add a reference link before submitting.",
+    },
     header: {
       title: 'AGI Jobs Assistant',
       subtitle:
@@ -85,7 +96,7 @@ export const messages: Record<SupportedLocale, MessageTree> = {
         attachmentsUnset: 'No attachments',
         specHash: 'Spec hash',
         reference: 'Reference link',
-        referenceUnset: 'We will generate an IPFS placeholder automatically.',
+        referenceUnset: "No reference link provided.",
         sla: 'SLA',
         slaRequired: 'Signature required before assignment',
         slaLink: 'SLA link',
@@ -95,8 +106,7 @@ export const messages: Record<SupportedLocale, MessageTree> = {
       },
       status: {
         submitting: 'Submitting job…',
-        success:
-          'Job created! We will display the transaction as soon as it is confirmed.',
+        success: "Job confirmed on-chain.",
         error: 'Unable to create the job: {{message}}',
       },
       acknowledgements: {
@@ -176,6 +186,17 @@ export const messages: Record<SupportedLocale, MessageTree> = {
     },
   },
   fr: {
+    publication: {
+      title: "Publier la spécification du travail",
+      instructions: "1. Téléchargez ce fichier JSON exact. 2. Publiez-le sur votre stockage durable approuvé. 3. Collez son URI ci-dessous. Nous revérifions les octets publiés avant de demander une transaction au portefeuille.",
+      download: "Télécharger la spécification exacte",
+      uri: "URI de la spécification publiée",
+      verify: "Vérifier la spécification publiée",
+      verifying: "Vérification des octets publiés…",
+      verified: "Vérifié : le fichier publié correspond à ce brouillon. Toute modification nécessite de republier le fichier.",
+      attachments: "Les pièces jointes sélectionnées restent sur votre appareil. Publiez les fichiers séparément et ajoutez leur lien de référence accessible.",
+      missingReference: "Publiez les pièces jointes et ajoutez un lien de référence avant de soumettre.",
+    },
     header: {
       title: 'Assistant AGI Jobs',
       subtitle:
@@ -252,8 +273,7 @@ export const messages: Record<SupportedLocale, MessageTree> = {
         attachmentsUnset: 'Aucune pièce jointe',
         specHash: 'Hash de spécification',
         reference: 'Lien de référence',
-        referenceUnset:
-          'Un lien IPFS de remplacement sera généré automatiquement.',
+        referenceUnset: "Aucun lien de référence fourni.",
         sla: 'SLA',
         slaRequired: 'Signature requise avant assignation',
         slaLink: 'Lien du SLA',
@@ -263,8 +283,7 @@ export const messages: Record<SupportedLocale, MessageTree> = {
       },
       status: {
         submitting: 'Soumission de la mission…',
-        success:
-          'Mission créée ! Nous afficherons la transaction dès confirmation.',
+        success: "Travail confirmé sur la chaîne.",
         error: 'Impossible de créer la mission : {{message}}',
       },
       acknowledgements: {
@@ -348,6 +367,17 @@ export const messages: Record<SupportedLocale, MessageTree> = {
     },
   },
   es: {
+    publication: {
+      title: "Publicar la especificación del trabajo",
+      instructions: "1. Descarga este JSON exacto. 2. Publícalo en tu almacenamiento duradero autorizado. 3. Pega su URI abajo. Verificamos de nuevo los bytes publicados antes de solicitar una transacción a la cartera.",
+      download: "Descargar la especificación exacta",
+      uri: "URI de la especificación publicada",
+      verify: "Verificar la especificación publicada",
+      verifying: "Verificando los bytes publicados…",
+      verified: "Verificado: el archivo publicado coincide con este borrador. Cualquier cambio requiere publicar el archivo actualizado.",
+      attachments: "Los archivos seleccionados permanecen en tu dispositivo. Publícalos por separado e incluye un enlace de referencia accesible.",
+      missingReference: "Publica los archivos adjuntos y añade un enlace de referencia antes de enviar.",
+    },
     header: {
       title: 'Asistente AGI Jobs',
       subtitle:
@@ -423,7 +453,7 @@ export const messages: Record<SupportedLocale, MessageTree> = {
         attachmentsUnset: 'Sin adjuntos',
         specHash: 'Hash de especificación',
         reference: 'Enlace de referencia',
-        referenceUnset: 'Generaremos un enlace IPFS automáticamente.',
+        referenceUnset: "No se ha proporcionado un enlace de referencia.",
         sla: 'SLA',
         slaRequired: 'Firma requerida antes de la asignación',
         slaLink: 'Enlace del SLA',
@@ -433,8 +463,7 @@ export const messages: Record<SupportedLocale, MessageTree> = {
       },
       status: {
         submitting: 'Enviando trabajo…',
-        success:
-          '¡Trabajo creado! Mostraremos la transacción cuando se confirme.',
+        success: "Trabajo confirmado en la cadena.",
         error: 'No se pudo crear el trabajo: {{message}}',
       },
       acknowledgements: {
@@ -515,6 +544,17 @@ export const messages: Record<SupportedLocale, MessageTree> = {
     },
   },
   zh: {
+    publication: {
+      title: "发布任务规格",
+      instructions: "1. 下载此完整 JSON 文件。2. 将其发布到已获准的持久存储。3. 在下方粘贴 URI。请求钱包交易之前，我们会再次核对已发布文件的字节。",
+      download: "下载完整规格文件",
+      uri: "已发布规格的 URI",
+      verify: "验证已发布的规格",
+      verifying: "正在验证已发布的字节…",
+      verified: "验证通过：已发布文件与此草稿一致。修改后必须重新发布文件。",
+      attachments: "选中的附件仍保存在您的设备上。请单独发布引用的文件，并提供可访问的参考链接。",
+      missingReference: "提交前请发布选中的附件并添加参考链接。",
+    },
     header: {
       title: 'AGI Jobs 助手',
       subtitle: '用熟悉的界面发布任务、审阅成果并指导验证者。',
@@ -588,7 +628,7 @@ export const messages: Record<SupportedLocale, MessageTree> = {
         attachmentsUnset: '无附件',
         specHash: '规格哈希',
         reference: '参考链接',
-        referenceUnset: '我们会自动生成 IPFS 占位链接。',
+        referenceUnset: "未提供参考链接。",
         sla: 'SLA',
         slaRequired: '分配前需要签署',
         slaLink: 'SLA 链接',
@@ -598,7 +638,7 @@ export const messages: Record<SupportedLocale, MessageTree> = {
       },
       status: {
         submitting: '正在提交任务…',
-        success: '任务已创建！确认后我们将显示交易信息。',
+        success: "任务已在链上确认。",
         error: '无法创建任务：{{message}}',
       },
       acknowledgements: {
@@ -674,6 +714,17 @@ export const messages: Record<SupportedLocale, MessageTree> = {
     },
   },
   ja: {
+    publication: {
+      title: "ジョブ仕様を公開する",
+      instructions: "1. この JSON をそのままダウンロードします。2. 承認済みの永続ストレージに公開します。3. 下に URI を貼り付けます。ウォレットで取引を要求する前に、公開されたバイト列を再確認します。",
+      download: "仕様ファイルをダウンロード",
+      uri: "公開した仕様の URI",
+      verify: "公開した仕様を検証",
+      verifying: "公開されたバイト列を検証中…",
+      verified: "検証済み：公開ファイルはこの下書きと一致します。編集後は更新したファイルを再公開してください。",
+      attachments: "選択した添付ファイルは端末内に残ります。参照ファイルは別途公開し、アクセス可能な参照リンクを追加してください。",
+      missingReference: "送信する前に添付ファイルを公開し、参照リンクを追加してください。",
+    },
     header: {
       title: 'AGI Jobs アシスタント',
       subtitle:
@@ -749,7 +800,7 @@ export const messages: Record<SupportedLocale, MessageTree> = {
         attachmentsUnset: '添付なし',
         specHash: '仕様ハッシュ',
         reference: '参照リンク',
-        referenceUnset: 'IPFS のプレースホルダーを自動生成します。',
+        referenceUnset: "参照リンクはありません。",
         sla: 'SLA',
         slaRequired: '割り当て前に署名が必要',
         slaLink: 'SLA リンク',
@@ -759,7 +810,7 @@ export const messages: Record<SupportedLocale, MessageTree> = {
       },
       status: {
         submitting: 'ジョブを送信しています…',
-        success: 'ジョブを作成しました。取引が確定し次第表示します。',
+        success: "ジョブがオンチェーンで確定しました。",
         error: 'ジョブを作成できませんでした：{{message}}',
       },
       acknowledgements: {

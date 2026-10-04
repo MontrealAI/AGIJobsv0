@@ -481,6 +481,20 @@ button.secondary {
   margin-top: 0.5rem;
 }
 
+.specification-publication {
+  display: grid;
+  gap: 0.75rem;
+  width: 100%;
+  min-width: 0;
+  padding: 1.25rem;
+  border: 1px solid rgba(155, 188, 255, 0.3);
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(34, 123, 255, 0.12), rgba(118, 58, 255, 0.08));
+}
+
+.specification-publication p { margin: 0; overflow-wrap: anywhere; }
+.specification-publication button { justify-self: start; }
+
 .chat-link {
   color: #9bbcff;
   text-decoration: none;
@@ -754,7 +768,7 @@ button.secondary {
 
 @media (max-width: 767px) {
   main {
-    padding: 1.5rem;
+    padding: 1rem;
   }
 
   .portal-shell {
@@ -763,6 +777,14 @@ button.secondary {
 
   .chat-window {
     max-height: none;
+  }
+
+  .chat-panel {
+    padding: 1rem;
+  }
+
+  .specification-publication {
+    padding: 1rem;
   }
 }
 

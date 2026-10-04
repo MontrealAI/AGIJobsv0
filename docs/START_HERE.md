@@ -2,7 +2,7 @@
 
 This repository contains smart contracts, agent and validator services, operator interfaces, and demonstrations of an agent-work marketplace. Begin locally, inspect the evidence, and then follow the deployment runbooks for your chosen environment.
 
-**Current release posture:** local development and demonstrations are testable. The contract-size blocker is resolved through fixed implementations and staged deployment. Release remains blocked by unconfigured maintainer signing trust and the integration/configuration requirements in the readiness report. Read the [readiness report](production/readiness-2026-10-03.md) before preparing any deployment.
+**Current release posture:** local development and demonstrations are testable. The contract-size blocker is resolved through fixed implementations and staged deployment. Release remains blocked by unconfigured maintainer signing trust and the integration/configuration requirements in the readiness report. Read the [readiness report](production/readiness-2026-10-04.md) before preparing any deployment.
 
 ## Choose your route
 
@@ -17,8 +17,9 @@ This repository contains smart contracts, agent and validator services, operator
 | Find a subsystem manual | [Documentation catalog](readme-catalog.md) |
 | Run the browser console | [Console instructions](../apps/console/README.md) |
 | Develop agent integration | [Gateway guide](../agent-gateway/README.md) |
+| Coordinate browser and desktop work | [Computer-work setup and recovery](computer-work.md), then [the executable supplier-desk lab](../demo/One-Box/computer-work/README.md) |
 | Understand owner controls | [Operator runbook](../OperatorRunbook.md) |
-| Prepare a production deployment | [Readiness report](production/readiness-2026-10-03.md), then [security deployment guide](security-deployment-guide.md) |
+| Prepare a production deployment | [Readiness report](production/readiness-2026-10-04.md), then [security deployment guide](security-deployment-guide.md) |
 
 ## Reproduce the local baseline
 
@@ -64,7 +65,7 @@ npm run release:check-size
 npm run ci:verify-signers
 ```
 
-The size check passes for the modular contracts. The signer check intentionally fails on the example signing keys. Read the [deployment architecture guide](production/fixed-implementations.md) before deploying new controllers. Follow their diagnostic output and the [remaining work](production/readiness-2026-10-03.md#remaining-production-work). Do not interpret a green local test suite, simulated economy, dashboard, or successful compilation as evidence of a deployable or audited production system.
+The size check passes for the modular contracts. The signer check intentionally fails on the example signing keys. Read the [deployment architecture guide](production/fixed-implementations.md) before deploying new controllers. Follow their diagnostic output and the [remaining work](production/readiness-2026-10-04.md#production-gates-still-requiring-authentic-evidence). Do not interpret a green local test suite, simulated economy, dashboard, or successful compilation as evidence of a deployable or audited production system.
 
 This repository's v2 contract configuration uses the 18-decimal `$AGIALPHA` token. Confirm the actual token, chain, contract addresses, and deployment manifest for the workflow you run; do not substitute another AGI Jobs repository's settlement assumptions.
 

@@ -29,18 +29,18 @@ jobs:
         uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
         with:
           egress-policy: block
-          allowed-endpoints: |
-            api.github.com
-            actions.githubusercontent.com
-            actions-results.githubusercontent.com
-            files.pythonhosted.org
-            github.com
-            codeload.github.com
-            uploads.github.com
-            release-assets.githubusercontent.com
-            objects.githubusercontent.com
-            pipelines.actions.githubusercontent.com
-            pypi.org
+          allowed-endpoints: >-
+            api.github.com:443
+            actions.githubusercontent.com:443
+            actions-results.githubusercontent.com:443
+            files.pythonhosted.org:443
+            github.com:443
+            codeload.github.com:443
+            uploads.github.com:443
+            release-assets.githubusercontent.com:443
+            objects.githubusercontent.com:443
+            pipelines.actions.githubusercontent.com:443
+            pypi.org:443
 
       - name: Setup Python
         uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d

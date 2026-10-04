@@ -1,4 +1,7 @@
 {
+  "computer-work": {
+    "stages": [{ "name": "computer-evidence", "handler": "computer.execute" }]
+  },
   "default": {
     "stages": [
       { "name": "intake", "handler": "policy.analyze" },

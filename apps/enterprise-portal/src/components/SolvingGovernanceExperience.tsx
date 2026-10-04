@@ -12,6 +12,8 @@ import {
   portalConfig,
 } from '../lib/contracts';
 import { jobStateToPhase } from '../lib/jobStatus';
+import { verifyPublishedSpecification } from '../lib/jobSpecPublication';
+import { SpecificationPublication } from './SpecificationPublication';
 
 const ROLE_AGENT = 0;
 const ROLE_VALIDATOR = 1;
@@ -32,21 +34,18 @@ const NATION_PRESETS = [
     label: 'Aurora Coalition (Climate Accord)',
     summary:
       'Enact accelerated decarbonisation with AI-governed carbon markets and validator-managed compliance.',
-    uri: 'ipfs://solving-alpha/nation-a/climate',
   },
   {
     id: 'nation-b',
     label: 'Horizon League (Trade Charter)',
     summary:
       'Codify autonomous trade dispute mediation and treasury rebalancing for allied economies.',
-    uri: 'ipfs://solving-alpha/nation-b/trade',
   },
   {
     id: 'nation-c',
     label: 'Oceanic Union (Biodiversity Pact)',
     summary:
       'Fund marine restoration bonds with validator-audited impact attestations and automatic clawbacks.',
-    uri: 'ipfs://solving-alpha/nation-c/biodiversity',
   },
 ];
 
@@ -137,10 +136,6 @@ function toJobKey(jobId: bigint): string {
   return jobId.toString(10);
 }
 
-function computeSpecHash(payload: unknown): string {
-  return ethers.keccak256(ethers.toUtf8Bytes(JSON.stringify(payload)));
-}
-
 function computeResultHash(summary: string): string {
   return ethers.keccak256(ethers.toUtf8Bytes(summary.trim()));
 }
@@ -222,6 +217,18 @@ export function SolvingGovernanceExperience() {
   const [nationId, setNationId] = useState<string>(NATION_PRESETS[0]?.id ?? '');
   const [nationReward, setNationReward] = useState<string>('5000');
   const [nationDeadlineHours, setNationDeadlineHours] = useState<string>('1');
+  const [nationSpecificationUri, setNationSpecificationUri] = useState('');
+  const nationSpecPayload = useMemo(() => {
+    const preset = NATION_PRESETS.find((item) => item.id === nationId);
+    return {
+      schemaVersion: 1,
+      scenarioId: preset?.id,
+      title: preset?.label,
+      description: preset?.summary,
+      nation: preset?.label,
+      policy: preset?.summary,
+    };
+  }, [nationId]);
   const [actionState, setActionState] = useState<ActionState>(emptyAction);
   const [validatorLabel, setValidatorLabel] = useState<string>(
     DEFAULT_VALIDATOR_LABELS[0]
@@ -317,7 +324,7 @@ export function SolvingGovernanceExperience() {
           agent: job.agent,
           reward: BigInt(job.reward),
           feePct: BigInt(metadata.feePct ?? 0),
-          metadataState: Number(metadata.status ?? 0),
+          metadataState: Number(metadata.state ?? 0),
           success: Boolean(metadata.success),
           burnConfirmed: Boolean(metadata.burnConfirmed),
           specHash: job.specHash,
@@ -436,12 +443,8 @@ export function SolvingGovernanceExperience() {
       const deadline = BigInt(
         Math.floor(Date.now() / 1000 + hours * 3600)
       );
-      const specPayload = {
-        nation: preset.label,
-        policy: preset.summary,
-        createdAt: new Date().toISOString(),
-      };
-      const specHash = computeSpecHash(specPayload);
+      // Retrieve and verify before either token approval or job creation.
+      const { specHash, uri } = await verifyPublishedSpecification(nationSpecPayload, nationSpecificationUri);
       const registry = getJobRegistryContract(signer);
       const stakeManagerAddress = portalConfig.stakeManagerAddress;
       if (!stakeManagerAddress) {
@@ -466,9 +469,10 @@ export function SolvingGovernanceExperience() {
         reward,
         deadline,
         specHash,
-        preset.uri
+        uri
       );
       const receipt = await tx.wait();
+      if (!receipt || Number(receipt.status) !== 1) throw new Error('The governance job transaction was not confirmed successfully');
       let createdId: bigint | null = null;
       if (receipt?.logs?.length) {
         const iface = registry.interface;
@@ -485,15 +489,14 @@ export function SolvingGovernanceExperience() {
         }
       }
       if (!createdId) {
-        const nextId = await registry.nextJobId();
-        createdId = BigInt(nextId) - 1n;
+        throw new Error('Confirmed transaction has no JobCreated receipt. Reconcile the transaction before creating another job.');
       }
       updateSpecs((prev) => ({
         ...prev,
         [toJobKey(createdId!)]: {
           title: preset.label,
           summary: preset.summary,
-          uri: preset.uri,
+          uri,
         },
       }));
       await refreshJobs();
@@ -504,6 +507,8 @@ export function SolvingGovernanceExperience() {
     nationDeadlineHours,
     nationId,
     nationReward,
+    nationSpecPayload,
+    nationSpecificationUri,
     refreshJobs,
     signer,
     tokenDecimals,
@@ -920,11 +925,13 @@ export function SolvingGovernanceExperience() {
             />
           </label>
         </div>
+        <SpecificationPublication payload={nationSpecPayload} uri={nationSpecificationUri}
+          onUriChange={setNationSpecificationUri} disabled={actionState.busy} inputId="governance-spec-uri" />
         <button
           type="button"
           className="button primary"
           onClick={handleCreateJob}
-          disabled={actionState.busy || !address}
+          disabled={actionState.busy || !address || !nationSpecificationUri.trim()}
         >
           Publish Proposal
         </button>

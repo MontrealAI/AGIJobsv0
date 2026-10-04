@@ -30,11 +30,14 @@ const orderValue = (value: unknown): unknown => {
   return value;
 };
 
-export const computeSpecHash = (payload: unknown): Hex => {
-  const ordered = orderValue(payload);
-  const serialised = JSON.stringify(ordered);
-  return keccak256(toUtf8Bytes(serialised)) as Hex;
+export const serializeSpecPayload = (payload: unknown): string => {
+  const serialised = JSON.stringify(orderValue(payload));
+  if (serialised === undefined) throw new Error('Specification must be JSON serializable');
+  return serialised;
 };
+
+export const computeSpecHash = (payload: unknown): Hex =>
+  keccak256(toUtf8Bytes(serializeSpecPayload(payload))) as Hex;
 
 const toUint8Array = (payload: ArrayBuffer | ArrayBufferView): Uint8Array => {
   if (payload instanceof Uint8Array) {

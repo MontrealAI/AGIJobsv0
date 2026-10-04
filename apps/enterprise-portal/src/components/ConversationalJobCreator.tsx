@@ -15,6 +15,8 @@ import { useTranslation } from '../context/LanguageContext';
 import { useWeb3 } from '../context/Web3Context';
 import { getJobRegistryContract, portalConfig } from '../lib/contracts';
 import { computeSpecHash } from '../lib/crypto';
+import { submitPublishedSpecification } from '../lib/jobSpecPublication';
+import { SpecificationPublication } from './SpecificationPublication';
 
 const dateLocales: Record<string, string> = {
   en: 'en-US',
@@ -215,6 +217,8 @@ export const ConversationalJobCreator = () => {
   const [txHash, setTxHash] = useState<string>();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string>();
+  const [specificationUri, setSpecificationUri] = useState('');
+  const submissionLock = useRef(false);
   const messageCounter = useRef(2);
   const endRef = useRef<HTMLDivElement>(null);
 
@@ -300,6 +304,7 @@ export const ConversationalJobCreator = () => {
     setTxHash(undefined);
     setSubmitting(false);
     setError(undefined);
+    setSpecificationUri('');
     messageCounter.current = 2;
   }, []);
 
@@ -525,7 +530,12 @@ export const ConversationalJobCreator = () => {
       pushAssistantText('chat.acknowledgements.walletMissing');
       return;
     }
-    if (submitting) return;
+    if (submissionLock.current) return;
+    if (attachments.length && !form.uri.trim()) {
+      setError(t('publication.missingReference'));
+      return;
+    }
+    submissionLock.current = true;
     setSubmitting(true);
     setError(undefined);
     pushStatus('chat.status.submitting');
@@ -539,23 +549,17 @@ export const ConversationalJobCreator = () => {
         ? Math.floor(new Date(form.deadline).getTime() / 1000)
         : now + safeTtl;
       const payload = buildSpecPayload(form, attachments);
-      const specHash = computeSpecHash(payload);
-      const fallbackUri = `ipfs://job-spec/${specHash.replace(/^0x/, '')}`;
-      const uri = form.uri || fallbackUri;
       const agentTypes = Number(form.agentTypes) || 1;
       const method = hasAcknowledged
         ? 'createJobWithAgentTypes'
         : 'acknowledgeAndCreateJobWithAgentTypes';
-      const tx = await contract[method](
-        rewardInWei,
-        BigInt(deadlineSeconds),
-        agentTypes,
-        specHash,
-        uri
+      const tx = await submitPublishedSpecification(payload, specificationUri, ({ specHash, uri }) =>
+        contract[method](rewardInWei, BigInt(deadlineSeconds), agentTypes, specHash, uri)
       );
       setTxHash(tx.hash);
+      const receipt = await tx.wait?.();
+      if (!receipt || Number(receipt.status) !== 1) throw new Error('The job transaction was not confirmed successfully');
       pushStatus('chat.status.success', undefined, tx.hash);
-      await tx.wait?.();
       await refreshAcknowledgement().catch(() => undefined);
       setCurrentStep('complete');
     } catch (err) {
@@ -563,6 +567,7 @@ export const ConversationalJobCreator = () => {
       setError(message);
       pushStatus('chat.status.error', { message });
     } finally {
+      submissionLock.current = false;
       setSubmitting(false);
     }
   }, [
@@ -575,7 +580,8 @@ export const ConversationalJobCreator = () => {
     refreshAcknowledgement,
     rewardInWei,
     signer,
-    submitting,
+    specificationUri,
+    t,
   ]);
 
   const explorerBase = useMemo(() => {
@@ -775,11 +781,13 @@ export const ConversationalJobCreator = () => {
     if (currentStep === 'summary') {
       return (
         <div className="chat-actions">
+          <SpecificationPublication payload={buildSpecPayload(form, attachments)} uri={specificationUri}
+            onUriChange={setSpecificationUri} disabled={submitting} inputId="chat-spec-uri" />
           <button
             type="button"
             className="primary"
             onClick={submitJob}
-            disabled={submitting}
+            disabled={submitting || !specificationUri.trim()}
           >
             {submitting
               ? t('chat.status.submitting')
@@ -789,10 +797,11 @@ export const ConversationalJobCreator = () => {
             type="button"
             className="secondary"
             onClick={() => goToStep('title')}
+            disabled={submitting}
           >
             {t('chat.summary.edit')}
           </button>
-          <button type="button" className="ghost" onClick={resetConversation}>
+          <button type="button" className="ghost" onClick={resetConversation} disabled={submitting}>
             {t('chat.summary.startOver')}
           </button>
           {!signer && (

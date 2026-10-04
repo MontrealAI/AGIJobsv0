@@ -1,5 +1,9 @@
+import { ethers } from 'ethers';
+import { fetchArtifactBytes, resolveArtifactUri } from './artifactSource';
+
 export interface ChainJobSummary {
   jobId: string;
+  specHash?: string;
   agent?: string;
   agentTypes?: number;
   uri?: string;
@@ -86,28 +90,48 @@ function confidenceFromMatches(matches: number, totalSignals: number): number {
   return Math.min(0.99, Math.max(0.05, raw));
 }
 
+/** Worker admission must use the bytes committed by the employer, not a mutable URI alone. */
+export async function fetchCommittedJobSpec(
+  uri: string | undefined,
+  specHash: string | undefined,
+  gateway?: string
+): Promise<JobSpec | null> {
+  if (!uri) {
+    if (specHash && specHash !== ethers.ZeroHash)
+      throw new Error('Committed specification URI is missing');
+    return null;
+  }
+  if (
+    !specHash ||
+    !ethers.isHexString(specHash, 32) ||
+    specHash === ethers.ZeroHash
+  )
+    throw new Error('Authoritative job specification hash is missing');
+  const bytes = await fetchArtifactBytes(
+    resolveArtifactUri(uri, gateway),
+    gateway || process.env.IPFS_GATEWAY_URL
+  );
+  if (ethers.keccak256(bytes).toLowerCase() !== specHash.toLowerCase())
+    throw new Error('Authoritative job specification hash mismatch');
+  const spec: unknown = JSON.parse(Buffer.from(bytes).toString('utf8'));
+  if (!spec || typeof spec !== 'object' || Array.isArray(spec))
+    throw new Error('Invalid job specification');
+  return spec as JobSpec;
+}
+
 export async function fetchJobSpec(
   uri: string | undefined,
   options?: { gatewayUrl?: string }
 ): Promise<JobSpec | null> {
   if (!uri) return null;
-  const normalized = uri.replace(/^ipfs:\/\//i, '');
-  let target = uri;
-  if (uri.startsWith('ipfs://')) {
-    const gateway = options?.gatewayUrl || process.env.IPFS_GATEWAY_URL;
-    if (!gateway) {
-      return null;
-    }
-    target = `${gateway.replace(/\/$/, '')}/${normalized}`;
-  }
   try {
-    const res = await fetch(target, {
-      headers: { Accept: 'application/json' },
-    });
-    if (!res.ok) {
-      throw new Error(`status ${res.status}`);
-    }
-    const text = await res.text();
+    const target = resolveArtifactUri(uri, options?.gatewayUrl);
+    const text = new TextDecoder().decode(
+      await fetchArtifactBytes(
+        target,
+        options?.gatewayUrl || process.env.IPFS_GATEWAY_URL
+      )
+    );
     if (!text.trim()) return null;
     try {
       const parsed = JSON.parse(text) as JobSpec;

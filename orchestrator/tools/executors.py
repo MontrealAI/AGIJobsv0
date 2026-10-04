@@ -24,6 +24,18 @@ class StepExecutionError(RuntimeError):
     """Raised when the adapter is unable to complete a step."""
 
 
+class BridgeUnavailable(StepExecutionError):
+    """Nothing was dispatched; a demo may explicitly use simulation."""
+
+
+class BridgeOutcomeUnknown(StepExecutionError):
+    """Dispatch may have had effects. Never retry or simulate it automatically."""
+
+
+class BridgeConfigurationError(StepExecutionError):
+    """Invalid operator settings must not trigger a simulated fallback."""
+
+
 class ModerationRejected(StepExecutionError):
     """Raised when moderation blocks a step."""
 
@@ -39,6 +51,13 @@ class StepResult:
     logs: List[str]
     attempts: int
     duration: float
+    simulated: bool = False
+
+
+@dataclass
+class _AttemptResult:
+    logs: List[str]
+    simulated: bool = False
 
 
 def _load_router_map() -> Dict[str, str]:
@@ -87,7 +106,7 @@ class _NodeBridge:
         if self._supported is not None:
             return self._supported
         try:
-            subprocess.run(["node", "--version"], check=True, capture_output=True)
+            subprocess.run(["node", "--version"], check=True, capture_output=True, timeout=5)
             self._supported = True
         except Exception:
             self._supported = False
@@ -95,12 +114,16 @@ class _NodeBridge:
 
     def run(self, intent: str, payload: Dict[str, object]) -> Iterable[str]:
         if not self._is_supported():
-            yield f"⚠️ Node runtime unavailable; skipped intent {intent}."
-            return
+            raise BridgeUnavailable("Node runtime unavailable; no intent dispatched.")
         bridge_script = Path(os.environ.get("ORCHESTRATOR_JS_BRIDGE", "packages/orchestrator/dist/bridge.mjs"))
-        if not bridge_script.exists():
-            yield f"⚠️ Bridge script missing ({bridge_script}); skipped intent {intent}."
-            return
+        if not bridge_script.is_file():
+            raise BridgeUnavailable("Node bridge script missing; no intent dispatched.")
+        try:
+            timeout = int(os.environ.get("ORCHESTRATOR_BRIDGE_TIMEOUT_SECONDS", "120"))
+            if not 1 <= timeout <= 600:
+                raise ValueError
+        except ValueError as exc:
+            raise BridgeConfigurationError("Bridge timeout must be an integer from 1 to 600 seconds.") from exc
         with self._lock:
             try:
                 proc = subprocess.run(
@@ -108,15 +131,18 @@ class _NodeBridge:
                     input=json.dumps(payload).encode("utf-8"),
                     capture_output=True,
                     check=False,
+                    timeout=timeout,
                 )
             except Exception as exc:  # pragma: no cover - shell issues
-                raise StepExecutionError(f"Failed to invoke Node bridge: {exc}") from exc
+                raise BridgeOutcomeUnknown("Node bridge interrupted; reconcile external effects before retrying.") from exc
         stdout = proc.stdout.decode("utf-8", errors="ignore").strip()
         stderr = proc.stderr.decode("utf-8", errors="ignore").strip()
         if stderr:
             yield from [line for line in stderr.splitlines() if line]
         if proc.returncode != 0:
-            raise StepExecutionError(stdout or f"Node bridge exited with {proc.returncode}")
+            raise BridgeOutcomeUnknown(f"Node bridge exited with {proc.returncode}; reconcile external effects before retrying.")
+        if not stdout:
+            raise BridgeOutcomeUnknown("Node bridge returned no execution evidence; reconcile before retrying.")
         for line in stdout.splitlines():
             if line:
                 yield line
@@ -197,8 +223,11 @@ class StepExecutor:
     def __init__(self, retry: RetryPolicy | None = None) -> None:
         self.retry = retry or RetryPolicy()
 
-    def _attempt(self, step: Step, attempt: int) -> List[str]:
+    def _attempt(self, step: Step, attempt: int) -> _AttemptResult:
         runtime_logs = _PHASE6_RUNTIME.annotate_step(step)
+        bridge_preference = os.environ.get("ORCHESTRATOR_BRIDGE_MODE", "auto")
+        if bridge_preference not in {"node", "python", "auto"}:
+            raise BridgeUnavailable("Unknown ORCHESTRATOR_BRIDGE_MODE; choose node, python or auto.")
 
         if step.tool == "safety.moderation":
             attachments: List[Attachment] = []
@@ -221,30 +250,34 @@ class StepExecutor:
                 logs.append(f"Repeated passage: {snippet[:120]}{'…' if len(snippet) > 120 else ''}")
             if report.blocked:
                 raise ModerationRejected(report, logs)
-            return list(runtime_logs) + logs
+            return _AttemptResult(list(runtime_logs) + logs)
 
         intent = _STEP_TO_INTENT.get(step.tool or "")
         if not intent:
-            return list(runtime_logs) + [
-                f"No executor registered for tool `{step.tool}`; marking as no-op."
-            ]
+            if bridge_preference == "node":
+                raise BridgeUnavailable(f"No executor registered for tool `{step.tool}`.")
+            return _AttemptResult(list(runtime_logs) + [
+                f"SIMULATION: no executor registered for tool `{step.tool}`; no work performed."
+            ], simulated=True)
         payload = _build_payload(step)
         logs: List[str] = list(runtime_logs)
         logs.append(f"Dispatching intent `{intent}` (attempt {attempt}).")
-        bridge_preference = os.environ.get("ORCHESTRATOR_BRIDGE_MODE", "auto")
+        simulated = False
         if bridge_preference == "node":
             logs.extend(_NODE_BRIDGE.run(intent, payload))
         elif bridge_preference == "python":
+            simulated = True
             logs.extend(_simulate_adapter(intent, step))
         else:
-            # auto mode: try node bridge first, fallback to simulation
+            # Demo compatibility only: fallback is permitted before dispatch.
             try:
                 logs.extend(_NODE_BRIDGE.run(intent, payload))
-            except StepExecutionError:
+            except BridgeUnavailable:
+                simulated = True
                 logs.append("Node bridge unavailable, using simulated adapter.")
                 logs.extend(_simulate_adapter(intent, step))
-        logs.append("Intent completed (logical).")
-        return logs
+        logs.append("SIMULATION: no external execution or settlement evidence." if simulated else "Node bridge completed; verify its external receipts before settlement.")
+        return _AttemptResult(logs, simulated=simulated)
 
     def execute(self, step: Step) -> StepResult:
         start = time.time()
@@ -265,14 +298,16 @@ class StepExecutor:
                             "Unable to dispatch step without an active agent.",
                         ]
                         return StepResult(False, failure_logs, attempt, time.time() - start)
-                logs = assignment_logs + self._attempt(step, attempt)
-                _SCOREBOARD.record_result(agents, success=True, context=context)
+                result = self._attempt(step, attempt)
+                logs = assignment_logs + result.logs
+                if not result.simulated:
+                    _SCOREBOARD.record_result(agents, success=True, context=context)
                 slash_detected, descriptor = _detect_slash(logs, step)
-                if slash_detected:
+                if slash_detected and not result.simulated:
                     message = _SCOREBOARD.record_slash(agents, reason=descriptor or "slash")
                     if message:
                         logs.append(message)
-                return StepResult(True, logs, attempt, time.time() - start)
+                return StepResult(True, logs, attempt, time.time() - start, simulated=result.simulated)
             except ModerationRejected as exc:
                 failure_logs = list(exc.logs)
                 failure_logs.append("Moderation gate blocked execution; escalation required.")
@@ -283,6 +318,8 @@ class StepExecutor:
                 return StepResult(False, failure_logs, attempt, time.time() - start)
             except StepExecutionError as exc:
                 errors.append(str(exc))
+                if isinstance(exc, (BridgeUnavailable, BridgeOutcomeUnknown, BridgeConfigurationError)):
+                    break
                 if attempt >= self.retry.attempts:
                     break
                 time.sleep(self.retry.backoff * attempt)

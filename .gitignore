@@ -19,6 +19,7 @@ reports/sbom/
 reports/load-sim/
 reports/python-coverage/
 reports/production-rehearsal/
+reports/portal-publication/
 monitoring/sentinel-alerts.log
 
 .next/
@@ -107,3 +108,4 @@ out/forge/
 /apps/orchestrator/dist/
 /reports/onebox/
 /storage/receipts/
+/reports/computer-work/

@@ -765,6 +765,16 @@
         "title": "Check connected readiness",
         "source": "demo/One-Box/bin/doctor.cjs",
         "explanation": "Run the strict, read-only doctor before connected launch. Unresolved contract, ownership, pause, balance or port checks must be addressed."
+      },
+      {
+        "title": "Run actual browser work",
+        "source": "demo/One-Box/computer-work/README.md",
+        "explanation": "The supplier-desk lab uses actual isolated Chromium interactions and a deterministic provider fixture. Run the accepted and injected-error paths, then inspect screenshots, receipts and the independent review."
+      },
+      {
+        "title": "Inspect independent acceptance",
+        "source": "demo/One-Box/computer-work/review.cjs",
+        "explanation": "Eleven arithmetic and structural checks verify the result against source quotes. A well-formed response and valid hashes cannot make a late supplier meet the delivery deadline."
       }
     ],
     "command": "npm run demo:onebox:launch -- --demo",

@@ -29,7 +29,7 @@ export const PortalPage = () => {
           {t('common.error', { message: error })}
         </div>
       )}
-      <main className="portal-main">
+      <div className="portal-main">
         <div className="portal-content">
           <div className="portal-column portal-column--primary">
             <ConversationalJobCreator />
@@ -47,7 +47,7 @@ export const PortalPage = () => {
             <HelpCenter />
           </aside>
         </div>
-      </main>
+      </div>
     </div>
   );
 };

@@ -6,12 +6,12 @@ import {
   JobSpec,
   classifyJob,
   extractPipeline,
-  fetchJobSpec,
+  fetchCommittedJobSpec,
   ChainJobSummary,
 } from './jobClassifier';
 import { buildPipeline, PipelineContext } from './pipeline';
 import { runJob, JobRunResult } from './execution';
-import { finalizeJob } from './submission';
+import { submitJobResult } from './submission';
 import {
   CapabilityMatrix,
   loadCapabilityMatrix,
@@ -25,7 +25,12 @@ import { auditLog } from './audit';
 import { AuditAnchoringService, AuditAnchoringOptions } from './anchoring';
 import { getWatchdog } from './monitor';
 import { postJob } from './employer';
-import { evaluateSubmission } from './validation';
+import { evaluateSubmission, needsIndependentReview } from './validation';
+import { SettlementJournal } from './settlementJournal';
+import {
+  ComputerWorkOutcomeUnknown,
+  requireComputerWorkAdmission,
+} from './computerWork';
 import { LearningCoordinator } from './learning';
 import {
   CompletedJobEvidence,
@@ -46,6 +51,7 @@ interface AppliedJobState {
   classification: ClassificationResult;
   spec: JobSpec | null;
   summary: ChainJobSummary;
+  execution?: { runResult: JobRunResult; resultRef: string; chainJob: any };
 }
 
 interface CommitData {
@@ -60,10 +66,12 @@ const JOB_REGISTRY_ABI = [
   'event AgentAssigned(uint256 indexed jobId,address indexed agent,string subdomain)',
   'event ResultSubmitted(uint256 indexed jobId,address indexed worker,bytes32 resultHash,string resultURI,string subdomain)',
   'event JobCompleted(uint256 indexed jobId,bool success)',
+  'event JobFinalized(uint256 indexed jobId,address indexed worker)',
   'event JobCancelled(uint256 indexed jobId)',
   'event JobDisputed(uint256 indexed jobId,address indexed caller)',
   'function jobs(uint256 jobId) view returns (address employer,address agent,uint128 reward,uint96 stake,uint128 burnReceiptAmount,bytes32 uriHash,bytes32 resultHash,bytes32 specHash,uint256 packedMetadata)',
   'function applyForJob(uint256 jobId,string subdomain,bytes32[] proof)',
+  'function submit(uint256 jobId,bytes32 resultHash,string resultURI,string subdomain,bytes32[] proof)',
 ];
 
 const STAKE_MANAGER_ABI = [
@@ -76,6 +84,8 @@ const VALIDATION_MODULE_ABI = [
   'event ValidationCommitted(uint256 indexed jobId,address indexed validator,bytes32 commitHash,string subdomain)',
   'event ValidationRevealed(uint256 indexed jobId,address indexed validator,bool approve,bytes32 burnTxHash,string subdomain)',
   'function jobNonce(uint256 jobId) view returns (uint256)',
+  'function validators(uint256 jobId) view returns (address[])',
+  'function commitments(uint256 jobId,address validator,uint256 nonce) view returns (bytes32)',
   'function commitValidation(uint256 jobId,bytes32 commitHash,string subdomain,bytes32[] proof)',
   'function revealValidation(uint256 jobId,bool approve,bytes32 salt,string subdomain,bytes32[] proof)',
   'function selectValidators(uint256 jobId,uint256 entropy)',
@@ -236,6 +246,9 @@ export class MetaOrchestrator {
   private readonly watchdog = getWatchdog();
   private readonly learning = new LearningCoordinator();
   private running = false;
+  private settlementJournal!: SettlementJournal;
+  private settlementRecoveryTimer: NodeJS.Timeout | null = null;
+  private recoveringSettlements = false;
 
   constructor(config?: Partial<MetaOrchestratorConfig>) {
     this.config = { ...resolveConfig(), ...(config ?? {}) };
@@ -261,6 +274,13 @@ export class MetaOrchestrator {
     await this.initializeAuditAnchoring();
     this.initializeEnergyPolicy();
     this.loadCompletedEvidenceCache();
+    const network = await this.provider.getNetwork();
+    this.settlementJournal = new SettlementJournal(
+      process.env.ORCHESTRATOR_SETTLEMENT_STATE_DIR ||
+        path.resolve('storage/orchestrator/settlement'),
+      `${network.chainId}:${this.config.jobRegistryAddress.toLowerCase()}`
+    );
+    this.restorePendingSettlements();
   }
 
   private async instantiateContracts(): Promise<void> {
@@ -475,7 +495,13 @@ export class MetaOrchestrator {
   start(): void {
     if (this.running) return;
     this.running = true;
+    this.restorePendingSettlements();
     this.registerEventHandlers();
+    void this.recoverSettledOutcomes();
+    this.settlementRecoveryTimer = setInterval(
+      () => void this.recoverSettledOutcomes(),
+      30_000
+    );
     this.auditAnchor?.start();
     auditLog('orchestrator.started', {
       actor: this.orchestratorIdentity?.address,
@@ -490,6 +516,9 @@ export class MetaOrchestrator {
     if (!this.running) return;
     this.running = false;
     this.auditAnchor?.stop();
+    if (this.settlementRecoveryTimer)
+      clearInterval(this.settlementRecoveryTimer);
+    this.settlementRecoveryTimer = null;
     this.registry.removeAllListeners();
     if (this.validationModule) this.validationModule.removeAllListeners();
     if (this.disputeModule) this.disputeModule.removeAllListeners();
@@ -527,6 +556,7 @@ export class MetaOrchestrator {
           reward: reward.toString(),
           stake: stake.toString(),
           uri,
+          specHash,
         };
         this.handleJobCreated(summary).catch((err) => {
           console.error('JobCreated handler failed', err);
@@ -535,6 +565,14 @@ export class MetaOrchestrator {
     );
 
     this.registry.on('JobCompleted', (jobId: bigint, success: boolean) => {
+      this.recordSettledOutcome(jobId.toString())
+        .then(() => {
+          if (!this.appliedJobs.get(jobId.toString())?.execution)
+            this.appliedJobs.delete(jobId.toString());
+        })
+        .catch((err) => {
+          console.error('Settled outcome recording failed', err);
+        });
       auditLog('job.completed', {
         jobId: jobId.toString(),
         details: { success },
@@ -545,11 +583,19 @@ export class MetaOrchestrator {
           .catch((err) => console.error('audit anchor trigger failed', err));
       }
       const key = jobId.toString();
-      this.appliedJobs.delete(key);
       const timer = this.assignmentTimers.get(key);
       if (timer) clearInterval(timer);
       this.assignmentTimers.delete(key);
       this.clearReviewTimer(key, 'job-completed');
+    });
+
+    this.registry.on('JobFinalized', (jobId: bigint) => {
+      this.recordSettledOutcome(jobId.toString()).catch((error) =>
+        console.error(
+          'Finalized outcome recording failed; journal retained',
+          error
+        )
+      );
     });
 
     this.registry.on('JobCancelled', (jobId: bigint) => {
@@ -764,10 +810,28 @@ export class MetaOrchestrator {
     if (summary.agent && summary.agent !== ethers.ZeroAddress) {
       return;
     }
-    const spec = await fetchJobSpec(summary.uri, {
-      gatewayUrl: this.config.ipfsGateway,
-    });
+    const spec = await fetchCommittedJobSpec(
+      summary.uri,
+      summary.specHash,
+      this.config.ipfsGateway
+    );
     const classification = classifyJob(summary, spec ?? undefined);
+    // Constructing stages is read-only: reject inconsistent categories, custom
+    // computer stages and unapproved endpoints before economic commitment.
+    buildPipeline(
+      {
+        jobId: summary.jobId,
+        category: classification.category,
+        tags: classification.tags,
+        metadata: spec?.metadata,
+      },
+      extractPipeline(spec ?? undefined)
+    );
+    if (classification.category === 'computer-work') {
+      // Admission must precede selection, stake deposits and applyForJob.
+      // The handler reloads operator policy before any eventual dispatch.
+      requireComputerWorkAdmission(summary.jobId, spec?.metadata?.computerWork);
+    }
     auditLog('job.detected', {
       jobId: summary.jobId,
       details: {
@@ -980,8 +1044,36 @@ export class MetaOrchestrator {
       const resultRef = artifactCid.startsWith('ipfs://')
         ? artifactCid
         : `ipfs://${artifactCid}`;
-      await finalizeJob(jobId, state.wallet);
-      this.beginReviewPhase(jobId, 'submission-finalized');
+      state.execution = {
+        runResult,
+        resultRef,
+        chainJob: {
+          employer: chainJob.employer,
+          agent: chainJob.agent,
+          reward: chainJob.reward?.toString(),
+          stake: chainJob.stake?.toString(),
+          packedMetadata: chainJob.packedMetadata?.toString(),
+        },
+      };
+      this.settlementJournal.save({
+        jobId,
+        agentAddress: state.identity.address,
+        fromBlock: await this.provider.getBlockNumber(),
+        classification: state.classification,
+        spec: state.spec,
+        summary: state.summary,
+        execution: state.execution,
+      });
+      if (!this.settlementJournal.claimSubmission(jobId))
+        throw new Error('Submission outcome requires operator reconciliation');
+      await submitJobResult(
+        this.registry.connect(state.wallet) as Contract,
+        jobId,
+        runResult.manifest,
+        resultRef,
+        toSubdomain(state.identity)
+      );
+      this.beginReviewPhase(jobId, 'evidence-submitted');
       this.recordCompletedJob(jobId, state, runResult, resultRef, chainJob);
       auditLog('job.submitted', {
         jobId,
@@ -996,38 +1088,217 @@ export class MetaOrchestrator {
           keywords: runResult.snapshot.keywords.slice(0, 12),
         },
       });
-      await this.learning.recordJobOutcome({
-        jobId,
-        identity: state.identity,
-        classification: state.classification,
-        spec: state.spec,
-        summary: state.summary,
-        chainJob,
-        runResult,
-        resultRef,
-        success: true,
-      });
-      await this.spawnSubtasks(jobId, state.spec);
+      // All outcome learning and dependent jobs wait for final settlement.
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       this.watchdog.recordFailure(state.identity.address, message);
-      auditLog('job.execution_failed', {
-        jobId,
-        actor: state.identity.address,
-        details: { error: message },
-      });
-      await this.learning.recordJobOutcome({
-        jobId,
-        identity: state.identity,
-        classification: state.classification,
-        spec: state.spec,
-        summary: state.summary,
-        chainJob,
-        success: false,
-        errorMessage: message,
-      });
+      auditLog(
+        err instanceof ComputerWorkOutcomeUnknown
+          ? 'job.execution_outcome_unknown'
+          : 'job.execution_failed',
+        {
+          jobId,
+          actor: state.identity.address,
+          details: { error: message },
+        }
+      );
+      // A transport, worker, pinning or submission error is operational evidence,
+      // not a finalized job outcome. It must never label training success/failure.
+      // Unknown dispatches retain their durable barrier for reconciliation.
       throw err;
     }
+  }
+
+  private async recordSettledOutcome(jobId: string): Promise<void> {
+    const state = this.appliedJobs.get(jobId);
+    if (!state?.execution) return;
+    // Validation may be reversed by a dispute. Train/spawn only after contract
+    // finalization is also visible at the RPC's finalized consensus block.
+    const job = await this.registry.jobs(jobId, { blockTag: 'finalized' });
+    const finalState = decodePackedJobMetadata(job.packedMetadata);
+    if (finalState.state !== 6) return;
+    const success = finalState.success === true;
+    const execution = state.execution;
+    if (!this.settlementJournal.claim(jobId, success)) {
+      auditLog('job.settlement_reconciliation_required', {
+        jobId,
+        details: {
+          reason:
+            'Outcome already claimed; inspect durable journal before any retry.',
+        },
+      });
+      return;
+    }
+    await this.learning.recordJobOutcome({
+      jobId,
+      identity: state.identity,
+      classification: state.classification,
+      spec: state.spec,
+      summary: state.summary,
+      ...execution,
+      success,
+    });
+    if (success) await this.spawnSubtasks(jobId, state.spec);
+    this.settlementJournal.complete(jobId);
+    delete state.execution;
+    this.appliedJobs.delete(jobId);
+  }
+
+  private restorePendingSettlements(): void {
+    for (const record of this.settlementJournal.pending()) {
+      const identity = this.identityManager.getByAddress(record.agentAddress);
+      if (!identity)
+        throw new Error(
+          `Missing identity for pending job ${record.jobId}; restore it before starting`
+        );
+      this.appliedJobs.set(record.jobId, {
+        identity,
+        wallet: identity.wallet.connect(this.provider),
+        classification: record.classification,
+        spec: record.spec,
+        summary: record.summary,
+        execution: record.execution,
+      });
+    }
+  }
+
+  private async recoverSettledOutcomes(): Promise<void> {
+    if (this.recoveringSettlements) return;
+    this.recoveringSettlements = true;
+    try {
+      for (const record of this.settlementJournal.pending()) {
+        try {
+          await this.recoverPreparedSubmission(record.jobId);
+          await this.recordSettledOutcome(record.jobId);
+        } catch (error) {
+          console.error(
+            `Pending job ${record.jobId} recovery failed; journal retained`,
+            error
+          );
+        }
+      }
+    } catch (error) {
+      console.error('Pending outcome recovery failed; journal retained', error);
+    } finally {
+      this.recoveringSettlements = false;
+    }
+  }
+
+  private async recoverPreparedSubmission(jobId: string): Promise<void> {
+    const state = this.appliedJobs.get(jobId);
+    if (!state?.execution) return;
+    const job = await this.registry.jobs(jobId);
+    const metadata = decodePackedJobMetadata(job.packedMetadata);
+    if ([3, 4, 5].includes(metadata.state ?? -1)) {
+      const { runResult, resultRef } = state.execution;
+      const expectedHash = ethers.keccak256(
+        ethers.toUtf8Bytes(JSON.stringify(runResult.manifest))
+      );
+      if (
+        String(job.agent).toLowerCase() !==
+          state.identity.address.toLowerCase() ||
+        job.resultHash !== expectedHash
+      )
+        throw new Error(
+          'Saved execution does not match the on-chain submission'
+        );
+      // Submission may have mined just before the process exited. Rebuild local
+      // review/dispute evidence from the verified journal without broadcasting.
+      if (!this.completedJobs.has(jobId))
+        this.recordCompletedJob(jobId, state, runResult, resultRef, job);
+      if (metadata.state === 3) {
+        this.beginReviewPhase(jobId, 'submission-recovered');
+        if (this.validationModule && this.validatorIdentities.length) {
+          const validators = await this.validationModule.validators(jobId);
+          await this.handleValidatorsSelected(BigInt(jobId), [...validators]);
+        }
+      } else {
+        this.clearReviewTimer(jobId, 'submission-already-reviewed');
+        if (metadata.state === 5)
+          await this.prepareDisputeEvidenceForJob(jobId, {
+            source: 'recovered-on-chain-dispute',
+          });
+      }
+      return;
+    }
+    if (metadata.state !== 2) return; // Only an assigned, unsubmitted job may resume.
+    if (
+      String(job.agent).toLowerCase() !==
+        state.identity.address.toLowerCase() ||
+      job.resultHash !== ethers.ZeroHash
+    )
+      throw new Error(
+        'Pending submission does not match the current on-chain assignment'
+      );
+    if (!this.settlementJournal.claimSubmission(jobId)) {
+      auditLog('job.submission_reconciliation_required', {
+        jobId,
+        details: {
+          reason:
+            'A submission attempt may already have broadcast; inspect chain and wallet nonce before retry.',
+        },
+      });
+      return;
+    }
+    const { runResult, resultRef, chainJob } = state.execution;
+    await submitJobResult(
+      this.registry.connect(state.wallet) as Contract,
+      jobId,
+      runResult.manifest,
+      resultRef,
+      toSubdomain(state.identity)
+    );
+    this.beginReviewPhase(jobId, 'evidence-submitted');
+    this.recordCompletedJob(jobId, state, runResult, resultRef, chainJob);
+  }
+
+  private async validationContext(
+    jobId: bigint
+  ): Promise<{ classification: ClassificationResult; spec: JobSpec | null }> {
+    // Cached classifications never authorize a vote. The saved URI is useful
+    // after restart, but must match the contract's immutable URI commitment.
+    let uri = this.appliedJobs.get(jobId.toString())?.summary?.uri;
+    let specHash: string;
+    if (typeof uri === 'string') {
+      const job = await this.registry.jobs(jobId);
+      if (ethers.keccak256(ethers.toUtf8Bytes(uri)) !== job.uriHash)
+        throw new Error('Saved specification URI does not match the contract');
+      specHash = job.specHash;
+    } else {
+      const latest = await this.provider.getBlockNumber();
+      const filter = this.registry.filters.JobCreated(jobId);
+      const find = (events: any[]) =>
+        events.find((item) => item.args && !item.removed);
+      let event: any;
+      try {
+        // Indexed event lookup covers the complete history, including week-long
+        // jobs on fast-block chains. Most archival RPCs serve this in one call.
+        event = find(await this.registry.queryFilter(filter, 0, latest));
+      } catch {
+        // Providers with getLogs range limits need bounded pages, not an age
+        // cutoff. A failed page propagates so unavailable history fails closed.
+        for (let to = latest; to >= 0 && !event; to -= 2000)
+          event = find(
+            await this.registry.queryFilter(filter, Math.max(0, to - 1999), to)
+          );
+      }
+      if (!event)
+        throw new Error('Authoritative job specification unavailable');
+      uri = event.args.uri ?? event.args[7];
+      specHash = event.args.specHash ?? event.args[6];
+    }
+    const spec = await fetchCommittedJobSpec(
+      uri,
+      specHash,
+      this.config.ipfsGateway
+    );
+    return {
+      classification: classifyJob(
+        { jobId: jobId.toString(), uri },
+        spec ?? undefined
+      ),
+      spec,
+    };
   }
 
   private async spawnSubtasks(
@@ -1053,7 +1324,11 @@ export class MetaOrchestrator {
           },
         });
       } catch (err) {
-        console.warn('Failed to spawn subtask', err);
+        console.warn(
+          'Failed to spawn subtask; reconcile pending settlement claim',
+          err
+        );
+        throw err;
       }
     }
   }
@@ -1101,9 +1376,50 @@ export class MetaOrchestrator {
     if (this.commits.has(key)) {
       return;
     }
+    const cached = this.appliedJobs.get(jobKey);
+    if (needsIndependentReview(cached?.classification, cached?.spec)) {
+      auditLog('validator.independent_review_required', {
+        jobId: jobKey,
+        actor: identity.address,
+      });
+      return; // Safe abstention needs no RPC; cached data can never authorize a vote.
+    }
+    let applied: { classification: ClassificationResult; spec: JobSpec | null };
+    try {
+      applied = await this.validationContext(jobId);
+    } catch (error) {
+      auditLog('validator.context_unavailable', {
+        jobId: jobKey,
+        actor: identity.address,
+        details: { error: String(error) },
+      });
+      return;
+    }
+    if (needsIndependentReview(applied.classification, applied.spec)) {
+      auditLog('validator.independent_review_required', {
+        jobId: jobKey,
+        actor: identity.address,
+      });
+      return;
+    }
+    const nonce: bigint = await this.validationModule.jobNonce(jobId);
+    const existingCommitment = await this.validationModule.commitments(
+      jobId,
+      identity.address,
+      nonce
+    );
+    if (existingCommitment !== ethers.ZeroHash) {
+      // Legacy validators retain reveal secrets in memory. A restart must not
+      // replace a mined commitment with a new salt or imply it was recovered.
+      auditLog('validator.commitment_reconciliation_required', {
+        jobId: jobKey,
+        actor: identity.address,
+        details: { nonce: nonce.toString(), commitment: existingCommitment },
+      });
+      return;
+    }
     let approve = false;
     try {
-      const applied = this.appliedJobs.get(jobKey);
       const evaluation = await evaluateSubmission({
         registry: this.registry,
         provider: this.provider,
@@ -1112,6 +1428,14 @@ export class MetaOrchestrator {
         spec: applied?.spec ?? null,
         ipfsGateway: this.config.ipfsGateway,
       });
+      if (evaluation.requiresIndependentReview) {
+        auditLog('validator.independent_review_required', {
+          jobId: jobKey,
+          actor: identity.address,
+          details: { resultUri: evaluation.resultUri, notes: evaluation.notes },
+        });
+        return; // An abstention is not a negative vote against the worker.
+      }
       approve = evaluation.approve;
       auditLog('validator.evaluation', {
         jobId: jobKey,
@@ -1146,7 +1470,6 @@ export class MetaOrchestrator {
       });
       approve = false;
     }
-    const nonce: bigint = await this.validationModule.jobNonce(jobId);
     const salt = ethers.hexlify(ethers.randomBytes(32));
     const commitHash = ethers.solidityPackedKeccak256(
       ['uint256', 'uint256', 'bool', 'bytes32'],

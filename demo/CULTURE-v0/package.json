@@ -41,7 +41,9 @@
     "ts-node": "^10.9.2",
     "typescript": "^5.9.2",
     "yargs": "^17.7.2",
-    "zod": "^3.25.76"
+    "zod": "^3.25.76",
+    "chai": "^4.5.0",
+    "@types/chai": "^4.3.20"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
@@ -54,6 +56,25 @@
       "prisma",
       "secp256k1",
       "unrs-resolver"
-    ]
+    ],
+    "overrides": {
+      "deepmerge-ts": "^8.0.2",
+      "ws": "^8.22.0",
+      "lodash": "^4.18.1",
+      "lodash-es": "^4.18.1",
+      "preact": "^10.29.8",
+      "effect": "^3.20.0",
+      "path-to-regexp@<1": "^0.1.13",
+      "defu": "^6.1.7",
+      "axios": "^1.20.0",
+      "form-data@4": "^4.0.6",
+      "fast-uri@3": "^3.1.8",
+      "qs@6": "^6.16.0",
+      "ajv@6": "^6.15.0",
+      "ajv@8": "^8.20.0",
+      "body-parser@1": "^1.20.8",
+      "follow-redirects": "^1.16.1",
+      "@protobufjs/utf8": "^1.1.2"
+    }
   }
 }

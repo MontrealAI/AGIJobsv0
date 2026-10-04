@@ -1,4 +1,5 @@
 import { Contract, JsonRpcProvider, ethers } from 'ethers';
+import { fetchArtifactBytes, resolveArtifactUri } from './artifactSource';
 import { ClassificationResult, JobSpec } from './jobClassifier';
 
 export interface SubmissionDetails {
@@ -18,6 +19,7 @@ export interface EvaluationNote {
 }
 
 export interface EvaluationOutcome {
+  requiresIndependentReview?: boolean;
   approve: boolean;
   confidence: number;
   notes: EvaluationNote[];
@@ -48,21 +50,6 @@ const DEFAULT_LOOKBACK_BLOCKS = Number(
 const DEFAULT_MIN_CONFIDENCE = Number(
   process.env.VALIDATION_MIN_CONFIDENCE || 0.5
 );
-
-function normaliseGatewayUri(uri: string, gateway?: string): string {
-  if (!uri) return uri;
-  if (uri.startsWith('ipfs://')) {
-    const normalizedGateway = (gateway || process.env.IPFS_GATEWAY_URL || '')
-      .replace(/\/$/, '')
-      .trim();
-    const path = uri.replace('ipfs://', '');
-    if (normalizedGateway) {
-      return `${normalizedGateway}/${path}`;
-    }
-    return `https://ipfs.io/ipfs/${path}`;
-  }
-  return uri;
-}
 
 async function fetchSubmissionDetails(
   registry: Contract,
@@ -120,18 +107,11 @@ async function downloadArtifact(
   uri: string,
   gateway?: string
 ): Promise<{ bytes: Uint8Array; text: string | null }> {
-  const target = normaliseGatewayUri(uri, gateway);
-  const response = await fetch(target, {
-    headers: {
-      Accept: 'application/json, text/plain;q=0.9, */*;q=0.1',
-    },
-  });
-  if (!response.ok) {
-    throw new Error(
-      `Unexpected status ${response.status} ${response.statusText}`
-    );
-  }
-  const buffer = new Uint8Array(await response.arrayBuffer());
+  const target = resolveArtifactUri(uri, gateway);
+  const buffer = await fetchArtifactBytes(
+    target,
+    gateway || process.env.IPFS_GATEWAY_URL
+  );
   let text: string | null = null;
   try {
     text = new TextDecoder().decode(buffer);
@@ -227,6 +207,17 @@ function analyseJsonPayload(
   return notes;
 }
 
+export function needsIndependentReview(
+  classification?: ClassificationResult,
+  spec?: JobSpec | null
+): boolean {
+  return (
+    classification?.category === 'computer-work' ||
+    spec?.category === 'computer-work' ||
+    !!spec?.metadata?.computerWork
+  );
+}
+
 export async function evaluateSubmission(
   options: EvaluateSubmissionOptions
 ): Promise<EvaluationOutcome> {
@@ -234,6 +225,10 @@ export async function evaluateSubmission(
   const minConfidence = options.minConfidence ?? DEFAULT_MIN_CONFIDENCE;
   const notes: EvaluationNote[] = [];
   const checks: boolean[] = [];
+  const requiresIndependentReview = needsIndependentReview(
+    options.classification,
+    options.spec
+  );
 
   const submission = await fetchSubmissionDetails(
     options.registry,
@@ -251,6 +246,7 @@ export async function evaluateSubmission(
     );
     return {
       approve: false,
+      requiresIndependentReview,
       confidence: 0,
       notes,
       contentLength: 0,
@@ -278,6 +274,7 @@ export async function evaluateSubmission(
     );
     return {
       approve: false,
+      requiresIndependentReview,
       confidence: 0,
       notes,
       contentLength: 0,
@@ -386,9 +383,17 @@ export async function evaluateSubmission(
   const totalChecks = checks.length || 1;
   const confidence = passedChecks / totalChecks;
   const hasError = notes.some((note) => note.level === 'error');
-  const approve = !hasError && confidence >= minConfidence;
+  const approve =
+    !requiresIndependentReview && !hasError && confidence >= minConfidence;
+  if (requiresIndependentReview)
+    notes.push(
+      toEvaluation(
+        'warning',
+        'Computer work requires an independent acceptance review; structural checks do not authorize a validator vote.'
+      )
+    );
 
-  if (!approve) {
+  if (!approve && !requiresIndependentReview) {
     notes.push(
       toEvaluation(
         'warning',
@@ -410,6 +415,7 @@ export async function evaluateSubmission(
 
   return {
     approve,
+    requiresIndependentReview,
     confidence,
     notes,
     contentLength,

@@ -1,5 +1,7 @@
 # One-Box — describe work, inspect a plan, follow the evidence
 
+
+**New: actual computer-work evidence.** Run the [supplier-desk lab](computer-work/README.md) to watch an isolated browser compare quotes, export deliverables, and have a separate rule-based reviewer accept or reject the recommendation. Then follow the [OpenClaw / Codex Computer Use integration guide](../../docs/computer-work.md) for an explicitly admitted live worker.
 A guided AGI Jobs workspace for learning the job lifecycle and operating a configured deployment. Start with the offline preview: no wallet, API key, Docker or blockchain is needed. Move to connected mode only after checking your deployment.
 
 [**Try the browser preview**](https://montrealai.github.io/AGIJobsv0/experiments/one-box/) · [Demo observatory](https://montrealai.github.io/AGIJobsv0/) · [Static console source](../../apps/onebox-static/) · [One-Box CI](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/onebox-ci.yml)

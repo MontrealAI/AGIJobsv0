@@ -12,9 +12,11 @@
 
 AGI Jobs v0 (v2) brings together job contracts, agent gateways, validators, operator consoles, orchestration, simulations, and demos. The architecture aims to support verifiable agent work with owner-controlled governance and observable execution.
 
-**Start here:** [Local setup and role guide](docs/START_HERE.md) · [Production readiness and remaining blockers](docs/production/readiness-2026-10-03.md) · [Demo guide and complete catalog](demo/README.md) · [Documentation catalog](docs/readme-catalog.md).
+**Start here:** [Local setup and role guide](docs/START_HERE.md) · [Production readiness and remaining blockers](docs/production/readiness-2026-10-04.md) · [Demo guide and complete catalog](demo/README.md) · [Documentation catalog](docs/readme-catalog.md).
 
 **Explore the demos visually:** [AGI Jobs Demo Observatory](https://montrealai.github.io/AGIJobsv0/) — searchable collection, individual demo pages, original guides and flowcharts, and a browser-only job walkthrough. [Website source and publishing instructions](website/README.md).
+
+**Coordinate computer-based work:** the [computer-work integration](docs/computer-work.md) connects admitted jobs to isolated OpenClaw workers, including their configured native Codex Computer Use capabilities. Start with the [supplier-desk browser lab](demo/One-Box/computer-work/README.md): it produces real browser evidence and separately checks both a correct and an incorrect recommendation. Live workers require explicit task admission, protected credentials and independent acceptance review. The vision's **$40T/year** opportunity is a planning assumption, not a verified market-size or revenue claim.
 
 **Exercise the production gates locally:** run `npm run production:rehearse` after dependency setup in a clean committed checkout. The [production rehearsal](docs/production/rehearsal.md) combines real cryptographic checks, HTTP fault injection, adversarial contract tests, and three settled local jobs into an inspectable, signed simulation report.
 

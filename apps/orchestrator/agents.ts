@@ -1,4 +1,5 @@
 import { createHash } from 'crypto';
+import { computerWorkHandler } from './computerWork';
 
 export interface AgentHandlerContext {
   jobId: string;
@@ -117,6 +118,7 @@ async function engineeringPlanner(
 }
 
 function installDefaultHandlers(): void {
+  handlers.set('computer.execute', computerWorkHandler);
   handlers.set('policy.analyze', analyticalAgent);
   handlers.set('research.summarize', defaultSummarizer);
   handlers.set('finance.evaluate', financialEstimator);

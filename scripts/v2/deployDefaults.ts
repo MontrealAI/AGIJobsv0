@@ -106,10 +106,7 @@ async function ensureAgialphaToken(): Promise<void> {
     AGIALPHA
   );
   const mintAmount = ethers.parseUnits('1000000', AGIALPHA_DECIMALS);
-  const latestBlock = await ethers.provider.getBlock('latest');
-  const blockGasLimit = latestBlock?.gasLimit;
-  const gasLimitOverride =
-    blockGasLimit && blockGasLimit > 1n ? blockGasLimit - 1n : undefined;
+  const gasLimitOverride = await getLocalGasLimitOverride();
   await token.mint(defaultSigner.address, mintAmount, {
     ...(gasLimitOverride ? { gasLimit: gasLimitOverride } : {}),
   });
@@ -136,7 +133,12 @@ async function getLocalGasLimitOverride(): Promise<bigint | undefined> {
   if (!blockGasLimit || blockGasLimit <= 1n) {
     return undefined;
   }
-  return blockGasLimit - 1n;
+  // EIP-7825 caps individual Osaka transactions independently of the block.
+  // This conservative local-only ceiling also works on pre-Osaka dev chains.
+  const transactionGasCap = 16_777_216n;
+  return blockGasLimit - 1n < transactionGasCap
+    ? blockGasLimit - 1n
+    : transactionGasCap;
 }
 
 function parseArgs(argv: string[]): CliArgs {

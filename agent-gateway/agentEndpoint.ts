@@ -3,18 +3,22 @@ export async function invokeAgentEndpoint(
   endpoint: string,
   payload: unknown,
   timeoutMs: number,
-  maxResponseBytes = 1024 * 1024
+  maxResponseBytes = 1024 * 1024,
+  options: { headers?: Record<string, string>; signal?: AbortSignal } = {}
 ): Promise<unknown> {
   if (!Number.isSafeInteger(timeoutMs) || timeoutMs <= 0)
     throw new Error('Agent timeout must be a positive integer');
   if (!Number.isSafeInteger(maxResponseBytes) || maxResponseBytes <= 0)
     throw new Error('Agent response limit must be a positive integer');
   const controller = new AbortController();
+  const abort = () => controller.abort();
+  options.signal?.addEventListener('abort', abort, { once: true });
+  if (options.signal?.aborted) controller.abort();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const res = await fetch(endpoint, {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      headers: { ...options.headers, 'content-type': 'application/json' },
       body: JSON.stringify(payload, (_key, value) =>
         typeof value === 'bigint' ? value.toString() : value
       ),
@@ -57,5 +61,6 @@ export async function invokeAgentEndpoint(
   } finally {
     controller.abort();
     clearTimeout(timer);
+    options.signal?.removeEventListener('abort', abort);
   }
 }

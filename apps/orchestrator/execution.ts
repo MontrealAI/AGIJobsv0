@@ -1,4 +1,5 @@
 import fs from 'fs';
+import { invokeApprovedAgent } from './agentPolicy';
 import path from 'path';
 import { setTimeout as delay } from 'timers/promises';
 
@@ -125,20 +126,7 @@ export async function invokeAgent(
   if (typeof agent === 'function') {
     return agent(payload);
   }
-  const res = await fetch(agent, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload ?? {}),
-  });
-  if (!res.ok) {
-    throw new Error(`Agent invocation failed: ${res.status} ${res.statusText}`);
-  }
-  const text = await res.text();
-  try {
-    return JSON.parse(text);
-  } catch {
-    return text;
-  }
+  return invokeApprovedAgent(agent, payload);
 }
 
 const DEFAULT_IPFS_API = 'http://localhost:5001/api/v0';

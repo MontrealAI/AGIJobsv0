@@ -4,11 +4,17 @@ on:
   pull_request:
     paths:
       - 'apps/orchestrator/**'
+      - 'agent-gateway/agentEndpoint.ts'
+      - 'demo/One-Box/computer-work/**'
+      - 'package*.json'
       - '.github/workflows/orchestrator-ci.yml'
   push:
     branches: [main]
     paths:
       - 'apps/orchestrator/**'
+      - 'agent-gateway/agentEndpoint.ts'
+      - 'demo/One-Box/computer-work/**'
+      - 'package*.json'
       - '.github/workflows/orchestrator-ci.yml'
 
 permissions:
@@ -31,5 +37,18 @@ jobs:
           node-version-file: '.nvmrc'
           cache: 'npm'
       - run: ./scripts/ci/npm-ci.sh
-      - name: Orchestrator tsc
-        run: npx tsc -p apps/orchestrator/tsconfig.json
+      - name: Build and verify computer-work boundaries
+        run: |
+          npm run build:orchestrator
+          node --test apps/orchestrator/dist/apps/orchestrator/__tests__/computerWork.test.js
+      - name: Install test browser
+        run: npx playwright install --with-deps chromium
+      - name: Verify actual browser work and independent rejection
+        run: node --test demo/One-Box/computer-work/test.cjs
+      - name: Preserve computer-work evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: computer-work-browser-evidence
+          path: reports/computer-work/
+          retention-days: 14
