@@ -853,3 +853,74 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 }
+
+/* Mission lab: visible progress, inspectable work, and reversible learning. */
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+[hidden] { display: none !important; }
+.skip-link { position: fixed; top: -100px; left: 16px; z-index: 100; background: #c6a3fa; color: #21132f; padding: 16px; border-radius: 8px; }
+.skip-link:focus { top: 10px; }
+.onebox-intro { padding-top: 30px; }
+.onebox-intro h2 { font-size: clamp(32px, 4.3vw, 54px); }
+.mission-workspace { width: calc(100% - 40px); max-width: 1120px; margin: 8px auto 26px; padding: 28px; border: 1px solid #71588e; border-radius: 20px; background: radial-gradient(ellipse at top right, #53347745, transparent 70%), #1a1326; box-shadow: 0 12px 60px #0003; }
+.mission-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
+.mission-heading h2 { margin: 9px 0 20px; font-size: clamp(23px, 3vw, 30px); font-weight: 500; letter-spacing: -.6px; }
+.mission-heading .onebox-eyebrow { margin-top: 0; }
+.mission-badge { flex-shrink: 0; border: 1px solid #705588; border-radius: 30px; padding: 8px 12px; color: #dcc5f5; font-size: 11px; }
+.mission-progress { list-style: none; padding: 0; margin: 8px 0 27px; display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+.mission-progress li { border-top: 2px solid #59446d; padding-top: 12px; color: #bcb0cb; font-size: 12px; }
+.mission-progress li > span:first-child { display: block; font-size: 11px; margin-bottom: 7px; }
+.mission-progress li.done { color: #b4e6d4; border-color: #9accb9; }
+.mission-progress li[aria-current] { color: #f4eafd; border-color: #d1aafa; }
+.mission-body { display: flex; align-items: center; justify-content: space-between; gap: 30px; }
+.mission-body h3 { font-size: 19px; margin: 0 0 10px; }
+.mission-body p { font-size: 14px; line-height: 1.8; color: #cbbddc; max-width: 690px; margin-block: 6px; }
+.mission-body .mission-meta { color: #b4e6d4; font-size: 12px; }
+.mission-primary, .mission-evidence-actions button, #attachment-clear, .dialog-actions button { min-height: 44px; padding: 11px 15px; border: 1px solid #705588; background: #2d203e; color: #eadff8; border-radius: 8px; font: inherit; font-size: 12px; cursor: pointer; }
+.mission-primary { background: #cfb0fc; color: #21132f; font-weight: 650; flex-shrink: 0; }
+button:disabled { opacity: .55; cursor: not-allowed; }
+#mission-evidence { border-top: 1px solid #473454; margin-top: 24px; padding-top: 7px; }
+#mission-evidence > summary { min-height: 48px; padding-block: 12px; cursor: pointer; color: #dec4fc; font-size: 14px; }
+#mission-evidence > summary span { color: #baaccb; margin-left: 8px; font-size: 12px; }
+.mission-evidence-grid { display: grid; grid-template-columns: .85fr 1.15fr; gap: 28px; padding-top: 14px; }
+.mission-evidence-grid > section { min-width: 0; }
+.mission-evidence-grid h3, .mission-review h3 { font-size: 16px; }
+.mission-evidence-grid p, .mission-review p, .mission-footnote { font-size: 12px; line-height: 1.8; color: #bfb0cf; }
+.mission-sources { list-style: none; padding: 0; }
+.mission-sources li { padding: 15px; border: 1px solid #4b385d; border-radius: 10px; background: #130e1c; margin-bottom: 10px; font-size: 13px; }
+.mission-sources code { color: #c6a3fa; font-size: 11px; }
+.source-result { display: inline-block; margin-left: 10px; color: #b4e6d4; font-size: 11px; text-transform: uppercase; }
+#mission-report, #api-token-input { width: 100%; background: #100b18; border: 1px solid #735c89; border-radius: 8px; color: #e4d7f2; padding: 13px; }
+#mission-report { height: 320px; resize: vertical; font: 12px/1.7 ui-monospace, monospace; }
+.mission-evidence-grid label { font-size: 13px; }
+.mission-evidence-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.mission-review { border-top: 1px solid #473454; margin-top: 25px; padding-top: 10px; }
+.mission-review ul { list-style: none; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 10px 20px; }
+.mission-review li { font-size: 12px; line-height: 1.7; color: #d2c3e1; }
+.mission-review li b { font-size: 10px; margin-right: 8px; }
+.check-pass b { color: #b4e6d4; } .check-fail b { color: #ffb6c5; }
+.mission-footnote { margin: 18px 0 0; font-size: 11px; }
+.mission-select { display: flex; align-items: center; gap: 12px; font-size: 12px; margin-top: 20px; }
+.mission-select select { min-height: 44px; background: #21162d; color: var(--text); border: 1px solid #705588; border-radius: 8px; }
+#api-token-dialog { width: min(480px, calc(100% - 32px)); background: #1a1326; color: var(--text); border: 1px solid #85639f; border-radius: 16px; padding: 26px; }
+#api-token-dialog::backdrop { background: #08050ec9; }
+#api-token-dialog p { color: #cbbddc; line-height: 1.7; font-size: 14px; }
+#api-token-input { min-height: 48px; margin-block: 10px 22px; }
+.dialog-actions { display: flex; gap: 12px; }
+@media (max-width: 700px) {
+  .mission-workspace { width: calc(100% - 28px); padding: 20px 16px; }
+  .mission-heading, .mission-body { flex-direction: column; gap: 10px; }
+  .mission-badge { margin-bottom: 16px; }
+  .mission-primary { width: 100%; margin-top: 10px; }
+  .mission-evidence-grid, .mission-review ul { grid-template-columns: 1fr; }
+  #mission-evidence > summary span { display: block; margin: 6px 0 0; }
+  .mission-progress { gap: 5px; }
+  .mission-progress li { font-size: 11px; }
+}
+#mission-workspace { scroll-margin-top: 100px; }
+#mission-confirmation { width: min(580px, calc(100% - 32px)); max-height: calc(100vh - 60px); overflow: auto; background: #1a1326; color: var(--text); border: 1px solid #85639f; border-radius: 16px; padding: 28px; }
+#mission-confirmation::backdrop { background: #08050ed9; }
+#mission-confirmation p, #mission-confirmation summary { line-height: 1.8; font-size: 14px; color: #d5c5e5; }
+#mission-confirmation .onebox-eyebrow { font-size: 11px; color: var(--accent); }
+#mission-confirmation summary { min-height: 44px; cursor: pointer; padding-block: 8px; }
+#mission-confirmation pre { padding: 14px; background: #100b18; border-radius: 8px; font-size: 11px; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 250px; overflow: auto; }
+#mission-confirmation .confirmation-actions { margin-top: 24px; }

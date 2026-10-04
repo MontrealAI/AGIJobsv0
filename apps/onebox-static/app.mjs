@@ -1,6 +1,14 @@
 import * as Config from "./config.mjs";
 import { createPreviewSession } from "./preview-model.mjs";
+import { createMissionView, downloadText } from "./mission-view.mjs";
 const previewSession = createPreviewSession();
+let missionView = null;
+let guidedRequest = false;
+function unknownExecutionError(message) {
+  const error = new Error(message);
+  error.code = 'EXECUTION_OUTCOME_UNKNOWN';
+  return error;
+}
 function isObject(value) { return value !== null && typeof value === 'object' && !Array.isArray(value); }
 import { drainSSEBuffer, sanitizeSSEChunk } from "./sse-parser.mjs";
 
@@ -625,6 +633,10 @@ function refreshEndpointState({ announce = false, immediateStatus = true } = {})
   const exportButton = document.getElementById('preview-export');
   if (exportButton) exportButton.hidden = !isDemoModeActive();
   renderAdvancedPanel();
+  renderMission();
+  if (attachmentInput) attachmentInput.disabled = isDemoModeActive();
+  const skipLink = document.querySelector('.skip-link');
+  if (skipLink) { skipLink.href = isDemoModeActive() ? '#mission-workspace' : '#composer'; skipLink.textContent = isDemoModeActive() ? 'Skip to guided mission' : 'Skip to composer'; }
   updateStatusUI({ immediate: immediateStatus });
   if (announce) {
     maybeAnnounceMode({ force: true });
@@ -633,7 +645,12 @@ function refreshEndpointState({ announce = false, immediateStatus = true } = {})
   }
 }
 
-function demoPlan(prompt) { return previewSession.plan(prompt); }
+function demoPlan(prompt) {
+  const jobId = Number(prompt.match(/(?:job\s*#?\s*|#)(\d+)/i)?.[1]);
+  return previewSession.plan(prompt, { artifact: missionView?.artifact(jobId) });
+}
+function renderMission() { missionView?.render({ offline: isDemoModeActive(), working: busy || Boolean(confirmCallback) }); }
+function isForcedOffline() { return hasDocument && Boolean(document.querySelector('meta[name="onebox-demo"][content="true"]')); }
 async function runDemoExecution(intent, planHash) { return previewSession.execute(intent, planHash); }
 
 
@@ -767,7 +784,7 @@ function gatewayUrlsFor(cid) {
 
 function renderAdvancedPanel() {
   if (!advancedPanel) return;
-  const token = storage?.getItem?.(IPFS_TOKEN_STORAGE_KEY) || "";
+  const token = readStoredValue(IPFS_TOKEN_STORAGE_KEY) || "";
   const maskedToken = token ? `••••${token.slice(-4)}` : "Not set";
   const orchestratorToken = getStoredApiToken();
   const maskedOrchestratorToken = orchestratorToken ? `••••${orchestratorToken.slice(-4)}` : "Not set";
@@ -790,10 +807,12 @@ function renderAdvancedPanel() {
     ? formatGatewayLink(statusUrl)
     : escapeHtml(isDemoModeActive() ? "Demo (disabled)" : "Disabled");
   const hasOverrides = Boolean(base) || Boolean(prefix);
+  const locked = isForcedOffline() ? " disabled" : "";
   advancedPanel.innerHTML = `
     <div class="card">
       <h2>Orchestrator</h2>
       <p>Mode: ${escapeHtml(orchestratorMode)}</p>
+      ${locked ? '<p>This hosted preview is locked offline. To connect services, run the local launcher without --demo. No credentials are needed here.</p>' : ''}
       <p class="status">Target: ${escapeHtml(formatOrchestratorDisplay())}</p>
       <p class="status">Prefix: ${escapeHtml(formatPrefixDisplay(prefix))}</p>
       <p class="status">Plan: ${planMarkup}</p>
@@ -801,14 +820,14 @@ function renderAdvancedPanel() {
       <p class="status">Status: ${statusMarkup}</p>
       <p class="status">API token: ${escapeHtml(maskedOrchestratorToken)}</p>
       <div>
-        <button type="button" class="inline" data-action="set-orchestrator">Set base URL</button>
-        <button type="button" class="inline" data-action="set-prefix">Set prefix</button>
+        <button type="button" class="inline" data-action="set-orchestrator"${locked}>Set base URL</button>
+        <button type="button" class="inline" data-action="set-prefix"${locked}>Set prefix</button>
         ${
           hasOverrides
             ? '<button type="button" class="inline" data-action="clear-orchestrator">Clear overrides</button>'
             : ""
         }
-        <button type="button" class="inline" data-action="set-api-token">Set API token</button>
+        <button type="button" class="inline" data-action="set-api-token"${locked}>Set API token</button>
         ${
           orchestratorToken
             ? '<button type="button" class="inline" data-action="clear-api-token">Clear API token</button>'
@@ -819,9 +838,9 @@ function renderAdvancedPanel() {
     <div class="card">
       <h2>IPFS uploads</h2>
       <p>Attachment-aware ICS plans can pin files through the configured service. Preview uploads nothing. Optional IPFS credentials are saved only in this browser; clear them when finished.</p>
-      <p class="status">Token: ${maskedToken}</p>
+      <p class="status">Token: ${escapeHtml(maskedToken)}</p>
       <div>
-        <button type="button" class="inline" data-action="set-token">Set token</button>
+        <button type="button" class="inline" data-action="set-token"${locked}>Set token</button>
         ${token ? '<button type="button" class="inline" data-action="clear-token">Clear token</button>' : ""}
       </div>
     </div>
@@ -970,7 +989,7 @@ function setAdvancedLog(data) {
 if (advancedPanel) {
   advancedPanel.addEventListener("click", (event) => {
     const button = event.target.closest("button[data-action]");
-    if (!button) return;
+    if (!button || button.disabled || busy || confirmCallback) return;
     const action = button.dataset.action;
     if (action === "set-orchestrator") {
       const current = getOrchestratorBase() || DEFAULT_ENDPOINTS.base || "";
@@ -1009,47 +1028,19 @@ if (advancedPanel) {
     } else if (action === "set-token") {
       const token = window.prompt("Enter your web3.storage API token");
       if (token && storage) {
-        storage.setItem(IPFS_TOKEN_STORAGE_KEY, token.trim());
+        try { storage.setItem(IPFS_TOKEN_STORAGE_KEY, token.trim()); }
+        catch { pushMessage('assistant', 'Browser storage is unavailable. The IPFS token could not be saved.'); return; }
         pushMessage("assistant", "Stored web3.storage token locally.");
         renderAdvancedPanel();
       }
     } else if (action === "clear-token") {
-      storage?.removeItem?.(IPFS_TOKEN_STORAGE_KEY);
+      try { storage?.removeItem?.(IPFS_TOKEN_STORAGE_KEY); } catch { pushMessage("assistant", "Browser storage is unavailable; use your browser settings to clear saved IPFS credentials."); return; }
       pushMessage("assistant", "Cleared stored web3.storage token.");
       renderAdvancedPanel();
     } else if (action === "set-api-token") {
-      const currentToken = getStoredApiToken();
-      const value = window.prompt("Enter the orchestrator API token", currentToken);
-      if (value !== null) {
-        const trimmed = value.trim();
-        if (!trimmed) {
-          clearStoredApiToken();
-          pushMessage("assistant", "Cleared orchestrator API token.");
-        } else {
-          const stored = setStoredApiToken(trimmed);
-          if (stored === true) {
-            queueAnnouncement("🔐 API token applied for orchestrator requests.");
-            pushMessage("assistant", "API token applied for this page only. Reloading clears it.");
-          } else if (stored === false) {
-            clearStoredApiToken();
-            queueAnnouncement("⚠️ Invalid characters removed from orchestrator API token. Nothing stored.");
-            pushMessage(
-              "assistant",
-              "Ignored orchestrator API token because it contained invalid characters."
-            );
-          } else {
-            queueAnnouncement("⚠️ Unable to persist orchestrator API token in this environment.");
-            pushMessage(
-              "assistant",
-              "Could not apply this API token."
-            );
-          }
-        }
-        flushPendingAnnouncements();
-        renderAdvancedPanel();
-        refreshOwnerSnapshot();
-        refreshStatusSoon();
-      }
+      const dialog = document.getElementById('api-token-dialog');
+      dialog.querySelector('input').value = '';
+      dialog.showModal();
     } else if (action === "clear-api-token") {
       clearStoredApiToken();
       pushMessage("assistant", "Cleared orchestrator API token.");
@@ -1184,6 +1175,7 @@ function formatBytes(size) {
 }
 
 function queueAttachments(files, { silent = false } = {}) {
+  if (isDemoModeActive()) { pushMessage("assistant", "Preview uploads nothing. Use the editable text brief under Mission evidence."); return []; }
   const normalized = asFileArray(files);
   if (!normalized.length) return [];
   const limited = normalized.slice(0, MAX_ATTACHMENT_QUEUE);
@@ -1216,6 +1208,7 @@ function drainQueuedAttachments() {
 
 function setBusy(state) {
   busy = state;
+  renderMission();
   if (sendButton) {
     sendButton.disabled = state;
   }
@@ -1223,7 +1216,7 @@ function setBusy(state) {
     questionInput.disabled = state;
   }
   if (attachmentInput) {
-    attachmentInput.disabled = state;
+    attachmentInput.disabled = state || isDemoModeActive();
   }
 }
 
@@ -1259,7 +1252,7 @@ async function refreshOwnerSnapshot() {
   try {
     const response = await fetch(
       url,
-      withAuth({ method: 'GET', headers: { Accept: 'application/json' } })
+      withAuth({ method: 'GET', signal: AbortSignal.timeout(15000), headers: { Accept: 'application/json' } })
     );
     if (!response.ok) {
       throw new Error(`Snapshot error (${response.status})`);
@@ -1368,7 +1361,7 @@ async function plannerRequest(prompt) {
   return { kind: "ics", ics };
 }
 
-async function requestConfirmation({ summary, required }) {
+async function requestConfirmation({ summary, required, intent }) {
   const prompt = summary && summary.trim() ? summary.trim() : "Proceed?";
   if (!required) {
     if (prompt) {
@@ -1389,9 +1382,19 @@ async function requestConfirmation({ summary, required }) {
     button.addEventListener('click', () => { const callback = confirmCallback; if (callback) callback(answer); });
     actions.append(button);
   }
-  feed.append(actions);
+  const dialog = guidedRequest ? document.getElementById('mission-confirmation') : null;
+  if (dialog) {
+    dialog.querySelector('[data-mission-summary]').textContent = message;
+    dialog.querySelector('[data-mission-plan]').textContent = JSON.stringify(intent, null, 2);
+    dialog.append(actions);
+    dialog.showModal();
+  } else feed.append(actions);
   return new Promise((resolve) => {
+    const cancel = event => { event.preventDefault(); confirmCallback?.('NO'); };
+    dialog?.addEventListener('cancel', cancel, { once: true });
     confirmCallback = (value) => {
+      dialog?.removeEventListener('cancel', cancel);
+      if (dialog?.open) dialog.close();
       actions.remove();
       const ok = /^(y|yes)$/i.test(value);
       if (!ok) {
@@ -1401,6 +1404,9 @@ async function requestConfirmation({ summary, required }) {
       setBusy(true);
       resolve(ok);
     };
+    renderMission();
+    actions.querySelector("button").focus({preventScroll:true});
+    scrollFeed();
   });
 }
 
@@ -1419,7 +1425,7 @@ async function maybePinAttachments(ics, files) {
   const attachments = Array.isArray(files) ? files.filter(Boolean) : [];
   const shouldPinPayload = needsAttachmentPin(ics);
   if (!attachments.length && !shouldPinPayload) return ics;
-  const token = storage?.getItem?.(IPFS_TOKEN_STORAGE_KEY);
+  const token = readStoredValue(IPFS_TOKEN_STORAGE_KEY);
   if (!token) {
     throw new Error("IPFS token missing. Provide a web3.storage token from the Advanced panel.");
   }
@@ -1573,7 +1579,9 @@ async function executeJobIntent(intent, { raw, planHash, createdAt } = {}) {
     throw new Error("Executor endpoint not configured");
   }
   if (!planHash) throw new Error('The backend did not return a planHash. Create a new plan before execution.');
-  const response = await fetch(
+  let response;
+  try {
+    response = await fetch(
     execUrl,
     withAuth({
       signal: AbortSignal.timeout(120000),
@@ -1582,6 +1590,11 @@ async function executeJobIntent(intent, { raw, planHash, createdAt } = {}) {
       body: JSON.stringify({ intent, mode: executionMode, planHash, createdAt }),
     })
   );
+  } catch {
+    setAdvancedLog({ intent, planHash, outcome: 'unknown', instruction: 'Inspect backend job status, relayer logs and chain receipts before creating another plan.' });
+    refreshStatusSoon();
+    throw unknownExecutionError('Execution outcome is unknown: the connection was interrupted or timed out. The backend may already have submitted a transaction. Inspect status, relayer logs and chain receipts before creating another plan.');
+  }
 
   let payload = null;
   try {
@@ -1591,13 +1604,22 @@ async function executeJobIntent(intent, { raw, planHash, createdAt } = {}) {
   }
 
   if (!response.ok) {
+    if (response.status >= 500) throw unknownExecutionError(`Execution outcome is unknown (HTTP ${response.status}). Inspect status, relayer logs and chain receipts before creating another plan.`);
     const errorMessage = payload?.error || `Execution failed (${response.status})`;
     throw new Error(errorMessage);
   }
 
+  if (!isObject(payload) || !Object.keys(payload).length) throw unknownExecutionError("Execution outcome is unknown: the backend returned no usable receipt. Inspect job status and chain receipts before creating another plan.");
+
   if (payload && payload.ok === false) {
     const message = payload.error || payload.message || "Execution failed";
     throw new Error(message);
+  }
+
+  const hasOutcome = payload?.jobId != null || payload?.txHash || (payload?.data && payload?.to);
+  if (!hasOutcome) {
+    setAdvancedLog({ intent, planHash, response: payload, outcome: 'unknown' });
+    throw unknownExecutionError('Execution outcome is unknown: the backend acknowledged the request without a job or transaction result. Inspect status and chain receipts before creating another plan.');
   }
 
   const messages = [];
@@ -1857,7 +1879,7 @@ async function refreshStatus() {
   try {
     const response = await fetch(
       statusUrl,
-      withAuth({ method: "GET", headers: { Accept: "application/json" } })
+      withAuth({ method: "GET", signal: AbortSignal.timeout(15000), headers: { Accept: "application/json" } })
     );
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);
@@ -1895,7 +1917,7 @@ function scheduleStatusRefresh(immediate = false) {
 }
 
 function refreshStatusSoon() {
-  if (isDemoModeActive()) { renderStatusBoard(previewSession.jobs()); return; }
+  if (isDemoModeActive()) { renderStatusBoard(previewSession.jobs()); renderMission(); return; }
   if (!statusBoard || !getStatusUrl()) return;
   refreshStatus().catch(() => {
     /* handled */
@@ -1955,9 +1977,11 @@ async function handleSubmit(event) {
             ? planResult.summary
             : "Proceed with the plan?",
         required: true,
+        intent: planResult.intent,
       });
 
       if (!confirmed) {
+        if (isDemoModeActive()) previewSession.cancel(planResult.planHash);
         setBusy(false);
         return;
       }
@@ -1995,6 +2019,12 @@ async function handleSubmit(event) {
     }
   } finally {
     setBusy(false);
+    if (guidedRequest) {
+      guidedRequest = false;
+      const next = document.querySelector('[data-mission="next"]');
+      next?.focus({preventScroll:true});
+      document.getElementById('mission-workspace')?.scrollIntoView({block:'start',behavior:'smooth'});
+    }
   }
 }
 
@@ -2008,16 +2038,29 @@ if (hasDocument) {
     attachmentInput.value = '';
     pushMessage('assistant', 'Attachments cleared. No file was uploaded.');
   });
+  missionView = createMissionView({
+    element: document.getElementById('mission-workspace'), session: previewSession,
+    onPrompt(text) { if (busy || confirmCallback) return; guidedRequest = true; questionInput.value = text; composer.requestSubmit(); },
+  });
+  const tokenDialog = document.getElementById('api-token-dialog');
+  document.getElementById('api-token-form').addEventListener('submit', event => {
+    event.preventDefault();
+    const input = document.getElementById('api-token-input');
+    if (!setStoredApiToken(input.value.trim())) { input.setCustomValidity('Use valid bearer-token characters, with no spaces or line breaks.'); input.reportValidity(); return; }
+    input.value = ''; tokenDialog.close();
+    pushMessage('assistant', 'API token applied for this page only. Reloading clears it.');
+    renderAdvancedPanel(); refreshOwnerSnapshot(); refreshStatusSoon();
+  });
+  document.getElementById('api-token-input').addEventListener('input', event => event.target.setCustomValidity(''));
+  document.getElementById('api-token-cancel').addEventListener('click', () => tokenDialog.close());
+  tokenDialog.addEventListener('close', () => { document.getElementById('api-token-input').value = ''; });
   // Initialize after state and owner action definitions, before any network work.
   try { storage?.removeItem(ORCHESTRATOR_TOKEN_STORAGE_KEY); } catch {}
   applyUrlOverrides();
   refreshEndpointState({ immediateStatus: true });
   if (ownerConsole) initOwnerConsole();
   document.getElementById('preview-export')?.addEventListener('click', () => {
-    const blob = new Blob([JSON.stringify(previewSession.evidence(), null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a'); link.href = url; link.download = 'onebox-preview-evidence.json'; link.click();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    downloadText('onebox-preview-evidence.json', JSON.stringify(previewSession.evidence(), null, 2), 'application/json');
   });
   pushMessage("assistant", currentWelcomeMessage);
   maybeAnnounceMode({ force: true });

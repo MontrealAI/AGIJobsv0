@@ -30,7 +30,28 @@ After installation, the preview uses local assets only. Its server enforces `con
 
 ## Your first complete mission
 
-The suggested prompts above the composer run this example. Send each request, inspect the plan and choose **Confirm plan** or **Cancel**. Typing YES or NO also works.
+Choose **Review mission plan** in the prominent guided mission. Each action opens an accessible confirmation dialog with the exact plan; cancelling or pressing Escape changes no job state. After confirmation, the mission explains the next step and returns keyboard focus to its action button.
+
+The mission asks: **Can this fictional release ship?** Its three bundled sources cover regression tests, a recovery rehearsal and an independent security review that is still pending. No actual repository or deployment is assessed.
+
+| Stage | What you inspect | What you learn |
+| --- | --- | --- |
+| Create | The brief, reward and deadline | A request becomes a plan you can accept or cancel. |
+| Assign | A simulated worker | Assignment precedes submission. |
+| Submit | **Mission evidence**: three source records and an editable JSON brief | Your confirmation binds the exact report text. |
+| Review | Eleven local checks, each shown as PASS or FAIL | Citations and reported results must match; the release recommendation must remain `hold`. |
+| Finalize | Accepted brief and retained action history | Completing the job acknowledges the report, not production readiness. |
+| Export | **Download submitted brief** (Markdown) and **Export preview evidence** (JSON) | Keep a readable deliverable and its source records, submissions and reviews. |
+
+**Try a failure and recovery:** after assignment, open Mission evidence and choose **Remove a citation**. Submit and validate: the missing citation produces a rejected review and named failed checks. Choose **Restore sample**, resubmit, validate and finalize. Both submissions and both reviews remain in the exported history. Editing is locked while confirmation or review is pending. A cancelled submission preserves your draft.
+
+The checks execute locally over synthetic sources. They check structure, citation coverage, exact result matching, the `hold` recommendation, explanation presence and a next action. They do not independently verify the explanation's truth, audit code, sign a release or settle funds. An accepted report correctly continues to recommend **HOLD** until the fictional independent review is complete.
+
+Start another guided mission after completion; a selector lets you revisit earlier missions without deleting their evidence. Everything is session-local and resets on reload. Pending preview approvals expire after 15 minutes; sessions are bounded to 200 jobs, 2,000 events and 1,000 outstanding plans.
+
+### Explore a custom mission
+
+The original suggested prompts above the composer run this example. Send each request, inspect the plan and choose **Confirm plan** or **Cancel**. Typing YES or NO also works in the command-box flow. Preview commands start with Post/Create, Apply, Submit, Validate/Review, Finalize, Status/Check or Dispute; lifecycle actions include a positive whole job number. Unrecognized commands are rejected instead of silently creating jobs.
 
 | Step | Request | Expected outcome |
 | --- | --- | --- |
@@ -45,7 +66,7 @@ The suggested prompts above the composer run this example. Send each request, in
 
 **Find your way around:** the status board follows your jobs; **Advanced** shows the plan, response and endpoint configuration; the expandable **Owner governance controls** retain the parameter and proposal tools without crowding the first-run experience. Use keyboard Tab/Enter for controls and focus the conversation to scroll it. On small screens the controls stack vertically.
 
-Preview accepts text only. Attachment-aware connected ICS plans retain the IPFS upload flow. A job-intent response cannot silently accept an unsupported attachment: the console explains the limitation, keeps the files queued, and **Clear attachments** lets you continue without uploading them.
+Preview accepts text only and disables file selection. Its hosted Advanced settings explain why no credentials are needed and keep connection controls disabled. Attachment-aware connected ICS plans retain the IPFS upload flow. A job-intent response cannot silently accept an unsupported attachment: the console explains the limitation, keeps the files queued, and **Clear attachments** lets you continue without uploading them.
 
 ## Connect a local or test deployment
 
@@ -61,11 +82,11 @@ npm run demo:onebox:launch -- --no-browser
 
 The launcher builds the static UI and packaged server, checks RPC chain identity and configured contract bytecode, then waits for health **and authenticated job status** before announcing readiness. Failed startup stops its child process; unexpected backend exit stops the UI. The strict doctor also checks gas balance, owner/pause reads and port availability. Unresolved reads and unmet prerequisites fail the strict check; passing is not a security audit or target-network commissioning.
 
-In the browser, open **Advanced → Set API token** and enter the same backend token. It stays in page memory and clears on reload or endpoint changes. Launch links and public runtime assets never contain the token. Older saved API tokens are removed. The UI endpoint/prefix preferences can persist; bearer credentials do not.
+In the browser, open **Advanced → Set API token** and enter the same backend token into the masked, keyboard-accessible dialog. It stays in page memory and clears on reload or endpoint changes. Launch links and public runtime assets never contain the token. Older saved API tokens are removed. The UI endpoint/prefix preferences can persist; bearer credentials do not.
 
 To prepare calldata without submitting it, launch with `--mode expert`. The destination, chain and calldata appear in Advanced; the UI explicitly says no transaction was sent. Review and submit through your wallet separately. Guest mode can submit through the configured relayer after confirmation.
 
-Connected approvals bind the complete intent, expire after 15 minutes and are consumed before execution begins. A repeated, changed, expired or unknown approval fails closed. One-Box keeps at most 1,000 outstanding approvals in a **single server process**; restarting invalidates them. After any ambiguous network/provider failure, inspect status, receipts and the chain before creating another plan. This prevents blind retries; it does not provide distributed, exactly-once settlement across replicas.
+Connected approvals bind the complete intent, expire after 15 minutes and are consumed before execution begins. A repeated, changed, expired or unknown approval fails closed. One-Box keeps at most 1,000 outstanding approvals in a **single server process**; restarting invalidates them. Interrupted execution, empty responses and HTTP 5xx responses display **Execution outcome is unknown**, rather than reporting success or prompting a blind retry. After any ambiguous network/provider failure, inspect status, receipts and the chain before creating another plan. This prevents blind retries; it does not provide distributed, exactly-once settlement across replicas.
 
 Both local servers bind to loopback by default. CORS permits the configured UI origin. For deliberate remote access, use authenticated HTTPS infrastructure and an explicit `ONEBOX_CORS_ALLOW` allowlist; do not expose a funded relayer as an unauthenticated public demo.
 
@@ -126,6 +147,7 @@ The original systems map is retained. The concrete demonstration connects operat
 | `config/` | Reserved local configuration directory |
 | `scripts/entrypoint.sh`, `Dockerfile.ui`, `docker-compose.yaml` | Container entrypoint and local service topology |
 | `scripts/browser-qa.mjs`, `test/` | Browser integration and regression checks |
+| `../../apps/onebox-static/mission-fixture.mjs`, `mission-view.mjs` | Synthetic source records, mechanical checks, downloadable brief and guided mission UI |
 | `../../apps/onebox-static/` | Canonical UI shared by CLI and Docker; the separate `apps/onebox` console is retained |
 
 ```bash
@@ -138,6 +160,6 @@ npx playwright install chromium
 npm run demo:onebox:qa
 ```
 
-The browser check exercises cancellation, lifecycle ordering, evidence export, reload behavior, mobile overflow, WCAG AA checks and the **actual packaged HTTP router with synthetic provider/chain service results**. Reports and screenshots go to `reports/onebox/`. CI additionally builds and starts the read-only Docker UI and verifies the connected container startup. These checks are scoped evidence, not an independent audit.
+The browser check exercises cancellation, lifecycle ordering, guided report editing, failed-check recovery, immutable submission history, Markdown/JSON exports, confirmation/token dialogs, denied browser storage, ambiguous execution outcomes, reload behavior, mobile overflow, WCAG AA checks and the **actual packaged HTTP router with synthetic provider/chain service results**. Reports and screenshots go to `reports/onebox/`. CI additionally builds and starts the read-only Docker UI and verifies the connected container startup. These checks are scoped evidence, not an independent audit.
 
 Changes should land through a reviewed pull request with required checks green. Consult [RUNBOOK.md](../../RUNBOOK.md) and [OperatorRunbook.md](../../OperatorRunbook.md) for operational ownership and escalation. Keep secrets outside source control, preserve diagrams and useful operator materials, and link release evidence through the repository's existing release-manifest process.

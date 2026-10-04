@@ -70,6 +70,84 @@ try {
   assert.ok(!(await page.locator('#status-board').innerText()).includes('finalized'));
   checks.push('Reload clears the simulation; desktop and 320/390px layouts');
 
+  // Guided mission: inspect sources, break a citation, recover without losing history.
+  async function missionAction(name, confirm = true) {
+    await page.getByRole('button',{name,exact:true}).click();
+    assert.equal(await page.locator('#mission-confirmation').isVisible(),true);
+    assert.equal(await page.locator('#mission-report').getAttribute('readonly'),'');
+    if (name === 'Review mission plan') await accessibility('mission-confirmation');
+    await page.getByRole('button',{name:confirm ? 'Confirm plan' : 'Cancel',exact:true}).click();
+    await page.waitForFunction(()=>!document.querySelector('#send').disabled);
+  }
+  await page.setViewportSize({width:1440,height:1080});
+  await page.getByRole('button',{name:'Review mission plan',exact:true}).click();
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(()=>!document.querySelector('#send').disabled);
+  assert.equal(await page.getByRole('button',{name:'Review mission plan',exact:true}).evaluate(el=>el===document.activeElement),true);
+  await missionAction('Review mission plan');
+  await missionAction('Review assignment');
+  await page.locator('#mission-evidence > summary').click();
+  await page.getByRole('button',{name:'Remove a citation',exact:true}).click();
+  await missionAction('Review submission',false);
+  assert.ok((await page.locator('.mission-meta').innerText()).includes('assigned'));
+  assert.equal(JSON.parse(await page.locator('#mission-report').inputValue()).findings[0].source,'');
+  await missionAction('Review submission');
+  assert.equal(await page.locator('#mission-report').getAttribute('readonly'),'');
+  await missionAction('Review validation');
+  assert.ok((await page.locator('.mission-review').innerText()).includes('Report needs correction'));
+  await accessibility('mission-rejected');
+  await page.screenshot({path:path.join(out,'mission-rejected.png'),fullPage:true});
+  await page.getByRole('button',{name:'Restore sample',exact:true}).click();
+  assert.equal(JSON.parse(await page.locator('#mission-report').inputValue()).findings[0].source,'fixture/tests');
+  await missionAction('Review resubmission');
+  await missionAction('Review validation');
+  assert.ok((await page.locator('.mission-review').innerText()).includes('11/11 checks passed'));
+  await missionAction('Review finalization');
+  const briefPromise=page.waitForEvent('download');
+  await page.getByRole('button',{name:'Download submitted brief',exact:true}).click();
+  const brief=await briefPromise; await brief.saveAs(path.join(out,'mission-brief.md'));
+  const briefText=fs.readFileSync(path.join(out,'mission-brief.md'),'utf8');
+  assert.ok(briefText.includes('SIMULATED TEACHING ARTIFACT'));
+  assert.ok(briefText.includes('"recommendation": "hold"'));
+  const missionExportPromise=page.waitForEvent('download');
+  await page.getByRole('button',{name:'Export preview evidence'}).click();
+  const missionExport=await missionExportPromise; await missionExport.saveAs(path.join(out,'mission-evidence.json'));
+  const missionEvidence=JSON.parse(fs.readFileSync(path.join(out,'mission-evidence.json'),'utf8'));
+  assert.equal(missionEvidence.events.filter(e=>e.action==='submit').length,2);
+  assert.equal(missionEvidence.events.filter(e=>e.action==='validate')[0].review.approved,false);
+  assert.equal(missionEvidence.jobs[0].status,'finalized');
+  assert.deepEqual(requests,[]);
+  await accessibility('mission-complete');
+  for (const width of [1440,390,320]) {
+    await page.setViewportSize({width,height:width===1440?1080:844});
+    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+    await accessibility(`mission-${width}`);
+    await page.evaluate(()=>scrollTo(0,0));
+    await page.screenshot({path:path.join(out,`mission-${width}.png`),fullPage:true});
+  }
+  await missionAction('Review another mission');
+  await page.locator('#mission-selection').selectOption('1');
+  assert.ok((await page.locator('.mission-meta').innerText()).includes('finalized'));
+  assert.equal(JSON.parse(await page.locator('#mission-report').inputValue()).recommendation,'hold');
+  await page.locator('#mission-selection').selectOption('2');
+  assert.ok((await page.locator('.mission-meta').innerText()).includes('created'));
+  await page.getByRole('button',{name:'Advanced',exact:true}).click();
+  assert.equal(await page.getByRole('button',{name:'Set API token',exact:true}).isDisabled(),true);
+  assert.equal(await page.getByRole('button',{name:'Set base URL',exact:true}).isDisabled(),true);
+  checks.push('Guided mission: bound report, rejected evidence, cancellation, repair, eleven checks, report download and immutable submission history');
+  // Storage access can throw after localStorage is obtained (privacy policies).
+  const privateContext=await browser.newContext();
+  await privateContext.addInitScript(()=>{Storage.prototype.getItem=()=>{throw new Error('denied');};Storage.prototype.setItem=()=>{throw new Error('denied');};Storage.prototype.removeItem=()=>{throw new Error('denied');};});
+  const privatePage=await privateContext.newPage();
+  privatePage.on('pageerror',e=>errors.push(e.message));
+  await privatePage.goto(origin);
+  await privatePage.getByRole('button',{name:'Review mission plan',exact:true}).click();
+  await privatePage.getByRole('button',{name:'Confirm plan',exact:true}).click();
+  await privatePage.waitForFunction(()=>!document.querySelector('#send').disabled);
+  assert.ok((await privatePage.locator('.mission-meta').innerText()).includes('created'));
+  await privateContext.close();
+  checks.push('Offline credential controls disabled; preview survives denied browser storage');
+
   // Run the real packaged HTTP router with explicit synthetic provider/chain service results.
   // This verifies the browser/server contract; it does not attest a real deployment.
   const token = 'onebox-browser-test-token';
@@ -89,6 +167,13 @@ try {
     assert.equal(req.body.ics.intent,'finalize');
     res.type('text/event-stream').send('data: ' + JSON.stringify({type:'receipt',text:'Legacy ICS fixture completed',advanced:{simulated:true}}) + '\n\n');
   });
+  let interruptedRequests=0;
+  app.post('/interrupted/plan',(_req,res)=>res.json({intent,planHash,summary:'Review interrupted fixture',requiresConfirmation:true}));
+  app.post('/interrupted/execute',(_req,res)=>{interruptedRequests++;res.writeHead(200,{'Content-Type':'application/json','Content-Length':'200'});res.write('{"ok":',()=>res.destroy());});
+  app.post('/empty/plan',(_req,res)=>res.json({intent,planHash,summary:'Review empty fixture',requiresConfirmation:true}));
+  app.post('/empty/execute',(_req,res)=>res.status(200).end());
+  app.post('/ack/plan',(_req,res)=>res.json({intent,planHash,summary:'Review bare acknowledgement',requiresConfirmation:true}));
+  app.post('/ack/execute',(_req,res)=>res.json({ok:true}));
   const api = await new Promise(resolve => {const s=app.listen(0,'127.0.0.1',()=>resolve(s));});
   servers.push(api);
   config.demoMode=false;
@@ -99,8 +184,11 @@ try {
   await page.setViewportSize({width:1440,height:1080});
   await page.goto(`${origin}/?orchestrator=${encodeURIComponent(config.publicOrchestratorUrl)}&mode=expert`);
   await page.getByRole('button',{name:'Advanced',exact:true}).click();
-  page.once('dialog',d=>d.accept(token));
   await page.getByRole('button',{name:'Set API token',exact:true}).click();
+  assert.equal(await page.locator('#api-token-input').getAttribute('type'),'password');
+  await accessibility('token-dialog');
+  await page.locator('#api-token-input').fill(token);
+  await page.getByRole('button',{name:'Apply token',exact:true}).click();
   assert.equal(await page.evaluate(t=>Object.values(localStorage).some(v=>v.includes(t)),token),false);
   assert.ok(!page.url().includes(token));
   await act('Post the connected fixture','Wallet transaction prepared for review. No transaction has been sent.');
@@ -114,6 +202,16 @@ try {
   await page.goto(`${origin}/?orchestrator=${encodeURIComponent(config.publicOrchestratorUrl)}&oneboxPrefix=/legacy`);
   await act('Run legacy fixture','Legacy ICS fixture completed');
   checks.push('Preserved ICS confirmation and SSE execution path');
+  await page.goto(`${origin}/?orchestrator=${encodeURIComponent(config.publicOrchestratorUrl)}&oneboxPrefix=/interrupted`);
+  await act('Post interrupted fixture','Execution outcome is unknown');
+  assert.equal(interruptedRequests,1,'No automatic execution retries');
+  assert.ok((await page.locator('#feed').innerText()).includes('chain receipts before creating another plan'));
+  await page.goto(`${origin}/?orchestrator=${encodeURIComponent(config.publicOrchestratorUrl)}&oneboxPrefix=/empty`);
+  await act('Post empty fixture','Execution outcome is unknown');
+  assert.ok(!(await page.locator('#feed').innerText()).includes('✅ Request completed'));
+  await page.goto(`${origin}/?orchestrator=${encodeURIComponent(config.publicOrchestratorUrl)}&oneboxPrefix=/ack`);
+  await act('Post acknowledgement fixture','Execution outcome is unknown');
+  checks.push('Interrupted, empty and bare acknowledgement execution responses require reconciliation; no false completion or automatic retry');
   assert.deepEqual(errors,[]);
   fs.writeFileSync(path.join(out,'browser-qa.json'),JSON.stringify({ok:true,checks,pageErrors:errors,scope:'Offline simulation and real HTTP router with synthetic service adapters; no real provider or blockchain commissioning'},null,2));
   console.log(JSON.stringify({ok:true,checks},null,2));

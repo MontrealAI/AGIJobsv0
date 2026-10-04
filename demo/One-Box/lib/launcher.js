@@ -759,7 +759,7 @@ async function runDemo(options = {}) {
     if (!demoMode) console.log('   Open Advanced → Set API token. The token is never printed or included in the URL.');
     if (config.maxJobBudgetAgia) console.log(`   Maximum job budget: ${config.maxJobBudgetAgia} AGIALPHA`);
     if (config.maxJobDurationDays) console.log(`   Maximum job duration: ${config.maxJobDurationDays} day(s)`);
-    for (const warning of config.warnings) console.warn(`   ${warning}`);
+    for (const warning of demoMode ? [] : config.warnings) console.warn(`   ${warning}`);
     console.log('   Press Ctrl+C to stop.\n');
     process.once('SIGINT', onSignal);
     process.once('SIGTERM', onSignal);
