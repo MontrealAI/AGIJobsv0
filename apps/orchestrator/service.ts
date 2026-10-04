@@ -25,7 +25,9 @@ import { auditLog } from './audit';
 import { AuditAnchoringService, AuditAnchoringOptions } from './anchoring';
 import { getWatchdog } from './monitor';
 import { postJob } from './employer';
-import { evaluateSubmission } from './validation';
+import { evaluateSubmission, needsIndependentReview } from './validation';
+import { fetchArtifactBytes } from './artifactSource';
+import { SettlementJournal } from './settlementJournal';
 import { LearningCoordinator } from './learning';
 import {
   CompletedJobEvidence,
@@ -238,6 +240,9 @@ export class MetaOrchestrator {
   private readonly watchdog = getWatchdog();
   private readonly learning = new LearningCoordinator();
   private running = false;
+  private settlementJournal!: SettlementJournal;
+  private settlementRecoveryTimer: NodeJS.Timeout | null = null;
+  private recoveringSettlements = false;
 
   constructor(config?: Partial<MetaOrchestratorConfig>) {
     this.config = { ...resolveConfig(), ...(config ?? {}) };
@@ -263,6 +268,13 @@ export class MetaOrchestrator {
     await this.initializeAuditAnchoring();
     this.initializeEnergyPolicy();
     this.loadCompletedEvidenceCache();
+    const network = await this.provider.getNetwork();
+    this.settlementJournal = new SettlementJournal(
+      process.env.ORCHESTRATOR_SETTLEMENT_STATE_DIR ||
+        path.resolve('storage/orchestrator/settlement'),
+      `${network.chainId}:${this.config.jobRegistryAddress.toLowerCase()}`
+    );
+    this.restorePendingSettlements();
   }
 
   private async instantiateContracts(): Promise<void> {
@@ -478,6 +490,11 @@ export class MetaOrchestrator {
     if (this.running) return;
     this.running = true;
     this.registerEventHandlers();
+    void this.recoverSettledOutcomes();
+    this.settlementRecoveryTimer = setInterval(
+      () => void this.recoverSettledOutcomes(),
+      30_000
+    );
     this.auditAnchor?.start();
     auditLog('orchestrator.started', {
       actor: this.orchestratorIdentity?.address,
@@ -492,6 +509,9 @@ export class MetaOrchestrator {
     if (!this.running) return;
     this.running = false;
     this.auditAnchor?.stop();
+    if (this.settlementRecoveryTimer)
+      clearInterval(this.settlementRecoveryTimer);
+    this.settlementRecoveryTimer = null;
     this.registry.removeAllListeners();
     if (this.validationModule) this.validationModule.removeAllListeners();
     if (this.disputeModule) this.disputeModule.removeAllListeners();
@@ -537,9 +557,14 @@ export class MetaOrchestrator {
     );
 
     this.registry.on('JobCompleted', (jobId: bigint, success: boolean) => {
-      this.recordSettledOutcome(jobId.toString(), success).catch((err) => {
-        console.error('Settled outcome recording failed', err);
-      });
+      this.recordSettledOutcome(jobId.toString(), success)
+        .then(() => {
+          if (!this.appliedJobs.get(jobId.toString())?.execution)
+            this.appliedJobs.delete(jobId.toString());
+        })
+        .catch((err) => {
+          console.error('Settled outcome recording failed', err);
+        });
       auditLog('job.completed', {
         jobId: jobId.toString(),
         details: { success },
@@ -550,7 +575,6 @@ export class MetaOrchestrator {
           .catch((err) => console.error('audit anchor trigger failed', err));
       }
       const key = jobId.toString();
-      this.appliedJobs.delete(key);
       const timer = this.assignmentTimers.get(key);
       if (timer) clearInterval(timer);
       this.assignmentTimers.delete(key);
@@ -985,10 +1009,32 @@ export class MetaOrchestrator {
       const resultRef = artifactCid.startsWith('ipfs://')
         ? artifactCid
         : `ipfs://${artifactCid}`;
-      state.execution = { runResult, resultRef, chainJob };
+      state.execution = {
+        runResult,
+        resultRef,
+        chainJob: {
+          employer: chainJob.employer,
+          agent: chainJob.agent,
+          reward: chainJob.reward?.toString(),
+          stake: chainJob.stake?.toString(),
+          packedMetadata: chainJob.packedMetadata?.toString(),
+        },
+      };
+      this.settlementJournal.save({
+        jobId,
+        agentAddress: state.identity.address,
+        fromBlock: await this.provider.getBlockNumber(),
+        classification: state.classification,
+        spec: state.spec,
+        summary: state.summary,
+        execution: state.execution,
+      });
       await submitJobResult(
         this.registry.connect(state.wallet) as Contract,
-        jobId, runResult.manifest, resultRef, toSubdomain(state.identity)
+        jobId,
+        runResult.manifest,
+        resultRef,
+        toSubdomain(state.identity)
       );
       this.beginReviewPhase(jobId, 'evidence-submitted');
       this.recordCompletedJob(jobId, state, runResult, resultRef, chainJob);
@@ -1014,30 +1060,144 @@ export class MetaOrchestrator {
         actor: state.identity.address,
         details: { error: message },
       });
-      if (!state.execution) await this.learning.recordJobOutcome({
-        jobId,
-        identity: state.identity,
-        classification: state.classification,
-        spec: state.spec,
-        summary: state.summary,
-        chainJob,
-        success: false,
-        errorMessage: message,
-      });
+      if (!state.execution)
+        await this.learning.recordJobOutcome({
+          jobId,
+          identity: state.identity,
+          classification: state.classification,
+          spec: state.spec,
+          summary: state.summary,
+          chainJob,
+          success: false,
+          errorMessage: message,
+        });
       throw err;
     }
   }
 
-  private async recordSettledOutcome(jobId: string, success: boolean): Promise<void> {
+  private async recordSettledOutcome(
+    jobId: string,
+    success: boolean
+  ): Promise<void> {
     const state = this.appliedJobs.get(jobId);
     if (!state?.execution) return;
     const execution = state.execution;
-    delete state.execution; // Duplicate events must not train or spawn twice.
+    if (!this.settlementJournal.claim(jobId, success)) {
+      auditLog('job.settlement_reconciliation_required', {
+        jobId,
+        details: {
+          reason:
+            'Outcome already claimed; inspect durable journal before any retry.',
+        },
+      });
+      return;
+    }
     await this.learning.recordJobOutcome({
-      jobId, identity: state.identity, classification: state.classification,
-      spec: state.spec, summary: state.summary, ...execution, success,
+      jobId,
+      identity: state.identity,
+      classification: state.classification,
+      spec: state.spec,
+      summary: state.summary,
+      ...execution,
+      success,
     });
     if (success) await this.spawnSubtasks(jobId, state.spec);
+    this.settlementJournal.complete(jobId);
+    delete state.execution;
+  }
+
+  private restorePendingSettlements(): void {
+    for (const record of this.settlementJournal.pending()) {
+      const identity = this.identityManager.getByAddress(record.agentAddress);
+      if (!identity)
+        throw new Error(
+          `Missing identity for pending job ${record.jobId}; restore it before starting`
+        );
+      this.appliedJobs.set(record.jobId, {
+        identity,
+        wallet: identity.wallet.connect(this.provider),
+        classification: record.classification,
+        spec: record.spec,
+        summary: record.summary,
+        execution: record.execution,
+      });
+    }
+  }
+
+  private async recoverSettledOutcomes(): Promise<void> {
+    if (this.recoveringSettlements) return;
+    this.recoveringSettlements = true;
+    try {
+      const latest = await this.provider.getBlockNumber();
+      for (const record of this.settlementJournal.pending()) {
+        // Replay the authoritative completion event, including events emitted
+        // while the process was offline; bound individual RPC log ranges.
+        for (let from = record.fromBlock; from <= latest; from += 2000) {
+          const events = await this.registry.queryFilter(
+            this.registry.filters.JobCompleted(record.jobId),
+            from,
+            Math.min(latest, from + 1999)
+          );
+          const event = events.find(
+            (item: any) => item.args && !item.removed
+          ) as any;
+          if (event) {
+            await this.recordSettledOutcome(
+              record.jobId,
+              Boolean(event.args.success ?? event.args[1])
+            );
+            break;
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Pending outcome recovery failed; journal retained', error);
+    } finally {
+      this.recoveringSettlements = false;
+    }
+  }
+
+  private async validationContext(
+    jobId: bigint
+  ): Promise<{ classification: ClassificationResult; spec: JobSpec | null }> {
+    const applied = this.appliedJobs.get(jobId.toString());
+    if (applied) return applied;
+    const latest = await this.provider.getBlockNumber();
+    // If the authoritative creation record is outside this bounded window,
+    // abstain and require operator recovery instead of guessing the review mode.
+    const events = await this.registry.queryFilter(
+      this.registry.filters.JobCreated(jobId),
+      Math.max(0, latest - 10000),
+      latest
+    );
+    const event = events.find((item: any) => item.args && !item.removed) as any;
+    if (!event) throw new Error('Authoritative job specification unavailable');
+    const args = event.args;
+    const uri = args.uri ?? args[7];
+    const specHash = args.specHash ?? args[6];
+    let spec: JobSpec | null = null;
+    if (uri) {
+      const artifact = await fetchArtifactBytes(uri, this.config.ipfsGateway);
+      if (
+        !specHash ||
+        specHash === ethers.ZeroHash ||
+        ethers.keccak256(artifact).toLowerCase() !==
+          String(specHash).toLowerCase()
+      )
+        throw new Error(
+          'Authoritative job specification hash mismatch or missing'
+        );
+      spec = JSON.parse(Buffer.from(artifact).toString('utf8'));
+      if (!spec || typeof spec !== 'object' || Array.isArray(spec))
+        throw new Error('Invalid job specification');
+    }
+    return {
+      classification: classifyJob(
+        { jobId: jobId.toString(), uri },
+        spec ?? undefined
+      ),
+      spec,
+    };
   }
 
   private async spawnSubtasks(
@@ -1063,7 +1223,11 @@ export class MetaOrchestrator {
           },
         });
       } catch (err) {
-        console.warn('Failed to spawn subtask', err);
+        console.warn(
+          'Failed to spawn subtask; reconcile pending settlement claim',
+          err
+        );
+        throw err;
       }
     }
   }
@@ -1111,9 +1275,26 @@ export class MetaOrchestrator {
     if (this.commits.has(key)) {
       return;
     }
+    let applied: { classification: ClassificationResult; spec: JobSpec | null };
+    try {
+      applied = await this.validationContext(jobId);
+    } catch (error) {
+      auditLog('validator.context_unavailable', {
+        jobId: jobKey,
+        actor: identity.address,
+        details: { error: String(error) },
+      });
+      return;
+    }
+    if (needsIndependentReview(applied.classification, applied.spec)) {
+      auditLog('validator.independent_review_required', {
+        jobId: jobKey,
+        actor: identity.address,
+      });
+      return;
+    }
     let approve = false;
     try {
-      const applied = this.appliedJobs.get(jobKey);
       const evaluation = await evaluateSubmission({
         registry: this.registry,
         provider: this.provider,
@@ -1124,7 +1305,8 @@ export class MetaOrchestrator {
       });
       if (evaluation.requiresIndependentReview) {
         auditLog('validator.independent_review_required', {
-          jobId: jobKey, actor: identity.address,
+          jobId: jobKey,
+          actor: identity.address,
           details: { resultUri: evaluation.resultUri, notes: evaluation.notes },
         });
         return; // An abstention is not a negative vote against the worker.

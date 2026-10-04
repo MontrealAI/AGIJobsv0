@@ -244,8 +244,15 @@ export async function executeComputerWork(
   try {
     fs.writeFileSync(fd, JSON.stringify({ ...journal, status: 'dispatched' }));
     fs.fsyncSync(fd);
-  } finally {
+    const directoryFd = fs.openSync(options.stateDirectory, 'r');
+    try {
+      fs.fsyncSync(directoryFd);
+    } finally {
+      fs.closeSync(directoryFd);
+    }
+  } catch (error) {
     fs.closeSync(fd);
+    throw error;
   }
   try {
     const response = record(
@@ -343,14 +350,25 @@ export async function executeComputerWork(
       summary: text(result.summary, 'summary', 4000),
       artifacts,
     };
-    fs.writeFileSync(journalPath, JSON.stringify(receipt, null, 2), {
-      mode: 0o600,
-    });
+    const saved = Buffer.from(JSON.stringify(receipt, null, 2));
+    let written = 0;
+    while (written < saved.length)
+      written += fs.writeSync(
+        fd,
+        saved,
+        written,
+        saved.length - written,
+        written
+      );
+    fs.ftruncateSync(fd, saved.length);
+    fs.fsyncSync(fd);
     return receipt;
   } catch {
     // Do not echo provider errors, token-bearing URLs, or an untrusted response.
     // The durable dispatched record deliberately remains as the replay barrier.
     throw new ComputerWorkOutcomeUnknown(attemptId);
+  } finally {
+    fs.closeSync(fd);
   }
 }
 
@@ -366,9 +384,15 @@ export async function computerWorkHandler(
     throw new Error(
       'Configure absolute COMPUTER_WORK_PROFILES_FILE and COMPUTER_WORK_STATE_DIR'
     );
-  if (fs.statSync(configFile).size > 1024 * 1024)
-    throw new Error('Worker configuration is too large');
-  const profiles = record(JSON.parse(fs.readFileSync(configFile, 'utf8')));
+  const configFd = fs.openSync(configFile, 'r');
+  let profiles: RecordValue;
+  try {
+    if (fs.fstatSync(configFd).size > 1024 * 1024)
+      throw new Error('Worker configuration is too large');
+    profiles = record(JSON.parse(fs.readFileSync(configFd, 'utf8')));
+  } finally {
+    fs.closeSync(configFd);
+  }
   if (!Object.prototype.hasOwnProperty.call(profiles, task.workerProfile))
     throw new Error('Unknown operator worker profile');
   return executeComputerWork(

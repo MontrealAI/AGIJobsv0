@@ -123,7 +123,10 @@ async function downloadArtifact(
   gateway?: string
 ): Promise<{ bytes: Uint8Array; text: string | null }> {
   const target = normaliseGatewayUri(uri, gateway);
-  const buffer = await fetchArtifactBytes(target, gateway || process.env.IPFS_GATEWAY_URL);
+  const buffer = await fetchArtifactBytes(
+    target,
+    gateway || process.env.IPFS_GATEWAY_URL
+  );
   let text: string | null = null;
   try {
     text = new TextDecoder().decode(buffer);
@@ -219,6 +222,17 @@ function analyseJsonPayload(
   return notes;
 }
 
+export function needsIndependentReview(
+  classification?: ClassificationResult,
+  spec?: JobSpec | null
+): boolean {
+  return (
+    classification?.category === 'computer-work' ||
+    spec?.category === 'computer-work' ||
+    !!spec?.metadata?.computerWork
+  );
+}
+
 export async function evaluateSubmission(
   options: EvaluateSubmissionOptions
 ): Promise<EvaluationOutcome> {
@@ -226,7 +240,10 @@ export async function evaluateSubmission(
   const minConfidence = options.minConfidence ?? DEFAULT_MIN_CONFIDENCE;
   const notes: EvaluationNote[] = [];
   const checks: boolean[] = [];
-  let requiresIndependentReview = options.classification?.category === 'computer-work' || options.spec?.category === 'computer-work' || !!options.spec?.metadata?.computerWork;
+  const requiresIndependentReview = needsIndependentReview(
+    options.classification,
+    options.spec
+  );
 
   const submission = await fetchSubmissionDetails(
     options.registry,
@@ -244,6 +261,7 @@ export async function evaluateSubmission(
     );
     return {
       approve: false,
+      requiresIndependentReview,
       confidence: 0,
       notes,
       contentLength: 0,
@@ -271,6 +289,7 @@ export async function evaluateSubmission(
     );
     return {
       approve: false,
+      requiresIndependentReview,
       confidence: 0,
       notes,
       contentLength: 0,
@@ -334,7 +353,6 @@ export async function evaluateSubmission(
     if (trimmed.length > 0) {
       try {
         const parsed = JSON.parse(trimmed);
-        requiresIndependentReview ||= parsed?.context?.category === 'computer-work' || parsed?.task?.schemaVersion === 1 && parsed?.provider === 'openclaw-responses';
         payloadType = 'json';
         checks.push(true);
         notes.push(
@@ -380,8 +398,15 @@ export async function evaluateSubmission(
   const totalChecks = checks.length || 1;
   const confidence = passedChecks / totalChecks;
   const hasError = notes.some((note) => note.level === 'error');
-  const approve = !requiresIndependentReview && !hasError && confidence >= minConfidence;
-  if (requiresIndependentReview) notes.push(toEvaluation('warning', 'Computer work requires an independent acceptance review; structural checks do not authorize a validator vote.'));
+  const approve =
+    !requiresIndependentReview && !hasError && confidence >= minConfidence;
+  if (requiresIndependentReview)
+    notes.push(
+      toEvaluation(
+        'warning',
+        'Computer work requires an independent acceptance review; structural checks do not authorize a validator vote.'
+      )
+    );
 
   if (!approve && !requiresIndependentReview) {
     notes.push(

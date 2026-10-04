@@ -17,6 +17,7 @@ import { evaluateSubmission } from '../validation';
 import { fetchArtifactBytes } from '../artifactSource';
 import { MetaOrchestrator } from '../service';
 import * as execution from '../execution';
+import { SettlementJournal } from '../settlementJournal';
 
 const task = {
   schemaVersion: 1,
@@ -439,6 +440,12 @@ test('valid computer manifest with matching on-chain hash still requires indepen
     provider: { getBlockNumber: async () => 10 } as any,
     jobId: 1n,
     ipfsGateway: f.endpoint,
+    classification: {
+      category: 'computer-work',
+      tags: [],
+      confidence: 1,
+      rationale: [],
+    },
   });
   assert.equal(result.approve, false);
   assert.equal(result.requiresIndependentReview, true);
@@ -451,7 +458,10 @@ test('valid computer manifest with matching on-chain hash still requires indepen
         assert.fail('Independent review must abstain before any vote'),
     },
     commits: new Map(),
-    appliedJobs: new Map(),
+    appliedJobs: new Map([
+      ['1', { classification: { category: 'computer-work' }, spec: null }],
+    ]),
+    validationContext: (MetaOrchestrator.prototype as any).validationContext,
   };
   await (MetaOrchestrator.prototype as any).commitValidation.call(
     validator,
@@ -502,6 +512,8 @@ test('assigned-job orchestration confirms submission before starting review', as
   };
   const orchestrator: any = {
     registry,
+    provider: { getBlockNumber: async () => 10 },
+    settlementJournal: { save: () => order.push('persist') },
     beginReviewPhase: (_id: string, reason: string) => {
       assert.equal(reason, 'evidence-submitted');
       order.push('review');
@@ -530,7 +542,13 @@ test('assigned-job orchestration confirms submission before starting review', as
       },
       { employer: ethers.ZeroAddress, reward: 1n, stake: 1n }
     );
-    assert.deepEqual(order, ['submit', 'confirmed', 'review', 'evidence']);
+    assert.deepEqual(order, [
+      'persist',
+      'submit',
+      'confirmed',
+      'review',
+      'evidence',
+    ]);
   } finally {
     run.mock.restore();
   }
@@ -548,6 +566,7 @@ test('settlement learning records the actual outcome once and spawns only after 
       execution: { runResult: {}, resultRef: 'ipfs://fixture', chainJob: {} },
     };
     const orchestrator = {
+      settlementJournal: { claim: () => true, complete: () => {} },
       appliedJobs: new Map([['1', state]]),
       learning: {
         recordJobOutcome: async (context: any) => {
@@ -584,4 +603,190 @@ test('job and result downloads reject unapproved origins and redirects', async (
   assert.equal(calls, 0);
   await assert.rejects(fetchArtifactBytes(f.endpoint, f.endpoint));
   assert.equal(calls, 1);
+});
+
+test('worker-controlled claims cannot change ordinary validator routing', async (t) => {
+  const body = JSON.stringify({
+    jobId: '1',
+    context: { category: 'computer-work' },
+    task: { schemaVersion: 1 },
+    provider: 'openclaw-responses',
+  });
+  const f = await fixture(t, (_, res) => res.end(body));
+  const result = await evaluateSubmission({
+    registry: {
+      filters: { ResultSubmitted: () => ({}) },
+      queryFilter: async () => [
+        {
+          args: [
+            '1',
+            ethers.ZeroAddress,
+            ethers.keccak256(ethers.toUtf8Bytes(body)),
+            f.endpoint,
+            'worker',
+          ],
+          blockNumber: 10,
+        },
+      ],
+    } as any,
+    provider: { getBlockNumber: async () => 10 } as any,
+    jobId: 1n,
+    ipfsGateway: f.endpoint,
+    classification: {
+      category: 'research',
+      confidence: 1,
+      rationale: [],
+      tags: [],
+    },
+  });
+  assert.equal(result.requiresIndependentReview, false);
+  assert.equal(result.approve, true);
+});
+
+test('computer work abstains before failed RPC or artifact evaluation', async () => {
+  const validator: any = {
+    registry: {
+      queryFilter: () =>
+        assert.fail('Must abstain before querying worker evidence'),
+    },
+    provider: {},
+    config: {},
+    commits: new Map(),
+    appliedJobs: new Map([
+      ['1', { classification: { category: 'computer-work' }, spec: null }],
+    ]),
+    validationContext: (MetaOrchestrator.prototype as any).validationContext,
+    validationModule: {
+      jobNonce: () => assert.fail('Must never commit a negative vote'),
+    },
+  };
+  await (MetaOrchestrator.prototype as any).commitValidation.call(
+    validator,
+    1n,
+    { address: ethers.ZeroAddress, wallet: { connect: () => ({}) } }
+  );
+  const result = await evaluateSubmission({
+    registry: {
+      filters: { ResultSubmitted: () => ({}) },
+      queryFilter: async () => [],
+    } as any,
+    provider: { getBlockNumber: async () => 10 } as any,
+    jobId: 1n,
+    spec: { category: 'computer-work' },
+  });
+  assert.equal(result.requiresIndependentReview, true);
+  assert.equal(result.approve, false);
+});
+
+test('pending handoff survives restart and recovers a completion missed while offline exactly once', async (t) => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'settlement-test-'));
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+  const before = new SettlementJournal(dir, '1:registry');
+  before.save({
+    jobId: '1',
+    agentAddress: ethers.ZeroAddress,
+    fromBlock: 10,
+    classification: {
+      category: 'research',
+      confidence: 1,
+      rationale: [],
+      tags: [],
+    },
+    spec: { subtasks: [] },
+    summary: { jobId: '1' },
+    execution: {
+      runResult: {} as any,
+      resultRef: 'ipfs://fixture',
+      chainJob: { reward: 5n },
+    },
+  });
+  const outcomes: boolean[] = [];
+  let spawned = 0;
+  const prototype = MetaOrchestrator.prototype as any;
+  const restarted: any = {
+    settlementJournal: new SettlementJournal(dir, '1:registry'),
+    appliedJobs: new Map(),
+    recoveringSettlements: false,
+    provider: { getBlockNumber: async () => 5010 },
+    identityManager: {
+      getByAddress: () => ({
+        address: ethers.ZeroAddress,
+        wallet: { connect: () => ({}) },
+      }),
+    },
+    registry: {
+      filters: { JobCompleted: () => ({}) },
+      queryFilter: async (_filter: unknown, from: number, to: number) => {
+        assert.ok(to - from < 2000);
+        return from <= 3000 && to >= 3000 ? [{ args: { success: true } }] : [];
+      },
+    },
+    learning: {
+      recordJobOutcome: async (context: any) => outcomes.push(context.success),
+    },
+    spawnSubtasks: async () => {
+      spawned++;
+    },
+    recordSettledOutcome: prototype.recordSettledOutcome,
+  };
+  prototype.restorePendingSettlements.call(restarted);
+  assert.equal(restarted.appliedJobs.get('1').execution.chainJob.reward, '5');
+  await prototype.recoverSettledOutcomes.call(restarted);
+  await prototype.recoverSettledOutcomes.call(restarted);
+  assert.deepEqual(outcomes, [true]);
+  assert.equal(spawned, 1);
+  assert.equal(new SettlementJournal(dir, '1:registry').pending().length, 0);
+  assert.equal(new SettlementJournal(dir, '2:registry').pending().length, 0);
+});
+
+test('uncertain side effects keep a durable claim and cannot silently replay after restart', async (t) => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'settlement-claim-'));
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+  const journal = new SettlementJournal(dir, '1:registry');
+  assert.equal(journal.claim('1', true), true);
+  assert.equal(
+    new SettlementJournal(dir, '1:registry').claim('1', true),
+    false
+  );
+});
+
+test('validators recover the hash-bound job specification and abstain if context is unavailable', async (t) => {
+  const body = JSON.stringify({
+    category: 'computer-work',
+    metadata: { computerWork: task },
+  });
+  const f = await fixture(t, (_, res) => res.end(body));
+  const prototype = MetaOrchestrator.prototype as any;
+  const validator: any = {
+    provider: { getBlockNumber: async () => 10 },
+    config: { ipfsGateway: f.endpoint },
+    appliedJobs: new Map(),
+    commits: new Map(),
+    validationContext: prototype.validationContext,
+    registry: {
+      filters: { JobCreated: () => ({}) },
+      queryFilter: async () => [
+        {
+          args: {
+            uri: f.endpoint,
+            specHash: ethers.keccak256(ethers.toUtf8Bytes(body)),
+          },
+        },
+      ],
+    },
+    validationModule: {
+      jobNonce: () => assert.fail('Context resolution must precede voting'),
+    },
+  };
+  const context = await prototype.validationContext.call(validator, 1n);
+  assert.equal(context.classification.category, 'computer-work');
+  validator.registry.queryFilter = async () => [];
+  await prototype.commitValidation.call(validator, 1n, {
+    address: ethers.ZeroAddress,
+    wallet: { connect: () => ({}) },
+  });
+  validator.registry.queryFilter = async () => [
+    { args: { uri: f.endpoint, specHash: ethers.ZeroHash } },
+  ];
+  await assert.rejects(prototype.validationContext.call(validator, 1n), /hash/);
 });
