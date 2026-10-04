@@ -14,7 +14,7 @@ import { approveAgentEndpoint, invokeApprovedAgent } from '../agentPolicy';
 import { buildPipeline } from '../pipeline';
 import { submitJobResult } from '../submission';
 import { evaluateSubmission } from '../validation';
-import { fetchArtifactBytes } from '../artifactSource';
+import { fetchArtifactBytes, resolveArtifactUri } from '../artifactSource';
 import { MetaOrchestrator } from '../service';
 import * as execution from '../execution';
 import { prepareJobArtifacts } from '../employer';
@@ -778,7 +778,7 @@ test('validators recover the hash-bound job specification and abstain if context
       queryFilter: async () => [
         {
           args: {
-            uri: 'ipfs://fixture-spec',
+            uri: 'ipfs://fixtureSpec',
             specHash: ethers.keccak256(ethers.toUtf8Bytes(body)),
           },
         },
@@ -899,4 +899,69 @@ test('restart resumes a prepared submission once, but never replays a possibly b
     prototype.recoverPreparedSubmission.call(restarted, '1'),
     /assignment/
   );
+});
+
+test('IPFS paths stay beneath the configured gateway prefix', () => {
+  const gateway = 'https://internal.example/ipfs';
+  for (const reference of [
+    '../admin',
+    'cid/../admin',
+    'cid/%2e%2e/admin',
+    'cid/%252e%252e/admin',
+    'cid/%2fadmin',
+    'cid/%5cadmin',
+    'cid/..%5cadmin',
+    'cid/admin?token=x',
+    'cid/#fragment',
+    'cid//admin',
+  ]) {
+    assert.throws(() => resolveArtifactUri(`ipfs://${reference}`, gateway));
+  }
+  assert.equal(
+    resolveArtifactUri('ipfs://bafybeiexample/reports/a%20b.json', gateway),
+    'https://internal.example/ipfs/bafybeiexample/reports/a%20b.json'
+  );
+  assert.equal(
+    resolveArtifactUri('ipfs://bafybeiexample', gateway + '/'),
+    'https://internal.example/ipfs/bafybeiexample'
+  );
+});
+
+test('cached ordinary classification cannot override committed computer-work specification', async (t) => {
+  const body = JSON.stringify({ category: 'computer-work' });
+  const f = await fixture(t, (_, res) => res.end(body));
+  const prototype = MetaOrchestrator.prototype as any;
+  const validator: any = {
+    provider: { getBlockNumber: async () => 10 },
+    config: { ipfsGateway: f.endpoint },
+    commits: new Map(),
+    appliedJobs: new Map([
+      [
+        '1',
+        {
+          classification: { category: 'research' },
+          spec: { category: 'research' },
+        },
+      ],
+    ]),
+    validationContext: prototype.validationContext,
+    registry: {
+      filters: { JobCreated: () => ({}) },
+      queryFilter: async () => [
+        {
+          args: {
+            uri: 'ipfs://fixtureSpec',
+            specHash: ethers.keccak256(ethers.toUtf8Bytes(body)),
+          },
+        },
+      ],
+    },
+    validationModule: {
+      jobNonce: () => assert.fail('Must abstain based on committed category'),
+    },
+  };
+  await prototype.commitValidation.call(validator, 1n, {
+    address: ethers.ZeroAddress,
+    wallet: { connect: () => ({}) },
+  });
 });

@@ -1,4 +1,4 @@
-import { fetchArtifactBytes } from './artifactSource';
+import { fetchArtifactBytes, resolveArtifactUri } from './artifactSource';
 
 export interface ChainJobSummary {
   jobId: string;
@@ -93,17 +93,14 @@ export async function fetchJobSpec(
   options?: { gatewayUrl?: string }
 ): Promise<JobSpec | null> {
   if (!uri) return null;
-  const normalized = uri.replace(/^ipfs:\/\//i, '');
-  let target = uri;
-  if (uri.startsWith('ipfs://')) {
-    const gateway = options?.gatewayUrl || process.env.IPFS_GATEWAY_URL;
-    if (!gateway) {
-      return null;
-    }
-    target = `${gateway.replace(/\/$/, '')}/${normalized}`;
-  }
   try {
-    const text = new TextDecoder().decode(await fetchArtifactBytes(target, options?.gatewayUrl || process.env.IPFS_GATEWAY_URL));
+    const target = resolveArtifactUri(uri, options?.gatewayUrl);
+    const text = new TextDecoder().decode(
+      await fetchArtifactBytes(
+        target,
+        options?.gatewayUrl || process.env.IPFS_GATEWAY_URL
+      )
+    );
     if (!text.trim()) return null;
     try {
       const parsed = JSON.parse(text) as JobSpec;

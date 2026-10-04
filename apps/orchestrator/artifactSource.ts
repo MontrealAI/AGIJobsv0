@@ -2,14 +2,34 @@ import { normalizeAgentEndpoint } from './agentPolicy';
 
 export function resolveArtifactUri(uri: string, gateway?: string): string {
   if (!uri.startsWith('ipfs://')) return uri;
-  const base = (
-    gateway ||
-    process.env.IPFS_GATEWAY_URL ||
-    'https://ipfs.io/ipfs'
-  )
-    .trim()
-    .replace(/\/$/, '');
-  return `${base}/${uri.slice(7)}`;
+  const [cid, ...segments] = uri.slice(7).split('/');
+  // Restrict reference syntax before URL normalization. CID decoding/retrieval
+  // belongs to the gateway; an invalid identifier must never escape its prefix.
+  if (!/^[a-zA-Z0-9]{1,256}$/.test(cid))
+    throw new Error('Invalid IPFS identifier');
+  const safeSegments = segments.map((segment) => {
+    const decoded = decodeURIComponent(segment);
+    if (
+      !decoded ||
+      decoded === '.' ||
+      decoded === '..' ||
+      /[\\/%?#\x00-\x1f\x7f]/.test(decoded)
+    )
+      throw new Error('Invalid IPFS path segment');
+    return encodeURIComponent(decoded);
+  });
+  const base = new URL(
+    normalizeAgentEndpoint(
+      (gateway || process.env.IPFS_GATEWAY_URL || 'https://ipfs.io/ipfs').trim()
+    )
+  );
+  const prefix = base.pathname.replace(/\/$/, '') + '/';
+  const target = new URL(
+    `${base.origin}${prefix}${[cid, ...safeSegments].join('/')}`
+  );
+  if (target.origin !== base.origin || !target.pathname.startsWith(prefix))
+    throw new Error('IPFS reference escapes gateway prefix');
+  return target.href;
 }
 
 /** Job-provided URIs cannot grant the orchestrator access to arbitrary origins. */

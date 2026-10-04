@@ -1207,8 +1207,8 @@ export class MetaOrchestrator {
   private async validationContext(
     jobId: bigint
   ): Promise<{ classification: ClassificationResult; spec: JobSpec | null }> {
-    const applied = this.appliedJobs.get(jobId.toString());
-    if (applied) return applied;
+    // Cached execution classification is not a cryptographic commitment.
+    // Always recover and verify the authoritative bytes before voting.
     const latest = await this.provider.getBlockNumber();
     // If the authoritative creation record is outside this bounded window,
     // abstain and require operator recovery instead of guessing the review mode.
@@ -1324,6 +1324,14 @@ export class MetaOrchestrator {
     const key = `${jobKey}:${identity.address.toLowerCase()}`;
     if (this.commits.has(key)) {
       return;
+    }
+    const cached = this.appliedJobs.get(jobKey);
+    if (needsIndependentReview(cached?.classification, cached?.spec)) {
+      auditLog('validator.independent_review_required', {
+        jobId: jobKey,
+        actor: identity.address,
+      });
+      return; // Safe abstention needs no RPC; cached data can never authorize a vote.
     }
     let applied: { classification: ClassificationResult; spec: JobSpec | null };
     try {
