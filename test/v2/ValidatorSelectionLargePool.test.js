@@ -4,6 +4,8 @@ const {
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
 
+// Keep Osaka's real EIP-7825 cap. EDR's estimate can exceed the cap even
+// when the transaction fits; submit with the explicit cap and execute it fully.
 describe('Validator selection with large pool', function () {
   let validation, stake, identity, other;
 
@@ -51,12 +53,14 @@ describe('Validator selection with large pool', function () {
         await stake.setStake(addr, 1, ethers.parseEther('1'));
         await identity.addAdditionalValidator(addr);
       }
-      await validation.setValidatorPool(validators);
+      await validation.setValidatorPool(validators, { gasLimit: 16_777_216 });
       await validation.setValidatorsPerJob(3);
       await validation.setValidatorPoolSampleSize(Math.min(poolSize, 50));
-      await validation.selectValidators(jobId, 12345);
+      await validation.selectValidators(jobId, 12345, { gasLimit: 16_777_216 });
       await ethers.provider.send('evm_mine', []);
-      const tx = await validation.connect(other).selectValidators(jobId++, 0);
+      const tx = await validation
+        .connect(other)
+        .selectValidators(jobId++, 0, { gasLimit: 16_777_216 });
       const receipt = await tx.wait();
       console.log(`pool size ${poolSize}: ${receipt.gasUsed}`);
       expect(receipt.gasUsed).to.be.lt(6000000n);
@@ -78,7 +82,7 @@ describe('Validator selection with large pool', function () {
       validators.push(addr);
     }
     await expect(
-      validation.setValidatorPool(validators)
+      validation.setValidatorPool(validators, { gasLimit: 16_777_216 })
     ).to.be.revertedWithCustomError(validation, 'PoolLimitExceeded');
   });
 });

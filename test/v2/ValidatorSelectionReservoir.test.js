@@ -4,6 +4,8 @@ const {
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
 
+// Keep Osaka's real EIP-7825 cap. EDR's estimate can exceed the cap even
+// when the transaction fits; submit with the explicit cap and execute it fully.
 describe('Validator selection reservoir strategy', function () {
   let validation, stake, identity, other;
   let validators;
@@ -53,7 +55,7 @@ describe('Validator selection reservoir strategy', function () {
       await stake.setStake(addr, 1, ethers.parseEther('1'));
       await identity.addAdditionalValidator(addr);
     }
-    await validation.setValidatorPool(validators);
+    await validation.setValidatorPool(validators, { gasLimit: 16_777_216 });
     await validation.setValidatorsPerJob(committeeSize);
   });
 
@@ -61,9 +63,13 @@ describe('Validator selection reservoir strategy', function () {
     const counts = {};
     const iterations = 30;
     for (let i = 0; i < iterations; i++) {
-      await validation.selectValidators(i + 1, i + 12345);
+      await validation.selectValidators(i + 1, i + 12345, {
+        gasLimit: 16_777_216,
+      });
       await ethers.provider.send('evm_mine', []);
-      await validation.connect(other).selectValidators(i + 1, 0);
+      await validation
+        .connect(other)
+        .selectValidators(i + 1, 0, { gasLimit: 16_777_216 });
       const selected = await validation.validators(i + 1);
       for (const v of selected) {
         counts[v] = (counts[v] || 0) + 1;

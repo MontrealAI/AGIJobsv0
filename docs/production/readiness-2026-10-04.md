@@ -37,6 +37,8 @@ The browser lab performs actual isolated Chromium actions. Its agent decisions a
 
 A fresh root `npm audit --omit=dev --json` on 2026-10-04 reported **136 affected dependency packages: 3 critical, 40 high, 72 moderate and 21 low**. The critical package families are `fast-xml-parser`, `protobufjs` and `tar`. These registry findings are a release blocker pending remediation and compatibility tests; package severity is not itself proof that every application path is exploitable. This computer-work change does not modify the dependency lockfile or claim those findings are resolved. Track dependency remediation separately and rerun the audit against the exact release tree.
 
+Dependency remediation and remaining blockers are tracked in the [dependency review](dependency-review-2026-10-04.md), which supersedes the baseline counts above for its exact tested tree.
+
 ## Production gates still requiring authentic evidence
 
 - An operator-owned, isolated live gateway with verified permissions, account selection, network/action policies, spending controls, stop/recovery behavior and measured task success.
