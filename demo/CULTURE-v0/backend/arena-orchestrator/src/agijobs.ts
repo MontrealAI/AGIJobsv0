@@ -59,16 +59,15 @@ class TypedEmitter extends EventEmitter {
   }
 }
 
-let nextJobId = 1;
-const records = new Map<number, JobRecord>();
-const submissionWaiters = new Map<
-  number,
-  Array<(update: SubmissionUpdate) => void>
->();
-
 export class JobRegistryClient extends TypedEmitter {
+  private nextJobId = 1;
+  private readonly records = new Map<number, JobRecord>();
+  private readonly submissionWaiters = new Map<
+    number,
+    Array<(update: SubmissionUpdate) => void>
+  >();
   async createJob(input: CreateJobInput): Promise<JobHandle> {
-    const jobId = nextJobId++;
+    const jobId = this.nextJobId++;
     const handle: JobHandle = { jobId, requestId: randomUUID() };
     const record: JobRecord = {
       ...handle,
@@ -81,14 +80,18 @@ export class JobRegistryClient extends TypedEmitter {
       createdAt: new Date(),
       updatedAt: new Date(),
     };
-    records.set(jobId, record);
-    this.emit('job:created', record);
+    this.records.set(jobId, record);
+    this.emit('job:created', structuredClone(record));
     this.log('created', record);
     return await Promise.resolve(handle);
   }
 
   async markSubmitted(jobId: number, cid: string): Promise<void> {
     const record = this.requireJob(jobId);
+    if (record.status !== 'created')
+      throw new Error(`Job ${jobId} already has a submission`);
+    if (!cid.trim() || cid.length > 512)
+      throw new Error('Invalid submission CID');
     record.status = 'submitted';
     record.submissionCid = cid;
     record.updatedAt = new Date();
@@ -97,7 +100,7 @@ export class JobRegistryClient extends TypedEmitter {
       cid,
       submittedAt: record.updatedAt,
     };
-    this.emit('job:submitted', update);
+    this.emit('job:submitted', structuredClone(update));
     this.notifyWaiters(jobId, update);
     this.log('submitted', record, { cid });
     await Promise.resolve();
@@ -105,12 +108,13 @@ export class JobRegistryClient extends TypedEmitter {
 
   async finalizeJob(jobId: number): Promise<void> {
     const record = this.requireJob(jobId);
+    if (record.status === 'finalized') return;
     if (record.status === 'created') {
       throw new Error(`Job ${jobId} has not been submitted`);
     }
     record.status = 'finalized';
     record.updatedAt = new Date();
-    this.emit('job:finalized', record);
+    this.emit('job:finalized', structuredClone(record));
     this.log('finalized', record);
     await Promise.resolve();
   }
@@ -122,12 +126,14 @@ export class JobRegistryClient extends TypedEmitter {
   }
 
   getJob(jobId: number): JobRecord {
-    return this.requireJob(jobId);
+    return structuredClone(this.requireJob(jobId));
   }
 
   listJobsByRound(roundId: number): JobRecord[] {
-    return Array.from(records.values()).filter(
-      (record) => record.roundId === roundId,
+    return structuredClone(
+      Array.from(this.records.values()).filter(
+        (record) => record.roundId === roundId,
+      ),
     );
   }
 
@@ -159,31 +165,31 @@ export class JobRegistryClient extends TypedEmitter {
 
       const cleanup = () => {
         clearTimeout(timeout);
-        const waiters = submissionWaiters.get(jobId);
+        const waiters = this.submissionWaiters.get(jobId);
         if (!waiters) return;
         const index = waiters.indexOf(handler);
         if (index >= 0) {
           waiters.splice(index, 1);
         }
         if (waiters.length === 0) {
-          submissionWaiters.delete(jobId);
+          this.submissionWaiters.delete(jobId);
         }
       };
 
-      const waiters = submissionWaiters.get(jobId) ?? [];
+      const waiters = this.submissionWaiters.get(jobId) ?? [];
       waiters.push(handler);
-      submissionWaiters.set(jobId, waiters);
+      this.submissionWaiters.set(jobId, waiters);
     });
   }
 
   reset(): void {
-    records.clear();
-    submissionWaiters.clear();
-    nextJobId = 1;
+    this.records.clear();
+    this.submissionWaiters.clear();
+    this.nextJobId = 1;
   }
 
   private requireJob(jobId: number): JobRecord {
-    const record = records.get(jobId);
+    const record = this.records.get(jobId);
     if (!record) {
       throw new Error(`Job ${jobId} not found`);
     }
@@ -191,14 +197,14 @@ export class JobRegistryClient extends TypedEmitter {
   }
 
   private notifyWaiters(jobId: number, update: SubmissionUpdate): void {
-    const waiters = submissionWaiters.get(jobId);
+    const waiters = this.submissionWaiters.get(jobId);
     if (!waiters) {
       return;
     }
-    submissionWaiters.delete(jobId);
+    this.submissionWaiters.delete(jobId);
     for (const waiter of waiters) {
       try {
-        waiter(update);
+        waiter(structuredClone(update));
       } catch (error) {
         console.warn('Job submission waiter threw', error);
       }

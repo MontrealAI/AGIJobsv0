@@ -2,7 +2,11 @@ import { jest } from '@jest/globals';
 import http from 'node:http';
 import type { AddressInfo } from 'node:net';
 import express from 'express';
-import { ArenaInputError, ArenaService } from '../src/arena.service.js';
+import {
+  ArenaInputError,
+  ArenaNotFoundError,
+  ArenaService,
+} from '../src/arena.service.js';
 import { buildRouter } from '../src/router.js';
 const teacher = `0x${'11'.repeat(20)}`;
 const student = `0x${'22'.repeat(20)}`;
@@ -115,6 +119,12 @@ test('reads scoreboard and validates status IDs', async () => {
   expect((await fetch(base + '/arena/status/0')).status).toBe(400);
 });
 test('domain conflicts are client errors and unexpected failures remain failures', async () => {
+  methods.getRound.mockImplementation(() => {
+    throw new ArenaNotFoundError('Round 999 not found');
+  });
+  const missing = await fetch(base + '/arena/status/999');
+  expect(missing.status).toBe(404);
+  expect(await missing.json()).toEqual({ error: 'Round 999 not found' });
   methods.closeRound.mockRejectedValue(new ArenaInputError('Round is closed'));
   expect((await post('/arena/close/1', {})).status).toBe(400);
   methods.recordSubmission.mockRejectedValue(new Error('provider unavailable'));
@@ -128,4 +138,20 @@ test('domain conflicts are client errors and unexpected failures remain failures
   ).toBe(500);
   methods.finalizeRound.mockRejectedValue('unknown');
   expect((await post('/arena/finalize/1', { winners: [] })).status).toBe(500);
+});
+test('rejects unrecognized evidence and winner fields before side effects', async () => {
+  expect(
+    (
+      await post('/arena/submit/1', {
+        participant: teacher,
+        cid: 'cid:evidence',
+        approve: true,
+      })
+    ).status,
+  ).toBe(400);
+  expect(
+    (await post('/arena/finalize/1', { winners: [], automatic: true })).status,
+  ).toBe(400);
+  expect(methods.recordSubmission).not.toHaveBeenCalled();
+  expect(methods.finalizeRound).not.toHaveBeenCalled();
 });

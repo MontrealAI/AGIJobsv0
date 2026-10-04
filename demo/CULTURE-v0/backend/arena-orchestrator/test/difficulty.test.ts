@@ -235,4 +235,20 @@ describe('PID regression: one adjustment per round', () => {
       delta: 0,
     });
   });
+  it('can discard a failed settlement without contaminating PID history', () => {
+    const tuned = {
+      ...config,
+      proportionalGain: 0,
+      integralGain: 4,
+      integralDecay: 0,
+      maxStep: 3,
+    };
+    const controller = new DifficultyController(tuned);
+    controller.update(4, 0.75);
+    const candidate = controller.fork();
+    expect(candidate.update(4, 1).delta).toBe(3);
+    // Discarding the candidate retains the last confirmed +0.25 error only.
+    expect(controller.update(4, 0.5).delta).toBe(1);
+    expect(candidate.update(4, 0.5).delta).toBe(3);
+  });
 });

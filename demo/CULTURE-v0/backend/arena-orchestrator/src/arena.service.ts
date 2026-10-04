@@ -3,12 +3,7 @@ import { buildStructuredLogRecord } from '../../../../../shared/structuredLogger
 import { DifficultyConfig, DifficultyController } from './difficulty.js';
 import { EloEngine, EloPlayer } from './elo.js';
 import { computeDiversityMetrics } from './qd.js';
-import {
-  jobRegistry as defaultJobRegistry,
-  JobRecord,
-  JobRegistryClient,
-  SubmissionUpdate,
-} from './agijobs.js';
+import { JobRecord, JobRegistryClient, SubmissionUpdate } from './agijobs.js';
 import { pinJSON as defaultPinJSON, PinResult } from './ipfs.js';
 import { buildTeacherPrompt, TeacherPrompt } from './prompt.js';
 import {
@@ -184,6 +179,7 @@ const DEFAULT_ROUND_STATE: SerializedArenaState = {
 };
 
 export class ArenaInputError extends Error {}
+export class ArenaNotFoundError extends ArenaInputError {}
 
 export class ArenaService extends ArenaEmitter {
   private mutationQueue: Promise<unknown> = Promise.resolve();
@@ -198,8 +194,7 @@ export class ArenaService extends ArenaEmitter {
   private readonly ensureContentSafe: typeof defaultEnsureContentSafe;
   private readonly roundPersistence: PersistenceAdapter<SerializedArenaState>;
   private readonly eloEngine: EloEngine;
-  private readonly difficultyController: DifficultyController;
-  private readonly slashRecipient?: string;
+  private difficultyController: DifficultyController;
 
   private readonly ready: Promise<void>;
   private readonly rounds = new Map<number, RoundState>();
@@ -214,11 +209,10 @@ export class ArenaService extends ArenaEmitter {
     super();
     this.arenaClient =
       dependencies.arenaContract ?? new InMemorySelfPlayArenaClient();
-    this.jobRegistry = dependencies.jobRegistry ?? defaultJobRegistry;
+    this.jobRegistry = dependencies.jobRegistry ?? new JobRegistryClient();
     this.pinJSON = dependencies.pinJSON ?? defaultPinJSON;
     this.ensureContentSafe =
       dependencies.ensureContentSafe ?? defaultEnsureContentSafe;
-    this.slashRecipient = dependencies.slashRecipient;
 
     const eloPersistence =
       dependencies.eloPersistence ??
@@ -243,10 +237,10 @@ export class ArenaService extends ArenaEmitter {
     this.ready = this.initialise();
 
     this.jobRegistry.on('job:submitted', (update) => {
-      void this.onJobSubmitted(update);
+      this.handleJobEvent('submission', () => this.onJobSubmitted(update));
     });
     this.jobRegistry.on('job:finalized', (record) => {
-      void this.onJobFinalized(record);
+      this.handleJobEvent('finalization', () => this.onJobFinalized(record));
     });
   }
 
@@ -283,7 +277,11 @@ export class ArenaService extends ArenaEmitter {
       throw new ArenaInputError(
         'Participants must have distinct, nonzero EVM addresses',
       );
-    if (input.students.length > 32 || input.validators.length > 16)
+    if (
+      input.students.length < 1 ||
+      input.students.length > 32 ||
+      input.validators.length > 16
+    )
       throw new ArenaInputError('Cohort limit exceeded');
     const reservedRoundId = this.nextRoundId;
 
@@ -389,15 +387,14 @@ export class ArenaService extends ArenaEmitter {
 
     this.rounds.set(round.id, round);
     await this.persistRounds();
-    this.emit('round:update', round);
+    this.emit('round:update', structuredClone(round));
     this.emit('scoreboard:update', this.getScoreboard());
-    void this.monitorRound(round);
     this.log('round-started', {
       roundId: round.id,
       difficulty,
       artifactId: input.artifactId,
     });
-    return round;
+    return structuredClone(round);
   }
 
   async closeRound(roundId: number): Promise<RoundState> {
@@ -408,19 +405,27 @@ export class ArenaService extends ArenaEmitter {
     await this.ready;
     const round = this.requireRound(roundId);
     if (round.status !== 'open') {
-      return round;
+      return structuredClone(round);
     }
-    await this.executeWithRetry(
-      () => this.arenaClient.closeRound(round.id),
-      'selfplay:closeRound',
-    );
+    try {
+      await this.executeWithRetry(
+        () => this.arenaClient.closeRound(round.id),
+        'selfplay:closeRound',
+      );
+    } catch (error) {
+      // A timed-out transaction can still settle. Never reopen submissions.
+      round.status = 'failed';
+      await this.persistRounds();
+      this.emit('scoreboard:update', this.getScoreboard());
+      throw error;
+    }
     round.status = 'closed';
     round.closedAt = new Date();
     await this.persistRounds();
-    this.emit('round:update', round);
+    this.emit('round:update', structuredClone(round));
     this.emit('scoreboard:update', this.getScoreboard());
     this.log('round-closed', { roundId: round.id });
-    return round;
+    return structuredClone(round);
   }
 
   async recordSubmission(
@@ -442,19 +447,35 @@ export class ArenaService extends ArenaEmitter {
     const round = this.requireRound(roundId);
     if (round.status !== 'open')
       throw new ArenaInputError('Submissions require an open round');
+    if (Date.now() >= round.deadlineAt.getTime())
+      throw new ArenaInputError(
+        'The submission deadline has passed. Close and review this round.',
+      );
     if (!cid.trim() || cid.length > 512)
       throw new ArenaInputError('Invalid submission CID');
     const normalised = participant.toLowerCase();
     const collection = [round.teacher, ...round.students, ...round.validators];
     const target = collection.find((entry) => entry.address === normalised);
     if (!target) {
-      throw new Error(
+      throw new ArenaInputError(
         `Participant ${participant} not found in round ${roundId}`,
       );
     }
     if (target.status !== 'pending')
       throw new ArenaInputError('Submission already recorded');
     await this.jobRegistry.markSubmitted(target.jobId, cid);
+    const job = this.jobRegistry.getJob(target.jobId);
+    // Persist inside this queued command before acknowledging the HTTP write.
+    // The registry's duplicate event is queued behind us and becomes a no-op.
+    const accepted = await this.onJobSubmitted({
+      jobId: target.jobId,
+      cid,
+      submittedAt: job.updatedAt,
+    });
+    if (!accepted)
+      throw new ArenaInputError(
+        'Submission was not accepted before the deadline',
+      );
     this.log('submission-recorded', { roundId, participant: normalised, cid });
   }
 
@@ -475,8 +496,11 @@ export class ArenaService extends ArenaEmitter {
       throw new ArenaInputError('Round must be closed before finalisation');
     }
 
-    const resolvedWinners =
-      winners === undefined ? this.computeAutomaticWinners(round) : winners;
+    if (winners === undefined)
+      throw new ArenaInputError(
+        'Explicit reviewed winners are required; use an empty list if none passed',
+      );
+    const resolvedWinners = winners;
     const winnerSet = new Set(resolvedWinners.map((w) => w.toLowerCase()));
     if (
       round.teacher.status !== 'submitted' &&
@@ -519,12 +543,11 @@ export class ArenaService extends ArenaEmitter {
           ? 0
           : round.winners.length / round.students.length;
       round.successRate = successRate;
-      const difficultyResult = this.difficultyController.update(
+      const proposedController = this.difficultyController.fork();
+      const difficultyResult = proposedController.update(
         round.difficulty,
         successRate,
       );
-      this.currentDifficulty = difficultyResult.nextDifficulty;
-      round.difficultyDelta = difficultyResult.delta;
 
       const diversity = computeDiversityMetrics(
         round.winners,
@@ -543,12 +566,16 @@ export class ArenaService extends ArenaEmitter {
           this.arenaClient.finalizeRound(
             round.id,
             difficultyResult.delta,
-            [],
-            BigInt(0),
-            this.slashRecipient,
+            Math.round(successRate * 10_000),
+            0, // No external Elo event is produced by the local rating adapter.
+            false, // Never bypass the contract's validation module.
+            [], // Student winners are not validator consensus evidence.
           ),
         'selfplay:finalizeRound',
       );
+      this.difficultyController = proposedController;
+      this.currentDifficulty = difficultyResult.nextDifficulty;
+      round.difficultyDelta = difficultyResult.delta;
       this.eloEngine.applyRoundOutcome(
         round.teacher.address,
         round.students.map((s) => s.address),
@@ -560,11 +587,11 @@ export class ArenaService extends ArenaEmitter {
       round.finalizedAt = new Date();
 
       await this.persistRounds();
-      this.emit('round:update', round);
+      this.emit('round:update', structuredClone(round));
       this.emit('scoreboard:update', this.getScoreboard());
       this.log('round-finalized', {
         roundId: round.id,
-        winners: round.winners,
+        winners: [...round.winners],
         difficultyDelta: difficultyResult.delta,
         snapshotCid: snapshot.cid,
       });
@@ -572,7 +599,7 @@ export class ArenaService extends ArenaEmitter {
       return {
         roundId: round.id,
         difficulty: round.difficulty,
-        winners: round.winners,
+        winners: [...round.winners],
         difficultyDelta: difficultyResult.delta,
         observedSuccessRate: successRate,
         snapshotCid: snapshot.cid,
@@ -580,6 +607,7 @@ export class ArenaService extends ArenaEmitter {
     } catch (error) {
       round.status = 'failed';
       await this.persistRounds();
+      this.emit('scoreboard:update', this.getScoreboard());
       throw error;
     }
   }
@@ -598,14 +626,14 @@ export class ArenaService extends ArenaEmitter {
       difficultyDelta: round.difficultyDelta,
       successRate: round.successRate,
       status: round.status,
-      winners: round.winners,
+      winners: [...round.winners],
       snapshotCid: round.snapshotCid,
       startedAt: round.startedAt,
       closedAt: round.closedAt,
       finalizedAt: round.finalizedAt,
     }));
 
-    return {
+    return structuredClone({
       agents,
       rounds,
       currentDifficulty: this.currentDifficulty,
@@ -621,11 +649,11 @@ export class ArenaService extends ArenaEmitter {
         maxIntegral: this.config.maxIntegral,
       },
       updatedAt: new Date(),
-    };
+    });
   }
 
   getRound(roundId: number): RoundState {
-    return this.requireRound(roundId);
+    return structuredClone(this.requireRound(roundId));
   }
 
   waitUntilReady(): Promise<void> {
@@ -662,61 +690,6 @@ export class ArenaService extends ArenaEmitter {
     }
     await this.persistRounds();
     this.emit('scoreboard:update', this.getScoreboard());
-  }
-
-  private async monitorRound(round: RoundState): Promise<void> {
-    try {
-      await this.jobRegistry.waitForSubmission(
-        round.teacher.jobId,
-        this.config.roundTimeoutMs,
-      );
-      this.log('teacher-submitted', {
-        roundId: round.id,
-        jobId: round.teacher.jobId,
-      });
-    } catch (error) {
-      this.log('teacher-submission-timeout', {
-        roundId: round.id,
-        error: (error as Error).message,
-      });
-      return;
-    }
-
-    const studentPromises = round.students.map((student) =>
-      this.jobRegistry
-        .waitForSubmission(student.jobId, this.config.roundTimeoutMs)
-        .then(() => student.address)
-        .catch(() => undefined),
-    );
-
-    const results = await Promise.all(studentPromises);
-    const winners = round.students
-      .filter(
-        (student) =>
-          student.status === 'submitted' || results.includes(student.address),
-      )
-      .map((student) => student.address);
-
-    if (winners.length > 0 && round.status === 'open') {
-      round.winners = Array.from(
-        new Set(winners.map((winner) => winner.toLowerCase())),
-      );
-      round.successRate =
-        round.students.length === 0
-          ? 0
-          : round.winners.length / round.students.length;
-      await this.persistRounds();
-      this.emit('round:update', round);
-    }
-  }
-
-  private computeAutomaticWinners(round: RoundState): string[] {
-    return round.students
-      .filter(
-        (student) =>
-          student.status === 'submitted' || student.status === 'validated',
-      )
-      .map((student) => student.address);
   }
 
   private async createParticipant(
@@ -802,25 +775,66 @@ export class ArenaService extends ArenaEmitter {
     }
   }
 
-  private async onJobSubmitted(update: SubmissionUpdate): Promise<void> {
+  private handleJobEvent(
+    kind: string,
+    operation: () => Promise<unknown>,
+  ): void {
+    void this.serial(operation).catch((error: unknown) => {
+      this.log('job-event-rejected', {
+        kind,
+        error:
+          error instanceof Error ? error.message : 'Unknown job event error',
+      });
+    });
+  }
+
+  private async onJobSubmitted(update: SubmissionUpdate): Promise<boolean> {
+    await this.ready;
     const job = this.jobRegistry.getJob(update.jobId);
     const round = this.rounds.get(job.roundId);
-    if (!round) {
-      return;
-    }
+    if (!round || round.status !== 'open') return false;
     const participant = this.findParticipant(round, job.participant, job.role);
+    if (
+      participant.jobId !== update.jobId ||
+      participant.status !== 'pending' ||
+      job.status !== 'submitted' ||
+      update.cid !== job.submissionCid ||
+      update.submittedAt.getTime() !== job.updatedAt.getTime() ||
+      !Number.isFinite(update.submittedAt.getTime()) ||
+      update.submittedAt < round.startedAt ||
+      update.submittedAt >= round.deadlineAt ||
+      Date.now() >= round.deadlineAt.getTime()
+    )
+      return false;
     participant.status = 'submitted';
     participant.submissionCid = update.cid;
     participant.lastUpdate = update.submittedAt;
     participant.attempts += 1;
-    await this.persistRounds();
-    this.emit('round:update', round);
+    try {
+      await this.persistRounds();
+    } catch (error) {
+      // The provider may have accepted the write, but local evidence is not durable.
+      // Block this round in memory; a restart also fails active snapshots closed.
+      round.status = 'failed';
+      this.emit('scoreboard:update', this.getScoreboard());
+      throw error;
+    }
+    this.emit('round:update', structuredClone(round));
     this.emit('scoreboard:update', this.getScoreboard());
+    this.log('submission-accepted', {
+      roundId: round.id,
+      jobId: participant.jobId,
+      role: participant.role,
+      message:
+        'Evidence received; operator review is required before assigning winners',
+    });
+    return true;
   }
 
   private async onJobFinalized(record: JobRecord): Promise<void> {
+    await this.ready;
     const round = this.rounds.get(record.roundId);
-    if (!round) {
+    if (!round || round.status !== 'closed') {
       return;
     }
     const participant = this.findParticipant(
@@ -828,12 +842,12 @@ export class ArenaService extends ArenaEmitter {
       record.participant,
       record.role,
     );
-    participant.status =
-      participant.status === 'pending' ? 'failed' : participant.status;
-    participant.lastUpdate = new Date();
-    await this.persistRounds();
-    this.emit('round:update', round);
-    this.emit('scoreboard:update', this.getScoreboard());
+    // External notifications must not rewrite the operator's reviewed outcome.
+    if (participant.jobId === record.jobId)
+      this.log('job-finalization-observed', {
+        roundId: round.id,
+        jobId: record.jobId,
+      });
   }
 
   private findParticipant(
@@ -883,7 +897,7 @@ export class ArenaService extends ArenaEmitter {
   private requireRound(roundId: number): RoundState {
     const round = this.rounds.get(roundId);
     if (!round) {
-      throw new Error(`Round ${roundId} not found`);
+      throw new ArenaNotFoundError(`Round ${roundId} not found`);
     }
     return round;
   }

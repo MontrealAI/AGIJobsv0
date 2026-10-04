@@ -108,6 +108,9 @@ jobs:
       - name: Hardhat tests
         working-directory: demo/CULTURE-v0
         run: pnpm run test:contracts:hardhat
+      - name: Compiled arena adapter lifecycle on a disposable local chain
+        working-directory: demo/CULTURE-v0
+        run: pnpm run test:arena-adapter
       - name: Coverage (Foundry & Hardhat)
         working-directory: demo/CULTURE-v0
         run: |

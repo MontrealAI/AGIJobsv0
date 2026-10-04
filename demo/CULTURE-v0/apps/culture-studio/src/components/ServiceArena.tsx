@@ -57,6 +57,11 @@ export function ServiceArena({
   };
   const refresh = async (id: number) => {
     const next = await loadServiceRound(id);
+    if (next.id !== round?.id) {
+      setParticipant('');
+      setCid('');
+      setWinners('');
+    }
     setRound(next);
     setRoundId(next.id);
     setStatus(`Round ${next.id}: ${next.status}`);
@@ -128,9 +133,8 @@ export function ServiceArena({
             />
           </label>
           <label>
-            Validator addresses (comma or newline separated)
+            Validator addresses (optional, comma or newline separated)
             <textarea
-              required
               value={validators}
               onChange={(event) => setValidators(event.target.value)}
             />
@@ -162,6 +166,23 @@ export function ServiceArena({
       <p role="status">{status}</p>
       {round && (
         <>
+          {round.deadlineAt && (
+            <p>
+              Submission deadline:{' '}
+              <time dateTime={round.deadlineAt}>
+                {new Date(round.deadlineAt).toLocaleString()}
+              </time>
+              . Evidence must arrive before this time. Close and review the
+              round after submissions finish.
+            </p>
+          )}
+          {round.status === 'failed' && (
+            <p role="alert" className="error-text">
+              This round requires reconciliation. Preserve its evidence and
+              inspect service logs and transaction receipts before taking
+              further action.
+            </p>
+          )}
           <div className="table-scroll">
             <table>
               <caption>Participant evidence status · round {round.id}</caption>
@@ -193,6 +214,7 @@ export function ServiceArena({
               void run(async () => {
                 await submitServiceWork(round.id, participant, cid);
                 await refresh(round.id);
+                setParticipant('');
                 setCid('');
               });
             }}
@@ -209,8 +231,12 @@ export function ServiceArena({
                   <option value="">Choose a participant</option>
                   {[round.teacher, ...round.students, ...round.validators].map(
                     (p) => (
-                      <option key={p.address} value={p.address}>
-                        {p.address}
+                      <option
+                        key={p.address}
+                        value={p.address}
+                        disabled={p.status !== 'pending'}
+                      >
+                        {p.address} · {p.status}
                       </option>
                     ),
                   )}

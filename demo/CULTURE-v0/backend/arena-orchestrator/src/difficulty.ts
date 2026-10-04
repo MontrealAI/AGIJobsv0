@@ -33,6 +33,14 @@ export class DifficultyController {
 
   constructor(private readonly config: DifficultyConfig) {}
 
+  // Stage an update without committing PID history before settlement succeeds.
+  fork(): DifficultyController {
+    const controller = new DifficultyController(this.config);
+    controller.integral = this.integral;
+    controller.previousError = this.previousError;
+    return controller;
+  }
+
   update(
     currentDifficulty: number,
     observedSuccessRate: number,
