@@ -41,9 +41,13 @@ npm run release:check-size
 
 Enumerate the nested npm projects with `git ls-files '*package-lock.json'` and run `npm audit --package-lock-only --omit=dev --json` in each lockfile's directory. Audit failures must be retained as findings, not rewritten as success. Run `pnpm install --frozen-lockfile` and `pnpm audit --prod --json` separately in `demo/CULTURE-v0`; its pnpm workspace is distinct from the nested npm locks.
 
-**Local verification:** all 583 root contract tests pass, as do 36 computer-work/browser regression tests and 33 provider/runtime/protocol checks. Console typechecking/build/lint, validator UI build/test and Validator Constellation v2 tests/build pass. CULTURE passes all service coverage gates (indexer: 32 tests, 92.94% line coverage; studio: 28 tests, 100% line coverage), script typechecking, quality gates, application builds and its three Hardhat contract tests.
+**Local verification:** all 583 root contract tests pass, as do 40 computer-work/browser regression tests and 33 provider/runtime/protocol checks. Console typechecking/build/lint, validator UI build/test and Validator Constellation v2 tests/build pass. CULTURE passes all service coverage gates (indexer: 32 tests, 92.94% line coverage; studio: 28 tests, 100% line coverage), script typechecking, quality gates, application builds and its three Hardhat contract tests.
 
 Application compatibility checks include console typechecking/build/lint, validator UI build/tests, Validator Constellation v2 tests/build, CULTURE indexer Prisma generation/build/tests, CULTURE service coverage, and Pages build/browser checks. CI must pass on the exact proposed commit before merge. Real provider integration, independent security review and target-network commissioning remain necessary.
+
+The refreshed Mermaid 11.17.2 runtime is regenerated in all three Kardashev-II offline dashboards; all three artifact/README checks pass. The existing diagram sources are retained. Local deployment gas overrides now respect the EIP-7825 transaction cap as well as the block limit. The three-job ASI Take-Off commissioning run passes with three validators per job, actual local escrow settlement, ten implementation records and fourteen constructor records; its token, work and operator identities remain simulated.
+
+CI logs also exposed malformed runner network allowlists: literal multiline YAML was passed as one DNS name and the hardening agent crashed. All 30 affected allowlists now use folded `host:443` entries with the same authorized hostnames. A regression check validates the parsed YAML values and runs in core CI. Blocking policy remains enabled.
 
 ## Primary references
 
@@ -52,3 +56,5 @@ Application compatibility checks include console typechecking/build/lint, valida
 - [fast-xml-parser security advisory](https://github.com/NaturalIntelligence/fast-xml-parser/security/advisories/GHSA-m7jm-9gc2-mpf2)
 - [Fastify 5 migration guide](https://fastify.dev/docs/latest/Guides/Migration-Guide-V5/)
 - [Web3.Storage legacy API retirement](https://blog.web3.storage/posts/the-data-layer-is-here-with-the-new-web3-storage)
+
+- [StepSecurity endpoint restriction guide](https://docs.stepsecurity.io/start-here/guides/how-to-restrict-network-connections-to-explicitly-allowed-endpoints)

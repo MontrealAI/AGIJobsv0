@@ -80,6 +80,8 @@ const VALIDATION_MODULE_ABI = [
   'event ValidationCommitted(uint256 indexed jobId,address indexed validator,bytes32 commitHash,string subdomain)',
   'event ValidationRevealed(uint256 indexed jobId,address indexed validator,bool approve,bytes32 burnTxHash,string subdomain)',
   'function jobNonce(uint256 jobId) view returns (uint256)',
+  'function validators(uint256 jobId) view returns (address[])',
+  'function commitments(uint256 jobId,address validator,uint256 nonce) view returns (bytes32)',
   'function commitValidation(uint256 jobId,bytes32 commitHash,string subdomain,bytes32[] proof)',
   'function revealValidation(uint256 jobId,bool approve,bytes32 salt,string subdomain,bytes32[] proof)',
   'function selectValidators(uint256 jobId,uint256 entropy)',
@@ -1169,6 +1171,38 @@ export class MetaOrchestrator {
     if (!state?.execution) return;
     const job = await this.registry.jobs(jobId);
     const metadata = decodePackedJobMetadata(job.packedMetadata);
+    if ([3, 4, 5].includes(metadata.state ?? -1)) {
+      const { runResult, resultRef } = state.execution;
+      const expectedHash = ethers.keccak256(
+        ethers.toUtf8Bytes(JSON.stringify(runResult.manifest))
+      );
+      if (
+        String(job.agent).toLowerCase() !==
+          state.identity.address.toLowerCase() ||
+        job.resultHash !== expectedHash
+      )
+        throw new Error(
+          'Saved execution does not match the on-chain submission'
+        );
+      // Submission may have mined just before the process exited. Rebuild local
+      // review/dispute evidence from the verified journal without broadcasting.
+      if (!this.completedJobs.has(jobId))
+        this.recordCompletedJob(jobId, state, runResult, resultRef, job);
+      if (metadata.state === 3) {
+        this.beginReviewPhase(jobId, 'submission-recovered');
+        if (this.validationModule && this.validatorIdentities.length) {
+          const validators = await this.validationModule.validators(jobId);
+          await this.handleValidatorsSelected(BigInt(jobId), [...validators]);
+        }
+      } else {
+        this.clearReviewTimer(jobId, 'submission-already-reviewed');
+        if (metadata.state === 5)
+          await this.prepareDisputeEvidenceForJob(jobId, {
+            source: 'recovered-on-chain-dispute',
+          });
+      }
+      return;
+    }
     if (metadata.state !== 2) return; // Only an assigned, unsubmitted job may resume.
     if (
       String(job.agent).toLowerCase() !==
@@ -1333,6 +1367,22 @@ export class MetaOrchestrator {
       });
       return;
     }
+    const nonce: bigint = await this.validationModule.jobNonce(jobId);
+    const existingCommitment = await this.validationModule.commitments(
+      jobId,
+      identity.address,
+      nonce
+    );
+    if (existingCommitment !== ethers.ZeroHash) {
+      // Legacy validators retain reveal secrets in memory. A restart must not
+      // replace a mined commitment with a new salt or imply it was recovered.
+      auditLog('validator.commitment_reconciliation_required', {
+        jobId: jobKey,
+        actor: identity.address,
+        details: { nonce: nonce.toString(), commitment: existingCommitment },
+      });
+      return;
+    }
     let approve = false;
     try {
       const evaluation = await evaluateSubmission({
@@ -1385,7 +1435,6 @@ export class MetaOrchestrator {
       });
       approve = false;
     }
-    const nonce: bigint = await this.validationModule.jobNonce(jobId);
     const salt = ethers.hexlify(ethers.randomBytes(32));
     const commitHash = ethers.solidityPackedKeccak256(
       ['uint256', 'uint256', 'bool', 'bytes32'],
