@@ -11,7 +11,10 @@
   },
   "include": [
     "src/lib/crypto.ts",
+    "src/lib/jobSpecPublication.ts",
     "test/verifyDeliverableSignature.test.ts",
+    "test/jobSpecPublication.test.ts",
+    "test/registryAbi.test.ts",
     "test/global.d.ts"
   ]
 }

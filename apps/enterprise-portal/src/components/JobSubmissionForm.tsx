@@ -1,11 +1,13 @@
 'use client';
 
-import { ChangeEvent, FormEvent, useMemo, useState } from 'react';
+import { ChangeEvent, FormEvent, useMemo, useRef, useState } from 'react';
 import { parseUnits } from 'ethers';
 import type { Log } from 'ethers';
 import { useWeb3 } from '../context/Web3Context';
 import { getJobRegistryContract, portalConfig } from '../lib/contracts';
 import { computeSpecHash } from '../lib/crypto';
+import { submitPublishedSpecification } from '../lib/jobSpecPublication';
+import { SpecificationPublication } from './SpecificationPublication';
 
 interface FormState {
   title: string;
@@ -40,6 +42,7 @@ export const JobSubmissionForm = () => {
   const [txHash, setTxHash] = useState<string>();
   const [jobId, setJobId] = useState<bigint>();
   const [error, setError] = useState<string>();
+  const submissionLock = useRef(false);
 
   const rewardInWei = useMemo(() => {
     if (!form.reward) return 0n;
@@ -60,7 +63,6 @@ export const JobSubmissionForm = () => {
       description: form.description,
       requiredSkills: skills,
       ttlHours: Number(form.ttl) || 0,
-      metadataURI: form.uri,
       sla: form.requiresSla
         ? {
             uri: form.slaUri,
@@ -87,6 +89,8 @@ export const JobSubmissionForm = () => {
       setError('Connect a verified wallet before submitting a job.');
       return;
     }
+    if (submissionLock.current) return;
+    submissionLock.current = true;
     setCreating(true);
     setError(undefined);
     try {
@@ -96,23 +100,23 @@ export const JobSubmissionForm = () => {
       const deadlineSeconds = form.deadline
         ? Math.floor(new Date(form.deadline).getTime() / 1000)
         : now + ttlSeconds;
-      const uri = form.uri || `ipfs://job-spec/${specHash}`;
       const agentTypes = Number(form.agentTypes);
       const method = hasAcknowledged ? 'createJobWithAgentTypes' : 'acknowledgeAndCreateJobWithAgentTypes';
       const registryAddress = await contract.getAddress();
-      const tx = await contract[method](rewardInWei, BigInt(deadlineSeconds), agentTypes, specHash, uri);
+      const tx = await submitPublishedSpecification(specPayload, form.uri, ({ specHash: verifiedHash, uri }) =>
+        contract[method](rewardInWei, BigInt(deadlineSeconds), agentTypes, verifiedHash, uri)
+      );
       setTxHash(tx.hash);
       const receipt = await tx.wait?.();
+      if (!receipt || Number(receipt.status) !== 1) throw new Error('The job transaction was not confirmed successfully');
       const logs: readonly Log[] = receipt?.logs ?? [];
-      const jobLog = logs.find(
-        (log) =>
-          typeof log.address === 'string' && log.address.toLowerCase() === registryAddress.toLowerCase()
-      );
-      if (jobLog) {
+      for (const jobLog of logs) {
+        if (jobLog.address.toLowerCase() !== registryAddress.toLowerCase()) continue;
         try {
           const parsed = contract.interface.parseLog(jobLog);
           if (parsed?.name === 'JobCreated' && parsed.args?.jobId) {
             setJobId(BigInt(parsed.args.jobId));
+            break;
           }
         } catch (parseError) {
           console.error('Failed to parse JobCreated log', parseError);
@@ -123,6 +127,7 @@ export const JobSubmissionForm = () => {
       console.error(err);
       setError((err as Error).message ?? 'Failed to create job');
     } finally {
+      submissionLock.current = false;
       setCreating(false);
     }
   };
@@ -137,6 +142,7 @@ export const JobSubmissionForm = () => {
         <div className="tag purple">On-chain</div>
       </div>
       <form onSubmit={handleSubmit} className="grid">
+        <fieldset disabled={creating} className="grid" style={{ border: 0, padding: 0, minWidth: 0 }}>
         <div className="grid two-column">
           <div>
             <label className="stat-label" htmlFor="job-title">
@@ -213,12 +219,6 @@ export const JobSubmissionForm = () => {
             </label>
             <input id="deadline" type="datetime-local" value={form.deadline} onChange={handleChange('deadline')} />
           </div>
-          <div>
-            <label className="stat-label" htmlFor="uri">
-              Specification URI
-            </label>
-            <input id="uri" placeholder="ipfs://…" value={form.uri} onChange={handleChange('uri')} />
-          </div>
         </div>
         <div className="grid two-column">
           <div>
@@ -255,6 +255,8 @@ export const JobSubmissionForm = () => {
             )}
           </div>
         </div>
+        <SpecificationPublication payload={specPayload} uri={form.uri} inputId="uri"
+          onUriChange={(uri) => setForm((current) => ({ ...current, uri }))} disabled={creating} />
         <div className="code-block">
           <strong>Spec Hash:</strong> {specHash}
         </div>
@@ -270,6 +272,7 @@ export const JobSubmissionForm = () => {
         </div>
         {jobId && <div className="alert success">Job #{jobId.toString()} created successfully.</div>}
         {error && <div className="alert error">{error}</div>}
+        </fieldset>
       </form>
     </section>
   );

@@ -45,6 +45,13 @@ jobs:
       - name: Type-check webapp
         run: npm run webapp:typecheck
 
+      - name: Verify portal specification publication and signatures
+        run: |
+          npm run compile
+          npm --prefix apps/enterprise-portal run typecheck
+          npx --no-install tsc -p apps/enterprise-portal/tsconfig.test.json
+          node --test apps/enterprise-portal/dist-test/test/*.test.js
+
       - name: Lint webapp
         run: npm run webapp:lint
 
@@ -53,6 +60,19 @@ jobs:
 
       - name: Webapp build
         run: npm --prefix apps/enterprise-portal run build
+
+      - name: Verify portal publication journeys and accessibility
+        run: |
+          npx playwright install --with-deps chromium
+          node apps/enterprise-portal/test/publication-browser.cjs
+
+      - name: Retain portal publication evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: portal-publication-evidence
+          path: reports/portal-publication/
+          if-no-files-found: warn
 
       - name: Cypress E2E
         env:

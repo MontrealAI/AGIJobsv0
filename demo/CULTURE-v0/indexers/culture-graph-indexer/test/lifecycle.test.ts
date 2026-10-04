@@ -85,7 +85,7 @@ describe('indexer process lifecycle', () => {
     const handlers = new Map<string, () => Promise<void>>();
     vi.spyOn(process, 'on').mockImplementation(((
       event: string,
-      callback: () => Promise<void>
+      callback: () => Promise<void>,
     ) => {
       handlers.set(event, callback);
       return process;
@@ -127,7 +127,7 @@ describe('indexer process lifecycle', () => {
     expect(state.order).toEqual(['recompute', 'ingest']);
     expect(error).toHaveBeenCalledWith(
       'Failed to start culture graph indexer',
-      expect.any(Error)
+      expect.any(Error),
     );
   });
 });

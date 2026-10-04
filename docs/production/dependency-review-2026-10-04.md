@@ -49,6 +49,8 @@ The refreshed Mermaid 11.17.2 runtime is regenerated in all three Kardashev-II o
 
 CI logs also exposed malformed runner network allowlists: literal multiline YAML was passed as one DNS name and the hardening agent crashed. All 30 affected allowlists now use folded `host:443` entries with the same authorized hostnames. A regression check validates the parsed YAML values and runs in core CI. Blocking policy remains enabled.
 
+Portal compatibility review also corrected unpublished specification placeholders in all three creation flows, aligned its registry ABI with the compiled contract, and added 22 publication/signature/ABI checks. The real-browser publication fixture verifies exact-byte downloads, acceptance and rejection, draft changes, five languages and mobile layout with zero page errors or publication-panel accessibility violations. No wallet transaction or external provider commissioning is simulated as production approval. CULTURE's added lifecycle test now passes its workspace-specific formatting gate.
+
 ## Primary references
 
 - [node-tar security advisory](https://github.com/isaacs/node-tar/security/advisories/GHSA-23hp-3jrh-7fpw)

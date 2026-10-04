@@ -8,9 +8,9 @@ export default function SolvingGovernancePage() {
   return (
     <Web3Provider>
       <LanguageProvider>
-        <main>
+        <div>
           <SolvingGovernanceExperience />
-        </main>
+        </div>
       </LanguageProvider>
     </Web3Provider>
   );

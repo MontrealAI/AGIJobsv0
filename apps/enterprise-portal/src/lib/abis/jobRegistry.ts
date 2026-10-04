@@ -1,276 +1,622 @@
+// Matched against the compiled v2 JobRegistry ABI by registryAbi.test.ts.
 export const jobRegistryAbi = [
   {
-    type: 'function',
+    inputs: [
+      {
+        name: 'reward',
+        type: 'uint256',
+      },
+      {
+        name: 'deadline',
+        type: 'uint64',
+      },
+      {
+        name: 'specHash',
+        type: 'bytes32',
+      },
+      {
+        name: 'uri',
+        type: 'string',
+      },
+    ],
     name: 'createJob',
-    inputs: [
-      { name: 'reward', type: 'uint256' },
-      { name: 'deadline', type: 'uint64' },
-      { name: 'specHash', type: 'bytes32' },
-      { name: 'uri', type: 'string' }
+    outputs: [
+      {
+        name: 'jobId',
+        type: 'uint256',
+      },
     ],
-    outputs: [{ name: 'jobId', type: 'uint256' }],
-    stateMutability: 'nonpayable'
+    stateMutability: 'nonpayable',
+    type: 'function',
   },
   {
-    type: 'function',
+    inputs: [
+      {
+        name: 'reward',
+        type: 'uint256',
+      },
+      {
+        name: 'deadline',
+        type: 'uint64',
+      },
+      {
+        name: 'agentTypes',
+        type: 'uint8',
+      },
+      {
+        name: 'specHash',
+        type: 'bytes32',
+      },
+      {
+        name: 'uri',
+        type: 'string',
+      },
+    ],
     name: 'createJobWithAgentTypes',
-    inputs: [
-      { name: 'reward', type: 'uint256' },
-      { name: 'deadline', type: 'uint64' },
-      { name: 'agentTypes', type: 'uint8' },
-      { name: 'specHash', type: 'bytes32' },
-      { name: 'uri', type: 'string' }
+    outputs: [
+      {
+        name: 'jobId',
+        type: 'uint256',
+      },
     ],
-    outputs: [{ name: 'jobId', type: 'uint256' }],
-    stateMutability: 'nonpayable'
+    stateMutability: 'nonpayable',
+    type: 'function',
   },
   {
-    type: 'function',
+    inputs: [
+      {
+        name: 'reward',
+        type: 'uint256',
+      },
+      {
+        name: 'deadline',
+        type: 'uint64',
+      },
+      {
+        name: 'specHash',
+        type: 'bytes32',
+      },
+      {
+        name: 'uri',
+        type: 'string',
+      },
+    ],
     name: 'acknowledgeAndCreateJob',
-    inputs: [
-      { name: 'reward', type: 'uint256' },
-      { name: 'deadline', type: 'uint64' },
-      { name: 'specHash', type: 'bytes32' },
-      { name: 'uri', type: 'string' }
+    outputs: [
+      {
+        name: 'jobId',
+        type: 'uint256',
+      },
     ],
-    outputs: [{ name: 'jobId', type: 'uint256' }],
-    stateMutability: 'nonpayable'
+    stateMutability: 'nonpayable',
+    type: 'function',
   },
   {
-    type: 'function',
+    inputs: [
+      {
+        name: 'reward',
+        type: 'uint256',
+      },
+      {
+        name: 'deadline',
+        type: 'uint64',
+      },
+      {
+        name: 'agentTypes',
+        type: 'uint8',
+      },
+      {
+        name: 'specHash',
+        type: 'bytes32',
+      },
+      {
+        name: 'uri',
+        type: 'string',
+      },
+    ],
     name: 'acknowledgeAndCreateJobWithAgentTypes',
-    inputs: [
-      { name: 'reward', type: 'uint256' },
-      { name: 'deadline', type: 'uint64' },
-      { name: 'agentTypes', type: 'uint8' },
-      { name: 'specHash', type: 'bytes32' },
-      { name: 'uri', type: 'string' }
+    outputs: [
+      {
+        name: 'jobId',
+        type: 'uint256',
+      },
     ],
-    outputs: [{ name: 'jobId', type: 'uint256' }],
-    stateMutability: 'nonpayable'
+    stateMutability: 'nonpayable',
+    type: 'function',
   },
   {
-    type: 'function',
+    inputs: [
+      {
+        name: '',
+        type: 'uint256',
+      },
+    ],
     name: 'jobs',
-    inputs: [{ name: 'jobId', type: 'uint256' }],
     outputs: [
       {
-        name: '',
-        type: 'tuple',
-        components: [
-          { name: 'employer', type: 'address' },
-          { name: 'agent', type: 'address' },
-          { name: 'reward', type: 'uint128' },
-          { name: 'stake', type: 'uint96' },
-          { name: 'burnReceiptAmount', type: 'uint128' },
-          { name: 'uriHash', type: 'bytes32' },
-          { name: 'resultHash', type: 'bytes32' },
-          { name: 'specHash', type: 'bytes32' },
-          { name: 'packedMetadata', type: 'uint256' }
-        ]
-      }
+        name: 'employer',
+        type: 'address',
+      },
+      {
+        name: 'agent',
+        type: 'address',
+      },
+      {
+        name: 'reward',
+        type: 'uint128',
+      },
+      {
+        name: 'stake',
+        type: 'uint96',
+      },
+      {
+        name: 'burnReceiptAmount',
+        type: 'uint128',
+      },
+      {
+        name: 'uriHash',
+        type: 'bytes32',
+      },
+      {
+        name: 'resultHash',
+        type: 'bytes32',
+      },
+      {
+        name: 'specHash',
+        type: 'bytes32',
+      },
+      {
+        name: 'packedMetadata',
+        type: 'uint256',
+      },
     ],
-    stateMutability: 'view'
+    stateMutability: 'view',
+    type: 'function',
   },
   {
-    type: 'function',
+    inputs: [
+      {
+        name: 'packed',
+        type: 'uint256',
+      },
+    ],
     name: 'decodeJobMetadata',
-    inputs: [{ name: 'packed', type: 'uint256' }],
+    outputs: [
+      {
+        components: [
+          {
+            name: 'state',
+            type: 'uint8',
+          },
+          {
+            name: 'success',
+            type: 'bool',
+          },
+          {
+            name: 'burnConfirmed',
+            type: 'bool',
+          },
+          {
+            name: 'agentTypes',
+            type: 'uint8',
+          },
+          {
+            name: 'feePct',
+            type: 'uint32',
+          },
+          {
+            name: 'agentPct',
+            type: 'uint32',
+          },
+          {
+            name: 'deadline',
+            type: 'uint64',
+          },
+          {
+            name: 'assignedAt',
+            type: 'uint64',
+          },
+        ],
+        name: '',
+        type: 'tuple',
+      },
+    ],
+    stateMutability: 'pure',
+    type: 'function',
+  },
+  {
+    inputs: [],
+    name: 'nextJobId',
     outputs: [
       {
         name: '',
-        type: 'tuple',
-        components: [
-          { name: 'status', type: 'uint8' },
-          { name: 'success', type: 'bool' },
-          { name: 'burnConfirmed', type: 'bool' },
-          { name: 'agentTypes', type: 'uint8' },
-          { name: 'feePct', type: 'uint32' },
-          { name: 'agentPct', type: 'uint32' },
-          { name: 'deadline', type: 'uint64' },
-          { name: 'assignedAt', type: 'uint64' }
-        ]
-      }
+        type: 'uint256',
+      },
     ],
-    stateMutability: 'pure'
+    stateMutability: 'view',
+    type: 'function',
   },
   {
-    type: 'function',
-    name: 'nextJobId',
     inputs: [],
-    outputs: [{ name: '', type: 'uint256' }],
-    stateMutability: 'view'
-  },
-  {
-    type: 'function',
     name: 'feePct',
-    inputs: [],
-    outputs: [{ name: '', type: 'uint256' }],
-    stateMutability: 'view'
+    outputs: [
+      {
+        name: '',
+        type: 'uint256',
+      },
+    ],
+    stateMutability: 'view',
+    type: 'function',
   },
   {
-    type: 'function',
+    inputs: [],
     name: 'owner',
-    inputs: [],
-    outputs: [{ name: '', type: 'address' }],
-    stateMutability: 'view'
+    outputs: [
+      {
+        name: '',
+        type: 'address',
+      },
+    ],
+    stateMutability: 'view',
+    type: 'function',
   },
   {
-    type: 'function',
+    inputs: [
+      {
+        name: 'jobId',
+        type: 'uint256',
+      },
+    ],
     name: 'getJobValidators',
-    inputs: [{ name: 'jobId', type: 'uint256' }],
-    outputs: [{ name: '', type: 'address[]' }],
-    stateMutability: 'view'
+    outputs: [
+      {
+        name: '',
+        type: 'address[]',
+      },
+    ],
+    stateMutability: 'view',
+    type: 'function',
   },
   {
-    type: 'function',
+    inputs: [
+      {
+        name: 'jobId',
+        type: 'uint256',
+      },
+      {
+        name: 'validator',
+        type: 'address',
+      },
+    ],
     name: 'getJobValidatorVote',
-    inputs: [
-      { name: 'jobId', type: 'uint256' },
-      { name: 'validator', type: 'address' }
+    outputs: [
+      {
+        name: '',
+        type: 'bool',
+      },
     ],
-    outputs: [{ name: '', type: 'bool' }],
-    stateMutability: 'view'
+    stateMutability: 'view',
+    type: 'function',
   },
   {
-    type: 'function',
+    inputs: [
+      {
+        name: 'jobId',
+        type: 'uint256',
+      },
+      {
+        name: 'subdomain',
+        type: 'string',
+      },
+      {
+        name: 'proof',
+        type: 'bytes32[]',
+      },
+    ],
     name: 'applyForJob',
-    inputs: [
-      { name: 'jobId', type: 'uint256' },
-      { name: 'subdomain', type: 'string' },
-      { name: 'proof', type: 'bytes32[]' }
-    ],
     outputs: [],
-    stateMutability: 'nonpayable'
+    stateMutability: 'nonpayable',
+    type: 'function',
   },
   {
-    type: 'function',
+    inputs: [
+      {
+        name: 'jobId',
+        type: 'uint256',
+      },
+      {
+        name: 'resultHash',
+        type: 'bytes32',
+      },
+      {
+        name: 'resultURI',
+        type: 'string',
+      },
+      {
+        name: 'subdomain',
+        type: 'string',
+      },
+      {
+        name: 'proof',
+        type: 'bytes32[]',
+      },
+    ],
     name: 'submit',
-    inputs: [
-      { name: 'jobId', type: 'uint256' },
-      { name: 'resultHash', type: 'bytes32' },
-      { name: 'resultURI', type: 'string' },
-      { name: 'subdomain', type: 'string' },
-      { name: 'proof', type: 'bytes32[]' }
-    ],
     outputs: [],
-    stateMutability: 'nonpayable'
+    stateMutability: 'nonpayable',
+    type: 'function',
   },
   {
-    type: 'function',
+    inputs: [
+      {
+        name: 'jobId',
+        type: 'uint256',
+      },
+      {
+        name: 'burnTxHash',
+        type: 'bytes32',
+      },
+      {
+        name: 'amount',
+        type: 'uint256',
+      },
+      {
+        name: 'blockNumber',
+        type: 'uint256',
+      },
+    ],
     name: 'submitBurnReceipt',
-    inputs: [
-      { name: 'jobId', type: 'uint256' },
-      { name: 'burnTxHash', type: 'bytes32' },
-      { name: 'amount', type: 'uint256' },
-      { name: 'blockNumber', type: 'uint256' }
-    ],
     outputs: [],
-    stateMutability: 'nonpayable'
+    stateMutability: 'nonpayable',
+    type: 'function',
   },
   {
-    type: 'function',
+    inputs: [
+      {
+        name: 'jobId',
+        type: 'uint256',
+      },
+      {
+        name: 'burnTxHash',
+        type: 'bytes32',
+      },
+    ],
     name: 'confirmEmployerBurn',
-    inputs: [
-      { name: 'jobId', type: 'uint256' },
-      { name: 'burnTxHash', type: 'bytes32' }
-    ],
     outputs: [],
-    stateMutability: 'nonpayable'
+    stateMutability: 'nonpayable',
+    type: 'function',
   },
   {
-    type: 'function',
+    inputs: [
+      {
+        name: 'jobId',
+        type: 'uint256',
+      },
+    ],
     name: 'finalize',
-    inputs: [{ name: 'jobId', type: 'uint256' }],
     outputs: [],
-    stateMutability: 'nonpayable'
+    stateMutability: 'nonpayable',
+    type: 'function',
   },
   {
-    type: 'function',
+    inputs: [],
     name: 'pause',
-    inputs: [],
     outputs: [],
-    stateMutability: 'nonpayable'
+    stateMutability: 'nonpayable',
+    type: 'function',
   },
   {
-    type: 'function',
+    inputs: [],
     name: 'unpause',
-    inputs: [],
     outputs: [],
-    stateMutability: 'nonpayable'
-  },
-  {
+    stateMutability: 'nonpayable',
     type: 'function',
-    name: 'hasBurnReceipt',
+  },
+  {
     inputs: [
-      { name: 'jobId', type: 'uint256' },
-      { name: 'burnTxHash', type: 'bytes32' }
+      {
+        name: 'jobId',
+        type: 'uint256',
+      },
+      {
+        name: 'burnTxHash',
+        type: 'bytes32',
+      },
     ],
-    outputs: [{ name: '', type: 'bool' }],
-    stateMutability: 'view'
+    name: 'hasBurnReceipt',
+    outputs: [
+      {
+        name: '',
+        type: 'bool',
+      },
+    ],
+    stateMutability: 'view',
+    type: 'function',
   },
   {
-    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        indexed: true,
+        name: 'jobId',
+        type: 'uint256',
+      },
+      {
+        indexed: true,
+        name: 'employer',
+        type: 'address',
+      },
+      {
+        indexed: true,
+        name: 'agent',
+        type: 'address',
+      },
+      {
+        indexed: false,
+        name: 'reward',
+        type: 'uint256',
+      },
+      {
+        indexed: false,
+        name: 'stake',
+        type: 'uint256',
+      },
+      {
+        indexed: false,
+        name: 'fee',
+        type: 'uint256',
+      },
+      {
+        indexed: false,
+        name: 'specHash',
+        type: 'bytes32',
+      },
+      {
+        indexed: false,
+        name: 'uri',
+        type: 'string',
+      },
+    ],
     name: 'JobCreated',
-    inputs: [
-      { name: 'jobId', type: 'uint256', indexed: true },
-      { name: 'employer', type: 'address', indexed: true },
-      { name: 'agent', type: 'address', indexed: true },
-      { name: 'reward', type: 'uint256', indexed: false },
-      { name: 'stake', type: 'uint256', indexed: false },
-      { name: 'fee', type: 'uint256', indexed: false },
-      { name: 'specHash', type: 'bytes32', indexed: false },
-      { name: 'uriHash', type: 'bytes32', indexed: false }
-    ]
+    type: 'event',
   },
   {
-    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        indexed: true,
+        name: 'jobId',
+        type: 'uint256',
+      },
+      {
+        indexed: true,
+        name: 'applicant',
+        type: 'address',
+      },
+      {
+        indexed: false,
+        name: 'subdomain',
+        type: 'string',
+      },
+    ],
     name: 'ApplicationSubmitted',
-    inputs: [
-      { name: 'jobId', type: 'uint256', indexed: true },
-      { name: 'applicant', type: 'address', indexed: true },
-      { name: 'subdomain', type: 'string', indexed: false }
-    ]
+    type: 'event',
   },
   {
-    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        indexed: true,
+        name: 'jobId',
+        type: 'uint256',
+      },
+      {
+        indexed: true,
+        name: 'agent',
+        type: 'address',
+      },
+      {
+        indexed: false,
+        name: 'subdomain',
+        type: 'string',
+      },
+    ],
     name: 'AgentAssigned',
-    inputs: [
-      { name: 'jobId', type: 'uint256', indexed: true },
-      { name: 'agent', type: 'address', indexed: true },
-      { name: 'subdomain', type: 'string', indexed: false }
-    ]
+    type: 'event',
   },
   {
-    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        indexed: true,
+        name: 'jobId',
+        type: 'uint256',
+      },
+      {
+        indexed: true,
+        name: 'worker',
+        type: 'address',
+      },
+      {
+        indexed: false,
+        name: 'resultHash',
+        type: 'bytes32',
+      },
+      {
+        indexed: false,
+        name: 'resultURI',
+        type: 'string',
+      },
+      {
+        indexed: false,
+        name: 'subdomain',
+        type: 'string',
+      },
+    ],
     name: 'ResultSubmitted',
-    inputs: [
-      { name: 'jobId', type: 'uint256', indexed: true },
-      { name: 'worker', type: 'address', indexed: true },
-      { name: 'resultHash', type: 'bytes32', indexed: false },
-      { name: 'resultURI', type: 'string', indexed: false },
-      { name: 'subdomain', type: 'string', indexed: false }
-    ]
+    type: 'event',
   },
   {
-    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        indexed: true,
+        name: 'jobId',
+        type: 'uint256',
+      },
+    ],
     name: 'ValidationStartTriggered',
-    inputs: [{ name: 'jobId', type: 'uint256', indexed: true }]
+    type: 'event',
   },
   {
-    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        indexed: true,
+        name: 'jobId',
+        type: 'uint256',
+      },
+      {
+        indexed: true,
+        name: 'worker',
+        type: 'address',
+      },
+    ],
     name: 'JobFinalized',
-    inputs: [
-      { name: 'jobId', type: 'uint256', indexed: true },
-      { name: 'worker', type: 'address', indexed: true }
-    ]
+    type: 'event',
   },
   {
-    type: 'event',
-    name: 'JobDisputed',
+    anonymous: false,
     inputs: [
-      { name: 'jobId', type: 'uint256', indexed: true },
-      { name: 'caller', type: 'address', indexed: true }
-    ]
-  }
+      {
+        indexed: true,
+        name: 'jobId',
+        type: 'uint256',
+      },
+      {
+        indexed: true,
+        name: 'caller',
+        type: 'address',
+      },
+    ],
+    name: 'JobDisputed',
+    type: 'event',
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: true,
+        name: 'jobId',
+        type: 'uint256',
+      },
+      {
+        indexed: false,
+        name: 'success',
+        type: 'bool',
+      },
+    ],
+    name: 'JobCompleted',
+    type: 'event',
+  },
 ] as const;

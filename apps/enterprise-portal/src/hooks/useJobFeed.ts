@@ -120,7 +120,7 @@ const deriveSpecUri = (params: {
   uriHash?: string;
   createdArgs?: unknown;
 }): string | undefined => {
-  const { specHash, uriHash, createdArgs } = params;
+  const { uriHash, createdArgs } = params;
   const expectedHash =
     uriHash && uriHash !== ZERO_HASH && isHex32(uriHash)
       ? uriHash.toLowerCase()
@@ -150,22 +150,9 @@ const deriveSpecUri = (params: {
       ? eventUri
       : undefined;
 
-  const specDerived = (() => {
-    const hash = specHash?.toLowerCase();
-    if (!hash || hash === ZERO_HASH) return undefined;
-    const suffix = hash.startsWith('0x') ? hash.slice(2) : hash;
-    if (!suffix) return undefined;
-    return `ipfs://job-spec/${suffix}`;
-  })();
-
-  const validatedSpecUri =
-    specDerived && (!expectedHash || hashMatches(specDerived, expectedHash))
-      ? specDerived
-      : undefined;
-
+  // A content hash is not an IPFS location. Only the recorded creation URI
+  // can identify published bytes; missing history remains visibly unavailable.
   if (validatedEventUri) return validatedEventUri;
-  if (validatedSpecUri) return validatedSpecUri;
-  if (!expectedHash) return eventUri ?? specDerived;
   return undefined;
 };
 
