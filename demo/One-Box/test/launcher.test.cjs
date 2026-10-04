@@ -42,11 +42,12 @@ test('resolveConfig normalises prefix and derives defaults', () => {
   const env = {
     RPC_URL: 'http://localhost:8545',
     JOB_REGISTRY_ADDRESS: VALID_JOB_REGISTRY,
-    ONEBOX_RELAYER_PRIVATE_KEY: '0xdead',
+    ONEBOX_RELAYER_PRIVATE_KEY: '0x' + '11'.repeat(32),
+    ONEBOX_API_TOKEN: 'local-test-token-1234',
     ONEBOX_PORT: '9010',
     ONEBOX_UI_PORT: '4400',
     ONEBOX_PUBLIC_ONEBOX_PREFIX: 'mission-control/',
-    ONEBOX_API_TOKEN: 'demo',
+    ONEBOX_API_TOKEN: 'local-test-token-1234',
     STAKE_MANAGER_ADDRESS: VALID_STAKE_MANAGER,
     SYSTEM_PAUSE_ADDRESS: VALID_SYSTEM_PAUSE,
     AGENT_ADDRESS: 'agent.example.eth',
@@ -55,7 +56,7 @@ test('resolveConfig normalises prefix and derives defaults', () => {
   assert.equal(config.orchestratorPort, 9010);
   assert.equal(config.uiPort, 4400);
   assert.equal(config.prefix, '/mission-control');
-  assert.equal(config.apiToken, 'demo');
+  assert.equal(config.apiToken, 'local-test-token-1234');
   assert.equal(config.publicOrchestratorUrl, 'http://127.0.0.1:9010');
   assert.equal(config.maxJobBudgetAgia, undefined);
   assert.equal(config.maxJobDurationDays, undefined);
@@ -72,7 +73,8 @@ test('resolveConfig allows explicit CLI overrides to win over environment', () =
   const env = {
     RPC_URL: 'http://localhost:8545',
     JOB_REGISTRY_ADDRESS: VALID_JOB_REGISTRY,
-    ONEBOX_RELAYER_PRIVATE_KEY: '0xdead',
+    ONEBOX_RELAYER_PRIVATE_KEY: '0x' + '11'.repeat(32),
+    ONEBOX_API_TOKEN: 'local-test-token-1234',
     ONEBOX_PORT: '9999',
     ONEBOX_UI_PORT: '4444',
     ONEBOX_PUBLIC_ORCHESTRATOR_URL: 'http://example.invalid',
@@ -84,7 +86,7 @@ test('resolveConfig allows explicit CLI overrides to win over environment', () =
     uiPort: 5050,
     uiHost: '0.0.0.0',
     prefix: '/mission',
-    apiToken: 'cli-token',
+    apiToken: 'cli-token-long-enough',
     defaultMode: 'expert',
     publicOrchestratorUrl: 'http://demo.internal:8088/onebox',
     explorerBase: 'https://scan.example/tx/',
@@ -98,7 +100,7 @@ test('resolveConfig allows explicit CLI overrides to win over environment', () =
   assert.equal(config.uiPort, 5050);
   assert.equal(config.uiHost, '0.0.0.0');
   assert.equal(config.prefix, '/mission');
-  assert.equal(config.apiToken, 'cli-token');
+  assert.equal(config.apiToken, 'cli-token-long-enough');
   assert.equal(config.defaultMode, 'expert');
   assert.equal(config.publicOrchestratorUrl, 'http://demo.internal:8088/onebox');
   assert.equal(config.explorerBase, 'https://scan.example/tx/');
@@ -118,7 +120,8 @@ test('resolveConfig parses guardrail environment variables', () => {
   const env = {
     RPC_URL: 'http://localhost:8545',
     JOB_REGISTRY_ADDRESS: VALID_JOB_REGISTRY,
-    ONEBOX_RELAYER_PRIVATE_KEY: '0xdead',
+    ONEBOX_RELAYER_PRIVATE_KEY: '0x' + '11'.repeat(32),
+    ONEBOX_API_TOKEN: 'local-test-token-1234',
     STAKE_MANAGER_ADDRESS: '   0x0000000000000000000000000000000000004567   ',
     SYSTEM_PAUSE_ADDRESS: '   ',
     AGENT_ADDRESS: ' 0x000000000000000000000000000000000000abcd ',
@@ -145,7 +148,8 @@ test('resolveConfig merges CLI example overrides with environment shortcuts', ()
   const env = {
     RPC_URL: 'http://localhost:8545',
     JOB_REGISTRY_ADDRESS: VALID_JOB_REGISTRY,
-    ONEBOX_RELAYER_PRIVATE_KEY: '0xdead',
+    ONEBOX_RELAYER_PRIVATE_KEY: '0x' + '11'.repeat(32),
+    ONEBOX_API_TOKEN: 'local-test-token-1234',
     ONEBOX_UI_SHORTCUTS: 'Research | Finalize job 12',
     STAKE_MANAGER_ADDRESS: VALID_STAKE_MANAGER,
     SYSTEM_PAUSE_ADDRESS: VALID_SYSTEM_PAUSE,
@@ -158,7 +162,8 @@ test('resolveConfig surfaces warnings when governance control addresses are omit
   const env = {
     RPC_URL: 'http://localhost:8545',
     JOB_REGISTRY_ADDRESS: VALID_JOB_REGISTRY,
-    ONEBOX_RELAYER_PRIVATE_KEY: '0xbeef',
+    ONEBOX_RELAYER_PRIVATE_KEY: '0x' + '11'.repeat(32),
+    ONEBOX_API_TOKEN: 'local-test-token-1234',
   };
   const config = resolveConfig(env);
   assert.ok(
@@ -175,7 +180,8 @@ test('resolveConfig reports invalid governance control addresses', () => {
   const env = {
     RPC_URL: 'http://localhost:8545',
     JOB_REGISTRY_ADDRESS: VALID_JOB_REGISTRY,
-    ONEBOX_RELAYER_PRIVATE_KEY: '0xbeef',
+    ONEBOX_RELAYER_PRIVATE_KEY: '0x' + '11'.repeat(32),
+    ONEBOX_API_TOKEN: 'local-test-token-1234',
     STAKE_MANAGER_ADDRESS: 'invalid-stake',
     SYSTEM_PAUSE_ADDRESS: '0x1234',
     AGENT_ADDRESS: '0x0',
@@ -199,52 +205,26 @@ test('resolveConfig rejects invalid job registry addresses when strict', () => {
   const env = {
     RPC_URL: 'http://localhost:8545',
     JOB_REGISTRY_ADDRESS: '0x1234',
-    ONEBOX_RELAYER_PRIVATE_KEY: '0xbeef',
+    ONEBOX_RELAYER_PRIVATE_KEY: '0x' + '11'.repeat(32),
+    ONEBOX_API_TOKEN: 'local-test-token-1234',
     STAKE_MANAGER_ADDRESS: VALID_STAKE_MANAGER,
     SYSTEM_PAUSE_ADDRESS: VALID_SYSTEM_PAUSE,
   };
   assert.throws(() => resolveConfig(env), /JOB_REGISTRY_ADDRESS must be a 0x-prefixed 40-character address/);
 });
 
-test('resolveConfig warns when exposing orchestrator without API token', () => {
-  const env = {
-    RPC_URL: 'http://localhost:8545',
-    JOB_REGISTRY_ADDRESS: VALID_JOB_REGISTRY,
-    ONEBOX_RELAYER_PRIVATE_KEY: '0xbeef',
-    ONEBOX_PUBLIC_ORCHESTRATOR_URL: 'https://demo.example/onebox',
-    STAKE_MANAGER_ADDRESS: VALID_STAKE_MANAGER,
-    SYSTEM_PAUSE_ADDRESS: VALID_SYSTEM_PAUSE,
-  };
-  const config = resolveConfig(env);
-  assert.ok(
-    config.warnings.some((warning) =>
-      warning.includes('No API token configured while exposing the orchestrator beyond loopback'),
-    ),
-  );
-});
-
-test('resolveConfig warns when the orchestrator URL cannot be parsed', () => {
-  const env = {
-    RPC_URL: 'http://localhost:8545',
-    JOB_REGISTRY_ADDRESS: VALID_JOB_REGISTRY,
-    ONEBOX_RELAYER_PRIVATE_KEY: '0xbeef',
-    ONEBOX_PUBLIC_ORCHESTRATOR_URL: 'not-a-url',
-    STAKE_MANAGER_ADDRESS: VALID_STAKE_MANAGER,
-    SYSTEM_PAUSE_ADDRESS: VALID_SYSTEM_PAUSE,
-  };
-  const config = resolveConfig(env);
-  assert.ok(
-    config.warnings.some((warning) =>
-      warning.includes("is not a valid absolute URL"),
-    ),
-  );
+test('resolveConfig rejects missing API authentication and malformed URLs', () => {
+  const env = { RPC_URL: 'http://localhost:8545', JOB_REGISTRY_ADDRESS: VALID_JOB_REGISTRY, ONEBOX_RELAYER_PRIVATE_KEY: '0x' + '11'.repeat(32) };
+  assert.throws(() => resolveConfig(env), /Missing required/);
+  assert.throws(() => resolveConfig({ ...env, ONEBOX_API_TOKEN: 'local-test-token-1234', ONEBOX_PUBLIC_ORCHESTRATOR_URL: 'not-a-url' }), /Invalid public orchestrator URL/);
 });
 
 test('resolveConfig collects warnings for malformed guardrails when allowPartial', () => {
   const env = {
     RPC_URL: 'http://localhost:8545',
     JOB_REGISTRY_ADDRESS: VALID_JOB_REGISTRY,
-    ONEBOX_RELAYER_PRIVATE_KEY: '0xdead',
+    ONEBOX_RELAYER_PRIVATE_KEY: '0x' + '11'.repeat(32),
+    ONEBOX_API_TOKEN: 'local-test-token-1234',
     ONEBOX_MAX_JOB_BUDGET_AGIA: 'abc',
     ONEBOX_MAX_JOB_DURATION_DAYS: '-1',
     STAKE_MANAGER_ADDRESS: VALID_STAKE_MANAGER,
@@ -257,12 +237,13 @@ test('resolveConfig collects warnings for malformed guardrails when allowPartial
   assert.ok(config.warnings.some((warning) => warning.includes('ONEBOX_MAX_JOB_DURATION_DAYS')));
 });
 
-test('createDemoUrl encodes orchestrator, prefix, token, and mode', () => {
+test('createDemoUrl encodes public configuration without the API token', () => {
   const env = {
     RPC_URL: 'http://localhost:8545',
     JOB_REGISTRY_ADDRESS: VALID_JOB_REGISTRY,
-    ONEBOX_RELAYER_PRIVATE_KEY: '0xdead',
-    ONEBOX_API_TOKEN: 'secret',
+    ONEBOX_RELAYER_PRIVATE_KEY: '0x' + '11'.repeat(32),
+    ONEBOX_API_TOKEN: 'local-test-token-1234',
+    ONEBOX_API_TOKEN: 'local-secret-token',
     ONEBOX_UI_DEFAULT_MODE: 'expert',
     STAKE_MANAGER_ADDRESS: VALID_STAKE_MANAGER,
     SYSTEM_PAUSE_ADDRESS: VALID_SYSTEM_PAUSE,
@@ -273,7 +254,7 @@ test('createDemoUrl encodes orchestrator, prefix, token, and mode', () => {
   assert.equal(parsed.hostname, '127.0.0.1');
   assert.equal(parsed.searchParams.get('orchestrator'), config.publicOrchestratorUrl);
   assert.equal(parsed.searchParams.get('oneboxPrefix'), config.prefix);
-  assert.equal(parsed.searchParams.get('token'), 'secret');
+  assert.equal(parsed.searchParams.get('token'), null);
   assert.equal(parsed.searchParams.get('mode'), 'expert');
   assert.equal(parsed.searchParams.get('welcome'), null);
   assert.equal(parsed.searchParams.get('examples'), null);
@@ -283,7 +264,8 @@ test('createDemoUrl includes welcome and examples when provided', () => {
   const env = {
     RPC_URL: 'http://localhost:8545',
     JOB_REGISTRY_ADDRESS: VALID_JOB_REGISTRY,
-    ONEBOX_RELAYER_PRIVATE_KEY: '0xdead',
+    ONEBOX_RELAYER_PRIVATE_KEY: '0x' + '11'.repeat(32),
+    ONEBOX_API_TOKEN: 'local-test-token-1234',
     ONEBOX_UI_WELCOME: 'Hello operator',
     ONEBOX_UI_SHORTCUTS: '["Spin up research mission", "Finalize job 42"]',
     STAKE_MANAGER_ADDRESS: VALID_STAKE_MANAGER,
@@ -318,6 +300,7 @@ test('resolveConfig flags placeholder environment values', () => {
   assert.deepEqual(sortedMissing, [
     'JOB_REGISTRY_ADDRESS',
     'ONEBOX_RELAYER_PRIVATE_KEY',
+    'ONEBOX_API_TOKEN',
     'RPC_URL',
   ].sort());
 });

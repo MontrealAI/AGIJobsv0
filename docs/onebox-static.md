@@ -4,6 +4,8 @@ This guide explains how to run, configure, and operate the **AGI Jobs v0 One-Box
 
 ---
 
+> For the current launcher, offline lifecycle, token handling and connected API scope, start with the [One-Box operator guide](../demo/One-Box/README.md). The integration patterns below describe optional infrastructure, not capabilities proven by the offline preview.
+
 ## 1. Architecture recap
 
 ```
@@ -30,7 +32,7 @@ The static client ships with a **friendly error dictionary** (`FRIENDLY_ERROR_RU
 | 3 | Set Account Abstraction credentials | Provision a bundler and sponsored Paymaster (Alchemy Account Kit or equivalent). Stake and fund them according to ERC-4337 requirements. |
 | 4 | Configure relayer fallback | If AA is unavailable, create an OpenZeppelin Defender Relayer with contract/function allowlists and daily spend caps. |
 | 5 | Configure orchestrator IPFS pinning | Set `PINNER_TOKEN` (and optional `PINNER_ENDPOINT`) so the server can pin metadata through web3.storage or your chosen provider. |
-| 6 | Populate [`apps/onebox-static/config.js`](../apps/onebox-static/config.js) | Update planner/executor URLs, AA chainId, and bundler label. |
+| 6 | Populate [`apps/onebox-static/config.js`](../apps/onebox-static/config.mjs) | Update planner/executor URLs, AA chainId, and bundler label. |
 | 7 | Generate web3.storage tokens | Issue per-origin tokens to team members; tokens stay in-browser. Consider revocation schedules. |
 | 8 | Build the hashed static bundle | Run `npm run onebox:static:build` to populate `apps/onebox-static/dist`. |
 | 9 | Pin the generated bundle to IPFS | `web3 storage upload apps/onebox-static/dist` or your preferred pinning workflow. |
@@ -69,12 +71,12 @@ The static client ships with a **friendly error dictionary** (`FRIENDLY_ERROR_RU
    - Allowed target contract addresses (AGIJobsv0 v2 modules only).
    - Spend caps per intent (`create_job`, `stake`, etc.).
    - Rate limiting keyed by `meta.traceId` or end-user fingerprinting headers.
-3. Point [`AA_MODE`](../apps/onebox-static/config.js) to the desired chainId (e.g., 8453 for Base).
+3. Point [`AA_MODE`](../apps/onebox-static/config.mjs) to the desired chainId (e.g., 8453 for Base).
 4. The orchestrator should simulate every `UserOperation` before submit and surface errors back through SSE.
 
 ### Relayer fallback
 
-- Configure an OpenZeppelin Defender Relayer with scoped API keys. The orchestrator should call the relayer only when `AA_MODE.enabled` is `false`.
+- In the static job-intent flow, guest mode (`AA_MODE.enabled` is `true`) requests relayer execution; expert mode (`false`) requests wallet calldata without submitting it. External AA/relayer providers require their own integration and commissioning.
 - Defender allows function-specific policies; restrict to the v2 contract selectors.
 - Include replay protection (trace id + nonce) and log correlation to the ICS meta trace.
 

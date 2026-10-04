@@ -83,7 +83,7 @@ test('probeRpc reports invalid address formats immediately', async () => {
   };
   const fetchImpl = async (_url, options) => ({
     ok: true,
-    json: async () => chainIdResponse,
+    json: async () => ({ ...chainIdResponse, id: JSON.parse(options.body).id }),
   });
 
   const probe = await probeRpc({
@@ -109,7 +109,7 @@ test('probeRpc flags placeholder and missing addresses without fetching bytecode
     if (payload.method === 'eth_chainId') {
       return {
         ok: true,
-        json: async () => chainIdResponse,
+        json: async () => ({ ...chainIdResponse, id: JSON.parse(options.body).id }),
       };
     }
     throw new Error(`Unexpected method ${payload.method}`);
@@ -201,7 +201,7 @@ test('fetchContractOwner decodes owner address from eth_call responses', async (
       if (!call || call.data !== '0x8da5cb5b') {
         throw new Error('Unexpected call payload');
       }
-      return `0x${'0'.repeat(24)}c0de`;
+      return `0x${'0'.repeat(60)}c0de`;
     },
   });
   await new Promise((resolve) => server.listen(0, resolve));
@@ -250,7 +250,7 @@ test('inspectOwnerSurface aggregates owner and pause status', async () => {
         throw new Error('Missing call target');
       }
       if (call.data === '0x8da5cb5b') {
-        return `0x${'0'.repeat(24)}${call.to.slice(-4)}`;
+        return `0x${'0'.repeat(60)}${call.to.slice(-4)}`;
       }
       if (call.data === '0x5c975abb') {
         return call.to.endsWith('c0de') ? `0x${'0'.repeat(64)}` : `0x${'0'.repeat(63)}1`;

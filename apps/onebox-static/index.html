@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>AGI Jobs — One-Box</title>
-  <meta name="description" content="Gasless, walletless one-box interface for AGI Jobs v0" />
+  <meta name="description" content="Preview a job lifecycle or connect a reviewed AGI Jobs deployment" />
   <meta
     http-equiv="Content-Security-Policy"
     content="default-src 'self'; style-src 'self'; script-src 'self'; connect-src {{ connect_src }}; img-src 'self' data:; font-src 'self'; base-uri 'self'; form-action 'self';"
@@ -22,13 +22,51 @@
   <header>
     <div>
       <h1>AGI Jobs — One-Box</h1>
-      <span>Gasless, walletless Web3 interface powered by the AGI-Alpha orchestrator.</span>
+      <span>Describe the work. Review the plan. Follow the evidence.</span>
     </div>
-    <button id="advanced-toggle" type="button">Advanced</button>
+    <button id="advanced-toggle" type="button" aria-controls="advanced-panel" aria-expanded="false">Advanced</button>
   </header>
 
-  <main class="layout">
-    <section id="feed" role="log" aria-live="polite"></section>
+  <section class="onebox-intro" aria-labelledby="journey-title">
+    <p class="onebox-eyebrow">THE ONE-BOX WORKSPACE</p>
+    <h2 id="journey-title">One request.<br>A plan you can inspect.</h2>
+    <p>Explore a complete job lifecycle in an offline teaching model, or connect your own reviewed deployment. Every execution starts with a plan you can confirm or cancel.</p>
+    <div class="journey-steps"><span><b>01</b> Describe the work</span><span><b>02</b> Review &amp; confirm</span><span><b>03</b> Inspect the outcome</span></div>
+    <div class="scope-row"><strong id="execution-scope" role="status">Checking execution mode…</strong><button id="preview-export" type="button">Export preview evidence</button></div>
+    <details class="preview-guide"><summary>First time here? Follow a useful example</summary><p>Post a source-cited software audit. Then use <strong>Apply job 1 → Submit job 1 → Validate job 1 → Finalize job 1</strong>. Confirm each plan. Try finalizing too early to see the evidence gate, or reject a review to explore a dispute.</p><p>Preview jobs, workers and reviews are simulated and reset on reload. Export the session before leaving. Connected mode needs your configured backend and its API token under Advanced.</p></details>
+  </section>
+  <section
+  id="shortcuts"
+  class="shortcuts"
+  aria-label="Suggested prompts"
+  hidden
+></section>
+  <form id="composer">
+  <div class="field">
+      <label for="question">Describe what you want to do</label>
+      <div class="input-row">
+        <input
+          id="question"
+          type="text"
+          placeholder='e.g., "Post a source-cited software audit for 5 AGIALPHA"'
+          autocomplete="off"
+          aria-describedby="question-hint"
+          required
+        />
+        <button id="send" type="submit">Send</button>
+      </div>
+      <p id="question-hint" class="hint">Review the proposed action before confirming. Preview mode never moves value.</p>
+    </div>
+    <div class="field file-input">
+      <label for="attachment">Attachments (optional)</label>
+      <input id="attachment" type="file" multiple aria-describedby="attachment-hint" />
+      <button id="attachment-clear" type="button">Clear attachments</button>
+      <p id="attachment-hint" class="hint">Optional for attachment-aware connected plans. Preview accepts text only; no file is uploaded automatically.</p>
+    </div>
+  </form>
+  <main class="layout" id="main">
+
+    <section id="feed" role="log" tabindex="0" aria-live="polite" aria-label="Mission conversation"></section>
     <section
       id="status-board"
       class="status-board"
@@ -38,6 +76,7 @@
     <aside id="advanced-panel" aria-live="polite" aria-label="Advanced details"></aside>
   </main>
 
+  <details class="owner-disclosure"><summary>Owner governance controls <span>Inspect parameters and prepare proposals</span></summary>
   <section
     id="owner-console"
     class="owner-console"
@@ -84,36 +123,11 @@
   <pre id="owner-preview" class="owner-console__pre" aria-live="polite">Preview will appear here.</pre>
 </section>
 
-<section
-  id="shortcuts"
-  class="shortcuts"
-  aria-label="Suggested prompts"
-  hidden
-></section>
 
-<form id="composer">
-  <div class="field">
-      <label for="question">Describe what you want to do</label>
-      <div class="input-row">
-        <input
-          id="question"
-          type="text"
-          placeholder='e.g., "Post a job for 500 images, 50 AGIALPHA reward"'
-          autocomplete="off"
-          aria-describedby="question-hint"
-          required
-        />
-        <button id="send" type="submit">Send</button>
-      </div>
-      <p id="question-hint" class="hint">One input box. Natural language in; confirmations appear when value moves.</p>
-    </div>
-    <div class="field file-input">
-      <label for="attachment">Attachments (optional)</label>
-      <input id="attachment" type="file" multiple aria-describedby="attachment-hint" />
-      <p id="attachment-hint" class="hint">Drop files anywhere or choose files to pin to IPFS for your next request.</p>
-    </div>
-  </form>
 
+
+
+  </details>
   <noscript>
     <p class="noscript-message">JavaScript is required for the AGI Jobs one-box interface.</p>
   </noscript>

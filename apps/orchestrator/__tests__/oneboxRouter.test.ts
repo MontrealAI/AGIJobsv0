@@ -304,7 +304,11 @@ test('DefaultOneboxService produces calldata for wallet mode', async () => {
     },
   } as unknown as ethers.AbstractProvider;
 
-  const plannerStub = { plan: async () => ({}) } as unknown as any;
+  const plannerStub = { plan: async () => ({ intent: { ok: true, data: {
+    intent: 'create_job', payload: { intent: 'create_job', confirm: true, params: {
+      job: { title: 'Wallet job', description: 'Wallet execution test', rewardAmount: '1', rewardTokenSymbol: 'AGIALPHA', deadlineDays: 3 }, autoApprove: true,
+    } },
+  } }, message: 'Ready', warnings: [] }) } as unknown as any;
 
   const service = new DefaultOneboxService({
     planner: plannerStub,
@@ -313,18 +317,9 @@ test('DefaultOneboxService produces calldata for wallet mode', async () => {
   });
 
   try {
-    const response = await service.execute(
-      {
-        kind: 'post_job',
-        title: 'Wallet job',
-        description: 'Wallet execution test',
-        reward_agialpha: '1',
-        deadline_days: 3,
-        attachments: [],
-        constraints: {},
-      },
-      'wallet'
-    );
+    const plan = await service.plan('Post the wallet test job');
+    const response = await service.execute(plan.intent, 'wallet', { planHash: plan.planHash });
+    await assert.rejects(() => service.execute(plan.intent, 'wallet', { planHash: plan.planHash }), /fresh plan/);
 
     assert.equal(response.ok, true);
     assert.equal(response.to, '0x000000000000000000000000000000000000dEaD');

@@ -21,9 +21,9 @@ export const escape = (value) =>
   String(value).replace(
     /[&<>"']/g,
     (char) =>
-      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[
+      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[
         char
-      ]
+      ])
   );
 const hash = (value) =>
   createHash('sha256').update(value).digest('hex').slice(0, 8);
@@ -89,17 +89,17 @@ export function makeCatalog(data = inventory(root)) {
       kindLabel: local.has(demo.name)
         ? 'Local chain'
         : demo.kind === 'Design guide'
-          ? 'Design guide'
-          : supporting
-            ? 'Supporting code'
-            : 'Code & guide',
+        ? 'Design guide'
+        : supporting
+        ? 'Supporting code'
+        : 'Code & guide',
       kindId: local.has(demo.name)
         ? 'local'
         : demo.kind === 'Design guide'
-          ? 'design'
-          : supporting
-            ? 'support'
-            : 'code',
+        ? 'design'
+        : supporting
+        ? 'support'
+        : 'code',
     };
   });
 }
@@ -372,8 +372,8 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
           index === 0
             ? '<i></i><i></i><i></i><i></i><b>01 → 04</b>'
             : index === 1
-              ? '<i></i><i></i><i></i><i></i><b>↻</b>'
-              : '<i></i><i></i><i></i><i></i><b>✧</b>'
+            ? '<i></i><i></i><i></i><i></i><b>↻</b>'
+            : '<i></i><i></i><i></i><i></i><b>✧</b>'
         }</div><span class="feature-content"><span class="badge ${
           demo.kindId
         }">${demo.kindLabel}</span><strong>${
@@ -538,10 +538,10 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
       demo.kindId === 'local'
         ? 'Runs actual contracts on a disposable localhost chain using mock tokens and synthetic work. Read the setup guide first.'
         : demo.kindId === 'design'
-          ? 'This directory is a design guide. Its original architecture is preserved, with links in the guide to related executable demonstrations.'
-          : demo.kindId === 'support'
-            ? 'This directory contains supporting modules, aliases, tests or assets. Open its source directory to find the parent workflow.'
-            : 'This directory includes code and documentation. Its guide defines dependencies, execution modes and what the results demonstrate.';
+        ? 'This directory is a design guide. Its original architecture is preserved, with links in the guide to related executable demonstrations.'
+        : demo.kindId === 'support'
+        ? 'This directory contains supporting modules, aliases, tests or assets. Open its source directory to find the parent workflow.'
+        : 'This directory includes code and documentation. Its guide defines dependencies, execution modes and what the results demonstrate.';
     const demoBody = `<main id="main" class="section-wrap demo-detail"><div class="breadcrumb"><a href="${base}">Home</a><span>/</span><a href="${base}#explore">Demo collection</a><span>/</span><span>${escape(
       demo.title
     )}</span></div><div class="detail-hero"><div><p class="eyebrow">${
@@ -710,8 +710,28 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
         `<head><meta http-equiv="Content-Security-Policy" content="${csp}">`
       )
   );
+  // Publish the same One-Box console, with an explicit offline boundary.
+  execFileSync(
+    process.execPath,
+    [path.join(root, 'apps/onebox-static/scripts/build.mjs')],
+    { cwd: root, stdio: 'pipe' }
+  );
+  const oneboxDirectory = path.join(output, 'experiments/one-box');
+  fs.cpSync(path.join(root, 'apps/onebox-static/dist'), oneboxDirectory, {
+    recursive: true,
+  });
+  const oneboxIndex = path.join(oneboxDirectory, 'index.html');
+  fs.writeFileSync(
+    oneboxIndex,
+    fs
+      .readFileSync(oneboxIndex, 'utf8')
+      .replace(/connect-src [^;]+;/, "connect-src 'none';")
+      .replace('</head>', '<meta name="onebox-demo" content="true"></head>')
+  );
   const manifest = {
     schemaVersion: 2,
+    oneboxRoute: 'experiments/one-box/',
+
     cultureStudioRoute: 'experiments/culture/',
     dashboardRoutes,
     experiences: Object.keys(experiences).length,
@@ -737,6 +757,7 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
     '',
     ...dashboardRoutes,
     'experiments/culture/',
+    'experiments/one-box/',
     ...catalog.map((demo) => `demos/${demo.id}/`),
     ...guideRoutes.values(),
   ];

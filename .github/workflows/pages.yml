@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
     paths:
+      - 'apps/onebox-static/**'
       - 'website/**'
       - 'scripts/pages/**'
       - 'scripts/demo/**'
@@ -17,6 +18,7 @@ on:
       - '.github/workflows/pages.yml'
   pull_request:
     paths:
+      - 'apps/onebox-static/**'
       - 'website/**'
       - 'scripts/pages/**'
       - 'scripts/demo/**'

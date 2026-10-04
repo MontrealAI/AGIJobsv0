@@ -14,6 +14,13 @@ if (!Object.hasOwn(outputs, target))
   );
 const out = path.join(root, outputs[target]);
 const assets = ['config/agents.json', 'config/agialpha.json'];
+if (target === 'orchestrator')
+  assets.push(
+    'config/contracts.orchestrator.json',
+    'config/owner-control.json',
+    'config/thermodynamics.json',
+    'config/identity-registry.json'
+  );
 if (target === 'gateway')
   assets.push(
     'agent-gateway/ipfs-runtime.cjs',
@@ -33,3 +40,22 @@ for (const asset of assets) {
   fs.copyFileSync(path.join(root, asset), destination);
 }
 console.log(`Packaged ${assets.length} runtime assets for ${target}.`);
+
+if (target === 'orchestrator') {
+  // Bundle the ESM governance dependency graph into the CommonJS server runtime.
+  // TypeScript does not follow ownerConsole's runtime require or copy ESM JS assets.
+  require('esbuild').buildSync({
+    absWorkingDir: root,
+    entryPoints: ['packages/orchestrator/src/tools/governance.ts'],
+    outfile: path.join(out, 'packages/orchestrator/src/tools/governance.cjs'),
+    bundle: true,
+    platform: 'node',
+    format: 'cjs',
+    banner: {
+      js: 'const __oneboxModuleUrl = require("node:url").pathToFileURL(__filename).href;',
+    },
+    define: { 'import.meta.url': '__oneboxModuleUrl' },
+    target: 'node22',
+    external: ['ethers'],
+  });
+}

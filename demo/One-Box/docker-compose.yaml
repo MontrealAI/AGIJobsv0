@@ -1,55 +1,74 @@
-version: '3.9'
-
-x-shared-env: &shared-env
-  env_file:
-    - ../../deployment-config/oneclick.env
-    - .env
-
+# The default profile is an offline UI. Enable `connected` after local setup.
 services:
   anvil:
-    image: ghcr.io/foundry-rs/foundry:latest
-    command:
-      ["anvil", "--host", "0.0.0.0", "--port", "8545", "--chain-id", "31337", "--block-time", "2"]
+    profiles: [connected]
+    image: ghcr.io/foundry-rs/foundry:v1.4.4
+    entrypoint: [anvil]
+    command: [--host, 0.0.0.0, --port, '8545', --chain-id, '31337', --block-time, '2']
     ports:
-      - "8545:8545"
-    networks:
-      - onebox
+      - '127.0.0.1:${ONEBOX_RPC_PORT:-8545}:8545'
+    healthcheck:
+      test: [CMD, cast, chain-id, --rpc-url, 'http://127.0.0.1:8545']
+      interval: 3s
+      timeout: 3s
+      retries: 20
+    networks: [onebox]
 
   orchestrator:
+    profiles: [connected]
     build:
       context: ../..
       dockerfile: deploy/docker/orchestrator.Dockerfile
-    <<: *shared-env
+    command: [node, apps/orchestrator/onebox-server.js]
+    env_file:
+      - path: ../../deployment-config/oneclick.env
+        required: false
+      - path: .env
+        required: false
     environment:
-      ONEBOX_PORT: ${ONEBOX_PORT-8080}
-      ONEBOX_CORS_ALLOW: ${ONEBOX_CORS_ALLOW-http://localhost:4173}
-      ORCHESTRATOR_STATE_BACKEND: ${ORCHESTRATOR_STATE_BACKEND-file}
+      RPC_URL: http://anvil:8545
+      CHAIN_ID: '31337'
+      ONEBOX_HOST: 0.0.0.0
+      ONEBOX_PORT: '8080'
+      ONEBOX_CORS_ALLOW: 'http://127.0.0.1:${ONEBOX_UI_PORT:-4173},http://localhost:${ONEBOX_UI_PORT:-4173}'
+      ORCHESTRATOR_STATE_BACKEND: file
       ORCHESTRATOR_STATE_DIR: /data/orchestrator
-      ORCHESTRATOR_STATE_URL: ${ORCHESTRATOR_STATE_URL-}
     volumes:
       - orchestrator_state:/data/orchestrator
     ports:
-      - "8080:8080"
+      - '127.0.0.1:${ONEBOX_PORT:-8080}:8080'
     depends_on:
-      - anvil
-    networks:
-      - onebox
+      anvil:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://127.0.0.1:8080/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+    networks: [onebox]
 
   onebox-ui:
     build:
       context: ../..
       dockerfile: demo/One-Box/Dockerfile.ui
     environment:
-      ORCHESTRATOR_URL: ${ORCHESTRATOR_URL-http://orchestrator:8080/onebox}
-      ONEBOX_API_TOKEN: ${ONEBOX_API_TOKEN-change-me}
-      EXPLORER_TX_BASE: ${EXPLORER_TX_BASE-}
-      IPFS_GATEWAY_BASE: ${IPFS_GATEWAY_BASE-}
+      # A browser must use a host URL, never Docker's `orchestrator` hostname.
+      ORCHESTRATOR_URL: '${ONEBOX_PUBLIC_ORCHESTRATOR_URL:-}'
+      ONEBOX_PREFIX: '${ONEBOX_PUBLIC_ONEBOX_PREFIX:-/onebox}'
+      ONEBOX_UI_DEFAULT_MODE: '${ONEBOX_UI_DEFAULT_MODE:-guest}'
+      PORT: '4173'
     ports:
-      - "4173:4173"
-    depends_on:
-      - orchestrator
-    networks:
-      - onebox
+      - '127.0.0.1:${ONEBOX_UI_PORT:-4173}:4173'
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://127.0.0.1:4173/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    networks: [onebox]
 
 volumes:
   orchestrator_state:

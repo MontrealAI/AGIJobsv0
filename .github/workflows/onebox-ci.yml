@@ -1,0 +1,69 @@
+name: One-Box demo CI
+
+on:
+  push:
+    branches: [main]
+    paths: &paths
+      - 'demo/One-Box/**'
+      - 'apps/onebox-static/**'
+      - 'apps/orchestrator/**'
+      - 'packages/onebox-orchestrator/**'
+      - 'packages/onebox-sdk/**'
+      - 'packages/orchestrator/**'
+      - 'attestation/eas/**'
+      - 'storage/ipfs/**'
+      - 'scripts/package-runtime-assets.cjs'
+      - 'deploy/docker/orchestrator.Dockerfile'
+      - 'package*.json'
+      - '.nvmrc'
+      - '.github/workflows/onebox-ci.yml'
+  pull_request:
+    paths: *paths
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: onebox-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: One-Box lifecycle, browser and packaged runtimes
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+      - name: Install locked dependencies
+        run: ./scripts/ci/npm-ci.sh
+      - name: Verify configuration, RPC, preview and HTTP service
+        run: |
+          npm run demo:onebox:test
+          npm run build:orchestrator
+          node --test apps/orchestrator/dist/apps/orchestrator/__tests__/{oneboxRouter,planApprovals}.test.js
+          npm run onebox:static:build
+          npm run verify:sri
+      - name: Install test browser
+        run: npx playwright install --with-deps chromium
+      - name: Verify complete user journeys and accessibility
+        run: npm run demo:onebox:qa
+      - name: Verify Docker configuration and packaged runtime startup
+        run: |
+          docker compose -f demo/One-Box/docker-compose.yaml --profile connected config --quiet
+          docker build -f demo/One-Box/Dockerfile.ui -t onebox-ui:test .
+          docker build -f deploy/docker/orchestrator.Dockerfile -t onebox-api:test .
+          bash demo/One-Box/scripts/docker-smoke.sh
+      - name: Save browser evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: onebox-browser-evidence
+          path: reports/onebox/
+          retention-days: 14

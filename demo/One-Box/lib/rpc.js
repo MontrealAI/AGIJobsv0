@@ -1,5 +1,6 @@
 const NETWORK_NAMES = new Map([
   [1, 'Ethereum Mainnet'],
+  [31337, 'Local development chain'],
   [5, 'Goerli'],
   [10, 'Optimism'],
   [56, 'BNB Chain'],
@@ -29,11 +30,11 @@ function toHex(value) {
 }
 
 function parseChainId(hexValue) {
-  if (typeof hexValue !== 'string' || !hexValue.startsWith('0x')) {
+  if (typeof hexValue !== 'string' || !/^0x(?:0|[1-9a-fA-F][0-9a-fA-F]*)$/.test(hexValue)) {
     throw new Error('Invalid chain id value received from RPC');
   }
   const numeric = Number.parseInt(hexValue, 16);
-  if (!Number.isFinite(numeric)) {
+  if (!Number.isSafeInteger(numeric) || numeric <= 0) {
     throw new Error('Unable to parse chain id value');
   }
   return {
@@ -68,6 +69,9 @@ async function jsonRpcRequest(fetchImpl, url, method, params, { timeoutMs = 8000
       throw new Error(`RPC responded with status ${response.status}`);
     }
     const body = await response.json();
+    if (!body || body.jsonrpc !== '2.0' || body.id !== payload.id || !Object.hasOwn(body, 'result') && !Object.hasOwn(body, 'error') || Object.hasOwn(body, 'result') && Object.hasOwn(body, 'error')) {
+      throw new Error('Malformed or mismatched JSON-RPC response');
+    }
     if (body.error) {
       throw new Error(body.error?.message ?? 'RPC returned an error');
     }
@@ -107,7 +111,8 @@ async function evaluateContractPresence({ rpcUrl, address, fetchImpl, timeoutMs 
     const code = await jsonRpcRequest(fetchImpl, rpcUrl, 'eth_getCode', [address, 'latest'], {
       timeoutMs,
     });
-    const hasCode = typeof code === 'string' && code !== '0x';
+    if (typeof code !== 'string' || !/^0x(?:[0-9a-fA-F]{2})*$/.test(code)) throw new Error('Malformed contract bytecode response');
+    const hasCode = code !== '0x';
     return {
       address,
       status: hasCode ? 'ok' : 'no_code',
@@ -180,11 +185,10 @@ async function probeRpc({
 }
 
 function formatEtherFromHex(hexValue) {
-  if (typeof hexValue !== 'string') {
-    throw new TypeError('Balance must be a hex string.');
+  if (typeof hexValue !== 'string' || !/^0x(?:0|[1-9a-fA-F][0-9a-fA-F]*)$/.test(hexValue)) {
+    throw new TypeError('Balance must be a valid unsigned RPC quantity.');
   }
-  const normalized = hexValue === '0x' ? '0x0' : hexValue;
-  const value = BigInt(normalized);
+  const value = BigInt(hexValue);
   const whole = value / WEI_PER_ETHER;
   const remainder = value % WEI_PER_ETHER;
   if (remainder === 0n) {
@@ -223,10 +227,10 @@ async function fetchAccountBalance({
       [trimmedAddress, 'latest'],
       { timeoutMs }
     );
-    const formatted = formatEtherFromHex(typeof balanceHex === 'string' ? balanceHex : '0x0');
+    const formatted = formatEtherFromHex(balanceHex);
     return {
       status: 'ok',
-      balanceHex: typeof balanceHex === 'string' ? balanceHex : '0x0',
+      balanceHex,
       balanceEther: formatted,
     };
   } catch (error) {
@@ -238,40 +242,13 @@ async function fetchAccountBalance({
 }
 
 function decodeAddressFromCallResult(result) {
-  if (typeof result !== 'string' || !result.startsWith('0x')) {
-    throw new Error('Call result is not a hex string');
-  }
-  if (result === '0x') {
-    throw new Error('Call result empty');
-  }
-  const raw = result.slice(2);
-  if (raw.length > 64) {
-    throw new Error('Call result length unexpected');
-  }
-  const body = raw.padStart(64, '0');
-  const candidate = `0x${body.slice(-40)}`;
-  if (!/^0x[0-9a-fA-F]{40}$/.test(candidate)) {
-    throw new Error('Call result did not encode an address');
-  }
-  return candidate;
+  if (typeof result !== 'string' || !/^0x0{24}[0-9a-fA-F]{40}$/.test(result)) throw new Error('Call result did not encode an ABI address');
+  return `0x${result.slice(-40)}`;
 }
 
 function decodeBooleanFromCallResult(result) {
-  if (typeof result !== 'string' || !result.startsWith('0x')) {
-    throw new Error('Call result is not a hex string');
-  }
-  if (result === '0x') {
-    throw new Error('Call result empty');
-  }
-  const body = result.slice(2);
-  if (body.length > 64) {
-    throw new Error('Call result length unexpected');
-  }
-  const lastNibble = body.slice(-1);
-  if (!/[0-9a-f]/i.test(lastNibble)) {
-    throw new Error('Call result did not encode a boolean');
-  }
-  return parseInt(lastNibble, 16) !== 0;
+  if (typeof result !== 'string' || !/^0x0{63}[01]$/.test(result)) throw new Error('Call result did not encode an ABI boolean');
+  return result.endsWith('1');
 }
 
 async function fetchContractOwner({
@@ -427,6 +404,9 @@ async function inspectOwnerSurface({
 
 module.exports = {
   NETWORK_NAMES,
+  jsonRpcRequest,
+  decodeAddressFromCallResult,
+  decodeBooleanFromCallResult,
   normaliseAddress,
   evaluateAddressShape,
   evaluateContractPresence,

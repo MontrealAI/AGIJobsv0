@@ -4,14 +4,14 @@
 [![CI (v2)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml)
 
 This package delivers the zero-dependency static console that can be hosted on any CDN. It mirrors the Next.js cockpit but ships as
-plain HTML/CSS/JS so the contract owner can drop a preconfigured dashboard into sovereign environments without building assets.
+plain HTML/CSS/JS so the contract owner can drop a preconfigured dashboard into sovereign environments after building the hashed, integrity-checked assets.
 
 ## Architecture
 
 - `app.mjs` – Core runtime that validates ICS payloads, calls the orchestrator REST endpoints, streams SSE responses, and renders
-  owner console widgets for on-chain parameter changes.【F:apps/onebox-static/app.mjs†L1-L160】
+  owner console widgets for on-chain parameter changes.
 - `config.mjs` – Build-time configuration (orchestrator URLs, IPFS endpoints, storage keys) that can be overridden by the hosting
-  environment before deployment.【F:apps/onebox-static/config.mjs†L1-L56】
+  environment before deployment.
 - `lib.mjs` – Utilities for intent validation, IPFS pinning, and transcript formatting.
 - `scripts/` – Build helpers for hashing assets and publishing static bundles.
 
@@ -25,28 +25,25 @@ flowchart TD
 
 ## Local preview
 
+From the repository root, use the pinned Node version and locked dependencies:
+
 ```bash
-cd apps/onebox-static
-npm install
-npm run onebox:static:build    # builds dist/ with hashed assets
-npm run onebox:static:publish  # optional deploy helper (configurable)
+nvm use
+npm ci
+npm run demo:onebox:launch -- --demo
 ```
 
-Open `dist/index.html` in a browser and set the orchestrator base URL using the on-screen controls or by defining the following
-query parameters:
+The launcher serves the built bundle over HTTP. Do not open `dist/index.html` with `file://`: module scripts and CSP need a web origin. Follow the [complete One-Box guide](../../demo/One-Box/README.md) for the five-step mission, evidence export, connected mode and Docker.
 
-```
-?orchestrator=https://alpha-orchestrator.example.com&oneboxPrefix=/onebox
-```
+The offline preview uses a session-local state model and blocks API/provider connections. It resets on reload and labels all evidence as simulated. Connected mode requires a reviewed deployment and authentic credentials; the currently supported job-intent actions are post job and finalize. Endpoint preferences may persist in localStorage, but the orchestrator API token is held in page memory only and clears on reload or endpoint changes.
 
-Saved values are cached under `localStorage` keys declared in `config.mjs`, so operators can persist approved endpoints between
-sessions.【F:apps/onebox-static/app.mjs†L19-L80】
+For an independently hosted bundle, configure the intended API origin in the build's CSP before deployment. The One-Box launcher automatically includes its configured origin. Set the API token using Advanced, never a shared launch URL. Build and verify with `npm run onebox:static:build` and `npm run verify:sri`. The existing publish helper remains available for deliberately configured deployments.
 
 ## Owner console
 
 The static bundle includes an owner action panel that wraps the same controls exposed by `npm run owner:command-center`. Operators
-can update stake thresholds, treasury addresses, and fee/burn percentages directly from the browser; the console prepares
-calldata compatible with the orchestrator SDK for review before submission.【F:apps/onebox-static/app.mjs†L81-L160】
+can inspect stake thresholds, treasury addresses, and fee/burn percentages; the console prepares proposals and
+calldata compatible with the orchestrator SDK for review before submission.
 
 ## Extending the bundle
 

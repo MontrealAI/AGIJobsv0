@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { createHmac, createHash, randomUUID, timingSafeEqual } from 'node:crypto';
 import express from 'express';
+import { PlanApprovalStore } from './planApprovals';
 import {
   Contract,
   JsonRpcProvider,
@@ -360,6 +361,7 @@ interface PlannerSummary {
 }
 
 export class DefaultOneboxService implements OneboxService {
+  private readonly approvals = new PlanApprovalStore();
   private readonly planner: PlannerClient;
   private readonly provider: Provider;
   private readonly registry: Contract;
@@ -442,7 +444,7 @@ export class DefaultOneboxService implements OneboxService {
     const intent = plannerIntentToJobIntent(envelope, expert);
     const { summary, warnings } = await this.buildPlannerSummary(envelope, intent, result);
 
-    const planHash = computePlanHash(envelope);
+    const planHash = this.approvals.issue(intent);
     return {
       summary,
       preview_summary: summary,
@@ -465,6 +467,8 @@ export class DefaultOneboxService implements OneboxService {
     mode: 'relayer' | 'wallet',
     options: ExecuteOptions = {}
   ): Promise<OneboxExecuteResponse> {
+    try { this.approvals.consume(options.planHash, intent); }
+    catch (error) { throw new HttpError(409, (error as Error).message); }
     switch (intent.kind) {
       case 'post_job':
         return this.executePostJob(intent, mode, options);

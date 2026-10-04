@@ -1,11 +1,15 @@
 #!/usr/bin/env node
-const path = require('node:path');
+const args = process.argv.slice(2);
+if (args.includes('--help') || args.includes('-h')) { console.log('Usage: npm run demo:onebox:doctor -- [--strict]\nRead-only configuration, RPC, contracts, ownership, balance and port checks. --strict returns a failing exit code for unmet prerequisites.'); process.exit(0); }
+if (args.some(arg => arg !== '--strict')) { console.error('Unknown option. Use --help.'); process.exit(1); }
 const {
   loadEnvironment,
   resolveConfig,
   createDemoUrl,
   isUnsetEnvValue,
   collectPortDiagnostics,
+  ROOT_DIR,
+  DEMO_DIR,
 } = require('../lib/launcher.js');
 const {
   probeRpc,
@@ -118,8 +122,8 @@ function describePauseResult(result) {
 }
 
 (async () => {
-  const rootDir = path.resolve(__dirname, '../../');
-  const demoDir = __dirname;
+  const rootDir = ROOT_DIR;
+  const demoDir = DEMO_DIR;
   const env = loadEnvironment({ rootDir, demoDir });
   const config = resolveConfig(env, { allowPartial: true });
   const relayerKeyConfigured = !isUnsetEnvValue(env.ONEBOX_RELAYER_PRIVATE_KEY);
@@ -136,6 +140,9 @@ function describePauseResult(result) {
   console.log('AGI Jobs One-Box configuration check');
   console.log('====================================');
   const missing = config.missing;
+  const failures = [...missing.map(key => `Missing ${key}`)];
+  try { resolveConfig(env); } catch (error) { failures.push(error.message); }
+  if (relayerKeyConfigured && !relayerAddress) failures.push('Invalid relayer private key');
   if (missing.length) {
     console.log('⚠️  Missing variables:');
     missing.forEach((key) => console.log(`   • ${key}`));
@@ -146,9 +153,11 @@ function describePauseResult(result) {
   }
 
   console.log('Runtime summary:');
-  const rpcDisplay = env.RPC_URL
-    ? `${env.RPC_URL}${isUnsetEnvValue(env.RPC_URL, { treatZeroAddress: false }) ? ' (placeholder)' : ''}`
-    : '(unset)';
+  let rpcDisplay = '(unset)';
+  if (env.RPC_URL) {
+    try { const url = new URL(env.RPC_URL); rpcDisplay = `${url.protocol}//${url.host}/[endpoint path hidden]`; }
+    catch { rpcDisplay = '(invalid endpoint)'; }
+  }
   const jobDisplay = config.jobRegistryAddress
     ? `${config.jobRegistryAddress}${isUnsetEnvValue(config.jobRegistryAddress) ? ' (placeholder)' : ''}`
     : '(unset)';
@@ -237,12 +246,18 @@ function describePauseResult(result) {
   console.log('');
 
   const rpcProbe = await probeRpc({
-    rpcUrl: env.RPC_URL,
+    rpcUrl: isUnsetEnvValue(env.RPC_URL, { treatZeroAddress: false }) ? undefined : env.RPC_URL,
     jobRegistryAddress: config.jobRegistryAddress,
     stakeManagerAddress: config.stakeManagerAddress,
     systemPauseAddress: config.systemPauseAddress,
   });
 
+  for (const entry of portDiagnostics) if (entry.status !== 'available') failures.push(`${entry.label}: ${entry.status}`);
+  if (rpcProbe.status !== 'ready') failures.push('RPC unavailable');
+  else {
+    if (env.CHAIN_ID && String(rpcProbe.chain.decimal) !== env.CHAIN_ID.trim()) failures.push('CHAIN_ID mismatch');
+    for (const key of ['jobRegistry', 'stakeManager', 'systemPause']) if (rpcProbe[key].status !== 'ok') failures.push(`${key}: ${rpcProbe[key].status}`);
+  }
   console.log('Network diagnostics:');
   if (rpcProbe.status === 'ready' && rpcProbe.chain) {
     const { chain } = rpcProbe;
@@ -270,7 +285,9 @@ function describePauseResult(result) {
       });
       if (balance.status === 'ok') {
         formatStatus('Relayer balance', `${balance.balanceEther} ETH`);
+        if (BigInt(balance.balanceHex) === 0n) failures.push('Relayer has no gas balance');
       } else {
+        failures.push('Relayer balance unavailable');
         formatStatus(
           'Relayer balance',
           `⚠️  ${balance.error ?? 'Unable to fetch balance.'}`
@@ -317,6 +334,11 @@ function describePauseResult(result) {
     formatStatus('Stake manager pause', describePauseResult(ownerSurface.stakeManager.paused));
     formatStatus('System pause owner', describeOwnerResult(ownerSurface.systemPause.owner));
     formatStatus('System pause state', describePauseResult(ownerSurface.systemPause.paused));
+    for (const [key, surface] of Object.entries(ownerSurface)) {
+      if (surface.owner.status !== 'ok') failures.push(`${key} owner unresolved`);
+      if (key !== 'systemPause' && surface.paused.status !== 'ok') failures.push(`${key} pause state unresolved`);
+      if (surface.paused.paused) failures.push(`${key} is paused`);
+    }
     const ownerAssignments = collectOwnerAssignments(ownerSurface);
     console.log('Owner consolidation:');
     if (ownerAssignments.length === 0) {
@@ -331,7 +353,7 @@ function describePauseResult(result) {
     const pausedContracts = collectPausedContracts(ownerSurface);
     console.log('Paused subsystems:');
     if (pausedContracts.length === 0) {
-      console.log('   • None detected.');
+      console.log('   • No paused state confirmed; unsupported or failed probes remain unknown.');
     } else {
       for (const label of pausedContracts) {
         console.log(`   • ${label}`);
@@ -347,8 +369,10 @@ function describePauseResult(result) {
 
   console.log('Owner control checklist:');
   console.log('   • npm run owner:surface          # Snapshot control surfaces');
-  console.log('   • npm run owner:update-all       # Apply configuration bundle');
+  console.log('   • Review owner changes with the deployment runbook before signing.');
   console.log('   • npm run owner:system-pause     # Emergency pause drill');
   console.log('   • npm run ci:verify-branch-protection');
   console.log('');
-})();
+  console.log(failures.length ? `Not ready for connected operation: ${failures.join('; ')}` : 'Read-only checks passed. This is not production commissioning or a security audit.');
+  if (args.includes('--strict') && failures.length) process.exitCode = 1;
+})().catch(error => { console.error('One-Box doctor failed:', error.message); process.exitCode = 1; });
