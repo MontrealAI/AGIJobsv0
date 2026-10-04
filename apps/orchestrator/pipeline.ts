@@ -2,6 +2,7 @@ import templates from './pipelines.json';
 import { StageDefinition } from './execution';
 import { getHandler, AgentHandler, AgentHandlerContext } from './agents';
 import { JobStageSpec } from './jobClassifier';
+import { approveAgentEndpoint } from './agentPolicy';
 
 type PipelineStageConfig = JobStageSpec;
 
@@ -63,12 +64,21 @@ export function buildPipeline(
   pipelineSpec?: JobStageSpec[]
 ): StageDefinition[] {
   const stages = normalizeStages(context.category, pipelineSpec);
+  if (context.category === 'computer-work' && pipelineSpec?.length)
+    throw new Error(
+      'Computer work uses its reviewed pipeline; custom stages are not allowed'
+    );
   return stages.map((stage) => {
+    if (
+      stage.handler === 'computer.execute' &&
+      context.category !== 'computer-work'
+    )
+      throw new Error('Computer worker requires the computer-work category');
     const handlerContext = buildStageContext(context, stage);
     const definition: StageDefinition = {
       name: stage.name,
       agent: stage.endpoint
-        ? stage.endpoint
+        ? approveAgentEndpoint(stage.endpoint)
         : wrapHandler(
             getHandler(stage.handler ?? 'report.generate'),
             handlerContext

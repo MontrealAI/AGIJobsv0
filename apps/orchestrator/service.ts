@@ -11,7 +11,7 @@ import {
 } from './jobClassifier';
 import { buildPipeline, PipelineContext } from './pipeline';
 import { runJob, JobRunResult } from './execution';
-import { finalizeJob } from './submission';
+import { submitJobResult } from './submission';
 import {
   CapabilityMatrix,
   loadCapabilityMatrix,
@@ -46,6 +46,7 @@ interface AppliedJobState {
   classification: ClassificationResult;
   spec: JobSpec | null;
   summary: ChainJobSummary;
+  execution?: { runResult: JobRunResult; resultRef: string; chainJob: any };
 }
 
 interface CommitData {
@@ -64,6 +65,7 @@ const JOB_REGISTRY_ABI = [
   'event JobDisputed(uint256 indexed jobId,address indexed caller)',
   'function jobs(uint256 jobId) view returns (address employer,address agent,uint128 reward,uint96 stake,uint128 burnReceiptAmount,bytes32 uriHash,bytes32 resultHash,bytes32 specHash,uint256 packedMetadata)',
   'function applyForJob(uint256 jobId,string subdomain,bytes32[] proof)',
+  'function submit(uint256 jobId,bytes32 resultHash,string resultURI,string subdomain,bytes32[] proof)',
 ];
 
 const STAKE_MANAGER_ABI = [
@@ -535,6 +537,9 @@ export class MetaOrchestrator {
     );
 
     this.registry.on('JobCompleted', (jobId: bigint, success: boolean) => {
+      this.recordSettledOutcome(jobId.toString(), success).catch((err) => {
+        console.error('Settled outcome recording failed', err);
+      });
       auditLog('job.completed', {
         jobId: jobId.toString(),
         details: { success },
@@ -980,8 +985,12 @@ export class MetaOrchestrator {
       const resultRef = artifactCid.startsWith('ipfs://')
         ? artifactCid
         : `ipfs://${artifactCid}`;
-      await finalizeJob(jobId, state.wallet);
-      this.beginReviewPhase(jobId, 'submission-finalized');
+      state.execution = { runResult, resultRef, chainJob };
+      await submitJobResult(
+        this.registry.connect(state.wallet) as Contract,
+        jobId, runResult.manifest, resultRef, toSubdomain(state.identity)
+      );
+      this.beginReviewPhase(jobId, 'evidence-submitted');
       this.recordCompletedJob(jobId, state, runResult, resultRef, chainJob);
       auditLog('job.submitted', {
         jobId,
@@ -996,18 +1005,7 @@ export class MetaOrchestrator {
           keywords: runResult.snapshot.keywords.slice(0, 12),
         },
       });
-      await this.learning.recordJobOutcome({
-        jobId,
-        identity: state.identity,
-        classification: state.classification,
-        spec: state.spec,
-        summary: state.summary,
-        chainJob,
-        runResult,
-        resultRef,
-        success: true,
-      });
-      await this.spawnSubtasks(jobId, state.spec);
+      // Positive learning credit and dependent jobs wait for JobCompleted.
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       this.watchdog.recordFailure(state.identity.address, message);
@@ -1016,7 +1014,7 @@ export class MetaOrchestrator {
         actor: state.identity.address,
         details: { error: message },
       });
-      await this.learning.recordJobOutcome({
+      if (!state.execution) await this.learning.recordJobOutcome({
         jobId,
         identity: state.identity,
         classification: state.classification,
@@ -1028,6 +1026,18 @@ export class MetaOrchestrator {
       });
       throw err;
     }
+  }
+
+  private async recordSettledOutcome(jobId: string, success: boolean): Promise<void> {
+    const state = this.appliedJobs.get(jobId);
+    if (!state?.execution) return;
+    const execution = state.execution;
+    delete state.execution; // Duplicate events must not train or spawn twice.
+    await this.learning.recordJobOutcome({
+      jobId, identity: state.identity, classification: state.classification,
+      spec: state.spec, summary: state.summary, ...execution, success,
+    });
+    if (success) await this.spawnSubtasks(jobId, state.spec);
   }
 
   private async spawnSubtasks(
@@ -1112,6 +1122,13 @@ export class MetaOrchestrator {
         spec: applied?.spec ?? null,
         ipfsGateway: this.config.ipfsGateway,
       });
+      if (evaluation.requiresIndependentReview) {
+        auditLog('validator.independent_review_required', {
+          jobId: jobKey, actor: identity.address,
+          details: { resultUri: evaluation.resultUri, notes: evaluation.notes },
+        });
+        return; // An abstention is not a negative vote against the worker.
+      }
       approve = evaluation.approve;
       auditLog('validator.evaluation', {
         jobId: jobKey,

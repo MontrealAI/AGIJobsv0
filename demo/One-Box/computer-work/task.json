@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "workerProfile": "procurement",
+  "goal": "Compare three synthetic supplier quotes and recommend the lowest-cost supplier that meets the delivery limit.",
+  "inputText": "Use the supplied fixture in the isolated browser. Set the delivery limit to 7 days and click Compare quotes. Report every supplier's total and eligibility, then recommend the eligible supplier with the lowest total. Do not place an order or send messages.",
+  "dataClass": "synthetic",
+  "allowedOrigins": ["http://127.0.0.1:18790"],
+  "acceptanceCriteria": [
+    "All three quotes are included; total equals quantity times unit price plus shipping, in integer cents.",
+    "Only suppliers delivering within 7 days are eligible.",
+    "The recommendation is the eligible supplier with the smallest total; no purchase is executed."
+  ],
+  "deliverables": [
+    { "name": "comparison.json", "mediaType": "application/json" },
+    { "name": "recommendation.md", "mediaType": "text/markdown" }
+  ]
+}

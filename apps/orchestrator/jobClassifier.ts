@@ -1,3 +1,5 @@
+import { fetchArtifactBytes } from './artifactSource';
+
 export interface ChainJobSummary {
   jobId: string;
   agent?: string;
@@ -101,13 +103,7 @@ export async function fetchJobSpec(
     target = `${gateway.replace(/\/$/, '')}/${normalized}`;
   }
   try {
-    const res = await fetch(target, {
-      headers: { Accept: 'application/json' },
-    });
-    if (!res.ok) {
-      throw new Error(`status ${res.status}`);
-    }
-    const text = await res.text();
+    const text = new TextDecoder().decode(await fetchArtifactBytes(target, options?.gatewayUrl || process.env.IPFS_GATEWAY_URL));
     if (!text.trim()) return null;
     try {
       const parsed = JSON.parse(text) as JobSpec;

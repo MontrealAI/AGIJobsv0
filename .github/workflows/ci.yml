@@ -147,6 +147,7 @@ jobs:
           npm run build:gateway
           npm run build:orchestrator
           node --test test/scripts/runtime-packaging.test.cjs
+          node --test apps/orchestrator/dist/apps/orchestrator/__tests__/computerWork.test.js
       - name: Hardhat tests
         run: npm test
       - name: ABI diff check

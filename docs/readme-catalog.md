@@ -6,8 +6,8 @@ briefings, and subsystem manuals when coordinating releases or audits.
 
 ## Summary
 
-- Total README-like files: 170
-- README documents: 130
+- Total README-like files: 171
+- README documents: 131
 - Runbooks and emergency guides: 40
 
 ## Root
@@ -120,6 +120,7 @@ briefings, and subsystem manuals when coordinating releases or audits.
 | `demo/OMNIPHOENIX-ASCENDANT-HYPERSTRUCTURE/README.md` | AGI Jobs v0 (v2) — Demo → Omniphoenix Ascendant Hyperstructure | README |
 | `demo/OMNIPHOENIX-ASCENDANT-HYPERSTRUCTURE/RUNBOOK.md` | Omniphoenix Ascendant Hyperstructure — Operator Runbook | RUNBOOK |
 | `demo/One-Box/README.md` | AGI Jobs v0 (v2) — Demo → One Box | README |
+| `demo/One-Box/computer-work/README.md` | Computer-work lab: a supplier decision you can verify | README |
 | `demo/Open-Endedness-v0/README.md` | AGI Jobs v0 (v2) — Demo → Open Endedness v0 | README |
 | `demo/Phase-6-Scaling-Multi-Domain-Expansion/README.md` | AGI Jobs v0 (v2) — Demo → Phase 6 Scaling Multi Domain Expansion | README |
 | `demo/Phase-8-Universal-Value-Dominance/README.md` | AGI Jobs v0 (v2) — Demo → Phase 8 Universal Value Dominance | README |
@@ -254,4 +255,3 @@ briefings, and subsystem manuals when coordinating releases or audits.
 | `services/culture-graph-indexer/README.md` | AGI Jobs v0 (v2) — Services → Culture Graph Indexer | README |
 | `services/sentinel/README.md` | AGI Jobs v0 (v2) — Sentinel Monitor | README |
 | `services/thermostat/README.md` | AGI Jobs v0 (v2) — Thermostat Service | README |
-

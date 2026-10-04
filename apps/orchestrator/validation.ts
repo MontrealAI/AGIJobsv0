@@ -1,4 +1,5 @@
 import { Contract, JsonRpcProvider, ethers } from 'ethers';
+import { fetchArtifactBytes } from './artifactSource';
 import { ClassificationResult, JobSpec } from './jobClassifier';
 
 export interface SubmissionDetails {
@@ -18,6 +19,7 @@ export interface EvaluationNote {
 }
 
 export interface EvaluationOutcome {
+  requiresIndependentReview?: boolean;
   approve: boolean;
   confidence: number;
   notes: EvaluationNote[];
@@ -121,17 +123,7 @@ async function downloadArtifact(
   gateway?: string
 ): Promise<{ bytes: Uint8Array; text: string | null }> {
   const target = normaliseGatewayUri(uri, gateway);
-  const response = await fetch(target, {
-    headers: {
-      Accept: 'application/json, text/plain;q=0.9, */*;q=0.1',
-    },
-  });
-  if (!response.ok) {
-    throw new Error(
-      `Unexpected status ${response.status} ${response.statusText}`
-    );
-  }
-  const buffer = new Uint8Array(await response.arrayBuffer());
+  const buffer = await fetchArtifactBytes(target, gateway || process.env.IPFS_GATEWAY_URL);
   let text: string | null = null;
   try {
     text = new TextDecoder().decode(buffer);
@@ -234,6 +226,7 @@ export async function evaluateSubmission(
   const minConfidence = options.minConfidence ?? DEFAULT_MIN_CONFIDENCE;
   const notes: EvaluationNote[] = [];
   const checks: boolean[] = [];
+  let requiresIndependentReview = options.classification?.category === 'computer-work' || options.spec?.category === 'computer-work' || !!options.spec?.metadata?.computerWork;
 
   const submission = await fetchSubmissionDetails(
     options.registry,
@@ -341,6 +334,7 @@ export async function evaluateSubmission(
     if (trimmed.length > 0) {
       try {
         const parsed = JSON.parse(trimmed);
+        requiresIndependentReview ||= parsed?.context?.category === 'computer-work' || parsed?.task?.schemaVersion === 1 && parsed?.provider === 'openclaw-responses';
         payloadType = 'json';
         checks.push(true);
         notes.push(
@@ -386,9 +380,10 @@ export async function evaluateSubmission(
   const totalChecks = checks.length || 1;
   const confidence = passedChecks / totalChecks;
   const hasError = notes.some((note) => note.level === 'error');
-  const approve = !hasError && confidence >= minConfidence;
+  const approve = !requiresIndependentReview && !hasError && confidence >= minConfidence;
+  if (requiresIndependentReview) notes.push(toEvaluation('warning', 'Computer work requires an independent acceptance review; structural checks do not authorize a validator vote.'));
 
-  if (!approve) {
+  if (!approve && !requiresIndependentReview) {
     notes.push(
       toEvaluation(
         'warning',
@@ -410,6 +405,7 @@ export async function evaluateSubmission(
 
   return {
     approve,
+    requiresIndependentReview,
     confidence,
     notes,
     contentLength,

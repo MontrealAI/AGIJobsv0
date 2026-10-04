@@ -1,0 +1,13 @@
+{
+  "procurement": {
+    "endpoint": "http://127.0.0.1:18789/v1/responses",
+    "agentId": "procurement",
+    "tokenEnv": "COMPUTER_WORK_PROCUREMENT_TOKEN",
+    "deploymentId": "REPLACE_WITH_CHAIN_ID_AND_REGISTRY_ADDRESS",
+    "mode": "live",
+    "timeoutMs": 120000,
+    "maxResponseBytes": 262144,
+    "maxOutputTokens": 4096,
+    "approvedJobs": []
+  }
+}
