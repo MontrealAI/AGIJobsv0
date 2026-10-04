@@ -5,7 +5,7 @@
   "confidence": {
     "compositeScore": 1,
     "quorum": true,
-    "summary": "All Stellar Kardashev-II invariants satisfied. Safe batch ready for execution.",
+    "summary": "Simulation checks passed. Safe batch contains unsigned placeholder proposals; do not submit it to a wallet.",
     "methods": [
       {
         "method": "deterministic-consensus",

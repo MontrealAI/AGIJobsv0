@@ -5016,7 +5016,7 @@ function buildStabilityLedger(
       quorum: compositeScore >= 0.95,
       summary:
         alerts.length === 0
-          ? "All Kardashev-II invariants satisfied. Safe batch ready for execution."
+          ? "Simulation checks passed. Safe batch contains unsigned placeholder proposals; do not submit it to a wallet."
           : `Manual review required for ${alerts.length} check(s).`,
       methods: [
         {
