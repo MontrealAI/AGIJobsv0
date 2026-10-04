@@ -2846,53 +2846,37 @@ function writeOfflineDashboard(outputDir, demoRoot = __dirname) {
   const uiSourceDir = path.join(demoRoot, 'ui');
   const uiTargetDir = path.join(outputDir, 'ui');
   ensureDir(uiTargetDir);
-  for (const filename of ['style.css', 'dashboard.js']) {
-    fs.copyFileSync(path.join(uiSourceDir, filename), path.join(uiTargetDir, filename));
+  for (const filename of ['style.css', 'dashboard.js', 'runtime.js']) {
+    fs.copyFileSync(filename === 'runtime.js' ? path.join(__dirname, 'ui/runtime.js') : path.join(uiSourceDir, filename), path.join(uiTargetDir, filename));
   }
   copyMermaidBundle(outputDir);
+  fs.copyFileSync(path.join(demoRoot, 'README.md'), path.join(outputDir, 'README.md'));
 
   const indexTemplate = fs.readFileSync(path.join(demoRoot, 'index.html'), 'utf8');
   const assetBaseMarker = 'window.__KARDASHEV_ASSET_BASE__ = "./output";';
   const offlineIndex = indexTemplate
     .replace(assetBaseMarker, 'window.__KARDASHEV_ASSET_BASE__ = ".";')
-    .replace(/src="\.\/output\//g, 'src="./');
+    .replace(/src="\.\/output\//g, 'src="./')
+    .replace('data-asset-base="./output"', 'data-asset-base="."');
 
   fs.writeFileSync(path.join(outputDir, 'index.html'), offlineIndex);
 }
 
 function parseArgs(argv) {
-  const args = {
-    outputDir: process.env.OUTPUT_DIR,
-    check: false,
-    printCommands: false,
-    configRoot: null,
-    profile: null,
-  };
-
-  for (let i = 0; i < argv.length; i += 1) {
-    const flag = argv[i];
-    if (flag === '--output-dir' && argv[i + 1]) {
-      args.outputDir = argv[i + 1];
-      i += 1;
-    } else if (flag === '--config-root' && argv[i + 1]) {
-      args.configRoot = argv[i + 1];
-      i += 1;
-    } else if (flag === '--profile' && argv[i + 1]) {
-      args.profile = argv[i + 1];
-      i += 1;
-    } else if (flag === '--check') {
-      args.check = true;
-    } else if (flag === '--print-commands') {
-      args.printCommands = true;
-    }
+  const options = require('./scripts/runtime.cjs').parseOptions(argv, [], ['print-commands']);
+  if (options.help) {
+    console.log('Legacy synthetic model: --check, --print-commands, --output-dir DIR, --config-root DIR, --profile NAME.\nUse npm run demo:kardashev-ii:orchestrate for the canonical command deck.');
+    process.exit(0);
   }
-
-  return args;
+  if (options.reflect || options.generate) throw new Error('Use the canonical orchestrator or dashboard server for this option');
+  return { outputDir: options['output-dir'] ?? process.env.OUTPUT_DIR,
+    configRoot: options['config-root'], profile: options.profile,
+    check: !!(options.check || options.ci), printCommands: !!options['print-commands'] };
 }
 
 function resolveOutputDir(rawOutputDir, demoRoot, { ensure = true } = {}) {
   const override = normalizePathOverride(rawOutputDir);
-  const dir = override ? path.resolve(override) : path.join(demoRoot, 'output');
+  const dir = override ? path.resolve(override) : path.join(os.homedir(), '.cache', 'agi-jobs-v0', 'kardashev-ii-legacy');
   if (ensure) {
     ensureDir(dir);
   }

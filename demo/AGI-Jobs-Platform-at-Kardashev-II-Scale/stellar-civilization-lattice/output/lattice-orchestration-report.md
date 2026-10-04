@@ -19,11 +19,19 @@
 * Utilisation: 57.91% (margin 0.14%).
 * Regional availability: earth 84000 GW · mars 26333.333 GW · orbital 139666.667 GW · luna 27966.667 GW.
 * Monte Carlo breach probability 0.00% (runs 256, tolerance 1.00%).
-* Demand percentiles: P95 289,943.142 GW · P99 292,465.854 GW.
+* Free energy margin 204270.42 GW (42.56%) · Gibbs free energy 484,813,513.1 GJ.
+* Free energy runway 0.50 hours at mean demand (gap 0.50h, 137388.64 GWh).
+* Hamiltonian stability 71.3% · entropy margin 95.96σ · game-theory slack 87.1% · buffer stable.
+* Allocation policy: Gibbs temperature 0.22 · Nash welfare 83.32% · fairness 94.0% · Gibbs potential -0.188.
+* Shapley allocation: fairness 99.6% · concentration 25.3%.
+* Replicator equilibrium 86.0% · drift 0.140.
+* Sentient welfare equilibrium 91.3% · cooperation 86.3% · inequality 5.1% · free energy/agent 0.098942 GJ.
+* Allocation deltas: Earth Sovereign Federation -22962.15 GW (Shapley 24.7%) · Mars Terraforming Compact +23294.25 GW (Shapley 23.2%) · Orbital Research Halo -19389.47 GW (Shapley 29.2%) · Luna Infrastructure Federation +19057.37 GW (Shapley 22.9%).
+* Demand percentiles: P95 275,729.58 GW · P99 276,278.27 GW.
 * Live feeds (≤ 5%): earth-grid Δ 0.60% · mars-dome Δ 1.52% · orbital-swarm Δ 1.07% · luna-night Δ 1.29%.
 * Feed latency: avg 181550 ms · max 720000 ms (calibrated 2025-02-28T18:00:00Z).
 * Energy window coverage 100.00% (threshold 84%) · reliability 98.49%.
-* ⚠️ Energy deficits: orbital 100.00% (0.01 GW·h short) · luna 100.00% (0.01 GW·h short).
+* Energy window deficits: none — all federations meet coverage targets.
 
 ---
 
@@ -31,6 +39,7 @@
 * 4 corridors · avg reliability 98.58% · avg utilisation 80.50% · min buffer 14.00 days.
 * Watcher coverage: 12 unique sentinels; verification ✅.
 * Capacity 2,430,000 tonnes/day · throughput 1,996,800 tonnes/day · energy 371,600 MWh.
+* Hamiltonian stability 98.6% · entropy 1.384 · game-theory slack 99.4% · Gibbs 7.23 MWh.
 * Logistics advisories: none — buffers and reliability nominal.
 
 ---
@@ -82,12 +91,14 @@
   - Thermostat margin: 69,600 GW (ok)
   - Utilisation: 69.49% (ok)
   - Recommended: Dispatch pause bundle for non-critical Earth workloads. · Increase stellar thermostat target via setGlobalParameters if surge persists.
-* **Interplanetary bridge outage simulation** — status WARNING (confidence 54.2%) · Failover latency 220s leaves 20s slack within 240s failsafe.
+* **Interplanetary bridge outage simulation** — status NOMINAL (confidence 70.2%) · Failover latency 143s leaves 97s slack within 240s failsafe. Relay boost 35.0% applied from Gibbs reserve.
   - Baseline latency: 110s (ok)
   - Failover latency: 220s (ok)
+  - Relay boost allocation: 35.0% (168000 GW) (ok)
+  - Mitigated latency: 143s (ok)
   - Failsafe budget: 240s (ok)
-  - Slack: 20s (ok)
-  - Recommended: Execute bridge isolation routine from mission directives if slack < 0. · Rebalance capital streams to spin up orbital relays before load crosses failsafe.
+  - Slack: 97s (ok)
+  - Recommended: Allocate relay boost to stabilise bridge latency using Gibbs reserve. · Keep isolation routine on standby while relays rebalance. · Rebalance capital streams to spin up orbital relays before load crosses failsafe.
 * **Sentinel outage (10 min) coverage test** — status NOMINAL (confidence 100.0%) · Guardian window stays protected under sentinel gap.
   - Minimum sentinel coverage: 1500s (ok)
   - Simulated coverage: 900s (ok)
@@ -106,10 +117,11 @@
   - Remaining buffer: 490 days (ok)
   - Slip ratio: 3.33% (ok)
   - Recommended: Accelerate self-improvement plan execution to reclaim schedule slack. · Reallocate capital from Earth infrastructure to Dyson assembly for this epoch.
-* **Primary energy window offline** — status WARNING (confidence 98.2%) · Coverage remains 82.49% after losing orbital 8h window.
+* **Primary energy window offline** — status NOMINAL (confidence 100.0%) · Coverage remains 122.03% after losing orbital 8h window. Reserve boost +2637862 GW·h applied from Gibbs runway plan.
   - Removed window: orbital @ 0h (check)
-  - Remaining coverage: 82.49% (check)
+  - Remaining coverage: 122.03% (ok)
   - Threshold: 84.00% (ok)
+  - Reserve boost: 2637861.96 GW·h (ok)
   - Lost capacity: 1168000.00 GW·h (check)
   - Recommended: Trigger orbital battery discharge if coverage < threshold. · Re-route Mars workloads to orbital halo until replacement window is provisioned.
 * **Logistics demand spike (+25%)** — status WARNING (confidence 87.3%) · Corridors absorb spike with utilisation 102.72% and buffers 12.00d.

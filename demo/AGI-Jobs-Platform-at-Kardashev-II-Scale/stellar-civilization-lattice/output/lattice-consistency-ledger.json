@@ -8,8 +8,8 @@
       "bigInt": 277966.667,
       "projection": 277966.6666666667
     },
-    "toleranceGw": 0.277966667,
-    "tolerancePct": 0.000001,
+    "toleranceGw": 138.98333350000001,
+    "tolerancePct": 0.0005,
     "maxDeviationGw": 0.00033333332976326346,
     "consensus": true,
     "coverageRatio": 1,

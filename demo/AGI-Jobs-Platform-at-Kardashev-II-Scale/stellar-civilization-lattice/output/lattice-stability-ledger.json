@@ -39,7 +39,7 @@
       },
       {
         "method": "scenario-sweep",
-        "score": 0.9349138786787033,
+        "score": 0.9511293490460158,
         "explanation": "Average confidence across Kardashev-II surge, bridge, sentinel, compute, identity, and schedule stressors."
       },
       {
@@ -128,7 +128,7 @@
     },
     {
       "id": "energy-triple-check",
-      "title": "Energy models reconciled",
+      "title": "Energy capacity covers modeled demand",
       "severity": "critical",
       "status": true,
       "weight": 1.1,
@@ -140,7 +140,7 @@
       "severity": "high",
       "status": true,
       "weight": 0.95,
-      "evidence": "max deviation 0.000333 GW · tolerance 0.277967 GW · coverage 100.00%"
+      "evidence": "max deviation 0.000333 GW · tolerance 138.983334 GW · coverage 100.00%"
     },
     {
       "id": "energy-monte-carlo",
@@ -180,7 +180,7 @@
       "severity": "high",
       "status": true,
       "weight": 0.8,
-      "evidence": "avg reliability 98.58% · min buffer 14.00d · utilisation 80.50% · watchers 12"
+      "evidence": "avg reliability 98.58% · min buffer 14.00d · utilisation 80.50% · Hamiltonian 98.6% · watchers 12"
     },
     {
       "id": "energy-margin",
@@ -292,16 +292,16 @@
       "severity": "medium",
       "status": true,
       "weight": 0.8,
-      "evidence": "8/11 nominal · 3 warning · 0 critical"
+      "evidence": "10/11 nominal · 1 warning · 0 critical"
     }
   ],
   "alerts": [],
   "scenarioSweep": {
     "total": 11,
-    "nominal": 8,
-    "warning": 3,
+    "nominal": 10,
+    "warning": 1,
     "critical": 0,
-    "averageConfidence": 0.9349138786787033,
+    "averageConfidence": 0.9511293490460158,
     "entries": [
       {
         "id": "energy-demand-surge",
@@ -313,9 +313,9 @@
       {
         "id": "bridge-failover",
         "title": "Interplanetary bridge outage simulation",
-        "status": "warning",
-        "confidence": 0.5416666666666666,
-        "summary": "Failover latency 220s leaves 20s slack within 240s failsafe."
+        "status": "nominal",
+        "confidence": 0.7020833333333333,
+        "summary": "Failover latency 143s leaves 97s slack within 240s failsafe. Relay boost 35.0% applied from Gibbs reserve."
       },
       {
         "id": "sentinel-gap",
@@ -341,9 +341,9 @@
       {
         "id": "energy-window-loss",
         "title": "Primary energy window offline",
-        "status": "warning",
-        "confidence": 0.9820464926262302,
-        "summary": "Coverage remains 82.49% after losing orbital 8h window."
+        "status": "nominal",
+        "confidence": 1,
+        "summary": "Coverage remains 122.03% after losing orbital 8h window. Reserve boost +2637862 GW·h applied from Gibbs runway plan."
       },
       {
         "id": "logistics-demand-spike",

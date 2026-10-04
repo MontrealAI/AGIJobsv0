@@ -652,8 +652,29 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
     legalComments: 'linked',
     logLevel: 'warning',
   });
+  const deckRoot = 'demo/AGI-Jobs-Platform-at-Kardashev-II-Scale/';
+  const dashboardRoutes = [];
+  for (const file of tracked) {
+    if (!file.startsWith(deckRoot)) continue;
+    const relative = file.slice(deckRoot.length);
+    if (
+      /^(?:(?:stellar-civilization-lattice|k2-stellar-demo)\/)?(?:index\.html|README\.md|ui\/|output\/)/.test(
+        relative
+      )
+    ) {
+      write(
+        'experiments/kardashev-ii/' + relative,
+        fs.readFileSync(path.join(root, file))
+      );
+      if (relative.endsWith('index.html'))
+        dashboardRoutes.push(
+          'experiments/kardashev-ii/' + relative.slice(0, -10)
+        );
+    }
+  }
   const manifest = {
     schemaVersion: 2,
+    dashboardRoutes,
     experiences: Object.keys(experiences).length,
     sourceInspections: new Set(
       Object.values(experiences).flatMap((p) => p.steps.map((s) => s.source))
@@ -675,6 +696,7 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
   );
   const routes = [
     '',
+    ...dashboardRoutes,
     ...catalog.map((demo) => `demos/${demo.id}/`),
     ...guideRoutes.values(),
   ];

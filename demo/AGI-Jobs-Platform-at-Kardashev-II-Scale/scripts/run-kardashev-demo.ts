@@ -1,76 +1,26 @@
 #!/usr/bin/env ts-node
 
-import { mkdirSync, readFileSync, writeFileSync, existsSync, copyFileSync } from "node:fs";
-import { createRequire } from "node:module";
-import { join, resolve, isAbsolute } from "node:path";
+import { mkdirSync, readFileSync, writeFileSync, existsSync } from "node:fs";
+import { join, resolve } from "node:path";
 import { Interface, keccak256, toUtf8Bytes } from "ethers";
 import { z } from "zod";
 
-const rawArgs = process.argv.slice(2);
-const args = new Set(rawArgs);
-
-function resolveDemoRoot(): string {
-  const defaultRoot = join(__dirname, "..");
-  const repoRoot = resolve(defaultRoot, "..", "..", "..");
-
-  let profile = process.env.KARDASHEV_DEMO_PROFILE?.trim();
-  let explicitRoot = process.env.KARDASHEV_DEMO_ROOT?.trim();
-
-  for (let i = 0; i < rawArgs.length; i += 1) {
-    const token = rawArgs[i];
-    if (token === "--profile" && rawArgs[i + 1]) {
-      profile = rawArgs[i + 1];
-      i += 1;
-    } else if (token?.startsWith("--profile=")) {
-      profile = token.split("=", 2)[1];
-    } else if (token === "--config-root" && rawArgs[i + 1]) {
-      explicitRoot = rawArgs[i + 1];
-      i += 1;
-    } else if (token?.startsWith("--config-root=")) {
-      explicitRoot = token.split("=", 2)[1];
-    }
-  }
-
-  if (profile && profile.length > 0) {
-    const candidate = resolve(defaultRoot, profile);
-    if (existsSync(candidate)) {
-      return candidate;
-    }
-    throw new Error(`Profile directory not found: ${candidate}`);
-  }
-
-  if (explicitRoot && explicitRoot.length > 0) {
-    const candidate = isAbsolute(explicitRoot)
-      ? explicitRoot
-      : resolve(repoRoot, explicitRoot);
-    if (existsSync(candidate)) {
-      return candidate;
-    }
-    throw new Error(`Config root override not found: ${candidate}`);
-  }
-
-  return defaultRoot;
-}
-
-const DEMO_ROOT = resolveDemoRoot();
-const CONFIG_PATH = join(DEMO_ROOT, "config", "kardashev-ii.manifest.json");
-const ENERGY_FEEDS_PATH = join(DEMO_ROOT, "config", "energy-feeds.json");
-const FABRIC_CONFIG_PATH = join(DEMO_ROOT, "config", "fabric.json");
-const TASK_LATTICE_CONFIG_PATH = join(DEMO_ROOT, "config", "task-lattice.json");
-const OUTPUT_DIR = join(DEMO_ROOT, "output");
+const { resolveOptions, validateInputs, readinessFailures, provenance, dashboardArtifacts } = require("./runtime.cjs");
+const options = resolveOptions(resolve(__dirname, ".."));
+const DEMO_ROOT = options.root;
+const CONFIG_ROOT = options.configRoot;
+const CONFIG_PATH = join(CONFIG_ROOT, "config", "kardashev-ii.manifest.json");
+const ENERGY_FEEDS_PATH = join(CONFIG_ROOT, "config", "energy-feeds.json");
+const FABRIC_CONFIG_PATH = join(CONFIG_ROOT, "config", "fabric.json");
+const TASK_LATTICE_CONFIG_PATH = join(CONFIG_ROOT, "config", "task-lattice.json");
+const OUTPUT_DIR = options.outputDir;
 const DIVERSIFICATION_TARGET_HHI = 0.3;
 const ENERGY_RUNWAY_TARGET_HOURS = 1;
 const HAMILTONIAN_TARGET_STABILITY = 0.9;
 const ENERGY_RESERVE_MULTIPLIER = 2.4;
-const OUTPUT_PREFIX = (() => {
-  const raw = process.env.KARDASHEV_DEMO_PREFIX?.trim();
-  const slug = raw?.toLowerCase().replace(/[^a-z0-9]+/g, "-") ?? "kardashev";
-  return slug.length > 0 ? slug : "kardashev";
-})();
-
-const CHECK_MODE = args.has("--check") || args.has("--ci");
-const REFLECT_MODE = args.has("--reflect");
-const mermaidRequire = createRequire(__filename);
+const OUTPUT_PREFIX = options.prefix;
+const CHECK_MODE = options.check;
+const REFLECT_MODE = options.reflect;
 
 const ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
 const managerInterface = new Interface([
@@ -2026,41 +1976,10 @@ function formatRunwayAdjustment(plan?: RunwayAdjustmentPlan | null): string | nu
 }
 
 function writeOfflineDashboard() {
-  const uiSourceDir = join(DEMO_ROOT, "ui");
-  const uiTargetDir = join(OUTPUT_DIR, "ui");
-  if (!existsSync(uiTargetDir)) {
-    mkdirSync(uiTargetDir, { recursive: true });
+  for (const asset of dashboardArtifacts(DEMO_ROOT, OUTPUT_DIR)) {
+    if (!CHECK_MODE) mkdirSync(require("node:path").dirname(asset.path), { recursive: true });
+    writeOrCheck(asset.path, asset.content);
   }
-
-  const uiFiles = ["style.css", "dashboard.js"];
-  for (const filename of uiFiles) {
-    const sourcePath = join(uiSourceDir, filename);
-    const targetPath = join(uiTargetDir, filename);
-    const content = readFileSync(sourcePath, "utf8");
-    writeFileSync(targetPath, content);
-  }
-
-  try {
-    const mermaidSource = mermaidRequire.resolve("mermaid/dist/mermaid.esm.min.mjs");
-    const mermaidScriptSource = mermaidRequire.resolve("mermaid/dist/mermaid.min.js");
-    const mermaidTargetDir = join(OUTPUT_DIR, "mermaid");
-    if (!existsSync(mermaidTargetDir)) {
-      mkdirSync(mermaidTargetDir, { recursive: true });
-    }
-    copyFileSync(mermaidSource, join(mermaidTargetDir, "mermaid.esm.min.mjs"));
-    copyFileSync(mermaidScriptSource, join(mermaidTargetDir, "mermaid.min.js"));
-  } catch (error) {
-    console.warn(
-      "⚠️ Mermaid bundle unavailable. Diagrams will fall back to source rendering only.",
-      error
-    );
-  }
-
-  const indexTemplate = readFileSync(join(DEMO_ROOT, "index.html"), "utf8");
-  const offlineIndex = indexTemplate
-    .replace('window.__KARDASHEV_ASSET_BASE__ = "./output";', 'window.__KARDASHEV_ASSET_BASE__ = ".";')
-    .replace(/src="\.\/output\//g, 'src="./');
-  writeFileSync(join(OUTPUT_DIR, "index.html"), offlineIndex);
 }
 
 function slugToId(slug: string): string {
@@ -4224,7 +4143,7 @@ function computeTelemetry(
   const energyModelDeltaGw = Math.abs(sumRegionalGw - dysonYield);
   const energyModelDeltaPct = dysonYield > 0 ? energyModelDeltaGw / dysonYield : 0;
   const energyAgreementWithinMargin =
-    energyModelDeltaPct <= marginPct &&
+    sumRegionalGw <= capturedPlan.effectiveCapturedGw * (1 - marginPct) * (1 + 1e-9) &&
     sumRegionalGw <= thermostatBudgetGw * (1 + marginPct) &&
     dysonYield >= capturedPlan.baselineCapturedGw;
   const energyTripleCheck =
@@ -4633,6 +4552,8 @@ function computeTelemetry(
     missionDirectives: manifest.missionDirectives,
     verification: {
       energyModels: {
+        comparison: "capacity-envelope",
+        explanation: "Regional load must fit captured capacity after its reserve margin and the thermostat budget. Planned Dyson yield covers the captured baseline; excess capacity is not reconciliation drift.",
         expected: manifest.verificationProtocols.energyModels,
         results: {
           regionalSumGw: sumRegionalGw,
@@ -4876,7 +4797,7 @@ function buildStabilityLedger(
     },
     {
       id: "energy-triple-check",
-      title: "Energy models reconciled",
+      title: "Energy capacity covers modeled demand",
       severity: "critical",
       status: telemetry.energy.tripleCheck && telemetry.verification.energyModels.withinMargin,
       weight: 1.1,
@@ -5781,7 +5702,7 @@ function buildSafeBatch(manifest: Manifest, transactions: SafeTransaction[]) {
     createdAt,
     meta: {
       name: "AGI Jobs Kardashev-II Command Batch",
-      description: "Owner-calibrated payload synthesised by demo/AGI-Jobs-Platform-at-Kardashev-II-Scale",
+      description: "UNSIGNED SIMULATION ONLY. Placeholder targets; do not submit to a wallet. Payload synthesised by demo/AGI-Jobs-Platform-at-Kardashev-II-Scale",
     },
     transactions: transactions.map((tx) => ({
       to: tx.to,
@@ -5814,7 +5735,8 @@ function run() {
   const energyFeedsConfig = loadEnergyFeeds();
   const fabricConfig = loadFabricConfig();
   const { lattice: missionLattice } = loadMissionLattice();
-  ensureOutputDir();
+  validateInputs(manifest, { energy: energyFeedsConfig, fabric: fabricConfig, lattice: missionLattice });
+  if (!CHECK_MODE) ensureOutputDir();
 
   const totalMonthlyValue = manifest.federations.flatMap((f) => f.domains).reduce((sum, d) => sum + d.monthlyValueUSD, 0);
   const totalResilience = manifest.federations.flatMap((f) => f.domains).reduce((sum, d) => sum + d.resilience, 0);
@@ -5915,6 +5837,7 @@ function run() {
   const logisticsJson = `${JSON.stringify(telemetry.logistics, null, 2)}\n`;
 
   const outputs = [
+    { suffix: "run-manifest.json", content: `${JSON.stringify(provenance([CONFIG_PATH, ENERGY_FEEDS_PATH, FABRIC_CONFIG_PATH, TASK_LATTICE_CONFIG_PATH], OUTPUT_PREFIX), null, 2)}\n` },
     { suffix: "telemetry.json", content: telemetryJson },
     { suffix: "telemetry.inline.js", content: telemetryInlineJs },
     { suffix: "safe-transaction-batch.json", content: safeJson },
@@ -5953,6 +5876,11 @@ function run() {
     writeOrCheck(output.path, output.content);
   }
 
+  const modelFailures: string[] = readinessFailures(telemetryWithScenarios, stabilityLedger);
+  for (const failure of modelFailures) console.error(`❌ Model readiness failed: ${failure}`);
+  if (modelFailures.length) process.exitCode = 1;
+  writeOfflineDashboard();
+
   if (CHECK_MODE) {
     const failures = process.exitCode ?? 0;
     if (failures) {
@@ -5963,9 +5891,7 @@ function run() {
     return;
   }
 
-  writeOfflineDashboard();
-
-  console.log("✔ Kardashev-II orchestration artefacts generated.");
+  console.log("Kardashev-II simulation artefacts generated. No network actions were performed.");
   console.log(`   Dominance score: ${dominanceScore.toFixed(1)} / 100.`);
   console.log(`   Monthly value throughput: ${formatUSD(totalMonthlyValue)}.`);
   console.log(`   Average resilience: ${(averageResilience * 100).toFixed(2)}%.`);

@@ -1,3 +1,4 @@
+import { html, loadMermaid as loadLocalMermaid, showFailure, showReady, prepareDiagram, appendDiagramSource } from "./runtime.js";
 let mermaidModule;
 
 const DEFAULT_ASSET_BASE = "./output";
@@ -123,52 +124,8 @@ async function hydrateInlinePayloads() {
 }
 
 async function loadMermaid() {
-  if (mermaidModule !== undefined) {
-    return mermaidModule;
-  }
-
-  const localUrl = new URL(
-    assetPath("mermaid/mermaid.esm.min.mjs"),
-    window.location.href
-  ).href;
-  const sources = [
-    { label: "local bundle", url: localUrl },
-    {
-      label: "cdn bundle",
-      url: "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs",
-    },
-  ];
-
-  for (const source of sources) {
-    try {
-      const mermaidNamespace = await import(source.url);
-      mermaidModule = mermaidNamespace?.default ?? mermaidNamespace;
-      return mermaidModule;
-    } catch (error) {
-      console.warn(`Failed to load mermaid from ${source.label}`, error);
-    }
-  }
-
-  const scriptSources = [
-    { label: "local script", url: assetPath("mermaid/mermaid.min.js") },
-    { label: "cdn script", url: "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js" },
-  ];
-
-  for (const source of scriptSources) {
-    try {
-      const mermaidNamespace = await loadMermaidScript(source.url);
-      if (mermaidNamespace) {
-        mermaidModule = mermaidNamespace;
-        return mermaidModule;
-      }
-    } catch (error) {
-      console.warn(`Failed to load mermaid from ${source.label}`, error);
-    }
-  }
-
-  mermaidModule = null;
-
-  return mermaidModule;
+  try { return await loadLocalMermaid(); }
+  catch (error) { console.warn(error.message); return null; }
 }
 
 async function fetchJson(path) {
@@ -242,7 +199,7 @@ function renderGlobalFailure(message) {
 
   const alert = document.createElement("section");
   alert.classList.add("card", "status-fail");
-  alert.innerHTML = `
+  alert.innerHTML = html`
     <div class="section-title">
       <h2>Telemetry unavailable</h2>
     </div>
@@ -282,7 +239,7 @@ function renderLegacyBanner() {
 
   const alert = document.createElement("section");
   alert.classList.add("card", "status-warn");
-  alert.innerHTML = `
+  alert.innerHTML = html`
     <div class="section-title">
       <h2>Legacy telemetry loaded</h2>
     </div>
@@ -677,7 +634,7 @@ function renderMetrics(telemetry) {
               Number.isFinite(deltaGw) && Number.isFinite(deltaPct)
                 ? ` · Δ${formatNumber(deltaGw)} GW (${formatPercent(deltaPct, 2)})`
                 : "";
-            return `Aligned — ${formatNumber(energy.models?.regionalSumGw)} vs ${formatNumber(
+            return `Within capacity envelope — ${formatNumber(energy.models?.regionalSumGw)} vs ${formatNumber(
               energy.models?.dysonProjectionGw
             )} GW${deltaText}`;
           })()
@@ -696,6 +653,8 @@ function renderMetrics(telemetry) {
       ? `${formatNumber(monteCarlo.percentileGw.p95)} GW`
       : "n/a";
     const runsText = Number.isFinite(monteCarlo.runs) ? monteCarlo.runs.toLocaleString() : "n/a";
+    const runwayGapText = Number.isFinite(monteCarlo.runwayGapHours) && Number.isFinite(monteCarlo.runwayGapGwh)
+      ? ` (gap ${monteCarlo.runwayGapHours.toFixed(2)}h, ${formatNumber(monteCarlo.runwayGapGwh)} GWh)` : "";
     document.querySelector(
       "#energy-monte-carlo-summary"
     ).textContent = `Breach ${breachText}${runwayText}${runwayGapText} · P95 ${p95Text} · runs ${runsText}`;
@@ -739,7 +698,7 @@ function renderMetrics(telemetry) {
     )} ms · Max ${energy.liveFeeds.maxLatencyMs} ms`;
     energy.liveFeeds.feeds.forEach((feed) => {
       const li = document.createElement("li");
-      li.innerHTML = `<span>${feed.region} (${feed.type})</span><span>${feed.deltaPct.toFixed(
+      li.innerHTML = html`<span>${feed.region} (${feed.type})</span><span>${feed.deltaPct.toFixed(
         2
       )}% Δ · ${feed.latencyMs} ms</span>`;
       li.classList.add(feed.withinTolerance ? "status-ok" : feed.driftAlert ? "status-warn" : "status-fail");
@@ -857,7 +816,7 @@ function renderLegacyMetrics(telemetry) {
   feedList.innerHTML = "";
   feeds.forEach((feed) => {
     const li = document.createElement("li");
-    li.innerHTML = `<span>${feed.region} (${feed.type})</span><span>${formatNumber(feed.nominalMw)} MW + ${formatNumber(
+    li.innerHTML = html`<span>${feed.region} (${feed.type})</span><span>${formatNumber(feed.nominalMw)} MW + ${formatNumber(
       feed.bufferMw
     )} MW buffer</span>`;
     li.classList.add("status-warn");
@@ -992,14 +951,15 @@ async function renderMermaidDiagram(path, containerId, renderId, inlineSource) {
   }
 
   if (!mermaidInitialised) {
-    await mermaid.initialize({ theme: "dark", securityLevel: "loose", startOnLoad: false });
+    await mermaid.initialize({ theme: "dark", securityLevel: "strict", startOnLoad: false });
     mermaidInitialised = true;
   }
 
   try {
-    const { svg } = await mermaid.render(renderId, source);
+    const { svg } = await mermaid.render(renderId, prepareDiagram(source));
     container.classList.remove("status-warn", "status-fail");
     container.innerHTML = svg;
+    appendDiagramSource(container, source);
   } catch (error) {
     console.warn(`Mermaid render failed for ${path}`, error);
     renderDiagramFallback(container, source, "Diagram render failed — showing source instead.");
@@ -1072,7 +1032,7 @@ function renderOwnerDirectives(telemetry) {
   list.innerHTML = "";
   telemetry.missionDirectives.ownerPowers.forEach((power) => {
     const li = document.createElement("li");
-    li.innerHTML = `<strong>${power.title}</strong> (Safe #${power.safeIndex}) — ${power.description} · <span class="uri">${power.playbookURI}</span>`;
+    li.innerHTML = html`<strong>${power.title}</strong> (Safe #${power.safeIndex}) — ${power.description} · <span class="uri">${power.playbookURI}</span>`;
     list.appendChild(li);
   });
   document.querySelector("#guardian-hotline").textContent = telemetry.missionDirectives.escalation.guardianHotline;
@@ -1114,7 +1074,7 @@ function renderFederations(telemetry) {
     domainList.classList.add("domain-list");
     federation.domains.forEach((domain) => {
       const li = document.createElement("li");
-      li.innerHTML = `<strong>${domain.name}</strong>: ${formatNumber(
+      li.innerHTML = html`<strong>${domain.name}</strong>: ${formatNumber(
         domain.monthlyValueUSD / 1_000_000_000
       )}B/mo · resilience ${(domain.resilience * 100).toFixed(2)}% · coverage ${domain.coverageSeconds}s`;
       domainList.appendChild(li);
@@ -1141,7 +1101,7 @@ function renderIdentity(identity) {
   list.innerHTML = "";
   identity.federations.forEach((federation) => {
     const li = document.createElement("li");
-    li.innerHTML = `<strong>${federation.name}</strong> — DID ${federation.didRegistry} · anchors ${federation.anchors.length} · methods ${federation.attestationMethods.join(", ")} · latency ${federation.attestationLatencySeconds}s · coverage ${(federation.coveragePct * 100).toFixed(2)}% · revocations ${federation.credentialRevocations24h.toLocaleString()}/24h`;
+    li.innerHTML = html`<strong>${federation.name}</strong> — DID ${federation.didRegistry} · anchors ${federation.anchors.length} · methods ${federation.attestationMethods.join(", ")} · latency ${federation.attestationLatencySeconds}s · coverage ${(federation.coveragePct * 100).toFixed(2)}% · revocations ${federation.credentialRevocations24h.toLocaleString()}/24h`;
     list.appendChild(li);
   });
 }
@@ -1154,7 +1114,7 @@ function renderComputeFabric(fabric) {
   list.innerHTML = "";
   fabric.planes.forEach((plane) => {
     const li = document.createElement("li");
-    li.innerHTML = `<strong>${plane.name}</strong> (${plane.geography}) — ${plane.capacityExaflops.toFixed(2)} EF · energy ${plane.energyGw.toLocaleString()} GW · latency ${plane.latencyMs} ms · availability ${(plane.availabilityPct * 100).toFixed(2)}% · partner ${plane.failoverPartner}`;
+    li.innerHTML = html`<strong>${plane.name}</strong> (${plane.geography}) — ${plane.capacityExaflops.toFixed(2)} EF · energy ${plane.energyGw.toLocaleString()} GW · latency ${plane.latencyMs} ms · availability ${(plane.availabilityPct * 100).toFixed(2)}% · partner ${plane.failoverPartner}`;
     list.appendChild(li);
   });
 }
@@ -1185,7 +1145,7 @@ function renderOrchestrationFabric(orchestration) {
     if (!shard.federationFound) {
       issues.push("no matching federation");
     }
-    li.innerHTML = `<strong>${shard.id}</strong> — registry ${shard.jobRegistry} · latency ${shard.latencyMs} ms · domains ${shard.domains.join(", ")}`;
+    li.innerHTML = html`<strong>${shard.id}</strong> — registry ${shard.jobRegistry} · latency ${shard.latencyMs} ms · domains ${shard.domains.join(", ")}`;
     if (issues.length > 0) {
       const issue = document.createElement("div");
       issue.textContent = issues.join(" · ");
@@ -1220,7 +1180,7 @@ function renderEnergySchedule(schedule, verification) {
       ? ` · ${(entry.renewablePct * 100).toFixed(1)}% renewable`
       : "";
     const li = document.createElement("li");
-    li.innerHTML = `<strong>${entry.federation.toUpperCase()}</strong><span>${(entry.coverageRatio * 100).toFixed(2)}% · ${(entry.reliabilityPct * 100).toFixed(2)}%${renewableText}</span>`;
+    li.innerHTML = html`<strong>${entry.federation.toUpperCase()}</strong><span>${(entry.coverageRatio * 100).toFixed(2)}% · ${(entry.reliabilityPct * 100).toFixed(2)}%${renewableText}</span>`;
     const ok = entry.coverageRatio >= schedule.coverageThreshold && entry.reliabilityPct >= schedule.reliabilityThreshold;
     li.classList.add(ok ? "status-ok" : "status-fail");
     coverageList.appendChild(li);
@@ -1233,7 +1193,7 @@ function renderEnergySchedule(schedule, verification) {
     const renewablePct = Number.isFinite(window.renewablePct)
       ? ` · ${(window.renewablePct * 100).toFixed(1)}% renewable`
       : "";
-    li.innerHTML = `<strong>${window.federation}</strong> · ${window.startHourUTC}:00Z · ${window.durationHours}h · ${formatNumber(window.availableGw + window.backupGw)} GW · ${(window.coverageRatio * 100).toFixed(2)}% coverage · ${(window.reliabilityPct * 100).toFixed(2)}% reliability${renewablePct}`;
+    li.innerHTML = html`<strong>${window.federation}</strong> · ${window.startHourUTC}:00Z · ${window.durationHours}h · ${formatNumber(window.availableGw + window.backupGw)} GW · ${(window.coverageRatio * 100).toFixed(2)}% coverage · ${(window.reliabilityPct * 100).toFixed(2)}% reliability${renewablePct}`;
     const ok = window.coverageRatio >= schedule.coverageThreshold;
     li.classList.add(ok ? "status-ok" : "status-warn");
     windowList.appendChild(li);
@@ -1327,7 +1287,7 @@ function renderAllocationPolicy(policy) {
     const latencyLabel = Number.isFinite(allocation.latencyMs)
       ? `Latency ${formatNumber(allocation.latencyMs)} ms`
       : "Latency n/a";
-    li.innerHTML = `
+    li.innerHTML = html`
       <strong>${allocation.name ?? allocation.shardId ?? allocation.federation ?? "Shard"}</strong>
       <div>Weight ${formatMaybeNumber(allocation.weight, (value) => (value * 100).toFixed(1))}% · Recommend ${formatMaybeNumber(
         allocation.recommendedGw,
@@ -1431,7 +1391,7 @@ function renderMissionLattice(mission) {
 
       const meta = document.createElement("div");
       meta.classList.add("mission-meta");
-      meta.innerHTML = `
+      meta.innerHTML = html`
         <span>Federation ${programme.federation}</span>
         <span>Owner safe ${programme.ownerSafe}</span>
         <span>${programme.taskCount} tasks</span>
@@ -1558,7 +1518,7 @@ function renderMissionThermodynamics(thermo) {
       const hamiltonianStatus =
         programme.hamiltonian >= 0.8 ? "status-fail" : programme.hamiltonian >= 0.6 ? "status-warn" : "status-ok";
       li.classList.add(hamiltonianStatus);
-      li.innerHTML = `
+      li.innerHTML = html`
         <strong>${programme.name}</strong>
         <div class="thermo-metrics">
           <span>Energy ${formatPercent(programme.energyShare, 1)}</span>
@@ -1587,7 +1547,7 @@ function renderMissionThermodynamics(thermo) {
       const statusClass =
         entry.pressureScore >= 0.75 ? "status-fail" : entry.pressureScore >= 0.55 ? "status-warn" : "status-ok";
       li.classList.add(statusClass);
-      li.innerHTML = `
+      li.innerHTML = html`
         <strong>${index + 1}. ${entry.name}</strong>
         <span class="queue-score">Pressure ${scoreText}</span>
         <span>${entry.recommendation}</span>
@@ -1652,7 +1612,7 @@ function renderLogistics(logistics, verification) {
   list.innerHTML = "";
   logistics.corridors.forEach((corridor) => {
     const li = document.createElement("li");
-    li.innerHTML = `<strong>${corridor.name}</strong><span>${(corridor.utilisationPct * 100).toFixed(1)}% · ${(corridor.reliabilityPct * 100).toFixed(
+    li.innerHTML = html`<strong>${corridor.name}</strong><span>${(corridor.utilisationPct * 100).toFixed(1)}% · ${(corridor.reliabilityPct * 100).toFixed(
       2
     )}% · buffer ${corridor.bufferDays.toFixed(1)}d</span>`;
     const ok =
@@ -1699,7 +1659,7 @@ function renderSettlement(settlement, verification) {
     const li = document.createElement("li");
     const withinTolerance = protocol.finalityMinutes <= protocol.toleranceMinutes;
     const withinCoverage = protocol.coveragePct >= settlement.coverageThreshold;
-    li.innerHTML = `<strong>${protocol.name}</strong><span>${protocol.finalityMinutes.toFixed(2)} / ${protocol.toleranceMinutes.toFixed(2)} min · ${(protocol.coveragePct * 100).toFixed(2)}% · risk ${protocol.riskLevel}</span>`;
+    li.innerHTML = html`<strong>${protocol.name}</strong><span>${protocol.finalityMinutes.toFixed(2)} / ${protocol.toleranceMinutes.toFixed(2)} min · ${(protocol.coveragePct * 100).toFixed(2)}% · risk ${protocol.riskLevel}</span>`;
     li.classList.add(withinTolerance && withinCoverage ? "status-ok" : "status-warn");
     if (protocol.riskLevel === "high") {
       li.classList.remove("status-ok", "status-warn");
@@ -1771,7 +1731,7 @@ function renderEquilibriumLedger(ledger) {
     const label = componentLabels[key] || key;
     const detailFn = componentDetails[key];
     const details = detailFn ? detailFn(component) : "Telemetry unavailable.";
-    li.innerHTML = `<strong>${label}</strong> — ${(score * 100).toFixed(1)}% · ${details}`;
+    li.innerHTML = html`<strong>${label}</strong> — ${(score * 100).toFixed(1)}% · ${details}`;
     li.classList.add(score >= 0.9 ? "status-ok" : score >= 0.8 ? "status-warn" : "status-fail");
     componentsList.appendChild(li);
   });
@@ -1786,9 +1746,9 @@ function renderEquilibriumLedger(ledger) {
     const action = ledger.primaryAction;
     const li = document.createElement("li");
     const priorityText = Number.isFinite(action.priorityScore)
-      ? `<br /><span>Priority: ${formatPercent(action.priorityScore)}</span>`
+      ? html`<br /><span>Priority: ${formatPercent(action.priorityScore)}</span>`
       : "";
-    li.innerHTML = `<strong>${action.rank}. ${action.title}</strong> — ${action.rationale}<br /><span>${action.action}</span><br /><span>Target: ${action.target}</span>${priorityText}`;
+    li.innerHTML = html`<strong>${action.rank}. ${action.title}</strong> — ${action.rationale}<br /><span>${action.action}</span><br /><span>Target: ${action.target}</span>${priorityText}`;
     li.classList.add(action.status === "needs-action" ? "status-warn" : "status-ok");
     primaryActionList.appendChild(li);
   }
@@ -1869,7 +1829,7 @@ function renderEquilibriumLedger(ledger) {
     ledger.pathways.forEach((pathway) => {
       const li = document.createElement("li");
       const status = pathway.status === "on-track" ? "status-ok" : "status-warn";
-      li.innerHTML = `<strong>${pathway.title}</strong> — ${pathway.rationale}<br /><span>${pathway.action}</span>`;
+      li.innerHTML = html`<strong>${pathway.title}</strong> — ${pathway.rationale}<br /><span>${pathway.action}</span>`;
       li.classList.add(status);
       pathwaysList.appendChild(li);
     });
@@ -1886,9 +1846,9 @@ function renderEquilibriumLedger(ledger) {
       const li = document.createElement("li");
       const status = step.status === "needs-action" ? "status-warn" : "status-ok";
       const priorityText = Number.isFinite(step.priorityScore)
-        ? `<br /><span>Priority: ${formatPercent(step.priorityScore)}</span>`
+        ? html`<br /><span>Priority: ${formatPercent(step.priorityScore)}</span>`
         : "";
-      li.innerHTML = `<strong>${step.rank}. ${step.title}</strong> — ${step.rationale}<br /><span>${step.action}</span><br /><span>Target: ${step.target}</span>${priorityText}`;
+      li.innerHTML = html`<strong>${step.rank}. ${step.title}</strong> — ${step.rationale}<br /><span>${step.action}</span><br /><span>Target: ${step.target}</span>${priorityText}`;
       li.classList.add(status);
       actionPathList.appendChild(li);
     });
@@ -1933,7 +1893,7 @@ function renderEquilibriumPath(path) {
 
   path.forEach((entry) => {
     const li = document.createElement("li");
-    li.innerHTML = `<strong>${entry.title}</strong> — ${entry.metric} · target ${entry.target}`;
+    li.innerHTML = html`<strong>${entry.title}</strong> — ${entry.metric} · target ${entry.target}`;
     const recommendation = document.createElement("div");
     recommendation.textContent = entry.recommendation;
     recommendation.classList.add("lede");
@@ -1965,7 +1925,7 @@ function renderLedger(ledger) {
   checkList.innerHTML = "";
   ledger.checks.forEach((check) => {
     const li = document.createElement("li");
-    li.innerHTML = `<strong>${check.title}</strong> — <span class="ledger-evidence">${check.evidence}</span>`;
+    li.innerHTML = html`<strong>${check.title}</strong> — <span class="ledger-evidence">${check.evidence}</span>`;
     li.classList.add(check.status ? "status-ok" : "status-fail");
     checkList.appendChild(li);
   });
@@ -1974,7 +1934,7 @@ function renderLedger(ledger) {
   methodsList.innerHTML = "";
   ledger.confidence.methods.forEach((method) => {
     const li = document.createElement("li");
-    li.innerHTML = `<strong>${method.method}</strong>: ${(method.score * 100).toFixed(2)}% — ${method.explanation}`;
+    li.innerHTML = html`<strong>${method.method}</strong>: ${(method.score * 100).toFixed(2)}% — ${method.explanation}`;
     li.classList.add(method.score >= 0.95 ? "status-ok" : method.score >= 0.75 ? "status-warn" : "status-fail");
     methodsList.appendChild(li);
   });
@@ -1989,7 +1949,7 @@ function renderLedger(ledger) {
   } else {
     ledger.alerts.forEach((alert) => {
       const li = document.createElement("li");
-      li.innerHTML = `<strong>${alert.title}</strong> (${alert.severity}) — ${alert.evidence}`;
+      li.innerHTML = html`<strong>${alert.title}</strong> (${alert.severity}) — ${alert.evidence}`;
       li.classList.add("status-fail");
       alertsList.appendChild(li);
     });
@@ -2103,7 +2063,7 @@ function renderOwnerProof(ownerProof, telemetry) {
   functionsList.innerHTML = "";
   ownerProof.requiredFunctions.forEach((fn) => {
     const li = document.createElement("li");
-    li.innerHTML = `<span>${fn.name}</span><span>${fn.occurrences}/${fn.minimumRequired}</span>`;
+    li.innerHTML = html`<span>${fn.name}</span><span>${fn.occurrences}/${fn.minimumRequired}</span>`;
     li.classList.add(fn.present ? "status-ok" : "status-fail");
     functionsList.appendChild(li);
   });
@@ -2171,6 +2131,7 @@ async function bootstrap() {
 
   const telemetry = telemetryResult.value;
   if (isLegacyTelemetry(telemetry)) {
+    showReady(telemetry);
     renderLegacyBanner();
     renderLegacyMetrics(telemetry);
     renderReflectionUnavailable(
@@ -2228,6 +2189,7 @@ async function bootstrap() {
     return;
   }
 
+  showReady(telemetry);
   renderMetrics(telemetry);
   attachReflectionButton(telemetry);
   renderOwnerDirectives(telemetry);
@@ -2296,4 +2258,4 @@ async function bootstrap() {
   });
 }
 
-bootstrap();
+bootstrap().catch(showFailure);

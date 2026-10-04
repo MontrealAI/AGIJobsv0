@@ -2,12 +2,27 @@
   "runs": 256,
   "breachProbability": 0,
   "percentileGw": {
-    "p50": 273468.4194078833,
-    "p95": 289943.141585405,
-    "p99": 292465.8542831234
+    "p50": 272146.3276207191,
+    "p95": 275729.57969433005,
+    "p99": 276278.26970608375
   },
-  "maxGw": 295685.83840385685,
-  "averageGw": 273067.2076398922,
+  "maxGw": 276978.6162523433,
+  "averageGw": 272059.06406118104,
+  "marginGw": 69600,
+  "freeEnergyMarginGw": 204270.42030566995,
+  "freeEnergyMarginPct": 0.4255633756368124,
+  "grossRunwayHours": 0.7508311513551826,
+  "usableFreeEnergyGw": 134670.42030566995,
+  "runwayHours": 0.49500435050892133,
+  "demandStdDevGw": 2128.696590561313,
+  "entropyMargin": 95.96032671420129,
+  "gibbsFreeEnergyGj": 484813513.10041183,
+  "hamiltonianStability": 0.7127816878184062,
+  "gameTheorySlack": 0.8707517595182829,
+  "runwayGapHours": 0.5049956494910787,
+  "runwayGapGwh": 137388.6437555111,
+  "runwayGapGj": 494599117.51983994,
+  "maintainsBuffer": true,
   "withinTolerance": true,
   "tolerance": 0.01
 }

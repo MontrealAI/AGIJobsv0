@@ -1726,6 +1726,8 @@
   },
   "verification": {
     "energyModels": {
+      "comparison": "capacity-envelope",
+      "explanation": "Regional load must fit captured capacity after its reserve margin and the thermostat budget. Planned Dyson yield covers the captured baseline; excess capacity is not reconciliation drift.",
       "expected": [
         "regionalSum",
         "dysonProjection",

@@ -128,7 +128,7 @@
     },
     {
       "id": "energy-triple-check",
-      "title": "Energy models reconciled",
+      "title": "Energy capacity covers modeled demand",
       "severity": "critical",
       "status": true,
       "weight": 1.1,

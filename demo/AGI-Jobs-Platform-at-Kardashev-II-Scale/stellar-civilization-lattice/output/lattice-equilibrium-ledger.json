@@ -1,0 +1,211 @@
+{
+  "generatedAt": "2025-04-01T00:00:00Z",
+  "status": "warning",
+  "overallScore": 0.8647,
+  "components": {
+    "energy": {
+      "score": 0.7404,
+      "freeEnergyMarginPct": 0.4256,
+      "usableFreeEnergyGw": 134670.4203,
+      "grossRunwayHours": 0.7508,
+      "runwayHours": 0.495,
+      "hamiltonianStability": 0.7128,
+      "gameTheorySlack": 0.8708,
+      "breachProbability": 0,
+      "gibbsFreeEnergyGj": 484813513.1,
+      "utilisationPct": 0.5791,
+      "utilisationScore": 1,
+      "safetyMarginPct": 0.145
+    },
+    "allocation": {
+      "score": 0.918,
+      "fairnessIndex": 0.9403,
+      "shapleyFairness": 0.9964,
+      "strategyStability": 0.8554,
+      "deviationIncentive": 0.1446,
+      "nashProduct": 0.8332,
+      "jainIndex": 0.9899,
+      "shapleyConcentration": 0.2526,
+      "gibbsPotential": -0.1877
+    },
+    "welfare": {
+      "score": 0.8768,
+      "cooperationIndex": 0.8632,
+      "inequalityIndex": 0.0509,
+      "coalitionStability": 0.8988,
+      "paretoSlack": 0.8554,
+      "collectiveActionPotential": 0.8157,
+      "freeEnergyPerAgentGj": 0.098942,
+      "welfarePotential": 0.8756
+    },
+    "logistics": {
+      "score": 0.9911,
+      "hamiltonianStability": 0.9858,
+      "gameTheorySlack": 0.9937,
+      "entropyRatio": 0.9986,
+      "nashWelfare": 0.9857
+    },
+    "compute": {
+      "score": 0.9925,
+      "failoverWithinQuorum": true,
+      "averageAvailabilityPct": 0.9813,
+      "deviationPct": 0
+    },
+    "mission": {
+      "score": 0.727,
+      "hamiltonianStability": 0.61,
+      "freeEnergyHeadroomPct": 0.3504
+    }
+  },
+  "thermodynamics": {
+    "freeEnergyMarginPct": 0.4256,
+    "usableFreeEnergyGw": 134670.4203,
+    "grossRunwayHours": 0.7508,
+    "runwayHours": 0.495,
+    "runwayGapHours": 0.505,
+    "runwayGapGwh": 137388.6438,
+    "runwayGapGj": 494599117.52,
+    "gibbsFreeEnergyGj": 484813513.1,
+    "entropyMargin": 95.9603,
+    "hamiltonianStability": 0.7128,
+    "hamiltonianComposite": 0.7695,
+    "hamiltonianTarget": 0.9,
+    "hamiltonianDelta": 0.1305,
+    "runwayAdjustment": {
+      "targetHours": 1,
+      "applied": false,
+      "runwayHoursBefore": 0.49500435050892133,
+      "runwayHoursAfter": 0.49500435050892133,
+      "runwayGapHoursBefore": 0.5049956494910787,
+      "runwayGapHoursAfter": 0.5049956494910787,
+      "runwayGapGwhBefore": 137388.6437555111,
+      "runwayGapGwhAfter": 137388.6437555111,
+      "totalReserveBoostGw": 329732.745,
+      "perFeedBoosts": [
+        {
+          "federationSlug": "orbital",
+          "region": "orbital-swarm",
+          "boostGw": 329732.745,
+          "weightPct": 100
+        }
+      ]
+    }
+  },
+  "gameTheory": {
+    "nashProduct": 0.8332,
+    "logisticsNashWelfare": 0.9857,
+    "coalitionStability": 0.8988,
+    "replicatorStability": 0.8595,
+    "replicatorDrift": 0.1405,
+    "shapleyFairness": 0.9964
+  },
+  "pathways": [
+    {
+      "title": "Thermodynamic headroom",
+      "status": "needs-action",
+      "rationale": "Free energy 42.6% · Hamiltonian 71.3% · runway 0.50h · utilisation 57.9% (margin 14.5%)",
+      "action": "Raise reserve buffers or smooth demand variance until Hamiltonian stability clears 85%."
+    },
+    {
+      "title": "Mission Hamiltonian balance",
+      "status": "needs-action",
+      "rationale": "Stability 61.0% · headroom 35.0%",
+      "action": "Adjust programme timelines and buffers to restore Hamiltonian stability above 90%."
+    },
+    {
+      "title": "Nash deviation control",
+      "status": "on-track",
+      "rationale": "Deviation incentive 14.5% · strategy 85.5%",
+      "action": "Keep incentive gradients aligned with Nash stability targets."
+    },
+    {
+      "title": "Sentient coalition balance",
+      "status": "on-track",
+      "rationale": "Coalition 89.9% · inequality 5.1%",
+      "action": "Continue cooperative reward rotations to sustain coalition stability."
+    },
+    {
+      "title": "Logistics game-theory slack",
+      "status": "on-track",
+      "rationale": "Slack 99.4% · entropy 1.00",
+      "action": "Maintain corridor utilisation within the equilibrium band."
+    },
+    {
+      "title": "Compute quorum resilience",
+      "status": "on-track",
+      "rationale": "Availability 98.1% · failover ok",
+      "action": "Sustain quorum failover coverage and monitor deviation drift."
+    }
+  ],
+  "actionPath": [
+    {
+      "rank": 1,
+      "title": "Stabilize mission Hamiltonian",
+      "status": "needs-action",
+      "rationale": "Stability 61.0% · headroom 35.0%",
+      "action": "Rebalance mission timelines and energy buffers to regain Hamiltonian stability.",
+      "target": "Mission Hamiltonian stability ≥ 90% and headroom ≥ 5%.",
+      "priorityScore": 0.273
+    },
+    {
+      "rank": 2,
+      "title": "Stabilize free energy buffer",
+      "status": "needs-action",
+      "rationale": "Free energy 42.6% · Hamiltonian 71.3% · runway 0.50h · utilisation 57.9% (margin 14.5%)",
+      "action": "Increase reserve buffers or smooth demand variance to restore Hamiltonian stability. Add ~137388.64 GWh (494599118 GJ) to hit the 1h runway. Reserve boost plan: orbital: +329,732.75 GW (100.0%) (total +329,732.75 GW).",
+      "target": "Free energy margin ≥ 70%, runway ≥ 1h, Hamiltonian stability ≥ 90%, utilisation ≤ 85.5%.",
+      "priorityScore": 0.2596
+    },
+    {
+      "rank": 3,
+      "title": "Reinforce sentient welfare balance",
+      "status": "on-track",
+      "rationale": "Coalition 89.9% · inequality 5.1%",
+      "action": "Continue cooperative reward rotations to sustain coalition stability.",
+      "target": "Coalition stability ≥ 85% and inequality ≤ 30%.",
+      "priorityScore": 0.1232
+    },
+    {
+      "rank": 4,
+      "title": "Tighten Nash allocation",
+      "status": "on-track",
+      "rationale": "Deviation 14.5% · strategy 85.5%",
+      "action": "Keep incentive gradients aligned with Nash stability targets.",
+      "target": "Deviation incentive ≤ 20% and strategy stability ≥ 85%.",
+      "priorityScore": 0.082
+    },
+    {
+      "rank": 5,
+      "title": "Restore logistics game-theory slack",
+      "status": "on-track",
+      "rationale": "Slack 99.4% · entropy 1.00",
+      "action": "Maintain corridor utilisation within the equilibrium band.",
+      "target": "Game-theory slack ≥ 85% and entropy ratio ≥ 0.9.",
+      "priorityScore": 0.0089
+    },
+    {
+      "rank": 6,
+      "title": "Secure compute quorum failover",
+      "status": "on-track",
+      "rationale": "Availability 98.1% · failover ok",
+      "action": "Sustain quorum failover coverage and monitor deviation drift.",
+      "target": "Failover within quorum and availability ≥ 95%.",
+      "priorityScore": 0.0075
+    }
+  ],
+  "primaryAction": {
+    "rank": 1,
+    "title": "Stabilize mission Hamiltonian",
+    "status": "needs-action",
+    "rationale": "Stability 61.0% · headroom 35.0%",
+    "action": "Rebalance mission timelines and energy buffers to regain Hamiltonian stability.",
+    "target": "Mission Hamiltonian stability ≥ 90% and headroom ≥ 5%.",
+    "priorityScore": 0.273
+  },
+  "recommendations": [
+    "Increase energy buffer or lower demand variance until Hamiltonian stability remains above 90%.",
+    "Extend free-energy runway to at least 1h to absorb demand shocks.",
+    "Lower mission Hamiltonian load or increase energy headroom to stabilize critical-path programmes.",
+    "Lift composite Hamiltonian stability by 13.1% using reserve buffers, mission slack, and logistics entropy smoothing."
+  ]
+}

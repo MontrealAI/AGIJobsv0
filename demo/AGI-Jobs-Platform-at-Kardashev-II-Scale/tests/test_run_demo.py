@@ -184,8 +184,9 @@ def test_run_demo_produces_outputs(tmp_path: Path) -> None:
         assert path.exists(), f"expected artefact missing: {path}"
 
     offline_index_contents = offline_index.read_text()
-    assert 'window.__KARDASHEV_ASSET_BASE__ = ".";' in offline_index_contents
+    assert 'data-asset-base="."' in offline_index_contents
     assert 'src="./kardashev-telemetry.inline.js"' in offline_index_contents
+    assert (offline_ui / "runtime.js").exists()
 
     action_path_contents = action_path.read_text()
     assert "Kardashev II Action Path" in action_path_contents

@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "mode": "deterministic-simulation",
+  "prefix": "kardashev",
+  "evidence": "Computed from local fixtures. No provider observations, signatures, transactions or physical infrastructure verified.",
+  "inputs": [
+    {
+      "name": "kardashev-ii.manifest.json",
+      "sha256": "5fa602043f799e1d8bd30a9755622f8210147e9a67ba7d59b81430411fb74ec9"
+    },
+    {
+      "name": "energy-feeds.json",
+      "sha256": "f3af5ef7e17b45f2cd4f425ab9197a392c9bc27d2554b2608f211e8f90e7046e"
+    },
+    {
+      "name": "fabric.json",
+      "sha256": "6f9247ee755e70ee530d89ca1e51db479f9d85c546a35dc699ac83d67b90f70e"
+    },
+    {
+      "name": "task-lattice.json",
+      "sha256": "177c85be509bb401bb0fdcf872df2cf32a439d9d487aada1e89352b344c9fb5a"
+    }
+  ]
+}

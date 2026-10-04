@@ -69,3 +69,21 @@ When updating an experience:
 
 See [the recorded validation scope](validation-2026-10-04.md) for the local checks
 performed while introducing these experiences.
+
+## Complete Kardashev II command decks
+
+The Kardashev II experience links to all three complete command decks: the base
+model, Stellar Civilization Lattice, and K2 Stellar. They are published under
+`experiments/kardashev-ii/`, together with their standalone `output/` exports.
+The builder copies tracked HTML, UI assets, ledgers and local Mermaid bundles;
+`catalog.json` lists the six `dashboardRoutes`. Source files and diagrams remain
+available alongside the guided tour.
+
+These are dated, deterministic model snapshots. They do not connect wallets,
+call providers, authenticate signatures or commission infrastructure. The demo's
+run manifest records exact input hashes. CI checks all three generators, rejects
+failed model readiness even after artifact regeneration, and tests every command
+deck for accessibility, responsive layout, diagram rendering and HTML injection.
+Pages QA separately opens all six published copies under the project base path.
+See the [Kardashev validation record](validation-kardashev-2026-10-04.md) for
+executed checks, preservation evidence and model limitations.

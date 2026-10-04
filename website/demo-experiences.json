@@ -832,11 +832,28 @@
         "explanation": "Expand the schedule and compare allocations with the manifest and energy feeds. This historical example is not live telemetry."
       }
     ],
-    "command": "npm run demo:kardashev-ii:orchestrate\nnpm run demo:kardashev-ii:ci",
-    "expected": "The orchestrator generates model ledgers and diagrams; the CI command checks their consistency. Use the serve command for the original dashboard.",
-    "experiment": "Trace one energy allocation through the task hierarchy and settlement model. Distinguish arithmetic consistency from physical feasibility or deployment readiness.",
+    "command": "npm run demo:kardashev-ii:orchestrate\nnpm run demo:kardashev-ii:ci\nnpm run demo:kardashev-ii:serve",
+    "expected": "Three model programmes and eleven stress scenarios in the main baseline, including five visible warnings. Inspect the run manifest input hashes and individual ledger checks. Check mode compares saved artifacts and fails critical/high readiness checks without writing files.",
+    "experiment": "Copy the configuration and select separate --config-root and --output-dir paths. Increase a bridge latency beyond its failsafe threshold, rerun, and inspect the failed readiness check. Restore the input and verify recovery; no external infrastructure or payment is affected.",
     "mode": "node",
-    "related": []
+    "related": [],
+    "dashboards": [
+      {
+        "title": "Main command deck",
+        "route": "experiments/kardashev-ii/",
+        "source": "demo/AGI-Jobs-Platform-at-Kardashev-II-Scale/index.html"
+      },
+      {
+        "title": "Sovereign Lattice",
+        "route": "experiments/kardashev-ii/stellar-civilization-lattice/",
+        "source": "demo/AGI-Jobs-Platform-at-Kardashev-II-Scale/stellar-civilization-lattice/index.html"
+      },
+      {
+        "title": "Stellar command deck",
+        "route": "experiments/kardashev-ii/k2-stellar-demo/",
+        "source": "demo/AGI-Jobs-Platform-at-Kardashev-II-Scale/k2-stellar-demo/index.html"
+      }
+    ]
   },
   "LARGE-SCALE-OMEGA-BUSINESS-3": {
     "question": "How do modeled missions turn into an operator control report?",

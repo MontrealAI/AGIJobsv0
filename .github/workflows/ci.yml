@@ -687,6 +687,14 @@ jobs:
         run: npm run demo:kardashev-ii:ci
       - name: Validate Stellar Kardashev II demo
         run: npm run demo:kardashev-ii-stellar:ci
+      - name: Validate Sovereign Lattice demo
+        run: npm run demo:kardashev-ii-lattice:ci
+      - name: Verify model failures, CLI and local server boundaries
+        run: node --test demo/AGI-Jobs-Platform-at-Kardashev-II-Scale/tests/runtime.test.cjs
+      - name: Install dashboard test browser
+        run: npx playwright install --with-deps chromium
+      - name: Verify every Kardashev command deck
+        run: node demo/AGI-Jobs-Platform-at-Kardashev-II-Scale/scripts/browser-qa.mjs
 
   asi_takeoff_demo:
     name: ASI Take-Off Demonstration

@@ -76,6 +76,13 @@ export function loadExperiences(root, catalog, tracked) {
         throw new Error(
           `Missing experience source: ${demo.name}: ${step.source}`
         );
+    for (const deck of p.dashboards || [])
+      if (
+        !/^experiments\/[a-z0-9/-]+\/$/.test(deck.route) ||
+        !deck.title ||
+        !tracked.has(deck.source)
+      )
+        throw new Error(`Invalid dashboard route: ${demo.name}`);
     for (const related of p.related)
       if (!names.has(related))
         throw new Error(`Missing related demo: ${related}`);
@@ -207,7 +214,18 @@ export function renderExperience(demo, profile, ctx) {
             'Check its source revision, configuration, timestamps and underlying events. Historical fixtures and generated plans do not prove a fresh execution.',
           ],
         ];
-  return `<nav class="experience-nav" aria-label="On this demo page"><a href="#guided-tour">Guided tour</a><a href="#inspect">Inspect the sources</a><a href="#try-it">Try it locally</a><a href="#architecture">Architecture</a><a href="#library">Complete library</a></nav>
+  const dashboards = (profile.dashboards || [])
+    .map(
+      (deck) =>
+        `<a class="button secondary" href="${base}${esc(deck.route)}">${esc(
+          deck.title
+        )} ↗</a>`
+    )
+    .join('');
+  const deckSection = dashboards
+    ? `<section class="experience-intro"><p class="eyebrow">OPEN THE COMPLETE COMMAND DECKS</p><h2>Explore the model in your browser.</h2><p class="section-description">Read-only dashboards with energy, governance, stress scenarios and preserved diagrams. No wallet or installation required; all values come from recorded simulations.</p><div class="hero-actions">${dashboards}</div></section>`
+    : '';
+  return `${deckSection}<nav class="experience-nav" aria-label="On this demo page"><a href="#guided-tour">Guided tour</a><a href="#inspect">Inspect the sources</a><a href="#try-it">Try it locally</a><a href="#architecture">Architecture</a><a href="#library">Complete library</a></nav>
 <section id="guided-tour" class="experience-intro"><p class="eyebrow">A CLOSER LOOK</p><h2>${esc(
     profile.question
   )}</h2><p class="section-description">${esc(

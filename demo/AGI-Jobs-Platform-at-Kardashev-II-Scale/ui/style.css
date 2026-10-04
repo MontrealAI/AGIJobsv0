@@ -643,3 +643,22 @@ button:hover {
   color: rgba(191, 219, 254, 0.85);
   line-height: 1.5;
 }
+
+/* Operator orientation and resilient small-screen layouts. */
+.scope-banner { border: 1px solid #8b79bb; border-radius: 16px; padding: 20px; background: #191126; color: #e9e4f5; }
+.scope-banner strong, .operator-guide .tag { color: #c9b7f5; }
+.scope-banner p { margin-top: 12px; line-height: 1.7; }
+.deck-nav { display:flex; flex-wrap:wrap; gap:12px; margin-top:20px; }
+.deck-nav a { color:#ddd0ff; border:1px solid #675581; border-radius:999px; padding:10px 16px; text-decoration:none; }
+.deck-nav a:hover { background:#302443; }
+.operator-guide li { margin-bottom:16px; line-height:1.75; }
+.operator-guide p { margin-top:16px; line-height:1.75; }
+.card, .card li, .card div, .card p { min-width:0; overflow-wrap:anywhere; }
+pre { overflow:auto; max-width:100%; }
+svg { max-width:100%; }
+a { color:#c9c3ff; }
+:focus-visible { outline:3px solid #c9b7f5; outline-offset:4px; }
+.skip-link { position:absolute; top:-80px; left:16px; z-index:10; padding:12px; background:#191126; }
+.skip-link:focus { top:12px; }
+@media(max-width:520px) { main { padding:32px 16px 64px; } h1 { font-size:2.2rem; } .card { padding:16px; } .metrics-grid,.federation-grid { grid-template-columns:minmax(0,1fr); } .section-title { flex-wrap:wrap; } }
+@media(prefers-reduced-motion:reduce) { * { scroll-behavior:auto !important; animation:none !important; transition:none !important; } }
