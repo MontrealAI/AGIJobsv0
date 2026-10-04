@@ -665,8 +665,8 @@
     {
       "id": "earth-mars-aether",
       "name": "Aether Mass Driver",
-      "fromFederation": "earth",
-      "toFederation": "mars",
+      "fromFederation": "earth-sovereign-grid",
+      "toFederation": "mars-terraforming-directorate",
       "transportMode": "mass-driver shuttle",
       "capacityTonnesPerDay": 720000,
       "utilisationPct": 0.79,
@@ -691,8 +691,8 @@
     {
       "id": "earth-orbital-solstice",
       "name": "Solstice Sky Rail",
-      "fromFederation": "earth",
-      "toFederation": "orbital",
+      "fromFederation": "earth-sovereign-grid",
+      "toFederation": "orbital-dyson-halo",
       "transportMode": "laser launch array",
       "capacityTonnesPerDay": 960000,
       "utilisationPct": 0.86,
@@ -717,8 +717,8 @@
     {
       "id": "mars-titan-cryo",
       "name": "Cryo Methane Chain",
-      "fromFederation": "mars",
-      "toFederation": "titan",
+      "fromFederation": "mars-terraforming-directorate",
+      "toFederation": "titan-cryofusion-array",
       "transportMode": "cryogenic hauler fleet",
       "capacityTonnesPerDay": 260000,
       "utilisationPct": 0.71,
@@ -743,8 +743,8 @@
     {
       "id": "orbital-titan-halo",
       "name": "Halo Cryo Spine",
-      "fromFederation": "orbital",
-      "toFederation": "titan",
+      "fromFederation": "orbital-dyson-halo",
+      "toFederation": "titan-cryofusion-array",
       "transportMode": "orbital tether ferry",
       "capacityTonnesPerDay": 340000,
       "utilisationPct": 0.74,

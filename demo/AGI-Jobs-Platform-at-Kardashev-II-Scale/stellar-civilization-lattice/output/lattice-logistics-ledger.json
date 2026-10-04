@@ -159,12 +159,22 @@
     ],
     "totalEnergyMwh": 371600
   },
+  "equilibrium": {
+    "hamiltonian": 0.057,
+    "hamiltonianStability": 0.9858,
+    "entropy": 1.3844,
+    "entropyRatio": 0.9986,
+    "nashWelfare": 0.9857,
+    "gameTheorySlack": 0.9937,
+    "gibbsFreeEnergyMwh": 7.23
+  },
   "warnings": [],
   "verification": {
     "reliabilityOk": true,
     "bufferOk": true,
     "utilisationOk": true,
     "watchersOk": true,
-    "autonomyOk": true
+    "autonomyOk": true,
+    "equilibriumOk": true
   }
 }

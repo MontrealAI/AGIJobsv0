@@ -1,17 +1,17 @@
 #!/usr/bin/env ts-node
 
 import { mkdirSync, readFileSync, writeFileSync, existsSync } from "node:fs";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { Interface, keccak256, toUtf8Bytes } from "ethers";
 import { z } from "zod";
 
-const DEMO_ROOT = join(__dirname, "..");
-const CONFIG_PATH = join(DEMO_ROOT, "config", "k2-stellar.manifest.json");
-const OUTPUT_DIR = join(DEMO_ROOT, "output");
-
-const args = new Set(process.argv.slice(2));
-const CHECK_MODE = args.has("--check") || args.has("--ci");
-const REFLECT_MODE = args.has("--reflect");
+const { resolveOptions, validateInputs, readinessFailures, provenance, dashboardArtifacts } = require("../../scripts/runtime.cjs");
+const options = resolveOptions(resolve(__dirname, ".."));
+const DEMO_ROOT = options.root;
+const CONFIG_PATH = join(options.configRoot, "config", "k2-stellar.manifest.json");
+const OUTPUT_DIR = options.outputDir;
+const CHECK_MODE = options.check;
+const REFLECT_MODE = options.reflect;
 
 const ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
 const managerInterface = new Interface([
@@ -1123,7 +1123,7 @@ function buildSafeBatch(manifest: Manifest, transactions: SafeTransaction[]) {
     createdAt,
     meta: {
       name: "AGI Jobs Kardashev-II Stellar Command Batch",
-      description: "Owner-calibrated payload synthesised by demo/AGI-Jobs-Platform-at-Kardashev-II-Scale/k2-stellar-demo",
+      description: "UNSIGNED SIMULATION ONLY. Placeholder targets; do not submit to a wallet. Payload synthesised by demo/AGI-Jobs-Platform-at-Kardashev-II-Scale/k2-stellar-demo",
     },
     transactions: transactions.map((tx) => ({
       to: tx.to,
@@ -1136,6 +1136,7 @@ function buildSafeBatch(manifest: Manifest, transactions: SafeTransaction[]) {
 
 function writeOrCheck(path: string, content: string) {
   if (CHECK_MODE) {
+    if (!existsSync(path)) { console.error(`Missing artefact: ${path}`); process.exitCode = 1; return; }
     const existing = readFileSync(path, "utf8");
     if (existing !== content) {
       console.error(`❌ Drift detected for ${path}. Regenerate artefacts.`);
@@ -1148,7 +1149,8 @@ function writeOrCheck(path: string, content: string) {
 
 function run() {
   const manifest = loadManifest();
-  ensureOutputDir();
+  validateInputs(manifest);
+  if (!CHECK_MODE) ensureOutputDir();
 
   const totalMonthlyValue = manifest.federations.flatMap((f) => f.domains).reduce((sum, d) => sum + d.monthlyValueUSD, 0);
   const totalResilience = manifest.federations.flatMap((f) => f.domains).reduce((sum, d) => sum + d.resilience, 0);
@@ -1181,6 +1183,7 @@ function run() {
   const ledgerJson = `${JSON.stringify(stabilityLedger, null, 2)}\n`;
 
   const outputs = [
+    { path: join(OUTPUT_DIR, "stellar-run-manifest.json"), content: `${JSON.stringify(provenance([CONFIG_PATH], "stellar"), null, 2)}\n` },
     { path: join(OUTPUT_DIR, "stellar-telemetry.json"), content: telemetryJson },
     { path: join(OUTPUT_DIR, "stellar-safe-transaction-batch.json"), content: safeJson },
     { path: join(OUTPUT_DIR, "stellar-stability-ledger.json"), content: ledgerJson },
@@ -1198,6 +1201,15 @@ function run() {
     writeOrCheck(output.path, output.content);
   }
 
+  const modelFailures: string[] = readinessFailures(telemetry, stabilityLedger);
+  for (const failure of modelFailures) console.error(`❌ Model readiness failed: ${failure}`);
+  if (modelFailures.length) process.exitCode = 1;
+
+  for (const asset of dashboardArtifacts(DEMO_ROOT, OUTPUT_DIR)) {
+    if (!CHECK_MODE) mkdirSync(require("node:path").dirname(asset.path), { recursive: true });
+    writeOrCheck(asset.path, asset.content);
+  }
+
   if (CHECK_MODE) {
     const failures = process.exitCode ?? 0;
     if (failures) {
@@ -1208,7 +1220,7 @@ function run() {
     return;
   }
 
-  console.log("✔ Stellar Kardashev-II orchestration artefacts generated.");
+  console.log("Stellar Kardashev-II simulation artefacts generated. No network actions were performed.");
   console.log(`   Dominance score: ${dominanceScore.toFixed(1)} / 100.`);
   console.log(`   Monthly value throughput: ${formatUSD(totalMonthlyValue)}.`);
   console.log(`   Average resilience: ${(averageResilience * 100).toFixed(2)}%.`);

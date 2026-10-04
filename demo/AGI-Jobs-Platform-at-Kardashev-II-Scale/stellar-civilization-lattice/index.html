@@ -1,29 +1,37 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-asset-base="./output">
   <head>
     <meta charset="utf-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>AGI Jobs v0 (v2) — Sovereign Lattice Command Deck</title>
     <link rel="stylesheet" href="./ui/style.css" />
   </head>
   <body>
-    <main>
+    <a class="skip-link" href="#main">Skip to overview</a>
+    <main id="main">
       <header>
         <span class="tag">AGI Jobs v0 (v2) · Sovereign Lattice demo</span>
         <h1>Sovereign Lattice Command Deck</h1>
-        <p>
-          Non-technical stewards can orchestrate the Dyson Heliosphere, federated domains, and emergency levers by loading the
-          Safe batch generated with <code>npm run demo:kardashev-ii-lattice:orchestrate</code>.
-        </p>
+        <p>Explore how a civilization-scale coordination model balances energy, computation, logistics,
+          validation and human governance. Inspect the assumptions, stress scenarios and unsigned governance proposals.</p>
+        <div class="scope-banner"><strong>DETERMINISTIC SIMULATION · NO WALLET REQUIRED</strong>
+          <p>This command deck reads local fixture data. It does not control physical infrastructure, contact providers,
+          collect signatures or execute payments. “Dominance”, “welfare” and “unstoppable” scores are model heuristics.</p>
+          <p id="demo-load-status" role="status">Loading the recorded simulation snapshot…</p>
+        </div>
+        <nav class="deck-nav" aria-label="Command deck sections">
+          <a href="#metrics">Overview</a><a href="#system-map">System map</a><a href="#governance">Governance</a><a href="#operator-guide">How to use this demo</a>
+        </nav>
       </header>
 
-      <section class="metrics-grid">
+      <section class="metrics-grid" id="metrics" aria-label="Modeled indicators">
         <article class="card">
           <h2>Dominance</h2>
           <p id="dominance-score">…</p>
         </article>
         <article class="card">
-          <h2>Monthly value flow</h2>
+          <h2>Assumed monthly value flow</h2>
           <p id="monthly-value">…</p>
         </article>
         <article class="card">
@@ -55,7 +63,7 @@
           <p>Status: <span id="energy-monte-carlo-status">…</span></p>
         </article>
         <article class="card">
-          <h2>Live energy feeds</h2>
+          <h2>Modeled energy feeds</h2>
           <p id="energy-feed-compliance">…</p>
           <p id="energy-feed-latency">…</p>
           <ul id="energy-feed-list" class="feed-list"></ul>
@@ -147,7 +155,7 @@
 
       <section class="card">
         <div class="section-title">
-          <h2>Owner override proof</h2>
+          <h2>Owner proposal structure</h2>
         </div>
         <p id="owner-proof-score" class="lede">…</p>
         <p id="owner-proof-secondary" class="lede">…</p>
@@ -160,7 +168,7 @@
         <p id="owner-proof-targets">…</p>
       </section>
 
-      <section class="card">
+      <section class="card" id="system-map">
         <div class="section-title">
           <h2>Federated systems map</h2>
           <button id="reflect-button">Run reflection checklist</button>
@@ -183,7 +191,7 @@
         <ul id="scenario-list" class="scenario-list"></ul>
       </section>
 
-      <section class="card">
+      <section class="card" id="governance">
         <div class="section-title">
           <h2>Owner directives</h2>
         </div>
@@ -204,6 +212,17 @@
         <div id="federation-grid" class="federation-grid"></div>
       </section>
 
+      <section class="card operator-guide" id="operator-guide">
+        <span class="tag">YOUR FIRST COMPLETE RUN</span><h2>From assumptions to a reviewable result</h2>
+        <ol><li><strong>Read the model.</strong> Inspect this profile’s config files. Recorded dates identify fixtures; they are not freshness claims.</li>
+        <li><strong>Reproduce it.</strong> From the repository root, run <code>nvm install</code>, <code>nvm use</code>, <code>npm ci</code>, then <code>npm run demo:kardashev-ii-lattice:orchestrate</code>.</li>
+        <li><strong>Verify it.</strong> Run <code>npm run demo:kardashev-ii-lattice:orchestrate -- --check</code>. This compares artifacts and enforces critical/high readiness checks without writing files.</li>
+        <li><strong>Experiment.</strong> Copy the profile configuration, change one input, and select separate <code>--config-root</code> and <code>--output-dir</code> directories. Compare the ledger warnings and metrics. A stressed model can intentionally fail readiness.</li></ol>
+        <p><strong>Read the evidence correctly.</strong> Input hashes establish reproducibility. Encoded calls and owner-selector checks establish proposal structure, not authority, signatures or successful transactions. Safe batches contain placeholder targets and are not ready to submit.</p>
+        <p><strong>Units.</strong> GW measures power; GWh measures stored energy; EF means exaflops. Currency values are scenario assumptions. Thermostat “Kelvin” fields are legacy normalized model parameters, not measured stellar temperatures.</p>
+        <p><a href="./README.md">Complete runbook and assumptions ↗</a></p>
+      </section>
+      <noscript><p class="scope-banner">JavaScript is needed for this dashboard. Read the complete runbook and JSON/Markdown artifacts in output/ to inspect the same simulation without scripts.</p></noscript>
       <footer class="footer-note">
         Generated from <code>config/kardashev-ii.manifest.json</code> · artefacts in <code>output/</code> · validate with
         <code>npm run demo:kardashev-ii-lattice:ci</code>

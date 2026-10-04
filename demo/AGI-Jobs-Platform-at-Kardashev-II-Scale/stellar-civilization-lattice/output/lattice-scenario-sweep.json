@@ -36,9 +36,9 @@
   {
     "id": "bridge-failover",
     "title": "Interplanetary bridge outage simulation",
-    "status": "warning",
-    "summary": "Failover latency 220s leaves 20s slack within 240s failsafe.",
-    "confidence": 0.5416666666666666,
+    "status": "nominal",
+    "summary": "Failover latency 143s leaves 97s slack within 240s failsafe. Relay boost 35.0% applied from Gibbs reserve.",
+    "confidence": 0.7020833333333333,
     "impact": "Bridge sentries maintain cadence under reroute load.",
     "metrics": [
       {
@@ -52,18 +52,29 @@
         "ok": true
       },
       {
+        "label": "Relay boost allocation",
+        "value": "35.0% (168000 GW)",
+        "ok": true
+      },
+      {
+        "label": "Mitigated latency",
+        "value": "143s",
+        "ok": true
+      },
+      {
         "label": "Failsafe budget",
         "value": "240s",
         "ok": true
       },
       {
         "label": "Slack",
-        "value": "20s",
+        "value": "97s",
         "ok": true
       }
     ],
     "recommendedActions": [
-      "Execute bridge isolation routine from mission directives if slack < 0.",
+      "Allocate relay boost to stabilise bridge latency using Gibbs reserve.",
+      "Keep isolation routine on standby while relays rebalance.",
       "Rebalance capital streams to spin up orbital relays before load crosses failsafe."
     ]
   },
@@ -172,9 +183,9 @@
   {
     "id": "energy-window-loss",
     "title": "Primary energy window offline",
-    "status": "warning",
-    "summary": "Coverage remains 82.49% after losing orbital 8h window.",
-    "confidence": 0.9820464926262302,
+    "status": "nominal",
+    "summary": "Coverage remains 122.03% after losing orbital 8h window. Reserve boost +2637862 GW·h applied from Gibbs runway plan.",
+    "confidence": 1,
     "impact": "Secondary windows can absorb the loss with limited throttling.",
     "metrics": [
       {
@@ -184,12 +195,17 @@
       },
       {
         "label": "Remaining coverage",
-        "value": "82.49%",
-        "ok": false
+        "value": "122.03%",
+        "ok": true
       },
       {
         "label": "Threshold",
         "value": "84.00%",
+        "ok": true
+      },
+      {
+        "label": "Reserve boost",
+        "value": "2637861.96 GW·h",
         "ok": true
       },
       {

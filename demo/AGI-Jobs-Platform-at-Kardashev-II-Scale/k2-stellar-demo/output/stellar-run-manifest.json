@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "mode": "deterministic-simulation",
+  "prefix": "stellar",
+  "evidence": "Computed from local fixtures. No provider observations, signatures, transactions or physical infrastructure verified.",
+  "inputs": [
+    {
+      "name": "k2-stellar.manifest.json",
+      "sha256": "50155e5e05f5ba243b954b612585e307fb58fcd2a922d3a3f21daa44ce9e64c7"
+    }
+  ]
+}

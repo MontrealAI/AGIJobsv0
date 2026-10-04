@@ -126,7 +126,13 @@ test('every demo has a unique route and all built local page/asset links resolve
     assert.equal(document.querySelectorAll('main#main').length, 1, file);
   }
   assert.deepEqual(missing, []);
-  assert.equal(pages.length, catalog.length + manifest.guides + 2);
+  assert.equal(
+    pages.length,
+    catalog.length +
+      manifest.guides +
+      2 +
+      (manifest.dashboardRoutes || []).length
+  );
 });
 
 test('published guides preserve every original Mermaid block verbatim', () => {
@@ -309,4 +315,43 @@ test('nested demo documentation is discovered without misclassifying the impleme
   );
   assert.equal(demo.readme, 'demo/superintelligent-empowerment/docs/README.md');
   assert.equal(demo.kindId, 'code');
+});
+
+test('all six published Kardashev decks retain their local assets and navigation', () => {
+  const output = path.join(root, 'build/pages');
+  const manifest = JSON.parse(
+    fs.readFileSync(path.join(output, 'catalog.json'))
+  );
+  assert.equal(manifest.dashboardRoutes.length, 6);
+  for (const route of manifest.dashboardRoutes) {
+    const document = new JSDOM(
+      fs.readFileSync(path.join(output, route, 'index.html'), 'utf8')
+    ).window.document;
+    assert.match(
+      document.querySelector('meta[http-equiv="Content-Security-Policy"]')
+        .content,
+      /script-src 'self'/
+    );
+    assert.equal(document.querySelectorAll('script:not([src])').length, 0);
+    for (const element of document.querySelectorAll('[href],[src]')) {
+      const value = element.getAttribute('href') || element.getAttribute('src');
+      if (value.startsWith('#')) {
+        assert.ok(
+          document.getElementById(value.slice(1)),
+          `${route}: ${value}`
+        );
+        continue;
+      }
+      const url = new URL(value, `https://example.invalid/${route}`);
+      assert.equal(
+        url.origin,
+        'https://example.invalid',
+        `${route}: external asset`
+      );
+      assert.ok(
+        fs.existsSync(path.join(output, decodeURIComponent(url.pathname))),
+        `${route}: ${value}`
+      );
+    }
+  }
 });

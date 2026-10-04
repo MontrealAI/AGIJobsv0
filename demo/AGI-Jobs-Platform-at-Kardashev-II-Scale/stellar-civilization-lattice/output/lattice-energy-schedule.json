@@ -1,6 +1,7 @@
 {
   "globalCoverageRatio": 1,
   "globalReliabilityPct": 0.9849,
+  "globalRenewablePct": 0.9521,
   "coverageThreshold": 0.84,
   "reliabilityThreshold": 0.95,
   "windows": [
@@ -275,6 +276,7 @@
       "scheduledGwH": 2016000,
       "coverageRatio": 1,
       "reliabilityPct": 0.9811,
+      "renewablePct": 0.9178,
       "windowCount": 4,
       "transferCapacityGbps": 1985,
       "deficitGwH": 0
@@ -285,6 +287,7 @@
       "scheduledGwH": 632000,
       "coverageRatio": 1,
       "reliabilityPct": 0.9627,
+      "renewablePct": 0.9134,
       "windowCount": 3,
       "transferCapacityGbps": 612,
       "deficitGwH": 0
@@ -295,6 +298,7 @@
       "scheduledGwH": 3352000,
       "coverageRatio": 1,
       "reliabilityPct": 0.9924,
+      "renewablePct": 0.9884,
       "windowCount": 3,
       "transferCapacityGbps": 1850,
       "deficitGwH": 0.01
@@ -305,22 +309,12 @@
       "scheduledGwH": 671200,
       "coverageRatio": 1,
       "reliabilityPct": 0.9797,
+      "renewablePct": 0.9101,
       "windowCount": 3,
       "transferCapacityGbps": 632,
       "deficitGwH": 0.01
     }
   ],
-  "deficits": [
-    {
-      "federation": "orbital",
-      "coverageRatio": 1,
-      "deficitGwH": 0.01
-    },
-    {
-      "federation": "luna",
-      "coverageRatio": 1,
-      "deficitGwH": 0.01
-    }
-  ],
+  "deficits": [],
   "reliabilityDeficits": []
 }

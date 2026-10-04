@@ -214,6 +214,13 @@
   },
   "energy": {
     "capturedGw": 480000,
+    "capturedPlan": {
+      "baselineCapturedGw": 480000,
+      "effectiveCapturedGw": 480000,
+      "requiredCapturedGw": 325107.21,
+      "expansionTargetGw": 480000,
+      "expansionNeeded": false
+    },
     "dysonYield": 567000,
     "utilisationPct": 0.5790972229166667,
     "marginPct": 0.145,
@@ -249,20 +256,114 @@
       "regionalSumGw": 277966.667,
       "dysonProjectionGw": 567000,
       "thermostatBudgetGw": 398400,
+      "deltaGw": 289033.333,
+      "deltaPct": 0.509759,
       "withinMargin": true
     },
     "monteCarlo": {
       "runs": 256,
       "breachProbability": 0,
       "percentileGw": {
-        "p50": 273468.4194078833,
-        "p95": 289943.141585405,
-        "p99": 292465.8542831234
+        "p50": 272146.3276207191,
+        "p95": 275729.57969433005,
+        "p99": 276278.26970608375
       },
-      "maxGw": 295685.83840385685,
-      "averageGw": 273067.2076398922,
+      "maxGw": 276978.6162523433,
+      "averageGw": 272059.06406118104,
+      "marginGw": 69600,
+      "freeEnergyMarginGw": 204270.42030566995,
+      "freeEnergyMarginPct": 0.4255633756368124,
+      "grossRunwayHours": 0.7508311513551826,
+      "usableFreeEnergyGw": 134670.42030566995,
+      "runwayHours": 0.49500435050892133,
+      "demandStdDevGw": 2128.696590561313,
+      "entropyMargin": 95.96032671420129,
+      "gibbsFreeEnergyGj": 484813513.10041183,
+      "hamiltonianStability": 0.7127816878184062,
+      "gameTheorySlack": 0.8707517595182829,
+      "runwayGapHours": 0.5049956494910787,
+      "runwayGapGwh": 137388.6437555111,
+      "runwayGapGj": 494599117.51983994,
+      "maintainsBuffer": true,
       "withinTolerance": true,
       "tolerance": 0.01
+    },
+    "allocationPolicy": {
+      "temperature": 0.2240302835016431,
+      "nashProduct": 0.8331769930110751,
+      "strategyStability": 0.8554459997956473,
+      "deviationIncentive": 0.14455400020435272,
+      "replicatorDrift": 0.14045845900304266,
+      "replicatorStability": 0.8595415409969573,
+      "jainIndex": 0.9898664326668037,
+      "concentrationIndex": 0.2959456672812839,
+      "diversificationScore": 0.7040543327187161,
+      "diversificationTarget": 0.3,
+      "diversificationAlpha": 0,
+      "allocationEntropy": 1.303575861126742,
+      "fairnessIndex": 0.9403312151350555,
+      "shapleyEntropy": 1.3813195478248188,
+      "shapleyFairness": 0.9964114307649258,
+      "shapleyConcentration": 0.2525593269452262,
+      "gibbsPotential": -0.18767064819717355,
+      "allocations": [
+        {
+          "federation": "earth",
+          "name": "Earth Sovereign Federation",
+          "weight": 0.21958694595633713,
+          "recommendedGw": 61037.85,
+          "payoff": 0.8265,
+          "shapleyShare": 0.246797,
+          "currentGw": 84000,
+          "deltaGw": -22962.15,
+          "resilience": 0.945,
+          "renewablePct": 0.87,
+          "latencyMs": 85,
+          "storageGwh": 54000
+        },
+        {
+          "federation": "mars",
+          "name": "Mars Terraforming Compact",
+          "weight": 0.17853788058988032,
+          "recommendedGw": 49627.58,
+          "payoff": 0.7754,
+          "shapleyShare": 0.231539,
+          "currentGw": 26333.33,
+          "deltaGw": 23294.25,
+          "resilience": 0.935,
+          "renewablePct": 0.93,
+          "latencyMs": 820,
+          "storageGwh": 18000
+        },
+        {
+          "federation": "orbital",
+          "name": "Orbital Research Halo",
+          "weight": 0.4327036738497087,
+          "recommendedGw": 120277.2,
+          "payoff": 0.9787,
+          "shapleyShare": 0.292245,
+          "currentGw": 139666.67,
+          "deltaGw": -19389.47,
+          "resilience": 0.959,
+          "renewablePct": 0.99,
+          "latencyMs": 42,
+          "storageGwh": 128000
+        },
+        {
+          "federation": "luna",
+          "name": "Luna Infrastructure Federation",
+          "weight": 0.1691714996040738,
+          "recommendedGw": 47024.04,
+          "payoff": 0.7683,
+          "shapleyShare": 0.229419,
+          "currentGw": 27966.67,
+          "deltaGw": 19057.37,
+          "resilience": 0.938,
+          "renewablePct": 0.91,
+          "latencyMs": 52,
+          "storageGwh": 12200
+        }
+      ]
     },
     "liveFeeds": {
       "calibrationISO8601": "2025-02-28T18:00:00Z",
@@ -330,6 +431,7 @@
     "schedule": {
       "globalCoverageRatio": 1,
       "globalReliabilityPct": 0.9849,
+      "globalRenewablePct": 0.9521,
       "coverageThreshold": 0.84,
       "reliabilityThreshold": 0.95,
       "windows": [
@@ -604,6 +706,7 @@
           "scheduledGwH": 2016000,
           "coverageRatio": 1,
           "reliabilityPct": 0.9811,
+          "renewablePct": 0.9178,
           "windowCount": 4,
           "transferCapacityGbps": 1985,
           "deficitGwH": 0
@@ -614,6 +717,7 @@
           "scheduledGwH": 632000,
           "coverageRatio": 1,
           "reliabilityPct": 0.9627,
+          "renewablePct": 0.9134,
           "windowCount": 3,
           "transferCapacityGbps": 612,
           "deficitGwH": 0
@@ -624,6 +728,7 @@
           "scheduledGwH": 3352000,
           "coverageRatio": 1,
           "reliabilityPct": 0.9924,
+          "renewablePct": 0.9884,
           "windowCount": 3,
           "transferCapacityGbps": 1850,
           "deficitGwH": 0.01
@@ -634,23 +739,13 @@
           "scheduledGwH": 671200,
           "coverageRatio": 1,
           "reliabilityPct": 0.9797,
+          "renewablePct": 0.9101,
           "windowCount": 3,
           "transferCapacityGbps": 632,
           "deficitGwH": 0.01
         }
       ],
-      "deficits": [
-        {
-          "federation": "orbital",
-          "coverageRatio": 1,
-          "deficitGwH": 0.01
-        },
-        {
-          "federation": "luna",
-          "coverageRatio": 1,
-          "deficitGwH": 0.01
-        }
-      ],
+      "deficits": [],
       "reliabilityDeficits": []
     },
     "crossVerification": {
@@ -661,8 +756,8 @@
         "bigInt": 277966.667,
         "projection": 277966.6666666667
       },
-      "toleranceGw": 0.277966667,
-      "tolerancePct": 0.000001,
+      "toleranceGw": 138.98333350000001,
+      "tolerancePct": 0.0005,
       "maxDeviationGw": 0.00033333332976326346,
       "consensus": true,
       "coverageRatio": 1,
@@ -865,13 +960,23 @@
       ],
       "totalEnergyMwh": 371600
     },
+    "equilibrium": {
+      "hamiltonian": 0.057,
+      "hamiltonianStability": 0.9858,
+      "entropy": 1.3844,
+      "entropyRatio": 0.9986,
+      "nashWelfare": 0.9857,
+      "gameTheorySlack": 0.9937,
+      "gibbsFreeEnergyMwh": 7.23
+    },
     "warnings": [],
     "verification": {
       "reliabilityOk": true,
       "bufferOk": true,
       "utilisationOk": true,
       "watchersOk": true,
-      "autonomyOk": true
+      "autonomyOk": true,
+      "equilibriumOk": true
     }
   },
   "compute": {
@@ -1043,6 +1148,19 @@
         "lastAnchorRotationISO8601": "2025-03-22T02:00:00Z"
       }
     ]
+  },
+  "sentientWelfare": {
+    "totalAgents": 4900000000,
+    "federationCount": 4,
+    "freeEnergyPerAgentGj": 0.098942,
+    "cooperationIndex": 0.8631526999110954,
+    "inequalityIndex": 0.05093463525336679,
+    "payoffCoefficient": 0.10117958183796122,
+    "coalitionStability": 0.8988204181620387,
+    "paretoSlack": 0.8554459997956473,
+    "equilibriumScore": 0.9125167614095236,
+    "welfarePotential": 0.8755600167846918,
+    "collectiveActionPotential": 0.8157293862486543
   },
   "computeFabric": {
     "totalCapacityExaflops": 94.9,
@@ -1875,6 +1993,67 @@
       }
     ]
   },
+  "missionThermodynamics": {
+    "freeEnergyBudgetGw": 204270.42030566995,
+    "freeEnergyHeadroomPct": 0.3503780794265351,
+    "hamiltonianLoad": 0.38999999999999996,
+    "hamiltonianStability": 0.6100000000000001,
+    "programmes": [
+      {
+        "id": "helios-lattice",
+        "name": "Helios Lattice Stewardship",
+        "energyShare": 0.6826758147512865,
+        "computeShare": 0.6532663316582914,
+        "riskIndex": 0.6,
+        "timelineSlackDays": 0,
+        "hamiltonian": 0.6405206995526518,
+        "pressureScore": 0.8555206995526518,
+        "recommendation": "Expand timeline slack and buffer energy reserves."
+      },
+      {
+        "id": "luna-supply-gateway",
+        "name": "Luna Supply Gateway",
+        "energyShare": 0.1269296740994854,
+        "computeShare": 0.1608040201005025,
+        "riskIndex": 0.4,
+        "timelineSlackDays": 0,
+        "hamiltonian": 0.2273193583698941,
+        "pressureScore": 0.4123193583698941,
+        "recommendation": "Expand timeline slack and buffer energy reserves."
+      },
+      {
+        "id": "ares-lifeline",
+        "name": "Ares Terraforming Lifeline",
+        "energyShare": 0.19039451114922812,
+        "computeShare": 0.185929648241206,
+        "riskIndex": 0.6,
+        "timelineSlackDays": 0,
+        "hamiltonian": 0.30215994207745417,
+        "pressureScore": 0.5171599420774542,
+        "recommendation": "Expand timeline slack and buffer energy reserves."
+      }
+    ],
+    "actionQueue": [
+      {
+        "id": "helios-lattice",
+        "name": "Helios Lattice Stewardship",
+        "pressureScore": 0.8555206995526518,
+        "recommendation": "Expand timeline slack and buffer energy reserves."
+      },
+      {
+        "id": "ares-lifeline",
+        "name": "Ares Terraforming Lifeline",
+        "pressureScore": 0.5171599420774542,
+        "recommendation": "Expand timeline slack and buffer energy reserves."
+      },
+      {
+        "id": "luna-supply-gateway",
+        "name": "Luna Supply Gateway",
+        "pressureScore": 0.4123193583698941,
+        "recommendation": "Expand timeline slack and buffer energy reserves."
+      }
+    ]
+  },
   "missionDirectives": {
     "ownerPowers": [
       {
@@ -1913,6 +2092,8 @@
   },
   "verification": {
     "energyModels": {
+      "comparison": "capacity-envelope",
+      "explanation": "Regional load must fit captured capacity after its reserve margin and the thermostat budget. Planned Dyson yield covers the captured baseline; excess capacity is not reconciliation drift.",
       "expected": [
         "regionalSum",
         "dysonProjection",
@@ -1921,9 +2102,12 @@
       "results": {
         "regionalSumGw": 277966.667,
         "dysonProjectionGw": 567000,
-        "thermostatBudgetGw": 398400
+        "thermostatBudgetGw": 398400,
+        "deltaGw": 289033.333,
+        "deltaPct": 0.509759
       },
-      "withinMargin": true
+      "withinMargin": true,
+      "tolerancePct": 0.145
     },
     "energyMonteCarlo": {
       "runs": 256,
@@ -1931,9 +2115,9 @@
       "tolerance": 0.01,
       "withinTolerance": true,
       "percentileGw": {
-        "p50": 273468.4194078833,
-        "p95": 289943.141585405,
-        "p99": 292465.8542831234
+        "p50": 272146.3276207191,
+        "p95": 275729.57969433005,
+        "p99": 276278.26970608375
       }
     },
     "energyFeeds": {
@@ -2004,18 +2188,7 @@
       "reliabilityOk": true,
       "globalCoverageRatio": 1,
       "globalReliabilityPct": 0.9849,
-      "deficits": [
-        {
-          "federation": "orbital",
-          "coverageRatio": 1,
-          "deficitGwH": 0.01
-        },
-        {
-          "federation": "luna",
-          "coverageRatio": 1,
-          "deficitGwH": 0.01
-        }
-      ],
+      "deficits": [],
       "reliabilityDeficits": []
     },
     "logistics": {
@@ -2024,9 +2197,12 @@
       "utilisationOk": true,
       "watchersOk": true,
       "autonomyOk": true,
+      "equilibriumOk": true,
       "minimumBufferDays": 14,
       "averageReliabilityPct": 0.9858,
-      "averageUtilisationPct": 0.805
+      "averageUtilisationPct": 0.805,
+      "hamiltonianStability": 0.9858,
+      "gameTheorySlack": 0.9937
     },
     "compute": {
       "tolerancePct": 8,
@@ -2150,9 +2326,9 @@
     {
       "id": "bridge-failover",
       "title": "Interplanetary bridge outage simulation",
-      "status": "warning",
-      "summary": "Failover latency 220s leaves 20s slack within 240s failsafe.",
-      "confidence": 0.5416666666666666,
+      "status": "nominal",
+      "summary": "Failover latency 143s leaves 97s slack within 240s failsafe. Relay boost 35.0% applied from Gibbs reserve.",
+      "confidence": 0.7020833333333333,
       "impact": "Bridge sentries maintain cadence under reroute load.",
       "metrics": [
         {
@@ -2166,18 +2342,29 @@
           "ok": true
         },
         {
+          "label": "Relay boost allocation",
+          "value": "35.0% (168000 GW)",
+          "ok": true
+        },
+        {
+          "label": "Mitigated latency",
+          "value": "143s",
+          "ok": true
+        },
+        {
           "label": "Failsafe budget",
           "value": "240s",
           "ok": true
         },
         {
           "label": "Slack",
-          "value": "20s",
+          "value": "97s",
           "ok": true
         }
       ],
       "recommendedActions": [
-        "Execute bridge isolation routine from mission directives if slack < 0.",
+        "Allocate relay boost to stabilise bridge latency using Gibbs reserve.",
+        "Keep isolation routine on standby while relays rebalance.",
         "Rebalance capital streams to spin up orbital relays before load crosses failsafe."
       ]
     },
@@ -2286,9 +2473,9 @@
     {
       "id": "energy-window-loss",
       "title": "Primary energy window offline",
-      "status": "warning",
-      "summary": "Coverage remains 82.49% after losing orbital 8h window.",
-      "confidence": 0.9820464926262302,
+      "status": "nominal",
+      "summary": "Coverage remains 122.03% after losing orbital 8h window. Reserve boost +2637862 GW·h applied from Gibbs runway plan.",
+      "confidence": 1,
       "impact": "Secondary windows can absorb the loss with limited throttling.",
       "metrics": [
         {
@@ -2298,12 +2485,17 @@
         },
         {
           "label": "Remaining coverage",
-          "value": "82.49%",
-          "ok": false
+          "value": "122.03%",
+          "ok": true
         },
         {
           "label": "Threshold",
           "value": "84.00%",
+          "ok": true
+        },
+        {
+          "label": "Reserve boost",
+          "value": "2637861.96 GW·h",
           "ok": true
         },
         {

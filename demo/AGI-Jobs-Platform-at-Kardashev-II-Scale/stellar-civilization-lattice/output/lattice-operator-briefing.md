@@ -23,14 +23,24 @@
 * Bridge latency tolerance (120s): true
 * Settlement finality 4.73 min (max 12.00 min) · slippage threshold 75 bps.
 * Logistics corridors 4 active — avg reliability 98.58% · min buffer 14.00d · watchers 12 (nominal).
+* Logistics equilibrium: Hamiltonian 98.6% · entropy 1.384 · game-theory slack 99.4%.
 * Mission unstoppable 100.00% across 3 programmes (dependencies resolved true).
 * Mission advisories: none — autonomy, sentinel, and timeline guardrails nominal.
 * Owner override unstoppable score 100.00% (selectors true, pause true, resume true, secondary aligned @ 100.00%, tertiary aligned @ 100.00% · decode failures 0).
-* Scenario sweep: 8/11 nominal, 3 warning, 0 critical.
-  - Interplanetary bridge outage simulation: Failover latency 220s leaves 20s slack within 240s failsafe.
-  - Primary energy window offline: Coverage remains 82.49% after losing orbital 8h window.
+* Scenario sweep: 10/11 nominal, 1 warning, 0 critical.
   - Logistics demand spike (+25%): Corridors absorb spike with utilisation 102.72% and buffers 12.00d.
 * Audit checklist: ipfs://QmKardashevAuditChecklist
+
+## Equilibrium action path
+* Gibbs free energy 484,813,513.1 GJ · entropy 95.96σ · Hamiltonian 71.3%
+* Free energy runway 0.49h at mean demand (gap 0.51h, 137388.64 GWh).
+* Nash 83.3% · coalition 89.9% · logistics welfare 98.6%
+* 1. Stabilize mission Hamiltonian (needs-action) — Rebalance mission timelines and energy buffers to regain Hamiltonian stability. · target Mission Hamiltonian stability ≥ 90% and headroom ≥ 5%.
+* 2. Stabilize free energy buffer (needs-action) — Increase reserve buffers or smooth demand variance to restore Hamiltonian stability. Add ~137388.64 GWh (494599118 GJ) to hit the 1h runway. Reserve boost plan: orbital: +329,732.75 GW (100.0%) (total +329,732.75 GW). · target Free energy margin ≥ 70%, runway ≥ 1h, Hamiltonian stability ≥ 90%, utilisation ≤ 85.5%.
+* 3. Reinforce sentient welfare balance (on-track) — Continue cooperative reward rotations to sustain coalition stability. · target Coalition stability ≥ 85% and inequality ≤ 30%.
+* 4. Tighten Nash allocation (on-track) — Keep incentive gradients aligned with Nash stability targets. · target Deviation incentive ≤ 20% and strategy stability ≥ 85%.
+* 5. Restore logistics game-theory slack (on-track) — Maintain corridor utilisation within the equilibrium band. · target Game-theory slack ≥ 85% and entropy ratio ≥ 0.9.
+* 6. Secure compute quorum failover (on-track) — Sustain quorum failover coverage and monitor deviation drift. · target Failover within quorum and availability ≥ 95%.
 
 ## Identity posture
 * 4/4 federations meeting quorum 5.

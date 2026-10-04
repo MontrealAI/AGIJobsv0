@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "mode": "deterministic-simulation",
+  "prefix": "lattice",
+  "evidence": "Computed from local fixtures. No provider observations, signatures, transactions or physical infrastructure verified.",
+  "inputs": [
+    {
+      "name": "kardashev-ii.manifest.json",
+      "sha256": "d0794e148a4d13da57667f011d287878c9b00fc6dcc8adb68357cb15a268c74f"
+    },
+    {
+      "name": "energy-feeds.json",
+      "sha256": "89f1d61ddf0d9cb01c6d2d2b1d6d35682b465197cf4ab03f8bd150347280e5b1"
+    },
+    {
+      "name": "fabric.json",
+      "sha256": "a703b6fd997d1a9876b2b02a835041697c8179c3050534de4a577d884476986e"
+    },
+    {
+      "name": "task-lattice.json",
+      "sha256": "f6e76d22c65ad4c9bd897259e4e4c6fa0e0e9b37c518518ff819db33c99e8f52"
+    }
+  ]
+}

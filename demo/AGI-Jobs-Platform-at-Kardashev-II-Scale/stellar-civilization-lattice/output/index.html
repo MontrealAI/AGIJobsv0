@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en" data-asset-base=".">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AGI Jobs v0 (v2) — Sovereign Lattice Command Deck</title>
+    <link rel="stylesheet" href="./ui/style.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to overview</a>
+    <main id="main">
+      <header>
+        <span class="tag">AGI Jobs v0 (v2) · Sovereign Lattice demo</span>
+        <h1>Sovereign Lattice Command Deck</h1>
+        <p>Explore how a civilization-scale coordination model balances energy, computation, logistics,
+          validation and human governance. Inspect the assumptions, stress scenarios and unsigned governance proposals.</p>
+        <div class="scope-banner"><strong>DETERMINISTIC SIMULATION · NO WALLET REQUIRED</strong>
+          <p>This command deck reads local fixture data. It does not control physical infrastructure, contact providers,
+          collect signatures or execute payments. “Dominance”, “welfare” and “unstoppable” scores are model heuristics.</p>
+          <p id="demo-load-status" role="status">Loading the recorded simulation snapshot…</p>
+        </div>
+        <nav class="deck-nav" aria-label="Command deck sections">
+          <a href="#metrics">Overview</a><a href="#system-map">System map</a><a href="#governance">Governance</a><a href="#operator-guide">How to use this demo</a>
+        </nav>
+      </header>
+
+      <section class="metrics-grid" id="metrics" aria-label="Modeled indicators">
+        <article class="card">
+          <h2>Dominance</h2>
+          <p id="dominance-score">…</p>
+        </article>
+        <article class="card">
+          <h2>Assumed monthly value flow</h2>
+          <p id="monthly-value">…</p>
+        </article>
+        <article class="card">
+          <h2>Resilience</h2>
+          <p id="resilience">…</p>
+        </article>
+        <article class="card">
+          <h2>Energy utilisation</h2>
+          <p id="energy-utilisation">…</p>
+          <p id="energy-margin">…</p>
+          <p>Status: <span id="energy-status">…</span></p>
+        </article>
+        <article class="card">
+          <h2>Guardian coverage</h2>
+          <p id="coverage">…</p>
+          <p>Status: <span id="coverage-status">…</span></p>
+        </article>
+        <article class="card">
+          <h2>Bridges</h2>
+          <ul id="bridge-statuses"></ul>
+        </article>
+        <article class="card">
+          <h2>Energy models</h2>
+          <p id="energy-models">…</p>
+        </article>
+        <article class="card">
+          <h2>Energy Monte Carlo</h2>
+          <p id="energy-monte-carlo-summary">…</p>
+          <p>Status: <span id="energy-monte-carlo-status">…</span></p>
+        </article>
+        <article class="card">
+          <h2>Modeled energy feeds</h2>
+          <p id="energy-feed-compliance">…</p>
+          <p id="energy-feed-latency">…</p>
+          <ul id="energy-feed-list" class="feed-list"></ul>
+        </article>
+        <article class="card">
+          <h2>Compute delta</h2>
+          <p id="compute-deviation">…</p>
+        </article>
+        <article class="card">
+          <h2>Bridge compliance</h2>
+          <p id="bridge-compliance">…</p>
+        </article>
+      </section>
+
+      <section class="card">
+        <div class="section-title">
+          <h2>Identity lattice posture</h2>
+        </div>
+        <p id="identity-summary" class="lede">…</p>
+        <ul id="identity-federations" class="identity-list"></ul>
+        <div class="identity-meta">
+          <p>Root authority: <span id="identity-root">…</span></p>
+          <p>Merkle root: <span id="identity-merkle">…</span></p>
+          <p>Revocation rate: <span id="identity-revocation">…</span></p>
+          <p>Latency window: <span id="identity-latency">…</span></p>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="section-title">
+          <h2>Compute fabric orchestration</h2>
+        </div>
+        <p id="fabric-summary" class="lede">…</p>
+        <ul id="fabric-planes" class="fabric-list"></ul>
+        <p class="fabric-meta" id="fabric-meta">…</p>
+      </section>
+
+      <section class="card">
+        <div class="section-title">
+          <h2>Sharded registry fabric</h2>
+        </div>
+        <p id="fabric-federation-summary" class="lede">…</p>
+        <p id="fabric-latency-summary">…</p>
+        <ul id="fabric-shards" class="fabric-list"></ul>
+      </section>
+
+      <section class="card">
+        <div class="section-title">
+          <h2>Energy window schedule</h2>
+        </div>
+        <p id="schedule-summary" class="lede">…</p>
+        <ul id="schedule-coverage" class="schedule-coverage"></ul>
+        <ul id="energy-window-list" class="window-list"></ul>
+        <p id="schedule-deficits">…</p>
+      </section>
+
+      <section class="card">
+        <div class="section-title">
+          <h2>Logistics corridors</h2>
+        </div>
+        <p id="logistics-summary" class="lede">…</p>
+        <p id="logistics-watchers">…</p>
+        <ul id="logistics-corridors" class="logistics-list"></ul>
+      </section>
+
+      <section class="card">
+        <div class="section-title">
+          <h2>Settlement lattice</h2>
+        </div>
+        <p id="settlement-summary" class="lede">…</p>
+        <p id="settlement-watchers">…</p>
+        <ul id="settlement-protocols" class="settlement-list"></ul>
+      </section>
+
+      <section class="card">
+        <div class="section-title">
+          <h2>Stability ledger</h2>
+        </div>
+        <p id="ledger-summary" class="lede">…</p>
+        <p class="ledger-score">Composite confidence: <span id="ledger-score">…</span></p>
+        <ul id="ledger-checks" class="ledger-list"></ul>
+        <h3>Verification vectors</h3>
+        <ul id="ledger-methods" class="ledger-methods"></ul>
+        <div class="ledger-alerts">
+          <h3>Alerts</h3>
+          <ul id="ledger-alerts"></ul>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="section-title">
+          <h2>Owner proposal structure</h2>
+        </div>
+        <p id="owner-proof-score" class="lede">…</p>
+        <p id="owner-proof-secondary" class="lede">…</p>
+        <ul id="owner-proof-summary" class="owner-proof-summary"></ul>
+        <ul id="owner-proof-functions" class="owner-proof-list"></ul>
+        <div class="owner-proof-meta">
+          <p>Transaction set hash: <span id="owner-proof-tx-hash">…</span></p>
+          <p>Selector set hash: <span id="owner-proof-selector-hash">…</span></p>
+        </div>
+        <p id="owner-proof-targets">…</p>
+      </section>
+
+      <section class="card" id="system-map">
+        <div class="section-title">
+          <h2>Federated systems map</h2>
+          <button id="reflect-button">Run reflection checklist</button>
+        </div>
+        <div id="mermaid-container">Loading interstellar map…</div>
+        <ul id="reflection-checklist"></ul>
+      </section>
+
+      <section class="card">
+        <div class="section-title">
+          <h2>Dyson Swarm timeline</h2>
+        </div>
+        <div id="dyson-container">Preparing Dyson programme timeline…</div>
+      </section>
+
+      <section class="card">
+        <div class="section-title">
+          <h2>Scenario stress sweep</h2>
+        </div>
+        <ul id="scenario-list" class="scenario-list"></ul>
+      </section>
+
+      <section class="card" id="governance">
+        <div class="section-title">
+          <h2>Owner directives</h2>
+        </div>
+        <ul id="owner-powers" class="owner-powers"></ul>
+        <div class="escalation-grid">
+          <p>Guardians: <span id="guardian-hotline">…</span></p>
+          <p>Operations: <span id="operations-hotline">…</span></p>
+          <p>Status page: <span id="status-page">…</span></p>
+          <p>Bridge failover: <span id="bridge-failover">…</span></p>
+        </div>
+        <p id="drill-info">…</p>
+      </section>
+
+      <section class="card">
+        <div class="section-title">
+          <h2>Federation readiness</h2>
+        </div>
+        <div id="federation-grid" class="federation-grid"></div>
+      </section>
+
+      <section class="card operator-guide" id="operator-guide">
+        <span class="tag">YOUR FIRST COMPLETE RUN</span><h2>From assumptions to a reviewable result</h2>
+        <ol><li><strong>Read the model.</strong> Inspect this profile’s config files. Recorded dates identify fixtures; they are not freshness claims.</li>
+        <li><strong>Reproduce it.</strong> From the repository root, run <code>nvm install</code>, <code>nvm use</code>, <code>npm ci</code>, then <code>npm run demo:kardashev-ii-lattice:orchestrate</code>.</li>
+        <li><strong>Verify it.</strong> Run <code>npm run demo:kardashev-ii-lattice:orchestrate -- --check</code>. This compares artifacts and enforces critical/high readiness checks without writing files.</li>
+        <li><strong>Experiment.</strong> Copy the profile configuration, change one input, and select separate <code>--config-root</code> and <code>--output-dir</code> directories. Compare the ledger warnings and metrics. A stressed model can intentionally fail readiness.</li></ol>
+        <p><strong>Read the evidence correctly.</strong> Input hashes establish reproducibility. Encoded calls and owner-selector checks establish proposal structure, not authority, signatures or successful transactions. Safe batches contain placeholder targets and are not ready to submit.</p>
+        <p><strong>Units.</strong> GW measures power; GWh measures stored energy; EF means exaflops. Currency values are scenario assumptions. Thermostat “Kelvin” fields are legacy normalized model parameters, not measured stellar temperatures.</p>
+        <p><a href="./README.md">Complete runbook and assumptions ↗</a></p>
+      </section>
+      <noscript><p class="scope-banner">JavaScript is needed for this dashboard. Read the complete runbook and JSON/Markdown artifacts in output/ to inspect the same simulation without scripts.</p></noscript>
+      <footer class="footer-note">
+        Generated from <code>config/kardashev-ii.manifest.json</code> · artefacts in <code>output/</code> · validate with
+        <code>npm run demo:kardashev-ii-lattice:ci</code>
+      </footer>
+    </main>
+    <script type="module" src="./ui/dashboard.js"></script>
+  </body>
+</html>

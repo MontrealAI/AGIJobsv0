@@ -361,6 +361,19 @@ try {
     [],
     'Every preserved diagram must parse and render'
   );
+  assert.equal(manifest.dashboardRoutes.length, 6);
+  for (const route of manifest.dashboardRoutes) {
+    await page.goto(url + route, { waitUntil: 'networkidle' });
+    await page.waitForFunction(
+      () => document.documentElement.dataset.demoStatus === 'ready'
+    );
+    await page.locator('#mermaid-container svg').waitFor();
+    await page.locator('#dyson-container svg').waitFor();
+    assert.equal(await page.locator('main#main').count(), 1);
+  }
+  checks.push(
+    'all six published Kardashev command decks load and render diagrams'
+  );
   assert.deepEqual(requests, [], 'Unexpected external network requests');
   assert.deepEqual(errors, [], 'Browser errors');
   fs.writeFileSync(
