@@ -8,6 +8,7 @@ import { ethers } from 'ethers';
 import {
   computerTaskDigest,
   computerWorkHandler,
+  ComputerWorkOutcomeUnknown,
   executeComputerWork,
   parseComputerWorkTask,
   requireComputerWorkAdmission,
@@ -584,6 +585,104 @@ test('assigned-job orchestration confirms submission before starting review', as
   } finally {
     run.mock.restore();
   }
+});
+
+test('unknown computer dispatch retains its replay barrier without training a failed outcome', async (t) => {
+  let calls = 0;
+  const f = await fixture(t, (_req, res) => {
+    calls++;
+    res.end(JSON.stringify({ ...completed(), status: 'incomplete' }));
+  });
+  const { stateDirectory } = configureWorker(t, f);
+  const state: any = {
+    identity: { address: ethers.ZeroAddress },
+    classification: { category: 'computer-work', tags: [] },
+    spec: { metadata: { computerWork: task } },
+    summary: {},
+  };
+  t.mock.method(
+    execution,
+    'runJob',
+    async () =>
+      computerWorkHandler({
+        context: {
+          jobId: '1',
+          category: 'computer-work',
+          metadata: state.spec.metadata,
+        },
+      } as any) as any
+  );
+  let failures = 0;
+  const orchestrator: any = {
+    watchdog: {
+      recordFailure: () => {
+        failures++;
+      },
+    },
+    learning: {
+      recordJobOutcome: () =>
+        assert.fail('Unknown work must not train an outcome'),
+    },
+    registry: {
+      connect: () => assert.fail('Unknown work must not submit evidence'),
+    },
+    spawnSubtasks: () => assert.fail('Unknown work must not spawn paid work'),
+    settlementJournal: {
+      save: () => assert.fail('No completed manifest exists'),
+    },
+  };
+  const execute = () =>
+    (MetaOrchestrator.prototype as any).executeAssignedJob.call(
+      orchestrator,
+      '1',
+      state,
+      {}
+    );
+  await assert.rejects(execute(), ComputerWorkOutcomeUnknown);
+  const journals = fs.readdirSync(stateDirectory);
+  assert.equal(journals.length, 1);
+  assert.equal(
+    JSON.parse(fs.readFileSync(path.join(stateDirectory, journals[0]), 'utf8'))
+      .status,
+    'dispatched'
+  );
+  assert.equal(state.execution, undefined);
+  await assert.rejects(execute(), /already dispatched/);
+  assert.equal(calls, 1);
+  assert.equal(failures, 2);
+});
+
+test('ordinary execution errors remain operational signals rather than settled training outcomes', async (t) => {
+  const error = new Error('Artifact publication is unavailable');
+  t.mock.method(execution, 'runJob', async () => {
+    throw error;
+  });
+  let failures = 0;
+  await assert.rejects(
+    (MetaOrchestrator.prototype as any).executeAssignedJob.call(
+      {
+        watchdog: {
+          recordFailure: () => {
+            failures++;
+          },
+        },
+        learning: {
+          recordJobOutcome: () =>
+            assert.fail('Execution errors are not settled outcomes'),
+        },
+      },
+      '1',
+      {
+        identity: { address: ethers.ZeroAddress },
+        classification: { category: 'general', tags: [] },
+        spec: {},
+        summary: {},
+      },
+      {}
+    ),
+    error
+  );
+  assert.equal(failures, 1);
 });
 
 test('settlement learning records the actual outcome once and spawns only after success', async () => {

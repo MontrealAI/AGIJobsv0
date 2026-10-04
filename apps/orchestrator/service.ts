@@ -27,7 +27,10 @@ import { getWatchdog } from './monitor';
 import { postJob } from './employer';
 import { evaluateSubmission, needsIndependentReview } from './validation';
 import { SettlementJournal } from './settlementJournal';
-import { requireComputerWorkAdmission } from './computerWork';
+import {
+  ComputerWorkOutcomeUnknown,
+  requireComputerWorkAdmission,
+} from './computerWork';
 import { LearningCoordinator } from './learning';
 import {
   CompletedJobEvidence,
@@ -1085,26 +1088,23 @@ export class MetaOrchestrator {
           keywords: runResult.snapshot.keywords.slice(0, 12),
         },
       });
-      // Positive learning credit and dependent jobs wait for final settlement.
+      // All outcome learning and dependent jobs wait for final settlement.
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       this.watchdog.recordFailure(state.identity.address, message);
-      auditLog('job.execution_failed', {
-        jobId,
-        actor: state.identity.address,
-        details: { error: message },
-      });
-      if (!state.execution)
-        await this.learning.recordJobOutcome({
+      auditLog(
+        err instanceof ComputerWorkOutcomeUnknown
+          ? 'job.execution_outcome_unknown'
+          : 'job.execution_failed',
+        {
           jobId,
-          identity: state.identity,
-          classification: state.classification,
-          spec: state.spec,
-          summary: state.summary,
-          chainJob,
-          success: false,
-          errorMessage: message,
-        });
+          actor: state.identity.address,
+          details: { error: message },
+        }
+      );
+      // A transport, worker, pinning or submission error is operational evidence,
+      // not a finalized job outcome. It must never label training success/failure.
+      // Unknown dispatches retain their durable barrier for reconciliation.
       throw err;
     }
   }
