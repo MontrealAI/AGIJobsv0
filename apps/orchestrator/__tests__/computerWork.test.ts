@@ -1105,3 +1105,115 @@ test('worker application receives exactly the hash-verified specification', asyn
   );
   assert.equal(applied, true);
 });
+
+test('mined submissions restore review and dispute evidence without rebroadcasting after restart', async () => {
+  const prototype = MetaOrchestrator.prototype as any;
+  const manifest = { jobId: '1', stageCids: ['fixture'] };
+  const resultHash = ethers.keccak256(
+    ethers.toUtf8Bytes(JSON.stringify(manifest))
+  );
+  let onChainState = 3n,
+    evidenceWrites = 0,
+    reviewStarts = 0,
+    selections = 0,
+    disputes = 0;
+  const recovered: any = {
+    appliedJobs: new Map([
+      [
+        '1',
+        {
+          identity: { address: ethers.ZeroAddress },
+          execution: {
+            runResult: { manifest },
+            resultRef: 'ipfs://fixture',
+            chainJob: {},
+          },
+        },
+      ],
+    ]),
+    completedJobs: new Map(),
+    registry: {
+      jobs: async () => ({
+        packedMetadata: onChainState,
+        agent: ethers.ZeroAddress,
+        resultHash,
+      }),
+      submit: () => assert.fail('Never rebroadcast a mined submission'),
+    },
+    settlementJournal: {
+      claimSubmission: () => assert.fail('No new broadcast claim'),
+    },
+    recordCompletedJob: (
+      id: string,
+      _state: unknown,
+      result: any,
+      uri: string,
+      job: any
+    ) => {
+      assert.deepEqual(result.manifest, manifest);
+      assert.equal(uri, 'ipfs://fixture');
+      assert.equal(job.resultHash, resultHash);
+      evidenceWrites++;
+      recovered.completedJobs.set(id, { recovered: true });
+    },
+    beginReviewPhase: () => {
+      reviewStarts++;
+    },
+    clearReviewTimer: () => {},
+    validatorIdentities: [{ address: ethers.ZeroAddress }],
+    validationModule: { validators: async () => [ethers.ZeroAddress] },
+    handleValidatorsSelected: async (id: bigint, validators: string[]) => {
+      assert.equal(id, 1n);
+      assert.deepEqual(validators, [ethers.ZeroAddress]);
+      selections++;
+    },
+    prepareDisputeEvidenceForJob: async (id: string) => {
+      assert.ok(recovered.completedJobs.has(id));
+      disputes++;
+    },
+  };
+  await prototype.recoverPreparedSubmission.call(recovered, '1');
+  await prototype.recoverPreparedSubmission.call(recovered, '1');
+  assert.equal(evidenceWrites, 1);
+  assert.equal(reviewStarts, 2);
+  assert.equal(selections, 2);
+  onChainState = 5n;
+  await prototype.recoverPreparedSubmission.call(recovered, '1');
+  assert.equal(disputes, 1);
+  assert.equal(reviewStarts, 2);
+  onChainState = 4n;
+  await prototype.recoverPreparedSubmission.call(recovered, '1');
+  assert.equal(evidenceWrites, 1);
+  recovered.registry.jobs = async () => ({
+    packedMetadata: 3n,
+    agent: ethers.ZeroAddress,
+    resultHash: ethers.ZeroHash,
+  });
+  await assert.rejects(
+    prototype.recoverPreparedSubmission.call(recovered, '1'),
+    /does not match/
+  );
+});
+
+test('validator recovery never overwrites an already-mined commitment with a new salt', async () => {
+  const prototype = MetaOrchestrator.prototype as any;
+  const validator: any = {
+    commits: new Map(),
+    appliedJobs: new Map(),
+    provider: {},
+    validationContext: async () => ({
+      classification: { category: 'research' },
+      spec: null,
+    }),
+    validationModule: {
+      jobNonce: async () => 2n,
+      commitments: async () => '0x' + '12'.repeat(32),
+      connect: () =>
+        assert.fail('A mined commitment requires its original reveal secret'),
+    },
+  };
+  await prototype.commitValidation.call(validator, 1n, {
+    address: ethers.ZeroAddress,
+    wallet: { connect: () => ({}) },
+  });
+});
