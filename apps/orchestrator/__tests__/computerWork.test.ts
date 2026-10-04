@@ -17,6 +17,7 @@ import { evaluateSubmission } from '../validation';
 import { fetchArtifactBytes } from '../artifactSource';
 import { MetaOrchestrator } from '../service';
 import * as execution from '../execution';
+import { prepareJobArtifacts } from '../employer';
 import { SettlementJournal } from '../settlementJournal';
 
 const task = {
@@ -513,7 +514,13 @@ test('assigned-job orchestration confirms submission before starting review', as
   const orchestrator: any = {
     registry,
     provider: { getBlockNumber: async () => 10 },
-    settlementJournal: { save: () => order.push('persist') },
+    settlementJournal: {
+      save: () => order.push('persist'),
+      claimSubmission: () => {
+        order.push('submission-claim');
+        return true;
+      },
+    },
     beginReviewPhase: (_id: string, reason: string) => {
       assert.equal(reason, 'evidence-submitted');
       order.push('review');
@@ -544,6 +551,7 @@ test('assigned-job orchestration confirms submission before starting review', as
     );
     assert.deepEqual(order, [
       'persist',
+      'submission-claim',
       'submit',
       'confirmed',
       'review',
@@ -715,6 +723,7 @@ test('pending handoff survives restart and recovers a completion missed while of
       }),
     },
     registry: {
+      jobs: async () => ({ packedMetadata: 4n }),
       filters: { JobCompleted: () => ({}) },
       queryFilter: async (_filter: unknown, from: number, to: number) => {
         assert.ok(to - from < 2000);
@@ -728,6 +737,7 @@ test('pending handoff survives restart and recovers a completion missed while of
       spawned++;
     },
     recordSettledOutcome: prototype.recordSettledOutcome,
+    recoverPreparedSubmission: prototype.recoverPreparedSubmission,
   };
   prototype.restorePendingSettlements.call(restarted);
   assert.equal(restarted.appliedJobs.get('1').execution.chainJob.reward, '5');
@@ -768,7 +778,7 @@ test('validators recover the hash-bound job specification and abstain if context
       queryFilter: async () => [
         {
           args: {
-            uri: f.endpoint,
+            uri: 'ipfs://fixture-spec',
             specHash: ethers.keccak256(ethers.toUtf8Bytes(body)),
           },
         },
@@ -789,4 +799,104 @@ test('validators recover the hash-bound job specification and abstain if context
     { args: { uri: f.endpoint, specHash: ethers.ZeroHash } },
   ];
   await assert.rejects(prototype.validationContext.call(validator, 1n), /hash/);
+});
+
+test('job specification hash commits to the exact published bytes', async () => {
+  const pinned: string[] = [];
+  const upload = mock.method(
+    execution,
+    'uploadToIPFS',
+    async (value: unknown) => {
+      pinned.push(String(value));
+      return {
+        cid: `fixture-${pinned.length}`,
+        uri: `ipfs://fixture-${pinned.length}`,
+      } as any;
+    }
+  );
+  try {
+    const metadata = {
+      category: 'computer-work',
+      title: 'Hash-bound job',
+      metadata: { computerWork: task },
+    };
+    const artifacts = await prepareJobArtifacts(metadata);
+    assert.equal(artifacts.jsonUri, 'ipfs://fixture-1');
+    assert.equal(artifacts.markdownUri, 'ipfs://fixture-2');
+    assert.deepEqual(JSON.parse(pinned[0]), metadata);
+    assert.equal(
+      artifacts.specHash,
+      ethers.keccak256(ethers.toUtf8Bytes(pinned[0]))
+    );
+  } finally {
+    upload.mock.restore();
+  }
+});
+
+test('restart resumes a prepared submission once, but never replays a possibly broadcast attempt', async (t) => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'prepared-submission-'));
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+  const journal = new SettlementJournal(dir, '1:registry');
+  journal.save({
+    jobId: '1',
+    agentAddress: ethers.ZeroAddress,
+    fromBlock: 10,
+    classification: {
+      category: 'research',
+      confidence: 1,
+      tags: [],
+      rationale: [],
+    },
+    spec: null,
+    summary: { jobId: '1' },
+    execution: {
+      runResult: { manifest: { jobId: '1' } } as any,
+      resultRef: 'ipfs://fixture',
+      chainJob: {},
+    },
+  });
+  let submissions = 0;
+  const prototype = MetaOrchestrator.prototype as any;
+  const restarted: any = {
+    settlementJournal: new SettlementJournal(dir, '1:registry'),
+    appliedJobs: new Map(),
+    provider: {},
+    identityManager: {
+      getByAddress: () => ({
+        address: ethers.ZeroAddress,
+        label: 'worker',
+        wallet: { connect: () => ({}) },
+      }),
+    },
+    registry: {
+      jobs: async () => ({
+        packedMetadata: 2n,
+        agent: ethers.ZeroAddress,
+        resultHash: ethers.ZeroHash,
+      }),
+      connect() {
+        return this;
+      },
+      submit: async () => {
+        submissions++;
+        return { hash: 'tx', wait: async () => ({ status: 1 }) };
+      },
+    },
+    beginReviewPhase: () => {},
+    recordCompletedJob: () => {},
+  };
+  prototype.restorePendingSettlements.call(restarted);
+  await prototype.recoverPreparedSubmission.call(restarted, '1');
+  restarted.settlementJournal = new SettlementJournal(dir, '1:registry');
+  await prototype.recoverPreparedSubmission.call(restarted, '1');
+  assert.equal(submissions, 1);
+  restarted.registry.jobs = async () => ({
+    packedMetadata: 2n,
+    agent: 'different-agent',
+    resultHash: ethers.ZeroHash,
+  });
+  await assert.rejects(
+    prototype.recoverPreparedSubmission.call(restarted, '1'),
+    /assignment/
+  );
 });

@@ -29,7 +29,9 @@ export interface JobArtifacts {
   specHash: string;
 }
 
-export async function prepareJobArtifacts(metadata: any): Promise<JobArtifacts> {
+export async function prepareJobArtifacts(
+  metadata: any
+): Promise<JobArtifacts> {
   const jsonSpec = JSON.stringify(metadata ?? {}, null, 2);
   const jsonPin = await uploadToIPFS(jsonSpec);
   const jsonCid = jsonPin.cid;
@@ -42,10 +44,8 @@ export async function prepareJobArtifacts(metadata: any): Promise<JobArtifacts> 
 
   const jsonUri = jsonPin.uri ?? `ipfs://${jsonCid}`;
   const markdownUri = markdownPin.uri ?? `ipfs://${markdownCid}`;
-  const specWithUris = { ...metadata, json: jsonUri, markdown: markdownUri };
-  const specHash = ethers.keccak256(
-    ethers.toUtf8Bytes(JSON.stringify(specWithUris))
-  );
+  // The on-chain commitment must cover exactly the bytes retrievable at jsonUri.
+  const specHash = ethers.keccak256(ethers.toUtf8Bytes(jsonSpec));
 
   return { jsonUri, markdownUri, specHash };
 }
@@ -78,7 +78,9 @@ export async function postJob(spec: PostJobSpec): Promise<{
     }
   }
 
-  const { jsonUri, markdownUri, specHash } = await prepareJobArtifacts(metadata);
+  const { jsonUri, markdownUri, specHash } = await prepareJobArtifacts(
+    metadata
+  );
   const specWithUris = { ...metadata, json: jsonUri, markdown: markdownUri };
 
   const provider = wallet.provider || new ethers.JsonRpcProvider(RPC_URL);

@@ -9,6 +9,7 @@ import type {
 import type { JobRunResult } from './execution';
 
 export interface PendingSettlement {
+  schemaVersion?: 1;
   jobId: string;
   agentAddress: string;
   fromBlock: number;
@@ -43,6 +44,11 @@ export class SettlementJournal {
     );
   }
   private create(file: string, value: unknown): boolean {
+    const serialized = JSON.stringify(value, (_, item) =>
+      typeof item === 'bigint' ? item.toString() : item
+    );
+    if (Buffer.byteLength(serialized) > 8 * 1024 * 1024)
+      throw new Error('Settlement record exceeds 8 MiB limit');
     let fd: number;
     try {
       fd = fs.openSync(file, 'wx', 0o600);
@@ -51,12 +57,8 @@ export class SettlementJournal {
       throw error;
     }
     try {
-      fs.writeFileSync(
-        fd,
-        JSON.stringify(value, (_, item) =>
-          typeof item === 'bigint' ? item.toString() : item
-        )
-      );
+      // Intentional data storage: JSON only, bounded size, operator-owned directory, fixed hashed filename, no execution.
+      fs.writeFileSync(fd, serialized);
       fs.fsyncSync(fd);
     } finally {
       fs.closeSync(fd);
@@ -70,7 +72,12 @@ export class SettlementJournal {
     return true;
   }
   save(record: PendingSettlement): void {
-    if (!this.create(this.file(record.jobId, '.pending.json'), record))
+    if (
+      !this.create(this.file(record.jobId, '.pending.json'), {
+        ...record,
+        schemaVersion: 1,
+      })
+    )
       throw new Error(
         'Settlement handoff already exists; reconcile before resubmitting'
       );
@@ -84,6 +91,7 @@ export class SettlementJournal {
           fs.readFileSync(path.join(this.directory, name), 'utf8')
         ) as PendingSettlement;
         if (
+          record.schemaVersion !== 1 ||
           !record.jobId ||
           !record.agentAddress ||
           !record.execution ||
@@ -98,6 +106,12 @@ export class SettlementJournal {
       .filter(
         (record) => !fs.existsSync(this.file(record.jobId, '.done.json'))
       );
+  }
+  claimSubmission(jobId: string): boolean {
+    return this.create(this.file(jobId, '.submission.json'), {
+      jobId,
+      startedAt: new Date().toISOString(),
+    });
   }
   claim(jobId: string, success: boolean): boolean {
     return this.create(this.file(jobId, '.claim.json'), {

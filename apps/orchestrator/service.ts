@@ -26,7 +26,7 @@ import { AuditAnchoringService, AuditAnchoringOptions } from './anchoring';
 import { getWatchdog } from './monitor';
 import { postJob } from './employer';
 import { evaluateSubmission, needsIndependentReview } from './validation';
-import { fetchArtifactBytes } from './artifactSource';
+import { fetchArtifactBytes, resolveArtifactUri } from './artifactSource';
 import { SettlementJournal } from './settlementJournal';
 import { LearningCoordinator } from './learning';
 import {
@@ -489,6 +489,7 @@ export class MetaOrchestrator {
   start(): void {
     if (this.running) return;
     this.running = true;
+    this.restorePendingSettlements();
     this.registerEventHandlers();
     void this.recoverSettledOutcomes();
     this.settlementRecoveryTimer = setInterval(
@@ -1029,6 +1030,8 @@ export class MetaOrchestrator {
         summary: state.summary,
         execution: state.execution,
       });
+      if (!this.settlementJournal.claimSubmission(jobId))
+        throw new Error('Submission outcome requires operator reconciliation');
       await submitJobResult(
         this.registry.connect(state.wallet) as Contract,
         jobId,
@@ -1130,24 +1133,32 @@ export class MetaOrchestrator {
     try {
       const latest = await this.provider.getBlockNumber();
       for (const record of this.settlementJournal.pending()) {
-        // Replay the authoritative completion event, including events emitted
-        // while the process was offline; bound individual RPC log ranges.
-        for (let from = record.fromBlock; from <= latest; from += 2000) {
-          const events = await this.registry.queryFilter(
-            this.registry.filters.JobCompleted(record.jobId),
-            from,
-            Math.min(latest, from + 1999)
-          );
-          const event = events.find(
-            (item: any) => item.args && !item.removed
-          ) as any;
-          if (event) {
-            await this.recordSettledOutcome(
-              record.jobId,
-              Boolean(event.args.success ?? event.args[1])
+        try {
+          await this.recoverPreparedSubmission(record.jobId);
+          // Replay the authoritative completion event, including events emitted
+          // while the process was offline; bound individual RPC log ranges.
+          for (let from = record.fromBlock; from <= latest; from += 2000) {
+            const events = await this.registry.queryFilter(
+              this.registry.filters.JobCompleted(record.jobId),
+              from,
+              Math.min(latest, from + 1999)
             );
-            break;
+            const event = events.find(
+              (item: any) => item.args && !item.removed
+            ) as any;
+            if (event) {
+              await this.recordSettledOutcome(
+                record.jobId,
+                Boolean(event.args.success ?? event.args[1])
+              );
+              break;
+            }
           }
+        } catch (error) {
+          console.error(
+            `Pending job ${record.jobId} recovery failed; journal retained`,
+            error
+          );
         }
       }
     } catch (error) {
@@ -1155,6 +1166,42 @@ export class MetaOrchestrator {
     } finally {
       this.recoveringSettlements = false;
     }
+  }
+
+  private async recoverPreparedSubmission(jobId: string): Promise<void> {
+    const state = this.appliedJobs.get(jobId);
+    if (!state?.execution) return;
+    const job = await this.registry.jobs(jobId);
+    const metadata = decodePackedJobMetadata(job.packedMetadata);
+    if (metadata.state !== 2) return; // Only an assigned, unsubmitted job may resume.
+    if (
+      String(job.agent).toLowerCase() !==
+        state.identity.address.toLowerCase() ||
+      job.resultHash !== ethers.ZeroHash
+    )
+      throw new Error(
+        'Pending submission does not match the current on-chain assignment'
+      );
+    if (!this.settlementJournal.claimSubmission(jobId)) {
+      auditLog('job.submission_reconciliation_required', {
+        jobId,
+        details: {
+          reason:
+            'A submission attempt may already have broadcast; inspect chain and wallet nonce before retry.',
+        },
+      });
+      return;
+    }
+    const { runResult, resultRef, chainJob } = state.execution;
+    await submitJobResult(
+      this.registry.connect(state.wallet) as Contract,
+      jobId,
+      runResult.manifest,
+      resultRef,
+      toSubdomain(state.identity)
+    );
+    this.beginReviewPhase(jobId, 'evidence-submitted');
+    this.recordCompletedJob(jobId, state, runResult, resultRef, chainJob);
   }
 
   private async validationContext(
@@ -1177,7 +1224,10 @@ export class MetaOrchestrator {
     const specHash = args.specHash ?? args[6];
     let spec: JobSpec | null = null;
     if (uri) {
-      const artifact = await fetchArtifactBytes(uri, this.config.ipfsGateway);
+      const artifact = await fetchArtifactBytes(
+        resolveArtifactUri(uri, this.config.ipfsGateway),
+        this.config.ipfsGateway
+      );
       if (
         !specHash ||
         specHash === ethers.ZeroHash ||

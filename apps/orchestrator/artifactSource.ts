@@ -1,5 +1,17 @@
 import { normalizeAgentEndpoint } from './agentPolicy';
 
+export function resolveArtifactUri(uri: string, gateway?: string): string {
+  if (!uri.startsWith('ipfs://')) return uri;
+  const base = (
+    gateway ||
+    process.env.IPFS_GATEWAY_URL ||
+    'https://ipfs.io/ipfs'
+  )
+    .trim()
+    .replace(/\/$/, '');
+  return `${base}/${uri.slice(7)}`;
+}
+
 /** Job-provided URIs cannot grant the orchestrator access to arbitrary origins. */
 export async function fetchArtifactBytes(
   target: string,

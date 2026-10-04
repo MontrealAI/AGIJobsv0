@@ -1,5 +1,5 @@
 import { Contract, JsonRpcProvider, ethers } from 'ethers';
-import { fetchArtifactBytes } from './artifactSource';
+import { fetchArtifactBytes, resolveArtifactUri } from './artifactSource';
 import { ClassificationResult, JobSpec } from './jobClassifier';
 
 export interface SubmissionDetails {
@@ -50,21 +50,6 @@ const DEFAULT_LOOKBACK_BLOCKS = Number(
 const DEFAULT_MIN_CONFIDENCE = Number(
   process.env.VALIDATION_MIN_CONFIDENCE || 0.5
 );
-
-function normaliseGatewayUri(uri: string, gateway?: string): string {
-  if (!uri) return uri;
-  if (uri.startsWith('ipfs://')) {
-    const normalizedGateway = (gateway || process.env.IPFS_GATEWAY_URL || '')
-      .replace(/\/$/, '')
-      .trim();
-    const path = uri.replace('ipfs://', '');
-    if (normalizedGateway) {
-      return `${normalizedGateway}/${path}`;
-    }
-    return `https://ipfs.io/ipfs/${path}`;
-  }
-  return uri;
-}
 
 async function fetchSubmissionDetails(
   registry: Contract,
@@ -122,7 +107,7 @@ async function downloadArtifact(
   uri: string,
   gateway?: string
 ): Promise<{ bytes: Uint8Array; text: string | null }> {
-  const target = normaliseGatewayUri(uri, gateway);
+  const target = resolveArtifactUri(uri, gateway);
   const buffer = await fetchArtifactBytes(
     target,
     gateway || process.env.IPFS_GATEWAY_URL
