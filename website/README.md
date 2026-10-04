@@ -87,3 +87,6 @@ deck for accessibility, responsive layout, diagram rendering and HTML injection.
 Pages QA separately opens all six published copies under the project base path.
 See the [Kardashev validation record](validation-kardashev-2026-10-04.md) for
 executed checks, preservation evidence and model limitations.
+
+
+The Pages build also compiles the actual CULTURE Studio in explicit offline preview mode. Before `npm run site:build`, install its independent workspace with `cd demo/CULTURE-v0 && corepack pnpm install --frozen-lockfile`. Return to the repository root for site commands. Run `node scripts/pages/culture-qa.mjs` after the general website checks to verify the complete Studio journey, evidence exports, accessibility, and mobile layouts.

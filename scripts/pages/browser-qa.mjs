@@ -6,6 +6,9 @@ import { chromium } from 'playwright';
 import AxeBuilder from '@axe-core/playwright';
 import { root } from './build.mjs';
 
+const profiles = JSON.parse(
+  fs.readFileSync(path.join(root, 'website/demo-experiences.json'), 'utf8')
+);
 const output = path.join(root, 'build/pages');
 const artifacts = path.join(root, 'reports/pages');
 fs.mkdirSync(artifacts, { recursive: true });
@@ -258,7 +261,11 @@ try {
     await page.goto(url + 'demos/' + demo.id + '/', {
       waitUntil: 'networkidle',
     });
-    assert.equal(await page.locator('.lesson-step').count(), 3, demo.name);
+    assert.equal(
+      await page.locator('.lesson-step').count(),
+      profiles[demo.name].steps.length,
+      demo.name
+    );
     assert.equal(
       await page.locator('.lab-toolbar').isVisible(),
       true,

@@ -1,55 +1,55 @@
-const orchestratorUrl =
-  import.meta.env.VITE_ORCHESTRATOR_URL ?? 'http://localhost:4005';
+import {
+  previewArtifacts,
+  previewDraft,
+  previewUpload,
+  previewMint,
+  previewJob,
+  previewArena,
+  previewScoreboard,
+  previewControls,
+} from './preview.js';
+const orchestratorUrl = (
+  import.meta.env.VITE_ORCHESTRATOR_URL ?? 'http://localhost:4005'
+).replace(/\/+$/, '');
 const indexerUrl =
   import.meta.env.VITE_INDEXER_URL ?? 'http://localhost:4100/graphql';
-
 export function isDemoMode(): boolean {
   return import.meta.env.VITE_DEMO_MODE === 'true';
 }
-
 let serviceToken = '';
 export function setServiceToken(token: string): void {
   serviceToken = token.trim();
 }
 
-function delay(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-async function postJson<T>(
-  url: string,
-  body: unknown,
-  fallback: T,
-): Promise<T> {
-  if (isDemoMode()) return fallback;
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(serviceToken &&
-      url.startsWith(`${orchestratorUrl.replace(/\/+$/, '')}/`)
-        ? { Authorization: `Bearer ${serviceToken}` }
-        : {}),
-    },
-    body: JSON.stringify(body),
-  });
-  if (!response.ok) {
-    throw new Error(`Request failed: ${response.status}`);
+async function requestJson<T>(url: string, body?: unknown): Promise<T> {
+  const abort = new AbortController();
+  const timeout = setTimeout(() => abort.abort(), 15000);
+  try {
+    const response = await fetch(url, {
+      method: body === undefined ? 'GET' : 'POST',
+      signal: abort.signal,
+      redirect: 'error',
+      credentials: 'omit',
+      headers: {
+        ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
+        ...(serviceToken &&
+        new URL(url).origin === new URL(orchestratorUrl).origin &&
+        url.startsWith(`${orchestratorUrl}/`)
+          ? { Authorization: `Bearer ${serviceToken}` }
+          : {}),
+      },
+      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+    });
+    if (!response.ok)
+      throw new Error(
+        `Request failed (HTTP ${response.status}). Check service configuration and operator access.`,
+      );
+    const raw = await response.text();
+    if (!raw) throw new Error('Service returned an empty response.');
+    return JSON.parse(raw) as T;
+  } finally {
+    clearTimeout(timeout);
   }
-  const raw = await response.text();
-  if (!raw) {
-    throw new Error(`Service returned an empty response: ${url}`);
-  }
-  return JSON.parse(raw) as T;
-}
-
-async function getJson<T>(url: string, fallback: T): Promise<T> {
-  if (isDemoMode()) return fallback;
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`Request failed: ${response.status}`);
-  }
-  return (await response.json()) as T;
 }
 
 export interface ArtifactInput {
@@ -70,63 +70,6 @@ export interface Artifact {
   readonly mintedAt?: string;
 }
 
-export async function fetchArtifacts(): Promise<Artifact[]> {
-  const query = `
-    query FetchArtifacts {
-      artifacts {
-        id
-        kind
-        cid
-        parentId
-        citations { to { id } }
-        influence: influenceScore
-        mintedAt: timestamp
-      }
-    }
-  `;
-  const fallback: Artifact[] = [
-    {
-      id: 1,
-      kind: 'book',
-      cid: 'bafybookdemo',
-      title: 'Artifact bafybo…',
-      cites: [],
-      influence: 0.92,
-    },
-  ];
-  const response = await postJson<{ data?: { artifacts?: any[] } }>(
-    indexerUrl,
-    { query },
-    { data: { artifacts: fallback } },
-  );
-
-  if (!Array.isArray(response.data?.artifacts)) {
-    throw new Error(
-      'Indexer returned no artifact data; check its GraphQL response',
-    );
-  }
-  return response.data.artifacts.map((artifact: any) => ({
-    id: Number(artifact.id),
-    title: deriveTitle(artifact.cid),
-    kind: artifact.kind ?? 'book',
-    cid: artifact.cid ?? '',
-    parentId: artifact.parentId == null ? undefined : Number(artifact.parentId),
-    cites:
-      artifact.citations?.map((citation: { to: { id: string } }) =>
-        Number(citation.to.id),
-      ) ??
-      artifact.cites ??
-      [],
-    influence: Number(artifact.influence ?? 0),
-    mintedAt: artifact.mintedAt ?? undefined,
-  }));
-}
-
-function deriveTitle(cid: string): string {
-  if (!cid) return 'Untitled Artifact';
-  return `Artifact ${cid.slice(0, 6)}…`;
-}
-
 export interface ChatMessage {
   readonly role: 'user' | 'assistant';
   readonly content: string;
@@ -138,45 +81,9 @@ export interface StreamRequest {
   readonly persona?: string;
 }
 
-export async function* streamLLMCompletion(
-  request: StreamRequest,
-): AsyncGenerator<string> {
-  const fallback = {
-    segments: [
-      "Let's sketch an inviting outline that explains the cultural playbook in clear language. ",
-      'We will cover goals, personas, workflows, and checkpoints readers can copy immediately. ',
-    ],
-  };
-
-  const response = await postJson<{ segments: string[] }>(
-    `${orchestratorUrl}/llm/generate`,
-    request,
-    fallback,
-  );
-
-  for (const segment of response.segments) {
-    await delay(120);
-    yield segment;
-  }
-}
-
 export interface IpfsUploadResult {
   readonly cid: string;
   readonly bytes: number;
-}
-
-export async function uploadToIpfs(content: string): Promise<IpfsUploadResult> {
-  const fallbackCid = `bafy${Math.random().toString(36).slice(2, 10)}`;
-  const fallback: IpfsUploadResult = {
-    cid: fallbackCid,
-    bytes: new TextEncoder().encode(content).length,
-  };
-
-  return postJson<IpfsUploadResult>(
-    `${orchestratorUrl}/ipfs/upload`,
-    { content },
-    fallback,
-  );
 }
 
 export interface MintResult {
@@ -184,39 +91,9 @@ export interface MintResult {
   readonly transactionHash: string;
 }
 
-export async function mintCultureArtifact(
-  input: ArtifactInput,
-): Promise<MintResult> {
-  const fallback: MintResult = {
-    artifactId: Math.floor(Math.random() * 10_000),
-    transactionHash: generateTxHash(),
-  };
-
-  return postJson<MintResult>(
-    `${orchestratorUrl}/culture/mint`,
-    input,
-    fallback,
-  );
-}
-
 export interface DerivativeJobResult {
   readonly jobId: string;
   readonly title: string;
-}
-
-export async function createDerivativeJob(
-  artifactId: number,
-): Promise<DerivativeJobResult> {
-  const fallback: DerivativeJobResult = {
-    jobId: `job-${artifactId}-${Date.now()}`,
-    title: `Follow-on evaluation for artifact ${artifactId}`,
-  };
-
-  return postJson<DerivativeJobResult>(
-    `${orchestratorUrl}/jobs/derive`,
-    { artifactId },
-    fallback,
-  );
 }
 
 export interface ArenaStartOptions {
@@ -231,48 +108,6 @@ export interface ArenaSummary {
   readonly difficulty: number;
   readonly observedSuccessRate: number;
   readonly difficultyDelta: number;
-}
-
-export async function launchArena(
-  options: ArenaStartOptions,
-): Promise<ArenaSummary> {
-  const students = Array.from(
-    { length: options.studentCount },
-    (_, idx) => `0xstudent${idx.toString().padStart(2, '0')}`,
-  );
-  const validators = ['0xvalidator01', '0xvalidator02', '0xvalidator03'];
-  const { round } = await postJson<{ round: { id: number } }>(
-    `${orchestratorUrl}/arena/start`,
-    {
-      artifactId: options.artifactId,
-      targetDifficulty: options.difficultyTarget ?? null,
-      teacher: '0xteacher',
-      students,
-      validators,
-    },
-    { round: { id: Date.now() } },
-  );
-
-  await postJson(
-    `${orchestratorUrl}/arena/close/${round.id}`,
-    {},
-    { ok: true },
-  );
-
-  const winners = students.filter((_, idx) => idx % 2 === 0);
-  const summary = await postJson<ArenaSummary>(
-    `${orchestratorUrl}/arena/finalize/${round.id}`,
-    { winners },
-    {
-      roundId: round.id,
-      winners,
-      difficulty: options.difficultyTarget ?? 0.65,
-      observedSuccessRate: 0.58,
-      difficultyDelta: 0.05,
-    },
-  );
-
-  return summary;
 }
 
 export interface ScoreboardAgent {
@@ -307,57 +142,6 @@ export interface ScoreboardResponse {
   readonly ownerControls: OwnerControlState;
 }
 
-export async function fetchScoreboard(): Promise<ScoreboardResponse> {
-  const fallbackRounds: ScoreboardRound[] = [
-    {
-      id: 101,
-      difficulty: 0.62,
-      successRate: 0.54,
-      difficultyDelta: 0.04,
-      status: 'completed',
-    },
-    {
-      id: 102,
-      difficulty: 0.66,
-      successRate: 0.59,
-      difficultyDelta: 0.03,
-      status: 'completed',
-    },
-  ];
-  const fallback: ScoreboardResponse = {
-    agents: [
-      {
-        address: '0xteacher',
-        rating: 1620,
-        wins: 24,
-        losses: 6,
-        role: 'teacher',
-      },
-      {
-        address: '0xstudent00',
-        rating: 1488,
-        wins: 12,
-        losses: 14,
-        role: 'student',
-      },
-    ],
-    rounds: fallbackRounds,
-    currentDifficulty: fallbackRounds.at(-1)?.difficulty ?? 0.6,
-    currentSuccessRate: fallbackRounds.at(-1)?.successRate ?? 0.6,
-    ownerControls: {
-      paused: false,
-      autoDifficulty: true,
-      maxConcurrentJobs: 3,
-      targetSuccessRate: 0.6,
-    },
-  };
-
-  return getJson<ScoreboardResponse>(
-    `${orchestratorUrl}/arena/scoreboard`,
-    fallback,
-  );
-}
-
 export interface TelemetrySeriesPoint {
   readonly label: string;
   readonly value: number;
@@ -369,6 +153,182 @@ export interface ArenaTelemetry {
   readonly successTrend: TelemetrySeriesPoint[];
 }
 
+export interface ServiceCapabilities {
+  mode: 'local-adapters' | 'hybrid-on-chain';
+  generation: boolean;
+  upload: boolean;
+  mint: boolean;
+  derivativeJobs: boolean;
+  ownerControls: boolean;
+}
+export async function fetchCapabilities(): Promise<ServiceCapabilities> {
+  return requestJson<ServiceCapabilities>(`${orchestratorUrl}/capabilities`);
+}
+function safeId(value: unknown): number {
+  const id = Number(value);
+  if (value === null || value === '' || !Number.isSafeInteger(id) || id < 1)
+    throw new Error('Service returned an invalid artifact ID.');
+  return id;
+}
+export async function fetchArtifacts(): Promise<Artifact[]> {
+  if (isDemoMode()) return previewArtifacts();
+  const response = await requestJson<{
+    errors?: unknown[];
+    data?: {
+      artifacts?: {
+        id: unknown;
+        kind?: string;
+        cid?: string;
+        parentId?: unknown;
+        citations?: { to: { id: unknown } }[];
+        influence?: number;
+        mintedAt?: string;
+      }[];
+    };
+  }>(indexerUrl, {
+    query:
+      'query FetchArtifacts { artifacts { id kind cid parentId citations { to { id } } influence: influenceScore mintedAt: timestamp } }',
+  });
+  if (response.errors?.length || !Array.isArray(response.data?.artifacts))
+    throw new Error(
+      'Indexer returned no artifact data or GraphQL errors. Check its configuration.',
+    );
+  return response.data.artifacts.map((artifact) => {
+    const influence = Number(artifact.influence ?? 0);
+    if (!Number.isFinite(influence) || influence < 0)
+      throw new Error('Indexer returned invalid influence.');
+    return {
+      id: safeId(artifact.id),
+      title: artifact.cid
+        ? `Artifact ${artifact.cid.slice(0, 12)}…`
+        : 'Untitled Artifact',
+      kind: artifact.kind ?? 'book',
+      cid: artifact.cid ?? '',
+      parentId:
+        artifact.parentId == null ? undefined : safeId(artifact.parentId),
+      cites:
+        artifact.citations?.map((citation) => safeId(citation.to.id)) ?? [],
+      influence,
+      mintedAt: artifact.mintedAt,
+    };
+  });
+}
+export async function* streamLLMCompletion(
+  request: StreamRequest,
+): AsyncGenerator<string> {
+  const response = isDemoMode()
+    ? { segments: previewDraft(request) }
+    : await requestJson<{ segments: string[] }>(
+        `${orchestratorUrl}/llm/generate`,
+        request,
+      );
+  for (const segment of response.segments) {
+    yield segment;
+  }
+}
+export async function uploadToIpfs(content: string): Promise<IpfsUploadResult> {
+  return isDemoMode()
+    ? previewUpload(content)
+    : requestJson(`${orchestratorUrl}/ipfs/upload`, { content });
+}
+export async function mintCultureArtifact(
+  input: ArtifactInput,
+): Promise<MintResult> {
+  return isDemoMode()
+    ? previewMint(input)
+    : requestJson(`${orchestratorUrl}/culture/mint`, input);
+}
+export async function createDerivativeJob(
+  artifactId: number,
+): Promise<DerivativeJobResult> {
+  return isDemoMode()
+    ? previewJob(artifactId)
+    : requestJson(`${orchestratorUrl}/jobs/derive`, { artifactId });
+}
+export async function launchArena(
+  options: ArenaStartOptions,
+): Promise<ArenaSummary> {
+  if (!isDemoMode())
+    throw new Error(
+      'Automatic fixture rounds are preview-only. Use the explicit service lifecycle controls.',
+    );
+  return previewArena(options);
+}
+export interface ServiceRound {
+  id: number;
+  status: string;
+  difficulty: number;
+  teacher: { address: string; status: string };
+  students: { address: string; status: string }[];
+  validators: { address: string; status: string }[];
+}
+export async function startServiceRound(input: {
+  artifactId: number;
+  teacher: string;
+  students: string[];
+  validators: string[];
+  difficultyOverride: number;
+}): Promise<ServiceRound> {
+  const result = await requestJson<{ round: ServiceRound }>(
+    `${orchestratorUrl}/arena/start`,
+    input,
+  );
+  return result.round;
+}
+export const loadServiceRound = (id: number) =>
+  requestJson<ServiceRound>(`${orchestratorUrl}/arena/status/${id}`);
+export const submitServiceWork = (
+  id: number,
+  participant: string,
+  cid: string,
+) => requestJson(`${orchestratorUrl}/arena/submit/${id}`, { participant, cid });
+export const closeServiceRound = (id: number) =>
+  requestJson(`${orchestratorUrl}/arena/close/${id}`, {});
+export const finalizeServiceRound = (id: number, winners: string[]) =>
+  requestJson<ArenaSummary>(`${orchestratorUrl}/arena/finalize/${id}`, {
+    winners,
+  });
+export async function fetchScoreboard(): Promise<ScoreboardResponse> {
+  if (isDemoMode()) return previewScoreboard();
+  const raw = await requestJson<
+    Omit<ScoreboardResponse, 'agents'> & {
+      difficultyWindow?: { targetSuccessRate: number };
+      agents: (ScoreboardAgent & {
+        stats?: { wins: number; losses: number };
+      })[];
+    }
+  >(`${orchestratorUrl}/arena/scoreboard`);
+  if (
+    !Array.isArray(raw.agents) ||
+    !Array.isArray(raw.rounds) ||
+    !Number.isFinite(raw.currentDifficulty)
+  )
+    throw new Error('Orchestrator returned invalid telemetry.');
+  return {
+    ...raw,
+    agents: raw.agents.map((agent) => ({
+      ...agent,
+      wins: agent.stats?.wins ?? agent.wins,
+      losses: agent.stats?.losses ?? agent.losses,
+      role: agent.role ?? 'participant',
+    })),
+    currentSuccessRate:
+      raw.currentSuccessRate ?? raw.rounds.at(-1)?.successRate ?? 0,
+    ownerControls: raw.ownerControls ?? {
+      paused: false,
+      autoDifficulty: true,
+      maxConcurrentJobs: 1,
+      targetSuccessRate: raw.difficultyWindow?.targetSuccessRate ?? 0.6,
+    },
+  };
+}
+export async function updateOwnerControls(
+  update: Partial<OwnerControlState>,
+): Promise<OwnerControlState> {
+  return isDemoMode()
+    ? previewControls(update)
+    : requestJson(`${orchestratorUrl}/arena/controls`, update);
+}
 export function buildTelemetry(scoreboard: ScoreboardResponse): ArenaTelemetry {
   const rounds = scoreboard.rounds.slice(-8);
   const difficultyTrend = rounds.map((round) => ({
@@ -384,32 +344,4 @@ export function buildTelemetry(scoreboard: ScoreboardResponse): ArenaTelemetry {
     difficultyTrend,
     successTrend,
   };
-}
-
-export async function updateOwnerControls(
-  update: Partial<OwnerControlState>,
-): Promise<OwnerControlState> {
-  const fallback = {
-    paused: update.paused ?? false,
-    autoDifficulty: update.autoDifficulty ?? true,
-    maxConcurrentJobs: update.maxConcurrentJobs ?? 3,
-    targetSuccessRate: update.targetSuccessRate ?? 0.6,
-  } satisfies OwnerControlState;
-
-  return postJson<OwnerControlState>(
-    `${orchestratorUrl}/arena/controls`,
-    update,
-    fallback,
-  );
-}
-
-function generateTxHash(): string {
-  if (
-    typeof crypto !== 'undefined' &&
-    typeof crypto.randomUUID === 'function'
-  ) {
-    const hex = crypto.randomUUID().replace(/-/g, '');
-    return `0x${hex.padEnd(64, '0')}`;
-  }
-  return `0x${Math.random().toString(16).slice(2).padEnd(64, '0')}`;
 }

@@ -317,9 +317,15 @@
     "install": "python -m pip install -r demo/AGI-Alpha-Node-v0/requirements.txt"
   },
   "CULTURE-v0": {
+    "dashboardDescription": "A complete browser learning lab: create artifacts, connect sources, evaluate a cohort, compare ratings, and export the evidence. Local simulation only; no wallet, account, or providers required.",
     "question": "How do artifacts become an evolving, inspectable knowledge graph?",
-    "purpose": "For creators and platform builders: follow artifact lineage, arena evaluation, indexing and the Culture Studio interface across a local service stack.",
+    "purpose": "For creators and platform builders: create an artifact, connect its sources, evaluate a learning round, and inspect every outcome in a complete browser simulation. The local service stack is a separate integration exercise.",
     "steps": [
+      {
+        "title": "Inspect the executable preview model",
+        "source": "demo/CULTURE-v0/apps/culture-studio/src/lib/preview.ts",
+        "explanation": "The published Studio uses this deterministic model for drafts, content fingerprints, lineage, citation PageRank, scored submissions, adaptive difficulty, Elo, and evidence exports. It makes no provider requests."
+      },
       {
         "title": "Inspect seed artifacts",
         "source": "demo/CULTURE-v0/data/seed-artifacts.json",
@@ -338,9 +344,16 @@
     ],
     "command": "cd demo/CULTURE-v0\ncorepack pnpm install --frozen-lockfile\ncorepack pnpm local:up",
     "expected": "With Docker and the pinned pnpm toolchain installed, the local stack starts and prints its service endpoints. Follow the Studio/indexer guides; stop it with corepack pnpm e2e:down from this directory.",
-    "experiment": "Create an artifact in the local Studio, inspect its lineage through the indexer, then evaluate it in the arena. Verify the persisted evidence after a service restart.",
+    "experiment": "In the browser Studio, register a new lesson citing a seed artifact. Run two rounds with different targets, inspect each student score and the difficulty change, then download the session evidence. Use the local stack separately to inspect the indexed fixtures and explicit service lifecycle.",
     "mode": "culture",
-    "related": []
+    "related": [],
+    "dashboards": [
+      {
+        "route": "experiments/culture/",
+        "title": "Open the interactive Culture Studio",
+        "source": "demo/CULTURE-v0/apps/culture-studio/src/lib/preview.ts"
+      }
+    ]
   },
   "Era-Of-Experience-v0": {
     "question": "How can an experience stream be audited after learning?",

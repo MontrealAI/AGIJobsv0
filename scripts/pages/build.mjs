@@ -20,9 +20,9 @@ export const escape = (value) =>
   String(value).replace(
     /[&<>"']/g,
     (char) =>
-      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[
+      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[
         char
-      ])
+      ]
   );
 const hash = (value) =>
   createHash('sha256').update(value).digest('hex').slice(0, 8);
@@ -88,17 +88,17 @@ export function makeCatalog(data = inventory(root)) {
       kindLabel: local.has(demo.name)
         ? 'Local chain'
         : demo.kind === 'Design guide'
-        ? 'Design guide'
-        : supporting
-        ? 'Supporting code'
-        : 'Code & guide',
+          ? 'Design guide'
+          : supporting
+            ? 'Supporting code'
+            : 'Code & guide',
       kindId: local.has(demo.name)
         ? 'local'
         : demo.kind === 'Design guide'
-        ? 'design'
-        : supporting
-        ? 'support'
-        : 'code',
+          ? 'design'
+          : supporting
+            ? 'support'
+            : 'code',
     };
   });
 }
@@ -369,8 +369,8 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
           index === 0
             ? '<i></i><i></i><i></i><i></i><b>01 → 04</b>'
             : index === 1
-            ? '<i></i><i></i><i></i><i></i><b>↻</b>'
-            : '<i></i><i></i><i></i><i></i><b>✧</b>'
+              ? '<i></i><i></i><i></i><i></i><b>↻</b>'
+              : '<i></i><i></i><i></i><i></i><b>✧</b>'
         }</div><span class="feature-content"><span class="badge ${
           demo.kindId
         }">${demo.kindLabel}</span><strong>${
@@ -530,10 +530,10 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
       demo.kindId === 'local'
         ? 'Runs actual contracts on a disposable localhost chain using mock tokens and synthetic work. Read the setup guide first.'
         : demo.kindId === 'design'
-        ? 'This directory is a design guide. Its original architecture is preserved, with links in the guide to related executable demonstrations.'
-        : demo.kindId === 'support'
-        ? 'This directory contains supporting modules, aliases, tests or assets. Open its source directory to find the parent workflow.'
-        : 'This directory includes code and documentation. Its guide defines dependencies, execution modes and what the results demonstrate.';
+          ? 'This directory is a design guide. Its original architecture is preserved, with links in the guide to related executable demonstrations.'
+          : demo.kindId === 'support'
+            ? 'This directory contains supporting modules, aliases, tests or assets. Open its source directory to find the parent workflow.'
+            : 'This directory includes code and documentation. Its guide defines dependencies, execution modes and what the results demonstrate.';
     const demoBody = `<main id="main" class="section-wrap demo-detail"><div class="breadcrumb"><a href="${base}">Home</a><span>/</span><a href="${base}#explore">Demo collection</a><span>/</span><span>${escape(
       demo.title
     )}</span></div><div class="detail-hero"><div><p class="eyebrow">${
@@ -672,8 +672,39 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
         );
     }
   }
+  // Compile the same Studio shipped in the pnpm workspace, in explicit offline mode.
+  const studio = path.join(root, 'demo/CULTURE-v0/apps/culture-studio');
+  execFileSync(
+    process.execPath,
+    [
+      path.join(studio, 'node_modules/vite/bin/vite.js'),
+      'build',
+      '--base',
+      './',
+      '--outDir',
+      path.join(output, 'experiments/culture'),
+    ],
+    {
+      cwd: studio,
+      env: { ...process.env, VITE_DEMO_MODE: 'true' },
+      stdio: 'pipe',
+    }
+  );
+  const studioIndex = path.join(output, 'experiments/culture/index.html');
+  const csp =
+    "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'";
+  fs.writeFileSync(
+    studioIndex,
+    fs
+      .readFileSync(studioIndex, 'utf8')
+      .replace(
+        '<head>',
+        `<head><meta http-equiv="Content-Security-Policy" content="${csp}">`
+      )
+  );
   const manifest = {
     schemaVersion: 2,
+    cultureStudioRoute: 'experiments/culture/',
     dashboardRoutes,
     experiences: Object.keys(experiences).length,
     sourceInspections: new Set(
@@ -697,6 +728,7 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
   const routes = [
     '',
     ...dashboardRoutes,
+    'experiments/culture/',
     ...catalog.map((demo) => `demos/${demo.id}/`),
     ...guideRoutes.values(),
   ];

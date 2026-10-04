@@ -1,0 +1,4 @@
+
+# Reproducible package build outputs
+**/dist/
+/out/

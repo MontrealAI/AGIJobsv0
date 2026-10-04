@@ -104,6 +104,7 @@ services:
     <<: *default-env
     environment:
       <<: *default-environment
+      ORCHESTRATOR_HOST: 0.0.0.0
       ORCHESTRATOR_PORT: ${ORCHESTRATOR_PORT-4005}
       ELO_STATE_PATH: /data/elo/ratings.json
       ROUND_STATE_PATH: /data/elo/rounds.json

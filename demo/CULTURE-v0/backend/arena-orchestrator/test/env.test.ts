@@ -60,3 +60,35 @@ describe('on-chain configuration requirements', () => {
     expect(loadEnvironment).toThrow('nonzero');
   });
 });
+
+describe('local listener and configuration safety', () => {
+  it('binds local simulation to loopback', () => {
+    expect(loadEnvironment().host).toBe('127.0.0.1');
+  });
+  it('requires a token for a network listener', () => {
+    process.env.ORCHESTRATOR_HOST = '0.0.0.0';
+    expect(loadEnvironment).toThrow('Non-loopback');
+    process.env.ORCHESTRATOR_API_TOKEN = token;
+    expect(loadEnvironment().host).toBe('0.0.0.0');
+  });
+  it('rejects reversed difficulty bounds', () => {
+    process.env.MIN_DIFFICULTY = '10';
+    expect(loadEnvironment).toThrow('MIN_DIFFICULTY');
+  });
+  it('rejects reversed Elo bounds', () => {
+    process.env.ELO_MIN_RATING = '2000';
+    process.env.ELO_MAX_RATING = '1000';
+    expect(loadEnvironment).toThrow('ELO_MIN_RATING');
+  });
+  it('accepts finite PID and explicit Elo bounds', () => {
+    Object.assign(process.env, {
+      DIFFICULTY_KI: '0.2',
+      DIFFICULTY_KD: '0.1',
+      DIFFICULTY_INTEGRAL_DECAY: '0.5',
+      DIFFICULTY_MAX_INTEGRAL: '3',
+      ELO_MIN_RATING: '800',
+      ELO_MAX_RATING: '2400',
+    });
+    expect(loadEnvironment().arena.maxIntegral).toBe(3);
+  });
+});

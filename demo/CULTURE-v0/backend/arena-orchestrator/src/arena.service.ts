@@ -183,7 +183,15 @@ const DEFAULT_ROUND_STATE: SerializedArenaState = {
   rounds: [],
 };
 
+export class ArenaInputError extends Error {}
+
 export class ArenaService extends ArenaEmitter {
+  private mutationQueue: Promise<unknown> = Promise.resolve();
+  private serial<T>(operation: () => Promise<T>): Promise<T> {
+    const result = this.mutationQueue.then(operation);
+    this.mutationQueue = result.catch(() => undefined);
+    return result;
+  }
   private readonly arenaClient: SelfPlayArenaClient;
   private readonly jobRegistry: JobRegistryClient;
   private readonly pinJSON: typeof defaultPinJSON;
@@ -243,8 +251,40 @@ export class ArenaService extends ArenaEmitter {
   }
 
   async startRound(input: StartArenaInput): Promise<RoundState> {
+    return this.serial(() => this.startRoundInternal(input));
+  }
+
+  private async startRoundInternal(
+    input: StartArenaInput,
+  ): Promise<RoundState> {
     await this.ready;
     const difficulty = input.difficultyOverride ?? this.currentDifficulty;
+    if (
+      !Number.isSafeInteger(input.artifactId) ||
+      input.artifactId < 1 ||
+      !Number.isInteger(difficulty) ||
+      difficulty < this.config.minDifficulty ||
+      difficulty > this.config.maxDifficulty
+    )
+      throw new ArenaInputError(
+        'Artifact ID or difficulty is outside the supported range',
+      );
+    const addresses = [
+      input.teacher,
+      ...input.students,
+      ...input.validators,
+    ].map((value) => value.toLowerCase());
+    if (
+      addresses.some(
+        (value) => !/^0x[a-f0-9]{40}$/.test(value) || /^0x0{40}$/.test(value),
+      ) ||
+      new Set(addresses).size !== addresses.length
+    )
+      throw new ArenaInputError(
+        'Participants must have distinct, nonzero EVM addresses',
+      );
+    if (input.students.length > 32 || input.validators.length > 16)
+      throw new ArenaInputError('Cohort limit exceeded');
     const reservedRoundId = this.nextRoundId;
 
     const prompt = await buildTeacherPrompt({
@@ -271,6 +311,10 @@ export class ArenaService extends ArenaEmitter {
       'selfplay:startRound',
     );
 
+    if (this.rounds.has(actualRoundId))
+      throw new Error(
+        'Arena returned an existing round ID; reconcile chain and local state before continuing',
+      );
     if (actualRoundId !== reservedRoundId) {
       this.log('round-id-mismatch', { reservedRoundId, actualRoundId });
       this.nextRoundId = actualRoundId + 1;
@@ -357,6 +401,10 @@ export class ArenaService extends ArenaEmitter {
   }
 
   async closeRound(roundId: number): Promise<RoundState> {
+    return this.serial(() => this.closeRoundInternal(roundId));
+  }
+
+  private async closeRoundInternal(roundId: number): Promise<RoundState> {
     await this.ready;
     const round = this.requireRound(roundId);
     if (round.status !== 'open') {
@@ -380,8 +428,22 @@ export class ArenaService extends ArenaEmitter {
     participant: string,
     cid: string,
   ): Promise<void> {
+    return this.serial(() =>
+      this.recordSubmissionInternal(roundId, participant, cid),
+    );
+  }
+
+  private async recordSubmissionInternal(
+    roundId: number,
+    participant: string,
+    cid: string,
+  ): Promise<void> {
     await this.ready;
     const round = this.requireRound(roundId);
+    if (round.status !== 'open')
+      throw new ArenaInputError('Submissions require an open round');
+    if (!cid.trim() || cid.length > 512)
+      throw new ArenaInputError('Invalid submission CID');
     const normalised = participant.toLowerCase();
     const collection = [round.teacher, ...round.students, ...round.validators];
     const target = collection.find((entry) => entry.address === normalised);
@@ -390,6 +452,8 @@ export class ArenaService extends ArenaEmitter {
         `Participant ${participant} not found in round ${roundId}`,
       );
     }
+    if (target.status !== 'pending')
+      throw new ArenaInputError('Submission already recorded');
     await this.jobRegistry.markSubmitted(target.jobId, cid);
     this.log('submission-recorded', { roundId, participant: normalised, cid });
   }
@@ -398,92 +462,126 @@ export class ArenaService extends ArenaEmitter {
     roundId: number,
     winners?: readonly string[],
   ): Promise<RoundSummary> {
+    return this.serial(() => this.finalizeRoundInternal(roundId, winners));
+  }
+
+  private async finalizeRoundInternal(
+    roundId: number,
+    winners?: readonly string[],
+  ): Promise<RoundSummary> {
     await this.ready;
     const round = this.requireRound(roundId);
     if (round.status !== 'closed') {
-      throw new Error('Round must be closed before finalisation');
+      throw new ArenaInputError('Round must be closed before finalisation');
     }
 
     const resolvedWinners =
       winners === undefined ? this.computeAutomaticWinners(round) : winners;
     const winnerSet = new Set(resolvedWinners.map((w) => w.toLowerCase()));
+    if (
+      round.teacher.status !== 'submitted' &&
+      round.teacher.status !== 'validated'
+    )
+      throw new ArenaInputError(
+        'Teacher evidence is required before finalisation',
+      );
+    if (
+      Array.from(winnerSet).some(
+        (winner) =>
+          !round.students.some(
+            (student) =>
+              student.address === winner &&
+              (student.status === 'submitted' ||
+                student.status === 'validated'),
+          ),
+      )
+    )
+      throw new ArenaInputError(
+        'Winners must be submitted students in this round',
+      );
     round.winners = Array.from(winnerSet);
 
-    await Promise.all(
-      round.students.map((student) =>
-        this.finalizeParticipant(round, student, winnerSet),
-      ),
-    );
-    await Promise.all(
-      round.validators.map((validator) =>
-        this.finalizeParticipant(round, validator, new Set()),
-      ),
-    );
-    await this.finalizeParticipant(round, round.teacher, winnerSet, true);
-
-    const successRate =
-      round.students.length === 0
-        ? 0
-        : round.winners.length / round.students.length;
-    round.successRate = successRate;
-    const difficultyResult = this.difficultyController.update(
-      round.difficulty,
-      successRate,
-    );
-    this.currentDifficulty = difficultyResult.nextDifficulty;
-    round.difficultyDelta = difficultyResult.delta;
-
-    this.eloEngine.applyRoundOutcome(
-      round.teacher.address,
-      round.students.map((s) => s.address),
-      winnerSet,
-    );
-    await this.eloEngine.save();
-
-    const diversity = computeDiversityMetrics(
-      round.winners,
-      round.students.map((s) => s.address),
-    );
-
-    const snapshot = await this.pinSnapshot(
-      round,
-      difficultyResult.delta,
-      diversity,
-    );
-    round.snapshotCid = snapshot.cid;
-    round.status = 'finalized';
-    round.finalizedAt = new Date();
-
-    await this.executeWithRetry(
-      () =>
-        this.arenaClient.finalizeRound(
-          round.id,
-          difficultyResult.delta,
-          [],
-          BigInt(0),
-          this.slashRecipient,
+    try {
+      await Promise.all(
+        round.students.map((student) =>
+          this.finalizeParticipant(round, student, winnerSet),
         ),
-      'selfplay:finalizeRound',
-    );
+      );
+      await Promise.all(
+        round.validators.map((validator) =>
+          this.finalizeParticipant(round, validator, new Set()),
+        ),
+      );
+      await this.finalizeParticipant(round, round.teacher, winnerSet, true);
 
-    await this.persistRounds();
-    this.emit('round:update', round);
-    this.emit('scoreboard:update', this.getScoreboard());
-    this.log('round-finalized', {
-      roundId: round.id,
-      winners: round.winners,
-      difficultyDelta: difficultyResult.delta,
-      snapshotCid: snapshot.cid,
-    });
+      const successRate =
+        round.students.length === 0
+          ? 0
+          : round.winners.length / round.students.length;
+      round.successRate = successRate;
+      const difficultyResult = this.difficultyController.update(
+        round.difficulty,
+        successRate,
+      );
+      this.currentDifficulty = difficultyResult.nextDifficulty;
+      round.difficultyDelta = difficultyResult.delta;
 
-    return {
-      roundId: round.id,
-      difficulty: round.difficulty,
-      winners: round.winners,
-      difficultyDelta: difficultyResult.delta,
-      observedSuccessRate: successRate,
-      snapshotCid: snapshot.cid,
-    };
+      const diversity = computeDiversityMetrics(
+        round.winners,
+        round.students.map((s) => s.address),
+      );
+
+      const snapshot = await this.pinSnapshot(
+        round,
+        difficultyResult.delta,
+        diversity,
+      );
+      round.snapshotCid = snapshot.cid;
+
+      await this.executeWithRetry(
+        () =>
+          this.arenaClient.finalizeRound(
+            round.id,
+            difficultyResult.delta,
+            [],
+            BigInt(0),
+            this.slashRecipient,
+          ),
+        'selfplay:finalizeRound',
+      );
+      this.eloEngine.applyRoundOutcome(
+        round.teacher.address,
+        round.students.map((s) => s.address),
+        winnerSet,
+      );
+      await this.eloEngine.save();
+
+      round.status = 'finalized';
+      round.finalizedAt = new Date();
+
+      await this.persistRounds();
+      this.emit('round:update', round);
+      this.emit('scoreboard:update', this.getScoreboard());
+      this.log('round-finalized', {
+        roundId: round.id,
+        winners: round.winners,
+        difficultyDelta: difficultyResult.delta,
+        snapshotCid: snapshot.cid,
+      });
+
+      return {
+        roundId: round.id,
+        difficulty: round.difficulty,
+        winners: round.winners,
+        difficultyDelta: difficultyResult.delta,
+        observedSuccessRate: successRate,
+        snapshotCid: snapshot.cid,
+      };
+    } catch (error) {
+      round.status = 'failed';
+      await this.persistRounds();
+      throw error;
+    }
   }
 
   getScoreboard(): ScoreboardSnapshot {
@@ -543,9 +641,20 @@ export class ArenaService extends ArenaEmitter {
     this.nextRoundId = Math.max(persisted.nextRoundId ?? 1, 1);
     for (const serialized of persisted.rounds ?? []) {
       const round = deserializeRound(serialized);
+      if (round.status === 'open' || round.status === 'closed') {
+        round.status = 'failed';
+        this.log('restart-reconciliation-required', {
+          roundId: round.id,
+          reason: 'Local job records are not a durable execution journal',
+        });
+      }
       this.rounds.set(round.id, round);
     }
 
+    if (this.arenaClient instanceof InMemorySelfPlayArenaClient)
+      this.arenaClient.restoreRoundCount(
+        Math.max(this.nextRoundId - 1, this.getHighestRoundId()),
+      );
     const onChainTotal = await this.arenaClient.getTotalRounds();
     const highestRound = Math.max(onChainTotal, this.getHighestRoundId());
     if (highestRound + 1 > this.nextRoundId) {
@@ -588,7 +697,7 @@ export class ArenaService extends ArenaEmitter {
       )
       .map((student) => student.address);
 
-    if (winners.length > 0) {
+    if (winners.length > 0 && round.status === 'open') {
       round.winners = Array.from(
         new Set(winners.map((winner) => winner.toLowerCase())),
       );
@@ -806,7 +915,7 @@ export class ArenaService extends ArenaEmitter {
         return await this.withTimeout(operation(), label);
       } catch (error) {
         attempt += 1;
-        if (attempt > this.config.maxRetries) {
+        if (label.startsWith('selfplay:') || attempt > this.config.maxRetries) {
           this.log('operation-failed', {
             label,
             attempt,

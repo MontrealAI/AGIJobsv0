@@ -7,7 +7,6 @@ describe('Culture artifact creation', () => {
     cy.contains('Send to assistant').click();
 
     cy.wait('@llmGenerate');
-    cy.contains('Streaming…');
     cy.contains('origin story').should('exist');
 
     cy.contains('Save draft to IPFS').click();

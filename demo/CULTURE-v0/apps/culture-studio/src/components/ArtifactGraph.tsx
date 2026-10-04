@@ -27,7 +27,22 @@ interface GraphLink extends LinkObject {
   linkType: 'derivation' | 'citation';
 }
 
-export function ArtifactGraph() {
+export function ArtifactGraph({
+  revision = 0,
+  canCreateJob = true,
+}: {
+  revision?: number;
+  canCreateJob?: boolean;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [width, setWidth] = useState(600);
+  useEffect(() => {
+    const observer = new ResizeObserver(([entry]) => {
+      if (entry.contentRect.width > 0) setWidth(entry.contentRect.width);
+    });
+    if (containerRef.current) observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, []);
   const [artifacts, setArtifacts] = useState<Artifact[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [focused, setFocused] = useState<GraphNode | null>(null);
@@ -46,13 +61,16 @@ export function ArtifactGraph() {
         if (!mounted) return;
         setArtifacts(items);
         if (items.length > 0) {
-          const [first] = items;
-          setFocused({
-            id: first.id,
-            name: first.title,
-            influence: first.influence,
-            kind: first.kind,
-            mintedAt: first.mintedAt,
+          setFocused((current) => {
+            const selected =
+              items.find((item) => item.id === current?.id) ?? items[0];
+            return {
+              id: selected.id,
+              name: selected.title,
+              influence: selected.influence,
+              kind: selected.kind,
+              mintedAt: selected.mintedAt,
+            };
           });
         }
       })
@@ -70,10 +88,12 @@ export function ArtifactGraph() {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [revision]);
 
   const graphData = useMemo(() => {
-    const nodes: GraphNode[] = artifacts.map((artifact) => ({
+    const nodes: GraphNode[] = artifacts.map((artifact, index) => ({
+      fx: Math.cos((index / artifacts.length) * 2 * Math.PI) * 115,
+      fy: Math.sin((index / artifacts.length) * 2 * Math.PI) * 115,
       id: artifact.id,
       name: artifact.title,
       influence: artifact.influence,
@@ -83,7 +103,10 @@ export function ArtifactGraph() {
     const links: GraphLink[] = [];
 
     for (const artifact of artifacts) {
-      if (artifact.parentId) {
+      if (
+        artifact.parentId &&
+        artifacts.some((a) => a.id === artifact.parentId)
+      ) {
         links.push({
           source: artifact.parentId,
           target: artifact.id,
@@ -91,6 +114,7 @@ export function ArtifactGraph() {
         });
       }
       for (const cited of artifact.cites) {
+        if (!artifacts.some((a) => a.id === cited)) continue;
         links.push({
           source: artifact.id,
           target: cited,
@@ -122,28 +146,29 @@ export function ArtifactGraph() {
       setJobStatus({ artifactId: node.id, result });
     } catch (cause) {
       console.error(cause);
-      setError('Could not schedule the derivative job. Please retry.');
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : 'Could not schedule the derivative job. Please retry.',
+      );
     } finally {
       setIsCreatingJob(false);
     }
   };
-
-  if (isLoading) {
-    return <div className="card">Loading culture graph…</div>;
-  }
 
   return (
     <section className="card">
       <h2>Culture graph</h2>
       <p className="subtitle">
         Explore how every minted artifact influences the next one. Hover to
-        inspect, click to launch a derivative job for that branch.
+        inspect, select a node or use the accessible artifact list below. Blue
+        links show derivation; purple links show citations.
       </p>
-      <div className="graph-wrapper">
+      <div className="graph-wrapper" ref={containerRef} aria-hidden="true">
         <ForceGraph2D
           ref={graphRef}
           graphData={graphData}
-          width={undefined}
+          width={width}
           height={420}
           backgroundColor="rgba(15, 23, 42, 0)"
           nodeCanvasObject={(
@@ -161,7 +186,7 @@ export function ArtifactGraph() {
               ? '#38bdf8'
               : '#a855f7'
           }
-          linkDirectionalParticles={2}
+          linkDirectionalParticles={0}
           linkDirectionalParticleSpeed={0.004}
           nodeLabel={(node: NodeObject) => formatTooltip(node as GraphNode)}
           onNodeClick={(node: NodeObject) => setFocused(node as GraphNode)}
@@ -169,6 +194,35 @@ export function ArtifactGraph() {
         />
       </div>
 
+      {isLoading && <p role="status">Loading culture graph…</p>}
+      {error && (
+        <p role="alert" className="error-text">
+          {error}
+        </p>
+      )}
+      <div className="artifact-list" aria-label="Artifact list">
+        {artifacts.map((artifact) => (
+          <button
+            className="artifact-choice"
+            key={artifact.id}
+            aria-pressed={focused?.id === artifact.id}
+            onClick={() => setFocused({ ...artifact, name: artifact.title })}
+          >
+            <span>
+              #{artifact.id} · {artifact.kind}
+            </span>
+            <strong>{artifact.title}</strong>
+            <small>
+              Influence {artifact.influence.toFixed(3)} · Source{' '}
+              {artifact.parentId ? `#${artifact.parentId}` : 'original'} · Cites{' '}
+              {artifact.cites.join(', ') || 'none'}
+            </small>
+          </button>
+        ))}
+      </div>
+      {!isLoading && !artifacts.length && !error && (
+        <p>No artifacts indexed yet. Check the seed command in the runbook.</p>
+      )}
       {focused && (
         <div className="graph-detail">
           <div>
@@ -189,10 +243,11 @@ export function ArtifactGraph() {
             <button
               type="button"
               onClick={() => handleCreateJob(focused)}
-              disabled={isCreatingJob}
+              disabled={isCreatingJob || !canCreateJob}
             >
               {isCreatingJob ? 'Scheduling…' : 'Create derivative job'}
             </button>
+            {!canCreateJob && <p>Derivative-job provider is not configured.</p>}
             {jobStatus && jobStatus.artifactId === focused.id && (
               <p className="status-text">Job ready: {jobStatus.result.title}</p>
             )}
@@ -217,7 +272,7 @@ function drawNode(
     28,
     baseRadius + Math.log1p(node.influence * 20),
   );
-  const label = node.name;
+  const label = `#${node.id} · ${node.name.length > 18 ? `${node.name.slice(0, 18)}…` : node.name}`;
   ctx.beginPath();
   const gradient = ctx.createRadialGradient(
     node.x as number,
@@ -233,7 +288,7 @@ function drawNode(
   ctx.arc(node.x as number, node.y as number, influenceRadius, 0, 2 * Math.PI);
   ctx.fill();
   ctx.fillStyle = '#e2e8f0';
-  ctx.font = `${Math.max(10, 16 / globalScale)}px Inter, system-ui`;
+  ctx.font = `${Math.max(8, 12 / globalScale)}px Inter, system-ui`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'top';
   ctx.fillText(

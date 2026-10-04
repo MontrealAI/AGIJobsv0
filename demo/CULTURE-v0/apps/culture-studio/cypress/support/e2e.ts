@@ -1,4 +1,6 @@
 beforeEach(() => {
+  cy.intercept('GET', '**/capabilities', { mode: 'local-adapters', generation: true, upload: true, mint: true, derivativeJobs: true, ownerControls: false });
+  // Explicit integration fixtures advertise only the mocked provider endpoints.
   // Default mocks for orchestrator endpoints so the UI stays friendly for demo tests.
   cy.intercept('POST', '**/llm/generate', {
     segments: [
@@ -23,7 +25,7 @@ beforeEach(() => {
   }).as('deriveJob');
 
   cy.intercept('POST', '**/arena/start', {
-    round: { id: 88 }
+    round: { id: 88, status: 'open' }
   }).as('startArena');
 
   cy.intercept('POST', '**/arena/close/88', { ok: true }).as('closeArena');
@@ -85,4 +87,14 @@ beforeEach(() => {
       ]
     }
   }).as('artifacts');
+});
+
+// Explicit lifecycle fixture: no automatic winner selection or implicit close.
+beforeEach(() => {
+  const teacher = `0x${'11'.repeat(20)}`, student = `0x${'22'.repeat(20)}`, validator = `0x${'33'.repeat(20)}`;
+  const round = { id: 88, status: 'open', difficulty: 3, teacher: { address: teacher, status: 'pending' }, students: [{ address: student, status: 'pending' }], validators: [{ address: validator, status: 'pending' }] };
+  cy.intercept('GET', '**/arena/status/88', (req) => req.reply(round)).as('roundStatus');
+  cy.intercept('POST', '**/arena/submit/88', (req) => { [round.teacher, ...round.students, ...round.validators].find((p) => p.address === req.body.participant)!.status = 'submitted'; req.reply({ status: 'ok' }); }).as('submission');
+  cy.intercept('POST', '**/arena/close/88', (req) => { round.status = 'closed'; req.reply({ round }); }).as('closeArena');
+  cy.intercept('POST', '**/arena/finalize/88', (req) => { round.status = 'finalized'; req.reply({ roundId: 88, winners: [student], difficulty: 3, difficultyDelta: 1, observedSuccessRate: 1 }); }).as('finalizeArena');
 });

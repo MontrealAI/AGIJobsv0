@@ -1,6 +1,9 @@
 import { jest } from '@jest/globals';
 import { ArenaService, type ArenaConfig } from '../src/arena.service.js';
-import type { SelfPlayArenaClient } from '../src/selfplay-arena.js';
+import {
+  InMemorySelfPlayArenaClient,
+  type SelfPlayArenaClient,
+} from '../src/selfplay-arena.js';
 import { JobRegistryClient } from '../src/agijobs.js';
 import type { PersistenceAdapter } from '../src/persistence.js';
 
@@ -152,5 +155,111 @@ describe('ArenaService', () => {
     const scoreboard = service.getScoreboard();
     expect(scoreboard.agents.length).toBeGreaterThan(0);
     expect(service.getRound(round.id).status).toBe('finalized');
+  });
+  const participantInput = {
+    artifactId: 1,
+    teacher: `0x${'11'.repeat(20)}`,
+    students: [`0x${'22'.repeat(20)}`],
+    validators: [],
+  };
+  it('rejects invalid, duplicate and out-of-range participants before side effects', async () => {
+    for (const input of [
+      { ...participantInput, difficultyOverride: 10 },
+      { ...participantInput, artifactId: 0 },
+      { ...participantInput, teacher: 'invalid' },
+      { ...participantInput, students: [participantInput.teacher] },
+    ]) {
+      await expect(service.startRound(input)).rejects.toThrow();
+    }
+    expect(arenaClient.startRound).not.toHaveBeenCalled();
+  });
+  it('serializes concurrent starts and rejects unsubmitted or foreign winners', async () => {
+    const [first, second] = await Promise.all([
+      service.startRound(participantInput),
+      service.startRound(participantInput),
+    ]);
+    expect([first.id, second.id]).toEqual([1, 2]);
+    await service.closeRound(first.id);
+    await expect(service.finalizeRound(first.id, [])).rejects.toThrow(
+      'Teacher evidence',
+    );
+    await expect(
+      service.recordSubmission(first.id, participantInput.teacher, 'cid:late'),
+    ).rejects.toThrow('open round');
+    await service.recordSubmission(
+      second.id,
+      participantInput.teacher,
+      'cid:teacher',
+    );
+    await expect(
+      service.recordSubmission(
+        second.id,
+        participantInput.teacher,
+        'cid:duplicate',
+      ),
+    ).rejects.toThrow('already');
+    await service.closeRound(second.id);
+    await expect(
+      service.finalizeRound(second.id, participantInput.students),
+    ).rejects.toThrow('submitted students');
+    await expect(
+      service.finalizeRound(second.id, [`0x${'44'.repeat(20)}`]),
+    ).rejects.toThrow('submitted students');
+    expect(arenaClient.finalizeRound).not.toHaveBeenCalled();
+  });
+  it('does not retry ambiguous chain finalization, report success, or change Elo', async () => {
+    const round = await service.startRound(participantInput);
+    await service.recordSubmission(
+      round.id,
+      participantInput.teacher,
+      'cid:teacher',
+    );
+    await service.recordSubmission(
+      round.id,
+      participantInput.students[0]!,
+      'cid:student',
+    );
+    await service.closeRound(round.id);
+    arenaClient.finalizeRound.mockRejectedValue(new Error('ambiguous receipt'));
+    await expect(
+      service.finalizeRound(round.id, participantInput.students),
+    ).rejects.toThrow('ambiguous receipt');
+    expect(arenaClient.finalizeRound).toHaveBeenCalledTimes(1);
+    expect(service.getRound(round.id).status).toBe('failed');
+    expect(service.getScoreboard().agents).toEqual([]);
+    await expect(
+      service.finalizeRound(round.id, participantInput.students),
+    ).rejects.toThrow('closed');
+    expect(arenaClient.finalizeRound).toHaveBeenCalledTimes(1);
+  });
+  it('preserves history and avoids reusing round IDs after local restart', async () => {
+    const persistence = createMemoryPersistence<any>({
+      currentDifficulty: 2,
+      nextRoundId: 1,
+      rounds: [],
+    });
+    const dependencies = {
+      roundPersistence: persistence,
+      eloPersistence: createMemoryPersistence<Record<string, any>>({}),
+      jobRegistry: new JobRegistryClient(),
+    };
+    const firstService = new ArenaService(config, dependencies);
+    const first = await firstService.startRound(participantInput);
+    const restarted = new ArenaService(config, {
+      ...dependencies,
+      arenaContract: new InMemorySelfPlayArenaClient(),
+    });
+    await restarted.waitUntilReady();
+    expect(restarted.getRound(first.id).status).toBe('failed');
+    const next = await restarted.startRound(participantInput);
+    expect(next.id).toBe(first.id + 1);
+    expect(restarted.getScoreboard().rounds).toHaveLength(2);
+    await expect(
+      restarted.recordSubmission(
+        first.id,
+        participantInput.teacher,
+        'cid:stale',
+      ),
+    ).rejects.toThrow('open round');
   });
 });
