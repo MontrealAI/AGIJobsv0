@@ -1,0 +1,332 @@
+{
+  "aurora": [
+    "AURORA",
+    "A complete job, from mission definition to validator votes and local settlement.",
+    "settlement"
+  ],
+  "asi-takeoff": [
+    "ASI Take-Off",
+    "Follow three sector scenarios through the same verifiable local job lifecycle.",
+    "settlement"
+  ],
+  "asi-global": [
+    "ASI Global",
+    "Coordinate renewable capacity, climate resilience and governance with mixed validator committees.",
+    "settlement"
+  ],
+  "atlas-conductor": [
+    "Atlas Conductor",
+    "Orchestrate four connected energy, food, health and macroeconomic scenarios.",
+    "settlement"
+  ],
+  "CULTURE-v0": [
+    "CULTURE",
+    "Explore an evolving artifact graph, persistent indexing, an arena and a studio interface.",
+    "learning"
+  ],
+  "Tiny-Recursive-Model-v0": [
+    "Tiny Recursive Model",
+    "Inspect recursive reasoning, model telemetry and a headless learning simulation.",
+    "learning"
+  ],
+  "MuZero-style-v0": [
+    "MuZero-style Planning",
+    "Explore model-based planning, search, policy telemetry and simulated job allocation.",
+    "learning"
+  ],
+  "Absolute-Zero-Reasoner-v0": [
+    "Absolute Zero Reasoner",
+    "Explore self-generated reasoning tasks, verification and learning experiments.",
+    "learning"
+  ],
+  "AlphaEvolve-v0": [
+    "AlphaEvolve",
+    "Explore evolutionary search, candidate evaluation and an inspectable results viewer.",
+    "learning"
+  ],
+  "Huxley-Godel-Machine-v0": [
+    "Huxley–Gödel Machine",
+    "Inspect hierarchical search and the experiments behind a self-improvement research demo.",
+    "learning"
+  ],
+  "Era-Of-Experience-v0": [
+    "Era of Experience",
+    "Trace experience-driven learning through a mission, audit and verification workflow.",
+    "learning"
+  ],
+  "Open-Endedness-v0": [
+    "Open-Endedness",
+    "Explore open-ended search, changing tasks and an evolving capability landscape.",
+    "learning"
+  ],
+  "Meta-Agentic-Program-Synthesis-v0": [
+    "Program Synthesis",
+    "Explore program generation and evaluation in a meta-agentic research workflow.",
+    "learning"
+  ],
+  "AGI-Alpha-Node-v0": [
+    "AGI Alpha Node",
+    "Explore the node runtime, operator dashboard and its documented execution paths.",
+    "agents"
+  ],
+  "AGIJobs-Day-One-Utility-Benchmark": [
+    "Day-One Utility Benchmark",
+    "Inspect practical task benchmarks, their acceptance criteria and evidence artifacts.",
+    "agents"
+  ],
+  "One-Box": [
+    "One-Box",
+    "Follow a consolidated operator journey through the AGI Jobs stack.",
+    "agents"
+  ],
+  "meta-agentic-alpha-agi": [
+    "Meta-Agentic Alpha AGI",
+    "Explore a coordinated agent scenario and the source that defines its behavior.",
+    "agents"
+  ],
+  "Meta-Agentic-ALPHA-AGI-Jobs-v0": [
+    "Meta-Agentic AGI Jobs",
+    "Explore the original scenario and its many preserved orchestration variants.",
+    "agents"
+  ],
+  "superintelligent-empowerment": [
+    "Superintelligent Empowerment",
+    "Explore the empowerment scenario, architecture and operator-facing walkthrough.",
+    "agents"
+  ],
+  "alpha-agi-insight-mark": [
+    "Alpha AGI Insight",
+    "Follow an insight-generation scenario through its documented verification workflow.",
+    "agents"
+  ],
+  "alpha-agi-mark": [
+    "Alpha AGI Mark",
+    "Explore an agentic mission and its complete execution and review pipeline.",
+    "agents"
+  ],
+  "alpha-meta": [
+    "Alpha Meta",
+    "Inspect mission planning, triangulation and owner-control diagnostics.",
+    "agents"
+  ],
+  "agi-governance": [
+    "AGI Governance",
+    "Explore governance scenarios, control boundaries and the available alpha variants.",
+    "governance"
+  ],
+  "Validator-Constellation-v0": [
+    "Validator Constellation",
+    "Explore validator coordination, committee behavior and its versioned demo interfaces.",
+    "governance"
+  ],
+  "sovereign-constellation": [
+    "Sovereign Constellation",
+    "Inspect a coordinated operator scenario with its own server and application.",
+    "governance"
+  ],
+  "sovereign-mesh": [
+    "Sovereign Mesh",
+    "Explore a distributed coordination scenario and its application/server boundary.",
+    "governance"
+  ],
+  "Trustless-Economic-Core-v0": [
+    "Trustless Economic Core",
+    "Inspect the rules and evidence around a simulated economic settlement system.",
+    "economics"
+  ],
+  "Economic-Power-v0": [
+    "Economic Power",
+    "Explore economic simulations and the assumptions behind their reported outcomes.",
+    "economics"
+  ],
+  "REDENOMINATION": [
+    "Redenomination",
+    "Explore denomination changes through an illustrative economic model and interface.",
+    "economics"
+  ],
+  "agi-labor-market-grand-demo": [
+    "AGI Labor Market",
+    "Explore a labor-market scenario and inspect the artifacts produced by its export workflow.",
+    "economics"
+  ],
+  "National-Supply-Chain-v0": [
+    "National Supply Chain",
+    "Explore supply-chain coordination, scenario inputs and a visual results interface.",
+    "scale"
+  ],
+  "Planetary-Orchestrator-Fabric-v0": [
+    "Planetary Orchestrator Fabric",
+    "Explore large-scale orchestration through its documented model and scenarios.",
+    "scale"
+  ],
+  "AGI-Jobs-Platform-at-Kardashev-II-Scale": [
+    "Kardashev II",
+    "Explore planetary and stellar coordination models, including the stellar lattice variants.",
+    "scale"
+  ],
+  "Kardashev-II Omega-Grade-α-AGI Business-3": [
+    "Kardashev II · Omega Business",
+    "Explore the full family of Omega business simulations and upgrade variants.",
+    "scale"
+  ],
+  "Kardashev-II-Omega-Grade-Alpha-AGI-Business-3": [
+    "Kardashev II · Business 3",
+    "Inspect the ASCII-path variant of the Omega business scenario and its interface.",
+    "scale"
+  ],
+  "LARGE-SCALE-OMEGA-BUSINESS-3": [
+    "Large-Scale Omega Business",
+    "Explore the large-scale business scenario, its inputs and operator documentation.",
+    "scale"
+  ],
+  "Phase-6-Scaling-Multi-Domain-Expansion": [
+    "Phase 6 · Multi-Domain Expansion",
+    "Explore coordination across domains, with the original architecture and expansion model.",
+    "scale"
+  ],
+  "Phase-8-Universal-Value-Dominance": [
+    "Phase 8 · Universal Value",
+    "Explore the phase-eight scenario, browser interface and orchestration flowcharts.",
+    "scale"
+  ],
+  "cosmic-omni-sovereign-symphony": [
+    "Cosmic Sovereign Symphony",
+    "Explore a flagship coordination scenario and its complete operator runbook.",
+    "scale"
+  ],
+  "cosmic-omniversal-grand-symphony": [
+    "Cosmic Omniversal Symphony",
+    "Explore a broad coordination scenario and its original system architecture.",
+    "scale"
+  ],
+  "helios-omniversal-symphony": [
+    "Helios Symphony",
+    "Explore the Helios coordination scenario, its configuration and architecture.",
+    "scale"
+  ],
+  "infinity-symphony": [
+    "Infinity Symphony",
+    "Inspect the Infinity scenario, its orchestration model and preserved guides.",
+    "scale"
+  ],
+  "astral-citadel": [
+    "Astral Citadel",
+    "Explore the Citadel scenario and the components supporting its control model.",
+    "governance"
+  ],
+  "astral-omnidominion-operating-system": [
+    "Astral Omnidominion",
+    "Explore the Astral operating-system scenario and its governance architecture.",
+    "governance"
+  ],
+  "astral-omnidominion-operating-system-command-theatre": [
+    "Astral Command Theatre",
+    "Explore the command-theatre presentation of Astral coordination and control.",
+    "governance"
+  ],
+  "imperatrix-celestia-operating-system": [
+    "Imperatrix Celestia",
+    "Inspect the Imperatrix operating-system scenario and its control-plane design.",
+    "governance"
+  ],
+  "omni-orchestrator-singularity": [
+    "Omni Orchestrator",
+    "Explore the Singularity orchestration scenario and its documented assumptions.",
+    "scale"
+  ],
+  "omni-sovereign-ascension-operating-system": [
+    "Omni Sovereign Ascension",
+    "Explore the Ascension operating-system scenario and its coordination architecture.",
+    "governance"
+  ],
+  "OMNIGENESIS-GLOBAL-SOVEREIGN-SYMPHONY": [
+    "Omnigenesis",
+    "Explore the global symphony scenario, source and preserved system diagrams.",
+    "scale"
+  ],
+  "OMNIPHOENIX-ASCENDANT-HYPERSTRUCTURE": [
+    "Omniphoenix",
+    "Explore the hyperstructure scenario and its operator-facing architecture.",
+    "scale"
+  ],
+  "omnisovereign": [
+    "Omnisovereign",
+    "Inspect a sovereign coordination scenario with its local operator runbook.",
+    "governance"
+  ],
+  "TRIDENT-SOVEREIGN-AGI-ORCHESTRATOR": [
+    "Trident Orchestrator",
+    "Explore Trident's sovereign orchestration model and documented execution paths.",
+    "governance"
+  ],
+  "zenith-sapience-initiative-global-governance": [
+    "Zenith · Global Governance",
+    "Explore the Zenith governance mission, deterministic kit and local rehearsal.",
+    "governance"
+  ],
+  "zenith-sapience-initiative-celestial-archon-governance": [
+    "Zenith · Celestial Archon",
+    "Inspect the Celestial Archon governance scenario and local mission evidence.",
+    "governance"
+  ],
+  "zenith-sapience-initiative-omnidominion-governance": [
+    "Zenith · Omnidominion",
+    "Explore the Omnidominion governance mission and its preserved architecture.",
+    "governance"
+  ],
+  "zenith-sapience-initiative-planetary-operating-system-governance": [
+    "Zenith · Planetary OS",
+    "Explore the planetary operating-system scenario, governance kit and runbook.",
+    "governance"
+  ],
+  "zenith-sapience-initiative-supra-sovereign-hypernova-governance": [
+    "Zenith · Hypernova",
+    "Explore the Hypernova governance mission and local rehearsal workflow.",
+    "governance"
+  ],
+  "CELESTIAL-SOVEREIGN-ORBITAL-AGI-OS-GRAND-DEMONSTRATION": [
+    "Celestial Sovereign Orbital",
+    "Read the orbital operating-system vision and continue to its related executable demo.",
+    "governance"
+  ],
+  "ICONIC-OPERATING-SYSTEM-DEMO": [
+    "Iconic Operating System",
+    "Read the operating-system design and follow the linked One-Box execution path.",
+    "agents"
+  ],
+  "OMNI-CONCORD-ASCENSION-ATLAS": [
+    "Omni Concord Ascension",
+    "Read the Ascension Atlas design and continue to the runnable Atlas Conductor.",
+    "scale"
+  ],
+  "polaris-concordat": [
+    "Polaris Concordat",
+    "Read the Concordat architecture and follow the related Sovereign Constellation demo.",
+    "governance"
+  ],
+  "solving-alpha-agi-governance": [
+    "Solving AGI Governance",
+    "Read the governance design and continue to the implemented governance scenarios.",
+    "governance"
+  ],
+  "zenith-sapience": [
+    "Zenith Sapience · Vision",
+    "Read the original Zenith vision and continue to its implemented governance mission.",
+    "governance"
+  ],
+  "zenith-sapience-initiative-omega-omni-operating-system": [
+    "Zenith · Omega Omni OS",
+    "Read the Omega operating-system design and follow the related Omnidominion demo.",
+    "governance"
+  ],
+  "presentation": [
+    "Presentation Assets",
+    "Find the presentation materials supporting the demo collection.",
+    "tools"
+  ],
+  "tests": [
+    "Shared Demo Tests",
+    "Inspect the shared test-runner regressions and discovery checks.",
+    "tools"
+  ]
+}

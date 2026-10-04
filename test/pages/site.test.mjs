@@ -1,0 +1,160 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import { JSDOM } from 'jsdom';
+import { marked } from 'marked';
+import {
+  basePath,
+  makeCatalog,
+  renderMarkdown,
+  root,
+} from '../../scripts/pages/build.mjs';
+import { advance, receipt } from '../../website/assets/lifecycle.mjs';
+import { displaySource } from '../../website/assets/diagram-source.mjs';
+
+test('legacy flowchart labels remain intact while reserved punctuation is quoted for display', () => {
+  const original =
+    'flowchart LR\nA[[Core (v2)]] --> B[reports.{md,json}]\nB --> C[(Store)]\nC --> D["Already (quoted)"]';
+  assert.equal(
+    displaySource(original),
+    'flowchart LR\nA[["Core (v2)"]] --> B["reports.{md,json}"]\nB --> C[(Store)]\nC --> D["Already (quoted)"]'
+  );
+  assert.equal(displaySource(displaySource(original)), displaySource(original));
+  assert.equal(
+    displaySource('sequenceDiagram\nA->>B: Core (v2)'),
+    'sequenceDiagram\nA->>B: Core (v2)'
+  );
+});
+
+test('walkthrough never settles missing evidence, rejected work or incomplete validation', () => {
+  for (const inputs of [
+    { evidence: false, vote: 'approve' },
+    { evidence: true, vote: 'reject' },
+    { evidence: true, vote: 'incomplete' },
+  ]) {
+    let state = { step: 0, events: [], blocked: false };
+    for (let i = 0; i < 6; i++) state = advance(state, inputs);
+    assert.equal(state.blocked, true);
+    const proof = receipt(state, { name: 'Fixture scenario' }, inputs);
+    assert.equal(proof.settled, false);
+    assert.equal(proof.simulated, true);
+    assert.equal(proof.productionApproved, false);
+    assert.equal(proof.chainTransactions, 0);
+  }
+  const inputs = { evidence: true, vote: 'approve' };
+  let state = { step: 0, events: [], blocked: false };
+  for (let i = 0; i < 4; i++) state = advance(state, inputs);
+  assert.equal(
+    receipt(state, { name: 'Fixture scenario' }, inputs).settled,
+    true
+  );
+  assert.equal(state.events.length, 4);
+  assert.deepEqual(advance(state, inputs), state);
+});
+
+test('public guides sanitize executable HTML and unsafe URLs while retaining diagram sources', () => {
+  const diagram = 'flowchart TD\nA[Mission] --> B[Evidence]';
+  const source =
+    '# Guide\n\n<script>alert(1)</script>\n\n[unsafe](javascript:alert(1))\n\n<img src="x" onerror="alert(1)">\n\n```mermaid\n' +
+    diagram +
+    '\n```\n\n[Local guide](next.md)';
+  const rendered = renderMarkdown(source, 'demo/example/README.md', {
+    base: '/AGIJobsv0/',
+    revision: 'abc',
+    guideRoutes: new Map([['demo/example/next.md', 'guides/next.html']]),
+    tracked: new Set(),
+    images: new Set(),
+  });
+  assert.deepEqual(rendered.diagrams, [diagram]);
+  const document = new JSDOM(rendered.html).window.document;
+  assert.equal(document.querySelectorAll('script,[onerror],iframe').length, 0);
+  assert.equal(
+    document.querySelector('[data-diagram] code').textContent,
+    diagram
+  );
+  assert.equal(
+    document.querySelector('a[href]').getAttribute('href'),
+    '/AGIJobsv0/guides/next.html'
+  );
+  assert.equal(document.querySelectorAll('a[href^="javascript:"]').length, 0);
+});
+
+test('every demo has a unique route and all built local page/asset links resolve under the project prefix', () => {
+  const catalog = makeCatalog();
+  assert.equal(new Set(catalog.map((demo) => demo.id)).size, catalog.length);
+  for (const demo of catalog)
+    assert.ok(demo.title && demo.description && demo.kindLabel);
+  for (const invalid of [
+    '//example.com/',
+    '/a/../',
+    'https://example.com/',
+    '/AGIJobsv0',
+  ])
+    assert.throws(() => basePath(invalid));
+  const output = path.join(root, 'build/pages');
+  const manifest = JSON.parse(
+    fs.readFileSync(path.join(output, 'catalog.json'))
+  );
+  assert.equal(manifest.directories, catalog.length);
+  const pages = [];
+  function walk(dir) {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const file = path.join(dir, entry.name);
+      if (entry.isDirectory()) walk(file);
+      else if (file.endsWith('.html')) pages.push(file);
+    }
+  }
+  walk(output);
+  const missing = [];
+  for (const file of pages) {
+    const document = new JSDOM(fs.readFileSync(file, 'utf8')).window.document;
+    for (const element of document.querySelectorAll('[href],[src]')) {
+      const value = element.getAttribute('href') || element.getAttribute('src');
+      if (!value.startsWith(manifest.basePath)) continue;
+      const route = decodeURIComponent(
+        value.slice(manifest.basePath.length).split(/[?#]/)[0]
+      );
+      const target = path.join(output, route || 'index.html');
+      if (!fs.existsSync(target)) missing.push({ file, value });
+      else if (
+        fs.statSync(target).isDirectory() &&
+        !fs.existsSync(path.join(target, 'index.html'))
+      )
+        missing.push({ file, value });
+    }
+    assert.equal(document.querySelectorAll('main#main').length, 1, file);
+  }
+  assert.deepEqual(missing, []);
+  assert.equal(pages.length, catalog.length + manifest.guides + 2);
+});
+
+test('published guides preserve every original Mermaid block verbatim', () => {
+  const output = path.join(root, 'build/pages');
+  const manifest = JSON.parse(
+    fs.readFileSync(path.join(output, 'catalog.json'))
+  );
+  let total = 0;
+  for (const [file, route] of Object.entries(manifest.guideRoutes)) {
+    const sources = [];
+    marked.walkTokens(
+      marked.lexer(fs.readFileSync(path.join(root, file), 'utf8')),
+      (token) => {
+        if (token.type === 'code' && token.lang?.trim() === 'mermaid')
+          sources.push(token.text);
+      }
+    );
+    const document = new JSDOM(
+      fs.readFileSync(path.join(output, route), 'utf8')
+    ).window.document;
+    assert.deepEqual(
+      [...document.querySelectorAll('[data-diagram] code')].map(
+        (code) => code.textContent
+      ),
+      sources,
+      file
+    );
+    total += sources.length;
+  }
+  assert.equal(total, manifest.diagrams);
+});

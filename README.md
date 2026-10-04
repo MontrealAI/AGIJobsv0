@@ -14,6 +14,8 @@ AGI Jobs v0 (v2) brings together job contracts, agent gateways, validators, oper
 
 **Start here:** [Local setup and role guide](docs/START_HERE.md) · [Production readiness and remaining blockers](docs/production/readiness-2026-10-03.md) · [Demo guide and complete catalog](demo/README.md) · [Documentation catalog](docs/readme-catalog.md).
 
+**Explore the demos visually:** [AGI Jobs Demo Observatory](https://montrealai.github.io/AGIJobsv0/) — searchable collection, individual demo pages, original guides and flowcharts, and a browser-only job walkthrough. [Website source and publishing instructions](website/README.md).
+
 **Exercise the production gates locally:** run `npm run production:rehearse` after dependency setup in a clean committed checkout. The [production rehearsal](docs/production/rehearsal.md) combines real cryptographic checks, HTTP fault injection, adversarial contract tests, and three settled local jobs into an inspectable, signed simulation report.
 
 **Deployment status:** local tests are not a mainnet certification. The four previously oversized contracts now use [fixed implementations and staged deployment](docs/production/fixed-implementations.md), and the size gate passes with normal Ethereum limits enforced. Release still requires authorized signing keys, completed deployment configuration, and passing CI. All existing architectural diagrams and demonstration surfaces are retained.

@@ -98,3 +98,6 @@ __pycache__/
 
 # Foundry output is isolated from Hardhat's artifacts directory.
 out/forge/
+
+# Generated Pages browser evidence; source and tests remain tracked.
+/reports/pages/
