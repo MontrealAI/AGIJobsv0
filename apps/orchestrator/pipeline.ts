@@ -63,6 +63,13 @@ export function buildPipeline(
   context: PipelineContext,
   pipelineSpec?: JobStageSpec[]
 ): StageDefinition[] {
+  if (
+    context.category !== 'computer-work' &&
+    Object.prototype.hasOwnProperty.call(context.metadata ?? {}, 'computerWork')
+  )
+    throw new Error(
+      'Computer-work metadata requires the computer-work category'
+    );
   const stages = normalizeStages(context.category, pipelineSpec);
   if (context.category === 'computer-work' && pipelineSpec?.length)
     throw new Error(

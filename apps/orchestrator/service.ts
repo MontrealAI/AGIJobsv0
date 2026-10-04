@@ -813,6 +813,17 @@ export class MetaOrchestrator {
       this.config.ipfsGateway
     );
     const classification = classifyJob(summary, spec ?? undefined);
+    // Constructing stages is read-only: reject inconsistent categories, custom
+    // computer stages and unapproved endpoints before economic commitment.
+    buildPipeline(
+      {
+        jobId: summary.jobId,
+        category: classification.category,
+        tags: classification.tags,
+        metadata: spec?.metadata,
+      },
+      extractPipeline(spec ?? undefined)
+    );
     if (classification.category === 'computer-work') {
       // Admission must precede selection, stake deposits and applyForJob.
       // The handler reloads operator policy before any eventual dispatch.

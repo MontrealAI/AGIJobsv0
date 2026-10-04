@@ -381,6 +381,10 @@ test('computer pipeline cannot be relabelled or replaced by a job-supplied stage
     metadata: { computerWork: task },
   };
   assert.equal(buildPipeline(context).length, 1);
+  assert.throws(
+    () => buildPipeline({ ...context, category: 'general' }),
+    /metadata requires the computer-work category/
+  );
   assert.throws(() =>
     buildPipeline(context, [{ name: 'override', handler: 'report.generate' }])
   );
@@ -1226,6 +1230,100 @@ test('dispatch reloads operator admission after an application preflight', async
   );
   assert.equal(calls, 0);
   assert.equal(fs.existsSync(stateDirectory), false);
+});
+
+test('inconsistent or unusable pipelines fail before selection, staking and application', async (t) => {
+  let body = '';
+  const f = await fixture(t, (req, res) => {
+    assert.equal(
+      req.method,
+      'GET',
+      'Pipeline validation must not dispatch work'
+    );
+    res.end(body);
+  });
+  const { stateDirectory } = configureWorker(t, f);
+  const orchestrator: any = {
+    config: { ipfsGateway: f.endpoint },
+    selectAgent: () =>
+      assert.fail('Invalid pipelines must not select an identity'),
+    applyForJob: () => assert.fail('Invalid pipelines must not stake or apply'),
+  };
+  const cases: [unknown, RegExp][] = [
+    [
+      { category: 'general', metadata: { computerWork: task } },
+      /metadata requires/,
+    ],
+    [{ metadata: { computerWork: task } }, /metadata requires/],
+    [
+      { category: 'general', metadata: { computerWork: null } },
+      /metadata requires/,
+    ],
+    [
+      {
+        category: 'computer-work',
+        metadata: { computerWork: task },
+        pipeline: [{ name: 'override', handler: 'report.generate' }],
+      },
+      /custom stages are not allowed/,
+    ],
+    [
+      {
+        category: 'general',
+        pipeline: [{ name: 'hidden', handler: 'computer.execute' }],
+      },
+      /requires the computer-work category/,
+    ],
+    [
+      {
+        category: 'general',
+        pipeline: [{ name: 'unknown', handler: 'not.registered' }],
+      },
+      /Unknown agent handler/,
+    ],
+  ];
+  for (const [spec, error] of cases) {
+    body = JSON.stringify(spec);
+    await assert.rejects(
+      (MetaOrchestrator.prototype as any).handleJobCreated.call(orchestrator, {
+        jobId: '1',
+        uri: f.endpoint,
+        specHash: ethers.keccak256(ethers.toUtf8Bytes(body)),
+      }),
+      error
+    );
+  }
+  assert.equal(fs.existsSync(stateDirectory), false);
+});
+
+test('ordinary jobs retain their default and custom pipelines without computer configuration', async (t) => {
+  let body = '';
+  const f = await fixture(t, (_req, res) => res.end(body));
+  configureWorker(t, f);
+  delete process.env.COMPUTER_WORK_PROFILES_FILE;
+  let applications = 0;
+  const orchestrator: any = {
+    config: { ipfsGateway: f.endpoint },
+    selectAgent: async () => ({ identity: { address: ethers.ZeroAddress } }),
+    applyForJob: async () => {
+      applications++;
+    },
+  };
+  for (const pipeline of [
+    undefined,
+    [{ name: 'report', handler: 'report.generate' }],
+  ]) {
+    body = JSON.stringify({ category: 'general', pipeline });
+    await (MetaOrchestrator.prototype as any).handleJobCreated.call(
+      orchestrator,
+      {
+        jobId: '1',
+        uri: f.endpoint,
+        specHash: ethers.keccak256(ethers.toUtf8Bytes(body)),
+      }
+    );
+  }
+  assert.equal(applications, 2);
 });
 
 test('mined submissions restore review and dispute evidence without rebroadcasting after restart', async () => {
