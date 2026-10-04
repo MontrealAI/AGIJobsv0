@@ -5,6 +5,7 @@ import path from 'path';
 import { randomBytes } from 'crypto';
 import { ethers } from 'ethers';
 import { resolveNamespace } from './bin/report-paths.cjs';
+import { quorum as validateQuorum, missionPlan } from './bin/mission-plan.cjs';
 
 type DeploySummary = {
   contracts: Record<string, string>;
@@ -212,10 +213,7 @@ function resolveDeploySummaryPath(net: string): string {
   return path.resolve('reports', net, namespace, 'receipts', 'deploy.json');
 }
 
-function specAmountToWei(
-  amount: string | undefined,
-  decimals: number
-): bigint {
+function specAmountToWei(amount: string | undefined, decimals: number): bigint {
   if (!amount) return 0n;
   const cleaned = amount.trim();
   if (!cleaned) return 0n;
@@ -232,10 +230,7 @@ function formatUnits(value: bigint, decimals: number): string {
   return ethers.formatUnits(value, decimals);
 }
 
-function parseSigned(
-  value: string | number | bigint,
-  label: string
-): bigint {
+function parseSigned(value: string | number | bigint, label: string): bigint {
   if (typeof value === 'bigint') {
     return value;
   }
@@ -280,7 +275,8 @@ function bufferGasEstimates(signer: ethers.Signer): void {
   const estimateGas = signer.estimateGas.bind(signer);
   // Identity-cache writes can change between estimation and the mined block.
   // Keep RPC estimation (including revert checks), with 20% execution headroom.
-  signer.estimateGas = async (tx) => ((await estimateGas(tx)) * 120n + 99n) / 100n;
+  signer.estimateGas = async (tx) =>
+    ((await estimateGas(tx)) * 120n + 99n) / 100n;
 }
 
 function createNonceManagedSigner(
@@ -319,7 +315,9 @@ async function impersonateSigner(
     signer = await provider.getSigner(normalised);
   } catch (err) {
     throw new Error(
-      `Provider cannot supply signer for ${normalised}: ${(err as Error).message}`
+      `Provider cannot supply signer for ${normalised}: ${
+        (err as Error).message
+      }`
     );
   }
   bufferGasEstimates(signer);
@@ -332,7 +330,10 @@ async function stopImpersonating(
   address: string
 ) {
   const normalised = ethers.getAddress(address);
-  const methods = ['hardhat_stopImpersonatingAccount', 'anvil_stopImpersonatingAccount'];
+  const methods = [
+    'hardhat_stopImpersonatingAccount',
+    'anvil_stopImpersonatingAccount',
+  ];
   for (const method of methods) {
     try {
       await provider.send(method, [normalised]);
@@ -612,10 +613,7 @@ async function applyThermostatConfig(
 
   if (config.systemTemperature !== undefined) {
     const before = await thermostat.systemTemperature();
-    const value = parseSigned(
-      config.systemTemperature,
-      'systemTemperature'
-    );
+    const value = parseSigned(config.systemTemperature, 'systemTemperature');
     const txHash = await recordCall(
       'Thermostat',
       targetAddress,
@@ -707,6 +705,17 @@ async function main() {
     process.env.AURORA_VALIDATOR1_KEY || DEFAULT_KEYS[2],
     process.env.AURORA_VALIDATOR2_KEY || DEFAULT_KEYS[3],
     process.env.AURORA_VALIDATOR3_KEY || DEFAULT_KEYS[4],
+    ...[5, 6].map(
+      (index) =>
+        process.env[`AURORA_VALIDATOR${index - 1}_KEY`] ||
+        (chain.chainId === 31337n
+          ? ethers.HDNodeWallet.fromPhrase(
+              'test test test test test test test test test test test junk',
+              undefined,
+              `m/44'/60'/0'/0/${index}`
+            ).privateKey
+          : undefined)
+    ),
   ];
 
   const employer = createNonceManagedSigner(provider, employerKey);
@@ -723,14 +732,18 @@ async function main() {
       ? readJsonFile<ThermostatConfig>(thermostatConfigPath)
       : null;
   const baseSpec = readJsonFile<Spec>(SPEC_PATH);
-  if (!baseSpec.validation || !baseSpec.validation.k || !baseSpec.validation.n) {
+  if (
+    !baseSpec.validation ||
+    !baseSpec.validation.k ||
+    !baseSpec.validation.n
+  ) {
     throw new Error('Validation quorum (k-of-n) must be defined in the spec.');
   }
 
-  const missionConfig =
-    MISSION_CONFIG_PATH && fs.existsSync(MISSION_CONFIG_PATH)
-      ? readJsonFile<MissionConfig>(MISSION_CONFIG_PATH)
-      : null;
+  if (MISSION_CONFIG_PATH) missionPlan(MISSION_CONFIG_PATH);
+  const missionConfig = MISSION_CONFIG_PATH
+    ? readJsonFile<MissionConfig>(MISSION_CONFIG_PATH)
+    : null;
   if (missionConfig?.scope && !process.env.AURORA_REPORT_SCOPE) {
     REPORT_SCOPE = missionConfig.scope;
   }
@@ -756,6 +769,7 @@ async function main() {
   const resolvedJobs = missionJobs.map((job, idx) => {
     const specPath = job.specPath ? path.resolve(job.specPath) : SPEC_PATH;
     const jobSpec = readJsonFile<Spec>(specPath);
+    validateQuorum(jobSpec.validation, job.name);
     if (!jobSpec.validation || !jobSpec.validation.k || !jobSpec.validation.n) {
       throw new Error(
         `Validation quorum (k-of-n) must be defined in spec for mission job ${job.name}.`
@@ -796,27 +810,22 @@ async function main() {
   }
 
   const referenceValidation = resolvedJobs[0].spec.validation;
-  const validatorCount = referenceValidation.n;
+  const validatorCount = Math.max(
+    ...resolvedJobs.map((job) => job.spec.validation.n)
+  );
   const quorum = referenceValidation.k;
-  for (const job of resolvedJobs) {
-    if (
-      job.spec.validation.n !== validatorCount ||
-      job.spec.validation.k !== quorum
-    ) {
-      throw new Error(
-        'All mission jobs must share the same validation k-of-n parameters.'
-      );
-    }
-  }
 
   const selectedValidatorKeys = validatorKeys.slice(0, validatorCount);
-  if (selectedValidatorKeys.length < validatorCount) {
+  if (
+    selectedValidatorKeys.length < validatorCount ||
+    selectedValidatorKeys.some((key) => !key)
+  ) {
     throw new Error(
       'Insufficient validator keys configured for the selected quorum.'
     );
   }
   const validators = selectedValidatorKeys.map((key) =>
-    createNonceManagedSigner(provider, key)
+    createNonceManagedSigner(provider, key!)
   );
 
   const agentRole = 0;
@@ -1072,7 +1081,8 @@ async function main() {
     'setAcknowledger',
     [addresses.StakeManager, true],
     {
-      notes: 'Allow StakeManager to acknowledge tax policy on behalf of participants',
+      notes:
+        'Allow StakeManager to acknowledge tax policy on behalf of participants',
     }
   );
   const stakeManagerAcknowledger = await jobRegistry.acknowledgers(
@@ -1106,7 +1116,10 @@ async function main() {
           `Identity owner ${identityOwnerAddress} is a contract. Skipping manual allowlist; configure ENS proofs instead.`
         );
       }
-      identityOwnerSigner = await impersonateSigner(provider, identityOwnerAddress);
+      identityOwnerSigner = await impersonateSigner(
+        provider,
+        identityOwnerAddress
+      );
       const balance = await provider.getBalance(identityOwnerAddress);
       const minimumBalance = ethers.parseEther('0.1');
       if (balance < minimumBalance) {
@@ -1165,8 +1178,11 @@ async function main() {
     ? new ethers.Interface(thermostatArtifact.abi)
     : null;
   const validatorsPerJobCount = Math.max(3, validatorCount);
-  const minValidatorsBound = Math.max(3, quorum);
-  const maxValidatorsBound = Math.max(minValidatorsBound, validatorsPerJobCount);
+  const minValidatorsBound = 3;
+  const maxValidatorsBound = Math.max(
+    minValidatorsBound,
+    validatorsPerJobCount
+  );
 
   await recordForwardGovernanceCall(
     'ValidationModule',
@@ -1185,7 +1201,10 @@ async function main() {
     {
       notes: `Require at least ${minValidatorsBound} validators from a pool cap of ${maxValidatorsBound}`,
       before: { quorum, pool: validatorCount },
-      after: { min: minValidatorsBound.toString(), max: maxValidatorsBound.toString() },
+      after: {
+        min: minValidatorsBound.toString(),
+        max: maxValidatorsBound.toString(),
+      },
     }
   );
   await recordForwardGovernanceCall(
@@ -1293,6 +1312,23 @@ async function main() {
 
   for (const job of resolvedJobs) {
     console.log(`Starting job: ${job.name}`);
+    const { k, n } = job.spec.validation;
+    await recordForwardGovernanceCall(
+      'ValidationModule',
+      addresses.ValidationModule,
+      validationInterface,
+      'setValidatorsPerJob',
+      [n],
+      { notes: `Select ${n} validators for ${job.name}` }
+    );
+    await recordForwardGovernanceCall(
+      'ValidationModule',
+      addresses.ValidationModule,
+      validationInterface,
+      'setRequiredValidatorApprovals',
+      [k],
+      { notes: `Require ${k} approvals for ${job.name}` }
+    );
     const jobDir = path.join('jobs', job.slug);
     const specHash = ethers.keccak256(
       ethers.toUtf8Bytes(JSON.stringify(job.spec))
@@ -1357,7 +1393,9 @@ async function main() {
     const selectionTimeout = Date.now() + 120_000;
     while (BigInt(await provider.getBlockNumber()) <= selectionTarget) {
       if (Date.now() > selectionTimeout) {
-        throw new Error(`Timed out waiting for validator selection for job ${jobId}`);
+        throw new Error(
+          `Timed out waiting for validator selection for job ${jobId}`
+        );
       }
       if (chain.chainId === 31337n) {
         await provider.send('evm_mine', []);
@@ -1366,8 +1404,32 @@ async function main() {
       }
     }
     await (
-      await validationModule.selectValidators(jobId, ethers.toBigInt(randomBytes(32)))
+      await validationModule.selectValidators(
+        jobId,
+        ethers.toBigInt(randomBytes(32))
+      )
     ).wait();
+    const selectedAddresses: string[] = await validationModule.validators(
+      jobId
+    );
+    if (
+      selectedAddresses.length !== n ||
+      new Set(selectedAddresses.map((address) => address.toLowerCase()))
+        .size !== n
+    )
+      throw new Error(
+        `Job ${jobId}: expected ${n} distinct selected validators`
+      );
+    const jobValidators = selectedAddresses.map((address) => {
+      const signer = validators.find(
+        (validator) => validator.address.toLowerCase() === address.toLowerCase()
+      );
+      if (!signer)
+        throw new Error(
+          `Job ${jobId}: selected validator has no configured local signer`
+        );
+      return signer;
+    });
 
     const submitRecord = {
       worker: worker.address,
@@ -1394,7 +1456,7 @@ async function main() {
       salt: string;
     }> = [];
 
-    for (const validator of validators) {
+    for (const validator of jobValidators) {
       const plan = deriveCommitPlan(
         jobId,
         true,
@@ -1417,12 +1479,14 @@ async function main() {
       });
     }
 
-    console.log(`Job ${jobId}: ${commitRecords.length} votes committed; entering reveal`);
+    console.log(
+      `Job ${jobId}: ${commitRecords.length} votes committed; entering reveal`
+    );
     const commitWindowSeconds = Number(await validationModule.commitWindow());
     await advanceTime(provider, commitWindowSeconds + 1);
 
-    for (let i = 0; i < validators.length; i++) {
-      const validator = validators[i];
+    for (let i = 0; i < jobValidators.length; i++) {
+      const validator = jobValidators[i];
       const revealTx = await validationModule
         .connect(validator)
         .revealValidation(
@@ -1443,16 +1507,20 @@ async function main() {
     }
 
     const finalizeTx = await validationModule
-      .connect(validators[0])
+      .connect(jobValidators[0])
       .finalize(jobId);
     const finalizeReceipt = await finalizeTx.wait();
     console.log(`Job ${jobId}: validation complete; settling employer escrow`);
     const settlementTx = await jobRegistry.connect(employer).finalize(jobId);
     const settlementReceipt = await settlementTx.wait();
     const settledJob = await jobRegistry.jobs(jobId);
-    const settledMetadata = await jobRegistry.decodeJobMetadata(settledJob.packedMetadata);
+    const settledMetadata = await jobRegistry.decodeJobMetadata(
+      settledJob.packedMetadata
+    );
     if (settledMetadata.state !== 6n || !settledMetadata.success) {
-      throw new Error(`Job ${jobId} did not reach successful finalized settlement`);
+      throw new Error(
+        `Job ${jobId} did not reach successful finalized settlement`
+      );
     }
 
     const payouts: Record<
@@ -1471,6 +1539,9 @@ async function main() {
 
     const validateRecord = {
       jobId: jobId.toString(),
+      committeeSize: n,
+      requiredApprovals: k,
+      approvalThreshold: Number(await validationModule.approvalThreshold()),
       validators: commitRecords,
       finalizeTx: finalizeReceipt?.hash || finalizeTx.hash,
       commits: commitRecords.length,

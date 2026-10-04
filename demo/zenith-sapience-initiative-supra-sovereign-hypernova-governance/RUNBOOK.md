@@ -6,7 +6,7 @@ repository; no bespoke automation is introduced.
 
 ## 1. Pre-Flight Checks
 
-- Ensure **Node.js 20.x** and **npm** are installed.
+- Ensure **Node.js 22.23.3 (the repository `.nvmrc`)** and **npm** are installed.
 - (Optional) Install **Foundry** if you plan to run the local rehearsal via Anvil.
 - Confirm contract health and owner wiring:
 

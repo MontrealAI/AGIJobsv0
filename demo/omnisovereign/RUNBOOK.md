@@ -128,8 +128,8 @@ or audited post-facto.  Only scripts that already exist in this repository are u
    - `demo/omnisovereign/project-plan.omnisovereign.json`
 2. Shut down the local node if still active:
    ```bash
-   pkill -f "[a]nvil" || true
-   pkill -f "hardhat node" || true
+   # The local launcher stops its own node automatically.
+   # Interrupt an active run with Ctrl+C in its terminal.
    ```
 3. Reset workspace (optional):
    ```bash

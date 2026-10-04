@@ -2,6 +2,10 @@
 
 > AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `demo/polaris-concordat`.
 
+## Execution status
+
+This directory contains design documentation and preserved architecture diagrams; it has no standalone executable. For a related runnable workflow, use [sovereign-constellation](../sovereign-constellation/README.md). See the [complete demo guide](../README.md) for setup and evidence boundaries.
+
 ## Overview
 - **Path:** `demo/polaris-concordat/README.md`
 - **Module Focus:** Anchors Demo → Polaris Concordat inside the AGI Jobs v0 (v2) lattice so teams can orchestrate economic, governance, and operational missions with deterministic guardrails.
@@ -28,7 +32,7 @@ flowchart LR
 4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../../OperatorRunbook.md).
 
 ## Directory Guide
-This module currently exposes its functionality programmatically; there are no additional files in this folder.
+This folder preserves the design guide; use the related executable workflow linked above.
 
 ## Quality & Governance
 - Every change must land through a pull request with all required checks green (unit, integration, linting, security scan).

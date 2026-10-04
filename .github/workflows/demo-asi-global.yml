@@ -5,6 +5,12 @@ on:
     paths:
       - 'demo/**'
       - 'scripts/v2/**'
+      - 'scripts/production/commissioning.cjs'
+      - 'contracts/**'
+      - 'config/**'
+      - 'hardhat.config.js'
+      - 'package.json'
+      - 'package-lock.json'
       - 'docs/asi-global-orchestrator-demo.md'
       - '.github/workflows/demo-asi-global.yml'
   push:
@@ -12,6 +18,12 @@ on:
     paths:
       - 'demo/**'
       - 'scripts/v2/**'
+      - 'scripts/production/commissioning.cjs'
+      - 'contracts/**'
+      - 'config/**'
+      - 'hardhat.config.js'
+      - 'package.json'
+      - 'package-lock.json'
       - 'docs/asi-global-orchestrator-demo.md'
       - '.github/workflows/demo-asi-global.yml'
   workflow_dispatch:
@@ -22,7 +34,11 @@ permissions:
 
 jobs:
   asi-global:
-    name: ASI Global Take-Off Demonstration
+    name: Local settlement (${{ matrix.demo }})
+    strategy:
+      fail-fast: false
+      matrix:
+        demo: [asi-global, atlas-conductor]
     runs-on: ubuntu-24.04
     timeout-minutes: 35
     steps:
@@ -64,18 +80,20 @@ jobs:
           version: 'v1.4.4'
 
       - name: Run ASI Global demo (deterministic kit)
+        if: matrix.demo == 'asi-global'
         run: npm run demo:asi-global
 
       - name: Run ASI Global demo (local rehearsal)
         env:
           RPC_URL: http://127.0.0.1:8545
           CHAIN_ID: '31337'
-        run: npm run demo:asi-global:local
+        run: npm run demo:${{ matrix.demo }}:local
 
-      - name: Upload global demo artefacts
+      - name: Upload local mission artefacts
+        if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: asi-global-receipts
+          name: ${{ matrix.demo }}-receipts
           path: |
-            reports/asi-global/**
-            reports/localhost/asi-global/**
+            reports/${{ matrix.demo }}/**
+            reports/localhost/${{ matrix.demo }}/**

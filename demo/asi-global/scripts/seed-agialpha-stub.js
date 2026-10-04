@@ -2,9 +2,13 @@
 const fs = require('fs');
 const path = require('path');
 const { ethers } = require('ethers');
+const {
+  localEndpoint,
+  assertLocalChain,
+} = require('../../aurora/bin/local-rpc.cjs');
 
 const AGIALPHA_ADDRESS = '0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA';
-const RPC_URL = process.env.AGI_RPC_URL || 'http://127.0.0.1:8545';
+const RPC_URL = localEndpoint().url;
 const artifactPath = path.join(
   __dirname,
   '..',
@@ -19,7 +23,9 @@ const artifactPath = path.join(
 );
 
 if (!fs.existsSync(artifactPath)) {
-  console.error(`Artifact not found at ${artifactPath}. Run 'npx hardhat compile' first.`);
+  console.error(
+    `Artifact not found at ${artifactPath}. Run 'npx hardhat compile' first.`
+  );
   process.exit(1);
 }
 
@@ -27,6 +33,7 @@ const artifact = JSON.parse(fs.readFileSync(artifactPath, 'utf8'));
 const provider = new ethers.JsonRpcProvider(RPC_URL);
 
 async function main() {
+  await assertLocalChain(RPC_URL);
   const signer = await provider.getSigner();
   const code = await provider.getCode(AGIALPHA_ADDRESS);
   if (code !== '0x') {
@@ -37,7 +44,10 @@ async function main() {
 
     for (const method of rpcMethods) {
       try {
-        await provider.send(method, [AGIALPHA_ADDRESS, artifact.deployedBytecode]);
+        await provider.send(method, [
+          AGIALPHA_ADDRESS,
+          artifact.deployedBytecode,
+        ]);
         console.log(
           `Injected LocalAgialpha bytecode at ${AGIALPHA_ADDRESS} via ${method}`
         );
@@ -61,7 +71,9 @@ async function main() {
     const mintAmount = ethers.parseUnits('1000000000', 18);
     const tx = await token.mint(await signer.getAddress(), mintAmount);
     await tx.wait();
-    console.log(`Minted ${mintAmount.toString()} wei to ${await signer.getAddress()}`);
+    console.log(
+      `Minted ${mintAmount.toString()} wei to ${await signer.getAddress()}`
+    );
   }
 }
 

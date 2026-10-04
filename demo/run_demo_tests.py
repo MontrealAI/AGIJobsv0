@@ -250,7 +250,7 @@ def _run_suite(
             if user_pref is None:
                 can_install_deps = _can_install_playwright_deps()
                 deps_ready = _playwright_system_deps_ready()
-                apt_reachable = _apt_repos_reachable() if can_install_deps else False
+                apt_reachable = _apt_repos_reachable() if can_install_deps and not deps_ready else False
                 if can_install_deps and apt_reachable and not deps_ready:
                     env["PLAYWRIGHT_INSTALL_WITH_DEPS"] = "1"
                 else:
@@ -692,7 +692,7 @@ def _apt_repos_reachable(timeout: float = 3.0) -> bool:
             with urllib.request.urlopen(url, timeout=timeout) as response:
                 if response.status < 400:
                     return True
-        except (urllib.error.URLError, ValueError):
+        except (OSError, ValueError):
             continue
 
     return False
@@ -1148,6 +1148,13 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
         ),
     )
     parser.add_argument(
+        "--runner",
+        action="append",
+        choices=["python", "npm", "pnpm", "yarn", "forge"],
+        default=[],
+        help="Only run selected test runtimes; repeat for multiple runtimes. No dependencies are installed for unselected Node suites.",
+    )
+    parser.add_argument(
         "--list",
         action="store_true",
         help="List discovered suites (after filtering) without running them.",
@@ -1205,9 +1212,13 @@ def main(argv: list[str] | None = None, demo_root: Path | None = None) -> int:
     demo_root = demo_root or Path(__file__).resolve().parent
     suites = list(
         _discover_tests(
-            demo_root, include=include, generate_prisma=not args.list
+            demo_root, include=include, generate_prisma=not args.list and (
+                not args.runner or any(r in args.runner for r in ("npm", "pnpm", "yarn"))
+            )
         )
     )
+    if args.runner:
+        suites = [suite for suite in suites if suite.runner in args.runner]
 
     if args.list:
         if not suites:
@@ -1307,7 +1318,7 @@ def main(argv: list[str] | None = None, demo_root: Path | None = None) -> int:
 
         total_duration = sum(result.duration for result in results)
         print(
-            f"\n✅ All demo test suites passed ({len(results)} suites, "
+            f"\n✅ All selected demo test suites passed ({len(results)} suites, "
             f"total {total_duration:.2f}s)."
         )
 

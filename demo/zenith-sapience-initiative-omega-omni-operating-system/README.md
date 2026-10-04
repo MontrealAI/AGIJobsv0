@@ -2,6 +2,10 @@
 
 > AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `demo/zenith-sapience-initiative-omega-omni-operating-system`.
 
+## Execution status
+
+This directory contains design documentation and preserved architecture diagrams; it has no standalone executable. For a related runnable workflow, use [zenith-sapience-initiative-omnidominion-governance](../zenith-sapience-initiative-omnidominion-governance/README.md). See the [complete demo guide](../README.md) for setup and evidence boundaries.
+
 ## Overview
 - **Path:** `demo/zenith-sapience-initiative-omega-omni-operating-system/README.md`
 - **Module Focus:** Anchors Demo → Zenith Sapience Initiative Omega Omni Operating System inside the AGI Jobs v0 (v2) lattice so teams can orchestrate economic, governance, and operational missions with deterministic guardrails.

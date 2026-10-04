@@ -949,6 +949,7 @@ def test_phase8_skips_playwright_dep_install_when_ready(
 
     monkeypatch.setattr(run_demo_tests, "_can_install_playwright_deps", lambda: True)
     monkeypatch.setattr(run_demo_tests, "_playwright_system_deps_ready", lambda: True)
+    monkeypatch.setattr(run_demo_tests, "_apt_repos_reachable", lambda: pytest.fail("No apt probe is needed when dependencies are ready"))
     monkeypatch.setattr(subprocess, "run", _fake_run)
 
     code, _ = run_demo_tests._run_suite(suite, {})
@@ -1069,3 +1070,30 @@ def test_node_suite_reports_missing_runner(
     assert exit_code == 1
     assert "npm" in captured.out
     assert "PATH" in captured.out
+
+
+def test_runner_filter_does_not_prepare_or_run_unselected_node_suites(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    demo_root = tmp_path / "demo"
+    demo_root.mkdir()
+    suites = [run_demo_tests.Suite(demo_root / name, demo_root / name / "tests", runner) for name, runner in [("alpha", "python"), ("beta", "npm")]]
+    prepared = []
+    executed = []
+    def discover(*args, **kwargs):
+        prepared.append(kwargs["generate_prisma"])
+        return suites
+    monkeypatch.setattr(run_demo_tests, "_discover_tests", discover)
+    def execute(suite, *args, **kwargs):
+        executed.append(suite.runner)
+        return run_demo_tests.SuiteResult(suite, 0, 0.01)
+    monkeypatch.setattr(run_demo_tests, "_execute_suite", execute)
+    assert run_demo_tests.main(["--runner", "python"], demo_root=demo_root) == 0
+    assert prepared == [False]
+    assert executed == ["python"]
+
+
+def test_apt_probe_handles_socket_timeout(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(run_demo_tests.sys, "platform", "linux")
+    def timeout(*args, **kwargs):
+        raise TimeoutError("test timeout")
+    monkeypatch.setattr(run_demo_tests.urllib.request, "urlopen", timeout)
+    assert run_demo_tests._apt_repos_reachable() is False

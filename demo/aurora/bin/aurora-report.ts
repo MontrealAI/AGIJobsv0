@@ -50,6 +50,14 @@ function renderKeyValues(record: Record<string, string>): string {
   const deploy = load('deploy.json');
   const stake = load('stake.json');
   const governance = load('governance.json') as GovernanceLog | null;
+  const placeholder =
+    mission?.evidenceClass === 'placeholder' ||
+    deploy?.evidenceClass === 'placeholder';
+  if (placeholder) {
+    parts.push(
+      '**PLACEHOLDER FIXTURE — no on-chain work or settlement was executed.**'
+    );
+  }
 
   if (mission) {
     parts.push(section('Mission Summary'));
@@ -60,7 +68,10 @@ function renderKeyValues(record: Record<string, string>): string {
     if (mission.scope) summaryLines.push('Scope: ' + mission.scope);
     if (mission.version) summaryLines.push('Version: ' + mission.version);
     if (Array.isArray(mission.jobs) && mission.jobs.length > 0) {
-      summaryLines.push('Jobs executed: ' + mission.jobs.length);
+      summaryLines.push(
+        (placeholder ? 'Configured fixture jobs: ' : 'Jobs executed: ') +
+          mission.jobs.length
+      );
     }
     if (summaryLines.length > 0) {
       parts.push('- ' + summaryLines.join('\n- '));
@@ -102,8 +113,7 @@ function renderKeyValues(record: Record<string, string>): string {
       if (submit.worker) parts.push('- **Worker**: `' + submit.worker + '`');
       if (submit.txHash)
         parts.push('- **Submission tx**: `' + submit.txHash + '`');
-      if (submit.resultURI)
-        parts.push('- **Result URI**: ' + submit.resultURI);
+      if (submit.resultURI) parts.push('- **Result URI**: ' + submit.resultURI);
     }
 
     if (validate) {
@@ -154,7 +164,8 @@ function renderKeyValues(record: Record<string, string>): string {
         if (post.txHash) parts.push('- **Transaction**: `' + post.txHash + '`');
         if (post.reward) parts.push('- **Reward**: ' + post.reward);
         if (post.deadline) parts.push('- **Deadline**: ' + post.deadline);
-        if (post.specHash) parts.push('- **Spec hash**: `' + post.specHash + '`');
+        if (post.specHash)
+          parts.push('- **Spec hash**: `' + post.specHash + '`');
         if (post.specUri) parts.push('- **Spec URI**: ' + post.specUri);
       }
 
@@ -174,7 +185,9 @@ function renderKeyValues(record: Record<string, string>): string {
         : load(path.join('jobs', jobSlug, 'validate.json'));
       if (validate?.validators && Array.isArray(validate.validators)) {
         parts.push('- **Validators**:');
-        for (const validator of validate.validators as Array<Record<string, unknown>>) {
+        for (const validator of validate.validators as Array<
+          Record<string, unknown>
+        >) {
           parts.push(
             `  - ${validator.address}: commit \`${validator.commitTx}\`, reveal \`${validator.revealTx}\``
           );
@@ -221,9 +234,7 @@ function renderKeyValues(record: Record<string, string>): string {
     parts.push(section('Thermostat Tuning'));
     for (const update of governance.thermostat) {
       const tx = update.txHash ? ` (tx: \`${update.txHash}\`)` : '';
-      parts.push(
-        `- ${update.action}: ${update.before} → ${update.after}${tx}`
-      );
+      parts.push(`- ${update.action}: ${update.before} → ${update.after}${tx}`);
     }
   }
 

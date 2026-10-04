@@ -25,6 +25,7 @@ def run_stub(tmp_path: Path, module_root: Path, mission_path: Path) -> Path:
     env.update(
         {
             "NETWORK": network,
+            "AGI_DEMO_ALLOW_PLACEHOLDERS": "1",
             "AURORA_REPORT_SCOPE": scope,
             "AURORA_MISSION_CONFIG": str(mission_path),
             "AURORA_DEPLOY_OUTPUT": str(receipts_dir / "deploy.json"),
@@ -68,6 +69,9 @@ def test_stub_writes_receipts(tmp_path: Path, module_root: Path, mission_config:
     assert deploy.get("network") == "integration-net"
     assert deploy.get("scope") == "asi-global-test"
     assert "generatedAt" in deploy
+    assert deploy["evidenceClass"] == "placeholder"
+    assert deploy["settled"] is False
+    assert deploy["productionApproved"] is False
 
 
 @pytest.mark.parametrize(
@@ -85,3 +89,19 @@ def test_receipt_payloads_include_timestamps(
     receipts_dir = run_stub(tmp_path, module_root, mission_config)
     payload = json.loads((receipts_dir / filename).read_text())
     assert "generatedAt" in payload, f"{filename} should include a generatedAt timestamp"
+    assert payload["evidenceClass"] == "placeholder"
+    assert payload["settled"] is False
+
+
+def test_stub_requires_explicit_opt_in(tmp_path: Path, module_root: Path) -> None:
+    env = os.environ.copy()
+    env.pop("AGI_DEMO_ALLOW_PLACEHOLDERS", None)
+    result = subprocess.run(["node", str(module_root / "scripts" / "aurora-demo-stub.js")], cwd=tmp_path, env=env, capture_output=True, text=True)
+    assert result.returncode != 0
+    assert "AGI_DEMO_ALLOW_PLACEHOLDERS=1" in result.stderr
+    assert not (tmp_path / "reports").exists()
+
+
+def test_stub_rejects_missing_mission(tmp_path: Path, module_root: Path) -> None:
+    with pytest.raises(subprocess.CalledProcessError):
+        run_stub(tmp_path, module_root, tmp_path / "missing.json")

@@ -6,6 +6,7 @@ prepare_local_node() {
   export DEMO_PORT="${DEMO_PORT:-8545}"
   export RPC_URL="http://127.0.0.1:${DEMO_PORT}"
   export LOCALHOST_RPC_URL="$RPC_URL"
+  export AGI_RPC_URL="$RPC_URL"
   export CHAIN_ID=31337
   LOG_FILE="$(mktemp "${TMPDIR:-/tmp}/agi-demo-node.XXXXXX")"
 }

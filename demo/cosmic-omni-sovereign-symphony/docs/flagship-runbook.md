@@ -107,9 +107,7 @@ and verify the resulting addresses against the canonical config.
 
 ## 6. Clean-up
 
-- Stop the Hardhat node spawned by `bin/orchestrate.sh` (the flagship launcher
-  handles this automatically on exit, but double-check with `pkill -f
-  "hardhat"`).
+- The flagship launcher stops its own Hardhat node on exit. Interrupt an active run with Ctrl+C in its terminal; leave unrelated nodes running.
 - If Docker was used, shut down the stack with `docker compose down
   --remove-orphans`.
 

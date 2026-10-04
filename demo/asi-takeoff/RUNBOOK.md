@@ -50,7 +50,7 @@ npm run demo:asi-takeoff:kit -- --report-root reports/localhost/asi-takeoff --pl
 
 ## 4. Owner Control Validations
 
-Run owner control drills against the deployed environment:
+The local launcher has stopped its disposable node when it returns. Inspect `receipts/governance.json` for its completed drills. The following advanced owner commands require a separately managed local deployment:
 
 ```bash
 AURORA_DEPLOY_OUTPUT=reports/localhost/asi-takeoff/receipts/deploy.json \
@@ -91,12 +91,7 @@ npm run owner:dashboard -- --network localhost
 
 ## 7. Cleaning Up
 
-Stop the local node if still running:
-
-```bash
-pkill -f "[a]nvil" || true
-pkill -f "hardhat node" || true
-```
+The launcher stops only the node it started. To interrupt an active run, press Ctrl+C in that terminal. If port 8545 belongs to another service, select an unused `DEMO_PORT` instead.
 
 Clear previous artefacts:
 
