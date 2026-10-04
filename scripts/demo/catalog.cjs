@@ -28,9 +28,10 @@ function inventory(base = root) {
   const demos = [...groups.entries()]
     .sort(([a], [b]) => a.localeCompare(b, 'en'))
     .map(([name, entries]) => {
-      const readme = entries.includes('demo/' + name + '/README.md')
-        ? 'demo/' + name + '/README.md'
-        : null;
+      const readme =
+        ['README.md', 'docs/README.md']
+          .map((file) => 'demo/' + name + '/' + file)
+          .find((file) => entries.includes(file)) || null;
       const guides = entries
         .filter((file) =>
           /(?:README|RUNBOOK|PLAYBOOK).*\.md$/i.test(path.basename(file))

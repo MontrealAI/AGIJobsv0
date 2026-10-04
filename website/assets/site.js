@@ -1,3 +1,4 @@
+import { initSourceLab } from './source-lab.js';
 import { advance, receipt, stages } from './lifecycle.mjs';
 
 document.documentElement.classList.add('js');
@@ -255,3 +256,5 @@ if (diagrams.length) {
     diagrams.forEach((diagram) => observer.observe(diagram));
   } else diagrams.forEach(render);
 }
+
+initSourceLab();

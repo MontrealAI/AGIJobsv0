@@ -8,6 +8,7 @@ import { marked } from 'marked';
 import { JSDOM } from 'jsdom';
 import createDOMPurify from 'dompurify';
 import { build as bundle } from 'esbuild';
+import { loadExperiences, renderExperience } from './experiences.mjs';
 
 const require = createRequire(import.meta.url);
 const { inventory } = require('../demo/catalog.cjs');
@@ -279,6 +280,14 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
   const data = inventory(root),
     catalog = makeCatalog(data),
     images = new Set();
+  for (const demo of catalog) {
+    demo.guides = [...tracked]
+      .filter(
+        (file) => file.startsWith(demo.path + '/') && /\.(md|mmd)$/i.test(file)
+      )
+      .sort();
+  }
+  const experiences = loadExperiences(root, catalog, tracked);
   const output = path.resolve(destination);
   if (
     output === root ||
@@ -312,7 +321,8 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
   const ctx = { base, revision, guideRoutes, tracked, output, images };
   const sourceURL = (file, directory = false) =>
     `${repo}/${directory ? 'tree' : 'blob'}/${revision}/${encodePath(file)}`;
-  const guideURL = (file) => base + guideRoutes.get(file);
+  const guideURL = (file) =>
+    guideRoutes.has(file) ? base + guideRoutes.get(file) : undefined;
   const card = (demo, index) =>
     `<article class="demo-card" data-demo-card data-kind="${
       demo.kindId
@@ -450,12 +460,32 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
   );
   const flowSources = [];
   for (const file of documents) {
-    const source = fs.readFileSync(path.join(root, file), 'utf8');
+    const originalSource = fs.readFileSync(path.join(root, file), 'utf8');
+    const source = file.endsWith('.mmd')
+      ? '````mermaid\n' + originalSource.trimEnd() + '\n````'
+      : originalSource;
     const title =
       source.match(/^#\s+(.+)$/m)?.[1].replace(/[*`]/g, '') ||
       path.basename(file);
     const rendered = renderMarkdown(source, file, ctx);
     const owner = catalog.find((demo) => demo.guides.includes(file));
+    const headingDocument = new JSDOM(rendered.html).window.document;
+    const headings = [...headingDocument.querySelectorAll('h2[id],h3[id]')];
+    const contents =
+      headings.length > 2
+        ? '<nav class="guide-contents" aria-label="Guide contents"><details open><summary>In this guide</summary><ol>' +
+          headings
+            .map(
+              (h) =>
+                '<li><a href="#' +
+                escape(h.id) +
+                '">' +
+                escape(h.textContent) +
+                '</a></li>'
+            )
+            .join('') +
+          '</ol></details></nav>'
+        : '';
     const guideBody = `<main id="main" class="section-wrap guide-layout"><div class="breadcrumb"><a href="${base}">Home</a><span>/</span>${
       owner
         ? `<a href="${base}demos/${owner.id}/">${escape(owner.title)}</a>`
@@ -468,7 +498,7 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
       file
     )}">View source on GitHub ↗</a></div><div class="guide-context">Original documentation, preserved from the repository. Historical projections and scenario ambitions are not evidence of live performance. See the <a href="${guideURL(
       'docs/production/readiness-2026-10-03.md'
-    )}">current readiness record</a> for deployment requirements.</div><article class="prose">${
+    )}">current readiness record</a> for deployment requirements.</div>${contents}<article class="prose">${
       rendered.html
     }</article><a class="button secondary back-button" href="${
       owner ? base + 'demos/' + owner.id + '/' : base + '#explore'
@@ -510,9 +540,9 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
       themes[demo.theme]
     }</p><h1>${escape(demo.title)}</h1><p class="section-description">${escape(
       demo.description
-    )}</p><div class="hero-actions">${
+    )}</p><div class="hero-actions"><a class="button primary" href="#guided-tour">Explore this demo ↓</a>${
       demo.readme
-        ? `<a class="button primary" href="${guideURL(
+        ? `<a class="button secondary" href="${guideURL(
             demo.readme
           )}">Read the full guide ↗</a>`
         : ''
@@ -529,7 +559,21 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
       demo.commands.length
     }</dd></div></dl><a href="${guideURL(
       'docs/START_HERE.md'
-    )}">Environment setup ↗</a></aside></div><div class="detail-grid"><section><p class="eyebrow">EVERY VARIANT, PRESERVED</p><h2>Guides & architecture</h2>${
+    )}">Environment setup ↗</a></aside></div>${renderExperience(
+      demo,
+      experiences[demo.name],
+      {
+        root,
+        base,
+        revision,
+        sourceURL,
+        guideURL,
+        catalog,
+        tracked,
+        write,
+        renderMarkdown: (source, file) => renderMarkdown(source, file, ctx),
+      }
+    )}<div id="library" class="detail-grid"><section><p class="eyebrow">EVERY VARIANT, PRESERVED</p><h2>Complete document library</h2>${
       demo.guides.length
         ? '<ul class="guide-list">' +
           demo.guides
@@ -609,7 +653,11 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
     logLevel: 'warning',
   });
   const manifest = {
-    schemaVersion: 1,
+    schemaVersion: 2,
+    experiences: Object.keys(experiences).length,
+    sourceInspections: new Set(
+      Object.values(experiences).flatMap((p) => p.steps.map((s) => s.source))
+    ).size,
     revision,
     basePath: base,
     directories: catalog.length,

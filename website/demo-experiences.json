@@ -1,0 +1,1986 @@
+{
+  "aurora": {
+    "question": "What makes a completed job eligible for payment?",
+    "purpose": "For operators and builders learning the contract lifecycle: connect a job specification to work submission, validator decisions and local settlement.",
+    "steps": [
+      {
+        "title": "Define acceptance",
+        "source": "demo/aurora/config/aurora.spec@v2.json",
+        "explanation": "Inspect validation.k and validation.n, the challenge window, stake and escrow. Amounts are token base units; the IPFS example URIs are placeholders, not uploaded evidence."
+      },
+      {
+        "title": "Follow the contract calls",
+        "source": "demo/aurora/aurora.demo.ts",
+        "explanation": "Trace registration, staking, posting, application, submission and validation. This driver executes real contract transactions on the selected local development chain."
+      },
+      {
+        "title": "Read the receipt",
+        "source": "demo/aurora/bin/aurora-report.ts",
+        "explanation": "The report generator reads run artifacts. Check job IDs, validator votes, settlement transactions and report scope; a generated summary alone does not demonstrate a successful settlement."
+      }
+    ],
+    "command": "npm run demo:aurora:local",
+    "expected": "One local job completes; inspect reports/localhost/aurora/ and its transaction evidence. Mock tokens and synthetic work are used.",
+    "experiment": "Change an acceptance condition in a copied specification and compare the resulting validation requirements. Do not treat a placeholder URI as evidence.",
+    "mode": "local",
+    "related": []
+  },
+  "asi-takeoff": {
+    "question": "How do several missions share one verifiable execution pipeline?",
+    "purpose": "For mission designers: follow the healthcare, agriculture and infrastructure scenarios from their individual requirements into local contract execution.",
+    "steps": [
+      {
+        "title": "Read the mission",
+        "source": "demo/asi-takeoff/config/mission@v2.json",
+        "explanation": "Expand jobs to inspect each objective, specification path, deadline, reward and result URI. The sector objectives describe synthetic scenarios, not completed real-world projects."
+      },
+      {
+        "title": "Inspect the local driver",
+        "source": "demo/asi-takeoff/bin/asi-takeoff-local.sh",
+        "explanation": "The launcher prepares the disposable local chain and calls the shared AURORA workflow. Follow the referenced specification for each job; committee sizes may differ between jobs."
+      },
+      {
+        "title": "Understand the wider plan",
+        "source": "demo/asi-takeoff/project-plan.json",
+        "explanation": "Compare the project plan with the executable mission. Planning dependencies and ambitious targets are context; transaction receipts establish which local jobs actually ran."
+      }
+    ],
+    "command": "npm run demo:asi-takeoff:local",
+    "expected": "Inspect reports/localhost/asi-takeoff/. Match every mission job to its own completed validation and settlement evidence; do not infer completion from the aggregate narrative.",
+    "experiment": "Compare two job specifications and identify differences in required approvals, validator count and deadline. Re-run with a separate report directory or preserve the first run before comparing.",
+    "mode": "local",
+    "related": ["aurora"]
+  },
+  "asi-global": {
+    "question": "How do several missions share one verifiable execution pipeline?",
+    "purpose": "For mission designers: follow the renewable capacity, climate resilience and governance scenarios from their individual requirements into local contract execution.",
+    "steps": [
+      {
+        "title": "Read the mission",
+        "source": "demo/asi-global/config/mission@v2.json",
+        "explanation": "Expand jobs to inspect each objective, specification path, deadline, reward and result URI. The sector objectives describe synthetic scenarios, not completed real-world projects."
+      },
+      {
+        "title": "Inspect the local driver",
+        "source": "demo/asi-global/bin/asi-global-local.sh",
+        "explanation": "The launcher prepares the disposable local chain and calls the shared AURORA workflow. Follow the referenced specification for each job; committee sizes may differ between jobs."
+      },
+      {
+        "title": "Understand the wider plan",
+        "source": "demo/asi-global/project-plan.json",
+        "explanation": "Compare the project plan with the executable mission. Planning dependencies and ambitious targets are context; transaction receipts establish which local jobs actually ran."
+      }
+    ],
+    "command": "npm run demo:asi-global:local",
+    "expected": "Inspect reports/localhost/asi-global/. Match every mission job to its own completed validation and settlement evidence; do not infer completion from the aggregate narrative.",
+    "experiment": "Compare two job specifications and identify differences in required approvals, validator count and deadline. Re-run with a separate report directory or preserve the first run before comparing.",
+    "mode": "local",
+    "related": ["aurora"]
+  },
+  "atlas-conductor": {
+    "question": "How do several missions share one verifiable execution pipeline?",
+    "purpose": "For mission designers: follow the energy, food, health and economic coordination scenarios from their individual requirements into local contract execution.",
+    "steps": [
+      {
+        "title": "Read the mission",
+        "source": "demo/atlas-conductor/config/mission@v2.json",
+        "explanation": "Expand jobs to inspect each objective, specification path, deadline, reward and result URI. The sector objectives describe synthetic scenarios, not completed real-world projects."
+      },
+      {
+        "title": "Inspect the local driver",
+        "source": "demo/atlas-conductor/bin/atlas-conductor-local.sh",
+        "explanation": "The launcher prepares the disposable local chain and calls the shared AURORA workflow. Follow the referenced specification for each job; committee sizes may differ between jobs."
+      },
+      {
+        "title": "Understand the wider plan",
+        "source": "demo/atlas-conductor/project-plan.json",
+        "explanation": "Compare the project plan with the executable mission. Planning dependencies and ambitious targets are context; transaction receipts establish which local jobs actually ran."
+      }
+    ],
+    "command": "npm run demo:atlas-conductor:local",
+    "expected": "Inspect reports/localhost/atlas-conductor/. Match every mission job to its own completed validation and settlement evidence; do not infer completion from the aggregate narrative.",
+    "experiment": "Compare two job specifications and identify differences in required approvals, validator count and deadline. Re-run with a separate report directory or preserve the first run before comparing.",
+    "mode": "local",
+    "related": ["aurora"]
+  },
+  "Absolute-Zero-Reasoner-v0": {
+    "question": "Can a reasoning loop generate its own practice tasks?",
+    "purpose": "For researchers: inspect proposal, sandbox verification, solving and feedback in a bounded synthetic reasoning experiment.",
+    "steps": [
+      {
+        "title": "Inspect the learning assumptions",
+        "source": "demo/Absolute-Zero-Reasoner-v0/absolute_zero_reasoner_demo/config/default_config.yaml",
+        "explanation": "This configuration belongs to the alternate absolute_zero_reasoner_demo engine. Compare its iteration, economics and guardrail assumptions with the selected entry point; the repository contains several implementations."
+      },
+      {
+        "title": "Follow the default entry point",
+        "source": "demo/Absolute-Zero-Reasoner-v0/azr_demo/__main__.py",
+        "explanation": "The root launcher uses azr_demo. Follow task generation, the verifier, solving and wall-clock stopping. The cap bounds local demo work; it is not a security sandbox certification."
+      },
+      {
+        "title": "Read a recorded example",
+        "source": "demo/Absolute-Zero-Reasoner-v0/reports/absolute_zero_reasoner_metrics.json",
+        "explanation": "This checked-in example is historical output, not a fresh browser execution. Inspect task success, costs and the seed/configuration before interpreting a reported improvement."
+      }
+    ],
+    "command": "python demo/Absolute-Zero-Reasoner-v0/run_demo.py --max-seconds 15 --output /tmp/azr-demo.json",
+    "expected": "A bounded run prints progress and writes /tmp/azr-demo.json. Compare actual iterations and solved tasks; elapsed time and simulated economics can vary.",
+    "experiment": "Reduce --max-seconds and compare completed iterations. Keep the same implementation when comparing configurations.",
+    "mode": "stdlib",
+    "related": []
+  },
+  "Tiny-Recursive-Model-v0": {
+    "question": "When does another reasoning pass help?",
+    "purpose": "For researchers and evaluators: explore a small recursive model, early halting, synthetic task accuracy and the cost of repeated computation.",
+    "steps": [
+      {
+        "title": "Read the experiment settings",
+        "source": "demo/Tiny-Recursive-Model-v0/config/trm_demo_config.yaml",
+        "explanation": "Inspect model and simulation assumptions. Distinguish inner/outer reasoning loops, halting policy and training settings before comparing strategies."
+      },
+      {
+        "title": "Trace the executable journey",
+        "source": "demo/Tiny-Recursive-Model-v0/run_demo.py",
+        "explanation": "The explain command introduces the model; simulate loads or creates the configured checkpoint, then compares synthetic trials under sentinel and thermostat controls."
+      },
+      {
+        "title": "Inspect the simulation",
+        "source": "demo/Tiny-Recursive-Model-v0/trm_demo/simulation.py",
+        "explanation": "Read how outcomes and simulated economics are calculated. Compare strategies on the same seed and trial count; these metrics are not production ROI."
+      }
+    ],
+    "command": "python demo/Tiny-Recursive-Model-v0/run_demo.py explain\npython demo/Tiny-Recursive-Model-v0/run_demo.py simulate --trials 24 --seed 7",
+    "expected": "The terminal shows strategy results, sentinel status and a thermostat trace. First execution may train a checkpoint; use the documented CPU dependency environment.",
+    "experiment": "Repeat with the same seed, then change the number of trials. Explain how sample size affects confidence in an apparent improvement.",
+    "mode": "trm",
+    "related": [],
+    "install": "python -m pip install -r demo/Tiny-Recursive-Model-v0/requirements-core.txt --extra-index-url https://download.pytorch.org/whl/cpu"
+  },
+  "MuZero-style-v0": {
+    "question": "How can search evaluate an action before taking it?",
+    "purpose": "For planning researchers: inspect model-based search, replay, training and evaluation in a synthetic job-allocation environment.",
+    "steps": [
+      {
+        "title": "Choose a configuration",
+        "source": "demo/MuZero-style-v0/config/muzero_demo.yaml",
+        "explanation": "Read training, search and environment settings. This file determines the experiment; do not mix it with config/default.yaml when comparing runs."
+      },
+      {
+        "title": "Follow the search",
+        "source": "demo/MuZero-style-v0/muzero_demo/mcts.py",
+        "explanation": "Trace the Monte Carlo tree-search implementation, including selection and value propagation. Search estimates depend on the learned model and budget."
+      },
+      {
+        "title": "Understand the CLI",
+        "source": "demo/MuZero-style-v0/muzero_demo/cli.py",
+        "explanation": "The demo, smoke-tests and eval subcommands have different purposes. Smoke exercises the configured model; a saved checkpoint is needed where the evaluation path expects one."
+      }
+    ],
+    "command": "python demo/MuZero-style-v0/scripts/run_demo.py smoke-tests --config demo/MuZero-style-v0/config/muzero_demo.yaml",
+    "expected": "The smoke path checks the selected configuration and model behavior. Use the demo subcommand for the longer training journey and inspect its checkpoint before eval.",
+    "experiment": "Compare search budgets while holding environment and seed fixed. Account for both reward and extra computation.",
+    "mode": "python",
+    "related": [],
+    "install": "python -m pip install -r demo/MuZero-style-v0/requirements.txt --extra-index-url https://download.pytorch.org/whl/cpu"
+  },
+  "AlphaEvolve-v0": {
+    "question": "Can a small code change improve an allocation heuristic?",
+    "purpose": "For developers: follow candidate generation, program changes, evaluation and selection on synthetic agents and jobs.",
+    "steps": [
+      {
+        "title": "Inspect the search settings",
+        "source": "demo/AlphaEvolve-v0/config/alphaevolve.json",
+        "explanation": "Locate search and evaluation parameters. Treat the evaluator and synthetic workload as part of the experiment, not as universal measures of code quality."
+      },
+      {
+        "title": "Follow candidate evaluation",
+        "source": "demo/AlphaEvolve-v0/alphaevolve_runner.py",
+        "explanation": "The CLI builds a population, evaluates candidates and records utility. Read the baseline construction and guardrails before trusting a winning edit."
+      },
+      {
+        "title": "Read a concrete improvement",
+        "source": "demo/AlphaEvolve-v0/alphaevolve_summary.json",
+        "explanation": "Expand best.diff and history. The recorded example changes the scoring weights and cost penalty; compare baseline utility and cost with the candidate on this workload."
+      }
+    ],
+    "command": "python demo/AlphaEvolve-v0/run_demo.py run --seed 7 --output /tmp/alphaevolve-report.json",
+    "expected": "A local evolutionary run writes /tmp/alphaevolve-report.json. Inspect baseline, selected candidate and evaluation assumptions; the historical summary is a separate recorded example.",
+    "experiment": "Examine the winning diff, then ask which held-out workloads would expose overfitting. A better synthetic utility score does not establish safer general code.",
+    "mode": "stdlib",
+    "related": []
+  },
+  "Huxley-Godel-Machine-v0": {
+    "question": "How should an improvement search be compared with a baseline?",
+    "purpose": "For researchers: inspect hierarchical search and budgeted evaluation through a reproducible simulation and comparison artifacts.",
+    "steps": [
+      {
+        "title": "Set the experiment",
+        "source": "demo/Huxley-Godel-Machine-v0/config/hgm_demo_config.json",
+        "explanation": "Inspect budgets, strategies and workload assumptions used by the simulator. The alternative hgm_config.json supports another implementation in this directory."
+      },
+      {
+        "title": "Follow the comparison",
+        "source": "demo/Huxley-Godel-Machine-v0/simulator/runner.py",
+        "explanation": "Read how each strategy receives work and how aggregate results are computed. Compare like-for-like budgets and seeds rather than names alone."
+      },
+      {
+        "title": "Use the import-safe launcher",
+        "source": "demo/huxley_godel_machine_v0/simulator/__main__.py",
+        "explanation": "The compatibility entry point provides explicit config, seed, output directory and UI artifact options for the canonical simulator."
+      }
+    ],
+    "command": "python -m demo.huxley_godel_machine_v0.simulator --seed 7 --output-dir /tmp/hgm-demo --ui-artifact /tmp/hgm-comparison.json",
+    "expected": "Simulation artifacts are written under /tmp/hgm-demo and /tmp/hgm-comparison.json. Inspect per-strategy outcomes and budget use.",
+    "experiment": "Keep the seed fixed and change one budget. Compare performance per unit of evaluation effort, not only the best observed outcome.",
+    "mode": "stdlib",
+    "related": []
+  },
+  "Open-Endedness-v0": {
+    "question": "How do curriculum strategies change what gets explored?",
+    "purpose": "For learning researchers: compare uniform, learning-progress and OMNI strategies over the same configurable synthetic task distribution.",
+    "steps": [
+      {
+        "title": "Set the task landscape",
+        "source": "demo/Open-Endedness-v0/config.demo.yaml",
+        "explanation": "Inspect task probabilities, episode count and economic assumptions. A changing task distribution changes the meaning of the score."
+      },
+      {
+        "title": "Compare three strategies",
+        "source": "demo/Open-Endedness-v0/run_demo.py",
+        "explanation": "The runner executes uniform, lp and omni and writes distribution, JSON and report artifacts. Follow _run_strategy and _write_artifacts to interpret them."
+      },
+      {
+        "title": "Inspect the simulator",
+        "source": "demo/Open-Endedness-v0/simulator.py",
+        "explanation": "Trace task sampling and value/cost accumulation. These are simulated outcomes, not measured commercial returns."
+      }
+    ],
+    "command": "python demo/Open-Endedness-v0/run_demo.py --output /tmp/open-endedness-demo",
+    "expected": "The terminal compares GMV, ROI and episodes for three strategies; /tmp/open-endedness-demo contains the detailed artifacts.",
+    "experiment": "Copy the YAML configuration, change task probabilities, and pass --config. Check whether the same strategy still wins and why.",
+    "mode": "python",
+    "related": [],
+    "install": "python -m pip install PyYAML==6.0.2"
+  },
+  "AGIJobs-Day-One-Utility-Benchmark": {
+    "question": "What does a useful improvement look like across cost, acceptance and latency?",
+    "purpose": "For evaluators: compare strategies against an explicit micro-dataset and acceptance rules before making broader utility claims.",
+    "steps": [
+      {
+        "title": "Read the workload",
+        "source": "demo/AGIJobs-Day-One-Utility-Benchmark/config/microset.yaml",
+        "explanation": "Ten synthetic jobs define baseline acceptance, cost and latency. Candidate values are derived using strategy multipliers; this is a model, not an independent real-world benchmark."
+      },
+      {
+        "title": "Inspect the strategy assumptions",
+        "source": "demo/AGIJobs-Day-One-Utility-Benchmark/config/strategies.yaml",
+        "explanation": "Compare each strategy profile and its multipliers. These assumptions explain the expected ordering of scores."
+      },
+      {
+        "title": "Follow the score calculation",
+        "source": "demo/AGIJobs-Day-One-Utility-Benchmark/demo_runner.py",
+        "explanation": "The runner applies rules, owner controls and strategy profiles and writes reports and dashboards. Check-mode avoids writing artifacts when supported by the selected command."
+      }
+    ],
+    "command": "python demo/AGIJobs-Day-One-Utility-Benchmark/run_demo.py --output-dir /tmp/day-one-demo scoreboard",
+    "expected": "A scoreboard and per-strategy reports are produced in /tmp/day-one-demo. Read acceptance, cost and latency together with the configured rules.",
+    "experiment": "Change a multiplier in a copied fixture and observe the scoreboard. Explain why this sensitivity test does not validate the multiplier itself.",
+    "mode": "python",
+    "related": [],
+    "install": "python -m pip install -r demo/AGIJobs-Day-One-Utility-Benchmark/requirements.txt"
+  },
+  "AGI-Alpha-Node-v0": {
+    "question": "How does an operator connect planning, specialists and node state?",
+    "purpose": "For node operators: inspect opportunity selection, specialist routing, knowledge capture and the distinction between local status and connected services.",
+    "steps": [
+      {
+        "title": "Inspect operator settings",
+        "source": "demo/AGI-Alpha-Node-v0/config.toml",
+        "explanation": "Read identity, model, chain and service settings before launching. Example values are not valid provider credentials or an authorized production identity."
+      },
+      {
+        "title": "Follow the specialist route",
+        "source": "demo/AGI-Alpha-Node-v0/alpha_node/orchestrator.py",
+        "explanation": "The planner chooses jobs, domain specialists produce results and the knowledge lake records them. The aggregate indices are defined in this implementation."
+      },
+      {
+        "title": "Start with a status snapshot",
+        "source": "demo/AGI-Alpha-Node-v0/run_demo.py",
+        "explanation": "This lightweight Python wrapper delegates to run_alpha_node.py and defaults to a non-interactive status snapshot. The root npm command invokes a separate TypeScript CLI."
+      }
+    ],
+    "command": "python demo/AGI-Alpha-Node-v0/run_demo.py",
+    "expected": "The wrapper prints the bundled local node status. Inspect configured identities and services before opting into the interactive or provider-connected paths.",
+    "experiment": "Compare a specialist output with the corresponding job domain and knowledge entry. Identify what external evidence would be required to verify the result.",
+    "mode": "python",
+    "related": [],
+    "install": "python -m pip install -r demo/AGI-Alpha-Node-v0/requirements.txt"
+  },
+  "CULTURE-v0": {
+    "question": "How do artifacts become an evolving, inspectable knowledge graph?",
+    "purpose": "For creators and platform builders: follow artifact lineage, arena evaluation, indexing and the Culture Studio interface across a local service stack.",
+    "steps": [
+      {
+        "title": "Inspect seed artifacts",
+        "source": "demo/CULTURE-v0/data/seed-artifacts.json",
+        "explanation": "Read the initial artifact identities and relationships. A seed dataset explains the graph shown by the demo; it does not prove ongoing autonomous discovery."
+      },
+      {
+        "title": "Follow arena evaluation",
+        "source": "demo/CULTURE-v0/backend/arena-orchestrator/src/arena.service.ts",
+        "explanation": "The arena service coordinates evaluation and persistence. Follow its authentication, moderation and budget boundaries when connecting external services."
+      },
+      {
+        "title": "Understand the local stack",
+        "source": "demo/CULTURE-v0/scripts/run-local-stack.mjs",
+        "explanation": "The launcher prepares the isolated local services. The original component guides explain Studio, the indexer, contracts, persistence and shutdown."
+      }
+    ],
+    "command": "cd demo/CULTURE-v0\ncorepack pnpm install --frozen-lockfile\ncorepack pnpm local:up",
+    "expected": "With Docker and the pinned pnpm toolchain installed, the local stack starts and prints its service endpoints. Follow the Studio/indexer guides; stop it with corepack pnpm e2e:down from this directory.",
+    "experiment": "Create an artifact in the local Studio, inspect its lineage through the indexer, then evaluate it in the arena. Verify the persisted evidence after a service restart.",
+    "mode": "culture",
+    "related": []
+  },
+  "Era-Of-Experience-v0": {
+    "question": "How can an experience stream be audited after learning?",
+    "purpose": "For evaluators: trace synthetic experiences into rewards, owner controls and an independently readable verification record.",
+    "steps": [
+      {
+        "title": "Inspect the experience stream",
+        "source": "demo/Era-Of-Experience-v0/scenario/experience-stream.json",
+        "explanation": "Read the events and associated assumptions before comparing rewards. The baseline and dominion scenario configurations define distinct experiments."
+      },
+      {
+        "title": "Follow the run",
+        "source": "demo/Era-Of-Experience-v0/scripts/runDemo.ts",
+        "explanation": "The entry point generates the experience demonstration. The separate audit and verifier commands inspect the resulting artifacts."
+      },
+      {
+        "title": "Read the recorded verification",
+        "source": "demo/Era-Of-Experience-v0/reports/verification.json",
+        "explanation": "This checked-in verification is an example. Link every asserted property to the run and audit inputs; do not treat an old success flag as a new run result."
+      }
+    ],
+    "command": "npm run demo:era-of-experience\nnpm run demo:era-of-experience:audit\nnpm run demo:era-of-experience:verify",
+    "expected": "Run, audit and verifier artifacts are generated under this demo’s reports directory. Compare the new summary, audit and verification together.",
+    "experiment": "Modify a copied reward configuration, regenerate the run, and compare the audit. Explain which behavior changed and which verification properties stayed the same.",
+    "mode": "node",
+    "related": []
+  },
+  "Economic-Power-v0": {
+    "question": "Which assumptions drive the reported economic outcome?",
+    "purpose": "For analysts: inspect a deterministic economic scenario, its treasury and owner controls, and the calculation behind reported returns.",
+    "steps": [
+      {
+        "title": "Read the baseline",
+        "source": "demo/Economic-Power-v0/scenario/baseline.json",
+        "explanation": "Inspect actors, job values, budgets and assumptions. Scenario amounts and synthetic identities are not current market data or funded accounts."
+      },
+      {
+        "title": "Trace the model",
+        "source": "demo/Economic-Power-v0/scripts/runDemo.ts",
+        "explanation": "Follow the scenario through the economic report generator and CI assertions. Use these calculations to explain a metric before repeating its headline."
+      },
+      {
+        "title": "Inspect the recorded results",
+        "source": "demo/Economic-Power-v0/reports/summary.json",
+        "explanation": "Expand metrics and ownerControl. ROI, dominance and readiness indices belong to this illustrative model; timestamps identify the historical fixture."
+      }
+    ],
+    "command": "npm run demo:economic-power:ci",
+    "expected": "The CI mode generates and checks local scenario reports. Read the summary alongside assertions and deterministic-verification artifacts.",
+    "experiment": "Compare total escrow, rewards and treasury changes in the generated report. Ask which inputs would need real provider or transaction evidence before using the model operationally.",
+    "mode": "node",
+    "related": []
+  },
+  "REDENOMINATION": {
+    "question": "How can an operator rehearse a denomination-sensitive job?",
+    "purpose": "For governance and treasury operators: trace a modeled job through validation, owner controls, emergency handling and report verification.",
+    "steps": [
+      {
+        "title": "Read the actors and phases",
+        "source": "demo/REDENOMINATION/scenario.json",
+        "explanation": "The scenario defines actors, a flow and policy expectations. Its embedded diagram is a narrative model; inspect the implementation before treating any step as executed."
+      },
+      {
+        "title": "Follow the demonstration",
+        "source": "demo/REDENOMINATION/scripts/run-demo.mjs",
+        "explanation": "Trace the exported scenario, evidence and report generation. The owner console and guardian drill are separate paths with their own prerequisites."
+      },
+      {
+        "title": "Inspect the verifier",
+        "source": "demo/REDENOMINATION/scripts/verify-scenario.mjs",
+        "explanation": "The verification script checks scenario structure and evidence relationships. It does not establish that a live currency redenomination or network upgrade occurred."
+      }
+    ],
+    "command": "npm run demo:redenomination\nnpm run demo:redenomination:verify",
+    "expected": "Scenario artifacts and verification output are produced locally. Inspect the report and exported UI data before opening mission control.",
+    "experiment": "Follow one failure or dispute branch in the scenario and identify the actor authorized to handle it. Distinguish a prepared control from an executed transaction.",
+    "mode": "node",
+    "related": []
+  },
+  "agi-labor-market-grand-demo": {
+    "question": "What evidence connects a labor-market story to its job events?",
+    "purpose": "For presenters and operators: inspect the bundled market transcript and use the local viewer to explain actors, job progression and exported evidence.",
+    "steps": [
+      {
+        "title": "Read the bundled transcript",
+        "source": "demo/agi-labor-market-grand-demo/ui/sample.json",
+        "explanation": "Inspect the scenario actors, events and metrics. This is a recorded example, not a live market feed."
+      },
+      {
+        "title": "Follow the viewer entry point",
+        "source": "demo/agi-labor-market-grand-demo/run_demo.py",
+        "explanation": "The summarize command reads a transcript; serve launches the local browser interface. The listener defaults to loopback and does not require a wallet for reading the sample."
+      },
+      {
+        "title": "Compare the exported view",
+        "source": "demo/agi-labor-market-grand-demo/ui/export/latest.json",
+        "explanation": "The latest-named file is checked-in data. Compare its contents and timestamps with your newly generated export before presenting it as current."
+      }
+    ],
+    "command": "python demo/agi-labor-market-grand-demo/run_demo.py summarize",
+    "expected": "The CLI summarizes the bundled transcript. Use the serve subcommand for the local UI, and npm run demo:agi-labor-market:export to regenerate the exporter’s data.",
+    "experiment": "Locate a job event and trace the actors and evidence around it. Check whether its metrics are observed transaction values or scenario assertions.",
+    "mode": "stdlib",
+    "related": []
+  },
+  "National-Supply-Chain-v0": {
+    "question": "How can a supply-chain mission be explained from its evidence?",
+    "purpose": "For operations teams: inspect a supply-chain transcript and its visual viewer, keeping simulated coordination separate from physical delivery.",
+    "steps": [
+      {
+        "title": "Read the sample mission",
+        "source": "demo/National-Supply-Chain-v0/ui/sample.json",
+        "explanation": "Inspect participating actors, ordered events and supply-chain metrics. These values describe the bundled demonstration."
+      },
+      {
+        "title": "Follow the visual interpretation",
+        "source": "demo/National-Supply-Chain-v0/ui/app.js",
+        "explanation": "The browser application maps scenario data into its interface. Review how event status and metrics are rendered rather than assuming the UI performs the underlying work."
+      },
+      {
+        "title": "Inspect the generated export",
+        "source": "demo/National-Supply-Chain-v0/ui/export/latest.json",
+        "explanation": "The checked-in export is a reproducible example. The export command refreshes UI data; it is not a delivery or logistics integration."
+      }
+    ],
+    "command": "npm run demo:national-supply-chain:export",
+    "expected": "The exporter updates the supply-chain UI data. Compare the new export with the input transcript and follow the preserved runbook to serve the standalone viewer.",
+    "experiment": "Trace one supply-chain claim to a specific event. Identify which real logistics or sensor record would be needed to validate that claim outside the demo.",
+    "mode": "node",
+    "related": []
+  },
+  "Planetary-Orchestrator-Fabric-v0": {
+    "question": "Can work recover when an orchestrator restarts?",
+    "purpose": "For distributed-system builders: inspect shard routing, queue pressure, reassignment and checkpoint recovery in a seeded local workload.",
+    "steps": [
+      {
+        "title": "Inspect shard capacity",
+        "source": "demo/Planetary-Orchestrator-Fabric-v0/config/fabric.example.json",
+        "explanation": "Expand shards, spillover policies and nodes. Earth, Luna and Mars are scenario labels; latency budgets and capacities are model inputs."
+      },
+      {
+        "title": "Follow routing and recovery",
+        "source": "demo/Planetary-Orchestrator-Fabric-v0/planetary_fabric/simulation.py",
+        "explanation": "Trace generated jobs through the high-load simulation and kill/resume path. Completion and reassignment are evidence about this local workload."
+      },
+      {
+        "title": "Choose a bounded run",
+        "source": "demo/Planetary-Orchestrator-Fabric-v0/run_demo.py",
+        "explanation": "The CLI supports jobs, seed, base-dir and no-restart. A small job count is suitable for learning the mechanics before a larger stress run."
+      }
+    ],
+    "command": "python demo/Planetary-Orchestrator-Fabric-v0/run_demo.py --jobs 100 --seed 1337 --base-dir /tmp/planetary-demo",
+    "expected": "The terminal prints completion_rate, max_depth_delta, reassigned_jobs and total_runtime; the base directory holds checkpoints and telemetry.",
+    "experiment": "Compare the same workload with and without --no-restart. Explain changes in reassignment and runtime while checking that all intended jobs are accounted for.",
+    "mode": "stdlib",
+    "related": []
+  },
+  "Validator-Constellation-v0": {
+    "question": "What happens when validators disagree or fail to reveal?",
+    "purpose": "For protocol learners: inspect committee selection, commit/reveal timing, quorum and slashing in a configurable validation simulation.",
+    "steps": [
+      {
+        "title": "Read the scenario",
+        "source": "demo/Validator-Constellation-v0/config/stellar-scenario.yaml",
+        "explanation": "Inspect committee, jobs, budget and owner parameters. A synthetic entropy seed is not production verifiable randomness."
+      },
+      {
+        "title": "Trace validation",
+        "source": "demo/Validator-Constellation-v0/validator_constellation/demo_runner.py",
+        "explanation": "Follow committee selection and vote processing. The Python simulator and versioned TypeScript implementations are distinct paths, all preserved in the guides."
+      },
+      {
+        "title": "Control the experiment",
+        "source": "demo/Validator-Constellation-v0/run_demo.py",
+        "explanation": "The CLI exposes truth, committee size, quorum, commit/reveal windows and slash fractions. Export the summary for inspection after a run."
+      }
+    ],
+    "command": "python demo/Validator-Constellation-v0/run_demo.py --seed demo-seed --truth true --output /tmp/validator-demo.json",
+    "expected": "A simulated committee round produces a summary in /tmp/validator-demo.json. Inspect votes, outcome, slashing and owner actions.",
+    "experiment": "Repeat with --truth false using the same seed. Compare the decision and penalties; distinguish simulator behavior from actual contract enforcement.",
+    "mode": "python",
+    "related": [],
+    "install": "python -m pip install PyYAML==6.0.2"
+  },
+  "superintelligent-empowerment": {
+    "question": "How do mission goals become a stakeholder impact report?",
+    "purpose": "For mission designers: turn named initiatives, beneficiaries and stated targets into a readable impact narrative while keeping goals separate from measured outcomes.",
+    "steps": [
+      {
+        "title": "Read the initiatives",
+        "source": "demo/superintelligent-empowerment/configs/mission.yaml",
+        "explanation": "Each initiative lists beneficiaries, capability vectors and success metrics. Growth and resilience values are stated targets, not measured results."
+      },
+      {
+        "title": "Follow report construction",
+        "source": "demo/superintelligent-empowerment/code/run_demo.py",
+        "explanation": "The orchestrator loads YAML, constructs initiative summaries and serializes an impact report. It synthesizes a narrative rather than executing the described real-world programs."
+      },
+      {
+        "title": "Inspect the example report",
+        "source": "demo/superintelligent-empowerment/output/report.json",
+        "explanation": "Compare the recorded report with the configuration. Trace every quantitative claim back to its target or calculation before using it in a presentation."
+      }
+    ],
+    "command": "python demo/superintelligent-empowerment/code/run_demo.py --output /tmp/empowerment-report.json",
+    "expected": "The terminal displays initiative information and writes /tmp/empowerment-report.json. No real-world impact is measured by this command.",
+    "experiment": "Copy mission.yaml, replace one initiative with your own measurable acceptance criterion, and run with --config. Identify the evidence you would later collect to assess it.",
+    "mode": "python",
+    "related": [],
+    "install": "python -m pip install -r demo/superintelligent-empowerment/code/requirements.txt"
+  },
+  "agi-governance": {
+    "question": "How do mission rules translate into governance diagnostics?",
+    "purpose": "For governance designers: inspect mission assumptions, simulated allocation and owner diagnostics across the original scenario and preserved alpha variants.",
+    "steps": [
+      {
+        "title": "Inspect the baseline mission",
+        "source": "demo/agi-governance/config/mission@v1.json",
+        "explanation": "Compare thermodynamic proxies, Hamiltonian coefficients and game-theoretic allocations. These are model parameters, not measurements of institutional governance."
+      },
+      {
+        "title": "Follow the lightweight evaluation",
+        "source": "demo/agi-governance/run_demo.py",
+        "explanation": "The Python harness reads the mission and computes a reproducible report. It does not sign or execute governance transactions."
+      },
+      {
+        "title": "Inspect the broader pipeline",
+        "source": "demo/agi-governance/alpha-v17/scripts/runMission.ts",
+        "explanation": "This is the alpha-v17 mission entry point. Each preserved alpha variant has its own configuration and diagnostics; do not mix a baseline report with a variant’s verification."
+      }
+    ],
+    "command": "python demo/agi-governance/run_demo.py --json",
+    "expected": "The terminal emits mission metrics as JSON. Use the original runbooks for the fuller TypeScript and owner-diagnostic workflows.",
+    "experiment": "Change a coefficient in a copied mission file and run with --mission. Explain the changed metric from the formula rather than attributing it to real governance success.",
+    "mode": "stdlib",
+    "related": []
+  },
+  "alpha-meta": {
+    "question": "How can a mission be checked from more than one perspective?",
+    "purpose": "For mission reviewers: connect the governance plan, validation, triangulation and owner-control evidence.",
+    "steps": [
+      {
+        "title": "Read the mission",
+        "source": "demo/alpha-meta/config/mission@alpha-meta.json",
+        "explanation": "Inspect mission assumptions and owner controls before reading the report. Compare with the separate project-plan file for planning dependencies."
+      },
+      {
+        "title": "Trace the complete pipeline",
+        "source": "demo/alpha-meta/scripts/fullPipeline.ts",
+        "explanation": "Follow the run, validation, triangulation and owner audit steps. Each stage has a distinct evidentiary purpose."
+      },
+      {
+        "title": "Read the recorded triangulation",
+        "source": "demo/alpha-meta/reports/alpha-meta-triangulation.json",
+        "explanation": "Inspect how consistency is evaluated. This checked-in example must be regenerated to establish behavior for a new configuration."
+      }
+    ],
+    "command": "npm run demo:alpha-meta:full",
+    "expected": "The full pipeline writes mission, validation, triangulation and owner diagnostic artifacts under demo/alpha-meta/reports/.",
+    "experiment": "Compare the mission assumptions with the triangulation checks. Identify a claim that no available check independently verifies.",
+    "mode": "node",
+    "related": []
+  },
+  "alpha-agi-mark": {
+    "question": "How can a contract demonstration produce a reviewable operator dossier?",
+    "purpose": "For reviewers: trace the Alpha Mark scenario into contract execution, a recap and the additional operator reports.",
+    "steps": [
+      {
+        "title": "Follow the scenario",
+        "source": "demo/alpha-agi-mark/scripts/runDemo.ts",
+        "explanation": "Read the deployment, scenario actions and assertions in the Hardhat driver. This local workflow uses demonstration actors and assets."
+      },
+      {
+        "title": "Read a concrete recap",
+        "source": "demo/alpha-agi-mark/reports/alpha-mark-recap.json",
+        "explanation": "Inspect transaction-related fields, actors and scenario outcomes. The committed recap is an example; fresh evidence must come from your own run."
+      },
+      {
+        "title": "Inspect the integrity checks",
+        "source": "demo/alpha-agi-mark/scripts/verifyRecap.ts",
+        "explanation": "Follow the verifier before relying on generated dashboards or narrative briefs. Their presentation should remain traceable to the underlying recap."
+      }
+    ],
+    "command": "npm run demo:alpha-agi-mark",
+    "expected": "A local Hardhat demonstration produces a recap. The :full command adds the operator suite; inspect the exact output paths printed by the scripts.",
+    "experiment": "Compare a recap field with the assertion or event that establishes it. Keep generated risk and intelligence indices separate from externally validated performance.",
+    "mode": "node",
+    "related": []
+  },
+  "alpha-agi-insight-mark": {
+    "question": "What does an insight exchange actually record and verify?",
+    "purpose": "For application builders: inspect insight scenarios, access-token behavior and the local contract evidence behind an exchange demonstration.",
+    "steps": [
+      {
+        "title": "Read the insight scenarios",
+        "source": "demo/alpha-agi-insight-mark/data/insight-scenarios.json",
+        "explanation": "Inspect the bundled inputs and labels. They are scenario examples, not investment recommendations or verified real-world predictions."
+      },
+      {
+        "title": "Follow the contract scenario",
+        "source": "demo/alpha-agi-insight-mark/scripts/runDemo.ts",
+        "explanation": "Trace contract deployment and the insight exchange actions. The dedicated Hardhat configuration isolates the scenario from other demo contracts."
+      },
+      {
+        "title": "Inspect report verification",
+        "source": "demo/alpha-agi-insight-mark/scripts/verifyReports.ts",
+        "explanation": "Read the conditions checked against generated reports. Contract ownership or access-token behavior does not establish the truth or future value of an insight."
+      }
+    ],
+    "command": "npm run demo:alpha-agi-insight-mark",
+    "expected": "The dedicated Hardhat scenario runs and produces insight reports. Inspect contract assertions and generated reports together.",
+    "experiment": "Trace one insight through issuance, access and exchange evidence. Identify which claim would still require independent evaluation of the insight itself.",
+    "mode": "node",
+    "related": []
+  },
+  "Meta-Agentic-Program-Synthesis-v0": {
+    "question": "How does a mission become an evaluated program candidate?",
+    "purpose": "For developers: inspect mission constraints, candidate synthesis, validation and an auditable selection process.",
+    "steps": [
+      {
+        "title": "Read the mission constraints",
+        "source": "demo/Meta-Agentic-Program-Synthesis-v0/config/mission.meta-agentic-program-synthesis.json",
+        "explanation": "Inspect the mission and its owner limits. The optional owner-overrides sample shows which assumptions can be changed."
+      },
+      {
+        "title": "Follow synthesis",
+        "source": "demo/Meta-Agentic-Program-Synthesis-v0/scripts/synthesisEngine.ts",
+        "explanation": "Trace candidate construction and evaluation in the TypeScript engine. The directory also contains a separate Python implementation, documented in its own guides."
+      },
+      {
+        "title": "Inspect the recorded summary",
+        "source": "demo/Meta-Agentic-Program-Synthesis-v0/reports/meta-agentic-program-synthesis-summary.json",
+        "explanation": "Read candidate and evaluation evidence alongside the selected implementation. A passing synthetic evaluator does not guarantee general correctness of generated code."
+      }
+    ],
+    "command": "npm run demo:meta-agentic-program-synthesis:full",
+    "expected": "The pipeline writes synthesis, validation, triangulation and owner diagnostic artifacts under the demo reports directory.",
+    "experiment": "Choose a constraint from the mission and find its corresponding evaluation check. Ask what adversarial or held-out input could falsify the claimed improvement.",
+    "mode": "node",
+    "related": []
+  },
+  "Meta-Agentic-ALPHA-AGI-Jobs-v0": {
+    "question": "How do several agents coordinate one opportunity-to-execution story?",
+    "purpose": "For agent-system designers: inspect a multi-domain plan, explicit approvals, budget limits and the implementation behind its many preserved variants.",
+    "steps": [
+      {
+        "title": "Read the original plan",
+        "source": "demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/config/meta_agentic_scenario.yaml",
+        "explanation": "Follow identify, learn and execution steps, the approvals list and exposure limits. Example secrets, addresses and notification channels are fixtures and should be replaced in a connected deployment."
+      },
+      {
+        "title": "Trace the TypeScript demonstration",
+        "source": "demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/scripts/runDemo.ts",
+        "explanation": "The root npm command selects this entry point. Python variants have their own guides and should not be assumed to execute the same path."
+      },
+      {
+        "title": "Inspect the architecture",
+        "source": "demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/reports/architecture.mmd",
+        "explanation": "Read the recorded component relationships, then follow each phase into its implementation. The diagram describes a workflow, not proof that every external integration ran."
+      }
+    ],
+    "command": "npm run demo:meta-agentic-alpha",
+    "expected": "The TypeScript demo produces its scenario artifacts. Review each phase and its assumptions; use the variant-specific guides for the other implementations.",
+    "experiment": "Trace a human-review prompt and a budget constraint from the configuration to the implementation. Identify where execution would need a real approval or provider.",
+    "mode": "node",
+    "related": []
+  },
+  "Trustless-Economic-Core-v0": {
+    "question": "Can economic settlement rules be exercised on a disposable chain?",
+    "purpose": "For contract developers: follow a dedicated Hardhat scenario and inspect the generated economic report and dashboard.",
+    "steps": [
+      {
+        "title": "Inspect the isolated chain setup",
+        "source": "demo/Trustless-Economic-Core-v0/hardhat.config.ts",
+        "explanation": "The dedicated Hardhat configuration selects contracts and artifacts for this scenario. Use the in-process hardhat network for a local rehearsal."
+      },
+      {
+        "title": "Follow the economic scenario",
+        "source": "demo/Trustless-Economic-Core-v0/scripts/runScenario.ts",
+        "explanation": "Trace the actors, contract calls and assertions before reading the summary. This is where local transaction behavior is established."
+      },
+      {
+        "title": "Read the original architecture",
+        "source": "demo/Trustless-Economic-Core-v0/README.md",
+        "explanation": "Connect the scenario to the wider core and owner controls. The preserved systems map is architectural context, not independent security review."
+      }
+    ],
+    "command": "npx hardhat run --config demo/Trustless-Economic-Core-v0/hardhat.config.ts demo/Trustless-Economic-Core-v0/scripts/runScenario.ts --network hardhat",
+    "expected": "The local scenario writes trustless-core-report.json, trustless-core-report.md and trustless-core-dashboard.html under its reports directory.",
+    "experiment": "Compare the report with the transaction receipts and assertions. Explain which settlement properties are demonstrated and which require adversarial contract testing.",
+    "mode": "node",
+    "related": []
+  },
+  "One-Box": {
+    "question": "What must be configured before an operator can launch the stack?",
+    "purpose": "For first-time operators: use diagnostics to connect the UI, orchestrator, contract addresses and local network before launching a consolidated workflow.",
+    "steps": [
+      {
+        "title": "Read the service topology",
+        "source": "demo/One-Box/docker-compose.yaml",
+        "explanation": "Inspect the local services, ports and environment dependencies. Docker must be available for the container path."
+      },
+      {
+        "title": "Understand the preflight",
+        "source": "demo/One-Box/bin/doctor.cjs",
+        "explanation": "The doctor checks configuration, placeholder addresses and reachable services. A failed check is actionable feedback, not something to bypass."
+      },
+      {
+        "title": "Follow launch behavior",
+        "source": "demo/One-Box/lib/launcher.js",
+        "explanation": "The launcher coordinates the configured runtime. Read the original environment and operator documentation before connecting an external network."
+      }
+    ],
+    "command": "npm run demo:onebox:doctor",
+    "expected": "The doctor prints configuration and readiness diagnostics. Missing environment values or a stopped local chain can correctly produce a nonzero exit; fix the named requirement before npm run demo:onebox:launch.",
+    "experiment": "Run the doctor before and after starting the documented local services. Check which diagnostics changed and which still require real contract addresses.",
+    "mode": "node",
+    "related": []
+  },
+  "astral-citadel": {
+    "question": "What can a mission plan tell an operator before execution?",
+    "purpose": "For mission reviewers: generate a deterministic readiness packet from a structured project plan, with explicit separation between planning heuristics and executed work.",
+    "steps": [
+      {
+        "title": "Read the project plan",
+        "source": "demo/astral-citadel/project-plan.json",
+        "explanation": "Inspect tasks, dependencies and owner context. These describe intended work and do not establish completion."
+      },
+      {
+        "title": "Trace readiness calculations",
+        "source": "demo/astral-citadel/run_demo.py",
+        "explanation": "The Python runner derives a JSON and Markdown packet from the plan. Follow its formulas before interpreting resilience or coordination metrics."
+      },
+      {
+        "title": "Connect to operations",
+        "source": "demo/astral-citadel/RUNBOOK.md",
+        "explanation": "The original runbook preserves the broader operator workflow. Use the local ASI demo for contract evidence; a plan-derived score is a different kind of artifact."
+      }
+    ],
+    "command": "python demo/astral-citadel/run_demo.py --output-dir /tmp/astral-demo",
+    "expected": "The runner writes astral-citadel-report.json and astral-citadel-report.md under /tmp/astral-demo.",
+    "experiment": "Compare a dependency in the plan with its report representation. Ask which missing operational evidence would prevent this plan from being commissioned.",
+    "mode": "stdlib",
+    "related": ["asi-global"]
+  },
+  "astral-omnidominion-operating-system-command-theatre": {
+    "question": "Can an operator see which mission documents are present?",
+    "purpose": "For presenters and operators: turn the command-theatre documents into a local coverage report and explain exactly how its heuristic scores are produced.",
+    "steps": [
+      {
+        "title": "Read the launch playbook",
+        "source": "demo/astral-omnidominion-operating-system-command-theatre/launch-playbook.md",
+        "explanation": "Inspect the operational journey and its assumptions. The original checklist and owner field guide remain available in the complete library below."
+      },
+      {
+        "title": "Follow document scoring",
+        "source": "demo/astral-omnidominion-operating-system-command-theatre/run_demo.py",
+        "explanation": "Coverage counts available documents; the coordination, Gibbs and payoff scores are functions of document count and line count. They are documentation heuristics, not physical or economic measurements."
+      },
+      {
+        "title": "Review the mission checklist",
+        "source": "demo/astral-omnidominion-operating-system-command-theatre/mission-review-checklist.md",
+        "explanation": "Use the checklist to organize an actual review. A high documentation score cannot establish that any checklist action has been completed."
+      }
+    ],
+    "command": "python demo/astral-omnidominion-operating-system-command-theatre/run_demo.py --output /tmp/astral-theatre.json",
+    "expected": "A local JSON report records document coverage and bounded heuristic scores. Inspect each document entry and the formulas that produce the scores.",
+    "experiment": "Compare the coverage result with the actual document list. Explain why adding prose could increase a score without improving operational readiness.",
+    "mode": "stdlib",
+    "related": []
+  },
+  "AGI-Jobs-Platform-at-Kardashev-II-Scale": {
+    "question": "How are energy, task hierarchy and settlement modeled together?",
+    "purpose": "For systems designers: inspect a speculative stellar-scale orchestration model and its executable ledger-generation variants.",
+    "steps": [
+      {
+        "title": "Inspect the manifest",
+        "source": "demo/AGI-Jobs-Platform-at-Kardashev-II-Scale/config/kardashev-ii.manifest.json",
+        "explanation": "Read the mission and scenario assumptions. Stellar labels and energy capacities are modeling inputs, not commissioned infrastructure."
+      },
+      {
+        "title": "Follow orchestration",
+        "source": "demo/AGI-Jobs-Platform-at-Kardashev-II-Scale/scripts/run-kardashev-demo.ts",
+        "explanation": "Trace manifest ingestion and ledger generation. The stellar and lattice subdirectories have separate manifests, scripts and preserved documentation."
+      },
+      {
+        "title": "Inspect a recorded energy schedule",
+        "source": "demo/AGI-Jobs-Platform-at-Kardashev-II-Scale/output/kardashev-energy-schedule.json",
+        "explanation": "Expand the schedule and compare allocations with the manifest and energy feeds. This historical example is not live telemetry."
+      }
+    ],
+    "command": "npm run demo:kardashev-ii:orchestrate\nnpm run demo:kardashev-ii:ci",
+    "expected": "The orchestrator generates model ledgers and diagrams; the CI command checks their consistency. Use the serve command for the original dashboard.",
+    "experiment": "Trace one energy allocation through the task hierarchy and settlement model. Distinguish arithmetic consistency from physical feasibility or deployment readiness.",
+    "mode": "node",
+    "related": []
+  },
+  "LARGE-SCALE-OMEGA-BUSINESS-3": {
+    "question": "How do modeled missions turn into an operator control report?",
+    "purpose": "For operators: inspect the business scenario, its inputs and the orchestration logic before using the accompanying interface or network launch paths.",
+    "steps": [
+      {
+        "title": "Read scenario inputs",
+        "source": "demo/LARGE-SCALE-OMEGA-BUSINESS-3/config/omega.simulation.json",
+        "explanation": "Inspect actors, workloads, budgets and controls. Values describe a synthetic scenario and must not be interpreted as live economic performance."
+      },
+      {
+        "title": "Follow the orchestrator",
+        "source": "demo/LARGE-SCALE-OMEGA-BUSINESS-3/orchestrator.ts",
+        "explanation": "Trace the configuration through planning, calculations and generated evidence. The separate mainnet launcher is a different, deployment-sensitive workflow."
+      },
+      {
+        "title": "Review the operator journey",
+        "source": "demo/LARGE-SCALE-OMEGA-BUSINESS-3/ui/operator-playbook.md",
+        "explanation": "Read the original guide for report locations, UI use and network prerequisites. Preserve the distinction between rehearsal outputs and authorized operational actions."
+      }
+    ],
+    "command": "npm run demo:omega-business-3",
+    "expected": "The local orchestrator produces scenario evidence and prints its output paths. Inspect generated reports before launching the optional UI.",
+    "experiment": "Pick a budget or control from the configuration and trace it into the report. Identify whether it is checked, calculated or merely described.",
+    "mode": "node",
+    "related": []
+  },
+  "TRIDENT-SOVEREIGN-AGI-ORCHESTRATOR": {
+    "question": "How do modeled missions turn into an operator control report?",
+    "purpose": "For operators: inspect the sovereign orchestration scenario, its inputs and the orchestration logic before using the accompanying interface or network launch paths.",
+    "steps": [
+      {
+        "title": "Read scenario inputs",
+        "source": "demo/TRIDENT-SOVEREIGN-AGI-ORCHESTRATOR/config/trident.simulation.json",
+        "explanation": "Inspect actors, workloads, budgets and controls. Values describe a synthetic scenario and must not be interpreted as live economic performance."
+      },
+      {
+        "title": "Follow the orchestrator",
+        "source": "demo/TRIDENT-SOVEREIGN-AGI-ORCHESTRATOR/orchestrator.ts",
+        "explanation": "Trace the configuration through planning, calculations and generated evidence. The separate mainnet launcher is a different, deployment-sensitive workflow."
+      },
+      {
+        "title": "Review the operator journey",
+        "source": "demo/TRIDENT-SOVEREIGN-AGI-ORCHESTRATOR/ui/operator-playbook.md",
+        "explanation": "Read the original guide for report locations, UI use and network prerequisites. Preserve the distinction between rehearsal outputs and authorized operational actions."
+      }
+    ],
+    "command": "npm run demo:trident-sovereign",
+    "expected": "The local orchestrator produces scenario evidence and prints its output paths. Inspect generated reports before launching the optional UI.",
+    "experiment": "Pick a budget or control from the configuration and trace it into the report. Identify whether it is checked, calculated or merely described.",
+    "mode": "node",
+    "related": []
+  },
+  "Phase-6-Scaling-Multi-Domain-Expansion": {
+    "question": "How can expansion across domains remain inspectable?",
+    "purpose": "For platform architects: connect a domain manifest to orchestration, owner controls and generated coverage evidence.",
+    "steps": [
+      {
+        "title": "Read the domain manifest",
+        "source": "demo/Phase-6-Scaling-Multi-Domain-Expansion/config/domains.phase6.json",
+        "explanation": "Inspect domains, policies, identities and capacity assumptions. Declared coverage is not evidence of a connected provider or deployed network."
+      },
+      {
+        "title": "Follow the executable path",
+        "source": "demo/Phase-6-Scaling-Multi-Domain-Expansion/scripts/run-phase6-demo.ts",
+        "explanation": "Trace domain routing and the generated expansion report. The DID audit and IoT simulation commands are separate checks with different inputs."
+      },
+      {
+        "title": "Review architecture and variants",
+        "source": "demo/Phase-6-Scaling-Multi-Domain-Expansion/README.md",
+        "explanation": "Use the preserved original guide and additional flowcharts to connect components. Read each variant’s own prerequisites before running it."
+      }
+    ],
+    "command": "npm run demo:phase6:orchestrate",
+    "expected": "The orchestrator emits domain evidence and reports.",
+    "experiment": "Trace one domain from the manifest into the report. Identify what external identity, sensor or contract evidence would be required to commission it.",
+    "mode": "node",
+    "related": []
+  },
+  "Phase-8-Universal-Value-Dominance": {
+    "question": "How can expansion across domains remain inspectable?",
+    "purpose": "For platform architects: connect a domain manifest to orchestration, owner controls and generated coverage evidence.",
+    "steps": [
+      {
+        "title": "Read the domain manifest",
+        "source": "demo/Phase-8-Universal-Value-Dominance/config/universal.value.manifest.json",
+        "explanation": "Inspect domains, policies, identities and capacity assumptions. Declared coverage is not evidence of a connected provider or deployed network."
+      },
+      {
+        "title": "Follow the executable path",
+        "source": "demo/Phase-8-Universal-Value-Dominance/run_demo.py",
+        "explanation": "Trace manifest validation and report generation. Phase 8’s lightweight Python path computes address checks and model heuristics without launching the TypeScript stack."
+      },
+      {
+        "title": "Review architecture and variants",
+        "source": "demo/Phase-8-Universal-Value-Dominance/README.md",
+        "explanation": "Use the preserved original guide and additional flowcharts to connect components. Read each variant’s own prerequisites before running it."
+      }
+    ],
+    "command": "python demo/Phase-8-Universal-Value-Dominance/run_demo.py --output /tmp/phase8-demo.json",
+    "expected": "The Python runner writes /tmp/phase8-demo.json, including address validation and synthetic coverage/resilience metrics.",
+    "experiment": "Trace one domain from the manifest into the report. Identify what external identity, sensor or contract evidence would be required to commission it.",
+    "mode": "stdlib",
+    "related": []
+  },
+  "sovereign-constellation": {
+    "question": "How do an operator console, API and contracts fit together?",
+    "purpose": "For application builders: inspect the constellation actors, owner controls and service boundaries before attempting a fully connected local stack.",
+    "steps": [
+      {
+        "title": "Inspect the actors",
+        "source": "demo/sovereign-constellation/config/actors.json",
+        "explanation": "Read the configured participants and their roles. Example identities must be matched to the correct local contracts and chain."
+      },
+      {
+        "title": "Follow contract deployment",
+        "source": "demo/sovereign-constellation/scripts/deployConstellation.ts",
+        "explanation": "The deployment script produces addresses consumed by the server and UI. A deployment and a seed operation must share the same persistent network to form one working stack."
+      },
+      {
+        "title": "Inspect the local launcher",
+        "source": "demo/sovereign-constellation/bin/sovereign-constellation-local.mjs",
+        "explanation": "This launcher coordinates deployment, seeding and two services. Inspect its prerequisites and network behavior; the contract test below validates a narrower, isolated path."
+      }
+    ],
+    "command": "npm run demo:sovereign-constellation:test:contracts",
+    "expected": "The contract test suite exercises the constellation contracts. This is a first verification step; the complete app additionally requires its server/app dependencies, configured addresses and a shared persistent local chain.",
+    "experiment": "Trace one address from deployment into the server and UI configuration. Verify chain identity and deployed bytecode before treating a connected screen as working end to end.",
+    "mode": "node",
+    "related": ["One-Box", "aurora"]
+  },
+  "sovereign-mesh": {
+    "question": "How does a multi-hub interface cross the API and chain boundary?",
+    "purpose": "For application architects: inspect hub configuration, commit construction and the mesh server before assembling a provider-connected deployment.",
+    "steps": [
+      {
+        "title": "Inspect the UI configuration",
+        "source": "demo/sovereign-mesh/config/mesh.ui.config.json",
+        "explanation": "Read hub, API and chain assumptions. Example mainnet configuration is a template, not a commissioned environment."
+      },
+      {
+        "title": "Follow commit construction",
+        "source": "demo/sovereign-mesh/app/src/lib/commit.ts",
+        "explanation": "Trace how the client prepares its validation commitment. Confirm the expected encoding and network before using it with real contracts."
+      },
+      {
+        "title": "Inspect the server boundary",
+        "source": "demo/sovereign-mesh/server/index.ts",
+        "explanation": "Read the API implementation, contract dependencies and environment requirements. The app and server have separate packages and setup steps."
+      }
+    ],
+    "command": "npm --prefix demo/sovereign-mesh/server ci\nnpm --prefix demo/sovereign-mesh/server run build\nnpm --prefix demo/sovereign-mesh/app ci\nnpm --prefix demo/sovereign-mesh/app run build",
+    "expected": "Both packages install their locked dependencies and compile. A successful build does not launch or commission a mesh; follow the component configuration and deployment scripts before starting services.",
+    "experiment": "Trace one UI action through the API to the expected contract operation. List the concrete addresses and provider evidence required to execute it.",
+    "mode": "node",
+    "related": ["sovereign-constellation"]
+  },
+  "Kardashev-II Omega-Grade-α-AGI Business-3": {
+    "question": "How can a large mission model stay reproducible across variants?",
+    "purpose": "For simulation researchers: inspect the business model, its configuration and the specific Python package selected by the launcher.",
+    "steps": [
+      {
+        "title": "Read the base assumptions",
+        "source": "demo/Kardashev-II Omega-Grade-α-AGI Business-3/config/default.json",
+        "explanation": "Inspect the workload, budgets, actors and modeled outcomes. The scale and economic labels are scenario ambitions, not measured capacity."
+      },
+      {
+        "title": "Follow package selection",
+        "source": "demo/Kardashev-II Omega-Grade-α-AGI Business-3/bin/run.sh",
+        "explanation": "The shell launcher selects an import-safe Python package. Nested Omega, Ultra, Supreme and upgrade variants have separate configurations and entry points."
+      },
+      {
+        "title": "Navigate the variant family",
+        "source": "demo/Kardashev-II Omega-Grade-α-AGI Business-3/README.md",
+        "explanation": "Use the complete document library below to choose one variant. Keep its configuration, launcher and evidence together when comparing runs."
+      }
+    ],
+    "command": "bash 'demo/Kardashev-II Omega-Grade-α-AGI Business-3/bin/run.sh'",
+    "expected": "The launcher runs the selected Python simulation. Inspect its console output and generated evidence; consult the chosen variant’s guide for overrides and output paths.",
+    "experiment": "Compare two variants on their actual inputs and calculation rules. A larger name or higher configured scale is not evidence of better measured performance.",
+    "mode": "python",
+    "related": []
+  },
+  "Kardashev-II-Omega-Grade-Alpha-AGI-Business-3": {
+    "question": "How can a large mission model stay reproducible across variants?",
+    "purpose": "For simulation researchers: inspect the business model, its configuration and the specific Python package selected by the launcher.",
+    "steps": [
+      {
+        "title": "Read the base assumptions",
+        "source": "demo/Kardashev-II-Omega-Grade-Alpha-AGI-Business-3/config/default.json",
+        "explanation": "Inspect the workload, budgets, actors and modeled outcomes. The scale and economic labels are scenario ambitions, not measured capacity."
+      },
+      {
+        "title": "Follow package selection",
+        "source": "demo/Kardashev-II-Omega-Grade-Alpha-AGI-Business-3/bin/run-demo.sh",
+        "explanation": "The shell launcher selects an import-safe Python package. Nested Omega, Ultra, Supreme and upgrade variants have separate configurations and entry points."
+      },
+      {
+        "title": "Navigate the variant family",
+        "source": "demo/Kardashev-II-Omega-Grade-Alpha-AGI-Business-3/README.md",
+        "explanation": "Use the complete document library below to choose one variant. Keep its configuration, launcher and evidence together when comparing runs."
+      }
+    ],
+    "command": "bash demo/Kardashev-II-Omega-Grade-Alpha-AGI-Business-3/bin/run-demo.sh",
+    "expected": "The launcher runs the selected Python simulation. Inspect its console output and generated evidence; consult the chosen variant’s guide for overrides and output paths.",
+    "experiment": "Compare two variants on their actual inputs and calculation rules. A larger name or higher configured scale is not evidence of better measured performance.",
+    "mode": "python",
+    "related": []
+  },
+  "cosmic-omni-sovereign-symphony": {
+    "question": "How can a multi-stage governance rehearsal leave an auditable trail?",
+    "purpose": "For operators: inspect a flagship orchestration script, multinational governance inputs and the sequence of artifacts it assembles.",
+    "steps": [
+      {
+        "title": "Read governance inputs",
+        "source": "demo/cosmic-omni-sovereign-symphony/config/multinational-governance.json",
+        "explanation": "Inspect participant roles, policy and vote assumptions. These examples are distinct from authenticated real-world governance identities."
+      },
+      {
+        "title": "Follow the rehearsal",
+        "source": "demo/cosmic-omni-sovereign-symphony/bin/flagship-demo.sh",
+        "explanation": "The wrapper sequences governance orchestration, an AGI OS mission and report verification. --ci and --dry-run change behavior; neither should be treated as executed on-chain governance."
+      },
+      {
+        "title": "Inspect the architecture",
+        "source": "demo/cosmic-omni-sovereign-symphony/docs/architecture.mmd",
+        "explanation": "Trace the control and evidence relationships, then use the original component runbooks for setup and validation."
+      }
+    ],
+    "command": "npm run demo:flagship -- --ci --dry-run",
+    "expected": "The rehearsal writes logs and report artifacts. It can require external tools and component prerequisites; read the wrapper and runbooks before execution. CI/dry-run evidence must remain labeled as rehearsal.",
+    "experiment": "Pick a logged stage and identify its inputs, exit status and output artifact. Check whether it executed, simulated or skipped the corresponding external action.",
+    "mode": "configured",
+    "related": ["asi-global"]
+  },
+  "astral-omnidominion-operating-system": {
+    "question": "Which underlying workflow does this mission actually launch?",
+    "purpose": "For operators: understand the preserved mission wrapper, its prerequisites and the shared implementation it calls.",
+    "steps": [
+      {
+        "title": "Read the wrapper",
+        "source": "demo/astral-omnidominion-operating-system/run_demo.py",
+        "explanation": "A Python wrapper applies non-interactive localhost defaults and forwards arguments to demo:agi-os:first-class. The default --skip-deploy assumes an already prepared local environment."
+      },
+      {
+        "title": "Inspect the shared entry point",
+        "source": "package.json",
+        "explanation": "Find demo:agi-os:first-class in scripts and follow its actual target. The wrapper name and marketing narrative should not be confused with a distinct verified engine."
+      },
+      {
+        "title": "Read the original mission guide",
+        "source": "demo/astral-omnidominion-operating-system/README.md",
+        "explanation": "Use the preserved architecture and mission documents to understand the intended operator journey. Start with AURORA if the local stack has not yet been configured."
+      }
+    ],
+    "command": "npm run demo:onebox:doctor",
+    "expected": "Start with the shared environment diagnostic. Fix missing configuration and services before using this mission’s source launcher; the diagnostic itself does not run the mission.",
+    "experiment": "Follow every command in the wrapper and classify it as configuration, deployment, local execution or reporting. Confirm that all stages point to the same intended environment.",
+    "mode": "configured",
+    "related": ["One-Box", "aurora"]
+  },
+  "cosmic-omniversal-grand-symphony": {
+    "question": "Which underlying workflow does this mission actually launch?",
+    "purpose": "For operators: understand the preserved mission wrapper, its prerequisites and the shared implementation it calls.",
+    "steps": [
+      {
+        "title": "Read the wrapper",
+        "source": "demo/cosmic-omniversal-grand-symphony/bin/grand-symphony.sh",
+        "explanation": "A shell wrapper forwards arguments to demo:agi-os:first-class. Its scenario identity does not create a separate execution engine."
+      },
+      {
+        "title": "Inspect the shared entry point",
+        "source": "package.json",
+        "explanation": "Find demo:agi-os:first-class in scripts and follow its actual target. The wrapper name and marketing narrative should not be confused with a distinct verified engine."
+      },
+      {
+        "title": "Read the original mission guide",
+        "source": "demo/cosmic-omniversal-grand-symphony/README.md",
+        "explanation": "Use the preserved architecture and mission documents to understand the intended operator journey. Start with AURORA if the local stack has not yet been configured."
+      }
+    ],
+    "command": "npm run demo:onebox:doctor",
+    "expected": "Start with the shared environment diagnostic. Fix missing configuration and services before using this mission’s source launcher; the diagnostic itself does not run the mission.",
+    "experiment": "Follow every command in the wrapper and classify it as configuration, deployment, local execution or reporting. Confirm that all stages point to the same intended environment.",
+    "mode": "configured",
+    "related": ["One-Box", "aurora"]
+  },
+  "imperatrix-celestia-operating-system": {
+    "question": "Which underlying workflow does this mission actually launch?",
+    "purpose": "For operators: understand the preserved mission wrapper, its prerequisites and the shared implementation it calls.",
+    "steps": [
+      {
+        "title": "Read the wrapper",
+        "source": "demo/imperatrix-celestia-operating-system/bin/launch.sh",
+        "explanation": "The launcher delegates to the first-class AGI OS workflow and forwards caller arguments. Inspect defaults before choosing an execution network."
+      },
+      {
+        "title": "Inspect the shared entry point",
+        "source": "package.json",
+        "explanation": "Find demo:agi-os:first-class in scripts and follow its actual target. The wrapper name and marketing narrative should not be confused with a distinct verified engine."
+      },
+      {
+        "title": "Read the original mission guide",
+        "source": "demo/imperatrix-celestia-operating-system/README.md",
+        "explanation": "Use the preserved architecture and mission documents to understand the intended operator journey. Start with AURORA if the local stack has not yet been configured."
+      }
+    ],
+    "command": "npm run demo:onebox:doctor",
+    "expected": "Start with the shared environment diagnostic. Fix missing configuration and services before using this mission’s source launcher; the diagnostic itself does not run the mission.",
+    "experiment": "Follow every command in the wrapper and classify it as configuration, deployment, local execution or reporting. Confirm that all stages point to the same intended environment.",
+    "mode": "configured",
+    "related": ["One-Box", "aurora"]
+  },
+  "meta-agentic-alpha-agi": {
+    "question": "Which underlying workflow does this mission actually launch?",
+    "purpose": "For operators: understand the preserved mission wrapper, its prerequisites and the shared implementation it calls.",
+    "steps": [
+      {
+        "title": "Read the wrapper",
+        "source": "demo/meta-agentic-alpha-agi/bin/launch.sh",
+        "explanation": "The launcher runs the first-class AGI OS workflow and then the ASI Take-Off local mission. Its project plan provides scenario context."
+      },
+      {
+        "title": "Inspect the shared entry point",
+        "source": "package.json",
+        "explanation": "Find demo:agi-os:first-class in scripts and follow its actual target. The wrapper name and marketing narrative should not be confused with a distinct verified engine."
+      },
+      {
+        "title": "Read the original mission guide",
+        "source": "demo/meta-agentic-alpha-agi/README.md",
+        "explanation": "Use the preserved architecture and mission documents to understand the intended operator journey. Start with AURORA if the local stack has not yet been configured."
+      }
+    ],
+    "command": "npm run demo:onebox:doctor",
+    "expected": "Start with the shared environment diagnostic. Fix missing configuration and services before using this mission’s source launcher; the diagnostic itself does not run the mission.",
+    "experiment": "Follow every command in the wrapper and classify it as configuration, deployment, local execution or reporting. Confirm that all stages point to the same intended environment.",
+    "mode": "configured",
+    "related": ["One-Box", "aurora"]
+  },
+  "omni-sovereign-ascension-operating-system": {
+    "question": "Which underlying workflow does this mission actually launch?",
+    "purpose": "For operators: understand the preserved mission wrapper, its prerequisites and the shared implementation it calls.",
+    "steps": [
+      {
+        "title": "Read the wrapper",
+        "source": "demo/omni-sovereign-ascension-operating-system/bin/launch.sh",
+        "explanation": "This wrapper invokes a deployment wizard before the first-class AGI OS workflow. It is a setup-dependent launch path, not an offline simulation."
+      },
+      {
+        "title": "Inspect the shared entry point",
+        "source": "package.json",
+        "explanation": "Find demo:agi-os:first-class in scripts and follow its actual target. The wrapper name and marketing narrative should not be confused with a distinct verified engine."
+      },
+      {
+        "title": "Read the original mission guide",
+        "source": "demo/omni-sovereign-ascension-operating-system/README.md",
+        "explanation": "Use the preserved architecture and mission documents to understand the intended operator journey. Start with AURORA if the local stack has not yet been configured."
+      }
+    ],
+    "command": "npm run demo:onebox:doctor",
+    "expected": "Start with the shared environment diagnostic. Fix missing configuration and services before using this mission’s source launcher; the diagnostic itself does not run the mission.",
+    "experiment": "Follow every command in the wrapper and classify it as configuration, deployment, local execution or reporting. Confirm that all stages point to the same intended environment.",
+    "mode": "configured",
+    "related": ["One-Box", "aurora"]
+  },
+  "omni-orchestrator-singularity": {
+    "question": "Where does a governance rehearsal cross into an authorized action?",
+    "purpose": "For governance operators: inspect council identities, emergency controls and the script’s dry-run versus execute paths.",
+    "steps": [
+      {
+        "title": "Inspect council configuration",
+        "source": "demo/omni-orchestrator-singularity/config/council.example.json",
+        "explanation": "Read member and threshold examples. They do not substitute for authenticated signers or a configured governance contract."
+      },
+      {
+        "title": "Read the emergency scenario",
+        "source": "demo/omni-orchestrator-singularity/config/emergency-drill.json",
+        "explanation": "Trace the intended pause and recovery actions and the evidence expected around them."
+      },
+      {
+        "title": "Audit execution branches",
+        "source": "demo/omni-orchestrator-singularity/bin/orchestrate.sh",
+        "explanation": "Inspect every branch under dry-run and execute, including identity updates and owner-control calls. A flag name alone is insufficient evidence that every nested action is read-only."
+      }
+    ],
+    "command": "bash demo/omni-orchestrator-singularity/bin/orchestrate.sh --help",
+    "expected": "The script prints its network and mode usage. Before a rehearsal, prepare the documented local network and inspect nested actions; no live operation is performed by this help command.",
+    "experiment": "Locate the commands that can alter ownership, identity or pause state. Explain the authority and transaction evidence required for each.",
+    "mode": "configured",
+    "related": ["One-Box"]
+  },
+  "helios-omniversal-symphony": {
+    "question": "How are several mission reports assembled into one operator packet?",
+    "purpose": "For operators and reviewers: inspect a Makefile-driven assembly of ASI missions, owner reports, kits and a digest.",
+    "steps": [
+      {
+        "title": "Inspect the orchestration recipe",
+        "source": "demo/helios-omniversal-symphony/Makefile",
+        "explanation": "Read the mission dependencies and report-copy paths. The recipe combines several workflows; report paths and prerequisites must agree before a full run."
+      },
+      {
+        "title": "Read the mission narrative",
+        "source": "demo/helios-omniversal-symphony/README.md",
+        "explanation": "Use the preserved architecture to understand why the mission and governance packets are grouped together."
+      },
+      {
+        "title": "Follow a runnable component",
+        "source": "demo/asi-global/bin/asi-global-local.sh",
+        "explanation": "Start with the maintained local ASI Global path to understand its actual output layout before assembling higher-level report bundles."
+      }
+    ],
+    "command": "npm run demo:asi-global:local",
+    "expected": "The related ASI Global component produces local transaction evidence. This is a component rehearsal; the Helios Makefile remains a separate assembly recipe requiring its documented inputs.",
+    "experiment": "Compare the Makefile’s expected report paths with the outputs of a fresh component run. Do not copy an old report to satisfy a missing new-run artifact.",
+    "mode": "local",
+    "related": ["asi-global", "asi-takeoff"]
+  },
+  "infinity-symphony": {
+    "question": "How can a mission bundle combine job evidence and owner diagnostics?",
+    "purpose": "For mission operators: inspect the Infinity job manifest, its scenario-specific controls and the assembly of governance evidence.",
+    "steps": [
+      {
+        "title": "Read the mission",
+        "source": "demo/infinity-symphony/config/mission@v2.json",
+        "explanation": "Inspect jobs, specifications, rewards and scenario objectives. These are configured requirements, not completed deliverables."
+      },
+      {
+        "title": "Follow the wrapper",
+        "source": "demo/infinity-symphony/bin/infinity-symphony-local.sh",
+        "explanation": "The script combines ASI Take-Off planning, a mission kit and owner reporting. Review its environment and report-path expectations before using it as a complete rehearsal."
+      },
+      {
+        "title": "Inspect the thermostat assumptions",
+        "source": "demo/infinity-symphony/config/infinity-symphony.thermostat@v2.json",
+        "explanation": "Read the modeled control parameters and compare them with the defaults of the workflow actually selected by the wrapper."
+      }
+    ],
+    "command": "npm run demo:asi-takeoff:local",
+    "expected": "The related ASI Take-Off component executes local jobs. Use its fresh receipts to understand the evidence required by Infinity’s broader bundle; this command is not an Infinity-specific full run.",
+    "experiment": "Trace each Infinity job specification and identify where the wrapper selects it. Confirm the effective configuration instead of assuming the scenario name selects it.",
+    "mode": "local",
+    "related": ["asi-takeoff"]
+  },
+  "OMNIGENESIS-GLOBAL-SOVEREIGN-SYMPHONY": {
+    "question": "How can an ambitious mission be translated into a reviewable plan?",
+    "purpose": "For mission designers: inspect this scenario’s task graph and operator runbook, then connect it to a related executable local workflow.",
+    "steps": [
+      {
+        "title": "Inspect the mission plan",
+        "source": "demo/OMNIGENESIS-GLOBAL-SOVEREIGN-SYMPHONY/project-plan.json",
+        "explanation": "Read task identities, dependencies, budgets and acceptance descriptions. A project plan is an input artifact; its targets are not evidence of completed work."
+      },
+      {
+        "title": "Read the operating sequence",
+        "source": "demo/OMNIGENESIS-GLOBAL-SOVEREIGN-SYMPHONY/RUNBOOK.md",
+        "explanation": "Follow the scenario-specific runbook and separate plan generation, owner diagnostics and contract execution. Some steps require a configured environment."
+      },
+      {
+        "title": "Inspect the execution reference",
+        "source": "demo/asi-takeoff/config/mission@v2.json",
+        "explanation": "This related local demo provides concrete executable job specifications. Compare the mission plan with the jobs actually selected by a launcher before claiming scenario-specific execution."
+      }
+    ],
+    "command": "npm run demo:asi-takeoff:local",
+    "expected": "The related ASI Take-Off workflow generates local contract evidence. It demonstrates the execution mechanism; it does not itself execute every task in this scenario’s project plan.",
+    "experiment": "Choose one task from this plan and specify its real input, acceptance test, validator evidence and settlement condition. Identify what the related local demonstration covers.",
+    "mode": "local",
+    "related": ["asi-takeoff"]
+  },
+  "OMNIPHOENIX-ASCENDANT-HYPERSTRUCTURE": {
+    "question": "How can an ambitious mission be translated into a reviewable plan?",
+    "purpose": "For mission designers: inspect this scenario’s task graph and operator runbook, then connect it to a related executable local workflow.",
+    "steps": [
+      {
+        "title": "Inspect the mission plan",
+        "source": "demo/OMNIPHOENIX-ASCENDANT-HYPERSTRUCTURE/project-plan.hyperstructure.json",
+        "explanation": "Read task identities, dependencies, budgets and acceptance descriptions. A project plan is an input artifact; its targets are not evidence of completed work."
+      },
+      {
+        "title": "Read the operating sequence",
+        "source": "demo/OMNIPHOENIX-ASCENDANT-HYPERSTRUCTURE/RUNBOOK.md",
+        "explanation": "Follow the scenario-specific runbook and separate plan generation, owner diagnostics and contract execution. Some steps require a configured environment."
+      },
+      {
+        "title": "Inspect the execution reference",
+        "source": "demo/asi-takeoff/config/mission@v2.json",
+        "explanation": "This related local demo provides concrete executable job specifications. Compare the mission plan with the jobs actually selected by a launcher before claiming scenario-specific execution."
+      }
+    ],
+    "command": "npm run demo:asi-takeoff:local",
+    "expected": "The related ASI Take-Off workflow generates local contract evidence. It demonstrates the execution mechanism; it does not itself execute every task in this scenario’s project plan.",
+    "experiment": "Choose one task from this plan and specify its real input, acceptance test, validator evidence and settlement condition. Identify what the related local demonstration covers.",
+    "mode": "local",
+    "related": ["asi-takeoff"]
+  },
+  "omnisovereign": {
+    "question": "How can an ambitious mission be translated into a reviewable plan?",
+    "purpose": "For mission designers: inspect this scenario’s task graph and operator runbook, then connect it to a related executable local workflow.",
+    "steps": [
+      {
+        "title": "Inspect the mission plan",
+        "source": "demo/omnisovereign/project-plan.omnisovereign.json",
+        "explanation": "Read task identities, dependencies, budgets and acceptance descriptions. A project plan is an input artifact; its targets are not evidence of completed work."
+      },
+      {
+        "title": "Read the operating sequence",
+        "source": "demo/omnisovereign/RUNBOOK.md",
+        "explanation": "Follow the scenario-specific runbook and separate plan generation, owner diagnostics and contract execution. Some steps require a configured environment."
+      },
+      {
+        "title": "Inspect the execution reference",
+        "source": "demo/asi-takeoff/config/mission@v2.json",
+        "explanation": "This related local demo provides concrete executable job specifications. Compare the mission plan with the jobs actually selected by a launcher before claiming scenario-specific execution."
+      }
+    ],
+    "command": "npm run demo:asi-takeoff:local",
+    "expected": "The related ASI Take-Off workflow generates local contract evidence. It demonstrates the execution mechanism; it does not itself execute every task in this scenario’s project plan.",
+    "experiment": "Choose one task from this plan and specify its real input, acceptance test, validator evidence and settlement condition. Identify what the related local demonstration covers.",
+    "mode": "local",
+    "related": ["asi-takeoff"]
+  },
+  "zenith-sapience-initiative-celestial-archon-governance": {
+    "question": "How does the Celestial Archon governance plan attach to a local rehearsal?",
+    "purpose": "For governance reviewers: inspect the Celestial Archon project plan, scenario-specific report scope and the shared ASI Global execution path.",
+    "steps": [
+      {
+        "title": "Read this governance plan",
+        "source": "demo/zenith-sapience-initiative-celestial-archon-governance/project-plan.json",
+        "explanation": "Inspect this variant’s task graph, policy and owner context. Compare concrete tasks across variants rather than inferring a capability hierarchy from their names."
+      },
+      {
+        "title": "Follow the local wrapper",
+        "source": "demo/zenith-sapience-initiative-celestial-archon-governance/bin/zenith-celestial-archon-local.sh",
+        "explanation": "The wrapper sets scenario report and planning variables, then delegates to ASI Global. Check which variables affect planning and which executable mission specification is actually selected."
+      },
+      {
+        "title": "Read the operating contract",
+        "source": "demo/zenith-sapience-initiative-celestial-archon-governance/RUNBOOK.md",
+        "explanation": "Use the runbook to connect plans, owner controls and evidence. Fresh local receipts establish the executed shared jobs; they do not automatically certify every governance objective in the plan."
+      }
+    ],
+    "command": "npm run demo:zenith-sapience-celestial-archon:local",
+    "expected": "The variant wrapper produces its scoped local rehearsal outputs. Inspect the manifest and receipts to distinguish shared ASI Global execution from scenario-specific planning artifacts.",
+    "experiment": "Compare the wrapper’s plan path, report root and effective mission jobs with another Zenith variant. Explain exactly what changes and what remains shared.",
+    "mode": "local",
+    "related": ["asi-global"]
+  },
+  "zenith-sapience-initiative-global-governance": {
+    "question": "How does the Global governance plan attach to a local rehearsal?",
+    "purpose": "For governance reviewers: inspect the Global project plan, scenario-specific report scope and the shared ASI Global execution path.",
+    "steps": [
+      {
+        "title": "Read this governance plan",
+        "source": "demo/zenith-sapience-initiative-global-governance/project-plan.json",
+        "explanation": "Inspect this variant’s task graph, policy and owner context. Compare concrete tasks across variants rather than inferring a capability hierarchy from their names."
+      },
+      {
+        "title": "Follow the local wrapper",
+        "source": "demo/zenith-sapience-initiative-global-governance/bin/zenith-sapience-local.sh",
+        "explanation": "The wrapper sets scenario report and planning variables, then delegates to ASI Global. Check which variables affect planning and which executable mission specification is actually selected."
+      },
+      {
+        "title": "Read the operating contract",
+        "source": "demo/zenith-sapience-initiative-global-governance/RUNBOOK.md",
+        "explanation": "Use the runbook to connect plans, owner controls and evidence. Fresh local receipts establish the executed shared jobs; they do not automatically certify every governance objective in the plan."
+      }
+    ],
+    "command": "npm run demo:zenith-sapience-initiative:local",
+    "expected": "The variant wrapper produces its scoped local rehearsal outputs. Inspect the manifest and receipts to distinguish shared ASI Global execution from scenario-specific planning artifacts.",
+    "experiment": "Compare the wrapper’s plan path, report root and effective mission jobs with another Zenith variant. Explain exactly what changes and what remains shared.",
+    "mode": "local",
+    "related": ["asi-global"]
+  },
+  "zenith-sapience-initiative-omnidominion-governance": {
+    "question": "How does the Omnidominion governance plan attach to a local rehearsal?",
+    "purpose": "For governance reviewers: inspect the Omnidominion project plan, scenario-specific report scope and the shared ASI Global execution path.",
+    "steps": [
+      {
+        "title": "Read this governance plan",
+        "source": "demo/zenith-sapience-initiative-omnidominion-governance/project-plan.json",
+        "explanation": "Inspect this variant’s task graph, policy and owner context. Compare concrete tasks across variants rather than inferring a capability hierarchy from their names."
+      },
+      {
+        "title": "Follow the local wrapper",
+        "source": "demo/zenith-sapience-initiative-omnidominion-governance/bin/zenith-omnidominion-local.sh",
+        "explanation": "The wrapper sets scenario report and planning variables, then delegates to ASI Global. Check which variables affect planning and which executable mission specification is actually selected."
+      },
+      {
+        "title": "Read the operating contract",
+        "source": "demo/zenith-sapience-initiative-omnidominion-governance/RUNBOOK.md",
+        "explanation": "Use the runbook to connect plans, owner controls and evidence. Fresh local receipts establish the executed shared jobs; they do not automatically certify every governance objective in the plan."
+      }
+    ],
+    "command": "npm run demo:zenith-sapience-omnidominion:local",
+    "expected": "The variant wrapper produces its scoped local rehearsal outputs. Inspect the manifest and receipts to distinguish shared ASI Global execution from scenario-specific planning artifacts.",
+    "experiment": "Compare the wrapper’s plan path, report root and effective mission jobs with another Zenith variant. Explain exactly what changes and what remains shared.",
+    "mode": "local",
+    "related": ["asi-global"]
+  },
+  "zenith-sapience-initiative-planetary-operating-system-governance": {
+    "question": "How does the Planetary OS governance plan attach to a local rehearsal?",
+    "purpose": "For governance reviewers: inspect the Planetary OS project plan, scenario-specific report scope and the shared ASI Global execution path.",
+    "steps": [
+      {
+        "title": "Read this governance plan",
+        "source": "demo/zenith-sapience-initiative-planetary-operating-system-governance/project-plan.json",
+        "explanation": "Inspect this variant’s task graph, policy and owner context. Compare concrete tasks across variants rather than inferring a capability hierarchy from their names."
+      },
+      {
+        "title": "Follow the local wrapper",
+        "source": "demo/zenith-sapience-initiative-planetary-operating-system-governance/bin/zenith-planetary-os-local.sh",
+        "explanation": "The wrapper sets scenario report and planning variables, then delegates to ASI Global. Check which variables affect planning and which executable mission specification is actually selected."
+      },
+      {
+        "title": "Read the operating contract",
+        "source": "demo/zenith-sapience-initiative-planetary-operating-system-governance/RUNBOOK.md",
+        "explanation": "Use the runbook to connect plans, owner controls and evidence. Fresh local receipts establish the executed shared jobs; they do not automatically certify every governance objective in the plan."
+      }
+    ],
+    "command": "npm run demo:zenith-sapience-planetary-os:local",
+    "expected": "The variant wrapper produces its scoped local rehearsal outputs. Inspect the manifest and receipts to distinguish shared ASI Global execution from scenario-specific planning artifacts.",
+    "experiment": "Compare the wrapper’s plan path, report root and effective mission jobs with another Zenith variant. Explain exactly what changes and what remains shared.",
+    "mode": "local",
+    "related": ["asi-global"]
+  },
+  "zenith-sapience-initiative-supra-sovereign-hypernova-governance": {
+    "question": "How does the Hypernova governance plan attach to a local rehearsal?",
+    "purpose": "For governance reviewers: inspect the Hypernova project plan, scenario-specific report scope and the shared ASI Global execution path.",
+    "steps": [
+      {
+        "title": "Read this governance plan",
+        "source": "demo/zenith-sapience-initiative-supra-sovereign-hypernova-governance/project-plan.json",
+        "explanation": "Inspect this variant’s task graph, policy and owner context. Compare concrete tasks across variants rather than inferring a capability hierarchy from their names."
+      },
+      {
+        "title": "Follow the local wrapper",
+        "source": "demo/zenith-sapience-initiative-supra-sovereign-hypernova-governance/bin/zenith-hypernova-local.sh",
+        "explanation": "The wrapper sets scenario report and planning variables, then delegates to ASI Global. Check which variables affect planning and which executable mission specification is actually selected."
+      },
+      {
+        "title": "Read the operating contract",
+        "source": "demo/zenith-sapience-initiative-supra-sovereign-hypernova-governance/RUNBOOK.md",
+        "explanation": "Use the runbook to connect plans, owner controls and evidence. Fresh local receipts establish the executed shared jobs; they do not automatically certify every governance objective in the plan."
+      }
+    ],
+    "command": "npm run demo:zenith-hypernova:local",
+    "expected": "The variant wrapper produces its scoped local rehearsal outputs. Inspect the manifest and receipts to distinguish shared ASI Global execution from scenario-specific planning artifacts.",
+    "experiment": "Compare the wrapper’s plan path, report root and effective mission jobs with another Zenith variant. Explain exactly what changes and what remains shared.",
+    "mode": "local",
+    "related": ["asi-global"]
+  },
+  "CELESTIAL-SOVEREIGN-ORBITAL-AGI-OS-GRAND-DEMONSTRATION": {
+    "question": "Which parts are architecture, and where can I try the related implementation?",
+    "purpose": "For readers of the project vision: study this preserved design, identify the components it proposes and continue to a concrete related implementation.",
+    "steps": [
+      {
+        "title": "Read the design",
+        "source": "demo/CELESTIAL-SOVEREIGN-ORBITAL-AGI-OS-GRAND-DEMONSTRATION/README.md",
+        "explanation": "This directory is documentation-only. Its architecture and ambitions are preserved; it does not contain a standalone executable demo."
+      },
+      {
+        "title": "Locate the implementation",
+        "source": "demo/zenith-sapience-initiative-celestial-archon-governance/README.md",
+        "explanation": "The related implementation has its own scope, prerequisites and evidence. It should not be assumed to realize every aspiration in this design."
+      },
+      {
+        "title": "Understand evidence boundaries",
+        "source": "docs/production/readiness-2026-10-03.md",
+        "explanation": "Compare demonstrated behavior with outstanding signing, integration, security review and commissioning requirements. A simulation cannot replace authentic evidence for those gates."
+      }
+    ],
+    "command": null,
+    "expected": "Open the related experience below for its guided inspection and run instructions. Reading this design does not execute or commission the proposed system.",
+    "experiment": "Choose a component from the diagram and map it to code, a test and an output in the related demo. Record any component that still has only a design description.",
+    "mode": "design",
+    "related": ["zenith-sapience-initiative-celestial-archon-governance"]
+  },
+  "ICONIC-OPERATING-SYSTEM-DEMO": {
+    "question": "Which parts are architecture, and where can I try the related implementation?",
+    "purpose": "For readers of the project vision: study this preserved design, identify the components it proposes and continue to a concrete related implementation.",
+    "steps": [
+      {
+        "title": "Read the design",
+        "source": "demo/ICONIC-OPERATING-SYSTEM-DEMO/README.md",
+        "explanation": "This directory is documentation-only. Its architecture and ambitions are preserved; it does not contain a standalone executable demo."
+      },
+      {
+        "title": "Locate the implementation",
+        "source": "demo/One-Box/README.md",
+        "explanation": "The related implementation has its own scope, prerequisites and evidence. It should not be assumed to realize every aspiration in this design."
+      },
+      {
+        "title": "Understand evidence boundaries",
+        "source": "docs/production/readiness-2026-10-03.md",
+        "explanation": "Compare demonstrated behavior with outstanding signing, integration, security review and commissioning requirements. A simulation cannot replace authentic evidence for those gates."
+      }
+    ],
+    "command": null,
+    "expected": "Open the related experience below for its guided inspection and run instructions. Reading this design does not execute or commission the proposed system.",
+    "experiment": "Choose a component from the diagram and map it to code, a test and an output in the related demo. Record any component that still has only a design description.",
+    "mode": "design",
+    "related": ["One-Box"]
+  },
+  "OMNI-CONCORD-ASCENSION-ATLAS": {
+    "question": "Which parts are architecture, and where can I try the related implementation?",
+    "purpose": "For readers of the project vision: study this preserved design, identify the components it proposes and continue to a concrete related implementation.",
+    "steps": [
+      {
+        "title": "Read the design",
+        "source": "demo/OMNI-CONCORD-ASCENSION-ATLAS/README.md",
+        "explanation": "This directory is documentation-only. Its architecture and ambitions are preserved; it does not contain a standalone executable demo."
+      },
+      {
+        "title": "Locate the implementation",
+        "source": "demo/atlas-conductor/README.md",
+        "explanation": "The related implementation has its own scope, prerequisites and evidence. It should not be assumed to realize every aspiration in this design."
+      },
+      {
+        "title": "Understand evidence boundaries",
+        "source": "docs/production/readiness-2026-10-03.md",
+        "explanation": "Compare demonstrated behavior with outstanding signing, integration, security review and commissioning requirements. A simulation cannot replace authentic evidence for those gates."
+      }
+    ],
+    "command": null,
+    "expected": "Open the related experience below for its guided inspection and run instructions. Reading this design does not execute or commission the proposed system.",
+    "experiment": "Choose a component from the diagram and map it to code, a test and an output in the related demo. Record any component that still has only a design description.",
+    "mode": "design",
+    "related": ["atlas-conductor"]
+  },
+  "polaris-concordat": {
+    "question": "Which parts are architecture, and where can I try the related implementation?",
+    "purpose": "For readers of the project vision: study this preserved design, identify the components it proposes and continue to a concrete related implementation.",
+    "steps": [
+      {
+        "title": "Read the design",
+        "source": "demo/polaris-concordat/README.md",
+        "explanation": "This directory is documentation-only. Its architecture and ambitions are preserved; it does not contain a standalone executable demo."
+      },
+      {
+        "title": "Locate the implementation",
+        "source": "demo/sovereign-constellation/README.md",
+        "explanation": "The related implementation has its own scope, prerequisites and evidence. It should not be assumed to realize every aspiration in this design."
+      },
+      {
+        "title": "Understand evidence boundaries",
+        "source": "docs/production/readiness-2026-10-03.md",
+        "explanation": "Compare demonstrated behavior with outstanding signing, integration, security review and commissioning requirements. A simulation cannot replace authentic evidence for those gates."
+      }
+    ],
+    "command": null,
+    "expected": "Open the related experience below for its guided inspection and run instructions. Reading this design does not execute or commission the proposed system.",
+    "experiment": "Choose a component from the diagram and map it to code, a test and an output in the related demo. Record any component that still has only a design description.",
+    "mode": "design",
+    "related": ["sovereign-constellation"]
+  },
+  "solving-alpha-agi-governance": {
+    "question": "Which parts are architecture, and where can I try the related implementation?",
+    "purpose": "For readers of the project vision: study this preserved design, identify the components it proposes and continue to a concrete related implementation.",
+    "steps": [
+      {
+        "title": "Read the design",
+        "source": "demo/solving-alpha-agi-governance/README.md",
+        "explanation": "This directory is documentation-only. Its architecture and ambitions are preserved; it does not contain a standalone executable demo."
+      },
+      {
+        "title": "Locate the implementation",
+        "source": "demo/agi-governance/README.md",
+        "explanation": "The related implementation has its own scope, prerequisites and evidence. It should not be assumed to realize every aspiration in this design."
+      },
+      {
+        "title": "Understand evidence boundaries",
+        "source": "docs/production/readiness-2026-10-03.md",
+        "explanation": "Compare demonstrated behavior with outstanding signing, integration, security review and commissioning requirements. A simulation cannot replace authentic evidence for those gates."
+      }
+    ],
+    "command": null,
+    "expected": "Open the related experience below for its guided inspection and run instructions. Reading this design does not execute or commission the proposed system.",
+    "experiment": "Choose a component from the diagram and map it to code, a test and an output in the related demo. Record any component that still has only a design description.",
+    "mode": "design",
+    "related": ["agi-governance"]
+  },
+  "zenith-sapience": {
+    "question": "Which parts are architecture, and where can I try the related implementation?",
+    "purpose": "For readers of the project vision: study this preserved design, identify the components it proposes and continue to a concrete related implementation.",
+    "steps": [
+      {
+        "title": "Read the design",
+        "source": "demo/zenith-sapience/README.md",
+        "explanation": "This directory is documentation-only. Its architecture and ambitions are preserved; it does not contain a standalone executable demo."
+      },
+      {
+        "title": "Locate the implementation",
+        "source": "demo/zenith-sapience-initiative-global-governance/README.md",
+        "explanation": "The related implementation has its own scope, prerequisites and evidence. It should not be assumed to realize every aspiration in this design."
+      },
+      {
+        "title": "Understand evidence boundaries",
+        "source": "docs/production/readiness-2026-10-03.md",
+        "explanation": "Compare demonstrated behavior with outstanding signing, integration, security review and commissioning requirements. A simulation cannot replace authentic evidence for those gates."
+      }
+    ],
+    "command": null,
+    "expected": "Open the related experience below for its guided inspection and run instructions. Reading this design does not execute or commission the proposed system.",
+    "experiment": "Choose a component from the diagram and map it to code, a test and an output in the related demo. Record any component that still has only a design description.",
+    "mode": "design",
+    "related": ["zenith-sapience-initiative-global-governance"]
+  },
+  "zenith-sapience-initiative-omega-omni-operating-system": {
+    "question": "Which parts are architecture, and where can I try the related implementation?",
+    "purpose": "For readers of the project vision: study this preserved design, identify the components it proposes and continue to a concrete related implementation.",
+    "steps": [
+      {
+        "title": "Read the design",
+        "source": "demo/zenith-sapience-initiative-omega-omni-operating-system/README.md",
+        "explanation": "This directory is documentation-only. Its architecture and ambitions are preserved; it does not contain a standalone executable demo."
+      },
+      {
+        "title": "Locate the implementation",
+        "source": "demo/zenith-sapience-initiative-omnidominion-governance/README.md",
+        "explanation": "The related implementation has its own scope, prerequisites and evidence. It should not be assumed to realize every aspiration in this design."
+      },
+      {
+        "title": "Understand evidence boundaries",
+        "source": "docs/production/readiness-2026-10-03.md",
+        "explanation": "Compare demonstrated behavior with outstanding signing, integration, security review and commissioning requirements. A simulation cannot replace authentic evidence for those gates."
+      }
+    ],
+    "command": null,
+    "expected": "Open the related experience below for its guided inspection and run instructions. Reading this design does not execute or commission the proposed system.",
+    "experiment": "Choose a component from the diagram and map it to code, a test and an output in the related demo. Record any component that still has only a design description.",
+    "mode": "design",
+    "related": ["zenith-sapience-initiative-omnidominion-governance"]
+  },
+  "AlphaEvolve_v0": {
+    "question": "Why does this demo also have an underscore-style package name?",
+    "purpose": "For Python users and contributors: understand an import-compatible facade that preserves access to the canonical demo without duplicating its engine.",
+    "steps": [
+      {
+        "title": "Read the compatibility layer",
+        "source": "demo/AlphaEvolve_v0/__init__.py",
+        "explanation": "Inspect how this package locates or re-exports the canonical implementation. The alias is supporting infrastructure, not a separate performance demonstration."
+      },
+      {
+        "title": "Read the canonical experience",
+        "source": "demo/AlphaEvolve-v0/README.md",
+        "explanation": "Run the canonical demo using its own environment and configuration. The related experience below explains its inputs, outputs and limitations."
+      },
+      {
+        "title": "Check package identity",
+        "source": "demo/AlphaEvolve_v0/__init__.py",
+        "explanation": "Confirm the resolved implementation path when debugging imports. Run from the repository root or use the documented launcher so relative package paths resolve consistently."
+      }
+    ],
+    "command": null,
+    "expected": "Open the canonical experience below. This package exists for import compatibility; its success should be evaluated by delegation and behavioral parity, not a separate synthetic score.",
+    "experiment": "Compare the imported module path and exported API with the canonical source. If behavior differs, inspect the shim and the environment before changing the underlying engine.",
+    "mode": "support",
+    "related": ["AlphaEvolve-v0"]
+  },
+  "astral_omnidominion_operating_system": {
+    "question": "Why does this demo also have an underscore-style package name?",
+    "purpose": "For Python users and contributors: understand an import-compatible facade that preserves access to the canonical demo without duplicating its engine.",
+    "steps": [
+      {
+        "title": "Read the compatibility layer",
+        "source": "demo/astral_omnidominion_operating_system/__init__.py",
+        "explanation": "Inspect how this package locates or re-exports the canonical implementation. The alias is supporting infrastructure, not a separate performance demonstration."
+      },
+      {
+        "title": "Read the canonical experience",
+        "source": "demo/astral-omnidominion-operating-system/README.md",
+        "explanation": "Run the canonical demo using its own environment and configuration. The related experience below explains its inputs, outputs and limitations."
+      },
+      {
+        "title": "Check package identity",
+        "source": "demo/astral_omnidominion_operating_system/__init__.py",
+        "explanation": "Confirm the resolved implementation path when debugging imports. Run from the repository root or use the documented launcher so relative package paths resolve consistently."
+      }
+    ],
+    "command": null,
+    "expected": "Open the canonical experience below. This package exists for import compatibility; its success should be evaluated by delegation and behavioral parity, not a separate synthetic score.",
+    "experiment": "Compare the imported module path and exported API with the canonical source. If behavior differs, inspect the shim and the environment before changing the underlying engine.",
+    "mode": "support",
+    "related": ["astral-omnidominion-operating-system"]
+  },
+  "huxley_godel_machine_v0": {
+    "question": "Why does this demo also have an underscore-style package name?",
+    "purpose": "For Python users and contributors: understand an import-compatible facade that preserves access to the canonical demo without duplicating its engine.",
+    "steps": [
+      {
+        "title": "Read the compatibility layer",
+        "source": "demo/huxley_godel_machine_v0/__init__.py",
+        "explanation": "Inspect how this package locates or re-exports the canonical implementation. The alias is supporting infrastructure, not a separate performance demonstration."
+      },
+      {
+        "title": "Read the canonical experience",
+        "source": "demo/Huxley-Godel-Machine-v0/README.md",
+        "explanation": "Run the canonical demo using its own environment and configuration. The related experience below explains its inputs, outputs and limitations."
+      },
+      {
+        "title": "Check package identity",
+        "source": "demo/huxley_godel_machine_v0/__init__.py",
+        "explanation": "Confirm the resolved implementation path when debugging imports. Run from the repository root or use the documented launcher so relative package paths resolve consistently."
+      }
+    ],
+    "command": null,
+    "expected": "Open the canonical experience below. This package exists for import compatibility; its success should be evaluated by delegation and behavioral parity, not a separate synthetic score.",
+    "experiment": "Compare the imported module path and exported API with the canonical source. If behavior differs, inspect the shim and the environment before changing the underlying engine.",
+    "mode": "support",
+    "related": ["Huxley-Godel-Machine-v0"]
+  },
+  "kardashev_ii_omega_grade_alpha_agi_business_3": {
+    "question": "Why does this demo also have an underscore-style package name?",
+    "purpose": "For Python users and contributors: understand an import-compatible facade that preserves access to the canonical demo without duplicating its engine.",
+    "steps": [
+      {
+        "title": "Read the compatibility layer",
+        "source": "demo/kardashev_ii_omega_grade_alpha_agi_business_3/__init__.py",
+        "explanation": "Inspect how this package locates or re-exports the canonical implementation. The alias is supporting infrastructure, not a separate performance demonstration."
+      },
+      {
+        "title": "Read the canonical experience",
+        "source": "demo/Kardashev-II-Omega-Grade-Alpha-AGI-Business-3/README.md",
+        "explanation": "Run the canonical demo using its own environment and configuration. The related experience below explains its inputs, outputs and limitations."
+      },
+      {
+        "title": "Check package identity",
+        "source": "demo/kardashev_ii_omega_grade_alpha_agi_business_3/__init__.py",
+        "explanation": "Confirm the resolved implementation path when debugging imports. Run from the repository root or use the documented launcher so relative package paths resolve consistently."
+      }
+    ],
+    "command": null,
+    "expected": "Open the canonical experience below. This package exists for import compatibility; its success should be evaluated by delegation and behavioral parity, not a separate synthetic score.",
+    "experiment": "Compare the imported module path and exported API with the canonical source. If behavior differs, inspect the shim and the environment before changing the underlying engine.",
+    "mode": "support",
+    "related": ["Kardashev-II-Omega-Grade-Alpha-AGI-Business-3"]
+  },
+  "kardashev_ii_omega_grade_alpha_agi_business_3_demo": {
+    "question": "Why does this demo also have an underscore-style package name?",
+    "purpose": "For Python users and contributors: understand an import-compatible facade that preserves access to the canonical demo without duplicating its engine.",
+    "steps": [
+      {
+        "title": "Read the compatibility layer",
+        "source": "demo/kardashev_ii_omega_grade_alpha_agi_business_3_demo/__init__.py",
+        "explanation": "Inspect how this package locates or re-exports the canonical implementation. The alias is supporting infrastructure, not a separate performance demonstration."
+      },
+      {
+        "title": "Read the canonical experience",
+        "source": "demo/Kardashev-II Omega-Grade-α-AGI Business-3/README.md",
+        "explanation": "Run the canonical demo using its own environment and configuration. The related experience below explains its inputs, outputs and limitations."
+      },
+      {
+        "title": "Check package identity",
+        "source": "demo/kardashev_ii_omega_grade_alpha_agi_business_3_demo/__init__.py",
+        "explanation": "Confirm the resolved implementation path when debugging imports. Run from the repository root or use the documented launcher so relative package paths resolve consistently."
+      }
+    ],
+    "command": null,
+    "expected": "Open the canonical experience below. This package exists for import compatibility; its success should be evaluated by delegation and behavioral parity, not a separate synthetic score.",
+    "experiment": "Compare the imported module path and exported API with the canonical source. If behavior differs, inspect the shim and the environment before changing the underlying engine.",
+    "mode": "support",
+    "related": ["Kardashev-II Omega-Grade-α-AGI Business-3"]
+  },
+  "kardashev_ii_omega_grade_alpha_agi_business_3_demo_omega": {
+    "question": "Why does this demo also have an underscore-style package name?",
+    "purpose": "For Python users and contributors: understand an import-compatible facade that preserves access to the canonical demo without duplicating its engine.",
+    "steps": [
+      {
+        "title": "Read the compatibility layer",
+        "source": "demo/kardashev_ii_omega_grade_alpha_agi_business_3_demo_omega/__init__.py",
+        "explanation": "Inspect how this package locates or re-exports the canonical implementation. The alias is supporting infrastructure, not a separate performance demonstration."
+      },
+      {
+        "title": "Read the canonical experience",
+        "source": "demo/Kardashev-II Omega-Grade-α-AGI Business-3/README.md",
+        "explanation": "Run the canonical demo using its own environment and configuration. The related experience below explains its inputs, outputs and limitations."
+      },
+      {
+        "title": "Check package identity",
+        "source": "demo/kardashev_ii_omega_grade_alpha_agi_business_3_demo_omega/__init__.py",
+        "explanation": "Confirm the resolved implementation path when debugging imports. Run from the repository root or use the documented launcher so relative package paths resolve consistently."
+      }
+    ],
+    "command": null,
+    "expected": "Open the canonical experience below. This package exists for import compatibility; its success should be evaluated by delegation and behavioral parity, not a separate synthetic score.",
+    "experiment": "Compare the imported module path and exported API with the canonical source. If behavior differs, inspect the shim and the environment before changing the underlying engine.",
+    "mode": "support",
+    "related": ["Kardashev-II Omega-Grade-α-AGI Business-3"]
+  },
+  "kardashev_ii_omega_grade_alpha_agi_business_3_demo_supreme": {
+    "question": "Why does this demo also have an underscore-style package name?",
+    "purpose": "For Python users and contributors: understand an import-compatible facade that preserves access to the canonical demo without duplicating its engine.",
+    "steps": [
+      {
+        "title": "Read the compatibility layer",
+        "source": "demo/kardashev_ii_omega_grade_alpha_agi_business_3_demo_supreme/__init__.py",
+        "explanation": "Inspect how this package locates or re-exports the canonical implementation. The alias is supporting infrastructure, not a separate performance demonstration."
+      },
+      {
+        "title": "Read the canonical experience",
+        "source": "demo/Kardashev-II Omega-Grade-α-AGI Business-3/README.md",
+        "explanation": "Run the canonical demo using its own environment and configuration. The related experience below explains its inputs, outputs and limitations."
+      },
+      {
+        "title": "Check package identity",
+        "source": "demo/kardashev_ii_omega_grade_alpha_agi_business_3_demo_supreme/__init__.py",
+        "explanation": "Confirm the resolved implementation path when debugging imports. Run from the repository root or use the documented launcher so relative package paths resolve consistently."
+      }
+    ],
+    "command": null,
+    "expected": "Open the canonical experience below. This package exists for import compatibility; its success should be evaluated by delegation and behavioral parity, not a separate synthetic score.",
+    "experiment": "Compare the imported module path and exported API with the canonical source. If behavior differs, inspect the shim and the environment before changing the underlying engine.",
+    "mode": "support",
+    "related": ["Kardashev-II Omega-Grade-α-AGI Business-3"]
+  },
+  "kardashev_ii_omega_grade_alpha_agi_business_3_demo_ultra": {
+    "question": "Why does this demo also have an underscore-style package name?",
+    "purpose": "For Python users and contributors: understand an import-compatible facade that preserves access to the canonical demo without duplicating its engine.",
+    "steps": [
+      {
+        "title": "Read the compatibility layer",
+        "source": "demo/kardashev_ii_omega_grade_alpha_agi_business_3_demo_ultra/__init__.py",
+        "explanation": "Inspect how this package locates or re-exports the canonical implementation. The alias is supporting infrastructure, not a separate performance demonstration."
+      },
+      {
+        "title": "Read the canonical experience",
+        "source": "demo/Kardashev-II Omega-Grade-α-AGI Business-3/README.md",
+        "explanation": "Run the canonical demo using its own environment and configuration. The related experience below explains its inputs, outputs and limitations."
+      },
+      {
+        "title": "Check package identity",
+        "source": "demo/kardashev_ii_omega_grade_alpha_agi_business_3_demo_ultra/__init__.py",
+        "explanation": "Confirm the resolved implementation path when debugging imports. Run from the repository root or use the documented launcher so relative package paths resolve consistently."
+      }
+    ],
+    "command": null,
+    "expected": "Open the canonical experience below. This package exists for import compatibility; its success should be evaluated by delegation and behavioral parity, not a separate synthetic score.",
+    "experiment": "Compare the imported module path and exported API with the canonical source. If behavior differs, inspect the shim and the environment before changing the underlying engine.",
+    "mode": "support",
+    "related": ["Kardashev-II Omega-Grade-α-AGI Business-3"]
+  },
+  "open_endedness_v0": {
+    "question": "Why does this demo also have an underscore-style package name?",
+    "purpose": "For Python users and contributors: understand an import-compatible facade that preserves access to the canonical demo without duplicating its engine.",
+    "steps": [
+      {
+        "title": "Read the compatibility layer",
+        "source": "demo/open_endedness_v0/__init__.py",
+        "explanation": "Inspect how this package locates or re-exports the canonical implementation. The alias is supporting infrastructure, not a separate performance demonstration."
+      },
+      {
+        "title": "Read the canonical experience",
+        "source": "demo/Open-Endedness-v0/README.md",
+        "explanation": "Run the canonical demo using its own environment and configuration. The related experience below explains its inputs, outputs and limitations."
+      },
+      {
+        "title": "Check package identity",
+        "source": "demo/open_endedness_v0/__init__.py",
+        "explanation": "Confirm the resolved implementation path when debugging imports. Run from the repository root or use the documented launcher so relative package paths resolve consistently."
+      }
+    ],
+    "command": null,
+    "expected": "Open the canonical experience below. This package exists for import compatibility; its success should be evaluated by delegation and behavioral parity, not a separate synthetic score.",
+    "experiment": "Compare the imported module path and exported API with the canonical source. If behavior differs, inspect the shim and the environment before changing the underlying engine.",
+    "mode": "support",
+    "related": ["Open-Endedness-v0"]
+  },
+  "presentation": {
+    "question": "Which presentation assets can I reuse to explain the demo collection?",
+    "purpose": "For presenters: open the preserved slide deck and PDF, then pair historical visuals with current executable evidence.",
+    "steps": [
+      {
+        "title": "Open the PDF",
+        "source": "demo/presentation/AGI_Jobs_v0_Demos_v0.pdf",
+        "explanation": "The PDF preserves the presentation as published. Download it from the source link; binary presentation files are not executed by this website."
+      },
+      {
+        "title": "Open the editable deck",
+        "source": "demo/presentation/AGI_Jobs_v0_Demos_v0.pptx",
+        "explanation": "The PowerPoint deck is the editable source. Check dates and scenario assumptions before presenting historical claims as current capabilities."
+      },
+      {
+        "title": "Connect to current demos",
+        "source": "demo/README.md",
+        "explanation": "Use the live catalog and individual experiences to find current commands, evidence boundaries and preserved diagrams."
+      }
+    ],
+    "command": null,
+    "expected": "Use the PDF for reading and the PPTX for editing. Validate claims against the current demo sources before sharing a revised presentation.",
+    "experiment": "Choose one slide and trace its main claim to an executable demo and concrete evidence. Update the explanation if the slide is conceptual.",
+    "mode": "support",
+    "related": ["aurora"]
+  },
+  "tests": {
+    "question": "How does the repository ensure that demo tests are discovered correctly?",
+    "purpose": "For contributors: inspect the shared runner regression tests and understand the difference between test discovery and demo behavior.",
+    "steps": [
+      {
+        "title": "Inspect discovery regressions",
+        "source": "demo/tests/test_run_demo_tests_runner.py",
+        "explanation": "These tests exercise the shared demo-test runner, including how suites are found and invoked. They do not replace each demo’s own behavioral tests."
+      },
+      {
+        "title": "Read the complete catalog",
+        "source": "demo/README.md",
+        "explanation": "Use each entry’s source and guides to locate its behavioral suite and runtime dependencies."
+      },
+      {
+        "title": "Inspect a concrete behavior suite",
+        "source": "demo/Validator-Constellation-v0/run_demo.py",
+        "explanation": "A runnable demo exposes behavior that its own tests should verify. Keep runner infrastructure and scenario correctness distinct."
+      }
+    ],
+    "command": "python -m pytest demo/tests/test_run_demo_tests_runner.py",
+    "expected": "Pytest executes the shared runner regression tests. Install pytest and follow the root Python test environment documentation first.",
+    "experiment": "Add or relocate a demo suite in an isolated branch and confirm discovery still finds it; do not silently drop a failing suite.",
+    "mode": "python",
+    "related": [],
+    "install": "python -m pip install pytest==8.3.3"
+  },
+  "validator_constellation_v0": {
+    "question": "Why does this demo also have an underscore-style package name?",
+    "purpose": "For Python users and contributors: understand an import-compatible facade that preserves access to the canonical demo without duplicating its engine.",
+    "steps": [
+      {
+        "title": "Read the compatibility layer",
+        "source": "demo/validator_constellation_v0/__init__.py",
+        "explanation": "Inspect how this package locates or re-exports the canonical implementation. The alias is supporting infrastructure, not a separate performance demonstration."
+      },
+      {
+        "title": "Read the canonical experience",
+        "source": "demo/Validator-Constellation-v0/README.md",
+        "explanation": "Run the canonical demo using its own environment and configuration. The related experience below explains its inputs, outputs and limitations."
+      },
+      {
+        "title": "Check package identity",
+        "source": "demo/validator_constellation_v0/__init__.py",
+        "explanation": "Confirm the resolved implementation path when debugging imports. Run from the repository root or use the documented launcher so relative package paths resolve consistently."
+      }
+    ],
+    "command": null,
+    "expected": "Open the canonical experience below. This package exists for import compatibility; its success should be evaluated by delegation and behavioral parity, not a separate synthetic score.",
+    "experiment": "Compare the imported module path and exported API with the canonical source. If behavior differs, inspect the shim and the environment before changing the underlying engine.",
+    "mode": "support",
+    "related": ["Validator-Constellation-v0"]
+  }
+}

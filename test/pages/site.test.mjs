@@ -138,7 +138,13 @@ test('published guides preserve every original Mermaid block verbatim', () => {
   for (const [file, route] of Object.entries(manifest.guideRoutes)) {
     const sources = [];
     marked.walkTokens(
-      marked.lexer(fs.readFileSync(path.join(root, file), 'utf8')),
+      marked.lexer(
+        file.endsWith('.mmd')
+          ? '````mermaid\n' +
+              fs.readFileSync(path.join(root, file), 'utf8').trimEnd() +
+              '\n````'
+          : fs.readFileSync(path.join(root, file), 'utf8')
+      ),
       (token) => {
         if (token.type === 'code' && token.lang?.trim() === 'mermaid')
           sources.push(token.text);
@@ -157,4 +163,150 @@ test('published guides preserve every original Mermaid block verbatim', () => {
     total += sources.length;
   }
   assert.equal(total, manifest.diagrams);
+});
+
+test('every experience resolves its sources, publishes exact downloads and includes its complete document library', () => {
+  const output = path.join(root, 'build/pages');
+  const manifest = JSON.parse(
+    fs.readFileSync(path.join(output, 'catalog.json'))
+  );
+  const profiles = JSON.parse(
+    fs.readFileSync(path.join(root, 'website/demo-experiences.json'))
+  );
+  assert.equal(manifest.experiences, manifest.directories);
+  assert.deepEqual(
+    Object.keys(profiles).sort(),
+    manifest.catalog.map((d) => d.name).sort()
+  );
+  for (const demo of manifest.catalog) {
+    const document = new JSDOM(
+      fs.readFileSync(path.join(output, 'demos', demo.id, 'index.html'), 'utf8')
+    ).window.document;
+    for (const id of [
+      'guided-tour',
+      'inspect',
+      'try-it',
+      'architecture',
+      'library',
+    ])
+      assert.ok(document.getElementById(id), `${demo.name}: ${id}`);
+    assert.equal(
+      document.querySelectorAll('.lesson-step').length,
+      profiles[demo.name].steps.length
+    );
+    const data = JSON.parse(
+      document.querySelector('#lab-data').content.textContent
+    );
+    assert.equal(data.revision, manifest.revision);
+    for (const source of data.sources) {
+      if (source.content === null) continue;
+      const local = fs.readFileSync(path.join(root, source.file));
+      assert.equal(source.content, local.toString('utf8'), source.file);
+      assert.deepEqual(
+        fs.readFileSync(
+          path.join(output, source.download.slice(manifest.basePath.length))
+        ),
+        local,
+        source.file
+      );
+    }
+    const links = [...document.querySelectorAll('#library a')].map((a) =>
+      a.getAttribute('href')
+    );
+    for (const file of demo.guides)
+      assert.ok(
+        links.includes(manifest.basePath + manifest.guideRoutes[file]),
+        file
+      );
+    for (const related of profiles[demo.name].related)
+      assert.ok(manifest.catalog.some((d) => d.name === related));
+  }
+});
+
+test('field inspection preserves values, ambiguous keys and empty containers without executing strings', async () => {
+  const { sourceFields, findFields } = await import(
+    '../../website/assets/source-model.mjs'
+  );
+  const value = {
+    'a/b': { '~x': 0 },
+    empty: [],
+    object: {},
+    bool: false,
+    none: null,
+    html: '<img src=x onerror=alert(1)>',
+    rows: [{ reward: '100000000000000000001' }],
+  };
+  const fields = sourceFields(value);
+  assert.ok(fields.some((r) => r.path === '$/a~1b/~0x' && r.value === '0'));
+  assert.ok(
+    fields.some(
+      (r) => r.value === '100000000000000000001' && r.type === 'string'
+    )
+  );
+  assert.equal(findFields(fields, 'none')[0].value, 'null');
+  assert.equal(findFields(fields, 'BOOL false').length, 1);
+  assert.equal(findFields(fields, 'onerror')[0].value, value.html);
+  assert.equal(findFields(fields, 'not present').length, 0);
+  assert.deepEqual(sourceFields([]), [
+    { path: '$', value: '[]', type: 'array' },
+  ]);
+});
+
+test('legacy schedules preserve relative timing without inventing dates or missing starts', async () => {
+  const { relativeSchedule, displaySources } = await import(
+    '../../website/assets/diagram-source.mjs'
+  );
+  const durationOnly = relativeSchedule(
+    fs.readFileSync(
+      path.join(root, 'demo/Economic-Power-v0/reports/global-expansion.mmd'),
+      'utf8'
+    )
+  );
+  assert.deepEqual(
+    durationOnly.tasks.map((t) => t.duration),
+    [72, 240, 720, 1440]
+  );
+  assert.ok(durationOnly.tasks.every((t) => t.start === null));
+  const schedule = relativeSchedule(
+    fs.readFileSync(
+      path.join(root, 'demo/Economic-Power-v0/reports/timeline.mmd'),
+      'utf8'
+    )
+  );
+  assert.deepEqual(
+    schedule.tasks.map((t) => t.start),
+    [0, 0, 0, 0, 33.5]
+  );
+  assert.deepEqual(
+    schedule.tasks.map((t) => t.duration),
+    [33.5, 26.9, 26.3, 21.9, 19.6]
+  );
+  assert.throws(() =>
+    relativeSchedule(
+      'gantt\n dateFormat X\n Valid : id1, 5h\n Invalid : id2, tomorrow, 5h'
+    )
+  );
+  const combined = fs.readFileSync(
+    path.join(root, 'demo/alpha-agi-mark/runbooks/alpha-agi-mark-flow.mmd'),
+    'utf8'
+  );
+  assert.equal(displaySources(combined).length, 2);
+  const hierarchy = displaySource(
+    'mindmap\n  root((Core (v2)))\n    "Sigma":::core --> "Welfare":::metric'
+  );
+  assert.match(hierarchy, /legacy_mind_0\["Core \(v2\)"\]/);
+  assert.match(hierarchy, /legacy_mind_0 --> legacy_mind_1/);
+  assert.match(hierarchy, /legacy_mind_1 --> legacy_mind_2/);
+  const chart = displaySource(
+    '%%{init: {theme: forest} }\nlineChart\n title Recorded success\n 0:0.33\n 1:0.67'
+  );
+  assert.match(chart, /line \[0.33, 0.67\]/);
+});
+
+test('nested demo documentation is discovered without misclassifying the implementation as an alias', () => {
+  const demo = makeCatalog().find(
+    (d) => d.name === 'superintelligent-empowerment'
+  );
+  assert.equal(demo.readme, 'demo/superintelligent-empowerment/docs/README.md');
+  assert.equal(demo.kindId, 'code');
 });

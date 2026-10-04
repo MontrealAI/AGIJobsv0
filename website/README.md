@@ -34,3 +34,38 @@ In the repository's **Settings → Pages**, the publishing source must be **GitH
 The workflow publishes only the generated `build/pages/` directory. It does not publish the repository root, dependency directories, environment files or local reports. Its preview artifact and browser evidence make every candidate reviewable before deployment.
 
 The default base path is `/AGIJobsv0/`. `SITE_BASE_PATH=/ npm run site:build` supports a root-path deployment for development; the local test harness reads the prefix from the generated manifest.
+
+## Individual demo experiences
+
+Every catalog entry has a source-grounded guided tour in `demo-experiences.json`.
+Each record names the concrete question, purpose, three source-backed steps,
+selected execution path, expected output, suggested experiment and related
+implementation. Design guides and compatibility packages explicitly identify their
+scope. A missing entry or untracked source fails the website build.
+
+The read-only source inspector uses exact repository files. Visitors can switch
+between walkthrough sources, search JSON fields, read full source text and
+download byte-identical copies with SHA-256 provenance. It never evaluates code,
+sends transactions, recalculates economic claims or represents a stored example
+as a fresh execution. JSON field paths use JSON Pointer escaping.
+
+The document library includes **every tracked Markdown document and standalone
+Mermaid file under `demo/`**, including nested variants, operator guides and
+recorded reports. Original guide routes remain stable. Each individual experience
+also shows a preserved architecture diagram where one is available; longer
+libraries and test-source lists remain browsable without JavaScript.
+
+When updating an experience:
+
+1. Read the selected entry point, configuration and output-writing code together.
+2. Run its documented command in the correct isolated environment. Explain
+   whether the path is a complete demo, a component rehearsal, a preflight,
+   compilation, a simulation or a design reading path.
+3. Keep source references tracked and commands specific. Distinguish historical
+   fixtures, synthetic targets, model heuristics and actual transaction evidence.
+4. Run the website tests and browser QA. QA exercises all individual inspectors
+   on mobile, downloads an exact source, checks field search and keyboard-accessible
+   content, and parses and renders every published diagram.
+
+See [the recorded validation scope](validation-2026-10-04.md) for the local checks
+performed while introducing these experiences.

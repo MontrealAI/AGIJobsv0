@@ -160,6 +160,31 @@ try {
   );
   await page.goto(url + 'demos/aurora/', { waitUntil: 'networkidle' });
   await a11y('demo');
+  await page.getByLabel('Find a field or value').fill('validation k');
+  assert.equal(await page.locator('.lab-field').count(), 1);
+  assert.equal(await page.locator('.field-value').textContent(), '2');
+  await page.getByLabel('Find a field or value').fill('no-such-field-482');
+  assert.equal(await page.locator('.lab-field').count(), 0);
+  await page.locator('[data-inspect-source="1"]').click();
+  assert.equal(await page.locator('#lab-source').inputValue(), '1');
+  assert.ok((await page.locator('#lab-code').textContent()).includes('import'));
+  await page.getByLabel('Choose a walkthrough source').selectOption('0');
+  const sourceDownload = page.waitForEvent('download');
+  await page.locator('#lab-download').click();
+  const sourceFile = await sourceDownload;
+  assert.deepEqual(
+    fs.readFileSync(await sourceFile.path()),
+    fs.readFileSync(path.join(root, 'demo/aurora/config/aurora.spec@v2.json'))
+  );
+  await page.locator('#guided-tour').scrollIntoViewIfNeeded();
+  await page.screenshot({ path: path.join(artifacts, 'demo-guided-tour.png') });
+  await page.locator('#inspect').scrollIntoViewIfNeeded();
+  await page.screenshot({
+    path: path.join(artifacts, 'demo-source-inspector.png'),
+  });
+  checks.push(
+    'source steps, exact source download, field search and empty results'
+  );
   await page.getByRole('link', { name: 'Read the full guide' }).click();
   await page.locator('[data-diagram]').first().scrollIntoViewIfNeeded();
   await page.waitForSelector('[data-rendered="true"] svg', { timeout: 30000 });
@@ -218,7 +243,65 @@ try {
   checks.push('all catalog entries available without JavaScript');
   await fallback.setViewportSize({ width: 390, height: 844 });
   assert.equal(await fallback.locator('#site-nav').isVisible(), true);
+  await fallback.goto(url + 'demos/aurora/');
+  assert.equal(await fallback.locator('.lesson-step:visible').count(), 3);
+  assert.ok(
+    (await fallback.locator('#lab-code').textContent()).includes(
+      'AURORA-Flagship-Job'
+    )
+  );
+  assert.equal(await fallback.locator('#experience-command').isVisible(), true);
   await noJS.close();
+  // Exercise every individual experience, including aliases, design guides and binary assets.
+  await page.setViewportSize({ width: 390, height: 844 });
+  for (const demo of manifest.catalog) {
+    await page.goto(url + 'demos/' + demo.id + '/', {
+      waitUntil: 'networkidle',
+    });
+    assert.equal(await page.locator('.lesson-step').count(), 3, demo.name);
+    assert.equal(
+      await page.locator('.lab-toolbar').isVisible(),
+      true,
+      demo.name
+    );
+    assert.equal(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth > innerWidth + 1
+      ),
+      false,
+      demo.name
+    );
+    await page
+      .getByLabel('Choose a walkthrough source')
+      .selectOption({ index: 1 });
+    assert.ok(
+      (await page.locator('#lab-path').textContent()).length > 0,
+      demo.name
+    );
+  }
+  checks.push(
+    'all ' +
+      manifest.directories +
+      ' experiences: working inspector and mobile layout'
+  );
+  await page.goto(
+    url +
+      'demos/' +
+      manifest.catalog.find((d) => d.name === 'AlphaEvolve-v0').id +
+      '/',
+    { waitUntil: 'networkidle' }
+  );
+  await page
+    .getByLabel('Choose a walkthrough source')
+    .selectOption({ index: 2 });
+  await a11y('source-inspector-mobile');
+  await page.locator('#inspect').scrollIntoViewIfNeeded();
+  await page.screenshot({
+    path: path.join(artifacts, 'mobile-source-inspector.png'),
+  });
+  checks.push(
+    'no-JavaScript experience retains steps, commands and full first source'
+  );
   // Parse every preserved flowchart in the same browser engine used for rendering.
   await page.goto(url + manifest.guideRoutes['demo/aurora/README.md']);
   await page.locator('[data-diagram]').first().scrollIntoViewIfNeeded();
