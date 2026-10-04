@@ -752,6 +752,7 @@ test('pending handoff survives restart and recovers finalized chain state exactl
   assert.deepEqual(outcomes, [true]);
   assert.equal(spawned, 1);
   assert.equal(new SettlementJournal(dir, '1:registry').pending().length, 0);
+  assert.equal(restarted.appliedJobs.size, 0);
   assert.equal(new SettlementJournal(dir, '2:registry').pending().length, 0);
 });
 
@@ -1216,4 +1217,64 @@ test('validator recovery never overwrites an already-mined commitment with a new
     address: ethers.ZeroAddress,
     wallet: { connect: () => ({}) },
   });
+});
+
+test('old job creation is recovered beyond 10,000 blocks even with RPC range limits', async (t) => {
+  const body = JSON.stringify({ category: 'computer-work' });
+  const f = await fixture(t, (_, res) => res.end(body));
+  const visited: number[] = [];
+  const context: any = {
+    appliedJobs: new Map(),
+    provider: { getBlockNumber: async () => 75000 },
+    config: { ipfsGateway: f.endpoint },
+    registry: {
+      filters: { JobCreated: () => ({}) },
+      queryFilter: async (_filter: unknown, from: number, to: number) => {
+        if (to - from >= 2000) throw new Error('RPC block range limit');
+        visited.push(from);
+        return from <= 100 && to >= 100
+          ? [
+              {
+                args: {
+                  uri: 'ipfs://oldSpec',
+                  specHash: ethers.keccak256(ethers.toUtf8Bytes(body)),
+                },
+              },
+            ]
+          : [];
+      },
+    },
+  };
+  const result = await (
+    MetaOrchestrator.prototype as any
+  ).validationContext.call(context, 1n);
+  assert.equal(result.classification.category, 'computer-work');
+  assert.ok(visited.length > 5);
+  assert.equal(visited.at(-1), 0);
+});
+
+test('restored job URI is verified against immutable on-chain hashes without needing old logs', async (t) => {
+  const body = JSON.stringify({ category: 'computer-work' });
+  const f = await fixture(t, (_, res) => res.end(body));
+  const uri = 'ipfs://savedSpec';
+  const state: any = {
+    appliedJobs: new Map([
+      ['1', { summary: { uri }, classification: { category: 'research' } }],
+    ]),
+    config: { ipfsGateway: f.endpoint },
+    provider: {
+      getBlockNumber: () => assert.fail('Durable URI avoids historical lookup'),
+    },
+    registry: {
+      jobs: async () => ({
+        uriHash: ethers.keccak256(ethers.toUtf8Bytes(uri)),
+        specHash: ethers.keccak256(ethers.toUtf8Bytes(body)),
+      }),
+    },
+  };
+  const method = (MetaOrchestrator.prototype as any).validationContext;
+  const recovered = await method.call(state, 1n);
+  assert.equal(recovered.classification.category, 'computer-work');
+  state.appliedJobs.get('1').summary.uri = 'ipfs://substituted';
+  await assert.rejects(method.call(state, 1n), /URI does not match/);
 });
