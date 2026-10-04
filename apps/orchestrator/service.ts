@@ -1068,7 +1068,7 @@ export class MetaOrchestrator {
           keywords: runResult.snapshot.keywords.slice(0, 12),
         },
       });
-      // Positive learning credit and dependent jobs wait for JobCompleted.
+      // Positive learning credit and dependent jobs wait for final settlement.
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       this.watchdog.recordFailure(state.identity.address, message);
@@ -1124,6 +1124,7 @@ export class MetaOrchestrator {
     if (success) await this.spawnSubtasks(jobId, state.spec);
     this.settlementJournal.complete(jobId);
     delete state.execution;
+    this.appliedJobs.delete(jobId);
   }
 
   private restorePendingSettlements(): void {
@@ -1237,21 +1238,38 @@ export class MetaOrchestrator {
   private async validationContext(
     jobId: bigint
   ): Promise<{ classification: ClassificationResult; spec: JobSpec | null }> {
-    // Cached execution classification is not a cryptographic commitment.
-    // Always recover and verify the authoritative bytes before voting.
-    const latest = await this.provider.getBlockNumber();
-    // If the authoritative creation record is outside this bounded window,
-    // abstain and require operator recovery instead of guessing the review mode.
-    const events = await this.registry.queryFilter(
-      this.registry.filters.JobCreated(jobId),
-      Math.max(0, latest - 10000),
-      latest
-    );
-    const event = events.find((item: any) => item.args && !item.removed) as any;
-    if (!event) throw new Error('Authoritative job specification unavailable');
-    const args = event.args;
-    const uri = args.uri ?? args[7];
-    const specHash = args.specHash ?? args[6];
+    // Cached classifications never authorize a vote. The saved URI is useful
+    // after restart, but must match the contract's immutable URI commitment.
+    let uri = this.appliedJobs.get(jobId.toString())?.summary?.uri;
+    let specHash: string;
+    if (typeof uri === 'string') {
+      const job = await this.registry.jobs(jobId);
+      if (ethers.keccak256(ethers.toUtf8Bytes(uri)) !== job.uriHash)
+        throw new Error('Saved specification URI does not match the contract');
+      specHash = job.specHash;
+    } else {
+      const latest = await this.provider.getBlockNumber();
+      const filter = this.registry.filters.JobCreated(jobId);
+      const find = (events: any[]) =>
+        events.find((item) => item.args && !item.removed);
+      let event: any;
+      try {
+        // Indexed event lookup covers the complete history, including week-long
+        // jobs on fast-block chains. Most archival RPCs serve this in one call.
+        event = find(await this.registry.queryFilter(filter, 0, latest));
+      } catch {
+        // Providers with getLogs range limits need bounded pages, not an age
+        // cutoff. A failed page propagates so unavailable history fails closed.
+        for (let to = latest; to >= 0 && !event; to -= 2000)
+          event = find(
+            await this.registry.queryFilter(filter, Math.max(0, to - 1999), to)
+          );
+      }
+      if (!event)
+        throw new Error('Authoritative job specification unavailable');
+      uri = event.args.uri ?? event.args[7];
+      specHash = event.args.specHash ?? event.args[6];
+    }
     const spec = await fetchCommittedJobSpec(
       uri,
       specHash,
