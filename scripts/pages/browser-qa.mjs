@@ -101,6 +101,37 @@ try {
     checks.push(label + ': accessibility');
   };
   await a11y('home');
+  await page
+    .locator('#site-nav')
+    .getByRole('link', { name: 'Featured demos' })
+    .click();
+  await page.locator('#featured').screenshot({
+    path: path.join(artifacts, 'featured-demos-desktop.png'),
+    style: '.site-header, .skip-link { visibility: hidden !important; }',
+  });
+  for (const [demo, route] of [
+    ['culture', manifest.cultureStudioRoute],
+    ['kardashev', 'experiments/kardashev-ii/'],
+  ]) {
+    const launch = page.locator(`[data-feature-launch="${demo}"]`);
+    assert.equal(await launch.getAttribute('href'), manifest.basePath + route);
+    await launch.focus();
+    await page.keyboard.press('Enter');
+    await page.waitForURL(url + route);
+    if (demo === 'culture') {
+      await page
+        .getByRole('heading', { name: /Knowledge grows/ })
+        .waitFor();
+    } else {
+      await page.waitForFunction(
+        () => document.documentElement.dataset.demoStatus === 'ready'
+      );
+    }
+    await page.goBack({ waitUntil: 'networkidle' });
+  }
+  checks.push(
+    'featured experiences: direct launch, keyboard activation and browser return'
+  );
   await page.getByLabel('Search the collection').fill('aurora');
   assert.equal(await page.locator('[data-demo-card]:visible').count(), 1);
   await page.reload({ waitUntil: 'networkidle' });
@@ -194,7 +225,7 @@ try {
   await a11y('guide');
   await page.screenshot({ path: path.join(artifacts, 'guide-diagram.png') });
   checks.push('demo detail, original guide, live Mermaid rendering');
-  for (const width of [320, 390, 768, 1440]) {
+  for (const width of [320, 390, 768, 900, 1024, 1440]) {
     await page.setViewportSize({ width, height: 900 });
     for (const route of ['', 'demos/aurora/']) {
       await page.goto(url + route, { waitUntil: 'networkidle' });
@@ -215,6 +246,10 @@ try {
     fullPage: true,
   });
   await page.screenshot({ path: path.join(artifacts, 'mobile-home.png') });
+  await page.locator('#featured').screenshot({
+    path: path.join(artifacts, 'featured-demos-mobile.png'),
+    style: '.site-header, .skip-link { visibility: hidden !important; }',
+  });
   await page.getByRole('button', { name: 'Menu' }).click();
   assert.equal(await page.locator('#site-nav').isVisible(), true);
   await page.keyboard.press('Escape');
@@ -225,7 +260,7 @@ try {
   await page.getByRole('button', { name: 'Menu' }).click();
   await page
     .locator('#site-nav')
-    .getByRole('link', { name: 'Explore demos' })
+    .getByRole('link', { name: 'Featured demos' })
     .click();
   assert.equal(
     await page.locator('#menu-toggle').getAttribute('aria-expanded'),
@@ -239,6 +274,10 @@ try {
   });
   const fallback = await noJS.newPage();
   await fallback.goto(url);
+  assert.equal(
+    await fallback.locator('[data-feature-launch]:visible').count(),
+    2
+  );
   assert.equal(
     await fallback.locator('[data-demo-card]:visible').count(),
     manifest.directories
