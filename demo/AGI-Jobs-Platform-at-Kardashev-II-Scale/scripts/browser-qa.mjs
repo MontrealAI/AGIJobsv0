@@ -129,9 +129,9 @@ try {
     fs.readFileSync(path.join(root, 'output/kardashev-telemetry.json'))
   );
   telemetry.energy.liveFeeds.feeds[0].region =
-    '<img src=x onerror="window.injected=true">';
+    '<img src=x onerror="window.__AGIJOBS_K2_XSS_EXECUTED__=true">';
   telemetry.missionDirectives.ownerPowers[0].title =
-    '<svg onload="window.injected=true">';
+    '<svg onload="window.__AGIJOBS_K2_XSS_EXECUTED__=true">';
   await page.route('**/kardashev-telemetry.inline.js', (route) =>
     route.fulfill({
       contentType: 'text/javascript',
@@ -142,7 +142,7 @@ try {
   await page.waitForFunction(
     () => document.documentElement.dataset.demoStatus === 'ready'
   );
-  assert.equal(await page.evaluate(() => window.injected), undefined);
+  assert.equal(await page.evaluate(() => window.__AGIJOBS_K2_XSS_EXECUTED__), undefined);
   assert.equal(
     await page.locator('#energy-feed-list img, #owner-power-list svg').count(),
     0
