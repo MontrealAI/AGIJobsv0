@@ -1,127 +1,154 @@
 # CULTURE Demo Runbook
 
-This runbook provides operational guidance for the CULTURE demo, enabling the platform owner to deploy, monitor, and control the system with confidence.
+This runbook distinguishes the complete browser teaching experience, the local service fixture stack, and the work required for a commissioned production deployment. All commands below start in `demo/CULTURE-v0` unless stated otherwise.
 
 ## 1. Prerequisites
 
-- Docker 24+
-- Node.js 22.23.3
-- Access to an Ethereum RPC endpoint (local Anvil, Sepolia, or mainnet fork)
-- IPFS pinning provider credentials (e.g., web3.storage, Pinata) if using managed storage
-- Owner wallet with sufficient ETH for deployments and gas
+- **Browser preview:** a current browser; no wallet, server, account, or payment.
+- **Local development:** Node.js **22.23.3** and Corepack/pnpm **10.5.2**. This is an independent pnpm workspace; installing the repository root does not install it.
+- **Local service stack:** Docker with Compose v2, available ports 4173, 4005, 4100, 8545, 8080, and 5001.
+- **Contract verification:** Foundry v1.4.4 and the locked Hardhat toolchain. A target-network deployment additionally requires verified core addresses, authorized keys and gas, provider adapters, and commissioning evidence.
 
 ## 2. Environment Configuration
 
-1. Copy `.env.example` to `.env`.
-2. Populate the mandatory variables:
-   - `RPC_URL` / `CHAIN_ID` — Ethereum RPC endpoint and network identifier (defaults assume local Anvil).
-   - `DEPLOYER_PRIVATE_KEY` — Account used for deployment and scripted transactions (local Hardhat key by default).
-   - `SEEDER_PRIVATE_KEY` — Optional account for seeding artifacts; falls back to the deployer.
-   - `OWNER_ADDRESS` — Address that will own CultureRegistry and SelfPlayArena post-deploy.
-   - `AGI_JOBS_CORE_ADDRESSES` — JSON blob pointing to upstream JobRegistry, ValidationModule, StakeManager, and IdentityRegistry.
-3. Optional overrides:
-   - `IPFS_GATEWAY` / `IPFS_API_ENDPOINT` / `IPFS_API_TOKEN` for remote pinning providers.
-   - `CULTURE_DEPLOY_OUTPUT` and `CULTURE_ENV_FILE` to adjust where deployment metadata is written.
-   - Orchestrator/indexer tuning knobs (ports, polling intervals, Elo storage path).
+The public [Culture Studio](https://montrealai.github.io/AGIJobsv0/experiments/culture/) is built with `VITE_DEMO_MODE=true`. All computations are local. Session state survives navigation between sections and resets on reload or explicit reset; download evidence before leaving. No real LLM, IPFS CID, transaction, payment, or independent validator is claimed.
+
+For service development, copy `.env.example` to `.env` and inspect each variable before use. The safer fixture launcher below creates a separate `.env.local` and never needs production credentials. It generates a random API token when one is absent, without printing the token. Keep this file private.
+
+| Configuration | Meaning |
+| --- | --- |
+| `RPC_URL`, `CHAIN_ID` | Actual RPC endpoint and expected chain; default fixture chain is 31337. |
+| `SELF_PLAY_ARENA_ADDRESS`, `ORCHESTRATOR_PRIVATE_KEY` | Configure both or neither. The legacy `SELFPLAY_ARENA_ADDRESS` alias remains supported; conflicting values fail. A configured arena selects a **hybrid** mode: the arena adapter is on-chain, but job, IPFS, and stake adapters remain local fixtures. |
+| `ORCHESTRATOR_API_TOKEN` | At least 32 characters. Required for on-chain operation or a non-loopback listener; protects service writes. In Studio, enter it in **Operator connection**, never enter a wallet key. |
+| `ORCHESTRATOR_HOST` | Defaults to `127.0.0.1`. Compose explicitly binds inside its container and publishes host ports to loopback. |
+| `STUDIO_ORIGINS` | Comma-separated allowed browser origins; defaults to localhost and 127.0.0.1 on port 4173. CORS is not authorization. |
+| `VITE_ORCHESTRATOR_URL`, `VITE_INDEXER_URL` | Browser-reachable service endpoints, fixed at build time. Do not place secrets in any `VITE_` variable. |
+| `DEPLOYER_PRIVATE_KEY`, `SEEDER_PRIVATE_KEY`, `OWNER_ADDRESS` | Signing identities for deployment and seed scripts. Built-in fixture keys are public test keys, never production secrets. |
+| `AGI_JOBS_CORE_ADDRESSES` | Actual upstream contract addresses for a deployment outside the fixture stack. Verify code, chain, roles, and ownership independently. |
+| `IPFS_GATEWAY`, `IPFS_API_ENDPOINT`, `IPFS_API_TOKEN` | Reserved provider configuration. Setting these does **not** replace the current local `pinJSON` adapter or implement Studio upload endpoints. |
+| `ELO_STATE_PATH`, `ROUND_STATE_PATH` | Persisted scoreboard and round snapshots. These are not an atomic transaction journal or durable job registry. |
 
 ## 3. One-Click Deployment
 
-1. Install dependencies: `npm install --legacy-peer-deps`.
-2. Compile contracts: `npx hardhat compile`.
-3. Execute the deployment + configuration pipeline:
-   ```bash
-   npx hardhat run demo/CULTURE-v0/scripts/deploy.culture.ts --network localhost
-   npx hardhat run demo/CULTURE-v0/scripts/owner.setParams.ts --network localhost
-   npx hardhat run demo/CULTURE-v0/scripts/owner.setRoles.ts --network localhost
-   npx hardhat run demo/CULTURE-v0/scripts/seed.culture.ts --network localhost
-   ```
-4. Start infrastructure via Docker Compose:
-   ```bash
-   docker compose -f demo/CULTURE-v0/docker-compose.yml up -d culture-chain culture-ipfs
-   docker compose -f demo/CULTURE-v0/docker-compose.yml --profile setup run --rm culture-contracts
-   docker compose -f demo/CULTURE-v0/docker-compose.yml up -d culture-orchestrator culture-indexer culture-studio
-   ```
-   Health checks on each container gate downstream services. Inspect `docker compose ps` to verify all statuses are `healthy`.
+### Browser preview, locally
 
-Named volumes isolate chain state (`culture_chain_data`), orchestrator Elo snapshots (`culture_orchestrator_state`), indexer SQLite storage (`culture_indexer_db`), and IPFS data (`culture_ipfs_data`). Remove them only when a full reset is required.
+```bash
+cd demo/CULTURE-v0 # from repository root
+corepack pnpm install --frozen-lockfile
+VITE_DEMO_MODE=true corepack pnpm --filter culture-studio dev --host 127.0.0.1
+```
 
-5. (Optional) Generate weekly analytics: `docker compose --profile reports run --rm culture-reports`.
+Open `http://127.0.0.1:4173`. For a static preview build:
+
+```bash
+VITE_DEMO_MODE=true corepack pnpm --filter culture-studio build
+corepack pnpm --filter culture-studio exec vite preview --host 127.0.0.1 --port 4173
+```
+
+### Isolated local fixture stack
+
+```bash
+corepack pnpm local:up
+node scripts/check-local-stack.mjs
+# Keep named volumes and stop containers:
+corepack pnpm e2e:down
+```
+
+The launcher brings up Anvil and IPFS, deploys fixture contracts, seeds the indexer, and starts Studio plus services. It prints the Studio address. This is an integration fixture, not autonomous end-to-end production operation. The Studio capabilities banner identifies the service mode. Unsupported provider buttons remain visible with an explanation and are disabled.
+
+Named volumes preserve chain state (`culture_chain_data`), orchestrator snapshots (`culture_orchestrator_state`), indexer SQLite (`culture_indexer_db`), and IPFS data (`culture_ipfs_data`). Back up evidence before considering any destructive reset. Ordinary shutdown keeps the volumes.
+
+### Explicit operator deployment scripts
+
+After reviewing `.env` and the target chain, run from this directory:
+
+```bash
+corepack pnpm exec hardhat compile
+corepack pnpm exec hardhat run scripts/deploy.culture.ts --network localhost
+corepack pnpm exec hardhat run scripts/owner.setParams.ts --network localhost
+corepack pnpm exec hardhat run scripts/owner.setRoles.ts --network localhost
+corepack pnpm exec hardhat run scripts/seed.culture.ts --network localhost
+```
+
+These are explicit signed operator actions, not a one-click production commissioning guarantee. Review script inputs, role assignments, ownership, deployed bytecode, and receipts before declaring a network ready.
 
 ## 4. Owner Workflows
 
 ### 4.1 Create a Knowledge Artifact
 
-1. Open `http://localhost:4173` (default Culture Studio port).
-2. Choose **Create Book**.
-3. Describe the artifact (topic, tone, derivative relationships).
-4. Approve the assistant's outline; the system will:
-   - Generate the artifact content via AGI Jobs planning agents.
-   - Run moderation checks.
-   - Upload the artifact to IPFS.
-   - Mint it on-chain via `CultureRegistry`.
-5. Review the success toast; follow the link to view the artifact on IPFS and in the Culture Graph.
+In **Create Artifact**, choose a title, source artifact, format, and writing tone. Describe a concrete lesson and press **Send to assistant**. In preview mode this produces a deterministic teaching template that incorporates your request; it is not an LLM inference. Review the text, then preview storage, registration, and a follow-on job in order.
+
+Storage computes SHA-256 over the exact UTF-8 draft. Identifiers starting with `preview-sha256-` are fingerprints, not resolvable IPFS CIDs. Registration adds the artifact and citation edge to the same session model used by the graph and arena picker. Duplicate content is rejected with its existing artifact ID. Follow-on jobs are recorded plans, not paid executions. Draft and workflow progress survive switching Studio sections.
 
 ### 4.2 Launch a Self-Play Arena Round
 
-1. Navigate to **Self-Play Arena**.
-2. Select a base artifact, student cohort size, and target success rate.
-3. Click **Launch Arena**. The orchestrator will:
-   - Spin up a teacher job seeded with the artifact content.
-   - Spawn student jobs and validators with commit–reveal hooks.
-   - Monitor completions, run automated tests, and compute Elo/difficulty adjustments.
-4. Observe real-time telemetry (teacher posted, students solved, validators revealed).
-5. Review the scoreboard and difficulty charts once finalized.
+In the **preview**, select an artifact and 1–12 students. Set a target success rate between 0.10 and 0.95. Launching computes each student's fixture score and compares it with the shown pass threshold. The evidence table explains all outcomes; the export includes the exact rubric and every input.
+
+- Success = passing students / participating students.
+- Difficulty is an integer from 1–9. The preview uses `4 × (success − target)`, capped to ±2, then rounded and clamped. The service uses its separately configured PID gains, applied once per round.
+- Elo uses K=32 in the preview and the teacher's pre-round rating. Rating changes balance across the cohort. Service Elo tuning is configured separately.
+- Pause prevents new preview rounds. Hold difficulty keeps the next value unchanged. Parallel jobs determine modeled batch count; this does not benchmark actual concurrency.
+
+In **service mode**, use the explicit lifecycle form: supply distinct nonzero EVM participant addresses and an integer difficulty, start a round, record actual evidence CIDs while open, close submissions, review approved student winners, and finalize separately. An empty winner list explicitly approves nobody. The UI never invents participants or auto-submits winners. Only submitted students may win, and teacher evidence is required. A CID submission is an operator assertion; it does not prove external validator consensus.
 
 ## 5. Owner Controls
 
-| Action | Method |
+| Action | Available implementation |
 | --- | --- |
-| Pause Culture Registry | UI Owner Panel → Pause Culture Registry |
-| Resume Culture Registry | UI Owner Panel → Resume Culture Registry |
-| Pause Self-Play Arena | UI Owner Panel → Pause Arena |
-| Configure Allowed Artifact Kinds | Call `CultureRegistry.setAllowedKinds(["kind"], true/false)` with owner wallet |
-| Update Citation Fan-Out | Call `CultureRegistry.setMaxCitations(newMax)` with owner wallet |
-| Update Rewards / Fees | Run `scripts/owner.setParams.ts` with new configuration |
-| Manage Agent Roles | Run `scripts/owner.setRoles.ts` to grant/revoke roles in IdentityRegistry |
-| Slash Malicious Validators | Trigger `StakeManager` slash via Owner Panel or script |
+| Pause/resume preview rounds, hold difficulty, change target and modeled batching | **Preview owner control panel**; session model only. |
+| Pause/unpause CultureRegistry or SelfPlayArena | Direct authorized contract calls; the Studio has no owner-wallet relayer. |
+| Configure allowed kinds / citation fan-out | Authorized `CultureRegistry.setAllowedKinds` / `setMaxCitations` calls. |
+| Configure contract parameters | Review and run `scripts/owner.setParams.ts`. |
+| Manage roles | Review and run `scripts/owner.setRoles.ts`; verify effective permissions on the actual deployment. |
+| Slashing | Contract-level authorized operation requiring independently verified evidence. The orchestrator's stake adapter only logs simulated operations. |
 
-All administrative transactions require the owner wallet signature. The UI relayer prompts before execution.
+`GET /capabilities` reports unsupported writing, upload, mint, derivative-job and owner-control APIs as false. Integrations must supply real implementations and evidence before advertising those capabilities. Studio fails visibly on service errors; it never falls back to preview data.
 
 ## 6. Monitoring & Analytics
 
-- **Culture Graph Dashboard** — Explore artifact lineage and influence rankings (powered by indexer’s PageRank). Fallback data renders even if the indexer is offline so the UI remains demonstrable.
-- **Arena Scoreboard** — Review Elo changes, difficulty thermostat behaviour, and validator accuracy. Telemetry pulls from `GET /arena/scoreboard` every 5 seconds.
-- **Prometheus Metrics** — Orchestrator exports metrics at `http://localhost:4005/metrics` (requests, round durations, validator accuracy). Scrape into your monitoring stack or curl directly during incident response.
-- **Indexer Health** — `http://localhost:4100/healthz` returns JSON including a timestamp. Log tailing at `/var/log/culture-indexer` (volume) aids investigations.
-- **Weekly Reports** — Regenerate Markdown in `reports/` using `npm exec ts-node --project tsconfig.json demo/CULTURE-v0/scripts/export.weekly.ts`. Inputs are versioned JSON snapshots under `data/analytics/` for reproducibility.
+- **Culture Graph:** local preview uses citation-only PageRank (damping 0.85, 40 iterations, uniform dangling-node redistribution). The service graph reads the indexer's GraphQL data. The accessible artifact cards mirror the visual graph. Influence is not ownership, quality certification, or financial value.
+- **Scoreboard:** `GET /arena/scoreboard` includes ratings, round status and configured difficulty window. Studio refreshes after each explicit operation. WebSocket `/ws/arena` emits scoreboard updates for other consumers.
+- **Prometheus:** `/metrics` currently exposes default process/runtime metrics. Request latency, validator accuracy, job queue saturation and finality metrics still require instrumentation before production.
+- **Health:** orchestrator `http://localhost:4005/healthz`; indexer `http://localhost:4100/healthz`. Inspect Compose logs and deployment receipts as well as health status.
+- **Evidence:** download the preview session JSON from any tab. It records model version, limitations, content fingerprints, full drafts, artifacts, citations, jobs, scores, controls and outcomes. It contains no service API token.
+- **Weekly reports:** use the commands in [scripts/README.md](scripts/README.md) and the package scripts. Versioned analytics inputs under `data/analytics/` are reproducible fixtures, not fresh production telemetry.
 
 ## 7. Troubleshooting
 
 | Symptom | Resolution |
 | --- | --- |
-| UI cannot mint artifacts | Ensure contracts are deployed, CultureRegistry is unpaused, and relayer wallet funded. Check orchestrator logs. |
-| Arena rounds stuck | Inspect orchestrator logs for unresponsive agents. Use Owner Panel to cancel the round or slash stalled validators. |
-| Indexer influence stale | Restart `culture-indexer` or call `POST http://localhost:4100/admin/recompute`. Validate the container’s `/var/log/culture-indexer` volume for errors. |
-| Compose service stuck in `starting` | Inspect health check endpoint (see Section 6). For persistent failures run `docker compose logs <service>`; remove the associated named volume only after collecting diagnostics. |
-| High gas costs | Switch to local Anvil for demonstrations or adjust job batch sizes via config. |
+| Preview upload unavailable | Use a secure browser context: HTTPS or localhost. SHA-256 uses Web Crypto. |
+| Service provider action disabled | Inspect `/capabilities`. The bundled backend does not implement this provider; a funded wallet alone cannot enable it. Use preview to learn the workflow. |
+| HTTP 401 | Apply the configured operator API token. The fixture token is in your private `.env.local`; do not publish it. |
+| Service unreachable / GraphQL error | Check configured browser URLs, CORS origins, Compose health and logs. No fictional success is substituted. |
+| Round cannot finalize | Verify it is closed, teacher evidence is submitted, and every winner is a submitted student in that round. Inspect actual participant status. |
+| Failed/ambiguous chain operation | Stop writes and reconcile transaction receipts, on-chain state and local snapshots. Mutating arena transactions are not blindly retried; failed finalization is not reported as finalized. |
+| Restart during an active round | Active rounds fail closed on restart because local job records and PID history are not durably restored. Historical rounds remain visible and new local IDs advance without overwriting them. Preserve snapshots and reconcile manually; this is not full crash recovery. |
+| Indexer influence stale | Inspect event ingestion, RPC logs and persisted cursor; use documented indexer CLI commands. Do not assume an unimplemented admin endpoint exists. |
+| Compose service stuck starting | `docker compose --env-file .env.local logs <service>` and inspect container health details before changing any state. |
 
 ## 8. Emergency Response
 
-1. Pause all contracts via Owner Panel or direct calls (`CultureRegistry.pause()`, `SelfPlayArena.pause()`).
-2. Revoke malicious identities using `owner.setRoles.ts`.
-3. Slash offending validators/students via `StakeManager`.
-4. Document incident in `reports/` and re-run weekly analytics to confirm containment.
-5. Resume services once the root cause is resolved (unpause contracts, restart docker services, rerun `owner.setRoles.ts` if identities changed).
+Stop new writes, preserve logs and snapshots, and reconcile submitted transactions before resuming. Where applicable, use an authorized owner to pause actual contracts through direct calls. Revoke compromised credentials and permissions through the deployment's established process. Do not interpret a preview pause or simulated slash as containment on a real network. Record affected rounds, evidence CIDs, actual receipts, and recovery decisions. Obtain independent review before reopening a production deployment.
 
 ## 9. Maintenance Cadence
 
-- Weekly: Review analytics reports, adjust difficulty parameters, rotate validator committees.
-- Monthly: Regenerate Docker images, update dependencies via `npm audit fix --dry-run`, rerun CI in staging.
-- Quarterly: Conduct disaster recovery drills and slashing simulations.
+Run the locked builds, lint, formatting, contract tests, service coverage and browser journey checks for changes. CI retains the existing coverage and gas budget gates. Review dependency/security updates and container digests deliberately rather than applying unreviewed upgrades. Exercise target-chain finality, reorg handling, durable job recovery, backup restoration, provider timeout behavior, access control and emergency procedures before each commissioned deployment.
+
+```bash
+corepack pnpm -r run build
+corepack pnpm lint
+corepack pnpm format
+corepack pnpm test:services
+corepack pnpm test:quality-gates
+corepack pnpm typecheck:scripts
+# Requires Foundry; full CI also runs static analysis and Compose/Cypress:
+corepack pnpm test:contracts
+corepack pnpm test:contracts:hardhat
+```
+
+To build the entire Observatory from the repository root, install its locked npm dependencies **and** this pnpm workspace, then run `npm run site:build`, `npm run site:test`, `npm run site:qa`, and `node scripts/pages/culture-qa.mjs`.
 
 ## 10. Support
 
-- Slack: #agi-culture-ops
-- Email: culture-ops@montreal.ai
-- PagerDuty: CULTURE-OnCall (24/7)
-
+Use the repository's documented contribution/security channels. The earlier example contacts (`#agi-culture-ops`, `culture-ops@montreal.ai`, `CULTURE-OnCall`) are unverified placeholders, not an established 24/7 support service. A production operator must publish and test real escalation contacts and ownership.

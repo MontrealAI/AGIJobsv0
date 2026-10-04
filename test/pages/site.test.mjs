@@ -123,7 +123,10 @@ test('every demo has a unique route and all built local page/asset links resolve
       )
         missing.push({ file, value });
     }
-    assert.equal(document.querySelectorAll('main#main').length, 1, file);
+    if (file.endsWith('experiments/culture/index.html')) {
+      assert.equal(document.querySelectorAll('#root').length, 1);
+      assert.ok(document.querySelector('noscript a'));
+    } else assert.equal(document.querySelectorAll('main#main').length, 1, file);
   }
   assert.deepEqual(missing, []);
   assert.equal(
@@ -131,7 +134,8 @@ test('every demo has a unique route and all built local page/asset links resolve
     catalog.length +
       manifest.guides +
       2 +
-      (manifest.dashboardRoutes || []).length
+      (manifest.dashboardRoutes || []).length +
+      Number(Boolean(manifest.cultureStudioRoute))
   );
 });
 
@@ -353,5 +357,23 @@ test('all six published Kardashev decks retain their local assets and navigation
         `${route}: ${value}`
       );
     }
+  }
+});
+
+test('published Culture Studio uses the real workspace build with no provider connections', () => {
+  const directory = path.join(root, 'build/pages/experiments/culture');
+  const document = new JSDOM(
+    fs.readFileSync(path.join(directory, 'index.html'), 'utf8')
+  ).window.document;
+  const policy = document.querySelector(
+    'meta[http-equiv="Content-Security-Policy"]'
+  ).content;
+  assert.match(policy, /connect-src 'none'/);
+  assert.match(policy, /script-src 'self'/);
+  assert.equal(document.querySelectorAll('script:not([src])').length, 0);
+  for (const element of document.querySelectorAll('script[src],link[href]')) {
+    const asset = element.getAttribute('src') || element.getAttribute('href');
+    assert.ok(asset.startsWith('./assets/'));
+    assert.ok(fs.existsSync(path.join(directory, asset)));
   }
 });

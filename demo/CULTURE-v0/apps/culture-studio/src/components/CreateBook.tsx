@@ -1,5 +1,5 @@
 import { isDemoMode } from '../lib/api.js';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   type ChatMessage,
   type MintResult,
@@ -9,6 +9,9 @@ import {
   mintCultureArtifact,
   createDerivativeJob,
   type DerivativeJobResult,
+  type ServiceCapabilities,
+  fetchArtifacts,
+  type Artifact,
 } from '../lib/api.js';
 
 const personas = [
@@ -30,7 +33,33 @@ interface TimelineItem {
   readonly description: string;
 }
 
-export function CreateBook() {
+export function CreateBook({
+  capabilities,
+  revision = 0,
+}: {
+  capabilities?: ServiceCapabilities;
+  revision?: number;
+}) {
+  const [title, setTitle] = useState('A field guide to shared knowledge');
+  const [parentId, setParentId] = useState(1);
+  const [artifacts, setArtifacts] = useState<Artifact[]>([]);
+  const [pending, setPending] = useState(false);
+  const lock = useRef(false);
+  useEffect(() => {
+    fetchArtifacts()
+      .then((items) => {
+        setArtifacts(items);
+        setParentId((current) =>
+          current === 0 || items.some((item) => item.id === current)
+            ? current
+            : (items[0]?.id ?? 0),
+        );
+      })
+      .catch(() => setArtifacts([]));
+  }, [revision]);
+  const allowed = (
+    operation: 'generation' | 'upload' | 'mint' | 'derivativeJobs',
+  ) => isDemoMode() || !!capabilities?.[operation];
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState(
     'Draft a playbook that explains how culture registries empower on-chain creatives.',
@@ -62,12 +91,13 @@ export function CreateBook() {
       {
         label: 'Store the draft',
         description:
-          'Upload the generated text to IPFS for a permanent record.',
+          'Preview a content fingerprint, or use a configured storage provider. IPFS persistence requires a pinning policy.',
         status: uploadResult ? 'complete' : draft ? 'active' : 'pending',
       },
       {
         label: 'Mint on CultureRegistry',
-        description: 'Mint the artifact so arenas can use it immediately.',
+        description:
+          'Register a reviewed artifact and its source; preview registration stays in this session.',
         status: mintResult ? 'complete' : uploadResult ? 'active' : 'pending',
       },
       {
@@ -88,7 +118,7 @@ export function CreateBook() {
 
   const handleSendMessage = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!input.trim() || isStreaming) {
+    if (!input.trim() || isStreaming || pending) {
       return;
     }
 
@@ -130,42 +160,70 @@ export function CreateBook() {
   };
 
   const handleUpload = async () => {
-    if (!draft || uploadResult) return;
+    if (!draft || uploadResult || lock.current) return;
+    lock.current = true;
+    setPending(true);
     setError(null);
     try {
       const result = await uploadToIpfs(draft);
       setUploadResult(result);
     } catch (cause) {
       console.error(cause);
-      setError('Upload failed. Please retry in a moment.');
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : 'The operation failed. Please retry.',
+      );
+    } finally {
+      lock.current = false;
+      setPending(false);
     }
   };
 
   const handleMint = async () => {
-    if (!uploadResult || mintResult) return;
+    if (!uploadResult || mintResult || lock.current) return;
+    lock.current = true;
+    setPending(true);
     setError(null);
     try {
       const result = await mintCultureArtifact({
-        title: draft.slice(0, 80) || 'Culture Artifact Draft',
+        title: title.trim(),
+        parentId: parentId || undefined,
         kind,
         cid: uploadResult.cid,
       });
       setMintResult(result);
     } catch (cause) {
       console.error(cause);
-      setError('Minting did not complete. Re-run when the network is ready.');
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : 'The operation failed. Please retry.',
+      );
+    } finally {
+      lock.current = false;
+      setPending(false);
     }
   };
 
   const handleCreateJob = async () => {
-    if (!mintResult || jobResult) return;
+    if (!mintResult || jobResult || lock.current) return;
+    lock.current = true;
+    setPending(true);
     setError(null);
     try {
       const result = await createDerivativeJob(mintResult.artifactId);
       setJobResult(result);
     } catch (cause) {
       console.error(cause);
-      setError('Unable to schedule the follow-on job. Give it another try.');
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : 'The operation failed. Please retry.',
+      );
+    } finally {
+      lock.current = false;
+      setPending(false);
     }
   };
 
@@ -176,10 +234,35 @@ export function CreateBook() {
           <h2>Create knowledge artifact</h2>
           <p className="subtitle">
             Guide the assistant, watch the response stream in, and mint the
-            result without leaving this page.
+            result in one guided workflow. The preview uses a local template,
+            not an LLM.
           </p>
         </div>
         <div className="persona-picker">
+          <label>
+            Artifact title
+            <input
+              value={title}
+              maxLength={120}
+              disabled={pending || !!mintResult}
+              onChange={(event) => setTitle(event.target.value)}
+            />
+          </label>
+          <label>
+            Source artifact
+            <select
+              value={parentId}
+              disabled={pending || !!mintResult}
+              onChange={(event) => setParentId(Number(event.target.value))}
+            >
+              <option value={0}>Original work (no parent)</option>
+              {artifacts.map((artifact) => (
+                <option key={artifact.id} value={artifact.id}>
+                  #{artifact.id} — {artifact.title}
+                </option>
+              ))}
+            </select>
+          </label>
           <label>
             Assistant tone
             <select
@@ -197,6 +280,7 @@ export function CreateBook() {
             Artifact format
             <select
               value={kind}
+              disabled={pending || !!mintResult}
               onChange={(event) => setKind(event.target.value)}
             >
               {artifactKinds.map((option) => (
@@ -209,6 +293,14 @@ export function CreateBook() {
         </div>
       </header>
 
+      {!allowed('generation') && (
+        <p className="capability-note">
+          The bundled orchestrator has no writing, IPFS upload, mint, or
+          derivative-job provider endpoints. Run the browser preview to explore
+          the complete journey, or integrate and advertise those capabilities
+          before enabling these actions.
+        </p>
+      )}
       <div className="timeline">
         {timeline.map((item) => (
           <div key={item.label} className={`timeline-item ${item.status}`}>
@@ -219,7 +311,15 @@ export function CreateBook() {
       </div>
 
       <div className="chat-card">
-        <div className="chat-log" aria-live="polite">
+        <div
+          className="chat-log"
+          aria-live="polite"
+          role="textbox"
+          aria-readonly="true"
+          aria-multiline="true"
+          tabIndex={0}
+          aria-label="Writing conversation"
+        >
           {messages.length === 0 && !isStreaming && (
             <div className="chat-message assistant">
               <p>
@@ -247,6 +347,8 @@ export function CreateBook() {
           aria-label="Send instructions to the writing assistant"
         >
           <textarea
+            aria-label="Lesson instructions"
+            maxLength={4000}
             value={input}
             onChange={(event) => setInput(event.target.value)}
             placeholder="Explain the focus for this artifact in plain words."
@@ -255,7 +357,12 @@ export function CreateBook() {
           />
           <button
             type="submit"
-            disabled={isStreaming || input.trim().length === 0}
+            disabled={
+              isStreaming ||
+              pending ||
+              input.trim().length === 0 ||
+              !allowed('generation')
+            }
           >
             {isStreaming ? 'Listening…' : 'Send to assistant'}
           </button>
@@ -269,7 +376,12 @@ export function CreateBook() {
             Quick skim of the generated text so you can decide whether to keep
             refining or mint it.
           </p>
-          <pre>{draft}</pre>
+          <textarea
+            readOnly
+            rows={10}
+            aria-label="Complete draft"
+            value={draft}
+          />
         </div>
       )}
 
@@ -277,7 +389,7 @@ export function CreateBook() {
         <button
           type="button"
           onClick={handleUpload}
-          disabled={!draft || !!uploadResult}
+          disabled={!draft || !!uploadResult || pending || !allowed('upload')}
         >
           {uploadResult
             ? isDemoMode()
@@ -290,7 +402,13 @@ export function CreateBook() {
         <button
           type="button"
           onClick={handleMint}
-          disabled={!uploadResult || !!mintResult}
+          disabled={
+            !uploadResult ||
+            !!mintResult ||
+            !title.trim() ||
+            pending ||
+            !allowed('mint')
+          }
         >
           {mintResult
             ? isDemoMode()
@@ -303,7 +421,9 @@ export function CreateBook() {
         <button
           type="button"
           onClick={handleCreateJob}
-          disabled={!mintResult || !!jobResult}
+          disabled={
+            !mintResult || !!jobResult || pending || !allowed('derivativeJobs')
+          }
         >
           {jobResult
             ? isDemoMode()
@@ -327,8 +447,7 @@ export function CreateBook() {
             <strong>
               {isDemoMode() ? 'Simulated artifact ID:' : 'CultureRegistry ID:'}
             </strong>{' '}
-            #{mintResult.artifactId} — tx{' '}
-            {mintResult.transactionHash.slice(0, 12)}…
+            #{mintResult.artifactId} — receipt {mintResult.transactionHash}
           </p>
         )}
         {jobResult && (
@@ -336,7 +455,11 @@ export function CreateBook() {
             <strong>Next job:</strong> {jobResult.title} ({jobResult.jobId})
           </p>
         )}
-        {error && <p className="error-text">{error}</p>}
+        {error && (
+          <p role="alert" className="error-text">
+            {error}
+          </p>
+        )}
       </div>
     </section>
   );

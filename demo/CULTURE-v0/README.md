@@ -1,5 +1,11 @@
 # AGI Jobs v0 (v2) — Demo → CULTURE v0
 
+> **Start here:** [Open the interactive Culture Studio](https://montrealai.github.io/AGIJobsv0/experiments/culture/) · [Operator runbook](RUNBOOK.md) · [Studio guide](apps/culture-studio/README.md)
+>
+> The published preview is a complete, deterministic browser learning loop: create a lesson, register its lineage, schedule a follow-on evaluation, inspect student scores, compare ratings and difficulty, and export the evidence. It uses no providers or real funds. The separate service stack remains an integration fixture; authentic production commissioning is not simulated away.
+
+
+
 > AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `demo/CULTURE-v0`.
 
 ## Overview
@@ -59,7 +65,7 @@ Run `pnpm test` for the module gates. Foundry **v1.4.4** is required for contrac
 
 This module is a working preview and development integration, not a completed production deployment. The arena HTTP API implements round operations and telemetry; the studio's LLM, IPFS upload, artifact mint, job creation, and owner-control requests still require real provider implementations. Some backend adapters are simulations even when an on-chain arena client is selected. A configured address alone does not establish end-to-end settlement.
 
-The contract and service coverage gates pass locally. The 39 Foundry tests cover lifecycle, authorization, ownership transfer, configuration, and signed-difficulty boundaries; contract line coverage is 94.06% for CultureRegistry and 97.44% for SelfPlayArena. The indexer has 27 tests with 92.50% lines, 90.24% branches, and 94.66% functions, including ordered live replay, graph growth, and validator outages. A separate compiled-runtime rehearsal verifies database migration, three real local-chain artifact events, graceful shutdown, and idempotent restart. The [gas baseline review](gas-snapshots/REVIEW-2026-10-03.md) explicitly records the two revised scenario ceilings and restored tests. These checks do not establish mainnet settlement or complete provider integration; see the [production-readiness record](../../docs/production/readiness-2026-10-03.md).
+The 2026-10-04 local checks pass: 39 Foundry, 3 Hardhat, 81 orchestrator, 30 indexer, and 26 Studio model/API tests. Studio model/API coverage is 100% lines and 98.87% branches; orchestrator coverage is 99.01% lines and 97.77% branches within its configured coverage scope (which excludes several adapters and the service implementation). Browser checks exercise the complete preview journey, all four sections, keyboard-accessible content, and 320px/390px layouts. These are engineering checks, not an independent security certification. The 39 Foundry tests cover lifecycle, authorization, ownership transfer, configuration, and signed-difficulty boundaries; contract line coverage is 94.06% for CultureRegistry and 97.44% for SelfPlayArena. The indexer has 30 tests with 91.62% lines, 90.64% branches, and 93.42% functions in the current coverage report, including ordered live replay, graph growth, and validator outages. A separate compiled-runtime rehearsal verifies database migration, three real local-chain artifact events, graceful shutdown, and idempotent restart. The [gas baseline review](gas-snapshots/REVIEW-2026-10-03.md) explicitly records the two revised scenario ceilings and restored tests. These checks do not establish mainnet settlement or complete provider integration; see the [production-readiness record](../../docs/production/readiness-2026-10-03.md).
 
 ### Start the local fixture stack
 

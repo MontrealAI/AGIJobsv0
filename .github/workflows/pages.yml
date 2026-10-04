@@ -52,6 +52,13 @@ jobs:
           cache: npm
       - name: Install locked dependencies
         run: ./scripts/ci/npm-ci.sh
+      - name: Install locked Culture Studio workspace
+        working-directory: demo/CULTURE-v0
+        env:
+          CYPRESS_INSTALL_BINARY: '0'
+        run: |
+          corepack enable
+          corepack pnpm install --frozen-lockfile
       - name: Install test browser
         run: npx playwright install --with-deps chromium
       - name: Verify catalog and build the complete site
@@ -60,7 +67,9 @@ jobs:
           npm run site:build
           npm run site:test
       - name: Verify interactions, accessibility, layouts and diagrams
-        run: npm run site:qa
+        run: |
+          npm run site:qa
+          node scripts/pages/culture-qa.mjs
       - name: Save browser evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02

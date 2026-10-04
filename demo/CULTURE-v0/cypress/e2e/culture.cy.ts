@@ -25,8 +25,9 @@ describe('Culture Studio smoke test', () => {
       ownerControls: { paused: false, autoDifficulty: true, maxConcurrentJobs: 3, targetSuccessRate: 0.6 }
     }).as('scoreboard');
 
+    cy.intercept('GET', '**/capabilities', { mode: 'local-adapters', generation: false, upload: false, mint: false, derivativeJobs: false, ownerControls: false });
     cy.visit('/');
-    cy.contains('h1', 'CULTURE').should('be.visible');
+    cy.contains('h1', 'Knowledge grows').should('be.visible');
 
     cy.wait('@artifacts');
 
@@ -37,14 +38,14 @@ describe('Culture Studio smoke test', () => {
     cy.contains('button', 'Self-Play Arena').click();
     cy.contains('h2', 'Start arena round').should('be.visible');
     cy.contains('Telemetry snapshot', { timeout: 20000 }).should('be.visible');
-    cy.get('table', { timeout: 20000 }).first().within(() => {
+    cy.get('#panel-1 table', { timeout: 20000 }).first().within(() => {
       cy.contains('Agent');
       cy.get('tbody tr').should('have.length.at.least', 1);
     });
 
     // Navigate to Culture Graph and ensure nodes load
     cy.contains('button', 'Culture Graph').click();
-    cy.contains('h2', 'Culture graph').should('be.visible');
+    cy.get('#panel-2').contains('h2', 'Culture graph').should('be.visible');
     cy.contains('button', 'Create derivative job').should('exist');
   });
 });

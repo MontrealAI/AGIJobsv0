@@ -14,8 +14,10 @@ import {
 } from '../lib/api.js';
 
 Chart.register(...registerables);
+import { previewEvidence } from '../lib/preview.js';
 
 interface Props {
+  readonly revision?: number;
   readonly onRoundCompleted?: (summary: ArenaSummary) => void;
   readonly onScoreboardUpdated?: (scoreboard: ScoreboardResponse) => void;
 }
@@ -27,11 +29,15 @@ interface ArtifactChoice {
 
 type Step = 'configure' | 'launching' | 'monitoring' | 'complete';
 
-export function StartArena({ onRoundCompleted, onScoreboardUpdated }: Props) {
+export function StartArena({
+  onRoundCompleted,
+  onScoreboardUpdated,
+  revision = 0,
+}: Props) {
   const [artifacts, setArtifacts] = useState<ArtifactChoice[]>([]);
   const [selectedArtifact, setSelectedArtifact] = useState<number | null>(null);
   const [studentCount, setStudentCount] = useState(6);
-  const [difficultyTarget, setDifficultyTarget] = useState(0.62);
+  const [difficultyTarget, setDifficultyTarget] = useState(0.6);
   const [step, setStep] = useState<Step>('configure');
   const [status, setStatus] = useState<string>(
     'Choose an artifact to anchor the arena round.',
@@ -51,7 +57,9 @@ export function StartArena({ onRoundCompleted, onScoreboardUpdated }: Props) {
         }));
         setArtifacts(mapped);
         if (mapped.length > 0) {
-          setSelectedArtifact(mapped[0].id);
+          setSelectedArtifact((current) =>
+            mapped.some((item) => item.id === current) ? current : mapped[0].id,
+          );
         }
       })
       .catch((cause: unknown) => {
@@ -63,6 +71,7 @@ export function StartArena({ onRoundCompleted, onScoreboardUpdated }: Props) {
       .then((scoreboard) => {
         setTelemetry(buildTelemetry(scoreboard));
         setControls(scoreboard.ownerControls);
+        setDifficultyTarget(scoreboard.ownerControls.targetSuccessRate);
         onScoreboardUpdated?.(scoreboard);
       })
       .catch((cause: unknown) => {
@@ -72,7 +81,7 @@ export function StartArena({ onRoundCompleted, onScoreboardUpdated }: Props) {
             : 'Could not load the scoreboard.',
         );
       });
-  }, [onScoreboardUpdated]);
+  }, [onScoreboardUpdated, revision]);
 
   useEffect(() => {
     if (!polling) return;
@@ -84,6 +93,7 @@ export function StartArena({ onRoundCompleted, onScoreboardUpdated }: Props) {
         const telemetrySnapshot = buildTelemetry(scoreboard);
         setTelemetry(telemetrySnapshot);
         setControls(scoreboard.ownerControls);
+        setDifficultyTarget(scoreboard.ownerControls.targetSuccessRate);
         onScoreboardUpdated?.(scoreboard);
       } catch (cause) {
         if (!cancelled) {
@@ -117,14 +127,21 @@ export function StartArena({ onRoundCompleted, onScoreboardUpdated }: Props) {
         difficultyTarget,
       });
       setSummary(arenaSummary);
-      setStatus(`Round ${arenaSummary.roundId} ready. Monitoring telemetry…`);
+      setStatus(
+        `Round ${arenaSummary.roundId} finalized. Inspect each submission below.`,
+      );
       onRoundCompleted?.(arenaSummary);
-      setPolling(true);
-      setStep('monitoring');
+      const scoreboard = await fetchScoreboard();
+      setTelemetry(buildTelemetry(scoreboard));
+      setControls(scoreboard.ownerControls);
+      onScoreboardUpdated?.(scoreboard);
+      setStep('complete');
     } catch (cause) {
       console.error(cause);
       setError(
-        'Unable to start the arena. Please confirm the orchestrator is reachable.',
+        cause instanceof Error
+          ? cause.message
+          : 'Unable to complete the preview round.',
       );
       setStep('configure');
     }
@@ -170,7 +187,10 @@ export function StartArena({ onRoundCompleted, onScoreboardUpdated }: Props) {
     }
     if (step === 'monitoring' && telemetry) {
       const lastRound = telemetry.scoreboard.rounds.at(-1);
-      if (lastRound?.status === 'completed') {
+      if (
+        lastRound?.id === summary?.roundId &&
+        lastRound?.status === 'finalized'
+      ) {
         setStep('complete');
         setStatus('Round complete. Review results below.');
         setPolling(false);
@@ -180,6 +200,7 @@ export function StartArena({ onRoundCompleted, onScoreboardUpdated }: Props) {
 
   const chartOptions = useMemo(
     () => ({
+      animation: false as const,
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
@@ -237,8 +258,9 @@ export function StartArena({ onRoundCompleted, onScoreboardUpdated }: Props) {
         <div>
           <h2>Start arena round</h2>
           <p className="subtitle">
-            Launch a self-play mission anchored to your latest artifact.
-            Telemetry updates in real time.
+            Launch a self-play mission anchored to your latest artifact. The
+            deterministic preview evaluates every student and records the full
+            result.
           </p>
         </div>
         <span className="status-pill">{status}</span>
@@ -286,7 +308,12 @@ export function StartArena({ onRoundCompleted, onScoreboardUpdated }: Props) {
           </label>
           <button
             type="submit"
-            disabled={step === 'launching' || step === 'monitoring'}
+            disabled={
+              !selectedArtifact ||
+              controls?.paused ||
+              step === 'launching' ||
+              step === 'monitoring'
+            }
           >
             {step === 'launching' ? 'Starting…' : 'Launch arena'}
           </button>
@@ -320,22 +347,82 @@ export function StartArena({ onRoundCompleted, onScoreboardUpdated }: Props) {
               </p>
             </div>
           )}
-          {error && <p className="error-text">{error}</p>}
+          {error && (
+            <p role="alert" className="error-text">
+              {error}
+            </p>
+          )}
         </div>
       </form>
 
+      {summary && (
+        <section className="submission-evidence">
+          <h3>Submission evidence · round {summary.roundId}</h3>
+          <p>
+            {
+              previewEvidence().rounds.find(
+                (round) => round.roundId === summary.roundId,
+              )?.rubric
+            }
+          </p>
+          <div className="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Student</th>
+                  <th>Score / 100</th>
+                  <th>Pass threshold</th>
+                  <th>Outcome</th>
+                </tr>
+              </thead>
+              <tbody>
+                {previewEvidence()
+                  .rounds.find((round) => round.roundId === summary.roundId)
+                  ?.submissions.map((submission) => (
+                    <tr key={submission.participant}>
+                      <td>{submission.participant}</td>
+                      <td>{submission.score}</td>
+                      <td>{submission.threshold}</td>
+                      <td>{submission.passed ? 'Passed' : 'Revise & retry'}</td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </div>
+          <p>
+            Next difficulty: {telemetry?.scoreboard.currentDifficulty} / 9 ·
+            Batches:{' '}
+            {
+              previewEvidence().rounds.find(
+                (round) => round.roundId === summary.roundId,
+              )?.batches
+            }
+            . Download the evidence for the exact score formula and ratings.
+          </p>
+        </section>
+      )}
       {telemetry && (
         <div className="telemetry-grid">
           <div className="telemetry-card">
             <h3>Difficulty trend</h3>
             <div className="chart-shell">
-              <Line options={chartOptions} data={difficultyData} />
+              <Line
+                options={{ ...chartOptions, scales: { y: { min: 1, max: 9 } } }}
+                data={difficultyData}
+                aria-label="Difficulty on a scale from 1 to 9; values in recent rounds below"
+                role="img"
+              />
             </div>
           </div>
           <div className="telemetry-card">
             <h3>Success trend</h3>
             <div className="chart-shell">
-              <Line options={chartOptions} data={successData} />
+              <Line
+                options={chartOptions}
+                data={successData}
+                aria-label="Success rate; values in recent rounds below"
+                role="img"
+              />
             </div>
           </div>
           <div className="telemetry-card">
@@ -368,7 +455,7 @@ export function StartArena({ onRoundCompleted, onScoreboardUpdated }: Props) {
 
       {controls && (
         <div className="owner-controls">
-          <h3>Owner control panel</h3>
+          <h3>Preview owner control panel</h3>
           <p className="subtitle">
             Pause rounds, adjust pacing, and review the orchestrator&apos;s
             current settings.
@@ -389,15 +476,36 @@ export function StartArena({ onRoundCompleted, onScoreboardUpdated }: Props) {
                 min={0.1}
                 max={0.95}
                 step={0.05}
-                value={controls.targetSuccessRate}
-                onChange={(event) =>
+                key={controls.targetSuccessRate}
+                defaultValue={controls.targetSuccessRate}
+                onBlur={(event) =>
                   handleTargetChange(Number(event.target.value))
                 }
               />
             </label>
+            <label>
+              Parallel jobs per batch
+              <select
+                value={controls.maxConcurrentJobs}
+                onChange={(event) =>
+                  applyControlUpdate({
+                    maxConcurrentJobs: Number(event.target.value),
+                  })
+                }
+              >
+                {[1, 2, 3, 6, 12].map((n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
+                ))}
+              </select>
+            </label>
             <div className="control-summary">
-              <p>Max concurrent jobs: {controls.maxConcurrentJobs}</p>
-              <p>Telemetry refresh: every 5 seconds</p>
+              <p>Modeled parallel jobs: {controls.maxConcurrentJobs}</p>
+              <p>
+                Controls affect the next preview round. No contract settings
+                change.
+              </p>
               <p>Status: {controls.paused ? 'Paused' : 'Active'}</p>
             </div>
           </div>

@@ -6,9 +6,9 @@ const esc = (value) =>
   String(value).replace(
     /[&<>"']/g,
     (c) =>
-      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[
+      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[
         c
-      ])
+      ]
   );
 const setups = {
   local: [
@@ -194,26 +194,26 @@ export function renderExperience(demo, profile, ctx) {
           ],
         ]
       : ['python', 'trm', 'stdlib'].includes(profile.mode)
-      ? [
-          [
-            'Import or dependency error',
-            'Confirm the active virtual environment and the selected demo’s requirements. Run python -m pip check; do not install unrelated demo requirements over a working environment.',
-          ],
-          [
-            'Unexpected result or missing file',
-            'Check the selected entry point, configuration and output argument. Keep the seed and implementation fixed before comparing outcomes.',
-          ],
-        ]
-      : [
-          [
-            'A command or service fails',
-            'Start at the first error, confirm the working directory and pinned toolchain, then follow the linked component guide. Optional packages and provider services have separate prerequisites.',
-          ],
-          [
-            'A report looks successful but lacks evidence',
-            'Check its source revision, configuration, timestamps and underlying events. Historical fixtures and generated plans do not prove a fresh execution.',
-          ],
-        ];
+        ? [
+            [
+              'Import or dependency error',
+              'Confirm the active virtual environment and the selected demo’s requirements. Run python -m pip check; do not install unrelated demo requirements over a working environment.',
+            ],
+            [
+              'Unexpected result or missing file',
+              'Check the selected entry point, configuration and output argument. Keep the seed and implementation fixed before comparing outcomes.',
+            ],
+          ]
+        : [
+            [
+              'A command or service fails',
+              'Start at the first error, confirm the working directory and pinned toolchain, then follow the linked component guide. Optional packages and provider services have separate prerequisites.',
+            ],
+            [
+              'A report looks successful but lacks evidence',
+              'Check its source revision, configuration, timestamps and underlying events. Historical fixtures and generated plans do not prove a fresh execution.',
+            ],
+          ];
   const dashboards = (profile.dashboards || [])
     .map(
       (deck) =>
@@ -223,7 +223,7 @@ export function renderExperience(demo, profile, ctx) {
     )
     .join('');
   const deckSection = dashboards
-    ? `<section class="experience-intro"><p class="eyebrow">OPEN THE COMPLETE COMMAND DECKS</p><h2>Explore the model in your browser.</h2><p class="section-description">Read-only dashboards with energy, governance, stress scenarios and preserved diagrams. No wallet or installation required; all values come from recorded simulations.</p><div class="hero-actions">${dashboards}</div></section>`
+    ? `<section class="experience-intro"><p class="eyebrow">OPEN THE COMPLETE COMMAND DECKS</p><h2>Explore the model in your browser.</h2><p class="section-description">${escape(profile.dashboardDescription || 'Read-only dashboards with energy, governance, stress scenarios and preserved diagrams. No wallet or installation required; all values come from recorded simulations.')}</p><div class="hero-actions">${dashboards}</div></section>`
     : '';
   return `${deckSection}<nav class="experience-nav" aria-label="On this demo page"><a href="#guided-tour">Guided tour</a><a href="#inspect">Inspect the sources</a><a href="#try-it">Try it locally</a><a href="#architecture">Architecture</a><a href="#library">Complete library</a></nav>
 <section id="guided-tour" class="experience-intro"><p class="eyebrow">A CLOSER LOOK</p><h2>${esc(

@@ -1,34 +1,61 @@
 import express from 'express';
 import { z } from 'zod';
-import { ArenaService } from './arena.service.js';
+import { ArenaInputError, ArenaService } from './arena.service.js';
 import { asyncHandler } from './async-handler.js';
 import { requireWriteToken } from './auth.js';
 import { buildStructuredLogRecord } from '../../../../../shared/structuredLogger.js';
 
-const startSchema = z.object({
-  artifactId: z.number().int().nonnegative(),
-  teacher: z.string().min(1),
-  students: z.array(z.string().min(1)).default([]),
-  validators: z.array(z.string().min(1)).default([]),
-  difficultyOverride: z.number().int().optional(),
-});
+const address = z
+  .string()
+  .regex(/^0x[a-fA-F0-9]{40}$/)
+  .refine((value) => !/^0x0{40}$/.test(value), 'Use a nonzero address');
+const identifier = z.coerce.number().int().positive().safe();
+const startSchema = z
+  .object({
+    artifactId: z.number().int().positive().safe(),
+    teacher: address,
+    students: z.array(address).min(1).max(32),
+    validators: z.array(address).max(16).default([]),
+    difficultyOverride: z
+      .number()
+      .int()
+      .nonnegative()
+      .max(4294967295)
+      .optional(),
+  })
+  .strict();
 
 const finalizeSchema = z.object({
-  winners: z.array(z.string().min(1)).default([]),
+  winners: z.array(address).max(32),
 });
 
 const submissionSchema = z.object({
-  participant: z.string().min(1),
-  cid: z.string().min(5),
+  participant: address,
+  cid: z.string().trim().min(5).max(512),
 });
 
-export function buildRouter(service: ArenaService, apiToken?: string) {
+export function buildRouter(
+  service: ArenaService,
+  apiToken?: string,
+  onChain = false,
+) {
   const router = express.Router();
   router.use(requireWriteToken(apiToken));
 
   router.get('/healthz', (_req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
   });
+
+  router.get('/capabilities', (_req, res) =>
+    res.json({
+      mode: onChain ? 'hybrid-on-chain' : 'local-adapters',
+      generation: false,
+      upload: false,
+      mint: false,
+      derivativeJobs: false,
+      ownerControls: false,
+    }),
+  );
 
   router.post(
     '/arena/start',
@@ -47,7 +74,7 @@ export function buildRouter(service: ArenaService, apiToken?: string) {
     '/arena/close/:roundId',
     asyncHandler(async (req, res, next) => {
       try {
-        const roundId = Number(req.params.roundId);
+        const roundId = identifier.parse(req.params.roundId);
         const round = await service.closeRound(roundId);
         res.json({ round });
       } catch (error) {
@@ -60,7 +87,7 @@ export function buildRouter(service: ArenaService, apiToken?: string) {
     '/arena/submit/:roundId',
     asyncHandler(async (req, res, next) => {
       try {
-        const roundId = Number(req.params.roundId);
+        const roundId = identifier.parse(req.params.roundId);
         const payload = submissionSchema.parse(req.body);
         await service.recordSubmission(
           roundId,
@@ -78,7 +105,7 @@ export function buildRouter(service: ArenaService, apiToken?: string) {
     '/arena/finalize/:roundId',
     asyncHandler(async (req, res, next) => {
       try {
-        const roundId = Number(req.params.roundId);
+        const roundId = identifier.parse(req.params.roundId);
         const payload = finalizeSchema.parse(req.body);
         const summary = await service.finalizeRound(roundId, payload.winners);
         res.json(summary);
@@ -94,7 +121,7 @@ export function buildRouter(service: ArenaService, apiToken?: string) {
 
   router.get('/arena/status/:roundId', (req, res, next) => {
     try {
-      const roundId = Number(req.params.roundId);
+      const roundId = identifier.parse(req.params.roundId);
       res.json(service.getRound(roundId));
     } catch (error) {
       next(error);
@@ -125,6 +152,10 @@ export function buildRouter(service: ArenaService, apiToken?: string) {
       });
       console.error(JSON.stringify(log));
 
+      if (error instanceof ArenaInputError) {
+        res.status(400).json({ error: error.message });
+        return;
+      }
       if (error instanceof z.ZodError) {
         res
           .status(400)
@@ -132,7 +163,7 @@ export function buildRouter(service: ArenaService, apiToken?: string) {
         return;
       }
       if (error instanceof Error) {
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ error: 'internal_error' });
         return;
       }
       res.status(500).json({ error: 'unknown_error' });

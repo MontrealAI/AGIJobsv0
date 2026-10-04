@@ -158,6 +158,10 @@ export class OnChainSelfPlayArenaClient implements SelfPlayArenaClient {
 export class InMemorySelfPlayArenaClient implements SelfPlayArenaClient {
   private rounds = 0;
 
+  restoreRoundCount(count: number): void {
+    this.rounds = Math.max(this.rounds, count);
+  }
+
   getTotalRounds(): Promise<number> {
     return Promise.resolve(this.rounds);
   }

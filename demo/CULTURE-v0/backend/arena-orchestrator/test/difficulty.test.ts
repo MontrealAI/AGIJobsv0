@@ -211,3 +211,28 @@ describe('DifficultyController', () => {
     expect(result.nextDifficulty).toBeLessThanOrEqual(config.maxDifficulty);
   });
 });
+
+describe('PID regression: one adjustment per round', () => {
+  const config = {
+    targetSuccessRate: 0.5,
+    minDifficulty: 1,
+    maxDifficulty: 9,
+    maxStep: 1,
+    proportionalGain: 100,
+  };
+  it('caps the total movement against the original integer difficulty', () => {
+    const controller = new DifficultyController(config);
+    expect(controller.update(4, 1)).toEqual({ nextDifficulty: 5, delta: 1 });
+    expect(controller.update(4, 0)).toEqual({ nextDifficulty: 3, delta: -1 });
+  });
+  it('keeps state isolated across independent arenas and helpers', () => {
+    const first = new DifficultyController({ ...config, integralGain: 2 });
+    for (let i = 0; i < 20; i++) first.update(4, 1);
+    const second = new DifficultyController({ ...config, integralGain: 2 });
+    expect(second.update(4, 0.5)).toEqual({ nextDifficulty: 4, delta: 0 });
+    expect(computeNextDifficulty(4, 0.5, config)).toEqual({
+      nextDifficulty: 4,
+      delta: 0,
+    });
+  });
+});

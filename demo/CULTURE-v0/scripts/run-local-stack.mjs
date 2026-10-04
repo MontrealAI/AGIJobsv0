@@ -1,8 +1,9 @@
-import { copyFile, chmod, access } from 'node:fs/promises';
+import { copyFile, chmod, access, appendFile } from 'node:fs/promises';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { readFileSync } from 'node:fs';
+import { randomBytes } from 'node:crypto';
 import { localStackEnv } from './local-stack-env.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
@@ -30,6 +31,18 @@ try {
     if (error.code !== 'ENOENT') throw error;
     await copyFile(path.join(root, '.env.example'), path.join(root, file));
     await chmod(path.join(root, file), 0o600);
+  }
+  if (
+    !/^ORCHESTRATOR_API_TOKEN=.+$/m.test(
+      readFileSync(path.join(root, file), 'utf8')
+    )
+  ) {
+    await chmod(path.join(root, file), 0o600);
+    await appendFile(
+      path.join(root, file),
+      `\nORCHESTRATOR_API_TOKEN=${randomBytes(32).toString('hex')}\n`,
+      { mode: 0o600 }
+    );
   }
   if (process.argv.includes('--down')) {
     compose('down');

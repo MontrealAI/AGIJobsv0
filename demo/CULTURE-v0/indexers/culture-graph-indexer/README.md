@@ -1,5 +1,8 @@
 # AGI Jobs v0 (v2) — Demo → CULTURE v0 → Indexers → Culture Graph Indexer
 
+> **Current execution guide:** use the module's independent pnpm workspace from `demo/CULTURE-v0`; the repository root npm install does not hydrate this workspace. See the [CULTURE runbook](https://github.com/MontrealAI/AGIJobsv0/blob/main/demo/CULTURE-v0/RUNBOOK.md) for exact commands, service capabilities, and simulation boundaries. Existing architecture diagrams below are retained.
+
+
 > AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `demo/CULTURE-v0/indexers/culture-graph-indexer`.
 
 ## Overview
@@ -22,11 +25,11 @@ flowchart LR
 ```
 
 ## Working With This Module
-1. From the repository root run `npm install` once to hydrate all workspaces.
+1. From `demo/CULTURE-v0`, run `corepack pnpm install --frozen-lockfile` to install this independent workspace.
 2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `demo/CULTURE-v0/indexers/culture-graph-indexer`.
-3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
+3. From `demo/CULTURE-v0`, execute `corepack pnpm lint`, `corepack pnpm format`, and `corepack pnpm test:services`; the full CI additionally checks contracts, budgets, and the fixture stack.
 4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../../../../OperatorRunbook.md).
-   - Prisma client artefacts are generated automatically by `scripts/ensure-prisma-client.mjs` when you run `npm test`; set `DATABASE_URL` if you need a non-default datasource for generation (defaults to `file:.tmp/dev.db`).
+   - Prisma client artefacts are generated automatically by `scripts/ensure-prisma-client.mjs` when you run the indexer test script; set `DATABASE_URL` if you need a non-default datasource for generation (defaults to `file:.tmp/dev.db`).
 
 ## Directory Guide
 ### Key Directories

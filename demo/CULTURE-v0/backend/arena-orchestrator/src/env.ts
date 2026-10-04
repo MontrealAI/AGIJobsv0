@@ -6,7 +6,16 @@ const addressRegex = /^0x[a-fA-F0-9]{40}$/;
 const privateKeyRegex = /^0x[a-fA-F0-9]{64}$/;
 
 const envSchema = z.object({
-  ORCHESTRATOR_PORT: z.coerce.number().int().positive().default(4005),
+  ORCHESTRATOR_PORT: z.coerce
+    .number()
+    .int()
+    .positive()
+    .max(65535)
+    .default(4005),
+  ORCHESTRATOR_HOST: z.string().default('127.0.0.1'),
+  STUDIO_ORIGINS: z
+    .string()
+    .default('http://localhost:4173,http://127.0.0.1:4173'),
   ORCHESTRATOR_API_TOKEN: z.string().min(32).optional(),
   TARGET_SUCCESS_RATE: z.coerce.number().min(0).max(1).default(0.6),
   MAX_DIFFICULTY_STEP: z.coerce.number().int().nonnegative().default(2),
@@ -19,10 +28,10 @@ const envSchema = z.object({
     .default(15 * 60_000),
   OPERATION_TIMEOUT_MS: z.coerce.number().int().positive().default(10_000),
   OPERATION_MAX_RETRIES: z.coerce.number().int().nonnegative().default(3),
-  DIFFICULTY_KI: z.coerce.number().optional(),
-  DIFFICULTY_KD: z.coerce.number().optional(),
-  DIFFICULTY_INTEGRAL_DECAY: z.coerce.number().optional(),
-  DIFFICULTY_MAX_INTEGRAL: z.coerce.number().optional(),
+  DIFFICULTY_KI: z.coerce.number().finite().optional(),
+  DIFFICULTY_KD: z.coerce.number().finite().optional(),
+  DIFFICULTY_INTEGRAL_DECAY: z.coerce.number().finite().optional(),
+  DIFFICULTY_MAX_INTEGRAL: z.coerce.number().finite().optional(),
   ELO_K_FACTOR: z.coerce.number().int().positive().default(32),
   ELO_DEFAULT_RATING: z.coerce.number().int().positive().default(1200),
   ELO_MIN_RATING: z.coerce.number().int().optional(),
@@ -46,6 +55,8 @@ const envSchema = z.object({
 
 export interface EnvironmentConfig {
   readonly port: number;
+  readonly host: string;
+  readonly studioOrigins: string[];
   readonly arena: ArenaConfig;
   readonly rpcUrl: string;
   readonly operatorKey?: string;
@@ -104,6 +115,22 @@ export function loadEnvironment(): EnvironmentConfig {
       'SELF_PLAY_ARENA_ADDRESS must be a deployed, nonzero arena address',
     );
   }
+  if (values.MIN_DIFFICULTY > values.MAX_DIFFICULTY)
+    throw new Error('MIN_DIFFICULTY must not exceed MAX_DIFFICULTY');
+  if (
+    values.ELO_MIN_RATING !== undefined &&
+    values.ELO_MAX_RATING !== undefined &&
+    values.ELO_MIN_RATING > values.ELO_MAX_RATING
+  )
+    throw new Error('ELO_MIN_RATING must not exceed ELO_MAX_RATING');
+  if (
+    !['127.0.0.1', 'localhost', '::1'].includes(values.ORCHESTRATOR_HOST) &&
+    !values.ORCHESTRATOR_API_TOKEN
+  )
+    throw new Error('Non-loopback listeners require ORCHESTRATOR_API_TOKEN');
+  const studioOrigins = values.STUDIO_ORIGINS.split(',').map(
+    (value) => new URL(value.trim()).origin,
+  );
   const arena: ArenaConfig = {
     targetSuccessRate: values.TARGET_SUCCESS_RATE,
     maxStep: values.MAX_DIFFICULTY_STEP,
@@ -130,6 +157,8 @@ export function loadEnvironment(): EnvironmentConfig {
 
   return {
     port: values.ORCHESTRATOR_PORT,
+    host: values.ORCHESTRATOR_HOST,
+    studioOrigins,
     arena,
     rpcUrl: values.RPC_URL,
     operatorKey: values.ORCHESTRATOR_PRIVATE_KEY,

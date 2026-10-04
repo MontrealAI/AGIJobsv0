@@ -45,9 +45,10 @@ const service = new ArenaService(env.arena, {
 await service.waitUntilReady();
 
 const app = express();
-app.use(cors());
+app.disable('x-powered-by');
+app.use(cors({ origin: env.studioOrigins }));
 app.use(express.json({ limit: '1mb' }));
-app.use(buildRouter(service, env.apiToken));
+app.use(buildRouter(service, env.apiToken, !!env.arenaAddress));
 
 const register = new promClient.Registry();
 promClient.collectDefaultMetrics({ register });
@@ -89,7 +90,7 @@ wss.on('connection', (socket) => {
 
 service.on('scoreboard:update', () => broadcastScoreboard());
 
-server.listen(port, () => {
+server.listen(port, env.host, () => {
   const log = buildStructuredLogRecord({
     component: 'arena-server',
     action: 'started',
