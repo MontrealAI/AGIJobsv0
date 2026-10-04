@@ -18,7 +18,7 @@ const {
 } = require('../lib/launcher.js');
 
 const net = require('node:net');
-const { once } = require('node:events');
+const { once, EventEmitter } = require('node:events');
 
 const VALID_JOB_REGISTRY = '0x000000000000000000000000000000000000c0de';
 const VALID_STAKE_MANAGER = '0x0000000000000000000000000000000000000abc';
@@ -370,45 +370,59 @@ test('parseCliArgs throws for invalid numeric or mode values', () => {
   assert.throws(() => parseCliArgs(['--max-duration', '0']));
 });
 
-async function getAvailablePort(host) {
-  const server = net.createServer();
-  server.listen({ port: 0, host });
-  await once(server, 'listening');
-  const address = server.address();
-  const port = typeof address === 'object' && address ? address.port : 0;
-  await new Promise((resolve) => server.close(resolve));
-  return port;
+function mockAvailablePorts(t) {
+  const attempts = [];
+  // A released ephemeral port can be acquired by another test or process.
+  // Exercise the listening event deterministically; occupied-port tests below
+  // still bind real sockets and verify native EADDRINUSE handling.
+  t.mock.method(net, 'createServer', () => {
+    const server = new EventEmitter();
+    server.unref = () => server;
+    server.close = () => server;
+    server.listen = (options) => {
+      attempts.push(options);
+      queueMicrotask(() => server.emit('listening'));
+      return server;
+    };
+    return server;
+  });
+  return attempts;
 }
 
-test('detectPortAvailability reports available ports', async () => {
+test('detectPortAvailability reports available ports', async (t) => {
   const host = '127.0.0.1';
-  const port = await getAvailablePort(host);
+  const port = 40001;
+  const attempts = mockAvailablePorts(t);
   const result = await detectPortAvailability({ port, host });
-  assert.equal(result.status, 'available');
+  assert.deepEqual(result, { status: 'available', error: null, host, port });
+  assert.deepEqual(attempts, [{ port, host, exclusive: true }]);
 });
 
-test('detectPortAvailability reports blocked ports', async () => {
+test('detectPortAvailability reports blocked ports', async (t) => {
   const host = '127.0.0.1';
   const server = net.createServer();
   server.listen({ port: 0, host });
   await once(server, 'listening');
+  t.after(() => new Promise((resolve) => server.close(resolve)));
   const address = server.address();
   const port = typeof address === 'object' && address ? address.port : 0;
   const result = await detectPortAvailability({ port, host });
   assert.equal(result.status, 'blocked');
-  await new Promise((resolve) => server.close(resolve));
+  assert.equal(result.error.code, 'EADDRINUSE');
 });
 
-test('collectPortDiagnostics flags blocked and available ports', async () => {
+test('collectPortDiagnostics flags blocked and available ports', async (t) => {
   const uiServer = net.createServer();
   uiServer.listen({ port: 0, host: '127.0.0.1' });
   await once(uiServer, 'listening');
+  t.after(() => new Promise((resolve) => uiServer.close(resolve)));
   const uiAddress = uiServer.address();
   const uiPort = typeof uiAddress === 'object' && uiAddress ? uiAddress.port : 0;
 
   const orchestratorServer = net.createServer();
   orchestratorServer.listen({ port: 0, host: '0.0.0.0' });
   await once(orchestratorServer, 'listening');
+  t.after(() => new Promise((resolve) => orchestratorServer.close(resolve)));
   const orchestratorAddress = orchestratorServer.address();
   const orchestratorPort =
     typeof orchestratorAddress === 'object' && orchestratorAddress ? orchestratorAddress.port : 0;
@@ -430,6 +444,7 @@ test('collectPortDiagnostics flags blocked and available ports', async () => {
   await new Promise((resolve) => uiServer.close(resolve));
   await new Promise((resolve) => orchestratorServer.close(resolve));
 
+  const attempts = mockAvailablePorts(t);
   const freeDiagnostics = await collectPortDiagnostics({
     orchestratorPort,
     uiPort,
@@ -439,15 +454,19 @@ test('collectPortDiagnostics flags blocked and available ports', async () => {
   const orchestratorFree = freeDiagnostics.find((entry) => entry.id === 'orchestrator');
   assert.equal(uiFree.status, 'available');
   assert.equal(orchestratorFree.status, 'available');
+  assert.deepEqual(attempts, [
+    { port: orchestratorPort, host: '127.0.0.1', exclusive: true },
+    { port: uiPort, host: '127.0.0.1', exclusive: true },
+  ]);
 });
 
-test('assertPortsAvailable throws when a port is blocked', async () => {
+test('assertPortsAvailable throws when a port is blocked', async (t) => {
   const server = net.createServer();
   server.listen({ port: 0, host: '127.0.0.1' });
   await once(server, 'listening');
+  t.after(() => new Promise((resolve) => server.close(resolve)));
   const address = server.address();
   const port = typeof address === 'object' && address ? address.port : 0;
   const config = { orchestratorPort: port, uiPort: port, uiHost: '127.0.0.1' };
   await assert.rejects(() => assertPortsAvailable(config), /Ports already in use/);
-  await new Promise((resolve) => server.close(resolve));
 });
