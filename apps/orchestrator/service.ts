@@ -63,6 +63,7 @@ const JOB_REGISTRY_ABI = [
   'event AgentAssigned(uint256 indexed jobId,address indexed agent,string subdomain)',
   'event ResultSubmitted(uint256 indexed jobId,address indexed worker,bytes32 resultHash,string resultURI,string subdomain)',
   'event JobCompleted(uint256 indexed jobId,bool success)',
+  'event JobFinalized(uint256 indexed jobId,address indexed worker)',
   'event JobCancelled(uint256 indexed jobId)',
   'event JobDisputed(uint256 indexed jobId,address indexed caller)',
   'function jobs(uint256 jobId) view returns (address employer,address agent,uint128 reward,uint96 stake,uint128 burnReceiptAmount,bytes32 uriHash,bytes32 resultHash,bytes32 specHash,uint256 packedMetadata)',
@@ -558,7 +559,7 @@ export class MetaOrchestrator {
     );
 
     this.registry.on('JobCompleted', (jobId: bigint, success: boolean) => {
-      this.recordSettledOutcome(jobId.toString(), success)
+      this.recordSettledOutcome(jobId.toString())
         .then(() => {
           if (!this.appliedJobs.get(jobId.toString())?.execution)
             this.appliedJobs.delete(jobId.toString());
@@ -580,6 +581,15 @@ export class MetaOrchestrator {
       if (timer) clearInterval(timer);
       this.assignmentTimers.delete(key);
       this.clearReviewTimer(key, 'job-completed');
+    });
+
+    this.registry.on('JobFinalized', (jobId: bigint) => {
+      this.recordSettledOutcome(jobId.toString()).catch((error) =>
+        console.error(
+          'Finalized outcome recording failed; journal retained',
+          error
+        )
+      );
     });
 
     this.registry.on('JobCancelled', (jobId: bigint) => {
@@ -1078,12 +1088,15 @@ export class MetaOrchestrator {
     }
   }
 
-  private async recordSettledOutcome(
-    jobId: string,
-    success: boolean
-  ): Promise<void> {
+  private async recordSettledOutcome(jobId: string): Promise<void> {
     const state = this.appliedJobs.get(jobId);
     if (!state?.execution) return;
+    // Validation may be reversed by a dispute. Train/spawn only after contract
+    // finalization is also visible at the RPC's finalized consensus block.
+    const job = await this.registry.jobs(jobId, { blockTag: 'finalized' });
+    const finalState = decodePackedJobMetadata(job.packedMetadata);
+    if (finalState.state !== 6) return;
+    const success = finalState.success === true;
     const execution = state.execution;
     if (!this.settlementJournal.claim(jobId, success)) {
       auditLog('job.settlement_reconciliation_required', {
@@ -1131,29 +1144,10 @@ export class MetaOrchestrator {
     if (this.recoveringSettlements) return;
     this.recoveringSettlements = true;
     try {
-      const latest = await this.provider.getBlockNumber();
       for (const record of this.settlementJournal.pending()) {
         try {
           await this.recoverPreparedSubmission(record.jobId);
-          // Replay the authoritative completion event, including events emitted
-          // while the process was offline; bound individual RPC log ranges.
-          for (let from = record.fromBlock; from <= latest; from += 2000) {
-            const events = await this.registry.queryFilter(
-              this.registry.filters.JobCompleted(record.jobId),
-              from,
-              Math.min(latest, from + 1999)
-            );
-            const event = events.find(
-              (item: any) => item.args && !item.removed
-            ) as any;
-            if (event) {
-              await this.recordSettledOutcome(
-                record.jobId,
-                Boolean(event.args.success ?? event.args[1])
-              );
-              break;
-            }
-          }
+          await this.recordSettledOutcome(record.jobId);
         } catch (error) {
           console.error(
             `Pending job ${record.jobId} recovery failed; journal retained`,
@@ -1207,8 +1201,8 @@ export class MetaOrchestrator {
   private async validationContext(
     jobId: bigint
   ): Promise<{ classification: ClassificationResult; spec: JobSpec | null }> {
-    const applied = this.appliedJobs.get(jobId.toString());
-    if (applied) return applied;
+    // Cached execution classification is not a cryptographic commitment.
+    // Always recover and verify the authoritative bytes before voting.
     const latest = await this.provider.getBlockNumber();
     // If the authoritative creation record is outside this bounded window,
     // abstain and require operator recovery instead of guessing the review mode.
@@ -1324,6 +1318,14 @@ export class MetaOrchestrator {
     const key = `${jobKey}:${identity.address.toLowerCase()}`;
     if (this.commits.has(key)) {
       return;
+    }
+    const cached = this.appliedJobs.get(jobKey);
+    if (needsIndependentReview(cached?.classification, cached?.spec)) {
+      auditLog('validator.independent_review_required', {
+        jobId: jobKey,
+        actor: identity.address,
+      });
+      return; // Safe abstention needs no RPC; cached data can never authorize a vote.
     }
     let applied: { classification: ClassificationResult; spec: JobSpec | null };
     try {

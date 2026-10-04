@@ -14,7 +14,7 @@ import { approveAgentEndpoint, invokeApprovedAgent } from '../agentPolicy';
 import { buildPipeline } from '../pipeline';
 import { submitJobResult } from '../submission';
 import { evaluateSubmission } from '../validation';
-import { fetchArtifactBytes } from '../artifactSource';
+import { fetchArtifactBytes, resolveArtifactUri } from '../artifactSource';
 import { MetaOrchestrator } from '../service';
 import * as execution from '../execution';
 import { prepareJobArtifacts } from '../employer';
@@ -575,6 +575,12 @@ test('settlement learning records the actual outcome once and spawns only after 
     };
     const orchestrator = {
       settlementJournal: { claim: () => true, complete: () => {} },
+      registry: {
+        jobs: async (_jobId: string, options: unknown) => {
+          assert.deepEqual(options, { blockTag: 'finalized' });
+          return { packedMetadata: success ? 14n : 6n };
+        },
+      },
       appliedJobs: new Map([['1', state]]),
       learning: {
         recordJobOutcome: async (context: any) => {
@@ -686,7 +692,7 @@ test('computer work abstains before failed RPC or artifact evaluation', async ()
   assert.equal(result.approve, false);
 });
 
-test('pending handoff survives restart and recovers a completion missed while offline exactly once', async (t) => {
+test('pending handoff survives restart and recovers finalized chain state exactly once', async (t) => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'settlement-test-'));
   t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
   const before = new SettlementJournal(dir, '1:registry');
@@ -723,7 +729,7 @@ test('pending handoff survives restart and recovers a completion missed while of
       }),
     },
     registry: {
-      jobs: async () => ({ packedMetadata: 4n }),
+      jobs: async () => ({ packedMetadata: 14n }),
       filters: { JobCompleted: () => ({}) },
       queryFilter: async (_filter: unknown, from: number, to: number) => {
         assert.ok(to - from < 2000);
@@ -778,7 +784,7 @@ test('validators recover the hash-bound job specification and abstain if context
       queryFilter: async () => [
         {
           args: {
-            uri: 'ipfs://fixture-spec',
+            uri: 'ipfs://fixtureSpec',
             specHash: ethers.keccak256(ethers.toUtf8Bytes(body)),
           },
         },
@@ -899,4 +905,141 @@ test('restart resumes a prepared submission once, but never replays a possibly b
     prototype.recoverPreparedSubmission.call(restarted, '1'),
     /assignment/
   );
+});
+
+test('IPFS paths stay beneath the configured gateway prefix', () => {
+  const gateway = 'https://internal.example/ipfs';
+  for (const reference of [
+    '../admin',
+    'cid/../admin',
+    'cid/%2e%2e/admin',
+    'cid/%252e%252e/admin',
+    'cid/%2fadmin',
+    'cid/%5cadmin',
+    'cid/..%5cadmin',
+    'cid/admin?token=x',
+    'cid/#fragment',
+    'cid//admin',
+  ]) {
+    assert.throws(() => resolveArtifactUri(`ipfs://${reference}`, gateway));
+  }
+  assert.equal(
+    resolveArtifactUri('ipfs://bafybeiexample/reports/a%20b.json', gateway),
+    'https://internal.example/ipfs/bafybeiexample/reports/a%20b.json'
+  );
+  assert.equal(
+    resolveArtifactUri('ipfs://bafybeiexample', gateway + '/'),
+    'https://internal.example/ipfs/bafybeiexample'
+  );
+});
+
+test('cached ordinary classification cannot override committed computer-work specification', async (t) => {
+  const body = JSON.stringify({ category: 'computer-work' });
+  const f = await fixture(t, (_, res) => res.end(body));
+  const prototype = MetaOrchestrator.prototype as any;
+  const validator: any = {
+    provider: { getBlockNumber: async () => 10 },
+    config: { ipfsGateway: f.endpoint },
+    commits: new Map(),
+    appliedJobs: new Map([
+      [
+        '1',
+        {
+          classification: { category: 'research' },
+          spec: { category: 'research' },
+        },
+      ],
+    ]),
+    validationContext: prototype.validationContext,
+    registry: {
+      filters: { JobCreated: () => ({}) },
+      queryFilter: async () => [
+        {
+          args: {
+            uri: 'ipfs://fixtureSpec',
+            specHash: ethers.keccak256(ethers.toUtf8Bytes(body)),
+          },
+        },
+      ],
+    },
+    validationModule: {
+      jobNonce: () => assert.fail('Must abstain based on committed category'),
+    },
+  };
+  await prototype.commitValidation.call(validator, 1n, {
+    address: ethers.ZeroAddress,
+    wallet: { connect: () => ({}) },
+  });
+});
+
+test('a trusted gateway cannot be used as an arbitrary same-origin HTTP proxy', async () => {
+  const gateway = 'https://internal.example/ipfs';
+  await assert.rejects(
+    fetchArtifactBytes('https://internal.example/admin', gateway),
+    /not approved/
+  );
+  await assert.rejects(
+    fetchArtifactBytes('https://internal.example/ipfs/%2e%2e/admin', gateway),
+    /not approved/
+  );
+  await assert.rejects(
+    fetchArtifactBytes(
+      'https://internal.example/ipfs/cid/%252e%252e/admin',
+      gateway
+    ),
+    /Invalid IPFS/
+  );
+});
+
+test('an accepted validation reversed by dispute never trains or spawns before final settlement', async () => {
+  let packedMetadata = 12n; // Completed + success, still disputable.
+  const outcomes: boolean[] = [];
+  let claims = 0;
+  const orchestrator: any = {
+    appliedJobs: new Map([
+      [
+        '1',
+        {
+          identity: {},
+          classification: {},
+          spec: {},
+          summary: {},
+          execution: {
+            runResult: {},
+            resultRef: 'ipfs://fixture',
+            chainJob: {},
+          },
+        },
+      ],
+    ]),
+    registry: {
+      jobs: async (_jobId: string, options: unknown) => {
+        assert.deepEqual(options, { blockTag: 'finalized' });
+        return { packedMetadata };
+      },
+    },
+    settlementJournal: {
+      claim: () => {
+        claims++;
+        return true;
+      },
+      complete: () => {},
+    },
+    learning: {
+      recordJobOutcome: async (context: any) => outcomes.push(context.success),
+    },
+    spawnSubtasks: () =>
+      assert.fail('Reversed acceptance must not spawn paid work'),
+  };
+  const record = (MetaOrchestrator.prototype as any).recordSettledOutcome;
+  await record.call(orchestrator, '1');
+  packedMetadata = 5n; // Disputed; previous approval was reversed.
+  await record.call(orchestrator, '1');
+  assert.deepEqual(outcomes, []);
+  assert.equal(claims, 0);
+  packedMetadata = 6n; // Finalized failure.
+  await record.call(orchestrator, '1');
+  await record.call(orchestrator, '1');
+  assert.deepEqual(outcomes, [false]);
+  assert.equal(claims, 1);
 });

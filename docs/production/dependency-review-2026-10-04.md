@@ -41,7 +41,7 @@ npm run release:check-size
 
 Enumerate the nested npm projects with `git ls-files '*package-lock.json'` and run `npm audit --package-lock-only --omit=dev --json` in each lockfile's directory. Audit failures must be retained as findings, not rewritten as success. Run `pnpm install --frozen-lockfile` and `pnpm audit --prod --json` separately in `demo/CULTURE-v0`; its pnpm workspace is distinct from the nested npm locks.
 
-**Local verification:** all 583 root contract tests pass, as do 32 computer-work/browser regression tests and 33 provider/runtime/protocol checks. Console typechecking/build/lint, validator UI build/test and Validator Constellation v2 tests/build pass. CULTURE passes all service coverage gates (indexer: 32 tests, 92.94% line coverage; studio: 28 tests, 100% line coverage), script typechecking, quality gates, application builds and its three Hardhat contract tests.
+**Local verification:** all 583 root contract tests pass, as do 36 computer-work/browser regression tests and 33 provider/runtime/protocol checks. Console typechecking/build/lint, validator UI build/test and Validator Constellation v2 tests/build pass. CULTURE passes all service coverage gates (indexer: 32 tests, 92.94% line coverage; studio: 28 tests, 100% line coverage), script typechecking, quality gates, application builds and its three Hardhat contract tests.
 
 Application compatibility checks include console typechecking/build/lint, validator UI build/tests, Validator Constellation v2 tests/build, CULTURE indexer Prisma generation/build/tests, CULTURE service coverage, and Pages build/browser checks. CI must pass on the exact proposed commit before merge. Real provider integration, independent security review and target-network commissioning remain necessary.
 
