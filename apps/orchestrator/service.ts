@@ -6,7 +6,7 @@ import {
   JobSpec,
   classifyJob,
   extractPipeline,
-  fetchJobSpec,
+  fetchCommittedJobSpec,
   ChainJobSummary,
 } from './jobClassifier';
 import { buildPipeline, PipelineContext } from './pipeline';
@@ -26,7 +26,6 @@ import { AuditAnchoringService, AuditAnchoringOptions } from './anchoring';
 import { getWatchdog } from './monitor';
 import { postJob } from './employer';
 import { evaluateSubmission, needsIndependentReview } from './validation';
-import { fetchArtifactBytes, resolveArtifactUri } from './artifactSource';
 import { SettlementJournal } from './settlementJournal';
 import { LearningCoordinator } from './learning';
 import {
@@ -551,6 +550,7 @@ export class MetaOrchestrator {
           reward: reward.toString(),
           stake: stake.toString(),
           uri,
+          specHash,
         };
         this.handleJobCreated(summary).catch((err) => {
           console.error('JobCreated handler failed', err);
@@ -804,9 +804,11 @@ export class MetaOrchestrator {
     if (summary.agent && summary.agent !== ethers.ZeroAddress) {
       return;
     }
-    const spec = await fetchJobSpec(summary.uri, {
-      gatewayUrl: this.config.ipfsGateway,
-    });
+    const spec = await fetchCommittedJobSpec(
+      summary.uri,
+      summary.specHash,
+      this.config.ipfsGateway
+    );
     const classification = classifyJob(summary, spec ?? undefined);
     auditLog('job.detected', {
       jobId: summary.jobId,
@@ -1216,25 +1218,11 @@ export class MetaOrchestrator {
     const args = event.args;
     const uri = args.uri ?? args[7];
     const specHash = args.specHash ?? args[6];
-    let spec: JobSpec | null = null;
-    if (uri) {
-      const artifact = await fetchArtifactBytes(
-        resolveArtifactUri(uri, this.config.ipfsGateway),
-        this.config.ipfsGateway
-      );
-      if (
-        !specHash ||
-        specHash === ethers.ZeroHash ||
-        ethers.keccak256(artifact).toLowerCase() !==
-          String(specHash).toLowerCase()
-      )
-        throw new Error(
-          'Authoritative job specification hash mismatch or missing'
-        );
-      spec = JSON.parse(Buffer.from(artifact).toString('utf8'));
-      if (!spec || typeof spec !== 'object' || Array.isArray(spec))
-        throw new Error('Invalid job specification');
-    }
+    const spec = await fetchCommittedJobSpec(
+      uri,
+      specHash,
+      this.config.ipfsGateway
+    );
     return {
       classification: classifyJob(
         { jobId: jobId.toString(), uri },

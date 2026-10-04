@@ -1043,3 +1043,65 @@ test('an accepted validation reversed by dispute never trains or spawns before f
   assert.deepEqual(outcomes, [false]);
   assert.equal(claims, 1);
 });
+
+test('uncommitted task bytes are rejected before worker selection, stake or application', async (t) => {
+  const committed = JSON.stringify({
+    category: 'computer-work',
+    metadata: { computerWork: task },
+  });
+  const changed = JSON.stringify({
+    category: 'research',
+    metadata: { computerWork: task },
+  });
+  const f = await fixture(t, (_, res) => res.end(changed));
+  const orchestrator: any = {
+    config: { ipfsGateway: f.endpoint },
+    selectAgent: () =>
+      assert.fail('Uncommitted bytes must not reach worker selection'),
+    applyForJob: () => assert.fail('Uncommitted bytes must not stake or apply'),
+  };
+  await assert.rejects(
+    (MetaOrchestrator.prototype as any).handleJobCreated.call(orchestrator, {
+      jobId: '1',
+      uri: f.endpoint,
+      specHash: ethers.keccak256(ethers.toUtf8Bytes(committed)),
+    }),
+    /hash mismatch/
+  );
+});
+
+test('worker application receives exactly the hash-verified specification', async (t) => {
+  const spec = { category: 'computer-work', metadata: { computerWork: task } };
+  const body = JSON.stringify(spec);
+  const f = await fixture(t, (_, res) => res.end(body));
+  let applied = false;
+  const orchestrator: any = {
+    config: { ipfsGateway: f.endpoint },
+    selectAgent: async (
+      _summary: unknown,
+      classification: any,
+      actual: unknown
+    ) => {
+      assert.deepEqual(actual, spec);
+      assert.equal(classification.category, 'computer-work');
+      return { identity: { address: ethers.ZeroAddress } };
+    },
+    applyForJob: async (
+      _summary: unknown,
+      _classification: unknown,
+      actual: unknown
+    ) => {
+      assert.deepEqual(actual, spec);
+      applied = true;
+    },
+  };
+  await (MetaOrchestrator.prototype as any).handleJobCreated.call(
+    orchestrator,
+    {
+      jobId: '1',
+      uri: 'ipfs://fixtureSpec',
+      specHash: ethers.keccak256(ethers.toUtf8Bytes(body)),
+    }
+  );
+  assert.equal(applied, true);
+});
