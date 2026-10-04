@@ -2,6 +2,10 @@
 
 The public showcase at <https://montrealai.github.io/AGIJobsv0/> is built from the repository's tracked demo inventory. It provides a searchable collection, an individual page for every demo/support directory, original guides with Mermaid diagrams, and a clearly labeled browser-only lifecycle walkthrough.
 
+The homepage spotlights **CULTURE Studio** and **AGI Jobs Platform at Kardashev II Scale** before the full collection. Header navigation and hero shortcuts lead to the featured experiences; each illustrated card explains three useful actions, links directly to the browser demo and its source-backed walkthrough, and states its preview or simulation scope. `scripts/pages/featured.mjs` owns this presentation. Its catalog references must resolve at build time. All existing discovery cards, guides and diagrams remain available.
+
+Browser QA opens both featured demos using the keyboard, checks return navigation and mobile menu behavior, captures desktop/mobile spotlights, and verifies the launch links remain available without JavaScript. Layout checks cover 320, 390, 768, 900, 1024 and 1440 pixels alongside WCAG A/AA accessibility checks. Component screenshots hide fixed navigation only while capturing the image so the header does not obscure the tall mobile cards.
+
 ## Build and verify
 
 Use the root `.nvmrc` toolchain and locked dependencies:

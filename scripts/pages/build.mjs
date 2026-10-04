@@ -9,6 +9,7 @@ import { JSDOM } from 'jsdom';
 import createDOMPurify from 'dompurify';
 import { build as bundle } from 'esbuild';
 import { loadExperiences, renderExperience } from './experiences.mjs';
+import { renderFeaturedDemos, renderHeroSpotlight } from './featured.mjs';
 
 const require = createRequire(import.meta.url);
 const { inventory } = require('../demo/catalog.cjs');
@@ -244,7 +245,9 @@ function chrome({
     'assets/site.css'
   )}"><script type="module" src="${href(
     'assets/site.js'
-  )}"></script></head><body><a class="skip-link" href="#main">Skip to content</a><header class="site-header"><div class="header-inner"><a class="brand" href="${base}" aria-label="AGI Jobs home"><span class="brand-mark" aria-hidden="true">✧</span><span>AGI <strong>JOBS</strong><small>DEMO OBSERVATORY</small></span></a><button id="menu-toggle" class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav">Menu <span aria-hidden="true">☰</span></button><nav id="site-nav" aria-label="Primary navigation"><a ${
+  )}"></script></head><body><a class="skip-link" href="#main">Skip to content</a><header class="site-header"><div class="header-inner"><a class="brand" href="${base}" aria-label="AGI Jobs home"><span class="brand-mark" aria-hidden="true">✧</span><span>AGI <strong>JOBS</strong><small>DEMO OBSERVATORY</small></span></a><button id="menu-toggle" class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav">Menu <span aria-hidden="true">☰</span></button><nav id="site-nav" aria-label="Primary navigation"><a href="${href(
+    '#featured'
+  )}">Featured demos</a><a ${
     active === 'catalog' ? 'aria-current="page"' : ''
   } href="${href('#explore')}">Explore demos</a><a href="${href(
     '#walkthrough'
@@ -418,7 +421,12 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
     )
     .join('');
   const setup = `git clone https://github.com/MontrealAI/AGIJobsv0.git\ncd AGIJobsv0\nnvm install\nnvm use\nnpm ci\nnpm run demo:aurora:local`;
-  const body = `<main id="main"><section class="hero section-wrap"><div class="hero-copy"><p class="eyebrow"><span></span> AGI JOBS / THE DEMO OBSERVATORY</p><h1>Intelligence,<br><em>put to work.</em></h1><p class="hero-description">Explore the systems that turn a mission into evidence, validation and settlement. From one local job to the frontiers of coordinated intelligence.</p><div class="hero-actions"><a class="button primary" href="#explore">Explore the demos <span aria-hidden="true">↗</span></a><a class="text-link" href="#walkthrough"><span class="play-icon" aria-hidden="true">▷</span> See how a job works</a></div><p class="hero-note">Open source. Inspectable. Start without a wallet.</p></div>${orbit()}</section><div class="metric-strip section-wrap"><div><strong>${
+  const body = `<main id="main"><section class="hero section-wrap"><div class="hero-copy"><p class="eyebrow"><span></span> AGI JOBS / THE DEMO OBSERVATORY</p><h1>Intelligence,<br><em>put to work.</em></h1><p class="hero-description">Explore the systems that turn a mission into evidence, validation and settlement. From one local job to the frontiers of coordinated intelligence.</p><div class="hero-actions"><a class="button primary" href="#explore">Explore the demos <span aria-hidden="true">↗</span></a><a class="text-link" href="#walkthrough"><span class="play-icon" aria-hidden="true">▷</span> See how a job works</a></div><p class="hero-note">Open source. Inspectable. Start without a wallet.</p>${renderHeroSpotlight(
+    base
+  )}</div>${orbit()}</section>${renderFeaturedDemos(
+    base,
+    catalog
+  )}<div class="metric-strip section-wrap"><div><strong>${
     catalog.length
   }<span> /</span></strong><span>catalog entries</span></div><div><strong>${
     Object.keys(data.commands).length
