@@ -91,6 +91,10 @@ In the **preview**, select an artifact and 1–12 students. Set a target success
 
 In **service mode**, use the explicit lifecycle form: supply distinct nonzero EVM participant addresses and an integer difficulty, start a round, record actual evidence CIDs while open, close submissions, review approved student winners, and finalize separately. An empty winner list explicitly approves nobody. The UI never invents participants or auto-submits winners. Only submitted students may win, and teacher evidence is required. A CID submission is an operator assertion; it does not prove external validator consensus.
 
+The displayed submission deadline is absolute: teacher and student evidence must arrive before `deadlineAt`, including evidence received through registry events. API acknowledgements wait for the local snapshot write. Duplicate or late events cannot reopen a round or replace accepted evidence. Finalization requires an explicit reviewed winner list in both the HTTP API and the service library; a submission alone never counts as a pass. If no student passes, submit `winners: []`.
+
+The on-chain adapter matches the included contract's `registerParticipant` and six-argument `finalizeRound` ABI. The service sends observed success in basis points, `forceFinalize=false`, no claimed validator winners, and Elo event ID `0` because its local rating adapter creates no external event. Student winners and validator winners are separate concepts. Contract validation must succeed before the service applies the difficulty/PID update or Elo outcome. Slashing remains a separate authorized contract operation, never an implicit consequence of this finalization call.
+
 ## 5. Owner Controls
 
 | Action | Available implementation |
@@ -122,7 +126,10 @@ In **service mode**, use the explicit lifecycle form: supply distinct nonzero EV
 | HTTP 401 | Apply the configured operator API token. The fixture token is in your private `.env.local`; do not publish it. |
 | Service unreachable / GraphQL error | Check configured browser URLs, CORS origins, Compose health and logs. No fictional success is substituted. |
 | Round cannot finalize | Verify it is closed, teacher evidence is submitted, and every winner is a submitted student in that round. Inspect actual participant status. |
-| Failed/ambiguous chain operation | Stop writes and reconcile transaction receipts, on-chain state and local snapshots. Mutating arena transactions are not blindly retried; failed finalization is not reported as finalized. |
+| Submission deadline passed | Preserve received evidence, close the round, and review it. Deadlines do not restart after teacher submission; late registry notifications cannot extend them. A round without teacher evidence cannot finalize. |
+| HTTP 404 for a round | Confirm the selected round ID and service instance. A missing round is reported distinctly from a server failure. |
+| Submission storage failure | The request fails and the affected round becomes failed in memory. Preserve the previous snapshot and inspect storage before reconciliation; no successful acknowledgement is issued. |
+| Failed/ambiguous chain operation | Stop writes and reconcile transaction receipts, on-chain state and local snapshots. Mutating arena transactions are not blindly retried; an ambiguous close blocks further submissions, and failed contract finalization does not advance difficulty/PID history or Elo. A browser timeout does not prove the operation was canceled: load status and inspect logs before retrying. |
 | Restart during an active round | Active rounds fail closed on restart because local job records and PID history are not durably restored. Historical rounds remain visible and new local IDs advance without overwriting them. Preserve snapshots and reconcile manually; this is not full crash recovery. |
 | Indexer influence stale | Inspect event ingestion, RPC logs and persisted cursor; use documented indexer CLI commands. Do not assume an unimplemented admin endpoint exists. |
 | Compose service stuck starting | `docker compose --env-file .env.local logs <service>` and inspect container health details before changing any state. |
@@ -145,7 +152,10 @@ corepack pnpm typecheck:scripts
 # Requires Foundry; full CI also runs static analysis and Compose/Cypress:
 corepack pnpm test:contracts
 corepack pnpm test:contracts:hardhat
+corepack pnpm test:arena-adapter
 ```
+
+`test:arena-adapter` compiles the actual contract and adapter, starts its own loopback Hardhat chain, verifies every adapter ABI fragment against compiled Solidity, exercises registration/closure/finalization, and confirms validator rejection stays unfinalized. It uses explicitly simulated identity, job, stake, and validation dependency contracts and always stops its temporary chain. It does not accept an external RPC or signing key. This catches integration drift without claiming independent security review or real provider commissioning.
 
 To build the entire Observatory from the repository root, install its locked npm dependencies **and** this pnpm workspace, then run `npm run site:build`, `npm run site:test`, `npm run site:qa`, and `node scripts/pages/culture-qa.mjs`.
 

@@ -40,13 +40,42 @@ async function requestJson<T>(url: string, body?: unknown): Promise<T> {
       },
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     });
-    if (!response.ok)
-      throw new Error(
-        `Request failed (HTTP ${response.status}). Check service configuration and operator access.`,
-      );
+    if (!response.ok) {
+      let detail = 'Check service configuration and operator access.';
+      if (response.status === 400 || response.status === 404) {
+        // Only expected domain/validation errors are suitable for operators.
+        // Do not expose server exception bodies or gateway HTML.
+        try {
+          const problem: unknown = JSON.parse(await response.text());
+          if (
+            typeof problem === 'object' &&
+            problem !== null &&
+            'error' in problem &&
+            typeof problem.error === 'string' &&
+            problem.error.length <= 240
+          )
+            detail =
+              problem.error === 'validation_error'
+                ? 'Check the required fields, participant addresses, and numeric limits.'
+                : problem.error;
+        } catch {
+          // Retain the generic explanation for an unreadable error response.
+        }
+      }
+      throw new Error(`Request failed (HTTP ${response.status}). ${detail}`);
+    }
     const raw = await response.text();
     if (!raw) throw new Error('Service returned an empty response.');
     return JSON.parse(raw) as T;
+  } catch (error) {
+    if (abort.signal.aborted)
+      throw new Error(
+        body !== undefined && url.startsWith(`${orchestratorUrl}/`)
+          ? 'Request timed out after 15 seconds. The operation may still complete. Load the round status and inspect service logs before retrying.'
+          : 'Request timed out after 15 seconds. Check the service connection and try loading again.',
+        { cause: error },
+      );
+    throw error;
   } finally {
     clearTimeout(timeout);
   }
@@ -258,6 +287,7 @@ export interface ServiceRound {
   id: number;
   status: string;
   difficulty: number;
+  deadlineAt?: string;
   teacher: { address: string; status: string };
   students: { address: string; status: string }[];
   validators: { address: string; status: string }[];

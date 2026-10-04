@@ -25,6 +25,19 @@ flowchart LR
 ```
 
 ## Working With This Module
+
+The HTTP service supports explicit arena operations with serialized lifecycle writes. Submission acknowledgements wait for persistence; evidence received after closure or the absolute deadline is rejected, and replayed events cannot overwrite accepted work. Winner selection is always an explicit operator review. Failed contract finalization leaves the confirmed difficulty/PID state and ratings unchanged. An ambiguous close fails the affected round closed. These safeguards do not make local snapshots a complete distributed transaction journal.
+
+The bundled job registry is isolated per client/service and remains an in-memory fixture. Job IDs must correspond to real upstream jobs before using the service against a commissioned arena. In particular, an address and private key alone do not connect fixture job creation to an on-chain JobRegistry. For a reproducible adapter-only rehearsal, run `pnpm test:arena-adapter` from `demo/CULTURE-v0`; it provisions and cleans up its own chain with labeled mock dependencies.
+
+| Operation | Contract mapping / behavior |
+| --- | --- |
+| Register student / validator | `registerParticipant(roundId, 0 or 1, jobId, address)` |
+| Finalize | Observed success in basis points; no forced validation, invented validator winners, external Elo event, or implicit slashing. |
+| Missing round | HTTP 404 with the requested ID. |
+| Invalid, late, or duplicate evidence | HTTP 400 with an actionable explanation. |
+| Unexpected storage/provider error | HTTP 500; inspect operator logs and reconcile before retrying. |
+
 1. From `demo/CULTURE-v0`, run `corepack pnpm install --frozen-lockfile` to install this independent workspace.
 2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `demo/CULTURE-v0/backend/arena-orchestrator`.
 3. From `demo/CULTURE-v0`, execute `corepack pnpm lint`, `corepack pnpm format`, and `corepack pnpm test:services`; the full CI additionally checks contracts, budgets, and the fixture stack.

@@ -1,6 +1,9 @@
 import { Interface } from 'ethers';
 import type { Log } from 'ethers';
-import { startedRoundId } from '../src/selfplay-arena.js';
+import {
+  startedRoundId,
+  requireConfirmedReceipt,
+} from '../src/selfplay-arena.js';
 
 const arena = '0x1111111111111111111111111111111111111111';
 const other = '0x2222222222222222222222222222222222222222';
@@ -23,6 +26,18 @@ function roundLog(
 }
 
 describe('confirmed arena round identifiers', () => {
+  it.each([null, { status: null }, { status: 0 }])(
+    'rejects missing or unsuccessful mutation receipts: %s',
+    (receipt) => {
+      expect(() => requireConfirmedReceipt(receipt)).toThrow(
+        'successful confirmed receipt',
+      );
+    },
+  );
+  it('accepts only a confirmed successful receipt', () => {
+    const receipt = { status: 1, hash: 'confirmed' };
+    expect(requireConfirmedReceipt(receipt)).toBe(receipt);
+  });
   it('uses the mined event ID and ignores matching events from other contracts', () => {
     expect(
       startedRoundId({ logs: [roundLog(41n, other), roundLog(42n)] }, arena),

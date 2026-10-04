@@ -1,18 +1,25 @@
 import { Contract, Interface, JsonRpcProvider, Wallet } from 'ethers';
 import type { Log } from 'ethers';
 
-const SELF_PLAY_ARENA_ABI = [
+export const SELF_PLAY_ARENA_ABI = [
   'event RoundStarted(uint256 indexed roundId, uint256 indexed teacherJobId, address indexed teacher, uint32 difficulty, uint64 startedAt)',
   'function totalRounds() view returns (uint256)',
   'function startRound(uint256 teacherJobId, address teacher, uint32 difficulty) returns (uint256)',
-  'function registerStudentJob(uint256 roundId, uint256 jobId, address student)',
-  'function registerValidatorJob(uint256 roundId, uint256 jobId, address validator)',
+  'function registerParticipant(uint256 roundId, uint8 participantKind, uint256 jobId, address participant)',
   'function closeRound(uint256 roundId)',
-  'function finalizeRound(uint256 roundId, int32 difficultyDelta, address[] slashedValidators, uint256 slashAmount, address slashRecipient)',
+  'function finalizeRound(uint256 roundId, int32 difficultyDelta, uint32 observedSuccessRateBps, uint32 eloEventId, bool forceFinalize, address[] winningValidators)',
 ] as const;
 
 const arenaInterface = new Interface(SELF_PLAY_ARENA_ABI);
 const roundStartedTopic = arenaInterface.getEvent('RoundStarted')!.topicHash;
+
+export function requireConfirmedReceipt<T extends { status: number | null }>(
+  receipt: T | null,
+): T {
+  if (!receipt || receipt.status !== 1)
+    throw new Error('Arena transaction has no successful confirmed receipt');
+  return receipt;
+}
 
 export function startedRoundId(
   receipt: { logs: ReadonlyArray<Pick<Log, 'address' | 'topics' | 'data'>> },
@@ -59,9 +66,10 @@ export interface SelfPlayArenaClient {
   readonly finalizeRound: (
     roundId: number,
     difficultyDelta: number,
-    slashedValidators: readonly string[],
-    slashAmount: bigint,
-    slashRecipient?: string,
+    observedSuccessRateBps: number,
+    eloEventId: number,
+    forceFinalize: boolean,
+    winningValidators: readonly string[],
   ) => Promise<void>;
 }
 
@@ -75,7 +83,8 @@ export class OnChainSelfPlayArenaClient implements SelfPlayArenaClient {
     rpcUrl: string,
     privateKey: string,
   ) {
-    this.provider = new JsonRpcProvider(rpcUrl);
+    // Writes are serialized by ArenaService; read the fresh nonce for each one.
+    this.provider = new JsonRpcProvider(rpcUrl, undefined, { cacheTimeout: 0 });
     this.wallet = new Wallet(privateKey, this.provider);
     this.contract = new Contract(address, SELF_PLAY_ARENA_ABI, this.wallet);
   }
@@ -103,8 +112,7 @@ export class OnChainSelfPlayArenaClient implements SelfPlayArenaClient {
   ): Promise<number> {
     const startRound = this.contract.getFunction('startRound');
     const tx = await startRound.send(teacherJobId, teacher, difficulty);
-    const receipt = await tx.wait();
-    if (!receipt) throw new Error('Arena transaction has no confirmed receipt');
+    const receipt = requireConfirmedReceipt(await tx.wait());
     return startedRoundId(receipt, this.address);
   }
 
@@ -113,9 +121,9 @@ export class OnChainSelfPlayArenaClient implements SelfPlayArenaClient {
     jobId: number,
     student: string,
   ): Promise<void> {
-    const register = this.contract.getFunction('registerStudentJob');
-    const tx = await register.send(roundId, jobId, student);
-    await tx.wait();
+    const register = this.contract.getFunction('registerParticipant');
+    const tx = await register.send(roundId, 0, jobId, student);
+    requireConfirmedReceipt(await tx.wait());
   }
 
   async registerValidator(
@@ -123,35 +131,35 @@ export class OnChainSelfPlayArenaClient implements SelfPlayArenaClient {
     jobId: number,
     validator: string,
   ): Promise<void> {
-    const register = this.contract.getFunction('registerValidatorJob');
-    const tx = await register.send(roundId, jobId, validator);
-    await tx.wait();
+    const register = this.contract.getFunction('registerParticipant');
+    const tx = await register.send(roundId, 1, jobId, validator);
+    requireConfirmedReceipt(await tx.wait());
   }
 
   async closeRound(roundId: number): Promise<void> {
     const close = this.contract.getFunction('closeRound');
     const tx = await close.send(roundId);
-    await tx.wait();
+    requireConfirmedReceipt(await tx.wait());
   }
 
   async finalizeRound(
     roundId: number,
     difficultyDelta: number,
-    slashedValidators: readonly string[],
-    slashAmount: bigint,
-    slashRecipient?: string,
+    observedSuccessRateBps: number,
+    eloEventId: number,
+    forceFinalize: boolean,
+    winningValidators: readonly string[],
   ): Promise<void> {
-    const recipient =
-      slashRecipient ?? '0x0000000000000000000000000000000000000000';
     const finalize = this.contract.getFunction('finalizeRound');
     const tx = await finalize.send(
       roundId,
       difficultyDelta,
-      slashedValidators,
-      slashAmount,
-      recipient,
+      observedSuccessRateBps,
+      eloEventId,
+      forceFinalize,
+      winningValidators,
     );
-    await tx.wait();
+    requireConfirmedReceipt(await tx.wait());
   }
 }
 
@@ -192,8 +200,9 @@ export class InMemorySelfPlayArenaClient implements SelfPlayArenaClient {
   async finalizeRound(
     _roundId: number,
     _difficultyDelta: number,
-    _slashedValidators: readonly string[],
-    _slashAmount: bigint,
-    _slashRecipient?: string,
+    _observedSuccessRateBps: number,
+    _eloEventId: number,
+    _forceFinalize: boolean,
+    _winningValidators: readonly string[],
   ): Promise<void> {}
 }

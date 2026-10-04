@@ -214,7 +214,67 @@ describe('service transport and schema boundaries', () => {
           ),
         ),
     );
-    const result = expect(api.fetchScoreboard()).rejects.toThrow('aborted');
+    const result = expect(api.fetchScoreboard()).rejects.toThrow(
+      'timed out after 15 seconds',
+    );
+    await vi.advanceTimersByTimeAsync(15000);
+    await result;
+  });
+  test('explains domain errors without exposing server exception bodies', async () => {
+    fetchMock.mockResolvedValue({
+      ...response({ error: 'The submission deadline has passed.' }, false),
+      status: 400,
+    });
+    await expect(
+      api.submitServiceWork(1, 'teacher', 'cid:proof'),
+    ).rejects.toThrow('deadline has passed');
+    fetchMock.mockResolvedValue({
+      ...response({ error: 'validation_error' }, false),
+      status: 400,
+    });
+    await expect(api.closeServiceRound(1)).rejects.toThrow('required fields');
+    fetchMock.mockResolvedValue({
+      ...response({ error: 'Round 999 not found' }, false),
+      status: 404,
+    });
+    await expect(api.loadServiceRound(999)).rejects.toThrow(
+      'Round 999 not found',
+    );
+    fetchMock.mockResolvedValue({
+      ...response({ error: 'private-server-details' }, false),
+      status: 500,
+    });
+    await expect(api.closeServiceRound(1)).rejects.toThrow(
+      'Check service configuration',
+    );
+    fetchMock.mockResolvedValue({
+      ok: false,
+      status: 400,
+      text: async () => '<html>gateway error</html>',
+    });
+    await expect(api.closeServiceRound(1)).rejects.toThrow(
+      'Check service configuration',
+    );
+    for (const error of [null, {}, { error: 1 }, { error: 'x'.repeat(241) }]) {
+      fetchMock.mockResolvedValue({ ...response(error, false), status: 400 });
+      await expect(api.closeServiceRound(1)).rejects.toThrow(
+        'Check service configuration',
+      );
+    }
+  });
+  test('treats a timed-out write as ambiguous rather than safe to repeat', async () => {
+    vi.useFakeTimers();
+    fetchMock.mockImplementation(
+      (_url, options) =>
+        new Promise((_resolve, reject) =>
+          options.signal.addEventListener('abort', () =>
+            reject(new Error('aborted')),
+          ),
+        ),
+    );
+    const result = expect(api.closeServiceRound(1)).rejects.toThrow(
+      'may still complete',
+    );
     await vi.advanceTimersByTimeAsync(15000);
     await result;
   });

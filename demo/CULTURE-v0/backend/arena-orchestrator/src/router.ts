@@ -1,6 +1,10 @@
 import express from 'express';
 import { z } from 'zod';
-import { ArenaInputError, ArenaService } from './arena.service.js';
+import {
+  ArenaInputError,
+  ArenaNotFoundError,
+  ArenaService,
+} from './arena.service.js';
 import { asyncHandler } from './async-handler.js';
 import { requireWriteToken } from './auth.js';
 import { buildStructuredLogRecord } from '../../../../../shared/structuredLogger.js';
@@ -25,14 +29,18 @@ const startSchema = z
   })
   .strict();
 
-const finalizeSchema = z.object({
-  winners: z.array(address).max(32),
-});
+const finalizeSchema = z
+  .object({
+    winners: z.array(address).max(32),
+  })
+  .strict();
 
-const submissionSchema = z.object({
-  participant: address,
-  cid: z.string().trim().min(5).max(512),
-});
+const submissionSchema = z
+  .object({
+    participant: address,
+    cid: z.string().trim().min(5).max(512),
+  })
+  .strict();
 
 export function buildRouter(
   service: ArenaService,
@@ -152,6 +160,10 @@ export function buildRouter(
       });
       console.error(JSON.stringify(log));
 
+      if (error instanceof ArenaNotFoundError) {
+        res.status(404).json({ error: error.message });
+        return;
+      }
       if (error instanceof ArenaInputError) {
         res.status(400).json({ error: error.message });
         return;

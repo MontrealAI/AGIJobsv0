@@ -11,6 +11,7 @@
     "test:contracts:gas:update": "pnpm exec forge snapshot --no-match-test testFuzz --snap gas-snapshots/.gas-snapshot",
     "test:contracts:coverage": "pnpm exec forge coverage --ir-minimum --out out/coverage --cache-path cache/coverage --report lcov --report summary",
     "test:contracts:hardhat": "pnpm exec hardhat test --config hardhat.config.ts",
+    "test:arena-adapter": "pnpm exec hardhat compile && pnpm --filter culture-arena-orchestrator build && node scripts/check-arena-adapter.mjs",
     "test:contracts:coverage:hardhat": "pnpm exec hardhat coverage --config hardhat.coverage.config.ts",
     "test:services": "pnpm -r --filter ./backend/arena-orchestrator test:coverage && pnpm -r --filter ./indexers/culture-graph-indexer test:coverage && pnpm -r --filter ./apps/culture-studio test:coverage",
     "test:e2e": "pnpm run e2e:compose",
@@ -20,7 +21,7 @@
     "check:coverage": "node scripts/check-coverage-thresholds.mjs",
     "check:budgets": "pnpm exec ts-node --project tsconfig.json scripts/check-budgets.ts",
     "test:quality-gates": "node --test scripts/test/*.test.mjs",
-    "test": "pnpm run lint && pnpm run test:contracts && pnpm run test:contracts:hardhat && pnpm run test:services && pnpm run check:coverage && pnpm run check:budgets",
+    "test": "pnpm run lint && pnpm run test:contracts && pnpm run test:contracts:hardhat && pnpm run test:arena-adapter && pnpm run test:services && pnpm run check:coverage && pnpm run check:budgets",
     "typecheck:scripts": "tsc --noEmit --project tsconfig.json"
   },
   "devDependencies": {
