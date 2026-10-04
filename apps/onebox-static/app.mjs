@@ -1,4 +1,7 @@
 import * as Config from "./config.mjs";
+import { createPreviewSession } from "./preview-model.mjs";
+const previewSession = createPreviewSession();
+function isObject(value) { return value !== null && typeof value === 'object' && !Array.isArray(value); }
 import { drainSSEBuffer, sanitizeSSEChunk } from "./sse-parser.mjs";
 
 export { drainSSEBuffer, sanitizeSSEChunk } from "./sse-parser.mjs";
@@ -68,7 +71,7 @@ const IPFS_GATEWAYS = Array.isArray(Config.IPFS_GATEWAYS) && Config.IPFS_GATEWAY
 const MAX_HISTORY = 10;
 const STATUS_REFRESH_MS = (() => {
   const raw =
-    Config.STATUS_REFRESH_MS ?? Config.STATUS_REFRESH_INTERVAL_MS ?? Config.STATUS_POLL_INTERVAL_MS;
+    Config.STATUS_REFRESH_MS;
   const parsed = Number(raw);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : 15000;
 })();
@@ -111,15 +114,9 @@ const storage = (() => {
   return null;
 })();
 
-if (hasDocument) {
-  applyUrlOverrides();
-}
-
-if (ownerConsole) {
-  initOwnerConsole();
-}
-
-let endpoints = resolveEndpoints();
+let endpoints;
+let pageBaseOverride = null;
+let pagePrefixOverride = null;
 let lastModeDescriptor = null;
 
 const MAX_ATTACHMENT_QUEUE = 3;
@@ -129,6 +126,7 @@ let busy = false;
 let history = [];
 let confirmCallback = null;
 let advancedLogEl = null;
+let lastAdvancedData = null;
 let statusTimer = null;
 let statusLoading = false;
 let lastStatusFingerprint = "";
@@ -189,7 +187,11 @@ function sanitizeUrlCandidate(value) {
 function sanitizeBaseUrl(value) {
   const candidate = sanitizeUrlCandidate(value);
   if (!candidate) return "";
-  return candidate.replace(/\/+$/, "");
+  try {
+    const url = new URL(candidate);
+    if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password || url.search || url.hash) return '';
+    return url.href.replace(/\/+$/, '');
+  } catch { return ''; }
 }
 
 function sanitizePrefixSegment(value) {
@@ -314,23 +316,26 @@ function readStoredValue(key) {
 }
 
 function readStoredBase() {
+  if (pageBaseOverride !== null) return pageBaseOverride;
   const value = readStoredValue(STORAGE_KEYS.base);
-  return value ? sanitizeBaseUrl(value) : null;
+  return value === "demo" ? "" : value ? sanitizeBaseUrl(value) : null;
 }
 
 function readStoredPrefix() {
+  if (pagePrefixOverride !== null) return pagePrefixOverride;
   const value = readStoredValue(STORAGE_KEYS.prefix);
-  return value ? sanitizePrefixSegment(value) : null;
+  return value === "(root)" ? "" : value ? sanitizePrefixSegment(value) : null;
 }
 
 function setStoredBase(value) {
-  if (!storage) return;
   const sanitized = sanitizeBaseUrl(value);
+  pageBaseOverride = sanitized;
+  if (!storage) return;
   try {
     if (sanitized) {
       storage.setItem(STORAGE_KEYS.base, sanitized);
     } else {
-      storage.removeItem(STORAGE_KEYS.base);
+      storage.setItem(STORAGE_KEYS.base, "demo");
     }
   } catch (err) {
     // ignore
@@ -338,55 +343,30 @@ function setStoredBase(value) {
 }
 
 function setStoredPrefix(value) {
-  if (!storage) return;
   const sanitized = sanitizePrefixSegment(value);
+  pagePrefixOverride = sanitized;
+  if (!storage) return;
   try {
     if (sanitized) {
       storage.setItem(STORAGE_KEYS.prefix, sanitized);
     } else {
-      storage.removeItem(STORAGE_KEYS.prefix);
+      storage.setItem(STORAGE_KEYS.prefix, "(root)");
     }
   } catch (err) {
     // ignore
   }
 }
 
-function getStoredApiToken() {
-  if (!storage || typeof storage.getItem !== "function") return "";
-  try {
-    const raw = storage.getItem(ORCHESTRATOR_TOKEN_STORAGE_KEY);
-    if (typeof raw !== "string") return "";
-    return sanitizeAuthToken(raw);
-  } catch (err) {
-    return "";
-  }
-}
-
-function setStoredApiToken(value) {
-  if (!storage || typeof storage.setItem !== "function") return null;
-  const sanitized = sanitizeAuthToken(value);
-  try {
-    if (sanitized) {
-      storage.setItem(ORCHESTRATOR_TOKEN_STORAGE_KEY, sanitized);
-    } else {
-      storage.removeItem(ORCHESTRATOR_TOKEN_STORAGE_KEY);
-    }
-  } catch (err) {
-    // ignore storage failures
-  }
-  return sanitized ? true : false;
-}
-
-function clearStoredApiToken() {
-  if (!storage || typeof storage.removeItem !== "function") return;
-  try {
-    storage.removeItem(ORCHESTRATOR_TOKEN_STORAGE_KEY);
-  } catch (err) {
-    // ignore
-  }
-}
+// Credentials stay in memory for this page and are never persisted or exported.
+let sessionApiToken = '';
+function getStoredApiToken() { return sessionApiToken; }
+function setStoredApiToken(value) { sessionApiToken = sanitizeAuthToken(value); return Boolean(sessionApiToken); }
+function clearStoredApiToken() { sessionApiToken = ''; }
 
 function clearStoredOrchestrator() {
+  pageBaseOverride = "";
+  pagePrefixOverride = "";
+  clearStoredApiToken();
   if (!storage) return;
   try {
     storage.removeItem(STORAGE_KEYS.base);
@@ -474,9 +454,10 @@ function computeEndpointsFromBase(base, prefix) {
       status: null,
     };
   }
-  const root = joinUrlSegments(sanitizedBase, sanitizedPrefix);
+  const baseWithoutPrefix = sanitizedPrefix && sanitizedBase.endsWith(`/${sanitizedPrefix}`) ? sanitizedBase.slice(0, -(sanitizedPrefix.length + 1)) : sanitizedBase;
+  const root = joinUrlSegments(baseWithoutPrefix, sanitizedPrefix);
   return {
-    base: sanitizedBase,
+    base: baseWithoutPrefix,
     prefix: sanitizedPrefix,
     plan: joinUrlSegments(root, "plan"),
     exec: joinUrlSegments(root, "execute"),
@@ -485,6 +466,7 @@ function computeEndpointsFromBase(base, prefix) {
 }
 
 function resolveEndpoints() {
+  if (hasDocument && document.querySelector('meta[name="onebox-demo"][content="true"]')) return { base: '', prefix: '', plan: null, exec: null, status: null };
   const baseOverride = readStoredBase();
   const prefixOverride = readStoredPrefix();
   const base = baseOverride !== null ? baseOverride : DEFAULT_ENDPOINTS.base || "";
@@ -493,9 +475,9 @@ function resolveEndpoints() {
   return {
     base: computed.base,
     prefix: computed.prefix,
-    plan: computed.plan || DEFAULT_ENDPOINTS.plan || null,
-    exec: computed.exec || DEFAULT_ENDPOINTS.exec || null,
-    status: computed.status || DEFAULT_ENDPOINTS.status || null,
+    plan: computed.plan,
+    exec: computed.exec,
+    status: computed.status,
   };
 }
 
@@ -506,6 +488,7 @@ function applyUrlOverrides() {
     let changed = false;
     let tokenHandled = false;
     if (url.searchParams.has(URL_PARAMS.base)) {
+      clearStoredApiToken();
       const baseValue = url.searchParams.get(URL_PARAMS.base);
       if (baseValue && baseValue.toLowerCase() !== "demo") {
         setStoredBase(baseValue);
@@ -522,8 +505,9 @@ function applyUrlOverrides() {
       setStoredPrefix(prefixValue || "");
       changed = true;
     }
-    if (url.searchParams.has("token")) {
-      const rawToken = url.searchParams.get("token");
+    if (url.searchParams.has("token") || new URLSearchParams(url.hash.slice(1)).has("token")) {
+      const rawToken = new URLSearchParams(url.hash.slice(1)).get("token") ?? url.searchParams.get("token");
+      if (new URLSearchParams(url.hash.slice(1)).has("token")) url.hash = "";
       const stored = setStoredApiToken(rawToken || "");
       if (stored === true) {
         queueAnnouncement("🔐 API token applied for orchestrator requests.");
@@ -558,7 +542,7 @@ function applyUrlOverrides() {
         queueAnnouncement("🛡️ Expert mode armed. Wallet calldata will be generated instead of relayer execution.");
       } else if (lowered === "guest") {
         AA_MODE.enabled = true;
-        queueAnnouncement("🤝 Guest mode active. The relayer will sponsor orchestrated transactions.");
+        queueAnnouncement("Guest mode selected. Connected execution requires a configured, funded relayer; preview sends no transactions.");
       }
       changed = true;
     }
@@ -632,8 +616,14 @@ function formatOrchestratorDisplay() {
 }
 
 function refreshEndpointState({ announce = false, immediateStatus = true } = {}) {
+  const previous = endpoints?.base;
   endpoints = resolveEndpoints();
+  if (previous !== undefined && previous !== endpoints.base) clearStoredApiToken();
   if (!hasDocument) return;
+  const mode = document.getElementById('execution-scope');
+  if (mode) mode.textContent = isDemoModeActive() ? 'Offline preview · no transactions' : 'Connected · review before execution';
+  const exportButton = document.getElementById('preview-export');
+  if (exportButton) exportButton.hidden = !isDemoModeActive();
   renderAdvancedPanel();
   updateStatusUI({ immediate: immediateStatus });
   if (announce) {
@@ -643,90 +633,9 @@ function refreshEndpointState({ announce = false, immediateStatus = true } = {})
   }
 }
 
-function demoPlan(prompt) {
-  const text = typeof prompt === "string" ? prompt.trim() : "";
-  const lowered = text.toLowerCase();
-  let action = "post_job";
-  if (lowered.includes("finalize")) {
-    action = "finalize_job";
-  } else if (lowered.includes("status")) {
-    action = "check_status";
-  } else if (lowered.includes("apply")) {
-    action = "apply_job";
-  } else if (lowered.includes("dispute")) {
-    action = "dispute";
-  }
+function demoPlan(prompt) { return previewSession.plan(prompt); }
+async function runDemoExecution(intent, planHash) { return previewSession.execute(intent, planHash); }
 
-  const jobIdMatch = text.match(/\d+/);
-  const jobId = jobIdMatch ? Number(jobIdMatch[0]) : undefined;
-  const payload = {};
-
-  if (action === "post_job") {
-    payload.title = text || "Demo job";
-    payload.description = text || "Demo request";
-    payload.rewardToken = "AGIALPHA";
-    payload.reward = "5.0";
-    payload.deadlineDays = 7;
-  } else if (jobId !== undefined) {
-    payload.jobId = jobId;
-  }
-
-  const friendlyAction =
-    action === "post_job"
-      ? "post a job"
-      : action === "finalize_job"
-        ? "finalize a job"
-        : action === "check_status"
-          ? "check a job status"
-          : action.replace(/_/g, " ");
-
-  const summary = text
-    ? `I will simulate ${friendlyAction} for: ${text}. Proceed?`
-    : `I will simulate ${friendlyAction}. Proceed?`;
-
-  const warnings = [
-    "Demo mode is active. Configure an orchestrator endpoint to run this on-chain.",
-  ];
-
-  return {
-    kind: "job-intent",
-    summary,
-    requiresConfirmation: true,
-    warnings,
-    intent: {
-      action,
-      payload,
-      constraints: { demo: true },
-      userContext: { mode: "demo" },
-    },
-    raw: { summary, intent: { action, payload }, demo: true },
-  };
-}
-
-async function runDemoExecution(intent) {
-  await new Promise((resolve) => setTimeout(resolve, 400));
-  const action = typeof intent?.action === "string" ? intent.action : "request";
-  const friendlyAction = action.replace(/_/g, " ");
-  const response = {
-    ok: true,
-    demo: true,
-    message: `Simulated ${friendlyAction} completed.`,
-    warnings: [
-      "Demo mode: no blockchain transaction was sent.",
-      "Set an orchestrator URL in the Advanced panel to exit demo mode.",
-    ],
-  };
-  if (action === "post_job") {
-    response.jobId = pickDemoJobId();
-  } else if (intent?.payload && intent.payload.jobId !== undefined) {
-    response.jobId = intent.payload.jobId;
-  }
-  return response;
-}
-
-function pickDemoJobId() {
-  return Math.floor(100 + Math.random() * 900);
-}
 
 function escapeHtml(value) {
   return String(value).replace(/[&<>"']/g, (char) => {
@@ -753,10 +662,11 @@ function formatGatewayLink(url, index) {
   if (!href) return null;
   try {
     const parsed = new URL(href);
+    if (!['http:', 'https:'].includes(parsed.protocol)) return escapeHtml(href);
     const label = parsed.hostname + parsed.pathname;
     return `<a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">${escapeHtml(label)}</a>`;
   } catch (err) {
-    return `<a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">${escapeHtml(href)}</a>`;
+    return escapeHtml(href);
   }
 }
 
@@ -861,7 +771,9 @@ function renderAdvancedPanel() {
   const maskedToken = token ? `••••${token.slice(-4)}` : "Not set";
   const orchestratorToken = getStoredApiToken();
   const maskedOrchestratorToken = orchestratorToken ? `••••${orchestratorToken.slice(-4)}` : "Not set";
-  const aaSummary = summarizeAAMode(AA_MODE);
+  const aaSummary = isDemoModeActive()
+    ? { description: 'Offline simulation. No bundler, paymaster, relayer or chain is called.', detail: 'Evidence is labelled simulated.' }
+    : { description: AA_MODE?.enabled === false ? 'Expert: prepare wallet calldata for separate review and submission.' : 'Guest: the configured backend relayer can submit after confirmation.', detail: 'Provider availability and chain identity are verified by your backend configuration.' };
   const orchestratorMode = isDemoModeActive() ? "Demo mode" : "Live orchestrator";
   const base = getOrchestratorBase();
   const prefix = getOrchestratorPrefix();
@@ -906,7 +818,7 @@ function renderAdvancedPanel() {
     </div>
     <div class="card">
       <h2>IPFS uploads</h2>
-      <p>Attachments and specs are pinned client-side via web3.storage. Tokens stay local to this browser.</p>
+      <p>Attachment-aware ICS plans can pin files through the configured service. Preview uploads nothing. Optional IPFS credentials are saved only in this browser; clear them when finished.</p>
       <p class="status">Token: ${maskedToken}</p>
       <div>
         <button type="button" class="inline" data-action="set-token">Set token</button>
@@ -922,8 +834,8 @@ function renderAdvancedPanel() {
       <h2>Runbook</h2>
       <ul>
         <li>Planner responses must comply with the Intent-Constraint Schema (ICS).</li>
-        <li>Value-moving intents require human confirmation (≤140 chars summary).</li>
-        <li>Simulations, paymaster sponsorship, and relayer limits run server-side.</li>
+        <li>Review and confirm each job-intent action before execution.</li>
+        <li>Real provider integrations, limits and sponsorship require backend configuration and verification.</li>
         <li>ENS enforcement notices appear inline when required.</li>
       </ul>
     </div>
@@ -933,10 +845,11 @@ function renderAdvancedPanel() {
     </div>
   `;
   advancedLogEl = advancedPanel.querySelector('[data-role="advanced-log"]');
+  if (lastAdvancedData) setAdvancedLog(lastAdvancedData);
 }
 
 function normalizePlannerWarnings(input) {
-  const list = toArray(input);
+  const list = Array.isArray(input) ? input : input == null ? [] : [input];
   return list
     .map((entry) => {
       if (typeof entry === "string") return entry.trim();
@@ -948,7 +861,7 @@ function normalizePlannerWarnings(input) {
     .filter((value) => typeof value === "string" && value);
 }
 
-function normalizeJobIntentPlan(payload) {
+export function normalizeJobIntentPlan(payload) {
   if (!isObject(payload)) return null;
 
   const container = isObject(payload.intent)
@@ -962,7 +875,7 @@ function normalizeJobIntentPlan(payload) {
   }
 
   const intent = container.intent;
-  if (typeof intent.action !== "string" || !intent.action.trim()) {
+  if (![intent.kind, intent.action].some(value => typeof value === "string" && value.trim())) {
     return null;
   }
 
@@ -987,15 +900,16 @@ function normalizeJobIntentPlan(payload) {
     requiresConfirmation,
     warnings,
     intent,
+    planHash: container.planHash ?? payload.planHash,
+    createdAt: container.createdAt ?? payload.createdAt,
     raw: payload,
   };
 }
 
-if (hasDocument) {
-  refreshEndpointState({ immediateStatus: true });
-}
+
 
 function setAdvancedLog(data) {
+  lastAdvancedData = data;
   if (!advancedPanel) return;
   if (!advancedLogEl) {
     renderAdvancedPanel();
@@ -1115,7 +1029,7 @@ if (advancedPanel) {
           const stored = setStoredApiToken(trimmed);
           if (stored === true) {
             queueAnnouncement("🔐 API token applied for orchestrator requests.");
-            pushMessage("assistant", "Stored orchestrator API token locally.");
+            pushMessage("assistant", "API token applied for this page only. Reloading clears it.");
           } else if (stored === false) {
             clearStoredApiToken();
             queueAnnouncement("⚠️ Invalid characters removed from orchestrator API token. Nothing stored.");
@@ -1127,13 +1041,14 @@ if (advancedPanel) {
             queueAnnouncement("⚠️ Unable to persist orchestrator API token in this environment.");
             pushMessage(
               "assistant",
-              "Could not store the orchestrator API token because local storage is unavailable."
+              "Could not apply this API token."
             );
           }
         }
         flushPendingAnnouncements();
         renderAdvancedPanel();
         refreshOwnerSnapshot();
+        refreshStatusSoon();
       }
     } else if (action === "clear-api-token") {
       clearStoredApiToken();
@@ -1163,6 +1078,7 @@ function toggleAdvanced(e) {
     renderAdvancedPanel();
   }
   document.body.classList.toggle("advanced");
+  advancedToggle?.setAttribute("aria-expanded", String(document.body.classList.contains("advanced")));
 }
 if (advancedToggle) {
   advancedToggle.addEventListener("click", toggleAdvanced);
@@ -1232,7 +1148,7 @@ function maybeAnnounceMode({ force = false } = {}) {
   let message;
   if (descriptor === "demo") {
     message =
-      "Demo mode is active. Set an orchestrator base URL in the Advanced panel when you're ready to run on-chain.";
+      "Offline preview: follow the suggested lifecycle steps. No provider calls, real work, reviews or transactions occur. To connect a backend, start the launcher without --demo after configuring and checking it.";
   } else if (descriptor === "unconfigured") {
     message =
       "No orchestrator endpoint configured yet. Provide one from the Advanced panel to talk to AGI-Alpha.";
@@ -1329,7 +1245,7 @@ function updateOwnerHints() {
 }
 
 function ownerApiUrl(...segments) {
-  return joinUrlSegments(endpoints.base, endpoints.prefix, ...segments);
+  return endpoints.base ? joinUrlSegments(endpoints.base, endpoints.prefix, ...segments) : '';
 }
 
 async function refreshOwnerSnapshot() {
@@ -1428,11 +1344,13 @@ async function plannerRequest(prompt) {
   const requestBody = {
     message: prompt,
     text: prompt,
+    expert: AA_MODE?.enabled === false,
     history,
   };
   const response = await fetch(
     planUrl,
     withAuth({
+      signal: AbortSignal.timeout(30000),
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(requestBody),
@@ -1464,8 +1382,17 @@ async function requestConfirmation({ summary, required }) {
   pushMessage("assistant", "Type YES to confirm or NO to cancel.");
   setBusy(false);
 
+  const actions = document.createElement('div');
+  actions.className = 'confirmation-actions';
+  for (const [label, answer] of [['Confirm plan', 'YES'], ['Cancel', 'NO']]) {
+    const button = document.createElement('button'); button.type = 'button'; button.textContent = label;
+    button.addEventListener('click', () => { const callback = confirmCallback; if (callback) callback(answer); });
+    actions.append(button);
+  }
+  feed.append(actions);
   return new Promise((resolve) => {
     confirmCallback = (value) => {
+      actions.remove();
       const ok = /^(y|yes)$/i.test(value);
       if (!ok) {
         pushMessage("assistant", "Cancelled.");
@@ -1559,6 +1486,7 @@ async function executeICS(ics) {
   const response = await fetch(
     execUrl,
     withAuth({
+      signal: AbortSignal.timeout(120000),
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ics, aa: AA_MODE }),
@@ -1606,7 +1534,7 @@ async function executeICS(ics) {
   refreshStatusSoon();
 }
 
-async function executeJobIntent(intent, { raw } = {}) {
+async function executeJobIntent(intent, { raw, planHash, createdAt } = {}) {
   if (!isObject(intent)) {
     throw new Error("Planner returned an invalid intent");
   }
@@ -1615,7 +1543,7 @@ async function executeJobIntent(intent, { raw } = {}) {
   const execUrl = getExecUrl();
   if (!execUrl) {
     if (isDemoModeActive()) {
-      const payload = await runDemoExecution(intent);
+      const payload = await runDemoExecution(intent, planHash);
       const messages = [];
       if (payload?.jobId !== undefined && payload.jobId !== null) {
         messages.push(`Job #${payload.jobId}`);
@@ -1644,12 +1572,14 @@ async function executeJobIntent(intent, { raw } = {}) {
     }
     throw new Error("Executor endpoint not configured");
   }
+  if (!planHash) throw new Error('The backend did not return a planHash. Create a new plan before execution.');
   const response = await fetch(
     execUrl,
     withAuth({
+      signal: AbortSignal.timeout(120000),
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ intent, mode: executionMode }),
+      body: JSON.stringify({ intent, mode: executionMode, planHash, createdAt }),
     })
   );
 
@@ -1681,7 +1611,9 @@ async function executeJobIntent(intent, { raw } = {}) {
     messages.push(`receipt ${payload.receiptUrl}`);
   }
 
-  const summary = payload?.message
+  const summary = payload?.data && payload?.to && !payload?.txHash
+    ? 'Wallet transaction prepared for review. No transaction has been sent. See Advanced for destination, chain and calldata.'
+    : payload?.message
     ? payload.message
     : messages.length
       ? `Completed: ${messages.join(" • ")}`
@@ -1848,7 +1780,7 @@ function createStatusCard(entry) {
   }
 
   const link = entry?.link || entry?.url;
-  if (typeof link === "string" && link.trim()) {
+  if (typeof link === "string" && sanitizeBaseUrl(link)) {
     const anchor = document.createElement("a");
     anchor.className = "status-pill";
     anchor.textContent = "Details";
@@ -1909,10 +1841,8 @@ function updateStatusUI({ immediate = false } = {}) {
       clearInterval(statusTimer);
       statusTimer = null;
     }
-    const message = isDemoModeActive()
-      ? "Status feed disabled in demo mode. Set an orchestrator endpoint to enable live updates."
-      : "Status feed disabled. Configure an orchestrator status endpoint.";
-    renderStatusPlaceholder(message);
+    if (isDemoModeActive()) renderStatusBoard(previewSession.jobs());
+    else renderStatusPlaceholder('Status feed disabled. Configure an orchestrator status endpoint.');
     return;
   }
   renderStatusPlaceholder("Loading job status…");
@@ -1965,6 +1895,7 @@ function scheduleStatusRefresh(immediate = false) {
 }
 
 function refreshStatusSoon() {
+  if (isDemoModeActive()) { renderStatusBoard(previewSession.jobs()); return; }
   if (!statusBoard || !getStatusUrl()) return;
   refreshStatus().catch(() => {
     /* handled */
@@ -2006,7 +1937,7 @@ async function handleSubmit(event) {
 
     if (planResult && planResult.kind === "job-intent") {
       if (files.length) {
-        requeueAttachments(files);
+        throw new Error('This job-intent plan does not include file uploads. Remove the attachments, or use a backend that returns an attachment-aware ICS plan. No file was uploaded.');
       }
 
       const warnings = Array.isArray(planResult.warnings)
@@ -2023,7 +1954,7 @@ async function handleSubmit(event) {
           planResult.summary && planResult.summary.trim()
             ? planResult.summary
             : "Proceed with the plan?",
-        required: planResult.requiresConfirmation,
+        required: true,
       });
 
       if (!confirmed) {
@@ -2031,7 +1962,7 @@ async function handleSubmit(event) {
         return;
       }
 
-      await executeJobIntent(planResult.intent, { raw: planResult.raw });
+      await executeJobIntent(planResult.intent, { raw: planResult.raw, planHash: planResult.planHash, createdAt: planResult.createdAt });
       history = history
         .concat(
           { role: "user", text },
@@ -2072,10 +2003,26 @@ if (composer) {
 }
 
 if (hasDocument) {
+  document.getElementById('attachment-clear')?.addEventListener('click', () => {
+    drainQueuedAttachments();
+    attachmentInput.value = '';
+    pushMessage('assistant', 'Attachments cleared. No file was uploaded.');
+  });
+  // Initialize after state and owner action definitions, before any network work.
+  try { storage?.removeItem(ORCHESTRATOR_TOKEN_STORAGE_KEY); } catch {}
+  applyUrlOverrides();
+  refreshEndpointState({ immediateStatus: true });
+  if (ownerConsole) initOwnerConsole();
+  document.getElementById('preview-export')?.addEventListener('click', () => {
+    const blob = new Blob([JSON.stringify(previewSession.evidence(), null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a'); link.href = url; link.download = 'onebox-preview-evidence.json'; link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  });
   pushMessage("assistant", currentWelcomeMessage);
   maybeAnnounceMode({ force: true });
   flushPendingAnnouncements();
   if (!currentShortcutExamples.length) {
-    renderShortcutExamples([]);
+    renderShortcutExamples(['Post a source-cited software audit for 5 AGIALPHA over 7 days', 'Apply job 1', 'Submit job 1 with a reproducible report', 'Validate job 1', 'Finalize job 1']);
   }
 }

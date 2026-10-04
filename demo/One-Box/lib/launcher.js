@@ -1,12 +1,14 @@
-const http = require('node:http');
 const path = require('node:path');
 const fs = require('node:fs');
 const { spawn } = require('node:child_process');
 const net = require('node:net');
-const { once } = require('node:events');
 const dotenv = require('dotenv');
+const { formatHostForUrl, buildOrigin, createDemoUrl, startStaticServer } = require('./static-server.cjs');
+const { probeRpc } = require('./rpc.js');
+const ROOT_DIR = path.resolve(__dirname, '../../..');
+const DEMO_DIR = path.resolve(__dirname, '..');
 
-const REQUIRED_ENV_KEYS = ['RPC_URL', 'JOB_REGISTRY_ADDRESS', 'ONEBOX_RELAYER_PRIVATE_KEY'];
+const REQUIRED_ENV_KEYS = ['RPC_URL', 'JOB_REGISTRY_ADDRESS', 'ONEBOX_RELAYER_PRIVATE_KEY', 'ONEBOX_API_TOKEN'];
 const PLACEHOLDER_TOKENS = [
   'your-key',
   'your_private_key',
@@ -14,21 +16,6 @@ const PLACEHOLDER_TOKENS = [
   'changeme',
   'change-me',
 ];
-const MIME_TYPES = {
-  '.html': 'text/html; charset=utf-8',
-  '.js': 'application/javascript; charset=utf-8',
-  '.mjs': 'application/javascript; charset=utf-8',
-  '.css': 'text/css; charset=utf-8',
-  '.json': 'application/json; charset=utf-8',
-  '.svg': 'image/svg+xml',
-  '.png': 'image/png',
-  '.jpg': 'image/jpeg',
-  '.jpeg': 'image/jpeg',
-  '.gif': 'image/gif',
-  '.ico': 'image/x-icon',
-  '.txt': 'text/plain; charset=utf-8',
-};
-
 const ADDRESS_REGEX = /^0x[0-9a-fA-F]{40}$/;
 
 function parseBoolean(value, defaultValue = false) {
@@ -58,8 +45,8 @@ function isLoopbackHostname(hostname) {
     lowered === 'localhost' ||
     lowered === '127.0.0.1' ||
     lowered === '::1' ||
-    lowered.endsWith('.localhost') ||
-    lowered.endsWith('.local')
+    lowered === '[::1]' ||
+    lowered.endsWith('.localhost')
   );
 }
 
@@ -72,26 +59,8 @@ function normalisePrefix(value, fallback = '/onebox') {
     return '';
   }
   const withLeading = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+  if (!/^\/[a-zA-Z0-9/_-]*$/.test(withLeading) || withLeading.includes('//')) throw new Error('Prefix must be a simple API path.');
   return withLeading.replace(/\/+$/, '');
-}
-
-function formatHostForUrl(host) {
-  const trimmed = String(host ?? '').trim();
-  if (!trimmed) {
-    return '127.0.0.1';
-  }
-  // If the host already contains square brackets or no colons, it is safe to use as-is.
-  if (trimmed.startsWith('[') || !trimmed.includes(':')) {
-    return trimmed;
-  }
-  // IPv6 literals require brackets when embedded in URLs.
-  return `[${trimmed}]`;
-}
-
-function buildOrigin(host, port) {
-  const safeHost = formatHostForUrl(host);
-  const safePort = Number.isFinite(port) ? `:${port}` : '';
-  return `http://${safeHost}${safePort}`;
 }
 
 function isUnsetEnvValue(value, { treatZeroAddress = true } = {}) {
@@ -112,8 +81,8 @@ function isUnsetEnvValue(value, { treatZeroAddress = true } = {}) {
   return false;
 }
 
-function loadEnvironment({ rootDir, demoDir } = {}) {
-  const env = { ...process.env };
+function loadEnvironment({ rootDir = ROOT_DIR, demoDir = DEMO_DIR, processEnv = process.env } = {}) {
+  const env = {};
   const candidates = [];
   if (rootDir) {
     candidates.push(path.join(rootDir, '.env'));
@@ -129,15 +98,16 @@ function loadEnvironment({ rootDir, demoDir } = {}) {
     const parsed = dotenv.parse(fs.readFileSync(file));
     Object.assign(env, parsed);
   }
-  return env;
+  return { ...env, ...processEnv };
 }
 
 function resolveNumber(value, fallback) {
-  const parsed = Number.parseInt(String(value ?? ''), 10);
-  if (Number.isFinite(parsed) && parsed > 0) {
-    return parsed;
+  if (value === undefined || value === null || value === '') return fallback;
+  const text = String(value);
+  if (!/^\d+$/.test(text) || !Number.isSafeInteger(Number(text)) || Number(text) < 1 || Number(text) > 65535) {
+    throw new Error('Port must be an integer from 1 to 65535');
   }
-  return fallback;
+  return Number(text);
 }
 
 function parsePositiveDecimal(value, { allowZero = false, label = 'value' } = {}) {
@@ -167,7 +137,7 @@ function parsePositiveInteger(value, { label = 'value' } = {}) {
     throw new Error(`${label} must be a positive integer`);
   }
   const numeric = Number.parseInt(trimmed, 10);
-  if (!Number.isFinite(numeric) || numeric <= 0) {
+  if (!Number.isSafeInteger(numeric) || numeric <= 0) {
     throw new Error(`${label} must be greater than zero`);
   }
   return numeric;
@@ -275,8 +245,8 @@ async function collectPortDiagnostics(config) {
       id: 'orchestrator',
       label: 'Orchestrator API',
       port: config.orchestratorPort,
-      host: config.uiHost ?? '0.0.0.0',
-      listenHost: '0.0.0.0',
+      host: config.orchestratorHost ?? '127.0.0.1',
+      listenHost: config.orchestratorHost ?? '127.0.0.1',
     },
     {
       id: 'ui',
@@ -288,7 +258,7 @@ async function collectPortDiagnostics(config) {
   ];
 
   const results = [];
-  for (const check of checks) {
+  for (const check of checks.filter(check => !config.staticOnly || check.id === 'ui')) {
     const result = await detectPortAvailability({ port: check.port, host: check.listenHost });
     results.push({
       id: check.id,
@@ -323,7 +293,7 @@ function resolveConfig(env, options = {}) {
   const missing = [];
   const warnings = [];
   for (const key of REQUIRED_ENV_KEYS) {
-    const value = env[key];
+    const value = key === 'ONEBOX_API_TOKEN' ? (options.apiToken ?? env[key]) : env[key];
     const treatZeroAddress = key !== 'RPC_URL';
     if (isUnsetEnvValue(value, { treatZeroAddress })) {
       missing.push(key);
@@ -342,9 +312,8 @@ function resolveConfig(env, options = {}) {
   const defaultModeRaw = (options.defaultMode ?? env.ONEBOX_UI_DEFAULT_MODE ?? 'guest').toString().toLowerCase();
   const defaultMode = defaultModeRaw === 'expert' ? 'expert' : 'guest';
   const publicOrchestratorUrl =
-    options.publicOrchestratorUrl ??
-    env.ONEBOX_PUBLIC_ORCHESTRATOR_URL ??
-    `http://${uiHost}:${orchestratorPort}`;
+    options.publicOrchestratorUrl || env.ONEBOX_PUBLIC_ORCHESTRATOR_URL ||
+    buildOrigin(uiHost === '0.0.0.0' || uiHost === '::' ? '127.0.0.1' : uiHost, orchestratorPort);
   const explorerBase = (options.explorerBase ?? env.ONEBOX_EXPLORER_TX_BASE ?? env.NEXT_PUBLIC_ONEBOX_EXPLORER_TX_BASE ?? '').trim();
   const welcomeMessage = (options.welcomeMessage ?? env.ONEBOX_UI_WELCOME ?? '').toString().trim();
 
@@ -355,7 +324,7 @@ function resolveConfig(env, options = {}) {
 
   if (!isUnsetEnvValue(jobRegistryAddress) && !ADDRESS_REGEX.test(jobRegistryAddress)) {
     const message = 'JOB_REGISTRY_ADDRESS must be a 0x-prefixed 40-character address.';
-    if (options.allowPartial) {
+    if (allowPartial) {
       warnings.push(message);
     } else {
       throw new Error(message);
@@ -399,6 +368,10 @@ function resolveConfig(env, options = {}) {
   const shortcutExamples = parseShortcutExamples(exampleSources);
 
   const parsedPublicUrl = parseAbsoluteUrl(publicOrchestratorUrl);
+  if (parsedPublicUrl && (!['http:', 'https:'].includes(parsedPublicUrl.protocol) || parsedPublicUrl.username || parsedPublicUrl.password || parsedPublicUrl.search || parsedPublicUrl.hash)) {
+    throw new Error('Orchestrator URL must use HTTP(S) without credentials, query parameters or fragments.');
+  }
+  if (orchestratorPort === uiPort && !options.staticOnly) throw new Error('UI and orchestrator ports must be different.');
   if (!parsedPublicUrl) {
     warnings.push(
       `Public orchestrator URL '${publicOrchestratorUrl}' is not a valid absolute URL. Update ONEBOX_PUBLIC_ORCHESTRATOR_URL or supply --orchestrator-url.`,
@@ -425,7 +398,7 @@ function resolveConfig(env, options = {}) {
         label: 'ONEBOX_MAX_JOB_BUDGET_AGIA',
       });
     } catch (error) {
-      if (options.allowPartial) {
+      if (allowPartial) {
         warnings.push(
           error instanceof Error
             ? error.message
@@ -447,7 +420,7 @@ function resolveConfig(env, options = {}) {
         label: 'ONEBOX_MAX_JOB_DURATION_DAYS',
       });
     } catch (error) {
-      if (options.allowPartial) {
+      if (allowPartial) {
         warnings.push(
           error instanceof Error
             ? error.message
@@ -461,9 +434,18 @@ function resolveConfig(env, options = {}) {
     }
   }
 
+  if (!allowPartial) {
+    if (!parsedPublicUrl) throw new Error('Invalid public orchestrator URL.');
+    const rpc = parseAbsoluteUrl(env.RPC_URL);
+    if (!rpc || !['http:', 'https:'].includes(rpc.protocol)) throw new Error('RPC_URL must be an HTTP(S) endpoint.');
+    try { new (require('ethers').Wallet)(env.ONEBOX_RELAYER_PRIVATE_KEY); } catch { throw new Error('ONEBOX_RELAYER_PRIVATE_KEY must be a valid private key.'); }
+    if (!/^[A-Za-z0-9._~+/=:-]{16,512}$/.test(apiToken)) throw new Error('ONEBOX_API_TOKEN must contain 16–512 bearer-token characters.');
+  }
+
   return {
     env,
     orchestratorPort,
+    orchestratorHost: env.ONEBOX_HOST || '127.0.0.1',
     uiPort,
     uiHost,
     prefix,
@@ -482,29 +464,9 @@ function resolveConfig(env, options = {}) {
     systemPauseAddress,
     agentAddress,
     allowPartial,
+    staticOnly: Boolean(options.staticOnly),
+    demoMode: Boolean(options.demoMode),
   };
-}
-
-function createDemoUrl(config) {
-  const base = `${buildOrigin(config.uiHost, config.uiPort)}/`;
-  const params = new URLSearchParams();
-  if (config.publicOrchestratorUrl) {
-    params.set('orchestrator', config.publicOrchestratorUrl);
-  }
-  if (config.prefix) {
-    params.set('oneboxPrefix', config.prefix);
-  }
-  if (config.apiToken) {
-    params.set('token', config.apiToken);
-  }
-  params.set('mode', config.defaultMode);
-  if (config.welcomeMessage) {
-    params.set('welcome', config.welcomeMessage);
-  }
-  if (Array.isArray(config.shortcutExamples) && config.shortcutExamples.length > 0) {
-    params.set('examples', JSON.stringify(config.shortcutExamples));
-  }
-  return `${base}?${params.toString()}`;
 }
 
 function runCommand(command, args, options = {}) {
@@ -540,6 +502,10 @@ function startOrchestrator(rootDir, env, config) {
     ...process.env,
     ...env,
     ONEBOX_PORT: String(config.orchestratorPort),
+    ONEBOX_HOST: config.orchestratorHost,
+    ONEBOX_API_TOKEN: config.apiToken,
+    ONEBOX_PREFIX: config.prefix,
+    ONEBOX_CORS_ALLOW: env.ONEBOX_CORS_ALLOW || buildOrigin(['0.0.0.0', '::'].includes(config.uiHost) ? '127.0.0.1' : config.uiHost, config.uiPort),
   };
   if (config.explorerBase) {
     orchestratorEnv.ONEBOX_EXPLORER_TX_BASE = config.explorerBase;
@@ -550,8 +516,7 @@ function startOrchestrator(rootDir, env, config) {
   if (config.maxJobDurationDays) {
     orchestratorEnv.ONEBOX_MAX_JOB_DURATION_DAYS = String(config.maxJobDurationDays);
   }
-  const command = process.platform === 'win32' ? 'npm.cmd' : 'npm';
-  const child = spawn(command, ['run', 'onebox:server'], {
+  const child = spawn(process.execPath, ['apps/orchestrator/dist/apps/orchestrator/onebox-server.js'], {
     cwd: rootDir,
     env: orchestratorEnv,
     stdio: 'inherit',
@@ -564,80 +529,12 @@ function startOrchestrator(rootDir, env, config) {
   return child;
 }
 
-function safeJoin(root, targetPath) {
-  const resolvedRoot = path.resolve(root);
-  const resolvedTarget = path.resolve(resolvedRoot, targetPath);
-  const relative = path.relative(resolvedRoot, resolvedTarget);
-  if (relative.startsWith('..') || path.isAbsolute(relative)) {
-    return null;
-  }
-  return resolvedTarget;
-}
-
-function startStaticServer(distDir, config) {
-  const demoQuery = new URL(createDemoUrl(config)).searchParams.toString();
-  const server = http.createServer((req, res) => {
-    try {
-      const base = req.headers.host ? `http://${req.headers.host}` : `${buildOrigin(config.uiHost, config.uiPort)}/`;
-      const requestUrl = new URL(req.url || '/', base);
-      if (
-        config.publicOrchestratorUrl &&
-        requestUrl.pathname === '/' &&
-        !requestUrl.searchParams.has('orchestrator')
-      ) {
-        res.statusCode = 302;
-        res.setHeader('Location', `/?${demoQuery}`);
-        res.end();
-        return;
-      }
-      let filePath = requestUrl.pathname;
-      if (filePath.endsWith('/')) {
-        filePath = `${filePath}index.html`;
-      }
-      if (filePath === '/') {
-        filePath = '/index.html';
-      }
-      const safePath = safeJoin(distDir, `.${decodeURIComponent(filePath)}`);
-      if (!safePath) {
-        res.statusCode = 403;
-        res.end('Forbidden');
-        return;
-      }
-      let contentPath = safePath;
-      if (!fs.existsSync(contentPath)) {
-        contentPath = safeJoin(distDir, './index.html');
-      }
-      if (!contentPath || !fs.existsSync(contentPath)) {
-        res.statusCode = 404;
-        res.end('Not found');
-        return;
-      }
-      const ext = path.extname(contentPath).toLowerCase();
-      res.statusCode = 200;
-      res.setHeader('Cache-Control', 'no-store');
-      res.setHeader('Content-Type', MIME_TYPES[ext] || 'application/octet-stream');
-      fs.createReadStream(contentPath).pipe(res);
-    } catch (error) {
-      res.statusCode = 500;
-      res.end('Internal server error');
-      console.error('[onebox] Static server error', error);
-    }
-  });
-
-  return new Promise((resolve, reject) => {
-    server.once('error', reject);
-    server.listen(config.uiPort, config.uiHost, () => {
-      console.log(`[onebox] UI server listening on http://${config.uiHost}:${config.uiPort}`);
-      resolve(server);
-    });
-  });
-}
-
 function openBrowser(url) {
   const platform = process.platform;
   const command = platform === 'darwin' ? 'open' : platform === 'win32' ? 'cmd' : 'xdg-open';
   const args = platform === 'win32' ? ['/c', 'start', '""', url] : [url];
   const child = spawn(command, args, { stdio: 'ignore', detached: true });
+  child.on('error', () => console.warn('[onebox] Browser could not open automatically. Open the printed UI URL.'));
   child.unref();
 }
 
@@ -650,18 +547,14 @@ function parseCliArgs(argv = process.argv.slice(2)) {
     return String(value);
   };
   const parseNumber = (flag, value) => {
-    const parsed = Number.parseInt(value, 10);
-    if (!Number.isFinite(parsed) || parsed <= 0) {
-      throw new Error(`Invalid value for ${flag}: ${value}`);
-    }
-    return parsed;
+    try { return resolveNumber(value); } catch { throw new Error(`Invalid value for ${flag}: expected a port from 1 to 65535`); }
   };
 
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
-    if (!arg.startsWith('--')) {
-      continue;
-    }
+    if (arg === '--help' || arg === '-h') { options.help = true; continue; }
+    if (arg === '--demo' || arg === '--static-only') { options.demoMode = true; options.staticOnly = true; continue; }
+    if (!arg.startsWith('--')) throw new Error(`Unexpected argument: ${arg}`);
 
     if (arg === '--no-browser') {
       options.openBrowser = false;
@@ -672,7 +565,9 @@ function parseCliArgs(argv = process.argv.slice(2)) {
       continue;
     }
 
-    const [flag, inlineValue] = arg.split('=');
+    const equals = arg.indexOf('=');
+    const flag = equals < 0 ? arg : arg.slice(0, equals);
+    const inlineValue = equals < 0 ? undefined : arg.slice(equals + 1);
     let value = inlineValue;
     if (value === undefined) {
       value = argv[index + 1];
@@ -733,146 +628,152 @@ function parseCliArgs(argv = process.argv.slice(2)) {
         break;
       }
       default:
-        // Unrecognised flag – ignore so scripts remain forward compatible.
-        break;
+        throw new Error(`Unknown option: ${flag}. Use --help for supported options.`);
     }
   }
 
   return options;
 }
 
+const HELP = `AGI Jobs One-Box
+
+Try a browser-only preview:
+  npm run demo:onebox:launch -- --demo
+
+Connect your configured local/test network:
+  npm run demo:onebox:doctor -- --strict
+  npm run demo:onebox:launch
+
+Options:
+  --demo, --static-only       Preview only; no backend or provider calls
+  --no-browser               Print the URL without opening a browser
+  --ui-port PORT             UI port (default 4173)
+  --orchestrator-port PORT   Backend port (default 8080)
+  --ui-host HOST             UI bind address (default 127.0.0.1)
+  --orchestrator-url URL     Browser-reachable backend base URL
+  --prefix PATH             API prefix (default /onebox)
+  --mode guest|expert       Relayer execution or wallet calldata preparation
+  --token TOKEN             Backend token; never placed in the launch URL
+  --max-budget AMOUNT        Maximum AGIALPHA job reward
+  --max-duration DAYS        Maximum job duration
+  --welcome TEXT            Welcome message
+  --example TEXT             Repeatable suggested prompt
+  --explorer-base URL        Transaction explorer base URL
+  --help                    Show this help
+
+Use Advanced → Set API token in the browser for connected mode.
+Guide: demo/One-Box/README.md
+`;
+
+async function waitForOrchestrator(child, config, { timeoutMs = 60000, fetchImpl = globalThis.fetch } = {}) {
+  const deadline = Date.now() + timeoutMs;
+  let spawnError;
+  const onError = (error) => { spawnError = error; };
+  child.on('error', onError);
+  try {
+    while (Date.now() < deadline) {
+      if (spawnError) throw new Error(`Orchestrator failed to start: ${spawnError.message}`);
+      if (child.exitCode !== null || child.signalCode !== null) throw new Error('Orchestrator exited before becoming ready. Check its startup output.');
+      try {
+        const origin = buildOrigin(config.orchestratorHost === '0.0.0.0' ? '127.0.0.1' : config.orchestratorHost, config.orchestratorPort);
+        const response = await fetchImpl(`${origin}/healthz`, { signal: AbortSignal.timeout(1500) });
+        const health = response.ok ? await response.json() : null;
+        if (health?.ok === true) {
+          const status = await fetchImpl(`${origin}${config.prefix}/status`, { headers: { Authorization: `Bearer ${config.apiToken}` }, signal: AbortSignal.timeout(3000) });
+          if (status.status === 401 || status.status === 403) throw new Error('Backend rejected the configured API token.');
+          if (status.ok && Array.isArray((await status.json()).jobs)) return;
+        }
+      } catch (error) {
+        if (error.message === 'Backend rejected the configured API token.') throw error;
+      }
+      await new Promise(resolve => setTimeout(resolve, 150));
+    }
+    throw new Error('Orchestrator readiness timed out. Check RPC connectivity, contract addresses and API authentication.');
+  } finally { child.removeListener('error', onError); }
+}
+
+async function stopChild(child) {
+  if (!child || !child.pid || child.exitCode !== null || child.signalCode !== null) return;
+  await new Promise(resolve => {
+    const force = setTimeout(() => child.kill('SIGKILL'), 5000);
+    const done = () => { clearTimeout(force); resolve(); };
+    child.once('exit', done);
+    child.once('error', done);
+    child.kill('SIGTERM');
+  });
+}
+
 async function runDemo(options = {}) {
-  const rootDir = options.rootDir ?? path.resolve(__dirname, '../../');
-  const demoDir = options.demoDir ?? __dirname;
+  if (options.help) { console.log(HELP); return { help: true }; }
+  const rootDir = options.rootDir ?? ROOT_DIR;
+  const demoDir = options.demoDir ?? DEMO_DIR;
   const env = loadEnvironment({ rootDir, demoDir });
-  const demoMode = options.demoMode ?? parseBoolean(env.ONEBOX_DEMO_MODE);
-  const allowPartial = options.allowPartial ?? demoMode ?? parseBoolean(env.ONEBOX_ALLOW_PARTIAL);
-  const staticOnly = options.staticOnly ?? false;
-  const config = resolveConfig(env, { ...options, allowPartial });
-
-  const portDiagnostics = await assertPortsAvailable(config);
-  const additionalWarnings = portDiagnostics
-    .filter((entry) => entry.status === 'unknown' && entry.error)
-    .map((entry) =>
-      entry.error instanceof Error
-        ? `Unable to verify ${entry.label} port ${entry.port} (${entry.host}): ${entry.error.message}`
-        : `Unable to verify ${entry.label} port ${entry.port} (${entry.host}).`
-    );
-  config.portDiagnostics = portDiagnostics;
-  if (additionalWarnings.length > 0) {
-    config.warnings = [...config.warnings, ...additionalWarnings];
+  const demoMode = Boolean(options.demoMode || options.staticOnly || parseBoolean(env.ONEBOX_DEMO_MODE) || options.allowPartial || parseBoolean(env.ONEBOX_ALLOW_PARTIAL));
+  const config = resolveConfig(env, { ...options, demoMode, staticOnly: demoMode, allowPartial: demoMode });
+  if (demoMode) config.publicOrchestratorUrl = '';
+  config.portDiagnostics = await assertPortsAvailable(config);
+  if (!demoMode) {
+    const probe = await probeRpc({ rpcUrl: env.RPC_URL, jobRegistryAddress: config.jobRegistryAddress, stakeManagerAddress: config.stakeManagerAddress, systemPauseAddress: config.systemPauseAddress });
+    if (probe.status !== 'ready' || probe.jobRegistry.status !== 'ok') throw new Error('RPC or Job Registry bytecode check failed. Run npm run demo:onebox:doctor.');
+    if (env.CHAIN_ID && String(probe.chain.decimal) !== String(env.CHAIN_ID).trim()) throw new Error('RPC chain ID does not match CHAIN_ID.');
+    for (const key of ['stakeManager', 'systemPause']) {
+      if (probe[key].status !== 'ok' && probe[key].status !== 'missing') throw new Error(`${key} contract check failed. Run the doctor.`);
+    }
   }
-
   await ensureInstall(rootDir);
   await buildStaticAssets(rootDir, env);
-
-  const shouldUseStaticOnly = staticOnly || demoMode || (config.allowPartial && config.missing.length > 0);
-
-  let orchestratorProcess = null;
-  if (!shouldUseStaticOnly && config.missing.length === 0) {
-    orchestratorProcess = startOrchestrator(rootDir, env, config);
-  } else {
-    const missingVars = config.missing.join(', ');
-    const modeLabel = demoMode ? 'demo' : 'static';
-    if (config.missing.length > 0) {
-      console.warn(
-        `[onebox] Missing required environment (${missingVars}). Starting in ${modeLabel} mode without the orchestrator.`,
-      );
-    } else {
-      console.warn(`[onebox] ${modeLabel} mode enabled. Skipping orchestrator startup.`);
-    }
-    config.publicOrchestratorUrl =
-      options.publicOrchestratorUrl ?? env.ONEBOX_PUBLIC_ORCHESTRATOR_URL ?? '';
-  }
-  const server = await startStaticServer(path.join(rootDir, 'apps/onebox-static/dist'), config);
-  const demoUrl = createDemoUrl(config);
-
-  console.log('');
-  console.log('🎖️  AGI Jobs One-Box demo ready');
-  console.log(`   • UI:        ${demoUrl}`);
-  if (orchestratorProcess) {
-    console.log(`   • Orchestrator API: http://${config.uiHost}:${config.orchestratorPort}/onebox`);
-  } else {
-    console.log('   • Orchestrator API: static-mode (UI demo only)');
-  }
-  if (config.maxJobBudgetAgia || config.maxJobDurationDays) {
-    console.log('   • Guardrails:');
-    if (config.maxJobBudgetAgia) {
-      console.log(`       – Max job budget: ${config.maxJobBudgetAgia} AGIALPHA`);
-    }
-    if (config.maxJobDurationDays) {
-      console.log(`       – Max job duration: ${config.maxJobDurationDays} day(s)`);
-    }
-  }
-  if (config.welcomeMessage) {
-    console.log(`   • Welcome prompt: ${config.welcomeMessage}`);
-  }
-  if (config.shortcutExamples.length > 0) {
-    console.log('   • Shortcuts:');
-    for (const shortcut of config.shortcutExamples) {
-      console.log(`       – ${shortcut}`);
-    }
-  }
-  if (config.warnings.length > 0) {
-    console.log('   • Warnings:');
-    for (const warning of config.warnings) {
-      console.log(`       – ${warning}`);
-    }
-  }
-  if (config.apiToken) {
-    console.log('   • API token: supplied via query parameter (kept in-memory only)');
-  }
-  if (config.portDiagnostics) {
-    console.log('   • Port diagnostics:');
-    for (const diag of config.portDiagnostics) {
-      const statusLabel =
-        diag.status === 'available'
-          ? 'available'
-          : diag.status === 'blocked'
-          ? 'in use'
-          : 'unknown';
-      console.log(`       – ${diag.label}: ${statusLabel} on ${diag.host}:${diag.port}`);
-    }
-  }
-  console.log('   • Press Ctrl+C to stop');
-  console.log('');
-
-  if (options.openBrowser !== false) {
-    openBrowser(demoUrl);
-  }
-
-  const shutdown = async () => {
-    try {
-      server.close();
-    } catch (error) {
-      // ignore
-    }
-    if (orchestratorProcess && !orchestratorProcess.killed) {
-      orchestratorProcess.kill('SIGINT');
-      await once(orchestratorProcess, 'exit').catch(() => {});
-    }
-    process.exit(0);
+  let orchestratorProcess;
+  let server;
+  let stopping = false;
+  let failure;
+  const stop = async () => {
+    if (stopping) return;
+    stopping = true;
+    process.removeListener('SIGINT', onSignal);
+    process.removeListener('SIGTERM', onSignal);
+    if (server) await new Promise(resolve => { server.close(resolve); server.closeAllConnections(); });
+    await stopChild(orchestratorProcess);
   };
-
-  process.once('SIGINT', shutdown);
-  process.once('SIGTERM', shutdown);
-
-  if (orchestratorProcess) {
-    orchestratorProcess.on('exit', (code) => {
-      console.log('[onebox] Orchestrator process exited', code);
-      try {
-        server.close();
-      } catch (error) {
-        // ignore
-      }
-      process.exit(code ?? 0);
-    });
-  }
-
-  return { config, demoUrl, orchestratorProcess, server };
+  const onSignal = () => { stop().catch(error => { console.error(error.message); process.exitCode = 1; }); };
+  try {
+    if (!demoMode) {
+      await runCommand(process.platform === 'win32' ? 'npm.cmd' : 'npm', ['run', 'build:orchestrator'], { cwd: rootDir, env: { ...process.env, ...env } });
+      orchestratorProcess = startOrchestrator(rootDir, env, config);
+      orchestratorProcess.on('error', error => { failure = error; });
+      orchestratorProcess.on('exit', (code, signal) => {
+        if (!stopping) {
+          failure = new Error(`Orchestrator stopped (${signal || code}). The UI has been shut down.`);
+          console.error('[onebox]', failure.message);
+          process.exitCode = 1;
+          if (server) void stop();
+        }
+      });
+      await waitForOrchestrator(orchestratorProcess, config);
+    }
+    if (failure || stopping) throw failure || new Error('Startup interrupted');
+    server = await startStaticServer(path.join(rootDir, 'apps/onebox-static/dist'), config);
+    if (failure || stopping) throw failure || new Error('Startup interrupted');
+    const demoUrl = createDemoUrl(config);
+    console.log(`\nAGI Jobs One-Box ready — ${demoMode ? 'browser-only preview; zero blockchain transactions' : 'connected backend verified'}`);
+    console.log(`   UI: ${demoUrl}`);
+    if (!demoMode) console.log('   Open Advanced → Set API token. The token is never printed or included in the URL.');
+    if (config.maxJobBudgetAgia) console.log(`   Maximum job budget: ${config.maxJobBudgetAgia} AGIALPHA`);
+    if (config.maxJobDurationDays) console.log(`   Maximum job duration: ${config.maxJobDurationDays} day(s)`);
+    for (const warning of config.warnings) console.warn(`   ${warning}`);
+    console.log('   Press Ctrl+C to stop.\n');
+    process.once('SIGINT', onSignal);
+    process.once('SIGTERM', onSignal);
+    if (options.openBrowser !== false) openBrowser(demoUrl);
+    return { config, demoUrl, orchestratorProcess, server, stop };
+  } catch (error) { await stop(); throw error; }
 }
 
 module.exports = {
+  ROOT_DIR,
+  DEMO_DIR,
+  HELP,
+  waitForOrchestrator,
+  stopChild,
   REQUIRED_ENV_KEYS,
   normalisePrefix,
   formatHostForUrl,

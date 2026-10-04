@@ -102,3 +102,8 @@ out/forge/
 # Generated Pages browser evidence; source and tests remain tracked.
 /reports/pages/
 /reports/kardashev/
+
+# One-Box build and local verification artifacts
+/apps/orchestrator/dist/
+/reports/onebox/
+/storage/receipts/

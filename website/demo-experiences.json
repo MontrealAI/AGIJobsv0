@@ -748,30 +748,37 @@
     "related": []
   },
   "One-Box": {
-    "question": "What must be configured before an operator can launch the stack?",
-    "purpose": "For first-time operators: use diagnostics to connect the UI, orchestrator, contract addresses and local network before launching a consolidated workflow.",
+    "question": "How does a request become an inspectable job lifecycle?",
+    "purpose": "Start with an offline, guided job lifecycle and export explicitly simulated evidence. Then follow the connected-mode prerequisites for your own reviewed deployment.",
     "steps": [
       {
-        "title": "Read the service topology",
-        "source": "demo/One-Box/docker-compose.yaml",
-        "explanation": "Inspect the local services, ports and environment dependencies. Docker must be available for the container path."
+        "title": "Follow the complete mission",
+        "source": "demo/One-Box/README.md",
+        "explanation": "Choose preview, connected Node or Docker, then follow the expected outcomes and troubleshooting guide."
       },
       {
-        "title": "Understand the preflight",
+        "title": "Inspect the evidence model",
+        "source": "apps/onebox-static/preview-model.mjs",
+        "explanation": "Preview state transitions reject missing jobs, altered approvals and out-of-order finalization. Evidence never claims real work or production approval."
+      },
+      {
+        "title": "Check connected readiness",
         "source": "demo/One-Box/bin/doctor.cjs",
-        "explanation": "The doctor checks configuration, placeholder addresses and reachable services. A failed check is actionable feedback, not something to bypass."
-      },
-      {
-        "title": "Follow launch behavior",
-        "source": "demo/One-Box/lib/launcher.js",
-        "explanation": "The launcher coordinates the configured runtime. Read the original environment and operator documentation before connecting an external network."
+        "explanation": "Run the strict, read-only doctor before connected launch. Unresolved contract, ownership, pause, balance or port checks must be addressed."
       }
     ],
-    "command": "npm run demo:onebox:doctor",
-    "expected": "The doctor prints configuration and readiness diagnostics. Missing environment values or a stopped local chain can correctly produce a nonzero exit; fix the named requirement before npm run demo:onebox:launch.",
-    "experiment": "Run the doctor before and after starting the documented local services. Check which diagnostics changed and which still require real contract addresses.",
+    "command": "npm run demo:onebox:launch -- --demo",
+    "expected": "The local console opens with five lifecycle prompts. Confirm creation, assignment, submission, review and finalization. Export JSON labelled simulated, with zero chain transactions. The preview needs no API keys or Docker.",
+    "experiment": "Try finalizing job 1 before submitting and validating it. The state remains unchanged. Complete the missing steps, finalize and inspect the exported evidence.",
     "mode": "node",
-    "related": []
+    "related": [],
+    "dashboards": [
+      {
+        "route": "experiments/one-box/",
+        "title": "Try the interactive One-Box preview",
+        "source": "apps/onebox-static/preview-model.mjs"
+      }
+    ]
   },
   "astral-citadel": {
     "question": "What can a mission plan tell an operator before execution?",

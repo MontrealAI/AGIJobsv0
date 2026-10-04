@@ -367,7 +367,7 @@
     "observability:smoke": "node scripts/observability-smoke-check.js",
     "onebox:build": "node apps/onebox/scripts/build.mjs",
     "onebox:publish": "node apps/onebox/scripts/publish.mjs",
-    "onebox:server": "ts-node --project apps/orchestrator/tsconfig.json apps/orchestrator/onebox-server.ts",
+    "onebox:server": "npm run build:orchestrator && node apps/orchestrator/dist/apps/orchestrator/onebox-server.js",
     "onebox:static:build": "node apps/onebox-static/scripts/build.mjs",
     "onebox:static:publish": "node apps/onebox-static/scripts/publish.mjs",
     "onebox:verify-sri": "node apps/onebox/scripts/verify-sri.mjs",
@@ -470,7 +470,9 @@
     "demo:atlas-conductor:local": "bash demo/atlas-conductor/bin/atlas-conductor-local.sh",
     "site:build": "node scripts/pages/build.mjs",
     "site:test": "node --test test/pages/*.test.mjs",
-    "site:qa": "node scripts/pages/browser-qa.mjs"
+    "site:qa": "node scripts/pages/browser-qa.mjs",
+    "demo:onebox:test": "node --test demo/One-Box/test/*.test.cjs apps/onebox-static/test/*.test.mjs",
+    "demo:onebox:qa": "node demo/One-Box/scripts/browser-qa.mjs"
   },
   "type": "commonjs",
   "version": "2.0.0"

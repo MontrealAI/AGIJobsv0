@@ -1,4 +1,4 @@
-const RAW_ORCHESTRATOR_BASE_URL = "https://alpha-orchestrator.example.com";
+const RAW_ORCHESTRATOR_BASE_URL = "";
 const RAW_ORCHESTRATOR_ONEBOX_PREFIX = "/onebox";
 const RAW_IPFS_ENDPOINT = "https://api.web3.storage/upload";
 const RAW_IPFS_GATEWAYS = [
@@ -75,3 +75,6 @@ export const ORCHESTRATOR_URL_PARAMS = {
   prefix: "oneboxPrefix",
 };
 export const ENABLE_DEMO_MODE = true;
+
+export const STATUS_REFRESH_MS = 15000;
+export const STATUS_MAX_ITEMS = 4;

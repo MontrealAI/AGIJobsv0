@@ -135,7 +135,8 @@ test('every demo has a unique route and all built local page/asset links resolve
       manifest.guides +
       2 +
       (manifest.dashboardRoutes || []).length +
-      Number(Boolean(manifest.cultureStudioRoute))
+      Number(Boolean(manifest.cultureStudioRoute)) +
+      Number(Boolean(manifest.oneboxRoute))
   );
 });
 
@@ -394,5 +395,36 @@ test('dashboard descriptions remain readable text rather than URL-encoded string
     ).textContent;
     assert.ok(text.includes(' '));
     assert.ok(!text.includes('%20'));
+  }
+});
+
+test('published One-Box is the offline console with intact integrity metadata', () => {
+  const directory = path.join(root, 'build/pages/experiments/one-box');
+  const document = new JSDOM(
+    fs.readFileSync(path.join(directory, 'index.html'), 'utf8')
+  ).window.document;
+  assert.equal(
+    document.querySelector('meta[name="onebox-demo"]').content,
+    'true'
+  );
+  assert.match(
+    document.querySelector('meta[http-equiv="Content-Security-Policy"]')
+      .content,
+    /connect-src 'none'/
+  );
+  assert.ok(document.querySelector('#preview-export'));
+  assert.ok(document.querySelector('#owner-console'));
+  for (const element of document.querySelectorAll(
+    'script[src],link[rel="stylesheet"]'
+  )) {
+    assert.match(element.getAttribute('integrity'), /^sha384-/);
+    assert.ok(
+      fs.existsSync(
+        path.join(
+          directory,
+          element.getAttribute('src') || element.getAttribute('href')
+        )
+      )
+    );
   }
 });

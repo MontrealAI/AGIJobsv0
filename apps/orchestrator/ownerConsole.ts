@@ -4,7 +4,7 @@ type GovernancePreview = {
   details?: Record<string, unknown>;
 };
 
-const governanceTools = require('../../packages/orchestrator/src/tools/governance.js') as {
+const governanceTools = require('../../packages/orchestrator/src/tools/governance.cjs') as {
   loadGovernanceSnapshot: () => Promise<Record<string, unknown>>;
   previewGovernanceAction: (input: {
     key: string;
