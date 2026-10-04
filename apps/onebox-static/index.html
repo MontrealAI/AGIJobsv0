@@ -19,6 +19,7 @@
   />
 </head>
 <body>
+  <a class="skip-link" href="#mission-workspace">Skip to guided mission</a>
   <header>
     <div>
       <h1>AGI Jobs — One-Box</h1>
@@ -33,8 +34,9 @@
     <p>Explore a complete job lifecycle in an offline teaching model, or connect your own reviewed deployment. Every execution starts with a plan you can confirm or cancel.</p>
     <div class="journey-steps"><span><b>01</b> Describe the work</span><span><b>02</b> Review &amp; confirm</span><span><b>03</b> Inspect the outcome</span></div>
     <div class="scope-row"><strong id="execution-scope" role="status">Checking execution mode…</strong><button id="preview-export" type="button">Export preview evidence</button></div>
-    <details class="preview-guide"><summary>First time here? Follow a useful example</summary><p>Post a source-cited software audit. Then use <strong>Apply job 1 → Submit job 1 → Validate job 1 → Finalize job 1</strong>. Confirm each plan. Try finalizing too early to see the evidence gate, or reject a review to explore a dispute.</p><p>Preview jobs, workers and reviews are simulated and reset on reload. Export the session before leaving. Connected mode needs your configured backend and its API token under Advanced.</p></details>
+    <details class="preview-guide"><summary>First time here? Follow a useful example</summary><p>Use the guided mission for an inspectable release brief, or post your own source-cited software audit. Then use <strong>Apply job 1 → Submit job 1 → Validate job 1 → Finalize job 1</strong>. Confirm each plan. Try finalizing too early to see the evidence gate, or reject a review to explore a dispute.</p><p>Preview jobs, workers and reviews are simulated and reset on reload. Export the session before leaving. Connected mode needs your configured backend and its API token under Advanced.</p></details>
   </section>
+  <section id="mission-workspace" class="mission-workspace" aria-labelledby="mission-title" tabindex="-1" hidden></section>
   <section
   id="shortcuts"
   class="shortcuts"
@@ -61,7 +63,7 @@
       <label for="attachment">Attachments (optional)</label>
       <input id="attachment" type="file" multiple aria-describedby="attachment-hint" />
       <button id="attachment-clear" type="button">Clear attachments</button>
-      <p id="attachment-hint" class="hint">Optional for attachment-aware connected plans. Preview accepts text only; no file is uploaded automatically.</p>
+      <p id="attachment-hint" class="hint">Optional for attachment-aware connected plans. Preview uses the text report under Mission evidence; no file is uploaded automatically.</p>
     </div>
   </form>
   <main class="layout" id="main">
@@ -128,6 +130,22 @@
 
 
   </details>
+  <dialog id="mission-confirmation" aria-labelledby="mission-confirmation-title" aria-describedby="mission-confirmation-scope">
+    <p class="onebox-eyebrow">YOUR CONFIRMATION IS REQUIRED</p>
+    <h2 id="mission-confirmation-title">Review this step</h2>
+    <p id="mission-confirmation-scope">Offline teaching model · no funds or transactions.</p>
+    <p data-mission-summary></p>
+    <details><summary>Inspect the exact plan</summary><pre data-mission-plan></pre></details>
+  </dialog>
+  <dialog id="api-token-dialog" aria-labelledby="api-token-title" aria-describedby="api-token-description">
+    <form id="api-token-form">
+      <h2 id="api-token-title">Connect this session</h2>
+      <p id="api-token-description">Use the token configured on your backend. It stays in page memory and clears on reload. Never enter a wallet private key.</p>
+      <label for="api-token-input">Orchestrator API token</label>
+      <input id="api-token-input" type="password" autocomplete="off" spellcheck="false" minlength="1" maxlength="512" required />
+      <div class="dialog-actions"><button type="submit">Apply token</button><button id="api-token-cancel" type="button">Cancel</button></div>
+    </form>
+  </dialog>
   <noscript>
     <p class="noscript-message">JavaScript is required for the AGI Jobs one-box interface.</p>
   </noscript>

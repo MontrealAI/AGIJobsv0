@@ -768,8 +768,8 @@
       }
     ],
     "command": "npm run demo:onebox:launch -- --demo",
-    "expected": "The local console opens with five lifecycle prompts. Confirm creation, assignment, submission, review and finalization. Export JSON labelled simulated, with zero chain transactions. The preview needs no API keys or Docker.",
-    "experiment": "Try finalizing job 1 before submitting and validating it. The state remains unchanged. Complete the missing steps, finalize and inspect the exported evidence.",
+    "expected": "The console opens with a guided release-readiness mission, visible lifecycle progress and an editable brief citing three synthetic sources. Confirm each step, inspect eleven local validation checks, download the submitted brief and export the complete simulated history. No API keys, wallet or Docker are needed.",
+    "experiment": "In Mission evidence, remove a citation before submission. Validate to see the named checks fail, restore the sample, then resubmit and validate. Both versions remain in the exported history. The accepted brief still recommends HOLD because the fictional independent review is pending.",
     "mode": "node",
     "related": [],
     "dashboards": [

@@ -917,6 +917,8 @@ function buildMatcher(context) {
 }
 
 export function formatError(err) {
+  // Reconciliation guidance must survive generic network/timeout friendly rules.
+  if (err?.code === 'EXECUTION_OUTCOME_UNKNOWN' && typeof err.message === 'string') return err.message;
   if (err === null || err === undefined) {
     return "Something went wrong, but the error was empty.";
   }
