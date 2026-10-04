@@ -24,6 +24,29 @@ export default function Home() {
   const [message, setMessage] = useState('');
   const { setError } = useError();
 
+  const isRecord = (value: unknown): value is Record<string, unknown> =>
+    typeof value === 'object' && value !== null;
+
+  const formatUnitsValue = (value: unknown) => {
+    if (typeof value === 'string' || typeof value === 'number' || typeof value === 'bigint') {
+      return ethers.formatUnits(value, DECIMALS);
+    }
+    return ethers.formatUnits(0, DECIMALS);
+  };
+
+  const toJobId = (value: unknown): string => {
+    if (typeof value === 'string' && value.trim()) {
+      return value;
+    }
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return value.toString();
+    }
+    if (typeof value === 'bigint') {
+      return value.toString();
+    }
+    return '';
+  };
+
   useEffect(() => {
     async function loadJobs() {
       try {
@@ -49,20 +72,38 @@ export default function Home() {
         );
         const controller = new AbortController();
         const timer = setTimeout(() => controller.abort(), timeout);
-        const data = await fetch(`${url}/jobs`, { signal: controller.signal })
+        const data: unknown = await fetch(`${url}/jobs`, { signal: controller.signal })
           .then((res) => res.json())
           .finally(() => clearTimeout(timer));
-        setJobs(
-          data.map((job: any) => ({
-            ...job,
-            reward: ethers.formatUnits(job.rewardRaw ?? job.reward, DECIMALS),
-            stake: ethers.formatUnits(job.stakeRaw ?? job.stake, DECIMALS),
-            fee: ethers.formatUnits(job.feeRaw ?? job.fee, DECIMALS),
-            specHash: job.specHash ?? ethers.ZeroHash,
-          }))
-        );
-      } catch (err: any) {
-        if (err.name === 'AbortError') {
+        if (!Array.isArray(data)) {
+          setJobs([]);
+          setMessage('No jobs available');
+          return;
+        }
+        const parsedJobs = data
+          .map((entry) => {
+            if (!isRecord(entry)) {
+              return null;
+            }
+            const jobId = toJobId(entry.jobId);
+            if (!jobId) {
+              return null;
+            }
+            return {
+              jobId,
+              employer: String(entry.employer ?? ''),
+              agent: String(entry.agent ?? ''),
+              reward: formatUnitsValue(entry.rewardRaw ?? entry.reward),
+              stake: formatUnitsValue(entry.stakeRaw ?? entry.stake),
+              fee: formatUnitsValue(entry.feeRaw ?? entry.fee),
+              specHash:
+                typeof entry.specHash === 'string' ? entry.specHash : ethers.ZeroHash,
+            } satisfies Job;
+          })
+          .filter((entry): entry is Job => entry !== null);
+        setJobs(parsedJobs);
+      } catch (err) {
+        if (err instanceof Error && err.name === 'AbortError') {
           console.error('Job fetch timed out');
           setMessage('Job request timed out');
         } else {
@@ -74,11 +115,11 @@ export default function Home() {
   }, []);
 
   async function vote(jobId: string, approve: boolean, specHash: string) {
-    if (!(window as any).ethereum) {
+    if (!window.ethereum) {
       setError('wallet not found');
       return;
     }
-    const provider = new ethers.BrowserProvider((window as any).ethereum);
+    const provider = new ethers.BrowserProvider(window.ethereum);
     const signer = await provider.getSigner();
     const addr = await signer.getAddress();
     const warning = await verifyEnsSubdomain(provider, addr);

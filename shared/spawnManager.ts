@@ -87,7 +87,7 @@ async function readJsonFile<T>(file: string, fallback: T): Promise<T> {
   try {
     const raw = await fs.promises.readFile(file, 'utf8');
     return JSON.parse(raw) as T;
-  } catch (err: any) {
+  } catch (err) {
     if (err.code !== 'ENOENT') {
       console.warn('Failed to read JSON file', file, err);
     }
@@ -210,7 +210,7 @@ async function readLabelsFromDirectory(dir: string): Promise<Set<string>> {
         console.warn('Failed to parse identity label', fullPath, err);
       }
     }
-  } catch (err: any) {
+  } catch (err) {
     if (err.code !== 'ENOENT') {
       console.warn('Failed to read identity directory', dir, err);
     }

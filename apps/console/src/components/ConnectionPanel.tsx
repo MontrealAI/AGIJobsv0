@@ -86,7 +86,7 @@ export function ConnectionPanel({ onConfigSaved }: ConnectionPanelProps) {
   }
 
   async function connectWallet() {
-    if (!(window as any).ethereum) {
+    if (!window.ethereum) {
       setWalletStatus({
         state: 'error',
         message:
@@ -96,11 +96,14 @@ export function ConnectionPanel({ onConfigSaved }: ConnectionPanelProps) {
     }
     try {
       setWalletStatus({ state: 'idle' });
-      const accounts = (await (window as any).ethereum.request({
+      const accounts = await window.ethereum.request({
         method: 'eth_requestAccounts',
-      })) as string[];
-      if (accounts && accounts.length > 0) {
-        setWalletStatus({ state: 'connected', address: accounts[0] });
+      });
+      const accountList = Array.isArray(accounts)
+        ? accounts.filter((account): account is string => typeof account === 'string')
+        : [];
+      if (accountList.length > 0) {
+        setWalletStatus({ state: 'connected', address: accountList[0] });
       } else {
         setWalletStatus({
           state: 'error',

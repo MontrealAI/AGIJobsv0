@@ -320,7 +320,7 @@ export async function readEnergySamples(
       return samples;
     }
     return samples.slice(-limit);
-  } catch (err: any) {
+  } catch (err) {
     if (err.code === 'ENOENT') {
       return [];
     }

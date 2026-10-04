@@ -50,7 +50,7 @@ const JOB_AGENT_PCT_MASK = 0xffffffffn << JOB_AGENT_PCT_OFFSET;
 const JOB_DEADLINE_MASK = 0xffffffffffffffffn << JOB_DEADLINE_OFFSET;
 const JOB_ASSIGNED_AT_MASK = 0xffffffffffffffffn << JOB_ASSIGNED_AT_OFFSET;
 
-function decodePackedJobMetadata(packed: any): {
+function decodePackedJobMetadata(packed: unknown): {
   state?: number;
   success?: boolean;
   burnConfirmed?: boolean;
@@ -70,8 +70,13 @@ function decodePackedJobMetadata(packed: any): {
     value = BigInt(packed);
   } else if (typeof packed === 'string') {
     value = BigInt(packed);
-  } else if (typeof (packed as any).toString === 'function') {
-    value = BigInt((packed as any).toString());
+  } else if (
+    typeof packed === 'object' &&
+    packed !== null &&
+    'toString' in packed &&
+    typeof packed.toString === 'function'
+  ) {
+    value = BigInt(packed.toString());
   } else {
     return {};
   }

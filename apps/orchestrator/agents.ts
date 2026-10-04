@@ -17,6 +17,9 @@ export type AgentHandler = (input: AgentHandlerInput) => Promise<unknown>;
 
 const handlers = new Map<string, AgentHandler>();
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
 function ensureText(value: unknown): string {
   if (typeof value === 'string') return value;
   if (value === null || value === undefined) return '';
@@ -69,9 +72,9 @@ async function analyticalAgent(
 async function financialEstimator(
   input: AgentHandlerInput
 ): Promise<Record<string, unknown>> {
-  const payload = input.payload as Record<string, unknown> | null;
-  const reward = Number((payload && (payload as any).reward) ?? 0);
-  const stake = Number((payload && (payload as any).stake) ?? 0);
+  const payload = isRecord(input.payload) ? input.payload : {};
+  const reward = Number(payload.reward ?? 0);
+  const stake = Number(payload.stake ?? 0);
   const efficiency = reward > 0 ? reward / (stake + 1) : 0;
   return {
     type: 'financial-model',

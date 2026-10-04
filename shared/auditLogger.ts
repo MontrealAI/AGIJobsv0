@@ -125,7 +125,7 @@ export async function readAuditEvents(
       return events;
     }
     return events.slice(-limit);
-  } catch (err: any) {
+  } catch (err) {
     if (err.code === 'ENOENT') {
       return [];
     }
@@ -338,7 +338,7 @@ export async function readAuditAnchors(
       return records;
     }
     return records.slice(-limit);
-  } catch (err: any) {
+  } catch (err) {
     if (err.code === 'ENOENT') {
       return [];
     }

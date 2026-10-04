@@ -219,7 +219,7 @@ export async function loadWorldModelObservations(
       return entries;
     }
     return entries.filter((entry) => entry.jobId === jobId);
-  } catch (err: any) {
+  } catch (err) {
     if (err.code === 'ENOENT') {
       return [];
     }

@@ -241,7 +241,7 @@ class MockMetaProvider extends ethers.AbstractProvider {
 }
 
 class MockForwarder {
-  public readonly requests: Array<{ request: any; signature: string }> = [];
+  public readonly requests: Array<{ request: Record<string, unknown>; signature: string }> = [];
 
   constructor(private readonly scenario: OptimismScenario & { userAddress: string }) {}
 
@@ -255,7 +255,11 @@ class MockForwarder {
     }
     return {
       populateTransaction: async (request: unknown, signature: string) => {
-        this.requests.push({ request, signature });
+        const record =
+          typeof request === 'object' && request !== null
+            ? (request as Record<string, unknown>)
+            : {};
+        this.requests.push({ request: record, signature });
         return {
           to: this.scenario.forwarder.address,
           data: this.scenario.metaTx.execute.data,

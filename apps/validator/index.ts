@@ -120,7 +120,10 @@ const JOB_AGENT_PCT_MASK = 0xffffffffn << JOB_AGENT_PCT_OFFSET;
 const JOB_DEADLINE_MASK = 0xffffffffffffffffn << JOB_DEADLINE_OFFSET;
 const JOB_ASSIGNED_AT_MASK = 0xffffffffffffffffn << JOB_ASSIGNED_AT_OFFSET;
 
-function decodePackedJobMetadata(packed: any): {
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+function decodePackedJobMetadata(packed: unknown): {
   state?: number;
   success?: boolean;
   burnConfirmed?: boolean;
@@ -140,8 +143,13 @@ function decodePackedJobMetadata(packed: any): {
     value = BigInt(packed);
   } else if (typeof packed === 'string') {
     value = BigInt(packed);
-  } else if (typeof (packed as any).toString === 'function') {
-    value = BigInt((packed as any).toString());
+  } else if (
+    typeof packed === 'object' &&
+    packed !== null &&
+    'toString' in packed &&
+    typeof packed.toString === 'function'
+  ) {
+    value = BigInt(packed.toString());
   } else {
     return {};
   }
@@ -383,19 +391,22 @@ async function fetchSubmissionEvent(jobId: bigint): Promise<SubmissionRecord> {
     throw new Error('No submission events found');
   }
   const evt = events[events.length - 1] as EventLog;
-  const args = evt.args as any;
+  const args = evt.args;
+  const argsRecord = isRecord(args) ? args : {};
+  const argsArray = Array.isArray(args) ? args : [];
   const worker: string =
-    (args?.worker as string) ??
-    (Array.isArray(args) ? args[1] : ethers.ZeroAddress);
+    (typeof argsRecord.worker === 'string' && argsRecord.worker) ||
+    (typeof argsArray[1] === 'string' ? argsArray[1] : ethers.ZeroAddress);
   const resultHash: string =
-    (args?.resultHash as string) ??
-    (Array.isArray(args) ? args[2] : ethers.ZeroHash);
+    (typeof argsRecord.resultHash === 'string' && argsRecord.resultHash) ||
+    (typeof argsArray[2] === 'string' ? argsArray[2] : ethers.ZeroHash);
   const resultUri: string =
-    (args?.resultURI as string) ??
-    (args?.resultUri as string) ??
-    (Array.isArray(args) ? args[3] : '');
+    (typeof argsRecord.resultURI === 'string' && argsRecord.resultURI) ||
+    (typeof argsRecord.resultUri === 'string' && argsRecord.resultUri) ||
+    (typeof argsArray[3] === 'string' ? argsArray[3] : '');
   const subdomain: string | undefined =
-    (args?.subdomain as string) ?? (Array.isArray(args) ? args[4] : undefined);
+    (typeof argsRecord.subdomain === 'string' && argsRecord.subdomain) ||
+    (typeof argsArray[4] === 'string' ? argsArray[4] : undefined);
   return {
     jobId: jobId.toString(),
     worker,
@@ -558,8 +569,11 @@ async function getBurnTxHash(jobId: bigint): Promise<string> {
   const events = await registry.queryFilter(filter, 0, 'latest');
   if (events.length === 0) return ethers.ZeroHash;
   const evt = events[events.length - 1] as EventLog;
-  const args = evt.args as any;
-  return (args?.burnTxHash as string) ?? ethers.ZeroHash;
+  const args = evt.args;
+  if (isRecord(args) && typeof args.burnTxHash === 'string') {
+    return args.burnTxHash;
+  }
+  return ethers.ZeroHash;
 }
 
 async function handleValidatorsSelected(jobId: bigint, validators: string[]) {
@@ -593,7 +607,7 @@ async function handleValidatorsSelected(jobId: bigint, validators: string[]) {
     [jobId, nonce, approve, burnTxHash, salt, specHash]
   );
 
-  const writer = validation.connect(wallet) as any;
+  const writer = validation.connect(wallet);
   const tx = await writer.commitValidation(jobId, commitHash, personaLabel, []);
   await tx.wait();
 
@@ -693,7 +707,7 @@ async function reveal(jobId: bigint) {
   const file = storagePath(jobId, address);
   if (!fs.existsSync(file)) return;
   const data = JSON.parse(fs.readFileSync(file, 'utf8')) as StoredCommit;
-  const writer = validation.connect(wallet) as any;
+  const writer = validation.connect(wallet);
   const tx = await writer.revealValidation(
     jobId,
     data.approve,
@@ -820,10 +834,11 @@ async function markDisputeResolution(
   employerWins: boolean
 ) {
   const file = disputePath(jobId, validatorAddress);
-  let existing: any = null;
+  let existing: Record<string, unknown> | null = null;
   if (fs.existsSync(file)) {
     try {
-      existing = JSON.parse(fs.readFileSync(file, 'utf8'));
+      const parsed = JSON.parse(fs.readFileSync(file, 'utf8'));
+      existing = isRecord(parsed) ? parsed : null;
     } catch (err) {
       console.warn('Failed to read existing dispute record', err);
     }

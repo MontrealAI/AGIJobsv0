@@ -12,11 +12,13 @@ import {
   __resetAAConfigForTests,
   type AccountAbstractionConfig,
 } from "../src/chain/providers/aa.js";
+import type { BundlerClient } from "../src/chain/providers/bundler.js";
 import {
   MetaTxSigner,
   __resetForwarderConfigForTests,
 } from "../src/chain/providers/metaTx.js";
 import type { ManagedPaymasterClient } from "../src/chain/providers/paymaster.js";
+import type { UserOperationStruct } from "../src/chain/providers/userOperation.js";
 
 const relayerMnemonic = "test test test test test test test test test test test junk";
 const aaMnemonic = "test walk nut penalty hip pave soap entry language right filter choice";
@@ -41,6 +43,23 @@ function restoreEnv(entries: { key: string; value: string | undefined }[]) {
     }
   }
 }
+
+type AccountAbstractionSignerHarness = AccountAbstractionSigner & {
+  bundler: BundlerClient;
+  resolveInitCode: (sender?: string) => Promise<string>;
+  resolveNonce: (sender?: string) => Promise<bigint>;
+  ensureChainId: () => Promise<bigint>;
+  resolveFeeData: () => Promise<{ maxFee: bigint; maxPriority: bigint }>;
+  estimateCallGas: () => Promise<{
+    callGasLimit: bigint;
+    preVerificationGas: bigint;
+    verificationGasLimit: bigint;
+  }>;
+  buildUserOperation: (
+    tx: ethers.TransactionRequest,
+    policyContext?: Record<string, unknown>
+  ) => Promise<{ userOp: UserOperationStruct; charge: unknown }>;
+};
 
 class MockProvider extends ethers.AbstractProvider {
   public readonly estimateGasCalls: ethers.TransactionRequest[] = [];
@@ -212,6 +231,7 @@ test("aa signer falls back to bundler gas estimates for undeployed accounts", as
   };
 
   const signer = new AccountAbstractionSigner(wallet, config);
+  const signerHarness = signer as AccountAbstractionSignerHarness;
 
   let bundlerCalled = false;
   const bundlerEstimates = {
@@ -220,21 +240,21 @@ test("aa signer falls back to bundler gas estimates for undeployed accounts", as
     verificationGasLimit: 120_000n,
   };
 
-  const bundlerClient = (signer as any).bundler;
+  const bundlerClient = signerHarness.bundler;
   bundlerClient.estimateUserOperationGas = async () => {
     bundlerCalled = true;
     return bundlerEstimates;
   };
 
-  (signer as any).resolveInitCode = async () => "0x1234";
-  (signer as any).resolveNonce = async () => 0n;
+  signerHarness.resolveInitCode = async () => "0x1234";
+  signerHarness.resolveNonce = async () => 0n;
 
   const tx: ethers.TransactionRequest = {
     to: wallet.address,
     data: "0x",
   };
 
-  const result = await (signer as any).buildUserOperation(tx);
+  const result = await signerHarness.buildUserOperation(tx);
   const userOp = result.userOp;
 
   assert.equal(bundlerCalled, true);
@@ -271,12 +291,13 @@ test("aa signer forwards policy context to managed paymaster", async () => {
   };
 
   const signer = new AccountAbstractionSigner(wallet, config);
+  const signerHarness = signer as AccountAbstractionSignerHarness;
 
-  (signer as any).resolveInitCode = async () => "0x";
-  (signer as any).resolveNonce = async () => 0n;
-  (signer as any).ensureChainId = async () => 1n;
-  (signer as any).resolveFeeData = async () => ({ maxFee: 1n, maxPriority: 1n });
-  (signer as any).estimateCallGas = async () => ({
+  signerHarness.resolveInitCode = async () => "0x";
+  signerHarness.resolveNonce = async () => 0n;
+  signerHarness.ensureChainId = async () => 1n;
+  signerHarness.resolveFeeData = async () => ({ maxFee: 1n, maxPriority: 1n });
+  signerHarness.estimateCallGas = async () => ({
     callGasLimit: 1000n,
     preVerificationGas: config.preVerificationGas,
     verificationGasLimit: config.verificationGasLimit,
@@ -294,7 +315,7 @@ test("aa signer forwards policy context to managed paymaster", async () => {
     gasLimit: 1000n,
   };
 
-  await (signer as any).buildUserOperation(tx, policyContext);
+  await signerHarness.buildUserOperation(tx, policyContext);
 
   assert.equal(paymasterCalls.length, 1);
   const context = paymasterCalls[0].context ?? {};
@@ -484,12 +505,15 @@ test("meta-tx signer falls back to a conservative gas ceiling when estimation fa
     const relayer = randomWallet().connect(provider);
     const signer = new MetaTxSigner(user, relayer);
 
-    let capturedRequest: any;
+    let capturedRequest: Record<string, unknown> | null = null;
     const forwarderStub = {
       getNonce: async () => 1n,
       getFunction: () => ({
         populateTransaction: async (request: unknown) => {
-          capturedRequest = request;
+          capturedRequest =
+            typeof request === "object" && request !== null
+              ? (request as Record<string, unknown>)
+              : null;
           return {
             to: forwarderAddress,
             data: "0x",

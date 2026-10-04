@@ -12,11 +12,11 @@ export default function AttestPage() {
 
   async function send(action: 'attest' | 'revoke') {
     try {
-      if (!(window as any).ethereum) {
+      if (!window.ethereum) {
         setError('wallet not found');
         return;
       }
-      const provider = new ethers.BrowserProvider((window as any).ethereum);
+      const provider = new ethers.BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
       const addr = await signer.getAddress();
       const warning = await verifyEnsSubdomain(provider, addr);

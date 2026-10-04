@@ -25,11 +25,44 @@ export async function resolveAddress(
   return resolved;
 }
 
+interface JobCreatedDetails {
+  employer: string;
+  reward: string;
+  stake: string;
+  fee: string;
+  specHash: string;
+  uri: string;
+}
+
+type JobDetectedHandler = (
+  jobId: string,
+  details: JobCreatedDetails
+) => void | Promise<void>;
+
+type JobCreatedListener = (
+  jobId: bigint,
+  employer: string,
+  assignedAgent: string,
+  reward: bigint,
+  stake: bigint,
+  fee: bigint,
+  specHash: string,
+  uri: string
+) => void | Promise<void>;
+
+interface JobRegistryContract {
+  on(event: 'JobCreated', listener: JobCreatedListener): void;
+}
+
+interface StakeManagerContract {
+  stakeOf(address: string, role: number): Promise<bigint>;
+}
+
 export function setupJobListener(
-  jobRegistry: any,
-  stakeManager: { stakeOf(address: string, role: number): Promise<bigint> },
+  jobRegistry: JobRegistryContract,
+  stakeManager: StakeManagerContract,
   agentAddress: string,
-  onJobDetected: (jobId: string, details: any) => void | Promise<void>
+  onJobDetected: JobDetectedHandler
 ): void {
   jobRegistry.on(
     'JobCreated',
@@ -60,10 +93,7 @@ export function setupJobListener(
 }
 
 export async function start(
-  onJobDetected: (
-    jobId: string,
-    details: any
-  ) => void | Promise<void> = defaultCallback
+  onJobDetected: JobDetectedHandler = defaultCallback
 ): Promise<void> {
   const provider = new ethers.JsonRpcProvider(RPC_URL);
   const jobRegistryAddress = await resolveAddress(
@@ -84,11 +114,17 @@ export async function start(
     stakeManagerAbi,
     provider
   );
-  setupJobListener(
-    jobRegistry,
-    stakeManager as unknown as {
-      stakeOf(address: string, role: number): Promise<bigint>;
+  const jobRegistryContract: JobRegistryContract = {
+    on: (event, listener) => {
+      jobRegistry.on(event, listener);
     },
+  };
+  const stakeManagerContract: StakeManagerContract = {
+    stakeOf: (address, role) => stakeManager.stakeOf(address, role),
+  };
+  setupJobListener(
+    jobRegistryContract,
+    stakeManagerContract,
     AGENT_ADDRESS,
     onJobDetected
   );
@@ -96,7 +132,7 @@ export async function start(
 
 export async function defaultCallback(
   jobId: string,
-  details: any
+  details: JobCreatedDetails
 ): Promise<void> {
   if (!ORCHESTRATOR_ENDPOINT) return;
   await fetch(ORCHESTRATOR_ENDPOINT, {

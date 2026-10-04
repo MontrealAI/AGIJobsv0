@@ -40,7 +40,10 @@ const links: GraphLink[] = [
 export function ArtifactGraph() {
   const [selected, setSelected] = useState<GraphNode | null>(null);
 
-  const data = useMemo(() => ({ nodes, links }), []);
+  const data = useMemo<{ nodes: GraphNode[]; links: GraphLink[] }>(
+    () => ({ nodes, links }),
+    []
+  );
 
   const handleAction = () => {
     if (!selected) return;
@@ -58,28 +61,26 @@ export function ArtifactGraph() {
         <CardBody>
           <Box height={{ base: '320px', md: '520px' }}>
             <ForceGraph2D
-              graphData={data as any}
-              nodeLabel={(node) => {
-                const typed = node as GraphNode;
-                return `${typed.name} — influence ${(typed.influence * 100).toFixed(0)}%`;
+              graphData={data}
+              nodeLabel={(node: GraphNode) => {
+                return `${node.name} — influence ${(node.influence * 100).toFixed(0)}%`;
               }}
-              nodeCanvasObject={(node, ctx, globalScale) => {
-                const typed = node as GraphNode;
-                const label = typed.name;
+              nodeCanvasObject={(node: GraphNode, ctx, globalScale) => {
+                const label = node.name;
                 const fontSize = 12 / globalScale;
-                const radius = 6 + typed.influence * 10;
+                const radius = 6 + node.influence * 10;
                 ctx.beginPath();
-                ctx.arc((typed.x ?? 0) as number, (typed.y ?? 0) as number, radius, 0, 2 * Math.PI, false);
-                ctx.fillStyle = typed.actionable ? '#34d399' : '#6366f1';
+                ctx.arc(node.x ?? 0, node.y ?? 0, radius, 0, 2 * Math.PI, false);
+                ctx.fillStyle = node.actionable ? '#34d399' : '#6366f1';
                 ctx.fill();
                 ctx.font = `${fontSize}px Sans-Serif`;
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'top';
                 ctx.fillStyle = '#e2e8f0';
-                ctx.fillText(label, (typed.x ?? 0) as number, ((typed.y ?? 0) as number) + radius);
+                ctx.fillText(label, node.x ?? 0, (node.y ?? 0) + radius);
               }}
-              linkLabel={(link) => (link as GraphLink).label}
-              onNodeClick={(node) => setSelected(node as GraphNode)}
+              linkLabel={(link: GraphLink) => link.label}
+              onNodeClick={(node: GraphNode) => setSelected(node)}
             />
           </Box>
         </CardBody>
