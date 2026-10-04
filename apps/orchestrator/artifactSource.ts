@@ -49,11 +49,28 @@ export async function fetchArtifactBytes(
       throw new Error('Configure artifact origins without paths');
     return url.origin;
   });
-  if (trustedGateway)
-    origins.push(new URL(normalizeAgentEndpoint(trustedGateway)).origin);
   const url = new URL(normalizeAgentEndpoint(target));
-  if (!origins.includes(url.origin))
-    throw new Error('Artifact origin is not approved by the operator');
+  let approved = origins.includes(url.origin);
+  if (!approved && trustedGateway) {
+    const gateway = new URL(normalizeAgentEndpoint(trustedGateway));
+    const prefix = gateway.pathname.replace(/\/$/, '') + '/';
+    if (url.origin === gateway.origin) {
+      if (url.pathname === gateway.pathname) approved = true;
+      else if (url.pathname.startsWith(prefix)) {
+        // A configured gateway grants its route, not arbitrary same-origin
+        // admin endpoints. Apply the same traversal rules to direct HTTP URLs.
+        const resolved = resolveArtifactUri(
+          `ipfs://${url.pathname.slice(prefix.length)}`,
+          trustedGateway
+        );
+        approved = new URL(resolved).pathname === url.pathname;
+      }
+    }
+  }
+  if (!approved)
+    throw new Error(
+      'Artifact origin or gateway path is not approved by the operator'
+    );
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 15_000);
   try {

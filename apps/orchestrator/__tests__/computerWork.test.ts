@@ -965,3 +965,22 @@ test('cached ordinary classification cannot override committed computer-work spe
     wallet: { connect: () => ({}) },
   });
 });
+
+test('a trusted gateway cannot be used as an arbitrary same-origin HTTP proxy', async () => {
+  const gateway = 'https://internal.example/ipfs';
+  await assert.rejects(
+    fetchArtifactBytes('https://internal.example/admin', gateway),
+    /not approved/
+  );
+  await assert.rejects(
+    fetchArtifactBytes('https://internal.example/ipfs/%2e%2e/admin', gateway),
+    /not approved/
+  );
+  await assert.rejects(
+    fetchArtifactBytes(
+      'https://internal.example/ipfs/cid/%252e%252e/admin',
+      gateway
+    ),
+    /Invalid IPFS/
+  );
+});
