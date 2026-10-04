@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## v2.0.0
 
+- Publish the Demo Observatory through a tested GitHub Pages workflow: a responsive searchable collection, individual demo pages, sanitized original guides with locally bundled Mermaid, and a clearly labeled browser lifecycle simulation with rejection paths and downloadable receipts.
+
 - Add a searchable catalog of all demo directories and registered commands, with setup, output paths, troubleshooting, and explicit design-guide labels. Preserve existing scenarios and flowcharts.
 - Make ASI Global and Atlas Conductor run actual local settlement with their original mixed validator committees; validate every configured job and payout, guard legacy placeholders behind explicit fixture opt-in, and preserve unrelated local processes.
 - Exercise all discovered Python demo suites in CI, isolate test-runtime selection, and handle optional dependency-probe timeouts without aborting the demo runner.

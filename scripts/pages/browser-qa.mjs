@@ -1,0 +1,307 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import http from 'node:http';
+import assert from 'node:assert/strict';
+import { chromium } from 'playwright';
+import AxeBuilder from '@axe-core/playwright';
+import { root } from './build.mjs';
+
+const output = path.join(root, 'build/pages');
+const artifacts = path.join(root, 'reports/pages');
+fs.mkdirSync(artifacts, { recursive: true });
+const manifest = JSON.parse(fs.readFileSync(path.join(output, 'catalog.json')));
+const errors = [],
+  requests = [],
+  checks = [],
+  diagramFailures = [];
+const server = http.createServer((req, res) => {
+  const url = new URL(req.url, 'http://localhost');
+  if (!url.pathname.startsWith(manifest.basePath)) {
+    res.writeHead(404);
+    res.end();
+    return;
+  }
+  const file = path.resolve(
+    output,
+    decodeURIComponent(url.pathname.slice(manifest.basePath.length)) ||
+      'index.html'
+  );
+  if (!file.startsWith(output + path.sep) && file !== output) {
+    res.writeHead(403);
+    res.end();
+    return;
+  }
+  const target =
+    fs.existsSync(file) && fs.statSync(file).isDirectory()
+      ? path.join(file, 'index.html')
+      : file;
+  if (!fs.existsSync(target)) {
+    res.writeHead(404);
+    res.end();
+    return;
+  }
+  res.setHeader(
+    'Content-Type',
+    {
+      '.html': 'text/html',
+      '.js': 'text/javascript',
+      '.css': 'text/css',
+      '.json': 'application/json',
+      '.svg': 'image/svg+xml',
+      '.png': 'image/png',
+    }[path.extname(target)] || 'application/octet-stream'
+  );
+  fs.createReadStream(target).pipe(res);
+});
+await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+const origin = `http://127.0.0.1:${server.address().port}`;
+const url = origin + manifest.basePath;
+const browser = await chromium.launch({
+  headless: true,
+  executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE || undefined,
+  args: ['--no-sandbox', '--disable-dev-shm-usage'],
+});
+try {
+  const context = await browser.newContext({
+    viewport: { width: 1440, height: 1050 },
+    reducedMotion: 'reduce',
+    acceptDownloads: true,
+  });
+  const page = await context.newPage();
+  page.on('pageerror', (error) => errors.push(error.message));
+  page.on('requestfailed', (request) =>
+    errors.push(request.url() + ': ' + request.failure()?.errorText)
+  );
+  page.on('request', (request) => {
+    if (!request.url().startsWith(origin) && !request.url().startsWith('data:'))
+      requests.push(request.url());
+  });
+  await page.goto(url, { waitUntil: 'networkidle' });
+  assert.equal(await page.locator('[data-demo-card]:visible').count(), 12);
+  await page.screenshot({ path: path.join(artifacts, 'desktop-home.png') });
+  const a11y = async (label) => {
+    const result = await new AxeBuilder({ page })
+      .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+      .analyze();
+    fs.writeFileSync(
+      path.join(artifacts, `accessibility-${label}.json`),
+      JSON.stringify(result.violations, null, 2)
+    );
+    assert.deepEqual(
+      result.violations.map((v) => ({
+        id: v.id,
+        nodes: v.nodes.map((n) => n.target),
+      })),
+      [],
+      label
+    );
+    checks.push(label + ': accessibility');
+  };
+  await a11y('home');
+  await page.getByLabel('Search the collection').fill('aurora');
+  assert.equal(await page.locator('[data-demo-card]:visible').count(), 1);
+  await page.reload({ waitUntil: 'networkidle' });
+  assert.equal(
+    await page.getByLabel('Search the collection').inputValue(),
+    'aurora'
+  );
+  await page.getByLabel('Search the collection').fill('no-such-demo-7391');
+  assert.equal(await page.locator('#catalog-empty').isVisible(), true);
+  await page.getByRole('button', { name: 'Clear filters' }).click();
+  await page.getByLabel('Experience', { exact: true }).selectOption('design');
+  assert.equal(await page.locator('[data-demo-card]:visible').count(), 7);
+  await page.getByRole('button', { name: 'Clear filters' }).click();
+  await page.getByRole('button', { name: 'Show more demos' }).click();
+  assert.equal(await page.locator('[data-demo-card]:visible').count(), 24);
+  checks.push('search, URL persistence, empty state, type filter, pagination');
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  await page.getByRole('button', { name: 'Copy', exact: true }).click();
+  assert.match(
+    await page.evaluate(() => navigator.clipboard.readText()),
+    /npm run demo:aurora:local/
+  );
+  checks.push('copy local setup commands');
+  await page.locator('#walkthrough').scrollIntoViewIfNeeded();
+  for (let i = 0; i < 4; i++) await page.locator('#walkthrough-next').click();
+  assert.equal(
+    await page.locator('#walkthrough-status').textContent(),
+    'Simulated settlement complete'
+  );
+  const downloadPromise = page.waitForEvent('download');
+  await page.locator('#walkthrough-download').click();
+  const download = await downloadPromise;
+  const receipt = JSON.parse(fs.readFileSync(await download.path(), 'utf8'));
+  assert.equal(receipt.simulated, true);
+  assert.equal(receipt.chainTransactions, 0);
+  assert.equal(receipt.productionApproved, false);
+  assert.equal(receipt.settled, true);
+  await page.locator('#walkthrough-reset').click();
+  await page.getByLabel('Worker includes the required evidence').uncheck();
+  await page.locator('#walkthrough-next').click();
+  await page.locator('#walkthrough-next').click();
+  assert.equal(
+    await page.locator('#walkthrough-status').textContent(),
+    'Evidence missing'
+  );
+  assert.equal(await page.locator('#walkthrough-next').isDisabled(), true);
+  await page.locator('#walkthrough-reset').click();
+  await page.getByLabel('Worker includes the required evidence').check();
+  await page.getByLabel('Validator outcome').selectOption('reject');
+  for (let i = 0; i < 3; i++) await page.locator('#walkthrough-next').click();
+  assert.equal(
+    await page.locator('#walkthrough-status').textContent(),
+    'Review required'
+  );
+  await page.screenshot({
+    path: path.join(artifacts, 'walkthrough-review.png'),
+  });
+  checks.push(
+    'successful walkthrough, labeled download, missing evidence, rejected result'
+  );
+  await page.goto(url + 'demos/aurora/', { waitUntil: 'networkidle' });
+  await a11y('demo');
+  await page.getByRole('link', { name: 'Read the full guide' }).click();
+  await page.locator('[data-diagram]').first().scrollIntoViewIfNeeded();
+  await page.waitForSelector('[data-rendered="true"] svg', { timeout: 30000 });
+  await a11y('guide');
+  await page.screenshot({ path: path.join(artifacts, 'guide-diagram.png') });
+  checks.push('demo detail, original guide, live Mermaid rendering');
+  for (const width of [320, 390, 768, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    for (const route of ['', 'demos/aurora/']) {
+      await page.goto(url + route, { waitUntil: 'networkidle' });
+      assert.equal(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth > innerWidth + 1
+        ),
+        false,
+        `overflow at ${width}: ${route}`
+      );
+    }
+    checks.push('responsive layout: ' + width);
+  }
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(url, { waitUntil: 'networkidle' });
+  await page.screenshot({
+    path: path.join(artifacts, 'mobile-full.png'),
+    fullPage: true,
+  });
+  await page.screenshot({ path: path.join(artifacts, 'mobile-home.png') });
+  await page.getByRole('button', { name: 'Menu' }).click();
+  assert.equal(await page.locator('#site-nav').isVisible(), true);
+  await page.keyboard.press('Escape');
+  assert.equal(
+    await page.locator('#menu-toggle').getAttribute('aria-expanded'),
+    'false'
+  );
+  await page.getByRole('button', { name: 'Menu' }).click();
+  await page
+    .locator('#site-nav')
+    .getByRole('link', { name: 'Explore demos' })
+    .click();
+  assert.equal(
+    await page.locator('#menu-toggle').getAttribute('aria-expanded'),
+    'false'
+  );
+  await a11y('mobile');
+  checks.push('mobile navigation');
+  const noJS = await browser.newContext({
+    javaScriptEnabled: false,
+    viewport: { width: 1440, height: 900 },
+  });
+  const fallback = await noJS.newPage();
+  await fallback.goto(url);
+  assert.equal(
+    await fallback.locator('[data-demo-card]:visible').count(),
+    manifest.directories
+  );
+  checks.push('all catalog entries available without JavaScript');
+  await fallback.setViewportSize({ width: 390, height: 844 });
+  assert.equal(await fallback.locator('#site-nav').isVisible(), true);
+  await noJS.close();
+  // Parse every preserved flowchart in the same browser engine used for rendering.
+  await page.goto(url + manifest.guideRoutes['demo/aurora/README.md']);
+  await page.locator('[data-diagram]').first().scrollIntoViewIfNeeded();
+  await page.waitForSelector('[data-rendered="true"] svg');
+  const diagramModule = fs
+    .readdirSync(path.join(output, 'assets'))
+    .find((name) => name.startsWith('diagrams-') && name.endsWith('.js'));
+  const sources = [];
+  for (const [file, route] of Object.entries(manifest.guideRoutes)) {
+    const html = fs.readFileSync(path.join(output, route), 'utf8');
+    const { JSDOM } = await import('jsdom');
+    const document = new JSDOM(html).window.document;
+    for (const code of document.querySelectorAll('[data-diagram] code'))
+      sources.push({ file, text: code.textContent });
+  }
+  const parseResults = await page.evaluate(
+    async ({ moduleURL, sources }) => {
+      const { validateDiagram, renderDiagram } = await import(moduleURL);
+      const errors = [];
+      let index = 0;
+      for (const source of sources) {
+        const figure = document.createElement('figure');
+        figure.dataset.diagram = `qa-${index++}`;
+        figure.innerHTML =
+          '<figcaption class="diagram-status"></figcaption><div class="diagram-viewport"></div><details><pre><code></code></pre></details>';
+        figure.querySelector('code').textContent = source.text;
+        document.body.append(figure);
+        try {
+          await validateDiagram(source.text);
+          await renderDiagram(figure);
+          if (!figure.querySelector('svg'))
+            throw new Error('Missing rendered SVG');
+        } catch (error) {
+          errors.push({
+            file: source.file,
+            message: String(error).slice(0, 300),
+          });
+        } finally {
+          figure.remove();
+        }
+      }
+      return errors;
+    },
+    { moduleURL: manifest.basePath + 'assets/' + diagramModule, sources }
+  );
+  diagramFailures.push(...parseResults);
+  fs.writeFileSync(
+    path.join(artifacts, 'diagram-validation.json'),
+    JSON.stringify(
+      { total: sources.length, failures: diagramFailures },
+      null,
+      2
+    )
+  );
+  assert.deepEqual(
+    diagramFailures,
+    [],
+    'Every preserved diagram must parse and render'
+  );
+  assert.deepEqual(requests, [], 'Unexpected external network requests');
+  assert.deepEqual(errors, [], 'Browser errors');
+  fs.writeFileSync(
+    path.join(artifacts, 'browser-report.json'),
+    JSON.stringify(
+      {
+        status: 'passed',
+        checks,
+        diagrams: sources.length,
+        diagramSyntaxFailures: diagramFailures,
+      },
+      null,
+      2
+    )
+  );
+  console.log(
+    JSON.stringify({
+      status: 'passed',
+      checks: checks.length,
+      diagrams: sources.length,
+      diagramSyntaxFailures: diagramFailures.length,
+    })
+  );
+} finally {
+  await browser.close();
+  await new Promise((resolve) => server.close(resolve));
+}
