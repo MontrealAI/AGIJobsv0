@@ -22,13 +22,8 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-
       - name: Harden runner
-        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
         with:
           egress-policy: block
           allowed-endpoints: >-
@@ -39,13 +34,24 @@ jobs:
             release-assets.githubusercontent.com:443
             objects.githubusercontent.com:443
             raw.githubusercontent.com:443
-            actions.githubusercontent.com:443
             actions-results.githubusercontent.com:443
-            pipelines.actions.githubusercontent.com:443
             registry.npmjs.org:443
             nodejs.org:443
             pypi.org:443
             files.pythonhosted.org:443
+
+      # This pinned action installs agent.service on GitHub-hosted Ubuntu.
+      # Its step can succeed after agent startup fails; make that a job failure.
+      # GitHub runner/cache transport endpoints are allowed by the action itself.
+      - name: Verify runner hardening is active
+        run: |
+          test -s /home/agent/agent.status
+          systemctl is-active --quiet agent.service
+
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          fetch-depth: 0
+          persist-credentials: false
 
       - name: Setup Node
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
@@ -81,6 +87,12 @@ jobs:
 
       - name: Bundle actual local receipts
         run: npm run demo:asi-takeoff:kit -- --report-root reports/localhost/asi-takeoff --local-receipts reports/localhost/asi-takeoff/receipts --summary-md reports/localhost/asi-takeoff/asi-takeoff-report.md --network localhost
+
+      - name: Verify runner hardening remained active
+        if: always()
+        run: |
+          test -s /home/agent/agent.status
+          systemctl is-active --quiet agent.service
 
       - name: Upload demo receipts
         if: always()
