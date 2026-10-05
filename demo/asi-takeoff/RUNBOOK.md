@@ -8,6 +8,16 @@ Follow [the root setup](../../docs/START_HERE.md#reproduce-the-local-baseline). 
 
 Default local fixtures need no personal wallet. Do not overwrite an existing `.env` or copy production keys into the demo. `env.example` documents optional variables; select only the values needed for this rehearsal. The local launcher rejects non-loopback RPCs and conflicting chain settings and uses chain ID 31337.
 
+### Prepare the computer-work surface
+
+Choose the surface before admitting a task. For [OpenClaw's native Codex Computer Use](https://docs.openclaw.ai/plugins/codex-computer-use), verify the Codex-owned plugin/MCP tools, the target desktop session and OS permissions. An installed plugin alone does not prove the desktop responds: the documented `computerUse.strictReadiness` option adds a live startup probe. Configure it through the commissioned OpenClaw/Codex environment; this demo does not install or repair that environment.
+
+For [ChatGPT Work Computer Use](https://learn.chatgpt.com/docs/computer-use), enable the plugin and review app access in the desktop app. macOS and Windows have different desktop behavior; Windows uses the foreground session. Use approved structured tools for repeatable operations and Computer Use when visual interaction is required. Export the two candidate files and run `review.cjs` as shown in the README.
+
+For an admitted OpenClaw run, retain the exact adapter receipt and protected dispatch journal. Use `review.cjs --receipt` with the job and deployment from your admission record. A rejected receipt does not authorize automatic redispatch. Reconcile the original attempt before admitting a correction. The checker validates task/content consistency; it cannot authenticate unsigned provider claims or approve payment.
+
+If CI reports `HH502` during compiler download, inspect the active network policy and the pinned compiler source before retrying. This workflow allows `binaries.soliditylang.org:443` for Hardhat's compiler lists/binaries while retaining block mode and agent health checks. Do not substitute a compiler version or disable the firewall to obtain a green run.
+
 ## 2. Run the retained three-job local chain
 
 ```bash

@@ -123,6 +123,92 @@ test('live adapter schema accepts the exact task without dispatch', () => {
   assert.match(computerTaskDigest(task), /^[0-9a-f]{64}$/);
 });
 
+test('actual Responses adapter fixture receipt passes the independent ASI review', async (t) => {
+  const http = require('node:http');
+  const {
+    executeComputerWork,
+    computerTaskDigest,
+  } = require('../../../apps/orchestrator/computerWork.ts');
+  const { reviewReceipt } = require('../computer-work/review.cjs');
+  const work = path.join(ROOT, 'demo/asi-takeoff/computer-work');
+  const task = JSON.parse(fs.readFileSync(path.join(work, 'task.json')));
+  const dir = temp(t),
+    tokenEnv = 'COMPUTER_WORK_ASI_TEST_TOKEN';
+  const previous = process.env[tokenEnv];
+  process.env[tokenEnv] = 'synthetic-local-test-token';
+  t.after(() => {
+    if (previous === undefined) delete process.env[tokenEnv];
+    else process.env[tokenEnv] = previous;
+  });
+  let requests = 0;
+  const server = http.createServer(async (req, res) => {
+    requests++;
+    assert.equal(
+      req.headers.authorization,
+      'Bearer synthetic-local-test-token'
+    );
+    let bytes = '';
+    for await (const chunk of req) bytes += chunk;
+    assert.equal(
+      JSON.parse(JSON.parse(bytes).input).taskSha256,
+      computerTaskDigest(task)
+    );
+    const result = {
+      status: 'completed',
+      summary: 'Synthetic fixture only; no live provider.',
+      artifacts: task.deliverables.map((item) => ({
+        ...item,
+        content: fs.readFileSync(
+          path.join(work, item.name.replace('.', '.example.')),
+          'utf8'
+        ),
+      })),
+    };
+    res.setHeader('Content-Type', 'application/json');
+    res.end(
+      JSON.stringify({
+        id: 'synthetic_response',
+        status: 'completed',
+        output: [
+          {
+            type: 'message',
+            role: 'assistant',
+            status: 'completed',
+            content: [{ type: 'output_text', text: JSON.stringify(result) }],
+          },
+        ],
+      })
+    );
+  });
+  t.after(() => {
+    server.closeAllConnections();
+    server.close();
+  });
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+  const receipt = await executeComputerWork(
+    '73',
+    task,
+    {
+      endpoint: `http://127.0.0.1:${server.address().port}/v1/responses`,
+      agentId: 'asi-takeoff',
+      tokenEnv,
+      deploymentId: 'synthetic-acceptance',
+      mode: 'fixture',
+      timeoutMs: 5000,
+      maxResponseBytes: 262144,
+      maxOutputTokens: 4096,
+      approvedJobs: [{ jobId: '73', taskSha256: computerTaskDigest(task) }],
+    },
+    { stateDirectory: dir }
+  );
+  assert.equal(requests, 1);
+  const result = reviewReceipt(receipt, '73', 'synthetic-acceptance');
+  assert.equal(result.accepted, true);
+  assert.equal(result.declaredWorkerMode, 'fixture');
+  assert.equal(result.productionApproved, false);
+  assert.equal(result.settlementApproved, false);
+});
+
 test('kit refuses to overwrite required inputs', async (t) => {
   const opts = inputs(temp(t));
   await assert.rejects(

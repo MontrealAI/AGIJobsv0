@@ -27,6 +27,8 @@ const french = {
     'Cet exercice fixe utilise le plan planétaire et le port 4176, indépendamment du scénario choisi ci-dessus. Toute modification de la tâche ou de son origine nécessite une nouvelle admission.',
   check:
     'Enregistrez les fichiers UTF-8 exacts, puis lancez ce vérificateur indépendant depuis la racine du dépôt avec vos chemins de fichiers :',
+  receiptCheck:
+    'Vous avez un reçu de l’adaptateur ? Vérifiez directement ses fichiers intégrés. Remplacez la tâche et le déploiement ci-dessous par les valeurs attendues de votre registre d’admission protégé. Des empreintes concordantes n’authentifient pas un agent.',
   boundary:
     'La validation arithmétique est distincte de la qualité du dossier, de la provenance du travail et du règlement autorisé. Le téléchargement ne lance aucun agent.',
   architecture: '3. Préserver la vision globale',

@@ -63,6 +63,14 @@ node demo/asi-takeoff/computer-work/review.cjs demo/asi-takeoff/computer-work/an
 
 Expected: `accepted: true`, `jobsChecked: 5`, `productionApproved: false`, `settlementApproved: false`. The evaluator independently recomputes values without importing the planner. It rejects changed amounts, omitted/duplicate jobs, wrong dependencies, hidden schedule conflicts, wrong source hashes and approval claims. Dossier substance, source rights, worker provenance and actual application effects still require independent review. Example output is not proof of worker execution.
 
+For an OpenClaw adapter receipt, check both embedded deliverables without manually copying their contents:
+
+```bash
+node demo/asi-takeoff/computer-work/review.cjs --receipt /path/to/receipt.json 73 your-deployment-id
+```
+
+Replace `73` and `your-deployment-id` with the expected values from the protected admission record, not values copied from the receipt under review. This mode checks the fixed task and its adapter digest, job/deployment binding, completion state, artifact names/types, exact UTF-8 byte counts and SHA-256 hashes before running the independent evaluator. It reads files of at most 1 MiB and never extracts or executes artifact contents. `declaredWorkerMode` distinguishes fixture/live declarations; `providerExecution` remains `not assessed`. An unsigned receipt can be fabricated with matching hashes: reconcile its attempt with the protected dispatch journal and actual effects, and obtain substantive review before acceptance or settlement. A changed task requires a separately commissioned evaluator.
+
 For an operator-led Work session, provide the task and source, request the two UTF-8 files, and run the same checker on the exact returned bytes. For live OpenClaw commissioning, follow [the existing setup and recovery procedure](../../docs/computer-work.md#commission-a-real-worker). Use [worker-profiles.example.json](computer-work/worker-profiles.example.json), which admits **no jobs**, with a dedicated endpoint/agent, protected `COMPUTER_WORK_ASI_TAKEOFF_TOKEN`, absolute profile/journal paths and a unique deployment identity. Run the studio inside the worker's own network environment so loopback resolves correctly.
 
 After the repository toolchain setup:
@@ -121,7 +129,7 @@ node --test demo/asi-takeoff/tests/*.test.cjs
 node demo/asi-takeoff/tests/browser-smoke.cjs
 ```
 
-The focused workflow runs planning/review/server/pipeline tests, optional Python regressions, the full governance pipeline, the local-chain mission and its actual receipt kit. Browser checks cover desktop/mobile, French labels, offline diagram display, downloads, untrusted text and failed loads. Full repository checks must pass for the exact PR head before merge.
+The focused workflow runs planning/review/server/pipeline tests, optional Python regressions, the full governance pipeline, the local-chain mission and its actual receipt kit. Receipt regressions include an authenticated local Responses fixture through the real adapter and rejection of changed tasks, wrong jobs/deployments, altered bytes and incorrect analysis with recomputed hashes. The fixture makes no live-provider call. Browser checks cover desktop/mobile, French labels, offline diagram display, downloads, untrusted text and failed loads. Runner hardening must remain active; the compiler host is explicitly allowed. Full repository checks must pass for the exact PR head before merge.
 
 | Before production | Evidence needed |
 | --- | --- |
