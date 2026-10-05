@@ -116,6 +116,88 @@ test('checkpoint corruption and legacy unsigned snapshots fail closed', async (t
   await writeFile(config.checkpoint.path, JSON.stringify(data));
   await assert.rejects(manager.load(), /integrity/);
 });
+for (const mode of ['spillover', 'cancel'] as const) {
+  test(`shard retirement remains restorable with incoming policies and nodes (${mode})`, async (t) => {
+    const { config } = await setup(t);
+    config.shards[0].spilloverTargets = ['edge'];
+    config.shards[0].router = {
+      spilloverPolicies: [{ target: 'edge', threshold: 1 }],
+    };
+    config.shards.push({
+      ...config.shards[0],
+      id: 'edge',
+      displayName: 'Edge',
+      spilloverTargets: ['earth'],
+      router: undefined,
+    });
+    config.nodes.push({
+      ...config.nodes[0],
+      id: 'edge.worker',
+      region: 'edge',
+    });
+    const o = new PlanetaryOrchestrator(
+      config,
+      new CheckpointManager(config.checkpoint.path)
+    );
+    o.submitJob({ ...job, shard: 'edge' });
+    o.processTick({ tick: 1 });
+    await assert.rejects(
+      o.applyOwnerCommand({
+        type: 'shard.deregister',
+        shard: 'edge',
+        redistribution: { mode: 'spillover', targetShard: 'missing' },
+      }),
+      /existing, different/
+    );
+    assert.equal(o.getShardSnapshots().edge.inFlight, 1);
+    await o.applyOwnerCommand({
+      type: 'shard.deregister',
+      shard: 'edge',
+      redistribution:
+        mode === 'spillover' ? { mode, targetShard: 'earth' } : { mode },
+    });
+    await o.saveCheckpoint();
+    const checkpoint = await new CheckpointManager(
+      config.checkpoint.path
+    ).load();
+    assert.deepEqual(checkpoint!.shards.earth.config.spilloverTargets, []);
+    assert.deepEqual(
+      checkpoint!.shards.earth.config.router!.spilloverPolicies,
+      []
+    );
+    assert.equal(checkpoint!.nodes['edge.worker'], undefined);
+    const restored = new PlanetaryOrchestrator(
+      config,
+      new CheckpointManager(config.checkpoint.path)
+    );
+    assert.equal(await restored.restoreFromCheckpoint(), true);
+    assert.equal(restored.getShardSnapshots().edge, undefined);
+    assert.throws(() => restored.submitJob(job), /Duplicate/);
+    if (mode === 'spillover') {
+      for (let tick = 2; tick <= 5; tick++) restored.processTick({ tick });
+      assert.equal(restored.fabricMetrics.jobsCompleted, 1);
+    } else assert.equal(restored.fabricMetrics.jobsCancelled, 1);
+  });
+}
+test('reject final-shard retirement before changing queued work', async (t) => {
+  const { config } = await setup(t);
+  const o = new PlanetaryOrchestrator(
+    config,
+    new CheckpointManager(config.checkpoint.path)
+  );
+  o.submitJob(job);
+  await assert.rejects(
+    o.applyOwnerCommand({
+      type: 'shard.deregister',
+      shard: 'earth',
+      redistribution: { mode: 'cancel' },
+    }),
+    /final shard/
+  );
+  assert.equal(o.getShardSnapshots().earth.queueDepth, 1);
+  await o.saveCheckpoint();
+  assert.ok(await new CheckpointManager(config.checkpoint.path).load());
+});
 test('resume requires an existing checkpoint and leaves reports untouched', async (t) => {
   const { config } = await setup(t);
   await mkdir(join(config.reporting.directory, 'test'), { recursive: true });

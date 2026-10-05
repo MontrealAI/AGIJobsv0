@@ -432,6 +432,16 @@ export class PlanetaryOrchestrator {
           throw new Error(`Unknown shard ${command.shard}`);
         }
         const redistribution = command.redistribution ?? { mode: 'spillover' as const };
+        if (this.shards.size === 1) {
+          throw new Error('Cannot deregister the final shard; pause the fabric instead');
+        }
+        let spilloverTarget: ShardId | undefined;
+        if (redistribution.mode === 'spillover') {
+          spilloverTarget = redistribution.targetShard ?? shardState.config.spilloverTargets.find((target) => target !== command.shard);
+          if (!spilloverTarget || spilloverTarget === command.shard || !this.shards.has(spilloverTarget)) {
+            throw new Error('Shard deregistration requires an existing, different spillover target');
+          }
+        }
         const queuedJobs = [...shardState.queue];
         const inFlightJobs = Array.from(shardState.inFlight.values());
         shardState.queue = [];
@@ -443,25 +453,11 @@ export class PlanetaryOrchestrator {
           }
         }
 
-        let spilloverTarget: ShardId | undefined;
         let spillRequests: SpilloverRequest[] = [];
         let cancelledJobs = 0;
         let cancelledValue = 0;
 
         if (redistribution.mode === 'spillover') {
-          spilloverTarget = redistribution.targetShard;
-          if (!spilloverTarget) {
-            spilloverTarget = shardState.config.spilloverTargets.find((target) => target !== command.shard);
-          }
-          if (!spilloverTarget) {
-            throw new Error(`Shard ${command.shard} deregistration requires a spillover target`);
-          }
-          if (spilloverTarget === command.shard) {
-            throw new Error('Shard deregistration spillover target must differ from source shard');
-          }
-          if (!this.shards.has(spilloverTarget)) {
-            throw new Error(`Spillover target shard ${spilloverTarget} not found`);
-          }
           spillRequests = allActiveJobs.map((job) => {
             job.assignedNodeId = undefined;
             job.startedTick = undefined;
@@ -526,6 +522,27 @@ export class PlanetaryOrchestrator {
         this.routers.delete(command.shard);
         this.pausedShards.delete(command.shard);
         this.removeShardConfig(command.shard);
+        for (const [shardId, state] of this.shards) {
+          state.config.spilloverTargets = state.config.spilloverTargets.filter((target) => target !== command.shard);
+          const router = this.routers.get(shardId);
+          router?.updateSpilloverTargets(state.config.spilloverTargets);
+          if (state.config.router?.spilloverPolicies) {
+            state.config.router.spilloverPolicies = state.config.router.spilloverPolicies.filter((policy) => policy.target !== command.shard);
+            router?.updateSpilloverPolicies(state.config.router.spilloverPolicies);
+          }
+          this.syncShardConfigReference(shardId, state.config);
+        }
+        const retiredNodes = [...this.nodes.values()].filter((node) => node.definition.region === command.shard);
+        for (const node of retiredNodes) {
+          this.nodes.delete(node.definition.id);
+          push({
+            tick: this.tick,
+            type: 'owner.node.deregister',
+            message: `Owner retired node ${node.definition.id} with shard ${command.shard}`,
+            data: { nodeId: node.definition.id, reason: command.reason ?? 'owner-shard-deregister' },
+          });
+        }
+        this.config.nodes = this.config.nodes.filter((node) => node.region !== command.shard);
 
         push({
           tick: this.tick,
@@ -540,6 +557,7 @@ export class PlanetaryOrchestrator {
             failedJobs: failedCount,
             redistributionMode: redistribution.mode,
             spilloverTarget,
+            retiredNodes: retiredNodes.map((node) => node.definition.id),
           },
         });
         break;
