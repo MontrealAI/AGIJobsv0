@@ -1,6 +1,7 @@
 'use strict';
 const fs = require('node:fs');
 const path = require('node:path');
+const os = require('node:os');
 const { spawnSync } = require('node:child_process');
 const { ROOT, sha256 } = require('./scenario.cjs');
 const PLAN = `Omega mainnet preparation — no commands executed, no RPC contacted.
@@ -9,7 +10,7 @@ const PLAN = `Omega mainnet preparation — no commands executed, no RPC contact
    treasury, token economics, artifacts, gas limits and output locations. Compile and
    audit the production contracts through the repository release workflow.
 3. Run npm run deploy:checklist using the reviewed MAINNET_RPC_URL environment.
-4. The optional --execute route checks eth_chainId = 1, binds the exact config hash,
+4. The optional --execute route checks eth_chainId = 1, binds a protected snapshot to the exact config hash,
    then opens the existing interactive deploy:oneclick:wizard without --yes or Compose.
    The wizard updates its explicit env file AFTER deployment, from actual addresses.
 5. Review the generated owner change ticket, deployment receipts and control ownership.
@@ -105,6 +106,24 @@ async function chainId(endpoint) {
   )
     throw new Error('RPC must report Ethereum mainnet chain ID 1');
 }
+function withReviewedConfig(configPath, expectedDigest, invoke) {
+  const bytes = fs.readFileSync(configPath);
+  if (bytes.length > 1024 * 1024 || sha256(bytes) !== expectedDigest)
+    throw new Error('Config changed during preflight');
+  const directory = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'omega-reviewed-config-')
+  );
+  const snapshot = path.join(directory, 'deployer.json');
+  try {
+    fs.chmodSync(directory, 0o700);
+    fs.writeFileSync(snapshot, bytes, { flag: 'wx', mode: 0o400 });
+    fs.chmodSync(directory, 0o500);
+    return invoke(snapshot);
+  } finally {
+    fs.chmodSync(directory, 0o700);
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+}
 async function main(argv = process.argv.slice(2)) {
   const o = parse(argv);
   if (!o.execute || o.help) {
@@ -132,22 +151,22 @@ async function main(argv = process.argv.slice(2)) {
       );
   };
   invoke(['run', 'deploy:checklist']);
-  if (sha256(fs.readFileSync(o.config)) !== o['config-sha256'])
-    throw new Error('Config changed during preflight');
-  invoke([
-    'run',
-    'deploy:oneclick:wizard',
-    '--',
-    '--config',
-    o.config,
-    '--network',
-    'mainnet',
-    '--env',
-    o.env,
-    '--deployment-output',
-    o.output,
-    '--no-compose',
-  ]);
+  withReviewedConfig(o.config, o['config-sha256'], (snapshot) =>
+    invoke([
+      'run',
+      'deploy:oneclick:wizard',
+      '--',
+      '--config',
+      snapshot,
+      '--network',
+      'mainnet',
+      '--env',
+      o.env,
+      '--deployment-output',
+      o.output,
+      '--no-compose',
+    ])
+  );
   if (!fs.existsSync(o.output))
     throw new Error(
       'Wizard aborted or no deployment addressbook exists; no change ticket generated'
@@ -164,7 +183,7 @@ async function main(argv = process.argv.slice(2)) {
     o.ticket,
   ]);
 }
-module.exports = { parse, chainId, main, PLAN };
+module.exports = { parse, chainId, main, PLAN, withReviewedConfig };
 if (require.main === module)
   main().catch((error) => {
     console.error(`Omega mainnet: ${error.message}`);

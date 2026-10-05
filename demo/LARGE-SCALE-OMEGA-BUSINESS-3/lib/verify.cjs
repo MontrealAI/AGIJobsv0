@@ -10,7 +10,10 @@ const {
   integer,
 } = require('./scenario.cjs');
 const { economics, taskFor, phasesFor } = require('./mission.cjs');
-const { checkCandidate } = require('../computer-work/checker.cjs');
+const {
+  checkCandidate,
+  validateInput,
+} = require('../computer-work/checker.cjs');
 function verifyReport(directory) {
   const root = fs.realpathSync(directory);
   function read(relative, max = 16 * 1024 * 1024) {
@@ -63,6 +66,11 @@ function verifyReport(directory) {
   assert.equal(report.jobs.length, scenario.nations.length);
   assert.equal(report.review.actualHumanReviewPerformed, false);
   const workloads = JSON.parse(read('workloads.json'));
+  assert.deepEqual(
+    Object.keys(workloads).sort(),
+    scenario.nations.map((nation) => nation.wallet).sort()
+  );
+  for (const input of Object.values(workloads)) validateInput(input);
   integer(report.review.capacityMinutes, 'review capacity', 0, 1000000);
   assert.ok(
     /^http:\/\/127\.0\.0\.1:[1-9][0-9]{0,4}$/.test(report.workerOrigin)

@@ -202,6 +202,30 @@ test('over-budget jobs are deferred even with review capacity', async (t) => {
   assert.match(result.report.jobs[0].admission.reason, /costs/);
   verifyReport(result.out);
 });
+test('verification validates deferred inputs even after all related artifacts are resealed', async (t) => {
+  const result = await run(options(t, ['--review-capacity', '0']));
+  const changed = clone(workloads),
+    report = clone(result.report);
+  changed.solaris.rows[0].generatedKwh = 'not-a-number';
+  rewrite(result.out, 'workloads.json', changed);
+  report.workloadSha256 = s.sha256(
+    fs.readFileSync(path.join(result.out, 'workloads.json'))
+  );
+  const job = report.jobs.find((entry) => entry.key === 'solaris');
+  rewrite(result.out, job.files.input, changed.solaris);
+  const { taskFor } = require('../lib/mission.cjs');
+  rewrite(
+    result.out,
+    job.files.task,
+    taskFor(
+      scenario.nations.find((nation) => nation.wallet === job.key),
+      changed.solaris,
+      report.workerOrigin
+    )
+  );
+  reseal(result.out, report);
+  assert.throws(() => verifyReport(result.out));
+});
 test('rejected candidates produce retained evidence and exit failure', async (t) => {
   const result = await run(options(t, ['--inject-error']));
   assert.equal(result.exitCode, 1);
@@ -452,6 +476,43 @@ test('mainnet config hash, governance and fresh output are mandatory', (t) => {
   assert.equal(mainnet.parse(args).execute, true);
   fs.appendFileSync(config, ' ');
   assert.throws(() => mainnet.parse(args), /digest/);
+});
+test('mainnet wizard and child keep reviewed bytes when the original config changes', (t) => {
+  const config = path.join(temp(t), 'config.json'),
+    reviewed = '{"network":"mainnet"}';
+  fs.writeFileSync(config, reviewed);
+  let snapshot;
+  mainnet.withReviewedConfig(config, s.sha256(reviewed), (file) => {
+    snapshot = file;
+    assert.notEqual(file, config);
+    assert.equal(fs.statSync(file).mode & 0o777, 0o400);
+    assert.equal(fs.statSync(path.dirname(file)).mode & 0o777, 0o500);
+    assert.equal(fs.readFileSync(file, 'utf8'), reviewed);
+    fs.writeFileSync(config, '{"network":"changed-during-confirmation"}');
+    assert.equal(fs.readFileSync(file, 'utf8'), reviewed);
+  });
+  assert.equal(fs.existsSync(path.dirname(snapshot)), false);
+  assert.throws(
+    () =>
+      mainnet.withReviewedConfig(config, s.sha256(reviewed), () =>
+        assert.fail('must not launch')
+      ),
+    /changed during preflight/
+  );
+});
+test('reviewed snapshot is cleaned up after wizard failure', (t) => {
+  const config = path.join(temp(t), 'config.json');
+  fs.writeFileSync(config, '{}');
+  let snapshot;
+  assert.throws(
+    () =>
+      mainnet.withReviewedConfig(config, s.sha256('{}'), (file) => {
+        snapshot = file;
+        throw new Error('wizard stopped');
+      }),
+    /wizard stopped/
+  );
+  assert.equal(fs.existsSync(path.dirname(snapshot)), false);
 });
 test('all shell launchers resolve the root from an unrelated working directory', (t) => {
   const cwd = temp(t);
