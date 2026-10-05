@@ -1,9 +1,12 @@
 {
-  "languages": ["en", "fr"],
+  "languages": [
+    "en",
+    "fr"
+  ],
   "strings": {
     "en": {
       "title": "🎖️ REDENOMINATION 👁️✨",
-      "subtitle": "A sovereign-grade redenomination control room that a non-technical leader can activate in minutes. Harness multi-signature governance, verifiable compute, collusion-resistant validation, and institutional observability — all orchestrated by AGI Jobs v0 (v2).",
+      "subtitle": "Plan a change of token units, inspect exact before-and-after values, and rehearse a governed computer-work mission. Start locally in minutes; retain independent review and authorization for live execution.",
       "ctaRun": "Run the scripted mission",
       "ctaArchitecture": "View architecture map",
       "sectionActors": "Empowered Personas",
@@ -11,7 +14,7 @@
       "sectionTimeline": "Mission Timeline",
       "sectionGuardrails": "Operational Guardrails",
       "sectionRunbook": "One-Command Runbook",
-      "sectionAssurance": "Enterprise-Grade Assurance",
+      "sectionAssurance": "Production acceptance requirements",
       "sectionOwner": "Owner Command Console",
       "phaseNavigator": "Phase navigator",
       "phaseNavigatorHint": "Select a lifecycle to see the obligations, safeguards, and automation entry points.",
@@ -25,20 +28,24 @@
       "ownerConsolePill": "Owner controls",
       "ownerStakeTitle": "Stake guardrails",
       "ownerJobTitle": "Job registry guardrails",
-      "ownerCommandsHint": "Commands below execute parameter updates, pause windows, and telemetry drills.",
+      "ownerCommandsHint": "Read-only guidance and explicit local dry runs. This dashboard executes no command.",
       "ownerPrimaryCommandTitle": "Primary automation",
       "ownerCommandsEmpty": "Generate the playbook export to populate owner automation commands.",
-      "runbookIntro": "Execute the scripted mission on a local fork or preferred testnet:",
-      "runbookFollow": "Then follow with infrastructure activation and validation scripts:",
+      "runbookIntro": "From the repository root, with the pinned Node version, start the local planning server. No dependency installation, wallet or API key is needed:",
+      "runbookFollow": "Use these offline planning and review tools:",
       "runbookDocs": "Reference documentation for governance and observability programs:",
-      "assuranceGovernance": "All privileged updates routed through a timelock-controlled multi-signature wallet with transparent proposal flows.",
-      "assuranceCompute": "Commit-reveal validation, signed result hashes, and Certificate NFTs ensure tamper-evident outputs.",
-      "assuranceObservability": "Prometheus + Grafana dashboards, audit logs, and anomaly alerts keep every stakeholder informed in real time.",
-      "assuranceUX": "One-click deployment, AI-guided chat workflows, and multilingual responsive interfaces welcome non-technical leaders."
+      "assuranceGovernance": "Before live execution, verify the actual owner, multisig, timelock and privileges on the target chain. These controls are not established by a local export.",
+      "assuranceCompute": "Check deliverables against approved source data with an independent evaluator. Commit-reveal and signed hashes are evidence mechanisms, not proof that the work is correct.",
+      "assuranceObservability": "Commission monitoring against real chain and worker events, preserve journals, and rehearse interruption and recovery. This page displays saved local data.",
+      "assuranceUX": "Responsive dashboards, exact numbers, English/French interface labels and non-interactive CLI output support review. Scenario details and command output remain in English.",
+      "planningNotice": "Offline planning rehearsal — no balances, transactions, provider calls or production approval.",
+      "computerWork": "Extend the mission with OpenClaw or operator-led ChatGPT Work: prepare evidence, independently verify it, then obtain separate governance authorization. Keyboard-and-mouse work is the opportunity; reliable completion must be measured task by task.",
+      "marketNotice": "Vision: $40 trillion/year of work, a project planning assumption rather than a verified market estimate or platform revenue.",
+      "diagramNotice": "The original graph is preserved as a conceptual vision. Its VRF, encrypted-verdict, automatic payout and moderator-control labels are not claims that this demo implements or verifies those mechanisms."
     },
     "fr": {
       "title": "🎖️ REDÉNOMINATION 👁️✨",
-      "subtitle": "Une salle de contrôle de redénomination souveraine qu’un décideur non technique peut activer en quelques minutes. Gouvernance multi-signature, calcul vérifiable, validation résistante à la collusion et observabilité institutionnelle — le tout orchestré par AGI Jobs v0 (v2).",
+      "subtitle": "Planifiez un changement d’unité, examinez les valeurs exactes avant et après, puis répétez une mission de travail informatique gouvernée. Démarrez localement en quelques minutes ; validation indépendante et autorisation restent nécessaires pour une exécution réelle.",
       "ctaRun": "Lancer la mission scénarisée",
       "ctaArchitecture": "Voir la carte d’architecture",
       "sectionActors": "Personas responsabilisées",
@@ -46,7 +53,7 @@
       "sectionTimeline": "Chronologie de la mission",
       "sectionGuardrails": "Garde-fous opérationnels",
       "sectionRunbook": "Runbook en une commande",
-      "sectionAssurance": "Assurance de niveau entreprise",
+      "sectionAssurance": "Exigences avant mise en production",
       "sectionOwner": "Console de commande propriétaire",
       "phaseNavigator": "Navigateur de phases",
       "phaseNavigatorHint": "Sélectionnez un cycle de vie pour voir obligations, garde-fous et scripts.",
@@ -60,16 +67,20 @@
       "ownerConsolePill": "Contrôles propriétaire",
       "ownerStakeTitle": "Garde-fous de mise sous séquestre",
       "ownerJobTitle": "Garde-fous du registre des missions",
-      "ownerCommandsHint": "Les commandes ci-dessous appliquent les mises à jour, fenêtres de pause et exercices de télémétrie.",
+      "ownerCommandsHint": "Consignes en lecture seule et simulations locales explicites. Cette page n’exécute aucune commande.",
       "ownerPrimaryCommandTitle": "Automatisation principale",
       "ownerCommandsEmpty": "Générez l’export du playbook pour renseigner les commandes du propriétaire.",
-      "runbookIntro": "Exécutez la mission scénarisée sur un fork local ou le testnet de votre choix :",
-      "runbookFollow": "Poursuivez ensuite avec l’activation de l’infrastructure et les scripts de validation :",
+      "runbookIntro": "Depuis la racine du dépôt, avec la version Node indiquée, lancez le serveur local de planification. Aucune installation de dépendances, aucun portefeuille ni clé API requis :",
+      "runbookFollow": "Utilisez ces outils de planification et de vérification hors ligne :",
       "runbookDocs": "Consultez la documentation pour la gouvernance et l’observabilité :",
-      "assuranceGovernance": "Toutes les mises à jour privilégiées transitent par un portefeuille multi-signature avec délai et propositions transparentes.",
-      "assuranceCompute": "La validation commit-reveal, les hachages signés et les NFTs de certificats garantissent des résultats infalsifiables.",
-      "assuranceObservability": "Prometheus + Grafana, journaux d’audit et alertes d’anomalies informent chaque acteur en temps réel.",
-      "assuranceUX": "Déploiement en un clic, flux conversationnels IA et interface réactive multilingue pour accueillir les dirigeants non techniques."
+      "assuranceGovernance": "Avant toute exécution réelle, vérifiez le propriétaire, le multisig, le délai et les privilèges sur la chaîne cible. Un export local ne prouve pas ces contrôles.",
+      "assuranceCompute": "Contrôlez les livrables à partir des sources approuvées avec un évaluateur indépendant. Les engagements et signatures ne prouvent pas l’exactitude du travail.",
+      "assuranceObservability": "Configurez le suivi des événements réels, conservez les journaux et testez les interruptions et reprises. Cette page affiche des données locales enregistrées.",
+      "assuranceUX": "Tableaux de bord adaptatifs, valeurs exactes, libellés français/anglais et sorties CLI non interactives facilitent la revue. Le scénario et les commandes restent en anglais.",
+      "planningNotice": "Répétition hors ligne — aucun solde modifié, aucune transaction ni requête fournisseur, aucune approbation de production.",
+      "computerWork": "Étendez la mission avec OpenClaw ou ChatGPT Work piloté par un opérateur : produisez des preuves, vérifiez-les indépendamment, puis obtenez une autorisation distincte. La fiabilité du travail à l’écran se mesure tâche par tâche.",
+      "marketNotice": "Vision : 40 000 milliards de dollars par an de travail, une hypothèse de planification du projet, sans estimation de marché vérifiée ni prévision de revenus.",
+      "diagramNotice": "Le schéma original est conservé comme vision conceptuelle. Ses mentions VRF, verdicts chiffrés, paiement automatique et pouvoirs des modérateurs ne prouvent pas leur implémentation dans cette démo."
     }
   }
 }

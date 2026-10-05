@@ -30,8 +30,17 @@
       body {
         margin: 0;
         font-family: 'Space Grotesk', system-ui, sans-serif;
-        background: radial-gradient(circle at top left, rgba(124, 92, 255, 0.15), transparent 35%),
-          radial-gradient(circle at bottom right, rgba(48, 213, 163, 0.1), transparent 40%), var(--bg);
+        background: radial-gradient(
+            circle at top left,
+            rgba(124, 92, 255, 0.15),
+            transparent 35%
+          ),
+          radial-gradient(
+            circle at bottom right,
+            rgba(48, 213, 163, 0.1),
+            transparent 40%
+          ),
+          var(--bg);
         color: var(--text);
         line-height: 1.5;
         min-height: 100vh;
@@ -83,7 +92,11 @@
         margin: 0 auto;
       }
       section {
-        background: linear-gradient(135deg, rgba(10, 16, 36, 0.9), rgba(8, 11, 24, 0.8));
+        background: linear-gradient(
+          135deg,
+          rgba(10, 16, 36, 0.9),
+          rgba(8, 11, 24, 0.8)
+        );
         border: 1px solid var(--card-border);
         border-radius: 24px;
         padding: 32px;
@@ -109,7 +122,7 @@
       }
       .grid-2 {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
         gap: 24px;
       }
       .definition-list {
@@ -288,15 +301,68 @@
           flex-direction: column;
         }
       }
+      body {
+        overflow-wrap: anywhere;
+      }
+      main > *,
+      .grid-2 > * {
+        min-width: 0;
+      }
+      pre,
+      code,
+      dd,
+      .card {
+        overflow-wrap: anywhere;
+      }
+      pre {
+        white-space: pre-wrap;
+      }
+      .mermaid {
+        overflow-x: auto;
+      }
+      .mermaid svg {
+        max-width: 100%;
+        height: auto;
+      }
+      :focus-visible {
+        outline: 3px solid #9df6d2;
+        outline-offset: 4px;
+      }
+      .skip-link {
+        position: absolute;
+        top: -60px;
+        left: 16px;
+      }
+      .skip-link:focus {
+        top: 8px;
+        background: #091020;
+        z-index: 10;
+        padding: 12px;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          scroll-behavior: auto !important;
+          transition: none !important;
+        }
+      }
     </style>
     <script type="module">
-      import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.esm.min.mjs";
-      mermaid.initialize({ startOnLoad: true, theme: 'dark', fontFamily: 'Space Grotesk' });
+      function escapeHtml(value) {
+        return String(value).replace(
+          /[&<>"']/g,
+          (character) =>
+            ({
+              '&': '&amp;',
+              '<': '&lt;',
+              '>': '&gt;',
+              '"': '&quot;',
+              "'": '&#39;',
+            }[character])
+        );
+      }
 
       const scenarioPath = './scenario.json';
       const translationsPath = './i18n/strings.json';
-      const jobRegistryConfigPath = './config/job-registry-redenominated.json';
-      const stakeManagerConfigPath = './config/stake-manager-redenominated.json';
       const exportDataPath = './ui/export/latest.json';
 
       const actorsContainer = document.querySelector('#actors');
@@ -310,13 +376,22 @@
       const languageSelect = document.querySelector('#language-select');
       const ownerStakeParams = document.querySelector('#owner-stake-params');
       const ownerJobParams = document.querySelector('#owner-job-params');
-      const ownerPrimaryCommand = document.querySelector('#owner-primary-command');
+      const ownerPrimaryCommand = document.querySelector(
+        '#owner-primary-command'
+      );
       const ownerCommandsList = document.querySelector('#owner-commands');
-      const ownerCommandsEmpty = document.querySelector('#owner-commands-empty');
+      const ownerCommandsEmpty = document.querySelector(
+        '#owner-commands-empty'
+      );
 
       const translationState = { languages: ['en'], strings: { en: {} } };
       let activeLanguage = 'en';
-      const state = { scenario: null, jobConfig: null, stakeConfig: null, exportData: null };
+      const state = {
+        scenario: null,
+        jobConfig: null,
+        stakeConfig: null,
+        exportData: null,
+      };
 
       async function fetchJson(url) {
         const response = await fetch(url, { cache: 'no-cache' });
@@ -324,19 +399,6 @@
           throw new Error(`${url} responded with status ${response.status}`);
         }
         return response.json();
-      }
-
-      async function fetchJsonOptional(url) {
-        try {
-          const response = await fetch(url, { cache: 'no-cache' });
-          if (!response.ok) {
-            throw new Error(`${response.status}`);
-          }
-          return response.json();
-        } catch (error) {
-          console.warn(`Optional resource unavailable: ${url}`, error);
-          return null;
-        }
       }
 
       function getTranslation(key) {
@@ -352,11 +414,7 @@
           const key = element.dataset.i18n;
           const value = getTranslation(key);
           if (!value) return;
-          if (element.dataset.i18nTarget === 'html') {
-            element.innerHTML = value;
-          } else {
-            element.textContent = value;
-          }
+          element.textContent = value;
         });
         document.title = `${getTranslation('title') ?? 'REDENOMINATION'} Demo`;
       }
@@ -390,6 +448,7 @@
           lang = 'en';
         }
         activeLanguage = lang;
+        document.documentElement.lang = lang;
         if (languageSelect && languageSelect.value !== lang) {
           languageSelect.value = lang;
         }
@@ -404,12 +463,7 @@
         if (value === undefined || value === null || value === '') {
           return '—';
         }
-        const numeric = Number(value);
-        if (Number.isFinite(numeric)) {
-          const maximumFractionDigits = numeric < 1 ? 6 : 2;
-          return `${numeric.toLocaleString(undefined, { maximumFractionDigits })} AGIΩ`;
-        }
-        return `${value} AGIΩ`;
+        return `${value} ${state.exportData?.token?.targetSymbol ?? 'tokens'}`;
       }
 
       function formatSecondsDisplay(value) {
@@ -421,10 +475,14 @@
           return `${value}`;
         }
         if (seconds >= 86400) {
-          return `${seconds.toLocaleString()} s (${(seconds / 86400).toFixed(2)} days)`;
+          return `${seconds.toLocaleString()} s (${(seconds / 86400).toFixed(
+            2
+          )} days)`;
         }
         if (seconds >= 3600) {
-          return `${seconds.toLocaleString()} s (${(seconds / 3600).toFixed(2)} hours)`;
+          return `${seconds.toLocaleString()} s (${(seconds / 3600).toFixed(
+            2
+          )} hours)`;
         }
         return `${seconds.toLocaleString()} s`;
       }
@@ -432,7 +490,12 @@
       function renderDefinition(container, entries) {
         if (!container) return;
         container.innerHTML = entries
-          .map((entry) => `<dt>${entry.label}</dt><dd>${entry.value}</dd>`)
+          .map(
+            (entry) =>
+              `<dt>${escapeHtml(entry.label)}</dt><dd>${escapeHtml(
+                entry.value
+              )}</dd>`
+          )
           .join('');
       }
 
@@ -445,7 +508,13 @@
         });
         (exportData?.timeline ?? []).forEach((step) => {
           if (!Array.isArray(step?.commands)) return;
-          const highlighted = ['pause', 'resume', 'update-parameters', 'snapshot', 'migrate-ledgers'];
+          const highlighted = [
+            'pause',
+            'resume',
+            'update-parameters',
+            'snapshot',
+            'migrate-ledgers',
+          ];
           if (highlighted.includes(step.id)) {
             step.commands.forEach((command) => commands.add(command));
           }
@@ -453,36 +522,86 @@
         return Array.from(commands);
       }
 
-      function renderOwnerConsole(jobConfig, stakeConfig, exportData, scenario) {
-        if (!ownerStakeParams || !ownerJobParams || !ownerPrimaryCommand || !ownerCommandsList) {
+      function renderOwnerConsole(
+        jobConfig,
+        stakeConfig,
+        exportData,
+        scenario
+      ) {
+        if (
+          !ownerStakeParams ||
+          !ownerJobParams ||
+          !ownerPrimaryCommand ||
+          !ownerCommandsList
+        ) {
           return;
         }
 
         const stakeEntries = [
-          { label: 'Global minimum stake', value: formatTokenDisplay(stakeConfig?.minStakeTokens) },
-          { label: 'Agent role minimum', value: formatTokenDisplay(stakeConfig?.roleMinimums?.agentTokens) },
-          { label: 'Validator role minimum', value: formatTokenDisplay(stakeConfig?.roleMinimums?.validatorTokens) },
-          { label: 'Platform role minimum', value: formatTokenDisplay(stakeConfig?.roleMinimums?.platformTokens) },
-          { label: 'Recommended minimum stake', value: formatTokenDisplay(stakeConfig?.stakeRecommendations?.minTokens) },
-          { label: 'Unbonding period', value: formatSecondsDisplay(stakeConfig?.unbondingPeriodSeconds) },
+          {
+            label: 'Global minimum stake',
+            value: formatTokenDisplay(stakeConfig?.minStakeTokens),
+          },
+          {
+            label: 'Agent role minimum',
+            value: formatTokenDisplay(stakeConfig?.roleMinimums?.agentTokens),
+          },
+          {
+            label: 'Validator role minimum',
+            value: formatTokenDisplay(
+              stakeConfig?.roleMinimums?.validatorTokens
+            ),
+          },
+          {
+            label: 'Platform role minimum',
+            value: formatTokenDisplay(
+              stakeConfig?.roleMinimums?.platformTokens
+            ),
+          },
+          {
+            label: 'Recommended minimum stake',
+            value: formatTokenDisplay(
+              stakeConfig?.stakeRecommendations?.minTokens
+            ),
+          },
+          {
+            label: 'Unbonding period',
+            value: formatSecondsDisplay(stakeConfig?.unbondingPeriodSeconds),
+          },
           {
             label: 'Validator reward',
-            value: stakeConfig?.validatorRewardPct !== undefined ? `${stakeConfig.validatorRewardPct}%` : '—',
+            value:
+              stakeConfig?.validatorRewardPct !== undefined
+                ? `${stakeConfig.validatorRewardPct}%`
+                : '—',
           },
           {
             label: 'Slashing (employer / treasury)',
             value:
-              stakeConfig?.employerSlashPct !== undefined && stakeConfig?.treasurySlashPct !== undefined
+              stakeConfig?.employerSlashPct !== undefined &&
+              stakeConfig?.treasurySlashPct !== undefined
                 ? `${stakeConfig.employerSlashPct}% / ${stakeConfig.treasurySlashPct}%`
                 : '—',
           },
         ];
 
         const jobEntries = [
-          { label: 'Job stake requirement', value: formatTokenDisplay(jobConfig?.jobStakeTokens) },
-          { label: 'Minimum agent stake', value: formatTokenDisplay(jobConfig?.minAgentStakeTokens) },
-          { label: 'Maximum job reward', value: formatTokenDisplay(jobConfig?.maxJobRewardTokens) },
-          { label: 'Job duration limit', value: formatSecondsDisplay(jobConfig?.jobDurationLimitSeconds) },
+          {
+            label: 'Job stake requirement',
+            value: formatTokenDisplay(jobConfig?.jobStakeTokens),
+          },
+          {
+            label: 'Minimum agent stake',
+            value: formatTokenDisplay(jobConfig?.minAgentStakeTokens),
+          },
+          {
+            label: 'Maximum job reward',
+            value: formatTokenDisplay(jobConfig?.maxJobRewardTokens),
+          },
+          {
+            label: 'Job duration limit',
+            value: formatSecondsDisplay(jobConfig?.jobDurationLimitSeconds),
+          },
           {
             label: 'Max active jobs per agent',
             value:
@@ -492,11 +611,15 @@
           },
           {
             label: 'Protocol fee',
-            value: jobConfig?.feePct !== undefined ? `${jobConfig.feePct}%` : '—',
+            value:
+              jobConfig?.feePct !== undefined ? `${jobConfig.feePct}%` : '—',
           },
           {
             label: 'Validator reward',
-            value: jobConfig?.validatorRewardPct !== undefined ? `${jobConfig.validatorRewardPct}%` : '—',
+            value:
+              jobConfig?.validatorRewardPct !== undefined
+                ? `${jobConfig.validatorRewardPct}%`
+                : '—',
           },
         ];
 
@@ -505,7 +628,8 @@
 
         let commands = collectOwnerCommands(scenario, exportData);
         if (!commands.length) {
-          ownerPrimaryCommand.textContent = 'npm run demo:redenomination:owner-console';
+          ownerPrimaryCommand.textContent =
+            'npm run demo:redenomination:owner-console';
           ownerCommandsEmpty?.removeAttribute('hidden');
           ownerCommandsList.innerHTML = '';
           return;
@@ -515,7 +639,7 @@
         ownerCommandsEmpty?.setAttribute('hidden', 'hidden');
         const rest = commands.slice(1);
         ownerCommandsList.innerHTML = rest
-          .map((command) => `<li><code>${command}</code></li>`)
+          .map((command) => `<li><code>${escapeHtml(command)}</code></li>`)
           .join('');
       }
 
@@ -524,8 +648,12 @@
           .map(
             (actor) => `
             <article class="card">
-              <h3>${actor.label} <span style="color: var(--accent); font-weight: 500;">${actor.role}</span></h3>
-              <p>${actor.goal}</p>
+              <h3>${escapeHtml(
+                actor.label
+              )} <span style="color: var(--accent); font-weight: 500;">${escapeHtml(
+              actor.role
+            )}</span></h3>
+              <p>${escapeHtml(actor.goal)}</p>
             </article>`
           )
           .join('');
@@ -536,14 +664,14 @@
           .map(
             (phase) => `
             <div>
-              <span class="pill">${phase.phase}</span>
+              <span class="pill">${escapeHtml(phase.phase)}</span>
               <div class="timeline">
                 ${phase.steps
                   .map(
                     (step, index) => `
                       <div class="timeline-step">
                         <strong>${String(index + 1).padStart(2, '0')}</strong>
-                        <span>${step}</span>
+                        <span>${escapeHtml(step)}</span>
                       </div>`
                   )
                   .join('')}
@@ -556,37 +684,55 @@
       function renderMetrics(metrics = {}) {
         metricsList.innerHTML = Object.entries(metrics)
           .map(([key, value]) => {
-            const label = key.replace(/([A-Z])/g, ' $1').replace(/^./, (c) => c.toUpperCase());
-            return `<div class="card"><h3>${label}</h3><p>${value}</p></div>`;
+            const label = key
+              .replace(/([A-Z])/g, ' $1')
+              .replace(/^./, (c) => c.toUpperCase());
+            return `<div class="card"><h3>${escapeHtml(
+              label
+            )}</h3><p>${escapeHtml(value)}</p></div>`;
           })
           .join('');
       }
 
       function renderResources(resources = {}) {
         scriptsList.innerHTML = (resources.scripts ?? [])
-          .map((script) => `<li><code>${script}</code></li>`)
+          .map((script) => `<li><code>${escapeHtml(script)}</code></li>`)
           .join('');
         docsList.innerHTML = (resources.docs ?? [])
-          .map((doc) => `<li><code>${doc}</code></li>`)
+          .map((doc) => `<li><code>${escapeHtml(doc)}</code></li>`)
           .join('');
       }
 
       function renderPhaseNavigator(flow = []) {
         phaseButtonsContainer.innerHTML = '';
-        phaseDetail.innerHTML = '<p class="phase-detail__empty" data-i18n="missionWizardEmpty">Select a phase to review its guardrails.</p>';
+        phaseDetail.innerHTML =
+          '<p class="phase-detail__empty" data-i18n="missionWizardEmpty">Select a phase to review its guardrails.</p>';
         flow.forEach((phase, index) => {
           const button = document.createElement('button');
           button.type = 'button';
           button.className = 'phase-button';
-          button.textContent = `${String(index + 1).padStart(2, '0')} — ${phase.phase}`;
+          button.setAttribute('aria-pressed', 'false');
+          button.textContent = `${String(index + 1).padStart(2, '0')} — ${
+            phase.phase
+          }`;
           button.addEventListener('click', () => {
-            document.querySelectorAll('.phase-button').forEach((btn) => btn.classList.remove('active'));
+            document.querySelectorAll('.phase-button').forEach((btn) => {
+              btn.classList.remove('active');
+              btn.setAttribute('aria-pressed', 'false');
+            });
             button.classList.add('active');
+            button.setAttribute('aria-pressed', 'true');
             const steps = (phase.steps ?? [])
-              .map((step, stepIndex) => `<li><strong>${String(stepIndex + 1).padStart(2, '0')}</strong> ${step}</li>`)
+              .map(
+                (step, stepIndex) =>
+                  `<li><strong>${String(stepIndex + 1).padStart(
+                    2,
+                    '0'
+                  )}</strong> ${escapeHtml(step)}</li>`
+              )
               .join('');
             phaseDetail.innerHTML = `
-              <h3>${phase.phase}</h3>
+              <h3>${escapeHtml(phase.phase)}</h3>
               <ol>${steps}</ol>
             `;
           });
@@ -595,18 +741,51 @@
         applyTranslations();
       }
 
-      function renderMermaidDiagram(diagram) {
+      async function renderMermaidDiagram(diagram) {
         if (!mermaidContainer) return;
-        if (typeof diagram !== 'string' || diagram.trim().length === 0) {
-          mermaidContainer.textContent =
-            'Mermaid diagram unavailable — run npm run demo:redenomination:verify to regenerate artefacts.';
-          return;
-        }
-        mermaidContainer.textContent = diagram.trim();
+        const source = typeof diagram === 'string' ? diagram.trim() : '';
+        const fallback = () => {
+          mermaidContainer.replaceChildren();
+          const saved = document.createElement('img');
+          saved.src = './ui/architecture.svg';
+          saved.alt =
+            'Preserved conceptual job lifecycle: assignment, evidence, validation, disputes and governed settlement.';
+          saved.style.width = '100%';
+          saved.style.maxWidth = '541px';
+          const details = document.createElement('details');
+          const summary = document.createElement('summary');
+          summary.textContent = 'View preserved Mermaid source';
+          const code = document.createElement('pre');
+          code.textContent = source || 'Diagram unavailable.';
+          details.append(summary, code);
+          mermaidContainer.append(saved, details);
+        };
+        fallback();
         try {
-          mermaid.init(undefined, mermaidContainer);
+          // Diagram loading must never block the rest of the dashboard.
+          const { default: mermaid } = await import(
+            'https://cdn.jsdelivr.net/npm/mermaid@12.1.0/dist/mermaid.esm.min.mjs'
+          );
+          mermaid.initialize({
+            startOnLoad: false,
+            securityLevel: 'strict',
+            theme: 'dark',
+            layout: 'dagre',
+            look: 'classic',
+            fontFamily: 'Space Grotesk',
+            flowchart: { htmlLabels: false },
+          });
+          const { svg } = await mermaid.render(
+            'redenomination-architecture',
+            source
+          );
+          mermaidContainer.innerHTML = svg;
         } catch (error) {
-          console.error('Failed to render Mermaid diagram', error);
+          fallback();
+          console.warn(
+            'Mermaid unavailable; local diagram and source shown.',
+            error
+          );
         }
       }
 
@@ -618,7 +797,12 @@
         renderResources(scenario.resources ?? {});
         renderPhaseNavigator(scenario.flow ?? []);
         renderMermaidDiagram(scenario.mermaid ?? '');
-        renderOwnerConsole(state.jobConfig, state.stakeConfig, state.exportData, scenario);
+        renderOwnerConsole(
+          state.jobConfig,
+          state.stakeConfig,
+          state.exportData,
+          scenario
+        );
       }
 
       Promise.all([
@@ -627,18 +811,26 @@
           console.error('Failed to load translations', error);
           return { languages: ['en'], strings: { en: {} } };
         }),
-        fetchJsonOptional(jobRegistryConfigPath),
-        fetchJsonOptional(stakeManagerConfigPath),
-        fetchJsonOptional(exportDataPath),
+        fetchJson(exportDataPath),
       ])
-        .then(([scenario, translations, jobConfig, stakeConfig, exportData]) => {
+        .then(([scenario, translations, exportData]) => {
+          if (
+            exportData.meta?.version !== '2.0.0' ||
+            !exportData.configSnapshots
+          )
+            throw new Error(
+              'Regenerate the playbook with npm run demo:redenomination:export'
+            );
           translationState.languages = translations.languages ?? ['en'];
           translationState.strings = translations.strings ?? { en: {} };
-          state.jobConfig = jobConfig ?? null;
-          state.stakeConfig = stakeConfig ?? null;
+          state.jobConfig = exportData.configSnapshots.jobRegistry;
+          state.stakeConfig = exportData.configSnapshots.stakeManager;
           state.exportData = exportData ?? {};
           const navigatorLang = navigator.language?.slice(0, 2).toLowerCase();
-          const preferred = translationState.languages.find((lang) => navigatorLang?.startsWith(lang.toLowerCase())) ?? 'en';
+          const preferred =
+            translationState.languages.find((lang) =>
+              navigatorLang?.startsWith(lang.toLowerCase())
+            ) ?? 'en';
           activeLanguage = preferred;
           populateLanguageSelector(translationState.languages);
           setLanguage(preferred);
@@ -646,13 +838,15 @@
         })
         .catch((error) => {
           console.error('Failed to load REDENOMINATION scenario assets', error);
-          actorsContainer.innerHTML = `<p style="color: var(--danger)">Failed to load scenario: ${
+          actorsContainer.textContent = `Unable to load this plan: ${
             error instanceof Error ? error.message : 'Unknown error'
-          }</p>`;
+          }. Run npm run demo:redenomination:export, then reload.`;
+          actorsContainer.setAttribute('role', 'alert');
         });
     </script>
   </head>
   <body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
     <header>
       <div class="language-bar">
         <label for="language-select" data-i18n="languageLabel">Language</label>
@@ -660,26 +854,64 @@
       </div>
       <h1 data-i18n="title">🎖️ REDENOMINATION 👁️✨</h1>
       <p data-i18n="subtitle">
-        A sovereign-grade redenomination control room that a non-technical leader can activate in minutes. Harness multi-signature
-        governance, verifiable compute, collusion-resistant validation, and institutional observability — all orchestrated by AGI
-        Jobs v0 (v2).
+        Plan a change of token units, inspect exact before-and-after values, and
+        rehearse a governed computer-work mission. Start locally in minutes;
+        retain independent review and authorization for live execution.
       </p>
       <div class="cta-row">
-        <a class="cta" data-i18n="ctaRun" href="#runbook">Run the scripted mission</a>
-        <a class="cta" data-i18n="ctaArchitecture" href="#architecture">View architecture map</a>
+        <a class="cta" data-i18n="ctaRun" href="#runbook"
+          >Run the scripted mission</a
+        >
+        <a class="cta" data-i18n="ctaArchitecture" href="#architecture"
+          >View architecture map</a
+        >
       </div>
     </header>
 
-    <main>
+    <main id="main-content">
+      <section class="card" aria-label="Planning status">
+        <strong data-i18n="planningNotice"
+          >Offline planning rehearsal — no balances, transactions, provider
+          calls or production approval.</strong
+        >
+        <p><a class="cta" href="./ui/">Open exact before / after values</a></p>
+        <p data-i18n="computerWork">
+          Extend the mission with OpenClaw or operator-led ChatGPT Work: prepare
+          evidence, independently verify it, then obtain separate governance
+          authorization. Keyboard-and-mouse work is the opportunity; reliable
+          completion must be measured task by task.
+        </p>
+        <p data-i18n="marketNotice">
+          Vision: $40 trillion/year of work, a project planning assumption
+          rather than a verified market estimate or platform revenue.
+        </p>
+      </section>
       <section>
         <h2 data-i18n="sectionActors">Empowered Personas</h2>
         <div class="grid-2" id="actors"></div>
       </section>
 
       <section id="architecture">
-        <div class="pill">Autonomous job lifecycle</div>
+        <div class="pill">Original vision architecture</div>
+        <p data-i18n="diagramNotice">
+          The original graph is preserved as a conceptual vision. Its VRF,
+          encrypted-verdict, automatic payout and moderator-control labels are
+          not claims that this demo implements or verifies those mechanisms.
+        </p>
+        <p>
+          <a
+            class="cta"
+            href="./ui/architecture.svg"
+            target="_blank"
+            rel="noopener"
+            >Open full-size flowchart</a
+          >
+        </p>
         <h2 data-i18n="sectionMermaid">Mermaid Systems Orchestration</h2>
-        <div class="card" style="padding: 24px; background: rgba(8, 12, 28, 0.95);">
+        <div
+          class="card"
+          style="padding: 24px; background: rgba(8, 12, 28, 0.95)"
+        >
           <div
             class="mermaid"
             id="mermaid-diagram"
@@ -701,12 +933,15 @@
         <span class="pill" data-i18n="phaseNavigator">Phase navigator</span>
         <h2 data-i18n="missionWizardTitle">Mission rehearsal</h2>
         <p class="phase-hint" data-i18n="phaseNavigatorHint">
-          Select a lifecycle to see the obligations, safeguards, and automation entry points.
+          Select a lifecycle to see the obligations, safeguards, and automation
+          entry points.
         </p>
         <div class="phase-controls">
           <div class="phase-buttons" id="phase-buttons"></div>
           <div class="phase-detail" id="phase-detail">
-            <p class="phase-detail__empty" data-i18n="missionWizardEmpty">Select a phase to review its guardrails.</p>
+            <p class="phase-detail__empty" data-i18n="missionWizardEmpty">
+              Select a phase to review its guardrails.
+            </p>
           </div>
         </div>
       </section>
@@ -730,13 +965,22 @@
           </article>
         </div>
         <p class="muted" data-i18n="ownerCommandsHint">
-          Commands below execute parameter updates, pause windows, and telemetry drills.
+          Read-only guidance and explicit local dry runs. This dashboard
+          executes no command.
         </p>
-        <h3 class="muted" data-i18n="ownerPrimaryCommandTitle">Primary automation</h3>
+        <h3 class="muted" data-i18n="ownerPrimaryCommandTitle">
+          Primary automation
+        </h3>
         <div class="code-block" aria-live="polite">
-          <code id="owner-primary-command">npm run demo:redenomination:owner-console</code>
+          <code id="owner-primary-command"
+            >npm run demo:redenomination:owner-console</code
+          >
         </div>
-        <p class="muted" id="owner-commands-empty" data-i18n="ownerCommandsEmpty">
+        <p
+          class="muted"
+          id="owner-commands-empty"
+          data-i18n="ownerCommandsEmpty"
+        >
           Generate the playbook export to populate owner automation commands.
         </p>
         <ul id="owner-commands"></ul>
@@ -744,43 +988,67 @@
 
       <section id="runbook">
         <h2 data-i18n="sectionRunbook">One-Command Runbook</h2>
-        <p data-i18n="runbookIntro">Execute the scripted mission on a local fork or preferred testnet:</p>
+        <p data-i18n="runbookIntro">
+          From the repository root, with the pinned Node version, start the
+          local planning server. No dependency installation, wallet or API key
+          is needed:
+        </p>
         <div class="code-block">
-          <code>npm install
-export NETWORK=anvil
-npm run demo:redenomination</code>
+          <code>npm run demo:redenomination:control-room</code>
         </div>
-        <p data-i18n="runbookFollow">Then follow with infrastructure activation and validation scripts:</p>
+        <p data-i18n="runbookFollow">
+          Use these offline planning and review tools:
+        </p>
         <ul id="scripts"></ul>
-        <p data-i18n="runbookDocs">Reference documentation for governance and observability programs:</p>
+        <p data-i18n="runbookDocs">
+          Reference documentation for governance and observability programs:
+        </p>
         <ul id="docs"></ul>
       </section>
 
       <section>
-        <h2 data-i18n="sectionAssurance">Enterprise-Grade Assurance</h2>
+        <h2 data-i18n="sectionAssurance">Production acceptance requirements</h2>
         <div class="grid-2">
           <article class="card">
             <h3>Governed Autonomy</h3>
-            <p data-i18n="assuranceGovernance">All privileged updates routed through a timelock-controlled multi-signature wallet with transparent proposal flows.</p>
+            <p data-i18n="assuranceGovernance">
+              Before live execution, verify the actual owner, multisig, timelock
+              and privileges on the target chain. These controls are not
+              established by a local export.
+            </p>
           </article>
           <article class="card">
             <h3>Verifiable Compute</h3>
-            <p data-i18n="assuranceCompute">Commit-reveal validation, signed result hashes, and Certificate NFTs ensure tamper-evident outputs.</p>
+            <p data-i18n="assuranceCompute">
+              Check deliverables against approved source data with an
+              independent evaluator. Commit-reveal and signed hashes are
+              evidence mechanisms, not proof that the work is correct.
+            </p>
           </article>
           <article class="card">
             <h3>Institutional Observability</h3>
-            <p data-i18n="assuranceObservability">Prometheus + Grafana dashboards, audit logs, and anomaly alerts keep every stakeholder informed in real time.</p>
+            <p data-i18n="assuranceObservability">
+              Commission monitoring against real chain and worker events,
+              preserve journals, and rehearse interruption and recovery. This
+              page displays saved local data.
+            </p>
           </article>
           <article class="card">
             <h3>Operational UX</h3>
-            <p data-i18n="assuranceUX">One-click deployment, AI-guided chat workflows, and multilingual responsive interfaces welcome non-technical leaders.</p>
+            <p data-i18n="assuranceUX">
+              Responsive dashboards, exact numbers, English/French interface
+              labels and non-interactive CLI output support review. Scenario
+              details and command output remain in English.
+            </p>
           </article>
         </div>
       </section>
     </main>
 
     <footer>
-      <p>AGI Jobs v0 (v2) • REDENOMINATION mission control • Deploy responsibly.</p>
+      <p>
+        AGI Jobs v0 (v2) • REDENOMINATION mission control • Deploy responsibly.
+      </p>
     </footer>
   </body>
 </html>

@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 import fs from 'node:fs';
+import planner from './playbook.cjs';
+import verifier from './verify-artifacts.cjs';
 import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
@@ -14,40 +16,53 @@ const COLORS = {
   yellow: '\u001b[33m',
   green: '\u001b[32m',
   red: '\u001b[31m',
-  gray: '\u001b[90m'
+  gray: '\u001b[90m',
 };
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const demoRoot = path.resolve(__dirname, '..');
 const scenarioPath = path.join(demoRoot, 'scenario.json');
-const jobRegistryConfigPath = path.join(demoRoot, 'config', 'job-registry-redenominated.json');
-const stakeManagerConfigPath = path.join(demoRoot, 'config', 'stake-manager-redenominated.json');
+const jobRegistryConfigPath = path.join(
+  demoRoot,
+  'config',
+  'job-registry-redenominated.json'
+);
+const stakeManagerConfigPath = path.join(
+  demoRoot,
+  'config',
+  'stake-manager-redenominated.json'
+);
 
 function loadJson(filePath, label) {
   try {
     return JSON.parse(fs.readFileSync(filePath, 'utf8'));
   } catch (error) {
-    console.error(`${COLORS.red}${COLORS.bright}[FATAL]${COLORS.reset} Unable to parse ${label} at ${filePath}`);
+    console.error(
+      `${COLORS.red}${COLORS.bright}[FATAL]${COLORS.reset} Unable to parse ${label} at ${filePath}`
+    );
     console.error(error);
     process.exit(1);
   }
 }
 
 const scenario = loadJson(scenarioPath, 'scenario.json');
-const jobRegistryConfig = loadJson(jobRegistryConfigPath, 'job-registry-redenominated.json');
-const stakeManagerConfig = loadJson(stakeManagerConfigPath, 'stake-manager-redenominated.json');
-
-function toNumber(value) {
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : NaN;
-}
+const report = verifier.verifyArtifacts();
+const jobRegistryConfig = report.configSnapshots.jobRegistry;
+const stakeManagerConfig = report.configSnapshots.stakeManager;
+const toNumber = (value) =>
+  planner.parseUnits(value, report.token.targetDecimals);
 
 function formatCheck(label, condition) {
-  const icon = condition ? `${COLORS.green}✔${COLORS.reset}` : `${COLORS.red}✘${COLORS.reset}`;
+  const icon = condition
+    ? `${COLORS.green}✔${COLORS.reset}`
+    : `${COLORS.red}✘${COLORS.reset}`;
   console.log(` ${icon} ${label}`);
   if (!condition) {
-    console.log(`   ${COLORS.gray}Review configuration in demo/REDENOMINATION/config to restore invariant.${COLORS.reset}`);
+    process.exitCode = 1;
+    console.log(
+      `   ${COLORS.gray}Review configuration in demo/REDENOMINATION/config to restore invariant.${COLORS.reset}`
+    );
   }
 }
 
@@ -55,22 +70,39 @@ function printBanner() {
   const title = 'Guardian Drill – Sovereign Control Validation';
   const line = '═'.repeat(Math.max(32, title.length + 6));
   console.log(`\n${COLORS.cyan}${line}${COLORS.reset}`);
-  console.log(`${COLORS.bright}${COLORS.cyan}  🎖️  ${title}  🎖️${COLORS.reset}`);
+  console.log(
+    `${COLORS.bright}${COLORS.cyan}  🎖️  ${title}  🎖️${COLORS.reset}`
+  );
   console.log(`${COLORS.cyan}${line}${COLORS.reset}\n`);
-  console.log(`${COLORS.gray}Exercise emergency, governance, and dispute powers without touching production infrastructure.${COLORS.reset}\n`);
+  console.log(
+    `${COLORS.gray}Exercise emergency, governance, and dispute powers without touching production infrastructure.${COLORS.reset}\n`
+  );
 }
 
 function summarizeInvariants() {
   const agentStake = toNumber(stakeManagerConfig.roleMinimums?.agentTokens);
-  const validatorStake = toNumber(stakeManagerConfig.roleMinimums?.validatorTokens);
+  const validatorStake = toNumber(
+    stakeManagerConfig.roleMinimums?.validatorTokens
+  );
   const jobBond = toNumber(jobRegistryConfig.jobStakeTokens);
   const rewardCap = toNumber(jobRegistryConfig.maxJobRewardTokens);
-  const unbonding = toNumber(stakeManagerConfig.unbondingPeriodSeconds);
+  const unbonding = planner.integer(
+    stakeManagerConfig.unbondingPeriodSeconds,
+    'unbonding seconds'
+  );
 
-  console.log(`${COLORS.bright}${COLORS.magenta}Critical Invariants${COLORS.reset}`);
-  formatCheck('Agent minimum stake covers job bond', agentStake >= jobBond && !Number.isNaN(agentStake) && !Number.isNaN(jobBond));
-  formatCheck('Validator stake exceeds agent minimum', validatorStake >= agentStake && !Number.isNaN(validatorStake) && !Number.isNaN(agentStake));
-  formatCheck('Reward cap exceeds bond and is positive', rewardCap >= jobBond && rewardCap > 0);
+  console.log(
+    `${COLORS.bright}${COLORS.magenta}Critical Invariants${COLORS.reset}`
+  );
+  formatCheck('Agent minimum stake covers job bond', agentStake >= jobBond);
+  formatCheck(
+    'Validator stake exceeds agent minimum',
+    validatorStake >= agentStake
+  );
+  formatCheck(
+    'Reward cap is unlimited (zero) or covers the bond',
+    rewardCap === 0n || rewardCap >= jobBond
+  );
   formatCheck('Unbonding period enforces cooldown (> 0)', unbonding > 0);
   console.log();
 }
@@ -79,51 +111,54 @@ const drillActions = [
   {
     key: 'pause',
     title: 'Emergency Pause & Recovery',
-    description: 'Rehearse the end-to-end kill-switch, moderator escalation, and safe resumption.',
+    description:
+      'Review pause, worker stop and recovery on a separately prepared disposable deployment.',
     steps: [
-      'Execute: npm run owner:system-pause to engage the Pausable circuit breakers.',
-      `Notify moderators via npm run owner:command-center and record approvals in the governance dashboard.`,
-      `After ${scenario.metrics?.governanceTimelock ?? 'the timelock delay'}, execute npm run owner:system-unpause to resume operations.`,
-      'Run npm run monitoring:validate to confirm observability pipelines acknowledge the pause & resume events.'
+      planner.pausePreview,
+      'Stop in-flight workers using the commissioned gateway/host controls; a chain pause does not stop desktop actions.',
+      'Reconcile actual chain state, pending claims and unknown worker outcomes. Preserve journals.',
+      planner.unpausePreview,
     ],
     signals: [
-      'JobRegistry paused() returns true.',
-      'StakeManager pause emits Pause event captured by observability indexer.',
-      'Grafana timeline displays synchronized pause markers.'
-    ]
+      'Check actual paused state and transaction receipts after an authorized rehearsal.',
+      'Independently verify worker cancellation and application state.',
+      'Obtain deployment-specific approval before any live resumption.',
+    ],
   },
   {
     key: 'parameters',
     title: 'Parameter Redenomination Vote',
-    description: 'Walk through adjusting stake ratios and validator weights through the governance timelock.',
+    description:
+      'Review a conversion proposal without applying it to old-token contracts.',
     steps: [
-      'Draft proposal: npm run governance:propose -- --target JobRegistry --method setValidatorRewardPct --value 12.',
-      `Queue via timelock: npm run governance:queue -- --timelock ${scenario.metrics?.governanceTimelock ?? '24 hours'}.`,
-      'Execute after delay: npm run governance:execute -- --proposal <id>.',
-      'Re-run npm run demo:redenomination:verify to confirm artefacts reflect the updated economics.'
+      'npm run demo:redenomination:export',
+      'npm run demo:redenomination:verify',
+      'npm run demo:redenomination:owner-console',
+      'Review every converted threshold, token scale, residual liability and unchanged policy before preparing a separate migration.',
     ],
     signals: [
-      `StakeManager minimum validator stake remains ≥ ${stakeManagerConfig.roleMinimums?.validatorTokens ?? 'configured threshold'} tokens.`,
-      'CertificateNFT metadata references updated reward ratio.',
-      'Monitoring dashboards display refreshed validator APR projections.'
-    ]
+      'Every base-unit conversion reconciles to its source.',
+      'Source hashes and embedded configuration agree.',
+      'A separately reviewed migration and recovery plan are available before changing real balances.',
+    ],
   },
   {
     key: 'dispute',
     title: 'Dispute Escalation & Slashing',
-    description: 'Simulate a contested result escalated to the Sentinel moderator council.',
+    description:
+      'Tabletop review of rejected or disputed evidence; no dispute or slash is executed.',
     steps: [
-      'Trigger dispute: npm run disputes:raise -- --job-id <id> --reason "suspicious redenomination vector".',
-      'Moderators convene: npm run disputes:moderate -- --job-id <id> --quorum 3.',
-      'If fraud confirmed, execute npm run staking:slash -- --agent <address> --validators <addresses>.',
-      'Archive evidence hash via npm run observability:record -- --job-id <id> --uri ipfs://<cid>.'
+      'Inject an incorrect conversion in a copy of the worker deliverable; run the independent computer-work/review.cjs checker.',
+      'Preserve the original task digest, result, independent verdict and dispatch journal.',
+      'Review the deployed dispute module and authorized governance procedure; do not infer moderator powers from the vision diagram.',
+      'For confirmed fault, prepare deployment-specific actions through separate authorized signers and independently reconcile receipts.',
     ],
     signals: [
-      'DisputeModule emits ModeratorOverride event.',
-      'Stake ledger shows proportional slashing aligned with config.treasurySlashPct.',
-      'ReputationEngine downgrade visible in mission-control transcript.'
-    ]
-  }
+      'Incorrect work is rejected with a nonzero checker exit status.',
+      'Provider completion does not imply acceptance or payout.',
+      'Final settlement depends on the actual contract outcome and finality.',
+    ],
+  },
 ];
 
 function printAction(action) {
@@ -142,23 +177,42 @@ function printAction(action) {
 
 function printAllActions() {
   drillActions.forEach((action) => printAction(action));
-  console.log(`${COLORS.gray}Run this drill whenever parameters change to guarantee governance muscle memory stays sharp.${COLORS.reset}`);
+  console.log(
+    `${COLORS.gray}This offline drill checks artifacts and prints a rehearsal; it does not prove live incident readiness.${COLORS.reset}`
+  );
 }
 
 async function interactiveLoop() {
   const rl = readline.createInterface({ input, output });
-  console.log(`${COLORS.bright}${COLORS.cyan}Select a drill to rehearse (type number, or q to quit).${COLORS.reset}`);
+  console.log(
+    `${COLORS.bright}${COLORS.cyan}Select a drill to rehearse (type number, or q to quit).${COLORS.reset}`
+  );
   while (true) {
     drillActions.forEach((action, index) => {
-      console.log(` ${COLORS.cyan}${index + 1}.${COLORS.reset} ${action.title}`);
+      console.log(
+        ` ${COLORS.cyan}${index + 1}.${COLORS.reset} ${action.title}`
+      );
     });
-    const answer = (await rl.question('> ')).trim().toLowerCase();
+    let answer;
+    try {
+      answer = (await rl.question('> ')).trim().toLowerCase();
+    } catch (error) {
+      if (error.code === 'ERR_USE_AFTER_CLOSE' || error.code === 'ABORT_ERR')
+        break;
+      throw error;
+    }
     if (answer === 'q' || answer === 'quit' || answer === 'exit') {
       break;
     }
     const selection = Number.parseInt(answer, 10);
-    if (!Number.isFinite(selection) || selection < 1 || selection > drillActions.length) {
-      console.log(`${COLORS.red}Invalid selection. Choose a number from the list or q to exit.${COLORS.reset}`);
+    if (
+      !Number.isFinite(selection) ||
+      selection < 1 ||
+      selection > drillActions.length
+    ) {
+      console.log(
+        `${COLORS.red}Invalid selection. Choose a number from the list or q to exit.${COLORS.reset}`
+      );
       continue;
     }
     console.log();
@@ -170,12 +224,18 @@ async function interactiveLoop() {
 function main() {
   printBanner();
   summarizeInvariants();
-  if (!process.stdout.isTTY || process.env.NON_INTERACTIVE === '1') {
+  if (
+    !process.stdin.isTTY ||
+    !process.stdout.isTTY ||
+    process.env.NON_INTERACTIVE === '1'
+  ) {
     printAllActions();
     return;
   }
   interactiveLoop().catch((error) => {
-    console.error(`${COLORS.red}Unexpected error during guardian drill:${COLORS.reset}`);
+    console.error(
+      `${COLORS.red}Unexpected error during guardian drill:${COLORS.reset}`
+    );
     console.error(error);
     process.exitCode = 1;
   });
