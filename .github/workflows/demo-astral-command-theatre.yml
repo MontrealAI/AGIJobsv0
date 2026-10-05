@@ -34,7 +34,7 @@ jobs:
       - name: Install test dependency
         run: python -m pip install pytest==8.4.2
       - name: Test evidence and rejection boundaries
-        run: python -m pytest -q demo/astral-omnidominion-operating-system-command-theatre/tests
+        run: python -m pytest -q --confcutdir=demo/astral-omnidominion-operating-system-command-theatre/tests demo/astral-omnidominion-operating-system-command-theatre/tests
       - name: Rehearse and verify
         run: |
           python demo/astral-omnidominion-operating-system-command-theatre/run_demo.py

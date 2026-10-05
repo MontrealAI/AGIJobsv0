@@ -8,7 +8,7 @@ Use Python 3.10+; pytest is needed only for tests, not for the runner:
 
 ```bash
 python3 -m pip install pytest==8.4.2
-PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python3 -m pytest -q demo/astral-omnidominion-operating-system-command-theatre/tests
+PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python3 -m pytest -q --confcutdir=demo/astral-omnidominion-operating-system-command-theatre/tests demo/astral-omnidominion-operating-system-command-theatre/tests
 python3 demo/astral-omnidominion-operating-system-command-theatre/run_demo.py
 python3 demo/astral-omnidominion-operating-system-command-theatre/run_demo.py --verify-report reports/astral-omnidominion-operating-system-command-theatre/report.json
 ```
