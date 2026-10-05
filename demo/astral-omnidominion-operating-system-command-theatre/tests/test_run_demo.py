@@ -59,6 +59,8 @@ def test_correct_work_and_evidence_recompute(tmp_path):
     assert code == 0
     assert payload["rehearsal"]["deliverable"] == {
         "source_rows": 4, "unique_rows": 3, "duplicate_rows": 1, "total_cents": 21999,
+        "deduplicated_ledger": [{"id": "A-001", "amount_cents": 12500}, {"id": "A-002", "amount_cents": 7500}, {"id": "A-003", "amount_cents": 1999}],
+        "duplicate_ids": ["A-001"],
     }
     assert payload["coverage"] == 1
     assert len(payload["rehearsal"]["artifacts"]) == 5
@@ -72,7 +74,7 @@ def test_incorrect_work_is_rejected_but_integrity_can_pass(tmp_path):
     assert code == 1
     assert payload["rehearsal"]["status"] == "rejected"
     checks = payload["rehearsal"]["review"]["checks"]
-    assert sum(checks.values()) == 3
+    assert sum(checks.values()) == 5
     assert checks["total_recomputed"] is False
     assert run_demo.verify_report(output)["accepted"] is False
 
@@ -245,3 +247,18 @@ def test_checker_rejects_boolean_counts_and_noninteger_money():
     assert run_demo.check_deliverable(source, {"source_rows": True, "unique_rows": 1, "duplicate_rows": 0, "total_cents": 10})["accepted"] is False
     with pytest.raises(ValueError, match="integer cents"):
         run_demo.check_deliverable([{"id": "one", "amount_cents": 10.1}], {})
+
+
+@pytest.mark.parametrize("defect", ["missing-ledger", "wrong-row", "missing-duplicate", "wrong-duplicate", "boolean-money"])
+def test_checker_verifies_records_and_each_duplicate_identity(defect):
+    rows = [{"id": "a", "amount_cents": 1}, {"id": "b", "amount_cents": 2}]
+    source = [rows[0], rows[1], rows[0], rows[1], rows[0]]
+    candidate = {"source_rows": 5, "unique_rows": 2, "duplicate_rows": 3, "total_cents": 3,
+                 "deduplicated_ledger": copy.deepcopy(rows), "duplicate_ids": ["a", "b"]}
+    assert run_demo.check_deliverable(source, candidate)["accepted"] is True
+    if defect == "missing-ledger": candidate.pop("deduplicated_ledger")
+    elif defect == "wrong-row": candidate["deduplicated_ledger"][0]["id"] = "other"
+    elif defect == "missing-duplicate": candidate["duplicate_ids"].pop()
+    elif defect == "wrong-duplicate": candidate["duplicate_ids"] = ["a", "other"]
+    else: candidate["deduplicated_ledger"][0]["amount_cents"] = True
+    assert run_demo.check_deliverable(source, candidate)["accepted"] is False

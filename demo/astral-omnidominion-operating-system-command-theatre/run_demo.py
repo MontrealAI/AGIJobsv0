@@ -170,7 +170,7 @@ def _atomic_write(path: Path, data: bytes) -> None:
 def check_deliverable(source: list[dict], candidate: dict) -> dict:
     if not isinstance(source, list) or not 1 <= len(source) <= 10000 or not isinstance(candidate, dict):
         raise ValueError("Invalid ledger or candidate structure")
-    unique = {}
+    unique, counts = {}, {}
     for row in source:
         if (not isinstance(row, dict) or not isinstance(row.get("id"), str) or not row["id"]
                 or type(row.get("amount_cents")) is not int or abs(row["amount_cents"]) > 10**12):
@@ -178,12 +178,15 @@ def check_deliverable(source: list[dict], candidate: dict) -> dict:
         if row["id"] in unique and unique[row["id"]] != row:
             raise ValueError("Conflicting source IDs require human reconciliation")
         unique[row["id"]] = row
+        counts[row["id"]] = counts.get(row["id"], 0) + 1
     expected_total = sum(row["amount_cents"] for row in unique.values())
     checks = {
         "source_row_count": type(candidate.get("source_rows")) is int and candidate["source_rows"] == len(source),
         "unique_row_count": type(candidate.get("unique_rows")) is int and candidate["unique_rows"] == len(unique),
         "duplicate_count": type(candidate.get("duplicate_rows")) is int and candidate["duplicate_rows"] == len(source) - len(unique),
         "total_recomputed": type(candidate.get("total_cents")) is int and candidate["total_cents"] == expected_total,
+        "deduplicated_ledger": _json_bytes(candidate.get("deduplicated_ledger")) == _json_bytes(list(unique.values())),
+        "duplicate_identities": candidate.get("duplicate_ids") == sorted(key for key, count in counts.items() if count > 1),
     }
     return {"accepted": all(checks.values()), "checks": checks,
             "reviewer": "separate deterministic checker function; same process, no independent identity",
@@ -200,14 +203,18 @@ def rehearse(catalog: dict, scenario: str, bundle: Path, output_dir: Path) -> di
                 "accepted": False, "task_sha256": _digest(_json_bytes(task))}
     source = [{"id": "A-001", "amount_cents": 12500}, {"id": "A-002", "amount_cents": 7500},
               {"id": "A-001", "amount_cents": 12500}, {"id": "A-003", "amount_cents": 1999}]
-    seen, total = set(), 0
+    seen, duplicates, ledger, total = set(), set(), [], 0
     for row in source:
         if row["id"] not in seen:
             seen.add(row["id"])
+            ledger.append(dict(row))
             total += row["amount_cents"]
+        else:
+            duplicates.add(row["id"])
     candidate = {"source_rows": len(source), "unique_rows": len(seen),
                  "duplicate_rows": len(source) - len(seen),
-                 "total_cents": total + (1 if scenario == "rejected" else 0)}
+                 "total_cents": total + (1 if scenario == "rejected" else 0),
+                 "deduplicated_ledger": ledger, "duplicate_ids": sorted(duplicates)}
     review = check_deliverable(source, candidate)
     bundle.mkdir(parents=True, exist_ok=False)
     artifacts = []

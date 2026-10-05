@@ -14,7 +14,7 @@ python3 demo/astral-omnidominion-operating-system-command-theatre/run_demo.py
 
 Open **`reports/astral-omnidominion-operating-system-command-theatre/report.html`** in your browser. No npm installation, Docker, account, API key or wallet is needed for this path. The runner uses only the standard library, makes no network calls and does not create an OS sandbox.
 
-**Expected:** `Outcome: accepted`, six documents inspected, four acceptance checks passed. The source contains four ledger rows including one duplicate. The deliverable contains **three unique entries, one duplicate and a total of 21,999 cents ($219.99)**. These are synthetic ledger amounts, not USDC transfers.
+**Expected:** `Outcome: accepted`, six documents inspected, six acceptance checks passed. The source contains four ledger rows including one duplicate. The deliverable contains **three unique entries, one duplicate and a total of 21,999 cents ($219.99)**. The exported deliverable includes the complete deduplicated ledger in source order and sorted duplicate IDs; the checker verifies both against the input. These are synthetic ledger amounts, not USDC transfers.
 
 | Choose your next step | What actually runs |
 | --- | --- |
@@ -30,7 +30,7 @@ python3 demo/astral-omnidominion-operating-system-command-theatre/run_demo.py --
 python3 demo/astral-omnidominion-operating-system-command-theatre/run_demo.py --scenario paused --output reports/astral-paused/report.json
 ```
 
-Both intentionally return **exit status 1**. Rejection introduces a one-cent error: three checks pass and the recomputed-total check fails. Pause blocks task execution and produces no task artifacts. A missing, empty, unreadable or oversized required document, or an invalid catalog, also blocks execution and reports what to fix. Nothing falls back to a live provider.
+Both intentionally return **exit status 1**. Rejection introduces a one-cent error: five checks pass and the recomputed-total check fails. Pause blocks task execution and produces no task artifacts. A missing, empty, unreadable or oversized required document, or an invalid catalog, also blocks execution and reports what to fix. Nothing falls back to a live provider.
 
 Verify saved evidence without executing a task:
 
