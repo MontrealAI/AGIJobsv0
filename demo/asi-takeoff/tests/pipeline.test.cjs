@@ -66,6 +66,35 @@ test('kit rejects output traversal, unsafe network names and missing required ev
     /Missing required dryRun/
   );
 });
+
+test('generated thermostat preview reaches runtime configuration validation', async (t) => {
+  const dir = temp(t),
+    result = await generateAsiTakeoffKit(inputs(dir));
+  const preview = result.manifest.checklist.find(
+    (c) => c.title === 'Thermostat parameter dry-run'
+  );
+  assert.ok(!preview.command.includes('--execute'));
+  const configFile = path.join(dir, 'hardhat.config.cjs');
+  fs.writeFileSync(
+    configFile,
+    'module.exports = { solidity: "0.8.25", networks: { hardhat: { chainId: 31337 } } };\n'
+  );
+  const missing = path.join(dir, 'deliberately-missing-thermodynamics.json');
+  const shellQuote = (value) => "'" + value.replace(/'/g, "'\\''") + "'";
+  const run = spawnSync(
+    'bash',
+    ['-c', `${preview.command} --config ${shellQuote(missing)}`],
+    {
+      cwd: ROOT,
+      env: { ...process.env, HARDHAT_CONFIG: configFile },
+      encoding: 'utf8',
+      timeout: 15000,
+    }
+  );
+  assert.equal(run.status, 1, run.stderr);
+  assert.match(run.stderr, /Thermodynamics config not found/);
+  assert.doesNotMatch(run.stderr, /TSError|Unable to compile TypeScript/);
+});
 test('local receipt kit uses actual local files instead of nonexistent pipeline reports', async (t) => {
   const dir = temp(t);
   for (const name of ['mission', 'deploy', 'governance', 'stake'])

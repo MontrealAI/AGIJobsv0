@@ -104,20 +104,36 @@
           Save the worker's exact UTF-8 files, then run this independent checker
           from the repository root with your saved paths:
         </p>
-        <code
+        <code id="review-files-command" data-command
           >node demo/asi-takeoff/computer-work/review.cjs /path/to/analysis.json
           /path/to/dossier.md</code
         >
+        <button
+          type="button"
+          class="copy-command"
+          data-copy="review-files-command"
+          data-i18n="copyCommand"
+        >
+          Copy command
+        </button>
         <p data-i18n="receiptCheck">
           Have an adapter receipt? Review its embedded files directly. Replace
           the job and deployment below with the expected values from your
           protected admission record. Matching hashes do not authenticate a
           worker.
         </p>
-        <code
+        <code id="review-receipt-command" data-command
           >node demo/asi-takeoff/computer-work/review.cjs --receipt
           /path/to/receipt.json 73 your-deployment-id</code
         >
+        <button
+          type="button"
+          class="copy-command"
+          data-copy="review-receipt-command"
+          data-i18n="copyCommand"
+        >
+          Copy command
+        </button>
         <p class="muted" data-i18n="boundary">
           Arithmetic acceptance is separate from dossier quality, worker
           provenance and authorized settlement. Downloads do not dispatch a
@@ -184,7 +200,17 @@
           three-job local-chain demonstration. It uses mock tokens and
           configured results for agriculture, infrastructure and healthcare.
         </p>
-        <code>npm run demo:asi-takeoff:local</code>
+        <code id="local-command" data-command
+          >npm run demo:asi-takeoff:local</code
+        >
+        <button
+          type="button"
+          class="copy-command"
+          data-copy="local-command"
+          data-i18n="copyCommand"
+        >
+          Copy command
+        </button>
         <p class="muted" data-i18n="chainBoundary">
           Its receipts verify local contract behavior. They do not establish
           completion of the real-world projects or a live provider run. See the

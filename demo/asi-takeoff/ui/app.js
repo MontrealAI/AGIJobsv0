@@ -7,6 +7,7 @@ const english = new Map(
   ])
 );
 const french = {
+  copyCommand: 'Copier la commande',
   downloadTask: 'Tâche et critères d’acceptation',
   downloadSource: 'Source synthétique approuvée',
   downloadAnalysis: 'Exemple d’analyse — aucune preuve d’exécution',
@@ -51,6 +52,26 @@ const french = {
 let current = null,
   requestId = 0;
 const tr = (en, fr) => ($('language').value === 'fr' ? fr : en);
+// HTML formatting must never turn a copied shell command into multiple commands.
+for (const code of document.querySelectorAll('code[data-command]'))
+  code.textContent = code.textContent.replace(/\s+/g, ' ').trim();
+for (const button of document.querySelectorAll('button[data-copy]')) {
+  const status = document.createElement('span');
+  status.className = 'copy-feedback';
+  status.setAttribute('role', 'status');
+  button.after(status);
+  button.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText($(button.dataset.copy).textContent);
+      status.textContent = tr('Command copied.', 'Commande copiée.');
+    } catch {
+      status.textContent = tr(
+        'Select and copy the command above.',
+        'Sélectionnez et copiez la commande ci-dessus.'
+      );
+    }
+  });
+}
 function node(tag, text, cls) {
   const el = document.createElement(tag);
   if (text !== undefined) el.textContent = String(text);

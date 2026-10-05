@@ -34,12 +34,44 @@ async function main() {
     assert.ok((await page.locator('#mission').innerText()).includes('41 days'));
     assert.ok((await page.locator('#mission').innerText()).includes('30-day'));
     findings.scenarios = true;
+    await page
+      .context()
+      .grantPermissions(['clipboard-read', 'clipboard-write'], {
+        origin: base,
+      });
+    const expectedCommand =
+      'node demo/asi-takeoff/computer-work/review.cjs --receipt /path/to/receipt.json 73 your-deployment-id';
+    assert.equal(
+      await page.locator('#review-receipt-command').textContent(),
+      expectedCommand
+    );
+    for (const command of await page
+      .locator('code[data-command]')
+      .allTextContents())
+      assert.ok(!command.includes('\n'));
+    await page.locator('[data-copy="review-receipt-command"]').click();
+    await page.waitForFunction(() =>
+      [...document.querySelectorAll('.copy-feedback')].some(
+        (el) => el.textContent === 'Command copied.'
+      )
+    );
+    assert.equal(
+      await page.evaluate(() => navigator.clipboard.readText()),
+      expectedCommand
+    );
+    findings.copyCommands = true;
     await page.selectOption('#language', 'fr');
     assert.equal(await page.locator('html').getAttribute('lang'), 'fr');
     assert.ok(
       (await page.locator('header').innerText()).includes('aucune transaction')
     );
     findings.french = true;
+    await page.locator('[data-copy="review-receipt-command"]').click();
+    await page.waitForFunction(() =>
+      [...document.querySelectorAll('.copy-feedback')].some(
+        (el) => el.textContent === 'Commande copiée.'
+      )
+    );
     const dir = process.env.ASI_TAKEOFF_BROWSER_REPORT_DIR;
     if (dir) {
       fs.mkdirSync(dir, { recursive: true });

@@ -107,6 +107,14 @@ button:disabled {
   opacity: 0.5;
   cursor: wait;
 }
+.copy-command {
+  margin-bottom: 0.75rem;
+}
+.copy-feedback {
+  display: inline-block;
+  margin: 0 0 0.75rem 0.75rem;
+  font-size: 0.9rem;
+}
 .muted,
 footer {
   color: var(--muted);

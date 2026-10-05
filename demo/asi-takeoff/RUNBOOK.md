@@ -89,10 +89,10 @@ The local launcher stops its node when it exits. Its saved addresses cannot be u
 ```bash
 HARDHAT_NETWORK=localhost npm run owner:verify-control
 HARDHAT_NETWORK=localhost npm run pause:test
-HARDHAT_NETWORK=localhost npx ts-node --compiler-options '{"module":"commonjs"}' scripts/v2/updateThermodynamics.ts
+HARDHAT_NETWORK=localhost npx ts-node --transpile-only --compiler-options '{"module":"commonjs"}' scripts/v2/updateThermodynamics.ts
 ```
 
-`pause:test` inspects wiring and uses static calls; it does not broadcast a pause. Thermodynamics defaults to a preview. Adding `--execute` to the direct `ts-node` invocation broadcasts transactions and requires separately recorded authorization, the correct signer and reviewed parameters. Hardhat's `run` command does not forward arbitrary `--execute` script arguments. The kit uses the correct invocation.
+`pause:test` inspects wiring and uses static calls; it does not broadcast a pause. Thermodynamics defaults to a preview. The direct invocation uses `--transpile-only`, matching the repository's Hardhat runtime setup; ordinary `ts-node` type-checking fails on the existing Hardhat/ethers script types before reaching the preview. Adding `--execute` broadcasts transactions and requires separately recorded authorization, the correct signer and reviewed parameters. Hardhat's `run` command does not forward arbitrary `--execute` script arguments. The kit uses the direct invocation.
 
 The owner command center and dashboard remain available (`npm run owner:command-center -- --network localhost`, `npm run owner:dashboard -- --network localhost`) after their actual deployed module configuration is prepared. A saved `AURORA_DEPLOY_OUTPUT` file alone does not re-create a running chain or automatically populate every owner script's configuration.
 

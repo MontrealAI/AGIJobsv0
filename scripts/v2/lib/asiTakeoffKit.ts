@@ -301,7 +301,7 @@ export async function generateAsiTakeoffKit(
   if (!/^[A-Za-z0-9_-]+$/.test(network))
     throw new Error('Invalid network name');
   const thermostatScript = 'scripts/v2/updateThermodynamics.ts';
-  const thermostatCommand = `HARDHAT_NETWORK=${network} npx ts-node --compiler-options '{"module":"commonjs"}' ${thermostatScript}`;
+  const thermostatCommand = `HARDHAT_NETWORK=${network} npx ts-node --transpile-only --compiler-options '{"module":"commonjs"}' ${thermostatScript}`;
   const dryRun = options.localReceiptsDir
     ? null
     : JSON.parse(await fs.readFile(dryRunPath, 'utf8'));
