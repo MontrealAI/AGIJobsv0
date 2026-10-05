@@ -4,7 +4,7 @@
 > authenticated signatures, physical infrastructure control or payments are performed. Safe batches are unsigned
 > proposals with placeholder targets and must not be submitted to a production wallet.
 
-Follow the [complete parent runbook](../README.md) for toolchain setup, model interpretation, experiments and troubleshooting.
+Follow the [complete parent runbook](https://github.com/MontrealAI/AGIJobsv0/blob/main/demo/AGI-Jobs-Platform-at-Kardashev-II-Scale/README.md) for toolchain setup, model interpretation, experiments and troubleshooting.
 From the repository root: `nvm install`, `nvm use`, `npm ci`, then `npm run demo:kardashev-ii-stellar:orchestrate` and
 `npm run demo:kardashev-ii-stellar:ci`. Serve this exact variant with
 `npm run demo:kardashev-ii:serve -- --profile k2-stellar-demo`.
@@ -14,6 +14,12 @@ The run-manifest JSON records SHA-256 input hashes. Model scores and "proof" lab
 
 
 > This module explores the AGI Jobs vision through a specialised Kardashev-II stellar model with deterministic guardian checks. Its scale and capabilities are scenario assumptions.
+
+## Computer work, evidence and review-constrained scale
+
+This variant includes the same ten synthetic work scopes, downloadable task drafts and interactive worker/reviewer capacity planner as the main deck.
+Follow the [computer-work runbook](COMPUTER-WORK.md) for real browser fixture execution, OpenClaw/ChatGPT Work commissioning and acceptance evidence.
+The planner's USD 40 trillion/year market input is an assumption; it is separate from this variant's fictional energy, governance and economic ledgers.
 
 ## 🧭 Ultra-deep readiness map
 - **Location**: `demo/AGI-Jobs-Platform-at-Kardashev-II-Scale/k2-stellar-demo/`
@@ -28,7 +34,7 @@ The run-manifest JSON records SHA-256 input hashes. Model scores and "proof" lab
 2. Run `npm run demo:kardashev-ii-stellar:ci` to validate artefacts and README integrity.
 3. Launch a deterministic dry-run with `npm run demo:kardashev-ii-stellar:orchestrate -- --check` to recompute ledgers without writing new outputs.
 4. Generate full artefacts with `npm run demo:kardashev-ii-stellar:orchestrate -- --reflect` to attach introspection notes, then serve the dashboard with `npm run demo:kardashev-ii:serve -- --profile k2-stellar-demo` and open the printed loopback URL.
-5. Escalate anomalies using the guardian contacts embedded in [`OperatorRunbook.md`](../../OperatorRunbook.md) and `config/k2-stellar.manifest.json`.
+5. Escalate anomalies using the guardian contacts embedded in [`OperatorRunbook.md`](https://github.com/MontrealAI/AGIJobsv0/blob/main/OperatorRunbook.md) and `config/k2-stellar.manifest.json`.
 
 ## 🧱 Architecture overview
 ```mermaid

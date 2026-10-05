@@ -4,7 +4,7 @@
 > authenticated signatures, physical infrastructure control or payments are performed. Safe batches are unsigned
 > proposals with placeholder targets and must not be submitted to a production wallet.
 
-Follow the [complete parent runbook](../README.md) for toolchain setup, model interpretation, experiments and troubleshooting.
+Follow the [complete parent runbook](https://github.com/MontrealAI/AGIJobsv0/blob/main/demo/AGI-Jobs-Platform-at-Kardashev-II-Scale/README.md) for toolchain setup, model interpretation, experiments and troubleshooting.
 From the repository root: `nvm install`, `nvm use`, `npm ci`, then `npm run demo:kardashev-ii-lattice:orchestrate` and
 `npm run demo:kardashev-ii-lattice:ci`. Serve this exact variant with
 `npm run demo:kardashev-ii:serve -- --profile stellar-civilization-lattice`.
@@ -14,6 +14,12 @@ The run-manifest JSON records SHA-256 input hashes. Model scores and "proof" lab
 
 
 > The Stellar Civilization Lattice profile runs the Kardashev-II operator experience with a Dyson-ready task lattice, lunar gateways, and Mars lifelines. It keeps every ledger, dashboard, and guardian hook coherent with the global AGI Jobs v0 (v2) sovereignty engine.
+
+## Computer work, evidence and review-constrained scale
+
+This variant includes the same ten synthetic work scopes, downloadable task drafts and interactive worker/reviewer capacity planner as the main deck.
+Follow the [computer-work runbook](COMPUTER-WORK.md) for real browser fixture execution, OpenClaw/ChatGPT Work commissioning and acceptance evidence.
+The planner's USD 40 trillion/year market input is an assumption; it is separate from this variant's fictional energy, governance and economic ledgers.
 
 ## 🧭 Ultra-deep readiness map
 - **Location**: `demo/AGI-Jobs-Platform-at-Kardashev-II-Scale/stellar-civilization-lattice/`
@@ -28,7 +34,7 @@ The run-manifest JSON records SHA-256 input hashes. Model scores and "proof" lab
 2. Run `npm run demo:kardashev-ii-lattice:ci` to validate artefacts and README integrity for the lattice profile.
 3. Launch a deterministic dry-run with `npm run demo:kardashev-ii:orchestrate -- --check --profile stellar-civilization-lattice` to recompute ledgers without rewriting outputs.
 4. Generate full artefacts with `npm run demo:kardashev-ii-lattice:orchestrate` (writes to `output/` with the `lattice-` prefix).
-5. Escalate anomalies via [`OperatorRunbook.md`](../../OperatorRunbook.md) and the guardian contacts in `config/kardashev-ii.manifest.json`.
+5. Escalate anomalies via [`OperatorRunbook.md`](https://github.com/MontrealAI/AGIJobsv0/blob/main/OperatorRunbook.md) and the guardian contacts in `config/kardashev-ii.manifest.json`.
 
 ## 🧱 Architecture overview
 ```mermaid

@@ -229,19 +229,53 @@ function provenance(files, prefix) {
   };
 }
 
+function portableDocument(file) {
+  const repoRoot = path.resolve(__dirname, '../../..');
+  return fs
+    .readFileSync(file, 'utf8')
+    .replace(/\]\(([^)]+\.md(?:#[^)]*)?)\)/g, (match, target) => {
+      if (/^(?:https?:|#)/.test(target)) return match;
+      if (/^(?:\.\.\/)?COMPUTER-WORK\.md$/.test(target))
+        return '](COMPUTER-WORK.md)';
+      const [relative, anchor] = target.split('#');
+      const absolute = path.resolve(path.dirname(file), relative);
+      const repositoryPath = path.relative(repoRoot, absolute);
+      if (repositoryPath.startsWith('..') || path.isAbsolute(repositoryPath))
+        return match;
+      return `](https://github.com/MontrealAI/AGIJobsv0/blob/main/${repositoryPath
+        .split(path.sep)
+        .map(encodeURIComponent)
+        .join('/')}${anchor ? '#' + anchor : ''})`;
+    });
+}
+
 function dashboardArtifacts(root, outputDir) {
   const common = path.resolve(__dirname, '..');
   const index = fs
     .readFileSync(path.join(root, 'index.html'), 'utf8')
     .replace(/\.\/output\//g, './')
+    .replaceAll('../ui/computer-work', './ui/computer-work')
     .replace('data-asset-base="./output"', 'data-asset-base="."')
     .replace(
       'window.__KARDASHEV_ASSET_BASE__ = "./output";',
       'window.__KARDASHEV_ASSET_BASE__ = ".";'
     );
-  return [
+  const sharedFiles = [
+    'computer-work.mjs',
+    'computer-work-model.mjs',
+    'computer-work.css',
+  ];
+  const shared = sharedFiles.map((file) => ({
+    file: `ui/${file}`,
+    content: fs.readFileSync(path.join(common, 'ui', file), 'utf8'),
+  }));
+  const artifacts = [
     ['index.html', index],
-    ['README.md', fs.readFileSync(path.join(root, 'README.md'), 'utf8')],
+    ['README.md', portableDocument(path.join(root, 'README.md'))],
+    [
+      'COMPUTER-WORK.md',
+      portableDocument(path.join(common, 'COMPUTER-WORK.md')),
+    ],
     ...['style.css', 'dashboard.js'].map((file) => [
       `ui/${file}`,
       fs.readFileSync(path.join(root, 'ui', file), 'utf8'),
@@ -254,7 +288,9 @@ function dashboardArtifacts(root, outputDir) {
       'mermaid/mermaid.min.js',
       fs.readFileSync(require.resolve('mermaid/dist/mermaid.min.js'), 'utf8'),
     ],
+    ...shared.map(({ file, content }) => [file, content]),
   ].map(([file, content]) => ({ path: path.join(outputDir, file), content }));
+  return artifacts;
 }
 
 module.exports = {
@@ -265,4 +301,5 @@ module.exports = {
   readinessFailures,
   provenance,
   dashboardArtifacts,
+  portableDocument,
 };

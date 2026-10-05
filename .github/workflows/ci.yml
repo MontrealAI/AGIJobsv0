@@ -692,6 +692,8 @@ jobs:
         run: npm run demo:kardashev-ii-lattice:ci
       - name: Verify model failures, CLI and local server boundaries
         run: node --test demo/AGI-Jobs-Platform-at-Kardashev-II-Scale/tests/runtime.test.cjs
+      - name: Verify computer-work task schemas and capacity boundaries
+        run: node --test demo/AGI-Jobs-Platform-at-Kardashev-II-Scale/tests/computer-work.test.mjs
       - name: Install dashboard test browser
         run: npx playwright install --with-deps chromium
       - name: Verify every Kardashev command deck

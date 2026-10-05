@@ -843,8 +843,8 @@
     "related": []
   },
   "AGI-Jobs-Platform-at-Kardashev-II-Scale": {
-    "question": "How are energy, task hierarchy and settlement modeled together?",
-    "purpose": "For systems designers: inspect a speculative stellar-scale orchestration model and its executable ledger-generation variants.",
+    "question": "How can verifiable computer work grow into a reviewable coordination fabric?",
+    "purpose": "For operators and systems designers: explore concrete computer-work scopes, review-constrained capacity and a speculative stellar-scale orchestration model.",
     "steps": [
       {
         "title": "Inspect the manifest",
@@ -860,11 +860,16 @@
         "title": "Inspect a recorded energy schedule",
         "source": "demo/AGI-Jobs-Platform-at-Kardashev-II-Scale/output/kardashev-energy-schedule.json",
         "explanation": "Expand the schedule and compare allocations with the manifest and energy feeds. This historical example is not live telemetry."
+      },
+      {
+        "title": "Scope computer work and inspect its evidence",
+        "source": "demo/AGI-Jobs-Platform-at-Kardashev-II-Scale/COMPUTER-WORK.md",
+        "explanation": "Choose one of ten synthetic task drafts in any command deck, inspect acceptance criteria, and test the worker/reviewer planner. Run the actual Supplier Desk browser fixture and its intentionally rejected result before separately commissioning OpenClaw or ChatGPT Work."
       }
     ],
     "command": "npm run demo:kardashev-ii:orchestrate\nnpm run demo:kardashev-ii:ci\nnpm run demo:kardashev-ii:serve",
-    "expected": "Three model programmes and eleven stress scenarios in the main baseline, including five visible warnings. Inspect the run manifest input hashes and individual ledger checks. Check mode compares saved artifacts and fails critical/high readiness checks without writing files.",
-    "experiment": "Copy the configuration and select separate --config-root and --output-dir paths. Increase a bridge latency beyond its failsafe threshold, rerun, and inspect the failed readiness check. Restore the input and verify recovery; no external infrastructure or payment is affected.",
+    "expected": "Three model programmes and eleven stress scenarios in the main baseline, including five visible warnings. Inspect run manifest input hashes and individual ledger checks. Read-only check mode fails critical/high readiness failures. The separate computer-work baseline has 200,000 annual submissions, review capacity of 112,500 and 101,250 assumed accepted jobs; USD 40 trillion/year is a planning assumption, not a verified TAM or revenue claim.",
+    "experiment": "Set the computer-work planner's reviewers to zero and confirm zero accepted value; raise reviewers to 45 to clear the baseline review backlog. Separately, copy the model configuration to --config-root and --output-dir paths, increase bridge latency beyond its failsafe, inspect the failure and restore the input. No provider, infrastructure or payment is affected.",
     "mode": "node",
     "related": [],
     "dashboards": [

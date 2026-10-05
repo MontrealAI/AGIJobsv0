@@ -2846,15 +2846,19 @@ function writeOfflineDashboard(outputDir, demoRoot = __dirname) {
   const uiSourceDir = path.join(demoRoot, 'ui');
   const uiTargetDir = path.join(outputDir, 'ui');
   ensureDir(uiTargetDir);
-  for (const filename of ['style.css', 'dashboard.js', 'runtime.js']) {
-    fs.copyFileSync(filename === 'runtime.js' ? path.join(__dirname, 'ui/runtime.js') : path.join(uiSourceDir, filename), path.join(uiTargetDir, filename));
+  for (const filename of ['style.css', 'dashboard.js', 'runtime.js', 'computer-work.mjs', 'computer-work-model.mjs', 'computer-work.css']) {
+    const shared = filename === 'runtime.js' || filename.startsWith('computer-work');
+    fs.copyFileSync(path.join(shared ? path.join(__dirname, 'ui') : uiSourceDir, filename), path.join(uiTargetDir, filename));
   }
   copyMermaidBundle(outputDir);
-  fs.copyFileSync(path.join(demoRoot, 'README.md'), path.join(outputDir, 'README.md'));
+  const { portableDocument } = require('./scripts/runtime.cjs');
+  fs.writeFileSync(path.join(outputDir, 'README.md'), portableDocument(path.join(demoRoot, 'README.md')));
+  fs.writeFileSync(path.join(outputDir, 'COMPUTER-WORK.md'), portableDocument(path.join(__dirname, 'COMPUTER-WORK.md')));
 
   const indexTemplate = fs.readFileSync(path.join(demoRoot, 'index.html'), 'utf8');
   const assetBaseMarker = 'window.__KARDASHEV_ASSET_BASE__ = "./output";';
   const offlineIndex = indexTemplate
+    .replaceAll('../ui/computer-work', './ui/computer-work')
     .replace(assetBaseMarker, 'window.__KARDASHEV_ASSET_BASE__ = ".";')
     .replace(/src="\.\/output\//g, 'src="./')
     .replace('data-asset-base="./output"', 'data-asset-base="."');
