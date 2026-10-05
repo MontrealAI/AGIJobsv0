@@ -37,6 +37,7 @@ jobs:
             actions-results.githubusercontent.com:443
             registry.npmjs.org:443
             nodejs.org:443
+            binaries.soliditylang.org:443
             pypi.org:443
             files.pythonhosted.org:443
 
