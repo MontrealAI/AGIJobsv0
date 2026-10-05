@@ -1,0 +1,73 @@
+{
+  "solaris": {
+    "kind": "energy-balance",
+    "goal": "Prepare a synthetic heliostat energy-balance report, identifying every deficit without claiming energy creation.",
+    "rows": [
+      {
+        "id": "array-north",
+        "generatedKwh": "12500",
+        "consumedKwh": "8700"
+      },
+      {
+        "id": "array-east",
+        "generatedKwh": "8400",
+        "consumedKwh": "9100"
+      },
+      {
+        "id": "array-west",
+        "generatedKwh": "10200",
+        "consumedKwh": "6400"
+      }
+    ]
+  },
+  "arctic": {
+    "kind": "reserve-reconciliation",
+    "goal": "Reconcile synthetic polar inventory against commitments and reserve requirements, reporting available stock and shortfalls.",
+    "rows": [
+      {
+        "id": "north-hub",
+        "stockUnits": "480",
+        "committedUnits": "300",
+        "reserveUnits": "80"
+      },
+      {
+        "id": "ice-hub",
+        "stockUnits": "250",
+        "committedUnits": "200",
+        "reserveUnits": "80"
+      },
+      {
+        "id": "coastal-hub",
+        "stockUnits": "910",
+        "committedUnits": "540",
+        "reserveUnits": "100"
+      }
+    ]
+  },
+  "silkroad": {
+    "kind": "supplier-selection",
+    "goal": "Compare synthetic supply-chain quotes and select the lowest total cost meeting the delivery limit.",
+    "quantity": "40",
+    "maxDeliveryDays": 7,
+    "rows": [
+      {
+        "id": "boreal",
+        "unitPriceMicros": "12000000",
+        "shippingMicros": "50000000",
+        "deliveryDays": 5
+      },
+      {
+        "id": "laurentian",
+        "unitPriceMicros": "10500000",
+        "shippingMicros": "40000000",
+        "deliveryDays": 12
+      },
+      {
+        "id": "stellar",
+        "unitPriceMicros": "11500000",
+        "shippingMicros": "30000000",
+        "deliveryDays": 7
+      }
+    ]
+  }
+}

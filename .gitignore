@@ -109,3 +109,9 @@ out/forge/
 /reports/onebox/
 /storage/receipts/
 /reports/computer-work/
+
+# Local Omega rehearsal build outputs
+demo/LARGE-SCALE-OMEGA-BUSINESS-3/.cache/
+demo/LARGE-SCALE-OMEGA-BUSINESS-3/.artifacts/
+
+/reports/omega-business-3/
