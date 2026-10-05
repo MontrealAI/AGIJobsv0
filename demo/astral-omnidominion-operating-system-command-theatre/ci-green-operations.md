@@ -1,34 +1,35 @@
 # CI Green Operations Manual
 
-Maintaining a permanently green CI v2 surface is essential for the Astral Omnidominion theatre. This manual maps the demonstration flow to the enforced GitHub Actions checks and documents the verification commands available to repository maintainers.
+A green signal must identify the commit, the checks that actually ran, and their scope. The theatre's offline checks do not certify a deployed marketplace or a live OpenClaw worker.
 
-## 1. Required GitHub Actions checks
+## 1. Targeted checks
 
-The CI v2 policy requires the following workflows to succeed before merging into `main` and for branch protection:
+Use Python 3.10+; pytest is needed only for tests, not for the runner:
 
-| Workflow | Description |
-| --- | --- |
-| `CI / lint` | Solhint + ESLint without warnings. |
-| `CI / tests` | Hardhat unit tests. |
-| `CI / foundry` | Foundry fuzz tests (`forge test`) with deterministic seed. |
-| `CI / coverage` | Coverage threshold validation (≥ 90% overall, access-control coverage). |
-| `CI / summary` | Aggregated pass/fail indicator gating merges. |
-| `CI / webapp` (companion) | Builds the owner/console webapp. |
-| `CI / e2e` (companion) | Cypress end-to-end suite against the console preview. |
-| `CI / fuzz` (companion) | Extended Foundry fuzzing. |
-| `CI / container-scan` | OWASP/Trivy container scan for published images. |
+```bash
+python3 -m pip install pytest==8.4.2
+PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python3 -m pytest -q demo/astral-omnidominion-operating-system-command-theatre/tests
+python3 demo/astral-omnidominion-operating-system-command-theatre/run_demo.py
+python3 demo/astral-omnidominion-operating-system-command-theatre/run_demo.py --verify-report reports/astral-omnidominion-operating-system-command-theatre/report.json
+```
 
-Mark each workflow as “Required” in GitHub branch protection. Use the `ci:verify-branch-protection` script to confirm settings:
+The dedicated [Astral command theatre workflow](../../.github/workflows/demo-astral-command-theatre.yml) tests supported Python versions, runs the rehearsal, verifies the evidence and retains the report artifacts. The existing [Demo gallery](../../.github/workflows/demo-gallery.yml) also discovers this Python suite. Tests include corrupted evidence, incorrect arithmetic, operator pause, incomplete documents, malformed catalogs, path traversal and report escaping.
+
+## 2. Repository-wide required checks
+
+The canonical required check names are in [ci/required-contexts.json](../../ci/required-contexts.json) and [ci/required-companion-contexts.json](../../ci/required-companion-contexts.json). Read those manifests and the current workflow runs rather than copying a stale list of job names into this guide.
+
+For maintainers with permission to read branch protection:
 
 ```bash
 npm run ci:verify-branch-protection
 ```
 
-The script fails if any expected check is missing, ensuring visibility of all gates on PRs and the default branch.
+This is a read-only verification command. Lack of API permission is an access limitation, not evidence that branch protection is absent. A demo-specific workflow is not automatically a required merge gate; repository policy controls that separately.
 
-## 2. Local parity commands
+## 3. Full-stack local parity
 
-Mirror the CI stages locally before pushing:
+Use the repository's pinned Node/npm setup and locked dependencies first. Run checks relevant to changes in shared contracts, webapps or orchestration:
 
 ```bash
 npm run lint:ci
@@ -38,31 +39,18 @@ npm run check:coverage
 npm run check:access-control
 npm run webapp:build
 npm run webapp:typecheck
-npm run webapp:e2e   # requires running preview server
+npm run webapp:e2e
 ```
 
-For fuzzing parity:
+`webapp:e2e` manages its build and preview server. Foundry coverage/fuzzing has its own toolchain; use `FOUNDRY_PROFILE=ci forge test` where required. The first-class demonstration runs compilation/simulation/owner stages; it **does not invoke this complete suite** and cannot substitute for it.
 
-```bash
-FOUNDRY_PROFILE=ci forge test
-```
+## 4. Stack health and failure response
 
-These commands are already invoked indirectly during `npm run demo:agi-os:first-class` via the embedded `demo:agi-os` stage (compilation, deterministic simulation, owner verification). Running them separately pre-validates commits before CI.
+1. Find the failing job and exact commit. Retain its logs.
+2. Reproduce the actual failing command with the pinned toolchain.
+3. Fix the cause and add a regression test when behavior is affected.
+4. Rerun the relevant rehearsal; inspect `steps[]` rather than treating skipped stages as passes.
+5. Compare artifact hashes and reviewer outcomes; a coherent manifest alone is insufficient.
+6. Attach evidence and CI run URLs to the PR. Merge only under the repository's required checks.
 
-## 3. One-click stack health
-
-The one-click deploy wizard shares its steps with CI (contract compilation, configuration validation). Keep the stack healthy by:
-
-- Re-generating `.env` via `npm run deploy:env` when credentials rotate.
-- Ensuring Docker images are rebuilt after dependency updates (`docker compose build`).
-- Monitoring Compose healthchecks (`docker compose ps`) to confirm services are ready before running UI end-to-end tests.
-
-## 4. Incident response when CI fails
-
-1. **Identify failing job** — Inspect the failing workflow log via GitHub.
-2. **Replicate locally** using the commands in section 2.
-3. **Fix and document** — Update code or configuration; note remediation steps in the PR description.
-4. **Re-run theatre** — Execute `npm run demo:agi-os:first-class -- --skip-deploy` to ensure the mission bundle remains green with the new changes.
-5. **Re-request review** — Attach log excerpts or updated artefacts demonstrating the fix.
-
-Maintaining this feedback loop keeps the theatre—and the broader AGI Jobs v0 (v2) platform—production ready.
+For the Docker stack, inspect `docker compose ps` and individual service logs. Review any credential/configuration change before regenerating environment files or rebuilding images. Never publish `.env`, provider tokens or private keys in CI artifacts.

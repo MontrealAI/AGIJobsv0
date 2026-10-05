@@ -1,68 +1,49 @@
 # Mission Review Checklist
 
-Use this checklist after every theatre run to confirm the artefacts are intact, governance controls are verified, and CI hygiene remains green. Each step cites the relevant command or artefact for cross-verification.
+Classify the run before deciding what it proves: offline file rehearsal, browser fixture lab, provider commissioning, full-stack rehearsal or production execution.
 
-## 1. Artefact integrity
+## 1. Offline theatre evidence
 
-- [ ] **Run manifest integrity check** (already executed by the demo). Review `reports/agi-os/first-class/first-class-run.json` → `steps[]` for `integrity-check` status `success`.
-- [ ] **Spot-check hashes** by recomputing SHA-256 for a random file:
+- [ ] Read `report.json`: `schema_version: 2`, `execution_mode: offline-fixture`, six documents and no input issues.
+- [ ] Confirm `live_provider`, `browser_executed`, `settlement_approved` and `production_approved` are all false.
+- [ ] Verify all five evidence artifacts and recompute the acceptance checks:
   ```bash
-  sha256sum reports/agi-os/grand-summary.md
+  python3 demo/astral-omnidominion-operating-system-command-theatre/run_demo.py --verify-report reports/astral-omnidominion-operating-system-command-theatre/report.json
   ```
-  Confirm the hash matches the corresponding entry in `first-class/first-class-manifest.json`.
-- [ ] **Open executive summary** via `reports/agi-os/grand-summary.html` and confirm mission objective, budget, dry-run outcomes, and owner control matrix render correctly.
-- [ ] **Inspect Mermaid control map** by running:
+- [ ] Inspect `accepted` separately from integrity. An intact rejected bundle is valid evidence of rejection.
+- [ ] Check the source, duplicate, deliverable and separate checker: four rows → three unique entries → 21,999 cents.
+- [ ] Demonstrate `--scenario rejected` (one-cent error, exit 1) and `--scenario paused` (no task artifacts, exit 1).
+- [ ] Open the HTML dashboard, inspect the job catalog and confirm no success card implies live capability or settlement.
+- [ ] Retain the report and its unique `runs/` directory. Hashes are relative to this report, not a signature or external attestation.
+
+## 2. Full-stack artifact integrity
+
+- [ ] Read `reports/agi-os/first-class/first-class-run.json` → `steps[]`. Require relevant stages to have `status: success`; enumerate skipped and failed stages.
+- [ ] Recompute a summary hash with a cross-platform command:
   ```bash
-  npx @mermaid-js/mermaid-cli -i reports/agi-os/first-class/owner-control-map.mmd -o /tmp/owner-control-map.svg
+  python3 -c "from pathlib import Path; import hashlib; print(hashlib.sha256(Path('reports/agi-os/grand-summary.md').read_bytes()).hexdigest())"
   ```
-  (Optional) Review the SVG to ensure ownership hierarchy is correct.
+  Compare it to `first-class/first-class-manifest.json`. Verify the complete manifest before relying on the package.
+- [ ] Confirm outputs belong to the run's commit and configuration; stale files cannot fill in a skipped stage.
+- [ ] Inspect `grand-summary.html`, `owner-control-matrix.json` and the preserved `first-class/owner-control-map.mmd` using a trusted Mermaid viewer. A source diagram is not deployed-state proof.
+- [ ] Review `mission-bundle/manifest.json`, simulation telemetry and `dry-run.log` when present. Completion markers do not turn a simulation into live evidence.
 
-## 2. Owner authority verification
+## 3. Owner authority and live workers
 
-- [ ] Confirm `owner-control-matrix.json` lists every module with `status: "ready"` except known configuration gaps (⚠️ entries should have associated follow-up tickets).
-- [ ] Execute a dry governance action:
+- [ ] Follow the [owner field guide](owner-control-field-guide.md); verify actual network, contract addresses, owner and pausers.
+- [ ] Preview only supported governance actions; use the actual pause script rather than report-generator subcommands.
+- [ ] If a transaction was authorized, retain its receipt and re-query each relevant module. Do not assume instantaneous finality or UI refresh.
+- [ ] For live work, collect the [commissioning evidence](computer-work.md#commissioning-evidence-required-for-real-use), including isolation, enforced limits, stop/recovery, independent review and settlement prerequisites.
+- [ ] Reconcile unknown provider outcomes from durable journals. Do not retry by deleting a dispatch record.
+
+## 4. CI, archive and decision
+
+- [ ] Run the [targeted checks](ci-green-operations.md) and inspect the required checks for the exact PR commit.
+- [ ] Archive only reviewed, non-secret evidence. For example, package the offline output separately from the full stack:
   ```bash
-  npm run owner:dashboard -- --dry-run
+  tar -czf astral-offline-evidence.tar.gz reports/astral-omnidominion-operating-system-command-theatre
   ```
-  Ensure the output matches the owner/pauser addresses from the summary.
-- [ ] If the system was unpaused for interactive testing, re-run:
-  ```bash
-  npm run owner:command-center -- pause-all
-  ```
-  Verify in the Owner Console UI that the pause state updates instantly.
+- [ ] Record what passed, what failed, what was skipped and what remains uncommissioned.
+- [ ] Use precise status: “offline rehearsal passed” or “provider commissioning passed for these tasks.” Reserve production approval for the actual deployment and its evidence.
 
-## 3. Simulation telemetry
-
-- [ ] Review `reports/agi-os/mission-bundle/manifest.json` to confirm the ASI take-off telemetry, thermodynamics, and dry-run logs are present.
-- [ ] Tail the deterministic labour market log:
-  ```bash
-  less +G reports/agi-os/mission-bundle/dry-run.log
-  ```
-  Check for `✅` or `COMPLETED` markers on every mission stage.
-
-## 4. CI & automation hygiene
-
-- [ ] Run lint and static checks locally (mirrors CI v2 surface):
-  ```bash
-  npm run lint:ci
-  npm run check:coverage
-  npm run check:access-control
-  ```
-  (Optional) execute `npm test` or targeted suites as required.
-- [ ] Verify branch protection expectations:
-  ```bash
-  npm run ci:verify-branch-protection
-  ```
-  Confirm the script reports required checks for main and PR branches.
-- [ ] Capture the `reports/agi-os/first-class/first-class-run.json` file along with CI run URLs for audit storage.
-
-## 5. Archive & communication
-
-- [ ] Package artefacts for stakeholders:
-  ```bash
-  tar -czf astral-omnidominion-mission-bundle.tar.gz reports/agi-os
-  ```
-- [ ] Share `grand-summary.html` and the generated manifest with decision-makers.
-- [ ] Log outcomes, including any ⚠️ items, in the Owner Control ticketing system or change log.
-
-Complete all boxes before certifying the demonstration as **green**.
+The $40T/year figure and catalog budgets remain planning assumptions. Document-length scores and generated diagrams are not production acceptance gates.

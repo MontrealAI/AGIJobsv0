@@ -1,22 +1,57 @@
-# AGI Jobs v0 (v2) — Demo → Astral Omnidominion Operating System Command Theatre
+# AGI Jobs v0 (v2) — Astral Omnidominion Operating System Command Theatre
 
-> AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `demo/astral-omnidominion-operating-system-command-theatre`.
+**A command theatre for work people perform using a keyboard and mouse while watching a screen.** Define the result, choose a capable worker, inspect its deliverables, and require evidence before acceptance and settlement.
 
-## Overview
-- **Path:** `demo/astral-omnidominion-operating-system-command-theatre/README.md`
-- **Module Focus:** Anchors Demo → Astral Omnidominion Operating System Command Theatre inside the AGI Jobs v0 (v2) lattice so teams can orchestrate economic, governance, and operational missions with deterministic guardrails.
-- **Integration Role:** Interfaces with the unified owner control plane, telemetry mesh, and contract registry to deliver end-to-end resilience.
+Start with a small, executable rehearsal. Extend it through the repository's existing OpenClaw adapter, browser lab, ChatGPT Work operating procedure, and governance tools. The wider vision remains a market for useful digital work across software, research, documents, spreadsheets, design tools and operations.
 
-### Quick start
-- `python demo/astral-omnidominion-operating-system-command-theatre/run_demo.py` produces a non-interactive JSON readiness report under `reports/astral-omnidominion-operating-system-command-theatre/`.
-- The runner is sandboxed and does not require Docker or blockchain endpoints, making it suitable for CI smoke checks.
+## Start here — one command
 
-## Capabilities
-- Provides opinionated configuration and assets tailored to `demo/astral-omnidominion-operating-system-command-theatre` while remaining interoperable with the global AGI Jobs v0 (v2) runtime.
-- Ships with safety-first defaults so non-technical operators can activate the experience without compromising security or compliance.
-- Publishes ready-to-automate hooks for CI, observability, and ledger reconciliation.
+From the repository root, with **Python 3.10+**:
+
+```bash
+python3 demo/astral-omnidominion-operating-system-command-theatre/run_demo.py
+```
+
+Open **`reports/astral-omnidominion-operating-system-command-theatre/report.html`** in your browser. No npm installation, Docker, account, API key or wallet is needed for this path. The runner uses only the standard library, makes no network calls and does not create an OS sandbox.
+
+**Expected:** `Outcome: accepted`, six documents inspected, four acceptance checks passed. The source contains four ledger rows including one duplicate. The deliverable contains **three unique entries, one duplicate and a total of 21,999 cents ($219.99)**. These are synthetic ledger amounts, not USDC transfers.
+
+| Choose your next step | What actually runs |
+| --- | --- |
+| [Offline rehearsal](launch-playbook.md#1-offline-rehearsal-default) | Real local JSON files, separate deterministic checking, SHA-256 verification and an offline HTML dashboard; fixture worker decisions |
+| [Browser lab](../One-Box/computer-work/README.md) | Actual isolated Chromium interaction, screenshots and a provider-shaped fixture response |
+| [OpenClaw / ChatGPT Work handoff](computer-work.md) | Existing live Responses adapter or operator-led Work execution after environment-specific commissioning |
+| [Full AGI OS theatre](launch-playbook.md#2-full-agi-os-stack-advanced) | Existing Node/Docker/local-chain orchestration, owner maps and mission bundles |
+
+## Prove that incorrect work is rejected
+
+```bash
+python3 demo/astral-omnidominion-operating-system-command-theatre/run_demo.py --scenario rejected --output reports/astral-rejected/report.json
+python3 demo/astral-omnidominion-operating-system-command-theatre/run_demo.py --scenario paused --output reports/astral-paused/report.json
+```
+
+Both intentionally return **exit status 1**. Rejection introduces a one-cent error: three checks pass and the recomputed-total check fails. Pause blocks task execution and produces no task artifacts. A missing, empty, unreadable or oversized required document, or an invalid catalog, also blocks execution and reports what to fix. Nothing falls back to a live provider.
+
+Verify saved evidence without executing a task:
+
+```bash
+python3 demo/astral-omnidominion-operating-system-command-theatre/run_demo.py --verify-report reports/astral-omnidominion-operating-system-command-theatre/report.json
+```
+
+Integrity verification returns zero for an intact accepted **or rejected** bundle; inspect `accepted` separately. A paused run has no complete bundle and cannot pass this check. Hashes establish byte consistency relative to the saved report, not producer identity or correctness. Every completed task retains a standalone `runs/<id>/receipt.json` and `index.html`; pass that receipt to `--verify-report` to inspect an earlier run. Preserve a trusted copy of the receipt outside a mutable worker directory for real audit use.
+
+## Capabilities and evidence boundaries
+
+The report preserves the original `coverage`, `documents` and `scores` fields, adds `schema_version: 2`, and labels the historical coordination/Gibbs/game-theory scores as **document-length illustrations**. They are not physics, profitability, reliability or production-readiness measurements.
+
+The new work catalog includes ten concrete job types with illustrative **100 / 1,000 / 10,000 USDC** budgets, tool requirements, deliverables and acceptance conditions. Only ledger reconciliation is executed by this Python runner. A separate checker function provides meaningful error detection; it is not an independent validator identity. Every report retains `live_provider: false`, `browser_executed: false`, `settlement_approved: false` and `production_approved: false`.
+
+The **$40 trillion/year** opportunity is retained as the project's **planning assumption**, not an independently verified estimate or promised platform revenue. Market size, digitally accessible tasks, licensed inputs, reliable execution, reviewer capacity, adoption and fee revenue are different quantities. Computer use broadens the task surface; each work category still needs measured acceptance evidence.
 
 ## Systems Map
+
+The original map is preserved. It describes the intended integration topology, not a claim that the offline runner connects to these services.
+
 ```mermaid
 flowchart LR
     Operators((Mission Owners)) --> demo_astral_omnidominion_operating_system_command_theatre[[Demo → Astral Omnidominion Operating System Command Theatre]]
@@ -25,25 +60,33 @@ flowchart LR
     Core --> Governance[[Owner Control Plane]]
 ```
 
-## Working With This Module
-1. From the repository root run `npm install` once to hydrate all workspaces.
-2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `demo/astral-omnidominion-operating-system-command-theatre`.
-3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
-4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../../OperatorRunbook.md).
+## From brief to useful work
 
-## Directory Guide
-### Key Files
-- `ci-green-operations.md`
-- `launch-playbook.md`
-- `mission-review-checklist.md`
-- `owner-control-field-guide.md`
+```mermaid
+flowchart TD
+    Brief["Outcome and acceptance criteria"] --> Admit["Admit exact task and limits"]
+    Admit --> Worker["OpenClaw or ChatGPT Work"]
+    Worker --> Evidence["Deliverables and execution evidence"]
+    Worker --> Uncertain["Interrupted or uncertain outcome"]
+    Uncertain --> Reconcile["Stop and reconcile effects"]
+    Evidence --> Checker["Recompute and inspect"]
+    Checker -->|Pass| Reviewer["Independent acceptance review"]
+    Checker -->|Fail| Correction["Correction or dispute"]
+    Reviewer --> Settlement["Separately authorized settlement"]
+```
 
-## Quality & Governance
-- Every change must land through a pull request with all required checks green (unit, integration, linting, security scan).
-- Reference [`RUNBOOK.md`](../../RUNBOOK.md) and [`OperatorRunbook.md`](../../OperatorRunbook.md) for escalation patterns and owner approvals.
-- Keep secrets outside the tree; use the secure parameter stores wired to the AGI Jobs v0 (v2) guardian mesh.
+## Directory guide
 
-## Next Steps
-- Review this module's issue board for open automation, data, or research threads.
-- Link new deliverables back to the central manifest via `npm run release:manifest`.
-- Publish artefacts (dashboards, mermaid charts, datasets) into `reports/` for downstream intelligence alignment.
+| File | Purpose |
+| --- | --- |
+| [launch-playbook.md](launch-playbook.md) | First run, expected output, full-stack path and troubleshooting |
+| [computer-work.md](computer-work.md) | Current capabilities, handoff and commissioning requirements |
+| [work-catalog.json](work-catalog.json) | Machine-readable task templates and market assumption |
+| [owner-control-field-guide.md](owner-control-field-guide.md) | Correct governance commands and authority boundaries |
+| [mission-review-checklist.md](mission-review-checklist.md) | Verify evidence and classify what a run actually proves |
+| [ci-green-operations.md](ci-green-operations.md) | Targeted checks, repository gates and CI failure diagnosis |
+| [run_demo.py](run_demo.py) | Offline runner and standalone evidence verifier |
+
+## Quality and governance
+
+Changes land through a pull request with the repository's required checks green. See [RUNBOOK.md](../../RUNBOOK.md), [OperatorRunbook.md](../../OperatorRunbook.md), and the [computer-work production boundaries](../../docs/computer-work.md). Keep secrets out of job specifications and evidence. Preserve the original flowcharts and full-stack tooling while commissioning each real worker separately.
