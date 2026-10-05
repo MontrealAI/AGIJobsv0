@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Planetary Fabric · Computer Workbench</title>
+    <link rel="stylesheet" href="style.css" />
+    <script type="module" src="app.mjs"></script>
+  </head>
+  <body>
+    <a class="skip" href="#workbench">Skip to workbench</a>
+    <header>
+      <a class="brand" href="/"
+        >◈ <span>AGI JOBS <small>PLANETARY FABRIC</small></span></a
+      ><label class="language"
+        ><span id="language-label">Language</span
+        ><select id="language" aria-labelledby="language-label">
+          <option value="en">English</option>
+          <option value="fr">Français</option>
+        </select></label
+      >
+    </header>
+    <main>
+      <section class="hero">
+        <div class="eyebrow" data-i18n="eyebrow">
+          ONE MISSION. A WORLD OF CAPABILITY.
+        </div>
+        <h1 data-i18n="title">Intelligence that<br />gets work done.</h1>
+        <p class="lead" data-i18n="intro">
+          Coordinate screen-based work across Earth, Luna, Mars and Helios. Make
+          the task precise. Reserve the resources. Verify the result.
+        </p>
+        <div class="badge" data-i18n="badge">
+          SYNTHETIC REHEARSAL · NO DISPATCH · NO PAYMENTS
+        </div>
+      </section>
+      <section class="journey" aria-label="Workflow">
+        <div>
+          <b>01</b><span data-i18n="scope">Scope the job</span
+          ><small data-i18n="scopeNote">Rights, inputs, deliverable</small>
+        </div>
+        <div>
+          <b>02</b><span data-i18n="route">Match capacity</span
+          ><small data-i18n="routeNote">Skills, budget, review time</small>
+        </div>
+        <div>
+          <b>03</b><span data-i18n="execute">Produce evidence</span
+          ><small>OpenClaw / ChatGPT Work</small>
+        </div>
+        <div>
+          <b>04</b><span data-i18n="verify">Independent review</span
+          ><small data-i18n="verifyNote">Acceptance before settlement</small>
+        </div>
+      </section>
+      <section id="workbench" class="panel">
+        <div class="section-head">
+          <div>
+            <div class="eyebrow" data-i18n="workbench">MISSION WORKBENCH</div>
+            <h2 data-i18n="planTitle">Which jobs fit this mission?</h2>
+          </div>
+          <button id="reset" data-i18n="reset" disabled>Reset baseline</button>
+        </div>
+        <p data-i18n="explain">
+          Ten synthetic jobs. Exact USDC arithmetic. Separate creator and
+          reviewer operators. Jobs are considered in listed order; this is a
+          transparent first-fit plan, not an optimized forecast.
+        </p>
+        <form id="controls">
+          <label
+            ><span data-i18n="budget">Mission budget (USDC)</span
+            ><input
+              id="budget"
+              inputmode="decimal"
+              value="15000.000000"
+              required /></label
+          ><label
+            ><span data-i18n="review">Total reviewer minutes</span
+            ><input
+              id="review"
+              type="number"
+              min="0"
+              max="1000000"
+              step="1"
+              value="60"
+              required /></label
+          ><label
+            ><span data-i18n="outage">Simulate an additional outage</span
+            ><select id="outage">
+              <option value="" data-i18n="none">None</option>
+            </select></label
+          ><button id="calculate" type="submit" disabled data-i18n="calculate">
+            Build allocation
+          </button>
+        </form>
+        <p id="status" role="status" aria-live="polite">Loading the mission…</p>
+        <div id="metrics" class="metrics"></div>
+        <div id="workers" class="workers"></div>
+        <div class="table-wrap">
+          <table>
+            <caption data-i18n="tableCaption">
+              Admission plan — holds consume no budget or reviewer time
+            </caption>
+            <thead>
+              <tr>
+                <th data-i18n="job">Job</th>
+                <th data-i18n="reward">Reward · USDC</th>
+                <th data-i18n="decision">Decision</th>
+                <th data-i18n="assignment">Creator / reviewer</th>
+              </tr>
+            </thead>
+            <tbody id="jobs"></tbody>
+          </table>
+        </div>
+        <div class="exports">
+          <button id="allocation" disabled data-i18n="allocation">
+            Download allocation.json</button
+          ><button id="brief" disabled data-i18n="brief">
+            Download brief.md</button
+          ><a href="board.json" download data-i18n="source">Source board</a
+          ><a href="task.json" download data-i18n="task">Worker task</a>
+        </div>
+        <p class="muted" data-i18n="exportNote">
+          Exports describe a plan. They do not admit gateway jobs, execute these
+          jobs, verify provider performance, or authorize settlement.
+        </p>
+        <details>
+          <summary data-i18n="policy">
+            Inspect source policy and fingerprint
+          </summary>
+          <pre id="policy"></pre>
+        </details>
+      </section>
+      <section class="two-col">
+        <article class="panel">
+          <div class="eyebrow" data-i18n="opportunity">THE OPPORTUNITY</div>
+          <h2 data-i18n="marketTitle">The screen is a work surface.</h2>
+          <p data-i18n="marketText">
+            The project vision assumes $40 trillion of annual screen-based work.
+            This is an unverified planning assumption, not measured addressable
+            demand or platform revenue.
+          </p>
+          <label
+            ><span data-i18n="capture"
+              >Illustrative share of that assumption</span
+            ><select id="capture">
+              <option value="1">0.001%</option>
+              <option value="10" selected>0.01%</option>
+              <option value="100">0.1%</option>
+              <option value="1000">1%</option>
+            </select></label
+          ><strong id="market-value" class="market-value"></strong>
+          <p class="muted" data-i18n="marketNote">
+            Illustrative annual gross job value, before adoption, reliability,
+            operating costs and marketplace fees. Not a forecast.
+          </p>
+        </article>
+        <article class="panel">
+          <div class="eyebrow" data-i18n="handoff">FROM PLAN TO PROOF</div>
+          <h2 data-i18n="handoffTitle">Give the worker a bounded job.</h2>
+          <p data-i18n="handoffText">
+            This task asks OpenClaw or ChatGPT Work to create and export the
+            baseline allocation. An independent local checker evaluates those
+            files. Performing the ten proposed jobs requires separate tasks and
+            evaluators.
+          </p>
+          <ol>
+            <li data-i18n="step1">
+              Reset the baseline and download the worker task.
+            </li>
+            <li data-i18n="step2">
+              Use a dedicated worker environment; give access only to this local
+              workbench.
+            </li>
+            <li data-i18n="step3">
+              Export both files. Review them with the command in the runbook.
+            </li>
+          </ol>
+          <a href="guide.html" data-i18n="guide">Open the operator guide →</a>
+          <p class="muted" data-i18n="handoffNote">
+            OpenClaw uses the existing admitted-task Responses adapter. ChatGPT
+            Work uses an operator-led desktop or browser task. Availability
+            depends on the actual installation and permissions.
+          </p>
+        </article>
+      </section>
+      <footer data-i18n="footer">
+        Planetary scale is the vision. Measured, reviewable work is the unit.
+        Original topology charts and simulation controls remain in the demo.
+      </footer>
+    </main>
+  </body>
+</html>

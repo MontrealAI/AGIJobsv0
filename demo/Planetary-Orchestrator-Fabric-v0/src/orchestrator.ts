@@ -1,3 +1,4 @@
+import { validateOwnerCommand, validateFabricConfig } from './validation';
 import { CheckpointManager } from './checkpoint';
 import { PlanetaryLedger } from './ledger';
 import {
@@ -134,6 +135,7 @@ export class PlanetaryOrchestrator {
   private readonly logger = new InMemoryFabricLogger();
   private readonly ledger = new PlanetaryLedger();
 
+  private readonly submittedJobIds = new Set<string>();
   private tick = 0;
   private metrics: FabricMetrics = PlanetaryOrchestrator.createInitialMetrics();
   private deterministicLog: DeterministicReplayFrame[] = [];
@@ -147,6 +149,7 @@ export class PlanetaryOrchestrator {
     private readonly config: FabricConfig,
     private readonly checkpointManager: CheckpointManager
   ) {
+    validateFabricConfig(config);
     this.initializeState();
   }
 
@@ -283,11 +286,14 @@ export class PlanetaryOrchestrator {
   }
 
   submitJob(definition: JobDefinition): void {
+    if (this.submittedJobIds.has(definition.id)) throw new Error(`Duplicate job ID ${definition.id}`);
+    if (!Number.isSafeInteger(definition.submissionTick) || definition.submissionTick < 0 || !Number.isSafeInteger(definition.estimatedDurationTicks) || definition.estimatedDurationTicks <= 0 || !Number.isFinite(definition.value) || definition.value < 0) throw new Error('Invalid job timing or value');
     this.logger.setTick(this.tick);
     const router = this.routers.get(definition.shard);
     if (!router) {
       throw new Error(`Unknown shard ${definition.shard}`);
     }
+    this.submittedJobIds.add(definition.id);
     const job: JobState = {
       ...definition,
       status: 'queued',
@@ -307,6 +313,7 @@ export class PlanetaryOrchestrator {
   }
 
   async applyOwnerCommand(command: OwnerCommand): Promise<FabricEvent[]> {
+    validateOwnerCommand(command);
     this.logger.setTick(this.tick);
     const events: FabricEvent[] = [];
     const push = (event: FabricEvent): void => {
@@ -899,7 +906,7 @@ export class PlanetaryOrchestrator {
   }
 
   async saveCheckpoint(): Promise<void> {
-    const payload = this.createCheckpointPayload();
+    const payload = { ...this.createCheckpointPayload(), submittedJobIds: [...this.submittedJobIds] };
     await this.checkpointManager.save(payload);
     this.recordFabricEvent({
       tick: this.tick,
@@ -914,6 +921,8 @@ export class PlanetaryOrchestrator {
     if (!payload) {
       return false;
     }
+    this.submittedJobIds.clear();
+    for (const jobId of payload.submittedJobIds ?? Object.values(payload.shards).flatMap((s) => [...s.queue, ...s.inFlight, ...s.completed, ...s.failed].map((j) => j.id))) this.submittedJobIds.add(jobId);
     const payloadShardIds = new Set(Object.keys(payload.shards));
     for (const [shardId, shardPayload] of Object.entries(payload.shards)) {
       const updatedConfig = PlanetaryOrchestrator.cloneShardConfig(shardPayload.config);

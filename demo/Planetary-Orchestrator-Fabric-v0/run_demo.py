@@ -48,6 +48,8 @@ def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
 
+    if not 1 <= args.jobs <= 1000000:
+        parser.error("--jobs must be between 1 and 1000000")
     result = run_high_load_blocking(
         args.base_dir,
         job_count=args.jobs,
@@ -55,6 +57,8 @@ def main(argv: list[str] | None = None) -> int:
         seed=args.seed,
     )
     output = {
+        "evidence_mode": "simulation", "actual_provider": False, "actual_chain": False,
+        "production_approved": False, "settlement_approved": False,
         "completion_rate": result.completion_rate,
         "max_depth_delta": result.max_depth_delta(),
         "reassigned_jobs": result.reassigned_jobs,

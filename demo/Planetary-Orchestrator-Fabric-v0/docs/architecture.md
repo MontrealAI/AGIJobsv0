@@ -1,5 +1,7 @@
 # Planetary Orchestrator Fabric – Architecture Dossier
 
+**Execution boundary:** this dossier describes the simulated fabric and its deployment vision. Node endpoints, container images, prices, regions and compliance labels below are illustrative metadata; no containers or chain transactions are executed. See [computer-work.md](computer-work.md) for the real adapter boundary.
+
 The Planetary Orchestrator Fabric is engineered to give a single owner deterministic command over a multi-region AGI workforce. This dossier decomposes the fabric into its core building blocks and exposes the telemetry, routing policies, and failure domains.
 
 ## Planetary Topology
@@ -52,7 +54,7 @@ The owner can provision **surge shards** at runtime (e.g., `edge-surge`) that in
 
 ## Node Marketplace
 
-Nodes register declaratively. The orchestrator enforces owner-set maximum concurrency, latency windows, and heartbeat intervals while surfacing the exact container image, runtime, pricing, and compliance posture for every agent pod.
+Nodes register declaratively. The TypeScript simulator enforces configured capacity/concurrency and models heartbeats. Latency budgets, runtime images, pricing and compliance fields are displayed metadata, not measured network guarantees or certifications.
 
 | Node ID | Region | Container Image | Runtime | Pricing (USDC/job) | Capabilities | Compliance |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -87,17 +89,17 @@ Nodes register declaratively. The orchestrator enforces owner-set maximum concur
 
 ## Security Considerations
 
-- Owner multisig is the only actor authorized to modify shard weights, pause the system, or apply thermostat changes.
-- Spillover routes are deterministic and signed. Unauthorized shards cannot inject tasks without owner-approved credentials.
-- Checkpoints include integrity hashes to detect tampering before resuming a run.
-- Node marketplace requires authenticated heartbeats; the demo provides local signing stubs that operators replace with production wallets or TPM-backed keys.
+- Owner commands are local simulator inputs. The displayed multisig is not authenticated; a production control plane must enforce authorization outside this simulator.
+- Spillover routes are deterministic simulator policies, not signed network messages.
+- Versioned TypeScript checkpoints include SHA-256 corruption detection and atomic replacement. Hashes are not signatures and do not establish an authorized writer. Protect the local storage boundary.
+- Heartbeats are simulated. No authenticated network heartbeat or production signing stub is implemented here.
 
 ## Extensibility Hooks
 
-- **Blockchain Integration:** Replace the mock ledger in `src/orchestrator.ts` with actual contract calls using `ethers` or Hardhat runners.
-- **Container Backend:** Attach `src/nodeMarketplace.ts` to Kubernetes, Nomad, or bare metal by implementing the `NodeProvider` interface.
+- **Blockchain Integration:** Use the existing orchestrator/contract lifecycle; do not make the simulator automatically retry paid side effects.
+- **Worker Backend:** The implemented computer-work adapter lives in `apps/orchestrator/computerWork.ts`; configure and commission its isolated OpenClaw worker. There is no `src/nodeMarketplace.ts` or `NodeProvider` interface in this module.
 - **Reward Engine:** Connect to `scripts/v2/rewardEngineReport.ts` for real payout calculations.
 - **Observability:** Stream `events.ndjson` into the observability stack via Fluent Bit or Loki.
-- **Owner Automation:** Populate `config/owner-commands.example.json` with production schedules so the orchestrator autonomously enforces governance policies mid-run.
+- **Owner Automation:** Populate `config/owner-commands.example.json` with simulator schedules to rehearse policy changes before implementing authenticated production controls.
 
 The architecture is tuned so a single operator—without writing a single line of code—can command a planetary intelligence fabric while retaining full custodial control.

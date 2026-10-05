@@ -53,3 +53,7 @@ Behind the scenes the drill forwards the following flags to the TypeScript entry
 - Couple the drill with alerting: trigger notifications on the `simulation.stopped` event so SRE teams know the halt was intentional.
 
 The restart drill proves that AGI Jobs v0 (v2) behaves like the superintelligent orchestrator operators expect—capable of pausing an entire planetary workload and resuming without missing a beat.
+
+## Current recovery boundary
+
+The shell launcher resolves the repository from its own location and requires `jq`. Stage two uses `--finish` to clear an inherited mission-plan stop limit. Missing checkpoints fail instead of starting a new mission. TypeScript snapshots now require format version 1 and a valid SHA-256 digest; earlier unsigned snapshots must be preserved separately and are not silently migrated. Atomic replacement protects against partial file writes, not every storage/power-loss failure. Use one process per checkpoint. These are controlled simulation shutdowns, not evidence of live-provider or paid-settlement recovery.

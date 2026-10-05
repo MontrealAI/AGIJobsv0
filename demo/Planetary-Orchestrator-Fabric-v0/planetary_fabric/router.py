@@ -110,7 +110,6 @@ class RegionalRouter:
             except NodeOfflineError:
                 self.metrics.failed += 1
                 await self._on_requeue.put(job.job_id)
-                await self.queue.put((job.priority, job.job_id))
                 break
             finally:
                 self.queue.task_done()

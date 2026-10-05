@@ -27,7 +27,7 @@ timeline
 
 ## Operator Checklist
 
-1. **Prime the environment** using the quickstart in the README. Copy the `.env` templates and run `npm install` once.
+1. **Prime the environment** using the quickstart in the README. Use the repository-pinned Node/npm versions and run `npm ci` once. The simulator and local workbench need no credentials.
 2. **Launch** the fabric with `bin/run-demo.sh`. Supply `--output-label` to route artifacts into a named directory.
 3. **Load the mission console** (`ui/dashboard.html`) and drop the generated `reports/<label>` folder onto the page to review topology, job flows, owner interventions, and restart drill guidance without a build step.
 4. **Replay governance payloads** from `reports/<label>/owner-script.json` or generate new ones with `npm run owner:system-pause` etc.
@@ -49,6 +49,8 @@ timeline
 
 ## Owner Control Surface Quick Reference
 
+These are examples of the wider repository owner surface, not authenticated controls exposed by this simulator. Use the JSON command schedule for local rehearsals.
+
 - **Pause / resume everything:** `owner:system-pause`, `owner:mission-control --action resume`.
 - **Shard tuning:** `owner:command-center --action shard-update --shard <id> --queue-alert <value>`.
 - **Node lifecycle:** `owner:command-center --action node-register --node-file <json>` or `--action node-deregister --node-id <id>`.
@@ -66,4 +68,4 @@ timeline
 
 ## Final Reflective Pass
 
-Walk the entire flow once more—from configuration through restart drill—and confirm every artifact updates as expected. If any invariant or log looks suspicious, re-run the acceptance autopilot to reproduce deterministic telemetry. The demo remains fully owner-governed, audit-ready, and ready for mainnet-scale deployment without requiring the operator to touch source code.
+Walk the entire flow once more—from configuration through restart drill—and confirm every artifact updates as expected. If any invariant or log looks suspicious, re-run the acceptance autopilot to reproduce deterministic telemetry. The resulting evidence qualifies the rehearsed simulator scenarios. Mainnet deployment still requires authenticated control, commissioned workers and independent reviewers, remote policy/stop enforcement, and validated contract settlement. See [the computer-work runbook](computer-work.md).

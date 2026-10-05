@@ -1,3 +1,4 @@
+import { validateFabricConfig, validateOwnerSchedule } from './validation';
 import { promises as fs } from 'fs';
 import { dirname, resolve } from 'path';
 import {
@@ -10,7 +11,7 @@ import {
   OwnerCommandSchedule,
   SpilloverPolicy,
 } from './types';
-import { loadJobBlueprint as loadBlueprint } from './job-blueprint';
+import { loadJobBlueprint as loadBlueprint, parseJobBlueprint } from './job-blueprint';
 
 function cloneSpilloverPolicies(policies: SpilloverPolicy[] | undefined): SpilloverPolicy[] | undefined {
   if (!policies) {
@@ -20,6 +21,7 @@ function cloneSpilloverPolicies(policies: SpilloverPolicy[] | undefined): Spillo
 }
 
 export function cloneFabricConfig(config: FabricConfig): FabricConfig {
+  validateFabricConfig(config);
   return {
     owner: {
       ...config.owner,
@@ -52,6 +54,7 @@ export async function loadFabricConfig(path: string): Promise<FabricConfig> {
 }
 
 function normaliseOwnerCommands(input: unknown): OwnerCommandSchedule[] {
+  validateOwnerSchedule(Array.isArray(input) ? input : (input as { commands?: unknown })?.commands);
   const cloneSchedule = (schedule: OwnerCommandSchedule): OwnerCommandSchedule => ({
     tick: schedule.tick,
     command: JSON.parse(JSON.stringify(schedule.command)) as OwnerCommandSchedule['command'],
@@ -157,30 +160,7 @@ async function resolveJobBlueprint(
 }
 
 function loadBlueprintInline(blueprint: JobBlueprint): JobBlueprint {
-  const metadata = blueprint.metadata
-    ? {
-        label: blueprint.metadata.label,
-        description: blueprint.metadata.description,
-        author: blueprint.metadata.author,
-        version: blueprint.metadata.version,
-      }
-    : undefined;
-  return {
-    metadata,
-    source: blueprint.source,
-    jobs: blueprint.jobs.map((entry) => ({
-      id: entry.id,
-      idPrefix: entry.idPrefix,
-      shard: entry.shard,
-      requiredSkills: entry.requiredSkills.map((skill) => skill),
-      estimatedDurationTicks: entry.estimatedDurationTicks,
-      value: entry.value,
-      valueStep: entry.valueStep,
-      submissionTick: entry.submissionTick,
-      count: entry.count,
-      note: entry.note,
-    })),
-  };
+  return parseJobBlueprint(blueprint);
 }
 
 export async function loadMissionPlan(path: string): Promise<LoadedMissionPlan> {

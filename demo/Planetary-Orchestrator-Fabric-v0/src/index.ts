@@ -71,6 +71,8 @@ async function main(): Promise<void> {
       type: 'boolean',
       describe: 'Resume from an existing checkpoint',
     })
+    .option('finish', { type: 'boolean', describe: 'Clear a mission plan stop limit when finishing a restart drill' })
+    .strict()
     .option('ci', {
       type: 'boolean',
       describe: 'Run in CI mode (reduced output)',
@@ -152,7 +154,7 @@ async function main(): Promise<void> {
     ciMode: lastValue(argv.ci) ?? planRun?.ciMode ?? false,
     ownerCommands,
     ownerCommandSource: ownerCommandSource ?? planRun?.ownerCommandSource,
-    stopAfterTicks: lastValue(argv['stop-after-ticks']) ?? planRun?.stopAfterTicks,
+    stopAfterTicks: argv.finish ? undefined : lastValue(argv['stop-after-ticks']) ?? planRun?.stopAfterTicks,
     preserveReportDirOnResume:
       lastValue(argv['preserve-report-on-resume']) ?? planRun?.preserveReportDirOnResume ?? true,
     jobBlueprint,

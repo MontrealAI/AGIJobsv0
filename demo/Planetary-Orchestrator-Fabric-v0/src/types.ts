@@ -242,6 +242,7 @@ export interface SimulationOptions {
 }
 
 export interface CheckpointData {
+  submittedJobIds?: string[];
   tick: number;
   systemPaused: boolean;
   pausedShards: ShardId[];

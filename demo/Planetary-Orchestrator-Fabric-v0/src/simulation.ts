@@ -1,7 +1,8 @@
+import { validateSimulation, validateLabel } from './validation';
 import { promises as fs } from 'fs';
 import { createWriteStream, WriteStream } from 'fs';
 import { once } from 'events';
-import { dirname, join } from 'path';
+import { dirname, join, resolve, sep } from 'path';
 import { CheckpointManager } from './checkpoint';
 import { PlanetaryOrchestrator } from './orchestrator';
 import {
@@ -232,7 +233,7 @@ function buildMissionChronicleMarkdown(args: {
   const valueFailureRate = metrics.valueSubmitted === 0 ? 0 : metrics.valueFailed / metrics.valueSubmitted;
   const resilienceSignals = [
     run.checkpointRestored
-      ? '✅ Orchestrator resumed from checkpoint with zero data loss.'
+      ? '✅ Simulator restored its checkpoint; inspect ledger invariants and completion totals.'
       : '⚠️ Run executed without checkpoint restoration.',
     run.stoppedEarly
       ? `⚠️ Run halted early at tick ${formatInteger(run.stopTick ?? metrics.tick)} (${run.stopReason ?? 'stop directive'})`
@@ -539,7 +540,7 @@ function buildMissionChronicleMarkdown(args: {
   lines.push('');
   lines.push('- **Non-technical mastery:** Every command above is replayable directly from the generated owner scripts, ensuring executives can reproduce the superintelligent behaviour without touching code.');
   lines.push('- **Spillover governance:** Regional spillovers and failover assignments are logged for audit, proving that Kardashev-grade throughput stayed deterministic and balanced.');
-  lines.push('- **Instant restart readiness:** The checkpoint configuration and ledger invariants document exactly how the orchestrator resumes after a kill-switch drill, guaranteeing business continuity.');
+  lines.push('- **Instant restart readiness:** The checkpoint configuration and ledger invariants document exactly how the orchestrator resumes after a kill-switch drill, providing evidence for this controlled simulation drill.');
   lines.push('');
   lines.push('This chronicle demonstrates that AGI Jobs v0 (v2) empowers mission owners to direct a planetary workforce with the precision, transparency, and command authority expected from a post-capital superintelligence.');
   lines.push('');
@@ -623,6 +624,7 @@ class ReportOutputManager {
   ): Promise<void> {
     const { initial = false } = options;
     const targetLabel = this.explicitLabel ? this.currentLabel : label;
+    validateLabel(targetLabel);
     const newDir = join(baseDir, targetLabel);
     const oldDir = this.reportDir;
 
@@ -630,28 +632,35 @@ class ReportOutputManager {
       return;
     }
 
+    if (!initial && resolve(newDir) !== resolve(oldDir)) {
+      if (await pathExists(newDir)) throw new Error('Report rotation target already exists; choose a fresh directory or label');
+    }
     if (!initial) {
       await this.closeEventsStream();
     }
 
     if (initial) {
-      if (!this.preserveReports) {
-        await fs.rm(newDir, { recursive: true, force: true });
-      }
+      // Keep unrelated files; generated artifacts are replaced individually.
       await fs.mkdir(newDir, { recursive: true });
     } else {
       const oldExists = await pathExists(oldDir);
       const newParent = dirname(newDir);
-      await fs.mkdir(newParent, { recursive: true });
-      if (!this.preserveReports && (await pathExists(newDir))) {
-        await fs.rm(newDir, { recursive: true, force: true });
-      }
-      if (oldExists && newDir !== oldDir) {
-        const oldParent = dirname(oldDir);
-        const tempDir = await fs.mkdtemp(join(oldParent, '.report-rotate-'));
-        await fs.rename(oldDir, tempDir);
+      if (oldExists && resolve(newDir).startsWith(resolve(oldDir) + sep)) {
+        // Stage outside the source before creating a destination beneath it.
+        // Preserve the staged reports if the second move fails.
+        const stagingRoot = await fs.mkdtemp(join(dirname(oldDir), '.report-rotate-'));
+        const stagedDir = join(stagingRoot, 'reports');
+        await fs.rename(oldDir, stagedDir);
+        try {
+          await fs.mkdir(newParent, { recursive: true });
+          await fs.rename(stagedDir, newDir);
+        } catch (error) {
+          throw new Error(`Report rotation failed; previous reports are preserved at ${stagedDir}`, { cause: error });
+        }
+        await fs.rmdir(stagingRoot);
+      } else if (oldExists && resolve(newDir) !== resolve(oldDir)) {
         await fs.mkdir(newParent, { recursive: true });
-        await fs.rename(tempDir, newDir);
+        await fs.rename(oldDir, newDir);
       } else {
         const newExists = await pathExists(newDir);
         if (!newExists) {
@@ -664,6 +673,10 @@ class ReportOutputManager {
     if (!this.explicitLabel) {
       this.currentLabel = label;
     }
+    for (const entry of await fs.readdir(newDir, { withFileTypes: true })) {
+      if (entry.isSymbolicLink()) throw new Error('Report directory contains a symlink');
+    }
+    if ((await fs.lstat(newDir)).isSymbolicLink()) throw new Error('Report directory must not be a symlink');
     this.eventsFilePath = join(newDir, 'events.ndjson');
     const initialWrite = initial && !this.preserveReports;
     const flags = initialWrite ? 'w' : 'a';
@@ -691,11 +704,14 @@ export async function runSimulation(
   config: FabricConfig,
   options: SimulationOptions
 ): Promise<SimulationResult> {
+  validateSimulation(config, options);
+  if (options.jobBlueprint) expandJobBlueprint(options.jobBlueprint, config);
   const checkpointPath = options.checkpointPath ?? config.checkpoint.path;
   const checkpointManager = new CheckpointManager(checkpointPath);
   const orchestrator = new PlanetaryOrchestrator(config, checkpointManager);
-  const reportManager = await ReportOutputManager.create(config, options);
   const checkpointRestored = options.resume ? await orchestrator.restoreFromCheckpoint() : false;
+  if (options.resume && !checkpointRestored) throw new Error('Resume requested but checkpoint is missing; no new simulation was started');
+  const reportManager = await ReportOutputManager.create(config, options);
   const startTick = orchestrator.currentTick;
   const stopAfterTicks = options.stopAfterTicks;
   if (stopAfterTicks !== undefined) {
@@ -1117,6 +1133,7 @@ async function writeArtifacts(
     : undefined;
 
   const summary = {
+    evidence: { mode: 'simulation', actualProvider: false, actualChain: false, settlementApproved: false, productionApproved: false },
     owner: config.owner,
     metrics,
     shards: shardSnapshots,
@@ -1454,6 +1471,7 @@ function buildDashboardHtml(
 <html lang="en">
 <head>
   <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Planetary Orchestrator Fabric Mission Control</title>
   <style>
     body { font-family: 'Inter', Arial, sans-serif; margin: 0; padding: 0; background: #050714; color: #f5f7ff; }
@@ -1473,6 +1491,7 @@ function buildDashboardHtml(
     .grid-two { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
   </style>
   <script type="module">
+    const escapeText = (value) => String(value).replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const executedLogPath = ${JSON.stringify(executedCommandsPath)};
     const ledgerAssetPath = ${JSON.stringify(ledgerPath)};
     const missionGraphAssetPath = ${JSON.stringify(missionGraphPath)};
@@ -1493,9 +1512,9 @@ function buildDashboardHtml(
         const definition = (await response.text()).trim();
         container.textContent = definition.length > 0
           ? definition
-          : 'flowchart LR\n  empty((No topology data available))';
+          : 'flowchart LR\\n  empty((No topology data available))';
       } catch (error) {
-        container.textContent = 'flowchart LR\n  failure((Topology unavailable))';
+        container.textContent = 'flowchart LR\\n  failure((Topology unavailable))';
         missionPathEl.textContent = missionGraphAssetPath + ' — ' + error;
       }
     }
@@ -1533,7 +1552,7 @@ function buildDashboardHtml(
             '<div class="metric"><strong>' +
             entry.label +
             '</strong><br />' +
-            (entry.value ?? 0).toLocaleString() +
+            escapeText((entry.value ?? 0).toLocaleString()) +
             '</div>'
         )
         .join('');
@@ -1541,24 +1560,24 @@ function buildDashboardHtml(
       if (blueprint) {
         const metadata = blueprint.metadata ?? {};
         const metaBlocks = [
-          '<div class="metric"><strong>Total Jobs</strong><br />' + blueprint.totalJobs.toLocaleString() + '</div>',
+          '<div class="metric"><strong>Total Jobs</strong><br />' + Number(blueprint.totalJobs).toLocaleString() + '</div>',
         ];
         if (metadata.label) {
-          metaBlocks.push('<div class="metric"><strong>Label</strong><br />' + metadata.label + '</div>');
+          metaBlocks.push('<div class="metric"><strong>Label</strong><br />' + escapeText(metadata.label) + '</div>');
         }
         if (metadata.description) {
           metaBlocks.push(
-            '<div class="metric"><strong>Description</strong><br />' + metadata.description + '</div>'
+            '<div class="metric"><strong>Description</strong><br />' + escapeText(metadata.description) + '</div>'
           );
         }
         if (metadata.author) {
-          metaBlocks.push('<div class="metric"><strong>Author</strong><br />' + metadata.author + '</div>');
+          metaBlocks.push('<div class="metric"><strong>Author</strong><br />' + escapeText(metadata.author) + '</div>');
         }
         if (metadata.version) {
-          metaBlocks.push('<div class="metric"><strong>Version</strong><br />' + metadata.version + '</div>');
+          metaBlocks.push('<div class="metric"><strong>Version</strong><br />' + escapeText(metadata.version) + '</div>');
         }
         if (blueprint.source) {
-          metaBlocks.push('<div class="metric"><strong>Source</strong><br /><code>' + blueprint.source + '</code></div>');
+          metaBlocks.push('<div class="metric"><strong>Source</strong><br /><code>' + escapeText(blueprint.source) + '</code></div>');
         }
         document.getElementById('blueprint-meta').innerHTML = metaBlocks.join('');
         document.getElementById('blueprint-entries').textContent = JSON.stringify(blueprint.entries, null, 2);
@@ -1599,11 +1618,11 @@ function buildDashboardHtml(
         : 'latest';
       document.getElementById('owner-status').innerHTML =
         '<div class="metric"><strong>System Paused</strong><br />' + (ownerState.systemPaused ? 'Yes' : 'No') + '</div>' +
-        '<div class="metric"><strong>Paused Shards</strong><br />' + pausedShards + '</div>' +
-        '<div class="metric"><strong>Checkpoint Path</strong><br /><code>' + checkpointPath + '</code></div>' +
-        '<div class="metric"><strong>Checkpoint Interval</strong><br />' + checkpointInterval + ' ticks</div>' +
-        '<div class="metric"><strong>Reporting Directory</strong><br /><code>' + reportingDirectory + '</code></div>' +
-        '<div class="metric"><strong>Default Label</strong><br />' + reportingLabel + '</div>';
+        '<div class="metric"><strong>Paused Shards</strong><br />' + escapeText(pausedShards) + '</div>' +
+        '<div class="metric"><strong>Checkpoint Path</strong><br /><code>' + escapeText(checkpointPath) + '</code></div>' +
+        '<div class="metric"><strong>Checkpoint Interval</strong><br />' + escapeText(checkpointInterval) + ' ticks</div>' +
+        '<div class="metric"><strong>Reporting Directory</strong><br /><code>' + escapeText(reportingDirectory) + '</code></div>' +
+        '<div class="metric"><strong>Default Label</strong><br />' + escapeText(reportingLabel) + '</div>';
       const ownerCommandsMeta = summary.ownerCommands ?? {};
       const scheduledCount = Array.isArray(ownerCommandsMeta.scheduled) ? ownerCommandsMeta.scheduled.length : 0;
       const executedCount = Array.isArray(ownerCommandsMeta.executed) ? ownerCommandsMeta.executed.length : 0;
@@ -1658,7 +1677,7 @@ function buildDashboardHtml(
               '<div class="metric"><strong>' +
               entry.label +
               '</strong><br />' +
-              (entry.value ?? 0).toLocaleString() +
+              escapeText((entry.value ?? 0).toLocaleString()) +
               '</div>'
           )
           .join('');
@@ -1671,11 +1690,11 @@ function buildDashboardHtml(
                   '<div class="metric ' +
                   statusClass +
                   '"><strong>' +
-                  entry.id +
+                  escapeText(entry.id) +
                   '</strong><br />' +
                   statusLabel +
                   '<br />' +
-                  entry.message +
+                  escapeText(entry.message) +
                   '</div>'
                 );
               })
@@ -1695,7 +1714,7 @@ function buildDashboardHtml(
               String(flow.to).replace(/[^a-zA-Z0-9]/g, '_')
           );
         }
-        document.getElementById('ledger-flow-mermaid').textContent = flowDiagramLines.join('\n');
+        document.getElementById('ledger-flow-mermaid').textContent = flowDiagramLines.join('\\n');
         const events = Array.isArray(ledger.events) ? ledger.events : [];
         const eventSummary = {
           totalEvents: ledger.totalEvents ?? events.length,
@@ -1706,20 +1725,21 @@ function buildDashboardHtml(
         document.getElementById('ledger-events').textContent = JSON.stringify(eventSummary, null, 2);
       } catch (error) {
         document.getElementById('ledger-metrics').innerHTML =
-          '<div class="metric critical">Unable to load ledger telemetry: ' + error + '</div>';
+          '<div class="metric critical">Unable to load ledger telemetry: ' + escapeText(error) + '</div>';
         document.getElementById('ledger-invariants').innerHTML = '';
         document.getElementById('ledger-flows').textContent = '';
         document.getElementById('ledger-events').textContent = '';
       }
       renderMermaid();
     }
-    loadData();
+    loadData().catch((error) => { document.getElementById('owner').textContent = 'Unable to load report. Open ui/dashboard.html and select the report folder, or serve reports over localhost. ' + error.message; });
   </script>
   <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
-  <script>mermaid.initialize({ startOnLoad: false, theme: 'dark' });</script>
+  <script>if (window.mermaid) mermaid.initialize({ startOnLoad: false, theme: 'dark' });</script>
 </head>
 <body>
   <header>
+    <p>SIMULATION · No provider execution or paid settlement</p>
     <h1>Planetary Orchestrator Fabric Mission Control</h1>
     <p>Empowering planetary operators to command sharded AGI fabrics with absolute owner authority.</p>
   </header>
@@ -2088,12 +2108,13 @@ function escapeHtml(value: string): string {
 function buildMermaidHtmlPage(title: string, mermaidDefinition: string): string {
   const normalized = (mermaidDefinition ?? '').replace(/\r?\n/g, '\n').trim();
   const safeDefinition = normalized.length > 0 ? normalized : 'flowchart LR\n  empty((No topology data))';
-  const mermaidJson = JSON.stringify(safeDefinition);
+  const mermaidJson = JSON.stringify(safeDefinition).replace(/</g, '\\u003c');
   const safeTitle = escapeHtml(title);
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>${safeTitle}</title>
   <style>
     body { font-family: 'Inter', Arial, sans-serif; margin: 0; padding: 32px; background: #050714; color: #f5f7ff; }
@@ -2140,8 +2161,7 @@ function buildMermaidHtmlPage(title: string, mermaidDefinition: string): string 
     }
   </script>
   <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
-  <script>mermaid.initialize({ startOnLoad: false, theme: 'dark' });</script>
+  <script>if (window.mermaid) mermaid.initialize({ startOnLoad: false, theme: 'dark' });</script>
 </body>
 </html>`;
 }
-

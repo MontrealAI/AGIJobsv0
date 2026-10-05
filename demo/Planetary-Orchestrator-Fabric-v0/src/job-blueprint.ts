@@ -12,8 +12,8 @@ const jobEntrySchema = z
     skills: z.array(z.string().min(1)).optional(),
     estimatedDurationTicks: z.number().int().positive().optional(),
     duration: z.number().int().positive().optional(),
-    value: z.number().positive().optional(),
-    valueStep: z.number().nonnegative().optional(),
+    value: z.number().finite().positive().optional(),
+    valueStep: z.number().finite().nonnegative().optional(),
     submissionTick: z.number().int().nonnegative().optional(),
     count: z.number().int().positive().optional(),
     note: z.string().optional(),
@@ -31,7 +31,7 @@ const jobEntrySchema = z
     }
   );
 
-const jobBlueprintSchema = z.object({
+export const jobBlueprintSchema = z.object({
   metadata: z
     .object({
       label: z.string().optional(),
@@ -85,7 +85,7 @@ function generateJobId(
   shard: ShardConfig,
   counters: Map<string, number>
 ): string {
-  if (entry.count === 1 && entry.id) {
+  if ((entry.count ?? 1) === 1 && entry.id) {
     return entry.id;
   }
   const prefix = entry.idPrefix ?? entry.id ?? `${shard.id}-job`;
@@ -96,6 +96,7 @@ function generateJobId(
 }
 
 export function expandJobBlueprint(blueprint: JobBlueprint, config: FabricConfig): JobDefinition[] {
+  blueprint = parseJobBlueprint(blueprint);
   const counters = new Map<string, number>();
   const jobs: JobDefinition[] = [];
   for (const entry of blueprint.jobs) {
@@ -115,6 +116,7 @@ export function expandJobBlueprint(blueprint: JobBlueprint, config: FabricConfig
       });
     }
   }
+  if (new Set(jobs.map((job) => job.id)).size !== jobs.length) throw new Error('Duplicate blueprint job ID');
   return jobs;
 }
 
@@ -147,3 +149,9 @@ export function cloneJobBlueprint(blueprint: JobBlueprint | undefined): JobBluep
   };
 }
 
+
+export function parseJobBlueprint(value: unknown): JobBlueprint {
+  const result = jobBlueprintSchema.parse(value);
+  if (result.jobs.reduce((total, entry) => total + (entry.count ?? 1), 0) > 1000000) throw new Error('Blueprint exceeds 1000000 simulated jobs');
+  return { metadata: result.metadata, jobs: result.jobs.map(normaliseEntry) };
+}

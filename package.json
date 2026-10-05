@@ -276,10 +276,10 @@
     "demo:omega-business-3": "ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/LARGE-SCALE-OMEGA-BUSINESS-3/orchestrator.ts",
     "demo:omega-business-3:mainnet": "demo/LARGE-SCALE-OMEGA-BUSINESS-3/bin/omega-mainnet.sh",
     "demo:omega-business-3:ui": "demo/LARGE-SCALE-OMEGA-BUSINESS-3/bin/omega-ui.sh",
-    "demo:planetary-orchestrator-fabric": "npx tsx demo/Planetary-Orchestrator-Fabric-v0/src/index.ts --config demo/Planetary-Orchestrator-Fabric-v0/config/fabric.example.json",
-    "demo:planetary-orchestrator-fabric:ci": "npx tsx demo/Planetary-Orchestrator-Fabric-v0/src/index.ts --config demo/Planetary-Orchestrator-Fabric-v0/config/fabric.example.json --jobs 2000 --simulate-outage mars.gpu-helion --ci --output-label ci-latest",
+    "demo:planetary-orchestrator-fabric": "node --import tsx demo/Planetary-Orchestrator-Fabric-v0/src/index.ts --config demo/Planetary-Orchestrator-Fabric-v0/config/fabric.example.json",
+    "demo:planetary-orchestrator-fabric:ci": "node --import tsx demo/Planetary-Orchestrator-Fabric-v0/src/index.ts --config demo/Planetary-Orchestrator-Fabric-v0/config/fabric.example.json --jobs 2000 --simulate-outage mars.gpu-helion --ci --output-label ci-latest",
     "demo:planetary-orchestrator-fabric:restart": "demo/Planetary-Orchestrator-Fabric-v0/bin/run-restart-drill.sh",
-    "demo:planetary-orchestrator-fabric:acceptance": "npx tsx demo/Planetary-Orchestrator-Fabric-v0/src/acceptance.ts --config demo/Planetary-Orchestrator-Fabric-v0/config/fabric.example.json --owner-commands demo/Planetary-Orchestrator-Fabric-v0/config/owner-commands.example.json",
+    "demo:planetary-orchestrator-fabric:acceptance": "node --import tsx demo/Planetary-Orchestrator-Fabric-v0/src/acceptance.ts --config demo/Planetary-Orchestrator-Fabric-v0/config/fabric.example.json --owner-commands demo/Planetary-Orchestrator-Fabric-v0/config/owner-commands.example.json",
     "demo:omni-sovereign": "bash demo/omni-sovereign-ascension-operating-system/bin/launch.sh",
     "demo:onebox:doctor": "node demo/One-Box/bin/doctor.cjs",
     "demo:onebox:launch": "node demo/One-Box/bin/start-onebox.cjs",
@@ -483,7 +483,10 @@
     "site:qa": "node scripts/pages/browser-qa.mjs",
     "demo:computer-work": "node demo/One-Box/computer-work/run.cjs",
     "demo:onebox:test": "node --test demo/One-Box/test/*.test.cjs apps/onebox-static/test/*.test.mjs",
-    "demo:onebox:qa": "node demo/One-Box/scripts/browser-qa.mjs"
+    "demo:onebox:qa": "node demo/One-Box/scripts/browser-qa.mjs",
+    "demo:planetary-orchestrator-fabric:workbench": "node demo/Planetary-Orchestrator-Fabric-v0/computer-work/server.cjs",
+    "demo:planetary-orchestrator-fabric:worker": "node --import tsx demo/Planetary-Orchestrator-Fabric-v0/computer-work/worker.cjs",
+    "test:planetary-orchestrator-fabric:regressions": "node --import tsx --test demo/Planetary-Orchestrator-Fabric-v0/tests/hardening.test.ts demo/Planetary-Orchestrator-Fabric-v0/tests/computer-work.test.cjs"
   },
   "type": "commonjs",
   "version": "2.0.0"

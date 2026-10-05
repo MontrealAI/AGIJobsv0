@@ -1,0 +1,13 @@
+{
+  "planetary": {
+    "endpoint": "http://127.0.0.1:18789/v1/responses",
+    "agentId": "planetary",
+    "tokenEnv": "COMPUTER_WORK_PLANETARY_TOKEN",
+    "deploymentId": "REPLACE_WITH_COMMISSIONED_DEPLOYMENT",
+    "mode": "live",
+    "timeoutMs": 120000,
+    "maxResponseBytes": 262144,
+    "maxOutputTokens": 8192,
+    "approvedJobs": []
+  }
+}
