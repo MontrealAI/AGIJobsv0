@@ -16,6 +16,7 @@ export interface AsiTakeoffKitOptions {
   logDir?: string;
   outputBasename?: string;
   networkHint?: string;
+  localReceiptsDir?: string;
   additionalArtifacts?: Array<ArtifactInput>;
   referenceDocs?: Array<ReferenceDoc>;
 }
@@ -64,15 +65,22 @@ function relativeToRoot(targetPath: string): string {
   return path.relative(ROOT, targetPath);
 }
 
-async function ensureFileExists(filePath: string, label: string): Promise<void> {
+async function ensureFileExists(
+  filePath: string,
+  label: string
+): Promise<void> {
   try {
     const stat = await fs.stat(filePath);
     if (!stat.isFile()) {
-      throw new Error(`Expected ${label} to be a file: ${relativeToRoot(filePath)}`);
+      throw new Error(
+        `Expected ${label} to be a file: ${relativeToRoot(filePath)}`
+      );
     }
   } catch (error) {
     throw new Error(
-      `Missing required ${label}: ${relativeToRoot(filePath)} (${(error as Error).message})`,
+      `Missing required ${label}: ${relativeToRoot(filePath)} (${
+        (error as Error).message
+      })`
     );
   }
 }
@@ -84,7 +92,7 @@ async function computeSha256(filePath: string): Promise<string> {
 
 async function collectDirectoryDescriptor(
   key: string,
-  directoryPath: string,
+  directoryPath: string
 ): Promise<DirectoryDescriptor | undefined> {
   try {
     const stat = await fs.stat(directoryPath);
@@ -106,7 +114,7 @@ async function collectDirectoryDescriptor(
 
 async function addArtifact(
   artifacts: KitArtifactRecord[],
-  input: ArtifactInput,
+  input: ArtifactInput
 ): Promise<void> {
   const absolute = ensureAbsolute(input.path);
   try {
@@ -130,7 +138,7 @@ async function addArtifact(
 }
 
 export async function generateAsiTakeoffKit(
-  options: AsiTakeoffKitOptions,
+  options: AsiTakeoffKitOptions
 ): Promise<AsiTakeoffKitResult> {
   const reportRoot = ensureAbsolute(options.reportRoot);
   const planPath = ensureAbsolute(options.planPath);
@@ -143,7 +151,9 @@ export async function generateAsiTakeoffKit(
     plan = JSON.parse(planRaw) as Record<string, any>;
   } catch (error) {
     throw new Error(
-      `Unable to parse project plan JSON at ${relativeToRoot(planPath)}: ${(error as Error).message}`,
+      `Unable to parse project plan JSON at ${relativeToRoot(planPath)}: ${
+        (error as Error).message
+      }`
     );
   }
 
@@ -169,23 +179,64 @@ export async function generateAsiTakeoffKit(
     {
       key: 'plan',
       path: planPath,
-      description: 'Canonical national initiative plan used for orchestration.',
+      description:
+        'Scenario context or local mission configuration; not proof of delivered work.',
     },
-    {
-      key: 'dryRun',
-      path: dryRunPath,
-      description: 'Owner dry-run harness output capturing job lifecycle replay.',
-    },
-    {
-      key: 'thermodynamics',
-      path: thermodynamicsPath,
-      description: 'Thermodynamic telemetry snapshot for incentive levers.',
-    },
-    {
-      key: 'missionControl',
-      path: missionControlPath,
-      description: 'Owner mission-control dossier including governance diagram.',
-    },
+    ...(options.localReceiptsDir
+      ? [
+          {
+            key: 'missionReceipt',
+            path: path.join(
+              ensureAbsolute(options.localReceiptsDir),
+              'mission.json'
+            ),
+            description: 'Local mission driver receipt.',
+          },
+          {
+            key: 'deployment',
+            path: path.join(
+              ensureAbsolute(options.localReceiptsDir),
+              'deploy.json'
+            ),
+            description: 'Disposable local deployment addresses.',
+          },
+          {
+            key: 'governanceReceipt',
+            path: path.join(
+              ensureAbsolute(options.localReceiptsDir),
+              'governance.json'
+            ),
+            description: 'Local governance drill receipt.',
+          },
+          {
+            key: 'stakeReceipt',
+            path: path.join(
+              ensureAbsolute(options.localReceiptsDir),
+              'stake.json'
+            ),
+            description: 'Local staking receipt.',
+          },
+        ]
+      : [
+          {
+            key: 'dryRun',
+            path: dryRunPath,
+            description:
+              'Owner dry-run harness output capturing job lifecycle replay.',
+          },
+          {
+            key: 'thermodynamics',
+            path: thermodynamicsPath,
+            description:
+              'Thermodynamic telemetry snapshot for incentive levers.',
+          },
+          {
+            key: 'missionControl',
+            path: missionControlPath,
+            description:
+              'Owner mission-control dossier including governance diagram.',
+          },
+        ]),
   ];
 
   if (summaryJsonPath) {
@@ -215,20 +266,50 @@ export async function generateAsiTakeoffKit(
   }
 
   const bundleDescriptor = options.bundleDir
-    ? await collectDirectoryDescriptor('missionBundle', ensureAbsolute(options.bundleDir))
+    ? await collectDirectoryDescriptor(
+        'missionBundle',
+        ensureAbsolute(options.bundleDir)
+      )
     : undefined;
   const logDescriptor = options.logDir
     ? await collectDirectoryDescriptor('logs', ensureAbsolute(options.logDir))
     : undefined;
 
   const outputBasename = options.outputBasename ?? 'governance-kit';
+  if (!/^[A-Za-z0-9][A-Za-z0-9_.-]{0,99}$/.test(outputBasename))
+    throw new Error(
+      'Output name must be a plain filename without path separators'
+    );
   const manifestPath = path.join(reportRoot, `${outputBasename}.json`);
   const markdownPath = path.join(reportRoot, `${outputBasename}.md`);
+  for (const output of [manifestPath, markdownPath]) {
+    const canonicalOutput = await fs
+      .realpath(output)
+      .catch(() => path.resolve(output));
+    for (const artifact of artifacts) {
+      const canonicalInput = await fs.realpath(
+        path.resolve(ROOT, artifact.path)
+      );
+      if (canonicalInput === canonicalOutput)
+        throw new Error('Kit output would overwrite a source artifact');
+    }
+  }
 
   const governance = plan.governance ?? {};
   const thermostat = governance.thermostat ?? {};
   const network = options.networkHint ?? 'hardhat';
-  const thermostatScript = thermostat.updateScript ?? 'scripts/v2/updateThermodynamics.ts';
+  if (!/^[A-Za-z0-9_-]+$/.test(network))
+    throw new Error('Invalid network name');
+  const thermostatScript = 'scripts/v2/updateThermodynamics.ts';
+  const thermostatCommand = `HARDHAT_NETWORK=${network} npx ts-node --compiler-options '{"module":"commonjs"}' ${thermostatScript}`;
+  const dryRun = options.localReceiptsDir
+    ? null
+    : JSON.parse(await fs.readFile(dryRunPath, 'utf8'));
+  const mode = options.localReceiptsDir
+    ? 'local-receipts'
+    : dryRun?.network === 'hardhat-offline' || dryRun?.status === 'simulated'
+    ? 'offline-fixture'
+    : 'reported-rehearsal';
 
   const defaultReferences: ReferenceDoc[] = [
     {
@@ -244,40 +325,53 @@ export async function generateAsiTakeoffKit(
       description: 'Thermodynamic incentive design overview.',
     },
   ];
-  const referenceDocs = options.referenceDocs && options.referenceDocs.length > 0
-    ? options.referenceDocs
-    : defaultReferences;
+  const referenceDocs =
+    options.referenceDocs && options.referenceDocs.length > 0
+      ? options.referenceDocs
+      : defaultReferences;
 
   const checklist = [
     {
       title: 'Verify owner control wiring',
       command: `npm run owner:verify-control -- --network ${network}`,
-      purpose: 'Confirms SystemPause, treasury, and thermostat governance match hardened defaults.',
+      purpose:
+        'Inspect the separately prepared deployment; configured addresses and permissions must be verified on its actual network.',
     },
     {
       title: 'Exercise pause and resume drill',
-      command: 'npm run pause:test',
-      purpose: 'Demonstrates the owner can halt and restore job execution paths instantly.',
+      command: `HARDHAT_NETWORK=${network} npm run pause:test`,
+      purpose:
+        'Runs the repository pause test; it does not pause or resume a production deployment.',
     },
     {
       title: 'Thermostat parameter dry-run',
-      command: `npx hardhat run ${thermostatScript} --network ${network}`,
-      purpose: 'Simulates temperature adjustments before committing to the chain.',
+      command: thermostatCommand,
+      purpose:
+        'Previews parameter actions against a prepared deployment. It requires the correct RPC, addresses and signer context.',
     },
     {
       title: 'Thermostat parameter execute',
-      command: `npx hardhat run ${thermostatScript} --network ${network} --execute`,
-      purpose: 'Applies incentive tuning on-chain under multisig supervision.',
+      command: `${thermostatCommand} --execute`,
+      purpose:
+        'Broadcasts transactions. Use only after separately recorded authorization and review of the exact network, deployment and signer.',
     },
     {
       title: 'Audit CI branch protection',
       command: 'npm run ci:verify-branch-protection',
-      purpose: 'Proves pull requests and main remain blocked on the green CI suite.',
+      purpose:
+        'Inspects branch protection with the required GitHub access; a report is not a guarantee of future enforcement.',
     },
   ];
 
   const manifest = {
     version: 'v1',
+    evidence: {
+      mode,
+      liveProvider: false,
+      productionApproved: false,
+      settlementApproved: false,
+      note: 'Hashes establish the recorded bytes only. The generator does not verify receipts on-chain, prove control authority, or certify completed work. Directory entries are an index, not recursively hashed artifacts.',
+    },
     generatedAt: new Date().toISOString(),
     reportRoot: relativeToRoot(reportRoot),
     ownerControls: {
@@ -302,7 +396,7 @@ export async function generateAsiTakeoffKit(
     participants: plan.participants ?? {},
     artifacts,
     directories: [bundleDescriptor, logDescriptor].filter(
-      (descriptor): descriptor is DirectoryDescriptor => Boolean(descriptor),
+      (descriptor): descriptor is DirectoryDescriptor => Boolean(descriptor)
     ),
     checklist,
     references: referenceDocs,
@@ -311,6 +405,14 @@ export async function generateAsiTakeoffKit(
   const mdLines: string[] = [];
   mdLines.push('# ASI Take-Off Governance Kit');
   mdLines.push('');
+  mdLines.push(`**Evidence mode: ${mode}.** ${manifest.evidence.note}`);
+  mdLines.push('');
+  if (mode === 'offline-fixture') {
+    mdLines.push(
+      '**Offline fixtures: no governance checks or blockchain transactions were performed by this mode.**'
+    );
+    mdLines.push('');
+  }
   mdLines.push(`- Generated: ${manifest.generatedAt}`);
   if (manifest.initiative) {
     mdLines.push(`- Initiative: ${manifest.initiative}`);
@@ -319,24 +421,30 @@ export async function generateAsiTakeoffKit(
     mdLines.push(`- Objective: ${manifest.objective}`);
   }
   if (manifest.ownerControls.owner) {
-    mdLines.push(`- Owner multisig: \`${manifest.ownerControls.owner}\``);
+    mdLines.push(
+      `- Scenario owner label (unverified): \`${manifest.ownerControls.owner}\``
+    );
   }
   if (manifest.ownerControls.pauseAuthority) {
-    mdLines.push(`- Pause authority: \`${manifest.ownerControls.pauseAuthority}\``);
+    mdLines.push(
+      `- Pause authority: \`${manifest.ownerControls.pauseAuthority}\``
+    );
   }
   if (manifest.ownerControls.treasury) {
     mdLines.push(`- Treasury: \`${manifest.ownerControls.treasury}\``);
   }
   if (manifest.ownerControls.thermostat?.initialTemperature) {
     mdLines.push(
-      `- Thermostat baseline temperature: ${manifest.ownerControls.thermostat.initialTemperature}`,
+      `- Thermostat baseline temperature: ${manifest.ownerControls.thermostat.initialTemperature}`
     );
   }
   mdLines.push('');
   mdLines.push('## Operational Checklist');
   mdLines.push('');
   for (const item of checklist) {
-    mdLines.push(`- **${item.title}.** ${item.purpose} Command: \`${item.command}\`.`);
+    mdLines.push(
+      `- **${item.title}.** ${item.purpose} Command: \`${item.command}\`.`
+    );
   }
   mdLines.push('');
   mdLines.push('## Artifact Integrity');
@@ -345,7 +453,7 @@ export async function generateAsiTakeoffKit(
   mdLines.push('| --- | --- | --- | ---: |');
   for (const artifact of artifacts) {
     mdLines.push(
-      `| ${artifact.key} | ${artifact.path} | \`${artifact.sha256}\` | ${artifact.size} |`,
+      `| ${artifact.key} | ${artifact.path} | \`${artifact.sha256}\` | ${artifact.size} |`
     );
   }
   mdLines.push('');
@@ -383,4 +491,3 @@ export async function generateAsiTakeoffKit(
     markdown: mdLines.join('\n'),
   };
 }
-

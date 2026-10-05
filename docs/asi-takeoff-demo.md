@@ -1,63 +1,36 @@
-# ASI Take-Off Demonstration for AGI Jobs v0
+# ASI Takeoff demonstration
 
-The `demo:asi-takeoff` pipeline turns the existing AGI Jobs v0 stack into a national-scale autonomous governance simulation.  It
-runs entirely on the deterministic scripts that ship with the repository—no bespoke contracts, no new protocol code, and no hidden
-assumptions.
+The [ASI Takeoff README](../demo/asi-takeoff/README.md) is the entry point. Start its dependency-free local studio with `npm run demo:asi-takeoff:studio`, or inspect the planetary plan with `npm run demo:asi-takeoff:plan -- planetary`.
 
-## Capabilities
+## Distinct execution paths
 
-Running the demonstration performs the following actions:
+| Path | Input | Output and scope |
+| --- | --- | --- |
+| Planning studio / CLI | Original national or planetary project plan | Exact budget reconciliation and an explicitly assumed dependency schedule; no transactions or provider work |
+| Computer-work exercise | Pinned synthetic planetary task | Candidate analysis/dossier, independent arithmetic review, separate substantive acceptance |
+| `npm run demo:asi-takeoff` | Rail plan as summary context; existing lifecycle/report scripts | Local harness, separately bootstrapped thermodynamic/owner reports, summary and governance kit under `reports/asi-takeoff/` |
+| `npm run demo:asi-takeoff:local` | `config/mission@v2.json` | Three configured mock-token job lifecycles and actual local receipts under `reports/localhost/asi-takeoff/` |
 
-1. **Protocol regeneration** – calls the canonical constant generator and Hardhat compiler to guarantee artefacts match source.
-2. **Lifecycle rehearsal** – executes `scripts/v2/testnetDryRun.ts` to stage jobs, acceptances, validation votes, disputes, and
-   epoch settlements under a local Hardhat chain.
-3. **Thermodynamic telemetry** – snapshots role shares, global temperature, and entropy alignment using
-   `scripts/v2/thermodynamicsReport.ts`.
-4. **Mission control dossier** – produces a governance control-plane report via `scripts/v2/ownerMissionControl.ts`, including a
-   Mermaid governance diagram, timelock bundle, and high-priority action list.
-5. **Owner wiring verification** – re-runs `scripts/v2/verifyOwnerControl.ts` to ensure the SystemPause circuit, treasury routing
-   and thermostat permissions remain hardened after the demo completes.
-6. **Audit summary** – renders `reports/asi-takeoff/summary.md` which ties each generated artifact to the national high-speed rail
-   initiative captured in `demo/asi-takeoff/project-plan.json`.
+Changing a scenario plan does not dispatch its jobs or change the three-job local mission. A local contract receipt does not establish completion of a physical project or a live model run. Scenario owner/treasury labels and placeholder IPFS references are not verified deployment addresses or published deliverables.
 
-Outputs are persisted to `reports/asi-takeoff` and include:
+## Governance pipeline
 
-- `dry-run.json` – structured replay of the job lifecycle harness.
-- `thermodynamics.json` – on-chain configuration comparison for incentive levers.
-- `mission-control.md` – governance report with diagrams and checklists.
-- `summary.md` / `summary.json` – curated view binding technical telemetry to business goals.
-- `logs/*.log` – per-step console output, timestamped for audit replay.
-- `governance-kit.json` / `governance-kit.md` – consolidated owner-control manifest with SHA-256 hashes for each artefact.
-
-The governance kit is generated automatically at the end of the pipeline via `scripts/v2/lib/asiTakeoffKit.ts`.  It cross-links the national initiative plan, dry-run receipts, thermodynamic report, mission-control dossier, and receipt directories, giving non-technical owners a single bundle to verify before approving deployments.
-
-## How to Run
+Complete the repository's [pinned setup](START_HERE.md#reproduce-the-local-baseline), then run:
 
 ```bash
-npm install
 npm run demo:asi-takeoff
 ```
 
-The command may take several minutes on the first run because it compiles the entire contract suite.  The dry-run harness expects
-an ephemeral Hardhat network (the default when the script is executed with no `--network` flag).
+It regenerates constants, compiles, runs `testnetDryRun.ts`, generates thermodynamic and mission-control reports, verifies owner wiring and builds a SHA-256 artifact index. The separate report processes use local fixtures; the bundle is not evidence of a single persistent deployment or production control authority.
 
-To regenerate the kit for alternate report directories (for example, artefacts produced by `npm run demo:asi-takeoff:local`), use:
+Outputs are `dry-run.json`, `thermodynamics.json`, `mission-control.md`, `summary.{md,json}`, `mission-bundle/`, `logs/`, `governance-kit.{json,md}` and `run-status.json`. An interrupted/running status is not success; old files can remain after failure. Use separate report directories for separate runs.
 
-```bash
-npm run demo:asi-takeoff:kit -- --report-root reports/localhost/asi-takeoff --summary-md reports/localhost/asi-takeoff/asi-takeoff-report.md --bundle reports/localhost/asi-takeoff/receipts
-```
+`AGIJOBS_FLAGSHIP_SKIP_ONCHAIN=true` produces **offline fixtures**, with `simulated`/`not-run` statuses. It performs no owner checks, chain transactions or provider execution. Generated files and hashes do not turn fixtures into validation evidence.
 
-## CI Integration
+For the planetary variant and actual output routing, see [planetary-scale-asi-takeoff.md](planetary-scale-asi-takeoff.md). For local-receipt kit generation, optional Python/Make launchers and owner previews, follow the [runbook](../demo/asi-takeoff/RUNBOOK.md). Local receipts use `--local-receipts`; they do not contain the governance pipeline's dry-run/thermodynamics files.
 
-The `ci (v2)` workflow exposes a dedicated job named **ASI Take-Off Demonstration**.  It runs `npm run demo:asi-takeoff` on each
-pull request and on the `main` branch to guarantee the simulation remains green.  Artefacts are uploaded so reviewers can inspect
-mission-control reports, thermodynamic telemetry, and raw logs directly from the PR checks tab.
+## Assurance
 
-## Extending the Scenario
+The focused `demo-asi-takeoff` workflow checks planning, task acceptance, server and reporting regressions, Python launcher behavior, the full governance pipeline, the three-job local chain and its receipt kit. The root `ci (v2)` workflow also runs the governance demonstration. Check the exact PR head; historical green runs are not current verification.
 
-The high-speed rail plan used by the demo is described in `demo/asi-takeoff/project-plan.json`.  Updating that file allows teams to
-introduce new national programmes (healthcare deployment, energy microgrids, etc.) while reusing the exact same execution pipeline.
-The script automatically incorporates any new jobs or participants into the final summary so the documentation always matches the
-plan of record.
-
-For a planetary-scale variant that layers multiple regions and global governance artefacts on top of the same primitives, see `docs/asi-global-orchestrator-demo.md` and the accompanying `npm run demo:asi-global` pipeline.
+The original flowchart and presentation remain available. Current OpenClaw, ChatGPT Work and API computer-use routes are documented in the demo README and [computer-work integration guide](computer-work.md), with task admission, independent evaluation and authorized settlement kept separate. The $40 trillion/year vision remains a project assumption, not a verified TAM or forecast.

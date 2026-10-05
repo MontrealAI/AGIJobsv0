@@ -6,6 +6,8 @@ cd "$ROOT"
 
 NET="localhost"
 SCOPE="${AURORA_REPORT_SCOPE:-asi-takeoff}"
+SCOPE="$(AURORA_REPORT_SCOPE="$SCOPE" node -e 'console.log(require("./demo/aurora/bin/report-paths.cjs").resolveNamespace(process.env.AURORA_REPORT_SCOPE))')"
+export AURORA_REPORT_NAMESPACE="$SCOPE"
 REPORT_DIR="reports/${NET}/${SCOPE}/receipts"
 DEPLOY_OUTPUT="${AURORA_DEPLOY_OUTPUT:-${REPORT_DIR}/deploy.json}"
 MISSION_CONFIG="${AURORA_MISSION_CONFIG:-demo/asi-takeoff/config/mission@v2.json}"

@@ -1,0 +1,13 @@
+{
+  "asi-takeoff": {
+    "endpoint": "http://127.0.0.1:18789/v1/responses",
+    "agentId": "asi-takeoff",
+    "tokenEnv": "COMPUTER_WORK_ASI_TAKEOFF_TOKEN",
+    "deploymentId": "REPLACE_WITH_CHAIN_ID_AND_REGISTRY_ADDRESS",
+    "mode": "live",
+    "timeoutMs": 120000,
+    "maxResponseBytes": 262144,
+    "maxOutputTokens": 8192,
+    "approvedJobs": []
+  }
+}

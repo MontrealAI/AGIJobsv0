@@ -1,0 +1,7 @@
+typer==0.27.2
+rich==15.0.0
+annotated-doc==0.0.5
+shellingham==1.5.4
+markdown-it-py==4.2.0
+mdurl==0.1.2
+Pygments==2.21.0

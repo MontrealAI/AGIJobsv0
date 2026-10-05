@@ -9,6 +9,7 @@ with Python ergonomics:
 from __future__ import annotations
 
 import os
+import re
 import shutil
 import subprocess
 from dataclasses import dataclass
@@ -39,6 +40,12 @@ class DemoConfig:
 
     def with_defaults(self) -> "DemoConfig":
         """Fill derived defaults (deploy output path) lazily."""
+        if self.network != "localhost":
+            raise ValueError("The disposable launcher supports only --network localhost")
+        if not re.fullmatch(r"[A-Za-z0-9_.-]+", self.report_scope) or self.report_scope in {".", ".."}:
+            raise ValueError("Report scope must be a plain namespace without path separators")
+        if not self.report_title.strip() or len(self.report_title) > 300 or any(ord(c) < 32 for c in self.report_title):
+            raise ValueError("Report title must be a nonempty single line")
         if self.deploy_output is None:
             receipts_dir = ROOT.parent.parent / "reports" / self.network / self.report_scope / "receipts"
             return DemoConfig(
@@ -59,7 +66,8 @@ def _require_command(command: str) -> None:
 
 
 def _validate_files(paths: Iterable[Path]) -> list[Path]:
-    missing = [path for path in paths if not path.exists()]
+    paths = list(paths)
+    missing = [path for path in paths if not path.is_file()]
     if missing:
         listed = "\n".join(str(path) for path in missing)
         console.print(f"[red]Required demo assets are missing:\n{listed}[/red]")
@@ -73,9 +81,9 @@ def _build_env(cfg: DemoConfig) -> dict[str, str]:
         "NETWORK": cfg.network,
         "AURORA_REPORT_SCOPE": cfg.report_scope,
         "AURORA_REPORT_TITLE": cfg.report_title,
-        "AURORA_DEPLOY_OUTPUT": str(cfg.deploy_output),
-        "AURORA_MISSION_CONFIG": str(cfg.mission_config),
-        "AURORA_THERMOSTAT_CONFIG": str(cfg.thermostat_config),
+        "AURORA_DEPLOY_OUTPUT": str(cfg.deploy_output.resolve()),
+        "AURORA_MISSION_CONFIG": str(cfg.mission_config.resolve()),
+        "AURORA_THERMOSTAT_CONFIG": str(cfg.thermostat_config.resolve()),
     }
 
 
@@ -96,7 +104,7 @@ def check() -> None:
     try:
         _require_command("npx")
         table.add_row("npx available", "✅")
-    except typer.Exit as exc:  # type: ignore[catching-non-exception]
+    except SystemExit as exc:
         table.add_row("npx available", "❌")
         console.print(table)
         raise exc
@@ -111,7 +119,7 @@ def check() -> None:
 
 @app.command()
 def run(
-    network: str = typer.Option("localhost", help="Target network for the Hardhat/Anvil node."),
+    network: str = typer.Option("localhost", help="Disposable local network; only localhost is supported."),
     report_scope: str = typer.Option("asi-takeoff", help="Namespace for generated receipts and reports."),
     report_title: str = typer.Option("ASI Take-Off — Mission Report", help="Title for generated telemetry reports."),
     deploy_output: Path = typer.Option(None, help="Override where deployment receipts are written."),

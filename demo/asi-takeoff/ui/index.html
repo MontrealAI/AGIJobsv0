@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>ASI Takeoff · Mission Studio</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <a class="skip" href="#mission">Skip to mission</a>
+    <header>
+      <div class="topline">
+        <span>AGI JOBS / MISSION STUDIO</span
+        ><label
+          >Language / Langue
+          <select id="language">
+            <option value="en">English</option>
+            <option value="fr">Français</option>
+          </select></label
+        >
+      </div>
+      <p class="eyebrow" data-i18n="eyebrow">FROM VISION TO REVIEWABLE WORK</p>
+      <h1>ASI TAKEOFF</h1>
+      <p class="lead" data-i18n="lead">
+        Explore a mission. Inspect the numbers. Commission work you can verify.
+      </p>
+      <p class="notice" data-i18n="notice">
+        Planning rehearsal · no live agent · no transaction · no production
+        approval
+      </p>
+    </header>
+    <main>
+      <section class="card" aria-labelledby="choose">
+        <h2 id="choose" data-i18n="choose">1. Explore a scenario</h2>
+        <div class="controls">
+          <label for="scenario" data-i18n="scenario">Mission</label
+          ><select id="scenario">
+            <option value="national">National rail corridor</option>
+            <option value="planetary">
+              Planetary energy coordination
+            </option></select
+          ><button id="refresh" type="button" data-i18n="refresh">
+            Refresh source
+          </button>
+        </div>
+        <p class="muted" data-i18n="languageNote">
+          Interface labels are bilingual. Source plans and technical evidence
+          remain in English.
+        </p>
+        <div id="error" role="alert" hidden></div>
+      </section>
+      <section
+        id="mission"
+        tabindex="-1"
+        aria-live="polite"
+        aria-busy="true"
+      ></section>
+      <section class="card" id="handoff">
+        <h2 data-i18n="handoff">2. Try the computer-work task</h2>
+        <p data-i18n="task">
+          Ask an OpenClaw worker or an operator-led ChatGPT Work session to
+          audit the synthetic planetary plan. Produce analysis.json and
+          dossier.md with all five jobs, exact budget totals and the dependency
+          schedule.
+        </p>
+        <p class="muted" data-i18n="fixed">
+          This fixed exercise uses the planetary plan and port 4176,
+          independently of the scenario selected above. Changing the task or
+          origin requires renewed admission.
+        </p>
+        <ul class="downloads">
+          <li>
+            <a data-i18n="downloadTask" href="/computer-work/task.json" download
+              >Task + acceptance criteria</a
+            >
+          </li>
+          <li>
+            <a
+              data-i18n="downloadSource"
+              href="/project-plan.planetary.json"
+              download
+              >Approved synthetic source</a
+            >
+          </li>
+          <li>
+            <a
+              data-i18n="downloadAnalysis"
+              href="/computer-work/analysis.example.json"
+              download
+              >Example analysis — not worker evidence</a
+            >
+          </li>
+          <li>
+            <a
+              data-i18n="downloadDossier"
+              href="/computer-work/dossier.example.md"
+              download
+              >Example dossier — not worker evidence</a
+            >
+          </li>
+        </ul>
+        <p data-i18n="check">
+          Save the worker's exact UTF-8 files, then run this independent checker
+          from the repository root with your saved paths:
+        </p>
+        <code
+          >node demo/asi-takeoff/computer-work/review.cjs /path/to/analysis.json
+          /path/to/dossier.md</code
+        >
+        <p class="muted" data-i18n="boundary">
+          Arithmetic acceptance is separate from dossier quality, worker
+          provenance and authorized settlement. Downloads do not dispatch a
+          worker.
+        </p>
+      </section>
+      <section class="card">
+        <h2 data-i18n="architecture">3. Preserve the larger vision</h2>
+        <img
+          class="architecture"
+          src="/architecture.svg"
+          alt="Original systems map: mission owners connect through ASI Takeoff to the AGI Jobs core, observability and owner control plane."
+        />
+        <p>
+          <a
+            href="/architecture.svg"
+            target="_blank"
+            rel="noopener"
+            data-i18n="openDiagram"
+            >Open the diagram at full size</a
+          >
+        </p>
+        <p data-i18n="opportunity">
+          The vision covers lawful work performed through a keyboard, mouse and
+          screen. Computer use expands the work an agent can attempt; each
+          category still needs measurable acceptance and demonstrated
+          reliability.
+        </p>
+        <p class="muted" data-i18n="market">
+          $40 trillion/year is a project planning assumption, not a verified
+          market estimate or revenue forecast. Physical construction and grid
+          operations in the original scenario require separately authorized
+          real-world delivery.
+        </p>
+        <div class="route-grid">
+          <article>
+            <h3>OpenClaw</h3>
+            <p data-i18n="openclaw">
+              Use the existing Responses adapter, a dedicated admitted worker
+              profile, enforced environment policy and durable dispatch journal.
+            </p>
+          </article>
+          <article>
+            <h3>ChatGPT Work</h3>
+            <p data-i18n="work">
+              Use approved computer/browser tools in an operator-led session and
+              export the candidate files. Follow the same independent review.
+            </p>
+          </article>
+          <article>
+            <h3>OpenAI API</h3>
+            <p data-i18n="api">
+              A separate runtime must supply the environment, execute tool
+              actions and return observations. The local studio supplies no live
+              runtime.
+            </p>
+          </article>
+        </div>
+      </section>
+      <section class="card">
+        <h2 data-i18n="chain">4. Rehearse the contract lifecycle</h2>
+        <p data-i18n="chainText">
+          After the repository's pinned toolchain setup, run the retained
+          three-job local-chain demonstration. It uses mock tokens and
+          configured results for agriculture, infrastructure and healthcare.
+        </p>
+        <code>npm run demo:asi-takeoff:local</code>
+        <p class="muted" data-i18n="chainBoundary">
+          Its receipts verify local contract behavior. They do not establish
+          completion of the real-world projects or a live provider run. See the
+          README and RUNBOOK for the distinct report pipeline and advanced owner
+          controls.
+        </p>
+      </section>
+    </main>
+    <footer data-i18n="footer">
+      Evidence before acceptance. Authorization before settlement.
+    </footer>
+  </body>
+</html>
