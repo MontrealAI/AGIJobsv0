@@ -87,7 +87,7 @@ The generated section includes every tracked top-level directory and every neste
 | [AlphaEvolve_v0](AlphaEvolve_v0) | Supporting code / assets | Open the guide or source directory |
 | [AlphaEvolve-v0](AlphaEvolve-v0/README.md) | Code and guide | Open the guide or source directory |
 | [asi-global](asi-global/README.md) | Code and guide | `demo:asi-global:local` |
-| [asi-takeoff](asi-takeoff/README.md) | Code and guide | `demo:asi-takeoff:local` |
+| [asi-takeoff](asi-takeoff/README.md) | Code and guide | `demo:asi-takeoff:local`, `demo:asi-takeoff:studio`, `demo:asi-takeoff:plan` |
 | [astral_omnidominion_operating_system](astral_omnidominion_operating_system) | Supporting code / assets | Open the guide or source directory |
 | [astral-citadel](astral-citadel/README.md) | Code and guide | Open the guide or source directory |
 | [astral-omnidominion-operating-system](astral-omnidominion-operating-system/README.md) | Code and guide | Open the guide or source directory |

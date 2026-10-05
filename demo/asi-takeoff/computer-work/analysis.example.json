@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "sourceSha256": "8903ee94ddc7fd55135fef9ea819f5ef933feb5cddc50dc78e09eac56177feb2",
+  "mode": "planning-only",
+  "currency": "AGIALPHA",
+  "budget": "780000",
+  "allocatedRewards": "680000",
+  "unallocatedBudget": "100000",
+  "scheduleBasis": "deadlineDays-as-duration-after-dependencies",
+  "horizonDays": 30,
+  "criticalPathDays": 41,
+  "horizonExceeded": true,
+  "jobs": [
+    {
+      "id": "SURPLUS-ASIA",
+      "reward": "110000",
+      "dependencies": [],
+      "startDay": 0,
+      "finishDay": 7
+    },
+    {
+      "id": "DEFICIT-EUROPE",
+      "reward": "96000",
+      "dependencies": [
+        "SURPLUS-ASIA"
+      ],
+      "startDay": 7,
+      "finishDay": 14
+    },
+    {
+      "id": "SURGE-AFRICA",
+      "reward": "125000",
+      "dependencies": [
+        "SURPLUS-ASIA"
+      ],
+      "startDay": 7,
+      "finishDay": 17
+    },
+    {
+      "id": "PLANETARY-LEDGER",
+      "reward": "180000",
+      "dependencies": [
+        "DEFICIT-EUROPE",
+        "SURGE-AFRICA"
+      ],
+      "startDay": 17,
+      "finishDay": 29
+    },
+    {
+      "id": "EXECUTE-LIQUIDITY",
+      "reward": "169000",
+      "dependencies": [
+        "PLANETARY-LEDGER"
+      ],
+      "startDay": 29,
+      "finishDay": 41
+    }
+  ],
+  "productionApproved": false,
+  "settlementApproved": false
+}

@@ -1,14 +1,15 @@
 AURORA_REPORT_SCOPE?=asi-takeoff
 AURORA_REPORT_TITLE?=ASI Take-Off — Mission Report
-NETWORK?=localhost
+NETWORK=localhost
+ROOT:=$(abspath $(dir $(lastword $(MAKEFILE_LIST)))/../..)
 
 .PHONY: local report
 
 local:
-	bash bin/asi-takeoff-local.sh
+	cd "$(ROOT)" && AURORA_REPORT_SCOPE="$(AURORA_REPORT_SCOPE)" AURORA_REPORT_TITLE="$(AURORA_REPORT_TITLE)" bash demo/asi-takeoff/bin/asi-takeoff-local.sh
 
 report:
-	AURORA_REPORT_SCOPE=$(AURORA_REPORT_SCOPE) \
+	cd "$(ROOT)" && AURORA_REPORT_SCOPE="$(AURORA_REPORT_SCOPE)" \
 	NETWORK=$(NETWORK) \
 	AURORA_REPORT_TITLE="$(AURORA_REPORT_TITLE)" \
-	npx ts-node --transpile-only ../aurora/bin/aurora-report.ts
+	npx ts-node --transpile-only demo/aurora/bin/aurora-report.ts

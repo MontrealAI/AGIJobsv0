@@ -18,6 +18,7 @@ interface CliOptions {
   logDir?: string;
   outputBasename?: string;
   networkHint?: string;
+  localReceiptsDir?: string;
 }
 
 function resolveFromRoot(target: string | undefined): string | undefined {
@@ -36,7 +37,13 @@ function parseArgs(argv: string[]): CliOptions {
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     const next = argv[i + 1];
+    if (!next || next.startsWith('--'))
+      throw new Error(`Missing value for ${arg}`);
     switch (arg) {
+      case '--local-receipts':
+        options.localReceiptsDir = resolveFromRoot(next);
+        i += 1;
+        break;
       case '--report-root':
         if (!next) throw new Error('Missing value for --report-root');
         options.reportRoot = resolveFromRoot(next)!;
@@ -97,10 +104,21 @@ function parseArgs(argv: string[]): CliOptions {
     }
   }
 
+  if (options.localReceiptsDir && !argv.includes('--plan'))
+    options.planPath = path.join(
+      ROOT,
+      'demo/asi-takeoff/config/mission@v2.json'
+    );
   return options;
 }
 
 async function main(): Promise<void> {
+  if (process.argv.slice(2).includes('--help')) {
+    process.stdout.write(
+      'Usage: npm run demo:asi-takeoff:kit -- [--report-root DIR] [--plan FILE] [--local-receipts DIR] [--summary-md FILE] [--network NAME] [--output-name NAME]\nDefault mode requires dry-run.json, thermodynamics.json and mission-control.md. Local-receipts mode hashes mission/deploy/governance/stake JSON files instead. Hashes do not approve production.\n'
+    );
+    return;
+  }
   const options = parseArgs(process.argv.slice(2));
   const result = await generateAsiTakeoffKit({
     planPath: options.planPath,
@@ -114,15 +132,17 @@ async function main(): Promise<void> {
     logDir: options.logDir,
     outputBasename: options.outputBasename,
     networkHint: options.networkHint,
+    localReceiptsDir: options.localReceiptsDir,
   });
 
   process.stdout.write(
-    `Governance kit generated:\n- ${result.manifestPath}\n- ${result.markdownPath}\n`,
+    `Governance kit generated:\n- ${result.manifestPath}\n- ${result.markdownPath}\n`
   );
 }
 
 main().catch((error) => {
-  process.stderr.write(`ASI take-off governance kit failed: ${(error as Error).message}\n`);
+  process.stderr.write(
+    `ASI take-off governance kit failed: ${(error as Error).message}\n`
+  );
   process.exitCode = 1;
 });
-
