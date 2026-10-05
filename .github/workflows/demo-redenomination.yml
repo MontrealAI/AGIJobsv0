@@ -6,12 +6,30 @@ on:
       - 'scripts/v2/redenominationPlaybook.ts'
       - 'scripts/v2/launchRedenominationControlRoom.ts'
       - 'demo/REDENOMINATION/**'
+      - 'config/agialpha.json'
+      - 'config/owner-control.json'
+      - 'config/stake-manager.json'
+      - 'config/job-registry.json'
+      - 'config/fee-pool.json'
+      - 'package.json'
+      - '.github/workflows/demo-redenomination.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/v2/redenominationPlaybook.ts'
+      - 'scripts/v2/launchRedenominationControlRoom.ts'
+      - 'demo/REDENOMINATION/**'
+      - 'config/agialpha.json'
+      - 'config/owner-control.json'
+      - 'config/stake-manager.json'
+      - 'config/job-registry.json'
+      - 'config/fee-pool.json'
+      - 'package.json'
       - '.github/workflows/demo-redenomination.yml'
   workflow_dispatch:
 
 permissions:
   contents: read
-  actions: write
 
 jobs:
   redenomination-demo:
@@ -45,46 +63,31 @@ jobs:
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version-file: '.nvmrc'
-          cache: npm
-          cache-dependency-path: |
-            package-lock.json
-            **/package-lock.json
 
-      - name: Install dependencies
-        run: ./scripts/ci/npm-ci.sh --no-audit --prefer-offline --progress=false
+      - name: Check saved artifacts before regeneration
+        run: npm run demo:redenomination:verify
+
+      - name: Exact arithmetic, worker acceptance, server and CLI tests
+        run: node --test demo/REDENOMINATION/tests/*.test.cjs
 
       - name: Generate redenomination playbook
         run: npm run demo:redenomination:export -- --current-supply 42000000
 
-      - name: Validate playbook structure
+      - name: Verify generated artifacts and review consoles
+        env:
+          NON_INTERACTIVE: '1'
         run: |
-          node - <<'NODE'
-          const fs = require('fs');
-          const path = 'demo/REDENOMINATION/ui/export/latest.json';
-          if (!fs.existsSync(path)) {
-            throw new Error('Playbook export missing');
-          }
-          const data = JSON.parse(fs.readFileSync(path, 'utf8'));
-          if (!data.meta || !data.meta.generatedAt) {
-            throw new Error('meta.generatedAt missing');
-          }
-          if (!data.token || !data.token.redenominationFactor) {
-            throw new Error('token.redenominationFactor missing');
-          }
-          if (!Array.isArray(data.timeline) || data.timeline.length < 3) {
-            throw new Error('timeline must contain at least three steps');
-          }
-          if (!Array.isArray(data.invariants) || data.invariants.length === 0) {
-            throw new Error('invariants missing');
-          }
-          if (!Array.isArray(data.verification) || data.verification.length === 0) {
-            throw new Error('verification commands missing');
-          }
-          console.log(`Playbook validated with ${data.timeline.length} timeline steps.`);
-          NODE
+          npm run demo:redenomination:verify
+          npm run demo:redenomination:guardian-drill
+          npm run demo:redenomination:owner-console
+          npm run demo:redenomination:mission-control
+          node demo/REDENOMINATION/computer-work/review.cjs demo/REDENOMINATION/computer-work/conversion.example.json demo/REDENOMINATION/computer-work/dossier.example.md
 
       - name: Upload playbook artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: redenomination-playbook
-          path: demo/REDENOMINATION/ui/export/latest.json
+          if-no-files-found: error
+          path: |
+            demo/REDENOMINATION/ui/export/latest.json
+            demo/REDENOMINATION/config/*-redenominated.json

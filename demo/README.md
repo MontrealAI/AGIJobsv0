@@ -133,7 +133,7 @@ The generated section includes every tracked top-level directory and every neste
 | [Planetary-Orchestrator-Fabric-v0](Planetary-Orchestrator-Fabric-v0/README.md) | Code and guide | `demo:planetary-orchestrator-fabric`, `demo:planetary-orchestrator-fabric:restart`, `demo:planetary-orchestrator-fabric:acceptance` |
 | [polaris-concordat](polaris-concordat/README.md) | Design guide | Open the guide or source directory |
 | [presentation](presentation) | Supporting code / assets | Open the guide or source directory |
-| [REDENOMINATION](REDENOMINATION/README.md) | Code and guide | `demo:redenomination`, `demo:redenomination:guardian-drill`, `demo:redenomination:mission-control` |
+| [REDENOMINATION](REDENOMINATION/README.md) | Code and guide | `demo:redenomination`, `demo:redenomination:control-room`, `demo:redenomination:export` |
 | [solving-alpha-agi-governance](solving-alpha-agi-governance/README.md) | Design guide | Open the guide or source directory |
 | [sovereign-constellation](sovereign-constellation/README.md) | Code and guide | `demo:sovereign-constellation`, `demo:sovereign-constellation:asi-takes-off`, `demo:sovereign-constellation:asi-takes-off:flight-plan` |
 | [sovereign-mesh](sovereign-mesh/README.md) | Code and guide | Open the guide or source directory |
