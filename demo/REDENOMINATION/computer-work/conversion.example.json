@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "sourceSha256": "a71726a9a1c4966bd0d4812fc21ae1a12cc56a4b365712086ca9ee7debc07e67",
+  "factor": "1000",
+  "currentDecimals": 18,
+  "targetDecimals": 6,
+  "rounding": "floor",
+  "productionApproved": false,
+  "settlementApproved": false,
+  "accounts": [
+    {
+      "id": "alice",
+      "sourceRaw": "1000000000000000000000",
+      "targetRaw": "1000000",
+      "remainderNumerator": "0",
+      "remainderDenominator": "1000000000000000000000"
+    },
+    {
+      "id": "bob",
+      "sourceRaw": "2500000000000000000000",
+      "targetRaw": "2500000",
+      "remainderNumerator": "0",
+      "remainderDenominator": "1000000000000000000000"
+    },
+    {
+      "id": "pending-escrow",
+      "sourceRaw": "1000600000000000000",
+      "targetRaw": "1000",
+      "remainderNumerator": "600000000000000000000",
+      "remainderDenominator": "1000000000000000000000"
+    },
+    {
+      "id": "pending-withdrawal",
+      "sourceRaw": "900600000000000000",
+      "targetRaw": "900",
+      "remainderNumerator": "600000000000000000000",
+      "remainderDenominator": "1000000000000000000000"
+    },
+    {
+      "id": "zero-balance",
+      "sourceRaw": "0",
+      "targetRaw": "0",
+      "remainderNumerator": "0",
+      "remainderDenominator": "1000000000000000000000"
+    }
+  ],
+  "totals": {
+    "sourceRaw": "3501901200000000000000",
+    "targetRaw": "3501900",
+    "remainderNumerator": "1200000000000000000000",
+    "remainderDenominator": "1000000000000000000000",
+    "floorOfAggregateRaw": "3501901",
+    "aggregateFloorDifferenceRaw": "1"
+  }
+}

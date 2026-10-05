@@ -1,16 +1,48 @@
 {
   "meta": {
-    "generatedAt": "2025-10-20T23:19:55.747Z",
-    "generator": "scripts/v2/redenominationPlaybook.ts",
-    "scenario": "Global AGI Jobs v2 redenomination and control drill",
-    "version": "1.0.0"
+    "generatedAt": "2026-10-05T18:44:00.336Z",
+    "generator": "demo/REDENOMINATION/scripts/playbook.cjs",
+    "scenario": "AGI Jobs redenomination planning rehearsal",
+    "version": "2.0.0",
+    "mode": "planning-only",
+    "source": "local configuration; no on-chain state queried",
+    "liveProvider": false,
+    "transactionsSubmitted": false,
+    "productionApproved": false,
+    "inputs": [
+      {
+        "path": "config/agialpha.json",
+        "sha256": "a6ce5c39468c7ad8445ee1f2007b588e648e049c36f5b8abca5c5329f0510286"
+      },
+      {
+        "path": "config/owner-control.json",
+        "sha256": "41d423736740423f2d4ee5bcedd92710e9ba0ce25c2e6c7d9a507125c0ee0364"
+      },
+      {
+        "path": "config/stake-manager.json",
+        "sha256": "68bee818297ad49f87027417234ffe4a2b5b94a2d71addcd6ef6262bcfbf024c"
+      },
+      {
+        "path": "config/job-registry.json",
+        "sha256": "c3d4b7a5c68e4ebd5886dbab6715a6e8a56d09569e70abf70488c433d03b747f"
+      },
+      {
+        "path": "config/fee-pool.json",
+        "sha256": "f5d10c0e1b256f0ed63a732823013d799d98a752459d9df35e2e1e822ea2520f"
+      }
+    ]
   },
   "token": {
     "currentSymbol": "AGIALPHA",
     "targetSymbol": "AGIΩ",
+    "targetName": "AGI Omega",
     "currentDecimals": 18,
     "targetDecimals": 18,
     "redenominationFactor": "1000",
+    "conversion": "1000 old tokens = 1 new token",
+    "formula": "targetRaw = sourceRaw × 10^targetDecimals ÷ (factor × 10^currentDecimals)",
+    "rounding": "reject",
+    "dust": [],
     "supplyBefore": {
       "raw": "42000000000000000000000000",
       "tokens": "42000000.0",
@@ -22,186 +54,210 @@
       "formatted": "42000.0 AGIΩ"
     },
     "rationale": [
-      "Stabilise headline token balances so that enterprise treasuries can reason about orders of magnitude without spreadsheets.",
-      "Keep validator and agent economic incentives untouched by automatically scaling every threshold, escrow, and reserve.",
-      "Demonstrate that AGI Jobs v2 governance can execute macro-level monetary operations in a single scripted run."
+      "Change the nominal unit while explicitly reconciling every base unit.",
+      "Preserve percentage policies and review all token-denominated thresholds.",
+      "This report proposes values; it does not replace token contracts, migrate balances or guarantee purchasing power."
     ]
   },
   "governance": [
     {
       "label": "Protocol owner",
-      "address": "Assign via config/owner-control.json",
-      "role": "Executes redenomination transactions and parameter updates"
+      "address": "0x0000000000000000000000000000000000000000",
+      "role": "Configured authority; verify against the actual chain"
     },
     {
       "label": "Governance multisig",
-      "address": "Assign via governance safe",
-      "role": "Approves upgrades, pause actions, and emergency overrides"
+      "address": "0x0000000000000000000000000000000000000000",
+      "role": "Review and authorize separately"
+    },
+    {
+      "label": "hgmControlModule owner",
+      "role": "Configuration only; not a verified deployment"
     },
     {
       "label": "stakeManager owner",
-      "address": "Delegate before mainnet activation",
-      "role": "Direct module executor (post-governance approval)"
+      "role": "Configuration only; not a verified deployment"
     },
     {
       "label": "jobRegistry owner",
-      "address": "Delegate before mainnet activation",
-      "role": "Direct module executor (post-governance approval)"
+      "role": "Configuration only; not a verified deployment"
     },
     {
       "label": "rewardEngine owner",
-      "address": "Delegate before mainnet activation",
-      "role": "Direct module executor (post-governance approval)"
+      "role": "Configuration only; not a verified deployment"
     },
     {
       "label": "thermostat owner",
-      "address": "Delegate before mainnet activation",
-      "role": "Direct module executor (post-governance approval)"
+      "role": "Configuration only; not a verified deployment"
     },
     {
       "label": "systemPause owner",
-      "address": "Delegate before mainnet activation",
-      "role": "Direct module executor (post-governance approval)"
+      "role": "Configuration only; not a verified deployment"
     },
     {
       "label": "feePool owner",
-      "address": "Delegate before mainnet activation",
-      "role": "Direct module executor (post-governance approval)"
+      "role": "Configuration only; not a verified deployment"
     },
     {
       "label": "platformRegistry owner",
-      "address": "Delegate before mainnet activation",
-      "role": "Direct module executor (post-governance approval)"
+      "role": "Configuration only; not a verified deployment"
     },
     {
       "label": "platformIncentives owner",
-      "address": "Delegate before mainnet activation",
-      "role": "Direct module executor (post-governance approval)"
+      "role": "Configuration only; not a verified deployment"
     },
     {
       "label": "jobRouter owner",
-      "address": "Delegate before mainnet activation",
-      "role": "Direct module executor (post-governance approval)"
+      "role": "Configuration only; not a verified deployment"
     },
     {
       "label": "validationModule owner",
-      "address": "Delegate before mainnet activation",
-      "role": "Direct module executor (post-governance approval)"
+      "role": "Configuration only; not a verified deployment"
     },
     {
       "label": "reputationEngine owner",
-      "address": "Delegate before mainnet activation",
-      "role": "Direct module executor (post-governance approval)"
+      "role": "Configuration only; not a verified deployment"
     },
     {
       "label": "disputeModule owner",
-      "address": "Delegate before mainnet activation",
-      "role": "Direct module executor (post-governance approval)"
+      "role": "Configuration only; not a verified deployment"
     },
     {
       "label": "arbitratorCommittee owner",
-      "address": "Delegate before mainnet activation",
-      "role": "Direct module executor (post-governance approval)"
+      "role": "Configuration only; not a verified deployment"
     },
     {
       "label": "certificateNFT owner",
-      "address": "Delegate before mainnet activation",
-      "role": "Direct module executor (post-governance approval)"
+      "role": "Configuration only; not a verified deployment"
     },
     {
       "label": "taxPolicy owner",
-      "address": "Delegate before mainnet activation",
-      "role": "Direct module executor (post-governance approval)"
+      "role": "Configuration only; not a verified deployment"
     },
     {
       "label": "identityRegistry owner",
-      "address": "Delegate before mainnet activation",
-      "role": "Direct module executor (post-governance approval)"
+      "role": "Configuration only; not a verified deployment"
     },
     {
       "label": "attestationRegistry owner",
-      "address": "Delegate before mainnet activation",
-      "role": "Direct module executor (post-governance approval)"
+      "role": "Configuration only; not a verified deployment"
     }
   ],
   "modules": {
     "stakeManager": {
-      "summary": "Owner re-baselines staking guardrails so that existing economic thresholds remain invariant after redenominating the unit of account.",
       "before": {
         "minStake": {
           "raw": "100000000000000000000",
           "tokens": "100.0",
           "formatted": "100.0 AGIALPHA"
         },
-        "agentRoleMinimum": {
+        "maxStakePerAddress": {
+          "raw": "0",
+          "tokens": "0.0",
+          "formatted": "0.0 AGIALPHA"
+        },
+        "roleMinimums.agent": {
           "raw": "100000000000000000000",
           "tokens": "100.0",
           "formatted": "100.0 AGIALPHA"
         },
-        "validatorRoleMinimum": {
+        "roleMinimums.validator": {
           "raw": "1000000000000000000000",
           "tokens": "1000.0",
           "formatted": "1000.0 AGIALPHA"
         },
-        "platformRoleMinimum": {
+        "roleMinimums.platform": {
           "raw": "0",
           "tokens": "0.0",
           "formatted": "0.0 AGIALPHA"
         },
-        "recommendationMin": {
+        "stakeRecommendations.min": {
           "raw": "100000000000000000000",
           "tokens": "100.0",
           "formatted": "100.0 AGIALPHA"
         },
-        "recommendationMax": {
+        "stakeRecommendations.max": {
           "raw": "0",
           "tokens": "0.0",
           "formatted": "0.0 AGIALPHA"
         },
-        "unbondingPeriodSeconds": "604800",
-        "feePct": "5",
-        "burnPct": "1",
-        "validatorRewardPct": "10"
+        "autoStake.floor": {
+          "raw": "100000000000000000000",
+          "tokens": "100.0",
+          "formatted": "100.0 AGIALPHA"
+        },
+        "autoStake.ceiling": {
+          "raw": "0",
+          "tokens": "0.0",
+          "formatted": "0.0 AGIALPHA"
+        },
+        "employerSlashPct": 50,
+        "treasurySlashPct": 50,
+        "feePct": 5,
+        "burnPct": 1,
+        "validatorRewardPct": 10,
+        "validatorSlashRewardPct": 0,
+        "unbondingPeriodSeconds": 604800,
+        "maxTotalPayoutPct": 200
       },
       "after": {
         "minStake": {
           "raw": "100000000000000000",
           "tokens": "0.1",
-          "formatted": "0.1 AGIALPHA"
+          "formatted": "0.1 AGIΩ"
         },
-        "agentRoleMinimum": {
+        "maxStakePerAddress": {
+          "raw": "0",
+          "tokens": "0.0",
+          "formatted": "0.0 AGIΩ"
+        },
+        "roleMinimums.agent": {
           "raw": "100000000000000000",
           "tokens": "0.1",
-          "formatted": "0.1 AGIALPHA"
+          "formatted": "0.1 AGIΩ"
         },
-        "validatorRoleMinimum": {
+        "roleMinimums.validator": {
           "raw": "1000000000000000000",
           "tokens": "1.0",
-          "formatted": "1.0 AGIALPHA"
+          "formatted": "1.0 AGIΩ"
         },
-        "platformRoleMinimum": {
+        "roleMinimums.platform": {
           "raw": "0",
           "tokens": "0.0",
-          "formatted": "0.0 AGIALPHA"
+          "formatted": "0.0 AGIΩ"
         },
-        "recommendationMin": {
+        "stakeRecommendations.min": {
           "raw": "100000000000000000",
           "tokens": "0.1",
-          "formatted": "0.1 AGIALPHA"
+          "formatted": "0.1 AGIΩ"
         },
-        "recommendationMax": {
+        "stakeRecommendations.max": {
           "raw": "0",
           "tokens": "0.0",
-          "formatted": "0.0 AGIALPHA"
+          "formatted": "0.0 AGIΩ"
         },
-        "unbondingPeriodSeconds": "604800",
-        "feePct": "5",
-        "burnPct": "1",
-        "validatorRewardPct": "10"
-      }
+        "autoStake.floor": {
+          "raw": "100000000000000000",
+          "tokens": "0.1",
+          "formatted": "0.1 AGIΩ"
+        },
+        "autoStake.ceiling": {
+          "raw": "0",
+          "tokens": "0.0",
+          "formatted": "0.0 AGIΩ"
+        },
+        "employerSlashPct": 50,
+        "treasurySlashPct": 50,
+        "feePct": 5,
+        "burnPct": 1,
+        "validatorRewardPct": 10,
+        "validatorSlashRewardPct": 0,
+        "unbondingPeriodSeconds": 604800,
+        "maxTotalPayoutPct": 200
+      },
+      "summary": "Token amounts converted with exact integer arithmetic; policy, addresses and time limits retained in the draft."
     },
     "jobRegistry": {
-      "summary": "Every job escrow, validator incentive, and employer commitment now references the redenominated token so treasury budgets stay constant in fiat terms.",
       "before": {
         "jobStake": {
           "raw": "1000000000000000000",
@@ -220,127 +276,203 @@
         },
         "jobDurationLimitSeconds": 604800,
         "maxActiveJobsPerAgent": 3,
-        "feePct": "5",
-        "validatorRewardPct": "10"
+        "expirationGracePeriodSeconds": 86400,
+        "feePct": 5,
+        "validatorRewardPct": 10
       },
       "after": {
         "jobStake": {
           "raw": "1000000000000000",
           "tokens": "0.001",
-          "formatted": "0.001 AGIALPHA"
+          "formatted": "0.001 AGIΩ"
         },
         "minAgentStake": {
           "raw": "100000000000000000",
           "tokens": "0.1",
-          "formatted": "0.1 AGIALPHA"
+          "formatted": "0.1 AGIΩ"
         },
         "maxJobReward": {
           "raw": "1000000000000000000",
           "tokens": "1.0",
-          "formatted": "1.0 AGIALPHA"
+          "formatted": "1.0 AGIΩ"
         },
         "jobDurationLimitSeconds": 604800,
         "maxActiveJobsPerAgent": 3,
-        "feePct": "5",
-        "validatorRewardPct": "10"
-      }
+        "expirationGracePeriodSeconds": 86400,
+        "feePct": 5,
+        "validatorRewardPct": 10
+      },
+      "summary": "Proposed nominal thresholds. Existing escrow and obligations are not changed by this generator."
     },
     "feePool": {
-      "summary": "Fee pool parameters remain constant – only balances migrate to the redenominated token and burn accounting scales by the conversion factor.",
       "before": {
-        "burnPct": "1",
-        "treasuryPct": "4",
-        "validatorRewardPct": "10",
-        "note": "All fee pool balances migrate by dividing raw balances by 1000 to preserve purchasing power in AGIALPHA."
+        "burnPct": 1,
+        "rewardRole": "platform"
       },
       "after": {
-        "burnPct": "1",
-        "treasuryPct": "4",
-        "validatorRewardPct": "10",
-        "note": "Post-migration balances exist entirely in AGIALPHA at the new unit size."
-      }
+        "burnPct": 1,
+        "rewardRole": "platform"
+      },
+      "summary": "Configured percentages stay unchanged. No balances or purchasing power are inferred."
     }
   },
+  "configSnapshots": {
+    "stakeManager": {
+      "minStakeTokens": "0.1",
+      "employerSlashPct": 50,
+      "treasurySlashPct": 50,
+      "feePct": 5,
+      "burnPct": 1,
+      "validatorRewardPct": 10,
+      "validatorSlashRewardPct": 0,
+      "treasury": "0x0000000000000000000000000000000000000000",
+      "treasuryAllowlist": {},
+      "unbondingPeriodSeconds": 604800,
+      "maxStakePerAddressTokens": "0.0",
+      "stakeRecommendations": {
+        "minTokens": "0.1",
+        "maxTokens": "0.0"
+      },
+      "roleMinimums": {
+        "agentTokens": "0.1",
+        "validatorTokens": "1.0",
+        "platformTokens": "0.0"
+      },
+      "autoStake": {
+        "enabled": false,
+        "threshold": 10,
+        "increasePct": 20,
+        "decreasePct": 10,
+        "windowSeconds": 604800,
+        "floorTokens": "0.1",
+        "ceilingTokens": "0.0",
+        "temperatureThreshold": 0,
+        "hamiltonianThreshold": 0,
+        "disputeWeight": 1,
+        "temperatureWeight": 1,
+        "hamiltonianWeight": 1
+      },
+      "pauser": "0x0000000000000000000000000000000000000000",
+      "jobRegistry": "0x0000000000000000000000000000000000000000",
+      "disputeModule": "0x0000000000000000000000000000000000000000",
+      "validationModule": "0x0000000000000000000000000000000000000000",
+      "thermostat": "0x0000000000000000000000000000000000000000",
+      "hamiltonianFeed": "0x0000000000000000000000000000000000000000",
+      "feePool": "0x0000000000000000000000000000000000000000",
+      "maxAGITypes": 50,
+      "maxTotalPayoutPct": 200
+    },
+    "jobRegistry": {
+      "jobStakeTokens": "0.001",
+      "minAgentStakeTokens": "0.1",
+      "maxJobRewardTokens": "1.0",
+      "jobDurationLimitSeconds": 604800,
+      "maxActiveJobsPerAgent": 3,
+      "expirationGracePeriodSeconds": 86400,
+      "feePct": 5,
+      "validatorRewardPct": 10,
+      "treasury": "0x0000000000000000000000000000000000000000",
+      "taxPolicy": "0x0000000000000000000000000000000000000000",
+      "acknowledgers": {}
+    }
+  },
+  "policyObservations": [],
   "timeline": [
     {
       "id": "snapshot",
-      "title": "Capture current ledger and staking telemetry",
-      "description": "Run the sovereign owner snapshot to export all balances and validator stakes before the redenomination begins.",
+      "title": "Capture and reconcile the source",
+      "description": "Record chain ID, token address/decimals, snapshot block, balances, escrow, stakes and pending claims. This file only reads local configuration.",
       "commands": [
-        "npm run owner:control:snapshot -- --format json --out reports/redenomination/pre.json"
+        "npm run demo:redenomination:verify"
       ],
       "checkpoints": [
-        "Confirm stake totals, validator quorum, and treasury balances at T-0.",
-        "Archive the export so auditors can reconcile supply rebasing."
+        "Compare source configuration with independently captured chain state.",
+        "Reject conflicting units and account for all liabilities."
       ]
     },
     {
       "id": "pause",
-      "title": "Enter supervised pause window",
-      "description": "The governance multisig invokes the emergency pause so no new jobs, stakes, or payouts execute during unit conversion.",
+      "title": "Preview the authorized pause",
+      "description": "Use the actual governance authority after rehearsal. This command simulates against an already prepared local deployment.",
       "commands": [
-        "npx hardhat run --no-compile scripts/v2/updateSystemPause.ts --network hardhat -- --mode pause"
+        "HARDHAT_NETWORK=localhost npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/systemPauseAction.ts --action pause --dry-run"
       ],
       "checkpoints": [
-        "Registry, stake manager, and validation module emit Paused events.",
-        "Operations channel announces maintenance window to employers and agents."
+        "Verify every module and in-flight worker before a real pause.",
+        "The report is not permission to sign."
       ]
     },
     {
       "id": "migrate-ledgers",
-      "title": "Re-denominate treasuries and vaults",
-      "description": "Treasury controllers divide each escrow, validator pool, and pending payout by the redenomination factor inside the migration script.",
+      "title": "Prepare a separately audited migration",
+      "description": "No ledger migration implementation ships in this demo. Supply a reviewed migration, rollback/recovery plan, dust allocation and independent reconciliation before changing real balances.",
       "commands": [
-        "npx ts-node scripts/v2/redenominationPlaybook.ts --out demo/REDENOMINATION/ui/export/latest.json",
-        "node scripts/v2/ledger-migrate.js --factor 1000 --dry-run reports/redenomination/pre.json"
+        "npm run demo:redenomination:export"
       ],
       "checkpoints": [
-        "Post-migration ledgers report identical fiat value when multiplied by the factor.",
-        "Burn vaults emit audit log entries describing every adjustment."
+        "Old token amount = new token amount × factor for exact conversions.",
+        "Sum of per-account floors can differ from floor of total supply; assign and reconcile dust explicitly."
       ]
     },
     {
       "id": "update-parameters",
-      "title": "Apply redenominated guardrails",
-      "description": "Owners push new stake manager and job registry configs generated by this playbook, keeping every threshold coherent with the new unit.",
+      "title": "Review draft guardrails",
+      "description": "Compare the embedded configSnapshots and source hashes. Existing contracts use their configured token and scale; editing decimals or a symbol here does not migrate them.",
       "commands": [
-        "npx hardhat run --no-compile scripts/v2/updateStakeManager.ts --network hardhat -- --config demo/REDENOMINATION/config/stake-manager-redenominated.json",
-        "npx hardhat run --no-compile scripts/v2/updateJobRegistry.ts --network hardhat -- --config demo/REDENOMINATION/config/job-registry-redenominated.json"
+        "npm run demo:redenomination:owner-console"
       ],
       "checkpoints": [
-        "Validator dashboards show the same required economic commitment as before.",
-        "Employer UI displays the redenominated token symbol and updated upper bounds."
+        "Do not apply a new-token draft to old-token contracts.",
+        "Preserve addresses, slashing splits, max stake and auto-stake bounds."
       ]
     },
     {
       "id": "resume",
-      "title": "Resume production and broadcast certificate proof",
-      "description": "Governance lifts the pause, validators mint a ceremonial completion certificate NFT, and agents receive translated balances in their control room.",
+      "title": "Verify before authorized resumption",
+      "description": "Reconcile actual balances, pending jobs, disputes and worker outcomes. Resume through the configured authority only after deployment-specific approval.",
       "commands": [
-        "npx hardhat run --no-compile scripts/v2/updateSystemPause.ts --network hardhat -- --mode resume",
-        "npm run observability:redenomination -- --export reports/redenomination/post.json"
+        "HARDHAT_NETWORK=localhost npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/systemPauseAction.ts --action unpause --dry-run"
       ],
       "checkpoints": [
-        "No disputes pending from the pause window.",
-        "Monitoring dashboards show supplyBefore * factor ≈ supplyAfter."
+        "Verify transaction receipts and final chain state after real execution.",
+        "No approval, certificate, payout or live readiness is inferred from this plan."
       ]
     }
   ],
   "invariants": [
-    "Total on-chain supply multiplied by the redenomination factor equals the pre-migration supply within one wei tolerance.",
-    "Validator reputation weights remain unchanged; only nominal stake units shift.",
-    "All paused modules resume and emit Unpaused events signed by the governance multisig.",
-    "Certificate NFT metadata references the redenomination event hash for future audits."
+    "For exact conversion: targetRaw × factor × 10^currentDecimals = sourceRaw × 10^targetDecimals.",
+    "For floor conversion, retain the exact remainder fraction for every affected value; do not discard liabilities.",
+    "Fees, slashing splits, duration limits and unrelated configuration remain unchanged.",
+    "Reject precision loss by default and prevent positive thresholds from silently becoming zero.",
+    "Independent validation, authorization and chain finality remain separate from agent execution."
   ],
   "verification": [
-    "npm run demo:redenomination:export",
-    "npm run demo:redenomination:control-room",
-    "npx hardhat test test/v2/redenomination.e2e.ts --network hardhat (optional owner E2E)"
+    "npm run demo:redenomination:verify",
+    "node --test demo/REDENOMINATION/tests/*.test.cjs",
+    "npm run demo:redenomination:guardian-drill"
   ],
   "references": [
-    "docs/AGI_Jobs_v0_Whitepaper_v2.md",
-    "docs/legacy/ProductionScaleAGIJobsPlatformSprintPlanv0.md",
+    "demo/REDENOMINATION/README.md",
+    "docs/computer-work.md",
+    "docs/system-pause.md",
     "scripts/v2/updateStakeManager.ts",
     "scripts/v2/updateJobRegistry.ts"
-  ]
+  ],
+  "computerWork": {
+    "scope": "Lawful work performed with a keyboard, mouse and screen",
+    "surfaces": [
+      "OpenClaw with approved browser, files, code and native Codex tools",
+      "Operator-led ChatGPT Work with enabled Computer Use",
+      "Separately implemented OpenAI API computer-use runtime"
+    ],
+    "task": "Produce a candidate conversion dossier, spreadsheet and reconciliation tests from public, licensed non-personal or synthetic inputs.",
+    "acceptance": [
+      "Independent checker recomputes every conversion from source base units.",
+      "Reviewer reconciles source totals, liabilities and dust; tests rounding, precision and interruption.",
+      "Separate governance signer authorizes any deployment or settlement."
+    ],
+    "marketAnnualUsd": "40000000000000",
+    "marketBasis": "Project planning assumption; unverified, not platform revenue",
+    "settlement": "USDC job-budget planning is separate from the AGIALPHA token-conversion example; no settlement token change is performed."
+  }
 }

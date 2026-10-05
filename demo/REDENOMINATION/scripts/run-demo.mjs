@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import fs from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import process from 'node:process';
 
@@ -11,10 +12,13 @@ const COLOR = {
   magenta: '\u001b[35m',
   yellow: '\u001b[33m',
   gray: '\u001b[90m',
-  blue: '\u001b[34m'
+  blue: '\u001b[34m',
 };
 
-const demoRoot = path.resolve(process.cwd(), 'demo', 'REDENOMINATION');
+const demoRoot = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '..'
+);
 const scenarioPath = path.join(demoRoot, 'scenario.json');
 
 function readScenario() {
@@ -22,7 +26,9 @@ function readScenario() {
     const raw = fs.readFileSync(scenarioPath, 'utf8');
     return JSON.parse(raw);
   } catch (error) {
-    console.error(`${COLOR.magenta}[FATAL]${COLOR.reset} Unable to read scenario file at ${scenarioPath}`);
+    console.error(
+      `${COLOR.magenta}[FATAL]${COLOR.reset} Unable to read scenario file at ${scenarioPath}`
+    );
     console.error(error);
     process.exit(1);
   }
@@ -40,7 +46,9 @@ function printActors(actors) {
   console.log(`${COLOR.bright}${COLOR.green}Actors & Intent${COLOR.reset}`);
   actors.forEach((actor, index) => {
     const bullet = `${index + 1}`.padStart(2, '0');
-    console.log(`${COLOR.green}[${bullet}]${COLOR.reset} ${COLOR.bright}${actor.role}${COLOR.reset} (${actor.label})`);
+    console.log(
+      `${COLOR.green}[${bullet}]${COLOR.reset} ${COLOR.bright}${actor.role}${COLOR.reset} (${actor.label})`
+    );
     console.log(`     ${COLOR.gray}${actor.goal}${COLOR.reset}`);
   });
   console.log();
@@ -48,9 +56,14 @@ function printActors(actors) {
 
 function printFlow(flow) {
   flow.forEach((phase, idx) => {
-    console.log(`${COLOR.bright}${COLOR.blue}Phase ${idx + 1}: ${phase.phase}${COLOR.reset}`);
+    console.log(
+      `${COLOR.bright}${COLOR.blue}Phase ${idx + 1}: ${phase.phase}${
+        COLOR.reset
+      }`
+    );
     phase.steps.forEach((step, stepIdx) => {
-      const icon = stepIdx === 0 ? '🚀' : stepIdx === phase.steps.length - 1 ? '✨' : '•';
+      const icon =
+        stepIdx === 0 ? '🚀' : stepIdx === phase.steps.length - 1 ? '✨' : '•';
       console.log(`   ${COLOR.yellow}${icon}${COLOR.reset} ${step}`);
     });
     console.log();
@@ -58,16 +71,24 @@ function printFlow(flow) {
 }
 
 function printMetrics(metrics) {
-  console.log(`${COLOR.bright}${COLOR.magenta}Operational Controls${COLOR.reset}`);
+  console.log(
+    `${COLOR.bright}${COLOR.magenta}Operational Controls${COLOR.reset}`
+  );
   Object.entries(metrics).forEach(([key, value]) => {
-    const label = key.replace(/([A-Z])/g, ' $1').replace(/^./, (c) => c.toUpperCase());
-    console.log(`   ${COLOR.magenta}▸${COLOR.reset} ${label}: ${COLOR.bright}${value}${COLOR.reset}`);
+    const label = key
+      .replace(/([A-Z])/g, ' $1')
+      .replace(/^./, (c) => c.toUpperCase());
+    console.log(
+      `   ${COLOR.magenta}▸${COLOR.reset} ${label}: ${COLOR.bright}${value}${COLOR.reset}`
+    );
   });
   console.log();
 }
 
 function printResources(resources) {
-  console.log(`${COLOR.bright}${COLOR.cyan}Follow-up Commands & References${COLOR.reset}`);
+  console.log(
+    `${COLOR.bright}${COLOR.cyan}Follow-up Commands & References${COLOR.reset}`
+  );
   if (resources.scripts?.length) {
     console.log(` ${COLOR.cyan}•${COLOR.reset} Launch Scripts:`);
     resources.scripts.forEach((script) => {
@@ -84,21 +105,34 @@ function printResources(resources) {
 }
 
 function printMermaid(diagram) {
-  console.log(`${COLOR.bright}${COLOR.magenta}Mermaid Orchestration${COLOR.reset}`);
+  console.log(
+    `${COLOR.bright}${COLOR.magenta}Mermaid Orchestration${COLOR.reset}`
+  );
   if (typeof diagram !== 'string' || diagram.trim().length === 0) {
-    console.log(`${COLOR.magenta}Diagram unavailable — run verification to regenerate scenario artefacts.${COLOR.reset}\n`);
+    console.log(
+      `${COLOR.magenta}Diagram unavailable — run verification to regenerate scenario artefacts.${COLOR.reset}\n`
+    );
     return;
   }
-  console.log(`${COLOR.gray}Embed the following graph in any markdown or dashboard to narrate the governed flow:${COLOR.reset}`);
+  console.log(
+    `${COLOR.gray}Embed the following graph in any markdown or dashboard to narrate the governed flow:${COLOR.reset}`
+  );
   console.log(`${COLOR.cyan}\n\`\`\`mermaid${COLOR.reset}`);
   console.log(diagram.trim());
   console.log(`${COLOR.cyan}\`\`\`${COLOR.reset}\n`);
 }
 
 function printCallToAction() {
-  console.log(`${COLOR.bright}${COLOR.green}Preflight:${COLOR.reset} Confirm artefacts with ${COLOR.bright}npm run demo:redenomination:verify${COLOR.reset} before touching mainnet controls.`);
-  console.log(`${COLOR.bright}${COLOR.green}Next Step:${COLOR.reset} Run ${COLOR.bright}npm run deploy:oneclick:auto${COLOR.reset} to materialize the full stack with governance defaults.`);
-  console.log(`${COLOR.gray}The demo output is a guided transcript that mirrors the automated pipelines shipped with AGI Jobs v0 (v2).${COLOR.reset}`);
+  console.log(
+    'This is a read-only transcript, not executed work. The original diagram is a conceptual vision.'
+  );
+  console.log('Next: npm run demo:redenomination:control-room');
+  console.log(
+    'Verify exact saved artifacts: npm run demo:redenomination:verify'
+  );
+  console.log(
+    'Computer-work commissioning and production boundaries: demo/REDENOMINATION/README.md'
+  );
 }
 
 const scenario = readScenario();
