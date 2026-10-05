@@ -1,0 +1,273 @@
+:root {
+  color-scheme: dark;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  background: #100c21;
+  color: #f1eaff;
+  --muted: #c1b4d4;
+  --accent: #d9b9ff;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: radial-gradient(ellipse at 85% 0%, #49307888, transparent 42%),
+    radial-gradient(circle at 15% 8%, #eee7ff 0 1px, transparent 2px);
+  background-size: auto, 137px 179px;
+}
+header,
+main,
+footer {
+  max-width: 1150px;
+  margin: auto;
+}
+header {
+  padding: 32px 28px 35px;
+}
+.topline {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: center;
+  color: var(--muted);
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+}
+.topline label {
+  letter-spacing: normal;
+}
+.eyebrow {
+  font-size: 0.8rem;
+  letter-spacing: 0.22em;
+  margin-top: 60px;
+  color: var(--accent);
+}
+h1 {
+  font-size: clamp(3rem, 10vw, 6.8rem);
+  line-height: 1;
+  letter-spacing: -0.06em;
+  margin: 16px 0 25px;
+}
+h2 {
+  font-size: 1.45rem;
+  margin-top: 0;
+}
+h3 {
+  margin: 0 0 10px;
+}
+.lead {
+  font-size: 1.25rem;
+  max-width: 680px;
+  line-height: 1.6;
+}
+.notice {
+  display: inline-block;
+  padding: 12px 16px;
+  border: 1px solid #a98ec566;
+  border-radius: 8px;
+  background: #241838;
+  font-size: 0.88rem;
+  color: #e2d5f5;
+}
+main {
+  padding: 0 28px 20px;
+}
+.card {
+  background: #1b142cef;
+  border: 1px solid #7e5aa344;
+  border-radius: 18px;
+  padding: 28px;
+  margin-bottom: 22px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+select,
+button {
+  font: inherit;
+  background: #2d2144;
+  color: #fff;
+  border: 1px solid #83619f;
+  border-radius: 8px;
+  padding: 10px 13px;
+}
+button {
+  cursor: pointer;
+  background: #614387;
+}
+button:hover {
+  background: #7954a7;
+}
+button:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+.copy-command {
+  margin-bottom: 0.75rem;
+}
+.copy-feedback {
+  display: inline-block;
+  margin: 0 0 0.75rem 0.75rem;
+  font-size: 0.9rem;
+}
+.muted,
+footer {
+  color: var(--muted);
+  font-size: 0.93rem;
+  line-height: 1.6;
+}
+p,
+li {
+  line-height: 1.65;
+}
+.metrics,
+.route-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+.metric {
+  background: #302143;
+  padding: 18px;
+  border-radius: 12px;
+}
+.metric strong {
+  display: block;
+  font-size: 1.65rem;
+  margin: 7px 0;
+}
+.metric span {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.observation {
+  border-left: 3px solid #edc47e;
+  padding: 12px 18px;
+  background: #44302055;
+}
+.table-wrap {
+  overflow: auto;
+  margin-top: 20px;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+  text-align: left;
+}
+th,
+td {
+  padding: 14px 10px;
+  border-bottom: 1px solid #64487866;
+  vertical-align: top;
+}
+th {
+  color: var(--accent);
+}
+td:first-child {
+  min-width: 220px;
+}
+code {
+  display: block;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  background: #100b1c;
+  border: 1px solid #64487866;
+  padding: 16px;
+  border-radius: 10px;
+  font-size: 0.83rem;
+  line-height: 1.7;
+}
+a {
+  color: #debdff;
+  text-underline-offset: 4px;
+}
+.downloads {
+  display: grid;
+  gap: 10px;
+  padding-left: 20px;
+}
+.architecture {
+  width: 100%;
+  height: auto;
+  margin: 12px 0 20px;
+}
+.route-grid article {
+  padding: 18px;
+  border: 1px solid #64487866;
+  border-radius: 12px;
+}
+.route-grid p {
+  margin-bottom: 0;
+  font-size: 0.94rem;
+}
+footer {
+  padding: 20px 28px 50px;
+}
+#error {
+  padding: 14px;
+  margin-top: 18px;
+  border: 1px solid #d598a0;
+  border-radius: 8px;
+  color: #ffd9e0;
+}
+.skip {
+  position: absolute;
+  top: -60px;
+  left: 20px;
+  background: #291843;
+  padding: 12px;
+  z-index: 2;
+}
+.skip:focus {
+  top: 10px;
+}
+:focus-visible {
+  outline: 3px solid #e9ceff;
+  outline-offset: 4px;
+}
+details {
+  margin-top: 18px;
+}
+summary {
+  cursor: pointer;
+  padding: 10px 0;
+}
+@media (max-width: 700px) {
+  header,
+  main,
+  footer {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+  .topline {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .eyebrow {
+    margin-top: 40px;
+  }
+  .metrics,
+  .route-grid {
+    grid-template-columns: 1fr;
+  }
+  .card {
+    padding: 20px;
+  }
+  .controls select {
+    max-width: 100%;
+  }
+  .controls button {
+    width: 100%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  * {
+    scroll-behavior: auto !important;
+  }
+}

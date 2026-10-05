@@ -1,88 +1,94 @@
 {
   "name": "REDENOMINATION",
-  "description": "End-to-end governed AGI labor market demo showcasing redenomination-safe upgrade controls, verifiable compute, and institutional observability.",
+  "description": "A governed computer-work mission and exact redenomination planning rehearsal. Produces reviewable drafts and evidence; does not deploy contracts, migrate balances, execute a worker or authorize settlement.",
   "mermaid": "graph TD;\n    A[Employer Alice posts redenomination job] --> B[JobRegistry records specification & policy tags];\n    B --> C{AGI Agent Selection};\n    C -->|Stake + ENS verified| D[Agent Hyperion-9 claims assignment];\n    D --> E[Off-chain AI pipelines produce redenomination dossier];\n    E --> F[Result hash + signature submitted on-chain];\n    F --> G[Chainlink VRF seeds validator committee];\n    G --> H[Commit window opens & validators encrypt verdict];\n    H --> I[Reveal window enforces accountability];\n    I --> J{Majority approves?};\n    J -->|Yes| K[Certificate NFT + payout released];\n    J -->|No| L[Dispute escalates to Sentinel moderators];\n    L --> M{Moderator quorum};\n    M -->|Override| N[System pause & slashing executed];\n    M -->|Uphold| K;\n    K --> O[Observability index updated];\n    O --> P[Prometheus & Grafana dashboards refresh];\n    O --> Q[On-chain audit log immutably sealed];\n    Q --> R[One-click deployment audit trail completed];",
   "actors": [
     {
       "role": "Employer",
       "label": "Alice",
-      "goal": "Publish redenomination-sensitive treasury modeling task with strict compliance requirements."
+      "goal": "Specify the conversion, approved sources, deliverables, budget and measurable acceptance criteria."
     },
     {
       "role": "AGI Agent",
       "label": "Hyperion-9",
-      "goal": "Execute sovereign-grade redenomination analysis using on-chain configuration and off-chain AI stack."
+      "goal": "Use an approved OpenClaw or operator-led ChatGPT Work environment to prepare a candidate dossier and evidence."
     },
     {
       "role": "Validator",
       "label": "Validator Guild",
-      "goal": "Run commit-reveal validation, sign attestations, and guard against collusion."
+      "goal": "Independently recompute base-unit arithmetic, reconcile liabilities and reject incorrect evidence before any acceptance decision."
     },
     {
       "role": "Moderator Council",
       "label": "Sentinel Multisig",
-      "goal": "Provide emergency pause and dispute overrides when policy violations emerge."
+      "goal": "Review disputed evidence and follow the deployed contracts and authorized incident procedure; no powers are inferred from this demo."
     },
     {
       "role": "Governance",
       "label": "Timelock DAO",
-      "goal": "Owns all privileged levers, updates parameters, and enforces redenomination risk policies."
+      "goal": "Separately authorize reviewed governance actions after checking the actual chain, ownership and configured timelock."
     }
   ],
   "flow": [
     {
       "phase": "Initialization",
       "steps": [
-        "Governance multisig deploys contracts via deploy:oneclick:auto and migrates ownership to timelock.",
-        "Identity registry whitelists ENS namespaces *.agent.agi.eth and *.club.agi.eth.",
-        "Stake thresholds configured for agents and validators; platform starts paused for audit.",
-        "Moderators, policy registry, and monitoring sentinels activated with baseline alerts."
+        "Run the offline generator and verifier; inspect the source hashes and exact conversion ratio.",
+        "For a live job, commission isolated worker tools and accounts using docs/computer-work.md; the demo requires none.",
+        "Verify actual token decimals, chain, owner, identities and contracts before considering deployment or admission.",
+        "Keep signing credentials outside the worker; agree acceptance rules, dust allocation and recovery responsibilities."
       ]
     },
     {
       "phase": "Job Lifecycle",
       "steps": [
-        "Employer Alice uses chat UI to describe redenomination treasury modeling brief.",
-        "Policy registry auto-tags the job as \"macro-finance\" and checks allow lists.",
-        "Randomized validator committee sealed; Hyperion-9 agent proves stake + ENS ownership and accepts.",
-        "Agent executes task using orchestrator + AI pipelines; uploads report hash to IPFS and signs payload.",
-        "Validators receive encrypted commit instructions, submit commitments, then reveal signed verdicts.",
-        "Majority approval triggers payouts, reputation boost, and Certificate NFT issuance.",
-        "Monitoring dashboards update metrics; audit log pipeline stores full trail.",
-        "Random audit sample escalates to moderators, verifying compliance and slashing logic readiness."
+        "Employer Alice defines a redenomination dossier using public, licensed non-personal or synthetic data.",
+        "Review computer-work/task.json, allowed origins, bounded deliverables and source data; admit its exact digest through the existing adapter.",
+        "An approved OpenClaw worker uses browser, computer, code and file tools as configured; ChatGPT Work is a separate operator-led option.",
+        "Worker returns conversion.json and dossier.md, with source references and a complete description of residual amounts.",
+        "Independent review checks every account, base-unit conversion, aggregate reconciliation and missing or duplicate entries.",
+        "Rejected or uncertain work retains its evidence and requires correction or reconciliation before a new admitted attempt.",
+        "Accepted candidate evidence enters the separately commissioned validator and contract lifecycle; provider completion does not release payment.",
+        "Production readiness requires receipts, finality, incident drills and deployment-specific authorization."
       ]
     },
     {
       "phase": "Emergency Drill",
       "steps": [
-        "Simulated anomalous validator triggers alert; Alertmanager notifies governance + moderators.",
-        "Governance executes system pause via timelock -> pause action; orchestrator enters safe mode.",
-        "Moderator council reviews dispute ledger, resolves flagged issue, and unpauses platform.",
-        "Deployment checklist re-verified; stakeholder dashboard confirms system healthy."        
+        "Run the guardian drill to check saved artifacts and review emergency procedures; it sends no transactions.",
+        "Rehearse an authorized pause on a disposable deployment and stop in-flight workers through their own controls.",
+        "Reconcile unknown outcomes, pending liabilities and disputed work; preserve dispatch and settlement journals.",
+        "Verify real state and required approvals before resumption. A successful offline drill is not a production-readiness certificate."
       ]
     }
   ],
   "metrics": {
-    "validationCommitteeSize": 3,
-    "stakeRequirementAgent": "10,000 AGI",
-    "stakeRequirementValidator": "50,000 AGI",
-    "auditSampleRate": "25% of high-value jobs",
-    "governanceTimelock": "24 hours"
+    "validationCommitteeSize": "Deployment-specific; verify actual committee",
+    "stakeRequirementAgent": "See exact generated agent-role threshold below",
+    "stakeRequirementValidator": "See exact generated validator-role threshold below",
+    "auditSampleRate": "Set by approved task and deployment policy",
+    "governanceTimelock": "Verify deployed timelock; no fixed delay assumed",
+    "marketOpportunity": "$40 trillion/year project planning assumption; unverified",
+    "executionMode": "Offline planning only"
   },
   "resources": {
     "docs": [
       "docs/governance.md",
       "docs/system-pause.md",
-      "docs/institutional-observability.md"
+      "docs/institutional-observability.md",
+      "demo/REDENOMINATION/README.md",
+      "docs/computer-work.md",
+      "demo/One-Box/computer-work/README.md"
     ],
     "scripts": [
       "npm run demo:redenomination:verify",
-      "npm run deploy:oneclick:auto",
-      "npm run owner:command-center",
+      "npm run demo:redenomination:export",
+      "npm run demo:redenomination:control-room",
       "npm run demo:redenomination:owner-console",
       "npm run demo:redenomination:guardian-drill",
-      "npm run monitoring:validate",
       "npm run demo:redenomination:mission-control"
     ]
-  }
+  },
+  "diagramStatus": "Original vision diagram, preserved verbatim. Specific VRF, encryption, immediate payout and moderator powers require separate implementation and verification; see README.",
+  "deploymentReference": "deploy:oneclick:auto and monitoring:validate remain repository tools, requiring their own setup and review. This rehearsal does not execute them."
 }

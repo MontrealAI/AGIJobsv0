@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "workerProfile": "redenomination",
+  "goal": "Prepare a synthetic redenomination conversion ledger and reviewable dossier, including exact residual liabilities.",
+  "inputText": "Use an isolated browser to review the local REDENOMINATION planning interface at http://127.0.0.1:4174/. The authoritative synthetic ledger is embedded below; the dashboard supplies context, not these account balances. Convert every account with floor rounding and report both per-account and aggregate totals. Do not sign, deploy, transfer tokens, contact people or modify source files. Use the exact ledger SHA-256 a71726a9a1c4966bd0d4812fc21ae1a12cc56a4b365712086ca9ee7debc07e67. Return conversion.json with schemaVersion 1, sourceSha256, factor, currentDecimals, targetDecimals, rounding, productionApproved false, settlementApproved false, accounts [{id, sourceRaw, targetRaw, remainderNumerator, remainderDenominator}], and totals {sourceRaw, targetRaw, remainderNumerator, remainderDenominator, floorOfAggregateRaw, aggregateFloorDifferenceRaw}. All amounts/fractions are unsigned decimal strings. The remainder denominator is factor * 10^currentDecimals, not a reduced fraction. Return dossier.md with source hash, methods, residual liabilities, aggregate-floor difference, limitations and proposed review steps. Ledger: {\"schemaVersion\":1,\"dataClass\":\"synthetic\",\"currentDecimals\":18,\"targetDecimals\":6,\"factor\":\"1000\",\"rounding\":\"floor\",\"accounts\":[{\"id\":\"alice\",\"sourceRaw\":\"1000000000000000000000\"},{\"id\":\"bob\",\"sourceRaw\":\"2500000000000000000000\"},{\"id\":\"pending-escrow\",\"sourceRaw\":\"1000600000000000000\"},{\"id\":\"pending-withdrawal\",\"sourceRaw\":\"900600000000000000\"},{\"id\":\"zero-balance\",\"sourceRaw\":\"0\"}]}",
+  "dataClass": "synthetic",
+  "allowedOrigins": [
+    "http://127.0.0.1:4174"
+  ],
+  "acceptanceCriteria": [
+    "All five accounts, including zero, pending escrow and withdrawal, occur exactly once with the exact source values.",
+    "Every new amount and remainder satisfies sourceRaw * 10^6 = targetRaw * 1000 * 10^18 + remainderNumerator.",
+    "Sum per-account floors separately from floor of aggregate; disclose the one-base-unit difference and all residual liabilities.",
+    "Dossier identifies the exact source hash and explains rounding and separate governance authorization; no transaction or settlement is performed."
+  ],
+  "deliverables": [
+    {
+      "name": "conversion.json",
+      "mediaType": "application/json"
+    },
+    {
+      "name": "dossier.md",
+      "mediaType": "text/markdown"
+    }
+  ]
+}
