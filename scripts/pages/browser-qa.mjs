@@ -119,9 +119,7 @@ try {
     await page.keyboard.press('Enter');
     await page.waitForURL(url + route);
     if (demo === 'culture') {
-      await page
-        .getByRole('heading', { name: /Knowledge grows/ })
-        .waitFor();
+      await page.getByRole('heading', { name: /Knowledge grows/ }).waitFor();
     } else {
       await page.waitForFunction(
         () => document.documentElement.dataset.demoStatus === 'ready'
@@ -416,9 +414,14 @@ try {
     await page.locator('#mermaid-container svg').waitFor();
     await page.locator('#dyson-container svg').waitFor();
     assert.equal(await page.locator('main#main').count(), 1);
+    await page.waitForFunction(
+      () => document.querySelector('#computer-work')?.dataset.status === 'ready'
+    );
+    assert.equal(await page.locator('#cw-example option').count(), 10);
+    assert.match(await page.locator('#cw-results').innerText(), /\$10,125,000/);
   }
   checks.push(
-    'all six published Kardashev command decks load and render diagrams'
+    'all six published Kardashev command decks load diagrams and computer-work planning'
   );
   assert.deepEqual(requests, [], 'Unexpected external network requests');
   assert.deepEqual(errors, [], 'Browser errors');

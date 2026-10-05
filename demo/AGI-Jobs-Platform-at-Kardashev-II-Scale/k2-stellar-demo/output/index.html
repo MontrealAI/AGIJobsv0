@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>AGI Jobs v0 (v2) — Stellar Kardashev II Command Deck</title>
     <link rel="stylesheet" href="./ui/style.css" />
+    <link rel="stylesheet" href="./ui/computer-work.css" />
   </head>
   <body>
     <a class="skip-link" href="#main">Skip to overview</a>
@@ -21,9 +22,14 @@
           <p id="demo-load-status" role="status">Loading the recorded simulation snapshot…</p>
         </div>
         <nav class="deck-nav" aria-label="Command deck sections">
-          <a href="#metrics">Overview</a><a href="#system-map">System map</a><a href="#governance">Governance</a><a href="#operator-guide">How to use this demo</a>
+          <a href="#computer-work">Computer work</a><a href="#metrics">Overview</a><a href="#system-map">System map</a><a href="#governance">Governance</a><a href="#operator-guide">How to use this demo</a>
         </nav>
       </header>
+
+      <section id="computer-work" class="cw-panel" aria-labelledby="computer-work-title">
+        <h2 id="computer-work-title">Computer work: scoped tasks, evidence and capacity</h2>
+        <p>Loading the local planning exercise. Read COMPUTER-WORK.md for task scopes, fixture commands and commissioning requirements.</p>
+      </section>
 
       <section class="metrics-grid" id="metrics" aria-label="Modeled indicators">
         <article class="card">
@@ -136,5 +142,6 @@
       </footer>
     </main>
     <script type="module" src="./ui/dashboard.js"></script>
+    <script type="module" src="./ui/computer-work.mjs"></script>
   </body>
 </html>

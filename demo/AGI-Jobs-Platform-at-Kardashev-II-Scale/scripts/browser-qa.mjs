@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 import { chromium } from 'playwright';
 import AxeBuilder from '@axe-core/playwright';
+import { examples, defaults } from '../ui/computer-work-model.mjs';
 const require = createRequire(import.meta.url);
 const { createServer } = require('./serve-dashboard.cjs');
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -93,6 +94,56 @@ try {
       .getByRole('button', { name: 'Run reflection checklist' })
       .click();
     assert.ok(await page.locator('#reflection-checklist li').count());
+    await page.waitForFunction(
+      () => document.querySelector('#computer-work')?.dataset.status === 'ready'
+    );
+    assert.equal(await page.locator('#cw-example option').count(), 10);
+    for (const example of examples) {
+      await page.locator('#cw-example').selectOption(example.id);
+      assert.deepEqual(
+        JSON.parse(await page.locator('#cw-json').textContent()),
+        example.task
+      );
+      assert.equal(
+        await page.locator('#cw-task li').count(),
+        example.task.acceptanceCriteria.length +
+          example.task.deliverables.length
+      );
+    }
+    await page.locator('#cw-example').selectOption('supplier');
+    const downloadEvent = page.waitForEvent('download');
+    await page
+      .getByRole('button', { name: 'Download task draft (JSON)' })
+      .click();
+    const download = await downloadEvent;
+    assert.equal(download.suggestedFilename(), 'k2-supplier-task-draft.json');
+    assert.deepEqual(
+      JSON.parse(fs.readFileSync(await download.path(), 'utf8')),
+      examples[0].task
+    );
+    await page.locator('#cw-reviewers').fill('0');
+    assert.match(await page.locator('#cw-results').innerText(), /\$0/);
+    await page.locator('#cw-reviewers').fill('45');
+    assert.match(
+      await page.locator('#cw-planning-status').innerText(),
+      /0 submitted jobs exceed/
+    );
+    for (const value of ['', '-1', '1.5', '1000001']) {
+      await page.locator('#cw-workers').fill(value);
+      assert.equal(await page.locator('#cw-results').innerText(), '');
+      assert.match(
+        await page.locator('#cw-planning-status').innerText(),
+        /Planning input invalid/
+      );
+    }
+    await page
+      .getByRole('button', { name: 'Reset planning assumptions' })
+      .click();
+    assert.equal(
+      await page.locator('#cw-workers').inputValue(),
+      String(defaults.workers)
+    );
+    assert.match(await page.locator('#cw-results').innerText(), /\$10,125,000/);
     const axe = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
       .analyze();
@@ -106,6 +157,12 @@ try {
       );
     }
     await page.setViewportSize({ width: 1440, height: 1000 });
+    await page.locator('#computer-work').screenshot({
+      path: path.join(
+        reportDir,
+        (route.replaceAll('/', '-') || 'main') + '-computer-work.png'
+      ),
+    });
     await page.locator('header').scrollIntoViewIfNeeded();
     await page.screenshot({
       path: path.join(
@@ -138,11 +195,34 @@ try {
       body: `window.__KARDASHEV_TELEMETRY__ = ${JSON.stringify(telemetry)};`,
     })
   );
+  await page.route('**/computer-work-model.mjs', (route) =>
+    route.fulfill({
+      contentType: 'text/javascript',
+      body: fs
+        .readFileSync(path.join(root, 'ui/computer-work-model.mjs'), 'utf8')
+        .replace(
+          'Supplier comparison',
+          '<img src=x onerror=window.__AGIJOBS_K2_XSS_EXECUTED__=true>'
+        )
+        .replace(
+          'Compare eligible quotes and recommend the lowest-cost supplier meeting the delivery deadline.',
+          '<svg onload=window.__AGIJOBS_K2_XSS_EXECUTED__=true>'
+        ),
+    })
+  );
   await page.goto(origin + '/');
   await page.waitForFunction(
     () => document.documentElement.dataset.demoStatus === 'ready'
   );
-  assert.equal(await page.evaluate(() => window.__AGIJOBS_K2_XSS_EXECUTED__), undefined);
+  await page.waitForFunction(
+    () => document.querySelector('#computer-work')?.dataset.status === 'ready'
+  );
+  assert.equal(await page.locator('#cw-task svg, #cw-example img').count(), 0);
+  assert.match(await page.locator('#cw-task').innerText(), /<svg/);
+  assert.equal(
+    await page.evaluate(() => window.__AGIJOBS_K2_XSS_EXECUTED__),
+    undefined
+  );
   assert.equal(
     await page.locator('#energy-feed-list img, #owner-power-list svg').count(),
     0
@@ -198,6 +278,9 @@ try {
     JSON.stringify({
       status: 'passed',
       dashboards: results.length,
+      taskDraftsPerDashboard: examples.length,
+      taskExports: 'passed',
+      planningBoundaries: 'passed',
       mobileWidths: [320, 390, 768],
       externalRequests: 0,
       accessibilityViolations: 0,

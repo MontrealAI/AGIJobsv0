@@ -110,10 +110,10 @@ export function renderFeaturedDemos(base, catalog) {
         <div class="spotlight-content">
           <div class="spotlight-meta"><span class="spotlight-mode">Simulation command deck</span><span>AGI Jobs Platform</span></div>
           <h3 id="kardashev-feature-title">Kardashev <em>II Scale</em></h3>
-          <p class="spotlight-description">Explore how a civilization-scale mission balances energy, compute, work and human governance.</p>
+          <p class="spotlight-description">Start with verifiable computer work, then explore civilization-scale energy, compute and human governance.</p>
           <ol class="spotlight-steps">
-            <li><span>Inspect</span> Follow energy budgets, allocations and mission graphs.</li>
-            <li><span>Review</span> Read stress scenarios, warnings and governance proposals.</li>
+            <li><span>Scope</span> Explore ten task drafts and plan workers against review capacity.</li>
+            <li><span>Inspect</span> Follow energy budgets, mission graphs, stress scenarios and governance proposals.</li>
             <li><span>Compare</span> Explore the main, Sovereign Lattice and Stellar models.</li>
           </ol>
           <div class="spotlight-actions"><a class="button primary" data-feature-launch="kardashev" href="${base}${

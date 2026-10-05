@@ -21,6 +21,20 @@ Historical fixture dates remain intact so that runs are reproducible; they are n
 The legacy model remains available and is never an automatic fallback for the canonical orchestrator.
 Its default output is a cache directory, keeping the canonical checked-in snapshot intact.
 
+## Computer work: practical scopes and a path to scale
+
+Every command deck now prominently includes **Computer work**: ten self-contained synthetic task scopes,
+exact JSON drafts, required deliverables and independent acceptance criteria, plus an interactive annual capacity planner.
+Start with one verifiable digital job, then model workers and human review capacity together.
+
+Read the [complete computer-work runbook](COMPUTER-WORK.md) for the actual Chromium Supplier Desk fixture,
+fault injection, OpenClaw Codex Computer Use readiness, ChatGPT Work permissions, operator admission,
+evidence, reconciliation and contract finalization. The downloadable drafts use the repository's current worker schema;
+they grant no authority and contact no provider. The planner is a separate local exercise, not an input to the civilization ledgers.
+
+**USD 40 trillion/year is a user-supplied market planning assumption.** Neither universal human-task automation nor market capture
+is established by this demo. Test representative capabilities in a commissioned environment and retain independent review.
+
 ## 🧭 Ultra-deep readiness map
 - **Location**: `demo/AGI-Jobs-Platform-at-Kardashev-II-Scale/`
 - **Operating manifest**: `config/kardashev-ii.manifest.json` (council, logistics, verification, and drill cadence).

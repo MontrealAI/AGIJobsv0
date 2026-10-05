@@ -9,6 +9,7 @@ const {
   parseOptions,
   validateInputs,
   readinessFailures,
+  dashboardArtifacts,
 } = require('../scripts/runtime.cjs');
 const { createServer } = require('../scripts/serve-dashboard.cjs');
 const root = path.resolve(__dirname, '..');
@@ -33,6 +34,41 @@ const run = (args) =>
     { encoding: 'utf8', timeout: 60000 }
   );
 const temp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'kardashev-test-'));
+
+test('portable decks carry shared computer-work assets and valid documentation targets without touching source', () => {
+  const output = path.join(os.tmpdir(), 'k2-portable-contract');
+  for (const profile of [
+    '',
+    'stellar-civilization-lattice',
+    'k2-stellar-demo',
+  ]) {
+    const assets = dashboardArtifacts(path.join(root, profile), output);
+    assert.ok(
+      assets.every((asset) => asset.path.startsWith(output + path.sep))
+    );
+    const files = new Map(
+      assets.map((asset) => [path.relative(output, asset.path), asset.content])
+    );
+    for (const file of [
+      'computer-work.mjs',
+      'computer-work-model.mjs',
+      'computer-work.css',
+    ])
+      assert.equal(
+        files.get(path.join('ui', file)),
+        fs.readFileSync(path.join(root, 'ui', file), 'utf8')
+      );
+    assert.match(files.get('index.html'), /src="\.\/ui\/computer-work\.mjs"/);
+    assert.ok(files.has('COMPUTER-WORK.md'));
+    for (const file of ['README.md', 'COMPUTER-WORK.md']) {
+      for (const [, target] of files.get(file).matchAll(/\]\(([^)]+)\)/g))
+        assert.ok(
+          /^https?:/.test(target) || target === 'COMPUTER-WORK.md',
+          `${profile}/${file}: ${target}`
+        );
+    }
+  }
+});
 
 test('CLI rejects typos, missing values and duplicate options', () => {
   for (const args of [
