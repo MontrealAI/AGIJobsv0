@@ -402,15 +402,15 @@ try {
     planner.parseUnits(value, exportData.token.targetDecimals);
   const bond = unit(jobRegistryConfig.jobStakeTokens),
     reward = unit(jobRegistryConfig.maxJobRewardTokens);
-  expect(
+  expectWarn(
     bond > 0n,
     'Job bond positive',
-    'Job bond must be positive for this scenario'
+    'Zero job bond: review the scenario admission policy'
   );
-  expect(
+  expectWarn(
     reward === 0n || reward >= bond,
     'Reward cap covers job bond or is unlimited',
-    'Reward cap below job bond'
+    'Reward cap below job bond: review job economics'
   );
   expect(
     planner.integer(stakeManagerConfig.unbondingPeriodSeconds, 'unbonding') >

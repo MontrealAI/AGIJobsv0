@@ -5,6 +5,7 @@ const crypto = require('node:crypto');
 const ROOT = path.resolve(__dirname, '../../..');
 const DEMO = path.resolve(__dirname, '..');
 const UINT256_MAX = (1n << 256n) - 1n;
+const UINT96_MAX = (1n << 96n) - 1n;
 const SOURCE_FILES = [
   'agialpha.json',
   'owner-control.json',
@@ -180,6 +181,16 @@ function validateConfig(config, label) {
       integer(value, `${label}.${key}`, BigInt(Number.MAX_SAFE_INTEGER));
   }
 }
+function percentageTotal(config, keys, label) {
+  // Omitted fields are unresolved chain state, not asserted zero values.
+  const configured = keys.filter((key) => config[key] !== undefined);
+  const total = configured.reduce(
+    (sum, key) => sum + integer(config[key], `${label}.${key}`, 100n),
+    0n
+  );
+  if (total > 100n)
+    throw new Error(`${label}: ${keys.join(' + ')} cannot exceed 100`);
+}
 function buildPlaybook(inputs, supplied = {}) {
   const options = { ...defaults(), ...supplied };
   const [token, owner, stake, job, fee] = inputs.configs;
@@ -193,12 +204,40 @@ function buildPlaybook(inputs, supplied = {}) {
     throw new Error('Source token symbol is missing');
   const ratio = integer(options.ratio, 'ratio');
   if (!ratio) throw new Error('Ratio must be positive');
+  // Match the existing owner planner's whole-percent configuration policy.
+  percentageTotal(
+    stake,
+    ['employerSlashPct', 'treasurySlashPct', 'validatorSlashRewardPct'],
+    'Owner slashing policy'
+  );
+  // The contract also bounds the distribution to employer/treasury/operator/burn.
+  // Validator rewards are handled separately there; do not sum all five fields.
+  percentageTotal(
+    stake,
+    [
+      'employerSlashPct',
+      'treasurySlashPct',
+      'operatorSlashPct',
+      'burnSlashPct',
+    ],
+    'Contract slash distribution'
+  );
+  percentageTotal(
+    stake,
+    ['feePct', 'burnPct', 'validatorRewardPct'],
+    'Stake fees'
+  );
+  percentageTotal(job, ['feePct', 'validatorRewardPct'], 'Job fees');
   if (
-    integer(stake.employerSlashPct, 'employerSlashPct', 100n) +
-      integer(stake.treasurySlashPct, 'treasurySlashPct', 100n) !==
-    100n
+    stake.unbondingPeriodSeconds !== undefined &&
+    integer(stake.unbondingPeriodSeconds, 'unbondingPeriodSeconds') === 0n
   )
-    throw new Error('Slashing percentages must sum to 100');
+    throw new Error('unbondingPeriodSeconds must be positive');
+  if (
+    stake.maxAGITypes !== undefined &&
+    integer(stake.maxAGITypes, 'maxAGITypes', 50n) === 0n
+  )
+    throw new Error('maxAGITypes must be between 1 and 50');
   const dust = [];
   const beforeStake = {},
     afterStake = {},
@@ -302,10 +341,17 @@ function buildPlaybook(inputs, supplied = {}) {
     }
   }
   const rawOf = (values, key) => (values[key] ? BigInt(values[key].raw) : 0n);
+  const policyObservations = [];
   for (const [s, j] of [
     [beforeStake, beforeJob],
     [afterStake, afterJob],
   ]) {
+    for (const key of ['minStake', 'stakeRecommendations.min']) {
+      if (s[key] && rawOf(s, key) === 0n)
+        throw new Error(`${key} must be positive`);
+    }
+    for (const key of ['jobStake', 'minAgentStake'])
+      integer(rawOf(j, key), `${key}: contract uint96`, UINT96_MAX);
     for (const [maximum, minimum] of [
       ['maxStakePerAddress', 'minStake'],
       ['stakeRecommendations.max', 'stakeRecommendations.min'],
@@ -314,18 +360,34 @@ function buildPlaybook(inputs, supplied = {}) {
       if (rawOf(s, maximum) && rawOf(s, maximum) < rawOf(s, minimum))
         throw new Error(`${maximum} is below ${minimum}`);
     }
-    if (
-      rawOf(j, 'maxJobReward') &&
-      rawOf(j, 'maxJobReward') < rawOf(j, 'jobStake')
-    )
-      throw new Error('Reward cap is below job bond');
-    if (rawOf(j, 'minAgentStake') < rawOf(j, 'jobStake'))
-      throw new Error('Agent minimum is below job bond');
-    if (rawOf(s, 'roleMinimums.agent') < rawOf(j, 'jobStake'))
-      throw new Error('Agent role minimum is below job bond');
-    if (rawOf(s, 'roleMinimums.validator') < rawOf(s, 'roleMinimums.agent'))
-      throw new Error('Validator minimum is below agent minimum');
   }
+  // These relationships are operator choices, not contract validity constraints.
+  if (
+    rawOf(afterJob, 'maxJobReward') &&
+    rawOf(afterJob, 'maxJobReward') < rawOf(afterJob, 'jobStake')
+  )
+    policyObservations.push(
+      'Reward cap is below the job bond; review job economics.'
+    );
+  if (rawOf(afterJob, 'minAgentStake') < rawOf(afterJob, 'jobStake'))
+    policyObservations.push(
+      'Agent minimum is below the job bond; review admission and available stake.'
+    );
+  if (
+    rawOf(afterStake, 'roleMinimums.agent') &&
+    rawOf(afterStake, 'roleMinimums.agent') < rawOf(afterJob, 'jobStake')
+  )
+    policyObservations.push(
+      'Agent role override is below the job bond; review role policy.'
+    );
+  if (
+    rawOf(afterStake, 'roleMinimums.validator') &&
+    rawOf(afterStake, 'roleMinimums.validator') <
+      rawOf(afterStake, 'roleMinimums.agent')
+  )
+    policyObservations.push(
+      'Validator role override is below the agent override; review the independent role policies.'
+    );
   let supplyBefore, supplyAfter;
   if (options.currentSupplyTokens !== undefined) {
     const raw = parseUnits(
@@ -421,6 +483,7 @@ function buildPlaybook(inputs, supplied = {}) {
       },
     },
     configSnapshots: { stakeManager: stakeDraft, jobRegistry: jobDraft },
+    policyObservations,
     timeline: [
       {
         id: 'snapshot',

@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generatedAt": "2026-10-05T16:59:14.063Z",
+    "generatedAt": "2026-10-05T18:44:00.336Z",
     "generator": "demo/REDENOMINATION/scripts/playbook.cjs",
     "scenario": "AGI Jobs redenomination planning rehearsal",
     "version": "2.0.0",
@@ -376,6 +376,7 @@
       "acknowledgers": {}
     }
   },
+  "policyObservations": [],
   "timeline": [
     {
       "id": "snapshot",

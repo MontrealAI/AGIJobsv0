@@ -20,6 +20,8 @@ async function main() {
     missingExport: false,
     diagramFallback: false,
     liveDiagram: false,
+    workHandoff: false,
+    policyObservations: false,
   };
   try {
     browser = await chromium.launch({
@@ -101,11 +103,35 @@ async function main() {
         fullPage: true,
       });
     findings.mobile = true;
+    const links = page.locator('#computer-work-handoff a[download]');
+    assert.equal(await links.count(), 4);
+    for (let index = 0; index < (await links.count()); index++) {
+      const [download] = await Promise.all([
+        page.waitForEvent('download'),
+        links.nth(index).click(),
+      ]);
+      assert.equal(await download.failure(), null);
+      assert.equal(
+        download.suggestedFilename(),
+        await links.nth(index).getAttribute('download')
+      );
+      assert.deepEqual(
+        fs.readFileSync(await download.path()),
+        fs.readFileSync(
+          path.join(DEMO, 'computer-work', download.suggestedFilename())
+        )
+      );
+    }
+    findings.workHandoff = true;
     const saved = JSON.parse(
       fs.readFileSync(path.join(DEMO, 'ui/export/latest.json'))
     );
     saved.token.targetSymbol = '<img src=x onerror="window.compromised=1">';
     saved.configSnapshots.jobRegistry.jobStakeTokens = '0.000000000000000001';
+    saved.policyObservations = [
+      'Reward cap is below the job bond; review job economics.',
+    ];
+    saved.configSnapshots.stakeManager.validatorSlashRewardPct = 7;
     await page.route('**/ui/export/latest.json*', (route) =>
       route.fulfill({ json: saved })
     );
@@ -118,6 +144,17 @@ async function main() {
     );
     assert.equal(await page.locator('#app img').count(), 0);
     assert.equal(await page.evaluate(() => window.compromised), undefined);
+    assert.ok(
+      (await page.locator('#app').innerText()).includes(
+        saved.policyObservations[0]
+      )
+    );
+    assert.ok(
+      (await page.locator('.owner-controls').innerText()).includes(
+        'Validator slashing reward\n7%'
+      )
+    );
+    findings.policyObservations = true;
     findings.exactValues = true;
     const scenario = JSON.parse(
       fs.readFileSync(path.join(DEMO, 'scenario.json'))

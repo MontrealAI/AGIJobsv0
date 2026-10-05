@@ -23,6 +23,7 @@ function verifyArtifacts(root = planner.DEMO, inputs = planner.loadInputs()) {
     'modules',
     'governance',
     'configSnapshots',
+    'policyObservations',
     'timeline',
     'invariants',
     'verification',

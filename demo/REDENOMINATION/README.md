@@ -14,7 +14,7 @@ npm run demo:redenomination:control-room
 
 Open **http://127.0.0.1:4174/** for the mission, original architecture graph, phase navigator and English/French interface labels. Open **http://127.0.0.1:4174/ui/** for exact before/after values, source hashes, governance configuration, rounding remainders and review commands. The scenario prose and terminal output remain English.
 
-The server binds only to loopback. Browser **Refresh** or **R** reloads the saved export; **Enter in the server terminal** regenerates it. **Ctrl+C** stops the server. To choose another port, set `PORT=4175`. The worker task template uses port 4174; changing it requires reviewing and re-admitting the updated task.
+The server binds only to loopback, validates the local Host and Origin, and rejects cross-site browser requests. Use its printed URL directly. Browser **Refresh** or **R** reloads the saved export; **Enter in the server terminal** regenerates it. **Ctrl+C** stops the server. To choose another port, set `PORT=4175`. The worker task template uses port 4174; changing it requires reviewing and re-admitting the updated task.
 
 The planner and both dashboards operate without a provider connection. Diagram rendering optionally loads pinned Mermaid **12.1.0** from jsDelivr; fonts use Google Fonts. Blocked or unavailable CDNs leave the rest of the interface usable and show the checked-in SVG flowchart with expandable Mermaid source. Modern ES2024 browsers support the renderer; the local SVG also handles older browsers. For an air-gapped deployment, mirror the reviewed assets and change their URLs and the local server's CSP. Do not expose this development server as an authenticated production service.
 
@@ -45,6 +45,19 @@ targetRaw = sourceRaw × 10^targetDecimals ÷ (factor × 10^currentDecimals)
 
 All arithmetic uses `BigInt`. Amounts in JSON are decimal strings. Fields ending in `Tokens` contain human token amounts; raw fallback fields contain integer base units. Conflicting raw and human-unit values are rejected. Percentages, addresses, duration limits, slashing splits, stake caps, role minimums, recommendations and auto-stake bounds are preserved or converted according to their units.
 
+The planner checks configured values against the existing [stake owner planner](../../scripts/v2/lib/stakeManagerPlan.ts), [job owner planner](../../scripts/v2/lib/jobRegistryPlan.ts) and contract limits:
+
+| Check | Rule |
+| --- | --- |
+| Owner slashing policy | Employer + treasury + validator slashing reward must be **at most 100%**; an unallocated remainder is valid |
+| Contract slash distribution | Employer + treasury + any explicitly configured operator/burn slash shares must be at most 100%; the contract handles validator rewards separately |
+| Fee policies | Stake fee + burn + validator reward, and job fee + validator reward, must each be at most 100% |
+| Job bond and agent minimum | Both source and converted raw values must fit `uint96`; other converted amounts must fit `uint256` |
+| Positive policies | Global minimum stake, an explicitly configured recommendation minimum, and unbonding period must be positive; `maxAGITypes` must be 1–50 |
+| Independent role choices | Zero disables a role override. Validator and agent overrides need not be ordered; economic relationships appear as review observations instead of invalid-configuration errors |
+
+These checks use the owner configuration's **whole percentages**. They do not resolve omitted settings or current on-chain state. The owner planner's combined slashing rule is stricter than the contract's separate validator-reward bound; keep that distinction when commissioning an actual update. Nonzero stake caps and ceilings must cover their corresponding minimum/floor. `autoStake.threshold` is a **dispute count**, not a token amount; counts, weights, temperature/Hamiltonian thresholds and time windows remain unchanged. Only its token floor and ceiling are converted.
+
 For example, **42,000,000 AGIALPHA → 42,000 AGIΩ** with factor 1,000. If precision changes from 18 to 6, the resulting supply is `42000000000` new base units. The default source configuration produces a `0.001 AGIΩ` job bond, `0.1 AGIΩ` agent-role minimum and `1.0 AGIΩ` validator-role minimum. These are illustrative local configuration values, not chain observations.
 
 ```bash
@@ -73,6 +86,8 @@ Read [the integration and recovery guide](../../docs/computer-work.md) and [the 
 ### Try the redenomination acceptance contract
 
 [computer-work/task.json](computer-work/task.json) is a schema-compatible task for the existing adapter. It embeds an approved synthetic ledger, its exact SHA-256 and measurable acceptance criteria. Its five accounts include pending escrow, pending withdrawal and a zero balance. The worker must produce `conversion.json` and `dossier.md`, including the difference between aggregate and per-account rounding.
+
+In the control room, **Try the computer-work task** downloads the task, ledger and two labeled examples. This fixed 18-to-6-decimal exercise is independent of the token plan currently displayed. For an operator-led ChatGPT Work session, provide the task and ledger, request the two UTF-8 deliverables, and review the returned files using the command shown on the dashboard. This handoff does not dispatch an API worker. The example files demonstrate the expected format and must never be presented as evidence of completed worker execution.
 
 First run the independent checker against the supplied, explicitly labeled example:
 
@@ -144,6 +159,9 @@ Safe pause/unpause examples in the generated plan call the actual `systemPauseAc
 | --- | --- |
 | `Non-exact conversion` | Increase target precision or explicitly review `--rounding floor` and every residual; never suppress the error blindly |
 | Positive threshold would become zero | Choose a representable ratio/precision or separately redesign the policy |
+| `contract uint96` range error | Reduce target precision or redesign the stake amount through a separately reviewed policy change; a mathematically valid `uint256` conversion may still exceed this contract field |
+| Policy observation | Review the economic or role relationship; this is an operator choice, not a failed contract-bound check |
+| Local same-origin access required | Open the printed `127.0.0.1` URL directly; proxy hosts and requests from another website are rejected |
 | Verifier reports mismatched source/draft | Review source changes, regenerate the plan, then rerun verification |
 | Missing export or unsupported plan version | Run `npm run demo:redenomination:export` and reload the dashboard |
 | Port in use | Stop the old server or choose `PORT`; update and re-admit any task using the old origin |

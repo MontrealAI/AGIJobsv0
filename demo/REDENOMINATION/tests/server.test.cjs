@@ -18,7 +18,7 @@ async function server(t, root = DEMO) {
         instance.close(resolve);
       })
   );
-  return (url, method = 'GET') =>
+  const request = (url, method = 'GET', headers = {}) =>
     new Promise((resolve, reject) => {
       const req = http.request(
         {
@@ -26,6 +26,8 @@ async function server(t, root = DEMO) {
           port: instance.address().port,
           path: url,
           method,
+          headers,
+          setHost: !Object.hasOwn(headers, 'Host'),
         },
         (res) => {
           let body = '';
@@ -40,6 +42,9 @@ async function server(t, root = DEMO) {
       req.on('error', reject);
       req.end();
     });
+  request.origin = `http://127.0.0.1:${instance.address().port}`;
+  request.port = instance.address().port;
+  return request;
 }
 test('both dashboards, configuration and export have correct routes and MIME types', async (t) => {
   const request = await server(t);
@@ -62,6 +67,67 @@ test('both dashboards, configuration and export have correct routes and MIME typ
       /frame-ancestors 'none'/
     );
   }
+});
+test('local host and same-origin boundaries reject rebinding and cross-site access', async (t) => {
+  const request = await server(t);
+  for (const headers of [
+    { Host: `attacker.example:${request.port}` },
+    { Host: `127.0.0.1.attacker.example:${request.port}` },
+    { Host: '127.0.0.1:1' },
+    { Host: '' },
+    { Origin: 'https://attacker.example' },
+    { Origin: 'null' },
+    { Origin: request.origin, 'Sec-Fetch-Site': 'cross-site' },
+  ])
+    assert.equal(
+      (await request('/ui/export/latest.json', 'GET', headers)).status,
+      403,
+      JSON.stringify(headers)
+    );
+  assert.equal(
+    (await request('/ui/', 'GET', { Origin: request.origin })).status,
+    200
+  );
+  const localhost = `localhost:${request.port}`;
+  assert.equal(
+    (
+      await request('/ui/', 'GET', {
+        Host: localhost,
+        Origin: `http://${localhost}`,
+      })
+    ).status,
+    200
+  );
+});
+test('only the four fixed computer-work handoff files are downloadable', async (t) => {
+  const request = await server(t);
+  for (const file of [
+    'task.json',
+    'ledger.json',
+    'conversion.example.json',
+    'dossier.example.md',
+  ]) {
+    const response = await request(`/computer-work/${file}`);
+    assert.equal(response.status, 200);
+    assert.equal(
+      response.headers['content-disposition'],
+      `attachment; filename="${file}"`
+    );
+    assert.equal(
+      response.body,
+      fs.readFileSync(path.join(DEMO, 'computer-work', file), 'utf8')
+    );
+    if (file.endsWith('.json'))
+      assert.doesNotThrow(() => JSON.parse(response.body));
+    else assert.match(response.headers['content-type'], /^text\/plain/);
+  }
+  for (const file of [
+    'review.cjs',
+    'worker-profiles.example.json',
+    'unreviewed.json',
+    '../README.md',
+  ])
+    assert.notEqual((await request(`/computer-work/${file}`)).status, 200);
 });
 test('HEAD works and mutation methods are rejected', async (t) => {
   const request = await server(t);

@@ -9,7 +9,14 @@ const MIME = {
   '.js': 'application/javascript; charset=utf-8',
   '.json': 'application/json; charset=utf-8',
   '.svg': 'image/svg+xml',
+  '.md': 'text/plain; charset=utf-8',
 };
+const WORK_DOWNLOADS = new Set([
+  '/computer-work/task.json',
+  '/computer-work/ledger.json',
+  '/computer-work/conversion.example.json',
+  '/computer-work/dossier.example.md',
+]);
 async function resource(root, url) {
   let request;
   try {
@@ -25,10 +32,12 @@ async function resource(root, url) {
     throw Object.assign(new Error('Forbidden'), { status: 403 });
   if (request.endsWith('/')) request += 'index.html';
   if (
-    !/^\/(?:index\.html|scenario\.json|(?:ui|config|i18n)\/[^?]+)$/.test(
+    (!/^\/(?:index\.html|scenario\.json|(?:ui|config|i18n)\/[^?]+)$/.test(
       request
-    ) ||
-    !MIME[path.extname(request)]
+    ) &&
+      !WORK_DOWNLOADS.has(request)) ||
+    !MIME[path.extname(request)] ||
+    (path.extname(request) === '.md' && !WORK_DOWNLOADS.has(request))
   )
     throw Object.assign(new Error('Not found'), { status: 404 });
   const base = await fs.realpath(root);
@@ -46,10 +55,11 @@ async function resource(root, url) {
   return {
     content: await fs.readFile(target),
     type: MIME[path.extname(target)],
+    download: WORK_DOWNLOADS.has(request) ? path.basename(request) : undefined,
   };
 }
 function createControlRoom(root = planner.DEMO) {
-  return http.createServer(async (req, res) => {
+  const server = http.createServer(async (req, res) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('Cache-Control', 'no-store');
     res.setHeader('Referrer-Policy', 'no-referrer');
@@ -57,6 +67,22 @@ function createControlRoom(root = planner.DEMO) {
       'Content-Security-Policy',
       "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'"
     );
+    const port = server.address().port;
+    const host = (req.headers.host || '').toLowerCase();
+    const allowedHosts = [`127.0.0.1:${port}`, `localhost:${port}`];
+    if (port === 80) allowedHosts.push('127.0.0.1', 'localhost');
+    if (
+      !allowedHosts.includes(host) ||
+      (req.headers.origin !== undefined &&
+        req.headers.origin !== `http://${host}`) ||
+      req.headers['sec-fetch-site'] === 'cross-site'
+    ) {
+      res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end(
+        req.method === 'HEAD' ? undefined : 'Local same-origin access required'
+      );
+      return;
+    }
     if (!['GET', 'HEAD'].includes(req.method)) {
       res.writeHead(405, { Allow: 'GET, HEAD' });
       res.end('Method not allowed');
@@ -64,6 +90,11 @@ function createControlRoom(root = planner.DEMO) {
     }
     try {
       const file = await resource(root, req.url);
+      if (file.download)
+        res.setHeader(
+          'Content-Disposition',
+          `attachment; filename="${file.download}"`
+        );
       res.writeHead(200, {
         'Content-Type': file.type,
         'Content-Length': file.content.length,
@@ -85,6 +116,7 @@ function createControlRoom(root = planner.DEMO) {
       );
     }
   });
+  return server;
 }
 async function main() {
   const port = Number(process.env.PORT ?? 4174);

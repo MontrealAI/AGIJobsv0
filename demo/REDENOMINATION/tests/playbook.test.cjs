@@ -138,6 +138,15 @@ test('drafts retain all unrelated policies and convert full token guardrails', (
   );
   assert.deepEqual(stake.customPolicy, data.configs[2].customPolicy);
   assert.equal(stake.autoStake.increasePct, before[2].autoStake.increasePct);
+  assert.equal(stake.autoStake.threshold, before[2].autoStake.threshold);
+  assert.equal(
+    stake.autoStake.temperatureThreshold,
+    before[2].autoStake.temperatureThreshold
+  );
+  assert.equal(
+    stake.autoStake.hamiltonianWeight,
+    before[2].autoStake.hamiltonianWeight
+  );
   for (const key of [
     'treasury',
     'unbondingPeriodSeconds',
@@ -184,10 +193,10 @@ test('cross-field policy contradictions fail before writing', () => {
       s.stakeRecommendations.maxTokens = '1';
     },
     (s) => {
-      s.roleMinimums.validatorTokens = '1';
+      s.validatorSlashRewardPct = 1;
     },
     (s) => {
-      s.employerSlashPct = 49;
+      s.employerSlashPct = 51;
     },
     (s) => {
       s.maxTotalPayoutPct = 201;
@@ -201,6 +210,107 @@ test('cross-field policy contradictions fail before writing', () => {
     change(data.configs[2]);
     assert.throws(() => p.buildPlaybook(data));
   }
+});
+test('complete configured slash shares follow owner and contract upper bounds', () => {
+  for (const [employer, treasury, validator] of [
+    [40, 40, 0],
+    [40, 40, 20],
+    [0, 0, 0],
+  ]) {
+    const data = input();
+    Object.assign(data.configs[2], {
+      employerSlashPct: employer,
+      treasurySlashPct: treasury,
+      validatorSlashRewardPct: validator,
+    });
+    const draft = p.buildPlaybook(data).configSnapshots.stakeManager;
+    assert.equal(draft.validatorSlashRewardPct, validator);
+    assert.equal(draft.employerSlashPct, employer);
+  }
+  const data = input();
+  data.configs[2].operatorSlashPct = 1;
+  assert.throws(() => p.buildPlaybook(data), /Contract slash distribution/);
+  data.configs[2].employerSlashPct = 40;
+  data.configs[2].burnSlashPct = 10;
+  assert.throws(() => p.buildPlaybook(data), /Contract slash distribution/);
+  data.configs[2].operatorSlashPct = 0;
+  data.configs[2].validatorSlashRewardPct = 10;
+  assert.doesNotThrow(() => p.buildPlaybook(data));
+});
+test('fee policy totals cannot exceed 100 percent', () => {
+  for (const index of [2, 3]) {
+    const data = input();
+    data.configs[index].feePct = index === 2 ? 89 : 90;
+    assert.doesNotThrow(() => p.buildPlaybook(data));
+    data.configs[index].feePct++;
+    assert.throws(() => p.buildPlaybook(data), /fees: .*cannot exceed 100/);
+  }
+});
+test('job bond and agent minimum fit uint96 before and after precision changes', () => {
+  const max = (1n << 96n) - 1n;
+  for (const key of ['jobStake', 'minAgentStake']) {
+    const data = input();
+    delete data.configs[3][`${key}Tokens`];
+    data.configs[3][key] = max.toString();
+    assert.equal(
+      p.buildPlaybook(data, { ratio: 1n }).modules.jobRegistry.after[key].raw,
+      max.toString()
+    );
+    data.configs[3][key] = (max + 1n).toString();
+    assert.throws(
+      () => p.buildPlaybook(data, { ratio: 1n }),
+      /contract uint96/
+    );
+    data.configs[3][key] = (max / 10n + 1n).toString();
+    assert.throws(
+      () => p.buildPlaybook(data, { ratio: 1n, newDecimals: 19 }),
+      /contract uint96/
+    );
+  }
+});
+test('required positive policies and AGI type cap match the owner planner', () => {
+  for (const change of [
+    (s) => {
+      s.minStakeTokens = '0';
+    },
+    (s) => {
+      s.stakeRecommendations.minTokens = '0';
+    },
+    (s) => {
+      s.unbondingPeriodSeconds = 0;
+    },
+    (s) => {
+      s.maxAGITypes = 0;
+    },
+    (s) => {
+      s.maxAGITypes = 51;
+    },
+  ]) {
+    const data = input();
+    change(data.configs[2]);
+    assert.throws(() => p.buildPlaybook(data));
+  }
+});
+test('independent roles and economic choices are observations, not invented validity rules', () => {
+  const data = input();
+  data.configs[3].maxJobRewardTokens = '0.5';
+  data.configs[3].minAgentStakeTokens = '0';
+  data.configs[2].roleMinimums.agentTokens = '0.5';
+  data.configs[2].roleMinimums.validatorTokens = '0.25';
+  const report = p.buildPlaybook(data);
+  assert.equal(report.policyObservations.length, 4);
+  assert.equal(
+    report.configSnapshots.stakeManager.roleMinimums.validatorTokens,
+    '0.00025'
+  );
+  data.configs[2].roleMinimums = {
+    agentTokens: '0',
+    validatorTokens: '0',
+    platformTokens: '0',
+  };
+  assert.equal(p.buildPlaybook(data).policyObservations.length, 2);
+  delete data.configs[2].roleMinimums;
+  assert.equal(p.buildPlaybook(data).policyObservations.length, 2);
 });
 test('supply example is exact and preserves zero explicitly', () => {
   const report = p.buildPlaybook(input(), {

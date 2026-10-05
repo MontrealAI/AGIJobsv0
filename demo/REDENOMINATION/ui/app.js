@@ -171,6 +171,19 @@ function renderOwnerControls(playbook = {}, jobConfig = {}, stakeConfig = {}) {
           ? `${stakeConfig.employerSlashPct}% / ${stakeConfig.treasurySlashPct}%`
           : '—',
     },
+    {
+      label: 'Validator slashing reward',
+      value: formatPercent(stakeConfig?.validatorSlashRewardPct),
+    },
+    ...['operatorSlashPct', 'burnSlashPct']
+      .filter((key) => stakeConfig[key] !== undefined)
+      .map((key) => ({
+        label:
+          key === 'operatorSlashPct'
+            ? 'Operator slash share'
+            : 'Burn slash share',
+        value: formatPercent(stakeConfig[key]),
+      })),
   ];
 
   const jobEntries = [
@@ -257,6 +270,47 @@ function renderGovernance(governance = []) {
   }
   wrapper.appendChild(grid);
   return wrapper;
+}
+
+function renderWorkHandoff() {
+  const content = document.createElement('div');
+  const intro = document.createElement('p');
+  intro.textContent =
+    'Download the fixed synthetic task and source ledger for an operator-led Work session or an explicitly admitted OpenClaw worker. The task uses port 4174; it is independent of the currently displayed token plan.';
+  content.appendChild(intro);
+  const list = document.createElement('ul');
+  list.className = 'invariant-list';
+  for (const [file, label] of [
+    ['task.json', 'Task and acceptance criteria'],
+    ['ledger.json', 'Approved synthetic ledger (five accounts)'],
+    ['conversion.example.json', 'Example conversion — not worker evidence'],
+    ['dossier.example.md', 'Example dossier — not worker evidence'],
+  ]) {
+    const li = document.createElement('li');
+    const link = document.createElement('a');
+    link.href = `../computer-work/${file}`;
+    link.download = file;
+    link.textContent = label;
+    li.appendChild(link);
+    list.appendChild(li);
+  }
+  content.appendChild(list);
+  const review = document.createElement('p');
+  review.textContent =
+    'Ask for conversion.json and dossier.md. Save the exact UTF-8 files, verify the worker receipt and artifact hashes when using the adapter, then run this from the repository root with your saved paths:';
+  content.appendChild(review);
+  const command = document.createElement('code');
+  command.textContent =
+    'node demo/REDENOMINATION/computer-work/review.cjs /path/to/conversion.json /path/to/dossier.md';
+  content.appendChild(command);
+  const boundary = document.createElement('p');
+  boundary.className = 'muted';
+  boundary.textContent =
+    'The checker validates arithmetic and dossier structure. Independently review the dossier and actual effects. Downloading a task does not dispatch a worker, authorize signing or approve settlement.';
+  content.appendChild(boundary);
+  const card = createCard('Try the computer-work task', content);
+  card.id = 'computer-work-handoff';
+  return card;
 }
 
 function renderTokenCard(token) {
@@ -476,6 +530,7 @@ function render({ playbook, jobConfig, stakeConfig }) {
         )
       )
     );
+  appEl.appendChild(renderWorkHandoff());
 
   const tokenCard = renderTokenCard(playbook.token ?? {});
   if (tokenCard) appEl.appendChild(tokenCard);
@@ -492,6 +547,13 @@ function render({ playbook, jobConfig, stakeConfig }) {
     stakeConfig ?? {}
   );
   if (ownerCard) appEl.appendChild(ownerCard);
+
+  const observations = renderListCard(
+    'Policy observations — review required',
+    playbook.policyObservations,
+    'invariant-list'
+  );
+  if (observations) appEl.appendChild(observations);
 
   const timelineCard = renderTimeline(playbook.timeline);
   if (timelineCard) appEl.appendChild(timelineCard);
