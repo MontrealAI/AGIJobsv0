@@ -1,6 +1,4 @@
 const EXPORT_PATH = './export/latest.json';
-const JOB_CONFIG_PATH = '../config/job-registry-redenominated.json';
-const STAKE_CONFIG_PATH = '../config/stake-manager-redenominated.json';
 
 async function fetchJson(path, { optional = false } = {}) {
   const url = `${path}${path.includes('?') ? '&' : '?'}t=${Date.now()}`;
@@ -25,33 +23,15 @@ const governanceTemplate = document.getElementById('governance-template');
 const timelineTemplate = document.getElementById('timeline-template');
 const moduleTemplate = document.getElementById('module-template');
 
+let tokenSymbol = 'tokens';
 function formatNumber(value) {
   if (value === undefined || value === null || value === '') return '—';
-  const number = Number(value);
-  if (!Number.isFinite(number)) {
-    return String(value);
-  }
-  if (Math.abs(number) >= 1_000_000) {
-    return `${number.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
-  }
-  if (Math.abs(number) >= 1_000) {
-    return number.toLocaleString(undefined, { maximumFractionDigits: 2 });
-  }
-  return number.toLocaleString(undefined, {
-    maximumFractionDigits: number < 1 ? 6 : 2,
-  });
+  return String(value);
 }
-
 function formatTokens(value) {
-  if (value === undefined || value === null || value === '') {
-    return '—';
-  }
-  const number = Number(value);
-  if (Number.isFinite(number)) {
-    const maximumFractionDigits = number < 1 ? 6 : 2;
-    return `${number.toLocaleString(undefined, { maximumFractionDigits })} AGIΩ`;
-  }
-  return `${value} AGIΩ`;
+  return value === undefined || value === null || value === ''
+    ? '—'
+    : `${value} ${tokenSymbol}`;
 }
 
 function formatSeconds(value) {
@@ -63,10 +43,14 @@ function formatSeconds(value) {
     return String(value);
   }
   if (seconds >= 86400) {
-    return `${seconds.toLocaleString()} s (${(seconds / 86400).toFixed(2)} days)`;
+    return `${seconds.toLocaleString()} s (${(seconds / 86400).toFixed(
+      2
+    )} days)`;
   }
   if (seconds >= 3600) {
-    return `${seconds.toLocaleString()} s (${(seconds / 3600).toFixed(2)} hours)`;
+    return `${seconds.toLocaleString()} s (${(seconds / 3600).toFixed(
+      2
+    )} hours)`;
   }
   return `${seconds.toLocaleString()} s`;
 }
@@ -123,7 +107,13 @@ function collectOwnerCommands(playbook = {}) {
   const commands = new Set();
   (playbook.timeline ?? []).forEach((step) => {
     if (!Array.isArray(step?.commands)) return;
-    const highlighted = ['pause', 'resume', 'update-parameters', 'snapshot', 'migrate-ledgers'];
+    const highlighted = [
+      'pause',
+      'resume',
+      'update-parameters',
+      'snapshot',
+      'migrate-ledgers',
+    ];
     if (highlighted.includes(step.id)) {
       step.commands.forEach((command) => commands.add(command));
     }
@@ -145,12 +135,30 @@ function renderOwnerControls(playbook = {}, jobConfig = {}, stakeConfig = {}) {
   grid.className = 'owner-grid';
 
   const stakeEntries = [
-    { label: 'Global minimum stake', value: formatTokens(stakeConfig?.minStakeTokens) },
-    { label: 'Agent role minimum', value: formatTokens(stakeConfig?.roleMinimums?.agentTokens) },
-    { label: 'Validator role minimum', value: formatTokens(stakeConfig?.roleMinimums?.validatorTokens) },
-    { label: 'Platform role minimum', value: formatTokens(stakeConfig?.roleMinimums?.platformTokens) },
-    { label: 'Recommended minimum stake', value: formatTokens(stakeConfig?.stakeRecommendations?.minTokens) },
-    { label: 'Unbonding period', value: formatSeconds(stakeConfig?.unbondingPeriodSeconds) },
+    {
+      label: 'Global minimum stake',
+      value: formatTokens(stakeConfig?.minStakeTokens),
+    },
+    {
+      label: 'Agent role minimum',
+      value: formatTokens(stakeConfig?.roleMinimums?.agentTokens),
+    },
+    {
+      label: 'Validator role minimum',
+      value: formatTokens(stakeConfig?.roleMinimums?.validatorTokens),
+    },
+    {
+      label: 'Platform role minimum',
+      value: formatTokens(stakeConfig?.roleMinimums?.platformTokens),
+    },
+    {
+      label: 'Recommended minimum stake',
+      value: formatTokens(stakeConfig?.stakeRecommendations?.minTokens),
+    },
+    {
+      label: 'Unbonding period',
+      value: formatSeconds(stakeConfig?.unbondingPeriodSeconds),
+    },
     {
       label: 'Validator reward',
       value: formatPercent(stakeConfig?.validatorRewardPct),
@@ -158,17 +166,43 @@ function renderOwnerControls(playbook = {}, jobConfig = {}, stakeConfig = {}) {
     {
       label: 'Slashing (employer / treasury)',
       value:
-        stakeConfig?.employerSlashPct !== undefined && stakeConfig?.treasurySlashPct !== undefined
+        stakeConfig?.employerSlashPct !== undefined &&
+        stakeConfig?.treasurySlashPct !== undefined
           ? `${stakeConfig.employerSlashPct}% / ${stakeConfig.treasurySlashPct}%`
           : '—',
     },
+    {
+      label: 'Validator slashing reward',
+      value: formatPercent(stakeConfig?.validatorSlashRewardPct),
+    },
+    ...['operatorSlashPct', 'burnSlashPct']
+      .filter((key) => stakeConfig[key] !== undefined)
+      .map((key) => ({
+        label:
+          key === 'operatorSlashPct'
+            ? 'Operator slash share'
+            : 'Burn slash share',
+        value: formatPercent(stakeConfig[key]),
+      })),
   ];
 
   const jobEntries = [
-    { label: 'Job stake requirement', value: formatTokens(jobConfig?.jobStakeTokens) },
-    { label: 'Minimum agent stake', value: formatTokens(jobConfig?.minAgentStakeTokens) },
-    { label: 'Maximum job reward', value: formatTokens(jobConfig?.maxJobRewardTokens) },
-    { label: 'Job duration limit', value: formatSeconds(jobConfig?.jobDurationLimitSeconds) },
+    {
+      label: 'Job stake requirement',
+      value: formatTokens(jobConfig?.jobStakeTokens),
+    },
+    {
+      label: 'Minimum agent stake',
+      value: formatTokens(jobConfig?.minAgentStakeTokens),
+    },
+    {
+      label: 'Maximum job reward',
+      value: formatTokens(jobConfig?.maxJobRewardTokens),
+    },
+    {
+      label: 'Job duration limit',
+      value: formatSeconds(jobConfig?.jobDurationLimitSeconds),
+    },
     {
       label: 'Max active jobs per agent',
       value:
@@ -177,7 +211,10 @@ function renderOwnerControls(playbook = {}, jobConfig = {}, stakeConfig = {}) {
           : '—',
     },
     { label: 'Protocol fee', value: formatPercent(jobConfig?.feePct) },
-    { label: 'Validator reward', value: formatPercent(jobConfig?.validatorRewardPct) },
+    {
+      label: 'Validator reward',
+      value: formatPercent(jobConfig?.validatorRewardPct),
+    },
   ];
 
   grid.appendChild(createDefinitionCard('Stake guardrails', stakeEntries));
@@ -186,7 +223,8 @@ function renderOwnerControls(playbook = {}, jobConfig = {}, stakeConfig = {}) {
 
   const hint = document.createElement('p');
   hint.className = 'muted';
-  hint.textContent = 'Automation to apply updates, pause windows, and telemetry drills.';
+  hint.textContent =
+    'Read-only guidance and explicit local dry runs. No command is executed by this dashboard.';
   container.appendChild(hint);
 
   const commands = collectOwnerCommands(playbook);
@@ -234,10 +272,51 @@ function renderGovernance(governance = []) {
   return wrapper;
 }
 
+function renderWorkHandoff() {
+  const content = document.createElement('div');
+  const intro = document.createElement('p');
+  intro.textContent =
+    'Download the fixed synthetic task and source ledger for an operator-led Work session or an explicitly admitted OpenClaw worker. The task uses port 4174; it is independent of the currently displayed token plan.';
+  content.appendChild(intro);
+  const list = document.createElement('ul');
+  list.className = 'invariant-list';
+  for (const [file, label] of [
+    ['task.json', 'Task and acceptance criteria'],
+    ['ledger.json', 'Approved synthetic ledger (five accounts)'],
+    ['conversion.example.json', 'Example conversion — not worker evidence'],
+    ['dossier.example.md', 'Example dossier — not worker evidence'],
+  ]) {
+    const li = document.createElement('li');
+    const link = document.createElement('a');
+    link.href = `../computer-work/${file}`;
+    link.download = file;
+    link.textContent = label;
+    li.appendChild(link);
+    list.appendChild(li);
+  }
+  content.appendChild(list);
+  const review = document.createElement('p');
+  review.textContent =
+    'Ask for conversion.json and dossier.md. Save the exact UTF-8 files, verify the worker receipt and artifact hashes when using the adapter, then run this from the repository root with your saved paths:';
+  content.appendChild(review);
+  const command = document.createElement('code');
+  command.textContent =
+    'node demo/REDENOMINATION/computer-work/review.cjs /path/to/conversion.json /path/to/dossier.md';
+  content.appendChild(command);
+  const boundary = document.createElement('p');
+  boundary.className = 'muted';
+  boundary.textContent =
+    'The checker validates arithmetic and dossier structure. Independently review the dossier and actual effects. Downloading a task does not dispatch a worker, authorize signing or approve settlement.';
+  content.appendChild(boundary);
+  const card = createCard('Try the computer-work task', content);
+  card.id = 'computer-work-handoff';
+  return card;
+}
+
 function renderTokenCard(token) {
   const content = document.createElement('div');
   const description = document.createElement('p');
-  description.innerHTML = `Redenominate <strong>${token.currentSymbol}</strong> into <strong>${token.targetSymbol}</strong> with a <strong>1:${token.redenominationFactor}</strong> conversion.`;
+  description.textContent = `${token.redenominationFactor} ${token.currentSymbol} = 1 ${token.targetSymbol}. This is a proposed unit conversion.`;
   content.appendChild(description);
 
   const stats = document.createElement('dl');
@@ -254,6 +333,14 @@ function renderTokenCard(token) {
 
   addStat('Current decimals', String(token.currentDecimals));
   addStat('Target decimals', String(token.targetDecimals));
+  addStat('Rounding policy', token.rounding);
+  addStat('Base-unit formula', token.formula);
+  addStat('Remainders requiring allocation', String(token.dust?.length ?? 0));
+  for (const dust of token.dust ?? [])
+    addStat(
+      `Remainder: ${dust.field}`,
+      `${dust.remainderNumerator} / ${dust.remainderDenominator} target base units`
+    );
   if (token.supplyBefore) {
     addStat('Supply before', token.supplyBefore.formatted);
   }
@@ -286,7 +373,8 @@ function renderModule(title, summary, before, after) {
       if (typeof value === 'object' && value && 'formatted' in value) {
         dd.textContent = value.formatted;
       } else {
-        dd.textContent = typeof value === 'number' ? formatNumber(value) : String(value);
+        dd.textContent =
+          typeof value === 'number' ? formatNumber(value) : String(value);
       }
       list.appendChild(dt);
       list.appendChild(dd);
@@ -313,7 +401,8 @@ function renderTimeline(timeline = []) {
     const element = timelineTemplate.content.cloneNode(true);
     element.querySelector('.timeline-card__id').textContent = `${index + 1}`;
     element.querySelector('.timeline-card__title').textContent = step.title;
-    element.querySelector('.timeline-card__description').textContent = step.description;
+    element.querySelector('.timeline-card__description').textContent =
+      step.description;
 
     const checkpoints = element.querySelector('.timeline-card__checkpoints');
     checkpoints.innerHTML = '';
@@ -363,7 +452,7 @@ function renderModules(modules = {}) {
       name,
       details.summary,
       details.before,
-      details.after,
+      details.after
     );
     stack.appendChild(moduleFragment);
   }
@@ -373,15 +462,20 @@ function renderModules(modules = {}) {
 }
 
 async function loadPlaybook() {
-  const [playbook, jobConfig, stakeConfig] = await Promise.all([
-    fetchJson(EXPORT_PATH),
-    fetchJson(JOB_CONFIG_PATH, { optional: true }),
-    fetchJson(STAKE_CONFIG_PATH, { optional: true }),
-  ]);
-  return { playbook, jobConfig, stakeConfig };
+  const playbook = await fetchJson(EXPORT_PATH);
+  if (playbook.meta?.version !== '2.0.0' || !playbook.configSnapshots)
+    throw new Error(
+      'Unsupported plan. Run npm run demo:redenomination:export, then reload.'
+    );
+  return {
+    playbook,
+    jobConfig: playbook.configSnapshots.jobRegistry,
+    stakeConfig: playbook.configSnapshots.stakeManager,
+  };
 }
 
 function render({ playbook, jobConfig, stakeConfig }) {
+  tokenSymbol = playbook.token.targetSymbol;
   appEl.innerHTML = '';
 
   const banner = document.createElement('section');
@@ -402,12 +496,41 @@ function render({ playbook, jobConfig, stakeConfig }) {
     metaList.appendChild(dd);
   };
 
-  addMeta('Generated at', new Date(playbook.meta?.generatedAt ?? Date.now()).toLocaleString());
+  addMeta(
+    'Generated at',
+    new Date(playbook.meta?.generatedAt ?? Date.now()).toLocaleString()
+  );
   addMeta('Generator', playbook.meta?.generator ?? 'unknown');
-  addMeta('Version', playbook.meta?.version ?? '1.0.0');
+  addMeta('Version', playbook.meta.version);
+  addMeta(
+    'Execution status',
+    'Planning only · no provider call · no transaction · production approval required'
+  );
+  addMeta('Inputs', playbook.meta.source);
+  for (const input of playbook.meta.inputs ?? [])
+    addMeta(input.path, `SHA-256 ${input.sha256}`);
 
   banner.appendChild(metaList);
   appEl.appendChild(banner);
+
+  const work = playbook.computerWork;
+  if (work)
+    appEl.appendChild(
+      createCard(
+        'Computer-work mission',
+        createList(
+          [
+            work.task,
+            ...work.acceptance,
+            ...work.surfaces,
+            '$40 trillion/year: ' + work.marketBasis,
+            work.settlement,
+          ],
+          'invariant-list'
+        )
+      )
+    );
+  appEl.appendChild(renderWorkHandoff());
 
   const tokenCard = renderTokenCard(playbook.token ?? {});
   if (tokenCard) appEl.appendChild(tokenCard);
@@ -418,27 +541,47 @@ function render({ playbook, jobConfig, stakeConfig }) {
   const modulesCard = renderModules(playbook.modules ?? {});
   if (modulesCard) appEl.appendChild(modulesCard);
 
-  const ownerCard = renderOwnerControls(playbook, jobConfig ?? {}, stakeConfig ?? {});
+  const ownerCard = renderOwnerControls(
+    playbook,
+    jobConfig ?? {},
+    stakeConfig ?? {}
+  );
   if (ownerCard) appEl.appendChild(ownerCard);
+
+  const observations = renderListCard(
+    'Policy observations — review required',
+    playbook.policyObservations,
+    'invariant-list'
+  );
+  if (observations) appEl.appendChild(observations);
 
   const timelineCard = renderTimeline(playbook.timeline);
   if (timelineCard) appEl.appendChild(timelineCard);
 
-  const invariantsCard = renderListCard('Critical invariants', playbook.invariants, 'invariant-list');
+  const invariantsCard = renderListCard(
+    'Critical invariants',
+    playbook.invariants,
+    'invariant-list'
+  );
   if (invariantsCard) appEl.appendChild(invariantsCard);
 
   const verificationCard = renderListCard(
     'Verification commands',
     playbook.verification,
-    'verification-list',
+    'verification-list'
   );
   if (verificationCard) appEl.appendChild(verificationCard);
 
-  const referencesCard = renderListCard('Reference material', playbook.references, 'verification-list');
+  const referencesCard = renderListCard(
+    'Reference material',
+    playbook.references,
+    'verification-list'
+  );
   if (referencesCard) appEl.appendChild(referencesCard);
 }
 
 async function refreshPlaybook() {
+  refreshButton.disabled = true;
   appEl.innerHTML = '';
   const loading = document.createElement('section');
   loading.className = 'card';
@@ -450,10 +593,13 @@ async function refreshPlaybook() {
   } catch (error) {
     const card = document.createElement('section');
     card.className = 'card';
-    card.innerHTML = `<h2>Unable to load playbook</h2><p>${
+    card.setAttribute('role', 'alert');
+    card.textContent = `Unable to load playbook: ${
       error instanceof Error ? error.message : 'Unknown error'
-    }</p>`;
-    appEl.appendChild(card);
+    }`;
+    appEl.replaceChildren(card);
+  } finally {
+    refreshButton.disabled = false;
   }
 }
 
@@ -462,7 +608,16 @@ refreshButton?.addEventListener('click', () => {
 });
 
 document.addEventListener('keydown', (event) => {
-  if (event.key.toLowerCase() === 'r') {
+  if (
+    event.key.toLowerCase() === 'r' &&
+    !event.ctrlKey &&
+    !event.metaKey &&
+    !event.altKey &&
+    !event.target.closest(
+      'input, textarea, select, [contenteditable="true"]'
+    ) &&
+    !refreshButton.disabled
+  ) {
     event.preventDefault();
     refreshPlaybook();
   }

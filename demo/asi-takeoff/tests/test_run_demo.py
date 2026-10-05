@@ -41,3 +41,34 @@ def test_validate_files_accepts_existing(tmp_path: Path) -> None:
     present.write_text("{}")
     result = run_demo._validate_files([present])
     assert result == [present]
+
+
+def test_generator_inputs_are_preserved_and_directories_rejected(tmp_path: Path) -> None:
+    module = load_module()
+    present = tmp_path / "asset.json"
+    present.write_text("{}")
+    assert module._validate_files(p for p in [present]) == [present]
+    with pytest.raises(SystemExit):
+        module._validate_files([tmp_path])
+
+
+@pytest.mark.parametrize("network,scope", [("mainnet", "asi-takeoff"), ("localhost", "../escape"), ("localhost", "..")])
+def test_local_launcher_rejects_misleading_network_and_scope(network, scope) -> None:
+    with pytest.raises(ValueError):
+        load_module().DemoConfig(network=network, report_scope=scope).with_defaults()
+
+
+def test_relative_overrides_are_absolute_before_shell_changes_directory(tmp_path: Path, monkeypatch) -> None:
+    module = load_module()
+    monkeypatch.chdir(tmp_path)
+    env = module._build_env(module.DemoConfig(mission_config=Path("mission.json"), thermostat_config=Path("thermostat.json"), deploy_output=Path("deploy.json")))
+    assert env["AURORA_MISSION_CONFIG"] == str(tmp_path / "mission.json")
+    assert env["AURORA_DEPLOY_OUTPUT"] == str(tmp_path / "deploy.json")
+
+
+def test_missing_command_has_nonzero_exit(monkeypatch) -> None:
+    module = load_module()
+    monkeypatch.setattr(module.shutil, "which", lambda command: None)
+    with pytest.raises(SystemExit) as error:
+        module.check()
+    assert error.value.code == 1

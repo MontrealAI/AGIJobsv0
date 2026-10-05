@@ -1,18 +1,45 @@
 {
   "minStakeTokens": "0.1",
+  "employerSlashPct": 50,
+  "treasurySlashPct": 50,
+  "feePct": 5,
+  "burnPct": 1,
+  "validatorRewardPct": 10,
+  "validatorSlashRewardPct": 0,
+  "treasury": "0x0000000000000000000000000000000000000000",
+  "treasuryAllowlist": {},
+  "unbondingPeriodSeconds": 604800,
+  "maxStakePerAddressTokens": "0.0",
+  "stakeRecommendations": {
+    "minTokens": "0.1",
+    "maxTokens": "0.0"
+  },
   "roleMinimums": {
     "agentTokens": "0.1",
     "validatorTokens": "1.0",
     "platformTokens": "0.0"
   },
-  "stakeRecommendations": {
-    "minTokens": "0.1",
-    "maxTokens": "0.0"
+  "autoStake": {
+    "enabled": false,
+    "threshold": 10,
+    "increasePct": 20,
+    "decreasePct": 10,
+    "windowSeconds": 604800,
+    "floorTokens": "0.1",
+    "ceilingTokens": "0.0",
+    "temperatureThreshold": 0,
+    "hamiltonianThreshold": 0,
+    "disputeWeight": 1,
+    "temperatureWeight": 1,
+    "hamiltonianWeight": 1
   },
-  "feePct": 5,
-  "burnPct": 1,
-  "validatorRewardPct": 10,
-  "employerSlashPct": 50,
-  "treasurySlashPct": 50,
-  "unbondingPeriodSeconds": 604800
+  "pauser": "0x0000000000000000000000000000000000000000",
+  "jobRegistry": "0x0000000000000000000000000000000000000000",
+  "disputeModule": "0x0000000000000000000000000000000000000000",
+  "validationModule": "0x0000000000000000000000000000000000000000",
+  "thermostat": "0x0000000000000000000000000000000000000000",
+  "hamiltonianFeed": "0x0000000000000000000000000000000000000000",
+  "feePool": "0x0000000000000000000000000000000000000000",
+  "maxAGITypes": 50,
+  "maxTotalPayoutPct": 200
 }

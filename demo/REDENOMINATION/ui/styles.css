@@ -71,7 +71,11 @@ body {
 }
 
 button#refresh-button {
-  background: linear-gradient(135deg, rgba(72, 247, 207, 0.85), rgba(47, 205, 255, 0.85));
+  background: linear-gradient(
+    135deg,
+    rgba(72, 247, 207, 0.85),
+    rgba(47, 205, 255, 0.85)
+  );
   color: #020307;
   border: none;
   border-radius: 999px;
@@ -126,7 +130,7 @@ main {
 
 .governance-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
   gap: 1rem;
 }
 
@@ -137,7 +141,7 @@ main {
 
 .owner-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
   gap: 1rem;
 }
 
@@ -315,4 +319,40 @@ main {
   main {
     padding: 0 1rem 3rem;
   }
+}
+
+/* Exact base units and source hashes must remain readable on small screens. */
+.card,
+code,
+dd {
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+:focus-visible {
+  outline: 3px solid #9df6d2;
+  outline-offset: 4px;
+}
+a {
+  color: #9df6d2;
+}
+@media (max-width: 640px) {
+  .module-card__list,
+  .owner-definition-list {
+    grid-template-columns: 1fr;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  * {
+    scroll-behavior: auto !important;
+    transition: none !important;
+  }
+}
+
+body {
+  overflow-wrap: anywhere;
+}
+main > *,
+.owner-grid > *,
+.governance-grid > * {
+  min-width: 0;
 }

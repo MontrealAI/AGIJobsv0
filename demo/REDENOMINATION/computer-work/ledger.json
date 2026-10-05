@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "dataClass": "synthetic",
+  "currentDecimals": 18,
+  "targetDecimals": 6,
+  "factor": "1000",
+  "rounding": "floor",
+  "accounts": [
+    { "id": "alice", "sourceRaw": "1000000000000000000000" },
+    { "id": "bob", "sourceRaw": "2500000000000000000000" },
+    { "id": "pending-escrow", "sourceRaw": "1000600000000000000" },
+    { "id": "pending-withdrawal", "sourceRaw": "900600000000000000" },
+    { "id": "zero-balance", "sourceRaw": "0" }
+  ]
+}
