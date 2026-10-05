@@ -298,8 +298,7 @@ async function main(): Promise<void> {
     throw new Error(
       'ASI_TAKEOFF_REPORT_ROOT must be a subdirectory of reports/'
     );
-  const plan = await loadPlan();
-  await ensureWorkspace();
+  await fs.mkdir(REPORT_ROOT, { recursive: true });
   await fs.writeFile(
     path.join(REPORT_ROOT, 'run-status.json'),
     JSON.stringify(
@@ -315,6 +314,9 @@ async function main(): Promise<void> {
       2
     ) + '\n'
   );
+  // Invalidate previous completion before any fallible plan or bundle setup.
+  await ensureWorkspace();
+  const plan = await loadPlan();
 
   if (SKIP_FLAGSHIP_ONCHAIN) {
     process.stdout.write(

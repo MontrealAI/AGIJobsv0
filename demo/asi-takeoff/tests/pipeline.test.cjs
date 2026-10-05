@@ -140,6 +140,52 @@ test('offline planetary pipeline never reports performed governance checks', (t)
     'offline-fixture'
   );
 });
+for (const [label, contents] of [
+  ['missing', undefined],
+  ['malformed', '{'],
+  ['invalid', '{}'],
+]) {
+  test(`${label} plans invalidate the prior completed run before failing`, (t) => {
+    const dir = fs.mkdtempSync(
+      path.join(ROOT, 'reports', 'takeoff-regression-')
+    );
+    t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+    const statusPath = path.join(dir, 'run-status.json');
+    fs.writeFileSync(
+      statusPath,
+      JSON.stringify({ status: 'completed', completedAt: 'prior run' })
+    );
+    const planPath = path.join(dir, 'new-plan.json');
+    if (contents !== undefined) fs.writeFileSync(planPath, contents);
+    const run = spawnSync(
+      process.execPath,
+      [
+        '-r',
+        'ts-node/register',
+        path.join(ROOT, 'scripts/v2/asiTakeoffDemo.ts'),
+      ],
+      {
+        cwd: ROOT,
+        env: {
+          ...process.env,
+          AGIJOBS_FLAGSHIP_SKIP_ONCHAIN: 'true',
+          ASI_TAKEOFF_PLAN_PATH: planPath,
+          ASI_TAKEOFF_REPORT_ROOT: dir,
+        },
+        encoding: 'utf8',
+        timeout: 30000,
+      }
+    );
+    assert.equal(run.status, 1, run.stderr);
+    assert.match(run.stderr, /ASI take-off demo failed/);
+    const status = JSON.parse(fs.readFileSync(statusPath));
+    assert.equal(status.status, 'running');
+    assert.equal(status.planPath, path.relative(ROOT, planPath));
+    assert.equal(status.completedAt, undefined);
+    assert.ok(Number.isFinite(Date.parse(status.startedAt)));
+    assert.equal(fs.existsSync(path.join(dir, 'dry-run.json')), false);
+  });
+}
 test('live adapter schema accepts the exact task without dispatch', () => {
   const {
     parseComputerWorkTask,
