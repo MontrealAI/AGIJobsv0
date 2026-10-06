@@ -28,6 +28,11 @@ function parse(argv, env = process.env) {
 function createServer(directory, port) {
   const verified = verifyReport(directory),
     reportBytes = fs.readFileSync(path.join(directory, 'report.json'));
+  const origin = `http://127.0.0.1:${port}`;
+  if (verified.report.workerOrigin !== origin)
+    throw new Error(
+      `Report worker origin is ${verified.report.workerOrigin}; use that dashboard port or create a new report for ${origin}`
+    );
   const manifest = new Map(verified.report.artifacts.map((a) => [a.path, a]));
   const staticFiles = new Map([
     ['/', ['index.html', 'text/html']],

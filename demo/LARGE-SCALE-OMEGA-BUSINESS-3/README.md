@@ -15,6 +15,8 @@ npm run demo:omega-business-3:ui
 
 Open **http://127.0.0.1:4186**. Choose a nation, inspect its inputs and download its task, candidate, dossier and checker verdict. No dependency installation, API key or wallet is needed for these two commands. Press **Ctrl+C** to stop the dashboard. It starts a fresh rehearsal unless you supply `--report /absolute/path/to/run`.
 
+An existing report must be served on the port recorded in its `workerOrigin`; the server rejects a mismatch because its downloaded tasks are bound to that origin. To use another port, start a new rehearsal with `--port` and keep the previous evidence intact.
+
 New here? Follow the [five-minute walkthrough](ui/non-technical-walkthrough.md). Configuring real workers or existing applications? Use the [operator playbook](ui/operator-playbook.md) and [computer-work guide](computer-work/README.md).
 
 ## Three missions, tangible deliverables

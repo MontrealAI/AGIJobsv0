@@ -222,6 +222,8 @@ async function run(options, dependencies = {}) {
     });
   }
   save('scenario.json', loaded.bytes);
+  const scenarioSnapshot = path.join(out, 'scenario.json');
+  fs.chmodSync(scenarioSnapshot, 0o400);
   save('workloads.json', workloadBytes);
   const capacity =
     options.reviewCapacity ?? scenario.businessPolicy.reviewCapacityMinutes;
@@ -313,7 +315,7 @@ async function run(options, dependencies = {}) {
           cwd: s.ROOT,
           env: {
             ...process.env,
-            OMEGA_SCENARIO_FILE: options.scenario,
+            OMEGA_SCENARIO_FILE: scenarioSnapshot,
             OMEGA_CONTRACT_REPORT: path.join(out, 'contract-receipts.json'),
             HARDHAT_NETWORK: 'hardhat',
             AGJ_DEMO_BOOTSTRAP_HARDHAT: '0',

@@ -314,6 +314,43 @@ test('successful phases must actually create their declared output', async (t) =
   assert.match(result.report.phases[0].error, /ENOENT|Missing/);
   verifyReport(result.out);
 });
+test('full phases read the saved scenario when the original changes', async (t) => {
+  const dir = temp(t),
+    input = path.join(dir, 'mutable-scenario.json');
+  fs.writeFileSync(input, s.json(scenario));
+  const opts = options(t, ['--full', '--scenario', input]);
+  let phases = 0;
+  const result = await run(opts, {
+    runPhase: async (def, context) => {
+      phases++;
+      fs.writeFileSync(input, '{"changed":"after initial review"}');
+      assert.equal(
+        context.env.OMEGA_SCENARIO_FILE,
+        path.join(opts.out, 'scenario.json')
+      );
+      assert.deepEqual(
+        JSON.parse(fs.readFileSync(context.env.OMEGA_SCENARIO_FILE)),
+        scenario
+      );
+      if (def.id === 'omega-simulation')
+        return {
+          id: def.id,
+          label: def.label,
+          status: 'failed',
+          exitCode: 2,
+          error: 'Fixture stops before contract execution',
+        };
+      fs.writeFileSync(
+        path.join(opts.out, def.file),
+        def.file.endsWith('.json') ? '{}' : 'Fixture owner report'
+      );
+      return { id: def.id, label: def.label, status: 'success', exitCode: 0 };
+    },
+  });
+  assert.equal(phases, 5);
+  assert.equal(result.exitCode, 1);
+  verifyReport(result.out);
+});
 test('external phases report spawn errors and timeouts', async () => {
   const missing = await runPhase(
     { id: 'missing', command: '/omega-command-does-not-exist', args: [] },
@@ -386,11 +423,17 @@ function request(port, url, headers = {}, method = 'GET') {
   });
 }
 test('dashboard serves only verified artifacts and loopback read requests', async (t) => {
-  const result = await run(options(t));
   const probe = http.createServer();
   await new Promise((r) => probe.listen(0, '127.0.0.1', r));
   const port = probe.address().port;
   await new Promise((r) => probe.close(r));
+  const result = await run(
+    options(t, ['--origin', `http://127.0.0.1:${port}`])
+  );
+  assert.throws(
+    () => createServer(result.out, port === 4186 ? 4187 : 4186),
+    /Report worker origin/
+  );
   const server = createServer(result.out, port);
   await new Promise((r) => server.listen(port, '127.0.0.1', r));
   t.after(() => new Promise((r) => server.close(r)));
