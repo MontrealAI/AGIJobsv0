@@ -11,7 +11,11 @@
       "specCid": "bafybeiaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
       "resultCid": "bafybeibbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
       "rewardTokens": "150000",
-      "deadlineHours": 72
+      "deadlineHours": 72,
+      "budgetUsdc": "5000",
+      "modeledWorkerCostUsdc": "350",
+      "estimatedReviewMinutes": 10,
+      "agentEns": "worker01.agent.agi.eth"
     },
     {
       "name": "Arctic Quantum Accord",
@@ -21,7 +25,11 @@
       "specCid": "bafybeiccccccccccccccccccccccccccccccccccccccccccccccccccccc",
       "resultCid": "bafybeiddddddddddddddddddddddddddddddddddddddddddddddddddddd",
       "rewardTokens": "132500",
-      "deadlineHours": 64
+      "deadlineHours": 64,
+      "budgetUsdc": "7500",
+      "modeledWorkerCostUsdc": "480",
+      "estimatedReviewMinutes": 12,
+      "agentEns": "worker02.agent.agi.eth"
     },
     {
       "name": "Celestial Silk Road Coalition",
@@ -31,7 +39,11 @@
       "specCid": "bafybeieeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
       "resultCid": "bafybeiffffffffffffffffffffffffffffffffffffffffffffffffffff",
       "rewardTokens": "188000",
-      "deadlineHours": 96
+      "deadlineHours": 96,
+      "budgetUsdc": "10000",
+      "modeledWorkerCostUsdc": "620",
+      "estimatedReviewMinutes": 15,
+      "agentEns": "worker03.agent.agi.eth"
     }
   ],
   "validators": [
@@ -39,13 +51,15 @@
       "name": "Horizon Arbitration Collective",
       "wallet": "horizon",
       "ensSubdomain": "validators.horizon",
-      "mission": "Curate validator proofs for cosmological asset routing"
+      "mission": "Curate validator proofs for cosmological asset routing",
+      "validatorEns": "validator01.club.agi.eth"
     },
     {
       "name": "Atlas Integrity Guild",
       "wallet": "atlas",
       "ensSubdomain": "validators.atlas",
-      "mission": "Guarantee cross-domain energy balance sheets"
+      "mission": "Guarantee cross-domain energy balance sheets",
+      "validatorEns": "validator02.club.agi.eth"
     }
   ],
   "treasury": {
@@ -53,5 +67,18 @@
     "wallet": "omega-treasury",
     "ensSubdomain": "treasury",
     "mission": "Recycle burns and fees into sovereign dividend schedules"
-  }
+  },
+  "schemaVersion": 2,
+  "mode": "synthetic",
+  "marketAnnualUsd": "40000000000000",
+  "marketBasis": "Project vision planning assumption; not a verified TAM, revenue forecast or reliability claim",
+  "businessPolicy": {
+    "budgetCurrency": "USDC",
+    "budgetDecimals": 6,
+    "platformFeeBps": 250,
+    "reviewCapacityMinutes": 40,
+    "reviewRateUsdcPerHour": "90",
+    "maxReviewerMinutesPerJob": 15
+  },
+  "referenceStatus": "Original specCid/resultCid values are preserved historical placeholders, not published or verified evidence. Runs produce real content hashes and offline CIDs for their actual files."
 }

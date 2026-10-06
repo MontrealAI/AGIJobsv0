@@ -2,7 +2,10 @@ import { expect } from 'chai';
 import fs from 'fs';
 import path from 'path';
 
-import { validateScenario, type OmegaScenario } from '../../demo/LARGE-SCALE-OMEGA-BUSINESS-3/orchestrator';
+import {
+  validateScenario,
+  type OmegaScenario,
+} from '../../demo/LARGE-SCALE-OMEGA-BUSINESS-3/orchestrator';
 
 describe('Omega Business scenario configuration', function () {
   it('accepts the shipped scenario file', function () {
@@ -15,7 +18,9 @@ describe('Omega Business scenario configuration', function () {
       'config',
       'omega.simulation.json'
     );
-    const scenario = JSON.parse(fs.readFileSync(scenarioPath, 'utf8')) as OmegaScenario;
+    const scenario = JSON.parse(
+      fs.readFileSync(scenarioPath, 'utf8')
+    ) as OmegaScenario;
 
     expect(() => validateScenario(scenario)).not.to.throw();
   });
@@ -30,11 +35,58 @@ describe('Omega Business scenario configuration', function () {
       'config',
       'omega.simulation.json'
     );
-    const scenario = JSON.parse(fs.readFileSync(scenarioPath, 'utf8')) as OmegaScenario;
+    const scenario = JSON.parse(
+      fs.readFileSync(scenarioPath, 'utf8')
+    ) as OmegaScenario;
     const invalid = JSON.parse(JSON.stringify(scenario)) as OmegaScenario;
 
     invalid.validators[0].wallet = invalid.nations[0].wallet;
 
-    expect(() => validateScenario(invalid)).to.throw('Duplicate validator wallet label');
+    expect(() => validateScenario(invalid)).to.throw(
+      'Duplicate validator wallet label'
+    );
+  });
+  it('exports tasks accepted by the real computer-work adapter schema', function () {
+    const {
+      taskFor,
+    } = require('../../demo/LARGE-SCALE-OMEGA-BUSINESS-3/lib/mission.cjs');
+    const scenario = require('../../demo/LARGE-SCALE-OMEGA-BUSINESS-3/config/omega.simulation.json');
+    const workloads = require('../../demo/LARGE-SCALE-OMEGA-BUSINESS-3/computer-work/workloads.json');
+    const {
+      parseComputerWorkTask,
+      computerTaskDigest,
+    } = require('../../apps/orchestrator/computerWork');
+    for (const nation of scenario.nations) {
+      const task = taskFor(nation, workloads[nation.wallet]);
+      expect(parseComputerWorkTask(task).workerProfile).to.equal('omega');
+      expect(computerTaskDigest(task)).to.match(/^[0-9a-f]{64}$/);
+      const changed = { ...task, goal: task.goal + ' changed' };
+      expect(computerTaskDigest(changed)).not.to.equal(
+        computerTaskDigest(task)
+      );
+    }
+  });
+  it('checks the complete handoff text at the real adapter input boundary', function () {
+    const {
+      taskFor,
+    } = require('../../demo/LARGE-SCALE-OMEGA-BUSINESS-3/lib/mission.cjs');
+    const scenario = require('../../demo/LARGE-SCALE-OMEGA-BUSINESS-3/config/omega.simulation.json');
+    const workloads = require('../../demo/LARGE-SCALE-OMEGA-BUSINESS-3/computer-work/workloads.json');
+    const {
+      parseComputerWorkTask,
+    } = require('../../apps/orchestrator/computerWork');
+    const input = { ...structuredClone(workloads.solaris), padding: '' };
+    input.padding = 'x'.repeat(
+      32000 - taskFor(scenario.nations[0], input).inputText.length
+    );
+    const task = taskFor(scenario.nations[0], input);
+    expect(parseComputerWorkTask(task).inputText.length).to.equal(32000);
+    expect(() =>
+      parseComputerWorkTask({ ...task, inputText: task.inputText + 'x' })
+    ).to.throw('Invalid input text');
+    input.padding += 'x';
+    expect(() => taskFor(scenario.nations[0], input)).to.throw(
+      'input text exceeds 32000'
+    );
   });
 });

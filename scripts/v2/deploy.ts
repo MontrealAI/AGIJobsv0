@@ -3,8 +3,8 @@ import {
   readImplementationAddresses,
 } from '../deploy/implementations.cjs';
 import { ethers, run, network, artifacts } from 'hardhat';
-import { writeFileSync } from 'fs';
-import { join } from 'path';
+import { writeFileSync, lstatSync } from 'fs';
+import { join, isAbsolute } from 'path';
 import { AGIALPHA, AGIALPHA_DECIMALS } from '../constants';
 import { loadEnsConfig } from '../config';
 
@@ -59,6 +59,18 @@ async function main() {
     }
     return undefined;
   };
+
+  const addressesOutput = getArg('addressesOutput');
+  if (addressesOutput !== undefined) {
+    if (typeof addressesOutput !== 'string' || !isAbsolute(addressesOutput))
+      throw new Error('Explicit addressbook output must be an absolute path');
+    try {
+      lstatSync(addressesOutput);
+      throw new Error('Explicit addressbook output already exists');
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+    }
+  }
 
   const governanceArg = getArg('governance');
   const governance =
@@ -501,8 +513,13 @@ async function main() {
   };
 
   writeFileSync(
-    join(__dirname, '..', '..', 'docs', 'deployment-addresses.json'),
-    JSON.stringify(addresses, null, 2)
+    typeof addressesOutput === 'string'
+      ? addressesOutput
+      : join(__dirname, '..', '..', 'docs', 'deployment-addresses.json'),
+    JSON.stringify(addresses, null, 2),
+    typeof addressesOutput === 'string'
+      ? { flag: 'wx', mode: 0o400 }
+      : undefined
   );
 
   await verify(await stake.getAddress(), [

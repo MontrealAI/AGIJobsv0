@@ -5,6 +5,13 @@ import readline from 'readline';
 
 import parseDuration from '../utils/parseDuration';
 import { ethers } from 'ethers';
+import { loadTokenConfig } from '../config';
+const {
+  reserveDeploymentOutput,
+  prepareDeploymentSource,
+  withAddressbookSnapshot,
+} = require('./lib/reserved-output.cjs');
+const { validateOneclickConfig } = require('./lib/oneclick-config.cjs');
 
 interface EconConfig {
   feePct?: number;
@@ -58,7 +65,10 @@ function parseArgs(): Args {
 function ensureAddress(
   value: string | undefined,
   label: string,
-  { allowZero = false, optional = false }: { allowZero?: boolean; optional?: boolean } = {},
+  {
+    allowZero = false,
+    optional = false,
+  }: { allowZero?: boolean; optional?: boolean } = {}
 ): string | undefined {
   if (value === undefined || value === null || value === '') {
     if (optional) {
@@ -114,7 +124,10 @@ async function confirm(message: string, autoYes: boolean): Promise<boolean> {
   if (autoYes) {
     return true;
   }
-  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
   const answer: string = await new Promise((resolve) => {
     rl.question(`${message} [y/N] `, resolve);
   });
@@ -122,7 +135,10 @@ async function confirm(message: string, autoYes: boolean): Promise<boolean> {
   return ['y', 'yes'].includes(answer.trim().toLowerCase());
 }
 
-async function runHardhat(args: string[], env: NodeJS.ProcessEnv): Promise<void> {
+async function runHardhat(
+  args: string[],
+  env: NodeJS.ProcessEnv
+): Promise<void> {
   const child = spawn('npx', ['hardhat', ...args], {
     stdio: 'inherit',
     env: { ...process.env, ...env },
@@ -139,12 +155,21 @@ async function runHardhat(args: string[], env: NodeJS.ProcessEnv): Promise<void>
   });
 }
 
-async function main() {
-  const args = parseArgs();
-  const configPath = (args.config as string) ?? path.join('deployment-config', 'deployer.sample.json');
+export async function deployOneClick(
+  args: Args,
+  consumeAddresses?: (snapshot: string) => Promise<void>
+) {
+  const configPath =
+    (args.config as string) ??
+    path.join('deployment-config', 'deployer.sample.json');
   const config = await loadConfig(configPath);
 
-  const network = (args.network as string) ?? config.network ?? process.env.HARDHAT_NETWORK ?? 'sepolia';
+  const network =
+    (args.network as string) ??
+    config.network ??
+    process.env.HARDHAT_NETWORK ??
+    'sepolia';
+  validateOneclickConfig(config, loadTokenConfig({ network }).config.decimals);
   const configuredGovernance = ensureAddress(config.governance, 'governance', {
     optional: true,
     allowZero: true,
@@ -156,7 +181,10 @@ async function main() {
 
   const econ = config.econ || {};
   const treasuryAddress =
-    ensureAddress(econ.treasury, 'treasury', { optional: true, allowZero: true }) ?? ethers.ZeroAddress;
+    ensureAddress(econ.treasury, 'treasury', {
+      optional: true,
+      allowZero: true,
+    }) ?? ethers.ZeroAddress;
   const feePct = econ.feePct ?? 5;
   const burnPct = econ.burnPct ?? 0;
   const minStake = formatToken(econ.minStake);
@@ -182,7 +210,10 @@ async function main() {
     console.log(`  • ${label.padEnd(24)} ${value}`);
   }
 
-  const proceed = await confirm('Proceed with contract deployment?', Boolean(args.yes));
+  const proceed = await confirm(
+    'Proceed with contract deployment?',
+    Boolean(args.yes)
+  );
   if (!proceed) {
     console.log('Aborted by user');
     return;
@@ -194,54 +225,84 @@ async function main() {
     ONECLICK_BURN_PCT: String(burnPct),
     ONECLICK_MIN_STAKE: minStake,
     ONECLICK_MIN_PLATFORM_STAKE: minPlatformStake,
+    ONECLICK_APPEAL_FEE: appealFee,
+    ONECLICK_DISPUTE_WINDOW: disputeWindow.toString(),
   };
 
   if (governance) {
     deployEnv.ONECLICK_GOVERNANCE = governance;
   }
 
-  if (appealFee && appealFee !== '0') {
-    deployEnv.ONECLICK_APPEAL_FEE = appealFee;
-  }
-  if (disputeWindow > 0) {
-    deployEnv.ONECLICK_DISPUTE_WINDOW = disputeWindow.toString();
-  }
-
-  await runHardhat(
-    [
-      'run',
-      '--no-compile',
-      '--network',
-      network,
-      path.join('scripts', 'v2', 'deploy.ts'),
-    ],
-    deployEnv,
-  );
-
-  const addressesPath = path.join('docs', 'deployment-addresses.json');
-  const outputPath = config.output ? path.resolve(config.output) : path.resolve('deployment-config', 'latest-deployment.json');
+  const outputPath = config.output
+    ? path.resolve(config.output)
+    : path.resolve('deployment-config', 'latest-deployment.json');
   await fs.mkdir(path.dirname(outputPath), { recursive: true });
-  await fs.copyFile(addressesPath, outputPath);
-  console.log(`ℹ️  Deployment addresses copied to ${outputPath}`);
+  // Mainnet must reserve fresh evidence before sending any transaction. A
+  // competing creation during interactive confirmation fails here, not later.
+  const reservedOutput =
+    network === 'mainnet' ? reserveDeploymentOutput(outputPath) : undefined;
+  let source: ReturnType<typeof prepareDeploymentSource>;
+  try {
+    source = prepareDeploymentSource(outputPath);
+    deployEnv.ONECLICK_ADDRESSES_OUTPUT = source.file;
+    await runHardhat(
+      [
+        'run',
+        '--no-compile',
+        '--network',
+        network,
+        path.join('scripts', 'v2', 'deploy.ts'),
+      ],
+      deployEnv
+    );
 
-  await runHardhat(
-    [
-      'run',
-      '--no-compile',
-      '--network',
-      network,
-      path.join('scripts', 'v2', 'apply-secure-defaults.ts'),
-    ],
-    {
-      ONECLICK_CONFIG_PATH: path.resolve(configPath),
-      ONECLICK_ADDRESSES_PATH: addressesPath,
-    },
+    const bytes = reservedOutput
+      ? reservedOutput.copyFrom(source.file)
+      : await fs.readFile(source.file);
+    if (!reservedOutput) await fs.writeFile(outputPath, bytes);
+    console.log(`ℹ️  Deployment addresses copied to ${outputPath}`);
+
+    await withAddressbookSnapshot(bytes, async (snapshot: string) => {
+      reservedOutput?.verify();
+      await runHardhat(
+        [
+          'run',
+          '--no-compile',
+          '--network',
+          network,
+          path.join('scripts', 'v2', 'apply-secure-defaults.ts'),
+        ],
+        {
+          ONECLICK_CONFIG: path.resolve(configPath),
+          ONECLICK_ADDRESSES: snapshot,
+        }
+      );
+      reservedOutput?.verify();
+      if (consumeAddresses) await consumeAddresses(snapshot);
+      reservedOutput?.verify();
+    });
+    source.complete();
+  } catch (error) {
+    if (source)
+      throw new Error(
+        `Deployment failed (${
+          error instanceof Error ? error.message : String(error)
+        }); this run's addressbook source is retained at ${
+          source.file
+        }. Reconcile receipts before retrying.`
+      );
+    throw error;
+  } finally {
+    reservedOutput?.close();
+  }
+
+  console.log(
+    '✅ Contracts deployed and secured. Update your environment variables with the new addresses.'
   );
-
-  console.log('✅ Contracts deployed and secured. Update your environment variables with the new addresses.');
 }
 
-main().catch((error) => {
-  console.error(error);
-  process.exitCode = 1;
-});
+if (require.main === module)
+  deployOneClick(parseArgs()).catch((error) => {
+    console.error(error);
+    process.exitCode = 1;
+  });

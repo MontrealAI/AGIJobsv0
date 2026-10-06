@@ -182,6 +182,7 @@ The generated section includes every tracked top-level directory and every neste
 - [Kardashev-II Omega-Grade-α-AGI Business-3/kardashev_ii_omega_grade_upgrade_for_alpha_agi_business_3_demo_v5/README.md](Kardashev-II%20Omega-Grade-%CE%B1-AGI%20Business-3/kardashev_ii_omega_grade_upgrade_for_alpha_agi_business_3_demo_v5/README.md)
 - [Kardashev-II Omega-Grade-α-AGI Business-3/kardashev_ii_omega_grade_upgrade_for_alpha_agi_business_3_demo_v6/README.md](Kardashev-II%20Omega-Grade-%CE%B1-AGI%20Business-3/kardashev_ii_omega_grade_upgrade_for_alpha_agi_business_3_demo_v6/README.md)
 - [Kardashev-II Omega-Grade-α-AGI Business-3/kardashev_ii_omega_grade_upgrade_for_alpha_agi_business_3_demo_v7/README.md](Kardashev-II%20Omega-Grade-%CE%B1-AGI%20Business-3/kardashev_ii_omega_grade_upgrade_for_alpha_agi_business_3_demo_v7/README.md)
+- [LARGE-SCALE-OMEGA-BUSINESS-3/computer-work/README.md](LARGE-SCALE-OMEGA-BUSINESS-3/computer-work/README.md)
 - [LARGE-SCALE-OMEGA-BUSINESS-3/ui/operator-playbook.md](LARGE-SCALE-OMEGA-BUSINESS-3/ui/operator-playbook.md)
 - [Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_prime_demo/README.md](Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_prime_demo/README.md)
 - [Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_v10/README.md](Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_v10/README.md)

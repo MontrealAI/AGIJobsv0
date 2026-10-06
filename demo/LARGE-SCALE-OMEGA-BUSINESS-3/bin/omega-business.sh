@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
 cd "${REPO_ROOT}"
-
-npx ts-node --compiler-options '{"module":"commonjs"}' demo/LARGE-SCALE-OMEGA-BUSINESS-3/orchestrator.ts "$@"
+exec node demo/LARGE-SCALE-OMEGA-BUSINESS-3/lib/mission.cjs "$@"

@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+    <title>Omega • Business command theatre</title>
+    <link rel="stylesheet" href="/style.css" />
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <a class="skip" href="#missions">Skip to missions</a>
+    <header>
+      <a class="brand" href="/" aria-label="Omega home"
+        ><span class="sigil">Ω</span
+        ><span>AGI JOBS <small>OMEGA BUSINESS / 03</small></span></a
+      >
+      <div class="header-actions">
+        <span
+          class="pill"
+          data-en="LOCAL · SYNTHETIC"
+          data-fr="LOCAL · SYNTHÉTIQUE"
+          >LOCAL · SYNTHETIC</span
+        ><button id="language" aria-label="Passer en français">FR</button>
+      </div>
+    </header>
+    <main>
+      <section class="hero">
+        <div>
+          <p
+            class="eyebrow"
+            data-en="THE COMPUTER-WORK ECONOMY"
+            data-fr="L’ÉCONOMIE DU TRAVAIL INFORMATIQUE"
+          >
+            THE COMPUTER-WORK ECONOMY
+          </p>
+          <h1
+            data-en="Big missions.\nVerifiable work."
+            data-fr="De grandes missions.\nDu travail vérifiable."
+          >
+            Big missions.<br />Verifiable work.
+          </h1>
+          <p
+            class="intro"
+            data-en="Three nations. Three concrete work orders. Follow every brief, calculation and evidence file before a human decides what happens next."
+            data-fr="Trois nations. Trois mandats concrets. Examinez chaque consigne, calcul et preuve avant la décision humaine."
+          >
+            Three nations. Three concrete work orders. Follow every brief,
+            calculation and evidence file before a human decides what happens
+            next.
+          </p>
+          <a
+            class="button primary"
+            href="#missions"
+            data-en="Explore the missions ↓"
+            data-fr="Explorer les missions ↓"
+            >Explore the missions ↓</a
+          >
+        </div>
+        <aside class="vision">
+          <span class="orbit">Ω</span>
+          <p class="eyebrow" data-en="THE VISION" data-fr="LA VISION">
+            THE VISION
+          </p>
+          <strong>$40T<span>/ year</span></strong>
+          <p
+            data-en="Project planning assumption for the wider work economy. Not a verified market estimate or expected platform revenue."
+            data-fr="Hypothèse de planification du projet pour l’économie du travail. Ce chiffre n’est ni une estimation vérifiée ni un revenu prévu."
+          >
+            Project planning assumption for the wider work economy. Not a
+            verified market estimate or expected platform revenue.
+          </p>
+        </aside>
+      </section>
+      <div class="notice">
+        <span class="status-dot"></span>
+        <p
+          data-en="This run uses deterministic fixtures. No live AI, wallet transaction or settlement occurs. Arithmetic checks are automated; human acceptance remains required."
+          data-fr="Cette exécution utilise des données synthétiques déterministes. Aucun service IA réel, aucune transaction ni aucun règlement. Les calculs sont vérifiés; l’acceptation humaine reste nécessaire."
+        >
+          This run uses deterministic fixtures. No live AI, wallet transaction
+          or settlement occurs. Arithmetic checks are automated; human
+          acceptance remains required.
+        </p>
+      </div>
+      <div id="run-status" class="notice run-status" role="status" hidden></div>
+      <section
+        class="metrics"
+        aria-label="Mission summary"
+        id="metrics"
+      ></section>
+      <section id="missions">
+        <div class="section-heading">
+          <div>
+            <p
+              class="eyebrow"
+              data-en="MISSION CONTROL"
+              data-fr="CENTRE DE MISSION"
+            >
+              MISSION CONTROL
+            </p>
+            <h2 data-en="Choose a work order" data-fr="Choisir un mandat">
+              Choose a work order
+            </h2>
+          </div>
+          <span
+            class="muted"
+            data-en="Select a nation to inspect its evidence"
+            data-fr="Sélectionnez une nation pour examiner ses preuves"
+            >Select a nation to inspect its evidence</span
+          >
+        </div>
+        <div id="mission-list" class="mission-grid"></div>
+        <div id="detail" class="detail" aria-live="polite"></div>
+      </section>
+      <section class="next-grid">
+        <article class="panel">
+          <p class="eyebrow">01 / ADMISSION</p>
+          <h2
+            data-en="Review is a real constraint"
+            data-fr="La révision est une vraie contrainte"
+          >
+            Review is a real constraint
+          </h2>
+          <p
+            data-en="Explore how available reviewer time changes admission. This preview does not modify the saved run."
+            data-fr="Explorez l’effet du temps de révision disponible. Cet aperçu ne modifie pas le dossier enregistré."
+          >
+            Explore how available reviewer time changes admission. This preview
+            does not modify the saved run.
+          </p>
+          <label
+            for="capacity"
+            data-en="Review minutes available"
+            data-fr="Minutes de révision disponibles"
+            >Review minutes available</label
+          >
+          <div class="range-row">
+            <input
+              id="capacity"
+              type="range"
+              min="0"
+              max="60"
+              step="1"
+              value="40"
+            /><output id="capacity-value" for="capacity">40</output>
+          </div>
+          <p id="capacity-result" aria-live="polite"></p>
+        </article>
+        <article class="panel">
+          <p class="eyebrow">02 / COMPUTER WORK</p>
+          <h2
+            data-en="Give an agent a bounded brief"
+            data-fr="Donner un mandat précis à un agent"
+          >
+            Give an agent a bounded brief
+          </h2>
+          <p
+            data-en="Download the selected task for OpenClaw or an operator-led ChatGPT Work session. Use a dedicated environment, admit the exact task, and inspect the resulting files independently."
+            data-fr="Téléchargez le mandat pour OpenClaw ou une session ChatGPT Work pilotée par un opérateur. Utilisez un environnement dédié, autorisez le mandat exact et vérifiez les fichiers indépendamment."
+          >
+            Download the selected task for OpenClaw or an operator-led ChatGPT
+            Work session. Use a dedicated environment, admit the exact task, and
+            inspect the resulting files independently.
+          </p>
+          <p
+            class="muted"
+            data-en="The dashboard never dispatches a worker. A separate signer handles any authorized settlement after acceptance."
+            data-fr="Le tableau de bord ne lance aucun agent. Un signataire distinct traite tout règlement autorisé après acceptation."
+          >
+            The dashboard never dispatches a worker. A separate signer handles
+            any authorized settlement after acceptance.
+          </p>
+        </article>
+      </section>
+      <section class="panel archive">
+        <div>
+          <p
+            class="eyebrow"
+            data-en="REPRODUCIBLE EVIDENCE"
+            data-fr="PREUVES REPRODUCTIBLES"
+          >
+            REPRODUCIBLE EVIDENCE
+          </p>
+          <h2
+            data-en="Take the audit trail with you"
+            data-fr="Emportez la piste d’audit"
+          >
+            Take the audit trail with you
+          </h2>
+          <p id="run-id" class="muted"></p>
+          <p
+            data-en="SHA-256 and offline raw CIDs bind file bytes. Files are not published to IPFS; hashes do not authenticate who produced them."
+            data-fr="SHA-256 et les CID bruts lient les octets des fichiers. Rien n’est publié sur IPFS; les empreintes n’authentifient pas l’auteur."
+          >
+            SHA-256 and offline raw CIDs bind file bytes. Files are not
+            published to IPFS; hashes do not authenticate who produced them.
+          </p>
+        </div>
+        <div class="downloads">
+          <a
+            class="button"
+            href="/download/report.json"
+            download
+            data-en="Download report.json"
+            data-fr="Télécharger report.json"
+            >Download report.json</a
+          ><a
+            class="button"
+            href="/download/simulation-ledger.ndjson"
+            download
+            data-en="Download mission ledger"
+            data-fr="Télécharger le registre"
+            >Download mission ledger</a
+          >
+        </div>
+      </section>
+      <p id="error" role="alert" hidden></p>
+    </main>
+    <footer>
+      <span>AGI JOBS v0 · OMEGA BUSINESS 3</span
+      ><span
+        data-en="Evidence first. Human acceptance. Separate settlement."
+        data-fr="Preuves d’abord. Acceptation humaine. Règlement distinct."
+        >Evidence first. Human acceptance. Separate settlement.</span
+      >
+    </footer>
+  </body>
+</html>

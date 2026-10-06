@@ -1,0 +1,105 @@
+name: Omega Business 3
+
+on:
+  pull_request:
+    paths:
+      - 'demo/LARGE-SCALE-OMEGA-BUSINESS-3/**'
+      - 'test/demo/omegaBusiness*.test.ts'
+      - 'contracts/test/MockERC20.sol'
+      - 'contracts/test/SimpleJobRegistry.sol'
+      - 'scripts/v2/owner*.ts'
+      - 'scripts/v2/oneclick-deploy.ts'
+      - 'scripts/v2/deploy.ts'
+      - 'scripts/v2/oneclick-wizard.ts'
+      - 'scripts/v2/lib/*.cjs'
+      - 'scripts/config/**'
+      - 'apps/orchestrator/computerWork.ts'
+      - 'apps/orchestrator/agentPolicy.ts'
+      - 'agent-gateway/agentEndpoint.ts'
+      - 'config/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.nvmrc'
+      - '.github/workflows/demo-omega-business-3.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'demo/LARGE-SCALE-OMEGA-BUSINESS-3/**'
+      - 'test/demo/omegaBusiness*.test.ts'
+      - 'contracts/test/MockERC20.sol'
+      - 'contracts/test/SimpleJobRegistry.sol'
+      - 'scripts/v2/owner*.ts'
+      - 'scripts/v2/oneclick-deploy.ts'
+      - 'scripts/v2/deploy.ts'
+      - 'scripts/v2/oneclick-wizard.ts'
+      - 'scripts/v2/lib/*.cjs'
+      - 'scripts/config/**'
+      - 'apps/orchestrator/computerWork.ts'
+      - 'apps/orchestrator/agentPolicy.ts'
+      - 'agent-gateway/agentEndpoint.ts'
+      - 'config/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.nvmrc'
+      - '.github/workflows/demo-omega-business-3.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: omega-business-3-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  rehearsal:
+    name: Offline evidence and failure handling
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: '.nvmrc'
+      - run: node --test demo/LARGE-SCALE-OMEGA-BUSINESS-3/tests/*.test.cjs
+      - run: node scripts/demo/catalog.cjs --check
+  integrated:
+    name: Owner rejection, mock contracts and browser
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+      - name: Install locked dependencies
+        run: ./scripts/ci/npm-ci.sh --no-audit --prefer-offline --progress=false
+      - name: Verify mainnet signer and wizard preflight with synthetic fixtures
+        run: node --test demo/LARGE-SCALE-OMEGA-BUSINESS-3/tests/mainnet-preflight.cjs
+      - name: Verify rejection of unconfigured owner addresses
+        run: node demo/LARGE-SCALE-OMEGA-BUSINESS-3/tests/owner-diagnostics.cjs reports/omega-business-3/ci/owner-diagnostics
+      - name: Independently verify evidence
+        run: node demo/LARGE-SCALE-OMEGA-BUSINESS-3/lib/verify.cjs reports/omega-business-3/ci/owner-diagnostics
+      - name: Rehearse all three jobs on local mock contracts
+        env:
+          OMEGA_CONTRACT_REPORT: reports/omega-business-3/ci/contract-receipts.json
+        run: npx hardhat --config demo/LARGE-SCALE-OMEGA-BUSINESS-3/hardhat.config.cjs test test/demo/omegaBusinessConfig.test.ts test/demo/omegaBusinessSimulation.test.ts
+      - name: Install browser
+        run: npx playwright install --with-deps chromium
+      - name: Desktop and mobile browser checks
+        env:
+          OMEGA_BROWSER_OUTPUT: reports/omega-business-3/ci/browser
+        run: node demo/LARGE-SCALE-OMEGA-BUSINESS-3/tests/browser.cjs
+      - name: Retain evidence and browser screenshots
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: omega-business-3-evidence
+          path: reports/omega-business-3/ci
+          if-no-files-found: warn
+          retention-days: 14

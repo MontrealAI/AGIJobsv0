@@ -273,7 +273,7 @@
     "demo:national-supply-chain:cross-verify": "ts-node --transpile-only scripts/v2/crossValidateNationalSupplyChainTranscript.ts",
     "demo:national-supply-chain:export": "AGI_JOBS_DEMO_EXPORT=demo/National-Supply-Chain-v0/ui/export/latest.json npx hardhat run --no-compile --network hardhat scripts/v2/nationalSupplyChainGrandDemo.ts",
     "demo:national-supply-chain:validate": "ts-node --transpile-only scripts/v2/validateNationalSupplyChainTranscript.ts",
-    "demo:omega-business-3": "ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/LARGE-SCALE-OMEGA-BUSINESS-3/orchestrator.ts",
+    "demo:omega-business-3": "node demo/LARGE-SCALE-OMEGA-BUSINESS-3/lib/mission.cjs",
     "demo:omega-business-3:mainnet": "demo/LARGE-SCALE-OMEGA-BUSINESS-3/bin/omega-mainnet.sh",
     "demo:omega-business-3:ui": "demo/LARGE-SCALE-OMEGA-BUSINESS-3/bin/omega-ui.sh",
     "demo:planetary-orchestrator-fabric": "node --import tsx demo/Planetary-Orchestrator-Fabric-v0/src/index.ts --config demo/Planetary-Orchestrator-Fabric-v0/config/fabric.example.json",
