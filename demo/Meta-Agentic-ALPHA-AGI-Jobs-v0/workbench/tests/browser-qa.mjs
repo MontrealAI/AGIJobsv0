@@ -86,6 +86,8 @@ try {
       ['Download proposal JSON', 'json', json(expected)],
       ['Download readable brief', 'md', renderProjectBrief(expected)],
     ]) {
+      // Exercise individual clicks without hitting Chromium's download burst limit.
+      await page.waitForTimeout(250);
       const [download] = await Promise.all([
         page.waitForEvent('download').catch(async (error) => {
           throw new Error(
@@ -113,6 +115,7 @@ try {
     'all twelve project briefs, acceptance criteria, keyboard focus and both exact exports'
   );
   for (const stage of stages) {
+    await page.waitForTimeout(250);
     await page
       .getByLabel('Evaluation phase', { exact: true })
       .selectOption(stage.id);
