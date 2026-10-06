@@ -767,6 +767,18 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
   await buildHgmSite(path.join(output, 'experiments/huxley-godel'));
   dashboardRoutes.push('experiments/huxley-godel/');
   archiveRoutes.push('experiments/huxley-godel/legacy/');
+  const { buildSite: buildProgramSynthesisSite } = await import(
+    '../../demo/Meta-Agentic-Program-Synthesis-v0/scripts/build-site.mjs'
+  );
+  const programSynthesisSite = await buildProgramSynthesisSite(
+    path.join(output, 'experiments/program-synthesis')
+  );
+  dashboardRoutes.push('experiments/program-synthesis/');
+  archiveRoutes.push(
+    ...programSynthesisSite.archiveRoutes.map(
+      (route) => 'experiments/program-synthesis/' + route
+    )
+  );
   // Compile the same Studio shipped in the pnpm workspace, in explicit offline mode.
   const studio = path.join(root, 'demo/CULTURE-v0/apps/culture-studio');
   execFileSync(

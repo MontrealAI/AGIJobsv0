@@ -24,6 +24,7 @@ class ReportBundle:
 HTML_TEMPLATE = """<!DOCTYPE html>
 <html lang=\"en\">
 <head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta charset=\"utf-8\" />
   <title>{title}</title>
   <style>
@@ -46,6 +47,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   <script>mermaid.initialize({{ startOnLoad: true, theme: "dark", securityLevel: "strict" }});</script>
 </head>
 <body>
+<main id="main">
+  <p role="note">Seeded simulation · no provider calls, independent external review, or blockchain payments. Rewards are simulation credits.</p>
   <h1>Meta-Agentic Program Synthesis</h1>
   <section>
     <h2>Mission Summary</h2>
@@ -64,13 +67,13 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   </section>
   <section>
     <h2>Opportunity Intelligence</h2>
-    <p class=\"note\">Strategic ventures unlocked by this sovereign cycle.</p>
+    <p class=\"note\">Illustrative opportunity scores derived from this synthetic run.</p>
     <div class=\"grid\">{opportunity_cards}</div>
     <div class=\"mermaid\">{opportunity_mermaid}</div>
   </section>
   <section>
     <h2>Architecture Atlas</h2>
-    <p class=\"note\">Live architecture graph distilled from this run.</p>
+    <p class=\"note\">Simulation architecture graph distilled from this run.</p>
     <div class=\"mermaid\">{architecture_mermaid}</div>
   </section>
   <section>
@@ -111,7 +114,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     </table>
   </section>
   <section>
-    <h2>On-Chain Jobs</h2>
+    <h2>Simulated Ledger Jobs</h2>
     <table>
       <thead>
         <tr><th>Job</th><th>Status</th><th>Reward</th><th>Commitment</th></tr>
@@ -135,6 +138,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       {performance_cards}
     </div>
   </section>
+</main>
 </body>
 </html>
 """
@@ -142,6 +146,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 BATCH_HTML_TEMPLATE = """<!DOCTYPE html>
 <html lang=\"en\">
 <head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta charset=\"utf-8\" />
   <title>{title}</title>
   <style>
@@ -164,6 +169,8 @@ BATCH_HTML_TEMPLATE = """<!DOCTYPE html>
   <script>mermaid.initialize({{ startOnLoad: true, theme: "dark", securityLevel: "strict" }});</script>
 </head>
 <body>
+<main id="main">
+  <p role="note">Seeded simulation · no provider calls, independent external review, or blockchain payments. Rewards are simulation credits.</p>
   <h1>Meta-Agentic Mission Constellation</h1>
     <section>
     <h2>Constellation Overview</h2>
@@ -188,6 +195,7 @@ BATCH_HTML_TEMPLATE = """<!DOCTYPE html>
     <h2>Meridian Flow</h2>
     <div class=\"mermaid\">{mermaid_graph}</div>
   </section>
+</main>
 </body>
 </html>
 """
@@ -198,7 +206,7 @@ def build_rows(items: Iterable[str]) -> str:
 
 
 def mermaid_escape(value: str) -> str:
-    return value.replace("\"", "\\\"").replace("\n", " ")
+    return value.replace("\"", "#quot;").replace("\n", " ")
 
 
 @lru_cache()
@@ -250,7 +258,7 @@ def format_job_rows(report: DemoRunArtifacts) -> str:
 
 def format_reward_tables(report: DemoRunArtifacts) -> str:
     return build_rows(
-        "<table><thead><tr><th colspan=2>Job #{job_id}</th></tr></thead><tbody>"
+        f"<table><thead><tr><th colspan=2>Job #{job_id}</th></tr></thead><tbody>"
         f"<tr><td>Total</td><td>{breakdown.total_reward:.2f}</td></tr>"
         + "".join(
             f"<tr><td>Solver {escape(address)}</td><td>{amount:.2f} (energy {breakdown.solver_energy.get(address, 0.0):.1f})</td></tr>"
@@ -421,9 +429,9 @@ def build_architecture_mermaid(report: DemoRunArtifacts) -> str:
         "    user((Non-technical Visionary))",
         "    owner{{Owner Console}}",
         "    architect[Sovereign Architect]",
-        f"    jobs[Jobs Posted ({len(report.jobs)})]",
-        f"    solvers[Execution Nodes ({len(solver_addresses) or 0})]",
-        f"    validators[Validator Council ({len(validator_addresses) or 0})]",
+        f'    jobs["Jobs Posted ({len(report.jobs)})"]',
+        f'    solvers["Execution Nodes ({len(solver_addresses) or 0})"]',
+        f'    validators["Validator Council ({len(validator_addresses) or 0})"]',
         "    rewards[[Thermodynamic Reward Engine]]",
         "    user --> architect",
         "    owner --> architect",
@@ -518,7 +526,7 @@ def format_reward_summary(summary: RewardSummary) -> str:
     return build_rows(
         [
             "<div class=\"summary-card\">",
-            f"  <h3>Total Rewards</h3><p>{summary.total_reward:.2f} $AGIα distributed</p>",
+            f"  <h3>Total Rewards</h3><p>{summary.total_reward:.2f} simulation credits distributed</p>",
             f"  <p>Architect retained {summary.architect_total:.2f}</p>",
             f"  <p>{solver_leader}</p>",
             f"  <p>{validator_leader}</p>",
@@ -742,7 +750,7 @@ def render_html(report: DemoRunArtifacts) -> str:
         verification_status=verification_status,
         verification_cards=verification_cards,
         verification_table=verification_table,
-        verification_mermaid=verification_mermaid,
+        verification_mermaid=escape(verification_mermaid),
         owner_rows=owner_rows,
         timelock_rows=timelock_rows,
         evolution_rows=evolution_rows,
@@ -750,10 +758,10 @@ def render_html(report: DemoRunArtifacts) -> str:
         reward_tables=reward_tables,
         performance_cards=performance_cards,
         opportunity_cards=opportunity_cards,
-        opportunity_mermaid=opportunity_mermaid,
-        architecture_mermaid=architecture_mermaid,
-        timeline_mermaid=timeline_mermaid,
-        reward_mermaid=reward_mermaid,
+        opportunity_mermaid=escape(opportunity_mermaid),
+        architecture_mermaid=escape(architecture_mermaid),
+        timeline_mermaid=escape(timeline_mermaid),
+        reward_mermaid=escape(reward_mermaid),
         reward_summary_cards=reward_summary_cards,
         mermaid_js=load_mermaid_js(),
     )
@@ -780,7 +788,7 @@ def render_batch_html(
         average_resilience=float(summary.get("average_resilience", 0.0)),
         summary_cards=summary_cards,
         table_rows=table_rows,
-        mermaid_graph=mermaid_graph,
+        mermaid_graph=escape(mermaid_graph),
     )
 
 

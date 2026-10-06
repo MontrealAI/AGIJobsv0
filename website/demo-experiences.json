@@ -678,7 +678,7 @@
   },
   "Meta-Agentic-Program-Synthesis-v0": {
     "question": "How does a mission become an evaluated program candidate?",
-    "purpose": "For developers: inspect mission constraints, candidate synthesis, validation and an auditable selection process.",
+    "purpose": "For operators and developers: search bounded programs, challenge candidates with a separate checker, prepare USDC work orders and inspect both original synthesis engines.",
     "steps": [
       {
         "title": "Read the mission constraints",
@@ -696,11 +696,18 @@
         "explanation": "Read candidate and evaluation evidence alongside the selected implementation. A passing synthetic evaluator does not guarantee general correctness of generated code."
       }
     ],
-    "command": "npm run demo:meta-agentic-program-synthesis:full",
-    "expected": "The pipeline writes synthesis, validation, triangulation and owner diagnostic artifacts under the demo reports directory.",
-    "experiment": "Choose a constraint from the mission and find its corresponding evaluation check. Ask what adversarial or held-out input could falsify the claimed improvement.",
+    "command": "npm run demo:program-synthesis:site",
+    "expected": "A complete offline website in build/program-synthesis, including the executable lab, work-order exports, regenerated Python command theatre and TypeScript dashboard.",
+    "experiment": "Search a program, export a wrong candidate, and run the Python checker. Set reviewer capacity to zero and inspect why the draft work order is held.",
     "mode": "node",
-    "related": []
+    "related": [],
+    "dashboards": [
+      {
+        "route": "experiments/program-synthesis/",
+        "source": "demo/Meta-Agentic-Program-Synthesis-v0/workbench/index.html",
+        "title": "Open the Synthesis Foundry"
+      }
+    ]
   },
   "Meta-Agentic-ALPHA-AGI-Jobs-v0": {
     "question": "How does a meta-agentic loop turn useful project briefs into accountable work orders?",

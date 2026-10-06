@@ -77,7 +77,8 @@ class OwnerConsole:
             self._record_event("resume", {"value": False})
 
     def set_paused(self, value: bool) -> None:
-        value = bool(value)
+        if type(value) is not bool:
+            raise ValueError("paused must be a boolean")
         if self._paused == value:
             return
         self._paused = value
@@ -154,7 +155,7 @@ class OwnerConsole:
         if verification_overrides:
             self.update_verification_policy(**verification_overrides)
         if "paused" in overrides:
-            self.set_paused(bool(overrides["paused"]))
+            self.set_paused(overrides["paused"])
         if "scenarios" in overrides:
             scenario_payload = overrides["scenarios"]
             payload_mapping: dict[str, Any]
@@ -305,6 +306,11 @@ def load_owner_overrides(path: Path) -> Mapping[str, Any]:
     data = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(data, Mapping):
         raise ValueError("override file must contain a JSON object")
+    unknown = set(data) - {"reward_policy", "stake_policy", "evolution_policy", "verification_policy", "scenarios", "paused"}
+    if unknown:
+        raise ValueError("unknown override keys: " + ", ".join(sorted(unknown)))
+    if "paused" in data and type(data["paused"]) is not bool:
+        raise ValueError("paused must be a boolean")
     return data
 
 

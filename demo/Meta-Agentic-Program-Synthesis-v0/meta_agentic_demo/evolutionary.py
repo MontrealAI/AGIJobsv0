@@ -63,6 +63,8 @@ class EvolutionaryProgramSynthesizer:
     ) -> Tuple[Program, List[EvolutionRecord]]:
         """Run the optimisation loop and return the best program."""
 
+        if type(generations) is not int or not 1 <= generations <= 1000:
+            raise ValueError("generations must be an integer within [1, 1000]")
         population = self.initialise_population()
         history: List[EvolutionRecord] = []
         previous_best: float | None = None
@@ -90,6 +92,9 @@ class EvolutionaryProgramSynthesizer:
                 telemetry_hook(record)
             previous_best = best_score
 
+            if generation == generations:
+                return evaluated[0].program, history
+
             next_population = elites.copy()
             while len(next_population) < self.population_size:
                 parent_a, parent_b = self._select_parents(evaluated)
@@ -97,8 +102,7 @@ class EvolutionaryProgramSynthesizer:
                 child = self._mutate(child)
                 next_population.append(child)
             population = next_population
-        best_program = max(population, key=evaluator)
-        return best_program, history
+        raise RuntimeError("evolution produced no evaluated candidate")
 
     # --- Internal helpers -------------------------------------------------
 

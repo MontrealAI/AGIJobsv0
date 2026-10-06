@@ -2,9 +2,21 @@
 
 from __future__ import annotations
 
+import math
+import re
 from dataclasses import dataclass, field
 from datetime import timedelta
 from typing import Dict, List, Optional
+
+
+def _number(value: object, name: str, low: float = 0, high: float = 1e12) -> None:
+    if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or not low <= value <= high:
+        raise ValueError(f"{name} must be finite and within [{low}, {high}]")
+
+
+def _integer(value: object, name: str, low: int, high: int) -> None:
+    if type(value) is not int or not low <= value <= high:
+        raise ValueError(f"{name} must be an integer within [{low}, {high}]")
 
 
 @dataclass(frozen=True)
@@ -15,6 +27,14 @@ class RewardPolicy:
     temperature: float = 1.4
     validator_weight: float = 0.15
     architect_weight: float = 0.1
+
+    def __post_init__(self) -> None:
+        _number(self.total_reward, "total_reward")
+        _number(self.temperature, "temperature", 1e-9, 1e6)
+        _number(self.validator_weight, "validator_weight", 0, 1)
+        _number(self.architect_weight, "architect_weight", 0, 1)
+        if self.validator_weight + self.architect_weight > 1:
+            raise ValueError("reward weights exceed total allocation")
 
     def to_dict(self) -> Dict[str, float | int]:
         return {
@@ -33,6 +53,11 @@ class StakePolicy:
     slash_fraction: float = 0.1
     inactivity_timeout: timedelta = timedelta(seconds=30)
 
+    def __post_init__(self) -> None:
+        _number(self.minimum_stake, "minimum_stake")
+        _number(self.slash_fraction, "slash_fraction", 0, 1)
+        _number(self.inactivity_timeout.total_seconds(), "inactivity_timeout", 1e-6)
+
     def to_dict(self) -> Dict[str, float | int]:
         return {
             "minimum_stake": self.minimum_stake,
@@ -50,6 +75,15 @@ class EvolutionPolicy:
     elite_count: int = 2
     mutation_rate: float = 0.35
     crossover_rate: float = 0.4
+
+    def __post_init__(self) -> None:
+        _integer(self.generations, "generations", 1, 1000)
+        _integer(self.population_size, "population_size", 2, 1000)
+        _integer(self.elite_count, "elite_count", 1, self.population_size - 1)
+        if self.generations * self.population_size > 100000:
+            raise ValueError("evaluation budget exceeds 100000 candidates")
+        _number(self.mutation_rate, "mutation_rate", 0, 1)
+        _number(self.crossover_rate, "crossover_rate", 0, 1)
 
     def to_dict(self) -> Dict[str, float | int]:
         return {
@@ -82,6 +116,17 @@ class VerificationPolicy:
     kurtosis_ceiling: float = 4.25
     jackknife_tolerance: float = 0.05
 
+    def __post_init__(self) -> None:
+        for name, value in self.to_dict().items():
+            _number(value, name)
+        _integer(self.bootstrap_iterations, "bootstrap_iterations", 1, 10000)
+        for name in ("holdout_threshold", "mae_threshold", "stress_threshold", "entropy_floor"):
+            _number(getattr(self, name), name, 0, 1)
+        _number(self.confidence_level, "confidence_level", 1e-9, 1 - 1e-9)
+        _number(self.spectral_energy_ceiling, "spectral_energy_ceiling", 1e-9, 1)
+        for name in ("variance_ratio_ceiling", "skewness_ceiling", "kurtosis_ceiling"):
+            _number(getattr(self, name), name, 1e-9)
+
     def to_dict(self) -> Dict[str, float | int]:
         return {
             "holdout_threshold": self.holdout_threshold,
@@ -111,6 +156,11 @@ class DatasetProfile:
     noise: float = 0.05
     seed: int = 1_337
 
+    def __post_init__(self) -> None:
+        _integer(self.length, "dataset length", 2, 4096)
+        _number(self.noise, "dataset noise", 0, 100)
+        _integer(self.seed, "dataset seed", 0, 2**53 - 1)
+
     def to_dict(self) -> Dict[str, float | int]:
         return {"length": self.length, "noise": self.noise, "seed": self.seed}
 
@@ -126,6 +176,12 @@ class DemoScenario:
     success_threshold: float
     dataset_profile: Optional[DatasetProfile] = None
     stress_multiplier: float = 1.0
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.identifier, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]{0,63}", self.identifier) or self.identifier == "all":
+            raise ValueError("scenario identifier must be a safe single path component, excluding 'all'")
+        _number(self.success_threshold, "success_threshold", 0, 1)
+        _number(self.stress_multiplier, "stress_multiplier", 0, 100)
 
     def to_dict(self) -> Dict[str, object]:
         return {

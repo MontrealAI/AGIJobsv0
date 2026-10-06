@@ -518,7 +518,12 @@
     "demo:zenith-hypernova:task": "node demo/zenith-sapience-initiative-supra-sovereign-hypernova-governance/workbench/cli.mjs task",
     "demo:zenith-hypernova:review": "node demo/zenith-sapience-initiative-supra-sovereign-hypernova-governance/workbench/cli.mjs review",
     "demo:zenith-hypernova:test": "node --test demo/zenith-sapience-initiative-supra-sovereign-hypernova-governance/workbench/tests/*.test.mjs",
-    "demo:zenith-hypernova:qa": "node demo/zenith-sapience-initiative-supra-sovereign-hypernova-governance/workbench/tests/browser-qa.mjs"
+    "demo:zenith-hypernova:qa": "node demo/zenith-sapience-initiative-supra-sovereign-hypernova-governance/workbench/tests/browser-qa.mjs",
+    "demo:program-synthesis:site": "node demo/Meta-Agentic-Program-Synthesis-v0/scripts/build-site.mjs",
+    "demo:program-synthesis:lab": "node demo/Meta-Agentic-Program-Synthesis-v0/scripts/lab.mjs",
+    "demo:program-synthesis:test": "node --import tsx --test demo/Meta-Agentic-Program-Synthesis-v0/tests/*.test.mjs",
+    "demo:program-synthesis:qa": "node demo/Meta-Agentic-Program-Synthesis-v0/scripts/browser-qa.mjs",
+    "demo:program-synthesis:worker": "node --import tsx demo/Meta-Agentic-Program-Synthesis-v0/computer-work/worker.cjs"
   },
   "type": "commonjs",
   "version": "2.0.0"

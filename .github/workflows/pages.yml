@@ -76,6 +76,7 @@ jobs:
           npm run demo:meta-agentic-alpha:qa
           HYPERNOVA_SITE_ROOT=build/pages/experiments/zenith-hypernova npm run demo:zenith-hypernova:qa
           HGM_SITE_ROOT=build/pages/experiments/huxley-godel npm run demo:hgm:qa
+          SYNTHESIS_SITE_ROOT=build/pages/experiments/program-synthesis npm run demo:program-synthesis:qa
           node scripts/pages/culture-qa.mjs
       - name: Save browser evidence
         if: always()
