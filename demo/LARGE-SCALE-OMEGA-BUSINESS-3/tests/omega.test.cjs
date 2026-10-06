@@ -669,6 +669,8 @@ test('mainnet validates the selected config economics before accepting execution
     ['econ', 'commitWindow', '-1d'],
     ['econ', 'revealWindow', '1d junk'],
     ['econ', 'disputeWindow', '0.1s'],
+    ['econ', 'commitWindow', '100000000000000000000'],
+    ['econ', 'commitWindow', '100000000000000000000s'],
     ['econ', 'commitWindow', 0],
     ['econ', 'disputeWindow', Number.MAX_SAFE_INTEGER + 1],
     ['econ', 'employerSlashPct', 1],

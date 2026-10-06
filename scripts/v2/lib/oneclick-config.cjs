@@ -29,16 +29,20 @@ function seconds(value, label, positive = false, numericOnly = false) {
   let parsed = value;
   if (!numericOnly && typeof value === 'string') {
     // Reject ignored suffixes, negative values, subsecond rounding and implicit units.
-    if (
-      !/^[0-9]+$/.test(value) &&
-      !/^(?:[0-9]+(?:\.[0-9]+)?\s*(?:s|sec(?:ond)?s?|m|min(?:ute)?s?|h|hours?|hrs?|d|days?|w|weeks?|wks?)\s*)+$/.test(
-        value
+    if (/^[0-9]+$/.test(value)) parsed = Number(value);
+    else {
+      // Bound each component to parseDuration's full numeric match so that
+      // oversized quantities cannot be split into several smaller matches.
+      if (
+        !/^(?:[0-9]{1,16}(?:\.[0-9]{1,16})?\s*(?:s|sec(?:ond)?s?|m|min(?:ute)?s?|h|hours?|hrs?|d|days?|w|weeks?|wks?)\s*)+$/.test(
+          value
+        )
       )
-    )
-      throw new Error(
-        `${label} must be whole seconds or explicit duration units`
-      );
-    parsed = parseDuration(value, 's');
+        throw new Error(
+          `${label} must be whole seconds or explicit duration units`
+        );
+      parsed = parseDuration(value, 's');
+    }
   }
   if (!Number.isSafeInteger(parsed) || parsed < (positive ? 1 : 0))
     throw new Error(
