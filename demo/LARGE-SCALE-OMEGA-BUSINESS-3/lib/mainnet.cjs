@@ -9,6 +9,8 @@ const PLAN = `Omega mainnet preparation — no commands executed, no RPC contact
 2. Review deployment-config/mainnet.json and an explicit deployer config, governance,
    treasury, token economics, artifacts, gas limits and output locations. Compile and
    audit the production contracts through the repository release workflow.
+   This route requires governance to match the MAINNET_PRIVATE_KEY signer; a multisig
+   or timelock needs a separately reviewed deployment/ownership-transfer procedure.
 3. Run npm run deploy:checklist using the reviewed MAINNET_RPC_URL environment.
 4. The optional --execute route checks eth_chainId = 1, binds a protected snapshot to the exact config hash,
    then opens the existing interactive deploy:oneclick:wizard without --yes or Compose.
@@ -68,8 +70,30 @@ function parse(argv) {
     if (!fs.statSync(o.env).isFile())
       throw new Error('An existing operator env file is required');
     o.output = config.output;
+    o.governance = config.governance;
   }
   return o;
+}
+function assertGovernanceSigner(governance, env = process.env) {
+  const value = String(env.MAINNET_PRIVATE_KEY || '')
+    .trim()
+    .replace(/^0x/i, '');
+  if (!/^[a-f0-9]{1,64}$/i.test(value))
+    throw new Error(
+      'A valid MAINNET_PRIVATE_KEY deployment signer is required'
+    );
+  let address;
+  try {
+    const { Wallet } = require('ethers');
+    address = new Wallet('0x' + value.padStart(64, '0')).address;
+  } catch {
+    throw new Error('Cannot validate MAINNET_PRIVATE_KEY deployment signer');
+  }
+  if (address.toLowerCase() !== governance.toLowerCase())
+    throw new Error(
+      'Governance must match the configured deployment signer; multisig or timelock initialization requires a separate reviewed procedure'
+    );
+  return address;
 }
 async function chainId(endpoint) {
   const url = new URL(endpoint);
@@ -138,6 +162,7 @@ async function main(argv = process.argv.slice(2)) {
     throw new Error(
       'Set MAINNET_RPC_URL in the protected deployment environment'
     );
+  assertGovernanceSigner(o.governance);
   await chainId(process.env.MAINNET_RPC_URL);
   const invoke = (args) => {
     const result = spawnSync('npm', args, {
@@ -183,7 +208,14 @@ async function main(argv = process.argv.slice(2)) {
     o.ticket,
   ]);
 }
-module.exports = { parse, chainId, main, PLAN, withReviewedConfig };
+module.exports = {
+  parse,
+  chainId,
+  main,
+  PLAN,
+  withReviewedConfig,
+  assertGovernanceSigner,
+};
 if (require.main === module)
   main().catch((error) => {
     console.error(`Omega mainnet: ${error.message}`);

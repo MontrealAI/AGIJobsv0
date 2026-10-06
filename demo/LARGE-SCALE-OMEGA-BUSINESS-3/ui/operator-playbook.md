@@ -98,3 +98,7 @@ The wrapper runs the existing deployment checklist, rechecks the config digest, 
 No production deployment, real provider dispatch, live payment or verified market-size claim is made by this update.
 
 The optional deployment wrapper supplies the reviewed configuration through a private, read-only snapshot for the entire interactive wizard and its deployment child. Editing the original file while confirmation is pending does not change those bytes. The snapshot is removed when the wizard returns, including on failure. The deployment signer remains responsible for the separate operator environment and transaction confirmation.
+
+This route requires the configured governance address to equal the account derived from `MAINNET_PRIVATE_KEY`; it validates that match before contacting RPC or launching deployment. Multisig and timelock governance require a separately reviewed initialization and ownership-transfer procedure. Do not replace governance with an arbitrary signer just to pass preflight.
+
+The mainnet deployment child atomically reserves the fresh addressbook path before its first transaction and writes through the held file descriptor. An existing or competing output is rejected. A failed deployment retains its reservation, possibly empty, alongside any original receipts in `docs/deployment-addresses.json`; an empty file is not a successful addressbook. Reconcile the chain and receipts before any retry. Never remove another run's output to make a retry pass.

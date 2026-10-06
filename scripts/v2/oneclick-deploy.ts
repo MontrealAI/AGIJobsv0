@@ -5,6 +5,7 @@ import readline from 'readline';
 
 import parseDuration from '../utils/parseDuration';
 import { ethers } from 'ethers';
+const { reserveDeploymentOutput } = require('./lib/reserved-output.cjs');
 
 interface EconConfig {
   feePct?: number;
@@ -58,7 +59,10 @@ function parseArgs(): Args {
 function ensureAddress(
   value: string | undefined,
   label: string,
-  { allowZero = false, optional = false }: { allowZero?: boolean; optional?: boolean } = {},
+  {
+    allowZero = false,
+    optional = false,
+  }: { allowZero?: boolean; optional?: boolean } = {}
 ): string | undefined {
   if (value === undefined || value === null || value === '') {
     if (optional) {
@@ -114,7 +118,10 @@ async function confirm(message: string, autoYes: boolean): Promise<boolean> {
   if (autoYes) {
     return true;
   }
-  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
   const answer: string = await new Promise((resolve) => {
     rl.question(`${message} [y/N] `, resolve);
   });
@@ -122,7 +129,10 @@ async function confirm(message: string, autoYes: boolean): Promise<boolean> {
   return ['y', 'yes'].includes(answer.trim().toLowerCase());
 }
 
-async function runHardhat(args: string[], env: NodeJS.ProcessEnv): Promise<void> {
+async function runHardhat(
+  args: string[],
+  env: NodeJS.ProcessEnv
+): Promise<void> {
   const child = spawn('npx', ['hardhat', ...args], {
     stdio: 'inherit',
     env: { ...process.env, ...env },
@@ -141,10 +151,16 @@ async function runHardhat(args: string[], env: NodeJS.ProcessEnv): Promise<void>
 
 async function main() {
   const args = parseArgs();
-  const configPath = (args.config as string) ?? path.join('deployment-config', 'deployer.sample.json');
+  const configPath =
+    (args.config as string) ??
+    path.join('deployment-config', 'deployer.sample.json');
   const config = await loadConfig(configPath);
 
-  const network = (args.network as string) ?? config.network ?? process.env.HARDHAT_NETWORK ?? 'sepolia';
+  const network =
+    (args.network as string) ??
+    config.network ??
+    process.env.HARDHAT_NETWORK ??
+    'sepolia';
   const configuredGovernance = ensureAddress(config.governance, 'governance', {
     optional: true,
     allowZero: true,
@@ -156,7 +172,10 @@ async function main() {
 
   const econ = config.econ || {};
   const treasuryAddress =
-    ensureAddress(econ.treasury, 'treasury', { optional: true, allowZero: true }) ?? ethers.ZeroAddress;
+    ensureAddress(econ.treasury, 'treasury', {
+      optional: true,
+      allowZero: true,
+    }) ?? ethers.ZeroAddress;
   const feePct = econ.feePct ?? 5;
   const burnPct = econ.burnPct ?? 0;
   const minStake = formatToken(econ.minStake);
@@ -182,7 +201,10 @@ async function main() {
     console.log(`  • ${label.padEnd(24)} ${value}`);
   }
 
-  const proceed = await confirm('Proceed with contract deployment?', Boolean(args.yes));
+  const proceed = await confirm(
+    'Proceed with contract deployment?',
+    Boolean(args.yes)
+  );
   if (!proceed) {
     console.log('Aborted by user');
     return;
@@ -207,21 +229,32 @@ async function main() {
     deployEnv.ONECLICK_DISPUTE_WINDOW = disputeWindow.toString();
   }
 
-  await runHardhat(
-    [
-      'run',
-      '--no-compile',
-      '--network',
-      network,
-      path.join('scripts', 'v2', 'deploy.ts'),
-    ],
-    deployEnv,
-  );
-
   const addressesPath = path.join('docs', 'deployment-addresses.json');
-  const outputPath = config.output ? path.resolve(config.output) : path.resolve('deployment-config', 'latest-deployment.json');
+  const outputPath = config.output
+    ? path.resolve(config.output)
+    : path.resolve('deployment-config', 'latest-deployment.json');
   await fs.mkdir(path.dirname(outputPath), { recursive: true });
-  await fs.copyFile(addressesPath, outputPath);
+  // Mainnet must reserve fresh evidence before sending any transaction. A
+  // competing creation during interactive confirmation fails here, not later.
+  const reservedOutput =
+    network === 'mainnet' ? reserveDeploymentOutput(outputPath) : undefined;
+  try {
+    await runHardhat(
+      [
+        'run',
+        '--no-compile',
+        '--network',
+        network,
+        path.join('scripts', 'v2', 'deploy.ts'),
+      ],
+      deployEnv
+    );
+
+    if (reservedOutput) reservedOutput.copyFrom(addressesPath);
+    else await fs.copyFile(addressesPath, outputPath);
+  } finally {
+    reservedOutput?.close();
+  }
   console.log(`ℹ️  Deployment addresses copied to ${outputPath}`);
 
   await runHardhat(
@@ -235,10 +268,12 @@ async function main() {
     {
       ONECLICK_CONFIG_PATH: path.resolve(configPath),
       ONECLICK_ADDRESSES_PATH: addressesPath,
-    },
+    }
   );
 
-  console.log('✅ Contracts deployed and secured. Update your environment variables with the new addresses.');
+  console.log(
+    '✅ Contracts deployed and secured. Update your environment variables with the new addresses.'
+  );
 }
 
 main().catch((error) => {
