@@ -4,6 +4,11 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 cd "$ROOT"
 
+if [[ "$#" -ne 0 || "${HARDHAT_NETWORK:-hardhat}" != "hardhat" ]]; then
+  echo 'Hypernova governance kit accepts no arguments and requires HARDHAT_NETWORK=hardhat.' >&2
+  exit 1
+fi
+export HARDHAT_NETWORK=hardhat
 REPORT_ROOT="reports/zenith-hypernova"
 
 export ASI_GLOBAL_PLAN_PATH="demo/zenith-sapience-initiative-supra-sovereign-hypernova-governance/project-plan.json"
@@ -20,7 +25,6 @@ export ASI_GLOBAL_ADDITIONAL_ARTIFACTS_APPEND='[
   {"key":"hypernovaOwnerControl","path":"demo/zenith-sapience-initiative-supra-sovereign-hypernova-governance/OWNER-CONTROL.md","description":"Owner control dossier for the Hypernova initiative."}
 ]'
 
-rm -rf "$REPORT_ROOT"
-mkdir -p "$REPORT_ROOT"
+node demo/zenith-sapience-initiative-supra-sovereign-hypernova-governance/bin/prepare-reports.cjs kit
 
-npm run demo:asi-global -- "$@"
+npm run demo:asi-global

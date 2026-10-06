@@ -1,19 +1,18 @@
 {
   "initiative": "Zenith Sapience Initiative – Supra-Sovereign Hypernova Governance Demonstration",
-  "objective": "Model cross-regional governance, incentive controls and dependency-aware allocation; produce reviewable planning evidence. Physical programmes and owner interventions require separate commissioning.",
+  "objective": "Stage a supra-sovereign Hypernova surge that steers thermodynamic incentives, executes continental programmes, and proves every owner override remains effective under stress.",
   "budget": {
     "currency": "AGIALPHA",
     "total": "1250000000",
     "allocations": {
-      "Pan-African Coalition": "217000000",
+      "Pan-African Coalition": "210000000",
       "Americas Alliance": "250000000",
       "Asia-Pacific Compact": "260000000",
       "European Union Grid": "210000000",
-      "MENA Hydrogen Bloc": "188000000",
-      "Global Governance Reserve": "78000000",
-      "Earth Systems Observatory": "47000000"
-    },
-    "unitNote": "AGIALPHA is retained solely as the legacy scenario accounting unit. New machine-work proposals use unfunded USDC reward ceilings; this plan is not a settlement deployment."
+      "MENA Hydrogen Bloc": "160000000",
+      "Global Governance Reserve": "62000000",
+      "Earth Systems Observatory": "21000000"
+    }
   },
   "governance": {
     "owner": "0xZENITH-MULTISIG",
@@ -36,7 +35,7 @@
       "commandCenter": "npm run owner:command-center -- --network hardhat --format markdown --out reports/zenith-hypernova/command-center.md",
       "parameterMatrix": "npm run owner:parameters -- --network hardhat --format markdown --out reports/zenith-hypernova/parameter-matrix.md",
       "missionControl": "npm run owner:mission-control -- --network hardhat --format markdown --out reports/zenith-hypernova/mission-control.md --bundle reports/zenith-hypernova/mission-bundle",
-      "mermaid": "OWNER_MERMAID_FORMAT=markdown OWNER_MERMAID_OUTPUT=reports/zenith-hypernova/governance.md OWNER_MERMAID_TITLE=\"Hypernova Governance Topology\" npm run owner:diagram -- --network hardhat"
+      "mermaid": "npx hardhat run --no-compile scripts/v2/renderOwnerMermaid.ts --format markdown --out reports/zenith-hypernova/governance.md --title 'Hypernova Governance Topology'"
     }
   },
   "regions": [
@@ -390,7 +389,5 @@
       "reports/zenith-hypernova/parameter-matrix.md",
       "reports/zenith-hypernova/thermodynamics.json"
     ]
-  },
-  "scope": "synthetic-governance-scenario",
-  "timingPolicy": "duration-after-dependencies"
+  }
 }

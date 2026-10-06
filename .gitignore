@@ -120,3 +120,10 @@ demo/LARGE-SCALE-OMEGA-BUSINESS-3/.artifacts/
 /reports/omnisovereign/
 
 /reports/meta-agentic-alpha/
+
+# Hypernova generated analysis and retained rehearsal evidence
+/reports/zenith-hypernova/
+/reports/zenith-hypernova-work/
+/reports/zenith-hypernova-previous-*/
+/reports/localhost/zenith-hypernova/
+/reports/localhost/zenith-hypernova-previous-*/

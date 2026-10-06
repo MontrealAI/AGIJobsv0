@@ -1,123 +1,62 @@
 # Hypernova Owner Control Matrix
 
-This dossier catalogues every adjustable parameter surfaced during the Supra-Sovereign
-Hypernova drill. All commands rely on existing repository scripts; no new code paths are
-introduced.
+The browser workbench and proposal exporter grant no runtime or signing authority. This matrix preserves the original control categories while using the options actually parsed by the repository scripts. An installed contract deployment, valid addresses, correct chain and authorized signer remain prerequisites for state-changing operations.
 
-## 1. Governance Topology
+## Governance topology and parameter inventory
 
-- **Verify wiring**
-  ```bash
-  npm run owner:verify-control -- --network hardhat
-  ```
-- **Render topology diagram**
-  ```bash
-  ASI_GLOBAL_MERMAID_TITLE="Hypernova Governance Topology" \
-  ASI_GLOBAL_MERMAID_PATH="reports/zenith-hypernova/governance.mmd" \
-  npm run owner:diagram -- --network hardhat --format markdown --out reports/zenith-hypernova/governance.md
-  ```
+The deterministic kit generates the complete dossier and diagrams:
 
-## 2. System Pause Circuit Breaker
+```bash
+npm run demo:zenith-hypernova
+```
 
-- **Dry-run pause/resume instructions**
-  ```bash
-  npm run owner:command-center -- --network hardhat --format markdown --out reports/zenith-hypernova/command-center.md
-  ```
-  Follow the generated Safe transaction plan to execute `SystemPause.pause()` or resume.
+For an already configured deployment, the report commands accept the network explicitly:
 
-## 3. Thermodynamic Steering
+```bash
+npm run owner:command-center -- --network localhost --format markdown --out reports/hypernova-command-center.md
+npm run owner:parameters -- --network localhost --format markdown --out reports/hypernova-parameters.md
+npm run owner:mission-control -- --network localhost --format markdown --out reports/hypernova-mission-control.md --bundle reports/hypernova-mission-bundle --bundle-name zenith-hypernova
+npm run owner:blueprint -- --network localhost --out reports/hypernova-blueprint.md
+```
 
-- **Inspect current parameters**
-  ```bash
-  npm run owner:parameters -- --network hardhat --format markdown --out reports/zenith-hypernova/parameter-matrix.md
-  ```
-- **Preview emergency temperature increase**
-  ```bash
-  npx hardhat run --no-compile scripts/v2/updateThermodynamics.ts \
-    --network hardhat \
-    --temperature 0.45 \
-    --preview
-  ```
-- **Execute temperature change (requires explicit confirmation)**
-  ```bash
-  npx hardhat run --no-compile scripts/v2/updateThermodynamics.ts \
-    --network hardhat \
-    --temperature 0.45 \
-    --execute
-  ```
-- **Restore baseline configuration**
-  ```bash
-  npx hardhat run --no-compile scripts/v2/updateThermodynamics.ts \
-    --network hardhat \
-    --load config/thermodynamics.json \
-    --execute
-  ```
+Use real deployment configuration, not the plan’s illustrative `0xZENITH-*` placeholders. The kit bootstraps ephemeral Hardhat data for its own reports; an unrelated process does not inherit those deployed contracts.
 
-## 4. Treasury & Rewards
+The Mermaid renderer uses environment options rather than unsupported Hardhat script arguments:
 
-- **Review fee splits and recipients**
-  ```bash
-  npx hardhat run --no-compile scripts/v2/owner-dashboard.ts --network hardhat
-  ```
-- **Preview fee redirect**
-  ```bash
-  npx hardhat run --no-compile scripts/v2/updateFeePool.ts \
-    --network hardhat \
-    --treasury 0xTREASURY-NEW \
-    --preview
-  ```
-- **Execute redirect after governance approval**
-  ```bash
-  npx hardhat run --no-compile scripts/v2/updateFeePool.ts \
-    --network hardhat \
-    --treasury 0xTREASURY-NEW \
-    --execute
-  ```
+```bash
+OWNER_MERMAID_FORMAT=markdown OWNER_MERMAID_OUTPUT=reports/hypernova-governance.md OWNER_MERMAID_TITLE="Hypernova Governance Topology" npm run owner:diagram -- --network hardhat
+```
 
-## 5. Identity & Access
+## Preview and signing boundaries
 
-- **Update ENS allowlist snapshot**
-  ```bash
-  npm run identity:update -- --plan reports/zenith-hypernova/identity-plan.json
-  ```
-  Inspect the generated diff before applying with `--execute`.
+| Control | Current interface | Verification |
+| --- | --- | --- |
+| System pause/resume | Inspect `owner:command-center`; authorize the actual pause controller call separately | Read contract pause state and corresponding transaction receipt |
+| Thermodynamics | `scripts/v2/updateThermodynamics.ts --config <reviewed-config>`; optional `--reward-engine` and `--thermostat` | Compare desired settings, owner identity and read-back values |
+| Treasury and fee recipients | `scripts/v2/updateFeePool.ts --config <reviewed-config>`; optional `--fee-pool`, `--json` | Check recipient, split, token, network and signer before applying |
+| ENS / identity policy | `scripts/v2/updateIdentityRegistry.ts --config <reviewed-config>`; optional `--address`, `--json` | Verify current resolver/ownership and policy; a name string is not identity proof |
+| Governor/delegate rotation | `scripts/v2/rotateGovernance.ts --config <owner-config>`; optional `--governance`, `--owner`, `--safe-out` | Inspect ownership transition and Safe bundle with authorized signers |
+| Upgrade planning | `npm run owner:plan:safe -- --network localhost --out reports/hypernova-upgrade-plan.json --safe-out reports/hypernova-safe.json` | Inspect exact chain, addresses, calldata and approvals |
+| Continuous assurance | `npm run owner:verify-control -- --network localhost` and `npm run owner:health -- --network localhost` | Inspect live read-back, not a historical green report |
 
-## 6. Validator Operations
+`<reviewed-config>` and `<owner-config>` are placeholders for operator-reviewed files in the corresponding script’s schema; the Hypernova project plan is not one of those configuration files.
 
-- **Rotate validator delegates**
-  ```bash
-  npm run owner:rotate -- --network hardhat --plan demo/zenith-sapience-initiative-supra-sovereign-hypernova-governance/project-plan.json
-  ```
-- **Trigger dispute rehearsal**
-  ```bash
-  npm run disputes:sim -- --network hardhat
-  ```
+For scripts that parse their own CLI flags, invoke TypeScript directly with `HARDHAT_NETWORK` set, rather than passing arbitrary options to `hardhat run`. Example **preview only**, after preparing a valid thermodynamics configuration:
 
-## 7. Upgrade Planning
+```bash
+HARDHAT_NETWORK=localhost npx ts-node --compiler-options '{"module":"commonjs"}' scripts/v2/updateThermodynamics.ts --config /absolute/path/to/reviewed-thermodynamics.json
+```
 
-- **Generate Safe transaction bundle**
-  ```bash
-  npm run owner:plan:safe -- --output reports/zenith-hypernova/upgrade-plan.json
-  ```
-- **Blueprint review**
-  ```bash
-  npm run owner:blueprint -- --network hardhat --out reports/zenith-hypernova/blueprint.md
-  ```
+The four update/rotation scripts above preview by default and use `--execute` to submit changes. This flag authorizes execution; it is not an interactive confirmation prompt. Do not append it until the owner has reviewed the concrete plan and signer. The old `--temperature`, `--preview`, `--load`, `--treasury` and `--plan` examples did not match these parsers and have been replaced. Do not assume every repository script shares this preview behavior.
 
-## 8. Continuous Assurance
+## Incident, dispute and recovery drills
 
-- **Mission Control dashboard refresh**
-  ```bash
-  npm run owner:mission-control -- --network hardhat --format markdown \
-    --out reports/zenith-hypernova/mission-control.md \
-    --bundle reports/zenith-hypernova/mission-bundle \
-    --bundle-name zenith-hypernova
-  ```
-- **Pulse telemetry snapshot**
-  ```bash
-  npm run owner:pulse -- --network hardhat --out reports/zenith-hypernova/pulse.json
-  ```
+The complete kit/local lifecycle provides the supported rehearsal path and its logs. There is no registered `disputes:sim` command in the current package. Verify which scenarios actually ran before describing slashing, reissue, recovery or pause as tested. For a live dispute, use the deployed protocol’s documented dispute path and inspect receipts; do not substitute a generated governance report.
 
-> **Reminder:** Every state-changing command demands explicit confirmation (`--execute`).
-> Without it, scripts run in preview mode and output Safe transaction data for multisig
-> review, keeping the owner in full control.
+Keep creator, checker, independent reviewer and settlement signer separate. A single operator running multiple models has not established independent review. Stop work on exhausted limits, unknown side effects, unauthorized sources or ambiguous approvals. Reconcile outcomes before retrying mutations.
+
+## Continuous assurance and retained evidence
+
+`owner:pulse` is a Hardhat script; do not attach the formerly documented `--out` flag. Inspect its source and configured deployment before use. The normal assurance path is the generated mission-control/parameter dossier plus verified contract state.
+
+Archive exact source revision, configuration hash, action record, receipt, reviewer decision and buyer acceptance. The Hypernova wrappers preserve older report directories. Browser content checks confirm the arithmetic of a synthetic plan; they cannot authenticate signer authority, reviewer independence, finality or payment.

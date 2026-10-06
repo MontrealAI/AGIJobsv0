@@ -74,6 +74,7 @@ jobs:
           npm run demo:kardashev-business:qa
           npm run demo:omnisovereign:qa
           npm run demo:meta-agentic-alpha:qa
+          HYPERNOVA_SITE_ROOT=build/pages/experiments/zenith-hypernova npm run demo:zenith-hypernova:qa
           HGM_SITE_ROOT=build/pages/experiments/huxley-godel npm run demo:hgm:qa
           node scripts/pages/culture-qa.mjs
       - name: Save browser evidence

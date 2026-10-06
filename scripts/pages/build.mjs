@@ -721,6 +721,32 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
     );
   }
   dashboardRoutes.push('experiments/omnisovereign/');
+  const hypernovaRoot =
+    'demo/zenith-sapience-initiative-supra-sovereign-hypernova-governance/';
+  for (const asset of [
+    'index.html',
+    'styles.css',
+    'app.mjs',
+    'core.mjs',
+    'review.mjs',
+    'architecture.svg',
+    'project-plan.json',
+    'legacy-project-plan.json',
+  ]) {
+    const source =
+      asset === 'project-plan.json'
+        ? asset
+        : asset === 'legacy-project-plan.json'
+        ? 'fixtures/' + asset
+        : 'workbench/' + asset;
+    const file = hypernovaRoot + source;
+    if (!tracked.has(file)) throw new Error('Missing Hypernova asset: ' + file);
+    write(
+      'experiments/zenith-hypernova/' + asset,
+      fs.readFileSync(path.join(root, file))
+    );
+  }
+  dashboardRoutes.push('experiments/zenith-hypernova/');
   const { buildSite: buildMetaAgenticSite } = await import(
     '../../demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/scripts/build-site.mjs'
   );
