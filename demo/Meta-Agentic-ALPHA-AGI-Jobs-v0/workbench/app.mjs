@@ -438,6 +438,8 @@ try {
 } catch (error) {
   $('load-status').textContent = error.message;
   $('load-status').className = 'fail';
+  $('project-title').textContent = 'Project briefs unavailable';
+  $('project-status').textContent = error.message;
   $('receipt-file').disabled = true;
   document.body.dataset.ready = 'failed';
 }

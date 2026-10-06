@@ -86,9 +86,22 @@ try {
       ['Download proposal JSON', 'json', json(expected)],
       ['Download readable brief', 'md', renderProjectBrief(expected)],
     ]) {
-      const pending = page.waitForEvent('download');
-      await page.getByRole('button', { name: button, exact: true }).click();
-      const download = await pending;
+      const [download] = await Promise.all([
+        page.waitForEvent('download').catch(async (error) => {
+          throw new Error(
+            project.id +
+              ' / ' +
+              button +
+              ': ' +
+              (await page.locator('#project-status').textContent()) +
+              ' / ' +
+              errors.join('; ') +
+              ' / ' +
+              error.message
+          );
+        }),
+        page.getByRole('button', { name: button, exact: true }).click(),
+      ]);
       assert.equal(
         download.suggestedFilename(),
         project.id + '.proposal.' + extension
