@@ -328,5 +328,30 @@
     "Shared Demo Tests",
     "Inspect the shared test-runner regressions and discovery checks.",
     "tools"
+  ],
+  "kardashev_ii_omega_grade_alpha_agi_business_3": [
+    "Business 3 · Foundation",
+    "Create reviewable computer-work orders, inspect evidence and explore the Foundation simulation.",
+    "scale"
+  ],
+  "kardashev_ii_omega_grade_alpha_agi_business_3_demo": [
+    "Business 3 · Business 3",
+    "Create reviewable computer-work orders, inspect evidence and explore the Business 3 simulation.",
+    "scale"
+  ],
+  "kardashev_ii_omega_grade_alpha_agi_business_3_demo_omega": [
+    "Business 3 · Omega",
+    "Create reviewable computer-work orders, inspect evidence and explore the Omega simulation.",
+    "scale"
+  ],
+  "kardashev_ii_omega_grade_alpha_agi_business_3_demo_supreme": [
+    "Business 3 · Supreme",
+    "Create reviewable computer-work orders, inspect evidence and explore the Supreme simulation.",
+    "scale"
+  ],
+  "kardashev_ii_omega_grade_alpha_agi_business_3_demo_ultra": [
+    "Business 3 · Ultra",
+    "Create reviewable computer-work orders, inspect evidence and explore the Ultra simulation.",
+    "scale"
   ]
 }

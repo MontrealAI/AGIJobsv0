@@ -71,6 +71,7 @@ jobs:
       - name: Verify interactions, accessibility, layouts and diagrams
         run: |
           npm run site:qa
+          npm run demo:kardashev-business:qa
           node scripts/pages/culture-qa.mjs
       - name: Save browser evidence
         if: always()

@@ -1,16 +1,23 @@
 # AGI Jobs v0 (v2) — Demo → Kardashev II Omega Grade α AGI Business 3
 
-> AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `demo/Kardashev-II Omega-Grade-α-AGI Business-3`.
+## Current operating path
+
+[Open the Business 3 workbench guide](../kardashev_ii_omega_grade_alpha_agi_business_3/workbench/README.md) for the shared website, bounded launch commands, ten computer-work templates and approved-task worker integration. Run `npm run demo:kardashev-business:serve` from the repository root.
+
+This directory implements a **synthetic orchestration simulation**. Its token, energy, planetary and validator metrics are not evidence of live settlement, physical infrastructure or production-ready autonomous work. The preserved architecture below describes the intended system; qualify a live deployment using the workbench guide.
+
+
 
 ## Overview
-- **Path:** `demo/Kardashev-II Omega-Grade-α-AGI Business-3/README.md`
-- **Module Focus:** Anchors Demo → Kardashev II Omega Grade α AGI Business 3 inside the AGI Jobs v0 (v2) lattice so teams can orchestrate economic, governance, and operational missions with deterministic guardrails.
-- **Integration Role:** Interfaces with the unified owner control plane, telemetry mesh, and contract registry to deliver end-to-end resilience.
+
+This Python demo models job orchestration, resource accounting and governance. The ASCII-safe launchers provide stable entry points into the canonical implementation. The shared workbench adds task specifications, reproducible evidence checks and an explicit adapter path to a separately configured worker.
 
 ## Capabilities
-- Provides opinionated configuration and assets tailored to `demo/Kardashev-II Omega-Grade-α-AGI Business-3` while remaining interoperable with the global AGI Jobs v0 (v2) runtime.
-- Ships with safety-first defaults so non-technical operators can activate the experience without compromising security or compliance.
-- Publishes ready-to-automate hooks for CI, observability, and ledger reconciliation.
+
+- Preserve the original mission configuration, simulation and architecture diagrams.
+- Run bounded local scenarios and inspect their checkpoint or telemetry artifacts.
+- Prepare synthetic screen-work tasks for separately admitted OpenClaw execution.
+- Require independent substantive review and a separate settlement authority for real jobs.
 
 ## Systems Map
 ```mermaid
@@ -22,10 +29,11 @@ flowchart LR
 ```
 
 ## Working With This Module
-1. From the repository root run `npm install` once to hydrate all workspaces.
-2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `demo/Kardashev-II Omega-Grade-α-AGI Business-3`.
-3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
-4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../../OperatorRunbook.md).
+
+1. Follow the current operating guide above for the exact command for this engine. Use Python 3.12 from the repository root; the selected Python launch paths use the standard library.
+2. Run `npm run demo:kardashev-business:smoke` to check all five engines with temporary state and process timeouts.
+3. Run the focused regression and browser checks documented in the workbench guide. Passing them qualifies the tested local behavior, not a live production deployment.
+4. Keep simulation state separate from live job evidence. Qualify the provider, tool permissions, independent reviewer and settlement integration before real operation.
 
 ## Directory Guide
 ### Key Directories
@@ -45,7 +53,7 @@ flowchart LR
 ## Quality & Governance
 - Every change must land through a pull request with all required checks green (unit, integration, linting, security scan).
 - Reference [`RUNBOOK.md`](../../RUNBOOK.md) and [`OperatorRunbook.md`](../../OperatorRunbook.md) for escalation patterns and owner approvals.
-- Keep secrets outside the tree; use the secure parameter stores wired to the AGI Jobs v0 (v2) guardian mesh.
+- Keep secrets outside the tree; configure private worker credentials outside the repository, with a separate signer boundary.
 
 ## Next Steps
 - Review this module's issue board for open automation, data, or research threads.

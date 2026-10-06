@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+import math
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -93,9 +94,13 @@ async def _run_orchestrator(config: UltraDemoConfig) -> None:
 
 
 def _apply_launch_overrides(config: UltraDemoConfig, args: argparse.Namespace) -> UltraDemoConfig:
+    if args.cycles is not None and args.cycles < 0:
+        raise UltraConfigError("cycles must be non-negative")
     if args.cycles:
         config.orchestrator.max_cycles = int(args.cycles)
     if args.runtime_hours is not None:
+        if not math.isfinite(args.runtime_hours) or args.runtime_hours <= 0:
+            raise UltraConfigError("runtime-hours must be finite and positive")
         config.mission.runtime_hours = float(args.runtime_hours)
     if args.no_sim:
         config.orchestrator.enable_simulation = False

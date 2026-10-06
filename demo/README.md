@@ -106,11 +106,11 @@ The generated section includes every tracked top-level directory and every neste
 | [ICONIC-OPERATING-SYSTEM-DEMO](ICONIC-OPERATING-SYSTEM-DEMO/README.md) | Design guide | Open the guide or source directory |
 | [imperatrix-celestia-operating-system](imperatrix-celestia-operating-system/README.md) | Code and guide | Open the guide or source directory |
 | [infinity-symphony](infinity-symphony/README.md) | Code and guide | Open the guide or source directory |
-| [kardashev_ii_omega_grade_alpha_agi_business_3](kardashev_ii_omega_grade_alpha_agi_business_3) | Supporting code / assets | Open the guide or source directory |
-| [kardashev_ii_omega_grade_alpha_agi_business_3_demo](kardashev_ii_omega_grade_alpha_agi_business_3_demo) | Supporting code / assets | Open the guide or source directory |
-| [kardashev_ii_omega_grade_alpha_agi_business_3_demo_omega](kardashev_ii_omega_grade_alpha_agi_business_3_demo_omega) | Supporting code / assets | Open the guide or source directory |
-| [kardashev_ii_omega_grade_alpha_agi_business_3_demo_supreme](kardashev_ii_omega_grade_alpha_agi_business_3_demo_supreme) | Supporting code / assets | Open the guide or source directory |
-| [kardashev_ii_omega_grade_alpha_agi_business_3_demo_ultra](kardashev_ii_omega_grade_alpha_agi_business_3_demo_ultra) | Supporting code / assets | Open the guide or source directory |
+| [kardashev_ii_omega_grade_alpha_agi_business_3](kardashev_ii_omega_grade_alpha_agi_business_3/README.md) | Code and guide | `demo:kardashev-business:serve`, `demo:kardashev-business:plan`, `demo:kardashev-business:worker` |
+| [kardashev_ii_omega_grade_alpha_agi_business_3_demo](kardashev_ii_omega_grade_alpha_agi_business_3_demo/README.md) | Code and guide | Open the guide or source directory |
+| [kardashev_ii_omega_grade_alpha_agi_business_3_demo_omega](kardashev_ii_omega_grade_alpha_agi_business_3_demo_omega/README.md) | Code and guide | Open the guide or source directory |
+| [kardashev_ii_omega_grade_alpha_agi_business_3_demo_supreme](kardashev_ii_omega_grade_alpha_agi_business_3_demo_supreme/README.md) | Code and guide | Open the guide or source directory |
+| [kardashev_ii_omega_grade_alpha_agi_business_3_demo_ultra](kardashev_ii_omega_grade_alpha_agi_business_3_demo_ultra/README.md) | Code and guide | Open the guide or source directory |
 | [Kardashev-II Omega-Grade-α-AGI Business-3](Kardashev-II%20Omega-Grade-%CE%B1-AGI%20Business-3/README.md) | Code and guide | `demo:kardashev-ii-omega-upgrade`, `demo:kardashev-ii-omega-upgrade-v3`, `demo:kardashev-ii-omega-ultra` |
 | [Kardashev-II-Omega-Grade-Alpha-AGI-Business-3](Kardashev-II-Omega-Grade-Alpha-AGI-Business-3/README.md) | Code and guide | Open the guide or source directory |
 | [LARGE-SCALE-OMEGA-BUSINESS-3](LARGE-SCALE-OMEGA-BUSINESS-3/README.md) | Code and guide | `demo:omega-business-3`, `demo:omega-business-3:ui` |
@@ -215,6 +215,7 @@ The generated section includes every tracked top-level directory and every neste
 - [cosmic-omni-sovereign-symphony/docs/RUNBOOK.md](cosmic-omni-sovereign-symphony/docs/RUNBOOK.md)
 - [cosmic-omni-sovereign-symphony/docs/flagship-runbook.md](cosmic-omni-sovereign-symphony/docs/flagship-runbook.md)
 - [cosmic-omni-sovereign-symphony/docs/observability-playbook.md](cosmic-omni-sovereign-symphony/docs/observability-playbook.md)
+- [kardashev_ii_omega_grade_alpha_agi_business_3/workbench/README.md](kardashev_ii_omega_grade_alpha_agi_business_3/workbench/README.md)
 - [sovereign-constellation/asi-takes-off-demo/README.md](sovereign-constellation/asi-takes-off-demo/README.md)
 - [superintelligent-empowerment/docs/README.md](superintelligent-empowerment/docs/README.md)
 

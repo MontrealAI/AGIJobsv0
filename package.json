@@ -488,7 +488,13 @@
     "demo:planetary-orchestrator-fabric:worker": "node --import tsx demo/Planetary-Orchestrator-Fabric-v0/computer-work/worker.cjs",
     "test:planetary-orchestrator-fabric:regressions": "node --import tsx --test demo/Planetary-Orchestrator-Fabric-v0/tests/hardening.test.ts demo/Planetary-Orchestrator-Fabric-v0/tests/computer-work.test.cjs",
     "demo:asi-takeoff:studio": "node demo/asi-takeoff/scripts/studio.cjs",
-    "demo:asi-takeoff:plan": "node demo/asi-takeoff/scripts/plan.cjs"
+    "demo:asi-takeoff:plan": "node demo/asi-takeoff/scripts/plan.cjs",
+    "demo:kardashev-business:serve": "node demo/kardashev_ii_omega_grade_alpha_agi_business_3/workbench/server.cjs",
+    "demo:kardashev-business:plan": "node demo/kardashev_ii_omega_grade_alpha_agi_business_3/workbench/cli.mjs",
+    "demo:kardashev-business:worker": "node --import tsx demo/kardashev_ii_omega_grade_alpha_agi_business_3/workbench/worker.cjs",
+    "demo:kardashev-business:test": "node --import tsx --test demo/kardashev_ii_omega_grade_alpha_agi_business_3/workbench/tests/*.test.mjs",
+    "demo:kardashev-business:qa": "node demo/kardashev_ii_omega_grade_alpha_agi_business_3/workbench/tests/browser-qa.mjs",
+    "demo:kardashev-business:smoke": "python demo/kardashev_ii_omega_grade_alpha_agi_business_3/workbench/smoke.py"
   },
   "type": "commonjs",
   "version": "2.0.0"

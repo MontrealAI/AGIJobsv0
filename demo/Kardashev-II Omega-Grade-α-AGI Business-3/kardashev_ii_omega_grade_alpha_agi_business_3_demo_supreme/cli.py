@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import math
 from pathlib import Path
 from typing import Optional
 
@@ -85,6 +86,14 @@ def build_arg_parser() -> argparse.ArgumentParser:
 def _build_config_from_args(args: argparse.Namespace) -> SupremeDemoConfig:
     config = SupremeDemoConfig()
     update_config_from_args(config, args)
+    if type(config.cycles) is not int or config.cycles < 0:
+        raise ValueError("cycles must be a non-negative integer")
+    for field in ("validators", "checkpoint_interval_seconds", "snapshot_interval_seconds", "simulation_tick_seconds", "validator_commit_delay_seconds", "validator_reveal_delay_seconds", "mission_hours", "default_reward", "energy_reserve", "compute_reserve", "token_supply"):
+        value = getattr(config, field)
+        if not math.isfinite(value) or value <= 0:
+            raise ValueError(f"{field} must be finite and positive")
+    if not 0 <= config.default_stake_ratio <= 1:
+        raise ValueError("default_stake_ratio must be between 0 and 1")
     config.ensure_directories()
     return config
 
@@ -111,7 +120,7 @@ async def _run_and_report(config: SupremeDemoConfig) -> None:
 
 def run_from_cli(args: Optional[argparse.Namespace] = None) -> None:
     parser = build_arg_parser()
-    parsed = args or parser.parse_args()
+    parsed = args if isinstance(args, argparse.Namespace) else parser.parse_args(args)
     config = _build_config_from_args(parsed)
     asyncio.run(_run_and_report(config))
 

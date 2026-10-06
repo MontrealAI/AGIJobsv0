@@ -1801,134 +1801,169 @@
     "related": ["Huxley-Godel-Machine-v0"]
   },
   "kardashev_ii_omega_grade_alpha_agi_business_3": {
-    "question": "Why does this demo also have an underscore-style package name?",
-    "purpose": "For Python users and contributors: understand an import-compatible facade that preserves access to the canonical demo without duplicating its engine.",
+    "question": "How does Foundation connect useful computer work to verifiable scale?",
+    "purpose": "Explore the Foundation engine alongside a shared work-order, evidence and capacity workbench.",
     "steps": [
       {
-        "title": "Read the compatibility layer",
-        "source": "demo/kardashev_ii_omega_grade_alpha_agi_business_3/__init__.py",
-        "explanation": "Inspect how this package locates or re-exports the canonical implementation. The alias is supporting infrastructure, not a separate performance demonstration."
+        "title": "Define authorized work",
+        "source": "demo/kardashev_ii_omega_grade_alpha_agi_business_3/README.md",
+        "explanation": "Follow the selected engine launch path and its documented simulation boundary."
       },
       {
-        "title": "Read the canonical experience",
-        "source": "demo/Kardashev-II-Omega-Grade-Alpha-AGI-Business-3/README.md",
-        "explanation": "Run the canonical demo using its own environment and configuration. The related experience below explains its inputs, outputs and limitations."
+        "title": "Inspect a concrete work order",
+        "source": "demo/kardashev_ii_omega_grade_alpha_agi_business_3/workbench/catalog.mjs",
+        "explanation": "Ten synthetic tasks specify useful outputs and acceptance criteria across software, documents, analysis and research."
       },
       {
-        "title": "Check package identity",
-        "source": "demo/kardashev_ii_omega_grade_alpha_agi_business_3/__init__.py",
-        "explanation": "Confirm the resolved implementation path when debugging imports. Run from the repository root or use the documented launcher so relative package paths resolve consistently."
+        "title": "Verify evidence before settlement",
+        "source": "demo/kardashev_ii_omega_grade_alpha_agi_business_3/workbench/README.md",
+        "explanation": "Inspect task/artifact hashes, independently recompute the energy ledger, then require independent substantive review and a separately authorized signer."
       }
     ],
-    "command": null,
-    "expected": "Open the canonical experience below. This package exists for import compatibility; its success should be evaluated by delegation and behavioral parity, not a separate synthetic score.",
-    "experiment": "Compare the imported module path and exported API with the canonical source. If behavior differs, inspect the shim and the environment before changing the underlying engine.",
-    "mode": "support",
-    "related": ["Kardashev-II-Omega-Grade-Alpha-AGI-Business-3"]
+    "command": "python -m demo.kardashev_ii_omega_grade_alpha_agi_business_3 --max-cycles 3 --no-resume",
+    "expected": "A bounded synthetic orchestration run. Use the workbench for task templates and exact artifact checks; live-provider execution and settlement require separate qualification.",
+    "experiment": "Generate an energy-ledger artifact, test a deliberately wrong answer, and vary reviewer capacity before increasing the agent count.",
+    "mode": "stdlib",
+    "related": ["Kardashev-II-Omega-Grade-Alpha-AGI-Business-3"],
+    "dashboards": [
+      {
+        "route": "experiments/kardashev-business/",
+        "title": "Business 3 machine labor workbench",
+        "source": "demo/kardashev_ii_omega_grade_alpha_agi_business_3/workbench/index.html"
+      }
+    ]
   },
   "kardashev_ii_omega_grade_alpha_agi_business_3_demo": {
-    "question": "Why does this demo also have an underscore-style package name?",
-    "purpose": "For Python users and contributors: understand an import-compatible facade that preserves access to the canonical demo without duplicating its engine.",
+    "question": "How does Business 3 connect useful computer work to verifiable scale?",
+    "purpose": "Explore the Business 3 engine alongside a shared work-order, evidence and capacity workbench.",
     "steps": [
       {
-        "title": "Read the compatibility layer",
-        "source": "demo/kardashev_ii_omega_grade_alpha_agi_business_3_demo/__init__.py",
-        "explanation": "Inspect how this package locates or re-exports the canonical implementation. The alias is supporting infrastructure, not a separate performance demonstration."
+        "title": "Define authorized work",
+        "source": "demo/kardashev_ii_omega_grade_alpha_agi_business_3_demo/README.md",
+        "explanation": "Follow the selected engine launch path and its documented simulation boundary."
       },
       {
-        "title": "Read the canonical experience",
-        "source": "demo/Kardashev-II Omega-Grade-α-AGI Business-3/README.md",
-        "explanation": "Run the canonical demo using its own environment and configuration. The related experience below explains its inputs, outputs and limitations."
+        "title": "Inspect a concrete work order",
+        "source": "demo/kardashev_ii_omega_grade_alpha_agi_business_3/workbench/catalog.mjs",
+        "explanation": "Ten synthetic tasks specify useful outputs and acceptance criteria across software, documents, analysis and research."
       },
       {
-        "title": "Check package identity",
-        "source": "demo/kardashev_ii_omega_grade_alpha_agi_business_3_demo/__init__.py",
-        "explanation": "Confirm the resolved implementation path when debugging imports. Run from the repository root or use the documented launcher so relative package paths resolve consistently."
+        "title": "Verify evidence before settlement",
+        "source": "demo/kardashev_ii_omega_grade_alpha_agi_business_3/workbench/README.md",
+        "explanation": "Inspect task/artifact hashes, independently recompute the energy ledger, then require independent substantive review and a separately authorized signer."
       }
     ],
-    "command": null,
-    "expected": "Open the canonical experience below. This package exists for import compatibility; its success should be evaluated by delegation and behavioral parity, not a separate synthetic score.",
-    "experiment": "Compare the imported module path and exported API with the canonical source. If behavior differs, inspect the shim and the environment before changing the underlying engine.",
-    "mode": "support",
-    "related": ["Kardashev-II Omega-Grade-α-AGI Business-3"]
+    "command": "python -m demo.kardashev_ii_omega_grade_alpha_agi_business_3_demo --cycles 3 --no-resume",
+    "expected": "A bounded synthetic orchestration run. Use the workbench for task templates and exact artifact checks; live-provider execution and settlement require separate qualification.",
+    "experiment": "Generate an energy-ledger artifact, test a deliberately wrong answer, and vary reviewer capacity before increasing the agent count.",
+    "mode": "stdlib",
+    "related": ["Kardashev-II Omega-Grade-α-AGI Business-3"],
+    "dashboards": [
+      {
+        "route": "experiments/kardashev-business/",
+        "title": "Business 3 machine labor workbench",
+        "source": "demo/kardashev_ii_omega_grade_alpha_agi_business_3/workbench/index.html"
+      }
+    ]
   },
   "kardashev_ii_omega_grade_alpha_agi_business_3_demo_omega": {
-    "question": "Why does this demo also have an underscore-style package name?",
-    "purpose": "For Python users and contributors: understand an import-compatible facade that preserves access to the canonical demo without duplicating its engine.",
+    "question": "How does Omega connect useful computer work to verifiable scale?",
+    "purpose": "Explore the Omega engine alongside a shared work-order, evidence and capacity workbench.",
     "steps": [
       {
-        "title": "Read the compatibility layer",
-        "source": "demo/kardashev_ii_omega_grade_alpha_agi_business_3_demo_omega/__init__.py",
-        "explanation": "Inspect how this package locates or re-exports the canonical implementation. The alias is supporting infrastructure, not a separate performance demonstration."
+        "title": "Define authorized work",
+        "source": "demo/kardashev_ii_omega_grade_alpha_agi_business_3_demo_omega/README.md",
+        "explanation": "Follow the selected engine launch path and its documented simulation boundary."
       },
       {
-        "title": "Read the canonical experience",
-        "source": "demo/Kardashev-II Omega-Grade-α-AGI Business-3/README.md",
-        "explanation": "Run the canonical demo using its own environment and configuration. The related experience below explains its inputs, outputs and limitations."
+        "title": "Inspect a concrete work order",
+        "source": "demo/kardashev_ii_omega_grade_alpha_agi_business_3/workbench/catalog.mjs",
+        "explanation": "Ten synthetic tasks specify useful outputs and acceptance criteria across software, documents, analysis and research."
       },
       {
-        "title": "Check package identity",
-        "source": "demo/kardashev_ii_omega_grade_alpha_agi_business_3_demo_omega/__init__.py",
-        "explanation": "Confirm the resolved implementation path when debugging imports. Run from the repository root or use the documented launcher so relative package paths resolve consistently."
+        "title": "Verify evidence before settlement",
+        "source": "demo/kardashev_ii_omega_grade_alpha_agi_business_3/workbench/README.md",
+        "explanation": "Inspect task/artifact hashes, independently recompute the energy ledger, then require independent substantive review and a separately authorized signer."
       }
     ],
-    "command": null,
-    "expected": "Open the canonical experience below. This package exists for import compatibility; its success should be evaluated by delegation and behavioral parity, not a separate synthetic score.",
-    "experiment": "Compare the imported module path and exported API with the canonical source. If behavior differs, inspect the shim and the environment before changing the underlying engine.",
-    "mode": "support",
-    "related": ["Kardashev-II Omega-Grade-α-AGI Business-3"]
+    "command": "python -m demo.kardashev_ii_omega_grade_alpha_agi_business_3_demo_omega --cycles 3 --duration 3",
+    "expected": "A bounded synthetic orchestration run. Use the workbench for task templates and exact artifact checks; live-provider execution and settlement require separate qualification.",
+    "experiment": "Generate an energy-ledger artifact, test a deliberately wrong answer, and vary reviewer capacity before increasing the agent count.",
+    "mode": "stdlib",
+    "related": ["Kardashev-II Omega-Grade-α-AGI Business-3"],
+    "dashboards": [
+      {
+        "route": "experiments/kardashev-business/",
+        "title": "Business 3 machine labor workbench",
+        "source": "demo/kardashev_ii_omega_grade_alpha_agi_business_3/workbench/index.html"
+      }
+    ]
   },
   "kardashev_ii_omega_grade_alpha_agi_business_3_demo_supreme": {
-    "question": "Why does this demo also have an underscore-style package name?",
-    "purpose": "For Python users and contributors: understand an import-compatible facade that preserves access to the canonical demo without duplicating its engine.",
+    "question": "How does Supreme connect useful computer work to verifiable scale?",
+    "purpose": "Explore the Supreme engine alongside a shared work-order, evidence and capacity workbench.",
     "steps": [
       {
-        "title": "Read the compatibility layer",
-        "source": "demo/kardashev_ii_omega_grade_alpha_agi_business_3_demo_supreme/__init__.py",
-        "explanation": "Inspect how this package locates or re-exports the canonical implementation. The alias is supporting infrastructure, not a separate performance demonstration."
+        "title": "Define authorized work",
+        "source": "demo/kardashev_ii_omega_grade_alpha_agi_business_3_demo_supreme/README.md",
+        "explanation": "Follow the selected engine launch path and its documented simulation boundary."
       },
       {
-        "title": "Read the canonical experience",
-        "source": "demo/Kardashev-II Omega-Grade-α-AGI Business-3/README.md",
-        "explanation": "Run the canonical demo using its own environment and configuration. The related experience below explains its inputs, outputs and limitations."
+        "title": "Inspect a concrete work order",
+        "source": "demo/kardashev_ii_omega_grade_alpha_agi_business_3/workbench/catalog.mjs",
+        "explanation": "Ten synthetic tasks specify useful outputs and acceptance criteria across software, documents, analysis and research."
       },
       {
-        "title": "Check package identity",
-        "source": "demo/kardashev_ii_omega_grade_alpha_agi_business_3_demo_supreme/__init__.py",
-        "explanation": "Confirm the resolved implementation path when debugging imports. Run from the repository root or use the documented launcher so relative package paths resolve consistently."
+        "title": "Verify evidence before settlement",
+        "source": "demo/kardashev_ii_omega_grade_alpha_agi_business_3/workbench/README.md",
+        "explanation": "Inspect task/artifact hashes, independently recompute the energy ledger, then require independent substantive review and a separately authorized signer."
       }
     ],
-    "command": null,
-    "expected": "Open the canonical experience below. This package exists for import compatibility; its success should be evaluated by delegation and behavioral parity, not a separate synthetic score.",
-    "experiment": "Compare the imported module path and exported API with the canonical source. If behavior differs, inspect the shim and the environment before changing the underlying engine.",
-    "mode": "support",
-    "related": ["Kardashev-II Omega-Grade-α-AGI Business-3"]
+    "command": "python -m demo.kardashev_ii_omega_grade_alpha_agi_business_3_demo_supreme --cycles 3 --no-resume --validator_commit_delay_seconds 1 --validator_reveal_delay_seconds 1",
+    "expected": "A bounded synthetic orchestration run. Use the workbench for task templates and exact artifact checks; live-provider execution and settlement require separate qualification.",
+    "experiment": "Generate an energy-ledger artifact, test a deliberately wrong answer, and vary reviewer capacity before increasing the agent count.",
+    "mode": "stdlib",
+    "related": ["Kardashev-II Omega-Grade-α-AGI Business-3"],
+    "dashboards": [
+      {
+        "route": "experiments/kardashev-business/",
+        "title": "Business 3 machine labor workbench",
+        "source": "demo/kardashev_ii_omega_grade_alpha_agi_business_3/workbench/index.html"
+      }
+    ]
   },
   "kardashev_ii_omega_grade_alpha_agi_business_3_demo_ultra": {
-    "question": "Why does this demo also have an underscore-style package name?",
-    "purpose": "For Python users and contributors: understand an import-compatible facade that preserves access to the canonical demo without duplicating its engine.",
+    "question": "How does Ultra connect useful computer work to verifiable scale?",
+    "purpose": "Explore the Ultra engine alongside a shared work-order, evidence and capacity workbench.",
     "steps": [
       {
-        "title": "Read the compatibility layer",
-        "source": "demo/kardashev_ii_omega_grade_alpha_agi_business_3_demo_ultra/__init__.py",
-        "explanation": "Inspect how this package locates or re-exports the canonical implementation. The alias is supporting infrastructure, not a separate performance demonstration."
+        "title": "Define authorized work",
+        "source": "demo/kardashev_ii_omega_grade_alpha_agi_business_3_demo_ultra/README.md",
+        "explanation": "Follow the selected engine launch path and its documented simulation boundary."
       },
       {
-        "title": "Read the canonical experience",
-        "source": "demo/Kardashev-II Omega-Grade-α-AGI Business-3/README.md",
-        "explanation": "Run the canonical demo using its own environment and configuration. The related experience below explains its inputs, outputs and limitations."
+        "title": "Inspect a concrete work order",
+        "source": "demo/kardashev_ii_omega_grade_alpha_agi_business_3/workbench/catalog.mjs",
+        "explanation": "Ten synthetic tasks specify useful outputs and acceptance criteria across software, documents, analysis and research."
       },
       {
-        "title": "Check package identity",
-        "source": "demo/kardashev_ii_omega_grade_alpha_agi_business_3_demo_ultra/__init__.py",
-        "explanation": "Confirm the resolved implementation path when debugging imports. Run from the repository root or use the documented launcher so relative package paths resolve consistently."
+        "title": "Verify evidence before settlement",
+        "source": "demo/kardashev_ii_omega_grade_alpha_agi_business_3/workbench/README.md",
+        "explanation": "Inspect task/artifact hashes, independently recompute the energy ledger, then require independent substantive review and a separately authorized signer."
       }
     ],
-    "command": null,
-    "expected": "Open the canonical experience below. This package exists for import compatibility; its success should be evaluated by delegation and behavioral parity, not a separate synthetic score.",
-    "experiment": "Compare the imported module path and exported API with the canonical source. If behavior differs, inspect the shim and the environment before changing the underlying engine.",
-    "mode": "support",
-    "related": ["Kardashev-II Omega-Grade-α-AGI Business-3"]
+    "command": "python -m demo.kardashev_ii_omega_grade_alpha_agi_business_3_demo_ultra launch --cycles 3 --no-sim",
+    "expected": "A bounded synthetic orchestration run. Use the workbench for task templates and exact artifact checks; live-provider execution and settlement require separate qualification.",
+    "experiment": "Generate an energy-ledger artifact, test a deliberately wrong answer, and vary reviewer capacity before increasing the agent count.",
+    "mode": "stdlib",
+    "related": ["Kardashev-II Omega-Grade-α-AGI Business-3"],
+    "dashboards": [
+      {
+        "route": "experiments/kardashev-business/",
+        "title": "Business 3 machine labor workbench",
+        "source": "demo/kardashev_ii_omega_grade_alpha_agi_business_3/workbench/index.html"
+      }
+    ]
   },
   "open_endedness_v0": {
     "question": "Why does this demo also have an underscore-style package name?",
