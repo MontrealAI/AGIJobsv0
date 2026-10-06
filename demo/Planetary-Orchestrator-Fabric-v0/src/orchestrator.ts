@@ -405,6 +405,7 @@ export class PlanetaryOrchestrator {
           throw new Error(`Shard ${shardId} already exists`);
         }
         const config = PlanetaryOrchestrator.cloneShardConfig(command.shard);
+        validateFabricConfig({ ...this.config, shards: [...this.config.shards, config] });
         const state = this.createShardState(config);
         this.shards.set(shardId, state);
         this.syncShardConfigReference(shardId, config);
@@ -567,6 +568,17 @@ export class PlanetaryOrchestrator {
         if (!shardState) {
           throw new Error(`Unknown shard ${command.shard}`);
         }
+        const prospective = {
+          ...shardState.config,
+          ...command.update,
+          router: command.update.router
+            ? { ...shardState.config.router, ...command.update.router }
+            : shardState.config.router,
+        };
+        validateFabricConfig({
+          ...this.config,
+          shards: this.config.shards.map((entry) => entry.id === command.shard ? prospective : entry),
+        });
         const router = this.routers.get(command.shard);
         const applied: Record<string, unknown> = {};
         if (command.update.displayName) {
@@ -618,6 +630,12 @@ export class PlanetaryOrchestrator {
         if (configIndex < 0) {
           throw new Error(`Config missing node ${command.nodeId}`);
         }
+        validateFabricConfig({
+          ...this.config,
+          nodes: this.config.nodes.map((entry) =>
+            entry.id === command.nodeId ? { ...entry, ...command.update } : entry
+          ),
+        });
         const definition = nodeState.definition;
         const configDefinition = this.config.nodes[configIndex];
         const applied: Record<string, unknown> = {};
@@ -741,6 +759,7 @@ export class PlanetaryOrchestrator {
           throw new Error(`Node ${command.node.id} already registered`);
         }
         const definition = cloneNodeDefinition(command.node);
+        validateFabricConfig({ ...this.config, nodes: [...this.config.nodes, definition] });
         this.config.nodes.push(definition);
         const nodeState = this.createNodeState(definition);
         nodeState.lastHeartbeatTick = this.tick;
@@ -1093,6 +1112,15 @@ export class PlanetaryOrchestrator {
       reason: 'manual-outage',
     });
     this.requeueJobsForNode(node, 'manual-outage');
+  }
+
+  getLatestPendingSubmissionTick(): number {
+    let latest = this.tick;
+    for (const shard of this.shards.values()) {
+      for (const job of shard.queue) latest = Math.max(latest, job.submissionTick);
+      for (const job of shard.inFlight.values()) latest = Math.max(latest, job.submissionTick);
+    }
+    return latest;
   }
 
   getShardSnapshots(): Record<ShardId, { queueDepth: number; inFlight: number; completed: number }> {

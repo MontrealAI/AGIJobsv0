@@ -17,7 +17,7 @@ import { PlanetaryOrchestrator } from '../src/orchestrator';
 import { runSimulation } from '../src/simulation';
 import { expandJobBlueprint } from '../src/job-blueprint';
 import { loadMissionPlan } from '../src/config-loader';
-import type { FabricConfig } from '../src/types';
+import type { FabricConfig, OwnerCommand } from '../src/types';
 const demo = resolve(__dirname, '..');
 async function setup(t: any) {
   const dir = await mkdtemp(join(tmpdir(), 'planetary-guard-'));
@@ -72,6 +72,127 @@ test('future jobs cannot execute before their submission tick', async (t) => {
   for (let tick = 1; tick < 5; tick++)
     assert.equal(o.processTick({ tick }).length, 0);
   assert.equal(o.processTick({ tick: 5 }).length, 1);
+});
+for (const resume of [false, true])
+  test(`scheduled jobs beyond the default budget finish (${
+    resume ? 'resumed' : 'fresh'
+  })`, async (t) => {
+    const { config } = await setup(t);
+    config.checkpoint.intervalTicks = 10000;
+    const jobBlueprint = { jobs: [{ ...job, submissionTick: 3000 }] };
+    if (resume) {
+      const partial = await runSimulation(config, {
+        jobs: 1,
+        jobBlueprint,
+        stopAfterTicks: 100,
+      });
+      assert.equal(partial.metrics.jobsCompleted, 0);
+    }
+    const result = await runSimulation(config, {
+      jobs: 1,
+      ...(resume ? { resume: true } : { jobBlueprint }),
+    });
+    assert.equal(result.metrics.jobsCompleted, 1);
+    assert.ok(result.metrics.tick >= 3000);
+    const summary = JSON.parse(
+      await readFile(result.artifacts.summaryPath, 'utf8')
+    );
+    assert.equal(summary.run.stopReason, 'completed');
+    assert.equal(summary.run.stoppedEarly, false);
+  });
+
+for (const target of ['missing', 'earth'])
+  for (const policy of [false, true])
+    test(`invalid ${
+      policy ? 'policy' : 'spillover'
+    } target ${target} is rejected before shard update`, async (t) => {
+      const { config } = await setup(t);
+      const before = structuredClone(config);
+      const manager = new CheckpointManager(config.checkpoint.path);
+      const o = new PlanetaryOrchestrator(config, manager);
+      o.submitJob(job);
+      const update = {
+        displayName: 'Must not change',
+        ...(policy
+          ? { router: { spilloverPolicies: [{ target, threshold: 1 }] } }
+          : { spilloverTargets: [target] }),
+      };
+      await assert.rejects(
+        o.applyOwnerCommand({ type: 'shard.update', shard: 'earth', update }),
+        /Invalid spillover/
+      );
+      assert.deepEqual(config, before);
+      assert.equal(o.getShardSnapshots().earth.queueDepth, 1);
+      await o.saveCheckpoint();
+      assert.ok(await manager.load());
+    });
+
+test('invalid registrations and node moves leave recoverable state unchanged', async (t) => {
+  const { config } = await setup(t);
+  const before = structuredClone(config);
+  const manager = new CheckpointManager(config.checkpoint.path);
+  const o = new PlanetaryOrchestrator(config, manager);
+  o.submitJob(job);
+  o.processTick({ tick: 1 });
+  const commands: OwnerCommand[] = [
+    {
+      type: 'shard.register',
+      shard: { ...config.shards[0], id: 'edge', spilloverTargets: ['missing'] },
+    },
+    {
+      type: 'shard.register',
+      shard: { ...config.shards[0], id: 'edge', spilloverTargets: ['edge'] },
+    },
+    {
+      type: 'shard.register',
+      shard: {
+        ...config.shards[0],
+        id: 'edge',
+        router: { spilloverPolicies: [{ target: 'missing', threshold: 1 }] },
+      },
+    },
+    {
+      type: 'node.register',
+      node: { ...config.nodes[0], id: 'invalid.worker', region: 'missing' },
+    },
+    {
+      type: 'node.update',
+      nodeId: 'earth.worker',
+      update: { region: 'missing', capacity: 9 },
+    },
+  ];
+  for (const command of commands) {
+    await assert.rejects(
+      o.applyOwnerCommand(command),
+      /Invalid spillover|Unknown node region/
+    );
+    assert.deepEqual(config, before);
+    assert.equal(o.getShardSnapshots().earth.inFlight, 1);
+    assert.equal(o.fabricMetrics.ownerInterventions, 0);
+  }
+  await o.applyOwnerCommand({
+    type: 'shard.register',
+    shard: { ...config.shards[0], id: 'edge', spilloverTargets: ['earth'] },
+  });
+  await o.applyOwnerCommand({
+    type: 'node.register',
+    node: { ...config.nodes[0], id: 'edge.worker', region: 'edge' },
+  });
+  await o.applyOwnerCommand({
+    type: 'shard.update',
+    shard: 'earth',
+    update: { spilloverTargets: ['edge'] },
+  });
+  await o.applyOwnerCommand({
+    type: 'node.update',
+    nodeId: 'earth.worker',
+    update: { region: 'edge' },
+  });
+  await o.saveCheckpoint();
+  const restored = new PlanetaryOrchestrator(config, manager);
+  assert.equal(await restored.restoreFromCheckpoint(), true);
+  assert.equal(restored.getNodeSnapshots()['earth.worker'].region, 'edge');
+  assert.ok(restored.getShardSnapshots().edge);
 });
 test('unserviceable job with no spillover does not hang', async (t) => {
   const { config } = await setup(t);

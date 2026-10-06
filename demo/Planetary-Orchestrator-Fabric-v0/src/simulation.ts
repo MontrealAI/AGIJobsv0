@@ -62,15 +62,20 @@ function computeOutageTick(plannedJobs: number, explicit?: number): number {
 function computeTickBudgets(
   plannedJobs: number,
   startTick: number,
-  stopAfterTicks: number | undefined
+  stopAfterTicks: number | undefined,
+  latestSubmissionTick: number
 ): { initialLimit: number; hardLimit: number; extensionWindow: number } {
   const baseWindow = Math.max(Math.ceil(plannedJobs * 0.4), 200);
   if (stopAfterTicks !== undefined) {
     const stopTick = startTick + coercePositiveInteger(stopAfterTicks);
     return { initialLimit: stopTick, hardLimit: stopTick, extensionWindow: baseWindow };
   }
-  const hardLimit = startTick + Math.max(baseWindow * 4, Math.ceil(plannedJobs * 1.5), 2000);
-  return { initialLimit: startTick + baseWindow, hardLimit, extensionWindow: baseWindow };
+  // Keep a full processing window after the last pending submission, including
+  // jobs restored from a checkpoint without their original blueprint options.
+  const horizon = Math.max(startTick, latestSubmissionTick);
+  const hardLimit = horizon + Math.max(baseWindow * 4, Math.ceil(plannedJobs * 1.5), 2000);
+  if (!Number.isSafeInteger(hardLimit)) throw new Error('Scheduled jobs exceed the safe simulation tick horizon');
+  return { initialLimit: horizon + baseWindow, hardLimit, extensionWindow: baseWindow };
 }
 
 type OwnerStateSnapshot = ReturnType<PlanetaryOrchestrator['getOwnerState']>;
@@ -794,7 +799,8 @@ export async function runSimulation(
   const { initialLimit, hardLimit, extensionWindow } = computeTickBudgets(
     plannedJobs,
     orchestrator.currentTick,
-    stopAfterTicks
+    stopAfterTicks,
+    orchestrator.getLatestPendingSubmissionTick()
   );
   let tickBudgetLimit = initialLimit;
   let tick = orchestrator.currentTick;
