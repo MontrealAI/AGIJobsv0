@@ -12,7 +12,7 @@ python3 demo/astral-omnidominion-operating-system-command-theatre/run_demo.py
 
 Open `reports/astral-omnidominion-operating-system-command-theatre/report.html`. The page works offline, adapts to narrow screens and provides file links, readable outcomes and a ten-job catalog. There are no external scripts, fonts or CDN dependencies.
 
-Expected: `accepted`, four checks passed, three unique ledger entries, one duplicate, 21,999 cents total. Read `report.json` for machine-readable fields. Each execution stores candidate files in a new `runs/<id>/` directory; it does not reuse another run's artifacts. Each completed task also retains its own `receipt.json` and `index.html` inside that directory, so earlier runs stay independently verifiable. The top-level report/dashboard represent the latest invocation at that output path.
+Expected: `accepted`, six checks passed, three unique ledger entries, one duplicate, 21,999 cents total. Read `report.json` for machine-readable fields. Each execution stores candidate files in a new `runs/<id>/` directory; it does not reuse another run's artifacts. Each completed task also retains its own `receipt.json` and `index.html` inside that directory, so earlier runs stay independently verifiable. The top-level report/dashboard represent the latest invocation at that output path.
 
 - `--scenario rejected`: an intentional one-cent error is detected; exit 1.
 - `--scenario paused`: no task is executed and no task artifacts are written; exit 1.

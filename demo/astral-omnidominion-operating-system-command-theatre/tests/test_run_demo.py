@@ -158,6 +158,31 @@ def test_rehashed_wrong_deliverable_still_fails_acceptance_consistency(tmp_path)
         run_demo.verify_report(output)
 
 
+@pytest.mark.parametrize("field,value", [
+    ("allowed_actions", ["read fixture", "write local evidence", "send payment"]),
+    ("allowed_actions", ["browse production"]),
+    ("allowed_actions", None),
+    ("schema_version", 2),
+    ("schema_version", True),
+    ("schema_version", None),
+])
+def test_rehashed_task_cannot_expand_authority_or_change_schema(tmp_path, field, value):
+    _, output, payload = execute(tmp_path)
+    work = payload["rehearsal"]
+    entry = next(e for e in work["artifacts"] if e["path"].endswith("/task.json"))
+    path = output.parent / entry["path"]
+    task = json.loads(path.read_text())
+    task[field] = value
+    data = run_demo._json_bytes(task)
+    path.write_bytes(data)
+    digest = hashlib.sha256(data).hexdigest()
+    entry.update(sha256=digest, bytes=len(data))
+    work["task_sha256"] = digest
+    output.write_text(json.dumps(payload))
+    with pytest.raises(ValueError, match="authority boundary"):
+        run_demo.verify_report(output)
+
+
 @pytest.mark.parametrize("attack", ["../outside.json", "/etc/passwd", "..\\outside.json"])
 def test_verifier_rejects_paths_outside_report(tmp_path, attack):
     _, output, payload = execute(tmp_path)

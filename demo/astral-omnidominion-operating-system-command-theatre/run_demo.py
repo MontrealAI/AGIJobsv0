@@ -265,7 +265,10 @@ def verify_report(path: Path) -> dict:
         raise ValueError("Task digest mismatch")
     catalog = load_catalog(next(iter(parents)) / "work-catalog.json")
     task = files["task.json"]
-    if (not isinstance(task, dict) or task.get("mode") != "offline-fixture"
+    if (not isinstance(task, dict) or type(task.get("schema_version")) is not int
+            or task["schema_version"] != 1
+            or task.get("allowed_actions") != ["read fixture", "write local evidence"]
+            or task.get("mode") != "offline-fixture"
             or task.get("input_class") != "synthetic" or task.get("signer_access") is not False
             or task.get("provider_dispatch") is not False or task.get("settlement_approved") is not False
             or task.get("job") != next(job for job in catalog["jobs"] if job["id"] == "reconciliation")):
