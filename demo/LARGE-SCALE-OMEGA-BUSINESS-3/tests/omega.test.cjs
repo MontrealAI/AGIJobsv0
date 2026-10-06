@@ -180,6 +180,56 @@ test('complete offline mission binds inputs, tasks, results and independent chec
     /already exists/
   );
 });
+test('handoffs reject oversized valid workloads and include all instruction overhead', () => {
+  const { taskFor } = require('../lib/mission.cjs');
+  const input = clone(workloads.solaris),
+    nation = scenario.nations[0];
+  input.rows = Array.from({ length: 1000 }, (_, index) => ({
+    id: `row-${index}`,
+    generatedKwh: '1',
+    consumedKwh: '0',
+  }));
+  validateInput(input);
+  assert.throws(() => taskFor(nation, input), /input text exceeds 32000/);
+  const boundary = { ...clone(workloads.solaris), padding: '' };
+  boundary.padding = 'x'.repeat(
+    32000 - taskFor(nation, boundary).inputText.length
+  );
+  assert.equal(taskFor(nation, boundary).inputText.length, 32000);
+  boundary.padding += 'x';
+  assert.throws(() => taskFor(nation, boundary), /input text exceeds 32000/);
+});
+test('a real mission rejects oversized handoffs even when all jobs are deferred', (t) => {
+  const dir = temp(t),
+    demo = path.join(dir, 'demo', 'LARGE-SCALE-OMEGA-BUSINESS-3');
+  fs.cpSync(s.DEMO, demo, { recursive: true });
+  const changed = clone(workloads);
+  changed.solaris.rows = Array.from({ length: 1000 }, (_, index) => ({
+    id: `row-${index}`,
+    generatedKwh: '1',
+    consumedKwh: '0',
+  }));
+  rewrite(demo, 'computer-work/workloads.json', changed);
+  const out = path.join(dir, 'run');
+  const result = spawnSync(
+    process.execPath,
+    [
+      path.join(demo, 'lib/mission.cjs'),
+      '--out',
+      out,
+      '--review-capacity',
+      '0',
+    ],
+    { encoding: 'utf8', timeout: 5000 }
+  );
+  assert.ifError(result.error);
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /input text exceeds 32000/);
+  const report = path.join(out, 'report.json');
+  if (fs.existsSync(report))
+    assert.equal(JSON.parse(fs.readFileSync(report)).successful, false);
+  assert.equal(fs.existsSync(path.join(out, 'solaris/task.json')), false);
+});
 for (const capacity of ['0', '100'])
   test(`subset scenarios export verifiable workloads with review capacity ${capacity}`, async (t) => {
     const dir = temp(t),

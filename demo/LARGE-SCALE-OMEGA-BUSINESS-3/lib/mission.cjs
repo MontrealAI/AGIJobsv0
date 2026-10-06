@@ -88,7 +88,7 @@ function economics(nation, policy) {
   };
 }
 function taskFor(nation, input, origin = 'http://127.0.0.1:4186') {
-  return {
+  const task = {
     schemaVersion: 1,
     workerProfile: 'omega',
     goal: input.goal,
@@ -113,6 +113,11 @@ function taskFor(nation, input, origin = 'http://127.0.0.1:4186') {
       { name: 'dossier.md', mediaType: 'text/markdown' },
     ],
   };
+  if (task.inputText.length > 32000)
+    throw new Error(
+      'Computer-work input text exceeds 32000 characters; reduce workload rows or split into separate work orders'
+    );
+  return task;
 }
 function phasesFor(options, out) {
   return [

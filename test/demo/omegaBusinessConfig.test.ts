@@ -66,4 +66,27 @@ describe('Omega Business scenario configuration', function () {
       );
     }
   });
+  it('checks the complete handoff text at the real adapter input boundary', function () {
+    const {
+      taskFor,
+    } = require('../../demo/LARGE-SCALE-OMEGA-BUSINESS-3/lib/mission.cjs');
+    const scenario = require('../../demo/LARGE-SCALE-OMEGA-BUSINESS-3/config/omega.simulation.json');
+    const workloads = require('../../demo/LARGE-SCALE-OMEGA-BUSINESS-3/computer-work/workloads.json');
+    const {
+      parseComputerWorkTask,
+    } = require('../../apps/orchestrator/computerWork');
+    const input = { ...structuredClone(workloads.solaris), padding: '' };
+    input.padding = 'x'.repeat(
+      32000 - taskFor(scenario.nations[0], input).inputText.length
+    );
+    const task = taskFor(scenario.nations[0], input);
+    expect(parseComputerWorkTask(task).inputText.length).to.equal(32000);
+    expect(() =>
+      parseComputerWorkTask({ ...task, inputText: task.inputText + 'x' })
+    ).to.throw('Invalid input text');
+    input.padding += 'x';
+    expect(() => taskFor(scenario.nations[0], input)).to.throw(
+      'input text exceeds 32000'
+    );
+  });
 });
