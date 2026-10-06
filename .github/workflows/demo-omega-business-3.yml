@@ -8,6 +8,8 @@ on:
       - 'contracts/test/MockERC20.sol'
       - 'contracts/test/SimpleJobRegistry.sol'
       - 'scripts/v2/owner*.ts'
+      - 'scripts/v2/oneclick-deploy.ts'
+      - 'scripts/v2/lib/reserved-output.cjs'
       - 'scripts/config/**'
       - 'apps/orchestrator/computerWork.ts'
       - 'apps/orchestrator/agentPolicy.ts'
@@ -25,6 +27,8 @@ on:
       - 'contracts/test/MockERC20.sol'
       - 'contracts/test/SimpleJobRegistry.sol'
       - 'scripts/v2/owner*.ts'
+      - 'scripts/v2/oneclick-deploy.ts'
+      - 'scripts/v2/lib/reserved-output.cjs'
       - 'scripts/config/**'
       - 'apps/orchestrator/computerWork.ts'
       - 'apps/orchestrator/agentPolicy.ts'
@@ -71,6 +75,8 @@ jobs:
           cache: npm
       - name: Install locked dependencies
         run: ./scripts/ci/npm-ci.sh --no-audit --prefer-offline --progress=false
+      - name: Verify mainnet signer preflight with synthetic keys
+        run: node --test demo/LARGE-SCALE-OMEGA-BUSINESS-3/tests/mainnet-preflight.cjs
       - name: Verify rejection of unconfigured owner addresses
         run: node demo/LARGE-SCALE-OMEGA-BUSINESS-3/tests/owner-diagnostics.cjs reports/omega-business-3/ci/owner-diagnostics
       - name: Independently verify evidence
