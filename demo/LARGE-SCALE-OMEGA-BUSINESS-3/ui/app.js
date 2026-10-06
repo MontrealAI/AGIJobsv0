@@ -231,7 +231,13 @@ byId('language').addEventListener('click', () => {
     if (!source.ok) throw new Error('Scenario unavailable');
     const scenario = await source.json();
     report.reviewLimit = scenario.businessPolicy.maxReviewerMinutesPerJob;
-    byId('capacity').max = String(Math.max(60, report.review.capacityMinutes));
+    const totalRequiredMinutes = report.jobs.reduce(
+      (total, job) => total + job.admission.estimatedReviewMinutes,
+      0
+    );
+    byId('capacity').max = String(
+      Math.max(60, report.review.capacityMinutes, totalRequiredMinutes)
+    );
     byId('capacity').value = String(report.review.capacityMinutes);
     render();
   } catch (error) {

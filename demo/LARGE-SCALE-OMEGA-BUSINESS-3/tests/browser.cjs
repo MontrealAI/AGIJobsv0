@@ -26,7 +26,7 @@ async function main() {
       `http://127.0.0.1:${port}`,
     ])
   );
-  const server = createServer(result.out, port);
+  let server = createServer(result.out, port);
   await new Promise((r) => server.listen(port, '127.0.0.1', r));
   let browser;
   try {
@@ -107,11 +107,70 @@ async function main() {
       path: path.join(output, 'mobile.png'),
       fullPage: true,
     });
+    // A verified custom report can validly need 1440 minutes per job while
+    // saved capacity is zero. Preview must reach one job and the whole batch.
+    const custom = structuredClone(require('../config/omega.simulation.json'));
+    custom.businessPolicy.maxReviewerMinutesPerJob = 1440;
+    custom.nations.forEach((nation) => {
+      nation.estimatedReviewMinutes = 1440;
+    });
+    const customPath = path.join(output, 'custom-scenario.json');
+    fs.writeFileSync(customPath, JSON.stringify(custom));
+    const customResult = await run(
+      parseArgs([
+        '--scenario',
+        customPath,
+        '--review-capacity',
+        '0',
+        '--out',
+        path.join(output, 'custom-run'),
+        '--origin',
+        `http://127.0.0.1:${port}`,
+      ])
+    );
+    server.closeAllConnections();
+    await new Promise((r) => server.close(r));
+    server = createServer(customResult.out, port);
+    await new Promise((r) => server.listen(port, '127.0.0.1', r));
+    await page.goto(`http://127.0.0.1:${port}/`);
+    await page.locator('.mission').nth(2).waitFor();
+    assert.equal(await page.locator('#capacity').getAttribute('max'), '4320');
+    await page.locator('#capacity').fill('1440');
+    assert.match(
+      await page.locator('#capacity-result').textContent(),
+      /1 of 3/
+    );
+    await page.locator('#capacity').fill('4320');
+    assert.match(
+      await page.locator('#capacity-result').textContent(),
+      /3 of 3/
+    );
+    await page.locator('#language').click();
+    assert.match(
+      await page.locator('#capacity-result').textContent(),
+      /3 mandat\(s\).*4320/
+    );
+    assert.equal(
+      JSON.parse(fs.readFileSync(path.join(customResult.out, 'report.json')))
+        .review.capacityMinutes,
+      0
+    );
+    assert.equal(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth > innerWidth
+      ),
+      false,
+      'custom scenario mobile overflow'
+    );
+    await page.screenshot({
+      path: path.join(output, 'custom-capacity.png'),
+      fullPage: true,
+    });
     assert.deepEqual(errors, []);
     assert.deepEqual(external, []);
     assert.equal(await page.locator('#error').isVisible(), false);
     console.log(
-      `Browser checks passed: desktop/mobile, keyboard, language, capacity preview, task download, no external requests or browser errors. Screenshots: ${output}`
+      `Browser checks passed: desktop/mobile, keyboard, language, default/custom capacity preview, task download, no external requests or browser errors. Screenshots: ${output}`
     );
   } finally {
     if (browser) await browser.close();

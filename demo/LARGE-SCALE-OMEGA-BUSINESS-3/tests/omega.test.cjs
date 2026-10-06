@@ -657,6 +657,8 @@ test('mainnet validates the selected config economics before accepting execution
   assert.equal(check(valid).execute, true);
   for (const [section, key, value] of [
     ['econ', 'feePct', 101],
+    ['econ', 'feePtc', 5],
+    ['econ', 'minPlatfromStake', '1000'],
     ['econ', 'feePct', 0.5],
     ['econ', 'burnPct', -1],
     ['econ', 'feePct', '5'],

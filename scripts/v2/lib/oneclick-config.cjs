@@ -60,6 +60,25 @@ function validateOneclickConfig(config, decimals) {
     config.secureDefaults === undefined ? {} : config.secureDefaults;
   object(econ, 'econ');
   object(defaults, 'secureDefaults');
+  for (const key of Object.keys(econ))
+    if (
+      ![
+        'feePct',
+        'burnPct',
+        'minStake',
+        'jobStake',
+        'minPlatformStake',
+        'commitWindow',
+        'revealWindow',
+        'employerSlashPct',
+        'treasurySlashPct',
+        'validatorSlashRewardPct',
+        'appealFee',
+        'disputeWindow',
+        'treasury',
+      ].includes(key)
+    )
+      throw new Error(`Unknown econ field ${key}`);
   for (const key of [
     'feePct',
     'burnPct',
