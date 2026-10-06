@@ -52,13 +52,15 @@ class GovernanceTimelock:
         "update_evolution_policy": lambda console, payload: console.update_evolution_policy(**payload),
         "update_verification_policy": lambda console, payload: console.update_verification_policy(**payload),
         "set_scenarios": lambda console, payload: console.update_scenarios_from_payload(payload),
-        "set_paused": lambda console, payload: console.set_paused(bool(payload["value"])),
+        "set_paused": lambda console, payload: console.set_paused(payload["value"]),
         "pause": lambda console, payload: console.pause(),
         "resume": lambda console, payload: console.resume(),
     }
 
     def __init__(self, default_delay: timedelta | None = None) -> None:
-        self.default_delay = default_delay or timedelta(seconds=0)
+        self.default_delay = default_delay if default_delay is not None else timedelta(seconds=0)
+        if self.default_delay < timedelta(0):
+            raise ValueError("timelock delay must be non-negative")
         self._scheduled: Dict[str, TimelockedAction] = {}
 
     # ------------------------------------------------------------------
@@ -72,7 +74,10 @@ class GovernanceTimelock:
     ) -> TimelockedAction:
         if name not in self._ACTIONS:
             raise ValueError(f"unknown timelock action: {name}")
-        eta = datetime.now(UTC) + (delay or self.default_delay)
+        effective_delay = delay if delay is not None else self.default_delay
+        if effective_delay < timedelta(0):
+            raise ValueError("timelock delay must be non-negative")
+        eta = datetime.now(UTC) + effective_delay
         action = TimelockedAction(
             action_id=f"tl-{uuid4().hex}",
             name=name,

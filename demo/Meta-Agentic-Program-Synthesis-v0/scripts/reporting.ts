@@ -37,7 +37,7 @@ function renderOwnerScriptVerdict(ownerScripts: OwnerScriptAudit[]): string {
     return "No owner scripts declared.";
   }
   if (available === ownerScripts.length) {
-    return "All declared owner scripts are available and verified.";
+    return "All declared owner scripts are present in the package catalog.";
   }
   return `${available}/${ownerScripts.length} owner scripts available – review missing commands.`;
 }
@@ -262,7 +262,7 @@ function renderMermaidFlow(mission: MissionConfig, run: SynthesisRun): string {
 function renderMermaidTimeline(task: TaskResult): string {
   const milestones = task.history.map((snapshot) => {
     const novelty = formatPercent(task.bestCandidate.metrics.novelty, 1);
-    return `  ${snapshot.timestamp} : score ${formatNumber(snapshot.bestScore, 2)} • elite ${formatNumber(snapshot.eliteScore, 2)} • diversity ${formatNumber(snapshot.diversity, 2)} • novelty ${novelty}`;
+    return `  Generation ${snapshot.generation} : score ${formatNumber(snapshot.bestScore, 2)} • elite ${formatNumber(snapshot.eliteScore, 2)} • diversity ${formatNumber(snapshot.diversity, 2)} • novelty ${novelty}`;
   });
   return [
     "```mermaid",
@@ -527,6 +527,11 @@ export function buildJsonSummary(
   ownerCapabilities: OwnerCapabilityAudit[],
 ): Record<string, unknown> {
   return {
+    evidenceClass: "seeded-simulation",
+    providerCalls: 0,
+    chainTransactions: 0,
+    productionApproved: false,
+    settlementApproved: false,
     generatedAt: run.generatedAt,
     mission: {
       title: run.mission.meta.title,
@@ -640,7 +645,7 @@ export function renderHtmlDashboard(
     <summary>Triangulated Verification</summary>
     <p><strong>Consensus:</strong> ${escapeHtml(task.triangulation.consensus)} • Confidence ${formatPercent(task.triangulation.confidence)}</p>
     <div class="table">${renderTriangulationHtml(task.triangulation)}</div>
-    <pre class="mermaid">${renderTriangulationMermaid(task.triangulation).replace(/```mermaid|```/g, "").trim()}</pre>
+    <pre class="mermaid">${escapeHtml(renderTriangulationMermaid(task.triangulation).replace(/```mermaid|```/g, "").trim())}</pre>
   </details>
   <details>
     <summary>Evolutionary History</summary>
@@ -652,7 +657,7 @@ export function renderHtmlDashboard(
   </details>
   <details>
     <summary>Evolution Timeline</summary>
-    <pre class="mermaid">${timeline.replace(/```mermaid|```/g, "").trim()}</pre>
+    <pre class="mermaid">${escapeHtml(timeline.replace(/```mermaid|```/g, "").trim())}</pre>
   </details>
 </section>`;
     })
@@ -669,7 +674,7 @@ export function renderHtmlDashboard(
   const missingVerifications = ownerCapabilities.filter((entry) => !entry.verificationAvailable);
   const ownerCapabilitiesVerdict =
     missingCommands.length === 0 && missingVerifications.length === 0
-      ? "✅ all owner commands verified"
+      ? "✅ all owner commands found in the package catalog"
       : `⚠️ ${missingCommands.length} command(s) + ${missingVerifications.length} verification(s) need attention`;
   const ownerSupremacySummary =
     `${formatPercent(ownerSupremacy.coverageRatio)} coverage • scripts ${formatPercent(ownerSupremacy.scriptAvailability)} ` +
@@ -682,11 +687,11 @@ export function renderHtmlDashboard(
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>${escapeHtml(run.mission.meta.title)}</title>
-    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js" defer></script>
+    <script src="./mermaid.min.js" defer></script>
     <script>
       document.addEventListener('DOMContentLoaded', () => {
         if (window.mermaid) {
-          window.mermaid.initialize({ startOnLoad: true, theme: 'dark' });
+          window.mermaid.initialize({ startOnLoad: true, theme: 'dark', securityLevel: 'strict' });
         }
       });
     </script>
@@ -712,6 +717,8 @@ export function renderHtmlDashboard(
     </style>
   </head>
   <body>
+<main id="main">
+    <p role="note">Seeded simulation. No provider calls, independent external review or payments. CI and owner checks inspect declarations only.</p>
     <header>
       <h1>${escapeHtml(run.mission.meta.title)}</h1>
       <p>${escapeHtml(run.mission.meta.description)}</p>
@@ -728,7 +735,7 @@ export function renderHtmlDashboard(
     </header>
     <section>
       <h2>Meta-Agentic Control Surface</h2>
-      <pre class="mermaid">${mermaidFlow.replace(/```mermaid|```/g, "").trim()}</pre>
+      <pre class="mermaid">${escapeHtml(mermaidFlow.replace(/```mermaid|```/g, "").trim())}</pre>
     </section>
     <section>
       <h2>Verification Consensus</h2>
@@ -759,9 +766,10 @@ export function renderHtmlDashboard(
       <p>Coverage ≥ ${run.mission.ci.minCoverage}% | Concurrency group <code>${escapeHtml(run.mission.ci.concurrency)}</code></p>
     </section>
     <footer>Generated ${escapeHtml(run.generatedAt)} • JSON summary embedded below</footer>
-    <script id="meta-agentic-summary" type="application/json">${escapeHtml(JSON.stringify(summary, null, 2))}</script>
-    <script id="meta-agentic-triangulation" type="application/json">${escapeHtml(JSON.stringify(triangulationDigest, null, 2))}</script>
-  </body>
+    <script id="meta-agentic-summary" type="application/json">${JSON.stringify(summary, null, 2).replace(/</g, "\\u003c")}</script>
+    <script id="meta-agentic-triangulation" type="application/json">${JSON.stringify(triangulationDigest, null, 2).replace(/</g, "\\u003c")}</script>
+  </main>
+</body>
 </html>`;
 }
 
@@ -799,10 +807,12 @@ export async function writeReports(
   await writeFile(markdownFile, markdown, "utf8");
   await writeFile(jsonFile, JSON.stringify(summary, null, 2), "utf8");
   await writeFile(htmlFile, html, "utf8");
+  const mermaidFile = path.join(path.dirname(htmlFile), "mermaid.min.js");
+  await writeFile(mermaidFile, readFileSync(path.join(__dirname, "../meta_agentic_demo/static/mermaid.min.js")));
   await writeFile(triangulationFile, JSON.stringify(triangulation, null, 2), "utf8");
   await writeFile(briefingFile, briefing, "utf8");
   return {
-    files: [markdownFile, jsonFile, htmlFile, triangulationFile, briefingFile],
+    files: [markdownFile, jsonFile, htmlFile, triangulationFile, briefingFile, mermaidFile],
     ownerScripts,
     ownerCapabilities,
   };

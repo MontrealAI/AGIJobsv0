@@ -29,12 +29,12 @@ export interface RunOptions {
 export function resolveRunOptions(options: RunOptions = {}): Required<RunOptions> {
   const missionFile = path.resolve(options.missionFile ?? process.env.AGI_META_PROGRAM_MISSION ?? DEFAULT_MISSION);
   const reportDir = path.resolve(options.reportDir ?? REPORT_DIR);
-  const reportFile = path.resolve(options.reportFile ?? REPORT_FILE);
-  const summaryFile = path.resolve(options.summaryFile ?? SUMMARY_FILE);
-  const dashboardFile = path.resolve(options.dashboardFile ?? DASHBOARD_FILE);
-  const manifestFile = path.resolve(options.manifestFile ?? MANIFEST_FILE);
-  const triangulationFile = path.resolve(options.triangulationFile ?? TRIANGULATION_FILE);
-  const briefingFile = path.resolve(options.briefingFile ?? BRIEFING_FILE);
+  const reportFile = path.resolve(options.reportFile ?? path.join(reportDir, path.basename(REPORT_FILE)));
+  const summaryFile = path.resolve(options.summaryFile ?? path.join(reportDir, path.basename(SUMMARY_FILE)));
+  const dashboardFile = path.resolve(options.dashboardFile ?? path.join(reportDir, path.basename(DASHBOARD_FILE)));
+  const manifestFile = path.resolve(options.manifestFile ?? path.join(reportDir, path.basename(MANIFEST_FILE)));
+  const triangulationFile = path.resolve(options.triangulationFile ?? path.join(reportDir, path.basename(TRIANGULATION_FILE)));
+  const briefingFile = path.resolve(options.briefingFile ?? path.join(reportDir, path.basename(BRIEFING_FILE)));
   return {
     missionFile,
     reportDir,
@@ -90,7 +90,7 @@ export async function executeSynthesis(options: RunOptions = {}): Promise<Synthe
   return run;
 }
 
-function parseArgs(argv: string[]): RunOptions {
+export function parseArgs(argv: string[]): RunOptions {
   const options: RunOptions = {};
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
@@ -103,6 +103,8 @@ function parseArgs(argv: string[]): RunOptions {
     } else if (arg === "--manifest" && index + 1 < argv.length) {
       options.manifestFile = argv[index + 1];
       index += 1;
+    } else {
+      throw new Error(`Unknown or incomplete argument: ${arg}`);
     }
   }
   return options;

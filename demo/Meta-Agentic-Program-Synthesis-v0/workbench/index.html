@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Turn a work brief into a tested program, reviewable evidence and an accountable machine-work order. Explore the AGI Jobs synthesis laboratory."
+    />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'"
+    />
+    <title>The Synthesis Foundry · AGI Jobs</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script type="module" src="app.mjs"></script>
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+    <header>
+      <a class="brand" href="#main"
+        ><span class="brand-icon" aria-hidden="true">✧</span> AGI JOBS
+        <span class="brand-sub">/ SYNTHESIS FOUNDRY</span></a
+      >
+      <nav aria-label="Main navigation">
+        <a href="#lab">Laboratory</a><a href="#work">Work orders</a
+        ><a href="#scale">Scale</a><a href="#evidence">Evidence</a>
+      </nav>
+      <span class="pill">LOCAL LAB · NO PAYMENT</span>
+    </header>
+    <main id="main">
+      <section class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">META-AGENTIC PROGRAM SYNTHESIS / V0</p>
+          <h1>Intelligence<br />that builds<br /><em>what comes next.</em></h1>
+          <p class="lead">
+            Turn a clear objective into a working program. Search, challenge,
+            improve—and carry the evidence into a broader economy of machine
+            work.
+          </p>
+          <div class="actions">
+            <a class="button primary" href="#lab"
+              >Enter the synthesis lab <span aria-hidden="true">↗</span></a
+            ><a class="button secondary" href="#work">Design a work order</a>
+          </div>
+          <p class="fine">
+            Runs in your browser. No account, provider connection or wallet
+            required.
+          </p>
+        </div>
+        <div
+          class="orbital"
+          aria-label="Illustration: specialized workers coordinate around a shared objective"
+          role="img"
+        >
+          <div class="orbit orbit-a"></div>
+          <div class="orbit orbit-b"></div>
+          <div class="orbit orbit-c"></div>
+          <div class="nucleus">α<span>OBJECTIVE</span></div>
+          <span class="satellite s1">SYNTHESIZE</span
+          ><span class="satellite s2">VERIFY</span
+          ><span class="satellite s3">IMPROVE</span>
+          <div class="orbital-caption">
+            ONE INTENT. MANY SPECIALISTS.<br />REVIEWABLE RESULTS.
+          </div>
+        </div>
+      </section>
+      <section class="principles" aria-label="Operating principles">
+        <div>
+          <span>01 / EXECUTION</span><strong>Programs with purpose</strong>
+          <p>Generate bounded candidates against explicit examples.</p>
+        </div>
+        <div>
+          <span>02 / EVIDENCE</span><strong>Proof before promotion</strong>
+          <p>Challenge outputs on unseen cases and preserve failures.</p>
+        </div>
+        <div>
+          <span>03 / VALUE</span><strong>Useful work compounds</strong>
+          <p>Reuse accepted capabilities across authorized workflows.</p>
+        </div>
+      </section>
+      <section id="lab" class="section">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">01 / THE EXECUTABLE LABORATORY</p>
+            <h2>From examples to<br />a reusable program.</h2>
+          </div>
+          <p>
+            This is real local search over a small, safe operation language. It
+            does not execute arbitrary generated code or establish general
+            intelligence.
+          </p>
+        </div>
+        <div class="lab-grid">
+          <form id="lab-form" class="panel">
+            <span class="step">DEFINE THE OBJECTIVE</span
+            ><label for="case">Choose a task</label
+            ><select id="case">
+              <option value="normalize">Normalize a dataset</option>
+              <option value="ledger">Reconcile eligible amounts</option>
+              <option value="catalog">Clean a product catalog</option>
+            </select>
+            <p id="goal"></p>
+            <label for="candidate-limit">Candidate limit</label
+            ><input
+              id="candidate-limit"
+              type="number"
+              min="1"
+              max="400"
+              step="1"
+              value="400"
+            />
+            <p class="fine">
+              Up to 400 candidates. At most 3 operations each. Search stops at
+              the first exact training match.
+            </p>
+            <div id="examples"></div>
+            <div class="actions">
+              <button class="primary" id="run" type="submit" disabled>
+                Search for a program</button
+              ><button class="secondary" id="stop" type="button" disabled>
+                Stop
+              </button>
+            </div>
+          </form>
+          <div class="panel results">
+            <div class="result-heading">
+              <span class="step">CANDIDATE / NOT YET ACCEPTED</span
+              ><span id="lab-state" class="pill">READY</span>
+            </div>
+            <p id="lab-status" role="status" aria-live="polite">
+              Loading the source fixtures…
+            </p>
+            <div class="program-display">
+              <span>DISCOVERED PROGRAM</span
+              ><code id="program">Awaiting your objective</code>
+            </div>
+            <dl class="metric-row">
+              <div>
+                <dt>Candidates evaluated</dt>
+                <dd id="tested">0</dd>
+              </div>
+              <div>
+                <dt>Training examples</dt>
+                <dd id="matched">—</dd>
+              </div>
+              <div>
+                <dt>External review</dt>
+                <dd>Required</dd>
+              </div>
+            </dl>
+            <label for="probe">Challenge it with your own integers</label
+            ><input id="probe" value="[-7,0,7,100]" spellcheck="false" /><button
+              id="challenge"
+              type="button"
+              class="secondary"
+              disabled
+            >
+              Evaluate input</button
+            ><output id="probe-result" aria-live="polite"></output>
+            <div class="actions">
+              <button
+                id="download-candidate"
+                type="button"
+                class="primary"
+                disabled
+              >
+                Export candidate JSON ↓</button
+              ><button id="inject" type="button" class="secondary" disabled>
+                Try a wrong candidate
+              </button>
+            </div>
+            <p class="fine">
+              The Python challenger checks the exact exported operations against
+              separate, fixed acceptance cases. A passing local check still
+              needs independent operator review.
+            </p>
+          </div>
+        </div>
+      </section>
+      <section id="work" class="section">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">02 / A MACHINE LABOR LAYER</p>
+            <h2>Give intelligence<br />a complete work order.</h2>
+          </div>
+          <p>
+            AGI Jobs coordinates specialized agents for authorized, lawful
+            screen-based work: clear deliverables, reviewable evidence,
+            independent verification and controlled settlement.
+          </p>
+        </div>
+        <div class="work-grid">
+          <div class="panel">
+            <h3>Choose the outcome</h3>
+            <label for="work-type">Work category</label
+            ><select id="work-type">
+              <option>Software &amp; automated tests</option>
+              <option>Public-data reports &amp; spreadsheets</option>
+              <option>Browser &amp; desktop quality assurance</option>
+              <option>Research &amp; numerical reproduction</option>
+              <option>Design &amp; presentation production</option>
+              <option>Authorized operational workflows</option></select
+            ><label for="objective">Deliverable and acceptance criteria</label
+            ><textarea id="objective" rows="4" maxlength="4000">
+Deliver an editable data transformation, reproduce its outputs on approved inputs, and include source hashes, test results and a concise reviewer guide.</textarea
+            >
+            <div class="field-grid">
+              <div>
+                <label for="budget">Budget (USDC)</label
+                ><input id="budget" value="1500" inputmode="decimal" />
+              </div>
+              <div>
+                <label for="worker-cost">Estimated execution cost</label
+                ><input id="worker-cost" value="400" inputmode="decimal" />
+              </div>
+              <div>
+                <label for="reviewer-cost">Estimated review cost</label
+                ><input id="reviewer-cost" value="100" inputmode="decimal" />
+              </div>
+              <div>
+                <label for="review-minutes">Review minutes needed</label
+                ><input
+                  id="review-minutes"
+                  type="number"
+                  min="0"
+                  max="100000"
+                  value="20"
+                />
+              </div>
+              <div>
+                <label for="review-capacity">Reviewer minutes available</label
+                ><input
+                  id="review-capacity"
+                  type="number"
+                  min="0"
+                  max="100000"
+                  value="60"
+                />
+              </div>
+            </div>
+            <label class="check"
+              ><input type="checkbox" id="lawful" />The scope and actions are
+              lawful and authorized.</label
+            ><label class="check"
+              ><input type="checkbox" id="rights" />Inputs are public, licensed
+              or synthetic, with verified usage rights.</label
+            ><label class="check"
+              ><input type="checkbox" id="independent" />An independent reviewer
+              is assigned.</label
+            >
+            <p id="plan-status" role="status"></p>
+            <button id="export-order" class="primary" type="button">
+              Export work order ↓
+            </button>
+            <p class="fine">
+              This prepares a draft. It does not admit, dispatch, fund or settle
+              a job. Reservations and actual costs must be enforced by the
+              commissioned runtime.
+            </p>
+          </div>
+          <div class="routes">
+            <article class="panel">
+              <span class="step">ROUTE A / OPERATOR-LED</span>
+              <h3>ChatGPT Work + Computer Use</h3>
+              <p>
+                Use approved app integrations or scoped desktop control to
+                perform the task. Export the actual files and session evidence,
+                then send them through independent acceptance review.
+              </p>
+              <a href="https://learn.chatgpt.com/docs/computer-use"
+                >Official Computer Use setup ↗</a
+              >
+            </article>
+            <article class="panel">
+              <span class="step">ROUTE B / ADMITTED WORKER</span>
+              <h3>OpenClaw + OpenAI runtime</h3>
+              <p>
+                Use the repository’s Responses adapter with an exact task hash,
+                a dedicated worker profile and a persistent dispatch journal.
+                Commission tools, app access, host isolation and spending limits
+                before admission.
+              </p>
+              <a
+                href="https://github.com/MontrealAI/AGIJobsv0/blob/main/demo/Meta-Agentic-Program-Synthesis-v0/INTEGRATION.md"
+                >Open the integration guide ↗</a
+              >
+            </article>
+            <article class="panel">
+              <span class="step">CAPABILITY WITH ACCOUNTABILITY</span>
+              <h3>Many apps. One evidence standard.</h3>
+              <p>
+                Browser, documents, spreadsheets, presentations, code and
+                desktop workflows can share a common work contract. Each
+                category needs its own measurable acceptance tests. Universal
+                reliable task completion is an ambition, not a demonstrated
+                result.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+      <section class="section architecture">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">03 / COORDINATION ARCHITECTURE</p>
+            <h2>A system that improves<br />through accepted work.</h2>
+          </div>
+          <p>
+            Specialization expands capability. Independent review decides what
+            becomes reusable. Authorized settlement closes the economic loop.
+          </p>
+        </div>
+        <div class="flow-grid">
+          <article>
+            <span>01</span>
+            <h3>Specify &amp; admit</h3>
+            <p>Rights, exact scope, spend ceiling, reviewer capacity.</p>
+          </article>
+          <article>
+            <span>02</span>
+            <h3>Synthesize &amp; execute</h3>
+            <p>Bounded tools, isolated workers, cancellable runs.</p>
+          </article>
+          <article>
+            <span>03</span>
+            <h3>Challenge &amp; verify</h3>
+            <p>Unseen inputs, actual artifacts, independent review.</p>
+          </article>
+          <article>
+            <span>04</span>
+            <h3>Accept &amp; settle</h3>
+            <p>Buyer acceptance, dispute path, authorized contract action.</p>
+          </article>
+        </div>
+        <div class="feedback">
+          <span aria-hidden="true">↶</span> Rejected candidates return for
+          correction. Accepted outcomes inform future worker selection.
+        </div>
+        <p>
+          <a href="legacy/python/index.html"
+            >Explore the preserved command theatre and flowcharts ↗</a
+          >
+        </p>
+      </section>
+      <section id="scale" class="section">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">
+              04 / FROM USEFUL WORK TO CIVILIZATION-SCALE CAPACITY
+            </p>
+            <h2>Build the productive base<br />for a larger future.</h2>
+          </div>
+          <p>
+            Revenue from accepted work can support better tools, scientific
+            discovery, infrastructure engineering and energy-system research.
+            Physical deployment requires its own capital, engineering and
+            governance.
+          </p>
+        </div>
+        <div class="scale-grid">
+          <div class="panel">
+            <span class="step">ILLUSTRATIVE OPPORTUNITY MODEL</span>
+            <h3>$40 trillion / year</h3>
+            <p>
+              Project-supplied total labor opportunity assumption. This is not
+              an independently verified TAM, forecast or revenue claim.
+            </p>
+            <div class="field-grid">
+              <div>
+                <label for="addressable">Digitally addressable (%)</label
+                ><input
+                  id="addressable"
+                  type="number"
+                  min="0"
+                  max="100"
+                  value="50"
+                />
+              </div>
+              <div>
+                <label for="licensed">Accessible &amp; licensed (%)</label
+                ><input
+                  id="licensed"
+                  type="number"
+                  min="0"
+                  max="100"
+                  value="20"
+                />
+              </div>
+              <div>
+                <label for="reliable">Passes acceptance (%)</label
+                ><input
+                  id="reliable"
+                  type="number"
+                  min="0"
+                  max="100"
+                  value="25"
+                />
+              </div>
+              <div>
+                <label for="adoption">Buyer adoption (%)</label
+                ><input
+                  id="adoption"
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.01"
+                  value="0.01"
+                />
+              </div>
+              <div>
+                <label for="fee">Platform fee (%)</label
+                ><input id="fee" type="number" min="0" max="100" value="5" />
+              </div>
+            </div>
+          </div>
+          <div class="scale-result">
+            <span class="step">YOUR ASSUMPTIONS / ANNUALIZED</span>
+            <p id="market-error" role="status"></p>
+            <div class="market-number" id="work-value">—</div>
+            <p>Illustrative accepted work value</p>
+            <div class="market-number smaller" id="fee-value">—</div>
+            <p>Illustrative platform revenue, before costs</p>
+            <p class="fine">
+              All five filters multiply. Work value is not profit. Change any
+              assumption to explore sensitivity.
+            </p>
+          </div>
+        </div>
+      </section>
+      <section id="evidence" class="section">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">05 / INSPECT THE RECORD</p>
+            <h2>Keep the ambition.<br />Make every claim inspectable.</h2>
+          </div>
+          <p>
+            The original Python and TypeScript engines, presentations and
+            diagrams remain available. These are reproducible research
+            demonstrations; their scores do not certify a production fleet.
+          </p>
+        </div>
+        <div class="evidence-grid">
+          <article class="panel">
+            <span class="step">PYTHON / REGENERATED AT BUILD</span>
+            <h3>Evolution &amp; verification</h3>
+            <label for="record">Scenario</label
+            ><select id="record">
+              <option value="alpha">Alpha</option>
+              <option value="atlas">Atlas</option>
+              <option value="sovereign">Sovereign</option>
+              <option value="imperium">Imperium</option>
+            </select>
+            <p id="record-summary" role="status"></p>
+            <div id="trajectory"></div>
+            <p>
+              <a id="record-link" href="legacy/python/alpha/report.json"
+                >Download raw record ↓</a
+              >
+            </p>
+            <a href="legacy/python/index.html">Open command theatre ↗</a>
+          </article>
+          <article class="panel">
+            <span class="step">TYPESCRIPT / REGENERATED AT BUILD</span>
+            <h3>Quality-diversity search</h3>
+            <p>
+              Explore the vector-program search, candidate archive,
+              triangulation and declared owner controls. Configuration
+              inspection is distinct from passing GitHub Actions.
+            </p>
+            <a
+              href="legacy/typescript/meta-agentic-program-synthesis-dashboard.html"
+              >Open original synthesis dashboard ↗</a
+            >
+            <p>
+              <a
+                href="legacy/typescript/meta-agentic-program-synthesis-summary.json"
+                >Download synthesis summary ↓</a
+              >
+            </p>
+          </article>
+          <article class="panel">
+            <span class="step">REPRODUCTION &amp; DEPLOYMENT</span>
+            <h3>Operator resources</h3>
+            <ul>
+              <li>
+                <a
+                  href="https://github.com/MontrealAI/AGIJobsv0/blob/main/demo/Meta-Agentic-Program-Synthesis-v0/README.md"
+                  >Quick start &amp; capability map ↗</a
+                >
+              </li>
+              <li>
+                <a
+                  href="https://github.com/MontrealAI/AGIJobsv0/blob/main/demo/Meta-Agentic-Program-Synthesis-v0/RUNBOOK.md"
+                  >Runbook &amp; recovery ↗</a
+                >
+              </li>
+              <li>
+                <a
+                  href="https://github.com/MontrealAI/AGIJobsv0/tree/main/demo/Meta-Agentic-Program-Synthesis-v0/presentation"
+                  >Original presentations ↗</a
+                >
+              </li>
+              <li><a href="build.json">Build provenance ↓</a></li>
+              <li><a href="cases.json">Exact laboratory inputs ↓</a></li>
+            </ul>
+            <p class="fine">
+              Legacy presentations are historical design material. Use the
+              current README and runbook for operational status.
+            </p>
+          </article>
+        </div>
+        <details class="faq">
+          <summary>
+            What does “production” require beyond this laboratory?
+          </summary>
+          <p>
+            A commissioned provider and execution environment, verified app
+            permissions, enforced cost and action limits, a tested stop/recovery
+            path, artifact integrity, independent acceptance, buyer use, and
+            deployment-specific contract validation before authorized
+            settlement. No provider connection or payment is made by this
+            website.
+          </p>
+        </details>
+        <details class="faq">
+          <summary>Why use AGI Jobs instead of a chatbot alone?</summary>
+          <p>
+            A chatbot helps perform a task. AGI Jobs adds the work contract:
+            scope, worker coordination, evidence, independent verification,
+            dispute handling and settlement. Value comes from accepted
+            deliverables that buyers can use.
+          </p>
+        </details>
+      </section>
+    </main>
+    <footer>
+      <a class="brand" href="#main">✧ AGI JOBS</a>
+      <p>THE SYNTHESIS FOUNDRY · From intelligence to accountable work.</p>
+      <a
+        href="https://github.com/MontrealAI/AGIJobsv0/tree/main/demo/Meta-Agentic-Program-Synthesis-v0"
+        >Source code ↗</a
+      >
+    </footer>
+    <noscript
+      ><p class="noscript">
+        JavaScript is required for local synthesis and exports. The operator
+        resources and preserved reports remain available through their links.
+      </p></noscript
+    >
+  </body>
+</html>

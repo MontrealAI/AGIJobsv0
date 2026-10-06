@@ -26,16 +26,30 @@ class StakeAccount:
     balance: float
     last_active: datetime = field(default_factory=lambda: datetime.now(UTC))
 
+    def __post_init__(self) -> None:
+        self._amount(self.balance)
+
+    @staticmethod
+    def _amount(amount: float) -> None:
+        if isinstance(amount, bool) or not isinstance(amount, (int, float)) or not math.isfinite(amount) or amount < 0:
+            raise ValueError("stake amount must be finite and non-negative")
+
     def slash(self, fraction: float) -> float:
+        self._amount(fraction)
+        if fraction > 1:
+            raise ValueError("slash fraction must be within [0, 1]")
         penalty = self.balance * fraction
         self.balance -= penalty
         return penalty
 
     def deposit(self, amount: float) -> None:
+        self._amount(amount)
+        self._amount(self.balance + amount)
         self.balance += amount
         self.last_active = datetime.now(UTC)
 
     def withdraw(self, amount: float) -> float:
+        self._amount(amount)
         if amount > self.balance:
             raise ValueError("withdrawal exceeds stake balance")
         self.balance -= amount
@@ -63,7 +77,7 @@ class StakeManager:
 
     def slash(self, address: str, fraction: float | None = None) -> float:
         account = self.ensure_account(address)
-        penalty = account.slash(fraction or self.policy.slash_fraction)
+        penalty = account.slash(self.policy.slash_fraction if fraction is None else fraction)
         return penalty
 
     def enforce_timeouts(self) -> Dict[str, float]:
@@ -106,13 +120,17 @@ class RewardEngine:
 
     def _boltzmann_split(self, energy_map: Dict[str, float], pool: float) -> Dict[str, float]:
         if not energy_map:
+            if pool:
+                raise ValueError("a non-zero reward pool requires recipients")
             return {}
+        for energy in energy_map.values():
+            StakeAccount._amount(energy)
         max_energy = max(energy_map.values())
         if max_energy == 0:
             equal_share = pool / len(energy_map)
             return {address: equal_share for address in energy_map}
         numerator = {
-            address: math.exp(energy / (self.policy.temperature * max_energy))
+            address: math.exp((energy / max_energy - 1) / self.policy.temperature)
             for address, energy in energy_map.items()
         }
         denominator = sum(numerator.values())
@@ -129,17 +147,35 @@ class ValidationModule:
     """Commit–reveal validation with voting quorum enforcement."""
 
     def __init__(self, quorum: int = 3) -> None:
+        if type(quorum) is not int or quorum < 1:
+            raise ValueError("quorum must be a positive integer")
         self.quorum = quorum
         self._commits: Dict[int, Dict[str, str]] = defaultdict(dict)
         self._votes: Dict[int, Dict[str, Tuple[str, bool]]] = defaultdict(dict)
 
     def commit_result(self, job: Job, node: str, digest: str) -> None:
+        if not node or not digest or digest != job.result_commit:
+            raise ValueError("solver commitment must match the job result")
+        if self._commits[job.job_id]:
+            raise ValueError("solver commitment already recorded")
+        job.assigned_node = node
         self._commits[job.job_id][node] = digest
 
     def submit_vote(self, job: Job, validator: str, digest: str, approve: bool) -> None:
+        if not self._commits[job.job_id] or job.status is not JobStatus.IN_PROGRESS:
+            raise ValueError("a pending committed result is required")
+        if not validator or validator == job.assigned_node or validator in self._votes[job.job_id]:
+            raise ValueError("validator must be distinct and vote once")
+        if type(approve) is not bool:
+            raise ValueError("approve must be a boolean")
         self._votes[job.job_id][validator] = (digest, approve)
 
     def finalise(self, job: Job) -> bool:
+        if job.status in (JobStatus.COMPLETED, JobStatus.FAILED):
+            return job.status is JobStatus.COMPLETED
+        if not job.result_commit or self._commits[job.job_id].get(job.assigned_node) != job.result_commit:
+            job.status = JobStatus.FAILED
+            return False
         votes = self._votes[job.job_id]
         if len(votes) < self.quorum:
             job.status = JobStatus.FAILED

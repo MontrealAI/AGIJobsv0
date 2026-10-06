@@ -92,11 +92,12 @@ def render_dashboard_html(payload: Mapping[str, object]) -> str:
         batch = payload["constellation_report"]
         batch_link = (
             f"<p class=\"note\">Constellation artefacts: "
-            f"<a href='{batch['html']}'>HTML</a> · <a href='{batch['json']}'>JSON</a></p>"
+            f"<a href='{_escape(batch['html'])}'>HTML</a> · <a href='{_escape(batch['json'])}'>JSON</a></p>"
         )
     return f"""<!DOCTYPE html>
 <html lang=\"en\">
   <head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta charset=\"utf-8\" />
     <title>Meta-Agentic Command Theatre</title>
     <style>
@@ -125,6 +126,8 @@ def render_dashboard_html(payload: Mapping[str, object]) -> str:
     <script>mermaid.initialize({{ startOnLoad: true, theme: "dark", securityLevel: "strict" }});</script>
   </head>
   <body>
+<main id="main">
+  <p role="note">Seeded simulation · no provider calls, independent external review, or blockchain payments. Rewards are simulation credits.</p>
     <section>
       <h1><span>Meta-Agentic Command Theatre</span>{summary['headline']}</h1>
       <div class=\"hero\">
@@ -140,7 +143,7 @@ def render_dashboard_html(payload: Mapping[str, object]) -> str:
     <section>
       <h2>Mission Fleet</h2>
       <div class=\"grid\">{cards}</div>
-      <div class=\"mermaid\">{summary['mermaid']}</div>
+      <div class=\"mermaid\">{_escape(summary['mermaid'])}</div>
     </section>
     <section>
       <h2>Capital & Verification Ledger</h2>
@@ -160,7 +163,8 @@ def render_dashboard_html(payload: Mapping[str, object]) -> str:
         <tbody>{opportunity_rows}</tbody>
       </table>
     </section>
-  </body>
+  </main>
+</body>
 </html>
 """
 
@@ -246,7 +250,7 @@ def _summarise_constellation(
     mermaid = _render_mermaid_graph(mission_entries)
 
     summary: MutableMapping[str, object] = {
-        "headline": "Sovereign fleet operational",
+        "headline": "Synthetic constellation complete",
         "mission_count": mission_count,
         "pass_rate": pass_rate,
         "average_score": average_score,
@@ -259,6 +263,9 @@ def _summarise_constellation(
     }
 
     payload: MutableMapping[str, object] = {
+        "evidence_class": "seeded-simulation",
+        "production_approved": False,
+        "settlement_approved": False,
         "missions": mission_entries,
         "summary": summary,
     }
@@ -279,7 +286,7 @@ def _render_mission_card(entry: Mapping[str, object]) -> str:
     links = entry["links"]
     if links["html"]:
         link_html = (
-            f"<p><a href='{links['html']}'>Open sovereign report</a></p>"
+            f"<p><a href='{_escape(links['html'])}'>Open sovereign report</a></p>"
         )
     return (
         "<div class='card'>"
@@ -291,7 +298,7 @@ def _render_mission_card(entry: Mapping[str, object]) -> str:
         f"<p>Skewness: {entry['skewness']:+.3f} (pass={entry['skewness_pass']})</p>"
         f"<p>Kurtosis: {entry['kurtosis']:.3f} (pass={entry['kurtosis_pass']})</p>"
         f"<p>Jackknife: {entry['jackknife_floor']:.3f}→{entry['jackknife_ceiling']:.3f} (pass={entry['jackknife_pass']})</p>"
-        f"<p>Total rewards: {entry['rewards']:.2f} $AGIα</p>"
+        f"<p>Total rewards: {entry['rewards']:.2f} simulation credits</p>"
         f"<p>Owner touchpoints: {entry['owner_actions']}</p>"
         f"<p>Timelock actions: {entry['timelock_actions']}</p>"
         f"<p>Top solver: {_escape(str(solver))}</p>"
@@ -308,9 +315,9 @@ def _render_ledger_row(entry: Mapping[str, object]) -> str:
     links = entry["links"]
     link_parts = []
     if links["html"]:
-        link_parts.append(f"<a href='{links['html']}'>HTML</a>")
+        link_parts.append(f"<a href='{_escape(links['html'])}'>HTML</a>")
     if links["json"]:
-        link_parts.append(f"<a href='{links['json']}'>JSON</a>")
+        link_parts.append(f"<a href='{_escape(links['json'])}'>JSON</a>")
     link_html = " · ".join(link_parts) if link_parts else "—"
     return (
         "<tr>"
@@ -318,7 +325,7 @@ def _render_ledger_row(entry: Mapping[str, object]) -> str:
         f"<td>{entry['score']:.4f}</td>"
         f"<td>{entry['resilience']:.4f}</td>"
         f"<td><span class='badge {badge_class}'>{verification}</span></td>"
-        f"<td>{entry['rewards']:.2f} $AGIα</td>"
+        f"<td>{entry['rewards']:.2f} simulation credits</td>"
         f"<td>{entry['opportunity_count']}</td>"
         f"<td>{link_html}</td>"
         "</tr>"
@@ -349,7 +356,7 @@ def _render_mermaid_graph(entries: Iterable[Mapping[str, object]]) -> str:
             f"    Architect --> {identifier}[\"{title}\\nScore {entry['score']:.3f}\"]"
         )
         lines.append(
-            f"    {identifier} --> {identifier}Reward{{\"{entry['rewards']:.1f} $AGIα\"}}"
+            f"    {identifier} --> {identifier}Reward{{\"{entry['rewards']:.1f} simulation credits\"}}"
         )
         if entry["opportunity_count"]:
             lines.append(
@@ -368,7 +375,7 @@ def _escape(value: str) -> str:
         value.replace("&", "&amp;")
         .replace("<", "&lt;")
         .replace(">", "&gt;")
-        .replace('"', "&quot;")
+        .replace('"', "&quot;").replace("'", "&#39;")
     )
 
 

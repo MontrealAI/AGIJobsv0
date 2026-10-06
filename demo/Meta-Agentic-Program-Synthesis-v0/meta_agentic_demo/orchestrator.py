@@ -79,7 +79,7 @@ class SovereignArchitect:
         self.stake_manager = StakeManager(self.config.stake_policy)
         self.validation_module = ValidationModule()
         self.timelock = timelock or GovernanceTimelock()
-        self.random = random.Random(random_seed)
+        self.random = random.Random(42 if random_seed is None else random_seed)
         self._stress_multiplier = 1.0
         self._recompute_baselines()
 
