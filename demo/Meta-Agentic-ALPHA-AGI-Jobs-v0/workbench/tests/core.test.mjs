@@ -18,6 +18,9 @@ import {
   json,
   sha256,
   validateScenario,
+  canonical,
+  makeProjectBrief,
+  renderProjectBrief,
 } from '../model.mjs';
 import { execute } from '../execute.mjs';
 import { reviewBundle, reviewReceipt, reviewCandidate } from '../review.mjs';
@@ -29,6 +32,74 @@ const source = readJson(path.join(root, 'scenario.json'));
 const fresh = () => structuredClone(source);
 const artifact = (bundle, index) =>
   JSON.parse(bundle.results[index].artifact.content);
+
+test('all twelve project exports preserve scope and require separate commissioning', async () => {
+  const before = structuredClone(source);
+  for (const project of source.work) {
+    const brief = await makeProjectBrief(source, project.id);
+    assert.equal(brief.documentType, 'proposed-project-brief');
+    assert.equal(brief.sourceSha256, await sha256(canonical(source)));
+    assert.equal(brief.scenarioId, source.id);
+    assert.equal(brief.dataClass, 'synthetic');
+    assert.deepEqual(brief.project, {
+      ...project,
+      rewardUsdc: decimal(amount(project.rewardUsdc)),
+    });
+    assert.equal(brief.executionAuthorized, false);
+    assert.equal(brief.productionApproved, false);
+    assert.equal(brief.settlementApproved, false);
+    assert.equal('workerProfile' in brief, false);
+    assert.equal(brief.commissioningRequired.length, 4);
+    const readable = renderProjectBrief(brief);
+    for (const text of [
+      project.title,
+      project.deliverable,
+      ...project.acceptanceCriteria,
+      brief.sourceSha256,
+    ])
+      assert.ok(readable.includes(text));
+    assert.match(readable, /not authorized/);
+    brief.project.acceptanceCriteria[0] = 'mutated copy';
+  }
+  assert.deepEqual(source, before);
+  await assert.rejects(
+    makeProjectBrief(source, 'identify'),
+    /known project ID/
+  );
+  await assert.rejects(
+    makeProjectBrief(source, 'ALPHA-013'),
+    /known project ID/
+  );
+  const changed = fresh();
+  changed.work[0].deliverable += ' Revised scope.';
+  assert.notEqual(
+    (await makeProjectBrief(changed, 'ALPHA-001')).sourceSha256,
+    (await makeProjectBrief(source, 'ALPHA-001')).sourceSha256
+  );
+});
+
+test('CLI project exports match browser contracts and reject unknown identities', async () => {
+  for (const command of ['brief', 'brief-markdown']) {
+    const result = spawnSync(
+      process.execPath,
+      [path.join(root, 'cli.mjs'), command, 'ALPHA-012'],
+      { encoding: 'utf8' }
+    );
+    assert.equal(result.status, 0, result.stderr);
+    const brief = await makeProjectBrief(source, 'ALPHA-012');
+    assert.equal(
+      result.stdout,
+      command === 'brief' ? json(brief) : renderProjectBrief(brief)
+    );
+  }
+  const invalid = spawnSync(
+    process.execPath,
+    [path.join(root, 'cli.mjs'), 'brief', 'ALPHA-013'],
+    { encoding: 'utf8' }
+  );
+  assert.equal(invalid.status, 1);
+  assert.match(invalid.stderr, /known project ID/);
+});
 
 test('six phases qualify, route, reserve and deliver exact review-ready work orders', async () => {
   const bundle = await execute(source);

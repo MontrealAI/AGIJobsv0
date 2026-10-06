@@ -40,6 +40,15 @@ The reference source produces **five review-ready work orders, seven deferred br
 
 The twelve briefs cover complete applications, SDK migrations, performance repairs, numerical research, evaluation suites, interface design, supply-chain models, open-source features, executable documentation, evidence maps, reconciliation software and scientific exploration. They are **proposed customer projects**. The completed artifacts are the six portfolio analyses and work-order dossier; the demo does not claim those customer projects have been delivered.
 
+Select any project title to inspect its deliverable and all three acceptance criteria. **Download proposal JSON** preserves the exact scope, normalized USDC reward, review allowance and source digest; **Download readable brief** provides the same proposal and commissioning steps for a customer or reviewer. Both exports explicitly leave execution, production and settlement unauthorized. These individual project proposals are separate from the six dispatchable portfolio-analysis work orders.
+
+The same exports are available without browser dependencies:
+
+```bash
+node demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/workbench/cli.mjs brief ALPHA-001
+node demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/workbench/cli.mjs brief-markdown ALPHA-001
+```
+
 ## Evidence that can be challenged
 
 The independent reviewer derives answers with its own implementation. It checks source identity, exact task digests, phase dependencies, complete coverage, artifact names, media types, UTF-8 byte counts, hashes and semantics. Try **Test a rehashed wrong answer**: an incorrect answer remains rejected after its hash is repaired.
@@ -51,6 +60,8 @@ node demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/workbench/cli.mjs inspect think
 ```
 
 For provider receipts, supply the expected job ID and deployment identity from a protected admission record. An unsigned receipt's claim to be “live” is not execution provenance. A successful artifact check is not independent human acceptance or settlement authorization. `productionApproved` and `settlementApproved` remain false.
+
+Choose the **Review phase** beside the file importer. Changing that phase, file type or expected admission clears the previous result and supersedes any pending check. Browsing the separate **Evaluation phase** selector does not change review scope. A newer import always owns its result; an older computation cannot replace it or leave the evaluator disabled.
 
 ## Current computer-work integration
 

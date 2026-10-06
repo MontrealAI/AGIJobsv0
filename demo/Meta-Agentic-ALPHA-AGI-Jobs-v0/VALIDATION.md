@@ -9,9 +9,10 @@ The release combines an executable six-phase evaluator, a complete public viewer
 | Original Python suite and all twelve CLI rehearsals | Preserved models run; fresh artifacts and nonzero failures are observable |
 | TypeScript scenario regressions | Required validator quorum, valid identities, bounded automation and finite projections |
 | Six-phase tests | Exact money, qualification, routing, review/budget admission, full phase coverage and deterministic replay |
+| Project proposal exports | All twelve scopes and acceptance criteria preserved in browser/CLI JSON and Markdown, source binding, separate commissioning and no execution authorization |
 | Adversarial artifact tests | Incorrect content is rejected even after a matching hash is recomputed |
 | Real adapter with six loopback fixtures | Exact task parsing, admitted job/deployment binding, replay prevention and returned artifact checks |
-| Browser QA | Keyboard access, mobile layout, automated accessibility, downloads, invalid-file handling, zero-capacity behavior, failure states and every preserved diagram |
+| Browser QA | Keyboard access, mobile layout, automated accessibility, downloads, invalid-file handling, changed review scope, stale-import rejection, overlapping-operation recovery, zero-capacity behavior, failure states and every preserved diagram |
 | Pages checks | Public catalog integration, publication build and published revision |
 
 The independent content checker does not import the producer's calculations. Shared schema, canonicalization and task-contract utilities define the comparison boundary. A bug shared by the specification and both implementations remains possible; substantive acceptance still needs independent judgment.

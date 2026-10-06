@@ -7,6 +7,8 @@ import {
   json,
   sha256,
   validateScenario,
+  makeProjectBrief,
+  renderProjectBrief,
 } from './model.mjs';
 import { execute, renderReport } from './execute.mjs';
 import { reviewBundle, reviewReceipt, reviewCandidate } from './review.mjs';
@@ -77,6 +79,49 @@ function clearEvidence() {
     b.querySelector('.state').textContent = 'Ready';
   });
   artifactView();
+}
+function beginReview(message) {
+  const ticket = ++sequence;
+  clearEvidence();
+  $('run').disabled = true;
+  $('evidence').setAttribute('aria-busy', 'true');
+  $('review-title').textContent = message;
+  $('review-title').className = '';
+  $('review-status').textContent =
+    'Checking against the bundled synthetic source…';
+  return ticket;
+}
+function finishReview(ticket) {
+  if (ticket !== sequence) return;
+  $('run').disabled = !source;
+  $('evidence').setAttribute('aria-busy', 'false');
+}
+function reviewInputsChanged() {
+  const ticket = ++sequence;
+  clearEvidence();
+  finishReview(ticket);
+  $('review-title').textContent = 'Review inputs changed';
+  $('review-title').className = '';
+  $('review-status').textContent =
+    'Import the file again for these review inputs, or run a new portfolio evaluation. The previous check no longer applies.';
+}
+function projectSelected() {
+  const project = source.work.find((work) => work.id === $('project').value);
+  $('project-title').textContent = project.title;
+  $('project-meta').textContent =
+    project.id +
+    ' · ' +
+    project.skill +
+    ' · ' +
+    money(project.rewardUsdc) +
+    ' USDC planned · ' +
+    project.reviewMinutes +
+    ' review minutes';
+  $('project-deliverable').textContent = project.deliverable;
+  $('project-criteria').replaceChildren(
+    ...project.acceptanceCriteria.map((criterion) => node('li', criterion))
+  );
+  $('project-status').textContent = '';
 }
 function showReview(result, label) {
   $('review-title').textContent = result.accepted
@@ -194,6 +239,26 @@ $('capacity-form').addEventListener('submit', (event) =>
 calculate();
 $('stage').addEventListener('change', selected);
 $('artifact-stage').addEventListener('change', artifactView);
+$('project').addEventListener('change', projectSelected);
+for (const id of ['review-stage', 'evidence-kind'])
+  $(id).addEventListener('change', reviewInputsChanged);
+for (const id of ['expected-job', 'expected-deployment'])
+  $(id).addEventListener('input', reviewInputsChanged);
+for (const id of ['download-brief', 'download-brief-markdown'])
+  $(id).addEventListener('click', async () => {
+    try {
+      const projectId = $('project').value;
+      const brief = await makeProjectBrief(source, projectId);
+      const markdown = id === 'download-brief-markdown';
+      download(
+        projectId + '.proposal.' + (markdown ? 'md' : 'json'),
+        markdown ? renderProjectBrief(brief) : json(brief),
+        markdown ? 'text/markdown' : 'application/json'
+      );
+    } catch (error) {
+      $('project-status').textContent = error.message;
+    }
+  });
 $('download-task').addEventListener('click', async () => {
   try {
     const id = $('stage').value;
@@ -203,11 +268,7 @@ $('download-task').addEventListener('click', async () => {
   }
 });
 $('run').addEventListener('click', async () => {
-  const ticket = ++sequence;
-  clearEvidence();
-  $('run').disabled = true;
-  $('review-title').textContent = 'Computing six stages…';
-  $('review-title').className = '';
+  const ticket = beginReview('Computing six stages…');
   try {
     const value = await execute(source);
     const result = await reviewBundle(value, source);
@@ -224,7 +285,7 @@ $('run').addEventListener('click', async () => {
   } catch (error) {
     if (ticket === sequence) failed(error.message);
   } finally {
-    if (ticket === sequence) $('run').disabled = false;
+    finishReview(ticket);
   }
 });
 $('download-evidence').addEventListener('click', () => {
@@ -241,34 +302,44 @@ $('download-report').addEventListener('click', () => {
 $('wrong-answer').addEventListener('click', async () => {
   if (!bundle) return;
   const wrong = structuredClone(bundle),
-    ticket = ++sequence;
-  clearEvidence();
-  const artifact = wrong.results[0].artifact;
-  const data = JSON.parse(artifact.content);
-  data.plannedRewardsUsdc = '1.000000';
-  artifact.content = json(data);
-  artifact.bytes = new TextEncoder().encode(artifact.content).length;
-  artifact.sha256 = await sha256(artifact.content);
-  const result = await reviewBundle(wrong, source);
-  if (ticket !== sequence) return;
-  showReview(result, 'Deliberately wrong answer with a recomputed valid hash');
-  setBundle(wrong, false);
+    ticket = beginReview('Checking the deliberately wrong answer…');
+  try {
+    const artifact = wrong.results[0].artifact;
+    const data = JSON.parse(artifact.content);
+    data.plannedRewardsUsdc = '1.000000';
+    artifact.content = json(data);
+    artifact.bytes = new TextEncoder().encode(artifact.content).length;
+    artifact.sha256 = await sha256(artifact.content);
+    const result = await reviewBundle(wrong, source);
+    if (ticket !== sequence) return;
+    showReview(
+      result,
+      'Deliberately wrong answer with a recomputed valid hash'
+    );
+    setBundle(wrong, false);
+  } catch (error) {
+    if (ticket === sequence) failed(error.message);
+  } finally {
+    finishReview(ticket);
+  }
 });
 $('receipt-file').addEventListener('change', async () => {
   const file = $('receipt-file').files[0];
   if (!file) return;
-  const ticket = ++sequence,
+  // Capture this immutable File and reset now, never from an older async completion.
+  $('receipt-file').value = '';
+  const ticket = beginReview('Checking imported evidence…'),
     kind = $('evidence-kind').value,
-    id = $('stage').value,
+    id = $('review-stage').value,
     job = $('expected-job').value.trim(),
     deployment = $('expected-deployment').value.trim();
-  clearEvidence();
   try {
     if (file.size > 1048576)
       throw new Error('Choose a JSON file at most 1 MiB.');
     const content = new TextDecoder('utf-8', { fatal: true }).decode(
       await file.arrayBuffer()
     );
+    if (ticket !== sequence) return;
     if (kind === 'candidate') {
       const result = await reviewCandidate(content, source, id);
       if (ticket === sequence)
@@ -296,7 +367,7 @@ $('receipt-file').addEventListener('change', async () => {
   } catch (error) {
     if (ticket === sequence) failed(error.message);
   } finally {
-    $('receipt-file').value = '';
+    finishReview(ticket);
   }
 });
 try {
@@ -307,7 +378,7 @@ try {
     );
   source = validateScenario(await response.json());
   for (const [index, stage] of stages.entries()) {
-    for (const id of ['stage', 'artifact-stage']) {
+    for (const id of ['stage', 'artifact-stage', 'review-stage']) {
       const option = node('option', stage.title);
       option.value = stage.id;
       $(id).append(option);
@@ -330,7 +401,19 @@ try {
   }
   for (const w of source.work) {
     const row = node('tr', ''),
-      title = node('td', w.title);
+      title = node('td', ''),
+      link = node('button', w.title, 'brief-link'),
+      option = node('option', w.id + ' · ' + w.title);
+    option.value = w.id;
+    $('project').append(option);
+    link.type = 'button';
+    link.setAttribute('aria-controls', 'project-detail');
+    link.addEventListener('click', () => {
+      $('project').value = w.id;
+      projectSelected();
+      $('project').focus();
+    });
+    title.append(link);
     title.append(node('small', w.id + ' / ' + w.skill));
     row.append(
       title,
@@ -344,6 +427,9 @@ try {
     $('work-rows').append(row);
   }
   selected();
+  projectSelected();
+  for (const id of ['project', 'download-brief', 'download-brief-markdown'])
+    $(id).disabled = false;
   $('run').disabled = false;
   $('download-task').disabled = false;
   $('load-status').textContent =
@@ -352,6 +438,8 @@ try {
 } catch (error) {
   $('load-status').textContent = error.message;
   $('load-status').className = 'fail';
+  $('project-title').textContent = 'Project briefs unavailable';
+  $('project-status').textContent = error.message;
   $('receipt-file').disabled = true;
   document.body.dataset.ready = 'failed';
 }
