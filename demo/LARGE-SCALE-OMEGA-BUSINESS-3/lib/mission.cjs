@@ -187,13 +187,15 @@ async function run(options, dependencies = {}) {
       'The current runner needs schemaVersion 2 business/workload fields; legacy validation remains available'
     );
   const workloadsFile = path.join(s.DEMO, 'computer-work/workloads.json'),
-    workloadBytes = fs.readFileSync(workloadsFile),
-    workloads = JSON.parse(workloadBytes);
+    catalog = JSON.parse(fs.readFileSync(workloadsFile)),
+    workloads = {};
   for (const nation of scenario.nations) {
-    if (!workloads[nation.wallet])
+    if (!Object.hasOwn(catalog, nation.wallet))
       throw new Error(`No reviewed workload for ${nation.wallet}`);
+    workloads[nation.wallet] = catalog[nation.wallet];
     validateInput(workloads[nation.wallet]);
   }
+  const workloadBytes = s.json(workloads);
   const runId =
     new Date().toISOString().replace(/[:.]/g, '-') +
     '-' +

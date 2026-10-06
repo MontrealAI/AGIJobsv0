@@ -180,6 +180,28 @@ test('complete offline mission binds inputs, tasks, results and independent chec
     /already exists/
   );
 });
+for (const capacity of ['0', '100'])
+  test(`subset scenarios export verifiable workloads with review capacity ${capacity}`, async (t) => {
+    const dir = temp(t),
+      selected = clone(scenario);
+    selected.nations = [selected.nations[1]];
+    rewrite(dir, 'scenario.json', selected);
+    const result = await run(
+      options(t, [
+        '--scenario',
+        path.join(dir, 'scenario.json'),
+        '--review-capacity',
+        capacity,
+      ])
+    );
+    assert.equal(result.exitCode, 0);
+    const saved = JSON.parse(
+      fs.readFileSync(path.join(result.out, 'workloads.json'))
+    );
+    assert.deepEqual(Object.keys(saved), [selected.nations[0].wallet]);
+    assert.equal(verifyReport(result.out).report.jobs.length, 1);
+    assert.equal(result.report.totals.deferred, capacity === '0' ? 1 : 0);
+  });
 test('admission reserves review capacity before starting work', async (t) => {
   const result = await run(options(t, ['--review-capacity', '10']));
   assert.equal(result.report.totals.admitted, 1);
