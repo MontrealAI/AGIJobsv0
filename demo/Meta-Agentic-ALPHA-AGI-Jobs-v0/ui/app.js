@@ -1,3 +1,4 @@
+import { mermaid, setHTML, setDiagram, safeHref } from '../legacy/runtime.mjs';
 const metricsGrid = document.getElementById('metrics-grid');
 const assignmentsBody = document.getElementById('assignments-body');
 const phasesBody = document.getElementById('phases-body');
@@ -33,7 +34,9 @@ const METRIC_LABELS = {
 };
 
 function formatNumber(value) {
-  return new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(value);
+  return new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(
+    value
+  );
 }
 
 function formatCurrency(value) {
@@ -45,21 +48,30 @@ function formatPercent(value) {
 }
 
 function ensureMermaid() {
-  const mermaid = globalThis.mermaid;
   if (!mermaid) {
     throw new Error('Mermaid failed to load.');
   }
-  mermaid.initialize({ startOnLoad: false, theme: 'dark', securityLevel: 'loose' });
+  mermaid.initialize({
+    startOnLoad: false,
+    theme: 'dark',
+    securityLevel: 'strict',
+  });
   return mermaid;
 }
 
 async function renderMermaid(element, definition, key) {
   const mermaid = ensureMermaid();
   try {
-    const { svg } = await mermaid.render(`${key}-${Math.random().toString(36).slice(2)}`, definition);
-    element.innerHTML = svg;
+    const { svg } = await mermaid.render(
+      `${key}-${Math.random().toString(36).slice(2)}`,
+      definition
+    );
+    setDiagram(element, svg);
   } catch (error) {
-    element.innerHTML = `<div class="error">Mermaid rendering error: ${String(error)}</div>`;
+    setHTML(
+      element,
+      `<div class="error">Mermaid rendering error: ${String(error)}</div>`
+    );
   }
 }
 
@@ -76,7 +88,11 @@ function renderMetrics(metrics) {
     label.textContent = METRIC_LABELS[key] ?? key;
     const figure = document.createElement('p');
     figure.className = 'metric-value';
-    if (key.includes('Value') || key.includes('Reserve') || key === 'capitalAtRisk') {
+    if (
+      key.includes('Value') ||
+      key.includes('Reserve') ||
+      key === 'capitalAtRisk'
+    ) {
       figure.textContent = formatCurrency(value);
     } else if (key === 'alphaCaptureVelocity') {
       figure.textContent = `${formatCurrency(value)}/h`;
@@ -155,7 +171,10 @@ function renderOwnerSurface(owner, ci) {
   commandList.replaceChildren();
   owner.commands.forEach((command) => {
     const li = document.createElement('li');
-    li.innerHTML = `<code>${command.script}</code><span>${command.description}</span>`;
+    setHTML(
+      li,
+      `<code>${command.script}</code><span>${command.description}</span>`
+    );
     commandList.append(li);
   });
 
@@ -170,7 +189,13 @@ function renderOwnerSurface(owner, ci) {
 
 async function hydrate() {
   try {
-    const [dashboardRes, architectureRes, timelineRes, coordinationRes, phaseFlowRes] = await Promise.all([
+    const [
+      dashboardRes,
+      architectureRes,
+      timelineRes,
+      coordinationRes,
+      phaseFlowRes,
+    ] = await Promise.all([
       fetch('../reports/dashboard.json', { cache: 'no-cache' }),
       fetch('../reports/architecture.mmd', { cache: 'no-cache' }),
       fetch('../reports/timeline.mmd', { cache: 'no-cache' }),
@@ -183,12 +208,14 @@ async function hydrate() {
     }
 
     const dashboard = await dashboardRes.json();
-    const [architecture, timeline, coordination, phaseFlow] = await Promise.all([
-      architectureRes.text(),
-      timelineRes.text(),
-      coordinationRes.text(),
-      phaseFlowRes.text(),
-    ]);
+    const [architecture, timeline, coordination, phaseFlow] = await Promise.all(
+      [
+        architectureRes.text(),
+        timelineRes.text(),
+        coordinationRes.text(),
+        phaseFlowRes.text(),
+      ]
+    );
 
     renderMetrics(dashboard.metrics);
     renderAssignments(dashboard.assignments);

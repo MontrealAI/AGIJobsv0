@@ -92,7 +92,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"       - Masterplan deck:   {format_path(outcome.report_path)}")
     print(f"       - Scoreboard:        {format_path(outcome.scoreboard_path)}")
     print("\nOpen the Meta-Convergence Console (V8):")
-    print(f"   python -m http.server --directory {format_path(outcome.dashboard_path.parent)} 9008")
+    print(f"   python -m http.server --bind 127.0.0.1 --directory {format_path(outcome.dashboard_path.parent)} 9008")
     print("   → Visit http://localhost:9008/index.html")
     print(
         "\nAdjust parameters in meta_agentic_alpha_v8/config/scenario.yaml or the playbook,"

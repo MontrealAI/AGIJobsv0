@@ -92,7 +92,7 @@ def main(argv: list[str] | None = None) -> int:
 
     dashboard_dir = outcome.dashboard_path.parent
     print("\nOpen the Hypergrid Console (V11):")
-    print(f"   python -m http.server --directory {_format_path(dashboard_dir)} 9011")
+    print(f"   python -m http.server --bind 127.0.0.1 --directory {_format_path(dashboard_dir)} 9011")
     print("   → Visit http://localhost:9011/index.html")
     print(
         "\nAdjust parameters in meta_agentic_alpha_v11/config/scenario.yaml, rerun this CLI, "

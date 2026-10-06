@@ -1,0 +1,201 @@
+{
+  "schemaVersion": 1,
+  "id": "meta-agentic-delivery-v1",
+  "dataClass": "synthetic",
+  "budgetUsdc": "30000.000000",
+  "reserveUsdc": "5000.000000",
+  "minimumUsefulBps": 8500,
+  "minimumReviewed": 20,
+  "reviewPools": [
+    {
+      "id": "software",
+      "minutes": 180
+    },
+    {
+      "id": "research",
+      "minutes": 120
+    },
+    {
+      "id": "design",
+      "minutes": 90
+    }
+  ],
+  "workers": [
+    {
+      "id": "builder",
+      "skill": "software",
+      "reviewed": 20,
+      "useful": 19
+    },
+    {
+      "id": "analyst",
+      "skill": "research",
+      "reviewed": 20,
+      "useful": 17
+    },
+    {
+      "id": "designer",
+      "skill": "design",
+      "reviewed": 20,
+      "useful": 16
+    }
+  ],
+  "work": [
+    {
+      "id": "ALPHA-001",
+      "skill": "software",
+      "title": "Build an accessible public-data observatory",
+      "deliverable": "A deployable application with ingestion, search, filters, data lineage, export and reproducible deployment.",
+      "rewardUsdc": "7500.000000",
+      "reviewMinutes": 90,
+      "acceptanceCriteria": [
+        "Keyboard and screen-reader flows pass",
+        "Dataset licensing and provenance are documented",
+        "Fresh deployment reproduces the published example"
+      ]
+    },
+    {
+      "id": "ALPHA-002",
+      "skill": "software",
+      "title": "Deliver an API migration and compatibility layer",
+      "deliverable": "A versioned SDK migration with compatibility tests, error mapping, migration guide and release artifacts.",
+      "rewardUsdc": "5000.000000",
+      "reviewMinutes": 70,
+      "acceptanceCriteria": [
+        "Compatibility matrix covers every public method",
+        "Regression tests run from a clean checkout",
+        "Breaking changes are explicitly documented"
+      ]
+    },
+    {
+      "id": "ALPHA-003",
+      "skill": "software",
+      "title": "Repair and benchmark a performance bottleneck",
+      "deliverable": "An upstream-ready patch with reproducible workloads, correctness checks and comparative measurements.",
+      "rewardUsdc": "3500.000000",
+      "reviewMinutes": 45,
+      "acceptanceCriteria": [
+        "Results include workload and hardware details",
+        "Correctness remains unchanged",
+        "Performance regression cases are covered"
+      ]
+    },
+    {
+      "id": "ALPHA-004",
+      "skill": "research",
+      "title": "Reproduce a numerical energy study",
+      "deliverable": "Executable numerical models, sensitivity analysis, documented assumptions and a reproducible research package.",
+      "rewardUsdc": "3000.000000",
+      "reviewMinutes": 60,
+      "acceptanceCriteria": [
+        "Independent reference cases agree within declared tolerances",
+        "Sensitivity and uncertainty are reported",
+        "No physical control or infrastructure claims"
+      ]
+    },
+    {
+      "id": "ALPHA-005",
+      "skill": "research",
+      "title": "Build a rigorous agent evaluation suite",
+      "deliverable": "Versioned tasks, scoring code, contamination controls, error taxonomy and an evaluation report.",
+      "rewardUsdc": "5000.000000",
+      "reviewMinutes": 80,
+      "acceptanceCriteria": [
+        "All scoring is reproducible",
+        "Held-out tasks are separated from tuning",
+        "Failure cases and review minutes are reported"
+      ]
+    },
+    {
+      "id": "ALPHA-006",
+      "skill": "design",
+      "title": "Create an accessible operations interface",
+      "deliverable": "A working responsive interface, component library, usability tasks and deployment instructions.",
+      "rewardUsdc": "2500.000000",
+      "reviewMinutes": 40,
+      "acceptanceCriteria": [
+        "Core flows work with keyboard alone",
+        "Mobile layouts have no horizontal overflow",
+        "Empty, loading and failure states are covered"
+      ]
+    },
+    {
+      "id": "ALPHA-007",
+      "skill": "research",
+      "title": "Investigate public supply-chain resilience",
+      "deliverable": "A reproducible public-data model with scenario analysis and a decision report.",
+      "rewardUsdc": "7500.000000",
+      "reviewMinutes": 90,
+      "acceptanceCriteria": [
+        "Public inputs are cited and licensed",
+        "Constraints and uncertainty are explicit",
+        "Results survive independent scenario checks"
+      ]
+    },
+    {
+      "id": "ALPHA-008",
+      "skill": "software",
+      "title": "Ship an open-source feature",
+      "deliverable": "A complete feature, tests, executable documentation, release notes and an upstream-ready contribution.",
+      "rewardUsdc": "4000.000000",
+      "reviewMinutes": 60,
+      "acceptanceCriteria": [
+        "Acceptance scenarios all pass",
+        "Existing behavior is preserved",
+        "No external publication without owner approval"
+      ]
+    },
+    {
+      "id": "ALPHA-009",
+      "skill": "software",
+      "title": "Deliver executable technical documentation",
+      "deliverable": "A tested documentation site with examples, troubleshooting and continuous verification.",
+      "rewardUsdc": "1500.000000",
+      "reviewMinutes": 20,
+      "acceptanceCriteria": [
+        "Examples run from a clean environment",
+        "Links and commands pass verification",
+        "Fresh-user onboarding is tested"
+      ]
+    },
+    {
+      "id": "ALPHA-010",
+      "skill": "research",
+      "title": "Produce a public technology evidence map",
+      "deliverable": "A searchable evidence package with source dates, comparison methodology and uncertainty analysis.",
+      "rewardUsdc": "6000.000000",
+      "reviewMinutes": 60,
+      "acceptanceCriteria": [
+        "Every claim is traceable to a public source",
+        "Evidence and inference are distinguished",
+        "The package is reproducible from its manifest"
+      ]
+    },
+    {
+      "id": "ALPHA-011",
+      "skill": "software",
+      "title": "Build an auditable reconciliation application",
+      "deliverable": "A local-first application with exact decimal reconciliation, discrepancy review and export.",
+      "rewardUsdc": "5000.000000",
+      "reviewMinutes": 40,
+      "acceptanceCriteria": [
+        "No floating-point money calculations",
+        "Malformed and duplicate inputs fail clearly",
+        "Export preserves an inspectable audit trail"
+      ]
+    },
+    {
+      "id": "ALPHA-012",
+      "skill": "design",
+      "title": "Prototype a scientific exploration environment",
+      "deliverable": "An interactive simulation interface with documented numerical methods, controls and accessibility.",
+      "rewardUsdc": "10000.000000",
+      "reviewMinutes": 75,
+      "acceptanceCriteria": [
+        "Reference numerical cases pass",
+        "Assumptions are visible beside controls",
+        "The prototype can be deployed reproducibly"
+      ]
+    }
+  ]
+}

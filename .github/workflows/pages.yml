@@ -73,6 +73,7 @@ jobs:
           npm run site:qa
           npm run demo:kardashev-business:qa
           npm run demo:omnisovereign:qa
+          npm run demo:meta-agentic-alpha:qa
           node scripts/pages/culture-qa.mjs
       - name: Save browser evidence
         if: always()

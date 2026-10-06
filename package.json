@@ -501,7 +501,14 @@
     "demo:omnisovereign:review": "node demo/omnisovereign/cli.mjs review",
     "demo:omnisovereign:worker": "node --import tsx demo/omnisovereign/worker.cjs",
     "demo:omnisovereign:test": "node --import tsx --test demo/omnisovereign/tests/*.test.mjs",
-    "demo:omnisovereign:qa": "node demo/omnisovereign/tests/browser-qa.mjs"
+    "demo:omnisovereign:qa": "node demo/omnisovereign/tests/browser-qa.mjs",
+    "demo:meta-agentic-alpha:work": "node demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/workbench/cli.mjs run",
+    "demo:meta-agentic-alpha:serve": "node demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/workbench/server.cjs",
+    "demo:meta-agentic-alpha:task": "node demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/workbench/cli.mjs task",
+    "demo:meta-agentic-alpha:review": "node demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/workbench/cli.mjs review",
+    "demo:meta-agentic-alpha:worker": "node --import tsx demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/workbench/worker.cjs",
+    "demo:meta-agentic-alpha:test": "node --import tsx --test demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/workbench/tests/*.test.mjs",
+    "demo:meta-agentic-alpha:qa": "node demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/workbench/tests/browser-qa.mjs"
   },
   "type": "commonjs",
   "version": "2.0.0"

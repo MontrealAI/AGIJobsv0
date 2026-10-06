@@ -115,7 +115,7 @@ The generated section includes every tracked top-level directory and every neste
 | [Kardashev-II-Omega-Grade-Alpha-AGI-Business-3](Kardashev-II-Omega-Grade-Alpha-AGI-Business-3/README.md) | Code and guide | Open the guide or source directory |
 | [LARGE-SCALE-OMEGA-BUSINESS-3](LARGE-SCALE-OMEGA-BUSINESS-3/README.md) | Code and guide | `demo:omega-business-3`, `demo:omega-business-3:ui` |
 | [meta-agentic-alpha-agi](meta-agentic-alpha-agi/README.md) | Code and guide | Open the guide or source directory |
-| [Meta-Agentic-ALPHA-AGI-Jobs-v0](Meta-Agentic-ALPHA-AGI-Jobs-v0/README.md) | Code and guide | `demo:meta-agentic-alpha` |
+| [Meta-Agentic-ALPHA-AGI-Jobs-v0](Meta-Agentic-ALPHA-AGI-Jobs-v0/README.md) | Code and guide | `demo:meta-agentic-alpha`, `demo:meta-agentic-alpha:work`, `demo:meta-agentic-alpha:serve` |
 | [Meta-Agentic-Program-Synthesis-v0](Meta-Agentic-Program-Synthesis-v0/README.md) | Code and guide | `demo:meta-agentic-program-synthesis`, `demo:meta-agentic-program-synthesis:briefing`, `demo:meta-agentic-program-synthesis:full` |
 | [MuZero-style-v0](MuZero-style-v0/README.md) | Code and guide | Open the guide or source directory |
 | [National-Supply-Chain-v0](National-Supply-Chain-v0/README.md) | Code and guide | `demo:national-supply-chain:export` |

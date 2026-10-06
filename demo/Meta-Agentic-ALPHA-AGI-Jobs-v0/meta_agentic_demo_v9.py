@@ -88,7 +88,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"       - Sovereignty deck:  {format_path(outcome.report_path)}")
     print(f"       - Scoreboard:        {format_path(outcome.scoreboard_path)}")
     print("\nOpen the Sovereignty Console (V9):")
-    print(f"   python -m http.server --directory {format_path(outcome.dashboard_path.parent)} 9009")
+    print(f"   python -m http.server --bind 127.0.0.1 --directory {format_path(outcome.dashboard_path.parent)} 9009")
     print("   → Visit http://localhost:9009/index.html")
     print(
         "\nAdjust parameters in meta_agentic_alpha_v9/config/scenario.yaml, rerun this CLI,"

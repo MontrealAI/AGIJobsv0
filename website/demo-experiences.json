@@ -376,7 +376,7 @@
       }
     ],
     "command": "npm run demo:era-of-experience\nnpm run demo:era-of-experience:audit\nnpm run demo:era-of-experience:verify",
-    "expected": "Run, audit and verifier artifacts are generated under this demo’s reports directory. Compare the new summary, audit and verification together.",
+    "expected": "Run, audit and verifier artifacts are generated under this demo\u2019s reports directory. Compare the new summary, audit and verification together.",
     "experiment": "Modify a copied reward configuration, regenerate the run, and compare the audit. Explain which behavior changed and which verification properties stayed the same.",
     "mode": "node",
     "related": []
@@ -454,7 +454,7 @@
       }
     ],
     "command": "python demo/agi-labor-market-grand-demo/run_demo.py summarize",
-    "expected": "The CLI summarizes the bundled transcript. Use the serve subcommand for the local UI, and npm run demo:agi-labor-market:export to regenerate the exporter’s data.",
+    "expected": "The CLI summarizes the bundled transcript. Use the serve subcommand for the local UI, and npm run demo:agi-labor-market:export to regenerate the exporter\u2019s data.",
     "experiment": "Locate a job event and trace the actors and evidence around it. Check whether its metrics are observed transaction values or scenario assertions.",
     "mode": "stdlib",
     "related": []
@@ -582,7 +582,7 @@
       {
         "title": "Inspect the broader pipeline",
         "source": "demo/agi-governance/alpha-v17/scripts/runMission.ts",
-        "explanation": "This is the alpha-v17 mission entry point. Each preserved alpha variant has its own configuration and diagnostics; do not mix a baseline report with a variant’s verification."
+        "explanation": "This is the alpha-v17 mission entry point. Each preserved alpha variant has its own configuration and diagnostics; do not mix a baseline report with a variant\u2019s verification."
       }
     ],
     "command": "python demo/agi-governance/run_demo.py --json",
@@ -696,30 +696,37 @@
     "related": []
   },
   "Meta-Agentic-ALPHA-AGI-Jobs-v0": {
-    "question": "How do several agents coordinate one opportunity-to-execution story?",
-    "purpose": "For agent-system designers: inspect a multi-domain plan, explicit approvals, budget limits and the implementation behind its many preserved variants.",
+    "question": "How does a meta-agentic loop turn useful project briefs into accountable work orders?",
+    "purpose": "For operators and builders: qualify specialized workers, define concrete deliverables, reserve USDC budgets and reviewer time, and challenge evidence across six executable phases.",
     "steps": [
       {
-        "title": "Read the original plan",
-        "source": "demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/config/meta_agentic_scenario.yaml",
-        "explanation": "Follow identify, learn and execution steps, the approvals list and exposure limits. Example secrets, addresses and notification channels are fixtures and should be replaced in a connected deployment."
+        "title": "Evaluate the six-phase loop",
+        "source": "demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/workbench/execute.mjs",
+        "explanation": "Inventory twelve proposed projects, qualify from synthetic observations, route specialists and reserve budget and reviewer capacity. Five work orders fit the reference scenario; customer projects are not executed."
       },
       {
-        "title": "Trace the TypeScript demonstration",
-        "source": "demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/scripts/runDemo.ts",
-        "explanation": "The root npm command selects this entry point. Python variants have their own guides and should not be assumed to execute the same path."
+        "title": "Challenge the evidence",
+        "source": "demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/workbench/review.mjs",
+        "explanation": "Independently recompute results and reject incorrect content even when hashes match. Provider receipts must match separately supplied admission values."
       },
       {
-        "title": "Inspect the architecture",
-        "source": "demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/reports/architecture.mmd",
-        "explanation": "Read the recorded component relationships, then follow each phase into its implementation. The diagram describes a workflow, not proof that every external integration ran."
+        "title": "Operate and explore every version",
+        "source": "demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/RUNBOOK.md",
+        "explanation": "Use the current admitted OpenClaw path or operator-led Work candidate flow, and preserve all twelve Python demonstrations and the classic TypeScript view."
       }
     ],
-    "command": "npm run demo:meta-agentic-alpha",
-    "expected": "The TypeScript demo produces its scenario artifacts. Review each phase and its assumptions; use the variant-specific guides for the other implementations.",
-    "experiment": "Trace a human-review prompt and a budget constraint from the configuration to the implementation. Identify where execution would need a real approval or provider.",
+    "command": "npm run demo:meta-agentic-alpha:work",
+    "expected": "Six checked JSON artifacts, six exact task contracts and an evidence dossier. Reference result: five review-ready work orders, seven deferred, 23,000 USDC reserved and 7,000 unallocated. No provider calls, customer-job completion or payment.",
+    "experiment": "Evaluate the portfolio, test a rehashed wrong answer and set reviewer hours to zero. Explore the preserved consoles and distinguish their fixture scores from actual release CI.",
     "mode": "node",
-    "related": []
+    "related": ["omnisovereign", "One-Box"],
+    "dashboards": [
+      {
+        "route": "experiments/meta-agentic-alpha/",
+        "source": "demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/workbench/index.html",
+        "title": "Open the complete delivery workbench"
+      }
+    ]
   },
   "Trustless-Economic-Core-v0": {
     "question": "Can economic settlement rules be exercised on a disposable chain?",
@@ -959,7 +966,7 @@
       {
         "title": "Review architecture and variants",
         "source": "demo/Phase-6-Scaling-Multi-Domain-Expansion/README.md",
-        "explanation": "Use the preserved original guide and additional flowcharts to connect components. Read each variant’s own prerequisites before running it."
+        "explanation": "Use the preserved original guide and additional flowcharts to connect components. Read each variant\u2019s own prerequisites before running it."
       }
     ],
     "command": "npm run demo:phase6:orchestrate",
@@ -980,12 +987,12 @@
       {
         "title": "Follow the executable path",
         "source": "demo/Phase-8-Universal-Value-Dominance/run_demo.py",
-        "explanation": "Trace manifest validation and report generation. Phase 8’s lightweight Python path computes address checks and model heuristics without launching the TypeScript stack."
+        "explanation": "Trace manifest validation and report generation. Phase 8\u2019s lightweight Python path computes address checks and model heuristics without launching the TypeScript stack."
       },
       {
         "title": "Review architecture and variants",
         "source": "demo/Phase-8-Universal-Value-Dominance/README.md",
-        "explanation": "Use the preserved original guide and additional flowcharts to connect components. Read each variant’s own prerequisites before running it."
+        "explanation": "Use the preserved original guide and additional flowcharts to connect components. Read each variant\u2019s own prerequisites before running it."
       }
     ],
     "command": "python demo/Phase-8-Universal-Value-Dominance/run_demo.py --output /tmp/phase8-demo.json",
@@ -1046,28 +1053,28 @@
     "mode": "node",
     "related": ["sovereign-constellation"]
   },
-  "Kardashev-II Omega-Grade-α-AGI Business-3": {
+  "Kardashev-II Omega-Grade-\u03b1-AGI Business-3": {
     "question": "How can a large mission model stay reproducible across variants?",
     "purpose": "For simulation researchers: inspect the business model, its configuration and the specific Python package selected by the launcher.",
     "steps": [
       {
         "title": "Read the base assumptions",
-        "source": "demo/Kardashev-II Omega-Grade-α-AGI Business-3/config/default.json",
+        "source": "demo/Kardashev-II Omega-Grade-\u03b1-AGI Business-3/config/default.json",
         "explanation": "Inspect the workload, budgets, actors and modeled outcomes. The scale and economic labels are scenario ambitions, not measured capacity."
       },
       {
         "title": "Follow package selection",
-        "source": "demo/Kardashev-II Omega-Grade-α-AGI Business-3/bin/run.sh",
+        "source": "demo/Kardashev-II Omega-Grade-\u03b1-AGI Business-3/bin/run.sh",
         "explanation": "The shell launcher selects an import-safe Python package. Nested Omega, Ultra, Supreme and upgrade variants have separate configurations and entry points."
       },
       {
         "title": "Navigate the variant family",
-        "source": "demo/Kardashev-II Omega-Grade-α-AGI Business-3/README.md",
+        "source": "demo/Kardashev-II Omega-Grade-\u03b1-AGI Business-3/README.md",
         "explanation": "Use the complete document library below to choose one variant. Keep its configuration, launcher and evidence together when comparing runs."
       }
     ],
-    "command": "bash 'demo/Kardashev-II Omega-Grade-α-AGI Business-3/bin/run.sh'",
-    "expected": "The launcher runs the selected Python simulation. Inspect its console output and generated evidence; consult the chosen variant’s guide for overrides and output paths.",
+    "command": "bash 'demo/Kardashev-II Omega-Grade-\u03b1-AGI Business-3/bin/run.sh'",
+    "expected": "The launcher runs the selected Python simulation. Inspect its console output and generated evidence; consult the chosen variant\u2019s guide for overrides and output paths.",
     "experiment": "Compare two variants on their actual inputs and calculation rules. A larger name or higher configured scale is not evidence of better measured performance.",
     "mode": "python",
     "related": []
@@ -1093,7 +1100,7 @@
       }
     ],
     "command": "bash demo/Kardashev-II-Omega-Grade-Alpha-AGI-Business-3/bin/run-demo.sh",
-    "expected": "The launcher runs the selected Python simulation. Inspect its console output and generated evidence; consult the chosen variant’s guide for overrides and output paths.",
+    "expected": "The launcher runs the selected Python simulation. Inspect its console output and generated evidence; consult the chosen variant\u2019s guide for overrides and output paths.",
     "experiment": "Compare two variants on their actual inputs and calculation rules. A larger name or higher configured scale is not evidence of better measured performance.",
     "mode": "python",
     "related": []
@@ -1145,7 +1152,7 @@
       }
     ],
     "command": "npm run demo:onebox:doctor",
-    "expected": "Start with the shared environment diagnostic. Fix missing configuration and services before using this mission’s source launcher; the diagnostic itself does not run the mission.",
+    "expected": "Start with the shared environment diagnostic. Fix missing configuration and services before using this mission\u2019s source launcher; the diagnostic itself does not run the mission.",
     "experiment": "Follow every command in the wrapper and classify it as configuration, deployment, local execution or reporting. Confirm that all stages point to the same intended environment.",
     "mode": "configured",
     "related": ["One-Box", "aurora"]
@@ -1171,7 +1178,7 @@
       }
     ],
     "command": "npm run demo:onebox:doctor",
-    "expected": "Start with the shared environment diagnostic. Fix missing configuration and services before using this mission’s source launcher; the diagnostic itself does not run the mission.",
+    "expected": "Start with the shared environment diagnostic. Fix missing configuration and services before using this mission\u2019s source launcher; the diagnostic itself does not run the mission.",
     "experiment": "Follow every command in the wrapper and classify it as configuration, deployment, local execution or reporting. Confirm that all stages point to the same intended environment.",
     "mode": "configured",
     "related": ["One-Box", "aurora"]
@@ -1197,7 +1204,7 @@
       }
     ],
     "command": "npm run demo:onebox:doctor",
-    "expected": "Start with the shared environment diagnostic. Fix missing configuration and services before using this mission’s source launcher; the diagnostic itself does not run the mission.",
+    "expected": "Start with the shared environment diagnostic. Fix missing configuration and services before using this mission\u2019s source launcher; the diagnostic itself does not run the mission.",
     "experiment": "Follow every command in the wrapper and classify it as configuration, deployment, local execution or reporting. Confirm that all stages point to the same intended environment.",
     "mode": "configured",
     "related": ["One-Box", "aurora"]
@@ -1223,7 +1230,7 @@
       }
     ],
     "command": "npm run demo:onebox:doctor",
-    "expected": "Start with the shared environment diagnostic. Fix missing configuration and services before using this mission’s source launcher; the diagnostic itself does not run the mission.",
+    "expected": "Start with the shared environment diagnostic. Fix missing configuration and services before using this mission\u2019s source launcher; the diagnostic itself does not run the mission.",
     "experiment": "Follow every command in the wrapper and classify it as configuration, deployment, local execution or reporting. Confirm that all stages point to the same intended environment.",
     "mode": "configured",
     "related": ["One-Box", "aurora"]
@@ -1249,14 +1256,14 @@
       }
     ],
     "command": "npm run demo:onebox:doctor",
-    "expected": "Start with the shared environment diagnostic. Fix missing configuration and services before using this mission’s source launcher; the diagnostic itself does not run the mission.",
+    "expected": "Start with the shared environment diagnostic. Fix missing configuration and services before using this mission\u2019s source launcher; the diagnostic itself does not run the mission.",
     "experiment": "Follow every command in the wrapper and classify it as configuration, deployment, local execution or reporting. Confirm that all stages point to the same intended environment.",
     "mode": "configured",
     "related": ["One-Box", "aurora"]
   },
   "omni-orchestrator-singularity": {
     "question": "Where does a governance rehearsal cross into an authorized action?",
-    "purpose": "For governance operators: inspect council identities, emergency controls and the script’s dry-run versus execute paths.",
+    "purpose": "For governance operators: inspect council identities, emergency controls and the script\u2019s dry-run versus execute paths.",
     "steps": [
       {
         "title": "Inspect council configuration",
@@ -1302,7 +1309,7 @@
     ],
     "command": "npm run demo:asi-global:local",
     "expected": "The related ASI Global component produces local transaction evidence. This is a component rehearsal; the Helios Makefile remains a separate assembly recipe requiring its documented inputs.",
-    "experiment": "Compare the Makefile’s expected report paths with the outputs of a fresh component run. Do not copy an old report to satisfy a missing new-run artifact.",
+    "experiment": "Compare the Makefile\u2019s expected report paths with the outputs of a fresh component run. Do not copy an old report to satisfy a missing new-run artifact.",
     "mode": "local",
     "related": ["asi-global", "asi-takeoff"]
   },
@@ -1327,14 +1334,14 @@
       }
     ],
     "command": "npm run demo:asi-takeoff:local",
-    "expected": "The related ASI Take-Off component executes local jobs. Use its fresh receipts to understand the evidence required by Infinity’s broader bundle; this command is not an Infinity-specific full run.",
+    "expected": "The related ASI Take-Off component executes local jobs. Use its fresh receipts to understand the evidence required by Infinity\u2019s broader bundle; this command is not an Infinity-specific full run.",
     "experiment": "Trace each Infinity job specification and identify where the wrapper selects it. Confirm the effective configuration instead of assuming the scenario name selects it.",
     "mode": "local",
     "related": ["asi-takeoff"]
   },
   "OMNIGENESIS-GLOBAL-SOVEREIGN-SYMPHONY": {
     "question": "How can an ambitious mission be translated into a reviewable plan?",
-    "purpose": "For mission designers: inspect this scenario’s task graph and operator runbook, then connect it to a related executable local workflow.",
+    "purpose": "For mission designers: inspect this scenario\u2019s task graph and operator runbook, then connect it to a related executable local workflow.",
     "steps": [
       {
         "title": "Inspect the mission plan",
@@ -1353,14 +1360,14 @@
       }
     ],
     "command": "npm run demo:asi-takeoff:local",
-    "expected": "The related ASI Take-Off workflow generates local contract evidence. It demonstrates the execution mechanism; it does not itself execute every task in this scenario’s project plan.",
+    "expected": "The related ASI Take-Off workflow generates local contract evidence. It demonstrates the execution mechanism; it does not itself execute every task in this scenario\u2019s project plan.",
     "experiment": "Choose one task from this plan and specify its real input, acceptance test, validator evidence and settlement condition. Identify what the related local demonstration covers.",
     "mode": "local",
     "related": ["asi-takeoff"]
   },
   "OMNIPHOENIX-ASCENDANT-HYPERSTRUCTURE": {
     "question": "How can an ambitious mission be translated into a reviewable plan?",
-    "purpose": "For mission designers: inspect this scenario’s task graph and operator runbook, then connect it to a related executable local workflow.",
+    "purpose": "For mission designers: inspect this scenario\u2019s task graph and operator runbook, then connect it to a related executable local workflow.",
     "steps": [
       {
         "title": "Inspect the mission plan",
@@ -1379,7 +1386,7 @@
       }
     ],
     "command": "npm run demo:asi-takeoff:local",
-    "expected": "The related ASI Take-Off workflow generates local contract evidence. It demonstrates the execution mechanism; it does not itself execute every task in this scenario’s project plan.",
+    "expected": "The related ASI Take-Off workflow generates local contract evidence. It demonstrates the execution mechanism; it does not itself execute every task in this scenario\u2019s project plan.",
     "experiment": "Choose one task from this plan and specify its real input, acceptance test, validator evidence and settlement condition. Identify what the related local demonstration covers.",
     "mode": "local",
     "related": ["asi-takeoff"]
@@ -1428,7 +1435,7 @@
       {
         "title": "Read this governance plan",
         "source": "demo/zenith-sapience-initiative-celestial-archon-governance/project-plan.json",
-        "explanation": "Inspect this variant’s task graph, policy and owner context. Compare concrete tasks across variants rather than inferring a capability hierarchy from their names."
+        "explanation": "Inspect this variant\u2019s task graph, policy and owner context. Compare concrete tasks across variants rather than inferring a capability hierarchy from their names."
       },
       {
         "title": "Follow the local wrapper",
@@ -1443,7 +1450,7 @@
     ],
     "command": "npm run demo:zenith-sapience-celestial-archon:local",
     "expected": "The variant wrapper produces its scoped local rehearsal outputs. Inspect the manifest and receipts to distinguish shared ASI Global execution from scenario-specific planning artifacts.",
-    "experiment": "Compare the wrapper’s plan path, report root and effective mission jobs with another Zenith variant. Explain exactly what changes and what remains shared.",
+    "experiment": "Compare the wrapper\u2019s plan path, report root and effective mission jobs with another Zenith variant. Explain exactly what changes and what remains shared.",
     "mode": "local",
     "related": ["asi-global"]
   },
@@ -1454,7 +1461,7 @@
       {
         "title": "Read this governance plan",
         "source": "demo/zenith-sapience-initiative-global-governance/project-plan.json",
-        "explanation": "Inspect this variant’s task graph, policy and owner context. Compare concrete tasks across variants rather than inferring a capability hierarchy from their names."
+        "explanation": "Inspect this variant\u2019s task graph, policy and owner context. Compare concrete tasks across variants rather than inferring a capability hierarchy from their names."
       },
       {
         "title": "Follow the local wrapper",
@@ -1469,7 +1476,7 @@
     ],
     "command": "npm run demo:zenith-sapience-initiative:local",
     "expected": "The variant wrapper produces its scoped local rehearsal outputs. Inspect the manifest and receipts to distinguish shared ASI Global execution from scenario-specific planning artifacts.",
-    "experiment": "Compare the wrapper’s plan path, report root and effective mission jobs with another Zenith variant. Explain exactly what changes and what remains shared.",
+    "experiment": "Compare the wrapper\u2019s plan path, report root and effective mission jobs with another Zenith variant. Explain exactly what changes and what remains shared.",
     "mode": "local",
     "related": ["asi-global"]
   },
@@ -1480,7 +1487,7 @@
       {
         "title": "Read this governance plan",
         "source": "demo/zenith-sapience-initiative-omnidominion-governance/project-plan.json",
-        "explanation": "Inspect this variant’s task graph, policy and owner context. Compare concrete tasks across variants rather than inferring a capability hierarchy from their names."
+        "explanation": "Inspect this variant\u2019s task graph, policy and owner context. Compare concrete tasks across variants rather than inferring a capability hierarchy from their names."
       },
       {
         "title": "Follow the local wrapper",
@@ -1495,7 +1502,7 @@
     ],
     "command": "npm run demo:zenith-sapience-omnidominion:local",
     "expected": "The variant wrapper produces its scoped local rehearsal outputs. Inspect the manifest and receipts to distinguish shared ASI Global execution from scenario-specific planning artifacts.",
-    "experiment": "Compare the wrapper’s plan path, report root and effective mission jobs with another Zenith variant. Explain exactly what changes and what remains shared.",
+    "experiment": "Compare the wrapper\u2019s plan path, report root and effective mission jobs with another Zenith variant. Explain exactly what changes and what remains shared.",
     "mode": "local",
     "related": ["asi-global"]
   },
@@ -1506,7 +1513,7 @@
       {
         "title": "Read this governance plan",
         "source": "demo/zenith-sapience-initiative-planetary-operating-system-governance/project-plan.json",
-        "explanation": "Inspect this variant’s task graph, policy and owner context. Compare concrete tasks across variants rather than inferring a capability hierarchy from their names."
+        "explanation": "Inspect this variant\u2019s task graph, policy and owner context. Compare concrete tasks across variants rather than inferring a capability hierarchy from their names."
       },
       {
         "title": "Follow the local wrapper",
@@ -1521,7 +1528,7 @@
     ],
     "command": "npm run demo:zenith-sapience-planetary-os:local",
     "expected": "The variant wrapper produces its scoped local rehearsal outputs. Inspect the manifest and receipts to distinguish shared ASI Global execution from scenario-specific planning artifacts.",
-    "experiment": "Compare the wrapper’s plan path, report root and effective mission jobs with another Zenith variant. Explain exactly what changes and what remains shared.",
+    "experiment": "Compare the wrapper\u2019s plan path, report root and effective mission jobs with another Zenith variant. Explain exactly what changes and what remains shared.",
     "mode": "local",
     "related": ["asi-global"]
   },
@@ -1532,7 +1539,7 @@
       {
         "title": "Read this governance plan",
         "source": "demo/zenith-sapience-initiative-supra-sovereign-hypernova-governance/project-plan.json",
-        "explanation": "Inspect this variant’s task graph, policy and owner context. Compare concrete tasks across variants rather than inferring a capability hierarchy from their names."
+        "explanation": "Inspect this variant\u2019s task graph, policy and owner context. Compare concrete tasks across variants rather than inferring a capability hierarchy from their names."
       },
       {
         "title": "Follow the local wrapper",
@@ -1547,7 +1554,7 @@
     ],
     "command": "npm run demo:zenith-hypernova:local",
     "expected": "The variant wrapper produces its scoped local rehearsal outputs. Inspect the manifest and receipts to distinguish shared ASI Global execution from scenario-specific planning artifacts.",
-    "experiment": "Compare the wrapper’s plan path, report root and effective mission jobs with another Zenith variant. Explain exactly what changes and what remains shared.",
+    "experiment": "Compare the wrapper\u2019s plan path, report root and effective mission jobs with another Zenith variant. Explain exactly what changes and what remains shared.",
     "mode": "local",
     "related": ["asi-global"]
   },
@@ -1868,7 +1875,7 @@
     "expected": "A bounded synthetic orchestration run. Use the workbench for task templates and exact artifact checks; live-provider execution and settlement require separate qualification.",
     "experiment": "Generate an energy-ledger artifact, test a deliberately wrong answer, and vary reviewer capacity before increasing the agent count.",
     "mode": "stdlib",
-    "related": ["Kardashev-II Omega-Grade-α-AGI Business-3"],
+    "related": ["Kardashev-II Omega-Grade-\u03b1-AGI Business-3"],
     "dashboards": [
       {
         "route": "experiments/kardashev-business/",
@@ -1901,7 +1908,7 @@
     "expected": "A bounded synthetic orchestration run. Use the workbench for task templates and exact artifact checks; live-provider execution and settlement require separate qualification.",
     "experiment": "Generate an energy-ledger artifact, test a deliberately wrong answer, and vary reviewer capacity before increasing the agent count.",
     "mode": "stdlib",
-    "related": ["Kardashev-II Omega-Grade-α-AGI Business-3"],
+    "related": ["Kardashev-II Omega-Grade-\u03b1-AGI Business-3"],
     "dashboards": [
       {
         "route": "experiments/kardashev-business/",
@@ -1934,7 +1941,7 @@
     "expected": "A bounded synthetic orchestration run. Use the workbench for task templates and exact artifact checks; live-provider execution and settlement require separate qualification.",
     "experiment": "Generate an energy-ledger artifact, test a deliberately wrong answer, and vary reviewer capacity before increasing the agent count.",
     "mode": "stdlib",
-    "related": ["Kardashev-II Omega-Grade-α-AGI Business-3"],
+    "related": ["Kardashev-II Omega-Grade-\u03b1-AGI Business-3"],
     "dashboards": [
       {
         "route": "experiments/kardashev-business/",
@@ -1967,7 +1974,7 @@
     "expected": "A bounded synthetic orchestration run. Use the workbench for task templates and exact artifact checks; live-provider execution and settlement require separate qualification.",
     "experiment": "Generate an energy-ledger artifact, test a deliberately wrong answer, and vary reviewer capacity before increasing the agent count.",
     "mode": "stdlib",
-    "related": ["Kardashev-II Omega-Grade-α-AGI Business-3"],
+    "related": ["Kardashev-II Omega-Grade-\u03b1-AGI Business-3"],
     "dashboards": [
       {
         "route": "experiments/kardashev-business/",
@@ -2035,12 +2042,12 @@
       {
         "title": "Inspect discovery regressions",
         "source": "demo/tests/test_run_demo_tests_runner.py",
-        "explanation": "These tests exercise the shared demo-test runner, including how suites are found and invoked. They do not replace each demo’s own behavioral tests."
+        "explanation": "These tests exercise the shared demo-test runner, including how suites are found and invoked. They do not replace each demo\u2019s own behavioral tests."
       },
       {
         "title": "Read the complete catalog",
         "source": "demo/README.md",
-        "explanation": "Use each entry’s source and guides to locate its behavioral suite and runtime dependencies."
+        "explanation": "Use each entry\u2019s source and guides to locate its behavioral suite and runtime dependencies."
       },
       {
         "title": "Inspect a concrete behavior suite",

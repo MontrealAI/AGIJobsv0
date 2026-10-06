@@ -135,6 +135,7 @@ test('every demo has a unique route and all built local page/asset links resolve
       manifest.guides +
       2 +
       (manifest.dashboardRoutes || []).length +
+      (manifest.archiveRoutes || []).length +
       Number(Boolean(manifest.cultureStudioRoute)) +
       Number(Boolean(manifest.oneboxRoute))
   );
@@ -327,7 +328,7 @@ test('all eight published command decks retain their local assets and navigation
   const manifest = JSON.parse(
     fs.readFileSync(path.join(output, 'catalog.json'))
   );
-  assert.equal(manifest.dashboardRoutes.length, 8);
+  assert.equal(manifest.dashboardRoutes.length, 9);
   for (const route of manifest.dashboardRoutes) {
     const document = new JSDOM(
       fs.readFileSync(path.join(output, route, 'index.html'), 'utf8')

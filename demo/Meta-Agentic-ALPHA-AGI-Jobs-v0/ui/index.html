@@ -5,18 +5,46 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Meta-Agentic α-AGI Jobs Control Room</title>
     <link rel="stylesheet" href="styles.css" />
-    <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js" defer></script>
     <script type="module" src="app.js" defer></script>
+    <style>
+      .fixture-notice {
+        padding: 1rem;
+        background: #21142f;
+        color: #f8f2ff;
+        border-bottom: 1px solid #ac87cb;
+        font: 16px/1.6 system-ui;
+      }
+      .fixture-notice a {
+        color: #e4c9ff;
+      }
+      svg {
+        max-width: 100%;
+        height: auto;
+      }
+      table {
+        max-width: 100%;
+      }
+      pre {
+        overflow: auto;
+      }
+    </style>
+    <link rel="stylesheet" href="../legacy/viewer.css" />
   </head>
   <body>
+    <aside class="fixture-notice" role="note">
+      <strong>Preserved simulation.</strong> Values, controls, addresses and CI
+      statuses are configured examples, not live telemetry or execution
+      authority. <a href="../../">Open the current delivery workbench</a>.
+    </aside>
     <header>
       <h1>Meta-Agentic α-AGI Jobs Control Room</h1>
       <p class="tagline">
-        Fully automated Identify → Out-Learn → Out-Think → Out-Design → Out-Strategise → Out-Execute loop with owner-first control.
+        Fully automated Identify → Out-Learn → Out-Think → Out-Design →
+        Out-Strategise → Out-Execute loop with owner-first control.
       </p>
     </header>
 
-    <main>
+    <main id="main">
       <section class="metrics" aria-labelledby="metrics-title">
         <h2 id="metrics-title">Macro Metrics</h2>
         <div class="metrics-grid" id="metrics-grid" role="list"></div>
@@ -24,27 +52,47 @@
 
       <section class="charts" aria-labelledby="architecture-title">
         <h2 id="architecture-title">Architecture Blueprint</h2>
-        <pre class="mermaid" id="architecture-diagram" aria-live="polite"></pre>
+        <pre
+          tabindex="0"
+          class="mermaid"
+          id="architecture-diagram"
+          aria-live="polite"
+        ></pre>
       </section>
 
       <section class="charts" aria-labelledby="timeline-title">
         <h2 id="timeline-title">Execution Timeline</h2>
-        <pre class="mermaid" id="timeline-diagram" aria-live="polite"></pre>
+        <pre
+          tabindex="0"
+          class="mermaid"
+          id="timeline-diagram"
+          aria-live="polite"
+        ></pre>
       </section>
 
       <section class="charts" aria-labelledby="coordination-title">
         <h2 id="coordination-title">Coordination Mesh</h2>
-        <pre class="mermaid" id="coordination-diagram" aria-live="polite"></pre>
+        <pre
+          tabindex="0"
+          class="mermaid"
+          id="coordination-diagram"
+          aria-live="polite"
+        ></pre>
       </section>
 
       <section class="charts" aria-labelledby="phase-flow-title">
         <h2 id="phase-flow-title">Sovereign Phase Flow</h2>
-        <pre class="mermaid" id="phase-flow-diagram" aria-live="polite"></pre>
+        <pre
+          tabindex="0"
+          class="mermaid"
+          id="phase-flow-diagram"
+          aria-live="polite"
+        ></pre>
       </section>
 
       <section class="assignments" aria-labelledby="assignments-title">
         <h2 id="assignments-title">Opportunity Portfolio</h2>
-        <table>
+        <table tabindex="0" aria-label="Scrollable recorded results">
           <thead>
             <tr>
               <th scope="col">Opportunity</th>
@@ -61,7 +109,7 @@
 
       <section class="assignments" aria-labelledby="phases-title">
         <h2 id="phases-title">Meta-Agentic Phase Matrix</h2>
-        <table>
+        <table tabindex="0" aria-label="Scrollable recorded results">
           <thead>
             <tr>
               <th scope="col">Phase</th>

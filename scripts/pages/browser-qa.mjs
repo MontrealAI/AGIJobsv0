@@ -406,7 +406,8 @@ try {
     [],
     'Every preserved diagram must parse and render'
   );
-  assert.equal(manifest.dashboardRoutes.length, 8);
+  assert.equal(manifest.dashboardRoutes.length, 9);
+  assert.equal(manifest.archiveRoutes.length, 13);
   const legacyDecks = manifest.dashboardRoutes.filter((route) =>
     route.startsWith('experiments/kardashev-ii/')
   );
@@ -468,6 +469,29 @@ try {
   );
   checks.push(
     'published OmniSovereign route executes six stages and rejects rehashed incorrect evidence'
+  );
+  await page.goto(url + 'experiments/meta-agentic-alpha/');
+  await page.waitForSelector('body[data-ready=true]');
+  assert.equal(await page.locator('#work-rows tr').count(), 12);
+  await page
+    .getByRole('button', { name: /Evaluate the six-phase portfolio/ })
+    .click();
+  await page.waitForFunction(
+    () =>
+      document.querySelector('#review-title').textContent ===
+      'Artifact checks passed'
+  );
+  assert.match(await page.locator('#findings').textContent(), /23,000/);
+  await page
+    .getByRole('button', { name: 'Test a rehashed wrong answer' })
+    .click();
+  await page.waitForFunction(
+    () =>
+      document.querySelector('#review-title').textContent ===
+      'Artifact checks failed'
+  );
+  checks.push(
+    'published Meta-Agentic ALPHA route evaluates twelve briefs and rejects incorrect evidence'
   );
   assert.deepEqual(requests, [], 'Unexpected external network requests');
   assert.deepEqual(errors, [], 'Browser errors');

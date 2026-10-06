@@ -5,16 +5,43 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Meta-Agentic α-AGI Jobs Demo — Alpha Flight Console</title>
     <link rel="stylesheet" href="styles.css" />
-    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js" defer></script>
-    <script src="dashboard.js" type="module" defer></script>
+    <script type="module" src="dashboard.js" defer></script>
+    <style>
+      .fixture-notice {
+        padding: 1rem;
+        background: #21142f;
+        color: #f8f2ff;
+        border-bottom: 1px solid #ac87cb;
+        font: 16px/1.6 system-ui;
+      }
+      .fixture-notice a {
+        color: #e4c9ff;
+      }
+      svg {
+        max-width: 100%;
+        height: auto;
+      }
+      table {
+        max-width: 100%;
+      }
+      pre {
+        overflow: auto;
+      }
+    </style>
+    <link rel="stylesheet" href="../../legacy/viewer.css" />
   </head>
   <body>
+    <aside class="fixture-notice" role="note">
+      <strong>Preserved simulation.</strong> Values, controls, addresses and CI
+      statuses are configured examples, not live telemetry or execution
+      authority. <a href="../../../">Open the current delivery workbench</a>.
+    </aside>
     <header class="hero">
       <div>
         <h1>Meta-Agentic α-AGI Jobs Demo</h1>
         <p class="tagline">
-          Empowering non-technical owners to command trillion-grade alpha engines
-          with a single click.
+          Empowering non-technical owners to command trillion-grade alpha
+          engines with a single click.
         </p>
         <p class="meta">Version 4 · Meta-Agentic Alpha Flight Deck</p>
       </div>
@@ -38,11 +65,14 @@
       </div>
     </header>
 
-    <main>
+    <main id="main">
       <section class="panel">
         <header>
           <h2>Owner Command Console</h2>
-          <p>All parameters are modifiable in real time using the owner controls script.</p>
+          <p>
+            All parameters are modifiable in real time using the owner controls
+            script.
+          </p>
         </header>
         <div class="grid" id="owner-controls"></div>
       </section>
@@ -71,9 +101,15 @@
       <section class="panel">
         <header>
           <h2>Phase Progress</h2>
-          <p>Meta-agentic pipeline status across Identify → Execute → Feedback.</p>
+          <p>
+            Meta-agentic pipeline status across Identify → Execute → Feedback.
+          </p>
         </header>
-        <table id="phase-table">
+        <table
+          tabindex="0"
+          aria-label="Scrollable recorded results"
+          id="phase-table"
+        >
           <thead>
             <tr>
               <th>Phase</th>
@@ -90,7 +126,9 @@
       <section class="panel">
         <header>
           <h2>Alpha Blueprint</h2>
-          <p>Mermaid diagrams render automatically when new runs are ingested.</p>
+          <p>
+            Mermaid diagrams render automatically when new runs are ingested.
+          </p>
         </header>
         <div class="mermaid" id="timeline-diagram"></div>
         <div class="mermaid" id="operating-system-diagram"></div>
@@ -108,16 +146,20 @@
       <section class="panel">
         <header>
           <h2>Scoreboard Snapshot</h2>
-          <p>Direct extraction from <code>storage/orchestrator_v4/scoreboard.json</code>.</p>
+          <p>
+            Direct extraction from
+            <code>storage/orchestrator_v4/scoreboard.json</code>.
+          </p>
         </header>
-        <pre id="scoreboard-json"></pre>
+        <pre tabindex="0" id="scoreboard-json"></pre>
       </section>
     </main>
 
     <footer class="footer">
       <p>
-        Built entirely with AGI Jobs v0 (v2). Every switch, guardian, and mission dial is
-        owner-adjustable, demonstrating world-scale empowerment for non-technical stewards.
+        Built entirely with AGI Jobs v0 (v2). Every switch, guardian, and
+        mission dial is owner-adjustable, demonstrating world-scale empowerment
+        for non-technical stewards.
       </p>
     </footer>
   </body>
