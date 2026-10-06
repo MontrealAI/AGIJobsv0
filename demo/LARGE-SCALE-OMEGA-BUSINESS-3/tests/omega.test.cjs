@@ -539,8 +539,60 @@ test('mainnet config hash, governance and fresh output are mandatory', (t) => {
     ticket,
   ];
   assert.equal(mainnet.parse(args).execute, true);
+  assert.throws(
+    () => mainnet.parse([...args, '--ticket', value.output]),
+    /must be distinct/
+  );
+  assert.throws(
+    () =>
+      mainnet.parse([
+        ...args,
+        '--ticket',
+        path.join(dir, 'unused', '..', 'addresses.json'),
+      ]),
+    /must be distinct/
+  );
+  if (process.platform !== 'win32') {
+    const alias = path.join(dir, 'alias');
+    fs.symlinkSync(dir, alias, 'dir');
+    assert.throws(
+      () =>
+        mainnet.parse([
+          ...args,
+          '--ticket',
+          path.join(alias, 'addresses.json'),
+        ]),
+      /must be distinct/
+    );
+  }
   fs.appendFileSync(config, ' ');
   assert.throws(() => mainnet.parse(args), /digest/);
+});
+test('change-ticket publication never overwrites competing evidence', (t) => {
+  const output = path.join(temp(t), 'ticket.md');
+  let staged;
+  assert.throws(
+    () =>
+      mainnet.publishChangeTicket(output, (file) => {
+        staged = file;
+        fs.writeFileSync(file, 'new ticket');
+        fs.writeFileSync(output, 'competing evidence');
+      }),
+    /publication failed/
+  );
+  t.after(() =>
+    fs.rmSync(path.dirname(staged), { recursive: true, force: true })
+  );
+  assert.equal(fs.readFileSync(output, 'utf8'), 'competing evidence');
+  assert.equal(fs.readFileSync(staged, 'utf8'), 'new ticket');
+  const fresh = path.join(temp(t), 'nested', 'fresh.md');
+  let successDir;
+  mainnet.publishChangeTicket(fresh, (file) => {
+    successDir = path.dirname(file);
+    fs.writeFileSync(file, 'reviewed ticket');
+  });
+  assert.equal(fs.readFileSync(fresh, 'utf8'), 'reviewed ticket');
+  assert.equal(fs.existsSync(successDir), false);
 });
 test('mainnet addressbook reservation rejects competing output and retains receipts', (t) => {
   const {

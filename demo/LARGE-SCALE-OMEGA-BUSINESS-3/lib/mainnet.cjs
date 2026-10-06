@@ -22,6 +22,23 @@ Optional execution (real transactions; operator terminal and reviewed files requ
   --env /absolute/operator.env --ticket /absolute/new-change-ticket.md
 No sample config, wallet, secret, ENS registration or IPFS publication is supplied.
 The offline rehearsal is not a production deployment approval.`;
+function canonicalOutput(file) {
+  let ancestor = path.resolve(file);
+  const suffix = [];
+  while (true) {
+    try {
+      fs.lstatSync(ancestor);
+      break;
+    } catch (error) {
+      if (error.code !== 'ENOENT') throw error;
+    }
+    suffix.unshift(path.basename(ancestor));
+    const parent = path.dirname(ancestor);
+    if (parent === ancestor) throw new Error('Cannot resolve output ancestor');
+    ancestor = parent;
+  }
+  return path.join(fs.realpathSync(ancestor), ...suffix);
+}
 function parse(argv) {
   const o = { execute: false };
   for (let i = 0; i < argv.length; i++) {
@@ -67,6 +84,10 @@ function parse(argv) {
       );
     if (fs.existsSync(o.ticket))
       throw new Error('Change-ticket output already exists');
+    if (canonicalOutput(config.output) === canonicalOutput(o.ticket))
+      throw new Error(
+        'Change-ticket and deployment addressbook paths must be distinct'
+      );
     if (!fs.statSync(o.env).isFile())
       throw new Error('An existing operator env file is required');
     o.output = config.output;
@@ -148,6 +169,23 @@ function withReviewedConfig(configPath, expectedDigest, invoke) {
     fs.rmSync(directory, { recursive: true, force: true });
   }
 }
+function publishChangeTicket(output, invoke) {
+  const directory = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'omega-change-ticket-')
+  );
+  fs.chmodSync(directory, 0o700);
+  const staged = path.join(directory, 'change-ticket.md');
+  try {
+    invoke(staged);
+    fs.mkdirSync(path.dirname(output), { recursive: true });
+    fs.copyFileSync(staged, output, fs.constants.COPYFILE_EXCL);
+  } catch (error) {
+    throw new Error(
+      `Change-ticket publication failed; generated evidence is retained at ${staged}: ${error.message}`
+    );
+  }
+  fs.rmSync(directory, { recursive: true, force: true });
+}
 async function main(argv = process.argv.slice(2)) {
   const o = parse(argv);
   if (!o.execute || o.help) {
@@ -196,17 +234,19 @@ async function main(argv = process.argv.slice(2)) {
     throw new Error(
       'Wizard aborted or no deployment addressbook exists; no change ticket generated'
     );
-  invoke([
-    'run',
-    'owner:change-ticket',
-    '--',
-    '--network',
-    'mainnet',
-    '--format',
-    'markdown',
-    '--out',
-    o.ticket,
-  ]);
+  publishChangeTicket(o.ticket, (staged) =>
+    invoke([
+      'run',
+      'owner:change-ticket',
+      '--',
+      '--network',
+      'mainnet',
+      '--format',
+      'markdown',
+      '--out',
+      staged,
+    ])
+  );
 }
 module.exports = {
   parse,
@@ -215,6 +255,7 @@ module.exports = {
   PLAN,
   withReviewedConfig,
   assertGovernanceSigner,
+  publishChangeTicket,
 };
 if (require.main === module)
   main().catch((error) => {
