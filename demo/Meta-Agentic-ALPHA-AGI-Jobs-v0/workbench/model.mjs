@@ -198,6 +198,58 @@ export function validateScenario(s) {
   }
   return s;
 }
+export async function makeProjectBrief(source, id) {
+  const snapshot = structuredClone(validateScenario(source));
+  const project = snapshot.work.find((work) => work.id === id);
+  if (!project)
+    throw new Error('Select a known project ID from ALPHA-001 to ALPHA-012.');
+  return {
+    schemaVersion: 1,
+    documentType: 'proposed-project-brief',
+    scenarioId: snapshot.id,
+    sourceSha256: await sha256(canonical(snapshot)),
+    dataClass: snapshot.dataClass,
+    project: { ...project, rewardUsdc: decimal(amount(project.rewardUsdc)) },
+    executionAuthorized: false,
+    ...boundary,
+    commissioningRequired: [
+      'Replace synthetic assumptions with an approved customer scope and permitted inputs.',
+      'Define the bounded task, allowed apps and actions, isolated workspace, time and cost limits, and stop controls.',
+      'Reserve an independent reviewer and agree on deliverable-specific acceptance evidence.',
+      'Admit the exact task and job through the protected execution system before dispatch; authorize settlement separately.',
+    ],
+  };
+}
+export function renderProjectBrief(brief) {
+  const p = brief.project;
+  return [
+    `# ${p.id}: ${p.title}`,
+    '',
+    'Synthetic project proposal. Execution, production and settlement are not authorized.',
+    '',
+    `Skill: ${p.skill}`,
+    `Planned reward: ${p.rewardUsdc} USDC`,
+    `Planned independent review: ${p.reviewMinutes} minutes`,
+    '',
+    '## Deliverable',
+    '',
+    p.deliverable,
+    '',
+    '## Acceptance criteria',
+    '',
+    ...p.acceptanceCriteria.map((criterion) => `- ${criterion}`),
+    '',
+    '## Before commissioning',
+    '',
+    ...brief.commissioningRequired.map(
+      (step, index) => `${index + 1}. ${step}`
+    ),
+    '',
+    `Source scenario: ${brief.scenarioId}`,
+    `Source SHA-256: ${brief.sourceSha256}`,
+    '',
+  ].join('\n');
+}
 export const outputContracts = {
   identify: {
     workIds: 'all IDs in source order',

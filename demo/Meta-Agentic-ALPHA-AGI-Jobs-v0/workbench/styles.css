@@ -436,6 +436,24 @@ pre {
 .work-panel {
   margin-top: 20px;
 }
+.brief-link {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+#project-detail h4 {
+  font-size: 17px;
+  margin: 18px 0 10px;
+}
+#project-criteria {
+  padding-left: 22px;
+  font-size: 14px;
+  line-height: 1.8;
+}
 .inline-heading {
   display: flex;
   justify-content: space-between;

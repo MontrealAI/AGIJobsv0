@@ -173,6 +173,37 @@
             </table>
           </div>
         </div>
+        <div class="panel work-panel" aria-labelledby="project-heading">
+          <div class="inline-heading">
+            <h3 id="project-heading">Inspect a project brief</h3>
+            <span class="pill">Proposal · Not commissioned</span>
+          </div>
+          <label for="project">Proposed project</label>
+          <select id="project" disabled></select>
+          <div id="project-detail" aria-live="polite">
+            <h4 id="project-title">Loading project briefs…</h4>
+            <p id="project-meta"></p>
+            <p id="project-deliverable"></p>
+            <h4>Acceptance criteria</h4>
+            <ul id="project-criteria"></ul>
+          </div>
+          <div class="actions">
+            <button id="download-brief" class="secondary" disabled>
+              Download proposal JSON
+            </button>
+            <button id="download-brief-markdown" class="secondary" disabled>
+              Download readable brief
+            </button>
+          </div>
+          <p class="micro">
+            Bring this brief to a customer and independent reviewer to agree on
+            scope, permitted inputs, acceptance evidence and execution limits.
+            Its synthetic reward and review time are planning assumptions. A
+            proposal is not a dispatchable phase work order or execution
+            approval.
+          </p>
+          <p id="project-status" role="status"></p>
+        </div>
       </section>
       <section
         id="evidence"
@@ -223,6 +254,8 @@
               Import a rehearsal bundle, or an OpenClaw adapter receipt for the
               selected stage. Files stay in this browser.
             </p>
+            <label for="review-stage">Review phase</label>
+            <select id="review-stage"></select>
             <label for="evidence-kind">File type</label
             ><select id="evidence-kind">
               <option value="receipt">
@@ -258,8 +291,9 @@
                 placeholder="Verified chain and contract identity"
               />
               <p class="micro">
-                Select the matching evaluation phase above before importing the
-                receipt.
+                Choose the matching review phase here before importing. Changing
+                review inputs clears the previous result and cancels any pending
+                check. Browsing evaluation phases does not change review scope.
               </p>
             </details>
             <div class="boundary">
