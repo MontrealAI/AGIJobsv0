@@ -1,92 +1,95 @@
 # Launch Playbook — Astral Omnidominion Command Theatre
 
-This playbook is designed for **non-technical operators**. Follow the steps in order to deploy the AGI Jobs v0 (v2) stack, run the first-class demo, and experience the live control surfaces.
+Begin with the offline rehearsal. Use the full AGI OS stack when you are ready to test the separate services and contracts.
 
-## 0. Prerequisites (triple-checked)
+## 1. Offline rehearsal (default)
 
-| Requirement | Verification method |
+Requirement: Python 3.10 or later (`python3 --version`). From the repository root:
+
+```bash
+python3 demo/astral-omnidominion-operating-system-command-theatre/run_demo.py
+```
+
+Open `reports/astral-omnidominion-operating-system-command-theatre/report.html`. The page works offline, adapts to narrow screens and provides file links, readable outcomes and a ten-job catalog. There are no external scripts, fonts or CDN dependencies.
+
+Expected: `accepted`, six checks passed, three unique ledger entries, one duplicate, 21,999 cents total. Read `report.json` for machine-readable fields. Each execution stores candidate files in a new `runs/<id>/` directory; it does not reuse another run's artifacts. Each completed task also retains its own `receipt.json` and `index.html` inside that directory, so earlier runs stay independently verifiable. The top-level report/dashboard represent the latest invocation at that output path.
+
+- `--scenario rejected`: an intentional one-cent error is detected; exit 1.
+- `--scenario paused`: no task is executed and no task artifacts are written; exit 1.
+- `--output /absolute/path/report.json`: write a separate report and adjacent dashboard. Output must end in `.json` and stay outside the demo source directory.
+- `--verify-report /absolute/path/report.json`: verify all artifact hashes and recompute acceptance; does not execute work or contact services.
+
+Use different output paths for demonstrations you want to compare. The current report and its referenced `runs/` directory form one evidence package. A local hash is not a signed attestation.
+
+## 2. Full AGI OS stack (advanced)
+
+This existing path may deploy contracts and start services. It is distinct from the offline rehearsal and the OpenClaw worker. Use disposable local/testnet environments and inspect configured RPCs and signers before execution.
+
+| Requirement | Verification |
 | --- | --- |
-| Docker Desktop ≥ 4.29 **or** Docker Engine ≥ 24 with Compose plugin | Run `docker --version` and `docker compose version`. Both commands must succeed. |
-| Node.js 22.23.3 LTS | Run `node --version` and confirm the version matches the repository’s `package.json`. |
-| npm 10.x (bundled with Node 20) | Run `npm --version`. |
-| Git | Run `git status`. |
-| 20 GB free disk space | `df -h .` |
+| Repository-pinned Node and npm | Follow [START_HERE](../../docs/START_HERE.md); `.nvmrc` and `package.json` are authoritative |
+| Locked dependencies | `npm ci` from the repository root |
+| Docker with Compose, or a prepared compatible runtime | `docker --version`, `docker compose version`, `docker compose ps` |
+| Local chain and deployment configuration | Review [the parent OS demo](../astral-omnidominion-operating-system/README.md) and `deployment-config/` |
+| Git and sufficient storage | `git status`, `df -h .`; allow space for images and artifacts |
 
-> If any check fails, resolve it before proceeding. The demo will self-verify but assumes the environment is healthy.
-
-## 1. Fresh setup
+For an explicit local deployment with Compose:
 
 ```bash
-npm install
+npm run demo:agi-os:first-class -- --network localhost --compose
 ```
 
-- Populates `node_modules` for faster script execution.
-- Validated by the demo preflight—if this command was skipped the preflight logs a warning but still runs.
-
-## 2. Initiate the guided mission
+For a previously prepared local deployment:
 
 ```bash
-npm run demo:agi-os:first-class
+npm run demo:agi-os:first-class -- --network localhost --yes --no-compose --skip-deploy
 ```
 
-During execution:
+The script supports `localhost` and `sepolia`. “Local Hardhat (Anvil)” is its existing preset label; Hardhat and Anvil are different tools. Check which runtime is actually running. Do not select a funded network for the first rehearsal.
 
-1. **Network selection** — Choose `Local Hardhat (Anvil)` unless you have funded testnet keys.
-2. **Launch Docker Compose** — Accept the default `yes` to automatically start the one-click stack. If already running, answer `no`.
-3. **Skip deployment?** — Keep `no` for a clean redeploy. Use `--skip-deploy` only when reusing an existing stack without changes.
+The orchestrator runs preflight, the deployment wizard when enabled, `demo:agi-os`, owner diagram generation, owner-control verification, summary rendering, manifest compilation and integrity checks. **Steps can be skipped when dependencies or artifacts are unavailable, even when the command exits zero.** Inspect `first-class-run.json` → `steps[]`; a skipped check is not a pass. `--skip-deploy` only skips the deployment wizard, not every side effect of later stages. These commands do not run the entire repository test/security suite.
 
-The orchestrator then runs the following stages with live status updates and prefixed logs:
+### Live mission control
 
-- Preflight validation (Docker, Compose, git cleanliness, Node.js).
-- One-click deployment wizard (creates `.env`, runs deployment scripts, optionally starts Compose, pauses system).
-- Full `demo:agi-os` mission (compilation, deterministic ASI take-off, owner control matrix, mission bundle).
-- Owner control diagram (`owner:diagram`) rendered to Mermaid.
-- Owner control verification (`owner:verify-control`).
-- HTML mission summary rendering.
-- Manifest compilation with SHA-256 hashes.
-- Cross-verification of artefacts and owner modules.
+Inspect actual port bindings and enabled services with `docker compose ps` before opening a UI. The Compose file maps `validator-ui` to `http://localhost:3000` and enterprise portal to `http://localhost:3001`. A validator UI is not guaranteed at port 3002. The separate static console can be built and previewed with:
 
-Each stage produces logs under `reports/agi-os/first-class/logs/` for audit.
+```bash
+npm run webapp:build
+npm --prefix apps/console run preview -- --host 127.0.0.1 --port 4173
+```
 
-## 3. Live mission control (optional but recommended)
+Confirm the actual network, contract addresses, account and data mode before submitting a task or governance action. Inspect transactions and refreshed authoritative state; a green button, static demo mode or polling animation is not proof of settlement.
 
-With Docker Compose running, explore the core UIs:
+### Full-stack mission evidence
 
-| UI | URL | What to try |
-| --- | --- | --- |
-| Owner Console | http://localhost:3000 | Connect to the local network, inspect the Governance Status card, render policies, and execute a **Pause All Modules** or **Resume All Modules** action via the governance form. |
-| Enterprise Portal | http://localhost:3001 | Follow the conversational flow to submit a sample task. Confirm the **Submit job** green button triggers the job lifecycle. |
-| Validator Console | http://localhost:3002 (if enabled) | Observe validator queues reacting to the submitted job. |
-| One-Box Static UI | http://localhost:4173 (after `npm --prefix apps/console run preview`) | Toggle demo mode (`?orchestrator=demo`) and issue a natural-language request; review the AI-generated plan summary. |
+Under `reports/agi-os/`, retain:
 
-All portals update live via existing polling/websocket infrastructure—no manual refresh is required.
+- `grand-summary.md` / `.html` — generated overview.
+- `owner-control-matrix.json` — module surfaces and configuration status.
+- `mission-bundle/` — simulation logs, telemetry and manifest when generated.
+- `first-class/first-class-run.json` — host/commit metadata and each stage's status.
+- `first-class/first-class-manifest.json` — SHA-256 entries, not signed attestations.
+- `first-class/logs/` — command logs.
+- `first-class/owner-control-map.mmd` — existing Mermaid governance map when generated.
 
-## 4. Mission evidence package
+Apply the [mission review checklist](mission-review-checklist.md). Do not reuse stale outputs to claim a newly skipped step succeeded.
 
-When the run finishes, collect artefacts from `reports/agi-os/`:
+## 3. Shutdown and troubleshooting
 
-- `grand-summary.md` and `grand-summary.html` — executive overview.
-- `owner-control-matrix.json` — governance levers with status (✅ ready, ⚠️ needs config, ❌ missing script).
-- `mission-bundle/` — deterministic simulation logs, telemetry, constants, and manifest.
-- `first-class/first-class-run.json` — run metadata (host, git commit, Docker versions, step durations).
-- `first-class/first-class-manifest.json` — attested SHA-256 checksums.
-- `first-class/logs/` — per-step logs with prefixed stdout/stderr.
-- `first-class/owner-control-map.mmd` — Mermaid diagram of owner control planes.
-
-Follow the [mission review checklist](./mission-review-checklist.md) for systematic validation.
-
-## 5. Shutdown / cleanup
-
-If the Compose stack should be stopped after the demonstration:
+To stop the local Compose stack without deleting named volumes:
 
 ```bash
 docker compose -f compose.yaml down
 ```
 
-To remove stateful volumes for a fresh rerun:
+`docker compose -f compose.yaml down -v` additionally deletes named volumes. Use that only for an intentionally disposable environment after retaining needed evidence. Deployment reruns can change state; they are not guaranteed idempotent.
 
-```bash
-docker compose -f compose.yaml down -v
-```
-
-The first-class orchestrator is idempotent—rerun `npm run demo:agi-os:first-class` anytime to regenerate artefacts, redeploy contracts, or refresh telemetry.
+| Symptom | Next step |
+| --- | --- |
+| `python3` missing or older than 3.10 | Install a supported Python; the offline path needs no pip packages |
+| Missing/empty document or invalid catalog | Restore the named source file; rerun and inspect the new report |
+| Intentional rejected/paused scenario exits 1 | Expected; inspect the status and failed/blocked condition |
+| Integrity check fails | Keep the evidence, identify changed/missing files and generate a new run; do not hand-edit hashes to make an old result pass |
+| Output permission error | Choose a writable report directory outside the demo sources |
+| Full-stack stage skipped | Satisfy that stage's prerequisites and rerun; zero exit alone is insufficient |
+| Provider task interrupted | Stop and reconcile using the [computer-work recovery guide](../../docs/computer-work.md#recovery-and-stop-controls) |

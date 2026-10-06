@@ -38,3 +38,282 @@ def test_main_writes_report(tmp_path: Path, monkeypatch):
     payload = json.loads(output.read_text(encoding="utf-8"))
     assert payload["documents"], "report should enumerate scanned documents"
     assert payload["scores"]["coordination_hamiltonian"] >= 0
+
+
+import copy
+import hashlib
+import os
+import shutil
+import subprocess
+
+import pytest
+
+
+def execute(tmp_path, scenario="accepted"):
+    output = tmp_path / "report.json"
+    code = run_demo.main(["--output", str(output), "--scenario", scenario])
+    return code, output, json.loads(output.read_text())
+
+
+def test_correct_work_and_evidence_recompute(tmp_path):
+    code, output, payload = execute(tmp_path)
+    assert code == 0
+    assert payload["rehearsal"]["deliverable"] == {
+        "source_rows": 4, "unique_rows": 3, "duplicate_rows": 1, "total_cents": 21999,
+        "deduplicated_ledger": [{"id": "A-001", "amount_cents": 12500}, {"id": "A-002", "amount_cents": 7500}, {"id": "A-003", "amount_cents": 1999}],
+        "duplicate_ids": ["A-001"],
+    }
+    assert payload["coverage"] == 1
+    assert len(payload["rehearsal"]["artifacts"]) == 5
+    assert run_demo.verify_report(output)["accepted"] is True
+    for key in ("live_provider", "browser_executed", "production_approved", "settlement_approved"):
+        assert payload[key] is False
+
+
+def test_incorrect_work_is_rejected_but_integrity_can_pass(tmp_path):
+    code, output, payload = execute(tmp_path, "rejected")
+    assert code == 1
+    assert payload["rehearsal"]["status"] == "rejected"
+    checks = payload["rehearsal"]["review"]["checks"]
+    assert sum(checks.values()) == 5
+    assert checks["total_recomputed"] is False
+    assert run_demo.verify_report(output)["accepted"] is False
+
+
+def test_pause_produces_no_task_artifacts(tmp_path):
+    code, output, payload = execute(tmp_path, "paused")
+    assert code == 1
+    assert payload["rehearsal"]["status"] == "blocked"
+    assert payload["rehearsal"]["artifacts"] == []
+    assert not (tmp_path / "runs").exists()
+    assert run_demo.main(["--verify-report", str(output)]) == 1
+
+
+@pytest.mark.parametrize("damage", ["missing", "empty", "invalid-utf8", "directory", "oversized"])
+def test_incomplete_documents_block_execution(tmp_path, damage):
+    base = tmp_path / "demo"
+    shutil.copytree(ROOT, base)
+    target = base / "launch-playbook.md"
+    target.unlink()
+    if damage == "empty":
+        target.write_text(" \n")
+    elif damage == "invalid-utf8":
+        target.write_bytes(b"\xff")
+    elif damage == "directory":
+        target.mkdir()
+    elif damage == "oversized":
+        target.write_bytes(b"a" * (run_demo.MAX_FILE_BYTES + 1))
+    output = tmp_path / "reports" / "report.json"
+    assert run_demo.main(["--output", str(output)], base_dir=base) == 1
+    payload = json.loads(output.read_text())
+    assert payload["issues"]
+    assert payload["coverage"] < 1
+    assert payload["rehearsal"]["artifacts"] == []
+
+
+@pytest.mark.parametrize("mutation", ["duplicate-id", "negative-budget", "boolean-budget", "unknown-tool", "verified-market", "empty-jobs", "missing-fixture", "not-object"])
+def test_malformed_catalogs_fail_closed(tmp_path, mutation):
+    catalog = json.loads((ROOT / "work-catalog.json").read_text())
+    if mutation == "duplicate-id":
+        catalog["jobs"][1]["id"] = catalog["jobs"][0]["id"]
+    elif mutation == "negative-budget":
+        catalog["jobs"][0]["budget_usdc"] = -1
+    elif mutation == "boolean-budget":
+        catalog["jobs"][0]["budget_usdc"] = True
+    elif mutation == "unknown-tool":
+        catalog["jobs"][0]["capabilities"] = ["wallet-sign"]
+    elif mutation == "verified-market":
+        catalog["market"]["verified"] = True
+    elif mutation == "empty-jobs":
+        catalog["jobs"] = []
+    elif mutation == "missing-fixture":
+        catalog["jobs"] = catalog["jobs"][1:]
+    else:
+        catalog = []
+    path = tmp_path / "catalog.json"
+    path.write_text(json.dumps(catalog))
+    with pytest.raises(ValueError):
+        run_demo.load_catalog(path)
+
+
+def test_tampered_and_missing_artifacts_rejected(tmp_path):
+    _, output, payload = execute(tmp_path)
+    target = output.parent / payload["rehearsal"]["artifacts"][2]["path"]
+    target.write_text('{"total_cents": 21998}')
+    assert run_demo.main(["--verify-report", str(output)]) == 1
+    target.unlink()
+    assert run_demo.main(["--verify-report", str(output)]) == 1
+
+
+@pytest.mark.skipif(not hasattr(os, "mkfifo"), reason="POSIX named pipes")
+def test_fifo_evidence_is_rejected_without_blocking(tmp_path):
+    _, output, payload = execute(tmp_path)
+    target = output.parent / payload["rehearsal"]["artifacts"][0]["path"]
+    target.unlink()
+    os.mkfifo(target)
+    result = subprocess.run([sys.executable, str(MODULE_PATH), "--verify-report", str(output)],
+                            capture_output=True, text=True, timeout=5)
+    assert result.returncode == 1
+    assert "regular file" in result.stderr
+
+
+@pytest.mark.skipif(not hasattr(os, "mkfifo"), reason="POSIX named pipes")
+def test_file_replaced_with_fifo_after_path_check_is_rejected(tmp_path, monkeypatch):
+    target = tmp_path / "evidence.json"
+    target.write_text("{}")
+    original_open = os.open
+
+    def swap_before_open(path, flags, *args, **kwargs):
+        if Path(path) == target:
+            target.unlink()
+            os.mkfifo(target)
+        return original_open(path, flags, *args, **kwargs)
+
+    monkeypatch.setattr(os, "open", swap_before_open)
+    with pytest.raises(ValueError, match="regular file"):
+        run_demo._read_bytes(target)
+
+
+def test_rehashed_wrong_deliverable_still_fails_acceptance_consistency(tmp_path):
+    _, output, payload = execute(tmp_path)
+    entry = next(e for e in payload["rehearsal"]["artifacts"] if e["path"].endswith("/deliverable.json"))
+    path = output.parent / entry["path"]
+    candidate = json.loads(path.read_text())
+    candidate["total_cents"] += 1
+    data = run_demo._json_bytes(candidate)
+    path.write_bytes(data)
+    entry.update(sha256=hashlib.sha256(data).hexdigest(), bytes=len(data))
+    output.write_text(json.dumps(payload))
+    with pytest.raises(ValueError, match="Review does not match"):
+        run_demo.verify_report(output)
+
+
+@pytest.mark.parametrize("field,value", [
+    ("allowed_actions", ["read fixture", "write local evidence", "send payment"]),
+    ("allowed_actions", ["browse production"]),
+    ("allowed_actions", None),
+    ("schema_version", 2),
+    ("schema_version", True),
+    ("schema_version", None),
+])
+def test_rehashed_task_cannot_expand_authority_or_change_schema(tmp_path, field, value):
+    _, output, payload = execute(tmp_path)
+    work = payload["rehearsal"]
+    entry = next(e for e in work["artifacts"] if e["path"].endswith("/task.json"))
+    path = output.parent / entry["path"]
+    task = json.loads(path.read_text())
+    task[field] = value
+    data = run_demo._json_bytes(task)
+    path.write_bytes(data)
+    digest = hashlib.sha256(data).hexdigest()
+    entry.update(sha256=digest, bytes=len(data))
+    work["task_sha256"] = digest
+    output.write_text(json.dumps(payload))
+    with pytest.raises(ValueError, match="authority boundary"):
+        run_demo.verify_report(output)
+
+
+@pytest.mark.parametrize("attack", ["../outside.json", "/etc/passwd", "..\\outside.json"])
+def test_verifier_rejects_paths_outside_report(tmp_path, attack):
+    _, output, payload = execute(tmp_path)
+    payload["rehearsal"]["artifacts"][0]["path"] = attack
+    output.write_text(json.dumps(payload))
+    with pytest.raises(ValueError, match="escapes"):
+        run_demo.verify_report(output)
+
+
+def test_verifier_rejects_symlinks_and_duplicate_entries(tmp_path):
+    _, output, payload = execute(tmp_path)
+    original = copy.deepcopy(payload)
+    payload["rehearsal"]["artifacts"][0] = payload["rehearsal"]["artifacts"][1]
+    output.write_text(json.dumps(payload))
+    with pytest.raises(ValueError, match="duplicated"):
+        run_demo.verify_report(output)
+    output.write_text(json.dumps(original))
+    target = output.parent / original["rehearsal"]["artifacts"][0]["path"]
+    other = tmp_path / "outside.json"
+    target.rename(other)
+    target.symlink_to(other)
+    with pytest.raises(ValueError, match="symlinks"):
+        run_demo.verify_report(output)
+
+
+def test_verifier_rejects_fake_production_boundary(tmp_path):
+    _, output, payload = execute(tmp_path)
+    payload["production_approved"] = True
+    output.write_text(json.dumps(payload))
+    with pytest.raises(ValueError, match="boundary"):
+        run_demo.verify_report(output)
+
+
+def test_repeated_runs_keep_separate_evidence(tmp_path):
+    _, _, first = execute(tmp_path)
+    first_files = {e["path"] for e in first["rehearsal"]["artifacts"]}
+    _, _, second = execute(tmp_path)
+    second_files = {e["path"] for e in second["rehearsal"]["artifacts"]}
+    assert first_files.isdisjoint(second_files)
+    assert all((tmp_path / name).is_file() for name in first_files | second_files)
+
+
+def test_dashboard_escapes_untrusted_text(tmp_path):
+    _, _, payload = execute(tmp_path)
+    payload["catalog"]["jobs"][0]["title"] = '<script>alert("bad")</script>'
+    page = run_demo.render_dashboard(payload)
+    assert "<script>" not in page
+    assert "&lt;script&gt;" in page
+    assert "Content-Security-Policy" in page
+    assert "Live provider: NO" in page
+
+
+def test_cli_works_outside_repository(tmp_path):
+    output = tmp_path / "report.json"
+    result = subprocess.run([sys.executable, str(MODULE_PATH), "--output", str(output)], cwd=tmp_path, capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+    assert output.with_suffix(".html").is_file()
+
+
+def test_conflicting_source_requires_reconciliation():
+    with pytest.raises(ValueError, match="Conflicting"):
+        run_demo.check_deliverable([{"id": "a", "amount_cents": 1}, {"id": "a", "amount_cents": 2}], {})
+
+
+def test_output_cannot_overwrite_source_or_html(tmp_path):
+    assert run_demo.main(["--output", str(ROOT / "work-catalog.json")]) == 1
+    assert run_demo.main(["--output", str(tmp_path / "report.html")]) == 1
+
+
+def test_old_receipt_remains_verifiable_after_new_run(tmp_path):
+    _, _, first = execute(tmp_path)
+    first_bundle = (tmp_path / first["rehearsal"]["artifacts"][0]["path"]).parent
+    execute(tmp_path, "rejected")
+    assert run_demo.verify_report(first_bundle / "receipt.json")["accepted"] is True
+    assert (first_bundle / "index.html").exists()
+
+
+@pytest.mark.parametrize("payload", [[], None, {"schema_version": 2}, {"rehearsal": []}])
+def test_malformed_report_has_clean_nonzero_exit(tmp_path, payload):
+    path = tmp_path / "invalid.json"
+    path.write_text(json.dumps(payload))
+    assert run_demo.main(["--verify-report", str(path)]) == 1
+
+
+def test_checker_rejects_boolean_counts_and_noninteger_money():
+    source = [{"id": "one", "amount_cents": 10}]
+    assert run_demo.check_deliverable(source, {"source_rows": True, "unique_rows": 1, "duplicate_rows": 0, "total_cents": 10})["accepted"] is False
+    with pytest.raises(ValueError, match="integer cents"):
+        run_demo.check_deliverable([{"id": "one", "amount_cents": 10.1}], {})
+
+
+@pytest.mark.parametrize("defect", ["missing-ledger", "wrong-row", "missing-duplicate", "wrong-duplicate", "boolean-money"])
+def test_checker_verifies_records_and_each_duplicate_identity(defect):
+    rows = [{"id": "a", "amount_cents": 1}, {"id": "b", "amount_cents": 2}]
+    source = [rows[0], rows[1], rows[0], rows[1], rows[0]]
+    candidate = {"source_rows": 5, "unique_rows": 2, "duplicate_rows": 3, "total_cents": 3,
+                 "deduplicated_ledger": copy.deepcopy(rows), "duplicate_ids": ["a", "b"]}
+    assert run_demo.check_deliverable(source, candidate)["accepted"] is True
+    if defect == "missing-ledger": candidate.pop("deduplicated_ledger")
+    elif defect == "wrong-row": candidate["deduplicated_ledger"][0]["id"] = "other"
+    elif defect == "missing-duplicate": candidate["duplicate_ids"].pop()
+    elif defect == "wrong-duplicate": candidate["duplicate_ids"] = ["a", "other"]
+    else: candidate["deduplicated_ledger"][0]["amount_cents"] = True
+    assert run_demo.check_deliverable(source, candidate)["accepted"] is False

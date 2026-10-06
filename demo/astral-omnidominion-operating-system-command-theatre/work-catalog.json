@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "market": {"annual_usd": 40000000000000, "basis": "project planning assumption", "verified": false},
+  "jobs": [
+    {"id":"reconciliation","title":"Reconcile a public ledger","budget_usdc":100,"capabilities":["files","spreadsheets","code"],"deliverable":"Deduplicated ledger and totals","acceptance":"Recompute totals from source rows; identify every duplicate."},
+    {"id":"software-qa","title":"Test a browser workflow","budget_usdc":1000,"capabilities":["browser","computer","code"],"deliverable":"Reproduction steps, screenshots and test results","acceptance":"Replay critical paths and confirm actual application state."},
+    {"id":"performance","title":"Optimize open-source performance","budget_usdc":10000,"capabilities":["code","files"],"deliverable":"Patch and reproducible benchmarks","acceptance":"Re-run baseline and candidate on the same workload without correctness regressions."},
+    {"id":"feature","title":"Build an open-source feature","budget_usdc":10000,"capabilities":["code","browser"],"deliverable":"Reviewable patch, tests and usage guide","acceptance":"Run requirements-based tests and inspect compatibility."},
+    {"id":"sdk","title":"Improve an API SDK","budget_usdc":1000,"capabilities":["code","files"],"deliverable":"SDK patch and executable examples","acceptance":"Run contract tests against licensed fixtures; verify error handling."},
+    {"id":"ai-evals","title":"Create an AI evaluation package","budget_usdc":1000,"capabilities":["code","files"],"deliverable":"Licensed cases, scorer and reproducibility report","acceptance":"Check held-out cases, provenance and scoring failure modes."},
+    {"id":"public-dashboard","title":"Build a public-data dashboard","budget_usdc":1000,"capabilities":["browser","spreadsheets","code"],"deliverable":"Dashboard, source data and calculations","acceptance":"Trace every displayed total to licensed source records."},
+    {"id":"documents","title":"Prepare a research briefing and deck","budget_usdc":1000,"capabilities":["browser","documents","presentations"],"deliverable":"Cited report and presentation","acceptance":"Check primary sources, claims, page layout and slide readability."},
+    {"id":"interactive-demo","title":"Create an interactive product demo","budget_usdc":1000,"capabilities":["browser","computer","code"],"deliverable":"Runnable demo and instructions","acceptance":"Exercise desktop/mobile, keyboard navigation and failure states."},
+    {"id":"scientific-reproduction","title":"Reproduce a numerical result","budget_usdc":10000,"capabilities":["code","files","documents"],"deliverable":"Runnable notebook, data provenance and figures","acceptance":"Recompute with declared tolerances and compare against the stated reference."}
+  ]
+}
