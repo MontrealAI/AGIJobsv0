@@ -158,6 +158,25 @@ try {
     document.querySelector('#observatory-alert').textContent.includes('Loaded')
   );
   assert.ok((await page.locator('#observatory-table tbody tr').count()) > 1);
+  for (const width of [320, 390, 768, 1024, 1440]) {
+    await page.setViewportSize({ width, height: 1000 });
+    assert.equal(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth + 1
+      ),
+      true,
+      'Preserved console overflow at ' + width
+    );
+  }
+  await page.setViewportSize({ width: 390, height: 844 });
+  const legacyAxe = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+    .analyze();
+  fs.writeFileSync(
+    path.join(evidence, 'legacy-accessibility.json'),
+    JSON.stringify(legacyAxe.violations, null, 2)
+  );
+  assert.deepEqual(legacyAxe.violations, []);
   await page.locator('#timeline-file').setInputFiles({
     name: 'paused.json',
     mimeType: 'application/json',
@@ -180,7 +199,8 @@ try {
         legacy: true,
         externalRequests: external.length,
         consoleErrors: errors.length,
-        accessibilityViolations: axe.violations.length,
+        accessibilityViolations:
+          axe.violations.length + legacyAxe.violations.length,
       },
       null,
       2
