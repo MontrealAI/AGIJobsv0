@@ -4,7 +4,6 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import random
-import shutil
 import statistics
 import time
 from dataclasses import dataclass
@@ -51,7 +50,7 @@ async def _populate_jobs(
         payload = DemoJobPayload(
             description=f"Autonomous task #{i} for {region}",
             complexity=rng.choice(["low", "medium", "high"]),
-            reward=f"{5 + (i % 3)}.0 ETH",
+            reward=f"{5 + (i % 3)}.000000 USDC (simulated)",
             metadata={"kardashev": "II", "category": rng.choice(["science", "logistics", "governance"])}
         )
         job = Job(job_id=f"job-{i}", region=region, payload=payload, priority=i % 5)
@@ -61,15 +60,19 @@ async def _populate_jobs(
 async def _prepare_orchestrator(
     config: SimulationConfig, *, resume: bool = False
 ) -> PlanetaryOrchestrator:
-    if not resume and config.checkpoint.directory.exists():
-        shutil.rmtree(config.checkpoint.directory)
-
-    orchestrator = await PlanetaryOrchestrator.from_checkpoint(
-        regions=list(config.regions),
-        checkpoint=config.checkpoint,
-        rebalance_interval=config.rebalance_interval,
-        heartbeat_interval=config.heartbeat_interval,
-    )
+    if resume:
+        orchestrator = await PlanetaryOrchestrator.from_checkpoint(
+            regions=list(config.regions), checkpoint=config.checkpoint,
+            rebalance_interval=config.rebalance_interval, heartbeat_interval=config.heartbeat_interval,
+        )
+    else:
+        # Invalidate only this model's prior snapshot before starting a new
+        # mission. A crash before its first checkpoint must not revive old work.
+        config.checkpoint.resolve_path().unlink(missing_ok=True)
+        orchestrator = PlanetaryOrchestrator(
+            regions=list(config.regions), checkpoint=config.checkpoint,
+            rebalance_interval=config.rebalance_interval, heartbeat_interval=config.heartbeat_interval,
+        )
     for node_cfg in config.nodes:
         await orchestrator.register_node(node_cfg)
     await orchestrator.start()
@@ -84,6 +87,8 @@ async def run_high_load_simulation(
 ) -> SimulationResult:
     """Execute a canonical scenario showing resilience under load."""
 
+    if type(job_count) is not int or not 1 <= job_count <= 1000000:
+        raise ValueError("jobs must be an integer between 1 and 1000000")
     rng = random.Random(seed)
     config = SimulationConfig.demo(base_dir)
     orchestrator = await _prepare_orchestrator(config)
@@ -118,7 +123,8 @@ async def run_high_load_simulation(
             shard_metrics = {region.name: [] for region in config.regions}
             monitor_task = asyncio.create_task(record_metrics())
 
-        await orchestrator.wait_for_all(timeout=120.0)
+        if not await orchestrator.wait_for_all(timeout=120.0):
+            raise TimeoutError("Simulation did not complete within 120 seconds")
         await asyncio.sleep(0.1)
         snapshot = orchestrator.snapshot()
     finally:

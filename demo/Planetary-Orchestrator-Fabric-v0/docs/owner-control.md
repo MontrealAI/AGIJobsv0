@@ -96,6 +96,7 @@ node scripts/v2/ownerControlSurface.ts \
 - **Spillover mode** re-queues pending work into the chosen target shard. The ledger records new `job.spillover` events, and dashboards illuminate the transfer.
 - Switch `mode` to `"cancel"` with an optional `"cancelReason"` to evaporate outstanding jobs instead of reassigning them—handy for decommission drills.
 - Summary metrics (`jobsCancelled`, `spillovers`, ledger totals) and mission atlases update the moment the command executes so auditors can verify the retirement instantly.
+- Retirement removes incoming spillover targets/policies and retires nodes assigned to that shard, keeping checkpoints restorable. Re-register those nodes in an existing shard to reuse them. The final shard cannot be removed; pause the fabric instead. Invalid spillover destinations are rejected before changing any jobs.
 
 ### Command the Checkpoint Engine
 

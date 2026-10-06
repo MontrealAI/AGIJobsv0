@@ -16,7 +16,7 @@ The planetary ledger extends the Planetary Orchestrator Fabric with a determinis
 
 | Tool / Method | Purpose |
 | --- | --- |
-| Jest test suite (`npm run test:planetary-orchestrator-fabric`) | Validates TypeScript logic, ledger accounting, and checkpoint durability. |
+| Node assertion suite (`npm run test:planetary-orchestrator-fabric`) | Validates TypeScript logic, ledger accounting, and checkpoint durability. |
 | Acceptance runner (`npm run demo:planetary-orchestrator-fabric:acceptance`) | Exercises high-load + restart scenarios to observe ledger behaviour under stress. |
 | Dashboard rendering (`ui/dashboard.html` / `reports/<label>/dashboard.html`) | Visual confirmation of spillover flows, invariants, and ledger event samples. |
 | CI workflow (`.github/workflows/demo-planetary-orchestrator-fabric.yml`) | Enforces presence of ledger artifacts and cross-checks totals during PR validation. |
@@ -38,4 +38,4 @@ After implementing the ledger, we performed a structured review:
 3. **Scenario Audit:** Re-ran mental simulations for outages, spillovers, and restarts to confirm ledger data stays coherent.
 4. **Final Pause & Re-evaluation:** Took a final pass over the reasoning chain from initial design through tests, looking for hidden assumptions (e.g., ledger omission in checkpoint payloads, dashboard fetch failures). No gaps found—ledger state is saved, restored, visualised, and tested.
 
-The ledger is therefore production-ready and audit-friendly, giving non-technical operators immediate trust in their planetary orchestration fabric.
+The ledger provides inspectable simulator accounting and tested invariants. It is not a financial ledger, proof of useful work, authenticated provider history, or settlement evidence. Review the exact run, its pending/failed jobs and its invariant results.

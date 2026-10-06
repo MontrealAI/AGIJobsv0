@@ -113,7 +113,7 @@ class DemoJobPayload:
 
     description: str
     complexity: str = "medium"
-    reward: str = "5.0 ETH"
+    reward: str = "5.000000 USDC (simulated)"
     metadata: Dict[str, str] = field(default_factory=dict)
 
 

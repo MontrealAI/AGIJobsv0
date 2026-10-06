@@ -1,0 +1,199 @@
+{
+  "schemaVersion": 1,
+  "label": "Planetary computer-work admission rehearsal",
+  "dataClass": "synthetic",
+  "budgetUsdc": "15000.000000",
+  "reviewMinutes": 60,
+  "policy": "Visit jobs in listed order. Choose the first online worker with the exact skill and an unused sequential job slot, then the first independent reviewer with the skill and enough remaining minutes. Reserve the full reward only if all checks pass. Checks: data rights, positive margin, worker, reviewer, budget. No dispatch or payment.",
+  "workers": [
+    {
+      "id": "earth-code",
+      "operator": "creator-earth",
+      "shard": "earth",
+      "skills": ["performance", "feature", "sdk", "tests", "docs"],
+      "online": true,
+      "maxJobs": 2
+    },
+    {
+      "id": "luna-browser",
+      "operator": "creator-luna",
+      "shard": "luna",
+      "skills": ["research", "docs", "demo"],
+      "online": true,
+      "maxJobs": 2
+    },
+    {
+      "id": "mars-data",
+      "operator": "creator-mars",
+      "shard": "mars",
+      "skills": ["dashboard", "science", "evals"],
+      "online": true,
+      "maxJobs": 2
+    },
+    {
+      "id": "helios-lab",
+      "operator": "creator-helios",
+      "shard": "helios",
+      "skills": ["science", "evals"],
+      "online": false,
+      "maxJobs": 1
+    }
+  ],
+  "reviewers": [
+    {
+      "id": "reviewer-a",
+      "operator": "independent-a",
+      "skills": [
+        "performance",
+        "feature",
+        "sdk",
+        "tests",
+        "evals",
+        "dashboard",
+        "demo",
+        "research",
+        "docs",
+        "science"
+      ],
+      "minutes": 40
+    },
+    {
+      "id": "reviewer-b",
+      "operator": "creator-mars",
+      "skills": ["dashboard", "science", "evals", "research", "docs", "demo"],
+      "minutes": 40
+    }
+  ],
+  "jobs": [
+    {
+      "id": "work-01",
+      "category": "performance",
+      "title": "Performance optimization",
+      "titleFr": "Optimisation des performances",
+      "rewardUsdc": "1500.000000",
+      "providerCostUsdc": "400.000000",
+      "reviewCostUsdc": "100.000000",
+      "reviewMinutes": 10,
+      "dataClass": "synthetic",
+      "rightsConfirmed": true,
+      "acceptance": "Reproducible before/after benchmark and passing tests."
+    },
+    {
+      "id": "work-02",
+      "category": "feature",
+      "title": "Open-source feature",
+      "titleFr": "Fonctionnalité libre",
+      "rewardUsdc": "3000.000000",
+      "providerCostUsdc": "900.000000",
+      "reviewCostUsdc": "200.000000",
+      "reviewMinutes": 15,
+      "dataClass": "synthetic",
+      "rightsConfirmed": true,
+      "acceptance": "Working patch, tests and executable example."
+    },
+    {
+      "id": "work-03",
+      "category": "sdk",
+      "title": "API and SDK tooling",
+      "titleFr": "Outils API et SDK",
+      "rewardUsdc": "1000.000000",
+      "providerCostUsdc": "200.000000",
+      "reviewCostUsdc": "80.000000",
+      "reviewMinutes": 10,
+      "dataClass": "synthetic",
+      "rightsConfirmed": true,
+      "acceptance": "Typed client, contract tests and example calls."
+    },
+    {
+      "id": "work-04",
+      "category": "tests",
+      "title": "Automated testing",
+      "titleFr": "Tests automatisés",
+      "rewardUsdc": "1500.000000",
+      "providerCostUsdc": "300.000000",
+      "reviewCostUsdc": "100.000000",
+      "reviewMinutes": 10,
+      "dataClass": "synthetic",
+      "rightsConfirmed": true,
+      "acceptance": "Failure-reproducing tests and a readable report."
+    },
+    {
+      "id": "work-05",
+      "category": "evals",
+      "title": "AI evaluation package",
+      "titleFr": "Évaluation de modèles IA",
+      "rewardUsdc": "2500.000000",
+      "providerCostUsdc": "500.000000",
+      "reviewCostUsdc": "150.000000",
+      "reviewMinutes": 20,
+      "dataClass": "synthetic",
+      "rightsConfirmed": true,
+      "acceptance": "Licensed fixtures, evaluator and measured failure cases."
+    },
+    {
+      "id": "work-06",
+      "category": "dashboard",
+      "title": "Public-data dashboard",
+      "titleFr": "Tableau de bord public",
+      "rewardUsdc": "5000.000000",
+      "providerCostUsdc": "900.000000",
+      "reviewCostUsdc": "300.000000",
+      "reviewMinutes": 15,
+      "dataClass": "synthetic",
+      "rightsConfirmed": true,
+      "acceptance": "Pinned public inputs, exact calculations and accessible UI."
+    },
+    {
+      "id": "work-07",
+      "category": "demo",
+      "title": "Interactive demonstration",
+      "titleFr": "Démonstration interactive",
+      "rewardUsdc": "1000.000000",
+      "providerCostUsdc": "250.000000",
+      "reviewCostUsdc": "80.000000",
+      "reviewMinutes": 10,
+      "dataClass": "synthetic",
+      "rightsConfirmed": false,
+      "acceptance": "Working controls, documented limits and reproducible output."
+    },
+    {
+      "id": "work-08",
+      "category": "research",
+      "title": "Vendor intelligence",
+      "titleFr": "Analyse de fournisseurs",
+      "rewardUsdc": "100.000000",
+      "providerCostUsdc": "20.000000",
+      "reviewCostUsdc": "10.000000",
+      "reviewMinutes": 5,
+      "dataClass": "synthetic",
+      "rightsConfirmed": true,
+      "acceptance": "Dated primary sources and verifiable comparison."
+    },
+    {
+      "id": "work-09",
+      "category": "docs",
+      "title": "Executable documentation",
+      "titleFr": "Documentation exécutable",
+      "rewardUsdc": "1000.000000",
+      "providerCostUsdc": "100.000000",
+      "reviewCostUsdc": "50.000000",
+      "reviewMinutes": 5,
+      "dataClass": "synthetic",
+      "rightsConfirmed": true,
+      "acceptance": "Commands tested in the stated environment and working links."
+    },
+    {
+      "id": "work-10",
+      "category": "science",
+      "title": "Numerical reproduction",
+      "titleFr": "Reproduction numérique",
+      "rewardUsdc": "10000.000000",
+      "providerCostUsdc": "2000.000000",
+      "reviewCostUsdc": "500.000000",
+      "reviewMinutes": 20,
+      "dataClass": "synthetic",
+      "rightsConfirmed": true,
+      "acceptance": "Reproducible method, source data and tolerance checks."
+    }
+  ]
+}

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Planetary Fabric · Operator guide</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="guide">
+      <a href="/">← Workbench / Atelier</a>
+      <section class="hero">
+        <div class="eyebrow">OPERATOR GUIDE · GUIDE OPÉRATEUR</div>
+        <h1>From an allocation<br />to checked evidence.</h1>
+        <p class="lead">
+          The task is to reproduce the baseline plan and export two files. The
+          ten proposed jobs are separate future work.
+        </p>
+      </section>
+      <section class="panel">
+        <h2>1. Try the local rehearsal</h2>
+        <p>
+          Open the workbench, reset the baseline, and download allocation.json
+          and brief.md. From the repository root, check your downloads:
+        </p>
+        <pre>
+node --import tsx demo/Planetary-Orchestrator-Fabric-v0/computer-work/review.cjs --allocation /absolute/path/allocation.json --brief /absolute/path/brief.md</pre
+        >
+        <p>
+          A passing result means five planned jobs, five holds, 10600.000000
+          USDC reserved, and 50 review minutes. It checks this specific planning
+          task, not the proposed jobs, worker identity or a payment.
+        </p>
+        <p lang="fr">
+          Rétablissez les paramètres de référence, exportez les deux fichiers et
+          utilisez la commande ci-dessus. Le résultat attendu est de cinq tâches
+          prévues, cinq retenues, 10 600 USDC réservés et 50 minutes de
+          révision.
+        </p>
+      </section>
+      <section class="panel">
+        <h2>2. Ask ChatGPT Work to do the task</h2>
+        <p>
+          Use a dedicated desktop/browser worker that can reach this server.
+          Download task.json, supply it to Work, and ask:
+        </p>
+        <pre>
+Use this task.json. Open http://127.0.0.1:18791/ in the permitted browser. Reset the baseline. Inspect the source board and allocation. Export allocation.json and brief.md to the approved output folder. Do not execute the proposed jobs or make payments.</pre
+        >
+        <p>
+          Grant the required browser or desktop permissions. The loopback server
+          must run on the worker's machine; a cloud browser cannot reach another
+          computer's localhost. Review both exports using step 1.
+        </p>
+        <p lang="fr">
+          Transmettez task.json à ChatGPT Work dans un environnement dédié.
+          Demandez la production des deux fichiers de référence, sans exécuter
+          les travaux proposés ni effectuer de paiement.
+        </p>
+      </section>
+      <section class="panel">
+        <h2>3. Commission OpenClaw</h2>
+        <p>
+          Use the repository's admitted-task Responses adapter. Copy
+          worker-profiles.example.json to protected operator storage; configure
+          the real endpoint, isolated agent, deployment ID, token and persistent
+          dispatch journal. The example admits no jobs.
+        </p>
+        <pre>npm run demo:planetary-orchestrator-fabric:worker -- inspect</pre>
+        <p>
+          Inspect the exact task hash, then explicitly admit that hash and the
+          intended job ID in the protected worker profile. The detailed runbook
+          explains the environment variables and stop/reconciliation procedure.
+        </p>
+        <pre>npm run demo:planetary-orchestrator-fabric:worker -- run 123</pre>
+        <p>
+          That command invokes a real worker when configured. Review the receipt
+          from its persistent journal:
+        </p>
+        <pre>
+node --import tsx demo/Planetary-Orchestrator-Fabric-v0/computer-work/review.cjs --receipt /absolute/path/receipt.json --job-id 123 --deployment-id YOUR_COMMISSIONED_DEPLOYMENT</pre
+        >
+        <p>
+          Do not delete a dispatch journal to retry. An interrupted attempt may
+          already have acted; reconcile its actual effects and stop the remote
+          worker separately. A receipt and its hashes are not authenticated
+          proof of provider execution.
+        </p>
+        <p lang="fr">
+          L’admission est explicite et liée à l’empreinte exacte de la tâche.
+          Conservez le journal persistant et réconciliez toute exécution
+          interrompue avant un nouvel essai.
+        </p>
+      </section>
+      <section class="panel">
+        <h2>What happens after a successful check?</h2>
+        <p>
+          Prepare a separate task and acceptance test for each real job.
+          Commission the worker, unrelated reviewers and existing contract
+          lifecycle. Record versions, permissions, costs, failure/stop behavior,
+          evidence and test-network settlement before considering paid
+          production.
+        </p>
+        <a
+          href="https://github.com/MontrealAI/AGIJobsv0/blob/main/demo/Planetary-Orchestrator-Fabric-v0/docs/computer-work.md"
+          >Detailed runbook and primary documentation</a
+        >
+      </section>
+    </main>
+  </body>
+</html>

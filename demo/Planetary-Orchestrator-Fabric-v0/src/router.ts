@@ -284,6 +284,12 @@ export class ShardRouterService {
         if (!job) {
           break;
         }
+        if (job.submissionTick > context.tick) {
+          this.rotateQueue();
+          rotations += 1;
+          if (rotations >= this.shard.queue.length) break;
+          continue;
+        }
         if (!this.canNodeAcceptJob(node, job)) {
           if (!this.hasEligibleNode(job)) {
             this.shard.queue.shift();
@@ -312,7 +318,8 @@ export class ShardRouterService {
                 data: { shard: this.config.id, jobId: job.id },
               });
             }
-            rotations = 0;
+            rotations += 1;
+            if (rotations >= this.shard.queue.length) break;
             continue;
           }
           this.rotateQueue();

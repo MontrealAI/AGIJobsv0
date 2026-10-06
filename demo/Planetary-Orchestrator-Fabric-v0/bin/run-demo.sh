@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+cd "$ROOT_DIR"
 DEFAULT_CONFIG="$ROOT_DIR/demo/Planetary-Orchestrator-Fabric-v0/config/fabric.example.json"
 
 CONFIG="$DEFAULT_CONFIG"
@@ -44,7 +45,7 @@ if [[ $PLAN_SET -eq 0 && $CONFIG_SET -eq 0 ]]; then
   CONFIG="$DEFAULT_CONFIG"
 fi
 
-CMD=(npx tsx "$ROOT_DIR/demo/Planetary-Orchestrator-Fabric-v0/src/index.ts")
+CMD=(node --import tsx "$ROOT_DIR/demo/Planetary-Orchestrator-Fabric-v0/src/index.ts")
 
 if [[ $PLAN_SET -eq 1 ]]; then
   CMD+=(--plan "$PLAN")

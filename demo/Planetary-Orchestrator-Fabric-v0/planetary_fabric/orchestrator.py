@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
+import tempfile
 import time
 from dataclasses import dataclass
 from typing import Dict, List, Optional
@@ -113,6 +115,10 @@ class PlanetaryOrchestrator:
         self.metrics.end_time = time.monotonic()
 
     async def register_job(self, job: Job) -> None:
+        if job.job_id in self.jobs:
+            raise ValueError("Duplicate job ID")
+        if job.region not in self.routers:
+            raise ValueError("Unknown job region")
         state = JobState(job=job)
         self.jobs[job.job_id] = state
         self.metrics.total_jobs += 1
@@ -164,6 +170,9 @@ class PlanetaryOrchestrator:
         while True:
             state = await self._complete_queue.get()
             original_state = self.jobs[state.job.job_id]
+            if original_state.status == "completed":
+                self._complete_queue.task_done()
+                continue
             original_state.status = "completed"
             original_state.assigned_node = state.assigned_node
             original_state.result = state.result
@@ -217,7 +226,16 @@ class PlanetaryOrchestrator:
                 if state["status"] in {"pending", "in_progress"}:
                     state["status"] = "pending"
                     state["assigned_node"] = None
-            path.write_text(json.dumps(payload, indent=2))
+            fd, temporary = tempfile.mkstemp(dir=path.parent, prefix=".checkpoint-")
+            try:
+                with os.fdopen(fd, "w") as output:
+                    output.write(json.dumps(payload))
+                    output.flush()
+                    os.fsync(output.fileno())
+                os.replace(temporary, path)
+            finally:
+                if os.path.exists(temporary):
+                    os.unlink(temporary)
 
     @classmethod
     async def from_checkpoint(

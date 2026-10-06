@@ -1,6 +1,6 @@
 # CI Guardrails – Planetary Orchestrator Fabric v0
 
-This demo ships with a dedicated CI workflow to guarantee that every pull request and `main` commit keeps the planetary fabric runnable, verifiable, and regression-free.
+This demo ships with a dedicated CI workflow to check changed planetary demo code on pull requests and `main`. A passing run supports the tested scenarios; it is not a production certification.
 
 ## Workflow Summary
 
@@ -9,17 +9,18 @@ This demo ships with a dedicated CI workflow to guarantee that every pull reques
   - Any change beneath `demo/Planetary-Orchestrator-Fabric-v0/**`
   - Dependency updates (`package.json`, `package-lock.json`)
   - Manual runs via `workflow_dispatch`
-- **Environment:** Hardened Ubuntu 24.04 runner with outbound network locked to GitHub + npm registries.
+- **Environment:** Hardened Ubuntu 24.04 runner with outbound network locked to the declared GitHub, npm and Python dependency endpoints.
 
 ## Job Stages
 
 1. **Checkout & Hardening** – Uses `step-security/harden-runner` to freeze outbound egress except the allowlist.
 2. **Dependency Sync** – `npm ci` ensures deterministic dependency graphs.
-3. **Type Safety** – `npx tsc --noEmit` validates the demo sources compile without generating JS.
-4. **Unit Tests** – `npm run test:planetary-orchestrator-fabric` executes deterministic simulations verifying shard balance, node failover (<2% drop), checkpoint resume, and the automated restart drill.
-5. **Demo Execution** – `npm run demo:planetary-orchestrator-fabric:ci` runs the fabric end-to-end in CI mode, producing reports under `reports/ci-latest`.
-6. **Acceptance Autopilot** – `npm run demo:planetary-orchestrator-fabric:acceptance -- --label ci-acceptance --jobs-high-load 4000 --outage-node mars.gpu-helion` proves the <2% drop rate and restart recovery criteria.
-7. **Artifact Validation** – Node scripts ensure `summary.json`, `events.ndjson`, `dashboard.html`, and `owner-script.json` exist and contain required sections.
+3. **Recovery and computer-work regressions** – Run the Node regression suite and five Python checks, including the real adapter against an authenticated local fixture. No live provider is called.
+4. **Type Safety** – `npx tsc --noEmit` validates the demo sources compile without generating JS.
+5. **Unit Tests** – `npm run test:planetary-orchestrator-fabric` executes deterministic simulations verifying shard balance, node failover (<2% drop), checkpoint resume, and the automated restart drill.
+6. **Demo Execution** – `npm run demo:planetary-orchestrator-fabric:ci` runs the fabric end-to-end in CI mode, producing reports under `reports/ci-latest`.
+7. **Acceptance Autopilot** – `npm run demo:planetary-orchestrator-fabric:acceptance -- --label ci-acceptance --jobs-high-load 4000 --outage-node mars.gpu-helion` proves the <2% drop rate and restart recovery criteria.
+8. **Artifact Validation** – Node scripts ensure `summary.json`, `events.ndjson`, `dashboard.html`, and `owner-script.json` exist and contain required sections.
 
 ## Branch Protection
 
@@ -37,6 +38,8 @@ Run the same steps locally:
 npm ci --no-audit --prefer-offline --progress=false
 npx tsc --noEmit --project demo/Planetary-Orchestrator-Fabric-v0/tsconfig.json
 npm run test:planetary-orchestrator-fabric
+npm run test:planetary-orchestrator-fabric:regressions
+python -m pytest demo/Planetary-Orchestrator-Fabric-v0/tests/test_simulation.py -q
 npm run demo:planetary-orchestrator-fabric:ci
 # Optional: run the combined acceptance suite locally
 npm run demo:planetary-orchestrator-fabric:acceptance -- --label local-acceptance
@@ -58,4 +61,4 @@ demo/Planetary-Orchestrator-Fabric-v0/bin/run-restart-drill.sh --label ci-drill
 | `reports/ci-latest/mission-topology.mmd` & `mission-topology.html` | Planetary mermaid atlas for shard, node, and spillover visualization |
 | `storage/checkpoint.json` | Most recent checkpoint snapshot |
 
-These guardrails keep the demo production-ready and prove that AGI Jobs v0 (v2) can enforce enterprise-grade CI discipline for planetary orchestration.
+These checks validate the simulator and allocation task. Record hosted CI results for the exact pull-request commit and commission production integrations separately. Browser checks can be run with `node --import tsx demo/Planetary-Orchestrator-Fabric-v0/tests/browser-qa.cjs` after installing Playwright Chromium.

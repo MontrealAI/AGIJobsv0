@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "workerProfile": "planetary",
+  "goal": "Produce a verified admission plan for ten synthetic computer-work jobs across the planetary fabric.",
+  "inputText": "Open http://127.0.0.1:18791/. Read board.json (SHA-256 097e30080a22aff6ff7d82f4b19c74a7f6164987f08b5236ddf3dfb8abcae051). Use the baseline budget of 15000.000000 USDC, 60 reviewer minutes, and the listed worker availability. Compute the deterministic admission plan using the displayed policy. Export allocation.json and brief.md using the workbench. Include every job, admission or hold reason, chosen worker and independent reviewer, exact six-decimal totals, and sourceSha256. Do not admit gateway jobs, perform these ten jobs, contact anyone, dispatch work, or make a payment. Return the two file contents as artifacts. The board is synthetic; all amounts are planning assumptions.",
+  "dataClass": "synthetic",
+  "allowedOrigins": ["http://127.0.0.1:18791"],
+  "acceptanceCriteria": [
+    "Every listed job appears once in source order with the correct admission decision and reason.",
+    "Workers must be online, have the exact skill and sequential capacity; reviewers must have the skill and a different operator from the worker.",
+    "Rewards, costs and budget reserve use exact six-decimal USDC; per-reviewer and total review-minute caps are respected.",
+    "The two files bind to the exact board source hash and state that no dispatch or settlement occurred."
+  ],
+  "deliverables": [
+    {
+      "name": "allocation.json",
+      "mediaType": "application/json"
+    },
+    {
+      "name": "brief.md",
+      "mediaType": "text/markdown"
+    }
+  ]
+}

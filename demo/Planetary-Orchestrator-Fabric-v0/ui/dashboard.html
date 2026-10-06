@@ -282,10 +282,11 @@
     }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
-  <script>mermaid.initialize({ startOnLoad: false, theme: 'dark' });</script>
+  <script>if (window.mermaid) mermaid.initialize({ startOnLoad: false, theme: 'dark' });</script>
 </head>
 <body>
   <header class="hero">
+    <p>SIMULATION · No provider execution or paid settlement</p>
     <h1>Planetary Orchestrator Fabric Mission Console</h1>
     <p>
       Load any generated <code>reports/&lt;label&gt;</code> bundle from AGI Jobs v0 (v2) to explore shard health, ledger flows, owner
@@ -480,7 +481,7 @@
             const hint = entry.hint ? escapeHtml(entry.hint) : '';
             return `
             <div class="metric-card">
-              <strong>${entry.label}</strong>
+              <strong>${escapeHtml(entry.label)}</strong>
               <span>${value}</span>
               ${hint ? `<small>${hint}</small>` : ''}
             </div>
@@ -627,7 +628,7 @@
         const stat = statistics[shardId] || {};
         return `
           <tr>
-            <td><strong>${shardId}</strong></td>
+            <td><strong>${escapeHtml(shardId)}</strong></td>
             <td>${formatNumber(snapshot.queueDepth)}</td>
             <td>${formatNumber(snapshot.inFlight)}</td>
             <td>${formatNumber(snapshot.completed)}</td>
@@ -748,8 +749,8 @@
         const to = String(flow.to ?? 'unknown').replace(/[^a-zA-Z0-9]/g, '_') || `to_${index}`;
         const countLabel = Number(flow.count ?? 0).toLocaleString();
         const valueLabel = Number(flow.value ?? 0).toLocaleString();
-        const label = `${countLabel} jobs | ${valueLabel} value`;
-        flowLines.push(`${from}(${flow.from ?? 'unknown'}) -->|${label}| ${to}(${flow.to ?? 'unknown'})`);
+        const label = `${countLabel} jobs · ${valueLabel} value`;
+        flowLines.push(`${from}["${from}"] -->|"${label}"| ${to}["${to}"]`);
       });
       if (flowLines.length === 1) {
         flowLines.push('placeholder((No spillovers))');
@@ -816,18 +817,18 @@
           : '—';
         return `
           <div class="metric-card" style="border-left: 4px solid ${color};">
-            <strong>${nodeId}</strong>
+            <strong>${escapeHtml(nodeId)}</strong>
             <span>${status}</span>
-            <small>Region: ${snapshot.region} · Running jobs: ${formatNumber(snapshot.runningJobs)}</small>
-            <small>Container: <code>${container}</code></small>
-            <small>Runtime: ${runtime}</small>
-            <small>Endpoint: ${endpoint}</small>
-            <small>Resources: ${resources}</small>
-            <small>Availability zones: ${zones}</small>
-            <small>Specialties: ${specialties}</small>
-            <small>Pricing: ${pricing}</small>
-            <small>Compliance: ${compliance}</small>
-            <small>Tags: ${tags}</small>
+            <small>Region: ${escapeHtml(snapshot.region)} · Running jobs: ${formatNumber(snapshot.runningJobs)}</small>
+            <small>Container: <code>${escapeHtml(container)}</code></small>
+            <small>Runtime: ${escapeHtml(runtime)}</small>
+            <small>Endpoint: ${escapeHtml(endpoint)}</small>
+            <small>Resources: ${escapeHtml(resources)}</small>
+            <small>Availability zones: ${escapeHtml(zones)}</small>
+            <small>Specialties: ${escapeHtml(specialties)}</small>
+            <small>Pricing: ${escapeHtml(pricing)}</small>
+            <small>Compliance: ${escapeHtml(compliance)}</small>
+            <small>Tags: ${escapeHtml(tags)}</small>
           </div>
         `;
       });
@@ -1167,8 +1168,8 @@
 <head>
   <meta charset="utf-8" />
   <title>Sample Planetary Topology</title>
-  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
-  <script>mermaid.initialize({ startOnLoad: true, theme: 'dark' });</script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"><\/script>
+  <script>if (window.mermaid) mermaid.initialize({ startOnLoad: true, theme: 'dark' });<\/script>
   <style>body { font-family: 'Inter', Arial, sans-serif; background: #050714; color: #f5f7ff; padding: 24px; } .mermaid { background: #fff; color: #000; border-radius: 12px; padding: 16px; }</style>
 </head>
 <body>
@@ -1185,7 +1186,7 @@
         new File([SAMPLE_TOPOLOGY], 'mission-topology.mmd', { type: 'text/plain' }),
         new File([SAMPLE_TOPOLOGY_HTML], 'mission-topology.html', { type: 'text/html' }),
       ]);
-      setStatus('Loaded curated sample telemetry. Replace with a real report bundle to view live data.', 'success');
+      setStatus('Loaded curated sample telemetry. Replace with a generated report bundle to inspect your simulation.', 'success');
     });
   </script>
 </body>

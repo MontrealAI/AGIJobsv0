@@ -1,3 +1,4 @@
+import { validateOwnerCommand, validateFabricConfig, jobIdSchema } from './validation';
 import { CheckpointManager } from './checkpoint';
 import { PlanetaryLedger } from './ledger';
 import {
@@ -134,6 +135,7 @@ export class PlanetaryOrchestrator {
   private readonly logger = new InMemoryFabricLogger();
   private readonly ledger = new PlanetaryLedger();
 
+  private readonly submittedJobIds = new Set<string>();
   private tick = 0;
   private metrics: FabricMetrics = PlanetaryOrchestrator.createInitialMetrics();
   private deterministicLog: DeterministicReplayFrame[] = [];
@@ -147,6 +149,7 @@ export class PlanetaryOrchestrator {
     private readonly config: FabricConfig,
     private readonly checkpointManager: CheckpointManager
   ) {
+    validateFabricConfig(config);
     this.initializeState();
   }
 
@@ -283,11 +286,15 @@ export class PlanetaryOrchestrator {
   }
 
   submitJob(definition: JobDefinition): void {
+    jobIdSchema.parse(definition.id);
+    if (this.submittedJobIds.has(definition.id)) throw new Error(`Duplicate job ID ${definition.id}`);
+    if (!Number.isSafeInteger(definition.submissionTick) || definition.submissionTick < 0 || !Number.isSafeInteger(definition.estimatedDurationTicks) || definition.estimatedDurationTicks <= 0 || !Number.isFinite(definition.value) || definition.value < 0) throw new Error('Invalid job timing or value');
     this.logger.setTick(this.tick);
     const router = this.routers.get(definition.shard);
     if (!router) {
       throw new Error(`Unknown shard ${definition.shard}`);
     }
+    this.submittedJobIds.add(definition.id);
     const job: JobState = {
       ...definition,
       status: 'queued',
@@ -307,6 +314,7 @@ export class PlanetaryOrchestrator {
   }
 
   async applyOwnerCommand(command: OwnerCommand): Promise<FabricEvent[]> {
+    validateOwnerCommand(command);
     this.logger.setTick(this.tick);
     const events: FabricEvent[] = [];
     const push = (event: FabricEvent): void => {
@@ -398,6 +406,7 @@ export class PlanetaryOrchestrator {
           throw new Error(`Shard ${shardId} already exists`);
         }
         const config = PlanetaryOrchestrator.cloneShardConfig(command.shard);
+        validateFabricConfig({ ...this.config, shards: [...this.config.shards, config] });
         const state = this.createShardState(config);
         this.shards.set(shardId, state);
         this.syncShardConfigReference(shardId, config);
@@ -425,6 +434,16 @@ export class PlanetaryOrchestrator {
           throw new Error(`Unknown shard ${command.shard}`);
         }
         const redistribution = command.redistribution ?? { mode: 'spillover' as const };
+        if (this.shards.size === 1) {
+          throw new Error('Cannot deregister the final shard; pause the fabric instead');
+        }
+        let spilloverTarget: ShardId | undefined;
+        if (redistribution.mode === 'spillover') {
+          spilloverTarget = redistribution.targetShard ?? shardState.config.spilloverTargets.find((target) => target !== command.shard);
+          if (!spilloverTarget || spilloverTarget === command.shard || !this.shards.has(spilloverTarget)) {
+            throw new Error('Shard deregistration requires an existing, different spillover target');
+          }
+        }
         const queuedJobs = [...shardState.queue];
         const inFlightJobs = Array.from(shardState.inFlight.values());
         shardState.queue = [];
@@ -436,25 +455,11 @@ export class PlanetaryOrchestrator {
           }
         }
 
-        let spilloverTarget: ShardId | undefined;
         let spillRequests: SpilloverRequest[] = [];
         let cancelledJobs = 0;
         let cancelledValue = 0;
 
         if (redistribution.mode === 'spillover') {
-          spilloverTarget = redistribution.targetShard;
-          if (!spilloverTarget) {
-            spilloverTarget = shardState.config.spilloverTargets.find((target) => target !== command.shard);
-          }
-          if (!spilloverTarget) {
-            throw new Error(`Shard ${command.shard} deregistration requires a spillover target`);
-          }
-          if (spilloverTarget === command.shard) {
-            throw new Error('Shard deregistration spillover target must differ from source shard');
-          }
-          if (!this.shards.has(spilloverTarget)) {
-            throw new Error(`Spillover target shard ${spilloverTarget} not found`);
-          }
           spillRequests = allActiveJobs.map((job) => {
             job.assignedNodeId = undefined;
             job.startedTick = undefined;
@@ -519,6 +524,27 @@ export class PlanetaryOrchestrator {
         this.routers.delete(command.shard);
         this.pausedShards.delete(command.shard);
         this.removeShardConfig(command.shard);
+        for (const [shardId, state] of this.shards) {
+          state.config.spilloverTargets = state.config.spilloverTargets.filter((target) => target !== command.shard);
+          const router = this.routers.get(shardId);
+          router?.updateSpilloverTargets(state.config.spilloverTargets);
+          if (state.config.router?.spilloverPolicies) {
+            state.config.router.spilloverPolicies = state.config.router.spilloverPolicies.filter((policy) => policy.target !== command.shard);
+            router?.updateSpilloverPolicies(state.config.router.spilloverPolicies);
+          }
+          this.syncShardConfigReference(shardId, state.config);
+        }
+        const retiredNodes = [...this.nodes.values()].filter((node) => node.definition.region === command.shard);
+        for (const node of retiredNodes) {
+          this.nodes.delete(node.definition.id);
+          push({
+            tick: this.tick,
+            type: 'owner.node.deregister',
+            message: `Owner retired node ${node.definition.id} with shard ${command.shard}`,
+            data: { nodeId: node.definition.id, reason: command.reason ?? 'owner-shard-deregister' },
+          });
+        }
+        this.config.nodes = this.config.nodes.filter((node) => node.region !== command.shard);
 
         push({
           tick: this.tick,
@@ -533,6 +559,7 @@ export class PlanetaryOrchestrator {
             failedJobs: failedCount,
             redistributionMode: redistribution.mode,
             spilloverTarget,
+            retiredNodes: retiredNodes.map((node) => node.definition.id),
           },
         });
         break;
@@ -542,6 +569,17 @@ export class PlanetaryOrchestrator {
         if (!shardState) {
           throw new Error(`Unknown shard ${command.shard}`);
         }
+        const prospective = {
+          ...shardState.config,
+          ...command.update,
+          router: command.update.router
+            ? { ...shardState.config.router, ...command.update.router }
+            : shardState.config.router,
+        };
+        validateFabricConfig({
+          ...this.config,
+          shards: this.config.shards.map((entry) => entry.id === command.shard ? prospective : entry),
+        });
         const router = this.routers.get(command.shard);
         const applied: Record<string, unknown> = {};
         if (command.update.displayName) {
@@ -593,6 +631,12 @@ export class PlanetaryOrchestrator {
         if (configIndex < 0) {
           throw new Error(`Config missing node ${command.nodeId}`);
         }
+        validateFabricConfig({
+          ...this.config,
+          nodes: this.config.nodes.map((entry) =>
+            entry.id === command.nodeId ? { ...entry, ...command.update } : entry
+          ),
+        });
         const definition = nodeState.definition;
         const configDefinition = this.config.nodes[configIndex];
         const applied: Record<string, unknown> = {};
@@ -716,6 +760,7 @@ export class PlanetaryOrchestrator {
           throw new Error(`Node ${command.node.id} already registered`);
         }
         const definition = cloneNodeDefinition(command.node);
+        validateFabricConfig({ ...this.config, nodes: [...this.config.nodes, definition] });
         this.config.nodes.push(definition);
         const nodeState = this.createNodeState(definition);
         nodeState.lastHeartbeatTick = this.tick;
@@ -899,7 +944,7 @@ export class PlanetaryOrchestrator {
   }
 
   async saveCheckpoint(): Promise<void> {
-    const payload = this.createCheckpointPayload();
+    const payload = { ...this.createCheckpointPayload(), submittedJobIds: [...this.submittedJobIds] };
     await this.checkpointManager.save(payload);
     this.recordFabricEvent({
       tick: this.tick,
@@ -914,6 +959,8 @@ export class PlanetaryOrchestrator {
     if (!payload) {
       return false;
     }
+    this.submittedJobIds.clear();
+    for (const jobId of payload.submittedJobIds ?? Object.values(payload.shards).flatMap((s) => [...s.queue, ...s.inFlight, ...s.completed, ...s.failed].map((j) => j.id))) this.submittedJobIds.add(jobId);
     const payloadShardIds = new Set(Object.keys(payload.shards));
     for (const [shardId, shardPayload] of Object.entries(payload.shards)) {
       const updatedConfig = PlanetaryOrchestrator.cloneShardConfig(shardPayload.config);
@@ -1068,6 +1115,15 @@ export class PlanetaryOrchestrator {
     this.requeueJobsForNode(node, 'manual-outage');
   }
 
+  getLatestPendingSubmissionTick(): number {
+    let latest = this.tick;
+    for (const shard of this.shards.values()) {
+      for (const job of shard.queue) latest = Math.max(latest, job.submissionTick);
+      for (const job of shard.inFlight.values()) latest = Math.max(latest, job.submissionTick);
+    }
+    return latest;
+  }
+
   getShardSnapshots(): Record<ShardId, { queueDepth: number; inFlight: number; completed: number }> {
     const snapshot: Record<ShardId, { queueDepth: number; inFlight: number; completed: number }> = {};
     for (const [shardId, shard] of this.shards.entries()) {
@@ -1219,6 +1275,7 @@ export class PlanetaryOrchestrator {
   }
 
   replay(frames: DeterministicReplayFrame[]): void {
+    this.submittedJobIds.clear();
     this.initializeState();
     const sorted = [...frames].sort((a, b) => a.tick - b.tick);
     for (const frame of sorted) {
@@ -1241,10 +1298,12 @@ export class PlanetaryOrchestrator {
   private applyRegistryEvent(event: RegistryEvent): void {
     switch (event.type) {
       case 'job.created': {
+        if (this.submittedJobIds.has(event.job.id)) throw new Error(`Duplicate replay job ID ${event.job.id}`);
         const router = this.routers.get(event.shard);
         if (!router) {
           throw new Error(`Unknown shard ${event.shard}`);
         }
+        this.submittedJobIds.add(event.job.id);
         router.queueJob(cloneJob(event.job), 'new');
         this.metrics.jobsSubmitted += 1;
         this.metrics.valueSubmitted += event.job.value;

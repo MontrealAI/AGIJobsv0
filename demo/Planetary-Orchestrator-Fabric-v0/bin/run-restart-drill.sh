@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 DEMO_DIR="$ROOT_DIR/demo/Planetary-Orchestrator-Fabric-v0"
+cd "$ROOT_DIR"
 DEFAULT_CONFIG="$DEMO_DIR/config/fabric.example.json"
 DEFAULT_OWNER_COMMANDS="$DEMO_DIR/config/owner-commands.example.json"
 CONFIG="$DEFAULT_CONFIG"
@@ -114,9 +115,9 @@ if ! command -v jq >/dev/null 2>&1; then
 fi
 
 if [[ $PLAN_SET -eq 1 ]]; then
-  CONTEXT_JSON="$(npx tsx "$DEMO_DIR/src/mission-context.ts" --plan "$PLAN")"
+  CONTEXT_JSON="$(node --import tsx "$DEMO_DIR/src/mission-context.ts" --plan "$PLAN")"
 else
-  CONTEXT_JSON="$(npx tsx "$DEMO_DIR/src/mission-context.ts" --config "$CONFIG")"
+  CONTEXT_JSON="$(node --import tsx "$DEMO_DIR/src/mission-context.ts" --config "$CONFIG")"
 fi
 
 extract_context() {
@@ -166,7 +167,7 @@ REPORT_DIR="$REPORT_BASE/$LABEL"
 SUMMARY_PATH="$REPORT_DIR/summary.json"
 
 echo "🚀 Stage 1: Launching planetary fabric and halting after $STOP_AFTER ticks to simulate orchestrator failure"
-CMD_STAGE_ONE=(npx tsx "$DEMO_DIR/src/index.ts")
+CMD_STAGE_ONE=(node --import tsx "$DEMO_DIR/src/index.ts")
 if [[ $PLAN_SET -eq 1 ]]; then
   CMD_STAGE_ONE+=(--plan "$PLAN")
 else
@@ -188,12 +189,13 @@ if [[ -n "$BLUEPRINT" ]]; then
   CMD_STAGE_ONE+=(--jobs-blueprint "$BLUEPRINT")
 fi
 STAGE_ONE_LOG=$(mktemp)
+trap 'rm -f "$STAGE_ONE_LOG"' EXIT
 set -o pipefail
 "${CMD_STAGE_ONE[@]}" | tee "$STAGE_ONE_LOG"
 
 SUMMARY_PATH="$(node - <<'NODE' "$STAGE_ONE_LOG"
 const fs = require('fs');
-const path = process.argv[1];
+const path = process.argv[2];
 const text = fs.readFileSync(path, 'utf8');
 const match = text.match(/\{[\s\S]*\}\s*$/);
 if (!match) {
@@ -234,7 +236,7 @@ if [[ -z "$CHECKPOINT_PATH" ]]; then
 fi
 
 echo "🧠 Stage 2: Resuming from checkpoint $CHECKPOINT_PATH and completing the planetary run"
-CMD_STAGE_TWO=(npx tsx "$DEMO_DIR/src/index.ts")
+CMD_STAGE_TWO=(node --import tsx "$DEMO_DIR/src/index.ts")
 if [[ $PLAN_SET -eq 1 ]]; then
   CMD_STAGE_TWO+=(--plan "$PLAN")
 else
@@ -244,6 +246,7 @@ CMD_STAGE_TWO+=(
   --jobs "$JOBS"
   --output-label "$LABEL"
   --resume
+  --finish
   --checkpoint "$CHECKPOINT_PATH"
   --preserve-report-on-resume "${PLAN_PRESERVE:-true}"
 )
