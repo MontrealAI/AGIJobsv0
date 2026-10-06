@@ -79,7 +79,14 @@ const root = process.cwd(), output = path.join(root, 'addresses.json');
 if (process.argv.at(-1).endsWith('/deploy.ts')) {
   assert.equal(process.env.ONECLICK_APPEAL_FEE, '0');
   assert.equal(process.env.ONECLICK_DISPUTE_WINDOW, '0');
-  fs.writeFileSync(path.join(root, 'docs/deployment-addresses.json'), '{"deployed":"original"}');
+  const produced = process.env.ONECLICK_ADDRESSES_OUTPUT;
+  assert.ok(path.isAbsolute(produced));
+  assert.equal(fs.statSync(path.dirname(produced)).mode & 0o777, 0o700);
+  fs.writeFileSync(produced, '{"deployed":"original"}', { flag: 'wx', mode: 0o400 });
+  fs.writeFileSync(path.join(root, 'produced-path.txt'), produced);
+  // Simulate another deployment overwriting the historical shared addressbook
+  // before this child returns. The parent must read only its private source.
+  fs.writeFileSync(path.join(root, 'docs/deployment-addresses.json'), '{"deployed":"other-run"}');
 } else {
   const input = process.env.ONECLICK_ADDRESSES;
   assert.equal(process.env.ONECLICK_CONFIG, path.join(root, 'config.json'));
@@ -161,8 +168,19 @@ fs.writeFileSync(path.join(root, 'consumed.json'), fs.readFileSync(input));
           path.join(directory, 'docs/deployment-addresses.json'),
           'utf8'
         ),
-        '{"deployed":"original"}'
+        '{"deployed":"other-run"}'
       );
+      const produced = fs.readFileSync(
+        path.join(directory, 'produced-path.txt'),
+        'utf8'
+      );
+      if (mode === 'normal')
+        assert.equal(fs.existsSync(path.dirname(produced)), false);
+      else
+        assert.equal(
+          fs.readFileSync(produced, 'utf8'),
+          '{"deployed":"original"}'
+        );
       if (mode !== 'normal') assert.match(result.stderr, /replaced/);
     }
     const consumed = path.join(directory, 'consumed.json');

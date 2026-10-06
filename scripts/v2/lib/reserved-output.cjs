@@ -54,6 +54,18 @@ function reserveDeploymentOutput(file) {
     },
   };
 }
+function prepareDeploymentSource(outputPath) {
+  const directory = fs.mkdtempSync(
+    path.join(path.dirname(outputPath), '.oneclick-evidence-')
+  );
+  fs.chmodSync(directory, 0o700);
+  return {
+    file: path.join(directory, 'addresses.json'),
+    complete() {
+      fs.rmSync(directory, { recursive: true, force: true });
+    },
+  };
+}
 async function withAddressbookSnapshot(bytes, invoke) {
   const directory = fs.mkdtempSync(
     path.join(os.tmpdir(), 'oneclick-addressbook-')
@@ -69,4 +81,8 @@ async function withAddressbookSnapshot(bytes, invoke) {
     fs.rmSync(directory, { recursive: true, force: true });
   }
 }
-module.exports = { reserveDeploymentOutput, withAddressbookSnapshot };
+module.exports = {
+  reserveDeploymentOutput,
+  prepareDeploymentSource,
+  withAddressbookSnapshot,
+};

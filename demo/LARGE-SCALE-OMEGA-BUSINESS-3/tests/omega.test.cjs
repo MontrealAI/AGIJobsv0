@@ -769,6 +769,30 @@ test('replaced addressbook is never overwritten and failed reservation stays vis
   assert.equal(fs.statSync(failed).size, 0);
   assert.throws(() => reserveDeploymentOutput(failed), /EEXIST/);
 });
+test('deployment source files are isolated between concurrent outputs', (t) => {
+  const {
+    prepareDeploymentSource,
+  } = require('../../../scripts/v2/lib/reserved-output.cjs');
+  const dir = temp(t),
+    first = prepareDeploymentSource(path.join(dir, 'first.json')),
+    second = prepareDeploymentSource(path.join(dir, 'second.json'));
+  assert.notEqual(path.dirname(first.file), path.dirname(second.file));
+  assert.equal(fs.statSync(path.dirname(first.file)).mode & 0o777, 0o700);
+  fs.writeFileSync(first.file, '{"deployed":"first"}', {
+    flag: 'wx',
+    mode: 0o400,
+  });
+  fs.writeFileSync(second.file, '{"deployed":"second"}', {
+    flag: 'wx',
+    mode: 0o400,
+  });
+  assert.equal(fs.readFileSync(first.file, 'utf8'), '{"deployed":"first"}');
+  assert.equal(fs.readFileSync(second.file, 'utf8'), '{"deployed":"second"}');
+  first.complete();
+  assert.equal(fs.existsSync(path.dirname(first.file)), false);
+  assert.equal(fs.readFileSync(second.file, 'utf8'), '{"deployed":"second"}');
+  second.complete();
+});
 test('addressbook consumers use protected produced bytes through replacement and failure', async (t) => {
   const {
     reserveDeploymentOutput,

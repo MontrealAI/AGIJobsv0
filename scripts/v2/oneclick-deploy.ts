@@ -8,6 +8,7 @@ import { ethers } from 'ethers';
 import { loadTokenConfig } from '../config';
 const {
   reserveDeploymentOutput,
+  prepareDeploymentSource,
   withAddressbookSnapshot,
 } = require('./lib/reserved-output.cjs');
 const { validateOneclickConfig } = require('./lib/oneclick-config.cjs');
@@ -232,7 +233,6 @@ export async function deployOneClick(
     deployEnv.ONECLICK_GOVERNANCE = governance;
   }
 
-  const addressesPath = path.join('docs', 'deployment-addresses.json');
   const outputPath = config.output
     ? path.resolve(config.output)
     : path.resolve('deployment-config', 'latest-deployment.json');
@@ -241,7 +241,10 @@ export async function deployOneClick(
   // competing creation during interactive confirmation fails here, not later.
   const reservedOutput =
     network === 'mainnet' ? reserveDeploymentOutput(outputPath) : undefined;
+  let source: ReturnType<typeof prepareDeploymentSource>;
   try {
+    source = prepareDeploymentSource(outputPath);
+    deployEnv.ONECLICK_ADDRESSES_OUTPUT = source.file;
     await runHardhat(
       [
         'run',
@@ -254,8 +257,8 @@ export async function deployOneClick(
     );
 
     const bytes = reservedOutput
-      ? reservedOutput.copyFrom(addressesPath)
-      : await fs.readFile(addressesPath);
+      ? reservedOutput.copyFrom(source.file)
+      : await fs.readFile(source.file);
     if (!reservedOutput) await fs.writeFile(outputPath, bytes);
     console.log(`ℹ️  Deployment addresses copied to ${outputPath}`);
 
@@ -278,6 +281,17 @@ export async function deployOneClick(
       if (consumeAddresses) await consumeAddresses(snapshot);
       reservedOutput?.verify();
     });
+    source.complete();
+  } catch (error) {
+    if (source)
+      throw new Error(
+        `Deployment failed (${
+          error instanceof Error ? error.message : String(error)
+        }); this run's addressbook source is retained at ${
+          source.file
+        }. Reconcile receipts before retrying.`
+      );
+    throw error;
   } finally {
     reservedOutput?.close();
   }
