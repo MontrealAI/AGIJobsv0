@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import { spawn } from 'node:child_process';
 import path from 'node:path';
 import os from 'node:os';
 import { fileURLToPath } from 'node:url';
@@ -393,6 +394,101 @@ try {
   checks.push(
     'legacy record HTML cannot execute scripts or inject remote images'
   );
+  // Exercise the exact fresh-record path advertised by the Python CLI.
+  const localRecord = JSON.parse(
+    fs.readFileSync(
+      path.join(
+        root,
+        'demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/legacy/snapshots.json'
+      )
+    )
+  ).v5;
+  localRecord.alpha.domains[0].title = 'FRESH_LOCAL_RUN_RECORD';
+  const localRecordPath = path.join(temporary, 'fresh record.json');
+  fs.writeFileSync(localRecordPath, json(localRecord));
+  const portProbe = createServer();
+  await new Promise((resolve) => portProbe.listen(0, '127.0.0.1', resolve));
+  const localPort = portProbe.address().port;
+  await new Promise((resolve) => portProbe.close(resolve));
+  const viewer = spawn(
+    process.execPath,
+    [
+      path.join(
+        root,
+        'demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/workbench/server.cjs'
+      ),
+      '--record',
+      'v5',
+      localRecordPath,
+    ],
+    {
+      env: { ...process.env, PORT: String(localPort) },
+      stdio: ['ignore', 'pipe', 'pipe'],
+    }
+  );
+  const exited = new Promise((resolve) => viewer.once('exit', resolve));
+  let viewerLogs = '';
+  viewer.stderr.on('data', (chunk) => (viewerLogs += chunk));
+  try {
+    await new Promise((resolve, reject) => {
+      const timer = setTimeout(
+        () =>
+          reject(
+            new Error('Local record viewer failed to start: ' + viewerLogs)
+          ),
+        20000
+      );
+      viewer.once('error', (error) => {
+        clearTimeout(timer);
+        reject(error);
+      });
+      viewer.once('exit', (code) => {
+        clearTimeout(timer);
+        reject(
+          new Error('Local record viewer exited ' + code + ': ' + viewerLogs)
+        );
+      });
+      viewer.stdout.on('data', (chunk) => {
+        viewerLogs += chunk;
+        if (viewerLogs.includes('http://127.0.0.1:')) {
+          clearTimeout(timer);
+          resolve();
+        }
+      });
+    });
+    const localPage = await context.newPage();
+    const localErrors = [];
+    localPage.on('pageerror', (error) => localErrors.push(error.message));
+    await localPage.goto(
+      'http://127.0.0.1:' + localPort + '/archive/meta_agentic_alpha_v5/ui/',
+      { waitUntil: 'networkidle' }
+    );
+    await localPage
+      .getByText('FRESH_LOCAL_RUN_RECORD', { exact: true })
+      .waitFor();
+    await localPage.waitForFunction(() =>
+      [...document.querySelectorAll('.mermaid')].every((node) =>
+        node.querySelector('svg')
+      )
+    );
+    assert.ok((await localPage.locator('.mermaid svg').count()) > 0);
+    assert.deepEqual(localErrors, []);
+    assert.equal(
+      (
+        await context.request.get(
+          'http://127.0.0.1:' + localPort + '/fresh%20record.json'
+        )
+      ).status(),
+      404
+    );
+    await localPage.close();
+    checks.push(
+      'advertised local viewer renders a newly generated record with bundled diagrams and no directory exposure'
+    );
+  } finally {
+    viewer.kill('SIGTERM');
+    await exited;
+  }
   const failedPage = await context.newPage();
   await failedPage.route('**/scenario.json', (route) =>
     route.fulfill({ status: 503, body: 'Unavailable' })

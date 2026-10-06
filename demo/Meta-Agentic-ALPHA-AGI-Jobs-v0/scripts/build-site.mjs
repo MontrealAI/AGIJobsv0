@@ -17,7 +17,19 @@ export const workbenchAssets = [
   'scenario.json',
   'architecture.svg',
 ];
-export async function buildSite(destination) {
+export async function buildSite(destination, { record = null } = {}) {
+  if (
+    record &&
+    (!Number.isInteger(record.version) ||
+      record.version < 5 ||
+      record.version > 11 ||
+      !record.payload ||
+      typeof record.payload !== 'object' ||
+      Array.isArray(record.payload))
+  )
+    throw new Error(
+      'A local record needs a version from 5 to 11 and an object payload.'
+    );
   const output = path.resolve(destination),
     assets = [];
   fs.mkdirSync(output, { recursive: true });
@@ -35,6 +47,7 @@ export async function buildSite(destination) {
   const snapshots = JSON.parse(
     fs.readFileSync(path.join(demoRoot, 'legacy/snapshots.json'), 'utf8')
   );
+  if (record) snapshots['v' + record.version] = record.payload;
   for (let version = 2; version <= 11; version++) {
     const prefix = `meta_agentic_alpha_v${version}/ui/`;
     for (const asset of ['index.html', 'styles.css', 'dashboard.js'])

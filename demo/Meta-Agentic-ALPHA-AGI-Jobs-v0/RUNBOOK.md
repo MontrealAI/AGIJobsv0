@@ -86,7 +86,15 @@ PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python -m pytest demo/Meta-Agentic-ALPHA-AGI-Jo
 python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/scripts/rehearse.py --out reports/meta-agentic-alpha/python-RUN_ID
 ```
 
-The second command exercises all eleven mission CLIs and Prime in a disposable copy with a minimal subprocess environment, collecting output in a new directory. It never treats an earlier tracked `latest_run` as fresh execution evidence. The website explicitly labels recorded snapshots and configured CI statuses.
+To view a newly generated V5–V11 dashboard record, use the matching version and its JSON path (the V5–V11 CLIs print the exact command):
+
+```bash
+npm run demo:meta-agentic-alpha:serve -- --record v5 demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_v5/ui/dashboard-data-v5.json
+```
+
+Open the loopback URL printed by the viewer. This builds the locked diagram dependencies into a temporary public directory and substitutes only the selected record. It does not expose the input file's directory. The record is a point-in-time copy; stop and restart the viewer after another run. A plain Python file server cannot resolve the source modules' package imports.
+
+The second rehearsal command above exercises all eleven mission CLIs and Prime in a disposable copy with a minimal subprocess environment, collecting output in a new directory. It never treats an earlier tracked `latest_run` as fresh execution evidence. The website explicitly labels recorded snapshots and configured CI statuses.
 
 To rebuild a standalone public site, choose an empty output directory:
 

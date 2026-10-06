@@ -3,6 +3,7 @@ const fs = require('node:fs'),
   http = require('node:http'),
   path = require('node:path'),
   os = require('node:os');
+const { readJson } = require('./io.cjs');
 const assetNames = [
   'index.html',
   'styles.css',
@@ -83,9 +84,25 @@ function createServer({ directory = __dirname, assets = assetNames } = {}) {
     stream.pipe(res);
   });
 }
-module.exports = { createServer, assetNames };
+function readRecordArgs(args) {
+  if (!args.length) return null;
+  if (
+    args.length !== 3 ||
+    args[0] !== '--record' ||
+    !/^v(?:[5-9]|1[01])$/.test(args[1])
+  )
+    throw new Error(
+      'Usage: npm run demo:meta-agentic-alpha:serve -- [--record v5..v11 DASHBOARD_DATA.json]'
+    );
+  const payload = readJson(path.resolve(args[2]));
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload))
+    throw new Error('Dashboard record must be a JSON object.');
+  return { version: Number(args[1].slice(1)), payload };
+}
+module.exports = { createServer, assetNames, readRecordArgs };
 if (require.main === module)
   (async () => {
+    const record = readRecordArgs(process.argv.slice(2));
     const port = Number(process.env.PORT || 4191);
     if (!Number.isInteger(port) || port < 1 || port > 65535)
       throw new Error('PORT must be an integer from 1 to 65535.');
@@ -93,7 +110,9 @@ if (require.main === module)
     const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'meta-alpha-viewer-'));
     let server;
     try {
-      server = createServer(await buildSite(path.join(temp, 'site')));
+      server = createServer(
+        await buildSite(path.join(temp, 'site'), { record })
+      );
     } catch (error) {
       fs.rmSync(temp, { recursive: true, force: true });
       throw error;
@@ -109,7 +128,10 @@ if (require.main === module)
       console.log(
         'Meta-Agentic ALPHA: http://127.0.0.1:' +
           port +
-          '/\nLocal evaluation and preserved dashboards; Ctrl+C to stop.'
+          (record
+            ? '/archive/meta_agentic_alpha_v' + record.version + '/ui/'
+            : '/') +
+          '\nLocal evaluation and preserved dashboards; Ctrl+C to stop.'
       )
     );
     for (const signal of ['SIGINT', 'SIGTERM'])

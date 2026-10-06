@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import os
 import sys
+import shlex
 from pathlib import Path
 
 
@@ -81,8 +82,9 @@ def main(argv: list[str] | None = None) -> int:
     print(f"       - Masterplan deck:   {format_path(outcome.report_path)}")
     print(f"       - Scoreboard:        {format_path(outcome.scoreboard_path)}")
     print("\nOpen the Sovereign Meta-Conductor Console:")
-    print(f"   python -m http.server --bind 127.0.0.1 --directory {format_path(outcome.dashboard_path.parent)} 9005")
-    print("   → Visit http://localhost:9005/index.html")
+    print("   From the repository root with locked Node dependencies installed:")
+    print(f"   npm run demo:meta-agentic-alpha:serve -- --record v5 {shlex.quote(str(outcome.dashboard_path.resolve()))}")
+    print("   → Open the loopback URL printed by the viewer; Ctrl+C to stop.")
     print("\nEvery control is editable via scripts/owner_controls.py — rerun this CLI after any change.")
     return 0
 

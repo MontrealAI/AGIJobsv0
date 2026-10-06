@@ -22,7 +22,7 @@ import {
 import { execute } from '../execute.mjs';
 import { reviewBundle, reviewReceipt, reviewCandidate } from '../review.mjs';
 import { readJson } from '../io.cjs';
-import { createServer, assetNames } from '../server.cjs';
+import { createServer, assetNames, readRecordArgs } from '../server.cjs';
 const require = createRequire(import.meta.url);
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const source = readJson(path.join(root, 'scenario.json'));
@@ -251,5 +251,33 @@ test('six task digests agree with the real adapter; admitted fixture dispatches 
     fs.rmSync(temp, { recursive: true, force: true });
     if (oldToken === undefined) delete process.env[tokenName];
     else process.env[tokenName] = oldToken;
+  }
+});
+
+test('generated-record viewer arguments are versioned, bounded and explicit', () => {
+  const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'meta-alpha-record-'));
+  try {
+    const record = path.join(temp, 'record with spaces.json');
+    fs.writeFileSync(record, JSON.stringify({ runId: 'fresh-local-record' }));
+    assert.equal(readRecordArgs([]), null);
+    for (let version = 5; version <= 11; version++)
+      assert.deepEqual(readRecordArgs(['--record', 'v' + version, record]), {
+        version,
+        payload: { runId: 'fresh-local-record' },
+      });
+    for (const args of [
+      ['--record', 'v4', record],
+      ['--record', 'v12', record],
+      ['--record', 'v5'],
+      ['unexpected'],
+      ['--record', 'v5', record, 'extra'],
+    ])
+      assert.throws(() => readRecordArgs(args), /Usage/);
+    fs.writeFileSync(record, '[]');
+    assert.throws(() => readRecordArgs(['--record', 'v5', record]), /object/);
+    fs.writeFileSync(record, ' '.repeat(1048577));
+    assert.throws(() => readRecordArgs(['--record', 'v5', record]));
+  } finally {
+    fs.rmSync(temp, { recursive: true, force: true });
   }
 });
