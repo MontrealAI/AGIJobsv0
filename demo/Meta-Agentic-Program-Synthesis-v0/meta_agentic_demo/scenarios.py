@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import math
+
 from typing import Iterable, Mapping, MutableMapping, Sequence
 
 from .config import DatasetProfile, DemoScenario
@@ -56,6 +58,8 @@ def _coerce_float(value: object, *, field: str) -> float:
         number = float(value)
     except (TypeError, ValueError) as error:
         raise ScenarioValidationError(f"{field} must be numeric") from error
+    if isinstance(value, bool) or not math.isfinite(number):
+        raise ScenarioValidationError(f"{field} must be finite and numeric")
     return number
 
 
@@ -72,7 +76,9 @@ def _build_dataset_profile(
     if length_value is None:
         raise ScenarioValidationError("dataset_profile.length is required")
     try:
-        length = int(length_value)
+        if type(length_value) is not int:
+            raise ValueError("length must be an integer")
+        length = length_value
     except (TypeError, ValueError) as error:
         raise ScenarioValidationError("dataset_profile.length must be an integer") from error
     if length <= 0:
@@ -83,7 +89,9 @@ def _build_dataset_profile(
         raise ScenarioValidationError("dataset_profile.noise must be non-negative")
     seed_value = payload.get("seed", base.seed if base else 1)
     try:
-        seed = int(seed_value)
+        if type(seed_value) is not int:
+            raise ValueError("seed must be an integer")
+        seed = seed_value
     except (TypeError, ValueError) as error:
         raise ScenarioValidationError("dataset_profile.seed must be an integer") from error
     return DatasetProfile(length=length, noise=noise, seed=seed)
@@ -175,7 +183,10 @@ def resolve_scenarios(
         if identifier_value is not None:
             identifier_text = str(identifier_value).strip()
             base_scenario = existing.get(identifier_text)
-        scenario = _build_scenario(payload, base=base_scenario)
+        try:
+            scenario = _build_scenario(payload, base=base_scenario)
+        except ValueError as error:
+            raise ScenarioValidationError(str(error)) from error
         if scenario.identifier in seen:
             raise ScenarioValidationError(
                 f"duplicate scenario identifier '{scenario.identifier}' in overrides"

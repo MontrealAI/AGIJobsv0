@@ -291,9 +291,12 @@ def describe_config(config: DemoConfig) -> str:
     return json.dumps(summary, indent=2)
 
 
-def main() -> None:
+def main() -> int:
     args = parse_args()
     owner_console = OwnerConsole(DemoConfig(scenarios=list(DEFAULT_SCENARIOS)))
+    if any(not math.isfinite(v) or v < 0 or v > 31536000 for v in (args.timelock_delay, args.timelock_fast_forward)):
+        print("Invalid timelock duration; use finite seconds within [0, 31536000].")
+        return 2
     timelock = GovernanceTimelock(
         default_delay=timedelta(seconds=max(args.timelock_delay, 0.0))
     )
@@ -323,29 +326,29 @@ def main() -> None:
             if scenario_override is not None and not enqueue_scenario_payload(
                 scenario_override, source=str(args.config_file)
             ):
-                return
+                return 2
             reward_overrides = overrides.get("reward_policy", {})
             if reward_overrides and not queue_timelock(
                 "update_reward_policy", reward_overrides
             ):
-                return
+                return 2
             stake_overrides = overrides.get("stake_policy", {})
             if stake_overrides and not queue_timelock("update_stake_policy", stake_overrides):
-                return
+                return 2
             evolution_overrides = overrides.get("evolution_policy", {})
             if evolution_overrides and not queue_timelock(
                 "update_evolution_policy", evolution_overrides
             ):
-                return
+                return 2
             verification_overrides = overrides.get("verification_policy", {})
             if verification_overrides and not queue_timelock(
                 "update_verification_policy", verification_overrides
             ):
-                return
+                return 2
             if "paused" in overrides and not queue_timelock(
-                "set_paused", {"value": bool(overrides["paused"]) }
+                "set_paused", {"value": overrides["paused"] }
             ):
-                return
+                return 2
         reward_overrides = {
             key: value
             for key, value in {
@@ -357,7 +360,7 @@ def main() -> None:
             if value is not None
         }
         if reward_overrides and not queue_timelock("update_reward_policy", reward_overrides):
-            return
+            return 2
         stake_overrides = {
             key: value
             for key, value in {
@@ -368,7 +371,7 @@ def main() -> None:
             if value is not None
         }
         if stake_overrides and not queue_timelock("update_stake_policy", stake_overrides):
-            return
+            return 2
         evolution_overrides = {
             key: value
             for key, value in {
@@ -383,7 +386,7 @@ def main() -> None:
         if evolution_overrides and not queue_timelock(
             "update_evolution_policy", evolution_overrides
         ):
-            return
+            return 2
         verification_overrides = {
             key: value
             for key, value in {
@@ -409,33 +412,33 @@ def main() -> None:
         if verification_overrides and not queue_timelock(
             "update_verification_policy", verification_overrides
         ):
-            return
+            return 2
         if args.pause and not queue_timelock("set_paused", {"value": True}):
-            return
+            return 2
         if args.scenario_file:
             for path in args.scenario_file:
                 try:
                     payload_data = json.loads(path.read_text(encoding="utf-8"))
                 except OSError as error:
                     print(f"❌ Unable to read scenario file {path}:", error)
-                    return
+                    return 2
                 except json.JSONDecodeError as error:
                     print(f"❌ Scenario file {path} is not valid JSON:", error)
-                    return
+                    return 2
                 if not enqueue_scenario_payload(payload_data, source=str(path)):
-                    return
+                    return 2
         if args.scenario_json:
             for index, raw in enumerate(args.scenario_json, start=1):
                 try:
                     payload_data = json.loads(raw)
                 except json.JSONDecodeError as error:
                     print(f"❌ Scenario JSON override #{index} is invalid:", error)
-                    return
+                    return 2
                 if not enqueue_scenario_payload(payload_data, source=f"cli:{index}"):
-                    return
-    except ValueError as error:
+                    return 2
+    except (ValueError, TypeError, OSError) as error:
         print("❌ Owner override error:", error)
-        return
+        return 2
 
     if scenario_payload_queue:
         effective_scenarios = list(owner_console.config.scenarios)
@@ -448,21 +451,21 @@ def main() -> None:
                 )
         except ScenarioValidationError as error:
             print("❌ Scenario override error:", error)
-            return
+            return 2
         final_payload = {
             "mode": "replace",
             "scenarios": serialise_scenarios(effective_scenarios),
         }
         if not queue_timelock("set_scenarios", final_payload):
-            return
+            return 2
 
     fast_forward_seconds = max(args.timelock_fast_forward, 0.0)
     execution_time = datetime.now(UTC) + timedelta(seconds=fast_forward_seconds)
     try:
         executed_actions = tuple(timelock.execute_due(owner_console, now=execution_time))
-    except ValueError as error:
+    except (ValueError, TypeError, OSError) as error:
         print("❌ Timelock execution error:", error)
-        return
+        return 2
 
     if scheduled_actions:
         print("\n🛡️ Governance timelock queue:")
@@ -485,7 +488,7 @@ def main() -> None:
     scenario_lookup = {scenario.identifier: scenario for scenario in config.scenarios}
     if not scenario_lookup:
         print("❌ Scenario catalogue is empty after applying overrides.")
-        return
+        return 2
     if args.list_scenarios:
         print("\n📋 Scenario catalogue:")
         for scenario in config.scenarios:
@@ -503,14 +506,14 @@ def main() -> None:
                 f"stress={scenario.stress_multiplier:.2f}×,",
                 f"{dataset_summary})",
             )
-        return
+        return 0
     if args.scenario == ALL_SCENARIOS_IDENTIFIER:
         selected_scenarios = list(config.scenarios)
     else:
         if args.scenario not in scenario_lookup:
             print(f"❌ Unknown scenario identifier: {args.scenario}")
             print("   Available:", ", ".join(sorted(scenario_lookup)))
-            return
+            return 2
         selected_scenarios = [scenario_lookup[args.scenario]]
     multi_run = len(selected_scenarios) > 1
     aggregated_results: dict[str, DemoRunArtifacts] = {}
@@ -540,7 +543,7 @@ def main() -> None:
             )
         if owner_console.is_paused:
             print("\n⏸️ Operations paused by owner. Resume to execute jobs.")
-            return
+            return 0
         artefacts = architect.run(scenario)
         output_dir = args.output / scenario.identifier if multi_run else args.output
         bundle = export_report(artefacts, output_dir)
@@ -563,18 +566,18 @@ def main() -> None:
             print("Success threshold not reached within configured generations.")
         summary = artefacts.reward_summary
         print("\n💠 Reward distribution overview:")
-        print(f"  • Total disbursed: {summary.total_reward:.2f} $AGIα")
-        print(f"  • Architect retained: {summary.architect_total:.2f} $AGIα")
+        print(f"  • Total simulated allocation: {summary.total_reward:.2f} simulation credits")
+        print(f"  • Architect retained: {summary.architect_total:.2f} simulation credits")
         if summary.top_solver:
             print(
-                f"  • Top solver: {summary.top_solver} -> {summary.solver_totals[summary.top_solver]:.2f} $AGIα"
+                f"  • Top solver: {summary.top_solver} -> {summary.solver_totals[summary.top_solver]:.2f} simulation credits"
             )
         if summary.top_validator:
             print(
                 "  • Top validator:",
                 summary.top_validator,
                 "->",
-                f"{summary.validator_totals[summary.top_validator]:.2f} $AGIα",
+                f"{summary.validator_totals[summary.top_validator]:.2f} simulation credits",
             )
         print("\n🧵 Triple-verification digest:")
         digest = artefacts.verification
@@ -678,7 +681,8 @@ def main() -> None:
     print("\n🛰️ Command theatre assembled:")
     print(f"  • Dashboard: {dashboard_bundle.html_path}")
     print(f"  • Data: {dashboard_bundle.json_path}")
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

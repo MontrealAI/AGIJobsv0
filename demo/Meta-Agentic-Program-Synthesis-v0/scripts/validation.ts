@@ -25,6 +25,11 @@ function assertPositive(value: number, label: string): void {
 function validateParameters(parameters: MissionParameters): void {
   assertPositive(parameters.seed, "Seed");
   assertPositive(parameters.generations, "Generations");
+  for (const key of ["seed", "generations", "populationSize", "eliteCount", "maxOperations"] as const) {
+    assertCondition(Number.isSafeInteger(parameters[key]), `${key} must be an integer.`);
+  }
+  assertCondition(parameters.generations <= 1000 && parameters.populationSize <= 1000 && parameters.generations * parameters.populationSize <= 100000, "Candidate evaluation budget exceeded.");
+  assertCondition(parameters.maxOperations <= 32, "Max operations cannot exceed 32.");
   assertPositive(parameters.populationSize, "Population size");
   assertPositive(parameters.eliteCount, "Elite count");
   assertCondition(
@@ -82,6 +87,7 @@ function computeOwnerCoverage(mission: MissionConfig): OwnerControlCoverage {
 }
 
 function validateTasks(tasks: TaskDefinition[], parameters: MissionParameters): void {
+  assertCondition(tasks.length <= 100, "At most 100 tasks are supported.");
   assertCondition(tasks.length > 0, "At least one task must be defined.");
   const seenIds = new Set<string>();
   for (const task of tasks) {
@@ -93,17 +99,19 @@ function validateTasks(tasks: TaskDefinition[], parameters: MissionParameters): 
     for (const example of task.examples) {
       assertCondition(Array.isArray(example.input), `Task ${task.id} example inputs must be arrays.`);
       assertCondition(Array.isArray(example.expected), `Task ${task.id} example expected values must be arrays.`);
+      assertCondition(example.input.length <= 4096 && example.expected.length <= 4096, "Example vector size exceeds 4096.");
+      assertCondition([...example.input, ...example.expected].every((v) => typeof v === "number" && Number.isFinite(v) && Math.abs(v) <= 1e9), "Example values must be finite bounded numbers.");
       assertCondition(example.input.length > 0, `Task ${task.id} example ${example.label} must not be empty.`);
     }
     assertPositive(task.owner.stake, `Task ${task.id} stake`);
     assertPositive(task.owner.reward, `Task ${task.id} reward`);
     assertCondition(
-      typeof task.owner.thermodynamicTarget === "number",
+      Number.isFinite(task.owner.thermodynamicTarget),
       `Task ${task.id} thermodynamic target must be numeric.`,
     );
     if (task.constraints?.maxOperations !== undefined) {
       assertCondition(
-        task.constraints.maxOperations > 0 && task.constraints.maxOperations <= parameters.maxOperations,
+        Number.isInteger(task.constraints.maxOperations) && task.constraints.maxOperations > 0 && task.constraints.maxOperations <= parameters.maxOperations,
         `Task ${task.id} maxOperations must be > 0 and ≤ mission maxOperations.`,
       );
     }

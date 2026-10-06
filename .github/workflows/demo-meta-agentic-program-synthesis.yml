@@ -5,11 +5,13 @@ on:
     paths:
       - 'demo/Meta-Agentic-Program-Synthesis-v0/**'
       - '.github/workflows/demo-meta-agentic-program-synthesis.yml'
+      - 'apps/orchestrator/computerWork.ts'
+      - 'package.json'
+      - 'package-lock.json'
   workflow_dispatch:
 
 permissions:
   contents: read
-  actions: write
 
 jobs:
   demo:
@@ -38,11 +40,34 @@ jobs:
             pipelines.actions.githubusercontent.com:443
             pypi.org:443
             files.pythonhosted.org:443
+            registry.npmjs.org:443
+            nodejs.org:443
+            cdn.playwright.dev:443
+            playwright.download.prss.microsoft.com:443
+            cdn.playwright.azureedge.net:443
+            archive.ubuntu.com:80
+            archive.ubuntu.com:443
+            security.ubuntu.com:80
+            security.ubuntu.com:443
+            azure.archive.ubuntu.com:80
+            azure.archive.ubuntu.com:443
+            packages.microsoft.com:443
 
       - name: Set up Python
         uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d
         with:
           python-version: '3.12'
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+
+      - name: Install locked Node dependencies
+        run: ./scripts/ci/npm-ci.sh
+
+      - name: Install test browser
+        run: npx playwright install --with-deps chromium
 
       - name: Install Python dependencies
         run: |
@@ -61,8 +86,19 @@ jobs:
           test -f demo/Meta-Agentic-Program-Synthesis-v0/.ci-artifacts/report.html
           test -f demo/Meta-Agentic-Program-Synthesis-v0/.ci-artifacts/report.json
 
+      - name: Verify synthesis, export, rejection and report regressions
+        run: |
+          npm run demo:program-synthesis:test
+          npm run demo:meta-agentic-program-synthesis:full -- --report-dir build/synthesis-dossier
+          npm run demo:program-synthesis:site
+          npm run demo:program-synthesis:qa
+
       - name: Upload artefacts
+        if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: meta-agentic-demo-report
-          path: demo/Meta-Agentic-Program-Synthesis-v0/.ci-artifacts/
+          path: |
+            demo/Meta-Agentic-Program-Synthesis-v0/.ci-artifacts/
+            build/synthesis-dossier/
+            reports/pages/program-synthesis/

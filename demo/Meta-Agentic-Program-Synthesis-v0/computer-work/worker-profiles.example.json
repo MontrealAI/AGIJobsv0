@@ -1,0 +1,13 @@
+{
+  "synthesis": {
+    "endpoint": "http://127.0.0.1:18789/v1/responses",
+    "agentId": "synthesis",
+    "tokenEnv": "COMPUTER_WORK_SYNTHESIS_TOKEN",
+    "deploymentId": "REPLACE_WITH_COMMISSIONED_DEPLOYMENT",
+    "mode": "live",
+    "timeoutMs": 120000,
+    "maxResponseBytes": 262144,
+    "maxOutputTokens": 8192,
+    "approvedJobs": []
+  }
+}

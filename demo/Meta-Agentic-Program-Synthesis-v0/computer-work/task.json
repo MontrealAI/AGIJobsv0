@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "workerProfile": "synthesis",
+  "goal": "Synthesize a bounded data normalization program and return its reviewable candidate.",
+  "inputText": "Open the locally served Synthesis Foundry at http://127.0.0.1:18792. Select Normalize a dataset and search with a 400-candidate limit. Export candidate.json and return its exact contents. The cases.json source SHA-256 must be 5eedacba07b10be56cd0547b547f997abb5cdded63dd571bad4d5c1c8855fd4f. Use the displayed workbench; do not fabricate a test result. The expected operations implement 3x + 2 over each input. Include evidence.md describing the actual actions and any errors. No job dispatch, remote transmission, purchase, signing or payment is authorized. The candidate remains review-required. The Python checker is a separate review step.",
+  "dataClass": "synthetic",
+  "allowedOrigins": [
+    "http://127.0.0.1:18792"
+  ],
+  "acceptanceCriteria": [
+    "candidate.json binds the exact source digest and normalize task.",
+    "The exported bounded operations pass the separate Python checker on training and held-out cases.",
+    "evidence.md describes actual execution, tool/runtime versions and errors, without claiming independent acceptance or payment."
+  ],
+  "deliverables": [
+    {
+      "name": "candidate.json",
+      "mediaType": "application/json"
+    },
+    {
+      "name": "evidence.md",
+      "mediaType": "text/markdown"
+    }
+  ]
+}

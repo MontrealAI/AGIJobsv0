@@ -512,7 +512,12 @@
     "demo:hgm:build": "node demo/Huxley-Godel-Machine-v0/scripts/build_site.mjs",
     "demo:hgm:test": "node --test demo/Huxley-Godel-Machine-v0/web/tests/*.test.mjs",
     "demo:hgm:qa": "node demo/Huxley-Godel-Machine-v0/web/tests/browser-qa.mjs",
-    "demo:hgm:worker": "ts-node --compiler-options '{\"module\":\"commonjs\"}' --transpile-only demo/Huxley-Godel-Machine-v0/scripts/worker.cjs"
+    "demo:hgm:worker": "ts-node --compiler-options '{\"module\":\"commonjs\"}' --transpile-only demo/Huxley-Godel-Machine-v0/scripts/worker.cjs",
+    "demo:program-synthesis:site": "node demo/Meta-Agentic-Program-Synthesis-v0/scripts/build-site.mjs",
+    "demo:program-synthesis:lab": "node demo/Meta-Agentic-Program-Synthesis-v0/scripts/lab.mjs",
+    "demo:program-synthesis:test": "node --import tsx --test demo/Meta-Agentic-Program-Synthesis-v0/tests/*.test.mjs",
+    "demo:program-synthesis:qa": "node demo/Meta-Agentic-Program-Synthesis-v0/scripts/browser-qa.mjs",
+    "demo:program-synthesis:worker": "node --import tsx demo/Meta-Agentic-Program-Synthesis-v0/computer-work/worker.cjs"
   },
   "type": "commonjs",
   "version": "2.0.0"

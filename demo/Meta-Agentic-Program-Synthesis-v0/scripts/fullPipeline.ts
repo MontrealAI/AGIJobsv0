@@ -1,7 +1,7 @@
 import { readFile, writeFile } from "fs/promises";
 import path from "path";
 import yaml from "js-yaml";
-import { executeSynthesis, type RunOptions } from "./runSynthesis";
+import { executeSynthesis, resolveRunOptions, parseArgs, type RunOptions } from "./runSynthesis";
 import { updateManifest } from "./manifest";
 import { evaluateOwnerScripts, inspectCommand, loadPackageScripts } from "./commandValidation";
 import type {
@@ -14,15 +14,7 @@ import type {
 
 const BASE_DIR = path.resolve(__dirname, "..");
 const REPO_ROOT = path.resolve(BASE_DIR, "..", "..");
-const REPORT_DIR = path.join(BASE_DIR, "reports");
 const WORKFLOW_FILE = path.join(REPO_ROOT, ".github", "workflows", "ci.yml");
-
-const FULL_JSON = path.join(REPORT_DIR, "meta-agentic-program-synthesis-full.json");
-const FULL_MARKDOWN = path.join(REPORT_DIR, "meta-agentic-program-synthesis-full.md");
-const CI_REPORT = path.join(REPORT_DIR, "meta-agentic-program-synthesis-ci.json");
-const OWNER_JSON = path.join(REPORT_DIR, "meta-agentic-program-synthesis-owner-diagnostics.json");
-const OWNER_MARKDOWN = path.join(REPORT_DIR, "meta-agentic-program-synthesis-owner-diagnostics.md");
-const TRIANGULATION_JSON = path.join(REPORT_DIR, "meta-agentic-program-synthesis-triangulation.json");
 
 function formatPercent(value: number): string {
   return `${(value * 100).toFixed(2)}%`;
@@ -72,7 +64,7 @@ function renderMarkdown(
   lines.push("");
   lines.push("## CI Shield Assessment");
   lines.push("");
-  lines.push(ciAssessment.ok ? "✅ All mandatory CI gates confirmed." : "❌ CI deviations detected. Review issues below.");
+  lines.push(ciAssessment.ok ? "✅ Workflow declarations match; this is not an actual CI run." : "❌ CI deviations detected. Review issues below.");
   if (ciAssessment.issues.length > 0) {
     for (const issue of ciAssessment.issues) {
       lines.push(`- ${issue}`);
@@ -111,7 +103,7 @@ function extractCoverageThreshold(job: Record<string, unknown>): number | null {
   return null;
 }
 
-async function verifyCi(mission: MissionConfig): Promise<{
+async function verifyCi(mission: MissionConfig, reportFile: string): Promise<{
   ok: boolean;
   issues: string[];
   report: Record<string, unknown>;
@@ -196,7 +188,7 @@ async function verifyCi(mission: MissionConfig): Promise<{
     coverageThreshold,
   };
 
-  await writeFile(CI_REPORT, JSON.stringify({ mission: mission.ci, verification: report }, null, 2), "utf8");
+  await writeFile(reportFile, JSON.stringify({ mission: mission.ci, verification: report }, null, 2), "utf8");
   return { ok, issues, report };
 }
 
@@ -316,10 +308,17 @@ function renderOwnerMarkdown(
 
 export async function runFullPipeline(options: RunOptions = {}): Promise<void> {
   const run = await executeSynthesis(options);
-  const missionFile = path.resolve(options.missionFile ?? process.env.AGI_META_PROGRAM_MISSION ?? path.join(BASE_DIR, "config", "mission.meta-agentic-program-synthesis.json"));
-  const reportDir = path.resolve(options.reportDir ?? REPORT_DIR);
+  const resolved = resolveRunOptions(options);
+  const missionFile = resolved.missionFile;
+  const reportDir = resolved.reportDir;
+  const FULL_JSON = path.join(reportDir, "meta-agentic-program-synthesis-full.json");
+  const FULL_MARKDOWN = path.join(reportDir, "meta-agentic-program-synthesis-full.md");
+  const CI_REPORT = path.join(reportDir, "meta-agentic-program-synthesis-ci.json");
+  const OWNER_JSON = path.join(reportDir, "meta-agentic-program-synthesis-owner-diagnostics.json");
+  const OWNER_MARKDOWN = path.join(reportDir, "meta-agentic-program-synthesis-owner-diagnostics.md");
+  const TRIANGULATION_JSON = resolved.triangulationFile;
 
-  const ciAssessment = await verifyCi(run.mission);
+  const ciAssessment = await verifyCi(run.mission, CI_REPORT);
   const ownerAssessment = await evaluateOwnerControls(run.mission, run.ownerCoverage);
 
   const normaliseAudit = (audit: OwnerScriptAudit[]): OwnerScriptAudit[] =>
@@ -349,6 +348,9 @@ export async function runFullPipeline(options: RunOptions = {}): Promise<void> {
   run.ownerScriptsAudit = assessedAudit;
 
   const ownerReport = {
+    evidenceClass: "offline-configuration-inspection",
+    productionApproved: false,
+    settlementApproved: false,
     generatedAt: new Date().toISOString(),
     readiness: ownerAssessment.readiness,
     commandReadiness: ownerAssessment.commandReadiness,
@@ -386,11 +388,11 @@ export async function runFullPipeline(options: RunOptions = {}): Promise<void> {
 
   const artifacts: Record<string, string> = {
     "Mission manifest": missionFile,
-    "Markdown report": path.join(reportDir, "meta-agentic-program-synthesis-report.md"),
-    "JSON summary": path.join(reportDir, "meta-agentic-program-synthesis-summary.json"),
-    "Dashboard": path.join(reportDir, "meta-agentic-program-synthesis-dashboard.html"),
+    "Markdown report": resolved.reportFile,
+    "JSON summary": resolved.summaryFile,
+    "Dashboard": resolved.dashboardFile,
     "Triangulation digest": TRIANGULATION_JSON,
-    "Manifest": path.join(reportDir, "meta-agentic-program-synthesis-manifest.json"),
+    "Manifest": resolved.manifestFile,
     "CI verification": CI_REPORT,
     "Owner diagnostics (JSON)": OWNER_JSON,
     "Owner diagnostics (Markdown)": OWNER_MARKDOWN,
@@ -401,6 +403,9 @@ export async function runFullPipeline(options: RunOptions = {}): Promise<void> {
   }
 
   const fullSummary = {
+    evidenceClass: "offline-configuration-inspection",
+    productionApproved: false,
+    settlementApproved: false,
     generatedAt: new Date().toISOString(),
     aggregate: run.aggregate,
     ownerBriefing: run.ownerBriefingPath ?? null,
@@ -435,7 +440,7 @@ export async function runFullPipeline(options: RunOptions = {}): Promise<void> {
     "utf8",
   );
 
-  await updateManifest(path.join(reportDir, "meta-agentic-program-synthesis-manifest.json"), [
+  await updateManifest(resolved.manifestFile, [
     CI_REPORT,
     OWNER_JSON,
     OWNER_MARKDOWN,
@@ -461,7 +466,7 @@ export async function runFullPipeline(options: RunOptions = {}): Promise<void> {
 }
 
 if (require.main === module) {
-  runFullPipeline()
+  runFullPipeline(parseArgs(process.argv.slice(2)))
     .catch((error) => {
       console.error("❌ Full pipeline failed:", error);
       process.exitCode = 1;

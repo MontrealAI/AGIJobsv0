@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Iterable, Optional
 
 DEMO_ROOT = Path(__file__).resolve().parent
-REPO_ROOT = DEMO_ROOT.parent
+REPO_ROOT = DEMO_ROOT.parent.parent
 
 
 def _resolve_main():
@@ -56,10 +56,10 @@ def run(argv: Optional[Iterable[str]] = None, *, main_fn=None) -> None:
     original_argv = sys.argv
     sys.argv = [original_argv[0]] + forwarded
     try:
-        main_callable()
+        return main_callable()
     finally:
         sys.argv = original_argv
 
 
 if __name__ == "__main__":
-    run()
+    raise SystemExit(run())

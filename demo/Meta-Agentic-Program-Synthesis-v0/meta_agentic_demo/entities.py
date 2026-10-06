@@ -40,7 +40,9 @@ class Job:
     def commit_result(self, payload: Dict[str, float]) -> str:
         """Persist a cryptographic commitment to the node's output."""
 
-        self.result_payload = payload
+        if self.result_commit is not None:
+            raise ValueError("job result is already committed")
+        self.result_payload = dict(payload)
         digest = sha256(repr(sorted(payload.items())).encode("utf-8")).hexdigest()
         self.result_commit = digest
         self.status = JobStatus.IN_PROGRESS
@@ -51,8 +53,9 @@ class Job:
             raise ValueError("Reveal digest does not match commitment")
         if self.result_payload is None:
             raise ValueError("No payload captured for reveal")
-        self.status = JobStatus.COMPLETED
-        return self.result_payload
+        if sha256(repr(sorted(self.result_payload.items())).encode("utf-8")).hexdigest() != digest:
+            raise ValueError("Stored result does not match commitment")
+        return dict(self.result_payload)
 
     def to_dict(self) -> Dict[str, object]:
         return {
@@ -286,6 +289,14 @@ class DemoRunArtifacts:
     def to_dict(self) -> Dict[str, object]:
         return {
             "scenario": self.scenario,
+            "schema_version": 2,
+            "evidence_class": "seeded-simulation",
+            "reward_unit": "simulation credits",
+            "provider_calls": 0,
+            "chain_transactions": 0,
+            "independent_review": "not-performed",
+            "production_approved": False,
+            "settlement_approved": False,
             "jobs": [job.to_dict() for job in self.jobs],
             "performances": [perf.__dict__ for perf in self.performances],
             "rewards": [
