@@ -40,6 +40,9 @@ class DemoOrchestrator:
         self.thermostat = thermostat or Thermostat(ThermostatConfig())
         self.sentinel = sentinel or Sentinel(SentinelConfig())
         self.parameters = parameters or EconomicParameters()
+        for value in (self.parameters.evaluation_cost, self.parameters.expansion_cost, self.sentinel.config.max_cost):
+            if not math.isfinite(value) or value <= 0:
+                raise ValueError("Costs and budget must be finite and positive")
         self.metrics = RunMetrics()
         self._pending_tasks: Set[asyncio.Task] = set()
         self._pending_expansions = 0
@@ -52,7 +55,9 @@ class DemoOrchestrator:
         self.owner_note: str | None = None
 
     async def run(self, *, max_actions: int, log: Optional[LogCallback] = None) -> None:
-        while self.metrics.total_actions < max_actions:
+        if isinstance(max_actions, bool) or not isinstance(max_actions, int) or not 0 <= max_actions <= 100000:
+            raise ValueError("max_actions must be an integer in [0, 100000]")
+        while self._scheduled_actions < max_actions:
             sentinel_outcome = self.sentinel.inspect(self.engine, self.metrics)
             if log and sentinel_outcome.triggered_rules:
                 for rule in sentinel_outcome.triggered_rules:
@@ -66,13 +71,16 @@ class DemoOrchestrator:
                     continue
                 break
 
+            remaining_budget = self.sentinel.config.max_cost - self.metrics.total_cost - self.reserved_cost
             allow_expansions = (
                 sentinel_outcome.allow_expansions
+                and self.parameters.expansion_cost <= remaining_budget
                 and not self.owner_controls.pause_all
                 and not self.owner_controls.pause_expansions
             )
             allow_evaluations = (
                 sentinel_outcome.allow_evaluations
+                and self.parameters.evaluation_cost <= remaining_budget
                 and not self.owner_controls.pause_all
                 and not self.owner_controls.pause_evaluations
             )
@@ -104,23 +112,26 @@ class DemoOrchestrator:
                 break
 
         if self._pending_tasks:
-            await asyncio.wait(self._pending_tasks)
+            await asyncio.gather(*self._pending_tasks)
+            self._pending_tasks.clear()
 
         self.owner_note = self.owner_controls.describe(
             consumed_actions=self._scheduled_actions,
             cap_triggered=self._owner_cap_triggered,
         )
 
+    @property
+    def reserved_cost(self) -> float:
+        return self._pending_expansions * self.parameters.expansion_cost + self._pending_evaluations * self.parameters.evaluation_cost
+
     def _schedule_action(self, decision: EngineAction, log: Optional[LogCallback]) -> Optional[asyncio.Task]:
         if decision.action is ActionType.EXPAND:
             self._pending_expansions += 1
             task = self._loop.create_task(self._handle_expansion(decision.target_agent_id, log))
-            task.add_done_callback(self._pending_tasks.discard)
             return task
         if decision.action is ActionType.EVALUATE:
             self._pending_evaluations += 1
             task = self._loop.create_task(self._handle_evaluation(decision.target_agent_id, log))
-            task.add_done_callback(self._pending_tasks.discard)
             return task
         return None
 

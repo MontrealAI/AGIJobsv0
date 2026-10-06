@@ -139,6 +139,8 @@ def load_config(path: Path, overrides: Iterable[Tuple[str, Any]] | None = None) 
     except json.JSONDecodeError as exc:
         raise ConfigError(f"Failed to parse configuration: {exc}") from exc
 
+    if not isinstance(raw_config, dict):
+        raise ConfigError("Configuration must be a JSON object.")
     if overrides:
         raw_config = _apply_overrides(raw_config, overrides)
 

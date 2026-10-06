@@ -4,6 +4,7 @@ The update completes the research-console and bounded benchmark-analysis workflo
 
 ## Corrected behavior
 
+- Apply admission-count and queued-cost bounds to the preserved asynchronous simulator; propagate task failures and validate its action limit.
 - Reserve pending evaluation and expansion costs before scheduling; enforce the budget on completed plus queued work.
 - Apply the configured budget and owner limits to the greedy baseline as well as HGM.
 - Include pending expansions in the agent ceiling; preserve unfinished tasks and cost reservations at the horizon.

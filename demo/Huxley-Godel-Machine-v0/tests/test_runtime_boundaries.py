@@ -58,3 +58,27 @@ def test_thermostat_ignores_undefined_initial_ratios():
         thermostat.observe(EconomicSnapshot(step, 0, 0, 0, 0, math.inf, [], None))
     assert engine.tau == 1
     assert engine.max_evaluation_concurrency == 1
+
+@pytest.mark.parametrize('budget,actions', [(1, 20), (50, 50), (1000, 3)])
+def test_preserved_async_simulator_reserves_cost_and_caps_admitted_actions(budget, actions):
+    import asyncio
+    from hgm_demo.engine import HGMEngine as LegacyEngine
+    from hgm_demo.orchestrator import DemoOrchestrator
+    from hgm_demo.sentinel import Sentinel as LegacySentinel, SentinelConfig
+    async def scenario():
+        engine = LegacyEngine(tau=1, alpha=1.25, epsilon=.05, rng=random.Random(1))
+        engine.register_root(quality=.58)
+        orchestrator = DemoOrchestrator(engine, sentinel=LegacySentinel(SentinelConfig(max_cost=budget)), rng=random.Random(2))
+        await orchestrator.run(max_actions=actions)
+        assert orchestrator.metrics.total_cost <= budget
+        assert orchestrator.metrics.total_actions <= actions
+        assert orchestrator.reserved_cost == 0
+    asyncio.run(scenario())
+
+def test_alternate_report_writer_serializes_undefined_ratios(tmp_path):
+    from hgm_v0_demo.demo_runner import run_hgm_demo, save_overall_report
+    config = load_config(CONFIG, overrides=[('owner_controls.pause_all', True)])
+    summary, timeline, _ = run_hgm_demo(config, random.Random(7), tmp_path)
+    assert summary.cost == 0
+    for file in [timeline, save_overall_report(summary, summary, tmp_path)]:
+        json.loads(file.read_text(), parse_constant=lambda value: pytest.fail(value))

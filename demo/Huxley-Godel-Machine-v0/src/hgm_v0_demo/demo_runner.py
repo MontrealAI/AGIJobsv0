@@ -7,7 +7,7 @@ import math
 import random
 import os
 from dataclasses import asdict
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Sequence, Tuple
 
@@ -171,11 +171,21 @@ def run_baseline(config: DemoConfig, rng: random.Random) -> RunSummary:
     return simulator.run()
 
 
+def _json_payload(value):
+    if isinstance(value, float) and not math.isfinite(value):
+        return None
+    if isinstance(value, dict):
+        return {key: _json_payload(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_json_payload(item) for item in value]
+    return value
+
+
 def write_timeline(snapshots: List[EconomicSnapshot], output_dir: Path) -> Path:
     output_dir.mkdir(parents=True, exist_ok=True)
     payload: List[Dict[str, Any]] = [asdict(snapshot) for snapshot in snapshots]
     path = output_dir / "timeline.json"
-    path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    path.write_text(json.dumps(_json_payload(payload), indent=2, allow_nan=False), encoding="utf-8")
     return path
 
 
@@ -235,14 +245,17 @@ def save_overall_report(hgm: RunSummary, baseline: RunSummary, output_dir: Path)
     delta_profit = hgm.profit - baseline.profit
     delta_roi = (0.0 if math.isinf(baseline.roi) else hgm.roi - baseline.roi)
     payload = {
-        "generated_at": datetime.utcnow().isoformat() + "Z",
+        "evidence_class": "seeded-simulation",
+        "production_approved": False,
+        "settlement_approved": False,
+        "generated_at": datetime.now(timezone.utc).isoformat(),
         "hgm": asdict(hgm),
         "baseline": asdict(baseline),
         "profit_lift": delta_profit,
         "roi_delta": delta_roi,
     }
     path = output_dir / "summary.json"
-    path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    path.write_text(json.dumps(_json_payload(payload), indent=2, allow_nan=False), encoding="utf-8")
     return path
 
 
