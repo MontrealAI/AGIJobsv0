@@ -2,6 +2,7 @@ import { spawn } from 'child_process';
 import { promises as fs } from 'fs';
 import path from 'path';
 import readline from 'readline';
+import { deployOneClick } from './oneclick-deploy';
 
 interface DeployConfig {
   network?: string;
@@ -144,6 +145,8 @@ async function main() {
   const envFile = (args.env as string) ?? path.join('deployment-config', 'oneclick.env');
   const composeFile = (args.composeFile as string) ?? 'compose.yaml';
   const deploymentOutput = (args['deployment-output'] as string) ?? config.output ?? path.join('deployment-config', 'latest-deployment.json');
+  if (path.resolve(deploymentOutput) !== path.resolve(config.output ?? path.join('deployment-config', 'latest-deployment.json')))
+    throw new Error('Wizard deployment output must match the reviewed config output');
 
   const autoYes = Boolean(resolveBool(args.yes) ?? resolveBool(args['non-interactive']));
   const forceCompose = Boolean(resolveBool(args.compose));
@@ -167,11 +170,11 @@ async function main() {
     return;
   }
 
-  await runCommand('npm', ['run', 'deploy:oneclick', '--', '--config', path.resolve(configPath), '--network', network, '--yes']);
-
-  const envArgs = ['run', 'deploy:env', '--', '--input', path.resolve(deploymentOutput), '--template', path.resolve(envFile), '--output', path.resolve(envFile), '--force'];
-  console.log('📝 Updating environment file with deployed addresses');
-  await runCommand('npm', envArgs);
+  await deployOneClick({ config: path.resolve(configPath), network, yes: true }, async (snapshot) => {
+    const envArgs = ['run', 'deploy:env', '--', '--input', snapshot, '--template', path.resolve(envFile), '--output', path.resolve(envFile), '--force'];
+    console.log('📝 Updating environment file with deployed addresses');
+    await runCommand('npm', envArgs);
+  });
 
   let startCompose = forceCompose;
   if (!forceCompose && !skipCompose) {

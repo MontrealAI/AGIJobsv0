@@ -5,7 +5,12 @@ import readline from 'readline';
 
 import parseDuration from '../utils/parseDuration';
 import { ethers } from 'ethers';
-const { reserveDeploymentOutput } = require('./lib/reserved-output.cjs');
+import { loadTokenConfig } from '../config';
+const {
+  reserveDeploymentOutput,
+  withAddressbookSnapshot,
+} = require('./lib/reserved-output.cjs');
+const { validateOneclickConfig } = require('./lib/oneclick-config.cjs');
 
 interface EconConfig {
   feePct?: number;
@@ -149,8 +154,10 @@ async function runHardhat(
   });
 }
 
-async function main() {
-  const args = parseArgs();
+export async function deployOneClick(
+  args: Args,
+  consumeAddresses?: (snapshot: string) => Promise<void>
+) {
   const configPath =
     (args.config as string) ??
     path.join('deployment-config', 'deployer.sample.json');
@@ -161,6 +168,7 @@ async function main() {
     config.network ??
     process.env.HARDHAT_NETWORK ??
     'sepolia';
+  validateOneclickConfig(config, loadTokenConfig({ network }).config.decimals);
   const configuredGovernance = ensureAddress(config.governance, 'governance', {
     optional: true,
     allowZero: true,
@@ -216,17 +224,12 @@ async function main() {
     ONECLICK_BURN_PCT: String(burnPct),
     ONECLICK_MIN_STAKE: minStake,
     ONECLICK_MIN_PLATFORM_STAKE: minPlatformStake,
+    ONECLICK_APPEAL_FEE: appealFee,
+    ONECLICK_DISPUTE_WINDOW: disputeWindow.toString(),
   };
 
   if (governance) {
     deployEnv.ONECLICK_GOVERNANCE = governance;
-  }
-
-  if (appealFee && appealFee !== '0') {
-    deployEnv.ONECLICK_APPEAL_FEE = appealFee;
-  }
-  if (disputeWindow > 0) {
-    deployEnv.ONECLICK_DISPUTE_WINDOW = disputeWindow.toString();
   }
 
   const addressesPath = path.join('docs', 'deployment-addresses.json');
@@ -250,33 +253,42 @@ async function main() {
       deployEnv
     );
 
-    if (reservedOutput) reservedOutput.copyFrom(addressesPath);
-    else await fs.copyFile(addressesPath, outputPath);
+    const bytes = reservedOutput
+      ? reservedOutput.copyFrom(addressesPath)
+      : await fs.readFile(addressesPath);
+    if (!reservedOutput) await fs.writeFile(outputPath, bytes);
+    console.log(`ℹ️  Deployment addresses copied to ${outputPath}`);
+
+    await withAddressbookSnapshot(bytes, async (snapshot: string) => {
+      reservedOutput?.verify();
+      await runHardhat(
+        [
+          'run',
+          '--no-compile',
+          '--network',
+          network,
+          path.join('scripts', 'v2', 'apply-secure-defaults.ts'),
+        ],
+        {
+          ONECLICK_CONFIG: path.resolve(configPath),
+          ONECLICK_ADDRESSES: snapshot,
+        }
+      );
+      reservedOutput?.verify();
+      if (consumeAddresses) await consumeAddresses(snapshot);
+      reservedOutput?.verify();
+    });
   } finally {
     reservedOutput?.close();
   }
-  console.log(`ℹ️  Deployment addresses copied to ${outputPath}`);
-
-  await runHardhat(
-    [
-      'run',
-      '--no-compile',
-      '--network',
-      network,
-      path.join('scripts', 'v2', 'apply-secure-defaults.ts'),
-    ],
-    {
-      ONECLICK_CONFIG_PATH: path.resolve(configPath),
-      ONECLICK_ADDRESSES_PATH: addressesPath,
-    }
-  );
 
   console.log(
     '✅ Contracts deployed and secured. Update your environment variables with the new addresses.'
   );
 }
 
-main().catch((error) => {
-  console.error(error);
-  process.exitCode = 1;
-});
+if (require.main === module)
+  deployOneClick(parseArgs()).catch((error) => {
+    console.error(error);
+    process.exitCode = 1;
+  });

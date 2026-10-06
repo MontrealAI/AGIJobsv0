@@ -248,6 +248,33 @@ test('verification validates deferred inputs even after all related artifacts ar
   reseal(result.out, report);
   assert.throws(() => verifyReport(result.out));
 });
+test('workload goals obey the live adapter contract, including deferred evidence', async (t) => {
+  for (const goal of [undefined, null, false, 7, '', '  \n ', 'x'.repeat(2001)])
+    assert.throws(() => validateInput({ ...workloads.solaris, goal }), /goal/);
+  validateInput({ ...workloads.solaris, goal: 'x'.repeat(2000) });
+  const result = await run(options(t, ['--review-capacity', '0']));
+  const changed = clone(workloads),
+    report = clone(result.report);
+  delete changed.solaris.goal;
+  rewrite(result.out, 'workloads.json', changed);
+  report.workloadSha256 = s.sha256(
+    fs.readFileSync(path.join(result.out, 'workloads.json'))
+  );
+  const job = report.jobs.find((entry) => entry.key === 'solaris');
+  rewrite(result.out, job.files.input, changed.solaris);
+  const { taskFor } = require('../lib/mission.cjs');
+  rewrite(
+    result.out,
+    job.files.task,
+    taskFor(
+      scenario.nations.find((nation) => nation.wallet === job.key),
+      changed.solaris,
+      report.workerOrigin
+    )
+  );
+  reseal(result.out, report);
+  assert.throws(() => verifyReport(result.out), /goal/);
+});
 test('rejected candidates produce retained evidence and exit failure', async (t) => {
   const result = await run(options(t, ['--inject-error']));
   assert.equal(result.exitCode, 1);
@@ -582,6 +609,87 @@ test('mainnet config hash, governance and fresh output are mandatory', (t) => {
   fs.appendFileSync(config, ' ');
   assert.throws(() => mainnet.parse(args), /digest/);
 });
+test('mainnet validates the selected config economics before accepting execution', (t) => {
+  const dir = temp(t),
+    config = path.join(dir, 'deploy.json'),
+    env = path.join(dir, 'operator.env');
+  fs.writeFileSync(env, '# fixture');
+  const base = {
+    network: 'mainnet',
+    governance: '0x' + '1'.repeat(40),
+    econ: { treasury: '0x' + '2'.repeat(40) },
+    output: path.join(dir, 'addresses.json'),
+  };
+  const check = (value) => {
+    rewrite(dir, 'deploy.json', value);
+    return mainnet.parse([
+      '--execute',
+      '--config',
+      config,
+      '--config-sha256',
+      s.sha256(fs.readFileSync(config)),
+      '--env',
+      env,
+      '--ticket',
+      path.join(dir, 'ticket.md'),
+    ]);
+  };
+  const valid = clone(base);
+  Object.assign(valid.econ, {
+    feePct: 100,
+    burnPct: 0,
+    minStake: '0.000000000000000001',
+    jobStake: '500',
+    commitWindow: '1d',
+    revealWindow: '1h 30m',
+    disputeWindow: 0,
+    employerSlashPct: 10,
+    treasurySlashPct: 80,
+    validatorSlashRewardPct: 10,
+  });
+  valid.secureDefaults = {
+    pauseOnLaunch: true,
+    maxJobRewardAgia: 25,
+    maxJobDurationSeconds: 86400,
+    validatorCommitWindowSeconds: 60,
+    validatorRevealWindowSeconds: 60,
+  };
+  assert.equal(check(valid).execute, true);
+  for (const [section, key, value] of [
+    ['econ', 'feePct', 101],
+    ['econ', 'feePct', 0.5],
+    ['econ', 'burnPct', -1],
+    ['econ', 'feePct', '5'],
+    ['econ', 'minStake', '-1'],
+    ['econ', 'appealFee', '1e3'],
+    ['econ', 'minPlatformStake', true],
+    ['econ', 'minStake', '0.0000000000000000001'],
+    ['econ', 'jobStake', '79228162515'],
+    ['econ', 'appealFee', '9'.repeat(80)],
+    ['econ', 'commitWindow', '-1d'],
+    ['econ', 'revealWindow', '1d junk'],
+    ['econ', 'disputeWindow', '0.1s'],
+    ['econ', 'commitWindow', 0],
+    ['econ', 'disputeWindow', Number.MAX_SAFE_INTEGER + 1],
+    ['econ', 'employerSlashPct', 1],
+    ['econ', 'validatorSlashRewardPct', 1],
+    ['secureDefaults', 'pauseOnLaunch', 'false'],
+    ['secureDefaults', 'validatorCommitWindowSeconds', 0],
+    ['secureDefaults', 'maxJobDurationSeconds', '1d'],
+    ['secureDefaults', 'maxJobRewardAgia', -1],
+    ['secureDefaults', 'maxJobRewardAgia', true],
+    ['secureDefaults', 'unknown', 1],
+  ]) {
+    const valueConfig = clone(base);
+    valueConfig[section] = { ...valueConfig[section], [key]: value };
+    assert.throws(
+      () => check(valueConfig),
+      undefined,
+      `${section}.${key}=${value}`
+    );
+  }
+  assert.equal(fs.existsSync(base.output), false);
+});
 test('change-ticket publication never overwrites competing evidence', (t) => {
   const output = path.join(temp(t), 'ticket.md');
   let staged;
@@ -658,6 +766,41 @@ test('replaced addressbook is never overwritten and failed reservation stays vis
   reserveDeploymentOutput(failed).close();
   assert.equal(fs.statSync(failed).size, 0);
   assert.throws(() => reserveDeploymentOutput(failed), /EEXIST/);
+});
+test('addressbook consumers use protected produced bytes through replacement and failure', async (t) => {
+  const {
+    reserveDeploymentOutput,
+    withAddressbookSnapshot,
+  } = require('../../../scripts/v2/lib/reserved-output.cjs');
+  const dir = temp(t),
+    output = path.join(dir, 'addresses.json'),
+    source = path.join(dir, 'source.json');
+  fs.writeFileSync(source, '{"deployed":"original"}');
+  const reservation = reserveDeploymentOutput(output);
+  let snapshot;
+  try {
+    const bytes = reservation.copyFrom(source);
+    await assert.rejects(
+      withAddressbookSnapshot(bytes, async (file) => {
+        snapshot = file;
+        assert.equal(fs.statSync(file).mode & 0o777, 0o400);
+        assert.equal(fs.statSync(path.dirname(file)).mode & 0o777, 0o500);
+        fs.writeFileSync(output, '{"deployed":"changed"}');
+        assert.throws(() => reservation.verify(), /contents changed/);
+        fs.unlinkSync(output);
+        fs.writeFileSync(output, '{"deployed":"replaced"}');
+        assert.throws(() => reservation.verify(), /replaced/);
+        await Promise.resolve();
+        assert.equal(fs.readFileSync(file, 'utf8'), '{"deployed":"original"}');
+        throw new Error('consumer failed');
+      }),
+      /consumer failed/
+    );
+  } finally {
+    reservation.close();
+  }
+  assert.equal(fs.existsSync(path.dirname(snapshot)), false);
+  assert.equal(fs.readFileSync(output, 'utf8'), '{"deployed":"replaced"}');
 });
 test('mainnet wizard and child keep reviewed bytes when the original config changes', (t) => {
   const config = path.join(temp(t), 'config.json'),

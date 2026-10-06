@@ -12,6 +12,12 @@ function amount(value) {
 }
 function validateInput(input) {
   assert.ok(
+    typeof input.goal === 'string' &&
+      input.goal.trim().length > 0 &&
+      input.goal.length <= 2000,
+    'Workload goal must be a nonempty string of at most 2000 characters'
+  );
+  assert.ok(
     Array.isArray(input.rows) &&
       input.rows.length > 0 &&
       input.rows.length <= 1000,

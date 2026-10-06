@@ -4,6 +4,9 @@ const path = require('node:path');
 const os = require('node:os');
 const { spawnSync } = require('node:child_process');
 const { ROOT, sha256 } = require('./scenario.cjs');
+const {
+  validateOneclickConfig,
+} = require('../../../scripts/v2/lib/oneclick-config.cjs');
 const PLAN = `Omega mainnet preparation — no commands executed, no RPC contacted.
 1. Complete ui/operator-playbook.md commissioning gates with a separate deployment signer.
 2. Review deployment-config/mainnet.json and an explicit deployer config, governance,
@@ -63,6 +66,10 @@ function parse(argv) {
     if (bytes.length > 1024 * 1024 || sha256(bytes) !== o['config-sha256'])
       throw new Error('Deployment config differs from the reviewed digest');
     const config = JSON.parse(bytes);
+    validateOneclickConfig(
+      config,
+      require('../../../config/agialpha.mainnet.json').decimals
+    );
     if (config.network !== 'mainnet')
       throw new Error('Deployment config must explicitly select mainnet');
     for (const [label, address] of [
