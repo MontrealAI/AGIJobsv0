@@ -540,6 +540,16 @@ test('mainnet config hash, governance and fresh output are mandatory', (t) => {
   ];
   assert.equal(mainnet.parse(args).execute, true);
   assert.throws(
+    () => mainnet.parse([...args, '--env', config]),
+    /must be distinct files/
+  );
+  const hardlink = path.join(dir, 'config-hardlink.env');
+  fs.linkSync(config, hardlink);
+  assert.throws(
+    () => mainnet.parse([...args, '--env', hardlink]),
+    /must be distinct files/
+  );
+  assert.throws(
     () => mainnet.parse([...args, '--ticket', value.output]),
     /must be distinct/
   );
@@ -555,6 +565,10 @@ test('mainnet config hash, governance and fresh output are mandatory', (t) => {
   if (process.platform !== 'win32') {
     const alias = path.join(dir, 'alias');
     fs.symlinkSync(dir, alias, 'dir');
+    assert.throws(
+      () => mainnet.parse([...args, '--env', path.join(alias, 'deploy.json')]),
+      /must be distinct files/
+    );
     assert.throws(
       () =>
         mainnet.parse([

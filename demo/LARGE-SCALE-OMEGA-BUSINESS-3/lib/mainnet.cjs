@@ -88,8 +88,17 @@ function parse(argv) {
       throw new Error(
         'Change-ticket and deployment addressbook paths must be distinct'
       );
-    if (!fs.statSync(o.env).isFile())
+    const envStat = fs.statSync(o.env),
+      configStat = fs.statSync(o.config);
+    if (!envStat.isFile())
       throw new Error('An existing operator env file is required');
+    if (
+      canonicalOutput(o.config) === canonicalOutput(o.env) ||
+      (configStat.dev === envStat.dev && configStat.ino === envStat.ino)
+    )
+      throw new Error(
+        'Reviewed config and writable operator env must be distinct files'
+      );
     o.output = config.output;
     o.governance = config.governance;
   }

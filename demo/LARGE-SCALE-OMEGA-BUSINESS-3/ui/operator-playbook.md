@@ -104,3 +104,5 @@ This route requires the configured governance address to equal the account deriv
 The mainnet deployment child atomically reserves the fresh addressbook path before its first transaction and writes through the held file descriptor. An existing or competing output is rejected. A failed deployment retains its reservation, possibly empty, alongside any original receipts in `docs/deployment-addresses.json`; an empty file is not a successful addressbook. Reconcile the chain and receipts before any retry. Never remove another run's output to make a retry pass.
 
 The change ticket and addressbook must resolve to distinct paths, including through existing directory symlinks. Tickets are generated in a private staging directory and published exclusively; a competing file is never overwritten. If publication fails, the error identifies the retained staging file for recovery.
+
+The reviewed JSON config and writable operator env must also be distinct files. Preflight rejects identical paths, canonical symlink aliases and hard links, because the wizard updates the env after deployment.
