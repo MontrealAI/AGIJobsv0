@@ -52,8 +52,6 @@ jobs:
             nodejs.org:443
             pypi.org:443
             files.pythonhosted.org:443
-            download.cypress.io:443
-            staticcdn.cypress.io:443
 
       - name: Verify runner hardening is active
         run: |
