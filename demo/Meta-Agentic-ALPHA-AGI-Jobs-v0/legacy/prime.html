@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Meta-Agentic α-AGI Jobs Prime Demo Dashboard</title>
+    <script type="module" src="legacy/prime.mjs"></script>
+    <style>
+      body {
+        font-family: 'Space Grotesk', sans-serif;
+        background: radial-gradient(circle at top, #0b1a2a, #030712);
+        color: #f5f7ff;
+        margin: 0;
+        padding: 2rem;
+      }
+      header {
+        text-align: center;
+        margin-bottom: 2rem;
+      }
+      h1 {
+        font-size: 2.5rem;
+        margin-bottom: 0.5rem;
+      }
+      .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 1rem;
+      }
+      .card {
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: 18px;
+        padding: 1.5rem;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+        backdrop-filter: blur(12px);
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 1rem;
+      }
+      th,
+      td {
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+      }
+      th {
+        text-align: left;
+        font-size: 0.85rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: rgba(245, 247, 255, 0.72);
+      }
+      .strategy-card {
+        background: linear-gradient(
+          135deg,
+          rgba(0, 255, 195, 0.2),
+          rgba(0, 125, 255, 0.25)
+        );
+        border-radius: 16px;
+        padding: 1.5rem;
+        margin-top: 1rem;
+      }
+      .footer {
+        margin-top: 2rem;
+        text-align: center;
+        font-size: 0.9rem;
+        color: rgba(245, 247, 255, 0.65);
+      }
+    </style>
+    <link rel="stylesheet" href="legacy/viewer.css" />
+  </head>
+  <body>
+    <aside role="note">
+      Preserved simulation: scores and execution results are configured
+      examples, not live provider, market or settlement evidence.
+      <a href="../">Open the current delivery workbench</a>.
+    </aside>
+    <header>
+      <h1>Meta-Agentic α-AGI Jobs Prime Demo</h1>
+      <p>
+        Empowering owners to command planet-scale intelligence autonomously.
+      </p>
+    </header>
+    <main id="main">
+      <section class="card">
+        <h2>Opportunity Pipeline</h2>
+        <table tabindex="0" aria-label="Scrollable recorded results">
+          <thead>
+            <tr>
+              <th>Domain</th>
+              <th>Description</th>
+              <th>Expected α</th>
+              <th>Risk Score</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Energy</td>
+              <td>
+                Energy domain shows 1 correlated anomalies with combined
+                magnitude 1.88
+              </td>
+              <td>1.88</td>
+              <td>1.82</td>
+            </tr>
+            <tr>
+              <td>Biotech</td>
+              <td>
+                Biotech domain shows 1 correlated anomalies with combined
+                magnitude 1.48
+              </td>
+              <td>1.48</td>
+              <td>2.43</td>
+            </tr>
+            <tr>
+              <td>Finance</td>
+              <td>
+                Finance domain shows 1 correlated anomalies with combined
+                magnitude 0.87
+              </td>
+              <td>0.87</td>
+              <td>2.37</td>
+            </tr>
+            <tr>
+              <td>Supply_Chain</td>
+              <td>
+                Supply_Chain domain shows 2 correlated anomalies with combined
+                magnitude 3.31
+              </td>
+              <td>3.31</td>
+              <td>9.75</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+      <section class="card">
+        <h2>Autonomous Strategy Flow</h2>
+        <pre tabindex="0" class="mermaid">
+flowchart TD
+    A[Identify Opportunities] --&gt; B[Out-Learn Curriculum]
+    B --&gt; C[Out-Think Planner]
+    C --&gt; D[Out-Design Blueprint]
+    D --&gt; E[Out-Strategise Portfolio]
+    E --&gt; F[Out-Execute Autonomy]
+    F --&gt; F1{Energy Initiative}
+    F1 --&gt;|Actions| G1[Spawn orchestrator agents for energy; Deploy treasury plan with allocation 1.00; Register governance proposal via AGI Jobs timelock; Launch validator challenge-response monitors]
+    F --&gt; F2{Biotech Initiative}
+    F2 --&gt;|Actions| G2[Spawn orchestrator agents for biotech; Deploy treasury plan with allocation 1.00; Register governance proposal via AGI Jobs timelock; Launch validator challenge-response monitors]
+    F --&gt; F3{Finance Initiative}
+    F3 --&gt;|Actions| G3[Spawn orchestrator agents for finance; Deploy treasury plan with allocation 1.00; Register governance proposal via AGI Jobs timelock; Launch validator challenge-response monitors]
+    F --&gt; F4{Supply_Chain Initiative}
+    F4 --&gt;|Actions| G4[Spawn orchestrator agents for supply_chain; Deploy treasury plan with allocation 1.00; Register governance proposal via AGI Jobs timelock; Launch validator challenge-response monitors]</pre
+        >
+      </section>
+      <section class="strategy-card">
+        <h3>Energy Strategy</h3>
+        <p><strong>Priority:</strong> 1 — <strong>Allocation:</strong> 1.00</p>
+        <p>
+          <strong>Stop Conditions:</strong> Loss exceeds risk limit, Governance
+          council veto, External market shock detected
+        </p>
+      </section>
+      <section class="strategy-card">
+        <h3>Biotech Strategy</h3>
+        <p><strong>Priority:</strong> 2 — <strong>Allocation:</strong> 1.00</p>
+        <p>
+          <strong>Stop Conditions:</strong> Loss exceeds risk limit, Governance
+          council veto, External market shock detected
+        </p>
+      </section>
+      <section class="strategy-card">
+        <h3>Finance Strategy</h3>
+        <p><strong>Priority:</strong> 3 — <strong>Allocation:</strong> 1.00</p>
+        <p>
+          <strong>Stop Conditions:</strong> Loss exceeds risk limit, Governance
+          council veto, External market shock detected
+        </p>
+      </section>
+      <section class="strategy-card">
+        <h3>Supply_Chain Strategy</h3>
+        <p><strong>Priority:</strong> 4 — <strong>Allocation:</strong> 1.00</p>
+        <p>
+          <strong>Stop Conditions:</strong> Loss exceeds risk limit, Governance
+          council veto, External market shock detected
+        </p>
+      </section>
+    </main>
+    <footer class="footer">
+      Generated at 2026-10-06T17:03:19.802108+00:00. All controls adjustable via
+      the governance console.
+    </footer>
+  </body>
+</html>

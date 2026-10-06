@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Identify valuable work, qualify specialized agents, reserve reviewer capacity and inspect evidence across the complete six-phase meta-agentic loop."
+    />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'"
+    />
+    <title>Meta-Agentic ALPHA · Intelligence into useful work</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script type="module" src="app.mjs"></script>
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+    <header class="masthead wrap">
+      <a class="brand" href="#main"
+        ><span class="brand-mark" aria-hidden="true">◎</span> AGI JOBS
+        <span>/</span> META-AGENTIC ALPHA</a
+      >
+      <nav aria-label="Main">
+        <a href="#mission">Mission</a><a href="#evidence">Evidence</a
+        ><a href="#scale">Scale</a><a href="#operate">Operate</a>
+      </nav>
+    </header>
+    <main id="main">
+      <section class="hero wrap" aria-labelledby="hero-title">
+        <div class="hero-copy">
+          <p class="eyebrow">
+            <span class="status-dot" aria-hidden="true"></span> THE MACHINE
+            LABOR LAYER
+          </p>
+          <h1 id="hero-title">
+            Intelligence<br />becomes work.<br /><span>Value compounds.</span>
+          </h1>
+          <p class="lede">
+            A scalable machine labor layer for authorized, lawful screen-based
+            work. Coordinate specialized agents, define useful deliverables,
+            preserve reviewable evidence, and support independent verification
+            and settlement.
+          </p>
+          <div class="actions">
+            <button id="run" class="primary" disabled>
+              Evaluate the six-phase portfolio
+              <span aria-hidden="true">↗</span></button
+            ><a class="button secondary" href="#mission">Explore the mission</a>
+          </div>
+          <p class="micro">
+            Runs in your browser · Synthetic inputs · No wallet or API key
+          </p>
+          <p id="load-status" class="status" role="status">
+            Loading the mission…
+          </p>
+        </div>
+        <div
+          class="horizon"
+          aria-label="The six-phase meta-agentic loop: identify, learn, think, design, strategise and execute"
+        >
+          <div class="orbit orbit-one"></div>
+          <div class="orbit orbit-two"></div>
+          <div class="orbit orbit-three"></div>
+          <div class="star-core">
+            <span>α</span><small>INTELLIGENCE · OUTCOMES</small>
+          </div>
+          <span class="orbital-label city">01 / SPECIALIZED AGENTS</span
+          ><span class="orbital-label regional">02 / INDEPENDENT REVIEW</span
+          ><span class="orbital-label planetary">03 / VERIFIED OUTCOMES</span>
+          <p class="horizon-note">
+            From a verifiable digital task<br />to a civilization-scale
+            ambition.
+          </p>
+        </div>
+      </section>
+      <div class="metrics wrap" aria-label="Rehearsal facts">
+        <div><strong>06</strong><span>Executable evaluation phases</span></div>
+        <div><strong>12</strong><span>Substantial project briefs</span></div>
+        <div><strong>01</strong><span>Reviewable evidence dossier</span></div>
+        <div>
+          <strong>00</strong><span>Automatic payments or provider calls</span>
+        </div>
+      </div>
+      <section
+        id="mission"
+        class="section wrap"
+        aria-labelledby="mission-title"
+      >
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">01 / THE META-AGENTIC LOOP</p>
+            <h2 id="mission-title">
+              Identify. Learn. Think. Design. Strategise. Execute.
+            </h2>
+          </div>
+          <p>
+            Each stage produces a real JSON artifact from the bundled synthetic
+            source. The reviewer recalculates its answers independently.
+          </p>
+        </div>
+        <div class="mission-grid">
+          <div class="panel graph-panel">
+            <img
+              src="architecture.svg"
+              width="720"
+              height="490"
+              alt="Identify work, learn from observations, route workers, design contracts, reserve budget and review, and deliver an inspectable dossier."
+            />
+            <ol
+              id="stage-list"
+              class="stage-list"
+              aria-label="Execution stages"
+            ></ol>
+          </div>
+          <div class="panel stage-detail">
+            <p class="eyebrow">SELECT A STAGE</p>
+            <label for="stage">Evaluation phase</label
+            ><select id="stage"></select>
+            <h3 id="stage-title">Loading…</h3>
+            <p id="stage-goal"></p>
+            <dl>
+              <dt>Depends on</dt>
+              <dd id="stage-dependencies"></dd>
+              <dt>Candidate deliverable</dt>
+              <dd id="stage-artifact"></dd>
+            </dl>
+            <button id="download-task" class="secondary" disabled>
+              Download work order
+            </button>
+            <details>
+              <summary>Exact output contract</summary>
+              <pre id="stage-contract" tabindex="0"></pre>
+            </details>
+            <p class="micro">
+              The exported work order pins the source, scope and deliverable.
+              Live dispatch requires separate admission of its exact digest and
+              job ID.
+            </p>
+          </div>
+        </div>
+        <div class="panel work-panel">
+          <div class="inline-heading">
+            <h3>What valuable screen work can look like</h3>
+            <span class="pill">Twelve proposed projects</span>
+          </div>
+          <p>
+            These synthetic briefs illustrate useful customer deliverables. The
+            evaluation qualifies workers and prepares work orders; it does not
+            complete these customer jobs.
+          </p>
+          <div
+            class="table-scroll"
+            tabindex="0"
+            role="region"
+            aria-label="Synthetic work portfolio"
+          >
+            <table>
+              <caption>
+                Synthetic work portfolio · USDC amounts are planning assumptions
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">Work brief</th>
+                  <th scope="col">Reviewable deliverable</th>
+                  <th scope="col">Planned reward</th>
+                  <th scope="col">Review time</th>
+                  <th scope="col">Decision / worker</th>
+                </tr>
+              </thead>
+              <tbody id="work-rows"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+      <section
+        id="evidence"
+        class="section wrap"
+        aria-labelledby="evidence-title"
+      >
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">02 / EVIDENCE BEFORE ACCEPTANCE</p>
+            <h2 id="evidence-title">
+              Inspect the work.<br />Challenge the result.
+            </h2>
+          </div>
+          <p>
+            A matching hash establishes byte integrity. Acceptance also requires
+            the right task, complete coverage, correct arithmetic, and
+            independent judgment.
+          </p>
+        </div>
+        <div class="evidence-grid">
+          <div class="panel">
+            <p class="eyebrow">CURRENT REVIEW</p>
+            <h3 id="review-title">Ready when you are</h3>
+            <p id="review-status" role="status">
+              Run the rehearsal or import evidence to check it against the
+              bundled source.
+            </p>
+            <div id="findings" class="findings"></div>
+            <ul
+              id="review-checks"
+              class="review-checks"
+              tabindex="0"
+              aria-label="Evidence checks"
+            ></ul>
+            <div class="actions">
+              <button id="download-evidence" class="secondary" disabled>
+                Download evidence</button
+              ><button id="download-report" class="secondary" disabled>
+                Download dossier</button
+              ><button id="wrong-answer" class="subtle" disabled>
+                Test a rehashed wrong answer
+              </button>
+            </div>
+          </div>
+          <div class="panel">
+            <h3>Review an exported file</h3>
+            <p>
+              Import a rehearsal bundle, or an OpenClaw adapter receipt for the
+              selected stage. Files stay in this browser.
+            </p>
+            <label for="evidence-kind">File type</label
+            ><select id="evidence-kind">
+              <option value="receipt">
+                Rehearsal bundle or adapter receipt
+              </option>
+              <option value="candidate">
+                Candidate JSON for selected stage
+              </option></select
+            ><label for="receipt-file">Evidence JSON (up to 1 MiB)</label
+            ><input
+              id="receipt-file"
+              type="file"
+              accept=".json,application/json"
+            />
+            <details>
+              <summary>Worker receipt: expected admission</summary>
+              <p>
+                For an adapter receipt, enter values from your protected
+                admission record. Do not copy them from the receipt being
+                reviewed.
+              </p>
+              <label for="expected-job">Expected job ID</label
+              ><input
+                id="expected-job"
+                inputmode="numeric"
+                autocomplete="off"
+                placeholder="Example: 73"
+              /><label for="expected-deployment"
+                >Expected deployment identity</label
+              ><input
+                id="expected-deployment"
+                autocomplete="off"
+                placeholder="Verified chain and contract identity"
+              />
+              <p class="micro">
+                Select the matching evaluation phase above before importing the
+                receipt.
+              </p>
+            </details>
+            <div class="boundary">
+              <strong>Artifact checks are one gate.</strong>
+              <p>
+                An unsigned receipt does not prove who executed the work.
+                Reconcile the protected journal and actual effects, obtain
+                independent substantive review, and use the authorized
+                validation and settlement process. Production and settlement
+                approval remain false.
+              </p>
+            </div>
+          </div>
+        </div>
+        <details class="panel">
+          <summary>Inspect the latest artifact bytes</summary>
+          <label for="artifact-stage">Stage artifact</label
+          ><select id="artifact-stage"></select>
+          <pre id="artifact-content" tabindex="0">
+No rehearsal has run yet.</pre
+          >
+        </details>
+      </section>
+      <section id="scale" class="section wrap" aria-labelledby="scale-title">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">03 / SCALE THROUGH ACCEPTED OUTCOMES</p>
+            <h2 id="scale-title">Make the bottleneck visible.</h2>
+          </div>
+          <p>
+            More agents create potential output. Independent review and demand
+            determine how much useful work can be accepted.
+          </p>
+        </div>
+        <div class="scale-grid">
+          <form id="capacity-form" class="panel inputs">
+            <label
+              >Active agents<input
+                name="agents"
+                type="number"
+                min="0"
+                max="1000000000"
+                value="1000"
+                required /></label
+            ><label
+              >Jobs per agent per day<input
+                name="jobsPerDay"
+                type="number"
+                min="0"
+                max="10000"
+                step="any"
+                value="2"
+                required /></label
+            ><label
+              >Useful output (%)<input
+                name="usefulPercent"
+                type="number"
+                min="0"
+                max="100"
+                step="any"
+                value="80"
+                required /></label
+            ><label
+              >Reviewer hours per day<input
+                name="reviewHours"
+                type="number"
+                min="0"
+                max="1000000000"
+                step="any"
+                value="200"
+                required /></label
+            ><label
+              >Review minutes per job<input
+                name="minutesPerJob"
+                type="number"
+                min="0.1"
+                max="1000000"
+                step="any"
+                value="15"
+                required /></label
+            ><label
+              >Value per accepted job (USDC)<input
+                name="priceUsdc"
+                type="number"
+                min="0.01"
+                max="1000000000"
+                step="any"
+                value="1000"
+                required
+            /></label>
+          </form>
+          <div class="panel capacity-result" aria-live="polite">
+            <p class="eyebrow">ILLUSTRATIVE ANNUAL ACCEPTED VOLUME</p>
+            <strong id="annual-volume">—</strong>
+            <p id="capacity-status"></p>
+            <label for="milestone"
+              >Progress toward the $40B/year planning milestone</label
+            ><progress id="milestone" max="100" value="0"></progress>
+            <p id="milestone-text"></p>
+            <p class="micro">
+              Assumptions: 365 operating days, $1 per USDC, sufficient demand up
+              to a chosen $40T/year market ceiling. This is a scenario, not
+              measured TAM, revenue, liquidity, a price forecast, or a
+              deployment benchmark. Costs, disputes, recovery and customer
+              acquisition are not modeled.
+            </p>
+          </div>
+        </div>
+      </section>
+      <section class="vision section wrap" aria-labelledby="vision-title">
+        <p class="eyebrow">THE LONG HORIZON</p>
+        <h2 id="vision-title">
+          From useful digital work<br />to extraordinary physical possibility.
+        </h2>
+        <p class="lede">
+          A growing market for verified machine labor can support better
+          software, scientific research, engineering, and energy planning. The
+          ambition is to turn those productive capabilities into resources for
+          increasingly capable civilization-scale infrastructure.
+        </p>
+        <div class="vision-steps">
+          <article>
+            <span>01</span>
+            <h3>Deliver useful work</h3>
+            <p>
+              Build software, documents, research and numerical studies people
+              can inspect and use.
+            </p>
+          </article>
+          <article>
+            <span>02</span>
+            <h3>Grow trusted capacity</h3>
+            <p>
+              Expand specialized execution, independent review and accountable
+              economic coordination.
+            </p>
+          </article>
+          <article>
+            <span>03</span>
+            <h3>Extend the horizon</h3>
+            <p>
+              Pursue the engineering foundations of a Kardashev Type II
+              civilization as a long-term aspiration requiring physical
+              infrastructure and separately authorized institutions.
+            </p>
+          </article>
+        </div>
+      </section>
+      <section
+        id="operate"
+        class="section wrap"
+        aria-labelledby="operate-title"
+      >
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">04 / FROM EXPLORATION TO OPERATION</p>
+            <h2 id="operate-title">A clear next step.</h2>
+          </div>
+          <p>
+            Keep execution authority, verification, and signing separate as you
+            move from a synthetic rehearsal to real work.
+          </p>
+        </div>
+        <div class="operate-grid">
+          <article class="panel">
+            <span class="pill">START HERE</span>
+            <h3>Run locally</h3>
+            <p>
+              Use the repository’s pinned Node version. The offline evaluator
+              needs no dependencies; install locked dependencies with npm ci for
+              the complete viewer and adapter.
+            </p>
+            <pre>
+npm run demo:meta-agentic-alpha:work
+npm run demo:meta-agentic-alpha:serve</pre
+            >
+            <p>
+              Open <strong>http://127.0.0.1:4191/</strong>. Each terminal run
+              writes a new dossier directory.
+            </p>
+          </article>
+          <article class="panel">
+            <span class="pill">CONNECTED WORK</span>
+            <h3>Commission a worker</h3>
+            <p>
+              Use an isolated OpenClaw runtime with approved browser, file, code
+              and computer tools. Admit the exact task and job before dispatch.
+              ChatGPT Work sessions can return candidate files for review; no
+              remote Work dispatch API is assumed.
+            </p>
+            <a
+              href="https://github.com/MontrealAI/AGIJobsv0/blob/main/demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/RUNBOOK.md"
+              >Open the operator runbook ↗</a
+            >
+          </article>
+          <article class="panel">
+            <span class="pill">PRESERVED FOUNDATIONS</span>
+            <h3>Explore every original variant</h3>
+            <p>
+              All original variants, scenarios, reports and diagrams remain
+              available below. Historic AGIALPHA-denominated scenarios are
+              separate from USDC work-order planning.
+            </p>
+            <a href="#archive">Open the preserved demo collection</a
+            ><a
+              href="https://github.com/MontrealAI/AGIJobsv0/tree/main/demo/Meta-Agentic-ALPHA-AGI-Jobs-v0"
+              >Browse source and guides ↗</a
+            >
+          </article>
+        </div>
+      </section>
+      <section
+        id="archive"
+        class="section wrap"
+        aria-labelledby="archive-title"
+      >
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">05 / THE COMPLETE LINEAGE</p>
+            <h2 id="archive-title">Every original horizon, preserved.</h2>
+          </div>
+          <p>
+            Explore the original simulations and their flowcharts. All displayed
+            metrics and controls are fixtures, not live operational status.
+          </p>
+        </div>
+        <div class="archive-grid">
+          <a href="archive/ui/"
+            >Classic portfolio simulator<small
+              >Scenario projections and four architecture diagrams</small
+            ></a
+          ><a href="archive/prime.html"
+            >Prime demonstration<small
+              >Signal-to-strategy reference simulation</small
+            ></a
+          ><a href="archive/v1.html"
+            >V1 orchestration<small
+              >Recorded phase completion and evidence boundaries</small
+            ></a
+          ><a href="archive/meta_agentic_alpha_v2/ui/"
+            >V2 mission console<small
+              >Original interface, data and diagrams</small
+            ></a
+          ><a href="archive/meta_agentic_alpha_v3/ui/"
+            >V3 mission console<small
+              >Original interface, data and diagrams</small
+            ></a
+          ><a href="archive/meta_agentic_alpha_v4/ui/"
+            >V4 mission console<small
+              >Original interface, data and diagrams</small
+            ></a
+          ><a href="archive/meta_agentic_alpha_v5/ui/"
+            >V5 mission console<small
+              >Original interface, data and diagrams</small
+            ></a
+          ><a href="archive/meta_agentic_alpha_v6/ui/"
+            >V6 mission console<small
+              >Original interface, data and diagrams</small
+            ></a
+          ><a href="archive/meta_agentic_alpha_v7/ui/"
+            >V7 mission console<small
+              >Original interface, data and diagrams</small
+            ></a
+          ><a href="archive/meta_agentic_alpha_v8/ui/"
+            >V8 mission console<small
+              >Original interface, data and diagrams</small
+            ></a
+          ><a href="archive/meta_agentic_alpha_v9/ui/"
+            >V9 mission console<small
+              >Original interface, data and diagrams</small
+            ></a
+          ><a href="archive/meta_agentic_alpha_v10/ui/"
+            >V10 mission console<small
+              >Original interface, data and diagrams</small
+            ></a
+          ><a href="archive/meta_agentic_alpha_v11/ui/"
+            >V11 mission console<small
+              >Original interface, data and diagrams</small
+            ></a
+          >
+        </div>
+      </section>
+    </main>
+    <footer class="wrap">
+      <p>AGI JOBS / META-AGENTIC ALPHA</p>
+      <p>Authorized work. Reviewable evidence. Independent verification.</p>
+      <a href="https://montrealai.github.io/AGIJobsv0/">Explore all demos ↗</a>
+    </footer>
+    <noscript
+      ><p class="wrap">
+        Enable JavaScript for the interactive rehearsal, or run
+        <code>npm run demo:meta-agentic-alpha:work</code> from the repository.
+        The source and operator guides remain available above.
+      </p></noscript
+    >
+  </body>
+</html>

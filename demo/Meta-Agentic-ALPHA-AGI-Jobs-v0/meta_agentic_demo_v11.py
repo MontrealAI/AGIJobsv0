@@ -1,6 +1,7 @@
 import argparse
 import os
 import sys
+import shlex
 from pathlib import Path
 
 
@@ -92,8 +93,9 @@ def main(argv: list[str] | None = None) -> int:
 
     dashboard_dir = outcome.dashboard_path.parent
     print("\nOpen the Hypergrid Console (V11):")
-    print(f"   python -m http.server --directory {_format_path(dashboard_dir)} 9011")
-    print("   → Visit http://localhost:9011/index.html")
+    print("   From the repository root with locked Node dependencies installed:")
+    print(f"   npm run demo:meta-agentic-alpha:serve -- --record v11 {shlex.quote(str(outcome.dashboard_path.resolve()))}")
+    print("   → Open the loopback URL printed by the viewer; Ctrl+C to stop.")
     print(
         "\nAdjust parameters in meta_agentic_alpha_v11/config/scenario.yaml, rerun this CLI, "
         "and the hypergrid console updates automatically."

@@ -1,4 +1,4 @@
-name: demo-meta-agentic-alpha-agi-jobs (v7)
+name: Meta-Agentic ALPHA suite
 
 on:
   push:
@@ -8,21 +8,30 @@ on:
       - '.github/workflows/demo-meta-agentic-alpha-agi-jobs.yml'
       - 'requirements-python.txt'
       - 'orchestrator/**'
+      - 'apps/orchestrator/computerWork.ts'
+      - 'agent-gateway/agentEndpoint.ts'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'website/assets/diagram-source.mjs'
   pull_request:
     paths:
       - 'demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/**'
       - '.github/workflows/demo-meta-agentic-alpha-agi-jobs.yml'
       - 'requirements-python.txt'
       - 'orchestrator/**'
+      - 'apps/orchestrator/computerWork.ts'
+      - 'agent-gateway/agentEndpoint.ts'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'website/assets/diagram-source.mjs'
   workflow_dispatch:
 
 permissions:
   contents: read
-  actions: write
 
 concurrency:
   group: demo-meta-agentic-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   test:
@@ -37,6 +46,9 @@ jobs:
 
       - name: Checkout
         uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+
+        with:
+          persist-credentials: false
 
       - name: Set up Python
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
@@ -56,89 +68,17 @@ jobs:
         run: |
           pytest demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/tests -q
 
-      - name: Execute demo CLI
-        env:
-          META_AGENTIC_DEMO_TIMEOUT: '120'
-          PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1'
-        run: |
-          python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_demo.py --timeout 45
-
-      - name: Execute demo CLI V2
-        env:
-          META_AGENTIC_DEMO_V2_TIMEOUT: '180'
-          PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1'
-        run: |
-          python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_demo_v2.py --timeout 60
-
-      - name: Execute demo CLI V3
-        env:
-          META_AGENTIC_DEMO_V3_TIMEOUT: '210'
-          PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1'
-        run: |
-          python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_demo_v3.py --timeout 75
-
-      - name: Execute demo CLI V4
-        env:
-          META_AGENTIC_DEMO_V4_TIMEOUT: '240'
-          PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1'
-        run: |
-          python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_demo_v4.py --timeout 90
-
-      - name: Execute demo CLI V5
-        env:
-          META_AGENTIC_DEMO_V5_TIMEOUT: '260'
-          PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1'
-        run: |
-          python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_demo_v5.py --timeout 105
-
-      - name: Execute demo CLI V6
-        env:
-          META_AGENTIC_DEMO_V6_TIMEOUT: '300'
-          PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1'
-        run: |
-          python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_demo_v6.py --timeout 120
-
-      - name: Execute demo CLI V7
-        env:
-          META_AGENTIC_DEMO_V7_TIMEOUT: '330'
-          PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1'
-        run: |
-          python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_demo_v7.py --timeout 135
-
-      - name: Execute demo CLI V8
-        env:
-          META_AGENTIC_DEMO_V8_TIMEOUT: '360'
-          PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1'
-        run: |
-          python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_demo_v8.py --timeout 150
-
-      - name: Execute demo CLI V9
-        env:
-          META_AGENTIC_DEMO_V9_TIMEOUT: '390'
-          PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1'
-        run: |
-          python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_demo_v9.py --timeout 165
-
-      - name: Execute demo CLI V10
-        env:
-          META_AGENTIC_DEMO_V10_TIMEOUT: '420'
-          PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1'
-        run: |
-          python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_demo_v10.py --timeout 180
-
-      - name: Execute demo CLI V11
-        env:
-          META_AGENTIC_DEMO_V11_TIMEOUT: '450'
-          PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1'
-        run: |
-          python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_demo_v11.py --timeout 210
+      - name: Rehearse all twelve Python CLIs in isolation
+        run: python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/scripts/rehearse.py --out reports/meta-agentic-alpha/python-ci
 
       - name: Upload artefacts
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: meta-agentic-demo-artefacts
+          retention-days: 14
           path: |
+            reports/meta-agentic-alpha/python-ci/
             demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/storage/latest_run.json
             demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/storage/latest_run_v2.json
             demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/storage/latest_run_v3.json
@@ -178,3 +118,37 @@ jobs:
             demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_v9/ui/
             demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_v11/reports/generated/alpha_meta_singularity_masterplan.md
             demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_v11/ui/
+
+  workbench:
+    name: Verify delivery workbench and preserved dashboards
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+      - name: Install locked dependencies and browser
+        run: |
+          ./scripts/ci/npm-ci.sh
+          npx playwright install --with-deps chromium
+      - name: Verify projections, evidence and admitted adapter fixtures
+        run: |
+          npm run test:meta-agentic-alpha
+          npm run demo:meta-agentic-alpha:test
+          npm run demo:meta-agentic-alpha:work
+      - name: Verify complete browser experience
+        run: npm run demo:meta-agentic-alpha:qa
+      - name: Preserve browser and execution evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: meta-agentic-alpha-workbench-evidence
+          path: reports/meta-agentic-alpha/
+          retention-days: 14

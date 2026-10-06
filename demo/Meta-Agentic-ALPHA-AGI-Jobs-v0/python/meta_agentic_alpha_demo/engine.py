@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import math
 import os
 import shutil
 import time
@@ -222,10 +223,10 @@ def _build_plan(config: DemoConfiguration, attachments: Iterable[Attachment]) ->
 def _await_completion(run_id: str, timeout: float = 30.0, poll: float = 0.2) -> Any:
     from orchestrator.runner import get_status
 
-    deadline = time.time() + timeout
+    deadline = time.monotonic() + timeout
     status = get_status(run_id)
     while status.run.state not in {"succeeded", "failed"}:
-        if time.time() > deadline:
+        if time.monotonic() > deadline:
             raise TimeoutError(f"Run {run_id} did not complete within {timeout} seconds")
         time.sleep(poll)
         status = get_status(run_id)
@@ -245,6 +246,11 @@ def _write_summary(
     alpha_probability = min(0.999, max(0.0, success_steps / total_steps * 0.98 + 0.02))
     scoreboard_snapshot = get_scoreboard().snapshot()
     summary_payload = {
+        "evidenceClass": "orchestrator-rehearsal",
+        "estimatedAlphaProbabilityMeaning": "Configured completion score, not a measured probability of economic success",
+        "providerExecution": "not assessed",
+        "productionApproved": False,
+        "settlementApproved": False,
         "runId": status.run.id,
         "state": status.run.state,
         "completedSteps": success_steps,
@@ -265,6 +271,8 @@ def _write_summary(
 def run_demo(config: DemoConfiguration, *, timeout: float = 60.0) -> DemoOutcome:
     """Execute the configured Meta-Agentic demo end-to-end."""
 
+    if not math.isfinite(timeout) or timeout <= 0 or timeout > 3600:
+        raise ValueError("Timeout must be finite and between 0 and 3600 seconds")
     storage_paths = _ensure_directories(config.base_dir)
     attachments = _hydrate_attachments(config)
     onboarded_agents = _register_agents(config)
@@ -281,6 +289,8 @@ def run_demo(config: DemoConfiguration, *, timeout: float = 60.0) -> DemoOutcome
         plan,
         onboarded_agents,
     )
+    if status.run.state != "succeeded":
+        raise RuntimeError(f"Orchestration failed; inspect {summary_path}")
 
     outcome = DemoOutcome(
         run_id=run_info.id,

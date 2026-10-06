@@ -721,6 +721,20 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
     );
   }
   dashboardRoutes.push('experiments/omnisovereign/');
+  const { buildSite: buildMetaAgenticSite } = await import(
+    '../../demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/scripts/build-site.mjs'
+  );
+  fs.rmSync(path.join(output, 'experiments/meta-agentic-alpha'), {
+    recursive: true,
+    force: true,
+  });
+  const metaAgenticSite = await buildMetaAgenticSite(
+    path.join(output, 'experiments/meta-agentic-alpha')
+  );
+  dashboardRoutes.push('experiments/meta-agentic-alpha/');
+  const archiveRoutes = metaAgenticSite.archiveRoutes.map(
+    (route) => 'experiments/meta-agentic-alpha/' + route
+  );
   // Compile the same Studio shipped in the pnpm workspace, in explicit offline mode.
   const studio = path.join(root, 'demo/CULTURE-v0/apps/culture-studio');
   execFileSync(
@@ -775,6 +789,7 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
 
     cultureStudioRoute: 'experiments/culture/',
     dashboardRoutes,
+    archiveRoutes,
     experiences: Object.keys(experiences).length,
     sourceInspections: new Set(
       Object.values(experiences).flatMap((p) => p.steps.map((s) => s.source))
@@ -797,6 +812,7 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
   const routes = [
     '',
     ...dashboardRoutes,
+    ...archiveRoutes,
     'experiments/culture/',
     'experiments/one-box/',
     ...catalog.map((demo) => `demos/${demo.id}/`),

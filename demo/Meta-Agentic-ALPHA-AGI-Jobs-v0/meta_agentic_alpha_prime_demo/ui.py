@@ -8,7 +8,7 @@ from .orchestrator import ExecutionSummary
 
 
 def generate_html_dashboard(summary: ExecutionSummary) -> str:
-    """Generate a standalone HTML dashboard that non-technical owners can open."""
+    """Generate an offline report; the complete viewer supplies diagram rendering."""
     rows = []
     identify = summary.phase_outputs.identify
     if identify:
@@ -21,7 +21,7 @@ def generate_html_dashboard(summary: ExecutionSummary) -> str:
             )
     table_html = "\n".join(rows)
 
-    mermaid_block = f"<pre class='mermaid'>{escape(summary.mermaid_diagram)}</pre>"
+    mermaid_block = f"<pre tabindex='0' class='mermaid'>{escape(summary.mermaid_diagram)}</pre>"
 
     strategies_html = []
     strategies = summary.phase_outputs.strategise or []
@@ -39,12 +39,9 @@ def generate_html_dashboard(summary: ExecutionSummary) -> str:
 <html lang="en">
 <head>
   <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Meta-Agentic α-AGI Jobs Prime Demo Dashboard</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600&display=swap" rel="stylesheet" />
-  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
-  <script>mermaid.initialize({{ startOnLoad: true, theme: "forest" }});</script>
+  <script type="module" src="legacy/prime.mjs"></script>
   <style>
     body {{
       font-family: 'Space Grotesk', sans-serif;
@@ -102,16 +99,18 @@ def generate_html_dashboard(summary: ExecutionSummary) -> str:
       color: rgba(245, 247, 255, 0.65);
     }}
   </style>
+<link rel="stylesheet" href="legacy/viewer.css">
 </head>
 <body>
+  <aside role="note">Preserved simulation: scores and execution results are configured examples, not live provider, market or settlement evidence. <a href="../">Open the current delivery workbench</a>.</aside>
   <header>
     <h1>Meta-Agentic α-AGI Jobs Prime Demo</h1>
     <p>Empowering owners to command planet-scale intelligence autonomously.</p>
   </header>
-  <main>
+  <main id="main">
     <section class="card">
       <h2>Opportunity Pipeline</h2>
-      <table>
+      <table tabindex="0" aria-label="Scrollable recorded results">
         <thead>
           <tr>
             <th>Domain</th>
@@ -144,4 +143,3 @@ def save_dashboard_html(summary: ExecutionSummary, destination: str | Path) -> N
     path = Path(destination)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(generate_html_dashboard(summary), encoding="utf-8")
-

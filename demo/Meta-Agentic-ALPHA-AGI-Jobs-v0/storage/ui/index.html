@@ -4,19 +4,42 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Meta-Agentic α-AGI Jobs Demo V2 Command Console</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
     <link rel="stylesheet" href="styles.css" />
+    <style>
+      .fixture-notice {
+        padding: 1rem;
+        background: #21142f;
+        color: #f8f2ff;
+        border-bottom: 1px solid #ac87cb;
+        font: 16px/1.6 system-ui;
+      }
+      .fixture-notice a {
+        color: #e4c9ff;
+      }
+      svg {
+        max-width: 100%;
+        height: auto;
+      }
+      table {
+        max-width: 100%;
+      }
+      pre {
+        overflow: auto;
+      }
+    </style>
+    <link rel="stylesheet" href="../../legacy/viewer.css" />
   </head>
   <body>
+    <aside class="fixture-notice" role="note">
+      <strong>Preserved simulation.</strong> Values, controls, addresses and CI
+      statuses are configured examples, not live telemetry or execution
+      authority. <a href="../../../">Open the current delivery workbench</a>.
+    </aside>
     <header>
       <h1 data-field="scenario-title">Meta-Agentic α-AGI Jobs Demo V2</h1>
       <p class="lead" data-field="scenario-narrative">
-        Fully-governed, antifragile AGI Jobs orchestration that any non-technical owner can deploy with a single command.
+        Fully-governed, antifragile AGI Jobs orchestration that any
+        non-technical owner can deploy with a single command.
       </p>
       <div class="header-metrics">
         <div>
@@ -34,7 +57,7 @@
       </div>
     </header>
 
-    <main>
+    <main id="main">
       <section class="grid">
         <article class="card">
           <h2>Owner Controls</h2>
@@ -57,8 +80,12 @@
             </div>
           </dl>
           <p class="hint">
-            Use <code>python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/scripts/owner_controls.py</code> to adjust these levers with a single
-            command.
+            Use
+            <code
+              >python
+              demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/scripts/owner_controls.py</code
+            >
+            to adjust these levers with a single command.
           </p>
         </article>
 
@@ -102,7 +129,11 @@
 
       <section class="card">
         <h2>Phase Telemetry</h2>
-        <table class="phase-table">
+        <table
+          tabindex="0"
+          aria-label="Scrollable recorded results"
+          class="phase-table"
+        >
           <thead>
             <tr>
               <th>Phase</th>
@@ -118,26 +149,36 @@
 
       <section class="card">
         <h2>Alpha Timeline</h2>
-        <pre class="mermaid" data-field="timeline">gantt
+        <pre tabindex="0" class="mermaid" data-field="timeline">
+gantt
   dateFormat  X
   title Awaiting orchestration results
-</pre>
+</pre
+        >
       </section>
 
       <section class="card">
         <h2>Execution Artefacts</h2>
         <ul class="artefacts">
           <li>
-            <a data-link="summary" href="#" rel="noopener" target="_blank">Summary JSON</a>
+            <a data-link="summary" href="#" rel="noopener" target="_blank"
+              >Summary JSON</a
+            >
             <span>Canonical ledger of the latest autonomous run.</span>
           </li>
           <li>
-            <a data-link="report" href="#" rel="noopener" target="_blank">Alpha Masterplan</a>
+            <a data-link="report" href="#" rel="noopener" target="_blank"
+              >Alpha Masterplan</a
+            >
             <span>Investor-grade deck synthesised from live telemetry.</span>
           </li>
           <li>
-            <a data-link="dashboard" href="#" rel="noopener" target="_blank">Console Source</a>
-            <span>Static assets powering this non-technical control plane.</span>
+            <a data-link="dashboard" href="#" rel="noopener" target="_blank"
+              >Console Source</a
+            >
+            <span
+              >Static assets powering this non-technical control plane.</span
+            >
           </li>
         </ul>
       </section>
@@ -146,18 +187,19 @@
         <h2>Run Logs</h2>
         <details open>
           <summary>Latest orchestrator events</summary>
-          <pre data-field="run-logs">Awaiting orchestration output…</pre>
+          <pre tabindex="0" data-field="run-logs">
+Awaiting orchestration output…</pre
+          >
         </details>
       </section>
     </main>
 
     <footer>
       <p>
-        Engineered with <strong>AGI Jobs v0 (v2)</strong>. Deployable by any owner in minutes — no engineering team required.
+        Engineered with <strong>AGI Jobs v0 (v2)</strong>. Deployable by any
+        owner in minutes — no engineering team required.
       </p>
     </footer>
-
-    <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs"></script>
     <script type="module" src="dashboard.js"></script>
   </body>
 </html>

@@ -1,0 +1,59 @@
+/* Keep every archived table and diagram available at small viewport sizes. */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+main,
+section,
+article,
+.card,
+.panel,
+main > *,
+section > *,
+article > * {
+  min-width: 0;
+}
+body {
+  overflow-wrap: anywhere;
+}
+table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+}
+pre {
+  max-width: 100%;
+  overflow: auto;
+}
+svg {
+  max-width: 100%;
+  height: auto;
+}
+a {
+  color: #e4c9ff;
+}
+:focus-visible {
+  outline: 3px solid #f4d68b;
+  outline-offset: 3px;
+}
+@media (max-width: 600px) {
+  body {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  main,
+  section,
+  article {
+    max-width: 100%;
+  }
+  section,
+  .card {
+    padding: 1rem;
+  }
+  .metrics-grid,
+  .owner-grid,
+  .summary-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
