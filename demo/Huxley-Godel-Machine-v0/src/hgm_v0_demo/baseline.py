@@ -72,8 +72,15 @@ class GreedyBaselineSimulator:
         for step in range(1, self.total_steps + 1):
             if self.owner_controls.should_block_new_actions(self.actions):
                 break
+            # Reserve only the evaluation that can follow this expansion.
+            evaluation_reserve = (
+                self.evaluation_cost
+                if not self.owner_controls.pause_evaluations
+                and not self.owner_controls.should_block_new_actions(self.actions + 1)
+                else 0.0
+            )
             if (step % 6 == 0 and not self.owner_controls.pause_expansions
-                    and self.cost + self.expansion_cost + self.evaluation_cost <= self.max_budget):
+                    and self.cost + self.expansion_cost + evaluation_reserve <= self.max_budget):
                 self._expand_best()
                 self.actions += 1
             if (not self.owner_controls.pause_evaluations

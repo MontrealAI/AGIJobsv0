@@ -51,6 +51,26 @@ def test_cli_owner_cap_applies_to_both_strategies(tmp_path):
     report = run_simulation(config_path=CONFIG, output_dir=tmp_path, overrides=[('owner_controls.max_actions', 0)])
     assert report.hgm.summary.cost == report.baseline.summary.cost == 0
 
+@pytest.mark.parametrize('paused,budget,action_cap,expected_actions', [
+    (True, 32, None, 1),
+    (True, 50, None, 1),
+    (False, 124.5, 6, 6),
+])
+def test_baseline_reserves_only_permitted_followup_evaluations(paused, budget, action_cap, expected_actions):
+    from hgm_v0_demo.baseline import GreedyBaselineSimulator
+    from hgm_v0_demo.owner_controls import OwnerControls
+    baseline = GreedyBaselineSimulator(
+        rng=random.Random(7), root_quality=.5, mutation_std=.1,
+        success_value=100, evaluation_cost=18.5, expansion_cost=32,
+        total_steps=6, quality_bounds=(.1, .9), max_budget=budget,
+        owner_controls=OwnerControls(pause_evaluations=paused, max_actions=action_cap),
+    )
+    result = baseline.run()
+    assert len(baseline.agents) == 2
+    assert baseline.actions == expected_actions
+    assert result.cost == (32 if paused else 124.5)
+    assert result.successes + result.failures == (0 if paused else 5)
+
 def test_thermostat_ignores_undefined_initial_ratios():
     engine = HGMEngine(1, 1, .1, 5, 5, 5, random.Random(1))
     thermostat = Thermostat(engine, ThermostatConfig(2, 2, .1, .1, 1, 8, 1, .1, .1))
