@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, Tuple
 import copy
 import json
+import math
 
 
 class ConfigError(RuntimeError):
@@ -141,7 +142,65 @@ def load_config(path: Path, overrides: Iterable[Tuple[str, Any]] | None = None) 
     if overrides:
         raw_config = _apply_overrides(raw_config, overrides)
 
+    validate_config(raw_config)
     return DemoConfig(raw=raw_config)
 
 
 __all__ = ["ConfigError", "DemoConfig", "load_config"]
+
+
+def validate_config(raw: Any) -> None:
+    if not isinstance(raw, dict):
+        raise ConfigError("Configuration must be a JSON object.")
+    schema = {
+        "seed": (0, 2**32 - 1, True),
+        "simulation": {"total_steps": (1, 100000, True), "baseline_total_steps": (1, 100000, True), "report_interval": (1, 100000, True), "evaluation_latency": "latency", "expansion_latency": "latency"},
+        "economics": {"success_value": (0, 1e9, False), "evaluation_cost": (0.000001, 1e9, False), "expansion_cost": (0.000001, 1e9, False), "max_budget": (0.000001, 1e12, False), "target_roi": (0, 1e9, False), "min_roi": (0, 1e9, False)},
+        "hgm": {"tau": (0.05, 10, False), "alpha": (0.2, 5, False), "epsilon": (0.000001, 0.999999, False), "max_agents": (1, 1000, True), "max_expansions": (0, 100000, True), "max_evaluations": (0, 100000, True), "concurrency": {"evaluation": (1, 1000, True), "expansion": (1, 1000, True)}, "quality": {"root": (0, 1, False), "mutation_std": (0, 1, False), "min_quality": (0, 1, False), "max_quality": (0, 1, False)}},
+        "thermostat": {"roi_window": (1, 100000, True), "tau_adjustment": (0, 1, False), "alpha_adjustment": (0, 1, False), "concurrency_step": (1, 1000, True), "max_concurrency": (1, 1000, True), "min_concurrency": (1, 1000, True), "roi_upper_margin": (0, 100, False), "roi_lower_margin": (0, 1, False)},
+        "sentinel": {"max_failures_per_agent": (1, 100000, True), "roi_recovery_steps": (1, 100000, True), "hard_budget_ratio": (0.000001, 1, False)},
+        "baseline": {"mutation_std": (0, 1, False), "quality_floor": (0, 1, False), "quality_ceiling": (0, 1, False)},
+        "owner_controls": {"pause_all": "bool", "pause_expansions": "bool", "pause_evaluations": "bool", "max_actions": "cap", "note": "text"},
+    }
+    def check(value, rules, label):
+        if isinstance(rules, dict):
+            if not isinstance(value, dict):
+                raise ConfigError(f"{label} must be an object.")
+            for key, item in value.items():
+                if key not in rules:
+                    raise ConfigError(f"Unknown configuration key: {label}.{key}")
+                check(item, rules[key], f"{label}.{key}")
+        elif isinstance(rules, tuple):
+            low, high, integer = rules
+            if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or not low <= value <= high or (integer and not isinstance(value, int)):
+                raise ConfigError(f"{label} must be a finite {'integer' if integer else 'number'} in [{low}, {high}].")
+        elif rules == "latency":
+            values = value if isinstance(value, list) else [value]
+            if len(values) not in (1, 2):
+                raise ConfigError(f"{label} must contain one or two latency values.")
+            for item in values:
+                check(item, (0, 100000, False), label)
+            if len(values) == 2 and values[0] > values[1]:
+                raise ConfigError(f"{label} lower bound exceeds upper bound.")
+        elif rules == "bool" and not isinstance(value, bool):
+            raise ConfigError(f"{label} must be a JSON boolean.")
+        elif rules == "cap" and value is not None:
+            check(value, (0, 100000, True), label)
+        elif rules == "text" and value is not None and (not isinstance(value, str) or len(value) > 2000):
+            raise ConfigError(f"{label} must be text of at most 2000 characters.")
+    check(raw, schema, "config")
+    config = DemoConfig(raw)
+    for section in ("simulation", "economics", "hgm", "thermostat", "sentinel", "baseline"):
+        config.require_section(section)
+    for section, keys in {"simulation": ("total_steps",), "economics": ("max_budget",), "hgm": ("tau", "alpha")}.items():
+        for key in keys:
+            if key not in raw[section]:
+                raise ConfigError(f"Missing {section}.{key}")
+    q = raw["hgm"].get("quality", {})
+    if not q.get("min_quality", 0.01) <= q.get("root", 0.5) <= q.get("max_quality", 0.99):
+        raise ConfigError("Root quality must lie within ordered quality bounds.")
+    b, t = raw["baseline"], raw["thermostat"]
+    if b.get("quality_floor", 0.01) > b.get("quality_ceiling", 0.99):
+        raise ConfigError("Baseline quality bounds must be ordered.")
+    if t.get("min_concurrency", 1) > t.get("max_concurrency", 8):
+        raise ConfigError("Thermostat concurrency bounds must be ordered.")

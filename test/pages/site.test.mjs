@@ -323,12 +323,12 @@ test('nested demo documentation is discovered without misclassifying the impleme
   assert.equal(demo.kindId, 'code');
 });
 
-test('all eight published command decks retain their local assets and navigation', () => {
+test('all published command decks retain their local assets and navigation', () => {
   const output = path.join(root, 'build/pages');
   const manifest = JSON.parse(
     fs.readFileSync(path.join(output, 'catalog.json'))
   );
-  assert.equal(manifest.dashboardRoutes.length, 9);
+  assert.equal(manifest.dashboardRoutes.length, 10);
   for (const route of manifest.dashboardRoutes) {
     const document = new JSDOM(
       fs.readFileSync(path.join(output, route, 'index.html'), 'utf8')

@@ -34,14 +34,16 @@ class OwnerControls:
                     return True
                 if lowered in {"false", "0", "no", "off"}:
                     return False
-            return bool(value)
+            if isinstance(value, bool):
+                return value
+            raise ValueError(f"owner_controls.{key} must be a boolean")
 
         def _as_int(key: str) -> Optional[int]:
             value = payload.get(key)
             if value is None:
                 return None
-            if isinstance(value, bool):
-                return int(value)
+            if isinstance(value, bool) or not isinstance(value, (int, str)):
+                raise ValueError(f"owner_controls.{key} must be an integer or null")
             try:
                 parsed = int(value)
             except (TypeError, ValueError) as exc:

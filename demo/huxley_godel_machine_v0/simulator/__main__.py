@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Sequence
 
 from . import run_cli
+from hgm_v0_demo.config_loader import ConfigError
 
 
 _DEFAULT_CONFIG = Path("demo/Huxley-Godel-Machine-v0/config/hgm_demo_config.json")
@@ -55,16 +56,16 @@ def main(argv: Sequence[str] | None = None) -> None:
     parser = _build_parser()
     args = parser.parse_args(argv)
 
-    if args.ui_artifact is not None:
-        args.ui_artifact.parent.mkdir(parents=True, exist_ok=True)
-
-    run_cli(
-        config=args.config,
-        output_dir=args.output_dir,
-        seed=args.seed,
-        overrides=args.overrides,
-        ui_artifact=args.ui_artifact,
-    )
+    try:
+        run_cli(
+            config=args.config,
+            output_dir=args.output_dir,
+            seed=args.seed,
+            overrides=args.overrides,
+            ui_artifact=args.ui_artifact,
+        )
+    except (ConfigError, OSError) as exc:
+        parser.exit(2, f"Configuration/output error: {exc}\n")
 
 
 if __name__ == "__main__":

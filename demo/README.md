@@ -102,7 +102,7 @@ The generated section includes every tracked top-level directory and every neste
 | [Era-Of-Experience-v0](Era-Of-Experience-v0/README.md) | Code and guide | `demo:era-of-experience`, `demo:era-of-experience:audit`, `demo:era-of-experience:verify` |
 | [helios-omniversal-symphony](helios-omniversal-symphony/README.md) | Code and guide | Open the guide or source directory |
 | [huxley_godel_machine_v0](huxley_godel_machine_v0) | Supporting code / assets | Open the guide or source directory |
-| [Huxley-Godel-Machine-v0](Huxley-Godel-Machine-v0/README.md) | Code and guide | Open the guide or source directory |
+| [Huxley-Godel-Machine-v0](Huxley-Godel-Machine-v0/README.md) | Code and guide | `demo:hgm:qa`, `demo:hgm:worker` |
 | [ICONIC-OPERATING-SYSTEM-DEMO](ICONIC-OPERATING-SYSTEM-DEMO/README.md) | Design guide | Open the guide or source directory |
 | [imperatrix-celestia-operating-system](imperatrix-celestia-operating-system/README.md) | Code and guide | Open the guide or source directory |
 | [infinity-symphony](infinity-symphony/README.md) | Code and guide | Open the guide or source directory |

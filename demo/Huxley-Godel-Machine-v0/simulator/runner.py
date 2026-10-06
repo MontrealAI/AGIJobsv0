@@ -128,7 +128,7 @@ def _normalise_latency_range(value: Any, label: str) -> Tuple[float, float] | No
 
 def _write_json(path: Path, payload: Any) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    path.write_text(json.dumps(payload, indent=2, allow_nan=False), encoding="utf-8")
     return path
 
 
@@ -369,6 +369,8 @@ def _run_baseline(config: DemoConfig, seed: int, output_dir: Path) -> StrategyRe
     quality_cfg = hgm_cfg.get("quality", {})
     baseline_cfg = config.baseline
     simulator = GreedyBaselineSimulator(
+        max_budget=float(econ["max_budget"]),
+        owner_controls=OwnerControls.from_mapping(config.owner_controls),
         rng=random.Random(seed),
         root_quality=float(quality_cfg.get("root", 0.5)),
         mutation_std=float(baseline_cfg.get("mutation_std", 0.1)),
@@ -397,6 +399,13 @@ def _run_baseline(config: DemoConfig, seed: int, output_dir: Path) -> StrategyRe
 
 def _write_summary_json(path: Path, hgm: RunSummary, baseline: RunSummary) -> Path:
     payload = {
+        "schema_version": 1,
+        "evidence_class": "seeded-simulation",
+        "provider_calls": 0,
+        "chain_transactions": 0,
+        "production_approved": False,
+        "settlement_approved": False,
+        "roi_definition": "simulated gross value / completed cost; not net return",
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "hgm": {
             key: _safe_number(value) if isinstance(value, float) else value
@@ -408,7 +417,7 @@ def _write_summary_json(path: Path, hgm: RunSummary, baseline: RunSummary) -> Pa
         },
         "profit_lift": _safe_number(hgm.profit - baseline.profit),
         "roi_delta": _safe_number(
-            0.0 if math.isinf(baseline.roi) else hgm.roi - baseline.roi
+            float("nan") if not math.isfinite(baseline.roi) or not math.isfinite(hgm.roi) else hgm.roi - baseline.roi
         ),
     }
     return _write_json(path, payload)
@@ -416,6 +425,13 @@ def _write_summary_json(path: Path, hgm: RunSummary, baseline: RunSummary) -> Pa
 
 def _build_ui_artifact(path: Path, config_path: Path, seed: int, hgm: StrategyResult, baseline: StrategyResult, roi_chart_path: Path, summary_table: str) -> Path:
     payload = {
+        "schema_version": 1,
+        "evidence_class": "seeded-simulation",
+        "provider_calls": 0,
+        "chain_transactions": 0,
+        "production_approved": False,
+        "settlement_approved": False,
+        "roi_definition": "simulated gross value / completed cost; not net return",
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "seed": seed,
         "config_path": str(config_path),
@@ -473,9 +489,12 @@ def run_simulation(
 
     config = load_config(config_path, overrides=overrides or [])
     actual_seed = seed if seed is not None else config.seed
+    if isinstance(actual_seed, bool) or not isinstance(actual_seed, int) or not 0 <= actual_seed < 2**32:
+        raise ConfigError("Seed must be an integer in [0, 4294967295].")
 
     output_dir.mkdir(parents=True, exist_ok=True)
 
+    _write_json(output_dir / "effective_config.json", config.raw)
     hgm_result = _run_hgm(config, actual_seed, output_dir)
     baseline_result = _run_baseline(config, actual_seed + 1, output_dir)
 
@@ -545,7 +564,9 @@ def run_cli(
         ui_artifact_path=ui_artifact,
     )
 
+    print("\nSEEDED SIMULATION — no provider calls, customer work, or payments. ROI = gross value / completed cost.")
     print("\n" + report.summary_table)
+    print(f"HGM pending tasks: {report.hgm.summary.pending_tasks}; reserved cost: {report.hgm.summary.reserved_cost:.2f}")
     print(f"\nSummary JSON saved to {report.summary_json_path}")
     print(f"Timeline saved to {report.hgm.timeline_path}")
     print(f"Baseline timeline saved to {report.baseline.timeline_path}")

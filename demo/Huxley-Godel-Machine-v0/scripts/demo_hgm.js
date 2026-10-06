@@ -50,14 +50,18 @@ async function detectPythonVersion(binary) {
 async function main() {
   const repoRoot = resolveRepoRoot();
   const demoRoot = path.join(repoRoot, 'demo', 'Huxley-Godel-Machine-v0');
-  const reportsRoot = process.env.HGM_REPORT_DIR || path.join(demoRoot, 'reports', 'guided');
-  const pythonBinary = process.env.PYTHON_BIN || process.env.PYTHON || 'python3';
+  const reportsRoot =
+    process.env.HGM_REPORT_DIR || path.join(demoRoot, 'reports', 'guided');
+  const pythonBinary =
+    process.env.PYTHON_BIN || process.env.PYTHON || 'python3';
   const paceRaw = process.env.HGM_GUIDED_PACE || '2.2s';
   const paceMs = parseDuration(paceRaw, 'ms') ?? 2200;
   const args = process.argv.slice(2);
 
   console.log('══════════════════════════════════════════════════════════════');
-  console.log('        Huxley–Gödel Machine :: Guided Operator Launcher       ');
+  console.log(
+    '        Huxley–Gödel Machine :: Guided Operator Launcher       '
+  );
   console.log('══════════════════════════════════════════════════════════════');
   console.log(`↪ repository root : ${repoRoot}`);
   console.log(`↪ demo workspace  : ${demoRoot}`);
@@ -72,7 +76,9 @@ async function main() {
     version = await detectPythonVersion(pythonBinary);
     console.log(`✓ detected interpreter :: ${version}`);
   } catch (error) {
-    console.error('✗ unable to detect Python interpreter. Ensure Python 3.10+ is installed.');
+    console.error(
+      '✗ unable to detect Python interpreter. Ensure Python 3.10+ is installed.'
+    );
     console.error(error.message);
     process.exitCode = 1;
     return;
@@ -89,7 +95,9 @@ async function main() {
     ...process.env,
     HGM_GUIDED_MODE: '1',
     HGM_GUIDED_PACE_MS: String(paceMs),
-    PYTHONPATH: [path.join(demoRoot, 'src'), process.env.PYTHONPATH].filter(Boolean).join(path.delimiter),
+    PYTHONPATH: [path.join(demoRoot, 'src'), process.env.PYTHONPATH]
+      .filter(Boolean)
+      .join(path.delimiter),
   };
 
   const uiArtifact = path.join(demoRoot, 'web', 'artifacts', 'comparison.json');
@@ -108,7 +116,9 @@ async function main() {
 
   try {
     await runCommand(pythonBinary, pythonArgs, { cwd: repoRoot, env });
-    console.log('\n★ Guided run complete. Explore the generated timeline, summary, and Markdown dossiers.');
+    console.log(
+      '\n★ Guided run complete. Explore the generated timeline, summary, and Markdown dossiers.'
+    );
   } catch (error) {
     console.error('\n✗ Guided run failed. Inspect the logs above for details.');
     console.error(error.message);

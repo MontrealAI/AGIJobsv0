@@ -4,6 +4,7 @@ from __future__ import annotations
 from collections import deque
 from dataclasses import dataclass
 from typing import Deque
+import math
 
 from .engine import HGMEngine
 from .metrics import EconomicSnapshot
@@ -33,6 +34,8 @@ class Thermostat:
         self._roi_history: Deque[float] = deque(maxlen=config.roi_window)
 
     def observe(self, snapshot: EconomicSnapshot) -> None:
+        if not math.isfinite(snapshot.roi):
+            return
         self._roi_history.append(snapshot.roi)
         if len(self._roi_history) < self.config.roi_window:
             return

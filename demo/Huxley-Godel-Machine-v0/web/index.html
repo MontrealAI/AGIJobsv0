@@ -2,62 +2,486 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>Huxley–Gödel Machine Demo Control Tower</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta
+      name="description"
+      content="Explore budgeted machine labor, reproducible HGM strategy comparisons and reviewable work orders."
+    />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'"
+    />
+    <title>HGM · Intelligence into useful work</title>
     <link rel="stylesheet" href="styles.css" />
-    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-    <script>
-      mermaid.initialize({ startOnLoad: true, theme: 'forest' });
-    </script>
+    <script type="module" src="viewer.js"></script>
   </head>
   <body>
-    <header>
-      <h1>Huxley–Gödel Machine Demo 👁️✨</h1>
-      <p>
-        Live insights from the autonomous clade-metaproductivity engine. Run
-        <code>python -m demo.huxley_godel_machine_v0.simulator</code> or
-        <code>make demo-agialpha</code> to generate
-        <code>web/artifacts/comparison.json</code> and explore.
-      </p>
+    <a class="skip" href="#main">Skip to content</a>
+    <header class="nav">
+      <a class="brand" href="#main"
+        ><span class="mark">H</span> HUXLEY–GÖDEL <small>AGI JOBS</small></a
+      >
+      <nav aria-label="Main navigation">
+        <a href="#observatory">Observatory</a><a href="#work">Work orders</a
+        ><a href="#architecture">Architecture</a><a href="#guide">Start here</a>
+      </nav>
+      <span class="mode">RESEARCH CONSOLE</span>
     </header>
-    <main>
-      <section class="summary">
-        <h2>Economic Summary</h2>
-        <div id="summary-cards" class="grid"></div>
-      </section>
-      <section>
-        <h2>ROI Trajectories</h2>
-        <canvas id="roi-chart" width="720" height="360"></canvas>
-      </section>
-      <section>
-        <h2>Strategy Logs</h2>
-        <div id="log-summary" class="grid"></div>
-      </section>
-      <section>
-        <h2>Autonomous Evolution Flow</h2>
-        <div class="mermaid" id="flowchart">
-          graph LR A[Start: Load Config] --> B{Thermostat} B -->|ROI >= Target|
-          C[Increase Concurrency] B -->|ROI < Target| D[Constrain Exploration] C
-          --> E[HGM Engine] D --> E E -->|Expand| F[Self-Modification] E
-          -->|Evaluate| G[Mission Execution] F --> H[Ledger Update] G --> H H
-          --> B H --> I[Sentinel Rules] I -->|Safe| B I -->|Halt| J[Graceful
-          Shutdown]
+    <main id="main">
+      <section class="hero wrap">
+        <div>
+          <p class="eyebrow">MACHINE LABOR / MEASURED EVOLUTION</p>
+          <h1>
+            Intelligence.<br />Into useful work.<br /><em>At growing scale.</em>
+          </h1>
+          <p class="lead">
+            Coordinate specialized agents. Make every improvement measurable.
+            Turn accepted work into the capacity to do more.
+          </p>
+          <div class="actions">
+            <a class="button primary" href="#observatory"
+              >Explore the evidence <span aria-hidden="true">↗</span></a
+            ><a class="button" href="#work">Define a job</a>
+          </div>
+          <p class="fine">
+            Seeded research simulation · Local analysis · No payments
+          </p>
+        </div>
+        <div
+          class="orbital"
+          aria-label="A governed cycle connecting work, evidence, review and improvement"
+        >
+          <div class="orbit one"></div>
+          <div class="orbit two"></div>
+          <div class="orbit three"></div>
+          <div class="nucleus">
+            <span>HGM</span><small>LEARN FROM<br />REVIEWED OUTCOMES</small>
+          </div>
+          <span class="satellite s1">01 / WORK</span
+          ><span class="satellite s2">02 / EVIDENCE</span
+          ><span class="satellite s3">03 / REVIEW</span
+          ><span class="satellite s4">04 / IMPROVE</span>
+          <p class="orbital-caption">
+            Bounded exploration. Accountable execution.
+          </p>
         </div>
       </section>
-      <section>
-        <h2>Lineage Performance Explorer</h2>
-        <div id="lineage"></div>
+      <div class="wrap boundary">
+        <strong>What this console proves</strong>
+        <p>
+          Reproducible scheduling experiments and checked analysis files. The
+          recorded outcomes are synthetic. They do not establish universal task
+          competence, autonomous self-improvement, customer revenue or
+          production readiness.
+        </p>
+      </div>
+      <section class="wrap section" id="observatory">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">01 / OBSERVATORY</p>
+            <h2>Make improvement accountable.</h2>
+          </div>
+          <p>
+            Compare the hierarchy with a greedy baseline. Inspect completed
+            costs and reservations before interpreting any economic lift.
+          </p>
+        </div>
+        <div class="toolbar">
+          <label
+            >Recorded scenario<select id="scenario">
+              <option value="reference">Reference · seed 7</option>
+              <option value="constrained">Constrained budget · seed 7</option>
+              <option value="paused">Owner pause · zero work</option>
+            </select></label
+          ><label class="file-label"
+            >Import comparison JSON<input
+              id="comparison-file"
+              type="file"
+              accept=".json,application/json" /></label
+          ><button id="download-record" type="button" disabled>
+            Download record
+          </button>
+        </div>
+        <p id="record-status" class="status" role="status">
+          Loading recorded simulation…
+        </p>
+        <noscript
+          ><p>
+            Enable JavaScript to inspect records and export files. The guide and
+            architecture remain readable below.
+          </p></noscript
+        >
+        <div id="summary-cards" class="metrics"></div>
+        <div class="panel chart-panel">
+          <div class="panel-heading">
+            <h3>Gross value / completed cost</h3>
+            <span class="legend"
+              ><i></i> HGM <i class="baseline"></i> Baseline</span
+            >
+          </div>
+          <p class="fine">
+            This multiple is the simulator’s “ROI” field. Net return is (gross
+            value − cost) / cost. Neither represents real revenue. Missing
+            ratios mean no completed cost.
+          </p>
+          <svg
+            id="roi-chart"
+            viewBox="0 0 760 260"
+            role="img"
+            aria-label="Recorded gross value to cost multiples over scheduling steps"
+          ></svg>
+          <p class="fine">
+            Each strategy has its own step coordinates. Same budget ceiling;
+            different action rates and random streams. Compare across many seeds
+            before drawing conclusions.
+          </p>
+        </div>
+        <details class="panel">
+          <summary>Read exact strategy totals</summary>
+          <div class="table-scroll">
+            <table>
+              <caption>
+                Simulated values in USD-equivalent units; not USDC balances
+              </caption>
+              <thead>
+                <tr>
+                  <th>Strategy</th>
+                  <th>Gross value</th>
+                  <th>Completed cost</th>
+                  <th>Reserved</th>
+                  <th>Value less all commitments</th>
+                  <th>Pending tasks</th>
+                </tr>
+              </thead>
+              <tbody id="totals"></tbody>
+            </table>
+          </div>
+        </details>
+        <div class="two-up">
+          <div class="panel">
+            <h3>Lineage performance</h3>
+            <div id="lineage"></div>
+          </div>
+          <div class="panel">
+            <h3>Recent strategy events</h3>
+            <div id="log-summary"></div>
+          </div>
+        </div>
+        <div class="panel analysis">
+          <div>
+            <p class="eyebrow">FROM RECORD TO DELIVERABLE</p>
+            <h3>Produce a checked benchmark analysis.</h3>
+            <p>
+              Generate a real JSON analysis of this simulation, or export the
+              exact task for an admitted worker. Candidate review checks
+              arithmetic and source binding; a separate reviewer must assess
+              usefulness.
+            </p>
+          </div>
+          <div class="actions">
+            <button id="analyse" disabled>Create analysis file</button
+            ><button id="task" disabled>Download worker task</button
+            ><label class="file-label"
+              >Check candidate JSON<input
+                id="candidate-file"
+                type="file"
+                accept=".json,application/json"
+                disabled
+            /></label>
+          </div>
+          <p id="analysis-status" role="status">Select a record to begin.</p>
+        </div>
+      </section>
+      <section class="section tinted" id="work">
+        <div class="wrap">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">02 / THE MACHINE LABOR LAYER</p>
+              <h2>A work contract.<br />A reviewable result.</h2>
+            </div>
+            <p>
+              AGI Jobs is designed as a scalable machine labor layer for
+              authorized, lawful screen-based work—coordinating specialized
+              agents to execute tasks, produce reviewable evidence, and support
+              independent verification and settlement.
+            </p>
+          </div>
+          <div class="two-up">
+            <form id="job-form" class="panel">
+              <h3>Define your next work order</h3>
+              <label>Workflow<select id="job-type"></select></label>
+              <div class="two-up">
+                <label
+                  >Maximum budget (USDC)<input
+                    id="budget"
+                    type="number"
+                    min="1"
+                    max="1000000"
+                    step="1"
+                    value="1500"
+                    required /></label
+                ><label
+                  >Reserved review time (minutes)<input
+                    id="minutes"
+                    type="number"
+                    min="1"
+                    max="10000"
+                    step="1"
+                    value="60"
+                    required
+                /></label>
+              </div>
+              <p id="job-deliverable"></p>
+              <button class="primary" type="submit">
+                Download work order draft
+              </button>
+              <p id="job-status" role="status">
+                A draft does not authorize execution or payment.
+              </p>
+            </form>
+            <div class="routes">
+              <article>
+                <span class="step">A</span>
+                <h3>OpenClaw worker</h3>
+                <p>
+                  Use the repository’s admitted Responses adapter. A protected
+                  profile binds the job, task digest, deployment and bounded
+                  execution. Browser, files, code and tools depend on the
+                  commissioned runtime.
+                </p>
+              </article>
+              <article>
+                <span class="step">B</span>
+                <h3>ChatGPT Work session</h3>
+                <p>
+                  An operator can authorize a scoped session across supported
+                  apps, browser and computer tools. Export candidate files for
+                  review. There is no assumed remote Work dispatch API.
+                </p>
+              </article>
+              <article>
+                <span class="step">C</span>
+                <h3>Independent verification</h3>
+                <p>
+                  Check evidence, reproduce calculations and test the
+                  deliverable. Keep creator, checker, unrelated reviewer and
+                  settlement signer responsibilities distinct.
+                </p>
+              </article>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section class="wrap section" id="architecture">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">03 / GOVERNED EVOLUTION</p>
+            <h2>The loop, kept visible.</h2>
+          </div>
+          <p>
+            HGM explores a lineage of simulated candidates. The thermostat
+            adjusts search pressure. The sentinel and owner controls bound work.
+            Only verified, authorized changes belong in a live system.
+          </p>
+        </div>
+        <div class="panel">
+          <h3>Preserved evolution flow</h3>
+          <pre class="mermaid" id="flowchart">
+graph LR
+ A[Start: Load Config] --> B{Thermostat}
+ B -->|ROI >= Target| C[Increase Concurrency]
+ B -->|ROI &lt; Target| D[Constrain Exploration]
+ C --> E[HGM Engine]
+ D --> E
+ E -->|Expand| F[Self-Modification]
+ E -->|Evaluate| G[Mission Execution]
+ F --> H[Ledger Update]
+ G --> H
+ H --> B
+ H --> I[Sentinel Rules]
+ I -->|Safe| B
+ I -->|Halt| J[Graceful Shutdown]</pre
+          >
+          <p class="fine">
+            Original conceptual flow retained. In this simulator,
+            “self-modification” mutates a quality parameter and “mission
+            execution” samples an outcome; neither changes production code nor
+            executes a customer job.
+          </p>
+        </div>
+        <div class="panel">
+          <h3>From authorized work to accepted value</h3>
+          <pre class="mermaid">
+flowchart TD
+ A[Buyer scope and approved inputs] --> B{Budget and reviewer available?}
+ B -->|No| C[Defer with reason]
+ B -->|Yes| D[Admitted worker and bounded tools]
+ D --> E[Artifacts and effect journal]
+ E --> F[Reproducible checks]
+ F --> G{Unrelated reviewer accepts?}
+ G -->|No| H[Repair or dispute within limits]
+ H --> F
+ G -->|Yes| I[Buyer acceptance]
+ I --> J{Settlement separately authorized?}
+ J -->|Yes| K[Verified settlement process]
+ J -->|No| L[Hold without payment]
+ K --> M[Measured outcomes inform next allocation]</pre
+          >
+        </div>
+        <a class="button" href="legacy/"
+          >Open the preserved Grand Operator Console ↗</a
+        >
+      </section>
+      <section class="section tinted" id="scale">
+        <div class="wrap">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">04 / A LONGER HORIZON</p>
+              <h2>Useful work compounds.<br />Capacity follows evidence.</h2>
+            </div>
+            <p>
+              Build toward a civilization-scale productive network: better
+              software and research, more capable infrastructure, and eventually
+              new energy and industrial capacity. Expansion must follow
+              demonstrated value, available resources and accountable
+              governance.
+            </p>
+          </div>
+          <div class="panel market">
+            <div>
+              <h3>Explore the market assumption</h3>
+              <p>
+                The $40 trillion annual screen-work opportunity is a
+                user-supplied planning scenario, not a measured addressable
+                market or revenue forecast. Eligibility, demand, delivery costs,
+                review capacity and competition all reduce realizable value.
+              </p>
+              <div class="two-up">
+                <label
+                  >Annual opportunity (USD trillions)<input
+                    id="tam"
+                    type="number"
+                    min="0"
+                    max="1000"
+                    step="any"
+                    value="40" /></label
+                ><label
+                  >Eligible share (%)<input
+                    id="eligible"
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="any"
+                    value="10" /></label
+                ><label
+                  >Share of eligible work (%)<input
+                    id="capture"
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="any"
+                    value="0.01"
+                /></label>
+              </div>
+            </div>
+            <div class="market-result">
+              <span>ILLUSTRATIVE ANNUAL WORK VALUE</span
+              ><output id="market-value" aria-live="polite"></output
+              ><small
+                >Opportunity × eligible share × captured share.<br />Gross work
+                value, before all costs; not platform revenue.</small
+              >
+            </div>
+          </div>
+        </div>
+      </section>
+      <section class="wrap section" id="guide">
+        <p class="eyebrow">05 / START HERE</p>
+        <h2>From first experiment to a qualified worker.</h2>
+        <div class="guide-grid">
+          <article class="panel">
+            <span class="step">01</span>
+            <h3>Reproduce the comparison</h3>
+            <p>
+              Python 3.12, from the repository root. No model key is needed.
+            </p>
+            <pre tabindex="0">
+python demo/Huxley-Godel-Machine-v0/run_demo.py --seed 7</pre
+            >
+            <p>
+              Import the generated
+              <code>web/artifacts/comparison.json</code> above. Try a different
+              seed or a smaller budget.
+            </p>
+          </article>
+          <article class="panel">
+            <span class="step">02</span>
+            <h3>Inspect and qualify</h3>
+            <p>
+              Export the analysis task. Commission a dedicated worker with
+              explicit permissions, approved inputs, spend limits and an
+              unrelated reviewer. Keep tokens and profiles off this site.
+            </p>
+            <a
+              href="https://github.com/MontrealAI/AGIJobsv0/blob/main/demo/Huxley-Godel-Machine-v0/RUNBOOK.md"
+              >Read the complete operator runbook ↗</a
+            >
+          </article>
+          <article class="panel">
+            <span class="step">03</span>
+            <h3>Review before expansion</h3>
+            <p>
+              Verify the output and actual effects. Measure useful deliveries,
+              cost and reviewer time. Reconcile unknown outcomes before
+              retrying; authorize settlement separately.
+            </p>
+            <a
+              href="https://github.com/MontrealAI/AGIJobsv0/tree/main/demo/Huxley-Godel-Machine-v0"
+              >Source, tests and validation ↗</a
+            >
+          </article>
+        </div>
+        <details class="panel">
+          <summary>
+            Current integration references · checked 6 October 2026
+          </summary>
+          <ul>
+            <li>
+              <a href="https://docs.openclaw.ai/tools/browser"
+                >OpenClaw managed browser</a
+              >
+            </li>
+            <li>
+              <a href="https://docs.openclaw.ai/gateway/sandboxing"
+                >OpenClaw sandbox configuration</a
+              >
+              — sandboxing must be explicitly enabled.
+            </li>
+            <li>
+              <a href="https://learn.chatgpt.com/docs/computer-use"
+                >ChatGPT Work computer use</a
+              >
+              — supported platforms, app permissions and limitations.
+            </li>
+            <li>
+              <a
+                href="https://developers.openai.com/api/docs/guides/tools-computer-use"
+                >OpenAI computer-use API</a
+              >
+              — a separate integration surface.
+            </li>
+          </ul>
+          <p>
+            Tool availability broadens the work that can be attempted. Each
+            workflow still needs qualification and acceptance evidence.
+          </p>
+        </details>
       </section>
     </main>
-    <footer>
-      <p>
-        Built with ❤️ for non-technical founders. Every control surface is
-        editable in
-        <code>config/hgm_config.json</code> — tune ROI targets, budgets, and
-        exploration in seconds.
-      </p>
+    <footer class="wrap footer">
+      <a class="brand" href="#main">HUXLEY–GÖDEL / AGI JOBS</a>
+      <p>Ambition at scale. Evidence at every step.</p>
+      <a href="https://montrealai.github.io/AGIJobsv0/">All AGI Jobs demos ↗</a>
     </footer>
-    <script type="module" src="viewer.js"></script>
   </body>
 </html>

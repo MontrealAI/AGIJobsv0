@@ -16,6 +16,7 @@ from .config_loader import ConfigError, DemoConfig, load_config
 from .engine import HGMEngine
 from .lineage import MermaidOptions, mermaid_from_snapshots
 from .metrics import EconomicSnapshot, RunSummary
+from .owner_controls import OwnerControls
 from .orchestrator import HGMDemoOrchestrator
 from .sentinel import Sentinel
 from .thermostat import Thermostat, ThermostatConfig
@@ -130,6 +131,7 @@ def run_hgm_demo(
         ),
         evaluation_latency_range=evaluation_latency,
         expansion_latency_range=expansion_latency,
+        owner_controls=OwnerControls.from_mapping(config.owner_controls),
     )
     total_steps = int(simulation_cfg.get("total_steps", 200))
     report_interval = int(simulation_cfg.get("report_interval", 10))
@@ -152,6 +154,8 @@ def run_baseline(config: DemoConfig, rng: random.Random) -> RunSummary:
     quality_cfg = hgm_cfg.get("quality", {})
     baseline_cfg = config.baseline
     simulator = GreedyBaselineSimulator(
+        max_budget=float(econ["max_budget"]),
+        owner_controls=OwnerControls.from_mapping(config.owner_controls),
         rng=rng,
         root_quality=float(quality_cfg.get("root", 0.5)),
         mutation_std=float(baseline_cfg.get("mutation_std", 0.1)),
