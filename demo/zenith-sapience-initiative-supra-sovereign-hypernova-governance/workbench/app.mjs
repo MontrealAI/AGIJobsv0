@@ -163,7 +163,7 @@ async function exportOrder(format) {
     );
     if (ticket === generation)
       $('work-status').textContent =
-        'Proposal downloaded. Source and runtime approvals, funding and execution are separate steps.';
+        'Proposal downloaded. Download the task source to accompany it. Source and runtime approvals, funding and execution are separate steps.';
   } catch (e) {
     $('work-status').textContent = e.message;
   }
@@ -224,6 +224,9 @@ $('work-form').addEventListener(
   () => ($('work-status').textContent = '')
 );
 $('download-handoff').addEventListener('click', () => exportOrder('md'));
+$('download-task-source').addEventListener('click', () =>
+  download('source-plan.json', corrected)
+);
 $('work-type').addEventListener('change', updateBrief);
 $('run').addEventListener('click', () => {
   analyzeSource(corrected, 'corrected project plan');
@@ -344,6 +347,7 @@ try {
     'region',
     'download-task',
     'download-handoff',
+    'download-task-source',
   ])
     $(id).disabled = false;
   updateBrief();

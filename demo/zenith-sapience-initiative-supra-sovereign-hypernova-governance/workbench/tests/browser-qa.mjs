@@ -112,11 +112,13 @@ try {
     assert.equal(await page.locator('#criteria li').count(), 3);
     const order = JSON.parse(await downloaded('Download work order'));
     assert.deepEqual(order, await makeWorkOrder(source, type.id, 'EARTH'));
+    assert.equal(order.inputs.scenarioFile, 'source-plan.json');
   }
   assert.match(
     await downloaded('Download operator brief'),
     /proposal requiring owner authorization/
   );
+  assert.equal(await downloaded('Download task source'), source);
   checks.push(
     'All ten browser proposals match the source-bound CLI contract; readable handoff exports'
   );
@@ -151,6 +153,11 @@ try {
   assert.match(
     await page.locator('#analysis-table').textContent(),
     /REGION_OVER_BUDGET:EARTH/
+  );
+  assert.equal(await downloaded('Download task source'), source);
+  assert.notEqual(await downloaded('Download exact source'), source);
+  checks.push(
+    'Task source stays bound to proposals while a different analysis source is selected'
   );
   const upload = (content) =>
     page.locator('#receipt-file').setInputFiles({

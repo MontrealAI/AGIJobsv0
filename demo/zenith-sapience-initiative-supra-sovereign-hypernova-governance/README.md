@@ -8,7 +8,7 @@ AGI Jobs is designed as a scalable machine labor layer for authorized, lawful sc
 
 ## Start in two minutes
 
-The browser workbench needs no wallet, credentials or installation. Select **Analyze the mission**, inspect the calculations, then export the evidence, CSV and readable report. **Inspect the original defects** compares the preserved historical input. **Create a brief** exports one of ten computer-work proposals with explicit acceptance tests and an unfunded USDC reward ceiling.
+The browser workbench needs no wallet, credentials or installation. Select **Analyze the mission**, inspect the calculations, then export the evidence, CSV and readable report. **Inspect the original defects** compares the preserved historical input. **Create a brief** exports one of ten computer-work proposals with explicit acceptance tests and an unfunded USDC reward ceiling. Keep **Download task source** (`source-plan.json`) with each work order and operator brief; verify its SHA-256 before execution. Browser proposals use the corrected mission, while analysis imports have a separate source export. The CLI supports custom proposal sources with `--source`.
 
 For local operation, use the repository `.nvmrc` (Node 22.23.3):
 
