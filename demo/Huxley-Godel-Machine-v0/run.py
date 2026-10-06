@@ -17,7 +17,9 @@ def build_report_markdown(output_path: Path, comparison, seed: int, actions: int
         *Generated:* {datetime.now(timezone.utc).isoformat()}\\
         *Seed:* {seed} | *Actions:* {actions}
 
-        ## Economic Summary
+        Historical seeded simulation: zero provider calls or payments. These toy strategies use different reward assumptions.
+
+        ## Simulated Economic Summary
 
         | Strategy | GMV ($) | Cost ($) | Profit ($) | ROI |
         | --- | --- | --- | --- | --- |
@@ -63,10 +65,12 @@ def main() -> None:
     )
     args = parser.parse_args()
 
+    if not 0 <= args.seed < 2**32 or not 0 <= args.actions <= 100000:
+        parser.error("Use seed in [0, 4294967295] and actions in [0, 100000].")
     comparison = run_comparison(seed=args.seed, actions=args.actions)
 
     print("=" * 72)
-    print("Huxley–Gödel Machine Demo :: Empowering AGI Jobs operators")
+    print("Huxley–Gödel Machine :: Historical seeded simulation (no live work or payments)")
     print("=" * 72)
     print(comparison.hgm.summary)
     print(comparison.baseline.summary)

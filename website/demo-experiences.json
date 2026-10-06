@@ -233,7 +233,14 @@
     "expected": "Simulation artifacts are written under /tmp/hgm-demo and /tmp/hgm-comparison.json. Inspect per-strategy outcomes and budget use.",
     "experiment": "Keep the seed fixed and change one budget. Compare performance per unit of evaluation effort, not only the best observed outcome.",
     "mode": "stdlib",
-    "related": []
+    "related": [],
+    "dashboards": [
+      {
+        "title": "Open the HGM research console",
+        "route": "experiments/huxley-godel/",
+        "source": "demo/Huxley-Godel-Machine-v0/web/index.html"
+      }
+    ]
   },
   "Open-Endedness-v0": {
     "question": "How do curriculum strategies change what gets explored?",

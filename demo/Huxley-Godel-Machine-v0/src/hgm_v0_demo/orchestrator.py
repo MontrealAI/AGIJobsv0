@@ -80,6 +80,8 @@ class HGMDemoOrchestrator:
                 roi=roi,
                 agents=agents,
                 best_agent_id=best_agent_id,
+                reserved_cost=self.reserved_cost,
+                pending_tasks=len(self.pending),
             )
             self.timeline.append(snapshot)
             self.thermostat.observe(snapshot)
@@ -113,6 +115,8 @@ class HGMDemoOrchestrator:
             best_agent_id=best_agent_id,
             best_agent_quality=best_agent_quality,
             owner_notes=owner_notes,
+            reserved_cost=self.reserved_cost,
+            pending_tasks=len(self.pending),
         )
 
     # ------------------------------------------------------------------
@@ -184,6 +188,13 @@ class HGMDemoOrchestrator:
             return float("inf")
         return self.gmv / self.cost
 
+    @property
+    def reserved_cost(self) -> float:
+        return math.fsum(
+            self.expansion_cost if task.action is ActionType.EXPAND else self.evaluation_cost
+            for task in self.pending
+        )
+
     def _emit_progress(self, step: int) -> None:
         snapshot = self.timeline.last
         roi = "∞" if math.isinf(snapshot.roi) else f"{snapshot.roi:.2f}"
@@ -217,16 +228,21 @@ class HGMDemoOrchestrator:
         return max(low, min(high, quality))
 
     def _apply_control_flags(self) -> None:
+        remaining = self.sentinel.max_budget - math.fsum((self.cost, self.reserved_cost))
         allow_expansions = (
             not self.owner_controls.pause_all
             and not self.owner_controls.pause_expansions
             and not self._sentinel_pause_expansions
+            and not self._sentinel_halt_all
+            and self.expansion_cost <= remaining
+            and self.cost + self.reserved_cost < self.sentinel.max_budget * self.sentinel.hard_budget_ratio
         )
         allow_evaluations = (
             not self.owner_controls.pause_all
             and not self.owner_controls.pause_evaluations
             and not self._sentinel_halt_all
             and not self._sentinel_pause_evaluations
+            and self.evaluation_cost <= remaining
         )
         self.engine.expansions_allowed = allow_expansions
         self.engine.evaluations_allowed = allow_evaluations

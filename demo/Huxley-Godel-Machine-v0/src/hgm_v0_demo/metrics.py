@@ -15,6 +15,8 @@ class EconomicSnapshot:
     roi: float
     agents: List["AgentSnapshot"]
     best_agent_id: Optional[str]
+    reserved_cost: float = 0.0
+    pending_tasks: int = 0
 
 
 @dataclass
@@ -30,6 +32,8 @@ class RunSummary:
     best_agent_id: Optional[str] = None
     best_agent_quality: Optional[float] = None
     owner_notes: Optional[str] = None
+    reserved_cost: float = 0.0
+    pending_tasks: int = 0
 
 
 @dataclass

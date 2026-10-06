@@ -162,6 +162,8 @@ class HGMEngine:
 
     def _can_expand(self) -> bool:
         inflight = sum(node.inflight_expansions for node in self._agents.values())
+        if len(self._agents) + inflight >= self.max_agents:
+            return False
         if inflight >= self.max_expansion_concurrency:
             return False
         if len(self._agents) == 0:

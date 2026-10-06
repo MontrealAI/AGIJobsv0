@@ -14,6 +14,7 @@ from typing import List
 import random
 
 from .metrics import EconomicSnapshot, RunSummary
+from .owner_controls import OwnerControls
 
 
 @dataclass
@@ -46,6 +47,8 @@ class GreedyBaselineSimulator:
         expansion_cost: float,
         total_steps: int,
         quality_bounds: tuple[float, float],
+        max_budget: float = float("inf"),
+        owner_controls: OwnerControls | None = None,
     ) -> None:
         self.rng = rng
         self.mutation_std = mutation_std
@@ -61,13 +64,31 @@ class GreedyBaselineSimulator:
         self.failures = 0
         self.timeline: List[EconomicSnapshot] = []
         self.logs: List[str] = []
+        self.max_budget = max_budget
+        self.owner_controls = owner_controls or OwnerControls()
+        self.actions = 0
 
     def run(self) -> RunSummary:
         for step in range(1, self.total_steps + 1):
-            if step % 6 == 0:
+            if self.owner_controls.should_block_new_actions(self.actions):
+                break
+            # Reserve only the evaluation that can follow this expansion.
+            evaluation_reserve = (
+                self.evaluation_cost
+                if not self.owner_controls.pause_evaluations
+                and not self.owner_controls.should_block_new_actions(self.actions + 1)
+                else 0.0
+            )
+            if (step % 6 == 0 and not self.owner_controls.pause_expansions
+                    and self.cost + self.expansion_cost + evaluation_reserve <= self.max_budget):
                 self._expand_best()
-            agent = self._select_agent()
-            self._evaluate(agent)
+                self.actions += 1
+            if (not self.owner_controls.pause_evaluations
+                    and not self.owner_controls.should_block_new_actions(self.actions)
+                    and self.cost + self.evaluation_cost <= self.max_budget):
+                agent = self._select_agent()
+                self._evaluate(agent)
+                self.actions += 1
             snapshot = EconomicSnapshot(
                 step=step,
                 gmv=self.gmv,
@@ -97,7 +118,7 @@ class GreedyBaselineSimulator:
             failures=self.failures,
             roi=roi,
             profit=profit,
-            steps=self.total_steps,
+            steps=len(self.timeline),
             best_agent_id=None,
             best_agent_quality=None,
         )

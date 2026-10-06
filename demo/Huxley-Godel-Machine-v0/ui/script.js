@@ -1,3 +1,4 @@
+import mermaid from 'mermaid';
 (function () {
   'use strict';
 
@@ -14,6 +15,7 @@
   };
 
   async function cycleSteps() {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     const steps = Array.from(document.querySelectorAll('[data-step]'));
     if (steps.length === 0) return;
     let index = 0;
@@ -38,7 +40,7 @@
 
   const percent = (value) => `${(value * 100).toFixed(1)}%`;
 
-  const DEFAULT_TIMELINE = '../reports/timeline.json';
+  const DEFAULT_TIMELINE = '../reproduction/reference/hgm_timeline.json';
 
   async function fetchTimeline(path) {
     const response = await fetch(path, { cache: 'no-store' });
@@ -49,6 +51,8 @@
   }
 
   function parseFile(file) {
+    if (file.size > 8 * 1024 * 1024)
+      return Promise.reject(new Error('Use a JSON file smaller than 8 MiB.'));
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = () => {
@@ -97,9 +101,12 @@
     const container = document.querySelector('#observatory-mermaid');
     if (!container) return;
     container.textContent = diagram;
-    if (window.mermaid) {
-      window.mermaid.init(undefined, container);
-    }
+    container.removeAttribute('data-processed');
+    mermaid
+      .run({ nodes: [container] })
+      .catch(() =>
+        updateAlert('Could not render lineage; see table below.', 'warning')
+      );
   }
 
   function renderSummaryCards(snapshot) {
@@ -110,17 +117,20 @@
       {
         title: 'GMV',
         value: currency(snapshot.gmv),
-        subtitle: 'Total gross merchandise value',
+        subtitle: 'Simulated gross value',
       },
       {
         title: 'Cost',
         value: currency(snapshot.cost),
-        subtitle: 'Total execution spend',
+        subtitle: 'Simulated completed cost',
       },
       {
         title: 'ROI',
-        value: snapshot.roi === Infinity ? '∞' : snapshot.roi.toFixed(2),
-        subtitle: 'Return on investment',
+        value:
+          snapshot.roi == null || !Number.isFinite(snapshot.roi)
+            ? 'N/A'
+            : snapshot.roi.toFixed(2),
+        subtitle: 'Simulated gross value / completed cost',
       },
       {
         title: 'Success cadence',
@@ -172,13 +182,17 @@
         row.classList.add('table-warning');
         row.classList.add('text-dark');
       }
-      row.innerHTML = `
-        <td>${agent.agent_id}${agent.agent_id === highlight ? ' ⭐' : ''}</td>
-        <td>${(agent.quality * 100).toFixed(1)}%</td>
-        <td>${agent.direct_success}/${agent.direct_failure}</td>
-        <td>${agent.clade_success}/${agent.clade_failure}</td>
-        <td>${agent.depth}</td>
-      `;
+      for (const value of [
+        agent.agent_id + (agent.agent_id === highlight ? ' ⭐' : ''),
+        (agent.quality * 100).toFixed(1) + '%',
+        `${agent.direct_success}/${agent.direct_failure}`,
+        `${agent.clade_success}/${agent.clade_failure}`,
+        agent.depth,
+      ]) {
+        const cell = document.createElement('td');
+        cell.textContent = String(value);
+        row.append(cell);
+      }
       table.append(row);
     });
   }
@@ -198,7 +212,48 @@
       );
       return;
     }
+    if (timeline.length > 100000) throw new Error('Timeline is too large.');
     const latest = timeline[timeline.length - 1];
+    for (const key of ['gmv', 'cost', 'successes', 'failures'])
+      if (
+        typeof latest[key] !== 'number' ||
+        !Number.isFinite(latest[key]) ||
+        latest[key] < 0
+      )
+        throw new Error('Invalid timeline totals.');
+    if (
+      latest.roi !== null &&
+      (typeof latest.roi !== 'number' || !Number.isFinite(latest.roi))
+    )
+      throw new Error('Invalid timeline ratio.');
+    if (!Array.isArray(latest.agents) || latest.agents.length > 1000)
+      throw new Error('Invalid lineage.');
+    const ids = new Set();
+    for (const agent of latest.agents) {
+      if (
+        !/^agent-\d{4,8}$/.test(agent.agent_id) ||
+        ids.has(agent.agent_id) ||
+        (agent.parent_id !== null && !ids.has(agent.parent_id))
+      )
+        throw new Error('Invalid lineage identity.');
+      ids.add(agent.agent_id);
+      for (const key of [
+        'quality',
+        'direct_success',
+        'direct_failure',
+        'clade_success',
+        'clade_failure',
+        'depth',
+      ])
+        if (
+          typeof agent[key] !== 'number' ||
+          !Number.isFinite(agent[key]) ||
+          agent[key] < 0
+        )
+          throw new Error('Invalid lineage number.');
+    }
+    if (latest.best_agent_id != null && !ids.has(latest.best_agent_id))
+      throw new Error('Invalid highlighted agent.');
     renderSummaryCards(latest);
     renderAgentsTable(latest.agents || [], latest.best_agent_id || null);
     updateMermaid(
@@ -237,9 +292,20 @@
       }
     }
 
-    if (window.mermaid) {
-      window.mermaid.initialize({ startOnLoad: true, theme: 'dark' });
-    }
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: 'dark',
+      securityLevel: 'strict',
+      flowchart: { htmlLabels: false },
+    });
+    mermaid
+      .run()
+      .catch(() =>
+        updateAlert(
+          'Diagram rendering failed. Source remains available.',
+          'warning'
+        )
+      );
 
     const fileInput = document.querySelector('#timeline-file');
     if (fileInput) {

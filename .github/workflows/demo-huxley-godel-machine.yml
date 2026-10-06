@@ -5,11 +5,13 @@ on:
     branches: [main]
     paths:
       - 'demo/Huxley-Godel-Machine-v0/**'
+      - 'demo/huxley_godel_machine_v0/**'
       - '.github/workflows/demo-huxley-godel-machine.yml'
       - 'Makefile'
   pull_request:
     paths:
       - 'demo/Huxley-Godel-Machine-v0/**'
+      - 'demo/huxley_godel_machine_v0/**'
       - '.github/workflows/demo-huxley-godel-machine.yml'
       - 'Makefile'
 
@@ -40,3 +42,27 @@ jobs:
             --set "simulation.expansion_latency=[0.0,0.0]" \
             --output-dir demo/Huxley-Godel-Machine-v0/artifacts-ci
           cat demo/Huxley-Godel-Machine-v0/artifacts-ci/summary.txt
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+      - name: Install locked website dependencies
+        run: ./scripts/ci/npm-ci.sh
+      - name: Build and verify HGM console
+        run: |
+          npm run demo:hgm:build
+          npm run demo:hgm:test
+          npm run demo:hgm:lint
+          npm run demo:hgm:worker -- inspect build/hgm/records/reference.json
+      - name: Install browser
+        run: npx playwright install --with-deps chromium
+      - name: Verify browser flows and accessibility
+        run: npm run demo:hgm:qa
+      - name: Save browser evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: hgm-browser-evidence
+          path: reports/pages/hgm
+          retention-days: 14

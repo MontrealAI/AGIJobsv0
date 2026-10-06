@@ -1,0 +1,6 @@
+
+# Preserved Bootstrap 5.3.3 bytes, verified against original SRI
+demo/Huxley-Godel-Machine-v0/ui/bootstrap.min.css
+
+# Simulator output is generated JSON, not maintained website source.
+demo/Huxley-Godel-Machine-v0/web/artifacts/
