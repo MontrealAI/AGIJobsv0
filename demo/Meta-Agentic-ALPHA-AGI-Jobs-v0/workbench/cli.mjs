@@ -3,18 +3,30 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomUUID } from 'node:crypto';
 import { readJson, readText } from './io.cjs';
-import { json, stages, makeTask, taskDigest } from './model.mjs';
+import {
+  json,
+  stages,
+  makeTask,
+  taskDigest,
+  makeProjectBrief,
+  renderProjectBrief,
+} from './model.mjs';
 import { execute, renderReport } from './execute.mjs';
 import { reviewBundle, reviewReceipt, reviewCandidate } from './review.mjs';
 const root = path.dirname(fileURLToPath(import.meta.url));
 const source = readJson(path.join(root, 'scenario.json'));
 const [command = 'help', ...args] = process.argv.slice(2);
 const usage =
-  'Meta-Agentic ALPHA\n  run [NEW_OUTPUT_DIRECTORY]\n  task STAGE_ID\n  inspect STAGE_ID\n  review EVIDENCE.json\n  review-artifact STAGE_ID CANDIDATE.json\n  review-receipt STAGE_ID RECEIPT.json EXPECTED_JOB_ID EXPECTED_DEPLOYMENT_ID\n  stages\n  help\nThe offline run makes zero provider calls or transactions. Every run uses a new directory.';
+  'Meta-Agentic ALPHA\n  run [NEW_OUTPUT_DIRECTORY]\n  task STAGE_ID\n  inspect STAGE_ID\n  brief PROJECT_ID\n  brief-markdown PROJECT_ID\n  review EVIDENCE.json\n  review-artifact STAGE_ID CANDIDATE.json\n  review-receipt STAGE_ID RECEIPT.json EXPECTED_JOB_ID EXPECTED_DEPLOYMENT_ID\n  stages\n  help\nThe offline run makes zero provider calls or transactions. Every run uses a new directory. Project briefs are proposals requiring separate commissioning.';
 try {
   if (['help', '--help'].includes(command) && !args.length) console.log(usage);
   else if (command === 'stages' && !args.length) console.log(json(stages));
-  else if (['task', 'inspect'].includes(command) && args.length === 1) {
+  else if (['brief', 'brief-markdown'].includes(command) && args.length === 1) {
+    const brief = await makeProjectBrief(source, args[0]);
+    process.stdout.write(
+      command === 'brief' ? json(brief) : renderProjectBrief(brief)
+    );
+  } else if (['task', 'inspect'].includes(command) && args.length === 1) {
     const task = await makeTask(source, args[0]);
     console.log(
       json(

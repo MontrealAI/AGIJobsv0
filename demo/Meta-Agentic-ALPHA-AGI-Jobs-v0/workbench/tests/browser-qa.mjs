@@ -7,7 +7,15 @@ import assert from 'node:assert/strict';
 import { chromium } from 'playwright';
 import AxeBuilder from '@axe-core/playwright';
 import { createServer } from '../server.cjs';
-import { stages, makeTask, taskDigest, json } from '../model.mjs';
+import {
+  stages,
+  makeTask,
+  taskDigest,
+  json,
+  makeProjectBrief,
+  renderProjectBrief,
+} from '../model.mjs';
+import { checkReviewState } from './review-state.mjs';
 import { execute } from '../execute.mjs';
 import { reviewBundle } from '../review.mjs';
 import { buildSite } from '../../scripts/build-site.mjs';
@@ -59,7 +67,55 @@ try {
   assert.equal(await page.locator(':focus').textContent(), 'Skip to content');
   assert.equal(await page.locator('[data-stage]').count(), 6);
   assert.equal(await page.locator('#work-rows tr').count(), 12);
+  for (const project of source.work) {
+    await page
+      .getByRole('button', { name: project.title, exact: true })
+      .click();
+    assert.equal(await page.locator(':focus').getAttribute('id'), 'project');
+    assert.equal(await page.locator('#project').inputValue(), project.id);
+    assert.equal(
+      await page.locator('#project-deliverable').textContent(),
+      project.deliverable
+    );
+    assert.deepEqual(
+      await page.locator('#project-criteria li').allTextContents(),
+      project.acceptanceCriteria
+    );
+    const expected = await makeProjectBrief(source, project.id);
+    for (const [button, extension, content] of [
+      ['Download proposal JSON', 'json', json(expected)],
+      ['Download readable brief', 'md', renderProjectBrief(expected)],
+    ]) {
+      // Exercise individual clicks without hitting Chromium's download burst limit.
+      await page.waitForTimeout(250);
+      const [download] = await Promise.all([
+        page.waitForEvent('download').catch(async (error) => {
+          throw new Error(
+            project.id +
+              ' / ' +
+              button +
+              ': ' +
+              (await page.locator('#project-status').textContent()) +
+              ' / ' +
+              errors.join('; ') +
+              ' / ' +
+              error.message
+          );
+        }),
+        page.getByRole('button', { name: button, exact: true }).click(),
+      ]);
+      assert.equal(
+        download.suggestedFilename(),
+        project.id + '.proposal.' + extension
+      );
+      assert.equal(fs.readFileSync(await download.path(), 'utf8'), content);
+    }
+  }
+  checks.push(
+    'all twelve project briefs, acceptance criteria, keyboard focus and both exact exports'
+  );
   for (const stage of stages) {
+    await page.waitForTimeout(250);
     await page
       .getByLabel('Evaluation phase', { exact: true })
       .selectOption(stage.id);
@@ -156,9 +212,7 @@ try {
   const stage = stages[3],
     task = await makeTask(source, stage.id),
     bundle = await execute(source);
-  await page
-    .getByLabel('Evaluation phase', { exact: true })
-    .selectOption(stage.id);
+  await page.getByLabel('Review phase', { exact: true }).selectOption(stage.id);
   await page.getByLabel('File type', { exact: true }).selectOption('candidate');
   await upload(bundle.results[3].artifact.content);
   await page.waitForFunction(
@@ -206,6 +260,10 @@ try {
   );
   checks.push(
     'valid, malformed, oversized, raw candidate and independently bound receipt imports'
+  );
+  await checkReviewState(page, source, bundle);
+  checks.push(
+    'changed review scope, stale asynchronous imports and superseded evaluation recovery'
   );
   await page.getByLabel('Active agents', { exact: true }).fill('');
   assert.equal(await page.locator('#annual-volume').textContent(), '—');

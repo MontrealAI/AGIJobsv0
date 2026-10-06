@@ -26,11 +26,15 @@ Money is represented in integer micro-USDC and displayed as decimal strings with
 
 Each phase can be recomputed from the exact source and declared rules. Dependencies establish the six-phase evaluation order. The analyses produce work orders for proposed customer projects; those projects require their own separately commissioned execution and acceptance.
 
+To start that commissioning conversation, select a project title in the website's portfolio. Inspect its deliverable and three acceptance criteria, then download its proposal as JSON or Markdown. The dependency-free CLI equivalents are `brief ALPHA-001` and `brief-markdown ALPHA-001` through `workbench/cli.mjs`. Each export binds the synthetic source digest and leaves execution authorization false. It is not a `ComputerWorkTask` and cannot be sent to the phase worker command. Replace the synthetic assumptions, agree on permitted actions and acceptance evidence, and create a separately admitted task for the real project.
+
 ## Connected worker
 
 First establish an isolated, operator-controlled OpenClaw runtime and a supported OpenAI provider configuration. The Gateway Responses endpoint is not itself a desktop implementation: the worker needs the permitted tools and a functioning computer provider for any screen-based task. Confirm the selected host, enabled tools and real screenshot/action behavior before admitting work. Do not expose a desktop or privileged Gateway to the public network.
 
 The repository adapter uses `POST /v1/responses` with the selected `openclaw/<agentId>` model route. Enable and protect the Gateway endpoint according to its current documentation. Keep tokens outside the repository and public website. The example profile uses loopback, explicit response/time/token limits and an **empty** `approvedJobs` list.
+
+The Responses endpoint is disabled by default. Its shared-token authentication grants operator access to that Gateway; an agent route or requested scope header does not reduce the token's authority. Use a separate restricted worker Gateway where appropriate. Computer actions require an available provider, OS permissions and permitted tools on the selected Gateway or paired node. After human takeover or a desktop change, obtain fresh observations rather than replaying stale screen references.
 
 1. Install locked repository dependencies with `npm ci`.
 2. Inspect an exact phase task without dispatch:
@@ -65,7 +69,9 @@ Stop local observation with Ctrl+C. Stop an active worker through the operator's
 
 Download a phase work order, provide it in an operator-led Work session, and authorize only the apps and data needed for that scope. Prefer structured integrations or code where appropriate, using computer interaction for GUI-only work. Ask for the exact candidate JSON file specified by the contract.
 
-Select **Candidate JSON for selected stage** in the workbench, or use:
+Install the Computer Use plugin and grant the required OS permissions separately from app permissions. Current Work guidance requires Screen Recording and Accessibility on macOS; Windows computer use needs the active, unlocked desktop. Do not use screen automation to operate terminal apps, automate Work itself, or accept system security or administrator permission prompts. Keep consequential actions within explicit task authority and retain an operator stop path.
+
+Select the matching **Review phase** beside the importer and **Candidate JSON for selected stage**, then import the file. Changing review phase, file type, job ID or deployment identity clears the old result and cancels pending checks; import again after changing scope. The separate evaluation-phase browser does not alter those review inputs. Alternatively, use:
 
 ```bash
 node demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/workbench/cli.mjs review-artifact strategise CANDIDATE.json
