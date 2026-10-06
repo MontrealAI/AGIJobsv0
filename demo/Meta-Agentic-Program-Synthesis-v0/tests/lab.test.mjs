@@ -74,6 +74,11 @@ test('bounded DSL never accepts arbitrary code or numeric overflow', () => {
   for (const program of [['eval'], ['sort', 'sort', 'sort', 'sort'], [{}]])
     assert.throws(() => execute([1], program));
   assert.throws(() => execute([Number.MAX_SAFE_INTEGER], ['times3']));
+  assert.throws(() => execute([Number.MAX_SAFE_INTEGER, 1], ['sum']));
+  assert.deepEqual(
+    execute([Number.MAX_SAFE_INTEGER, 2, -Number.MAX_SAFE_INTEGER], ['sum']),
+    [2]
+  );
   assert.throws(() => execute([NaN], []));
   assert.equal([...candidates()].length, 400);
 });

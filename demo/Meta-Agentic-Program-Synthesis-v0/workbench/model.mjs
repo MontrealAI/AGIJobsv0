@@ -25,7 +25,8 @@ export function execute(input, program) {
     if (op === 'add2') values = values.map((x) => x + 2);
     if (op === 'times3') values = values.map((x) => x * 3);
     if (op === 'nonnegative') values = values.filter((x) => x >= 0);
-    if (op === 'sum') values = [values.reduce((sum, x) => sum + x, 0)];
+    if (op === 'sum')
+      values = [Number(values.reduce((sum, x) => sum + BigInt(x), 0n))];
     if (op === 'sort') values.sort((a, b) => a - b);
     if (op === 'unique') values = [...new Set(values)];
     if (op === 'reverse') values.reverse();
