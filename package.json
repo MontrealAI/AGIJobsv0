@@ -494,7 +494,14 @@
     "demo:kardashev-business:worker": "node --import tsx demo/kardashev_ii_omega_grade_alpha_agi_business_3/workbench/worker.cjs",
     "demo:kardashev-business:test": "node --import tsx --test demo/kardashev_ii_omega_grade_alpha_agi_business_3/workbench/tests/*.test.mjs",
     "demo:kardashev-business:qa": "node demo/kardashev_ii_omega_grade_alpha_agi_business_3/workbench/tests/browser-qa.mjs",
-    "demo:kardashev-business:smoke": "python demo/kardashev_ii_omega_grade_alpha_agi_business_3/workbench/smoke.py"
+    "demo:kardashev-business:smoke": "python demo/kardashev_ii_omega_grade_alpha_agi_business_3/workbench/smoke.py",
+    "demo:omnisovereign": "node demo/omnisovereign/cli.mjs run",
+    "demo:omnisovereign:serve": "node demo/omnisovereign/server.cjs",
+    "demo:omnisovereign:task": "node demo/omnisovereign/cli.mjs task",
+    "demo:omnisovereign:review": "node demo/omnisovereign/cli.mjs review",
+    "demo:omnisovereign:worker": "node --import tsx demo/omnisovereign/worker.cjs",
+    "demo:omnisovereign:test": "node --import tsx --test demo/omnisovereign/tests/*.test.mjs",
+    "demo:omnisovereign:qa": "node demo/omnisovereign/tests/browser-qa.mjs"
   },
   "type": "commonjs",
   "version": "2.0.0"

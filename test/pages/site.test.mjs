@@ -322,12 +322,12 @@ test('nested demo documentation is discovered without misclassifying the impleme
   assert.equal(demo.kindId, 'code');
 });
 
-test('all seven published Kardashev decks retain their local assets and navigation', () => {
+test('all eight published command decks retain their local assets and navigation', () => {
   const output = path.join(root, 'build/pages');
   const manifest = JSON.parse(
     fs.readFileSync(path.join(output, 'catalog.json'))
   );
-  assert.equal(manifest.dashboardRoutes.length, 7);
+  assert.equal(manifest.dashboardRoutes.length, 8);
   for (const route of manifest.dashboardRoutes) {
     const document = new JSDOM(
       fs.readFileSync(path.join(output, route, 'index.html'), 'utf8')
