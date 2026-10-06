@@ -680,6 +680,26 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
         );
     }
   }
+  // Publish the same offline Business 3 planner used by the local viewer.
+  const businessRoot =
+    'demo/kardashev_ii_omega_grade_alpha_agi_business_3/workbench/';
+  for (const asset of [
+    'index.html',
+    'styles.css',
+    'app.mjs',
+    'core.mjs',
+    'catalog.mjs',
+    'architecture.svg',
+  ]) {
+    const file = businessRoot + asset;
+    if (!tracked.has(file))
+      throw new Error('Missing Business 3 workbench asset: ' + file);
+    write(
+      'experiments/kardashev-business/' + asset,
+      fs.readFileSync(path.join(root, file))
+    );
+  }
+  dashboardRoutes.push('experiments/kardashev-business/');
   // Compile the same Studio shipped in the pnpm workspace, in explicit offline mode.
   const studio = path.join(root, 'demo/CULTURE-v0/apps/culture-studio');
   execFileSync(

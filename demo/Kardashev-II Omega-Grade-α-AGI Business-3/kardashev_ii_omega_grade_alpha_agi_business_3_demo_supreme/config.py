@@ -11,7 +11,7 @@ from typing import List, Optional
 class SupremeDemoConfig:
     """Runtime configuration for the Omega-grade demo."""
 
-    cycles: int = 0
+    cycles: int = 6
     checkpoint_path: Path = Path("./omega_state.json")
     log_path: Path = Path("./omega_logs.jsonl")
     structured_log_level: str = "INFO"

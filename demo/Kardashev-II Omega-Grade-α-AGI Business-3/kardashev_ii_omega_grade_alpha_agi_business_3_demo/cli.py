@@ -5,6 +5,8 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+import math
+import sys
 from datetime import timedelta
 from pathlib import Path
 from typing import Any, Callable, Optional
@@ -13,6 +15,18 @@ from .governance import GovernanceParameters
 from .orchestrator import Orchestrator, OrchestratorConfig
 
 DEFAULT_CONFIG_PATH = Path(__file__).resolve().parents[1] / "config" / "default.json"
+
+
+class ExplicitArgumentParser(argparse.ArgumentParser):
+    def parse_known_args(self, args=None, namespace=None):
+        values = list(sys.argv[1:] if args is None else args)
+        parsed, remaining = super().parse_known_args(values, namespace)
+        parsed._explicit = {
+            self._option_string_actions[value.split("=", 1)[0]].dest
+            for value in values
+            if value.split("=", 1)[0] in self._option_string_actions
+        }
+        return parsed, remaining
 
 
 def _require_positive(value: float, *, field: str, allow_zero: bool = False) -> None:
@@ -27,6 +41,8 @@ def _require_positive(value: float, *, field: str, allow_zero: bool = False) -> 
         ValueError: If the value is outside the allowed range.
     """
 
+    if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value):
+        raise ValueError(f"{field} must be a finite number")
     if allow_zero:
         if value < 0:
             raise ValueError(f"{field} must be non-negative (got {value})")
@@ -43,7 +59,7 @@ def _require_unit_interval(value: float, *, field: str) -> None:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Run the Kardashev-II Omega-Grade α-AGI Business 3 demo")
+    parser = ExplicitArgumentParser(description="Run the Kardashev-II Omega-Grade α-AGI Business 3 demo", allow_abbrev=False)
     parser.add_argument(
         "--cycles",
         type=int,
@@ -164,7 +180,7 @@ def build_config(args: argparse.Namespace, overrides: Optional[dict[str, Any]] =
     stays verifiable without driving the full async runtime.
     """
 
-    overrides = overrides or {}
+    overrides = dict(overrides or {})
     default_args = build_parser().parse_args([])
     config_path = args.config or (DEFAULT_CONFIG_PATH if DEFAULT_CONFIG_PATH.exists() else None)
     if config_path:
@@ -196,6 +212,8 @@ def build_config(args: argparse.Namespace, overrides: Optional[dict[str, Any]] =
         overrides.update(data)
 
     def is_explicit(field: str) -> bool:
+        if hasattr(args, "_explicit"):
+            return field in args._explicit
         return getattr(args, field) != getattr(default_args, field)
 
     def resolve(field: str, override_key: str, *, transform: Optional[Callable[[Any], Any]] = None) -> Any:
@@ -288,7 +306,8 @@ def build_config(args: argparse.Namespace, overrides: Optional[dict[str, Any]] =
         "phase_transition_pause_threshold": overrides["phase_transition_pause_threshold"],
         "phase_transition_resume_threshold": overrides["phase_transition_resume_threshold"],
     }
-    params.update(overrides)
+    # Keep the resolved CLI values authoritative after configuration validation.
+    params = {**overrides, **params}
     params["checkpoint_interval_seconds"] = checkpoint_interval
     params["cycle_sleep_seconds"] = cycle_sleep
 

@@ -322,12 +322,12 @@ test('nested demo documentation is discovered without misclassifying the impleme
   assert.equal(demo.kindId, 'code');
 });
 
-test('all six published Kardashev decks retain their local assets and navigation', () => {
+test('all seven published Kardashev decks retain their local assets and navigation', () => {
   const output = path.join(root, 'build/pages');
   const manifest = JSON.parse(
     fs.readFileSync(path.join(output, 'catalog.json'))
   );
-  assert.equal(manifest.dashboardRoutes.length, 6);
+  assert.equal(manifest.dashboardRoutes.length, 7);
   for (const route of manifest.dashboardRoutes) {
     const document = new JSDOM(
       fs.readFileSync(path.join(output, route, 'index.html'), 'utf8')
@@ -348,6 +348,23 @@ test('all six published Kardashev decks retain their local assets and navigation
         continue;
       }
       const url = new URL(value, `https://example.invalid/${route}`);
+      if (
+        element.tagName === 'A' &&
+        url.protocol === 'https:' &&
+        url.origin !== 'https://example.invalid'
+      ) {
+        assert.ok(
+          [
+            'montrealai.github.io',
+            'github.com',
+            'docs.openclaw.ai',
+            'learn.chatgpt.com',
+            'developers.openai.com',
+          ].includes(url.hostname),
+          `${route}: unexpected external reference`
+        );
+        continue;
+      }
       assert.equal(
         url.origin,
         'https://example.invalid',

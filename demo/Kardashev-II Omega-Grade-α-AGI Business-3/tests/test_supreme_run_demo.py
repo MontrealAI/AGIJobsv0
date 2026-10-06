@@ -83,7 +83,8 @@ def test_run_as_script_uses_package_main(monkeypatch):
 
     runpy.run_path(str(script_path), run_name="__main__")
 
-    assert captured["argv"] == []
+    assert "--cycles" in captured["argv"]
+    assert "--no-resume" in captured["argv"]
     assert str(repo_root) in sys.path
 
 

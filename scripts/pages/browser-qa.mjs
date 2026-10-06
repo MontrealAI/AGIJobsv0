@@ -406,8 +406,12 @@ try {
     [],
     'Every preserved diagram must parse and render'
   );
-  assert.equal(manifest.dashboardRoutes.length, 6);
-  for (const route of manifest.dashboardRoutes) {
+  assert.equal(manifest.dashboardRoutes.length, 7);
+  const legacyDecks = manifest.dashboardRoutes.filter((route) =>
+    route.startsWith('experiments/kardashev-ii/')
+  );
+  assert.equal(legacyDecks.length, 6);
+  for (const route of legacyDecks) {
     await page.goto(url + route, { waitUntil: 'networkidle' });
     await page.waitForFunction(
       () => document.documentElement.dataset.demoStatus === 'ready'
@@ -423,6 +427,25 @@ try {
   }
   checks.push(
     'all six published Kardashev command decks load diagrams and computer-work planning'
+  );
+  await page.goto(url + 'experiments/kardashev-business/');
+  await page.waitForSelector('body[data-ready=true]');
+  assert.equal(await page.locator('.engine-card').count(), 5);
+  assert.equal(await page.locator('.template').count(), 10);
+  await page.getByRole('button', { name: 'Generate & check example' }).click();
+  await page.waitForFunction(
+    () =>
+      document.querySelector('#review-title').textContent ===
+      'Artifact checks passed'
+  );
+  await page.getByRole('button', { name: 'Test a wrong answer' }).click();
+  await page.waitForFunction(
+    () =>
+      document.querySelector('#review-title').textContent ===
+      'Artifact checks failed'
+  );
+  checks.push(
+    'published Business 3 workbench generates and checks evidence without a provider'
   );
   assert.deepEqual(requests, [], 'Unexpected external network requests');
   assert.deepEqual(errors, [], 'Browser errors');

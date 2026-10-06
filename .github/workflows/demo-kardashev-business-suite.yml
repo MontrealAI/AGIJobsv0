@@ -1,0 +1,75 @@
+name: Kardashev Business 3 suite
+on:
+  pull_request:
+    paths:
+      - 'demo/kardashev_ii_omega_grade_alpha_agi_business_3*/**'
+      - 'demo/Kardashev-II-Omega-Grade-Alpha-AGI-Business-3/**'
+      - 'demo/Kardashev-II Omega-Grade-α-AGI Business-3/**'
+      - 'apps/orchestrator/computerWork.ts'
+      - 'agent-gateway/agentEndpoint.ts'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/demo-kardashev-business-suite.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'demo/kardashev_ii_omega_grade_alpha_agi_business_3*/**'
+      - 'demo/Kardashev-II-Omega-Grade-Alpha-AGI-Business-3/**'
+      - 'demo/Kardashev-II Omega-Grade-α-AGI Business-3/**'
+      - 'apps/orchestrator/computerWork.ts'
+      - 'agent-gateway/agentEndpoint.ts'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/demo-kardashev-business-suite.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: kardashev-business-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - name: Install locked dependencies
+        run: |
+          ./scripts/ci/npm-ci.sh
+          python -m pip install pytest==8.4.2
+          npx playwright install --with-deps chromium
+      - name: Check contracts, evidence rejection and adapter admission
+        run: npm run demo:kardashev-business:test
+      - name: Check all five isolated launchers
+        run: npm run demo:kardashev-business:smoke
+      - name: Run simulation and configuration regressions
+        env:
+          PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1'
+        run: >-
+          python -m pytest --import-mode=importlib -q
+          'demo/Kardashev-II-Omega-Grade-Alpha-AGI-Business-3/tests'
+          'demo/Kardashev-II Omega-Grade-α-AGI Business-3/tests'
+          demo/kardashev_ii_omega_grade_alpha_agi_business_3_demo/tests
+          demo/kardashev_ii_omega_grade_alpha_agi_business_3_demo_omega/tests
+          demo/kardashev_ii_omega_grade_alpha_agi_business_3_demo_supreme/tests
+          demo/kardashev_ii_omega_grade_alpha_agi_business_3_demo_ultra/tests
+          test/demo/test_kardashev_ii_omega_grade_alpha_agi_business_3_demo.py
+          'demo/Kardashev-II Omega-Grade-α-AGI Business-3/kardashev_ii_omega_grade_alpha_agi_business_3_demo_ultra/tests'
+      - name: Verify browser interactions, layout and accessibility
+        run: npm run demo:kardashev-business:qa
+      - name: Preserve browser evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: kardashev-business-evidence
+          path: reports/kardashev-business/
+          retention-days: 14

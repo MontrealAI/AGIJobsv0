@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+import math
 from datetime import datetime
 from pathlib import Path
 from typing import Iterable, Optional
@@ -89,7 +90,10 @@ def main(argv: Optional[Iterable[str]] = None) -> None:
         return
 
     scenario = _load_scenario(args.config)
-    scenario.config.max_cycles = args.cycles or scenario.config.max_cycles
+    if args.cycles is not None:
+        if args.cycles < 0:
+            parser.error("--cycles must be non-negative")
+        scenario.config.max_cycles = args.cycles or None
 
     if args.no_run:
         _render_plan_to_disk(scenario)
@@ -112,7 +116,9 @@ def _resolve_duration(value: float | None) -> float | None:
 
     if value is None:
         return 10.0
-    if value <= 0:
+    if not math.isfinite(value) or value < 0:
+        raise ValueError("duration must be finite and non-negative")
+    if value == 0:
         return None
     return float(value)
 
@@ -212,8 +218,8 @@ def _print_node(node, *, indent: int) -> None:
 
 async def _run_orchestrator(scenario, *, duration: Optional[float]) -> None:
     orchestrator = Orchestrator(scenario.config)
-    await orchestrator.start()
     try:
+        await orchestrator.start()
         if duration is not None:
             await asyncio.sleep(duration)
             await orchestrator.shutdown()
@@ -223,6 +229,7 @@ async def _run_orchestrator(scenario, *, duration: Optional[float]) -> None:
         print("\nOperator requested shutdown via keyboard interrupt.")
         await orchestrator.shutdown()
     finally:
+        await orchestrator.shutdown()
         await orchestrator.wait_until_stopped()
         print(
             "Mission completed at",

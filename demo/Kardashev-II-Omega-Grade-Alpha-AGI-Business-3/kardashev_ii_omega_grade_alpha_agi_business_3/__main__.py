@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+import math
 from pathlib import Path
 from typing import Any, Dict
 
@@ -12,14 +13,14 @@ from .governance import GovernanceParameters
 from .orchestrator import OrchestratorConfig, run_demo
 
 
-def parse_args() -> argparse.Namespace:
+def parse_args(argv=None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run the Kardashev-II Omega-Grade α-AGI Business 3 demo")
     parser.add_argument("--config", type=Path, default=Path(__file__).resolve().parent.parent / "config" / "default.json")
-    parser.add_argument("--max-cycles", type=int, default=None, help="Optional safety limit on orchestration cycles")
+    parser.add_argument("--max-cycles", type=int, default=None, help="Cycle limit (default mission: 5; 0 explicitly runs indefinitely)")
     parser.add_argument("--no-simulation", action="store_true", help="Disable planetary simulation integration")
     parser.add_argument("--checkpoint", type=Path, help="Override checkpoint path")
     parser.add_argument("--no-resume", action="store_true", help="Start without rehydrating checkpoint state")
-    return parser.parse_args()
+    return parser.parse_args(argv)
 
 
 def load_config(path: Path) -> Dict[str, Any]:
@@ -53,11 +54,17 @@ def build_config(data: Dict[str, Any], overrides: argparse.Namespace) -> Orchest
         insight_interval_seconds=data.get("insight_interval_seconds", defaults.insight_interval_seconds),
         control_channel_file=control_file,
     )
+    if config.max_cycles is not None and (type(config.max_cycles) is not int or config.max_cycles < 0):
+        raise ValueError("max_cycles must be a non-negative integer")
+    for field in ("cycle_sleep_seconds", "checkpoint_interval_seconds", "insight_interval_seconds", "energy_capacity", "compute_capacity", "base_agent_tokens"):
+        value = getattr(config, field)
+        if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or value <= 0:
+            raise ValueError(f"{field} must be finite and positive")
     return config
 
 
-def main() -> None:
-    args = parse_args()
+def main(argv=None) -> None:
+    args = parse_args(argv)
     data = load_config(args.config)
     config = build_config(data, args)
     asyncio.run(run_demo(config))

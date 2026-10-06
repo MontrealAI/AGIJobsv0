@@ -1,0 +1,13 @@
+{
+  "kardashev-business": {
+    "endpoint": "http://127.0.0.1:18789/v1/responses",
+    "agentId": "kardashev-business",
+    "tokenEnv": "COMPUTER_WORK_KARDASHEV_TOKEN",
+    "deploymentId": "REPLACE_WITH_VERIFIED_CHAIN_AND_CONTRACT",
+    "mode": "live",
+    "timeoutMs": 120000,
+    "maxResponseBytes": 262144,
+    "maxOutputTokens": 8192,
+    "approvedJobs": []
+  }
+}
