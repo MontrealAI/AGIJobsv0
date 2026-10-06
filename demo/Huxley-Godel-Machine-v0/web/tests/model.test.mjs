@@ -60,6 +60,35 @@ test('imports reject malformed, non-finite, forged and injected records', () => 
     assert.throws(() => validateComparison(d));
   }
 });
+test('imports require exact totals, derived values and evidence for pending work', async () => {
+  for (const field of ['gmv', 'cost', 'reserved_cost', 'profit', 'roi']) {
+    const d = record();
+    d.hgm.summary[field] += 0.000001;
+    if (field !== 'profit')
+      d.hgm.summary.profit = d.hgm.summary.gmv - d.hgm.summary.cost;
+    if (field !== 'roi')
+      d.hgm.summary.roi = d.hgm.summary.gmv / d.hgm.summary.cost;
+    assert.throws(() => validateComparison(d), field);
+    await assert.rejects(() => analyse(d));
+    await assert.rejects(() => review(d, {}));
+  }
+  const d = record();
+  d.hgm.summary.gmv += 0.01;
+  d.hgm.summary.profit = d.hgm.summary.gmv - d.hgm.summary.cost;
+  d.hgm.summary.roi = d.hgm.summary.gmv / d.hgm.summary.cost;
+  assert.throws(() => validateComparison(d), /final snapshot/);
+  for (const field of [
+    'reserved_cost',
+    'pending_tasks',
+    'successes',
+    'failures',
+  ]) {
+    const paused = record('paused');
+    paused.hgm.timeline = [];
+    paused.hgm.summary[field] = 1;
+    assert.throws(() => validateComparison(paused), /final snapshot/);
+  }
+});
 test('worker task is bounded to a synthetic benchmark analysis', async () => {
   const t = await makeTask(record());
   assert.equal(t.workerProfile, 'hgm-analysis');

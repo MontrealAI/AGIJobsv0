@@ -34,14 +34,13 @@ function integer(value, name, max = 100000) {
   if (!Number.isSafeInteger(value)) throw new Error('Invalid ' + name);
   return value;
 }
-const close = (a, b) => Math.abs(a - b) <= 1e-6 * Math.max(1, Math.abs(b));
 function snapshot(row) {
   for (const key of ['gmv', 'cost', 'reserved_cost']) number(row[key], key);
   for (const key of ['successes', 'failures', 'pending_tasks'])
     integer(row[key], key);
   if (
     row.roi !== null &&
-    (!close(number(row.roi, 'ROI'), row.cost ? row.gmv / row.cost : 0) ||
+    (number(row.roi, 'ROI') !== (row.cost ? row.gmv / row.cost : 0) ||
       row.cost === 0)
   )
     throw new Error('ROI does not reconcile');
@@ -72,10 +71,7 @@ export function validateComparison(data) {
     snapshot(strategy.summary);
     if (
       !Number.isFinite(strategy.summary.profit) ||
-      !close(
-        strategy.summary.profit,
-        strategy.summary.gmv - strategy.summary.cost
-      )
+      strategy.summary.profit !== strategy.summary.gmv - strategy.summary.cost
     )
       throw new Error('Profit does not reconcile');
     let previous = 0;
@@ -106,20 +102,17 @@ export function validateComparison(data) {
           integer(agent[field], field);
       }
     }
-    if (strategy.timeline.length) {
-      const last = strategy.timeline.at(-1);
-      for (const field of [
-        'gmv',
-        'cost',
-        'reserved_cost',
-        'pending_tasks',
-        'successes',
-        'failures',
-      ])
-        if (!close(last[field], strategy.summary[field]))
-          throw new Error('Summary does not match final snapshot');
-    } else if (strategy.summary.cost || strategy.summary.gmv)
-      throw new Error('Nonzero summary needs a timeline');
+    const final = strategy.timeline.at(-1);
+    for (const field of [
+      'gmv',
+      'cost',
+      'reserved_cost',
+      'pending_tasks',
+      'successes',
+      'failures',
+    ])
+      if (strategy.summary[field] !== (final ? final[field] : 0))
+        throw new Error('Summary does not match final snapshot');
     if (
       !Array.isArray(strategy.logs) ||
       strategy.logs.some((x) => typeof x !== 'string' || x.length > 2000)
