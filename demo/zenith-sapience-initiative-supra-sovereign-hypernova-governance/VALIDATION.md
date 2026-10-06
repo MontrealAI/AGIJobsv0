@@ -10,6 +10,8 @@ This record describes engineering validation of the demo. It is not a certificat
 - The original README Mermaid block and historical plan are preserved byte-for-byte. All six regions, eleven jobs, dependencies, rewards, durations and participant roles remain intact.
 - The corrected allocation ledger sums to **1,250,000,000** scenario units; job rewards remain **1,128,000,000**, leaving **122,000,000**. The explicit duration-after-dependencies model has a **286-day** critical path under unlimited parallel capacity.
 - The preserved governance-kit command completed, compiling 267 Solidity files and generating reports and diagrams. Its owner-verification output reported **18 missing addresses and zero verified owner checks** in the unconfigured ephemeral environment. Successful artifact generation is therefore not proof of deployed ownership. Inspect a configured deployment and use strict verification before live operations.
+- The isolated local-chain rehearsal on chain 31337 finalized all **three shared ASI Global jobs**, with 5, 4 and 5 validator reveals respectively. The commissioning record reported mock tokens and work, no independent operators, ten fixed implementations and fourteen constructor records. Thermostat adjustments were skipped because no Thermostat address was configured. This verifies the retained local lifecycle, not the eleven infrastructure projects or a live deployment.
+- The complete website build generated **76 demo pages, 329 guides and 263 preserved diagrams**. All **13 site tests** pass, and the Hypernova browser suite also passes against the built assets under the GitHub project URL prefix.
 
 ## Required CI and publishing gates
 

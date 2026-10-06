@@ -406,7 +406,8 @@ try {
     [],
     'Every preserved diagram must parse and render'
   );
-  assert.equal(manifest.dashboardRoutes.length, 10);
+  assert.equal(manifest.dashboardRoutes.length, 11);
+  assert.ok(manifest.dashboardRoutes.includes('experiments/zenith-hypernova/'));
   assert.equal(manifest.archiveRoutes.length, 14);
   const legacyDecks = manifest.dashboardRoutes.filter((route) =>
     route.startsWith('experiments/kardashev-ii/')
