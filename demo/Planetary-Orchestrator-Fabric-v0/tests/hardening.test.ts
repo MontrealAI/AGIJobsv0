@@ -222,6 +222,35 @@ test('duplicate IDs are rejected including after cancellation and checkpoint res
   await restored.restoreFromCheckpoint();
   assert.throws(() => restored.submitJob(job), /Duplicate/);
 });
+test('replay rebuilds duplicate protection and discards stale instance IDs', async (t) => {
+  const { config } = await setup(t);
+  const manager = new CheckpointManager(config.checkpoint.path);
+  const source = new PlanetaryOrchestrator(structuredClone(config), manager);
+  source.submitJob(job);
+  for (let tick = 1; tick <= 4; tick++) source.processTick({ tick });
+  const frames = source.getDeterministicLog();
+  const replayed = new PlanetaryOrchestrator(config, manager);
+  replayed.submitJob({ ...job, id: 'stale' });
+  replayed.replay(frames);
+  assert.equal(replayed.fabricMetrics.jobsCompleted, 1);
+  assert.throws(() => replayed.submitJob(job), /Duplicate/);
+  replayed.submitJob({ ...job, id: 'stale' });
+  replayed.replay(frames);
+  assert.equal(replayed.fabricMetrics.jobsSubmitted, 1);
+  assert.throws(() => replayed.submitJob(job), /Duplicate/);
+  await replayed.saveCheckpoint();
+  const restored = new PlanetaryOrchestrator(config, manager);
+  assert.equal(await restored.restoreFromCheckpoint(), true);
+  assert.throws(() => restored.submitJob(job), /Duplicate/);
+  restored.submitJob({ ...job, id: 'stale' });
+  const created = frames
+    .flatMap((frame) => frame.events)
+    .find((event) => event.type === 'job.created')!;
+  assert.throws(
+    () => replayed.replay([{ tick: 1, events: [created, created] }]),
+    /Duplicate replay/
+  );
+});
 test('checkpoint corruption and legacy unsigned snapshots fail closed', async (t) => {
   const { config } = await setup(t);
   const manager = new CheckpointManager(config.checkpoint.path),

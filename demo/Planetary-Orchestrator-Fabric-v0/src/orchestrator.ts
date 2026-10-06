@@ -1274,6 +1274,7 @@ export class PlanetaryOrchestrator {
   }
 
   replay(frames: DeterministicReplayFrame[]): void {
+    this.submittedJobIds.clear();
     this.initializeState();
     const sorted = [...frames].sort((a, b) => a.tick - b.tick);
     for (const frame of sorted) {
@@ -1296,10 +1297,12 @@ export class PlanetaryOrchestrator {
   private applyRegistryEvent(event: RegistryEvent): void {
     switch (event.type) {
       case 'job.created': {
+        if (this.submittedJobIds.has(event.job.id)) throw new Error(`Duplicate replay job ID ${event.job.id}`);
         const router = this.routers.get(event.shard);
         if (!router) {
           throw new Error(`Unknown shard ${event.shard}`);
         }
+        this.submittedJobIds.add(event.job.id);
         router.queueJob(cloneJob(event.job), 'new');
         this.metrics.jobsSubmitted += 1;
         this.metrics.valueSubmitted += event.job.value;
