@@ -1385,30 +1385,41 @@
     "related": ["asi-takeoff"]
   },
   "omnisovereign": {
-    "question": "How can an ambitious mission be translated into a reviewable plan?",
-    "purpose": "For mission designers: inspect this scenario’s task graph and operator runbook, then connect it to a related executable local workflow.",
+    "question": "How can useful machine work scale across city, regional and planetary planning layers?",
+    "purpose": "Run the complete six-stage synthetic coordination rehearsal, export exact worker tasks, and check evidence before any independent acceptance or settlement.",
     "steps": [
       {
-        "title": "Inspect the mission plan",
-        "source": "demo/omnisovereign/project-plan.omnisovereign.json",
-        "explanation": "Read task identities, dependencies, budgets and acceptance descriptions. A project plan is an input artifact; its targets are not evidence of completed work."
+        "title": "Run the dedicated coordination workflow",
+        "source": "demo/omnisovereign/execute.mjs",
+        "explanation": "Execute the six original stage identities with actual inventory, allocation, treasury, energy, reviewer-capacity and dossier artifacts. The underlying customer briefs remain planned examples."
       },
       {
-        "title": "Read the operating sequence",
+        "title": "Challenge the evidence",
+        "source": "demo/omnisovereign/review.mjs",
+        "explanation": "Recompute source arithmetic independently; reject wrong answers even if hashes are recalculated. Check adapter receipts against separately supplied job/deployment bindings."
+      },
+      {
+        "title": "Commission authorized computer work",
         "source": "demo/omnisovereign/RUNBOOK.md",
-        "explanation": "Follow the scenario-specific runbook and separate plan generation, owner diagnostics and contract execution. Some steps require a configured environment."
-      },
-      {
-        "title": "Inspect the execution reference",
-        "source": "demo/asi-takeoff/config/mission@v2.json",
-        "explanation": "This related local demo provides concrete executable job specifications. Compare the mission plan with the jobs actually selected by a launcher before claiming scenario-specific execution."
+        "explanation": "Use the admitted OpenClaw adapter or an operator-led Work session. Retain the national/planetary chain drills and keep their local mock-token receipts separate from USDC planning."
       }
     ],
-    "command": "npm run demo:asi-takeoff:local",
-    "expected": "The related ASI Take-Off workflow generates local contract evidence. It demonstrates the execution mechanism; it does not itself execute every task in this scenario’s project plan.",
-    "experiment": "Choose one task from this plan and specify its real input, acceptance test, validator evidence and settlement condition. Identify what the related local demonstration covers.",
-    "mode": "local",
-    "related": ["asi-takeoff"]
+    "command": "npm run demo:omnisovereign",
+    "expected": "Six JSON artifacts, six task contracts, source, evidence bundle, review result and readable dossier in a unique reports/omnisovereign directory. No provider calls or payments.",
+    "experiment": "Run the rehearsal, reject a rehashed wrong answer, and vary reviewer capacity before increasing agent count.",
+    "mode": "stdlib",
+    "related": [
+      "asi-takeoff",
+      "asi-global",
+      "kardashev_ii_omega_grade_alpha_agi_business_3"
+    ],
+    "dashboards": [
+      {
+        "route": "experiments/omnisovereign/",
+        "title": "OmniSovereign coordination console",
+        "source": "demo/omnisovereign/index.html"
+      }
+    ]
   },
   "zenith-sapience-initiative-celestial-archon-governance": {
     "question": "How does the Celestial Archon governance plan attach to a local rehearsal?",

@@ -406,7 +406,7 @@ try {
     [],
     'Every preserved diagram must parse and render'
   );
-  assert.equal(manifest.dashboardRoutes.length, 7);
+  assert.equal(manifest.dashboardRoutes.length, 8);
   const legacyDecks = manifest.dashboardRoutes.filter((route) =>
     route.startsWith('experiments/kardashev-ii/')
   );
@@ -446,6 +446,28 @@ try {
   );
   checks.push(
     'published Business 3 workbench generates and checks evidence without a provider'
+  );
+  await page.goto(url + 'experiments/omnisovereign/');
+  await page.waitForSelector('body[data-ready=true]');
+  assert.equal(await page.locator('[data-stage]').count(), 6);
+  await page
+    .getByRole('button', { name: /Run the six-stage rehearsal/ })
+    .click();
+  await page.waitForFunction(
+    () =>
+      document.querySelector('#review-title').textContent ===
+      'Artifact checks passed'
+  );
+  await page
+    .getByRole('button', { name: 'Test a rehashed wrong answer' })
+    .click();
+  await page.waitForFunction(
+    () =>
+      document.querySelector('#review-title').textContent ===
+      'Artifact checks failed'
+  );
+  checks.push(
+    'published OmniSovereign route executes six stages and rejects rehashed incorrect evidence'
   );
   assert.deepEqual(requests, [], 'Unexpected external network requests');
   assert.deepEqual(errors, [], 'Browser errors');

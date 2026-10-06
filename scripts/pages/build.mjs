@@ -700,6 +700,27 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
     );
   }
   dashboardRoutes.push('experiments/kardashev-business/');
+  // Publish the complete OmniSovereign rehearsal with only local assets.
+  for (const asset of [
+    'index.html',
+    'styles.css',
+    'app.mjs',
+    'model.mjs',
+    'execute.mjs',
+    'review.mjs',
+    'scenario.json',
+    'project-plan.omnisovereign.json',
+    'architecture.svg',
+  ]) {
+    const file = 'demo/omnisovereign/' + asset;
+    if (!tracked.has(file))
+      throw new Error('Missing OmniSovereign asset: ' + file);
+    write(
+      'experiments/omnisovereign/' + asset,
+      fs.readFileSync(path.join(root, file))
+    );
+  }
+  dashboardRoutes.push('experiments/omnisovereign/');
   // Compile the same Studio shipped in the pnpm workspace, in explicit offline mode.
   const studio = path.join(root, 'demo/CULTURE-v0/apps/culture-studio');
   execFileSync(

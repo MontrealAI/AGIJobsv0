@@ -1,0 +1,57 @@
+name: OmniSovereign coordination
+on:
+  pull_request:
+    paths:
+      - 'demo/omnisovereign/**'
+      - 'apps/orchestrator/computerWork.ts'
+      - 'agent-gateway/agentEndpoint.ts'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/demo-omnisovereign.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'demo/omnisovereign/**'
+      - 'apps/orchestrator/computerWork.ts'
+      - 'agent-gateway/agentEndpoint.ts'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/demo-omnisovereign.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: omnisovereign-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+      - name: Install locked dependencies and browser
+        run: |
+          ./scripts/ci/npm-ci.sh
+          npx playwright install --with-deps chromium
+      - name: Verify all stages, independent evidence checks and admitted adapter fixtures
+        run: npm run demo:omnisovereign:test
+      - name: Execute the complete offline rehearsal
+        run: npm run demo:omnisovereign
+      - name: Verify browser interactions and accessibility
+        run: npm run demo:omnisovereign:qa
+      - name: Preserve reviewable evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: omnisovereign-evidence
+          path: reports/omnisovereign/
+          retention-days: 14

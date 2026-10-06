@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "id": "omnisovereign-screen-work-v1",
+  "dataClass": "synthetic",
+  "budgetUsdc": "40000.000000",
+  "minimumReserveUsdc": "5000.000000",
+  "regions": [
+    {
+      "id": "CITY-STATES",
+      "name": "City networks",
+      "reviewMinutes": 20,
+      "generatedMwh": 600,
+      "demandMwh": 740
+    },
+    {
+      "id": "REGIONAL-COUNCILS",
+      "name": "Regional councils",
+      "reviewMinutes": 30,
+      "generatedMwh": 950,
+      "demandMwh": 810
+    },
+    {
+      "id": "PLANETARY-RESERVE",
+      "name": "Planetary reserve",
+      "reviewMinutes": 30,
+      "generatedMwh": 500,
+      "demandMwh": 560
+    }
+  ],
+  "work": [
+    {
+      "id": "OMNI-001",
+      "region": "CITY-STATES",
+      "title": "Reproduce and repair a public scheduling benchmark",
+      "deliverable": "Reproducible benchmark, patch and regression tests",
+      "rewardUsdc": "1500.000000",
+      "estimatedCostUsdc": "180.000000",
+      "reviewMinutes": 12
+    },
+    {
+      "id": "OMNI-002",
+      "region": "REGIONAL-COUNCILS",
+      "title": "Build an accessible synthetic logistics dashboard",
+      "deliverable": "Dashboard, source data and accessibility evidence",
+      "rewardUsdc": "3000.000000",
+      "estimatedCostUsdc": "400.000000",
+      "reviewMinutes": 15
+    },
+    {
+      "id": "OMNI-003",
+      "region": "PLANETARY-RESERVE",
+      "title": "Reproduce a numerical energy allocation study",
+      "deliverable": "Executable notebook, conservation tests and assumptions",
+      "rewardUsdc": "5000.000000",
+      "estimatedCostUsdc": "850.000000",
+      "reviewMinutes": 20
+    },
+    {
+      "id": "OMNI-004",
+      "region": "CITY-STATES",
+      "title": "Produce an API migration and compatibility test kit",
+      "deliverable": "SDK patch, contract tests and migration guide",
+      "rewardUsdc": "2500.000000",
+      "estimatedCostUsdc": "260.000000",
+      "reviewMinutes": 10
+    },
+    {
+      "id": "OMNI-005",
+      "region": "REGIONAL-COUNCILS",
+      "title": "Build an agent evaluation package for approved workflows",
+      "deliverable": "Synthetic task set, evaluator and failure analysis",
+      "rewardUsdc": "7500.000000",
+      "estimatedCostUsdc": "1100.000000",
+      "reviewMinutes": 18
+    },
+    {
+      "id": "OMNI-006",
+      "region": "PLANETARY-RESERVE",
+      "title": "Reconcile a synthetic portfolio and publish executable docs",
+      "deliverable": "Exact reconciliation, source lineage and runnable documentation",
+      "rewardUsdc": "4000.000000",
+      "estimatedCostUsdc": "540.000000",
+      "reviewMinutes": 15
+    }
+  ]
+}

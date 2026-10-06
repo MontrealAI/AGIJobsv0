@@ -124,7 +124,7 @@ The generated section includes every tracked top-level directory and every neste
 | [omni-sovereign-ascension-operating-system](omni-sovereign-ascension-operating-system/README.md) | Code and guide | `demo:omni-sovereign` |
 | [OMNIGENESIS-GLOBAL-SOVEREIGN-SYMPHONY](OMNIGENESIS-GLOBAL-SOVEREIGN-SYMPHONY/README.md) | Code and guide | Open the guide or source directory |
 | [OMNIPHOENIX-ASCENDANT-HYPERSTRUCTURE](OMNIPHOENIX-ASCENDANT-HYPERSTRUCTURE/README.md) | Code and guide | Open the guide or source directory |
-| [omnisovereign](omnisovereign/README.md) | Code and guide | Open the guide or source directory |
+| [omnisovereign](omnisovereign/README.md) | Code and guide | `demo:omnisovereign`, `demo:omnisovereign:serve`, `demo:omnisovereign:task` |
 | [One-Box](One-Box/README.md) | Code and guide | `demo:onebox:doctor`, `demo:onebox:launch`, `demo:computer-work` |
 | [open_endedness_v0](open_endedness_v0) | Supporting code / assets | Open the guide or source directory |
 | [Open-Endedness-v0](Open-Endedness-v0/README.md) | Code and guide | Open the guide or source directory |
