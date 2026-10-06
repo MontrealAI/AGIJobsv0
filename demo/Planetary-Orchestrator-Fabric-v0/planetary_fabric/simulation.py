@@ -66,6 +66,9 @@ async def _prepare_orchestrator(
             rebalance_interval=config.rebalance_interval, heartbeat_interval=config.heartbeat_interval,
         )
     else:
+        # Invalidate only this model's prior snapshot before starting a new
+        # mission. A crash before its first checkpoint must not revive old work.
+        config.checkpoint.resolve_path().unlink(missing_ok=True)
         orchestrator = PlanetaryOrchestrator(
             regions=list(config.regions), checkpoint=config.checkpoint,
             rebalance_interval=config.rebalance_interval, heartbeat_interval=config.heartbeat_interval,

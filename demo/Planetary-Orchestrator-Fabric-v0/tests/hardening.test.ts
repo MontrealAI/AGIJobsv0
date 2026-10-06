@@ -73,6 +73,37 @@ test('future jobs cannot execute before their submission tick', async (t) => {
     assert.equal(o.processTick({ tick }).length, 0);
   assert.equal(o.processTick({ tick: 5 }).length, 1);
 });
+for (const id of ['job 1', 'tenant:42'])
+  test(`opaque job ID remains controllable in direct and scheduled commands: ${id}`, async (t) => {
+    const { config } = await setup(t);
+    config.shards.push({ ...config.shards[0], id: 'edge' });
+    const o = new PlanetaryOrchestrator(
+      structuredClone(config),
+      new CheckpointManager(config.checkpoint.path)
+    );
+    assert.throws(() => o.submitJob({ ...job, id: '' }));
+    o.submitJob({ ...job, id });
+    await o.applyOwnerCommand({
+      type: 'job.reroute',
+      jobId: id,
+      targetShard: 'edge',
+    });
+    await o.applyOwnerCommand({ type: 'job.cancel', jobId: id });
+    assert.equal(o.fabricMetrics.jobsCancelled, 1);
+    const result = await runSimulation(config, {
+      jobs: 1,
+      jobBlueprint: { jobs: [{ ...job, id, submissionTick: 10 }] },
+      ownerCommands: [
+        {
+          tick: 1,
+          command: { type: 'job.reroute', jobId: id, targetShard: 'edge' },
+        },
+        { tick: 2, command: { type: 'job.cancel', jobId: id } },
+      ],
+    });
+    assert.equal(result.metrics.jobsCancelled, 1);
+    assert.equal(result.executedOwnerCommands.length, 2);
+  });
 for (const resume of [false, true])
   test(`scheduled jobs beyond the default budget finish (${
     resume ? 'resumed' : 'fresh'

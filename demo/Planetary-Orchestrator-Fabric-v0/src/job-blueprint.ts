@@ -1,11 +1,12 @@
 import { promises as fs } from 'fs';
 import { resolve } from 'path';
 import { z } from 'zod';
+import { jobIdSchema } from './validation';
 import { FabricConfig, JobDefinition, JobBlueprint, JobBlueprintEntry, ShardConfig } from './types';
 
 const jobEntrySchema = z
   .object({
-    id: z.string().min(1).optional(),
+    id: jobIdSchema.optional(),
     idPrefix: z.string().min(1).optional(),
     shard: z.string().min(1),
     requiredSkills: z.array(z.string().min(1)).optional(),

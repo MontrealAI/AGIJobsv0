@@ -7,6 +7,9 @@ const id = z
   .refine((s) => !s.includes('..'));
 const positive = z.number().int().positive().max(Number.MAX_SAFE_INTEGER);
 const natural = z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER);
+// Job IDs are opaque keys, not paths or shard identifiers. Preserve names
+// accepted by blueprints, including spaces and tenant-qualified IDs.
+export const jobIdSchema = z.string().min(1);
 const policy = z.object({
   target: id,
   threshold: natural,
@@ -99,13 +102,13 @@ const command = z.discriminatedUnion('type', [
   }),
   z.object({
     type: z.literal('job.cancel'),
-    jobId: id.optional(),
+    jobId: jobIdSchema.optional(),
     locator: locator.optional(),
     ...reason,
   }),
   z.object({
     type: z.literal('job.reroute'),
-    jobId: id.optional(),
+    jobId: jobIdSchema.optional(),
     locator: locator.optional(),
     targetShard: id,
     ...reason,

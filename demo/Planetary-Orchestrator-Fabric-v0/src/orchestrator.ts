@@ -1,4 +1,4 @@
-import { validateOwnerCommand, validateFabricConfig } from './validation';
+import { validateOwnerCommand, validateFabricConfig, jobIdSchema } from './validation';
 import { CheckpointManager } from './checkpoint';
 import { PlanetaryLedger } from './ledger';
 import {
@@ -286,6 +286,7 @@ export class PlanetaryOrchestrator {
   }
 
   submitJob(definition: JobDefinition): void {
+    jobIdSchema.parse(definition.id);
     if (this.submittedJobIds.has(definition.id)) throw new Error(`Duplicate job ID ${definition.id}`);
     if (!Number.isSafeInteger(definition.submissionTick) || definition.submissionTick < 0 || !Number.isSafeInteger(definition.estimatedDurationTicks) || definition.estimatedDurationTicks <= 0 || !Number.isFinite(definition.value) || definition.value < 0) throw new Error('Invalid job timing or value');
     this.logger.setTick(this.tick);
