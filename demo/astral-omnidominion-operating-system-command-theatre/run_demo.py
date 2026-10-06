@@ -12,6 +12,7 @@ import json
 import math
 import os
 import re
+import stat
 import sys
 import tempfile
 import uuid
@@ -51,7 +52,14 @@ def _digest(data: bytes) -> str:
 
 
 def _read_bytes(path: Path) -> bytes:
-    with path.open("rb") as stream:
+    if not stat.S_ISREG(path.lstat().st_mode):
+        raise ValueError(f"Expected a regular file: {path.name}")
+    # Nonblocking open prevents a replacement FIFO from hanging between lstat
+    # and open. Validate the descriptor too; a path check alone is racy.
+    flags = os.O_RDONLY | getattr(os, "O_NONBLOCK", 0) | getattr(os, "O_NOFOLLOW", 0)
+    with os.fdopen(os.open(path, flags), "rb") as stream:
+        if not stat.S_ISREG(os.fstat(stream.fileno()).st_mode):
+            raise ValueError(f"Expected a regular file: {path.name}")
         data = stream.read(MAX_FILE_BYTES + 1)
     if len(data) > MAX_FILE_BYTES:
         raise ValueError(f"File exceeds {MAX_FILE_BYTES} bytes: {path.name}")

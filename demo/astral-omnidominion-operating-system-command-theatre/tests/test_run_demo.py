@@ -42,6 +42,7 @@ def test_main_writes_report(tmp_path: Path, monkeypatch):
 
 import copy
 import hashlib
+import os
 import shutil
 import subprocess
 
@@ -142,6 +143,35 @@ def test_tampered_and_missing_artifacts_rejected(tmp_path):
     assert run_demo.main(["--verify-report", str(output)]) == 1
     target.unlink()
     assert run_demo.main(["--verify-report", str(output)]) == 1
+
+
+@pytest.mark.skipif(not hasattr(os, "mkfifo"), reason="POSIX named pipes")
+def test_fifo_evidence_is_rejected_without_blocking(tmp_path):
+    _, output, payload = execute(tmp_path)
+    target = output.parent / payload["rehearsal"]["artifacts"][0]["path"]
+    target.unlink()
+    os.mkfifo(target)
+    result = subprocess.run([sys.executable, str(MODULE_PATH), "--verify-report", str(output)],
+                            capture_output=True, text=True, timeout=5)
+    assert result.returncode == 1
+    assert "regular file" in result.stderr
+
+
+@pytest.mark.skipif(not hasattr(os, "mkfifo"), reason="POSIX named pipes")
+def test_file_replaced_with_fifo_after_path_check_is_rejected(tmp_path, monkeypatch):
+    target = tmp_path / "evidence.json"
+    target.write_text("{}")
+    original_open = os.open
+
+    def swap_before_open(path, flags, *args, **kwargs):
+        if Path(path) == target:
+            target.unlink()
+            os.mkfifo(target)
+        return original_open(path, flags, *args, **kwargs)
+
+    monkeypatch.setattr(os, "open", swap_before_open)
+    with pytest.raises(ValueError, match="regular file"):
+        run_demo._read_bytes(target)
 
 
 def test_rehashed_wrong_deliverable_still_fails_acceptance_consistency(tmp_path):
