@@ -118,6 +118,9 @@ it('validates generated artifacts after disabling a domain, its sentinel, and a 
     expect(() => validateArtifacts(parsed, outputDir)).not.toThrow();
     const scorecard = JSON.parse(readFileSync(join(outputDir, 'phase8-dominance-scorecard.json'), 'utf8'));
     expect(scorecard.activityPolicy).toContain('active entities only');
+    const csv = readFileSync(join(outputDir, 'phase8-cycle-report.csv'), 'utf8').trim().split('\n');
+    expect(csv[0]).toContain(',active,');
+    expect(csv.find((line) => line.startsWith('health-sovereign,'))).toMatch(/,false,.*inactive$/);
     for (const [key, field, expected] of [
       ['domains', 'valueFlowMonthlyUSD', metrics.totalMonthlyUSD],
       ['sentinels', 'coverageSeconds', metrics.guardianCoverageMinutes * 60],
@@ -129,4 +132,17 @@ it('validates generated artifacts after disabling a domain, its sentinel, and a 
   } finally {
     rmSync(outputDir, { recursive: true, force: true });
   }
+});
+
+it('rejects unsafe aggregate budgets before any allocation and preserves the exact boundary', () => {
+  const config = loadConfig();
+  config.capitalStreams.forEach((stream) => { stream.annualBudget = Number.MAX_SAFE_INTEGER; });
+  expect(() => parseManifest(config)).toThrow(/Aggregate active annual budget/);
+  expect(() => computeMetrics(config)).toThrow(/Aggregate active annual budget/);
+  config.capitalStreams.slice(1).forEach((stream) => { stream.active = false; });
+  config.capitalStreams[0].domains = config.domains.map((domain) => domain.slug);
+  const parsed = parseManifest(config);
+  const { metrics } = crossVerifyMetrics(parsed);
+  expect(metrics.annualBudget).toBe(Number.MAX_SAFE_INTEGER);
+  expect(Object.values(metrics.domainFundingMap).reduce((sum, value) => sum + value, 0)).toBe(Number.MAX_SAFE_INTEGER);
 });

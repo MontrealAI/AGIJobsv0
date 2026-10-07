@@ -350,7 +350,7 @@ describe("Phase 8 orchestration console", () => {
 
       const cycleReport = readFileSync(artifactPaths.cycleReport, "utf-8");
       expect(cycleReport).toContain(
-        "slug,name,resilience_index,autonomy_bps,monthly_value_usd,sentinel_coverage_seconds,guardian_window_seconds,coverage_adequacy_percent,capital_coverage_usd,capital_share_percent,resilience_status",
+        "slug,name,active,resilience_index,autonomy_bps,monthly_value_usd,sentinel_coverage_seconds,guardian_window_seconds,coverage_adequacy_percent,capital_coverage_usd,capital_share_percent,resilience_status",
       );
       const cycleReportLines = cycleReport.trim().split("\n");
       expect(cycleReportLines).toHaveLength((config.domains?.length ?? 0) + 1);

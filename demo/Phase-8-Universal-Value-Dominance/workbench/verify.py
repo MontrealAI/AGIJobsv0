@@ -12,14 +12,48 @@ def same_values(actual, expected):
     return type(actual) is type(expected) and actual == expected
 
 
+def draft_order(task, scenario):
+    return {
+        'schemaVersion': 1,
+        'status': 'draft',
+        'taskId': task['id'],
+        'title': task['title'],
+        'goal': task['goal'],
+        'dataClass': 'public-licensed-or-synthetic',
+        'deliverables': task['deliverables'],
+        'acceptanceCriteria': task['acceptanceCriteria'],
+        'authorization': {
+            'scope': 'Define exact sources, application origins, allowed actions and stop conditions before admission.',
+            'externalActionsApproved': False,
+        },
+        'runtime': {
+            'operatorChoice': ['OpenClaw isolated browser', 'ChatGPT Work Computer Use', 'OpenAI API computer-use harness'],
+            'configured': False,
+        },
+        'review': {
+            'independentReviewerRequired': True,
+            'identityVerified': False,
+            'buyerAcceptanceRequired': True,
+        },
+        'settlement': {
+            'currency': 'USDC',
+            'approved': False,
+            'note': 'Separate deployed settlement policy and explicit authorization required.',
+        },
+        'scenario': scenario,
+    }
+
+
 def verify(directory):
     root = Path(directory)
     receipt = json.loads((root / 'receipt.json').read_text())
-    if receipt.get('evidenceClass') != 'local-planning-calculation' or any(receipt.get(k) is not False for k in ['productionApproved', 'settlementApproved', 'independentReviewCompleted']): raise ValueError('Unsupported receipt claim')
+    claims = {'schemaVersion': 1, 'evidenceClass': 'local-planning-calculation', 'providerCalls': 0, 'chainTransactions': 0, 'productionApproved': False, 'settlementApproved': False, 'independentReviewCompleted': False}
+    if set(receipt) != set(claims) | {'artifacts'} or not same_values({key: receipt[key] for key in claims}, claims): raise ValueError('Unsupported receipt claim')
     expected = {'plan.json', 'work-orders.json', 'report.md'}
     entries = receipt['artifacts']
     if len(entries) != 3 or {x['name'] for x in entries} != expected: raise ValueError('Unexpected artifact set')
     for item in entries:
+        if set(item) != {'name', 'sha256'}: raise ValueError('Unsupported artifact metadata')
         file = root / item['name']
         if file.is_symlink() or hashlib.sha256(file.read_bytes()).hexdigest() != item['sha256']: raise ValueError('Artifact digest mismatch')
     p = json.loads((root / 'plan.json').read_text()); s = p['settings']
@@ -65,9 +99,12 @@ def verify(directory):
     }
     if not same_values(p, values): raise ValueError('Independent arithmetic mismatch or unsupported execution claim')
     orders = json.loads((root / 'work-orders.json').read_text())
-    if len(orders) != 10 or len({o['taskId'] for o in orders}) != 10: raise ValueError('Incomplete work-order set')
+    tasks = json.loads(Path(__file__).with_name('tasks.json').read_text())
+    catalog = {task['id']: task for task in tasks}
+    if not isinstance(orders, list) or len(orders) != len(catalog) or {o['taskId'] for o in orders} != set(catalog): raise ValueError('Incomplete work-order set')
     for order in orders:
-        if order['scenario'] != p or order['status'] != 'draft' or order['settlement']['currency'] != 'USDC' or order['settlement']['approved'] is not False or order['review']['identityVerified'] is not False or order['runtime']['configured'] is not False: raise ValueError('Unsupported work-order claim')
+        if not same_values(order, draft_order(catalog[order['taskId']], values)):
+            raise ValueError('Unsupported work-order claim or modified draft')
     return {'arithmeticVerified': True, 'artifactIntegrityVerified': True, 'reviewerIndependenceVerified': False, 'settlementApproved': False}
 
 if __name__ == '__main__':

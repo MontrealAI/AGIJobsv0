@@ -575,6 +575,21 @@ const SelfImprovementSchema = z.object({
   guardrails: KernelGuardrailsSchema,
 });
 
+function safeAnnualBudgetTotal(streams: Array<{ annualBudget?: number; active?: boolean }>): number {
+  let total = 0n;
+  for (const stream of streams) {
+    if (stream.active === false) continue;
+    if (typeof stream.annualBudget !== "number" || !Number.isSafeInteger(stream.annualBudget) || stream.annualBudget < 0) {
+      throw new Error("Annual budgets must be non-negative safe whole USD amounts");
+    }
+    total += BigInt(stream.annualBudget);
+  }
+  if (total > BigInt(Number.MAX_SAFE_INTEGER)) {
+    throw new Error("Aggregate active annual budget exceeds the safe whole USD limit");
+  }
+  return Number(total);
+}
+
 const ManifestSchema = z
   .object({
     global: z.object({
@@ -658,6 +673,11 @@ const ManifestSchema = z
     });
 
     const streams = value.capitalStreams ?? [];
+    try {
+      safeAnnualBudgetTotal(streams);
+    } catch (error) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: (error as Error).message, path: ["capitalStreams"] });
+    }
     const streamSlugMap = new Map<string, number>();
     streams.forEach((stream, index) => {
       const slug = String(stream?.slug ?? "").toLowerCase();
@@ -1265,6 +1285,7 @@ export function computeMetrics(config: Phase8Config) {
   const domains = (config.domains ?? []).filter((entry) => entry.active !== false);
   const sentinels = (config.sentinels ?? []).filter((entry) => entry.active !== false);
   const streams = (config.capitalStreams ?? []).filter((entry) => entry.active !== false);
+  const annualBudget = safeAnnualBudgetTotal(streams);
   const protocols = config.guardianProtocols ?? [];
   const plan = config.selfImprovement?.plan ?? {};
   const autonomy = config.autonomy;
@@ -1285,7 +1306,6 @@ export function computeMetrics(config: Phase8Config) {
       ? 0
       : domains.reduce((acc: number, domain: any) => acc + Number(domain.resilienceIndex ?? 0), 0) / domains.length;
   const guardianCoverageMinutes = sentinels.reduce((acc: number, sentinel: any) => acc + Number(sentinel.coverageSeconds ?? 0), 0) / 60;
-  const annualBudget = streams.reduce((acc: number, stream: any) => acc + Number(stream.annualBudget ?? 0), 0);
 
   const coverageSet = new Set<string>();
   const fundedSet = new Set<string>();
@@ -1513,7 +1533,7 @@ export function crossVerifyMetrics(config: Phase8Config, overrides: MetricTolera
     const targets = ((stream.domains ?? []).length > 0 ? declaredTargets : [...domainSlugs]).sort();
     for (const target of targets) {
       const current = fundingByDomain.get(target) ?? 0;
-      fundingByDomain.set(target, current + Math.floor((budgetRaw + targets.length - 1 - targets.indexOf(target)) / targets.length));
+      fundingByDomain.set(target, current + Number((BigInt(budgetRaw) + BigInt(targets.length - 1 - targets.indexOf(target))) / BigInt(targets.length)));
     }
   }
 
@@ -2594,6 +2614,7 @@ function generateCycleReportCsv(
   const header = [
     "slug",
     "name",
+    "active",
     "resilience_index",
     "autonomy_bps",
     "monthly_value_usd",
@@ -2613,10 +2634,11 @@ function generateCycleReportCsv(
     const fundingUSD = funding.get(normalized) ?? 0;
     const capitalShare = metrics.annualBudget > 0 ? (fundingUSD / metrics.annualBudget) * 100 : 0;
     const resilience = Number(domain.resilienceIndex ?? 0);
-    const resilienceStatus = resilience < RESILIENCE_ALERT_THRESHOLD ? "review" : "stable";
+    const resilienceStatus = domain.active === false ? "inactive" : resilience < RESILIENCE_ALERT_THRESHOLD ? "review" : "stable";
     const row = [
       slug,
       domain.name ?? slug,
+      String(domain.active !== false),
       resilience.toFixed(3),
       Number(domain.autonomyLevelBps ?? 0).toString(),
       Number(domain.valueFlowMonthlyUSD ?? 0).toString(),

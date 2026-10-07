@@ -127,3 +127,51 @@ test('checker agrees on zero acceptance, zero admission, fractional review and t
     } finally { fs.rmSync(dir, { recursive: true, force: true }); }
   }
 });
+
+test('checker rejects rehashed changes to every authorization, runtime, review and settlement gate', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'phase8-gates-'));
+  const verify = () => spawnSync(process.env.PYTHON_BIN || 'python3', [path.join(root, 'verify.py'), dir], { encoding: 'utf8' });
+  try {
+    run(dir);
+    const original = JSON.parse(fs.readFileSync(path.join(dir, 'work-orders.json')));
+    const receipt = JSON.parse(fs.readFileSync(path.join(dir, 'receipt.json')));
+    const mutations = [
+      (o) => { o.authorization.externalActionsApproved = true; },
+      (o) => { o.authorization.scope = 'All actions authorized'; },
+      (o) => { o.runtime.configured = true; },
+      (o) => { o.review.independentReviewerRequired = false; },
+      (o) => { o.review.buyerAcceptanceRequired = false; },
+      (o) => { o.review.identityVerified = true; },
+      (o) => { o.settlement.approved = true; },
+      (o) => { o.settlement.currency = 'ETH'; },
+      (o) => { o.status = 'accepted'; },
+      (o) => { o.productionApproved = true; },
+      (o) => { delete o.review; },
+      (o) => { o.taskId = 'unrecognized'; },
+    ];
+    for (const change of mutations) {
+      const orders = structuredClone(original);
+      change(orders[0]);
+      const file = path.join(dir, 'work-orders.json');
+      fs.writeFileSync(file, JSON.stringify(orders));
+      receipt.artifacts.find((item) => item.name === 'work-orders.json').sha256 = createHash('sha256').update(fs.readFileSync(file)).digest('hex');
+      fs.writeFileSync(path.join(dir, 'receipt.json'), JSON.stringify(receipt));
+      assert.notEqual(verify().status, 0, change.toString());
+    }
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('checker rejects unsupported receipt execution and approval claims', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'phase8-receipt-gates-'));
+  try {
+    const receipt = run(dir);
+    for (const key of Object.keys(receipt).filter((key) => key !== 'artifacts')) {
+      const changed = structuredClone(receipt);
+      changed[key] = typeof changed[key] === 'number' ? changed[key] + 1 : typeof changed[key] === 'boolean' ? !changed[key] : 'live';
+      fs.writeFileSync(path.join(dir, 'receipt.json'), JSON.stringify(changed));
+      const result = spawnSync(process.env.PYTHON_BIN || 'python3', [path.join(root, 'verify.py'), dir], { encoding: 'utf8' });
+      assert.notEqual(result.status, 0, key);
+      assert.match(result.stderr, /Unsupported receipt claim/);
+    }
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});
