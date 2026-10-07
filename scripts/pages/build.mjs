@@ -831,6 +831,14 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
       (route) => 'experiments/program-synthesis/' + route
     )
   );
+  const { buildSite: buildPhase8Site } = await import(
+    '../../demo/Phase-8-Universal-Value-Dominance/scripts/build-site.mjs'
+  );
+  const phase8Site = await buildPhase8Site(
+    path.join(output, 'experiments/phase8')
+  );
+  dashboardRoutes.push(phase8Site.route);
+  archiveRoutes.push(...phase8Site.archiveRoutes);
   // Compile the same Studio shipped in the pnpm workspace, in explicit offline mode.
   const studio = path.join(root, 'demo/CULTURE-v0/apps/culture-studio');
   execFileSync(

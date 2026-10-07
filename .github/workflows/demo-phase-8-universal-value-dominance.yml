@@ -9,7 +9,6 @@ on:
 
 permissions:
   contents: read
-  actions: write
 
 jobs:
   phase8-demo:
@@ -51,6 +50,14 @@ jobs:
 
       - name: Run Phase 8 Jest suite
         run: npx jest --config demo/Phase-8-Universal-Value-Dominance/jest.config.cjs --runInBand
+
+      - name: Verify work admission and independent arithmetic
+        run: npm run demo:phase8:work:test
+
+      - name: Regenerate and validate governance artifacts
+        run: |
+          npm run demo:phase8:orchestrate
+          npm run demo:phase8:ci
 
       - name: Generate owner command artefacts
         run: |

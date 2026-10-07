@@ -129,7 +129,7 @@ The generated section includes every tracked top-level directory and every neste
 | [open_endedness_v0](open_endedness_v0) | Supporting code / assets | Open the guide or source directory |
 | [Open-Endedness-v0](Open-Endedness-v0/README.md) | Code and guide | Open the guide or source directory |
 | [Phase-6-Scaling-Multi-Domain-Expansion](Phase-6-Scaling-Multi-Domain-Expansion/README.md) | Code and guide | `demo:phase6:did`, `demo:phase6:iot`, `demo:phase6:orchestrate` |
-| [Phase-8-Universal-Value-Dominance](Phase-8-Universal-Value-Dominance/README.md) | Code and guide | `demo:phase8:bootstrap`, `demo:phase8:orchestrate` |
+| [Phase-8-Universal-Value-Dominance](Phase-8-Universal-Value-Dominance/README.md) | Code and guide | `demo:phase8:bootstrap`, `demo:phase8:orchestrate`, `demo:phase8:work` |
 | [Planetary-Orchestrator-Fabric-v0](Planetary-Orchestrator-Fabric-v0/README.md) | Code and guide | `demo:planetary-orchestrator-fabric`, `demo:planetary-orchestrator-fabric:restart`, `demo:planetary-orchestrator-fabric:acceptance` |
 | [polaris-concordat](polaris-concordat/README.md) | Design guide | Open the guide or source directory |
 | [presentation](presentation) | Supporting code / assets | Open the guide or source directory |

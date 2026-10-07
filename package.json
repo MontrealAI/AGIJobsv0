@@ -524,7 +524,12 @@
     "demo:program-synthesis:lab": "node demo/Meta-Agentic-Program-Synthesis-v0/scripts/lab.mjs",
     "demo:program-synthesis:test": "node --import tsx --test demo/Meta-Agentic-Program-Synthesis-v0/tests/*.test.mjs",
     "demo:program-synthesis:qa": "node demo/Meta-Agentic-Program-Synthesis-v0/scripts/browser-qa.mjs",
-    "demo:program-synthesis:worker": "node --import tsx demo/Meta-Agentic-Program-Synthesis-v0/computer-work/worker.cjs"
+    "demo:program-synthesis:worker": "node --import tsx demo/Meta-Agentic-Program-Synthesis-v0/computer-work/worker.cjs",
+    "demo:phase8:work": "node demo/Phase-8-Universal-Value-Dominance/workbench/cli.mjs",
+    "demo:phase8:site": "node demo/Phase-8-Universal-Value-Dominance/scripts/build-site.mjs",
+    "demo:phase8:work:test": "node --test demo/Phase-8-Universal-Value-Dominance/workbench/tests/*.test.mjs",
+    "demo:phase8:qa": "node demo/Phase-8-Universal-Value-Dominance/scripts/browser-qa.mjs",
+    "demo:phase8:worker": "node --import tsx demo/Phase-8-Universal-Value-Dominance/computer-work/worker.cjs"
   },
   "type": "commonjs",
   "version": "2.0.0"

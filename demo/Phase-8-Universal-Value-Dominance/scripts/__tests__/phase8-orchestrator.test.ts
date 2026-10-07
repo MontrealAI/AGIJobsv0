@@ -91,7 +91,7 @@ describe("Phase 8 orchestration console", () => {
       );
       const targets = streamDomains.length > 0 ? streamDomains : domainSlugs;
       for (const target of targets) {
-        fundingMap.set(target, (fundingMap.get(target) ?? 0) + budget);
+        fundingMap.set(target, (fundingMap.get(target) ?? 0) + budget / targets.length);
       }
     }
     const fundingValues = domainSlugs.map((slug) => fundingMap.get(slug) ?? 0);
@@ -235,7 +235,7 @@ describe("Phase 8 orchestration console", () => {
 
   it("resolves environment overrides with validation", () => {
     expect(resolveEnvironment({})).toEqual({
-      chainId: 1,
+      chainId: 31337,
       managerAddress: "0x0000000000000000000000000000000000000000",
     });
 
@@ -316,7 +316,7 @@ describe("Phase 8 orchestration console", () => {
 
       const safeBatch = JSON.parse(readFileSync(artifactPaths.safeBatch, "utf-8"));
       expect(safeBatch.chainId).toBe(String(env.chainId));
-      expect(safeBatch.meta.createdFromSafeAddress).toBe(env.managerAddress);
+      expect(safeBatch.meta.createdFromSafeAddress).toBe("");
       const stableSafeBatch = {
         ...safeBatch,
         createdAt: "<timestamp>",

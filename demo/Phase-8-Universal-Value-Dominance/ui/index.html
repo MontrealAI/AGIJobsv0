@@ -7,12 +7,13 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
+    <aside style="padding:16px;color:#fff;background:#261737">Synthetic multi-agent UI simulation. Model names, metrics and actions are fixtures. <a href="../workbench/" style="color:#dac5ff">Open the work lab →</a></aside>
     <header>
       <h1>Phase 8 — Universal Value Dominance</h1>
-      <p>Command the most capable AI workforce ever assembled. No Solidity. No DevOps. Just outcomes.</p>
+      <p>Explore a coordinated workforce with inspectable evidence and owner controls.</p>
     </header>
 
-    <main>
+    <main id="main">
       <section class="panel">
         <h2>1. Load Mission Blueprint</h2>
         <input type="file" id="jobConfig" accept="application/json" />
@@ -134,8 +135,9 @@
       <small>Powered by AGI Jobs v0/v2 — command swarms, enforce governance, unlock universal value.</small>
     </footer>
 
+    <script src="../assets/mermaid.min.js"></script>
     <script type="module">
-      import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
+      const mermaid = window.mermaid;
       mermaid.initialize({ startOnLoad: false, theme: "dark" });
 
       const jobInput = document.getElementById("jobConfig");

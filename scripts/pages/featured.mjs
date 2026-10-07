@@ -127,6 +127,7 @@ export function renderFeaturedDemos(base, catalog) {
       </article>
     </div>
     <article class="mark-home-callout" aria-labelledby="mark-feature-title"><div><span class="work-number">ALPHA AGI MARK / NEW INTERACTIVE LAB</span><h3 id="mark-feature-title">Capital to capability.</h3><p>Plan a useful mission, compare worker and review capacity, and export a scoped USDC work proposal. Browser-only simulation; no live execution or settlement.</p></div><a class="button secondary" href="${base}experiments/alpha-agi-mark/">Open the mission lab ↗</a></article>
+    <article class="mark-home-callout" aria-labelledby="phase8-feature-title"><div><span class="work-number">PHASE 8 / UNIVERSAL VALUE WORK LAB</span><h3 id="phase8-feature-title">Intelligence becomes useful work.</h3><p>Choose from ten work categories, explore worker and review capacity, and export a scoped work order. Open the preserved governance atlas to inspect the wider system.</p></div><a class="button secondary" href="${base}experiments/phase8/workbench/">Open the work lab ↗</a></article>
     <div class="spotlight-footer"><p><span aria-hidden="true">✧</span> Start with a question. Explore the system. Inspect the evidence.</p><a class="text-link" href="#explore">Browse all ${
       catalog.length
     } catalog entries <span aria-hidden="true">↓</span></a></div>

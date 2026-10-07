@@ -1,21 +1,23 @@
+SYNTHETIC REHEARSAL: fixture inputs and addresses; no live execution, independent acceptance or settlement.
+
 # Phase 8 — Governance Directives
-Generated: 2025-10-26T13:37:19.417Z
-Chain ID: 1
+Generated: 2026-10-07T15:15:52.749Z
+Chain ID: 31337
 Phase8 manager: 0xfa12b3c4d5e6f7890abcdeffedcba98765432109
 
 ## Immediate directives
 1. Confirm npm dependencies remain locked via `npm ci` (step enforced by CI).
 2. Run `npm run demo:phase8:orchestrate` to regenerate calldata, scorecard, and operator briefings.
-3. Load `output/phase8-governance-calldata.json` or `output/phase8-safe-transaction-batch.json` into your multisig / timelock and execute the queued actions in sequence.
+3. Inspect the synthetic calldata and Safe batch offline. Before any signing, replace fixture addresses and verify chain ID, deployed code, owner authority, full simulation and independent review.
 4. Distribute `output/phase8-governance-directives.md` and `output/phase8-dominance-scorecard.json` to guardian council and observers for sign-off.
 5. Launch the dashboard with `npx serve demo/Phase-8-Universal-Value-Dominance` for live monitoring.
 
 ## Oversight priorities
-- Planetary Finance Mesh: resilience 0.960, autonomy 7800 bps, coverage 900s (125.0% of guardian window), funding $890.00B/yr, sentinels Capital Watch Exocomptroller, streams Planetary Resilience Fund
-- Climate Harmonizer Array: resilience 0.940, autonomy 7400 bps, coverage 900s (125.0% of guardian window), funding $720.00B/yr, sentinels Solar Shield Guardian, streams Climate Stabilization Endowment
-- Health Sovereign Continuum: resilience 0.910, autonomy 7000 bps, coverage 900s (125.0% of guardian window), funding $890.00B/yr, sentinels Bio Sentinel Continuity, streams Planetary Resilience Fund
-- Infrastructure Synthesis Grid: resilience 0.915, autonomy 7600 bps, coverage 900s (125.0% of guardian window), funding $1.08T/yr, sentinels Solar Shield Guardian, streams Climate Stabilization Endowment · Innovation Thrust Catalyst
-- Knowledge Lattice Nexus: resilience 0.902, autonomy 6900 bps, coverage 900s (125.0% of guardian window), funding $1.25T/yr, sentinels Capital Watch Exocomptroller, streams Planetary Resilience Fund · Innovation Thrust Catalyst
+- Planetary Finance Mesh: resilience 0.960, autonomy 7800 bps, coverage 900s (125.0% of guardian window), funding $296.67B/yr, sentinels Capital Watch Exocomptroller, streams Planetary Resilience Fund
+- Climate Harmonizer Array: resilience 0.940, autonomy 7400 bps, coverage 900s (125.0% of guardian window), funding $360.00B/yr, sentinels Solar Shield Guardian, streams Climate Stabilization Endowment
+- Health Sovereign Continuum: resilience 0.910, autonomy 7000 bps, coverage 900s (125.0% of guardian window), funding $296.67B/yr, sentinels Bio Sentinel Continuity, streams Planetary Resilience Fund
+- Infrastructure Synthesis Grid: resilience 0.915, autonomy 7600 bps, coverage 900s (125.0% of guardian window), funding $540.00B/yr, sentinels Solar Shield Guardian, streams Climate Stabilization Endowment · Innovation Thrust Catalyst
+- Knowledge Lattice Nexus: resilience 0.902, autonomy 6900 bps, coverage 900s (125.0% of guardian window), funding $476.67B/yr, sentinels Capital Watch Exocomptroller, streams Planetary Resilience Fund · Innovation Thrust Catalyst
 
 ## Safety instrumentation
 - Autonomy guard ≤7900 bps · human override 15 minutes · escalation guardian-council → dao-emergency → sentinel-lockdown

@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "workerProfile": "phase8",
+  "goal": "Produce a reproducible capacity analysis using the Phase 8 Universal Value Work Lab.",
+  "inputText": "Use the locally served workbench at http://127.0.0.1:18798/workbench/. Inspect the balanced launch scenario, then the review bottleneck and worker interruption. Return the exact exported balanced phase8-capacity-plan.json as capacity-plan.json and evidence.md describing the actual actions, results, runtime versions and errors. Do not fabricate execution or acceptance. No public posting, purchase, signing, payment or external transmission is authorized. A separate reviewer must recalculate the results.",
+  "dataClass": "synthetic",
+  "allowedOrigins": [
+    "http://127.0.0.1:18798"
+  ],
+  "acceptanceCriteria": [
+    "Balanced plan admits 54 and expects 43 accepted jobs with 29700 USDC reserved and 24200 USDC spent.",
+    "Review bottleneck admits 8 and expects 6 accepted; worker interruption admits 16 and expects 12 accepted.",
+    "evidence.md records actual actions and discloses blockers; no independent acceptance or paid settlement is claimed."
+  ],
+  "deliverables": [
+    {
+      "name": "capacity-plan.json",
+      "mediaType": "application/json"
+    },
+    {
+      "name": "evidence.md",
+      "mediaType": "text/markdown"
+    }
+  ]
+}

@@ -411,9 +411,10 @@ try {
   );
   await verifyWorkPlanner({ page, context, url, artifacts, a11y, checks });
   await verifyAlphaMark({ page, context, url, artifacts, a11y, checks });
-  assert.equal(manifest.dashboardRoutes.length, 13);
+  assert.equal(manifest.dashboardRoutes.length, 14);
   assert.ok(manifest.dashboardRoutes.includes('experiments/zenith-hypernova/'));
-  assert.equal(manifest.archiveRoutes.length, 21);
+  assert.ok(manifest.dashboardRoutes.includes('experiments/phase8/workbench/'));
+  assert.equal(manifest.archiveRoutes.length, 23);
   const legacyDecks = manifest.dashboardRoutes.filter((route) =>
     route.startsWith('experiments/kardashev-ii/')
   );

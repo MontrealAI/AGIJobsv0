@@ -6,6 +6,7 @@ function markSkip(reason: string) {
   // Flag the browser suite for skipping instead of hard-failing when Chromium
   // is unavailable. This keeps CI lean while still allowing explicit installs
   // when the environment opts in.
+  if (process.env.PLAYWRIGHT_OPTIONAL_E2E !== '1') throw new Error(`Phase 8 browser checks required: ${reason}`);
   process.env.PHASE8_SKIP_BROWSER = '1';
   console.warn(`Skipping Phase 8 Playwright setup: ${reason}`);
 }

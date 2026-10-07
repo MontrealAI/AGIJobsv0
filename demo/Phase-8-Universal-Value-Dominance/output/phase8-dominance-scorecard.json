@@ -1,7 +1,10 @@
 {
-  "generatedAt": "2025-10-26T13:37:19.417Z",
+  "evidenceClass": "synthetic-governance-rehearsal",
+  "productionApproved": false,
+  "settlementApproved": false,
+  "generatedAt": "2026-10-07T15:15:52.749Z",
   "chain": {
-    "id": 1,
+    "id": 31337,
     "manager": "0xfa12b3c4d5e6f7890abcdeffedcba98765432109"
   },
   "metrics": {
@@ -50,7 +53,7 @@
       "sentinelGuardians": [
         "Capital Watch Exocomptroller"
       ],
-      "capitalSupportUSD": 890000000000,
+      "capitalSupportUSD": 296666666667,
       "capitalStreams": [
         "Planetary Resilience Fund"
       ]
@@ -67,7 +70,7 @@
       "sentinelGuardians": [
         "Solar Shield Guardian"
       ],
-      "capitalSupportUSD": 720000000000,
+      "capitalSupportUSD": 360000000000,
       "capitalStreams": [
         "Climate Stabilization Endowment"
       ]
@@ -84,7 +87,7 @@
       "sentinelGuardians": [
         "Bio Sentinel Continuity"
       ],
-      "capitalSupportUSD": 890000000000,
+      "capitalSupportUSD": 296666666667,
       "capitalStreams": [
         "Planetary Resilience Fund"
       ]
@@ -101,7 +104,7 @@
       "sentinelGuardians": [
         "Solar Shield Guardian"
       ],
-      "capitalSupportUSD": 1080000000000,
+      "capitalSupportUSD": 540000000000,
       "capitalStreams": [
         "Climate Stabilization Endowment",
         "Innovation Thrust Catalyst"
@@ -119,7 +122,7 @@
       "sentinelGuardians": [
         "Capital Watch Exocomptroller"
       ],
-      "capitalSupportUSD": 1250000000000,
+      "capitalSupportUSD": 476666666667,
       "capitalStreams": [
         "Planetary Resilience Fund",
         "Innovation Thrust Catalyst"

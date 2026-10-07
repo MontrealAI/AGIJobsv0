@@ -454,10 +454,10 @@ function main() {
     const budget = Number(stream.annualBudget ?? 0);
     if (!Number.isFinite(budget) || budget <= 0) continue;
     const targets = (stream.domains ?? []).map((domain) => domain.toLowerCase());
-    const normalizedTargets = targets.length > 0 ? targets : Array.from(slugs.values());
+    const normalizedTargets = [...new Set(targets.length > 0 ? targets : Array.from(slugs.values()))];
     for (const domain of normalizedTargets) {
       if (!slugs.has(domain)) continue;
-      streamCoverage.set(domain, (streamCoverage.get(domain) ?? 0) + budget);
+      streamCoverage.set(domain, (streamCoverage.get(domain) ?? 0) + budget / normalizedTargets.length);
     }
   }
   const unfunded = Array.from(slugs.values()).filter((slug) => (streamCoverage.get(slug) ?? 0) <= 0);
@@ -824,12 +824,12 @@ function main() {
   const capitalSupportByDomain = new Map<string, number>();
   for (const stream of config.capitalStreams) {
     const targets = (stream.domains ?? []).map((domain) => domain.toLowerCase());
-    const effectiveTargets = targets.length > 0 ? targets : domainList;
+    const effectiveTargets = [...new Set(targets.length > 0 ? targets : domainList)];
     for (const domain of effectiveTargets) {
       if (!capitalSupportByDomain.has(domain)) {
         capitalSupportByDomain.set(domain, 0);
       }
-      capitalSupportByDomain.set(domain, (capitalSupportByDomain.get(domain) ?? 0) + stream.annualBudget);
+      capitalSupportByDomain.set(domain, (capitalSupportByDomain.get(domain) ?? 0) + stream.annualBudget / effectiveTargets.length);
     }
   }
 

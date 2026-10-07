@@ -103,3 +103,18 @@ def test_invalid_addresses_surface_in_report(tmp_path):
     assert payload["domains"][0]["orchestrator"] == ZERO_ADDRESS
     assert payload["addressAudit"]["invalidCount"] == 1
     assert any("domains[0].orchestrator" in path for path in payload["addressAudit"]["invalidPaths"])
+
+
+def test_python_matches_typescript_manifest_units(tmp_path):
+    output = tmp_path / 'report.json'
+    subprocess.run([sys.executable, str(SCRIPT_PATH), '--output', str(output), '--quiet'], check=True)
+    p = json.loads(output.read_text())
+    assert p['totals']['monthlyUSD'] == 688_000_000_000
+    assert p['coverage']['guardianReviewWindowSeconds'] == 720
+    assert p['coverage']['averageSeconds'] == 900
+    assert p['resilience']['average'] == 0.9254
+    assert p['autonomy']['maxAutonomyBps'] == 7800
+    assert p['autonomy']['autonomyGuardCapBps'] == 7900
+    assert p['resilience']['cadenceSeconds'] == 7200
+    assert p['totals']['dominanceScore'] == 97.1
+    assert p['productionApproved'] is False

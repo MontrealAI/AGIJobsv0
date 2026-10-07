@@ -1,0 +1,97 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
+import { defaults, plan, workOrder } from '../model.mjs';
+import { run } from '../cli.mjs';
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const tasks = JSON.parse(fs.readFileSync(path.join(root, 'tasks.json')));
+test('budget is fully reserved before admission and all attempts pay for review', () => {
+  const p = plan(defaults);
+  assert.equal(p.admitted, 54);
+  assert.equal(p.accepted, 43);
+  assert.equal(p.spentUSDC, 24200);
+  assert.equal(p.reserveUSDC, 29700);
+  assert.equal(p.reviewHours, 27);
+  assert.equal(p.spentUSDC + p.remainingUSDC, defaults.budgetUSDC);
+});
+test('review capacity, interruption, zero acceptance and zero budget fail closed', () => {
+  assert.equal(plan({ reviewerHours: 4 }).admitted, 8);
+  assert.equal(plan({ outagePercent: 100 }).admitted, 0);
+  const p = plan({ acceptancePercent: 0 });
+  assert.equal(p.payoutUSDC, 0);
+  assert.equal(p.spentUSDC, 2700);
+  assert.equal(p.costPerAcceptedUSDC, null);
+  assert.equal(plan({ budgetUSDC: 0 }).admitted, 0);
+});
+test('invalid scenarios cannot produce a plausible-looking output', () => {
+  for (const bad of [
+    null,
+    [],
+    { workers: -1 },
+    { workers: '8' },
+    { offers: Infinity },
+    { days: 1.5 },
+    { reviewMinutes: 0 },
+    { acceptancePercent: 101 },
+    { settlementApproved: true },
+  ])
+    assert.throws(() => plan(bad));
+});
+test('accounting invariants across deterministic stress combinations', () => {
+  for (const workers of [0, 1, 8, 500000])
+    for (const reviewerHours of [0, 1, 40, 1000000])
+      for (const acceptancePercent of [0, 1, 80, 100]) {
+        const p = plan({ workers, reviewerHours, acceptancePercent });
+        assert.ok(p.reserveUSDC <= p.settings.budgetUSDC);
+        assert.ok(p.spentUSDC <= p.reserveUSDC);
+        assert.ok(p.accepted <= p.admitted);
+        assert.ok(p.reviewHours <= reviewerHours);
+        assert.equal(p.spentUSDC + p.remainingUSDC, p.settings.budgetUSDC);
+      }
+});
+test('all ten work orders remain drafts with independent review and settlement gates', () => {
+  assert.equal(tasks.length, 10);
+  assert.equal(new Set(tasks.map((t) => t.id)).size, 10);
+  for (const task of tasks) {
+    const order = workOrder(task);
+    assert.equal(order.status, 'draft');
+    assert.equal(order.settlement.currency, 'USDC');
+    assert.equal(order.settlement.approved, false);
+    assert.equal(order.review.identityVerified, false);
+    assert.equal(order.runtime.configured, false);
+  }
+});
+test('separate Python arithmetic checker rejects corruption even after hashes are rewritten', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'phase8-check-'));
+  const verify = () =>
+    spawnSync(
+      process.env.PYTHON_BIN || 'python3',
+      [path.join(root, 'verify.py'), dir],
+      { encoding: 'utf8' }
+    );
+  try {
+    run(dir);
+    assert.equal(verify().status, 0);
+    assert.throws(() => run(dir), /already contains/);
+    const file = path.join(dir, 'plan.json');
+    const p = JSON.parse(fs.readFileSync(file));
+    p.accepted++;
+    fs.writeFileSync(file, JSON.stringify(p));
+    assert.notEqual(verify().status, 0);
+    const receipt = JSON.parse(fs.readFileSync(path.join(dir, 'receipt.json')));
+    receipt.artifacts.find((x) => x.name === 'plan.json').sha256 = createHash(
+      'sha256'
+    )
+      .update(fs.readFileSync(file))
+      .digest('hex');
+    fs.writeFileSync(path.join(dir, 'receipt.json'), JSON.stringify(receipt));
+    assert.match(verify().stderr, /arithmetic mismatch/);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});

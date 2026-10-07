@@ -1,0 +1,172 @@
+[
+  {
+    "id": "reporting",
+    "category": "Research & reporting",
+    "title": "Evidence-backed research pack",
+    "domain": "knowledge-lattice",
+    "goal": "Turn an approved public dataset into an editable report, CSV workbook and presentation outline.",
+    "deliverables": [
+      "Sources with dates and licenses",
+      "Reproducible calculations",
+      "Editable report and presentation outline"
+    ],
+    "acceptanceCriteria": [
+      "Every numeric claim traces to an input row",
+      "Recalculation matches exported totals",
+      "Buyer can edit all outputs"
+    ]
+  },
+  {
+    "id": "software",
+    "category": "Software engineering",
+    "title": "Public software improvement",
+    "domain": "infrastructure-synthesis",
+    "goal": "Implement a bounded feature or performance improvement in an approved open-source project.",
+    "deliverables": [
+      "Patch and reproducible build",
+      "Tests and before/after measurements",
+      "Usage and rollback notes"
+    ],
+    "acceptanceCriteria": [
+      "Acceptance tests pass on the declared revision",
+      "No unexplained regression",
+      "A reviewer can reproduce the change"
+    ]
+  },
+  {
+    "id": "testing",
+    "category": "Quality assurance",
+    "title": "Browser acceptance suite",
+    "domain": "infrastructure-synthesis",
+    "goal": "Exercise approved application flows and return reproducible bug reports and tests.",
+    "deliverables": [
+      "Test suite",
+      "Screenshots or action trace",
+      "Defect report"
+    ],
+    "acceptanceCriteria": [
+      "Every defect includes reproduction steps",
+      "Coverage maps to the approved flows",
+      "Failures and blocked steps are disclosed"
+    ]
+  },
+  {
+    "id": "data",
+    "category": "Data operations",
+    "title": "Public dataset cleanup",
+    "domain": "knowledge-lattice",
+    "goal": "Normalize a public or synthetic dataset while preserving its provenance.",
+    "deliverables": [
+      "Clean CSV",
+      "Transformation script",
+      "Reconciliation report"
+    ],
+    "acceptanceCriteria": [
+      "No unexplained row loss",
+      "Types and units validated",
+      "Source and output hashes recorded"
+    ]
+  },
+  {
+    "id": "intelligence",
+    "category": "Market intelligence",
+    "title": "Public product comparison",
+    "domain": "planetary-finance",
+    "goal": "Compare public product documentation against a buyer-approved feature matrix.",
+    "deliverables": [
+      "Source register",
+      "Comparison CSV",
+      "Decision brief"
+    ],
+    "acceptanceCriteria": [
+      "Every comparison cites a dated source",
+      "Unknowns remain marked unknown",
+      "No private or personal data collected"
+    ]
+  },
+  {
+    "id": "climate",
+    "category": "Climate research",
+    "title": "Energy scenario analysis",
+    "domain": "climate-harmonizer",
+    "goal": "Model a public energy dataset and compare explicit assumptions.",
+    "deliverables": [
+      "Reproducible model",
+      "Scenario tables",
+      "Methods report"
+    ],
+    "acceptanceCriteria": [
+      "Units and totals reconcile",
+      "Sensitivity results are reproducible",
+      "No physical-system control or geoengineering execution"
+    ]
+  },
+  {
+    "id": "health",
+    "category": "Health research",
+    "title": "Public literature evidence map",
+    "domain": "health-sovereign",
+    "goal": "Organize approved public research sources into a traceable evidence table.",
+    "deliverables": [
+      "Citation register",
+      "Evidence table",
+      "Limitations brief"
+    ],
+    "acceptanceCriteria": [
+      "Claims map to cited passages",
+      "No patient or personal data",
+      "No diagnosis or clinical decision execution"
+    ]
+  },
+  {
+    "id": "docs",
+    "category": "Documentation",
+    "title": "Executable technical guide",
+    "domain": "knowledge-lattice",
+    "goal": "Build a guide with examples that run on a declared environment.",
+    "deliverables": [
+      "Editable guide",
+      "Runnable examples",
+      "Validation log"
+    ],
+    "acceptanceCriteria": [
+      "All commands run from a clean setup",
+      "Versions are recorded",
+      "Failures and limitations are disclosed"
+    ]
+  },
+  {
+    "id": "design",
+    "category": "Design & media",
+    "title": "Accessible interface prototype",
+    "domain": "infrastructure-synthesis",
+    "goal": "Create an interactive prototype against an approved brief and public or licensed assets.",
+    "deliverables": [
+      "Editable source",
+      "Responsive prototype",
+      "Accessibility report"
+    ],
+    "acceptanceCriteria": [
+      "Keyboard workflows complete",
+      "Mobile layout remains usable",
+      "Assets have traceable licenses"
+    ]
+  },
+  {
+    "id": "science",
+    "category": "Scientific computing",
+    "title": "Numerical reproduction",
+    "domain": "knowledge-lattice",
+    "goal": "Reproduce a published computation using public data and explicit tolerances.",
+    "deliverables": [
+      "Executable notebook or script",
+      "Results CSV",
+      "Methods and discrepancy report"
+    ],
+    "acceptanceCriteria": [
+      "Environment and seeds recorded",
+      "Results meet agreed tolerances or disclose discrepancies",
+      "Independent reviewer can rerun the calculation"
+    ]
+  }
+]

@@ -6,7 +6,9 @@
     "costUSDPer1KTokens": 0.012,
     "safetyScore": 0.97,
     "latencyMs": 240,
-    "lastValidated": "2025-07-01T00:00:00Z"
+    "lastValidated": "2025-07-01T00:00:00Z",
+    "evidenceClass": "synthetic-fixture",
+    "liveProviderConfigured": false
   },
   {
     "id": "code-savant-x",
@@ -15,7 +17,9 @@
     "costUSDPer1KTokens": 0.018,
     "safetyScore": 0.95,
     "latencyMs": 180,
-    "lastValidated": "2025-07-02T00:00:00Z"
+    "lastValidated": "2025-07-02T00:00:00Z",
+    "evidenceClass": "synthetic-fixture",
+    "liveProviderConfigured": false
   },
   {
     "id": "sentience-alpha",
@@ -24,6 +28,8 @@
     "costUSDPer1KTokens": 0.009,
     "safetyScore": 0.96,
     "latencyMs": 220,
-    "lastValidated": "2025-07-03T00:00:00Z"
+    "lastValidated": "2025-07-03T00:00:00Z",
+    "evidenceClass": "synthetic-fixture",
+    "liveProviderConfigured": false
   }
 ]
