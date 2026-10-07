@@ -10,7 +10,7 @@ const isolatedValidationStore = require('../helpers/validation-store.cjs');
 const { VALIDATION_PROTOCOL_ABI } = require('../../shared/validationProtocol');
 
 async function setupChain() {
-  const [owner, employer, v1, v2, v3] = await ethers.getSigners();
+  const [owner, employer, v1, v2, v3, v4] = await ethers.getSigners();
   const spec = JSON.stringify({
     category: 'research',
     title: 'Public integrity rehearsal',
@@ -74,7 +74,7 @@ async function setupChain() {
     )
   ).deploy();
   await validation.setIdentityRegistry(await identity.getAddress());
-  for (const signer of [v1, v2, v3]) {
+  for (const signer of [v1, v2, v3, v4]) {
     await identity.addAdditionalValidator(signer.address);
     await stake.setStake(signer.address, 1, ethers.parseEther('100'));
   }
@@ -92,6 +92,15 @@ async function setupChain() {
     registry,
     validation,
     select,
+    rotateCommittee: async (includeValidator) => {
+      await validation.resetJobNonce(1);
+      await validation.setValidatorPool([
+        (includeValidator ? v1 : v4).address,
+        v2.address,
+        v3.address,
+      ]);
+      await select();
+    },
     v1,
     spec,
     client: new ethers.Contract(
@@ -218,6 +227,7 @@ describe('Automatic validator real-contract lifecycle', function () {
       DOMAIN_SEPARATOR: chain.client.DOMAIN_SEPARATOR,
       commitments: chain.client.commitments,
       revealed: chain.client.revealed,
+      validators: chain.client.validators,
       rounds: async (...args) => {
         if (failedRoundReads > 0) {
           failedRoundReads--;
@@ -328,6 +338,33 @@ describe('Automatic validator real-contract lifecycle', function () {
   async function openReveal() {
     await time.increaseTo((await chain.client.rounds(1)).commitDeadline + 1n);
   }
+
+  it('discards an old selection retry after a real committee rotation and later rejoins', async () => {
+    failedRoundReads = 1;
+    await gateway.handleValidatorSelection('1', [chain.v1.address]);
+    await gateway.handleJobAwaitingValidation(chain.submission);
+    expect(active().status).to.equal('context-retry');
+    await chain.rotateCommittee(false);
+    expect(await chain.client.validators(1)).not.to.include(chain.v1.address);
+    fire(timerWithDelay((delay) => delay === 5000));
+    await waitFor(() => active().status === 'not-selected');
+    expect(active().error).to.equal('VALIDATION_VALIDATOR_NOT_SELECTED');
+    expect(record()).to.equal(null);
+    expect(calls.stake).to.equal(0);
+    expect(calls.commit).to.equal(0);
+    expect(
+      timers.filter(
+        (timer) => !timer.cleared && [5000, 15000].includes(timer.delay)
+      )
+    ).to.have.length(0);
+    await gateway.handleJobAwaitingValidation(chain.submission);
+    expect(record()).to.equal(null);
+    await chain.rotateCommittee(true);
+    await gateway.handleValidatorSelection('1', [chain.v1.address]);
+    expect(active().status, active().error).to.equal('committed');
+    expect(record().metadata.automaticCommitStatus).to.equal('confirmed');
+    expect(calls.commit).to.equal(1);
+  });
 
   for (const delayed of ['selection', 'submission', 'audit']) {
     it(`does not poison future rounds when ${delayed} processing passes the commit deadline`, async () => {

@@ -117,6 +117,11 @@ describe('Automatic validator context recovery', function () {
       }),
       jobNonce: async () => 1n,
       DOMAIN_SEPARATOR: async () => ethers.id('domain'),
+      validators: async (jobId, options) => {
+        expect(jobId).to.equal(submission.jobId);
+        expect(options).to.deep.equal({ blockTag: 100 });
+        return [address];
+      },
       connect: write,
     };
     utils.registry = {
@@ -222,6 +227,46 @@ describe('Automatic validator context recovery', function () {
     expect(calls.stake).to.equal(0);
     selectionFailure = false;
     await runRetry();
+    expect(calls.stake).to.equal(1);
+    expect(calls.writes).to.equal(0);
+  });
+
+  it('retries a failed committee lookup before performing any evaluation', async () => {
+    const lookup = utils.validation.validators;
+    utils.validation.validators = async () => {
+      throw new Error('temporary committee RPC failure');
+    };
+    await start();
+    expect(active().status).to.equal('context-retry');
+    expect(calls).to.deep.equal({ stake: 0, writes: 0, fetch: 0 });
+    utils.validation.validators = lookup;
+    await runRetry();
+    expect(calls.stake).to.equal(1);
+    expect(calls.writes).to.equal(0);
+  });
+
+  it('ignores an obsolete selection retry until membership is confirmed again', async () => {
+    selectionFailure = true;
+    await start();
+    const lookup = utils.validation.validators;
+    utils.validation.validators = async (jobId, options) => {
+      await lookup(jobId, options);
+      return [ethers.ZeroAddress];
+    };
+    selectionFailure = false;
+    scopeDeadline += 100n;
+    await runRetry();
+    expect(active().status).to.equal('not-selected');
+    expect(active().error).to.equal('VALIDATION_VALIDATOR_NOT_SELECTED');
+    expect(calls).to.deep.equal({ stake: 0, writes: 0, fetch: 0 });
+    expect(
+      timers.filter((entry) => entry.delay === 5000 && !entry.cleared)
+    ).to.have.length(0);
+    await gateway.handleJobAwaitingValidation(submission);
+    expect(calls).to.deep.equal({ stake: 0, writes: 0, fetch: 0 });
+    utils.validation.validators = lookup;
+    scopeDeadline += 100n;
+    await gateway.handleValidatorSelection(submission.jobId, [address]);
     expect(calls.stake).to.equal(1);
     expect(calls.writes).to.equal(0);
   });

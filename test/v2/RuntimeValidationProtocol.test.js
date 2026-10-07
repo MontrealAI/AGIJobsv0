@@ -327,6 +327,7 @@ describe('Runtime v2 validator protocol', function () {
       rounds: async () => ({ commitDeadline: 13000n, tallied: false }),
       jobNonce: async () => 1n,
       DOMAIN_SEPARATOR: async () => ethers.id('domain'),
+      validators: async () => [v1.address],
     };
     utils.provider = {
       getBlockNumber: async () => 12000,

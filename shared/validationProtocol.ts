@@ -7,6 +7,7 @@ export const VALIDATION_PROTOCOL_ABI = [
   'function DOMAIN_SEPARATOR() view returns (bytes32)',
   'function commitments(uint256 jobId,address validator,uint256 nonce) view returns (bytes32)',
   'function revealed(uint256 jobId,address validator) view returns (bool)',
+  'function validators(uint256 jobId) view returns (address[] validators_)',
   'function commitValidation(uint256 jobId,bytes32 commitHash,string subdomain,bytes32[] proof)',
   'function revealValidation(uint256 jobId,bool approve,bytes32 burnTxHash,bytes32 salt,string subdomain,bytes32[] proof)',
   'function rounds(uint256 jobId) view returns (uint256 commitDeadline,uint256 revealDeadline,uint256 approvals,uint256 rejections,uint256 revealedCount,bool tallied,uint256 committeeSize,uint64 earlyFinalizeEligibleAt,bool earlyFinalized)',

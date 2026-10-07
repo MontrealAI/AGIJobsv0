@@ -611,7 +611,8 @@ export async function commitHelper(
   roundScope = await requireOpenValidationCommitRound(
     context,
     jobId,
-    roundScope
+    roundScope,
+    wallet.address
   );
   beginCommitRecord(
     jobId,

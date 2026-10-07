@@ -15,7 +15,7 @@ const {
 
 let sequence = 0;
 async function setup() {
-  const [owner, employer, v1, v2, v3] = await ethers.getSigners();
+  const [owner, employer, v1, v2, v3, v4] = await ethers.getSigners();
   const jobId = String(Date.now() * 100 + sequence++);
   const stake = await (
     await ethers.getContractFactory('MockStakeManager')
@@ -43,7 +43,7 @@ async function setup() {
     )
   ).deploy();
   await validation.setIdentityRegistry(await identity.getAddress());
-  for (const signer of [v1, v2, v3]) {
+  for (const signer of [v1, v2, v3, v4]) {
     await identity.addAdditionalValidator(signer.address);
     await stake.setStake(signer.address, 1, ethers.parseEther('100'));
   }
@@ -77,7 +77,24 @@ async function setup() {
     VALIDATION_REGISTRY_ABI,
     ethers.provider
   );
-  return { owner, v1, jobId, select, client, registryClient, validation };
+  return {
+    owner,
+    v1,
+    jobId,
+    select,
+    client,
+    registryClient,
+    validation,
+    rotateCommittee: async (includeValidator) => {
+      await validation.resetJobNonce(jobId);
+      await validation.setValidatorPool([
+        (includeValidator ? v1 : v4).address,
+        v2.address,
+        v3.address,
+      ]);
+      await select();
+    },
+  };
 }
 
 const {
@@ -176,6 +193,20 @@ describe('Gateway manual validator round recovery', function () {
     await context.validation.resetJobNonce(context.jobId);
     await context.select();
   }
+
+  it('rejects an unselected validator without an intent and allows a later confirmed selection', async () => {
+    const { jobId, v1 } = context;
+    await context.rotateCommittee(false);
+    await expect(utils.commitHelper(jobId, v1, true)).to.be.rejectedWith(
+      'VALIDATION_VALIDATOR_NOT_SELECTED'
+    );
+    expect(load()).to.equal(null);
+    expect(fs.existsSync(file)).to.equal(false);
+    expect(utils.commits.has(jobId)).to.equal(false);
+    await context.rotateCommittee(true);
+    await utils.commitHelper(jobId, v1, true);
+    expect(load().metadata.manualCommitStatus).to.equal('confirmed');
+  });
 
   for (const expiresDuringLookup of [false, true]) {
     it(`does not persist a commit intent when the window closes ${
@@ -287,6 +318,7 @@ describe('Gateway manual validator round recovery', function () {
       DOMAIN_SEPARATOR: client.DOMAIN_SEPARATOR,
       commitments: client.commitments,
       revealed: client.revealed,
+      validators: client.validators,
       rounds: client.rounds,
       connect: () => ({
         commitValidation: async () => {
@@ -332,6 +364,7 @@ describe('Gateway manual validator round recovery', function () {
       DOMAIN_SEPARATOR: client.DOMAIN_SEPARATOR,
       commitments: client.commitments,
       revealed: client.revealed,
+      validators: client.validators,
       rounds: client.rounds,
       connect: () => ({
         commitValidation: async (...args) => {
@@ -470,6 +503,7 @@ describe('Gateway manual validator round recovery', function () {
         DOMAIN_SEPARATOR: client.DOMAIN_SEPARATOR,
         commitments: client.commitments,
         revealed: client.revealed,
+        validators: client.validators,
         rounds: client.rounds,
         connect: () => ({
           [method]: async (...args) => {
@@ -593,6 +627,7 @@ describe('Gateway manual validator round recovery', function () {
         DOMAIN_SEPARATOR: client.DOMAIN_SEPARATOR,
         commitments: client.commitments,
         revealed: client.revealed,
+        validators: client.validators,
         rounds: client.rounds,
         connect: () => ({
           revealValidation: async (...args) => {
@@ -757,6 +792,7 @@ describe('Gateway manual validator round recovery', function () {
         DOMAIN_SEPARATOR: client.DOMAIN_SEPARATOR,
         commitments: client.commitments,
         revealed: client.revealed,
+        validators: client.validators,
         rounds: client.rounds,
         connect: () => {
           throw new Error('unexpected duplicate reveal');

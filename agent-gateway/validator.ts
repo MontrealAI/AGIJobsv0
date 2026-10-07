@@ -33,6 +33,7 @@ import {
   readActiveValidationRound,
   readValidationRound,
   requireOpenValidationCommitRound,
+  requireValidationCommitteeMember,
   reconcilePreviousRound,
   assertStoredValidationRound,
 } from './validationRound';
@@ -68,6 +69,7 @@ interface ValidationEvaluation {
 
 type AssignmentStatus =
   | 'selected'
+  | 'not-selected'
   | 'awaiting-review'
   | 'context-retry'
   | 'reconciliation-required'
@@ -191,6 +193,8 @@ function scheduleSelectionRetry(assignment: ValidationAssignment): void {
     )
       return;
     assignment.scheduledSelection = null;
+    // This is a retry candidate only; the handler verifies the live committee
+    // at the same block as its round snapshot before accepting the selection.
     handleValidatorSelection(assignment.jobId, [
       assignment.wallet.address,
     ]).catch((error) =>
@@ -1219,6 +1223,7 @@ async function evaluateAndCommit(
   }
   if (
     assignment.status === 'awaiting-review' ||
+    assignment.status === 'not-selected' ||
     assignment.status === 'reconciliation-required'
   )
     return;
@@ -1319,6 +1324,13 @@ async function evaluateAndCommit(
   let evaluationGuardReleased = false;
   try {
     requireCurrentAssignment(assignment);
+    await requireOpenValidationCommitRound(
+      { validation, registry, provider },
+      submission.jobId,
+      assignment.selectionScope,
+      assignment.wallet.address
+    );
+    requireCurrentAssignment(assignment);
     await ensureStake(assignment.wallet, 0n, ROLE_VALIDATOR);
     requireCurrentAssignment(assignment);
     const content = await loadSubmissionContent(submission);
@@ -1384,7 +1396,8 @@ async function evaluateAndCommit(
     roundScope = await requireOpenValidationCommitRound(
       roundContext,
       submission.jobId,
-      roundScope
+      roundScope,
+      assignment.wallet.address
     );
     requireCurrentAssignment(assignment);
     beginCommitRecord(
@@ -1471,7 +1484,11 @@ async function evaluateAndCommit(
       broadcastIntent ||
       assignment.error === 'VALIDATION_COMMITMENT_RECONCILIATION_REQUIRED'
         ? 'reconciliation-required'
+        : assignment.error === 'VALIDATION_VALIDATOR_NOT_SELECTED'
+        ? 'not-selected'
         : 'failed';
+    if (assignment.status === 'not-selected')
+      cancelAssignmentTimers(assignment);
     if (
       assignment.status === 'failed' &&
       assignment.error !== 'VALIDATION_COMMIT_WINDOW_CLOSED' &&
@@ -1561,6 +1578,12 @@ export async function handleValidatorSelection(
       const active =
         inspected?.roundScope ??
         (await readActiveValidationRound(context, jobId));
+      await requireValidationCommitteeMember(
+        context,
+        jobId,
+        wallet.address,
+        active
+      );
       if (!isCurrentAssignment(assignment)) continue;
       const freshRecord = inspected?.status === 'fresh-round';
       const previousScope = assignment.selectionScope;
@@ -1590,6 +1613,7 @@ export async function handleValidatorSelection(
       if (!isCurrentAssignment(assignment)) continue;
       if (
         fresh ||
+        assignment.status === 'not-selected' ||
         (record &&
           !freshRecord &&
           assignment.commit?.commitHash !== record.commitHash)
@@ -1646,7 +1670,10 @@ export async function handleValidatorSelection(
       if (isCurrentAssignment(assignment)) {
         assignment.error =
           error instanceof Error ? error.message : String(error);
-        if (
+        if (assignment.error === 'VALIDATION_VALIDATOR_NOT_SELECTED') {
+          cancelAssignmentTimers(assignment);
+          assignment.status = 'not-selected';
+        } else if (
           assignment.error === 'VALIDATION_COMMITMENT_RECONCILIATION_REQUIRED'
         ) {
           cancelAssignmentTimers(assignment);

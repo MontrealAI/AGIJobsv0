@@ -92,13 +92,31 @@ export async function readActiveValidationRound(
   };
 }
 
+export async function requireValidationCommitteeMember(
+  context: ValidationRoundContext,
+  jobId: string | bigint,
+  validator: string,
+  scope: CommitRoundScope
+): Promise<void> {
+  const committee: string[] = await context.validation.validators(jobId, {
+    blockTag: scope.blockNumber,
+  });
+  if (
+    !committee.some(
+      (address) => address.toLowerCase() === validator.toLowerCase()
+    )
+  )
+    throw new Error('VALIDATION_VALIDATOR_NOT_SELECTED');
+}
+
 // Recheck after identity lookup, reconciliation and audit I/O, immediately
 // before saving a new broadcast intent. Inspection and reveal stay available
 // after the commit deadline.
 export async function requireOpenValidationCommitRound(
   context: ValidationRoundContext,
   jobId: string | bigint,
-  expected: CommitRoundScope
+  expected: CommitRoundScope,
+  validator: string
 ): Promise<CommitRoundScope> {
   const active = await readActiveValidationRound(context, jobId, true);
   if (
@@ -110,6 +128,7 @@ export async function requireOpenValidationCommitRound(
     active.specHash !== expected.specHash
   )
     reconciliationRequired();
+  await requireValidationCommitteeMember(context, jobId, validator, active);
   return active;
 }
 
