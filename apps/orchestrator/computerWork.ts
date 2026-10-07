@@ -194,6 +194,35 @@ export class ComputerWorkOutcomeUnknown extends Error {
   }
 }
 
+function validateStateDirectory(directory: string, allowMissing = true): void {
+  let stat: fs.Stats;
+  try {
+    stat = fs.lstatSync(directory);
+  } catch (error) {
+    if (allowMissing && (error as NodeJS.ErrnoException).code === 'ENOENT')
+      return;
+    throw error;
+  }
+  if (
+    !stat.isDirectory() ||
+    (typeof process.geteuid === 'function' &&
+      (stat.uid !== process.geteuid() || (stat.mode & 0o077) !== 0))
+  )
+    throw new Error('Worker state must be a private operator-owned directory');
+}
+
+function validateProfileFile(stat: fs.Stats): void {
+  if (
+    !stat.isFile() ||
+    (typeof process.geteuid === 'function' &&
+      ((stat.uid !== process.geteuid() && stat.uid !== 0) ||
+        (stat.mode & 0o022) !== 0))
+  )
+    throw new Error(
+      'Worker profiles must be a protected operator-owned regular file'
+    );
+}
+
 /** Read-only admission: no network calls, dispatch claims or filesystem writes. */
 function validateComputerWorkAdmission(
   jobId: string,
@@ -217,6 +246,7 @@ function validateComputerWorkAdmission(
     throw new Error('Worker bearer token is missing or invalid');
   if (!path.isAbsolute(stateDirectory))
     throw new Error('Worker state directory must be absolute and persistent');
+  validateStateDirectory(path.resolve(stateDirectory));
   return { task, profile, taskSha256, token };
 }
 
@@ -234,12 +264,32 @@ export async function executeComputerWork(
   );
   if (options.signal?.aborted)
     throw new Error('Computer work cancelled before dispatch');
-  fs.mkdirSync(options.stateDirectory, { recursive: true, mode: 0o700 });
+  const stateDirectory = path.resolve(options.stateDirectory);
+  const firstCreated = fs.mkdirSync(stateDirectory, {
+    recursive: true,
+    mode: 0o700,
+  });
+  validateStateDirectory(stateDirectory, false);
+  if (firstCreated) {
+    // Persist newly created directory names before claiming or dispatching work.
+    // Syncing only the journal directory does not persist its parent's entry.
+    let created = stateDirectory;
+    for (;;) {
+      const parentFd = fs.openSync(path.dirname(created), 'r');
+      try {
+        fs.fsyncSync(parentFd);
+      } finally {
+        fs.closeSync(parentFd);
+      }
+      if (created === path.resolve(firstCreated)) break;
+      created = path.dirname(created);
+    }
+  }
   const attemptId = randomUUID();
   const key = sha256(
     JSON.stringify([profile.deploymentId, task.workerProfile, jobId])
   );
-  const journalPath = path.join(options.stateDirectory, `${key}.json`);
+  const journalPath = path.join(stateDirectory, `${key}.json`);
   const journal = {
     schemaVersion: 1,
     attemptId,
@@ -265,7 +315,7 @@ export async function executeComputerWork(
   try {
     fs.writeFileSync(fd, JSON.stringify({ ...journal, status: 'dispatched' }));
     fs.fsyncSync(fd);
-    const directoryFd = fs.openSync(options.stateDirectory, 'r');
+    const directoryFd = fs.openSync(stateDirectory, 'r');
     try {
       fs.fsyncSync(directoryFd);
     } finally {
@@ -407,10 +457,22 @@ export function requireComputerWorkAdmission(
     throw new Error(
       'Configure absolute COMPUTER_WORK_PROFILES_FILE and COMPUTER_WORK_STATE_DIR'
     );
-  const configFd = fs.openSync(configFile, 'r');
+  const original = fs.lstatSync(configFile);
+  validateProfileFile(original);
+  // Do not follow a replacement symlink or block on a replacement FIFO.
+  const configFd = fs.openSync(
+    configFile,
+    fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW | fs.constants.O_NONBLOCK
+  );
   let profiles: RecordValue;
   try {
-    if (fs.fstatSync(configFd).size > 1024 * 1024)
+    const opened = fs.fstatSync(configFd);
+    validateProfileFile(opened);
+    if (opened.dev !== original.dev || opened.ino !== original.ino)
+      throw new Error(
+        'Worker profiles changed during admission; retry preflight'
+      );
+    if (opened.size > 1024 * 1024)
       throw new Error('Worker configuration is too large');
     profiles = record(JSON.parse(fs.readFileSync(configFd, 'utf8')));
   } finally {

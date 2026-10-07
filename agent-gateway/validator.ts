@@ -4,6 +4,7 @@ import { ethers, Wallet } from 'ethers';
 import {
   registry,
   validation,
+  provider,
   walletManager,
   FETCH_TIMEOUT_MS,
   TOKEN_DECIMALS,
@@ -21,6 +22,12 @@ import { appendTrainingRecord } from '../shared/trainingRecords';
 import { secureLogAction } from './security';
 import { summarizeContent } from '../shared/worldModel';
 import { loadCommitRecord, updateCommitRecord } from './validationStore';
+import { assertAutomaticValidationAllowed } from './validationContext';
+import {
+  prepareValidationCommitment,
+  assertValidationReveal,
+  validationRevealDelay,
+} from '../shared/validationProtocol';
 
 interface SubmissionInfo {
   jobId: string;
@@ -47,6 +54,7 @@ interface ValidationEvaluation {
 
 type AssignmentStatus =
   | 'selected'
+  | 'awaiting-review'
   | 'evaluating'
   | 'committed'
   | 'revealed'
@@ -64,6 +72,7 @@ interface ValidationAssignment {
   commit?: {
     txHash: string;
     salt: string;
+    burnTxHash?: string;
     approve: boolean;
     committedAt: string;
     evaluation: ValidationEvaluation;
@@ -443,7 +452,10 @@ async function triggerValidatorFallback(jobId: string): Promise<void> {
       await ensureIdentity(wallet, 'validator');
       await ensureStake(wallet, 0n, ROLE_VALIDATOR);
       const writer = validation.connect(wallet) as unknown as {
-        selectValidators(jobId: string, entropy: string): Promise<ethers.TransactionResponse>;
+        selectValidators(
+          jobId: string,
+          entropy: string
+        ): Promise<ethers.TransactionResponse>;
       };
       const entropy = ethers.hexlify(ethers.randomBytes(32));
       const tx = await writer.selectValidators(jobId, entropy);
@@ -651,6 +663,7 @@ function rehydrateAssignmentFromStore(
   assignment.commit = {
     txHash: record.commitTx || assignment.commit?.txHash || '',
     salt: record.salt,
+    burnTxHash: record.burnTxHash,
     approve: record.approve,
     committedAt: record.committedAt,
     evaluation,
@@ -925,6 +938,7 @@ async function revealValidation(
       commitInfo = {
         txHash: record.commitTx || assignment.commit?.txHash || '',
         salt: record.salt,
+        burnTxHash: record.burnTxHash,
         approve: record.approve,
         committedAt: record.committedAt,
         evaluation,
@@ -941,9 +955,26 @@ async function revealValidation(
     throw new Error('Validator identity missing label');
   }
   try {
+    await assertValidationReveal(
+      validation,
+      registry,
+      provider,
+      jobId,
+      assignment.wallet.address,
+      commitInfo.approve,
+      commitInfo.salt,
+      commitInfo.burnTxHash
+    );
     const tx = await (validation as any)
       .connect(assignment.wallet)
-      .revealValidation(jobId, commitInfo.approve, commitInfo.salt, label, []);
+      .revealValidation(
+        jobId,
+        commitInfo.approve,
+        commitInfo.burnTxHash,
+        commitInfo.salt,
+        label,
+        []
+      );
     await tx.wait();
     assignment.reveal = {
       txHash: tx.hash,
@@ -997,19 +1028,15 @@ async function scheduleReveal(
   }
   try {
     const round = await validation.rounds(jobId);
-    const commitDeadline = Number(round[2] || round.commitDeadline || 0);
-    const revealDeadline = Number(round[3] || round.revealDeadline || 0);
-    const nowSec = Math.floor(Date.now() / 1000);
-    const baseTarget =
-      Math.max(commitDeadline, nowSec) + VALIDATOR_REVEAL_LEAD_SECONDS;
-    const maxTarget = revealDeadline
-      ? Math.min(revealDeadline - 1, baseTarget)
-      : baseTarget;
-    const targetSec = Math.max(nowSec, maxTarget);
-    let delayMs = Math.max(0, targetSec - nowSec) * 1000;
-    if (delayMs === 0) {
-      delayMs = VALIDATOR_REVEAL_FALLBACK_MS;
-    }
+    const commitDeadline = Number(round.commitDeadline);
+    const revealDeadline = Number(round.revealDeadline);
+    const block = await provider.getBlock('latest');
+    if (!block) throw new Error('VALIDATION_BLOCK_UNAVAILABLE');
+    const delayMs = validationRevealDelay(
+      round,
+      block.timestamp,
+      VALIDATOR_REVEAL_LEAD_SECONDS
+    );
     assignment.scheduledReveal = setTimeout(() => {
       revealValidation(jobId, assignment).catch((err) =>
         console.error('validator reveal error', err)
@@ -1018,12 +1045,19 @@ async function scheduleReveal(
     assignment.round = {
       commitDeadline,
       revealDeadline,
-      approvals: round[4]?.toString?.(),
-      rejections: round[5]?.toString?.(),
-      committeeSize: Number(round[7] || round.committeeSize || 0),
+      approvals: round.approvals.toString(),
+      rejections: round.rejections.toString(),
+      committeeSize: Number(round.committeeSize),
     };
   } catch (err) {
     console.warn('Failed to schedule validator reveal', jobId, err);
+    if (
+      err instanceof Error &&
+      /^VALIDATION_REVEAL_(WINDOW_CLOSED|DELAY_OUT_OF_RANGE)$/.test(err.message)
+    ) {
+      assignment.error = err.message;
+      return;
+    }
     assignment.scheduledReveal = setTimeout(() => {
       revealValidation(jobId, assignment).catch((error) =>
         console.error('validator reveal retry error', error)
@@ -1041,6 +1075,7 @@ async function evaluateAndCommit(
   if (assignment.status === 'committed' || assignment.status === 'revealed') {
     return;
   }
+  if (assignment.status === 'awaiting-review') return;
   if (assignment.attempts >= VALIDATOR_MAX_RETRIES) {
     return;
   }
@@ -1067,6 +1102,26 @@ async function evaluateAndCommit(
     return;
   }
   assignment.processing = true;
+  try {
+    await assertAutomaticValidationAllowed(
+      registry,
+      provider,
+      submission.jobId
+    );
+  } catch (error) {
+    assignment.processing = false;
+    assignment.status = 'awaiting-review';
+    assignment.error = error instanceof Error ? error.message : String(error);
+    await secureLogAction({
+      component: 'validator',
+      action: 'automatic-validation-abstained',
+      jobId: submission.jobId,
+      agent: assignment.wallet.address,
+      metadata: { reason: assignment.error },
+      success: false,
+    });
+    return;
+  }
   assignment.attempts += 1;
   assignment.status = 'evaluating';
   if (!assignment.notifiedAt) {
@@ -1118,16 +1173,22 @@ async function evaluateAndCommit(
     if (!label) {
       throw new Error('Validator identity missing label');
     }
-    const nonce = await validation.jobNonce(submission.jobId);
+    const previous = loadCommitRecord(
+      submission.jobId,
+      assignment.wallet.address
+    );
+    if (previous) {
+      throw new Error('VALIDATION_COMMITMENT_RECONCILIATION_REQUIRED');
+    }
     const salt = ethers.hexlify(ethers.randomBytes(32));
-    const commitHash = ethers.solidityPackedKeccak256(
-      ['uint256', 'uint256', 'bool', 'bytes32'],
-      [
-        BigInt(submission.jobId),
-        BigInt(nonce.toString()),
-        evaluation.approve,
-        salt,
-      ]
+    const { commitHash, burnTxHash } = await prepareValidationCommitment(
+      validation,
+      registry,
+      provider,
+      submission.jobId,
+      assignment.wallet.address,
+      evaluation.approve,
+      salt
     );
 
     await secureLogAction({
@@ -1151,6 +1212,7 @@ async function evaluateAndCommit(
     assignment.commit = {
       txHash: tx.hash,
       salt,
+      burnTxHash,
       approve: evaluation.approve,
       committedAt: new Date().toISOString(),
       evaluation,
@@ -1160,6 +1222,7 @@ async function evaluateAndCommit(
       updateCommitRecord(submission.jobId, assignment.wallet.address, {
         approve: evaluation.approve,
         salt,
+        burnTxHash,
         commitHash,
         commitTx: tx.hash,
         committedAt: assignment.commit.committedAt,
@@ -1292,11 +1355,6 @@ export async function handleValidatorSelection(
       }
       const submission = submissions.get(jobId);
       if (submission) {
-        try {
-          await notifyDomainAgent(submission, assignment);
-        } catch (err) {
-          console.warn('validator notification during selection failed', err);
-        }
         await evaluateAndCommit(submission, assignment);
       }
     } catch (err: any) {
@@ -1321,11 +1379,6 @@ export async function handleJobAwaitingValidation(
   const bucket = assignments.get(submission.jobId);
   if (!bucket) return;
   for (const assignment of bucket.values()) {
-    try {
-      await notifyDomainAgent(submission, assignment);
-    } catch (err) {
-      console.warn('validator notification failed', err);
-    }
     await evaluateAndCommit(submission, assignment);
   }
 }

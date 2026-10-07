@@ -111,6 +111,137 @@ function configureWorker(t: any, f: Awaited<ReturnType<typeof fixture>>) {
   return { configFile, stateDirectory };
 }
 
+test('unsafe dispatch directories fail admission without worker calls or new claims', async (t) => {
+  let calls = 0;
+  const f = await fixture(t, (_req, res) => {
+    calls++;
+    res.end(JSON.stringify(completed()));
+  });
+  const { stateDirectory } = configureWorker(t, f);
+  fs.mkdirSync(stateDirectory, { mode: 0o700 });
+  for (const mode of [0o777, 0o770, 0o755]) {
+    fs.chmodSync(stateDirectory, mode);
+    assert.throws(
+      () => requireComputerWorkAdmission('1', task),
+      /private operator-owned directory/
+    );
+    await assert.rejects(
+      executeComputerWork('1', task, f.profile, { stateDirectory }),
+      /private operator-owned directory/
+    );
+    assert.deepEqual(fs.readdirSync(stateDirectory), []);
+  }
+  fs.chmodSync(stateDirectory, 0o700);
+  fs.rmdirSync(stateDirectory);
+  const target = path.join(f.options.stateDirectory, 'redirected-journal');
+  fs.mkdirSync(target, { mode: 0o700 });
+  fs.symlinkSync(target, stateDirectory, 'dir');
+  assert.throws(
+    () => requireComputerWorkAdmission('1', task),
+    /private operator-owned directory/
+  );
+  await assert.rejects(
+    executeComputerWork('1', task, f.profile, { stateDirectory }),
+    /private operator-owned directory/
+  );
+  assert.deepEqual(fs.readdirSync(target), []);
+  assert.equal(calls, 0);
+});
+
+test('mutable or redirected operator profiles fail admission before economic commitment', async (t) => {
+  const f = await fixture(t, () =>
+    assert.fail('Admission cannot dispatch work')
+  );
+  const { configFile, stateDirectory } = configureWorker(t, f);
+  for (const mode of [0o666, 0o660]) {
+    fs.chmodSync(configFile, mode);
+    assert.throws(
+      () => requireComputerWorkAdmission('1', task),
+      /protected operator-owned regular file/
+    );
+  }
+  fs.chmodSync(configFile, 0o600);
+  assert.equal(
+    requireComputerWorkAdmission('1', task).stateDirectory,
+    stateDirectory
+  );
+  const target = path.join(
+    f.options.stateDirectory,
+    'redirected-profiles.json'
+  );
+  fs.renameSync(configFile, target);
+  fs.symlinkSync(target, configFile);
+  assert.throws(
+    () => requireComputerWorkAdmission('1', task),
+    /protected operator-owned regular file/
+  );
+  assert.equal(fs.existsSync(stateDirectory), false);
+});
+
+test('new state directory entries must be durable before any dispatch claim', async (t) => {
+  let calls = 0;
+  const f = await fixture(t, (_req, res) => {
+    calls++;
+    res.end(JSON.stringify(completed()));
+  });
+  const parent = path.join(f.options.stateDirectory, 'new-parent');
+  const stateDirectory = path.join(parent, 'dispatches');
+  const originalOpen = fs.openSync;
+  const originalSync = fs.fsyncSync;
+  const watched = new Map<number, string>();
+  const synced: string[] = [];
+  const open = mock.method(fs, 'openSync', (...args: any[]) => {
+    const fd = (originalOpen as any)(...args);
+    if (args[0] === parent || args[0] === f.options.stateDirectory)
+      watched.set(fd, args[0]);
+    else watched.delete(fd);
+    return fd;
+  });
+  const sync = mock.method(fs, 'fsyncSync', (fd: number) => {
+    const location = watched.get(fd);
+    if (location) {
+      synced.push(location);
+      if (location === f.options.stateDirectory)
+        throw new Error('Parent directory durability unavailable');
+    }
+    return originalSync(fd);
+  });
+  try {
+    await assert.rejects(
+      executeComputerWork('1', task, f.profile, { stateDirectory }),
+      /Parent directory durability unavailable/
+    );
+  } finally {
+    sync.mock.restore();
+    open.mock.restore();
+  }
+  assert.deepEqual(synced, [parent, f.options.stateDirectory]);
+  assert.deepEqual(fs.readdirSync(stateDirectory), []);
+  assert.equal(calls, 0);
+});
+
+test('dot segments use one canonical state location for creation and replay prevention', async (t) => {
+  let calls = 0;
+  const f = await fixture(t, (_req, res) => {
+    calls++;
+    res.end(JSON.stringify(completed()));
+  });
+  const stateDirectory = `${f.options.stateDirectory}/unused/../dispatches`;
+  await executeComputerWork('1', task, f.profile, { stateDirectory });
+  await assert.rejects(
+    executeComputerWork('1', task, f.profile, {
+      stateDirectory: path.resolve(stateDirectory),
+    }),
+    /already dispatched/
+  );
+  assert.equal(
+    fs.existsSync(path.join(f.options.stateDirectory, 'unused')),
+    false
+  );
+  assert.equal(fs.readdirSync(path.resolve(stateDirectory)).length, 1);
+  assert.equal(calls, 1);
+});
+
 test('invalid Unicode task strings cannot collide under UTF-8 hashing', () => {
   for (const invalid of ['\ud800', '\udfff']) {
     assert.throws(

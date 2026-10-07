@@ -227,6 +227,7 @@ async function main() {
         '--test',
         'test/scripts/release-provenance.test.cjs',
         'test/scripts/release-ci.test.cjs',
+        'test/scripts/dependency-audit.test.cjs',
         'test/scripts/release-inventory.test.cjs',
       ]
     );

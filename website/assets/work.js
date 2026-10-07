@@ -84,12 +84,24 @@ export function initWorkPlanner() {
   $('work-open').addEventListener('change', async (event) => {
     const file = event.target.files[0];
     const opening = ++openVersion;
-    const editing = editVersion;
     if (!file) return;
+    invalidate();
+    const editing = editVersion;
+    $('work-status').textContent = 'Opening editable draft…';
     try {
       if (file.size > savedDraftMaxBytes)
         throw new Error('Choose a saved work draft smaller than 100 KB.');
-      const fields = openEditableDraft(await file.text());
+      const bytes = await file.arrayBuffer();
+      let saved;
+      try {
+        saved = new TextDecoder('utf-8', {
+          fatal: true,
+          ignoreBOM: true,
+        }).decode(bytes);
+      } catch {
+        throw new Error('Choose a saved work draft encoded as valid UTF-8.');
+      }
+      const fields = openEditableDraft(saved);
       if (opening !== openVersion) return;
       if (editing !== editVersion)
         throw new Error(
@@ -106,7 +118,6 @@ export function initWorkPlanner() {
     } finally {
       if (opening === openVersion) {
         event.target.value = '';
-        $('work-status').focus();
       }
     }
   });

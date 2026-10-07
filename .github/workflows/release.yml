@@ -90,6 +90,19 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: node scripts/release/check-release-ci.js
 
+      - name: Audit every production dependency lockfile
+        id: dependency-audit
+        timeout-minutes: 8
+        run: node scripts/release/audit-dependencies.cjs
+
+      - name: Retain dependency audit evidence, including failures
+        if: always() && steps.dependency-audit.outcome != 'skipped'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: release-dependency-audit-${{ github.sha }}
+          path: reports/release/dependency-audit/
+          if-no-files-found: error
+
       - name: Determine network
         id: network
         run: |

@@ -114,8 +114,75 @@ export async function verifyWorkPlanner({
     .getByText('This file is not valid JSON.', { exact: false })
     .waitFor();
   assert.equal(
+    await page.locator('[data-work-download="task"]').isDisabled(),
+    true
+  );
+  assert.equal(
     await page.getByLabel('Objective', { exact: true }).inputValue(),
     customGoal
+  );
+  await page.getByLabel('Open saved editable draft').setInputFiles({
+    name: 'invalid-utf8.json',
+    mimeType: 'application/json',
+    buffer: Buffer.concat([
+      Buffer.from('{"value":"'),
+      Buffer.from([0xff]),
+      Buffer.from('"}'),
+    ]),
+  });
+  await page
+    .getByText('Choose a saved work draft encoded as valid UTF-8.', {
+      exact: true,
+    })
+    .waitFor();
+  await page.getByRole('button', { name: 'Build work order' }).click();
+  assert.equal(
+    await page.locator('[data-work-download="task"]').isDisabled(),
+    false
+  );
+  await page.evaluate(() => {
+    const original = File.prototype.arrayBuffer;
+    window.releaseDraftRead = null;
+    File.prototype.arrayBuffer = function () {
+      const file = this;
+      File.prototype.arrayBuffer = original;
+      return new Promise((resolve) => {
+        window.releaseDraftRead = async () =>
+          resolve(await original.call(file));
+      });
+    };
+  });
+  await page.getByLabel('Open saved editable draft').setInputFiles(savedPath);
+  await page.waitForFunction(
+    () => typeof window.releaseDraftRead === 'function'
+  );
+  assert.equal(
+    await page.locator('[data-work-download="task"]').isDisabled(),
+    true
+  );
+  assert.equal(await page.locator('#work-preview').isVisible(), false);
+  await page
+    .getByLabel('Objective', { exact: true })
+    .fill('An edit made while opening a draft.');
+  await page.evaluate(() => window.releaseDraftRead());
+  await page
+    .getByText('Draft was not opened because you changed the form.', {
+      exact: false,
+    })
+    .waitFor();
+  assert.equal(
+    await page.getByLabel('Objective', { exact: true }).inputValue(),
+    'An edit made while opening a draft.'
+  );
+  assert.equal(
+    await page
+      .locator('#work-goal')
+      .evaluate((element) => element === document.activeElement),
+    true
+  );
+  assert.equal(
+    await page.locator('[data-work-download="task"]').isDisabled(),
+    true
   );
   await page
     .getByRole('button', { name: "Use category's suggested objective" })
@@ -198,6 +265,6 @@ export async function verifyWorkPlanner({
     await fallback.close();
   }
   checks.push(
-    'work planner: all ten categories, exact money, schema downloads, editable-draft round trip, preserved custom objectives, invalid imports, stale-draft invalidation, injection, keyboard, mobile, accessibility and no-JavaScript guidance'
+    'work planner: all ten categories, exact money, schema downloads, editable-draft round trip, preserved custom objectives, invalid UTF-8 imports, pending-import invalidation, input races, injection, keyboard, mobile, accessibility and no-JavaScript guidance'
   );
 }

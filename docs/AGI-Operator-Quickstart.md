@@ -144,7 +144,7 @@ npx hardhat run --network localhost scripts/v2/deploy.ts
 
 # Terminal C — activate intelligence services
 npm run agent:gateway
-npm run agent:validator
+VALIDATOR_DECISION=approve npm run agent:validator
 uvicorn services.meta_api.app.main:app --reload --port 8000
 
 # Terminal D — mission HUDs
@@ -153,6 +153,8 @@ npm --prefix apps/console run dev
 npm --prefix apps/mission-control run dev
 npm --prefix apps/orchestrator run dev
 ```
+
+The fixed validator decision above is for the deterministic devnet rehearsal. It is not a content evaluator or production acceptance policy. The validator requires an explicit decision and a persistent private reveal journal; follow the [validator setup and recovery guide](AGENTIC_QUICKSTART.md) before starting it.
 
 ### 5. One-click production parity via Docker Compose
 ```bash

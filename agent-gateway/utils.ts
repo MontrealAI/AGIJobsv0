@@ -4,6 +4,12 @@ import { loadTokenConfig } from '../scripts/config';
 import WalletManager from './wallet';
 import { Job, AgentInfo, CommitData } from './types';
 import { loadCommitRecord, updateCommitRecord } from './validationStore';
+import {
+  VALIDATION_PROTOCOL_ABI,
+  VALIDATION_REGISTRY_ABI,
+  prepareValidationCommitment,
+  assertValidationReveal,
+} from '../shared/validationProtocol';
 
 const DEFAULT_RPC_URL = 'http://localhost:8545';
 const ALLOWED_RPC_PROTOCOLS = new Set(['http:', 'https:', 'ws:', 'wss:']);
@@ -151,6 +157,7 @@ export const provider: JsonRpcProvider = new ethers.JsonRpcProvider(RPC_URL);
 
 // Minimal ABI for JobRegistry interactions
 const JOB_REGISTRY_ABI = [
+  ...VALIDATION_REGISTRY_ABI,
   'event JobCreated(uint256 indexed jobId, address indexed employer, address indexed agent, uint256 reward, uint256 stake, uint256 fee, bytes32 specHash, string uri)',
   'event ApplicationSubmitted(uint256 indexed jobId, address indexed applicant, string subdomain)',
   'event AgentAssigned(uint256 indexed jobId, address indexed agent, string subdomain)',
@@ -181,11 +188,8 @@ const STAKE_MANAGER_ABI = [
 
 // Minimal ABI for ValidationModule interactions
 const VALIDATION_MODULE_ABI = [
-  'function jobNonce(uint256 jobId) view returns (uint256)',
-  'function commitValidation(uint256 jobId, bytes32 commitHash, string subdomain, bytes32[] proof)',
-  'function revealValidation(uint256 jobId, bool approve, bytes32 salt, string subdomain, bytes32[] proof)',
+  ...VALIDATION_PROTOCOL_ABI,
   'function finalize(uint256 jobId) external returns (bool)',
-  'function rounds(uint256 jobId) view returns (address[] validators,address[] participants,uint256 commitDeadline,uint256 revealDeadline,uint256 approvals,uint256 rejections,bool tallied,uint256 committeeSize)',
   'event ValidatorsSelected(uint256 indexed jobId, address[] validators)',
 ];
 
@@ -470,7 +474,7 @@ export async function scheduleFinalize(jobId: string): Promise<void> {
   if (!validation || !automationWallet) return;
   try {
     const round = await validation.rounds(jobId);
-    const revealDeadline = Number(round[3] || round.revealDeadline);
+    const revealDeadline = Number(round.revealDeadline);
     const delay = revealDeadline - Math.floor(Date.now() / 1000);
     if (delay <= 0) {
       await finalizeJob(jobId);
@@ -562,7 +566,10 @@ export async function commitHelper(
 ): Promise<{ tx: string; salt: string; commitHash: string }> {
   if (!validation) throw new Error('validation module not configured');
   await checkEnsSubdomain(wallet.address);
-  const nonce = await validation.jobNonce(jobId);
+  const previous = loadCommitRecord(jobId, wallet.address);
+  if (previous) {
+    throw new Error('VALIDATION_COMMITMENT_RECONCILIATION_REQUIRED');
+  }
   let salt: string;
   if (saltOverride) {
     try {
@@ -573,36 +580,31 @@ export async function commitHelper(
   } else {
     salt = ethers.hexlify(ethers.randomBytes(32));
   }
-  const jobBigInt = ethers.getBigInt(jobId);
-  const nonceBigInt = ethers.getBigInt(nonce);
-  const commitHash = ethers.solidityPackedKeccak256(
-    ['uint256', 'uint256', 'bool', 'bytes32'],
-    [jobBigInt, nonceBigInt, approve, salt]
+  const { commitHash, burnTxHash } = await prepareValidationCommitment(
+    validation,
+    registry,
+    provider,
+    jobId,
+    wallet.address,
+    approve,
+    salt
   );
+  const validatorEns =
+    (await provider.lookupAddress(wallet.address)) || undefined;
+  const validatorLabel = validatorEns?.split('.')[0];
   const tx = await (validation as any)
     .connect(wallet)
-    .commitValidation(jobId, commitHash, '', []);
+    .commitValidation(jobId, commitHash, validatorLabel || '', []);
   await tx.wait();
   if (!commits.has(jobId)) commits.set(jobId, {});
   const jobCommits = commits.get(jobId)!;
-  jobCommits[wallet.address.toLowerCase()] = { approve, salt };
-
-  let validatorEns: string | undefined;
-  let validatorLabel: string | undefined;
-  try {
-    const lookup = await provider.lookupAddress(wallet.address);
-    if (lookup) {
-      validatorEns = lookup;
-      validatorLabel = lookup.split('.')[0];
-    }
-  } catch (err) {
-    console.warn('ENS lookup failed during commitHelper', err);
-  }
+  jobCommits[wallet.address.toLowerCase()] = { approve, salt, burnTxHash };
 
   try {
     updateCommitRecord(jobId, wallet.address, {
       approve,
       salt,
+      burnTxHash,
       commitHash,
       commitTx: tx.hash,
       committedAt: new Date().toISOString(),
@@ -634,6 +636,7 @@ export async function revealHelper(
     data = {
       approve: storedRecord.approve,
       salt: storedRecord.salt,
+      burnTxHash: storedRecord.burnTxHash,
     };
     jobCommits[wallet.address.toLowerCase()] = { ...data };
   }
@@ -650,9 +653,30 @@ export async function revealHelper(
     throw new Error(`invalid salt provided: ${err?.message || err}`);
   }
   await checkEnsSubdomain(wallet.address);
+  await assertValidationReveal(
+    validation,
+    registry,
+    provider,
+    jobId,
+    wallet.address,
+    approve,
+    salt,
+    data?.burnTxHash
+  );
+  const validatorLabel =
+    storedRecord?.validatorLabel ||
+    (await provider.lookupAddress(wallet.address))?.split('.')[0] ||
+    '';
   const tx = await (validation as any)
     .connect(wallet)
-    .revealValidation(jobId, approve, salt, '', []);
+    .revealValidation(
+      jobId,
+      approve,
+      data!.burnTxHash,
+      salt,
+      validatorLabel,
+      []
+    );
   await tx.wait();
   delete jobCommits[wallet.address.toLowerCase()];
 

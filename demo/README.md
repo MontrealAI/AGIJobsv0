@@ -9,7 +9,7 @@ Run commands from the repository root after the [pinned setup](../docs/START_HER
 | Goal | Command / guide | Evidence to inspect |
 | --- | --- | --- |
 | Complete one job on a disposable blockchain | `npm run demo:aurora:local` · [AURORA](aurora/README.md#run-the-local-job-lifecycle) | `reports/localhost/aurora/`: transactions, validator votes, and settlement |
-| Complete three sector scenarios | `npm run demo:asi-takeoff:local` · [ASI Take-Off](asi-takeoff/README.md#run-the-three-job-local-walkthrough) | `reports/localhost/asi-takeoff/`: three finalized jobs and payouts |
+| Complete three sector scenarios | `npm run demo:asi-takeoff:local` · [ASI Take-Off](asi-takeoff/README.md#retained-local-contract-walkthrough) | `reports/localhost/asi-takeoff/`: three finalized jobs and payouts |
 | Rehearse global coordination | `npm run demo:asi-global:local` · [ASI Global](asi-global/README.md) | `reports/localhost/asi-global/`: three actual local settlements |
 | Rehearse energy, food, health, and macroeconomic scenarios | `npm run demo:atlas-conductor:local` · [Atlas Conductor](atlas-conductor/README.md) | `reports/localhost/atlas-conductor/`: four actual local settlements |
 | Explore recursive-model simulation without a wallet | [Tiny Recursive Model setup](Tiny-Recursive-Model-v0/README.md#run-the-headless-demo) | Synthetic outcomes and model telemetry; install its headless Python requirements |

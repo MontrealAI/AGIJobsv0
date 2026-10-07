@@ -102,6 +102,7 @@ out/forge/
 
 # Generated Pages browser evidence; source and tests remain tracked.
 /reports/pages/
+/reports/release/dependency-audit/
 /reports/kardashev/
 /reports/kardashev-business/
 

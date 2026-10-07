@@ -403,6 +403,76 @@ describe('ValidationModule V2', function () {
     expect(await reputation.reputation(v3.address)).to.equal(0n);
   });
 
+  it('accepts the generic validator domain-bound commitment recovered from its private journal', async () => {
+    const fs = require('node:fs');
+    const os = require('node:os');
+    const path = require('node:path');
+    const {
+      RevealJournal,
+      commitHash,
+    } = require('../../examples/agentic/validator-recovery');
+    const directory = fs.mkdtempSync(
+      path.join(fs.realpathSync(os.tmpdir()), 'validator-contract-')
+    );
+    try {
+      await select(1);
+      const scope = {
+        chainId: String((await ethers.provider.getNetwork()).chainId),
+        validationModule: (await validation.getAddress()).toLowerCase(),
+        validator: v1.address.toLowerCase(),
+      };
+      const record = {
+        version: 1,
+        scope,
+        jobId: '1',
+        nonce: String(await validation.jobNonce(1)),
+        specHash: await jobRegistry.getSpecHash(1),
+        domainSeparator: await validation.DOMAIN_SEPARATOR(),
+        approve: true,
+        burnTxHash,
+        salt: ethers.hexlify(ethers.randomBytes(32)),
+        subdomain: 'validator',
+        commitProof: [],
+        revealProof: [],
+      };
+      record.commitHash = commitHash({
+        ...record,
+        validator: scope.validator,
+        chainId: scope.chainId,
+      });
+      new RevealJournal(directory, scope).prepare(record);
+      await validation
+        .connect(v1)
+        .commitValidation(
+          1,
+          record.commitHash,
+          record.subdomain,
+          record.commitProof
+        );
+      const recovered = new RevealJournal(directory, scope).load(
+        '1',
+        record.nonce
+      );
+      await advance(61);
+      await expect(
+        validation
+          .connect(v1)
+          .revealValidation(
+            1,
+            recovered.approve,
+            recovered.burnTxHash,
+            recovered.salt,
+            recovered.subdomain,
+            recovered.revealProof
+          )
+      ).to.emit(validation, 'ValidationRevealed');
+      expect(await validation.revealed(1, v1.address)).to.equal(true);
+      expect(await validation.votes(1, v1.address)).to.equal(true);
+    } finally {
+      fs.rmSync(directory, { recursive: true, force: true });
+    }
+  });
+
   it('rejects reveal with incorrect nonce', async () => {
     await select(1);
     const salt = ethers.keccak256(ethers.toUtf8Bytes('salt'));

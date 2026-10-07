@@ -20,6 +20,7 @@ export interface StoredCommitRecord {
   validatorLabel?: string;
   approve: boolean;
   salt: string;
+  burnTxHash?: string;
   commitHash: string;
   committedAt: string;
   commitTx?: string;
@@ -35,6 +36,7 @@ export interface StoredCommitRecord {
 export interface CommitRecordUpdate {
   approve?: boolean;
   salt?: string;
+  burnTxHash?: string;
   commitHash?: string;
   committedAt?: string;
   commitTx?: string;
@@ -92,12 +94,24 @@ export function loadCommitRecord(
   const file = recordPath(jobId, validator);
   try {
     const raw = fs.readFileSync(file, 'utf8');
-    return JSON.parse(raw) as StoredCommitRecord;
-  } catch (err: any) {
-    if (err?.code !== 'ENOENT') {
-      console.warn('failed to load commit record', file, err);
+    const record = JSON.parse(raw) as StoredCommitRecord;
+    if (
+      !record ||
+      record.jobId !== jobId.toString() ||
+      record.validator !== validator.toLowerCase() ||
+      typeof record.approve !== 'boolean' ||
+      typeof record.salt !== 'string' ||
+      !record.salt ||
+      typeof record.commitHash !== 'string' ||
+      !record.commitHash ||
+      typeof record.committedAt !== 'string'
+    ) {
+      throw new Error('Invalid stored validator commitment');
     }
-    return null;
+    return record;
+  } catch (err: any) {
+    if (err?.code === 'ENOENT') return null;
+    throw new Error('VALIDATION_COMMITMENT_RECONCILIATION_REQUIRED');
   }
 }
 
@@ -111,6 +125,9 @@ function mergeRecords(
   }
   if (typeof update.salt === 'string' && update.salt.length > 0) {
     next.salt = update.salt;
+  }
+  if (typeof update.burnTxHash === 'string') {
+    next.burnTxHash = update.burnTxHash;
   }
   if (typeof update.commitHash === 'string' && update.commitHash.length > 0) {
     next.commitHash = update.commitHash;
