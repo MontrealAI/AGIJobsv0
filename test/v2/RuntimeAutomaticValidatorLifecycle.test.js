@@ -504,4 +504,30 @@ describe('Automatic validator real-contract lifecycle', function () {
     expect(active().status).to.equal('revealed');
     expect(calls.reveal).to.equal(1);
   });
+
+  it('exposes reconciliation-required after reveal scheduling exhausts its read retries', async () => {
+    await start();
+    const saved = record();
+    failedRoundReads = 100;
+    fire(timerWithDelay((delay) => delay < 120000));
+    await waitFor(() =>
+      timers.some((entry) => !entry.cleared && entry.delay === 5000)
+    );
+    for (let attempt = 0; attempt < 13; attempt++) {
+      const count = timers.length;
+      fire(timerWithDelay((delay) => delay === 5000));
+      await waitFor(
+        () =>
+          timers.length > count || active().status === 'reconciliation-required'
+      );
+    }
+    expect(active().status).to.equal('reconciliation-required');
+    expect(active().error).to.equal('temporary round RPC failure');
+    expect(
+      timers.filter((entry) => !entry.cleared && entry.delay < 120000)
+    ).to.have.length(0);
+    expect(record()).to.deep.equal(saved);
+    expect(calls.commit).to.equal(1);
+    expect(calls.reveal).to.equal(0);
+  });
 });

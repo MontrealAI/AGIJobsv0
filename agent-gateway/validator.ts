@@ -1168,8 +1168,10 @@ async function scheduleReveal(
         assignment.error
       ) ||
       attempt >= VALIDATOR_REVEAL_SCHEDULE_MAX_RETRIES
-    )
+    ) {
+      assignment.status = 'reconciliation-required';
       return;
+    }
     const timer = setTimeout(() => {
       if (
         !isCurrentAssignment(assignment) ||

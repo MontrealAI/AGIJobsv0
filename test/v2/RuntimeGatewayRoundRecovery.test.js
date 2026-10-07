@@ -295,6 +295,66 @@ describe('Gateway manual validator round recovery', function () {
     ).to.equal(ethers.ZeroHash);
   });
 
+  it('recovers a mined commit with a lost response before advancing a reset nonce', async () => {
+    const { client, jobId, v1 } = context;
+    utils.validation = {
+      runner: client.runner,
+      getAddress: () => client.getAddress(),
+      jobNonce: client.jobNonce,
+      DOMAIN_SEPARATOR: client.DOMAIN_SEPARATOR,
+      commitments: client.commitments,
+      revealed: client.revealed,
+      rounds: client.rounds,
+      connect: () => ({
+        commitValidation: async (...args) => {
+          const tx = await client.connect(v1).commitValidation(...args);
+          await tx.wait();
+          throw new Error('lost mined commit response');
+        },
+      }),
+    };
+    await expect(
+      utils.commitHelper(jobId, v1, true, ethers.id('lost response secret'))
+    ).to.be.rejectedWith('lost mined commit response');
+    const original = load();
+    expect(original.commitTx).to.equal(undefined);
+    const archived = rememberArchive(original);
+    await freshRound();
+    const ranges = [];
+    utils.validation = {
+      ...utils.validation,
+      runner: {
+        provider: {
+          getBlock: (tag) => ethers.provider.getBlock(tag),
+          getNetwork: () => ethers.provider.getNetwork(),
+          getTransactionReceipt: (hash) =>
+            ethers.provider.getTransactionReceipt(hash),
+          getLogs: async (filter) => {
+            ranges.push([filter.fromBlock, filter.toBlock]);
+            if (filter.toBlock - filter.fromBlock + 1 > 2)
+              throw new Error('provider range limit');
+            return ethers.provider.getLogs(filter);
+          },
+        },
+      },
+      connect: (signer) => client.connect(signer),
+    };
+    await utils.commitHelper(
+      jobId,
+      v1,
+      false,
+      ethers.id('recovered next round')
+    );
+    expect(ranges.some(([from, to]) => to - from + 1 > 2)).to.equal(true);
+    expect(load().salt).not.to.equal(original.salt);
+    expect(JSON.parse(fs.readFileSync(archived, 'utf8'))).to.deep.equal(
+      original
+    );
+    expect(
+      await client.commitments(jobId, v1.address, await client.jobNonce(jobId))
+    ).to.equal(load().commitHash);
+  });
+
   it('rejects legacy, corrupt, cross-deployment and orphaned records without replacing them', async () => {
     const { jobId, v1 } = context;
     await utils.commitHelper(jobId, v1, true, ethers.id('protected secret'));

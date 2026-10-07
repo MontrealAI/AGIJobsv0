@@ -114,15 +114,66 @@ export async function reconcilePreviousRound(
     old.domain !== next.domain ||
     BigInt(next.nonce) < BigInt(old.nonce) ||
     BigInt(next.commitDeadline) <= BigInt(old.commitDeadline) ||
-    next.blockNumber <= old.blockNumber ||
-    !previous.commitTx
+    next.blockNumber <= old.blockNumber
   )
     reconciliationRequired();
   const chain = validation!.runner?.provider ?? provider;
+  const eventInterface = new ethers.Interface([
+    'event ValidationCommitted(uint256 indexed jobId,address indexed validator,bytes32 commitHash,string subdomain)',
+  ]);
+  const matches = (log: ethers.Log) => {
+    if (
+      log.removed ||
+      log.address.toLowerCase() !== old.validationModule.toLowerCase()
+    )
+      return false;
+    try {
+      const event = eventInterface.parseLog(log);
+      return (
+        event?.args[0].toString() === previous.jobId &&
+        event.args[1].toLowerCase() === previous.validator.toLowerCase() &&
+        event.args[2].toLowerCase() === previous.commitHash.toLowerCase()
+      );
+    } catch {
+      return false;
+    }
+  };
+  const commitReceipt = async () => {
+    if (previous.commitTx)
+      return chain.getTransactionReceipt(previous.commitTx);
+    const topics = eventInterface.encodeFilterTopics('ValidationCommitted', [
+      previous.jobId,
+      previous.validator,
+    ]);
+    let toBlock = next.blockNumber - 1;
+    let pageSize = 2000;
+    while (toBlock > old.blockNumber) {
+      const fromBlock = Math.max(old.blockNumber + 1, toBlock - pageSize + 1);
+      let logs;
+      try {
+        logs = await chain.getLogs({
+          address: old.validationModule,
+          topics,
+          fromBlock,
+          toBlock,
+        });
+      } catch (error) {
+        if (pageSize === 1) throw error;
+        pageSize = Math.max(1, Math.floor(pageSize / 2));
+        continue;
+      }
+      for (const log of logs) {
+        if (matches(log))
+          return chain.getTransactionReceipt(log.transactionHash);
+      }
+      toBlock = fromBlock - 1;
+    }
+    return null;
+  };
   const [anchor, receipt, oldCommitment, currentCommitment] = await Promise.all(
     [
       chain.getBlock(old.blockNumber),
-      chain.getTransactionReceipt(previous.commitTx!),
+      commitReceipt(),
       validation!.commitments(previous.jobId, previous.validator, old.nonce, {
         blockTag: next.blockNumber,
       }),
@@ -135,29 +186,22 @@ export async function reconcilePreviousRound(
     anchor?.hash !== old.blockHash ||
     !receipt ||
     receipt.status !== 1 ||
+    receipt.blockNumber <= old.blockNumber ||
     receipt.blockNumber >= next.blockNumber ||
     oldCommitment !== ethers.ZeroHash ||
     currentCommitment !== ethers.ZeroHash
   )
     reconciliationRequired();
-  const eventInterface = new ethers.Interface([
-    'event ValidationCommitted(uint256 indexed jobId,address indexed validator,bytes32 commitHash,string subdomain)',
+  const [receiptBlock, observedBlock] = await Promise.all([
+    chain.getBlock(receipt!.blockNumber),
+    chain.getBlock(next.blockNumber),
   ]);
-  const confirmed = receipt!.logs.some((log) => {
-    if (log.address.toLowerCase() !== old.validationModule.toLowerCase())
-      return false;
-    try {
-      const event = eventInterface.parseLog(log);
-      return (
-        event?.args[0].toString() === previous.jobId &&
-        event.args[1].toLowerCase() === previous.validator.toLowerCase() &&
-        event.args[2].toLowerCase() === previous.commitHash.toLowerCase()
-      );
-    } catch {
-      return false;
-    }
-  });
-  if (!confirmed) reconciliationRequired();
+  if (
+    receiptBlock?.hash !== receipt!.blockHash ||
+    observedBlock?.hash !== next.blockHash ||
+    !receipt!.logs.some(matches)
+  )
+    reconciliationRequired();
 }
 
 export async function assertStoredValidationRound(

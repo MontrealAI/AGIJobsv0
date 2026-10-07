@@ -88,6 +88,8 @@ Records are bounded JSON data, limited to 1 MiB with additional depth and node l
 
 Automatic validators reserve `awaiting-review` for verified independent-review requirements, including computer work. Temporary lookup failures receive bounded read-only retries. `reconciliation-required` means automation cannot safely establish the current transaction or round state; retain the records and compare canonical receipts, the active round and wallet transactions before operator recovery. An uncertain validator broadcast is not automatically resent.
 
+If reveal scheduling exhausts its read retries or observes a closed reveal window, the assignment explicitly enters `reconciliation-required` with the lookup error retained for operators. A mined commitment whose send response was lost can be recovered from canonical commitment events before advancing to a later round; a missing or orphaned receipt still blocks replacement.
+
 Manual and automatic reveals share one durable claim before broadcasting and save the transaction hash before waiting for confirmation. The compatibility-preserved `automaticRevealStatus` metadata key guards both entry points. A repeated manual request returns a transaction only after checking its successful canonical receipt and matching reveal event; a lost send response can be reconciled from that event within the saved round. An unresolved attempt or a changed round requires reconciliation and never authorizes a duplicate reveal. Stored vote data takes precedence over any in-memory cache.
 
 ## Testing & CI
