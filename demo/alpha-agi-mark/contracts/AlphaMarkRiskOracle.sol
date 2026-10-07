@@ -133,7 +133,8 @@ contract AlphaMarkRiskOracle is Ownable {
         if (currentCount == 0) {
             updatedThreshold = 0;
         } else if (approvalThreshold == 0) {
-            updatedThreshold = (currentCount + 1) / 2;
+            // A default quorum must exceed half, including even-sized councils.
+            updatedThreshold = (currentCount / 2) + 1;
         } else if (approvalThreshold > currentCount) {
             updatedThreshold = currentCount;
         }

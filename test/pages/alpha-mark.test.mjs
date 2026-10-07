@@ -29,6 +29,11 @@ const input = (extra = {}) => ({
   minutesPerReviewer: '120',
   ...extra,
 });
+const prepared = {
+  authorityPlanned: true,
+  inputsPlanned: true,
+  reviewPlanned: true,
+};
 
 test('review capacity bounds work even when worker supply grows', () => {
   const model = modelCapacity(input());
@@ -81,6 +86,26 @@ test('fractional review slots are rounded down and every limiting resource is re
   );
 });
 
+test('partial reviewer availability cannot be pooled into another complete review', () => {
+  const model = modelCapacity(
+    input({ reviewers: '2', minutesPerReviewer: '45', reviewerMinutes: '30' })
+  );
+  assert.equal(model.model, 'one-day-static-capacity/v2');
+  assert.equal(model.slots.reviewer, 2);
+  assert.equal(model.candidateJobs, 2);
+  assert.equal(model.reviewMinutesReserved, 60);
+  assert.equal(model.reviewMinutesUnallocated, 30);
+  assert.equal(
+    model.assumptions.reviewAssignment,
+    'one-independent-reviewer-per-job'
+  );
+  assert.equal(
+    modelCapacity(input({ reviewers: '10000', minutesPerReviewer: '29' }))
+      .candidateJobs,
+    0
+  );
+});
+
 test('invalid and out-of-bounds numeric fields cannot enter the model', () => {
   for (const field of [
     'workers',
@@ -109,12 +134,17 @@ test('invalid and out-of-bounds numeric fields cannot enter the model', () => {
     for (const value of ['0', '-1', '1.0000001', '1000001', '1e3', 'NaN', ''])
       assert.throws(() => modelCapacity(input({ [field]: value })));
   }
+  assert.throws(
+    () => modelCapacity(input({ dailyBudget: '1000001' })),
+    /Daily reward budget/
+  );
 });
 
 test('preparation acknowledgments never grant authority or fabricate evidence', () => {
   const incomplete = createAlphaMarkPlan(input());
   assert.equal(incomplete.status, 'preparation-incomplete');
   assert.equal(incomplete.missing.length, 3);
+  assert.equal(incomplete.proposal, null);
   assert.equal(
     createAlphaMarkPlan(input({ reviewPlanned: 'true' })).preparation
       .reviewPlanned,
@@ -146,6 +176,24 @@ test('preparation acknowledgments never grant authority or fabricate evidence', 
   }
 });
 
+test('capacity downloads cannot carry a task before preparation or when no complete job fits', () => {
+  for (const key of Object.keys(prepared)) {
+    const plan = createAlphaMarkPlan(input({ ...prepared, [key]: false }));
+    assert.equal(plan.status, 'preparation-incomplete');
+    assert.equal(JSON.parse(JSON.stringify(plan)).proposal, null);
+  }
+  for (const limited of [
+    { dailyBudget: '1499.999999' },
+    { minutesPerReviewer: '29' },
+  ]) {
+    const plan = createAlphaMarkPlan(input({ ...prepared, ...limited }));
+    assert.equal(plan.status, 'capacity-unavailable');
+    assert.equal(plan.capacity.candidateJobs, 0);
+    assert.equal(plan.proposal, null);
+  }
+  assert.ok(createAlphaMarkPlan(input(prepared)).proposal.task);
+});
+
 test('task creation reuses source boundaries and preserves entered content as data', () => {
   for (const sources of [
     'http://example.org',
@@ -154,7 +202,7 @@ test('task creation reuses source boundaries and preserves entered content as da
   ])
     assert.throws(() => createAlphaMarkPlan(input({ sources })));
   const draft = createAlphaMarkPlan(
-    input({ goal: '<img src=x onerror=alert(1)>' })
+    input({ ...prepared, goal: '<img src=x onerror=alert(1)>' })
   );
   assert.equal(draft.proposal.task.goal, '<img src=x onerror=alert(1)>');
   assert.deepEqual(draft.proposal.task.allowedOrigins, ['https://example.org']);

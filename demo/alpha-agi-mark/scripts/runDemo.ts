@@ -9,6 +9,15 @@ import { execSync } from 'child_process';
 import { renderDashboard } from './renderDashboard';
 import { canonicalStringify } from './utils/canonical';
 import { expectRevert } from './utils/expectRevert';
+import {
+  assertDistinctActors,
+  assertSufficientBalance,
+  DEMO_CURVE,
+  DEMO_PURCHASES,
+  investorMinimumBalances,
+  MIN_GAS_RESERVE,
+  resolveExecutionMode,
+} from './utils/executionPreflight';
 
 type Address = string;
 
@@ -44,7 +53,6 @@ const OUTPUT_PATH = path.join(
   'alpha-mark-recap.json'
 );
 
-const MIN_BALANCE = ethers.parseEther('0.05');
 const ONE_TOKEN = ethers.parseEther('1');
 
 function calculatePurchaseCost(
@@ -93,16 +101,14 @@ function parsePrivateKeys(raw?: string): string[] {
     .filter((value) => value.length > 0);
 }
 
-async function ensureBalance(label: string, signer: any): Promise<void> {
+async function ensureBalance(
+  label: string,
+  signer: any,
+  minimum = MIN_GAS_RESERVE
+): Promise<void> {
   const address = await signer.getAddress();
   const balance = await signer.provider!.getBalance(address);
-  if (balance < MIN_BALANCE) {
-    throw new Error(
-      `${label} (${address}) requires at least ${ethers.formatEther(
-        MIN_BALANCE
-      )} ETH but only has ${ethers.formatEther(balance)} ETH`
-    );
-  }
+  assertSufficientBalance(label, address, balance, minimum);
 }
 
 const HARDHAT_CHAIN_ID = 31337n;
@@ -128,7 +134,7 @@ async function requireOperatorConsent(
     }
 
     console.log(
-      `🛡️  Dry-run safeguard active (AGIJOBS_DEMO_DRY_RUN=${flag}). Using Hardhat in-memory network (${networkLabel}).`
+      `🛡️  Local rehearsal on the Hardhat in-memory network (${networkLabel}; AGIJOBS_DEMO_DRY_RUN=${flag}).`
     );
     return;
   }
@@ -208,7 +214,11 @@ function describeNetworkName(name: string, chainId: bigint): string {
 async function main() {
   const network = await ethers.provider.getNetwork();
   const dryRun =
-    (process.env.AGIJOBS_DEMO_DRY_RUN ?? 'true').toLowerCase() !== 'false';
+    resolveExecutionMode(
+      hardhatNetwork.name,
+      network.chainId,
+      process.env.AGIJOBS_DEMO_DRY_RUN
+    ) === 'dry-run';
   const networkLabel = describeNetworkName(network.name, network.chainId);
   await requireOperatorConsent(networkLabel, dryRun, network.chainId);
 
@@ -223,6 +233,17 @@ async function main() {
   const validatorAddresses = await Promise.all(
     validators.map((signer) => signer.getAddress())
   );
+  assertDistinctActors([
+    { label: 'Owner', address: ownerAddress },
+    ...investorAddresses.map((address, index) => ({
+      label: DEMO_PURCHASES[index].label,
+      address,
+    })),
+    ...validatorAddresses.map((address, index) => ({
+      label: `Validator ${index + 1}`,
+      address,
+    })),
+  ]);
 
   const tradeLedger: TradeRecord[] = [];
   const timeline: TimelineEntry[] = [];
@@ -294,8 +315,11 @@ async function main() {
   });
 
   await ensureBalance('Owner', owner);
+  const investorMinimums = investorMinimumBalances();
   await Promise.all(
-    investors.map((signer, idx) => ensureBalance(`Investor ${idx + 1}`, signer))
+    investors.map((signer, idx) =>
+      ensureBalance(DEMO_PURCHASES[idx].label, signer, investorMinimums[idx])
+    )
   );
   await Promise.all(
     validators.map((signer, idx) =>
@@ -308,9 +332,9 @@ async function main() {
   pushTimeline({
     phase: 'Orchestration',
     title: 'Actors cleared for launch',
-    description: `Owner, investors, and validators funded ≥ ${ethers.formatEther(
-      MIN_BALANCE
-    )} ETH`,
+    description: `Distinct actors funded for planned purchases, temporary overpayments, and a ${ethers.formatEther(
+      MIN_GAS_RESERVE
+    )} ETH gas reserve each (actual gas costs must be reviewed separately)`,
     icon: '💠',
   });
 
@@ -357,9 +381,7 @@ async function main() {
     actorLabel: 'Owner',
   });
 
-  const basePrice = ethers.parseEther('0.1');
-  const slope = ethers.parseEther('0.05');
-  const maxSupply = 100; // whole tokens
+  const { basePrice, slope, maxSupply } = DEMO_CURVE;
 
   const AlphaMark = await ethers.getContractFactory('AlphaMarkEToken', owner);
   const mark = await AlphaMark.deploy(
@@ -458,13 +480,11 @@ async function main() {
   );
 
   const buy = async (
-    label: string,
     signer: any,
-    amountTokens: string,
-    overpay = '0'
+    purchase: (typeof DEMO_PURCHASES)[number]
   ) => {
-    const amount = ethers.parseEther(amountTokens);
-    const tokensWhole = amount / ONE_TOKEN;
+    const { label, tokens: tokensWhole, overpayment } = purchase;
+    const amount = tokensWhole * ONE_TOKEN;
     const cost = await mark.previewPurchaseCost(amount);
     const manualCost = calculatePurchaseCost(
       basePrice,
@@ -480,9 +500,11 @@ async function main() {
       manualCost
     );
 
-    const totalValue = cost + ethers.parseEther(overpay);
+    const totalValue = cost + overpayment;
     await (
-      await mark.connect(signer).buyTokens(amount, { value: totalValue })
+      await mark
+        .connect(signer)
+        .buyTokensWithLimit(amount, cost, { value: totalValue })
     ).wait();
 
     simulatedSupply += tokensWhole;
@@ -497,13 +519,13 @@ async function main() {
     });
 
     console.log(
-      `   ✅ ${label} bought ${amountTokens} SEED for ${ethers.formatEther(
+      `   ✅ ${label} bought ${tokensWhole} SEED for ${ethers.formatEther(
         cost
       )} ETH`
     );
   };
 
-  await buy('Investor A', investorA, '5', '0.2');
+  await buy(investorA, DEMO_PURCHASES[0]);
 
   console.log('   🔒 Owner pauses market to demonstrate compliance gate');
   await (await mark.pauseMarket()).wait();
@@ -547,8 +569,8 @@ async function main() {
     actorLabel: 'Owner',
   });
 
-  await buy('Investor B', investorB, '3');
-  await buy('Investor C', investorC, '4');
+  await buy(investorB, DEMO_PURCHASES[1]);
+  await buy(investorC, DEMO_PURCHASES[2]);
 
   console.log('\n💡 Validator council activity:');
   await (await riskOracle.connect(validatorA).approveSeed()).wait();
@@ -615,7 +637,9 @@ async function main() {
     sellReturn,
     manualReturn
   );
-  await (await mark.connect(investorB).sellTokens(sellAmount)).wait();
+  await (
+    await mark.connect(investorB).sellTokensWithLimit(sellAmount, sellReturn)
+  ).wait();
 
   simulatedSupply -= sellAmountWhole;
   simulatedReserve -= sellReturn;

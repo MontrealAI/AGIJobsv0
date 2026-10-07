@@ -158,14 +158,26 @@ This runbook describes the local α-AGI MARK financing-market demonstration. Beg
    npm run demo:alpha-agi-mark -- --network sepolia
    ```
 
-   Provide keys for at least three investors and three validators; the script confirms each wallet holds ≥0.05 ETH and prompts for
-   a `launch` acknowledgement before any mainnet/testnet transactions proceed.
+   Provide keys for at least three investors and three validators. The selected owner, investor and validator addresses must all be distinct. Before deployment, the script checks these balances:
+
+   | Role | Planned purchase value | Minimum balance |
+   | --- | --- | --- |
+   | Investor A | 1.00 ETH + 0.20 ETH temporary overpayment | 1.25 ETH |
+   | Investor B | 1.20 ETH | 1.25 ETH |
+   | Investor C | 2.30 ETH | 2.35 ETH |
+   | Owner and each validator | Gas only | 0.05 ETH each |
+
+   Each minimum includes a 0.05 ETH gas reserve. These are preflight floors, not live fee estimates; review actual network fees and the owner's deployment costs separately. The script prompts for a `launch` acknowledgement before any mainnet/testnet transactions proceed.
+
+   A run on the in-memory `hardhat` network is always recorded as a local rehearsal, including when `AGIJOBS_DEMO_DRY_RUN=false` was left in the environment. The scenario uses explicit purchase-cost and redemption-return limits. Address separation is a configuration check; it does not establish independent ownership or review.
 
 ## Emergency Controls
 
-- `pause()` halts buys while still allowing redemptions when emergency exit is active.
-- `abort()` activates emergency exit and keeps the bonding curve solvent for participant withdrawals.
-- `overrideValidation()` lets the owner force a green light or red light if the validator council stalls.
-- `resetApprovals()` clears validator votes instantly so a fresh review cycle can begin after any incident.
+When `AlphaMarkRiskOracle` is constructed with threshold `0`, its initial nonempty council defaults to a strict majority: `floor(validatorCount / 2) + 1`. An empty council cannot approve; repopulating it selects the same default. Existing nonzero thresholds remain explicit owner policy as validators are added, and are capped to the remaining count after removals. Review the quorum after every membership change.
+
+- `AlphaMarkEToken.pauseMarket()` halts buys while still allowing redemptions when emergency exit is active.
+- `AlphaMarkEToken.abortLaunch()` closes the sale and activates emergency exit, preserving the recorded reserve for redemptions.
+- `AlphaMarkEToken.setValidationOverride(enabled, status)` lets the owner override launch validation. This is explicit governance authority, not independent approval.
+- `AlphaMarkRiskOracle.resetApprovals()` clears validator votes so a fresh review cycle can begin after an incident.
 
 These controls are exercised on the local test chain. External use requires independently reviewed configuration and authorization.

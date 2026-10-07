@@ -18,6 +18,12 @@ import { canonicalStringify } from '../scripts/utils/canonical';
 import { assertVerifiedRecap } from '../scripts/verifyRecap';
 import { buildStochasticProof } from '../scripts/monteCarloVerifier';
 import { renderDashboard } from '../scripts/renderDashboard';
+import {
+  assertDistinctActors,
+  assertSufficientBalance,
+  investorMinimumBalances,
+  resolveExecutionMode,
+} from '../scripts/utils/executionPreflight';
 
 const demoDir = path.resolve(__dirname, '..');
 const source = readFileSync(
@@ -362,4 +368,87 @@ test('guard probes reject successful calls, unrelated RPC failures, and differen
     }),
     /unexpected reason/
   );
+});
+
+test('local Hardhat execution remains a rehearsal even when broadcast is requested', () => {
+  for (const flag of [undefined, 'true', 'false', ' FALSE '])
+    assert.equal(resolveExecutionMode('hardhat', 31337n, flag), 'dry-run');
+  assert.throws(
+    () => resolveExecutionMode('hardhat', 1n, 'false'),
+    /requires chain ID 31337/
+  );
+});
+
+test('external networks require explicit broadcast mode, even with a local-looking chain ID', () => {
+  for (const network of ['sepolia', 'localhost']) {
+    for (const flag of [undefined, 'true'])
+      assert.throws(
+        () => resolveExecutionMode(network, 31337n, flag),
+        /Dry-run requires the in-memory hardhat network/
+      );
+    assert.equal(resolveExecutionMode(network, 31337n, 'false'), 'broadcast');
+  }
+  for (const flag of ['', '0', 'yes', 'flase'])
+    assert.throws(
+      () => resolveExecutionMode('hardhat', 31337n, flag),
+      /must be true or false/
+    );
+});
+
+test('actor preflight rejects repeated identities within and across roles before deployment', () => {
+  const owner = '0x00000000000000000000000000000000000000aA';
+  const investor = '0x00000000000000000000000000000000000000bB';
+  const actors = [
+    { label: 'Owner', address: owner },
+    { label: 'Investor A', address: investor },
+  ];
+  assert.doesNotThrow(() => assertDistinctActors(actors));
+  for (const address of [owner.toUpperCase(), investor.toUpperCase()])
+    assert.throws(
+      () =>
+        assertDistinctActors([...actors, { label: 'Validator A', address }]),
+      /actor identities must be distinct/
+    );
+  assert.throws(
+    () =>
+      assertDistinctActors([
+        ...actors,
+        { label: 'Investor B', address: investor },
+      ]),
+    /Investor A and Investor B share/
+  );
+});
+
+test('investor funding preflight covers curve costs, temporary overpayment, and gas reserve', () => {
+  const minimums = investorMinimumBalances();
+  assert.deepEqual(minimums, [
+    1250000000000000000n,
+    1250000000000000000n,
+    2350000000000000000n,
+  ]);
+  for (const [index, minimum] of minimums.entries()) {
+    assert.throws(
+      () =>
+        assertSufficientBalance(
+          `Investor ${index}`,
+          '0xabc',
+          50000000000000000n,
+          minimum
+        ),
+      /planned value and the gas reserve/
+    );
+    assert.throws(
+      () =>
+        assertSufficientBalance(
+          `Investor ${index}`,
+          '0xabc',
+          minimum - 1n,
+          minimum
+        ),
+      /requires at least/
+    );
+    assert.doesNotThrow(() =>
+      assertSufficientBalance(`Investor ${index}`, '0xabc', minimum, minimum)
+    );
+  }
 });

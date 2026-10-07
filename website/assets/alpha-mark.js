@@ -103,10 +103,12 @@ export function initAlphaMark() {
         ? `Preparation incomplete. ${plan.missing.join(
             ' '
           )} The capacity model is still available; task exports require all preparation acknowledgments.`
+        : plan.capacity.candidateJobs === 0
+        ? 'No complete job fits these capacity assumptions. Increase the limiting resource or adjust the per-job allowances before exporting a proposed task. The capacity plan remains available.'
         : 'Draft prepared for operator review. Your acknowledgments are planning statements. No execution, source rights, review independence or settlement has been verified or authorized.';
       buttons.forEach((button) => {
         button.disabled =
-          button.dataset.markDownload !== 'plan' && plan.missing.length > 0;
+          button.dataset.markDownload !== 'plan' && plan.proposal === null;
       });
     } catch (error) {
       status.textContent = error.message;
