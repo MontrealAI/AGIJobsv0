@@ -21,6 +21,8 @@ test('local Compose excludes inherited fixture values while retaining system too
       ORCHESTRATOR_PRIVATE_KEY: 'production-secret',
       CULTURE_REGISTRY_ADDRESS: 'remote',
       COMPOSE_FILE: '/remote-compose.yml',
+      COMPOSE_PROJECT_NAME: 'production-project',
+      COMPOSE_PROFILES: 'live',
       DATABASE_URL: 'file:/remote.db',
       CULTURE_ENV_FILE: 'production.env',
       LOCAL_UID: '0',
@@ -36,6 +38,8 @@ test('local Compose excludes inherited fixture values while retaining system too
     'ORCHESTRATOR_PRIVATE_KEY',
     'CULTURE_REGISTRY_ADDRESS',
     'COMPOSE_FILE',
+    'COMPOSE_PROJECT_NAME',
+    'COMPOSE_PROFILES',
     'DATABASE_URL',
   ]) {
     assert.equal(result[key], undefined, key);

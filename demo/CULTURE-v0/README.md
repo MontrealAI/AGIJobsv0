@@ -89,6 +89,8 @@ Open <http://localhost:4173>. Setup writes a separate `.env.local`, deploys the 
 
 Run `pnpm run test:e2e` for the Compose health/ingestion checks and the Cypress UI walkthrough. Cypress uses explicit UI response fixtures; the separate health check verifies actual seeded-chain ingestion and rejects unauthenticated arena writes. LLM generation, IPFS upload/minting, job creation, paid settlement, and production dependency adapters still require their intended provider integrations. Local fixture keys must never be used on a funded network.
 
+The UI smoke test uses Cypress **16.1.1** and an installed Chrome browser. CI downloads Chrome for Testing **155.0.8059.39**, verifies its pinned SHA-256, and passes its exact executable path to Cypress; it does not depend on the runner image's auto-updated browser. The version and checksum live in [the active workflow](../../.github/workflows/culture-ci.yml). To reproduce with another installed Chrome executable, start the stack, run `node scripts/check-local-stack.mjs`, then `pnpm exec cypress run --browser /absolute/path/to/chrome --config-file cypress.config.ts`. Use `node scripts/run-local-stack.mjs --logs` to inspect the same isolated Compose project before shutting it down.
+
 ## Directory Guide
 ### Key Directories
 - `apps`

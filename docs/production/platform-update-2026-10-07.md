@@ -6,6 +6,7 @@ This update adds a practical machine-labor entry point to the complete demo obse
 
 - A homepage route for buyers, workers and independent reviewers, plus a concrete progression from useful digital work to coordinated scientific and infrastructure research.
 - A browser-local planner for ten work categories. It exports exact proposals, tasks in the existing computer-work schema, and operator handoffs. Draft edits invalidate prior downloads. No worker, transaction, source fetch or external effect is triggered by the planner.
+- Editable drafts can be saved and reopened locally, including unfinished work. Import accepts only bounded planner fields, invalidates generated downloads, and never imports execution authority. Switching categories preserves a custom objective; an explicit reset restores the suggested objective.
 - Exact six-decimal proposal arithmetic, explicit USDC/AGIALPHA deployment distinction, source URL validation, input/output limits and independent content acceptance criteria.
 - A stable readiness index and published computer-work guide. OpenClaw's native Codex readiness configuration is documented against current official sources; ChatGPT Work remains an operator-led route.
 - The $40T/year opportunity is explicitly a user-supplied planning assumption. No universal automation capability, realized stellar infrastructure, buyer acceptance or production certification is asserted.
@@ -23,7 +24,7 @@ Primary advisories: [proxy-addr IP trust validation](https://github.com/advisori
 ## Verification results
 
 - Complete site build: 76 demo pages, 337 guides and 265 preserved diagrams.
-- All 20 site tests pass, including actual adapter-schema compatibility and the two security regressions.
+- All 22 site tests pass, including actual adapter-schema compatibility, the two security regressions and bounded editable-draft round trips.
 - Full browser verification passes with 31 check groups, zero diagram failures and zero automated accessibility violations across the tested widths.
 - Gateway and orchestrator builds pass; all 47 computer-work boundary tests and 12 browser/provider/runtime tests pass.
 - Documentation links verify across 288 Markdown files. The checker now decodes percent-encoded filenames correctly, and a missing incident-response link is corrected. Pages CI runs the documentation check before publishing.

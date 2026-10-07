@@ -101,6 +101,29 @@
   gap: 32px;
   align-items: start;
 }
+.work-draft-tools {
+  padding: 24px;
+  margin-bottom: 24px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.work-draft-tools h3 {
+  margin-top: 0;
+}
+.work-draft-tools label {
+  display: block;
+  margin: 20px 0 8px;
+  font-weight: 600;
+}
+.work-draft-tools input {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  font: inherit;
+}
+.work-draft-tools .button {
+  white-space: normal;
+}
 .work-form,
 .work-result {
   padding: 30px;

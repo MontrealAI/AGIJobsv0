@@ -7,6 +7,9 @@ import {
   sourceReferences,
   usdcUnits,
   handoffText,
+  saveEditableDraft,
+  openEditableDraft,
+  savedDraftMaxBytes,
 } from '../../website/assets/work-model.mjs';
 
 const input = {
@@ -21,6 +24,58 @@ const input = {
   runMinutes: '60',
   reviewerMinutes: '15',
 };
+
+test('editable drafts preserve exact incomplete input without importing execution authority', () => {
+  const unfinished = {
+    ...input,
+    goal: '  Mon objectif — α  ',
+    scope: '',
+    sources: '',
+  };
+  assert.deepEqual(
+    openEditableDraft(saveEditableDraft(unfinished)),
+    unfinished
+  );
+  assert.throws(() => createDraft(unfinished), /Scope/);
+  const restored = createDraft(openEditableDraft(saveEditableDraft(input)));
+  assert.deepEqual(restored, createDraft(input));
+  assert.ok(
+    Object.values(restored.authorization).every((value) => value === false)
+  );
+  assert.equal(restored.evidence.independentReviewComplete, false);
+});
+
+test('invalid saved files cannot inject extra fields or silently truncate entered text', () => {
+  const saved = JSON.parse(saveEditableDraft(input));
+  for (const value of [
+    { ...saved, authorization: { execute: true } },
+    { ...saved, schema: 'unknown' },
+    { ...saved, fields: { ...input, execute: 'true' } },
+    { ...saved, fields: { ...input, goal: 'x'.repeat(2001) } },
+    { ...saved, fields: { ...input, scope: null } },
+    { ...saved, fields: { ...input, runtime: 'remote-work-api' } },
+    { ...saved, fields: { ...input, type: 'unknown' } },
+    { ...saved, fields: { ...input, dataClass: 'private' } },
+    { ...saved, fields: { ...input, reward: 1500 } },
+    { ...saved, fields: { ...input, reward: '15\n00' } },
+    { ...saved, fields: { ...input, runMinutes: 'oops' } },
+    { ...saved, fields: { ...input, sources: '\u0000' } },
+    createDraft(input),
+    createDraft(input).task,
+    null,
+    [],
+  ])
+    assert.throws(() => openEditableDraft(JSON.stringify(value)));
+  assert.throws(() => openEditableDraft('{'), /valid JSON/);
+  assert.throws(
+    () => openEditableDraft(' '.repeat(savedDraftMaxBytes + 1)),
+    /100 KB/
+  );
+  assert.throws(
+    () => openEditableDraft('α'.repeat(savedDraftMaxBytes / 2 + 1)),
+    /100 KB/
+  );
+});
 
 test('every work category exports tasks accepted unchanged by the actual orchestrator parser', () => {
   const drafts = workTypes.map((type) =>

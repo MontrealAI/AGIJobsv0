@@ -304,31 +304,32 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Start isolated local fixture stack
         working-directory: demo/CULTURE-v0
-        env:
-          COMPOSE_PROJECT_NAME: culture-ci
         run: node scripts/run-local-stack.mjs
       - name: Verify live service health and indexed seed artifacts
         working-directory: demo/CULTURE-v0
         run: node scripts/check-local-stack.mjs
+      - name: Install pinned Chrome for Testing
+        env:
+          CULTURE_CHROME_VERSION: '155.0.8059.39'
+          CULTURE_CHROME_SHA256: '55672d1f392fd3e7b7a08621b6e804e6bcb39d40cf155504abb74b3a021ea8ea'
+        run: |
+          curl --fail --location --retry 3 \
+            "https://storage.googleapis.com/chrome-for-testing-public/${CULTURE_CHROME_VERSION}/linux64/chrome-linux64.zip" \
+            --output "$RUNNER_TEMP/culture-chrome.zip"
+          printf '%s  %s\n' "$CULTURE_CHROME_SHA256" "$RUNNER_TEMP/culture-chrome.zip" | sha256sum --check --status
+          unzip -q "$RUNNER_TEMP/culture-chrome.zip" -d "$RUNNER_TEMP/culture-chrome"
+          echo "CYPRESS_BROWSER=$RUNNER_TEMP/culture-chrome/chrome-linux64/chrome" >> "$GITHUB_ENV"
       - name: Run Cypress (headless)
         working-directory: demo/CULTURE-v0
         run: |
-          google-chrome --version
-          pnpm exec cypress run --browser chrome --config-file cypress.config.ts
+          pnpm exec cypress version
+          "$CYPRESS_BROWSER" --version
+          pnpm exec cypress run --browser "$CYPRESS_BROWSER" --config-file cypress.config.ts
       - name: Capture stack logs on failure
         if: failure()
         working-directory: demo/CULTURE-v0
-        env:
-          COMPOSE_PROJECT_NAME: culture-ci
-          CULTURE_ENV_FILE: .env.local
-        run: |
-          docker compose --env-file .env.local logs --no-color
-          for CONTAINER in $(docker compose --env-file .env.local ps --all --quiet); do
-            docker inspect --format '{{.Name}} {{json .State.Health}}' "$CONTAINER"
-          done
+        run: node scripts/run-local-stack.mjs --logs
       - name: Shutdown stack
         if: always()
         working-directory: demo/CULTURE-v0
-        env:
-          COMPOSE_PROJECT_NAME: culture-ci
         run: node scripts/run-local-stack.mjs --down
