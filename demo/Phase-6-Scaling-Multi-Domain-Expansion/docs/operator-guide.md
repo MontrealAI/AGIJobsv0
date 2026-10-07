@@ -1,5 +1,7 @@
 # Phase 6 operator guide
 
+A sunset `retirementBlock` is enforced against the observed chain block: removal is deferred while the height is unknown or below that block, and the existing domain settings are retained. Offline browser and blueprint exports omit scheduled removal calldata; use the chain-bound preview at or after the retirement block to prepare it. A successful apply can therefore leave a future retirement pending.
+
 Start with the [command center](https://montrealai.github.io/AGIJobsv0/experiments/phase6/) or the [offline rehearsal](../README.md#working-with-this-module). Neither needs credentials. Keep the original five domain examples as a reference, and make a separate configuration for your deployment.
 
 ## What each result establishes

@@ -935,9 +935,17 @@ function buildGlobalGuardsStruct(
 
 export function planPhase6Changes(
   current: Phase6State,
-  desired: Phase6Config
+  desired: Phase6Config,
+  observedBlockNumber?: number
 ): Phase6Plan {
   validatePhase6Config(desired);
+  if (
+    observedBlockNumber !== undefined &&
+    (!Number.isSafeInteger(observedBlockNumber) || observedBlockNumber < 0)
+  )
+    throw new Error(
+      'Observed block number must be a non-negative safe integer.'
+    );
   const warnings: string[] = [];
   const domains: DomainPlan[] = [];
   const domainOperationsPlans: DomainOperationsPlan[] = [];
@@ -1210,6 +1218,20 @@ export function planPhase6Changes(
     }
 
     if (lifecycle === 'sunset') {
+      touchedOperations.add(key);
+      touchedTelemetry.add(key);
+      touchedInfrastructure.add(key);
+      const retirementBlock = input.sunsetPlan?.retirementBlock;
+      if (
+        retirementBlock !== undefined &&
+        (observedBlockNumber === undefined ||
+          observedBlockNumber < retirementBlock)
+      ) {
+        warnings.push(
+          `Domain ${slug} removal deferred until an observed block reaches retirementBlock ${retirementBlock}; retaining its on-chain configuration.`
+        );
+        continue;
+      }
       domains.push({
         action: 'removeDomain',
         id: existing.id,
@@ -1219,9 +1241,6 @@ export function planPhase6Changes(
         lifecycle: 'sunset',
         sunsetPlan: cloneSunsetPlan(input.sunsetPlan),
       });
-      touchedOperations.add(key);
-      touchedTelemetry.add(key);
-      touchedInfrastructure.add(key);
       continue;
     }
 

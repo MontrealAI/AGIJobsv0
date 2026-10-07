@@ -140,6 +140,12 @@ export interface Phase6DemoConfig {
     slug: string;
     active?: boolean;
     lifecycle?: 'active' | 'experimental' | 'sunset';
+    sunsetPlan?: {
+      reason?: string;
+      retirementBlock?: number;
+      handoffDomains?: string[];
+      notes?: string;
+    };
     name: string;
     manifestURI: string;
     subgraph: string;
@@ -833,7 +839,8 @@ export function buildPhase6Blueprint(
               ])
             : undefined,
         removeDomain:
-          domain.lifecycle === 'sunset'
+          domain.lifecycle === 'sunset' &&
+          domain.sunsetPlan?.retirementBlock === undefined
             ? ABI_INTERFACE.encodeFunctionData('removeDomain', [domainId])
             : undefined,
         setDomainOperations:

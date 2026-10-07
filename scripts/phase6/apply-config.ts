@@ -91,7 +91,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   });
 
   const state = await fetchPhase6State(manager, readBlock.number);
-  const plan = planPhase6Changes(state, config);
+  const plan = planPhase6Changes(state, config, readBlock.number);
   const transactions = buildPhase6Transactions(plan, args);
   const summary = buildPlanSummary(plan, {
     manager: args.manager,
@@ -202,7 +202,8 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
     const remaining = buildPhase6Transactions(
       planPhase6Changes(
         await fetchPhase6State(manager, verifiedBlock.number),
-        config
+        config,
+        verifiedBlock.number
       ),
       args
     );

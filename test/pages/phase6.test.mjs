@@ -263,6 +263,16 @@ const variants = {
     value.global.l2SyncCadence = 0;
     return value;
   },
+  scheduledRetirement: () => {
+    const value = clone();
+    value.domains[0].lifecycle = 'sunset';
+    value.domains[0].sunsetPlan = {
+      reason: 'Wait for the scheduled handoff.',
+      handoffDomains: ['health'],
+      retirementBlock: 21370000,
+    };
+    return value;
+  },
   minimal,
 };
 
@@ -307,6 +317,8 @@ for (const [name, makeConfig] of Object.entries(variants))
         [0, 0]
       );
     }
+    if (name === 'scheduledRetirement')
+      assert.ok(actual.every((call) => !call.label.includes('(finance)')));
     if (name === 'missingTelemetry') {
       assert.equal(metrics.telemetryMissingCount, 1);
       assert.equal(metrics.resilienceFloorCoverage, 3 / 5);

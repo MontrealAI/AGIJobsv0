@@ -326,6 +326,7 @@ export function buildCalldata(config, abi) {
   config.domains.forEach((domain) => {
     const domainId = keccak256(toUtf8Bytes(domain.slug.toLowerCase()));
     if (domain.lifecycle === 'sunset') {
+      if (domain.sunsetPlan?.retirementBlock !== undefined) return;
       calldata.push({
         label: `removeDomain(${domain.slug})`,
         data: iface.encodeFunctionData('removeDomain', [domainId]),

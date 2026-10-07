@@ -689,7 +689,26 @@ describe('Phase6 apply-config planner', function () {
       ],
     };
 
-    const removalPlan = planPhase6Changes(activeState, sunsetConfig);
+    for (const observedBlock of [undefined, 21369999]) {
+      const deferred = planPhase6Changes(
+        activeState,
+        sunsetConfig,
+        observedBlock
+      );
+      expect(deferred.domains).to.be.empty;
+      expect(deferred.domainOperations).to.be.empty;
+      expect(deferred.domainTelemetry).to.be.empty;
+      expect(deferred.domainInfrastructure).to.be.empty;
+      expect(deferred.warnings.join(' ')).to.include('removal deferred');
+    }
+    for (const invalidBlock of [-1, 1.5, NaN, Number.MAX_SAFE_INTEGER + 1])
+      expect(() =>
+        planPhase6Changes(activeState, sunsetConfig, invalidBlock)
+      ).to.throw('Observed block number');
+    const removalPlan = planPhase6Changes(activeState, sunsetConfig, 21370000);
+    expect(
+      planPhase6Changes(activeState, sunsetConfig, 21370001).domains
+    ).to.deep.equal(removalPlan.domains);
     expect(removalPlan.domains).to.have.lengthOf(1);
     const removal = removalPlan.domains[0];
     expect(removal.action).to.equal('removeDomain');
