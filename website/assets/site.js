@@ -1,3 +1,4 @@
+import { initAlphaMark } from './alpha-mark.js';
 import { initWorkPlanner } from './work.js';
 import { initEvidenceReview } from './review.js';
 import { initSourceLab } from './source-lab.js';
@@ -263,3 +264,4 @@ if (diagrams.length) {
 initSourceLab();
 
 initWorkPlanner();
+initAlphaMark();

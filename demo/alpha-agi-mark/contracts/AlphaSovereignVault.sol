@@ -7,6 +7,11 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
+interface IAlphaMarkAssetSource {
+    function baseAsset() external view returns (IERC20);
+    function usesNativeAsset() external view returns (bool);
+}
+
 /// @title AlphaSovereignVault
 /// @notice Minimal sovereign treasury that receives α-AGI MARK launch proceeds and
 ///         gives the operator full post-launch control.
@@ -30,7 +35,10 @@ contract AlphaSovereignVault is Ownable, Pausable, ReentrancyGuard {
     address public markExchange;
 
     uint256 private _nativeIntake;
-    uint256 private _pendingNativeAcknowledgement;
+    mapping(address => uint256) private _pendingNativeAcknowledgement;
+    mapping(address => uint256) private _acknowledgedTokenBalance;
+    mapping(address => uint256) public totalReceivedToken;
+    mapping(address => bool) public launchAcknowledged;
     uint256 private _tokenIntake;
 
     uint256 public lastAcknowledgedAmount;
@@ -64,13 +72,25 @@ contract AlphaSovereignVault is Ownable, Pausable, ReentrancyGuard {
     function notifyLaunch(uint256 amount, bool usedNativeAsset, bytes calldata metadata)
         external
         whenNotPaused
+        nonReentrant
         returns (bool)
     {
         require(msg.sender == markExchange, "Unauthorized sender");
+        require(!launchAcknowledged[msg.sender], "Launch already acknowledged");
+        launchAcknowledged[msg.sender] = true;
         if (usedNativeAsset) {
-            require(_pendingNativeAcknowledgement >= amount, "Native receipt mismatch");
-            _pendingNativeAcknowledgement -= amount;
+            require(_pendingNativeAcknowledgement[msg.sender] >= amount, "Native receipt mismatch");
+            _pendingNativeAcknowledgement[msg.sender] -= amount;
         } else if (amount > 0) {
+            IAlphaMarkAssetSource source = IAlphaMarkAssetSource(msg.sender);
+            require(!source.usesNativeAsset(), "Asset mode mismatch");
+            IERC20 asset = source.baseAsset();
+            address assetAddress = address(asset);
+            require(assetAddress.code.length > 0, "Asset must be a contract");
+            uint256 acknowledgedBalance = _acknowledgedTokenBalance[assetAddress] + amount;
+            require(asset.balanceOf(address(this)) >= acknowledgedBalance, "Token receipt mismatch");
+            _acknowledgedTokenBalance[assetAddress] = acknowledgedBalance;
+            totalReceivedToken[assetAddress] += amount;
             _tokenIntake += amount;
         }
         lastAcknowledgedAmount = amount;
@@ -91,6 +111,8 @@ contract AlphaSovereignVault is Ownable, Pausable, ReentrancyGuard {
 
     function withdrawToken(address asset, address to, uint256 amount) external onlyOwner nonReentrant {
         require(to != address(0), "Recipient required");
+        uint256 accounted = _acknowledgedTokenBalance[asset];
+        _acknowledgedTokenBalance[asset] = amount >= accounted ? 0 : accounted - amount;
         IERC20(asset).safeTransfer(to, amount);
         emit TreasuryTokenWithdrawal(asset, to, amount);
     }
@@ -99,6 +121,7 @@ contract AlphaSovereignVault is Ownable, Pausable, ReentrancyGuard {
         return address(this).balance;
     }
 
+    /// @notice Legacy sum of raw units, not a valuation. Use the per-asset intake views.
     function totalReceived() public view returns (uint256) {
         return _nativeIntake + _tokenIntake;
     }
@@ -116,7 +139,9 @@ contract AlphaSovereignVault is Ownable, Pausable, ReentrancyGuard {
             return;
         }
         _nativeIntake += msg.value;
-        _pendingNativeAcknowledgement += msg.value;
+        if (msg.sender == markExchange) {
+            _pendingNativeAcknowledgement[msg.sender] += msg.value;
+        }
         emit TreasuryIntakeRecorded(_nativeIntake, _tokenIntake, totalReceived());
     }
 }

@@ -3,14 +3,16 @@ export function canonicalize(value: unknown): unknown {
     return value.map((item) => canonicalize(item));
   }
 
-  if (value && typeof value === "object") {
-    const entries = Object.entries(value as Record<string, unknown>).sort(([a], [b]) => {
-      if (a < b) return -1;
-      if (a > b) return 1;
-      return 0;
-    });
+  if (value && typeof value === 'object') {
+    const entries = Object.entries(value as Record<string, unknown>).sort(
+      ([a], [b]) => {
+        if (a < b) return -1;
+        if (a > b) return 1;
+        return 0;
+      }
+    );
 
-    const normalized: Record<string, unknown> = {};
+    const normalized: Record<string, unknown> = Object.create(null);
     for (const [key, val] of entries) {
       normalized[key] = canonicalize(val);
     }

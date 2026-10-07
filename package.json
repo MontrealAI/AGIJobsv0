@@ -453,6 +453,7 @@
     "superintelligence:alpha-agi-mark": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/alpha-agi-mark/scripts/generateSuperintelligenceBrief.ts",
     "test": "node scripts/run-hardhat-tests.cjs",
     "test:alpha-agi-insight-mark": "npx hardhat test --config demo/alpha-agi-insight-mark/hardhat.config.ts",
+    "test:alpha-agi-mark:scripts": "TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\"}' node --require ts-node/register --test demo/alpha-agi-mark/script-tests/verification.test.ts",
     "test:alpha-agi-mark": "npx hardhat test --config demo/alpha-agi-mark/hardhat.config.ts",
     "test:planetary-orchestrator-fabric": "node --import tsx demo/Planetary-Orchestrator-Fabric-v0/tests/planetary_fabric.test.ts",
     "test:fork": "SKIP_MOCK_AGIALPHA=1 hardhat test --no-compile test/fork/mainnet-job-lifecycle.fork.test.ts",

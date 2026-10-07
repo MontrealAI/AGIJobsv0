@@ -1,12 +1,18 @@
-import { readFile } from "fs/promises";
-import path from "path";
-import { createInterface } from "readline/promises";
-import { stdin as input, stdout as output } from "node:process";
+import { assertVerifiedRecap } from './verifyRecap';
+import { readFile } from 'fs/promises';
+import path from 'path';
+import { createInterface } from 'readline/promises';
+import { stdin as input, stdout as output } from 'node:process';
 
-import { formatEther } from "ethers";
-import { z } from "zod";
+import { formatEther } from 'ethers';
+import { z } from 'zod';
 
-const DEFAULT_RECAP_PATH = path.join(__dirname, "..", "reports", "alpha-mark-recap.json");
+const DEFAULT_RECAP_PATH = path.join(
+  __dirname,
+  '..',
+  'reports',
+  'alpha-mark-recap.json'
+);
 
 const timelineEntrySchema = z
   .object({
@@ -71,14 +77,14 @@ const verificationSchema = z
         failedChecks: z.number().optional(),
         confidenceIndexBps: z.number().optional(),
         confidenceIndexPercent: z.string().optional(),
-        verdict: z.enum(["PASS", "REVIEW"]).optional(),
+        verdict: z.enum(['PASS', 'REVIEW']).optional(),
         checks: z
           .array(
             z.object({
               key: z.string(),
               label: z.string(),
               consistent: z.boolean(),
-            }),
+            })
           )
           .optional(),
       })
@@ -198,7 +204,7 @@ const recapSchema = z
                 address: z.string(),
                 approved: z.boolean(),
               })
-              .passthrough(),
+              .passthrough()
           )
           .optional(),
       })
@@ -256,11 +262,11 @@ function parseArgs(): Options {
   let snapshot = false;
 
   for (const arg of args) {
-    if (arg === "--snapshot" || arg === "--non-interactive") {
+    if (arg === '--snapshot' || arg === '--non-interactive') {
       snapshot = true;
-    } else if (arg.startsWith("--recap=")) {
-      recapPath = path.resolve(arg.split("=", 2)[1]);
-    } else if (arg === "--help" || arg === "-h") {
+    } else if (arg.startsWith('--recap=')) {
+      recapPath = path.resolve(arg.split('=', 2)[1]);
+    } else if (arg === '--help' || arg === '-h') {
       printHelp();
       process.exit(0);
     }
@@ -274,11 +280,13 @@ function parseArgs(): Options {
 }
 
 function printHelp() {
-  console.log(`α-AGI MARK Operator Console\n\n` +
-    `Usage: npm run console:alpha-agi-mark [-- --snapshot] [-- --recap=path]\n\n` +
-    `Options:\n` +
-    `  --snapshot       Print a non-interactive mission brief. Automatically enabled in non-TTY environments.\n` +
-    `  --recap=<path>   Override the recap dossier path (defaults to reports/alpha-mark-recap.json).\n`);
+  console.log(
+    `α-AGI MARK Operator Console\n\n` +
+      `Usage: npm run console:alpha-agi-mark [-- --snapshot] [-- --recap=path]\n\n` +
+      `Options:\n` +
+      `  --snapshot       Print a non-interactive mission brief. Automatically enabled in non-TTY environments.\n` +
+      `  --recap=<path>   Override the recap dossier path (defaults to reports/alpha-mark-recap.json).\n`
+  );
 }
 
 function colour(text: string, code: string): string {
@@ -286,31 +294,31 @@ function colour(text: string, code: string): string {
 }
 
 const styles = {
-  heading: (text: string) => colour(text, "1;38;2;96;255;207"),
-  subheading: (text: string) => colour(text, "1;38;2;157;123;255"),
-  accent: (text: string) => colour(text, "38;2;224;245;255"),
-  muted: (text: string) => colour(text, "2;38;2;180;200;215"),
-  success: (text: string) => colour(text, "1;38;2;110;255;180"),
-  info: (text: string) => colour(text, "1;38;2;130;200;255"),
-  warning: (text: string) => colour(text, "1;38;2;255;210;110"),
-  danger: (text: string) => colour(text, "1;38;2;255;120;120"),
+  heading: (text: string) => colour(text, '1;38;2;96;255;207'),
+  subheading: (text: string) => colour(text, '1;38;2;157;123;255'),
+  accent: (text: string) => colour(text, '38;2;224;245;255'),
+  muted: (text: string) => colour(text, '2;38;2;180;200;215'),
+  success: (text: string) => colour(text, '1;38;2;110;255;180'),
+  info: (text: string) => colour(text, '1;38;2;130;200;255'),
+  warning: (text: string) => colour(text, '1;38;2;255;210;110'),
+  danger: (text: string) => colour(text, '1;38;2;255;120;120'),
 };
 
 function divider(label?: string): void {
-  const line = "═".repeat(60);
+  const line = '═'.repeat(60);
   if (!label) {
     console.log(styles.muted(line));
     return;
   }
   const padded = ` ${label} `;
   const remaining = Math.max(0, line.length - padded.length);
-  const prefix = "═".repeat(Math.floor(remaining / 2));
-  const suffix = "═".repeat(remaining - prefix.length);
+  const prefix = '═'.repeat(Math.floor(remaining / 2));
+  const suffix = '═'.repeat(remaining - prefix.length);
   console.log(styles.muted(`${prefix}${padded}${suffix}`));
 }
 
 function formatAddress(address?: string): string {
-  if (!address) return "n/a";
+  if (!address) return 'n/a';
   if (address.length <= 12) return address;
   return `${address.slice(0, 6)}…${address.slice(-4)}`;
 }
@@ -322,7 +330,11 @@ function renderKeyValues(pairs: Array<[string, string]>): void {
   });
 }
 
-function boolBadge(value: boolean, labelTrue = "ON", labelFalse = "OFF"): string {
+function boolBadge(
+  value: boolean,
+  labelTrue = 'ON',
+  labelFalse = 'OFF'
+): string {
   return value
     ? styles.success(`● ${labelTrue}`)
     : styles.muted(`○ ${labelFalse}`);
@@ -330,14 +342,14 @@ function boolBadge(value: boolean, labelTrue = "ON", labelFalse = "OFF"): string
 
 function formatTable(headers: string[], rows: string[][]): string {
   if (rows.length === 0) {
-    return styles.muted("  (no records)");
+    return styles.muted('  (no records)');
   }
 
-  const cleanRows = rows.map((row) => row.map((cell) => cell ?? ""));
+  const cleanRows = rows.map((row) => row.map((cell) => cell ?? ''));
   const widths = headers.map((header, columnIndex) => {
     return Math.max(
       header.length,
-      ...cleanRows.map((row) => plainLength(row[columnIndex])),
+      ...cleanRows.map((row) => plainLength(row[columnIndex]))
     );
   });
 
@@ -349,211 +361,264 @@ function formatTable(headers: string[], rows: string[][]): string {
     if (rawLength > width) {
       return truncatePlain(value, width);
     }
-    return value + " ".repeat(width - rawLength);
+    return value + ' '.repeat(width - rawLength);
   };
 
   const headerRow = `│ ${headers
     .map((header, index) => padCell(header, widths[index]))
-    .join(" │ ")} │`;
+    .join(' │ ')} │`;
 
   const rowStrings = cleanRows.map(
     (row) =>
       `│ ${row
         .map((cell, index) => padCell(cell, widths[index]))
-        .join(" │ ")} │`,
+        .join(' │ ')} │`
   );
 
   return [
-    border("┌", "─", "┬", "┐"),
+    border('┌', '─', '┬', '┐'),
     headerRow,
-    border("├", "─", "┼", "┤"),
+    border('├', '─', '┼', '┤'),
     ...rowStrings,
-    border("└", "─", "┴", "┘"),
-  ].join("\n");
+    border('└', '─', '┴', '┘'),
+  ].join('\n');
 }
 
 function plainLength(value: string): number {
-  return value.replace(/\u001b\[[0-9;]*m/g, "").length;
+  return value.replace(/\u001b\[[0-9;]*m/g, '').length;
 }
 
 function truncatePlain(value: string, width: number): string {
-  const raw = value.replace(/\u001b\[[0-9;]*m/g, "");
+  const raw = value.replace(/\u001b\[[0-9;]*m/g, '');
   if (raw.length <= width) {
     return value;
   }
-  const truncated = raw.slice(0, Math.max(0, width - 1)) + "…";
+  const truncated = raw.slice(0, Math.max(0, width - 1)) + '…';
   return truncated;
 }
 
 function weiToEth(wei?: string): string {
-  if (!wei) return "0";
+  if (!wei) return '0';
   try {
     return formatEther(BigInt(wei));
   } catch {
-    return "0";
+    return '0';
   }
 }
 
 function renderSummary(recap: Recap): void {
-  console.log(styles.heading("MISSION SUMMARY"));
+  console.log(styles.heading('MISSION SUMMARY'));
   divider();
 
   const launchStatus = recap.launch?.finalized
-    ? styles.success("Finalized")
+    ? styles.success('Finalized')
     : recap.launch?.aborted
-      ? styles.danger("Aborted")
-      : styles.warning("Pending");
+    ? styles.danger('Aborted')
+    : styles.warning('Pending');
 
   const treasury = recap.launch?.treasury ?? recap.ownerControls.treasury;
   const sovereign = recap.launch?.sovereignVault;
 
   renderKeyValues([
-    ["Generated", recap.generatedAt],
-    ["Network", `${recap.network.label}`],
-    ["Dry run", recap.network.dryRun ? styles.success("yes") : styles.warning("no")],
-    ["Orchestrator", `${recap.orchestrator.branch ?? "n/a"} @ ${recap.orchestrator.commit ?? "HEAD"}`],
-    ["Launch status", launchStatus],
-    ["Treasury", formatAddress(treasury)],
+    ['Generated', recap.generatedAt],
+    ['Network', `${recap.network.label}`],
     [
-      "Vault intake",
+      'Dry run',
+      recap.network.dryRun ? styles.success('yes') : styles.warning('no'),
+    ],
+    [
+      'Orchestrator',
+      `${recap.orchestrator.branch ?? 'n/a'} @ ${
+        recap.orchestrator.commit ?? 'HEAD'
+      }`,
+    ],
+    ['Launch status', launchStatus],
+    ['Treasury', formatAddress(treasury)],
+    [
+      'Vault intake',
       sovereign?.totalReceivedWei
         ? `${weiToEth(sovereign.totalReceivedWei)} units (native ${weiToEth(
-            sovereign.totalReceivedNativeWei,
+            sovereign.totalReceivedNativeWei
           )} | external ${weiToEth(sovereign.totalReceivedExternalWei)})`
-        : "—",
+        : '—',
     ],
     [
-      "Ignition mode",
+      'Ignition mode',
       sovereign?.lastAcknowledgedUsedNative === undefined
-        ? "—"
+        ? '—'
         : sovereign.lastAcknowledgedUsedNative
-          ? styles.success("Native asset")
-          : styles.info("External asset"),
+        ? styles.success('Native asset')
+        : styles.info('External asset'),
     ],
-    ["Seed holder", formatAddress(recap.seed?.holder ?? recap.actors.owner)],
-    ["Supply", recap.bondingCurve?.supplyWholeTokens ?? "n/a"],
+    ['Seed holder', formatAddress(recap.seed?.holder ?? recap.actors.owner)],
+    ['Supply', recap.bondingCurve?.supplyWholeTokens ?? 'n/a'],
   ]);
 
   if (recap.empowerment) {
-    console.log(`\n  ${styles.subheading("Empowerment index")}`);
+    console.log(`\n  ${styles.subheading('Empowerment index')}`);
     console.log(
-      `    ${styles.success(`${recap.empowerment.automation.automationMultiplier}x automation`)} from ${
-        recap.empowerment.automation.manualCommands
-      } command${recap.empowerment.automation.manualCommands === 1 ? "" : "s"}`,
+      `    ${styles.success(
+        `${recap.empowerment.automation.automationMultiplier}x automation`
+      )} from ${recap.empowerment.automation.manualCommands} command${
+        recap.empowerment.automation.manualCommands === 1 ? '' : 's'
+      }`
     );
     console.log(
       `    ${styles.info(
-        `${recap.empowerment.assurance.verificationConfidencePercent}% confidence · Validators ${recap.empowerment.assurance.validatorApprovals}/${recap.empowerment.assurance.validatorThreshold}`,
-      )}`,
+        `${recap.empowerment.assurance.verificationConfidencePercent}% check pass rate · Validators ${recap.empowerment.assurance.validatorApprovals}/${recap.empowerment.assurance.validatorThreshold}`
+      )}`
     );
   }
 
   if (sovereign?.decodedMetadata) {
-    console.log(`\n  ${styles.subheading("Sovereign ignition")}`);
+    console.log(`\n  ${styles.subheading('Sovereign ignition')}`);
     console.log(`    ${sovereign.decodedMetadata}`);
   }
 }
 
 function renderEmpowerment(recap: Recap): void {
-  console.log(`\n${styles.heading("OPERATOR EMPOWERMENT INDEX")}`);
+  console.log(`\n${styles.heading('OPERATOR EMPOWERMENT INDEX')}`);
   divider();
 
   const empowerment = recap.empowerment;
   if (!empowerment) {
-    console.log(styles.warning("  Empowerment metrics unavailable. Run npm run demo:alpha-agi-mark to generate them."));
+    console.log(
+      styles.warning(
+        '  Empowerment metrics unavailable. Run npm run demo:alpha-agi-mark to generate them.'
+      )
+    );
     return;
   }
 
-  console.log(`  ${styles.subheading("Narrative")}`);
+  console.log(`  ${styles.subheading('Narrative')}`);
   console.log(`    ${empowerment.tagline}`);
 
-  console.log(`\n  ${styles.subheading("Automation")}`);
+  console.log(`\n  ${styles.subheading('Automation')}`);
   renderKeyValues([
-    ["Automation multiplier", `${empowerment.automation.automationMultiplier}x`],
-    ["Manual commands", empowerment.automation.manualCommands.toString()],
-    ["Orchestrated actions", empowerment.automation.orchestratedActions.toString()],
+    [
+      'Automation multiplier',
+      `${empowerment.automation.automationMultiplier}x`,
+    ],
+    ['Manual commands', empowerment.automation.manualCommands.toString()],
+    [
+      'Orchestrated actions',
+      empowerment.automation.orchestratedActions.toString(),
+    ],
   ]);
 
-  console.log(`\n  ${styles.subheading("Assurance")}`);
+  console.log(`\n  ${styles.subheading('Assurance')}`);
   renderKeyValues([
-    ["Confidence", `${empowerment.assurance.verificationConfidencePercent}%`],
-    ["Checks", `${empowerment.assurance.checksPassed}/${empowerment.assurance.totalChecks}`],
-    ["Validator quorum", `${empowerment.assurance.validatorApprovals}/${empowerment.assurance.validatorThreshold}`],
+    [
+      'Check pass rate',
+      `${empowerment.assurance.verificationConfidencePercent}%`,
+    ],
+    [
+      'Checks',
+      `${empowerment.assurance.checksPassed}/${empowerment.assurance.totalChecks}`,
+    ],
+    [
+      'Validator quorum',
+      `${empowerment.assurance.validatorApprovals}/${empowerment.assurance.validatorThreshold}`,
+    ],
   ]);
 
-  console.log(`\n  ${styles.subheading("Capital formation")}`);
+  console.log(`\n  ${styles.subheading('Capital formation')}`);
   const grossCapital =
     empowerment.capitalFormation.grossContributionsEth ??
     `${weiToEth(empowerment.capitalFormation.grossContributionsWei)} ETH`;
   const reserveBalance =
-    empowerment.capitalFormation.reserveEth ?? `${weiToEth(empowerment.capitalFormation.reserveWei)} ETH`;
+    empowerment.capitalFormation.reserveEth ??
+    `${weiToEth(empowerment.capitalFormation.reserveWei)} ETH`;
   renderKeyValues([
-    ["Participants", empowerment.capitalFormation.participants.toString()],
-    ["Gross capital", grossCapital],
-    ["Sovereign reserve", reserveBalance],
+    ['Participants', empowerment.capitalFormation.participants.toString()],
+    ['Gross capital', grossCapital],
+    ['Sovereign reserve', reserveBalance],
   ]);
 
-  console.log(`\n  ${styles.subheading("Command deck levers")}`);
-  renderKeyValues([["Controls tracked", empowerment.operatorControls.totalControls.toString()]]);
+  console.log(`\n  ${styles.subheading('Command deck levers')}`);
+  renderKeyValues([
+    ['Controls tracked', empowerment.operatorControls.totalControls.toString()],
+  ]);
   const highlights = empowerment.operatorControls.highlights ?? [];
   if (highlights.length > 0) {
     highlights.forEach((highlight, index) => {
       console.log(`    ${styles.accent(`${index + 1}.`)} ${highlight}`);
     });
   } else {
-    console.log(styles.muted("    Highlight list available once the operator annotates priorities."));
+    console.log(
+      styles.muted(
+        '    Highlight list available once the operator annotates priorities.'
+      )
+    );
   }
 }
 
 function renderOwnerDeck(recap: Recap): void {
-  console.log(`\n${styles.heading("OWNER COMMAND DECK")}`);
+  console.log(`\n${styles.heading('OWNER COMMAND DECK')}`);
   divider();
 
   renderKeyValues([
-    ["Paused", boolBadge(recap.ownerControls.paused)],
-    ["Whitelist", boolBadge(recap.ownerControls.whitelistEnabled)],
-    ["Emergency exit", boolBadge(recap.ownerControls.emergencyExitEnabled)],
-    ["Validation override", boolBadge(recap.ownerControls.validationOverrideEnabled, "ACTIVE", "Dormant")],
-    ["Override status", recap.ownerControls.validationOverrideStatus ? styles.warning("Forced GREEN") : styles.muted("Oracle governed")],
-    ["Base asset", recap.ownerControls.usesNativeAsset ? "ETH" : formatAddress(recap.ownerControls.baseAsset)],
-    ["Funding cap", `${weiToEth(recap.ownerControls.fundingCapWei)} ETH`],
-    ["Max supply", recap.ownerControls.maxSupplyWholeTokens],
-    ["Base price", `${weiToEth(recap.ownerControls.basePriceWei)} ETH`],
-    ["Slope", `${weiToEth(recap.ownerControls.slopeWei)} ETH`],
+    ['Paused', boolBadge(recap.ownerControls.paused)],
+    ['Whitelist', boolBadge(recap.ownerControls.whitelistEnabled)],
+    ['Emergency exit', boolBadge(recap.ownerControls.emergencyExitEnabled)],
+    [
+      'Validation override',
+      boolBadge(
+        recap.ownerControls.validationOverrideEnabled,
+        'ACTIVE',
+        'Dormant'
+      ),
+    ],
+    [
+      'Override status',
+      recap.ownerControls.validationOverrideStatus
+        ? styles.warning('Forced GREEN')
+        : styles.muted('Oracle governed'),
+    ],
+    [
+      'Base asset',
+      recap.ownerControls.usesNativeAsset
+        ? 'ETH'
+        : formatAddress(recap.ownerControls.baseAsset),
+    ],
+    ['Funding cap', `${weiToEth(recap.ownerControls.fundingCapWei)} ETH`],
+    ['Max supply', recap.ownerControls.maxSupplyWholeTokens],
+    ['Base price', `${weiToEth(recap.ownerControls.basePriceWei)} ETH`],
+    ['Slope', `${weiToEth(recap.ownerControls.slopeWei)} ETH`],
   ]);
 
   if (recap.ownerParameterMatrix && recap.ownerParameterMatrix.length > 0) {
-    console.log(`\n${styles.subheading("Parameter matrix")}`);
+    console.log(`\n${styles.subheading('Parameter matrix')}`);
     const rows = recap.ownerParameterMatrix.map((entry) => {
       const value = formatMatrixValue(entry.value);
-      return [entry.parameter, value, entry.description ?? ""];
+      return [entry.parameter, value, entry.description ?? ''];
     });
-    console.log(formatTable(["Parameter", "Value", "Description"], rows));
+    console.log(formatTable(['Parameter', 'Value', 'Description'], rows));
   }
 }
 
 function formatMatrixValue(value: unknown): string {
   if (Array.isArray(value)) {
-    return `[${value.map((item) => formatMatrixValue(item)).join(", ")}]`;
+    return `[${value.map((item) => formatMatrixValue(item)).join(', ')}]`;
   }
-  if (typeof value === "boolean") {
-    return value ? "true" : "false";
+  if (typeof value === 'boolean') {
+    return value ? 'true' : 'false';
   }
-  if (value && typeof value === "object") {
+  if (value && typeof value === 'object') {
     try {
       return JSON.stringify(value);
     } catch {
-      return "{…}";
+      return '{…}';
     }
   }
   if (value === null || value === undefined) {
-    return "—";
+    return '—';
   }
   return String(value);
 }
 
 function renderParticipants(recap: Recap): void {
-  console.log(`\n${styles.heading("PARTICIPANT LEDGER")}`);
+  console.log(`\n${styles.heading('PARTICIPANT LEDGER')}`);
   divider();
 
   const participants = recap.participants ?? [];
@@ -562,75 +627,105 @@ function renderParticipants(recap: Recap): void {
     `${participant.tokens}`,
     `${weiToEth(participant.contributionWei)} ETH`,
   ]);
-  console.log(formatTable(["Address", "SeedShares", "Contribution"], rows));
+  console.log(formatTable(['Address', 'SeedShares', 'Contribution'], rows));
 }
 
 function renderValidators(recap: Recap): void {
-  console.log(`\n${styles.heading("VALIDATOR COUNCIL")}`);
+  console.log(`\n${styles.heading('VALIDATOR COUNCIL')}`);
   divider();
 
   if (!recap.validators) {
-    console.log(styles.muted("  No validator data recorded."));
+    console.log(styles.muted('  No validator data recorded.'));
     return;
   }
 
   renderKeyValues([
-    ["Approvals", `${recap.validators.approvalCount ?? "0"}/${recap.validators.approvalThreshold ?? "?"}`],
+    [
+      'Approvals',
+      `${recap.validators.approvalCount ?? '0'}/${
+        recap.validators.approvalThreshold ?? '?'
+      }`,
+    ],
   ]);
 
   if (recap.validators.matrix && recap.validators.matrix.length > 0) {
     const rows = recap.validators.matrix.map((entry, index) => [
       `${index + 1}`,
       formatAddress(entry.address),
-      entry.approved ? "🟢 Approved" : "⚪ Pending",
+      entry.approved ? '🟢 Approved' : '⚪ Pending',
     ]);
-    console.log("\n" + formatTable(["#", "Validator", "Status"], rows));
+    console.log('\n' + formatTable(['#', 'Validator', 'Status'], rows));
   } else if (recap.validators.members) {
     const rows = recap.validators.members.map((member, index) => [
       `${index + 1}`,
       formatAddress(member),
     ]);
-    console.log("\n" + formatTable(["#", "Validator"], rows));
+    console.log('\n' + formatTable(['#', 'Validator'], rows));
   }
 }
 
 function renderVerification(recap: Recap): void {
-  console.log(`\n${styles.heading("TRIPLE-VERIFICATION MATRIX")}`);
+  console.log(`\n${styles.heading('TRIPLE-VERIFICATION MATRIX')}`);
   divider();
 
   const verification = recap.verification;
   if (!verification) {
-    console.log(styles.warning("  Verification artefacts unavailable. Re-run npm run verify:alpha-agi-mark."));
+    console.log(
+      styles.warning(
+        '  Verification artefacts unavailable. Re-run npm run verify:alpha-agi-mark.'
+      )
+    );
     return;
   }
 
   const summaryChecks = verification.summary?.checks;
   const checks = summaryChecks
-    ? summaryChecks.map((entry) => ({ label: entry.label, consistent: entry.consistent }))
+    ? summaryChecks.map((entry) => ({
+        label: entry.label,
+        consistent: entry.consistent,
+      }))
     : [
-        { label: "Supply consensus", consistent: verification.supplyConsensus?.consistent ?? false },
-        { label: "Pricing parity", consistent: verification.pricing?.consistent ?? false },
-        { label: "Capital flows", consistent: verification.capitalFlows?.consistent ?? false },
-        { label: "Contribution totals", consistent: verification.contributions?.consistent ?? false },
+        {
+          label: 'Supply consensus',
+          consistent: verification.supplyConsensus?.consistent ?? false,
+        },
+        {
+          label: 'Pricing parity',
+          consistent: verification.pricing?.consistent ?? false,
+        },
+        {
+          label: 'Capital flows',
+          consistent: verification.capitalFlows?.consistent ?? false,
+        },
+        {
+          label: 'Contribution totals',
+          consistent: verification.contributions?.consistent ?? false,
+        },
       ];
 
   const total = verification.summary?.totalChecks ?? checks.length;
-  const passing = verification.summary?.passedChecks ?? checks.filter((check) => check.consistent).length;
-  const confidencePercent = verification.summary?.confidenceIndexPercent
-    ?? (verification.summary?.confidenceIndexBps !== undefined
+  const passing =
+    verification.summary?.passedChecks ??
+    checks.filter((check) => check.consistent).length;
+  const confidencePercent =
+    verification.summary?.confidenceIndexPercent ??
+    (verification.summary?.confidenceIndexBps !== undefined
       ? (verification.summary.confidenceIndexBps / 100).toFixed(2)
       : (total === 0 ? 0 : Math.round((passing / total) * 100)).toString());
 
-  const verdictBadge = verification.summary?.verdict === "PASS"
-    ? styles.success("PASS")
-    : verification.summary?.verdict
-    ? styles.warning(verification.summary.verdict)
-    : undefined;
+  const verdictBadge =
+    verification.summary?.verdict === 'PASS'
+      ? styles.success('PASS')
+      : verification.summary?.verdict
+      ? styles.warning(verification.summary.verdict)
+      : undefined;
 
   console.log(
-    `  Confidence index: ${
-      passing === total ? styles.success(`${confidencePercent}%`) : styles.warning(`${confidencePercent}%`)
-    } (${passing}/${total} checks)`,
+    `  Check pass rate: ${
+      passing === total
+        ? styles.success(`${confidencePercent}%`)
+        : styles.warning(`${confidencePercent}%`)
+    } (${passing}/${total} checks)`
   );
   if (verdictBadge) {
     console.log(`  Verdict: ${verdictBadge}`);
@@ -638,119 +733,199 @@ function renderVerification(recap: Recap): void {
 
   console.log();
   checks.forEach((check) => {
-    const badge = check.consistent ? styles.success("✅") : styles.danger("⚠️");
+    const badge = check.consistent ? styles.success('✅') : styles.danger('⚠️');
     console.log(`  ${badge} ${check.label}`);
   });
 
   if (verification.capitalFlows) {
-    console.log("\n  Capital summary:");
+    console.log('\n  Capital summary:');
     renderKeyValues([
-      ["Gross inflows", `${weiToEth(verification.capitalFlows.ledgerGrossWei)} ETH`],
-      ["Redemptions", `${weiToEth(verification.capitalFlows.ledgerRedemptionsWei)} ETH`],
-      ["Net reserve", `${weiToEth(verification.capitalFlows.ledgerNetWei)} ETH`],
-      ["Vault received", `${weiToEth(verification.capitalFlows.vaultReceivedWei)} ETH`],
+      [
+        'Gross inflows',
+        `${weiToEth(verification.capitalFlows.ledgerGrossWei)} ETH`,
+      ],
+      [
+        'Redemptions',
+        `${weiToEth(verification.capitalFlows.ledgerRedemptionsWei)} ETH`,
+      ],
+      [
+        'Net reserve',
+        `${weiToEth(verification.capitalFlows.ledgerNetWei)} ETH`,
+      ],
+      [
+        'Vault received',
+        `${weiToEth(verification.capitalFlows.vaultReceivedWei)} ETH`,
+      ],
     ]);
   }
 }
 
 function renderTimeline(recap: Recap): void {
-  console.log(`\n${styles.heading("MISSION TIMELINE")}`);
+  console.log(`\n${styles.heading('MISSION TIMELINE')}`);
   divider();
 
   const timeline = recap.timeline ?? [];
   if (timeline.length === 0) {
-    console.log(styles.muted("  Timeline data unavailable. Regenerate with npm run timeline:alpha-agi-mark."));
+    console.log(
+      styles.muted(
+        '  Timeline data unavailable. Regenerate with npm run timeline:alpha-agi-mark.'
+      )
+    );
     return;
   }
 
   timeline.slice(0, 8).forEach((entry, index) => {
-    const icon = entry.icon ?? "•";
+    const icon = entry.icon ?? '•';
     console.log(`  ${styles.accent(`${index + 1}. ${icon} ${entry.title}`)}`);
     console.log(`     ${entry.phase} – ${entry.description}`);
     if (entry.actorLabel || entry.actor) {
-      console.log(`     Actor: ${entry.actorLabel ?? formatAddress(entry.actor!)}`);
+      console.log(
+        `     Actor: ${entry.actorLabel ?? formatAddress(entry.actor!)}`
+      );
     }
   });
 
   if (timeline.length > 8) {
-    console.log(`\n  ${styles.muted(`… ${timeline.length - 8} additional events available in the timeline dossier.`)}`);
+    console.log(
+      `\n  ${styles.muted(
+        `… ${
+          timeline.length - 8
+        } additional events available in the timeline dossier.`
+      )}`
+    );
   }
 }
 
 function renderMermaid(recap: Recap): void {
-  console.log(`\n${styles.heading("DYNAMIC MERMAID BLUEPRINT")}`);
+  console.log(`\n${styles.heading('DYNAMIC MERMAID BLUEPRINT')}`);
   divider();
 
   const owner = formatAddress(recap.actors.owner);
-  const investors = (recap.actors.investors ?? []).map(formatAddress).slice(0, 3);
+  const investors = (recap.actors.investors ?? [])
+    .map(formatAddress)
+    .slice(0, 3);
   const validators = (recap.validators?.members ?? []).map(formatAddress);
   const mermaid = [
-    "```mermaid",
-    "flowchart TD",
-    "    classDef operator fill:#0d2818,stroke:#60ffcf,color:#f1fff8,stroke-width:2px;",
-    "    classDef contract fill:#101546,stroke:#60ffcf,color:#f6faff,stroke-width:2px;",
-    "    classDef council fill:#2f2445,stroke:#9d7bff,color:#f6f0ff;",
-    "    classDef investor fill:#162b24,stroke:#6dffd6,color:#f1fffb;",
-    `    Operator{{${owner}}}:::operator --> SeedNFT[NovaSeedNFT\\n${formatAddress(recap.contracts.novaSeed)}]:::contract`,
-    `    Operator --> Oracle[Risk Oracle\\n${formatAddress(recap.contracts.riskOracle)}]:::contract`,
-    `    Operator --> Exchange[Bonding Curve\\n${formatAddress(recap.contracts.markExchange)}]:::contract`,
-    `    Exchange --> Vault[α-AGI Sovereign Vault\\n${formatAddress(recap.contracts.sovereignVault)}]:::contract`,
+    '```mermaid',
+    'flowchart TD',
+    '    classDef operator fill:#0d2818,stroke:#60ffcf,color:#f1fff8,stroke-width:2px;',
+    '    classDef contract fill:#101546,stroke:#60ffcf,color:#f6faff,stroke-width:2px;',
+    '    classDef council fill:#2f2445,stroke:#9d7bff,color:#f6f0ff;',
+    '    classDef investor fill:#162b24,stroke:#6dffd6,color:#f1fffb;',
+    `    Operator{{${owner}}}:::operator --> SeedNFT[NovaSeedNFT\\n${formatAddress(
+      recap.contracts.novaSeed
+    )}]:::contract`,
+    `    Operator --> Oracle[Risk Oracle\\n${formatAddress(
+      recap.contracts.riskOracle
+    )}]:::contract`,
+    `    Operator --> Exchange[Bonding Curve\\n${formatAddress(
+      recap.contracts.markExchange
+    )}]:::contract`,
+    `    Exchange --> Vault[α-AGI Sovereign Vault\\n${formatAddress(
+      recap.contracts.sovereignVault
+    )}]:::contract`,
     `    SeedNFT --> Exchange`,
     `    Oracle --> Exchange`,
   ];
 
   investors.forEach((investor, index) => {
-    mermaid.push(`    Investor${index + 1}[Investor ${index + 1}\\n${investor}]:::investor --> Exchange`);
+    mermaid.push(
+      `    Investor${index + 1}[Investor ${
+        index + 1
+      }\\n${investor}]:::investor --> Exchange`
+    );
   });
 
   validators.forEach((validator, index) => {
-    mermaid.push(`    Council${index + 1}[Validator ${index + 1}\\n${validator}]:::council --> Oracle`);
+    mermaid.push(
+      `    Council${index + 1}[Validator ${
+        index + 1
+      }\\n${validator}]:::council --> Oracle`
+    );
   });
 
-  mermaid.push("    Exchange -->|Ignition| Vault");
-  mermaid.push("```\n");
+  mermaid.push('    Exchange -->|Ignition| Vault');
+  mermaid.push('```\n');
 
-  console.log(mermaid.join("\n"));
+  console.log(mermaid.join('\n'));
 }
 
 async function loadRecap(recapPath: string): Promise<Recap> {
   let raw: string;
   try {
-    raw = await readFile(recapPath, "utf8");
+    raw = await readFile(recapPath, 'utf8');
   } catch (error) {
     const message = (error as Error).message ?? String(error);
     throw new Error(
-      `Unable to read recap dossier at ${recapPath}. Run npm run demo:alpha-agi-mark first.\n${message}`,
+      `Unable to read recap dossier at ${recapPath}. Run npm run demo:alpha-agi-mark first.\n${message}`
     );
   }
 
   try {
     const parsed = JSON.parse(raw);
+    assertVerifiedRecap(parsed);
     return recapSchema.parse(parsed);
   } catch (error) {
     if (error instanceof z.ZodError) {
       throw new Error(`Recap dossier schema mismatch: ${error.message}`);
     }
-    throw new Error(`Unable to parse recap dossier: ${(error as Error).message ?? error}`);
+    throw new Error(
+      `Unable to parse recap dossier: ${(error as Error).message ?? error}`
+    );
   }
 }
 
 async function interactiveLoop(recap: Recap): Promise<void> {
-  console.log(styles.heading("α-AGI MARK Operator Console"));
-  console.log(styles.muted("Press the number of a panel to explore it. Type 0 to exit."));
+  console.log(styles.heading('α-AGI MARK Operator Console'));
+  console.log(
+    styles.muted('Press the number of a panel to explore it. Type 0 to exit.')
+  );
 
   const rl = createInterface({ input, output });
 
-  const actions: Array<{ key: string; description: string; run: () => void }> = [
-    { key: "1", description: "Mission summary", run: () => renderSummary(recap) },
-    { key: "2", description: "Operator empowerment index", run: () => renderEmpowerment(recap) },
-    { key: "3", description: "Owner command deck", run: () => renderOwnerDeck(recap) },
-    { key: "4", description: "Participant ledger", run: () => renderParticipants(recap) },
-    { key: "5", description: "Validator council", run: () => renderValidators(recap) },
-    { key: "6", description: "Triple-verification matrix", run: () => renderVerification(recap) },
-    { key: "7", description: "Mission timeline", run: () => renderTimeline(recap) },
-    { key: "8", description: "Mermaid blueprint", run: () => renderMermaid(recap) },
-  ];
+  const actions: Array<{ key: string; description: string; run: () => void }> =
+    [
+      {
+        key: '1',
+        description: 'Mission summary',
+        run: () => renderSummary(recap),
+      },
+      {
+        key: '2',
+        description: 'Operator empowerment index',
+        run: () => renderEmpowerment(recap),
+      },
+      {
+        key: '3',
+        description: 'Owner command deck',
+        run: () => renderOwnerDeck(recap),
+      },
+      {
+        key: '4',
+        description: 'Participant ledger',
+        run: () => renderParticipants(recap),
+      },
+      {
+        key: '5',
+        description: 'Validator council',
+        run: () => renderValidators(recap),
+      },
+      {
+        key: '6',
+        description: 'Triple-verification matrix',
+        run: () => renderVerification(recap),
+      },
+      {
+        key: '7',
+        description: 'Mission timeline',
+        run: () => renderTimeline(recap),
+      },
+      {
+        key: '8',
+        description: 'Mermaid blueprint',
+        run: () => renderMermaid(recap),
+      },
+    ];
 
   let active = true;
   while (active) {
@@ -758,16 +933,18 @@ async function interactiveLoop(recap: Recap): Promise<void> {
     actions.forEach((action) => {
       console.log(`  ${styles.accent(action.key)} → ${action.description}`);
     });
-    console.log(`  ${styles.accent("0")} → Exit console`);
+    console.log(`  ${styles.accent('0')} → Exit console`);
 
-    const answer = await rl.question(styles.muted("Select panel: "));
-    if (answer.trim() === "0") {
+    const answer = await rl.question(styles.muted('Select panel: '));
+    if (answer.trim() === '0') {
       active = false;
       break;
     }
     const action = actions.find((candidate) => candidate.key === answer.trim());
     if (!action) {
-      console.log(styles.warning("Unknown selection. Choose a number from the menu."));
+      console.log(
+        styles.warning('Unknown selection. Choose a number from the menu.')
+      );
       continue;
     }
     console.log();
@@ -776,11 +953,11 @@ async function interactiveLoop(recap: Recap): Promise<void> {
 
   await rl.close();
   console.log();
-  console.log(styles.muted("Console session closed."));
+  console.log(styles.muted('Console session closed.'));
 }
 
 function snapshotReport(recap: Recap): void {
-  console.log(styles.heading("α-AGI MARK Snapshot"));
+  console.log(styles.heading('α-AGI MARK Snapshot'));
   renderSummary(recap);
   renderEmpowerment(recap);
   renderOwnerDeck(recap);

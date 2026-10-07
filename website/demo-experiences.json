@@ -625,8 +625,8 @@
     "related": []
   },
   "alpha-agi-mark": {
-    "question": "How can a contract demonstration produce a reviewable operator dossier?",
-    "purpose": "For reviewers: trace the Alpha Mark scenario into contract execution, a recap and the additional operator reports.",
+    "question": "How does capital become independently verifiable computer work?",
+    "purpose": "For mission owners and reviewers: explore a browser-only work plan, then inspect the separate Alpha Mark bonding-curve, launch-gate and refund demonstration.",
     "steps": [
       {
         "title": "Follow the scenario",
@@ -644,11 +644,19 @@
         "explanation": "Follow the verifier before relying on generated dashboards or narrative briefs. Their presentation should remain traceable to the underlying recap."
       }
     ],
-    "command": "npm run demo:alpha-agi-mark",
-    "expected": "A local Hardhat demonstration produces a recap. The :full command adds the operator suite; inspect the exact output paths printed by the scripts.",
-    "experiment": "Compare a recap field with the assertion or event that establishes it. Keep generated risk and intelligence indices separate from externally validated performance.",
+    "command": "npm run test:alpha-agi-mark\nnpm run demo:alpha-agi-mark:full",
+    "expected": "A disposable local Hardhat run writes demo/alpha-agi-mark/reports/alpha-mark-recap.json and the operator dossier. These demonstrate local capital-market scenarios with test actors, not live agent work or a USDC job settlement.",
+    "experiment": "In the browser lab, increase workers without increasing review time. Compare the capacity limit, then export a scoped draft for operator review. In the contract demo, trace recap fields to the assertions that establish them.",
     "mode": "node",
-    "related": []
+    "related": ["AGI-Jobs-Platform-at-Kardashev-II-Scale"],
+    "dashboards": [
+      {
+        "title": "Open the Alpha Mark mission lab",
+        "route": "experiments/alpha-agi-mark/",
+        "source": "demo/alpha-agi-mark/scripts/runDemo.ts"
+      }
+    ],
+    "dashboardDescription": "Browser-only capital-to-work planning with bounded capacity assumptions, a USDC proposal and an operator-admission task. No wallet, source fetching, provider calls or settlement."
   },
   "alpha-agi-insight-mark": {
     "question": "What does an insight exchange actually record and verify?",

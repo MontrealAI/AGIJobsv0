@@ -1,11 +1,11 @@
 # α-AGI MARK Demo Runbook
 
-This runbook describes how a non-technical operator can execute the α-AGI MARK foresight market demo from scratch.
+This runbook describes the local α-AGI MARK financing-market demonstration. Begin with the [quick start](../README.md) or [browser capital-to-work lab](https://montrealai.github.io/AGIJobsv0/experiments/alpha-agi-mark/). Local test accounts and reports are not an independently commissioned production deployment. See [computer-work handoff](../docs/computer-work-handoff.md) for actual worker admission and acceptance.
 
 ## Prerequisites
 
 - Node.js v22.23.3 (already enforced by repository engines)
-- `npm install`
+- `npm ci` from the repository root
 
 ## Execution Steps
 
@@ -82,9 +82,9 @@ This runbook describes how a non-technical operator can execute the α-AGI MARK 
    ```
 
    The script replays the trade ledger from the recap, recomputes the bonding-curve math independently, and
-   prints a confidence index table that must read 100% before green-lighting any external announcement. The recap now
+   prints an arithmetic consistency table. All checks must pass; even 100% does not establish provider provenance, buyer acceptance, an independent audit or production readiness. The recap now
    carries a `verification.summary` payload (confidence index, passed/total counts, verdict, labelled checks) so the
-   console, dashboard, and integrity dossier all present the exact same confidence score.
+   console and dashboard retain the same four-check historical summary. Offline verification adds checks and reports its own denominator; neither score is a probability of correctness.
 
 7. **Layer in stochastic assurance**
 
@@ -114,9 +114,7 @@ This runbook describes how a non-technical operator can execute the α-AGI MARK 
    ```
 
    Generates `demo/alpha-agi-mark/reports/alpha-mark-empowerment.md`, merging a quadrant chart,
-   capital pie, and timeline into a single empowerment brief. It reuses the recap dossier to prove
-   the automation multiplier, validator quorum, and owner command deck are aligned for sovereign
-   launch authority.
+   capital pie, and timeline into a single empowerment brief. It summarizes the local recap, validator quorum and owner controls. Any multiplier is a descriptive demo metric, not measured labor productivity or a financial return.
 
 10. **Synthesize the risk lattice dossier**
 
@@ -137,7 +135,7 @@ This runbook describes how a non-technical operator can execute the α-AGI MARK 
    Creates `demo/alpha-agi-mark/reports/alpha-mark-timeline.md`, blending a Mermaid timeline with a
    tabular ledger of every orchestrated action. Ideal for board briefings or audit evidence packs.
 
-12. **(Optional) Run unit tests**
+12. **Run unit tests before review**
 
    ```bash
    npx hardhat test --config demo/alpha-agi-mark/hardhat.config.ts
@@ -147,18 +145,17 @@ This runbook describes how a non-technical operator can execute the α-AGI MARK 
    pause/emergency exit, abort, and residual withdrawal) so board operators can demonstrate contractual control with a
    single automated report.
 
-13. **(Optional) Dry-run on a fork or external network**
+13. **Advanced: explicitly authorized external-network execution**
 
-   Set environment variables before invoking the script:
+   This broadcasts real transactions and spends funds; it is not a dry-run or a required quick-start step. Use disposable testnet accounts only after reviewing the contracts, roles, RPC and planned transactions. Supply signing keys through a protected environment; never paste production keys into shell history. Then explicitly choose the network:
 
    ```bash
    export AGIJOBS_DEMO_DRY_RUN=false
    export ALPHA_MARK_NETWORK=sepolia
+   export ALPHA_MARK_CHAIN_ID=11155111
    export ALPHA_MARK_RPC_URL=https://...
-   export ALPHA_MARK_OWNER_KEY=0x...
-   export ALPHA_MARK_INVESTOR_KEYS=0x...,0x...,0x...
-   export ALPHA_MARK_VALIDATOR_KEYS=0x...,0x...,0x...
-   npm run demo:alpha-agi-mark
+   # Owner, investor and validator keys must already be provisioned securely.
+   npm run demo:alpha-agi-mark -- --network sepolia
    ```
 
    Provide keys for at least three investors and three validators; the script confirms each wallet holds ≥0.05 ETH and prompts for
@@ -171,4 +168,4 @@ This runbook describes how a non-technical operator can execute the α-AGI MARK 
 - `overrideValidation()` lets the owner force a green light or red light if the validator council stalls.
 - `resetApprovals()` clears validator votes instantly so a fresh review cycle can begin after any incident.
 
-These controls are showcased live in the demo.
+These controls are exercised on the local test chain. External use requires independently reviewed configuration and authorization.

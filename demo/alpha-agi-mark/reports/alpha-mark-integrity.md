@@ -1,18 +1,20 @@
 # α-AGI MARK Integrity Report
 
-Generated: 2025-10-17T13:12:40.494Z
+Generated: 2026-10-07T13:03:07.145Z
+
+Scope: local financial-demo reconciliation. Check pass rates are not statistical confidence, independent reviewer approval, or production qualification.
 
 ## Recap Envelope
 
-- Network: hardhat (chainId 31337) (chain 31337, block 0)
+- Network: hardhat (chainId 31337) (chain 31337, block 24)
 - Dry-run mode: enabled
-- Checksum (sha256/json-key-sorted): 7ad550522dac8b424fbc45a250a8941cba4febe7b87f76b16bb2f23a5d0bf41f
+- Checksum (sha256/json-key-sorted): e1d09b444cea891779ab7c77a4f048c958846700da53078d2cc8be8e0b91aad9
 
 ### Orchestrator Telemetry
 
 - Mode: dry-run
-- Git commit: 6b15cfab6dcbdf70b7df550b8d804ed88e1aed11
-- Git branch: work
+- Git commit: faf0fb1581244845dc7fea7125ef62b57596c628
+- Git branch: codex/alpha-mark-production-20261007
 - Workspace dirty: yes
 
 ### Actor Registry
@@ -21,9 +23,9 @@ Generated: 2025-10-17T13:12:40.494Z
 - Investors: 0x70997970C51812dc3A010C7d01b50e0d17dc79C8, 0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC, 0x90F79bf6EB2c4f870365E785982E1f101E93b906
 - Validators: 0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65, 0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc, 0x976EA74026E726554dB657fA54763abd0C3a0aa9
 
-## Confidence Summary
+## Local Check Summary
 
-- Confidence index: 100.00% (4/4 checks recorded)
+- Check pass rate: 100.00% (4/4 checks recorded)
 - Core invariant coverage: 100.00% (11/11 checks)
 - Validator quorum: 2/2
 - Ledger supply processed: 11 whole tokens
@@ -32,9 +34,9 @@ Generated: 2025-10-17T13:12:40.494Z
 
 ## Operator Empowerment Index
 
-- Narrative: AGI Jobs orchestrated 22 mission events from 1 command, sustaining 100.00% confidence across 4/4 invariants.
+- Narrative: AGI Jobs orchestrated 22 mission events from 1 command, sustaining 100.00% check pass rate across 4/4 invariants.
 - Automation multiplier: 22.00x (22 orchestrated actions from 1 command)
-- Verification confidence: 100.00% (4/4 checks, validators 2/2)
+- Verification check pass rate: 100.00% (4/4 checks, validators 2/2)
 - Capital formation: 3 participants · Gross 4.5 · Reserve 0.0
 - Command deck depth: 16 actuators recorded
 - Control highlights: `pauseMarket`, `whitelistEnabled`, `emergencyExitEnabled`, `validationOverrideEnabled`
@@ -52,9 +54,9 @@ Generated: 2025-10-17T13:12:40.494Z
 | Embedded verification: pricing | ✅ | - | - |
 | Embedded verification: capital flows | ✅ | - | - |
 | Embedded verification: contributions | ✅ | - | - |
-| Verification summary total checks | ❌ | 11 | 4 |
-| Verification summary passed checks | ❌ | 11 | 4 |
-| Verification summary confidence index | ✅ | 100.00% | 100.00% |
+| Verification summary total checks | ✅ | 4 | 4 |
+| Verification summary passed checks | ✅ | 4 | 4 |
+| Verification summary check pass rate | ✅ | 100.00% | 100.00% |
 | Verification summary verdict | ✅ | PASS | PASS |
 
 ## Participant Contribution Constellation
