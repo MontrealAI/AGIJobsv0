@@ -1,7 +1,7 @@
 SYNTHETIC REHEARSAL: fixture inputs and addresses; no live execution, independent acceptance or settlement.
 
 # Phase 8 — Governance Directives
-Generated: 2026-10-07T15:15:52.749Z
+Generated: 2026-10-07T15:24:20.507Z
 Chain ID: 31337
 Phase8 manager: 0xfa12b3c4d5e6f7890abcdeffedcba98765432109
 

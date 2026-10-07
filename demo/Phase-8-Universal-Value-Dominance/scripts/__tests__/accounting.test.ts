@@ -16,11 +16,37 @@ describe('Phase 8 accounting and numerical boundaries', () => {
     );
     expect(allocated).toBeCloseTo(1970000000000, 2);
     expect(allocated).toBeCloseTo(metrics.annualBudget, 2);
-    expect(metrics.domainFundingMap['planetary-finance']).toBeCloseTo(
-      890000000000 / 3,
-      2
+    expect(metrics.domainFundingMap['planetary-finance']).toBe(296666666666);
+    crossVerifyMetrics(config);
+  });
+  it('allocates whole-dollar remainders once, independent of target order', () => {
+    const config = loadConfig();
+    config.capitalStreams = [
+      {
+        ...config.capitalStreams[0],
+        annualBudget: 2,
+        domains: [
+          'planetary-finance',
+          'health-sovereign',
+          'knowledge-lattice',
+          'health-sovereign',
+        ],
+      },
+    ];
+    const first = computeMetrics(config);
+    expect(first.domainFundingMap['planetary-finance'] || 0).toBe(0);
+    expect(first.domainFundingMap['health-sovereign']).toBe(1);
+    expect(first.domainFundingMap['knowledge-lattice']).toBe(1);
+    config.capitalStreams[0].domains.reverse();
+    expect(computeMetrics(config).domainFundingMap).toEqual(
+      first.domainFundingMap
     );
     crossVerifyMetrics(config);
+  });
+  it('cannot satisfy active-domain coverage with a disabled sentinel', () => {
+    const config = loadConfig();
+    config.sentinels.forEach((sentinel) => (sentinel.active = false));
+    expect(() => parseManifest(config)).toThrow(/coverage/);
   });
   it('excludes disabled capital and sentinels from active capacity', () => {
     const config = loadConfig();

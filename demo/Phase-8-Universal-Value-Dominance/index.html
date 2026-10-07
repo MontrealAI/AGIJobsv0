@@ -2235,11 +2235,11 @@
           const budget = toNumber(stream.annualBudget, 0);
           if (!Number.isFinite(budget) || budget <= 0) continue;
           const streamName = stream.name || stream.slug || "Stream";
-          const targets = [...new Set((asArray(stream.domains).length ? asArray(stream.domains) : defaultTargets).map((x) => String(x).toLowerCase()))].filter((x) => domainSlugs.some((slug) => slug.toLowerCase() === x));
+          const targets = [...new Set((asArray(stream.domains).length ? asArray(stream.domains) : defaultTargets).map((x) => String(x).toLowerCase()))].filter((x) => domainSlugs.some((slug) => slug.toLowerCase() === x)).sort();
           for (const target of targets) {
             const normalized = String(target || "").toLowerCase();
             if (!normalized) continue;
-            fundingMap.set(normalized, (fundingMap.get(normalized) || 0) + budget / targets.length);
+            fundingMap.set(normalized, (fundingMap.get(normalized) || 0) + Math.floor(budget / targets.length) + (targets.indexOf(target) < budget % targets.length ? 1 : 0));
             const list = streamBindings.get(normalized) || [];
             if (!list.includes(streamName)) {
               list.push(streamName);

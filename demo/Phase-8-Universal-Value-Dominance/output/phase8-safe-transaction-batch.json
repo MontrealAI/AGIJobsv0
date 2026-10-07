@@ -1,10 +1,10 @@
 {
   "version": "1.0",
   "chainId": "31337",
-  "createdAt": 1791386152749,
+  "createdAt": 1791386660508,
   "meta": {
     "name": "Phase 8 — SIMULATION ONLY — Universal Value Dominance",
-    "description": "SIMULATION ONLY: fixture addresses; verify chain, deployed bytecode, authority and simulation before signing. Generated on 2026-10-07T15:15:52.749Z",
+    "description": "SIMULATION ONLY: fixture addresses; verify chain, deployed bytecode, authority and simulation before signing. Generated on 2026-10-07T15:24:20.507Z",
     "txBuilderVersion": "1.16.1",
     "createdFromSafeAddress": "",
     "createdFromOwnerAddress": "",

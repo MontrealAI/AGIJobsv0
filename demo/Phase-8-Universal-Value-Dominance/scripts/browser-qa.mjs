@@ -151,6 +151,37 @@ try {
   );
   await page.goto(origin + '/ui/');
   await page.waitForSelector('svg');
+  await page.setInputFiles('#extensionConfig', {
+    name: 'untrusted.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(
+      JSON.stringify({
+        extensions: [
+          {
+            name: '<img src=x onerror=alert(1)>',
+            module: '<script>bad</script>',
+            ciChecks: ['<img src=y>'],
+            dependencies: [],
+          },
+        ],
+      })
+    ),
+  });
+  await page.waitForFunction(() =>
+    document.querySelector('#extensionTable tbody').textContent.includes('<img')
+  );
+  assert.equal(
+    await page.locator('#extensionTable img, #extensionTable script').count(),
+    0
+  );
+  await page.setInputFiles('#jobConfig', {
+    name: 'invalid.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from('{'),
+  });
+  await page.waitForFunction(() =>
+    document.getElementById('jobPreview').textContent.includes('Could not load')
+  );
   assert.deepEqual(errors, []);
   assert.deepEqual(external, []);
   const result = {

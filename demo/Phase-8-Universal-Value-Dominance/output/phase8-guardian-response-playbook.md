@@ -1,7 +1,7 @@
 SYNTHETIC REHEARSAL: fixture inputs and addresses; no live execution, independent acceptance or settlement.
 
 # Phase 8 — Guardian Response Playbook
-Generated: 2026-10-07T15:15:52.749Z
+Generated: 2026-10-07T15:24:20.507Z
 
 ## Protocol posture
 - Protocols defined: 3

@@ -89,9 +89,9 @@ describe("Phase 8 orchestration console", () => {
       const streamDomains = Array.from(
         new Set((stream.domains ?? []).map((domain) => String(domain ?? "").toLowerCase()).filter(Boolean)),
       );
-      const targets = streamDomains.length > 0 ? streamDomains : domainSlugs;
+      const targets = (streamDomains.length > 0 ? streamDomains : [...domainSlugs]).sort();
       for (const target of targets) {
-        fundingMap.set(target, (fundingMap.get(target) ?? 0) + budget / targets.length);
+        fundingMap.set(target, (fundingMap.get(target) ?? 0) + Math.floor(budget / targets.length) + (targets.indexOf(target) < budget % targets.length ? 1 : 0));
       }
     }
     const fundingValues = domainSlugs.map((slug) => fundingMap.get(slug) ?? 0);

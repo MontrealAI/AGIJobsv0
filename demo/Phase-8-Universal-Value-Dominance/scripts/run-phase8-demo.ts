@@ -456,7 +456,7 @@ const StreamSchema = z.object({
   uri: z.string({ required_error: "Capital stream uri is required" }).min(1, "Capital stream uri is required"),
   vault: AddressSchema,
   annualBudget: z
-    .number({ invalid_type_error: "Capital stream annualBudget must be a number" })
+    .number({ invalid_type_error: "Capital stream annualBudget must be a number" }).int("Capital stream annualBudget must use whole USD").safe("Capital stream annualBudget must be a safe integer")
     .nonnegative("Capital stream annualBudget cannot be negative")
     .default(0),
   expansionBps: z
@@ -744,7 +744,7 @@ const ManifestSchema = z
     }
   
     const guardianWindow = Number(value.global?.guardianReviewWindow ?? 0);
-    const domainSlugs = Array.from(domainSlugMap.keys());
+    const domainSlugs = domains.filter((domain) => domain.active !== false).map((domain) => domain.slug.toLowerCase());
 
     sentinels.forEach((sentinel, index) => {
       (sentinel.domains ?? []).forEach((domain, domainIndex) => {
@@ -774,8 +774,8 @@ const ManifestSchema = z
       });
     });
 
-    if (guardianWindow > 0) {
-      const coverage = (value.sentinels ?? []).reduce((acc, sentinel) => {
+    if (guardianWindow > 0 && domainSlugs.length > 0) {
+      const coverage = (value.sentinels ?? []).filter((sentinel) => sentinel.active !== false).reduce((acc, sentinel) => {
         const raw = Number(sentinel?.coverageSeconds ?? 0);
         return acc + (Number.isFinite(raw) && raw > 0 ? raw : 0);
       }, 0);
@@ -788,11 +788,12 @@ const ManifestSchema = z
       }
 
       const domainCoverage = new Map<string, number>();
-      if (domainSlugs.length !== domains.length) {
+      if (domainSlugMap.size !== domains.length) {
         return;
       }
       const domainSlugSet = new Set(domainSlugs);
       for (const sentinel of value.sentinels ?? []) {
+        if (sentinel.active === false) continue;
         const sentinelCoverage = Number(sentinel?.coverageSeconds ?? 0);
         if (!Number.isFinite(sentinelCoverage) || sentinelCoverage <= 0) continue;
         const sentinelDomains = Array.from(
@@ -1085,11 +1086,11 @@ function capitalCoverageMap(streams: CapitalStreamRecord[], domainSlugs: string[
       new Set((stream.domains ?? []).map((domain) => String(domain || "").toLowerCase()).filter(Boolean)),
     );
 
-    const targets = streamDomains.length > 0 ? streamDomains.filter((slug) => normalizedDomains.includes(slug)) : normalizedDomains;
+    const targets = streamDomains.length > 0 ? streamDomains.filter((slug) => normalizedDomains.includes(slug)).sort() : [...normalizedDomains].sort();
     if (targets.length === 0) continue;
 
     for (const domain of targets) {
-      map.set(domain, (map.get(domain) ?? 0) + budget / targets.length);
+      map.set(domain, (map.get(domain) ?? 0) + Math.floor(budget / targets.length) + (targets.indexOf(domain) < budget % targets.length ? 1 : 0));
     }
   }
 
@@ -1171,7 +1172,7 @@ export function schedulePlaybooks(config: Phase8Config, now: number = Math.floor
 
 export function guardrailDiagnostics(config: Phase8Config): string[] {
   const diagnostics: string[] = [];
-  const domains = config.domains ?? [];
+  const domains = (config.domains ?? []).filter((domain) => domain.active !== false);
   const guardianWindow = Number(config.global?.guardianReviewWindow ?? 0);
   const globalHeartbeat = Number(config.global?.heartbeatSeconds ?? 0);
   const guardrailCap = Number(config.selfImprovement?.autonomyGuards?.maxAutonomyBps ?? NaN);
@@ -1505,10 +1506,10 @@ export function crossVerifyMetrics(config: Phase8Config, overrides: MetricTolera
     const declaredTargets = Array.from(
       new Set((stream.domains ?? []).map((entry) => String(entry ?? "").toLowerCase()).filter((entry) => domainSet.has(entry))),
     );
-    const targets = (stream.domains ?? []).length > 0 ? declaredTargets : domainSlugs;
+    const targets = ((stream.domains ?? []).length > 0 ? declaredTargets : [...domainSlugs]).sort();
     for (const target of targets) {
       const current = fundingByDomain.get(target) ?? 0;
-      fundingByDomain.set(target, current + budgetRaw / targets.length);
+      fundingByDomain.set(target, current + Math.floor((budgetRaw + targets.length - 1 - targets.indexOf(target)) / targets.length));
     }
   }
 
@@ -2450,10 +2451,10 @@ function generateOperatorRunbook(
 
   lines.push("Dominion readiness checks:");
   const guardianWindow = Number(config.global?.guardianReviewWindow ?? 0);
-  const coverage = coverageMap(config.sentinels ?? [], (config.domains ?? []).map((d) => String(d.slug ?? "")));
+  const coverage = coverageMap(config.sentinels ?? [], (config.domains ?? []).filter((d) => d.active !== false).map((d) => String(d.slug ?? "")));
   const funding = capitalCoverageMap(
     config.capitalStreams ?? [],
-    (config.domains ?? []).map((d) => String(d.slug ?? "")),
+    (config.domains ?? []).filter((d) => d.active !== false).map((d) => String(d.slug ?? "")),
   );
   for (const domain of config.domains ?? []) {
     const slug = String(domain.slug ?? "").toLowerCase();
@@ -2581,10 +2582,10 @@ function generateCycleReportCsv(
 ): string {
   const guardianWindow = Number(config.global?.guardianReviewWindow ?? 0);
   const domains = config.domains ?? [];
-  const coverage = coverageMap(config.sentinels ?? [], domains.map((domain) => String(domain.slug ?? "")));
+  const coverage = coverageMap(config.sentinels ?? [], domains.filter((domain) => domain.active !== false).map((domain) => String(domain.slug ?? "")));
   const funding = capitalCoverageMap(
     config.capitalStreams ?? [],
-    domains.map((domain) => String(domain.slug ?? "")),
+    domains.filter((domain) => domain.active !== false).map((domain) => String(domain.slug ?? "")),
   );
   const header = [
     "slug",
@@ -2701,10 +2702,10 @@ function generateGovernanceDirectives(
   generatedAt: string,
 ): string {
   const guardianWindow = Number(config.global?.guardianReviewWindow ?? 0);
-  const coverageSeconds = coverageMap(config.sentinels ?? [], (config.domains ?? []).map((domain) => String(domain.slug ?? "")));
+  const coverageSeconds = coverageMap(config.sentinels ?? [], (config.domains ?? []).filter((domain) => domain.active !== false).map((domain) => String(domain.slug ?? "")));
   const fundingUSD = capitalCoverageMap(
     config.capitalStreams ?? [],
-    (config.domains ?? []).map((domain) => String(domain.slug ?? "")),
+    (config.domains ?? []).filter((domain) => domain.active !== false).map((domain) => String(domain.slug ?? "")),
   );
   const sentinelLabels = sentinelNameMap(config);
   const streamLabels = streamNameMap(config);
@@ -2807,10 +2808,10 @@ function generateDominanceScorecard(
   environment: EnvironmentConfig,
   generatedAt: string,
 ) {
-  const coverageSeconds = coverageMap(config.sentinels ?? [], (config.domains ?? []).map((domain) => String(domain.slug ?? "")));
+  const coverageSeconds = coverageMap(config.sentinels ?? [], (config.domains ?? []).filter((domain) => domain.active !== false).map((domain) => String(domain.slug ?? "")));
   const fundingUSD = capitalCoverageMap(
     config.capitalStreams ?? [],
-    (config.domains ?? []).map((domain) => String(domain.slug ?? "")),
+    (config.domains ?? []).filter((domain) => domain.active !== false).map((domain) => String(domain.slug ?? "")),
   );
   const sentinelLabels = sentinelNameMap(config);
   const streamLabels = streamNameMap(config);
