@@ -119,6 +119,7 @@ describe('Gateway manual validator round recovery', function () {
       registry: utils.registry,
       provider: utils.provider,
       begin: storage.beginCommitRecord,
+      update: storage.updateCommitRecord,
     };
     utils.validation = context.client;
     utils.registry = context.registryClient;
@@ -132,11 +133,13 @@ describe('Gateway manual validator round recovery', function () {
     );
     expect(fs.existsSync(file)).to.equal(false);
   });
-  afterEach(() => {
+  afterEach(async () => {
+    await ethers.provider.send('evm_setAutomine', [true]);
     utils.validation = previous.validation;
     utils.registry = previous.registry;
     utils.provider = previous.provider;
     storage.beginCommitRecord = previous.begin;
+    storage.updateCommitRecord = previous.update;
     utils.commits.delete(context.jobId);
     fs.rmSync(file, { force: true });
     for (const archived of archives) fs.rmSync(archived, { force: true });
@@ -246,6 +249,7 @@ describe('Gateway manual validator round recovery', function () {
       jobNonce: client.jobNonce,
       DOMAIN_SEPARATOR: client.DOMAIN_SEPARATOR,
       commitments: client.commitments,
+      revealed: client.revealed,
       rounds: client.rounds,
       connect: () => ({
         commitValidation: async () => {
@@ -368,6 +372,7 @@ describe('Gateway manual validator round recovery', function () {
         jobNonce: client.jobNonce,
         DOMAIN_SEPARATOR: client.DOMAIN_SEPARATOR,
         commitments: client.commitments,
+        revealed: client.revealed,
         rounds: client.rounds,
         connect: () => ({
           [method]: async (...args) => {
@@ -461,5 +466,209 @@ describe('Gateway manual validator round recovery', function () {
       )
     ).to.throw('VALIDATION_COMMITMENT_RECONCILIATION_REQUIRED');
     expect(load()).to.deep.equal(changed);
+  });
+
+  for (const failure of ['before-acceptance', 'lost-send-response', 'wait']) {
+    it(`preserves the manual reveal claim after ${failure} and never resends it`, async () => {
+      const { jobId, v1, client } = context;
+      await utils.commitHelper(jobId, v1, true, ethers.id(failure));
+      await time.increaseTo((await client.rounds(jobId)).commitDeadline + 1n);
+      await ethers.provider.send('evm_setAutomine', [false]);
+      let sends = 0;
+      let sent;
+      const ranges = [];
+      const chain = {
+        getBlock: (...args) => ethers.provider.getBlock(...args),
+        getNetwork: () => ethers.provider.getNetwork(),
+        getTransactionReceipt: (...args) =>
+          ethers.provider.getTransactionReceipt(...args),
+        getLogs: async (filter) => {
+          ranges.push(filter);
+          if (filter.toBlock - filter.fromBlock > 1)
+            throw new Error('provider range limit');
+          return ethers.provider.getLogs(filter);
+        },
+      };
+      utils.validation = {
+        runner: { provider: chain },
+        getAddress: () => client.getAddress(),
+        jobNonce: client.jobNonce,
+        DOMAIN_SEPARATOR: client.DOMAIN_SEPARATOR,
+        commitments: client.commitments,
+        revealed: client.revealed,
+        rounds: client.rounds,
+        connect: () => ({
+          revealValidation: async (...args) => {
+            sends++;
+            expect(load().metadata.automaticRevealStatus).to.equal(
+              'broadcast-intent'
+            );
+            if (failure === 'before-acceptance')
+              throw new Error('uncertain reveal response');
+            sent = await client.connect(v1).revealValidation(...args);
+            if (failure === 'lost-send-response')
+              throw new Error('uncertain reveal response');
+            return {
+              hash: sent.hash,
+              wait: async () => {
+                expect(load().revealTx).to.equal(sent.hash);
+                expect(load().metadata.automaticRevealStatus).to.equal(
+                  'broadcast'
+                );
+                throw new Error('uncertain reveal response');
+              },
+            };
+          },
+        }),
+      };
+      await expect(utils.revealHelper(jobId, v1)).to.be.rejectedWith(
+        'uncertain reveal response'
+      );
+      const uncertain = load();
+      expect(uncertain.revealTx).to.equal(
+        failure === 'wait' ? sent.hash : undefined
+      );
+      utils.commits.delete(jobId);
+      await expect(utils.revealHelper(jobId, v1)).to.be.rejectedWith(
+        'VALIDATION_COMMITMENT_RECONCILIATION_REQUIRED'
+      );
+      expect(sends).to.equal(1);
+      expect(load()).to.deep.equal(uncertain);
+      await ethers.provider.send('evm_mine', []);
+      await ethers.provider.send('evm_setAutomine', [true]);
+      if (sent) {
+        expect(await client.revealed(jobId, v1.address)).to.equal(true);
+        const reconciled = await utils.revealHelper(jobId, v1);
+        expect(reconciled.tx).to.equal(sent.hash);
+        expect(load().revealTx).to.equal(sent.hash);
+        expect(load().metadata.automaticRevealStatus).to.equal('confirmed');
+        expect((await utils.revealHelper(jobId, v1)).tx).to.equal(sent.hash);
+        expect(sends).to.equal(1);
+        if (failure === 'lost-send-response') {
+          expect(ranges.length).to.be.greaterThan(1);
+          expect(
+            ranges.every(
+              (range) =>
+                range.fromBlock > uncertain.roundScope.blockNumber &&
+                range.toBlock - range.fromBlock < 2000
+            )
+          ).to.equal(true);
+        }
+      } else {
+        expect(await client.revealed(jobId, v1.address)).to.equal(false);
+        utils.validation = client;
+        await freshRound();
+        await expect(utils.revealHelper(jobId, v1)).to.be.rejectedWith(
+          'VALIDATION_COMMITMENT_RECONCILIATION_REQUIRED'
+        );
+        expect(load()).to.deep.equal(uncertain);
+      }
+    });
+  }
+
+  it('uses durable vote data despite a stale manual cache and excludes an automatic reveal claim', async () => {
+    const { jobId, v1, client } = context;
+    await utils.commitHelper(jobId, v1, true, ethers.id('durable vote'));
+    const saved = load();
+    utils.commits.get(jobId)[v1.address.toLowerCase()] = {
+      approve: false,
+      salt: ethers.id('stale cache'),
+      burnTxHash: ethers.id('stale burn'),
+    };
+    await time.increaseTo((await client.rounds(jobId)).commitDeadline + 1n);
+    storage.updateCommitRecord(
+      jobId,
+      v1.address,
+      { metadata: { automaticRevealStatus: 'broadcast-intent' } },
+      {
+        commitHash: saved.commitHash,
+        roundScope: saved.roundScope,
+        revealUnattempted: true,
+      }
+    );
+    await expect(utils.revealHelper(jobId, v1)).to.be.rejectedWith(
+      'VALIDATION_COMMITMENT_RECONCILIATION_REQUIRED'
+    );
+    const tx = await client
+      .connect(v1)
+      .revealValidation(
+        jobId,
+        saved.approve,
+        saved.burnTxHash,
+        saved.salt,
+        'validator',
+        []
+      );
+    await tx.wait();
+    expect((await utils.revealHelper(jobId, v1)).tx).to.equal(tx.hash);
+    expect(load().metadata.automaticRevealStatus).to.equal('confirmed');
+    expect(utils.commits.get(jobId)[v1.address.toLowerCase()]).to.equal(
+      undefined
+    );
+  });
+
+  it('never broadcasts when the durable reveal claim cannot be saved', async () => {
+    const { jobId, v1, client } = context;
+    await utils.commitHelper(jobId, v1, true, ethers.id('disk failure'));
+    await time.increaseTo((await client.rounds(jobId)).commitDeadline + 1n);
+    const original = load();
+    storage.updateCommitRecord = () => {
+      throw new Error('disk unavailable');
+    };
+    await expect(utils.revealHelper(jobId, v1)).to.be.rejectedWith(
+      'disk unavailable'
+    );
+    expect(await client.revealed(jobId, v1.address)).to.equal(false);
+    expect(load()).to.deep.equal(original);
+  });
+
+  it('rejects a wrong, orphaned or anchor-block reveal receipt without claiming success', async () => {
+    const { jobId, v1, client } = context;
+    await utils.commitHelper(jobId, v1, true, ethers.id('receipt evidence'));
+    await time.increaseTo((await client.rounds(jobId)).commitDeadline + 1n);
+    await utils.revealHelper(jobId, v1);
+    const original = load();
+    const receipt = await ethers.provider.getTransactionReceipt(
+      original.revealTx
+    );
+    const anchor = await ethers.provider.getBlock(
+      original.roundScope.blockNumber
+    );
+    const receiptFields = {
+      hash: receipt.hash,
+      blockNumber: receipt.blockNumber,
+      blockHash: receipt.blockHash,
+      status: receipt.status,
+      logs: receipt.logs,
+    };
+    for (const invalid of [
+      await ethers.provider.getTransactionReceipt(original.commitTx),
+      { ...receiptFields, status: 0 },
+      { ...receiptFields, blockHash: ethers.ZeroHash },
+      { ...receiptFields, blockNumber: anchor.number, blockHash: anchor.hash },
+    ]) {
+      utils.validation = {
+        runner: {
+          provider: {
+            getBlock: (...args) => ethers.provider.getBlock(...args),
+            getNetwork: () => ethers.provider.getNetwork(),
+            getTransactionReceipt: async () => invalid,
+          },
+        },
+        getAddress: () => client.getAddress(),
+        jobNonce: client.jobNonce,
+        DOMAIN_SEPARATOR: client.DOMAIN_SEPARATOR,
+        commitments: client.commitments,
+        revealed: client.revealed,
+        rounds: client.rounds,
+        connect: () => {
+          throw new Error('unexpected duplicate reveal');
+        },
+      };
+      await expect(utils.revealHelper(jobId, v1)).to.be.rejectedWith(
+        'VALIDATION_COMMITMENT_RECONCILIATION_REQUIRED'
+      );
+      expect(load()).to.deep.equal(original);
+    }
   });
 });

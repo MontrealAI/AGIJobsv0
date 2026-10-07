@@ -7,6 +7,8 @@ import {
   loadCommitRecord,
   updateCommitRecord,
   beginCommitRecord,
+  StoredCommitRecord,
+  CommitRoundScope,
 } from './validationStore';
 import {
   VALIDATION_PROTOCOL_ABI,
@@ -20,6 +22,7 @@ import {
   readValidationRound,
   reconcilePreviousRound,
   assertStoredValidationRound,
+  inspectStoredValidationRound,
 } from './validationRound';
 
 const DEFAULT_RPC_URL = 'http://localhost:8545';
@@ -646,6 +649,86 @@ export async function commitHelper(
   return { tx: tx.hash, salt, commitHash };
 }
 
+const revealEventInterface = new ethers.Interface([
+  'event ValidationRevealed(uint256 indexed jobId,address indexed validator,bool approve,bytes32 burnTxHash,string subdomain)',
+]);
+
+async function confirmedRevealTransaction(
+  record: StoredCommitRecord,
+  observed: CommitRoundScope
+): Promise<string> {
+  const chain = validation!.runner?.provider ?? provider;
+  const scope = record.roundScope!;
+  const matches = (log: ethers.Log) => {
+    if (log.address.toLowerCase() !== scope.validationModule.toLowerCase())
+      return false;
+    try {
+      const event = revealEventInterface.parseLog(log);
+      return (
+        event?.args[0].toString() === record.jobId &&
+        event.args[1].toLowerCase() === record.validator.toLowerCase() &&
+        event.args[2] === record.approve &&
+        event.args[3].toLowerCase() === record.burnTxHash!.toLowerCase()
+      );
+    } catch {
+      return false;
+    }
+  };
+  const verifyReceipt = async (hash: string) => {
+    const receipt = await chain.getTransactionReceipt(hash);
+    if (
+      !receipt ||
+      receipt.status !== 1 ||
+      receipt.blockNumber <= scope.blockNumber ||
+      receipt.blockNumber > observed.blockNumber ||
+      !receipt.logs.some(matches)
+    )
+      reconciliationRequired();
+    const [receiptBlock, observedBlock] = await Promise.all([
+      chain.getBlock(receipt!.blockNumber),
+      chain.getBlock(observed.blockNumber),
+    ]);
+    if (
+      receiptBlock?.hash !== receipt!.blockHash ||
+      observedBlock?.hash !== observed.blockHash
+    )
+      reconciliationRequired();
+    return receipt!.hash;
+  };
+  if (record.revealTx) return verifyReceipt(record.revealTx);
+
+  // A send response can be lost after the transaction was accepted. Recover
+  // its hash from canonical evidence in this saved round, never by resending.
+  const topics = revealEventInterface.encodeFilterTopics('ValidationRevealed', [
+    record.jobId,
+    record.validator,
+  ]);
+  let toBlock = observed.blockNumber;
+  let pageSize = 2000;
+  while (toBlock > scope.blockNumber) {
+    const fromBlock = Math.max(scope.blockNumber + 1, toBlock - pageSize + 1);
+    let logs;
+    try {
+      logs = await chain.getLogs({
+        address: scope.validationModule,
+        topics,
+        fromBlock,
+        toBlock,
+      });
+    } catch (error) {
+      if (pageSize === 1) throw error;
+      pageSize = Math.max(1, Math.floor(pageSize / 2));
+      continue;
+    }
+    for (const log of logs) {
+      if (!log.removed && matches(log))
+        return verifyReceipt(log.transactionHash);
+    }
+    toBlock = fromBlock - 1;
+  }
+  reconciliationRequired();
+}
+
 export async function revealHelper(
   jobId: string,
   wallet: Wallet,
@@ -653,27 +736,13 @@ export async function revealHelper(
   saltOverride?: string
 ): Promise<{ tx: string }> {
   if (!validation) throw new Error('validation module not configured');
-  let jobCommits = commits.get(jobId);
-  if (!jobCommits) {
-    jobCommits = {};
-    commits.set(jobId, jobCommits);
-  }
-  let data = jobCommits[wallet.address.toLowerCase()];
-  let storedRecord = loadCommitRecord(jobId, wallet.address);
-  if (!data && storedRecord) {
-    data = {
-      approve: storedRecord.approve,
-      salt: storedRecord.salt,
-      burnTxHash: storedRecord.burnTxHash,
-    };
-    jobCommits[wallet.address.toLowerCase()] = { ...data };
-  }
+  const storedRecord = loadCommitRecord(jobId, wallet.address);
+  if (!storedRecord) reconciliationRequired();
   const approve =
-    typeof approveOverride === 'boolean' ? approveOverride : data?.approve;
-  const saltSource = saltOverride ?? data?.salt;
-  if (approve === undefined || !saltSource) {
-    throw new Error('no commit found');
-  }
+    typeof approveOverride === 'boolean'
+      ? approveOverride
+      : storedRecord.approve;
+  const saltSource = saltOverride ?? storedRecord.salt;
   let salt: string;
   try {
     salt = normaliseSalt(saltSource);
@@ -681,11 +750,52 @@ export async function revealHelper(
     throw new Error(`invalid salt provided: ${err?.message || err}`);
   }
   await checkEnsSubdomain(wallet.address);
-  if (!storedRecord) reconciliationRequired();
-  const storedScope = await assertStoredValidationRound(
-    { validation, registry, provider },
-    storedRecord!
-  );
+  if (
+    approve !== storedRecord.approve ||
+    salt.toLowerCase() !== storedRecord.salt.toLowerCase()
+  )
+    reconciliationRequired();
+  const context = { validation, registry, provider };
+  const inspected = await inspectStoredValidationRound(context, storedRecord);
+  if (!['committed', 'revealed'].includes(inspected.status))
+    reconciliationRequired();
+  const storedScope = storedRecord.roundScope!;
+  const expected = {
+    commitHash: storedRecord.commitHash,
+    roundScope: storedScope,
+  };
+  if (inspected.status === 'revealed') {
+    const tx = await confirmedRevealTransaction(
+      storedRecord,
+      inspected.roundScope
+    );
+    await assertStoredValidationRound(context, storedRecord);
+    updateCommitRecord(
+      jobId,
+      wallet.address,
+      {
+        revealTx: tx,
+        revealedAt: storedRecord.revealedAt || new Date().toISOString(),
+        ...(storedRecord.metadata?.automaticRevealStatus
+          ? { metadata: { automaticRevealStatus: 'confirmed' } }
+          : {}),
+      },
+      expected
+    );
+    const cached = commits.get(jobId);
+    if (cached) delete cached[wallet.address.toLowerCase()];
+    return { tx };
+  }
+  if (
+    ['revealTx', 'revealedAt'].some((key) =>
+      Object.prototype.hasOwnProperty.call(storedRecord, key)
+    ) ||
+    Object.prototype.hasOwnProperty.call(
+      storedRecord.metadata ?? {},
+      'automaticRevealStatus'
+    )
+  )
+    reconciliationRequired();
   await assertValidationReveal(
     validation,
     registry,
@@ -694,22 +804,36 @@ export async function revealHelper(
     wallet.address,
     approve,
     salt,
-    data?.burnTxHash
+    storedRecord.burnTxHash
   );
   const validatorLabel =
-    storedRecord?.validatorLabel ||
+    storedRecord.validatorLabel ||
     (await provider.lookupAddress(wallet.address))?.split('.')[0] ||
     '';
+  // This legacy-named marker is shared with automatic validators so neither
+  // entry point can resend another entry point's uncertain reveal.
+  updateCommitRecord(
+    jobId,
+    wallet.address,
+    { metadata: { automaticRevealStatus: 'broadcast-intent' } },
+    { ...expected, revealUnattempted: true }
+  );
   const tx = await (validation as any)
     .connect(wallet)
     .revealValidation(
       jobId,
       approve,
-      data!.burnTxHash,
+      storedRecord.burnTxHash,
       salt,
       validatorLabel,
       []
     );
+  updateCommitRecord(
+    jobId,
+    wallet.address,
+    { revealTx: tx.hash, metadata: { automaticRevealStatus: 'broadcast' } },
+    expected
+  );
   await tx.wait();
   updateCommitRecord(
     jobId,
@@ -717,10 +841,12 @@ export async function revealHelper(
     {
       revealTx: tx.hash,
       revealedAt: new Date().toISOString(),
+      metadata: { automaticRevealStatus: 'confirmed' },
     },
-    { commitHash: storedRecord!.commitHash, roundScope: storedScope }
+    expected
   );
-  delete jobCommits[wallet.address.toLowerCase()];
+  const cached = commits.get(jobId);
+  if (cached) delete cached[wallet.address.toLowerCase()];
 
   return { tx: tx.hash };
 }

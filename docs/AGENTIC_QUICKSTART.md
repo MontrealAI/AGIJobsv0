@@ -38,6 +38,10 @@ These examples exercise event-driven on-chain execution. The generic validator u
 
 The gateway listens for `JobCreated`, checks its configured reward/stake policy, and automatically applies using the configured ENS subdomain. The generic validator at `examples/agentic/v2-validator.js` listens for committee selections, records its exact commitment privately before broadcasting, and polls the on-chain round to reveal only after the commit window closes. The commitment includes the job, round nonce, specification, verdict, burn evidence, salt, validator, chain and contract domain.
 
+The validator resolves burn evidence separately for each selected job. If the registry requires a burn, it must already be satisfied: the validator finds that job’s latest non-removed `BurnConfirmed` event using backward pages of at most 2,000 blocks, reduces page sizes when the provider requires it, and verifies the receipt with `hasBurnReceipt(jobId, hash)`. Missing or unavailable required evidence blocks commitment preparation. Jobs with no burn requirement use the zero hash. The legacy process-wide `BURN_TX_HASH` setting is ignored with a warning; it cannot override a job’s receipt.
+
+The exact resolved receipt is preserved in the private journal and checked against the job again before any commit or reveal broadcast. Restart recovery never substitutes a different receipt into an existing commitment.
+
 ## Private reveal journal and restart recovery
 
 The default journal is `~/.agi-jobs/validator-reveals`, outside the repository. Set `VALIDATOR_STATE_DIR` to an absolute dedicated directory when using persistent deployment storage. The validator creates private directories (`0700`) and secret files (`0600`), checks ownership and rejects symlink paths or unsafe existing permissions. Use a path without symlink ancestors on a filesystem that supports exclusive hard links and file/directory `fsync`; local Linux and macOS deployments require appropriate private storage. Do not put this directory on a public artifact volume or serve it over HTTP. Its plaintext salts must remain private until reveal and should be included only in protected backups.

@@ -1073,7 +1073,7 @@ jobs:
   summary:
     name: CI summary
     runs-on: ubuntu-24.04
-    if: ${{ always() }}
+    if: ${{ !cancelled() }}
     needs:
       - branch_protection
       - lint

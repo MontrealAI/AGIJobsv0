@@ -305,6 +305,64 @@ function safeErrorCode(err) {
     : 'VALIDATOR_RPC_OR_STORAGE_FAILURE';
 }
 
+async function resolveJobBurnReceipt(registry, provider, jobId) {
+  const status = await registry.burnEvidenceStatus(jobId);
+  if (!(status.burnRequired ?? status[0])) return ethers.ZeroHash;
+  if (!(status.burnSatisfied ?? status[1]))
+    fail('VALIDATOR_BURN_EVIDENCE_REQUIRED');
+  const filter = registry.filters.BurnConfirmed(jobId);
+  let toBlock = await provider.getBlockNumber();
+  if (!Number.isSafeInteger(toBlock) || toBlock < 0)
+    fail('VALIDATOR_BLOCK_UNAVAILABLE');
+  let pageSize = 2000;
+  while (toBlock >= 0) {
+    const fromBlock = Math.max(0, toBlock - pageSize + 1);
+    let events;
+    try {
+      events = await registry.queryFilter(filter, fromBlock, toBlock);
+    } catch (error) {
+      if (pageSize === 1) throw error;
+      pageSize = Math.max(1, Math.floor(pageSize / 2));
+      continue;
+    }
+    for (let index = events.length - 1; index >= 0; index--) {
+      const event = events[index];
+      if (
+        event.removed ||
+        !event.args ||
+        String(event.args.jobId ?? event.args[0]) !== String(jobId)
+      )
+        continue;
+      const candidate = event.args.burnTxHash ?? event.args[1];
+      if (
+        !ethers.isHexString(candidate, 32) ||
+        candidate === ethers.ZeroHash ||
+        !(await registry.hasBurnReceipt(jobId, candidate))
+      )
+        fail('VALIDATOR_BURN_RECEIPT_UNAVAILABLE');
+      return candidate.toLowerCase();
+    }
+    toBlock = fromBlock - 1;
+  }
+  fail('VALIDATOR_BURN_RECEIPT_UNAVAILABLE');
+}
+
+async function assertRecordedBurnEvidence(registry, record) {
+  const status = await registry.burnEvidenceStatus(record.jobId);
+  if (status.burnRequired ?? status[0]) {
+    if (!(status.burnSatisfied ?? status[1]))
+      fail('VALIDATOR_BURN_EVIDENCE_REQUIRED');
+    if (record.burnTxHash === ethers.ZeroHash)
+      fail('VALIDATOR_BURN_RECEIPT_UNAVAILABLE');
+  }
+  if (
+    record.burnTxHash !== ethers.ZeroHash &&
+    !(await registry.hasBurnReceipt(record.jobId, record.burnTxHash))
+  ) {
+    fail('VALIDATOR_BURN_RECEIPT_UNAVAILABLE');
+  }
+}
+
 function createValidatorRuntime({
   journal,
   reader,
@@ -313,7 +371,6 @@ function createValidatorRuntime({
   provider,
   validatorLabel,
   approve,
-  burnTxHash,
   commitProof = [],
   revealProof = [],
   report = () => {},
@@ -342,7 +399,11 @@ function createValidatorRuntime({
       await Promise.race([
         Promise.resolve()
           .then(send)
-          .then((tx) => tx.wait(2, confirmationTimeoutMs)),
+          .then((tx) => tx.wait(2, confirmationTimeoutMs))
+          .then((receipt) => {
+            if (!receipt || receipt.status !== 1)
+              fail('VALIDATOR_TRANSACTION_NOT_CONFIRMED');
+          }),
         new Promise((_, reject) => {
           timer = setTimeout(
             () =>
@@ -405,6 +466,7 @@ function createValidatorRuntime({
         BigInt(block.timestamp) > BigInt(round.commitDeadline)
       )
         fail('VALIDATOR_COMMIT_WINDOW_CLOSED');
+      await assertRecordedBurnEvidence(registry, record);
       if (!journal.mark(record, 'commit')) return 'commit-uncertain';
       await broadcast(() =>
         writer.commitValidation(
@@ -420,6 +482,7 @@ function createValidatorRuntime({
     if (BigInt(block.timestamp) <= BigInt(round.commitDeadline))
       return 'waiting-for-reveal';
     if (journal.has(record, 'reveal')) return 'reveal-uncertain';
+    await assertRecordedBurnEvidence(registry, record);
     if (!journal.mark(record, 'reveal')) return 'reveal-uncertain';
     await broadcast(() =>
       writer.revealValidation(
@@ -461,9 +524,10 @@ function createValidatorRuntime({
       const nonce = String(await reader.jobNonce(jobId));
       let record = journal.load(key, nonce);
       if (!record) {
-        const [specHash, domainSeparator] = await Promise.all([
+        const [specHash, domainSeparator, burnTxHash] = await Promise.all([
           registry.getSpecHash(jobId),
           reader.DOMAIN_SEPARATOR(),
+          resolveJobBurnReceipt(registry, provider, jobId),
         ]);
         record = {
           version: 1,
@@ -497,5 +561,6 @@ module.exports = {
   ValidatorRecoveryError,
   commitHash,
   createValidatorRuntime,
+  resolveJobBurnReceipt,
   safeErrorCode,
 };

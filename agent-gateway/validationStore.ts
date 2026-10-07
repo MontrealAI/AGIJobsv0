@@ -403,6 +403,8 @@ export function updateCommitRecord(
   expected?: {
     commitHash: string;
     roundScope: CommitRoundScope;
+    // Shared by manual and automatic callers. The persisted
+    // automaticRevealStatus key retains its legacy name for compatibility.
     revealUnattempted?: boolean;
   }
 ): StoredCommitRecord {

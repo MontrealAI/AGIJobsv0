@@ -8,6 +8,7 @@ const {
   RevealJournal,
   commitHash,
   createValidatorRuntime,
+  resolveJobBurnReceipt,
   safeErrorCode,
 } = require('../../examples/agentic/validator-recovery');
 const { parseDecision } = require('../../examples/agentic/v2-validator');
@@ -98,9 +99,14 @@ describe('generic validator durable reveal recovery', () => {
       journal,
       reader,
       writer,
-      registry: { getSpecHash: async () => state.specHash },
+      registry: {
+        getSpecHash: async () => state.specHash,
+        burnEvidenceStatus: async () => [false, true],
+        hasBurnReceipt: async () => false,
+      },
       provider: {
         getNetwork: async () => ({ chainId: state.chainId }),
+        getBlockNumber: async () => 21,
         getBlock: async (tag) => ({
           number: tag === 'latest' ? 21 : tag,
           timestamp: state.timestamp,
@@ -108,7 +114,6 @@ describe('generic validator durable reveal recovery', () => {
       },
       validatorLabel: 'reviewer',
       approve: true,
-      burnTxHash: ethers.ZeroHash,
       revealProof: [hex('66')],
     };
     return { state, calls, options, runtime: createValidatorRuntime(options) };
@@ -146,6 +151,151 @@ describe('generic validator durable reveal recovery', () => {
     ]) {
       assert.notEqual(commitHash({ ...fields, ...mutation }), expected);
     }
+  });
+
+  it('resolves each required burn receipt through bounded provider-adaptive pages without skipping failed ranges', async () => {
+    const calls = [];
+    const accepted = [];
+    const receipt = hex('91');
+    const registry = {
+      burnEvidenceStatus: async () => ({
+        burnRequired: true,
+        burnSatisfied: true,
+      }),
+      filters: { BurnConfirmed: (jobId) => ({ jobId: String(jobId) }) },
+      queryFilter: async (filter, from, to) => {
+        calls.push([from, to]);
+        assert.equal(filter.jobId, '7');
+        if (to - from + 1 > 250) throw new Error('provider log range exceeded');
+        accepted.push([from, to]);
+        return from <= 1950 && to >= 1950
+          ? [
+              { args: { jobId: 7n, burnTxHash: receipt } },
+              { args: { jobId: 8n, burnTxHash: hex('92') } },
+              { removed: true, args: { jobId: 7n, burnTxHash: hex('93') } },
+            ]
+          : [];
+      },
+      hasBurnReceipt: async (jobId, hash) => {
+        assert.equal(String(jobId), '7');
+        return hash === receipt;
+      },
+    };
+    assert.equal(
+      await resolveJobBurnReceipt(
+        registry,
+        { getBlockNumber: async () => 5010 },
+        7n
+      ),
+      receipt
+    );
+    assert.ok(calls.every(([from, to]) => to - from + 1 <= 2000));
+    assert.ok(calls.slice(0, 4).every(([, to]) => to === 5010));
+    for (let i = 1; i < accepted.length; i++)
+      assert.equal(accepted[i][1], accepted[i - 1][0] - 1);
+  });
+
+  it('uses zero only when burn evidence is not required and fails before recording an unsatisfied job', async () => {
+    assert.equal(
+      await resolveJobBurnReceipt(
+        { burnEvidenceStatus: async () => [false, true] },
+        {},
+        7n
+      ),
+      ethers.ZeroHash
+    );
+    const journal = journalAt(directory);
+    const { runtime, options, calls } = fixture(journal);
+    options.registry.burnEvidenceStatus = async () => [true, false];
+    await assert.rejects(
+      runtime.selected(7n, [scope.validator]),
+      /VALIDATOR_BURN_EVIDENCE_REQUIRED/
+    );
+    assert.equal(journal.records().length, 0);
+    assert.equal(calls.commit.length, 0);
+  });
+
+  it('rejects missing, zero or invalid current receipts before creating an irreversible commitment', async () => {
+    const journal = journalAt(directory);
+    const { runtime, options, calls } = fixture(journal);
+    options.registry.burnEvidenceStatus = async () => [true, true];
+    options.registry.filters = { BurnConfirmed: () => ({}) };
+    for (const events of [
+      [],
+      [{ args: [7n, ethers.ZeroHash] }],
+      [{ args: [7n, hex('91')] }],
+      [{ args: [8n, hex('92')] }],
+    ]) {
+      options.registry.queryFilter = async () => events;
+      await assert.rejects(
+        runtime.selected(7n, [scope.validator]),
+        /VALIDATOR_BURN_RECEIPT_UNAVAILABLE/
+      );
+      assert.equal(journal.records().length, 0);
+    }
+    assert.equal(calls.commit.length, 0);
+  });
+
+  it('propagates failed single-block receipt lookups instead of treating RPC failures as absent evidence', async () => {
+    const widths = [];
+    const failure = new Error('RPC body containing private provider details');
+    const registry = {
+      burnEvidenceStatus: async () => [true, true],
+      filters: { BurnConfirmed: () => ({}) },
+      queryFilter: async (_filter, from, to) => {
+        widths.push(to - from + 1);
+        throw failure;
+      },
+    };
+    await assert.rejects(
+      resolveJobBurnReceipt(registry, { getBlockNumber: async () => 3000 }, 7n),
+      (error) => error === failure
+    );
+    assert.equal(widths[widths.length - 1], 1);
+    assert.equal(widths.filter((width) => width === 1).length, 1);
+    assert.equal(safeErrorCode(failure), 'VALIDATOR_RPC_OR_STORAGE_FAILURE');
+  });
+
+  it('rechecks preserved per-job burn evidence before either broadcast and never replaces a saved receipt', async () => {
+    const journal = journalAt(directory);
+    const saved = makeRecord({ burnTxHash: hex('91') });
+    journal.prepare(saved);
+    const { runtime, calls, state } = fixture(journal);
+    assert.equal(
+      (await runtime.recover())[0].status,
+      'VALIDATOR_BURN_RECEIPT_UNAVAILABLE'
+    );
+    assert.equal(journal.has(saved, 'commit'), false);
+    state.commitment = saved.commitHash;
+    state.timestamp = 101;
+    assert.equal(
+      (await runtime.recover())[0].status,
+      'VALIDATOR_BURN_RECEIPT_UNAVAILABLE'
+    );
+    assert.equal(journal.has(saved, 'reveal'), false);
+    assert.deepEqual(journal.load('7', '1'), saved);
+    assert.equal(calls.commit.length + calls.reveal.length, 0);
+  });
+
+  it('does not report confirmation when a transaction has no successful receipt', async () => {
+    const journal = journalAt(directory);
+    const { options } = fixture(journal);
+    let reported = false;
+    options.writer.commitValidation = async () => ({
+      wait: async () => ({ status: 0 }),
+    });
+    const runtime = createValidatorRuntime({
+      ...options,
+      report: () => {
+        reported = true;
+      },
+    });
+    await assert.rejects(
+      runtime.selected(7n, [scope.validator]),
+      /VALIDATOR_TRANSACTION_NOT_CONFIRMED/
+    );
+    assert.equal(reported, false);
+    assert.equal(journal.has(journal.load('7', '1'), 'commit'), true);
   });
 
   it('requires an explicit valid rehearsal decision instead of approving by default', () => {

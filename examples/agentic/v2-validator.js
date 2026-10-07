@@ -18,7 +18,6 @@ const {
   safeErrorCode,
 } = require('./validator-recovery');
 
-const ZERO_HASH = ethers.ZeroHash;
 const CONFIG_PATH = process.env.GATEWAY_CONFIG
   ? path.resolve(process.cwd(), process.env.GATEWAY_CONFIG)
   : path.resolve(__dirname, 'gateway.config.json');
@@ -169,7 +168,11 @@ async function main() {
       process.env.VALIDATOR_REVEAL_PROOF ||
       process.env.VALIDATION_PROOF
   );
-  const burnHash = (process.env.BURN_TX_HASH || '').trim();
+  if (process.env.BURN_TX_HASH) {
+    console.warn(
+      '[validator] BURN_TX_HASH is ignored; confirmed burn receipts are resolved separately for each job.'
+    );
+  }
   const validationAbi = [
     'event ValidatorsSelected(uint256 indexed jobId,address[] validators)',
     'event ValidationCommitted(uint256 indexed jobId,address indexed validator,bytes32 commitHash,string subdomain)',
@@ -205,7 +208,12 @@ async function main() {
   }
   const registry = new ethers.Contract(
     registryAddress,
-    ['function getSpecHash(uint256 jobId) view returns (bytes32)'],
+    [
+      'function getSpecHash(uint256 jobId) view returns (bytes32)',
+      'function burnEvidenceStatus(uint256 jobId) view returns (bool burnRequired,bool burnSatisfied)',
+      'function hasBurnReceipt(uint256 jobId,bytes32 burnTxHash) view returns (bool)',
+      'event BurnConfirmed(uint256 indexed jobId,bytes32 indexed burnTxHash)',
+    ],
     provider
   );
   const stateDirectory =
@@ -224,9 +232,6 @@ async function main() {
     provider,
     validatorLabel,
     approve: defaultApprove,
-    burnTxHash: burnHash
-      ? ethers.hexlify(ethers.zeroPadValue(ethers.getBytes(burnHash), 32))
-      : ZERO_HASH,
     commitProof,
     revealProof,
     report: (phase, jobId) => {
@@ -270,7 +275,7 @@ async function main() {
   }
   // Validate all retained records before enabling event-driven broadcasts.
   journal.records();
-  moduleReader.on('ValidatorsSelected', (jobId, validators) => {
+  await moduleReader.on('ValidatorsSelected', (jobId, validators) => {
     runtime
       .selected(jobId, validators)
       .catch((err) => reportError('commit', err, jobId));
