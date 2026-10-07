@@ -76,6 +76,17 @@ before(async () => {
       res.end('A text deliverable');
       return;
     }
+    if (route === '/bad-utf8') {
+      res.setHeader('content-type', 'application/json');
+      res.end(
+        Buffer.concat([
+          Buffer.from('{"result":"'),
+          Buffer.from([0xc3, 0x28]),
+          Buffer.from('"}'),
+        ])
+      );
+      return;
+    }
     res.setHeader('content-type', 'application/json');
     if (route === '/bad-json') res.end('{broken');
     else if (route === '/empty') res.end('');
@@ -127,6 +138,12 @@ test('malformed JSON, empty and null responses are rejected', async () => {
       invokeAgentEndpoint(`${origin}/${route}`, {}, 2000),
       /invalid JSON|empty response/
     );
+});
+test('invalid UTF-8 is rejected rather than silently changing evidence bytes', async () => {
+  await assert.rejects(
+    invokeAgentEndpoint(`${origin}/bad-utf8`, {}, 2000),
+    /invalid UTF-8/
+  );
 });
 test('redirects do not forward job payloads', async () => {
   await assert.rejects(

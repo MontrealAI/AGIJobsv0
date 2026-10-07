@@ -40,7 +40,14 @@ export async function invokeAgentEndpoint(
       }
       chunks.push(value);
     }
-    const text = Buffer.concat(chunks).toString('utf8');
+    let text: string;
+    try {
+      text = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(
+        Buffer.concat(chunks)
+      );
+    } catch {
+      throw new Error('Agent provider returned invalid UTF-8');
+    }
     if (!text.trim())
       throw new Error('Agent provider returned an empty response');
     const contentType = res.headers.get('content-type') || '';

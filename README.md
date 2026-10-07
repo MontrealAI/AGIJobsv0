@@ -16,6 +16,8 @@ AGI Jobs v0 (v2) brings together job contracts, agent gateways, validators, oper
 
 **Design useful work:** [Job planner](https://montrealai.github.io/AGIJobsv0/work/) · [Machine labor delivery workflow](docs/MACHINE_LABOR.md). Ten concrete work categories, exact proposal amounts, source boundaries and downloadable tasks compatible with the existing admitted computer-work adapter.
 
+**Review delivered work:** [Evidence reviewer](https://montrealai.github.io/AGIJobsv0/review/) · [Review guide](docs/EVIDENCE_REVIEW.md). Compare the admitted task with a worker receipt, verify exact artifact bytes and record acceptance findings locally. Hash consistency does not establish provider provenance or authorize settlement.
+
 **Explore the demos visually:** [AGI Jobs Demo Observatory](https://montrealai.github.io/AGIJobsv0/) — searchable collection, individual demo pages, original guides and flowcharts, and a browser-only job walkthrough. [Website source and publishing instructions](website/README.md).
 
 **Coordinate computer-based work:** the [computer-work integration](docs/computer-work.md) connects admitted jobs to isolated OpenClaw workers, including their configured native Codex Computer Use capabilities. Start with the [supplier-desk browser lab](demo/One-Box/computer-work/README.md): it produces real browser evidence and separately checks both a correct and an incorrect recommendation. Live workers require explicit task admission, protected credentials and independent acceptance review. The vision's **$40T/year** opportunity is a planning assumption, not a verified market-size or revenue claim.
@@ -71,7 +73,7 @@ Use the catalogue to jump directly into any subsystem; the documents are regener
 
 ## Owner command authority
 
-The contract owner maintains unilateral, auditable control over the entire platform. Every command emits deterministic artefacts (`reports/owner-control/**`) and is enforced by CI so branch protection never accepts a regression.
+The contract owner controls the documented governance entry points. Owner-control commands produce reviewable artefacts (`reports/owner-control/**`), and CI checks the configured authority manifests. Effective merge enforcement additionally requires active repository branch rules; a workflow alone does not prevent an unchecked merge.
 
 | Capability | Command | Output |
 | ---------- | ------- | ------ |
@@ -123,7 +125,7 @@ The release workflow fails closed if a maintainer attempts to publish a tag with
 
 ## CI v2 status wall (live)
 
-The full mapping between wall entries, workflow job identifiers, and maintenance steps lives in [`docs/status-wall.md`](docs/status-wall.md). The wall is enforced twice: GitHub branch protection consumes `ci/required-contexts.json`, and the `CI summary` job fails fast when any upstream signal degrades. Release captains regenerate the wall locally with `npm run ci:status-wall -- --require-success --include-companion --format markdown` so this table mirrors the live GitHub truth at all times. ([README.md](ci/README.md)) ([check-ci-status-wall.ts](scripts/ci/check-ci-status-wall.ts))
+The full mapping between wall entries, workflow job identifiers, and maintenance steps lives in [`docs/status-wall.md`](docs/status-wall.md). `ci/required-contexts.json` defines the intended required checks, and `CI summary` aggregates its upstream signals. Repository branch rules must be configured separately to make these checks mandatory for merging. Release captains can inspect current results with `npm run ci:status-wall -- --require-success --include-companion --format markdown`. Badges below use GitHub's workflow-status endpoint; the `job` query parameter does not establish an individual job's result. Inspect the linked run and its job list for exact evidence. ([README.md](ci/README.md)) ([check-ci-status-wall.ts](scripts/ci/check-ci-status-wall.ts))
 
 | Required job | Status badge |
 | ------------ | ------------ |

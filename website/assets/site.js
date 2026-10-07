@@ -1,8 +1,10 @@
 import { initWorkPlanner } from './work.js';
+import { initEvidenceReview } from './review.js';
 import { initSourceLab } from './source-lab.js';
 import { advance, receipt, stages } from './lifecycle.mjs';
 
 document.documentElement.classList.add('js');
+initEvidenceReview();
 
 const $ = (selector) => document.querySelector(selector);
 const menu = $('#menu-toggle');

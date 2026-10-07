@@ -1,4 +1,5 @@
 import { verifyWorkPlanner } from './work-qa.mjs';
+import { verifyEvidenceReview } from './review-qa.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import http from 'node:http';
@@ -496,6 +497,7 @@ try {
   checks.push(
     'published Meta-Agentic ALPHA route evaluates twelve briefs and rejects incorrect evidence'
   );
+  await verifyEvidenceReview({ page, context, url, artifacts, a11y, checks });
   assert.deepEqual(requests, [], 'Unexpected external network requests');
   assert.deepEqual(errors, [], 'Browser errors');
   fs.writeFileSync(

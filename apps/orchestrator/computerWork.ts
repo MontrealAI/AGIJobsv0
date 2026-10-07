@@ -18,7 +18,12 @@ function record(value: unknown): RecordValue {
   return value as RecordValue;
 }
 function text(value: unknown, name: string, max = 2000): string {
-  if (typeof value !== 'string' || !value.trim() || value.length > max)
+  if (
+    typeof value !== 'string' ||
+    !value.trim() ||
+    value.length > max ||
+    Buffer.from(value, 'utf8').toString('utf8') !== value
+  )
     throw new Error(`Invalid ${name}`);
   return value;
 }
@@ -336,6 +341,8 @@ export async function executeComputerWork(
       );
       if (!expected) throw new Error('Unexpected deliverable');
       const content = text(artifact.content, 'artifact content', 128_000);
+      if (Buffer.byteLength(content, 'utf8') > 128_000)
+        throw new Error('Artifact exceeds the UTF-8 byte limit');
       if (expected.mediaType === 'application/json') JSON.parse(content);
       return {
         ...expected,

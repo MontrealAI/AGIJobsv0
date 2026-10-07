@@ -111,6 +111,85 @@ function configureWorker(t: any, f: Awaited<ReturnType<typeof fixture>>) {
   return { configFile, stateDirectory };
 }
 
+test('invalid Unicode task strings cannot collide under UTF-8 hashing', () => {
+  for (const invalid of ['\ud800', '\udfff']) {
+    assert.throws(
+      () => computerTaskDigest({ ...task, goal: invalid }),
+      /Invalid goal/
+    );
+    assert.throws(
+      () => parseComputerWorkTask({ ...task, inputText: invalid }),
+      /Invalid input text/
+    );
+    assert.throws(
+      () => parseComputerWorkTask({ ...task, acceptanceCriteria: [invalid] }),
+      /Invalid acceptance criterion/
+    );
+  }
+});
+
+for (const [label, content] of [
+  ['oversized UTF-8', 'α'.repeat(64_001)],
+  ['unpaired surrogate', '\ud800'],
+  ['surrogate artifact', '\udfff'],
+]) {
+  test(`worker ${label} remains unapproved with a durable replay barrier`, async (t) => {
+    let calls = 0;
+    const f = await fixture(t, (_req, res) => {
+      calls++;
+      const response = completed();
+      const result = JSON.parse(response.output[0].content[0].text);
+      result.artifacts[0].content = JSON.stringify({ text: content });
+      if (label === 'unpaired surrogate') result.summary = content;
+      if (label === 'surrogate artifact')
+        result.artifacts[0].content = `"${content}"`;
+      response.output[0].content[0].text = JSON.stringify(result);
+      res.end(JSON.stringify(response));
+    });
+    f.profile.maxResponseBytes = 1024 * 1024;
+    await assert.rejects(
+      executeComputerWork('1', task, f.profile, f.options),
+      ComputerWorkOutcomeUnknown
+    );
+    await assert.rejects(
+      executeComputerWork('1', task, f.profile, f.options),
+      /already dispatched/
+    );
+    assert.equal(calls, 1);
+    const journal = JSON.parse(
+      fs.readFileSync(
+        path.join(
+          f.options.stateDirectory,
+          fs.readdirSync(f.options.stateDirectory)[0]
+        ),
+        'utf8'
+      )
+    );
+    assert.equal(journal.status, 'dispatched');
+    assert.equal(journal.artifacts, undefined);
+  });
+}
+
+test('valid multibyte artifact at the exact byte limit remains byte-identical', async (t) => {
+  const content = `"${'α'.repeat(63_999)}"`;
+  const f = await fixture(t, (_req, res) => {
+    const response = completed();
+    const result = JSON.parse(response.output[0].content[0].text);
+    result.artifacts[0].content = content;
+    response.output[0].content[0].text = JSON.stringify(result);
+    res.end(JSON.stringify(response));
+  });
+  f.profile.maxResponseBytes = 1024 * 1024;
+  const receipt: any = await executeComputerWork(
+    '1',
+    task,
+    f.profile,
+    f.options
+  );
+  assert.equal(receipt.artifacts[0].content, content);
+  assert.equal(receipt.artifacts[0].bytes, 128_000);
+});
+
 test('admitted task uses authenticated isolated OpenResponses and returns hashed evidence, never approval', async (t) => {
   let calls = 0;
   let body: any;

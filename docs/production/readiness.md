@@ -6,11 +6,14 @@ This is the stable entry point for deployment status. Dated reports describe the
 
 The public website provides the complete preserved demo collection, guided experiences, original diagrams, browser workbenches and a local job planner. The repository supplies executable local-chain workflows and an operator-admitted OpenClaw computer-work adapter. These capabilities require their documented environments and have distinct evidence boundaries.
 
+The [local evidence reviewer](../EVIDENCE_REVIEW.md) checks delivered artifact integrity against the original task and records an unsigned reviewer assessment. It does not authenticate provider provenance or satisfy independent acceptance by itself. The adapter rejects malformed UTF-8, invalid Unicode strings and text artifacts exceeding 128,000 UTF-8 bytes.
+
 ## What a live deployment still needs
 
 | Gate | Evidence needed |
 | --- | --- |
 | Release trust | Authorized maintainer signing identities and verified release artifacts |
+| Merge enforcement | Active repository rules requiring the intended checks and review policy, verified against GitHub configuration |
 | Security | Independent review, current dependency findings resolved or explicitly assessed, and validated provider configuration |
 | Worker commissioning | An isolated real runtime with verified permissions, account selection, action/network policy, spending limits, stop behavior and representative success/rejection cases |
 | Independent acceptance | Reviewers qualified for the work category, conflict disclosures, reproducible checks and actual buyer acceptance |
