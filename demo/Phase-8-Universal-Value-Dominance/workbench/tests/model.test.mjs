@@ -175,3 +175,20 @@ test('checker rejects unsupported receipt execution and approval claims', () => 
     }
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });
+
+test('checker rejects rehashed report accounting and approval claims', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'phase8-report-check-'));
+  try {
+    const receipt = run(dir);
+    const file = path.join(dir, 'report.md');
+    const report = fs.readFileSync(file, 'utf8');
+    for (const changed of [report.replace('| Reserved USDC | 29700 |', '| Reserved USDC | 999999 |'), report + '\nSettlement approved.\n']) {
+      fs.writeFileSync(file, changed);
+      receipt.artifacts.find((item) => item.name === 'report.md').sha256 = createHash('sha256').update(changed).digest('hex');
+      fs.writeFileSync(path.join(dir, 'receipt.json'), JSON.stringify(receipt));
+      const result = spawnSync(process.env.PYTHON_BIN || 'python3', [path.join(root, 'verify.py'), dir], { encoding: 'utf8' });
+      assert.notEqual(result.status, 0);
+      assert.match(result.stderr, /Independent report mismatch/);
+    }
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});

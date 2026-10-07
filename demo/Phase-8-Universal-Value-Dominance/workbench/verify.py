@@ -44,6 +44,27 @@ def draft_order(task, scenario):
     }
 
 
+def report_markdown(result):
+    hours = result['reviewHours']
+    hours_text = str(int(hours)) if hours.is_integer() else str(hours)
+    lines = [
+        '# Phase 8 capacity report', '',
+        'Synthetic planning scenario; no live work, independent acceptance or payment is claimed.', '',
+        '| Measure | Result |', '| --- | ---: |',
+        f"| Offers | {result['settings']['offers']} |",
+        f"| Admitted | {result['admitted']} |",
+        f"| Expected accepted | {result['accepted']} |",
+        f"| Deferred | {result['deferred']} |",
+        f"| Reserved USDC | {result['reserveUSDC']} |",
+        f"| Expected spent USDC | {result['spentUSDC']} |",
+        f"| Remaining USDC | {result['remainingUSDC']} |",
+        f"| Review hours | {hours_text} |", '',
+        "Bottleneck: " + ', '.join(result['bottlenecks']) + '.', '',
+        'Eight productive hours per worker-day. Every admitted attempt consumes execution and review cost and reserves its full reward; only accepted work earns the modeled reward. Non-accepted rewards are released in this scenario. Actual refunds, disputes, gas, taxes, fees and payment finality require the applicable settlement implementation. Expected acceptance is an input, never a measured success rate.',
+    ]
+    return '\n'.join(lines) + '\n'
+
+
 def verify(directory):
     root = Path(directory)
     receipt = json.loads((root / 'receipt.json').read_text())
@@ -98,6 +119,7 @@ def verify(directory):
         'settlementApproved': False,
     }
     if not same_values(p, values): raise ValueError('Independent arithmetic mismatch or unsupported execution claim')
+    if (root / 'report.md').read_text() != report_markdown(values): raise ValueError('Independent report mismatch')
     orders = json.loads((root / 'work-orders.json').read_text())
     tasks = json.loads(Path(__file__).with_name('tasks.json').read_text())
     catalog = {task['id']: task for task in tasks}
