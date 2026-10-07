@@ -10,6 +10,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: phase8-demo-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   phase8-demo:
     name: Phase 8 Universal Value Dominance Demo
@@ -33,9 +37,8 @@ jobs:
             release-assets.githubusercontent.com:443
             objects.githubusercontent.com:443
             raw.githubusercontent.com:443
-            actions.githubusercontent.com:443
-            actions-results.githubusercontent.com:443
-            pipelines.actions.githubusercontent.com:443
+            *.actions.githubusercontent.com:443
+            actions-results-receiver-production.githubapp.com:443
             registry.npmjs.org:443
             nodejs.org:443
 
