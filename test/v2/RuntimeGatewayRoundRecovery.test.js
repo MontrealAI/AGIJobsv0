@@ -4,6 +4,7 @@ const path = require('node:path');
 const crypto = require('node:crypto');
 const { ethers } = require('hardhat');
 const { time } = require('@nomicfoundation/hardhat-network-helpers');
+const isolatedValidationStore = require('../helpers/validation-store.cjs');
 const {
   deployImplementations,
 } = require('../../scripts/deploy/implementations.cjs');
@@ -88,6 +89,7 @@ describe('Gateway manual validator round recovery', function () {
   let utils;
   let storage;
   let previous;
+  let isolated;
   let file;
   const archives = new Set();
   beforeEach(async () => {
@@ -118,9 +120,14 @@ describe('Gateway manual validator round recovery', function () {
       validation: utils.validation,
       registry: utils.registry,
       provider: utils.provider,
+      load: storage.loadCommitRecord,
       begin: storage.beginCommitRecord,
       update: storage.updateCommitRecord,
     };
+    isolated = isolatedValidationStore();
+    storage.loadCommitRecord = isolated.store.loadCommitRecord;
+    storage.beginCommitRecord = isolated.store.beginCommitRecord;
+    storage.updateCommitRecord = isolated.store.updateCommitRecord;
     utils.validation = context.client;
     utils.registry = context.registryClient;
     utils.provider = {
@@ -128,7 +135,7 @@ describe('Gateway manual validator round recovery', function () {
       lookupAddress: async () => 'validator.club.agi.eth',
     };
     file = path.resolve(
-      'storage/validation',
+      isolated.root,
       `${context.jobId}-${context.v1.address.toLowerCase()}.json`
     );
     expect(fs.existsSync(file)).to.equal(false);
@@ -138,12 +145,14 @@ describe('Gateway manual validator round recovery', function () {
     utils.validation = previous.validation;
     utils.registry = previous.registry;
     utils.provider = previous.provider;
+    storage.loadCommitRecord = previous.load;
     storage.beginCommitRecord = previous.begin;
     storage.updateCommitRecord = previous.update;
     utils.commits.delete(context.jobId);
     fs.rmSync(file, { force: true });
     for (const archived of archives) fs.rmSync(archived, { force: true });
     archives.clear();
+    isolated.cleanup();
   });
   function rememberArchive(record) {
     const digest = crypto
@@ -151,7 +160,7 @@ describe('Gateway manual validator round recovery', function () {
       .update(JSON.stringify(record, null, 2))
       .digest('hex');
     const archived = path.resolve(
-      'storage/validation/archive',
+      path.join(isolated.root, 'archive'),
       `${digest}.json`
     );
     archives.add(archived);
