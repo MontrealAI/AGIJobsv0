@@ -373,7 +373,7 @@ export async function initWallets(): Promise<void> {
   }
 }
 
-export async function checkEnsSubdomain(address: string): Promise<void> {
+export async function checkEnsSubdomain(address: string): Promise<string> {
   try {
     const name = await provider.lookupAddress(address);
     if (
@@ -381,9 +381,10 @@ export async function checkEnsSubdomain(address: string): Promise<void> {
       (name.endsWith('.agent.agi.eth') ||
         name.endsWith('.club.agi.eth') ||
         name.endsWith('.a.agi.eth')) &&
-      name.split('.').length > 3
+      name.split('.').length > 3 &&
+      name.split('.')[0].length > 0
     ) {
-      return;
+      return name;
     }
   } catch {
     // ignore lookup errors and fall through to warning
@@ -580,7 +581,7 @@ export async function commitHelper(
   saltOverride?: string
 ): Promise<{ tx: string; salt: string; commitHash: string }> {
   if (!validation) throw new Error('validation module not configured');
-  await checkEnsSubdomain(wallet.address);
+  const validatorEns = await checkEnsSubdomain(wallet.address);
   const previous = loadCommitRecord(jobId, wallet.address);
   let salt: string;
   if (saltOverride) {
@@ -605,9 +606,7 @@ export async function commitHelper(
   const context = { validation, registry, provider };
   let roundScope = await readValidationRound(context, vote);
   if (previous) await reconcilePreviousRound(context, previous, roundScope);
-  const validatorEns =
-    (await provider.lookupAddress(wallet.address)) || undefined;
-  const validatorLabel = validatorEns?.split('.')[0];
+  const validatorLabel = validatorEns.split('.')[0];
   roundScope = await requireOpenValidationCommitRound(
     context,
     jobId,
@@ -632,7 +631,7 @@ export async function commitHelper(
   );
   const tx = await (validation as any)
     .connect(wallet)
-    .commitValidation(jobId, commitHash, validatorLabel || '', []);
+    .commitValidation(jobId, commitHash, validatorLabel, []);
   updateCommitRecord(
     jobId,
     wallet.address,
@@ -756,7 +755,7 @@ export async function revealHelper(
   } catch (err: any) {
     throw new Error(`invalid salt provided: ${err?.message || err}`);
   }
-  await checkEnsSubdomain(wallet.address);
+  const validatorEns = await checkEnsSubdomain(wallet.address);
   if (
     approve !== storedRecord.approve ||
     salt.toLowerCase() !== storedRecord.salt.toLowerCase()
@@ -814,9 +813,7 @@ export async function revealHelper(
     storedRecord.burnTxHash
   );
   const validatorLabel =
-    storedRecord.validatorLabel ||
-    (await provider.lookupAddress(wallet.address))?.split('.')[0] ||
-    '';
+    storedRecord.validatorLabel || validatorEns.split('.')[0];
   // This legacy-named marker is shared with automatic validators so neither
   // entry point can resend another entry point's uncertain reveal.
   updateCommitRecord(

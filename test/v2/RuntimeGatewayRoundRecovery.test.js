@@ -194,6 +194,58 @@ describe('Gateway manual validator round recovery', function () {
     await context.select();
   }
 
+  it('uses the validated ENS name for a commit without a second reverse lookup', async () => {
+    let lookups = 0;
+    utils.provider.lookupAddress = async () =>
+      ++lookups === 1 ? 'validator.club.agi.eth' : null;
+    await utils.commitHelper(context.jobId, context.v1, true);
+    expect(lookups).to.equal(1);
+    expect(load().validatorEns).to.equal('validator.club.agi.eth');
+    expect(load().validatorLabel).to.equal('validator');
+    expect(load().metadata.manualCommitStatus).to.equal('confirmed');
+  });
+
+  it('uses the validated ENS name for a reveal when an older record has no saved label', async () => {
+    await utils.commitHelper(context.jobId, context.v1, true);
+    const saved = load();
+    delete saved.validatorLabel;
+    overwrite(saved);
+    await time.increaseTo(
+      (await context.client.rounds(context.jobId)).commitDeadline + 1n
+    );
+    let lookups = 0;
+    utils.provider.lookupAddress = async () =>
+      ++lookups === 1 ? 'validator.club.agi.eth' : null;
+    await utils.revealHelper(context.jobId, context.v1);
+    expect(lookups).to.equal(1);
+    expect(load().metadata.automaticRevealStatus).to.equal('confirmed');
+  });
+
+  for (const name of [
+    null,
+    '',
+    '.club.agi.eth',
+    'validator.example',
+    'unavailable',
+  ]) {
+    it(`does not save a commit intent for an invalid or unavailable ENS result (${String(
+      name
+    )})`, async () => {
+      utils.provider.lookupAddress = async () => {
+        if (name === 'unavailable') throw new Error('temporary ENS failure');
+        return name;
+      };
+      await expect(
+        utils.commitHelper(context.jobId, context.v1, true)
+      ).to.be.rejectedWith('No valid');
+      expect(load()).to.equal(null);
+      expect(fs.existsSync(file)).to.equal(false);
+      utils.provider.lookupAddress = async () => 'validator.club.agi.eth';
+      await utils.commitHelper(context.jobId, context.v1, true);
+      expect(load().metadata.manualCommitStatus).to.equal('confirmed');
+    });
+  }
+
   it('rejects an unselected validator without an intent and allows a later confirmed selection', async () => {
     const { jobId, v1 } = context;
     await context.rotateCommittee(false);
@@ -215,9 +267,8 @@ describe('Gateway manual validator round recovery', function () {
       const { jobId, v1, client } = context;
       const deadline = (await client.rounds(jobId)).commitDeadline;
       if (expiresDuringLookup) {
-        let lookups = 0;
         utils.provider.lookupAddress = async () => {
-          if (++lookups === 2) await time.increaseTo(deadline + 1n);
+          await time.increaseTo(deadline + 1n);
           return 'validator.club.agi.eth';
         };
       } else {
