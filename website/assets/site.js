@@ -1,3 +1,4 @@
+import { initWorkPlanner } from './work.js';
 import { initSourceLab } from './source-lab.js';
 import { advance, receipt, stages } from './lifecycle.mjs';
 
@@ -258,3 +259,5 @@ if (diagrams.length) {
 }
 
 initSourceLab();
+
+initWorkPlanner();

@@ -10,6 +10,7 @@ import createDOMPurify from 'dompurify';
 import { build as bundle } from 'esbuild';
 import { loadExperiences, renderExperience } from './experiences.mjs';
 import { renderFeaturedDemos, renderHeroSpotlight } from './featured.mjs';
+import { renderWorkIntro, renderVision, renderWorkPage } from './work.mjs';
 
 const require = createRequire(import.meta.url);
 const { inventory } = require('../demo/catalog.cjs');
@@ -246,8 +247,8 @@ function chrome({
   )}"><script type="module" src="${href(
     'assets/site.js'
   )}"></script></head><body><a class="skip-link" href="#main">Skip to content</a><header class="site-header"><div class="header-inner"><a class="brand" href="${base}" aria-label="AGI Jobs home"><span class="brand-mark" aria-hidden="true">✧</span><span>AGI <strong>JOBS</strong><small>DEMO OBSERVATORY</small></span></a><button id="menu-toggle" class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav">Menu <span aria-hidden="true">☰</span></button><nav id="site-nav" aria-label="Primary navigation"><a href="${href(
-    '#featured'
-  )}">Featured demos</a><a ${
+    'work/'
+  )}">Design a job</a><a href="${href('#featured')}">Featured demos</a><a ${
     active === 'catalog' ? 'aria-current="page"' : ''
   } href="${href('#explore')}">Explore demos</a><a href="${href(
     '#walkthrough'
@@ -311,6 +312,12 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
       'demo/README.md',
       'docs/START_HERE.md',
       'docs/production/readiness-2026-10-03.md',
+      'docs/production/readiness-2026-10-04.md',
+      'docs/production/dependency-review-2026-10-04.md',
+      'docs/production/readiness.md',
+      'docs/production/platform-update-2026-10-07.md',
+      'docs/computer-work.md',
+      'docs/MACHINE_LABOR.md',
       'docs/production/rehearsal.md',
       ...catalog.flatMap((demo) => demo.guides),
     ]),
@@ -421,9 +428,12 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
     )
     .join('');
   const setup = `git clone https://github.com/MontrealAI/AGIJobsv0.git\ncd AGIJobsv0\nnvm install\nnvm use\nnpm ci\nnpm run demo:aurora:local`;
-  const body = `<main id="main"><section class="hero section-wrap"><div class="hero-copy"><p class="eyebrow"><span></span> AGI JOBS / THE DEMO OBSERVATORY</p><h1>Intelligence,<br><em>put to work.</em></h1><p class="hero-description">Explore the systems that turn a mission into evidence, validation and settlement. From one local job to the frontiers of coordinated intelligence.</p><div class="hero-actions"><a class="button primary" href="#explore">Explore the demos <span aria-hidden="true">↗</span></a><a class="text-link" href="#walkthrough"><span class="play-icon" aria-hidden="true">▷</span> See how a job works</a></div><p class="hero-note">Open source. Inspectable. Start without a wallet.</p>${renderHeroSpotlight(
+  const body = `<main id="main"><section class="hero section-wrap"><div class="hero-copy"><p class="eyebrow"><span></span> AGI JOBS / THE MACHINE LABOR LAYER</p><h1>Intelligence,<br><em>put to work.</em></h1><p class="hero-description">A scalable machine labor layer for authorized, lawful screen-based work. Coordinate specialized agents, produce reviewable evidence, and verify useful outcomes before settlement.</p><div class="hero-actions"><a class="button primary" href="${base}work/">Design a useful job <span aria-hidden="true">↗</span></a><a class="text-link" href="#walkthrough"><span class="play-icon" aria-hidden="true">▷</span> See how a job works</a></div><p class="hero-note">Open source. Inspectable. Start without a wallet.</p>${renderHeroSpotlight(
     base
-  )}</div>${orbit()}</section>${renderFeaturedDemos(
+  )}</div>${orbit()}</section>${renderWorkIntro(
+    base,
+    guideURL
+  )}${renderFeaturedDemos(
     base,
     catalog
   )}<div class="metric-strip section-wrap"><div><strong>${
@@ -451,19 +461,34 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
   )} · Git and nvm</li><li>Mock tokens and local test identities</li><li>Transactions and receipts you can inspect</li><li>Owned node shuts down when the run finishes</li></ul></div><div class="terminal"><div class="terminal-bar"><span><i></i><i></i><i></i></span><span>YOUR TERMINAL</span><button class="text-button" type="button" data-copy="setup-command">Copy</button></div><pre tabindex="0" aria-label="Local setup commands"><code id="setup-command">${escape(
     setup
   )}</code></pre><div class="terminal-note"><span class="status-dot"></span> First compilation can take several minutes.</div><p>Find the report in <code>reports/localhost/aurora/</code>. If port 8545 is in use, run with <code>DEMO_PORT=18545</code>.</p></div></div></section><section class="section-wrap evidence-section" aria-labelledby="evidence-title"><div><p class="eyebrow">READ THE EVIDENCE CORRECTLY</p><h2 id="evidence-title">Ambitious by design.<br>Precise about proof.</h2></div><div><p>Local-chain demos execute actual contracts with mock tokens and synthetic work. Research demos explore models under stated assumptions. Design guides preserve architecture and vision.</p><p>Successful tests establish the behavior they check. Live production requires authorized signing, provider validation, independent security review and target-network commissioning.</p><div class="inline-links"><a href="${guideURL(
-    'docs/production/readiness-2026-10-03.md'
+    'docs/production/readiness.md'
   )}">Production readiness ↗</a><a href="${guideURL(
     'docs/production/rehearsal.md'
-  )}">Rehearsal guide ↗</a></div></div></section></main>`;
+  )}">Rehearsal guide ↗</a></div></div></section>${renderVision(
+    base,
+    guideURL
+  )}</main>`;
   write(
     'index.html',
     chrome({
       title: 'Intelligence, put to work',
       description:
-        'Explore the complete AGI Jobs demo collection: local settlement, learning systems, governance and large-scale coordination, with original guides and flowcharts.',
+        'Design authorized computer-work jobs and explore the complete AGI Jobs collection: evidence, independent verification, settlement and large-scale coordination, with original guides and flowcharts.',
       base,
       revision,
       body,
+    })
+  );
+  write(
+    'work/index.html',
+    chrome({
+      title: 'Design a useful job',
+      description:
+        'Prepare a scoped computer-work proposal with ten useful work categories, exact budgets, source boundaries and independent acceptance criteria.',
+      base,
+      revision,
+      canonical: 'work/',
+      body: renderWorkPage(base, guideURL),
     })
   );
   const flowSources = [];
@@ -505,7 +530,7 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
     }</p><a href="${sourceURL(
       file
     )}">View source on GitHub ↗</a></div><div class="guide-context">Original documentation, preserved from the repository. Historical projections and scenario ambitions are not evidence of live performance. See the <a href="${guideURL(
-      'docs/production/readiness-2026-10-03.md'
+      'docs/production/readiness.md'
     )}">current readiness record</a> for deployment requirements.</div>${contents}<article class="prose">${
       rendered.html
     }</article><a class="button secondary back-button" href="${
@@ -833,6 +858,7 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
 
     cultureStudioRoute: 'experiments/culture/',
     dashboardRoutes,
+    workRoute: 'work/',
     archiveRoutes,
     experiences: Object.keys(experiences).length,
     sourceInspections: new Set(
@@ -855,6 +881,7 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
   );
   const routes = [
     '',
+    'work/',
     ...dashboardRoutes,
     ...archiveRoutes,
     'experiments/culture/',

@@ -82,11 +82,24 @@ for (const file of markdownFiles) {
     if (isExternal(target)) {
       continue;
     }
-    const resolved = resolveTarget(file, target);
+    let resolved;
+    try {
+      resolved = resolveTarget(file, decodeURIComponent(target.split('?')[0]));
+    } catch {
+      failures.push({
+        file,
+        target: targetRaw,
+        resolved: 'invalid percent encoding',
+      });
+      continue;
+    }
     if (!resolved) {
       continue;
     }
-    if (!fs.existsSync(resolved)) {
+    if (
+      (resolved !== repoRoot && !resolved.startsWith(repoRoot + path.sep)) ||
+      !fs.existsSync(resolved)
+    ) {
       failures.push({ file, target: targetRaw, resolved });
     }
   }
@@ -95,9 +108,15 @@ for (const file of markdownFiles) {
 if (failures.length > 0) {
   console.error('Broken documentation links detected:');
   for (const failure of failures) {
-    console.error(`- ${path.relative(repoRoot, failure.file)} → ${failure.target} (expected ${failure.resolved})`);
+    console.error(
+      `- ${path.relative(repoRoot, failure.file)} → ${
+        failure.target
+      } (expected ${failure.resolved})`
+    );
   }
   process.exit(1);
 }
 
-console.log(`Documentation links verified across ${markdownFiles.length} Markdown files.`);
+console.log(
+  `Documentation links verified across ${markdownFiles.length} Markdown files.`
+);

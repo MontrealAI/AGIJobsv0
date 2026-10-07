@@ -1,0 +1,303 @@
+{
+  "checkedAt": "2026-10-07T00:18:30.902160+00:00",
+  "locks": [
+    {
+      "path": "apps/console/package-lock.json",
+      "counts": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      },
+      "highPackages": [],
+      "lockSha256": "17ceacbe2e9269421bdadf550a2585bbf21bfc08229c85b379c4cd7564f37bf0"
+    },
+    {
+      "path": "apps/enterprise-portal/package-lock.json",
+      "counts": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      },
+      "highPackages": [],
+      "lockSha256": "3c46acf978eb7513593f8346b9c2e77db708e8ef2e596ce7e804b8ae8e457744"
+    },
+    {
+      "path": "apps/onebox/package-lock.json",
+      "counts": {
+        "info": 0,
+        "low": 2,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 2
+      },
+      "highPackages": [],
+      "lockSha256": "43153803eb8883221e0908348ed45f15b96fbee55edd298e1701ec92ff51d87d"
+    },
+    {
+      "path": "apps/validator-ui/package-lock.json",
+      "counts": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      },
+      "highPackages": [],
+      "lockSha256": "4a9ab1d78eee5c0b4f98647f714da24d385cd787e65f8f3683783467b92bb13d"
+    },
+    {
+      "path": "demo/AGI-Alpha-Node-v0/package-lock.json",
+      "counts": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      },
+      "highPackages": [],
+      "lockSha256": "1feea9503cffb353b52de071ad1ad7f5744ba3c7dfef2d1955c7e2660a2988c1"
+    },
+    {
+      "path": "demo/CULTURE-v0/apps/culture-studio/package-lock.json",
+      "counts": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      },
+      "highPackages": [],
+      "lockSha256": "105350390cc2fc5cef39fcb0e1d5d9f2cafdf1fc8f44a20dfa0555382fb19694"
+    },
+    {
+      "path": "demo/CULTURE-v0/backend/arena-orchestrator/package-lock.json",
+      "counts": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      },
+      "highPackages": [],
+      "lockSha256": "017f5870fc4106aec31dc94b1ed8cc32c897ede6e6d41c68dcfaccaee93ddea3"
+    },
+    {
+      "path": "demo/CULTURE-v0/hardhat/package-lock.json",
+      "counts": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      },
+      "highPackages": [],
+      "lockSha256": "deba3ec489df6b2b868dba10975526c1d8e811cdd4d6d6ff1a3e813aceb341c9"
+    },
+    {
+      "path": "demo/CULTURE-v0/indexers/culture-graph-indexer/package-lock.json",
+      "counts": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      },
+      "highPackages": [],
+      "lockSha256": "1d44af0ccd3130e3aa85c29dd133fa3c7370c61db6fda16bd996d6e3a35f0878"
+    },
+    {
+      "path": "demo/Economic-Power-v0/package-lock.json",
+      "counts": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      },
+      "highPackages": [],
+      "lockSha256": "6d0eb0df4e9944730acec6a1db7f73cd37ec00be0487b283734dd342faee5771"
+    },
+    {
+      "path": "demo/Phase-8-Universal-Value-Dominance/package-lock.json",
+      "counts": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      },
+      "highPackages": [],
+      "lockSha256": "da5045acab910f49cedafe7325a3def1992617ead712a1180ef24d29d9c854d4"
+    },
+    {
+      "path": "demo/Validator-Constellation-v0/v2/package-lock.json",
+      "counts": {
+        "info": 0,
+        "low": 0,
+        "moderate": 5,
+        "high": 0,
+        "critical": 0,
+        "total": 5
+      },
+      "highPackages": [],
+      "lockSha256": "4ee557fffb7f818709c8963a5c199899c828dba7c7240d78d7d19548c32f0a20"
+    },
+    {
+      "path": "demo/sovereign-constellation/app/package-lock.json",
+      "counts": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      },
+      "highPackages": [],
+      "lockSha256": "244b9a5636bb5d540c773237feb99c7f907b684ecbffdfa167e7e38729c565b8"
+    },
+    {
+      "path": "demo/sovereign-constellation/server/package-lock.json",
+      "counts": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      },
+      "highPackages": [],
+      "lockSha256": "245f1b842bb631cf6aed1ec36d5f652f87d49ceb06afe292519144c12e119759"
+    },
+    {
+      "path": "demo/sovereign-mesh/app/package-lock.json",
+      "counts": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      },
+      "highPackages": [],
+      "lockSha256": "75bc239fa97df44cbeebcde2ad921141e4dfffb5c390b1130323b067fd19e189"
+    },
+    {
+      "path": "demo/sovereign-mesh/server/package-lock.json",
+      "counts": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      },
+      "highPackages": [],
+      "lockSha256": "96cd3864d507b1fea39e364529ee9c10439dd1965289ea5975b13b52ee1c59ae"
+    },
+    {
+      "path": "package-lock.json",
+      "counts": {
+        "info": 0,
+        "low": 22,
+        "moderate": 36,
+        "high": 7,
+        "critical": 0,
+        "total": 65
+      },
+      "highPackages": [
+        "braces",
+        "chokidar",
+        "hardhat",
+        "libp2p-crypto",
+        "mocha",
+        "node-forge",
+        "web3.storage"
+      ],
+      "lockSha256": "e2467d988e8c4ecd3cebf9e123ea5ecc7153997724910c6588e74474f25fb22c"
+    },
+    {
+      "path": "packages/onebox-sdk/package-lock.json",
+      "counts": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      },
+      "highPackages": [],
+      "lockSha256": "8aa54f034207ba68fb4c0278eda321cc027ae989055fea8ca2e5098e54dfb7c9"
+    },
+    {
+      "path": "packages/orchestrator/package-lock.json",
+      "counts": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      },
+      "highPackages": [],
+      "lockSha256": "c4befe1e53495ae6ea280552a6643ab4533e19b7a8e440a404996e5e03262312"
+    },
+    {
+      "path": "services/culture-graph-indexer/package-lock.json",
+      "counts": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      },
+      "highPackages": [],
+      "lockSha256": "6405cee85b39d24799b7d7337e1b5ef3b1a6e54f722c59c53502122913317c6e"
+    },
+    {
+      "path": "subgraph/package-lock.json",
+      "counts": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      },
+      "highPackages": [],
+      "lockSha256": "b78522dced8bb2784f02987d35e43fb45fd78a4046dd233bb8e3116a43a718d3"
+    }
+  ],
+  "schema": "agi-jobs-dependency-audit/v1",
+  "command": "npm audit --package-lock-only --omit=dev --json",
+  "npmVersion": "10.8.2",
+  "productionApproved": false,
+  "pnpmWorkspace": {
+    "path": "demo/CULTURE-v0/pnpm-lock.yaml",
+    "command": "pnpm audit --prod --json",
+    "pnpmVersion": "10.5.2",
+    "counts": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 0,
+      "critical": 0
+    },
+    "lockSha256": "d05737f8175182cf87a5321036434e930680103effa9eaa4890fa1762f4d2e4c"
+  }
+}

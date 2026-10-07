@@ -66,6 +66,7 @@ jobs:
       - name: Verify catalog and build the complete site
         run: |
           npm run demos -- --check
+          npm run docs:verify
           npm run site:build
           npm run site:test
       - name: Verify interactions, accessibility, layouts and diagrams
