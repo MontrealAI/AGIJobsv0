@@ -178,6 +178,54 @@ test('mutable or redirected operator profiles fail admission before economic com
   assert.equal(fs.existsSync(stateDirectory), false);
 });
 
+test('profile policy and content remain bound to the opened file during path replacement', async (t) => {
+  const f = await fixture(t, () =>
+    assert.fail('Admission cannot dispatch work')
+  );
+  const { configFile, stateDirectory } = configureWorker(t, f);
+  const originalOpen = fs.openSync;
+  let sequence = 0;
+  const replaceAfterOpen = (replacement: unknown) => {
+    let replaced = false;
+    return mock.method(fs, 'openSync', (...args: any[]) => {
+      const fd = (originalOpen as any)(...args);
+      if (args[0] === configFile && !replaced) {
+        replaced = true;
+        fs.renameSync(configFile, `${configFile}.opened-${sequence++}`);
+        fs.writeFileSync(configFile, JSON.stringify(replacement), {
+          mode: 0o600,
+        });
+      }
+      return fd;
+    });
+  };
+
+  fs.chmodSync(configFile, 0o666);
+  let opened = replaceAfterOpen({ isolated: f.profile });
+  try {
+    assert.throws(
+      () => requireComputerWorkAdmission('1', task),
+      /protected operator-owned regular file/
+    );
+  } finally {
+    opened.mock.restore();
+  }
+
+  opened = replaceAfterOpen({
+    isolated: { ...f.profile, approvedJobs: [] },
+  });
+  try {
+    assert.deepEqual(
+      requireComputerWorkAdmission('1', task).profile,
+      f.profile
+    );
+    assert.throws(() => requireComputerWorkAdmission('1', task), /admission/);
+  } finally {
+    opened.mock.restore();
+  }
+  assert.equal(fs.existsSync(stateDirectory), false);
+});
+
 test('new state directory entries must be durable before any dispatch claim', async (t) => {
   let calls = 0;
   const f = await fixture(t, (_req, res) => {

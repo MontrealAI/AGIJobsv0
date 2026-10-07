@@ -53,6 +53,37 @@ export function validationCommitmentHash(vote: ValidationCommitment): string {
   );
 }
 
+async function latestConfirmedBurnReceipt(
+  registry: Contract,
+  provider: Provider,
+  jobId: bigint | string
+): Promise<string | undefined> {
+  const filter = registry.filters.BurnConfirmed(jobId);
+  let toBlock = await provider.getBlockNumber();
+  let pageSize = 2000;
+  while (toBlock >= 0) {
+    const fromBlock = Math.max(0, toBlock - pageSize + 1);
+    let events;
+    try {
+      events = await registry.queryFilter(filter, fromBlock, toBlock);
+    } catch (error) {
+      // Smaller provider ranges must not become missing evidence or an age
+      // cutoff. Retry the same upper boundary; never skip a failed page.
+      if (pageSize === 1) throw error;
+      pageSize = Math.max(1, Math.floor(pageSize / 2));
+      continue;
+    }
+    for (let index = events.length - 1; index >= 0; index--) {
+      const event = events[index];
+      if (!event.removed && 'args' in event) {
+        return event.args.burnTxHash ?? event.args[1];
+      }
+    }
+    toBlock = fromBlock - 1;
+  }
+  return undefined;
+}
+
 export async function prepareValidationCommitment(
   validation: Contract,
   registry: Contract,
@@ -79,11 +110,11 @@ export async function prepareValidationCommitment(
     if (!(burnStatus.burnSatisfied ?? burnStatus[1])) {
       throw new Error('VALIDATION_BURN_EVIDENCE_REQUIRED');
     }
-    const events = await registry.queryFilter(
-      registry.filters.BurnConfirmed(jobId)
+    const candidate = await latestConfirmedBurnReceipt(
+      registry,
+      provider,
+      jobId
     );
-    const latest = events[events.length - 1];
-    const candidate = latest && 'args' in latest ? latest.args[1] : undefined;
     if (
       !candidate ||
       candidate === ethers.ZeroHash ||

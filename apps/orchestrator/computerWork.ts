@@ -457,21 +457,25 @@ export function requireComputerWorkAdmission(
     throw new Error(
       'Configure absolute COMPUTER_WORK_PROFILES_FILE and COMPUTER_WORK_STATE_DIR'
     );
-  const original = fs.lstatSync(configFile);
-  validateProfileFile(original);
-  // Do not follow a replacement symlink or block on a replacement FIFO.
-  const configFd = fs.openSync(
-    configFile,
-    fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW | fs.constants.O_NONBLOCK
-  );
+  // Open once without following symlinks or blocking on FIFOs. All policy
+  // checks and content reads apply to this descriptor, never a prior path stat.
+  let configFd: number;
+  try {
+    if (typeof fs.constants.O_NOFOLLOW !== 'number')
+      throw new Error('Secure profile access is unavailable');
+    configFd = fs.openSync(
+      configFile,
+      fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW | fs.constants.O_NONBLOCK
+    );
+  } catch {
+    throw new Error(
+      'Worker profiles must be a protected operator-owned regular file'
+    );
+  }
   let profiles: RecordValue;
   try {
     const opened = fs.fstatSync(configFd);
     validateProfileFile(opened);
-    if (opened.dev !== original.dev || opened.ino !== original.ino)
-      throw new Error(
-        'Worker profiles changed during admission; retry preflight'
-      );
     if (opened.size > 1024 * 1024)
       throw new Error('Worker configuration is too large');
     profiles = record(JSON.parse(fs.readFileSync(configFd, 'utf8')));

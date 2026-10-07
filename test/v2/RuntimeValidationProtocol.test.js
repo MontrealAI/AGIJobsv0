@@ -207,6 +207,7 @@ describe('Runtime v2 validator protocol', function () {
       }),
       clearReviewTimer: () => {},
     };
+    Object.setPrototypeOf(state, prototype);
     const identity = {
       address: v1.address,
       label: 'validator',
@@ -244,6 +245,7 @@ describe('Runtime v2 validator protocol', function () {
       provider: utils.provider,
       load: storage.loadCommitRecord,
       update: storage.updateCommitRecord,
+      begin: storage.beginCommitRecord,
     };
     let saved;
     utils.registry = registryClient;
@@ -252,7 +254,9 @@ describe('Runtime v2 validator protocol', function () {
       getNetwork: () => ethers.provider.getNetwork(),
       lookupAddress: async () => 'validator.club.agi.eth',
     };
-    storage.loadCommitRecord = () => saved;
+    storage.loadCommitRecord = () => saved ?? null;
+    storage.beginCommitRecord = (_jobId, _validator, update) =>
+      (saved = { jobId: '1', validator: v1.address.toLowerCase(), ...update });
     storage.updateCommitRecord = (_jobId, _validator, update) =>
       (saved = { ...saved, ...update });
     try {
@@ -279,6 +283,7 @@ describe('Runtime v2 validator protocol', function () {
       utils.provider = previous.provider;
       storage.loadCommitRecord = previous.load;
       storage.updateCommitRecord = previous.update;
+      storage.beginCommitRecord = previous.begin;
       utils.commits.clear();
       for (const key of [
         'JOB_REGISTRY_ADDRESS',

@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { createHash, randomUUID } from 'crypto';
 
 export interface DisputeRecord {
   claimant: string;
@@ -13,6 +14,17 @@ export interface DisputeResolutionRecord {
   resolvedAt: string;
 }
 
+export interface CommitRoundScope {
+  chainId: string;
+  validationModule: string;
+  nonce: string;
+  commitDeadline: string;
+  domain: string;
+  specHash: string;
+  blockNumber: number;
+  blockHash: string;
+}
+
 export interface StoredCommitRecord {
   jobId: string;
   validator: string;
@@ -21,6 +33,7 @@ export interface StoredCommitRecord {
   approve: boolean;
   salt: string;
   burnTxHash?: string;
+  roundScope?: CommitRoundScope;
   commitHash: string;
   committedAt: string;
   commitTx?: string;
@@ -37,6 +50,7 @@ export interface CommitRecordUpdate {
   approve?: boolean;
   salt?: string;
   burnTxHash?: string;
+  roundScope?: CommitRoundScope;
   commitHash?: string;
   committedAt?: string;
   commitTx?: string;
@@ -77,13 +91,96 @@ function recordPath(jobId: string | number, validator: string): string {
   return path.join(STORAGE_ROOT, `${safeJobId}-${safeValidator}.json`);
 }
 
+function syncDirectory(directory: string): void {
+  const fd = fs.openSync(directory, 'r');
+  try {
+    fs.fsyncSync(fd);
+  } finally {
+    fs.closeSync(fd);
+  }
+}
+
 function writeRecord(file: string, record: StoredCommitRecord): void {
   ensureStorageRoot();
-  fs.writeFileSync(file, JSON.stringify(record, null, 2), { mode: 0o600 });
+  const temporary = `${file}.${randomUUID()}.tmp`;
+  let fd: number | undefined;
   try {
-    fs.chmodSync(file, 0o600);
-  } catch (err) {
-    console.warn('validation storage chmod failed', file, err);
+    fd = fs.openSync(temporary, 'wx', 0o600);
+    fs.writeFileSync(fd, JSON.stringify(record, null, 2));
+    fs.fsyncSync(fd);
+    fs.closeSync(fd);
+    fd = undefined;
+    fs.renameSync(temporary, file);
+    syncDirectory(STORAGE_ROOT);
+  } finally {
+    if (fd !== undefined) fs.closeSync(fd);
+    if (fs.existsSync(temporary)) fs.unlinkSync(temporary);
+  }
+}
+
+export function beginCommitRecord(
+  jobId: string | number,
+  validator: string,
+  update: CommitRecordUpdate,
+  expectedPrevious: StoredCommitRecord | null
+): StoredCommitRecord {
+  ensureStorageRoot();
+  const file = recordPath(jobId, validator);
+  let lock: number;
+  try {
+    lock = fs.openSync(`${file}.lock`, 'wx', 0o600);
+  } catch {
+    throw new Error('VALIDATION_COMMITMENT_RECONCILIATION_REQUIRED');
+  }
+  try {
+    const current = loadCommitRecord(jobId, validator);
+    if (JSON.stringify(current) !== JSON.stringify(expectedPrevious)) {
+      throw new Error('VALIDATION_COMMITMENT_RECONCILIATION_REQUIRED');
+    }
+    if (
+      typeof update.approve !== 'boolean' ||
+      !update.salt ||
+      !update.commitHash ||
+      !update.roundScope
+    ) {
+      throw new Error('VALIDATION_COMMITMENT_RECONCILIATION_REQUIRED');
+    }
+    if (current) {
+      const directory = path.join(STORAGE_ROOT, 'archive');
+      fs.mkdirSync(directory, { recursive: true, mode: 0o700 });
+      syncDirectory(STORAGE_ROOT);
+      const body = JSON.stringify(current, null, 2);
+      const digest = createHash('sha256').update(body).digest('hex');
+      const archived = path.join(directory, `${digest}.json`);
+      let fd: number | undefined;
+      try {
+        fd = fs.openSync(archived, 'wx', 0o600);
+        fs.writeFileSync(fd, body);
+        fs.fsyncSync(fd);
+      } catch (err: any) {
+        if (err.code !== 'EEXIST' || fs.readFileSync(archived, 'utf8') !== body)
+          throw err;
+      } finally {
+        if (fd !== undefined) fs.closeSync(fd);
+      }
+      syncDirectory(directory);
+    }
+    const next = mergeRecords(
+      {
+        jobId: jobId.toString(),
+        validator: validator.toLowerCase(),
+        approve: update.approve,
+        salt: update.salt,
+        commitHash: update.commitHash,
+        committedAt: update.committedAt ?? new Date().toISOString(),
+      },
+      update
+    );
+    writeRecord(file, next);
+    return next;
+  } finally {
+    fs.closeSync(lock);
+    fs.unlinkSync(`${file}.lock`);
   }
 }
 
@@ -126,6 +223,7 @@ function mergeRecords(
   if (typeof update.salt === 'string' && update.salt.length > 0) {
     next.salt = update.salt;
   }
+  if (update.roundScope) next.roundScope = { ...update.roundScope };
   if (typeof update.burnTxHash === 'string') {
     next.burnTxHash = update.burnTxHash;
   }
@@ -172,6 +270,54 @@ function mergeRecords(
 }
 
 export function updateCommitRecord(
+  jobId: string | number,
+  validator: string,
+  update: CommitRecordUpdate,
+  expected?: { commitHash: string; roundScope: CommitRoundScope }
+): StoredCommitRecord {
+  ensureStorageRoot();
+  const file = recordPath(jobId, validator);
+  let lock: number;
+  try {
+    lock = fs.openSync(`${file}.lock`, 'wx', 0o600);
+  } catch {
+    throw new Error('VALIDATION_COMMITMENT_RECONCILIATION_REQUIRED');
+  }
+  try {
+    const current = loadCommitRecord(jobId, validator);
+    if (expected) {
+      if (
+        !current ||
+        current.commitHash !== expected.commitHash ||
+        JSON.stringify(current.roundScope) !==
+          JSON.stringify(expected.roundScope)
+      ) {
+        throw new Error('VALIDATION_COMMITMENT_RECONCILIATION_REQUIRED');
+      }
+    } else if (
+      current?.roundScope &&
+      [
+        'approve',
+        'salt',
+        'burnTxHash',
+        'roundScope',
+        'commitHash',
+        'committedAt',
+        'commitTx',
+        'revealTx',
+        'revealedAt',
+      ].some((key) => Object.prototype.hasOwnProperty.call(update, key))
+    ) {
+      throw new Error('VALIDATION_COMMITMENT_RECONCILIATION_REQUIRED');
+    }
+    return mergeCommitRecord(jobId, validator, update);
+  } finally {
+    fs.closeSync(lock);
+    fs.unlinkSync(`${file}.lock`);
+  }
+}
+
+function mergeCommitRecord(
   jobId: string | number,
   validator: string,
   update: CommitRecordUpdate
