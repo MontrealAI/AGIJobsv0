@@ -3,19 +3,13 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { z } from "zod";
 
-import { crossVerifyMetrics } from "./run-phase8-demo";
+import { crossVerifyMetrics, parseManifest } from "./run-phase8-demo";
 
 const ROOT = join(__dirname, "..", "config", "universal.value.manifest.json");
 const HTML = join(__dirname, "..", "index.html");
 const README = join(__dirname, "..", "README.md");
 const OUTPUT_DIR = join(__dirname, "..", "output");
-const SCORECARD = join(OUTPUT_DIR, "phase8-dominance-scorecard.json");
-const DIRECTIVES = join(OUTPUT_DIR, "phase8-governance-directives.md");
-const CHECKLIST = join(OUTPUT_DIR, "phase8-governance-checklist.md");
-const EMERGENCY = join(OUTPUT_DIR, "phase8-emergency-overrides.json");
-const CALLDATA_MANIFEST = join(OUTPUT_DIR, "phase8-governance-calldata.json");
-const GUARDIAN_PLAYBOOK = join(OUTPUT_DIR, "phase8-guardian-response-playbook.md");
-const AI_TEAM_MATRIX = join(OUTPUT_DIR, "phase8-ai-team-matrix.json");
+
 
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 const SEVERITY_WEIGHTS: Record<string, number> = { critical: 1, high: 0.75, medium: 0.5, low: 0.25 };
@@ -353,9 +347,18 @@ const configSchema = z.object({
   governance: governanceSchema.optional(),
 }).passthrough();
 
-function main() {
-  const configRaw = JSON.parse(readFileSync(ROOT, "utf-8"));
-  const config = configSchema.parse(configRaw);
+export function validateArtifacts(configRaw: unknown = JSON.parse(readFileSync(ROOT, "utf-8")), outputDir = OUTPUT_DIR) {
+  const SCORECARD = join(outputDir, "phase8-dominance-scorecard.json");
+  const DIRECTIVES = join(outputDir, "phase8-governance-directives.md");
+  const CHECKLIST = join(outputDir, "phase8-governance-checklist.md");
+  const EMERGENCY = join(outputDir, "phase8-emergency-overrides.json");
+  const CALLDATA_MANIFEST = join(outputDir, "phase8-governance-calldata.json");
+  const GUARDIAN_PLAYBOOK = join(outputDir, "phase8-guardian-response-playbook.md");
+  const AI_TEAM_MATRIX = join(outputDir, "phase8-ai-team-matrix.json");
+  const config = configSchema.parse(parseManifest(configRaw));
+  const activeDomains = config.domains.filter((entry) => entry.active);
+  const activeSentinels = config.sentinels.filter((entry) => entry.active);
+  const activeStreams = config.capitalStreams.filter((entry) => entry.active);
   const { metrics: telemetryMetrics, crossCheck } = crossVerifyMetrics(config);
 
   if (config.global.phase8Manager === ZERO_ADDRESS) {
@@ -374,25 +377,26 @@ function main() {
   const sentinelSlugs = new Set<string>();
   const sentinelDomains = new Set<string>();
   const domainCoverage = new Map<string, number>();
-  const domainList = config.domains.map((domain) => domain.slug.toLowerCase());
+  const domainList = activeDomains.map((domain) => domain.slug.toLowerCase());
   for (const sentinel of config.sentinels) {
     const slug = sentinel.slug.toLowerCase();
     if (sentinelSlugs.has(slug)) {
       throw new Error(`Duplicate sentinel slug detected: ${slug}`);
     }
     sentinelSlugs.add(slug);
-    const sentinelDomainSlugs = (sentinel.domains ?? []).map((domain) => domain.toLowerCase());
+    const sentinelDomainSlugs = [...new Set((sentinel.domains ?? []).map((domain) => domain.toLowerCase()))];
     const targets = sentinelDomainSlugs.length > 0 ? sentinelDomainSlugs : domainList;
     for (const domain of targets) {
       if (!slugs.has(domain)) {
         throw new Error(`Sentinel ${sentinel.slug} references unknown domain ${domain}`);
       }
+      if (!sentinel.active || !domainList.includes(domain)) continue;
       sentinelDomains.add(domain);
       domainCoverage.set(domain, (domainCoverage.get(domain) ?? 0) + sentinel.coverageSeconds);
     }
   }
 
-  const uncoveredDomains = config.domains.filter((domain) => !sentinelDomains.has(domain.slug.toLowerCase()));
+  const uncoveredDomains = activeDomains.filter((domain) => !sentinelDomains.has(domain.slug.toLowerCase()));
   if (uncoveredDomains.length > 0) {
     const list = uncoveredDomains.map((domain) => domain.slug).join(", ");
     throw new Error(`All domains require sentinel coverage — missing: ${list}`);
@@ -450,17 +454,17 @@ function main() {
   }
 
   const streamCoverage = new Map<string, number>();
-  for (const stream of config.capitalStreams) {
+  for (const stream of activeStreams) {
     const budget = Number(stream.annualBudget ?? 0);
     if (!Number.isFinite(budget) || budget <= 0) continue;
     const targets = (stream.domains ?? []).map((domain) => domain.toLowerCase());
-    const normalizedTargets = [...new Set(targets.length > 0 ? targets : Array.from(slugs.values()))].sort();
+    const normalizedTargets = [...new Set(targets.length > 0 ? targets.filter((domain) => domainList.includes(domain)) : domainList)].sort();
     for (const domain of normalizedTargets) {
       if (!slugs.has(domain)) continue;
       streamCoverage.set(domain, (streamCoverage.get(domain) ?? 0) + Math.floor(budget / normalizedTargets.length) + (normalizedTargets.indexOf(domain) < budget % normalizedTargets.length ? 1 : 0));
     }
   }
-  const unfunded = Array.from(slugs.values()).filter((slug) => (streamCoverage.get(slug) ?? 0) <= 0);
+  const unfunded = domainList.filter((slug) => (streamCoverage.get(slug) ?? 0) <= 0);
   if (unfunded.length > 0) {
     throw new Error(`All domains require capital stream funding — missing: ${unfunded.join(", ")}`);
   }
@@ -485,6 +489,7 @@ function main() {
       if (!slugs.has(domain)) {
         throw new Error(`Guardian protocol ${protocol.scenario} references unknown domain ${domain}`);
       }
+      if (!domainList.includes(domain)) continue;
       protocolCoverage.set(domain, (protocolCoverage.get(domain) ?? 0) + 1);
     }
 
@@ -500,8 +505,8 @@ function main() {
   const protocolSeverityScore = config.guardianProtocols.length === 0 ? 0 : protocolSeverityTotal / config.guardianProtocols.length;
   const protocolSeverityLevel = severityDescriptor(protocolSeverityScore);
 
-  const sentinelCoverage = config.sentinels.reduce((acc, s) => acc + s.coverageSeconds, 0);
-  if (sentinelCoverage < config.global.guardianReviewWindow) {
+  const sentinelCoverage = activeSentinels.reduce((acc, s) => acc + s.coverageSeconds, 0);
+  if (activeDomains.length > 0 && sentinelCoverage < config.global.guardianReviewWindow) {
     throw new Error(
       `Sentinel coverage ${sentinelCoverage}s must exceed guardian review window ${config.global.guardianReviewWindow}s`,
     );
@@ -509,7 +514,7 @@ function main() {
 
   const guardianWindow = config.global.guardianReviewWindow;
   if (guardianWindow > 0) {
-    if (domainList.length !== config.domains.length) {
+    if (domainList.length !== activeDomains.length) {
       // Defer to slug validation errors before enforcing coverage-specific diagnostics.
       return;
     }
@@ -553,7 +558,7 @@ function main() {
     throw new Error("Guardian protocol severity mismatch against cross-verified metrics.");
   }
 
-  if (telemetryMetrics.minimumCoverageAdequacy < 1) {
+  if (activeDomains.length > 0 && telemetryMetrics.minimumCoverageAdequacy < 1) {
     throw new Error("Telemetry metrics indicate guardian coverage adequacy below 100%.");
   }
 
@@ -676,15 +681,15 @@ function main() {
   const approxEqual = (a: number, b: number, tolerance = 1e-6) => Math.abs(a - b) <= tolerance;
 
   const computeDominanceScore = () => {
-    const totalMonthlyUSD = config.domains.reduce((acc, domain) => acc + Number(domain.valueFlowMonthlyUSD ?? 0), 0);
+    const totalMonthlyUSD = activeDomains.reduce((acc, domain) => acc + Number(domain.valueFlowMonthlyUSD ?? 0), 0);
     const averageResilience =
-      config.domains.reduce((acc, domain) => acc + Number(domain.resilienceIndex ?? 0), 0) /
-      Math.max(1, config.domains.length);
-    const coverageRatio = sentinelDomains.size / Math.max(1, config.domains.length);
+      activeDomains.reduce((acc, domain) => acc + Number(domain.resilienceIndex ?? 0), 0) /
+      Math.max(1, activeDomains.length);
+    const coverageRatio = sentinelDomains.size / Math.max(1, activeDomains.length);
     const averageDomainCoverage =
       Array.from(domainCoverage.values()).reduce((acc, value) => acc + value, 0) /
-      Math.max(1, domainCoverage.size || config.domains.length);
-    const maxDomainAutonomy = Math.max(...config.domains.map((domain) => domain.autonomyLevelBps));
+      Math.max(1, domainCoverage.size || activeDomains.length);
+    const maxDomainAutonomy = Math.max(0, ...activeDomains.map((domain) => domain.autonomyLevelBps));
 
     const cadenceSeconds = config.selfImprovement.plan.cadenceSeconds;
     const valueScore = totalMonthlyUSD <= 0 ? 0 : Math.min(1, totalMonthlyUSD / 500_000_000_000);
@@ -709,18 +714,18 @@ function main() {
     return Math.min(100, Math.round(weighted * 1000) / 10);
   };
 
-  const expectedMonthlyValue = config.domains.reduce((acc, domain) => acc + domain.valueFlowMonthlyUSD, 0);
+  const expectedMonthlyValue = activeDomains.reduce((acc, domain) => acc + domain.valueFlowMonthlyUSD, 0);
   if (!approxEqual(Number(scorecardRaw.metrics.monthlyValueUSD ?? 0), expectedMonthlyValue, 1)) {
     throw new Error("Dominance scorecard monthly value mismatch with manifest.");
   }
 
-  const expectedAnnualBudget = config.capitalStreams.reduce((acc, stream) => acc + stream.annualBudget, 0);
+  const expectedAnnualBudget = activeStreams.reduce((acc, stream) => acc + stream.annualBudget, 0);
   if (!approxEqual(Number(scorecardRaw.metrics.annualBudgetUSD ?? 0), expectedAnnualBudget, 1)) {
     throw new Error("Dominance scorecard annual budget mismatch with manifest.");
   }
 
   const expectedAverageResilience =
-    config.domains.reduce((acc, domain) => acc + domain.resilienceIndex, 0) / Math.max(1, config.domains.length);
+    activeDomains.reduce((acc, domain) => acc + domain.resilienceIndex, 0) / Math.max(1, activeDomains.length);
   if (!approxEqual(Number(scorecardRaw.metrics.averageResilience ?? 0), expectedAverageResilience, 1e-3)) {
     throw new Error("Dominance scorecard average resilience mismatch with manifest.");
   }
@@ -730,13 +735,13 @@ function main() {
     throw new Error("Dominance scorecard sentinel coverage minutes mismatch with manifest.");
   }
 
-  const expectedCoverageRatioPercent = Math.round((sentinelDomains.size / Math.max(1, config.domains.length)) * 100);
+  const expectedCoverageRatioPercent = Math.round((sentinelDomains.size / Math.max(1, activeDomains.length)) * 100);
   if (!approxEqual(Number(scorecardRaw.metrics.coverageRatioPercent ?? 0), expectedCoverageRatioPercent, 0.5)) {
     throw new Error("Dominance scorecard coverage ratio percent mismatch with manifest.");
   }
 
   const expectedFundedRatioPercent = Math.round(
-    (Array.from(streamCoverage.entries()).filter(([, budget]) => budget > 0).length / Math.max(1, config.domains.length)) *
+    (Array.from(streamCoverage.entries()).filter(([, budget]) => budget > 0).length / Math.max(1, activeDomains.length)) *
       100,
   );
   if (!approxEqual(Number(scorecardRaw.metrics.fundedDomainRatioPercent ?? 0), expectedFundedRatioPercent, 0.5)) {
@@ -759,7 +764,7 @@ function main() {
     throw new Error("Dominance scorecard guardian protocol severity level mismatch with manifest.");
   }
 
-  const expectedMaxAutonomy = Math.max(...config.domains.map((domain) => domain.autonomyLevelBps));
+  const expectedMaxAutonomy = Math.max(0, ...activeDomains.map((domain) => domain.autonomyLevelBps));
   if (!approxEqual(Number(scorecardRaw.metrics.maxAutonomyBps ?? 0), expectedMaxAutonomy, 1e-6)) {
     throw new Error("Dominance scorecard maximum autonomy mismatch with manifest.");
   }
@@ -809,11 +814,12 @@ function main() {
   const streamLookup = new Map(config.capitalStreams.map((stream) => [stream.slug.toLowerCase(), stream]));
 
   const sentinelNamesByDomain = new Map<string, string[]>();
-  for (const sentinel of config.sentinels) {
+  for (const sentinel of activeSentinels) {
     const domains = sentinel.domains ?? [];
     const targets = domains.length > 0 ? domains : domainList;
     for (const domain of targets) {
       const key = domain.toLowerCase();
+      if (!domainList.includes(key)) continue;
       if (!sentinelNamesByDomain.has(key)) {
         sentinelNamesByDomain.set(key, []);
       }
@@ -822,9 +828,9 @@ function main() {
   }
 
   const capitalSupportByDomain = new Map<string, number>();
-  for (const stream of config.capitalStreams) {
+  for (const stream of activeStreams) {
     const targets = (stream.domains ?? []).map((domain) => domain.toLowerCase());
-    const effectiveTargets = [...new Set(targets.length > 0 ? targets : domainList)].sort();
+    const effectiveTargets = [...new Set(targets.length > 0 ? targets.filter((domain) => domainList.includes(domain)) : domainList)].sort();
     for (const domain of effectiveTargets) {
       if (!capitalSupportByDomain.has(domain)) {
         capitalSupportByDomain.set(domain, 0);
@@ -882,11 +888,11 @@ function main() {
       throw new Error(`Dominance scorecard capital support mismatch for domain ${manifestDomain.slug}`);
     }
 
-    const expectedStreamNames = config.capitalStreams
+    const expectedStreamNames = activeStreams
       .filter((stream) => {
         const targets = (stream.domains ?? []).map((domain) => domain.toLowerCase());
         const normalizedTargets = targets.length > 0 ? targets : domainList;
-        return normalizedTargets.includes(manifestDomain.slug.toLowerCase());
+        return manifestDomain.active && normalizedTargets.includes(manifestDomain.slug.toLowerCase());
       })
       .map((stream) => stream.name);
     if (!ensureSameStrings(scorecardDomain.capitalStreams ?? [], expectedStreamNames)) {
@@ -1156,7 +1162,7 @@ function main() {
     }
   }
 
-  const maxDomainAutonomy = Math.max(...config.domains.map((d) => d.autonomyLevelBps));
+  const maxDomainAutonomy = Math.max(0, ...activeDomains.map((d) => d.autonomyLevelBps));
   if (maxDomainAutonomy > config.selfImprovement.autonomyGuards.maxAutonomyBps) {
     throw new Error("Domain autonomy exceeds guardrail maximum");
   }
@@ -1190,4 +1196,4 @@ function main() {
   }
 }
 
-main();
+if (require.main === module) validateArtifacts();

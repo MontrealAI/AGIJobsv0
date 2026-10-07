@@ -1099,11 +1099,13 @@ function capitalCoverageMap(streams: CapitalStreamRecord[], domainSlugs: string[
 
 function sentinelNameMap(config: Phase8Config): Map<string, string[]> {
   const map = new Map<string, string[]>();
+  const activeSlugs = (config.domains ?? []).filter((domain) => domain.active !== false).map((domain) => domain.slug.toLowerCase());
   for (const sentinel of config.sentinels ?? []) {
+    if (sentinel.active === false) continue;
     const label = sentinel.name ?? sentinel.slug ?? "sentinel";
-    for (const domain of sentinel.domains ?? []) {
+    for (const domain of (sentinel.domains ?? []).length > 0 ? sentinel.domains : activeSlugs) {
       const slug = String(domain || "").toLowerCase();
-      if (!slug) continue;
+      if (!activeSlugs.includes(slug)) continue;
       const entries = map.get(slug) ?? [];
       if (!entries.includes(label)) {
         entries.push(label);
@@ -1116,11 +1118,13 @@ function sentinelNameMap(config: Phase8Config): Map<string, string[]> {
 
 function streamNameMap(config: Phase8Config): Map<string, string[]> {
   const map = new Map<string, string[]>();
+  const activeSlugs = (config.domains ?? []).filter((domain) => domain.active !== false).map((domain) => domain.slug.toLowerCase());
   for (const stream of config.capitalStreams ?? []) {
+    if (stream.active === false) continue;
     const label = stream.name ?? stream.slug ?? "stream";
-    for (const domain of stream.domains ?? []) {
+    for (const domain of (stream.domains ?? []).length > 0 ? stream.domains : activeSlugs) {
       const slug = String(domain || "").toLowerCase();
-      if (!slug) continue;
+      if (!activeSlugs.includes(slug)) continue;
       const entries = map.get(slug) ?? [];
       if (!entries.includes(label)) {
         entries.push(label);
@@ -1355,7 +1359,7 @@ export function computeMetrics(config: Phase8Config) {
   aiTeams.forEach((team) => {
     (team.domains ?? []).forEach((domain) => {
       const normalized = String(domain ?? "").toLowerCase();
-      if (normalized) {
+      if (domainSlugSet.has(normalized)) {
         aiTeamDomainSet.add(normalized);
       }
     });
@@ -1579,7 +1583,7 @@ export function crossVerifyMetrics(config: Phase8Config, overrides: MetricTolera
                     .filter((entry) => domainSet.has(entry)),
                 ),
               );
-              const targets = declared.length > 0 ? declared : domainSlugs;
+              const targets = (protocol.linkedDomains ?? []).length > 0 ? declared : domainSlugs;
               for (const target of targets) {
                 coverageSet.add(target);
               }

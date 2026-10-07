@@ -5,7 +5,14 @@ import {
   loadConfig,
   parseManifest,
   resolveEnvironment,
+  writeArtifacts,
+  calldata,
 } from '../run-phase8-demo';
+import { validateArtifacts } from '../validate-phase8-config';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
 describe('Phase 8 accounting and numerical boundaries', () => {
   it('conserves the total shared capital instead of assigning each domain the entire stream', () => {
     const config = loadConfig();
@@ -93,4 +100,23 @@ describe('Phase 8 accounting and numerical boundaries', () => {
       resolveEnvironment({ PHASE8_CHAIN_ID: '9007199254740992' })
     ).toThrow();
   });
+});
+
+it('validates generated artifacts after disabling a domain, its sentinel, and a capital stream', () => {
+  const config = loadConfig();
+  config.domains.find((entry) => entry.slug === 'health-sovereign')!.active = false;
+  config.sentinels.find((entry) => entry.slug === 'bio-sentinel')!.active = false;
+  config.capitalStreams.find((entry) => entry.slug === 'innovation-thrust')!.active = false;
+  // An AI team covering only an inactive domain contributes no active coverage.
+  config.aiTeams = [{ ...config.aiTeams[0], domains: ['health-sovereign'] }];
+  const parsed = parseManifest(config);
+  const { metrics } = crossVerifyMetrics(parsed);
+  expect(metrics.aiTeamCoverageRatio).toBe(0);
+  const outputDir = mkdtempSync(join(tmpdir(), 'phase8-disabled-'));
+  try {
+    writeArtifacts(parsed, metrics, calldata(parsed), resolveEnvironment({ PHASE8_MANAGER_ADDRESS: parsed.global.phase8Manager }), { outputDir });
+    expect(() => validateArtifacts(parsed, outputDir)).not.toThrow();
+  } finally {
+    rmSync(outputDir, { recursive: true, force: true });
+  }
 });

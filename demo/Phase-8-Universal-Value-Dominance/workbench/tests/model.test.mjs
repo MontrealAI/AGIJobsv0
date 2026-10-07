@@ -95,3 +95,35 @@ test('separate Python arithmetic checker rejects corruption even after hashes ar
     fs.rmSync(dir, { recursive: true, force: true });
   }
 });
+test('checker rejects every corrupted accounting field even with coherent hashes and embedded scenarios', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'phase8-complete-check-'));
+  const verify = () => spawnSync(process.env.PYTHON_BIN || 'python3', [path.join(root, 'verify.py'), dir], { encoding: 'utf8' });
+  try {
+    run(dir);
+    const original = JSON.parse(fs.readFileSync(path.join(dir, 'plan.json')));
+    const orders = JSON.parse(fs.readFileSync(path.join(dir, 'work-orders.json')));
+    const receipt = JSON.parse(fs.readFileSync(path.join(dir, 'receipt.json')));
+    for (const key of Object.keys(original).filter((key) => key !== 'settings')) {
+      const corrupt = structuredClone(original);
+      const value = corrupt[key];
+      corrupt[key] = typeof value === 'number' ? value + 1 : typeof value === 'boolean' ? !value : typeof value === 'string' ? value + '-corrupted' : Array.isArray(value) ? ['corrupted'] : { ...value, workers: value.workers + 1 };
+      fs.writeFileSync(path.join(dir, 'plan.json'), JSON.stringify(corrupt));
+      fs.writeFileSync(path.join(dir, 'work-orders.json'), JSON.stringify(orders.map((order) => ({ ...order, scenario: corrupt }))));
+      for (const item of receipt.artifacts) item.sha256 = createHash('sha256').update(fs.readFileSync(path.join(dir, item.name))).digest('hex');
+      fs.writeFileSync(path.join(dir, 'receipt.json'), JSON.stringify(receipt));
+      const result = verify();
+      assert.notEqual(result.status, 0, key);
+      assert.match(result.stderr, /arithmetic mismatch/, key);
+    }
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});
+test('checker agrees on zero acceptance, zero admission, fractional review and tied capacity', () => {
+  for (const settings of [{ acceptancePercent: 0 }, { budgetUSDC: 0 }, { reviewMinutes: 7, offers: 11 }, { offers: 80, budgetUSDC: 44000 }]) {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'phase8-boundary-check-'));
+    try {
+      run(dir, settings);
+      const result = spawnSync(process.env.PYTHON_BIN || 'python3', [path.join(root, 'verify.py'), dir], { encoding: 'utf8' });
+      assert.equal(result.status, 0, result.stderr);
+    } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+  }
+});
