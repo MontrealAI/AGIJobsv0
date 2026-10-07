@@ -421,8 +421,16 @@ describe('ValidationModule V2', function () {
         validationModule: (await validation.getAddress()).toLowerCase(),
         validator: v1.address.toLowerCase(),
       };
+      const selected = (
+        await validation.queryFilter(validation.filters.ValidatorsSelected(1))
+      ).at(-1);
       const record = {
-        version: 1,
+        version: 2,
+        selection: {
+          blockNumber: selected.blockNumber,
+          blockHash: selected.blockHash,
+          logIndex: selected.index,
+        },
         scope,
         jobId: '1',
         nonce: String(await validation.jobNonce(1)),
@@ -451,7 +459,8 @@ describe('ValidationModule V2', function () {
         );
       const recovered = new RevealJournal(directory, scope).load(
         '1',
-        record.nonce
+        record.nonce,
+        record.selection
       );
       await advance(61);
       await expect(

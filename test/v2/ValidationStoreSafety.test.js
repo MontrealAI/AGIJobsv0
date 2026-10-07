@@ -17,6 +17,42 @@ describe('Validator storage trust boundaries', () => {
   afterEach(() => fixture.cleanup());
   const recordFile = () => path.join(fixture.root, `1-${validator}.json`);
 
+  it('provisions the default storage privately from a standard checkout', () => {
+    const checkout = path.join(fixture.directory, 'checkout');
+    const gateway = path.join(checkout, 'agent-gateway');
+    fs.mkdirSync(checkout, { mode: 0o755 });
+    fs.mkdirSync(gateway, { mode: 0o755 });
+    fs.mkdirSync(path.join(checkout, 'storage'), { mode: 0o755 });
+    const { transpileModule, ModuleKind } = require('typescript');
+    const source = fs.readFileSync(
+      path.resolve(__dirname, '../../agent-gateway/validationStore.ts'),
+      'utf8'
+    );
+    const copy = path.join(gateway, 'validationStore.js');
+    fs.writeFileSync(
+      copy,
+      transpileModule(source, {
+        compilerOptions: { module: ModuleKind.CommonJS, esModuleInterop: true },
+      }).outputText
+    );
+    const prior = process.env.VALIDATION_STORAGE_DIR;
+    try {
+      delete process.env.VALIDATION_STORAGE_DIR;
+      const store = require(copy);
+      const record = store.updateCommitRecord('1', validator, update);
+      const root = path.join(checkout, 'storage/validation');
+      expect(fs.statSync(root).mode & 0o777).to.equal(0o700);
+      expect(
+        fs.statSync(path.join(root, `1-${validator}.json`)).mode & 0o777
+      ).to.equal(0o600);
+      expect(store.loadCommitRecord('1', validator)).to.deep.equal(record);
+    } finally {
+      delete require.cache[copy];
+      if (prior === undefined) delete process.env.VALIDATION_STORAGE_DIR;
+      else process.env.VALIDATION_STORAGE_DIR = prior;
+    }
+  });
+
   it('preserves canonical filenames and arbitrary bounded JSON as inert data', () => {
     const metadata = {
       nested: {
