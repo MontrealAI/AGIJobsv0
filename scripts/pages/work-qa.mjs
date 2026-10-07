@@ -62,6 +62,72 @@ export async function verifyWorkPlanner({
       assert.deepEqual(JSON.parse(bytes), proposal.task);
     else assert.match(bytes, /DRAFT\. Owner admission/);
   }
+  // Changing category must not destroy a buyer's custom objective.
+  const customGoal = await page
+    .getByLabel('Objective', { exact: true })
+    .inputValue();
+  await page
+    .getByLabel('Work category', { exact: true })
+    .selectOption('feature');
+  assert.equal(
+    await page.getByLabel('Objective', { exact: true }).inputValue(),
+    customGoal
+  );
+  assert.equal(
+    await page.locator('[data-work-download="task"]').isDisabled(),
+    true
+  );
+
+  const waitForSaved = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Save editable draft' }).click();
+  const saved = await waitForSaved;
+  assert.equal(saved.suggestedFilename(), 'work-draft.json');
+  const savedPath = await saved.path();
+  const fields = JSON.parse(fs.readFileSync(savedPath, 'utf8')).fields;
+  await page.reload({ waitUntil: 'networkidle' });
+  assert.equal(await page.getByLabel('Approved source URLs').inputValue(), '');
+  await page.getByLabel('Open saved editable draft').setInputFiles(savedPath);
+  await page.getByText('Editable draft opened.', { exact: false }).waitFor();
+  for (const [name, value] of Object.entries(fields))
+    assert.equal(
+      await page.locator(`#work-planner [name="${name}"]`).inputValue(),
+      value
+    );
+  assert.equal(
+    await page.locator('[data-work-download="task"]').isDisabled(),
+    true
+  );
+  assert.equal(await page.locator('#work-preview').isVisible(), false);
+  assert.equal(await page.locator('#work-goal img').count(), 0);
+  await page.getByRole('button', { name: 'Build work order' }).click();
+  const reopened = JSON.parse(await page.locator('#work-json').textContent());
+  assert.equal(reopened.task.goal, customGoal);
+  assert.ok(
+    Object.values(reopened.authorization).every((value) => value === false)
+  );
+  await page.getByLabel('Open saved editable draft').setInputFiles({
+    name: 'invalid.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from('{'),
+  });
+  await page
+    .getByText('This file is not valid JSON.', { exact: false })
+    .waitFor();
+  assert.equal(
+    await page.getByLabel('Objective', { exact: true }).inputValue(),
+    customGoal
+  );
+  await page
+    .getByRole('button', { name: "Use category's suggested objective" })
+    .click();
+  assert.notEqual(
+    await page.getByLabel('Objective', { exact: true }).inputValue(),
+    customGoal
+  );
+  assert.equal(
+    await page.locator('[data-work-download="task"]').isDisabled(),
+    true
+  );
   await page
     .getByLabel('Approved source URLs')
     .fill('https://user:secret@example.org');
@@ -132,6 +198,6 @@ export async function verifyWorkPlanner({
     await fallback.close();
   }
   checks.push(
-    'work planner: all ten categories, exact money, schema downloads, stale-draft invalidation, injection, keyboard, mobile, accessibility and no-JavaScript guidance'
+    'work planner: all ten categories, exact money, schema downloads, editable-draft round trip, preserved custom objectives, invalid imports, stale-draft invalidation, injection, keyboard, mobile, accessibility and no-JavaScript guidance'
   );
 }

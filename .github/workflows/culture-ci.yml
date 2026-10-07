@@ -304,8 +304,6 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Start isolated local fixture stack
         working-directory: demo/CULTURE-v0
-        env:
-          COMPOSE_PROJECT_NAME: culture-ci
         run: node scripts/run-local-stack.mjs
       - name: Verify live service health and indexed seed artifacts
         working-directory: demo/CULTURE-v0
@@ -318,17 +316,8 @@ jobs:
       - name: Capture stack logs on failure
         if: failure()
         working-directory: demo/CULTURE-v0
-        env:
-          COMPOSE_PROJECT_NAME: culture-ci
-          CULTURE_ENV_FILE: .env.local
-        run: |
-          docker compose --env-file .env.local logs --no-color
-          for CONTAINER in $(docker compose --env-file .env.local ps --all --quiet); do
-            docker inspect --format '{{.Name}} {{json .State.Health}}' "$CONTAINER"
-          done
+        run: node scripts/run-local-stack.mjs --logs
       - name: Shutdown stack
         if: always()
         working-directory: demo/CULTURE-v0
-        env:
-          COMPOSE_PROJECT_NAME: culture-ci
         run: node scripts/run-local-stack.mjs --down

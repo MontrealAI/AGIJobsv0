@@ -147,6 +147,86 @@ export const workTypes = [
   },
 ];
 
+export const savedDraftMaxBytes = 100_000;
+const draftFields = {
+  type: 32,
+  runtime: 16,
+  workerProfile: 64,
+  goal: 2000,
+  scope: 2000,
+  sources: 12_000,
+  dataClass: 16,
+  reward: 20,
+  runMinutes: 4,
+  reviewerMinutes: 3,
+};
+
+function editableFields(input) {
+  if (!input || typeof input !== 'object' || Array.isArray(input))
+    throw new Error('Saved draft must contain planner fields.');
+  if (Object.keys(input).some((key) => !Object.hasOwn(draftFields, key)))
+    throw new Error('Saved draft contains unsupported fields.');
+  const fields = {};
+  for (const [key, max] of Object.entries(draftFields)) {
+    const value = input[key];
+    if (
+      typeof value !== 'string' ||
+      value.length > max ||
+      /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/.test(value) ||
+      (!['goal', 'scope', 'sources'].includes(key) && /[\r\n]/.test(value)) ||
+      (['runMinutes', 'reviewerMinutes'].includes(key) &&
+        value !== '' &&
+        !/^\d+$/.test(value))
+    )
+      throw new Error(`Saved draft has an invalid ${key} field.`);
+    fields[key] = value;
+  }
+  if (
+    !workTypes.some((type) => type.id === fields.type) ||
+    !['openclaw', 'work'].includes(fields.runtime) ||
+    !['public', 'licensed', 'synthetic'].includes(fields.dataClass)
+  )
+    throw new Error(
+      'Saved draft has an unsupported category, route or input class.'
+    );
+  return fields;
+}
+
+export function saveEditableDraft(input) {
+  return (
+    JSON.stringify(
+      { schema: 'agi-jobs-work-draft/v1', fields: editableFields(input) },
+      null,
+      2
+    ) + '\n'
+  );
+}
+
+export function openEditableDraft(text) {
+  if (
+    typeof text !== 'string' ||
+    new TextEncoder().encode(text).length > savedDraftMaxBytes
+  )
+    throw new Error('Choose a saved work draft smaller than 100 KB.');
+  let saved;
+  try {
+    saved = JSON.parse(text);
+  } catch {
+    throw new Error(
+      'This file is not valid JSON. Choose a saved editable work draft.'
+    );
+  }
+  if (
+    !saved ||
+    saved.schema !== 'agi-jobs-work-draft/v1' ||
+    Object.keys(saved).some((key) => !['schema', 'fields'].includes(key))
+  )
+    throw new Error(
+      'Choose an editable work draft, not a task, proposal or execution receipt.'
+    );
+  return editableFields(saved.fields);
+}
+
 export function usdcUnits(value) {
   if (
     typeof value !== 'string' ||
