@@ -9,7 +9,7 @@ import {
   calldata,
 } from '../run-phase8-demo';
 import { validateArtifacts } from '../validate-phase8-config';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -116,6 +116,16 @@ it('validates generated artifacts after disabling a domain, its sentinel, and a 
   try {
     writeArtifacts(parsed, metrics, calldata(parsed), resolveEnvironment({ PHASE8_MANAGER_ADDRESS: parsed.global.phase8Manager }), { outputDir });
     expect(() => validateArtifacts(parsed, outputDir)).not.toThrow();
+    const scorecard = JSON.parse(readFileSync(join(outputDir, 'phase8-dominance-scorecard.json'), 'utf8'));
+    expect(scorecard.activityPolicy).toContain('active entities only');
+    for (const [key, field, expected] of [
+      ['domains', 'valueFlowMonthlyUSD', metrics.totalMonthlyUSD],
+      ['sentinels', 'coverageSeconds', metrics.guardianCoverageMinutes * 60],
+      ['capitalStreams', 'annualBudgetUSD', metrics.annualBudget],
+    ] as const) {
+      expect(scorecard[key].some((entry: any) => entry.active === false)).toBe(true);
+      expect(scorecard[key].filter((entry: any) => entry.active).reduce((sum: number, entry: any) => sum + entry[field], 0)).toBe(expected);
+    }
   } finally {
     rmSync(outputDir, { recursive: true, force: true });
   }

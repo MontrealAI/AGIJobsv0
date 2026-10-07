@@ -849,6 +849,10 @@ export function validateArtifacts(configRaw: unknown = JSON.parse(readFileSync(R
       throw new Error(`Dominance scorecard references unknown domain ${scorecardDomain.slug}`);
     }
 
+    if (scorecardDomain.active !== manifestDomain.active) {
+      throw new Error(`Dominance scorecard active flag mismatch for ${manifestDomain.slug}`);
+    }
+
     if (scorecardDomain.name !== manifestDomain.name) {
       throw new Error(`Dominance scorecard name mismatch for domain ${manifestDomain.slug}`);
     }
@@ -909,6 +913,10 @@ export function validateArtifacts(configRaw: unknown = JSON.parse(readFileSync(R
     if (!manifestSentinel) {
       throw new Error(`Dominance scorecard references unknown sentinel ${scorecardSentinel.slug}`);
     }
+    if (scorecardSentinel.active !== manifestSentinel.active) {
+      throw new Error(`Dominance scorecard active flag mismatch for ${manifestSentinel.slug}`);
+    }
+
     if (scorecardSentinel.name !== manifestSentinel.name) {
       throw new Error(`Dominance scorecard name mismatch for sentinel ${manifestSentinel.slug}`);
     }
@@ -932,6 +940,10 @@ export function validateArtifacts(configRaw: unknown = JSON.parse(readFileSync(R
     if (!manifestStream) {
       throw new Error(`Dominance scorecard references unknown capital stream ${scorecardStream.slug}`);
     }
+    if (scorecardStream.active !== manifestStream.active) {
+      throw new Error(`Dominance scorecard active flag mismatch for ${manifestStream.slug}`);
+    }
+
     if (scorecardStream.name !== manifestStream.name) {
       throw new Error(`Dominance scorecard name mismatch for capital stream ${manifestStream.slug}`);
     }

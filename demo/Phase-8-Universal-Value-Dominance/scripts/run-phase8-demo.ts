@@ -2821,6 +2821,7 @@ function generateDominanceScorecard(
   const streamLabels = streamNameMap(config);
   return {
     generatedAt,
+    activityPolicy: "Headline metrics and allocated funding count active entities only. Detailed entries retain configured values; active=false entries contribute no active capacity.",
     chain: {
       id: environment.chainId,
       manager: environment.managerAddress,
@@ -2862,6 +2863,7 @@ function generateDominanceScorecard(
       const slug = String(domain.slug ?? "").toLowerCase();
       return {
         slug,
+        active: domain.active !== false,
         name: domain.name,
         autonomyLevelBps: domain.autonomyLevelBps,
         resilienceIndex: Number(domain.resilienceIndex ?? 0),
@@ -2876,6 +2878,7 @@ function generateDominanceScorecard(
     }),
     sentinels: (config.sentinels ?? []).map((sentinel) => ({
       slug: sentinel.slug,
+      active: sentinel.active !== false,
       name: sentinel.name,
       coverageSeconds: Number(sentinel.coverageSeconds ?? 0),
       sensitivityBps: Number(sentinel.sensitivityBps ?? 0),
@@ -2883,6 +2886,7 @@ function generateDominanceScorecard(
     })),
     capitalStreams: (config.capitalStreams ?? []).map((stream) => ({
       slug: stream.slug,
+      active: stream.active !== false,
       name: stream.name,
       annualBudgetUSD: Number(stream.annualBudget ?? 0),
       expansionBps: Number(stream.expansionBps ?? 0),

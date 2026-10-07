@@ -2,7 +2,8 @@
   "evidenceClass": "synthetic-governance-rehearsal",
   "productionApproved": false,
   "settlementApproved": false,
-  "generatedAt": "2026-10-07T15:24:20.507Z",
+  "generatedAt": "2026-10-07T15:42:16.316Z",
+  "activityPolicy": "Headline metrics and allocated funding count active entities only. Detailed entries retain configured values; active=false entries contribute no active capacity.",
   "chain": {
     "id": 31337,
     "manager": "0xfa12b3c4d5e6f7890abcdeffedcba98765432109"
@@ -43,6 +44,7 @@
   "domains": [
     {
       "slug": "planetary-finance",
+      "active": true,
       "name": "Planetary Finance Mesh",
       "autonomyLevelBps": 7800,
       "resilienceIndex": 0.96,
@@ -60,6 +62,7 @@
     },
     {
       "slug": "climate-harmonizer",
+      "active": true,
       "name": "Climate Harmonizer Array",
       "autonomyLevelBps": 7400,
       "resilienceIndex": 0.94,
@@ -77,6 +80,7 @@
     },
     {
       "slug": "health-sovereign",
+      "active": true,
       "name": "Health Sovereign Continuum",
       "autonomyLevelBps": 7000,
       "resilienceIndex": 0.91,
@@ -94,6 +98,7 @@
     },
     {
       "slug": "infrastructure-synthesis",
+      "active": true,
       "name": "Infrastructure Synthesis Grid",
       "autonomyLevelBps": 7600,
       "resilienceIndex": 0.915,
@@ -112,6 +117,7 @@
     },
     {
       "slug": "knowledge-lattice",
+      "active": true,
       "name": "Knowledge Lattice Nexus",
       "autonomyLevelBps": 6900,
       "resilienceIndex": 0.902,
@@ -132,6 +138,7 @@
   "sentinels": [
     {
       "slug": "solar-shield",
+      "active": true,
       "name": "Solar Shield Guardian",
       "coverageSeconds": 900,
       "sensitivityBps": 450,
@@ -142,6 +149,7 @@
     },
     {
       "slug": "capital-watch",
+      "active": true,
       "name": "Capital Watch Exocomptroller",
       "coverageSeconds": 900,
       "sensitivityBps": 380,
@@ -152,6 +160,7 @@
     },
     {
       "slug": "bio-sentinel",
+      "active": true,
       "name": "Bio Sentinel Continuity",
       "coverageSeconds": 900,
       "sensitivityBps": 420,
@@ -163,6 +172,7 @@
   "capitalStreams": [
     {
       "slug": "climate-stabilization",
+      "active": true,
       "name": "Climate Stabilization Endowment",
       "annualBudgetUSD": 720000000000,
       "expansionBps": 1300,
@@ -173,6 +183,7 @@
     },
     {
       "slug": "planetary-resilience",
+      "active": true,
       "name": "Planetary Resilience Fund",
       "annualBudgetUSD": 890000000000,
       "expansionBps": 1250,
@@ -184,6 +195,7 @@
     },
     {
       "slug": "innovation-thrust",
+      "active": true,
       "name": "Innovation Thrust Catalyst",
       "annualBudgetUSD": 360000000000,
       "expansionBps": 1600,

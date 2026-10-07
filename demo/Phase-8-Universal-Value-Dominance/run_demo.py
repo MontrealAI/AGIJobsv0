@@ -213,8 +213,8 @@ def compute_metrics(manifest: Mapping[str, Any]) -> PhaseMetrics:
             coverage[slug] += float(sentinel.get("coverageSeconds", 0))
     total_monthly_usd = sum(float(d.get("valueFlowMonthlyUSD", 0)) for d in domains)
     coverage_ratio = sum(v > 0 for v in coverage.values()) / len(slugs) if slugs else 0.0
-    average_resilience = fmean(float(d.get("resilienceIndex", 0)) for d in domains)
-    average_coverage_seconds = fmean(coverage.values())
+    average_resilience = fmean(float(d.get("resilienceIndex", 0)) for d in domains) if domains else 0.0
+    average_coverage_seconds = fmean(coverage.values()) if coverage else 0.0
     guardian_review_window_seconds = int(manifest.get("global", {}).get("guardianReviewWindow", 0))
     max_autonomy_bps = max((int(d.get("autonomyLevelBps", 0)) for d in domains), default=0)
     improvement = manifest.get("selfImprovement", {})

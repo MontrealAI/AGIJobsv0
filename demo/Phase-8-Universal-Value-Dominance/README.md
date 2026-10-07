@@ -54,7 +54,7 @@ The $40 trillion/year screen-work opportunity is a **user-supplied strategic ass
 - Every admitted attempt reserves its reward, execution cost and review cost. Review capacity covers all attempts, including those not accepted.
 - Expected accepted jobs are rounded down. Only accepted work earns a modeled reward; other reward reserves are released in the scenario.
 - Disputes, refund delays, chain fees, taxes, settlement finality and realized buyer value are outside this planning model.
-- The legacy manifest's shared annual streams are divided equally across their unique active target domains. Whole-USD remainders go to target slugs in alphabetical order, preserving the exact total in every export. Budgets are no longer duplicated for every binding. Disabled entities do not contribute to active capacity.
+- The legacy manifest's shared annual streams are divided equally across their unique active target domains. Whole-USD remainders go to target slugs in alphabetical order, preserving the exact total in every export. Budgets are no longer duplicated for every binding. Disabled entities do not contribute to active capacity. Scorecard detail retains their configured values and an explicit `active` flag; consumers must filter that flag when aggregating.
 - Python and TypeScript use the same manifest fields and seconds-based guardian window. The synthetic dominance score is a heuristic, not a production approval.
 
 ## Verification

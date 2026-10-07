@@ -118,3 +118,19 @@ def test_python_matches_typescript_manifest_units(tmp_path):
     assert p['resilience']['cadenceSeconds'] == 7200
     assert p['totals']['dominanceScore'] == 97.1
     assert p['productionApproved'] is False
+
+
+def test_all_domains_disabled_reports_zero_capacity(tmp_path):
+    manifest = json.loads((PHASE_ROOT / "config" / "universal.value.manifest.json").read_text())
+    for domain in manifest['domains']:
+        domain['active'] = False
+    source = tmp_path / 'disabled.json'
+    source.write_text(json.dumps(manifest))
+    output = tmp_path / 'report.json'
+    subprocess.run([sys.executable, str(SCRIPT_PATH), '--manifest', str(source), '--output', str(output), '--quiet'], check=True)
+    report = json.loads(output.read_text())
+    assert report['totals']['monthlyUSD'] == 0
+    assert report['coverage']['ratio'] == 0
+    assert report['coverage']['averageSeconds'] == 0
+    assert report['resilience']['average'] == 0
+    assert report['autonomy']['maxAutonomyBps'] == 0
