@@ -29,6 +29,17 @@
         "type": "bytes32"
       }
     ],
+    "name": "DomainIndexCorrupted",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "id",
+        "type": "bytes32"
+      }
+    ],
     "name": "DuplicateDomain",
     "type": "error"
   },
@@ -85,6 +96,11 @@
     "type": "error"
   },
   {
+    "inputs": [],
+    "name": "InvalidAutopilotCadence",
+    "type": "error"
+  },
+  {
     "inputs": [
       {
         "internalType": "string",
@@ -114,6 +130,11 @@
   {
     "inputs": [],
     "name": "InvalidHeartbeat",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidInfrastructureURI",
     "type": "error"
   },
   {
@@ -189,6 +210,61 @@
     "inputs": [],
     "name": "ZeroAddress",
     "type": "error"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "id",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "agentOps",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "dataPipeline",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "credentialVerifier",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "fallbackOperator",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "controlPlaneURI",
+        "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint64",
+        "name": "autopilotCadence",
+        "type": "uint64"
+      },
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "autopilotEnabled",
+        "type": "bool"
+      }
+    ],
+    "name": "DomainInfrastructureUpdated",
+    "type": "event"
   },
   {
     "anonymous": false,
@@ -323,12 +399,12 @@
       },
       {
         "indexed": false,
-        "internalType": "bool",
-        "name": "active",
-        "type": "bool"
+        "internalType": "string",
+        "name": "slug",
+        "type": "string"
       }
     ],
-    "name": "DomainStatusChanged",
+    "name": "DomainRemoved",
     "type": "event"
   },
   {
@@ -342,12 +418,12 @@
       },
       {
         "indexed": false,
-        "internalType": "string",
-        "name": "slug",
-        "type": "string"
+        "internalType": "bool",
+        "name": "active",
+        "type": "bool"
       }
     ],
-    "name": "DomainRemoved",
+    "name": "DomainStatusChanged",
     "type": "event"
   },
   {
@@ -612,6 +688,49 @@
     "anonymous": false,
     "inputs": [
       {
+        "indexed": true,
+        "internalType": "address",
+        "name": "meshCoordinator",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "dataLake",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "identityBridge",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "topologyURI",
+        "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint64",
+        "name": "autopilotCadence",
+        "type": "uint64"
+      },
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "enforceDecentralizedInfra",
+        "type": "bool"
+      }
+    ],
+    "name": "GlobalInfrastructureUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
         "indexed": false,
         "internalType": "bytes32",
         "name": "manifestHash",
@@ -711,103 +830,6 @@
         "type": "bytes32"
       },
       {
-        "components": [
-          {
-            "internalType": "string",
-            "name": "slug",
-            "type": "string"
-          },
-          {
-            "internalType": "string",
-            "name": "name",
-            "type": "string"
-          },
-          {
-            "internalType": "string",
-            "name": "metadataURI",
-            "type": "string"
-          },
-          {
-            "internalType": "address",
-            "name": "validationModule",
-            "type": "address"
-          },
-          {
-            "internalType": "address",
-            "name": "dataOracle",
-            "type": "address"
-          },
-          {
-            "internalType": "address",
-            "name": "l2Gateway",
-            "type": "address"
-          },
-          {
-            "internalType": "string",
-            "name": "subgraphEndpoint",
-            "type": "string"
-          },
-          {
-            "internalType": "address",
-            "name": "executionRouter",
-            "type": "address"
-          },
-          {
-            "internalType": "uint64",
-            "name": "heartbeatSeconds",
-            "type": "uint64"
-          },
-          {
-            "internalType": "bool",
-            "name": "active",
-            "type": "bool"
-          }
-        ],
-        "internalType": "struct Phase6ExpansionManager.Domain",
-        "name": "config",
-        "type": "tuple"
-      }
-    ],
-    "name": "updateDomain",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "bytes32",
-        "name": "id",
-        "type": "bytes32"
-      }
-    ],
-    "name": "removeDomain",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "bytes32",
-        "name": "id",
-        "type": "bytes32"
-      }
-    ],
-    "name": "domainExists",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
         "internalType": "address",
         "name": "validationModule",
         "type": "address"
@@ -851,6 +873,25 @@
         "internalType": "uint256",
         "name": "",
         "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "id",
+        "type": "bytes32"
+      }
+    ],
+    "name": "domainExists",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
       }
     ],
     "stateMutability": "view",
@@ -990,6 +1031,62 @@
           }
         ],
         "internalType": "struct Phase6ExpansionManager.Domain",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "id",
+        "type": "bytes32"
+      }
+    ],
+    "name": "getDomainInfrastructure",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "agentOps",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "dataPipeline",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "credentialVerifier",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "fallbackOperator",
+            "type": "address"
+          },
+          {
+            "internalType": "string",
+            "name": "controlPlaneURI",
+            "type": "string"
+          },
+          {
+            "internalType": "uint64",
+            "name": "autopilotCadence",
+            "type": "uint64"
+          },
+          {
+            "internalType": "bool",
+            "name": "autopilotEnabled",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct Phase6ExpansionManager.DomainInfrastructure",
         "name": "",
         "type": "tuple"
       }
@@ -1180,6 +1277,44 @@
         "internalType": "address",
         "name": "oversightCouncil",
         "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "globalInfrastructure",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "meshCoordinator",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "dataLake",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "identityBridge",
+        "type": "address"
+      },
+      {
+        "internalType": "string",
+        "name": "topologyURI",
+        "type": "string"
+      },
+      {
+        "internalType": "uint64",
+        "name": "autopilotCadence",
+        "type": "uint64"
+      },
+      {
+        "internalType": "bool",
+        "name": "enforceDecentralizedInfra",
+        "type": "bool"
       }
     ],
     "stateMutability": "view",
@@ -1389,6 +1524,74 @@
         "type": "bytes32"
       }
     ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "id",
+        "type": "bytes32"
+      }
+    ],
+    "name": "removeDomain",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "id",
+        "type": "bytes32"
+      },
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "agentOps",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "dataPipeline",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "credentialVerifier",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "fallbackOperator",
+            "type": "address"
+          },
+          {
+            "internalType": "string",
+            "name": "controlPlaneURI",
+            "type": "string"
+          },
+          {
+            "internalType": "uint64",
+            "name": "autopilotCadence",
+            "type": "uint64"
+          },
+          {
+            "internalType": "bool",
+            "name": "autopilotEnabled",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct Phase6ExpansionManager.DomainInfrastructure",
+        "name": "infrastructure",
+        "type": "tuple"
+      }
+    ],
+    "name": "setDomainInfrastructure",
+    "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
   },
@@ -1628,6 +1831,51 @@
       {
         "components": [
           {
+            "internalType": "address",
+            "name": "meshCoordinator",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "dataLake",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "identityBridge",
+            "type": "address"
+          },
+          {
+            "internalType": "string",
+            "name": "topologyURI",
+            "type": "string"
+          },
+          {
+            "internalType": "uint64",
+            "name": "autopilotCadence",
+            "type": "uint64"
+          },
+          {
+            "internalType": "bool",
+            "name": "enforceDecentralizedInfra",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct Phase6ExpansionManager.GlobalInfrastructure",
+        "name": "infrastructure",
+        "type": "tuple"
+      }
+    ],
+    "name": "setGlobalInfrastructure",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
             "internalType": "bytes32",
             "name": "manifestHash",
             "type": "bytes32"
@@ -1783,38 +2031,6 @@
     "name": "updateDomain",
     "outputs": [],
     "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "bytes32",
-        "name": "id",
-        "type": "bytes32"
-      }
-    ],
-    "name": "removeDomain",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "bytes32",
-        "name": "id",
-        "type": "bytes32"
-      }
-    ],
-    "name": "domainExists",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "view",
     "type": "function"
   }
 ]

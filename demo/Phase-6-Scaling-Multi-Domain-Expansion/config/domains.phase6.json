@@ -1,4 +1,8 @@
 {
+  "scenario": {
+    "mode": "illustrative",
+    "description": "Synthetic planning configuration. Addresses, infrastructure states, metrics and credentials are examples; no live work, identity, deployment or settlement is verified."
+  },
   "global": {
     "manifestURI": "ipfs://phase6/global-control-surface.json",
     "iotOracleRouter": "0x1111111111111111111111111111111111111111",

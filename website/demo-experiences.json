@@ -973,7 +973,7 @@
   },
   "Phase-6-Scaling-Multi-Domain-Expansion": {
     "question": "How can expansion across domains remain inspectable?",
-    "purpose": "For platform architects: connect a domain manifest to orchestration, owner controls and generated coverage evidence.",
+    "purpose": "For buyers and operators: plan one multi-domain dispatch wave, inspect illustrative domain policies and separate configuration from verified execution.",
     "steps": [
       {
         "title": "Read the domain manifest",
@@ -988,14 +988,22 @@
       {
         "title": "Review architecture and variants",
         "source": "demo/Phase-6-Scaling-Multi-Domain-Expansion/README.md",
-        "explanation": "Use the preserved original guide and additional flowcharts to connect components. Read each variant\u2019s own prerequisites before running it."
+        "explanation": "Use the preserved original guide and additional flowcharts to connect components. Read each variant’s own prerequisites before running it."
       }
     ],
     "command": "npm run demo:phase6:orchestrate",
-    "expected": "The orchestrator emits domain evidence and reports.",
+    "expected": "The orchestrator generates an illustrative blueprint and planning report. It does not dispatch computer work, verify live credentials or submit transactions.",
     "experiment": "Trace one domain from the manifest into the report. Identify what external identity, sensor or contract evidence would be required to commission it.",
     "mode": "node",
-    "related": []
+    "related": [],
+    "dashboardDescription": "The complete Phase 6 control surface preserves every configuration view and its original systems map. A browser-only lab models capacity, pauses domains and exports a synthetic task for operator review. No provider or chain is connected.",
+    "dashboards": [
+      {
+        "title": "Phase 6 expansion lab",
+        "route": "experiments/phase6/",
+        "source": "demo/Phase-6-Scaling-Multi-Domain-Expansion/index.html"
+      }
+    ]
   },
   "Phase-8-Universal-Value-Dominance": {
     "question": "How does broad machine capability become verified, useful work?",

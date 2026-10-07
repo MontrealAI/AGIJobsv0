@@ -44,6 +44,13 @@ import {
 } from './disputes';
 import { getJobEnergyLog } from './metrics';
 import { EnergyPolicy, type EnergyPolicyOptions } from './energyPolicy';
+import {
+  VALIDATION_PROTOCOL_ABI,
+  VALIDATION_REGISTRY_ABI,
+  prepareValidationCommitment,
+  assertValidationReveal,
+  validationRevealDelay,
+} from '../../shared/validationProtocol';
 
 interface AppliedJobState {
   identity: AgentIdentity;
@@ -58,9 +65,11 @@ interface CommitData {
   wallet: Wallet;
   salt: string;
   approve: boolean;
+  burnTxHash: string;
 }
 
 const JOB_REGISTRY_ABI = [
+  ...VALIDATION_REGISTRY_ABI,
   'event JobCreated(uint256 indexed jobId,address indexed employer,address indexed agent,uint256 reward,uint256 stake,uint256 fee,bytes32 specHash,string uri)',
   'event ApplicationSubmitted(uint256 indexed jobId,address indexed applicant,string subdomain)',
   'event AgentAssigned(uint256 indexed jobId,address indexed agent,string subdomain)',
@@ -80,14 +89,11 @@ const STAKE_MANAGER_ABI = [
 ];
 
 const VALIDATION_MODULE_ABI = [
+  ...VALIDATION_PROTOCOL_ABI,
   'event ValidatorsSelected(uint256 indexed jobId,address[] validators)',
   'event ValidationCommitted(uint256 indexed jobId,address indexed validator,bytes32 commitHash,string subdomain)',
   'event ValidationRevealed(uint256 indexed jobId,address indexed validator,bool approve,bytes32 burnTxHash,string subdomain)',
-  'function jobNonce(uint256 jobId) view returns (uint256)',
   'function validators(uint256 jobId) view returns (address[])',
-  'function commitments(uint256 jobId,address validator,uint256 nonce) view returns (bytes32)',
-  'function commitValidation(uint256 jobId,bytes32 commitHash,string subdomain,bytes32[] proof)',
-  'function revealValidation(uint256 jobId,bool approve,bytes32 salt,string subdomain,bytes32[] proof)',
   'function selectValidators(uint256 jobId,uint256 entropy)',
 ];
 
@@ -102,6 +108,8 @@ const DEFAULT_ASSIGNMENT_POLL_MS = Number(
 const DEFAULT_REVEAL_DELAY_MS = Number(
   process.env.VALIDATION_REVEAL_DELAY_MS || 60000
 );
+const REVEAL_SCHEDULE_RETRY_MS = 5000;
+const MAX_REVEAL_SCHEDULE_RETRIES = 12;
 const REVIEW_TIMEOUT_MS = Number(
   process.env.VALIDATION_REVIEW_TIMEOUT_MS || 10 * 60 * 1000
 );
@@ -1471,25 +1479,107 @@ export class MetaOrchestrator {
       approve = false;
     }
     const salt = ethers.hexlify(ethers.randomBytes(32));
-    const commitHash = ethers.solidityPackedKeccak256(
-      ['uint256', 'uint256', 'bool', 'bytes32'],
-      [jobId, nonce, approve, salt]
+    const { commitHash, burnTxHash } = await prepareValidationCommitment(
+      this.validationModule,
+      this.registry,
+      this.provider,
+      jobId,
+      identity.address,
+      approve,
+      salt
     );
+    const subdomain = identity.label || identity.ens?.split('.')[0] || '';
     const writer = this.validationModule.connect(wallet) as any;
-    const tx = await writer.commitValidation(jobId, commitHash, '', []);
+    const tx = await writer.commitValidation(jobId, commitHash, subdomain, []);
     await tx.wait();
     auditLog('validator.commit', {
       jobId: jobId.toString(),
       actor: identity.address,
       details: { tx: tx.hash, approve },
     });
-    this.commits.set(key, { wallet, salt, approve });
+    this.commits.set(key, { wallet, salt, approve, burnTxHash });
     this.clearReviewTimer(jobKey, 'validator-commit');
+    await this.scheduleValidationReveal(jobId, identity);
+  }
+
+  private async scheduleValidationReveal(
+    jobId: bigint,
+    identity: AgentIdentity,
+    retryAttempt = 0
+  ): Promise<void> {
+    if (!this.validationModule) return;
+    const key = `${jobId.toString()}:${identity.address.toLowerCase()}`;
+    const data = this.commits.get(key);
+    if (!data) return;
+    const previous = this.commitTimers.get(key);
+    if (previous) clearTimeout(previous);
+    this.commitTimers.delete(key);
+    let delay: number;
+    try {
+      const round = await this.validationModule.rounds(jobId);
+      const block = await this.provider.getBlock('latest');
+      if (!block) throw new Error('VALIDATION_BLOCK_UNAVAILABLE');
+      delay = validationRevealDelay(
+        round,
+        block.timestamp,
+        retryAttempt > 0
+          ? 1
+          : block.timestamp +
+              Math.ceil(DEFAULT_REVEAL_DELAY_MS / 1000) -
+              Number(round.commitDeadline)
+      );
+    } catch (error) {
+      if (this.commits.get(key) !== data) return;
+      const windowError =
+        error instanceof Error &&
+        /^VALIDATION_REVEAL_(WINDOW_CLOSED|DELAY_OUT_OF_RANGE)$/.test(
+          error.message
+        );
+      const retry = !windowError && retryAttempt < MAX_REVEAL_SCHEDULE_RETRIES;
+      if (retry) {
+        const timer = setTimeout(() => {
+          if (
+            this.commits.get(key) !== data ||
+            this.commitTimers.get(key) !== timer
+          )
+            return;
+          this.commitTimers.delete(key);
+          this.scheduleValidationReveal(
+            jobId,
+            identity,
+            retryAttempt + 1
+          ).catch((err) => {
+            console.error('scheduleValidationReveal error', err);
+          });
+        }, REVEAL_SCHEDULE_RETRY_MS);
+        this.commitTimers.set(key, timer);
+      }
+      auditLog(
+        retry
+          ? 'validator.reveal_schedule_retry'
+          : 'validator.reveal_schedule_reconciliation_required',
+        {
+          jobId: jobId.toString(),
+          actor: identity.address,
+          details: { error: String(error), retryAttempt },
+        }
+      );
+      return;
+    }
+    if (this.commits.get(key) !== data) return;
     const timer = setTimeout(() => {
+      if (
+        this.commits.get(key) !== data ||
+        this.commitTimers.get(key) !== timer
+      )
+        return;
+      this.commitTimers.delete(key);
+      // A submission error can mean the reveal was broadcast. Only retry the
+      // preceding read-only scheduling phase, never an uncertain transaction.
       this.revealValidation(jobId, identity).catch((err) => {
         console.error('revealValidation error', err);
       });
-    }, DEFAULT_REVEAL_DELAY_MS);
+    }, delay);
     this.commitTimers.set(key, timer);
   }
 
@@ -1501,12 +1591,23 @@ export class MetaOrchestrator {
     const key = `${jobId.toString()}:${identity.address.toLowerCase()}`;
     const data = this.commits.get(key);
     if (!data) return;
+    await assertValidationReveal(
+      this.validationModule,
+      this.registry,
+      this.provider,
+      jobId,
+      identity.address,
+      data.approve,
+      data.salt,
+      data.burnTxHash
+    );
     const writer = this.validationModule.connect(data.wallet) as any;
     const tx = await writer.revealValidation(
       jobId,
       data.approve,
+      data.burnTxHash,
       data.salt,
-      '',
+      identity.label || identity.ens?.split('.')[0] || '',
       []
     );
     await tx.wait();

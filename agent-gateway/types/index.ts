@@ -34,4 +34,5 @@ export interface AgentInfo {
 export interface CommitData {
   approve: boolean;
   salt: string;
+  burnTxHash?: string;
 }

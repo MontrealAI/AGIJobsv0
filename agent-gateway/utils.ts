@@ -3,7 +3,27 @@ import { WebSocketServer, WebSocket } from 'ws';
 import { loadTokenConfig } from '../scripts/config';
 import WalletManager from './wallet';
 import { Job, AgentInfo, CommitData } from './types';
-import { loadCommitRecord, updateCommitRecord } from './validationStore';
+import {
+  loadCommitRecord,
+  updateCommitRecord,
+  beginCommitRecord,
+  StoredCommitRecord,
+  CommitRoundScope,
+} from './validationStore';
+import {
+  VALIDATION_PROTOCOL_ABI,
+  VALIDATION_REGISTRY_ABI,
+  prepareValidationCommitment,
+  assertValidationReveal,
+} from '../shared/validationProtocol';
+
+import {
+  reconciliationRequired,
+  readValidationRound,
+  reconcilePreviousRound,
+  assertStoredValidationRound,
+  inspectStoredValidationRound,
+} from './validationRound';
 
 const DEFAULT_RPC_URL = 'http://localhost:8545';
 const ALLOWED_RPC_PROTOCOLS = new Set(['http:', 'https:', 'ws:', 'wss:']);
@@ -151,6 +171,7 @@ export const provider: JsonRpcProvider = new ethers.JsonRpcProvider(RPC_URL);
 
 // Minimal ABI for JobRegistry interactions
 const JOB_REGISTRY_ABI = [
+  ...VALIDATION_REGISTRY_ABI,
   'event JobCreated(uint256 indexed jobId, address indexed employer, address indexed agent, uint256 reward, uint256 stake, uint256 fee, bytes32 specHash, string uri)',
   'event ApplicationSubmitted(uint256 indexed jobId, address indexed applicant, string subdomain)',
   'event AgentAssigned(uint256 indexed jobId, address indexed agent, string subdomain)',
@@ -181,11 +202,8 @@ const STAKE_MANAGER_ABI = [
 
 // Minimal ABI for ValidationModule interactions
 const VALIDATION_MODULE_ABI = [
-  'function jobNonce(uint256 jobId) view returns (uint256)',
-  'function commitValidation(uint256 jobId, bytes32 commitHash, string subdomain, bytes32[] proof)',
-  'function revealValidation(uint256 jobId, bool approve, bytes32 salt, string subdomain, bytes32[] proof)',
+  ...VALIDATION_PROTOCOL_ABI,
   'function finalize(uint256 jobId) external returns (bool)',
-  'function rounds(uint256 jobId) view returns (address[] validators,address[] participants,uint256 commitDeadline,uint256 revealDeadline,uint256 approvals,uint256 rejections,bool tallied,uint256 committeeSize)',
   'event ValidatorsSelected(uint256 indexed jobId, address[] validators)',
 ];
 
@@ -470,7 +488,7 @@ export async function scheduleFinalize(jobId: string): Promise<void> {
   if (!validation || !automationWallet) return;
   try {
     const round = await validation.rounds(jobId);
-    const revealDeadline = Number(round[3] || round.revealDeadline);
+    const revealDeadline = Number(round.revealDeadline);
     const delay = revealDeadline - Math.floor(Date.now() / 1000);
     if (delay <= 0) {
       await finalizeJob(jobId);
@@ -562,7 +580,7 @@ export async function commitHelper(
 ): Promise<{ tx: string; salt: string; commitHash: string }> {
   if (!validation) throw new Error('validation module not configured');
   await checkEnsSubdomain(wallet.address);
-  const nonce = await validation.jobNonce(jobId);
+  const previous = loadCommitRecord(jobId, wallet.address);
   let salt: string;
   if (saltOverride) {
     try {
@@ -573,47 +591,142 @@ export async function commitHelper(
   } else {
     salt = ethers.hexlify(ethers.randomBytes(32));
   }
-  const jobBigInt = ethers.getBigInt(jobId);
-  const nonceBigInt = ethers.getBigInt(nonce);
-  const commitHash = ethers.solidityPackedKeccak256(
-    ['uint256', 'uint256', 'bool', 'bytes32'],
-    [jobBigInt, nonceBigInt, approve, salt]
+  const vote = await prepareValidationCommitment(
+    validation,
+    registry,
+    provider,
+    jobId,
+    wallet.address,
+    approve,
+    salt
   );
-  const tx = await (validation as any)
-    .connect(wallet)
-    .commitValidation(jobId, commitHash, '', []);
-  await tx.wait();
-  if (!commits.has(jobId)) commits.set(jobId, {});
-  const jobCommits = commits.get(jobId)!;
-  jobCommits[wallet.address.toLowerCase()] = { approve, salt };
-
-  let validatorEns: string | undefined;
-  let validatorLabel: string | undefined;
-  try {
-    const lookup = await provider.lookupAddress(wallet.address);
-    if (lookup) {
-      validatorEns = lookup;
-      validatorLabel = lookup.split('.')[0];
-    }
-  } catch (err) {
-    console.warn('ENS lookup failed during commitHelper', err);
-  }
-
-  try {
-    updateCommitRecord(jobId, wallet.address, {
+  const { commitHash, burnTxHash } = vote;
+  const context = { validation, registry, provider };
+  const roundScope = await readValidationRound(context, vote);
+  if (previous) await reconcilePreviousRound(context, previous, roundScope);
+  const validatorEns =
+    (await provider.lookupAddress(wallet.address)) || undefined;
+  const validatorLabel = validatorEns?.split('.')[0];
+  beginCommitRecord(
+    jobId,
+    wallet.address,
+    {
       approve,
       salt,
+      burnTxHash,
       commitHash,
-      commitTx: tx.hash,
+      roundScope,
       committedAt: new Date().toISOString(),
       validatorEns,
       validatorLabel,
-    });
-  } catch (err) {
-    console.warn('failed to persist validator commit record', err);
-  }
+      metadata: { manualCommitStatus: 'broadcast-intent' },
+    },
+    previous
+  );
+  const tx = await (validation as any)
+    .connect(wallet)
+    .commitValidation(jobId, commitHash, validatorLabel || '', []);
+  updateCommitRecord(
+    jobId,
+    wallet.address,
+    { commitTx: tx.hash },
+    { commitHash, roundScope }
+  );
+  await tx.wait();
+  updateCommitRecord(
+    jobId,
+    wallet.address,
+    {
+      committedAt: new Date().toISOString(),
+      metadata: { manualCommitStatus: 'confirmed' },
+    },
+    { commitHash, roundScope }
+  );
+  if (!commits.has(jobId)) commits.set(jobId, {});
+  const jobCommits = commits.get(jobId)!;
+  jobCommits[wallet.address.toLowerCase()] = { approve, salt, burnTxHash };
 
   return { tx: tx.hash, salt, commitHash };
+}
+
+const revealEventInterface = new ethers.Interface([
+  'event ValidationRevealed(uint256 indexed jobId,address indexed validator,bool approve,bytes32 burnTxHash,string subdomain)',
+]);
+
+async function confirmedRevealTransaction(
+  record: StoredCommitRecord,
+  observed: CommitRoundScope
+): Promise<string> {
+  const chain = validation!.runner?.provider ?? provider;
+  const scope = record.roundScope!;
+  const matches = (log: ethers.Log) => {
+    if (log.address.toLowerCase() !== scope.validationModule.toLowerCase())
+      return false;
+    try {
+      const event = revealEventInterface.parseLog(log);
+      return (
+        event?.args[0].toString() === record.jobId &&
+        event.args[1].toLowerCase() === record.validator.toLowerCase() &&
+        event.args[2] === record.approve &&
+        event.args[3].toLowerCase() === record.burnTxHash!.toLowerCase()
+      );
+    } catch {
+      return false;
+    }
+  };
+  const verifyReceipt = async (hash: string) => {
+    const receipt = await chain.getTransactionReceipt(hash);
+    if (
+      !receipt ||
+      receipt.status !== 1 ||
+      receipt.blockNumber <= scope.blockNumber ||
+      receipt.blockNumber > observed.blockNumber ||
+      !receipt.logs.some(matches)
+    )
+      reconciliationRequired();
+    const [receiptBlock, observedBlock] = await Promise.all([
+      chain.getBlock(receipt!.blockNumber),
+      chain.getBlock(observed.blockNumber),
+    ]);
+    if (
+      receiptBlock?.hash !== receipt!.blockHash ||
+      observedBlock?.hash !== observed.blockHash
+    )
+      reconciliationRequired();
+    return receipt!.hash;
+  };
+  if (record.revealTx) return verifyReceipt(record.revealTx);
+
+  // A send response can be lost after the transaction was accepted. Recover
+  // its hash from canonical evidence in this saved round, never by resending.
+  const topics = revealEventInterface.encodeFilterTopics('ValidationRevealed', [
+    record.jobId,
+    record.validator,
+  ]);
+  let toBlock = observed.blockNumber;
+  let pageSize = 2000;
+  while (toBlock > scope.blockNumber) {
+    const fromBlock = Math.max(scope.blockNumber + 1, toBlock - pageSize + 1);
+    let logs;
+    try {
+      logs = await chain.getLogs({
+        address: scope.validationModule,
+        topics,
+        fromBlock,
+        toBlock,
+      });
+    } catch (error) {
+      if (pageSize === 1) throw error;
+      pageSize = Math.max(1, Math.floor(pageSize / 2));
+      continue;
+    }
+    for (const log of logs) {
+      if (!log.removed && matches(log))
+        return verifyReceipt(log.transactionHash);
+    }
+    toBlock = fromBlock - 1;
+  }
+  reconciliationRequired();
 }
 
 export async function revealHelper(
@@ -623,26 +736,13 @@ export async function revealHelper(
   saltOverride?: string
 ): Promise<{ tx: string }> {
   if (!validation) throw new Error('validation module not configured');
-  let jobCommits = commits.get(jobId);
-  if (!jobCommits) {
-    jobCommits = {};
-    commits.set(jobId, jobCommits);
-  }
-  let data = jobCommits[wallet.address.toLowerCase()];
-  let storedRecord = loadCommitRecord(jobId, wallet.address);
-  if (!data && storedRecord) {
-    data = {
-      approve: storedRecord.approve,
-      salt: storedRecord.salt,
-    };
-    jobCommits[wallet.address.toLowerCase()] = { ...data };
-  }
+  const storedRecord = loadCommitRecord(jobId, wallet.address);
+  if (!storedRecord) reconciliationRequired();
   const approve =
-    typeof approveOverride === 'boolean' ? approveOverride : data?.approve;
-  const saltSource = saltOverride ?? data?.salt;
-  if (approve === undefined || !saltSource) {
-    throw new Error('no commit found');
-  }
+    typeof approveOverride === 'boolean'
+      ? approveOverride
+      : storedRecord.approve;
+  const saltSource = saltOverride ?? storedRecord.salt;
   let salt: string;
   try {
     salt = normaliseSalt(saltSource);
@@ -650,20 +750,103 @@ export async function revealHelper(
     throw new Error(`invalid salt provided: ${err?.message || err}`);
   }
   await checkEnsSubdomain(wallet.address);
+  if (
+    approve !== storedRecord.approve ||
+    salt.toLowerCase() !== storedRecord.salt.toLowerCase()
+  )
+    reconciliationRequired();
+  const context = { validation, registry, provider };
+  const inspected = await inspectStoredValidationRound(context, storedRecord);
+  if (!['committed', 'revealed'].includes(inspected.status))
+    reconciliationRequired();
+  const storedScope = storedRecord.roundScope!;
+  const expected = {
+    commitHash: storedRecord.commitHash,
+    roundScope: storedScope,
+  };
+  if (inspected.status === 'revealed') {
+    const tx = await confirmedRevealTransaction(
+      storedRecord,
+      inspected.roundScope
+    );
+    await assertStoredValidationRound(context, storedRecord);
+    updateCommitRecord(
+      jobId,
+      wallet.address,
+      {
+        revealTx: tx,
+        revealedAt: storedRecord.revealedAt || new Date().toISOString(),
+        ...(storedRecord.metadata?.automaticRevealStatus
+          ? { metadata: { automaticRevealStatus: 'confirmed' } }
+          : {}),
+      },
+      expected
+    );
+    const cached = commits.get(jobId);
+    if (cached) delete cached[wallet.address.toLowerCase()];
+    return { tx };
+  }
+  if (
+    ['revealTx', 'revealedAt'].some((key) =>
+      Object.prototype.hasOwnProperty.call(storedRecord, key)
+    ) ||
+    Object.prototype.hasOwnProperty.call(
+      storedRecord.metadata ?? {},
+      'automaticRevealStatus'
+    )
+  )
+    reconciliationRequired();
+  await assertValidationReveal(
+    validation,
+    registry,
+    provider,
+    jobId,
+    wallet.address,
+    approve,
+    salt,
+    storedRecord.burnTxHash
+  );
+  const validatorLabel =
+    storedRecord.validatorLabel ||
+    (await provider.lookupAddress(wallet.address))?.split('.')[0] ||
+    '';
+  // This legacy-named marker is shared with automatic validators so neither
+  // entry point can resend another entry point's uncertain reveal.
+  updateCommitRecord(
+    jobId,
+    wallet.address,
+    { metadata: { automaticRevealStatus: 'broadcast-intent' } },
+    { ...expected, revealUnattempted: true }
+  );
   const tx = await (validation as any)
     .connect(wallet)
-    .revealValidation(jobId, approve, salt, '', []);
+    .revealValidation(
+      jobId,
+      approve,
+      storedRecord.burnTxHash,
+      salt,
+      validatorLabel,
+      []
+    );
+  updateCommitRecord(
+    jobId,
+    wallet.address,
+    { revealTx: tx.hash, metadata: { automaticRevealStatus: 'broadcast' } },
+    expected
+  );
   await tx.wait();
-  delete jobCommits[wallet.address.toLowerCase()];
-
-  try {
-    updateCommitRecord(jobId, wallet.address, {
+  updateCommitRecord(
+    jobId,
+    wallet.address,
+    {
       revealTx: tx.hash,
       revealedAt: new Date().toISOString(),
-    });
-  } catch (err) {
-    console.warn('failed to update validator commit record on reveal', err);
-  }
+      metadata: { automaticRevealStatus: 'confirmed' },
+    },
+    expected
+  );
+  const cached = commits.get(jobId);
+  if (cached) delete cached[wallet.address.toLowerCase()];
 
   return { tx: tx.hash };
 }

@@ -15,7 +15,9 @@ const {
 subtask(TASK_TEST_GET_TEST_FILES).setAction(async (args, _hre, runSuper) => {
   const files = await runSuper(args);
   const scriptTests = path.join(__dirname, 'test', 'scripts') + path.sep;
+  const pageTests = path.join(__dirname, 'test', 'pages') + path.sep;
   return files.filter((file) => {
+    if (file.startsWith(pageTests)) return false;
     if (
       file ===
       path.join(__dirname, 'test', 'hamiltonian-monitor.config.test.js')

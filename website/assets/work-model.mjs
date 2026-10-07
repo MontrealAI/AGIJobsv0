@@ -148,6 +148,9 @@ export const workTypes = [
 ];
 
 export const savedDraftMaxBytes = 100_000;
+const encoder = new TextEncoder();
+const decoder = new TextDecoder('utf-8', { ignoreBOM: true });
+const validUnicode = (value) => decoder.decode(encoder.encode(value)) === value;
 const draftFields = {
   type: 32,
   runtime: 16,
@@ -172,6 +175,7 @@ function editableFields(input) {
     if (
       typeof value !== 'string' ||
       value.length > max ||
+      !validUnicode(value) ||
       /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/.test(value) ||
       (!['goal', 'scope', 'sources'].includes(key) && /[\r\n]/.test(value)) ||
       (['runMinutes', 'reviewerMinutes'].includes(key) &&
@@ -245,9 +249,13 @@ export function usdcUnits(value) {
 }
 
 export function sourceReferences(value) {
-  if (typeof value !== 'string' || value.length > 12_000)
+  if (
+    typeof value !== 'string' ||
+    value.length > 12_000 ||
+    !validUnicode(value)
+  )
     throw new Error(
-      'Source references must contain at most 12,000 characters.'
+      'Source references must contain at most 12,000 valid Unicode characters.'
     );
   const lines = value
     .split(/\r?\n/)
@@ -294,11 +302,12 @@ function boundedText(value, label, max) {
   if (
     typeof value !== 'string' ||
     !value.trim() ||
+    !validUnicode(value) ||
     value.trim().length > max ||
     /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/.test(value)
   )
     throw new Error(
-      `${label} is required and must contain at most ${max} characters, without control characters.`
+      `${label} is required and must contain at most ${max} valid Unicode characters, without control characters.`
     );
   return value.trim();
 }

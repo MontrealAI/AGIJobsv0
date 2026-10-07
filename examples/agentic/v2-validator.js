@@ -2,6 +2,7 @@
 'use strict';
 
 const path = require('path');
+const os = require('os');
 const { ethers } = require('ethers');
 const namehash = require('eth-ens-namehash');
 require('dotenv').config();
@@ -9,7 +10,14 @@ require('dotenv').config();
 const metrics = require('./metrics');
 const { loadConfig, ensLabelFrom } = require('./v2-agent-gateway');
 
-const ZERO_HASH = ethers.ZeroHash;
+const {
+  RevealJournal,
+  ValidatorRecoveryError,
+  commitHash,
+  createValidatorRuntime,
+  safeErrorCode,
+} = require('./validator-recovery');
+
 const CONFIG_PATH = process.env.GATEWAY_CONFIG
   ? path.resolve(process.cwd(), process.env.GATEWAY_CONFIG)
   : path.resolve(__dirname, 'gateway.config.json');
@@ -24,7 +32,7 @@ function parseProvider(cfg) {
     return new ethers.JsonRpcProvider(process.env.RPC_SEPOLIA);
   }
   if (!fallback) {
-    throw new Error('RPC URL missing (set rpcUrl in config or RPC_URL env).');
+    throw new ValidatorRecoveryError('VALIDATOR_RPC_URL_REQUIRED');
   }
   return new ethers.JsonRpcProvider(fallback);
 }
@@ -38,12 +46,12 @@ function loadWallet(provider) {
       provider
     );
   }
-  throw new Error('Provide PRIVATE_KEY or MNEMONIC for validator runtime.');
+  throw new ValidatorRecoveryError('VALIDATOR_CREDENTIALS_REQUIRED');
 }
 
 function ensureValidatorEns(ensName, cfg) {
   if (!ensName) {
-    throw new Error('Set VALIDATOR_ENS to your validator ENS name.');
+    throw new ValidatorRecoveryError('VALIDATOR_ENS_REQUIRED');
   }
   const normalised = namehash.normalize(ensName);
   const allowed = new Set();
@@ -61,11 +69,7 @@ function ensureValidatorEns(ensName, cfg) {
       return;
     }
   }
-  throw new Error(
-    `Validator ENS ${normalised} is not inside allowed club roots (${Array.from(
-      allowed
-    ).join(', ')})`
-  );
+  throw new ValidatorRecoveryError('VALIDATOR_ENS_ROOT_MISMATCH');
 }
 
 function normalizeProofEntry(entry) {
@@ -124,30 +128,30 @@ function parseProof(raw) {
   }
 }
 
-function commitHash(approve, saltHex) {
-  const salt = ethers.getBytes(saltHex);
-  if (salt.length !== 32) {
-    throw new Error('Salt must be 32 bytes.');
-  }
-  return ethers.keccak256(
-    ethers.solidityPacked(['bool', 'bytes32'], [approve, salt])
+function parseDecision(value) {
+  const normalized =
+    typeof value === 'string' ? value.trim().toLowerCase() : '';
+  if (['1', 'true', 'yes', 'approve'].includes(normalized)) return true;
+  if (['0', 'false', 'no', 'reject'].includes(normalized)) return false;
+  throw new ValidatorRecoveryError(
+    'VALIDATOR_EXPLICIT_REHEARSAL_DECISION_REQUIRED'
   );
 }
 
-function schedule(fn, delayMs) {
-  return setTimeout(fn, Math.max(0, delayMs));
-}
-
 async function main() {
-  const cfg = loadConfig(CONFIG_PATH);
+  const defaultApprove = parseDecision(process.env.VALIDATOR_DECISION);
+  let cfg;
+  try {
+    cfg = loadConfig(CONFIG_PATH);
+  } catch {
+    throw new ValidatorRecoveryError('VALIDATOR_GATEWAY_CONFIG_INVALID');
+  }
   const provider = parseProvider(cfg);
   const wallet = loadWallet(provider);
 
   const validationAddress = cfg.validationModule || cfg.validationModuleAddress;
   if (!validationAddress || !ethers.isAddress(validationAddress)) {
-    throw new Error(
-      'Configure validationModule address in gateway.config.json'
-    );
+    throw new ValidatorRecoveryError('VALIDATOR_MODULE_ADDRESS_REQUIRED');
   }
 
   const validatorEns = process.env.VALIDATOR_ENS || process.env.ENS_LABEL || '';
@@ -164,21 +168,23 @@ async function main() {
       process.env.VALIDATOR_REVEAL_PROOF ||
       process.env.VALIDATION_PROOF
   );
-  const burnHash = (process.env.BURN_TX_HASH || '').trim();
-  const defaultApprove =
-    typeof process.env.VALIDATOR_DECISION === 'string'
-      ? ['1', 'true', 'yes', 'approve'].includes(
-          process.env.VALIDATOR_DECISION.trim().toLowerCase()
-        )
-      : true;
-
+  if (process.env.BURN_TX_HASH) {
+    console.warn(
+      '[validator] BURN_TX_HASH is ignored; confirmed burn receipts are resolved separately for each job.'
+    );
+  }
   const validationAbi = [
     'event ValidatorsSelected(uint256 indexed jobId,address[] validators)',
     'event ValidationCommitted(uint256 indexed jobId,address indexed validator,bytes32 commitHash,string subdomain)',
     'event ValidationResult(uint256 indexed jobId,bool success)',
     'function commitValidation(uint256 jobId,bytes32 commitHash,string subdomain,bytes32[] proof)',
     'function revealValidation(uint256 jobId,bool approve,bytes32 burnTxHash,bytes32 salt,string subdomain,bytes32[] proof)',
-    'function revealDeadline(uint256 jobId) view returns (uint256)',
+    'function jobNonce(uint256 jobId) view returns (uint256)',
+    'function DOMAIN_SEPARATOR() view returns (bytes32)',
+    'function commitments(uint256 jobId,address validator,uint256 nonce) view returns (bytes32)',
+    'function revealed(uint256 jobId,address validator) view returns (bool)',
+    'function jobRegistry() view returns (address)',
+    'function rounds(uint256 jobId) view returns (uint256 commitDeadline,uint256 revealDeadline,uint256 approvals,uint256 rejections,uint256 revealedCount,bool tallied,uint256 committeeSize,uint64 earlyFinalizeEligibleAt,bool earlyFinalized)',
   ];
 
   const moduleReader = new ethers.Contract(
@@ -193,104 +199,92 @@ async function main() {
     `[validator] network=${network.name} chainId=${network.chainId} wallet=${wallet.address} ens=${validatorEns}`
   );
 
-  const commits = new Map();
-
-  function clearJob(jobId) {
-    const key = jobId.toString();
-    const state = commits.get(key);
-    if (state && state.timer) {
-      clearTimeout(state.timer);
-    }
-    commits.delete(key);
+  const registryAddress = await moduleReader.jobRegistry();
+  if (
+    !ethers.isAddress(registryAddress) ||
+    registryAddress === ethers.ZeroAddress
+  ) {
+    throw new ValidatorRecoveryError('VALIDATOR_REGISTRY_ADDRESS_INVALID');
   }
-
-  moduleReader.on('ValidatorsSelected', async (jobId, validators) => {
-    const started = Date.now();
-    try {
-      const normalized = Array.isArray(validators)
-        ? validators.map((addr) => addr.toLowerCase())
-        : [];
-      if (!normalized.includes(wallet.address.toLowerCase())) {
-        return;
-      }
-      const approve = defaultApprove;
-      const salt = ethers.hexlify(ethers.randomBytes(32));
-      const hash = commitHash(approve, salt);
-      console.log(
-        `[validator] committing job=${jobId.toString()} hash=${hash}`
-      );
-      const tx = await moduleWriter.commitValidation(
-        jobId,
-        hash,
-        validatorLabel,
-        commitProof
-      );
-      await tx.wait(2);
-      metrics.logEnergy('commit', {
-        jobId: jobId.toString(),
-        millis: Date.now() - started,
-      });
-
-      let revealDelayMs = 10000;
-      try {
-        const deadline = await moduleReader.revealDeadline(jobId);
-        const deadlineMs = Number(deadline) * 1000;
-        const buffer = 5000;
-        const wait = deadlineMs - Date.now() - buffer;
-        if (Number.isFinite(wait)) {
-          revealDelayMs = Math.max(1000, wait);
-        }
-      } catch (deadlineErr) {
-        console.warn(
-          '[validator] revealDeadline lookup failed:',
-          deadlineErr.message || deadlineErr
-        );
-      }
-
-      const timer = schedule(async () => {
-        const revealStarted = Date.now();
-        try {
-          const burn = burnHash
-            ? ethers.hexlify(ethers.zeroPadValue(ethers.getBytes(burnHash), 32))
-            : ZERO_HASH;
-          const txReveal = await moduleWriter.revealValidation(
-            jobId,
-            approve,
-            burn,
-            salt,
-            validatorLabel,
-            revealProof
-          );
-          await txReveal.wait(2);
-          metrics.logEnergy('reveal', {
-            jobId: jobId.toString(),
-            millis: Date.now() - revealStarted,
-          });
-          clearJob(jobId);
-        } catch (revealErr) {
-          const message =
-            revealErr?.error?.message ||
-            revealErr?.message ||
-            String(revealErr);
-          console.error('[validator] reveal error:', message);
-          metrics.logQuarantine('reveal', message, { jobId: jobId.toString() });
-        }
-      }, revealDelayMs);
-
-      commits.set(jobId.toString(), { approve, salt, timer });
-    } catch (err) {
-      const message = err?.error?.message || err?.message || String(err);
-      console.error('[validator] commit error:', message);
-      metrics.logQuarantine('commit', message, { jobId: jobId.toString() });
-    }
+  const registry = new ethers.Contract(
+    registryAddress,
+    [
+      'function getSpecHash(uint256 jobId) view returns (bytes32)',
+      'function burnEvidenceStatus(uint256 jobId) view returns (bool burnRequired,bool burnSatisfied)',
+      'function hasBurnReceipt(uint256 jobId,bytes32 burnTxHash) view returns (bool)',
+      'event BurnConfirmed(uint256 indexed jobId,bytes32 indexed burnTxHash)',
+    ],
+    provider
+  );
+  const stateDirectory =
+    process.env.VALIDATOR_STATE_DIR ||
+    path.join(os.homedir(), '.agi-jobs', 'validator-reveals');
+  const journal = new RevealJournal(stateDirectory, {
+    chainId: network.chainId,
+    validationModule: validationAddress,
+    validator: wallet.address,
   });
-
-  moduleReader.on('ValidationResult', (jobId, success) => {
-    console.log(
-      `[validator] validation result job=${jobId.toString()} success=${success}`
+  const runtime = createValidatorRuntime({
+    journal,
+    reader: moduleReader,
+    writer: moduleWriter,
+    registry,
+    provider,
+    validatorLabel,
+    approve: defaultApprove,
+    commitProof,
+    revealProof,
+    report: (phase, jobId) => {
+      console.log(`[validator] ${phase} confirmed job=${jobId}`);
+      metrics.logEnergy(phase, { jobId });
+    },
+  });
+  const reportError = (phase, err, jobId) => {
+    // RPC exceptions may embed signed transactions and reveal calldata.
+    const code = safeErrorCode(err);
+    console.error(`[validator] ${phase}: ${code}`);
+    metrics.logQuarantine(
+      phase,
+      code,
+      jobId === undefined ? {} : { jobId: String(jobId) }
     );
-    clearJob(jobId);
+  };
+  const reportedStates = new Map();
+  let recovering = false;
+  async function recover() {
+    if (recovering) return;
+    recovering = true;
+    try {
+      for (const { jobId, status } of await runtime.recover()) {
+        if (reportedStates.get(jobId) === status) continue;
+        reportedStates.set(jobId, status);
+        if (status.endsWith('-uncertain') || status.startsWith('VALIDATOR_')) {
+          console.warn(
+            `[validator] job=${jobId} status=${status}; retain the journal and reconcile on-chain state before any manual retry.`
+          );
+          metrics.logQuarantine('recovery', status, { jobId });
+        }
+      }
+    } finally {
+      recovering = false;
+    }
+  }
+  const interval = Number(process.env.VALIDATOR_POLL_MS || 5000);
+  if (!Number.isSafeInteger(interval) || interval < 1000 || interval > 60000) {
+    throw new ValidatorRecoveryError('VALIDATOR_POLL_INTERVAL_INVALID');
+  }
+  // Validate all retained records before enabling event-driven broadcasts.
+  journal.records();
+  await moduleReader.on('ValidatorsSelected', (jobId, validators) => {
+    runtime
+      .selected(jobId, validators)
+      .catch((err) => reportError('commit', err, jobId));
   });
+  await recover();
+  setInterval(
+    () => recover().catch((err) => reportError('recovery', err)),
+    interval
+  );
 
   metrics.logTelemetry('validator.started', {
     chainId: Number(network.chainId),
@@ -300,8 +294,9 @@ async function main() {
 
 if (require.main === module) {
   main().catch((err) => {
-    console.error('[validator] fatal:', err.message || err);
-    metrics.logQuarantine('fatal', err.message || String(err));
+    const code = safeErrorCode(err);
+    console.error('[validator] fatal:', code);
+    metrics.logQuarantine('fatal', code);
     process.exit(1);
   });
 }
@@ -310,4 +305,5 @@ module.exports = {
   commitHash,
   main,
   parseProof,
+  parseDecision,
 };

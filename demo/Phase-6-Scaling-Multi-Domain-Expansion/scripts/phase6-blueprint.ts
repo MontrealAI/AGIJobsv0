@@ -1,8 +1,16 @@
 #!/usr/bin/env ts-node
 import { readFileSync } from 'node:fs';
-import { Interface, formatEther, keccak256, toUtf8Bytes } from 'ethers';
+import {
+  isPhase6DomainActive,
+  parsePhase6Json,
+  validatePhase6Config,
+} from '../../../scripts/phase6/config-validation';
+import { Interface, keccak256, toUtf8Bytes } from 'ethers';
 
 export interface DecentralizedInfraEntry {
+  layer?: string;
+  provider?: string;
+  uri?: string;
   name: string;
   role: string;
   status: string;
@@ -10,6 +18,7 @@ export interface DecentralizedInfraEntry {
 }
 
 export interface DomainInfrastructureEntry {
+  provider?: string;
   layer: string;
   name: string;
   role: string;
@@ -75,15 +84,19 @@ export interface DomainTelemetryConfig {
 export interface DomainMetadataConfig {
   domain: string;
   l2: string;
-  sentinel: string;
+  sentinel?: string | null;
   resilienceIndex: number;
-  uptime: string;
+  uptime?: string | null;
   valueFlowMonthlyUSD: number;
-  valueFlowDisplay?: string;
+  valueFlowDisplay?: string | null;
   [key: string]: unknown;
 }
 
 export interface Phase6DemoConfig {
+  scenario?: {
+    mode: 'illustrative' | 'operator-supplied';
+    description: string;
+  };
   global: {
     manifestURI: string;
     iotOracleRouter?: string;
@@ -125,6 +138,14 @@ export interface Phase6DemoConfig {
   };
   domains: Array<{
     slug: string;
+    active?: boolean;
+    lifecycle?: 'active' | 'experimental' | 'sunset';
+    sunsetPlan?: {
+      reason?: string;
+      retirementBlock?: number;
+      handoffDomains?: string[];
+      notes?: string;
+    };
     name: string;
     manifestURI: string;
     subgraph: string;
@@ -154,7 +175,15 @@ export interface Phase6DemoConfig {
 }
 
 export interface DomainBlueprint {
+  configured: {
+    operations: boolean;
+    telemetry: boolean;
+    infrastructureControl: boolean;
+    credentials: boolean;
+  };
   slug: string;
+  active: boolean;
+  lifecycle: 'active' | 'experimental' | 'sunset';
   name: string;
   domainId: string;
   manifestURI: string;
@@ -173,6 +202,9 @@ export interface DomainBlueprint {
     maxActiveJobs: number;
     maxQueueDepth: number;
     minStakeWei: string;
+    minStakeBaseUnits: string;
+    minStakeDisplay: string;
+    /** Legacy key; no asset denomination is inferred. Prefer minStakeDisplay. */
     minStakeEth: string;
     treasuryShareBps: number;
     circuitBreakerBps: number;
@@ -209,15 +241,24 @@ export interface DomainBlueprint {
   };
   credentials: DomainCredentialRequirementConfig[];
   calldata: {
-    registerDomain: string;
-    updateDomain: string;
-    setDomainOperations: string;
-    setDomainTelemetry: string;
+    registerDomain?: string;
+    updateDomain?: string;
+    removeDomain?: string;
+    setDomainOperations?: string;
+    setDomainTelemetry?: string;
     setDomainInfrastructure?: string;
   };
 }
 
 export interface Phase6Blueprint {
+  scenario: { mode: 'illustrative' | 'operator-supplied'; description: string };
+  execution: {
+    mode: 'planning-only';
+    transactionsSubmitted: false;
+    workDispatched: false;
+    credentialsVerified: false;
+    telemetryVerified: false;
+  };
   generatedAt: string;
   configPath?: string;
   configHash: string;
@@ -239,6 +280,9 @@ export interface Phase6Blueprint {
     domainInfraCount: number;
     autopilotEnabledCount: number;
     autopilotCoverage: number;
+    resilienceSampleCount: number;
+    automationSampleCount: number;
+    telemetryMissingCount: number;
     resilienceFloorBreaches?: number;
     resilienceFloorCoverage?: number;
     automationFloorBreaches?: number;
@@ -297,8 +341,8 @@ export interface Phase6Blueprint {
   };
   calldata: {
     globalConfig: string;
-    globalGuards: string;
-    globalTelemetry: string;
+    globalGuards?: string;
+    globalTelemetry?: string;
     globalInfrastructure?: string;
     systemPause?: string;
     escalationBridge?: string;
@@ -319,6 +363,7 @@ export const ABI_FRAGMENTS = [
   'function setEscalationBridge(address newBridge)',
   'function registerDomain((string slug,string name,string metadataURI,address validationModule,address dataOracle,address l2Gateway,string subgraphEndpoint,address executionRouter,uint64 heartbeatSeconds,bool active) config)',
   'function updateDomain(bytes32 id,(string slug,string name,string metadataURI,address validationModule,address dataOracle,address l2Gateway,string subgraphEndpoint,address executionRouter,uint64 heartbeatSeconds,bool active) config)',
+  'function removeDomain(bytes32 id)',
   'function setDomainOperations(bytes32 id,(uint48 maxActiveJobs,uint48 maxQueueDepth,uint96 minStake,uint16 treasuryShareBps,uint16 circuitBreakerBps,bool requiresHumanValidation) config)',
   'function setDomainTelemetry(bytes32 id,(uint32,uint32,uint32,uint32,bool,address,address,bytes32,bytes32) telemetry)',
   'function setDomainInfrastructure(bytes32 id,(address,address,address,address,string,uint64,bool) infrastructure)',
@@ -359,19 +404,23 @@ function toBigIntString(value: string | number | undefined): string {
   return BigInt(value).toString();
 }
 
-function minStakeEth(valueWei: string): string {
-  try {
-    return `${formatEther(BigInt(valueWei))} ETH`;
-  } catch (error) {
-    return valueWei;
-  }
+function minStakeDisplay(baseUnits: string): string {
+  return `${baseUnits} base units (asset and decimals unconfigured)`;
 }
 
 function computeMermaid(config: Phase6DemoConfig): string {
-  const lines = ['graph TD', '  Owner[[Governance]] --> Expansion(Phase6ExpansionManager)'];
-  for (const domain of config.domains) {
-    const id = domain.slug.replace(/[^a-z0-9]/gi, '');
-    lines.push(`  Expansion --> ${id}([${domain.name}])`);
+  const lines = [
+    'graph TD',
+    '  Owner[[Governance]] --> Expansion(Phase6ExpansionManager)',
+  ];
+  for (const [index, domain] of config.domains.entries()) {
+    const id = `domain${index}`;
+    const label = domain.name
+      .replace(/&/g, '&amp;')
+      .replace(/"/g, '&quot;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+    lines.push(`  Expansion --> ${id}(["${label}"])`);
     lines.push(`  ${id} --> Runtime`);
   }
   lines.push('  Runtime[Phase6 Runtime] --> IoT[IoT & external oracles]');
@@ -395,6 +444,9 @@ function computeMetrics(config: Phase6DemoConfig) {
   const automationFloor = toNumber(config.global.telemetry?.automationFloorBps);
   let resilienceFloorBreaches = 0;
   let automationFloorBreaches = 0;
+  let resilienceSamples = 0;
+  let automationSamples = 0;
+  let telemetryMissingCount = 0;
 
   for (const domain of config.domains) {
     const domainCredentials = ensureArray(domain.credentials);
@@ -418,13 +470,20 @@ function computeMetrics(config: Phase6DemoConfig) {
       }
     }
     const telemetry = domain.telemetry;
+    if (!telemetry) telemetryMissingCount += 1;
     if (telemetry) {
       const resilienceBps = toNumber(telemetry.resilienceBps);
-      if (resilienceBps !== null && resilienceFloor !== null && resilienceBps < resilienceFloor) {
+      if (resilienceBps !== null) resilienceSamples += 1;
+      if (
+        resilienceBps !== null &&
+        resilienceFloor !== null &&
+        resilienceBps < resilienceFloor
+      ) {
         resilienceFloorBreaches += 1;
       }
       const auto = toNumber(telemetry.automationBps);
       if (auto !== null) {
+        automationSamples += 1;
         automation.push(auto);
         if (automationFloor !== null && auto < automationFloor) {
           automationFloorBreaches += 1;
@@ -460,22 +519,29 @@ function computeMetrics(config: Phase6DemoConfig) {
           resilience.reduce((acc, value) => {
             const diff = value - averageResilience;
             return acc + diff * diff;
-          }, 0) / resilience.length,
+          }, 0) / resilience.length
         )
       : undefined;
 
-  const computeCoverage = (breaches: number, floor: number | null): number | undefined => {
+  const computeCoverage = (
+    breaches: number,
+    samples: number,
+    floor: number | null
+  ): number | undefined => {
     if (floor === null) {
       return undefined;
     }
     if (!domainCount) {
-      return 1;
+      return 0;
     }
-    return (domainCount - breaches) / domainCount;
+    return (samples - breaches) / domainCount;
   };
 
   return {
     domainCount,
+    resilienceSampleCount: resilienceSamples,
+    automationSampleCount: automationSamples,
+    telemetryMissingCount,
     averageResilience,
     minResilience: resilience.length ? Math.min(...resilience) : undefined,
     maxResilience: resilience.length ? Math.max(...resilience) : undefined,
@@ -489,14 +555,24 @@ function computeMetrics(config: Phase6DemoConfig) {
     globalInfraCount: ensureArray(config.global.decentralizedInfra).length,
     domainInfraCount: config.domains.reduce(
       (acc, domain) => acc + ensureArray(domain.infrastructure).length,
-      0,
+      0
     ),
     autopilotEnabledCount: autopilotEnabled,
     autopilotCoverage: domainCount ? autopilotEnabled / domainCount : 0,
-    resilienceFloorBreaches: resilienceFloor !== null ? resilienceFloorBreaches : undefined,
-    resilienceFloorCoverage: computeCoverage(resilienceFloorBreaches, resilienceFloor),
-    automationFloorBreaches: automationFloor !== null ? automationFloorBreaches : undefined,
-    automationFloorCoverage: computeCoverage(automationFloorBreaches, automationFloor),
+    resilienceFloorBreaches:
+      resilienceFloor !== null ? resilienceFloorBreaches : undefined,
+    resilienceFloorCoverage: computeCoverage(
+      resilienceFloorBreaches,
+      resilienceSamples,
+      resilienceFloor
+    ),
+    automationFloorBreaches:
+      automationFloor !== null ? automationFloorBreaches : undefined,
+    automationFloorCoverage: computeCoverage(
+      automationFloorBreaches,
+      automationSamples,
+      automationFloor
+    ),
     credentialedDomainCount: credentialedDomains,
     credentialRequirementCount,
     credentialCoverage: domainCount ? credentialedDomains / domainCount : 0,
@@ -514,7 +590,7 @@ function buildDomainTuples(domain: Phase6DemoConfig['domains'][number]) {
     domain.subgraph,
     domain.executionRouter ?? ZERO_ADDRESS,
     BigInt(domain.heartbeatSeconds ?? 120),
-    true,
+    isPhase6DomainActive(domain),
   ];
 
   const operations = domain.operations ?? {
@@ -553,10 +629,12 @@ function buildDomainTuples(domain: Phase6DemoConfig['domains'][number]) {
     Boolean(telemetry.usesL2Settlement ?? false),
     telemetry.sentinelOracle ?? ZERO_ADDRESS,
     telemetry.settlementAsset ?? ZERO_ADDRESS,
-    typeof telemetry.metricsDigest === 'string' && telemetry.metricsDigest.startsWith('0x')
+    typeof telemetry.metricsDigest === 'string' &&
+    telemetry.metricsDigest.startsWith('0x')
       ? telemetry.metricsDigest
       : ZERO_BYTES32,
-    typeof telemetry.manifestHash === 'string' && telemetry.manifestHash.startsWith('0x')
+    typeof telemetry.manifestHash === 'string' &&
+    telemetry.manifestHash.startsWith('0x')
       ? telemetry.manifestHash
       : ZERO_BYTES32,
   ];
@@ -576,14 +654,16 @@ function buildDomainTuples(domain: Phase6DemoConfig['domains'][number]) {
 }
 
 export function loadPhase6Config(path: string): Phase6DemoConfig {
-  const data = JSON.parse(readFileSync(path, 'utf-8'));
+  const data = parsePhase6Json(readFileSync(path, 'utf-8'));
+  validatePhase6Config(data);
   return data as Phase6DemoConfig;
 }
 
 export function buildPhase6Blueprint(
   config: Phase6DemoConfig,
-  options: { configPath?: string } = {},
+  options: { configPath?: string } = {}
 ): Phase6Blueprint {
+  validatePhase6Config(config);
   const metrics = computeMetrics(config);
 
   const configHash = keccak256(toUtf8Bytes(JSON.stringify(config)));
@@ -640,36 +720,51 @@ export function buildPhase6Blueprint(
     const telemetry = domain.telemetry ?? ({} as DomainTelemetryConfig);
     const operations = domain.operations ?? ({} as DomainOperationsConfig);
     const control = domain.infrastructureControl;
-    const credentialRequirements = ensureArray(domain.credentials).map((entry) => {
-      const notes =
-        entry && entry.notes !== undefined && entry.notes !== null
-          ? String(entry.notes)
-          : undefined;
-      return {
-        name: String(entry?.name ?? ''),
-        requirement: String(entry?.requirement ?? ''),
-        credentialType: String(entry?.credentialType ?? ''),
-        format: String(entry?.format ?? ''),
-        issuers: normalizeStringArray(entry?.issuers ?? []),
-        verifiers: normalizeStringArray(entry?.verifiers ?? []),
-        registry: String(entry?.registry ?? ''),
-        evidence: String(entry?.evidence ?? ''),
-        notes,
-      };
-    });
+    const credentialRequirements = ensureArray(domain.credentials).map(
+      (entry) => {
+        const notes =
+          entry && entry.notes !== undefined && entry.notes !== null
+            ? String(entry.notes)
+            : undefined;
+        return {
+          name: String(entry?.name ?? ''),
+          requirement: String(entry?.requirement ?? ''),
+          credentialType: String(entry?.credentialType ?? ''),
+          format: String(entry?.format ?? ''),
+          issuers: normalizeStringArray(entry?.issuers ?? []),
+          verifiers: normalizeStringArray(entry?.verifiers ?? []),
+          registry: String(entry?.registry ?? ''),
+          evidence: String(entry?.evidence ?? ''),
+          notes,
+        };
+      }
+    );
 
     return {
+      configured: {
+        operations: domain.operations !== undefined,
+        telemetry: domain.telemetry !== undefined,
+        infrastructureControl: domain.infrastructureControl !== undefined,
+        credentials: domain.credentials !== undefined,
+      },
       slug: domain.slug,
+      active: isPhase6DomainActive(domain),
+      lifecycle: domain.lifecycle ?? 'active',
       name: domain.name,
       domainId,
       manifestURI: domain.manifestURI,
       subgraph: domain.subgraph,
       priority: Number(domain.priority ?? 0),
-      skillTags: ensureArray(domain.skillTags).map((tag) => tag.toLowerCase()),
-      capabilities: Object.fromEntries(
-        Object.entries(domain.capabilities ?? {}).map(([key, value]) => [key.toLowerCase(), Number(value)]),
+      skillTags: ensureArray(domain.skillTags).map((tag) =>
+        tag.trim().toLowerCase()
       ),
-      heartbeatSeconds: Number(domain.heartbeatSeconds ?? config.global.l2SyncCadence ?? 0),
+      capabilities: Object.fromEntries(
+        Object.entries(domain.capabilities ?? {}).map(([key, value]) => [
+          key.trim().toLowerCase(),
+          Number(value),
+        ])
+      ),
+      heartbeatSeconds: Number(domain.heartbeatSeconds ?? 120),
       addresses: {
         validationModule: domain.validationModule,
         oracle: normaliseAddress(domain.oracle),
@@ -680,27 +775,43 @@ export function buildPhase6Blueprint(
         maxActiveJobs: Number(operations.maxActiveJobs ?? 0),
         maxQueueDepth: Number(operations.maxQueueDepth ?? 0),
         minStakeWei: toBigIntString(operations.minStake ?? '0'),
-        minStakeEth: minStakeEth(toBigIntString(operations.minStake ?? '0')),
+        minStakeBaseUnits: toBigIntString(operations.minStake ?? '0'),
+        minStakeDisplay: minStakeDisplay(
+          toBigIntString(operations.minStake ?? '0')
+        ),
+        minStakeEth: minStakeDisplay(
+          toBigIntString(operations.minStake ?? '0')
+        ),
         treasuryShareBps: Number(operations.treasuryShareBps ?? 0),
         circuitBreakerBps: Number(operations.circuitBreakerBps ?? 0),
-        requiresHumanValidation: Boolean(operations.requiresHumanValidation ?? false),
+        requiresHumanValidation: Boolean(
+          operations.requiresHumanValidation ?? false
+        ),
       },
       telemetry: {
         resilienceBps: Number(telemetry.resilienceBps ?? 0),
         automationBps: Number(telemetry.automationBps ?? 0),
         complianceBps: Number(telemetry.complianceBps ?? 0),
-        settlementLatencySeconds: Number(telemetry.settlementLatencySeconds ?? 0),
+        settlementLatencySeconds: Number(
+          telemetry.settlementLatencySeconds ?? 0
+        ),
         usesL2Settlement: Boolean(telemetry.usesL2Settlement ?? false),
         sentinelOracle: normaliseAddress(telemetry.sentinelOracle ?? undefined),
-        settlementAsset: normaliseAddress(telemetry.settlementAsset ?? undefined),
+        settlementAsset: normaliseAddress(
+          telemetry.settlementAsset ?? undefined
+        ),
         metricsDigest: telemetry.metricsDigest ?? ZERO_BYTES32,
         manifestHash: telemetry.manifestHash ?? ZERO_BYTES32,
       },
       metadata: {
         resilienceIndex: toNumber(metadata.resilienceIndex),
         valueFlowMonthlyUSD: toNumber(metadata.valueFlowMonthlyUSD),
-        valueFlowDisplay: typeof metadata.valueFlowDisplay === 'string' ? metadata.valueFlowDisplay : null,
-        sentinel: typeof metadata.sentinel === 'string' ? metadata.sentinel : null,
+        valueFlowDisplay:
+          typeof metadata.valueFlowDisplay === 'string'
+            ? metadata.valueFlowDisplay
+            : null,
+        sentinel:
+          typeof metadata.sentinel === 'string' ? metadata.sentinel : null,
         uptime: typeof metadata.uptime === 'string' ? metadata.uptime : null,
         raw: metadata as Record<string, unknown>,
       },
@@ -716,14 +827,43 @@ export function buildPhase6Blueprint(
       },
       credentials: credentialRequirements,
       calldata: {
-        registerDomain: ABI_INTERFACE.encodeFunctionData('registerDomain', [tuples.tuple]),
-        updateDomain: ABI_INTERFACE.encodeFunctionData('updateDomain', [domainId, tuples.tuple]),
-        setDomainOperations: ABI_INTERFACE.encodeFunctionData('setDomainOperations', [domainId, tuples.opsTuple]),
-        setDomainTelemetry: ABI_INTERFACE.encodeFunctionData('setDomainTelemetry', [domainId, tuples.telemetryTuple]),
-        setDomainInfrastructure: ABI_INTERFACE.encodeFunctionData(
-          'setDomainInfrastructure',
-          [domainId, tuples.infraTuple],
-        ),
+        registerDomain:
+          domain.lifecycle !== 'sunset'
+            ? ABI_INTERFACE.encodeFunctionData('registerDomain', [tuples.tuple])
+            : undefined,
+        updateDomain:
+          domain.lifecycle !== 'sunset'
+            ? ABI_INTERFACE.encodeFunctionData('updateDomain', [
+                domainId,
+                tuples.tuple,
+              ])
+            : undefined,
+        removeDomain:
+          domain.lifecycle === 'sunset' &&
+          domain.sunsetPlan?.retirementBlock === undefined
+            ? ABI_INTERFACE.encodeFunctionData('removeDomain', [domainId])
+            : undefined,
+        setDomainOperations:
+          domain.operations && domain.lifecycle !== 'sunset'
+            ? ABI_INTERFACE.encodeFunctionData('setDomainOperations', [
+                domainId,
+                tuples.opsTuple,
+              ])
+            : undefined,
+        setDomainTelemetry:
+          domain.telemetry && domain.lifecycle !== 'sunset'
+            ? ABI_INTERFACE.encodeFunctionData('setDomainTelemetry', [
+                domainId,
+                tuples.telemetryTuple,
+              ])
+            : undefined,
+        setDomainInfrastructure:
+          domain.infrastructureControl && domain.lifecycle !== 'sunset'
+            ? ABI_INTERFACE.encodeFunctionData('setDomainInfrastructure', [
+                domainId,
+                tuples.infraTuple,
+              ])
+            : undefined,
       },
     };
   });
@@ -733,22 +873,29 @@ export function buildPhase6Blueprint(
   for (const domain of config.domains) {
     domainInfra[domain.slug] = ensureArray(domain.infrastructure);
   }
-  const domainCredentialMap: Record<string, DomainCredentialRequirementConfig[]> = {};
+  const domainCredentialMap: Record<
+    string,
+    DomainCredentialRequirementConfig[]
+  > = {};
   for (const domain of domains) {
     domainCredentialMap[domain.slug] = domain.credentials;
   }
 
   const rawGlobalCredentials = config.global.credentials ?? {};
   const globalCredentials = {
-    trustAnchors: ensureArray(rawGlobalCredentials.trustAnchors).map((anchor) => ({
-      name: String(anchor?.name ?? ''),
-      did: String(anchor?.did ?? ''),
-      role: String(anchor?.role ?? ''),
-      policyURI:
-        anchor && typeof anchor.policyURI === 'string' && anchor.policyURI.length
-          ? anchor.policyURI
-          : undefined,
-    })),
+    trustAnchors: ensureArray(rawGlobalCredentials.trustAnchors).map(
+      (anchor) => ({
+        name: String(anchor?.name ?? ''),
+        did: String(anchor?.did ?? ''),
+        role: String(anchor?.role ?? ''),
+        policyURI:
+          anchor &&
+          typeof anchor.policyURI === 'string' &&
+          anchor.policyURI.length
+            ? anchor.policyURI
+            : undefined,
+      })
+    ),
     issuers: ensureArray(rawGlobalCredentials.issuers).map((issuer) => ({
       name: String(issuer?.name ?? ''),
       did: String(issuer?.did ?? ''),
@@ -768,21 +915,44 @@ export function buildPhase6Blueprint(
   };
 
   const calldata = {
-    globalConfig: ABI_INTERFACE.encodeFunctionData('setGlobalConfig', [globalTuple]),
-    globalGuards: ABI_INTERFACE.encodeFunctionData('setGlobalGuards', [guardTuple]),
-    globalTelemetry: ABI_INTERFACE.encodeFunctionData('setGlobalTelemetry', [telemetryTuple]),
+    globalConfig: ABI_INTERFACE.encodeFunctionData('setGlobalConfig', [
+      globalTuple,
+    ]),
+    globalGuards: config.global.guards
+      ? ABI_INTERFACE.encodeFunctionData('setGlobalGuards', [guardTuple])
+      : undefined,
+    globalTelemetry: globalTelemetry
+      ? ABI_INTERFACE.encodeFunctionData('setGlobalTelemetry', [telemetryTuple])
+      : undefined,
     globalInfrastructure: globalInfrastructure
-      ? ABI_INTERFACE.encodeFunctionData('setGlobalInfrastructure', [globalInfraTuple])
+      ? ABI_INTERFACE.encodeFunctionData('setGlobalInfrastructure', [
+          globalInfraTuple,
+        ])
       : undefined,
     systemPause: config.global.systemPause
-      ? ABI_INTERFACE.encodeFunctionData('setSystemPause', [config.global.systemPause])
+      ? ABI_INTERFACE.encodeFunctionData('setSystemPause', [
+          config.global.systemPause,
+        ])
       : undefined,
     escalationBridge: config.global.escalationBridge
-      ? ABI_INTERFACE.encodeFunctionData('setEscalationBridge', [config.global.escalationBridge])
+      ? ABI_INTERFACE.encodeFunctionData('setEscalationBridge', [
+          config.global.escalationBridge,
+        ])
       : undefined,
   };
 
   return {
+    scenario: config.scenario ?? {
+      mode: 'operator-supplied',
+      description: 'Unverified operator-supplied configuration.',
+    },
+    execution: {
+      mode: 'planning-only',
+      transactionsSubmitted: false,
+      workDispatched: false,
+      credentialsVerified: false,
+      telemetryVerified: false,
+    },
     generatedAt: new Date().toISOString(),
     configPath: options.configPath,
     configHash,
@@ -797,20 +967,26 @@ export function buildPhase6Blueprint(
       treasuryBridge: normaliseAddress(config.global.treasuryBridge),
       systemPause: normaliseAddress(config.global.systemPause),
       escalationBridge: normaliseAddress(config.global.escalationBridge),
-      l2SyncCadenceSeconds: Number(config.global.l2SyncCadence ?? 0),
+      l2SyncCadenceSeconds: Number(config.global.l2SyncCadence ?? 180),
       meshCoordinator: normaliseAddress(globalInfrastructure?.meshCoordinator),
       dataLake: normaliseAddress(globalInfrastructure?.dataLake),
       identityBridge: normaliseAddress(globalInfrastructure?.identityBridge),
       topologyURI: globalInfrastructure?.topologyURI ?? null,
-      autopilotCadenceSeconds: Number(globalInfrastructure?.autopilotCadence ?? 0),
-      enforceDecentralizedInfra: Boolean(globalInfrastructure?.enforceDecentralizedInfra ?? false),
+      autopilotCadenceSeconds: Number(
+        globalInfrastructure?.autopilotCadence ?? 0
+      ),
+      enforceDecentralizedInfra: Boolean(
+        globalInfrastructure?.enforceDecentralizedInfra ?? false
+      ),
     },
     guards: {
       treasuryBufferBps: Number(globalGuards.treasuryBufferBps ?? 0),
       circuitBreakerBps: Number(globalGuards.circuitBreakerBps ?? 0),
       anomalyGracePeriod: Number(globalGuards.anomalyGracePeriod ?? 0),
       autoPauseEnabled: Boolean(globalGuards.autoPauseEnabled ?? false),
-      oversightCouncil: normaliseAddress(globalGuards.oversightCouncil ?? undefined),
+      oversightCouncil: normaliseAddress(
+        globalGuards.oversightCouncil ?? undefined
+      ),
     },
     telemetry: {
       manifestHash: globalTelemetry?.manifestHash ?? null,
@@ -837,4 +1013,3 @@ export function buildPhase6Blueprint(
     domains,
   };
 }
-
