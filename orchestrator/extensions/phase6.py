@@ -724,10 +724,20 @@ def _integer(
     maximum: int = 2**64 - 1,
     allow_string: bool = False,
 ) -> int:
-    if allow_string and isinstance(value, str) and re.fullmatch(r"0|[1-9][0-9]*", value):
+    decimal_string = bool(allow_string and isinstance(value, str) and re.fullmatch(r"0|[1-9][0-9]*", value))
+    if decimal_string:
         value = int(value)
-    if isinstance(value, bool) or not isinstance(value, int) or not minimum <= value <= maximum:
-        raise ValueError(f"{context} must be an integer between {minimum} and {maximum}")
+    # JSON 30.0 and 3e1 have integer semantics in the TypeScript consumer too.
+    # Conversion is safe only before binary64 integer precision is exhausted.
+    if isinstance(value, float) and math.isfinite(value) and value.is_integer() and abs(value) <= 2**53 - 1:
+        value = int(value)
+    if (
+        isinstance(value, bool)
+        or not isinstance(value, int)
+        or (not decimal_string and abs(value) > 2**53 - 1)
+        or not minimum <= value <= maximum
+    ):
+        raise ValueError(f"{context} must be an exact integer between {minimum} and {maximum}; numeric values must be safe integers")
     return value
 
 

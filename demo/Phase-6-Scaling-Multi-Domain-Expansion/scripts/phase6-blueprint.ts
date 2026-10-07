@@ -8,6 +8,9 @@ import {
 import { Interface, keccak256, toUtf8Bytes } from 'ethers';
 
 export interface DecentralizedInfraEntry {
+  layer?: string;
+  provider?: string;
+  uri?: string;
   name: string;
   role: string;
   status: string;
@@ -15,6 +18,7 @@ export interface DecentralizedInfraEntry {
 }
 
 export interface DomainInfrastructureEntry {
+  provider?: string;
   layer: string;
   name: string;
   role: string;
@@ -80,11 +84,11 @@ export interface DomainTelemetryConfig {
 export interface DomainMetadataConfig {
   domain: string;
   l2: string;
-  sentinel: string;
+  sentinel?: string | null;
   resilienceIndex: number;
-  uptime: string;
+  uptime?: string | null;
   valueFlowMonthlyUSD: number;
-  valueFlowDisplay?: string;
+  valueFlowDisplay?: string | null;
   [key: string]: unknown;
 }
 

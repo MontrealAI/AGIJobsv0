@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 import pytest
@@ -623,3 +624,49 @@ def test_absent_credential_sections_remain_valid_unverified_metadata(sample_payl
     plan = runtime.build_bridge_plan("finance")
     assert plan["credentials"] == []
     assert plan["credentialsVerified"] is False
+
+
+@pytest.mark.parametrize(("number_literal", "expected"), [("30.0", 30), ("1e2", 100)])
+def test_json_integer_valued_numeric_syntax_matches_typescript(sample_payload, tmp_path, number_literal, expected):
+    marker = "PHASE6_INTEGER_LITERAL"
+    sample_payload["domains"][0]["heartbeatSeconds"] = marker
+    sample_payload["domains"][0]["operations"] = {
+        "maxActiveJobs": marker,
+        "maxQueueDepth": marker,
+        "minStake": marker,
+        "treasuryShareBps": marker,
+    }
+    sample_payload["domains"][0]["sunsetPlan"] = {"retirementBlock": marker}
+    sample_payload["global"]["l2SyncCadence"] = marker
+    sample_payload["global"]["telemetry"] = {"resilienceFloorBps": marker}
+    config = tmp_path / "numeric-syntax.json"
+    config.write_text(json.dumps(sample_payload).replace(json.dumps(marker), number_literal), encoding="utf-8")
+    runtime = DomainExpansionRuntime.from_file(config)
+    profile = runtime.domains[0]
+    plan = runtime.build_bridge_plan("finance")
+    assert profile.heartbeat_seconds == expected
+    assert profile.max_active_jobs == expected
+    assert profile.treasury_share_bps == expected
+    assert plan["minStake"] == str(expected)
+    assert plan["syncCadenceSeconds"] == expected
+
+
+@pytest.mark.parametrize("value", [2**53, float(2**53), float("inf"), float("nan"), 30.25, True])
+def test_numeric_stakes_must_be_exact_safe_integers(sample_payload, value):
+    sample_payload["domains"][0]["operations"] = {"minStake": value}
+    with pytest.raises(ValueError, match="minStake"):
+        DomainExpansionRuntime.from_payload(sample_payload)
+
+
+@pytest.mark.parametrize("value", [2**53, float(2**53)])
+def test_unsafe_numeric_cadence_is_rejected_even_within_uint64(sample_payload, value):
+    sample_payload["global"]["l2SyncCadence"] = value
+    with pytest.raises(ValueError, match="l2SyncCadence"):
+        DomainExpansionRuntime.from_payload(sample_payload)
+
+
+def test_large_decimal_stake_strings_remain_exact(sample_payload):
+    stake = str(2**96 - 1)
+    sample_payload["domains"][0]["operations"] = {"minStake": stake}
+    runtime = DomainExpansionRuntime.from_payload(sample_payload)
+    assert runtime.build_bridge_plan("finance")["minStake"] == stake

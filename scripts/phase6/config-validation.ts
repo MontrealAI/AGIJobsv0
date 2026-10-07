@@ -70,6 +70,7 @@ function bool(value: unknown, path: string): void {
 function address(value: unknown, path: string, nonzero = false): void {
   if (
     typeof value !== 'string' ||
+    !/^0x[0-9a-fA-F]{40}$/.test(value) ||
     !isAddress(value) ||
     (nonzero && /^0x0{40}$/i.test(value))
   ) {
@@ -213,14 +214,24 @@ function infrastructure(value: unknown, path: string, global = false): void {
     );
   }
 }
-function integrations(value: unknown, path: string): void {
+function integrations(
+  value: unknown,
+  path: string,
+  requireLayer = false
+): void {
   if (!Array.isArray(value)) fail(path, 'must be an array.');
   value.forEach((entry, i) => {
     const row = object(entry, `${path}[${i}]`);
+    keys(
+      row,
+      ['layer', 'name', 'role', 'status', 'provider', 'endpoint', 'uri'],
+      `${path}[${i}]`
+    );
     ['name', 'role', 'status'].forEach((key) =>
       text(row[key], `${path}[${i}].${key}`)
     );
-    ['layer', 'endpoint', 'uri'].forEach((key) =>
+    if (requireLayer) text(row.layer, `${path}[${i}].layer`);
+    ['layer', 'provider', 'endpoint', 'uri'].forEach((key) =>
       optional(row, key, `${path}[${i}]`, text)
     );
   });
@@ -492,10 +503,22 @@ export function validatePhase6Config(value: unknown): void {
     }
     optional(domain, 'telemetry', path, telemetry);
     optional(domain, 'infrastructureControl', path, infrastructure);
-    optional(domain, 'infrastructure', path, integrations);
+    optional(domain, 'infrastructure', path, (value, field) =>
+      integrations(value, field, true)
+    );
     optional(domain, 'credentials', path, credentials);
     if (domain.metadata !== undefined) {
       const metadata = object(domain.metadata, `${path}.metadata`);
+      for (const field of ['sentinel', 'uptime', 'valueFlowDisplay']) {
+        optional(metadata, field, `${path}.metadata`, (value, name) => {
+          if (
+            value !== null &&
+            (typeof value !== 'string' || /[\u0000-\u001f\u007f]/.test(value))
+          ) {
+            fail(name, 'must be a string without control characters or null.');
+          }
+        });
+      }
       optional(
         metadata,
         'resilienceIndex',
@@ -506,6 +529,11 @@ export function validatePhase6Config(value: unknown): void {
     }
     if (domain.sunsetPlan !== undefined) {
       const sunset = object(domain.sunsetPlan, `${path}.sunsetPlan`);
+      keys(
+        sunset,
+        ['reason', 'retirementBlock', 'handoffDomains', 'notes'],
+        `${path}.sunsetPlan`
+      );
       optional(sunset, 'reason', `${path}.sunsetPlan`, text);
       optional(sunset, 'retirementBlock', `${path}.sunsetPlan`, (item, field) =>
         integer(item, field, 1)

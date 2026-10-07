@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { Interface } from 'ethers';
+import { Interface, getIcapAddress } from 'ethers';
 import { spawnSync } from 'node:child_process';
 import { mkdtempSync, copyFileSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
@@ -41,6 +41,62 @@ const sample = (): EventPayload => ({
 
 describe('Phase 6 strict configuration and evidence boundaries', function () {
   for (const [label, mutate] of [
+    [
+      'ICAP address outside the configuration hex format',
+      (c: any) => {
+        c.domains[0].validationModule = getIcapAddress(
+          c.domains[0].validationModule
+        );
+      },
+    ],
+    [
+      'ICAP zero validation address',
+      (c: any) => {
+        c.domains[0].validationModule = getIcapAddress('0x' + '0'.repeat(40));
+      },
+    ],
+    [
+      'unknown global integration field',
+      (c: any) => {
+        c.global.decentralizedInfra[0].providre = 'ignored';
+      },
+    ],
+    [
+      'unknown domain integration field',
+      (c: any) => {
+        c.domains[0].infrastructure[0].providre = 'ignored';
+      },
+    ],
+    [
+      'untyped global integration provider',
+      (c: any) => {
+        c.global.decentralizedInfra[0].provider = false;
+      },
+    ],
+    [
+      'untyped domain integration provider',
+      (c: any) => {
+        c.domains[0].infrastructure[0].provider = { name: 'ignored' };
+      },
+    ],
+    [
+      'unknown sunset plan field',
+      (c: any) => {
+        c.domains[0].sunsetPlan = { retireAtBlock: 100 };
+      },
+    ],
+    [
+      'missing domain infrastructure layer',
+      (c: any) => {
+        delete c.domains[0].infrastructure[0].layer;
+      },
+    ],
+    [
+      'empty domain infrastructure layer',
+      (c: any) => {
+        c.domains[0].infrastructure[0].layer = '';
+      },
+    ],
     [
       'unknown credential section field',
       (c: any) => {
@@ -187,6 +243,31 @@ describe('Phase 6 strict configuration and evidence boundaries', function () {
       expect(() => buildPhase6Blueprint(config)).to.throw();
     });
   }
+  it('preserves optional provider metadata on global and domain integrations', function () {
+    const config = fresh();
+    config.global.decentralizedInfra[0].provider = 'Global Example Provider';
+    config.domains[0].infrastructure[0].provider = 'Domain Example Provider';
+    validatePhase6Config(config);
+    const blueprint = buildPhase6Blueprint(config);
+    expect(blueprint.infrastructure.global[0].provider).to.equal(
+      'Global Example Provider'
+    );
+    expect(blueprint.domains[0].infrastructure[0].provider).to.equal(
+      'Domain Example Provider'
+    );
+  });
+
+  it('allows global infrastructure entries without a domain layer label', function () {
+    const config = fresh();
+    config.global.decentralizedInfra.forEach((entry: any) => {
+      delete entry.layer;
+    });
+    expect(() => validatePhase6Config(config)).not.to.throw();
+    expect(buildPhase6Blueprint(config).infrastructure.global).to.have.length(
+      config.global.decentralizedInfra.length
+    );
+  });
+
   it('rejects duplicate JSON keys including escaped duplicates before values disappear', function () {
     expect(() => parsePhase6Json('{"active":true,"active":false}')).to.throw(
       'duplicate JSON key'

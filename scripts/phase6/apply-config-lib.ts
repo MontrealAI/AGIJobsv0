@@ -12,6 +12,9 @@ export const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 const ADDRESS_PATTERN = /^0x[0-9a-fA-F]{40}$/;
 
 export interface DecentralizedInfraEntry {
+  layer?: string;
+  provider?: string;
+  uri?: string;
   name: string;
   role: string;
   status: string;
@@ -19,6 +22,7 @@ export interface DecentralizedInfraEntry {
 }
 
 export interface InfrastructureEntry {
+  provider?: string;
   layer: string;
   name: string;
   role: string;
@@ -70,11 +74,11 @@ export interface DomainCredentialRequirementInput {
 export interface DomainMetadata {
   domain: string;
   l2: string;
-  sentinel: string;
+  sentinel?: string | null;
   resilienceIndex: number;
-  uptime: string;
+  uptime?: string | null;
   valueFlowMonthlyUSD: number;
-  valueFlowDisplay?: string;
+  valueFlowDisplay?: string | null;
   [key: string]: unknown;
 }
 

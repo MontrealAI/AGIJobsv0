@@ -385,3 +385,50 @@ test('Phase 6 browser registration and update encode only active lifecycle as en
     }
   }
 });
+
+test('Phase 6 rejects non-string known display metadata before preview generation', () => {
+  const {
+    validatePhase6Config,
+  } = require('../../scripts/phase6/config-validation.ts');
+  for (const key of ['sentinel', 'uptime', 'valueFlowDisplay']) {
+    for (const invalid of [99, true, [], {}]) {
+      const value = clone();
+      value.domains[0].metadata[key] = invalid;
+      const expected = new RegExp(`metadata\\.${key}`);
+      assert.throws(() => validatePhase6Config(value), expected);
+      assert.throws(() => buildPhase6Blueprint(value), expected);
+    }
+  }
+});
+
+test('Phase 6 null, empty and string display metadata retain browser/CLI parity', () => {
+  const {
+    validatePhase6Config,
+  } = require('../../scripts/phase6/config-validation.ts');
+  for (const accepted of [null, '', 'declared example']) {
+    const value = clone();
+    for (const domain of value.domains) {
+      for (const key of ['sentinel', 'uptime', 'valueFlowDisplay'])
+        domain.metadata[key] = accepted;
+    }
+    assert.doesNotThrow(() => validatePhase6Config(value));
+    const blueprint = buildPhase6Blueprint(value);
+    const metrics = computeMetrics(value);
+    assert.equal(metrics.sentinelCount, accepted ? 1 : 0);
+    assert.equal(metrics.sentinelCount, blueprint.metrics.sentinelFamilies);
+    for (const domain of blueprint.domains) {
+      assert.equal(domain.metadata.sentinel, accepted);
+      assert.equal(domain.metadata.uptime, accepted);
+      assert.equal(domain.metadata.valueFlowDisplay, accepted);
+    }
+    assert.deepEqual(
+      buildCalldata(value, abi).map((call) => call.data),
+      [
+        ...Object.values(blueprint.calldata),
+        ...blueprint.domains.flatMap((domain) =>
+          Object.values(domain.calldata)
+        ),
+      ].filter((call) => call !== undefined)
+    );
+  }
+});
