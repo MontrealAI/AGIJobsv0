@@ -1,16 +1,17 @@
-import { mkdir, readFile, writeFile } from "fs/promises";
-import path from "path";
+import { assertVerifiedRecap } from './verifyRecap';
+import { mkdir, readFile, writeFile } from 'fs/promises';
+import path from 'path';
 
-import { formatEther } from "ethers";
-import { z } from "zod";
+import { formatEther } from 'ethers';
+import { z } from 'zod';
 
-const REPORT_DIR = path.join(__dirname, "..", "reports");
-const RECAP_PATH = path.join(REPORT_DIR, "alpha-mark-recap.json");
-const REPORT_PATH = path.join(REPORT_DIR, "alpha-mark-integrity.md");
+const REPORT_DIR = path.join(__dirname, '..', 'reports');
+const RECAP_PATH = path.join(REPORT_DIR, 'alpha-mark-recap.json');
+const REPORT_PATH = path.join(REPORT_DIR, 'alpha-mark-integrity.md');
 
 const tradeSchema = z
   .object({
-    kind: z.enum(["BUY", "SELL"]),
+    kind: z.enum(['BUY', 'SELL']),
     actor: z.string(),
     label: z.string(),
     tokensWhole: z.string(),
@@ -30,205 +31,206 @@ const participantSchema = z
 
 const recapSchema = z
   .object({
-  generatedAt: z.string(),
-  network: z
-    .object({
-    label: z.string(),
-    name: z.string(),
-    chainId: z.string(),
-    blockNumber: z.string(),
-    dryRun: z.boolean(),
+    generatedAt: z.string(),
+    network: z
+      .object({
+        label: z.string(),
+        name: z.string(),
+        chainId: z.string(),
+        blockNumber: z.string(),
+        dryRun: z.boolean(),
+      })
+      .passthrough(),
+    orchestrator: z
+      .object({
+        commit: z.string().optional(),
+        branch: z.string().optional(),
+        workspaceDirty: z.boolean(),
+        mode: z.enum(['dry-run', 'broadcast']),
+      })
+      .passthrough(),
+    actors: z.object({
+      owner: z.string(),
+      investors: z.array(z.string()).min(3),
+      validators: z.array(z.string()).min(3),
+    }),
+    bondingCurve: z
+      .object({
+        supplyWholeTokens: z.string(),
+        reserveWei: z.string(),
+        nextPriceWei: z.string(),
+        basePriceWei: z.string(),
+        slopeWei: z.string(),
+        reserveEth: z.string().optional(),
+        nextPriceEth: z.string().optional(),
+        basePriceEth: z.string().optional(),
+        slopeEth: z.string().optional(),
+      })
+      .passthrough(),
+    ownerControls: z
+      .object({
+        paused: z.boolean(),
+        whitelistEnabled: z.boolean(),
+        emergencyExitEnabled: z.boolean(),
+        finalized: z.boolean(),
+        aborted: z.boolean(),
+        validationOverrideEnabled: z.boolean(),
+        validationOverrideStatus: z.boolean(),
+        treasury: z.string(),
+        riskOracle: z.string(),
+        baseAsset: z.string(),
+        usesNativeAsset: z.boolean(),
+        fundingCapWei: z.string(),
+        fundingCapEth: z.string().optional(),
+        maxSupplyWholeTokens: z.string(),
+        saleDeadlineTimestamp: z.string(),
+        basePriceWei: z.string(),
+        basePriceEth: z.string().optional(),
+        slopeWei: z.string(),
+        slopeEth: z.string().optional(),
+      })
+      .passthrough(),
+    validators: z
+      .object({
+        approvalCount: z.string(),
+        approvalThreshold: z.string(),
+        members: z.array(z.string()),
+      })
+      .passthrough()
+      .optional(),
+    participants: z.array(participantSchema),
+    trades: z.array(tradeSchema),
+    launch: z
+      .object({
+        finalized: z.boolean(),
+        aborted: z.boolean(),
+        treasury: z.string(),
+        sovereignVault: z
+          .object({
+            manifestUri: z.string(),
+            totalReceivedWei: z.string(),
+            totalReceivedNativeWei: z.string().optional(),
+            totalReceivedExternalWei: z.string().optional(),
+            totalReceivedEth: z.string().optional(),
+            lastAcknowledgedAmountWei: z.string(),
+            lastAcknowledgedAmountEth: z.string().optional(),
+            lastAcknowledgedMetadataHex: z.string().optional(),
+            decodedMetadata: z.string().optional(),
+            vaultBalanceWei: z.string().optional(),
+            vaultBalanceEth: z.string().optional(),
+            totalReceivedNativeEth: z.string().optional(),
+            totalReceivedExternalEth: z.string().optional(),
+            lastAcknowledgedUsedNative: z.boolean().optional(),
+          })
+          .passthrough(),
+      })
+      .passthrough(),
+    verification: z
+      .object({
+        supplyConsensus: z
+          .object({
+            ledgerWholeTokens: z.string(),
+            contractWholeTokens: z.string(),
+            simulationWholeTokens: z.string(),
+            participantAggregateWholeTokens: z.string(),
+            consistent: z.boolean(),
+          })
+          .passthrough(),
+        pricing: z
+          .object({
+            contractNextPriceWei: z.string(),
+            simulatedNextPriceWei: z.string(),
+            consistent: z.boolean(),
+          })
+          .passthrough(),
+        capitalFlows: z
+          .object({
+            ledgerGrossWei: z.string(),
+            ledgerRedemptionsWei: z.string(),
+            ledgerNetWei: z.string(),
+            simulatedReserveWei: z.string(),
+            contractReserveWei: z.string(),
+            vaultReceivedWei: z.string(),
+            combinedReserveWei: z.string(),
+            consistent: z.boolean(),
+          })
+          .passthrough(),
+        contributions: z
+          .object({
+            participantAggregateWei: z.string(),
+            ledgerGrossWei: z.string(),
+            consistent: z.boolean(),
+          })
+          .passthrough(),
+        summary: z
+          .object({
+            totalChecks: z.number(),
+            passedChecks: z.number(),
+            failedChecks: z.number().optional(),
+            confidenceIndexBps: z.number(),
+            confidenceIndexPercent: z.string(),
+            verdict: z.enum(['PASS', 'REVIEW']),
+            checks: z
+              .array(
+                z.object({
+                  key: z.string(),
+                  label: z.string(),
+                  consistent: z.boolean(),
+                })
+              )
+              .optional(),
+          })
+          .partial()
+          .optional(),
+      })
+      .passthrough()
+      .optional(),
+    checksums: z
+      .object({
+        algorithm: z.literal('sha256'),
+        canonicalEncoding: z.literal('json-key-sorted'),
+        recapSha256: z.string(),
+      })
+      .optional(),
+    empowerment: z
+      .object({
+        tagline: z.string(),
+        automation: z
+          .object({
+            manualCommands: z.number(),
+            orchestratedActions: z.number(),
+            automationMultiplier: z.string(),
+          })
+          .passthrough(),
+        assurance: z
+          .object({
+            verificationConfidencePercent: z.string(),
+            checksPassed: z.number(),
+            totalChecks: z.number(),
+            validatorApprovals: z.number(),
+            validatorThreshold: z.number(),
+          })
+          .passthrough(),
+        capitalFormation: z
+          .object({
+            participants: z.number(),
+            grossContributionsWei: z.string(),
+            grossContributionsEth: z.string().optional(),
+            reserveWei: z.string(),
+            reserveEth: z.string().optional(),
+          })
+          .passthrough(),
+        operatorControls: z
+          .object({
+            totalControls: z.number(),
+            highlights: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      })
+      .passthrough()
+      .optional(),
   })
-    .passthrough(),
-  orchestrator: z
-    .object({
-    commit: z.string().optional(),
-    branch: z.string().optional(),
-    workspaceDirty: z.boolean(),
-    mode: z.enum(["dry-run", "broadcast"]),
-  })
-    .passthrough(),
-  actors: z.object({
-    owner: z.string(),
-    investors: z.array(z.string()).min(3),
-    validators: z.array(z.string()).min(3),
-  }),
-  bondingCurve: z
-    .object({
-    supplyWholeTokens: z.string(),
-    reserveWei: z.string(),
-    nextPriceWei: z.string(),
-    basePriceWei: z.string(),
-    slopeWei: z.string(),
-    reserveEth: z.string().optional(),
-    nextPriceEth: z.string().optional(),
-    basePriceEth: z.string().optional(),
-    slopeEth: z.string().optional(),
-  })
-    .passthrough(),
-  ownerControls: z
-    .object({
-    paused: z.boolean(),
-    whitelistEnabled: z.boolean(),
-    emergencyExitEnabled: z.boolean(),
-    finalized: z.boolean(),
-    aborted: z.boolean(),
-    validationOverrideEnabled: z.boolean(),
-    validationOverrideStatus: z.boolean(),
-    treasury: z.string(),
-    riskOracle: z.string(),
-    baseAsset: z.string(),
-    usesNativeAsset: z.boolean(),
-    fundingCapWei: z.string(),
-    fundingCapEth: z.string().optional(),
-    maxSupplyWholeTokens: z.string(),
-    saleDeadlineTimestamp: z.string(),
-    basePriceWei: z.string(),
-    basePriceEth: z.string().optional(),
-    slopeWei: z.string(),
-    slopeEth: z.string().optional(),
-  })
-    .passthrough(),
-  validators: z
-    .object({
-      approvalCount: z.string(),
-      approvalThreshold: z.string(),
-      members: z.array(z.string()),
-    })
-    .passthrough()
-    .optional(),
-  participants: z.array(participantSchema),
-  trades: z.array(tradeSchema),
-  launch: z
-    .object({
-      finalized: z.boolean(),
-      aborted: z.boolean(),
-      treasury: z.string(),
-      sovereignVault: z
-        .object({
-          manifestUri: z.string(),
-          totalReceivedWei: z.string(),
-          totalReceivedNativeWei: z.string().optional(),
-          totalReceivedExternalWei: z.string().optional(),
-          totalReceivedEth: z.string().optional(),
-          lastAcknowledgedAmountWei: z.string(),
-          lastAcknowledgedAmountEth: z.string().optional(),
-          lastAcknowledgedMetadataHex: z.string().optional(),
-          decodedMetadata: z.string().optional(),
-          vaultBalanceWei: z.string().optional(),
-          vaultBalanceEth: z.string().optional(),
-          totalReceivedNativeEth: z.string().optional(),
-          totalReceivedExternalEth: z.string().optional(),
-          lastAcknowledgedUsedNative: z.boolean().optional(),
-        })
-        .passthrough(),
-    })
-    .passthrough(),
-  verification: z
-    .object({
-      supplyConsensus: z
-        .object({
-          ledgerWholeTokens: z.string(),
-          contractWholeTokens: z.string(),
-          simulationWholeTokens: z.string(),
-          participantAggregateWholeTokens: z.string(),
-          consistent: z.boolean(),
-        })
-        .passthrough(),
-      pricing: z
-        .object({
-          contractNextPriceWei: z.string(),
-          simulatedNextPriceWei: z.string(),
-          consistent: z.boolean(),
-        })
-        .passthrough(),
-      capitalFlows: z
-        .object({
-          ledgerGrossWei: z.string(),
-          ledgerRedemptionsWei: z.string(),
-          ledgerNetWei: z.string(),
-          simulatedReserveWei: z.string(),
-          contractReserveWei: z.string(),
-          vaultReceivedWei: z.string(),
-          combinedReserveWei: z.string(),
-          consistent: z.boolean(),
-        })
-        .passthrough(),
-      contributions: z
-        .object({
-          participantAggregateWei: z.string(),
-          ledgerGrossWei: z.string(),
-          consistent: z.boolean(),
-        })
-        .passthrough(),
-      summary: z
-        .object({
-          totalChecks: z.number(),
-          passedChecks: z.number(),
-          failedChecks: z.number().optional(),
-          confidenceIndexBps: z.number(),
-          confidenceIndexPercent: z.string(),
-          verdict: z.enum(["PASS", "REVIEW"]),
-          checks: z
-            .array(
-              z.object({
-                key: z.string(),
-                label: z.string(),
-                consistent: z.boolean(),
-              }),
-            )
-            .optional(),
-        })
-        .partial()
-        .optional(),
-    })
-    .passthrough()
-    .optional(),
-  checksums: z
-    .object({
-      algorithm: z.literal("sha256"),
-      canonicalEncoding: z.literal("json-key-sorted"),
-      recapSha256: z.string(),
-    })
-    .optional(),
-  empowerment: z
-    .object({
-      tagline: z.string(),
-      automation: z
-        .object({
-          manualCommands: z.number(),
-          orchestratedActions: z.number(),
-          automationMultiplier: z.string(),
-        })
-        .passthrough(),
-      assurance: z
-        .object({
-          verificationConfidencePercent: z.string(),
-          checksPassed: z.number(),
-          totalChecks: z.number(),
-          validatorApprovals: z.number(),
-          validatorThreshold: z.number(),
-        })
-        .passthrough(),
-      capitalFormation: z
-        .object({
-          participants: z.number(),
-          grossContributionsWei: z.string(),
-          grossContributionsEth: z.string().optional(),
-          reserveWei: z.string(),
-          reserveEth: z.string().optional(),
-        })
-        .passthrough(),
-      operatorControls: z
-        .object({
-          totalControls: z.number(),
-          highlights: z.array(z.string()).optional(),
-        })
-        .passthrough(),
-    })
-    .passthrough()
-    .optional(),
-}).passthrough();
+  .passthrough();
 
 type Recap = z.infer<typeof recapSchema>;
 
@@ -252,7 +254,7 @@ function asEth(value: bigint): string {
 }
 
 function badge(flag: boolean): string {
-  return flag ? "✅" : "❌";
+  return flag ? '✅' : '❌';
 }
 
 function shortAddress(address: string): string {
@@ -263,156 +265,199 @@ function shortAddress(address: string): string {
 function buildChecks(recap: Recap) {
   const checks: CheckResult[] = [];
 
-  const supply = parseBigInt("recorded supply", recap.bondingCurve.supplyWholeTokens);
-  const reserve = parseBigInt("reserve balance", recap.bondingCurve.reserveWei);
-  const nextPrice = parseBigInt("next price", recap.bondingCurve.nextPriceWei);
-  const basePrice = parseBigInt("base price", recap.bondingCurve.basePriceWei);
-  const slope = parseBigInt("slope", recap.bondingCurve.slopeWei);
-  const fundingCap = parseBigInt("funding cap", recap.ownerControls.fundingCapWei);
+  const supply = parseBigInt(
+    'recorded supply',
+    recap.bondingCurve.supplyWholeTokens
+  );
+  const reserve = parseBigInt('reserve balance', recap.bondingCurve.reserveWei);
+  const nextPrice = parseBigInt('next price', recap.bondingCurve.nextPriceWei);
+  const basePrice = parseBigInt('base price', recap.bondingCurve.basePriceWei);
+  const slope = parseBigInt('slope', recap.bondingCurve.slopeWei);
+  const fundingCap = parseBigInt(
+    'funding cap',
+    recap.ownerControls.fundingCapWei
+  );
   const vaultReceived = parseBigInt(
-    "sovereign vault receipts",
-    recap.launch.sovereignVault.totalReceivedWei,
+    'sovereign vault receipts',
+    recap.launch.sovereignVault.totalReceivedWei
   );
   const vaultNative = parseBigInt(
-    "sovereign vault native intake",
-    recap.launch.sovereignVault.totalReceivedNativeWei ?? "0",
+    'sovereign vault native intake',
+    recap.launch.sovereignVault.totalReceivedNativeWei ?? '0'
   );
   const vaultExternal = parseBigInt(
-    "sovereign vault external intake",
-    recap.launch.sovereignVault.totalReceivedExternalWei ?? "0",
+    'sovereign vault external intake',
+    recap.launch.sovereignVault.totalReceivedExternalWei ?? '0'
   );
 
   let ledgerSupply = 0n;
   let ledgerGross = 0n;
   let ledgerRedemptions = 0n;
+  let peakReserve = 0n;
   for (const trade of recap.trades) {
-    const tokens = parseBigInt(`trade tokens (${trade.label})`, trade.tokensWhole);
+    const tokens = parseBigInt(
+      `trade tokens (${trade.label})`,
+      trade.tokensWhole
+    );
     const value = parseBigInt(`trade value (${trade.label})`, trade.valueWei);
-    if (trade.kind === "BUY") {
+    if (trade.kind === 'BUY') {
       ledgerSupply += tokens;
       ledgerGross += value;
     } else {
       ledgerSupply -= tokens;
       ledgerRedemptions += value;
     }
+    if (ledgerGross - ledgerRedemptions > peakReserve)
+      peakReserve = ledgerGross - ledgerRedemptions;
   }
   if (ledgerSupply < 0n) {
-    throw new Error("Trade ledger yields negative supply");
+    throw new Error('Trade ledger yields negative supply');
   }
   const ledgerNet = ledgerGross - ledgerRedemptions;
   const expectedNextPrice = basePrice + slope * supply;
 
   const participantTokenSum = recap.participants.reduce((acc, participant) => {
-    return acc + parseBigInt(`participant token balance (${participant.address})`, participant.tokensWei);
+    return (
+      acc +
+      parseBigInt(
+        `participant token balance (${participant.address})`,
+        participant.tokensWei
+      )
+    );
   }, 0n);
 
-  const participantContributionSum = recap.participants.reduce((acc, participant) => {
-    return acc + parseBigInt(`participant contribution (${participant.address})`, participant.contributionWei);
-  }, 0n);
+  const participantContributionSum = recap.participants.reduce(
+    (acc, participant) => {
+      return (
+        acc +
+        parseBigInt(
+          `participant contribution (${participant.address})`,
+          participant.contributionWei
+        )
+      );
+    },
+    0n
+  );
 
   checks.push({
-    label: "Ledger supply equals recorded supply",
+    label: 'Ledger supply equals recorded supply',
     ok: ledgerSupply === supply,
     expected: supply.toString(),
     observed: ledgerSupply.toString(),
   });
 
   checks.push({
-    label: "Participant balances equal supply",
+    label: 'Participant balances equal supply',
     ok: participantTokenSum === supply * 10n ** 18n,
     expected: (supply * 10n ** 18n).toString(),
     observed: participantTokenSum.toString(),
   });
 
   checks.push({
-    label: "Next price matches base + slope * supply",
+    label: 'Next price matches base + slope * supply',
     ok: expectedNextPrice === nextPrice,
     expected: asEth(expectedNextPrice),
     observed: asEth(nextPrice),
   });
 
   checks.push({
-    label: "Vault receipts + reserve equal net capital",
+    label: 'Vault receipts + reserve equal net capital',
     ok: reserve + vaultReceived === ledgerNet,
     expected: asEth(ledgerNet),
     observed: asEth(reserve + vaultReceived),
   });
 
   checks.push({
-    label: "Vault intake split matches aggregate",
+    label: 'Vault intake split matches aggregate',
     ok: vaultNative + vaultExternal === vaultReceived,
     expected: asEth(vaultReceived),
     observed: asEth(vaultNative + vaultExternal),
   });
 
   checks.push({
-    label: "Participant contributions equal gross capital",
+    label: 'Participant contributions equal gross capital',
     ok: participantContributionSum === ledgerGross,
     expected: asEth(ledgerGross),
     observed: asEth(participantContributionSum),
   });
 
   checks.push({
-    label: "Funding cap respected",
-    ok: fundingCap === 0n || ledgerGross <= fundingCap,
-    expected: fundingCap === 0n ? "Unlimited" : asEth(fundingCap),
-    observed: asEth(ledgerGross),
+    label: 'Funding cap respected',
+    ok: fundingCap === 0n || peakReserve <= fundingCap,
+    expected: fundingCap === 0n ? 'Unlimited' : asEth(fundingCap),
+    observed: asEth(peakReserve),
   });
 
   if (recap.verification) {
     checks.push({
-      label: "Embedded verification: supply",
+      label: 'Embedded verification: supply',
       ok: recap.verification.supplyConsensus.consistent,
     });
     checks.push({
-      label: "Embedded verification: pricing",
+      label: 'Embedded verification: pricing',
       ok: recap.verification.pricing.consistent,
     });
     checks.push({
-      label: "Embedded verification: capital flows",
+      label: 'Embedded verification: capital flows',
       ok: recap.verification.capitalFlows.consistent,
     });
     checks.push({
-      label: "Embedded verification: contributions",
+      label: 'Embedded verification: contributions',
       ok: recap.verification.contributions.consistent,
     });
   }
 
   const coreCheckCount = checks.length;
   const corePassCount = checks.filter((check) => check.ok).length;
-  const coreConfidenceBps = coreCheckCount === 0 ? 0 : Math.round((corePassCount * 10000) / coreCheckCount);
+  const coreConfidenceBps =
+    coreCheckCount === 0
+      ? 0
+      : Math.round((corePassCount * 10000) / coreCheckCount);
 
   if (recap.verification?.summary) {
     const summary = recap.verification.summary;
+    const embeddedChecks = [
+      recap.verification.supplyConsensus,
+      recap.verification.pricing,
+      recap.verification.capitalFlows,
+      recap.verification.contributions,
+    ];
+    const embeddedPassed = embeddedChecks.filter(
+      (entry) => entry.consistent
+    ).length;
+    const embeddedBps = Math.round(
+      (embeddedPassed * 10000) / embeddedChecks.length
+    );
     const summaryTotal = summary.totalChecks;
     const summaryPassed = summary.passedChecks;
     const summaryBps = summary.confidenceIndexBps;
-    const expectedVerdict = corePassCount === coreCheckCount ? "PASS" : "REVIEW";
+    const expectedVerdict =
+      embeddedPassed === embeddedChecks.length ? 'PASS' : 'REVIEW';
 
     checks.push({
-      label: "Verification summary total checks",
-      ok: summaryTotal === coreCheckCount,
-      expected: coreCheckCount.toString(),
-      observed: summaryTotal?.toString() ?? "(missing)",
+      label: 'Verification summary total checks',
+      ok: summaryTotal === embeddedChecks.length,
+      expected: embeddedChecks.length.toString(),
+      observed: summaryTotal?.toString() ?? '(missing)',
     });
     checks.push({
-      label: "Verification summary passed checks",
-      ok: summaryPassed === corePassCount,
-      expected: corePassCount.toString(),
-      observed: summaryPassed?.toString() ?? "(missing)",
+      label: 'Verification summary passed checks',
+      ok: summaryPassed === embeddedPassed,
+      expected: embeddedPassed.toString(),
+      observed: summaryPassed?.toString() ?? '(missing)',
     });
     checks.push({
-      label: "Verification summary confidence index",
-      ok: summaryBps === coreConfidenceBps,
-      expected: `${(coreConfidenceBps / 100).toFixed(2)}%`,
+      label: 'Verification summary check pass rate',
+      ok: summaryBps === embeddedBps,
+      expected: `${(embeddedBps / 100).toFixed(2)}%`,
       observed:
         summaryBps !== undefined
           ? `${(summaryBps / 100).toFixed(2)}%`
-          : summary.confidenceIndexPercent ?? "(missing)",
+          : summary.confidenceIndexPercent ?? '(missing)',
     });
     if (summary.verdict) {
       checks.push({
-        label: "Verification summary verdict",
+        label: 'Verification summary verdict',
         ok: summary.verdict === expectedVerdict,
         expected: expectedVerdict,
         observed: summary.verdict,
@@ -433,168 +478,239 @@ function buildChecks(recap: Recap) {
 }
 
 function renderChecksTable(checks: CheckResult[]): string {
-  const header = "| Check | Status | Expected | Observed |";
-  const separator = "|---|:---:|---|---|";
+  const header = '| Check | Status | Expected | Observed |';
+  const separator = '|---|:---:|---|---|';
   const rows = checks.map((check) => {
-    const status = check.ok ? "✅" : "❌";
-    const expected = check.expected ?? "-";
-    const observed = check.observed ?? "-";
+    const status = check.ok ? '✅' : '❌';
+    const expected = check.expected ?? '-';
+    const observed = check.observed ?? '-';
     return `| ${check.label} | ${status} | ${expected} | ${observed} |`;
   });
-  return [header, separator, ...rows].join("\n");
+  return [header, separator, ...rows].join('\n');
 }
 
-function renderOwnerControls(controls: Recap["ownerControls"]): string {
+function renderOwnerControls(controls: Recap['ownerControls']): string {
   const items = [
-    { label: "Market paused", flag: controls.paused },
-    { label: "Whitelist enforced", flag: controls.whitelistEnabled },
-    { label: "Emergency exit armed", flag: controls.emergencyExitEnabled },
-    { label: "Launch finalized", flag: controls.finalized },
-    { label: "Launch aborted", flag: controls.aborted },
-    { label: "Validation override enabled", flag: controls.validationOverrideEnabled },
+    { label: 'Market paused', flag: controls.paused },
+    { label: 'Whitelist enforced', flag: controls.whitelistEnabled },
+    { label: 'Emergency exit armed', flag: controls.emergencyExitEnabled },
+    { label: 'Launch finalized', flag: controls.finalized },
+    { label: 'Launch aborted', flag: controls.aborted },
+    {
+      label: 'Validation override enabled',
+      flag: controls.validationOverrideEnabled,
+    },
   ];
-  return items
-    .map((item) => `- ${badge(item.flag)} ${item.label}`)
-    .join("\n");
+  return items.map((item) => `- ${badge(item.flag)} ${item.label}`).join('\n');
 }
 
-function renderContributionPie(participants: Recap["participants"]): string {
+function renderContributionPie(participants: Recap['participants']): string {
   const lines = participants.map((participant) => {
     const contributionValue = parseBigInt(
       `participant contribution (${participant.address})`,
-      participant.contributionWei,
+      participant.contributionWei
     );
-    const contribution = parseFloat(participant.contributionEth ?? formatEther(contributionValue));
-    return `    \"${shortAddress(participant.address)}\" : ${contribution.toFixed(4)}`;
+    const contribution = parseFloat(
+      participant.contributionEth ?? formatEther(contributionValue)
+    );
+    return `    \"${shortAddress(
+      participant.address
+    )}\" : ${contribution.toFixed(4)}`;
   });
-  return ["```mermaid", "pie title Contribution resonance (ETH)", ...lines, "```"].join("\n");
+  return [
+    '```mermaid',
+    'pie title Contribution resonance (ETH)',
+    ...lines,
+    '```',
+  ].join('\n');
 }
 
 async function main() {
   await mkdir(REPORT_DIR, { recursive: true });
-  const raw = await readFile(RECAP_PATH, "utf8");
-  const recap = recapSchema.parse(JSON.parse(raw));
+  const raw = await readFile(RECAP_PATH, 'utf8');
+  const source = JSON.parse(raw);
+  assertVerifiedRecap(source);
+  const recap = recapSchema.parse(source);
 
-  const { checks, ledgerGross, ledgerNet, ledgerSupply, coreCheckCount, corePassCount, coreConfidenceBps } =
-    buildChecks(recap);
+  const {
+    checks,
+    ledgerGross,
+    ledgerNet,
+    ledgerSupply,
+    coreCheckCount,
+    corePassCount,
+    coreConfidenceBps,
+  } = buildChecks(recap);
   const passCount = checks.filter((check) => check.ok).length;
+  if (passCount !== checks.length)
+    throw new Error('Integrity report rejected inconsistent recap checks');
   const computedConfidence = (passCount / checks.length) * 100;
 
   const summary = recap.verification?.summary;
   const summaryConfidencePercent = summary
-    ? summary.confidenceIndexPercent ?? (summary.confidenceIndexBps / 100).toFixed(2)
+    ? summary.confidenceIndexPercent ??
+      (summary.confidenceIndexBps / 100).toFixed(2)
     : undefined;
   const summaryChecksLabel = summary
     ? `${summary.passedChecks}/${summary.totalChecks} checks recorded`
     : `${passCount}/${checks.length} checks passed`;
-  const confidenceLineValue = summaryConfidencePercent ?? computedConfidence.toFixed(2);
-  const confidenceLine = `- Confidence index: ${confidenceLineValue}% (${summaryChecksLabel})`;
-  const coreConfidencePercent = coreCheckCount === 0 ? "0.00" : (coreConfidenceBps / 100).toFixed(2);
+  const confidenceLineValue =
+    summaryConfidencePercent ?? computedConfidence.toFixed(2);
+  const confidenceLine = `- Check pass rate: ${confidenceLineValue}% (${summaryChecksLabel})`;
+  const coreConfidencePercent =
+    coreCheckCount === 0 ? '0.00' : (coreConfidenceBps / 100).toFixed(2);
   const coreLine = `- Core invariant coverage: ${coreConfidencePercent}% (${corePassCount}/${coreCheckCount} checks)`;
 
   const generatedAt = new Date(recap.generatedAt).toISOString();
 
   const checksumLine = recap.checksums
     ? `- Checksum (${recap.checksums.algorithm}/${recap.checksums.canonicalEncoding}): ${recap.checksums.recapSha256}\n`
-    : "";
+    : '';
 
   const orchestratorLines = [
     `- Mode: ${recap.orchestrator.mode}`,
-    `- Git commit: ${recap.orchestrator.commit ?? "(unavailable)"}`,
-    `- Git branch: ${recap.orchestrator.branch ?? "(unavailable)"}`,
-    `- Workspace dirty: ${recap.orchestrator.workspaceDirty ? "yes" : "no"}`,
-  ].join("\n");
+    `- Git commit: ${recap.orchestrator.commit ?? '(unavailable)'}`,
+    `- Git branch: ${recap.orchestrator.branch ?? '(unavailable)'}`,
+    `- Workspace dirty: ${recap.orchestrator.workspaceDirty ? 'yes' : 'no'}`,
+  ].join('\n');
 
   const actorLines = [
     `- Owner: ${recap.actors.owner}`,
-    `- Investors: ${recap.actors.investors.join(", ")}`,
-    `- Validators: ${recap.actors.validators.join(", ")}`,
-  ].join("\n");
+    `- Investors: ${recap.actors.investors.join(', ')}`,
+    `- Validators: ${recap.actors.validators.join(', ')}`,
+  ].join('\n');
 
   const contributionPie = renderContributionPie(recap.participants);
   const ownerControls = renderOwnerControls(recap.ownerControls);
   const validatorSummary = recap.validators
     ? `Validator quorum: ${recap.validators.approvalCount}/${recap.validators.approvalThreshold}`
-    : "Validator quorum: (not available in recap)";
+    : 'Validator quorum: (not available in recap)';
   const metadataDisplay =
     recap.launch.sovereignVault.decodedMetadata ??
     recap.launch.sovereignVault.lastAcknowledgedMetadataHex ??
-    "Unavailable";
+    'Unavailable';
   const vaultBalanceDisplay = recap.launch.sovereignVault.vaultBalanceWei
-    ? asEth(parseBigInt("vault balance", recap.launch.sovereignVault.vaultBalanceWei))
-    : "Unavailable";
+    ? asEth(
+        parseBigInt(
+          'vault balance',
+          recap.launch.sovereignVault.vaultBalanceWei
+        )
+      )
+    : 'Unavailable';
   const lastAcknowledgedAmountDisplay = asEth(
-    parseBigInt("last acknowledged amount", recap.launch.sovereignVault.lastAcknowledgedAmountWei),
+    parseBigInt(
+      'last acknowledged amount',
+      recap.launch.sovereignVault.lastAcknowledgedAmountWei
+    )
   );
   const nativeIntakeDisplay = asEth(
-    parseBigInt("native intake", recap.launch.sovereignVault.totalReceivedNativeWei ?? "0"),
+    parseBigInt(
+      'native intake',
+      recap.launch.sovereignVault.totalReceivedNativeWei ?? '0'
+    )
   );
   const externalIntakeDisplay = asEth(
-    parseBigInt("external intake", recap.launch.sovereignVault.totalReceivedExternalWei ?? "0"),
+    parseBigInt(
+      'external intake',
+      recap.launch.sovereignVault.totalReceivedExternalWei ?? '0'
+    )
   );
-  const ignitionModeDisplay = recap.launch.sovereignVault.lastAcknowledgedUsedNative === undefined
-    ? "Unknown"
-    : recap.launch.sovereignVault.lastAcknowledgedUsedNative
-      ? "Native asset"
-      : "External asset";
+  const ignitionModeDisplay =
+    recap.launch.sovereignVault.lastAcknowledgedUsedNative === undefined
+      ? 'Unknown'
+      : recap.launch.sovereignVault.lastAcknowledgedUsedNative
+      ? 'Native asset'
+      : 'External asset';
 
   const empowermentSection = (() => {
     if (!recap.empowerment) {
-      return "";
+      return '';
     }
 
-    const empowermentGross = recap.empowerment.capitalFormation.grossContributionsEth
-      ?? asEth(parseBigInt("empowerment gross capital", recap.empowerment.capitalFormation.grossContributionsWei));
-    const empowermentReserve = recap.empowerment.capitalFormation.reserveEth
-      ?? asEth(parseBigInt("empowerment reserve", recap.empowerment.capitalFormation.reserveWei));
+    const empowermentGross =
+      recap.empowerment.capitalFormation.grossContributionsEth ??
+      asEth(
+        parseBigInt(
+          'empowerment gross capital',
+          recap.empowerment.capitalFormation.grossContributionsWei
+        )
+      );
+    const empowermentReserve =
+      recap.empowerment.capitalFormation.reserveEth ??
+      asEth(
+        parseBigInt(
+          'empowerment reserve',
+          recap.empowerment.capitalFormation.reserveWei
+        )
+      );
     const highlights = recap.empowerment.operatorControls.highlights ?? [];
     const highlightsLine =
       highlights.length > 0
-        ? `- Control highlights: ${highlights.map((entry) => `\`${entry}\``).join(", ")}`
-        : "- Control highlights: Operator may annotate priorities in the command deck.";
+        ? `- Control highlights: ${highlights
+            .map((entry) => `\`${entry}\``)
+            .join(', ')}`
+        : '- Control highlights: Operator may annotate priorities in the command deck.';
 
     return (
-      "## Operator Empowerment Index\n\n" +
+      '## Operator Empowerment Index\n\n' +
       `- Narrative: ${recap.empowerment.tagline}\n` +
-      `- Automation multiplier: ${recap.empowerment.automation.automationMultiplier}x (${recap.empowerment.automation.orchestratedActions} orchestrated actions from ${recap.empowerment.automation.manualCommands} command${
-        recap.empowerment.automation.manualCommands === 1 ? "" : "s"
+      `- Automation multiplier: ${
+        recap.empowerment.automation.automationMultiplier
+      }x (${
+        recap.empowerment.automation.orchestratedActions
+      } orchestrated actions from ${
+        recap.empowerment.automation.manualCommands
+      } command${
+        recap.empowerment.automation.manualCommands === 1 ? '' : 's'
       })\n` +
-      `- Verification confidence: ${recap.empowerment.assurance.verificationConfidencePercent}% (${recap.empowerment.assurance.checksPassed}/${recap.empowerment.assurance.totalChecks} checks, validators ${recap.empowerment.assurance.validatorApprovals}/${recap.empowerment.assurance.validatorThreshold})\n` +
+      `- Verification check pass rate: ${recap.empowerment.assurance.verificationConfidencePercent}% (${recap.empowerment.assurance.checksPassed}/${recap.empowerment.assurance.totalChecks} checks, validators ${recap.empowerment.assurance.validatorApprovals}/${recap.empowerment.assurance.validatorThreshold})\n` +
       `- Capital formation: ${recap.empowerment.capitalFormation.participants} participants · Gross ${empowermentGross} · Reserve ${empowermentReserve}\n` +
       `- Command deck depth: ${recap.empowerment.operatorControls.totalControls} actuators recorded\n` +
       `${highlightsLine}\n`
     );
   })();
 
-  const markdown = `# α-AGI MARK Integrity Report\n\n` +
+  const markdown =
+    `# α-AGI MARK Integrity Report\n\n` +
     `Generated: ${generatedAt}\n\n` +
+    `Scope: local financial-demo reconciliation. Check pass rates are not statistical confidence, independent reviewer approval, or production qualification.\n\n` +
     `## Recap Envelope\n\n` +
     `- Network: ${recap.network.label} (chain ${recap.network.chainId}, block ${recap.network.blockNumber})\n` +
-    `- Dry-run mode: ${recap.network.dryRun ? "enabled" : "disabled"}\n` +
+    `- Dry-run mode: ${recap.network.dryRun ? 'enabled' : 'disabled'}\n` +
     `${checksumLine}` +
     `\n### Orchestrator Telemetry\n\n` +
     `${orchestratorLines}\n\n` +
     `### Actor Registry\n\n` +
     `${actorLines}\n\n` +
-    `## Confidence Summary\n\n` +
+    `## Local Check Summary\n\n` +
     `${confidenceLine}\n` +
     `${coreLine}\n` +
     `- ${validatorSummary}\n` +
     `- Ledger supply processed: ${ledgerSupply.toString()} whole tokens\n` +
     `- Gross capital processed: ${asEth(ledgerGross)}\n` +
     `- Net capital secured in sovereign reserve: ${asEth(ledgerNet)}\n\n` +
-    (empowermentSection ? `${empowermentSection}\n` : "") +
+    (empowermentSection ? `${empowermentSection}\n` : '') +
     `${renderChecksTable(checks)}\n\n` +
     `## Participant Contribution Constellation\n\n` +
     `${contributionPie}\n\n` +
     `## Launch Telemetry\n\n` +
     `| Metric | Value |\n|---|---|\n` +
     `| Supply | ${recap.bondingCurve.supplyWholeTokens} SeedShares |\n` +
-    `| Next price | ${asEth(parseBigInt("next price", recap.bondingCurve.nextPriceWei))} |\n` +
-    `| Base price | ${asEth(parseBigInt("base price", recap.bondingCurve.basePriceWei))} |\n` +
-    `| Slope | ${asEth(parseBigInt("slope", recap.bondingCurve.slopeWei))} |\n` +
-    `| Reserve balance | ${asEth(parseBigInt("reserve", recap.bondingCurve.reserveWei))} |\n` +
-    `| Sovereign vault receipts | ${asEth(parseBigInt("vault", recap.launch.sovereignVault.totalReceivedWei))} |\n` +
+    `| Next price | ${asEth(
+      parseBigInt('next price', recap.bondingCurve.nextPriceWei)
+    )} |\n` +
+    `| Base price | ${asEth(
+      parseBigInt('base price', recap.bondingCurve.basePriceWei)
+    )} |\n` +
+    `| Slope | ${asEth(
+      parseBigInt('slope', recap.bondingCurve.slopeWei)
+    )} |\n` +
+    `| Reserve balance | ${asEth(
+      parseBigInt('reserve', recap.bondingCurve.reserveWei)
+    )} |\n` +
+    `| Sovereign vault receipts | ${asEth(
+      parseBigInt('vault', recap.launch.sovereignVault.totalReceivedWei)
+    )} |\n` +
     `| Sovereign native intake | ${nativeIntakeDisplay} |\n` +
     `| Sovereign external intake | ${externalIntakeDisplay} |\n` +
     `| Last ignition mode | ${ignitionModeDisplay} |\n` +
@@ -607,22 +723,31 @@ async function main() {
     `${ownerControls}\n\n` +
     `### Control Parameters\n\n` +
     `| Parameter | Value |\n|---|---|\n` +
-    `| Funding cap | ${recap.ownerControls.fundingCapEth ?? asEth(parseBigInt("funding cap", recap.ownerControls.fundingCapWei))} |\n` +
+    `| Funding cap | ${
+      recap.ownerControls.fundingCapEth ??
+      asEth(parseBigInt('funding cap', recap.ownerControls.fundingCapWei))
+    } |\n` +
     `| Max supply | ${recap.ownerControls.maxSupplyWholeTokens} SeedShares |\n` +
     `| Sale deadline | ${recap.ownerControls.saleDeadlineTimestamp} |\n` +
     `| Treasury | ${recap.ownerControls.treasury} |\n` +
     `| Risk oracle | ${recap.ownerControls.riskOracle} |\n` +
     `| Base asset | ${recap.ownerControls.baseAsset} |\n` +
-    `| Uses native asset | ${recap.ownerControls.usesNativeAsset ? 'Yes (native ETH)' : 'No (ERC-20 base asset)'} |\n` +
+    `| Uses native asset | ${
+      recap.ownerControls.usesNativeAsset
+        ? 'Yes (native ETH)'
+        : 'No (ERC-20 base asset)'
+    } |\n` +
     `| Base price (wei) | ${recap.ownerControls.basePriceWei} |\n` +
     `| Slope (wei) | ${recap.ownerControls.slopeWei} |\n`;
 
-  await writeFile(REPORT_PATH, markdown, "utf8");
+  await writeFile(REPORT_PATH, markdown, 'utf8');
   console.log(`📝 α-AGI MARK integrity report generated at ${REPORT_PATH}`);
-  console.log(`Confidence index ${confidenceLineValue}% (${summaryChecksLabel}).`);
+  console.log(
+    `Check pass rate ${confidenceLineValue}% (${summaryChecksLabel}).`
+  );
 }
 
 main().catch((error) => {
-  console.error("Failed to generate integrity report:", error);
+  console.error('Failed to generate integrity report:', error);
   process.exitCode = 1;
 });

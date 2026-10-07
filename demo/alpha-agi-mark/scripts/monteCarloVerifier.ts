@@ -1,17 +1,33 @@
-import { mkdir, readFile, writeFile } from "fs/promises";
-import path from "path";
-import { randomInt } from "crypto";
+import { mkdir, readFile, writeFile } from 'fs/promises';
+import path from 'path';
+import { createHash } from 'crypto';
+import { assertVerifiedRecap } from './verifyRecap';
 
-import { formatEther } from "ethers";
-import { z } from "zod";
+import { formatEther } from 'ethers';
+import { z } from 'zod';
 
-const RECAP_PATH = path.join(__dirname, "..", "reports", "alpha-mark-recap.json");
-const JSON_OUTPUT_PATH = path.join(__dirname, "..", "reports", "alpha-mark-stochastic-proof.json");
-const MARKDOWN_OUTPUT_PATH = path.join(__dirname, "..", "reports", "alpha-mark-stochastic-proof.md");
+const RECAP_PATH = path.join(
+  __dirname,
+  '..',
+  'reports',
+  'alpha-mark-recap.json'
+);
+const JSON_OUTPUT_PATH = path.join(
+  __dirname,
+  '..',
+  'reports',
+  'alpha-mark-stochastic-proof.json'
+);
+const MARKDOWN_OUTPUT_PATH = path.join(
+  __dirname,
+  '..',
+  'reports',
+  'alpha-mark-stochastic-proof.md'
+);
 
 const tradeSchema = z
   .object({
-    kind: z.enum(["BUY", "SELL"]),
+    kind: z.enum(['BUY', 'SELL']),
     tokensWhole: z.string(),
     valueWei: z.string(),
     label: z.string().optional(),
@@ -40,7 +56,7 @@ const recapSchema = z
     generatedAt: z.string(),
     bondingCurve: bondingCurveSchema,
     ownerControls: ownerControlsSchema,
-    trades: z.array(tradeSchema).nonempty("Trade ledger is empty"),
+    trades: z.array(tradeSchema).nonempty('Trade ledger is empty'),
     checksums: z
       .object({
         algorithm: z.string(),
@@ -80,13 +96,24 @@ function parseBigInt(label: string, value: string | undefined): bigint {
   }
 }
 
-function purchaseCost(basePrice: bigint, slope: bigint, currentSupply: bigint, amount: bigint): bigint {
+function purchaseCost(
+  basePrice: bigint,
+  slope: bigint,
+  currentSupply: bigint,
+  amount: bigint
+): bigint {
   const baseComponent = basePrice * amount;
-  const slopeComponent = slope * ((amount * ((2n * currentSupply) + amount - 1n)) / 2n);
+  const slopeComponent =
+    slope * ((amount * (2n * currentSupply + amount - 1n)) / 2n);
   return baseComponent + slopeComponent;
 }
 
-function purchaseCostIterative(basePrice: bigint, slope: bigint, currentSupply: bigint, amount: bigint): bigint {
+function purchaseCostIterative(
+  basePrice: bigint,
+  slope: bigint,
+  currentSupply: bigint,
+  amount: bigint
+): bigint {
   let total = 0n;
   for (let i = 0n; i < amount; i++) {
     total += basePrice + slope * (currentSupply + i);
@@ -94,17 +121,27 @@ function purchaseCostIterative(basePrice: bigint, slope: bigint, currentSupply: 
   return total;
 }
 
-function saleReturn(basePrice: bigint, slope: bigint, currentSupply: bigint, amount: bigint): bigint {
+function saleReturn(
+  basePrice: bigint,
+  slope: bigint,
+  currentSupply: bigint,
+  amount: bigint
+): bigint {
   const baseComponent = basePrice * amount;
   if (amount === 0n || currentSupply === 0n) {
     return baseComponent;
   }
-  const numerator = amount * ((2n * (currentSupply - 1n)) - (amount - 1n));
+  const numerator = amount * (2n * (currentSupply - 1n) - (amount - 1n));
   const slopeComponent = slope * (numerator / 2n);
   return baseComponent + slopeComponent;
 }
 
-function saleReturnIterative(basePrice: bigint, slope: bigint, currentSupply: bigint, amount: bigint): bigint {
+function saleReturnIterative(
+  basePrice: bigint,
+  slope: bigint,
+  currentSupply: bigint,
+  amount: bigint
+): bigint {
   let total = 0n;
   for (let i = 0n; i < amount; i++) {
     const supplyLevel = currentSupply - 1n - i;
@@ -126,7 +163,7 @@ function recordFinding(
   index: number,
   label: string,
   expected: bigint,
-  actual: bigint,
+  actual: bigint
 ): void {
   findings.push({
     index,
@@ -141,44 +178,52 @@ function runLedgerReplay(
   trades: Trade[],
   basePrice: bigint,
   slope: bigint,
-  maxSupply?: bigint,
+  maxSupply?: bigint
 ): { findings: LedgerFinding[]; finalSupply: bigint; finalReserve: bigint } {
   const findings: LedgerFinding[] = [];
   let supply = 0n;
   let reserve = 0n;
 
   trades.forEach((trade, index) => {
-    const tokens = parseBigInt(`trade[${index}].tokensWhole`, trade.tokensWhole);
+    const tokens = parseBigInt(
+      `trade[${index}].tokensWhole`,
+      trade.tokensWhole
+    );
     const value = parseBigInt(`trade[${index}].valueWei`, trade.valueWei);
 
-    if (trade.kind === "BUY") {
+    if (tokens <= 0n || tokens > 100000n || value < 0n) {
+      throw new Error(
+        `Trade ${index} requires 1–100000 whole tokens and an unsigned value for bounded replay`
+      );
+    }
+    if (trade.kind === 'BUY') {
       const expected = purchaseCost(basePrice, slope, supply, tokens);
       const iterative = purchaseCostIterative(basePrice, slope, supply, tokens);
       if (expected !== value) {
         recordFinding(
           findings,
           index,
-          `Buy ${trade.label ?? ""}`.trim(),
+          `Buy ${trade.label ?? ''}`.trim(),
           expected,
-          value,
+          value
         );
       }
       if (iterative !== expected) {
         recordFinding(
           findings,
           index,
-          `Buy iterative mismatch ${trade.label ?? ""}`.trim(),
+          `Buy iterative mismatch ${trade.label ?? ''}`.trim(),
           iterative,
-          expected,
+          expected
         );
       }
       if (maxSupply !== undefined && supply + tokens > maxSupply) {
         recordFinding(
           findings,
           index,
-          `Buy exceeds max supply ${trade.label ?? ""}`.trim(),
+          `Buy exceeds max supply ${trade.label ?? ''}`.trim(),
           maxSupply,
-          supply + tokens,
+          supply + tokens
         );
       }
       supply += tokens;
@@ -188,9 +233,9 @@ function runLedgerReplay(
         recordFinding(
           findings,
           index,
-          `Sell exceeds supply ${trade.label ?? ""}`.trim(),
+          `Sell exceeds supply ${trade.label ?? ''}`.trim(),
           supply,
-          tokens,
+          tokens
         );
       }
       const expected = saleReturn(basePrice, slope, supply, tokens);
@@ -199,18 +244,18 @@ function runLedgerReplay(
         recordFinding(
           findings,
           index,
-          `Sell ${trade.label ?? ""}`.trim(),
+          `Sell ${trade.label ?? ''}`.trim(),
           expected,
-          value,
+          value
         );
       }
       if (iterative !== expected) {
         recordFinding(
           findings,
           index,
-          `Sell iterative mismatch ${trade.label ?? ""}`.trim(),
+          `Sell iterative mismatch ${trade.label ?? ''}`.trim(),
           iterative,
-          expected,
+          expected
         );
       }
       supply -= tokens;
@@ -219,9 +264,9 @@ function runLedgerReplay(
         recordFinding(
           findings,
           index,
-          `Reserve dropped negative after sell ${trade.label ?? ""}`.trim(),
+          `Reserve dropped negative after sell ${trade.label ?? ''}`.trim(),
           0n,
-          reserve,
+          reserve
         );
       }
     }
@@ -235,6 +280,7 @@ function runMonteCarlo(
   basePrice: bigint,
   slope: bigint,
   maxSupply?: bigint,
+  seed = 'alpha-agi-mark-v1'
 ): {
   iterations: number;
   invariants: InvariantState;
@@ -246,6 +292,13 @@ function runMonteCarlo(
   minReserve: bigint;
   maxReserve: bigint;
 } {
+  let state = createHash('sha256').update(seed).digest().readUInt32LE(0) || 1;
+  const randomInt = (min: number, max: number) => {
+    state ^= state << 13;
+    state ^= state >>> 17;
+    state ^= state << 5;
+    return min + Math.floor(((state >>> 0) / 4294967296) * (max - min));
+  };
   const invariants: InvariantState = {
     reserveNonNegative: true,
     supplyWithinBounds: true,
@@ -281,7 +334,12 @@ function runMonteCarlo(
         }
         const amount = BigInt(randomInt(1, Number(available) + 1));
         const deterministic = purchaseCost(basePrice, slope, supply, amount);
-        const iterative = purchaseCostIterative(basePrice, slope, supply, amount);
+        const iterative = purchaseCostIterative(
+          basePrice,
+          slope,
+          supply,
+          amount
+        );
         if (deterministic !== iterative) {
           invariants.iterativeParity = false;
         }
@@ -351,39 +409,73 @@ function runMonteCarlo(
   };
 }
 
-function renderInvariantTable(entries: Array<{ label: string; ok: boolean; description: string }>): string {
-  const header = "| Check | Result | Description |\n| --- | --- | --- |";
+function renderInvariantTable(
+  entries: Array<{ label: string; ok: boolean; description: string }>
+): string {
+  const header = '| Check | Result | Description |\n| --- | --- | --- |';
   const rows = entries.map((entry) => {
-    const status = entry.ok ? "✅" : "❌";
+    const status = entry.ok ? '✅' : '❌';
     return `| ${entry.label} | ${status} | ${entry.description} |`;
   });
-  return [header, ...rows].join("\n");
+  return [header, ...rows].join('\n');
 }
 
-async function main() {
-  const raw = await readFile(RECAP_PATH, "utf8");
-  const recap: Recap = recapSchema.parse(JSON.parse(raw));
+export function buildStochasticProof(input: unknown) {
+  const { recap: validated } = assertVerifiedRecap(input);
+  const recap: Recap = recapSchema.parse(input);
 
-  const basePrice = parseBigInt("bondingCurve.basePriceWei", recap.bondingCurve.basePriceWei);
-  const slope = parseBigInt("bondingCurve.slopeWei", recap.bondingCurve.slopeWei);
-  const ledgerSupply = parseBigInt("bondingCurve.supplyWholeTokens", recap.bondingCurve.supplyWholeTokens);
-  const ledgerReserve = parseBigInt("bondingCurve.reserveWei", recap.bondingCurve.reserveWei);
-  const ledgerNextPrice = parseBigInt("bondingCurve.nextPriceWei", recap.bondingCurve.nextPriceWei);
-  const maxSupply = recap.ownerControls.maxSupplyWholeTokens
-    ? parseBigInt("ownerControls.maxSupplyWholeTokens", recap.ownerControls.maxSupplyWholeTokens)
-    : undefined;
+  const basePrice = parseBigInt(
+    'bondingCurve.basePriceWei',
+    recap.bondingCurve.basePriceWei
+  );
+  const slope = parseBigInt(
+    'bondingCurve.slopeWei',
+    recap.bondingCurve.slopeWei
+  );
+  const ledgerSupply = parseBigInt(
+    'bondingCurve.supplyWholeTokens',
+    recap.bondingCurve.supplyWholeTokens
+  );
+  const ledgerReserve =
+    parseBigInt('bondingCurve.reserveWei', recap.bondingCurve.reserveWei) +
+    BigInt(validated.launch.sovereignVault.totalReceivedWei);
+  const ledgerNextPrice = parseBigInt(
+    'bondingCurve.nextPriceWei',
+    recap.bondingCurve.nextPriceWei
+  );
+  const maxSupply =
+    recap.ownerControls.maxSupplyWholeTokens &&
+    recap.ownerControls.maxSupplyWholeTokens !== '0'
+      ? parseBigInt(
+          'ownerControls.maxSupplyWholeTokens',
+          recap.ownerControls.maxSupplyWholeTokens
+        )
+      : undefined;
 
-  const ledgerResult = runLedgerReplay(recap.trades, basePrice, slope, maxSupply);
+  const ledgerResult = runLedgerReplay(
+    recap.trades,
+    basePrice,
+    slope,
+    maxSupply
+  );
 
   const ledgerConsistent =
     ledgerResult.findings.length === 0 &&
     ledgerResult.finalSupply === ledgerSupply &&
-    ledgerResult.finalReserve === ledgerReserve;
+    ledgerResult.finalReserve === ledgerReserve &&
+    nextPrice(basePrice, slope, ledgerResult.finalSupply) === ledgerNextPrice;
 
-  const monteCarlo = runMonteCarlo(250, basePrice, slope, maxSupply);
+  const seed = validated.checksums.recapSha256;
+  const monteCarlo = runMonteCarlo(250, basePrice, slope, maxSupply, seed);
 
   const stochasticProof = {
-    generatedAt: new Date().toISOString(),
+    generatedAt: recap.generatedAt,
+    scope:
+      'deterministic synthetic bonding-curve model; not live agent execution, independent review, or production qualification',
+    verdict:
+      ledgerConsistent && Object.values(monteCarlo.invariants).every(Boolean)
+        ? 'PASS'
+        : 'REVIEW',
     recapDigest: recap.checksums?.recapSha256,
     parameters: {
       basePriceWei: basePrice.toString(),
@@ -393,97 +485,134 @@ async function main() {
     ledgerReplay: {
       tradesTested: recap.trades.length,
       consistent: ledgerConsistent,
-      finalSupplyWei: ledgerResult.finalSupply.toString(),
+      finalSupplyWholeTokens: ledgerResult.finalSupply.toString(),
       finalReserveWei: ledgerResult.finalReserve.toString(),
-      expectedSupplyWei: ledgerSupply.toString(),
+      expectedSupplyWholeTokens: ledgerSupply.toString(),
       expectedReserveWei: ledgerReserve.toString(),
       findings: ledgerResult.findings,
     },
     monteCarlo: {
       iterations: 250,
+      seed,
+      generator: 'sha256-seeded-xorshift32-v1',
       totalOperations: monteCarlo.totalOperations,
       buyOperations: monteCarlo.buyCount,
       sellOperations: monteCarlo.sellCount,
-      minSupplyWei: monteCarlo.minSupply.toString(),
-      maxSupplyWei: monteCarlo.maxSupplyObserved.toString(),
+      minSupplyWholeTokens: monteCarlo.minSupply.toString(),
+      maxSupplyWholeTokens: monteCarlo.maxSupplyObserved.toString(),
       minReserveWei: monteCarlo.minReserve.toString(),
       maxReserveWei: monteCarlo.maxReserve.toString(),
       invariants: monteCarlo.invariants,
     },
     expectedNextPriceWei: ledgerNextPrice.toString(),
-    observedNextPriceWei: nextPrice(basePrice, slope, ledgerResult.finalSupply).toString(),
+    observedNextPriceWei: nextPrice(
+      basePrice,
+      slope,
+      ledgerResult.finalSupply
+    ).toString(),
   };
-
-  await mkdir(path.dirname(JSON_OUTPUT_PATH), { recursive: true });
-  await writeFile(JSON_OUTPUT_PATH, JSON.stringify(stochasticProof, null, 2));
 
   const invariantEntries = [
     {
-      label: "Ledger replay parity",
+      label: 'Ledger replay parity',
       ok: ledgerConsistent,
-      description: "Trade ledger reproduces on-chain supply, reserve, and pricing",
+      description:
+        'Trade ledger matches recorded supply, reserve plus vault receipts, and next price',
     },
     {
-      label: "Reserve non-negative",
+      label: 'Reserve non-negative',
       ok: monteCarlo.invariants.reserveNonNegative,
-      description: "Monte Carlo reserve balance never dipped below zero",
+      description: 'Monte Carlo reserve balance never dipped below zero',
     },
     {
-      label: "Supply bounds respected",
+      label: 'Supply bounds respected',
       ok: monteCarlo.invariants.supplyWithinBounds,
-      description: "Supply never exceeded configured maxSupply in stochastic runs",
+      description:
+        'Supply never exceeded configured maxSupply in stochastic runs',
     },
     {
-      label: "Buy-side monotonicity",
+      label: 'Buy-side monotonicity',
       ok: monteCarlo.invariants.monotonicBuys,
-      description: "Price increased or held for every synthetic buy sequence",
+      description: 'Price increased or held for every synthetic buy sequence',
     },
     {
-      label: "Sell-side monotonicity",
+      label: 'Sell-side monotonicity',
       ok: monteCarlo.invariants.monotonicSells,
-      description: "Price decreased or held for every synthetic sell sequence",
+      description: 'Price decreased or held for every synthetic sell sequence',
     },
     {
-      label: "Iterative parity",
+      label: 'Iterative parity',
       ok: monteCarlo.invariants.iterativeParity,
-      description: "Closed-form and iterative bonding-curve calculations agree",
+      description: 'Closed-form and iterative bonding-curve calculations agree',
     },
   ];
 
   const pieChart = `pie showData\n  "Monte Carlo buys" : ${monteCarlo.buyCount}\n  "Monte Carlo sells" : ${monteCarlo.sellCount}`;
 
-  const markdownReport = `# α-AGI MARK Stochastic Assurance Proof\n\n` +
-    `Generated at ${stochasticProof.generatedAt}. This dossier cross-checks the recap with an independent ledger replay ` +
-    `and 250 Monte Carlo stress runs so non-technical operators can cite a second verification stack when briefing stakeholders.` +
+  const markdownReport =
+    `# α-AGI MARK Stochastic Assurance Proof\n\n` +
+    `Source recap generated at ${stochasticProof.generatedAt}. This dossier cross-checks the recap with a separate local ledger replay ` +
+    `and 250 reproducible synthetic model runs. Verdict: **${stochasticProof.verdict}**. This is not independent human review or evidence of live agent execution.` +
     `\n\n` +
-    `## Verification Outcomes\n\n${renderInvariantTable(invariantEntries)}\n\n` +
+    `## Verification Outcomes\n\n${renderInvariantTable(
+      invariantEntries
+    )}\n\n` +
     `## Stochastic Coverage\n\n` +
-    "```mermaid\n" +
+    '```mermaid\n' +
     pieChart +
-    "\n```\n\n" +
+    '\n```\n\n' +
     `- Trades replayed: **${recap.trades.length}**\n` +
     `- Monte Carlo iterations: **${monteCarlo.iterations}**\n` +
     `- Operations simulated: **${monteCarlo.totalOperations}** (${monteCarlo.buyCount} buys / ${monteCarlo.sellCount} sells)\n` +
     `- Supply window explored: **${monteCarlo.minSupply.toString()} → ${monteCarlo.maxSupplyObserved.toString()}** whole tokens\n` +
-    `- Reserve window explored: **${formatWei(monteCarlo.minReserve)} → ${formatWei(monteCarlo.maxReserve)}**\n\n` +
-    `## Confidence Notes\n\n` +
+    `- Reserve window explored: **${formatWei(
+      monteCarlo.minReserve
+    )} → ${formatWei(monteCarlo.maxReserve)}**\n\n` +
+    `## Model Scope\n\n` +
+    `- Seed: \`${seed}\`; generator: sha256-seeded-xorshift32-v1.\n` +
     `- Ledger replay final supply matches recap: **${ledgerResult.finalSupply.toString()}** vs. expected **${ledgerSupply.toString()}**.\n` +
-    `- Ledger replay reserve matches recap: **${formatWei(ledgerResult.finalReserve)}** vs. expected **${formatWei(ledgerReserve)}**.\n` +
-    `- Next price cross-check: **${formatWei(nextPrice(basePrice, slope, ledgerResult.finalSupply))}** (recomputed) vs. recap **${formatWei(ledgerNextPrice)}**.\n` +
+    `- Ledger replay reserve matches recap reserve plus vault receipts: **${formatWei(
+      ledgerResult.finalReserve
+    )}** vs. expected **${formatWei(ledgerReserve)}**.\n` +
+    `- Next price cross-check: **${formatWei(
+      nextPrice(basePrice, slope, ledgerResult.finalSupply)
+    )}** (recomputed) vs. recap **${formatWei(ledgerNextPrice)}**.\n` +
     (stochasticProof.recapDigest
       ? `- Recap checksum (sha256): \`${stochasticProof.recapDigest}\`.\n`
-      : "") +
-    `\nThe stochastic probe confirms that AGI Jobs v0 (v2) maintains solvency, respects supply bounds, and keeps the bonding curve ` +
-    `mathematically reversible even under randomised trade sequences. This empowers non-technical operators to evidence a ` +
-    `second, statistically driven verification layer in minutes.`;
+      : '') +
+    `\nThis bounded arithmetic model probes selected invariants; it does not prove contract security, solvency under every condition, statistical confidence, or production readiness. ` +
+    `It does not model gas, oracle failure, slippage, external token behavior, human reviewer independence, or real-world buyer value.`;
 
-  await writeFile(MARKDOWN_OUTPUT_PATH, markdownReport);
-
-  console.log("🧪 Stochastic proof written to", path.relative(path.join(__dirname, "..", "..", ".."), JSON_OUTPUT_PATH));
-  console.log("🌀 Markdown dossier written to", path.relative(path.join(__dirname, "..", "..", ".."), MARKDOWN_OUTPUT_PATH));
+  return { stochasticProof, markdownReport };
 }
 
-main().catch((error) => {
-  console.error("❌ Stochastic verification failed:", error);
-  process.exitCode = 1;
-});
+async function main() {
+  const { stochasticProof, markdownReport } = buildStochasticProof(
+    JSON.parse(await readFile(RECAP_PATH, 'utf8'))
+  );
+  await mkdir(path.dirname(JSON_OUTPUT_PATH), { recursive: true });
+  await writeFile(
+    JSON_OUTPUT_PATH,
+    JSON.stringify(stochasticProof, null, 2) + '\n'
+  );
+  await writeFile(MARKDOWN_OUTPUT_PATH, markdownReport);
+  if (stochasticProof.verdict !== 'PASS')
+    throw new Error(
+      'Stochastic verification failed: ledger or model invariants require review'
+    );
+
+  console.log(
+    '🧪 Stochastic proof written to',
+    path.relative(path.join(__dirname, '..', '..', '..'), JSON_OUTPUT_PATH)
+  );
+  console.log(
+    '🌀 Markdown dossier written to',
+    path.relative(path.join(__dirname, '..', '..', '..'), MARKDOWN_OUTPUT_PATH)
+  );
+}
+
+if (require.main === module)
+  main().catch((error) => {
+    console.error('❌ Stochastic verification failed:', error);
+    process.exitCode = 1;
+  });

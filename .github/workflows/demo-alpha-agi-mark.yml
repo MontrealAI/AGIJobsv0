@@ -18,7 +18,6 @@ on:
 
 permissions:
   contents: read
-  actions: write
 
 jobs:
   alpha-agi-mark-demo:
@@ -63,8 +62,11 @@ jobs:
       - name: Run α-AGI MARK unit tests
         run: npm run test:alpha-agi-mark
 
+      - name: Reject malformed evidence and fail-open verification
+        run: npm run test:alpha-agi-mark:scripts
+
       - name: Execute α-AGI MARK foresight demo
-        run: npm run demo:alpha-agi-mark:ci
+        run: AGIJOBS_DEMO_DRY_RUN=true npm run demo:alpha-agi-mark:full
 
       - name: Validate recap dossier
         run: |
@@ -147,7 +149,7 @@ jobs:
           const content = fs.readFileSync(path, 'utf8');
           const requiredSections = [
             '# α-AGI MARK Integrity Report',
-            '## Confidence Summary',
+            '## Local Check Summary',
             '```mermaid',
             'Owner Command Deck Snapshot',
           ];
@@ -229,3 +231,11 @@ jobs:
         with:
           name: alpha-agi-mark-timeline
           path: demo/alpha-agi-mark/reports/alpha-mark-timeline.md
+
+      - name: Upload complete local verification bundle
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: alpha-agi-mark-complete-verification
+          path: demo/alpha-agi-mark/reports/
+          if-no-files-found: error
+          retention-days: 14

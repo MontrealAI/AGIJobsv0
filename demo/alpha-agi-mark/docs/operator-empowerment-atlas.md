@@ -1,5 +1,8 @@
 # α-AGI MARK Operator Empowerment Atlas
 
+> Scope: these preserved diagrams describe a local financing-market demonstration. Chart coordinates and automation multipliers are illustrative, not empirical assurance or productivity measurements. A local check pass rate does not prove authorship, independent review, buyer value or production readiness. See the [current quick start](../README.md) and [computer-work handoff](computer-work-handoff.md).
+
+
 The atlas distills how AGI Jobs v0 (v2) lets a single non-technical steward conjure, govern, and finalize the α-AGI MARK foresight DEX. Each diagram highlights a distinct perspective of the same orchestration so operators can audit the system visually before ever touching Solidity.
 
 ## Holistic Mindmap
@@ -95,3 +98,5 @@ quadrantChart
 The empowerment glyph translates the recap’s empowerment stanza into a single chart that any executive can interpret. The
 default dry-run places the AGI Jobs empowerment index firmly inside the “Sovereign Autopilot” quadrant, signalling that a
 single command delivered dozens of mission actions with board-ready assurance metrics.
+
+The original journey diagram is preserved as a conceptual map. In the current script the external-network confirmation occurs before transactions; there is no separate finalization prompt. Local execution requires no confirmation.

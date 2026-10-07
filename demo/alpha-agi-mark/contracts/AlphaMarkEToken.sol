@@ -91,6 +91,15 @@ contract AlphaMarkEToken is ERC20, Ownable, Pausable, ReentrancyGuard {
     // ----------- Core Market Functions -----------
 
     function buyTokens(uint256 amount) external payable whenNotPaused nonReentrant {
+        _buyTokens(amount, type(uint256).max);
+    }
+
+    /// @notice Bound the cost of an ERC20 or native purchase against intervening trades.
+    function buyTokensWithLimit(uint256 amount, uint256 maxCost) external payable whenNotPaused nonReentrant {
+        _buyTokens(amount, maxCost);
+    }
+
+    function _buyTokens(uint256 amount, uint256 maxCost) internal {
         require(!finalized && !aborted, "Sale closed");
         require(amount > 0, "Amount zero");
         uint256 wholeAmount = _requireWhole(amount);
@@ -103,6 +112,7 @@ contract AlphaMarkEToken is ERC20, Ownable, Pausable, ReentrancyGuard {
         }
 
         uint256 cost = _purchaseCost(wholeAmount);
+        require(cost <= maxCost, "Purchase cost exceeds limit");
         if (fundingCap != 0) {
             require(reserveBalance + cost <= fundingCap, "Funding cap reached");
         }
@@ -111,7 +121,11 @@ contract AlphaMarkEToken is ERC20, Ownable, Pausable, ReentrancyGuard {
             require(msg.value >= cost, "Insufficient payment");
         } else {
             require(msg.value == 0, "Native payment disabled");
+            uint256 balanceBefore = baseAsset.balanceOf(address(this));
+            uint256 buyerBefore = baseAsset.balanceOf(msg.sender);
             baseAsset.safeTransferFrom(msg.sender, address(this), cost);
+            require(baseAsset.balanceOf(address(this)) == balanceBefore + cost, "Unsupported asset transfer");
+            require(baseAsset.balanceOf(msg.sender) + cost == buyerBefore, "Unsupported asset transfer");
         }
 
         _mint(msg.sender, amount);
@@ -127,6 +141,16 @@ contract AlphaMarkEToken is ERC20, Ownable, Pausable, ReentrancyGuard {
     }
 
     function sellTokens(uint256 amount) external nonReentrant {
+        _sellTokens(amount, 0);
+    }
+
+    /// @notice Bound the redemption proceeds against intervening trades.
+    function sellTokensWithLimit(uint256 amount, uint256 minRefund) external nonReentrant {
+        _sellTokens(amount, minRefund);
+    }
+
+    function _sellTokens(uint256 amount, uint256 minRefund) internal {
+        require(!finalized, "Launch finalized");
         require(amount > 0, "Amount zero");
         uint256 wholeAmount = _requireWhole(amount);
         require(balanceOf(msg.sender) >= amount, "Insufficient balance");
@@ -135,6 +159,7 @@ contract AlphaMarkEToken is ERC20, Ownable, Pausable, ReentrancyGuard {
         }
 
         uint256 refund = _saleReturn(wholeAmount);
+        require(refund >= minRefund, "Sale return below limit");
         require(refund <= reserveBalance, "Insufficient reserve");
 
         _burn(msg.sender, amount);
@@ -144,7 +169,7 @@ contract AlphaMarkEToken is ERC20, Ownable, Pausable, ReentrancyGuard {
             (bool success, ) = msg.sender.call{value: refund}("");
             require(success, "Refund transfer failed");
         } else {
-            baseAsset.safeTransfer(msg.sender, refund);
+            _transferBaseAsset(msg.sender, refund);
         }
 
         emit TokensSold(msg.sender, amount, refund);
@@ -263,7 +288,7 @@ contract AlphaMarkEToken is ERC20, Ownable, Pausable, ReentrancyGuard {
             (bool success, ) = recipient.call{value: amount}("");
             require(success, "Transfer failed");
         } else {
-            baseAsset.safeTransfer(recipient, amount);
+            _transferBaseAsset(recipient, amount);
         }
 
         _attemptSovereignAcknowledgement(recipient, amount, metadata);
@@ -283,7 +308,7 @@ contract AlphaMarkEToken is ERC20, Ownable, Pausable, ReentrancyGuard {
         emit EmergencyExitUpdated(true);
     }
 
-    function withdrawResidual(address payable to) external onlyOwner {
+    function withdrawResidual(address payable to) external onlyOwner nonReentrant {
         require(finalized || aborted, "Not closed");
         require(to != address(0), "Invalid recipient");
         uint256 balance = _assetBalance();
@@ -293,7 +318,7 @@ contract AlphaMarkEToken is ERC20, Ownable, Pausable, ReentrancyGuard {
             (bool success, ) = to.call{value: amount}("");
             require(success, "Residual transfer failed");
         } else {
-            baseAsset.safeTransfer(to, amount);
+            _transferBaseAsset(to, amount);
         }
     }
 
@@ -369,6 +394,7 @@ contract AlphaMarkEToken is ERC20, Ownable, Pausable, ReentrancyGuard {
     }
 
     function _purchaseCost(uint256 amount) internal view returns (uint256) {
+        if (amount == 0) return 0;
         uint256 supply = _currentSupply();
         uint256 baseComponent = basePrice * amount;
         uint256 slopeComponent = slope * ((amount * ((2 * supply) + amount - 1)) / 2);
@@ -425,6 +451,7 @@ contract AlphaMarkEToken is ERC20, Ownable, Pausable, ReentrancyGuard {
             baseAsset = IERC20(address(0));
             usesNativeAsset = true;
         } else {
+            require(asset.code.length > 0, "Asset must be a contract");
             baseAsset = IERC20(asset);
             usesNativeAsset = false;
         }
@@ -440,6 +467,16 @@ contract AlphaMarkEToken is ERC20, Ownable, Pausable, ReentrancyGuard {
             return address(this).balance;
         }
         return baseAsset.balanceOf(address(this));
+    }
+
+    // Fee-on-transfer and rebasing assets cannot safely back a fixed-unit curve.
+    // Check both sides so a sender-side fee cannot consume other holders' reserves.
+    function _transferBaseAsset(address to, uint256 amount) internal {
+        uint256 sourceBefore = baseAsset.balanceOf(address(this));
+        uint256 recipientBefore = baseAsset.balanceOf(to);
+        baseAsset.safeTransfer(to, amount);
+        require(baseAsset.balanceOf(address(this)) + amount == sourceBefore, "Unsupported asset transfer");
+        require(baseAsset.balanceOf(to) == recipientBefore + amount, "Unsupported asset transfer");
     }
 
     function _attemptSovereignAcknowledgement(address recipient, uint256 amount, bytes calldata metadata) internal {

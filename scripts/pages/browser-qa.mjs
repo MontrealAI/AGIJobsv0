@@ -1,3 +1,4 @@
+import { verifyAlphaMark } from './alpha-mark-qa.mjs';
 import { verifyWorkPlanner } from './work-qa.mjs';
 import { verifyEvidenceReview } from './review-qa.mjs';
 import fs from 'node:fs';
@@ -409,7 +410,8 @@ try {
     'Every preserved diagram must parse and render'
   );
   await verifyWorkPlanner({ page, context, url, artifacts, a11y, checks });
-  assert.equal(manifest.dashboardRoutes.length, 12);
+  await verifyAlphaMark({ page, context, url, artifacts, a11y, checks });
+  assert.equal(manifest.dashboardRoutes.length, 13);
   assert.ok(manifest.dashboardRoutes.includes('experiments/zenith-hypernova/'));
   assert.equal(manifest.archiveRoutes.length, 21);
   const legacyDecks = manifest.dashboardRoutes.filter((route) =>

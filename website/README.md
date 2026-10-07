@@ -94,7 +94,6 @@ Pages QA separately opens all six published copies under the project base path.
 See the [Kardashev validation record](validation-kardashev-2026-10-04.md) for
 executed checks, preservation evidence and model limitations.
 
-
 The Pages build also compiles the actual CULTURE Studio in explicit offline preview mode. Before `npm run site:build`, install its independent workspace with `cd demo/CULTURE-v0 && corepack pnpm install --frozen-lockfile`. Return to the repository root for site commands. Run `node scripts/pages/culture-qa.mjs` after the general website checks to verify the complete Studio journey, evidence exports, accessibility, and mobile layouts.
 
 ## Machine labor entry point
@@ -106,3 +105,18 @@ The homepage now explains the buyer, worker and independent-reviewer routes, con
 The stable [readiness index](../docs/production/readiness.md), [computer-work guide](../docs/computer-work.md) and [delivery workflow](../docs/MACHINE_LABOR.md) are published as local, source-bound guides. The dated records remain available at their original routes.
 
 The planner's **Save editable draft** and **Open saved editable draft** controls preserve unfinished work locally, including exact entered text. Reloading still clears the form; there is no browser storage or upload. The versioned draft format accepts only the known form fields, with bounded file and field sizes. Opening a draft requires a new review and build before task downloads become available; execution authority and evidence are never imported. Task and proposal exports remain distinct from editable drafts. Custom objectives survive category changes; the explicit suggested-objective button replaces the text only when requested.
+
+## Alpha Mark capital-to-work lab
+
+`experiments/alpha-agi-mark/` connects the original capital-market demo to a useful-work planning journey. Its model compares daily worker slots, independently reviewable slots and exact six-decimal USDC reward-budget slots. The smallest count is a static candidate-capacity bound, not a success or revenue forecast. Provider charges, reviewer fees, rework, disputes and demand are explicitly excluded.
+
+The lab reuses `work-model.mjs` for source validation and compatible task/proposal exports. Preparation acknowledgments enable the operator handoff; every execution, spending and settlement authorization remains false. An edit clears all previous results and disables downloads. No inputs persist across reloads and no source, provider or wallet connection occurs. The native/ERC20 Alpha Mark market remains a separate contract demonstration, linked with its original documentation and diagrams.
+
+`alpha-mark-model.mjs` owns the bounded arithmetic, `alpha-mark.js` owns browser state, and `scripts/pages/alpha-mark.mjs` renders the experience. The homepage and guided tour both link directly to it. Regression checks cover money precision, all capacity bottlenecks, incomplete prerequisites, source boundaries, exact downloads and stale results. Browser QA additionally checks keyboard interaction, text injection, five viewport widths, WCAG A/AA and the readable no-JavaScript path.
+
+```bash
+node --test test/pages/alpha-mark.test.mjs
+node scripts/pages/alpha-mark-browser-qa.mjs
+```
+
+Run the site build first. The complete `site:qa` command also includes the Alpha Mark checks.

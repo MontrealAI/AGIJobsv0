@@ -1,14 +1,16 @@
 # α-AGI MARK Superintelligence Brief
 
 > [!SUCCESS]
-> AGI Jobs orchestrated **22 mission-grade actions** from 1 command, sustaining 100.00% verification confidence and dispatching 0.0 ETH to the sovereign vault.
+> AGI Jobs orchestrated **22 mission-grade actions** from 1 command, sustaining 100.00% local check pass rate and dispatching 3.85 ETH to the sovereign vault.
+
+Scope: scripted financial-demo evidence. This brief does not demonstrate superintelligence, independent review, live buyer value, or production qualification.
 
 ## Mission Signals
 
 - **Network:** hardhat (chainId 31337) (hardhat)
-- **Orchestrator commit:** 6b15cfab6dcbdf70b7df550b8d804ed88e1aed11
+- **Orchestrator commit:** faf0fb1581244845dc7fea7125ef62b57596c628
 - **Verification verdict:** PASS
-- **Confidence index:** 100.00% (4/4)
+- **Check pass rate:** 100.00% (4/4)
 - **Capital raised:** 4.5 ETH across 3 contributors
 - **Supply outstanding:** 11 SeedShares
 
@@ -76,7 +78,7 @@ flowchart LR
 ```mermaid
 mindmap
   root((α-AGI MARK Assurance))
-    Confidence[100.00% confidence]
+    Confidence[100.00% check pass rate]
       Checks[4/4 invariants aligned]
     Validation[Validator quorum]
       Approvals[2/2 approvals]
@@ -118,5 +120,5 @@ pie showData
 Report checksum (sha256 over canonical JSON snapshot):
 
 ```
-{"bondingCurve":{"basePriceEth":"0.1","basePriceWei":"100000000000000000","nextPriceEth":"0.65","nextPriceWei":"650000000000000000","reserveEth":"0.0","reserveWei":"0","slopeEth":"0.05","slopeWei":"50000000000000000","supplyWholeTokens":"11"},"empowerment":{"assurance":{"checksPassed":4,"totalChecks":4,"validatorApprovals":2,"validatorThreshold":2,"verificationConfidencePercent":"100.00"},"automation":{"automationMultiplier":"22.00","manualCommands":1,"orchestratedActions":22},"capitalFormation":{"grossContributionsEth":"4.5","grossContributionsWei":"4500000000000000000","participants":3,"reserveEth":"0.0","reserveWei":"0"},"operatorControls":{"highlights":["pauseMarket","whitelistEnabled","emergencyExitEnabled","validationOverrideEnabled"],"totalControls":16},"tagline":"AGI Jobs orchestrated 22 mission events from 1 command, sustaining 100.00% confidence across 4/4 invariants."},"generatedAt":"2025-10-17T13:12:40.494Z","network":{"blockNumber":"0","chainId":"31337","dryRun":true,"label":"hardhat (chainId 31337)","name":"hardhat"},"validators":{"approvalCount":"2","approvalThreshold":"2","matrix":[{"address":"0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65","approved":true},{"address":"0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc","approved":true},{"address":"0x976EA74026E726554dB657fA54763abd0C3a0aa9","approved":false}],"members":["0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65","0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc","0x976EA74026E726554dB657fA54763abd0C3a0aa9"]},"verification":{"confidenceIndexPercent":"100.00","passedChecks":4,"totalChecks":4,"verdict":"PASS"}}
+aacce22694f771091f762799c3ea481127dbb31843616255f87767484d0d47ab
 ```

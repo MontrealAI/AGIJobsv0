@@ -1,10 +1,10 @@
 # α-AGI MARK Mission Timeline
 
-Generated 2025-10-16T22:28:58.620Z on hardhat (chainId 31337).
+Generated 2026-10-07T13:03:07.145Z on hardhat (chainId 31337).
 
 - **Orchestrator mode:** dry-run
-- **Commit:** c7f11d9aec96ad3de7103c89aaa8f517bbc9040c
-- **Branch:** work
+- **Commit:** faf0fb1581244845dc7fea7125ef62b57596c628
+- **Branch:** codex/alpha-mark-production-20261007
 
 ## Cinematic Timeline
 
@@ -43,7 +43,7 @@ timeline
     section Launch
       ✨ Sovereign ignition finalized (Owner) : Funds transferred to the vault with ignition metadata recorded
     section Verification
-      ✅ Triple-verification matrix aligned : Ledger, simulation, and on-chain state reconcile 1\:1
+      ✅ Triple-verification matrix aligned : Ledger, simulation, and on-chain state reconcile 4/4 checks (100.00% check pass rate)
     section Mission Control
       🧾 Recap dossier synthesis : Preparing sovereign dashboard, owner matrix, and recap digest
 ```
@@ -72,5 +72,5 @@ timeline
 | 18 | Governance | 🗳️ Validator B casts approval | Consensus secured (2/2) | Validator B |
 | 19 | Liquidity | 🔄 Investor B redeems 1 SeedShares | 0.65 ETH released from the reserve | Investor B |
 | 20 | Launch | ✨ Sovereign ignition finalized | Funds transferred to the vault with ignition metadata recorded | Owner |
-| 21 | Verification | ✅ Triple-verification matrix aligned | Ledger, simulation, and on-chain state reconcile 1:1 | — |
+| 21 | Verification | ✅ Triple-verification matrix aligned | Ledger, simulation, and on-chain state reconcile 4/4 checks (100.00% check pass rate) | — |
 | 22 | Mission Control | 🧾 Recap dossier synthesis | Preparing sovereign dashboard, owner matrix, and recap digest | — |

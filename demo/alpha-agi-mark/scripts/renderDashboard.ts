@@ -1,7 +1,13 @@
-import { mkdir, writeFile } from "fs/promises";
-import path from "path";
+import { assertVerifiedRecap } from './verifyRecap';
+import { mkdir, writeFile } from 'fs/promises';
+import path from 'path';
 
-const DASHBOARD_PATH = path.join(__dirname, "..", "reports", "alpha-mark-dashboard.html");
+const DASHBOARD_PATH = path.join(
+  __dirname,
+  '..',
+  'reports',
+  'alpha-mark-dashboard.html'
+);
 
 type RecapParticipant = {
   address: string;
@@ -12,7 +18,7 @@ type RecapParticipant = {
 };
 
 type RecapTrade = {
-  kind: "BUY" | "SELL";
+  kind: 'BUY' | 'SELL';
   actor: string;
   label: string;
   tokensWhole: string;
@@ -120,7 +126,7 @@ type RecapData = {
     commit?: string;
     branch?: string;
     workspaceDirty: boolean;
-    mode: "dry-run" | "broadcast";
+    mode: 'dry-run' | 'broadcast';
   };
   actors: {
     owner: string;
@@ -198,7 +204,11 @@ type RecapData = {
       lastAcknowledgedUsedNative?: boolean;
     };
   };
-  ownerParameterMatrix?: Array<{ parameter: string; value: unknown; description: string }>;
+  ownerParameterMatrix?: Array<{
+    parameter: string;
+    value: unknown;
+    description: string;
+  }>;
   verification?: VerificationSnapshot;
   checksums?: {
     algorithm: string;
@@ -211,11 +221,11 @@ type RecapData = {
 
 function escapeHtml(value: string): string {
   return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
 function shortenAddress(address: string): string {
@@ -226,27 +236,31 @@ function shortenAddress(address: string): string {
 }
 
 function renderBooleanBadge(value: boolean): string {
-  return `<span class="badge ${value ? "on" : "off"}">${value ? "ENABLED" : "DISABLED"}</span>`;
+  return `<span class="badge ${value ? 'on' : 'off'}">${
+    value ? 'ENABLED' : 'DISABLED'
+  }</span>`;
 }
 
 function renderConsistencyBadge(ok: boolean): string {
-  return `<span class="badge ${ok ? "success" : "danger"}">${ok ? "CONSISTENT" : "REVIEW"}</span>`;
+  return `<span class="badge ${ok ? 'success' : 'danger'}">${
+    ok ? 'CONSISTENT' : 'REVIEW'
+  }</span>`;
 }
 
-function renderTradeBadge(kind: "BUY" | "SELL"): string {
-  const cssClass = kind === "BUY" ? "buy" : "sell";
+function renderTradeBadge(kind: 'BUY' | 'SELL'): string {
+  const cssClass = kind === 'BUY' ? 'buy' : 'sell';
   return `<span class="badge ${cssClass}">${kind}</span>`;
 }
 
-function formatNumber(value: string | undefined, fallback = "-"): string {
-  if (!value || value === "0") {
+function formatNumber(value: string | undefined, fallback = '-'): string {
+  if (!value || value === '0') {
     return fallback;
   }
   return value;
 }
 
 function sanitizeTimelineText(value: string): string {
-  return value.replace(/\r?\n/g, " ").replace(/:/g, "\\:");
+  return value.replace(/\r?\n/g, ' ').replace(/:/g, '\\:');
 }
 
 function timelineActorLabel(entry: TimelineEntry): string {
@@ -259,36 +273,43 @@ function timelineActorLabel(entry: TimelineEntry): string {
   if (entry.actor) {
     return shortenAddress(entry.actor);
   }
-  return "—";
+  return '—';
 }
 
 function buildTimelineMermaid(entries: TimelineEntry[]): string {
-  const lines = ["timeline", "    title α-AGI MARK Operator Timeline"];
+  const lines = ['timeline', '    title α-AGI MARK Operator Timeline'];
   let currentPhase: string | undefined;
 
   entries.forEach((entry) => {
-    const phase = entry.phase || "Mission";
+    const phase = entry.phase || 'Mission';
     if (phase !== currentPhase) {
       lines.push(`    section ${phase}`);
       currentPhase = phase;
     }
-    const iconPart = entry.icon ? `${entry.icon} ` : "";
-    const actorPart = entry.actorLabel || entry.actor ? ` (${timelineActorLabel(entry)})` : "";
-    lines.push(`      ${sanitizeTimelineText(`${iconPart}${entry.title}${actorPart}`)} : ${sanitizeTimelineText(entry.description)}`);
+    const iconPart = entry.icon ? `${entry.icon} ` : '';
+    const actorPart =
+      entry.actorLabel || entry.actor ? ` (${timelineActorLabel(entry)})` : '';
+    lines.push(
+      `      ${sanitizeTimelineText(
+        `${iconPart}${entry.title}${actorPart}`
+      )} : ${sanitizeTimelineText(entry.description)}`
+    );
   });
 
-  return lines.join("\n");
+  return lines.join('\n');
 }
 
 function buildTimelineSection(entries: TimelineEntry[] = []): string {
   if (!entries.length) {
-    return "";
+    return '';
   }
 
   const mermaidDefinition = escapeHtml(buildTimelineMermaid(entries));
   const rows = entries
     .map((entry) => {
-      const iconText = entry.icon ? `${entry.icon} ${entry.title}` : entry.title;
+      const iconText = entry.icon
+        ? `${entry.icon} ${entry.title}`
+        : entry.title;
       return `
         <tr>
           <td>${entry.order}</td>
@@ -299,7 +320,7 @@ function buildTimelineSection(entries: TimelineEntry[] = []): string {
         </tr>
       `;
     })
-    .join("\n");
+    .join('\n');
 
   return `
     <section>
@@ -330,19 +351,23 @@ ${mermaidDefinition}
 
 function buildEmpowermentSection(empowerment?: EmpowermentSnapshot): string {
   if (!empowerment) {
-    return "";
+    return '';
   }
 
-  const automationMultiplier = `${escapeHtml(empowerment.automation.automationMultiplier)}×`;
-  const highlights = (empowerment.operatorControls.highlights ?? []).map((highlight) => `
+  const automationMultiplier = `${escapeHtml(
+    empowerment.automation.automationMultiplier
+  )}×`;
+  const highlights = (empowerment.operatorControls.highlights ?? []).map(
+    (highlight) => `
         <li><code>${escapeHtml(highlight)}</code></li>
-      `);
+      `
+  );
 
   const highlightList =
     highlights.length > 0
       ? `
         <ul class="empowerment-list">
-          ${highlights.join("\n")}
+          ${highlights.join('\n')}
         </ul>
       `
       : '<p class="metric-caption">Matrix capture ready for operator-defined priorities.</p>';
@@ -356,32 +381,42 @@ function buildEmpowermentSection(empowerment?: EmpowermentSnapshot): string {
           <h3>Automation</h3>
           <p class="metric-value">${automationMultiplier}</p>
           <p class="metric-caption">${escapeHtml(
-            `${empowerment.automation.orchestratedActions} orchestrated actions from ${empowerment.automation.manualCommands} command${
-              empowerment.automation.manualCommands === 1 ? "" : "s"
-            }`,
+            `${
+              empowerment.automation.orchestratedActions
+            } orchestrated actions from ${
+              empowerment.automation.manualCommands
+            } command${empowerment.automation.manualCommands === 1 ? '' : 's'}`
           )}</p>
         </article>
         <article class="empowerment-card">
           <h3>Assurance</h3>
-          <p class="metric-value">${escapeHtml(empowerment.assurance.verificationConfidencePercent)}%</p>
+          <p class="metric-value">${escapeHtml(
+            empowerment.assurance.verificationConfidencePercent
+          )}%</p>
           <p class="metric-caption">${escapeHtml(
-            `${empowerment.assurance.checksPassed}/${empowerment.assurance.totalChecks} checks · Validators ${empowerment.assurance.validatorApprovals}/${empowerment.assurance.validatorThreshold}`,
+            `${empowerment.assurance.checksPassed}/${empowerment.assurance.totalChecks} checks · Validators ${empowerment.assurance.validatorApprovals}/${empowerment.assurance.validatorThreshold}`
           )}</p>
         </article>
         <article class="empowerment-card">
           <h3>Capital Formation</h3>
           <p class="metric-value">${escapeHtml(
-            empowerment.capitalFormation.grossContributionsEth ?? empowerment.capitalFormation.grossContributionsWei,
+            empowerment.capitalFormation.grossContributionsEth ??
+              empowerment.capitalFormation.grossContributionsWei
           )}</p>
           <p class="metric-caption">${escapeHtml(
-            `${empowerment.capitalFormation.participants} participants · Reserve ${
-              empowerment.capitalFormation.reserveEth ?? empowerment.capitalFormation.reserveWei
-            }`,
+            `${
+              empowerment.capitalFormation.participants
+            } participants · Reserve ${
+              empowerment.capitalFormation.reserveEth ??
+              empowerment.capitalFormation.reserveWei
+            }`
           )}</p>
         </article>
         <article class="empowerment-card">
           <h3>Command Deck</h3>
-          <p class="metric-value">${escapeHtml(empowerment.operatorControls.totalControls.toString())}</p>
+          <p class="metric-value">${escapeHtml(
+            empowerment.operatorControls.totalControls.toString()
+          )}</p>
           <p class="metric-caption">Owner actuators catalogued in the parameter matrix.</p>
           ${highlightList}
         </article>
@@ -393,29 +428,37 @@ function buildEmpowermentSection(empowerment?: EmpowermentSnapshot): string {
 function buildControlHighlights(recap: RecapData): string {
   const controls = [
     {
-      label: "Market State",
-      detail: recap.ownerControls.paused ? "Paused for operator oversight" : "Live & programmable",
-      badge: recap.ownerControls.paused ? renderBooleanBadge(false) : '<span class="badge success">LIVE</span>',
+      label: 'Market State',
+      detail: recap.ownerControls.paused
+        ? 'Paused for operator oversight'
+        : 'Live & programmable',
+      badge: recap.ownerControls.paused
+        ? renderBooleanBadge(false)
+        : '<span class="badge success">LIVE</span>',
     },
     {
-      label: "Whitelist",
+      label: 'Whitelist',
       detail: recap.ownerControls.whitelistEnabled
-        ? "Only approved sovereign contributors may participate"
-        : "Open liquidity access",
+        ? 'Only approved sovereign contributors may participate'
+        : 'Open liquidity access',
       badge: renderBooleanBadge(recap.ownerControls.whitelistEnabled),
     },
     {
-      label: "Emergency Exit",
+      label: 'Emergency Exit',
       detail: recap.ownerControls.emergencyExitEnabled
-        ? "Participants can unwind even during a pause"
-        : "Exit lever on standby",
+        ? 'Participants can unwind even during a pause'
+        : 'Exit lever on standby',
       badge: renderBooleanBadge(recap.ownerControls.emergencyExitEnabled),
     },
     {
-      label: "Validation Override",
+      label: 'Validation Override',
       detail: recap.ownerControls.validationOverrideEnabled
-        ? `Owner override engaged (${recap.ownerControls.validationOverrideStatus ? "FORCE-GREEN" : "FORCE-RED"})`
-        : "Validator council governs launch",
+        ? `Owner override engaged (${
+            recap.ownerControls.validationOverrideStatus
+              ? 'FORCE-GREEN'
+              : 'FORCE-RED'
+          })`
+        : 'Validator council governs launch',
       badge: renderBooleanBadge(recap.ownerControls.validationOverrideEnabled),
     },
   ];
@@ -430,25 +473,28 @@ function buildControlHighlights(recap: RecapData): string {
           </header>
           <p>${escapeHtml(control.detail)}</p>
         </article>
-      `,
+      `
     )
-    .join("\n");
+    .join('\n');
 }
 
 function buildParticipantsTable(participants: RecapParticipant[]): string {
   const rows = participants
     .map((participant, idx) => {
-      const contribution = participant.contributionEth ?? participant.contributionWei;
+      const contribution =
+        participant.contributionEth ?? participant.contributionWei;
       return `
         <tr>
           <td>${idx + 1}</td>
-          <td class="mono">${escapeHtml(shortenAddress(participant.address))}</td>
+          <td class="mono">${escapeHtml(
+            shortenAddress(participant.address)
+          )}</td>
           <td>${escapeHtml(participant.tokens)}</td>
           <td>${escapeHtml(contribution)}</td>
         </tr>
       `;
     })
-    .join("\n");
+    .join('\n');
 
   return `
     <table>
@@ -469,7 +515,7 @@ function buildParticipantsTable(participants: RecapParticipant[]): string {
 
 function buildTradesTable(trades: RecapTrade[]): string {
   if (!trades.length) {
-    return "<p>No trades recorded.</p>";
+    return '<p>No trades recorded.</p>';
   }
 
   const rows = trades
@@ -478,13 +524,15 @@ function buildTradesTable(trades: RecapTrade[]): string {
         <tr>
           <td>${index + 1}</td>
           <td>${renderTradeBadge(trade.kind)}</td>
-          <td>${escapeHtml(trade.label)}<br /><span class="mono">${escapeHtml(shortenAddress(trade.actor))}</span></td>
+          <td>${escapeHtml(trade.label)}<br /><span class="mono">${escapeHtml(
+        shortenAddress(trade.actor)
+      )}</span></td>
           <td>${escapeHtml(trade.tokensWhole)}</td>
           <td>${escapeHtml(trade.valueEth ?? trade.valueWei)}</td>
         </tr>
-      `,
+      `
     )
-    .join("\n");
+    .join('\n');
 
   return `
     <table class="ledger-table">
@@ -504,15 +552,21 @@ function buildTradesTable(trades: RecapTrade[]): string {
   `;
 }
 
-function buildOwnerMatrixTable(entries: Array<{ parameter: string; value: unknown; description: string }> = []): string {
+function buildOwnerMatrixTable(
+  entries: Array<{
+    parameter: string;
+    value: unknown;
+    description: string;
+  }> = []
+): string {
   if (entries.length === 0) {
-    return "<p>No owner parameter matrix entries captured.</p>";
+    return '<p>No owner parameter matrix entries captured.</p>';
   }
 
   const rows = entries
     .map((entry) => {
       const value =
-        typeof entry.value === "object" && entry.value !== null
+        typeof entry.value === 'object' && entry.value !== null
           ? escapeHtml(JSON.stringify(entry.value))
           : escapeHtml(String(entry.value));
       return `
@@ -523,7 +577,7 @@ function buildOwnerMatrixTable(entries: Array<{ parameter: string; value: unknow
         </tr>
       `;
     })
-    .join("\n");
+    .join('\n');
 
   return `
     <table>
@@ -543,7 +597,7 @@ function buildOwnerMatrixTable(entries: Array<{ parameter: string; value: unknow
 
 function buildVerificationSection(verification?: VerificationSnapshot): string {
   if (!verification) {
-    return "";
+    return '';
   }
 
   const summary = verification.summary;
@@ -553,80 +607,111 @@ function buildVerificationSection(verification?: VerificationSnapshot): string {
         ? (summary.confidenceIndexBps / 100).toFixed(2)
         : undefined)
     : undefined;
-  const passedChecks = summary?.passedChecks ??
-    (summary?.checks ? summary.checks.filter((check) => check.consistent).length : undefined);
+  const passedChecks =
+    summary?.passedChecks ??
+    (summary?.checks
+      ? summary.checks.filter((check) => check.consistent).length
+      : undefined);
   const totalChecks = summary?.totalChecks ?? summary?.checks?.length;
-  const verdict = summary?.verdict ?? (passedChecks !== undefined && totalChecks !== undefined && passedChecks === totalChecks
-    ? "PASS"
-    : passedChecks !== undefined && totalChecks !== undefined
-    ? "REVIEW"
-    : undefined);
+  const verdict =
+    summary?.verdict ??
+    (passedChecks !== undefined &&
+    totalChecks !== undefined &&
+    passedChecks === totalChecks
+      ? 'PASS'
+      : passedChecks !== undefined && totalChecks !== undefined
+      ? 'REVIEW'
+      : undefined);
 
   const supplyCard = {
-    title: "Supply Consensus",
+    title: 'Supply Consensus',
     consistent: verification.supplyConsensus.consistent,
     body: `
       <p class="mono">
         Ledger ${escapeHtml(verification.supplyConsensus.ledgerWholeTokens)} ·
-        Contract ${escapeHtml(verification.supplyConsensus.contractWholeTokens)} ·
-        Simulation ${escapeHtml(verification.supplyConsensus.simulationWholeTokens)} ·
-        Participants ${escapeHtml(verification.supplyConsensus.participantAggregateWholeTokens)}
+        Contract ${escapeHtml(
+          verification.supplyConsensus.contractWholeTokens
+        )} ·
+        Simulation ${escapeHtml(
+          verification.supplyConsensus.simulationWholeTokens
+        )} ·
+        Participants ${escapeHtml(
+          verification.supplyConsensus.participantAggregateWholeTokens
+        )}
       </p>
     `,
   };
 
   const pricingCard = {
-    title: "Pricing Integrity",
+    title: 'Pricing Integrity',
     consistent: verification.pricing.consistent,
     body: `
       <p>
         On-chain quote: <span class="mono">${escapeHtml(
-          formatNumber(verification.pricing.contractNextPriceEth, `${verification.pricing.contractNextPriceWei} wei`),
+          formatNumber(
+            verification.pricing.contractNextPriceEth,
+            `${verification.pricing.contractNextPriceWei} wei`
+          )
         )}</span><br />
         Simulated quote: <span class="mono">${escapeHtml(
-          formatNumber(verification.pricing.simulatedNextPriceEth, `${verification.pricing.simulatedNextPriceWei} wei`),
+          formatNumber(
+            verification.pricing.simulatedNextPriceEth,
+            `${verification.pricing.simulatedNextPriceWei} wei`
+          )
         )}</span>
       </p>
     `,
   };
 
   const capitalCard = {
-    title: "Capital Flow Integrity",
+    title: 'Capital Flow Integrity',
     consistent: verification.capitalFlows.consistent,
     body: `
       <p>
         Gross inflow: <span class="mono">${escapeHtml(
-          formatNumber(verification.capitalFlows.ledgerGrossEth, `${verification.capitalFlows.ledgerGrossWei} wei`),
+          formatNumber(
+            verification.capitalFlows.ledgerGrossEth,
+            `${verification.capitalFlows.ledgerGrossWei} wei`
+          )
         )}</span><br />
         Redemptions: <span class="mono">${escapeHtml(
           formatNumber(
             verification.capitalFlows.ledgerRedemptionsEth,
-            `${verification.capitalFlows.ledgerRedemptionsWei} wei`,
-          ),
+            `${verification.capitalFlows.ledgerRedemptionsWei} wei`
+          )
         )}</span><br />
         Net reserve: <span class="mono">${escapeHtml(
-          formatNumber(verification.capitalFlows.ledgerNetEth, `${verification.capitalFlows.ledgerNetWei} wei`),
+          formatNumber(
+            verification.capitalFlows.ledgerNetEth,
+            `${verification.capitalFlows.ledgerNetWei} wei`
+          )
         )}</span><br />
         Vault received: <span class="mono">${escapeHtml(
-          formatNumber(verification.capitalFlows.vaultReceivedEth, `${verification.capitalFlows.vaultReceivedWei} wei`),
+          formatNumber(
+            verification.capitalFlows.vaultReceivedEth,
+            `${verification.capitalFlows.vaultReceivedWei} wei`
+          )
         )}</span>
       </p>
     `,
   };
 
   const contributionsCard = {
-    title: "Contribution Accounting",
+    title: 'Contribution Accounting',
     consistent: verification.contributions.consistent,
     body: `
       <p>
         On-chain aggregate: <span class="mono">${escapeHtml(
           formatNumber(
             verification.contributions.participantAggregateEth,
-            `${verification.contributions.participantAggregateWei} wei`,
-          ),
+            `${verification.contributions.participantAggregateWei} wei`
+          )
         )}</span><br />
         Ledger aggregate: <span class="mono">${escapeHtml(
-          formatNumber(verification.contributions.ledgerGrossEth, `${verification.contributions.ledgerGrossWei} wei`),
+          formatNumber(
+            verification.contributions.ledgerGrossEth,
+            `${verification.contributions.ledgerGrossWei} wei`
+          )
         )}</span>
       </p>
     `,
@@ -638,17 +723,25 @@ function buildVerificationSection(verification?: VerificationSnapshot): string {
     ? `
       <div class="verification-summary">
         <div class="summary-metric">
-          <span class="confidence-value">${escapeHtml(confidencePercent ?? "100.00")}%</span>
-          confidence${
+          <span class="confidence-value">${escapeHtml(
+            confidencePercent ?? 'unavailable'
+          )}%</span>
+          check pass rate${
             passedChecks !== undefined && totalChecks !== undefined
               ? ` (${passedChecks}/${totalChecks} checks)`
-              : ""
+              : ''
           }
         </div>
-        ${verdict ? `<div class="summary-verdict ${verdict === "PASS" ? "success" : "warning"}">${escapeHtml(verdict)}</div>` : ""}
+        ${
+          verdict
+            ? `<div class="summary-verdict ${
+                verdict === 'PASS' ? 'success' : 'warning'
+              }">${escapeHtml(verdict)}</div>`
+            : ''
+        }
       </div>
     `
-    : "";
+    : '';
 
   const grid = cards
     .map(
@@ -660,9 +753,9 @@ function buildVerificationSection(verification?: VerificationSnapshot): string {
           </header>
           ${card.body}
         </article>
-      `,
+      `
     )
-    .join("\n");
+    .join('\n');
 
   return `
     <section>
@@ -682,46 +775,55 @@ function buildVerificationSection(verification?: VerificationSnapshot): string {
 function buildMermaidFlow(recap: RecapData): string {
   const metadataSnippet = recap.launch.sovereignVault.decodedMetadata
     ? recap.launch.sovereignVault.decodedMetadata.replace(/\"/g, '\\"')
-    : "Ignition metadata";
+    : 'Ignition metadata';
 
   const mermaidLines = [
-    "flowchart LR",
-    `    Operator((Operator ${shortenAddress(recap.seed.holder)})) --> Seed[Nova-Seed #${recap.seed.tokenId}]`,
-    "    Seed -->|Tokenizes vision| Exchange[α-AGI SeedShares Exchange]",
-    "    Exchange -->|Bonding curve capital| Reserve((Sovereign Reserve))",
+    'flowchart LR',
+    `    Operator((Operator ${shortenAddress(
+      recap.seed.holder
+    )})) --> Seed[Nova-Seed #${recap.seed.tokenId}]`,
+    '    Seed -->|Tokenizes vision| Exchange[α-AGI SeedShares Exchange]',
+    '    Exchange -->|Bonding curve capital| Reserve((Sovereign Reserve))',
     `    Exchange -->|Validator consensus (${recap.validators.approvalCount}/${recap.validators.approvalThreshold})| Oracle[Risk Oracle Council]`,
-    "    Oracle --> Launch{Launch Condition}",
-    "    Launch -->|Finalized| Vault[[α-AGI Sovereign Vault]]",
+    '    Oracle --> Launch{Launch Condition}',
+    '    Launch -->|Finalized| Vault[[α-AGI Sovereign Vault]]',
     `    Vault -->|Acknowledge| Manifest>\"${metadataSnippet}\"]`,
-    "    Launch -.->|Abort| Emergency((Emergency Exit))",
+    '    Launch -.->|Abort| Emergency((Emergency Exit))',
   ];
 
-  return mermaidLines.join("\n");
+  return mermaidLines.join('\n');
 }
 
 function buildDashboardHtml(recap: RecapData): string {
   const participantCount = recap.participants.length;
-  const reserve = formatNumber(recap.bondingCurve.reserveEth, `${recap.bondingCurve.reserveWei} wei`);
-  const nextPrice = formatNumber(recap.bondingCurve.nextPriceEth, `${recap.bondingCurve.nextPriceWei} wei`);
+  const reserve = formatNumber(
+    recap.bondingCurve.reserveEth,
+    `${recap.bondingCurve.reserveWei} wei`
+  );
+  const nextPrice = formatNumber(
+    recap.bondingCurve.nextPriceEth,
+    `${recap.bondingCurve.nextPriceWei} wei`
+  );
   const sovereignBalance = formatNumber(
     recap.launch.sovereignVault.totalReceivedEth,
-    `${recap.launch.sovereignVault.totalReceivedWei} wei`,
+    `${recap.launch.sovereignVault.totalReceivedWei} wei`
   );
   const sovereignNative = formatNumber(
     recap.launch.sovereignVault.totalReceivedNativeEth,
-    `${recap.launch.sovereignVault.totalReceivedNativeWei} wei`,
+    `${recap.launch.sovereignVault.totalReceivedNativeWei} wei`
   );
   const sovereignToken = formatNumber(
     recap.launch.sovereignVault.totalReceivedExternalEth,
-    `${recap.launch.sovereignVault.totalReceivedExternalWei} wei`,
+    `${recap.launch.sovereignVault.totalReceivedExternalWei} wei`
   );
   const lastIgnition = formatNumber(
     recap.launch.sovereignVault.lastAcknowledgedAmountEth,
-    `${recap.launch.sovereignVault.lastAcknowledgedAmountWei} wei`,
+    `${recap.launch.sovereignVault.lastAcknowledgedAmountWei} wei`
   );
-  const lastIgnitionMode = recap.launch.sovereignVault.lastAcknowledgedUsedNative
-    ? "Native asset"
-    : "External asset";
+  const lastIgnitionMode = recap.launch.sovereignVault
+    .lastAcknowledgedUsedNative
+    ? 'Native asset'
+    : 'External asset';
 
   const ownerMatrix = buildOwnerMatrixTable(recap.ownerParameterMatrix ?? []);
   const timelineSection = buildTimelineSection(recap.timeline ?? []);
@@ -731,15 +833,17 @@ function buildDashboardHtml(recap: RecapData): string {
   const generatedTimestamp = new Date(recap.generatedAt).toISOString();
 
   const modeBadge =
-    recap.orchestrator.mode === "dry-run"
+    recap.orchestrator.mode === 'dry-run'
       ? '<span class="badge info">Dry Run</span>'
       : '<span class="badge success">Broadcast</span>';
   const dirtyBadge = recap.orchestrator.workspaceDirty
     ? '<span class="badge warning">Workspace Dirty</span>'
-    : "";
+    : '';
   const checksumLine = recap.checksums
-    ? `<li><strong>Checksum</strong>: <code>sha256:${escapeHtml(recap.checksums.recapSha256)}</code></li>`
-    : "";
+    ? `<li><strong>Checksum</strong>: <code>sha256:${escapeHtml(
+        recap.checksums.recapSha256
+      )}</code></li>`
+    : '';
 
   const telemetrySection = `
         <section>
@@ -749,28 +853,52 @@ function buildDashboardHtml(recap: RecapData): string {
               <h3>Recap Envelope</h3>
               <ul>
                 <li><strong>Generated</strong>: ${generatedTimestamp}</li>
-                <li><strong>Network</strong>: ${escapeHtml(recap.network.label)}</li>
-                <li><strong>Chain</strong>: ${escapeHtml(recap.network.chainId)}</li>
-                <li><strong>Block</strong>: ${escapeHtml(recap.network.blockNumber)}</li>
-                <li><strong>Dry-run mode</strong>: ${recap.network.dryRun ? "Enabled" : "Disabled"}</li>
+                <li><strong>Network</strong>: ${escapeHtml(
+                  recap.network.label
+                )}</li>
+                <li><strong>Chain</strong>: ${escapeHtml(
+                  recap.network.chainId
+                )}</li>
+                <li><strong>Block</strong>: ${escapeHtml(
+                  recap.network.blockNumber
+                )}</li>
+                <li><strong>Dry-run mode</strong>: ${
+                  recap.network.dryRun ? 'Enabled' : 'Disabled'
+                }</li>
                 ${checksumLine}
               </ul>
             </article>
             <article class="meta-card">
               <h3>Orchestrator</h3>
               <ul>
-                <li><strong>Mode</strong>: ${recap.orchestrator.mode === "dry-run" ? "Dry run" : "Broadcast"}</li>
-                <li><strong>Commit</strong>: ${escapeHtml(recap.orchestrator.commit ?? "(unavailable)")}</li>
-                <li><strong>Branch</strong>: ${escapeHtml(recap.orchestrator.branch ?? "(unavailable)")}</li>
-                <li><strong>Workspace dirty</strong>: ${recap.orchestrator.workspaceDirty ? "Yes" : "No"}</li>
+                <li><strong>Mode</strong>: ${
+                  recap.orchestrator.mode === 'dry-run'
+                    ? 'Dry run'
+                    : 'Broadcast'
+                }</li>
+                <li><strong>Commit</strong>: ${escapeHtml(
+                  recap.orchestrator.commit ?? '(unavailable)'
+                )}</li>
+                <li><strong>Branch</strong>: ${escapeHtml(
+                  recap.orchestrator.branch ?? '(unavailable)'
+                )}</li>
+                <li><strong>Workspace dirty</strong>: ${
+                  recap.orchestrator.workspaceDirty ? 'Yes' : 'No'
+                }</li>
               </ul>
             </article>
             <article class="meta-card">
               <h3>Actors</h3>
               <ul>
-                <li><strong>Owner</strong>: ${escapeHtml(shortenAddress(recap.actors.owner))}</li>
-                <li><strong>Investors</strong>: ${escapeHtml(recap.actors.investors.map(shortenAddress).join(", "))}</li>
-                <li><strong>Validators</strong>: ${escapeHtml(recap.actors.validators.map(shortenAddress).join(", "))}</li>
+                <li><strong>Owner</strong>: ${escapeHtml(
+                  shortenAddress(recap.actors.owner)
+                )}</li>
+                <li><strong>Investors</strong>: ${escapeHtml(
+                  recap.actors.investors.map(shortenAddress).join(', ')
+                )}</li>
+                <li><strong>Validators</strong>: ${escapeHtml(
+                  recap.actors.validators.map(shortenAddress).join(', ')
+                )}</li>
               </ul>
             </article>
           </div>
@@ -1128,8 +1256,8 @@ function buildDashboardHtml(recap: RecapData): string {
         text-decoration: underline;
       }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js" integrity="sha256-YBtS2OVCkXbkqVKgf/mBlC9ZwTe74MkRUyvMh35vjps=" crossorigin="anonymous"></script>
-    <script>mermaid.initialize({ startOnLoad: true, theme: 'dark' });</script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@11.17.2/dist/mermaid.min.js" integrity="sha384-EOXBFmc3gx5mb+vn0vPvvGqACToJD24hhacX5Yx+8NUUQrHIle/Qi5Bg9o3zKwW2" crossorigin="anonymous"></script>
+    <script>mermaid.initialize({ startOnLoad: true, theme: 'dark', securityLevel: 'strict' });</script>
   </head>
   <body>
       <main>
@@ -1140,6 +1268,7 @@ function buildDashboardHtml(recap: RecapData): string {
             Autonomous foresight launch executed via AGI Jobs v0 (v2). This dossier captures every
             actuator a non-technical steward needs to command an α-AGI Nova-Seed into sovereign reality.
           </p>
+          <p><strong>Evidence scope:</strong> a recorded financial-demo rehearsal. Check pass rates describe local invariants; they are not statistical confidence, independent review, live computer-work results, or production approval.</p>
           <div class="hero-meta">
             ${modeBadge}
             ${dirtyBadge}
@@ -1159,11 +1288,15 @@ function buildDashboardHtml(recap: RecapData): string {
         <div class="metrics">
           <article class="metric">
             <h3>Validator Consensus</h3>
-            <strong>${escapeHtml(`${recap.validators.approvalCount}/${recap.validators.approvalThreshold}`)}</strong>
-            <p>${escapeHtml(recap.validators.members.length.toString())} guardians in council</p>
+            <strong>${escapeHtml(
+              `${recap.validators.approvalCount}/${recap.validators.approvalThreshold}`
+            )}</strong>
+            <p>${escapeHtml(
+              recap.validators.members.length.toString()
+            )} guardians in council</p>
           </article>
           <article class="metric">
-            <h3>Live SeedShares Supply</h3>
+            <h3>Recorded SeedShares Supply</h3>
             <strong>${escapeHtml(recap.bondingCurve.supplyWholeTokens)}</strong>
             <p>Dynamic bonding curve issuance</p>
           </article>
@@ -1175,16 +1308,20 @@ function buildDashboardHtml(recap: RecapData): string {
           <article class="metric">
             <h3>Next Token Price</h3>
             <strong>${escapeHtml(nextPrice)}</strong>
-            <p>Real-time quote for incremental participation</p>
+            <p>Snapshot quote for incremental participation</p>
           </article>
           <article class="metric">
             <h3>Sovereign Vault</h3>
             <strong>${escapeHtml(sovereignBalance)}</strong>
             <p>
-              Manifest URI: ${escapeHtml(recap.launch.sovereignVault.manifestUri)}<br />
+              Manifest URI: ${escapeHtml(
+                recap.launch.sovereignVault.manifestUri
+              )}<br />
               Native intake: ${escapeHtml(sovereignNative)}<br />
               External intake: ${escapeHtml(sovereignToken)}<br />
-              Last ignition: ${escapeHtml(lastIgnition)} · ${escapeHtml(lastIgnitionMode)}
+              Last ignition: ${escapeHtml(lastIgnition)} · ${escapeHtml(
+    lastIgnitionMode
+  )}
             </p>
           </article>
           <article class="metric">
@@ -1204,15 +1341,17 @@ function buildDashboardHtml(recap: RecapData): string {
         </div>
       </section>
 
-      ${recap.trades && recap.trades.length
-        ? `
+      ${
+        recap.trades && recap.trades.length
+          ? `
       <section>
         <h2>Trade Resonance Log</h2>
         <p>Every bonding curve action captured chronologically to prove deterministic capital flows.</p>
         ${buildTradesTable(recap.trades)}
       </section>
       `
-        : ""}
+          : ''
+      }
 
       <section>
         <h2>Participant Ledger</h2>
@@ -1231,7 +1370,13 @@ function buildDashboardHtml(recap: RecapData): string {
         <pre class="mermaid">
 ${mermaidDefinition}
         </pre>
-        <p class="mono">Contracts: NovaSeed ${escapeHtml(shortenAddress(recap.contracts.novaSeed))} · Oracle ${escapeHtml(shortenAddress(recap.contracts.riskOracle))} · Exchange ${escapeHtml(shortenAddress(recap.contracts.markExchange))} · Vault ${escapeHtml(shortenAddress(recap.contracts.sovereignVault))}</p>
+        <p class="mono">Contracts: NovaSeed ${escapeHtml(
+          shortenAddress(recap.contracts.novaSeed)
+        )} · Oracle ${escapeHtml(
+    shortenAddress(recap.contracts.riskOracle)
+  )} · Exchange ${escapeHtml(
+    shortenAddress(recap.contracts.markExchange)
+  )} · Vault ${escapeHtml(shortenAddress(recap.contracts.sovereignVault))}</p>
       </section>
 
       <footer>
@@ -1242,9 +1387,13 @@ ${mermaidDefinition}
 </html>`;
 }
 
-export async function renderDashboard(recap: RecapData, outputPath = DASHBOARD_PATH): Promise<string> {
+export async function renderDashboard(
+  recap: RecapData,
+  outputPath = DASHBOARD_PATH
+): Promise<string> {
+  assertVerifiedRecap(recap);
   const html = buildDashboardHtml(recap);
   await mkdir(path.dirname(outputPath), { recursive: true });
-  await writeFile(outputPath, html, "utf8");
+  await writeFile(outputPath, html, 'utf8');
   return outputPath;
 }

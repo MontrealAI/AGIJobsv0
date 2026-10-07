@@ -1,5 +1,8 @@
 # α-AGI MARK Operator Command Console
 
+> Scope: these preserved diagrams describe a local financing-market demonstration. Chart coordinates and automation multipliers are illustrative, not empirical assurance or productivity measurements. A local check pass rate does not prove authorship, independent review, buyer value or production readiness. See the [current quick start](../README.md) and [computer-work handoff](computer-work-handoff.md).
+
+
 The command console is a briefing aid for non-technical launch stewards.  It
 layers multiple visualisations so the operator can reason about every control
 lever exposed by AGI Jobs v0 (v2) before, during, and after ignition.

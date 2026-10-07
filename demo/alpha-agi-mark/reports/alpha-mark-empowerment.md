@@ -1,18 +1,20 @@
 # α-AGI MARK Empowerment Pulse
 
-Generated 2025-10-17T13:12:40.494Z on **hardhat (chainId 31337)** (hardhat, chainId 31337).
+Generated 2026-10-07T13:03:07.145Z on **hardhat (chainId 31337)** (hardhat, chainId 31337).
 
-AGI Jobs orchestrated 22 mission events from 1 command, sustaining 100.00% confidence across 4/4 invariants.
+AGI Jobs orchestrated 22 mission events from 1 command, sustaining 100.00% check pass rate across 4/4 invariants.
 
 ## Mission Snapshot
 
 - Orchestrator mode: **dry-run**
 - Automation multiplier: **22.00×** (22 orchestrated actions from 1 command)
-- Verification confidence: **100.00%** (4/4 checks · verdict PASS)
+- Verification check pass rate: **100.00%** (4/4 checks · verdict PASS)
 - Validator quorum: **2/2** approvals
 - Capital formation: **3** participants · Gross **4.5 ETH** · Reserve **0 ETH**
 
-## Autonomous Command Quadrant
+## Illustrative Command Quadrant
+
+Quadrant positions are presentation heuristics derived from local demo counts, not measured reliability, independent review, or demonstrated agent capability.
 
 ```mermaid
 quadrantChart
@@ -82,7 +84,4 @@ timeline
 
 ---
 
-The empowerment pulse evidences a sovereign-grade automation fabric: AGI Jobs v0 (v2) elevated a single operator into a
-launch commander who steers validator governance, capital formation, and sovereign ignition without touching low-level
-Solidity. This dossier exists so boards, auditors, and public stewards can witness that intelligence, assurance, and
-governance fused into one artefact.
+The pulse records a scripted financial rehearsal. Counts and illustrative diagrams describe this run; they do not establish independent reviewer approval, live computer-work capability, or production readiness.

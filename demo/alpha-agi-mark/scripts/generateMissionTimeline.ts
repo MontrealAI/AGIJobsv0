@@ -1,11 +1,12 @@
-import { mkdir, readFile, writeFile } from "fs/promises";
-import path from "path";
+import { assertVerifiedRecap } from './verifyRecap';
+import { mkdir, readFile, writeFile } from 'fs/promises';
+import path from 'path';
 
-import { z } from "zod";
+import { z } from 'zod';
 
-const REPORT_DIR = path.join(__dirname, "..", "reports");
-const RECAP_PATH = path.join(REPORT_DIR, "alpha-mark-recap.json");
-const TIMELINE_PATH = path.join(REPORT_DIR, "alpha-mark-timeline.md");
+const REPORT_DIR = path.join(__dirname, '..', 'reports');
+const RECAP_PATH = path.join(REPORT_DIR, 'alpha-mark-recap.json');
+const TIMELINE_PATH = path.join(REPORT_DIR, 'alpha-mark-timeline.md');
 
 const timelineEntrySchema = z
   .object({
@@ -33,17 +34,19 @@ const recapSchema = z
       .object({
         commit: z.string().optional(),
         branch: z.string().optional(),
-        mode: z.enum(["dry-run", "broadcast"]),
+        mode: z.enum(['dry-run', 'broadcast']),
       })
       .passthrough(),
-    timeline: z.array(timelineEntrySchema).nonempty("Timeline is empty – run the demo first."),
+    timeline: z
+      .array(timelineEntrySchema)
+      .nonempty('Timeline is empty – run the demo first.'),
   })
   .passthrough();
 
 type TimelineEntry = z.infer<typeof timelineEntrySchema>;
 
 function sanitizeMermaid(value: string): string {
-  return value.replace(/\r?\n/g, " ").replace(/:/g, "\\:");
+  return value.replace(/\r?\n/g, ' ').replace(/:/g, '\\:');
 }
 
 function shortenAddress(address: string | undefined): string | undefined {
@@ -53,22 +56,26 @@ function shortenAddress(address: string | undefined): string | undefined {
 }
 
 function buildMermaid(entries: TimelineEntry[]): string {
-  const lines = ["timeline", "    title α-AGI MARK Mission Timeline"];
+  const lines = ['timeline', '    title α-AGI MARK Mission Timeline'];
   let currentPhase: string | undefined;
 
   for (const entry of entries) {
-    const phase = entry.phase || "Mission";
+    const phase = entry.phase || 'Mission';
     if (phase !== currentPhase) {
       lines.push(`    section ${phase}`);
       currentPhase = phase;
     }
-    const icon = entry.icon ? `${entry.icon} ` : "";
+    const icon = entry.icon ? `${entry.icon} ` : '';
     const actor = entry.actorLabel || shortenAddress(entry.actor);
-    const actorSuffix = actor ? ` (${actor})` : "";
-    lines.push(`      ${sanitizeMermaid(`${icon}${entry.title}${actorSuffix}`)} : ${sanitizeMermaid(entry.description)}`);
+    const actorSuffix = actor ? ` (${actor})` : '';
+    lines.push(
+      `      ${sanitizeMermaid(
+        `${icon}${entry.title}${actorSuffix}`
+      )} : ${sanitizeMermaid(entry.description)}`
+    );
   }
 
-  return lines.join("\n");
+  return lines.join('\n');
 }
 
 function buildTable(entries: TimelineEntry[]): string {
@@ -76,42 +83,45 @@ function buildTable(entries: TimelineEntry[]): string {
   const rows = entries
     .map((entry) => {
       const label = entry.icon ? `${entry.icon} ${entry.title}` : entry.title;
-      const actor = entry.actorLabel || shortenAddress(entry.actor) || "—";
+      const actor = entry.actorLabel || shortenAddress(entry.actor) || '—';
       return `| ${entry.order} | ${entry.phase} | ${label} | ${entry.description} | ${actor} |`;
     })
-    .join("\n");
+    .join('\n');
   return `${header}\n${rows}`;
 }
 
 async function main() {
-  const raw = await readFile(RECAP_PATH, "utf8");
-  const recap = recapSchema.parse(JSON.parse(raw));
+  const raw = await readFile(RECAP_PATH, 'utf8');
+  const source = JSON.parse(raw);
+  assertVerifiedRecap(source);
+  const recap = recapSchema.parse(source);
 
   const mermaid = buildMermaid(recap.timeline);
   const table = buildTable(recap.timeline);
   const generatedAt = new Date(recap.generatedAt).toISOString();
   const networkLabel = recap.network.label;
-  const commitLabel = recap.orchestrator.commit ?? "(unavailable)";
-  const branchLabel = recap.orchestrator.branch ?? "(unavailable)";
+  const commitLabel = recap.orchestrator.commit ?? '(unavailable)';
+  const branchLabel = recap.orchestrator.branch ?? '(unavailable)';
 
-  const markdown = `# α-AGI MARK Mission Timeline\n\n` +
+  const markdown =
+    `# α-AGI MARK Mission Timeline\n\n` +
     `Generated ${generatedAt} on ${networkLabel}.\n\n` +
     `- **Orchestrator mode:** ${recap.orchestrator.mode}\n` +
     `- **Commit:** ${commitLabel}\n` +
     `- **Branch:** ${branchLabel}\n\n` +
     `## Cinematic Timeline\n\n` +
-    "```mermaid\n" +
+    '```mermaid\n' +
     `${mermaid}\n` +
-    "```\n\n" +
+    '```\n\n' +
     `## Event Ledger\n\n${table}\n`;
 
   await mkdir(REPORT_DIR, { recursive: true });
-  await writeFile(TIMELINE_PATH, markdown, "utf8");
+  await writeFile(TIMELINE_PATH, markdown, 'utf8');
 
   console.log(`Mission timeline written to ${TIMELINE_PATH}`);
 }
 
 main().catch((error) => {
-  console.error("Failed to generate mission timeline:", error);
+  console.error('Failed to generate mission timeline:', error);
   process.exitCode = 1;
 });

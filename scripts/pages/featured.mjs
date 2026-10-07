@@ -9,6 +9,7 @@ export function renderHeroSpotlight(base) {
     <span>IN THE SPOTLIGHT</span>
     <a href="${base}${featuredRoutes.culture}">CULTURE Studio <span aria-hidden="true">↗</span></a>
     <a href="${base}${featuredRoutes.kardashev}">Kardashev II <span aria-hidden="true">↗</span></a>
+    <a href="${base}experiments/alpha-agi-mark/">Alpha Mark <span aria-hidden="true">↗</span></a>
   </nav>`;
 }
 
@@ -125,6 +126,7 @@ export function renderFeaturedDemos(base, catalog) {
         </div>
       </article>
     </div>
+    <article class="mark-home-callout" aria-labelledby="mark-feature-title"><div><span class="work-number">ALPHA AGI MARK / NEW INTERACTIVE LAB</span><h3 id="mark-feature-title">Capital to capability.</h3><p>Plan a useful mission, compare worker and review capacity, and export a scoped USDC work proposal. Browser-only simulation; no live execution or settlement.</p></div><a class="button secondary" href="${base}experiments/alpha-agi-mark/">Open the mission lab ↗</a></article>
     <div class="spotlight-footer"><p><span aria-hidden="true">✧</span> Start with a question. Explore the system. Inspect the evidence.</p><a class="text-link" href="#explore">Browse all ${
       catalog.length
     } catalog entries <span aria-hidden="true">↓</span></a></div>

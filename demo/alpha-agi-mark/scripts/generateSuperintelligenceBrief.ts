@@ -1,12 +1,19 @@
-import { mkdir, writeFile, readFile } from "fs/promises";
-import path from "path";
+import { assertVerifiedRecap } from './verifyRecap';
+import { mkdir, writeFile, readFile } from 'fs/promises';
+import path from 'path';
 
-import { formatEther } from "ethers";
-import { z } from "zod";
+import { formatEther } from 'ethers';
+import { z } from 'zod';
 
-import { canonicalStringify } from "./utils/canonical";
+import { createHash } from 'crypto';
+import { canonicalStringify } from './utils/canonical';
 
-const REPORT_PATH = path.join(__dirname, "..", "reports", "alpha-mark-superintelligence.md");
+const REPORT_PATH = path.join(
+  __dirname,
+  '..',
+  'reports',
+  'alpha-mark-superintelligence.md'
+);
 const REPORT_DIR = path.dirname(REPORT_PATH);
 
 const recapSchema = z
@@ -24,15 +31,15 @@ const recapSchema = z
       .object({
         commit: z.string().optional(),
         branch: z.string().optional(),
-        mode: z.enum(["dry-run", "broadcast"]),
+        mode: z.enum(['dry-run', 'broadcast']),
       })
       .passthrough(),
     verification: z
       .object({
         summary: z
           .object({
-            verdict: z.enum(["PASS", "REVIEW"]).default("REVIEW"),
-            confidenceIndexPercent: z.string().default("0"),
+            verdict: z.enum(['PASS', 'REVIEW']).default('REVIEW'),
+            confidenceIndexPercent: z.string().default('0'),
             passedChecks: z.number().default(0),
             totalChecks: z.number().default(0),
           })
@@ -116,19 +123,19 @@ const recapSchema = z
             tokensWei: z.string(),
             contributionWei: z.string(),
           })
-          .passthrough(),
+          .passthrough()
       )
       .nonempty(),
     trades: z
       .array(
         z
           .object({
-            kind: z.enum(["BUY", "SELL"]),
+            kind: z.enum(['BUY', 'SELL']),
             label: z.string(),
             tokensWhole: z.string(),
             valueWei: z.string(),
           })
-          .passthrough(),
+          .passthrough()
       )
       .nonempty(),
     timeline: z
@@ -139,7 +146,7 @@ const recapSchema = z
             title: z.string(),
             description: z.string(),
           })
-          .passthrough(),
+          .passthrough()
       )
       .nonempty(),
     launch: z
@@ -163,11 +170,11 @@ const recapSchema = z
   .passthrough();
 
 function escapeMermaid(input: string): string {
-  return input.replace(/[\r\n]/g, " ").replace(/"/g, "'");
+  return input.replace(/[\r\n]/g, ' ').replace(/"/g, "'");
 }
 
 function formatBool(value: boolean): string {
-  return value ? "✅ Enabled" : "⛔️ Disabled";
+  return value ? '✅ Enabled' : '⛔️ Disabled';
 }
 
 function formatWei(wei: string): { raw: bigint; eth: string } {
@@ -176,9 +183,15 @@ function formatWei(wei: string): { raw: bigint; eth: string } {
 }
 
 async function loadRecap() {
-  const recapPath = path.join(__dirname, "..", "reports", "alpha-mark-recap.json");
-  const raw = await readFile(recapPath, "utf-8");
+  const recapPath = path.join(
+    __dirname,
+    '..',
+    'reports',
+    'alpha-mark-recap.json'
+  );
+  const raw = await readFile(recapPath, 'utf-8');
   const parsedJson = JSON.parse(raw);
+  assertVerifiedRecap(parsedJson);
   return recapSchema.parse(parsedJson);
 }
 
@@ -191,59 +204,88 @@ function assert(condition: boolean, message: string) {
 async function main() {
   const recap = await loadRecap();
 
-  assert(!!recap.empowerment, "Recap missing empowerment stanza. Run the orchestrator first.");
+  assert(
+    !!recap.empowerment,
+    'Recap missing empowerment stanza. Run the orchestrator first.'
+  );
   const empowerment = recap.empowerment!;
 
   const verificationSummary = recap.verification?.summary;
-  assert(!!verificationSummary, "Recap lacks verification summary; rerun verify script.");
   assert(
-    verificationSummary!.verdict === "PASS",
-    `Verification verdict is ${verificationSummary!.verdict}, expected PASS.`,
+    !!verificationSummary,
+    'Recap lacks verification summary; rerun verify script.'
+  );
+  assert(
+    verificationSummary!.verdict === 'PASS',
+    `Verification verdict is ${verificationSummary!.verdict}, expected PASS.`
   );
 
   const supply = BigInt(recap.bondingCurve.supplyWholeTokens);
   const reserve = BigInt(recap.bondingCurve.reserveWei);
-  const participantGross = recap.participants.reduce((acc, participant) => acc + BigInt(participant.contributionWei), 0n);
-  const empowermentGross = BigInt(empowerment.capitalFormation.grossContributionsWei);
+  const participantGross = recap.participants.reduce(
+    (acc, participant) => acc + BigInt(participant.contributionWei),
+    0n
+  );
+  const empowermentGross = BigInt(
+    empowerment.capitalFormation.grossContributionsWei
+  );
   assert(
     participantGross === empowermentGross,
-    `Participant contribution aggregate ${participantGross} does not match empowerment gross ${empowermentGross}.`,
+    `Participant contribution aggregate ${participantGross} does not match empowerment gross ${empowermentGross}.`
   );
 
   const reserveSnapshot = BigInt(empowerment.capitalFormation.reserveWei);
   assert(
     reserveSnapshot === reserve,
-    `Empowerment reserve ${reserveSnapshot} does not match bonding curve reserve ${reserve}.`,
+    `Empowerment reserve ${reserveSnapshot} does not match bonding curve reserve ${reserve}.`
   );
 
   assert(
-    empowerment.assurance.validatorApprovals === Number(recap.validators.approvalCount),
-    "Validator approvals mismatch between empowerment snapshot and validator registry.",
+    empowerment.assurance.validatorApprovals ===
+      Number(recap.validators.approvalCount),
+    'Validator approvals mismatch between empowerment snapshot and validator registry.'
   );
 
   const ownerControlRows = [
-    { label: "Market paused", value: formatBool(recap.ownerControls.paused) },
-    { label: "Whitelist mode", value: formatBool(recap.ownerControls.whitelistEnabled) },
-    { label: "Emergency exit", value: formatBool(recap.ownerControls.emergencyExitEnabled) },
-    { label: "Launch finalized", value: formatBool(recap.ownerControls.finalized) },
-    { label: "Launch aborted", value: formatBool(recap.ownerControls.aborted) },
+    { label: 'Market paused', value: formatBool(recap.ownerControls.paused) },
     {
-      label: "Validation override",
+      label: 'Whitelist mode',
+      value: formatBool(recap.ownerControls.whitelistEnabled),
+    },
+    {
+      label: 'Emergency exit',
+      value: formatBool(recap.ownerControls.emergencyExitEnabled),
+    },
+    {
+      label: 'Launch finalized',
+      value: formatBool(recap.ownerControls.finalized),
+    },
+    { label: 'Launch aborted', value: formatBool(recap.ownerControls.aborted) },
+    {
+      label: 'Validation override',
       value: recap.ownerControls.validationOverrideEnabled
         ? recap.ownerControls.validationOverrideStatus
-          ? "✅ Forcing launch-ready"
-          : "⚠️ Forcing hold"
-        : "⛔️ Disabled",
+          ? '✅ Forcing launch-ready'
+          : '⚠️ Forcing hold'
+        : '⛔️ Disabled',
     },
-    { label: "Treasury", value: recap.ownerControls.treasury ?? "—" },
-    { label: "Risk oracle", value: recap.ownerControls.riskOracle ?? "—" },
+    { label: 'Treasury', value: recap.ownerControls.treasury ?? '—' },
+    { label: 'Risk oracle', value: recap.ownerControls.riskOracle ?? '—' },
     {
-      label: "Base asset",
-      value: recap.ownerControls.usesNativeAsset ? "Native ETH" : recap.ownerControls.baseAsset ?? "External ERC-20",
+      label: 'Base asset',
+      value: recap.ownerControls.usesNativeAsset
+        ? 'Native ETH'
+        : recap.ownerControls.baseAsset ?? 'External ERC-20',
     },
-    { label: "Funding cap (wei)", value: recap.ownerControls.fundingCapWei },
-    { label: "Max supply (tokens)", value: recap.ownerControls.maxSupplyWholeTokens },
-    { label: "Sale deadline", value: recap.ownerControls.saleDeadlineTimestamp },
+    { label: 'Funding cap (wei)', value: recap.ownerControls.fundingCapWei },
+    {
+      label: 'Max supply (tokens)',
+      value: recap.ownerControls.maxSupplyWholeTokens,
+    },
+    {
+      label: 'Sale deadline',
+      value: recap.ownerControls.saleDeadlineTimestamp,
+    },
   ];
 
   const bondingCurve = {
@@ -259,7 +301,10 @@ async function main() {
   const contributionsDisplay = formatEther(participantGross);
 
   const participantRows = recap.participants.map(
-    (participant) => `| ${participant.address} | ${participant.tokens} | ${formatEther(BigInt(participant.contributionWei))} |`,
+    (participant) =>
+      `| ${participant.address} | ${participant.tokens} | ${formatEther(
+        BigInt(participant.contributionWei)
+      )} |`
   );
 
   const timelineSections: Record<string, string[]> = {};
@@ -273,113 +318,175 @@ async function main() {
     timelineSections[safePhase].push(`${safeTitle} : ${safeDescription}`);
   });
 
-  const timelineMermaidLines: string[] = ["```mermaid", "timeline", "    title α-AGI MARK Sovereign Orchestration"];
+  const timelineMermaidLines: string[] = [
+    '```mermaid',
+    'timeline',
+    '    title α-AGI MARK Sovereign Orchestration',
+  ];
   Object.entries(timelineSections).forEach(([phase, events]) => {
     timelineMermaidLines.push(`    section ${phase}`);
     events.forEach((event) => {
       timelineMermaidLines.push(`      ${event}`);
     });
   });
-  timelineMermaidLines.push("```");
+  timelineMermaidLines.push('```');
 
   const flowMermaid = [
-    "```mermaid",
-    "flowchart LR",
-    "    Operator((Operator)) -->|Command one| Orchestrator{{AGI Jobs Orchestrator}}",
-    "    Orchestrator --> NovaSeed[Nova-Seed NFT]",
-    "    Orchestrator --> Exchange[AlphaMark Exchange]",
-    "    Orchestrator --> Oracle[Risk Oracle]",
-    "    Investors((Investors)) --> Exchange",
+    '```mermaid',
+    'flowchart LR',
+    '    Operator((Operator)) -->|Command one| Orchestrator{{AGI Jobs Orchestrator}}',
+    '    Orchestrator --> NovaSeed[Nova-Seed NFT]',
+    '    Orchestrator --> Exchange[AlphaMark Exchange]',
+    '    Orchestrator --> Oracle[Risk Oracle]',
+    '    Investors((Investors)) --> Exchange',
     `    Oracle -->|Approvals ${recap.validators.approvalCount}/${recap.validators.approvalThreshold}| Exchange`,
     `    Exchange -->|Reserve ${reserveDisplay} ETH| Vault[α-AGI Sovereign Vault]`,
-    "    Vault --> Sovereign[[Sovereign Ignition]]",
-    "```",
-  ].join("\n");
+    '    Vault --> Sovereign[[Sovereign Ignition]]',
+    '```',
+  ].join('\n');
 
   const assuranceMermaid = [
-    "```mermaid",
-    "mindmap",
-    "  root((α-AGI MARK Assurance))",
-    `    Confidence[${verificationSummary.confidenceIndexPercent}% confidence]`,
+    '```mermaid',
+    'mindmap',
+    '  root((α-AGI MARK Assurance))',
+    `    Confidence[${verificationSummary.confidenceIndexPercent}% check pass rate]`,
     `      Checks[${verificationSummary.passedChecks}/${verificationSummary.totalChecks} invariants aligned]`,
-    "    Validation[Validator quorum]",
+    '    Validation[Validator quorum]',
     `      Approvals[${recap.validators.approvalCount}/${recap.validators.approvalThreshold} approvals]`,
-    "    Controls[Owner actuators]",
+    '    Controls[Owner actuators]',
     `      Matrix[${empowerment.operatorControls.totalControls} controls catalogued]`,
-    "    Capital[Reserve discipline]",
+    '    Capital[Reserve discipline]',
     `      Supply[${supplyDisplay} SeedShares outstanding]`,
     `      ReserveBalance[${reserveDisplay} ETH reserve]`,
-    "```",
-  ].join("\n");
+    '```',
+  ].join('\n');
 
   const pieMermaid = [
-    "```mermaid",
-    "pie showData",
-    "    title Empowerment Composition",
+    '```mermaid',
+    'pie showData',
+    '    title Empowerment Composition',
     `    \"Automation\" : ${empowerment.automation.orchestratedActions}`,
     `    \"Verification\" : ${empowerment.assurance.checksPassed}`,
     `    \"Capital\" : ${empowerment.capitalFormation.participants}`,
     `    \"Controls\" : ${empowerment.operatorControls.totalControls}`,
-    "```",
-  ].join("\n");
+    '```',
+  ].join('\n');
 
   const markdownLines: string[] = [
-    "# α-AGI MARK Superintelligence Brief",
-    "",
+    '# α-AGI MARK Superintelligence Brief',
+    '',
     `> [!SUCCESS]`,
-    `> AGI Jobs orchestrated **${empowerment.automation.orchestratedActions} mission-grade actions** from ${empowerment.automation.manualCommands} command${empowerment.automation.manualCommands === 1 ? "" : "s"}, sustaining ${verificationSummary.confidenceIndexPercent}% verification confidence and dispatching ${reserveDisplay} ETH to the sovereign vault.`,
-    "",
-    "## Mission Signals",
-    "",
+    `> AGI Jobs orchestrated **${
+      empowerment.automation.orchestratedActions
+    } mission-grade actions** from ${
+      empowerment.automation.manualCommands
+    } command${
+      empowerment.automation.manualCommands === 1 ? '' : 's'
+    }, sustaining ${
+      verificationSummary.confidenceIndexPercent
+    }% local check pass rate and dispatching ${formatEther(
+      BigInt(recap.launch.sovereignVault.totalReceivedWei)
+    )} ETH to the sovereign vault.`,
+    '',
+    'Scope: scripted financial-demo evidence. This brief does not demonstrate superintelligence, independent review, live buyer value, or production qualification.',
+    '',
+    '## Mission Signals',
+    '',
     `- **Network:** ${recap.network.label} (${recap.network.name})`,
-    `- **Orchestrator commit:** ${recap.orchestrator.commit ?? "unknown"}`,
+    `- **Orchestrator commit:** ${recap.orchestrator.commit ?? 'unknown'}`,
     `- **Verification verdict:** ${verificationSummary.verdict}`,
-    `- **Confidence index:** ${verificationSummary.confidenceIndexPercent}% (${verificationSummary.passedChecks}/${verificationSummary.totalChecks})`,
+    `- **Check pass rate:** ${verificationSummary.confidenceIndexPercent}% (${verificationSummary.passedChecks}/${verificationSummary.totalChecks})`,
     `- **Capital raised:** ${contributionsDisplay} ETH across ${recap.participants.length} contributors`,
     `- **Supply outstanding:** ${supplyDisplay} SeedShares`,
   ];
-  markdownLines.push("", "## Sovereign Control Deck", "", "| Control | Status |", "| --- | --- |");
-  markdownLines.push(...ownerControlRows.map((row) => `| ${row.label} | ${row.value} |`));
-  markdownLines.push("", "## Participant Ledger Snapshot", "", "| Participant | SeedShares | Contribution (ETH) |", "| --- | --- | --- |");
+  markdownLines.push(
+    '',
+    '## Sovereign Control Deck',
+    '',
+    '| Control | Status |',
+    '| --- | --- |'
+  );
+  markdownLines.push(
+    ...ownerControlRows.map((row) => `| ${row.label} | ${row.value} |`)
+  );
+  markdownLines.push(
+    '',
+    '## Participant Ledger Snapshot',
+    '',
+    '| Participant | SeedShares | Contribution (ETH) |',
+    '| --- | --- | --- |'
+  );
   markdownLines.push(...participantRows);
-  markdownLines.push("", "## Orchestration Timeline", "");
+  markdownLines.push('', '## Orchestration Timeline', '');
   markdownLines.push(...timelineMermaidLines);
-  markdownLines.push("", "## Capital Flow Blueprint", "", flowMermaid);
-  markdownLines.push("", "## Assurance Mindmap", "", assuranceMermaid);
-  markdownLines.push("", "## Empowerment Composition", "", pieMermaid);
-  markdownLines.push("", "## Bonding Curve Telemetry", "");
+  markdownLines.push('', '## Capital Flow Blueprint', '', flowMermaid);
+  markdownLines.push('', '## Assurance Mindmap', '', assuranceMermaid);
+  markdownLines.push('', '## Empowerment Composition', '', pieMermaid);
+  markdownLines.push('', '## Bonding Curve Telemetry', '');
   markdownLines.push(
     `- **Reserve:** ${reserveDisplay} ETH`,
-    `- **Next price:** ${bondingCurve.nextPrice.eth} ETH (${bondingCurve.nextPrice.raw.toString()} wei)`,
-    `- **Base price:** ${bondingCurve.basePrice.eth} ETH (${bondingCurve.basePrice.raw.toString()} wei)`,
-    `- **Slope:** ${bondingCurve.slope.eth} ETH/token`,
+    `- **Next price:** ${
+      bondingCurve.nextPrice.eth
+    } ETH (${bondingCurve.nextPrice.raw.toString()} wei)`,
+    `- **Base price:** ${
+      bondingCurve.basePrice.eth
+    } ETH (${bondingCurve.basePrice.raw.toString()} wei)`,
+    `- **Slope:** ${bondingCurve.slope.eth} ETH/token`
   );
-  markdownLines.push("", "## Sovereign Vault", "");
+  markdownLines.push('', '## Sovereign Vault', '');
   markdownLines.push(
-    `- **Recipient treasury:** ${recap.launch.treasury ?? "not configured"}`,
+    `- **Recipient treasury:** ${recap.launch.treasury ?? 'not configured'}`,
     `- **Vault manifest:** ${recap.launch.sovereignVault.manifestUri}`,
-    `- **Last ignition metadata:** ${recap.launch.sovereignVault.decodedMetadata ?? recap.launch.sovereignVault.lastAcknowledgedMetadataHex}`,
-    `- **Native launch:** ${recap.launch.sovereignVault.lastAcknowledgedUsedNative ? "Yes" : "No"}`,
-    `- **Total received:** ${formatEther(BigInt(recap.launch.sovereignVault.totalReceivedWei))} ETH`,
+    `- **Last ignition metadata:** ${
+      recap.launch.sovereignVault.decodedMetadata ??
+      recap.launch.sovereignVault.lastAcknowledgedMetadataHex
+    }`,
+    `- **Native launch:** ${
+      recap.launch.sovereignVault.lastAcknowledgedUsedNative ? 'Yes' : 'No'
+    }`,
+    `- **Total received:** ${formatEther(
+      BigInt(recap.launch.sovereignVault.totalReceivedWei)
+    )} ETH`
   );
-  markdownLines.push("", "---", "", "Report checksum (sha256 over canonical JSON snapshot):", "", "```");
-  markdownLines.push(canonicalStringify({
-    generatedAt: recap.generatedAt,
-    network: recap.network,
-    verification: verificationSummary,
-    empowerment,
-    bondingCurve: recap.bondingCurve,
-    validators: recap.validators,
-  }));
-  markdownLines.push("```");
-  const markdown = markdownLines.join("\n");
+  markdownLines.push(
+    '',
+    '---',
+    '',
+    'Report checksum (sha256 over canonical JSON snapshot):',
+    '',
+    '```'
+  );
+  markdownLines.push(
+    createHash('sha256')
+      .update(
+        canonicalStringify({
+          generatedAt: recap.generatedAt,
+          network: recap.network,
+          verification: verificationSummary,
+          empowerment,
+          bondingCurve: recap.bondingCurve,
+          validators: recap.validators,
+        })
+      )
+      .digest('hex')
+  );
+  markdownLines.push('```');
+  const markdown = markdownLines.join('\n');
 
   await mkdir(REPORT_DIR, { recursive: true });
   await writeFile(REPORT_PATH, markdown);
-  console.log(`🧠 Superintelligence brief written to ${path.relative(path.join(__dirname, "..", "..", ".."), REPORT_PATH)}`);
+  console.log(
+    `🧠 Superintelligence brief written to ${path.relative(
+      path.join(__dirname, '..', '..', '..'),
+      REPORT_PATH
+    )}`
+  );
 }
 
 main().catch((error) => {
-  console.error("❌ Failed to generate superintelligence brief:", error instanceof Error ? error.message : error);
+  console.error(
+    '❌ Failed to generate superintelligence brief:',
+    error instanceof Error ? error.message : error
+  );
   process.exitCode = 1;
 });

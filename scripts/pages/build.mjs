@@ -12,6 +12,7 @@ import { loadExperiences, renderExperience } from './experiences.mjs';
 import { renderFeaturedDemos, renderHeroSpotlight } from './featured.mjs';
 import { renderWorkIntro, renderVision, renderWorkPage } from './work.mjs';
 import { renderReviewPage } from './review.mjs';
+import { renderAlphaMarkPage } from './alpha-mark.mjs';
 
 const require = createRequire(import.meta.url);
 const { inventory } = require('../demo/catalog.cjs');
@@ -505,6 +506,18 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
       body: renderReviewPage(base, guideURL),
     })
   );
+  write(
+    'experiments/alpha-agi-mark/index.html',
+    chrome({
+      title: 'Alpha AGI Mark — Capital to capability',
+      description:
+        'Prepare a scoped USDC computer-work proposal and model worker, reviewer and reward-budget capacity. Browser-only planning with no execution or settlement.',
+      base,
+      revision,
+      canonical: 'experiments/alpha-agi-mark/',
+      body: renderAlphaMarkPage(base, guideURL),
+    })
+  );
   const flowSources = [];
   for (const file of documents) {
     const originalSource = fs.readFileSync(path.join(root, file), 'utf8');
@@ -700,7 +713,7 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
     logLevel: 'warning',
   });
   const deckRoot = 'demo/AGI-Jobs-Platform-at-Kardashev-II-Scale/';
-  const dashboardRoutes = [];
+  const dashboardRoutes = ['experiments/alpha-agi-mark/'];
   for (const file of tracked) {
     if (!file.startsWith(deckRoot)) continue;
     const relative = file.slice(deckRoot.length);

@@ -3189,3 +3189,364 @@ html:not(.js) [data-copy] {
     padding: 14px;
   }
 }
+
+/* Alpha Mark capital-to-work planning experience. */
+.mark-page {
+  padding-top: 52px;
+  padding-bottom: 70px;
+}
+.mark-hero {
+  display: grid;
+  grid-template-columns: 1.12fr 1fr;
+  align-items: center;
+  gap: 20px;
+  padding: 38px 0 32px;
+}
+.mark-hero h1 {
+  font-size: clamp(42px, 5.5vw, 78px);
+  line-height: 1.06;
+  letter-spacing: -2.8px;
+  margin: 25px 0;
+}
+.mark-hero h1 em {
+  font-style: normal;
+  color: var(--violet);
+}
+.mark-hero .section-description {
+  font-size: 19px;
+  max-width: 600px;
+}
+.mark-scope {
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 22px;
+}
+.mark-constellation {
+  position: relative;
+  min-width: 0;
+}
+.mark-constellation svg {
+  display: block;
+  width: 100%;
+}
+.mark-orbit-label {
+  position: absolute;
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: #d9c6f2;
+}
+.mark-orbit-one {
+  left: 17%;
+  top: 16%;
+}
+.mark-orbit-two {
+  right: 8%;
+  top: 24%;
+}
+.mark-orbit-three {
+  right: 32%;
+  bottom: 9%;
+}
+.mark-art-caption {
+  text-align: center;
+  color: var(--muted);
+  font-size: 10px;
+  letter-spacing: 2px;
+  margin-top: 8px;
+}
+.mark-boundary {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.7fr) 2fr;
+  gap: 30px;
+  border: 1px solid #584268;
+  border-radius: var(--radius);
+  padding: 25px 30px;
+  background: #1c1329;
+}
+.mark-boundary strong {
+  color: #e1c5ff;
+}
+.mark-boundary p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+.mark-page h2 {
+  margin: 18px 0 28px;
+  font-size: clamp(30px, 3.8vw, 49px);
+  line-height: 1.18;
+}
+.mark-journey {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 25px;
+}
+.mark-journey article {
+  border-top: 1px solid #715389;
+  padding-top: 22px;
+}
+.mark-journey h3 {
+  margin: 16px 0;
+  font-size: 21px;
+}
+.mark-journey p {
+  color: var(--muted);
+  font-size: 14px;
+}
+.mark-lab-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: 30px;
+  margin-top: 30px;
+  align-items: start;
+}
+.mark-lab-grid fieldset {
+  min-width: 0;
+  border: 0;
+  padding: 0;
+  margin: 0 0 30px;
+}
+.mark-lab-grid legend {
+  font-size: 19px;
+  color: #ead6ff;
+  font-weight: 650;
+  margin-bottom: 16px;
+}
+.mark-checklist p {
+  color: var(--muted);
+  font-size: 14px;
+}
+.mark-checklist label {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-weight: normal;
+  font-size: 14px;
+}
+.mark-checklist input[type='checkbox'] {
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  margin-top: 3px;
+  accent-color: #c49cff;
+}
+.mark-result {
+  padding: 30px;
+  border: 1px solid #63447c;
+  background: linear-gradient(150deg, #2b173b, #16101e 65%);
+  border-radius: var(--radius);
+}
+.mark-result h3 {
+  font-size: 22px;
+  margin-top: 26px;
+}
+.mark-result > h3:first-of-type {
+  margin-top: 12px;
+  font-size: 30px;
+}
+.mark-result p,
+.mark-result li {
+  color: var(--muted);
+  font-size: 14px;
+}
+.mark-result .notice {
+  color: #dfd0ee;
+}
+.mark-result pre {
+  max-height: 400px;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 11px;
+}
+.mark-result details {
+  border-top: 1px solid var(--line);
+  padding: 16px 0;
+}
+.mark-result summary {
+  cursor: pointer;
+}
+.mark-capacity {
+  margin: 25px 0;
+  padding: 26px;
+  border: 1px solid #705288;
+  background: radial-gradient(ellipse at top, #58337955, transparent);
+  border-radius: 12px;
+  text-align: center;
+}
+.mark-capacity strong {
+  display: block;
+  font-size: clamp(44px, 6vw, 76px);
+  line-height: 1.1;
+  color: #e5caff;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+.mark-capacity span {
+  display: block;
+  margin-top: 8px;
+  color: #f0e4fa;
+}
+.mark-capacity p {
+  margin-bottom: 0;
+  font-size: 12px;
+}
+.mark-slots {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.mark-slots div {
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 14px;
+}
+.mark-slots dt {
+  color: var(--muted);
+  font-size: 11px;
+}
+.mark-slots dd {
+  margin: 8px 0 0;
+  font-size: 23px;
+  color: #e8d7fb;
+  overflow-wrap: anywhere;
+}
+.mark-downloads {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 22px 0;
+}
+.mark-downloads .button {
+  width: 100%;
+}
+.mark-result .mark-bottleneck {
+  color: #c0e4d9;
+}
+.mark-paths pre {
+  overflow: auto;
+  max-width: 100%;
+  font-size: 11px;
+  background: #100b17;
+  padding: 15px;
+  border-radius: 8px;
+}
+.mark-paths .work-roles article {
+  padding: 24px;
+}
+.mark-paths .text-link {
+  margin-top: 14px;
+}
+.mark-horizon {
+  border-top: 1px solid var(--line);
+  background: radial-gradient(ellipse at 60% 45%, #6e388c22, transparent 65%);
+}
+.mark-home-callout {
+  margin-top: 26px;
+  padding: 26px 30px;
+  border: 1px solid #59406e;
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  justify-content: space-between;
+  background: radial-gradient(ellipse at left, #65368844, transparent), #17101f;
+}
+.mark-home-callout h3 {
+  margin: 8px 0;
+  font-size: 26px;
+}
+.mark-home-callout p {
+  color: var(--muted);
+  margin: 0;
+  font-size: 14px;
+  max-width: 650px;
+}
+.mark-home-callout .button {
+  flex-shrink: 0;
+}
+@media (min-width: 1100px) {
+  .mark-result {
+    position: sticky;
+    top: 110px;
+  }
+}
+@media (max-width: 900px) {
+  .mark-hero {
+    grid-template-columns: 1fr 0.8fr;
+  }
+  .mark-hero h1 {
+    font-size: 48px;
+  }
+  .mark-journey {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .mark-lab-grid {
+    gap: 20px;
+  }
+  .mark-result {
+    padding: 22px;
+  }
+  .mark-home-callout {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 20px;
+  }
+}
+@media (max-width: 700px) {
+  .mark-hero,
+  .mark-lab-grid,
+  .mark-boundary {
+    grid-template-columns: 1fr;
+  }
+  .mark-hero {
+    padding-top: 28px;
+    gap: 0;
+  }
+  .mark-hero h1 {
+    font-size: clamp(40px, 9vw, 60px);
+    letter-spacing: -1.7px;
+  }
+  .mark-constellation {
+    max-width: 460px;
+    width: 100%;
+    justify-self: center;
+  }
+  .mark-boundary {
+    gap: 14px;
+    padding: 22px;
+  }
+  .mark-page {
+    padding-top: 30px;
+  }
+  .mark-lab-grid .work-field-pair {
+    grid-template-columns: 1fr;
+  }
+  .mark-result {
+    position: static;
+  }
+  .mark-home-callout {
+    padding: 22px;
+  }
+  .mark-home-callout .button {
+    width: 100%;
+  }
+  .mark-orbit-label {
+    font-size: 9px;
+  }
+}
+@media (max-width: 390px) {
+  .mark-journey {
+    grid-template-columns: 1fr;
+  }
+  .mark-slots {
+    grid-template-columns: 1fr;
+  }
+  .mark-slots div {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .mark-slots dd {
+    margin: 0;
+  }
+}

@@ -1,13 +1,14 @@
-import { ethers } from "hardhat";
-import { mkdir, writeFile } from "fs/promises";
-import path from "path";
-import { createInterface } from "readline/promises";
-import { stdin as input, stdout as output } from "node:process";
-import { createHash } from "crypto";
-import { execSync } from "child_process";
+import { ethers, network as hardhatNetwork } from 'hardhat';
+import { mkdir, writeFile } from 'fs/promises';
+import path from 'path';
+import { createInterface } from 'readline/promises';
+import { stdin as input, stdout as output } from 'node:process';
+import { createHash } from 'crypto';
+import { execSync } from 'child_process';
 
-import { renderDashboard } from "./renderDashboard";
-import { canonicalStringify } from "./utils/canonical";
+import { renderDashboard } from './renderDashboard';
+import { canonicalStringify } from './utils/canonical';
+import { expectRevert } from './utils/expectRevert';
 
 type Address = string;
 
@@ -20,7 +21,7 @@ interface ParticipantSnapshot {
 }
 
 interface TradeRecord {
-  kind: "BUY" | "SELL";
+  kind: 'BUY' | 'SELL';
   actor: Address;
   label: string;
   tokensWhole: bigint;
@@ -36,48 +37,58 @@ interface TimelineEntry {
   actorLabel?: string;
 }
 
-const OUTPUT_PATH = path.join(__dirname, "..", "reports", "alpha-mark-recap.json");
+const OUTPUT_PATH = path.join(
+  __dirname,
+  '..',
+  'reports',
+  'alpha-mark-recap.json'
+);
 
-const MIN_BALANCE = ethers.parseEther("0.05");
-const ONE_TOKEN = ethers.parseEther("1");
+const MIN_BALANCE = ethers.parseEther('0.05');
+const ONE_TOKEN = ethers.parseEther('1');
 
-function calculatePurchaseCost(basePriceWei: bigint, slopeWei: bigint, supplyWhole: bigint, amountWhole: bigint): bigint {
+function calculatePurchaseCost(
+  basePriceWei: bigint,
+  slopeWei: bigint,
+  supplyWhole: bigint,
+  amountWhole: bigint
+): bigint {
   const baseComponent = basePriceWei * amountWhole;
-  const slopeComponent = slopeWei * ((amountWhole * ((2n * supplyWhole) + amountWhole - 1n)) / 2n);
+  const slopeComponent =
+    slopeWei * ((amountWhole * (2n * supplyWhole + amountWhole - 1n)) / 2n);
   return baseComponent + slopeComponent;
 }
 
-function calculateSaleReturn(basePriceWei: bigint, slopeWei: bigint, supplyWhole: bigint, amountWhole: bigint): bigint {
+function calculateSaleReturn(
+  basePriceWei: bigint,
+  slopeWei: bigint,
+  supplyWhole: bigint,
+  amountWhole: bigint
+): bigint {
   const baseComponent = basePriceWei * amountWhole;
   if (amountWhole === 0n || supplyWhole === 0n) {
     return baseComponent;
   }
 
-  const numerator = amountWhole * ((2n * (supplyWhole - 1n)) - (amountWhole - 1n));
+  const numerator =
+    amountWhole * (2n * (supplyWhole - 1n) - (amountWhole - 1n));
   const slopeComponent = slopeWei * (numerator / 2n);
   return baseComponent + slopeComponent;
 }
 
 function expectEqual(label: string, actual: bigint, expected: bigint) {
   if (actual !== expected) {
-    throw new Error(`${label} mismatch: expected ${expected}, received ${actual}`);
+    throw new Error(
+      `${label} mismatch: expected ${expected}, received ${actual}`
+    );
   }
   console.log(`   ✅ ${label}`);
-}
-
-async function safeAttempt<T>(label: string, action: () => Promise<T>): Promise<T | undefined> {
-  try {
-    return await action();
-  } catch (error) {
-    console.log(`⚠️  ${label} -> reverted: ${(error as Error).message}`);
-    return undefined;
-  }
 }
 
 function parsePrivateKeys(raw?: string): string[] {
   if (!raw) return [];
   return raw
-    .split(",")
+    .split(',')
     .map((value) => value.trim())
     .filter((value) => value.length > 0);
 }
@@ -87,7 +98,9 @@ async function ensureBalance(label: string, signer: any): Promise<void> {
   const balance = await signer.provider!.getBalance(address);
   if (balance < MIN_BALANCE) {
     throw new Error(
-      `${label} (${address}) requires at least ${ethers.formatEther(MIN_BALANCE)} ETH but only has ${ethers.formatEther(balance)} ETH`,
+      `${label} (${address}) requires at least ${ethers.formatEther(
+        MIN_BALANCE
+      )} ETH but only has ${ethers.formatEther(balance)} ETH`
     );
   }
 }
@@ -97,46 +110,59 @@ const HARDHAT_CHAIN_ID = 31337n;
 async function requireOperatorConsent(
   networkLabel: string,
   isDryRun: boolean,
-  networkChainId: bigint,
+  networkChainId: bigint
 ): Promise<void> {
-  const flag = process.env.AGIJOBS_DEMO_DRY_RUN ?? "unset";
+  const flag = process.env.AGIJOBS_DEMO_DRY_RUN ?? 'unset';
   if (isDryRun) {
-    if (networkChainId !== HARDHAT_CHAIN_ID) {
+    if (
+      hardhatNetwork.name !== 'hardhat' ||
+      networkChainId !== HARDHAT_CHAIN_ID
+    ) {
       console.log(
-        "🛑 Dry-run safeguard active – refusing to execute against a live network. " +
-          "Set AGIJOBS_DEMO_DRY_RUN=false to opt in to broadcasts.",
+        '🛑 Dry-run safeguard active – refusing to execute against a live network. ' +
+          'Set AGIJOBS_DEMO_DRY_RUN=false to opt in to broadcasts.'
       );
-      process.exit(0);
+      throw new Error(
+        'Dry-run requires the in-memory hardhat network; no report was generated.'
+      );
     }
 
     console.log(
-      `🛡️  Dry-run safeguard active (AGIJOBS_DEMO_DRY_RUN=${flag}). Using Hardhat in-memory network (${networkLabel}).`,
+      `🛡️  Dry-run safeguard active (AGIJOBS_DEMO_DRY_RUN=${flag}). Using Hardhat in-memory network (${networkLabel}).`
     );
     return;
   }
 
   const rl = createInterface({ input, output });
   const answer = await rl.question(
-    `⚠️  Real network broadcast detected on ${networkLabel}. Type "launch" to confirm execution: `,
+    `⚠️  Real network broadcast detected on ${networkLabel}. Type "launch" to confirm execution: `
   );
   rl.close();
 
-  if (answer.trim().toLowerCase() !== "launch") {
-    console.log("🛑 Operator declined broadcast – exiting demo without executing transactions.");
-    process.exit(0);
+  if (answer.trim().toLowerCase() !== 'launch') {
+    console.log(
+      '🛑 Operator declined broadcast – exiting demo without executing transactions.'
+    );
+    throw new Error('Operator declined broadcast; no report was generated.');
   }
 }
 
 async function loadActors() {
   const provider = ethers.provider;
   const network = await provider.getNetwork();
-  const isHardhat = network.chainId === 31337n;
+  const isHardhat =
+    hardhatNetwork.name === 'hardhat' && network.chainId === 31337n;
 
   const ownerKey = process.env.ALPHA_MARK_OWNER_KEY;
   const investorKeys = parsePrivateKeys(process.env.ALPHA_MARK_INVESTOR_KEYS);
   const validatorKeys = parsePrivateKeys(process.env.ALPHA_MARK_VALIDATOR_KEYS);
 
-  if (isHardhat && !ownerKey && investorKeys.length === 0 && validatorKeys.length === 0) {
+  if (
+    isHardhat &&
+    !ownerKey &&
+    investorKeys.length === 0 &&
+    validatorKeys.length === 0
+  ) {
     const signers = await ethers.getSigners();
     return {
       owner: signers[0],
@@ -148,14 +174,18 @@ async function loadActors() {
 
   if (!ownerKey) {
     throw new Error(
-      "ALPHA_MARK_OWNER_KEY must be provided when running outside the Hardhat in-memory network.",
+      'ALPHA_MARK_OWNER_KEY must be provided when running outside the Hardhat in-memory network.'
     );
   }
   if (investorKeys.length < 3) {
-    throw new Error("ALPHA_MARK_INVESTOR_KEYS must supply at least three comma-separated private keys.");
+    throw new Error(
+      'ALPHA_MARK_INVESTOR_KEYS must supply at least three comma-separated private keys.'
+    );
   }
   if (validatorKeys.length < 3) {
-    throw new Error("ALPHA_MARK_VALIDATOR_KEYS must supply at least three comma-separated private keys.");
+    throw new Error(
+      'ALPHA_MARK_VALIDATOR_KEYS must supply at least three comma-separated private keys.'
+    );
   }
 
   const makeWallet = (key: string) => new ethers.Wallet(key, provider);
@@ -169,20 +199,30 @@ async function loadActors() {
 }
 
 function describeNetworkName(name: string, chainId: bigint): string {
-  if (!name || name === "unknown") {
+  if (!name || name === 'unknown') {
     return `chain-${chainId.toString()}`;
   }
   return `${name} (chainId ${chainId})`;
 }
 
 async function main() {
+  const network = await ethers.provider.getNetwork();
+  const dryRun =
+    (process.env.AGIJOBS_DEMO_DRY_RUN ?? 'true').toLowerCase() !== 'false';
+  const networkLabel = describeNetworkName(network.name, network.chainId);
+  await requireOperatorConsent(networkLabel, dryRun, network.chainId);
+
   const { owner, investors, validators, usesExternalKeys } = await loadActors();
   const [investorA, investorB, investorC] = investors;
   const [validatorA, validatorB, validatorC] = validators;
 
   const ownerAddress = await owner.getAddress();
-  const investorAddresses = await Promise.all(investors.map((signer) => signer.getAddress()));
-  const validatorAddresses = await Promise.all(validators.map((signer) => signer.getAddress()));
+  const investorAddresses = await Promise.all(
+    investors.map((signer) => signer.getAddress())
+  );
+  const validatorAddresses = await Promise.all(
+    validators.map((signer) => signer.getAddress())
+  );
 
   const tradeLedger: TradeRecord[] = [];
   const timeline: TimelineEntry[] = [];
@@ -203,10 +243,15 @@ async function main() {
 
   const recordTrade = (entry: TradeRecord) => {
     tradeLedger.push(entry);
-    const previous = accountState.get(entry.actor) ?? { tokens: 0n, grossContribution: 0n, netContribution: 0n };
-    const tokensDelta = entry.kind === "BUY" ? entry.tokensWhole : -entry.tokensWhole;
-    const grossDelta = entry.kind === "BUY" ? entry.valueWei : 0n;
-    const netDelta = entry.kind === "BUY" ? entry.valueWei : -entry.valueWei;
+    const previous = accountState.get(entry.actor) ?? {
+      tokens: 0n,
+      grossContribution: 0n,
+      netContribution: 0n,
+    };
+    const tokensDelta =
+      entry.kind === 'BUY' ? entry.tokensWhole : -entry.tokensWhole;
+    const grossDelta = entry.kind === 'BUY' ? entry.valueWei : 0n;
+    const netDelta = entry.kind === 'BUY' ? entry.valueWei : -entry.valueWei;
     accountState.set(entry.actor, {
       tokens: previous.tokens + tokensDelta,
       grossContribution: previous.grossContribution + grossDelta,
@@ -215,85 +260,111 @@ async function main() {
 
     const tokensDisplay = entry.tokensWhole.toString();
     const valueEth = ethers.formatEther(entry.valueWei);
-    const isBuy = entry.kind === "BUY";
+    const isBuy = entry.kind === 'BUY';
     pushTimeline({
-      phase: isBuy ? "Market Activation" : "Liquidity",
-      title: `${entry.label} ${isBuy ? "acquires" : "redeems"} ${tokensDisplay} SeedShares`,
-      description: `${valueEth} ETH ${isBuy ? "committed to" : "released from"} the reserve`,
-      icon: isBuy ? "🟢" : "🔄",
+      phase: isBuy ? 'Market Activation' : 'Liquidity',
+      title: `${entry.label} ${
+        isBuy ? 'acquires' : 'redeems'
+      } ${tokensDisplay} SeedShares`,
+      description: `${valueEth} ETH ${
+        isBuy ? 'committed to' : 'released from'
+      } the reserve`,
+      icon: isBuy ? '🟢' : '🔄',
       actor: entry.actor,
       actorLabel: entry.label,
     });
   };
 
-  const network = await ethers.provider.getNetwork();
-  const currentBlock = await ethers.provider.getBlockNumber();
-  const dryRun = (process.env.AGIJOBS_DEMO_DRY_RUN ?? "true").toLowerCase() !== "false";
-  const networkLabel = describeNetworkName(network.name, network.chainId);
-
-  await requireOperatorConsent(networkLabel, dryRun, network.chainId);
-
-  console.log("🚀 Booting α-AGI MARK foresight exchange demo\n");
+  console.log('🚀 Booting α-AGI MARK foresight exchange demo\n');
   console.log(`   • Network: ${networkLabel}`);
-  console.log(`   • Dry run mode: ${dryRun ? "enabled" : "disabled"}`);
-  console.log(`   • Actor source: ${usesExternalKeys ? "environment-provided keys" : "Hardhat signers"}\n`);
+  console.log(`   • Dry run mode: ${dryRun ? 'enabled' : 'disabled'}`);
+  console.log(
+    `   • Actor source: ${
+      usesExternalKeys ? 'environment-provided keys' : 'Hardhat signers'
+    }\n`
+  );
 
   pushTimeline({
-    phase: "Orchestration",
-    title: "Mission boot sequence",
-    description: `AGI Jobs orchestrator engaged on ${networkLabel} (${dryRun ? "dry-run" : "broadcast"} mode)`,
-    icon: "🚀",
+    phase: 'Orchestration',
+    title: 'Mission boot sequence',
+    description: `AGI Jobs orchestrator engaged on ${networkLabel} (${
+      dryRun ? 'dry-run' : 'broadcast'
+    } mode)`,
+    icon: '🚀',
   });
 
-  await ensureBalance("Owner", owner);
-  await Promise.all(investors.map((signer, idx) => ensureBalance(`Investor ${idx + 1}`, signer)));
-  await Promise.all(validators.map((signer, idx) => ensureBalance(`Validator ${idx + 1}`, signer)));
+  await ensureBalance('Owner', owner);
+  await Promise.all(
+    investors.map((signer, idx) => ensureBalance(`Investor ${idx + 1}`, signer))
+  );
+  await Promise.all(
+    validators.map((signer, idx) =>
+      ensureBalance(`Validator ${idx + 1}`, signer)
+    )
+  );
 
-  console.log("   • All actors funded above operational threshold\n");
+  console.log('   • All actors funded above operational threshold\n');
 
   pushTimeline({
-    phase: "Orchestration",
-    title: "Actors cleared for launch",
-    description: `Owner, investors, and validators funded ≥ ${ethers.formatEther(MIN_BALANCE)} ETH`,
-    icon: "💠",
+    phase: 'Orchestration',
+    title: 'Actors cleared for launch',
+    description: `Owner, investors, and validators funded ≥ ${ethers.formatEther(
+      MIN_BALANCE
+    )} ETH`,
+    icon: '💠',
   });
 
-  const NovaSeed = await ethers.getContractFactory("NovaSeedNFT", owner);
+  const NovaSeed = await ethers.getContractFactory('NovaSeedNFT', owner);
   const novaSeed = await NovaSeed.deploy(ownerAddress);
   await novaSeed.waitForDeployment();
-  const seedId = await novaSeed.mintSeed.staticCall(ownerAddress, "ipfs://alpha-mark/seed/genesis");
-  await (await novaSeed.mintSeed(ownerAddress, "ipfs://alpha-mark/seed/genesis")).wait();
-  console.log(`🌱 Nova-Seed minted with tokenId=${seedId} at ${novaSeed.target}`);
+  const seedId = await novaSeed.mintSeed.staticCall(
+    ownerAddress,
+    'ipfs://alpha-mark/seed/genesis'
+  );
+  await (
+    await novaSeed.mintSeed(ownerAddress, 'ipfs://alpha-mark/seed/genesis')
+  ).wait();
+  console.log(
+    `🌱 Nova-Seed minted with tokenId=${seedId} at ${novaSeed.target}`
+  );
   pushTimeline({
-    phase: "Seed Genesis",
+    phase: 'Seed Genesis',
     title: `Nova-Seed minted (#${seedId})`,
-    description: "Operator forges the foresight seed NFT underpinning the launch",
-    icon: "🌱",
+    description:
+      'Operator forges the foresight seed NFT underpinning the launch',
+    icon: '🌱',
     actor: ownerAddress,
-    actorLabel: "Owner",
+    actorLabel: 'Owner',
   });
 
-  const RiskOracle = await ethers.getContractFactory("AlphaMarkRiskOracle", owner);
-  const riskOracle = await RiskOracle.deploy(ownerAddress, validatorAddresses, 2);
+  const RiskOracle = await ethers.getContractFactory(
+    'AlphaMarkRiskOracle',
+    owner
+  );
+  const riskOracle = await RiskOracle.deploy(
+    ownerAddress,
+    validatorAddresses,
+    2
+  );
   await riskOracle.waitForDeployment();
   console.log(`🛡️  Risk oracle deployed at ${riskOracle.target}`);
   pushTimeline({
-    phase: "Deployment",
-    title: "Risk oracle council activated",
-    description: "Validator quorum contract online with 2-of-3 threshold",
-    icon: "🛡️",
+    phase: 'Deployment',
+    title: 'Risk oracle council activated',
+    description: 'Validator quorum contract online with 2-of-3 threshold',
+    icon: '🛡️',
     actor: ownerAddress,
-    actorLabel: "Owner",
+    actorLabel: 'Owner',
   });
 
-  const basePrice = ethers.parseEther("0.1");
-  const slope = ethers.parseEther("0.05");
+  const basePrice = ethers.parseEther('0.1');
+  const slope = ethers.parseEther('0.05');
   const maxSupply = 100; // whole tokens
 
-  const AlphaMark = await ethers.getContractFactory("AlphaMarkEToken", owner);
+  const AlphaMark = await ethers.getContractFactory('AlphaMarkEToken', owner);
   const mark = await AlphaMark.deploy(
-    "α-AGI SeedShares",
-    "SEED",
+    'α-AGI SeedShares',
+    'SEED',
     ownerAddress,
     riskOracle.target,
     basePrice,
@@ -304,161 +375,214 @@ async function main() {
   await mark.waitForDeployment();
   console.log(`🏛️  AlphaMark exchange deployed at ${mark.target}`);
   pushTimeline({
-    phase: "Deployment",
-    title: "Bonding-curve exchange deployed",
-    description: "AlphaMarkEToken market-maker ready for capital formation",
-    icon: "🏛️",
+    phase: 'Deployment',
+    title: 'Bonding-curve exchange deployed',
+    description: 'AlphaMarkEToken market-maker ready for capital formation',
+    icon: '🏛️',
     actor: ownerAddress,
-    actorLabel: "Owner",
+    actorLabel: 'Owner',
   });
 
-  const SovereignVault = await ethers.getContractFactory("AlphaSovereignVault", owner);
-  const sovereignVault = await SovereignVault.deploy(ownerAddress, "ipfs://alpha-mark/sovereign/genesis");
+  const SovereignVault = await ethers.getContractFactory(
+    'AlphaSovereignVault',
+    owner
+  );
+  const sovereignVault = await SovereignVault.deploy(
+    ownerAddress,
+    'ipfs://alpha-mark/sovereign/genesis'
+  );
   await sovereignVault.waitForDeployment();
   await (await sovereignVault.designateMarkExchange(mark.target)).wait();
   console.log(`👑 Sovereign vault deployed at ${sovereignVault.target}`);
   pushTimeline({
-    phase: "Deployment",
-    title: "Sovereign vault commissioned",
-    description: "Vault bound to the exchange for sovereign ignition",
-    icon: "👑",
+    phase: 'Deployment',
+    title: 'Sovereign vault commissioned',
+    description: 'Vault bound to the exchange for sovereign ignition',
+    icon: '👑',
     actor: ownerAddress,
-    actorLabel: "Owner",
+    actorLabel: 'Owner',
   });
 
   await (await sovereignVault.pauseVault()).wait();
   await (await sovereignVault.unpauseVault()).wait();
-  console.log("   • Sovereign vault pause/unpause controls verified");
+  console.log('   • Sovereign vault pause/unpause controls verified');
   pushTimeline({
-    phase: "Safety & Compliance",
-    title: "Vault circuit breaker tested",
-    description: "Owner pauses and resumes the sovereign vault to verify emergency controls",
-    icon: "🛡️",
+    phase: 'Safety & Compliance',
+    title: 'Vault circuit breaker tested',
+    description:
+      'Owner pauses and resumes the sovereign vault to verify emergency controls',
+    icon: '🛡️',
     actor: ownerAddress,
-    actorLabel: "Owner",
+    actorLabel: 'Owner',
   });
 
-  const Stable = await ethers.getContractFactory("TestStablecoin", owner);
+  const Stable = await ethers.getContractFactory('TestStablecoin', owner);
   const stable = await Stable.deploy();
   await stable.waitForDeployment();
 
-  console.log("   🪙 Owner demonstrates base-asset retargeting to a stablecoin and back");
+  console.log(
+    '   🪙 Owner demonstrates base-asset retargeting to a stablecoin and back'
+  );
   await (await mark.setBaseAsset(stable.target)).wait();
   await (await mark.setBaseAsset(ethers.ZeroAddress)).wait();
   pushTimeline({
-    phase: "Configuration",
-    title: "Base asset retargeted",
-    description: "Funding rail toggled from ETH to stablecoin and back before launch",
-    icon: "🪙",
+    phase: 'Configuration',
+    title: 'Base asset retargeted',
+    description:
+      'Funding rail toggled from ETH to stablecoin and back before launch',
+    icon: '🪙',
     actor: ownerAddress,
-    actorLabel: "Owner",
+    actorLabel: 'Owner',
   });
 
   await (await mark.setTreasury(ownerAddress)).wait();
-  await (await mark.setFundingCap(ethers.parseEther("1000"))).wait();
+  await (await mark.setFundingCap(ethers.parseEther('1000'))).wait();
   await (await mark.setWhitelistEnabled(true)).wait();
   await (await mark.setWhitelist(investorAddresses, true)).wait();
   pushTimeline({
-    phase: "Configuration",
-    title: "Owner governance levers calibrated",
-    description: "Treasury, funding cap, and whitelist configured for sovereign launch",
-    icon: "🛠️",
+    phase: 'Configuration',
+    title: 'Owner governance levers calibrated',
+    description:
+      'Treasury, funding cap, and whitelist configured for sovereign launch',
+    icon: '🛠️',
     actor: ownerAddress,
-    actorLabel: "Owner",
+    actorLabel: 'Owner',
   });
 
-  console.log("\n📊 Initial bonding curve configuration:");
+  console.log('\n📊 Initial bonding curve configuration:');
   console.log(`   • Base price: ${ethers.formatEther(basePrice)} ETH`);
   console.log(`   • Slope: ${ethers.formatEther(slope)} ETH per token`);
   console.log(`   • Max supply: ${maxSupply} SeedShares\n`);
-  console.log("   • Base asset: Native ETH (owner can retarget to a stablecoin pre-launch)\n");
+  console.log(
+    '   • Base asset: Native ETH (owner can retarget to a stablecoin pre-launch)\n'
+  );
 
-  const buy = async (label: string, signer: any, amountTokens: string, overpay = "0") => {
+  const buy = async (
+    label: string,
+    signer: any,
+    amountTokens: string,
+    overpay = '0'
+  ) => {
     const amount = ethers.parseEther(amountTokens);
     const tokensWhole = amount / ONE_TOKEN;
     const cost = await mark.previewPurchaseCost(amount);
-    const manualCost = calculatePurchaseCost(basePrice, slope, simulatedSupply, tokensWhole);
+    const manualCost = calculatePurchaseCost(
+      basePrice,
+      slope,
+      simulatedSupply,
+      tokensWhole
+    );
     expectEqual(
-      `Bonding curve cost parity for ${label} (${ethers.formatEther(cost)} ETH)`,
+      `Bonding curve cost parity for ${label} (${ethers.formatEther(
+        cost
+      )} ETH)`,
       cost,
-      manualCost,
+      manualCost
     );
 
     const totalValue = cost + ethers.parseEther(overpay);
-    await (await mark.connect(signer).buyTokens(amount, { value: totalValue })).wait();
+    await (
+      await mark.connect(signer).buyTokens(amount, { value: totalValue })
+    ).wait();
 
     simulatedSupply += tokensWhole;
     simulatedReserve += cost;
     const buyerAddress = await signer.getAddress();
-    recordTrade({ kind: "BUY", actor: buyerAddress, label, tokensWhole, valueWei: cost });
+    recordTrade({
+      kind: 'BUY',
+      actor: buyerAddress,
+      label,
+      tokensWhole,
+      valueWei: cost,
+    });
 
-    console.log(`   ✅ ${label} bought ${amountTokens} SEED for ${ethers.formatEther(cost)} ETH`);
+    console.log(
+      `   ✅ ${label} bought ${amountTokens} SEED for ${ethers.formatEther(
+        cost
+      )} ETH`
+    );
   };
 
-  await buy("Investor A", investorA, "5", "0.2");
+  await buy('Investor A', investorA, '5', '0.2');
 
-  console.log("   🔒 Owner pauses market to demonstrate compliance gate");
+  console.log('   🔒 Owner pauses market to demonstrate compliance gate');
   await (await mark.pauseMarket()).wait();
   pushTimeline({
-    phase: "Safety & Compliance",
-    title: "Market paused for compliance review",
-    description: "Owner halts trading to showcase real-time control",
-    icon: "⏸️",
+    phase: 'Safety & Compliance',
+    title: 'Market paused for compliance review',
+    description: 'Owner halts trading to showcase real-time control',
+    icon: '⏸️',
     actor: ownerAddress,
-    actorLabel: "Owner",
+    actorLabel: 'Owner',
   });
-  const pausedAttempt = await safeAttempt("Investor C purchase while paused", async () => {
-    const amount = ethers.parseEther("2");
-    const cost = await mark.previewPurchaseCost(amount);
-    await mark.connect(investorC).buyTokens(amount, { value: cost });
-  });
-  if (pausedAttempt === undefined) {
+  await expectRevert(
+    'Investor C purchase while paused',
+    mark.interface.encodeErrorResult('EnforcedPause', []),
+    async () => {
+      const amount = ethers.parseEther('2');
+      const cost = await mark.previewPurchaseCost(amount);
+      await mark
+        .connect(investorC)
+        .buyTokens.staticCall(amount, { value: cost });
+    }
+  );
+  {
     pushTimeline({
-      phase: "Safety & Compliance",
-      title: "Pause enforcement confirmed",
-      description: "Investor C blocked while the market pause is active",
-      icon: "🛑",
+      phase: 'Safety & Compliance',
+      title: 'Pause enforcement confirmed',
+      description: 'Investor C blocked while the market pause is active',
+      icon: '🛑',
       actor: investorAddresses[2],
-      actorLabel: "Investor C",
+      actorLabel: 'Investor C',
     });
   }
-  console.log("   🔓 Owner unpauses market\n");
+  console.log('   🔓 Owner unpauses market\n');
   await (await mark.unpauseMarket()).wait();
   pushTimeline({
-    phase: "Safety & Compliance",
-    title: "Market resumed",
-    description: "Owner reopens trading after compliance check",
-    icon: "▶️",
+    phase: 'Safety & Compliance',
+    title: 'Market resumed',
+    description: 'Owner reopens trading after compliance check',
+    icon: '▶️',
     actor: ownerAddress,
-    actorLabel: "Owner",
+    actorLabel: 'Owner',
   });
 
-  await buy("Investor B", investorB, "3");
-  await buy("Investor C", investorC, "4");
+  await buy('Investor B', investorB, '3');
+  await buy('Investor C', investorC, '4');
 
-  console.log("\n💡 Validator council activity:");
+  console.log('\n💡 Validator council activity:');
   await (await riskOracle.connect(validatorA).approveSeed()).wait();
   console.log(`   • Validator ${validatorAddresses[0]} approved`);
   pushTimeline({
-    phase: "Governance",
-    title: "Validator A casts approval",
+    phase: 'Governance',
+    title: 'Validator A casts approval',
     description: `Consensus progress: 1/${validatorAddresses.length}`,
-    icon: "🗳️",
+    icon: '🗳️',
     actor: validatorAddresses[0],
-    actorLabel: "Validator A",
+    actorLabel: 'Validator A',
   });
-  const prematureFinalize = await safeAttempt("Premature finalize attempt", async () => {
-    const prematureMetadata = ethers.toUtf8Bytes("Attempt before consensus");
-    await mark.finalizeLaunch(sovereignVault.target, prematureMetadata);
-  });
-  if (prematureFinalize === undefined) {
+  await expectRevert(
+    'Premature finalize attempt',
+    ethers.concat([
+      '0x08c379a0',
+      ethers.AbiCoder.defaultAbiCoder().encode(['string'], ['Not validated']),
+    ]),
+    async () => {
+      const prematureMetadata = ethers.toUtf8Bytes('Attempt before consensus');
+      await mark.finalizeLaunch.staticCall(
+        sovereignVault.target,
+        prematureMetadata
+      );
+    }
+  );
+  {
     pushTimeline({
-      phase: "Governance",
-      title: "Launch guard rejected premature finalize",
-      description: "Owner cannot finalize before oracle quorum",
-      icon: "⚖️",
+      phase: 'Governance',
+      title: 'Launch guard rejected premature finalize',
+      description: 'Owner cannot finalize before oracle quorum',
+      icon: '⚖️',
       actor: ownerAddress,
-      actorLabel: "Owner",
+      actorLabel: 'Owner',
     });
   }
   await (await riskOracle.connect(validatorB).approveSeed()).wait();
@@ -466,46 +590,70 @@ async function main() {
   const approvalsNow = await riskOracle.approvalCount();
   const thresholdNow = await riskOracle.approvalThreshold();
   pushTimeline({
-    phase: "Governance",
-    title: "Validator B casts approval",
+    phase: 'Governance',
+    title: 'Validator B casts approval',
     description: `Consensus secured (${approvalsNow.toString()}/${thresholdNow.toString()})`,
-    icon: "🗳️",
+    icon: '🗳️',
     actor: validatorAddresses[1],
-    actorLabel: "Validator B",
+    actorLabel: 'Validator B',
   });
 
-  console.log("\n♻️  Investor B tests liquidity by selling 1 SEED");
-  const sellAmount = ethers.parseEther("1");
+  console.log('\n♻️  Investor B tests liquidity by selling 1 SEED');
+  const sellAmount = ethers.parseEther('1');
   const sellAmountWhole = sellAmount / ONE_TOKEN;
   const sellReturn = await mark.previewSaleReturn(sellAmount);
-  const manualReturn = calculateSaleReturn(basePrice, slope, simulatedSupply, sellAmountWhole);
+  const manualReturn = calculateSaleReturn(
+    basePrice,
+    slope,
+    simulatedSupply,
+    sellAmountWhole
+  );
   expectEqual(
-    `Bonding curve redemption parity for Investor B (${ethers.formatEther(sellReturn)} ETH)`,
+    `Bonding curve redemption parity for Investor B (${ethers.formatEther(
+      sellReturn
+    )} ETH)`,
     sellReturn,
-    manualReturn,
+    manualReturn
   );
   await (await mark.connect(investorB).sellTokens(sellAmount)).wait();
 
   simulatedSupply -= sellAmountWhole;
   simulatedReserve -= sellReturn;
   const sellerAddress = await investorB.getAddress();
-  recordTrade({ kind: "SELL", actor: sellerAddress, label: "Investor B", tokensWhole: sellAmountWhole, valueWei: sellReturn });
+  recordTrade({
+    kind: 'SELL',
+    actor: sellerAddress,
+    label: 'Investor B',
+    tokensWhole: sellAmountWhole,
+    valueWei: sellReturn,
+  });
 
-  console.log(`   ✅ Investor B redeemed 1 SEED for ${ethers.formatEther(sellReturn)} ETH`);
-
-  console.log("\n🟢 Oracle threshold satisfied, owner finalizes launch to the sovereign vault");
-  const launchMetadata = ethers.toUtf8Bytes("α-AGI Sovereign ignition: Nova-Seed ascends");
-  await (await mark.finalizeLaunch(sovereignVault.target, launchMetadata)).wait();
   console.log(
-    `   • Sovereign vault acknowledged ignition metadata: "${ethers.toUtf8String(launchMetadata)}"`
+    `   ✅ Investor B redeemed 1 SEED for ${ethers.formatEther(sellReturn)} ETH`
+  );
+
+  console.log(
+    '\n🟢 Oracle threshold satisfied, owner finalizes launch to the sovereign vault'
+  );
+  const launchMetadata = ethers.toUtf8Bytes(
+    'α-AGI Sovereign ignition: Nova-Seed ascends'
+  );
+  await (
+    await mark.finalizeLaunch(sovereignVault.target, launchMetadata)
+  ).wait();
+  console.log(
+    `   • Sovereign vault acknowledged ignition metadata: "${ethers.toUtf8String(
+      launchMetadata
+    )}"`
   );
   pushTimeline({
-    phase: "Launch",
-    title: "Sovereign ignition finalized",
-    description: "Funds transferred to the vault with ignition metadata recorded",
-    icon: "✨",
+    phase: 'Launch',
+    title: 'Sovereign ignition finalized',
+    description:
+      'Funds transferred to the vault with ignition metadata recorded',
+    icon: '✨',
     actor: ownerAddress,
-    actorLabel: "Owner",
+    actorLabel: 'Owner',
   });
 
   const [supply, reserve, nextPrice] = await mark.getCurveState();
@@ -552,14 +700,18 @@ async function main() {
     participantTokenAggregate += balanceWhole;
 
     expectEqual(
-      `Participant ${i + 1} token ledger alignment (${balanceWhole.toString()} SeedShares)`,
+      `Participant ${
+        i + 1
+      } token ledger alignment (${balanceWhole.toString()} SeedShares)`,
       ledgerEntry.tokens,
-      balanceWhole,
+      balanceWhole
     );
     expectEqual(
-      `Participant ${i + 1} gross contribution alignment (${ethers.formatEther(contribution)} ETH)`,
+      `Participant ${i + 1} gross contribution alignment (${ethers.formatEther(
+        contribution
+      )} ETH)`,
       ledgerEntry.grossContribution,
-      contribution,
+      contribution
     );
 
     participants.push({
@@ -575,7 +727,7 @@ async function main() {
   let ledgerGrossWei = 0n;
   let ledgerSellWei = 0n;
   for (const entry of tradeLedger) {
-    if (entry.kind === "BUY") {
+    if (entry.kind === 'BUY') {
       ledgerSupplyWhole += entry.tokensWhole;
       ledgerGrossWei += entry.valueWei;
     } else {
@@ -598,51 +750,62 @@ async function main() {
   const sovereignTotalReceived = await sovereignVault.totalReceived();
   const sovereignNativeReceived = await sovereignVault.totalReceivedNative();
   const sovereignTokenReceived = await sovereignVault.totalReceivedExternal();
-  const lastAcknowledgedUsedNative = await sovereignVault.lastAcknowledgedUsedNative();
+  const lastAcknowledgedUsedNative =
+    await sovereignVault.lastAcknowledgedUsedNative();
   const lastAcknowledgedAmount = await sovereignVault.lastAcknowledgedAmount();
   const vaultBalance = await sovereignVault.vaultBalance();
   const combinedReserve = reserve + sovereignTotalReceived;
 
-  console.log("\n🔍 Triple-verification matrix:");
+  console.log('\n🔍 Triple-verification matrix:');
   expectEqual(
     `Ledger supply matches on-chain total (${ledgerSupplyWhole.toString()} SeedShares)`,
     ledgerSupplyWhole,
-    supply,
+    supply
   );
   expectEqual(
     `Simulation supply matches on-chain total (${simulatedSupply.toString()} SeedShares)`,
     simulatedSupply,
-    supply,
+    supply
   );
   expectEqual(
     `Participant balances sum to supply (${participantTokenAggregate.toString()} SeedShares)`,
     participantTokenAggregate,
-    supply,
+    supply
   );
   expectEqual(
-    `Next token price matches first-principles math (${ethers.formatEther(nextPrice)} ETH)`,
+    `Next token price matches first-principles math (${ethers.formatEther(
+      nextPrice
+    )} ETH)`,
     nextPrice,
-    simulatedNextPrice,
+    simulatedNextPrice
   );
   expectEqual(
-    `Vault receipts equal ledger net capital (${ethers.formatEther(sovereignTotalReceived)} ETH)`,
+    `Vault receipts equal ledger net capital (${ethers.formatEther(
+      sovereignTotalReceived
+    )} ETH)`,
     sovereignTotalReceived,
-    ledgerNetWei,
+    ledgerNetWei
   );
   expectEqual(
-    `Simulated reserve equals ledger net capital (${ethers.formatEther(simulatedReserve)} ETH)`,
+    `Simulated reserve equals ledger net capital (${ethers.formatEther(
+      simulatedReserve
+    )} ETH)`,
     simulatedReserve,
-    ledgerNetWei,
+    ledgerNetWei
   );
   expectEqual(
-    `Reserve + vault equals ledger net capital (${ethers.formatEther(combinedReserve)} ETH)`,
+    `Reserve + vault equals ledger net capital (${ethers.formatEther(
+      combinedReserve
+    )} ETH)`,
     combinedReserve,
-    ledgerNetWei,
+    ledgerNetWei
   );
   expectEqual(
-    `Participant contributions equal ledger gross capital (${ethers.formatEther(participantContributionAggregate)} ETH)`,
+    `Participant contributions equal ledger gross capital (${ethers.formatEther(
+      participantContributionAggregate
+    )} ETH)`,
     participantContributionAggregate,
-    ledgerGrossWei,
+    ledgerGrossWei
   );
   const recap = {
     contracts: {
@@ -699,84 +862,91 @@ async function main() {
 
   const ownerParameterMatrix = [
     {
-      parameter: "pauseMarket",
+      parameter: 'pauseMarket',
       value: ownerControls.paused,
-      description: "Master halt switch for all bonding-curve trades",
+      description: 'Master halt switch for all bonding-curve trades',
     },
     {
-      parameter: "whitelistEnabled",
+      parameter: 'whitelistEnabled',
       value: ownerControls.whitelistEnabled,
-      description: "Compliance gate restricting participation to approved wallets",
+      description:
+        'Compliance gate restricting participation to approved wallets',
     },
     {
-      parameter: "emergencyExitEnabled",
+      parameter: 'emergencyExitEnabled',
       value: ownerControls.emergencyExitEnabled,
-      description: "Allow redemptions while paused for orderly unwinding",
+      description: 'Allow redemptions while paused for orderly unwinding',
     },
     {
-      parameter: "validationOverrideEnabled",
+      parameter: 'validationOverrideEnabled',
       value: ownerControls.validationOverrideEnabled,
-      description: "Owner override switch for the risk oracle consensus",
+      description: 'Owner override switch for the risk oracle consensus',
     },
     {
-      parameter: "validationOverrideStatus",
+      parameter: 'validationOverrideStatus',
       value: ownerControls.validationOverrideStatus,
-      description: "Forced validation outcome when override is enabled",
+      description: 'Forced validation outcome when override is enabled',
     },
     {
-      parameter: "finalized",
+      parameter: 'finalized',
       value: ownerControls.finalized,
-      description: "Indicates whether sovereign funds have been dispatched",
+      description: 'Indicates whether sovereign funds have been dispatched',
     },
     {
-      parameter: "aborted",
+      parameter: 'aborted',
       value: ownerControls.aborted,
-      description: "Emergency abort flag preserving participant capital",
+      description: 'Emergency abort flag preserving participant capital',
     },
     {
-      parameter: "treasury",
+      parameter: 'treasury',
       value: ownerControls.treasury,
-      description: "Address receiving proceeds on finalization",
+      description: 'Address receiving proceeds on finalization',
     },
     {
-      parameter: "riskOracle",
+      parameter: 'riskOracle',
       value: ownerControls.riskOracle,
-      description: "Validator council contract controlling launch approvals",
+      description: 'Validator council contract controlling launch approvals',
     },
     {
-      parameter: "baseAsset",
+      parameter: 'baseAsset',
       value: ownerControls.baseAsset,
-      description: "Current financing currency (0x0 indicates native ETH)",
+      description: 'Current financing currency (0x0 indicates native ETH)',
     },
     {
-      parameter: "usesNativeAsset",
+      parameter: 'usesNativeAsset',
       value: ownerControls.usesNativeAsset,
-      description: "True when the market accepts native ETH deposits",
+      description: 'True when the market accepts native ETH deposits',
     },
     {
-      parameter: "fundingCap",
-      value: { wei: ownerControls.fundingCapWei, eth: ownerControls.fundingCapEth },
-      description: "Upper bound on capital accepted before launch",
+      parameter: 'fundingCap',
+      value: {
+        wei: ownerControls.fundingCapWei,
+        eth: ownerControls.fundingCapEth,
+      },
+      description: 'Upper bound on capital accepted before launch',
     },
     {
-      parameter: "maxSupplyWholeTokens",
+      parameter: 'maxSupplyWholeTokens',
       value: ownerControls.maxSupplyWholeTokens,
-      description: "Maximum SeedShares that can ever be minted",
+      description: 'Maximum SeedShares that can ever be minted',
     },
     {
-      parameter: "saleDeadlineTimestamp",
+      parameter: 'saleDeadlineTimestamp',
       value: ownerControls.saleDeadlineTimestamp,
-      description: "Timestamp after which purchases are rejected",
+      description: 'Timestamp after which purchases are rejected',
     },
     {
-      parameter: "basePrice",
-      value: { wei: ownerControls.basePriceWei, eth: ownerControls.basePriceEth },
-      description: "Bonding curve base price component",
+      parameter: 'basePrice',
+      value: {
+        wei: ownerControls.basePriceWei,
+        eth: ownerControls.basePriceEth,
+      },
+      description: 'Bonding curve base price component',
     },
     {
-      parameter: "slope",
+      parameter: 'slope',
       value: { wei: ownerControls.slopeWei, eth: ownerControls.slopeEth },
-      description: "Bonding curve slope component",
+      description: 'Bonding curve slope component',
     },
   ];
 
@@ -817,7 +987,9 @@ async function main() {
     },
     contributions: {
       participantAggregateWei: participantContributionAggregate.toString(),
-      participantAggregateEth: ethers.formatEther(participantContributionAggregate),
+      participantAggregateEth: ethers.formatEther(
+        participantContributionAggregate
+      ),
       ledgerGrossWei: ledgerGrossWei.toString(),
       ledgerGrossEth: ethers.formatEther(ledgerGrossWei),
       consistent: participantContributionAggregate === ledgerGrossWei,
@@ -826,30 +998,33 @@ async function main() {
 
   const verificationChecks = [
     {
-      key: "supplyConsensus",
-      label: "Supply consensus alignment",
+      key: 'supplyConsensus',
+      label: 'Supply consensus alignment',
       consistent: verificationBase.supplyConsensus.consistent,
     },
     {
-      key: "pricing",
-      label: "Pricing integrity",
+      key: 'pricing',
+      label: 'Pricing integrity',
       consistent: verificationBase.pricing.consistent,
     },
     {
-      key: "capitalFlows",
-      label: "Capital flow reconciliation",
+      key: 'capitalFlows',
+      label: 'Capital flow reconciliation',
       consistent: verificationBase.capitalFlows.consistent,
     },
     {
-      key: "contributions",
-      label: "Contribution accounting",
+      key: 'contributions',
+      label: 'Contribution accounting',
       consistent: verificationBase.contributions.consistent,
     },
   ];
 
-  const passedChecks = verificationChecks.filter((check) => check.consistent).length;
+  const passedChecks = verificationChecks.filter(
+    (check) => check.consistent
+  ).length;
   const totalChecks = verificationChecks.length;
-  const confidenceIndexBps = totalChecks === 0 ? 0 : Math.round((passedChecks * 10000) / totalChecks);
+  const confidenceIndexBps =
+    totalChecks === 0 ? 0 : Math.round((passedChecks * 10000) / totalChecks);
   const confidenceIndexPercent = (confidenceIndexBps / 100).toFixed(2);
 
   const verification = {
@@ -860,23 +1035,24 @@ async function main() {
       failedChecks: totalChecks - passedChecks,
       confidenceIndexBps,
       confidenceIndexPercent,
-      verdict: passedChecks === totalChecks ? "PASS" : "REVIEW",
+      verdict: passedChecks === totalChecks ? 'PASS' : 'REVIEW',
       checks: verificationChecks,
     },
   };
 
   pushTimeline({
-    phase: "Verification",
-    title: "Triple-verification matrix aligned",
-    description: `Ledger, simulation, and on-chain state reconcile ${passedChecks}/${totalChecks} checks (${confidenceIndexPercent}% confidence)`,
-    icon: "✅",
+    phase: 'Verification',
+    title: 'Triple-verification matrix aligned',
+    description: `Ledger, simulation, and on-chain state reconcile ${passedChecks}/${totalChecks} checks (${confidenceIndexPercent}% check pass rate)`,
+    icon: '✅',
   });
 
   pushTimeline({
-    phase: "Mission Control",
-    title: "Recap dossier synthesis",
-    description: "Preparing sovereign dashboard, owner matrix, and recap digest",
-    icon: "🧾",
+    phase: 'Mission Control',
+    title: 'Recap dossier synthesis',
+    description:
+      'Preparing sovereign dashboard, owner matrix, and recap digest',
+    icon: '🧾',
   });
 
   const timelineRecap = timeline.map((entry, index) => ({
@@ -893,13 +1069,13 @@ async function main() {
   const orchestratedActions = timelineRecap.length;
   const automationMultiplier =
     manualCommandsRequired === 0
-      ? "0.00"
+      ? '0.00'
       : (orchestratedActions / manualCommandsRequired).toFixed(2);
 
   const empowerment = {
     tagline: `AGI Jobs orchestrated ${orchestratedActions} mission events from ${manualCommandsRequired} command${
-      manualCommandsRequired === 1 ? "" : "s"
-    }, sustaining ${confidenceIndexPercent}% confidence across ${passedChecks}/${totalChecks} invariants.`,
+      manualCommandsRequired === 1 ? '' : 's'
+    }, sustaining ${confidenceIndexPercent}% check pass rate across ${passedChecks}/${totalChecks} invariants.`,
     automation: {
       manualCommands: manualCommandsRequired,
       orchestratedActions,
@@ -921,7 +1097,9 @@ async function main() {
     },
     operatorControls: {
       totalControls: ownerParameterMatrix.length,
-      highlights: ownerParameterMatrix.slice(0, 4).map((entry) => entry.parameter),
+      highlights: ownerParameterMatrix
+        .slice(0, 4)
+        .map((entry) => entry.parameter),
     },
   };
 
@@ -949,27 +1127,38 @@ async function main() {
 
   const gitInfo = (command: string): string | undefined => {
     try {
-      return execSync(command, { stdio: ["ignore", "pipe", "ignore"] }).toString().trim();
+      return execSync(command, { stdio: ['ignore', 'pipe', 'ignore'] })
+        .toString()
+        .trim();
     } catch (error) {
       return undefined;
     }
   };
 
   const orchestrationMetadata = {
-    commit: gitInfo("git rev-parse HEAD"),
-    branch: gitInfo("git rev-parse --abbrev-ref HEAD"),
-    workspaceDirty: Boolean(gitInfo("git status --short")),
-    mode: dryRun ? "dry-run" : "broadcast",
+    commit: gitInfo('git rev-parse HEAD'),
+    branch: gitInfo('git rev-parse --abbrev-ref HEAD'),
+    workspaceDirty: Boolean(gitInfo('git status --short')),
+    mode: dryRun ? 'dry-run' : 'broadcast',
   };
 
   const generatedAt = new Date().toISOString();
   const baseRecap = {
     generatedAt,
+    evidenceScope: {
+      execution: dryRun
+        ? 'local-hardhat-rehearsal'
+        : 'operator-authorized-broadcast',
+      independentReview: false,
+      buyerAcceptance: false,
+      productionQualified: false,
+      note: 'Local invariant checks and seeded model simulations do not establish real-world agent capability, independent review, buyer value, or production readiness.',
+    },
     network: {
       label: networkLabel,
-      name: network.name ?? "unknown",
+      name: network.name ?? 'unknown',
       chainId: network.chainId.toString(),
-      blockNumber: currentBlock.toString(),
+      blockNumber: (await ethers.provider.getBlockNumber()).toString(),
       dryRun,
     },
     orchestrator: orchestrationMetadata,
@@ -977,12 +1166,14 @@ async function main() {
     ...enrichedRecap,
   };
 
-  const digest = createHash("sha256").update(canonicalStringify(baseRecap)).digest("hex");
+  const digest = createHash('sha256')
+    .update(canonicalStringify(baseRecap))
+    .digest('hex');
   const finalRecap = {
     ...baseRecap,
     checksums: {
-      algorithm: "sha256",
-      canonicalEncoding: "json-key-sorted",
+      algorithm: 'sha256',
+      canonicalEncoding: 'json-key-sorted',
       recapSha256: digest,
     },
   };
@@ -992,21 +1183,23 @@ async function main() {
   const dashboardPath = await renderDashboard(finalRecap);
 
   console.log(
-    `\n🔍 Verification confidence index: ${confidenceIndexPercent}% (${passedChecks}/${totalChecks} checks aligned)`,
+    `\n🔍 Verification check pass rate: ${confidenceIndexPercent}% (${passedChecks}/${totalChecks} checks aligned)`
   );
-  console.log("\n🧾 Demo recap written to", OUTPUT_PATH);
-  console.log("🖥️  Sovereign dashboard rendered to", dashboardPath);
+  console.log('\n🧾 Demo recap written to', OUTPUT_PATH);
+  console.log('🖥️  Sovereign dashboard rendered to', dashboardPath);
   console.log(
     `🌌 Empowerment multiplier: ${automationMultiplier}x automation from ${manualCommandsRequired} manual command${
-      manualCommandsRequired === 1 ? "" : "s"
-    }`,
+      manualCommandsRequired === 1 ? '' : 's'
+    }`
   );
   console.log(JSON.stringify(finalRecap, null, 2));
   console.log(`🔐 Recap digest (sha256): ${digest}`);
-  console.log("\n🧭 Owner parameter matrix snapshot:");
+  console.log('\n🧭 Owner parameter matrix snapshot:');
   console.table(ownerParameterMatrix);
   console.log(
-    `\n✨ α-AGI MARK demo complete. Sovereign vault now safeguards ${ethers.formatEther(sovereignTotalReceived)} ETH.`
+    `\n✨ α-AGI MARK demo complete. Sovereign vault now safeguards ${ethers.formatEther(
+      sovereignTotalReceived
+    )} ETH.`
   );
 }
 

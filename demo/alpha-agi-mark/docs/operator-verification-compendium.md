@@ -1,5 +1,8 @@
 # α-AGI MARK Verification Compendium
 
+> Scope: these preserved diagrams describe a local financing-market demonstration. Chart coordinates and automation multipliers are illustrative, not empirical assurance or productivity measurements. A local check pass rate does not prove authorship, independent review, buyer value or production readiness. See the [current quick start](../README.md) and [computer-work handoff](computer-work-handoff.md).
+
+
 *Empowering non-technical operators with a cinematic command of truth, trust, and telemetry.*
 
 ## Why this compendium exists
@@ -32,16 +35,11 @@ mindmap
       On-chain state introspection
 ```
 
-The orchestrator captures every signal into artefacts that a non-technical user can open in their browser. The
-triangulation engine cross-references three independent perspectives so that no single ledger can be tampered with
-without detection. Every recap now emits a `verification.summary` bundle containing the canonical confidence index
-(basis points + human readable percentage), the exact number of invariants that passed, the launch verdict, and a
-machine-readable list of each check. Because the summary is embedded in the recap, console, dashboard, integrity report,
-and verifier all display identical confidence numbers without manual reconciliation.
+The orchestrator records local scenario signals in reviewable artifacts. Replay compares accounting and curve calculations with the recorded local-chain snapshot. The self-hash detects accidental corruption; an attacker who rewrites a fully consistent recap can recompute it, so this is not authentication. The embedded `verification.summary` retains four historical checks for compatibility; the offline verifier and integrity report apply additional checks. Their denominators can differ, and each must report its own passed/total count.
 
-The empowerment stanza rides on top of the verification bundle, turning the maths into an executive-ready multiplier. The
+The empowerment stanza rides on top of the verification bundle, summarizing the count of scripted demo events per command. The
 dashboard, console, and integrity dossier all read the same automation, assurance, capital, and command-deck metrics directly
-from the recap, ensuring auditors and founders quote identical numbers in every forum.
+from the recap, keeping descriptive scenario metrics consistent without turning them into independently measured outcomes.
 
 ## Operator flow – five minute audit
 
@@ -51,9 +49,7 @@ from the recap, ensuring auditors and founders quote identical numbers in every 
 4. `npm run integrity:alpha-agi-mark` – assemble the confidence dossier ready for board review.
 5. `npm run dashboard:alpha-agi-mark` *(optional)* – re-render the cinematic HTML dashboard from any recap snapshot.
 
-These commands all run inside the demo directory and require no Solidity or DevOps knowledge. Every command prints a
-confidence index and explains any mismatch, allowing a non-technical operator to intervene rapidly if a discrepancy ever
-appears.
+Run these commands from the repository root after locked dependency setup. Verifiers exit nonzero on schema, checksum or accounting failure. Preserve the failed evidence and correct the source issue before regenerating reports.
 
 ## Cross-check choreography
 

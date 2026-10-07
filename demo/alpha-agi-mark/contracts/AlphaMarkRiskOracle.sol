@@ -29,10 +29,10 @@ contract AlphaMarkRiskOracle is Ownable {
     constructor(address owner_, address[] memory initialValidators, uint256 threshold) Ownable(owner_) {
         approvalThreshold = threshold;
         _batchAddValidators(initialValidators);
-        _ensureThresholdWithinBounds();
         if (approvalThreshold != 0 && approvalThreshold > validatorCount()) {
             revert("Threshold above validator count");
         }
+        _ensureThresholdWithinBounds();
     }
 
     function setApprovalThreshold(uint256 newThreshold) external onlyOwner {

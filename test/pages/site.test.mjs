@@ -330,7 +330,7 @@ test('all published command decks retain their local assets and navigation', () 
   const manifest = JSON.parse(
     fs.readFileSync(path.join(output, 'catalog.json'))
   );
-  assert.equal(manifest.dashboardRoutes.length, 12);
+  assert.equal(manifest.dashboardRoutes.length, 13);
   assert.ok(manifest.dashboardRoutes.includes('experiments/zenith-hypernova/'));
   for (const route of manifest.dashboardRoutes) {
     const document = new JSDOM(
@@ -353,6 +353,16 @@ test('all published command decks retain their local assets and navigation', () 
       }
       const url = new URL(value, `https://example.invalid/${route}`);
       if (
+        element.tagName === 'LINK' &&
+        element.getAttribute('rel') === 'canonical'
+      ) {
+        assert.equal(
+          url.href,
+          `https://montrealai.github.io${manifest.basePath}${route}`
+        );
+        continue;
+      }
+      if (
         element.tagName === 'A' &&
         url.protocol === 'https:' &&
         url.origin !== 'https://example.invalid'
@@ -374,8 +384,11 @@ test('all published command decks retain their local assets and navigation', () 
         'https://example.invalid',
         `${route}: external asset`
       );
+      const localRoute = url.pathname.startsWith(manifest.basePath)
+        ? url.pathname.slice(manifest.basePath.length)
+        : url.pathname;
       assert.ok(
-        fs.existsSync(path.join(output, decodeURIComponent(url.pathname))),
+        fs.existsSync(path.join(output, decodeURIComponent(localRoute))),
         `${route}: ${value}`
       );
     }

@@ -1,15 +1,22 @@
 {
-  "generatedAt": "2025-10-17T13:12:40.494Z",
+  "generatedAt": "2026-10-07T13:03:07.145Z",
+  "evidenceScope": {
+    "execution": "local-hardhat-rehearsal",
+    "independentReview": false,
+    "buyerAcceptance": false,
+    "productionQualified": false,
+    "note": "Local invariant checks and seeded model simulations do not establish real-world agent capability, independent review, buyer value, or production readiness."
+  },
   "network": {
     "label": "hardhat (chainId 31337)",
     "name": "hardhat",
     "chainId": "31337",
-    "blockNumber": "0",
+    "blockNumber": "24",
     "dryRun": true
   },
   "orchestrator": {
-    "commit": "6b15cfab6dcbdf70b7df550b8d804ed88e1aed11",
-    "branch": "work",
+    "commit": "faf0fb1581244845dc7fea7125ef62b57596c628",
+    "branch": "codex/alpha-mark-production-20261007",
     "workspaceDirty": true,
     "mode": "dry-run"
   },
@@ -511,7 +518,7 @@
       "order": 21,
       "phase": "Verification",
       "title": "Triple-verification matrix aligned",
-      "description": "Ledger, simulation, and on-chain state reconcile 4/4 checks (100.00% confidence)",
+      "description": "Ledger, simulation, and on-chain state reconcile 4/4 checks (100.00% check pass rate)",
       "icon": "✅"
     },
     {
@@ -523,7 +530,7 @@
     }
   ],
   "empowerment": {
-    "tagline": "AGI Jobs orchestrated 22 mission events from 1 command, sustaining 100.00% confidence across 4/4 invariants.",
+    "tagline": "AGI Jobs orchestrated 22 mission events from 1 command, sustaining 100.00% check pass rate across 4/4 invariants.",
     "automation": {
       "manualCommands": 1,
       "orchestratedActions": 22,
@@ -556,6 +563,6 @@
   "checksums": {
     "algorithm": "sha256",
     "canonicalEncoding": "json-key-sorted",
-    "recapSha256": "7ad550522dac8b424fbc45a250a8941cba4febe7b87f76b16bb2f23a5d0bf41f"
+    "recapSha256": "e1d09b444cea891779ab7c77a4f048c958846700da53078d2cc8be8e0b91aad9"
   }
 }
