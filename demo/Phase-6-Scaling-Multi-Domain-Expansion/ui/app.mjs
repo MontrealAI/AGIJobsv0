@@ -1,4 +1,4 @@
-import { Interface, keccak256, toUtf8Bytes } from 'ethers';
+import { buildCalldata, computeMetrics } from './preview-model.mjs';
 import mermaid from 'mermaid';
 import { initPlanner, resetPlanner } from './planner.mjs';
 import {
@@ -7,9 +7,7 @@ import {
 } from '../../../scripts/phase6/config-validation.ts';
 
 const zeroAddress = '0x0000000000000000000000000000000000000000';
-const zeroBytes32 = '0x' + '0'.repeat(64);
 const configPath = './config/domains.phase6.json';
-let iface;
 
 const state = { config: null, mermaidSource: '', calldata: [], metrics: null };
 const html = (parts, ...values) =>
@@ -106,76 +104,12 @@ function appendCredentialItem(list, heading, lines = []) {
 
 function heartbeatSummary(domain, global) {
   const cadence = Math.max(
-    domain.heartbeatSeconds ?? 0,
-    global.l2SyncCadence ?? 0
+    domain.heartbeatSeconds ?? 120,
+    global.l2SyncCadence ?? 180
   );
-  return `${cadence}s sync cadence (domain ${domain.heartbeatSeconds}s, global ${global.l2SyncCadence}s)`;
-}
-
-function buildDomainTuple(domain) {
-  return [
-    domain.slug,
-    domain.name,
-    domain.manifestURI,
-    domain.validationModule ?? zeroAddress,
-    domain.oracle ?? zeroAddress,
-    domain.l2Gateway ?? zeroAddress,
-    domain.subgraph,
-    domain.executionRouter ?? zeroAddress,
-    BigInt(domain.heartbeatSeconds ?? 120),
-    domain.active !== false && domain.lifecycle !== 'sunset',
-  ];
-}
-
-function buildDomainOperationsTuple(domain) {
-  const ops = domain.operations ?? {};
-  const minStakeRaw = ops.minStake ?? 0;
-  const minStake =
-    typeof minStakeRaw === 'string'
-      ? BigInt(minStakeRaw)
-      : BigInt(Math.trunc(Number(minStakeRaw)));
-  return [
-    BigInt(Math.trunc(Number(ops.maxActiveJobs ?? 0))),
-    BigInt(Math.trunc(Number(ops.maxQueueDepth ?? 0))),
-    minStake,
-    Number(ops.treasuryShareBps ?? 0),
-    Number(ops.circuitBreakerBps ?? 0),
-    Boolean(ops.requiresHumanValidation),
-  ];
-}
-
-function buildDomainTelemetryTuple(domain) {
-  const telemetry = domain.telemetry ?? {};
-  const toBytes32 = (value) =>
-    typeof value === 'string' && value.startsWith('0x') && value.length === 66
-      ? value
-      : zeroBytes32;
-  return [
-    Number(telemetry.resilienceBps ?? 0),
-    Number(telemetry.automationBps ?? 0),
-    Number(telemetry.complianceBps ?? 0),
-    Number(telemetry.settlementLatencySeconds ?? 0),
-    Boolean(telemetry.usesL2Settlement ?? false),
-    telemetry.sentinelOracle ?? zeroAddress,
-    telemetry.settlementAsset ?? zeroAddress,
-    toBytes32(telemetry.metricsDigest),
-    toBytes32(telemetry.manifestHash),
-  ];
-}
-
-function buildDomainInfrastructureTuple(domain) {
-  const control = domain.infrastructureControl ?? {};
-  const cadence = Number(control.autopilotCadence ?? 0);
-  const safeCadence = Number.isFinite(cadence) ? Math.trunc(cadence) : 0;
-  return [
-    control.agentOps ?? zeroAddress,
-    control.dataPipeline ?? zeroAddress,
-    control.credentialVerifier ?? zeroAddress,
-    control.fallbackOperator ?? zeroAddress,
-    control.controlPlaneURI ?? domain.manifestURI,
-    BigInt(safeCadence),
-    Boolean(control.autopilotEnabled ?? false),
-  ];
+  return `${cadence}s sync cadence (domain ${
+    domain.heartbeatSeconds ?? 120
+  }s, global ${global.l2SyncCadence ?? 180}s)`;
 }
 
 function formatBps(value) {
@@ -213,157 +147,6 @@ function formatUSD(value) {
   return `$${numeric.toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
 }
 
-function computeMetrics(config) {
-  const resilience = [];
-  const automation = [];
-  const compliance = [];
-  const latency = [];
-  let l2Coverage = 0;
-  const valueFlows = [];
-  const sentinels = new Set();
-  const resilienceFloor = Number(
-    config.global?.telemetry?.resilienceFloorBps ?? NaN
-  );
-  const automationFloor = Number(
-    config.global?.telemetry?.automationFloorBps ?? NaN
-  );
-  let resilienceFloorBreaches = 0;
-  let automationFloorBreaches = 0;
-  const globalCredentials = config.global?.credentials ?? {};
-  const globalTrustAnchors = ensureArray(globalCredentials.trustAnchors);
-  const globalIssuers = ensureArray(globalCredentials.issuers);
-  const globalPolicies = ensureArray(globalCredentials.policies);
-  const issuerDomainCoverage = new Set();
-  globalIssuers.forEach((issuer) => {
-    ensureArray(issuer.domains).forEach((domain) => {
-      issuerDomainCoverage.add(String(domain).toLowerCase());
-    });
-  });
-  const globalRevocationRegistry =
-    typeof globalCredentials.revocationRegistry === 'string' &&
-    globalCredentials.revocationRegistry
-      ? globalCredentials.revocationRegistry
-      : null;
-  let credentialedDomains = 0;
-  let credentialRequirements = 0;
-  config.domains.forEach((domain) => {
-    const idx = Number.parseFloat(domain.metadata?.resilienceIndex ?? '');
-    if (!Number.isNaN(idx)) {
-      resilience.push(idx);
-    }
-    if (domain.telemetry) {
-      const telemetry = domain.telemetry;
-      const resilienceBps = Number(telemetry.resilienceBps ?? NaN);
-      if (
-        !Number.isNaN(resilienceBps) &&
-        !Number.isNaN(resilienceFloor) &&
-        resilienceBps < resilienceFloor
-      ) {
-        resilienceFloorBreaches += 1;
-      }
-      const auto = Number(telemetry.automationBps ?? NaN);
-      const comp = Number(telemetry.complianceBps ?? NaN);
-      const latencySeconds = Number(telemetry.settlementLatencySeconds ?? NaN);
-      if (!Number.isNaN(auto)) {
-        automation.push(auto);
-        if (!Number.isNaN(automationFloor) && auto < automationFloor) {
-          automationFloorBreaches += 1;
-        }
-      }
-      if (!Number.isNaN(comp)) {
-        compliance.push(comp);
-      }
-      if (!Number.isNaN(latencySeconds)) {
-        latency.push(latencySeconds);
-      }
-      if (telemetry.usesL2Settlement) {
-        l2Coverage += 1;
-      }
-    }
-    const domainCredentials = ensureArray(domain.credentials);
-    if (domainCredentials.length) {
-      credentialedDomains += 1;
-      credentialRequirements += domainCredentials.length;
-    }
-    const value = domain.metadata?.valueFlowMonthlyUSD;
-    if (typeof value === 'number' && Number.isFinite(value)) {
-      valueFlows.push(value);
-    }
-    if (domain.metadata?.sentinel) {
-      sentinels.add(String(domain.metadata.sentinel));
-    }
-  });
-  const averageResilience =
-    resilience.length > 0
-      ? resilience.reduce((acc, cur) => acc + cur, 0) / resilience.length
-      : null;
-  const minResilience = resilience.length > 0 ? Math.min(...resilience) : null;
-  const maxResilience = resilience.length > 0 ? Math.max(...resilience) : null;
-  const resilienceStdDev =
-    resilience.length > 0 && averageResilience !== null
-      ? Math.sqrt(
-          resilience.reduce((acc, cur) => {
-            const diff = cur - averageResilience;
-            return acc + diff * diff;
-          }, 0) / resilience.length
-        )
-      : null;
-  const totalValueFlow = valueFlows.reduce((acc, cur) => acc + cur, 0);
-  const domainCount = config.domains.length || 0;
-  const computeCoverage = (breaches, floor) => {
-    if (Number.isNaN(floor)) {
-      return null;
-    }
-    if (!domainCount) {
-      return 1;
-    }
-    return (domainCount - breaches) / domainCount;
-  };
-  return {
-    averageResilience,
-    minResilience,
-    maxResilience,
-    resilienceStdDev,
-    totalValueFlow,
-    sentinelCount: sentinels.size,
-    averageAutomation: automation.length
-      ? automation.reduce((acc, cur) => acc + cur, 0) / automation.length
-      : null,
-    averageCompliance: compliance.length
-      ? compliance.reduce((acc, cur) => acc + cur, 0) / compliance.length
-      : null,
-    averageLatency: latency.length
-      ? latency.reduce((acc, cur) => acc + cur, 0) / latency.length
-      : null,
-    l2Coverage: config.domains.length ? l2Coverage / config.domains.length : 0,
-    resilienceFloorCoverage: computeCoverage(
-      resilienceFloorBreaches,
-      resilienceFloor
-    ),
-    resilienceFloorBreaches,
-    automationFloorCoverage: computeCoverage(
-      automationFloorBreaches,
-      automationFloor
-    ),
-    automationFloorBreaches,
-    autopilotEnabled: config.domains.reduce(
-      (acc, domain) =>
-        domain.infrastructureControl?.autopilotEnabled ? acc + 1 : acc,
-      0
-    ),
-    credentialCoverage: config.domains.length
-      ? credentialedDomains / config.domains.length
-      : 0,
-    credentialedDomains,
-    credentialRequirements,
-    globalCredentialAnchors: globalTrustAnchors.length,
-    globalCredentialIssuers: globalIssuers.length,
-    globalCredentialPolicies: globalPolicies.length,
-    globalCredentialDomainCoverage: issuerDomainCoverage.size,
-    globalRevocationRegistry,
-  };
-}
-
 function renderGlobal(config) {
   const target = document.getElementById('global-summary');
   target.innerHTML = '';
@@ -377,7 +160,7 @@ function renderGlobal(config) {
     `DID registry: ${formatAddress(config.global.didRegistry)}`,
     `System pause: ${formatAddress(config.global.systemPause)}`,
     `Escalation bridge: ${formatAddress(config.global.escalationBridge)}`,
-    `Network cadence baseline: ${config.global.l2SyncCadence}s`,
+    `Network cadence baseline: ${config.global.l2SyncCadence ?? 180}s`,
     `Mesh coordinator: ${formatAddress(infra.meshCoordinator)}`,
     `Data lake: ${formatAddress(infra.dataLake)}`,
     `Identity bridge: ${formatAddress(infra.identityBridge)}`,
@@ -461,6 +244,13 @@ function renderGlobal(config) {
       );
     }
     items.push(`Declared sentinels: ${sentinelCount}`);
+    items.push(
+      `Telemetry coverage: ${
+        config.domains.length - state.metrics.telemetryMissingCount
+      }/${config.domains.length} domains with samples; ${
+        state.metrics.telemetryMissingCount
+      } missing. Missing samples do not pass configured floors.`
+    );
     if (resilienceFloorCoverage !== null) {
       items.push(
         `Resilience floor coverage: ${(resilienceFloorCoverage * 100).toFixed(
@@ -702,7 +492,7 @@ function renderDomains(config) {
 
     const priority = document.createElement('span');
     priority.className = 'badge';
-    priority.textContent = `priority ${domain.priority}`;
+    priority.textContent = `configured priority ${domain.priority ?? 0}`;
     card.appendChild(priority);
 
     const metrics = document.createElement('div');
@@ -721,7 +511,7 @@ function renderDomains(config) {
       <span>IoT oracle: ${formatAddress(domain.oracle)}</span>
       <span>Execution router: ${formatAddress(domain.executionRouter)}</span>
       <span>Heartbeat: ${heartbeatSummary(domain, config.global)}</span>
-      <span>Skill tags: ${domain.skillTags.join(', ')}</span>
+      <span>Skill tags: ${ensureArray(domain.skillTags).join(', ')}</span>
       <span>Resilience index: ${resilience}</span>
       <span
         >Illustrative monthly value flow:
@@ -892,130 +682,6 @@ function renderCalldata() {
   });
 }
 
-function buildCalldata(config) {
-  const calldata = [];
-  const globalTuple = [
-    config.global.iotOracleRouter ?? zeroAddress,
-    config.global.defaultL2Gateway ?? zeroAddress,
-    config.global.didRegistry ?? zeroAddress,
-    config.global.treasuryBridge ?? zeroAddress,
-    BigInt(config.global.l2SyncCadence ?? 180),
-    config.global.manifestURI,
-  ];
-  const guardTuple = [
-    Number(config.global.guards?.treasuryBufferBps ?? 0),
-    Number(config.global.guards?.circuitBreakerBps ?? 0),
-    Number(config.global.guards?.anomalyGracePeriod ?? 0),
-    Boolean(config.global.guards?.autoPauseEnabled ?? false),
-    config.global.guards?.oversightCouncil ?? zeroAddress,
-  ];
-  const telemetryTuple = [
-    config.global.telemetry?.manifestHash &&
-    config.global.telemetry.manifestHash.length === 66
-      ? config.global.telemetry.manifestHash
-      : zeroBytes32,
-    config.global.telemetry?.metricsDigest &&
-    config.global.telemetry.metricsDigest.length === 66
-      ? config.global.telemetry.metricsDigest
-      : zeroBytes32,
-    Number(config.global.telemetry?.resilienceFloorBps ?? 0),
-    Number(config.global.telemetry?.automationFloorBps ?? 0),
-    Number(config.global.telemetry?.oversightWeightBps ?? 0),
-  ];
-  const infrastructureTuple = config.global.infrastructure
-    ? [
-        config.global.infrastructure.meshCoordinator ?? zeroAddress,
-        config.global.infrastructure.dataLake ?? zeroAddress,
-        config.global.infrastructure.identityBridge ?? zeroAddress,
-        config.global.infrastructure.topologyURI ?? config.global.manifestURI,
-        BigInt(
-          Number.isFinite(Number(config.global.infrastructure.autopilotCadence))
-            ? Math.trunc(Number(config.global.infrastructure.autopilotCadence))
-            : 0
-        ),
-        Boolean(
-          config.global.infrastructure.enforceDecentralizedInfra ?? false
-        ),
-      ]
-    : null;
-  calldata.push({
-    label: 'setGlobalConfig(GlobalConfig)',
-    data: iface.encodeFunctionData('setGlobalConfig', [globalTuple]),
-  });
-  calldata.push({
-    label: 'setGlobalGuards(GlobalGuards)',
-    data: iface.encodeFunctionData('setGlobalGuards', [guardTuple]),
-  });
-  calldata.push({
-    label: 'setGlobalTelemetry(GlobalTelemetry)',
-    data: iface.encodeFunctionData('setGlobalTelemetry', [telemetryTuple]),
-  });
-  if (infrastructureTuple) {
-    calldata.push({
-      label: 'setGlobalInfrastructure(GlobalInfrastructure)',
-      data: iface.encodeFunctionData('setGlobalInfrastructure', [
-        infrastructureTuple,
-      ]),
-    });
-  }
-  if (config.global.systemPause && config.global.systemPause !== zeroAddress) {
-    calldata.push({
-      label: 'setSystemPause(address)',
-      data: iface.encodeFunctionData('setSystemPause', [
-        config.global.systemPause,
-      ]),
-    });
-  }
-  if (
-    config.global.escalationBridge &&
-    config.global.escalationBridge !== zeroAddress
-  ) {
-    calldata.push({
-      label: 'setEscalationBridge(address)',
-      data: iface.encodeFunctionData('setEscalationBridge', [
-        config.global.escalationBridge,
-      ]),
-    });
-  }
-  config.domains.forEach((domain) => {
-    const tuple = buildDomainTuple(domain);
-    const domainId = keccak256(toUtf8Bytes(domain.slug.toLowerCase()));
-    const opsTuple = buildDomainOperationsTuple(domain);
-    const telemetryTupleDomain = buildDomainTelemetryTuple(domain);
-    const infraTuple = buildDomainInfrastructureTuple(domain);
-    calldata.push({
-      label: `registerDomain(${domain.slug})`,
-      data: iface.encodeFunctionData('registerDomain', [tuple]),
-    });
-    calldata.push({
-      label: `updateDomain(${domain.slug})`,
-      data: iface.encodeFunctionData('updateDomain', [domainId, tuple]),
-    });
-    calldata.push({
-      label: `setDomainOperations(${domain.slug})`,
-      data: iface.encodeFunctionData('setDomainOperations', [
-        domainId,
-        opsTuple,
-      ]),
-    });
-    calldata.push({
-      label: `setDomainTelemetry(${domain.slug})`,
-      data: iface.encodeFunctionData('setDomainTelemetry', [
-        domainId,
-        telemetryTupleDomain,
-      ]),
-    });
-    calldata.push({
-      label: `setDomainInfrastructure(${domain.slug})`,
-      data: iface.encodeFunctionData('setDomainInfrastructure', [
-        domainId,
-        infraTuple,
-      ]),
-    });
-  });
-  state.calldata = calldata;
-}
-
 async function initialise() {
   resetPlanner();
   document.querySelector('#copy-mermaid').disabled = true;
@@ -1031,9 +697,8 @@ async function initialise() {
         'Configuration must contain global settings and domains.'
       );
     validatePhase6Config(cfg);
-    iface = new Interface(abi);
     // Encode before displaying a successful preview. Invalid ABI inputs fail the whole preview.
-    buildCalldata(cfg);
+    state.calldata = buildCalldata(cfg, abi);
     state.config = cfg;
     state.metrics = computeMetrics(cfg);
     renderGlobal(cfg);
@@ -1047,7 +712,7 @@ async function initialise() {
     await updateMermaid();
     status.textContent =
       cfg.domains.length +
-      ' illustrative domains loaded. No worker, credential service, chain or oracle was contacted. Calldata is an unsigned example.';
+      ' configured domains loaded. No worker, credential service, chain or oracle was contacted. Calldata is an unsigned example.';
     document.querySelector('#copy-mermaid').disabled = false;
   } catch (error) {
     state.config = null;
@@ -1170,13 +835,13 @@ function renderInfrastructure(config) {
     `;
     const list = document.createElement('ul');
     list.className = 'mesh-list';
-    domain.infrastructure.forEach((entry, idx) => {
+    ensureArray(domain.infrastructure).forEach((entry, idx) => {
       const endpoint = entry.endpoint || entry.uri;
       const meta = endpoint ? ` → ${endpoint}` : '';
       const item = document.createElement('li');
-      item.textContent = `[${idx + 1}] ${entry.layer}: ${entry.name} · ${
-        entry.role
-      } · declared status ${entry.status}${meta}`;
+      item.textContent = `[${idx + 1}] ${entry.layer ?? 'Integration'}: ${
+        entry.name
+      } · ${entry.role} · declared status ${entry.status}${meta}`;
       list.appendChild(item);
     });
     card.appendChild(list);

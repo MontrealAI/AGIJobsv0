@@ -97,15 +97,16 @@ export function createWave(input, config) {
       0,
       10000
     );
-    const limit = configured.operations?.maxActiveJobs;
-    if (!Number.isSafeInteger(limit) || limit < 1)
+    const limit = configured.operations?.maxActiveJobs ?? null;
+    if (limit !== null && (!Number.isSafeInteger(limit) || limit < 1))
       throw new Error(
         'Configured concurrency limits must be positive safe integers.'
       );
     const paused =
+      limit === null ||
       row.mode === 'paused' ||
       configured.active === false ||
-      configured.lifecycle === 'sunset';
+      (configured.lifecycle ?? 'active') !== 'active';
     return {
       slug: configured.slug,
       name: configured.name,

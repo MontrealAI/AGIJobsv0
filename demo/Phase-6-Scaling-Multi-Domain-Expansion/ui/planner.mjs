@@ -55,10 +55,12 @@ export function initPlanner(config) {
     row.append(legend);
     const note = document.createElement('p');
     note.textContent = `Configured concurrent-job limit: ${
-      domain.operations.maxActiveJobs
+      domain.operations?.maxActiveJobs ?? 'not supplied'
     }. ${
-      domain.active === false || domain.lifecycle === 'sunset'
-        ? 'Inactive configuration: this row remains paused.'
+      !domain.operations ||
+      domain.active === false ||
+      (domain.lifecycle ?? 'active') !== 'active'
+        ? 'Inactive lifecycle or unconfigured capacity: this row remains paused.'
         : 'Planning only; no existing job load is known.'
     }`;
     row.append(note);
@@ -95,7 +97,11 @@ export function initPlanner(config) {
       option.textContent = text;
       mode.append(option);
     }
-    if (domain.active === false || domain.lifecycle === 'sunset') {
+    if (
+      !domain.operations ||
+      domain.active === false ||
+      (domain.lifecycle ?? 'active') !== 'active'
+    ) {
       mode.value = 'paused';
       mode.disabled = true;
     }

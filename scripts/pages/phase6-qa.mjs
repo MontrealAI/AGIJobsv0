@@ -14,7 +14,7 @@ export async function verifyPhase6({
   await page.waitForFunction(() =>
     document
       .querySelector('#preview-status')
-      .textContent.includes('5 illustrative domains loaded')
+      .textContent.includes('5 configured domains loaded')
   );
   assert.equal(await page.locator('#planning-domains fieldset').count(), 5);
   assert.equal(await page.locator('#domain-grid .domain-card').count(), 5);
@@ -158,7 +158,7 @@ export async function verifyPhase6({
   await page.waitForFunction(() =>
     document
       .querySelector('#preview-status')
-      .textContent.includes('5 illustrative domains loaded')
+      .textContent.includes('5 configured domains loaded')
   );
   assert.equal(
     await page.locator('[data-wave-download="task"]').isDisabled(),
@@ -240,7 +240,7 @@ export async function verifyPhase6({
   await broken.waitForFunction(() =>
     document
       .querySelector('#preview-status')
-      .textContent.includes('5 illustrative domains loaded')
+      .textContent.includes('5 configured domains loaded')
   );
   assert.equal(
     await broken
@@ -269,6 +269,130 @@ export async function verifyPhase6({
     /Clipboard unavailable/
   );
   await brokenContext.close();
+  const variantContext = await context.browser().newContext();
+  const variantPage = await variantContext.newPage();
+  const variantErrors = [];
+  variantPage.on('pageerror', (error) => variantErrors.push(error.message));
+  let variantMode = 'lifecycles';
+  await variantPage.route('**/config/domains.phase6.json', async (route) => {
+    const response = await route.fetch();
+    const cfg = await response.json();
+    if (variantMode === 'minimal') {
+      const domain = cfg.domains[0];
+      await route.fulfill({
+        response,
+        json: {
+          global: { manifestURI: cfg.global.manifestURI },
+          domains: [
+            {
+              slug: domain.slug,
+              name: domain.name,
+              manifestURI: domain.manifestURI,
+              validationModule: domain.validationModule,
+              subgraph: domain.subgraph,
+            },
+          ],
+        },
+      });
+      return;
+    }
+    cfg.domains[0].lifecycle = 'sunset';
+    cfg.domains[0].sunsetPlan = {
+      reason: 'Retire after independent review.',
+      handoffDomains: ['health'],
+    };
+    cfg.domains[1].lifecycle = 'experimental';
+    cfg.domains[1].active = true;
+    for (const domain of cfg.domains) {
+      domain.telemetry.resilienceBps = 10000;
+      domain.telemetry.automationBps = 10000;
+    }
+    delete cfg.domains[2].telemetry;
+    delete cfg.domains[3].infrastructureControl;
+    delete cfg.global.guards;
+    await route.fulfill({ response, json: cfg });
+  });
+  await variantPage.goto(url + 'experiments/phase6/', {
+    waitUntil: 'networkidle',
+  });
+  await variantPage.waitForFunction(() =>
+    document
+      .querySelector('#preview-status')
+      .textContent.includes('5 configured domains loaded')
+  );
+  for (const slug of ['finance', 'health']) {
+    assert.equal(
+      await variantPage.getByLabel('Planning state · ' + slug).isDisabled(),
+      true
+    );
+    assert.equal(
+      await variantPage.getByLabel('Planning state · ' + slug).inputValue(),
+      'paused'
+    );
+  }
+  await variantPage
+    .getByRole('button', { name: 'Calculate dispatch draft' })
+    .click();
+  const variantPlan = JSON.parse(
+    await variantPage.locator('#wave-json').textContent()
+  );
+  assert.deepEqual(
+    variantPlan.domains.slice(0, 2).map((domain) => domain.candidateJobs),
+    [0, 0]
+  );
+  const labels = await variantPage
+    .locator('#calldata-grid h3')
+    .allTextContents();
+  assert.deepEqual(
+    labels.filter((label) => label.includes('(finance)')),
+    ['removeDomain(finance)']
+  );
+  assert.ok(!labels.includes('setDomainTelemetry(logistics)'));
+  assert.ok(!labels.includes('setDomainInfrastructure(climate)'));
+  assert.ok(!labels.includes('setGlobalGuards(GlobalGuards)'));
+  const metrics = await variantPage.locator('#global-summary').textContent();
+  assert.match(metrics, /Resilience floor coverage: 80.0%/);
+  assert.match(metrics, /Automation floor coverage: 80.0%/);
+  assert.match(metrics, /1 missing/);
+  variantMode = 'minimal';
+  await variantPage
+    .getByRole('button', { name: 'Reload configuration preview' })
+    .click();
+  await variantPage.waitForFunction(() =>
+    document
+      .querySelector('#preview-status')
+      .textContent.includes('1 configured domains loaded')
+  );
+  assert.deepEqual(
+    await variantPage.locator('#calldata-grid h3').allTextContents(),
+    [
+      'setGlobalConfig(GlobalConfig)',
+      'registerDomain(finance)',
+      'updateDomain(finance)',
+    ]
+  );
+  assert.equal(
+    await variantPage.getByLabel('Planning state · finance').isDisabled(),
+    true
+  );
+  await variantPage
+    .getByRole('button', { name: 'Calculate dispatch draft' })
+    .click();
+  assert.equal(await variantPage.locator('#wave-candidates').innerText(), '0');
+  assert.equal(
+    await variantPage.locator('[data-wave-download="task"]').isDisabled(),
+    true
+  );
+  assert.doesNotMatch(
+    await variantPage.locator('#snapshot').textContent(),
+    /undefined|floor coverage: 100/
+  );
+  assert.match(
+    await variantPage.locator('#domain-grid').textContent(),
+    /180s sync cadence/
+  );
+  assert.deepEqual(variantErrors, []);
+  await variantContext.close();
   const offline = await context
     .browser()
     .newContext({ javaScriptEnabled: false });
@@ -295,6 +419,6 @@ export async function verifyPhase6({
   );
   await offline.close();
   checks.push(
-    'Phase 6: five-domain fair allocation, zero-reviewer and exact-USDC bounds, pauses, prepared synthetic tasks, exact downloads, stale/reloaded drafts, two preserved maps, fail-closed invalid configuration and retry, clipboard recovery, keyboard, 5 widths, WCAG A/AA and no-JavaScript fallback'
+    'Phase 6: five-domain fair allocation, zero-reviewer and exact-USDC bounds, pauses, prepared synthetic tasks, exact downloads, stale/reloaded drafts, two preserved maps, minimal/experimental/sunset/missing-telemetry configuration variants, fail-closed invalid configuration and retry, clipboard recovery, keyboard, 5 widths, WCAG A/AA and no-JavaScript fallback'
   );
 }

@@ -1,6 +1,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import fs from 'node:fs';
+import { createRequire } from 'node:module';
+import {
+  buildCalldata,
+  computeMetrics,
+} from '../../demo/Phase-6-Scaling-Multi-Domain-Expansion/ui/preview-model.mjs';
 import { createHash } from 'node:crypto';
 import { JSDOM } from 'jsdom';
 import {
@@ -185,4 +190,160 @@ test('Phase 6 source preserves the original architecture independently of config
   assert.match(html, /id="mermaid-diagram"/);
   assert.equal((html.match(/<script(?![^>]*src)/g) || []).length, 0);
   assert.doesNotMatch(html, /cdn\.jsdelivr|fonts\.googleapis/);
+});
+
+// Exercise the actual CLI blueprint alongside the browser projection so shared
+// configuration variants cannot silently diverge after either implementation changes.
+const require = createRequire(import.meta.url);
+require('ts-node/register/transpile-only');
+const {
+  buildPhase6Blueprint,
+} = require('../../demo/Phase-6-Scaling-Multi-Domain-Expansion/scripts/phase6-blueprint.ts');
+const abi = JSON.parse(
+  fs.readFileSync(
+    new URL(
+      '../../demo/Phase-6-Scaling-Multi-Domain-Expansion/abi/Phase6ExpansionManager.json',
+      import.meta.url
+    )
+  )
+);
+const clone = () => structuredClone(config);
+const minimal = () => ({
+  global: { manifestURI: config.global.manifestURI },
+  domains: [
+    {
+      slug: config.domains[0].slug,
+      name: config.domains[0].name,
+      manifestURI: config.domains[0].manifestURI,
+      validationModule: config.domains[0].validationModule,
+      subgraph: config.domains[0].subgraph,
+    },
+  ],
+});
+const variants = {
+  full: clone,
+  missingTelemetry: () => {
+    const value = clone();
+    for (const domain of value.domains) {
+      domain.telemetry.resilienceBps =
+        value.global.telemetry.resilienceFloorBps;
+      domain.telemetry.automationBps =
+        value.global.telemetry.automationFloorBps;
+    }
+    delete value.domains[0].telemetry;
+    value.domains[1].telemetry.resilienceBps = 1;
+    return value;
+  },
+  absentOptionalSetters: () => {
+    const value = clone();
+    delete value.global.guards;
+    delete value.global.telemetry;
+    delete value.global.infrastructure;
+    for (const domain of value.domains) {
+      delete domain.operations;
+      delete domain.telemetry;
+      delete domain.infrastructureControl;
+    }
+    return value;
+  },
+  sunsetAndExperimental: () => {
+    const value = clone();
+    value.domains[0].lifecycle = 'sunset';
+    value.domains[0].sunsetPlan = {
+      reason: 'Reassign work before retirement.',
+      handoffDomains: ['health'],
+    };
+    value.domains[1].lifecycle = 'experimental';
+    value.domains[1].active = true;
+    return value;
+  },
+  explicitManual: () => {
+    const value = clone();
+    value.global.l2SyncCadence = 0;
+    return value;
+  },
+  minimal,
+};
+
+for (const [name, makeConfig] of Object.entries(variants))
+  test(`Phase 6 browser/CLI calldata and telemetry parity: ${name}`, () => {
+    const variant = makeConfig();
+    const blueprint = buildPhase6Blueprint(variant);
+    const expected = [
+      ...Object.values(blueprint.calldata),
+      ...blueprint.domains.flatMap((domain) => Object.values(domain.calldata)),
+    ].filter((value) => value !== undefined);
+    const actual = buildCalldata(variant, abi);
+    assert.deepEqual(
+      actual.map((call) => call.data),
+      expected
+    );
+    const metrics = computeMetrics(variant);
+    for (const key of [
+      'resilienceSampleCount',
+      'automationSampleCount',
+      'telemetryMissingCount',
+      'resilienceFloorCoverage',
+      'automationFloorCoverage',
+      'averageResilience',
+      'averageAutomation',
+      'averageCompliance',
+      'averageLatency',
+    ])
+      assert.equal(metrics[key] ?? null, blueprint.metrics[key] ?? null, key);
+    assert.equal(metrics.l2Coverage, blueprint.metrics.l2SettlementCoverage);
+    assert.equal(metrics.sentinelCount, blueprint.metrics.sentinelFamilies);
+    if (name === 'sunsetAndExperimental') {
+      assert.deepEqual(
+        actual
+          .filter((call) => call.label.includes('(finance)'))
+          .map((call) => call.label),
+        ['removeDomain(finance)']
+      );
+      const wave = createWave(input(), variant);
+      assert.deepEqual(
+        wave.domains.slice(0, 2).map((domain) => domain.candidateJobs),
+        [0, 0]
+      );
+    }
+    if (name === 'missingTelemetry') {
+      assert.equal(metrics.telemetryMissingCount, 1);
+      assert.equal(metrics.resilienceFloorCoverage, 3 / 5);
+      assert.equal(metrics.automationFloorCoverage, 4 / 5);
+    }
+    if (name === 'absentOptionalSetters')
+      assert.ok(
+        actual.every(
+          (call) =>
+            !/^set(?:Domain(?:Operations|Telemetry|Infrastructure)|Global(?:Guards|Telemetry|Infrastructure))\(/.test(
+              call.label
+            )
+        )
+      );
+    if (name === 'minimal') {
+      assert.deepEqual(
+        actual.map((call) => call.label),
+        [
+          'setGlobalConfig(GlobalConfig)',
+          'registerDomain(finance)',
+          'updateDomain(finance)',
+        ]
+      );
+      const values = input();
+      values.domains = values.domains.slice(0, 1);
+      const wave = createWave(values, variant);
+      assert.equal(wave.candidateJobs, 0);
+      assert.equal(wave.domains[0].configuredConcurrencyLimit, null);
+    }
+  });
+
+test('Phase 6 omitted telemetry never establishes floor coverage, even at zero floors', () => {
+  const value = clone();
+  value.global.telemetry.resilienceFloorBps = 0;
+  value.global.telemetry.automationFloorBps = 0;
+  for (const domain of value.domains) delete domain.telemetry;
+  assert.equal(computeMetrics(value).resilienceFloorCoverage, 0);
+  assert.equal(computeMetrics(value).automationFloorCoverage, 0);
+  value.domains = [];
+  assert.equal(computeMetrics(value).resilienceFloorCoverage, 0);
 });
