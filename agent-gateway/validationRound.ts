@@ -58,7 +58,8 @@ export function validateStoredRound(
 
 export async function readActiveValidationRound(
   context: ValidationRoundContext,
-  jobId: string | bigint
+  jobId: string | bigint,
+  requireOpenCommitWindow = false
 ): Promise<CommitRoundScope> {
   const { validation, registry, provider } = context;
   const chain = validation.runner?.provider ?? provider;
@@ -74,6 +75,11 @@ export async function readActiveValidationRound(
   ]);
   if (round.tallied || BigInt(round.commitDeadline) <= 0n)
     reconciliationRequired();
+  if (
+    requireOpenCommitWindow &&
+    BigInt(block.timestamp) > BigInt(round.commitDeadline)
+  )
+    throw new Error('VALIDATION_COMMIT_WINDOW_CLOSED');
   return {
     chainId: network.chainId.toString(),
     validationModule: (await validation.getAddress()).toLowerCase(),
@@ -84,6 +90,27 @@ export async function readActiveValidationRound(
     blockNumber: block.number,
     blockHash: block.hash,
   };
+}
+
+// Recheck after identity lookup, reconciliation and audit I/O, immediately
+// before saving a new broadcast intent. Inspection and reveal stay available
+// after the commit deadline.
+export async function requireOpenValidationCommitRound(
+  context: ValidationRoundContext,
+  jobId: string | bigint,
+  expected: CommitRoundScope
+): Promise<CommitRoundScope> {
+  const active = await readActiveValidationRound(context, jobId, true);
+  if (
+    active.chainId !== expected.chainId ||
+    active.validationModule !== expected.validationModule ||
+    active.nonce !== expected.nonce ||
+    active.commitDeadline !== expected.commitDeadline ||
+    active.domain !== expected.domain ||
+    active.specHash !== expected.specHash
+  )
+    reconciliationRequired();
+  return active;
 }
 
 export async function readValidationRound(

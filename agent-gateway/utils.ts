@@ -20,6 +20,7 @@ import {
 import {
   reconciliationRequired,
   readValidationRound,
+  requireOpenValidationCommitRound,
   reconcilePreviousRound,
   assertStoredValidationRound,
   inspectStoredValidationRound,
@@ -602,11 +603,16 @@ export async function commitHelper(
   );
   const { commitHash, burnTxHash } = vote;
   const context = { validation, registry, provider };
-  const roundScope = await readValidationRound(context, vote);
+  let roundScope = await readValidationRound(context, vote);
   if (previous) await reconcilePreviousRound(context, previous, roundScope);
   const validatorEns =
     (await provider.lookupAddress(wallet.address)) || undefined;
   const validatorLabel = validatorEns?.split('.')[0];
+  roundScope = await requireOpenValidationCommitRound(
+    context,
+    jobId,
+    roundScope
+  );
   beginCommitRecord(
     jobId,
     wallet.address,

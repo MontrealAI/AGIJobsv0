@@ -32,6 +32,7 @@ import {
   inspectStoredValidationRound,
   readActiveValidationRound,
   readValidationRound,
+  requireOpenValidationCommitRound,
   reconcilePreviousRound,
   assertStoredValidationRound,
 } from './validationRound';
@@ -1347,7 +1348,7 @@ async function evaluateAndCommit(
 
     const { commitHash, burnTxHash } = vote;
     const roundContext = { validation, registry, provider };
-    const roundScope = await readValidationRound(roundContext, vote);
+    let roundScope = await readValidationRound(roundContext, vote);
     if (previous)
       await reconcilePreviousRound(roundContext, previous, roundScope);
     requireCurrentAssignment(assignment);
@@ -1380,6 +1381,11 @@ async function evaluateAndCommit(
       success: true,
     });
 
+    roundScope = await requireOpenValidationCommitRound(
+      roundContext,
+      submission.jobId,
+      roundScope
+    );
     requireCurrentAssignment(assignment);
     beginCommitRecord(
       submission.jobId,
@@ -1468,6 +1474,7 @@ async function evaluateAndCommit(
         : 'failed';
     if (
       assignment.status === 'failed' &&
+      assignment.error !== 'VALIDATION_COMMIT_WINDOW_CLOSED' &&
       assignment.attempts < VALIDATOR_MAX_RETRIES
     ) {
       scheduleEvaluationRetry(assignment, VALIDATOR_RETRY_DELAY_MS);

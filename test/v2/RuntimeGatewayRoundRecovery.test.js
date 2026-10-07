@@ -177,6 +177,34 @@ describe('Gateway manual validator round recovery', function () {
     await context.select();
   }
 
+  for (const expiresDuringLookup of [false, true]) {
+    it(`does not persist a commit intent when the window closes ${
+      expiresDuringLookup ? 'during the identity lookup' : 'before the request'
+    }`, async () => {
+      const { jobId, v1, client } = context;
+      const deadline = (await client.rounds(jobId)).commitDeadline;
+      if (expiresDuringLookup) {
+        let lookups = 0;
+        utils.provider.lookupAddress = async () => {
+          if (++lookups === 2) await time.increaseTo(deadline + 1n);
+          return 'validator.club.agi.eth';
+        };
+      } else {
+        await time.increaseTo(deadline + 1n);
+      }
+      await expect(utils.commitHelper(jobId, v1, true)).to.be.rejectedWith(
+        'VALIDATION_COMMIT_WINDOW_CLOSED'
+      );
+      expect(load()).to.equal(null);
+      expect(fs.existsSync(file)).to.equal(false);
+      expect(utils.commits.has(jobId)).to.equal(false);
+      utils.provider.lookupAddress = async () => 'validator.club.agi.eth';
+      await freshRound();
+      await utils.commitHelper(jobId, v1, true);
+      expect(load().metadata.manualCommitStatus).to.equal('confirmed');
+    });
+  }
+
   it('archives the completed secret and commits/reveals after a real reset reuses the nonce', async () => {
     const { jobId, v1, client, validation } = context;
     await utils.commitHelper(jobId, v1, false, ethers.id('first round'));

@@ -329,6 +329,55 @@ describe('Automatic validator real-contract lifecycle', function () {
     await time.increaseTo((await chain.client.rounds(1)).commitDeadline + 1n);
   }
 
+  for (const delayed of ['selection', 'submission', 'audit']) {
+    it(`does not poison future rounds when ${delayed} processing passes the commit deadline`, async () => {
+      if (delayed === 'selection') {
+        await gateway.handleJobAwaitingValidation(chain.submission);
+        await openReveal();
+        await gateway.handleValidatorSelection('1', [chain.v1.address]);
+      } else {
+        await gateway.handleValidatorSelection('1', [chain.v1.address]);
+        if (delayed === 'submission') await openReveal();
+        else {
+          security.secureLogAction = async (entry) => {
+            if (entry.action === 'evaluate') await openReveal();
+          };
+        }
+        await gateway.handleJobAwaitingValidation(chain.submission);
+      }
+      expect(active().error).to.equal('VALIDATION_COMMIT_WINDOW_CLOSED');
+      expect(active().status).to.equal('failed');
+      expect(record()).to.equal(null);
+      expect(calls.commit).to.equal(0);
+      expect(
+        timers.filter((timer) => !timer.cleared && timer.delay === 15000)
+      ).to.have.length(0);
+      security.secureLogAction = async () => {};
+      await chain.validation.resetJobNonce(1);
+      await chain.select();
+      await gateway.handleValidatorSelection('1', [chain.v1.address]);
+      expect(active().status, active().error).to.equal('committed');
+      expect(record().metadata.automaticCommitStatus).to.equal('confirmed');
+      expect(calls.commit).to.equal(1);
+    });
+  }
+
+  it('restores and reveals a saved commitment after its commit window has closed', async () => {
+    await start();
+    const saved = record();
+    gateway.clearValidatorState();
+    await openReveal();
+    await gateway.handleValidatorSelection('1', [chain.v1.address]);
+    expect(active().status, active().error).to.equal('committed');
+    expect(record()).to.deep.equal(saved);
+    fire(timerWithDelay((delay) => delay < 120000));
+    await waitFor(
+      () => record().metadata.automaticRevealStatus === 'confirmed'
+    );
+    expect(calls.commit).to.equal(1);
+    expect(calls.reveal).to.equal(1);
+  });
+
   for (const submissionFirst of [false, true]) {
     it(`commits, restores, reveals and advances a reset nonce with ${
       submissionFirst ? 'submission' : 'selection'
