@@ -21,9 +21,11 @@ const scope = {
 };
 const specHash = hex('33');
 const domainSeparator = hex('44');
+const selection = { blockNumber: 10, blockHash: hex('aa'), logIndex: 0 };
 function makeRecord(overrides = {}) {
   const record = {
-    version: 1,
+    version: 2,
+    selection,
     scope,
     jobId: '7',
     nonce: '1',
@@ -61,6 +63,7 @@ describe('generic validator durable reveal recovery', () => {
   function fixture(journal) {
     const state = {
       nonce: 1n,
+      selection: { ...selection },
       commitment: ethers.ZeroHash,
       revealed: false,
       timestamp: 50,
@@ -68,28 +71,67 @@ describe('generic validator durable reveal recovery', () => {
       specHash,
       domainSeparator,
       tallied: false,
+      commitDeadline: 100n,
+      revealDeadline: 200n,
+      committedEvents: [],
     };
     const calls = { commit: [], reveal: [] };
     const reader = {
+      filters: {
+        ValidatorsSelected: (jobId) => ({ jobId: String(jobId) }),
+        ValidationCommitted: () => ({ commits: true }),
+      },
+      queryFilter: async (filter, from, to) =>
+        filter.commits
+          ? state.committedEvents.filter(
+              (event) => event.blockNumber >= from && event.blockNumber <= to
+            )
+          : state.selection.blockNumber >= from &&
+            state.selection.blockNumber <= to
+          ? [
+              {
+                args: { jobId: filter.jobId, validators: [scope.validator] },
+                blockNumber: state.selection.blockNumber,
+                blockHash: state.selection.blockHash,
+                index: state.selection.logIndex,
+              },
+            ]
+          : [],
       jobNonce: async () => state.nonce,
       commitments: async () => state.commitment,
       revealed: async () => state.revealed,
       rounds: async () => ({
-        commitDeadline: 100n,
-        revealDeadline: 200n,
+        commitDeadline: state.commitDeadline,
+        revealDeadline: state.revealDeadline,
         tallied: state.tallied,
       }),
       DOMAIN_SEPARATOR: async () => state.domainSeparator,
     };
     const writer = {
       commitValidation: async (...args) => {
-        assert.equal(journal.has(journal.load('7', '1'), 'commit'), true);
+        assert.equal(
+          journal.has(journal.load('7', '1', state.selection), 'commit'),
+          true
+        );
         calls.commit.push(args);
         state.commitment = args[1];
+        state.committedEvents.push({
+          args: {
+            jobId: String(args[0]),
+            validator: scope.validator,
+            commitHash: args[1],
+          },
+          blockNumber: state.selection.blockNumber,
+          blockHash: state.selection.blockHash,
+          index: state.selection.logIndex + 1,
+        });
         return { wait: async () => ({ status: 1 }) };
       },
       revealValidation: async (...args) => {
-        assert.equal(journal.has(journal.load('7', '1'), 'reveal'), true);
+        assert.equal(
+          journal.has(journal.load('7', '1', state.selection), 'reveal'),
+          true
+        );
         calls.reveal.push(args);
         state.revealed = true;
         return { wait: async () => ({ status: 1 }) };
@@ -110,6 +152,7 @@ describe('generic validator durable reveal recovery', () => {
         getBlock: async (tag) => ({
           number: tag === 'latest' ? 21 : tag,
           timestamp: state.timestamp,
+          hash: state.selection.blockHash,
         }),
       },
       validatorLabel: 'reviewer',
@@ -273,7 +316,7 @@ describe('generic validator durable reveal recovery', () => {
       'VALIDATOR_BURN_RECEIPT_UNAVAILABLE'
     );
     assert.equal(journal.has(saved, 'reveal'), false);
-    assert.deepEqual(journal.load('7', '1'), saved);
+    assert.deepEqual(journal.load('7', '1', selection), saved);
     assert.equal(calls.commit.length + calls.reveal.length, 0);
   });
 
@@ -295,7 +338,10 @@ describe('generic validator durable reveal recovery', () => {
       /VALIDATOR_TRANSACTION_NOT_CONFIRMED/
     );
     assert.equal(reported, false);
-    assert.equal(journal.has(journal.load('7', '1'), 'commit'), true);
+    assert.equal(
+      journal.has(journal.load('7', '1', selection), 'commit'),
+      true
+    );
   });
 
   it('requires an explicit valid rehearsal decision instead of approving by default', () => {
@@ -312,12 +358,15 @@ describe('generic validator durable reveal recovery', () => {
     const journal = journalAt(directory);
     const { state, calls, options, runtime } = fixture(journal);
     await runtime.selected(7n, [scope.validator]);
-    const original = journal.load('7', '1');
+    const original = journal.load('7', '1', selection);
     assert.equal(fs.statSync(journal.directory).mode & 0o777, 0o700);
-    assert.equal(fs.statSync(journal.file('7', '1')).mode & 0o777, 0o600);
+    assert.equal(
+      fs.statSync(journal.file('7', '1', '.json', selection)).mode & 0o777,
+      0o600
+    );
     const script = `const { RevealJournal } = require(${JSON.stringify(
       path.resolve('examples/agentic/validator-recovery.js')
-    )}); const j = new RevealJournal(process.argv[1], JSON.parse(process.argv[2])); process.stdout.write(j.load('7','1').commitHash);`;
+    )}); const j = new RevealJournal(process.argv[1], JSON.parse(process.argv[2])); process.stdout.write(j.records()[0].commitHash);`;
     assert.equal(
       execFileSync(
         process.execPath,
@@ -358,7 +407,98 @@ describe('generic validator durable reveal recovery', () => {
       { jobId: '7', status: 'committed' },
     ]);
     assert.equal(calls.commit[0][1], record.commitHash);
-    assert.equal(journal.load('7', '1').salt, record.salt);
+    assert.equal(journal.load('7', '1', selection).salt, record.salt);
+  });
+
+  for (const completed of [false, true]) {
+    it(`creates a new durable vote when a ${
+      completed ? 'completed' : 'reset'
+    } round reuses its nonce`, async () => {
+      const journal = journalAt(directory);
+      const { runtime, state, calls, options } = fixture(journal);
+      await runtime.selected(7n, [scope.validator]);
+      const previous = journal.load('7', '1', selection);
+      if (completed) {
+        state.timestamp = 101;
+        await runtime.recover();
+        await runtime.recover();
+        assert.equal(journal.has(previous, 'complete'), true);
+      }
+      state.selection = { ...selection, logIndex: 2 };
+      state.commitment = ethers.ZeroHash;
+      state.revealed = false;
+      state.commitDeadline = 300n;
+      state.revealDeadline = 400n;
+      state.timestamp = 250;
+      const restarted = createValidatorRuntime({
+        ...options,
+        journal: journalAt(directory),
+      });
+      assert.equal(
+        await restarted.selected(7n, [scope.validator]),
+        'committed'
+      );
+      const next = journal.load('7', '1', state.selection);
+      assert.notEqual(next.salt, previous.salt);
+      assert.notEqual(next.commitHash, previous.commitHash);
+      assert.deepEqual(journal.load('7', '1', selection), previous);
+      assert.equal(journal.records().length, 2);
+      await restarted.selected(7n, [scope.validator]);
+      assert.equal(calls.commit.length, 2);
+      assert.deepEqual(
+        (await restarted.recover()).map((entry) => entry.status),
+        ['VALIDATOR_ROUND_CHANGED', 'waiting-for-reveal']
+      );
+    });
+  }
+
+  it('quarantines a selected record if its canonical selection is replaced', async () => {
+    const journal = journalAt(directory);
+    const { runtime, state, calls } = fixture(journal);
+    await runtime.selected(7n, [scope.validator]);
+    state.selection = { ...selection, blockHash: hex('bb') };
+    state.commitment = ethers.ZeroHash;
+    assert.equal(
+      (await runtime.recover())[0].status,
+      'VALIDATOR_ROUND_CHANGED'
+    );
+    await assert.rejects(
+      runtime.selected(7n, [scope.validator]),
+      /VALIDATOR_ROUND_CHANGED/
+    );
+    assert.equal(calls.commit.length, 1);
+  });
+
+  it('does not replace a previous round while its broadcast remains unconfirmed', async () => {
+    const journal = journalAt(directory);
+    const { runtime, state, calls, options } = fixture(journal);
+    options.writer.commitValidation = async () => {
+      throw new Error('lost send response');
+    };
+    await assert.rejects(runtime.selected(7n, [scope.validator]));
+    state.selection = { ...selection, logIndex: 2 };
+    await assert.rejects(
+      runtime.selected(7n, [scope.validator]),
+      /VALIDATOR_PREVIOUS_COMMIT_UNCERTAIN/
+    );
+    assert.equal(journal.records().length, 1);
+    assert.equal(calls.commit.length, 0);
+  });
+
+  it('requires review of legacy journals instead of silently creating a new vote', async () => {
+    const journal = journalAt(directory);
+    const record = makeRecord({ version: 1 });
+    fs.writeFileSync(
+      path.join(journal.directory, '7-1.json'),
+      JSON.stringify(record),
+      { mode: 0o600 }
+    );
+    const { runtime, calls } = fixture(journal);
+    await assert.rejects(
+      runtime.selected(7n, [scope.validator]),
+      /VALIDATOR_JOURNAL_LEGACY_REQUIRES_REVIEW/
+    );
+    assert.equal(calls.commit.length, 0);
   });
 
   it('suppresses concurrent duplicate selection callbacks and restart duplicates', async () => {
@@ -387,7 +527,7 @@ describe('generic validator durable reveal recovery', () => {
     );
     assert.equal(journal.mark(record, 'commit'), true);
     assert.equal(journalAt(directory).mark(record, 'commit'), false);
-    assert.equal(journal.load('7', '1').salt, record.salt);
+    assert.equal(journal.load('7', '1', selection).salt, record.salt);
   });
 
   it('retains an ambiguous commit and does not broadcast again on restart', async () => {
@@ -397,7 +537,7 @@ describe('generic validator durable reveal recovery', () => {
       throw new Error(`RPC response includes secret ${hex('55')}`);
     };
     await assert.rejects(runtime.selected(7n, [scope.validator]));
-    const original = journal.load('7', '1');
+    const original = journal.load('7', '1', selection);
     const restarted = createValidatorRuntime({
       ...options,
       journal: journalAt(directory),
@@ -513,7 +653,7 @@ describe('generic validator durable reveal recovery', () => {
   it('rejects corrupt state and does not disclose salts in sanitized errors', async () => {
     const journal = journalAt(directory);
     journal.prepare(makeRecord());
-    fs.writeFileSync(journal.file('7', '1'), '{bad');
+    fs.writeFileSync(journal.file('7', '1', '.json', selection), '{bad');
     const { runtime, calls } = fixture(journal);
     await assert.rejects(runtime.recover(), /JOURNAL_CORRUPT/);
     assert.equal(calls.commit.length + calls.reveal.length, 0);
@@ -527,21 +667,27 @@ describe('generic validator durable reveal recovery', () => {
     const journal = journalAt(directory);
     journal.prepare(makeRecord());
     const other = journalAt(directory, { ...scope, chainId: '1' });
-    fs.copyFileSync(journal.file('7', '1'), other.file('7', '1'));
+    fs.copyFileSync(
+      journal.file('7', '1', '.json', selection),
+      other.file('7', '1', '.json', selection)
+    );
     assert.throws(() => other.records(), /JOURNAL_CORRUPT/);
-    fs.copyFileSync(journal.file('7', '1'), journal.file('8', '1'));
-    assert.throws(() => journal.load('8', '1'), /JOURNAL_CORRUPT/);
+    fs.copyFileSync(
+      journal.file('7', '1', '.json', selection),
+      journal.file('8', '1', '.json', selection)
+    );
+    assert.throws(() => journal.load('8', '1', selection), /JOURNAL_CORRUPT/);
   });
 
   it('rejects secret permissions, symlinks, and malformed phase markers', () => {
     const journal = journalAt(directory);
     const record = makeRecord();
     journal.prepare(record);
-    fs.chmodSync(journal.file('7', '1'), 0o644);
+    fs.chmodSync(journal.file('7', '1', '.json', selection), 0o644);
     assert.throws(() => journal.records(), /JOURNAL_PERMISSIONS/);
-    fs.chmodSync(journal.file('7', '1'), 0o600);
-    const marker = journal.file('7', '1', '.commit');
-    fs.symlinkSync(journal.file('7', '1'), marker);
+    fs.chmodSync(journal.file('7', '1', '.json', selection), 0o600);
+    const marker = journal.file('7', '1', '.commit', selection);
+    fs.symlinkSync(journal.file('7', '1', '.json', selection), marker);
     assert.throws(() => journal.mark(record, 'commit'));
     fs.unlinkSync(marker);
     fs.writeFileSync(
@@ -554,7 +700,11 @@ describe('generic validator durable reveal recovery', () => {
 
   it('rejects FIFO secret files without blocking', () => {
     const journal = journalAt(directory);
-    execFileSync('mkfifo', ['-m', '600', journal.file('7', '1')]);
+    execFileSync('mkfifo', [
+      '-m',
+      '600',
+      journal.file('7', '1', '.json', selection),
+    ]);
     assert.throws(() => journal.records(), /JOURNAL_PERMISSIONS/);
   });
 

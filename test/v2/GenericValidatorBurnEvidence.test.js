@@ -114,7 +114,11 @@ describe('Generic validator per-job burn evidence', function () {
     await ethers.provider.send('evm_mine', []);
     const client = new ethers.Contract(
       await validation.getAddress(),
-      VALIDATION_PROTOCOL_ABI,
+      [
+        ...VALIDATION_PROTOCOL_ABI,
+        'event ValidatorsSelected(uint256 indexed jobId,address[] validators)',
+        'event ValidationCommitted(uint256 indexed jobId,address indexed validator,bytes32 commitHash,string subdomain)',
+      ],
       ethers.provider
     );
     const registryClient = new ethers.Contract(
@@ -163,10 +167,9 @@ describe('Generic validator per-job burn evidence', function () {
         expect(await runtime.selected(jobId, [v1.address])).to.equal(
           'committed'
         );
-        const saved = journal.load(
-          String(jobId),
-          String(await client.jobNonce(jobId))
-        );
+        const saved = journal
+          .records()
+          .find((record) => record.jobId === String(jobId));
         expect(saved.burnTxHash).to.equal(burns[Number(jobId) - 1]);
         expect(saved.burnTxHash).not.to.equal(process.env.BURN_TX_HASH);
       }
@@ -190,6 +193,28 @@ describe('Generic validator per-job burn evidence', function () {
       expect(
         writes.filter((entry) => entry.method === 'commitValidation')
       ).to.have.length(2);
+      const previous = journal.records().find((record) => record.jobId === '1');
+      await validation.resetJobNonce(1);
+      await validation.connect(v1).selectValidators(1, 0);
+      const target = await validation.selectionBlock(1);
+      await validation.connect(v2).selectValidators(1, 1);
+      while (BigInt(await ethers.provider.getBlockNumber()) <= target)
+        await ethers.provider.send('evm_mine', []);
+      await validation.connect(v1).selectValidators(1, 0);
+      await ethers.provider.send('evm_mine', []);
+      expect(String(await client.jobNonce(1))).to.equal(previous.nonce);
+      expect(await restarted.selected(1n, [v1.address])).to.equal('committed');
+      const records = journal
+        .records()
+        .filter((record) => record.jobId === '1');
+      expect(records).to.have.length(2);
+      const next = records.find(
+        (record) => record.commitHash !== previous.commitHash
+      );
+      expect(next.salt).not.to.equal(previous.salt);
+      expect(
+        await validation.commitments(1, v1.address, previous.nonce)
+      ).to.equal(next.commitHash);
     } finally {
       fs.rmSync(directory, { recursive: true, force: true });
       if (originalGlobal === undefined) delete process.env.BURN_TX_HASH;

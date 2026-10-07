@@ -2481,6 +2481,10 @@ function generateOperatorRunbook(
     (config.domains ?? []).filter((d) => d.active !== false).map((d) => String(d.slug ?? "")),
   );
   for (const domain of config.domains ?? []) {
+    if (domain.active === false) {
+      lines.push(`• ${domain.name}: INACTIVE — excluded from readiness checks and active coverage/funding totals.`);
+      continue;
+    }
     const slug = String(domain.slug ?? "").toLowerCase();
     const domainCoverage = coverage.get(slug) ?? 0;
     const coverageStatus = guardianWindow > 0 ? `${(domainCoverage / guardianWindow * 100).toFixed(1)}% of window` : "n/a";
@@ -2766,6 +2770,10 @@ function generateGovernanceDirectives(
   lines.push("");
   lines.push("## Oversight priorities");
   for (const domain of config.domains ?? []) {
+    if (domain.active === false) {
+      lines.push(`- ${domain.name}: INACTIVE — excluded from readiness checks and active coverage/funding totals.`);
+      continue;
+    }
     const slug = String(domain.slug ?? "").toLowerCase();
     const coverage = coverageSeconds.get(slug) ?? 0;
     const coveragePercent = guardianWindow > 0 ? (coverage / guardianWindow) * 100 : 0;

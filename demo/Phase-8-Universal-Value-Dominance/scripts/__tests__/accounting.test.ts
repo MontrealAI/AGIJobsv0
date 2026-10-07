@@ -121,6 +121,15 @@ it('validates generated artifacts after disabling a domain, its sentinel, and a 
     const csv = readFileSync(join(outputDir, 'phase8-cycle-report.csv'), 'utf8').trim().split('\n');
     expect(csv[0]).toContain(',active,');
     expect(csv.find((line) => line.startsWith('health-sovereign,'))).toMatch(/,false,.*inactive$/);
+    const inactiveDomain = parsed.domains.find((domain) => domain.slug === 'health-sovereign')!;
+    const activeDomain = parsed.domains.find((domain) => domain.active !== false)!;
+    for (const file of ['phase8-orchestration-report.txt', 'phase8-governance-directives.md']) {
+      const report = readFileSync(join(outputDir, file), 'utf8');
+      const readinessLine = report.split('\n').find((line) => line.includes(`${inactiveDomain.name}:`));
+      expect(readinessLine).toContain('INACTIVE — excluded from readiness checks and active coverage/funding totals.');
+      expect(readinessLine).not.toMatch(/coverage 0s|funding \$0|ALERT/i);
+      expect(report).toContain(`${activeDomain.name}:`);
+    }
     for (const [key, field, expected] of [
       ['domains', 'valueFlowMonthlyUSD', metrics.totalMonthlyUSD],
       ['sentinels', 'coverageSeconds', metrics.guardianCoverageMinutes * 60],

@@ -21,6 +21,13 @@ const uint = (value) =>
   BigInt(value) < 1n << 256n;
 const bytes32 = (value) =>
   typeof value === 'string' && /^0x[0-9a-f]{64}$/.test(value);
+const validSelection = (selection) =>
+  selection &&
+  Number.isSafeInteger(selection.blockNumber) &&
+  selection.blockNumber >= 0 &&
+  bytes32(selection.blockHash) &&
+  Number.isSafeInteger(selection.logIndex) &&
+  selection.logIndex >= 0;
 
 // Matches ValidationModuleBase._revealValidation's domain-bound encoding.
 function commitHash({
@@ -127,10 +134,19 @@ class RevealJournal {
     ensureDirectory(this.directory);
   }
 
-  file(jobId, nonce, suffix = '.json') {
-    if (!uint(String(jobId)) || !uint(String(nonce)))
+  file(jobId, nonce, suffix = '.json', selection) {
+    if (
+      !uint(String(jobId)) ||
+      !uint(String(nonce)) ||
+      !validSelection(selection)
+    )
       fail('VALIDATOR_RECORD_ID_INVALID');
-    return path.join(this.directory, `${jobId}-${nonce}${suffix}`);
+    return path.join(
+      this.directory,
+      `${jobId}-${nonce}-${selection.blockHash.slice(2)}-${
+        selection.logIndex
+      }${suffix}`
+    );
   }
 
   read(file) {
@@ -199,9 +215,11 @@ class RevealJournal {
   }
 
   validate(record) {
+    if (record?.version === 1) fail('VALIDATOR_JOURNAL_LEGACY_REQUIRES_REVIEW');
     if (
       !record ||
-      record.version !== 1 ||
+      record.version !== 2 ||
+      !validSelection(record.selection) ||
       !uint(record.jobId) ||
       !uint(record.nonce) ||
       typeof record.approve !== 'boolean' ||
@@ -234,10 +252,16 @@ class RevealJournal {
     return record;
   }
 
-  load(jobId, nonce) {
+  load(jobId, nonce, selection) {
     try {
-      const record = this.validate(this.read(this.file(jobId, nonce)));
-      if (record.jobId !== String(jobId) || record.nonce !== String(nonce))
+      const record = this.validate(
+        this.read(this.file(jobId, nonce, '.json', selection))
+      );
+      if (
+        record.jobId !== String(jobId) ||
+        record.nonce !== String(nonce) ||
+        JSON.stringify(record.selection) !== JSON.stringify(selection)
+      )
         fail('VALIDATOR_JOURNAL_CORRUPT');
       return record;
     } catch (err) {
@@ -248,9 +272,14 @@ class RevealJournal {
 
   prepare(record) {
     this.validate(record);
-    const file = this.file(record.jobId, record.nonce);
+    const file = this.file(
+      record.jobId,
+      record.nonce,
+      '.json',
+      record.selection
+    );
     if (!this.publish(file, record)) {
-      const previous = this.load(record.jobId, record.nonce);
+      const previous = this.load(record.jobId, record.nonce, record.selection);
       if (JSON.stringify(previous) !== JSON.stringify(record))
         fail('VALIDATOR_JOURNAL_DUPLICATE_MISMATCH');
     }
@@ -266,7 +295,11 @@ class RevealJournal {
         const record = this.validate(
           this.read(path.join(this.directory, name))
         );
-        if (path.basename(this.file(record.jobId, record.nonce)) !== name)
+        if (
+          path.basename(
+            this.file(record.jobId, record.nonce, '.json', record.selection)
+          ) !== name
+        )
           fail('VALIDATOR_JOURNAL_CORRUPT');
         for (const phase of ['commit', 'reveal', 'complete'])
           this.has(record, phase);
@@ -279,7 +312,7 @@ class RevealJournal {
       fail('VALIDATOR_PHASE_INVALID');
     try {
       const marker = this.read(
-        this.file(record.jobId, record.nonce, `.${phase}`)
+        this.file(record.jobId, record.nonce, `.${phase}`, record.selection)
       );
       if (marker.version !== 1 || marker.commitHash !== record.commitHash)
         fail('VALIDATOR_JOURNAL_CORRUPT');
@@ -292,11 +325,124 @@ class RevealJournal {
 
   mark(record, phase) {
     if (this.has(record, phase)) return false;
-    return this.publish(this.file(record.jobId, record.nonce, `.${phase}`), {
-      version: 1,
-      commitHash: record.commitHash,
-    });
+    return this.publish(
+      this.file(record.jobId, record.nonce, `.${phase}`, record.selection),
+      {
+        version: 1,
+        commitHash: record.commitHash,
+      }
+    );
   }
+}
+
+// The nonce is deleted during contract cleanup and can be reused. The canonical
+// ValidatorsSelected log gives each round a distinct, reorg-aware identity.
+async function resolveSelection(
+  reader,
+  provider,
+  jobId,
+  validator,
+  blockNumber
+) {
+  const filter = reader.filters.ValidatorsSelected(jobId);
+  let toBlock = blockNumber;
+  let pageSize = 2000;
+  while (toBlock >= 0) {
+    const fromBlock = Math.max(0, toBlock - pageSize + 1);
+    let events;
+    try {
+      events = await reader.queryFilter(filter, fromBlock, toBlock);
+    } catch (error) {
+      if (pageSize === 1) throw error;
+      pageSize = Math.max(1, Math.floor(pageSize / 2));
+      continue;
+    }
+    for (let index = events.length - 1; index >= 0; index--) {
+      const event = events[index];
+      if (
+        event.removed ||
+        !event.args ||
+        String(event.args.jobId ?? event.args[0]) !== String(jobId)
+      )
+        continue;
+      const selection = {
+        blockNumber: event.blockNumber,
+        blockHash: event.blockHash?.toLowerCase(),
+        logIndex: event.index,
+      };
+      const validators = event.args.validators ?? event.args[1];
+      if (
+        !validSelection(selection) ||
+        selection.blockNumber > blockNumber ||
+        !Array.isArray(validators) ||
+        !validators.some((address) => address.toLowerCase() === validator)
+      )
+        fail('VALIDATOR_SELECTION_UNAVAILABLE');
+      const anchor = await provider.getBlock(selection.blockNumber);
+      if (anchor?.hash?.toLowerCase() !== selection.blockHash)
+        fail('VALIDATOR_ROUND_CHANGED');
+      return selection;
+    }
+    toBlock = fromBlock - 1;
+  }
+  fail('VALIDATOR_SELECTION_UNAVAILABLE');
+}
+
+async function assertPreviousRoundClosed(
+  journal,
+  reader,
+  provider,
+  previous,
+  next
+) {
+  const old = previous.selection;
+  const anchor = await provider.getBlock(old.blockNumber);
+  if (
+    anchor?.hash?.toLowerCase() !== old.blockHash ||
+    next.blockNumber < old.blockNumber ||
+    (next.blockNumber === old.blockNumber && next.logIndex <= old.logIndex)
+  )
+    fail('VALIDATOR_ROUND_CHANGED');
+  if (!journal.has(previous, 'commit')) return;
+  // A pending old transaction must not be mistaken for a settled old round.
+  const filter = reader.filters.ValidationCommitted(
+    previous.jobId,
+    journal.scope.validator
+  );
+  let toBlock = next.blockNumber;
+  let pageSize = 2000;
+  while (toBlock >= old.blockNumber) {
+    const fromBlock = Math.max(old.blockNumber, toBlock - pageSize + 1);
+    let events;
+    try {
+      events = await reader.queryFilter(filter, fromBlock, toBlock);
+    } catch (error) {
+      if (pageSize === 1) throw error;
+      pageSize = Math.max(1, Math.floor(pageSize / 2));
+      continue;
+    }
+    for (const event of events) {
+      if (
+        event.removed ||
+        !event.args ||
+        String(event.args.jobId ?? event.args[0]) !== previous.jobId ||
+        (event.args.validator ?? event.args[1])?.toLowerCase() !==
+          journal.scope.validator ||
+        (event.args.commitHash ?? event.args[2])?.toLowerCase() !==
+          previous.commitHash ||
+        event.blockNumber < old.blockNumber ||
+        event.blockNumber > next.blockNumber ||
+        (event.blockNumber === old.blockNumber &&
+          event.index <= old.logIndex) ||
+        (event.blockNumber === next.blockNumber && event.index >= next.logIndex)
+      )
+        continue;
+      const block = await provider.getBlock(event.blockNumber);
+      if (block?.hash?.toLowerCase() === event.blockHash?.toLowerCase()) return;
+    }
+    toBlock = fromBlock - 1;
+  }
+  fail('VALIDATOR_PREVIOUS_COMMIT_UNCERTAIN');
 }
 
 function safeErrorCode(err) {
@@ -429,6 +575,17 @@ function createValidatorRuntime({
     if (!latest) fail('VALIDATOR_BLOCK_UNAVAILABLE');
     const block = await provider.getBlock(Math.max(0, latest.number - 1));
     if (!block) fail('VALIDATOR_BLOCK_UNAVAILABLE');
+    if (block.number < record.selection.blockNumber)
+      return 'awaiting-confirmations';
+    const selection = await resolveSelection(
+      reader,
+      provider,
+      record.jobId,
+      scope.validator,
+      block.number
+    );
+    if (JSON.stringify(selection) !== JSON.stringify(record.selection))
+      fail('VALIDATOR_ROUND_CHANGED');
     const options = { blockTag: block.number };
     const [nonce, hash, revealed, round, specHash, domainSeparator] =
       await Promise.all([
@@ -521,16 +678,39 @@ function createValidatorRuntime({
       return;
     const key = String(jobId);
     return serial(key, async () => {
-      const nonce = String(await reader.jobNonce(jobId));
-      let record = journal.load(key, nonce);
+      const previousRecords = journal.records(); // Validate before preparing any vote.
+      const block = await provider.getBlock('latest');
+      if (!block) fail('VALIDATOR_BLOCK_UNAVAILABLE');
+      const options = { blockTag: block.number };
+      const selection = await resolveSelection(
+        reader,
+        provider,
+        jobId,
+        scope.validator,
+        block.number
+      );
+      const nonce = String(await reader.jobNonce(jobId, options));
+      let record = journal.load(key, nonce, selection);
       if (!record) {
+        for (const previous of previousRecords.filter(
+          (entry) => entry.jobId === key
+        )) {
+          await assertPreviousRoundClosed(
+            journal,
+            reader,
+            provider,
+            previous,
+            selection
+          );
+        }
         const [specHash, domainSeparator, burnTxHash] = await Promise.all([
-          registry.getSpecHash(jobId),
-          reader.DOMAIN_SEPARATOR(),
+          registry.getSpecHash(jobId, options),
+          reader.DOMAIN_SEPARATOR(options),
           resolveJobBurnReceipt(registry, provider, jobId),
         ]);
         record = {
-          version: 1,
+          version: 2,
+          selection,
           scope,
           jobId: key,
           nonce,

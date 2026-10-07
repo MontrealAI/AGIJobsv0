@@ -226,6 +226,46 @@ describe('Automatic validator context recovery', function () {
     expect(calls.writes).to.equal(0);
   });
 
+  it('shrinks rejected log ranges without skipping the JobCreated event', async () => {
+    utils.provider.getBlockNumber = async () => 5000;
+    const query = utils.registry.queryFilter;
+    const accepted = [];
+    const attempted = [];
+    utils.registry.queryFilter = async (filter, from, to) => {
+      attempted.push([from, to]);
+      if (to - from + 1 > 250) throw new Error('provider log range limit');
+      accepted.push([from, to]);
+      return from <= 4200 && to >= 4200 ? query() : [];
+    };
+    await start();
+    expect(attempted).to.include.deep.members([
+      [0, 5000],
+      [3001, 5000],
+      [4751, 5000],
+    ]);
+    expect(accepted).to.deep.equal([
+      [4751, 5000],
+      [4501, 4750],
+      [4251, 4500],
+      [4001, 4250],
+    ]);
+    expect(calls.stake).to.equal(1);
+    expect(calls.writes).to.equal(0);
+  });
+
+  it('bounds log page shrinking and retries a provider that rejects one-block ranges', async () => {
+    let queries = 0;
+    utils.registry.queryFilter = async () => {
+      queries++;
+      throw new Error('provider unavailable');
+    };
+    await start();
+    expect(queries).to.equal(12);
+    expect(active().status).to.equal('context-retry');
+    expect(calls.stake).to.equal(0);
+    expect(calls.writes).to.equal(0);
+  });
+
   it('bounds context retries while a confirmed fresh round gets a fresh budget', async () => {
     fetchFailure = true;
     await start();
