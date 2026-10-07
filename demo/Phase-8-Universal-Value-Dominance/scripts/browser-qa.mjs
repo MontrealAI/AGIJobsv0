@@ -149,6 +149,12 @@ try {
     await page.locator('#mermaid-diagram').getAttribute('data-rendered'),
     'true'
   );
+  await page.locator('#manifest-reset').click();
+  await page.waitForFunction(
+    () =>
+      document.getElementById('mermaid-diagram')?.dataset.rendered === 'true'
+  );
+  assert.equal(await page.locator('#mermaid-diagram svg').count(), 1);
   await page.goto(origin + '/ui/');
   await page.waitForSelector('svg');
   await page.setInputFiles('#extensionConfig', {

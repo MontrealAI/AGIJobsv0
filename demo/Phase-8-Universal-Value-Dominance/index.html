@@ -4,7 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Phase 8 — Universal Value Dominance Console</title>
-    <script src="./assets/mermaid.min.js" defer></script>
+    <script src="./assets/mermaid.min.js"></script>
+    <script>
+      mermaid.initialize({ startOnLoad: false, theme: "dark" });
+    </script>
     <style>
       :root {
         color-scheme: dark;
@@ -4050,6 +4053,7 @@
 
         if (window.mermaid) {
           try {
+            container.removeAttribute("data-processed");
             container.setAttribute("data-rendered", "pending");
             window.mermaid.initialize({ startOnLoad: false, theme: "dark" });
             Promise.resolve(window.mermaid.run({ nodes: [container] }))
