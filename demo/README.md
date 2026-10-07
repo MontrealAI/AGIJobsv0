@@ -9,7 +9,7 @@ Run commands from the repository root after the [pinned setup](../docs/START_HER
 | Goal | Command / guide | Evidence to inspect |
 | --- | --- | --- |
 | Complete one job on a disposable blockchain | `npm run demo:aurora:local` · [AURORA](aurora/README.md#run-the-local-job-lifecycle) | `reports/localhost/aurora/`: transactions, validator votes, and settlement |
-| Complete three sector scenarios | `npm run demo:asi-takeoff:local` · [ASI Take-Off](asi-takeoff/README.md#run-the-three-job-local-walkthrough) | `reports/localhost/asi-takeoff/`: three finalized jobs and payouts |
+| Complete three sector scenarios | `npm run demo:asi-takeoff:local` · [ASI Take-Off](asi-takeoff/README.md#retained-local-contract-walkthrough) | `reports/localhost/asi-takeoff/`: three finalized jobs and payouts |
 | Rehearse global coordination | `npm run demo:asi-global:local` · [ASI Global](asi-global/README.md) | `reports/localhost/asi-global/`: three actual local settlements |
 | Rehearse energy, food, health, and macroeconomic scenarios | `npm run demo:atlas-conductor:local` · [Atlas Conductor](atlas-conductor/README.md) | `reports/localhost/atlas-conductor/`: four actual local settlements |
 | Explore recursive-model simulation without a wallet | [Tiny Recursive Model setup](Tiny-Recursive-Model-v0/README.md#run-the-headless-demo) | Synthetic outcomes and model telemetry; install its headless Python requirements |
@@ -129,7 +129,7 @@ The generated section includes every tracked top-level directory and every neste
 | [open_endedness_v0](open_endedness_v0) | Supporting code / assets | Open the guide or source directory |
 | [Open-Endedness-v0](Open-Endedness-v0/README.md) | Code and guide | Open the guide or source directory |
 | [Phase-6-Scaling-Multi-Domain-Expansion](Phase-6-Scaling-Multi-Domain-Expansion/README.md) | Code and guide | `demo:phase6:did`, `demo:phase6:iot`, `demo:phase6:orchestrate` |
-| [Phase-8-Universal-Value-Dominance](Phase-8-Universal-Value-Dominance/README.md) | Code and guide | `demo:phase8:bootstrap`, `demo:phase8:orchestrate` |
+| [Phase-8-Universal-Value-Dominance](Phase-8-Universal-Value-Dominance/README.md) | Code and guide | `demo:phase8:bootstrap`, `demo:phase8:orchestrate`, `demo:phase8:work` |
 | [Planetary-Orchestrator-Fabric-v0](Planetary-Orchestrator-Fabric-v0/README.md) | Code and guide | `demo:planetary-orchestrator-fabric`, `demo:planetary-orchestrator-fabric:restart`, `demo:planetary-orchestrator-fabric:acceptance` |
 | [polaris-concordat](polaris-concordat/README.md) | Design guide | Open the guide or source directory |
 | [presentation](presentation) | Supporting code / assets | Open the guide or source directory |

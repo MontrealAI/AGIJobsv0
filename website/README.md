@@ -104,7 +104,7 @@ The homepage now explains the buyer, worker and independent-reviewer routes, con
 
 The stable [readiness index](../docs/production/readiness.md), [computer-work guide](../docs/computer-work.md) and [delivery workflow](../docs/MACHINE_LABOR.md) are published as local, source-bound guides. The dated records remain available at their original routes.
 
-The planner's **Save editable draft** and **Open saved editable draft** controls preserve unfinished work locally, including exact entered text. Reloading still clears the form; there is no browser storage or upload. The versioned draft format accepts only the known form fields, with bounded file and field sizes. Opening a draft requires a new review and build before task downloads become available; execution authority and evidence are never imported. Task and proposal exports remain distinct from editable drafts. Custom objectives survive category changes; the explicit suggested-objective button replaces the text only when requested.
+The planner's **Save editable draft** and **Open saved editable draft** controls preserve unfinished work locally, including exact entered text. Reloading still clears the form; there is no browser storage or upload. The versioned draft format accepts only the known form fields, with bounded file and field sizes and valid UTF-8/Unicode content. Opening a draft immediately disables previous task downloads and requires a new review and build; a delayed file read cannot overwrite edits made while it opens. Execution authority and evidence are never imported. Task and proposal exports remain distinct from editable drafts. Custom objectives survive category changes; the explicit suggested-objective button replaces the text only when requested.
 
 ## Alpha Mark capital-to-work lab
 
@@ -120,3 +120,26 @@ node scripts/pages/alpha-mark-browser-qa.mjs
 ```
 
 Run the site build first. The complete `site:qa` command also includes the Alpha Mark checks.
+
+## Phase 6 multi-domain expansion lab
+
+`experiments/phase6/` publishes the complete Phase 6 configuration dashboard, its original systems map, a separate configured-domain map and an interactive dispatch-wave planner. All dependencies are bundled locally from the lockfile. The original views for credentials, bridge plans, infrastructure, domain controls and unsigned example calldata remain available. Their metrics are explicitly illustrative; no live provider, identity service, oracle or chain is contacted.
+
+The capacity model reserves one job per worker for one wave, bounded by the configured concurrency limit, shared reviewer minutes and exact six-decimal USDC reward arithmetic. Allocation cycles through configuration order one slot at a time; paused, inactive, experimental, sunset and unconfigured-capacity domains receive no slots. It is a static planning bound, excludes existing in-flight jobs and operating costs, and is not a live priority scheduler or throughput forecast. Every edit or configuration reload invalidates previous exports. Draft inputs remain in memory and disappear on reload.
+
+Five synthetic arithmetic tasks make the handoff reproducible without private data. A task download requires a candidate slot and three operator preparation commitments, then reuses the canonical work-proposal and task schemas. Commitments grant no authority. Actual buyer work belongs in the complete work planner; provider output belongs in the evidence reviewer. OpenClaw gateway dispatch and operator-led ChatGPT Work remain distinct commissioned routes.
+
+`ui/preview-model.mjs` keeps calldata and configuration metrics independently testable. Regression tests compare its encoded calls and telemetry coverage against the actual CLI blueprint for full, minimal, missing-field, experimental, sunset and manual-cadence configurations. Missing telemetry cannot pass a configured floor, absent optional configuration produces no setter, experimental domains encode inactive registration/update proposals, and sunset domains produce only a removal example. Generated runbooks list optional global setters only when the corresponding configuration exists, and explicitly mark absent global/domain controls, telemetry and credential requirements as unconfigured. Missing input never establishes deployed governance settings or unrestricted eligibility.
+
+The standalone source is `demo/Phase-6-Scaling-Multi-Domain-Expansion/index.html` with its `ui/` modules. Build the local-only dependencies before serving it:
+
+```bash
+node scripts/pages/phase6-build.mjs
+python -m http.server 8080 --bind 127.0.0.1 --directory build/phase6
+# Open http://127.0.0.1:8080
+node --test test/pages/phase6.test.mjs
+# After npm run site:build:
+node scripts/pages/phase6-browser-qa.mjs
+```
+
+The normal website build and QA include this route. Browser checks cover capacity constraints, pauses, exact downloads, operator gating, invalid/stale inputs, configuration reload, keyboard use, responsive layouts, accessibility and both preserved diagram sources. The no-JavaScript page retains the workflow, original map source and source links.

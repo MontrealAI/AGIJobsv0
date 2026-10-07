@@ -4,7 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Phase 8 — Universal Value Dominance Console</title>
-    <script src="./assets/mermaid.min.js" defer></script>
+    <script src="./assets/mermaid.min.js"></script>
+    <script>
+      mermaid.initialize({ startOnLoad: false, theme: "dark" });
+    </script>
     <style>
       :root {
         color-scheme: dark;
@@ -1144,6 +1147,7 @@
     </style>
   </head>
   <body>
+    <aside style="padding:16px 24px;background:#201333;color:#f3eaff;border-bottom:1px solid #ac87de">Synthetic governance rehearsal · All values, model names and addresses are fixtures. Scores do not prove realized value or production readiness. <a href="./workbench/" style="color:#d8c0ff">Open the Universal Value Work Lab →</a></aside>
     <a class="skip-link" href="#main">Skip to main content</a>
     <header>
       <h1 data-i18n-key="headings.hero">Phase 8 · Universal Value Dominance</h1>
@@ -1657,6 +1661,13 @@
           .replace(/>/g, "&gt;")
           .replace(/"/g, "&quot;")
           .replace(/'/g, "&#39;");
+
+      const safeHref = (value) => {
+        try {
+          const url = new URL(String(value));
+          return ['https:', 'http:'].includes(url.protocol) ? escapeHtml(url.href) : '#';
+        } catch { return '#'; }
+      };
 
       const escapeSelector = (value) => {
         if (typeof CSS !== "undefined" && typeof CSS.escape === "function") {
@@ -2205,9 +2216,9 @@
       };
 
       const buildContext = (manifest) => {
-        const domains = asArray(manifest.domains);
-        const sentinels = asArray(manifest.sentinels);
-        const streams = asArray(manifest.capitalStreams);
+        const domains = asArray(manifest.domains).filter((entry) => entry.active !== false);
+        const sentinels = asArray(manifest.sentinels).filter((entry) => entry.active !== false);
+        const streams = asArray(manifest.capitalStreams).filter((entry) => entry.active !== false);
         const protocols = asArray(manifest.guardianProtocols);
         const domainSlugs = domains.map((domain) => String(domain.slug ?? ""));
 
@@ -2227,11 +2238,11 @@
           const budget = toNumber(stream.annualBudget, 0);
           if (!Number.isFinite(budget) || budget <= 0) continue;
           const streamName = stream.name || stream.slug || "Stream";
-          const targets = asArray(stream.domains).length ? asArray(stream.domains) : defaultTargets;
+          const targets = [...new Set((asArray(stream.domains).length ? asArray(stream.domains) : defaultTargets).map((x) => String(x).toLowerCase()))].filter((x) => domainSlugs.some((slug) => slug.toLowerCase() === x)).sort();
           for (const target of targets) {
             const normalized = String(target || "").toLowerCase();
             if (!normalized) continue;
-            fundingMap.set(normalized, (fundingMap.get(normalized) || 0) + budget);
+            fundingMap.set(normalized, (fundingMap.get(normalized) || 0) + Math.floor(budget / targets.length) + (targets.indexOf(target) < budget % targets.length ? 1 : 0));
             const list = streamBindings.get(normalized) || [];
             if (!list.includes(streamName)) {
               list.push(streamName);
@@ -2366,7 +2377,7 @@
         if (dominanceScore >= 95) {
           alerts.push({
             level: "success",
-            title: "Universal dominance secured",
+            title: "Scenario thresholds satisfied",
             description: `Dominance score ${dominanceScore.toFixed(1)} / 100 with sentinel coverage ${formatDuration(
               averageCoverageSeconds,
             )} per dominion. Maintain guardian oversight windows to keep the lattice green.`,
@@ -2862,7 +2873,7 @@
           .map((sink) => `<li>${escapeHtml(sink.name)} · ${escapeHtml(sink.target)} (${sink.retentionDays}d)</li>`)
           .join("");
         const consoles = asArray(safety.validatorConsoles)
-          .map((console) => `<li>${escapeHtml(console.name)} — <a href="${escapeHtml(console.url)}">${escapeHtml(console.url)}</a></li>`)
+          .map((console) => `<li>${escapeHtml(console.name)} — <a href="${safeHref(console.url)}">${escapeHtml(console.url)}</a></li>`)
           .join("");
 
         container.innerHTML = `
@@ -2978,7 +2989,7 @@
         }
 
         const validators = asArray(governance.validatorTools)
-          .map((tool) => `<li>${escapeHtml(tool.name)} — <a href="${escapeHtml(tool.url)}">${escapeHtml(tool.url)}</a></li>`)
+          .map((tool) => `<li>${escapeHtml(tool.name)} — <a href="${safeHref(tool.url)}">${escapeHtml(tool.url)}</a></li>`)
           .join("");
         const proposals = asArray(governance.proposalTemplates)
           .map((proposal) => `<li>${escapeHtml(proposal.title)} — ${escapeHtml(proposal.summary)} (ETA ${proposal.executionEtaHours}h)</li>`)
@@ -2990,7 +3001,7 @@
         container.innerHTML = `
           <article class="governance-card">
             <h3>Governance interface</h3>
-            <p><a href="${escapeHtml(governance.interface)}">${escapeHtml(governance.interface)}</a></p>
+            <p><a href="${safeHref(governance.interface)}">${escapeHtml(governance.interface)}</a></p>
           </article>
           <article class="governance-card">
             <h3>Validator tools</h3>
@@ -3269,7 +3280,7 @@
       }
 
       function renderDomains(container, manifest, context) {
-        const domains = asArray(manifest.domains);
+        const domains = asArray(manifest.domains).filter((entry) => entry.active !== false);
         if (!domains.length) {
           container.innerHTML = `<p data-i18n-key="fallbacks.noDominions">${t("fallbacks.noDominions")}</p>`;
           return;
@@ -3319,7 +3330,7 @@
       }
 
       function renderSentinels(container, manifest) {
-        const sentinels = asArray(manifest.sentinels);
+        const sentinels = asArray(manifest.sentinels).filter((entry) => entry.active !== false);
         if (!sentinels.length) {
           container.innerHTML = `<p data-i18n-key="fallbacks.noSentinels">${t("fallbacks.noSentinels")}</p>`;
           return;
@@ -3341,7 +3352,7 @@
       }
 
       function renderStreams(container, manifest) {
-        const streams = asArray(manifest.capitalStreams);
+        const streams = asArray(manifest.capitalStreams).filter((entry) => entry.active !== false);
         if (!streams.length) {
           container.innerHTML = `<p data-i18n-key="fallbacks.noStreams">${t("fallbacks.noStreams")}</p>`;
           return;
@@ -3533,9 +3544,9 @@
           return;
         }
 
-        const domains = asArray(manifest.domains);
-        const sentinels = asArray(manifest.sentinels);
-        const streams = asArray(manifest.capitalStreams);
+        const domains = asArray(manifest.domains).filter((entry) => entry.active !== false);
+        const sentinels = asArray(manifest.sentinels).filter((entry) => entry.active !== false);
+        const streams = asArray(manifest.capitalStreams).filter((entry) => entry.active !== false);
         const domainMap = new Map(domains.map((domain) => [String(domain.slug ?? "").toLowerCase(), domain]));
         const sentinelMap = new Map(sentinels.map((sentinel) => [String(sentinel.slug ?? "").toLowerCase(), sentinel]));
         const streamMap = new Map(streams.map((stream) => [String(stream.slug ?? "").toLowerCase(), stream]));
@@ -4042,6 +4053,7 @@
 
         if (window.mermaid) {
           try {
+            container.removeAttribute("data-processed");
             container.setAttribute("data-rendered", "pending");
             window.mermaid.initialize({ startOnLoad: false, theme: "dark" });
             Promise.resolve(window.mermaid.run({ nodes: [container] }))

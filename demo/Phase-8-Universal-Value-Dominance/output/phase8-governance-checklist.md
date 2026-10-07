@@ -1,13 +1,15 @@
+SYNTHETIC REHEARSAL: fixture inputs and addresses; no live execution, independent acceptance or settlement.
+
 # Phase 8 — Governance Execution Checklist
-Generated: 2025-10-26T13:37:19.417Z
+Generated: 2026-10-07T15:24:20.507Z
 
 > This briefing converts the encoded calldata manifest into a guardian flight plan so non-technical operators can command the universal value mesh with total confidence.
 
 - Manager Safe / Timelock: `0xfa12b3c4d5e6f7890abcdeffedcba98765432109`
-- Chain ID: 1
+- Chain ID: 31337
 - Universal dominance score: 97.1 / 100
 - Guardian lattice coverage: 45.0 min (minimum adequacy 125.0%)
-- Capital floor: $720.00B / yr per dominion (100% funded coverage)
+- Capital floor: $296.67B / yr per dominion (100% funded coverage)
 
 ## Execution order
 1. **Prime global parameters**
@@ -83,4 +85,4 @@ Generated: 2025-10-26T13:37:19.417Z
 - Publish the updated self-improvement plan hash and cadence to mission control.
 - Archive Safe transaction receipts with this checklist for audit trails — this forms the human verification layer for the superintelligence.
 
-> When every checkbox above is satisfied, guardians have mathematically verified control over the superintelligence — universal value dominance with human override dials intact.
+> These checks validate a synthetic rehearsal. They do not prove production readiness, superintelligence, independent review, or realized economic value.

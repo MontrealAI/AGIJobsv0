@@ -131,6 +131,34 @@ test('money remains exact at the smallest unit and both limits', () => {
     assert.throws(() => usdcUnits(value));
 });
 
+test('malformed Unicode cannot produce a task that the worker rejects or a silently changed source', () => {
+  for (const malformed of ['\ud800', '\udfff', 'text\ud800end']) {
+    for (const field of ['goal', 'scope', 'sources']) {
+      const fields = {
+        ...input,
+        [field]:
+          field === 'sources' ? 'https://example.org/' + malformed : malformed,
+      };
+      assert.throws(() => createDraft(fields), /Unicode/);
+      assert.throws(() => saveEditableDraft(fields), /invalid/);
+      assert.throws(
+        () =>
+          openEditableDraft(
+            JSON.stringify({ schema: 'agi-jobs-work-draft/v1', fields })
+          ),
+        /invalid/
+      );
+    }
+  }
+  const fields = {
+    ...input,
+    goal: 'Reproduce α — 🔬',
+    scope: 'Vérifier les résultats.',
+  };
+  assert.deepEqual(openEditableDraft(saveEditableDraft(fields)), fields);
+  assert.equal(createDraft(fields).task.goal, fields.goal);
+});
+
 test('source boundaries reject credentials, unsafe schemes, hidden normalization and local addresses', () => {
   for (const sources of [
     '',

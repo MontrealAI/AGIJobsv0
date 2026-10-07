@@ -7,12 +7,13 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
+    <aside style="padding:16px;color:#fff;background:#261737">Synthetic multi-agent UI simulation. Model names, metrics and actions are fixtures. <a href="../workbench/" style="color:#dac5ff">Open the work lab →</a></aside>
     <header>
       <h1>Phase 8 — Universal Value Dominance</h1>
-      <p>Command the most capable AI workforce ever assembled. No Solidity. No DevOps. Just outcomes.</p>
+      <p>Explore a coordinated workforce with inspectable evidence and owner controls.</p>
     </header>
 
-    <main>
+    <main id="main">
       <section class="panel">
         <h2>1. Load Mission Blueprint</h2>
         <input type="file" id="jobConfig" accept="application/json" />
@@ -134,8 +135,9 @@
       <small>Powered by AGI Jobs v0/v2 — command swarms, enforce governance, unlock universal value.</small>
     </footer>
 
+    <script src="../assets/mermaid.min.js"></script>
     <script type="module">
-      import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
+      const mermaid = window.mermaid;
       mermaid.initialize({ startOnLoad: false, theme: "dark" });
 
       const jobInput = document.getElementById("jobConfig");
@@ -164,6 +166,15 @@
       let jobConfig;
       let ownerConfig;
       let extensionConfig;
+
+      const escapeHtml = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+      const diagramLabel = (value) => String(value ?? "").replace(/[^a-zA-Z0-9 _-]/g, " ").slice(0, 120);
+      async function readObjectFile(file) {
+        if (file.size > 2 * 1024 * 1024) throw new Error("Use a JSON object smaller than 2 MiB.");
+        const value = JSON.parse(await file.text());
+        if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("Use a JSON object.");
+        return value;
+      }
 
       function renderMermaid(diagram) {
         mermaid
@@ -206,7 +217,7 @@
 
       function formatDependencies(deps) {
         if (!Array.isArray(deps) || deps.length === 0) return "—";
-        return deps.map((dep) => `${dep.type ?? "?"}:${dep.slug ?? "?"}`).join("<br/>");
+        return deps.map((dep) => `${escapeHtml(dep.type ?? "?")}:${escapeHtml(dep.slug ?? "?")}`).join("<br/>");
       }
 
       function renderExtensions(config) {
@@ -231,12 +242,12 @@
         extensions.forEach((extension) => {
           const row = document.createElement("tr");
           row.innerHTML = `
-            <td>${extension.name ?? extension.slug}</td>
-            <td>${extension.module ?? "—"}</td>
+            <td>${escapeHtml(extension.name ?? extension.slug)}</td>
+            <td>${escapeHtml(extension.module ?? "—")}</td>
             <td>${formatHours(Number(extension.upgradeWindowHours ?? 0))}</td>
             <td>${extension.pauseBeforeUpgrade ? "Yes" : "No"}</td>
             <td>${formatDependencies(extension.dependencies)}</td>
-            <td>${Array.isArray(extension.ciChecks) && extension.ciChecks.length > 0 ? extension.ciChecks.join("<br/>") : "—"}</td>
+            <td>${Array.isArray(extension.ciChecks) && extension.ciChecks.length > 0 ? extension.ciChecks.map(escapeHtml).join("<br/>") : "—"}</td>
           `;
           extensionTable.appendChild(row);
         });
@@ -245,8 +256,8 @@
       jobInput.addEventListener("change", async (event) => {
         const file = event.target.files?.[0];
         if (!file) return;
-        const text = await file.text();
-        jobConfig = JSON.parse(text);
+        try {
+        jobConfig = await readObjectFile(file);
         jobPreview.textContent = JSON.stringify(jobConfig, null, 2);
         const dominance = computeDominance(jobConfig);
         statDominance.textContent = `${dominance.toFixed(1)} / 100`;
@@ -256,14 +267,14 @@
         const validatorReward = Number(jobConfig?.validators?.rewardBps ?? 0) / 100;
         statValidator.textContent = validatorReward > 0 ? `${validatorReward.toFixed(2)}%` : "—";
         pushTimeline("Mission blueprint ingested. Telemetry refreshed.");
+        } catch (error) { jobConfig = undefined; jobPreview.textContent = "Could not load mission: " + error.message; pushTimeline("Mission file rejected.", "warn"); }
       });
 
       extensionInput?.addEventListener("change", async (event) => {
         const file = event.target.files?.[0];
         if (!file) return;
         try {
-          const text = await file.text();
-          extensionConfig = JSON.parse(text);
+          extensionConfig = await readObjectFile(file);
           renderExtensions(extensionConfig);
           pushTimeline("Contract extension plan analysed. Calldata available.");
         } catch (error) {
@@ -290,7 +301,7 @@
       function pushTimeline(message, tone = "info") {
         const card = document.createElement("div");
         card.className = `timeline-card ${tone}`;
-        card.innerHTML = `<strong>${new Date().toLocaleTimeString()}:</strong> ${message}`;
+        card.innerHTML = `<strong>${new Date().toLocaleTimeString()}:</strong> ${escapeHtml("Simulation · " + message)}`;
         timeline.prepend(card);
       }
 
@@ -333,11 +344,11 @@
       ownerInput.addEventListener("change", async (event) => {
         const file = event.target.files?.[0];
         if (!file) return;
-        const text = await file.text();
-        ownerConfig = JSON.parse(text);
+        try {
+        ownerConfig = await readObjectFile(file);
         ownerSummary.innerHTML = `
-          <p><strong>Owner:</strong> ${ownerConfig.owner}</p>
-          <p><strong>Pause Guardian:</strong> ${ownerConfig.pauseGuardian}</p>
+          <p><strong>Owner:</strong> ${escapeHtml(ownerConfig.owner)}</p>
+          <p><strong>Pause Guardian:</strong> ${escapeHtml(ownerConfig.pauseGuardian)}</p>
           <p><strong>Governance Council Seats:</strong> ${ownerConfig.governanceCouncil?.length ?? 0}</p>
         `;
 
@@ -346,11 +357,11 @@
           const row = document.createElement("tr");
           row.innerHTML = `
             <td>
-              <div class="module-name">${module.name}</div>
-              <small class="module-address">${module.address}</small>
+              <div class="module-name">${escapeHtml(module.name)}</div>
+              <small class="module-address">${escapeHtml(module.address)}</small>
             </td>
-            <td>${(module.capabilities ?? []).join(" · ")}</td>
-            <td>${(module.guardrails ?? []).join(" · ")}</td>
+            <td>${escapeHtml((module.capabilities ?? []).join(" · "))}</td>
+            <td>${escapeHtml((module.guardrails ?? []).join(" · "))}</td>
           `;
           ownerModules.appendChild(row);
         }
@@ -359,16 +370,16 @@
         for (const parameter of ownerConfig.parameters ?? []) {
           const row = document.createElement("tr");
           row.innerHTML = `
-            <td>${parameter.name} <small>${parameter.unit ?? ""}</small></td>
-            <td>${parameter.desired}</td>
-            <td>${parameter.call}</td>
+            <td>${escapeHtml(parameter.name)} <small>${escapeHtml(parameter.unit ?? "")}</small></td>
+            <td>${escapeHtml(parameter.desired)}</td>
+            <td>${escapeHtml(parameter.call)}</td>
           `;
           ownerParameters.appendChild(row);
         }
 
-        const checks = (ownerConfig.ci?.requireStatusChecks ?? []).map((check) => `<li>${check}</li>`).join("");
+        const checks = (ownerConfig.ci?.requireStatusChecks ?? []).map((check) => `<li>${escapeHtml(check)}</li>`).join("");
         ciSummary.innerHTML = `
-          <p><strong>CI Workflow:</strong> ${ownerConfig.ci?.workflow ?? "—"}</p>
+          <p><strong>CI Workflow:</strong> ${escapeHtml(ownerConfig.ci?.workflow ?? "—")}</p>
           <ul>${checks}</ul>
         `;
 
@@ -390,10 +401,11 @@
         ];
         for (const module of ownerConfig.controlSurfaces ?? []) {
           const nodeId = module.key.replace(/[^a-zA-Z0-9]/g, "").slice(0, 20) || "Module";
-          diagram.push(`  Manager --> ${nodeId}[${module.name}]`);
+          diagram.push(`  Manager --> ${nodeId}["${diagramLabel(module.name)}"]`);
         }
         renderMermaid(diagram.join("\n"));
         pushTimeline("Owner directives loaded. Full command surface activated.", "info");
+        } catch (error) { ownerConfig = undefined; ownerSummary.textContent = "Could not load owner directives: " + error.message; pushTimeline("Owner file rejected.", "warn"); }
       });
     </script>
   </body>

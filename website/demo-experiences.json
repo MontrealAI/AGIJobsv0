@@ -973,7 +973,7 @@
   },
   "Phase-6-Scaling-Multi-Domain-Expansion": {
     "question": "How can expansion across domains remain inspectable?",
-    "purpose": "For platform architects: connect a domain manifest to orchestration, owner controls and generated coverage evidence.",
+    "purpose": "For buyers and operators: plan one multi-domain dispatch wave, inspect illustrative domain policies and separate configuration from verified execution.",
     "steps": [
       {
         "title": "Read the domain manifest",
@@ -988,18 +988,26 @@
       {
         "title": "Review architecture and variants",
         "source": "demo/Phase-6-Scaling-Multi-Domain-Expansion/README.md",
-        "explanation": "Use the preserved original guide and additional flowcharts to connect components. Read each variant\u2019s own prerequisites before running it."
+        "explanation": "Use the preserved original guide and additional flowcharts to connect components. Read each variant’s own prerequisites before running it."
       }
     ],
     "command": "npm run demo:phase6:orchestrate",
-    "expected": "The orchestrator emits domain evidence and reports.",
+    "expected": "The orchestrator generates an illustrative blueprint and planning report. It does not dispatch computer work, verify live credentials or submit transactions.",
     "experiment": "Trace one domain from the manifest into the report. Identify what external identity, sensor or contract evidence would be required to commission it.",
     "mode": "node",
-    "related": []
+    "related": [],
+    "dashboardDescription": "The complete Phase 6 control surface preserves every configuration view and its original systems map. A browser-only lab models capacity, pauses domains and exports a synthetic task for operator review. No provider or chain is connected.",
+    "dashboards": [
+      {
+        "title": "Phase 6 expansion lab",
+        "route": "experiments/phase6/",
+        "source": "demo/Phase-6-Scaling-Multi-Domain-Expansion/index.html"
+      }
+    ]
   },
   "Phase-8-Universal-Value-Dominance": {
-    "question": "How can expansion across domains remain inspectable?",
-    "purpose": "For platform architects: connect a domain manifest to orchestration, owner controls and generated coverage evidence.",
+    "question": "How does broad machine capability become verified, useful work?",
+    "purpose": "Explore ten screen-work categories, budget and review constraints, and the preserved governance atlas.",
     "steps": [
       {
         "title": "Read the domain manifest",
@@ -1007,21 +1015,33 @@
         "explanation": "Inspect domains, policies, identities and capacity assumptions. Declared coverage is not evidence of a connected provider or deployed network."
       },
       {
-        "title": "Follow the executable path",
-        "source": "demo/Phase-8-Universal-Value-Dominance/run_demo.py",
-        "explanation": "Trace manifest validation and report generation. Phase 8\u2019s lightweight Python path computes address checks and model heuristics without launching the TypeScript stack."
+        "title": "Plan useful work",
+        "source": "demo/Phase-8-Universal-Value-Dominance/workbench/model.mjs",
+        "explanation": "Inspect admission, full reward reserves, review costs for every attempt, and explicit execution boundaries."
       },
       {
         "title": "Review architecture and variants",
         "source": "demo/Phase-8-Universal-Value-Dominance/README.md",
-        "explanation": "Use the preserved original guide and additional flowcharts to connect components. Read each variant\u2019s own prerequisites before running it."
+        "explanation": "Use the preserved original guide and additional flowcharts to connect components. Read each variant’s own prerequisites before running it."
       }
     ],
-    "command": "python demo/Phase-8-Universal-Value-Dominance/run_demo.py --output /tmp/phase8-demo.json",
-    "expected": "The Python runner writes /tmp/phase8-demo.json, including address validation and synthetic coverage/resilience metrics.",
-    "experiment": "Trace one domain from the manifest into the report. Identify what external identity, sensor or contract evidence would be required to commission it.",
-    "mode": "stdlib",
-    "related": []
+    "command": "npm run demo:phase8:work -- run /tmp/phase8-work",
+    "expected": "A capacity plan, ten work-order drafts, calculation report and SHA-256 artifact receipt. No provider calls or settlement.",
+    "experiment": "Reduce reviewer hours and compare admitted jobs. Export a bundle and check its arithmetic with the separate Python verifier.",
+    "mode": "node",
+    "related": [],
+    "dashboards": [
+      {
+        "route": "experiments/phase8/workbench/",
+        "title": "Open the Universal Value Work Lab",
+        "source": "demo/Phase-8-Universal-Value-Dominance/workbench/index.html"
+      },
+      {
+        "route": "experiments/phase8/",
+        "title": "Explore the governance atlas",
+        "source": "demo/Phase-8-Universal-Value-Dominance/index.html"
+      }
+    ]
   },
   "sovereign-constellation": {
     "question": "How do an operator console, API and contracts fit together?",

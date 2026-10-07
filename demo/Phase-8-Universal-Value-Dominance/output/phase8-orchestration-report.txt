@@ -1,12 +1,14 @@
+SYNTHETIC REHEARSAL: fixture inputs and addresses; no live execution, independent acceptance or settlement.
+
 PHASE 8 — UNIVERSAL VALUE DOMINANCE :: OPERATOR RUNBOOK
-Generated at 2025-10-26T13:37:19.417Z
+Generated at 2026-10-07T15:24:20.507Z
 
 Key telemetry snapshot:
 • Universal dominance score: 97.1 / 100
 • Total monthly value flow: $688.00B
 • Annual capital allocation: $1.97T
 • Sentinel lattice coverage: 45.0 minutes / cycle
-• Domains funded: 100.0% · Minimum funding floor $720.00B
+• Domains funded: 100.0% · Minimum funding floor $296.67B
 • Minimum sentinel coverage: 900s vs guardian window 720s
 • Autonomous session envelope: 6.50h · 480,000 tokens · checkpoint 20m
 • AI team mesh: 3 teams covering 100.0% of dominions
@@ -29,11 +31,11 @@ Manifesto URI: ipfs://agi-jobs/phase8/manifest.json
 Manifesto Hash: 0x3c0842c55548b2d2972b57504c6c582b7b4c8cd02b5113b122d2e825282a4b49
 
 Dominion readiness checks:
-• Planetary Finance Mesh: Resilience 0.960 · Autonomy 7800 bps · Sentinel coverage 900s (125.0% of window) · Funding $890.00B/yr
-• Climate Harmonizer Array: Resilience 0.940 · Autonomy 7400 bps · Sentinel coverage 900s (125.0% of window) · Funding $720.00B/yr
-• Health Sovereign Continuum: Resilience 0.910 · Autonomy 7000 bps · Sentinel coverage 900s (125.0% of window) · Funding $890.00B/yr
-• Infrastructure Synthesis Grid: Resilience 0.915 · Autonomy 7600 bps · Sentinel coverage 900s (125.0% of window) · Funding $1.08T/yr
-• Knowledge Lattice Nexus: Resilience 0.902 · Autonomy 6900 bps · Sentinel coverage 900s (125.0% of window) · Funding $1.25T/yr
+• Planetary Finance Mesh: Resilience 0.960 · Autonomy 7800 bps · Sentinel coverage 900s (125.0% of window) · Funding $296.67B/yr
+• Climate Harmonizer Array: Resilience 0.940 · Autonomy 7400 bps · Sentinel coverage 900s (125.0% of window) · Funding $360.00B/yr
+• Health Sovereign Continuum: Resilience 0.910 · Autonomy 7000 bps · Sentinel coverage 900s (125.0% of window) · Funding $296.67B/yr
+• Infrastructure Synthesis Grid: Resilience 0.915 · Autonomy 7600 bps · Sentinel coverage 900s (125.0% of window) · Funding $540.00B/yr
+• Knowledge Lattice Nexus: Resilience 0.902 · Autonomy 6900 bps · Sentinel coverage 900s (125.0% of window) · Funding $476.67B/yr
 
 Self-improvement kernel:
 • Plan URI ipfs://agi-jobs/phase8/self-improvement/plan.json

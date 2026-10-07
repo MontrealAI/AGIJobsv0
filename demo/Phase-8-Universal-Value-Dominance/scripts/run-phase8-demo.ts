@@ -11,7 +11,7 @@ import { Interface, keccak256, toUtf8Bytes } from "ethers";
 import { z, ZodError } from "zod";
 
 const CONFIG_PATH = join(__dirname, "..", "config", "universal.value.manifest.json");
-const OUTPUT_DIR = join(__dirname, "..", "output");
+const OUTPUT_DIR = process.env.PHASE8_OUTPUT_DIR || join(__dirname, "..", "output");
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 const ZERO_HASH = "0x0000000000000000000000000000000000000000000000000000000000000000";
 const HEX_ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
@@ -75,12 +75,15 @@ const BigNumberishSchema = z
   .union([z.string(), z.number(), z.bigint(), z.undefined(), z.null()])
   .transform((value) => {
     if (value === undefined || value === null) return "0";
-    if (typeof value === "bigint") return value.toString();
+    if (typeof value === "bigint") {
+      if (value < 0n) throw new Error("BigInt fields must be non-negative");
+      return value.toString();
+    }
     if (typeof value === "number") {
-      if (!Number.isFinite(value) || value < 0) {
-        throw new Error("BigInt fields must be finite and non-negative");
+      if (!Number.isSafeInteger(value) || value < 0) {
+        throw new Error("BigInt numeric fields must be safe non-negative integers; use a decimal string for larger values");
       }
-      return Math.trunc(value).toString();
+      return value.toString();
     }
     if (typeof value !== "string") {
       throw new Error("BigInt fields must be provided as a string, number, or bigint");
@@ -95,22 +98,22 @@ const BigNumberishSchema = z
 
 const ChainIdSchema = z
   .preprocess((value) => {
-    if (value === undefined || value === null || value === "") return undefined;
+    if (value === undefined || value === null || value === "") return 31337;
     if (typeof value === "bigint") return Number(value);
     if (typeof value === "number") return value;
     if (typeof value === "string") {
       const trimmed = value.trim();
-      if (trimmed === "") return undefined;
+      if (trimmed === "") return 31337;
       const parsed = Number(trimmed);
       return Number.isFinite(parsed) ? parsed : trimmed;
     }
     return value;
   }, z
     .number({ invalid_type_error: "Chain ID must be a number" })
-    .int("Chain ID must be a whole number")
+    .int("Chain ID must be a whole number").safe("Chain ID must be a safe integer")
     .positive("Chain ID must be positive")
     .optional())
-  .default(1);
+  .default(31337);
 
 const EnvironmentSchema = z
   .object({
@@ -417,11 +420,11 @@ const DomainSchema = z.object({
   autonomyLevelBps: z
     .number({ invalid_type_error: "Domain autonomyLevelBps must be a number" })
     .int("Domain autonomyLevelBps must be an integer")
-    .nonnegative("Domain autonomyLevelBps cannot be negative"),
+    .nonnegative("Domain autonomyLevelBps cannot be negative").max(10000, "Domain autonomyLevelBps cannot exceed 10000"),
   skillTags: z.array(z.string()).default([]),
   resilienceIndex: z
     .number({ invalid_type_error: "Domain resilienceIndex must be a number" })
-    .min(0, "Domain resilienceIndex cannot be negative"),
+    .min(0, "Domain resilienceIndex cannot be negative").max(1, "Domain resilienceIndex cannot exceed 1"),
   valueFlowMonthlyUSD: z
     .number({ invalid_type_error: "Domain valueFlowMonthlyUSD must be a number" })
     .nonnegative("Domain valueFlowMonthlyUSD cannot be negative")
@@ -442,7 +445,7 @@ const SentinelSchema = z.object({
   sensitivityBps: z
     .number({ invalid_type_error: "Sentinel sensitivityBps must be a number" })
     .int("Sentinel sensitivityBps must be an integer")
-    .nonnegative("Sentinel sensitivityBps cannot be negative"),
+    .nonnegative("Sentinel sensitivityBps cannot be negative").max(10000, "Sentinel sensitivityBps cannot exceed 10000"),
   domains: z.array(z.string()).default([]),
   active: z.boolean().default(true),
 });
@@ -453,13 +456,13 @@ const StreamSchema = z.object({
   uri: z.string({ required_error: "Capital stream uri is required" }).min(1, "Capital stream uri is required"),
   vault: AddressSchema,
   annualBudget: z
-    .number({ invalid_type_error: "Capital stream annualBudget must be a number" })
+    .number({ invalid_type_error: "Capital stream annualBudget must be a number" }).int("Capital stream annualBudget must use whole USD").safe("Capital stream annualBudget must be a safe integer")
     .nonnegative("Capital stream annualBudget cannot be negative")
     .default(0),
   expansionBps: z
     .number({ invalid_type_error: "Capital stream expansionBps must be a number" })
     .int("Capital stream expansionBps must be an integer")
-    .nonnegative("Capital stream expansionBps cannot be negative"),
+    .nonnegative("Capital stream expansionBps cannot be negative").max(10000, "Capital stream expansionBps cannot exceed 10000"),
   domains: z.array(z.string()).default([]),
   active: z.boolean().default(true),
 });
@@ -572,6 +575,21 @@ const SelfImprovementSchema = z.object({
   guardrails: KernelGuardrailsSchema,
 });
 
+function safeAnnualBudgetTotal(streams: Array<{ annualBudget?: number; active?: boolean }>): number {
+  let total = 0n;
+  for (const stream of streams) {
+    if (stream.active === false) continue;
+    if (typeof stream.annualBudget !== "number" || !Number.isSafeInteger(stream.annualBudget) || stream.annualBudget < 0) {
+      throw new Error("Annual budgets must be non-negative safe whole USD amounts");
+    }
+    total += BigInt(stream.annualBudget);
+  }
+  if (total > BigInt(Number.MAX_SAFE_INTEGER)) {
+    throw new Error("Aggregate active annual budget exceeds the safe whole USD limit");
+  }
+  return Number(total);
+}
+
 const ManifestSchema = z
   .object({
     global: z.object({
@@ -595,7 +613,7 @@ const ManifestSchema = z
       maxDrawdownBps: z
         .number({ invalid_type_error: "Global maxDrawdownBps must be a number" })
         .int("Global maxDrawdownBps must be an integer")
-        .nonnegative("Global maxDrawdownBps cannot be negative"),
+        .nonnegative("Global maxDrawdownBps cannot be negative").max(10000, "Global maxDrawdownBps cannot exceed 10000"),
       manifestoURI: z
         .string({ required_error: "Global manifestoURI is required" })
         .min(1, "Global manifestoURI is required"),
@@ -655,6 +673,11 @@ const ManifestSchema = z
     });
 
     const streams = value.capitalStreams ?? [];
+    try {
+      safeAnnualBudgetTotal(streams);
+    } catch (error) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: (error as Error).message, path: ["capitalStreams"] });
+    }
     const streamSlugMap = new Map<string, number>();
     streams.forEach((stream, index) => {
       const slug = String(stream?.slug ?? "").toLowerCase();
@@ -741,7 +764,7 @@ const ManifestSchema = z
     }
   
     const guardianWindow = Number(value.global?.guardianReviewWindow ?? 0);
-    const domainSlugs = Array.from(domainSlugMap.keys());
+    const domainSlugs = domains.filter((domain) => domain.active !== false).map((domain) => domain.slug.toLowerCase());
 
     sentinels.forEach((sentinel, index) => {
       (sentinel.domains ?? []).forEach((domain, domainIndex) => {
@@ -771,8 +794,8 @@ const ManifestSchema = z
       });
     });
 
-    if (guardianWindow > 0) {
-      const coverage = (value.sentinels ?? []).reduce((acc, sentinel) => {
+    if (guardianWindow > 0 && domainSlugs.length > 0) {
+      const coverage = (value.sentinels ?? []).filter((sentinel) => sentinel.active !== false).reduce((acc, sentinel) => {
         const raw = Number(sentinel?.coverageSeconds ?? 0);
         return acc + (Number.isFinite(raw) && raw > 0 ? raw : 0);
       }, 0);
@@ -785,11 +808,12 @@ const ManifestSchema = z
       }
 
       const domainCoverage = new Map<string, number>();
-      if (domainSlugs.length !== domains.length) {
+      if (domainSlugMap.size !== domains.length) {
         return;
       }
       const domainSlugSet = new Set(domainSlugs);
       for (const sentinel of value.sentinels ?? []) {
+        if (sentinel.active === false) continue;
         const sentinelCoverage = Number(sentinel?.coverageSeconds ?? 0);
         if (!Number.isFinite(sentinelCoverage) || sentinelCoverage <= 0) continue;
         const sentinelDomains = Array.from(
@@ -1028,6 +1052,7 @@ export function parseManifest(raw: unknown): Phase8Config {
 }
 
 type SentinelRecord = {
+  active?: boolean;
   slug?: string | null;
   coverageSeconds?: number;
   domains?: string[];
@@ -1040,6 +1065,7 @@ function coverageMap(sentinels: SentinelRecord[], domainSlugs: string[]): Map<st
   );
 
   for (const sentinel of sentinels) {
+    if (sentinel.active === false) continue;
     const coverage = Number(sentinel.coverageSeconds ?? 0);
     if (!Number.isFinite(coverage) || coverage <= 0) continue;
 
@@ -1047,7 +1073,7 @@ function coverageMap(sentinels: SentinelRecord[], domainSlugs: string[]): Map<st
       new Set((sentinel.domains ?? []).map((domain) => String(domain || "").toLowerCase()).filter(Boolean)),
     );
 
-    const targets = sentinelDomains.length > 0 ? sentinelDomains : normalizedDomains;
+    const targets = sentinelDomains.length > 0 ? sentinelDomains.filter((slug) => normalizedDomains.includes(slug)) : normalizedDomains;
     if (targets.length === 0) continue;
 
     for (const domain of targets) {
@@ -1059,6 +1085,7 @@ function coverageMap(sentinels: SentinelRecord[], domainSlugs: string[]): Map<st
 }
 
 type CapitalStreamRecord = {
+  active?: boolean;
   slug?: string | null;
   annualBudget?: number;
   domains?: string[];
@@ -1071,6 +1098,7 @@ function capitalCoverageMap(streams: CapitalStreamRecord[], domainSlugs: string[
   );
 
   for (const stream of streams) {
+    if (stream.active === false) continue;
     const budget = Number(stream.annualBudget ?? 0);
     if (!Number.isFinite(budget) || budget <= 0) continue;
 
@@ -1078,11 +1106,11 @@ function capitalCoverageMap(streams: CapitalStreamRecord[], domainSlugs: string[
       new Set((stream.domains ?? []).map((domain) => String(domain || "").toLowerCase()).filter(Boolean)),
     );
 
-    const targets = streamDomains.length > 0 ? streamDomains : normalizedDomains;
+    const targets = streamDomains.length > 0 ? streamDomains.filter((slug) => normalizedDomains.includes(slug)).sort() : [...normalizedDomains].sort();
     if (targets.length === 0) continue;
 
     for (const domain of targets) {
-      map.set(domain, (map.get(domain) ?? 0) + budget);
+      map.set(domain, (map.get(domain) ?? 0) + Math.floor(budget / targets.length) + (targets.indexOf(domain) < budget % targets.length ? 1 : 0));
     }
   }
 
@@ -1091,11 +1119,13 @@ function capitalCoverageMap(streams: CapitalStreamRecord[], domainSlugs: string[
 
 function sentinelNameMap(config: Phase8Config): Map<string, string[]> {
   const map = new Map<string, string[]>();
+  const activeSlugs = (config.domains ?? []).filter((domain) => domain.active !== false).map((domain) => domain.slug.toLowerCase());
   for (const sentinel of config.sentinels ?? []) {
+    if (sentinel.active === false) continue;
     const label = sentinel.name ?? sentinel.slug ?? "sentinel";
-    for (const domain of sentinel.domains ?? []) {
+    for (const domain of (sentinel.domains ?? []).length > 0 ? sentinel.domains : activeSlugs) {
       const slug = String(domain || "").toLowerCase();
-      if (!slug) continue;
+      if (!activeSlugs.includes(slug)) continue;
       const entries = map.get(slug) ?? [];
       if (!entries.includes(label)) {
         entries.push(label);
@@ -1108,11 +1138,13 @@ function sentinelNameMap(config: Phase8Config): Map<string, string[]> {
 
 function streamNameMap(config: Phase8Config): Map<string, string[]> {
   const map = new Map<string, string[]>();
+  const activeSlugs = (config.domains ?? []).filter((domain) => domain.active !== false).map((domain) => domain.slug.toLowerCase());
   for (const stream of config.capitalStreams ?? []) {
+    if (stream.active === false) continue;
     const label = stream.name ?? stream.slug ?? "stream";
-    for (const domain of stream.domains ?? []) {
+    for (const domain of (stream.domains ?? []).length > 0 ? stream.domains : activeSlugs) {
       const slug = String(domain || "").toLowerCase();
-      if (!slug) continue;
+      if (!activeSlugs.includes(slug)) continue;
       const entries = map.get(slug) ?? [];
       if (!entries.includes(label)) {
         entries.push(label);
@@ -1164,7 +1196,7 @@ export function schedulePlaybooks(config: Phase8Config, now: number = Math.floor
 
 export function guardrailDiagnostics(config: Phase8Config): string[] {
   const diagnostics: string[] = [];
-  const domains = config.domains ?? [];
+  const domains = (config.domains ?? []).filter((domain) => domain.active !== false);
   const guardianWindow = Number(config.global?.guardianReviewWindow ?? 0);
   const globalHeartbeat = Number(config.global?.heartbeatSeconds ?? 0);
   const guardrailCap = Number(config.selfImprovement?.autonomyGuards?.maxAutonomyBps ?? NaN);
@@ -1250,9 +1282,10 @@ function shortAddress(label: string, address?: string) {
 }
 
 export function computeMetrics(config: Phase8Config) {
-  const domains = config.domains ?? [];
-  const sentinels = config.sentinels ?? [];
-  const streams = config.capitalStreams ?? [];
+  const domains = (config.domains ?? []).filter((entry) => entry.active !== false);
+  const sentinels = (config.sentinels ?? []).filter((entry) => entry.active !== false);
+  const streams = (config.capitalStreams ?? []).filter((entry) => entry.active !== false);
+  const annualBudget = safeAnnualBudgetTotal(streams);
   const protocols = config.guardianProtocols ?? [];
   const plan = config.selfImprovement?.plan ?? {};
   const autonomy = config.autonomy;
@@ -1273,7 +1306,6 @@ export function computeMetrics(config: Phase8Config) {
       ? 0
       : domains.reduce((acc: number, domain: any) => acc + Number(domain.resilienceIndex ?? 0), 0) / domains.length;
   const guardianCoverageMinutes = sentinels.reduce((acc: number, sentinel: any) => acc + Number(sentinel.coverageSeconds ?? 0), 0) / 60;
-  const annualBudget = streams.reduce((acc: number, stream: any) => acc + Number(stream.annualBudget ?? 0), 0);
 
   const coverageSet = new Set<string>();
   const fundedSet = new Set<string>();
@@ -1347,7 +1379,7 @@ export function computeMetrics(config: Phase8Config) {
   aiTeams.forEach((team) => {
     (team.domains ?? []).forEach((domain) => {
       const normalized = String(domain ?? "").toLowerCase();
-      if (normalized) {
+      if (domainSlugSet.has(normalized)) {
         aiTeamDomainSet.add(normalized);
       }
     });
@@ -1459,9 +1491,9 @@ type MetricToleranceOverrides = Partial<
 
 export function crossVerifyMetrics(config: Phase8Config, overrides: MetricToleranceOverrides = {}) {
   const metrics = computeMetrics(config);
-  const domains = config.domains ?? [];
-  const sentinels = config.sentinels ?? [];
-  const streams = config.capitalStreams ?? [];
+  const domains = (config.domains ?? []).filter((entry) => entry.active !== false);
+  const sentinels = (config.sentinels ?? []).filter((entry) => entry.active !== false);
+  const streams = (config.capitalStreams ?? []).filter((entry) => entry.active !== false);
   const protocols = config.guardianProtocols ?? [];
 
   const severityWeights: Record<string, number> = { critical: 1, high: 0.75, medium: 0.5, low: 0.25 };
@@ -1474,13 +1506,14 @@ export function crossVerifyMetrics(config: Phase8Config, overrides: MetricTolera
   const coverageByDomain = new Map<string, number>();
   let totalSentinelCoverageSeconds = 0;
   for (const sentinel of sentinels) {
+    if (sentinel.active === false) continue;
     const coverage = Number(sentinel.coverageSeconds ?? 0);
     if (!Number.isFinite(coverage) || coverage <= 0) continue;
     totalSentinelCoverageSeconds += coverage;
     const declaredTargets = Array.from(
       new Set((sentinel.domains ?? []).map((entry) => String(entry ?? "").toLowerCase()).filter((entry) => domainSet.has(entry))),
     );
-    const targets = declaredTargets.length > 0 ? declaredTargets : domainSlugs;
+    const targets = (sentinel.domains ?? []).length > 0 ? declaredTargets : domainSlugs;
     for (const target of targets) {
       coverageByDomain.set(target, (coverageByDomain.get(target) ?? 0) + coverage);
     }
@@ -1491,15 +1524,16 @@ export function crossVerifyMetrics(config: Phase8Config, overrides: MetricTolera
     fundingByDomain.set(slug, 0);
   }
   for (const stream of streams) {
+    if (stream.active === false) continue;
     const budgetRaw = Number(stream.annualBudget ?? 0);
     if (!Number.isFinite(budgetRaw) || budgetRaw <= 0) continue;
     const declaredTargets = Array.from(
       new Set((stream.domains ?? []).map((entry) => String(entry ?? "").toLowerCase()).filter((entry) => domainSet.has(entry))),
     );
-    const targets = declaredTargets.length > 0 ? declaredTargets : domainSlugs;
+    const targets = ((stream.domains ?? []).length > 0 ? declaredTargets : [...domainSlugs]).sort();
     for (const target of targets) {
       const current = fundingByDomain.get(target) ?? 0;
-      fundingByDomain.set(target, current + budgetRaw);
+      fundingByDomain.set(target, current + Number((BigInt(budgetRaw) + BigInt(targets.length - 1 - targets.indexOf(target))) / BigInt(targets.length)));
     }
   }
 
@@ -1569,7 +1603,7 @@ export function crossVerifyMetrics(config: Phase8Config, overrides: MetricTolera
                     .filter((entry) => domainSet.has(entry)),
                 ),
               );
-              const targets = declared.length > 0 ? declared : domainSlugs;
+              const targets = (protocol.linkedDomains ?? []).length > 0 ? declared : domainSlugs;
               for (const target of targets) {
                 coverageSet.add(target);
               }
@@ -2441,12 +2475,16 @@ function generateOperatorRunbook(
 
   lines.push("Dominion readiness checks:");
   const guardianWindow = Number(config.global?.guardianReviewWindow ?? 0);
-  const coverage = coverageMap(config.sentinels ?? [], (config.domains ?? []).map((d) => String(d.slug ?? "")));
+  const coverage = coverageMap(config.sentinels ?? [], (config.domains ?? []).filter((d) => d.active !== false).map((d) => String(d.slug ?? "")));
   const funding = capitalCoverageMap(
     config.capitalStreams ?? [],
-    (config.domains ?? []).map((d) => String(d.slug ?? "")),
+    (config.domains ?? []).filter((d) => d.active !== false).map((d) => String(d.slug ?? "")),
   );
   for (const domain of config.domains ?? []) {
+    if (domain.active === false) {
+      lines.push(`• ${domain.name}: INACTIVE — excluded from readiness checks and active coverage/funding totals.`);
+      continue;
+    }
     const slug = String(domain.slug ?? "").toLowerCase();
     const domainCoverage = coverage.get(slug) ?? 0;
     const coverageStatus = guardianWindow > 0 ? `${(domainCoverage / guardianWindow * 100).toFixed(1)}% of window` : "n/a";
@@ -2572,14 +2610,15 @@ function generateCycleReportCsv(
 ): string {
   const guardianWindow = Number(config.global?.guardianReviewWindow ?? 0);
   const domains = config.domains ?? [];
-  const coverage = coverageMap(config.sentinels ?? [], domains.map((domain) => String(domain.slug ?? "")));
+  const coverage = coverageMap(config.sentinels ?? [], domains.filter((domain) => domain.active !== false).map((domain) => String(domain.slug ?? "")));
   const funding = capitalCoverageMap(
     config.capitalStreams ?? [],
-    domains.map((domain) => String(domain.slug ?? "")),
+    domains.filter((domain) => domain.active !== false).map((domain) => String(domain.slug ?? "")),
   );
   const header = [
     "slug",
     "name",
+    "active",
     "resilience_index",
     "autonomy_bps",
     "monthly_value_usd",
@@ -2599,10 +2638,11 @@ function generateCycleReportCsv(
     const fundingUSD = funding.get(normalized) ?? 0;
     const capitalShare = metrics.annualBudget > 0 ? (fundingUSD / metrics.annualBudget) * 100 : 0;
     const resilience = Number(domain.resilienceIndex ?? 0);
-    const resilienceStatus = resilience < RESILIENCE_ALERT_THRESHOLD ? "review" : "stable";
+    const resilienceStatus = domain.active === false ? "inactive" : resilience < RESILIENCE_ALERT_THRESHOLD ? "review" : "stable";
     const row = [
       slug,
       domain.name ?? slug,
+      String(domain.active !== false),
       resilience.toFixed(3),
       Number(domain.autonomyLevelBps ?? 0).toString(),
       Number(domain.valueFlowMonthlyUSD ?? 0).toString(),
@@ -2692,10 +2732,10 @@ function generateGovernanceDirectives(
   generatedAt: string,
 ): string {
   const guardianWindow = Number(config.global?.guardianReviewWindow ?? 0);
-  const coverageSeconds = coverageMap(config.sentinels ?? [], (config.domains ?? []).map((domain) => String(domain.slug ?? "")));
+  const coverageSeconds = coverageMap(config.sentinels ?? [], (config.domains ?? []).filter((domain) => domain.active !== false).map((domain) => String(domain.slug ?? "")));
   const fundingUSD = capitalCoverageMap(
     config.capitalStreams ?? [],
-    (config.domains ?? []).map((domain) => String(domain.slug ?? "")),
+    (config.domains ?? []).filter((domain) => domain.active !== false).map((domain) => String(domain.slug ?? "")),
   );
   const sentinelLabels = sentinelNameMap(config);
   const streamLabels = streamNameMap(config);
@@ -2721,7 +2761,7 @@ function generateGovernanceDirectives(
     "2. Run `npm run demo:phase8:orchestrate` to regenerate calldata, scorecard, and operator briefings.",
   );
   lines.push(
-    "3. Load `output/phase8-governance-calldata.json` or `output/phase8-safe-transaction-batch.json` into your multisig / timelock and execute the queued actions in sequence.",
+    "3. Inspect the synthetic calldata and Safe batch offline. Before any signing, replace fixture addresses and verify chain ID, deployed code, owner authority, full simulation and independent review.",
   );
   lines.push(
     "4. Distribute `output/phase8-governance-directives.md` and `output/phase8-dominance-scorecard.json` to guardian council and observers for sign-off.",
@@ -2730,6 +2770,10 @@ function generateGovernanceDirectives(
   lines.push("");
   lines.push("## Oversight priorities");
   for (const domain of config.domains ?? []) {
+    if (domain.active === false) {
+      lines.push(`- ${domain.name}: INACTIVE — excluded from readiness checks and active coverage/funding totals.`);
+      continue;
+    }
     const slug = String(domain.slug ?? "").toLowerCase();
     const coverage = coverageSeconds.get(slug) ?? 0;
     const coveragePercent = guardianWindow > 0 ? (coverage / guardianWindow) * 100 : 0;
@@ -2798,15 +2842,16 @@ function generateDominanceScorecard(
   environment: EnvironmentConfig,
   generatedAt: string,
 ) {
-  const coverageSeconds = coverageMap(config.sentinels ?? [], (config.domains ?? []).map((domain) => String(domain.slug ?? "")));
+  const coverageSeconds = coverageMap(config.sentinels ?? [], (config.domains ?? []).filter((domain) => domain.active !== false).map((domain) => String(domain.slug ?? "")));
   const fundingUSD = capitalCoverageMap(
     config.capitalStreams ?? [],
-    (config.domains ?? []).map((domain) => String(domain.slug ?? "")),
+    (config.domains ?? []).filter((domain) => domain.active !== false).map((domain) => String(domain.slug ?? "")),
   );
   const sentinelLabels = sentinelNameMap(config);
   const streamLabels = streamNameMap(config);
   return {
     generatedAt,
+    activityPolicy: "Headline metrics and allocated funding count active entities only. Detailed entries retain configured values; active=false entries contribute no active capacity.",
     chain: {
       id: environment.chainId,
       manager: environment.managerAddress,
@@ -2848,6 +2893,7 @@ function generateDominanceScorecard(
       const slug = String(domain.slug ?? "").toLowerCase();
       return {
         slug,
+        active: domain.active !== false,
         name: domain.name,
         autonomyLevelBps: domain.autonomyLevelBps,
         resilienceIndex: Number(domain.resilienceIndex ?? 0),
@@ -2862,6 +2908,7 @@ function generateDominanceScorecard(
     }),
     sentinels: (config.sentinels ?? []).map((sentinel) => ({
       slug: sentinel.slug,
+      active: sentinel.active !== false,
       name: sentinel.name,
       coverageSeconds: Number(sentinel.coverageSeconds ?? 0),
       sensitivityBps: Number(sentinel.sensitivityBps ?? 0),
@@ -2869,6 +2916,7 @@ function generateDominanceScorecard(
     })),
     capitalStreams: (config.capitalStreams ?? []).map((stream) => ({
       slug: stream.slug,
+      active: stream.active !== false,
       name: stream.name,
       annualBudgetUSD: Number(stream.annualBudget ?? 0),
       expansionBps: Number(stream.expansionBps ?? 0),
@@ -3157,7 +3205,7 @@ function generateGovernanceChecklist(
 
   lines.push("");
   lines.push(
-    "> When every checkbox above is satisfied, guardians have mathematically verified control over the superintelligence — universal value dominance with human override dials intact.",
+    "> These checks validate a synthetic rehearsal. They do not prove production readiness, superintelligence, independent review, or realized economic value.",
   );
 
   return `${lines.join("\n")}\n`;
@@ -3185,6 +3233,9 @@ export function writeArtifacts(
       : manifestManager;
   const chainId = overrides.chainId ?? environment.chainId;
   const callManifest = {
+    evidenceClass: "synthetic-governance-rehearsal",
+    productionApproved: false,
+    settlementApproved: false,
     generatedAt,
     managerAddress,
     chainId,
@@ -3216,10 +3267,10 @@ export function writeArtifacts(
     chainId: String(chainId),
     createdAt: Date.now(),
     meta: {
-      name: "Phase 8 — Universal Value Dominance",
-      description: `Generated by AGI Jobs v0 (v2) on ${generatedAt}`,
+      name: "Phase 8 — SIMULATION ONLY — Universal Value Dominance",
+      description: `SIMULATION ONLY: fixture addresses; verify chain, deployed bytecode, authority and simulation before signing. Generated on ${generatedAt}`,
       txBuilderVersion: "1.16.1",
-      createdFromSafeAddress: managerAddress,
+      createdFromSafeAddress: "",
       createdFromOwnerAddress: "",
       checksum: "",
     },
@@ -3273,6 +3324,14 @@ export function writeArtifacts(
 
   const aiTeamMatrixPath = join(outputDir, "phase8-ai-team-matrix.json");
   writeFileSync(aiTeamMatrixPath, `${JSON.stringify(generateAiTeamMatrix(config, metrics, generatedAt), null, 2)}\n`);
+
+  for (const artifact of [scorecardPath, planPayloadPath, emergencyOverridesPath, aiTeamMatrixPath]) {
+    const payload = JSON.parse(readFileSync(artifact, "utf8"));
+    writeFileSync(artifact, JSON.stringify({ evidenceClass: "synthetic-governance-rehearsal", productionApproved: false, settlementApproved: false, ...payload }, null, 2) + "\n");
+  }
+  for (const artifact of [reportPath, operatorRunbookPath, directivesPath, checklistPath, guardianPlaybookPath]) {
+    writeFileSync(artifact, "SYNTHETIC REHEARSAL: fixture inputs and addresses; no live execution, independent acceptance or settlement.\n\n" + readFileSync(artifact, "utf8"));
+  }
 
   return [
     { label: "Calldata manifest", path: callManifestPath },
@@ -3338,7 +3397,7 @@ export function main() {
 
     const { metrics } = crossVerifyMetrics(config);
     banner("Network telemetry");
-    console.log(`Total monthly on-chain value: ${usd(metrics.totalMonthlyUSD)}`);
+    console.log(`Synthetic monthly value assumption: ${usd(metrics.totalMonthlyUSD)}`);
     console.log(`Annual capital allocation: ${usd(metrics.annualBudget)}`);
     console.log(`Average resilience index: ${metrics.averageResilience.toFixed(3)}`);
     console.log(`Universal dominance score: ${metrics.dominanceScore.toFixed(1)} / 100`);
@@ -3475,7 +3534,7 @@ export function main() {
     banner("How to run");
     console.log("  1. Execute `npm ci` (first run only)");
     console.log("  2. Run `npm run demo:phase8:orchestrate`");
-    console.log("  3. Paste emitted calldata into the governance console / Safe");
+    console.log("  3. Inspect synthetic calldata offline; verify deployments and authority before signing");
     console.log("  4. Open demo UI via `npx serve demo/Phase-8-Universal-Value-Dominance`");
   } catch (error) {
     console.error("\n\x1b[31mPhase 8 orchestration failed\x1b[0m");

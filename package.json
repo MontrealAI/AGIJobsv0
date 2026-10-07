@@ -283,7 +283,7 @@
     "demo:omni-sovereign": "bash demo/omni-sovereign-ascension-operating-system/bin/launch.sh",
     "demo:onebox:doctor": "node demo/One-Box/bin/doctor.cjs",
     "demo:onebox:launch": "node demo/One-Box/bin/start-onebox.cjs",
-    "demo:phase6:apply": "npx hardhat run --no-compile scripts/phase6/apply-config.ts",
+    "demo:phase6:apply": "ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/phase6/apply-config.ts",
     "demo:phase6:ci": "node demo/Phase-6-Scaling-Multi-Domain-Expansion/scripts/ci-check.mjs",
     "demo:phase6:did": "ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/Phase-6-Scaling-Multi-Domain-Expansion/scripts/phase6-did-audit.ts",
     "demo:phase6:iot": "ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/Phase-6-Scaling-Multi-Domain-Expansion/scripts/phase6-iot-simulator.ts",
@@ -476,6 +476,7 @@
     "test:meta-agentic-alpha": "node --import tsx demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/test/meta_agentic_demo.test.ts",
     "owner:era-of-experience:controls": "node --import tsx demo/Era-Of-Experience-v0/scripts/updateOwnerControls.ts",
     "release:check-size": "node scripts/release/check-contract-size.js",
+    "release:audit-dependencies": "node scripts/release/audit-dependencies.cjs",
     "build:orchestrator": "tsc -p apps/orchestrator/tsconfig.json && node scripts/package-runtime-assets.cjs orchestrator",
     "demos": "node scripts/demo/catalog.cjs",
     "demo:atlas-conductor:local": "bash demo/atlas-conductor/bin/atlas-conductor-local.sh",
@@ -524,7 +525,12 @@
     "demo:program-synthesis:lab": "node demo/Meta-Agentic-Program-Synthesis-v0/scripts/lab.mjs",
     "demo:program-synthesis:test": "node --import tsx --test demo/Meta-Agentic-Program-Synthesis-v0/tests/*.test.mjs",
     "demo:program-synthesis:qa": "node demo/Meta-Agentic-Program-Synthesis-v0/scripts/browser-qa.mjs",
-    "demo:program-synthesis:worker": "node --import tsx demo/Meta-Agentic-Program-Synthesis-v0/computer-work/worker.cjs"
+    "demo:program-synthesis:worker": "node --import tsx demo/Meta-Agentic-Program-Synthesis-v0/computer-work/worker.cjs",
+    "demo:phase8:work": "node demo/Phase-8-Universal-Value-Dominance/workbench/cli.mjs",
+    "demo:phase8:site": "node demo/Phase-8-Universal-Value-Dominance/scripts/build-site.mjs",
+    "demo:phase8:work:test": "node --test demo/Phase-8-Universal-Value-Dominance/workbench/tests/*.test.mjs",
+    "demo:phase8:qa": "node demo/Phase-8-Universal-Value-Dominance/scripts/browser-qa.mjs",
+    "demo:phase8:worker": "node --import tsx demo/Phase-8-Universal-Value-Dominance/computer-work/worker.cjs"
   },
   "type": "commonjs",
   "version": "2.0.0"

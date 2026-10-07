@@ -1,4 +1,5 @@
 import { verifyAlphaMark } from './alpha-mark-qa.mjs';
+import { verifyPhase6 } from './phase6-qa.mjs';
 import { verifyWorkPlanner } from './work-qa.mjs';
 import { verifyEvidenceReview } from './review-qa.mjs';
 import fs from 'node:fs';
@@ -411,9 +412,11 @@ try {
   );
   await verifyWorkPlanner({ page, context, url, artifacts, a11y, checks });
   await verifyAlphaMark({ page, context, url, artifacts, a11y, checks });
-  assert.equal(manifest.dashboardRoutes.length, 13);
+  assert.equal(manifest.dashboardRoutes.length, 15);
+  assert.ok(manifest.dashboardRoutes.includes('experiments/phase6/'));
   assert.ok(manifest.dashboardRoutes.includes('experiments/zenith-hypernova/'));
-  assert.equal(manifest.archiveRoutes.length, 21);
+  assert.ok(manifest.dashboardRoutes.includes('experiments/phase8/workbench/'));
+  assert.equal(manifest.archiveRoutes.length, 23);
   const legacyDecks = manifest.dashboardRoutes.filter((route) =>
     route.startsWith('experiments/kardashev-ii/')
   );
@@ -499,6 +502,7 @@ try {
   checks.push(
     'published Meta-Agentic ALPHA route evaluates twelve briefs and rejects incorrect evidence'
   );
+  await verifyPhase6({ page, context, url, artifacts, a11y, checks });
   await verifyEvidenceReview({ page, context, url, artifacts, a11y, checks });
   assert.deepEqual(requests, [], 'Unexpected external network requests');
   assert.deepEqual(errors, [], 'Browser errors');

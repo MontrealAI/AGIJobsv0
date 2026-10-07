@@ -203,30 +203,23 @@ def clamp01(value: float) -> float:
 
 
 def compute_metrics(manifest: Mapping[str, Any]) -> PhaseMetrics:
-    streams = [stream for stream in manifest.get("capitalStreams", []) if stream.get("active", True)]
-    annual_budget = sum(float(stream.get("annualBudget", 0) or 0) for stream in streams)
-    total_monthly_usd = annual_budget / 12 if annual_budget else 0
-
-    sentinels = [sentinel for sentinel in manifest.get("sentinels", []) if sentinel.get("active", True)]
-    sentinel_domains = {domain for sentinel in sentinels for domain in sentinel.get("domains", [])}
-    total_domains = max(1, len(manifest.get("domains", [])))
-    coverage_ratio = min(1.0, len(sentinel_domains) / total_domains)
-
-    resilience_scores = [max(0.0, 1 - float(sentinel.get("sensitivityBps", 0) or 0) / 10_000) for sentinel in sentinels]
-    average_resilience = fmean(resilience_scores)
-    average_coverage_seconds = fmean([float(sentinel.get("coverageSeconds", 0) or 0) for sentinel in sentinels])
-
-    global_cfg = manifest.get("global", {})
-    guardian_review_window_seconds = int(float(global_cfg.get("guardianReviewWindow", 0) or 0) * 60)
-
-    autonomy_cfg = manifest.get("autonomy", {}).get("session", {})
-    max_autonomy_hours = float(autonomy_cfg.get("maxHours", 0) or 0)
-    max_autonomy_bps = int(min(10_000, max_autonomy_hours / 24 * 10_000)) if max_autonomy_hours else 0
-
-    safety_cfg = manifest.get("safety", {})
-    cadence_seconds = int(float(safety_cfg.get("checkInCadenceMinutes", 0) or 0) * 60)
-
-    autonomy_guard_cap_bps = int(global_cfg.get("maxDrawdownBps", 10_000) or 10_000)
+    domains = [d for d in manifest.get("domains", []) if d.get("active", True)]
+    slugs = {d["slug"].lower() for d in domains}
+    sentinels = [s for s in manifest.get("sentinels", []) if s.get("active", True)]
+    coverage = {slug: 0.0 for slug in slugs}
+    for sentinel in sentinels:
+        targets = {d.lower() for d in sentinel.get("domains", [])} or slugs
+        for slug in targets & slugs:
+            coverage[slug] += float(sentinel.get("coverageSeconds", 0))
+    total_monthly_usd = sum(float(d.get("valueFlowMonthlyUSD", 0)) for d in domains)
+    coverage_ratio = sum(v > 0 for v in coverage.values()) / len(slugs) if slugs else 0.0
+    average_resilience = fmean(float(d.get("resilienceIndex", 0)) for d in domains) if domains else 0.0
+    average_coverage_seconds = fmean(coverage.values()) if coverage else 0.0
+    guardian_review_window_seconds = int(manifest.get("global", {}).get("guardianReviewWindow", 0))
+    max_autonomy_bps = max((int(d.get("autonomyLevelBps", 0)) for d in domains), default=0)
+    improvement = manifest.get("selfImprovement", {})
+    cadence_seconds = int(improvement.get("plan", {}).get("cadenceSeconds", 0))
+    autonomy_guard_cap_bps = int(improvement.get("autonomyGuards", {}).get("maxAutonomyBps", 0))
 
     return PhaseMetrics(
         total_monthly_usd=total_monthly_usd,
@@ -275,6 +268,9 @@ def save_report(
     invalid_paths = list(invalid_paths or [])
     global_section = manifest.get("global", {})
     report = {
+        "evidenceClass": "synthetic-governance-rehearsal",
+        "productionApproved": False,
+        "settlementApproved": False,
         "totals": {
             "monthlyUSD": metrics.total_monthly_usd,
             "dominanceScore": metrics.dominance_score,
@@ -354,7 +350,7 @@ def main(argv: list[str] | None = None) -> int:
 
     if not args.quiet:
         print("🛰️  Phase 8 — Universal Value Dominance :: Telemetry")
-        print(f"• Monthly economic throughput (USD): {metrics.total_monthly_usd:,.0f}")
+        print(f"• Scenario monthly value assumption (USD): {metrics.total_monthly_usd:,.0f}")
         print(f"• Dominance score: {metrics.dominance_score:.1f} / 100")
         print(f"• Coverage ratio: {metrics.coverage_ratio:.2%} across sentinels")
         print(f"• Average resilience: {metrics.average_resilience:.2%}")

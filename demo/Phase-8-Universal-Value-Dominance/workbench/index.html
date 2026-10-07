@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta
+      name="description"
+      content="Plan useful machine work across domains. Explore capacity, budgets and review, then export a traceable work order."
+    />
+    <meta name="theme-color" content="#100b20" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'"
+    />
+    <title>Universal Value Work Lab · AGI Jobs</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script type="module" src="app.mjs"></script>
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+    <header>
+      <a class="brand" href="../../../">✧ AGI <strong>JOBS</strong></a>
+      <nav aria-label="Primary">
+        <a href="#mission">Choose a mission</a
+        ><a href="#capacity">Plan capacity</a
+        ><a href="#evidence">Inspect evidence</a
+        ><a href="../">Governance atlas ↗</a>
+      </nav>
+      <span class="mode">LOCAL SCENARIO</span>
+    </header>
+    <main id="main">
+      <section class="hero">
+        <div>
+          <p class="eyebrow">PHASE 08 / UNIVERSAL VALUE</p>
+          <h1>Intelligence becomes<br /><em>useful work.</em></h1>
+          <p class="intro">
+            One verifiable outcome. A growing network of capability.<br />Build
+            the path from today's computer work to tomorrow's extraordinary
+            possibilities.
+          </p>
+          <div class="actions">
+            <a class="button" href="#mission"
+              >Design your first mission <span>↗</span></a
+            ><a class="secondary" href="#capacity">Explore the economics ↓</a>
+          </div>
+          <p class="scope">
+            Interactive planning · No sign-in or wallet required
+          </p>
+        </div>
+        <div class="cosmos" aria-hidden="true">
+          <div class="orbit o1"></div>
+          <div class="orbit o2"></div>
+          <div class="orbit o3"></div>
+          <div class="sun">✧</div>
+          <span class="satellite s1">RESEARCH</span
+          ><span class="satellite s2">ENGINEERING</span
+          ><span class="satellite s3">KNOWLEDGE</span
+          ><span class="satellite s4">VERIFICATION</span
+          ><span class="orbital-caption">THE MACHINE LABOR LAYER</span>
+        </div>
+      </section>
+      <div class="facts">
+        <div><b>10</b><span>Practical work categories</span></div>
+        <div><b>5</b><span>Connected domain concepts</span></div>
+        <div><b>Evidence</b><span>Before acceptance</span></div>
+        <div><b>USDC</b><span>Modeled work budgets</span></div>
+      </div>
+      <section id="mission">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">01 / START WITH AN OUTCOME</p>
+            <h2>What should intelligence deliver?</h2>
+          </div>
+          <p>
+            Authorized, lawful screen-based work.<br />Public, licensed or
+            synthetic inputs.
+          </p>
+        </div>
+        <div class="mission-layout">
+          <div
+            id="tasks"
+            class="task-grid"
+            role="group"
+            aria-label="Work categories"
+          ></div>
+          <article class="brief">
+            <p class="eyebrow" id="domain"></p>
+            <h3 id="task-title"></h3>
+            <p id="goal"></p>
+            <h4>What you receive</h4>
+            <ul id="deliverables"></ul>
+            <h4>How a reviewer checks it</h4>
+            <ul id="criteria"></ul>
+            <button id="export-order" class="button">
+              Download work order ↗
+            </button>
+            <p class="small">
+              A draft for scoping and approval. Exporting does not dispatch a
+              worker or authorize payment.
+            </p>
+          </article>
+        </div>
+      </section>
+      <section id="capacity">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">02 / SCALE WHAT CAN BE CHECKED</p>
+            <h2>Ambition, with an operating budget.</h2>
+          </div>
+          <p>
+            Change the assumptions.<br />Find the constraint before adding more
+            workers.
+          </p>
+        </div>
+        <div class="presets" role="group" aria-label="Scenario presets">
+          <button data-preset="balanced" aria-pressed="true">
+            Balanced launch</button
+          ><button data-preset="review" aria-pressed="false">
+            Review bottleneck</button
+          ><button data-preset="outage" aria-pressed="false">
+            Worker interruption
+          </button>
+        </div>
+        <div class="planner">
+          <form id="scenario">
+            <div class="field-grid" id="fields"></div>
+            <p class="small">
+              Eight productive hours per worker-day. Full execution, review and
+              reward reserves for every admitted attempt.
+            </p>
+          </form>
+          <div class="results" aria-live="polite" aria-atomic="true">
+            <p class="eyebrow">SCENARIO RESULT</p>
+            <div class="headline">
+              <strong id="accepted">—</strong
+              ><span>expected accepted jobs</span>
+            </div>
+            <p id="constraint"></p>
+            <div id="bars"></div>
+            <dl id="metrics"></dl>
+            <p id="error" role="alert"></p>
+            <button id="export-plan" class="button">
+              Download capacity plan ↗</button
+            ><button id="export-report" class="secondary">
+              Download calculation report
+            </button>
+          </div>
+        </div>
+        <details>
+          <summary>See the calculation and limits</summary>
+          <p>
+            Admitted jobs = minimum of offers, worker capacity, review capacity
+            and fully reserved budget. Expected accepted jobs = admitted × the
+            assumed acceptance rate, rounded down. Every attempt incurs
+            execution and review costs. Only accepted work earns the modeled
+            reward; unused reward reserves are released. All amounts are whole
+            USDC planning units.
+          </p>
+          <p>
+            Acceptance rates are assumptions. This scenario does not estimate
+            realized buyer value, revenue, profit, disputes, refund timing, gas,
+            taxes, fees or settlement finality. A $40 trillion/year screen-work
+            opportunity is a user-supplied strategic scenario, not a verified
+            market size or a revenue forecast.
+          </p>
+        </details>
+      </section>
+      <section id="evidence">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">03 / A TRACEABLE PATH TO VALUE</p>
+            <h2>Every outcome earns its next step.</h2>
+          </div>
+          <p>A good result can be inspected,<br />reproduced and put to use.</p>
+        </div>
+        <div class="evidence-grid">
+          <article>
+            <span class="step">01</span>
+            <h3>Scope & authorize</h3>
+            <p>
+              Specify inputs, applications, budgets, deliverables and acceptance
+              criteria. Check worker and reviewer capacity.
+            </p>
+          </article>
+          <article>
+            <span class="step">02</span>
+            <h3>Execute & capture</h3>
+            <p>
+              A configured worker uses approved tools, APIs or computer use.
+              Record versions, actions, costs, failures and artifact hashes.
+            </p>
+          </article>
+          <article>
+            <span class="step">03</span>
+            <h3>Review & accept</h3>
+            <p>
+              A separate reviewer verifies the actual artifacts. The buyer tests
+              usefulness. Rejected work returns for repair or resolution.
+            </p>
+          </article>
+          <article>
+            <span class="step">04</span>
+            <h3>Settle & learn</h3>
+            <p>
+              Apply the deployed settlement rules after authorization. Promote
+              improvements only after measured evaluation and a rollback check.
+            </p>
+          </article>
+        </div>
+        <div class="boundary">
+          <div>
+            <h3>What is connected today?</h3>
+            <p>
+              This lab runs local planning calculations. OpenClaw and ChatGPT
+              Work can operate supported interfaces in separately configured
+              environments. Neither a runtime name nor a generated plan proves
+              that a worker ran, an independent reviewer accepted, or a buyer
+              paid.
+            </p>
+          </div>
+          <div>
+            <p class="eyebrow">RUNTIME PATHS</p>
+            <a href="https://docs.openclaw.ai/tools/browser"
+              >OpenClaw managed browser ↗</a
+            ><a href="https://learn.chatgpt.com/docs/computer-use"
+              >ChatGPT Work Computer Use ↗</a
+            ><a
+              href="https://developers.openai.com/api/docs/guides/tools-computer-use"
+              >OpenAI computer-use integration ↗</a
+            ><a
+              href="https://github.com/MontrealAI/AGIJobsv0/tree/main/demo/Phase-8-Universal-Value-Dominance"
+              >Setup, source & verification ↗</a
+            >
+          </div>
+        </div>
+      </section>
+      <section class="vision">
+        <p class="eyebrow">THE LONG HORIZON</p>
+        <h2>From individual outcomes<br />to civilization-scale capability.</h2>
+        <p>
+          Make knowledge reproducible. Make engineering faster. Turn verified
+          work into better software, scientific tools and infrastructure
+          designs. Expand only as reliability, review capacity and real buyer
+          value are demonstrated.
+        </p>
+        <a class="secondary" href="../"
+          >Explore the preserved governance atlas ↗</a
+        >
+      </section>
+    </main>
+    <footer>
+      <a class="brand" href="../../../">✧ AGI JOBS</a>
+      <p>
+        Universal Value Work Lab · Phase 8<br />Planning and governance
+        rehearsals. Live integrations require commissioning.
+      </p>
+      <span id="status" role="status"></span>
+    </footer>
+    <noscript
+      ><p>
+        This lab needs JavaScript for calculations. Read the repository guide
+        for the command-line workflow.
+      </p></noscript
+    >
+  </body>
+</html>

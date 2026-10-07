@@ -67,7 +67,7 @@ jobs:
       - name: Verify CI summary coverage vs workflow
         run: npm run ci:verify-summary-needs
       - name: Release provenance regression tests
-        run: node --test test/scripts/runner-egress.test.cjs test/scripts/demo-report-paths.test.cjs test/scripts/local-demo-rpc.test.cjs test/scripts/release-provenance.test.cjs test/scripts/release-inventory.test.cjs test/scripts/contract-size.test.cjs test/scripts/release-ci.test.cjs test/scripts/slither-policy.test.cjs test/scripts/dispute-overloads.test.js test/hamiltonian-monitor.config.test.js
+        run: node --test test/scripts/runner-egress.test.cjs test/scripts/demo-report-paths.test.cjs test/scripts/local-demo-rpc.test.cjs test/scripts/release-provenance.test.cjs test/scripts/release-inventory.test.cjs test/scripts/contract-size.test.cjs test/scripts/release-ci.test.cjs test/scripts/dependency-audit.test.cjs test/scripts/slither-policy.test.cjs test/scripts/dispute-overloads.test.js test/hamiltonian-monitor.config.test.js
       - name: Prettier formatting check
         run: npm run format:check
       - name: Targeted lint suite
@@ -150,6 +150,8 @@ jobs:
           node --test apps/orchestrator/dist/apps/orchestrator/__tests__/computerWork.test.js
       - name: Hardhat tests
         run: npm test
+      - name: Phase 6 contract and TypeScript regression tests
+        run: npx hardhat test --no-compile test/v2/Phase6ExpansionManager.test.js test/scripts/phase6*.test.ts
       - name: ABI diff check
         run: npm run abi:diff
 
@@ -190,6 +192,7 @@ jobs:
           coverage run --rcfile=.coveragerc --append -m pytest -m "not requires_torch" tests
           coverage run --rcfile=.coveragerc --append -m pytest -m "not requires_torch" packages/hgm-core/tests
           coverage run --rcfile=.coveragerc --append -m pytest -m "not requires_torch" demo/Huxley-Godel-Machine-v0/tests
+          coverage run --rcfile=.coveragerc --append -m pytest demo/Phase-6-Scaling-Multi-Domain-Expansion/tests
       - name: Export unit coverage data
         run: |
           mkdir -p reports/python-coverage
@@ -1073,7 +1076,7 @@ jobs:
   summary:
     name: CI summary
     runs-on: ubuntu-24.04
-    if: ${{ always() }}
+    if: ${{ !cancelled() }}
     needs:
       - branch_protection
       - lint

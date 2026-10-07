@@ -70,6 +70,7 @@ async function main() {
   const scored = rankAdapters(adapters, jobDurationHours);
   spinner.stop();
 
+  console.log("Synthetic adapter fixtures only; scores are illustrative and do not establish provider availability or safety.");
   console.table(scored.map(({ compositeScore, ...rest }) => ({ ...rest, compositeScore })));
   const outputPath = path.join(CONFIG_DIR, "model-adapters.scored.json");
   await fs.writeFile(outputPath, JSON.stringify(scored, null, 2));

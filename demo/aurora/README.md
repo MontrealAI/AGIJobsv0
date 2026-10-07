@@ -17,7 +17,7 @@ npm run demo:aurora:local
 
 This deploys the v2 stack to a disposable local chain, executes one job through validator commit/reveal and employer settlement, exercises owner controls, and writes `reports/localhost/aurora/aurora-report.md`. Per-stage receipts and token balance changes are in `reports/localhost/aurora/receipts/`. The tokens, identities, and submitted work are demonstration fixtures; transactions are executed by the actual local contracts.
 
-Anvil is preferred and Hardhat is the fallback. The node is bound to localhost with chain ID 31337. An occupied port is refused without stopping existing processes; select another with `DEMO_PORT=18545 npm run demo:aurora:local`. The launcher stops only its own node when finished. For three related jobs and a consolidated report, use the [ASI Take-Off walkthrough](../asi-takeoff/README.md#run-the-three-job-local-walkthrough).
+Anvil is preferred and Hardhat is the fallback. The node is bound to localhost with chain ID 31337. An occupied port is refused without stopping existing processes; select another with `DEMO_PORT=18545 npm run demo:aurora:local`. The launcher stops only its own node when finished. For three related jobs and a consolidated report, use the [ASI Take-Off walkthrough](../asi-takeoff/README.md#retained-local-contract-walkthrough).
 
 ## Capabilities
 - Provides opinionated configuration and assets tailored to `demo/aurora` while remaining interoperable with the global AGI Jobs v0 (v2) runtime.

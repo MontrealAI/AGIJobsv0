@@ -46,8 +46,14 @@ jobs:
       # GitHub runner/cache transport endpoints are allowed by the action itself.
       - name: Verify runner hardening is active
         run: |
-          test -s /home/agent/agent.status
-          systemctl is-active --quiet agent.service
+          for attempt in {1..30}; do
+            if test -s /home/agent/agent.status && systemctl is-active --quiet agent.service; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Runner hardening did not become ready after $attempt checks (60 seconds)." >&2
+          exit 1
 
       - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
         with:
@@ -64,7 +70,9 @@ jobs:
         run: ./scripts/ci/npm-ci.sh
 
       - name: Planning, worker review, studio and report regressions
-        run: node --test demo/asi-takeoff/tests/*.test.cjs
+        run: |
+          node --test test/scripts/hardening-readiness.test.cjs
+          node --test demo/asi-takeoff/tests/*.test.cjs
 
       - name: Optional Python launcher regression tests
         run: |

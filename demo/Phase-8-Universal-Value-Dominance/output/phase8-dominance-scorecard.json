@@ -1,7 +1,11 @@
 {
-  "generatedAt": "2025-10-26T13:37:19.417Z",
+  "evidenceClass": "synthetic-governance-rehearsal",
+  "productionApproved": false,
+  "settlementApproved": false,
+  "generatedAt": "2026-10-07T15:42:16.316Z",
+  "activityPolicy": "Headline metrics and allocated funding count active entities only. Detailed entries retain configured values; active=false entries contribute no active capacity.",
   "chain": {
-    "id": 1,
+    "id": 31337,
     "manager": "0xfa12b3c4d5e6f7890abcdeffedcba98765432109"
   },
   "metrics": {
@@ -40,6 +44,7 @@
   "domains": [
     {
       "slug": "planetary-finance",
+      "active": true,
       "name": "Planetary Finance Mesh",
       "autonomyLevelBps": 7800,
       "resilienceIndex": 0.96,
@@ -50,13 +55,14 @@
       "sentinelGuardians": [
         "Capital Watch Exocomptroller"
       ],
-      "capitalSupportUSD": 890000000000,
+      "capitalSupportUSD": 296666666666,
       "capitalStreams": [
         "Planetary Resilience Fund"
       ]
     },
     {
       "slug": "climate-harmonizer",
+      "active": true,
       "name": "Climate Harmonizer Array",
       "autonomyLevelBps": 7400,
       "resilienceIndex": 0.94,
@@ -67,13 +73,14 @@
       "sentinelGuardians": [
         "Solar Shield Guardian"
       ],
-      "capitalSupportUSD": 720000000000,
+      "capitalSupportUSD": 360000000000,
       "capitalStreams": [
         "Climate Stabilization Endowment"
       ]
     },
     {
       "slug": "health-sovereign",
+      "active": true,
       "name": "Health Sovereign Continuum",
       "autonomyLevelBps": 7000,
       "resilienceIndex": 0.91,
@@ -84,13 +91,14 @@
       "sentinelGuardians": [
         "Bio Sentinel Continuity"
       ],
-      "capitalSupportUSD": 890000000000,
+      "capitalSupportUSD": 296666666667,
       "capitalStreams": [
         "Planetary Resilience Fund"
       ]
     },
     {
       "slug": "infrastructure-synthesis",
+      "active": true,
       "name": "Infrastructure Synthesis Grid",
       "autonomyLevelBps": 7600,
       "resilienceIndex": 0.915,
@@ -101,7 +109,7 @@
       "sentinelGuardians": [
         "Solar Shield Guardian"
       ],
-      "capitalSupportUSD": 1080000000000,
+      "capitalSupportUSD": 540000000000,
       "capitalStreams": [
         "Climate Stabilization Endowment",
         "Innovation Thrust Catalyst"
@@ -109,6 +117,7 @@
     },
     {
       "slug": "knowledge-lattice",
+      "active": true,
       "name": "Knowledge Lattice Nexus",
       "autonomyLevelBps": 6900,
       "resilienceIndex": 0.902,
@@ -119,7 +128,7 @@
       "sentinelGuardians": [
         "Capital Watch Exocomptroller"
       ],
-      "capitalSupportUSD": 1250000000000,
+      "capitalSupportUSD": 476666666667,
       "capitalStreams": [
         "Planetary Resilience Fund",
         "Innovation Thrust Catalyst"
@@ -129,6 +138,7 @@
   "sentinels": [
     {
       "slug": "solar-shield",
+      "active": true,
       "name": "Solar Shield Guardian",
       "coverageSeconds": 900,
       "sensitivityBps": 450,
@@ -139,6 +149,7 @@
     },
     {
       "slug": "capital-watch",
+      "active": true,
       "name": "Capital Watch Exocomptroller",
       "coverageSeconds": 900,
       "sensitivityBps": 380,
@@ -149,6 +160,7 @@
     },
     {
       "slug": "bio-sentinel",
+      "active": true,
       "name": "Bio Sentinel Continuity",
       "coverageSeconds": 900,
       "sensitivityBps": 420,
@@ -160,6 +172,7 @@
   "capitalStreams": [
     {
       "slug": "climate-stabilization",
+      "active": true,
       "name": "Climate Stabilization Endowment",
       "annualBudgetUSD": 720000000000,
       "expansionBps": 1300,
@@ -170,6 +183,7 @@
     },
     {
       "slug": "planetary-resilience",
+      "active": true,
       "name": "Planetary Resilience Fund",
       "annualBudgetUSD": 890000000000,
       "expansionBps": 1250,
@@ -181,6 +195,7 @@
     },
     {
       "slug": "innovation-thrust",
+      "active": true,
       "name": "Innovation Thrust Catalyst",
       "annualBudgetUSD": 360000000000,
       "expansionBps": 1600,

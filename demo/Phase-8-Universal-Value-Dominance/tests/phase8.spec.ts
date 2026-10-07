@@ -39,7 +39,7 @@ if (skipBrowser) {
     const funding = page.locator('[data-test-id="stat-card"][data-stat-key="capital-coverage"]');
     await expect(funding).toContainText('Dominions funded');
     await expect(funding).toContainText('100.0%');
-    await expect(funding).toContainText('$720.00B/yr');
+    await expect(funding).toContainText('$296.67B/yr');
 
     const autonomy = page.locator('[data-test-id="stat-card"][data-stat-key="autonomy-envelope"]');
     await expect(autonomy).toContainText('Autonomous session');
@@ -66,7 +66,7 @@ if (skipBrowser) {
     await expect(streamCards.first()).toContainText('Climate Stabilization Endowment');
 
     const financeDomain = page.locator('[data-domain-slug="planetary-finance"]');
-    await expect(financeDomain).toContainText('Funding $890.00B/yr');
+    await expect(financeDomain).toContainText('Funding $296.67B/yr');
     const financeStreams = financeDomain.locator('[data-test-id="domain-stream"]');
     await expect(financeStreams).toContainText('Planetary Resilience Fund');
   });
@@ -105,7 +105,7 @@ if (skipBrowser) {
   test('shows coverage alert, runbook guidance, and copy feedback', async ({ page }) => {
     const alerts = page.locator('[data-test-id="alert"]');
     await expect(alerts).toHaveCount(1);
-    await expect(alerts.first()).toContainText('Universal dominance secured');
+    await expect(alerts.first()).toContainText('Scenario thresholds satisfied');
 
     const tooltipButton = page.locator('[data-test-id="runbook-step"] .info-button').first();
     const tooltipId = await tooltipButton.getAttribute('aria-controls');

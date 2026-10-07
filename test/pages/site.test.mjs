@@ -107,8 +107,18 @@ test('every demo has a unique route and all built local page/asset links resolve
   }
   walk(output);
   const missing = [];
+  const pageAnchors = new Map();
+  const fragmentLinks = [];
   for (const file of pages) {
     const document = new JSDOM(fs.readFileSync(file, 'utf8')).window.document;
+    pageAnchors.set(
+      file,
+      new Set(
+        [...document.querySelectorAll('[id],a[name]')].map(
+          (element) => element.id || element.getAttribute('name')
+        )
+      )
+    );
     for (const element of document.querySelectorAll('[href],[src]')) {
       const value = element.getAttribute('href') || element.getAttribute('src');
       if (!value.startsWith(manifest.basePath)) continue;
@@ -122,6 +132,22 @@ test('every demo has a unique route and all built local page/asset links resolve
         !fs.existsSync(path.join(target, 'index.html'))
       )
         missing.push({ file, value });
+      if (
+        element.hasAttribute('href') &&
+        value.includes('#') &&
+        fs.existsSync(target)
+      ) {
+        const resolved = fs.statSync(target).isDirectory()
+          ? path.join(target, 'index.html')
+          : target;
+        if (resolved.endsWith('.html'))
+          fragmentLinks.push({
+            file,
+            value,
+            target: resolved,
+            fragment: decodeURIComponent(value.split('#').slice(1).join('#')),
+          });
+      }
     }
     if (file.endsWith('experiments/culture/index.html')) {
       assert.equal(document.querySelectorAll('#root').length, 1);
@@ -129,6 +155,14 @@ test('every demo has a unique route and all built local page/asset links resolve
     } else assert.equal(document.querySelectorAll('main#main').length, 1, file);
   }
   assert.deepEqual(missing, []);
+  assert.deepEqual(
+    fragmentLinks.filter(
+      ({ target, fragment }) =>
+        fragment && !pageAnchors.get(target)?.has(fragment)
+    ),
+    [],
+    'Published guide links must resolve to an existing section, not just a page.'
+  );
   assert.equal(
     pages.length,
     catalog.length +
@@ -330,8 +364,10 @@ test('all published command decks retain their local assets and navigation', () 
   const manifest = JSON.parse(
     fs.readFileSync(path.join(output, 'catalog.json'))
   );
-  assert.equal(manifest.dashboardRoutes.length, 13);
+  assert.equal(manifest.dashboardRoutes.length, 15);
+  assert.ok(manifest.dashboardRoutes.includes('experiments/phase6/'));
   assert.ok(manifest.dashboardRoutes.includes('experiments/zenith-hypernova/'));
+  assert.ok(manifest.dashboardRoutes.includes('experiments/phase8/workbench/'));
   for (const route of manifest.dashboardRoutes) {
     const document = new JSDOM(
       fs.readFileSync(path.join(output, route, 'index.html'), 'utf8')

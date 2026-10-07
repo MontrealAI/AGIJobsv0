@@ -11,7 +11,7 @@ This repository contains smart contracts, agent and validator services, operator
 | Understand the architecture and its diagrams | [Repository overview](../README.md#architecture-panorama) |
 | Explore a working model demo without a wallet | [Tiny Recursive Model setup](../demo/Tiny-Recursive-Model-v0/README.md#run-the-headless-demo) |
 | Execute a job from creation to local settlement | [AURORA walkthrough](../demo/aurora/README.md#run-the-local-job-lifecycle) |
-| Run a three-job local mission with receipts | [ASI Take-Off walkthrough](../demo/asi-takeoff/README.md#run-the-three-job-local-walkthrough) |
+| Run a three-job local mission with receipts | [ASI Take-Off walkthrough](../demo/asi-takeoff/README.md#retained-local-contract-walkthrough) |
 | Rehearse release, provider failures, security controls, and commissioning | [Production rehearsal](production/rehearsal.md) |
 | Choose, run, or validate any demo | [Demo guide and complete catalog](../demo/README.md) |
 | Find a subsystem manual | [Documentation catalog](readme-catalog.md) |
@@ -63,10 +63,11 @@ Install the optional model dashboard in its own virtual environment. Its Streaml
 
 ```bash
 npm run release:check-size
+npm run release:audit-dependencies
 npm run ci:verify-signers
 ```
 
-The size check passes for the modular contracts. The signer check intentionally fails on the example signing keys. Read the [deployment architecture guide](production/fixed-implementations.md) before deploying new controllers. Follow their diagnostic output and the [remaining work](production/readiness.md#what-a-live-deployment-still-needs). Do not interpret a green local test suite, simulated economy, dashboard, or successful compilation as evidence of a deployable or audited production system.
+The size check passes for the modular contracts. The dependency check retains registry audit evidence for every tracked npm and pnpm lockfile and fails on critical/high findings or unavailable evidence; it currently reports unresolved high findings. The signer check intentionally fails on the example signing keys. Read the [deployment architecture guide](production/fixed-implementations.md) before deploying new controllers. Follow their diagnostic output and the [remaining work](production/readiness.md#what-a-live-deployment-still-needs). Do not interpret a green local test suite, simulated economy, dashboard, or successful compilation as evidence of a deployable or audited production system.
 
 This repository's v2 contract configuration uses the 18-decimal `$AGIALPHA` token. Confirm the actual token, chain, contract addresses, and deployment manifest for the workflow you run; do not substitute another AGI Jobs repository's settlement assumptions.
 

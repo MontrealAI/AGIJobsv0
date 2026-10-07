@@ -1,6 +1,7 @@
 #!/usr/bin/env ts-node
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { parsePhase6Args } from './phase6-cli';
 
 import {
   buildPhase6Blueprint,
@@ -9,7 +10,12 @@ import {
   DomainBlueprint,
 } from './phase6-blueprint';
 
-const DEFAULT_CONFIG_PATH = join(__dirname, '..', 'config', 'domains.phase6.json');
+const DEFAULT_CONFIG_PATH = join(
+  __dirname,
+  '..',
+  'config',
+  'domains.phase6.json'
+);
 
 interface CliOptions {
   configPath: string;
@@ -17,6 +23,10 @@ interface CliOptions {
 }
 
 export interface DidAuditReport {
+  auditScope: 'configuration-coverage-only';
+  credentialsVerified: false;
+  signaturesVerified: false;
+  revocationChecked: false;
   generatedAt: string;
   configPath?: string;
   coverage: number;
@@ -39,44 +49,7 @@ export interface DidAuditReport {
 }
 
 function parseArgs(argv: string[] = process.argv.slice(2)): CliOptions {
-  const options: CliOptions = { configPath: DEFAULT_CONFIG_PATH };
-
-  for (let i = 0; i < argv.length; i += 1) {
-    const arg = argv[i];
-    const next = argv[i + 1];
-    switch (arg) {
-      case '--config':
-        if (!next) {
-          throw new Error('--config expects a path');
-        }
-        options.configPath = next;
-        i += 1;
-        break;
-      case '--config=':
-        options.configPath = arg.split('=', 2)[1] ?? DEFAULT_CONFIG_PATH;
-        break;
-      case '--json':
-        if (!next || next.startsWith('--')) {
-          options.jsonOutput = '-';
-        } else {
-          options.jsonOutput = next;
-          i += 1;
-        }
-        break;
-      case '--json=':
-        options.jsonOutput = arg.split('=', 2)[1] ?? '-';
-        break;
-      case '--help':
-      case '-h':
-        printUsage();
-        process.exit(0);
-        break;
-      default:
-        console.warn(`Unknown option: ${arg}`);
-    }
-  }
-
-  return options;
+  return parsePhase6Args(argv, DEFAULT_CONFIG_PATH, ['json'], printUsage);
 }
 
 function printUsage(): void {
@@ -86,7 +59,7 @@ function printUsage(): void {
       `Options:\n` +
       `  --config <path>   Use an alternate config file (default: ${DEFAULT_CONFIG_PATH})\n` +
       `  --json [path|-]   Emit JSON to <path>; use '-' for stdout\n` +
-      `  -h, --help        Show this message\n`,
+      `  -h, --help        Show this message\n`
   );
 }
 
@@ -101,8 +74,12 @@ function summarizeDomain(domain: DomainBlueprint): {
   gaps: string[];
 } {
   const credentials = domain.credentials.map((credential) => credential.name);
-  const issuers = uniqueStrings(domain.credentials.flatMap((credential) => credential.issuers));
-  const verifiers = uniqueStrings(domain.credentials.flatMap((credential) => credential.verifiers));
+  const issuers = uniqueStrings(
+    domain.credentials.flatMap((credential) => credential.issuers)
+  );
+  const verifiers = uniqueStrings(
+    domain.credentials.flatMap((credential) => credential.verifiers)
+  );
   const gaps: string[] = [];
   if (credentials.length === 0) {
     gaps.push('missing credentials');
@@ -113,10 +90,17 @@ function summarizeDomain(domain: DomainBlueprint): {
   if (verifiers.length === 0) {
     gaps.push('no verifiers');
   }
+  domain.credentials.forEach((credential) => {
+    if (!credential.issuers.length) gaps.push(`${credential.name}: no issuers`);
+    if (!credential.verifiers.length)
+      gaps.push(`${credential.name}: no verifiers`);
+  });
   return { credentials, issuers, verifiers, gaps };
 }
 
-export function createDidAuditReport(blueprint: Phase6Blueprint): DidAuditReport {
+export function createDidAuditReport(
+  blueprint: Phase6Blueprint
+): DidAuditReport {
   const missingDomains = blueprint.domains
     .filter((domain) => domain.credentials.length === 0)
     .map((domain) => domain.slug);
@@ -132,6 +116,10 @@ export function createDidAuditReport(blueprint: Phase6Blueprint): DidAuditReport
     };
   });
   return {
+    auditScope: 'configuration-coverage-only',
+    credentialsVerified: false,
+    signaturesVerified: false,
+    revocationChecked: false,
     generatedAt: new Date().toISOString(),
     configPath: blueprint.configPath,
     coverage: blueprint.metrics.credentialCoverage,
@@ -147,25 +135,47 @@ export function createDidAuditReport(blueprint: Phase6Blueprint): DidAuditReport
   };
 }
 
-function renderReport(report: DidAuditReport, domains: DomainBlueprint[]): void {
+function renderReport(
+  report: DidAuditReport,
+  domains: DomainBlueprint[]
+): void {
   console.log('\x1b[38;5;119mPhase 6 Credential & DID Audit\x1b[0m');
   console.log(`Generated: ${report.generatedAt}`);
   console.log(
-    `Coverage: ${(report.coverage * 100).toFixed(1)}% (${report.credentialedDomains}/${report.totalDomains} domains, ${report.totalRequirements} requirements)`,
+    'Configuration inventory only: issuer identity, signatures, expiry and revocation are not verified.'
   );
-  console.log(`Trust anchors: ${report.globalTrustAnchors} | issuers: ${report.globalIssuers} | policies: ${report.globalPolicies}`);
+  console.log(
+    `Coverage: ${(report.coverage * 100).toFixed(1)}% (${
+      report.credentialedDomains
+    }/${report.totalDomains} domains, ${report.totalRequirements} requirements)`
+  );
+  console.log(
+    `Trust anchors: ${report.globalTrustAnchors} | issuers: ${report.globalIssuers} | policies: ${report.globalPolicies}`
+  );
   console.log(`Revocation registry: ${report.revocationRegistry ?? '—'}`);
   if (report.missingDomains.length) {
-    console.log(`⚠ Missing credential coverage for: ${report.missingDomains.join(', ')}`);
+    console.log(
+      `⚠ Missing credential coverage for: ${report.missingDomains.join(', ')}`
+    );
   } else {
     console.log('All domains include credential requirements.');
   }
   domains.forEach((domain) => {
     const summary = summarizeDomain(domain);
     console.log(`\n${domain.name} (${domain.slug})`);
-    console.log(`  Credentials: ${summary.credentials.length ? summary.credentials.join(', ') : '—'}`);
-    console.log(`  Issuers: ${summary.issuers.length ? summary.issuers.join(', ') : '—'}`);
-    console.log(`  Verifiers: ${summary.verifiers.length ? summary.verifiers.join(', ') : '—'}`);
+    console.log(
+      `  Credentials: ${
+        summary.credentials.length ? summary.credentials.join(', ') : '—'
+      }`
+    );
+    console.log(
+      `  Issuers: ${summary.issuers.length ? summary.issuers.join(', ') : '—'}`
+    );
+    console.log(
+      `  Verifiers: ${
+        summary.verifiers.length ? summary.verifiers.join(', ') : '—'
+      }`
+    );
     if (summary.gaps.length) {
       console.log(`  Gaps: ${summary.gaps.join(', ')}`);
     }
@@ -175,7 +185,9 @@ function renderReport(report: DidAuditReport, domains: DomainBlueprint[]): void 
 export function runCli(argv: string[] = process.argv.slice(2)): void {
   const options = parseArgs(argv);
   const config = loadPhase6Config(options.configPath);
-  const blueprint = buildPhase6Blueprint(config, { configPath: options.configPath });
+  const blueprint = buildPhase6Blueprint(config, {
+    configPath: options.configPath,
+  });
   const report = createDidAuditReport(blueprint);
 
   if (options.jsonOutput === '-') {
