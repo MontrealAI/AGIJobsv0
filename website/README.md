@@ -94,3 +94,11 @@ executed checks, preservation evidence and model limitations.
 
 
 The Pages build also compiles the actual CULTURE Studio in explicit offline preview mode. Before `npm run site:build`, install its independent workspace with `cd demo/CULTURE-v0 && corepack pnpm install --frozen-lockfile`. Return to the repository root for site commands. Run `node scripts/pages/culture-qa.mjs` after the general website checks to verify the complete Studio journey, evidence exports, accessibility, and mobile layouts.
+
+## Machine labor entry point
+
+The homepage now explains the buyer, worker and independent-reviewer routes, connecting useful digital deliverables to the longer-term scientific and infrastructure vision. The full demo collection and original flowcharts remain intact.
+
+`work/` provides a local planner for ten useful job categories. It exports an unfunded proposal, a task compatible with the existing `ComputerWorkTask` parser, and an operator handoff. No source is fetched and no provider or wallet is connected. Every edit invalidates the previous draft. `scripts/pages/work.mjs` owns the accessible presentation; `website/assets/work-model.mjs` supplies categories and validation, and `work.js` handles the browser interaction. Browser QA covers all categories, exact downloads, invalid input, stale drafts, text injection, keyboard use, five widths and the no-JavaScript fallback. `catalog.json` records the route as `workRoute`.
+
+The stable [readiness index](../docs/production/readiness.md), [computer-work guide](../docs/computer-work.md) and [delivery workflow](../docs/MACHINE_LABOR.md) are published as local, source-bound guides. The dated records remain available at their original routes.

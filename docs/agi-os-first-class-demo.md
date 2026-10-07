@@ -122,6 +122,6 @@ Then rerun the orchestrator. New manifests and hashes are generated each time.
 
 - **Operational issues** – consult [`docs/owner-control-non-technical-guide.md`](./owner-control-non-technical-guide.md).
 - **Emergency controls** – run `npm run owner:emergency` to view the emergency response playbook.
-- **Security posture** – see [`docs/security/operations.md`](./security/operations.md) for incident response integration.
+- **Security posture** – see [the security deployment guide](./security-deployment-guide.md) for incident response integration.
 
 The Astral Omnidominion demo is the recommended path to onboard new executives, investors, and auditors onto the AGI Jobs platform. It proves readiness, safety, and operational control in under an hour.

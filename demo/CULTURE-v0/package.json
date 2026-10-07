@@ -74,7 +74,9 @@
       "ajv@8": "^8.20.0",
       "body-parser@1": "^1.20.8",
       "follow-redirects": "^1.16.1",
-      "@protobufjs/utf8": "^1.1.2"
+      "@protobufjs/utf8": "^1.1.2",
+      "proxy-addr": "^2.0.8",
+      "source-map-js": "^1.2.2"
     }
   }
 }
