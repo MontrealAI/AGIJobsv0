@@ -45,6 +45,17 @@ export async function verifyAlphaMark({
     await page.locator('[data-mark-download="task"]').isDisabled(),
     true
   );
+  assert.equal(
+    JSON.parse(await page.locator('#mark-json').textContent()).proposal,
+    null
+  );
+  const incompleteDownload = page.waitForEvent('download');
+  await page.locator('[data-mark-download="plan"]').click();
+  const incomplete = await incompleteDownload;
+  assert.equal(
+    JSON.parse(fs.readFileSync(await incomplete.path(), 'utf8')).proposal,
+    null
+  );
   for (const name of ['authorityPlanned', 'inputsPlanned', 'reviewPlanned'])
     await page.locator(`[name="${name}"]`).check();
   assert.equal(await page.locator('#alpha-mark-result').isVisible(), false);
@@ -83,7 +94,38 @@ export async function verifyAlphaMark({
     await page.locator('#mark-bottleneck').innerText(),
     /reward budget/
   );
+  assert.match(
+    await page.locator('#alpha-mark-status').innerText(),
+    /No complete job fits/
+  );
+  for (const kind of ['proposal', 'task'])
+    assert.equal(
+      await page.locator(`[data-mark-download="${kind}"]`).isDisabled(),
+      true
+    );
+  assert.equal(
+    await page.locator('[data-mark-download="plan"]').isDisabled(),
+    false
+  );
+  assert.equal(
+    JSON.parse(await page.locator('#mark-json').textContent()).proposal,
+    null
+  );
+  await page.getByLabel('Daily reward budget (USDC)').fill('1000001');
+  await page.getByRole('button', { name: 'Calculate mission draft' }).click();
+  assert.match(
+    await page.locator('#alpha-mark-status').innerText(),
+    /Daily reward budget/
+  );
+  assert.equal(
+    await page.locator('[data-mark-download="plan"]').isDisabled(),
+    true
+  );
   await page.getByLabel('Daily reward budget (USDC)').fill('15000');
+  await page.getByLabel('Minutes per reviewer / day').fill('45');
+  await page.getByRole('button', { name: 'Calculate mission draft' }).click();
+  assert.equal(await page.locator('#mark-candidate').innerText(), '2');
+  await page.getByLabel('Minutes per reviewer / day').fill('120');
   await page
     .getByLabel('Objective', { exact: true })
     .fill('<img src=x onerror=alert(1)> Buyer objective');
@@ -192,6 +234,6 @@ export async function verifyAlphaMark({
   );
   await offline.close();
   checks.push(
-    'Alpha Mark: exact USDC arithmetic, review bottleneck, prerequisite gating, compatible downloads, stale-state invalidation, input injection, keyboard activation, 5 widths, WCAG A/AA and no-JavaScript fallback'
+    'Alpha Mark: exact USDC arithmetic, complete per-reviewer assignments, prerequisite and zero-capacity export gating, compatible downloads, stale-state invalidation, input injection, keyboard activation, 5 widths, WCAG A/AA and no-JavaScript fallback'
   );
 }

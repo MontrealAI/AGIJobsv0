@@ -8,7 +8,7 @@ AGI Jobs can coordinate work performed through browser and desktop interfaces, i
 
 | Surface | How it fits | Repository support |
 | --- | --- | --- |
-| OpenClaw with native Codex Computer Use | The gateway delegates desktop work to its configured Codex runtime and OS permissions | Implemented Responses adapter and admission journal; commission your actual gateway separately |
+| OpenClaw with native Codex Computer Use | The documented Codex-owned route controls a macOS desktop through its configured runtime and OS permissions | Implemented Responses adapter and admission journal; commission your actual gateway separately. OpenClaw's cross-platform paired-node route is a separate integration. |
 | OpenClaw managed browser or other approved tools | A dedicated worker carries out browser, integration or file tasks | Same adapter; worker policy determines available tools |
 | ChatGPT Work with Computer Use | An operator performs a scoped task in Work, reviews permissions and exports evidence | Supported operating procedure; no invented remote Work API or automated login |
 | OpenAI Responses computer tool or code-execution tool | A custom worker supplies an isolated environment and handles tool calls | Extension path through an approved agent endpoint; a direct OpenAI desktop runtime is not bundled here |

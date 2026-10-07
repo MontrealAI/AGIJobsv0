@@ -9,11 +9,14 @@ AGI Jobs coordinates authorized, lawful screen-based work with specialized worke
 | Surface | Current capability | How it fits here |
 | --- | --- | --- |
 | OpenClaw | Managed agent browser; configurable models, tools and sandbox execution | The repository's [computer-work adapter](../../../docs/computer-work.md) targets an operator-configured Responses gateway. Pin and commission the worker profile. Sandboxing is off by default; explicitly configure and test it. |
-| ChatGPT Work / Codex Computer Use | Approved desktop applications on supported macOS/Windows installations | An operator can perform the admitted workflow and export artifacts. No direct ChatGPT Work dispatch bridge is implemented by this demo. App/OS permissions and product availability remain separate prerequisites. |
+| OpenClaw with native Codex Computer Use | Codex-owned desktop control on macOS, with a configured plugin and native OS permissions | Uses the same admitted gateway route. Run `/codex computer-use status` in an OpenClaw chat and commission a representative task. Set `plugins.entries.codex.config.computerUse.strictReadiness: true` when each turn must pass a live desktop check; the default availability check alone does not prove desktop access. |
+| ChatGPT Work / Codex desktop app | Approved desktop applications on supported macOS/Windows installations | An operator can perform the admitted workflow and export artifacts. No direct ChatGPT Work dispatch bridge is implemented by this demo. App/OS permissions and product availability remain separate prerequisites. This product route is distinct from OpenClaw's macOS integration. |
 | OpenAI Responses computer use | Model-directed UI actions or code in a runtime managed by the integrating application | A custom worker must enforce its own isolation, action controls, timeouts and evidence. API conversation state does not restore a browser session. |
 | OpenAI Agents API computer use | An OpenAI-hosted browser with session events and origin/sign-in approval flows | A distinct integration option; this demo does not implement its session protocol. Origin approval does not itself guarantee per-action confirmation. |
 
 The capability is broader than text generation: agents can use application interfaces to produce software, analyses and editable business artifacts. Reliability must be demonstrated for each admitted task. Neither these product capabilities nor a local demo establish universal task success.
+
+ChatGPT's Computer Use cannot automate terminal applications or ChatGPT itself, authenticate as an administrator or approve OS security prompts. Route those requirements to an appropriate authorized API/code worker or an explicit operator step. Record the execution surface, installed versions, available tools and observed readiness result with the task evidence; a successful plugin installation is not a completed commissioning test.
 
 ## A concrete first work order
 
@@ -45,6 +48,7 @@ Track accepted deliverables, buyer reuse, cost per accepted job, review minutes,
 - [OpenAI Responses computer use](https://developers.openai.com/api/docs/guides/tools-computer-use): integration paths, session state and result verification.
 - [OpenAI Agents API computer use](https://developers.openai.com/api/docs/guides/agents-api/tools/computer-use): hosted browser and approval event boundary.
 - [OpenClaw managed browser](https://docs.openclaw.ai/tools/browser): dedicated browser profile.
+- [OpenClaw Codex Computer Use](https://docs.openclaw.ai/plugins/codex-computer-use): macOS integration and live readiness controls.
 - [OpenClaw sandboxing](https://docs.openclaw.ai/gateway/sandboxing): sandbox configuration and host/gateway boundary.
 
 Recheck these sources and test the actual pinned worker before upgrades. These references establish documented capabilities, not a production certification for AGI Jobs.

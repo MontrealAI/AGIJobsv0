@@ -6,6 +6,60 @@ const toWei = (value: string) => ethers.parseEther(value);
 const WHOLE = toWei("1");
 
 describe("α-AGI MARK owner governance", function () {
+  for (const count of [2, 4]) {
+    it(`requires a strict majority when ${count} validators use the default quorum`, async function () {
+      const [owner, ...signers] = await ethers.getSigners();
+      const validators = signers.slice(0, count);
+      const oracle = await (await ethers.getContractFactory("AlphaMarkRiskOracle")).deploy(
+        owner.address, validators.map((validator) => validator.address), 0,
+      );
+      expect(await oracle.approvalThreshold()).to.equal(BigInt(count / 2 + 1));
+      for (const validator of validators.slice(0, count / 2))
+        await oracle.connect(validator).approveSeed();
+      expect(await oracle.seedValidated()).to.equal(false);
+      await oracle.connect(validators[count / 2]).approveSeed();
+      expect(await oracle.seedValidated()).to.equal(true);
+    });
+  }
+
+  it("clears removed votes and restores a strict default when an empty council is repopulated", async function () {
+    const [owner, ...signers] = await ethers.getSigners();
+    const validators = signers.slice(0, 4);
+    const addresses = validators.map((validator) => validator.address);
+    const oracle = await (await ethers.getContractFactory("AlphaMarkRiskOracle")).deploy(owner.address, [], 0);
+    await oracle.addValidators(addresses);
+    expect(await oracle.approvalThreshold()).to.equal(3);
+    for (const validator of validators) await oracle.connect(validator).approveSeed();
+    await oracle.removeValidators(addresses.slice(2));
+    expect(await oracle.approvalCount()).to.equal(2);
+    expect(await oracle.approvalThreshold()).to.equal(2);
+    expect(await oracle.seedValidated()).to.equal(true);
+    await oracle.removeValidators(addresses);
+    expect(await oracle.approvalCount()).to.equal(0);
+    expect(await oracle.approvalThreshold()).to.equal(0);
+    expect(await oracle.seedValidated()).to.equal(false);
+    await oracle.addValidators(addresses.slice(0, 2));
+    expect(await oracle.approvalThreshold()).to.equal(2);
+    expect(await oracle.seedValidated()).to.equal(false);
+    await oracle.connect(validators[0]).approveSeed();
+    expect(await oracle.seedValidated()).to.equal(false);
+    await oracle.connect(validators[1]).approveSeed();
+    expect(await oracle.seedValidated()).to.equal(true);
+  });
+
+  it("retains an explicit owner threshold as the council grows", async function () {
+    const [owner, validatorA, validatorB, validatorC, validatorD] = await ethers.getSigners();
+    const oracle = await (await ethers.getContractFactory("AlphaMarkRiskOracle")).deploy(
+      owner.address, [validatorA.address, validatorB.address], 1,
+    );
+    await oracle.addValidators([validatorC.address, validatorD.address]);
+    expect(await oracle.approvalThreshold()).to.equal(1);
+    await oracle.connect(validatorA).approveSeed();
+    expect(await oracle.seedValidated()).to.equal(true);
+    await oracle.setApprovalThreshold(3);
+    expect(await oracle.seedValidated()).to.equal(false);
+  });
+
   it("gives the owner decisive control over validator council and overrides", async function () {
     const [owner, validatorA, validatorB, validatorC, outsider] = await ethers.getSigners();
 

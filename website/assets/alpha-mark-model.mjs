@@ -31,7 +31,14 @@ function integer(value, label, maximum) {
 
 export function modelCapacity(input) {
   const reward = BigInt(usdcUnits(input.reward));
-  const budget = BigInt(usdcUnits(input.dailyBudget));
+  let budget;
+  try {
+    budget = BigInt(usdcUnits(input.dailyBudget));
+  } catch {
+    throw new Error(
+      'Daily reward budget must be from 0.000001 to 1,000,000 USDC, with at most six decimal places.'
+    );
+  }
   const workers = integer(input.workers, 'Workers', 10000);
   const jobsPerWorker = integer(
     input.jobsPerWorker,
@@ -51,18 +58,19 @@ export function modelCapacity(input) {
   );
   const slots = {
     worker: workers * jobsPerWorker,
-    reviewer: Math.floor((reviewers * minutesPerReviewer) / minutesPerJob),
+    reviewer: reviewers * Math.floor(minutesPerReviewer / minutesPerJob),
     rewardBudget: Number(budget / reward),
   };
   const candidateJobs = Math.min(...Object.values(slots));
   return {
-    model: 'one-day-static-capacity/v1',
+    model: 'one-day-static-capacity/v2',
     assumptions: {
       workers,
       jobsPerWorker,
       reviewers,
       minutesPerReviewer,
       minutesPerJob,
+      reviewAssignment: 'one-independent-reviewer-per-job',
       rewardBaseUnits: reward.toString(),
       dailyBudgetBaseUnits: budget.toString(),
     },
@@ -77,6 +85,8 @@ export function modelCapacity(input) {
       BigInt(candidateJobs) * reward
     ).toString(),
     reviewMinutesReserved: candidateJobs * minutesPerJob,
+    reviewMinutesUnallocated:
+      reviewers * minutesPerReviewer - candidateJobs * minutesPerJob,
     forecast: false,
     assumptionsVerified: false,
     excludes: [
@@ -104,6 +114,8 @@ export function createAlphaMarkPlan(input) {
     schema: 'alpha-agi-mark-work-plan/v1',
     status: missing.length
       ? 'preparation-incomplete'
+      : capacity.candidateJobs === 0
+      ? 'capacity-unavailable'
       : 'draft-for-operator-review',
     browserOnly: true,
     simulation: true,
@@ -111,7 +123,7 @@ export function createAlphaMarkPlan(input) {
     preparation,
     missing,
     capacity,
-    proposal,
+    proposal: missing.length || capacity.candidateJobs === 0 ? null : proposal,
     relationshipToMarket:
       'No capital transfer, token valuation, launch approval, contract execution or settlement is performed. This USDC work proposal is separate from the Alpha Mark native/ERC20 bonding-curve demo.',
   };
