@@ -1,248 +1,379 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AGI Jobs Phase 6 Control Surface</title>
-    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js" defer></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap"
-      rel="stylesheet"
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+    <meta
+      name="description"
+      content="Plan authorized multi-domain computer work, reserve independent review capacity and inspect the complete Phase 6 configuration."
     />
-    <style>
-      :root {
-        color-scheme: dark;
-        --bg: #030712;
-        --card: rgba(20, 24, 35, 0.78);
-        --accent: #7f5bff;
-        --accent-soft: rgba(127, 91, 255, 0.18);
-        --text: #e5e7eb;
-        --muted: #94a3b8;
-      }
-      * {
-        box-sizing: border-box;
-      }
-      body {
-        margin: 0;
-        background: radial-gradient(circle at 10% 10%, rgba(127, 91, 255, 0.25), transparent 60%),
-          radial-gradient(circle at 90% 15%, rgba(34, 211, 238, 0.2), transparent 55%),
-          var(--bg);
-        font-family: 'Space Grotesk', system-ui, sans-serif;
-        color: var(--text);
-      }
-      header {
-        padding: 64px 5vw 32px;
-        text-align: center;
-      }
-      header h1 {
-        font-size: clamp(2.5rem, 5vw, 3.75rem);
-        margin: 0;
-        letter-spacing: -0.04em;
-      }
-      header p {
-        max-width: 720px;
-        margin: 16px auto 32px;
-        color: var(--muted);
-        line-height: 1.6;
-      }
-      .hero-actions {
-        display: flex;
-        justify-content: center;
-        gap: 16px;
-        flex-wrap: wrap;
-      }
-      button.primary {
-        background: linear-gradient(135deg, #7f5bff, #22d3ee);
-        border: none;
-        color: #0b1120;
-        padding: 14px 28px;
-        border-radius: 999px;
-        font-weight: 600;
-        font-size: 1rem;
-        cursor: pointer;
-        transition: transform 0.18s ease, box-shadow 0.18s ease;
-        box-shadow: 0 18px 45px rgba(127, 91, 255, 0.35);
-      }
-      button.primary:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 20px 48px rgba(127, 91, 255, 0.45);
-      }
-      main {
-        padding: 0 5vw 96px;
-        display: grid;
-        gap: 40px;
-      }
-      section.card {
-        background: var(--card);
-        border: 1px solid rgba(148, 163, 184, 0.12);
-        border-radius: 24px;
-        padding: 32px;
-        backdrop-filter: blur(18px);
-        box-shadow: 0 24px 64px rgba(2, 6, 23, 0.55);
-      }
-      .grid {
-        display: grid;
-        gap: 24px;
-      }
-      @media (min-width: 900px) {
-        .grid.columns-2 {
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-        }
-      }
-      .domain-card {
-        border-radius: 20px;
-        border: 1px solid rgba(127, 91, 255, 0.22);
-        padding: 24px;
-        background: rgba(15, 23, 42, 0.72);
-        position: relative;
-        overflow: hidden;
-      }
-      .domain-card::after {
-        content: '';
-        position: absolute;
-        inset: 0;
-        pointer-events: none;
-        background: radial-gradient(circle at 80% 0%, rgba(34, 211, 238, 0.15), transparent 55%);
-      }
-      .domain-card h3 {
-        margin: 0 0 12px;
-        font-size: 1.5rem;
-      }
-      .badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 6px 12px;
-        border-radius: 999px;
-        background: rgba(127, 91, 255, 0.18);
-        border: 1px solid rgba(127, 91, 255, 0.35);
-        font-size: 0.82rem;
-        color: var(--text);
-        margin-right: 8px;
-      }
-      .metrics {
-        display: grid;
-        gap: 12px;
-        margin-top: 12px;
-      }
-      .metrics span {
-        font-size: 0.95rem;
-        color: var(--muted);
-      }
-      ul.mesh-list {
-        list-style: none;
-        padding: 0;
-        margin: 12px 0 0 0;
-        display: grid;
-        gap: 8px;
-      }
-      ul.mesh-list li {
-        background: rgba(255, 255, 255, 0.03);
-        border-radius: 12px;
-        padding: 10px 14px;
-        border: 1px solid rgba(148, 163, 184, 0.15);
-        color: var(--muted);
-        font-size: 0.9rem;
-        line-height: 1.5;
-      }
-      ul.credential-list {
-        margin-top: 18px;
-      }
-      ul.credential-list li strong {
-        display: block;
-        color: var(--text);
-        font-weight: 600;
-        margin-bottom: 4px;
-      }
-      ul.credential-list li span {
-        display: block;
-        font-size: 0.82rem;
-        color: var(--muted);
-      }
-      pre {
-        background: rgba(15, 23, 42, 0.78);
-        border-radius: 18px;
-        padding: 20px;
-        overflow-x: auto;
-        font-size: 0.85rem;
-        border: 1px solid rgba(148, 163, 184, 0.15);
-      }
-      .mermaid-container {
-        background: rgba(15, 23, 42, 0.78);
-        border-radius: 24px;
-        padding: 24px;
-        border: 1px solid rgba(148, 163, 184, 0.15);
-      }
-      footer {
-        text-align: center;
-        color: var(--muted);
-        padding: 24px 5vw 64px;
-      }
-      .hidden {
-        display: none !important;
-      }
-    </style>
-    <script>
-      document.addEventListener('DOMContentLoaded', () => {
-        if (window.mermaid) {
-          window.mermaid.initialize({ startOnLoad: false, theme: 'dark' });
-        }
-      });
-    </script>
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self'; img-src 'self' data:; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'"
+    />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <title>Phase 6 · Multi-domain work lab · AGI Jobs</title>
+    <link rel="stylesheet" href="./ui/styles.css" />
+    <script type="module" src="./ui/app.mjs"></script>
   </head>
   <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <nav class="topbar" aria-label="Primary">
+      <a href="https://montrealai.github.io/AGIJobsv0/">✧ AGI JOBS</a
+      ><a
+        href="https://montrealai.github.io/AGIJobsv0/demos/phase-6-scaling-multi-domain-expansion/"
+        >Sources &amp; original guides ↗</a
+      >
+    </nav>
     <header>
-      <h1>AGI Jobs Phase 6 Control Surface</h1>
+      <p class="eyebrow">PHASE 06 / MULTI-DOMAIN EXPANSION</p>
+      <h1>More domains.<br /><em>One standard of proof.</em></h1>
       <p>
-        Operate civilization-scale agent fleets across finance, healthcare, logistics, and climate systems. One run of
-        AGI Jobs v0/v2 deploys or updates every domain, routes IoT signals, and verifies DID-controlled access – without
-        writing a single line of code.
+        Coordinate specialized agents across finance, health operations,
+        logistics, climate and education. Turn authorized screen-based work into
+        bounded assignments, reviewable evidence and results a buyer can accept.
       </p>
       <div class="hero-actions">
-        <button id="launch-demo" class="primary">Launch orchestration preview</button>
-        <button id="copy-mermaid" class="primary" style="background: rgba(34,211,238,0.18); color: var(--text); box-shadow: none;">
-          Copy mermaid diagram
-        </button>
+        <a class="primary" href="#planner">Plan a dispatch wave ↓</a
+        ><a class="secondary" href="#snapshot">Inspect configuration ↓</a>
       </div>
+      <p class="scope-note">
+        Browser-only planning · No accounts, wallet or provider connection ·
+        Export before reloading
+      </p>
     </header>
 
-    <main>
-      <section class="card">
-        <h2>Global readiness dashboard</h2>
-        <div class="metrics" id="global-summary"></div>
-      </section>
-
-      <section class="card">
-        <h2>Credential governance</h2>
-        <div class="metrics" id="credential-summary"></div>
-        <div class="grid columns-2" id="credential-grid"></div>
-      </section>
-
-      <section class="card">
-        <h2>Layer-2 bridge & oracle plan</h2>
-        <div class="grid columns-2" id="bridge-grid"></div>
-      </section>
-
-      <section class="card">
-        <h2>Decentralized infrastructure mesh</h2>
-        <p style="color: var(--muted); margin-top: 0;">
-          Transparent view of the cross-chain, storage, identity, and compute rails the runtime activates per domain.
-          Every integration is pre-approved for automated governance overrides.
+    <main id="main">
+      <section class="boundary" aria-labelledby="boundary-title">
+        <h2 id="boundary-title">Build capacity through accepted work.</h2>
+        <p>
+          This preview reads an illustrative repository configuration. Its large
+          scale, revenue, identity, resilience and automation figures are
+          scenario assumptions, not measured performance. A real deployment
+          needs commissioned workers, buyer authority, independent review and
+          actual settlement evidence.
         </p>
-        <div class="grid columns-2" id="infra-grid"></div>
       </section>
-
-      <section class="card">
-        <h2>Domain control modules</h2>
-        <div class="grid columns-2" id="domain-grid"></div>
+      <section class="card lab" id="planner" aria-labelledby="planner-title">
+        <p class="eyebrow">THE MULTI-DOMAIN WORK LAB</p>
+        <h2 id="planner-title">Expand the fleet.<br />Reserve the review.</h2>
+        <p class="intro">
+          Five specialties. One dispatch wave. See how worker availability,
+          independent review and a proposed reward budget bound the work you can
+          responsibly attempt.
+        </p>
+        <p class="scope-note">
+          Planning only. No inputs are stored, uploaded or sent to a worker.
+          Reloading clears the draft. Use synthetic or approved public inputs;
+          do not enter secrets.
+        </p>
+        <form id="phase6-form" novalidate>
+          <fieldset>
+            <legend>1 / Assign domain capacity</legend>
+            <p>
+              Each worker can take one job in this wave. The configured
+              concurrent-job limit is a planning ceiling; existing in-flight
+              work and actual admission are unknown. Pausing here affects only
+              this model.
+            </p>
+            <div id="planning-domains" class="domain-inputs">
+              <p>
+                Domain controls load from the bundled configuration when
+                JavaScript is enabled.
+              </p>
+            </div>
+          </fieldset>
+          <fieldset>
+            <legend>2 / Reserve a shared review and reward budget</legend>
+            <div class="field-grid">
+              <div>
+                <label for="wave-reviewers">Independent reviewers</label
+                ><input
+                  id="wave-reviewers"
+                  name="reviewers"
+                  type="number"
+                  min="0"
+                  max="10000"
+                  value="2"
+                  required
+                />
+              </div>
+              <div>
+                <label for="wave-minutes">Available minutes per reviewer</label
+                ><input
+                  id="wave-minutes"
+                  name="minutes"
+                  type="number"
+                  min="1"
+                  max="480"
+                  value="120"
+                  required
+                />
+              </div>
+              <div>
+                <label for="wave-review-minutes">Review minutes per job</label
+                ><input
+                  id="wave-review-minutes"
+                  name="reviewMinutes"
+                  type="number"
+                  min="1"
+                  max="480"
+                  value="30"
+                  required
+                />
+              </div>
+              <div>
+                <label for="wave-budget">Proposed reward budget (USDC)</label
+                ><input
+                  id="wave-budget"
+                  name="budget"
+                  inputmode="decimal"
+                  maxlength="20"
+                  value="1000"
+                  required
+                />
+              </div>
+              <div>
+                <label for="wave-reward">Proposed reward per job (USDC)</label
+                ><input
+                  id="wave-reward"
+                  name="reward"
+                  inputmode="decimal"
+                  maxlength="20"
+                  value="100"
+                  required
+                />
+              </div>
+            </div>
+            <p class="scope-note">
+              Unfunded proposals, six-decimal precision. This is one wave, not
+              jobs per day or a throughput forecast. Review time and budget are
+              assumed fully available; provider charges, reviewer fees, rework
+              and settlement costs are excluded.
+            </p>
+          </fieldset>
+          <fieldset>
+            <legend>3 / Prepare one concrete example</legend>
+            <label for="wave-domain">Example task domain</label
+            ><select id="wave-domain" name="domain"></select>
+            <p id="example-detail">
+              Examples use synthetic records and exact, independently
+              reproducible arithmetic.
+            </p>
+            <details>
+              <summary>Inspect the complete synthetic input</summary>
+              <pre
+                id="example-data"
+                tabindex="0"
+                aria-label="Synthetic example data"
+              ></pre>
+            </details>
+            <div class="field-grid">
+              <div>
+                <label for="wave-runtime">Execution route</label
+                ><select id="wave-runtime" name="runtime">
+                  <option value="openclaw">Commissioned OpenClaw</option>
+                  <option value="work">Operator-led ChatGPT Work</option>
+                </select>
+              </div>
+              <div>
+                <label for="wave-profile">Worker profile name</label
+                ><input
+                  id="wave-profile"
+                  name="workerProfile"
+                  maxlength="64"
+                  value="research"
+                  required
+                />
+              </div>
+            </div>
+            <p class="scope-note">
+              The task uses bounded UTF-8 artifacts and a 60-minute proposed run
+              allowance. These planning values do not enforce runtime limits.
+              Task export requires a candidate slot in the selected domain.
+            </p>
+            <div class="checklist">
+              <label
+                ><input type="checkbox" name="authority" /> I will verify the
+                buyer’s authority and permitted actions before admission.</label
+              ><label
+                ><input type="checkbox" name="sources" /> I will verify the
+                synthetic inputs and approved source and account
+                boundaries.</label
+              ><label
+                ><input type="checkbox" name="review" /> I will assign an
+                independent reviewer and agree acceptance criteria.</label
+              >
+            </div>
+            <p class="scope-note">
+              These are preparation commitments. They do not authorize
+              execution, establish credentials or verify any claim.
+            </p>
+          </fieldset>
+          <button type="submit" class="primary" disabled>
+            Calculate dispatch draft →
+          </button>
+        </form>
+        <aside class="result-panel" aria-labelledby="result-title">
+          <p class="eyebrow">REVIEWABLE CAPACITY</p>
+          <h3 id="result-title">What fits in this wave?</h3>
+          <p id="wave-status" class="status" role="status" tabindex="-1">
+            Enable JavaScript and load the local configuration to calculate.
+          </p>
+          <div id="wave-result" hidden>
+            <div class="big-number">
+              <strong id="wave-candidates">0</strong
+              ><span>candidate job slots</span>
+            </div>
+            <p id="wave-explanation"></p>
+            <div
+              class="table-scroll"
+              tabindex="0"
+              role="region"
+              aria-label="Domain allocation"
+            >
+              <table>
+                <caption>
+                  Round-robin allocation in configuration order; one slot per
+                  eligible domain per round.
+                </caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Domain</th>
+                    <th scope="col">State</th>
+                    <th scope="col">Requested</th>
+                    <th scope="col">Candidate</th>
+                    <th scope="col">Deferred</th>
+                  </tr>
+                </thead>
+                <tbody id="allocation-rows"></tbody>
+              </table>
+            </div>
+            <p>
+              Deferred jobs include paused domains and requests beyond available
+              capacity. No queue or scheduler is connected. Configured domain
+              priorities do not affect this illustrative allocation rule.
+            </p>
+            <details>
+              <summary>Inspect the complete capacity draft</summary>
+              <pre
+                id="wave-json"
+                tabindex="0"
+                aria-label="Capacity draft JSON"
+              ></pre>
+            </details>
+          </div>
+          <div class="downloads">
+            <button
+              type="button"
+              class="secondary"
+              data-wave-download="plan"
+              disabled
+            >
+              Download capacity plan ↓</button
+            ><button
+              type="button"
+              class="secondary"
+              data-wave-download="proposal"
+              disabled
+            >
+              Download example proposal ↓</button
+            ><button
+              type="button"
+              class="secondary"
+              data-wave-download="task"
+              disabled
+            >
+              Download task.json ↓
+            </button>
+          </div>
+          <p>
+            For an actual buyer brief, define the approved sources and
+            acceptance criteria in the
+            <a href="https://montrealai.github.io/AGIJobsv0/work/"
+              >complete work planner</a
+            >. Inspect an actual completed receipt in the
+            <a href="https://montrealai.github.io/AGIJobsv0/review/"
+              >evidence reviewer</a
+            >.
+          </p>
+        </aside>
       </section>
+      <section class="card" aria-labelledby="preview-title">
+        <p class="eyebrow">PRESERVED CONTROL SURFACE</p>
+        <h2 id="preview-title">Read the plan before commissioning it.</h2>
+        <p>
+          Every original configuration view remains below. Declared services,
+          credential policies and gateway addresses have not been verified.
+          Register and update are alternative operations, not a batch to submit
+          together.
+        </p>
+        <button id="launch-demo" class="secondary" disabled>
+          Reload configuration preview
+        </button>
+        <p id="preview-status" class="status" role="status">
+          Build and serve this source with
+          <code>node scripts/pages/phase6-build.mjs</code>, or use the hosted
+          experience. JavaScript is required to inspect configuration and
+          calculate drafts.
+        </p>
+        <noscript
+          ><p>
+            JavaScript is disabled. Read the original systems map, workflow and
+            linked source guide; no draft or calldata is generated.
+          </p></noscript
+        >
+      </section>
+      <div id="snapshot" class="grid" hidden>
+        <details class="card">
+          <summary><h2>Illustrative configuration snapshot</h2></summary>
+          <div class="metrics" id="global-summary"></div>
+        </details>
 
+        <details class="card">
+          <summary><h2>Credential governance</h2></summary>
+          <div class="metrics" id="credential-summary"></div>
+          <div class="grid columns-2" id="credential-grid"></div>
+        </details>
+
+        <details class="card">
+          <summary><h2>Layer-2 bridge & oracle plan</h2></summary>
+          <div class="grid columns-2" id="bridge-grid"></div>
+        </details>
+
+        <details class="card">
+          <summary><h2>Decentralized infrastructure mesh</h2></summary>
+          <p style="color: var(--muted); margin-top: 0">
+            Declared cross-chain, storage, identity and compute integrations per
+            domain. Configuration does not establish connectivity,
+            authorization, decentralization or an operating service.
+          </p>
+          <div class="grid columns-2" id="infra-grid"></div>
+        </details>
+
+        <details class="card">
+          <summary><h2>Domain control modules</h2></summary>
+          <div class="grid columns-2" id="domain-grid"></div>
+        </details>
+
+        <details class="card">
+          <summary><h2>Illustrative calldata inspector</h2></summary>
+          <p style="color: var(--muted); margin-top: 0">
+            Unsigned example encodings for the bundled ABI and illustrative
+            configuration. No target address, chain ID, nonce, live state,
+            permissions or transaction simulation has been verified. Rebuild a
+            proposal against the actual deployment and independently review it
+            before any authorized signing. This page cannot submit transactions.
+          </p>
+          <div class="grid" id="calldata-grid"></div>
+        </details>
+      </div>
       <section class="card">
-        <h2>Phase 6 systems map</h2>
+        <h2>Original Phase 6 systems map</h2>
         <div class="mermaid-container">
-          <pre class="mermaid" id="mermaid-diagram">graph TD
+          <pre class="mermaid" id="mermaid-original">
+graph TD
   Owner[[Timelock / Owner]] -->|governs| Expansion(Phase6ExpansionManager)
   Expansion -->|registers| Domains{{Multi-domain registry}}
   Domains -->|events| Subgraph[(Phase6 Subgraph)]
@@ -254,961 +385,136 @@
   Agents --> IoT[IoT & External Oracles]
   Runtime --> L2Gateways[Layer-2 Executors]
   L2Gateways --> Settlement[Ethereum Mainnet]
-</pre>
+</pre
+          >
+        </div>
+        <details>
+          <summary>Read the preserved original source</summary>
+          <pre
+            id="original-source"
+            tabindex="0"
+            aria-label="Original systems map source"
+          ></pre>
+        </details>
+        <p class="scope-note">
+          Architecture intent. Arrows do not demonstrate connected services or
+          observed settlement.
+        </p>
+      </section>
+      <section class="card">
+        <h2>Configured domain map</h2>
+        <p id="diagram-status">
+          Generated from this preview’s domain names. The original map above is
+          preserved separately.
+        </p>
+        <div class="mermaid-container">
+          <pre class="mermaid" id="mermaid-diagram">
+Load the configuration to draw its domain map.</pre
+          >
+        </div>
+        <details>
+          <summary>Read the configured map source</summary>
+          <pre
+            id="dynamic-source"
+            tabindex="0"
+            aria-label="Configured domain map source"
+          ></pre>
+        </details>
+        <button id="copy-mermaid" class="secondary" disabled>
+          Copy configured map source
+        </button>
+      </section>
+      <section class="card" aria-labelledby="workflow-title">
+        <p class="eyebrow">FROM A BOUNDED TASK TO COMPOUNDING CAPABILITY</p>
+        <h2 id="workflow-title">Scale what can be verified.</h2>
+        <div class="grid columns-2">
+          <article>
+            <h3>01 / Commission the worker</h3>
+            <p>
+              The repository’s admitted Responses adapter can dispatch to an
+              appropriately configured OpenClaw gateway. The gateway needs a
+              protected worker profile, isolated browser or sandbox, explicit
+              origins, action policy and enforced cost and time limits. A
+              profile name alone connects nothing.
+            </p>
+          </article>
+          <article>
+            <h3>02 / Scope the computer work</h3>
+            <p>
+              An operator-led ChatGPT Work session may use its available
+              computer, browser, code and file tools under the user’s
+              permissions. This repository does not expose a remote Work
+              dispatch API or implement the separate OpenAI-hosted
+              browser-session API. Tool availability and task reliability must
+              be demonstrated for each workflow.
+            </p>
+          </article>
+          <article>
+            <h3>03 / Review independent evidence</h3>
+            <p>
+              Keep the exact task, sources, action log, artifacts and runtime
+              record. An independent reviewer reproduces the acceptance checks
+              and records discrepancies. Hashes establish byte integrity;
+              self-reported success and illustrative compliance scores do not
+              establish correctness, eligibility or independent approval.
+            </p>
+          </article>
+          <article>
+            <h3>04 / Settle under actual authority</h3>
+            <p>
+              A buyer accepts the useful deliverable. An authorized deployment
+              and signer apply its real dispute, fee and settlement rules.
+              Provider completion, independent review, buyer use and settlement
+              are separate events with separate evidence.
+            </p>
+          </article>
+        </div>
+        <div class="hero-actions">
+          <a
+            class="secondary"
+            href="https://github.com/MontrealAI/AGIJobsv0/blob/main/docs/computer-work.md"
+            >Read the worker integration guide ↗</a
+          ><a
+            class="secondary"
+            href="https://github.com/MontrealAI/AGIJobsv0/blob/main/docs/production/readiness.md"
+            >Inspect deployment readiness ↗</a
+          >
         </div>
       </section>
-
-      <section class="card">
-        <h2>Calldata clipboard</h2>
-        <p style="color: var(--muted); margin-top: 0;">
-          Ready-to-execute calldata for `registerDomain`, `updateDomain`, and `setGlobalConfig`. Paste straight into your
-          multisig or timelock UI.
+      <section class="card horizon" aria-labelledby="horizon-title">
+        <p class="eyebrow">A LONGER HORIZON</p>
+        <h2 id="horizon-title">
+          Useful work becomes<br />extraordinary capacity.
+        </h2>
+        <p class="intro">
+          Coordinate software, scientific analysis, education and infrastructure
+          research into larger programs. Reinvest accepted results in better
+          tools, stronger evidence and more capable teams. Energy and physical
+          infrastructure outcomes require engineering and validation beyond a
+          screen.
         </p>
-        <div class="grid" id="calldata-grid"></div>
+        <div class="market">
+          <strong>$40T / year</strong>
+          <p>
+            Project-supplied planning assumption for broad screen-based labor.
+            Not a verified market estimate, revenue forecast or claim that every
+            human task can be automated. Achievable work depends on permissions,
+            available tools, task reliability, buyer demand and independent
+            review.
+          </p>
+        </div>
+        <a
+          href="https://montrealai.github.io/AGIJobsv0/experiments/kardashev-ii/"
+          >Explore the civilization-scale research model →</a
+        >
       </section>
     </main>
 
     <footer>
-      Phase 6 readiness courtesy of AGI Jobs v0/v2. Governance retains full control, agents gain infinite reach.
+      AGI Jobs · Useful work, inspectable evidence, authorized settlement.<br /><a
+        href="https://montrealai.github.io/AGIJobsv0/"
+        >Return to the Demo Observatory →</a
+      >
     </footer>
-
-    <script type="module">
-      const zeroAddress = '0x0000000000000000000000000000000000000000';
-      const zeroBytes32 = '0x' + '0'.repeat(64);
-      const configPath = './config/domains.phase6.json';
-      const abi = await fetch('./abi/Phase6ExpansionManager.json').then((res) => res.json());
-      const { Interface, keccak256, toUtf8Bytes, formatEther } = await import('https://cdn.jsdelivr.net/npm/ethers@6.15.0/+esm');
-      const iface = new Interface(abi);
-
-      const state = { config: null, mermaidSource: '', calldata: [], metrics: null };
-
-      function formatAddress(addr) {
-        if (!addr || addr === zeroAddress) return '—';
-        return `${addr.slice(0, 6)}…${addr.slice(-4)}`;
-      }
-
-      function formatCadence(value) {
-        if (value === undefined || value === null || Number.isNaN(Number(value))) {
-          return '—';
-        }
-        if (Number(value) === 0) {
-          return 'manual';
-        }
-        return `${value}s`;
-      }
-
-      function formatAutopilot(control = {}) {
-        const enabled = Boolean(control.autopilotEnabled);
-        const cadence = formatCadence(control.autopilotCadence);
-        return `${enabled ? 'enabled' : 'standby'} @ ${cadence}`;
-      }
-
-      function ensureArray(value) {
-        return Array.isArray(value) ? value : [];
-      }
-
-      function formatList(values, fallback = '—') {
-        if (!values || !values.length) {
-          return fallback;
-        }
-        return values.join(', ');
-      }
-
-      function appendCredentialItem(list, heading, lines = []) {
-        const li = document.createElement('li');
-        const title = document.createElement('strong');
-        title.textContent = heading;
-        li.appendChild(title);
-        lines
-          .filter((line) => typeof line === 'string' && line.length)
-          .forEach((line) => {
-            const span = document.createElement('span');
-            span.textContent = line;
-            li.appendChild(span);
-          });
-        list.appendChild(li);
-      }
-
-      function heartbeatSummary(domain, global) {
-        const cadence = Math.max(domain.heartbeatSeconds ?? 0, global.l2SyncCadence ?? 0);
-        return `${cadence}s sync cadence (domain ${domain.heartbeatSeconds}s, global ${global.l2SyncCadence}s)`;
-      }
-
-      function buildDomainTuple(domain) {
-        return [
-          domain.slug,
-          domain.name,
-          domain.manifestURI,
-          domain.validationModule ?? zeroAddress,
-          domain.oracle ?? zeroAddress,
-          domain.l2Gateway ?? zeroAddress,
-          domain.subgraph,
-          domain.executionRouter ?? zeroAddress,
-          BigInt(domain.heartbeatSeconds ?? 120),
-          true,
-        ];
-      }
-
-      function buildDomainOperationsTuple(domain) {
-        const ops = domain.operations ?? {};
-        const minStakeRaw = ops.minStake ?? 0;
-        const minStake =
-          typeof minStakeRaw === 'string'
-            ? BigInt(minStakeRaw)
-            : BigInt(Math.trunc(Number(minStakeRaw)));
-      return [
-        BigInt(Math.trunc(Number(ops.maxActiveJobs ?? 0))),
-        BigInt(Math.trunc(Number(ops.maxQueueDepth ?? 0))),
-        minStake,
-        Number(ops.treasuryShareBps ?? 0),
-        Number(ops.circuitBreakerBps ?? 0),
-        Boolean(ops.requiresHumanValidation),
-      ];
-      }
-
-      function buildDomainTelemetryTuple(domain) {
-        const telemetry = domain.telemetry ?? {};
-        const toBytes32 = (value) =>
-          typeof value === 'string' && value.startsWith('0x') && value.length === 66 ? value : zeroBytes32;
-        return [
-          Number(telemetry.resilienceBps ?? 0),
-          Number(telemetry.automationBps ?? 0),
-          Number(telemetry.complianceBps ?? 0),
-          Number(telemetry.settlementLatencySeconds ?? 0),
-          Boolean(telemetry.usesL2Settlement ?? false),
-          telemetry.sentinelOracle ?? zeroAddress,
-          telemetry.settlementAsset ?? zeroAddress,
-          toBytes32(telemetry.metricsDigest),
-          toBytes32(telemetry.manifestHash),
-        ];
-      }
-
-      function buildDomainInfrastructureTuple(domain) {
-        const control = domain.infrastructureControl ?? {};
-        const cadence = Number(control.autopilotCadence ?? 0);
-        const safeCadence = Number.isFinite(cadence) ? Math.trunc(cadence) : 0;
-        return [
-          control.agentOps ?? zeroAddress,
-          control.dataPipeline ?? zeroAddress,
-          control.credentialVerifier ?? zeroAddress,
-          control.fallbackOperator ?? zeroAddress,
-          control.controlPlaneURI ?? domain.manifestURI,
-          BigInt(safeCadence),
-          Boolean(control.autopilotEnabled ?? false),
-        ];
-      }
-
-      function formatBps(value) {
-        if (typeof value !== 'number' || Number.isNaN(value)) return '—';
-        return `${(value / 100).toFixed(2)}% (${value} bps)`;
-      }
-
-      function formatStake(value) {
-        try {
-          if (value === undefined || value === null) return '—';
-          const big = typeof value === 'bigint' ? value : BigInt(value);
-          return `${formatEther(big)} ETH`;
-        } catch (error) {
-          return String(value ?? '—');
-        }
-      }
-
-      function formatUSD(value) {
-        if (value === undefined || value === null || Number.isNaN(Number(value))) {
-          return '—';
-        }
-        const numeric = Number(value);
-        if (!Number.isFinite(numeric)) {
-          return '—';
-        }
-        if (numeric >= 1e12) {
-          return `$${(numeric / 1e12).toFixed(2)}T`;
-        }
-        if (numeric >= 1e9) {
-          return `$${(numeric / 1e9).toFixed(2)}B`;
-        }
-        if (numeric >= 1e6) {
-          return `$${(numeric / 1e6).toFixed(2)}M`;
-        }
-        return `$${numeric.toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
-      }
-
-      function computeMetrics(config) {
-        const resilience = [];
-        const automation = [];
-        const compliance = [];
-        const latency = [];
-        let l2Coverage = 0;
-        const valueFlows = [];
-        const sentinels = new Set();
-        const resilienceFloor = Number(config.global?.telemetry?.resilienceFloorBps ?? NaN);
-        const automationFloor = Number(config.global?.telemetry?.automationFloorBps ?? NaN);
-        let resilienceFloorBreaches = 0;
-        let automationFloorBreaches = 0;
-        const globalCredentials = config.global?.credentials ?? {};
-        const globalTrustAnchors = ensureArray(globalCredentials.trustAnchors);
-        const globalIssuers = ensureArray(globalCredentials.issuers);
-        const globalPolicies = ensureArray(globalCredentials.policies);
-        const issuerDomainCoverage = new Set();
-        globalIssuers.forEach((issuer) => {
-          ensureArray(issuer.domains).forEach((domain) => {
-            issuerDomainCoverage.add(String(domain).toLowerCase());
-          });
-        });
-        const globalRevocationRegistry =
-          typeof globalCredentials.revocationRegistry === 'string' && globalCredentials.revocationRegistry
-            ? globalCredentials.revocationRegistry
-            : null;
-        let credentialedDomains = 0;
-        let credentialRequirements = 0;
-        config.domains.forEach((domain) => {
-          const idx = Number.parseFloat(domain.metadata?.resilienceIndex ?? '');
-          if (!Number.isNaN(idx)) {
-            resilience.push(idx);
-          }
-          if (domain.telemetry) {
-            const telemetry = domain.telemetry;
-            const resilienceBps = Number(telemetry.resilienceBps ?? NaN);
-            if (!Number.isNaN(resilienceBps) && !Number.isNaN(resilienceFloor) && resilienceBps < resilienceFloor) {
-              resilienceFloorBreaches += 1;
-            }
-            const auto = Number(telemetry.automationBps ?? NaN);
-            const comp = Number(telemetry.complianceBps ?? NaN);
-            const latencySeconds = Number(telemetry.settlementLatencySeconds ?? NaN);
-            if (!Number.isNaN(auto)) {
-              automation.push(auto);
-              if (!Number.isNaN(automationFloor) && auto < automationFloor) {
-                automationFloorBreaches += 1;
-              }
-            }
-            if (!Number.isNaN(comp)) {
-              compliance.push(comp);
-            }
-            if (!Number.isNaN(latencySeconds)) {
-              latency.push(latencySeconds);
-            }
-            if (telemetry.usesL2Settlement) {
-              l2Coverage += 1;
-            }
-          }
-          const domainCredentials = ensureArray(domain.credentials);
-          if (domainCredentials.length) {
-            credentialedDomains += 1;
-            credentialRequirements += domainCredentials.length;
-          }
-          const value = domain.metadata?.valueFlowMonthlyUSD;
-          if (typeof value === 'number' && Number.isFinite(value)) {
-            valueFlows.push(value);
-          }
-          if (domain.metadata?.sentinel) {
-            sentinels.add(String(domain.metadata.sentinel));
-          }
-        });
-        const averageResilience =
-          resilience.length > 0 ? resilience.reduce((acc, cur) => acc + cur, 0) / resilience.length : null;
-        const minResilience = resilience.length > 0 ? Math.min(...resilience) : null;
-        const maxResilience = resilience.length > 0 ? Math.max(...resilience) : null;
-        const resilienceStdDev =
-          resilience.length > 0 && averageResilience !== null
-            ? Math.sqrt(
-                resilience.reduce((acc, cur) => {
-                  const diff = cur - averageResilience;
-                  return acc + diff * diff;
-                }, 0) / resilience.length,
-              )
-            : null;
-        const totalValueFlow = valueFlows.reduce((acc, cur) => acc + cur, 0);
-        const domainCount = config.domains.length || 0;
-        const computeCoverage = (breaches, floor) => {
-          if (Number.isNaN(floor)) {
-            return null;
-          }
-          if (!domainCount) {
-            return 1;
-          }
-          return (domainCount - breaches) / domainCount;
-        };
-        return {
-          averageResilience,
-          minResilience,
-          maxResilience,
-          resilienceStdDev,
-          totalValueFlow,
-          sentinelCount: sentinels.size,
-          averageAutomation: automation.length
-            ? automation.reduce((acc, cur) => acc + cur, 0) / automation.length
-            : null,
-          averageCompliance: compliance.length
-            ? compliance.reduce((acc, cur) => acc + cur, 0) / compliance.length
-            : null,
-          averageLatency: latency.length ? latency.reduce((acc, cur) => acc + cur, 0) / latency.length : null,
-          l2Coverage: config.domains.length ? l2Coverage / config.domains.length : 0,
-          resilienceFloorCoverage: computeCoverage(resilienceFloorBreaches, resilienceFloor),
-          resilienceFloorBreaches,
-          automationFloorCoverage: computeCoverage(automationFloorBreaches, automationFloor),
-          automationFloorBreaches,
-          autopilotEnabled: config.domains.reduce(
-            (acc, domain) => (domain.infrastructureControl?.autopilotEnabled ? acc + 1 : acc),
-            0,
-          ),
-          credentialCoverage: config.domains.length ? credentialedDomains / config.domains.length : 0,
-          credentialedDomains,
-          credentialRequirements,
-          globalCredentialAnchors: globalTrustAnchors.length,
-          globalCredentialIssuers: globalIssuers.length,
-          globalCredentialPolicies: globalPolicies.length,
-          globalCredentialDomainCoverage: issuerDomainCoverage.size,
-          globalRevocationRegistry,
-        };
-      }
-
-      function renderGlobal(config) {
-        const target = document.getElementById('global-summary');
-        target.innerHTML = '';
-        const telemetry = config.global.telemetry || {};
-        const infra = config.global.infrastructure || {};
-        const items = [
-          `Global manifest: ${config.global.manifestURI}`,
-          `IoT oracle router: ${formatAddress(config.global.iotOracleRouter)}`,
-          `Default L2 gateway: ${formatAddress(config.global.defaultL2Gateway)}`,
-          `Treasury bridge: ${formatAddress(config.global.treasuryBridge)}`,
-          `DID registry: ${formatAddress(config.global.didRegistry)}`,
-          `System pause: ${formatAddress(config.global.systemPause)}`,
-          `Escalation bridge: ${formatAddress(config.global.escalationBridge)}`,
-          `Network cadence baseline: ${config.global.l2SyncCadence}s`,
-          `Mesh coordinator: ${formatAddress(infra.meshCoordinator)}`,
-          `Data lake: ${formatAddress(infra.dataLake)}`,
-          `Identity bridge: ${formatAddress(infra.identityBridge)}`,
-          `Infra topology: ${infra.topologyURI ?? '—'}`,
-          `Infra autopilot: ${formatAutopilot({
-            autopilotEnabled: Number(infra.autopilotCadence ?? 0) > 0,
-            autopilotCadence: infra.autopilotCadence,
-          })}`,
-          `Infra enforcement: ${infra.enforceDecentralizedInfra ? 'enforced' : 'advisory'}`,
-          `Treasury buffer: ${formatBps(config.global.guards?.treasuryBufferBps)}`,
-          `Circuit breaker: ${formatBps(config.global.guards?.circuitBreakerBps)}`,
-          `Anomaly grace: ${config.global.guards?.anomalyGracePeriod ?? '—'}s`,
-          `Auto-pause: ${String(config.global.guards?.autoPauseEnabled ?? false)}`,
-          `Oversight council: ${formatAddress(config.global.guards?.oversightCouncil)}`,
-          `Telemetry manifest hash: ${telemetry.manifestHash ?? '—'}`,
-          `Telemetry metrics digest: ${telemetry.metricsDigest ?? '—'}`,
-          `Telemetry resilience floor: ${formatBps(telemetry.resilienceFloorBps)}`,
-          `Telemetry automation floor: ${formatBps(telemetry.automationFloorBps)}`,
-          `Telemetry oversight weight: ${formatBps(telemetry.oversightWeightBps)}`,
-        ];
-        if (state.metrics) {
-          const {
-            averageResilience,
-            minResilience,
-            maxResilience,
-            totalValueFlow,
-            sentinelCount,
-            averageAutomation,
-            averageCompliance,
-            averageLatency,
-            l2Coverage,
-            resilienceStdDev,
-            resilienceFloorCoverage,
-            resilienceFloorBreaches,
-            automationFloorCoverage,
-            automationFloorBreaches,
-            credentialCoverage,
-            credentialedDomains,
-            credentialRequirements,
-            globalCredentialAnchors,
-            globalCredentialIssuers,
-            globalCredentialPolicies,
-            globalCredentialDomainCoverage,
-            globalRevocationRegistry,
-          } = state.metrics;
-          if (averageResilience !== null) {
-            items.push(`Network resilience: avg ${averageResilience.toFixed(3)} (min ${minResilience?.toFixed(3)}, max ${maxResilience?.toFixed(3)})`);
-          }
-          if (resilienceStdDev !== null) {
-            items.push(`Resilience deviation: ±${resilienceStdDev.toFixed(4)}`);
-          }
-          if (averageAutomation !== null) {
-            items.push(`Automation maturity: ${formatBps(averageAutomation)}`);
-          }
-          if (averageCompliance !== null) {
-            items.push(`Compliance assurance: ${formatBps(averageCompliance)}`);
-          }
-          if (averageLatency !== null) {
-            items.push(`Average settlement latency: ${averageLatency.toFixed(1)}s`);
-          }
-          items.push(`L2 settlement coverage: ${(l2Coverage * 100).toFixed(1)}% of domains`);
-          if (totalValueFlow) {
-            items.push(`Monthly value flow across domains: ${formatUSD(totalValueFlow)}`);
-          }
-          items.push(`Active sentinels: ${sentinelCount}`);
-          if (resilienceFloorCoverage !== null) {
-            items.push(
-              `Resilience floor coverage: ${(resilienceFloorCoverage * 100).toFixed(1)}% (breaches ${resilienceFloorBreaches})`,
-            );
-          }
-          if (automationFloorCoverage !== null) {
-            items.push(
-              `Automation floor coverage: ${(automationFloorCoverage * 100).toFixed(1)}% (breaches ${automationFloorBreaches})`,
-            );
-          }
-          if (config.domains.length) {
-            items.push(
-              `Autopilot coverage: ${(
-                (state.metrics.autopilotEnabled / config.domains.length) * 100
-              ).toFixed(1)}% (${state.metrics.autopilotEnabled}/${config.domains.length} domains)`,
-            );
-          }
-          items.push(
-            `Credential coverage: ${(credentialCoverage * 100).toFixed(1)}% (${credentialedDomains}/${config.domains.length} domains, ${credentialRequirements} requirements)`,
-          );
-          items.push(
-            `Trust anchors: ${globalCredentialAnchors} | issuers: ${globalCredentialIssuers} | policies: ${globalCredentialPolicies}`,
-          );
-          items.push(
-            `Issuer footprint: ${globalCredentialDomainCoverage} domains | Revocation registry: ${
-              globalRevocationRegistry ?? '—'
-            }`,
-          );
-        }
-        items.forEach((text) => {
-          const span = document.createElement('span');
-          span.textContent = `• ${text}`;
-          target.appendChild(span);
-        });
-      }
-
-      function renderCredentialGovernance(config) {
-        const summary = document.getElementById('credential-summary');
-        const grid = document.getElementById('credential-grid');
-        summary.innerHTML = '';
-        grid.innerHTML = '';
-
-        const metrics = state.metrics || {};
-        const coverage = Number(metrics.credentialCoverage ?? 0);
-        const credentialedDomains = Number(metrics.credentialedDomains ?? 0);
-        const requirements = Number(metrics.credentialRequirements ?? 0);
-        const trustAnchorsCount = Number(metrics.globalCredentialAnchors ?? 0);
-        const issuerCount = Number(metrics.globalCredentialIssuers ?? 0);
-        const policyCount = Number(metrics.globalCredentialPolicies ?? 0);
-        const issuerFootprint = Number(metrics.globalCredentialDomainCoverage ?? 0);
-        const configDomainCount = config.domains.length || 0;
-        const globalCredentials = config.global.credentials || {};
-        const revocationRegistry =
-          metrics.globalRevocationRegistry ?? globalCredentials.revocationRegistry ?? '—';
-        const summaryItems = [
-          `Global coverage: ${(coverage * 100).toFixed(1)}% (${credentialedDomains}/${configDomainCount} domains)`,
-          `Credential safeguards: ${requirements} total requirements`,
-          `Trust anchors: ${trustAnchorsCount} | issuers: ${issuerCount} | policies: ${policyCount}`,
-          `Issuer footprint: ${issuerFootprint} domains`,
-          `Revocation registry: ${revocationRegistry}`,
-        ];
-        summaryItems.forEach((text) => {
-          const span = document.createElement('span');
-          span.textContent = `• ${text}`;
-          summary.appendChild(span);
-        });
-
-        const trustAnchors = ensureArray(globalCredentials.trustAnchors);
-        const issuers = ensureArray(globalCredentials.issuers);
-        const policies = ensureArray(globalCredentials.policies);
-
-        const globalCard = document.createElement('div');
-        globalCard.className = 'domain-card';
-        const globalHeading = document.createElement('h3');
-        globalHeading.textContent = 'Global credential control';
-        globalCard.appendChild(globalHeading);
-
-        const globalMetrics = document.createElement('div');
-        globalMetrics.className = 'metrics';
-        globalMetrics.innerHTML = `
-          <span>Trust anchors: ${trustAnchors.length}</span>
-          <span>Issuers: ${issuers.length}</span>
-          <span>Policies: ${policies.length}</span>
-          <span>Issuer footprint: ${issuerFootprint} domains</span>
-          <span>Revocation registry: ${revocationRegistry}</span>
-        `;
-        globalCard.appendChild(globalMetrics);
-
-        const anchorList = document.createElement('ul');
-        anchorList.className = 'mesh-list credential-list';
-        if (trustAnchors.length) {
-          trustAnchors.forEach((anchor, idx) => {
-            appendCredentialItem(anchorList, `[Anchor ${idx + 1}] ${anchor.name}`, [
-              `DID: ${anchor.did}`,
-              anchor.role ? `Role: ${anchor.role}` : '',
-              anchor.policyURI ? `Policy: ${anchor.policyURI}` : '',
-            ]);
-          });
-        } else {
-          appendCredentialItem(anchorList, 'Trust anchors pending', [
-            'Define global oversight issuers to unlock credential automation.',
-          ]);
-        }
-        globalCard.appendChild(anchorList);
-
-        const issuerList = document.createElement('ul');
-        issuerList.className = 'mesh-list credential-list';
-        if (issuers.length) {
-          issuers.forEach((issuer, idx) => {
-            appendCredentialItem(issuerList, `[Issuer ${idx + 1}] ${issuer.name}`, [
-              `DID: ${issuer.did}`,
-              issuer.attestationType ? `Attestation: ${issuer.attestationType}` : '',
-              issuer.registry ? `Registry: ${issuer.registry}` : '',
-              issuer.domains?.length ? `Domains: ${formatList(issuer.domains)}` : '',
-            ]);
-          });
-        } else {
-          appendCredentialItem(issuerList, 'Issuers pending', [
-            'Register credential issuers to activate cross-domain access control.',
-          ]);
-        }
-        globalCard.appendChild(issuerList);
-
-        const policyList = document.createElement('ul');
-        policyList.className = 'mesh-list credential-list';
-        if (policies.length) {
-          policies.forEach((policy, idx) => {
-            appendCredentialItem(policyList, `[Policy ${idx + 1}] ${policy.name}`, [
-              policy.description || '',
-              policy.uri ? `URI: ${policy.uri}` : '',
-            ]);
-          });
-        } else {
-          appendCredentialItem(policyList, 'Policies pending', [
-            'Publish credential policies to guide human oversight enrollment.',
-          ]);
-        }
-        globalCard.appendChild(policyList);
-        grid.appendChild(globalCard);
-
-        config.domains.forEach((domain) => {
-          const domainCard = document.createElement('div');
-          domainCard.className = 'domain-card';
-          const heading = document.createElement('h3');
-          heading.textContent = domain.name;
-          domainCard.appendChild(heading);
-
-          const domainCredentials = ensureArray(domain.credentials);
-          const issuerSet = new Set();
-          const verifierSet = new Set();
-          const registrySet = new Set();
-          domainCredentials.forEach((credential) => {
-            ensureArray(credential.issuers).forEach((issuer) => issuerSet.add(issuer));
-            ensureArray(credential.verifiers).forEach((verifier) => verifierSet.add(verifier));
-            if (credential.registry) {
-              registrySet.add(credential.registry);
-            }
-          });
-
-          const domainMetrics = document.createElement('div');
-          domainMetrics.className = 'metrics';
-          domainMetrics.innerHTML = `
-            <span>Total requirements: ${domainCredentials.length}</span>
-            <span>Issuers in scope: ${issuerSet.size}</span>
-            <span>Verifiers active: ${verifierSet.size}</span>
-            <span>Registries referenced: ${registrySet.size}</span>
-          `;
-          domainCard.appendChild(domainMetrics);
-
-          const credentialList = document.createElement('ul');
-          credentialList.className = 'mesh-list credential-list';
-          if (domainCredentials.length) {
-            domainCredentials.forEach((credential, idx) => {
-              appendCredentialItem(credentialList, `[${idx + 1}] ${credential.name}`, [
-                credential.requirement,
-                credential.credentialType ? `Type: ${credential.credentialType}` : '',
-                credential.format ? `Format: ${credential.format}` : '',
-                credential.issuers?.length
-                  ? `Issuers: ${formatList(credential.issuers)}`
-                  : '',
-                credential.verifiers?.length
-                  ? `Verifiers: ${formatList(credential.verifiers)}`
-                  : '',
-                credential.registry ? `Registry: ${credential.registry}` : '',
-                credential.evidence ? `Evidence: ${credential.evidence}` : '',
-                credential.notes ? `Notes: ${credential.notes}` : '',
-              ]);
-            });
-          } else {
-            appendCredentialItem(credentialList, 'Credential plan pending', [
-              'Define verifiable credential guard rails before enabling autonomous operations.',
-            ]);
-          }
-          domainCard.appendChild(credentialList);
-          grid.appendChild(domainCard);
-        });
-      }
-
-      function renderDomains(config) {
-        const grid = document.getElementById('domain-grid');
-        grid.innerHTML = '';
-        config.domains.forEach((domain) => {
-          const card = document.createElement('article');
-          card.className = 'domain-card';
-
-          const title = document.createElement('h3');
-          title.textContent = domain.name;
-          card.appendChild(title);
-
-          const slug = document.createElement('span');
-          slug.className = 'badge';
-          slug.textContent = `slug: ${domain.slug}`;
-          card.appendChild(slug);
-
-          const priority = document.createElement('span');
-          priority.className = 'badge';
-          priority.textContent = `priority ${domain.priority}`;
-          card.appendChild(priority);
-
-          const metrics = document.createElement('div');
-          metrics.className = 'metrics';
-          const metadata = domain.metadata || {};
-          const telemetry = domain.telemetry || {};
-          const control = domain.infrastructureControl || {};
-          const resilience = metadata.resilienceIndex !== undefined ? Number(metadata.resilienceIndex).toFixed(3) : '—';
-          metrics.innerHTML = `
-            <span>Manifest URI: ${domain.manifestURI}</span>
-            <span>Subgraph: ${domain.subgraph}</span>
-            <span>Validation module: ${formatAddress(domain.validationModule)}</span>
-            <span>IoT oracle: ${formatAddress(domain.oracle)}</span>
-            <span>Execution router: ${formatAddress(domain.executionRouter)}</span>
-            <span>Heartbeat: ${heartbeatSummary(domain, config.global)}</span>
-            <span>Skill tags: ${domain.skillTags.join(', ')}</span>
-            <span>Resilience index: ${resilience}</span>
-            <span>Monthly value flow: ${metadata.valueFlowDisplay ?? formatUSD(metadata.valueFlowMonthlyUSD)}</span>
-            <span>Domain sentinel: ${metadata.sentinel ?? '—'}</span>
-            <span>Sentinel oracle: ${formatAddress(telemetry.sentinelOracle)}</span>
-            <span>Uptime: ${metadata.uptime ?? '—'}</span>
-            <span>Max active jobs: ${domain.operations?.maxActiveJobs ?? '—'}</span>
-            <span>Queue depth: ${domain.operations?.maxQueueDepth ?? '—'}</span>
-            <span>Min stake: ${formatStake(domain.operations?.minStake)}</span>
-            <span>Treasury share: ${formatBps(domain.operations?.treasuryShareBps)}</span>
-            <span>Circuit breaker: ${formatBps(domain.operations?.circuitBreakerBps)}</span>
-            <span>Requires human validation: ${domain.operations?.requiresHumanValidation ? 'Yes' : 'No'}</span>
-            <span>Telemetry resilience: ${formatBps(telemetry.resilienceBps)}</span>
-            <span>Telemetry automation: ${formatBps(telemetry.automationBps)}</span>
-            <span>Telemetry compliance: ${formatBps(telemetry.complianceBps)}</span>
-            <span>Settlement latency: ${telemetry.settlementLatencySeconds ?? '—'}s (L2 ${telemetry.usesL2Settlement ? 'enabled' : 'disabled'})</span>
-            <span>Telemetry metrics digest: ${telemetry.metricsDigest ?? '—'}</span>
-            <span>Telemetry manifest hash: ${telemetry.manifestHash ?? '—'}</span>
-            <span>Agent ops coordinator: ${formatAddress(control.agentOps)}</span>
-            <span>Data pipeline: ${formatAddress(control.dataPipeline)}</span>
-            <span>Credential verifier: ${formatAddress(control.credentialVerifier)}</span>
-            <span>Fallback operator: ${formatAddress(control.fallbackOperator)}</span>
-            <span>Control plane URI: ${control.controlPlaneURI ?? '—'}</span>
-            <span>Autopilot posture: ${formatAutopilot(control)}</span>
-          `;
-          card.appendChild(metrics);
-
-          const credentialList = document.createElement('ul');
-          credentialList.className = 'mesh-list credential-list';
-          const domainCredentials = ensureArray(domain.credentials);
-          if (domainCredentials.length) {
-            domainCredentials.forEach((credential, idx) => {
-              appendCredentialItem(credentialList, `[${idx + 1}] ${credential.name}`, [
-                credential.requirement,
-                credential.issuers?.length ? `Issuers: ${formatList(credential.issuers)}` : '',
-                credential.verifiers?.length ? `Verifiers: ${formatList(credential.verifiers)}` : '',
-                credential.registry ? `Registry: ${credential.registry}` : '',
-              ]);
-            });
-          } else {
-            appendCredentialItem(credentialList, 'Credential guard rails', [
-              'No verifiable credentials configured yet — follow governance checklist before launch.',
-            ]);
-          }
-          card.appendChild(credentialList);
-          grid.appendChild(card);
-        });
-      }
-
-      function renderBridgePlans(config) {
-        const grid = document.getElementById('bridge-grid');
-        grid.innerHTML = '';
-        config.domains.forEach((domain) => {
-          const div = document.createElement('div');
-          div.className = 'domain-card';
-          const metadata = domain.metadata || {};
-          const telemetry = domain.telemetry || {};
-          const control = domain.infrastructureControl || {};
-          const bridge = {
-            domain: domain.slug,
-            l2Gateway: domain.l2Gateway || config.global.defaultL2Gateway,
-            oracle: domain.oracle || config.global.iotOracleRouter,
-            executionRouter: domain.executionRouter || zeroAddress,
-            validationModule: domain.validationModule || zeroAddress,
-            cadence: heartbeatSummary(domain, config.global),
-            sentinel: metadata.sentinel || '—',
-            resilience: metadata.resilienceIndex !== undefined ? Number(metadata.resilienceIndex).toFixed(3) : '—',
-            telemetryResilience: telemetry.resilienceBps ?? null,
-            telemetryAutomation: telemetry.automationBps ?? null,
-            telemetryCompliance: telemetry.complianceBps ?? null,
-            settlementLatency: telemetry.settlementLatencySeconds ?? null,
-            usesL2: telemetry.usesL2Settlement ?? false,
-            autopilot: formatAutopilot(control),
-            controlPlane: control.controlPlaneURI ?? '—',
-            agentOps: formatAddress(control.agentOps),
-          };
-          div.innerHTML = `
-            <h3>${domain.name}</h3>
-            <div class="metrics">
-              <span>Target L2 gateway: ${formatAddress(bridge.l2Gateway)}</span>
-              <span>IoT oracle router: ${formatAddress(bridge.oracle)}</span>
-              <span>Execution router: ${formatAddress(bridge.executionRouter)}</span>
-              <span>Validation module: ${formatAddress(bridge.validationModule)}</span>
-              <span>${bridge.cadence}</span>
-              <span>Resilience index: ${bridge.resilience}</span>
-              <span>Sentinel coverage: ${bridge.sentinel}</span>
-              <span>Max active jobs: ${domain.operations?.maxActiveJobs ?? '—'}</span>
-              <span>Min stake: ${formatStake(domain.operations?.minStake)}</span>
-              <span>Treasury share: ${formatBps(domain.operations?.treasuryShareBps)}</span>
-              <span>Telemetry resilience: ${bridge.telemetryResilience !== null ? formatBps(Number(bridge.telemetryResilience)) : '—'}</span>
-              <span>Telemetry automation: ${bridge.telemetryAutomation !== null ? formatBps(Number(bridge.telemetryAutomation)) : '—'}</span>
-              <span>Telemetry compliance: ${bridge.telemetryCompliance !== null ? formatBps(Number(bridge.telemetryCompliance)) : '—'}</span>
-              <span>Settlement latency: ${bridge.settlementLatency ?? '—'}s (L2 ${bridge.usesL2 ? 'enabled' : 'disabled'})</span>
-              <span>Agent ops coordinator: ${bridge.agentOps}</span>
-              <span>Control plane: ${bridge.controlPlane}</span>
-              <span>Autopilot posture: ${bridge.autopilot}</span>
-            </div>
-          `;
-          grid.appendChild(div);
-        });
-      }
-
-      function renderCalldata() {
-        const grid = document.getElementById('calldata-grid');
-        grid.innerHTML = '';
-        state.calldata.forEach((entry) => {
-          const wrapper = document.createElement('div');
-          wrapper.className = 'domain-card';
-          const title = document.createElement('h3');
-          title.textContent = entry.label;
-          wrapper.appendChild(title);
-          const pre = document.createElement('pre');
-          pre.textContent = entry.data;
-          wrapper.appendChild(pre);
-          grid.appendChild(wrapper);
-        });
-      }
-
-      function buildCalldata(config) {
-        const calldata = [];
-        const globalTuple = [
-          config.global.iotOracleRouter ?? zeroAddress,
-          config.global.defaultL2Gateway ?? zeroAddress,
-          config.global.didRegistry ?? zeroAddress,
-          config.global.treasuryBridge ?? zeroAddress,
-          BigInt(config.global.l2SyncCadence ?? 180),
-          config.global.manifestURI,
-        ];
-        const guardTuple = [
-          Number(config.global.guards?.treasuryBufferBps ?? 0),
-          Number(config.global.guards?.circuitBreakerBps ?? 0),
-          Number(config.global.guards?.anomalyGracePeriod ?? 0),
-          Boolean(config.global.guards?.autoPauseEnabled ?? false),
-          config.global.guards?.oversightCouncil ?? zeroAddress,
-        ];
-        const telemetryTuple = [
-          (config.global.telemetry?.manifestHash && config.global.telemetry.manifestHash.length === 66)
-            ? config.global.telemetry.manifestHash
-            : zeroBytes32,
-          (config.global.telemetry?.metricsDigest && config.global.telemetry.metricsDigest.length === 66)
-            ? config.global.telemetry.metricsDigest
-            : zeroBytes32,
-          Number(config.global.telemetry?.resilienceFloorBps ?? 0),
-          Number(config.global.telemetry?.automationFloorBps ?? 0),
-          Number(config.global.telemetry?.oversightWeightBps ?? 0),
-        ];
-        const infrastructureTuple = config.global.infrastructure
-          ? [
-              config.global.infrastructure.meshCoordinator ?? zeroAddress,
-              config.global.infrastructure.dataLake ?? zeroAddress,
-              config.global.infrastructure.identityBridge ?? zeroAddress,
-              config.global.infrastructure.topologyURI ?? config.global.manifestURI,
-              BigInt(Number.isFinite(Number(config.global.infrastructure.autopilotCadence))
-                ? Math.trunc(Number(config.global.infrastructure.autopilotCadence))
-                : 0),
-              Boolean(config.global.infrastructure.enforceDecentralizedInfra ?? false),
-            ]
-          : null;
-        calldata.push({
-          label: 'setGlobalConfig(GlobalConfig)',
-          data: iface.encodeFunctionData('setGlobalConfig', [globalTuple]),
-        });
-        calldata.push({
-          label: 'setGlobalGuards(GlobalGuards)',
-          data: iface.encodeFunctionData('setGlobalGuards', [guardTuple]),
-        });
-        calldata.push({
-          label: 'setGlobalTelemetry(GlobalTelemetry)',
-          data: iface.encodeFunctionData('setGlobalTelemetry', [telemetryTuple]),
-        });
-        if (infrastructureTuple) {
-          calldata.push({
-            label: 'setGlobalInfrastructure(GlobalInfrastructure)',
-            data: iface.encodeFunctionData('setGlobalInfrastructure', [infrastructureTuple]),
-          });
-        }
-        if (config.global.systemPause && config.global.systemPause !== zeroAddress) {
-          calldata.push({
-            label: 'setSystemPause(address)',
-            data: iface.encodeFunctionData('setSystemPause', [config.global.systemPause]),
-          });
-        }
-        if (config.global.escalationBridge && config.global.escalationBridge !== zeroAddress) {
-          calldata.push({
-            label: 'setEscalationBridge(address)',
-            data: iface.encodeFunctionData('setEscalationBridge', [config.global.escalationBridge]),
-          });
-        }
-        config.domains.forEach((domain) => {
-          const tuple = buildDomainTuple(domain);
-          const domainId = keccak256(toUtf8Bytes(domain.slug.toLowerCase()));
-          const opsTuple = buildDomainOperationsTuple(domain);
-          const telemetryTupleDomain = buildDomainTelemetryTuple(domain);
-          const infraTuple = buildDomainInfrastructureTuple(domain);
-          calldata.push({
-            label: `registerDomain(${domain.slug})`,
-            data: iface.encodeFunctionData('registerDomain', [tuple]),
-          });
-          calldata.push({
-            label: `updateDomain(${domain.slug})`,
-            data: iface.encodeFunctionData('updateDomain', [
-              domainId,
-              tuple,
-            ]),
-          });
-          calldata.push({
-            label: `setDomainOperations(${domain.slug})`,
-            data: iface.encodeFunctionData('setDomainOperations', [domainId, opsTuple]),
-          });
-          calldata.push({
-            label: `setDomainTelemetry(${domain.slug})`,
-            data: iface.encodeFunctionData('setDomainTelemetry', [domainId, telemetryTupleDomain]),
-          });
-          calldata.push({
-            label: `setDomainInfrastructure(${domain.slug})`,
-            data: iface.encodeFunctionData('setDomainInfrastructure', [domainId, infraTuple]),
-          });
-        });
-        state.calldata = calldata;
-      }
-
-      async function initialise() {
-        const response = await fetch(configPath);
-        const cfg = await response.json();
-        state.config = cfg;
-        state.metrics = computeMetrics(cfg);
-        renderGlobal(cfg);
-        renderCredentialGovernance(cfg);
-        renderDomains(cfg);
-        renderBridgePlans(cfg);
-        renderInfrastructure(cfg);
-        buildCalldata(cfg);
-        renderCalldata();
-        updateMermaid();
-      }
-
-      function updateMermaid() {
-        const lines = ['graph TD'];
-        lines.push('  Owner[[Governance]] --> Expansion(Phase6ExpansionManager)');
-        state.config.domains.forEach((domain) => {
-          lines.push(`  Expansion --> ${domain.slug.replace(/[^a-z0-9]/gi, '')}([${domain.name}])`);
-          lines.push(`  ${domain.slug.replace(/[^a-z0-9]/gi, '')} --> RuntimePhase6`);
-        });
-        lines.push('  RuntimePhase6[Phase6 Runtime] --> IoTSignal[IoT/Oracle Feeds]');
-        lines.push('  RuntimePhase6 --> L2Fabric[Layer-2 Fabric]');
-        lines.push('  L2Fabric --> Settlement');
-        const diagram = lines.join('\n');
-        state.mermaidSource = diagram;
-        const el = document.getElementById('mermaid-diagram');
-        el.textContent = diagram;
-        if (window.mermaid) {
-          window.mermaid.run({ querySelector: '#mermaid-diagram' });
-        }
-      }
-
-      function renderInfrastructure(config) {
-        const grid = document.getElementById('infra-grid');
-        grid.innerHTML = '';
-
-        const globalCard = document.createElement('div');
-        globalCard.className = 'domain-card';
-        const globalIntegrations = config.global.decentralizedInfra || [];
-        const globalControl = config.global.infrastructure || {};
-        globalCard.innerHTML = `
-          <h3>Global control mesh</h3>
-          <div class="metrics">
-            <span>Total integrations: ${globalIntegrations.length}</span>
-            <span>Manifest anchor: ${config.global.manifestURI}</span>
-            <span>Mesh coordinator: ${formatAddress(globalControl.meshCoordinator)}</span>
-            <span>Data lake: ${formatAddress(globalControl.dataLake)}</span>
-            <span>Identity bridge: ${formatAddress(globalControl.identityBridge)}</span>
-            <span>Control plane: ${globalControl.topologyURI ?? '—'}</span>
-            <span>Autopilot posture: ${formatAutopilot({
-              autopilotEnabled: Number(globalControl.autopilotCadence ?? 0) > 0,
-              autopilotCadence: globalControl.autopilotCadence,
-            })}</span>
-            <span>Infra enforcement: ${globalControl.enforceDecentralizedInfra ? 'enforced' : 'advisory'}</span>
-          </div>
-        `;
-        const globalList = document.createElement('ul');
-        globalList.className = 'mesh-list';
-        globalIntegrations.forEach((entry, idx) => {
-          const li = document.createElement('li');
-          const endpoint = entry.endpoint ? ` → ${entry.endpoint}` : '';
-          li.textContent = `[G${idx + 1}] ${entry.name} · ${entry.role} · status ${entry.status}${endpoint}`;
-          globalList.appendChild(li);
-        });
-        globalCard.appendChild(globalList);
-        grid.appendChild(globalCard);
-
-        config.domains.forEach((domain) => {
-          const card = document.createElement('div');
-          card.className = 'domain-card';
-          const control = domain.infrastructureControl || {};
-          card.innerHTML = `
-            <h3>${domain.name}</h3>
-            <div class="metrics">
-              <span>Control plane: ${control.controlPlaneURI ?? '—'}</span>
-              <span>Autopilot posture: ${formatAutopilot(control)}</span>
-              <span>Agent ops: ${formatAddress(control.agentOps)}</span>
-              <span>Data pipeline: ${formatAddress(control.dataPipeline)}</span>
-              <span>Credential verifier: ${formatAddress(control.credentialVerifier)}</span>
-              <span>Fallback operator: ${formatAddress(control.fallbackOperator)}</span>
-            </div>
-          `;
-          const list = document.createElement('ul');
-          list.className = 'mesh-list';
-          domain.infrastructure.forEach((entry, idx) => {
-            const endpoint = entry.endpoint || entry.uri;
-            const meta = endpoint ? ` → ${endpoint}` : '';
-            const item = document.createElement('li');
-            item.textContent = `[${idx + 1}] ${entry.layer}: ${entry.name} · ${entry.role} · status ${entry.status}${meta}`;
-            list.appendChild(item);
-          });
-          card.appendChild(list);
-          grid.appendChild(card);
-        });
-      }
-
-      document.getElementById('launch-demo').addEventListener('click', () => {
-        initialise();
-      });
-
-      document.getElementById('copy-mermaid').addEventListener('click', async () => {
-        if (!state.mermaidSource) {
-          await initialise();
-        }
-        await navigator.clipboard.writeText(state.mermaidSource);
-        document.getElementById('copy-mermaid').textContent = 'Copied diagram ✓';
-        setTimeout(() => {
-          document.getElementById('copy-mermaid').textContent = 'Copy mermaid diagram';
-        }, 3000);
-      });
-
-      // Auto-load for convenience
-      initialise();
-    </script>
   </body>
 </html>

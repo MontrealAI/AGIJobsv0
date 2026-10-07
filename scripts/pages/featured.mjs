@@ -10,6 +10,7 @@ export function renderHeroSpotlight(base) {
     <a href="${base}${featuredRoutes.culture}">CULTURE Studio <span aria-hidden="true">↗</span></a>
     <a href="${base}${featuredRoutes.kardashev}">Kardashev II <span aria-hidden="true">↗</span></a>
     <a href="${base}experiments/alpha-agi-mark/">Alpha Mark <span aria-hidden="true">↗</span></a>
+    <a href="${base}experiments/phase6/">Phase 6 <span aria-hidden="true">↗</span></a>
   </nav>`;
 }
 
@@ -127,6 +128,7 @@ export function renderFeaturedDemos(base, catalog) {
       </article>
     </div>
     <article class="mark-home-callout" aria-labelledby="mark-feature-title"><div><span class="work-number">ALPHA AGI MARK / NEW INTERACTIVE LAB</span><h3 id="mark-feature-title">Capital to capability.</h3><p>Plan a useful mission, compare worker and review capacity, and export a scoped USDC work proposal. Browser-only simulation; no live execution or settlement.</p></div><a class="button secondary" href="${base}experiments/alpha-agi-mark/">Open the mission lab ↗</a></article>
+    <article class="mark-home-callout" aria-labelledby="phase6-feature-title"><div><span class="work-number">PHASE 6 / MULTI-DOMAIN EXPANSION</span><h3 id="phase6-feature-title">More domains. One standard of proof.</h3><p>Allocate one dispatch wave across five specialties, reserve independent review capacity and export a reproducible synthetic task. Inspect the complete configuration and preserved systems maps.</p></div><a class="button secondary" href="${base}experiments/phase6/">Open the expansion lab ↗</a></article>
     <div class="spotlight-footer"><p><span aria-hidden="true">✧</span> Start with a question. Explore the system. Inspect the evidence.</p><a class="text-link" href="#explore">Browse all ${
       catalog.length
     } catalog entries <span aria-hidden="true">↓</span></a></div>

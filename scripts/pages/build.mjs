@@ -13,6 +13,7 @@ import { renderFeaturedDemos, renderHeroSpotlight } from './featured.mjs';
 import { renderWorkIntro, renderVision, renderWorkPage } from './work.mjs';
 import { renderReviewPage } from './review.mjs';
 import { renderAlphaMarkPage } from './alpha-mark.mjs';
+import { buildPhase6Site } from './phase6-build.mjs';
 
 const require = createRequire(import.meta.url);
 const { inventory } = require('../demo/catalog.cjs');
@@ -713,7 +714,11 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
     logLevel: 'warning',
   });
   const deckRoot = 'demo/AGI-Jobs-Platform-at-Kardashev-II-Scale/';
-  const dashboardRoutes = ['experiments/alpha-agi-mark/'];
+  const dashboardRoutes = [
+    'experiments/alpha-agi-mark/',
+    'experiments/phase6/',
+  ];
+  await buildPhase6Site(path.join(output, 'experiments/phase6'), { base });
   for (const file of tracked) {
     if (!file.startsWith(deckRoot)) continue;
     const relative = file.slice(deckRoot.length);

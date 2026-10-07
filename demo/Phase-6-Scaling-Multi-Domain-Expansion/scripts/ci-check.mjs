@@ -2,11 +2,17 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createRequire } from 'node:module';
+import { isDeepStrictEqual } from 'node:util';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const root = join(__dirname, '..');
+const repoRoot = join(root, '..', '..');
+const require = createRequire(import.meta.url);
+require('ts-node').register({ compilerOptions: { module: 'commonjs' } });
+const { parsePhase6Json, validatePhase6Config } = require(join(repoRoot, 'scripts/phase6/config-validation.ts'));
 const configPath = join(root, 'config', 'domains.phase6.json');
 const repoAbiPath = join(__dirname, '..', '..', '..', 'subgraph', 'abis', 'Phase6ExpansionManager.json');
 const demoAbiPath = join(root, 'abi', 'Phase6ExpansionManager.json');
@@ -30,7 +36,8 @@ if (!existsSync(htmlPath)) {
   fail(`UI file missing: ${htmlPath}`);
 }
 
-const config = JSON.parse(readFileSync(configPath, 'utf-8'));
+const config = parsePhase6Json(readFileSync(configPath, 'utf-8'));
+validatePhase6Config(config);
 const repoAbi = JSON.parse(readFileSync(repoAbiPath, 'utf-8'));
 const demoAbi = JSON.parse(readFileSync(demoAbiPath, 'utf-8'));
 const html = readFileSync(htmlPath, 'utf-8');
@@ -41,6 +48,32 @@ if (!Array.isArray(repoAbi) || !repoAbi.length) {
 
 if (JSON.stringify(repoAbi) !== JSON.stringify(demoAbi)) {
   fail('Demo ABI file is out of sync with subgraph ABI. Run `cp subgraph/abis/Phase6ExpansionManager.json demo/Phase-6-Scaling-Multi-Domain-Expansion/abi/`');
+}
+
+// Two copied files can agree while both drift from the contract. Compile its
+// ABI from source with the lockfile-governed compiler (no network downloads).
+const solc = require('solc');
+const lock = JSON.parse(readFileSync(join(repoRoot, 'package-lock.json'), 'utf8'));
+if (solc.version().split('+')[0] !== lock.packages['node_modules/solc'].version) {
+  fail('Installed solc does not match package-lock.json; run npm ci.');
+}
+const contractSource = 'contracts/v2/Phase6ExpansionManager.sol';
+const compilation = JSON.parse(solc.compile(JSON.stringify({
+  language: 'Solidity',
+  sources: { [contractSource]: { content: readFileSync(join(repoRoot, contractSource), 'utf8') } },
+  settings: { outputSelection: { '*': { '*': ['abi'] } } },
+}), { import: (source) => {
+  for (const directory of [repoRoot, join(repoRoot, 'node_modules')]) {
+    const path = join(directory, source);
+    if (existsSync(path)) return { contents: readFileSync(path, 'utf8') };
+  }
+  return { error: `Import not found: ${source}` };
+} }));
+const errors = (compilation.errors ?? []).filter((entry) => entry.severity === 'error');
+if (errors.length) fail(errors.map((entry) => entry.formattedMessage).join('\n'));
+const compiledAbi = compilation.contracts[contractSource].Phase6ExpansionManager.abi;
+if (!isDeepStrictEqual(compiledAbi, demoAbi)) {
+  fail('Phase 6 ABI differs from the compiled contract. Regenerate both checked-in ABIs from the contract artifact.');
 }
 
 if (!config.global || !config.global.manifestURI) {

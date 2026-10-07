@@ -330,7 +330,7 @@ test('all published command decks retain their local assets and navigation', () 
   const manifest = JSON.parse(
     fs.readFileSync(path.join(output, 'catalog.json'))
   );
-  assert.equal(manifest.dashboardRoutes.length, 13);
+  assert.equal(manifest.dashboardRoutes.length, 14);
   assert.ok(manifest.dashboardRoutes.includes('experiments/zenith-hypernova/'));
   for (const route of manifest.dashboardRoutes) {
     const document = new JSDOM(

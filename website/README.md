@@ -120,3 +120,24 @@ node scripts/pages/alpha-mark-browser-qa.mjs
 ```
 
 Run the site build first. The complete `site:qa` command also includes the Alpha Mark checks.
+
+## Phase 6 multi-domain expansion lab
+
+`experiments/phase6/` publishes the complete Phase 6 configuration dashboard, its original systems map, a separate configured-domain map and an interactive dispatch-wave planner. All dependencies are bundled locally from the lockfile. The original views for credentials, bridge plans, infrastructure, domain controls and unsigned example calldata remain available. Their metrics are explicitly illustrative; no live provider, identity service, oracle or chain is contacted.
+
+The capacity model reserves one job per worker for one wave, bounded by the configured concurrency limit, shared reviewer minutes and exact six-decimal USDC reward arithmetic. Allocation cycles through configuration order one slot at a time; paused/inactive domains receive no slots. It is a static planning bound, excludes existing in-flight jobs and operating costs, and is not a live priority scheduler or throughput forecast. Every edit or configuration reload invalidates previous exports. Draft inputs remain in memory and disappear on reload.
+
+Five synthetic arithmetic tasks make the handoff reproducible without private data. A task download requires a candidate slot and three operator preparation commitments, then reuses the canonical work-proposal and task schemas. Commitments grant no authority. Actual buyer work belongs in the complete work planner; provider output belongs in the evidence reviewer. OpenClaw gateway dispatch and operator-led ChatGPT Work remain distinct commissioned routes.
+
+The standalone source is `demo/Phase-6-Scaling-Multi-Domain-Expansion/index.html` with its `ui/` modules. Build the local-only dependencies before serving it:
+
+```bash
+node scripts/pages/phase6-build.mjs
+python -m http.server 8080 --bind 127.0.0.1 --directory build/phase6
+# Open http://127.0.0.1:8080
+node --test test/pages/phase6.test.mjs
+# After npm run site:build:
+node scripts/pages/phase6-browser-qa.mjs
+```
+
+The normal website build and QA include this route. Browser checks cover capacity constraints, pauses, exact downloads, operator gating, invalid/stale inputs, configuration reload, keyboard use, responsive layouts, accessibility and both preserved diagram sources. The no-JavaScript page retains the workflow, original map source and source links.

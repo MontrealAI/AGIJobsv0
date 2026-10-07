@@ -283,7 +283,7 @@
     "demo:omni-sovereign": "bash demo/omni-sovereign-ascension-operating-system/bin/launch.sh",
     "demo:onebox:doctor": "node demo/One-Box/bin/doctor.cjs",
     "demo:onebox:launch": "node demo/One-Box/bin/start-onebox.cjs",
-    "demo:phase6:apply": "npx hardhat run --no-compile scripts/phase6/apply-config.ts",
+    "demo:phase6:apply": "ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/phase6/apply-config.ts",
     "demo:phase6:ci": "node demo/Phase-6-Scaling-Multi-Domain-Expansion/scripts/ci-check.mjs",
     "demo:phase6:did": "ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/Phase-6-Scaling-Multi-Domain-Expansion/scripts/phase6-did-audit.ts",
     "demo:phase6:iot": "ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/Phase-6-Scaling-Multi-Domain-Expansion/scripts/phase6-iot-simulator.ts",

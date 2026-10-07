@@ -7,6 +7,8 @@
 
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { parsePhase6Args } from './phase6-cli';
+import { parsePhase6Json } from '../../../scripts/phase6/config-validation';
 
 import {
   buildPhase6Blueprint,
@@ -15,7 +17,7 @@ import {
   DomainBlueprint,
 } from './phase6-blueprint';
 
-interface EventPayload {
+export interface EventPayload {
   id: string;
   domainHint?: string;
   summary: string;
@@ -32,23 +34,30 @@ interface CliOptions {
   jsonOutput?: string;
 }
 
-interface EvaluatedEvent {
+export interface EvaluatedEvent {
   event: EventPayload;
-  recommendedDomain: DomainBlueprint;
+  status: 'proposal' | 'blocked';
+  executionAuthorized: false;
+  recommendedDomain: DomainBlueprint | null;
   rationale: string[];
-  scorecard: Array<{ domain: string; score: number; reasons: string[] }>;
-  bridgePlan: {
+  scorecard: Array<{
+    domain: string;
+    score: number;
+    reasons: string[];
+    blockers: string[];
+  }>;
+  bridgePlan?: {
     l2Gateway?: string | null;
     settlementLayer: string;
     autopilot: string;
     requiresHumanValidation: boolean;
   };
-  guardRails: {
-    minStakeEth: string;
+  guardRails?: {
+    minStakeDisplay: string;
     treasuryShareBps: number;
     circuitBreakerBps: number;
   };
-  credentialPlan: {
+  credentialPlan?: {
     requirements: string[];
     issuers: string[];
     verifiers: string[];
@@ -56,12 +65,18 @@ interface EvaluatedEvent {
   };
 }
 
-const DEFAULT_CONFIG_PATH = join(__dirname, '..', 'config', 'domains.phase6.json');
+const DEFAULT_CONFIG_PATH = join(
+  __dirname,
+  '..',
+  'config',
+  'domains.phase6.json'
+);
 const DEFAULT_EVENTS: EventPayload[] = [
   {
     id: 'finance-liquidity-shock',
     domainHint: 'finance',
-    summary: 'High-volatility window detected by risk oracle – synthesize hedge routing and deploy treasury buffers.',
+    summary:
+      'High-volatility window detected by risk oracle – synthesize hedge routing and deploy treasury buffers.',
     type: 'market.oracle.alert',
     severity: 'critical',
     requiredSkills: ['finance', 'risk', 'defi'],
@@ -74,10 +89,11 @@ const DEFAULT_EVENTS: EventPayload[] = [
   {
     id: 'health-telemetry-escalation',
     domainHint: 'health',
-    summary: 'Remote clinic telemetry flagged inconsistent vitals across 11 nodes – dispatch oversight + DID verification.',
+    summary:
+      'Remote clinic telemetry flagged inconsistent vitals across 11 nodes – dispatch oversight + DID verification.',
     type: 'iot.vitals.alert',
     severity: 'high',
-    requiredSkills: ['health', 'compliance', 'regulation'],
+    requiredSkills: ['healthcare', 'diagnostics', 'compliance'],
     requiredCapabilities: { compliance: 4 },
     metadata: {
       regions: ['Nairobi', 'Lagos'],
@@ -86,11 +102,12 @@ const DEFAULT_EVENTS: EventPayload[] = [
   },
   {
     id: 'logistics-delay',
-    summary: 'Hyper-port sensor mesh reports 7-hour delay for a climate-sensitive shipment – reroute and notify operators.',
+    summary:
+      'Hyper-port sensor mesh reports 7-hour delay for a climate-sensitive shipment – reroute and notify operators.',
     type: 'iot.logistics.delay',
     severity: 'medium',
-    requiredSkills: ['logistics', 'climate', 'automation'],
-    requiredCapabilities: { logistics: 3 },
+    requiredSkills: ['logistics', 'iot', 'routing'],
+    requiredCapabilities: { routing: 3 },
     metadata: {
       cargo: 'Biopharma cold-chain',
       temperatureSpike: '2.3°C',
@@ -100,11 +117,12 @@ const DEFAULT_EVENTS: EventPayload[] = [
   {
     id: 'education-accreditation',
     domainHint: 'education',
-    summary: 'Incoming cohort requests verifiable credential issuance mapped to DID wallet distribution.',
+    summary:
+      'Incoming cohort requests verifiable credential issuance mapped to DID wallet distribution.',
     type: 'identity.credential.issue',
     severity: 'low',
-    requiredSkills: ['education', 'identity', 'compliance'],
-    requiredCapabilities: { credentials: 3 },
+    requiredSkills: ['education', 'research', 'training'],
+    requiredCapabilities: { curriculum: 3 },
     metadata: {
       cohortSize: 5400,
       requiresOnChainProof: true,
@@ -112,59 +130,13 @@ const DEFAULT_EVENTS: EventPayload[] = [
   },
 ];
 
-function parseArgs(): CliOptions {
-  const argv = process.argv.slice(2);
-  const options: CliOptions = { configPath: DEFAULT_CONFIG_PATH };
-
-  for (let i = 0; i < argv.length; i += 1) {
-    const arg = argv[i];
-    if (arg === '--config') {
-      const next = argv[++i];
-      if (!next) {
-        throw new Error('--config expects a path');
-      }
-      options.configPath = next;
-      continue;
-    }
-    if (arg.startsWith('--config=')) {
-      options.configPath = arg.split('=', 2)[1] ?? DEFAULT_CONFIG_PATH;
-      continue;
-    }
-    if (arg === '--events') {
-      const next = argv[++i];
-      if (!next) {
-        throw new Error('--events expects a path to a JSON file.');
-      }
-      options.eventPath = next;
-      continue;
-    }
-    if (arg.startsWith('--events=')) {
-      options.eventPath = arg.split('=', 2)[1];
-      continue;
-    }
-    if (arg === '--json') {
-      const next = argv[i + 1];
-      if (!next || next.startsWith('--')) {
-        options.jsonOutput = '-';
-      } else {
-        options.jsonOutput = next;
-        i += 1;
-      }
-      continue;
-    }
-    if (arg.startsWith('--json=')) {
-      const value = arg.split('=', 2)[1];
-      options.jsonOutput = value && value.length ? value : '-';
-      continue;
-    }
-    if (arg === '--help' || arg === '-h') {
-      printUsage();
-      process.exit(0);
-    }
-    console.warn(`Unknown option: ${arg}`);
-  }
-
-  return options;
+function parseArgs(argv: string[] = process.argv.slice(2)): CliOptions {
+  return parsePhase6Args(
+    argv,
+    DEFAULT_CONFIG_PATH,
+    ['json', 'events'],
+    printUsage
+  );
 }
 
 function printUsage(): void {
@@ -175,42 +147,162 @@ function printUsage(): void {
       `  --config <path>         Use a custom Phase 6 config file (default: ${DEFAULT_CONFIG_PATH})\n` +
       `  --events <path>         Load events from a JSON file instead of built-in samples\n` +
       `  --json [path|-]         Emit JSON output to <path>; use '-' for stdout\n` +
-      `  -h, --help              Show this message\n`,
+      `  -h, --help              Show this message\n`
   );
 }
 
-function loadEvents(path?: string): EventPayload[] {
-  if (!path) {
-    return DEFAULT_EVENTS;
-  }
-  const raw = JSON.parse(readFileSync(path, 'utf-8'));
-  if (Array.isArray(raw)) {
-    return raw as EventPayload[];
-  }
-  throw new Error(`Events file must contain an array – received ${typeof raw}`);
+export function validateEvents(
+  value: unknown
+): asserts value is EventPayload[] {
+  if (!Array.isArray(value) || !value.length || value.length > 1000)
+    throw new Error('Events must contain 1–1000 records.');
+  const ids = new Set<string>();
+  value.forEach((event, index) => {
+    const fail = (field: string) => {
+      throw new Error(`events[${index}].${field} is invalid.`);
+    };
+    if (!event || typeof event !== 'object' || Array.isArray(event))
+      fail('record');
+    ['id', 'summary', 'type'].forEach((key) => {
+      if (
+        typeof event[key] !== 'string' ||
+        !event[key].trim() ||
+        /[\u0000-\u001f\u007f]/.test(event[key])
+      )
+        fail(key);
+    });
+    if (ids.has(event.id)) fail('id (duplicate)');
+    ids.add(event.id);
+    if (!['low', 'medium', 'high', 'critical'].includes(event.severity))
+      fail('severity');
+    if (
+      event.domainHint !== undefined &&
+      (typeof event.domainHint !== 'string' ||
+        !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(event.domainHint))
+    )
+      fail('domainHint');
+    if (
+      event.requiredSkills !== undefined &&
+      (!Array.isArray(event.requiredSkills) ||
+        event.requiredSkills.some(
+          (skill: unknown) => typeof skill !== 'string' || !skill.trim()
+        ))
+    )
+      fail('requiredSkills');
+    if (event.requiredCapabilities !== undefined) {
+      if (
+        !event.requiredCapabilities ||
+        typeof event.requiredCapabilities !== 'object' ||
+        Array.isArray(event.requiredCapabilities)
+      )
+        fail('requiredCapabilities');
+      Object.entries(event.requiredCapabilities).forEach(([key, minimum]) => {
+        if (
+          !key.trim() ||
+          typeof minimum !== 'number' ||
+          !Number.isFinite(minimum) ||
+          minimum <= 0 ||
+          minimum > Number.MAX_SAFE_INTEGER
+        )
+          fail('requiredCapabilities');
+      });
+    }
+    if (event.metadata !== undefined) {
+      if (
+        !event.metadata ||
+        typeof event.metadata !== 'object' ||
+        Array.isArray(event.metadata)
+      )
+        fail('metadata');
+      if (
+        event.metadata.requiresHumanInLoop !== undefined &&
+        typeof event.metadata.requiresHumanInLoop !== 'boolean'
+      )
+        fail('metadata.requiresHumanInLoop');
+    }
+  });
 }
 
-function evaluateEvents(blueprint: Phase6Blueprint, events: EventPayload[]): EvaluatedEvent[] {
+function loadEvents(path?: string): EventPayload[] {
+  const value = path
+    ? parsePhase6Json(readFileSync(path, 'utf-8'))
+    : DEFAULT_EVENTS;
+  validateEvents(value);
+  return value;
+}
+
+function eligibility(domain: DomainBlueprint, event: EventPayload): string[] {
+  const blockers: string[] = [];
+  if (!domain.active || domain.lifecycle !== 'active')
+    blockers.push('Domain is inactive or not commissioned as active');
+  if (event.domainHint && event.domainHint !== domain.slug)
+    blockers.push('Outside requested domain');
+  const skills = normaliseSkills(event.requiredSkills);
+  const missing = skills.filter((skill) => !domain.skillTags.includes(skill));
+  if (missing.length)
+    blockers.push(`Missing required skills: ${missing.join(', ')}`);
+  Object.entries(event.requiredCapabilities ?? {}).forEach(
+    ([capability, minimum]) => {
+      if ((domain.capabilities[capability.trim().toLowerCase()] ?? 0) < minimum)
+        blockers.push(`Capability ${capability} below required ${minimum}`);
+    }
+  );
+  if (
+    event.metadata?.requiresHumanInLoop === true &&
+    !domain.operations.requiresHumanValidation
+  )
+    blockers.push('Required human validation is not configured');
+  if (
+    !event.domainHint &&
+    !skills.length &&
+    !Object.keys(event.requiredCapabilities ?? {}).length
+  )
+    blockers.push('No domain selection requirements supplied');
+  return blockers;
+}
+
+export function evaluateEvents(
+  blueprint: Phase6Blueprint,
+  events: EventPayload[]
+): EvaluatedEvent[] {
+  validateEvents(events);
   return events.map((event) => {
     const scorecard = blueprint.domains
       .map((domain) => ({
         domain: domain.slug,
         score: scoreDomain(domain, event),
         reasons: buildReasons(domain, event),
+        blockers: eligibility(domain, event),
       }))
-      .sort((a, b) => b.score - a.score);
-
-    const top = scorecard[0];
-    const recommendedDomain = blueprint.domains.find((domain) => domain.slug === top.domain)!;
-
+      .sort((a, b) => b.score - a.score || a.domain.localeCompare(b.domain));
+    const top = scorecard.find((entry) => entry.blockers.length === 0);
+    if (!top)
+      return {
+        event,
+        status: 'blocked',
+        executionAuthorized: false,
+        recommendedDomain: null,
+        rationale: [
+          'No configured active domain satisfies all requirements. Revise the task or commission an appropriate domain; do not dispatch.',
+        ],
+        scorecard,
+      };
+    const recommendedDomain = blueprint.domains.find(
+      (domain) => domain.slug === top.domain
+    )!;
     return {
       event,
+      status: 'proposal',
+      executionAuthorized: false,
       recommendedDomain,
-      rationale: scorecard[0].reasons,
+      rationale: [
+        ...top.reasons,
+        'Configuration-based proposal only; authorization, provider commissioning and independent verification remain required.',
+      ],
       scorecard,
       bridgePlan: buildBridgePlan(blueprint, recommendedDomain),
       guardRails: {
-        minStakeEth: recommendedDomain.operations.minStakeEth,
+        minStakeDisplay: recommendedDomain.operations.minStakeDisplay,
         treasuryShareBps: recommendedDomain.operations.treasuryShareBps,
         circuitBreakerBps: recommendedDomain.operations.circuitBreakerBps,
       },
@@ -227,30 +319,44 @@ function normaliseSkills(skills?: string[]): string[] {
 function scoreDomain(domain: DomainBlueprint, event: EventPayload): number {
   let score = domain.priority || 0;
 
-  if (event.domainHint && event.domainHint.toLowerCase() === domain.slug.toLowerCase()) {
+  if (
+    event.domainHint &&
+    event.domainHint.toLowerCase() === domain.slug.toLowerCase()
+  ) {
     score += 25;
   }
 
   const skills = normaliseSkills(event.requiredSkills);
-  const matchedSkills = skills.filter((skill) => domain.skillTags.includes(skill));
+  const matchedSkills = skills.filter((skill) =>
+    domain.skillTags.includes(skill)
+  );
   score += matchedSkills.length * 12;
 
   const requiredCaps = event.requiredCapabilities ?? {};
-  const capabilityScore = Object.entries(requiredCaps).reduce((acc, [cap, weight]) => {
-    const domainCap = domain.capabilities[cap.toLowerCase()] ?? 0;
-    return acc + domainCap * Number(weight ?? 1);
-  }, 0);
+  const capabilityScore = Object.entries(requiredCaps).reduce(
+    (acc, [cap, weight]) => {
+      const domainCap = domain.capabilities[cap.toLowerCase()] ?? 0;
+      return acc + domainCap * Number(weight ?? 1);
+    },
+    0
+  );
   score += capabilityScore * 6;
 
   if (domain.telemetry.usesL2Settlement && event.type.startsWith('iot.')) {
     score += 8;
   }
 
-  if (domain.operations.requiresHumanValidation && event.metadata?.requiresHumanInLoop) {
+  if (
+    domain.operations.requiresHumanValidation &&
+    event.metadata?.requiresHumanInLoop
+  ) {
     score += 6;
   }
 
-  if (!domain.operations.requiresHumanValidation && event.metadata?.requiresHumanInLoop) {
+  if (
+    !domain.operations.requiresHumanValidation &&
+    event.metadata?.requiresHumanInLoop
+  ) {
     score -= 4;
   }
 
@@ -271,11 +377,16 @@ function scoreDomain(domain: DomainBlueprint, event: EventPayload): number {
 
 function buildReasons(domain: DomainBlueprint, event: EventPayload): string[] {
   const reasons: string[] = [];
-  if (event.domainHint && event.domainHint.toLowerCase() === domain.slug.toLowerCase()) {
+  if (
+    event.domainHint &&
+    event.domainHint.toLowerCase() === domain.slug.toLowerCase()
+  ) {
     reasons.push('Domain hint matches');
   }
   const skills = normaliseSkills(event.requiredSkills);
-  const matchedSkills = skills.filter((skill) => domain.skillTags.includes(skill));
+  const matchedSkills = skills.filter((skill) =>
+    domain.skillTags.includes(skill)
+  );
   if (matchedSkills.length) {
     reasons.push(`Skill alignment: ${matchedSkills.join(', ')}`);
   }
@@ -283,28 +394,40 @@ function buildReasons(domain: DomainBlueprint, event: EventPayload): string[] {
   Object.entries(requiredCaps).forEach(([cap, weight]) => {
     const domainCap = domain.capabilities[cap.toLowerCase()];
     if (domainCap) {
-      reasons.push(`Capability ${cap}: ${domainCap.toFixed(1)} x weight ${Number(weight ?? 1).toFixed(1)}`);
+      reasons.push(
+        `Capability ${cap}: ${domainCap.toFixed(1)} x weight ${Number(
+          weight ?? 1
+        ).toFixed(1)}`
+      );
     }
   });
   if (domain.telemetry.usesL2Settlement && event.type.startsWith('iot.')) {
-    reasons.push('IoT-ready L2 settlement');
+    reasons.push('L2 settlement configured (unverified)');
   }
   if (domain.operations.requiresHumanValidation) {
-    reasons.push('Human validation available');
+    reasons.push('Human validation configured (unverified)');
   }
   if (domain.infrastructureControl.autopilotEnabled) {
-    reasons.push(`Autopilot cadence ${domain.infrastructureControl.autopilotCadenceSeconds || 0}s`);
+    reasons.push(
+      `Autopilot cadence ${
+        domain.infrastructureControl.autopilotCadenceSeconds || 0
+      }s`
+    );
   }
   return reasons;
 }
 
 function buildBridgePlan(blueprint: Phase6Blueprint, domain: DomainBlueprint) {
   const autopilot = domain.infrastructureControl.autopilotEnabled
-    ? `autopilot enabled @ ${domain.infrastructureControl.autopilotCadenceSeconds || 0}s`
+    ? `autopilot enabled @ ${
+        domain.infrastructureControl.autopilotCadenceSeconds || 0
+      }s`
     : 'autopilot standby';
   return {
     l2Gateway: domain.addresses.l2Gateway ?? blueprint.global.defaultL2Gateway,
-    settlementLayer: domain.telemetry.usesL2Settlement ? 'Layer-2 accelerated' : 'Layer-1 anchor',
+    settlementLayer: domain.telemetry.usesL2Settlement
+      ? 'Layer-2 accelerated'
+      : 'Layer-1 anchor',
     autopilot,
     requiresHumanValidation: domain.operations.requiresHumanValidation,
   };
@@ -314,17 +437,20 @@ function buildCredentialPlan(domain: DomainBlueprint, event: EventPayload) {
   if (!domain.credentials.length) {
     return { requirements: [], issuers: [], verifiers: [], notes: [] };
   }
-  const prioritized = event.metadata?.requiresHumanInLoop
-    ? domain.credentials
-    : domain.credentials.slice(0, Math.max(1, Math.min(2, domain.credentials.length)));
-  const unique = (values: string[]) => Array.from(new Set(values.filter((value) => value && value.length)));
+  const prioritized = domain.credentials;
+  const unique = (values: string[]) =>
+    Array.from(new Set(values.filter((value) => value && value.length)));
   const notes = prioritized
     .map((credential) => credential.notes)
-    .filter((note): note is string => typeof note === 'string' && note.length > 0);
+    .filter(
+      (note): note is string => typeof note === 'string' && note.length > 0
+    );
   return {
     requirements: prioritized.map((credential) => credential.name),
     issuers: unique(prioritized.flatMap((credential) => credential.issuers)),
-    verifiers: unique(prioritized.flatMap((credential) => credential.verifiers)),
+    verifiers: unique(
+      prioritized.flatMap((credential) => credential.verifiers)
+    ),
     notes,
   };
 }
@@ -337,19 +463,38 @@ function summariseEvent(result: EvaluatedEvent) {
   if (result.event.requiredSkills?.length) {
     console.log(`  required skills: ${result.event.requiredSkills.join(', ')}`);
   }
-  console.log(`\n  \x1b[32mRecommended domain:\x1b[0m ${result.recommendedDomain.name} (${result.recommendedDomain.slug})`);
+  if (!result.recommendedDomain) {
+    console.log('  BLOCKED: no eligible domain; no execution authorized.');
+    result.scorecard.forEach((entry) =>
+      console.log(`    ${entry.domain}: ${entry.blockers.join('; ')}`)
+    );
+    return;
+  }
+  console.log(
+    `\n  \x1b[32mRecommended domain:\x1b[0m ${result.recommendedDomain.name} (${result.recommendedDomain.slug})`
+  );
   console.log(`    manifest: ${result.recommendedDomain.manifestURI}`);
   console.log(`    subgraph: ${result.recommendedDomain.subgraph}`);
-  console.log(`    guard rails: min stake ${result.guardRails.minStakeEth}, treasury share ${result.guardRails.treasuryShareBps} bps, circuit breaker ${result.guardRails.circuitBreakerBps} bps`);
-  console.log(`    bridge plan: ${result.bridgePlan.settlementLayer} via ${result.bridgePlan.l2Gateway ?? '—'} (${result.bridgePlan.autopilot})`);
+  console.log(
+    `    guard rails: min stake ${result.guardRails.minStakeDisplay}, treasury share ${result.guardRails.treasuryShareBps} bps, circuit breaker ${result.guardRails.circuitBreakerBps} bps`
+  );
+  console.log(
+    `    bridge plan: ${result.bridgePlan.settlementLayer} via ${
+      result.bridgePlan.l2Gateway ?? '—'
+    } (${result.bridgePlan.autopilot})`
+  );
   if (result.bridgePlan.requiresHumanValidation) {
-    console.log('    ⚠ Requires human validation – route through credential verifier.');
+    console.log(
+      '    ⚠ Requires human validation – route through credential verifier.'
+    );
   }
   if (result.credentialPlan.requirements.length) {
     console.log(
-      `    credential plan: ${result.credentialPlan.requirements.join(', ')} | issuers ${
+      `    credential plan: ${result.credentialPlan.requirements.join(
+        ', '
+      )} | issuers ${
         result.credentialPlan.issuers.join(', ') || '—'
-      } | verifiers ${result.credentialPlan.verifiers.join(', ') || '—'}`,
+      } | verifiers ${result.credentialPlan.verifiers.join(', ') || '—'}`
     );
     if (result.credentialPlan.notes.length) {
       console.log(`    notes: ${result.credentialPlan.notes.join(' | ')}`);
@@ -361,20 +506,31 @@ function summariseEvent(result: EvaluatedEvent) {
   });
   console.log('  Scorecard:');
   result.scorecard.slice(0, 4).forEach((entry, idx) => {
-    const indicator = idx === 0 ? '★' : '•';
-    console.log(`    ${indicator} ${entry.domain.padEnd(12)} ${entry.score.toFixed(2)}`);
+    const indicator =
+      entry.domain === result.recommendedDomain?.slug
+        ? '★'
+        : entry.blockers.length
+        ? '×'
+        : '•';
+    console.log(
+      `    ${indicator} ${entry.domain.padEnd(12)} ${entry.score.toFixed(2)}`
+    );
   });
 }
 
 function emitJson(results: EvaluatedEvent[], path?: string) {
   const payload = results.map((result) => ({
     event: result.event,
-    recommendedDomain: {
-      slug: result.recommendedDomain.slug,
-      name: result.recommendedDomain.name,
-      manifestURI: result.recommendedDomain.manifestURI,
-      subgraph: result.recommendedDomain.subgraph,
-    },
+    status: result.status,
+    executionAuthorized: false,
+    recommendedDomain: result.recommendedDomain
+      ? {
+          slug: result.recommendedDomain.slug,
+          name: result.recommendedDomain.name,
+          manifestURI: result.recommendedDomain.manifestURI,
+          subgraph: result.recommendedDomain.subgraph,
+        }
+      : null,
     rationale: result.rationale,
     bridgePlan: result.bridgePlan,
     guardRails: result.guardRails,
@@ -394,22 +550,36 @@ function emitJson(results: EvaluatedEvent[], path?: string) {
 function main() {
   const options = parseArgs();
   const config = loadPhase6Config(options.configPath);
-  const blueprint = buildPhase6Blueprint(config, { configPath: options.configPath });
+  const blueprint = buildPhase6Blueprint(config, {
+    configPath: options.configPath,
+  });
   const events = loadEvents(options.eventPath);
 
+  const evaluations = evaluateEvents(blueprint, events);
+  if (options.jsonOutput === '-') {
+    emitJson(evaluations, '-');
+    return;
+  }
+
   console.log('\x1b[38;5;117mPhase 6 IoT & external signal simulator\x1b[0m');
+  console.log(
+    'Planning only. No task authorization, work execution, identity checks or settlement occurs.'
+  );
   console.log(`Spec version: ${blueprint.specVersion}`);
   console.log(`Config hash: ${blueprint.configHash}`);
-  console.log(`Loaded ${events.length} event${events.length === 1 ? '' : 's'}.`);
+  console.log(
+    `Loaded ${events.length} event${events.length === 1 ? '' : 's'}.`
+  );
 
-  const evaluations = evaluateEvents(blueprint, events);
   evaluations.forEach(summariseEvent);
 
   if (options.jsonOutput) {
     emitJson(evaluations, options.jsonOutput);
   }
 
-  console.log('\nAll events processed. Phase 6 routing plan ready for execution.');
+  console.log(
+    '\nAll events evaluated. Review proposals and resolve blocked requirements before worker admission.'
+  );
 }
 
-main();
+if (require.main === module) main();
