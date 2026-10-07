@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Zenith Hypernova: turn authorized computer-based work into reviewable evidence. Explore governance, machine-work briefs and review-constrained scale."
+    />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'"
+    />
+    <meta name="theme-color" content="#0d081b" />
+    <title>Zenith Hypernova · AGI Jobs</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script type="module" src="app.mjs"></script>
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+    <header>
+      <a class="brand" href="#main"
+        ><span class="mark" aria-hidden="true">✦</span
+        ><span>AGI JOBS <small>ZENITH / HYPERNOVA</small></span></a
+      >
+      <nav aria-label="Main navigation">
+        <a href="#mission">Mission</a><a href="#work">Create a brief</a
+        ><a href="#evidence">Evidence</a><a href="#scale">Scale</a
+        ><a href="#operate">Operate</a>
+      </nav>
+      <a class="back" href="https://montrealai.github.io/AGIJobsv0/"
+        >All demos ↗</a
+      >
+    </header>
+    <main id="main">
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="hero-copy">
+          <p class="eyebrow">THE MACHINE LABOR LAYER</p>
+          <h1 id="hero-title">Useful work.<br />Planetary ambition.</h1>
+          <p class="intro">
+            Coordinate intelligence into work that can be inspected, reproduced
+            and trusted. Start with one authorized task. Build toward a
+            civilization with far greater productive capacity.
+          </p>
+          <div class="actions">
+            <button id="run" disabled>
+              Analyze the mission <span aria-hidden="true">↗</span></button
+            ><a class="button secondary" href="#work">Design a work order</a>
+          </div>
+          <p class="scope">
+            <span class="dot" aria-hidden="true"></span> Runs in your browser ·
+            No account required<br />Local planning and analysis. Live execution
+            is a separate, authorized step.
+          </p>
+        </div>
+        <div class="orbital" aria-hidden="true">
+          <div class="orbit orbit-one"></div>
+          <div class="orbit orbit-two"></div>
+          <div class="orbit orbit-three"></div>
+          <div class="star-core">✦</div>
+          <span class="orbit-label top">INTELLIGENCE</span
+          ><span class="orbit-label right">EVIDENCE</span
+          ><span class="orbit-label bottom">PRODUCTIVE CAPACITY</span
+          ><span class="orbit-label left">GOVERNANCE</span>
+          <div class="orbital-caption">
+            ZENITH SAPIENCE INITIATIVE<br /><strong>HYPERNOVA</strong>
+          </div>
+        </div>
+      </section>
+      <div id="load-status" role="status" class="status">
+        Loading the source plan…
+      </div>
+      <noscript
+        ><p class="notice">
+          Enable JavaScript for local analysis and downloads. The
+          <a
+            href="https://github.com/MontrealAI/AGIJobsv0/tree/main/demo/zenith-sapience-initiative-supra-sovereign-hypernova-governance"
+            >complete source and command-line runbook</a
+          >
+          remain available.
+        </p></noscript
+      >
+      <section class="metrics" aria-label="Scope at a glance">
+        <div><strong>6</strong><span>regional research contexts</span></div>
+        <div><strong>11</strong><span>preserved scenario jobs</span></div>
+        <div><strong>10</strong><span>computer-work templates</span></div>
+        <div>
+          <strong>$40T / year</strong
+          ><span
+            >assumed market ceiling <a href="#market-note">details</a></span
+          >
+        </div>
+      </section>
+
+      <section id="mission" class="section">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">01 / THE MISSION</p>
+            <h2>A global vision.<br />A reviewable next step.</h2>
+          </div>
+          <p>
+            AGI Jobs is designed as a scalable machine labor layer for
+            authorized, lawful screen-based work: specialized agents execute
+            tasks, produce evidence and support independent verification and
+            settlement.
+          </p>
+        </div>
+        <div class="region-grid" id="regions"></div>
+        <div class="panel mission-panel">
+          <div>
+            <p class="eyebrow">FROM KNOWLEDGE TO CAPACITY</p>
+            <h3>Better research. Better systems. Greater reach.</h3>
+            <p>
+              Verified software and scientific work can improve energy, industry
+              and coordination. Reinvesting proven gains into compute, energy
+              and research creates a path from useful digital work toward
+              planetary and, eventually, stellar-scale infrastructure.
+            </p>
+            <p class="muted">
+              A direction for long-term development. These scenario goals do not
+              demonstrate constructed infrastructure, autonomous sovereignty or
+              achieved superintelligence.
+            </p>
+          </div>
+          <img
+            src="architecture.svg"
+            alt="Authorized scope branches into specialist execution and owner controls. Evidence passes through independent review before buyer acceptance and authorized settlement; findings return to the work scope."
+            width="620"
+            height="390"
+          />
+        </div>
+        <details>
+          <summary>Explore all 11 original scenario jobs</summary>
+          <p>
+            Durations start after dependencies are accepted. The critical path
+            assumes unlimited parallel resources; it is not a real construction
+            schedule. AGIALPHA amounts are synthetic scenario units.
+          </p>
+          <div
+            class="table-wrap"
+            tabindex="0"
+            role="region"
+            aria-label="Scenario job table"
+          >
+            <table>
+              <caption>
+                Preserved governance task graph
+              </caption>
+              <thead>
+                <tr>
+                  <th>Job</th>
+                  <th>Depends on</th>
+                  <th>Stage days</th>
+                  <th>Scenario reward</th>
+                </tr>
+              </thead>
+              <tbody id="jobs"></tbody>
+            </table>
+          </div>
+        </details>
+      </section>
+
+      <section id="work" class="section">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">02 / DEFINE USEFUL WORK</p>
+            <h2>From ambition<br />to an actionable brief.</h2>
+          </div>
+          <p>
+            Specify an output, acceptance tests, a reward ceiling and a review
+            budget. Export the same brief for an OpenClaw operator, ChatGPT Work
+            or another approved execution runtime.
+          </p>
+        </div>
+        <div class="two-col">
+          <form id="work-form" class="panel">
+            <h3>Shape the assignment</h3>
+            <label for="work-type">Type of work</label
+            ><select id="work-type" disabled></select
+            ><label for="region">Research context</label
+            ><select id="region" disabled></select>
+            <div class="input-pair">
+              <div>
+                <label for="budget">Reward ceiling (USDC)</label
+                ><input
+                  id="budget"
+                  type="number"
+                  min="0.000001"
+                  max="100000"
+                  step="0.000001"
+                  value="1500"
+                  required
+                />
+              </div>
+              <div>
+                <label for="review-minutes">Reviewer minutes</label
+                ><input
+                  id="review-minutes"
+                  type="number"
+                  min="1"
+                  max="480"
+                  step="1"
+                  value="15"
+                  required
+                />
+              </div>
+            </div>
+            <label for="run-minutes">Maximum run time (minutes)</label
+            ><input
+              id="run-minutes"
+              type="number"
+              min="1"
+              max="1440"
+              step="1"
+              value="60"
+              required
+            />
+            <p class="muted">
+              Proposed USDC reward, unfunded. Provider spending limits and
+              actual execution permissions must be commissioned separately.
+            </p>
+            <div class="actions">
+              <button id="download-task" type="submit" disabled>
+                Download work order</button
+              ><button
+                id="download-handoff"
+                type="button"
+                class="secondary"
+                disabled
+              >
+                Download operator brief</button
+              ><button
+                id="download-task-source"
+                type="button"
+                class="secondary"
+                disabled
+              >
+                Download task source
+              </button>
+            </div>
+            <p id="work-status" role="status"></p>
+            <p class="muted">
+              Proposals use the corrected mission. Keep its task source with the
+              work order and operator brief; analysis imports have their own
+              separate source export.
+            </p>
+          </form>
+          <article class="panel brief">
+            <p class="eyebrow">ACCEPTANCE BEFORE EXECUTION</p>
+            <h3 id="brief-title">Loading work templates…</h3>
+            <p id="brief-output"></p>
+            <ol id="criteria"></ol>
+            <div class="divider"></div>
+            <h4>Evidence that travels with the work</h4>
+            <p>
+              Approved inputs and citations, exact file hashes, action logs,
+              tool versions, reproduction instructions, test results and review
+              decisions.
+            </p>
+            <h4>Authority stays explicit</h4>
+            <p>
+              Public, licensed or synthetic inputs only. Creator, Checker and
+              independent Reviewer have distinct roles. Publishing, sending,
+              purchases and transaction signing need separate authorization.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section id="evidence" class="section">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">03 / INSPECT THE EVIDENCE</p>
+            <h2>Prove the calculation.<br />Keep the receipt.</h2>
+          </div>
+          <p>
+            Run real local computations on the source plan: exact budget
+            reconciliation and dependency scheduling. A separate checking
+            implementation recomputes the answers before export.
+          </p>
+        </div>
+        <div class="panel">
+          <div class="evidence-head">
+            <div>
+              <h3 id="review-title">Ready to analyze</h3>
+              <p id="review-status" role="status">
+                Choose Analyze the mission above to generate a report,
+                spreadsheet-ready CSV and evidence bundle.
+              </p>
+            </div>
+            <div class="actions">
+              <button id="legacy" class="secondary" disabled>
+                Inspect the original defects</button
+              ><button id="reset" class="secondary" disabled>
+                Use corrected plan
+              </button>
+            </div>
+          </div>
+          <p id="source-label" class="tag">Source: corrected project plan</p>
+          <div class="result-metrics" id="result-metrics"></div>
+          <ul id="checks" class="checks"></ul>
+          <div
+            class="table-wrap"
+            id="analysis-table"
+            tabindex="0"
+            role="region"
+            aria-label="Reconciled allocation table"
+          ></div>
+          <div class="actions">
+            <button id="download-evidence" disabled>Download evidence</button
+            ><button id="download-csv" class="secondary" disabled>
+              Download CSV</button
+            ><button id="download-report" class="secondary" disabled>
+              Download report</button
+            ><button id="download-source" class="secondary" disabled>
+              Download exact source
+            </button>
+          </div>
+          <div class="import">
+            <label for="receipt-file"
+              >Review a Hypernova analysis evidence JSON (up to 1 MiB)</label
+            ><input
+              type="file"
+              id="receipt-file"
+              accept=".json,application/json"
+              disabled
+            />
+            <p class="muted">
+              Checked against the selected source plan. Files stay in this
+              browser. General work deliverables need their own acceptance tests
+              and independent review.
+            </p>
+          </div>
+          <p class="notice">
+            A hash verifies bytes. Automated content checks do not authenticate
+            an independent reviewer, establish buyer acceptance or authorize
+            payment. This page calls no provider and sends no blockchain
+            transaction.
+          </p>
+        </div>
+      </section>
+
+      <section id="scale" class="section">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">04 / SCALE WHAT WORKS</p>
+            <h2>
+              Intelligence can multiply.<br />Review capacity must follow.
+            </h2>
+          </div>
+          <p>
+            Explore how authorized demand, worker throughput and reviewer
+            availability jointly constrain delivery. Every value below is an
+            editable planning assumption.
+          </p>
+        </div>
+        <div class="two-col">
+          <form id="capacity-form" class="panel">
+            <h3>Planning assumptions</h3>
+            <div class="input-pair">
+              <div>
+                <label for="workers">Workers</label
+                ><input
+                  id="workers"
+                  type="number"
+                  min="0"
+                  max="1000000"
+                  step="1"
+                  value="100"
+                  required
+                />
+              </div>
+              <div>
+                <label for="jobs-per-day">Jobs / worker / day</label
+                ><input
+                  id="jobs-per-day"
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.1"
+                  value="2"
+                  required
+                />
+              </div>
+              <div>
+                <label for="days">Operating days / year</label
+                ><input
+                  id="days"
+                  type="number"
+                  min="1"
+                  max="366"
+                  step="1"
+                  value="250"
+                  required
+                />
+              </div>
+              <div>
+                <label for="review-hours">Total reviewer hours / day</label
+                ><input
+                  id="review-hours"
+                  type="number"
+                  min="0"
+                  max="24000000"
+                  step="0.5"
+                  value="20"
+                  required
+                />
+              </div>
+              <div>
+                <label for="scale-review">Minutes / review</label
+                ><input
+                  id="scale-review"
+                  type="number"
+                  min="1"
+                  max="480"
+                  step="1"
+                  value="15"
+                  required
+                />
+              </div>
+              <div>
+                <label for="acceptance">Acceptance rate (%)</label
+                ><input
+                  id="acceptance"
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="1"
+                  value="80"
+                  required
+                />
+              </div>
+              <div>
+                <label for="demand">Authorized jobs / year</label
+                ><input
+                  id="demand"
+                  type="number"
+                  min="0"
+                  max="10000000000"
+                  step="1"
+                  value="100000"
+                  required
+                />
+              </div>
+              <div>
+                <label for="reward">Average reward (USDC)</label
+                ><input
+                  id="reward"
+                  type="number"
+                  min="0"
+                  max="100000"
+                  step="1"
+                  value="1500"
+                  required
+                />
+              </div>
+            </div>
+            <button type="submit">Calculate capacity</button>
+          </form>
+          <article class="panel scale-result" aria-live="polite">
+            <p class="eyebrow">ILLUSTRATIVE ANNUAL CAPACITY</p>
+            <h3 id="capacity-number">—</h3>
+            <p>accepted jobs per year</p>
+            <div id="capacity-detail"></div>
+            <p id="capacity-status" role="status"></p>
+            <p id="market-note" class="muted">
+              $40 trillion/year is the project’s user-supplied market ceiling
+              assumption, not a measured TAM. Reward volume is gross
+              illustrative throughput, not platform revenue, profit or settled
+              money. The comparison assumes 1 USDC ≈ US$1 and excludes costs,
+              fees, rework, disputes, downtime and exchange-rate changes.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section id="operate" class="section">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">05 / OPERATE WITH EVIDENCE</p>
+            <h2>Choose the right<br />execution surface.</h2>
+          </div>
+          <p>
+            Current documentation supports broad computer-based workflows. Each
+            job still needs compatible tools, permission, testing and
+            acceptance. Computer use alone does not guarantee reliable
+            completion.
+          </p>
+        </div>
+        <div class="runtime-grid">
+          <article class="panel">
+            <span class="step">01</span>
+            <h3>OpenClaw + OpenAI</h3>
+            <p>
+              Use a dedicated agent browser and an approved OpenAI
+              authentication route. Confirm the installed runtime, available
+              model, tool policy and actual spend limits. Isolate each trust
+              boundary; a shared Gateway is not isolation for adversarial
+              tenants.
+            </p>
+            <a href="https://docs.openclaw.ai/providers/openai/setup"
+              >Provider setup ↗</a
+            >
+            <a href="https://docs.openclaw.ai/tools/browser">Browser tools ↗</a>
+          </article>
+          <article class="panel">
+            <span class="step">02</span>
+            <h3>ChatGPT Work</h3>
+            <p>
+              Desktop Computer Use can work across supported applications and
+              local files. Browser access and desktop permissions remain
+              distinct. A cloud Work session does not automatically gain access
+              to your local desktop or its signed-in accounts.
+            </p>
+            <a
+              href="https://learn.chatgpt.com/use-cases/use-your-computer-with-codex"
+              >Desktop and browser guidance ↗</a
+            >
+          </article>
+          <article class="panel">
+            <span class="step">03</span>
+            <h3>Your execution service</h3>
+            <p>
+              For programmatic operation, evaluate the OpenAI computer-use APIs
+              in a controlled runtime. Enforce limits and approvals outside the
+              model. Bind evidence to the exact work order before reviewer and
+              buyer acceptance.
+            </p>
+            <a
+              href="https://developers.openai.com/api/docs/guides/tools-computer-use"
+              >Computer-use integration ↗</a
+            >
+          </article>
+        </div>
+        <details>
+          <summary>What must be true before live work or settlement?</summary>
+          <ol>
+            <li>
+              Owner approves the scoped job, sources, runtime permissions and
+              separate provider spending cap.
+            </li>
+            <li>
+              Dedicated runtime passes clean-install commissioning, policy,
+              timeout, stop and recovery tests.
+            </li>
+            <li>
+              Creator submits outputs; Checker runs the pre-agreed tests and
+              records failures.
+            </li>
+            <li>
+              An unrelated reviewer verifies evidence and declares conflicts;
+              the buyer accepts the result.
+            </li>
+            <li>
+              An authorized signer verifies network, contract, token, escrow and
+              final settlement rules. This demo does not provide that settlement
+              deployment.
+            </li>
+          </ol>
+          <p>
+            Stop and escalate ambiguous permissions, unapproved inputs, injected
+            instructions, exhausted budgets or unexpected application state. Do
+            not retry an uncertain external mutation until its outcome has been
+            reconciled.
+          </p>
+        </details>
+        <details>
+          <summary>Run the same analysis from the command line</summary>
+          <pre><code>npm run demo:zenith-hypernova:work
+npm run demo:zenith-hypernova:task -- --type governance-audit --region EARTH
+npm run demo:zenith-hypernova:test</code></pre>
+          <p>
+            The preserved governance kit and isolated local-chain rehearsal
+            remain in the
+            <a
+              href="https://github.com/MontrealAI/AGIJobsv0/blob/main/demo/zenith-sapience-initiative-supra-sovereign-hypernova-governance/RUNBOOK.md"
+              >complete runbook</a
+            >. Their simulated contract results do not execute the 11 physical
+            infrastructure projects.
+          </p>
+        </details>
+      </section>
+    </main>
+    <footer>
+      <div>
+        <strong>AGI JOBS / ZENITH HYPERNOVA</strong>
+        <p>Authorized work. Reviewable evidence. Accountable scale.</p>
+      </div>
+      <p>
+        Documentation checked 6 October 2026 · Workbench v1.0.0<br /><a
+          href="https://github.com/MontrealAI/AGIJobsv0/tree/main/demo/zenith-sapience-initiative-supra-sovereign-hypernova-governance"
+          >Source, preserved diagrams & operator guides ↗</a
+        >
+      </p>
+    </footer>
+  </body>
+</html>

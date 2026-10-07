@@ -4,7 +4,11 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 cd "$ROOT"
 
-NETWORK_NAME="${NETWORK:-localhost}"
+if [[ "$#" -ne 0 || "${NETWORK:-localhost}" != "localhost" ]]; then
+  echo 'Hypernova local rehearsal accepts no arguments and requires NETWORK=localhost.' >&2
+  exit 1
+fi
+NETWORK_NAME="localhost"
 LOCAL_REPORT_ROOT="reports/${NETWORK_NAME}/zenith-hypernova"
 
 export ASI_GLOBAL_PLAN_PATH="demo/zenith-sapience-initiative-supra-sovereign-hypernova-governance/project-plan.json"
@@ -23,8 +27,9 @@ export ASI_GLOBAL_ADDITIONAL_ARTIFACTS_APPEND='[
 
 export AURORA_REPORT_SCOPE="zenith-hypernova"
 export AURORA_REPORT_TITLE="Hypernova Initiative — Mission Report"
+export AURORA_MISSION_CONFIG="demo/asi-global/config/mission@v2.json"
+unset AURORA_REPORT_NAMESPACE AURORA_DEPLOY_OUTPUT
 
-rm -rf "$LOCAL_REPORT_ROOT"
-mkdir -p "$LOCAL_REPORT_ROOT"
+node demo/zenith-sapience-initiative-supra-sovereign-hypernova-governance/bin/prepare-reports.cjs local
 
-NETWORK="$NETWORK_NAME" npm run demo:asi-global:local -- "$@"
+NETWORK="$NETWORK_NAME" npm run demo:asi-global:local

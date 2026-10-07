@@ -70,6 +70,11 @@ jobs:
       - name: Run Hypernova deterministic kit
         run: npm run demo:zenith-hypernova
 
+      - name: Verify Hypernova analysis, evidence and work orders
+        run: |
+          npm run demo:zenith-hypernova:test
+          npm run demo:zenith-hypernova:work
+
       - name: Run Hypernova local rehearsal
         env:
           RPC_URL: http://127.0.0.1:8545

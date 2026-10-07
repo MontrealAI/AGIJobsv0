@@ -269,7 +269,7 @@ async function writeSummary(plan: any, dryRun: DryRunReport): Promise<void> {
         jobs.forEach((job: any) => {
           mdLines.push(`  - **${job.id}** — ${job.title}`);
           mdLines.push(`    - Reward: ${job.reward} ${plan.budget?.currency ?? ''}`.trim());
-          mdLines.push(`    - Deadline: ${job.deadlineDays} days`);
+          mdLines.push(`    - ${plan.timingPolicy === 'duration-after-dependencies' ? 'Stage duration after dependencies' : 'Deadline'}: ${job.deadlineDays} days`);
           mdLines.push(
             `    - Dependencies: ${job.dependencies?.length ? job.dependencies.join(', ') : 'None'}`,
           );
@@ -289,7 +289,7 @@ async function writeSummary(plan: any, dryRun: DryRunReport): Promise<void> {
     globalJobs.forEach((job: any) => {
       mdLines.push(`- **${job.id}** — ${job.title}`);
       mdLines.push(`  - Reward: ${job.reward} ${plan.budget?.currency ?? ''}`.trim());
-      mdLines.push(`  - Deadline: ${job.deadlineDays} days`);
+      mdLines.push(`  - ${plan.timingPolicy === 'duration-after-dependencies' ? 'Stage duration after dependencies' : 'Deadline'}: ${job.deadlineDays} days`);
       mdLines.push(`  - Dependencies: ${job.dependencies?.length ? job.dependencies.join(', ') : 'None'}`);
       if (job.thermodynamicProfile?.adjustmentOnDelay) {
         mdLines.push(`  - Thermodynamic response: ${job.thermodynamicProfile.adjustmentOnDelay}`);

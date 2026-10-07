@@ -150,7 +150,7 @@ The generated section includes every tracked top-level directory and every neste
 | [zenith-sapience-initiative-omega-omni-operating-system](zenith-sapience-initiative-omega-omni-operating-system/README.md) | Design guide | Open the guide or source directory |
 | [zenith-sapience-initiative-omnidominion-governance](zenith-sapience-initiative-omnidominion-governance/README.md) | Code and guide | `demo:zenith-sapience-omnidominion`, `demo:zenith-sapience-omnidominion:local` |
 | [zenith-sapience-initiative-planetary-operating-system-governance](zenith-sapience-initiative-planetary-operating-system-governance/README.md) | Code and guide | `demo:zenith-sapience-planetary-os`, `demo:zenith-sapience-planetary-os:local` |
-| [zenith-sapience-initiative-supra-sovereign-hypernova-governance](zenith-sapience-initiative-supra-sovereign-hypernova-governance/README.md) | Code and guide | `demo:zenith-hypernova`, `demo:zenith-hypernova:local` |
+| [zenith-sapience-initiative-supra-sovereign-hypernova-governance](zenith-sapience-initiative-supra-sovereign-hypernova-governance/README.md) | Code and guide | `demo:zenith-hypernova`, `demo:zenith-hypernova:local`, `demo:zenith-hypernova:work` |
 
 ### Nested guides and variants
 

@@ -1547,18 +1547,18 @@
     "related": ["asi-global"]
   },
   "zenith-sapience-initiative-supra-sovereign-hypernova-governance": {
-    "question": "How does the Hypernova governance plan attach to a local rehearsal?",
-    "purpose": "For governance reviewers: inspect the Hypernova project plan, scenario-specific report scope and the shared ASI Global execution path.",
+    "question": "How can machine work scale with accountable governance and review?",
+    "purpose": "Create computer-work proposals, run budget and dependency analysis, verify artifacts and explore the limits imposed by reviewer capacity.",
     "steps": [
       {
         "title": "Read this governance plan",
         "source": "demo/zenith-sapience-initiative-supra-sovereign-hypernova-governance/project-plan.json",
-        "explanation": "Inspect this variant\u2019s task graph, policy and owner context. Compare concrete tasks across variants rather than inferring a capability hierarchy from their names."
+        "explanation": "Inspect the corrected allocations and explicit stage-duration policy. All six regional contexts and eleven original jobs remain; physical outcomes are scenario targets."
       },
       {
-        "title": "Follow the local wrapper",
-        "source": "demo/zenith-sapience-initiative-supra-sovereign-hypernova-governance/bin/zenith-hypernova-local.sh",
-        "explanation": "The wrapper sets scenario report and planning variables, then delegates to ASI Global. Check which variables affect planning and which executable mission specification is actually selected."
+        "title": "Inspect execution and content checks",
+        "source": "demo/zenith-sapience-initiative-supra-sovereign-hypernova-governance/workbench/cli.mjs",
+        "explanation": "Run the same local analysis as the browser, export the exact source and independently recompute arithmetic and schedule before accepting evidence. Content checks do not authenticate a reviewer or authorize settlement."
       },
       {
         "title": "Read the operating contract",
@@ -1566,11 +1566,19 @@
         "explanation": "Use the runbook to connect plans, owner controls and evidence. Fresh local receipts establish the executed shared jobs; they do not automatically certify every governance objective in the plan."
       }
     ],
-    "command": "npm run demo:zenith-hypernova:local",
-    "expected": "The variant wrapper produces its scoped local rehearsal outputs. Inspect the manifest and receipts to distinguish shared ASI Global execution from scenario-specific planning artifacts.",
-    "experiment": "Compare the wrapper\u2019s plan path, report root and effective mission jobs with another Zenith variant. Explain exactly what changes and what remains shared.",
-    "mode": "local",
-    "related": ["asi-global"]
+    "command": "npm run demo:zenith-hypernova:work",
+    "expected": "Fresh analysis JSON, CSV, Markdown, exact source and checked evidence in a new reports/zenith-hypernova-work directory. No provider calls or blockchain transactions. The separate local-chain command still rehearses the shared ASI Global jobs.",
+    "experiment": "Inspect the preserved original defects, compare the corrected plan, then reduce reviewer hours to see the capacity bottleneck. Export an unfunded work proposal for an approved runtime.",
+    "mode": "node",
+    "related": ["asi-global"],
+    "dashboards": [
+      {
+        "title": "Open the Hypernova workbench",
+        "route": "experiments/zenith-hypernova/",
+        "source": "demo/zenith-sapience-initiative-supra-sovereign-hypernova-governance/workbench/index.html"
+      }
+    ],
+    "dashboardDescription": "Interactive local analysis, ten work-order templates, source-bound evidence and reviewer-constrained capacity. Live work and settlement require separate commissioning."
   },
   "CELESTIAL-SOVEREIGN-ORBITAL-AGI-OS-GRAND-DEMONSTRATION": {
     "question": "Which parts are architecture, and where can I try the related implementation?",
