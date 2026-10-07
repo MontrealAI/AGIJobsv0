@@ -3,10 +3,10 @@
 [![CI (v2)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml)
 [![Containers](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/containers.yml/badge.svg?branch=main)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/containers.yml)
 
-The agent gateway is the on-chain mission control bridge for the superintelligent platform. It exposes authenticated REST,
+The agent gateway connects authorized workers and validators to the platform's contracts. It exposes authenticated REST,
 WebSocket, and gRPC interfaces that orchestrate job creation, validator staking, telemetry ingestion, and audit anchoring against
-the deployed contracts. All configuration is driven from `config/` manifests so the contract owner can rotate parameters without
-changing code.
+the deployed contracts. Operators configure deployments through `config/` manifests and environment variables, with live
+authorization, provider behavior and recovery verified during commissioning.
 
 ```mermaid
 flowchart LR
@@ -40,7 +40,7 @@ flowchart LR
   Alpha Bridge client. All protobuf types live in `protos/agi/alpha/bridge/v1`. The service adapts HTTP errors back to canonical
   gRPC codes so clients always receive deterministic error handling.【F:agent-gateway/grpc.ts†L1-L120】
 - **Telemetry + audit anchoring** – Incoming telemetry is validated, stored, and exported both via `/metrics` and the anchoring
-  tasks under `auditAnchoring.ts`, ensuring every deliverable carries an immutable record.【F:agent-gateway/auditAnchoring.ts†L1-L160】【F:agent-gateway/telemetry.ts†L1-L200】
+  tasks under `auditAnchoring.ts`, supporting verifiable audit records when anchoring is configured and confirmed.【F:agent-gateway/auditAnchoring.ts†L1-L160】【F:agent-gateway/telemetry.ts†L1-L200】
 - **Staking automation** – `stakeCoordinator.ts` wraps the stake manager ABI so agents can top-up, withdraw, or restake directly
   through the gateway (REST and gRPC endpoints use the same helpers).【F:agent-gateway/stakeCoordinator.ts†L1-L220】
 - **Job planning + opportunities** – The job planner persists multi-step execution plans and resumes them on startup, while the
@@ -76,6 +76,16 @@ PORT=4000 RPC_URL=http://127.0.0.1:8545 JOB_REGISTRY_ADDRESS=<addr> VALIDATION_M
 A Prometheus-compatible metrics stream is available at `GET /metrics`. WebSocket clients connect to the same origin; the gateway
 uses `registerEvents` to broadcast validator assignments and job changes.【F:agent-gateway/index.ts†L1-L61】
 
+## Private validator state
+
+Set `VALIDATION_STORAGE_DIR` to an absolute directory on a durable, private volume before starting a validator. Its parent must already exist, belong to the service user and not be writable by other users. The default remains `storage/validation` relative to the runtime package: repository-root `storage/validation` for source execution, or `agent-gateway/dist/storage/validation` for the compiled gateway. Use an explicit path when mounting production storage.
+
+The gateway creates private directories (`0700`) and records (`0600`). Existing paths must satisfy ownership and permission checks; symlinks, shared files and unsafe paths are rejected. Stop the service and back up existing state before correcting permissions as the owning user. Do not delete commitment records, intent markers or lock files to force a retry: reconcile wallet transactions and the current contract round first. Protect archives and backups because they contain plaintext reveal salts.
+
+Records are bounded JSON data, limited to 1 MiB with additional depth and node limits. Network-derived evidence and labels remain untrusted data after persistence. Never execute these files, serve the private volume over HTTP, or render its text as trusted HTML. A storage validation or durability error prevents a new vote broadcast; it is not permission to discard earlier evidence.
+
+Automatic validators reserve `awaiting-review` for verified independent-review requirements, including computer work. Temporary lookup failures receive bounded read-only retries. `reconciliation-required` means automation cannot safely establish the current transaction or round state; retain the records and compare canonical receipts, the active round and wallet transactions before operator recovery. An uncertain validator broadcast is not automatically resent.
+
 ## Testing & CI
 
 - `npm run test` executes the Hardhat suite that consumes this service’s mocks.
@@ -91,8 +101,8 @@ uses `registerEvents` to broadcast validator assignments and job changes.【F:ag
 4. Use `npm run owner:command-center` to render the mermaid authority graph—gateway endpoints reflect the same contract addresses
    when queried via `/system/health`.
 
-The gateway is the connective tissue between owners, agents, and validators. Keep its configuration aligned with the manifests
-and the superintelligent machine remains fully responsive to contract owner directives.
+The gateway connects owners, agents, and validators. Keep its configuration aligned with the manifests and verify owner controls,
+recovery and settlement in the intended deployment.
 ## Provider execution and local simulations
 
 An agent endpoint failure stops `executeJob` before result upload, signing, or submission. `runAgentTask` retains preview fallback output with `executionMode: 'failed'`; callers must inspect its error and mode. Missing endpoints produce an explicitly marked simulation, not a provider result.

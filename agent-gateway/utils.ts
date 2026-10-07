@@ -7,17 +7,20 @@ import {
   loadCommitRecord,
   updateCommitRecord,
   beginCommitRecord,
-  StoredCommitRecord,
-  CommitRoundScope,
 } from './validationStore';
 import {
   VALIDATION_PROTOCOL_ABI,
   VALIDATION_REGISTRY_ABI,
   prepareValidationCommitment,
   assertValidationReveal,
-  validationCommitmentHash,
-  ValidationCommitment,
 } from '../shared/validationProtocol';
+
+import {
+  reconciliationRequired,
+  readValidationRound,
+  reconcilePreviousRound,
+  assertStoredValidationRound,
+} from './validationRound';
 
 const DEFAULT_RPC_URL = 'http://localhost:8545';
 const ALLOWED_RPC_PROTOCOLS = new Set(['http:', 'https:', 'ws:', 'wss:']);
@@ -566,141 +569,6 @@ function normaliseSalt(value: string): string {
   return ethers.hexlify(bytes);
 }
 
-function reconciliationRequired(): never {
-  throw new Error('VALIDATION_COMMITMENT_RECONCILIATION_REQUIRED');
-}
-
-function validateStoredRound(record: StoredCommitRecord): CommitRoundScope {
-  const scope = record.roundScope;
-  const uint = (value: unknown) =>
-    typeof value === 'string' && /^(0|[1-9][0-9]*)$/.test(value);
-  if (
-    !scope ||
-    !uint(scope.chainId) ||
-    !uint(scope.nonce) ||
-    !uint(scope.commitDeadline) ||
-    !ethers.isAddress(scope.validationModule) ||
-    !ethers.isHexString(scope.domain, 32) ||
-    !ethers.isHexString(scope.specHash, 32) ||
-    !ethers.isHexString(scope.blockHash, 32) ||
-    !Number.isSafeInteger(scope.blockNumber) ||
-    scope.blockNumber < 0 ||
-    !record.burnTxHash ||
-    !ethers.isHexString(record.burnTxHash, 32)
-  )
-    reconciliationRequired();
-  try {
-    const expected = validationCommitmentHash({
-      jobId: BigInt(record.jobId),
-      validator: record.validator,
-      approve: record.approve,
-      salt: record.salt,
-      burnTxHash: record.burnTxHash!,
-      nonce: BigInt(scope.nonce),
-      chainId: BigInt(scope.chainId),
-      domain: scope.domain,
-      specHash: scope.specHash,
-    });
-    if (expected.toLowerCase() !== record.commitHash.toLowerCase())
-      reconciliationRequired();
-  } catch {
-    reconciliationRequired();
-  }
-  return scope;
-}
-
-async function readManualRound(
-  vote: ValidationCommitment
-): Promise<CommitRoundScope> {
-  const chain = validation!.runner?.provider ?? provider;
-  const block = await chain.getBlock('latest');
-  if (!block?.hash) reconciliationRequired();
-  const options = { blockTag: block.number };
-  const [round, nonce, domain, specHash, network] = await Promise.all([
-    validation!.rounds(vote.jobId, options),
-    validation!.jobNonce(vote.jobId, options),
-    validation!.DOMAIN_SEPARATOR(options),
-    registry.getSpecHash(vote.jobId, options),
-    chain.getNetwork(),
-  ]);
-  if (
-    BigInt(nonce) !== vote.nonce ||
-    domain !== vote.domain ||
-    specHash !== vote.specHash ||
-    network.chainId !== vote.chainId ||
-    round.tallied ||
-    BigInt(round.commitDeadline) <= 0n
-  )
-    reconciliationRequired();
-  return {
-    chainId: vote.chainId.toString(),
-    validationModule: (await validation!.getAddress()).toLowerCase(),
-    nonce: vote.nonce.toString(),
-    commitDeadline: round.commitDeadline.toString(),
-    domain: vote.domain,
-    specHash: vote.specHash,
-    blockNumber: block.number,
-    blockHash: block.hash,
-  };
-}
-
-async function reconcilePreviousRound(
-  previous: StoredCommitRecord,
-  next: CommitRoundScope
-): Promise<void> {
-  const old = validateStoredRound(previous);
-  if (
-    old.chainId !== next.chainId ||
-    old.validationModule.toLowerCase() !== next.validationModule ||
-    old.domain !== next.domain ||
-    BigInt(next.nonce) < BigInt(old.nonce) ||
-    BigInt(next.commitDeadline) <= BigInt(old.commitDeadline) ||
-    next.blockNumber <= old.blockNumber ||
-    !previous.commitTx
-  )
-    reconciliationRequired();
-  const chain = validation!.runner?.provider ?? provider;
-  const [anchor, receipt, oldCommitment, currentCommitment] = await Promise.all(
-    [
-      chain.getBlock(old.blockNumber),
-      chain.getTransactionReceipt(previous.commitTx!),
-      validation!.commitments(previous.jobId, previous.validator, old.nonce, {
-        blockTag: next.blockNumber,
-      }),
-      validation!.commitments(previous.jobId, previous.validator, next.nonce, {
-        blockTag: next.blockNumber,
-      }),
-    ]
-  );
-  if (
-    anchor?.hash !== old.blockHash ||
-    !receipt ||
-    receipt.status !== 1 ||
-    receipt.blockNumber >= next.blockNumber ||
-    oldCommitment !== ethers.ZeroHash ||
-    currentCommitment !== ethers.ZeroHash
-  )
-    reconciliationRequired();
-  const eventInterface = new ethers.Interface([
-    'event ValidationCommitted(uint256 indexed jobId,address indexed validator,bytes32 commitHash,string subdomain)',
-  ]);
-  const confirmed = receipt!.logs.some((log) => {
-    if (log.address.toLowerCase() !== old.validationModule.toLowerCase())
-      return false;
-    try {
-      const event = eventInterface.parseLog(log);
-      return (
-        event?.args[0].toString() === previous.jobId &&
-        event.args[1].toLowerCase() === previous.validator.toLowerCase() &&
-        event.args[2].toLowerCase() === previous.commitHash.toLowerCase()
-      );
-    } catch {
-      return false;
-    }
-  });
-  if (!confirmed) reconciliationRequired();
-}
-
 export async function commitHelper(
   jobId: string,
   wallet: Wallet,
@@ -730,8 +598,9 @@ export async function commitHelper(
     salt
   );
   const { commitHash, burnTxHash } = vote;
-  const roundScope = await readManualRound(vote);
-  if (previous) await reconcilePreviousRound(previous, roundScope);
+  const context = { validation, registry, provider };
+  const roundScope = await readValidationRound(context, vote);
+  if (previous) await reconcilePreviousRound(context, previous, roundScope);
   const validatorEns =
     (await provider.lookupAddress(wallet.address)) || undefined;
   const validatorLabel = validatorEns?.split('.')[0];
@@ -813,27 +682,10 @@ export async function revealHelper(
   }
   await checkEnsSubdomain(wallet.address);
   if (!storedRecord) reconciliationRequired();
-  const storedScope = validateStoredRound(storedRecord!);
-  const activeScope = await readManualRound({
-    jobId: BigInt(jobId),
-    validator: wallet.address,
-    approve,
-    salt,
-    burnTxHash: storedRecord!.burnTxHash!,
-    nonce: BigInt(storedScope.nonce),
-    chainId: BigInt(storedScope.chainId),
-    domain: storedScope.domain,
-    specHash: storedScope.specHash,
-  });
-  const chain = validation!.runner?.provider ?? provider;
-  const anchor = await chain.getBlock(storedScope.blockNumber);
-  if (
-    activeScope.validationModule !==
-      storedScope.validationModule.toLowerCase() ||
-    activeScope.commitDeadline !== storedScope.commitDeadline ||
-    anchor?.hash !== storedScope.blockHash
-  )
-    reconciliationRequired();
+  const storedScope = await assertStoredValidationRound(
+    { validation, registry, provider },
+    storedRecord!
+  );
   await assertValidationReveal(
     validation,
     registry,

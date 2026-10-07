@@ -21,7 +21,20 @@ import { publishEnergySample, recordValidationFlowMetrics } from './telemetry';
 import { appendTrainingRecord } from '../shared/trainingRecords';
 import { secureLogAction } from './security';
 import { summarizeContent } from '../shared/worldModel';
-import { loadCommitRecord, updateCommitRecord } from './validationStore';
+import {
+  beginCommitRecord,
+  loadCommitRecord,
+  updateCommitRecord,
+  CommitRoundScope,
+  StoredCommitRecord,
+} from './validationStore';
+import {
+  inspectStoredValidationRound,
+  readActiveValidationRound,
+  readValidationRound,
+  reconcilePreviousRound,
+  assertStoredValidationRound,
+} from './validationRound';
 import { assertAutomaticValidationAllowed } from './validationContext';
 import {
   prepareValidationCommitment,
@@ -55,6 +68,8 @@ interface ValidationEvaluation {
 type AssignmentStatus =
   | 'selected'
   | 'awaiting-review'
+  | 'context-retry'
+  | 'reconciliation-required'
   | 'evaluating'
   | 'committed'
   | 'revealed'
@@ -68,11 +83,16 @@ interface ValidationAssignment {
   status: AssignmentStatus;
   createdAt: string;
   attempts: number;
+  contextAttempts?: number;
+  selectionAttempts?: number;
+  selectionScope?: CommitRoundScope;
   round?: RoundMetadata;
   commit?: {
     txHash: string;
     salt: string;
     burnTxHash?: string;
+    commitHash: string;
+    roundScope?: CommitRoundScope;
     approve: boolean;
     committedAt: string;
     evaluation: ValidationEvaluation;
@@ -83,7 +103,11 @@ interface ValidationAssignment {
   };
   error?: string;
   processing?: boolean;
+  revealProcessing?: boolean;
+  revealPreflightAttempts?: number;
   scheduledReveal?: NodeJS.Timeout | null;
+  scheduledEvaluation?: NodeJS.Timeout | null;
+  scheduledSelection?: NodeJS.Timeout | null;
   energySample?: EnergySample;
   notifiedAt?: string;
   notificationDelivered?: boolean;
@@ -127,16 +151,88 @@ const submissions = new Map<string, SubmissionInfo>();
 const assignmentHistory: ValidatorAssignmentSnapshot[] = [];
 const fallbackTimers = new Map<string, NodeJS.Timeout>();
 
+function isCurrentAssignment(assignment: ValidationAssignment): boolean {
+  return (
+    assignments
+      .get(assignment.jobId)
+      ?.get(assignment.wallet.address.toLowerCase()) === assignment
+  );
+}
+
+function requireCurrentAssignment(assignment: ValidationAssignment): void {
+  if (!isCurrentAssignment(assignment))
+    throw new Error('VALIDATION_ASSIGNMENT_SUPERSEDED');
+}
+
+function cancelAssignmentTimers(assignment: ValidationAssignment): void {
+  if (assignment.scheduledSelection)
+    clearTimeout(assignment.scheduledSelection);
+  if (assignment.scheduledEvaluation)
+    clearTimeout(assignment.scheduledEvaluation);
+  if (assignment.scheduledReveal) clearTimeout(assignment.scheduledReveal);
+  assignment.scheduledEvaluation = null;
+  assignment.scheduledReveal = null;
+  assignment.scheduledSelection = null;
+}
+
+function scheduleSelectionRetry(assignment: ValidationAssignment): void {
+  if (
+    !isCurrentAssignment(assignment) ||
+    (assignment.selectionAttempts || 0) >= VALIDATOR_CONTEXT_MAX_ATTEMPTS
+  )
+    return;
+  if (assignment.scheduledSelection)
+    clearTimeout(assignment.scheduledSelection);
+  const timer = setTimeout(() => {
+    if (
+      !isCurrentAssignment(assignment) ||
+      assignment.scheduledSelection !== timer
+    )
+      return;
+    assignment.scheduledSelection = null;
+    handleValidatorSelection(assignment.jobId, [
+      assignment.wallet.address,
+    ]).catch((error) =>
+      console.error('validator selection retry error', error)
+    );
+  }, VALIDATOR_CONTEXT_RETRY_MS);
+  assignment.scheduledSelection = timer;
+}
+
+function scheduleEvaluationRetry(
+  assignment: ValidationAssignment,
+  delay: number
+): void {
+  if (!isCurrentAssignment(assignment)) return;
+  if (!assignment.selectionScope) return;
+  if (assignment.scheduledEvaluation)
+    clearTimeout(assignment.scheduledEvaluation);
+  const timer = setTimeout(() => {
+    if (
+      !isCurrentAssignment(assignment) ||
+      assignment.scheduledEvaluation !== timer
+    )
+      return;
+    assignment.scheduledEvaluation = null;
+    const submission = submissions.get(assignment.jobId);
+    if (!submission) return;
+    evaluateAndCommit(submission, assignment).catch((error) =>
+      console.error('validator evaluation retry error', error)
+    );
+  }, delay);
+  assignment.scheduledEvaluation = timer;
+}
+
 const RESULT_DIR = path.resolve(__dirname, '../storage/results');
 const VALIDATOR_MAX_RETRIES = Number(process.env.VALIDATOR_MAX_RETRIES || '3');
 const VALIDATOR_RETRY_DELAY_MS = Number(
   process.env.VALIDATOR_RETRY_DELAY_MS || '15000'
 );
+const VALIDATOR_CONTEXT_MAX_ATTEMPTS = 3;
+const VALIDATOR_CONTEXT_RETRY_MS = 5000;
+const VALIDATOR_REVEAL_SCHEDULE_MAX_RETRIES = 12;
 const VALIDATOR_REVEAL_LEAD_SECONDS = Number(
   process.env.VALIDATOR_REVEAL_LEAD_SECONDS || '30'
-);
-const VALIDATOR_REVEAL_FALLBACK_MS = Number(
-  process.env.VALIDATOR_REVEAL_FALLBACK_MS || '60000'
 );
 const VALIDATOR_HISTORY_LIMIT = Number(
   process.env.VALIDATOR_HISTORY_LIMIT || '50'
@@ -622,31 +718,13 @@ async function notifyDomainAgent(
   } catch (err) {
     console.warn('validator notification logging failed', err);
   }
-  try {
-    updateCommitRecord(submission.jobId, assignment.wallet.address, {
-      metadata: {
-        notifiedAt: assignment.notifiedAt,
-        notificationDelivered: delivered,
-      },
-    });
-  } catch (err) {
-    // commit record may not exist yet; ignore but log at debug level
-    if (
-      err instanceof Error &&
-      /missing required base fields/.test(err.message)
-    ) {
-      return;
-    }
-    console.warn('failed to persist validator notification metadata', err);
-  }
 }
 
 function rehydrateAssignmentFromStore(
-  jobId: string,
-  assignment: ValidationAssignment
+  record: StoredCommitRecord,
+  assignment: ValidationAssignment,
+  status: 'committed' | 'revealed'
 ): void {
-  const record = loadCommitRecord(jobId, assignment.wallet.address);
-  if (!record) return;
   const storedEvaluation = record.evaluation as
     | ValidationEvaluation
     | undefined;
@@ -664,13 +742,15 @@ function rehydrateAssignmentFromStore(
     txHash: record.commitTx || assignment.commit?.txHash || '',
     salt: record.salt,
     burnTxHash: record.burnTxHash,
+    commitHash: record.commitHash,
+    roundScope: record.roundScope,
     approve: record.approve,
     committedAt: record.committedAt,
     evaluation,
   };
-  if (record.revealTx) {
+  if (status === 'revealed') {
     assignment.reveal = {
-      txHash: record.revealTx,
+      txHash: record.revealTx || '',
       revealedAt: record.revealedAt || new Date().toISOString(),
     };
     assignment.status = 'revealed';
@@ -916,65 +996,69 @@ async function revealValidation(
   jobId: string,
   assignment: ValidationAssignment
 ): Promise<void> {
-  if (!validation) return;
-  if (assignment.status === 'revealed') return;
-  let commitInfo = assignment.commit;
-  if (!commitInfo) {
-    const record = loadCommitRecord(jobId, assignment.wallet.address);
-    if (record) {
-      const storedEvaluation = record.evaluation as
-        | ValidationEvaluation
-        | undefined;
-      const storedSubmission = record.submission as SubmissionInfo | undefined;
-      const evaluation: ValidationEvaluation = storedEvaluation ??
-        assignment.commit?.evaluation ?? {
-          approve: record.approve,
-          reasons: ['restored-from-storage'],
-          hashMatches: false,
-          resultAvailable: Boolean(storedSubmission?.resultURI),
-          worker: storedSubmission?.worker ?? '',
-          resultURI: storedSubmission?.resultURI ?? '',
-        };
-      commitInfo = {
-        txHash: record.commitTx || assignment.commit?.txHash || '',
-        salt: record.salt,
-        burnTxHash: record.burnTxHash,
-        approve: record.approve,
-        committedAt: record.committedAt,
-        evaluation,
-      };
-      assignment.commit = commitInfo;
-    }
-  }
-  if (!commitInfo) {
-    console.warn('Validator assignment missing commit data for reveal', jobId);
+  if (
+    !validation ||
+    !isCurrentAssignment(assignment) ||
+    assignment.status !== 'committed' ||
+    assignment.revealProcessing
+  )
     return;
-  }
-  const label = assignment.identity.label || assignment.identity.ensName;
-  if (!label) {
-    throw new Error('Validator identity missing label');
-  }
+  assignment.revealProcessing = true;
+  let revealIntent = false;
+  let revealGuardReleased = false;
   try {
+    const record = loadCommitRecord(jobId, assignment.wallet.address);
+    if (
+      !record ||
+      !record.roundScope ||
+      record.commitHash !== assignment.commit?.commitHash
+    )
+      throw new Error('VALIDATION_COMMITMENT_RECONCILIATION_REQUIRED');
+    await assertStoredValidationRound(
+      { validation, registry, provider },
+      record
+    );
     await assertValidationReveal(
       validation,
       registry,
       provider,
       jobId,
       assignment.wallet.address,
-      commitInfo.approve,
-      commitInfo.salt,
-      commitInfo.burnTxHash
+      record.approve,
+      record.salt,
+      record.burnTxHash
     );
+    requireCurrentAssignment(assignment);
+    const label = assignment.identity.label || assignment.identity.ensName;
+    if (!label) throw new Error('Validator identity missing label');
+    const expected = {
+      commitHash: record.commitHash,
+      roundScope: record.roundScope,
+    };
+    updateCommitRecord(
+      jobId,
+      assignment.wallet.address,
+      { metadata: { automaticRevealStatus: 'broadcast-intent' } },
+      { ...expected, revealUnattempted: true }
+    );
+    revealIntent = true;
+    assignment.status = 'reconciliation-required';
     const tx = await (validation as any)
       .connect(assignment.wallet)
       .revealValidation(
         jobId,
-        commitInfo.approve,
-        commitInfo.burnTxHash,
-        commitInfo.salt,
+        record.approve,
+        record.burnTxHash,
+        record.salt,
         label,
         []
       );
+    updateCommitRecord(
+      jobId,
+      assignment.wallet.address,
+      { revealTx: tx.hash, metadata: { automaticRevealStatus: 'broadcast' } },
+      expected
+    );
     await tx.wait();
     assignment.reveal = {
       txHash: tx.hash,
@@ -982,29 +1066,54 @@ async function revealValidation(
     };
     assignment.status = 'revealed';
     try {
-      updateCommitRecord(jobId, assignment.wallet.address, {
-        revealTx: tx.hash,
-        revealedAt: assignment.reveal.revealedAt,
-        metadata: assignment.notifiedAt
-          ? {
-              notifiedAt: assignment.notifiedAt,
-              notificationDelivered: assignment.notificationDelivered ?? false,
-            }
-          : undefined,
-      });
-    } catch (err) {
-      console.warn('failed to persist validator reveal metadata', err);
+      updateCommitRecord(
+        jobId,
+        assignment.wallet.address,
+        {
+          revealedAt: assignment.reveal.revealedAt,
+          metadata: { automaticRevealStatus: 'confirmed' },
+        },
+        expected
+      );
+    } catch (error) {
+      console.warn('failed to persist confirmed validator reveal', error);
     }
     await secureLogAction({
       component: 'validator',
       action: 'reveal',
       jobId,
       agent: assignment.wallet.address,
-      metadata: { txHash: tx.hash, approve: commitInfo.approve },
+      metadata: { txHash: tx.hash, approve: record.approve },
       success: true,
     });
-  } catch (err: any) {
-    assignment.error = err?.message || String(err);
+  } catch (error) {
+    assignment.error = error instanceof Error ? error.message : String(error);
+    if (
+      !revealIntent &&
+      isCurrentAssignment(assignment) &&
+      assignment.error !== 'VALIDATION_COMMITMENT_RECONCILIATION_REQUIRED'
+    ) {
+      assignment.revealPreflightAttempts =
+        (assignment.revealPreflightAttempts || 0) + 1;
+      if (assignment.revealPreflightAttempts < VALIDATOR_CONTEXT_MAX_ATTEMPTS) {
+        assignment.status = 'committed';
+        const timer = setTimeout(() => {
+          if (
+            !isCurrentAssignment(assignment) ||
+            assignment.scheduledReveal !== timer
+          )
+            return;
+          assignment.scheduledReveal = null;
+          scheduleReveal(jobId, assignment).catch((err) =>
+            console.error('validator reveal preflight retry error', err)
+          );
+        }, VALIDATOR_CONTEXT_RETRY_MS);
+        assignment.scheduledReveal = timer;
+      } else assignment.status = 'reconciliation-required';
+    } else if (assignment.status !== 'revealed')
+      assignment.status = 'reconciliation-required';
+    assignment.revealProcessing = false;
+    revealGuardReleased = true;
     await secureLogAction({
       component: 'validator',
       action: 'reveal-failed',
@@ -1013,57 +1122,86 @@ async function revealValidation(
       metadata: { error: assignment.error },
       success: false,
     });
-    throw err;
+    throw error;
+  } finally {
+    if (!revealGuardReleased) assignment.revealProcessing = false;
   }
 }
 
 async function scheduleReveal(
   jobId: string,
-  assignment: ValidationAssignment
+  assignment: ValidationAssignment,
+  attempt = 0
 ): Promise<void> {
-  if (!validation) return;
-  if (assignment.scheduledReveal) {
-    clearTimeout(assignment.scheduledReveal);
-    assignment.scheduledReveal = null;
-  }
+  if (
+    !validation ||
+    !isCurrentAssignment(assignment) ||
+    assignment.status !== 'committed' ||
+    assignment.revealProcessing
+  )
+    return;
+  if (assignment.scheduledReveal) clearTimeout(assignment.scheduledReveal);
+  assignment.scheduledReveal = null;
+  let delayMs: number;
   try {
     const round = await validation.rounds(jobId);
-    const commitDeadline = Number(round.commitDeadline);
-    const revealDeadline = Number(round.revealDeadline);
     const block = await provider.getBlock('latest');
     if (!block) throw new Error('VALIDATION_BLOCK_UNAVAILABLE');
-    const delayMs = validationRevealDelay(
+    delayMs = validationRevealDelay(
       round,
       block.timestamp,
       VALIDATOR_REVEAL_LEAD_SECONDS
     );
-    assignment.scheduledReveal = setTimeout(() => {
-      revealValidation(jobId, assignment).catch((err) =>
-        console.error('validator reveal error', err)
-      );
-    }, delayMs);
     assignment.round = {
-      commitDeadline,
-      revealDeadline,
+      commitDeadline: Number(round.commitDeadline),
+      revealDeadline: Number(round.revealDeadline),
       approvals: round.approvals.toString(),
       rejections: round.rejections.toString(),
       committeeSize: Number(round.committeeSize),
     };
-  } catch (err) {
-    console.warn('Failed to schedule validator reveal', jobId, err);
-    if (
-      err instanceof Error &&
-      /^VALIDATION_REVEAL_(WINDOW_CLOSED|DELAY_OUT_OF_RANGE)$/.test(err.message)
-    ) {
-      assignment.error = err.message;
+  } catch (error) {
+    if (!isCurrentAssignment(assignment) || assignment.status !== 'committed')
       return;
-    }
-    assignment.scheduledReveal = setTimeout(() => {
-      revealValidation(jobId, assignment).catch((error) =>
-        console.error('validator reveal retry error', error)
+    assignment.error = error instanceof Error ? error.message : String(error);
+    if (
+      /^VALIDATION_REVEAL_(WINDOW_CLOSED|DELAY_OUT_OF_RANGE)$/.test(
+        assignment.error
+      ) ||
+      attempt >= VALIDATOR_REVEAL_SCHEDULE_MAX_RETRIES
+    )
+      return;
+    const timer = setTimeout(() => {
+      if (
+        !isCurrentAssignment(assignment) ||
+        assignment.scheduledReveal !== timer
+      )
+        return;
+      assignment.scheduledReveal = null;
+      scheduleReveal(jobId, assignment, attempt + 1).catch((err) =>
+        console.error('validator reveal scheduling error', err)
       );
-    }, VALIDATOR_REVEAL_FALLBACK_MS);
+    }, VALIDATOR_CONTEXT_RETRY_MS);
+    assignment.scheduledReveal = timer;
+    return;
   }
+  if (
+    !isCurrentAssignment(assignment) ||
+    assignment.status !== 'committed' ||
+    assignment.revealProcessing
+  )
+    return;
+  const timer = setTimeout(() => {
+    if (
+      !isCurrentAssignment(assignment) ||
+      assignment.scheduledReveal !== timer
+    )
+      return;
+    assignment.scheduledReveal = null;
+    revealValidation(jobId, assignment).catch((error) =>
+      console.error('validator reveal error', error)
+    );
+  }, delayMs);
+  assignment.scheduledReveal = timer;
 }
 
 async function evaluateAndCommit(
@@ -1071,11 +1209,18 @@ async function evaluateAndCommit(
   assignment: ValidationAssignment
 ): Promise<void> {
   if (!validation) return;
+  if (!isCurrentAssignment(assignment) || !assignment.selectionScope) return;
   if (assignment.processing) return;
   if (assignment.status === 'committed' || assignment.status === 'revealed') {
     return;
   }
-  if (assignment.status === 'awaiting-review') return;
+  if (
+    assignment.status === 'awaiting-review' ||
+    assignment.status === 'reconciliation-required'
+  )
+    return;
+  if ((assignment.contextAttempts || 0) >= VALIDATOR_CONTEXT_MAX_ATTEMPTS)
+    return;
   if (assignment.attempts >= VALIDATOR_MAX_RETRIES) {
     return;
   }
@@ -1101,6 +1246,9 @@ async function evaluateAndCommit(
     scheduleValidatorFallback(submission.jobId);
     return;
   }
+  if (assignment.scheduledEvaluation)
+    clearTimeout(assignment.scheduledEvaluation);
+  assignment.scheduledEvaluation = null;
   assignment.processing = true;
   try {
     await assertAutomaticValidationAllowed(
@@ -1110,8 +1258,26 @@ async function evaluateAndCommit(
     );
   } catch (error) {
     assignment.processing = false;
-    assignment.status = 'awaiting-review';
+    if (!isCurrentAssignment(assignment)) return;
     assignment.error = error instanceof Error ? error.message : String(error);
+    if (assignment.error === 'VALIDATION_INDEPENDENT_REVIEW_REQUIRED') {
+      assignment.status = 'awaiting-review';
+    } else if (
+      error instanceof SyntaxError ||
+      /VALIDATION_SPECIFICATION_MISMATCH|Authoritative job specification hash mismatch|Invalid job specification/.test(
+        assignment.error
+      )
+    ) {
+      assignment.status = 'reconciliation-required';
+    } else {
+      assignment.contextAttempts = (assignment.contextAttempts || 0) + 1;
+      assignment.status =
+        assignment.contextAttempts < VALIDATOR_CONTEXT_MAX_ATTEMPTS
+          ? 'context-retry'
+          : 'failed';
+      if (assignment.status === 'context-retry')
+        scheduleEvaluationRetry(assignment, VALIDATOR_CONTEXT_RETRY_MS);
+    }
     await secureLogAction({
       component: 'validator',
       action: 'automatic-validation-abstained',
@@ -1122,6 +1288,12 @@ async function evaluateAndCommit(
     });
     return;
   }
+  if (!isCurrentAssignment(assignment)) {
+    assignment.processing = false;
+    return;
+  }
+  assignment.contextAttempts = 0;
+  assignment.error = undefined;
   assignment.attempts += 1;
   assignment.status = 'evaluating';
   if (!assignment.notifiedAt) {
@@ -1137,34 +1309,17 @@ async function evaluateAndCommit(
     label: assignment.identity.label,
     category: 'validation',
   });
-  try {
-    await ensureStake(assignment.wallet, 0n, ROLE_VALIDATOR);
-  } catch (err: any) {
-    assignment.processing = false;
-    assignment.error = err?.message || String(err);
-    assignment.status = 'failed';
-    await secureLogAction({
-      component: 'validator',
-      action: 'stake-failed',
-      jobId: submission.jobId,
-      agent: assignment.wallet.address,
-      metadata: { error: assignment.error },
-      success: false,
-    });
-    await recordValidationOutcome({
-      jobId: submission.jobId,
-      validator: assignment.wallet.address,
-      success: false,
-      reason: assignment.error,
-      stage: 'stake',
-    });
-    return;
-  }
 
   let evaluation: ValidationEvaluation | null = null;
   let energySample: EnergySample | undefined;
+  let broadcastIntent = false;
+  let evaluationGuardReleased = false;
   try {
+    requireCurrentAssignment(assignment);
+    await ensureStake(assignment.wallet, 0n, ROLE_VALIDATOR);
+    requireCurrentAssignment(assignment);
     const content = await loadSubmissionContent(submission);
+    requireCurrentAssignment(assignment);
     evaluation = analysePayload(content.payload, submission);
     if (content.source) {
       evaluation.source = content.source;
@@ -1177,11 +1332,8 @@ async function evaluateAndCommit(
       submission.jobId,
       assignment.wallet.address
     );
-    if (previous) {
-      throw new Error('VALIDATION_COMMITMENT_RECONCILIATION_REQUIRED');
-    }
     const salt = ethers.hexlify(ethers.randomBytes(32));
-    const { commitHash, burnTxHash } = await prepareValidationCommitment(
+    const vote = await prepareValidationCommitment(
       validation,
       registry,
       provider,
@@ -1190,6 +1342,27 @@ async function evaluateAndCommit(
       evaluation.approve,
       salt
     );
+
+    const { commitHash, burnTxHash } = vote;
+    const roundContext = { validation, registry, provider };
+    const roundScope = await readValidationRound(roundContext, vote);
+    if (previous)
+      await reconcilePreviousRound(roundContext, previous, roundScope);
+    requireCurrentAssignment(assignment);
+    if (
+      !assignment.selectionScope ||
+      (
+        [
+          'chainId',
+          'validationModule',
+          'nonce',
+          'commitDeadline',
+          'domain',
+          'specHash',
+        ] as const
+      ).some((field) => assignment.selectionScope![field] !== roundScope[field])
+    )
+      throw new Error('VALIDATION_COMMITMENT_RECONCILIATION_REQUIRED');
 
     await secureLogAction({
       component: 'validator',
@@ -1205,41 +1378,69 @@ async function evaluateAndCommit(
       success: true,
     });
 
-    const tx = await (validation as any)
-      .connect(assignment.wallet)
-      .commitValidation(submission.jobId, commitHash, label, []);
-    await tx.wait();
-    assignment.commit = {
-      txHash: tx.hash,
-      salt,
-      burnTxHash,
-      approve: evaluation.approve,
-      committedAt: new Date().toISOString(),
-      evaluation,
-    };
-    assignment.status = 'committed';
-    try {
-      updateCommitRecord(submission.jobId, assignment.wallet.address, {
+    requireCurrentAssignment(assignment);
+    beginCommitRecord(
+      submission.jobId,
+      assignment.wallet.address,
+      {
         approve: evaluation.approve,
         salt,
         burnTxHash,
         commitHash,
-        commitTx: tx.hash,
-        committedAt: assignment.commit.committedAt,
+        roundScope,
+        committedAt: new Date().toISOString(),
         evaluation,
         submission,
         validatorEns: assignment.identity.ensName,
         validatorLabel: assignment.identity.label,
-        metadata: assignment.notifiedAt
-          ? {
-              notifiedAt: assignment.notifiedAt,
-              notificationDelivered: assignment.notificationDelivered ?? false,
-            }
-          : undefined,
-      });
-    } catch (err) {
-      console.warn('failed to persist validator commit state', err);
+        metadata: {
+          automaticCommitStatus: 'broadcast-intent',
+          notifiedAt: assignment.notifiedAt,
+          notificationDelivered: assignment.notificationDelivered ?? false,
+        },
+      },
+      previous
+    );
+    broadcastIntent = true;
+    assignment.commit = {
+      txHash: '',
+      salt,
+      burnTxHash,
+      commitHash,
+      roundScope,
+      approve: evaluation.approve,
+      committedAt: new Date().toISOString(),
+      evaluation,
+    };
+    assignment.status = 'reconciliation-required';
+    requireCurrentAssignment(assignment);
+    const tx = await (validation as any)
+      .connect(assignment.wallet)
+      .commitValidation(submission.jobId, commitHash, label, []);
+    assignment.commit.txHash = tx.hash;
+    updateCommitRecord(
+      submission.jobId,
+      assignment.wallet.address,
+      { commitTx: tx.hash, metadata: { automaticCommitStatus: 'broadcast' } },
+      { commitHash, roundScope }
+    );
+    await tx.wait();
+    assignment.status = 'committed';
+    try {
+      updateCommitRecord(
+        submission.jobId,
+        assignment.wallet.address,
+        {
+          committedAt: assignment.commit.committedAt,
+          metadata: { automaticCommitStatus: 'confirmed' },
+        },
+        { commitHash, roundScope }
+      );
+    } catch (error) {
+      console.warn('failed to persist confirmed validator commitment', error);
     }
+    if (isCurrentAssignment(assignment))
+      await scheduleReveal(submission.jobId, assignment);
     await secureLogAction({
       component: 'validator',
       action: 'commit',
@@ -1252,8 +1453,25 @@ async function evaluateAndCommit(
       success: true,
     });
   } catch (err: any) {
+    if (!isCurrentAssignment(assignment)) return;
     assignment.error = err?.message || String(err);
-    assignment.status = 'failed';
+    if (['committed', 'revealed'].includes(assignment.status)) {
+      console.warn('validator post-commit reporting failed', err);
+      return;
+    }
+    assignment.status =
+      broadcastIntent ||
+      assignment.error === 'VALIDATION_COMMITMENT_RECONCILIATION_REQUIRED'
+        ? 'reconciliation-required'
+        : 'failed';
+    if (
+      assignment.status === 'failed' &&
+      assignment.attempts < VALIDATOR_MAX_RETRIES
+    ) {
+      scheduleEvaluationRetry(assignment, VALIDATOR_RETRY_DELAY_MS);
+    }
+    assignment.processing = false;
+    evaluationGuardReleased = true;
     await secureLogAction({
       component: 'validator',
       action: 'commit-failed',
@@ -1269,32 +1487,22 @@ async function evaluateAndCommit(
       reason: assignment.error,
       stage: 'commit',
     });
-    if (assignment.attempts < VALIDATOR_MAX_RETRIES) {
-      setTimeout(() => {
-        evaluateAndCommit(submission, assignment).catch((error) =>
-          console.error('validator evaluation retry error', error)
-        );
-      }, VALIDATOR_RETRY_DELAY_MS);
-    }
     return;
   } finally {
-    assignment.processing = false;
-    energySample = await endEnergySpan(span, {
-      jobId: submission.jobId,
-      stage: 'validation',
-      approve: assignment.commit?.approve ?? false,
-    });
-    assignment.energySample = energySample;
-    await publishEnergySample(energySample);
-    if (evaluation) {
-      await recordValidationTraining(assignment, evaluation, energySample);
+    if (!evaluationGuardReleased) assignment.processing = false;
+    try {
+      energySample = await endEnergySpan(span, {
+        jobId: submission.jobId,
+        stage: 'validation',
+        approve: assignment.commit?.approve ?? false,
+      });
+      assignment.energySample = energySample;
+      await publishEnergySample(energySample);
+      if (evaluation)
+        await recordValidationTraining(assignment, evaluation, energySample);
+    } catch (error) {
+      console.warn('validator telemetry failed', error);
     }
-  }
-
-  try {
-    await scheduleReveal(submission.jobId, assignment);
-  } catch (err) {
-    console.warn('Failed to schedule validator reveal', err);
   }
 
   await recordValidationOutcome({
@@ -1310,9 +1518,7 @@ export async function handleValidatorSelection(
   validators: string[]
 ): Promise<void> {
   if (!validation) return;
-  if (validators.length > 0) {
-    clearValidatorFallback(jobId);
-  }
+  if (validators.length > 0) clearValidatorFallback(jobId);
   const managed = new Set(
     walletManager.list().map((address) => address.toLowerCase())
   );
@@ -1320,21 +1526,102 @@ export async function handleValidatorSelection(
   for (const address of validators) {
     const lower = address.toLowerCase();
     if (!managed.has(lower)) continue;
-    if (bucket.has(lower)) continue;
     const wallet = walletManager.get(address);
     if (!wallet) continue;
-    try {
-      const identity = await ensureIdentity(wallet, 'validator');
-      const assignment: ValidationAssignment = {
+    let assignment = bucket.get(lower);
+    if (!assignment) {
+      assignment = {
         jobId,
         wallet,
-        identity,
+        identity: { address: wallet.address, role: 'validator' },
         status: 'selected',
         createdAt: new Date().toISOString(),
         attempts: 0,
       };
-      rehydrateAssignmentFromStore(jobId, assignment);
       bucket.set(lower, assignment);
+    }
+    if (assignment.scheduledSelection)
+      clearTimeout(assignment.scheduledSelection);
+    assignment.scheduledSelection = null;
+    try {
+      const context = { validation, registry, provider };
+      const record = loadCommitRecord(jobId, wallet.address);
+      const inspected = record
+        ? await inspectStoredValidationRound(context, record)
+        : undefined;
+      const active =
+        inspected?.roundScope ??
+        (await readActiveValidationRound(context, jobId));
+      if (!isCurrentAssignment(assignment)) continue;
+      const freshRecord = inspected?.status === 'fresh-round';
+      const previousScope = assignment.selectionScope;
+      let fresh = !previousScope && freshRecord;
+      if (previousScope) {
+        if (
+          active.chainId !== previousScope.chainId ||
+          active.validationModule !== previousScope.validationModule ||
+          active.domain !== previousScope.domain ||
+          active.specHash !== previousScope.specHash ||
+          BigInt(active.nonce) < BigInt(previousScope.nonce) ||
+          BigInt(active.commitDeadline) < BigInt(previousScope.commitDeadline)
+        )
+          throw new Error('VALIDATION_COMMITMENT_RECONCILIATION_REQUIRED');
+        if (
+          active.nonce !== previousScope.nonce ||
+          active.commitDeadline !== previousScope.commitDeadline
+        ) {
+          if (!record && assignment.commit)
+            throw new Error('VALIDATION_COMMITMENT_RECONCILIATION_REQUIRED');
+          fresh = true;
+        }
+      }
+      if ((assignment.processing || assignment.revealProcessing) && !fresh)
+        continue;
+      const identity = await ensureIdentity(wallet, 'validator');
+      if (!isCurrentAssignment(assignment)) continue;
+      if (
+        fresh ||
+        (record &&
+          !freshRecord &&
+          assignment.commit?.commitHash !== record.commitHash)
+      ) {
+        cancelAssignmentTimers(assignment);
+        assignment = {
+          jobId,
+          wallet,
+          identity,
+          status: 'selected',
+          createdAt: new Date().toISOString(),
+          attempts: 0,
+        };
+        bucket.set(lower, assignment);
+      }
+      assignment.identity = identity;
+      assignment.selectionScope = active;
+      assignment.selectionAttempts = 0;
+      if (assignment.status === 'context-retry' && !assignment.contextAttempts)
+        assignment.status = 'selected';
+      if (record && inspected && !freshRecord) {
+        if (
+          inspected.status === 'uncertain' ||
+          (inspected.status === 'committed' &&
+            (record.revealTx || record.metadata?.automaticRevealStatus))
+        ) {
+          cancelAssignmentTimers(assignment);
+          assignment.status = 'reconciliation-required';
+          assignment.error = 'VALIDATION_COMMITMENT_RECONCILIATION_REQUIRED';
+          continue;
+        }
+        rehydrateAssignmentFromStore(
+          record,
+          assignment,
+          inspected.status as 'committed' | 'revealed'
+        );
+        if (assignment.status === 'revealed')
+          cancelAssignmentTimers(assignment);
+      }
+      if (assignment.status === 'committed' && !assignment.scheduledReveal)
+        await scheduleReveal(jobId, assignment);
       await secureLogAction({
         component: 'validator',
         action: 'selected',
@@ -1343,28 +1630,37 @@ export async function handleValidatorSelection(
         metadata: { validators },
         success: true,
       });
-      if (assignment.status === 'committed' && !assignment.scheduledReveal) {
-        try {
-          await scheduleReveal(jobId, assignment);
-        } catch (err) {
-          console.warn(
-            'Failed to reschedule reveal for restored validator',
-            err
-          );
+      const submission = submissions.get(jobId);
+      if (submission && !assignment.scheduledEvaluation)
+        await evaluateAndCommit(submission, assignment);
+    } catch (error) {
+      if (isCurrentAssignment(assignment)) {
+        assignment.error =
+          error instanceof Error ? error.message : String(error);
+        if (
+          assignment.error === 'VALIDATION_COMMITMENT_RECONCILIATION_REQUIRED'
+        ) {
+          cancelAssignmentTimers(assignment);
+          assignment.status = 'reconciliation-required';
+        } else {
+          assignment.selectionAttempts =
+            (assignment.selectionAttempts || 0) + 1;
+          if (!assignment.selectionScope)
+            assignment.status =
+              assignment.selectionAttempts < VALIDATOR_CONTEXT_MAX_ATTEMPTS
+                ? 'context-retry'
+                : 'failed';
+          scheduleSelectionRetry(assignment);
         }
       }
-      const submission = submissions.get(jobId);
-      if (submission) {
-        await evaluateAndCommit(submission, assignment);
-      }
-    } catch (err: any) {
-      console.error('Validator identity verification failed', err);
       await secureLogAction({
         component: 'validator',
         action: 'selection-failed',
         jobId,
         agent: wallet.address,
-        metadata: { error: err?.message },
+        metadata: {
+          error: error instanceof Error ? error.message : String(error),
+        },
         success: false,
       });
     }
@@ -1391,10 +1687,7 @@ export function handleJobCompletionForValidators(jobId: string): void {
   const bucket = assignments.get(jobId);
   if (!bucket) return;
   for (const [address, assignment] of bucket.entries()) {
-    if (assignment.scheduledReveal) {
-      clearTimeout(assignment.scheduledReveal);
-      assignment.scheduledReveal = null;
-    }
+    cancelAssignmentTimers(assignment);
     try {
       const metadata: Record<string, unknown> = {
         completedAt: new Date().toISOString(),
@@ -1404,7 +1697,16 @@ export function handleJobCompletionForValidators(jobId: string): void {
         metadata.notificationDelivered =
           assignment.notificationDelivered ?? false;
       }
-      updateCommitRecord(jobId, assignment.wallet.address, { metadata });
+      if (assignment.commit?.roundScope)
+        updateCommitRecord(
+          jobId,
+          assignment.wallet.address,
+          { metadata },
+          {
+            commitHash: assignment.commit.commitHash,
+            roundScope: assignment.commit.roundScope,
+          }
+        );
     } catch (err) {
       if (
         !(
@@ -1532,6 +1834,9 @@ export function listValidatorAssignments(): {
 }
 
 export function clearValidatorState(): void {
+  for (const bucket of assignments.values())
+    for (const assignment of bucket.values())
+      cancelAssignmentTimers(assignment);
   assignments.clear();
   submissions.clear();
   assignmentHistory.length = 0;
@@ -1539,4 +1844,11 @@ export function clearValidatorState(): void {
     clearTimeout(timer);
   }
   fallbackTimers.clear();
+  if (validationRecoveryTimer) clearTimeout(validationRecoveryTimer);
+  validationRecoveryTimer = null;
+  validationOutcomes = [];
+  validationPausedUntil = 0;
+  validationPauseTriggeredAt = null;
+  validationPauseReason = null;
+  validationPauseCount = 0;
 }

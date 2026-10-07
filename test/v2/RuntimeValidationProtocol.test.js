@@ -321,8 +321,22 @@ describe('Runtime v2 validator protocol', function () {
       forbiddenWrites++;
       throw new Error('Unexpected automatic validation write');
     };
-    utils.validation = { connect: write };
-    utils.provider = { getBlockNumber: async () => 12000 };
+    utils.validation = {
+      connect: write,
+      getAddress: async () => ethers.ZeroAddress,
+      rounds: async () => ({ commitDeadline: 13000n, tallied: false }),
+      jobNonce: async () => 1n,
+      DOMAIN_SEPARATOR: async () => ethers.id('domain'),
+    };
+    utils.provider = {
+      getBlockNumber: async () => 12000,
+      getNetwork: async () => ({ chainId: 31337n }),
+      getBlock: async () => ({
+        number: 12000,
+        hash: ethers.id('block'),
+        timestamp: 12000,
+      }),
+    };
     utils.walletManager = { list: () => [v1.address], get: () => v1 };
     identity.ensureIdentity = async () => ({
       address: v1.address,
@@ -382,7 +396,9 @@ describe('Runtime v2 validator protocol', function () {
           if (!submissionFirst)
             await gateway.handleJobAwaitingValidation(submission);
           const [assignment] = gateway.listValidatorAssignments().active;
-          expect(assignment.status).to.equal('awaiting-review');
+          expect(assignment.status).to.equal(
+            changed ? 'reconciliation-required' : 'awaiting-review'
+          );
           expect(assignment.attempts).to.equal(0);
           expect(assignment.commitTx).to.equal(undefined);
           expect(assignment.notifiedAt).to.equal(undefined);
@@ -411,27 +427,33 @@ describe('Runtime v2 validator protocol', function () {
 
   it('treats corrupt or unreadable saved commitments as reconciliation failures, not missing state', () => {
     const fs = require('fs');
-    const storage = require('../../agent-gateway/validationStore');
-    const original = fs.readFileSync;
+    const path = require('path');
+    const fixture = require('../helpers/validation-store.cjs')();
+    const storage = fixture.store;
+    const original = fs.openSync;
+    fs.mkdirSync(fixture.root, { mode: 0o700 });
+    const file = path.join(fixture.root, `1-${ethers.ZeroAddress}.json`);
     try {
       for (const body of ['{broken', 'null', '{}']) {
-        fs.readFileSync = () => body;
+        fs.writeFileSync(file, body, { mode: 0o600 });
         expect(() =>
           storage.loadCommitRecord('1', ethers.ZeroAddress)
         ).to.throw('VALIDATION_COMMITMENT_RECONCILIATION_REQUIRED');
       }
-      fs.readFileSync = () => {
-        throw Object.assign(new Error('denied'), { code: 'EACCES' });
+      fs.openSync = (...args) => {
+        if (args[0] === file)
+          throw Object.assign(new Error('denied'), { code: 'EACCES' });
+        return original(...args);
       };
       expect(() => storage.loadCommitRecord('1', ethers.ZeroAddress)).to.throw(
         'VALIDATION_COMMITMENT_RECONCILIATION_REQUIRED'
       );
-      fs.readFileSync = () => {
-        throw Object.assign(new Error('missing'), { code: 'ENOENT' });
-      };
+      fs.openSync = original;
+      fs.unlinkSync(file);
       expect(storage.loadCommitRecord('1', ethers.ZeroAddress)).to.equal(null);
     } finally {
-      fs.readFileSync = original;
+      fs.openSync = original;
+      fixture.cleanup();
     }
   });
 

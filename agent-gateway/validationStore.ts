@@ -65,34 +65,78 @@ export interface CommitRecordUpdate {
   metadata?: Record<string, unknown>;
 }
 
-const STORAGE_ROOT = path.resolve(__dirname, '../storage/validation');
+const configuredStorage = process.env.VALIDATION_STORAGE_DIR;
+if (configuredStorage !== undefined && !path.isAbsolute(configuredStorage))
+  throw new Error('VALIDATION_STORAGE_DIR must be an absolute path');
+const STORAGE_ROOT =
+  configuredStorage ?? path.resolve(__dirname, '../storage/validation');
+const STORAGE_ANCHOR = configuredStorage
+  ? path.dirname(STORAGE_ROOT)
+  : path.resolve(__dirname, '..');
+const MAX_RECORD_BYTES = 1024 * 1024;
+
+function validateDirectory(directory: string, privateDirectory: boolean): void {
+  const fd = fs.openSync(
+    directory,
+    fs.constants.O_RDONLY | fs.constants.O_DIRECTORY | fs.constants.O_NOFOLLOW
+  );
+  try {
+    const stat = fs.fstatSync(fd);
+    if (
+      !stat.isDirectory() ||
+      fs.realpathSync(directory) !== path.resolve(directory) ||
+      (typeof process.getuid === 'function' && stat.uid !== process.getuid()) ||
+      (stat.mode & (privateDirectory ? 0o077 : 0o022)) !== 0
+    ) {
+      throw new Error('VALIDATION_STORAGE_UNSAFE_DIRECTORY');
+    }
+  } finally {
+    fs.closeSync(fd);
+  }
+}
 
 function ensureStorageRoot(): void {
-  if (!fs.existsSync(STORAGE_ROOT)) {
-    fs.mkdirSync(STORAGE_ROOT, { recursive: true, mode: 0o700 });
-    return;
-  }
-  try {
-    const stats = fs.statSync(STORAGE_ROOT);
-    if (!stats.isDirectory()) {
-      throw new Error(`${STORAGE_ROOT} is not a directory`);
+  validateDirectory(STORAGE_ANCHOR, false);
+  const directories = configuredStorage
+    ? [STORAGE_ROOT]
+    : [path.dirname(STORAGE_ROOT), STORAGE_ROOT];
+  for (const directory of directories) {
+    let created = false;
+    try {
+      fs.mkdirSync(directory, { mode: 0o700 });
+      created = true;
+    } catch (err: any) {
+      if (err.code !== 'EEXIST') throw err;
     }
-    if ((stats.mode & 0o777) !== 0o700) {
-      fs.chmodSync(STORAGE_ROOT, 0o700);
-    }
-  } catch (err) {
-    console.warn('validation storage permission check failed', err);
+    validateDirectory(directory, directory === STORAGE_ROOT);
+    if (created) syncDirectory(path.dirname(directory));
   }
 }
 
 function recordPath(jobId: string | number, validator: string): string {
+  if (
+    (typeof jobId !== 'string' && typeof jobId !== 'number') ||
+    (typeof jobId === 'number' &&
+      (!Number.isSafeInteger(jobId) || jobId < 0)) ||
+    typeof validator !== 'string'
+  )
+    throw new Error('VALIDATION_STORAGE_IDENTITY_INVALID');
   const safeJobId = jobId.toString();
+  if (
+    !/^(0|[1-9][0-9]{0,77})$/.test(safeJobId) ||
+    BigInt(safeJobId) >= 1n << 256n ||
+    !/^0x[0-9a-fA-F]{40}$/.test(validator)
+  )
+    throw new Error('VALIDATION_STORAGE_IDENTITY_INVALID');
   const safeValidator = validator.toLowerCase();
   return path.join(STORAGE_ROOT, `${safeJobId}-${safeValidator}.json`);
 }
 
 function syncDirectory(directory: string): void {
-  const fd = fs.openSync(directory, 'r');
+  const fd = fs.openSync(
+    directory,
+    fs.constants.O_RDONLY | fs.constants.O_DIRECTORY | fs.constants.O_NOFOLLOW
+  );
   try {
     fs.fsyncSync(fd);
   } finally {
@@ -100,13 +144,91 @@ function syncDirectory(directory: string): void {
   }
 }
 
+function serialiseRecord(record: StoredCommitRecord): string {
+  const active = new WeakSet<object>();
+  let nodes = 0;
+  let stringBytes = 0;
+  const visit = (value: unknown, depth: number): void => {
+    if (++nodes > 16384 || depth > 32)
+      throw new Error('VALIDATION_STORAGE_RECORD_TOO_LARGE');
+    if (value === undefined || value === null || typeof value === 'boolean')
+      return;
+    if (typeof value === 'string') {
+      stringBytes += Buffer.byteLength(value, 'utf8');
+      if (stringBytes > MAX_RECORD_BYTES)
+        throw new Error('VALIDATION_STORAGE_RECORD_TOO_LARGE');
+      return;
+    }
+    if (typeof value === 'number' && Number.isFinite(value)) return;
+    if (typeof value !== 'object' || active.has(value))
+      throw new Error('VALIDATION_STORAGE_RECORD_INVALID');
+    if (Array.isArray(value) && value.length > 16384)
+      throw new Error('VALIDATION_STORAGE_RECORD_TOO_LARGE');
+    if (
+      !Array.isArray(value) &&
+      ![Object.prototype, null].includes(Object.getPrototypeOf(value))
+    )
+      throw new Error('VALIDATION_STORAGE_RECORD_INVALID');
+    active.add(value);
+    for (const key of Object.keys(value)) {
+      stringBytes += Buffer.byteLength(key, 'utf8');
+      if (stringBytes > MAX_RECORD_BYTES)
+        throw new Error('VALIDATION_STORAGE_RECORD_TOO_LARGE');
+      const descriptor = Object.getOwnPropertyDescriptor(value, key);
+      if (!descriptor || !('value' in descriptor))
+        throw new Error('VALIDATION_STORAGE_RECORD_INVALID');
+      visit(descriptor.value, depth + 1);
+    }
+    active.delete(value);
+  };
+  visit(record, 0);
+  const body = JSON.stringify(record, null, 2);
+  if (Buffer.byteLength(body, 'utf8') > MAX_RECORD_BYTES)
+    throw new Error('VALIDATION_STORAGE_RECORD_TOO_LARGE');
+  return body;
+}
+
+function readRecordText(file: string): string {
+  const fd = fs.openSync(
+    file,
+    fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW | fs.constants.O_NONBLOCK
+  );
+  try {
+    const stat = fs.fstatSync(fd);
+    if (
+      !stat.isFile() ||
+      stat.nlink !== 1 ||
+      (stat.mode & 0o077) !== 0 ||
+      (typeof process.getuid === 'function' && stat.uid !== process.getuid())
+    )
+      throw new Error('VALIDATION_STORAGE_UNSAFE_RECORD');
+    if (stat.size > MAX_RECORD_BYTES)
+      throw new Error('VALIDATION_STORAGE_RECORD_TOO_LARGE');
+    const bytes = Buffer.alloc(MAX_RECORD_BYTES + 1);
+    let count = 0;
+    while (count < bytes.length) {
+      const read = fs.readSync(fd, bytes, count, bytes.length - count, count);
+      if (!read) break;
+      count += read;
+    }
+    if (count > MAX_RECORD_BYTES)
+      throw new Error('VALIDATION_STORAGE_RECORD_TOO_LARGE');
+    return new TextDecoder('utf-8', { fatal: true }).decode(
+      bytes.subarray(0, count)
+    );
+  } finally {
+    fs.closeSync(fd);
+  }
+}
+
 function writeRecord(file: string, record: StoredCommitRecord): void {
+  const body = serialiseRecord(record);
   ensureStorageRoot();
   const temporary = `${file}.${randomUUID()}.tmp`;
   let fd: number | undefined;
   try {
     fd = fs.openSync(temporary, 'wx', 0o600);
-    fs.writeFileSync(fd, JSON.stringify(record, null, 2));
+    fs.writeFileSync(fd, body);
     fs.fsyncSync(fd);
     fs.closeSync(fd);
     fd = undefined;
@@ -124,8 +246,8 @@ export function beginCommitRecord(
   update: CommitRecordUpdate,
   expectedPrevious: StoredCommitRecord | null
 ): StoredCommitRecord {
-  ensureStorageRoot();
   const file = recordPath(jobId, validator);
+  ensureStorageRoot();
   let lock: number;
   try {
     lock = fs.openSync(`${file}.lock`, 'wx', 0o600);
@@ -148,8 +270,9 @@ export function beginCommitRecord(
     if (current) {
       const directory = path.join(STORAGE_ROOT, 'archive');
       fs.mkdirSync(directory, { recursive: true, mode: 0o700 });
+      validateDirectory(directory, true);
       syncDirectory(STORAGE_ROOT);
-      const body = JSON.stringify(current, null, 2);
+      const body = serialiseRecord(current);
       const digest = createHash('sha256').update(body).digest('hex');
       const archived = path.join(directory, `${digest}.json`);
       let fd: number | undefined;
@@ -158,7 +281,7 @@ export function beginCommitRecord(
         fs.writeFileSync(fd, body);
         fs.fsyncSync(fd);
       } catch (err: any) {
-        if (err.code !== 'EEXIST' || fs.readFileSync(archived, 'utf8') !== body)
+        if (err.code !== 'EEXIST' || readRecordText(archived) !== body)
           throw err;
       } finally {
         if (fd !== undefined) fs.closeSync(fd);
@@ -190,8 +313,12 @@ export function loadCommitRecord(
 ): StoredCommitRecord | null {
   const file = recordPath(jobId, validator);
   try {
-    const raw = fs.readFileSync(file, 'utf8');
+    validateDirectory(STORAGE_ANCHOR, false);
+    validateDirectory(path.dirname(STORAGE_ROOT), false);
+    validateDirectory(STORAGE_ROOT, true);
+    const raw = readRecordText(file);
     const record = JSON.parse(raw) as StoredCommitRecord;
+    serialiseRecord(record);
     if (
       !record ||
       record.jobId !== jobId.toString() ||
@@ -273,10 +400,14 @@ export function updateCommitRecord(
   jobId: string | number,
   validator: string,
   update: CommitRecordUpdate,
-  expected?: { commitHash: string; roundScope: CommitRoundScope }
+  expected?: {
+    commitHash: string;
+    roundScope: CommitRoundScope;
+    revealUnattempted?: boolean;
+  }
 ): StoredCommitRecord {
-  ensureStorageRoot();
   const file = recordPath(jobId, validator);
+  ensureStorageRoot();
   let lock: number;
   try {
     lock = fs.openSync(`${file}.lock`, 'wx', 0o600);
@@ -285,12 +416,57 @@ export function updateCommitRecord(
   }
   try {
     const current = loadCommitRecord(jobId, validator);
+    const changesRevealStatus = Object.prototype.hasOwnProperty.call(
+      update.metadata ?? {},
+      'automaticRevealStatus'
+    );
+    if (changesRevealStatus && !expected) {
+      throw new Error('VALIDATION_COMMITMENT_RECONCILIATION_REQUIRED');
+    }
     if (expected) {
       if (
         !current ||
+        !current.roundScope ||
+        !expected.roundScope ||
         current.commitHash !== expected.commitHash ||
         JSON.stringify(current.roundScope) !==
           JSON.stringify(expected.roundScope)
+      ) {
+        throw new Error('VALIDATION_COMMITMENT_RECONCILIATION_REQUIRED');
+      }
+      if (changesRevealStatus) {
+        const statuses = ['broadcast-intent', 'broadcast', 'confirmed'];
+        const nextStatus = update.metadata!.automaticRevealStatus;
+        const nextIndex =
+          typeof nextStatus === 'string' ? statuses.indexOf(nextStatus) : -1;
+        const hasPrior = Object.prototype.hasOwnProperty.call(
+          current.metadata ?? {},
+          'automaticRevealStatus'
+        );
+        const priorStatus = current.metadata?.automaticRevealStatus;
+        const priorIndex =
+          typeof priorStatus === 'string' ? statuses.indexOf(priorStatus) : -1;
+        if (
+          nextIndex < 0 ||
+          (!hasPrior && nextIndex !== 0) ||
+          (hasPrior && (priorIndex < 0 || nextIndex < priorIndex))
+        )
+          throw new Error('VALIDATION_COMMITMENT_RECONCILIATION_REQUIRED');
+      }
+      if (expected.revealUnattempted) {
+        if (
+          Object.prototype.hasOwnProperty.call(current, 'revealTx') ||
+          Object.prototype.hasOwnProperty.call(current, 'revealedAt') ||
+          Object.prototype.hasOwnProperty.call(
+            current.metadata ?? {},
+            'automaticRevealStatus'
+          ) ||
+          update.metadata?.automaticRevealStatus !== 'broadcast-intent'
+        ) {
+          throw new Error('VALIDATION_COMMITMENT_RECONCILIATION_REQUIRED');
+        }
+      } else if (
+        update.metadata?.automaticRevealStatus === 'broadcast-intent'
       ) {
         throw new Error('VALIDATION_COMMITMENT_RECONCILIATION_REQUIRED');
       }
@@ -362,11 +538,21 @@ export function deleteCommitRecord(
   validator: string
 ): void {
   const file = recordPath(jobId, validator);
+  ensureStorageRoot();
+  let lock: number;
   try {
-    fs.rmSync(file);
+    lock = fs.openSync(`${file}.lock`, 'wx', 0o600);
+  } catch {
+    throw new Error('VALIDATION_COMMITMENT_RECONCILIATION_REQUIRED');
+  }
+  try {
+    if (!loadCommitRecord(jobId, validator)) return;
+    fs.unlinkSync(file);
+    syncDirectory(STORAGE_ROOT);
   } catch (err: any) {
-    if (err?.code !== 'ENOENT') {
-      console.warn('failed to delete commit record', file, err);
-    }
+    if (err?.code !== 'ENOENT') throw err;
+  } finally {
+    fs.closeSync(lock);
+    fs.unlinkSync(`${file}.lock`);
   }
 }

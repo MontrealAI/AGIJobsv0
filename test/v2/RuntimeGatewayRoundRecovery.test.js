@@ -79,6 +79,10 @@ async function setup() {
   return { owner, v1, jobId, select, client, registryClient, validation };
 }
 
+const {
+  inspectStoredValidationRound,
+} = require('../../agent-gateway/validationRound');
+
 describe('Gateway manual validator round recovery', function () {
   let context;
   let utils;
@@ -190,6 +194,31 @@ describe('Gateway manual validator round recovery', function () {
     expect(await validation.votes(jobId, v1.address)).to.equal(true);
   });
 
+  it('classifies restored records through the shared inspector before either runtime acts', async () => {
+    const { jobId, v1, client, registryClient } = context;
+    const roundContext = {
+      validation: client,
+      registry: registryClient,
+      provider: ethers.provider,
+    };
+    await utils.commitHelper(jobId, v1, true, ethers.id('shared recovery'));
+    const record = load();
+    expect(
+      (await inspectStoredValidationRound(roundContext, record)).status
+    ).to.equal('committed');
+    await time.increaseTo((await client.rounds(jobId)).commitDeadline + 1n);
+    await utils.revealHelper(jobId, v1);
+    expect(
+      (await inspectStoredValidationRound(roundContext, load())).status
+    ).to.equal('revealed');
+    await freshRound();
+    const inspected = await inspectStoredValidationRound(roundContext, load());
+    expect(inspected.status).to.equal('fresh-round');
+    expect(BigInt(inspected.roundScope.commitDeadline)).to.be.greaterThan(
+      BigInt(record.roundScope.commitDeadline)
+    );
+  });
+
   it('retains a mined same-round commitment and never overwrites its secret', async () => {
     await utils.commitHelper(
       context.jobId,
@@ -230,6 +259,18 @@ describe('Gateway manual validator round recovery', function () {
     const original = load();
     expect(original.metadata.manualCommitStatus).to.equal('broadcast-intent');
     expect(original.commitTx).to.equal(undefined);
+    expect(
+      (
+        await inspectStoredValidationRound(
+          {
+            validation: client,
+            registry: context.registryClient,
+            provider: ethers.provider,
+          },
+          original
+        )
+      ).status
+    ).to.equal('uncertain');
     utils.validation = client;
     await freshRound();
     await expect(utils.commitHelper(jobId, v1, false)).to.be.rejectedWith(
