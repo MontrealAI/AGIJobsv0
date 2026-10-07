@@ -18,6 +18,7 @@ This repository contains smart contracts, agent and validator services, operator
 | Run the browser console | [Console instructions](../apps/console/README.md) |
 | Develop agent integration | [Gateway guide](../agent-gateway/README.md) |
 | Coordinate browser and desktop work | [Computer-work setup and recovery](computer-work.md), then [the executable supplier-desk lab](../demo/One-Box/computer-work/README.md) |
+| Inspect a delivery and record review findings | [Evidence review guide](EVIDENCE_REVIEW.md) and [local reviewer](https://montrealai.github.io/AGIJobsv0/review/) |
 | Understand owner controls | [Operator runbook](../OperatorRunbook.md) |
 | Prepare a production deployment | [Readiness report](production/readiness.md), then [security deployment guide](security-deployment-guide.md) |
 

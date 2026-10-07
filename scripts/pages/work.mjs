@@ -17,9 +17,7 @@ export function renderWorkIntro(base, guide) {
       <article><span class="work-number">02 / WORKERS</span><h3>Execute within scope.</h3><p>Use a commissioned OpenClaw worker or an operator-led ChatGPT Work session. Capture artifacts, source evidence and actual results.</p><a class="text-link" href="${guide(
         'docs/computer-work.md'
       )}">Connect a worker →</a></article>
-      <article><span class="work-number">03 / REVIEWERS</span><h3>Verify the outcome.</h3><p>Inspect the delivered work, reproduce the checks and resolve discrepancies. Buyer acceptance and authorized settlement follow the evidence.</p><a class="text-link" href="${guide(
-        'docs/MACHINE_LABOR.md'
-      )}">Read the delivery workflow →</a></article>
+      <article><span class="work-number">03 / REVIEWERS</span><h3>Verify the outcome.</h3><p>Match delivered files to the admitted task, verify their fingerprints and record findings against each acceptance criterion. Buyer acceptance and authorized settlement follow the evidence.</p><a class="text-link" href="${base}review/">Inspect delivered work →</a></article>
     </div>
     <p class="work-footnote">This public site is an exploration and planning workspace. Downloads create local drafts; execution and settlement require a separately configured deployment.</p>
   </section>`;
@@ -95,7 +93,7 @@ export function renderWorkPage(base, guide) {
       <details><summary>What is ready for production?</summary><p>The static website, local demonstrations and integration code can be built and checked. A live deployment still needs authentic provider commissioning, release trust, independent security review, current dependency assessment and target-network evidence. <a class="text-link" href="${guide(
         'docs/production/readiness.md'
       )}">Inspect the current readiness index →</a></p></details>
-    </section><div class="work-page-links"><a href="${base}#explore">Explore the preserved demo collection →</a><a href="${guide(
+    </section><div class="work-page-links"><a href="${base}review/">Inspect delivered work →</a><a href="${base}#explore">Explore the preserved demo collection →</a><a href="${guide(
     'docs/MACHINE_LABOR.md'
   )}">Complete delivery workflow →</a></div>
   </main>`;

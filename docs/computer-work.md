@@ -38,6 +38,8 @@ The adapter enforces exact task admission, provider destination, bearer-token lo
 
 Each receipt has `status: "evidence-ready"`, `review.status: "required"`, `settlementApproved: false` and `productionApproved: false`. Provider completion means the provider returned its result; it does not establish correct work. Current deliverables are bounded UTF-8 JSON, CSV, Markdown or plain text. Screenshots and larger binary files need a separately commissioned artifact store and integrity checks; the fixture saves screenshots locally.
 
+The adapter rejects malformed UTF-8 transport bytes, unpaired Unicode surrogates in task and evidence strings, and artifacts exceeding **128,000 UTF-8 bytes** each. The [local evidence reviewer](EVIDENCE_REVIEW.md) compares the original admitted task with a completed receipt, verifies exact bytes and records unsigned acceptance findings. Neither hash consistency nor a review export authenticates the worker or authorizes settlement.
+
 ## Commission a real worker
 
 1. Prepare a dedicated standard OS account or VM, separate browser profile and least-privilege application accounts. Keep personal sessions, production signing keys and deployment secrets out of the worker. Allow only the job's apps, sites, inputs and output locations. Prefer structured integrations when available.

@@ -11,6 +11,7 @@ import { build as bundle } from 'esbuild';
 import { loadExperiences, renderExperience } from './experiences.mjs';
 import { renderFeaturedDemos, renderHeroSpotlight } from './featured.mjs';
 import { renderWorkIntro, renderVision, renderWorkPage } from './work.mjs';
+import { renderReviewPage } from './review.mjs';
 
 const require = createRequire(import.meta.url);
 const { inventory } = require('../demo/catalog.cjs');
@@ -318,6 +319,7 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
       'docs/production/platform-update-2026-10-07.md',
       'docs/computer-work.md',
       'docs/MACHINE_LABOR.md',
+      'docs/EVIDENCE_REVIEW.md',
       'docs/production/rehearsal.md',
       ...catalog.flatMap((demo) => demo.guides),
     ]),
@@ -489,6 +491,18 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
       revision,
       canonical: 'work/',
       body: renderWorkPage(base, guideURL),
+    })
+  );
+  write(
+    'review/index.html',
+    chrome({
+      title: 'Inspect delivered work',
+      description:
+        'Verify local worker evidence against the admitted task and record criterion-by-criterion review findings without uploading files or authorizing settlement.',
+      base,
+      revision,
+      canonical: 'review/',
+      body: renderReviewPage(base, guideURL),
     })
   );
   const flowSources = [];
@@ -859,6 +873,7 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
     cultureStudioRoute: 'experiments/culture/',
     dashboardRoutes,
     workRoute: 'work/',
+    reviewRoute: 'review/',
     archiveRoutes,
     experiences: Object.keys(experiences).length,
     sourceInspections: new Set(
@@ -882,6 +897,7 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
   const routes = [
     '',
     'work/',
+    'review/',
     ...dashboardRoutes,
     ...archiveRoutes,
     'experiments/culture/',
