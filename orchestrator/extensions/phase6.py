@@ -764,11 +764,11 @@ def _normalize_credentials(payload: object, context: str) -> List[Dict[str, obje
         label = f"{context} credentials[{index}]"
         _keys(item, {"name", "requirement", "credentialType", "format", "registry", "evidence", "issuers", "verifiers", "notes"}, label)
         entry: Dict[str, object] = {
-            key: _text(item.get(key, ""), f"{label}.{key}", required=(key == "name"))
+            key: _text(item.get(key, ""), f"{label}.{key}", required=True)
             for key in ("name", "requirement", "credentialType", "format", "registry", "evidence")
         }
         for key in ("issuers", "verifiers"):
-            entry[key] = _string_list(item.get(key, []), f"{label}.{key}")
+            entry[key] = _string_list(item.get(key), f"{label}.{key}")
         notes = _optional_text(item.get("notes"), f"{label}.notes")
         if notes:
             entry["notes"] = notes
@@ -788,11 +788,10 @@ def _normalize_trust_anchors(payload: object) -> List[Dict[str, str]]:
     for index, item in enumerate(_credential_entries(payload, "trustAnchors")):
         label = f"global.credentials.trustAnchors[{index}]"
         _keys(item, {"name", "did", "role", "policyURI", "policyUri"}, label)
-        entry = {key: _text(item.get(key, ""), f"{label}.{key}", required=True) for key in ("name", "did")}
-        for key, value in (("role", item.get("role")), ("policyURI", item.get("policyURI", item.get("policyUri")))):
-            text = _optional_text(value, f"{label}.{key}")
-            if text:
-                entry[key] = text
+        entry = {key: _text(item.get(key, ""), f"{label}.{key}", required=True) for key in ("name", "did", "role")}
+        policy_uri = _optional_text(item.get("policyURI", item.get("policyUri")), f"{label}.policyURI")
+        if policy_uri:
+            entry["policyURI"] = policy_uri
         result.append(entry)
     return result
 
@@ -803,7 +802,7 @@ def _normalize_credential_issuers(payload: object) -> List[Dict[str, object]]:
         label = f"global.credentials.issuers[{index}]"
         _keys(item, {"name", "did", "attestationType", "registry", "domains"}, label)
         entry: Dict[str, object] = {
-            key: _text(item.get(key, ""), f"{label}.{key}", required=(key in {"name", "did"}))
+            key: _text(item.get(key, ""), f"{label}.{key}", required=True)
             for key in ("name", "did", "attestationType", "registry")
         }
         entry["domains"] = _string_list(item.get("domains", []), f"{label}.domains")
@@ -816,7 +815,7 @@ def _normalize_credential_policies(payload: object) -> List[Dict[str, str]]:
     for index, item in enumerate(_credential_entries(payload, "policies")):
         label = f"global.credentials.policies[{index}]"
         _keys(item, {"name", "description", "uri"}, label)
-        entry = {key: _text(item.get(key, ""), f"{label}.{key}", required=(key == "name")) for key in ("name", "description", "uri")}
+        entry = {key: _text(item.get(key, ""), f"{label}.{key}", required=True) for key in ("name", "description", "uri")}
         result.append(entry)
     return result
 

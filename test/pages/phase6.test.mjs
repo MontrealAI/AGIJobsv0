@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import fs from 'node:fs';
 import { createRequire } from 'node:module';
+import { Interface } from 'ethers';
 import {
   buildCalldata,
   computeMetrics,
@@ -346,4 +347,41 @@ test('Phase 6 omitted telemetry never establishes floor coverage, even at zero f
   assert.equal(computeMetrics(value).automationFloorCoverage, 0);
   value.domains = [];
   assert.equal(computeMetrics(value).resilienceFloorCoverage, 0);
+});
+
+test('Phase 6 browser registration and update encode only active lifecycle as enabled', () => {
+  const iface = new Interface(abi);
+  const {
+    isPhase6DomainActive,
+  } = require('../../scripts/phase6/config-validation.ts');
+  for (const lifecycle of [undefined, 'active', 'experimental']) {
+    for (const requestedActive of [undefined, true, false]) {
+      const value = clone();
+      const domain = value.domains[0];
+      if (lifecycle === undefined) delete domain.lifecycle;
+      else domain.lifecycle = lifecycle;
+      if (requestedActive === undefined) delete domain.active;
+      else domain.active = requestedActive;
+      const expected =
+        lifecycle !== 'experimental' && requestedActive !== false;
+      assert.equal(isPhase6DomainActive(domain), expected);
+      const blueprint = buildPhase6Blueprint(value);
+      assert.equal(blueprint.domains[0].active, expected);
+      for (const call of buildCalldata(value, abi).filter((call) =>
+        /^(registerDomain|updateDomain)\(finance\)$/.test(call.label)
+      )) {
+        const action = call.label.startsWith('register')
+          ? 'registerDomain'
+          : 'updateDomain';
+        const decoded = iface.decodeFunctionData(action, call.data);
+        const tuple = decoded[action === 'registerDomain' ? 0 : 1];
+        assert.equal(
+          tuple.active,
+          expected,
+          `${lifecycle}/${requestedActive}/${action}`
+        );
+        assert.equal(call.data, blueprint.domains[0].calldata[action]);
+      }
+    }
+  }
 });

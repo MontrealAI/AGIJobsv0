@@ -19,7 +19,116 @@ async function deploy(name: string, ...args: unknown[]) {
 describe('Phase6 apply-config planner', function () {
   it('computes deterministic domain ids', function () {
     expect(domainIdFromSlug('finance')).to.equal(domainIdFromSlug('FINANCE'));
-    expect(domainIdFromSlug('finance')).to.not.equal(domainIdFromSlug('health'));
+    expect(domainIdFromSlug('finance')).to.not.equal(
+      domainIdFromSlug('health')
+    );
+  });
+
+  it('keeps experimental registrations and lifecycle transitions inactive for omitted or true active flags', async function () {
+    const [, governance] = await ethers.getSigners();
+    const manager = await deploy('Phase6ExpansionManager', governance.address);
+    const validation = await deploy('ValidationStub');
+    const managerGov = manager.connect(governance);
+    for (const [index, explicitActive] of [undefined, true].entries()) {
+      const domain = {
+        slug: `experimental-${index}`,
+        lifecycle: 'experimental' as const,
+        name: 'Experimental Domain',
+        manifestURI: 'ipfs://phase6/experimental.json',
+        subgraph: 'https://example.test/experimental',
+        validationModule: validation.target as string,
+        ...(explicitActive === undefined ? {} : { active: explicitActive }),
+      };
+      const desired: Phase6Config = {
+        global: { manifestURI: 'ipfs://phase6/global.json' },
+        domains: [domain],
+      };
+      const registration = planPhase6Changes(
+        await fetchPhase6State(manager),
+        desired
+      );
+      expect(registration.domains).to.have.length(1);
+      expect(registration.domains[0].action).to.equal('registerDomain');
+      expect(registration.domains[0].config!.active).to.equal(false);
+      await managerGov.registerDomain(registration.domains[0].config!);
+      let observed = await fetchPhase6State(manager);
+      expect(
+        observed.domains.find((entry) => entry.slug === domain.slug)!.active
+      ).to.equal(false);
+
+      const active: Phase6Config = {
+        ...desired,
+        domains: [{ ...domain, lifecycle: 'active', active: true }],
+      };
+      const activation = planPhase6Changes(observed, active);
+      expect(activation.domains[0].config!.active).to.equal(true);
+      await managerGov.updateDomain(
+        activation.domains[0].id,
+        activation.domains[0].config!
+      );
+      observed = await fetchPhase6State(manager);
+      expect(
+        observed.domains.find((entry) => entry.slug === domain.slug)!.active
+      ).to.equal(true);
+
+      const deactivation = planPhase6Changes(observed, desired);
+      expect(deactivation.domains).to.have.length(1);
+      expect(deactivation.domains[0].action).to.equal('updateDomain');
+      expect(deactivation.domains[0].config!.active).to.equal(false);
+      await managerGov.updateDomain(
+        deactivation.domains[0].id,
+        deactivation.domains[0].config!
+      );
+      observed = await fetchPhase6State(manager);
+      expect(
+        observed.domains.find((entry) => entry.slug === domain.slug)!.active
+      ).to.equal(false);
+      const explicitlyInactive: Phase6Config = {
+        ...desired,
+        domains: [{ ...domain, lifecycle: 'active', active: false }],
+      };
+      expect(
+        planPhase6Changes(observed, explicitlyInactive).domains
+      ).to.have.length(0);
+    }
+  });
+
+  it('preserves an existing inactive domain when an active lifecycle update omits the active flag', async function () {
+    const [, governance] = await ethers.getSigners();
+    const manager = await deploy('Phase6ExpansionManager', governance.address);
+    const validation = await deploy('ValidationStub');
+    const managerGov = manager.connect(governance);
+    const config: Phase6Config = {
+      global: { manifestURI: 'ipfs://phase6/global.json' },
+      domains: [
+        {
+          slug: 'paused',
+          lifecycle: 'active',
+          name: 'Paused Domain',
+          manifestURI: 'ipfs://phase6/paused.json',
+          subgraph: 'https://example.test/paused',
+          validationModule: validation.target as string,
+          active: false,
+        },
+      ],
+    };
+    const registration = planPhase6Changes(
+      await fetchPhase6State(manager),
+      config
+    );
+    await managerGov.registerDomain(registration.domains[0].config!);
+    const observed = await fetchPhase6State(manager);
+    delete config.domains[0].active;
+    config.domains[0].manifestURI = 'ipfs://phase6/paused-updated.json';
+    const update = planPhase6Changes(observed, config);
+    expect(update.domains).to.have.length(1);
+    expect(update.domains[0].diffs).to.deep.equal(['metadataURI']);
+    expect(update.domains[0].config!.active).to.equal(false);
+    await managerGov.updateDomain(
+      update.domains[0].id,
+      update.domains[0].config!
+    );
+    expect((await fetchPhase6State(manager)).domains[0].active).to.equal(false);
   });
 
   it('plans registrations, updates and address changes', async function () {
@@ -161,22 +270,28 @@ describe('Phase6 apply-config planner', function () {
     expect(initialPlan.globalGuards?.diffs).to.include('treasuryBufferBps');
 
     const managerGov = manager.connect(governance);
-    await expect(managerGov.setGlobalConfig(initialPlan.global!.config)).to.emit(manager, 'GlobalConfigUpdated');
-    await expect(managerGov.setSystemPause(pause.target)).to.emit(manager, 'SystemPauseUpdated');
+    await expect(
+      managerGov.setGlobalConfig(initialPlan.global!.config)
+    ).to.emit(manager, 'GlobalConfigUpdated');
+    await expect(managerGov.setSystemPause(pause.target)).to.emit(
+      manager,
+      'SystemPauseUpdated'
+    );
     await expect(managerGov.setEscalationBridge(escalation.target)).to.emit(
       manager,
-      'EscalationBridgeUpdated',
+      'EscalationBridgeUpdated'
     );
-    await expect(managerGov.registerDomain(initialPlan.domains[0].config)).to.emit(manager, 'DomainRegistered');
-    await expect(managerGov.setGlobalGuards(initialPlan.globalGuards!.config)).to.emit(
-      manager,
-      'GlobalGuardsUpdated',
-    );
+    await expect(
+      managerGov.registerDomain(initialPlan.domains[0].config)
+    ).to.emit(manager, 'DomainRegistered');
+    await expect(
+      managerGov.setGlobalGuards(initialPlan.globalGuards!.config)
+    ).to.emit(manager, 'GlobalGuardsUpdated');
     await expect(
       managerGov.setDomainOperations(
         initialPlan.domainOperations[0].id,
-        initialPlan.domainOperations[0].config,
-      ),
+        initialPlan.domainOperations[0].config
+      )
     ).to.emit(manager, 'DomainOperationsUpdated');
 
     const afterRegistration = await fetchPhase6State(manager);
@@ -204,18 +319,25 @@ describe('Phase6 apply-config planner', function () {
 
     const updatedPlan = planPhase6Changes(afterRegistration, tweaked);
     expect(updatedPlan.domains).to.have.lengthOf(1);
-    expect(updatedPlan.domains[0].diffs).to.include.members(['heartbeatSeconds', 'metadataURI', 'active']);
+    expect(updatedPlan.domains[0].diffs).to.include.members([
+      'heartbeatSeconds',
+      'metadataURI',
+      'active',
+    ]);
     expect(updatedPlan.domainOperations).to.have.lengthOf(1);
     expect(updatedPlan.domainOperations[0].diffs).to.include('maxActiveJobs');
 
     await expect(
-      managerGov.updateDomain(updatedPlan.domains[0].id, updatedPlan.domains[0].config),
+      managerGov.updateDomain(
+        updatedPlan.domains[0].id,
+        updatedPlan.domains[0].config
+      )
     ).to.emit(manager, 'DomainUpdated');
     await expect(
       managerGov.setDomainOperations(
         updatedPlan.domainOperations[0].id,
-        updatedPlan.domainOperations[0].config,
-      ),
+        updatedPlan.domainOperations[0].config
+      )
     ).to.emit(manager, 'DomainOperationsUpdated');
 
     const finalState = await fetchPhase6State(manager);
@@ -239,7 +361,10 @@ describe('Phase6 apply-config planner', function () {
         },
         diffs: ['manifestURI'],
       },
-      systemPause: { action: 'setSystemPause', target: '0x5555555555555555555555555555555555555555' },
+      systemPause: {
+        action: 'setSystemPause',
+        target: '0x5555555555555555555555555555555555555555',
+      },
       escalationBridge: {
         action: 'setEscalationBridge',
         target: '0x6666666666666666666666666666666666666666',
@@ -351,12 +476,18 @@ describe('Phase6 apply-config planner', function () {
       total: 8,
     });
     expect(summary.actions.domains[0].config.heartbeatSeconds).to.equal('120');
-    expect(summary.actions.domainOperations[0].config.minStake).to.equal('1234567890000000000');
+    expect(summary.actions.domainOperations[0].config.minStake).to.equal(
+      '1234567890000000000'
+    );
     expect(summary.actions.global?.config.l2SyncCadence).to.equal('180');
-    expect(summary.actions.globalTelemetry?.config.resilienceFloorBps).to.equal(9300);
+    expect(summary.actions.globalTelemetry?.config.resilienceFloorBps).to.equal(
+      9300
+    );
     expect(summary.actions.domains[0].lifecycle).to.equal('active');
     expect(summary.filters.onlyDomains).to.deep.equal(['finance']);
-    expect(summary.warnings).to.deep.equal(['review system pause escalation playbook']);
+    expect(summary.warnings).to.deep.equal([
+      'review system pause escalation playbook',
+    ]);
 
     const filtered = buildPlanSummary(plan, {
       manager: '0x1234567890123456789012345678901234567890',
@@ -522,20 +653,22 @@ describe('Phase6 apply-config planner', function () {
     await managerGov.setEscalationBridge(baseConfig.global.escalationBridge!);
     await managerGov.setGlobalGuards(registrationPlan.globalGuards!.config);
     if (registrationPlan.globalTelemetry) {
-      await managerGov.setGlobalTelemetry(registrationPlan.globalTelemetry.config);
+      await managerGov.setGlobalTelemetry(
+        registrationPlan.globalTelemetry.config
+      );
     }
     await managerGov.registerDomain(registrationPlan.domains[0].config!);
     await managerGov.setDomainOperations(
       registrationPlan.domainOperations[0].id,
-      registrationPlan.domainOperations[0].config,
+      registrationPlan.domainOperations[0].config
     );
     await managerGov.setDomainTelemetry(
       registrationPlan.domainTelemetry[0].id,
-      registrationPlan.domainTelemetry[0].config,
+      registrationPlan.domainTelemetry[0].config
     );
     await managerGov.setDomainInfrastructure(
       registrationPlan.domainInfrastructure[0].id,
-      registrationPlan.domainInfrastructure[0].config,
+      registrationPlan.domainInfrastructure[0].config
     );
 
     const activeState = await fetchPhase6State(manager);
@@ -561,7 +694,9 @@ describe('Phase6 apply-config planner', function () {
     const removal = removalPlan.domains[0];
     expect(removal.action).to.equal('removeDomain');
     expect(removal.lifecycle).to.equal('sunset');
-    expect(removal.sunsetPlan).to.deep.equal(sunsetConfig.domains[0].sunsetPlan);
+    expect(removal.sunsetPlan).to.deep.equal(
+      sunsetConfig.domains[0].sunsetPlan
+    );
     expect(removalPlan.domainOperations).to.be.empty;
     expect(removalPlan.domainTelemetry).to.be.empty;
     expect(removalPlan.domainInfrastructure).to.be.empty;
@@ -574,7 +709,10 @@ describe('Phase6 apply-config planner', function () {
       manager: managerAddress,
       governance: governance.address,
       specVersion,
-      network: { name: network.name ?? 'hardhat', chainId: Number(network.chainId) },
+      network: {
+        name: network.name ?? 'hardhat',
+        chainId: Number(network.chainId),
+      },
       configPath: 'sunset.json',
       dryRun: true,
       filters: {

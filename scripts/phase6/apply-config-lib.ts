@@ -1,7 +1,11 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { Contract } from 'ethers';
-import { parsePhase6Json, validatePhase6Config } from './config-validation';
+import {
+  isPhase6DomainActive,
+  parsePhase6Json,
+  validatePhase6Config,
+} from './config-validation';
 import { keccak256, toUtf8Bytes } from 'ethers';
 
 export const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
@@ -548,7 +552,10 @@ function buildDomainStruct(
       input.heartbeatSeconds === undefined
         ? previous?.heartbeatSeconds ?? 120n
         : BigInt(input.heartbeatSeconds),
-    active: input.active ?? previous?.active ?? true,
+    active: isPhase6DomainActive({
+      ...input,
+      active: input.active ?? previous?.active,
+    }),
   };
 }
 

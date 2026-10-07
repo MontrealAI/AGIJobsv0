@@ -578,3 +578,48 @@ def test_explicit_validation_module_must_be_nonzero(sample_payload):
     sample_payload["domains"][0]["validationModule"] = "0x" + "0" * 40
     with pytest.raises(ValueError, match="non-zero"):
         DomainExpansionRuntime.from_payload(sample_payload)
+
+
+@pytest.mark.parametrize(
+    ("section", "field"),
+    [
+        ("domain", "requirement"),
+        ("domain", "credentialType"),
+        ("domain", "format"),
+        ("domain", "registry"),
+        ("domain", "evidence"),
+        ("trustAnchors", "role"),
+        ("issuers", "attestationType"),
+        ("issuers", "registry"),
+        ("policies", "description"),
+        ("policies", "uri"),
+    ],
+)
+@pytest.mark.parametrize("omit", [True, False], ids=["missing", "blank"])
+def test_declared_credentials_require_complete_text_fields(sample_payload, section, field, omit):
+    record = (
+        sample_payload["domains"][0]["credentials"][0]
+        if section == "domain" else sample_payload["global"]["credentials"][section][0]
+    )
+    if omit:
+        del record[field]
+    else:
+        record[field] = "   "
+    with pytest.raises(ValueError, match=field):
+        DomainExpansionRuntime.from_payload(sample_payload)
+
+
+@pytest.mark.parametrize("field", ["issuers", "verifiers"])
+def test_declared_domain_credentials_require_party_arrays(sample_payload, field):
+    del sample_payload["domains"][0]["credentials"][0][field]
+    with pytest.raises(ValueError, match=field):
+        DomainExpansionRuntime.from_payload(sample_payload)
+
+
+def test_absent_credential_sections_remain_valid_unverified_metadata(sample_payload):
+    del sample_payload["global"]["credentials"]
+    del sample_payload["domains"][0]["credentials"]
+    runtime = DomainExpansionRuntime.from_payload(sample_payload)
+    plan = runtime.build_bridge_plan("finance")
+    assert plan["credentials"] == []
+    assert plan["credentialsVerified"] is False

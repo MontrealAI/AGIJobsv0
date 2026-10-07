@@ -1,6 +1,14 @@
 /** Shared offline validation. Syntax and configured values never prove deployment or authority. */
 import { isAddress } from 'ethers';
 
+/** Effective registry activity: only an active lifecycle can enable dispatch. */
+export function isPhase6DomainActive(input: {
+  lifecycle?: 'active' | 'experimental' | 'sunset';
+  active?: boolean;
+}): boolean {
+  return (input.lifecycle ?? 'active') === 'active' && input.active !== false;
+}
+
 type ObjectValue = Record<string, unknown>;
 const UINT32 = 2 ** 32 - 1;
 const UINT48 = 2 ** 48 - 1;
@@ -221,6 +229,21 @@ function credentials(value: unknown, path: string): void {
   if (!Array.isArray(value)) fail(path, 'must be an array.');
   value.forEach((entry, i) => {
     const row = object(entry, `${path}[${i}]`);
+    keys(
+      row,
+      [
+        'name',
+        'requirement',
+        'credentialType',
+        'format',
+        'registry',
+        'evidence',
+        'issuers',
+        'verifiers',
+        'notes',
+      ],
+      `${path}[${i}]`
+    );
     [
       'name',
       'requirement',
@@ -323,6 +346,11 @@ export function validatePhase6Config(value: unknown): void {
   }
   if (global.credentials !== undefined) {
     const record = object(global.credentials, 'global.credentials');
+    keys(
+      record,
+      ['trustAnchors', 'issuers', 'policies', 'revocationRegistry'],
+      'global.credentials'
+    );
     optional(record, 'revocationRegistry', 'global.credentials', text);
     for (const [key, required] of Object.entries({
       trustAnchors: ['name', 'did', 'role'],
@@ -335,6 +363,15 @@ export function validatePhase6Config(value: unknown): void {
       (record[key] as unknown[]).forEach((entry, i) => {
         const path = `global.credentials.${key}[${i}]`;
         const row = object(entry, path);
+        keys(
+          row,
+          key === 'trustAnchors'
+            ? [...required, 'policyURI']
+            : key === 'issuers'
+            ? [...required, 'domains']
+            : required,
+          path
+        );
         required.forEach((field) => text(row[field], `${path}.${field}`));
         optional(row, 'domains', path, strings);
         optional(row, 'policyURI', path, text);

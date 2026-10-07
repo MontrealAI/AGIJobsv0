@@ -16,7 +16,7 @@ function buildDomainTuple(domain) {
     domain.subgraph,
     domain.executionRouter ?? zeroAddress,
     BigInt(domain.heartbeatSeconds ?? 120),
-    domain.active !== false && domain.lifecycle !== 'sunset',
+    (domain.lifecycle ?? 'active') === 'active' && domain.active !== false,
   ];
 }
 

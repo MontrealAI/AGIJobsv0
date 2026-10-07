@@ -1,6 +1,7 @@
 #!/usr/bin/env ts-node
 import { readFileSync } from 'node:fs';
 import {
+  isPhase6DomainActive,
   parsePhase6Json,
   validatePhase6Config,
 } from '../../../scripts/phase6/config-validation';
@@ -164,6 +165,12 @@ export interface Phase6DemoConfig {
 }
 
 export interface DomainBlueprint {
+  configured: {
+    operations: boolean;
+    telemetry: boolean;
+    infrastructureControl: boolean;
+    credentials: boolean;
+  };
   slug: string;
   active: boolean;
   lifecycle: 'active' | 'experimental' | 'sunset';
@@ -573,7 +580,7 @@ function buildDomainTuples(domain: Phase6DemoConfig['domains'][number]) {
     domain.subgraph,
     domain.executionRouter ?? ZERO_ADDRESS,
     BigInt(domain.heartbeatSeconds ?? 120),
-    domain.lifecycle === 'sunset' ? false : domain.active ?? true,
+    isPhase6DomainActive(domain),
   ];
 
   const operations = domain.operations ?? {
@@ -724,8 +731,14 @@ export function buildPhase6Blueprint(
     );
 
     return {
+      configured: {
+        operations: domain.operations !== undefined,
+        telemetry: domain.telemetry !== undefined,
+        infrastructureControl: domain.infrastructureControl !== undefined,
+        credentials: domain.credentials !== undefined,
+      },
       slug: domain.slug,
-      active: domain.lifecycle === 'sunset' ? false : domain.active ?? true,
+      active: isPhase6DomainActive(domain),
       lifecycle: domain.lifecycle ?? 'active',
       name: domain.name,
       domainId,

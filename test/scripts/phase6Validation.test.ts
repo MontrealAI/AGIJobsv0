@@ -42,6 +42,36 @@ const sample = (): EventPayload => ({
 describe('Phase 6 strict configuration and evidence boundaries', function () {
   for (const [label, mutate] of [
     [
+      'unknown credential section field',
+      (c: any) => {
+        c.global.credentials.revocationRegsitry = 'did:example:wrong';
+      },
+    ],
+    [
+      'unknown trust anchor field',
+      (c: any) => {
+        c.global.credentials.trustAnchors[0].policyURL = 'ipfs://ignored';
+      },
+    ],
+    [
+      'unknown credential issuer field',
+      (c: any) => {
+        c.global.credentials.issuers[0].domainz = ['finance'];
+      },
+    ],
+    [
+      'unknown credential policy field',
+      (c: any) => {
+        c.global.credentials.policies[0].policyURI = 'ipfs://ignored';
+      },
+    ],
+    [
+      'unknown domain credential field',
+      (c: any) => {
+        c.domains[0].credentials[0].verifer = ['did:example:ignored'];
+      },
+    ],
+    [
       'zero pause target',
       (c: any) => {
         c.global.systemPause = '0x' + '0'.repeat(40);
