@@ -147,6 +147,7 @@ describe('generic validator durable reveal recovery', () => {
         hasBurnReceipt: async () => false,
       },
       provider: {
+        getLogs: async () => [],
         getNetwork: async () => ({ chainId: state.chainId }),
         getBlockNumber: async () => 21,
         getBlock: async (tag) => ({
@@ -592,6 +593,94 @@ describe('generic validator durable reveal recovery', () => {
     ]);
     assert.equal(calls.reveal.length, 1);
   });
+
+  for (const fault of [
+    'none',
+    'orphan',
+    'receipt',
+    'missing-log',
+    'wrong-salt',
+    'wrong-sender',
+    'wrong-selection',
+    'unconfirmed',
+    'removed',
+  ]) {
+    it(`recovers a finalized reveal only with matching canonical evidence: ${fault}`, async () => {
+      const journal = journalAt(directory);
+      const saved = makeRecord();
+      journal.prepare(saved);
+      journal.mark(saved, 'commit');
+      journal.mark(saved, 'reveal');
+      const { options, state, calls, runtime } = fixture(journal);
+      state.nonce = 0n;
+      state.commitDeadline = 0n;
+      state.revealDeadline = 0n;
+      const iface = new ethers.Interface([
+        'event ValidationRevealed(uint256 indexed jobId,address indexed validator,bool approve,bytes32 burnTxHash,string subdomain)',
+        'function revealValidation(uint256 jobId,bool approve,bytes32 burnTxHash,bytes32 salt,string subdomain,bytes32[] proof)',
+      ]);
+      const encoded = iface.encodeEventLog(
+        iface.getEvent('ValidationRevealed'),
+        [7n, scope.validator, true, ethers.ZeroHash, 'reviewer']
+      );
+      const log = {
+        ...encoded,
+        address: scope.validationModule,
+        blockNumber: 12,
+        blockHash: selection.blockHash,
+        index: 2,
+        transactionHash: hex('ab'),
+        removed: false,
+      };
+      const receipt = {
+        status: 1,
+        blockNumber: 12,
+        blockHash: selection.blockHash,
+        hash: log.transactionHash,
+        logs: [log],
+      };
+      const transaction = {
+        hash: log.transactionHash,
+        blockHash: selection.blockHash,
+        to: scope.validationModule,
+        from: scope.validator,
+        data: iface.encodeFunctionData('revealValidation', [
+          7n,
+          true,
+          ethers.ZeroHash,
+          fault === 'wrong-salt' ? hex('99') : saved.salt,
+          'reviewer',
+          [],
+        ]),
+      };
+      if (fault === 'orphan') log.blockHash = hex('bb');
+      if (fault === 'receipt') receipt.status = 0;
+      if (fault === 'missing-log') receipt.logs = [];
+      if (fault === 'wrong-sender') transaction.from = hex('99', 20);
+      if (fault === 'wrong-selection')
+        state.selection = { ...selection, logIndex: 1 };
+      if (fault === 'unconfirmed') log.blockNumber = 21;
+      if (fault === 'removed') log.removed = true;
+      const ranges = [];
+      options.provider.getLogs = async ({ fromBlock, toBlock }) => {
+        ranges.push([fromBlock, toBlock]);
+        if (toBlock - fromBlock + 1 > 2)
+          throw new Error('provider range limit');
+        return log.blockNumber >= fromBlock && log.blockNumber <= toBlock
+          ? [log]
+          : [];
+      };
+      options.provider.getTransactionReceipt = async () => receipt;
+      options.provider.getTransaction = async () => transaction;
+      const result = (await runtime.recover())[0];
+      assert.equal(result.status === 'complete', fault === 'none');
+      assert.equal(journal.has(saved, 'complete'), fault === 'none');
+      assert.equal(calls.commit.length + calls.reveal.length, 0);
+      assert.ok(
+        ranges.every(([from, to]) => from >= selection.blockNumber && to <= 20)
+      );
+    });
+  }
 
   it('blocks mismatched commitments, changed rounds/specs/domains/networks, and expired windows', async () => {
     for (const [key, value, expected] of [

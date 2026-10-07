@@ -342,7 +342,8 @@ async function resolveSelection(
   provider,
   jobId,
   validator,
-  blockNumber
+  blockNumber,
+  beforeLogIndex = Infinity
 ) {
   const filter = reader.filters.ValidatorsSelected(jobId);
   let toBlock = blockNumber;
@@ -361,6 +362,7 @@ async function resolveSelection(
       const event = events[index];
       if (
         event.removed ||
+        (event.blockNumber === blockNumber && event.index >= beforeLogIndex) ||
         !event.args ||
         String(event.args.jobId ?? event.args[0]) !== String(jobId)
       )
@@ -449,6 +451,115 @@ function safeErrorCode(err) {
   return err instanceof ValidatorRecoveryError
     ? err.code
     : 'VALIDATOR_RPC_OR_STORAGE_FAILURE';
+}
+
+const revealInterface = new ethers.Interface([
+  'event ValidationRevealed(uint256 indexed jobId,address indexed validator,bool approve,bytes32 burnTxHash,string subdomain)',
+  'function revealValidation(uint256 jobId,bool approve,bytes32 burnTxHash,bytes32 salt,string subdomain,bytes32[] proof)',
+]);
+
+async function hasCanonicalReveal(reader, provider, record, confirmedBlock) {
+  const { scope } = record;
+  const topics = revealInterface.encodeFilterTopics('ValidationRevealed', [
+    record.jobId,
+    scope.validator,
+  ]);
+  let fromBlock = record.selection.blockNumber;
+  let pageSize = 2000;
+  while (fromBlock <= confirmedBlock) {
+    const toBlock = Math.min(confirmedBlock, fromBlock + pageSize - 1);
+    let logs;
+    try {
+      logs = await provider.getLogs({
+        address: scope.validationModule,
+        topics,
+        fromBlock,
+        toBlock,
+      });
+    } catch (error) {
+      if (pageSize === 1) throw error;
+      pageSize = Math.max(1, Math.floor(pageSize / 2));
+      continue;
+    }
+    for (const log of logs) {
+      if (
+        log.removed ||
+        log.address.toLowerCase() !== scope.validationModule ||
+        log.blockNumber < fromBlock ||
+        log.blockNumber > toBlock ||
+        (log.blockNumber === record.selection.blockNumber &&
+          log.index <= record.selection.logIndex)
+      )
+        continue;
+      let event;
+      try {
+        event = revealInterface.parseLog(log);
+      } catch {
+        continue;
+      }
+      if (
+        !event ||
+        String(event.args[0]) !== record.jobId ||
+        event.args[1].toLowerCase() !== scope.validator ||
+        event.args[2] !== record.approve ||
+        event.args[3].toLowerCase() !== record.burnTxHash
+      )
+        continue;
+      const [block, receipt, transaction] = await Promise.all([
+        provider.getBlock(log.blockNumber),
+        provider.getTransactionReceipt(log.transactionHash),
+        provider.getTransaction(log.transactionHash),
+      ]);
+      if (
+        block?.hash?.toLowerCase() !== log.blockHash?.toLowerCase() ||
+        !receipt ||
+        receipt.status !== 1 ||
+        receipt.blockNumber !== log.blockNumber ||
+        receipt.hash?.toLowerCase() !== log.transactionHash.toLowerCase() ||
+        receipt.blockHash?.toLowerCase() !== log.blockHash?.toLowerCase() ||
+        !transaction ||
+        transaction.hash?.toLowerCase() !== log.transactionHash.toLowerCase() ||
+        transaction.to?.toLowerCase() !== scope.validationModule ||
+        transaction.from?.toLowerCase() !== scope.validator ||
+        transaction.blockHash?.toLowerCase() !== log.blockHash?.toLowerCase() ||
+        !receipt.logs.some(
+          (entry) =>
+            entry.index === log.index &&
+            entry.address.toLowerCase() === scope.validationModule &&
+            entry.data === log.data &&
+            JSON.stringify(entry.topics) === JSON.stringify(log.topics)
+        )
+      )
+        continue;
+      let call;
+      try {
+        call = revealInterface.parseTransaction(transaction);
+      } catch {
+        continue;
+      }
+      if (
+        !call ||
+        call.name !== 'revealValidation' ||
+        String(call.args[0]) !== record.jobId ||
+        call.args[1] !== record.approve ||
+        call.args[2].toLowerCase() !== record.burnTxHash ||
+        call.args[3].toLowerCase() !== record.salt
+      )
+        continue;
+      const selected = await resolveSelection(
+        reader,
+        provider,
+        record.jobId,
+        scope.validator,
+        log.blockNumber,
+        log.index
+      );
+      if (JSON.stringify(selected) === JSON.stringify(record.selection))
+        return true;
+    }
+    fromBlock = toBlock + 1;
+  }
+  return false;
 }
 
 async function resolveJobBurnReceipt(registry, provider, jobId) {
@@ -577,6 +688,15 @@ function createValidatorRuntime({
     if (!block) fail('VALIDATOR_BLOCK_UNAVAILABLE');
     if (block.number < record.selection.blockNumber)
       return 'awaiting-confirmations';
+    // Finalization clears live round mappings. Recover the exact saved reveal
+    // from confirmed canonical evidence before consulting those mappings.
+    if (
+      (journal.has(record, 'reveal') || journal.has(record, 'complete')) &&
+      (await hasCanonicalReveal(reader, provider, record, block.number))
+    ) {
+      journal.mark(record, 'complete');
+      return 'complete';
+    }
     const selection = await resolveSelection(
       reader,
       provider,
