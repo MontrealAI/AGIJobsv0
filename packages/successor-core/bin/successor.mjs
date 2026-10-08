@@ -1,17 +1,12 @@
 #!/usr/bin/env node
-import {
-  readFileSync,
-  writeFileSync,
-  mkdirSync,
-  lstatSync,
-  readdirSync,
-} from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, readdirSync } from 'node:fs';
 import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomUUID } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { performance } from 'node:perf_hooks';
-import { canonicalize, digestObject } from '../src/integrity.mjs';
+import { digestObject } from '../src/integrity.mjs';
+import { readJsonFile as readJson } from '../src/json-file.mjs';
 import { validateMission } from '../src/domain.mjs';
 import { compileJobs, sealWorkOrder } from '../src/compiler.mjs';
 import { createInvoiceJobs, createInvoiceEdges } from '../src/invoice.mjs';
@@ -91,18 +86,6 @@ function parse(args) {
   }
   if (words.length > 2) error('USAGE', 'Too many positional arguments.');
   return { options, words };
-}
-function readJson(path) {
-  if (!path) error('INPUT_REQUIRED', 'An explicit input file is required.');
-  const stat = lstatSync(path);
-  if (!stat.isFile() || stat.isSymbolicLink() || stat.size > 16 * 1024 * 1024)
-    error(
-      'INPUT_LIMIT',
-      'Input must be a regular JSON file of at most 16 MiB.'
-    );
-  const value = JSON.parse(readFileSync(path, 'utf8'));
-  canonicalize(value);
-  return value;
 }
 function save(path, value) {
   mkdirSync(dirname(resolve(path)), { recursive: true, mode: 0o700 });

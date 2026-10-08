@@ -43,7 +43,7 @@ Use the release dossier's command results, checkout revision, working-tree state
 
 | Check | Observed result / boundary |
 | --- | --- |
-| Successor core | 92/92 local core tests pass, including actual WORLD examination, runtime boundaries and clean-directory CLI replay |
+| Successor core | 98/98 local core tests pass, including actual WORLD examination, runtime boundaries and clean-directory CLI replay |
 | Compiled orchestrator bridge and legacy worker tests | 69/69 successor and legacy tests pass; actual local-chain lifecycle accepts and pays the accurate FAIL report |
 | Existing contracts | 706 contract tests pass; 267 Solidity files compiled and bytecode-size checks pass; no settlement semantics changed |
 | Documentation and public site | 297 Markdown files pass link checks; rebuilt site passes 60/60 tests and preserves 76 demos, 350 guides and 266 diagrams; browser evidence is recorded separately |
@@ -54,6 +54,10 @@ Use the release dossier's command results, checkout revision, working-tree state
 An earlier site regression detected stale copied package metadata during concurrent edits. The release dossier retains that observation and the final rebuilt-site result; a source or documentation change does not silently convert a failed check into a pass. Local, chain and external commissioning results are never combined into one score.
 
 The [acceptance matrix](acceptance-matrix.md), [security review](security-review.md), [operations guide](operations.md) and [current platform readiness](../production/readiness.md) describe limits and evidence. Publication of source or Pages does not clear signing, dependency, independent-examiner, provider/network or production-action gates.
+
+## Hosted security-review follow-up
+
+The initial hosted CodeQL review found a CLI file-check/read race and two unused-variable findings. The CLI and standalone proof harness now share a bounded reader that checks the opened descriptor, refuses symlinks/nonregular files and detects observed changes. Regression tests exercise deterministic path replacement, post-check growth, mutation and FIFO handling. The two unused variables were removed. Hosted analysis of the follow-up commit is tracked in the release PR; these fixes do not clear the separate production signing/dependency gates.
 
 ## Containment and rollback
 

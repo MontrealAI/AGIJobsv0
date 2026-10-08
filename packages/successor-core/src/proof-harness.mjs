@@ -1,19 +1,11 @@
 #!/usr/bin/env node
 // Separate executable with no network, wallet, production effect driver or
 // embedded evaluator secret. Protected evaluation requires external custody.
-import { readFile } from 'node:fs/promises';
+import { readJsonFile } from './json-file.mjs';
 import { pathToFileURL } from 'node:url';
 import { runProofRehearsal } from './proof-rehearsal.mjs';
 import { verifyProof } from './proof.mjs';
 
-async function boundedJson(path) {
-  const data = await readFile(path);
-  if (data.length > 8 * 1024 * 1024)
-    throw Object.assign(new Error('Proof input exceeds 8 MiB'), {
-      code: 'INPUT_TOO_LARGE',
-    });
-  return JSON.parse(data.toString('utf8'));
-}
 export async function runHarness(args = process.argv.slice(2)) {
   if (args.length === 1 && args[0] === '--fixture') return runProofRehearsal();
   const names = [
@@ -31,7 +23,9 @@ export async function runHarness(args = process.argv.slice(2)) {
       { code: 'INVALID_ARGUMENTS' }
     );
   const [receipt, trustStore, candidate, protocol, context] = await Promise.all(
-    names.map((_, i) => boundedJson(args[i * 2 + 1]))
+    names.map((_, i) =>
+      readJsonFile(args[i * 2 + 1], { maxBytes: 8 * 1024 * 1024 })
+    )
   );
   const verified = await verifyProof(receipt, {
     trustStore,
@@ -41,7 +35,7 @@ export async function runHarness(args = process.argv.slice(2)) {
     now: Date.now(),
   });
   let admissionEligible = false;
-  let admissionCode = 'INDEPENDENCE_REQUIRED';
+  let admissionCode;
   try {
     await verifyProof(receipt, {
       trustStore,

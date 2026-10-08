@@ -10,6 +10,8 @@ The Node store is a single-host SQLite file with WAL, full synchronous writes an
 
 The demo writes `chronicle-checkpoint.json` beside its database for inspection. That neighboring file is not independent custody. Retain an authenticated latest head outside the database writer's control before claiming suffix-truncation detection against that writer. `chronicle inspect --checkpoint` checks the explicitly supplied head; a local hash chain by itself establishes consistency only.
 
+JSON file imports require platform support for no-follow and nonblocking file opens (the supported Linux/macOS runtime). Imports fail closed when those primitives are unavailable. The CLI reads at most 16 MiB and the standalone proof harness at most 8 MiB per file. Checks and bounded reads use one descriptor; final-component symlinks, nonregular inputs, invalid UTF-8 and observed in-place changes are rejected. Parent directories and operator trust configuration must remain protected.
+
 ## Before an examination
 
 - Record mission owner, outcome, rights, incumbent and strongest credible alternative. Freeze metrics, critical-error limits, complete cost method, minimum meaningful gain, sample/stopping rule and expiry.

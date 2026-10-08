@@ -128,7 +128,6 @@ export function createActionBroker({
     }
     let decision = await authorize(request, store.read());
     requireAssurance(decision.allowed, decision.code, decision.reason);
-    const permission = permissionFor(request).payload;
     store.transact(
       (state) => {
         requireAssurance(
