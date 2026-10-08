@@ -67,7 +67,12 @@ export function readJsonFile(path, { maxBytes = MAX_BYTES } = {}) {
     } catch {
       reject('INPUT_ENCODING', 'JSON input must contain valid UTF-8.');
     }
-    const value = JSON.parse(text);
+    let value;
+    try {
+      value = JSON.parse(text);
+    } catch {
+      reject('INPUT_JSON', 'JSON input is malformed.');
+    }
     canonicalize(value);
     return value;
   } finally {

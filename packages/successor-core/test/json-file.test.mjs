@@ -24,6 +24,11 @@ test('bounded JSON imports validate UTF-8 and canonical data', (t) => {
   assert.throws(() => readJsonFile(path), { code: 'INPUT_ENCODING' });
   fs.writeFileSync(path, '{"__proto__":{}}');
   assert.throws(() => readJsonFile(path));
+  fs.writeFileSync(path, 'sensitive-fixture-token');
+  assert.throws(() => readJsonFile(path), {
+    code: 'INPUT_JSON',
+    message: 'JSON input is malformed.',
+  });
 });
 
 test('symbolic links and directories are rejected before reading', (t) => {
