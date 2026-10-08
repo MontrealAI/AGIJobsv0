@@ -146,6 +146,7 @@ jobs:
         run: |
           npm run build:gateway
           npm run build:orchestrator
+          npm run build:validator
           node --test test/scripts/runtime-packaging.test.cjs
           node --test apps/orchestrator/dist/apps/orchestrator/__tests__/computerWork.test.js
       - name: Hardhat tests

@@ -324,6 +324,7 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
       'docs/computer-work.md',
       'docs/MACHINE_LABOR.md',
       'docs/EVIDENCE_REVIEW.md',
+      'apps/validator/README.md',
       'docs/production/rehearsal.md',
       ...catalog.flatMap((demo) => demo.guides),
     ]),

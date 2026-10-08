@@ -128,3 +128,8 @@ demo/LARGE-SCALE-OMEGA-BUSINESS-3/.artifacts/
 /reports/zenith-hypernova-previous-*/
 /reports/localhost/zenith-hypernova/
 /reports/localhost/zenith-hypernova-previous-*/
+
+# Built validator service and private operator state
+apps/validator/dist/
+storage/validator-service-reveals/
+storage/validation-reports/

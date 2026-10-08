@@ -3,8 +3,8 @@
   "label": "sentinel",
   "stakeTarget": "5000000000000000000",
   "metadata": {
-    "description": "Deterministic validator persona with dedicated stake for commit-reveal rounds.",
+    "description": "Validator persona with explicit reviewer admission and durable commit-reveal recovery.",
     "categories": ["compliance", "governance"],
-    "notes": "Uses deterministic random salts for each validation cycle."
+    "notes": "Uses cryptographically random per-round salts; structural checks are advisory and cannot authorize a vote."
   }
 }
