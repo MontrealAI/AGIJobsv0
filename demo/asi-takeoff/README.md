@@ -112,7 +112,7 @@ See [RUNBOOK.md](RUNBOOK.md) for the actual local kit command, planetary report 
 ```mermaid
 flowchart LR
     Operators((Mission Owners)) --> demo_asi_takeoff[[Demo → ASI Takeoff]]
-    demo_asi_takeoff --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    demo_asi_takeoff --> Core[["AGI Jobs v0 (v2) Core Intelligence"]]
     Core --> Observability[[Unified CI / CD & Observability]]
     Core --> Governance[[Owner Control Plane]]
 ```

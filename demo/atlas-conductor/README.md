@@ -32,7 +32,7 @@ If port 8545 is occupied, run `DEMO_PORT=18545 npm run demo:atlas-conductor:loca
 ```mermaid
 flowchart LR
     Operators((Mission Owners)) --> demo_atlas_conductor[[Demo → Atlas Conductor]]
-    demo_atlas_conductor --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    demo_atlas_conductor --> Core[["AGI Jobs v0 (v2) Core Intelligence"]]
     Core --> Observability[[Unified CI / CD & Observability]]
     Core --> Governance[[Owner Control Plane]]
 ```

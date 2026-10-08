@@ -16,7 +16,7 @@
 ```mermaid
 flowchart LR
     Operators((Mission Owners)) --> demo_OMNIGENESIS_GLOBAL_SOVEREIGN_SYMPHONY[[Demo → Omnigenesis Global Sovereign Symphony]]
-    demo_OMNIGENESIS_GLOBAL_SOVEREIGN_SYMPHONY --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    demo_OMNIGENESIS_GLOBAL_SOVEREIGN_SYMPHONY --> Core[["AGI Jobs v0 (v2) Core Intelligence"]]
     Core --> Observability[[Unified CI / CD & Observability]]
     Core --> Governance[[Owner Control Plane]]
 ```

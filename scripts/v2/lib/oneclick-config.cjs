@@ -60,6 +60,16 @@ function validateOneclickConfig(config, decimals) {
     config.secureDefaults === undefined ? {} : config.secureDefaults;
   object(econ, 'econ');
   object(defaults, 'secureDefaults');
+  const tax = config.tax === undefined ? {} : config.tax;
+  object(tax, 'tax');
+  if (tax.enabled !== undefined && typeof tax.enabled !== 'boolean')
+    throw new Error('tax.enabled must be boolean');
+  for (const key of ['uri', 'description'])
+    if (
+      tax[key] !== undefined &&
+      (typeof tax[key] !== 'string' || !tax[key].trim())
+    )
+      throw new Error(`tax.${key} must be a nonempty string`);
   for (const key of Object.keys(econ))
     if (
       ![

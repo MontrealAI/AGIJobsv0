@@ -29,6 +29,7 @@ function parseArgs() {
 }
 
 async function verify(address: string, args: any[] = []) {
+  if (['hardhat', 'localhost', 'anvil'].includes(network.name)) return;
   try {
     await run('verify:verify', {
       address,
@@ -39,8 +40,11 @@ async function verify(address: string, args: any[] = []) {
   }
 }
 
-async function main() {
+export async function deployOneClickModules() {
   const [deployer] = await ethers.getSigners();
+  if (!deployer) {
+    throw new Error('No deployment signer configured for this network');
+  }
   const args = parseArgs();
   const getArg = (key: string): string | boolean | undefined => {
     if (Object.prototype.hasOwnProperty.call(args, key)) {
@@ -75,7 +79,25 @@ async function main() {
   const governanceArg = getArg('governance');
   const governance =
     typeof governanceArg === 'string' ? governanceArg : deployer.address;
-  const governanceSigner = await ethers.getSigner(governance);
+  if (ethers.getAddress(governance) !== ethers.getAddress(deployer.address)) {
+    throw new Error(
+      'One-click deployment requires governance to match the connected deployer. ' +
+        'For multisig governance use scripts/v2/deployDefaults.ts and complete its ownership handoff.'
+    );
+  }
+  const governanceSigner = deployer;
+  if (getArg('arbitrator') !== undefined) {
+    throw new Error(
+      'One-click Kleros replacement is unsupported: use a reviewed arbitration integration that also updates staking and pause controls'
+    );
+  }
+  const minStakeArg = getArg('minStake');
+  const minStake = ethers.parseUnits(
+    typeof minStakeArg === 'string' ? minStakeArg : '1',
+    AGIALPHA_DECIMALS
+  );
+  if (minStake <= 0n || minStake > ethers.MaxUint256)
+    throw new Error('Minimum stake must be a positive uint256 token amount');
 
   const { config: ensConfig } = loadEnsConfig({
     network: network.name,
@@ -147,7 +169,7 @@ async function main() {
     Stake.runner
   );
   const stake = await Stake.deploy(
-    0,
+    minStake,
     0,
     0,
     treasury,
@@ -185,8 +207,10 @@ async function main() {
     'contracts/v2/TaxPolicy.sol:TaxPolicy'
   );
   const tax = await TaxPolicy.deploy(
-    'ipfs://policy',
-    'All taxes on participants; contract and owner exempt'
+    typeof getArg('taxUri') === 'string' ? getArg('taxUri') : 'ipfs://policy',
+    typeof getArg('taxDescription') === 'string'
+      ? getArg('taxDescription')
+      : 'All taxes on participants; contract and owner exempt'
   );
   await tax.waitForDeployment();
 
@@ -227,12 +251,12 @@ async function main() {
     ethers.ZeroHash
   );
   await identity.waitForDeployment();
-  await identity.setENS(ensConfig.registry);
+  await (await identity.setENS(ensConfig.registry)).wait();
   if (nameWrapperAddress !== ethers.ZeroAddress) {
-    await identity.setNameWrapper(nameWrapperAddress);
+    await (await identity.setNameWrapper(nameWrapperAddress)).wait();
   }
-  await identity.setAgentRootNode(agentRootNode);
-  await identity.setClubRootNode(clubRootNode);
+  await (await identity.setAgentRootNode(agentRootNode)).wait();
+  await (await identity.setClubRootNode(clubRootNode)).wait();
 
   const Attestation = await ethers.getContractFactory(
     'contracts/v2/AttestationRegistry.sol:AttestationRegistry'
@@ -242,14 +266,20 @@ async function main() {
     nameWrapperAddress
   );
   await attestation.waitForDeployment();
-  await identity.setAttestationRegistry(await attestation.getAddress());
-  await registry
-    .connect(governanceSigner)
-    .setIdentityRegistry(await identity.getAddress());
-  await validation.setIdentityRegistry(await identity.getAddress());
+  await (
+    await identity.setAttestationRegistry(await attestation.getAddress())
+  ).wait();
+  await (
+    await registry
+      .connect(governanceSigner)
+      .setIdentityRegistry(await identity.getAddress())
+  ).wait();
+  await (
+    await validation.setIdentityRegistry(await identity.getAddress())
+  ).wait();
 
   const NFT = await ethers.getContractFactory(
-    'contracts/v2/modules/CertificateNFT.sol:CertificateNFT'
+    'contracts/v2/CertificateNFT.sol:CertificateNFT'
   );
   const nft = await NFT.deploy('Cert', 'CERT');
   await nft.waitForDeployment();
@@ -284,7 +314,7 @@ async function main() {
     await dispute.getAddress()
   );
   await committee.waitForDeployment();
-  await dispute.setCommittee(await committee.getAddress());
+  await (await dispute.setCommittee(await committee.getAddress())).wait();
 
   const FeePool = await ethers.getContractFactory(
     'contracts/v2/FeePool.sol:FeePool'
@@ -330,87 +360,92 @@ async function main() {
   );
   await incentives.waitForDeployment();
 
+  // Complete dependency and caller wiring while the deployer still owns the
+  // modules. Merely storing JobRegistry's module references is insufficient.
+  await (await stake.setValidationModule(await validation.getAddress())).wait();
+  await (await stake.setFeePool(await feePool.getAddress())).wait();
+  await (
+    await validation.setReputationEngine(await reputation.getAddress())
+  ).wait();
+  await (await dispute.setStakeManager(await stake.getAddress())).wait();
+  await (await nft.setJobRegistry(await registry.getAddress())).wait();
+  await (await nft.setStakeManager(await stake.getAddress())).wait();
+  await (await reputation.setCaller(await registry.getAddress(), true)).wait();
+  await (
+    await reputation.setCaller(await validation.getAddress(), true)
+  ).wait();
+  for (const module of [registry, stake, dispute, feePool]) {
+    await (await tax.setAcknowledger(await module.getAddress(), true)).wait();
+  }
+
   const Installer = await ethers.getContractFactory(
     'contracts/v2/ModuleInstaller.sol:ModuleInstaller'
   );
   const installer = await Installer.deploy();
   await installer.waitForDeployment();
-  await installer.transferOwnership(governance);
+  await (await installer.transferOwnership(governance)).wait();
 
-  await registry.setGovernance(await installer.getAddress());
-  await stake.setGovernance(await installer.getAddress());
-  await validation.transferOwnership(await installer.getAddress());
-  await reputation.transferOwnership(await installer.getAddress());
-  await dispute.transferOwnership(await installer.getAddress());
-  await nft.transferOwnership(await installer.getAddress());
-  await incentives.transferOwnership(await installer.getAddress());
-  await platformRegistry.transferOwnership(await installer.getAddress());
-  await jobRouter.transferOwnership(await installer.getAddress());
-  await feePool.transferOwnership(await installer.getAddress());
-  await tax.transferOwnership(await installer.getAddress());
-  await identity.transferOwnership(await installer.getAddress());
+  await (await registry.setGovernance(await installer.getAddress())).wait();
+  await (await stake.setGovernance(await installer.getAddress())).wait();
+  await (
+    await validation.transferOwnership(await installer.getAddress())
+  ).wait();
+  await (
+    await reputation.transferOwnership(await installer.getAddress())
+  ).wait();
+  await (await dispute.transferOwnership(await installer.getAddress())).wait();
+  await (await nft.transferOwnership(await installer.getAddress())).wait();
+  await (
+    await incentives.transferOwnership(await installer.getAddress())
+  ).wait();
+  await (
+    await platformRegistry.transferOwnership(await installer.getAddress())
+  ).wait();
+  await (
+    await jobRouter.transferOwnership(await installer.getAddress())
+  ).wait();
+  await (await feePool.transferOwnership(await installer.getAddress())).wait();
+  await (await tax.transferOwnership(await installer.getAddress())).wait();
+  await (await identity.transferOwnership(await installer.getAddress())).wait();
 
-  if (network.name === 'hardhat') {
-    const installerAddress = await installer.getAddress();
-    await network.provider.send('hardhat_impersonateAccount', [
-      installerAddress,
-    ]);
-    const installerSigner = await ethers.getSigner(installerAddress);
-    try {
-      await network.provider.send('hardhat_setBalance', [
-        installerAddress,
-        ethers.toBeHex(ethers.parseEther('1')),
-      ]);
-      await identity.connect(installerSigner).acceptOwnership();
-      try {
-        await tax.connect(installerSigner).acceptOwnership();
-      } catch (taxError) {
-        console.warn('⚠️  Unable to auto-accept TaxPolicy ownership', taxError);
-      }
-    } finally {
-      await network.provider.send('hardhat_stopImpersonatingAccount', [
-        installerAddress,
-      ]);
-    }
-  }
+  await (
+    await installer
+      .connect(governanceSigner)
+      .initialize(
+        await registry.getAddress(),
+        await stake.getAddress(),
+        await validation.getAddress(),
+        await reputation.getAddress(),
+        await dispute.getAddress(),
+        await nft.getAddress(),
+        await incentives.getAddress(),
+        await platformRegistry.getAddress(),
+        await jobRouter.getAddress(),
+        await feePool.getAddress(),
+        await tax.getAddress(),
+        await identity.getAddress(),
+        clubRootNode,
+        agentRootNode,
+        ethers.ZeroHash,
+        ethers.ZeroHash,
+        []
+      )
+  ).wait();
 
-  await installer
-    .connect(governanceSigner)
-    .initialize(
-      await registry.getAddress(),
-      await stake.getAddress(),
-      await validation.getAddress(),
-      await reputation.getAddress(),
-      await dispute.getAddress(),
-      await nft.getAddress(),
-      await incentives.getAddress(),
-      await platformRegistry.getAddress(),
-      await jobRouter.getAddress(),
-      await feePool.getAddress(),
-      await tax.getAddress(),
-      await identity.getAddress(),
-      clubRootNode,
-      agentRootNode,
-      ethers.ZeroHash,
-      ethers.ZeroHash,
-      []
-    );
+  // ModuleInstaller returns these two modules through Ownable2Step.
+  await (await identity.connect(governanceSigner).acceptOwnership()).wait();
+  await (await tax.connect(governanceSigner).acceptOwnership()).wait();
 
-  await committee.transferOwnership(governance);
-  await attestation.transferOwnership(governance);
+  await (await committee.transferOwnership(governance)).wait();
+  await (await attestation.transferOwnership(governance)).wait();
 
   const feePctArg = getArg('feePct');
   const feePct = typeof feePctArg === 'string' ? Number(feePctArg) : 5;
-  await registry.connect(governanceSigner).setFeePct(feePct);
+  await (await registry.connect(governanceSigner).setFeePct(feePct)).wait();
 
-  await feePool.connect(governanceSigner).setBurnPct(burnPct);
+  await (await feePool.connect(governanceSigner).setBurnPct(burnPct)).wait();
 
-  const minStakeArg = getArg('minStake');
-  const minStake = ethers.parseUnits(
-    typeof minStakeArg === 'string' ? minStakeArg : '0',
-    AGIALPHA_DECIMALS
-  );
-  await stake.connect(governanceSigner).setMinStake(minStake);
+  await (await stake.connect(governanceSigner).setMinStake(minStake)).wait();
 
   const ensureContract = async (addr: string, name: string) => {
     if ((await ethers.provider.getCode(addr)) === '0x') {
@@ -445,16 +480,34 @@ async function main() {
   );
   await pause.waitForDeployment();
   const pauseAddress = await pause.getAddress();
-  await registry.connect(governanceSigner).setPauser(pauseAddress);
-  await stake.connect(governanceSigner).setPauser(pauseAddress);
-  await validation.connect(governanceSigner).setPauser(pauseAddress);
-  await dispute.connect(governanceSigner).setPauser(pauseAddress);
-  await platformRegistry.connect(governanceSigner).setPauser(pauseAddress);
-  await feePool.connect(governanceSigner).setPauser(pauseAddress);
-  await reputation.connect(governanceSigner).setPauser(pauseAddress);
-  await committee.connect(governanceSigner).setPauser(pauseAddress);
-  await stake.connect(governanceSigner).setGovernance(governance);
-  await registry.connect(governanceSigner).setGovernance(governance);
+  await (
+    await registry.connect(governanceSigner).setPauser(pauseAddress)
+  ).wait();
+  await (await stake.connect(governanceSigner).setPauser(pauseAddress)).wait();
+  await (
+    await validation.connect(governanceSigner).setPauser(pauseAddress)
+  ).wait();
+  await (
+    await dispute.connect(governanceSigner).setPauser(pauseAddress)
+  ).wait();
+  await (
+    await platformRegistry.connect(governanceSigner).setPauser(pauseAddress)
+  ).wait();
+  await (
+    await feePool.connect(governanceSigner).setPauser(pauseAddress)
+  ).wait();
+  await (
+    await reputation.connect(governanceSigner).setPauser(pauseAddress)
+  ).wait();
+  await (
+    await committee.connect(governanceSigner).setPauser(pauseAddress)
+  ).wait();
+  await (
+    await stake.connect(governanceSigner).setGovernance(governance)
+  ).wait();
+  await (
+    await registry.connect(governanceSigner).setGovernance(governance)
+  ).wait();
 
   console.log('JobRegistry deployed to:', await registry.getAddress());
   console.log('ValidationModule:', await validation.getAddress());
@@ -474,9 +527,11 @@ async function main() {
       governance
     );
     await kleros.waitForDeployment();
-    await registry
-      .connect(governanceSigner)
-      .setDisputeModule(await kleros.getAddress());
+    await (
+      await registry
+        .connect(governanceSigner)
+        .setDisputeModule(await kleros.getAddress())
+    ).wait();
     activeDispute = await kleros.getAddress();
     console.log('KlerosDisputeModule:', activeDispute);
   } else {
@@ -584,8 +639,10 @@ async function main() {
   }
   await verify(await nft.getAddress(), ['Cert', 'CERT']);
   await verify(await tax.getAddress(), [
-    'ipfs://policy',
-    'All taxes on participants; contract and owner exempt',
+    typeof getArg('taxUri') === 'string' ? getArg('taxUri') : 'ipfs://policy',
+    typeof getArg('taxDescription') === 'string'
+      ? getArg('taxDescription')
+      : 'All taxes on participants; contract and owner exempt',
   ]);
   await verify(await feePool.getAddress(), [
     await stake.getAddress(),
@@ -626,10 +683,12 @@ async function main() {
     await verify(address as string, []);
   }
 
-  await incentives.connect(governanceSigner).stakeAndActivate(0);
+  await (await incentives.connect(governanceSigner).stakeAndActivate(0)).wait();
+  return addresses;
 }
 
-main().catch((error) => {
-  console.error(error);
-  process.exitCode = 1;
-});
+if (require.main === module)
+  deployOneClickModules().catch((error) => {
+    console.error(error);
+    process.exitCode = 1;
+  });

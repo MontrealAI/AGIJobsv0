@@ -1,0 +1,126 @@
+{
+  "primary": [
+    {
+      "name": "node-runner",
+      "file": "deploy/docker/orchestrator.Dockerfile",
+      "context": "."
+    },
+    {
+      "name": "validator-runner",
+      "file": "deploy/docker/attester.Dockerfile",
+      "context": "."
+    },
+    {
+      "name": "gateway",
+      "file": "agent-gateway/Dockerfile",
+      "context": "."
+    },
+    {
+      "name": "webapp",
+      "file": "apps/enterprise-portal/Dockerfile",
+      "context": "."
+    },
+    {
+      "name": "owner-console",
+      "file": "apps/console/Dockerfile",
+      "context": "apps/console"
+    }
+  ],
+  "auxiliary": [
+    {
+      "name": "operator",
+      "file": "apps/operator/Dockerfile",
+      "context": "."
+    },
+    {
+      "name": "validator-ui",
+      "file": "apps/validator-ui/Dockerfile",
+      "context": "."
+    },
+    {
+      "name": "meta-api",
+      "file": "services/meta_api/Dockerfile",
+      "context": "."
+    },
+    {
+      "name": "alpha-bridge",
+      "file": "services/alpha-bridge/Dockerfile",
+      "context": "."
+    },
+    {
+      "name": "notifications",
+      "file": "services/notifications/Dockerfile",
+      "context": "."
+    },
+    {
+      "name": "culture-indexer",
+      "file": "services/culture-graph-indexer/Dockerfile",
+      "context": "."
+    },
+    {
+      "name": "agent-node",
+      "file": "deploy/docker/agent-node.Dockerfile",
+      "context": "."
+    },
+    {
+      "name": "bundler",
+      "file": "deploy/docker/bundler.Dockerfile",
+      "context": "."
+    },
+    {
+      "name": "paymaster-supervisor",
+      "file": "deploy/docker/paymaster-supervisor.Dockerfile",
+      "context": "."
+    },
+    {
+      "name": "onebox-ui",
+      "file": "demo/One-Box/Dockerfile.ui",
+      "context": "."
+    },
+    {
+      "name": "alpha-python",
+      "file": "demo/AGI-Alpha-Node-v0/Dockerfile",
+      "context": "demo/AGI-Alpha-Node-v0"
+    },
+    {
+      "name": "alpha-typescript",
+      "file": "demo/AGI-Alpha-Node-v0/docker/Dockerfile",
+      "context": "."
+    },
+    {
+      "name": "alpha-commandhub",
+      "file": "demo/AGI-Alpha-Node-v0/docker/commandhub.Dockerfile",
+      "context": "demo/AGI-Alpha-Node-v0"
+    },
+    {
+      "name": "alpha-grand",
+      "file": "demo/AGI-Alpha-Node-v0/grand_demo/Dockerfile",
+      "context": "demo/AGI-Alpha-Node-v0/grand_demo"
+    },
+    {
+      "name": "alpha-grandiose",
+      "file": "demo/AGI-Alpha-Node-v0/grandiose_alpha_demo/Dockerfile",
+      "context": "demo/AGI-Alpha-Node-v0/grandiose_alpha_demo"
+    },
+    {
+      "name": "culture-studio",
+      "file": "demo/CULTURE-v0/apps/culture-studio/Dockerfile",
+      "context": "."
+    },
+    {
+      "name": "culture-orchestrator",
+      "file": "demo/CULTURE-v0/backend/arena-orchestrator/Dockerfile",
+      "context": "."
+    },
+    {
+      "name": "culture-demo-indexer",
+      "file": "demo/CULTURE-v0/indexers/culture-graph-indexer/Dockerfile",
+      "context": "."
+    },
+    {
+      "name": "culture-smoke-tests",
+      "file": "demo/CULTURE-v0/scripts/Dockerfile.smoke-tests",
+      "context": "."
+    }
+  ]
+}

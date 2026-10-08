@@ -25,6 +25,8 @@ describe('agent gateway configuration validation', function () {
   const envBackup = {};
 
   beforeEach(function () {
+    envBackup.AGIALPHA_TOKEN = process.env.AGIALPHA_TOKEN;
+    delete process.env.AGIALPHA_TOKEN;
     envBackup.RPC_URL = process.env.RPC_URL;
     envBackup.PORT = process.env.PORT;
     envBackup.FETCH_TIMEOUT_MS = process.env.FETCH_TIMEOUT_MS;
@@ -47,18 +49,31 @@ describe('agent gateway configuration validation', function () {
   });
 
   afterEach(function () {
-    process.env.RPC_URL = envBackup.RPC_URL;
-    process.env.PORT = envBackup.PORT;
-    process.env.FETCH_TIMEOUT_MS = envBackup.FETCH_TIMEOUT_MS;
-    process.env.STALE_JOB_MS = envBackup.STALE_JOB_MS;
-    process.env.SWEEP_INTERVAL_MS = envBackup.SWEEP_INTERVAL_MS;
-    process.env.KEYSTORE_URL = envBackup.KEYSTORE_URL;
-    process.env.JOB_REGISTRY_ADDRESS = envBackup.JOB_REGISTRY_ADDRESS;
-    process.env.VALIDATION_MODULE_ADDRESS = envBackup.VALIDATION_MODULE_ADDRESS;
-    process.env.STAKE_MANAGER_ADDRESS = envBackup.STAKE_MANAGER_ADDRESS;
+    for (const [key, value] of Object.entries(envBackup)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
 
     clearModuleCache();
   });
+
+  it('uses the validated deployed token address without bypassing metadata checks', function () {
+    process.env.AGIALPHA_TOKEN = DUMMY_ADDRESS;
+    const utils = loadUtils();
+    expect(utils.AGIALPHA_ADDRESS).to.equal(DUMMY_ADDRESS);
+    expect(utils.TOKEN_DECIMALS).to.equal(18);
+    expect(utils.verifyTokenDecimals).to.be.a('function');
+  });
+
+  for (const value of [
+    'invalid-address',
+    '0x0000000000000000000000000000000000000000',
+  ]) {
+    it(`rejects an invalid deployed token address (${value})`, function () {
+      process.env.AGIALPHA_TOKEN = value;
+      expect(() => loadUtils()).to.throw(/AGIALPHA_TOKEN.*nonzero/);
+    });
+  }
 
   it('rejects RPC URLs with unsupported schemes', function () {
     process.env.RPC_URL = 'ftp://example.com';

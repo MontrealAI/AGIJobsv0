@@ -156,7 +156,19 @@ const {
   symbol: AGIALPHA_SYMBOL,
   name: AGIALPHA_NAME,
 } = agialpha;
-export const AGIALPHA_ADDRESS = AGIALPHA_ADDRESS_INTERNAL;
+// Deployment tooling writes AGIALPHA_TOKEN. Accept only an explicit, valid
+// operator address; token decimals/symbol/name are still verified on chain.
+const configuredTokenAddress = readEnv('AGIALPHA_TOKEN');
+if (
+  configuredTokenAddress &&
+  (!ethers.isAddress(configuredTokenAddress) ||
+    configuredTokenAddress.toLowerCase() === ethers.ZeroAddress)
+) {
+  throw new Error('AGIALPHA_TOKEN must be a valid nonzero address');
+}
+export const AGIALPHA_ADDRESS = configuredTokenAddress
+  ? ethers.getAddress(configuredTokenAddress)
+  : AGIALPHA_ADDRESS_INTERNAL;
 if (AGIALPHA_SYMBOL.trim().length === 0) {
   throw new Error('config/agialpha.json is missing token symbol');
 }

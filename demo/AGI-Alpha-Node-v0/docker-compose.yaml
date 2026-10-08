@@ -1,15 +1,11 @@
-version: "3.9"
+# Python command-hub variant; the adjacent .yml file retains the other demo.
 services:
   commandhub:
     build:
-      context: ..
-      dockerfile: ../Dockerfile
-    command: ["poetry", "run", "python", "-m", "alpha_node.cli", "run"]
-    working_dir: /app/demo/AGI-Alpha-Node-v0
+      context: .
+      dockerfile: docker/commandhub.Dockerfile
     environment:
-      - PYTHONUNBUFFERED=1
+      PYTHONUNBUFFERED: '1'
     volumes:
-      - ./:/app/demo/AGI-Alpha-Node-v0
-    ports:
-      - "8787:8787"
-      - "8788:8788"
+      - ./:/app
+    # This variant runs one CLI cycle and exits; it does not open a web server.

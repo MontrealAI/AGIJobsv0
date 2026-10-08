@@ -16,3 +16,13 @@ yarn-error.log*
 # Local Python environments are not container build inputs.
 **/.venv*
 **/*.egg-info
+
+# Runtime credentials and generated state must never enter image layers.
+**/.env
+**/.env.*
+!**/.env.example
+!**/.env.*.example
+deployment-config/*.env
+**/logs
+**/storage
+**/dist

@@ -39,7 +39,7 @@ COPY --from=builder /app/agent-gateway/dist ./agent-gateway/dist
 COPY --from=builder /app/scripts/start-telemetry.sh ./scripts/start-telemetry.sh
 RUN apk upgrade --no-cache \
     && chmod +x ./scripts/start-telemetry.sh \
-    && mkdir -p /app/storage /app/logs \
+    && mkdir -p /app/storage /app/logs /app/agent-gateway/dist/storage /app/agent-gateway/dist/logs \
     && chown -R node:node /app
 USER node
 CMD ["node", "agent-gateway/dist/agent-gateway/index.js"]

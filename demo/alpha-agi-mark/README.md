@@ -54,14 +54,14 @@ OpenClaw can provide an isolated browser and configured model/tools; ChatGPT Wor
 ```mermaid
 flowchart LR
     Operators((Mission Owners)) --> demo_alpha_agi_mark[[Demo → Alpha AGI Mark]]
-    demo_alpha_agi_mark --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    demo_alpha_agi_mark --> Core[["AGI Jobs v0 (v2) Core Intelligence"]]
     Core --> Observability[[Unified CI / CD & Observability]]
     Core --> Governance[[Owner Control Plane]]
 ```
 
 ## Operator and engineering guides
 
-- [Complete runbook](runbooks/alpha-agi-mark-runbook.md) and [original architecture flow](runbooks/alpha-agi-mark-flow.mmd).
+- [Complete runbook](runbooks/alpha-agi-mark-runbook.md) and [original orchestration flow](runbooks/alpha-agi-mark-flow.mmd) and [contract architecture](runbooks/alpha-agi-mark-contracts.mmd).
 - [Operator command console](docs/operator-command-console.md), [empowerment atlas](docs/operator-empowerment-atlas.md), and [verification compendium](docs/operator-verification-compendium.md).
 - [Computer-work commissioning](../../docs/computer-work.md), [evidence review](../../docs/EVIDENCE_REVIEW.md), and [repository production gates](../../docs/production/readiness.md).
 

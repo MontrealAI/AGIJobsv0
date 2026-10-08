@@ -77,16 +77,23 @@ async function ensureEnvFile(envPath: string) {
   }
 
   throw new Error(
-    `Environment file ${resolved} is missing and no template was found. Check deployment-config/oneclick.env.example.`,
+    `Environment file ${resolved} is missing and no template was found. Check deployment-config/oneclick.env.example.`
   );
 }
 
-async function confirm(question: string, autoYes: boolean, defaultValue = false): Promise<boolean> {
+async function confirm(
+  question: string,
+  autoYes: boolean,
+  defaultValue = false
+): Promise<boolean> {
   if (autoYes) {
     return true;
   }
 
-  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
   const suffix = defaultValue ? ' [Y/n] ' : ' [y/N] ';
   const answer: string = await new Promise((resolve) => {
     rl.question(`${question}${suffix}`, resolve);
@@ -100,7 +107,11 @@ async function confirm(question: string, autoYes: boolean, defaultValue = false)
   return ['y', 'yes'].includes(normalised);
 }
 
-async function runCommand(command: string, args: string[], options: RunCommandOptions = {}): Promise<void> {
+async function runCommand(
+  command: string,
+  args: string[],
+  options: RunCommandOptions = {}
+): Promise<void> {
   return new Promise((resolve, reject) => {
     const child = spawn(command, args, {
       stdio: 'inherit',
@@ -135,22 +146,39 @@ function resolveBool(arg: string | boolean | undefined): boolean | undefined {
 async function main() {
   const args = parseArgs();
 
-  const configPath = (args.config as string) ?? path.join('deployment-config', 'deployer.sample.json');
+  const configPath =
+    (args.config as string) ??
+    path.join('deployment-config', 'deployer.sample.json');
   if (!(await fileExists(configPath))) {
     throw new Error(`Configuration file not found: ${configPath}`);
   }
 
   const config = await readJson<DeployConfig>(configPath);
   const network = (args.network as string) ?? config.network ?? 'sepolia';
-  const envFile = (args.env as string) ?? path.join('deployment-config', 'oneclick.env');
+  const envFile =
+    (args.env as string) ?? path.join('deployment-config', 'oneclick.env');
   const composeFile = (args.composeFile as string) ?? 'compose.yaml';
-  const deploymentOutput = (args['deployment-output'] as string) ?? config.output ?? path.join('deployment-config', 'latest-deployment.json');
-  if (path.resolve(deploymentOutput) !== path.resolve(config.output ?? path.join('deployment-config', 'latest-deployment.json')))
-    throw new Error('Wizard deployment output must match the reviewed config output');
+  const deploymentOutput =
+    (args['deployment-output'] as string) ??
+    config.output ??
+    path.join('deployment-config', 'latest-deployment.json');
+  if (
+    path.resolve(deploymentOutput) !==
+    path.resolve(
+      config.output ?? path.join('deployment-config', 'latest-deployment.json')
+    )
+  )
+    throw new Error(
+      'Wizard deployment output must match the reviewed config output'
+    );
 
-  const autoYes = Boolean(resolveBool(args.yes) ?? resolveBool(args['non-interactive']));
+  const autoYes = Boolean(
+    resolveBool(args.yes) ?? resolveBool(args['non-interactive'])
+  );
   const forceCompose = Boolean(resolveBool(args.compose));
-  const skipCompose = Boolean(resolveBool(args['no-compose']) ?? resolveBool(args['skip-compose']));
+  const skipCompose = Boolean(
+    resolveBool(args['no-compose']) ?? resolveBool(args['skip-compose'])
+  );
 
   console.log('🔧 One-click deployment wizard');
   console.log(`  • Config file:       ${path.resolve(configPath)}`);
@@ -164,17 +192,34 @@ async function main() {
 
   await ensureEnvFile(envFile);
 
-  const proceed = await confirm('Deploy contracts with npm run deploy:oneclick?', autoYes);
+  const proceed = await confirm(
+    'Deploy contracts with npm run deploy:oneclick?',
+    autoYes
+  );
   if (!proceed) {
     console.log('🚫 Deployment aborted by user');
     return;
   }
 
-  await deployOneClick({ config: path.resolve(configPath), network, yes: true }, async (snapshot) => {
-    const envArgs = ['run', 'deploy:env', '--', '--input', snapshot, '--template', path.resolve(envFile), '--output', path.resolve(envFile), '--force'];
-    console.log('📝 Updating environment file with deployed addresses');
-    await runCommand('npm', envArgs);
-  });
+  await deployOneClick(
+    { config: path.resolve(configPath), network, yes: true },
+    async (snapshot) => {
+      const envArgs = [
+        'run',
+        'deploy:env',
+        '--',
+        '--input',
+        snapshot,
+        '--template',
+        path.resolve(envFile),
+        '--output',
+        path.resolve(envFile),
+        '--force',
+      ];
+      console.log('📝 Updating environment file with deployed addresses');
+      await runCommand('npm', envArgs);
+    }
+  );
 
   let startCompose = forceCompose;
   if (!forceCompose && !skipCompose) {
@@ -182,7 +227,15 @@ async function main() {
   }
 
   if (startCompose) {
-    const composeArgs = ['compose', '--env-file', path.resolve(envFile), '-f', path.resolve(composeFile), 'up', '--build'];
+    const composeArgs = [
+      'compose',
+      '--env-file',
+      path.resolve(envFile),
+      '-f',
+      path.resolve(composeFile),
+      'up',
+      '--build',
+    ];
     const detach = resolveBool(args.detach);
     if (detach !== false) {
       composeArgs.push('--detach');
@@ -191,15 +244,27 @@ async function main() {
       await runCommand('docker', composeArgs);
       console.log('🚀 Docker Compose stack is starting...');
     } catch (error) {
-      console.error('⚠️  Failed to launch Docker Compose stack:', error instanceof Error ? error.message : error);
+      console.error(
+        '⚠️  Failed to launch Docker Compose stack:',
+        error instanceof Error ? error.message : error
+      );
       console.error('You can launch it manually with:');
-      console.error(`  docker compose --env-file ${path.resolve(envFile)} -f ${path.resolve(composeFile)} up --build${(resolveBool(args.detach) !== false) ? ' --detach' : ''}`);
+      console.error(
+        `  docker compose --env-file ${path.resolve(envFile)} -f ${path.resolve(
+          composeFile
+        )} up --build${resolveBool(args.detach) !== false ? ' --detach' : ''}`
+      );
+      throw error;
     }
   } else {
-    console.log('ℹ️  Skipping Docker Compose launch. Start manually when ready.');
+    console.log(
+      'ℹ️  Skipping Docker Compose launch. Start manually when ready.'
+    );
   }
 
-  console.log('✅ One-click workflow completed. Review the generated artefacts before unpausing the protocol.');
+  console.log(
+    '✅ One-click workflow completed. Review the generated artefacts before unpausing the protocol.'
+  );
 }
 
 main().catch((error) => {

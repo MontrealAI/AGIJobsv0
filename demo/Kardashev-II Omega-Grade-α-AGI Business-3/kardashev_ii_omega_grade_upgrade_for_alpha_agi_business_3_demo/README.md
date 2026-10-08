@@ -16,7 +16,7 @@
 ```mermaid
 flowchart LR
     Operators((Mission Owners)) --> demo_Kardashev_II_Omega_Grade___AGI_Business_3_kardashev_ii_omega_grade_upgrade_for_alpha_agi_business_3_demo[[Demo → Kardashev II Omega Grade α AGI Business 3 → Kardashev II Omega Grade Upgrade FOR Alpha AGI Business 3 Demo]]
-    demo_Kardashev_II_Omega_Grade___AGI_Business_3_kardashev_ii_omega_grade_upgrade_for_alpha_agi_business_3_demo --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    demo_Kardashev_II_Omega_Grade___AGI_Business_3_kardashev_ii_omega_grade_upgrade_for_alpha_agi_business_3_demo --> Core[["AGI Jobs v0 (v2) Core Intelligence"]]
     Core --> Observability[[Unified CI / CD & Observability]]
     Core --> Governance[[Owner Control Plane]]
 ```

@@ -13,13 +13,23 @@ interface AddressBook {
   systemPause?: string;
   feePool?: string;
   identityRegistry?: string;
+  certificateNFT?: string;
+  taxPolicy?: string;
 }
 
 type Args = Record<string, string | boolean>;
 
 const ADDRESS_FIELDS: Record<string, keyof AddressBook> = {
   AGIALPHA_TOKEN: 'token',
+  NEXT_PUBLIC_AGIALPHA_ADDRESS: 'token',
+  NEXT_PUBLIC_STAKING_TOKEN_ADDRESS: 'token',
+  NEXT_PUBLIC_JOB_REGISTRY_ADDRESS: 'jobRegistry',
+  NEXT_PUBLIC_VALIDATION_MODULE_ADDRESS: 'validationModule',
+  NEXT_PUBLIC_STAKE_MANAGER_ADDRESS: 'stakeManager',
+  NEXT_PUBLIC_TAX_POLICY_ADDRESS: 'taxPolicy',
+  NEXT_PUBLIC_CERTIFICATE_NFT_ADDRESS: 'certificateNFT',
   JOB_REGISTRY: 'jobRegistry',
+  JOB_REGISTRY_ADDRESS: 'jobRegistry',
   STAKE_MANAGER_ADDRESS: 'stakeManager',
   VALIDATION_MODULE_ADDRESS: 'validationModule',
   DISPUTE_MODULE_ADDRESS: 'disputeModule',
@@ -63,7 +73,11 @@ async function loadAddressBook(candidatePaths: string[]): Promise<AddressBook> {
       }
     }
   }
-  throw new Error(`Unable to locate deployment address book. Checked: ${candidatePaths.join(', ')}`);
+  throw new Error(
+    `Unable to locate deployment address book. Checked: ${candidatePaths.join(
+      ', '
+    )}`
+  );
 }
 
 function normaliseAddress(value: string | undefined): string | undefined {
@@ -90,7 +104,7 @@ async function ensureWritable(filePath: string, force: boolean) {
     await fs.access(filePath);
     if (!force) {
       throw new Error(
-        `Output file ${filePath} already exists. Pass --force to overwrite or remove the file before generating a new one.`,
+        `Output file ${filePath} already exists. Pass --force to overwrite or remove the file before generating a new one.`
       );
     }
   } catch (error) {
@@ -103,11 +117,14 @@ async function ensureWritable(filePath: string, force: boolean) {
 async function main() {
   const args = parseArgs();
   const inputCandidates = [
-    (args.input as string) ?? path.join('deployment-config', 'latest-deployment.json'),
+    (args.input as string) ??
+      path.join('deployment-config', 'latest-deployment.json'),
     path.join('docs', 'deployment-addresses.json'),
   ];
-  const templatePath = (args.template as string) ?? path.join('deployment-config', 'oneclick.env');
-  const outputPath = (args.output as string) ?? path.join('deployment-config', 'oneclick.env');
+  const templatePath =
+    (args.template as string) ?? path.join('deployment-config', 'oneclick.env');
+  const outputPath =
+    (args.output as string) ?? path.join('deployment-config', 'oneclick.env');
   const force = Boolean(args.force);
 
   const addresses = await loadAddressBook(inputCandidates);
@@ -137,7 +154,9 @@ async function main() {
   await fs.writeFile(path.resolve(outputPath), template, 'utf8');
 
   if (updates.length === 0) {
-    console.warn('⚠️  No address updates were applied; check that your deployment artefacts contain contract addresses.');
+    console.warn(
+      '⚠️  No address updates were applied; check that your deployment artefacts contain contract addresses.'
+    );
   } else {
     console.log('✅ Updated environment file with the following addresses:');
     for (const update of updates) {

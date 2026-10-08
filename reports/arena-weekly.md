@@ -13,12 +13,11 @@ Self-play governance (SPG) metrics derived from arena activity.
 
 ```mermaid
 %%{init: { 'theme': 'neutral' }}%%
-line
-    title Validator Honesty
-    xAxis Week
-    yAxis Honesty
-    series Honesty [0.955]
-    labels [2025-W01]
+xychart-beta
+    title "Validator Honesty"
+    x-axis "Week" ["2025-W01"]
+    y-axis "Honesty" 0 --> 1
+    bar [0.955]
 ```
 
 ## Latest Elo Deltas

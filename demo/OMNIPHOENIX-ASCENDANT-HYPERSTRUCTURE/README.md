@@ -16,7 +16,7 @@
 ```mermaid
 flowchart LR
     Operators((Mission Owners)) --> demo_OMNIPHOENIX_ASCENDANT_HYPERSTRUCTURE[[Demo → Omniphoenix Ascendant Hyperstructure]]
-    demo_OMNIPHOENIX_ASCENDANT_HYPERSTRUCTURE --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    demo_OMNIPHOENIX_ASCENDANT_HYPERSTRUCTURE --> Core[["AGI Jobs v0 (v2) Core Intelligence"]]
     Core --> Observability[[Unified CI / CD & Observability]]
     Core --> Governance[[Owner Control Plane]]
 ```

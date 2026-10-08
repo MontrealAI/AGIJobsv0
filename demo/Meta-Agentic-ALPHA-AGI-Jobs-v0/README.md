@@ -102,7 +102,7 @@ Choose a new output path. This runs each CLI in its own subprocess within a disp
 ```mermaid
 flowchart LR
     Operators((Mission Owners)) --> demo_Meta_Agentic_ALPHA_AGI_Jobs_v0[[Demo → Meta Agentic ALPHA AGI Jobs v0]]
-    demo_Meta_Agentic_ALPHA_AGI_Jobs_v0 --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    demo_Meta_Agentic_ALPHA_AGI_Jobs_v0 --> Core[["AGI Jobs v0 (v2) Core Intelligence"]]
     Core --> Observability[[Unified CI / CD & Observability]]
     Core --> Governance[[Owner Control Plane]]
 ```

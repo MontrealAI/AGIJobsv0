@@ -19,20 +19,20 @@
 
 ```mermaid
 flowchart TD
-    A[Confirm repo hygiene\n`git status --short`] --> B{Any diffs?}
-    B -- Yes --> B1[Commit/stash before production\n(avoids stale artifacts)] --> A
-    B -- No --> C[Run CI locally\n`npm ci && npm run lint && npm test`]
+    A["Confirm repo hygiene\n#96;git status --short#96;"] --> B{Any diffs?}
+    B -- Yes --> B1["Commit/stash before production\n(avoids stale artifacts)"] --> A
+    B -- No --> C["Run CI locally\n#96;npm ci && npm run lint && npm test#96;"]
     C --> D{All green?}
     D -- No --> D1[Fix failures until local CI passes\nCI v2 must be green]
-    D -- Yes --> E[Deployment checklist\n`env DOTENV_PATH=.env npm run deploy:checklist`]
+    D -- Yes --> E["Deployment checklist\n#96;env DOTENV_PATH=.env npm run deploy:checklist#96;"]
     E --> F{Checklist ✅?}
     F -- No --> F1[Resolve RPC / config / ENS issues\nthen rerun]
-    F -- Yes --> G[Guided mainnet deploy\n`npm run migrate:wizard -- --network mainnet --execute`]
-    G --> H[Archive emitted addresses\n`deployment-reports/mainnet-*`]
-    H --> I[Owner health report\n`npm run owner:health`]
-    I --> J[Owner control plan\n`npm run owner:plan`]
+    F -- Yes --> G["Guided mainnet deploy\n#96;npm run migrate:wizard -- --network mainnet --execute#96;"]
+    G --> H["Archive emitted addresses\n#96;deployment-reports/mainnet-*#96;"]
+    H --> I["Owner health report\n#96;npm run owner:health#96;"]
+    I --> J["Owner control plan\n#96;npm run owner:plan#96;"]
     J --> K[Etherscan verification & controls\nuse ABI + owner setters]
-    K --> L[Ongoing monitoring\n`npm run owner:pulse` / `npm run owner:dashboard`]
+    K --> L["Ongoing monitoring\n#96;npm run owner:pulse#96; / #96;npm run owner:dashboard#96;"]
 ```
 
 Keep this graph open during the process. Each node maps to a concrete command or Etherscan

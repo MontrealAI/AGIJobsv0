@@ -106,7 +106,7 @@ boundaries within minutes.
 
 ### Step 2 – Deployment & Wiring
 
-1. Deploy using `npx hardhat run scripts/v2/deployDefaults.ts --network <network> --governance <address>`.
+1. Set the reviewed governance address in your deployment JSON, then deploy using `DEPLOY_DEFAULTS_CONFIG=deployment-config/reviewed.json DEPLOY_DEFAULTS_OUTPUT=reports/deployment.json npx hardhat run scripts/v2/deployDefaults.ts --network <network>`. Hardhat does not forward `--governance`; see the [current deployment guide](deployment-v2-agialpha.md).
 2. Immediately run `npm run wire:verify` to validate inter-module addresses.
 3. If wiring fails, call `npm run owner:surface -- --network <network>` and inspect the offending module.
 

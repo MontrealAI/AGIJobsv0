@@ -156,6 +156,7 @@ describe('Deployer', function () {
     expect(await stakeC.jobRegistry()).to.equal(registry);
     expect(await stakeC.disputeModule()).to.equal(dispute);
     expect(await stakeC.validationModule()).to.equal(validation);
+    expect(await stakeC.feePool()).to.equal(feePool);
     expect(await registryC.stakeManager()).to.equal(stake);
     expect(await registryC.validationModule()).to.equal(validation);
     expect(await registryC.reputationEngine()).to.equal(reputation);
@@ -164,6 +165,8 @@ describe('Deployer', function () {
     expect(await registryC.feePool()).to.equal(feePool);
     expect(await stakeC.validatorSlashRewardPct()).to.equal(0);
     expect(await registryC.taxPolicy()).to.equal(taxPolicy);
+    expect(await disputeC.stakeManager()).to.equal(stake);
+    expect(await disputeC.taxPolicy()).to.equal(taxPolicy);
     await registryC.connect(governance).acknowledgeTaxPolicy();
     expect(await taxPolicyC.hasAcknowledged(governance.address)).to.equal(true);
     expect(await registryC.identityRegistry()).to.equal(identityRegistryAddr);
@@ -174,6 +177,7 @@ describe('Deployer', function () {
     expect(await reputationC.callers(registry)).to.equal(true);
     expect(await reputationC.callers(validation)).to.equal(true);
     expect(await certificateC.jobRegistry()).to.equal(registry);
+    expect(await certificateC.stakeManager()).to.equal(stake);
     expect(await incentivesC.stakeManager()).to.equal(stake);
     expect(await incentivesC.platformRegistry()).to.equal(platformRegistry);
     expect(await incentivesC.jobRouter()).to.equal(router);
@@ -243,5 +247,21 @@ describe('Deployer', function () {
     const registryC = JobRegistry.attach(registry);
     expect(taxPolicy).to.equal(ethers.ZeroAddress);
     expect(await registryC.taxPolicy()).to.equal(ethers.ZeroAddress);
+    const disputeC = await ethers.getContractAt(
+      'contracts/v2/modules/DisputeModule.sol:DisputeModule',
+      decoded[4]
+    );
+    const stakeC = await ethers.getContractAt(
+      'contracts/v2/StakeManager.sol:StakeManager',
+      decoded[0]
+    );
+    const certificateC = await ethers.getContractAt(
+      'contracts/v2/CertificateNFT.sol:CertificateNFT',
+      decoded[5]
+    );
+    expect(await disputeC.taxPolicy()).to.equal(ethers.ZeroAddress);
+    expect(await disputeC.stakeManager()).to.equal(decoded[0]);
+    expect(await stakeC.feePool()).to.equal(decoded[9]);
+    expect(await certificateC.stakeManager()).to.equal(decoded[0]);
   });
 });

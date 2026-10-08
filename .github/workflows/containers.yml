@@ -3,14 +3,11 @@ name: containers
 on:
   pull_request:
   push:
-    branches:
-      - main
-    tags:
-      - 'v*.*.*'
+    branches: [main]
+    tags: ['v*.*.*']
 
 permissions:
   contents: read
-  actions: write
   packages: write
   id-token: write
 
@@ -19,51 +16,45 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
-    name: build (${{ matrix.image.name }})
-    runs-on: ubuntu-24.04
-    timeout-minutes: 60
+  build-native:
+    name: native (${{ matrix.image.name }}, ${{ matrix.arch.name }})
+    runs-on: ${{ matrix.arch.runner }}
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
+        arch:
+          - name: amd64
+            runner: ubuntu-24.04
+          - name: arm64
+            runner: ubuntu-24.04-arm
         image:
           - name: node-runner
             context: .
             file: deploy/docker/orchestrator.Dockerfile
-            tag: node-runner:latest
           - name: validator-runner
             context: .
             file: deploy/docker/attester.Dockerfile
-            tag: validator-runner:latest
           - name: gateway
             context: .
             file: agent-gateway/Dockerfile
-            tag: gateway:latest
           - name: webapp
             context: .
             file: apps/enterprise-portal/Dockerfile
-            tag: webapp:latest
           - name: owner-console
             context: apps/console
             file: apps/console/Dockerfile
-            tag: owner-console:latest
     steps:
       - name: Checkout
         uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
-        with:
-          fetch-depth: 0
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@29109295f81e9208d7d86ff1c6c12d2833863392
-
+      # Native ARM avoids QEMU illegal-instruction failures during npm install.
+      # https://docs.github.com/en/actions/reference/runners/github-hosted-runners
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435
-        with:
-          driver-opts: network=host
 
       - name: Normalise image namespace
-        run: |
-          echo "REPO_OWNER_LC=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_ENV"
+        run: echo "REPO_OWNER_LC=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_ENV"
 
       - name: Log in to GHCR
         if: github.event_name != 'pull_request'
@@ -73,93 +64,199 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build (PR, single-arch, load)
-        if: github.event_name == 'pull_request'
-        id: build-pr
+      - name: Build native image for execution
         uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83
         with:
           context: ${{ matrix.image.context }}
           file: ${{ matrix.image.file }}
-          platforms: linux/amd64
+          platforms: linux/${{ matrix.arch.name }}
           load: true
           push: false
           provenance: false
           sbom: false
-          outputs: type=docker
-          tags: ghcr.io/${{ env.REPO_OWNER_LC }}/${{ matrix.image.tag }}
+          tags: agi-smoke:${{ matrix.image.name }}
+          cache-from: type=gha,scope=${{ matrix.image.name }}-${{ matrix.arch.name }}
+          cache-to: type=gha,scope=${{ matrix.image.name }}-${{ matrix.arch.name }},mode=max
 
-      - name: Build candidate (main/tags, multi-arch, attestations)
-        if: github.event_name != 'pull_request'
-        id: build-push
-        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83
+      - name: Set up gateway fixture toolchain
+        if: matrix.image.name == 'gateway'
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
-          context: ${{ matrix.image.context }}
-          file: ${{ matrix.image.file }}
-          platforms: linux/amd64,linux/arm64
-          load: false
-          push: true
-          provenance: mode=max
-          sbom: true
-          tags: ghcr.io/${{ env.REPO_OWNER_LC }}/${{ matrix.image.name }}:candidate-${{ github.sha }}
+          node-version-file: '.nvmrc'
+          cache: npm
 
-      - name: Trivy scan (OS packages, every built architecture)
+      - name: Compile isolated gateway contract fixtures
+        if: matrix.image.name == 'gateway'
         env:
-          IMAGE_NAME: ghcr.io/${{ env.REPO_OWNER_LC }}/${{ matrix.image.name }}
-          IMAGE_DIGEST: ${{ steps.build-push.outputs.digest }}
+          CYPRESS_INSTALL_BINARY: '0'
         run: |
-          IMAGE_REF="${IMAGE_NAME}:latest"
-          PLATFORMS="linux/amd64"
-          if [ -n "$IMAGE_DIGEST" ]; then
-            IMAGE_REF="${IMAGE_NAME}@${IMAGE_DIGEST}"
-            PLATFORMS="linux/amd64 linux/arm64"
-          fi
-          for PLATFORM in $PLATFORMS; do
-            docker run --rm \
-              -v /var/run/docker.sock:/var/run/docker.sock \
-              -v "$PWD/.trivyignore":/etc/trivy/.trivyignore:ro \
-              aquasec/trivy:0.75.0 \
-              image --scanners vuln --pkg-types os --platform "$PLATFORM" \
-              --ignorefile /etc/trivy/.trivyignore \
-              --severity HIGH,CRITICAL --exit-code 1 "$IMAGE_REF"
-          done
+          ./scripts/ci/npm-ci.sh
+          npx hardhat compile
+
+      - name: Boot and runtime packaging smoke
+        run: bash scripts/docker/container-smoke.sh '${{ matrix.image.name }}' 'agi-smoke:${{ matrix.image.name }}'
+
+      - name: Trivy scan (OS packages, native architecture)
+        run: |
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            -v "$PWD/.trivyignore":/etc/trivy/.trivyignore:ro \
+            aquasec/trivy:0.75.0 \
+            image --scanners vuln --pkg-types os --platform linux/${{ matrix.arch.name }} \
+            --ignorefile /etc/trivy/.trivyignore \
+            --severity HIGH,CRITICAL --exit-code 1 'agi-smoke:${{ matrix.image.name }}'
 
       - name: Trivy scan (application packages, advisory)
         continue-on-error: true
-        env:
-          IMAGE_NAME: ghcr.io/${{ env.REPO_OWNER_LC }}/${{ matrix.image.name }}
-          IMAGE_DIGEST: ${{ steps.build-push.outputs.digest }}
         run: |
-          IMAGE_REF="${IMAGE_NAME}:latest"
-          if [ -n "$IMAGE_DIGEST" ]; then
-            IMAGE_REF="${IMAGE_NAME}@${IMAGE_DIGEST}"
-          fi
           docker run --rm \
             -v /var/run/docker.sock:/var/run/docker.sock \
             -v "$PWD/.trivyignore":/etc/trivy/.trivyignore:ro \
             aquasec/trivy:0.75.0 \
             image --scanners vuln --pkg-types library \
             --ignorefile /etc/trivy/.trivyignore \
-            --severity HIGH,CRITICAL --exit-code 0 "$IMAGE_REF"
+            --severity HIGH,CRITICAL --exit-code 0 'agi-smoke:${{ matrix.image.name }}'
 
-      - name: Promote scanned candidate to latest
-        if: github.ref == 'refs/heads/main'
+      - name: Publish attested native candidate
+        if: github.event_name != 'pull_request'
+        id: publish
+        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83
+        with:
+          context: ${{ matrix.image.context }}
+          file: ${{ matrix.image.file }}
+          platforms: linux/${{ matrix.arch.name }}
+          push: true
+          provenance: mode=max
+          sbom: true
+          tags: ghcr.io/${{ env.REPO_OWNER_LC }}/${{ matrix.image.name }}:candidate-${{ github.sha }}-${{ matrix.arch.name }}
+          cache-from: type=gha,scope=${{ matrix.image.name }}-${{ matrix.arch.name }}
+
+      - name: Verify published candidate is the executed image
+        if: github.event_name != 'pull_request'
         env:
-          IMAGE_NAME: ghcr.io/${{ env.REPO_OWNER_LC }}/${{ matrix.image.name }}
-          IMAGE_DIGEST: ${{ steps.build-push.outputs.digest }}
+          IMAGE_DIGEST: ${{ steps.publish.outputs.digest }}
+        run: |
+          IMAGE="ghcr.io/${{ env.REPO_OWNER_LC }}/${{ matrix.image.name }}@$IMAGE_DIGEST"
+          docker pull "$IMAGE"
+          test "$(docker image inspect --format '{{.Id}}' "$IMAGE")" = "$(docker image inspect --format '{{.Id}}' 'agi-smoke:${{ matrix.image.name }}')"
+
+      - name: Record native digest
+        if: github.event_name != 'pull_request'
+        env:
+          IMAGE_DIGEST: ${{ steps.publish.outputs.digest }}
         run: |
           test -n "$IMAGE_DIGEST"
-          docker buildx imagetools create \
-            --tag "${IMAGE_NAME}:latest" "${IMAGE_NAME}@${IMAGE_DIGEST}"
+          mkdir -p digests
+          printf '%s\n' "$IMAGE_DIGEST" > 'digests/${{ matrix.arch.name }}.txt'
 
-      - name: Upload container digest
+      - name: Preserve native digest
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ${{ matrix.image.name }}-${{ matrix.arch.name }}-digest
+          path: digests/${{ matrix.arch.name }}.txt
+          if-no-files-found: error
+
+  # Keep the existing required check names. Each fails unless BOTH native
+  # architectures completed their builds, runtime probes and security scans.
+  build:
+    name: build (${{ matrix.image }})
+    needs: [build-native, inventory, auxiliary]
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        image: [node-runner, validator-runner, gateway, webapp, owner-console]
+    steps:
+      - name: Require every native build
+        env:
+          NATIVE_RESULT: ${{ needs.build-native.result }}
+          INVENTORY_RESULT: ${{ needs.inventory.result }}
+          AUXILIARY_RESULT: ${{ needs.auxiliary.result }}
+        run: |
+          test "$NATIVE_RESULT" = success
+          test "$INVENTORY_RESULT" = success
+          test "$AUXILIARY_RESULT" = success
+
+      - name: Set up Docker Buildx
+        if: github.event_name != 'pull_request'
+        uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435
+
+      - name: Log in to GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download native digests
+        if: github.event_name != 'pull_request'
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          pattern: ${{ matrix.image }}-*-digest
+          path: digests
+          merge-multiple: true
+
+      - name: Assemble verified multi-architecture candidate
         if: github.event_name != 'pull_request'
         run: |
-          echo "${{ steps.build-push.outputs.digest }}" > digest.txt
-        shell: bash
+          OWNER=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')
+          IMAGE="ghcr.io/${OWNER}/${{ matrix.image }}"
+          AMD64=$(cat digests/amd64.txt)
+          ARM64=$(cat digests/arm64.txt)
+          [[ "$AMD64" =~ ^sha256:[a-f0-9]{64}$ ]]
+          [[ "$ARM64" =~ ^sha256:[a-f0-9]{64}$ ]]
+          docker buildx imagetools create --tag "$IMAGE:candidate-${{ github.sha }}" "$IMAGE@$AMD64" "$IMAGE@$ARM64"
+          docker buildx imagetools inspect "$IMAGE:candidate-${{ github.sha }}" --raw > manifest.json
+          python3 -c 'import json; m=json.load(open("manifest.json")); assert {("linux","amd64"),("linux","arm64")} <= {(x.get("platform",{}).get("os"),x.get("platform",{}).get("architecture")) for x in m["manifests"]}'
+          docker buildx imagetools inspect "$IMAGE:candidate-${{ github.sha }}" --format '{{json .Manifest}}' | python3 -c 'import json,sys; print(json.load(sys.stdin)["digest"])' > digest.txt
+          if [ '${{ github.ref }}' = refs/heads/main ]; then
+            docker buildx imagetools create --tag "$IMAGE:latest" "$IMAGE@$(cat digest.txt)"
+          fi
 
       - name: Publish digest artefact
         if: github.event_name != 'pull_request'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: ${{ matrix.image.name }}-digest
+          name: ${{ matrix.image }}-digest
           path: digest.txt
+          if-no-files-found: error
+
+  inventory:
+    runs-on: ubuntu-24.04
+    outputs:
+      auxiliary: ${{ steps.catalog.outputs.auxiliary }}
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+      - name: Validate every tracked container and Compose build context
+        id: catalog
+        run: |
+          python3 -m pip install PyYAML==6.0.3
+          python3 scripts/docker/validate-catalog.py --compose
+
+  auxiliary:
+    name: auxiliary (${{ matrix.image.name }})
+    needs: inventory
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        image: ${{ fromJSON(needs.inventory.outputs.auxiliary) }}
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+      - uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435
+      - name: Build auxiliary or historical demo image
+        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83
+        with:
+          context: ${{ matrix.image.context }}
+          file: ${{ matrix.image.file }}
+          load: true
+          push: false
+          tags: agi-smoke:${{ matrix.image.name }}
+      - name: Verify packaged runtime
+        run: bash scripts/docker/container-smoke.sh '${{ matrix.image.name }}' 'agi-smoke:${{ matrix.image.name }}'

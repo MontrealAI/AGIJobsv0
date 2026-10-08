@@ -56,7 +56,7 @@ flowchart TD
     verifyCompanion[ci:verify-companion-contexts]:::cmd --> companionManifest[ci/required-companion-contexts.json]:::guard
     summaryNeeds[ci:verify-summary-needs]:::cmd --> workflow
     statusWall[ci:status-wall --require-success --include-companion]:::cmd --> ghApi[GitHub Actions API]:::api
-    statusWall --> wallArtefact[reports/ci/status.{md,json}]:::artefact
+    statusWall --> wallArtefact["reports/ci/status.{md,json}"]:::artefact
     enforce[ci:enforce-branch-protection]:::cmd --> ghApi
 ```
 
@@ -171,15 +171,15 @@ flowchart TD
     classDef companion fill:#f97316,stroke:#9a3412,color:#fff7ed,stroke-width:1px;
     classDef checks fill:#22c55e,stroke:#166534,color:#ecfdf5,stroke-width:1px;
 
-    ciSummary[ci (v2) / CI summary]:::main --> checksWall[GitHub checks wall]:::checks
+    ciSummary["ci (v2) / CI summary"]:::main --> checksWall[GitHub checks wall]:::checks
     staticAnalysis[static-analysis / Slither static analysis]:::companion --> checksWall
     fuzzSuite[fuzz / forge-fuzz]:::companion --> checksWall
     webappCi[webapp / webapp-ci]:::companion --> checksWall
-    containersNode[containers / build (node-runner)]:::companion --> checksWall
-    containersValidator[containers / build (validator-runner)]:::companion --> checksWall
-    containersGateway[containers / build (gateway)]:::companion --> checksWall
-    containersWebapp[containers / build (webapp)]:::companion --> checksWall
-    containersOwner[containers / build (owner-console)]:::companion --> checksWall
+    containersNode["containers / build (node-runner)"]:::companion --> checksWall
+    containersValidator["containers / build (validator-runner)"]:::companion --> checksWall
+    containersGateway["containers / build (gateway)"]:::companion --> checksWall
+    containersWebapp["containers / build (webapp)"]:::companion --> checksWall
+    containersOwner["containers / build (owner-console)"]:::companion --> checksWall
     e2eSuite[e2e / orchestrator-e2e]:::companion --> checksWall
 ```
 
@@ -212,10 +212,10 @@ flowchart TD
 
     manifests[ci/required-contexts.json + ci/required-companion-contexts.json]:::manifest --> sync[ci:sync-contexts]:::cli
     sync --> verify[ci:verify-contexts / ci:verify-companion-contexts]:::cli
-    verify --> guardJob[ci (v2) / Branch protection guard]:::guard
+    verify --> guardJob["ci (v2) / Branch protection guard"]:::guard
     guardJob --> githubRule[GitHub branch protection rule]:::guard
-    githubRule --> summaryJob[ci (v2) / CI summary]:::guard
-    summaryJob --> artefacts[reports/ci/status.{md,json}]:::reports
+    githubRule --> summaryJob["ci (v2) / CI summary"]:::guard
+    summaryJob --> artefacts["reports/ci/status.{md,json}"]:::reports
     artefacts --> oncall[On-call + release captains]:::cli
     artefacts --> dashboards[External dashboards]:::reports
 ```
@@ -246,7 +246,7 @@ flowchart TD
     classDef cli fill:#6366f1,stroke:#312e81,color:#eef2ff,stroke-width:1px;
     classDef downstream fill:#22c55e,stroke:#166534,color:#ecfdf5,stroke-width:1px;
 
-    summaryJob[ci (v2) / CI summary]:::cli --> jsonFeed[reports/ci/status.json]:::artefact
+    summaryJob["ci (v2) / CI summary"]:::cli --> jsonFeed[reports/ci/status.json]:::artefact
     summaryJob --> markdownFeed[reports/ci/status.md]:::artefact
     jsonFeed --> grafana[Grafana / Looker / Metabase decks]:::downstream
     markdownFeed --> briefings[Daily briefings & PR templates]:::downstream

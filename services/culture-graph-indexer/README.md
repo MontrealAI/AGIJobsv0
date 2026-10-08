@@ -16,7 +16,7 @@
 ```mermaid
 flowchart LR
     Operators((Mission Owners)) --> services_culture_graph_indexer[[Services → Culture Graph Indexer]]
-    services_culture_graph_indexer --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    services_culture_graph_indexer --> Core[["AGI Jobs v0 (v2) Core Intelligence"]]
     Core --> Observability[[Unified CI / CD & Observability]]
     Core --> Governance[[Owner Control Plane]]
 ```

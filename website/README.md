@@ -13,16 +13,25 @@ Browser QA opens both featured demos using the keyboard, checks return navigatio
 Use the root `.nvmrc` toolchain and locked dependencies:
 
 ```bash
-npm ci
+nvm install
+nvm use
+CYPRESS_INSTALL_BINARY=0 npm ci
+(cd demo/CULTURE-v0 && CYPRESS_INSTALL_BINARY=0 corepack pnpm install --frozen-lockfile)
 npm run site:build
 npm run site:test
 npx playwright install --with-deps chromium
+npm run site:mermaid
 npm run site:qa
+node scripts/pages/culture-qa.mjs
 ```
 
-The static output is `build/pages/`. Browser screenshots, accessibility results and diagram checks are written to `reports/pages/`. `PLAYWRIGHT_CHROMIUM_EXECUTABLE` can select an already-installed Chromium executable. The browser test starts and stops its own loopback server, serves the real `/AGIJobsv0/` project prefix, and does not call external services.
+Run this sequence from the repository root after installing nvm. The parenthesized command installs CULTURE Studio's independent, locked workspace without changing your working directory. Its dependency installation is required even when you only want to build the public website. The Cypress binary is not needed for this Pages build; Playwright supplies the browser used by its checks.
+
+The static output is `build/pages/`. Browser screenshots, accessibility results and diagram checks are written to `reports/pages/`. `PLAYWRIGHT_CHROMIUM_EXECUTABLE` can select an already-installed Chromium executable. The browser test starts and stops its own loopback server, serves the real `/AGIJobsv0/` project prefix, and does not call external services. The final command exercises the complete CULTURE Studio journey; CI additionally runs the specialized workbench checks listed in `.github/workflows/pages.yml`.
 
 The build uses the root lockfile's Marked, DOMPurify and JSDOM to render and sanitize documentation, and bundles the locked Mermaid runtime locally with esbuild. No CDN scripts, remote fonts, analytics, wallet connections or provider credentials are needed by the showcase. The browser simulation uses repository scenario names and committee settings; it omits actual escrow, timing, disputes and fees, and its downloadable receipt explicitly records simulation status and zero blockchain transactions.
+
+`site:mermaid` separately parses and renders every Mermaid block in tracked Markdown, every standalone `.mmd` file, and every nonempty static `.mermaid` element in tracked HTML. It uses the locked renderer directly, without the website's compatibility adapters, and rejects invalid SVG geometry and external requests. `reports/pages/mermaid-source-validation.json` records the renderer version, source hashes and any failures. Server template targets are listed separately and require rendered-endpoint checks; dynamically populated diagrams are exercised by their workbench browser checks. Pages CI runs this source gate before building and retains its evidence on failure; Markdown, Mermaid and HTML edits anywhere in the repository trigger it.
 
 ## Content and preservation
 

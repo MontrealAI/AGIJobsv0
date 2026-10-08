@@ -318,24 +318,24 @@ async function main() {
     .join('\n');
 
   const mindmapNodes = [
-    `  Control Deck`,
-    `    "${mermaidSafe(controlRows[0].status)}"`,
-    `    "${mermaidSafe(controlRows[1].status)}"`,
-    `    "${mermaidSafe(controlRows[2].status)}"`,
-    `    "${mermaidSafe(controlRows[3].status)}"`,
-    `    "${mermaidSafe(controlRows[4].status)}"`,
-    `    "${mermaidSafe(controlRows[5].status)}"`,
-    `  Verification`,
-    `    "${mermaidSafe(
+    `    Control Deck`,
+    `      "${mermaidSafe(controlRows[0].status)}"`,
+    `      "${mermaidSafe(controlRows[1].status)}"`,
+    `      "${mermaidSafe(controlRows[2].status)}"`,
+    `      "${mermaidSafe(controlRows[3].status)}"`,
+    `      "${mermaidSafe(controlRows[4].status)}"`,
+    `      "${mermaidSafe(controlRows[5].status)}"`,
+    `    Verification`,
+    `      "${mermaidSafe(
       badge(checksPassed === checks, 'Matrix aligned', 'Pending alignment')
     )}"`,
-    `    "${mermaidSafe(`Check pass rate ${confidence}`)}"`,
-    `    "${mermaidSafe(`Verdict ${verdict}`)}"`,
-    `  Capital Formation`,
-    `    "${mermaidSafe(`${supply.toString()} SeedShares live`)}"`,
-    `    "${mermaidSafe(formatEther(reserve))} ETH reserve"`,
-    `    "${mermaidSafe(`Funding cap ${formatEther(fundingCap)} ETH`)}"`,
-    `    "${mermaidSafe(`Max supply ${maxSupply.toString()} SeedShares`)}"`,
+    `      "${mermaidSafe(`Check pass rate ${confidence}`)}"`,
+    `      "${mermaidSafe(`Verdict ${verdict}`)}"`,
+    `    Capital Formation`,
+    `      "${mermaidSafe(`${supply.toString()} SeedShares live`)}"`,
+    `      "${mermaidSafe(formatEther(reserve))} ETH reserve"`,
+    `      "${mermaidSafe(`Funding cap ${formatEther(fundingCap)} ETH`)}"`,
+    `      "${mermaidSafe(`Max supply ${maxSupply.toString()} SeedShares`)}"`,
   ].join('\n');
 
   const mindmap = `mindmap\n  root((α-AGI MARK\\nRisk Lattice))\n${mindmapNodes}`;

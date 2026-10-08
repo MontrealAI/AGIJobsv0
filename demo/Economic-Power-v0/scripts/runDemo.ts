@@ -3042,10 +3042,10 @@ function generateGlobalExpansionMermaid(phases: GlobalExpansionPhase[]): string 
   const lines = phases
     .map((phase, index) => {
       const status = phase.readiness >= 0.9 ? 'done' : phase.readiness >= 0.75 ? 'active' : 'crit';
-      return `    ${phase.phase.replace(/[^a-zA-Z0-9]/g, '_')} :${status}, phase_${index}, ${phase.horizonHours}h`;
+      return `    ${phase.phase.replace(/[^a-zA-Z0-9]/g, '_')} :${status}, phase_${index}, 0, ${phase.horizonHours}h`;
     })
     .join('\n');
-  return `gantt\n    title Global Expansion Cadence\n    dateFormat  X\n${lines}`;
+  return `gantt\n    title Global Expansion Cadence — normalized horizons (starts unspecified)\n    dateFormat  X\n    axisFormat %s\n    accDescr: Zero is a normalized comparison origin only. Operational start times are unspecified. Axis values are seconds; phase horizons retain their stated hours.\n${lines}`;
 }
 
 function generateOwnerAutopilotMermaid(autopilot: OwnerAutopilot): string {
@@ -4432,14 +4432,14 @@ function generateMermaidFlow(
 function generateMermaidTimeline(summary: Summary): string {
   const lines = summary.assignments
     .map((assignment) => {
-      const start = assignment.startHour.toFixed(1);
-      const end = assignment.endHour.toFixed(1);
-      return `    section ${assignment.jobName}\n      ${assignment.agentName} :active, ${assignment.jobId}, ${start}h, ${(
+      // Mermaid dateFormat X expects seconds, not an hour-duration token.
+      const start = Math.round(Number(assignment.startHour.toFixed(1)) * 3600);
+      return `    section ${assignment.jobName}\n      ${assignment.agentName} :active, ${assignment.jobId}, ${start}, ${(
         assignment.endHour - assignment.startHour
       ).toFixed(1)}h`;
     })
     .join('\n');
-  return `gantt\n    title Economic Power Execution Timeline\n    dateFormat X\n${lines}`;
+  return `gantt\n    title Economic Power Execution Timeline\n    dateFormat X\n    axisFormat %s\n    accDescr: Axis values are elapsed seconds from the start; durations retain their stated hours.\n${lines}`;
 }
 
 function synthesiseSummary(

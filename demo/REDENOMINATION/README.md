@@ -130,7 +130,7 @@ The **$40 trillion/year** vision is retained as a **project planning assumption*
 ```mermaid
 flowchart LR
     Operators((Mission Owners)) --> demo_REDENOMINATION[[Demo → Redenomination]]
-    demo_REDENOMINATION --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    demo_REDENOMINATION --> Core[["AGI Jobs v0 (v2) Core Intelligence"]]
     Core --> Observability[[Unified CI / CD & Observability]]
     Core --> Governance[[Owner Control Plane]]
 ```

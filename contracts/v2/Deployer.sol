@@ -387,6 +387,8 @@ contract Deployer is Ownable {
         pool.setBurnPct(burnPct);
         committee.setDisputeModule(IDisputeModule(address(dispute)));
         certificate.setJobRegistry(address(registry));
+        certificate.setStakeManager(address(stake));
+        dispute.setStakeManager(IStakeManager(address(stake)));
         require(
             address(identity.ens()) == address(ids.ens) && address(identity.nameWrapper()) == address(ids.nameWrapper)
                 && identity.agentRootNode() == ids.agentRootNode && identity.clubRootNode() == ids.clubRootNode,
@@ -408,6 +410,7 @@ contract Deployer is Ownable {
         if (address(policy) != address(0)) {
             policy.setAcknowledger(address(registry), true);
             registry.setTaxPolicy(ITaxPolicy(address(policy)));
+            dispute.setTaxPolicy(ITaxPolicy(address(policy)));
         }
 
         registry.setIdentityRegistry(IIdentityRegistry(address(identity)));
@@ -422,6 +425,7 @@ contract Deployer is Ownable {
         validation.setReputationEngine(repInterface);
         stake.setModules(address(registry), address(dispute));
         stake.setValidationModule(address(validation));
+        stake.setFeePool(IFeePool(address(pool)));
         incentives.setModules(
             IStakeManager(address(stake)), IPlatformRegistryFull(address(pRegistry)), IJobRouter(address(router))
         );

@@ -48,7 +48,7 @@ The original plan allocated 1.173 billion of 1.25 billion scenario units. Region
 ```mermaid
 flowchart LR
     Operators((Mission Owners)) --> demo_zenith_sapience_initiative_supra_sovereign_hypernova_governance[[Demo → Zenith Sapience Initiative Supra Sovereign Hypernova Governance]]
-    demo_zenith_sapience_initiative_supra_sovereign_hypernova_governance --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    demo_zenith_sapience_initiative_supra_sovereign_hypernova_governance --> Core[["AGI Jobs v0 (v2) Core Intelligence"]]
     Core --> Observability[[Unified CI / CD & Observability]]
     Core --> Governance[[Owner Control Plane]]
 ```

@@ -33,7 +33,7 @@ The CLI reports synthetic task outcomes and simulated economics. These are not l
 ```mermaid
 flowchart LR
     Operators((Mission Owners)) --> demo_Tiny_Recursive_Model_v0[[Demo → Tiny Recursive Model v0]]
-    demo_Tiny_Recursive_Model_v0 --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    demo_Tiny_Recursive_Model_v0 --> Core[["AGI Jobs v0 (v2) Core Intelligence"]]
     Core --> Observability[[Unified CI / CD & Observability]]
     Core --> Governance[[Owner Control Plane]]
 ```

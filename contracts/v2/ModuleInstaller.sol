@@ -23,6 +23,11 @@ interface IOwnable {
     function transferOwnership(address newOwner) external;
 }
 
+interface IOwnable2StepInstaller {
+    function pendingOwner() external view returns (address);
+    function acceptOwnership() external;
+}
+
 error AlreadyInitialized();
 
 /// @title ModuleInstaller
@@ -30,8 +35,10 @@ error AlreadyInitialized();
 /// @dev Core contracts now accept zero addresses in their constructors so
 ///      owners may either supply dependencies at deployment or call
 ///      {initialize} later. Modules must transfer ownership to this installer
-///      prior to calling {initialize}. After wiring, ownership can be reclaimed
-///      via the modules' own `transferOwnership` functions.
+///      prior to calling {initialize}. The helper returns single-step ownership
+///      to its owner; IdentityRegistry and TaxPolicy require final acceptance.
+///      Callers must also prepare the module-specific dependencies and caller
+///      permissions documented in docs/module-installer.md.
 contract ModuleInstaller is Ownable {
     bool public initialized;
 
@@ -90,6 +97,20 @@ contract ModuleInstaller is Ownable {
     ) external onlyOwner {
         if (initialized) revert AlreadyInitialized();
         initialized = true;
+
+        // A nominated owner must accept before invoking protected setters.
+        // This must happen on-chain; RPC account impersonation is not a
+        // deployment mechanism and is unavailable on public networks.
+        IOwnable2StepInstaller identityOwnership = IOwnable2StepInstaller(address(identityRegistry));
+        if (identityOwnership.pendingOwner() == address(this)) {
+            identityOwnership.acceptOwnership();
+        }
+        if (address(taxPolicy) != address(0)) {
+            IOwnable2StepInstaller taxOwnership = IOwnable2StepInstaller(address(taxPolicy));
+            if (taxOwnership.pendingOwner() == address(this)) {
+                taxOwnership.acceptOwnership();
+            }
+        }
 
         jobRegistry.setModules(
             validationModule,
@@ -152,8 +173,11 @@ contract ModuleInstaller is Ownable {
     }
 
     /// @notice Replace the validation module on an existing registry.
-    /// @dev Migrates configuration from the old module and restores governance
-    ///      to the owner after wiring.
+    /// @dev Low-level legacy helper: copies dependency references through
+    ///      optional calls and returns governance. It does not migrate rounds,
+    ///      commitments, validator settings, or stake locks. Use a reviewed,
+    ///      paused and drained procedure with preconfigured dependencies and
+    ///      verify all ownership/wiring postconditions; see the migration script.
     /// @param jobRegistry Target registry whose validation module is updated.
     /// @param newValidation Address of the newly deployed validation module.
     /// @param ackModules Optional additional acknowledger modules.

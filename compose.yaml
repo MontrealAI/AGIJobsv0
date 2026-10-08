@@ -1,11 +1,13 @@
-version: '3.9'
+# Local deployment stack. Run with --env-file deployment-config/oneclick.env.
+# Mock settlement adapters are available only with --profile rehearsal.
 
 x-default-env: &default-env
   env_file:
     - deployment-config/oneclick.env
-  environment:
+  environment: &default-environment
     RPC_URL: ${RPC_URL-http://anvil:8545}
     CHAIN_ID: ${CHAIN_ID-31337}
+    JOB_REGISTRY_ADDRESS: ${JOB_REGISTRY_ADDRESS-${JOB_REGISTRY-0x0000000000000000000000000000000000000000}}
     JOB_REGISTRY: ${JOB_REGISTRY-0x0000000000000000000000000000000000000000}
     STAKE_MANAGER_ADDRESS: ${STAKE_MANAGER_ADDRESS-0x0000000000000000000000000000000000000000}
     VALIDATION_MODULE_ADDRESS: ${VALIDATION_MODULE_ADDRESS-0x0000000000000000000000000000000000000000}
@@ -26,10 +28,11 @@ x-default-env: &default-env
 
 services:
   anvil:
-    image: ghcr.io/foundry-rs/foundry:latest
-    command: ["anvil", "--host", "0.0.0.0", "--port", "8545", "--chain-id", "31337", "--block-time", "2"]
+    image: ghcr.io/foundry-rs/foundry:v1.4.4@sha256:9584dfbb0e2e9bda80332b66a7cebed635fc9786638871df6b7594e39e678578
+    entrypoint: ["anvil"]
+    command: ["--host", "0.0.0.0", "--port", "8545", "--chain-id", "31337", "--block-time", "2"]
     ports:
-      - "8545:8545"
+      - "127.0.0.1:8545:8545"
     networks:
       - agi-jobs
 
@@ -43,7 +46,7 @@ services:
     volumes:
       - orchestrator_state:/data
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     networks:
       - agi-jobs
 
@@ -51,18 +54,20 @@ services:
     build:
       context: .
       dockerfile: deploy/docker/orchestrator.Dockerfile
+    command: [node, apps/orchestrator/onebox-server.js]
     <<: *default-env
     depends_on:
       - meta-api
     environment:
-      <<: *default-env.environment
-      ONEBOX_PORT: ${ONEBOX_PORT-8080}
-      ONEBOX_CORS_ALLOW: ${ONEBOX_CORS_ALLOW-https://localhost:3000,https://localhost:3001}
+      <<: *default-environment
+      ONEBOX_HOST: 0.0.0.0
+      ONEBOX_PORT: 8080
+      ONEBOX_CORS_ALLOW: ${ONEBOX_CORS_ALLOW-http://localhost:3000,http://localhost:3001}
     volumes:
       - orchestrator_state:/data
       - orchestrator_logs:/srv/app/logs
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
     networks:
       - agi-jobs
 
@@ -74,14 +79,18 @@ services:
     depends_on:
       - orchestrator
     environment:
-      <<: *default-env.environment
-      GATEWAY_API_KEY: ${GATEWAY_API_KEY-change-me}
+      <<: *default-environment
+      PORT: 8090
+      KEYSTORE_URL: ${KEYSTORE_URL-}
+      KEYSTORE_TOKEN: ${KEYSTORE_TOKEN-}
+      GATEWAY_API_KEY: ${GATEWAY_API_KEY-}
+      VALIDATION_STORAGE_DIR: /app/agent-gateway/dist/storage/validation
       TELEMETRY_FLUSH_INTERVAL_MS: ${TELEMETRY_FLUSH_INTERVAL_MS-60000}
     volumes:
-      - gateway_storage:/app/storage
-      - gateway_logs:/app/logs
+      - gateway_storage:/app/agent-gateway/dist/storage
+      - gateway_logs:/app/agent-gateway/dist/logs
     ports:
-      - "8090:8090"
+      - "127.0.0.1:8090:8090"
     networks:
       - agi-jobs
 
@@ -93,43 +102,46 @@ services:
     depends_on:
       - orchestrator
     environment:
-      <<: *default-env.environment
+      <<: *default-environment
       ALPHA_AGENT_URL: ${ALPHA_AGENT_URL-http://orchestrator:8080/onebox}
     ports:
-      - "50052:50052"
+      - "127.0.0.1:50052:50052"
     networks:
       - agi-jobs
 
   bundler:
+    profiles: [rehearsal]
     build:
       context: .
       dockerfile: deploy/docker/bundler.Dockerfile
     environment:
       PORT: 3000
     ports:
-      - "4337:3000"
+      - "127.0.0.1:4337:3000"
     networks:
       - agi-jobs
 
   paymaster-supervisor:
+    profiles: [rehearsal]
     build:
       context: .
       dockerfile: deploy/docker/paymaster-supervisor.Dockerfile
     environment:
       PORT: 4000
     ports:
-      - "4000:4000"
+      - "127.0.0.1:4000:4000"
     networks:
       - agi-jobs
 
   attester:
+    profiles: [rehearsal]
     build:
       context: .
       dockerfile: deploy/docker/attester.Dockerfile
     environment:
       PORT: 7000
     ports:
-      - "7000:7000"
+      - "127.0.0.1:7000:7000"
     networks:
       - agi-jobs
 
@@ -139,12 +151,12 @@ services:
       dockerfile: services/notifications/Dockerfile
     <<: *default-env
     environment:
-      <<: *default-env.environment
+      <<: *default-environment
       NOTIFICATIONS_STORAGE_DIR: /data
     volumes:
       - notification_logs:/data
     ports:
-      - "8075:8075"
+      - "127.0.0.1:8075:8075"
     networks:
       - agi-jobs
 
@@ -152,14 +164,23 @@ services:
     build:
       context: .
       dockerfile: apps/validator-ui/Dockerfile
+      args:
+        NEXT_PUBLIC_RPC_URL: ${NEXT_PUBLIC_RPC_URL-http://localhost:8545}
+        NEXT_PUBLIC_GATEWAY_URL: ${NEXT_PUBLIC_GATEWAY_URL-http://localhost:8090}
+        NEXT_PUBLIC_AGIALPHA_ADDRESS: ${NEXT_PUBLIC_AGIALPHA_ADDRESS-${AGIALPHA_TOKEN-0x0000000000000000000000000000000000000000}}
+        NEXT_PUBLIC_AGIALPHA_DECIMALS: ${NEXT_PUBLIC_AGIALPHA_DECIMALS-18}
+        NEXT_PUBLIC_JOB_REGISTRY_ADDRESS: ${NEXT_PUBLIC_JOB_REGISTRY_ADDRESS-${JOB_REGISTRY_ADDRESS-${JOB_REGISTRY-0x0000000000000000000000000000000000000000}}}
+        NEXT_PUBLIC_VALIDATION_MODULE_ADDRESS: ${NEXT_PUBLIC_VALIDATION_MODULE_ADDRESS-${VALIDATION_MODULE_ADDRESS-0x0000000000000000000000000000000000000000}}
+        NEXT_PUBLIC_ATTESTATION_ADDRESS: ${NEXT_PUBLIC_ATTESTATION_ADDRESS-0x0000000000000000000000000000000000000000}
     env_file:
       - deployment-config/oneclick.env
     environment:
+      GATEWAY_URL: ${GATEWAY_URL-http://agent-gateway:8090}
       NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL-http://localhost:8000}
     depends_on:
       - meta-api
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     networks:
       - agi-jobs
 
@@ -167,6 +188,19 @@ services:
     build:
       context: .
       dockerfile: apps/enterprise-portal/Dockerfile
+      args:
+        NEXT_PUBLIC_CHAIN_ID: ${NEXT_PUBLIC_CHAIN_ID-${CHAIN_ID-31337}}
+        NEXT_PUBLIC_RPC_URL: ${NEXT_PUBLIC_RPC_URL-http://localhost:8545}
+        NEXT_PUBLIC_JOB_REGISTRY_ADDRESS: ${NEXT_PUBLIC_JOB_REGISTRY_ADDRESS-${JOB_REGISTRY_ADDRESS-${JOB_REGISTRY-0x0000000000000000000000000000000000000000}}}
+        NEXT_PUBLIC_TAX_POLICY_ADDRESS: ${NEXT_PUBLIC_TAX_POLICY_ADDRESS-0x0000000000000000000000000000000000000000}
+        NEXT_PUBLIC_CERTIFICATE_NFT_ADDRESS: ${NEXT_PUBLIC_CERTIFICATE_NFT_ADDRESS-0x0000000000000000000000000000000000000000}
+        NEXT_PUBLIC_VALIDATION_MODULE_ADDRESS: ${NEXT_PUBLIC_VALIDATION_MODULE_ADDRESS-${VALIDATION_MODULE_ADDRESS-0x0000000000000000000000000000000000000000}}
+        NEXT_PUBLIC_STAKE_MANAGER_ADDRESS: ${NEXT_PUBLIC_STAKE_MANAGER_ADDRESS-${STAKE_MANAGER_ADDRESS-0x0000000000000000000000000000000000000000}}
+        NEXT_PUBLIC_STAKING_TOKEN_ADDRESS: ${NEXT_PUBLIC_STAKING_TOKEN_ADDRESS-${AGIALPHA_TOKEN-0x0000000000000000000000000000000000000000}}
+        NEXT_PUBLIC_STAKING_TOKEN_SYMBOL: ${NEXT_PUBLIC_STAKING_TOKEN_SYMBOL-AGIALPHA}
+        NEXT_PUBLIC_SUBGRAPH_URL: ${NEXT_PUBLIC_SUBGRAPH_URL-}
+        NEXT_PUBLIC_SPECIFICATION_ORIGINS: ${NEXT_PUBLIC_SPECIFICATION_ORIGINS-}
+        NEXT_PUBLIC_SPECIFICATION_GATEWAY: ${NEXT_PUBLIC_SPECIFICATION_GATEWAY-https://ipfs.io/ipfs}
     env_file:
       - deployment-config/oneclick.env
     environment:
@@ -174,7 +208,7 @@ services:
     depends_on:
       - orchestrator
     ports:
-      - "3001:3000"
+      - "127.0.0.1:3001:3000"
     networks:
       - agi-jobs
 

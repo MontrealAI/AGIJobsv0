@@ -95,7 +95,7 @@ flowchart LR
     classDef job fill:#111827,color:#fef3c7,stroke:#fbbf24;
     classDef gate fill:#0f172a,color:#bae6fd,stroke:#38bdf8;
 
-    GitHub[GitHub Actions `ci (v2)`]:::job --> Toolchain[make verify]:::job
+    GitHub["GitHub Actions #96;ci (v2)#96;"]:::job --> Toolchain[make verify]:::job
     Toolchain --> Orchestration[make mission]:::job
     Orchestration --> Receipts[make report]:::job
     Receipts --> Publish[npm run release:manifest:summary]:::job

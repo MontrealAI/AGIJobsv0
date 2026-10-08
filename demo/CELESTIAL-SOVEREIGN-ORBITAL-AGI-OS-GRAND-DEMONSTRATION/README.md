@@ -20,7 +20,7 @@ This directory contains design documentation and preserved architecture diagrams
 ```mermaid
 flowchart LR
     Operators((Mission Owners)) --> demo_CELESTIAL_SOVEREIGN_ORBITAL_AGI_OS_GRAND_DEMONSTRATION[[Demo → Celestial Sovereign Orbital AGI OS Grand Demonstration]]
-    demo_CELESTIAL_SOVEREIGN_ORBITAL_AGI_OS_GRAND_DEMONSTRATION --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    demo_CELESTIAL_SOVEREIGN_ORBITAL_AGI_OS_GRAND_DEMONSTRATION --> Core[["AGI Jobs v0 (v2) Core Intelligence"]]
     Core --> Observability[[Unified CI / CD & Observability]]
     Core --> Governance[[Owner Control Plane]]
 ```

@@ -16,7 +16,7 @@
 ```mermaid
 flowchart LR
     Operators((Mission Owners)) --> demo_zenith_sapience_initiative_global_governance[[Demo → Zenith Sapience Initiative Global Governance]]
-    demo_zenith_sapience_initiative_global_governance --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    demo_zenith_sapience_initiative_global_governance --> Core[["AGI Jobs v0 (v2) Core Intelligence"]]
     Core --> Observability[[Unified CI / CD & Observability]]
     Core --> Governance[[Owner Control Plane]]
 ```

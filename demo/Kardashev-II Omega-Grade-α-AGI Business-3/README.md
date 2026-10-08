@@ -23,7 +23,7 @@ This Python demo models job orchestration, resource accounting and governance. T
 ```mermaid
 flowchart LR
     Operators((Mission Owners)) --> demo_Kardashev_II_Omega_Grade___AGI_Business_3[[Demo → Kardashev II Omega Grade α AGI Business 3]]
-    demo_Kardashev_II_Omega_Grade___AGI_Business_3 --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    demo_Kardashev_II_Omega_Grade___AGI_Business_3 --> Core[["AGI Jobs v0 (v2) Core Intelligence"]]
     Core --> Observability[[Unified CI / CD & Observability]]
     Core --> Governance[[Owner Control Plane]]
 ```

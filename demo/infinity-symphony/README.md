@@ -16,7 +16,7 @@
 ```mermaid
 flowchart LR
     Operators((Mission Owners)) --> demo_infinity_symphony[[Demo → Infinity Symphony]]
-    demo_infinity_symphony --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    demo_infinity_symphony --> Core[["AGI Jobs v0 (v2) Core Intelligence"]]
     Core --> Observability[[Unified CI / CD & Observability]]
     Core --> Governance[[Owner Control Plane]]
 ```

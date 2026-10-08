@@ -16,7 +16,7 @@
 ```mermaid
 flowchart LR
     Operators((Mission Owners)) --> demo_astral_omnidominion_operating_system[[Demo → Astral Omnidominion Operating System]]
-    demo_astral_omnidominion_operating_system --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    demo_astral_omnidominion_operating_system --> Core[["AGI Jobs v0 (v2) Core Intelligence"]]
     Core --> Observability[[Unified CI / CD & Observability]]
     Core --> Governance[[Owner Control Plane]]
 ```

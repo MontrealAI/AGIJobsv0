@@ -19,7 +19,7 @@ support so operators can preview calldata before broadcast.
 
 ```mermaid
 flowchart LR
-    Intent[Intents JSON] --> Validate[ICSSchema] --> Router[route()] --> Tools
+    Intent[Intents JSON] --> Validate[ICSSchema] --> Router["route()"] --> Tools
     Tools --> DryRun[Dry run transcript]
     Tools --> Execute[Signed transaction payload]
     DryRun --> UI[Owner console]

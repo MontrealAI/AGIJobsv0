@@ -231,7 +231,7 @@
     OwnerSignal[Owner Supremacy 100%]
     QuantumSignal[Quantum Assurance 76%]
     CoherenceSignal[Coherence 76%]
-    QuantumAlign[Quantum Alignment 222.15k kJ Δ (≤ 0.18 kJ)]
+    QuantumAlign["Quantum Alignment 222.15k kJ Δ (≤ 0.18 kJ)"]
     EnergyFloor[Energy Margin 222.15k kJ]
     Stackelberg --> Confidence
     EnergyFloor --> ThermoSignal
@@ -282,8 +282,8 @@
   Landauer((Landauer 3.816e-14 kJ))
   Gibbs((Gibbs 222.15k kJ))
   Landauer -->|ΔF 222.15k kJ| Gibbs
-  Landauer -->|⟨e^{-βW}⟩ log -38.414| Sampled[Jarzynski sample]
-  Gibbs -->|e^{-βΔF} log -37.912| Theory[Theoretical bound]</pre>
+  Landauer -->|"⟨e^{-βW}⟩ log -38.414"| Sampled[Jarzynski sample]
+  Gibbs -->|"e^{-βΔF} log -37.912"| Theory[Theoretical bound]</pre>
         </div>
       </section>
 
@@ -331,27 +331,32 @@
 
       <section class="card">
         <h2>Antifragility Tensor</h2>
-        <pre class="mermaid">mindmap
+        <pre class="mermaid">flowchart TD
   root((Antifragility Tensor))
-    "Quadratic curvature":::core
-      "2a=9.20e-1":::core
-    "Sigma Scan":::core
-        "σ=0.00":::sigma --> "Welfare -3.97":::welfare
-        "σ=0.17":::sigma --> "Welfare 9.47":::welfare
-        "σ=0.33":::sigma --> "Welfare 22.15":::welfare
-        "σ=0.49":::sigma --> "Welfare 34.85":::welfare
-        "σ=0.65":::sigma --> "Welfare 47.58":::welfare
-    "Quantum Lattice":::core
-      "Coherence 76%":::sigma
-      "Charge Δ 3.00e-2 (tol 7.00e-2)":::welfare
-      "Alignment Δ 222.15k kJ":::sigma
-    "Owner Actions":::core
-      "Mint Mirror 55.00%"
-      "Residual Risk 0.013"
-      "Supremacy 100.0%":::core
+  root --> af_0["Quadratic curvature"]:::core
+  af_0 --> af_1["2a=9.20e-1"]:::core
+  root --> af_2["Sigma Scan"]:::core
+  af_2 --> af_3["σ=0.00"]:::sigma
+  af_3 --> af_4["Welfare -3.97"]:::welfare
+  af_2 --> af_5["σ=0.17"]:::sigma
+  af_5 --> af_6["Welfare 9.47"]:::welfare
+  af_2 --> af_7["σ=0.33"]:::sigma
+  af_7 --> af_8["Welfare 22.15"]:::welfare
+  af_2 --> af_9["σ=0.49"]:::sigma
+  af_9 --> af_10["Welfare 34.85"]:::welfare
+  af_2 --> af_11["σ=0.65"]:::sigma
+  af_11 --> af_12["Welfare 47.58"]:::welfare
+  root --> af_13["Quantum Lattice"]:::core
+  af_13 --> af_14["Coherence 76%"]:::sigma
+  af_13 --> af_15["Charge Δ 3.00e-2 (tol 7.00e-2)"]:::welfare
+  af_13 --> af_16["Alignment Δ 222.15k kJ"]:::sigma
+  root --> af_17["Owner Actions"]:::core
+  af_17 --> af_18["Mint Mirror 55.00%"]
+  af_17 --> af_19["Residual Risk 0.013"]
+  af_17 --> af_20["Supremacy 100.0%"]:::core
   classDef core fill:#111827,stroke:#38bdf8,stroke-width:2px,color:#f9fafb,font-weight:600;
-  classDef sigma fill:#1f2937,stroke:#f97316,stroke-width:2px,color:#fef3c7;font-weight:600;
-  classDef welfare fill:#0f172a,stroke:#22d3ee,stroke-width:2px,color:#ecfeff;font-weight:600;</pre>
+  classDef sigma fill:#1f2937,stroke:#f97316,stroke-width:2px,color:#fef3c7,font-weight:600;
+  classDef welfare fill:#0f172a,stroke:#22d3ee,stroke-width:2px,color:#ecfeff,font-weight:600;</pre>
         <div id="antifragility-chart">Rendering antifragility curve…</div>
         <table>
           <thead><tr><th>σ</th><th>Welfare</th><th>Average payoff</th><th>Divergence</th></tr></thead>

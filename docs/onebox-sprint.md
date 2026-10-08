@@ -74,18 +74,18 @@
 ```mermaid
 sequenceDiagram
   actor U as User (One‑Box)
-  participant BOX as apps/onebox (Next.js)
+  participant OneBox as apps/onebox (Next.js)
   participant ORCH as services/alpha-bridge (AGI‑Alpha meta‑agent)
   participant CHAIN as services/chain-adapter (ethers/4337)
   participant ETH as Ethereum (AGIJobs v2)
-  U->>BOX: "I want to hire someone to label 500 images"
-  BOX->>ORCH: Intent {goal, context}
-  ORCH-->>BOX: Plan [{step: createJob, args:{reward, uri}}, ...]
-  BOX->>CHAIN: Exec(createJob) [simulate → present summary → execute]
+  U->>OneBox: "I want to hire someone to label 500 images"
+  OneBox->>ORCH: Intent {goal, context}
+  ORCH-->>OneBox: Plan [{step: createJob, args:{reward, uri}}, ...]
+  OneBox->>CHAIN: Exec(createJob) [simulate → present summary → execute]
   CHAIN->>ETH: JobRegistry.createJob(...)
   ETH-->>CHAIN: JobCreated(jobId)
-  CHAIN-->>BOX: Success + event payload
-  BOX-->>U: "Job #123 created; escrowed 50 $AGIALPHA; I’ll monitor validators"
+  CHAIN-->>OneBox: Success + event payload
+  OneBox-->>U: "Job #123 created; escrowed 50 $AGIALPHA; I’ll monitor validators"
 ```
 
 **Notes**

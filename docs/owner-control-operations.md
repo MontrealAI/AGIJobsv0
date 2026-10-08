@@ -138,7 +138,7 @@ flowchart TD
     I -->|Option A| R1[Pause Contracts]
     I -->|Option B| R2[Rotate Keys]
     I -->|Option C| R3[Rollback Config]
-    R1 --> C1[Call pause() on JobRegistry via Safe]
+    R1 --> C1["Call pause() on JobRegistry via Safe"]
     R2 --> C2[Update signer list]
     R3 --> C3[Reapply previous config snapshot]
     C1 --> E[Postmortem]

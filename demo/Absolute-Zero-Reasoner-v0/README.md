@@ -16,7 +16,7 @@
 ```mermaid
 flowchart LR
     Operators((Mission Owners)) --> demo_Absolute_Zero_Reasoner_v0[[Demo → Absolute Zero Reasoner v0]]
-    demo_Absolute_Zero_Reasoner_v0 --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    demo_Absolute_Zero_Reasoner_v0 --> Core[["AGI Jobs v0 (v2) Core Intelligence"]]
     Core --> Observability[[Unified CI / CD & Observability]]
     Core --> Governance[[Owner Control Plane]]
 ```

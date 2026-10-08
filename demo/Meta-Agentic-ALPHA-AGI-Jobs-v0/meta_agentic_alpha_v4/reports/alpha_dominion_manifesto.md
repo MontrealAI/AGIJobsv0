@@ -25,7 +25,7 @@ flowchart LR
   Planner --> Strategise
   Planner --> Govern
   Planner --> Execute
-  Execute -->|On-chain Dispatch| AGIJobs[(AGI Jobs v0 (v2) Protocol)]
+  Execute -->|On-chain Dispatch| AGIJobs[("AGI Jobs v0 (v2) Protocol")]
   AGIJobs --> Telemetry
   Telemetry --> Owner
   GuardianMesh --> Govern

@@ -157,16 +157,19 @@
               </p>
             </div>
             <div class="col-lg-6">
-              <div class="mermaid theme-dark">
-                graph TD Operator["Operator invokes make demo-hgm"] -->
-                Launcher{Guided launcher} Launcher -->|validates|
-                PythonTool[Python 3.10+] Launcher -->|exports| EnvVars[[HGM_*
-                env vars]] Launcher -->|executes| DemoCLI[run_demo.py] DemoCLI
-                --> Thermostat[Thermostat feedback] DemoCLI -->
-                Sentinel[Sentinel guard-rails] DemoCLI --> CMP[CMP lineage
-                engine] CMP --> Reports[ROI & lineage artefacts] Reports -->
-                UI[Grandiose UI :: index.html] UI --> Operator
-              </div>
+              <pre class="mermaid theme-dark">
+                graph TD
+                Operator["Operator invokes make demo-hgm"] --> Launcher{Guided launcher}
+                Launcher -->|validates| PythonTool[Python 3.10+]
+                Launcher -->|exports| EnvVars[[HGM_* env vars]]
+                Launcher -->|executes| DemoCLI[run_demo.py]
+                DemoCLI --> Thermostat[Thermostat feedback]
+                DemoCLI --> Sentinel[Sentinel guard-rails]
+                DemoCLI --> CMP[CMP lineage engine]
+                CMP --> Reports[ROI & lineage artefacts]
+                Reports --> UI[Grandiose UI :: index.html]
+                UI --> Operator
+              </pre>
             </div>
           </div>
         </div>
@@ -259,9 +262,10 @@
                 Ready when you are. Load a timeline to illuminate the lineage.
               </div>
               <div class="row g-3" id="observatory-cards"></div>
-              <div class="mermaid theme-dark mt-4" id="observatory-mermaid">
-                graph TD placeholder([Awaiting timeline upload])
-              </div>
+              <pre class="mermaid theme-dark mt-4" id="observatory-mermaid">
+                graph TD
+                placeholder([Awaiting timeline upload])
+              </pre>
               <div class="table-responsive mt-4">
                 <table
                   class="table table-dark table-striped align-middle"

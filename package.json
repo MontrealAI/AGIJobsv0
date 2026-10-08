@@ -482,6 +482,7 @@
     "demo:atlas-conductor:local": "bash demo/atlas-conductor/bin/atlas-conductor-local.sh",
     "site:build": "node scripts/pages/build.mjs",
     "site:test": "node --test test/pages/*.test.mjs",
+    "site:mermaid": "node scripts/pages/mermaid-qa.mjs",
     "site:qa": "node scripts/pages/browser-qa.mjs",
     "demo:computer-work": "node demo/One-Box/computer-work/run.cjs",
     "demo:onebox:test": "node --test demo/One-Box/test/*.test.cjs apps/onebox-static/test/*.test.mjs",

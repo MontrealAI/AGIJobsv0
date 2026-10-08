@@ -6,8 +6,12 @@ ENV PYTHONUNBUFFERED=1 \
 WORKDIR /app
 
 COPY requirements.txt ./
-RUN pip install --upgrade pip \
-    && pip install -r requirements.txt
+# Some supported architectures need to compile transitive Python extensions.
+RUN apt-get update && apt-get install -y --no-install-recommends build-essential \
+    && pip install --upgrade pip \
+    && pip install -r requirements.txt \
+    && apt-get purge -y --auto-remove build-essential \
+    && rm -rf /var/lib/apt/lists/*
 
 COPY . ./
 

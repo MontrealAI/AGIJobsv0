@@ -45,8 +45,8 @@
 ```mermaid
 flowchart TD
   Landauer[Landauer 5.340e-15 kJ] -->|ΔF 69.80k kJ| Gibbs[Gibbs 69.80k kJ]
-  Landauer -->|Sampled work| Jarzynski[⟨e^{-βW}⟩ log -42.069]
-  Gibbs -->|Theory| Theoretical[e^{-βΔF} log -41.338]
+  Landauer -->|Sampled work| Jarzynski["⟨e^{-βW}⟩ log -42.069"]
+  Gibbs -->|Theory| Theoretical["e^{-βΔF} log -41.338"]
 ```
 
 ## 4. Hamiltonian Control Plane
@@ -124,7 +124,7 @@ flowchart LR
     OwnerSignal[Owner Supremacy 100%]
     QuantumSignal[Quantum Assurance 82%]
     CoherenceSignal[Coherence 82%]
-    QuantumAlign[Quantum Alignment 69.80k kJ Δ (≤ 450.00 kJ)]
+    QuantumAlign["Quantum Alignment 69.80k kJ Δ (≤ 450.00 kJ)"]
     EnergyFloor[Energy Margin 69.80k kJ]
     Stackelberg --> Confidence
     EnergyFloor --> ThermoSignal
@@ -216,26 +216,30 @@ flowchart LR
 | 0.30 | 6.59 | 1.00 | 7.73e-2 |
 
 ```mermaid
-mindmap
+flowchart TD
   root((Antifragility Tensor))
-    "Quadratic curvature":::core
-      "2a=1.59e+1":::core
-    "Sigma Scan":::core
-        "σ=0.00":::sigma --> "Welfare -3.73":::welfare
-        "σ=0.10":::sigma --> "Welfare -0.45":::welfare
-        "σ=0.20":::sigma --> "Welfare 2.99":::welfare
-        "σ=0.30":::sigma --> "Welfare 6.59":::welfare
-    "Quantum Lattice":::core
-      "Coherence 82%":::sigma
-      "Charge Δ 7.00e-5 (tol 1.20e-4)":::welfare
-      "Alignment Δ 69.80k kJ":::sigma
-    "Owner Actions":::core
-      "Mint Mirror 65.00%"
-      "Residual Risk 0.214"
-      "Supremacy 100.0%":::core
+  root --> af_0["Quadratic curvature"]:::core
+  af_0 --> af_1["2a=1.59e+1"]:::core
+  root --> af_2["Sigma Scan"]:::core
+  af_2 --> af_3["σ=0.00"]:::sigma
+  af_3 --> af_4["Welfare -3.73"]:::welfare
+  af_2 --> af_5["σ=0.10"]:::sigma
+  af_5 --> af_6["Welfare -0.45"]:::welfare
+  af_2 --> af_7["σ=0.20"]:::sigma
+  af_7 --> af_8["Welfare 2.99"]:::welfare
+  af_2 --> af_9["σ=0.30"]:::sigma
+  af_9 --> af_10["Welfare 6.59"]:::welfare
+  root --> af_11["Quantum Lattice"]:::core
+  af_11 --> af_12["Coherence 82%"]:::sigma
+  af_11 --> af_13["Charge Δ 7.00e-5 (tol 1.20e-4)"]:::welfare
+  af_11 --> af_14["Alignment Δ 69.80k kJ"]:::sigma
+  root --> af_15["Owner Actions"]:::core
+  af_15 --> af_16["Mint Mirror 65.00%"]
+  af_15 --> af_17["Residual Risk 0.214"]
+  af_15 --> af_18["Supremacy 100.0%"]:::core
   classDef core fill:#111827,stroke:#38bdf8,stroke-width:2px,color:#f9fafb,font-weight:600;
-  classDef sigma fill:#1f2937,stroke:#f97316,stroke-width:2px,color:#fef3c7;font-weight:600;
-  classDef welfare fill:#0f172a,stroke:#22d3ee,stroke-width:2px,color:#ecfeff;font-weight:600;
+  classDef sigma fill:#1f2937,stroke:#f97316,stroke-width:2px,color:#fef3c7,font-weight:600;
+  classDef welfare fill:#0f172a,stroke:#22d3ee,stroke-width:2px,color:#ecfeff,font-weight:600;
 ```
 
 ## 8. Alpha-Field Sovereign Assurance
