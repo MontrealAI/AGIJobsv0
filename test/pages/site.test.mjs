@@ -169,6 +169,7 @@ test('every demo has a unique route and all built local page/asset links resolve
       manifest.guides +
       2 +
       (manifest.dashboardRoutes || []).length +
+      (manifest.successorRoutes || []).length +
       (manifest.archiveRoutes || []).length +
       Number(Boolean(manifest.cultureStudioRoute)) +
       Number(Boolean(manifest.oneboxRoute)) +

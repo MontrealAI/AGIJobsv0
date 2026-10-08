@@ -8,6 +8,12 @@ The public website provides the complete preserved demo collection, guided exper
 
 The [local evidence reviewer](../EVIDENCE_REVIEW.md) checks delivered artifact integrity against the original task and records an unsigned reviewer assessment. It does not authenticate provider provenance or satisfy independent acceptance by itself. The adapter rejects malformed UTF-8, invalid Unicode strings and text artifacts exceeding 128,000 UTF-8 bytes.
 
+## SUCCESSOR Ω release candidate
+
+The [SUCCESSOR Ω local guide](../successor/README.md) adds compiled missions, executable discovery, signed evaluation mechanics, durable state and portable knowledge. The public/local missions are synthetic rehearsals. The new mission-bound computer-work route and action broker refuse live dispatch; legacy admitted computer-work behavior is preserved. A local signed fixture is not I3 independent proof, and export/restoration grants no authority.
+
+Read the [acceptance matrix](../successor/acceptance-matrix.md) and [security review](../successor/security-review.md) before commissioning this subsystem. Its current local verification does not clear any existing production gate below.
+
 ## What a live deployment still needs
 
 | Gate | Evidence needed |

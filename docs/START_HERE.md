@@ -8,6 +8,7 @@ This repository contains smart contracts, agent and validator services, operator
 
 | Your goal | Open this |
 | --- | --- |
+| Rehearse SUCCESSOR Ω missions, proof boundaries and portable knowledge | [SUCCESSOR Ω guide](successor/README.md) |
 | Understand the architecture and its diagrams | [Repository overview](../README.md#architecture-panorama) |
 | Explore a working model demo without a wallet | [Tiny Recursive Model setup](../demo/Tiny-Recursive-Model-v0/README.md#run-the-headless-demo) |
 | Execute a job from creation to local settlement | [AURORA walkthrough](../demo/aurora/README.md#run-the-local-job-lifecycle) |

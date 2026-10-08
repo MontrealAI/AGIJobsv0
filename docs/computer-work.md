@@ -111,3 +111,8 @@ Screen-based work expands the kinds of jobs an agent can attempt: data entry and
 The **$40 trillion/year** figure is retained as a **planning assumption supplied by the project vision**, not a verified market estimate or expected platform revenue. Keep separate: total labor spend, digitally addressable tasks, accessible/licensed workflows, tasks meeting acceptance thresholds, actual customer adoption and marketplace revenue. No test in this repository validates that market number or establishes universal human-level work capability.
 
 The existing contracts, token rules, demonstrations and original diagrams remain in place. Extend capability by commissioning additional worker profiles and task-specific evaluators, with evidence for each new work category.
+
+
+## Sealed SUCCESSOR mission bindings
+
+SUCCESSOR work uses the unchanged schemaVersion 1 task plus a separately hashed outer binding. Protected operator admission must match both digests; stripping or changing the outer mission metadata fails before dispatch. The new route is fixture-only until remote effect enforcement is commissioned. See [compatibility and migration](successor/migration.md) for exact configuration, nonce/restart behavior and the distinction between work acceptance, settlement, proof and authority.

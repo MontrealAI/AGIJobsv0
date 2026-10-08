@@ -1,5 +1,16 @@
 # Changelog
 
+## v2.1.0-rc.1 — SUCCESSOR Ω release candidate
+
+- Add a shared mission constitution, 21 coverage templates, five-stage SEIZE record, sealed job compiler and dependency invalidation registry.
+- Run three local missions: invoice integrity, bounded symbolic WORLD discovery, and sequential evidence/resource planning. Preserve unsafe candidates and cases where a conventional alternative removes claimed advantage.
+- Add complete candidate freezes, separately runnable signed evaluation, explicit admission/authority mechanics and a fixture-only action broker with SQLite reservations, restart reconciliation and revocation.
+- Preserve schemaVersion 1 computer-work tasks while requiring separate sealed mission bindings. Link actual local-chain settlement receipts to exact work-order/report bytes without converting payment into mission proof.
+- Export and verify JSON Mission Packs; restore negative knowledge and create a successor without inherited permissions. Add actual bounded substitution of two local formation algorithms.
+- Add EN/FR SUCCESSOR workbenches while preserving existing demo routes and Mermaid sources.
+
+The first source baseline was published before implementation as `source-v2.0.0-baseline.1`. This candidate introduces no token migration, contract storage change or commissioned live SUCCESSOR authority. Independent examination, production signing, dependency remediation and remote worker commissioning remain separate gates; see [release notes](docs/successor/release-notes.md).
+
 ## Demo experience expansion — 2026-10-04
 
 - Add source-grounded walkthroughs, expected results, experiments, troubleshooting and verification links for all 76 demo/support entries.

@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "package": "@agijobs/successor-core",
+  "version": "0.1.0",
+  "license": "MIT",
+  "runtime": { "node": "22.23.3", "npm": "10.8.2" },
+  "newThirdPartyRuntimeDependencies": [],
+  "platformPrimitives": [
+    "Node crypto / Ed25519",
+    "WebCrypto / SHA-256",
+    "Node SQLite (experimental in pinned Node 22)",
+    "Node filesystem"
+  ],
+  "fixtureRights": [
+    "Authored synthetic invoice records: CC0-1.0",
+    "Authored synthetic WORLD/resource cases and implementation: MIT"
+  ],
+  "optionalServices": [
+    {
+      "name": "OpenAI Responses API",
+      "defaultEnabled": false,
+      "weightsOwned": false,
+      "conditions": "Operator admission, rights review, provider credentials and budget reservation required."
+    }
+  ],
+  "excludedFromPortableKnowledge": [
+    "credentials",
+    "protected cases",
+    "active authority",
+    "production connections"
+  ],
+  "scope": "Source-component bill of materials. Root/package lockfiles and production dependency audit remain authoritative for the wider repository."
+}

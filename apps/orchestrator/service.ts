@@ -27,6 +27,7 @@ import { getWatchdog } from './monitor';
 import { postJob } from './employer';
 import { evaluateSubmission, needsIndependentReview } from './validation';
 import { SettlementJournal } from './settlementJournal';
+import { inspectSuccessorComputerWorkAdmission } from './successorComputerWork';
 import {
   ComputerWorkOutcomeUnknown,
   requireComputerWorkAdmission,
@@ -838,7 +839,22 @@ export class MetaOrchestrator {
     if (classification.category === 'computer-work') {
       // Admission must precede selection, stake deposits and applyForJob.
       // The handler reloads operator policy before any eventual dispatch.
-      requireComputerWorkAdmission(summary.jobId, spec?.metadata?.computerWork);
+      if (
+        Object.prototype.hasOwnProperty.call(
+          spec?.metadata ?? {},
+          'successorComputerWork'
+        )
+      )
+        await inspectSuccessorComputerWorkAdmission(
+          summary.jobId,
+          spec?.metadata?.computerWork,
+          spec?.metadata?.successorComputerWork
+        );
+      else
+        requireComputerWorkAdmission(
+          summary.jobId,
+          spec?.metadata?.computerWork
+        );
     }
     auditLog('job.detected', {
       jobId: summary.jobId,

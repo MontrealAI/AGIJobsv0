@@ -1,0 +1,760 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "urn:agijobsv0:successor-domain:1.0.0",
+  "title": "SUCCESSOR Ω v1 mission, work-order and job-graph interchange",
+  "$comment": "JSON Schema validates structure only. domain.mjs and compiler.mjs additionally enforce canonical Unicode/numbers, actual calendar dates, rights, trust separation, graph closure and budgets. Schemas and self-declared records do not grant authority. Hash format is successor-canonical-json-v1; amounts are integer base-unit strings.",
+  "oneOf": [
+    {
+      "$ref": "#/definitions/mission"
+    },
+    {
+      "$ref": "#/definitions/workOrder"
+    },
+    {
+      "$ref": "#/definitions/jobGraph"
+    }
+  ],
+  "definitions": {
+    "reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,159}$"
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,159}$"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 16000
+        }
+      },
+      "required": ["id", "version", "description"]
+    },
+    "right": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "sourceId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,159}$"
+        },
+        "license": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 16000
+        },
+        "dataClass": {
+          "enum": ["synthetic", "public-licensed-nonpersonal"]
+        },
+        "permittedUses": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,159}$"
+          },
+          "minItems": 1,
+          "maxItems": 20
+        },
+        "expiresAt": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{3})?Z$"
+        }
+      },
+      "required": [
+        "sourceId",
+        "license",
+        "dataClass",
+        "permittedUses",
+        "expiresAt"
+      ]
+    },
+    "jobBudget": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "unit": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,159}$"
+        },
+        "limitBaseUnits": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,29})$"
+        },
+        "maxDurationMs": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 86400000
+        },
+        "maxRetries": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        }
+      },
+      "required": ["unit", "limitBaseUnits", "maxDurationMs", "maxRetries"]
+    },
+    "missionBudget": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "unit": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,159}$"
+        },
+        "limitBaseUnits": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,29})$"
+        },
+        "maxDurationMs": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 86400000
+        },
+        "maxRetries": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "maxJobs": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 256
+        }
+      },
+      "required": [
+        "unit",
+        "limitBaseUnits",
+        "maxDurationMs",
+        "maxRetries",
+        "maxJobs"
+      ]
+    },
+    "rollback": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "target": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,159}$"
+        },
+        "available": {
+          "type": "boolean"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 16000
+        }
+      },
+      "required": ["target", "available", "reason"]
+    },
+    "authorityCeiling": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "level": {
+          "enum": ["A0", "A1", "A2", "A3", "A4"]
+        },
+        "permittedActions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,159}$"
+          },
+          "minItems": 1,
+          "maxItems": 256
+        },
+        "prohibitedActions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,159}$"
+          },
+          "minItems": 1,
+          "maxItems": 256
+        },
+        "externalEffects": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "level",
+        "permittedActions",
+        "prohibitedActions",
+        "externalEffects"
+      ]
+    },
+    "proofProtocol": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,159}$"
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,159}$"
+        },
+        "mode": {
+          "enum": ["SYNTHETIC_REHEARSAL", "INDEPENDENT_REQUEST"]
+        },
+        "formationOwner": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,159}$"
+        },
+        "custodian": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,159}$"
+        },
+        "requiredIndependence": {
+          "enum": ["I0", "I1", "I2", "I3", "I4"]
+        },
+        "minimumMargin": {
+          "type": "number",
+          "minimum": 0
+        },
+        "criticalErrorCeiling": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "scope": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 16000
+        }
+      },
+      "required": [
+        "id",
+        "version",
+        "mode",
+        "formationOwner",
+        "custodian",
+        "requiredIndependence",
+        "minimumMargin",
+        "criticalErrorCeiling",
+        "scope"
+      ]
+    },
+    "mission": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schemaVersion": {
+          "const": "1.0.0"
+        },
+        "kind": {
+          "const": "MissionConstitution"
+        },
+        "missionId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,159}$"
+        },
+        "institutionId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,159}$"
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,159}$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 16000
+        },
+        "principal": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,159}$"
+        },
+        "beneficiary": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 16000
+        },
+        "objective": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 16000
+        },
+        "incumbent": {
+          "$ref": "#/definitions/reference"
+        },
+        "alternatives": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/reference"
+          },
+          "minItems": 1,
+          "maxItems": 32
+        },
+        "rights": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/right"
+          },
+          "minItems": 1,
+          "maxItems": 256
+        },
+        "hardGates": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,159}$"
+              },
+              "description": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 16000
+              },
+              "maxViolations": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 100
+              }
+            },
+            "required": ["id", "description", "maxViolations"]
+          },
+          "minItems": 1,
+          "maxItems": 64
+        },
+        "criticalFunctions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,159}$"
+          },
+          "minItems": 1,
+          "maxItems": 64
+        },
+        "roles": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "producer": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,159}$"
+            },
+            "verifier": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,159}$"
+            },
+            "acceptor": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,159}$"
+            },
+            "admitter": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,159}$"
+            }
+          },
+          "required": ["producer", "verifier", "acceptor", "admitter"]
+        },
+        "budget": {
+          "$ref": "#/definitions/missionBudget"
+        },
+        "expiresAt": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{3})?Z$"
+        },
+        "authorityCeiling": {
+          "$ref": "#/definitions/authorityCeiling"
+        },
+        "allowedTools": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,159}$"
+          },
+          "minItems": 1,
+          "maxItems": 256
+        },
+        "allowedActions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,159}$"
+          },
+          "minItems": 1,
+          "maxItems": 256
+        },
+        "rollback": {
+          "$ref": "#/definitions/rollback"
+        },
+        "proofProtocol": {
+          "$ref": "#/definitions/proofProtocol"
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "kind",
+        "missionId",
+        "institutionId",
+        "version",
+        "title",
+        "principal",
+        "beneficiary",
+        "objective",
+        "incumbent",
+        "alternatives",
+        "rights",
+        "hardGates",
+        "criticalFunctions",
+        "roles",
+        "budget",
+        "expiresAt",
+        "authorityCeiling",
+        "allowedTools",
+        "allowedActions",
+        "rollback",
+        "proofProtocol"
+      ]
+    },
+    "workOrder": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schemaVersion": {
+          "const": "1.0.0"
+        },
+        "kind": {
+          "const": "SealedWorkOrder"
+        },
+        "jobId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,159}$"
+        },
+        "missionId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,159}$"
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,159}$"
+        },
+        "family": {
+          "enum": [
+            "constitution",
+            "evidence",
+            "formation",
+            "challenge",
+            "verification",
+            "admission",
+            "renewal"
+          ]
+        },
+        "objective": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 16000
+        },
+        "principal": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,159}$"
+        },
+        "actor": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,159}$"
+        },
+        "authorizedInputs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,159}$"
+          },
+          "minItems": 1,
+          "maxItems": 256
+        },
+        "evidenceObligation": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,159}$"
+          },
+          "minItems": 1,
+          "maxItems": 256
+        },
+        "permittedTools": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,159}$"
+          },
+          "minItems": 1,
+          "maxItems": 256
+        },
+        "permittedActions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,159}$"
+          },
+          "minItems": 1,
+          "maxItems": 256
+        },
+        "prohibitedActions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,159}$"
+          },
+          "minItems": 1,
+          "maxItems": 256
+        },
+        "budget": {
+          "$ref": "#/definitions/jobBudget"
+        },
+        "expiresAt": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{3})?Z$"
+        },
+        "outputSchema": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "object"
+            },
+            "required": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,159}$"
+              },
+              "minItems": 1,
+              "maxItems": 256
+            }
+          },
+          "required": ["type", "required"]
+        },
+        "verifier": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "identity": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,159}$"
+            },
+            "method": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 16000
+            },
+            "independence": {
+              "enum": ["I0", "I1", "I2", "I3", "I4"]
+            }
+          },
+          "required": ["identity", "method", "independence"]
+        },
+        "acceptance": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "owner": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,159}$"
+            },
+            "predicate": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 16000
+            },
+            "evidenceSources": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,159}$"
+              },
+              "minItems": 1,
+              "maxItems": 256
+            }
+          },
+          "required": ["owner", "predicate", "evidenceSources"]
+        },
+        "rollback": {
+          "$ref": "#/definitions/rollback"
+        },
+        "chronicle": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "eligible": {
+              "type": "boolean"
+            },
+            "rights": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 16000
+            },
+            "scope": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 16000
+            },
+            "expiresAt": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{3})?Z$"
+            }
+          },
+          "required": ["eligible", "rights", "scope", "expiresAt"]
+        },
+        "covers": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,159}$"
+          },
+          "minItems": 0,
+          "maxItems": 256
+        },
+        "state": {
+          "enum": [
+            "DRAFT",
+            "UNDERWRITTEN",
+            "AUTHORIZED",
+            "EXECUTING",
+            "VERIFIED",
+            "ACCEPTED",
+            "CHRONICLE_ELIGIBLE",
+            "REFUSED",
+            "FAILED",
+            "TIMED_OUT",
+            "REPAIR_REQUIRED",
+            "ROLLED_BACK"
+          ]
+        },
+        "digest": {
+          "type": "string",
+          "pattern": "^sha256:[a-f0-9]{64}$"
+        },
+        "sealed": {
+          "type": "boolean"
+        },
+        "signatureStatus": {
+          "enum": [
+            "UNSIGNED_COMMITMENT",
+            "FIXTURE_SIGNED",
+            "AUTHORIZED_SIGNATURE"
+          ]
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "kind",
+        "jobId",
+        "missionId",
+        "version",
+        "family",
+        "objective",
+        "principal",
+        "actor",
+        "authorizedInputs",
+        "evidenceObligation",
+        "permittedTools",
+        "permittedActions",
+        "prohibitedActions",
+        "budget",
+        "expiresAt",
+        "outputSchema",
+        "verifier",
+        "acceptance",
+        "rollback",
+        "chronicle",
+        "covers",
+        "state"
+      ]
+    },
+    "jobGraph": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schemaVersion": {
+          "const": "1.0.0"
+        },
+        "kind": {
+          "const": "JobGraph"
+        },
+        "graphId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,159}$"
+        },
+        "missionId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,159}$"
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,159}$"
+        },
+        "nodes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/workOrder"
+          },
+          "minItems": 1,
+          "maxItems": 256
+        },
+        "edges": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "from": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,159}$"
+              },
+              "to": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,159}$"
+              },
+              "kind": {
+                "enum": [
+                  "evidence",
+                  "control",
+                  "challenge",
+                  "rollback",
+                  "invalidation"
+                ]
+              }
+            },
+            "required": ["from", "to", "kind"]
+          },
+          "minItems": 0,
+          "maxItems": 2048
+        },
+        "authorityCreated": {
+          "const": "NONE"
+        },
+        "digest": {
+          "type": "string",
+          "pattern": "^sha256:[a-f0-9]{64}$"
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "kind",
+        "graphId",
+        "missionId",
+        "version",
+        "nodes",
+        "edges",
+        "authorityCreated"
+      ]
+    }
+  }
+}

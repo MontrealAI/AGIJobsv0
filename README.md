@@ -12,6 +12,8 @@
 
 AGI Jobs v0 (v2) brings together job contracts, agent gateways, validators, operator consoles, orchestration, simulations, and demos. The architecture aims to support verifiable agent work with owner-controlled governance and observable execution.
 
+**Develop enduring mission intelligence:** [SUCCESSOR Ω local guide](docs/successor/README.md) · [Architecture and trust boundaries](docs/successor/architecture.md). Run `npm run successor:demo` to compile sealed work, examine an invoice, search executable world models, compare resource plans, and restore knowledge without permissions. Synthetic rehearsal does not establish independent proof or production authority.
+
 **Start here:** [Local setup and role guide](docs/START_HERE.md) · [Production readiness and remaining blockers](docs/production/readiness.md) · [Demo guide and complete catalog](demo/README.md) · [Documentation catalog](docs/readme-catalog.md).
 
 **Design useful work:** [Job planner](https://montrealai.github.io/AGIJobsv0/work/) · [Machine labor delivery workflow](docs/MACHINE_LABOR.md). Ten concrete work categories, exact proposal amounts, source boundaries and downloadable tasks compatible with the existing admitted computer-work adapter.

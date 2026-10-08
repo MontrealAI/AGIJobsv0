@@ -1,5 +1,24 @@
 # AGI Jobs Demo Observatory
 
+## SUCCESSOR Ω mission workbench
+
+The canonical [SUCCESSOR Ω journey](https://montrealai.github.io/AGIJobsv0/successor/) and [French edition](https://montrealai.github.io/AGIJobsv0/successor/fr/) extend α-AGI Ascension with three local, synthetic missions: invoice integrity, executable energy world models, and sequential evidence/resource planning. The browser imports the same `packages/successor-core/src/journeys.mjs` entry point as local tooling. Each journey uses a validated constitution and compiled sealed-job graph; a compiled coverage plan is not a completed or accepted job portfolio.
+
+Choose a mission, inspect the constitution, run its bounded computation, inspect failures and credible alternatives, freeze the exact local report, and review a simulated admission refusal. Public fixture measurements cannot establish independent Specialist ASI, fresh production proof or operational authority. The page reports no demonstrated Alpha when the strongest comparator ties the challenger; it retains unsafe patches and falsifying counterexamples.
+
+Mission Pack downloads preserve the constitution, sealed graph, findings, failure knowledge and replay recipe as bounded JSON. Restore verifies integrity, displays imported records as inert text, clears prior run outputs, and creates no active permission. A descendant declares a replacement supplier and starts unproven. Import accepts at most 2 MiB in this browser; imports do not execute programs or restore credentials. Editing a mission or assumption invalidates old previews/downloads, and late asynchronous operations cannot resurrect them. State stays in memory until explicit export; no confidential data, API key, wallet, analytics or production connection belongs in this public surface.
+
+`successor.mjs` renders the EN/FR page; `successor.js` presents validated core results; `presentation-state.mjs` enforces local preview invalidation. The browser build explicitly imports only browser-safe modules and fails on Node-only dependencies. Proof custody, signatures, transactional storage and effect authorization remain backend concerns. `catalog.json` records the new `successorRoutes` separately from preserved demo command decks.
+
+After a complete site build:
+
+```bash
+node --test test/pages/successor.test.mjs
+node scripts/pages/successor-qa.mjs
+```
+
+The complete `site:qa` command also runs the new journey checks: real core outputs, keyboard controls, EN/FR, mobile, reduced motion, high contrast, WCAG A/AA, stale results, tampered packs and restoration without authority. Reports and screenshots use `reports/pages/`. See the [architecture and operator guide](../docs/successor/README.md) for the CLI, runtime and commissioning boundaries.
+
 The **[evidence reviewer](https://montrealai.github.io/AGIJobsv0/review/)** completes the local planning-to-review journey. It matches an admitted task and operator-supplied job/deployment identity with a completed receipt, verifies UTF-8 byte counts and SHA-256, displays untrusted artifacts as text, and exports unsigned criterion-by-criterion assessments. Files stay in the browser tab. See the [review guide](../docs/EVIDENCE_REVIEW.md) for formats and verification limits. `website/assets/review-model.mjs` owns the bounded integrity checks, and `review.js` invalidates results on input changes or stale asynchronous reads. Browser QA covers tampering, downloads, input races, accessibility and responsive layouts; model integration tests consume receipts produced by the actual adapter.
 
 The public showcase at <https://montrealai.github.io/AGIJobsv0/> is built from the repository's tracked demo inventory. It provides a searchable collection, an individual page for every demo/support directory, original guides with Mermaid diagrams, and a clearly labeled browser-only lifecycle walkthrough.
