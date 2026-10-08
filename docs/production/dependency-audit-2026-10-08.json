@@ -4,17 +4,17 @@
   "scope": "Production dependencies in every tracked npm and pnpm lockfile",
   "policy": "Reject critical/high findings, failed commands and missing evidence. No advisory allowlist.",
   "source": {
-    "commit": "c0afff64b820c5df9ec4568a75037dd4be42124f",
-    "tree": "a35cdc562422d3261d7d49e537a51e9736c6c92f",
+    "commit": "83bc8b7efcd9c065832b5903ff8a71e2ed135f96",
+    "tree": "7d56fdbe4f76bbd0fde99eac70b8893cde13bdf8",
     "dirty": true
   },
   "nodeVersion": "v22.23.3",
-  "startedAt": "2026-10-08T14:17:07.561Z",
+  "startedAt": "2026-10-08T16:10:34.034Z",
   "audits": [
     {
       "lockfile": "apps/console/package-lock.json",
       "status": "passed",
-      "startedAt": "2026-10-08T14:17:07.561Z",
+      "startedAt": "2026-10-08T16:10:34.034Z",
       "stdout": "01.json",
       "stderr": "01.stderr.txt",
       "lockfileSha256": "17ceacbe2e9269421bdadf550a2585bbf21bfc08229c85b379c4cd7564f37bf0",
@@ -36,14 +36,14 @@
         "critical": 0,
         "total": 0
       },
-      "finishedAt": "2026-10-08T14:17:13.049Z",
+      "finishedAt": "2026-10-08T16:10:39.902Z",
       "stdoutSha256": "2e882bbd9ea3a5a81135881b00ff78d9b0bfc1aa651f514ab917dc82087aa6b4",
-      "stderrSha256": "53f5194746b30347bda1f506a26187b043f7ec55dbd804110ae7cf561e35a7f0"
+      "stderrSha256": "aa45a036250da18e9118fdf59729fe4dbc4b63fde5743832fc8196ddeb9bc016"
     },
     {
       "lockfile": "apps/enterprise-portal/package-lock.json",
       "status": "passed",
-      "startedAt": "2026-10-08T14:17:07.566Z",
+      "startedAt": "2026-10-08T16:10:34.038Z",
       "stdout": "02.json",
       "stderr": "02.stderr.txt",
       "lockfileSha256": "3c46acf978eb7513593f8346b9c2e77db708e8ef2e596ce7e804b8ae8e457744",
@@ -65,14 +65,14 @@
         "critical": 0,
         "total": 0
       },
-      "finishedAt": "2026-10-08T14:17:13.091Z",
+      "finishedAt": "2026-10-08T16:10:39.818Z",
       "stdoutSha256": "26f96fc3557e20c3a219f7cec64eb44a16ebc0da24c75e541ff1cf0a279e96c2",
-      "stderrSha256": "1887a99724e86418675468b72ccf8bb4c22ec972e5df665d63948272890c1976"
+      "stderrSha256": "53f5194746b30347bda1f506a26187b043f7ec55dbd804110ae7cf561e35a7f0"
     },
     {
       "lockfile": "apps/onebox/package-lock.json",
       "status": "passed",
-      "startedAt": "2026-10-08T14:17:07.568Z",
+      "startedAt": "2026-10-08T16:10:34.040Z",
       "stdout": "03.json",
       "stderr": "03.stderr.txt",
       "lockfileSha256": "43153803eb8883221e0908348ed45f15b96fbee55edd298e1701ec92ff51d87d",
@@ -94,14 +94,14 @@
         "critical": 0,
         "total": 2
       },
-      "finishedAt": "2026-10-08T14:17:13.212Z",
+      "finishedAt": "2026-10-08T16:10:40.061Z",
       "stdoutSha256": "686d696f9fe9f8dd730fa74c7155c42a2b119f8a604fa9de335c260918c1f7c9",
-      "stderrSha256": "79605b0e3c0a1b88b40a15fc23536fef1da1b1aa62f85c65f49acc7ec652fcbe"
+      "stderrSha256": "1887a99724e86418675468b72ccf8bb4c22ec972e5df665d63948272890c1976"
     },
     {
       "lockfile": "apps/validator-ui/package-lock.json",
       "status": "passed",
-      "startedAt": "2026-10-08T14:17:07.570Z",
+      "startedAt": "2026-10-08T16:10:34.042Z",
       "stdout": "04.json",
       "stderr": "04.stderr.txt",
       "lockfileSha256": "814165560e3c9a7234caf78640dd21f12f6055d926b2e72a4112be97a042471a",
@@ -123,14 +123,14 @@
         "critical": 0,
         "total": 0
       },
-      "finishedAt": "2026-10-08T14:17:13.053Z",
+      "finishedAt": "2026-10-08T16:10:39.861Z",
       "stdoutSha256": "cf9435f3d2d78363bf4725f17d61a1dd549d6ca3ff6d67ae076d77e55bd43322",
-      "stderrSha256": "4912d4ac3ca122e796220cb35fc5489f001c0ee9b1ec453dac10f48e7c10b17a"
+      "stderrSha256": "79605b0e3c0a1b88b40a15fc23536fef1da1b1aa62f85c65f49acc7ec652fcbe"
     },
     {
       "lockfile": "demo/AGI-Alpha-Node-v0/package-lock.json",
       "status": "passed",
-      "startedAt": "2026-10-08T14:17:13.049Z",
+      "startedAt": "2026-10-08T16:10:39.818Z",
       "stdout": "05.json",
       "stderr": "05.stderr.txt",
       "lockfileSha256": "1feea9503cffb353b52de071ad1ad7f5744ba3c7dfef2d1955c7e2660a2988c1",
@@ -152,14 +152,14 @@
         "critical": 0,
         "total": 0
       },
-      "finishedAt": "2026-10-08T14:17:13.404Z",
+      "finishedAt": "2026-10-08T16:10:40.151Z",
       "stdoutSha256": "615b57ab7672517dd03fe6b66d1293fe624aa1c2376fb3a84a89f08ffd8ebbbe",
-      "stderrSha256": "dcb33237ba4529ec27ace06475adab60b5bd5d3fa9d79ab0183d09161ce63c3b"
+      "stderrSha256": "60b03bfb0c9553e98f65783f7790533cc9561cbe0608a08781edcb8f858f163f"
     },
     {
       "lockfile": "demo/CULTURE-v0/apps/culture-studio/package-lock.json",
       "status": "passed",
-      "startedAt": "2026-10-08T14:17:13.053Z",
+      "startedAt": "2026-10-08T16:10:39.861Z",
       "stdout": "06.json",
       "stderr": "06.stderr.txt",
       "lockfileSha256": "105350390cc2fc5cef39fcb0e1d5d9f2cafdf1fc8f44a20dfa0555382fb19694",
@@ -181,14 +181,14 @@
         "critical": 0,
         "total": 0
       },
-      "finishedAt": "2026-10-08T14:17:17.315Z",
+      "finishedAt": "2026-10-08T16:10:43.426Z",
       "stdoutSha256": "49d34301c332d8d9e4cda58f134fb67261541d6ea90d65f1cd373f8fcd2810fc",
-      "stderrSha256": "a28bd1a45ed8300f8ba3d6662dc808eb7db505074a18c1559463605d8cff2adf"
+      "stderrSha256": "b1246df41bee12a931202f29d405cc785f39ddd46a5f824362d289e1d466740d"
     },
     {
       "lockfile": "demo/CULTURE-v0/backend/arena-orchestrator/package-lock.json",
       "status": "passed",
-      "startedAt": "2026-10-08T14:17:13.091Z",
+      "startedAt": "2026-10-08T16:10:39.902Z",
       "stdout": "07.json",
       "stderr": "07.stderr.txt",
       "lockfileSha256": "017f5870fc4106aec31dc94b1ed8cc32c897ede6e6d41c68dcfaccaee93ddea3",
@@ -210,14 +210,14 @@
         "critical": 0,
         "total": 0
       },
-      "finishedAt": "2026-10-08T14:17:17.309Z",
+      "finishedAt": "2026-10-08T16:10:43.515Z",
       "stdoutSha256": "6cb93bcf7c5b8d2336d2dd7711fba6b0ee6e096b4910923e7b441c2f85b432de",
-      "stderrSha256": "25bae4e49cbf07de7239f37b7c5082d2afb089be9b8e30d8323e89d14f360eee"
+      "stderrSha256": "234dd9d86243c62e29d8e3a162eaa0c0c74ab775167888c6c423af849e7545bc"
     },
     {
       "lockfile": "demo/CULTURE-v0/hardhat/package-lock.json",
       "status": "passed",
-      "startedAt": "2026-10-08T14:17:13.212Z",
+      "startedAt": "2026-10-08T16:10:40.061Z",
       "stdout": "08.json",
       "stderr": "08.stderr.txt",
       "lockfileSha256": "deba3ec489df6b2b868dba10975526c1d8e811cdd4d6d6ff1a3e813aceb341c9",
@@ -239,14 +239,14 @@
         "critical": 0,
         "total": 0
       },
-      "finishedAt": "2026-10-08T14:17:13.666Z",
+      "finishedAt": "2026-10-08T16:10:40.459Z",
       "stdoutSha256": "b7e78aa697a0f6ecbcf23c1e2a0711528425b5d3d3923661af08a410392c22d0",
-      "stderrSha256": "b862830b5c357a65f6f3442623a3f52c34df2847473d9353acb4c77ccccfbdf1"
+      "stderrSha256": "ce694a734408841745e6b97aebd61774cafb979dd1f3737dae863d5cdab40855"
     },
     {
       "lockfile": "demo/CULTURE-v0/indexers/culture-graph-indexer/package-lock.json",
       "status": "passed",
-      "startedAt": "2026-10-08T14:17:13.404Z",
+      "startedAt": "2026-10-08T16:10:40.151Z",
       "stdout": "09.json",
       "stderr": "09.stderr.txt",
       "lockfileSha256": "1d44af0ccd3130e3aa85c29dd133fa3c7370c61db6fda16bd996d6e3a35f0878",
@@ -268,14 +268,14 @@
         "critical": 0,
         "total": 0
       },
-      "finishedAt": "2026-10-08T14:17:17.357Z",
+      "finishedAt": "2026-10-08T16:10:43.476Z",
       "stdoutSha256": "54152c5ea0a6018cd2a3cd8cea2977155f38fb114a19acd397f0981e5ba486db",
-      "stderrSha256": "9fa34fd18afeb97a203acd71afc9e8a4484fa9a0602fe2af2b2b8e9adfdc3b46"
+      "stderrSha256": "a2b616a7bfc38842ec11af3bc9cb1ef091e8677904e4c8ff58019696d03de692"
     },
     {
       "lockfile": "demo/CULTURE-v0/pnpm-lock.yaml",
       "status": "passed",
-      "startedAt": "2026-10-08T14:17:13.666Z",
+      "startedAt": "2026-10-08T16:10:40.459Z",
       "stdout": "10.json",
       "stderr": "10.stderr.txt",
       "lockfileSha256": "8723124ec5fedc4a537c56c74cc554fae83c515b0d6997ce41fd9be0bbced373",
@@ -297,14 +297,14 @@
         "high": 0,
         "critical": 0
       },
-      "finishedAt": "2026-10-08T14:17:17.334Z",
+      "finishedAt": "2026-10-08T16:10:43.503Z",
       "stdoutSha256": "1dc77a1aef64a3e3b6cdbea3d03829de36bc21acb9be56b97095668d521506e5",
-      "stderrSha256": "9ee3d130a686fb698d03f9f1053d10bd97d02cf3709500f4d2b42ad2bcb95815"
+      "stderrSha256": "664dfc87d37b3d4ed609574b4d8898956c73f8a10fe103435ec13e691100b4a5"
     },
     {
       "lockfile": "demo/Economic-Power-v0/package-lock.json",
       "status": "passed",
-      "startedAt": "2026-10-08T14:17:17.309Z",
+      "startedAt": "2026-10-08T16:10:43.426Z",
       "stdout": "11.json",
       "stderr": "11.stderr.txt",
       "lockfileSha256": "6d0eb0df4e9944730acec6a1db7f73cd37ec00be0487b283734dd342faee5771",
@@ -326,14 +326,14 @@
         "critical": 0,
         "total": 0
       },
-      "finishedAt": "2026-10-08T14:17:21.235Z",
+      "finishedAt": "2026-10-08T16:10:47.853Z",
       "stdoutSha256": "9d34037ec363e2f245689919208bfca97a8eb08c7615052f2b6f970324cbe485",
-      "stderrSha256": "3905dc48278a0b9f5c375f02ed1f7ae72f2faa2750dbaa775f60d70b3f49d2a8"
+      "stderrSha256": "8d7e0275e91b53eaee85997a36520e4287febe20c0b6a92db34d2e988ef82fc8"
     },
     {
       "lockfile": "demo/Phase-8-Universal-Value-Dominance/package-lock.json",
       "status": "passed",
-      "startedAt": "2026-10-08T14:17:17.315Z",
+      "startedAt": "2026-10-08T16:10:43.476Z",
       "stdout": "12.json",
       "stderr": "12.stderr.txt",
       "lockfileSha256": "da5045acab910f49cedafe7325a3def1992617ead712a1180ef24d29d9c854d4",
@@ -355,14 +355,14 @@
         "critical": 0,
         "total": 0
       },
-      "finishedAt": "2026-10-08T14:17:21.274Z",
+      "finishedAt": "2026-10-08T16:10:47.900Z",
       "stdoutSha256": "04a513ff9c344411845193c1b9a9d7691177df3990594edabf0a9aac7209239a",
-      "stderrSha256": "c050c9ca62ac5016e1498135dea8415b7215d52b3942877f055b0b5e7eebbf38"
+      "stderrSha256": "7d8264baa6f008c9a43a0f1d0ac80f34e3e64fd34def8d73649a422df68f295a"
     },
     {
       "lockfile": "demo/Validator-Constellation-v0/v2/package-lock.json",
       "status": "passed",
-      "startedAt": "2026-10-08T14:17:17.334Z",
+      "startedAt": "2026-10-08T16:10:43.503Z",
       "stdout": "13.json",
       "stderr": "13.stderr.txt",
       "lockfileSha256": "4ee557fffb7f818709c8963a5c199899c828dba7c7240d78d7d19548c32f0a20",
@@ -384,14 +384,14 @@
         "critical": 0,
         "total": 5
       },
-      "finishedAt": "2026-10-08T14:17:26.541Z",
-      "stdoutSha256": "8b6b945eb228599e20284a9fae2a53526a14b6e7c13a5f1a4940c033788fd1e3",
-      "stderrSha256": "4e68a6933f4ad92d0e5371e8833ca6eff49845280cebc521d89c5a0b3c79920e"
+      "finishedAt": "2026-10-08T16:10:51.524Z",
+      "stdoutSha256": "f5f6b20b05804a4cbdc4b03022f210b1b30b91b87de32527d5c119a7d809577e",
+      "stderrSha256": "0f582ec19c43ab6d008743146c9676ea781cd915bff2fd0130a7ac49f411253b"
     },
     {
       "lockfile": "demo/sovereign-constellation/app/package-lock.json",
       "status": "passed",
-      "startedAt": "2026-10-08T14:17:17.357Z",
+      "startedAt": "2026-10-08T16:10:43.515Z",
       "stdout": "14.json",
       "stderr": "14.stderr.txt",
       "lockfileSha256": "244b9a5636bb5d540c773237feb99c7f907b684ecbffdfa167e7e38729c565b8",
@@ -413,14 +413,14 @@
         "critical": 0,
         "total": 0
       },
-      "finishedAt": "2026-10-08T14:17:21.248Z",
+      "finishedAt": "2026-10-08T16:10:47.874Z",
       "stdoutSha256": "da1684a5fa17f387c451fd3a94e8bbb3b3421221a1fa7c5d31fec9246806a7c4",
-      "stderrSha256": "79caecfb9b2a620b3cffa855484b3720de4de4d757594e86ec543f7a7883dc06"
+      "stderrSha256": "13adc19841f66cfccb805c279a0c8a77a87d611168fccdbb4d4679e445fc1377"
     },
     {
       "lockfile": "demo/sovereign-constellation/server/package-lock.json",
       "status": "passed",
-      "startedAt": "2026-10-08T14:17:21.235Z",
+      "startedAt": "2026-10-08T16:10:47.853Z",
       "stdout": "15.json",
       "stderr": "15.stderr.txt",
       "lockfileSha256": "245f1b842bb631cf6aed1ec36d5f652f87d49ceb06afe292519144c12e119759",
@@ -442,14 +442,14 @@
         "critical": 0,
         "total": 0
       },
-      "finishedAt": "2026-10-08T14:17:26.456Z",
+      "finishedAt": "2026-10-08T16:10:51.531Z",
       "stdoutSha256": "a9edb1e4fc8ea65ac6bbf3d018c9620bc906f20100906006b364e717cf7adf7a",
-      "stderrSha256": "8ee4cb046cde195de6ec8df91030da1ae5af9f00386749ad07abcb64b9bd827e"
+      "stderrSha256": "e6170f4f0555cf5b266928f9a42d12451c46df306d480bbde033192f587bc293"
     },
     {
       "lockfile": "demo/sovereign-mesh/app/package-lock.json",
       "status": "passed",
-      "startedAt": "2026-10-08T14:17:21.248Z",
+      "startedAt": "2026-10-08T16:10:47.874Z",
       "stdout": "16.json",
       "stderr": "16.stderr.txt",
       "lockfileSha256": "75bc239fa97df44cbeebcde2ad921141e4dfffb5c390b1130323b067fd19e189",
@@ -471,14 +471,14 @@
         "critical": 0,
         "total": 0
       },
-      "finishedAt": "2026-10-08T14:17:26.469Z",
+      "finishedAt": "2026-10-08T16:10:51.529Z",
       "stdoutSha256": "da1684a5fa17f387c451fd3a94e8bbb3b3421221a1fa7c5d31fec9246806a7c4",
       "stderrSha256": "7f71e6fbc64a191c76f490111d24125fdb3481ef93ee8bc4d4cab01e956b0ffa"
     },
     {
       "lockfile": "demo/sovereign-mesh/server/package-lock.json",
       "status": "passed",
-      "startedAt": "2026-10-08T14:17:21.274Z",
+      "startedAt": "2026-10-08T16:10:47.900Z",
       "stdout": "17.json",
       "stderr": "17.stderr.txt",
       "lockfileSha256": "96cd3864d507b1fea39e364529ee9c10439dd1965289ea5975b13b52ee1c59ae",
@@ -500,18 +500,18 @@
         "critical": 0,
         "total": 0
       },
-      "finishedAt": "2026-10-08T14:17:26.485Z",
+      "finishedAt": "2026-10-08T16:10:51.520Z",
       "stdoutSha256": "a9edb1e4fc8ea65ac6bbf3d018c9620bc906f20100906006b364e717cf7adf7a",
-      "stderrSha256": "1b102e40c80ca29c21f9db54547448840eaeae15c696b97296c9827aeed6b378"
+      "stderrSha256": "2e42c5ca0c593f07f0a9c7a56e718b9ec1dadecfc424ee875c3a3fef497eb142"
     },
     {
       "lockfile": "package-lock.json",
       "status": "failed",
-      "startedAt": "2026-10-08T14:17:26.456Z",
+      "startedAt": "2026-10-08T16:10:51.520Z",
       "stdout": "18.json",
       "stderr": "18.stderr.txt",
-      "lockfileSha256": "e2467d988e8c4ecd3cebf9e123ea5ecc7153997724910c6588e74474f25fb22c",
-      "manifestSha256": "27e2391c9b41d7b2ee5d135e160e5999dd2bd24ce42a55867091a12e67f0c17c",
+      "lockfileSha256": "13626e97ac5be3465c1503501b9ed7542a74d601a21f34e0537e9761987b265c",
+      "manifestSha256": "31965d1647fb849f07894a4d285a838c7d5c2210df6bce7ceb3666948999987f",
       "command": [
         "npm",
         "audit",
@@ -522,14 +522,14 @@
       ],
       "exitCode": 1,
       "error": "0 critical / 7 high findings",
-      "finishedAt": "2026-10-08T14:17:38.522Z",
-      "stdoutSha256": "5a7a616a1a421f6eafd7f933ffd3eedfd42d4f2b40aa58151328d08e66d8e339",
-      "stderrSha256": "a208fb2ac9cbf349a8948fdb3db01c3b303201829298ccf851316c87ca829706"
+      "finishedAt": "2026-10-08T16:11:03.417Z",
+      "stdoutSha256": "5455b661aa82541a9757d944c44fed0479ddbb51a784995f343638bc808892e9",
+      "stderrSha256": "a375281b94508415bb339d9b19fddc09b1f8c5fe3523520a32d50a7600c9bd9b"
     },
     {
       "lockfile": "packages/onebox-sdk/package-lock.json",
       "status": "passed",
-      "startedAt": "2026-10-08T14:17:26.469Z",
+      "startedAt": "2026-10-08T16:10:51.524Z",
       "stdout": "19.json",
       "stderr": "19.stderr.txt",
       "lockfileSha256": "8aa54f034207ba68fb4c0278eda321cc027ae989055fea8ca2e5098e54dfb7c9",
@@ -551,14 +551,14 @@
         "critical": 0,
         "total": 0
       },
-      "finishedAt": "2026-10-08T14:17:31.838Z",
+      "finishedAt": "2026-10-08T16:10:54.809Z",
       "stdoutSha256": "846fc260eb0bf70e6b21419d4cab9fcc61c224c7362324d4cbc8aebf8355f9bd",
-      "stderrSha256": "1d1e29ebda06323f3426aaebb820da0478443a888aa5fdc5e3271c8b68bc12bd"
+      "stderrSha256": "a208fb2ac9cbf349a8948fdb3db01c3b303201829298ccf851316c87ca829706"
     },
     {
       "lockfile": "packages/orchestrator/package-lock.json",
       "status": "passed",
-      "startedAt": "2026-10-08T14:17:26.485Z",
+      "startedAt": "2026-10-08T16:10:51.529Z",
       "stdout": "20.json",
       "stderr": "20.stderr.txt",
       "lockfileSha256": "c4befe1e53495ae6ea280552a6643ab4533e19b7a8e440a404996e5e03262312",
@@ -580,14 +580,14 @@
         "critical": 0,
         "total": 0
       },
-      "finishedAt": "2026-10-08T14:17:31.824Z",
+      "finishedAt": "2026-10-08T16:10:54.818Z",
       "stdoutSha256": "0976fe53f76ce6d717f0e00bd18890a877e9c2ed7f8c708933cae4a4958642e1",
-      "stderrSha256": "642ec38f105a94f48c972645394118d9f4ef97e1f34d19aadaeb5a990775c9c6"
+      "stderrSha256": "7311b8cd84a5bf472032e0e6f79a7f4c1c6457afc4a0e2a1668f0d4fd36e6062"
     },
     {
       "lockfile": "services/culture-graph-indexer/package-lock.json",
       "status": "passed",
-      "startedAt": "2026-10-08T14:17:26.541Z",
+      "startedAt": "2026-10-08T16:10:51.531Z",
       "stdout": "21.json",
       "stderr": "21.stderr.txt",
       "lockfileSha256": "6405cee85b39d24799b7d7337e1b5ef3b1a6e54f722c59c53502122913317c6e",
@@ -609,14 +609,14 @@
         "critical": 0,
         "total": 0
       },
-      "finishedAt": "2026-10-08T14:17:31.789Z",
+      "finishedAt": "2026-10-08T16:10:54.778Z",
       "stdoutSha256": "0c2039a26d18ea4bf22b1bd6214b86450767c293eeb3c5415048c8e67bf1a25a",
-      "stderrSha256": "2be0f1b352dc532e8f0e5ebf6e5235b9cd573872ee32a09ea78a4e3e696379dc"
+      "stderrSha256": "64ccc61820a8a434dc1effe4cd6f291cef18a977d807a11f5864777441c15163"
     },
     {
       "lockfile": "subgraph/package-lock.json",
       "status": "passed",
-      "startedAt": "2026-10-08T14:17:31.789Z",
+      "startedAt": "2026-10-08T16:10:54.778Z",
       "stdout": "22.json",
       "stderr": "22.stderr.txt",
       "lockfileSha256": "b78522dced8bb2784f02987d35e43fb45fd78a4046dd233bb8e3116a43a718d3",
@@ -638,12 +638,12 @@
         "critical": 0,
         "total": 0
       },
-      "finishedAt": "2026-10-08T14:17:32.217Z",
+      "finishedAt": "2026-10-08T16:10:55.131Z",
       "stdoutSha256": "f74556af8705cf0e2d1debfcb5678559879ac130e5671cc52e0a7b2e7492d0b9",
-      "stderrSha256": "8b1e64de5c66f8cfc234d2b8378d31623673c909ea669eeb5db092ac0cc8af66"
+      "stderrSha256": "252a974e7f28cb29ebb6bbf3c9c7c68ef6e2687290b4a27a729ed769638ce3be"
     }
   ],
-  "finishedAt": "2026-10-08T14:17:38.522Z",
+  "finishedAt": "2026-10-08T16:11:03.417Z",
   "evidenceNote": "Snapshot of the recorded working source and exact dependency input hashes; this is not final-commit CI certification. Raw command outputs are emitted by the release audit command and are identified below by filename and SHA-256.",
-  "summarySha256": "0f7fdff2591a10693860e505d9c3a2e780e3047282fe3ab010198cad76d94e4a"
+  "summarySha256": "83e1e6ad0657ceca5c9e2df57417e3942e5e0e54e13e0e478ab6c462266545ad"
 }

@@ -1,5 +1,12 @@
 import express from 'express';
+import { rateLimit } from 'express-rate-limit';
 import { ethers } from 'ethers';
+import {
+  peerAddressKey,
+  REQUEST_WINDOW_MS,
+  REQUESTS_PER_PEER,
+  REQUESTS_PER_PROCESS,
+} from './requestBudget';
 import {
   walletManager,
   registry,
@@ -66,7 +73,6 @@ import {
 import { buildPerformanceDashboard } from './performanceDashboard';
 import { evaluateSystemHealth } from './systemHealth';
 import {
-  recordDeliverable,
   listDeliverables,
   recordHeartbeat,
   listHeartbeats,
@@ -91,7 +97,6 @@ import {
   ROLE_AGENT,
   ROLE_VALIDATOR,
   ROLE_PLATFORM,
-  acknowledgeTaxPolicy as ensureTaxAcknowledgement,
 } from './stakeCoordinator';
 import {
   parseBooleanFlag,
@@ -114,6 +119,31 @@ import {
 import { serialiseChainJob } from './jobSerialization';
 
 const app = express();
+// Bound work before parsing request bodies, verifying signatures, or I/O.
+// The process ceiling also bounds the peer store to admitted traffic across
+// its two rotating windows. Forwarded client headers are never quota keys.
+app.use(
+  rateLimit({
+    windowMs: REQUEST_WINDOW_MS,
+    limit: REQUESTS_PER_PROCESS,
+    keyGenerator: () => 'gateway-process',
+    identifier: 'gateway-process',
+    standardHeaders: 'draft-8',
+    legacyHeaders: false,
+    message: { error: 'gateway request budget exhausted; retry later' },
+  })
+);
+app.use(
+  rateLimit({
+    windowMs: REQUEST_WINDOW_MS,
+    limit: REQUESTS_PER_PEER,
+    keyGenerator: (req) => peerAddressKey(req.socket.remoteAddress),
+    identifier: 'gateway-peer',
+    standardHeaders: 'draft-8',
+    legacyHeaders: false,
+    message: { error: 'peer request budget exhausted; retry later' },
+  })
+);
 app.use(express.json());
 
 app.get('/metrics', async (_req, res) => {
@@ -127,16 +157,32 @@ app.get('/metrics', async (_req, res) => {
   }
 });
 
+type AuthenticatedPrincipal =
+  | { kind: 'operator' }
+  | { kind: 'wallet'; address: string };
+const authenticatedPrincipals = new WeakMap<
+  express.Request,
+  AuthenticatedPrincipal
+>();
+
+const AUTH_CHALLENGE_TTL_MS = 5 * 60 * 1000;
 let nonce = ethers.hexlify(ethers.randomBytes(16));
+let nonceExpiresAt = Date.now() + AUTH_CHALLENGE_TTL_MS;
 function rotateNonce() {
   nonce = ethers.hexlify(ethers.randomBytes(16));
+  nonceExpiresAt = Date.now() + AUTH_CHALLENGE_TTL_MS;
+}
+function refreshExpiredNonce(): void {
+  if (Date.now() >= nonceExpiresAt) rotateNonce();
 }
 
 app.get('/auth/challenge', (_req, res) => {
+  refreshExpiredNonce();
   res.json({
     nonce,
     message: AUTH_MESSAGE,
     challenge: `${AUTH_MESSAGE}${nonce}`,
+    expiresAt: new Date(nonceExpiresAt).toISOString(),
   });
 });
 
@@ -146,20 +192,31 @@ function authMiddleware(
   next: express.NextFunction
 ) {
   const apiKey = req.header('x-api-key');
-  if (GATEWAY_API_KEY && apiKey === GATEWAY_API_KEY) return next();
+  if (GATEWAY_API_KEY && apiKey === GATEWAY_API_KEY) {
+    authenticatedPrincipals.set(req, { kind: 'operator' });
+    return next();
+  }
 
+  refreshExpiredNonce();
   const signature = req.header('x-signature');
   const address = req.header('x-address');
   if (signature && address) {
     try {
       // Agents sign the static AUTH_MESSAGE concatenated with the most recent
-      // nonce retrieved from /auth/challenge. The nonce is only rotated after a
-      // signature has been verified to ensure concurrent requests cannot render
-      // an in-flight challenge invalid.
+      // nonce retrieved from /auth/challenge. Successful authentication consumes
+      // the shared challenge. Concurrent clients must fetch a fresh challenge
+      // and retry authentication if another client consumed theirs first.
       const recovered = ethers
         .verifyMessage(AUTH_MESSAGE + nonce, signature)
         .toLowerCase();
-      if (recovered === address.toLowerCase()) {
+      if (
+        recovered === address.toLowerCase() &&
+        walletManager?.get(recovered)?.address.toLowerCase() === recovered
+      ) {
+        authenticatedPrincipals.set(req, {
+          kind: 'wallet',
+          address: recovered,
+        });
         rotateNonce();
         return next();
       }
@@ -173,6 +230,42 @@ function authMiddleware(
     nonce,
     message: AUTH_MESSAGE,
     challenge: `${AUTH_MESSAGE}${nonce}`,
+    expiresAt: new Date(nonceExpiresAt).toISOString(),
+  });
+}
+
+// A challenge proves possession of one managed wallet, never operator authority.
+// Keep the principal on the request, not in request-controlled body/header data.
+function authoriseWallet(
+  req: express.Request,
+  res: express.Response,
+  wallet: { address: string }
+): boolean {
+  const principal = authenticatedPrincipals.get(req);
+  if (
+    principal?.kind === 'operator' ||
+    (principal?.kind === 'wallet' &&
+      principal.address === wallet.address.toLowerCase())
+  ) {
+    return true;
+  }
+  res
+    .status(403)
+    .json({ error: 'wallet is not authorised for this principal' });
+  return false;
+}
+
+function operatorAuthMiddleware(
+  req: express.Request,
+  res: express.Response,
+  next: express.NextFunction
+): void {
+  authMiddleware(req, res, () => {
+    if (authenticatedPrincipals.get(req)?.kind !== 'operator') {
+      res.status(403).json({ error: 'operator API key is required' });
+      return;
+    }
+    next();
   });
 }
 
@@ -430,23 +523,56 @@ app.get('/health', (req: express.Request, res: express.Response) => {
 });
 
 app.get('/nonce', (req: express.Request, res: express.Response) => {
+  refreshExpiredNonce();
   res.json({ nonce });
 });
 
 // Register an agent to receive job dispatches
-app.post('/agents', (req: express.Request, res: express.Response) => {
-  const { id, url, wallet } = req.body as {
-    id: string;
-    url?: string;
-    wallet: string;
-  };
-  if (!id || !wallet) {
-    return res.status(400).json({ error: 'id and wallet required' });
+app.post(
+  '/agents',
+  operatorAuthMiddleware,
+  (req: express.Request, res: express.Response) => {
+    const { id, url, wallet } = req.body as {
+      id: string;
+      url?: string;
+      wallet: string;
+    };
+    if (
+      typeof id !== 'string' ||
+      id.trim().length === 0 ||
+      id.length > 256 ||
+      /[\u0000-\u001f\u007f]/.test(id)
+    ) {
+      return res.status(400).json({
+        error:
+          'id must be a non-empty string of at most 256 characters without control characters',
+      });
+    }
+    if (typeof wallet !== 'string' || !ethers.isAddress(wallet)) {
+      return res.status(400).json({ error: 'wallet must be a valid address' });
+    }
+    if (url !== undefined) {
+      try {
+        if (typeof url !== 'string' || url.length > 2048) throw new Error();
+        const parsed = new URL(url);
+        if (
+          !['http:', 'https:'].includes(parsed.protocol) ||
+          parsed.username ||
+          parsed.password
+        )
+          throw new Error();
+      } catch {
+        return res.status(400).json({
+          error:
+            'url must be an HTTP(S) URL of at most 2048 characters without credentials',
+        });
+      }
+    }
+    agents.set(id, { url, wallet, ws: agents.get(id)?.ws || null });
+    if (!pendingJobs.has(id)) pendingJobs.set(id, []);
+    res.json({ id, url, wallet });
   }
-  agents.set(id, { url, wallet, ws: agents.get(id)?.ws || null });
-  if (!pendingJobs.has(id)) pendingJobs.set(id, []);
-  res.json({ id, url, wallet });
-});
+);
 
 app.get('/agents', (req: express.Request, res: express.Response) => {
   res.json(
@@ -556,6 +682,7 @@ app.post(
       res.status(400).json({ error: 'unknown wallet' });
       return;
     }
+    if (!authoriseWallet(req, res, wallet)) return;
     const body = req.body as Record<string, unknown>;
     const role = parseRoleInput(body?.role ?? req.query.role);
     const requiredStake = parseTokenAmount(
@@ -602,6 +729,7 @@ app.post(
       res.status(400).json({ error: 'unknown wallet' });
       return;
     }
+    if (!authoriseWallet(req, res, wallet)) return;
     const body = req.body as Record<string, unknown>;
     const amount = parseTokenAmount(body?.amount);
     if (amount === undefined || amount <= 0n) {
@@ -639,6 +767,7 @@ app.post(
       res.status(400).json({ error: 'unknown wallet' });
       return;
     }
+    if (!authoriseWallet(req, res, wallet)) return;
     const role = parseRoleInput(req.body?.role ?? req.query.role);
     try {
       const receipt = await finalizeStakeWithdrawal(wallet, role);
@@ -668,6 +797,7 @@ app.post(
       res.status(400).json({ error: 'unknown wallet' });
       return;
     }
+    if (!authoriseWallet(req, res, wallet)) return;
     const body = req.body as Record<string, unknown>;
     const amount = parseTokenAmount(body?.amount);
     if (amount === undefined || amount <= 0n) {
@@ -707,6 +837,7 @@ app.post(
       res.status(400).json({ error: 'unknown wallet' });
       return;
     }
+    if (!authoriseWallet(req, res, wallet)) return;
     const body = req.body as Record<string, unknown>;
     const role = parseRoleInput(body?.role ?? req.query.role);
     const amount = parseTokenAmount(body?.amount);
@@ -719,7 +850,8 @@ app.post(
         amount: amount,
         restakeAmount,
         restakePercent:
-          typeof restakePercent === 'number' || typeof restakePercent === 'string'
+          typeof restakePercent === 'number' ||
+          typeof restakePercent === 'string'
             ? restakePercent
             : undefined,
         destination,
@@ -780,7 +912,9 @@ app.get('/jobs/:id', async (req: express.Request, res: express.Response) => {
     telemetry: listTelemetryReports({ jobId, limit: telemetryLimit }),
     payouts: getRewardPayouts(jobId),
     contributors: includeContributors ? contributorSummaries : undefined,
-    contributorCount: includeContributors ? contributorSummaries.length : undefined,
+    contributorCount: includeContributors
+      ? contributorSummaries.length
+      : undefined,
   });
 });
 
@@ -820,43 +954,37 @@ app.get(
   }
 );
 
-app.get(
-  '/deliverables/:id',
-  (req: express.Request, res: express.Response) => {
-    const record = getDeliverableById(req.params.id);
-    if (!record) {
-      res.status(404).json({ error: 'not-found' });
-      return;
-    }
-    const includeTelemetry = parseBooleanFlag(
-      req.query.includeTelemetry ?? req.query.includePayload
-    );
-    const response: Record<string, unknown> = { ...record };
-    if (includeTelemetry) {
-      response.telemetryPayload = loadStoredPayload(record.telemetry);
-    }
-    res.json(response);
+app.get('/deliverables/:id', (req: express.Request, res: express.Response) => {
+  const record = getDeliverableById(req.params.id);
+  if (!record) {
+    res.status(404).json({ error: 'not-found' });
+    return;
   }
-);
+  const includeTelemetry = parseBooleanFlag(
+    req.query.includeTelemetry ?? req.query.includePayload
+  );
+  const response: Record<string, unknown> = { ...record };
+  if (includeTelemetry) {
+    response.telemetryPayload = loadStoredPayload(record.telemetry);
+  }
+  res.json(response);
+});
 
-app.get(
-  '/heartbeats/:id',
-  (req: express.Request, res: express.Response) => {
-    const record = getHeartbeatById(req.params.id);
-    if (!record) {
-      res.status(404).json({ error: 'not-found' });
-      return;
-    }
-    const includeTelemetry = parseBooleanFlag(
-      req.query.includeTelemetry ?? req.query.includePayload
-    );
-    const response: Record<string, unknown> = { ...record };
-    if (includeTelemetry) {
-      response.telemetryPayload = loadStoredPayload(record.telemetry);
-    }
-    res.json(response);
+app.get('/heartbeats/:id', (req: express.Request, res: express.Response) => {
+  const record = getHeartbeatById(req.params.id);
+  if (!record) {
+    res.status(404).json({ error: 'not-found' });
+    return;
   }
-);
+  const includeTelemetry = parseBooleanFlag(
+    req.query.includeTelemetry ?? req.query.includePayload
+  );
+  const response: Record<string, unknown> = { ...record };
+  if (includeTelemetry) {
+    response.telemetryPayload = loadStoredPayload(record.telemetry);
+  }
+  res.json(response);
+});
 
 app.get(
   '/telemetry/reports/:id',
@@ -1113,7 +1241,7 @@ app.get(
 
 app.post(
   '/audit/anchors',
-  authMiddleware,
+  operatorAuthMiddleware,
   async (req: express.Request, res: express.Response) => {
     const { force, minNewEvents } =
       (req.body as { force?: boolean; minNewEvents?: number }) || {};
@@ -1355,7 +1483,7 @@ app.get(
 
 app.post(
   '/spawn/blueprints',
-  authMiddleware,
+  operatorAuthMiddleware,
   async (req: express.Request, res: express.Response) => {
     const { category, minPriority, dryRun, persist, markConsumed } =
       (req.body as {
@@ -1450,6 +1578,7 @@ app.post(
     };
     const wallet = walletManager.get(address);
     if (!wallet) return res.status(400).json({ error: 'unknown wallet' });
+    if (!authoriseWallet(req, res, wallet)) return;
     let subdomain: string;
     let identityProof: string[];
     try {
@@ -1482,6 +1611,7 @@ app.post(
     };
     const wallet = walletManager.get(address);
     if (!wallet) return res.status(400).json({ error: 'unknown wallet' });
+    if (!authoriseWallet(req, res, wallet)) return;
     let subdomain: string;
     let identityProof: string[];
     try {
@@ -1491,27 +1621,20 @@ app.post(
       return res.status(400).json({ error: err.message });
     }
     try {
-      const hash = ethers.id(result || '');
-      await ensureTaxAcknowledgement(wallet);
-      const tx = await (registry as any)
-        .connect(wallet)
-        .submit(req.params.id, hash, result || '', subdomain, identityProof);
-      await tx.wait();
-      const deliverable = recordDeliverable({
+      const submission = await submitDeliverable({
         jobId: req.params.id,
-        agent: wallet.address,
-        success: true,
-        resultUri: result || undefined,
-        resultHash: hash,
-        metadata: {
-          source: 'legacy-submit-endpoint',
-        },
-        submissionMethod: 'submit',
-        txHash: tx.hash,
+        wallet,
+        resultUri: result || '',
+        resultHash: ethers.id(result || ''),
+        subdomain,
+        proofBytes: identityProof,
+        metadata: { source: 'legacy-submit-endpoint' },
       });
-      res.json({ tx: tx.hash, deliverable });
+      res.json({ tx: submission.txHash, deliverable: submission.deliverable });
     } catch (err: any) {
-      res.status(500).json({ error: err.message });
+      res
+        .status(err instanceof SubmissionInputError ? 400 : 500)
+        .json({ error: err.message });
     }
   }
 );
@@ -1531,6 +1654,7 @@ app.post(
       res.status(400).json({ error: 'unknown wallet' });
       return;
     }
+    if (!authoriseWallet(req, res, wallet)) return;
     let subdomain: string;
     let identityProof: string[];
     try {
@@ -1564,10 +1688,9 @@ app.post(
       res.status(400).json({ error: err?.message || String(err) });
       return;
     }
-    const signature =
-      typeof body.signature === 'string' && body.signature
-        ? body.signature
-        : undefined;
+    // Preserve explicit invalid values so the shared verifier cannot silently
+    // downgrade a malformed attestation to an unsigned submission.
+    const signature = body.signature;
     const signedPayload = (body as { signedPayload?: unknown }).signedPayload;
     const preferFinalize = body.finalize !== false && Boolean(resultRef);
     try {
@@ -1588,13 +1711,9 @@ app.post(
         metadata: normaliseMetadata(body.metadata),
         telemetry: (body as { telemetry?: unknown }).telemetry,
         telemetryCid:
-          typeof body.telemetryCid === 'string'
-            ? body.telemetryCid
-            : undefined,
+          typeof body.telemetryCid === 'string' ? body.telemetryCid : undefined,
         telemetryUri:
-          typeof body.telemetryUri === 'string'
-            ? body.telemetryUri
-            : undefined,
+          typeof body.telemetryUri === 'string' ? body.telemetryUri : undefined,
         contributors,
         digest: typeof body.digest === 'string' ? body.digest : undefined,
         signature,
@@ -1651,9 +1770,7 @@ app.get(
         if (!normalised) return true;
         return (
           entry.address.toLowerCase() === normalised ||
-          entry.ensNames.some(
-            (name) => name.toLowerCase() === normalised
-          )
+          entry.ensNames.some((name) => name.toLowerCase() === normalised)
         );
       });
     }
@@ -1676,6 +1793,7 @@ app.post(
       res.status(400).json({ error: 'unknown wallet' });
       return;
     }
+    if (!authoriseWallet(req, res, wallet)) return;
     const status = typeof body.status === 'string' ? body.status.trim() : '';
     if (!status) {
       res.status(400).json({ error: 'status is required' });
@@ -1712,6 +1830,7 @@ app.post(
       res.status(400).json({ error: 'unknown wallet' });
       return;
     }
+    if (!authoriseWallet(req, res, wallet)) return;
     const { address: _ignored, ...payload } = body;
     const canonicalPayload =
       (payload as { payload?: unknown }).payload ??
@@ -1747,7 +1866,9 @@ app.post(
       samples.push(...((body as { samples: unknown[] }).samples || []));
     }
     if (Array.isArray((body as { energySamples?: unknown }).energySamples)) {
-      samples.push(...((body as { energySamples: unknown[] }).energySamples || []));
+      samples.push(
+        ...((body as { energySamples: unknown[] }).energySamples || [])
+      );
     }
     if ((body as { sample?: unknown }).sample) {
       samples.push((body as { sample: unknown }).sample);
@@ -1810,7 +1931,7 @@ app.get(
 
 app.post(
   '/employer/plans',
-  authMiddleware,
+  operatorAuthMiddleware,
   async (req: express.Request, res: express.Response) => {
     try {
       const plan = await createJobPlan(req.body);
@@ -1824,7 +1945,7 @@ app.post(
 
 app.post(
   '/employer/plans/:planId/launch',
-  authMiddleware,
+  operatorAuthMiddleware,
   async (req: express.Request, res: express.Response) => {
     const { taskIds, maxTasks } =
       (req.body as { taskIds?: string[] | string; maxTasks?: number }) || {};
@@ -1856,7 +1977,7 @@ app.post(
 
 app.post(
   '/employer/jobs',
-  authMiddleware,
+  operatorAuthMiddleware,
   async (req: express.Request, res: express.Response) => {
     try {
       const record = await postJob(req.body);
@@ -1897,7 +2018,7 @@ app.get(
 
 app.post(
   '/security/quarantine/release',
-  authMiddleware,
+  operatorAuthMiddleware,
   (req: express.Request, res: express.Response) => {
     const { address } = req.body as { address: string };
     if (!address) {
@@ -1920,6 +2041,7 @@ app.post(
       if (!wallet) {
         throw new GatewayError(400, `unknown wallet: ${address}`);
       }
+      if (!authoriseWallet(req, res, wallet)) return;
       const approve = parseBooleanBody(req.body?.approve, 'approve');
       const saltRaw =
         typeof req.body?.salt === 'string' ? req.body.salt.trim() : undefined;
@@ -1944,6 +2066,7 @@ app.post(
       if (!wallet) {
         throw new GatewayError(400, `unknown wallet: ${address}`);
       }
+      if (!authoriseWallet(req, res, wallet)) return;
       const approve = parseOptionalBooleanBody(req.body?.approve, 'approve');
       const saltRaw =
         typeof req.body?.salt === 'string' ? req.body.salt.trim() : undefined;

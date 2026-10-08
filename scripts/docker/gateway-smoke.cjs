@@ -228,6 +228,28 @@ for (const target of ['/app/storage', '/app/logs', '/app/agent-gateway/dist', '/
       record.validator
     )},${JSON.stringify(record)},null)`
   );
+  const evidenceInput = {
+    jobId: '1',
+    agent: fixtureWallet.address.toLowerCase(),
+    success: true,
+    submissionMethod: 'none',
+    telemetry: { evidence: 'local-container-fixture'.repeat(1024) },
+  };
+  const evidence = JSON.parse(
+    docker(
+      'exec',
+      name,
+      'node',
+      '-e',
+      `const assert = require('node:assert/strict');
+const store = require('./agent-gateway/dist/agent-gateway/deliverableStore.js');
+const record = store.recordDeliverable(${JSON.stringify(evidenceInput)});
+assert.ok(record.id);
+assert.ok(record.telemetry?.path, 'Large telemetry must use a persisted payload reference');
+assert.equal(Object.hasOwn(record.telemetry, 'inline'), false);
+process.stdout.write(JSON.stringify({ id: record.id, digest: record.telemetry.digest }));`
+    )
+  );
   docker('stop', '--time', '10', name);
   if (docker('inspect', '--format', '{{.State.ExitCode}}', name).trim() !== '0')
     throw new Error('Gateway SIGTERM did not exit cleanly');
@@ -245,8 +267,38 @@ for (const target of ['/app/storage', '/app/logs', '/app/agent-gateway/dist', '/
       ethers.ZeroHash
     )})process.exit(1)`
   );
+  docker(
+    'exec',
+    name,
+    'node',
+    '-e',
+    `const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const store = require('./agent-gateway/dist/agent-gateway/deliverableStore.js');
+const record = store.getDeliverableById(${JSON.stringify(evidence.id)});
+assert.ok(record, 'Deliverable must survive container recreation');
+assert.equal(record.jobId, '1');
+assert.equal(record.agent, ${JSON.stringify(evidenceInput.agent)});
+assert.equal(record.success, true);
+assert.equal(record.telemetry?.digest, ${JSON.stringify(evidence.digest)});
+assert.deepEqual(store.loadStoredPayload(record.telemetry), ${JSON.stringify(
+      evidenceInput.telemetry
+    )});
+const file = '/app/agent-gateway/dist/storage/deliverables/deliverables.sqlite';
+const stats = fs.lstatSync(file);
+assert.ok(stats.isFile() && !stats.isSymbolicLink());
+assert.equal(stats.uid, process.getuid());
+assert.equal(stats.mode & 0o777, 0o600);
+const Database = require('better-sqlite3');
+const database = new Database(file, { readonly: true, fileMustExist: true });
+try {
+  assert.equal(database.pragma('quick_check', { simple: true }), 'ok');
+} finally {
+  database.close();
+}`
+  );
   console.log(
-    'PASS: gateway token verification, wallet loading, HTTP/gRPC boot, non-root process, protected dependencies, writable runtime state, durable record across recreation and graceful shutdown (local contract fixtures).'
+    'PASS: gateway token verification, wallet loading, HTTP/gRPC boot, non-root process, protected dependencies, writable runtime state, durable validation and SQLite evidence/payload records across recreation, native SQLite integrity and graceful shutdown (local contract fixtures).'
   );
 }
 

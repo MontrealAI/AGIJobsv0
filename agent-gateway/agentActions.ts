@@ -1,7 +1,11 @@
 import { Wallet, ethers } from 'ethers';
 import {
   recordDeliverable,
+  validateDeliverableInput,
+  assertDeliverableStorageReady,
+  DeliverableInputError,
   type AgentDeliverableRecord,
+  type DeliverableInput,
   type DeliverableContributor,
 } from './deliverableStore';
 import { registry, jobs } from './utils';
@@ -57,7 +61,7 @@ export interface SubmitDeliverableOptions {
   telemetryUri?: string;
   contributors?: DeliverableContributor[];
   digest?: string;
-  signature?: string;
+  signature?: unknown;
   signedPayload?: unknown;
 }
 
@@ -68,11 +72,59 @@ export interface SubmitDeliverableResult {
   deliverable: AgentDeliverableRecord;
 }
 
-function canonicalisePayload(payload: unknown): string {
+type ContentAttestation =
+  | { kind: 'unsigned' }
+  | { kind: 'signed'; signature: string; resultHash: string };
+
+/**
+ * Evidence signatures are optional content attestations, not authorization to
+ * use a managed wallet. HTTP/gRPC authentication and the signed registry
+ * transaction establish that authority. An attestation must be complete and
+ * cover exactly the digest advertised by the certificate metadata.
+ */
+function parseContentAttestation(
+  signature: unknown,
+  signedPayload: unknown,
+  resultHash: string
+): ContentAttestation {
+  if (signature === undefined && signedPayload === undefined) {
+    return { kind: 'unsigned' };
+  }
+  if (typeof signature !== 'string' || signature.length === 0) {
+    throw new SubmissionInputError(
+      'A content attestation requires a signature and signedPayload'
+    );
+  }
+  if (
+    typeof signedPayload !== 'string' ||
+    !ethers.isHexString(signedPayload, 32) ||
+    signedPayload.toLowerCase() !== resultHash.toLowerCase()
+  ) {
+    throw new SubmissionInputError(
+      'signedPayload must be the exact submitted resultHash digest'
+    );
+  }
+  return { kind: 'signed', signature, resultHash };
+}
+
+function verifyContentAttestation(
+  attestation: Extract<ContentAttestation, { kind: 'signed' }>,
+  agent: string
+): string {
   try {
-    return typeof payload === 'string' ? payload : JSON.stringify(payload);
+    const signature = ethers.Signature.from(attestation.signature).serialized;
+    const recovered = ethers.verifyMessage(
+      ethers.getBytes(attestation.resultHash),
+      signature
+    );
+    if (recovered.toLowerCase() !== agent.toLowerCase()) {
+      throw new Error('signer mismatch');
+    }
+    return signature;
   } catch {
-    return String(payload);
+    throw new SubmissionInputError(
+      'Content signature must be an EIP-191 signature of resultHash bytes by the managed wallet'
+    );
   }
 }
 
@@ -148,13 +200,53 @@ export async function submitDeliverable(
     resolvedHash = ethers.ZeroHash;
   }
 
-  if (signature && signedPayload !== undefined) {
-    const canonical = canonicalisePayload(signedPayload);
-    const recovered = ethers.verifyMessage(canonical, signature).toLowerCase();
-    if (recovered !== wallet.address.toLowerCase()) {
-      throw new Error('signature mismatch');
+  const attestation = parseContentAttestation(
+    signature,
+    signedPayload,
+    resolvedHash
+  );
+  let verifiedSignature: string | undefined;
+  if (attestation.kind === 'signed') {
+    verifiedSignature = verifyContentAttestation(attestation, wallet.address);
+    if (
+      digest !== undefined &&
+      (typeof digest !== 'string' ||
+        digest.toLowerCase() !== resolvedHash.toLowerCase())
+    ) {
+      throw new SubmissionInputError(
+        'An attested digest must match the submitted resultHash'
+      );
     }
   }
+
+  // Validate and detach caller evidence before any transaction. Otherwise a
+  // malformed/oversized record could be rejected only after a confirmed submit.
+  let deliverableInput: DeliverableInput;
+  try {
+    deliverableInput = validateDeliverableInput({
+      jobId,
+      agent: wallet.address,
+      success: success !== false,
+      resultUri: resultUri || resolvedResultRef || undefined,
+      resultCid: resultCid || undefined,
+      resultRef: resolvedResultRef || undefined,
+      resultHash: resolvedHash,
+      digest: verifiedSignature ? resolvedHash : digest,
+      signature: verifiedSignature,
+      proof: normaliseProof(proof),
+      metadata,
+      telemetry,
+      telemetryCid,
+      telemetryUri,
+      contributors,
+    });
+  } catch (error) {
+    if (error instanceof DeliverableInputError) {
+      throw new SubmissionInputError(error.message);
+    }
+    throw error;
+  }
+  assertDeliverableStorageReady();
 
   let submissionMethod: SubmissionMethod = 'none';
   let txHash: string | undefined;
@@ -188,7 +280,7 @@ export async function submitDeliverable(
       resultHash: resolvedHash,
       resultUri: resultUri || resolvedResultRef || undefined,
       resultCid: resultCid || undefined,
-      signature,
+      signature: verifiedSignature,
       success: success !== false,
       submittedAt,
       submissionMethod,
@@ -207,22 +299,8 @@ export async function submitDeliverable(
   }
 
   const deliverable = recordDeliverable({
-    jobId,
-    agent: wallet.address,
-    success: success !== false,
+    ...deliverableInput,
     submittedAt,
-    resultUri: resultUri || resolvedResultRef || undefined,
-    resultCid: resultCid || undefined,
-    resultRef: resolvedResultRef || undefined,
-    resultHash: resolvedHash,
-    digest,
-    signature,
-    proof: normaliseProof(proof),
-    metadata,
-    telemetry,
-    telemetryCid,
-    telemetryUri,
-    contributors,
     submissionMethod,
     txHash,
     certificateMetadataUri: certificateMetadata?.uri,

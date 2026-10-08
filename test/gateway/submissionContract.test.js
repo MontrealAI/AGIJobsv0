@@ -1,6 +1,7 @@
 const { expect } = require('chai');
 const { artifacts, ethers } = require('hardhat');
 const fs = require('node:fs');
+const os = require('node:os');
 const path = require('node:path');
 const ts = require('typescript');
 const {
@@ -9,7 +10,7 @@ const {
 
 // Isolate gateway I/O while running its actual TypeScript entrypoints. The
 // deployed contract artifact, rather than a copied ABI, validates each call.
-function loadGateway(file, dependencies) {
+function loadGateway(file, dependencies, runtimeDirectory) {
   const filename = path.resolve(__dirname, '../../agent-gateway', file);
   const compiled = ts.transpileModule(fs.readFileSync(filename, 'utf8'), {
     compilerOptions: {
@@ -31,7 +32,12 @@ function loadGateway(file, dependencies) {
     'exports',
     '__dirname',
     compiled.outputText
-  )(localRequire, module, module.exports, path.dirname(filename));
+  )(
+    localRequire,
+    module,
+    module.exports,
+    runtimeDirectory ?? path.dirname(filename)
+  );
   return module.exports;
 }
 
@@ -45,11 +51,12 @@ describe('gateway current registry submissions', function () {
     );
   });
 
-  function actions() {
+  function actions(store = {}) {
     const calls = {
       tax: 0,
       submit: [],
       publish: 0,
+      certificates: [],
       records: [],
       waits: 0,
       legacy: 0,
@@ -83,15 +90,20 @@ describe('gateway current registry submissions', function () {
         },
       },
       './certificateMetadata': {
-        publishCertificateMetadata: async () => {
+        publishCertificateMetadata: async (input) => {
           calls.publish++;
+          calls.certificates.push(input);
         },
       },
       './deliverableStore': {
+        DeliverableInputError: class extends Error {},
+        assertDeliverableStorageReady: () => {},
+        validateDeliverableInput: (input) => input,
         recordDeliverable: (record) => {
           calls.records.push(record);
           return record;
         },
+        ...store,
       },
     });
     return { ...module, calls };
@@ -127,7 +139,224 @@ describe('gateway current registry submissions', function () {
     expect([calls.tax, calls.waits, calls.publish, calls.legacy]).to.deep.equal(
       [1, 1, 1, 0]
     );
+    expect(calls.records[0].signature).to.equal(undefined);
+    expect(calls.certificates[0].signature).to.equal(undefined);
   });
+
+  it('publishes only a verified EIP-191 content signature over the exact result digest', async function () {
+    const { submitDeliverable, calls } = actions();
+    const wallet = ethers.Wallet.createRandom();
+    const resultHash = ethers.id('actual result bytes');
+    const signature = await wallet.signMessage(ethers.getBytes(resultHash));
+    await submitDeliverable({
+      jobId: '42',
+      wallet,
+      resultUri: 'ipfs://result',
+      resultHash,
+      signature,
+      signedPayload: resultHash,
+    });
+    expect(calls.submit[0][1]).to.equal(resultHash);
+    expect(calls.records[0]).to.include({ signature, digest: resultHash });
+    expect(calls.certificates[0]).to.include({ signature, resultHash });
+    // The existing independent certificate verifier consumes this exact format.
+    expect(
+      ethers.verifyMessage(
+        ethers.getBytes(calls.certificates[0].resultHash),
+        calls.certificates[0].signature
+      )
+    ).to.equal(wallet.address);
+  });
+
+  for (const scenario of [
+    'signature without payload',
+    'payload without signature',
+    'null payload',
+    'empty signature',
+    'malformed signature',
+    'unrelated signed payload',
+    'object payload',
+    'signature over hexadecimal text',
+    'wrong signer',
+    'wrong signed result',
+    'conflicting digest',
+  ]) {
+    it(`rejects ${scenario} before tax, submit, publication or persistence`, async function () {
+      const { submitDeliverable, SubmissionInputError, calls } = actions();
+      const wallet = ethers.Wallet.createRandom();
+      const resultHash = ethers.id('actual result bytes');
+      const signature = await wallet.signMessage(ethers.getBytes(resultHash));
+      const options = {
+        jobId: '42',
+        wallet,
+        resultUri: 'ipfs://result',
+        resultHash,
+        signature,
+        signedPayload: resultHash,
+      };
+      switch (scenario) {
+        case 'signature without payload':
+          delete options.signedPayload;
+          break;
+        case 'payload without signature':
+          delete options.signature;
+          break;
+        case 'null payload':
+          options.signedPayload = null;
+          break;
+        case 'empty signature':
+          options.signature = '';
+          break;
+        case 'malformed signature':
+          options.signature = '0x1234';
+          break;
+        case 'unrelated signed payload':
+          options.signedPayload = 'arbitrary message';
+          options.signature = await wallet.signMessage(options.signedPayload);
+          break;
+        case 'object payload':
+          options.signedPayload = { resultHash };
+          break;
+        case 'signature over hexadecimal text':
+          options.signature = await wallet.signMessage(resultHash);
+          break;
+        case 'wrong signer':
+          options.signature = await ethers.Wallet.createRandom().signMessage(
+            ethers.getBytes(resultHash)
+          );
+          break;
+        case 'wrong signed result':
+          options.signature = await wallet.signMessage(
+            ethers.getBytes(ethers.id('other result'))
+          );
+          break;
+        case 'conflicting digest':
+          options.digest = ethers.id('other result');
+          break;
+      }
+      let failure;
+      try {
+        await submitDeliverable(options);
+      } catch (error) {
+        failure = error;
+      }
+      expect(failure).to.be.instanceOf(SubmissionInputError);
+      expect([
+        calls.tax,
+        calls.submit.length,
+        calls.publish,
+        calls.records.length,
+      ]).to.deep.equal([0, 0, 0, 0]);
+    });
+  }
+
+  it('preflights storage input before transactions and maps validation errors to client input errors', async function () {
+    class DeliverableInputError extends Error {}
+    const { submitDeliverable, SubmissionInputError, calls } = actions({
+      DeliverableInputError,
+      validateDeliverableInput: () => {
+        throw new DeliverableInputError('evidence too large');
+      },
+    });
+    let failure;
+    try {
+      await submitDeliverable({
+        jobId: '42',
+        wallet: ethers.Wallet.createRandom(),
+        resultUri: 'ipfs://result',
+      });
+    } catch (error) {
+      failure = error;
+    }
+    expect(failure).to.be.instanceOf(SubmissionInputError);
+    expect(failure.message).to.equal('evidence too large');
+    expect([
+      calls.tax,
+      calls.submit.length,
+      calls.publish,
+      calls.records.length,
+    ]).to.deep.equal([0, 0, 0, 0]);
+  });
+
+  it('rejects unavailable storage before transactions without mislabelling an operator failure as bad input', async function () {
+    const unavailable = new Error('journal unavailable');
+    const { submitDeliverable, SubmissionInputError, calls } = actions({
+      assertDeliverableStorageReady: () => {
+        throw unavailable;
+      },
+    });
+    let failure;
+    try {
+      await submitDeliverable({
+        jobId: '42',
+        wallet: ethers.Wallet.createRandom(),
+        resultUri: 'ipfs://result',
+      });
+    } catch (error) {
+      failure = error;
+    }
+    expect(failure).to.equal(unavailable);
+    expect(failure).not.to.be.instanceOf(SubmissionInputError);
+    expect([
+      calls.tax,
+      calls.submit.length,
+      calls.publish,
+      calls.records.length,
+    ]).to.deep.equal([0, 0, 0, 0]);
+  });
+
+  for (const unsafe of ['oversized evidence', 'symlinked journal']) {
+    it(`composes the real storage preflight to reject ${unsafe} before chain writes`, async function () {
+      const directory = fs.mkdtempSync(
+        path.join(os.tmpdir(), 'gateway-submit-')
+      );
+      const runtimeDirectory = path.join(directory, 'agent-gateway');
+      fs.mkdirSync(runtimeDirectory);
+      try {
+        const store = loadGateway('deliverableStore.ts', {}, runtimeDirectory);
+        const { submitDeliverable, SubmissionInputError, calls } = actions({
+          DeliverableInputError: store.DeliverableInputError,
+          validateDeliverableInput: store.validateDeliverableInput,
+          assertDeliverableStorageReady: store.assertDeliverableStorageReady,
+        });
+        const outside = path.join(directory, 'outside.json');
+        fs.writeFileSync(outside, 'unchanged', { mode: 0o600 });
+        if (unsafe === 'symlinked journal') {
+          fs.symlinkSync(
+            outside,
+            path.join(directory, 'storage/deliverables/deliverables.jsonl')
+          );
+        }
+        let failure;
+        try {
+          await submitDeliverable({
+            jobId: '42',
+            wallet: ethers.Wallet.createRandom(),
+            resultUri: 'ipfs://result',
+            metadata:
+              unsafe === 'oversized evidence'
+                ? { content: 'x'.repeat(1024 * 1024) }
+                : {},
+          });
+        } catch (error) {
+          failure = error;
+        }
+        expect(failure).to.be.instanceOf(Error);
+        if (unsafe === 'oversized evidence')
+          expect(failure).to.be.instanceOf(SubmissionInputError);
+        else expect(failure).not.to.be.instanceOf(SubmissionInputError);
+        expect([
+          calls.tax,
+          calls.submit.length,
+          calls.publish,
+          calls.records.length,
+        ]).to.deep.equal([0, 0, 0, 0]);
+        expect(fs.readFileSync(outside, 'utf8')).to.equal('unchanged');
+      } finally {
+        fs.rmSync(directory, { recursive: true, force: true });
+      }
+    });
+  }
 
   it('accepts proof arrays and the legacy empty proof without changing evidence metadata', async function () {
     const { normaliseIdentityProof } = actions();
@@ -205,6 +434,7 @@ describe('gateway current registry submissions', function () {
           checkEnsSubdomain: async () => 'worker.agent.agi.eth',
         },
         './agentActions': actionModule,
+        './requestBudget': require('../../agent-gateway/requestBudget'),
         './apiHelpers': { resolveAgentAddress: async (value) => value },
         './deliverableStore': {},
         './stakeCoordinator': {},

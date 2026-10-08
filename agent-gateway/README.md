@@ -35,9 +35,10 @@ flowchart LR
 
 - **REST + WebSocket API** – `/jobs`, `/agents`, `/deliverables`, `/telemetry`, `/metrics`, and `/auth/challenge` endpoints power
   agent UX and operator dashboards. Authentication accepts either an API key or signature-based challenge using the rotating
-  challenge nonce returned by `/auth/challenge` (nonce rotates after each successful signature). [Source](routes.ts)
-- **gRPC control plane** – `agentgateway.v1.AgentGateway` exposes seven unary RPCs for result submission, heartbeats, telemetry,
-  job information, staking and reward claims. Its schema is [`protos/agent_gateway.proto`](protos/agent_gateway.proto).
+  challenge nonce returned by `/auth/challenge` (nonce rotates after each successful signature). A signature authorizes only its
+  managed wallet; the operator API key authorizes wallet selection and privileged operations. [Source](routes.ts)
+- **gRPC control plane** – `agentgateway.v1.AgentGateway` exposes eight unary RPCs for authentication challenges, result submission,
+  heartbeats, telemetry, job information, staking and reward claims. Its schema is [`protos/agent_gateway.proto`](protos/agent_gateway.proto).
   It shares submission and staking helpers with REST and uses gRPC status codes for failures. Job event broadcasts use the
   separate WebSocket interface; the Alpha Bridge has its own protocol. [Source](grpc.ts)
 - **Telemetry + audit anchoring** – Incoming telemetry is validated, stored, and exported both via `/metrics` and the anchoring
@@ -51,17 +52,17 @@ flowchart LR
 
 Set the following variables before launching the service:
 
-| Variable | Purpose |
-| -------- | ------- |
-| `RPC_URL` | HTTP(S) JSON-RPC endpoint for the service's `JsonRpcProvider`. [Source](utils.ts) |
-| `JOB_REGISTRY_ADDRESS` | Registry contract address controlling job lifecycle. [Source](utils.ts) |
-| `VALIDATION_MODULE_ADDRESS` | Validator commit/reveal module used for quorum management. [Source](utils.ts) |
-| `STAKE_MANAGER_ADDRESS` | Optional; enables reward logging + stake info feeds. [Source](utils.ts) |
-| `DISPUTE_MODULE_ADDRESS` | Optional dispute integration for escalations. [Source](utils.ts) |
-| `KEYSTORE_URL` + `KEYSTORE_TOKEN` | Required wallet-key endpoint and optional bearer credential. It returns `{ "keys": ["<private-key>"] }`. Use an authenticated HTTPS service outside isolated local fixtures; the loader accepts HTTP(S). [Source](utils.ts) |
-| `BOT_WALLET`, `ORCHESTRATOR_WALLET` | Select automation and orchestration addresses already loaded from the keystore. Defaults use the first wallet, then the automation wallet. [Source](utils.ts) |
-| `PORT`, `GRPC_PORT` | HTTP/WebSocket and gRPC listener ports (default 3000 / 50051); `GRPC_PORT=0` disables gRPC. [Source](utils.ts) |
-| `GATEWAY_API_KEY` | Optional API key for non-signature automation flows. [Source](routes.ts) |
+| Variable                            | Purpose                                                                                                                                                                                                                     |
+| ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `RPC_URL`                           | HTTP(S) JSON-RPC endpoint for the service's `JsonRpcProvider`. [Source](utils.ts)                                                                                                                                           |
+| `JOB_REGISTRY_ADDRESS`              | Registry contract address controlling job lifecycle. [Source](utils.ts)                                                                                                                                                     |
+| `VALIDATION_MODULE_ADDRESS`         | Validator commit/reveal module used for quorum management. [Source](utils.ts)                                                                                                                                               |
+| `STAKE_MANAGER_ADDRESS`             | Optional; enables reward logging + stake info feeds. [Source](utils.ts)                                                                                                                                                     |
+| `DISPUTE_MODULE_ADDRESS`            | Optional dispute integration for escalations. [Source](utils.ts)                                                                                                                                                            |
+| `KEYSTORE_URL` + `KEYSTORE_TOKEN`   | Required wallet-key endpoint and optional bearer credential. It returns `{ "keys": ["<private-key>"] }`. Use an authenticated HTTPS service outside isolated local fixtures; the loader accepts HTTP(S). [Source](utils.ts) |
+| `BOT_WALLET`, `ORCHESTRATOR_WALLET` | Select automation and orchestration addresses already loaded from the keystore. Defaults use the first wallet, then the automation wallet. [Source](utils.ts)                                                               |
+| `PORT`, `GRPC_PORT`                 | HTTP/WebSocket and gRPC listener ports (default 3000 / 50051); `GRPC_PORT=0` disables gRPC. [Source](utils.ts)                                                                                                              |
+| `GATEWAY_API_KEY`                   | Operator credential for selecting managed wallets and privileged POST operations. Required for those operator routes; wallet-scoped challenge authentication remains available without it. [Source](routes.ts)              |
 
 Token metadata (decimals, symbol and name) comes from the selected `config/agialpha*.json` manifest. `AGIALPHA_TOKEN` can explicitly
 select the deployed token address; startup checks its metadata on chain. `AGIALPHA_NETWORK` or `NETWORK` selects the manifest.
@@ -86,10 +87,36 @@ use plaintext transports; configure TLS termination and the intended network acc
 
 A Prometheus-compatible metrics stream is available at `GET /metrics`. WebSocket clients connect to the same origin; the gateway
 uses `registerEvents` to broadcast validator assignments and job changes. [Source](index.ts)
+Public WebSocket connections receive broadcasts. Control messages require the operator API key in the connection's
+`X-Api-Key` handshake header: `register` must match an agent ID and wallet already registered through authenticated `POST /agents`,
+and `ack` can update only that socket's registered agent queue. Keep these credentials in a trusted server client; see the
+[Node WebSocket example](../docs/gateway-setup.md#websocket-stream).
+
+Keep the operator API key with trusted operators. A worker signs the current challenge using its own managed wallet and can act
+only for that same wallet; changing the body address does not grant another wallet's authority. REST uses `/auth/challenge`,
+while gRPC uses its separate `GetAuthChallenge` RPC. Challenges expire after five minutes and rotate after successful signature
+authentication; one client's successful signature consumes that transport's shared nonce. Concurrent clients may need to fetch
+and sign a fresh challenge. Privileged agent registration, audit anchoring, blueprint
+creation, employer planning/job posting and quarantine release require the operator API key. See the [authentication contract](../docs/gateway-setup.md#authentication)
+for exact routes, metadata and error codes.
+
+REST and gRPC each enforce fixed, process-local budgets before authentication: 240 requests per transport peer per minute and
+2,400 per process per minute. Challenges, reads and failed authentication count. REST returns `429` and gRPC returns
+`RESOURCE_EXHAUSTED` with retry timing. A reverse proxy's clients share its observed peer quota; forwarded headers do not change
+that identity. Configure aggregate ingress limits when using replicas. See [request budgets](../docs/gateway-setup.md#request-budgets).
+WebSocket connections and inbound messages have separate process-local budgets, active-connection caps and a 64 KiB payload
+limit. Exceeding a budget attempts a `1013` close; unauthorized control messages attempt `1008`. The transport is then
+terminated immediately so clients that ignore close handshakes cannot retain resources. Clients may observe an abrupt close.
 
 Result submission calls the registry's current `submit` function with an ENS identity proof. It does not settle a job. See
 [proof formats and request examples](../docs/gateway-setup.md#proofs-and-result-submission) for REST/gRPC compatibility and the
 separate independent-validation and settlement steps. A deliverable's `success` field is a worker report, not a validator verdict.
+
+Evidence signatures are optional and separate from request authentication. A signed submission must supply both `signature`
+and `signedPayload`, where the payload is exactly the 32-byte `resultHash` and the managed wallet signs its decoded bytes using
+EIP-191. Invalid, incomplete or mismatched attestations fail before tax acknowledgement or result submission. Authenticated
+requests omitting both fields remain unsigned; the gateway does not manufacture a content signature. See the
+[signature example](../docs/gateway-setup.md#optional-evidence-signatures).
 
 ## Persistence and restart recovery
 
@@ -98,6 +125,25 @@ Deliverables, heartbeats and telemetry records are stored under `storage/deliver
 for source execution, or `agent-gateway/dist/storage` for the compiled service. The container uses
 `/app/agent-gateway/dist/storage`; persist it on a writable volume owned by the service user. Validator commitments may use
 the separate `VALIDATION_STORAGE_DIR` described below. [Source](deliverableStore.ts) [Source](jobPlanner.ts)
+
+New evidence records and large telemetry payloads are stored together in parameterized SQLite transactions in
+`storage/deliverables/deliverables.sqlite`; the in-memory index updates only after commit. Existing JSONL journals and telemetry
+files remain readable and are not rewritten, deleted or automatically migrated. Payload `path` values are opaque storage
+locators resolved against the database first and then legacy files; they are not promises of a newly written file.
+
+The store accepts bounded plain JSON: at most 1 MiB per serialized record or payload, depth 32 and 16,384 visited values.
+Submission inputs have a 960 KiB preflight limit to reserve receipt metadata space. Telemetry up to 8 KiB can remain inline.
+Each record kind has a 64 MiB budget for new record/payload JSON plus legacy journal bytes; the SQLite database has a 256 MiB page
+limit including payloads and overhead. These fixed limits are separate from request limits. Cycles, accessors, custom object
+prototypes and non-finite numbers are rejected. Evidence directories (`0700`) and files (`0600`) must belong to the service user;
+symlinks, multiply linked files and unsafe existing storage are rejected rather than silently repaired.
+
+Run one gateway writer per evidence store. Stop the service before backing up the entire deliverables directory, including the
+database, any SQLite recovery sidecars and legacy files. SQLite uses `DELETE` journaling with `synchronous=FULL`; do not copy only
+a live database or remove recovery files to bypass an error. Readiness checks test a write transaction and storage budgets but
+do not reserve disk space; conservative headroom checks reject work before hard caps are exhausted. A final write can fail after chain confirmation: reconcile the receipt before retrying. Plan retention
+and recovery before reaching limits; no history is automatically truncated. Storage errors use `DELIVERABLE_STORAGE_*` codes.
+Treat persisted text as untrusted data and never execute it or expose the private evidence directory as web content.
 
 The live jobs/agents maps, pending delivery queues and timers remain in memory. Event listeners do not provide a durable,
 checkpointed replay of every missed job event. After a restart, verify active jobs against canonical contract state, re-register
