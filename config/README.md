@@ -23,7 +23,7 @@ flowchart TD
     classDef chain fill:#fef2f2,stroke:#b91c1c,color:#7f1d1d,stroke-width:1px;
 
     cfg[config/*.json manifests]:::cfg --> scripts[TypeScript config loaders]:::tool
-    scripts --> ciJobs[ci (v2) validation jobs]:::ci
+    scripts --> ciJobs["ci (v2) validation jobs"]:::ci
     scripts --> ownerCli[npm run owner:* command surface]:::tool
     ownerCli --> chain[Contracts + orchestration services]:::chain
     ciJobs --> chain

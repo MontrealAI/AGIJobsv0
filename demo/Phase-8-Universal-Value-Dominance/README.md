@@ -113,7 +113,7 @@ The following original reference remains available alongside the work lab. Its m
 ```mermaid
 flowchart LR
     Operators((Mission Owners)) --> demo_Phase_8_Universal_Value_Dominance[[Demo → Phase 8 Universal Value Dominance]]
-    demo_Phase_8_Universal_Value_Dominance --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    demo_Phase_8_Universal_Value_Dominance --> Core[["AGI Jobs v0 (v2) Core Intelligence"]]
     Core --> Observability[[Unified CI / CD & Observability]]
     Core --> Governance[[Owner Control Plane]]
 ```

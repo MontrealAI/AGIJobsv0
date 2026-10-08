@@ -12,7 +12,7 @@
 flowchart TD
     subgraph Prep[Preparation]
         A[Clone repo \n & install deps]
-        B[Populate .env \n (RPC, key, governance)]
+        B["Populate .env \n (RPC, key, governance)"]
         C[Review deployment-config/mainnet.json]
     end
     subgraph DryRun[Dry-run & Checklist]
@@ -163,17 +163,17 @@ Store the bundle in your institution’s vault alongside emergency pause instruc
 
 ```mermaid
 gantt
-    title First 15 minutes after discovering a misconfiguration
-    dateFormat  mm-dd HH:MM
+    title First 20 minutes after discovering a misconfiguration
+    dateFormat  HH:mm
     axisFormat  %H:%M
     section Detection
-    Alert raised           :active, 00-00 00:00, 5m
+    Alert raised           :active, alert, 00:00, 5m
     section Containment
-    Pause SystemPause      :crit, 00-00 00:05, 2m
-    Notify operators       :after Pause SystemPause, 3m
+    Pause SystemPause      :crit, pause, after alert, 2m
+    Notify operators       :notify, after pause, 3m
     section Remediation
-    Execute owner-plan fix :after Notify operators, 5m
-    Verify with dashboard  :after Execute owner-plan fix, 5m
+    Execute owner-plan fix :remediate, after notify, 5m
+    Verify with dashboard  :verify, after remediate, 5m
 ```
 
 Commands to keep on a sticky note:

@@ -15,8 +15,8 @@
     },
     {
       "path": "demo/agi-governance/reports/governance-demo-dashboard.html",
-      "sha256": "d259f50f32db73da1cb211a82e761745b309a1035ab14410eb2dd90bdc389796",
-      "bytes": 25589
+      "sha256": "a1866bfcefdfdbadf5c5ddcf31351d225cbf3d661f2218ff41eeeba0cf5bd25d",
+      "bytes": 25832
     },
     {
       "path": "demo/agi-governance/reports/governance-demo-full-run.json",
@@ -40,8 +40,8 @@
     },
     {
       "path": "demo/agi-governance/reports/governance-demo-report.md",
-      "sha256": "93a01784d9c48e29dd24b53e841f84e1ffff5f7eda9ef295adcebea9a24f72c9",
-      "bytes": 16766
+      "sha256": "0c844d2ef54b50629a16db4f8bb7e4dcedf6d92e63c1e7846af0ccc8f1fcf5ac",
+      "bytes": 17009
     },
     {
       "path": "demo/agi-governance/reports/governance-demo-summary.json",
@@ -68,5 +68,27 @@
       "sha256": "7fa6e6841c331249ad04edcd943b8fdfde38caafa06eff0ecf16a88096c921fa",
       "bytes": 1599
     }
-  ]
+  ],
+  "presentationCorrections": {
+    "date": "2026-10-08",
+    "sourceCommit": "5b4cebb309a83a7a6749d8911d8bf96a1921e042",
+    "scope": "Mermaid syntax and rendering corrections only. All numerical observations, labels, historical timestamps and simulation evidence are preserved; no simulation was rerun.",
+    "generatedAtMeaning": "generatedAt records the original simulation run. Only the listed presentation-file digests in entries were updated on 2026-10-08. Original digests are retained below and original files are available at sourceCommit.",
+    "entries": [
+      {
+        "path": "demo/agi-governance/reports/governance-demo-dashboard.html",
+        "originalSha256": "d259f50f32db73da1cb211a82e761745b309a1035ab14410eb2dd90bdc389796",
+        "originalBytes": 25589,
+        "presentationSha256": "a1866bfcefdfdbadf5c5ddcf31351d225cbf3d661f2218ff41eeeba0cf5bd25d",
+        "presentationBytes": 25832
+      },
+      {
+        "path": "demo/agi-governance/reports/governance-demo-report.md",
+        "originalSha256": "93a01784d9c48e29dd24b53e841f84e1ffff5f7eda9ef295adcebea9a24f72c9",
+        "originalBytes": 16766,
+        "presentationSha256": "0c844d2ef54b50629a16db4f8bb7e4dcedf6d92e63c1e7846af0ccc8f1fcf5ac",
+        "presentationBytes": 17009
+      }
+    ]
+  }
 }

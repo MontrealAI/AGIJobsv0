@@ -222,7 +222,7 @@ flowchart TD
     classDef artefact fill:#f5f3ff,stroke:#7c3aed,color:#4c1d95,stroke-width:1px;
 
     statusCLI[ci:status-wall]:::cli --> ghRunsAPI[GitHub Actions runs API]:::api
-    statusCLI --> statusArtefacts[reports/ci/status.{md,json}]:::artefact
+    statusCLI --> statusArtefacts["reports/ci/status.{md,json}"]:::artefact
     manifestCheck[ci:sync-contexts --check]:::cli --> workflowFile[.github/workflows/ci.yml]:::guard
     manifestCheck --> manifestJSON[ci/required-contexts.json]:::guard
     branchAudit[ci:verify-branch-protection]:::cli --> githubBranchAPI[GitHub branch protection API]:::api
@@ -344,7 +344,7 @@ flowchart TD
 
     subgraph Operator Surface
         gateway[Agent gateway APIs]:::service
-        consoles[Operator consoles (`apps/`)]:::service
+        consoles["Operator consoles (#96;apps/#96;)"]:::service
         ownerDeck[Owner CLI + control scripts]:::entry
     end
 
@@ -418,8 +418,8 @@ flowchart LR
     ControlDoctor --> AuthorityMatrix[(Owner authority matrix)]:::guard
     AuthorityMatrix --> BranchGuard[Branch protection guard]:::guard
     BranchGuard --> GitHub[GitHub branch protection]:::repo
-    GitHub --> CIWall[ci (v2) / CI summary]:::guard
-    CIWall --> Reports[reports/ci/status.{md,json}]:::repo
+    GitHub --> CIWall["ci (v2) / CI summary"]:::guard
+    CIWall --> Reports["reports/ci/status.{md,json}"]:::repo
     Reports --> OwnerCouncil
     Reports --> Operators[Operator consoles]:::auto
 ```
@@ -434,7 +434,7 @@ flowchart LR
     classDef command fill:#fef3c7,stroke:#d97706,color:#7c2d12,stroke-width:1px;
     classDef execution fill:#eff6ff,stroke:#2563eb,color:#1e3a8a,stroke-width:1px;
 
-    configs[Config manifests\n(config/, storage/)]:::inputs --> surface[owner:surface]:::analysis
+    configs["Config manifests\n(config/, storage/)"]:::inputs --> surface[owner:surface]:::analysis
     surface --> matrix[owner:parameters]:::analysis
     matrix --> doctor[owner:doctor]:::analysis
     doctor --> mission[owner:mission-control]:::command
@@ -487,7 +487,7 @@ flowchart LR
     classDef cli fill:#f5f3ff,stroke:#7c3aed,color:#4c1d95,stroke-width:1px;
     classDef surface fill:#f1f5f9,stroke:#1e293b,color:#0f172a,stroke-width:1px;
 
-    summaryJob[ci (v2) / CI summary]:::cli --> statusJson[reports/ci/status.json]:::artefact
+    summaryJob["ci (v2) / CI summary"]:::cli --> statusJson[reports/ci/status.json]:::artefact
     summaryJob --> statusMarkdown[reports/ci/status.md]:::artefact
     statusJson --> dashboards[Mission dashboards\n& release control rooms]:::surface
     statusMarkdown --> briefings[Owner briefings\n& PR threads]:::surface
@@ -537,15 +537,15 @@ flowchart TD
     classDef companion fill:#fef3c7,stroke:#d97706,color:#7c2d12,stroke-width:1px;
     classDef checks fill:#f1f5f9,stroke:#1e293b,color:#0f172a,stroke-width:1px;
 
-    ciSummary[ci (v2) / CI summary]:::main --> checksWall[GitHub checks wall]:::checks
+    ciSummary["ci (v2) / CI summary"]:::main --> checksWall[GitHub checks wall]:::checks
     staticAnalysis[static-analysis / Slither static analysis]:::companion --> checksWall
     fuzzSuite[fuzz / forge-fuzz]:::companion --> checksWall
     webappCi[webapp / webapp-ci]:::companion --> checksWall
-    containersNode[containers / build (node-runner)]:::companion --> checksWall
-    containersValidator[containers / build (validator-runner)]:::companion --> checksWall
-    containersGateway[containers / build (gateway)]:::companion --> checksWall
-    containersWebapp[containers / build (webapp)]:::companion --> checksWall
-    containersOwner[containers / build (owner-console)]:::companion --> checksWall
+    containersNode["containers / build (node-runner)"]:::companion --> checksWall
+    containersValidator["containers / build (validator-runner)"]:::companion --> checksWall
+    containersGateway["containers / build (gateway)"]:::companion --> checksWall
+    containersWebapp["containers / build (webapp)"]:::companion --> checksWall
+    containersOwner["containers / build (owner-console)"]:::companion --> checksWall
     e2eSuite[e2e / orchestrator-e2e]:::companion --> checksWall
 ```
 
@@ -559,9 +559,9 @@ flowchart LR
     classDef guard fill:#f1f5f9,stroke:#1e293b,color:#0f172a,stroke-width:1px;
     classDef summary fill:#eff6ff,stroke:#2563eb,color:#1e3a8a,stroke-width:1px;
 
-    manifestDeck[ci/required-contexts.json\nci/required-companion-contexts.json]:::manifest --> branchGuard[ci (v2) / Branch protection guard]:::guard
-    branchGuard --> githubAPI[GitHub Branch Protection API\n(enforced contexts)]:::guard
-    branchGuard --> ciSummary[ci (v2) / CI summary]:::summary
+    manifestDeck[ci/required-contexts.json\nci/required-companion-contexts.json]:::manifest --> branchGuard["ci (v2) / Branch protection guard"]:::guard
+    branchGuard --> githubAPI["GitHub Branch Protection API\n(enforced contexts)"]:::guard
+    branchGuard --> ciSummary["ci (v2) / CI summary"]:::summary
     ciSummary --> checksTab[Protected branch checks wall]:::summary
 ```
 

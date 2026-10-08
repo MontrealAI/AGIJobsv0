@@ -25,13 +25,13 @@
     },
     {
       "path": "demo/alpha-meta/reports/alpha-meta-governance-dashboard.html",
-      "sha256": "d07335b353db2313bfad165d57b065384775f29251d5792782ea13db282e41ad",
-      "bytes": 27078
+      "sha256": "980d8e31ff357979fae73d2f15bbe1c261447e9f0d292cbb20d2bbdbb9900efb",
+      "bytes": 27346
     },
     {
       "path": "demo/alpha-meta/reports/alpha-meta-governance-report.md",
-      "sha256": "9e12f53971b44b119cccd3d03f89fbad2d578373080402a0d3ecb6e8256b7142",
-      "bytes": 18066
+      "sha256": "d7ef02f297ede2c91a6adfa05478dbb6fe608b7e1de94f5210c8f1c25fa885cb",
+      "bytes": 18334
     },
     {
       "path": "demo/alpha-meta/reports/alpha-meta-governance-summary.json",
@@ -78,5 +78,69 @@
       "sha256": "256efc47ed3d55f477e3c768ef209774ed8b8f1da6206bfd6531346fe9a08dfb",
       "bytes": 1946
     }
-  ]
+  ],
+  "presentationCorrections": {
+    "date": "2026-10-08",
+    "sourceCommit": "5b4cebb309a83a7a6749d8911d8bf96a1921e042",
+    "scope": "Mermaid syntax and rendering corrections only. All numerical observations, labels, historical timestamps and simulation evidence are preserved; no simulation was rerun.",
+    "generatedAtMeaning": "generatedAt records the original simulation run. Only the listed presentation-file digests in entries were updated on 2026-10-08. Original digests are retained below and original files are available at sourceCommit.",
+    "entries": [
+      {
+        "path": "demo/alpha-meta/reports/alpha-meta-governance-dashboard.html",
+        "originalSha256": "d07335b353db2313bfad165d57b065384775f29251d5792782ea13db282e41ad",
+        "originalBytes": 27078,
+        "presentationSha256": "980d8e31ff357979fae73d2f15bbe1c261447e9f0d292cbb20d2bbdbb9900efb",
+        "presentationBytes": 27346
+      },
+      {
+        "path": "demo/alpha-meta/reports/alpha-meta-governance-report.md",
+        "originalSha256": "9e12f53971b44b119cccd3d03f89fbad2d578373080402a0d3ecb6e8256b7142",
+        "originalBytes": 18066,
+        "presentationSha256": "d7ef02f297ede2c91a6adfa05478dbb6fe608b7e1de94f5210c8f1c25fa885cb",
+        "presentationBytes": 18334
+      }
+    ],
+    "knownPreexistingMismatches": [
+      {
+        "path": "demo/alpha-meta/config/mission@alpha-meta.json",
+        "manifestSha256": "8603981e101b0b63d5ddb0d56f71792c7910bb6dc3f6ecf422321333432b9b17",
+        "manifestBytes": 16596,
+        "observedSourceCommitSha256": "b6aa88f8131425e2b7cb408a6f3823e48df7f07a61fe3766b5f8a066412a779b",
+        "observedSourceCommitBytes": 16905,
+        "currentSha256": "b6aa88f8131425e2b7cb408a6f3823e48df7f07a61fe3766b5f8a066412a779b",
+        "currentBytes": 16905,
+        "status": "Preexisting at sourceCommit; unchanged in this correction and not revalidated simulation evidence."
+      },
+      {
+        "path": "demo/alpha-meta/reports/alpha-meta-full-run.json",
+        "manifestSha256": "1e76f87b64fcca9e9d75765430c62cbe784eb67c5d205520e70475fee50ab390",
+        "manifestBytes": 3394,
+        "observedSourceCommitSha256": "40d42fa90f831f461a16eeb68203278106bcbe3f3d237e0f75a43964f2523691",
+        "observedSourceCommitBytes": 3813,
+        "currentSha256": "40d42fa90f831f461a16eeb68203278106bcbe3f3d237e0f75a43964f2523691",
+        "currentBytes": 3813,
+        "status": "Preexisting at sourceCommit; unchanged in this correction and not revalidated simulation evidence."
+      },
+      {
+        "path": "demo/alpha-meta/reports/alpha-meta-full-run.md",
+        "manifestSha256": "803d80f589c9e3765b89ac3208e29bf447171661392b3311854ca60da16e2fd8",
+        "manifestBytes": 3617,
+        "observedSourceCommitSha256": "527abf1d55c462af94ff3f497a27cf4f5a88c6aacba31f681082619e33aed173",
+        "observedSourceCommitBytes": 3904,
+        "currentSha256": "527abf1d55c462af94ff3f497a27cf4f5a88c6aacba31f681082619e33aed173",
+        "currentBytes": 3904,
+        "status": "Preexisting at sourceCommit; unchanged in this correction and not revalidated simulation evidence."
+      },
+      {
+        "path": "demo/alpha-meta/reports/alpha-meta-owner-matrix.md",
+        "manifestSha256": "9f4b7a42e929d7c8f3d21e7fa7def32f559baff9b70877feb4481a07bd001a96",
+        "manifestBytes": 1814,
+        "observedSourceCommitSha256": "31995f3124010c3602fad84f5d0366caea5de0014852cf027c351d0ac86faa12",
+        "observedSourceCommitBytes": 2809,
+        "currentSha256": "31995f3124010c3602fad84f5d0366caea5de0014852cf027c351d0ac86faa12",
+        "currentBytes": 2809,
+        "status": "Preexisting at sourceCommit; unchanged in this correction and not revalidated simulation evidence."
+      }
+    ]
+  }
 }

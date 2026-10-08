@@ -97,7 +97,8 @@ flowchart TD
     A[Run owner diagram] --> B{Any warnings?}
   end
   B -- No --> H[Archive report]
-  B -- Yes --> subgraph Triaging
+  B -- Yes --> Triaging
+  subgraph Triaging
     C[Identify affected modules]
     D[Cross-check with owner:verify-control]
     E[Decide fix: rotate / update config / accept pending]

@@ -88,7 +88,7 @@ The practical sequence is useful digital deliverables, independently accepted ec
 ```mermaid
 flowchart LR
     Operators((Mission Owners)) --> demo_omnisovereign[[Demo → Omnisovereign]]
-    demo_omnisovereign --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    demo_omnisovereign --> Core[["AGI Jobs v0 (v2) Core Intelligence"]]
     Core --> Observability[[Unified CI / CD & Observability]]
     Core --> Governance[[Owner Control Plane]]
 ```

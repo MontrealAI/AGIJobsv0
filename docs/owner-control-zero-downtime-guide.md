@@ -190,7 +190,7 @@ Attach this signed template to the generated Markdown and Safe bundle for comple
 
 ```mermaid
 flowchart TD
-    Audit[Quarterly audit\n(owner:surface for all networks)] --> Review[Retro meeting\nLessons + config debt]
+    Audit["Quarterly audit\n(owner:surface for all networks)"] --> Review[Retro meeting\nLessons + config debt]
     Review --> Backlog[Create GitHub issues\nfor config / script gaps]
     Backlog --> Sprint[Schedule owner-control sprint]
     Sprint --> Ship[Execute changes via this guide]

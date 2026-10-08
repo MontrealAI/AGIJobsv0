@@ -5,7 +5,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends ca-certificates curl \
+  && apt-get install -y --no-install-recommends ca-certificates curl python3 python3-networkx python3-scipy \
   && rm -rf /var/lib/apt/lists/*
 
 FROM base AS build

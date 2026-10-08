@@ -21,7 +21,7 @@ and pulls live contract metadata from environment/runtime configuration.
 ```mermaid
 flowchart LR
     Owner[Owner / Operator] --> UI[Next.js interface]
-    UI --> OrchestratorSDK[@agi/orchestrator]
+    UI --> OrchestratorSDK["@agi/orchestrator"]
     OrchestratorSDK --> AgentGateway
     UI --> Metrics[Gateway metrics & health]
     Metrics --> UI

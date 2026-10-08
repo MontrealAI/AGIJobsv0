@@ -76,6 +76,7 @@
             return;
           }
           target.textContent = diagram;
+          target.removeAttribute('data-processed');
           mermaid.run({ nodes: [target] });
         });
       });
@@ -113,7 +114,11 @@
       <p>Paste the CLI output below and click render to visualise the live job DAG.</p>
       <textarea id="mermaid-source" rows="10" style="width:100%; border-radius:12px; padding:1rem; background:rgba(0,0,0,0.35); color:#f5f7ff; border:1px solid rgba(255,255,255,0.08);"></textarea>
       <button id="render" style="margin-top:1rem; padding:0.6rem 1.2rem; border-radius:10px; background:#1f6feb; border:none; color:white; font-weight:600; cursor:pointer;">Render Mermaid</button>
-      <div id="mermaid-diagram" class="mermaid" style="margin-top:1.5rem;">graph TD\n    Dyson_Swarm_Launch[Dyson Swarm Launch]\n    Autonomous_Logistics_Mesh[Autonomous Logistics Mesh]\n    Planetary_Validator_Guild[Planetary Validator Guild]\n    Dyson_Swarm_Launch --> Autonomous_Logistics_Mesh</div>
+      <div id="mermaid-diagram" class="mermaid" style="margin-top:1.5rem;">graph TD
+    Dyson_Swarm_Launch[Dyson Swarm Launch]
+    Autonomous_Logistics_Mesh[Autonomous Logistics Mesh]
+    Planetary_Validator_Guild[Planetary Validator Guild]
+    Dyson_Swarm_Launch --> Autonomous_Logistics_Mesh</div>
     </section>
 
     <section>

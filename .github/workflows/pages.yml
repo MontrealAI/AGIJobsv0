@@ -4,6 +4,10 @@ on:
   push:
     branches: [main]
     paths:
+      - '**/*.md'
+      - '**/*.mmd'
+      - '**/*.html'
+      - 'orchestrator/analytics.py'
       - 'apps/onebox-static/**'
       - 'website/**'
       - 'scripts/pages/**'
@@ -18,6 +22,10 @@ on:
       - '.github/workflows/pages.yml'
   pull_request:
     paths:
+      - '**/*.md'
+      - '**/*.mmd'
+      - '**/*.html'
+      - 'orchestrator/analytics.py'
       - 'apps/onebox-static/**'
       - 'website/**'
       - 'scripts/pages/**'
@@ -63,6 +71,8 @@ jobs:
           corepack pnpm install --frozen-lockfile
       - name: Install test browser
         run: npx playwright install --with-deps chromium
+      - name: Verify original repository Mermaid sources
+        run: npm run site:mermaid
       - name: Verify catalog and build the complete site
         run: |
           npm run demos -- --check

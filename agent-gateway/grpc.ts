@@ -2,6 +2,7 @@ import path from 'path';
 import * as grpc from '@grpc/grpc-js';
 import * as protoLoader from '@grpc/proto-loader';
 import { Wallet, ethers } from 'ethers';
+import { GatewayRequestBudget, grpcPeerAddress } from './requestBudget';
 import {
   walletManager,
   checkEnsSubdomain,
@@ -34,7 +35,7 @@ import {
   normaliseMetadata,
   resolveAgentAddress,
 } from './apiHelpers';
-import { submitDeliverable } from './agentActions';
+import { SubmissionInputError, submitDeliverable } from './agentActions';
 import {
   ensureStake,
   getStakeBalance,
@@ -321,13 +322,22 @@ type UnaryCallback<T> = grpc.sendUnaryData<T>;
 
 let serverInstance: grpc.Server | null = null;
 
+const AUTH_CHALLENGE_TTL_MS = 5 * 60 * 1000;
 let authNonce = ethers.hexlify(ethers.randomBytes(16));
+let authNonceExpiresAt = Date.now() + AUTH_CHALLENGE_TTL_MS;
 
 function rotateAuthNonce(): void {
   authNonce = ethers.hexlify(ethers.randomBytes(16));
+  authNonceExpiresAt = Date.now() + AUTH_CHALLENGE_TTL_MS;
+}
+function refreshExpiredAuthNonce(): void {
+  if (Date.now() >= authNonceExpiresAt) rotateAuthNonce();
 }
 
-function extractMetadataValue(metadata: grpc.Metadata, key: string): string | undefined {
+function extractMetadataValue(
+  metadata: grpc.Metadata,
+  key: string
+): string | undefined {
   const values = metadata.get(key);
   if (!values || values.length === 0) {
     return undefined;
@@ -342,14 +352,40 @@ function extractMetadataValue(metadata: grpc.Metadata, key: string): string | un
   return undefined;
 }
 
+type AuthenticatedPrincipal =
+  | { kind: 'operator' }
+  | { kind: 'wallet'; address: string };
+const authenticatedPrincipals = new WeakMap<object, AuthenticatedPrincipal>();
+const requestBudget = new GatewayRequestBudget();
+
+function enforceRequestBudget(
+  call: grpc.ServerUnaryCall<unknown, unknown>
+): grpc.ServiceError | null {
+  const decision = requestBudget.consume(grpcPeerAddress(call.getPeer?.()));
+  if (decision.allowed) return null;
+  const metadata = new grpc.Metadata();
+  metadata.set('retry-after', String(decision.retryAfterSeconds));
+  return {
+    ...createServiceError(
+      grpc.status.RESOURCE_EXHAUSTED,
+      'gateway request budget exhausted; retry later'
+    ),
+    metadata,
+  };
+}
+
 function authenticateCall(
   call: grpc.ServerUnaryCall<unknown, unknown>
 ): grpc.ServiceError | null {
+  const limited = enforceRequestBudget(call);
+  if (limited) return limited;
   const apiKey = extractMetadataValue(call.metadata, 'x-api-key');
   if (GATEWAY_API_KEY && apiKey === GATEWAY_API_KEY) {
+    authenticatedPrincipals.set(call, { kind: 'operator' });
     return null;
   }
 
+  refreshExpiredAuthNonce();
   const signature = extractMetadataValue(call.metadata, 'x-signature');
   const address = extractMetadataValue(call.metadata, 'x-address');
   if (signature && address) {
@@ -357,7 +393,14 @@ function authenticateCall(
       const recovered = ethers
         .verifyMessage(AUTH_MESSAGE + authNonce, signature)
         .toLowerCase();
-      if (recovered === address.toLowerCase()) {
+      if (
+        recovered === address.toLowerCase() &&
+        walletManager?.get(recovered)?.address.toLowerCase() === recovered
+      ) {
+        authenticatedPrincipals.set(call, {
+          kind: 'wallet',
+          address: recovered,
+        });
         rotateAuthNonce();
         return null;
       }
@@ -404,9 +447,11 @@ function parseOptionalJson(
   }
 }
 
-function parseTelemetryPayload(
-  payload?: ProtoTelemetryPayload | null
-): { data?: unknown; cid?: string; uri?: string } {
+function parseTelemetryPayload(payload?: ProtoTelemetryPayload | null): {
+  data?: unknown;
+  cid?: string;
+  uri?: string;
+} {
   if (!payload) {
     return {};
   }
@@ -435,24 +480,16 @@ function parseTelemetrySamples(samples?: ProtoTelemetrySample[]): unknown[] {
     try {
       parsed.push(JSON.parse(entry.payload_json));
     } catch (err) {
-      throw new Error(
-        `telemetry sample is not valid JSON: ${String(err)}`
-      );
+      throw new Error(`telemetry sample is not valid JSON: ${String(err)}`);
     }
   }
   return parsed;
 }
 
 function parseSignedPayload(value?: string): unknown {
-  if (!value || value.trim().length === 0) {
-    return undefined;
-  }
-  const trimmed = value.trim();
-  try {
-    return JSON.parse(trimmed);
-  } catch {
-    return trimmed;
-  }
+  // Proto3 scalar string defaults have no presence. Nonempty values must remain
+  // exact digest strings for the shared attestation verifier.
+  return value === '' ? undefined : value;
 }
 
 function toStoredPayloadMessage(
@@ -536,7 +573,9 @@ function mapDeliverable(
       label: entry.label,
       signature: entry.signature,
       payload_digest: entry.payloadDigest,
-      metadata_json: entry.metadata ? JSON.stringify(entry.metadata) : undefined,
+      metadata_json: entry.metadata
+        ? JSON.stringify(entry.metadata)
+        : undefined,
     }));
   }
   if (record.submissionMethod) {
@@ -661,16 +700,16 @@ function mapContributorSummary(
   if (summary.lastContributionAt) {
     message.last_contribution_at = summary.lastContributionAt;
   }
-  message.contributions = summary.contributions.map(
-    mapContributorContribution
-  );
+  message.contributions = summary.contributions.map(mapContributorContribution);
   return message;
 }
 
 function mapPayouts(payouts: any[]): RewardPayoutRecordMessage[] {
   return payouts.map((entry) => ({
     tx_hash: (entry as { txHash?: string }).txHash,
-    amount_raw: (entry as { raw?: string }).raw ?? (entry as { amountRaw?: string }).amountRaw,
+    amount_raw:
+      (entry as { raw?: string }).raw ??
+      (entry as { amountRaw?: string }).amountRaw,
     amount_formatted:
       (entry as { formatted?: string }).formatted ??
       (entry as { amountFormatted?: string }).amountFormatted,
@@ -695,6 +734,7 @@ function mapClaimActions(actions: any[]): ClaimActionMessage[] {
 }
 
 async function resolveWallet(
+  call: object,
   walletAddress?: string,
   agentAddress?: string
 ): Promise<Wallet> {
@@ -715,6 +755,19 @@ async function resolveWallet(
   const wallet = walletManager.get(resolved);
   if (!wallet) {
     throw new Error('wallet is not managed by the gateway');
+  }
+  const principal = authenticatedPrincipals.get(call);
+  if (
+    principal?.kind !== 'operator' &&
+    !(
+      principal?.kind === 'wallet' &&
+      principal.address === wallet.address.toLowerCase()
+    )
+  ) {
+    throw createServiceError(
+      grpc.status.PERMISSION_DENIED,
+      'wallet is not authorised for this principal'
+    );
   }
   return wallet;
 }
@@ -750,7 +803,10 @@ function handleContributorParsing(
 }
 
 async function handleSubmitResult(
-  call: grpc.ServerUnaryCall<SubmitResultRequestMessage, SubmitResultResponseMessage>,
+  call: grpc.ServerUnaryCall<
+    SubmitResultRequestMessage,
+    SubmitResultResponseMessage
+  >,
   callback: UnaryCallback<SubmitResultResponseMessage>
 ): Promise<void> {
   const authError = authenticateCall(call);
@@ -761,18 +817,26 @@ async function handleSubmitResult(
   const request = call.request;
   const jobId = request.job_id?.trim();
   if (!jobId) {
-    callback(createServiceError(grpc.status.INVALID_ARGUMENT, 'job_id is required'), null);
+    callback(
+      createServiceError(grpc.status.INVALID_ARGUMENT, 'job_id is required'),
+      null
+    );
     return;
   }
   let wallet: Wallet;
   try {
-    wallet = await resolveWallet(request.wallet_address, request.agent_address);
+    wallet = await resolveWallet(
+      call,
+      request.wallet_address,
+      request.agent_address
+    );
   } catch (err) {
     respondWithError(callback, err, grpc.status.INVALID_ARGUMENT);
     return;
   }
+  let subdomain: string;
   try {
-    await checkEnsSubdomain(wallet.address);
+    subdomain = (await checkEnsSubdomain(wallet.address)).split('.')[0];
   } catch (err) {
     respondWithError(callback, err, grpc.status.PERMISSION_DENIED);
     return;
@@ -810,9 +874,10 @@ async function handleSubmitResult(
     return;
   }
 
-  const success = request.success === undefined || request.success === null
-    ? true
-    : Boolean(request.success);
+  const success =
+    request.success === undefined || request.success === null
+      ? true
+      : Boolean(request.success);
   const finalizePreference =
     request.finalize === undefined || request.finalize === null
       ? undefined
@@ -829,6 +894,7 @@ async function handleSubmitResult(
       resultRef: request.result_ref,
       resultHash: request.result_hash,
       proofBytes: request.proof_bytes,
+      subdomain,
       proof,
       success,
       finalize: finalizePreference,
@@ -840,7 +906,7 @@ async function handleSubmitResult(
       telemetryUri: request.telemetry_uri ?? telemetryPayload.uri,
       contributors,
       digest: request.digest,
-      signature: request.signature,
+      signature: request.signature === '' ? undefined : request.signature,
       signedPayload,
     });
 
@@ -853,15 +919,20 @@ async function handleSubmitResult(
     callback(null, response);
   } catch (err: any) {
     const message = err?.message || String(err);
-    const code = message && message.toLowerCase().includes('signature')
-      ? grpc.status.INVALID_ARGUMENT
-      : grpc.status.INTERNAL;
+    const code =
+      err instanceof SubmissionInputError ||
+      (message && message.toLowerCase().includes('signature'))
+        ? grpc.status.INVALID_ARGUMENT
+        : grpc.status.INTERNAL;
     callback(createServiceError(code, message), null);
   }
 }
 
 async function handleRecordHeartbeat(
-  call: grpc.ServerUnaryCall<RecordHeartbeatRequestMessage, HeartbeatRecordMessage>,
+  call: grpc.ServerUnaryCall<
+    RecordHeartbeatRequestMessage,
+    HeartbeatRecordMessage
+  >,
   callback: UnaryCallback<HeartbeatRecordMessage>
 ): Promise<void> {
   const authError = authenticateCall(call);
@@ -872,19 +943,29 @@ async function handleRecordHeartbeat(
   const request = call.request;
   const jobId = request.job_id?.trim();
   if (!jobId) {
-    callback(createServiceError(grpc.status.INVALID_ARGUMENT, 'job_id is required'), null);
+    callback(
+      createServiceError(grpc.status.INVALID_ARGUMENT, 'job_id is required'),
+      null
+    );
     return;
   }
   let wallet: Wallet;
   try {
-    wallet = await resolveWallet(request.wallet_address, request.agent_address);
+    wallet = await resolveWallet(
+      call,
+      request.wallet_address,
+      request.agent_address
+    );
   } catch (err) {
     respondWithError(callback, err, grpc.status.INVALID_ARGUMENT);
     return;
   }
   const status = request.status?.trim();
   if (!status) {
-    callback(createServiceError(grpc.status.INVALID_ARGUMENT, 'status is required'), null);
+    callback(
+      createServiceError(grpc.status.INVALID_ARGUMENT, 'status is required'),
+      null
+    );
     return;
   }
   let metadata: Record<string, unknown> | undefined;
@@ -915,7 +996,10 @@ async function handleRecordHeartbeat(
 }
 
 async function handleRecordTelemetry(
-  call: grpc.ServerUnaryCall<RecordTelemetryRequestMessage, RecordTelemetryResponseMessage>,
+  call: grpc.ServerUnaryCall<
+    RecordTelemetryRequestMessage,
+    RecordTelemetryResponseMessage
+  >,
   callback: UnaryCallback<RecordTelemetryResponseMessage>
 ): Promise<void> {
   const authError = authenticateCall(call);
@@ -926,12 +1010,19 @@ async function handleRecordTelemetry(
   const request = call.request;
   const jobId = request.job_id?.trim();
   if (!jobId) {
-    callback(createServiceError(grpc.status.INVALID_ARGUMENT, 'job_id is required'), null);
+    callback(
+      createServiceError(grpc.status.INVALID_ARGUMENT, 'job_id is required'),
+      null
+    );
     return;
   }
   let wallet: Wallet;
   try {
-    wallet = await resolveWallet(request.wallet_address, request.agent_address);
+    wallet = await resolveWallet(
+      call,
+      request.wallet_address,
+      request.agent_address
+    );
   } catch (err) {
     respondWithError(callback, err, grpc.status.INVALID_ARGUMENT);
     return;
@@ -1002,7 +1093,10 @@ async function handleRecordTelemetry(
 }
 
 async function handleGetJobInfo(
-  call: grpc.ServerUnaryCall<GetJobInfoRequestMessage, GetJobInfoResponseMessage>,
+  call: grpc.ServerUnaryCall<
+    GetJobInfoRequestMessage,
+    GetJobInfoResponseMessage
+  >,
   callback: UnaryCallback<GetJobInfoResponseMessage>
 ): Promise<void> {
   const authError = authenticateCall(call);
@@ -1013,18 +1107,24 @@ async function handleGetJobInfo(
   const request = call.request;
   const jobId = request.job_id?.trim();
   if (!jobId) {
-    callback(createServiceError(grpc.status.INVALID_ARGUMENT, 'job_id is required'), null);
+    callback(
+      createServiceError(grpc.status.INVALID_ARGUMENT, 'job_id is required'),
+      null
+    );
     return;
   }
-  const deliverableLimit = request.deliverable_limit && request.deliverable_limit > 0
-    ? request.deliverable_limit
-    : undefined;
-  const heartbeatLimit = request.heartbeat_limit && request.heartbeat_limit > 0
-    ? request.heartbeat_limit
-    : undefined;
-  const telemetryLimit = request.telemetry_limit && request.telemetry_limit > 0
-    ? request.telemetry_limit
-    : undefined;
+  const deliverableLimit =
+    request.deliverable_limit && request.deliverable_limit > 0
+      ? request.deliverable_limit
+      : undefined;
+  const heartbeatLimit =
+    request.heartbeat_limit && request.heartbeat_limit > 0
+      ? request.heartbeat_limit
+      : undefined;
+  const telemetryLimit =
+    request.telemetry_limit && request.telemetry_limit > 0
+      ? request.telemetry_limit
+      : undefined;
 
   let chainJob: Record<string, unknown> | null = null;
   try {
@@ -1039,9 +1139,15 @@ async function handleGetJobInfo(
     job_id: jobId,
     job_json: jobRecord ? JSON.stringify(jobRecord) : undefined,
     chain_json: chainJob ? JSON.stringify(chainJob) : undefined,
-    deliverables: listDeliverables({ jobId, limit: deliverableLimit }).map(mapDeliverable),
-    heartbeats: listHeartbeats({ jobId, limit: heartbeatLimit }).map(mapHeartbeat),
-    telemetry: listTelemetryReports({ jobId, limit: telemetryLimit }).map(mapTelemetry),
+    deliverables: listDeliverables({ jobId, limit: deliverableLimit }).map(
+      mapDeliverable
+    ),
+    heartbeats: listHeartbeats({ jobId, limit: heartbeatLimit }).map(
+      mapHeartbeat
+    ),
+    telemetry: listTelemetryReports({ jobId, limit: telemetryLimit }).map(
+      mapTelemetry
+    ),
     payouts: mapPayouts(getRewardPayouts(jobId)),
   };
   const contributors = listContributorSummaries({ jobId });
@@ -1053,7 +1159,10 @@ async function handleGetJobInfo(
 }
 
 async function handleEnsureStake(
-  call: grpc.ServerUnaryCall<EnsureStakeRequestMessage, EnsureStakeResponseMessage>,
+  call: grpc.ServerUnaryCall<
+    EnsureStakeRequestMessage,
+    EnsureStakeResponseMessage
+  >,
   callback: UnaryCallback<EnsureStakeResponseMessage>
 ): Promise<void> {
   const authError = authenticateCall(call);
@@ -1064,7 +1173,11 @@ async function handleEnsureStake(
   const request = call.request;
   let wallet: Wallet;
   try {
-    wallet = await resolveWallet(request.wallet_address, request.agent_address);
+    wallet = await resolveWallet(
+      call,
+      request.wallet_address,
+      request.agent_address
+    );
   } catch (err) {
     respondWithError(callback, err, grpc.status.INVALID_ARGUMENT);
     return;
@@ -1116,7 +1229,10 @@ async function handleGetStake(
     ? await resolveAgentAddress(request.agent_address)
     : null;
   if (!resolved) {
-    callback(createServiceError(grpc.status.INVALID_ARGUMENT, 'invalid agent address'), null);
+    callback(
+      createServiceError(grpc.status.INVALID_ARGUMENT, 'invalid agent address'),
+      null
+    );
     return;
   }
   const role = parseRoleInput(request.role);
@@ -1140,7 +1256,10 @@ async function handleGetStake(
 }
 
 async function handleAutoClaimRewards(
-  call: grpc.ServerUnaryCall<AutoClaimRewardsRequestMessage, AutoClaimRewardsResponseMessage>,
+  call: grpc.ServerUnaryCall<
+    AutoClaimRewardsRequestMessage,
+    AutoClaimRewardsResponseMessage
+  >,
   callback: UnaryCallback<AutoClaimRewardsResponseMessage>
 ): Promise<void> {
   const authError = authenticateCall(call);
@@ -1151,7 +1270,11 @@ async function handleAutoClaimRewards(
   const request = call.request;
   let wallet: Wallet;
   try {
-    wallet = await resolveWallet(request.wallet_address, request.agent_address);
+    wallet = await resolveWallet(
+      call,
+      request.wallet_address,
+      request.agent_address
+    );
   } catch (err) {
     respondWithError(callback, err, grpc.status.INVALID_ARGUMENT);
     return;
@@ -1159,15 +1282,18 @@ async function handleAutoClaimRewards(
   const role = parseRoleInput(request.role);
   const amount = parseTokenAmount(request.amount);
   const restakeAmount = parseTokenAmount(request.restake_amount);
-  const restakePercent = request.restake_percent_text && request.restake_percent_text.trim().length > 0
-    ? request.restake_percent_text
-    : typeof request.restake_percent === 'number'
-    ? request.restake_percent
-    : undefined;
+  const restakePercent =
+    request.restake_percent_text &&
+    request.restake_percent_text.trim().length > 0
+      ? request.restake_percent_text
+      : typeof request.restake_percent === 'number'
+      ? request.restake_percent
+      : undefined;
   const withdrawStake = request.withdraw_stake === true;
-  const acknowledge = request.acknowledge === undefined || request.acknowledge === null
-    ? true
-    : Boolean(request.acknowledge);
+  const acknowledge =
+    request.acknowledge === undefined || request.acknowledge === null
+      ? true
+      : Boolean(request.acknowledge);
   try {
     const result = await autoClaimRewards(wallet, {
       amount,
@@ -1195,6 +1321,31 @@ async function handleAutoClaimRewards(
 }
 
 const handlers: grpc.UntypedServiceImplementation = {
+  GetAuthChallenge(
+    call: grpc.ServerUnaryCall<
+      Record<string, never>,
+      { nonce: string; message: string; challenge: string; expires_at: string }
+    >,
+    callback: UnaryCallback<{
+      nonce: string;
+      message: string;
+      challenge: string;
+      expires_at: string;
+    }>
+  ) {
+    const limited = enforceRequestBudget(call);
+    if (limited) {
+      callback(limited, null);
+      return;
+    }
+    refreshExpiredAuthNonce();
+    callback(null, {
+      nonce: authNonce,
+      message: AUTH_MESSAGE,
+      challenge: `${AUTH_MESSAGE}${authNonce}`,
+      expires_at: new Date(authNonceExpiresAt).toISOString(),
+    });
+  },
   SubmitResult(
     call: grpc.ServerUnaryCall<
       SubmitResultRequestMessage,
@@ -1207,7 +1358,10 @@ const handlers: grpc.UntypedServiceImplementation = {
     });
   },
   RecordHeartbeat(
-    call: grpc.ServerUnaryCall<RecordHeartbeatRequestMessage, HeartbeatRecordMessage>,
+    call: grpc.ServerUnaryCall<
+      RecordHeartbeatRequestMessage,
+      HeartbeatRecordMessage
+    >,
     callback: UnaryCallback<HeartbeatRecordMessage>
   ) {
     handleRecordHeartbeat(call, callback).catch((err) => {
@@ -1226,7 +1380,10 @@ const handlers: grpc.UntypedServiceImplementation = {
     });
   },
   GetJobInfo(
-    call: grpc.ServerUnaryCall<GetJobInfoRequestMessage, GetJobInfoResponseMessage>,
+    call: grpc.ServerUnaryCall<
+      GetJobInfoRequestMessage,
+      GetJobInfoResponseMessage
+    >,
     callback: UnaryCallback<GetJobInfoResponseMessage>
   ) {
     handleGetJobInfo(call, callback).catch((err) => {
@@ -1234,7 +1391,10 @@ const handlers: grpc.UntypedServiceImplementation = {
     });
   },
   EnsureStake(
-    call: grpc.ServerUnaryCall<EnsureStakeRequestMessage, EnsureStakeResponseMessage>,
+    call: grpc.ServerUnaryCall<
+      EnsureStakeRequestMessage,
+      EnsureStakeResponseMessage
+    >,
     callback: UnaryCallback<EnsureStakeResponseMessage>
   ) {
     handleEnsureStake(call, callback).catch((err) => {
@@ -1280,7 +1440,8 @@ export async function startGrpcServer(): Promise<void> {
   const protoDescriptor = grpc.loadPackageDefinition(
     packageDefinition
   ) as unknown as AgentGatewayProtoGrpcType;
-  const serviceDefinition = protoDescriptor.agentgateway?.v1?.AgentGateway?.service;
+  const serviceDefinition =
+    protoDescriptor.agentgateway?.v1?.AgentGateway?.service;
   if (!serviceDefinition) {
     throw new Error('AgentGateway service definition not found in proto');
   }

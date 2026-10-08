@@ -15,8 +15,8 @@
     },
     {
       "path": "demo/Meta-Agentic-Program-Synthesis-v0/reports/meta-agentic-program-synthesis-dashboard.html",
-      "sha256": "14fdb0c02e896775e2d1260804f80d1ad7bc6a4c5ab0d9f8ae7422b243c3ef10",
-      "bytes": 73187
+      "sha256": "bb6a8daa51dccb3479f5b7f8668b4a556a31021d8dc5732688e7a488109f07ae",
+      "bytes": 73367
     },
     {
       "path": "demo/Meta-Agentic-Program-Synthesis-v0/reports/meta-agentic-program-synthesis-full.json",
@@ -40,8 +40,8 @@
     },
     {
       "path": "demo/Meta-Agentic-Program-Synthesis-v0/reports/meta-agentic-program-synthesis-report.md",
-      "sha256": "6eb01613adcab58cd0e8131febc95f9abca44db2c3fb511c52bc24a1ccac193f",
-      "bytes": 14195
+      "sha256": "31a5730959b916ac31e3c599fb3a02108af92d9dadadd9845f772e38957a99bc",
+      "bytes": 14375
     },
     {
       "path": "demo/Meta-Agentic-Program-Synthesis-v0/reports/meta-agentic-program-synthesis-summary.json",
@@ -53,5 +53,27 @@
       "sha256": "5310f77edead66fac2302c31a72c36d438cfa2b77acf76dfa7d408daad1e2030",
       "bytes": 5041
     }
-  ]
+  ],
+  "presentationCorrections": {
+    "date": "2026-10-08",
+    "sourceCommit": "5b4cebb309a83a7a6749d8911d8bf96a1921e042",
+    "scope": "Mermaid syntax and rendering corrections only. All numerical observations, labels, historical timestamps and simulation evidence are preserved; no simulation was rerun.",
+    "generatedAtMeaning": "generatedAt records the original simulation run. Only the listed presentation-file digests in entries were updated on 2026-10-08. Original digests are retained below and original files are available at sourceCommit.",
+    "entries": [
+      {
+        "path": "demo/Meta-Agentic-Program-Synthesis-v0/reports/meta-agentic-program-synthesis-dashboard.html",
+        "originalSha256": "14fdb0c02e896775e2d1260804f80d1ad7bc6a4c5ab0d9f8ae7422b243c3ef10",
+        "originalBytes": 73187,
+        "presentationSha256": "bb6a8daa51dccb3479f5b7f8668b4a556a31021d8dc5732688e7a488109f07ae",
+        "presentationBytes": 73367
+      },
+      {
+        "path": "demo/Meta-Agentic-Program-Synthesis-v0/reports/meta-agentic-program-synthesis-report.md",
+        "originalSha256": "6eb01613adcab58cd0e8131febc95f9abca44db2c3fb511c52bc24a1ccac193f",
+        "originalBytes": 14195,
+        "presentationSha256": "31a5730959b916ac31e3c599fb3a02108af92d9dadadd9845f772e38957a99bc",
+        "presentationBytes": 14375
+      }
+    ]
+  }
 }

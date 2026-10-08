@@ -31,9 +31,9 @@ flowchart TD
   classDef ops fill:#3f0f1f,stroke:#f472b6,color:#fff0f6,font-weight:bold;
   classDef ci fill:#0f172a,stroke:#facc15,color:#fef9c3,font-weight:bold;
 
-  Nexus[(AGI Jobs v0 (v2))]:::nexus --> Protocols[[contracts/\nattestation/\npaymaster/\nsubgraph/\nechidna/]]:::proto
+  Nexus[("AGI Jobs v0 (v2)")]:::nexus --> Protocols[[contracts/\nattestation/\npaymaster/\nsubgraph/\nechidna/]]:::proto
   Nexus --> Cortex[[backend/\norchestrator/\nservices/\nroutes/\nagent-gateway/\npackages/]]:::cortex
-  Nexus --> Surfaces[[apps/operator\napps/console\napps/mission-control\napps/orchestrator\napps/validator\napps/validator-ui\napps/enterprise-portal\napps/onebox(\-static)]]:::surfaces
+  Nexus --> Surfaces[["apps/operator\napps/console\napps/mission-control\napps/orchestrator\napps/validator\napps/validator-ui\napps/enterprise-portal\napps/onebox(\-static)"]]:::surfaces
   Nexus --> DemoVerse[[demo/\nkardashev_*\nzenith_*\ncosmic_*\nalpha-*\nvalidator_constellation_v0/]]:::demos
   Nexus --> Operations[[deploy/\ndeployment-config/\nmonitoring/\nRUNBOOK.md\nscripts/]]:::ops
   Nexus --> Assurance[[ci/\n.github/workflows/\nreports/\ntests/\nscorecard/]]:::ci

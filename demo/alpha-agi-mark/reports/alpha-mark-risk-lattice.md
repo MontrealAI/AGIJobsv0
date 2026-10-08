@@ -20,22 +20,22 @@ Network: **hardhat (chainId 31337)** · Owner: **0xf39Fd6e51aad88F6F4ce6aB882727
 ```mermaid
 mindmap
   root((α-AGI MARK\nRisk Lattice))
-  Control Deck
-    "🟢 Armed"
-    "🟢 Locked"
-    "⚪ Dormant"
-    "⚪ Observer mode"
-    "🟢 Ignited"
-    "⚪ Nominal"
-  Verification
-    "🟢 Matrix aligned"
-    "Check pass rate 100.00"
-    "Verdict PASS"
-  Capital Formation
-    "11 SeedShares live"
-    "0.0 ETH reserve"
-    "Funding cap 1000.0 ETH"
-    "Max supply 100 SeedShares"
+    Control Deck
+      "🟢 Armed"
+      "🟢 Locked"
+      "⚪ Dormant"
+      "⚪ Observer mode"
+      "🟢 Ignited"
+      "⚪ Nominal"
+    Verification
+      "🟢 Matrix aligned"
+      "Check pass rate 100.00"
+      "Verdict PASS"
+    Capital Formation
+      "11 SeedShares live"
+      "0.0 ETH reserve"
+      "Funding cap 1000.0 ETH"
+      "Max supply 100 SeedShares"
 ```
 
 ```mermaid

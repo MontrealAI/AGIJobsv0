@@ -1,14 +1,45 @@
 import { Wallet, ethers } from 'ethers';
 import {
   recordDeliverable,
+  validateDeliverableInput,
+  assertDeliverableStorageReady,
+  DeliverableInputError,
   type AgentDeliverableRecord,
+  type DeliverableInput,
   type DeliverableContributor,
 } from './deliverableStore';
 import { registry, jobs } from './utils';
 import { acknowledgeTaxPolicy as ensureTaxAcknowledgement } from './stakeCoordinator';
 import { publishCertificateMetadata } from './certificateMetadata';
 
-type SubmissionMethod = 'finalizeJob' | 'submit' | 'none';
+type SubmissionMethod = 'submit' | 'none';
+
+export class SubmissionInputError extends Error {}
+
+/** Convert legacy packed proof bytes or a bytes32 array to the current ABI. */
+export function normaliseIdentityProof(value: unknown): string[] {
+  if (value === undefined || value === null || value === '' || value === '0x')
+    return [];
+  if (Array.isArray(value)) {
+    if (
+      [...value].every(
+        (word) => typeof word === 'string' && ethers.isHexString(word, 32)
+      )
+    )
+      return [...value];
+  } else if (
+    typeof value === 'string' &&
+    /^0x(?:[0-9a-fA-F]{64})+$/.test(value)
+  ) {
+    return value
+      .slice(2)
+      .match(/.{64}/g)!
+      .map((word) => `0x${word}`);
+  }
+  throw new SubmissionInputError(
+    'Identity proof must contain complete bytes32 words'
+  );
+}
 
 export interface SubmitDeliverableOptions {
   jobId: string;
@@ -17,7 +48,8 @@ export interface SubmitDeliverableOptions {
   resultCid?: string;
   resultRef?: string;
   resultHash?: string;
-  proofBytes?: string;
+  proofBytes?: string | string[];
+  subdomain?: string;
   proof?: unknown;
   success?: boolean;
   finalize?: boolean;
@@ -29,7 +61,7 @@ export interface SubmitDeliverableOptions {
   telemetryUri?: string;
   contributors?: DeliverableContributor[];
   digest?: string;
-  signature?: string;
+  signature?: unknown;
   signedPayload?: unknown;
 }
 
@@ -40,17 +72,63 @@ export interface SubmitDeliverableResult {
   deliverable: AgentDeliverableRecord;
 }
 
-function canonicalisePayload(payload: unknown): string {
+type ContentAttestation =
+  | { kind: 'unsigned' }
+  | { kind: 'signed'; signature: string; resultHash: string };
+
+/**
+ * Evidence signatures are optional content attestations, not authorization to
+ * use a managed wallet. HTTP/gRPC authentication and the signed registry
+ * transaction establish that authority. An attestation must be complete and
+ * cover exactly the digest advertised by the certificate metadata.
+ */
+function parseContentAttestation(
+  signature: unknown,
+  signedPayload: unknown,
+  resultHash: string
+): ContentAttestation {
+  if (signature === undefined && signedPayload === undefined) {
+    return { kind: 'unsigned' };
+  }
+  if (typeof signature !== 'string' || signature.length === 0) {
+    throw new SubmissionInputError(
+      'A content attestation requires a signature and signedPayload'
+    );
+  }
+  if (
+    typeof signedPayload !== 'string' ||
+    !ethers.isHexString(signedPayload, 32) ||
+    signedPayload.toLowerCase() !== resultHash.toLowerCase()
+  ) {
+    throw new SubmissionInputError(
+      'signedPayload must be the exact submitted resultHash digest'
+    );
+  }
+  return { kind: 'signed', signature, resultHash };
+}
+
+function verifyContentAttestation(
+  attestation: Extract<ContentAttestation, { kind: 'signed' }>,
+  agent: string
+): string {
   try {
-    return typeof payload === 'string' ? payload : JSON.stringify(payload);
+    const signature = ethers.Signature.from(attestation.signature).serialized;
+    const recovered = ethers.verifyMessage(
+      ethers.getBytes(attestation.resultHash),
+      signature
+    );
+    if (recovered.toLowerCase() !== agent.toLowerCase()) {
+      throw new Error('signer mismatch');
+    }
+    return signature;
   } catch {
-    return String(payload);
+    throw new SubmissionInputError(
+      'Content signature must be an EIP-191 signature of resultHash bytes by the managed wallet'
+    );
   }
 }
 
-function normaliseProof(
-  proof: unknown
-): Record<string, unknown> | undefined {
+function normaliseProof(proof: unknown): Record<string, unknown> | undefined {
   if (!proof) {
     return undefined;
   }
@@ -77,11 +155,10 @@ export async function submitDeliverable(
     resultRef,
     resultHash,
     proofBytes,
+    subdomain,
     proof,
     success,
-    finalize,
     finalizeOnly,
-    preferFinalize,
     metadata,
     telemetry,
     telemetryCid,
@@ -98,6 +175,14 @@ export async function submitDeliverable(
   if (!wallet) {
     throw new Error('wallet is required');
   }
+  if (finalizeOnly) {
+    throw new SubmissionInputError(
+      'finalizeOnly is unsupported: submit results for independent validation before settlement'
+    );
+  }
+  const identityProof = normaliseIdentityProof(
+    proofBytes ?? (typeof proof === 'string' ? proof : undefined)
+  );
 
   const resolvedResultRef =
     (resultRef && resultRef.trim().length > 0 ? resultRef : undefined) ||
@@ -106,6 +191,8 @@ export async function submitDeliverable(
 
   let resolvedHash: string;
   if (resultHash && resultHash.trim().length > 0) {
+    if (!ethers.isHexString(resultHash, 32))
+      throw new SubmissionInputError('resultHash must be a bytes32 value');
     resolvedHash = resultHash;
   } else if (resolvedResultRef) {
     resolvedHash = ethers.id(resolvedResultRef);
@@ -113,63 +200,75 @@ export async function submitDeliverable(
     resolvedHash = ethers.ZeroHash;
   }
 
-  if (signature && signedPayload !== undefined) {
-    const canonical = canonicalisePayload(signedPayload);
-    const recovered = ethers
-      .verifyMessage(canonical, signature)
-      .toLowerCase();
-    if (recovered !== wallet.address.toLowerCase()) {
-      throw new Error('signature mismatch');
+  const attestation = parseContentAttestation(
+    signature,
+    signedPayload,
+    resolvedHash
+  );
+  let verifiedSignature: string | undefined;
+  if (attestation.kind === 'signed') {
+    verifiedSignature = verifyContentAttestation(attestation, wallet.address);
+    if (
+      digest !== undefined &&
+      (typeof digest !== 'string' ||
+        digest.toLowerCase() !== resolvedHash.toLowerCase())
+    ) {
+      throw new SubmissionInputError(
+        'An attested digest must match the submitted resultHash'
+      );
     }
   }
 
-  let submissionMethod: SubmissionMethod = 'none';
+  // Validate and detach caller evidence before any transaction. Otherwise a
+  // malformed/oversized record could be rejected only after a confirmed submit.
+  let deliverableInput: DeliverableInput;
+  try {
+    deliverableInput = validateDeliverableInput({
+      jobId,
+      agent: wallet.address,
+      success: success !== false,
+      resultUri: resultUri || resolvedResultRef || undefined,
+      resultCid: resultCid || undefined,
+      resultRef: resolvedResultRef || undefined,
+      resultHash: resolvedHash,
+      digest: verifiedSignature ? resolvedHash : digest,
+      signature: verifiedSignature,
+      proof: normaliseProof(proof),
+      metadata,
+      telemetry,
+      telemetryCid,
+      telemetryUri,
+      contributors,
+    });
+  } catch (error) {
+    if (error instanceof DeliverableInputError) {
+      throw new SubmissionInputError(error.message);
+    }
+    throw error;
+  }
+  assertDeliverableStorageReady();
+
   let txHash: string | undefined;
-  const shouldAttemptFinalize =
-    preferFinalize !== undefined
-      ? preferFinalize && Boolean(resolvedResultRef)
-      : finalize !== false && Boolean(resolvedResultRef);
-
-  const proofBytesNormalised =
-    typeof proofBytes === 'string' && proofBytes.trim().length > 0
-      ? proofBytes
-      : typeof proof === 'string' && proof.trim().length > 0
-      ? proof
-      : '0x';
-
   await ensureTaxAcknowledgement(wallet);
-
-  if (shouldAttemptFinalize && resolvedResultRef) {
-    try {
-      const finalizeTx = await (registry as any)
-        .connect(wallet)
-        .finalizeJob(jobId, resolvedResultRef);
-      await finalizeTx.wait();
-      submissionMethod = 'finalizeJob';
-      txHash = finalizeTx.hash;
-    } catch (err) {
-      if (finalizeOnly) {
-        throw err;
-      }
-      console.warn('finalizeJob failed, falling back to submit', err);
-    }
+  const submissionUri = resultUri || resolvedResultRef || '';
+  try {
+    const submitTx = await (registry as any)
+      .connect(wallet)
+      .submit(
+        jobId,
+        resolvedHash,
+        submissionUri,
+        subdomain ?? '',
+        identityProof
+      );
+    await submitTx.wait();
+    txHash = submitTx.hash;
+  } catch (err) {
+    console.error('submit transaction failed', err);
+    throw new Error('Failed to submit job result transaction');
   }
 
-  if (submissionMethod !== 'finalizeJob') {
-    const submissionUri = resultUri || resolvedResultRef || '';
-    try {
-      const submitTx = await (registry as any)
-        .connect(wallet)
-        .submit(jobId, resolvedHash, submissionUri, '', proofBytesNormalised);
-      await submitTx.wait();
-      submissionMethod = 'submit';
-      txHash = submitTx.hash;
-    } catch (err) {
-      console.error('submit transaction failed', err);
-      throw new Error('Failed to submit job result transaction');
-    }
-  }
-
+  const submissionMethod: SubmissionMethod = 'submit';
   const submittedAt = new Date().toISOString();
   const cachedJob = jobs.get(jobId);
   let certificateMetadata;
@@ -180,7 +279,7 @@ export async function submitDeliverable(
       resultHash: resolvedHash,
       resultUri: resultUri || resolvedResultRef || undefined,
       resultCid: resultCid || undefined,
-      signature,
+      signature: verifiedSignature,
       success: success !== false,
       submittedAt,
       submissionMethod,
@@ -199,22 +298,8 @@ export async function submitDeliverable(
   }
 
   const deliverable = recordDeliverable({
-    jobId,
-    agent: wallet.address,
-    success: success !== false,
+    ...deliverableInput,
     submittedAt,
-    resultUri: resultUri || resolvedResultRef || undefined,
-    resultCid: resultCid || undefined,
-    resultRef: resolvedResultRef || undefined,
-    resultHash: resolvedHash,
-    digest,
-    signature,
-    proof: normaliseProof(proof),
-    metadata,
-    telemetry,
-    telemetryCid,
-    telemetryUri,
-    contributors,
     submissionMethod,
     txHash,
     certificateMetadataUri: certificateMetadata?.uri,

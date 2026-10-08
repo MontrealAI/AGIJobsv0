@@ -258,12 +258,24 @@ message AutoClaimRewardsResponse {
   string restaked_formatted = 8;
 }
 
-// All RPCs require authentication metadata. Provide `x-api-key` when the
+message AuthChallengeRequest {}
+message AuthChallengeResponse {
+  string nonce = 1;
+  string message = 2;
+  string challenge = 3;
+  string expires_at = 4;
+}
+
+// All RPCs except GetAuthChallenge require authentication metadata. Provide `x-api-key` when the
 // gateway is configured with a shared key, or include both `x-address` and
 // `x-signature` metadata headers where the signature is over the string
 // `Agent Gateway Auth` concatenated with the latest nonce issued by the
-// gateway. The nonce rotates after each successful signature validation.
+// GetAuthChallenge RPC. This nonce is separate from the HTTP challenge and rotates
+// after each successful signature validation; unused challenges expire in five minutes.
+// The signer must be a managed wallet;
+// wallet actions may only target that same wallet. API keys authorize operators.
 service AgentGateway {
+  rpc GetAuthChallenge(AuthChallengeRequest) returns (AuthChallengeResponse);
   rpc SubmitResult(SubmitResultRequest) returns (SubmitResultResponse);
   rpc RecordHeartbeat(RecordHeartbeatRequest) returns (RecordHeartbeatResponse);
   rpc RecordTelemetry(RecordTelemetryRequest) returns (RecordTelemetryResponse);

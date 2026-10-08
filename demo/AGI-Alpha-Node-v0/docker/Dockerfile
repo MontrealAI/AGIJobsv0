@@ -1,12 +1,16 @@
-FROM node:22.23.3-bullseye
+FROM node:22.23.3-bookworm-slim
 WORKDIR /app
+ENV CYPRESS_INSTALL_BINARY=0
 
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends python3 make g++ \
+    && rm -rf /var/lib/apt/lists/*
 COPY package*.json ./
-RUN npm install --legacy-peer-deps
+RUN npm ci
 
 COPY . .
 
-RUN npm run build:agi-alpha-node
+RUN npm run build:agi-alpha-node && npm prune --omit=dev
 
 ENV NODE_ENV=production \
     ALPHA_NODE_CONFIG=/config/alpha-node.json \

@@ -13,7 +13,7 @@ flowchart LR
         A[Developer PR]
     end
     subgraph CI Suite
-        B[ci (v2) summary]\nPulls jobs listed below
+        B["ci (v2) summary<br/>Pulls jobs listed below"]
         B1[Lint & Static]
         B2[Tests + Coverage]
         B3[Foundry Fuzz]

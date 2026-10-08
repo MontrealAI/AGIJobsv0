@@ -16,7 +16,7 @@
 ```mermaid
 flowchart LR
     Operators((Mission Owners)) --> demo_AGIJobs_Day_One_Utility_Benchmark[[Demo → AGIJobs Day One Utility Benchmark]]
-    demo_AGIJobs_Day_One_Utility_Benchmark --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    demo_AGIJobs_Day_One_Utility_Benchmark --> Core[["AGI Jobs v0 (v2) Core Intelligence"]]
     Core --> Observability[[Unified CI / CD & Observability]]
     Core --> Governance[[Owner Control Plane]]
 ```

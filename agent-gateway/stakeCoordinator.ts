@@ -88,7 +88,7 @@ async function fetchMinStake(): Promise<bigint> {
     return minStakeCache;
   } catch (err) {
     console.warn('Failed to fetch minStake from StakeManager', err);
-    return 0n;
+    throw err;
   }
 }
 
@@ -105,6 +105,7 @@ async function ensureTokenAllowance(
     allowance = BigInt(current.toString());
   } catch (err) {
     console.warn('allowance query failed', wallet.address, err);
+    throw err;
   }
   if (allowance >= minimum) {
     return null;
@@ -180,7 +181,7 @@ export async function getStakeBalance(
     return BigInt(balance.toString());
   } catch (err) {
     console.warn('stakeOf query failed', address, err);
-    return 0n;
+    throw err;
   }
 }
 
@@ -203,33 +204,8 @@ export async function ensureStake(
   const delta = target - current;
   await ensureTokenAllowance(wallet, delta);
   const contract = (stakeManager as any).connect(wallet);
-  if (typeof contract.stake === 'function') {
-    try {
-      const tx = await contract.stake(role, delta);
-      await tx.wait();
-      await recordAuditEvent(
-        {
-          component: 'stake-coordinator',
-          action: 'stake',
-          agent: wallet.address,
-          metadata: {
-            role,
-            method: 'stake',
-            delta: ethers.formatUnits(delta, TOKEN_DECIMALS),
-            target: ethers.formatUnits(target, TOKEN_DECIMALS),
-          },
-          success: true,
-        },
-        wallet
-      );
-      return;
-    } catch (err) {
-      console.warn(
-        'StakeManager.stake failed; attempting depositStake fallback',
-        err
-      );
-    }
-  }
+  // The current StakeManager exposes depositStake. Never switch methods and
+  // send a second transaction after a submission or receipt becomes uncertain.
   try {
     const tx = await contract.depositStake(role, delta);
     await tx.wait();

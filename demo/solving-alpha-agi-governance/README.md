@@ -20,7 +20,7 @@ This directory contains design documentation and preserved architecture diagrams
 ```mermaid
 flowchart LR
     Operators((Mission Owners)) --> demo_solving_alpha_agi_governance[[Demo → Solving Alpha AGI Governance]]
-    demo_solving_alpha_agi_governance --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    demo_solving_alpha_agi_governance --> Core[["AGI Jobs v0 (v2) Core Intelligence"]]
     Core --> Observability[[Unified CI / CD & Observability]]
     Core --> Governance[[Owner Control Plane]]
 ```

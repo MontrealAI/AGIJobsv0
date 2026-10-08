@@ -119,11 +119,20 @@ test('every demo has a unique route and all built local page/asset links resolve
         )
       )
     );
+    const pageURL = new URL(
+      manifest.basePath + path.relative(output, file).split(path.sep).join('/'),
+      'https://pages.invalid'
+    );
     for (const element of document.querySelectorAll('[href],[src]')) {
-      const value = element.getAttribute('href') || element.getAttribute('src');
-      if (!value.startsWith(manifest.basePath)) continue;
+      const value = element.getAttribute('href') ?? element.getAttribute('src');
+      const link = new URL(value, pageURL);
+      if (link.origin !== pageURL.origin) continue;
+      if (!link.pathname.startsWith(manifest.basePath)) {
+        missing.push({ file, value });
+        continue;
+      }
       const route = decodeURIComponent(
-        value.slice(manifest.basePath.length).split(/[?#]/)[0]
+        link.pathname.slice(manifest.basePath.length)
       );
       const target = path.join(output, route || 'index.html');
       if (!fs.existsSync(target)) missing.push({ file, value });
@@ -132,11 +141,7 @@ test('every demo has a unique route and all built local page/asset links resolve
         !fs.existsSync(path.join(target, 'index.html'))
       )
         missing.push({ file, value });
-      if (
-        element.hasAttribute('href') &&
-        value.includes('#') &&
-        fs.existsSync(target)
-      ) {
+      if (element.hasAttribute('href') && link.hash && fs.existsSync(target)) {
         const resolved = fs.statSync(target).isDirectory()
           ? path.join(target, 'index.html')
           : target;
@@ -145,7 +150,7 @@ test('every demo has a unique route and all built local page/asset links resolve
             file,
             value,
             target: resolved,
-            fragment: decodeURIComponent(value.split('#').slice(1).join('#')),
+            fragment: decodeURIComponent(link.hash.slice(1)),
           });
       }
     }
@@ -305,10 +310,7 @@ test('legacy schedules preserve relative timing without inventing dates or missi
     '../../website/assets/diagram-source.mjs'
   );
   const durationOnly = relativeSchedule(
-    fs.readFileSync(
-      path.join(root, 'demo/Economic-Power-v0/reports/global-expansion.mmd'),
-      'utf8'
-    )
+    'gantt\n dateFormat X\n Phase I :done, phase_0, 72h\n Phase II :done, phase_1, 240h\n Phase III :done, phase_2, 720h\n Phase IV :done, phase_3, 1440h'
   );
   assert.deepEqual(
     durationOnly.tasks.map((t) => t.duration),
@@ -316,10 +318,7 @@ test('legacy schedules preserve relative timing without inventing dates or missi
   );
   assert.ok(durationOnly.tasks.every((t) => t.start === null));
   const schedule = relativeSchedule(
-    fs.readFileSync(
-      path.join(root, 'demo/Economic-Power-v0/reports/timeline.mmd'),
-      'utf8'
-    )
+    'gantt\n dateFormat X\n Fusion :active, fusion, 0.0h, 33.5h\n Supply :active, supply, 0.0h, 26.9h\n Governance :active, governance, 0.0h, 26.3h\n Market :active, market, 0.0h, 21.9h\n Oracle :active, oracle, 33.5h, 19.6h'
   );
   assert.deepEqual(
     schedule.tasks.map((t) => t.start),
@@ -334,10 +333,25 @@ test('legacy schedules preserve relative timing without inventing dates or missi
       'gantt\n dateFormat X\n Valid : id1, 5h\n Invalid : id2, tomorrow, 5h'
     )
   );
-  const combined = fs.readFileSync(
-    path.join(root, 'demo/alpha-agi-mark/runbooks/alpha-agi-mark-flow.mmd'),
-    'utf8'
-  );
+  for (const file of ['global-expansion.mmd', 'timeline.mmd'])
+    assert.equal(
+      relativeSchedule(
+        fs.readFileSync(
+          path.join(root, 'demo/Economic-Power-v0/reports', file),
+          'utf8'
+        )
+      ),
+      null,
+      'Corrected epoch-seconds sources must render directly in Mermaid'
+    );
+  const combined = ['alpha-agi-mark-flow.mmd', 'alpha-agi-mark-contracts.mmd']
+    .map((file) =>
+      fs.readFileSync(
+        path.join(root, 'demo/alpha-agi-mark/runbooks', file),
+        'utf8'
+      )
+    )
+    .join('\n');
   assert.equal(displaySources(combined).length, 2);
   const hierarchy = displaySource(
     'mindmap\n  root((Core (v2)))\n    "Sigma":::core --> "Welfare":::metric'

@@ -165,24 +165,16 @@ The 2024-Q2 release adds aggregated governance entry points so a multisig can re
 ```mermaid
 flowchart LR
     subgraph StakeManager.applyConfiguration
-        SMCFG[ConfigUpdate
-        • treasury & allowlist
-        • fee/burn/validator %
-        • pauser, pause/unpause & auto-tuning
-        • job/dispute modules]
-        AL[AllowlistUpdate[]]
+        SMCFG["ConfigUpdate<br/>        • treasury & allowlist<br/>        • fee/burn/validator %<br/>        • pauser, pause/unpause & auto-tuning<br/>        • job/dispute modules"]
+        AL["AllowlistUpdate[]"]
         SMCFG -->|1.| StakeManager
         AL -->|pre-apply allowlist| StakeManager
     end
 
     subgraph JobRegistry.applyConfiguration
-        JRCFG[ConfigUpdate
-        • module bundle
-        • ENS roots & caches
-        • fee / reward splits
-        • job limits & treasury]
-        ACK[AcknowledgerUpdate[]]
-        MODS[ackModules[]]
+        JRCFG["ConfigUpdate<br/>        • module bundle<br/>        • ENS roots & caches<br/>        • fee / reward splits<br/>        • job limits & treasury"]
+        ACK["AcknowledgerUpdate[]"]
+        MODS["ackModules[]"]
         ACK -->|allow/deny| JobRegistry
         MODS -->|enable| JobRegistry
         JRCFG -->|1.| JobRegistry
@@ -252,7 +244,7 @@ graph TD
     Gov -->|setMinStake, setTreasury, setPauser| SM
     Gov -->|setFeePct, setBurnPct, setTreasury| JR
     Gov -->|setBurnPct, setTreasuryAllowlist| FP
-    Gov -->|applyConfiguration (registrars, blacklist, pauser)| PR
+    Gov -->|"applyConfiguration (registrars, blacklist, pauser)"| PR
     Gov -->|setPolicy, acknowledgeUpgrades| TP
     Gov -->|setModules, pause/unpause| SP
     Gov -->|setEnsRoots, addAdditionalAgent/Validator| IR

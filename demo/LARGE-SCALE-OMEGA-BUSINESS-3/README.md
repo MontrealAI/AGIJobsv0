@@ -119,7 +119,7 @@ npm run demo:omega-business-3:mainnet
 ```mermaid
 flowchart LR
     Operators((Mission Owners)) --> demo_LARGE_SCALE_OMEGA_BUSINESS_3[[Demo → Large Scale Omega Business 3]]
-    demo_LARGE_SCALE_OMEGA_BUSINESS_3 --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    demo_LARGE_SCALE_OMEGA_BUSINESS_3 --> Core[["AGI Jobs v0 (v2) Core Intelligence"]]
     Core --> Observability[[Unified CI / CD & Observability]]
     Core --> Governance[[Owner Control Plane]]
 ```

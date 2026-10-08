@@ -1,12 +1,12 @@
 # Testnet Incentives Deployment
 
-This example shows how to deploy the thermodynamic incentives stack on a public testnet such as Sepolia.
+This preserved example rehearses the thermodynamic incentives stack on an isolated Hardhat chain. It deploys `ValidationStub` and is not a public-testnet or production deployment route. For public networks, deploy the real modular protocol with the [current staged guide](deployment-v2-agialpha.md), then review and wire the optional thermodynamic modules and their signer policies separately.
 
 ```bash
-npx hardhat run scripts/deploy-v2.ts --network sepolia
+npx hardhat run scripts/deploy-v2.ts --network hardhat
 ```
 
-Recommended starting parameters used by the script:
+Fixture parameters used by the script (not production recommendations):
 
 - **Thermostat**
   - initial temperature `1.0` (`1e18`)

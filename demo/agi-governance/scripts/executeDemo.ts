@@ -2455,7 +2455,7 @@ function buildMermaidFlowchart(bundle: ReportBundle): string {
     `    OwnerSignal[Owner Supremacy ${ownerSupremacy}]`,
     `    QuantumSignal[Quantum Assurance ${quantumAssurance}]`,
     `    CoherenceSignal[Coherence ${quantumCoherence}]`,
-    `    QuantumAlign[Quantum Alignment ${quantumAlignment}]`,
+    `    QuantumAlign["Quantum Alignment ${quantumAlignment}"]`,
     `    EnergyFloor[Energy Margin ${formatNumber(alphaField.energyMarginKJ)} kJ]`,
     "    Stackelberg --> Confidence",
     "    EnergyFloor --> ThermoSignal",
@@ -2521,31 +2521,32 @@ function buildOwnerSequence(bundle: ReportBundle): string {
 }
 
 function buildAntifragilityMindmap(bundle: ReportBundle): string {
+  // This styled tree uses flowchart syntax: mindmap does not support arrows or classDef.
   const lines = bundle.antifragility.samples
     .map(
-      (sample) =>
-        `        \"σ=${sample.sigma.toFixed(2)}\":::sigma --> \"Welfare ${formatNumber(sample.welfare)}\":::welfare`,
+      (sample, index) =>
+        `  sigmaScan --> sigma_${index}["σ=${sample.sigma.toFixed(2)}"]:::sigma --> welfare_${index}["Welfare ${formatNumber(sample.welfare)}"]:::welfare`,
     )
     .join("\n");
   return [
     "```mermaid",
-    "mindmap",
+    "flowchart TD",
     "  root((Antifragility Tensor))",
-    "    \"Quadratic curvature\":::core",
-    `      \"2a=${bundle.antifragility.quadraticSecondDerivative.toExponential(2)}\":::core`,
-    "    \"Sigma Scan\":::core",
+    '  root --> curvature["Quadratic curvature"]:::core',
+    `  curvature --> curvatureValue["2a=${bundle.antifragility.quadraticSecondDerivative.toExponential(2)}"]:::core`,
+    '  root --> sigmaScan["Sigma Scan"]:::core',
     lines,
-    "    \"Quantum Lattice\":::core",
-    `      \"Coherence ${Math.round(bundle.quantum.quantumConfidence * 100)}%\":::sigma`,
-    `      \"Charge Δ ${bundle.quantum.chargeDelta.toExponential(2)} (tol ${bundle.quantum.allowableChargeDrift.toExponential(2)})\":::welfare`,
-    `      \"Alignment Δ ${formatNumber(bundle.alphaField.thermoQuantumDeltaKJ)} kJ\":::sigma`,
-    "    \"Owner Actions\":::core",
-    `      \"Mint Mirror ${formatPercent(bundle.incentives.mint.treasuryMirrorShare)}\"`,
-    `      \"Residual Risk ${bundle.risk.portfolioResidual.toFixed(3)}\"`,
-    `      \"Supremacy ${(bundle.alphaField.ownerSupremacyIndex * 100).toFixed(1)}%\":::core`,
+    '  root --> quantum["Quantum Lattice"]:::core',
+    `  quantum --> coherence["Coherence ${Math.round(bundle.quantum.quantumConfidence * 100)}%"]:::sigma`,
+    `  quantum --> charge["Charge Δ ${bundle.quantum.chargeDelta.toExponential(2)} (tol ${bundle.quantum.allowableChargeDrift.toExponential(2)})"]:::welfare`,
+    `  quantum --> alignment["Alignment Δ ${formatNumber(bundle.alphaField.thermoQuantumDeltaKJ)} kJ"]:::sigma`,
+    '  root --> owner["Owner Actions"]:::core',
+    `  owner --> mirror["Mint Mirror ${formatPercent(bundle.incentives.mint.treasuryMirrorShare)}"]`,
+    `  owner --> residual["Residual Risk ${bundle.risk.portfolioResidual.toFixed(3)}"]`,
+    `  owner --> supremacy["Supremacy ${(bundle.alphaField.ownerSupremacyIndex * 100).toFixed(1)}%"]:::core`,
     "  classDef core fill:#111827,stroke:#38bdf8,stroke-width:2px,color:#f9fafb,font-weight:600;",
-    "  classDef sigma fill:#1f2937,stroke:#f97316,stroke-width:2px,color:#fef3c7;font-weight:600;",
-    "  classDef welfare fill:#0f172a,stroke:#22d3ee,stroke-width:2px,color:#ecfeff;font-weight:600;",
+    "  classDef sigma fill:#1f2937,stroke:#f97316,stroke-width:2px,color:#fef3c7,font-weight:600;",
+    "  classDef welfare fill:#0f172a,stroke:#22d3ee,stroke-width:2px,color:#ecfeff,font-weight:600;",
     "```",
   ].join("\n");
 }
@@ -2787,7 +2788,7 @@ function buildMarkdown(bundle: ReportBundle): string {
     "```mermaid",
     "flowchart TD",
     `  Landauer[Landauer ${formatScientific(jarzynski.landauerKJ)} kJ] -->|ΔF ${formatNumber(jarzynski.deltaFreeEnergyKJ)} kJ| Gibbs[Gibbs ${formatNumber(jarzynski.gibbsFreeEnergyKJ)} kJ]`,
-    `  Landauer -->|Sampled work| Jarzynski[⟨e^{-βW}⟩ log ${jarzynski.logExpectation.toFixed(3)}]`,
+    `  Landauer -->|Sampled work| Jarzynski["⟨e^{-βW}⟩ log ${jarzynski.logExpectation.toFixed(3)}"]`,
     `  Gibbs -->|Theory| Theoretical[e^{-βΔF} log ${jarzynski.logTheoretical.toFixed(3)}]`,
     "```",
     "",
@@ -3079,8 +3080,8 @@ function buildDashboardHtml(bundle: ReportBundle): string {
       `  Landauer((Landauer ${formatScientific(jarzynski.landauerKJ)} kJ))`,
       `  Gibbs((Gibbs ${formatNumber(jarzynski.gibbsFreeEnergyKJ)} kJ))`,
       `  Landauer -->|ΔF ${formatNumber(jarzynski.deltaFreeEnergyKJ)} kJ| Gibbs`,
-      `  Landauer -->|⟨e^{-βW}⟩ log ${jarzynski.logExpectation.toFixed(3)}| Sampled[Jarzynski sample]`,
-      `  Gibbs -->|e^{-βΔF} log ${jarzynski.logTheoretical.toFixed(3)}| Theory[Theoretical bound]`,
+      `  Landauer -->|"⟨e^{-βW}⟩ log ${jarzynski.logExpectation.toFixed(3)}"| Sampled[Jarzynski sample]`,
+      `  Gibbs -->|"e^{-βΔF} log ${jarzynski.logTheoretical.toFixed(3)}"| Theory[Theoretical bound]`,
     ].join("\n"),
   );
 

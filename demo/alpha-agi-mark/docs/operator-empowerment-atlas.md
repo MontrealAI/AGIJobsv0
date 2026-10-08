@@ -9,7 +9,7 @@ The atlas distills how AGI Jobs v0 (v2) lets a single non-technical steward conj
 
 ```mermaid
 mindmap
-  root((AGI Jobs v0 (v2) Orchestrator))
+  root(("AGI Jobs v0 (v2) Orchestrator"))
     Launch Preparation
       Dry-run Sentinel
       Wallet Balance Guardian
@@ -36,7 +36,7 @@ mindmap
 journey
     title Alpha Operator Expedition
     section Ignition
-      Invoke `npm run demo:alpha-agi-mark`: 5:Operator
+      Invoke `npm run demo#58;alpha-agi-mark`: 5:Operator
       Confirm dry-run / launch intent: 4:Operator
     section Market Resonance
       Watch automated deployments unfurl: 5:Operator

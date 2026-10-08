@@ -8,6 +8,8 @@ The public website provides the complete preserved demo collection, guided exper
 
 The [local evidence reviewer](../EVIDENCE_REVIEW.md) checks delivered artifact integrity against the original task and records an unsigned reviewer assessment. It does not authenticate provider provenance or satisfy independent acceptance by itself. The adapter rejects malformed UTF-8, invalid Unicode strings and text artifacts exceeding 128,000 UTF-8 bytes.
 
+The [container operations guide](../container-operations.md) identifies every maintained and historical Dockerfile, its startup probe, and the additional setup needed for live operation. The [validator review console](../../apps/validator-ui/README.md) supports an explicit human verdict, current round deadlines, and private browser recovery records; browser storage and downloaded backups are unencrypted. Neither a successful health check nor a structurally valid delivery establishes acceptance of the work.
+
 ## What a live deployment still needs
 
 | Gate | Evidence needed |
@@ -28,7 +30,8 @@ The production release workflow enforces `npm run release:audit-dependencies` be
 
 ## Verification records
 
-- [Platform and website update, 2026-10-07](platform-update-2026-10-07.md): current integration, dependency refresh and validation scope.
+- [Container, deployment and diagram update, 2026-10-08](platform-update-2026-10-08.md): current changes and validation boundaries.
+- [Platform and website update, 2026-10-07](platform-update-2026-10-07.md): earlier integration, dependency refresh and validation scope.
 - [Computer-work correctness and remaining gates](readiness-2026-10-04.md).
 - [Dependency maintenance and legacy provider limitations](dependency-review-2026-10-04.md).
 - [Original production readiness record](readiness-2026-10-03.md).

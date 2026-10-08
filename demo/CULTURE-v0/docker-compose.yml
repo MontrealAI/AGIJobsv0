@@ -210,7 +210,7 @@ services:
       <<: *default-environment
       CULTURE_REPORT_OUTPUT: ${CULTURE_REPORT_OUTPUT-/workspace/demo/CULTURE-v0/reports}
     command: >-
-      bash -lc "set -euo pipefail && npm install --legacy-peer-deps &&
+      bash -lc "set -euo pipefail && npm ci &&
       npx ts-node --project tsconfig.json demo/CULTURE-v0/scripts/export.weekly.ts"
 
   culture-analytics:
@@ -227,7 +227,7 @@ services:
       ORCHESTRATOR_MODERATION_AUDIT: ${ORCHESTRATOR_MODERATION_AUDIT-/workspace/storage/validation/moderation.log}
       CULTURE_ORCHESTRATOR_LOG: ${CULTURE_ORCHESTRATOR_LOG-/var/log/culture-orchestrator/structured.log}
     command: >-
-      bash -lc "set -euo pipefail && npm install --legacy-peer-deps &&
+      bash -lc "set -euo pipefail && npm ci &&
       npx ts-node --project tsconfig.json demo/CULTURE-v0/scripts/generate.analytics.ts --interval ${CULTURE_ANALYTICS_INTERVAL:-3600}"
     depends_on:
       culture-indexer:

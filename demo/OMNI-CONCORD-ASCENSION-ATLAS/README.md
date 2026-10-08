@@ -20,7 +20,7 @@ This directory contains design documentation and preserved architecture diagrams
 ```mermaid
 flowchart LR
     Operators((Mission Owners)) --> demo_OMNI_CONCORD_ASCENSION_ATLAS[[Demo → Omni Concord Ascension Atlas]]
-    demo_OMNI_CONCORD_ASCENSION_ATLAS --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    demo_OMNI_CONCORD_ASCENSION_ATLAS --> Core[["AGI Jobs v0 (v2) Core Intelligence"]]
     Core --> Observability[[Unified CI / CD & Observability]]
     Core --> Governance[[Owner Control Plane]]
 ```

@@ -364,14 +364,14 @@ graph TB
         REP[(ReputationEngine)]:::aux
     end
 
-    EO --|attested metrics| RE
-    RE --|temperature query| TH
-    TH --|Tₛ/Tᵣ| RE
-    RE --|usage feedback| TH
-    RE --|token rewards| FP
-    RE --|reputation delta| REP
-    FP --|payouts| U[(Participants)]:::user
-    REP --|score updates| U
+    EO -->|attested metrics| RE
+    RE -->|temperature query| TH
+    TH -->|Tₛ/Tᵣ| RE
+    RE -->|usage feedback| TH
+    RE -->|token rewards| FP
+    RE -->|reputation delta| REP
+    FP -->|payouts| U[(Participants)]:::user
+    REP -->|score updates| U
 ```
 
 ### Reward Settlement Process

@@ -16,7 +16,7 @@
 ```mermaid
 flowchart LR
     Operators((Mission Owners)) --> demo_Validator_Constellation_v0[[Demo → Validator Constellation v0]]
-    demo_Validator_Constellation_v0 --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    demo_Validator_Constellation_v0 --> Core[["AGI Jobs v0 (v2) Core Intelligence"]]
     Core --> Observability[[Unified CI / CD & Observability]]
     Core --> Governance[[Owner Control Plane]]
 ```

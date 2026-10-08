@@ -19,7 +19,7 @@
 ```mermaid
 flowchart LR
     Operators((Mission Owners)) --> demo_CULTURE_v0_backend_arena_orchestrator[[Demo → CULTURE v0 → Backend → Arena Orchestrator]]
-    demo_CULTURE_v0_backend_arena_orchestrator --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    demo_CULTURE_v0_backend_arena_orchestrator --> Core[["AGI Jobs v0 (v2) Core Intelligence"]]
     Core --> Observability[[Unified CI / CD & Observability]]
     Core --> Governance[[Owner Control Plane]]
 ```

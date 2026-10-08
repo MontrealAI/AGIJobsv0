@@ -20,7 +20,7 @@ This directory contains design documentation and preserved architecture diagrams
 ```mermaid
 flowchart LR
     Operators((Mission Owners)) --> demo_polaris_concordat[[Demo → Polaris Concordat]]
-    demo_polaris_concordat --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    demo_polaris_concordat --> Core[["AGI Jobs v0 (v2) Core Intelligence"]]
     Core --> Observability[[Unified CI / CD & Observability]]
     Core --> Governance[[Owner Control Plane]]
 ```

@@ -31,7 +31,7 @@ async function startGateway(): Promise<void> {
   await startGrpcServer();
 
   server = http.createServer(app);
-  wss = new WebSocketServer({ server });
+  wss = new WebSocketServer({ server, maxPayload: 64 * 1024 });
   registerEvents(wss, {
     onUnassignedJobCreated: handleJobCreatedEvent,
   });

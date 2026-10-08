@@ -3,6 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { ethers, network, artifacts } from 'hardhat';
 import { time } from '@nomicfoundation/hardhat-network-helpers';
+import { validationCommitmentHash } from '../../shared/validationProtocol';
 import {
   loadTokenConfig,
   loadEnsConfig,
@@ -11,6 +12,8 @@ import {
   type EnsConfig,
 } from '../config';
 import { verifyAgialpha } from '../verify-agialpha';
+import parseDuration from '../utils/parseDuration';
+const { validateOneclickConfig } = require('../v2/lib/oneclick-config.cjs');
 
 const constantsPath = path.join(
   __dirname,
@@ -115,6 +118,59 @@ function parsePct(value: string | number | undefined): number {
   return Math.round(scaled);
 }
 
+// Resolve operator input before deploying implementations or injecting a local token.
+// The shared validator rejects ignored suffixes, fractional seconds and overflow;
+// parseDuration is only used after that validation has succeeded.
+export function readProviderConfiguration(
+  decimals: number,
+  env: NodeJS.ProcessEnv = process.env
+) {
+  const econ = {
+    minStake: env.MIN_STAKE ?? '0',
+    employerSlashPct: parsePct(env.EMPLOYER_SLASH_PCT),
+    treasurySlashPct: parsePct(env.TREASURY_SLASH_PCT ?? '100'),
+    commitWindow: env.COMMIT_WINDOW ?? '3600',
+    revealWindow: env.REVEAL_WINDOW ?? '3600',
+    appealFee: env.DISPUTE_FEE ?? '1',
+    disputeWindow: env.DISPUTE_WINDOW ?? '86400',
+    burnPct: parsePct(env.FEEPOOL_BURN_PCT),
+    feePct: parsePct(env.JOB_FEE_PCT),
+    jobStake: env.JOB_STAKE ?? '0',
+  };
+  validateOneclickConfig({ econ }, decimals);
+  // Numeric seconds are already validated; avoid a millisecond conversion
+  // that can round a valid integer near Number.MAX_SAFE_INTEGER.
+  const seconds = (value: string) =>
+    /^[0-9]+$/.test(value) ? Number(value) : parseDuration(value, 's')!;
+  const committeeBound = (key: 'MIN_VALIDATORS' | 'MAX_VALIDATORS') => {
+    const input = env[key] ?? '3';
+    const value = Number(input);
+    if (!/^[0-9]+$/.test(input) || !Number.isSafeInteger(value) || value < 3) {
+      throw new Error(`${key} must be a safe integer of at least 3`);
+    }
+    return value;
+  };
+  const minValidators = committeeBound('MIN_VALIDATORS');
+  const maxValidators = committeeBound('MAX_VALIDATORS');
+  if (maxValidators < minValidators) {
+    throw new Error('MAX_VALIDATORS must be at least MIN_VALIDATORS');
+  }
+  return {
+    minStake: parseUnits(econ.minStake, decimals),
+    employerSlashPct: econ.employerSlashPct,
+    treasurySlashPct: econ.treasurySlashPct,
+    commitWindow: seconds(econ.commitWindow),
+    revealWindow: seconds(econ.revealWindow),
+    minValidators,
+    maxValidators,
+    disputeFee: parseUnits(econ.appealFee, decimals),
+    disputeWindow: seconds(econ.disputeWindow),
+    burnPct: econ.burnPct,
+    feePct: econ.feePct,
+    jobStake: parseUnits(econ.jobStake, decimals),
+  };
+}
+
 async function ensureLocalToken(
   tokenConfig: TokenConfig
 ): Promise<{ tokenAddress: string; tokenIsMock: boolean }> {
@@ -170,15 +226,27 @@ type DeploymentContext = {
   tokenIsMock: boolean;
   tokenConfig: TokenConfig;
   ensConfig: EnsConfig;
+  configuration: ReturnType<typeof readProviderConfiguration>;
 };
 
 async function deployContracts(ctx: DeploymentContext) {
-  const { deployer, treasury, decimals, ensConfig } = ctx;
+  const { deployer, treasury, ensConfig, configuration } = ctx;
   const deployerAddress = await deployer.getAddress();
 
-  const minStake = parseUnits(process.env.MIN_STAKE || '0', decimals);
-  const employerSlashPct = parsePct(process.env.EMPLOYER_SLASH_PCT);
-  const treasurySlashPct = parsePct(process.env.TREASURY_SLASH_PCT || '100');
+  const {
+    minStake,
+    employerSlashPct,
+    treasurySlashPct,
+    commitWindow,
+    revealWindow,
+    minValidators,
+    maxValidators,
+    disputeFee,
+    disputeWindow,
+    burnPct,
+    feePct,
+    jobStake,
+  } = configuration;
 
   const Stake = await ethers.getContractFactory(
     'contracts/v2/StakeManager.sol:StakeManager'
@@ -226,10 +294,6 @@ async function deployContracts(ctx: DeploymentContext) {
   const Validation = await ethers.getContractFactory(
     'contracts/v2/ValidationModule.sol:ValidationModule'
   );
-  const commitWindow = Number(process.env.COMMIT_WINDOW || 3600);
-  const revealWindow = Number(process.env.REVEAL_WINDOW || 3600);
-  const minValidators = Number(process.env.MIN_VALIDATORS || 3);
-  const maxValidators = Number(process.env.MAX_VALIDATORS || 3);
   const validation = await Validation.deploy(
     ethers.ZeroAddress,
     await stake.getAddress(),
@@ -254,19 +318,19 @@ async function deployContracts(ctx: DeploymentContext) {
       : ethers.ZeroAddress
   );
   await attestation.waitForDeployment();
-  await identity.setAttestationRegistry(await attestation.getAddress());
+  await (
+    await identity.setAttestationRegistry(await attestation.getAddress())
+  ).wait();
 
   const Dispute = await ethers.getContractFactory(
     'contracts/v2/modules/DisputeModule.sol:DisputeModule'
   );
-  const disputeFee = parseUnits(process.env.DISPUTE_FEE || '1', decimals);
-  const disputeWindow = Number(process.env.DISPUTE_WINDOW || 86400);
   const dispute = await Dispute.deploy(
     ethers.ZeroAddress,
     disputeFee,
     disputeWindow,
     ethers.ZeroAddress,
-    ctx.governanceTarget
+    deployerAddress
   );
   await dispute.waitForDeployment();
 
@@ -288,7 +352,6 @@ async function deployContracts(ctx: DeploymentContext) {
   const FeePool = await ethers.getContractFactory(
     'contracts/v2/FeePool.sol:FeePool'
   );
-  const burnPct = parsePct(process.env.FEEPOOL_BURN_PCT);
   const feePool = await FeePool.deploy(
     await stake.getAddress(),
     burnPct,
@@ -300,8 +363,6 @@ async function deployContracts(ctx: DeploymentContext) {
   const JobRegistry = await ethers.getContractFactory(
     'contracts/v2/JobRegistry.sol:JobRegistry'
   );
-  const feePct = parsePct(process.env.JOB_FEE_PCT);
-  const jobStake = parseUnits(process.env.JOB_STAKE || '0', decimals);
   const registry = await JobRegistry.deploy(
     ethers.ZeroAddress,
     await stake.getAddress(),
@@ -328,56 +389,77 @@ async function deployContracts(ctx: DeploymentContext) {
   await committee.waitForDeployment();
 
   // Wire modules together
-  await stake.setModules(
-    await registry.getAddress(),
-    await dispute.getAddress()
-  );
-  await stake.setValidationModule(await validation.getAddress());
-  await stake.setFeePool(await feePool.getAddress());
+  await (
+    await stake.setModules(
+      await registry.getAddress(),
+      await dispute.getAddress()
+    )
+  ).wait();
+  await (await stake.setValidationModule(await validation.getAddress())).wait();
+  await (await stake.setFeePool(await feePool.getAddress())).wait();
 
-  await validation.setJobRegistry(await registry.getAddress());
-  await validation.setStakeManager(await stake.getAddress());
-  await validation.setReputationEngine(await reputation.getAddress());
-  await validation.setIdentityRegistry(await identity.getAddress());
+  await (await validation.setJobRegistry(await registry.getAddress())).wait();
+  await (await validation.setStakeManager(await stake.getAddress())).wait();
+  await (
+    await validation.setReputationEngine(await reputation.getAddress())
+  ).wait();
+  await (
+    await validation.setIdentityRegistry(await identity.getAddress())
+  ).wait();
 
-  await dispute.setJobRegistry(await registry.getAddress());
-  await dispute.setStakeManager(await stake.getAddress());
-  await dispute.setCommittee(await committee.getAddress());
-  await committee.setDisputeModule(await dispute.getAddress());
+  await (await dispute.setJobRegistry(await registry.getAddress())).wait();
+  await (await dispute.setStakeManager(await stake.getAddress())).wait();
+  await (await dispute.setCommittee(await committee.getAddress())).wait();
+  await (await committee.setDisputeModule(await dispute.getAddress())).wait();
 
-  await certificate.setJobRegistry(await registry.getAddress());
+  await (await certificate.setJobRegistry(await registry.getAddress())).wait();
+  await (await certificate.setStakeManager(await stake.getAddress())).wait();
 
   const baseUriEnv = process.env.CERTIFICATE_BASE_URI?.trim();
   if (baseUriEnv && baseUriEnv.length > 0) {
     const baseUri = baseUriEnv.endsWith('/') ? baseUriEnv : `${baseUriEnv}/`;
-    await certificate.setBaseURI(baseUri);
+    await (await certificate.setBaseURI(baseUri)).wait();
     if (/^true$/i.test(process.env.CERTIFICATE_LOCK_BASE_URI ?? '')) {
-      await certificate.lockBaseURI();
+      await (await certificate.lockBaseURI()).wait();
     }
   }
 
-  await feePool.setStakeManager(await stake.getAddress());
+  await (await feePool.setStakeManager(await stake.getAddress())).wait();
 
-  await registry.setModules(
-    await validation.getAddress(),
-    await stake.getAddress(),
-    await reputation.getAddress(),
-    await dispute.getAddress(),
-    await certificate.getAddress(),
-    await feePool.getAddress(),
-    []
-  );
-  await registry.setIdentityRegistry(await identity.getAddress());
-  await registry.setTaxPolicy(await taxPolicy.getAddress());
-  await dispute.setTaxPolicy(await taxPolicy.getAddress());
+  await (
+    await registry.setModules(
+      await validation.getAddress(),
+      await stake.getAddress(),
+      await reputation.getAddress(),
+      await dispute.getAddress(),
+      await certificate.getAddress(),
+      await feePool.getAddress(),
+      []
+    )
+  ).wait();
+  await (
+    await registry.setIdentityRegistry(await identity.getAddress())
+  ).wait();
+  await (await registry.setTaxPolicy(await taxPolicy.getAddress())).wait();
+  await (await dispute.setTaxPolicy(await taxPolicy.getAddress())).wait();
 
-  await reputation.setCaller(await registry.getAddress(), true);
-  await reputation.setCaller(await validation.getAddress(), true);
+  await (await reputation.setCaller(await registry.getAddress(), true)).wait();
+  await (
+    await reputation.setCaller(await validation.getAddress(), true)
+  ).wait();
 
-  await taxPolicy.setAcknowledger(await registry.getAddress(), true);
-  await taxPolicy.setAcknowledger(await stake.getAddress(), true);
-  await taxPolicy.setAcknowledger(await dispute.getAddress(), true);
-  await taxPolicy.setAcknowledger(await feePool.getAddress(), true);
+  await (
+    await taxPolicy.setAcknowledger(await registry.getAddress(), true)
+  ).wait();
+  await (
+    await taxPolicy.setAcknowledger(await stake.getAddress(), true)
+  ).wait();
+  await (
+    await taxPolicy.setAcknowledger(await dispute.getAddress(), true)
+  ).wait();
+  await (
+    await taxPolicy.setAcknowledger(await feePool.getAddress(), true)
+  ).wait();
 
   return {
     stake,
@@ -420,41 +502,57 @@ async function runIntegrationScenario(
     deployer
   );
 
-  await token.connect(deployer).mint(await stake.getAddress(), 0);
+  await (
+    await token.connect(deployer).mint(await stake.getAddress(), 0)
+  ).wait();
 
   const stakeAmount = ethers.parseUnits('1000', decimals);
   for (const signer of [employer, agent, ...validators]) {
-    await token.connect(deployer).mint(signer.address, stakeAmount);
+    await (
+      await token.connect(deployer).mint(signer.address, stakeAmount)
+    ).wait();
   }
 
-  await identity.addAdditionalAgent(agent.address);
+  await (await identity.addAdditionalAgent(agent.address)).wait();
   for (const validator of validators) {
-    await identity.addAdditionalValidator(validator.address);
+    await (await identity.addAdditionalValidator(validator.address)).wait();
   }
 
-  await validation.setValidatorPool(
-    validators.map((validator) => validator.address)
-  );
-  await validation.setValidatorsPerJob(validators.length);
-  await validation.setCommitWindow(1800);
-  await validation.setRevealWindow(1800);
-  await validation.setRequiredValidatorApprovals(validators.length);
+  await (
+    await validation.setValidatorPool(
+      validators.map((validator) => validator.address)
+    )
+  ).wait();
+  await (await validation.setValidatorsPerJob(validators.length)).wait();
+  await (await validation.setCommitWindow(1800)).wait();
+  await (await validation.setRevealWindow(1800)).wait();
+  await (
+    await validation.setRequiredValidatorApprovals(validators.length)
+  ).wait();
 
-  await registry.setJobParameters(ethers.parseUnits('100000', decimals), 0);
-  await registry.setFeePct(0);
-  await registry.setValidatorRewardPct(0);
-  await registry.setJobDurationLimit(3600);
+  await (
+    await registry.setJobParameters(ethers.parseUnits('100000', decimals), 0)
+  ).wait();
+  await (await registry.setFeePct(0)).wait();
+  await (await registry.setValidatorRewardPct(0)).wait();
+  await (await registry.setJobDurationLimit(3600)).wait();
 
   const roleEnum = { Agent: 0, Validator: 1 } as const;
 
   for (const signer of [agent, ...validators]) {
-    await token.connect(signer).approve(await stake.getAddress(), stakeAmount);
+    await (
+      await token.connect(signer).approve(await stake.getAddress(), stakeAmount)
+    ).wait();
     const role = signer === agent ? roleEnum.Agent : roleEnum.Validator;
-    await stake.connect(signer).acknowledgeAndDeposit(role, stakeAmount);
+    await (
+      await stake.connect(signer).acknowledgeAndDeposit(role, stakeAmount)
+    ).wait();
   }
 
   const reward = ethers.parseUnits('100', decimals);
-  await token.connect(employer).approve(await stake.getAddress(), reward);
+  await (
+    await token.connect(employer).approve(await stake.getAddress(), reward)
+  ).wait();
   const deadline = BigInt((await time.latest()) + 3600);
   const specHash = ethers.id('integration-spec');
   const tx = await registry
@@ -478,8 +576,8 @@ async function runIntegrationScenario(
     if (keyed.commitDeadline !== undefined) {
       return BigInt(keyed.commitDeadline);
     }
-    if (Array.isArray(round) && round.length > 2) {
-      const value = round[2];
+    if (Array.isArray(round) && round.length > 0) {
+      const value = round[0];
       if (value !== undefined) {
         return BigInt(value as bigint);
       }
@@ -498,7 +596,9 @@ async function runIntegrationScenario(
     }
     const trySelect = async (signer: ethers.Signer, entropy: number) => {
       try {
-        await validation.connect(signer).selectValidators(jobId, entropy);
+        await (
+          await validation.connect(signer).selectValidators(jobId, entropy)
+        ).wait();
       } catch (err) {
         const message = (err as Error).message || '';
         if (!message.includes('ValidatorsAlreadySelected')) {
@@ -515,21 +615,25 @@ async function runIntegrationScenario(
     }
   };
 
-  await registry.connect(agent).applyForJob(jobId, 'agent', []);
-  await registry
-    .connect(agent)
-    .acknowledgeAndSubmit(
-      jobId,
-      ethers.id('ipfs://result'),
-      'ipfs://result',
-      'agent',
-      []
-    );
+  await (await registry.connect(agent).applyForJob(jobId, 'agent', [])).wait();
+  await (
+    await registry
+      .connect(agent)
+      .acknowledgeAndSubmit(
+        jobId,
+        ethers.id('ipfs://result'),
+        'ipfs://result',
+        'agent',
+        []
+      )
+  ).wait();
 
   await ensureValidatorsSelected();
 
   const burnHash = ethers.keccak256(ethers.toUtf8Bytes('burn-proof'));
-  await registry.connect(employer).submitBurnReceipt(jobId, burnHash, 0, 0);
+  await (
+    await registry.connect(employer).submitBurnReceipt(jobId, burnHash, 0, 0)
+  ).wait();
 
   const commitDeadline = await readCommitDeadline();
   if (commitDeadline === 0n) {
@@ -541,15 +645,26 @@ async function runIntegrationScenario(
   }
 
   const nonce = await validation.jobNonce(jobId);
+  const domain = await validation.DOMAIN_SEPARATOR();
+  const { chainId } = await ethers.provider.getNetwork();
   const commitFor = async (validator: ethers.Signer, saltLabel: string) => {
     const saltBytes = ethers.keccak256(ethers.toUtf8Bytes(saltLabel));
-    const commit = ethers.keccak256(
-      ethers.solidityPacked(
-        ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32', 'bytes32'],
-        [jobId, nonce, true, burnHash, saltBytes, specHash]
-      )
-    );
-    await validation.connect(validator).commitValidation(jobId, commit, '', []);
+    const commit = validationCommitmentHash({
+      jobId,
+      nonce,
+      validator: await validator.getAddress(),
+      approve: true,
+      burnTxHash: burnHash,
+      salt: saltBytes,
+      specHash,
+      domain,
+      chainId,
+    });
+    await (
+      await validation
+        .connect(validator)
+        .commitValidation(jobId, commit, 'validator', [])
+    ).wait();
     return saltBytes;
   };
 
@@ -562,19 +677,24 @@ async function runIntegrationScenario(
     salts[i] = saltBytes;
   }
 
-  await time.increase(31);
+  await time.increaseTo(commitDeadline + 1n);
   for (let i = 0; i < validators.length; i += 1) {
     const validator = validators[i];
     const saltBytes = salts[i];
-    await validation
-      .connect(validator)
-      .revealValidation(jobId, true, burnHash, saltBytes, '', []);
+    await (
+      await validation
+        .connect(validator)
+        .revealValidation(jobId, true, burnHash, saltBytes, 'validator', [])
+    ).wait();
   }
 
-  await time.increase(3);
-  await validation.finalize(jobId);
-  await registry.connect(employer).confirmEmployerBurn(jobId, burnHash);
-  await registry.connect(employer).finalize(jobId);
+  const round = await validation.rounds(jobId);
+  await time.increaseTo(BigInt(round.revealDeadline ?? round[1]) + 1n);
+  await (await validation.finalize(jobId)).wait();
+  await (
+    await registry.connect(employer).confirmEmployerBurn(jobId, burnHash)
+  ).wait();
+  await (await registry.connect(employer).finalize(jobId)).wait();
 
   console.log(`Integration scenario finalized job ${jobId} successfully.`);
 }
@@ -603,25 +723,55 @@ async function transferOwnership(
     return;
   }
 
-  await stake.setGovernance(target);
-  await registry.setGovernance(target);
-  await feePool.setGovernance(target);
+  await (await stake.setGovernance(target)).wait();
+  await (await registry.setGovernance(target)).wait();
+  await (await feePool.setGovernance(target)).wait();
 
-  await Promise.all([
-    reputation.transferOwnership(target),
-    validation.transferOwnership(target),
-    dispute.transferOwnership(target),
-    certificate.transferOwnership(target),
-    identity.transferOwnership(target),
-    taxPolicy.transferOwnership(target),
-    committee.transferOwnership(target),
-    attestation.transferOwnership(target),
-  ]);
+  for (const contract of [
+    reputation,
+    validation,
+    dispute,
+    certificate,
+    feePool,
+    identity,
+    taxPolicy,
+    committee,
+    attestation,
+  ]) {
+    await (await contract.transferOwnership(target)).wait();
+  }
 
-  console.log(`Ownership transferred to ${target}.`);
+  for (const [name, contract] of Object.entries({
+    stake,
+    registry,
+    feePool,
+    reputation,
+    validation,
+    dispute,
+    certificate,
+    committee,
+    attestation,
+  })) {
+    if (
+      ethers.getAddress(await contract.owner()) !== ethers.getAddress(target)
+    ) {
+      throw new Error(`${name} governance handoff did not complete`);
+    }
+  }
+  for (const [name, contract] of Object.entries({ identity, taxPolicy })) {
+    if (
+      ethers.getAddress(await contract.pendingOwner()) !==
+      ethers.getAddress(target)
+    ) {
+      throw new Error(`${name} pending governance handoff was not recorded`);
+    }
+  }
+  console.log(
+    `Ownership handed off to ${target}; governance must still call acceptOwnership() on IdentityRegistry and TaxPolicy before commissioning.`
+  );
 }
 
-async function main() {
+export async function deployProviderAgnostic() {
   const [deployer] = await ethers.getSigners();
   const deployerAddress = await deployer.getAddress();
   const networkKey = inferNetworkKey({
@@ -644,6 +794,7 @@ async function main() {
   });
 
   const decimals = Number(tokenConfig.decimals ?? 18);
+  const configuration = readProviderConfiguration(decimals);
   const { tokenAddress, tokenIsMock } = await ensureLocalToken(tokenConfig);
   await verifyTokenMetadata(tokenConfigPath, ethers.provider, tokenIsMock);
 
@@ -678,6 +829,7 @@ async function main() {
     tokenIsMock,
     tokenConfig,
     ensConfig,
+    configuration,
   };
 
   console.log(`Deploying with signer ${deployerAddress} on ${network.name}`);
@@ -715,7 +867,9 @@ async function main() {
   );
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exitCode = 1;
-});
+if (require.main === module) {
+  deployProviderAgnostic().catch((err) => {
+    console.error(err);
+    process.exitCode = 1;
+  });
+}

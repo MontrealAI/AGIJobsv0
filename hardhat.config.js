@@ -202,6 +202,7 @@ module.exports = {
     mainnet: {
       url: process.env.MAINNET_RPC_URL || '',
       accounts: resolveAccounts('MAINNET_PRIVATE_KEY'),
+      chainId: 1,
     },
     sepolia: {
       url: process.env.SEPOLIA_RPC_URL || '',

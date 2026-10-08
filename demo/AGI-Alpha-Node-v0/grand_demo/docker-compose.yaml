@@ -9,7 +9,7 @@ services:
       - ./config:/app/config
       - ./storage:/app/storage
     ports:
-      - "8080:8080"
-      - "9108:9108"
-    command: ["python", "scripts/run_demo.py"]
+      - "127.0.0.1:8080:8080"
+      - "127.0.0.1:9108:9108"
+    # The image ENTRYPOINT already launches scripts/run_demo.py.
     restart: unless-stopped

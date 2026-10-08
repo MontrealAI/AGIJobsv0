@@ -16,7 +16,7 @@
 ```mermaid
 flowchart LR
     Operators((Mission Owners)) --> demo_agi_labor_market_grand_demo[[Demo → AGI Labor Market Grand Demo]]
-    demo_agi_labor_market_grand_demo --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    demo_agi_labor_market_grand_demo --> Core[["AGI Jobs v0 (v2) Core Intelligence"]]
     Core --> Observability[[Unified CI / CD & Observability]]
     Core --> Governance[[Owner Control Plane]]
 ```

@@ -78,7 +78,7 @@ flowchart TD
 ```mermaid
 flowchart LR
     Operators((Mission Owners)) --> demo_Meta_Agentic_Program_Synthesis_v0[[Demo → Meta Agentic Program Synthesis v0]]
-    demo_Meta_Agentic_Program_Synthesis_v0 --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    demo_Meta_Agentic_Program_Synthesis_v0 --> Core[["AGI Jobs v0 (v2) Core Intelligence"]]
     Core --> Observability[[Unified CI / CD & Observability]]
     Core --> Governance[[Owner Control Plane]]
 ```
@@ -108,3 +108,5 @@ The targeted CI runs the engines, regression tests, candidate rejection checks, 
 - `tests/`: new runtime, export, admission and semantic regressions.
 
 See [VALIDATION.md](VALIDATION.md) for the change record and qualification limits, and the [repository operator guide](../../OperatorRunbook.md) for separately commissioned owner operations.
+
+Mermaid rendering corrections dated October 8, 2026 are recorded in the [historical report manifest](reports/meta-agentic-program-synthesis-manifest.json). They preserve the original simulation values and timestamps; they do not represent a new execution or new production evidence.

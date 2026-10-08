@@ -127,7 +127,7 @@ describe('Omega Business local mock-contract rehearsal', function () {
       await record(
         await registry
           .connect(agent)
-          .applyForJob(id, `worker0${index + 1}.agent.agi.eth`, '0x')
+          .applyForJob(id, `worker0${index + 1}.agent.agi.eth`, [])
       );
       await expect(
         registry.connect(employer).finalizeJob(id, 'pending')
@@ -136,7 +136,7 @@ describe('Omega Business local mock-contract rehearsal', function () {
       await expect(
         registry
           .connect(outsider)
-          .submit(id, resultHash, 'urn:omega:invalid', '', '0x')
+          .submit(id, resultHash, 'urn:omega:invalid', '', [])
       ).to.be.revertedWith('not agent');
       await record(
         await registry
@@ -146,7 +146,7 @@ describe('Omega Business local mock-contract rehearsal', function () {
             resultHash,
             `urn:omega:fixture:result:${index + 1}`,
             `worker0${index + 1}.agent.agi.eth`,
-            '0x'
+            []
           )
       );
       await expect(

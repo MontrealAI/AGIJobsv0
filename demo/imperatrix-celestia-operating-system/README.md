@@ -16,7 +16,7 @@
 ```mermaid
 flowchart LR
     Operators((Mission Owners)) --> demo_imperatrix_celestia_operating_system[[Demo → Imperatrix Celestia Operating System]]
-    demo_imperatrix_celestia_operating_system --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    demo_imperatrix_celestia_operating_system --> Core[["AGI Jobs v0 (v2) Core Intelligence"]]
     Core --> Observability[[Unified CI / CD & Observability]]
     Core --> Governance[[Owner Control Plane]]
 ```
