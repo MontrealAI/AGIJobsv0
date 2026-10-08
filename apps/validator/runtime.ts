@@ -32,6 +32,12 @@ export const REGISTRY_ABI = [
   'function jobs(uint256 jobId) view returns (address employer,address agent,uint128 reward,uint96 stake,uint128 burnReceiptAmount,bytes32 uriHash,bytes32 resultHash,bytes32 specHash,uint256 packedMetadata)',
 ];
 
+export const DISPUTE_ABI = [
+  'event DisputeRaised(uint256 indexed jobId,address indexed claimant,bytes32 indexed evidenceHash,string reason)',
+  'event DisputeResolved(uint256 indexed jobId,address indexed resolver,bool employerWins)',
+  'function disputes(uint256 jobId) view returns (address claimant,uint256 raisedAt,bool resolved,uint256 fee,bytes32 evidenceHash,string reason)',
+];
+
 export interface ReviewContext {
   scope: { chainId: string; validationModule: string; validator: string };
   selection: { blockNumber: number; blockHash: string; logIndex: number };

@@ -6,6 +6,7 @@ import {
   createReviewedValidator,
   VALIDATION_ABI,
   REGISTRY_ABI,
+  DISPUTE_ABI,
 } from './runtime';
 import {
   fetchArtifactBytes,
@@ -171,12 +172,6 @@ function decodePackedJobMetadata(packed: any): {
     assignedAt: (value & JOB_ASSIGNED_AT_MASK) >> JOB_ASSIGNED_AT_OFFSET,
   };
 }
-
-const DISPUTE_ABI = [
-  'event DisputeRaised(uint256 indexed jobId, address indexed claimant, bytes32 evidenceHash)',
-  'event DisputeResolved(uint256 indexed jobId, address indexed resolver, bool employerWins)',
-  'function disputes(uint256 jobId) view returns (tuple(address claimant,uint256 raisedAt,bool resolved,uint256 fee,bytes32 evidenceHash))',
-];
 
 const STAKE_MANAGER_ABI = [
   'function stakeOf(address user, uint8 role) view returns (uint256)',
@@ -606,10 +601,15 @@ async function startObservers() {
   if (dispute) {
     await dispute.on(
       'DisputeRaised',
-      async (jobId: bigint, claimant: string, evidenceHash: string) => {
+      async (
+        jobId: bigint,
+        claimant: string,
+        evidenceHash: string,
+        reason: string
+      ) => {
         console.log(`Dispute raised on job ${jobId} by ${claimant}`);
         loadDisputeEvidence(evidenceHash)
-          .then((evidence) => respondToDispute(jobId, evidence))
+          .then((evidence) => respondToDispute(jobId, evidence, reason))
           .catch((error) =>
             console.error('[validator] dispute:', safeErrorCode(error))
           );
@@ -629,7 +629,11 @@ async function startObservers() {
   }
 }
 
-async function respondToDispute(jobId: bigint, fetched: DisputeEvidence) {
+async function respondToDispute(
+  jobId: bigint,
+  fetched: DisputeEvidence,
+  reason: string
+) {
   const evidence = fetched.text;
   console.log(`Handling dispute for job ${jobId}`);
   const disputeFile = disputePath(jobId, validatorAddress);
@@ -661,6 +665,7 @@ async function respondToDispute(jobId: bigint, fetched: DisputeEvidence) {
     subdomain: personaLabel,
     timestamp: new Date().toISOString(),
     evidence: parsedEvidence,
+    reason,
     evidenceHash: fetched.commitment,
     evidenceVerified: fetched.verified,
     evidenceError: fetched.error,

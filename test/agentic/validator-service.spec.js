@@ -11,6 +11,7 @@ const {
   createReviewedValidator,
   VALIDATION_ABI,
   REGISTRY_ABI,
+  DISPUTE_ABI,
 } = require('../../apps/validator/runtime');
 const { RevealJournal } = require('../../examples/agentic/validator-recovery');
 
@@ -186,10 +187,11 @@ describe('reviewed validator service with current deployed contracts', function 
     };
   }
 
-  it('matches all configured registry and validation functions/events to actual artifacts', async () => {
+  it('matches all configured registry, validation and dispute functions/events to actual artifacts', async () => {
     for (const [abi, source] of [
       [VALIDATION_ABI, 'contracts/v2/ValidationModule.sol:ValidationModule'],
       [REGISTRY_ABI, 'contracts/v2/JobRegistry.sol:JobRegistry'],
+      [DISPUTE_ABI, 'contracts/v2/modules/DisputeModule.sol:DisputeModule'],
     ]) {
       const canonical = new ethers.Interface(
         (await artifacts.readArtifact(source)).abi
@@ -200,6 +202,11 @@ describe('reviewed validator service with current deployed contracts', function 
             ? canonical.getEvent(fragment.name)
             : canonical.getFunction(fragment.name);
         assert.equal(actual.format('sighash'), fragment.format('sighash'));
+        if (fragment.type === 'event')
+          assert.deepEqual(
+            actual.inputs.map((x) => Boolean(x.indexed)),
+            fragment.inputs.map((x) => Boolean(x.indexed))
+          );
         if (fragment.type === 'function')
           assert.deepEqual(
             actual.outputs.map((x) => x.format('sighash')),
