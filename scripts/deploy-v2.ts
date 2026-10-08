@@ -1,5 +1,5 @@
 import { deployImplementations } from './deploy/implementations.cjs';
-import { ethers } from 'hardhat';
+import { ethers, network } from 'hardhat';
 
 // Mainnet ENS registry and NameWrapper addresses
 // ENS registry: 0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e
@@ -8,6 +8,14 @@ const ENS_REGISTRY = '0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e';
 const NAME_WRAPPER = '0xD4416b13d2b3a9aBae7AcD5D6C2BbDBE25686401';
 
 async function main() {
+  // Preserved integration fixture: this script installs ValidationStub and
+  // permissive economics. It must never be used for public-network deployment.
+  if (network.name !== 'hardhat') {
+    throw new Error(
+      'scripts/deploy-v2.ts is a local Hardhat fixture with ValidationStub. ' +
+        'Use scripts/v2/deployDefaults.ts and docs/deployment-v2-agialpha.md for reviewed deployments.'
+    );
+  }
   const [deployer] = await ethers.getSigners();
 
   const Stake = await ethers.getContractFactory(

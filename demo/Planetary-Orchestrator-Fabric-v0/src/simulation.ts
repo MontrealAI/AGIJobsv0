@@ -1508,6 +1508,7 @@ function buildDashboardHtml(
     }
     async function loadMissionTopology() {
       const container = document.getElementById('mission-topology');
+      container.removeAttribute('data-processed');
       const missionPathEl = document.getElementById('mission-topology-path');
       missionPathEl.textContent = missionGraphAssetPath;
       try {
@@ -1720,7 +1721,9 @@ function buildDashboardHtml(
               String(flow.to).replace(/[^a-zA-Z0-9]/g, '_')
           );
         }
-        document.getElementById('ledger-flow-mermaid').textContent = flowDiagramLines.join('\\n');
+        const ledgerDiagram = document.getElementById('ledger-flow-mermaid');
+        ledgerDiagram.textContent = flowDiagramLines.join('\\n');
+        ledgerDiagram.removeAttribute('data-processed');
         const events = Array.isArray(ledger.events) ? ledger.events : [];
         const eventSummary = {
           totalEvents: ledger.totalEvents ?? events.length,

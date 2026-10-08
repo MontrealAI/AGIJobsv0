@@ -13,19 +13,19 @@ sequenceDiagram
   actor U as User chat
   participant ORCH as planAndExecute()
   participant BRIDGE as alpha-bridge (gRPC)
-  participant BOX as /onebox routes
+  participant OneBox as /onebox routes
   participant CHAIN as Tool router
 
   U->>ORCH: message, history
   ORCH->>ORCH: detect confirmations & ensure userId
   ORCH->>BRIDGE: PlanRequest (gRPC)
-  BRIDGE->>BOX: POST /plan (JSON)
-  BOX-->>BRIDGE: Plan payload (intent, planHash, requiresConfirmation)
+  BRIDGE->>OneBox: POST /plan (JSON)
+  OneBox-->>BRIDGE: Plan payload (intent, planHash, requiresConfirmation)
   BRIDGE-->>ORCH: PlanResponse (plan JSON, consent token)
   ORCH->>ORCH: ask clarification? / prompt for consent
   ORCH->>BRIDGE: ExecuteRequest (gRPC)
-  BRIDGE->>BOX: POST /execute (JSON)
-  BOX-->>BRIDGE: Execute payload (job status / tx receipts)
+  BRIDGE->>OneBox: POST /execute (JSON)
+  OneBox-->>BRIDGE: Execute payload (job status / tx receipts)
   BRIDGE-->>ORCH: ExecuteResponse (receipt JSON)
   ORCH-->>CHAIN: route(ICS)
   CHAIN-->>U: streamed execution events

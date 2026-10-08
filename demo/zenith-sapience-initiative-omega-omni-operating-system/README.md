@@ -20,7 +20,7 @@ This directory contains design documentation and preserved architecture diagrams
 ```mermaid
 flowchart LR
     Operators((Mission Owners)) --> demo_zenith_sapience_initiative_omega_omni_operating_system[[Demo → Zenith Sapience Initiative Omega Omni Operating System]]
-    demo_zenith_sapience_initiative_omega_omni_operating_system --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    demo_zenith_sapience_initiative_omega_omni_operating_system --> Core[["AGI Jobs v0 (v2) Core Intelligence"]]
     Core --> Observability[[Unified CI / CD & Observability]]
     Core --> Governance[[Owner Control Plane]]
 ```

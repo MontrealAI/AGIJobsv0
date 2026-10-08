@@ -129,7 +129,7 @@ describe('Trident Sovereign wallet simulation', function () {
       .applyForJob(
         firstJobId,
         `${agentNation.ensSubdomain}.${scenario.ensRoot}`,
-        '0x'
+        []
       );
 
     const firstResultHash = ethers.keccak256(ethers.toUtf8Bytes(employerNation.resultCid));
@@ -140,7 +140,7 @@ describe('Trident Sovereign wallet simulation', function () {
         firstResultHash,
         `ipfs://${employerNation.resultCid}`,
         `${agentNation.ensSubdomain}.${scenario.ensRoot}`,
-        '0x'
+        []
       );
 
     const balanceBefore = await token.balanceOf(firstAgent.address);
@@ -179,7 +179,7 @@ describe('Trident Sovereign wallet simulation', function () {
       .applyForJob(
         secondJobId,
         `${employerNation.ensSubdomain}.${scenario.ensRoot}`,
-        '0x'
+        []
       );
 
     const secondResultHash = ethers.keccak256(ethers.toUtf8Bytes(agentNation.resultCid));
@@ -190,7 +190,7 @@ describe('Trident Sovereign wallet simulation', function () {
         secondResultHash,
         `ipfs://${agentNation.resultCid}`,
         `${employerNation.ensSubdomain}.${scenario.ensRoot}`,
-        '0x'
+        []
       );
 
     const validatorWatcher = actorWallets.get(scenario.validators[0].wallet)!;

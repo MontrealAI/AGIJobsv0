@@ -41,11 +41,11 @@ npm run owner:mission-control -- \
 flowchart LR
     subgraph Bundle[mission-control bundle]
         direction TB
-        MD[*.md\n(visual briefing)]
-        JSON[*.json\n(machine payload)]
-        TXT[*.txt\n(human console)]
-        MAN[*.manifest.json\n(step+metric index)]
-        SHA[*.checksums.txt\n(SHA-256 ledger)]
+        MD["*.md\n(visual briefing)"]
+        JSON["*.json\n(machine payload)"]
+        TXT["*.txt\n(human console)"]
+        MAN["*.manifest.json\n(step+metric index)"]
+        SHA["*.checksums.txt\n(SHA-256 ledger)"]
     end
     OPS[Operators] --> MD
     Pipelines --> JSON

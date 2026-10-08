@@ -104,268 +104,269 @@ const originalPublishCertificate =
   certificateMetadata.publishCertificateMetadata;
 const originalSimulationMode = process.env.AGENT_ALLOW_SIMULATED_EXECUTION;
 
-before(() => {
-  (energyMonitor as any).startEnergySpan = () => ({
-    id: 'span',
-    startedAt: new Date().toISOString(),
-    cpuStart: { user: 0, system: 0 } as NodeJS.CpuUsage,
-    hrtimeStart: BigInt(0),
-    context: {},
+describe('gateway task execution', () => {
+  before(() => {
+    (energyMonitor as any).startEnergySpan = () => ({
+      id: 'span',
+      startedAt: new Date().toISOString(),
+      cpuStart: { user: 0, system: 0 } as NodeJS.CpuUsage,
+      hrtimeStart: BigInt(0),
+      context: {},
+    });
+    (energyMonitor as any).endEnergySpan = async () => ({
+      spanId: 'span',
+      startedAt: new Date().toISOString(),
+      finishedAt: new Date().toISOString(),
+      durationMs: 1,
+      runtimeMs: 1,
+      cpuTimeMs: 1,
+      gpuTimeMs: 0,
+      cpuUserUs: 1,
+      cpuSystemUs: 0,
+      cpuTotalUs: 1,
+      cpuCycles: 1,
+      gpuCycles: 0,
+      memoryRssBytes: 0,
+      energyEstimate: 1,
+    });
+    (telemetry as any).publishEnergySample = async () => {};
+    (learning as any).notifyTrainingOutcome = async () => {};
+    (auditLogger as any).recordAuditEvent = async () => ({} as any);
+    (certificateMetadata as any).publishCertificateMetadata = async () => null;
   });
-  (energyMonitor as any).endEnergySpan = async () => ({
-    spanId: 'span',
-    startedAt: new Date().toISOString(),
-    finishedAt: new Date().toISOString(),
-    durationMs: 1,
-    runtimeMs: 1,
-    cpuTimeMs: 1,
-    gpuTimeMs: 0,
-    cpuUserUs: 1,
-    cpuSystemUs: 0,
-    cpuTotalUs: 1,
-    cpuCycles: 1,
-    gpuCycles: 0,
-    memoryRssBytes: 0,
-    energyEstimate: 1,
+
+  after(() => {
+    (energyMonitor as any).startEnergySpan = originalStartSpan;
+    (energyMonitor as any).endEnergySpan = originalEndSpan;
+    (telemetry as any).publishEnergySample = originalPublish;
+    (learning as any).notifyTrainingOutcome = originalNotify;
+    (auditLogger as any).recordAuditEvent = originalAudit;
+    (certificateMetadata as any).publishCertificateMetadata =
+      originalPublishCertificate;
+    registryAny.connect = originalRegistryConnect;
+    registryAny.taxPolicy = originalRegistryTaxPolicy;
   });
-  (telemetry as any).publishEnergySample = async () => {};
-  (learning as any).notifyTrainingOutcome = async () => {};
-  (auditLogger as any).recordAuditEvent = async () => ({} as any);
-  (certificateMetadata as any).publishCertificateMetadata = async () => null;
-});
 
-after(() => {
-  (energyMonitor as any).startEnergySpan = originalStartSpan;
-  (energyMonitor as any).endEnergySpan = originalEndSpan;
-  (telemetry as any).publishEnergySample = originalPublish;
-  (learning as any).notifyTrainingOutcome = originalNotify;
-  (auditLogger as any).recordAuditEvent = originalAudit;
-  (certificateMetadata as any).publishCertificateMetadata =
-    originalPublishCertificate;
-  registryAny.connect = originalRegistryConnect;
-  registryAny.taxPolicy = originalRegistryTaxPolicy;
-});
-
-afterEach(() => {
-  if (originalSimulationMode === undefined)
-    delete process.env.AGENT_ALLOW_SIMULATED_EXECUTION;
-  else process.env.AGENT_ALLOW_SIMULATED_EXECUTION = originalSimulationMode;
-  setAgentEndpointInvoker(null);
-  setIpfsClientFactory(null);
-  clearAgentMemory();
-  registryAny.connect = originalRegistryConnect;
-  registryAny.taxPolicy = originalRegistryTaxPolicy;
-  if (fs.existsSync(resultsDir)) {
-    for (const file of fs.readdirSync(resultsDir)) {
-      const target = path.join(resultsDir, file);
-      try {
-        fs.unlinkSync(target);
-      } catch {
-        // ignore clean-up failures
+  afterEach(() => {
+    if (originalSimulationMode === undefined)
+      delete process.env.AGENT_ALLOW_SIMULATED_EXECUTION;
+    else process.env.AGENT_ALLOW_SIMULATED_EXECUTION = originalSimulationMode;
+    setAgentEndpointInvoker(null);
+    setIpfsClientFactory(null);
+    clearAgentMemory();
+    registryAny.connect = originalRegistryConnect;
+    registryAny.taxPolicy = originalRegistryTaxPolicy;
+    if (fs.existsSync(resultsDir)) {
+      for (const file of fs.readdirSync(resultsDir)) {
+        const target = path.join(resultsDir, file);
+        try {
+          fs.unlinkSync(target);
+        } catch {
+          // ignore clean-up failures
+        }
       }
     }
-  }
-});
-
-describe('runAgentTask', () => {
-  it('provides orchestration context to agent invocations', async () => {
-    const context = createExecutionContext('101', 'https://agent.test/run');
-    const invocations: InvocationRecord[] = [];
-    const dispose = registerContextProvider(async () => ({
-      context: { hint: 'remember' },
-      memory: [
-        {
-          jobId: '42',
-          timestamp: new Date().toISOString(),
-          success: true,
-          resultURI: 'ipfs://prev',
-        },
-      ],
-    }));
-
-    setAgentEndpointInvoker(async (endpoint, payload) => {
-      invocations.push({ endpoint, payload });
-      return { ok: true };
-    });
-
-    const result = await runAgentTask(context.profile, context);
-    expect(result.output).to.deep.equal({ ok: true });
-    expect(result.orchestration.context).to.have.property('hint', 'remember');
-    expect(invocations).to.have.lengthOf(1);
-    const sent = invocations[0].payload as any;
-    expect(sent.context).to.have.property('hint', 'remember');
-    expect(sent.memory).to.be.an('array').with.lengthOf(1);
-    expect(sent.memory[0].jobId).to.equal('42');
-
-    dispose();
   });
 
-  it('falls back to generated output when the endpoint fails', async () => {
-    const context = createExecutionContext('102', 'https://agent.example/run');
-    setAgentEndpointInvoker(async () => {
-      throw new Error('network error');
-    });
+  describe('runAgentTask', () => {
+    it('provides orchestration context to agent invocations', async () => {
+      const context = createExecutionContext('101', 'https://agent.test/run');
+      const invocations: InvocationRecord[] = [];
+      const dispose = registerContextProvider(async () => ({
+        context: { hint: 'remember' },
+        memory: [
+          {
+            jobId: '42',
+            timestamp: new Date().toISOString(),
+            success: true,
+            resultURI: 'ipfs://prev',
+          },
+        ],
+      }));
 
-    const result = await runAgentTask(context.profile, context);
-    expect(result.output).to.have.property(
-      'summary',
-      'Autogenerated fallback solution'
-    );
-    expect(result.error).to.be.instanceOf(Error);
-  });
-});
-
-describe('executeJob', () => {
-  for (const scenario of [
-    'provider failure',
-    'missing endpoint',
-    'simulation on mainnet',
-    'simulation without a chain',
-  ]) {
-    it(`rejects ${scenario} before uploading, signing, or submitting`, async () => {
-      delete process.env.AGENT_ALLOW_SIMULATED_EXECUTION;
-      const context = createExecutionContext(
-        'rejected',
-        scenario === 'provider failure'
-          ? 'https://agent.fixture/run'
-          : undefined
-      );
-      if (scenario.startsWith('simulation')) {
-        process.env.AGENT_ALLOW_SIMULATED_EXECUTION = 'true';
-        if (scenario === 'simulation on mainnet')
-          context.wallet = context.wallet.connect({
-            getNetwork: async () => ({ chainId: 1n }),
-          } as any);
-      }
-      setAgentEndpointInvoker(async () => {
-        throw new Error('provider unavailable');
+      setAgentEndpointInvoker(async (endpoint, payload) => {
+        invocations.push({ endpoint, payload });
+        return { ok: true };
       });
-      let uploads = 0,
-        submissions = 0,
-        signatures = 0;
+
+      const result = await runAgentTask(context.profile, context);
+      expect(result.output).to.deep.equal({ ok: true });
+      expect(result.orchestration.context).to.have.property('hint', 'remember');
+      expect(invocations).to.have.lengthOf(1);
+      const sent = invocations[0].payload as any;
+      expect(sent.context).to.have.property('hint', 'remember');
+      expect(sent.memory).to.be.an('array').with.lengthOf(1);
+      expect(sent.memory[0].jobId).to.equal('42');
+
+      dispose();
+    });
+
+    it('falls back to generated output when the endpoint fails', async () => {
+      const context = createExecutionContext('102', 'https://agent.example/run');
+      setAgentEndpointInvoker(async () => {
+        throw new Error('network error');
+      });
+
+      const result = await runAgentTask(context.profile, context);
+      expect(result.output).to.have.property(
+        'summary',
+        'Autogenerated fallback solution'
+      );
+      expect(result.error).to.be.instanceOf(Error);
+    });
+  });
+
+  describe('executeJob', () => {
+    for (const scenario of [
+      'provider failure',
+      'missing endpoint',
+      'simulation on mainnet',
+      'simulation without a chain',
+    ]) {
+      it(`rejects ${scenario} before uploading, signing, or submitting`, async () => {
+        delete process.env.AGENT_ALLOW_SIMULATED_EXECUTION;
+        const context = createExecutionContext(
+          'rejected',
+          scenario === 'provider failure'
+            ? 'https://agent.fixture/run'
+            : undefined
+        );
+        if (scenario.startsWith('simulation')) {
+          process.env.AGENT_ALLOW_SIMULATED_EXECUTION = 'true';
+          if (scenario === 'simulation on mainnet')
+            context.wallet = context.wallet.connect({
+              getNetwork: async () => ({ chainId: 1n }),
+            } as any);
+        }
+        setAgentEndpointInvoker(async () => {
+          throw new Error('provider unavailable');
+        });
+        let uploads = 0,
+          submissions = 0,
+          signatures = 0;
+        setIpfsClientFactory(
+          () =>
+            ({
+              add: async () => {
+                uploads++;
+                throw new Error('must not upload');
+              },
+            } as unknown as IPFSHTTPClient)
+        );
+        context.wallet.signMessage = async () => {
+          signatures++;
+          throw new Error('must not sign');
+        };
+        registryAny.connect = () => {
+          submissions++;
+          throw new Error('must not submit');
+        };
+        let rejected: unknown;
+        try {
+          await executeJob(context);
+        } catch (error) {
+          rejected = error;
+        }
+        expect(rejected).to.be.instanceOf(Error);
+        expect((rejected as Error).message).to.match(
+          /provider unavailable|synthetic execution is disabled|Synthetic execution requires/
+        );
+        expect([uploads, signatures, submissions]).to.deep.equal([0, 0, 0]);
+        expect(getAgentMemory(context.profile.address)[0].success).to.equal(
+          false
+        );
+      });
+    }
+
+    it('retains explicitly enabled synthetic execution only on a connected local chain', async () => {
+      process.env.AGENT_ALLOW_SIMULATED_EXECUTION = 'true';
+      const context = createExecutionContext('local-simulation');
+      context.wallet = context.wallet.connect({
+        getNetwork: async () => ({ chainId: 31337n }),
+      } as any);
       setIpfsClientFactory(
         () =>
           ({
-            add: async () => {
-              uploads++;
-              throw new Error('must not upload');
-            },
+            add: async () => ({ cid: { toString: () => 'bafysimulation' } }),
           } as unknown as IPFSHTTPClient)
       );
-      context.wallet.signMessage = async () => {
-        signatures++;
-        throw new Error('must not sign');
-      };
-      registryAny.connect = () => {
-        submissions++;
-        throw new Error('must not submit');
-      };
-      let rejected: unknown;
-      try {
-        await executeJob(context);
-      } catch (error) {
-        rejected = error;
-      }
-      expect(rejected).to.be.instanceOf(Error);
-      expect((rejected as Error).message).to.match(
-        /provider unavailable|synthetic execution is disabled|Synthetic execution requires/
+      registryAny.taxPolicy = async () => ethers.ZeroAddress;
+      registryAny.connect = () => ({
+        submit: async () => ({ hash: '0xsimulation', wait: async () => ({}) }),
+      });
+      const result = await executeJob(context);
+      expect(result.executionMode).to.equal('simulation');
+      expect(result.rawOutput).to.have.property('simulation', true);
+    });
+
+    it('uploads results and submits for validation without legacy finalization', async () => {
+      const context = createExecutionContext('201', 'https://agent.finalize');
+      setAgentEndpointInvoker(async () => ({ response: 'ok' }));
+      setIpfsClientFactory(
+        () =>
+          ({
+            add: async () => ({ cid: { toString: () => 'bafytestcid' } }),
+          } as unknown as IPFSHTTPClient)
       );
-      expect([uploads, signatures, submissions]).to.deep.equal([0, 0, 0]);
-      expect(getAgentMemory(context.profile.address)[0].success).to.equal(
-        false
+
+      registryAny.taxPolicy = async () => ethers.ZeroAddress;
+      let submitArgs: unknown[] | null = null;
+      let legacyCalls = 0;
+      registryAny.connect = () => ({
+        finalizeJob: async () => {
+          legacyCalls++;
+          throw new Error('legacy finalization must not be attempted');
+        },
+        submit: async (...args: unknown[]) => {
+          submitArgs = args;
+          return { hash: '0xsubmit', wait: async () => ({}) };
+        },
+      });
+
+      const result = await executeJob(context);
+      expect(result.resultURI).to.equal('ipfs://bafytestcid');
+      expect(result.resultCid).to.equal('bafytestcid');
+      expect(result.txHash).to.equal('0xsubmit');
+      expect(result.submissionMethod).to.equal('submit');
+      expect(legacyCalls).to.equal(0);
+      expect(submitArgs).to.deep.equal([
+        context.job.jobId, result.resultHash, 'ipfs://bafytestcid', 'test-agent', [],
+      ]);
+
+      const history = getAgentMemory(context.profile.address);
+      expect(history).to.have.lengthOf(1);
+      expect(history[0].method).to.equal('submit');
+      expect(history[0].resultURI).to.equal('ipfs://bafytestcid');
+    });
+
+    it('submits through the current registry surface', async () => {
+      const context = createExecutionContext('202', 'https://agent.submit');
+      setAgentEndpointInvoker(async () => ({ job: 'done' }));
+      setIpfsClientFactory(
+        () =>
+          ({
+            add: async () => ({ cid: { toString: () => 'bafysubmitcid' } }),
+          } as unknown as IPFSHTTPClient)
       );
+
+      registryAny.taxPolicy = async () => ethers.ZeroAddress;
+      let submitCalled = 0;
+      registryAny.connect = () => ({
+        submit: async () => {
+          submitCalled += 1;
+          return { hash: '0xsubmit', wait: async () => ({}) };
+        },
+      });
+
+      const result = await executeJob(context);
+      expect(submitCalled).to.equal(1);
+      expect(result.txHash).to.equal('0xsubmit');
+      expect(result.submissionMethod).to.equal('submit');
+      expect(result.resultURI).to.equal('ipfs://bafysubmitcid');
+
+      const history = getAgentMemory(context.profile.address);
+      expect(history[0].method).to.equal('submit');
+      expect(history[0].resultURI).to.equal('ipfs://bafysubmitcid');
     });
-  }
-
-  it('retains explicitly enabled synthetic execution only on a connected local chain', async () => {
-    process.env.AGENT_ALLOW_SIMULATED_EXECUTION = 'true';
-    const context = createExecutionContext('local-simulation');
-    context.wallet = context.wallet.connect({
-      getNetwork: async () => ({ chainId: 31337n }),
-    } as any);
-    setIpfsClientFactory(
-      () =>
-        ({
-          add: async () => ({ cid: { toString: () => 'bafysimulation' } }),
-        } as unknown as IPFSHTTPClient)
-    );
-    registryAny.taxPolicy = async () => ethers.ZeroAddress;
-    registryAny.connect = () => ({
-      submit: async () => ({ hash: '0xsimulation', wait: async () => ({}) }),
-    });
-    const result = await executeJob(context);
-    expect(result.executionMode).to.equal('simulation');
-    expect(result.rawOutput).to.have.property('simulation', true);
-  });
-
-  it('uploads results to IPFS and finalizes when supported', async () => {
-    const context = createExecutionContext('201', 'https://agent.finalize');
-    setAgentEndpointInvoker(async () => ({ response: 'ok' }));
-    setIpfsClientFactory(
-      () =>
-        ({
-          add: async () => ({ cid: { toString: () => 'bafytestcid' } }),
-        } as unknown as IPFSHTTPClient)
-    );
-
-    registryAny.taxPolicy = async () => ethers.ZeroAddress;
-    let finalizeArgs: { jobId: string; resultRef: string } | null = null;
-    registryAny.connect = () => ({
-      finalizeJob: async (jobId: string, resultRef: string) => {
-        finalizeArgs = { jobId, resultRef };
-        return { hash: '0xfinalize', wait: async () => ({}) };
-      },
-      submit: async () => {
-        throw new Error('submit should not be called');
-      },
-    });
-
-    const result = await executeJob(context);
-    expect(result.resultURI).to.equal('ipfs://bafytestcid');
-    expect(result.resultCid).to.equal('bafytestcid');
-    expect(result.txHash).to.equal('0xfinalize');
-    expect(result.submissionMethod).to.equal('finalizeJob');
-    expect(finalizeArgs).to.deep.equal({
-      jobId: context.job.jobId,
-      resultRef: 'ipfs://bafytestcid',
-    });
-
-    const history = getAgentMemory(context.profile.address);
-    expect(history).to.have.lengthOf(1);
-    expect(history[0].method).to.equal('finalizeJob');
-    expect(history[0].resultURI).to.equal('ipfs://bafytestcid');
-  });
-
-  it('falls back to submit when finalizeJob reverts', async () => {
-    const context = createExecutionContext('202', 'https://agent.submit');
-    setAgentEndpointInvoker(async () => ({ job: 'done' }));
-    setIpfsClientFactory(
-      () =>
-        ({
-          add: async () => ({ cid: { toString: () => 'bafysubmitcid' } }),
-        } as unknown as IPFSHTTPClient)
-    );
-
-    registryAny.taxPolicy = async () => ethers.ZeroAddress;
-    let submitCalled = 0;
-    registryAny.connect = () => ({
-      finalizeJob: async () => {
-        throw new Error('unsupported');
-      },
-      submit: async () => {
-        submitCalled += 1;
-        return { hash: '0xsubmit', wait: async () => ({}) };
-      },
-    });
-
-    const result = await executeJob(context);
-    expect(submitCalled).to.equal(1);
-    expect(result.txHash).to.equal('0xsubmit');
-    expect(result.submissionMethod).to.equal('submit');
-    expect(result.resultURI).to.equal('ipfs://bafysubmitcid');
-
-    const history = getAgentMemory(context.profile.address);
-    expect(history[0].method).to.equal('submit');
-    expect(history[0].resultURI).to.equal('ipfs://bafysubmitcid');
   });
 });

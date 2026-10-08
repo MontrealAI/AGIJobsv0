@@ -16,7 +16,7 @@
 ```mermaid
 flowchart LR
     Operators((Mission Owners)) --> demo_agi_governance[[Demo → AGI Governance]]
-    demo_agi_governance --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    demo_agi_governance --> Core[["AGI Jobs v0 (v2) Core Intelligence"]]
     Core --> Observability[[Unified CI / CD & Observability]]
     Core --> Governance[[Owner Control Plane]]
 ```
@@ -50,3 +50,5 @@ flowchart LR
 - Review this module's issue board for open automation, data, or research threads.
 - Link new deliverables back to the central manifest via `npm run release:manifest`.
 - Publish artefacts (dashboards, mermaid charts, datasets) into `reports/` for downstream intelligence alignment.
+
+Mermaid rendering corrections dated October 8, 2026 are recorded in the [historical report manifest](reports/governance-demo-manifest.json). They preserve the original simulation values and timestamps; they do not represent a new execution or new production evidence.

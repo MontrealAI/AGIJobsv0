@@ -332,7 +332,8 @@
     <section class="panel">
       <h2>Planetary Topology Atlas</h2>
       <p class="note">Mermaid artifact: <code id="topology-path">—</code></p>
-      <div id="topology-mermaid" class="mermaid">flowchart TD\n  placeholder((Awaiting topology...))</div>
+      <div id="topology-mermaid" class="mermaid">flowchart TD
+  placeholder((Awaiting topology...))</div>
     </section>
 
     <section class="panel">
@@ -380,7 +381,8 @@
       <h2>Ledger &amp; Spillover Cartography</h2>
       <div id="ledger-metrics" class="metrics"></div>
       <div id="ledger-invariants" class="metrics"></div>
-      <div id="spillover-diagram" class="mermaid">flowchart LR\n  placeholder((Waiting)) --0--> placeholder</div>
+      <div id="spillover-diagram" class="mermaid">flowchart LR
+  placeholder((Waiting)) --0--> placeholder</div>
       <pre class="json" id="ledger-events-json">Ledger events will render here.</pre>
     </section>
 
@@ -492,6 +494,7 @@
     }
 
     function renderTopology(mermaidSource, artifactPath) {
+      topologyMermaidEl.removeAttribute('data-processed');
       if (mermaidSource && mermaidSource.trim()) {
         topologyMermaidEl.textContent = mermaidSource;
         topologyPathEl.textContent = artifactPath || 'mission-topology.mmd';
@@ -756,6 +759,7 @@
         flowLines.push('placeholder((No spillovers))');
       }
       spilloverDiagramEl.textContent = flowLines.join('\n');
+      spilloverDiagramEl.removeAttribute('data-processed');
       if (window.mermaid) {
         window.mermaid.init(undefined, [spilloverDiagramEl]);
       }

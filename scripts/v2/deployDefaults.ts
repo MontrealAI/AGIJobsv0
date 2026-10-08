@@ -221,6 +221,7 @@ function requireAddress(
     throw new Error(`${label} address is required`);
   }
   if (str.toLowerCase() === 'zero') {
+    if (!allowZero) throw new Error(`${label} cannot be the zero address`);
     return ethers.ZeroAddress;
   }
   try {
@@ -268,7 +269,7 @@ function parsePercentage(value: unknown, label: string): number {
   if (!Number.isFinite(numeric) || numeric < 0) {
     throw new Error(`${label} must be a positive number`);
   }
-  const scaled = numeric > 0 && numeric <= 1 ? numeric * 100 : numeric;
+  const scaled = numeric > 0 && numeric < 1 ? numeric * 100 : numeric;
   if (!Number.isInteger(scaled)) {
     throw new Error(`${label} must be an integer percentage between 0 and 100`);
   }
@@ -287,7 +288,10 @@ function parseDuration(value: unknown, label: string): number {
   if (!str) return 0;
   const trimmed = str.replace(/_/g, '').toLowerCase();
   if (/^\d+$/.test(trimmed)) {
-    return Number(trimmed);
+    const seconds = Number(trimmed);
+    if (!Number.isSafeInteger(seconds))
+      throw new Error(`${label} must be a safe integer number of seconds`);
+    return seconds;
   }
   const match = trimmed.match(/^([0-9]*\.?[0-9]+)([smhdw])$/);
   if (match) {
@@ -304,7 +308,11 @@ function parseDuration(value: unknown, label: string): number {
       w: 60 * 60 * 24 * 7,
     };
     const seconds = amount * multipliers[unit];
-    return Math.round(seconds);
+    if (!Number.isSafeInteger(seconds))
+      throw new Error(
+        `${label} must resolve to a safe integer number of seconds`
+      );
+    return seconds;
   }
   throw new Error(
     `${label} must be provided in seconds or as <value><s|m|h|d|w>. Received ${value}`
@@ -327,7 +335,11 @@ function parseTokenAmount(value: unknown, label: string): bigint {
     return extracted;
   }
   if (typeof extracted === 'number') {
-    if (!Number.isFinite(extracted) || extracted < 0) {
+    if (
+      !Number.isFinite(extracted) ||
+      extracted < 0 ||
+      extracted > Number.MAX_SAFE_INTEGER
+    ) {
       throw new Error(`${label} must be a non-negative number`);
     }
     return ethers.parseUnits(extracted.toString(), AGIALPHA_DECIMALS);
@@ -396,8 +408,19 @@ async function verify(address: string, args: any[] = [], contract?: string) {
   }
 }
 
+function reportNumber(value: bigint, label: string): number {
+  const number = Number(value);
+  if (!Number.isSafeInteger(number))
+    throw new Error(
+      `${label} exceeds the deployment report's safe integer range`
+    );
+  return number;
+}
+
 async function main() {
   const [owner] = await ethers.getSigners();
+  if (!owner)
+    throw new Error('No deployment signer configured for this network');
   const cli = parseArgs(process.argv.slice(2));
   const envOutput = toStringOrUndefined(process.env.DEPLOY_DEFAULTS_OUTPUT);
   const skipVerifyEnv = (
@@ -416,8 +439,10 @@ async function main() {
     : ({} as DeployerConfig);
 
   const configGovernance = toStringOrUndefined(config.governance);
-  const governance =
-    toStringOrUndefined(cli.governance) ?? configGovernance ?? owner.address;
+  const governance = requireAddress(
+    'Governance',
+    toStringOrUndefined(cli.governance) ?? configGovernance ?? owner.address
+  );
 
   const taxConfig: TaxConfig = config.tax ?? {};
   const cliWithTax = cli['with-tax'] === true;
@@ -658,29 +683,88 @@ async function main() {
     systemPause,
   ] = decoded as string[];
 
-  const effectiveFeePct = econ.feePct === 0 ? 5 : econ.feePct;
-  const effectiveBurnPct = econ.burnPct === 0 ? 5 : econ.burnPct;
-  const effectiveEmployerSlash =
-    econ.employerSlashPct === 0 && econ.treasurySlashPct === 0
-      ? 0
-      : econ.employerSlashPct;
-  const effectiveTreasurySlash =
-    econ.employerSlashPct === 0 && econ.treasurySlashPct === 0
-      ? 100
-      : econ.treasurySlashPct;
-  const effectiveValidatorSlash =
-    econ.employerSlashPct === 0 &&
-    econ.treasurySlashPct === 0 &&
-    econ.validatorSlashRewardPct === 0
-      ? 0
-      : econ.validatorSlashRewardPct;
-  const effectiveCommitWindow =
-    econ.commitWindow === 0 ? 1_800 : econ.commitWindow;
-  const effectiveRevealWindow =
-    econ.revealWindow === 0 ? 1_800 : econ.revealWindow;
-  const defaultStake = ethers.parseUnits('1', AGIALPHA_DECIMALS);
-  const effectiveMinStake = econ.minStake === 0n ? defaultStake : econ.minStake;
-  const effectiveJobStake = econ.jobStake === 0n ? defaultStake : econ.jobStake;
+  // Report confirmed contract state, not duplicated defaults that can drift
+  // from the deployed implementation (including burn and timing parameters).
+  const deployedStake = await ethers.getContractAt(
+    'contracts/v2/StakeManager.sol:StakeManager',
+    stakeManager
+  );
+  const deployedRegistry = await ethers.getContractAt(
+    'contracts/v2/JobRegistry.sol:JobRegistry',
+    jobRegistry
+  );
+  const deployedValidation = await ethers.getContractAt(
+    'contracts/v2/ValidationModule.sol:ValidationModule',
+    validationModule
+  );
+  const deployedPool = await ethers.getContractAt(
+    'contracts/v2/FeePool.sol:FeePool',
+    feePool
+  );
+  const [
+    effectiveFeePct,
+    effectiveBurnPct,
+    effectiveEmployerSlash,
+    effectiveTreasurySlash,
+    effectiveValidatorSlash,
+    effectiveCommitWindow,
+    effectiveRevealWindow,
+    effectiveMinStake,
+    effectiveJobStake,
+  ] = await Promise.all([
+    deployedRegistry.feePct(),
+    deployedPool.burnPct(),
+    deployedStake.employerSlashPct(),
+    deployedStake.treasurySlashPct(),
+    deployedStake.validatorSlashRewardPct(),
+    deployedValidation.commitWindow(),
+    deployedValidation.revealWindow(),
+    deployedStake.minStake(),
+    deployedRegistry.jobStake(),
+  ]);
+
+  const pendingOwnership: Array<{
+    contract: string;
+    address: string;
+    pendingOwner: string;
+  }> = [];
+  for (const [name, address] of [
+    ['IdentityRegistry', identityRegistry],
+    ...(withTax ? [['TaxPolicy', taxPolicy]] : []),
+  ]) {
+    const ownable = await ethers.getContractAt(
+      [
+        'function owner() view returns (address)',
+        'function pendingOwner() view returns (address)',
+        'function acceptOwnership()',
+      ],
+      address,
+      owner
+    );
+    const currentOwner = ethers.getAddress(await ownable.owner());
+    if (currentOwner === ethers.getAddress(governance)) continue;
+    const pendingOwner = await ownable.pendingOwner();
+    if (ethers.getAddress(pendingOwner) !== ethers.getAddress(governance))
+      throw new Error(
+        `${name} pending governance does not match the requested owner`
+      );
+    if (ethers.getAddress(governance) === ethers.getAddress(owner.address)) {
+      await (await ownable.acceptOwnership()).wait();
+      if (
+        ethers.getAddress(await ownable.owner()) !==
+        ethers.getAddress(governance)
+      )
+        throw new Error(`${name} governance acceptance did not complete`);
+    } else {
+      pendingOwnership.push({ contract: name, address, pendingOwner });
+    }
+  }
+  if (pendingOwnership.length) {
+    console.log(
+      'Governance acceptance required before commissioning:',
+      pendingOwnership
+    );
+  }
 
   console.log('\nEconomic parameters applied');
   console.table(
@@ -735,34 +819,14 @@ async function main() {
       requestedTaxUri !== DEFAULT_TAX_URI ||
       requestedTaxDescription !== DEFAULT_TAX_DESCRIPTION;
     if (shouldUpdatePolicy) {
-      let governanceSigner: typeof owner | null = null;
-      if (governance.toLowerCase() === owner.address.toLowerCase()) {
-        governanceSigner = owner;
-      } else {
-        try {
-          governanceSigner = await ethers.getSigner(governance);
-        } catch (err) {
-          if (network.name === 'hardhat' || network.name === 'localhost') {
-            try {
-              await network.provider.request({
-                method: 'hardhat_impersonateAccount',
-                params: [governance],
-              });
-              governanceSigner = await ethers.getSigner(governance);
-            } catch (impersonateErr) {
-              console.warn(
-                `Unable to impersonate governance ${governance}: ${
-                  (impersonateErr as Error).message
-                }`
-              );
-            }
-          }
-          if (!governanceSigner) {
-            console.warn(
-              `Unable to obtain signer for governance address ${governance}. Update the tax policy manually via setPolicy(uri, text).`
-            );
-          }
-        }
+      const governanceSigner =
+        ethers.getAddress(governance) === ethers.getAddress(owner.address)
+          ? owner
+          : null;
+      if (!governanceSigner) {
+        console.warn(
+          'Tax policy metadata remains unchanged. Governance must acceptOwnership() then call setPolicy(uri, text).'
+        );
       }
       if (governanceSigner) {
         const taxContract = await ethers.getContractAt(
@@ -822,6 +886,7 @@ async function main() {
       timestamp: new Date().toISOString(),
       network: network.name,
       governance,
+      pendingOwnership,
       withTax,
       taxPolicy: withTax
         ? {
@@ -831,13 +896,22 @@ async function main() {
           }
         : null,
       econ: {
-        feePct: effectiveFeePct,
-        burnPct: effectiveBurnPct,
-        employerSlashPct: effectiveEmployerSlash,
-        treasurySlashPct: effectiveTreasurySlash,
-        validatorSlashRewardPct: effectiveValidatorSlash,
-        commitWindow: effectiveCommitWindow,
-        revealWindow: effectiveRevealWindow,
+        feePct: reportNumber(effectiveFeePct, 'feePct'),
+        burnPct: reportNumber(effectiveBurnPct, 'burnPct'),
+        employerSlashPct: reportNumber(
+          effectiveEmployerSlash,
+          'employerSlashPct'
+        ),
+        treasurySlashPct: reportNumber(
+          effectiveTreasurySlash,
+          'treasurySlashPct'
+        ),
+        validatorSlashRewardPct: reportNumber(
+          effectiveValidatorSlash,
+          'validatorSlashRewardPct'
+        ),
+        commitWindow: reportNumber(effectiveCommitWindow, 'commitWindow'),
+        revealWindow: reportNumber(effectiveRevealWindow, 'revealWindow'),
         minStake: effectiveMinStake.toString(),
         jobStake: effectiveJobStake.toString(),
       },

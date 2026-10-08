@@ -16,7 +16,7 @@
 ```mermaid
 flowchart LR
     Operators((Mission Owners)) --> scripts_etherscan[[Scripts → Etherscan]]
-    scripts_etherscan --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    scripts_etherscan --> Core[["AGI Jobs v0 (v2) Core Intelligence"]]
     Core --> Observability[[Unified CI / CD & Observability]]
     Core --> Governance[[Owner Control Plane]]
 ```

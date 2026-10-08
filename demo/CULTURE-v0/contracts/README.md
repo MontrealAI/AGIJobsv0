@@ -16,7 +16,7 @@
 ```mermaid
 flowchart LR
     Operators((Mission Owners)) --> demo_CULTURE_v0_contracts[[Demo → CULTURE v0 → Contracts]]
-    demo_CULTURE_v0_contracts --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    demo_CULTURE_v0_contracts --> Core[["AGI Jobs v0 (v2) Core Intelligence"]]
     Core --> Observability[[Unified CI / CD & Observability]]
     Core --> Governance[[Owner Control Plane]]
 ```

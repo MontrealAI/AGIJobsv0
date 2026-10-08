@@ -156,16 +156,16 @@ gantt
     dateFormat  HH:mm
     axisFormat  %H:%M
     section Preparation
-    Draft template (git branch)       :done,    prep1, 00:30, 00:30
-    Run owner:template --stdout       :done,    prep2, after prep1, 00:05
+    Draft template (git branch)       :done,    prep1, 00:30, 30m
+    Run owner#58;template --stdout       :done,    prep2, after prep1, 5m
     section Dry Run
-    owner:update-all --dry-run        :active,  dryrun, after prep2, 00:10
-    Review Safe bundle                :         review, after dryrun, 00:15
+    owner#58;update-all --dry-run        :active,  dryrun, after prep2, 10m
+    Review Safe bundle                :         review, after dryrun, 15m
     section Execution
-    owner:update-all --execute        :         exec1, after review, 00:10
+    owner#58;update-all --execute        :         exec1, after review, 10m
     section Verification
-    owner:verify-control --strict     :         verify1, after exec1, 00:05
-    owner:surface (archive)           :         archive1, after verify1, 00:05
+    owner#58;verify-control --strict     :         verify1, after exec1, 5m
+    owner#58;surface (archive)           :         archive1, after verify1, 5m
 ```
 
 Attach the completed checklist to your governance ticket to prove every control

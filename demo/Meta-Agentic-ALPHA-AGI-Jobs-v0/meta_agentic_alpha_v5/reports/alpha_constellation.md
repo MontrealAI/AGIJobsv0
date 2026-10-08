@@ -13,7 +13,7 @@ graph TD
   Planner[Meta-Agentic Planner]
   Guardians[Guardian Mesh]
   Treasury[Treasury Optimiser]
-  Chain[AGI Jobs v0 (v2) On-Chain]
+  Chain["AGI Jobs v0 (v2) On-Chain"]
   Owner --> Console
   Console --> Planner
   Planner --> Guardians

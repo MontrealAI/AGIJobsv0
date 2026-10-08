@@ -1,5 +1,7 @@
 import { WebSocketServer } from 'ws';
 import { ethers } from 'ethers';
+import { decodeJobMetadata } from './jobMetadata';
+import { GatewayRequestBudget, peerAddressKey } from './requestBudget';
 import {
   registry,
   validation,
@@ -15,6 +17,7 @@ import {
   cleanupJob,
   jobTimestamps,
   stakeManager,
+  GATEWAY_API_KEY,
 } from './utils';
 import { Job, JobCreatedEvent } from './types';
 import { appendTrainingRecord, RewardPayout } from '../shared/trainingRecords';
@@ -46,6 +49,10 @@ export function registerEvents(
   callbacks: EventCallbacks = {}
 ): void {
   const { onUnassignedJobCreated } = callbacks;
+  const connectionBudget = new GatewayRequestBudget(60, 600);
+  const messageBudget = new GatewayRequestBudget();
+  const activePeers = new Map<string, number>();
+  let activeConnections = 0;
   registry.on(
     'JobCreated',
     (
@@ -177,13 +184,7 @@ export function registerEvents(
           }
           employer = (chainJob.employer as string) || undefined;
           agentAddress = (chainJob.agent as string) || undefined;
-          const typeValue =
-            typeof chainJob.agentTypes !== 'undefined'
-              ? Number(chainJob.agentTypes)
-              : undefined;
-          if (!Number.isNaN(typeValue as number)) {
-            agentType = typeValue as number;
-          }
+          agentType = decodeJobMetadata(chainJob.packedMetadata).agentTypes;
         }
       } catch (err) {
         console.warn('Failed to load job details for training log', id, err);
@@ -295,25 +296,93 @@ export function registerEvents(
     );
   }
 
-  wss.on('connection', (ws) => {
+  wss.on('connection', (ws, request) => {
+    let stopped = false;
+    // Protocol and payload-limit errors are emitted on the socket. Handle
+    // them before admission so a malformed client cannot crash the process.
+    ws.on('error', () => {
+      stopped = true;
+      ws.terminate();
+    });
+    const rejectConnection = (code: number, reason: string): void => {
+      stopped = true;
+      // A peer may ignore the close handshake. Release the transport now so
+      // denied connections cannot accumulate outside the active socket cap.
+      try {
+        ws.close(code, reason);
+      } finally {
+        ws.terminate();
+      }
+    };
+    const peer = request?.socket?.remoteAddress;
+    const peerKey = peerAddressKey(peer);
+    const peerConnections = activePeers.get(peerKey) ?? 0;
+    if (
+      !connectionBudget.consume(peer).allowed ||
+      activeConnections >= 256 ||
+      peerConnections >= 16
+    ) {
+      rejectConnection(1013, 'connection budget exhausted; retry later');
+      return;
+    }
+    activeConnections++;
+    activePeers.set(peerKey, peerConnections + 1);
+    let closed = false;
+    // Dispatch registration is operator configuration. Public event listeners
+    // cannot overwrite destinations or acknowledge another worker's queue.
+    const operator = Boolean(
+      GATEWAY_API_KEY && request?.headers['x-api-key'] === GATEWAY_API_KEY
+    );
+    const registrations = new Set<string>();
     ws.on('message', (data) => {
+      if (closed || stopped) return;
+      if (!messageBudget.consume(peer).allowed) {
+        rejectConnection(1013, 'message budget exhausted; retry later');
+        return;
+      }
       let msg: any;
       try {
         msg = JSON.parse(data.toString());
       } catch {
         return;
       }
+      if (!msg || typeof msg !== 'object' || Array.isArray(msg)) return;
+      if (msg.type !== 'register' && msg.type !== 'ack') return;
+      if (!operator) {
+        rejectConnection(1008, 'operator authentication required');
+        return;
+      }
       if (msg.type === 'register') {
         const { id, wallet } = msg;
-        if (!id || !wallet) return;
-        const existing = agents.get(id) || {};
-        agents.set(id, { url: (existing as any).url, wallet, ws });
+        if (typeof id !== 'string' || typeof wallet !== 'string') return;
+        const existing = agents.get(id);
+        if (
+          !existing ||
+          !ethers.isAddress(wallet) ||
+          typeof existing.wallet !== 'string' ||
+          existing.wallet.toLowerCase() !== wallet.toLowerCase()
+        ) {
+          rejectConnection(
+            1008,
+            'agent registration does not match operator configuration'
+          );
+          return;
+        }
+        agents.set(id, { ...existing, ws });
+        registrations.add(id);
         if (!pendingJobs.has(id)) pendingJobs.set(id, []);
         pendingJobs.get(id)!.forEach((job) => {
           ws.send(JSON.stringify({ type: 'job', job }));
         });
       } else if (msg.type === 'ack') {
         const { id, jobId } = msg;
+        if (
+          typeof id !== 'string' ||
+          !registrations.has(id) ||
+          agents.get(id)?.ws !== ws ||
+          !['string', 'number'].includes(typeof jobId)
+        )
+          return;
         const queue = pendingJobs.get(id) || [];
         pendingJobs.set(
           id,
@@ -323,6 +392,12 @@ export function registerEvents(
     });
 
     ws.on('close', () => {
+      if (closed) return;
+      closed = true;
+      activeConnections--;
+      const remaining = (activePeers.get(peerKey) ?? 1) - 1;
+      if (remaining > 0) activePeers.set(peerKey, remaining);
+      else activePeers.delete(peerKey);
       agents.forEach((info) => {
         if (info.ws === ws) info.ws = null;
       });

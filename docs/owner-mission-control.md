@@ -127,7 +127,7 @@ journey
       Sign off on execution scope: 4:Owner
     section Execute
       Re-run mission control with production RPC: 4:Owner
-      Trigger `owner:update-all --execute` if actions exist: 4:Owner
+      Trigger `owner#58;update-all --execute` if actions exist: 4:Owner
     section Assure & Archive
       Attach Markdown + JSON artefacts to ticket: 3:Ops
       Archive logs + SHA-256 hashes: 3:Ops

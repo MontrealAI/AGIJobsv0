@@ -16,7 +16,7 @@
 ```mermaid
 flowchart LR
     Operators((Mission Owners)) --> lib_forge_std[[LIB → Forge STD]]
-    lib_forge_std --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    lib_forge_std --> Core[["AGI Jobs v0 (v2) Core Intelligence"]]
     Core --> Observability[[Unified CI / CD & Observability]]
     Core --> Governance[[Owner Control Plane]]
 ```

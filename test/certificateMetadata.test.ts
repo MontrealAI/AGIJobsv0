@@ -17,6 +17,8 @@ describe('certificateMetadata', () => {
     AGIALPHA_NETWORK: process.env.AGIALPHA_NETWORK,
   };
   let publishCertificateMetadata: typeof import('../agent-gateway/certificateMetadata')['publishCertificateMetadata'];
+  const certificateModulePath = require.resolve('../agent-gateway/certificateMetadata');
+  let previousCertificateModule: NodeModule | undefined;
 
   before(async () => {
     process.env.JOB_REGISTRY_ADDRESS =
@@ -32,6 +34,10 @@ describe('certificateMetadata', () => {
     process.env.CERTIFICATE_IPNS_KEY =
       process.env.CERTIFICATE_IPNS_KEY || 'k51qzi5uqu5dlxexample';
 
+    // Other suites import the gateway before this fixture sets its startup
+    // configuration. Isolate this module's import-time settings, then restore it.
+    previousCertificateModule = require.cache[certificateModulePath];
+    delete require.cache[certificateModulePath];
     ({ publishCertificateMetadata } = await import(
       '../agent-gateway/certificateMetadata'
     ));
@@ -49,6 +55,9 @@ describe('certificateMetadata', () => {
   });
 
   after(() => {
+    if (previousCertificateModule)
+      require.cache[certificateModulePath] = previousCertificateModule;
+    else delete require.cache[certificateModulePath];
     process.env.JOB_REGISTRY_ADDRESS = originalEnv.JOB_REGISTRY_ADDRESS;
     process.env.VALIDATION_MODULE_ADDRESS =
       originalEnv.VALIDATION_MODULE_ADDRESS;

@@ -19,9 +19,9 @@ mindmap
       "docs/deployment-addresses.json"
       "Environment overrides"
     "On-chain queries"
-      "owner()"
-      "governance()"
-      "pendingOwner()"
+      ownerQuery["owner()"]
+      governanceQuery["governance()"]
+      pendingOwnerQuery["pendingOwner()"]
     "Outputs"
       "Health score"
       "Module timeline"
@@ -86,15 +86,15 @@ sequenceDiagram
 ```mermaid
 flowchart LR
     Start[Start score 100] --> Mismatch{{Mismatch?}}
-    Mismatch -- yes -->|−35 each| Score
+    Mismatch -->|yes: −35 each| Score
     Start --> MissingAddr{{Missing address?}}
-    MissingAddr -- yes -->|−30 each| Score
+    MissingAddr -->|yes: −30 each| Score
     Start --> MissingExpected{{Missing expected?}}
-    MissingExpected -- yes -->|−20 each| Score
+    MissingExpected -->|yes: −20 each| Score
     Start --> Errors{{On-chain errors?}}
-    Errors -- yes -->|−45 each| Score
+    Errors -->|yes: −45 each| Score
     Start --> Skipped{{Skipped modules?}}
-    Skipped -- yes -->|−10 each| Score
+    Skipped -->|yes: −10 each| Score
     Score --> Grade{Grade}
     Grade -->|≥85| Green[Green]
     Grade -->|60-84| Amber[Amber]

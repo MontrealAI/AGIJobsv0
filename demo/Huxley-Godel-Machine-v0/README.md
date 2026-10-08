@@ -75,7 +75,7 @@ Outputs: `effective_config.json`, `summary.json`, `summary.txt`, `hgm_timeline.j
 ```mermaid
 flowchart LR
     Operators((Mission Owners)) --> demo_Huxley_Godel_Machine_v0[[Demo → Huxley Godel Machine v0]]
-    demo_Huxley_Godel_Machine_v0 --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    demo_Huxley_Godel_Machine_v0 --> Core[["AGI Jobs v0 (v2) Core Intelligence"]]
     Core --> Observability[[Unified CI / CD & Observability]]
     Core --> Governance[[Owner Control Plane]]
 ```

@@ -181,18 +181,18 @@ gantt
     dateFormat  HH:mm
     axisFormat  %H:%M
     section Detect & Snapshot
-    owner:surface + owner:pulse    :done,   snap, 00:10, 00:10
-    owner:verify-control           :active, verify, after snap, 00:05
+    owner#58;surface + owner#58;pulse    :done,   snap, 00:10, 10m
+    owner#58;verify-control           :active, verify, after snap, 5m
     section Stabilise
-    updateSystemPause --execute    :        pause, after verify, 00:05
-    owner:rotate --safe            :        rotate, after pause, 00:10
-    owner:rotate --execute         :        rotateExec, after rotate, 00:05
+    updateSystemPause --execute    :        pause, after verify, 5m
+    owner#58;rotate --safe            :        rotate, after pause, 10m
+    owner#58;rotate --execute         :        rotateExec, after rotate, 5m
     section Harden
-    owner:update-all --only crit   :        harden, after rotateExec, 00:10
+    owner#58;update-all --only crit   :        harden, after rotateExec, 10m
     section Audit
-    owner:audit + owner:dashboard  :        audit, after harden, 00:10
+    owner#58;audit + owner#58;dashboard  :        audit, after harden, 10m
     section Recovery Planning
-    owner:command-center           :        recover, after audit, 00:10
+    owner#58;command-center           :        recover, after audit, 10m
 ```
 
 Mark each step as complete inside the generated Markdown to create an auditable

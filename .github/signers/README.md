@@ -27,7 +27,7 @@ The committed entries are examples containing invalid key payloads. They do not 
 ```mermaid
 flowchart LR
     Operators((Mission Owners)) --> _github_signers[[.github → Signers]]
-    _github_signers --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    _github_signers --> Core[["AGI Jobs v0 (v2) Core Intelligence"]]
     Core --> Observability[[Unified CI / CD & Observability]]
     Core --> Governance[[Owner Control Plane]]
 ```

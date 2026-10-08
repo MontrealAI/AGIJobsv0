@@ -55,7 +55,7 @@ The original map is preserved. It describes the intended integration topology, n
 ```mermaid
 flowchart LR
     Operators((Mission Owners)) --> demo_astral_omnidominion_operating_system_command_theatre[[Demo → Astral Omnidominion Operating System Command Theatre]]
-    demo_astral_omnidominion_operating_system_command_theatre --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    demo_astral_omnidominion_operating_system_command_theatre --> Core[["AGI Jobs v0 (v2) Core Intelligence"]]
     Core --> Observability[[Unified CI / CD & Observability]]
     Core --> Governance[[Owner Control Plane]]
 ```

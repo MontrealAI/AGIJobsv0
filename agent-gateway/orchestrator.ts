@@ -473,7 +473,7 @@ export async function handleJob(job: Job): Promise<void> {
   try {
     const tx = await (registry as any)
       .connect(wallet)
-      .applyForJob(job.jobId, identity.label ?? '', '0x');
+      .applyForJob(job.jobId, identity.label ?? '', []);
     await tx.wait();
     await secureLogAction(
       {

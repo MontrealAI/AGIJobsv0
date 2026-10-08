@@ -784,7 +784,7 @@ function buildMermaidFlow(recap: RecapData): string {
     )})) --> Seed[Nova-Seed #${recap.seed.tokenId}]`,
     '    Seed -->|Tokenizes vision| Exchange[α-AGI SeedShares Exchange]',
     '    Exchange -->|Bonding curve capital| Reserve((Sovereign Reserve))',
-    `    Exchange -->|Validator consensus (${recap.validators.approvalCount}/${recap.validators.approvalThreshold})| Oracle[Risk Oracle Council]`,
+    `    Exchange -->|"Validator consensus (${recap.validators.approvalCount}/${recap.validators.approvalThreshold})"| Oracle[Risk Oracle Council]`,
     '    Oracle --> Launch{Launch Condition}',
     '    Launch -->|Finalized| Vault[[α-AGI Sovereign Vault]]',
     `    Vault -->|Acknowledge| Manifest>\"${metadataSnippet}\"]`,

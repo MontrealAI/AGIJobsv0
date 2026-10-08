@@ -88,9 +88,28 @@ export async function postJob(
   const tx = await (registry as any)
     .connect(wallet)
     .createJob(reward, deadline, specHash, uri);
-  await tx.wait();
-  const nextJobId = await (registry as any).nextJobId();
-  const jobId = Number(nextJobId) - 1;
+  const receipt = await tx.wait();
+  const registryAddress = (await registry.getAddress()).toLowerCase();
+  const created = receipt?.logs
+    .filter((log: ethers.Log) => log.address.toLowerCase() === registryAddress)
+    .map((log: ethers.Log) => {
+      try {
+        return registry.interface.parseLog(log);
+      } catch {
+        return null;
+      }
+    })
+    .find(
+      (event: ethers.LogDescription | null) =>
+        event?.name === 'JobCreated' &&
+        event.args.employer.toLowerCase() === wallet.address.toLowerCase() &&
+        event.args.specHash === specHash
+    );
+  if (!created)
+    throw new Error('Confirmed job creation receipt is missing JobCreated');
+  const jobId = Number(created.args.jobId);
+  if (!Number.isSafeInteger(jobId) || jobId <= 0)
+    throw new Error('Created job ID exceeds the supported ledger range');
   const record: PostedJobRecord = {
     jobId,
     description: spec.description,

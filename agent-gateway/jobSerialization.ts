@@ -1,4 +1,5 @@
 import { formatTokenAmount } from './apiHelpers';
+import { decodeJobMetadata } from './jobMetadata';
 
 export function serialiseChainJob(entry: any): Record<string, unknown> | null {
   if (!entry || typeof entry !== 'object') {
@@ -33,37 +34,29 @@ export function serialiseChainJob(entry: any): Record<string, unknown> | null {
       plain.stakeRaw = stakeValue?.toString?.();
     }
   }
-  const feePct = entry.feePct ?? entry[4];
-  if (feePct !== undefined) {
-    plain.feePct = Number(feePct);
+  const burnReceiptAmount = entry.burnReceiptAmount ?? entry[4];
+  if (burnReceiptAmount !== undefined)
+    plain.burnReceiptAmount = BigInt(burnReceiptAmount).toString();
+  const packed = entry.packedMetadata ?? entry[8];
+  if (packed !== undefined) {
+    const metadata = decodeJobMetadata(packed);
+    Object.assign(plain, metadata);
+    // Keep ordinary timestamps numeric for existing clients. Preserve an exact
+    // decimal string if a configured uint64 exceeds JavaScript's safe range.
+    for (const key of ['deadline', 'assignedAt'] as const)
+      plain[key] =
+        metadata[key] <= BigInt(Number.MAX_SAFE_INTEGER)
+          ? Number(metadata[key])
+          : metadata[key].toString();
+    plain.packedMetadata = BigInt(packed).toString();
   }
-  const state = entry.state ?? entry[5];
-  if (state !== undefined) {
-    plain.state = Number(state);
-  }
-  const success = entry.success ?? entry[6];
-  if (success !== undefined) {
-    plain.success = Boolean(success);
-  }
-  const agentTypes = entry.agentTypes ?? entry[7];
-  if (agentTypes !== undefined) {
-    plain.agentTypes = Number(agentTypes);
-  }
-  const deadline = entry.deadline ?? entry[8];
-  if (deadline !== undefined) {
-    plain.deadline = Number(deadline);
-  }
-  const assignedAt = entry.assignedAt ?? entry[9];
-  if (assignedAt !== undefined) {
-    plain.assignedAt = Number(assignedAt);
-  }
-  const uriHash = entry.uriHash ?? entry[10];
-  if (uriHash) {
-    plain.uriHash = uriHash;
-  }
-  const resultHash = entry.resultHash ?? entry[11];
-  if (resultHash) {
-    plain.resultHash = resultHash;
+  for (const [key, index] of [
+    ['uriHash', 5],
+    ['resultHash', 6],
+    ['specHash', 7],
+  ] as const) {
+    const hash = entry[key] ?? entry[index];
+    if (typeof hash === 'string') plain[key] = hash;
   }
   return plain;
 }

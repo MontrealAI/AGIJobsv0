@@ -33,7 +33,7 @@ services:
       AGENT_CAPABILITIES: {capabilities}
       AGENT_ROUTER: {router}
       AGENT_REGISTRY_URL: {registry_url}
-      AGENT_REGISTRY_OWNER_TOKEN: ${AGENT_REGISTRY_OWNER_TOKEN}
+      AGENT_REGISTRY_OWNER_TOKEN: ${{AGENT_REGISTRY_OWNER_TOKEN:?Set the registry owner token}}
       AGENT_HEARTBEAT_SECRET: {secret}
     volumes:
       - ./agent-data:/var/lib/agent

@@ -56,7 +56,34 @@ for (const mode of [
     const output = path.join(directory, 'addresses.json');
     const config = path.join(directory, 'config.json');
     const env = path.join(directory, 'operator.env');
-    fs.writeFileSync(env, '# original fixture');
+    const rpcUrls = [
+      'https://server-rpc.example.invalid',
+      'https://browser-rpc.example.invalid',
+    ];
+    fs.writeFileSync(
+      env,
+      `# synthetic mainnet fixture\nRPC_URL=${rpcUrls[0]}\nNEXT_PUBLIC_RPC_URL=${rpcUrls[1]}\n`
+    );
+    const rpcLog = path.join(directory, 'rpc-requests.jsonl');
+    const preload = path.join(directory, 'mock-rpc.cjs');
+    // Exercise the real network preflight with two separate endpoints, while
+    // intercepting every request in this child so no real RPC is contacted.
+    fs.writeFileSync(
+      preload,
+      `const fs = require('node:fs'), assert = require('node:assert/strict');
+const urls = ${JSON.stringify(rpcUrls)};
+global.fetch = async (url, options) => {
+  assert.ok(urls.includes(url), 'Unexpected fixture RPC endpoint');
+  assert.equal(options.method, 'POST');
+  const request = JSON.parse(options.body);
+  assert.deepEqual(request, { jsonrpc: '2.0', id: 1, method: 'eth_chainId', params: [] });
+  fs.appendFileSync(${JSON.stringify(
+    rpcLog
+  )}, JSON.stringify({ url, method: request.method }) + '\\n');
+  return { ok: true, json: async () => ({ jsonrpc: '2.0', id: 1, result: '0x1' }) };
+};
+`
+    );
     fs.writeFileSync(
       config,
       JSON.stringify({
@@ -120,6 +147,8 @@ fs.writeFileSync(path.join(root, 'consumed.json'), fs.readFileSync(input));
     const result = spawnSync(
       process.execPath,
       [
+        '--require',
+        preload,
         require.resolve('ts-node/dist/bin.js'),
         '--project',
         path.join(ROOT, 'tsconfig.json'),
@@ -149,6 +178,14 @@ fs.writeFileSync(path.join(root, 'consumed.json'), fs.readFileSync(input));
       result.status,
       mode === 'normal' ? 0 : 1,
       result.stdout + result.stderr
+    );
+    assert.deepEqual(
+      fs
+        .readFileSync(rpcLog, 'utf8')
+        .trim()
+        .split('\n')
+        .map((line) => JSON.parse(line)),
+      rpcUrls.map((url) => ({ url, method: 'eth_chainId' }))
     );
     if (mode === 'invalid-config') {
       assert.match(result.stderr, /feePct/);

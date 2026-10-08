@@ -53,12 +53,12 @@
 ```mermaid
 %%{init: {'theme':'neutral'}}%%
 flowchart LR
-    A([Start]) --> B[Identity<br/>(ENS subname under *.club.agi.eth)]
+    A([Start]) --> B["Identity<br/>(ENS subname under *.club.agi.eth)"]
     B --> C[Stake deposit<br/>role=validator]
     C --> D{Eligible?<br/>Active + minStake + reputation OK}
     D -- No --> C
-    D -- Yes --> E[Committee selection<br/>(VRF + weighted sortition)]
-    E --> F[Commit vote<br/>(hash)]
+    D -- Yes --> E["Committee selection<br/>(VRF + weighted sortition)"]
+    E --> F["Commit vote<br/>(hash)"]
     F --> G[Reveal vote]
     G --> H{Threshold met?}
     H -- Yes --> I[Finalize:<br/>Approve/Reject]
@@ -82,7 +82,7 @@ flowchart LR
 flowchart TB
     subgraph Eligibility_Set[Eligibility Set]
       X1[Identity verified] --> X2[Active stake ≥ min]
-      X2 --> X3[Good standing (reputation)]
+      X2 --> X3["Good standing (reputation)"]
     end
     subgraph Selection[Selection]
       S1[VRF seed] --> S2[Deterministic scoring]

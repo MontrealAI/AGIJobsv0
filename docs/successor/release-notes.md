@@ -2,6 +2,8 @@
 
 Release candidate for **α-AGI Ascension → SUCCESSOR Ω**. Base: `5b4cebb309a83a7a6749d8911d8bf96a1921e042`. Generated release evidence records `checkout.revision`, `checkout.tree`, working-tree state and the executable `sourceDigest`; the release PR identifies the final head and its checks. This record does not announce production admission or a completed protected independent examination.
 
+This candidate also integrates the separately reviewed deployment, gateway, validator and diagram repairs from main commit `d25842f609dd525582bf5fcbccea778e7443d3df` (PR #3914). The original source baseline remains the first published release; validation of the combined tree is recorded in the release PR.
+
 ## What changes
 
 AGI Jobs gains a shared mission layer for bounded discovery, sealed work, comparative evidence and retained knowledge. The package, CLI and EN/FR public journey use the same core calculations. Models and operators can change while the mission's methods, evidence and failures remain inspectable.
@@ -45,8 +47,8 @@ Use the release dossier's command results, checkout revision, working-tree state
 | --- | --- |
 | Successor core | 98/98 local core tests pass, including actual WORLD examination, runtime boundaries and clean-directory CLI replay |
 | Compiled orchestrator bridge and legacy worker tests | 69/69 successor and legacy tests pass; actual local-chain lifecycle accepts and pays the accurate FAIL report |
-| Existing contracts | 706 contract tests pass; 267 Solidity files compiled and bytecode-size checks pass; no settlement semantics changed |
-| Documentation and public site | 297 Markdown files pass link checks; rebuilt site passes 60/60 tests and preserves 76 demos, 350 guides and 266 diagrams; browser evidence is recorded separately |
+| Existing contracts | Original implementation passed 706 contract tests and the bytecode-size gate. After integrating main, 267 Solidity files compile and 33 targeted registry, gateway-compatibility and task-execution tests pass; the combined full-suite result is recorded in the release PR |
+| Documentation and public site | Combined tree: 299 Markdown files pass link checks; rebuilt site passes 60/60 tests and preserves 76 demos, 353 guides and 267 diagrams; browser QA passes 48 checks, and the source audit passes 504 diagrams plus one template target |
 | Maintainer signing trust | **BLOCKED:** configured maintainer key payload is not a valid OpenSSH public key |
 | Production dependency audit | **BLOCKED:** observed root lockfile has 0 critical and 7 high findings |
 | Independent proof / live successor worker / production authority | **EXTERNAL:** no such commissioning is inferred from local tests |
@@ -57,7 +59,7 @@ The [acceptance matrix](acceptance-matrix.md), [security review](security-review
 
 ## Hosted security-review follow-up
 
-The initial hosted CodeQL review found a CLI file-check/read race and two unused-variable findings. The CLI and standalone proof harness now share a bounded reader that checks the opened descriptor, refuses symlinks/nonregular files and detects observed changes. Regression tests exercise deterministic path replacement, post-check growth, mutation and FIFO handling. The two unused variables were removed. Hosted analysis of the follow-up commit is tracked in the release PR; these fixes do not clear the separate production signing/dependency gates.
+The initial hosted CodeQL review found a CLI file-check/read race and two unused-variable findings. The CLI and standalone proof harness now share a bounded reader that checks the opened descriptor, refuses symlinks/nonregular files and detects observed changes. Regression tests exercise deterministic path replacement, post-check growth, mutation and FIFO handling. The two unused variables were removed. Malformed JSON errors also omit input fragments to prevent accidental disclosure through logs. Hosted CodeQL analysis and its aggregate gate pass on `d2fa1d7c09a4d0595917e3922ada1c2ec6dfb045`; combined-tree analysis after integrating main is tracked separately in the release PR. These fixes do not clear the separate production signing/dependency gates.
 
 ## Containment and rollback
 

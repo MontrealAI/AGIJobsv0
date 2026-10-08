@@ -17,7 +17,7 @@ Choose new destination files to preserve earlier exports. For the complete isola
 ```mermaid
 flowchart LR
     Operators((Mission Owners)) --> demo_Meta_Agentic_ALPHA_AGI_Jobs_v0_meta_agentic_alpha_prime_demo[[Demo → Meta Agentic ALPHA AGI Jobs v0 → Meta Agentic Alpha Prime Demo]]
-    demo_Meta_Agentic_ALPHA_AGI_Jobs_v0_meta_agentic_alpha_prime_demo --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    demo_Meta_Agentic_ALPHA_AGI_Jobs_v0_meta_agentic_alpha_prime_demo --> Core[["AGI Jobs v0 (v2) Core Intelligence"]]
     Core --> Observability[[Unified CI / CD & Observability]]
     Core --> Governance[[Owner Control Plane]]
 ```

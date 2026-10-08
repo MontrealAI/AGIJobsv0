@@ -1,0 +1,649 @@
+{
+  "schemaVersion": 1,
+  "status": "failed",
+  "scope": "Production dependencies in every tracked npm and pnpm lockfile",
+  "policy": "Reject critical/high findings, failed commands and missing evidence. No advisory allowlist.",
+  "source": {
+    "commit": "83bc8b7efcd9c065832b5903ff8a71e2ed135f96",
+    "tree": "7d56fdbe4f76bbd0fde99eac70b8893cde13bdf8",
+    "dirty": true
+  },
+  "nodeVersion": "v22.23.3",
+  "startedAt": "2026-10-08T16:10:34.034Z",
+  "audits": [
+    {
+      "lockfile": "apps/console/package-lock.json",
+      "status": "passed",
+      "startedAt": "2026-10-08T16:10:34.034Z",
+      "stdout": "01.json",
+      "stderr": "01.stderr.txt",
+      "lockfileSha256": "17ceacbe2e9269421bdadf550a2585bbf21bfc08229c85b379c4cd7564f37bf0",
+      "manifestSha256": "6e4ec83eb0debb1b882f3b1096e70c78ed6d6672e3d00d5381f4b2241e951b95",
+      "command": [
+        "npm",
+        "audit",
+        "--package-lock-only",
+        "--omit=dev",
+        "--json",
+        "--audit-level=high"
+      ],
+      "exitCode": 0,
+      "vulnerabilities": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      },
+      "finishedAt": "2026-10-08T16:10:39.902Z",
+      "stdoutSha256": "2e882bbd9ea3a5a81135881b00ff78d9b0bfc1aa651f514ab917dc82087aa6b4",
+      "stderrSha256": "aa45a036250da18e9118fdf59729fe4dbc4b63fde5743832fc8196ddeb9bc016"
+    },
+    {
+      "lockfile": "apps/enterprise-portal/package-lock.json",
+      "status": "passed",
+      "startedAt": "2026-10-08T16:10:34.038Z",
+      "stdout": "02.json",
+      "stderr": "02.stderr.txt",
+      "lockfileSha256": "3c46acf978eb7513593f8346b9c2e77db708e8ef2e596ce7e804b8ae8e457744",
+      "manifestSha256": "2e08c6a3ca5a7436e084dacd1d8534636faee7e29b76590a2cd7fdf735ddd56e",
+      "command": [
+        "npm",
+        "audit",
+        "--package-lock-only",
+        "--omit=dev",
+        "--json",
+        "--audit-level=high"
+      ],
+      "exitCode": 0,
+      "vulnerabilities": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      },
+      "finishedAt": "2026-10-08T16:10:39.818Z",
+      "stdoutSha256": "26f96fc3557e20c3a219f7cec64eb44a16ebc0da24c75e541ff1cf0a279e96c2",
+      "stderrSha256": "53f5194746b30347bda1f506a26187b043f7ec55dbd804110ae7cf561e35a7f0"
+    },
+    {
+      "lockfile": "apps/onebox/package-lock.json",
+      "status": "passed",
+      "startedAt": "2026-10-08T16:10:34.040Z",
+      "stdout": "03.json",
+      "stderr": "03.stderr.txt",
+      "lockfileSha256": "43153803eb8883221e0908348ed45f15b96fbee55edd298e1701ec92ff51d87d",
+      "manifestSha256": "526b194e3f0810e67e06c3d02036e0bc1f55e436e6394cf84c2ffce9d1407b3d",
+      "command": [
+        "npm",
+        "audit",
+        "--package-lock-only",
+        "--omit=dev",
+        "--json",
+        "--audit-level=high"
+      ],
+      "exitCode": 0,
+      "vulnerabilities": {
+        "info": 0,
+        "low": 2,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 2
+      },
+      "finishedAt": "2026-10-08T16:10:40.061Z",
+      "stdoutSha256": "686d696f9fe9f8dd730fa74c7155c42a2b119f8a604fa9de335c260918c1f7c9",
+      "stderrSha256": "1887a99724e86418675468b72ccf8bb4c22ec972e5df665d63948272890c1976"
+    },
+    {
+      "lockfile": "apps/validator-ui/package-lock.json",
+      "status": "passed",
+      "startedAt": "2026-10-08T16:10:34.042Z",
+      "stdout": "04.json",
+      "stderr": "04.stderr.txt",
+      "lockfileSha256": "814165560e3c9a7234caf78640dd21f12f6055d926b2e72a4112be97a042471a",
+      "manifestSha256": "d48dcf75e939082a8ff8a94e0f0f3b6e18b55032eaa4fa6022f64276b5c14337",
+      "command": [
+        "npm",
+        "audit",
+        "--package-lock-only",
+        "--omit=dev",
+        "--json",
+        "--audit-level=high"
+      ],
+      "exitCode": 0,
+      "vulnerabilities": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      },
+      "finishedAt": "2026-10-08T16:10:39.861Z",
+      "stdoutSha256": "cf9435f3d2d78363bf4725f17d61a1dd549d6ca3ff6d67ae076d77e55bd43322",
+      "stderrSha256": "79605b0e3c0a1b88b40a15fc23536fef1da1b1aa62f85c65f49acc7ec652fcbe"
+    },
+    {
+      "lockfile": "demo/AGI-Alpha-Node-v0/package-lock.json",
+      "status": "passed",
+      "startedAt": "2026-10-08T16:10:39.818Z",
+      "stdout": "05.json",
+      "stderr": "05.stderr.txt",
+      "lockfileSha256": "1feea9503cffb353b52de071ad1ad7f5744ba3c7dfef2d1955c7e2660a2988c1",
+      "manifestSha256": "359b920274dbb5e67016afa33311e3c0a969dd6cabae9548a13c4a4c92ed8c6e",
+      "command": [
+        "npm",
+        "audit",
+        "--package-lock-only",
+        "--omit=dev",
+        "--json",
+        "--audit-level=high"
+      ],
+      "exitCode": 0,
+      "vulnerabilities": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      },
+      "finishedAt": "2026-10-08T16:10:40.151Z",
+      "stdoutSha256": "615b57ab7672517dd03fe6b66d1293fe624aa1c2376fb3a84a89f08ffd8ebbbe",
+      "stderrSha256": "60b03bfb0c9553e98f65783f7790533cc9561cbe0608a08781edcb8f858f163f"
+    },
+    {
+      "lockfile": "demo/CULTURE-v0/apps/culture-studio/package-lock.json",
+      "status": "passed",
+      "startedAt": "2026-10-08T16:10:39.861Z",
+      "stdout": "06.json",
+      "stderr": "06.stderr.txt",
+      "lockfileSha256": "105350390cc2fc5cef39fcb0e1d5d9f2cafdf1fc8f44a20dfa0555382fb19694",
+      "manifestSha256": "7eea07c9bd350003c4712662e2174a59442af85754bc9116b7d6c964d24ddf3a",
+      "command": [
+        "npm",
+        "audit",
+        "--package-lock-only",
+        "--omit=dev",
+        "--json",
+        "--audit-level=high"
+      ],
+      "exitCode": 0,
+      "vulnerabilities": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      },
+      "finishedAt": "2026-10-08T16:10:43.426Z",
+      "stdoutSha256": "49d34301c332d8d9e4cda58f134fb67261541d6ea90d65f1cd373f8fcd2810fc",
+      "stderrSha256": "b1246df41bee12a931202f29d405cc785f39ddd46a5f824362d289e1d466740d"
+    },
+    {
+      "lockfile": "demo/CULTURE-v0/backend/arena-orchestrator/package-lock.json",
+      "status": "passed",
+      "startedAt": "2026-10-08T16:10:39.902Z",
+      "stdout": "07.json",
+      "stderr": "07.stderr.txt",
+      "lockfileSha256": "017f5870fc4106aec31dc94b1ed8cc32c897ede6e6d41c68dcfaccaee93ddea3",
+      "manifestSha256": "48b9888646fcc074acd543038fe16a1e8338d9ea9ed1609cce671418a443bcdc",
+      "command": [
+        "npm",
+        "audit",
+        "--package-lock-only",
+        "--omit=dev",
+        "--json",
+        "--audit-level=high"
+      ],
+      "exitCode": 0,
+      "vulnerabilities": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      },
+      "finishedAt": "2026-10-08T16:10:43.515Z",
+      "stdoutSha256": "6cb93bcf7c5b8d2336d2dd7711fba6b0ee6e096b4910923e7b441c2f85b432de",
+      "stderrSha256": "234dd9d86243c62e29d8e3a162eaa0c0c74ab775167888c6c423af849e7545bc"
+    },
+    {
+      "lockfile": "demo/CULTURE-v0/hardhat/package-lock.json",
+      "status": "passed",
+      "startedAt": "2026-10-08T16:10:40.061Z",
+      "stdout": "08.json",
+      "stderr": "08.stderr.txt",
+      "lockfileSha256": "deba3ec489df6b2b868dba10975526c1d8e811cdd4d6d6ff1a3e813aceb341c9",
+      "manifestSha256": "34be72428cd7b451ab7e2fea19d10096646cece310ca2b7ca8f55ba08972beac",
+      "command": [
+        "npm",
+        "audit",
+        "--package-lock-only",
+        "--omit=dev",
+        "--json",
+        "--audit-level=high"
+      ],
+      "exitCode": 0,
+      "vulnerabilities": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      },
+      "finishedAt": "2026-10-08T16:10:40.459Z",
+      "stdoutSha256": "b7e78aa697a0f6ecbcf23c1e2a0711528425b5d3d3923661af08a410392c22d0",
+      "stderrSha256": "ce694a734408841745e6b97aebd61774cafb979dd1f3737dae863d5cdab40855"
+    },
+    {
+      "lockfile": "demo/CULTURE-v0/indexers/culture-graph-indexer/package-lock.json",
+      "status": "passed",
+      "startedAt": "2026-10-08T16:10:40.151Z",
+      "stdout": "09.json",
+      "stderr": "09.stderr.txt",
+      "lockfileSha256": "1d44af0ccd3130e3aa85c29dd133fa3c7370c61db6fda16bd996d6e3a35f0878",
+      "manifestSha256": "be54c73d6ea5d026e48b564843e6131373385fb1dabbf9bd017142e426898de3",
+      "command": [
+        "npm",
+        "audit",
+        "--package-lock-only",
+        "--omit=dev",
+        "--json",
+        "--audit-level=high"
+      ],
+      "exitCode": 0,
+      "vulnerabilities": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      },
+      "finishedAt": "2026-10-08T16:10:43.476Z",
+      "stdoutSha256": "54152c5ea0a6018cd2a3cd8cea2977155f38fb114a19acd397f0981e5ba486db",
+      "stderrSha256": "a2b616a7bfc38842ec11af3bc9cb1ef091e8677904e4c8ff58019696d03de692"
+    },
+    {
+      "lockfile": "demo/CULTURE-v0/pnpm-lock.yaml",
+      "status": "passed",
+      "startedAt": "2026-10-08T16:10:40.459Z",
+      "stdout": "10.json",
+      "stderr": "10.stderr.txt",
+      "lockfileSha256": "8723124ec5fedc4a537c56c74cc554fae83c515b0d6997ce41fd9be0bbced373",
+      "manifestSha256": "d64398b56dbd22251198515d66a10cc6db38483d92c01760721b0ce2f927314d",
+      "command": [
+        "corepack",
+        "pnpm",
+        "audit",
+        "--prod",
+        "--json",
+        "--audit-level",
+        "high"
+      ],
+      "exitCode": 0,
+      "vulnerabilities": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0
+      },
+      "finishedAt": "2026-10-08T16:10:43.503Z",
+      "stdoutSha256": "1dc77a1aef64a3e3b6cdbea3d03829de36bc21acb9be56b97095668d521506e5",
+      "stderrSha256": "664dfc87d37b3d4ed609574b4d8898956c73f8a10fe103435ec13e691100b4a5"
+    },
+    {
+      "lockfile": "demo/Economic-Power-v0/package-lock.json",
+      "status": "passed",
+      "startedAt": "2026-10-08T16:10:43.426Z",
+      "stdout": "11.json",
+      "stderr": "11.stderr.txt",
+      "lockfileSha256": "6d0eb0df4e9944730acec6a1db7f73cd37ec00be0487b283734dd342faee5771",
+      "manifestSha256": "b73fd779d4576a9d478421b661cad430ba6a1e922e7e19bc15f0819615cbeb91",
+      "command": [
+        "npm",
+        "audit",
+        "--package-lock-only",
+        "--omit=dev",
+        "--json",
+        "--audit-level=high"
+      ],
+      "exitCode": 0,
+      "vulnerabilities": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      },
+      "finishedAt": "2026-10-08T16:10:47.853Z",
+      "stdoutSha256": "9d34037ec363e2f245689919208bfca97a8eb08c7615052f2b6f970324cbe485",
+      "stderrSha256": "8d7e0275e91b53eaee85997a36520e4287febe20c0b6a92db34d2e988ef82fc8"
+    },
+    {
+      "lockfile": "demo/Phase-8-Universal-Value-Dominance/package-lock.json",
+      "status": "passed",
+      "startedAt": "2026-10-08T16:10:43.476Z",
+      "stdout": "12.json",
+      "stderr": "12.stderr.txt",
+      "lockfileSha256": "da5045acab910f49cedafe7325a3def1992617ead712a1180ef24d29d9c854d4",
+      "manifestSha256": "ea204392ed1085d86bcc8995eb99498478feee43069de78e12b0030122a54702",
+      "command": [
+        "npm",
+        "audit",
+        "--package-lock-only",
+        "--omit=dev",
+        "--json",
+        "--audit-level=high"
+      ],
+      "exitCode": 0,
+      "vulnerabilities": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      },
+      "finishedAt": "2026-10-08T16:10:47.900Z",
+      "stdoutSha256": "04a513ff9c344411845193c1b9a9d7691177df3990594edabf0a9aac7209239a",
+      "stderrSha256": "7d8264baa6f008c9a43a0f1d0ac80f34e3e64fd34def8d73649a422df68f295a"
+    },
+    {
+      "lockfile": "demo/Validator-Constellation-v0/v2/package-lock.json",
+      "status": "passed",
+      "startedAt": "2026-10-08T16:10:43.503Z",
+      "stdout": "13.json",
+      "stderr": "13.stderr.txt",
+      "lockfileSha256": "4ee557fffb7f818709c8963a5c199899c828dba7c7240d78d7d19548c32f0a20",
+      "manifestSha256": "ba41e83416860be52102352aacc9929a74f919a5c149ba4ff0fdb7f1ad26fa02",
+      "command": [
+        "npm",
+        "audit",
+        "--package-lock-only",
+        "--omit=dev",
+        "--json",
+        "--audit-level=high"
+      ],
+      "exitCode": 0,
+      "vulnerabilities": {
+        "info": 0,
+        "low": 0,
+        "moderate": 5,
+        "high": 0,
+        "critical": 0,
+        "total": 5
+      },
+      "finishedAt": "2026-10-08T16:10:51.524Z",
+      "stdoutSha256": "f5f6b20b05804a4cbdc4b03022f210b1b30b91b87de32527d5c119a7d809577e",
+      "stderrSha256": "0f582ec19c43ab6d008743146c9676ea781cd915bff2fd0130a7ac49f411253b"
+    },
+    {
+      "lockfile": "demo/sovereign-constellation/app/package-lock.json",
+      "status": "passed",
+      "startedAt": "2026-10-08T16:10:43.515Z",
+      "stdout": "14.json",
+      "stderr": "14.stderr.txt",
+      "lockfileSha256": "244b9a5636bb5d540c773237feb99c7f907b684ecbffdfa167e7e38729c565b8",
+      "manifestSha256": "91d2b5b7ab2dc603ec0783e2f4f48fd57eb8deb16edd15459240f9b2163fa694",
+      "command": [
+        "npm",
+        "audit",
+        "--package-lock-only",
+        "--omit=dev",
+        "--json",
+        "--audit-level=high"
+      ],
+      "exitCode": 0,
+      "vulnerabilities": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      },
+      "finishedAt": "2026-10-08T16:10:47.874Z",
+      "stdoutSha256": "da1684a5fa17f387c451fd3a94e8bbb3b3421221a1fa7c5d31fec9246806a7c4",
+      "stderrSha256": "13adc19841f66cfccb805c279a0c8a77a87d611168fccdbb4d4679e445fc1377"
+    },
+    {
+      "lockfile": "demo/sovereign-constellation/server/package-lock.json",
+      "status": "passed",
+      "startedAt": "2026-10-08T16:10:47.853Z",
+      "stdout": "15.json",
+      "stderr": "15.stderr.txt",
+      "lockfileSha256": "245f1b842bb631cf6aed1ec36d5f652f87d49ceb06afe292519144c12e119759",
+      "manifestSha256": "17240e47f5216d718ed03cd0dee10dbcd8852bfb8fc9b40cd73b546a47292ce9",
+      "command": [
+        "npm",
+        "audit",
+        "--package-lock-only",
+        "--omit=dev",
+        "--json",
+        "--audit-level=high"
+      ],
+      "exitCode": 0,
+      "vulnerabilities": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      },
+      "finishedAt": "2026-10-08T16:10:51.531Z",
+      "stdoutSha256": "a9edb1e4fc8ea65ac6bbf3d018c9620bc906f20100906006b364e717cf7adf7a",
+      "stderrSha256": "e6170f4f0555cf5b266928f9a42d12451c46df306d480bbde033192f587bc293"
+    },
+    {
+      "lockfile": "demo/sovereign-mesh/app/package-lock.json",
+      "status": "passed",
+      "startedAt": "2026-10-08T16:10:47.874Z",
+      "stdout": "16.json",
+      "stderr": "16.stderr.txt",
+      "lockfileSha256": "75bc239fa97df44cbeebcde2ad921141e4dfffb5c390b1130323b067fd19e189",
+      "manifestSha256": "508a36536767490810a016f257b1c2baec2a03dfa6101a111bf206940c730899",
+      "command": [
+        "npm",
+        "audit",
+        "--package-lock-only",
+        "--omit=dev",
+        "--json",
+        "--audit-level=high"
+      ],
+      "exitCode": 0,
+      "vulnerabilities": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      },
+      "finishedAt": "2026-10-08T16:10:51.529Z",
+      "stdoutSha256": "da1684a5fa17f387c451fd3a94e8bbb3b3421221a1fa7c5d31fec9246806a7c4",
+      "stderrSha256": "7f71e6fbc64a191c76f490111d24125fdb3481ef93ee8bc4d4cab01e956b0ffa"
+    },
+    {
+      "lockfile": "demo/sovereign-mesh/server/package-lock.json",
+      "status": "passed",
+      "startedAt": "2026-10-08T16:10:47.900Z",
+      "stdout": "17.json",
+      "stderr": "17.stderr.txt",
+      "lockfileSha256": "96cd3864d507b1fea39e364529ee9c10439dd1965289ea5975b13b52ee1c59ae",
+      "manifestSha256": "1b5092f85584adc497307ac11416c1260ac0129d0c1b9d8e700b150f5c409211",
+      "command": [
+        "npm",
+        "audit",
+        "--package-lock-only",
+        "--omit=dev",
+        "--json",
+        "--audit-level=high"
+      ],
+      "exitCode": 0,
+      "vulnerabilities": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      },
+      "finishedAt": "2026-10-08T16:10:51.520Z",
+      "stdoutSha256": "a9edb1e4fc8ea65ac6bbf3d018c9620bc906f20100906006b364e717cf7adf7a",
+      "stderrSha256": "2e42c5ca0c593f07f0a9c7a56e718b9ec1dadecfc424ee875c3a3fef497eb142"
+    },
+    {
+      "lockfile": "package-lock.json",
+      "status": "failed",
+      "startedAt": "2026-10-08T16:10:51.520Z",
+      "stdout": "18.json",
+      "stderr": "18.stderr.txt",
+      "lockfileSha256": "13626e97ac5be3465c1503501b9ed7542a74d601a21f34e0537e9761987b265c",
+      "manifestSha256": "31965d1647fb849f07894a4d285a838c7d5c2210df6bce7ceb3666948999987f",
+      "command": [
+        "npm",
+        "audit",
+        "--package-lock-only",
+        "--omit=dev",
+        "--json",
+        "--audit-level=high"
+      ],
+      "exitCode": 1,
+      "error": "0 critical / 7 high findings",
+      "finishedAt": "2026-10-08T16:11:03.417Z",
+      "stdoutSha256": "5455b661aa82541a9757d944c44fed0479ddbb51a784995f343638bc808892e9",
+      "stderrSha256": "a375281b94508415bb339d9b19fddc09b1f8c5fe3523520a32d50a7600c9bd9b"
+    },
+    {
+      "lockfile": "packages/onebox-sdk/package-lock.json",
+      "status": "passed",
+      "startedAt": "2026-10-08T16:10:51.524Z",
+      "stdout": "19.json",
+      "stderr": "19.stderr.txt",
+      "lockfileSha256": "8aa54f034207ba68fb4c0278eda321cc027ae989055fea8ca2e5098e54dfb7c9",
+      "manifestSha256": "0b7189676e4fa325d7f2a362e748bfe746cfae10d8e8334d52736f8219a59fcb",
+      "command": [
+        "npm",
+        "audit",
+        "--package-lock-only",
+        "--omit=dev",
+        "--json",
+        "--audit-level=high"
+      ],
+      "exitCode": 0,
+      "vulnerabilities": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      },
+      "finishedAt": "2026-10-08T16:10:54.809Z",
+      "stdoutSha256": "846fc260eb0bf70e6b21419d4cab9fcc61c224c7362324d4cbc8aebf8355f9bd",
+      "stderrSha256": "a208fb2ac9cbf349a8948fdb3db01c3b303201829298ccf851316c87ca829706"
+    },
+    {
+      "lockfile": "packages/orchestrator/package-lock.json",
+      "status": "passed",
+      "startedAt": "2026-10-08T16:10:51.529Z",
+      "stdout": "20.json",
+      "stderr": "20.stderr.txt",
+      "lockfileSha256": "c4befe1e53495ae6ea280552a6643ab4533e19b7a8e440a404996e5e03262312",
+      "manifestSha256": "e0166ee2acfc832796faf3373f1dbae85042de2f2a53774892c96e78c77ac17f",
+      "command": [
+        "npm",
+        "audit",
+        "--package-lock-only",
+        "--omit=dev",
+        "--json",
+        "--audit-level=high"
+      ],
+      "exitCode": 0,
+      "vulnerabilities": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      },
+      "finishedAt": "2026-10-08T16:10:54.818Z",
+      "stdoutSha256": "0976fe53f76ce6d717f0e00bd18890a877e9c2ed7f8c708933cae4a4958642e1",
+      "stderrSha256": "7311b8cd84a5bf472032e0e6f79a7f4c1c6457afc4a0e2a1668f0d4fd36e6062"
+    },
+    {
+      "lockfile": "services/culture-graph-indexer/package-lock.json",
+      "status": "passed",
+      "startedAt": "2026-10-08T16:10:51.531Z",
+      "stdout": "21.json",
+      "stderr": "21.stderr.txt",
+      "lockfileSha256": "6405cee85b39d24799b7d7337e1b5ef3b1a6e54f722c59c53502122913317c6e",
+      "manifestSha256": "ca9df177475d603fcbfd565294112e2ab1b78269fd75986f43337a0ff2d91110",
+      "command": [
+        "npm",
+        "audit",
+        "--package-lock-only",
+        "--omit=dev",
+        "--json",
+        "--audit-level=high"
+      ],
+      "exitCode": 0,
+      "vulnerabilities": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      },
+      "finishedAt": "2026-10-08T16:10:54.778Z",
+      "stdoutSha256": "0c2039a26d18ea4bf22b1bd6214b86450767c293eeb3c5415048c8e67bf1a25a",
+      "stderrSha256": "64ccc61820a8a434dc1effe4cd6f291cef18a977d807a11f5864777441c15163"
+    },
+    {
+      "lockfile": "subgraph/package-lock.json",
+      "status": "passed",
+      "startedAt": "2026-10-08T16:10:54.778Z",
+      "stdout": "22.json",
+      "stderr": "22.stderr.txt",
+      "lockfileSha256": "b78522dced8bb2784f02987d35e43fb45fd78a4046dd233bb8e3116a43a718d3",
+      "manifestSha256": "a7ebfe5cf0c8eaaf70547ff0fb1c9ebdc6737cb024b18a13b4da6c24621f77ae",
+      "command": [
+        "npm",
+        "audit",
+        "--package-lock-only",
+        "--omit=dev",
+        "--json",
+        "--audit-level=high"
+      ],
+      "exitCode": 0,
+      "vulnerabilities": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      },
+      "finishedAt": "2026-10-08T16:10:55.131Z",
+      "stdoutSha256": "f74556af8705cf0e2d1debfcb5678559879ac130e5671cc52e0a7b2e7492d0b9",
+      "stderrSha256": "252a974e7f28cb29ebb6bbf3c9c7c68ef6e2687290b4a27a729ed769638ce3be"
+    }
+  ],
+  "finishedAt": "2026-10-08T16:11:03.417Z",
+  "evidenceNote": "Snapshot of the recorded working source and exact dependency input hashes; this is not final-commit CI certification. Raw command outputs are emitted by the release audit command and are identified below by filename and SHA-256.",
+  "summarySha256": "83e1e6ad0657ceca5c9e2df57417e3942e5e0e54e13e0e478ab6c462266545ad"
+}

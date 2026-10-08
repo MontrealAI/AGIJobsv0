@@ -62,7 +62,7 @@ journey
   title Emergency parameter hotfix
   section Preparation
     Sync main branch: 3: Owner
-    Run `npm run owner:surface`: 2: Owner
+    Run `npm run owner#58;surface`: 2: Owner
   section Change drafting
     Launch wizard, edit value: 4: Owner
     Commit JSON + note: 2: Owner
@@ -71,8 +71,8 @@ journey
     Safe bundle review: 4: Signers
     Execute with `--execute`: 2: Owner
   section Assurance
-    `owner:verify-control` check: 3: Owner
-    `owner:dashboard` snapshot: 2: Owner
+    `owner#58;verify-control` check: 3: Owner
+    `owner#58;dashboard` snapshot: 2: Owner
 ```
 
 1. **Snapshot current state.**

@@ -16,7 +16,7 @@
 ```mermaid
 flowchart LR
     Operators((Mission Owners)) --> demo_TRIDENT_SOVEREIGN_AGI_ORCHESTRATOR[[Demo → Trident Sovereign AGI Orchestrator]]
-    demo_TRIDENT_SOVEREIGN_AGI_ORCHESTRATOR --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    demo_TRIDENT_SOVEREIGN_AGI_ORCHESTRATOR --> Core[["AGI Jobs v0 (v2) Core Intelligence"]]
     Core --> Observability[[Unified CI / CD & Observability]]
     Core --> Governance[[Owner Control Plane]]
 ```

@@ -16,7 +16,7 @@
 ```mermaid
 flowchart LR
     Operators((Mission Owners)) --> demo_meta_agentic_alpha_agi[[Demo → Meta Agentic Alpha AGI]]
-    demo_meta_agentic_alpha_agi --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    demo_meta_agentic_alpha_agi --> Core[["AGI Jobs v0 (v2) Core Intelligence"]]
     Core --> Observability[[Unified CI / CD & Observability]]
     Core --> Governance[[Owner Control Plane]]
 ```

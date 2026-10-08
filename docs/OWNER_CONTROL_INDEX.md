@@ -67,14 +67,26 @@ flowchart LR
 
 > **Non-technical mode.** Run `npm run owner:quickstart -- --network <network>` for a wizard that asks plain-language questions and emits a tailored checklist covering the workflow above.
 
-## Mainnet release (Safe bundle)
+## Mainnet deployment candidate (read-only)
 
-When the release checklist is green and stakeholders approve, trigger the GitHub Action to produce a multisig-ready execution plan:
+The `release-mainnet` workflow produces a reviewable **deployment candidate**, not an executable Safe bundle. It never obtains a signer, broadcasts a transaction or certifies production readiness. A configuration-update bundle from `owner:plan:safe` applies to an existing deployment; it cannot deploy a new stack.
 
-1. Open **GitHub → Actions → `release-mainnet` → Run workflow**.
-2. Select `mainnet` or `sepolia`, type **YES** into the confirmation box, and start the run.
-3. Download the emitted artifact (`safe-bundle-<network>.zip`), extract `plan.json`, and upload it to your Safe for signing.
-4. Collect the required approvals in the Safe UI, execute the bundle, then archive the signed transaction hash alongside the plan.
+1. Review `deployment-config/<network>.json` and the matching `config/agialpha.<network>.json`. Set the real governance address, correct token and ENS addresses/roots, explicit economics and a reviewed tax-policy URI. Keep `secureDefaults.pauseOnLaunch: true`. Checked-in sample addresses and metadata intentionally block candidate approval.
+2. Configure the read-only `MAINNET_RPC_URL` or `SEPOLIA_RPC_URL` secret. No private key or `SAFE_ADDRESS` secret is used. Open **GitHub → Actions → `release-mainnet` → Run workflow**, select the target, and type **YES** to confirm candidate generation.
+3. Download `deployment-candidate-<network>.zip` and read `plan.json`. It records the source revision, config hash, compiled code/ABI hashes, target-chain observation, staged deployment sequence, blocking findings and remaining approvals. A failed preflight retains its report for correction; a successful preflight means **candidate for review** only. Do not upload this report to Safe Transaction Builder.
+4. Review the normalized `config` object: nested ENS roots are made explicit and validated commit/reveal durations are normalized to exact seconds for `deployDefaults.ts`. Zero economic values retain that deployer's documented default semantics. The `secureDefaults` phase remains a separate governance action. The report contains no signed transaction, predicted deployment address or final gas estimate.
+5. Complete the [release readiness gates](production/readiness-2026-10-03.md) and [deployment handbook](production-deployment-handbook.md). An approved deployment uses the staged coordinator, retains its address for resumption, verifies all ownership handoffs (including `pendingOwner`/`acceptOwnership` for IdentityRegistry and TaxPolicy), and completes live commissioning before unpausing. Safe approvals and transaction simulation remain a separate reviewed process.
+
+For local inspection, compile with the target configuration and generate a fresh report:
+
+```bash
+AGJ_NETWORK=mainnet npm run compile
+npx ts-node scripts/v2/plan-deploy.ts --network mainnet --out plan.json
+# Offline inspection preserves configuration/artifact findings but exits 2:
+npx ts-node scripts/v2/plan-deploy.ts --network mainnet --offline --out plan-offline.json
+```
+
+Exit `0` means input/chain preflight passed; exit `2` means the JSON report contains blockers; exit `1` means no report could be generated (for example, invalid arguments or unreadable JSON). Output files are created exclusively: choose a new filename for each review instead of overwriting previous evidence. RPC credentials are never included in the report.
 
 ## Parameter catalogue
 

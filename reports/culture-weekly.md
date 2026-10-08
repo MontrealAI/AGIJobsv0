@@ -14,20 +14,18 @@ This report summarises CMS metrics across the most recent culture snapshots.
 
 ```mermaid
 %%{init: { 'theme': 'forest' }}%%
-line
-    title CMS Artifact Velocity
-    xAxis Week
-    yAxis Artifacts
-    series Artifacts [12]
-    labels [2025-W01]
+xychart-beta
+    title "CMS Artifact Velocity"
+    x-axis "Week" ["2025-W01"]
+    y-axis "Artifacts" 0 --> 12
+    bar [12]
 ```
 
 ```mermaid
 %%{init: { 'theme': 'forest' }}%%
-line
-    title Citation Depth Trend
-    xAxis Week
-    yAxis Depth
-    series Depth [3.00]
-    labels [2025-W01]
+xychart-beta
+    title "Citation Depth Trend"
+    x-axis "Week" ["2025-W01"]
+    y-axis "Depth" 0 --> 3
+    bar [3.00]
 ```

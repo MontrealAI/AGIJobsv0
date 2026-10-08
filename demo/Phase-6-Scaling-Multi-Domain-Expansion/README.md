@@ -22,7 +22,7 @@ Coordinate specialized agents across finance, health, logistics, climate and edu
 ```mermaid
 flowchart LR
     Operators((Mission Owners)) --> demo_Phase_6_Scaling_Multi_Domain_Expansion[[Demo → Phase 6 Scaling Multi Domain Expansion]]
-    demo_Phase_6_Scaling_Multi_Domain_Expansion --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    demo_Phase_6_Scaling_Multi_Domain_Expansion --> Core[["AGI Jobs v0 (v2) Core Intelligence"]]
     Core --> Observability[[Unified CI / CD & Observability]]
     Core --> Governance[[Owner Control Plane]]
 ```

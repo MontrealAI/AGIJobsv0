@@ -213,26 +213,7 @@ describe('Agent gateway localnet E2E', function () {
     gatewayUtils.validation = validation;
 
     const registryProxy = gatewayUtils.registry as any;
-    registryProxy.connect = (wallet: Wallet) => {
-      const connected = registry.connect(wallet);
-      return new Proxy(connected, {
-        get(target, prop, receiver) {
-          if (prop === 'submit') {
-            return async (...args: unknown[]) => {
-              const normalised = [...args];
-              if (normalised.length >= 5) {
-                const proof = normalised[4];
-                if (Array.isArray(proof)) {
-                  normalised[4] = proof.length === 0 ? '0x' : proof;
-                }
-              }
-              return (target as any).submit(...normalised);
-            };
-          }
-          return Reflect.get(target as any, prop, receiver);
-        },
-      });
-    };
+    registryProxy.connect = (wallet: Wallet) => registry.connect(wallet);
     registryProxy.taxPolicy = async () => ethers.ZeroAddress;
 
     gatewayUtils.stakeManager = null;
@@ -260,7 +241,7 @@ describe('Agent gateway localnet E2E', function () {
     const nextJobId = await registry.nextJobId();
     const jobId = nextJobId - 1n;
 
-    await registry.connect(agent).applyForJob(jobId, subdomain, '0x');
+    await registry.connect(agent).applyForJob(jobId, subdomain, []);
 
     const profile = createAgentProfile(agent);
     const identity: AgentIdentity = {

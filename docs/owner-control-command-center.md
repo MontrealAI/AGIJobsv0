@@ -149,7 +149,7 @@ journey
       Fetch control surface report: 4:Owner
     section Draft
       Update JSON config with change tickets: 3:Owner
-      Dry-run owner:update-all: 4:Owner
+      Dry-run owner#58;update-all: 4:Owner
       Share diff with reviewers: 3:Governance
     section Execute
       Collect Safe approvals: 3:Governance

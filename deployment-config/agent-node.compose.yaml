@@ -11,9 +11,9 @@ services:
       AGENT_REGION: us-east
       AGENT_CAPABILITIES: execution,validation
       AGENT_ROUTER: default
-      AGENT_REGISTRY_URL: http://meta-api:8000/agents
-      AGENT_REGISTRY_OWNER_TOKEN: super-secret-token
-      AGENT_HEARTBEAT_SECRET: replace-me
+      AGENT_REGISTRY_URL: ${AGENT_REGISTRY_URL:?Set the reachable registry URL}
+      AGENT_REGISTRY_OWNER_TOKEN: ${AGENT_REGISTRY_OWNER_TOKEN:?Set the registry owner token}
+      AGENT_HEARTBEAT_SECRET: ${AGENT_HEARTBEAT_SECRET:?Set a unique heartbeat secret}
     volumes:
       - ./agent-data:/var/lib/agent
     restart: unless-stopped

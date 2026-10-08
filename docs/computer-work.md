@@ -13,7 +13,7 @@ AGI Jobs can coordinate work performed through browser and desktop interfaces, i
 | ChatGPT Work with Computer Use | An operator performs a scoped task in Work, reviews permissions and exports evidence | Supported operating procedure; no invented remote Work API or automated login |
 | OpenAI Responses computer tool or code-execution tool | A custom worker supplies an isolated environment and handles tool calls | Extension path through an approved agent endpoint; a direct OpenAI desktop runtime is not bundled here |
 
-Official documentation checked **2026-10-07**: [OpenClaw Codex Computer Use](https://docs.openclaw.ai/plugins/codex-computer-use), [OpenClaw Responses API](https://docs.openclaw.ai/gateway/openresponses-http-api), [OpenClaw security](https://docs.openclaw.ai/gateway/security), [ChatGPT Work Computer Use](https://learn.chatgpt.com/docs/computer-use), and [OpenAI API computer use](https://developers.openai.com/api/docs/guides/tools-computer-use). Availability and configuration remain version- and account-dependent; record the versions actually commissioned.
+Official documentation checked **2026-10-08**: [OpenClaw Codex Computer Use](https://docs.openclaw.ai/plugins/codex-computer-use), [OpenClaw Responses API](https://docs.openclaw.ai/gateway/openresponses-http-api), [OpenClaw security](https://docs.openclaw.ai/gateway/security), [ChatGPT Work Computer Use](https://learn.chatgpt.com/docs/computer-use), and [OpenAI API computer use](https://developers.openai.com/api/docs/guides/tools-computer-use). Availability and configuration remain version- and account-dependent; record the versions actually commissioned.
 
 OpenClaw's Responses endpoint is disabled by default. Enable `gateway.http.endpoints.responses.enabled` deliberately. It accepts agent routing such as `openclaw/procurement`; bearer authentication can grant full gateway operator authority. Deploy a separate gateway, credentials and OS identity for each trust boundary. A new conversation is not an isolation boundary.
 
@@ -23,9 +23,13 @@ For native Codex desktop work, follow the official plugin setup and run `/codex 
 
 The repository services use the pinned Node toolchain in [START_HERE](START_HERE.md). A separately installed OpenClaw worker has its own supported runtime requirements; do not upgrade the repository's Node version merely to match a worker. Record the installed OpenClaw version, Codex runtime/plugin version, provider/model identifier and authentication route with the commissioning evidence. Test the selected combination against the actual account and desktop before admitting jobs.
 
-OpenClaw's [2026.9.8 release notes](https://docs.openclaw.ai/releases/2026.9.8), checked on 2026-10-07, still describe GPT-6.1 Sol support as incomplete. A newer model name is not proof that a particular worker supports it. Preserve a tested configuration until its replacement passes the same acceptance and recovery checks.
+OpenClaw's [2026.9.8 release notes](https://docs.openclaw.ai/releases/2026.9.8), checked on 2026-10-08, still describe GPT-6.1 Sol support as incomplete. A newer model name is not proof that a particular worker supports it. Preserve a tested configuration until its replacement passes the same acceptance and recovery checks.
 
 For the operator-led [ChatGPT Work route](https://learn.chatgpt.com/docs/computer-use), use structured plugins where they fit the task and Computer Use for permitted application interactions. Work cannot automate terminal applications or ChatGPT itself, act as an administrator, or approve operating-system security prompts. Choose an API/code worker or a separately authorized operator step when a job requires those capabilities. Keep that step explicit in the work order and evidence.
+
+Work's desktop operating conditions also matter. On Windows, the target application must remain visible on an unlocked, connected desktop; Computer Use takes foreground input, so use a dedicated session or VM. On macOS, Work's optional locked-use feature needs explicit setup and its own safeguards; do not assume that installing a plugin enables unattended access after locking. Commission the actual host's lock, wake and interruption behavior before scheduling work.
+
+For a custom GPT-6 Astra API worker, [OpenAI's current computer-use guide](https://developers.openai.com/api/docs/guides/tools-computer-use) recommends code execution through an environment such as Playwright or PyAutoGUI; the structured `computer` tool remains supported. Either route needs an implemented action loop, isolated environment and result verification. This is extension guidance, not an additional runtime bundled with this repository.
 
 ## The acceptance boundary
 

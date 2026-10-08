@@ -2,6 +2,10 @@ FROM node:22.23.3-bookworm-slim AS base
 
 WORKDIR /app
 
+ENV CYPRESS_INSTALL_BINARY=0
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends python3 make g++ \
+    && rm -rf /var/lib/apt/lists/*
 COPY package.json package-lock.json ./
 RUN npm ci
 

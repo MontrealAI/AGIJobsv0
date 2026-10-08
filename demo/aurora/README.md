@@ -28,7 +28,7 @@ Anvil is preferred and Hardhat is the fallback. The node is bound to localhost w
 ```mermaid
 flowchart LR
     Operators((Mission Owners)) --> demo_aurora[[Demo → Aurora]]
-    demo_aurora --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    demo_aurora --> Core[["AGI Jobs v0 (v2) Core Intelligence"]]
     Core --> Observability[[Unified CI / CD & Observability]]
     Core --> Governance[[Owner Control Plane]]
 ```

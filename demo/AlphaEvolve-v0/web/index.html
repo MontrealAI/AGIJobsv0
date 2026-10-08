@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>AlphaEvolve Demo Portal</title>
     <link rel="stylesheet" href="assets/styles.css" />
-    <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs"></script>
     <script type="module">
-      mermaid.initialize({ startOnLoad: true, theme: "forest" });
+      import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.17.2/dist/mermaid.esm.min.mjs";
+      mermaid.initialize({ startOnLoad: true, theme: "forest", securityLevel: "strict" });
     </script>
   </head>
   <body>

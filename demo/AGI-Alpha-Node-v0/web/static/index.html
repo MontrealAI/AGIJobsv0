@@ -54,8 +54,10 @@
       margin-bottom: 2rem;
     }
   </style>
-  <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs"></script>
-  <script>mermaid.initialize({ startOnLoad: true, theme: 'dark' });</script>
+  <script type="module">
+    import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.17.2/dist/mermaid.esm.min.mjs";
+    mermaid.initialize({ startOnLoad: true, theme: "dark", securityLevel: "strict" });
+  </script>
 </head>
 <body>
   <header>

@@ -76,8 +76,8 @@ graph TD
   P --> C
   C -->|Confidence Index| D[Integrity Dossier]
   D -->|Confidence ≥ 99%?| Verdict{Auto-Signoff}
-  Verdict -->|Yes| ✅[Stakeholder Sign-off]
-  Verdict -->|No| 🛑[Operator Escalates]
+  Verdict -->|Yes| Approval[Stakeholder Sign-off]
+  Verdict -->|No| Escalation[Operator Escalates]
 ```
 
 The new **Phase Coverage Scanner** enforces that the mission timeline spans orchestration through launch and that a

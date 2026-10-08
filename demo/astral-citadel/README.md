@@ -16,7 +16,7 @@
 ```mermaid
 flowchart LR
     Operators((Mission Owners)) --> demo_astral_citadel[[Demo → Astral Citadel]]
-    demo_astral_citadel --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    demo_astral_citadel --> Core[["AGI Jobs v0 (v2) Core Intelligence"]]
     Core --> Observability[[Unified CI / CD & Observability]]
     Core --> Governance[[Owner Control Plane]]
 ```

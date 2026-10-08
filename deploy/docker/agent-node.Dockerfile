@@ -15,6 +15,7 @@ RUN pip install --no-cache-dir -r requirements-agent.txt
 
 COPY tools/agent_registry_cli.py ${APP_HOME}/agent_registry_cli.py
 COPY orchestrator ${APP_HOME}/orchestrator
+COPY config/policies.default.json ${APP_HOME}/config/policies.default.json
 
 COPY agent-gateway ${APP_HOME}/agent-gateway
 
@@ -23,10 +24,11 @@ ENV AGENT_ID=agent-001 \
     AGENT_CAPABILITIES=execution,validation \
     AGENT_ROUTER=default \
     AGENT_REGISTRY_URL=http://meta-api:8000/agents \
-    AGENT_REGISTRY_OWNER_TOKEN=changeme \
-    AGENT_HEARTBEAT_SECRET=please-change-me
+    AGENT_REGISTRY_OWNER_TOKEN="" \
+    AGENT_HEARTBEAT_SECRET=""
 
 COPY deploy/docker/entrypoints/agent-node.sh /usr/local/bin/agent-node
+COPY deploy/docker/entrypoints/agent-health.py /usr/local/bin/agent-health.py
 RUN chmod +x /usr/local/bin/agent-node
 
 ENTRYPOINT ["agent-node"]

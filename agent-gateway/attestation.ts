@@ -2,7 +2,7 @@ import {
   ReceiptAttester,
   ReceiptAttestationResult,
   loadReceiptAttesterFromEnv,
-} from '../attestation/eas';
+} from '../attestation/eas/src';
 
 let cachedAttester: ReceiptAttester | null | undefined;
 

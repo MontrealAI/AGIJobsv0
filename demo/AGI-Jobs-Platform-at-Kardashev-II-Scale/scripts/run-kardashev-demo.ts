@@ -2516,13 +2516,8 @@ function buildDysonTimeline(manifest: Manifest): string {
     const labelPrefix = index === 0 ? "  " : "  ";
     const modifier = index === 0 ? "active" : index === manifest.dysonProgram.phases.length - 1 ? "crit" : "";
     const id = `phase${index + 1}`;
-    const parts = [
-      `${phase.name} :${modifier}`.trim(),
-      id,
-      start,
-      `${phase.durationDays}d`,
-    ].filter(Boolean);
-    lines.push(`${labelPrefix}${parts.join(", ")}`);
+    const parts = [modifier, id, start, `${phase.durationDays}d`].filter(Boolean);
+    lines.push(`${labelPrefix}${phase.name} :${parts.join(", ")}`);
     current = addDays(current, phase.durationDays);
   });
   return lines.join("\n");

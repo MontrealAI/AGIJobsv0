@@ -4,20 +4,17 @@ on:
   workflow_dispatch:
     inputs:
       network:
-        description: 'Deploy target'
+        description: 'Read-only deployment candidate target'
         type: choice
         options: [mainnet, sepolia]
         default: mainnet
       confirm:
-        description: 'Type YES to confirm'
+        description: 'Type YES to generate a candidate; this does not deploy'
         required: true
         default: 'NO'
 
 permissions:
   contents: read
-  actions: write
-  id-token: write
-  packages: read
 
 jobs:
   guardrails:
@@ -28,20 +25,16 @@ jobs:
         with:
           egress-policy: audit
       - name: Confirm
+        env:
+          CONFIRM: ${{ inputs.confirm }}
         run: |
-          test "${{ inputs.confirm }}" = "YES" || { echo "Deployment not confirmed"; exit 1; }
+          test "$CONFIRM" = "YES" || { echo "Candidate generation not confirmed"; exit 1; }
 
   build-plan:
     needs: guardrails
     runs-on: ubuntu-24.04
     env:
-      FEE_PCT: '0.02'
-      BURN_PCT: '0.06'
-      TREASURY: '0x1111111111111111111111111111111111111111'
-      VALIDATORS_PER_JOB: '3'
-      REQUIRED_APPROVALS: '3'
-      COMMIT_WINDOW: '30m'
-      REVEAL_WINDOW: '30m'
+      AGJ_NETWORK: ${{ inputs.network }}
     steps:
       - name: Harden runner
         uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
@@ -65,15 +58,22 @@ jobs:
       - name: Enforce production contract size limits
         run: npm run release:check-size
 
-      - name: Build Safe execution plan
-        env:
-          RPC_URL: ${{ inputs.network == 'mainnet' && secrets.MAINNET_RPC_URL || secrets.SEPOLIA_RPC_URL }}
-          SAFE_ADDRESS: ${{ secrets.SAFE_ADDRESS }}
-        run: |
-          npx hardhat run scripts/v2/plan-deploy.ts --network ${{ inputs.network }} > plan.json
-          jq -e 'type == "object" and (.transactions | type == "array" and length > 0)' plan.json >/dev/null
+      - name: Test candidate validation
+        run: node --test test/scripts/deployment-candidate.test.cjs
 
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      - name: Build read-only deployment candidate
+        env:
+          TARGET_NETWORK: ${{ inputs.network }}
+          MAINNET_RPC_URL: ${{ secrets.MAINNET_RPC_URL }}
+          SEPOLIA_RPC_URL: ${{ secrets.SEPOLIA_RPC_URL }}
+        run: |
+          npx ts-node scripts/v2/plan-deploy.ts --network "$TARGET_NETWORK" --out plan.json
+          jq -e '.schema == "agi-jobs/deployment-candidate/v1" and .status == "candidate-for-review" and .executable == false and .productionApproved == false and (.blockers | length == 0)' plan.json >/dev/null
+
+      - name: Preserve candidate and blocking findings
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: safe-bundle-${{ inputs.network }}
+          name: deployment-candidate-${{ inputs.network }}
           path: plan.json
+          if-no-files-found: warn

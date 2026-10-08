@@ -12,15 +12,15 @@ flowchart LR
     classDef govMod fill:#f8fafc,stroke:#1e293b,color:#0f172a,stroke-width:1px;
     classDef owner fill:#f5f3ff,stroke:#7c3aed,color:#5b21b6,stroke-width:1px;
 
-    Governance[TimelockController / Safe]:::gov --> JobRegistry[JobRegistry (Governable)]:::govMod
-    Governance --> StakeManager[StakeManager (Governable)]:::govMod
-    Governance --> DisputeModule[DisputeModule (Governable)]:::govMod
-    Governance --> SystemPause[SystemPause (Governable)]:::govMod
+    Governance[TimelockController / Safe]:::gov --> JobRegistry["JobRegistry (Governable)"]:::govMod
+    Governance --> StakeManager["StakeManager (Governable)"]:::govMod
+    Governance --> DisputeModule["DisputeModule (Governable)"]:::govMod
+    Governance --> SystemPause["SystemPause (Governable)"]:::govMod
 
-    Governance --> OwnerConfigurator[OwnerConfigurator (Ownable2Step)]:::owner
-    OwnerConfigurator --> ValidationModule[ValidationModule (Ownable)]:::govMod
-    OwnerConfigurator --> ReputationEngine[ReputationEngine (Ownable)]:::govMod
-    OwnerConfigurator --> CertificateNFT[CertificateNFT (Ownable)]:::govMod
+    Governance --> OwnerConfigurator["OwnerConfigurator (Ownable2Step)"]:::owner
+    OwnerConfigurator --> ValidationModule["ValidationModule (Ownable)"]:::govMod
+    OwnerConfigurator --> ReputationEngine["ReputationEngine (Ownable)"]:::govMod
+    OwnerConfigurator --> CertificateNFT["CertificateNFT (Ownable)"]:::govMod
 ```
 
 - **Governable contracts** (e.g., `JobRegistry`, `StakeManager`, `DisputeModule`, `SystemPause`) are deployed with a `TimelockController` owner and gate privileged functions behind the `onlyGovernance` modifier. Updating a parameter requires scheduling and executing a timelock proposal or Safe transaction that targets the module directly.

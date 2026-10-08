@@ -20,7 +20,7 @@ The current admitted computer-work path and USDC planning are documented in the 
 ```mermaid
 flowchart LR
     Operators((Mission Owners)) --> demo_Meta_Agentic_ALPHA_AGI_Jobs_v0_meta_agentic_alpha_v4[[Demo → Meta Agentic ALPHA AGI Jobs v0 → Meta Agentic Alpha V4]]
-    demo_Meta_Agentic_ALPHA_AGI_Jobs_v0_meta_agentic_alpha_v4 --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    demo_Meta_Agentic_ALPHA_AGI_Jobs_v0_meta_agentic_alpha_v4 --> Core[["AGI Jobs v0 (v2) Core Intelligence"]]
     Core --> Observability[[Unified CI / CD & Observability]]
     Core --> Governance[[Owner Control Plane]]
 ```

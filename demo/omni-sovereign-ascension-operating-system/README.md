@@ -16,7 +16,7 @@
 ```mermaid
 flowchart LR
     Operators((Mission Owners)) --> demo_omni_sovereign_ascension_operating_system[[Demo → Omni Sovereign Ascension Operating System]]
-    demo_omni_sovereign_ascension_operating_system --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    demo_omni_sovereign_ascension_operating_system --> Core[["AGI Jobs v0 (v2) Core Intelligence"]]
     Core --> Observability[[Unified CI / CD & Observability]]
     Core --> Governance[[Owner Control Plane]]
 ```

@@ -34,7 +34,7 @@ The legacy receipt-format generators remain in `scripts/*-stub.js` for fixture t
 ```mermaid
 flowchart LR
     Operators((Mission Owners)) --> demo_asi_global[[Demo → ASI Global]]
-    demo_asi_global --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    demo_asi_global --> Core[["AGI Jobs v0 (v2) Core Intelligence"]]
     Core --> Observability[[Unified CI / CD & Observability]]
     Core --> Governance[[Owner Control Plane]]
 ```

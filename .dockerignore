@@ -7,6 +7,7 @@
 reports
 coverage
 artifacts
+cache
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -16,3 +17,23 @@ yarn-error.log*
 # Local Python environments are not container build inputs.
 **/.venv*
 **/*.egg-info
+
+# Runtime credentials and generated state must never enter image layers.
+**/.env
+**/.env.*
+!**/.env.example
+!**/.env.*.example
+deployment-config/*.env
+**/logs
+# `storage/ipfs` and `packages/storage` are source modules, not runtime data.
+storage/*
+!storage/package.json
+!storage/ipfs
+storage/ipfs/*
+!storage/ipfs/index.js
+!storage/ipfs/index.d.ts
+agent-gateway/storage
+apps/**/storage
+services/**/storage
+demo/**/storage
+**/dist

@@ -7,19 +7,15 @@ ection.
 
 ```mermaid
 flowchart TD
-    Start([Start review]) --> Config[Update config/*.json
-(owners & parameters)]
-    Config --> SurfaceCmd[`npm run owner:surface
-(--network <net>)`]
+    Start([Start review]) --> Config["Update config/*.json<br/>(owners & parameters)"]
+    Config --> SurfaceCmd["#96;npm run owner:surface<br/>(--network <net>)#96;"]
     SurfaceCmd -->|Human output| Review{All modules green?}
     SurfaceCmd -->|--json| Automate[Attach to change control]
     Review -- no --> Fix[Resolve warnings/errors]
     Fix --> Config
-    Review -- yes --> Bundle[`npm run owner:update-all
--- --network <net>`]
-    Bundle --> Execute[`--execute` or Safe bundle]
-    Execute --> Verify[`npm run owner:verify-control
--- --network <net>`]
+    Review -- yes --> Bundle["#96;npm run owner:update-all<br/>-- --network <net>#96;"]
+    Bundle --> Execute["#96;--execute#96; or Safe bundle"]
+    Execute --> Verify["#96;npm run owner:verify-control<br/>-- --network <net>#96;"]
 ```
 
 ## Quick Start

@@ -170,6 +170,11 @@ export async function deployOneClick(
     process.env.HARDHAT_NETWORK ??
     'sepolia';
   validateOneclickConfig(config, loadTokenConfig({ network }).config.decimals);
+  if (config.tax?.enabled === false) {
+    throw new Error(
+      'One-click deployment requires TaxPolicy. Use scripts/v2/deployDefaults.ts for a reviewed tax-disabled deployment.'
+    );
+  }
   const configuredGovernance = ensureAddress(config.governance, 'governance', {
     optional: true,
     allowZero: true,
@@ -187,7 +192,7 @@ export async function deployOneClick(
     }) ?? ethers.ZeroAddress;
   const feePct = econ.feePct ?? 5;
   const burnPct = econ.burnPct ?? 0;
-  const minStake = formatToken(econ.minStake);
+  const minStake = formatToken(econ.minStake ?? '1');
   const minPlatformStake = formatToken(econ.minPlatformStake ?? '1000');
   const appealFee = formatToken(econ.appealFee);
   const disputeWindow = parseSeconds(econ.disputeWindow);
@@ -227,6 +232,10 @@ export async function deployOneClick(
     ONECLICK_MIN_PLATFORM_STAKE: minPlatformStake,
     ONECLICK_APPEAL_FEE: appealFee,
     ONECLICK_DISPUTE_WINDOW: disputeWindow.toString(),
+    ONECLICK_TAX_URI: config.tax?.uri ?? 'ipfs://policy',
+    ONECLICK_TAX_DESCRIPTION:
+      config.tax?.description ??
+      'All taxes on participants; contract and owner exempt',
   };
 
   if (governance) {
