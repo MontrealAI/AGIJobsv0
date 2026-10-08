@@ -18,6 +18,8 @@ AGI Jobs v0 (v2) brings together job contracts, agent gateways, validators, oper
 
 **Review delivered work:** [Evidence reviewer](https://montrealai.github.io/AGIJobsv0/review/) · [Review guide](docs/EVIDENCE_REVIEW.md). Compare the admitted task with a worker receipt, verify exact artifact bytes and record acceptance findings locally. Hash consistency does not establish provider provenance or authorize settlement.
 
+**Run a reviewed validator:** [Service setup and recovery](apps/validator/README.md). Admit an exact chain/round/specification/result decision; retain reveal secrets before broadcast and reconcile uncertain outcomes after restart.
+
 **Explore the demos visually:** [AGI Jobs Demo Observatory](https://montrealai.github.io/AGIJobsv0/) — searchable collection, individual demo pages, original guides and flowcharts, and a browser-only job walkthrough. [Website source and publishing instructions](website/README.md).
 
 **Coordinate computer-based work:** the [computer-work integration](docs/computer-work.md) connects admitted jobs to isolated OpenClaw workers, including their configured native Codex Computer Use capabilities. Start with the [supplier-desk browser lab](demo/One-Box/computer-work/README.md): it produces real browser evidence and separately checks both a correct and an incorrect recommendation. Live workers require explicit task admission, protected credentials and independent acceptance review. The vision's **$40T/year** opportunity is a planning assumption, not a verified market-size or revenue claim.

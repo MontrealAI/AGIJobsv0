@@ -1,6 +1,32 @@
+import { loadDisputeEvidence, DisputeEvidence } from './evidence';
 import { EventLog, JsonRpcProvider, Wallet, Contract, ethers } from 'ethers';
 import fs from 'fs';
 import path from 'path';
+import {
+  createReviewedValidator,
+  VALIDATION_ABI,
+  REGISTRY_ABI,
+} from './runtime';
+import {
+  fetchArtifactBytes,
+  resolveArtifactUri,
+} from '../orchestrator/artifactSource';
+const {
+  safeErrorCode,
+  ensurePrivateDirectory,
+} = require('../../examples/agentic/validator-recovery');
+const {
+  readPrivateJson,
+  validateReviewFile,
+  writePrivateReport,
+} = require('./review-admission.cjs');
+
+if (require.main === module && process.argv.includes('--help')) {
+  console.log(
+    'Validator service: independently review each job, then admit its exact round/spec/result in VALIDATOR_REVIEW_FILE.\nUsage: node apps/validator/dist/apps/validator/index.js [--inspect-job JOB_ID]\nRequired: RPC_URL, VALIDATION_MODULE_ADDRESS, JOB_REGISTRY_ADDRESS, VALIDATOR_ADDRESS or PRIVATE_KEY.\nSee apps/validator/README.md for setup, review, private state and recovery.'
+  );
+  process.exit(0);
+}
 
 interface ValidatorPersonaRecord {
   ens: string;
@@ -51,17 +77,6 @@ interface EvaluationResult {
   timestamp: string;
 }
 
-interface StoredCommit {
-  salt: string;
-  approve: boolean;
-  burnTxHash: string;
-  subdomain: string;
-  commitHash: string;
-  evaluationPath?: string;
-  stakeBalance?: string;
-  recordedAt: string;
-}
-
 const RPC_URL = process.env.RPC_URL || 'http://localhost:8545';
 const VALIDATION_MODULE_ADDRESS = process.env.VALIDATION_MODULE_ADDRESS || '';
 const JOB_REGISTRY_ADDRESS = process.env.JOB_REGISTRY_ADDRESS || '';
@@ -76,31 +91,29 @@ const IPFS_GATEWAY = (process.env.IPFS_GATEWAY_URL || 'https://ipfs.io/ipfs/')
 const SUBMISSION_LOOKBACK_BLOCKS = Number(
   process.env.SUBMISSION_LOOKBACK_BLOCKS || 200_000
 );
-const SUBMISSION_FETCH_TIMEOUT_MS = Number(
-  process.env.SUBMISSION_FETCH_TIMEOUT_MS || 15_000
-);
-const SUBMISSION_MAX_BYTES = Number(
-  process.env.SUBMISSION_MAX_BYTES || 5_000_000
-);
-const STORAGE_ROOT = path.resolve(__dirname, '../../storage/validation');
+let STORAGE_ROOT =
+  process.env.VALIDATOR_REPORT_DIR ||
+  path.resolve(process.cwd(), 'storage/validation-reports');
+const STATE_ROOT =
+  process.env.VALIDATOR_STATE_DIR ||
+  path.resolve(process.cwd(), 'storage/validator-service-reveals');
+const REVIEW_FILE = process.env.VALIDATOR_REVIEW_FILE;
 
 const provider = new JsonRpcProvider(RPC_URL);
-const wallet = PRIVATE_KEY ? new Wallet(PRIVATE_KEY, provider) : null;
-
-const VALIDATION_ABI = [
-  'event ValidatorsSelected(uint256 indexed jobId, address[] validators)',
-  'function jobNonce(uint256 jobId) view returns (uint256)',
-  'function commitValidation(uint256 jobId, bytes32 commitHash, string subdomain, bytes32[] proof)',
-  'function revealValidation(uint256 jobId, bool approve, bytes32 burnTxHash, bytes32 salt, string subdomain, bytes32[] proof)',
-];
-
-const REGISTRY_ABI = [
-  'event ResultSubmitted(uint256 indexed jobId, address indexed worker, bytes32 resultHash, string resultURI, string subdomain)',
-  'event JobDisputed(uint256 indexed jobId, address indexed caller)',
-  'event BurnReceiptSubmitted(uint256 indexed jobId, bytes32 burnTxHash, uint256 amount, uint256 blockNumber)',
-  'function getSpecHash(uint256 jobId) view returns (bytes32)',
-  'function jobs(uint256 jobId) view returns (address employer,address agent,uint128 reward,uint96 stake,uint128 burnReceiptAmount,bytes32 uriHash,bytes32 resultHash,bytes32 specHash,uint256 packedMetadata)',
-];
+const wallet = (() => {
+  if (!PRIVATE_KEY) return null;
+  try {
+    return new Wallet(PRIVATE_KEY, provider);
+  } catch {
+    throw new Error('VALIDATOR_PRIVATE_KEY_INVALID');
+  }
+})();
+if (
+  wallet &&
+  process.env.VALIDATOR_ADDRESS &&
+  wallet.address.toLowerCase() !== process.env.VALIDATOR_ADDRESS.toLowerCase()
+)
+  throw new Error('VALIDATOR_ADDRESS_MISMATCH');
 
 const JOB_STATE_OFFSET = 0n;
 const JOB_SUCCESS_OFFSET = 3n;
@@ -183,8 +196,6 @@ const dispute = DISPUTE_MODULE_ADDRESS
   ? new Contract(DISPUTE_MODULE_ADDRESS, DISPUTE_ABI, provider)
   : null;
 
-fs.mkdirSync(STORAGE_ROOT, { recursive: true });
-
 const persona = loadPersona(PERSONA_PATH);
 const personaStakeTarget = parseStakeTarget(persona.stakeTarget);
 const personaLabel = persona.label;
@@ -193,9 +204,7 @@ const validatorAddress = wallet?.address.toLowerCase();
 if (wallet && persona.address) {
   const normalizedPersonaAddress = persona.address.toLowerCase();
   if (normalizedPersonaAddress !== validatorAddress) {
-    console.warn(
-      `Persona address ${normalizedPersonaAddress} does not match wallet ${validatorAddress}. Using wallet address.`
-    );
+    throw new Error('VALIDATOR_PERSONA_ADDRESS_MISMATCH');
   }
 }
 
@@ -204,17 +213,10 @@ if (wallet && !persona.address) {
 }
 
 if (!persona.ens.endsWith('.club.agi.eth')) {
-  console.warn(
-    `Validator persona ${persona.ens} is expected to use a .club.agi.eth domain.`
-  );
+  throw new Error('VALIDATOR_PERSONA_ENS_INVALID');
 }
 
 const submissions = new Map<string, SubmissionRecord>();
-
-function storagePath(jobId: bigint | number, address?: string): string {
-  const suffix = address ? `-${address.toLowerCase()}` : '';
-  return path.join(STORAGE_ROOT, `${jobId}${suffix}.json`);
-}
 
 function evaluationPath(jobId: bigint | number, address?: string): string {
   const suffix = address ? `-${address.toLowerCase()}` : '';
@@ -283,72 +285,33 @@ function parseStakeTarget(value?: string | number): bigint | null {
   return ethers.parseUnits(trimmed, 18);
 }
 
-function normaliseUri(uri: string): string {
-  if (!uri) return uri;
-  if (uri.startsWith('ipfs://')) {
-    const pathPart = uri.replace('ipfs://', '');
-    if (!IPFS_GATEWAY) {
-      return `https://ipfs.io/ipfs/${pathPart}`;
-    }
-    return `${IPFS_GATEWAY}/${pathPart}`;
-  }
-  return uri;
-}
-
 async function fetchArtifact(uri: string): Promise<{
   bytes: Uint8Array;
   text: string | null;
   contentType: string | null;
 }> {
-  const target = normaliseUri(uri);
-  const controller = new AbortController();
-  const timer = setTimeout(
-    () => controller.abort(),
-    SUBMISSION_FETCH_TIMEOUT_MS
-  );
-  try {
-    const response = await fetch(target, {
-      headers: {
-        Accept: 'application/json, text/plain;q=0.9, */*;q=0.1',
-      },
-      signal: controller.signal,
-    });
-    if (!response.ok) {
-      throw new Error(`status ${response.status} ${response.statusText}`);
-    }
-    const arrayBuffer = await response.arrayBuffer();
-    const bytes = new Uint8Array(arrayBuffer);
-    if (SUBMISSION_MAX_BYTES && bytes.length > SUBMISSION_MAX_BYTES) {
-      throw new Error(
-        `artifact exceeds maximum size (${bytes.length} > ${SUBMISSION_MAX_BYTES})`
-      );
-    }
-    const contentType = response.headers.get('content-type');
-    let text: string | null = null;
-    try {
-      if (
-        contentType?.includes('json') ||
-        contentType?.includes('text') ||
-        contentType?.includes('csv')
-      ) {
-        text = new TextDecoder().decode(bytes);
-      } else {
-        text = new TextDecoder().decode(bytes);
-      }
-    } catch {
-      text = null;
-    }
-    return { bytes, text, contentType };
-  } finally {
-    clearTimeout(timer);
-  }
+  const target = resolveArtifactUri(uri, IPFS_GATEWAY);
+  const bytes = await fetchArtifactBytes(target, IPFS_GATEWAY);
+  return { bytes, text: new TextDecoder().decode(bytes), contentType: null };
+}
+
+function saveReport(file: string, record: unknown): void {
+  writePrivateReport(STORAGE_ROOT, path.basename(file), record);
+}
+
+function cacheSubmission(jobId: bigint, record: SubmissionRecord): void {
+  const key = jobId.toString();
+  submissions.delete(key);
+  submissions.set(key, record);
+  while (submissions.size > 1024)
+    submissions.delete(submissions.keys().next().value!);
 }
 
 function persistSubmission(jobId: bigint, record: SubmissionRecord): void {
   try {
-    fs.writeFileSync(submissionPath(jobId), JSON.stringify(record, null, 2));
+    saveReport(submissionPath(jobId), record);
   } catch (err) {
-    console.error('Failed to persist submission record', err);
+    console.error('Failed to persist submission record', safeErrorCode(err));
   }
 }
 
@@ -359,12 +322,11 @@ function loadSubmission(jobId: bigint): SubmissionRecord | null {
   const file = submissionPath(jobId);
   if (!fs.existsSync(file)) return null;
   try {
-    const raw = fs.readFileSync(file, 'utf8');
-    const parsed = JSON.parse(raw) as SubmissionRecord;
-    submissions.set(jobId.toString(), parsed);
+    const parsed = readPrivateJson(file) as SubmissionRecord;
+    cacheSubmission(jobId, parsed);
     return parsed;
   } catch (err) {
-    console.warn('Failed to load cached submission record', err);
+    console.warn('Failed to load cached submission record', safeErrorCode(err));
     return null;
   }
 }
@@ -413,10 +375,15 @@ async function fetchSubmissionEvent(jobId: bigint): Promise<SubmissionRecord> {
 }
 
 async function ensureSubmission(
-  jobId: bigint
+  jobId: bigint,
+  expectedHash: string
 ): Promise<SubmissionRecord | null> {
   const existing = loadSubmission(jobId);
-  if (existing) return existing;
+  if (
+    existing?.computedHash?.toLowerCase() === expectedHash.toLowerCase() &&
+    !existing.errors?.length
+  )
+    return existing;
   try {
     const base = await fetchSubmissionEvent(jobId);
     const artifact = base.resultUri
@@ -432,13 +399,11 @@ async function ensureSubmission(
       sample: artifact.text ? artifact.text.slice(0, 2048) : undefined,
       errors: undefined,
     };
-    submissions.set(jobId.toString(), record);
+    cacheSubmission(jobId, record);
     persistSubmission(jobId, record);
     return record;
   } catch (err) {
-    console.error('Failed to fetch submission details', err);
-    const fallback = loadSubmission(jobId);
-    if (fallback) return fallback;
+    console.error('Failed to fetch submission details', safeErrorCode(err));
     return null;
   }
 }
@@ -460,7 +425,7 @@ async function evaluateJob(jobId: bigint): Promise<EvaluationResult> {
   ];
   const jobState = states[state] ?? `Unknown(${state})`;
   const resultHash: string = (job.resultHash ?? ethers.ZeroHash) as string;
-  const submission = await ensureSubmission(jobId);
+  const submission = await ensureSubmission(jobId, resultHash);
   const notes: string[] = [];
   let approve = true;
 
@@ -501,7 +466,7 @@ async function evaluateJob(jobId: bigint): Promise<EvaluationResult> {
     }
   }
 
-  if (state < 3) {
+  if (state !== 3) {
     notes.push(`Job state ${jobState} indicates submission may not be ready.`);
     approve = false;
   }
@@ -548,90 +513,17 @@ async function getValidatorStake(): Promise<bigint | null> {
     if (typeof value === 'bigint') return value;
     return BigInt(value.toString());
   } catch (err) {
-    console.warn('Failed to query validator stake', err);
+    console.warn('Failed to query validator stake', safeErrorCode(err));
     return null;
   }
 }
 
-async function getBurnTxHash(jobId: bigint): Promise<string> {
-  const filter = registry.filters.BurnReceiptSubmitted(jobId);
-  const events = await registry.queryFilter(filter, 0, 'latest');
-  if (events.length === 0) return ethers.ZeroHash;
-  const evt = events[events.length - 1] as EventLog;
-  const args = evt.args as any;
-  return (args?.burnTxHash as string) ?? ethers.ZeroHash;
-}
-
+let runtime: Awaited<ReturnType<typeof createReviewedValidator>> | undefined;
 async function handleValidatorsSelected(jobId: bigint, validators: string[]) {
-  if (!wallet) return;
-  const lower = validators.map((v) => v.toLowerCase());
-  if (!lower.includes(wallet.address.toLowerCase())) return;
-  console.log(
-    `Selected as validator for job ${jobId} using ${personaLabel}.club.agi.eth`
-  );
-
-  const evaluation = await evaluateJob(jobId);
-  const approve = evaluation.approve;
-  if (personaStakeTarget && evaluation.stakeBalance) {
-    const currentStake = BigInt(evaluation.stakeBalance);
-    if (currentStake < personaStakeTarget) {
-      console.warn(
-        `Validator stake ${ethers.formatUnits(
-          currentStake,
-          18
-        )} below target ${ethers.formatUnits(personaStakeTarget, 18)}.`
-      );
-    }
-  }
-  const nonce: bigint = await validation.jobNonce(jobId);
-  const specHash: string = await registry.getSpecHash(jobId);
-  const burnTxHash: string = await getBurnTxHash(jobId);
-
-  const salt = ethers.hexlify(ethers.randomBytes(32));
-  const commitHash = ethers.solidityPackedKeccak256(
-    ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32', 'bytes32'],
-    [jobId, nonce, approve, burnTxHash, salt, specHash]
-  );
-
-  const writer = validation.connect(wallet) as any;
-  const tx = await writer.commitValidation(jobId, commitHash, personaLabel, []);
-  await tx.wait();
-
-  const address = wallet.address.toLowerCase();
-  const evalFile = evaluationPath(jobId, address);
-  try {
-    fs.writeFileSync(evalFile, JSON.stringify(evaluation, null, 2));
-  } catch (err) {
-    console.warn('Failed to persist evaluation report', err);
-  }
-
-  const commitRecord: StoredCommit = {
-    salt,
-    approve,
-    burnTxHash,
-    subdomain: personaLabel,
-    commitHash,
-    evaluationPath: evalFile,
-    stakeBalance: evaluation.stakeBalance,
-    recordedAt: new Date().toISOString(),
-  };
-
-  try {
-    fs.writeFileSync(
-      storagePath(jobId, address),
-      JSON.stringify(commitRecord, null, 2)
-    );
-  } catch (err) {
-    console.error('Failed to persist commit record', err);
-  }
-
-  console.log(
-    `Commit submitted for job ${jobId}: ${approve ? 'approve' : 'reject'} (tx ${
-      tx.hash
-    })`
-  );
-
-  scheduleReveal(jobId);
+  if (!runtime) return;
+  const status = await runtime.selected(jobId, validators);
+  if (status === 'review-required')
+    console.log(`[validator] job=${jobId} review-required`);
 }
 
 async function handleResultSubmitted(
@@ -668,105 +560,77 @@ async function handleResultSubmitted(
       record.contentType = artifact.contentType ?? undefined;
       record.sample = artifact.text ? artifact.text.slice(0, 2048) : undefined;
     } catch (err) {
-      record.errors = [
-        err instanceof Error
-          ? err.message
-          : 'Failed to fetch submission artifact',
-      ];
-      console.error('Failed to fetch submission artifact', err);
+      record.errors = [safeErrorCode(err)];
+      console.error('Failed to fetch submission artifact', safeErrorCode(err));
     }
   }
-  submissions.set(jobId.toString(), record);
+  cacheSubmission(jobId, record);
   persistSubmission(jobId, record);
 }
 
-function scheduleReveal(jobId: bigint) {
-  const delay = Number(process.env.REVEAL_DELAY_MS || 60000);
-  setTimeout(() => {
-    reveal(jobId).catch((err) => console.error('Reveal failed', err));
-  }, delay);
-}
-
-async function reveal(jobId: bigint) {
-  if (!wallet) return;
-  const address = wallet.address.toLowerCase();
-  const file = storagePath(jobId, address);
-  if (!fs.existsSync(file)) return;
-  const data = JSON.parse(fs.readFileSync(file, 'utf8')) as StoredCommit;
-  const writer = validation.connect(wallet) as any;
-  const tx = await writer.revealValidation(
-    jobId,
-    data.approve,
-    data.burnTxHash,
-    data.salt,
-    data.subdomain,
-    []
-  );
-  await tx.wait();
-  fs.unlinkSync(file);
-  console.log(
-    `Reveal submitted for job ${jobId} with ${data.subdomain}.club.agi.eth`
-  );
-}
-
-validation.on('ValidatorsSelected', handleValidatorsSelected);
-registry.on(
-  'ResultSubmitted',
-  (
-    jobId: bigint,
-    worker: string,
-    resultHash: string,
-    resultURI: string,
-    subdomain: string,
-    event: { blockNumber?: bigint | number }
-  ) => {
-    handleResultSubmitted(
-      jobId,
-      worker,
-      resultHash,
-      resultURI,
-      subdomain,
-      event
-    ).catch((err) => console.error('Failed to process ResultSubmitted', err));
-  }
-);
-registry.on('JobDisputed', (jobId: bigint, caller: string) => {
-  console.log(`Job ${jobId} disputed by ${caller}`);
-});
-
-if (dispute) {
-  dispute.on(
-    'DisputeRaised',
-    async (jobId: bigint, claimant: string, evidenceHash: string) => {
-      console.log(`Dispute raised on job ${jobId} by ${claimant}`);
-      const evidence = await fetchEvidence(evidenceHash);
-      await respondToDispute(jobId, evidence);
-    }
-  );
-  dispute.on(
-    'DisputeResolved',
-    async (jobId: bigint, resolver: string, employerWins: boolean) => {
-      console.log(
-        `Dispute resolved for job ${jobId} by ${resolver}, employerWins=${employerWins}`
+async function startObservers() {
+  await validation.on(
+    'ValidatorsSelected',
+    (jobId: bigint, validators: string[]) => {
+      handleValidatorsSelected(jobId, validators).catch((error) =>
+        console.error('[validator] selection:', safeErrorCode(error))
       );
-      await markDisputeResolution(jobId, resolver, employerWins);
     }
   );
-}
+  await registry.on(
+    'ResultSubmitted',
+    (
+      jobId: bigint,
+      worker: string,
+      resultHash: string,
+      resultURI: string,
+      subdomain: string,
+      event: { blockNumber?: bigint | number }
+    ) => {
+      handleResultSubmitted(
+        jobId,
+        worker,
+        resultHash,
+        resultURI,
+        subdomain,
+        event
+      ).catch((err) =>
+        console.error('Failed to process ResultSubmitted', safeErrorCode(err))
+      );
+    }
+  );
+  await registry.on('JobDisputed', (jobId: bigint, caller: string) => {
+    console.log(`Job ${jobId} disputed by ${caller}`);
+  });
 
-async function fetchEvidence(hash: string): Promise<string> {
-  const gateway = process.env.EVIDENCE_GATEWAY || 'https://ipfs.io/ipfs/';
-  try {
-    const res = await fetch(gateway + hash.replace(/^0x/, ''));
-    if (!res.ok) throw new Error(`status ${res.status}`);
-    return await res.text();
-  } catch (err) {
-    console.error('Failed to fetch evidence', err);
-    return '';
+  if (dispute) {
+    await dispute.on(
+      'DisputeRaised',
+      async (jobId: bigint, claimant: string, evidenceHash: string) => {
+        console.log(`Dispute raised on job ${jobId} by ${claimant}`);
+        loadDisputeEvidence(evidenceHash)
+          .then((evidence) => respondToDispute(jobId, evidence))
+          .catch((error) =>
+            console.error('[validator] dispute:', safeErrorCode(error))
+          );
+      }
+    );
+    await dispute.on(
+      'DisputeResolved',
+      async (jobId: bigint, resolver: string, employerWins: boolean) => {
+        console.log(
+          `Dispute resolved for job ${jobId} by ${resolver}, employerWins=${employerWins}`
+        );
+        markDisputeResolution(jobId, resolver, employerWins).catch((error) =>
+          console.error('[validator] dispute resolution:', safeErrorCode(error))
+        );
+      }
+    );
   }
 }
 
-async function respondToDispute(jobId: bigint, evidence: string) {
+async function respondToDispute(jobId: bigint, fetched: DisputeEvidence) {
+  const evidence = fetched.text;
   console.log(`Handling dispute for job ${jobId}`);
   const disputeFile = disputePath(jobId, validatorAddress);
   let parsedEvidence: unknown = evidence;
@@ -782,11 +646,12 @@ async function respondToDispute(jobId: bigint, evidence: string) {
     const evalFile = evaluationPath(jobId, validatorAddress);
     if (fs.existsSync(evalFile)) {
       try {
-        evaluation = JSON.parse(
-          fs.readFileSync(evalFile, 'utf8')
-        ) as EvaluationResult;
+        evaluation = readPrivateJson(evalFile) as EvaluationResult;
       } catch (err) {
-        console.warn('Failed to load evaluation for dispute', err);
+        console.warn(
+          'Failed to load evaluation for dispute',
+          safeErrorCode(err)
+        );
       }
     }
   }
@@ -796,9 +661,9 @@ async function respondToDispute(jobId: bigint, evidence: string) {
     subdomain: personaLabel,
     timestamp: new Date().toISOString(),
     evidence: parsedEvidence,
-    evidenceHash: evidence
-      ? ethers.keccak256(ethers.toUtf8Bytes(evidence))
-      : null,
+    evidenceHash: fetched.commitment,
+    evidenceVerified: fetched.verified,
+    evidenceError: fetched.error,
     evaluation,
     stance: evaluation
       ? evaluation.approve
@@ -807,10 +672,10 @@ async function respondToDispute(jobId: bigint, evidence: string) {
       : 'unknown',
   };
   try {
-    fs.writeFileSync(disputeFile, JSON.stringify(record, null, 2));
+    saveReport(disputeFile, record);
     console.log(`Dispute evidence recorded at ${disputeFile}`);
   } catch (err) {
-    console.error('Failed to persist dispute record', err);
+    console.error('Failed to persist dispute record', safeErrorCode(err));
   }
 }
 
@@ -823,9 +688,12 @@ async function markDisputeResolution(
   let existing: any = null;
   if (fs.existsSync(file)) {
     try {
-      existing = JSON.parse(fs.readFileSync(file, 'utf8'));
+      existing = readPrivateJson(file);
     } catch (err) {
-      console.warn('Failed to read existing dispute record', err);
+      console.warn(
+        'Failed to read existing dispute record',
+        safeErrorCode(err)
+      );
     }
   }
   const resolution = {
@@ -841,10 +709,137 @@ async function markDisputeResolution(
     resolution,
   };
   try {
-    fs.writeFileSync(file, JSON.stringify(record, null, 2));
+    saveReport(file, record);
   } catch (err) {
-    console.error('Failed to write dispute resolution record', err);
+    console.error(
+      'Failed to write dispute resolution record',
+      safeErrorCode(err)
+    );
   }
 }
 
-console.log('Validator service running...');
+export async function main(): Promise<void> {
+  if (!path.isAbsolute(STORAGE_ROOT) || !path.isAbsolute(STATE_ROOT))
+    throw new Error('VALIDATOR_STATE_PATH_INVALID');
+  const args = process.argv.slice(2);
+  const inspectJob =
+    args.length === 2 && args[0] === '--inspect-job' ? args[1] : undefined;
+  if (args.length && inspectJob === undefined)
+    throw new Error('VALIDATOR_ARGUMENTS_INVALID');
+  const address =
+    wallet?.address || process.env.VALIDATOR_ADDRESS || persona.address;
+  if (!address) throw new Error('VALIDATOR_ADDRESS_REQUIRED');
+  const interval = Number(process.env.VALIDATOR_POLL_MS || 5000);
+  if (!Number.isSafeInteger(interval) || interval < 1000 || interval > 60000)
+    throw new Error('VALIDATOR_POLL_INTERVAL_INVALID');
+  if (!inspectJob) {
+    // Old files used an incompatible hash and lack deployment/round scope.
+    // Preserve them and require reconciliation, never import their salts blindly.
+    const legacy = path.resolve(process.cwd(), 'storage/validation');
+    if (fs.existsSync(legacy)) {
+      const stat = fs.lstatSync(legacy);
+      if (!stat.isDirectory() || stat.isSymbolicLink())
+        throw new Error('VALIDATOR_LEGACY_PATH_UNSAFE');
+      if (
+        fs
+          .readdirSync(legacy)
+          .some((name) =>
+            new RegExp(`^[0-9]+-${address.toLowerCase()}\\.json$`, 'i').test(
+              name
+            )
+          )
+      )
+        throw new Error('VALIDATOR_LEGACY_REQUIRES_REVIEW');
+    }
+    ensurePrivateDirectory(STORAGE_ROOT);
+  }
+  runtime = await createReviewedValidator({
+    provider,
+    reader: validation,
+    registry,
+    signer: inspectJob ? undefined : wallet || undefined,
+    validatorAddress: address,
+    validatorLabel: personaLabel,
+    stateDirectory: STATE_ROOT,
+    reportDirectory: STORAGE_ROOT,
+    reviewFile: REVIEW_FILE,
+    expectedChainId: process.env.CHAIN_ID,
+    evaluate: async (jobId) => ({ ...(await evaluateJob(jobId)) }),
+    report: (phase, jobId) =>
+      console.log(`[validator] ${phase} confirmed job=${jobId}`),
+  });
+  if (inspectJob) {
+    console.log(JSON.stringify(await runtime.inspect(inspectJob), null, 2));
+    provider.destroy();
+    return;
+  }
+  STORAGE_ROOT = runtime.reportDirectory;
+  ensurePrivateDirectory(STORAGE_ROOT);
+  let recovering = false;
+  const states = new Map<string, string>();
+  async function reconcile() {
+    if (recovering || !runtime || !wallet) return;
+    recovering = true;
+    try {
+      const outcomes = await runtime.recover();
+      for (const { jobId, status } of outcomes) {
+        if (states.get(jobId) !== status)
+          console.log(`[validator] job=${jobId} status=${status}`);
+        states.set(jobId, status);
+      }
+      // A reviewer normally admits a job after its selection event. Poll the
+      // explicit review file as well, so a missed event cannot strand admission.
+      if (REVIEW_FILE) {
+        const review = validateReviewFile(readPrivateJson(REVIEW_FILE));
+        const jobs = new Set<string>(
+          review.decisions.map((entry: { jobId: string }) => entry.jobId)
+        );
+        for (const jobId of jobs) {
+          try {
+            const validators = await validation.validators(jobId);
+            await runtime.selected(BigInt(jobId), validators);
+          } catch (error) {
+            console.error(
+              `[validator] admission job=${jobId}:`,
+              safeErrorCode(error)
+            );
+          }
+        }
+      }
+    } finally {
+      recovering = false;
+    }
+  }
+  await startObservers();
+  await reconcile();
+  const timer = setInterval(
+    () =>
+      reconcile().catch((error) =>
+        console.error('[validator] recovery:', safeErrorCode(error))
+      ),
+    interval
+  );
+  const stop = () => {
+    clearInterval(timer);
+    provider.destroy();
+  };
+  process.once('SIGINT', stop);
+  process.once('SIGTERM', stop);
+  console.log(
+    `Validator service running (${
+      wallet ? 'explicit reviewer admission' : 'observer mode'
+    }).`
+  );
+}
+
+if (require.main === module)
+  main().catch((error) => {
+    console.error(
+      '[validator] startup:',
+      error instanceof Error && /^VALIDATOR_[A-Z_]+$/.test(error.message)
+        ? error.message
+        : safeErrorCode(error)
+    );
+    provider.destroy();
+    process.exitCode = 1;
+  });

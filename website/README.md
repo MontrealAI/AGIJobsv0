@@ -113,6 +113,8 @@ The homepage now explains the buyer, worker and independent-reviewer routes, con
 
 The stable [readiness index](../docs/production/readiness.md), [computer-work guide](../docs/computer-work.md) and [delivery workflow](../docs/MACHINE_LABOR.md) are published as local, source-bound guides. The dated records remain available at their original routes.
 
+The reviewer also links to the published [validator service guide](../apps/validator/README.md). It explains explicit on-chain decision admission, private reveal recovery and uncertain-transaction handling. A browser assessment remains separate from the service's round-bound admission file; the website cannot authorize a vote or release payment.
+
 The planner's **Save editable draft** and **Open saved editable draft** controls preserve unfinished work locally, including exact entered text. Reloading still clears the form; there is no browser storage or upload. The versioned draft format accepts only the known form fields, with bounded file and field sizes and valid UTF-8/Unicode content. Opening a draft immediately disables previous task downloads and requires a new review and build; a delayed file read cannot overwrite edits made while it opens. Execution authority and evidence are never imported. Task and proposal exports remain distinct from editable drafts. Custom objectives survive category changes; the explicit suggested-objective button replaces the text only when requested.
 
 ## Alpha Mark capital-to-work lab

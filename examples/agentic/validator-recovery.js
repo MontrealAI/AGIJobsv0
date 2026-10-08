@@ -628,11 +628,22 @@ function createValidatorRuntime({
   provider,
   validatorLabel,
   approve,
+  decide,
+  authorizeCommit,
+  assertDeployment,
   commitProof = [],
   revealProof = [],
   report = () => {},
   confirmationTimeoutMs = 60000,
 }) {
+  if (decide !== undefined && typeof decide !== 'function')
+    fail('VALIDATOR_DECISION_INVALID');
+  if (authorizeCommit !== undefined && typeof authorizeCommit !== 'function')
+    fail('VALIDATOR_DECISION_INVALID');
+  if (assertDeployment !== undefined && typeof assertDeployment !== 'function')
+    fail('VALIDATOR_SCOPE_INVALID');
+  if (!decide && typeof approve !== 'boolean')
+    fail('VALIDATOR_DECISION_INVALID');
   if (
     !Number.isSafeInteger(confirmationTimeoutMs) ||
     confirmationTimeoutMs < 1 ||
@@ -677,6 +688,7 @@ function createValidatorRuntime({
   }
 
   async function reconcile(record) {
+    if (assertDeployment) await assertDeployment();
     journal.has(record, 'complete'); // Validate the marker, but re-check chain state after reorgs.
     const network = await provider.getNetwork();
     if (String(network.chainId) !== scope.chainId)
@@ -744,6 +756,8 @@ function createValidatorRuntime({
       )
         fail('VALIDATOR_COMMIT_WINDOW_CLOSED');
       await assertRecordedBurnEvidence(registry, record);
+      if (authorizeCommit && (await authorizeCommit(record)) !== true)
+        return 'review-required';
       if (!journal.mark(record, 'commit')) return 'commit-uncertain';
       await broadcast(() =>
         writer.commitValidation(
@@ -798,6 +812,7 @@ function createValidatorRuntime({
       return;
     const key = String(jobId);
     return serial(key, async () => {
+      if (assertDeployment) await assertDeployment();
       const previousRecords = journal.records(); // Validate before preparing any vote.
       const block = await provider.getBlock('latest');
       if (!block) fail('VALIDATOR_BLOCK_UNAVAILABLE');
@@ -828,6 +843,20 @@ function createValidatorRuntime({
           reader.DOMAIN_SEPARATOR(options),
           resolveJobBurnReceipt(registry, provider, jobId),
         ]);
+        const context = {
+          scope,
+          selection,
+          jobId: key,
+          nonce,
+          specHash: specHash.toLowerCase(),
+          domainSeparator: domainSeparator.toLowerCase(),
+          burnTxHash,
+          blockNumber: block.number,
+        };
+        const decision = decide ? await decide(context) : approve;
+        // Missing admission is an abstention, never an implicit negative vote.
+        if (decision === null) return 'review-required';
+        if (typeof decision !== 'boolean') fail('VALIDATOR_DECISION_INVALID');
         record = {
           version: 2,
           selection,
@@ -836,7 +865,7 @@ function createValidatorRuntime({
           nonce,
           specHash: specHash.toLowerCase(),
           domainSeparator: domainSeparator.toLowerCase(),
-          approve,
+          approve: decision,
           burnTxHash,
           salt: ethers.hexlify(ethers.randomBytes(32)),
           subdomain: validatorLabel,
@@ -863,4 +892,6 @@ module.exports = {
   createValidatorRuntime,
   resolveJobBurnReceipt,
   safeErrorCode,
+  resolveSelection,
+  ensurePrivateDirectory: ensureDirectory,
 };
