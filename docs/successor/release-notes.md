@@ -47,7 +47,7 @@ Use the release dossier's command results, checkout revision, working-tree state
 | --- | --- |
 | Successor core | 98/98 local core tests pass, including actual WORLD examination, runtime boundaries and clean-directory CLI replay |
 | Compiled orchestrator bridge and legacy worker tests | 69/69 successor and legacy tests pass; actual local-chain lifecycle accepts and pays the accurate FAIL report |
-| Existing contracts | Original implementation passed 706 contract tests and the bytecode-size gate. After integrating main, 267 Solidity files compile and 33 targeted registry, gateway-compatibility and task-execution tests pass; the combined full-suite result is recorded in the release PR |
+| Existing contracts | After integrating main, the complete Hardhat suite passes 822 tests, 267 Solidity files compile and the bytecode-size gate passes; the release PR identifies the exact validation revision |
 | Documentation and public site | Combined tree: 299 Markdown files pass link checks; rebuilt site passes 60/60 tests and preserves 76 demos, 353 guides and 267 diagrams; browser QA passes 48 checks, and the source audit passes 504 diagrams plus one template target |
 | Maintainer signing trust | **BLOCKED:** configured maintainer key payload is not a valid OpenSSH public key |
 | Production dependency audit | **BLOCKED:** observed root lockfile has 0 critical and 7 high findings |
@@ -60,6 +60,10 @@ The [acceptance matrix](acceptance-matrix.md), [security review](security-review
 ## Hosted security-review follow-up
 
 The initial hosted CodeQL review found a CLI file-check/read race and two unused-variable findings. The CLI and standalone proof harness now share a bounded reader that checks the opened descriptor, refuses symlinks/nonregular files and detects observed changes. Regression tests exercise deterministic path replacement, post-check growth, mutation and FIFO handling. The two unused variables were removed. Malformed JSON errors also omit input fragments to prevent accidental disclosure through logs. Hosted CodeQL analysis and its aggregate gate pass on `d2fa1d7c09a4d0595917e3922ada1c2ec6dfb045`; combined-tree analysis after integrating main is tracked separately in the release PR. These fixes do not clear the separate production signing/dependency gates.
+
+## Integration test-fixture correction
+
+Hosted CULTURE coverage exposed two indexer tests timing out while each launched Prisma migrations inside its five-second test deadline. The fixture now runs the actual migrations once per test file in a bounded setup hook and copies the closed, empty database for each context. Tests retain their five-second deadline and all four 90% coverage thresholds. Cleanup retains the actual Prisma disconnect method across restored spies and reports failures instead of silently ignoring them. Isolation regressions verify separate records, the checksum migration, repeated cleanup and fresh contexts. All 34 indexer tests pass locally with 92.94% statements/lines, 90.78% branches and 95% functions; hosted confirmation is recorded in the release PR.
 
 ## Containment and rollback
 
