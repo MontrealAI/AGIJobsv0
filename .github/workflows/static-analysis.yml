@@ -105,7 +105,7 @@ jobs:
             tools/security/slither-allowlist.json
 
       - name: Upload SARIF to security tab
-        uses: github/codeql-action/upload-sarif@755f44910c12a3d7ca0d8c6e42c048b3362f7cec
+        uses: github/codeql-action/upload-sarif@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
         with:
           sarif_file: reports/security/slither.sarif
 
@@ -145,14 +145,14 @@ jobs:
         run: ./scripts/ci/npm-ci.sh --no-audit --prefer-offline --progress=false
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@7dccf72e419e51b915f40df725d7c2e766b51b44
+        uses: github/codeql-action/init@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
         with:
           languages: javascript
           config-file: .github/codeql/config.yml
           build-mode: none
 
       - name: Perform CodeQL analysis
-        uses: github/codeql-action/analyze@7dccf72e419e51b915f40df725d7c2e766b51b44
+        uses: github/codeql-action/analyze@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
         with:
           output: reports/security/codeql
 
