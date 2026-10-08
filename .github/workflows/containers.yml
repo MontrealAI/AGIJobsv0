@@ -64,20 +64,6 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build native image for execution
-        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83
-        with:
-          context: ${{ matrix.image.context }}
-          file: ${{ matrix.image.file }}
-          platforms: linux/${{ matrix.arch.name }}
-          load: true
-          push: false
-          provenance: false
-          sbom: false
-          tags: agi-smoke:${{ matrix.image.name }}
-          cache-from: type=gha,scope=${{ matrix.image.name }}-${{ matrix.arch.name }}
-          cache-to: type=gha,scope=${{ matrix.image.name }}-${{ matrix.arch.name }},mode=max
-
       - name: Set up gateway fixture toolchain
         if: matrix.image.name == 'gateway'
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
@@ -92,6 +78,22 @@ jobs:
         run: |
           ./scripts/ci/npm-ci.sh
           npx hardhat compile
+
+      # Generate fixture artifacts before the first build so the executed image
+      # and attested publish below use the same workspace/build context.
+      - name: Build native image for execution
+        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83
+        with:
+          context: ${{ matrix.image.context }}
+          file: ${{ matrix.image.file }}
+          platforms: linux/${{ matrix.arch.name }}
+          load: true
+          push: false
+          provenance: false
+          sbom: false
+          tags: agi-smoke:${{ matrix.image.name }}
+          cache-from: type=gha,scope=${{ matrix.image.name }}-${{ matrix.arch.name }}
+          cache-to: type=gha,scope=${{ matrix.image.name }}-${{ matrix.arch.name }},mode=max
 
       - name: Boot and runtime packaging smoke
         run: bash scripts/docker/container-smoke.sh '${{ matrix.image.name }}' 'agi-smoke:${{ matrix.image.name }}'

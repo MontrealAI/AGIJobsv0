@@ -99,6 +99,8 @@ describe('Deployment CLI rehearsals', function () {
   it('runs the provider-agnostic real job lifecycle through settlement and handoff', function () {
     const result = run('scripts/deploy/providerAgnosticDeploy.ts', {
       GOVERNANCE_ADDRESS: '0x0000000000000000000000000000000000001234',
+      COMMIT_WINDOW: '30m',
+      REVEAL_WINDOW: '30m',
     });
     expect(result.status, result.log).to.equal(0);
     expect(result.log).to.include('Integration scenario finalized job');
@@ -123,12 +125,12 @@ describe('One-click wizard launch status', function () {
     fs.rmSync(directory, { recursive: true, force: true });
   });
 
-  function runWizard(dockerExit, launch) {
+  function runWizard(dockerExit, launch, network = 'localhost') {
     const config = path.join(directory, 'config.json');
     const envFile = path.join(directory, 'runtime env');
     const commands = path.join(directory, 'commands.jsonl');
     const preload = path.join(directory, 'commands.cjs');
-    fs.writeFileSync(config, JSON.stringify({ network: 'localhost' }));
+    fs.writeFileSync(config, JSON.stringify({ network }));
     fs.writeFileSync(envFile, 'CHAIN_ID=31337\n');
     // Exercise the real CLI, logging commands and replacing only its external
     // deployment/command boundaries. No Docker daemon, RPC or funds are used.
@@ -145,10 +147,10 @@ Module._load = function(request, parent, isMain) {
       deployOneClick: async (_args, consume) => consume('reviewed-addressbook.json')
     };
     if (request === 'child_process') return {
-      spawn(command, args) {
+      spawn(command, args, options) {
         fs.appendFileSync(${JSON.stringify(
           commands
-        )}, JSON.stringify({command, args}) + '\\n');
+        )}, JSON.stringify({command, args, chainId: options.env.CHAIN_ID, rpc: options.env.RPC_URL, staleAddress: options.env.NEXT_PUBLIC_STALE_ADDRESS}) + '\\n');
         const child = new EventEmitter();
         process.nextTick(() => child.emit('exit', command === 'docker' ? ${dockerExit} : 0));
         return child;
@@ -176,6 +178,12 @@ Module._load = function(request, parent, isMain) {
       ],
       {
         cwd: path.resolve(__dirname, '../..'),
+        env: {
+          ...process.env,
+          CHAIN_ID: '1',
+          RPC_URL: 'https://wrong.example',
+          NEXT_PUBLIC_STALE_ADDRESS: 'stale',
+        },
         encoding: 'utf8',
         timeout: 20000,
         maxBuffer: 1024 * 1024,
@@ -185,11 +193,9 @@ Module._load = function(request, parent, isMain) {
       ...result,
       log: `${result.stdout || ''}\n${result.stderr || ''}`,
       envFile,
-      commands: fs
-        .readFileSync(commands, 'utf8')
-        .trim()
-        .split('\n')
-        .map(JSON.parse),
+      commands: fs.existsSync(commands)
+        ? fs.readFileSync(commands, 'utf8').trim().split('\n').map(JSON.parse)
+        : [],
     };
   }
 
@@ -202,11 +208,21 @@ Module._load = function(request, parent, isMain) {
     const docker = result.commands.find(
       (command) => command.command === 'docker'
     );
+    expect(docker.chainId).to.equal('31337');
+    expect(docker.rpc).to.equal('http://anvil:8545');
+    expect(docker.staleAddress).to.equal(undefined);
     expect(docker.args).to.include.members([
       '--env-file',
       result.envFile,
       '--detach',
     ]);
+  });
+
+  it('rejects public network local templates before deployment or commands', function () {
+    const result = runWizard(0, true, 'sepolia');
+    expect(result.status).to.equal(1);
+    expect(result.log).to.include('RPC_URL must be explicitly configured');
+    expect(result.commands).to.deep.equal([]);
   });
 
   it('retains success when Docker launches successfully', function () {

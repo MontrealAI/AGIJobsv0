@@ -24,5 +24,15 @@ yarn-error.log*
 !**/.env.*.example
 deployment-config/*.env
 **/logs
-**/storage
+# `storage/ipfs` and `packages/storage` are source modules, not runtime data.
+storage/*
+!storage/package.json
+!storage/ipfs
+storage/ipfs/*
+!storage/ipfs/index.js
+!storage/ipfs/index.d.ts
+agent-gateway/storage
+apps/**/storage
+services/**/storage
+demo/**/storage
 **/dist

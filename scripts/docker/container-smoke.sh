@@ -4,7 +4,10 @@ set -euo pipefail
 kind=${1:?image catalog name required}
 image=${2:?image reference required}
 name="agi-${kind}-smoke-$$"
-cleanup() { docker rm -f "$name" >/dev/null 2>&1 || true; }
+cleanup() {
+  docker rm -f "$name" "${name}-chain" >/dev/null 2>&1 || true
+  docker network rm "${name}-network" >/dev/null 2>&1 || true
+}
 trap cleanup EXIT
 start() { docker run -d --name "$name" "$@" "$image"; }
 http_ready() {
@@ -64,13 +67,18 @@ case "$kind" in
     echo 'PASS: packaged gRPC definition loads and bridge listens; upstream provider commissioning remains separate.'
     ;;
   meta-api)
-    start
+    # Readiness includes eth_blockNumber; exercise a real isolated local RPC.
+    docker network create "${name}-network"
+    docker run -d --name "${name}-chain" --network "${name}-network" --network-alias chain --entrypoint anvil \
+      ghcr.io/foundry-rs/foundry:v1.4.4@sha256:9584dfbb0e2e9bda80332b66a7cebed635fc9786638871df6b7594e39e678578 \
+      --host 0.0.0.0 --port 8545 --chain-id 31337
+    start --network "${name}-network" -e RPC_URL=http://chain:8545 -e CHAIN_ID=31337
     for attempt in $(seq 1 45); do
       if docker exec "$name" python -c "import urllib.request; assert urllib.request.urlopen('http://127.0.0.1:8000/healthz',timeout=2).status == 200"; then break; fi
       if [ "$attempt" = 45 ]; then docker logs "$name"; exit 1; fi
       sleep 1
     done
-    echo 'PASS: Python API boots and answers health check.'
+    echo 'PASS: Python API boots and its readiness check reads a real local Anvil chain.'
     ;;
   onebox-ui)
     start --read-only --cap-drop ALL --security-opt no-new-privileges

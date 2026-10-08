@@ -19,3 +19,11 @@ await identityRegistry.configureMainnet();
 ```
 
 The supported deployment scripts already configure ENS from the selected network configuration. Verify the resulting registry, wrapper and root nodes instead of overwriting another network’s settings with mainnet addresses. Never invoke `configureMainnet()` on a testnet solely because a generic guide mentions it.
+
+## Match the service and browser networks
+
+The one-click addressbook records its network and observed chain ID. `deploy:env` uses those values for `AGJ_NETWORK`, `CHAIN_ID` and `NEXT_PUBLIC_CHAIN_ID`; older addressbooks require an explicit `--network` matching the reviewed deployment. An explicitly requested missing addressbook fails rather than falling back to another deployment.
+
+For public networks, configure **both** `RPC_URL` (private server endpoint) and `NEXT_PUBLIC_RPC_URL` (separately approved, browser-published endpoint) in the environment file before running the wizard. Both must be literal HTTPS URLs; local Anvil defaults are rejected. The wizard checks each endpoint’s chain before deployment and verifies the deployed JobRegistry before launching Compose. It never derives the browser URL from a private server URL or prints endpoint credentials. Browser configuration is public and requires an image rebuild when changed.
+
+For local rehearsals, Docker’s `http://anvil:8545` and the browser’s `http://localhost:8545` remain distinct, with chain ID 31337. The host cannot validate Docker’s internal DNS before the stack exists, so public-network RPC verification does not run for that local fixture. The Compose launch uses the checked routing/address settings and clears conflicting inherited shell values.

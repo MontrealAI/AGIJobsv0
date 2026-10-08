@@ -25,7 +25,7 @@ afterEach(() => {
 describe('read-only same-origin jobs proxy', () => {
   it('fetches only the configured jobs endpoint without forwarding browser headers', async () => {
     vi.stubEnv('GATEWAY_URL', 'http://agent-gateway:8090');
-    const fetch = vi.fn(
+    const fetch = vi.fn<typeof globalThis.fetch>(
       async () => new Response(JSON.stringify([{ jobId: '1' }]))
     );
     vi.stubGlobal('fetch', fetch);
@@ -49,12 +49,32 @@ describe('read-only same-origin jobs proxy', () => {
 
   it('allows only canonical job identifiers for evidence and rejects writes or path injection', async () => {
     vi.stubEnv('GATEWAY_URL', 'http://agent-gateway:8090');
-    const fetch = vi.fn(async () => new Response('[]'));
+    const fetch = vi.fn<typeof globalThis.fetch>(
+      async () => new Response('[]')
+    );
     vi.stubGlobal('fetch', fetch);
     for (const request of [
       { method: 'POST', query: {} },
       { method: 'GET', query: { jobId: '../admin' } },
+      { method: 'GET', query: { jobId: '//untrusted.invalid/path' } },
+      { method: 'GET', query: { jobId: 'https://untrusted.invalid/' } },
+      { method: 'GET', query: { jobId: '%2f%2funtrusted.invalid' } },
+      { method: 'GET', query: { jobId: '42?next=https://untrusted.invalid/' } },
+      { method: 'GET', query: { jobId: '42#fragment' } },
       { method: 'GET', query: { jobId: ['1', '2'] } },
+      ...[
+        '',
+        '00',
+        '01',
+        '-1',
+        '+42',
+        '0x2a',
+        '4.2',
+        '4e2',
+        '42\n',
+        '9'.repeat(78),
+        (BigInt(2) ** BigInt(256)).toString(),
+      ].map((jobId) => ({ method: 'GET', query: { jobId } })),
     ]) {
       const res = response();
       await handler(request as any, res);
@@ -75,6 +95,65 @@ describe('read-only same-origin jobs proxy', () => {
     expect(res.statusCode).toBe(200);
   });
 
+  it('keeps the configured origin and removes configured query, fragment and path for both uint256 boundaries', async () => {
+    vi.stubEnv(
+      'GATEWAY_URL',
+      'https://trusted.example:8443/old/path?token=server-only#fragment'
+    );
+    const fetch = vi.fn<typeof globalThis.fetch>(
+      async () => new Response('[]')
+    );
+    vi.stubGlobal('fetch', fetch);
+    for (const jobId of [
+      '0',
+      (BigInt(2) ** BigInt(256) - BigInt(1)).toString(),
+    ]) {
+      const res = response();
+      await handler(
+        {
+          method: 'GET',
+          query: { jobId, host: 'untrusted.invalid', protocol: 'http:' },
+        } as any,
+        res
+      );
+      expect(res.statusCode).toBe(200);
+      const [destination, options] = fetch.mock.calls[
+        fetch.mock.calls.length - 1
+      ] as any;
+      expect(destination.origin).toBe('https://trusted.example:8443');
+      expect(destination.pathname).toBe(`/jobs/${jobId}/deliverables`);
+      expect(destination.search).toBe('');
+      expect(destination.hash).toBe('');
+      expect(options.redirect).toBe('error');
+    }
+    const res = response();
+    await handler({ method: 'GET', query: {} } as any, res);
+    expect(String(fetch.mock.calls[fetch.mock.calls.length - 1][0])).toBe(
+      'https://trusted.example:8443/jobs'
+    );
+  });
+
+  it('rejects unsafe operator URL configuration without fetching or leaking credentials', async () => {
+    const fetch = vi.fn<typeof globalThis.fetch>(
+      async () => new Response('[]')
+    );
+    vi.stubGlobal('fetch', fetch);
+    for (const base of [
+      'file:///private/config',
+      'ftp://trusted.example/jobs',
+      'http://operator:private-secret@trusted.example',
+      'not a URL',
+    ]) {
+      vi.stubEnv('GATEWAY_URL', base);
+      const res = response();
+      await handler({ method: 'GET', query: {} } as any, res);
+      expect(res.statusCode).toBe(502);
+      expect(JSON.stringify(res.body)).not.toContain(base);
+      expect(JSON.stringify(res.body)).not.toContain('private-secret');
+    }
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
   it('bounds responses and surfaces malformed or failing upstream services without their private errors', async () => {
     for (const upstream of [
       new Response('[]', { status: 500 }),
@@ -83,7 +162,7 @@ describe('read-only same-origin jobs proxy', () => {
     ]) {
       vi.stubGlobal(
         'fetch',
-        vi.fn(async () => upstream)
+        vi.fn<typeof globalThis.fetch>(async () => upstream)
       );
       const res = response();
       await handler({ method: 'GET', query: {} } as any, res);

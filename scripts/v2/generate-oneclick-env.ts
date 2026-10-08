@@ -2,8 +2,15 @@ import { promises as fs } from 'fs';
 import path from 'path';
 
 import { ethers } from 'ethers';
+const {
+  deploymentNetwork,
+  runtimeEnvironment,
+  verifyRuntimeNetwork,
+} = require('./lib/runtime-network.cjs');
 
 interface AddressBook {
+  network?: string;
+  chainId?: string | number;
   token?: string;
   jobRegistry?: string;
   stakeManager?: string;
@@ -19,7 +26,10 @@ interface AddressBook {
 
 type Args = Record<string, string | boolean>;
 
-const ADDRESS_FIELDS: Record<string, keyof AddressBook> = {
+const ADDRESS_FIELDS: Record<
+  string,
+  Exclude<keyof AddressBook, 'network' | 'chainId'>
+> = {
   AGIALPHA_TOKEN: 'token',
   NEXT_PUBLIC_AGIALPHA_ADDRESS: 'token',
   NEXT_PUBLIC_STAKING_TOKEN_ADDRESS: 'token',
@@ -91,14 +101,6 @@ function normaliseAddress(value: string | undefined): string | undefined {
   }
 }
 
-function replaceLine(line: string, key: string, value: string): string {
-  const prefix = `${key}=`;
-  if (line.startsWith(prefix)) {
-    return `${prefix}${value}`;
-  }
-  return line;
-}
-
 async function ensureWritable(filePath: string, force: boolean) {
   try {
     await fs.access(filePath);
@@ -119,7 +121,9 @@ async function main() {
   const inputCandidates = [
     (args.input as string) ??
       path.join('deployment-config', 'latest-deployment.json'),
-    path.join('docs', 'deployment-addresses.json'),
+    ...(args.input === undefined
+      ? [path.join('docs', 'deployment-addresses.json')]
+      : []),
   ];
   const templatePath =
     (args.template as string) ?? path.join('deployment-config', 'oneclick.env');
@@ -131,7 +135,31 @@ async function main() {
   await ensureWritable(outputPath, force);
 
   let template = await fs.readFile(path.resolve(templatePath), 'utf8');
+  const identity = deploymentNetwork(addresses, args.network);
+  const environment = runtimeEnvironment(template, identity);
+  const registry = normaliseAddress(addresses.jobRegistry);
+  if (!registry || registry === ethers.ZeroAddress)
+    throw new Error(
+      'Deployment addressbook must contain a nonzero JobRegistry'
+    );
+  await verifyRuntimeNetwork(environment, identity, { registry });
   const lines = template.split(/\r?\n/);
+  const setLine = (key: string, value: string) => {
+    // Remove every previous declaration, including export/quoted forms, so
+    // dotenv and Compose cannot disagree because of duplicate template keys.
+    const declaration = new RegExp(`^\\s*(?:export\\s+)?${key}\\s*=`);
+    for (let index = lines.length - 1; index >= 0; index -= 1)
+      if (declaration.test(lines[index])) lines.splice(index, 1);
+    lines.push(`${key}=${value}`);
+  };
+  for (const key of [
+    'CHAIN_ID',
+    'NEXT_PUBLIC_CHAIN_ID',
+    'AGJ_NETWORK',
+    'RPC_URL',
+    'NEXT_PUBLIC_RPC_URL',
+  ])
+    setLine(key, environment[key]);
 
   const updates: string[] = [];
   for (const [envKey, field] of Object.entries(ADDRESS_FIELDS)) {
@@ -140,12 +168,7 @@ async function main() {
       continue;
     }
 
-    const index = lines.findIndex((line) => line.startsWith(`${envKey}=`));
-    if (index === -1) {
-      lines.push(`${envKey}=${address}`);
-    } else {
-      lines[index] = replaceLine(lines[index], envKey, address);
-    }
+    setLine(envKey, address);
     updates.push(`${envKey} -> ${address}`);
   }
 

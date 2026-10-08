@@ -12,6 +12,8 @@ import {
   type EnsConfig,
 } from '../config';
 import { verifyAgialpha } from '../verify-agialpha';
+import parseDuration from '../utils/parseDuration';
+const { validateOneclickConfig } = require('../v2/lib/oneclick-config.cjs');
 
 const constantsPath = path.join(
   __dirname,
@@ -116,6 +118,59 @@ function parsePct(value: string | number | undefined): number {
   return Math.round(scaled);
 }
 
+// Resolve operator input before deploying implementations or injecting a local token.
+// The shared validator rejects ignored suffixes, fractional seconds and overflow;
+// parseDuration is only used after that validation has succeeded.
+export function readProviderConfiguration(
+  decimals: number,
+  env: NodeJS.ProcessEnv = process.env
+) {
+  const econ = {
+    minStake: env.MIN_STAKE ?? '0',
+    employerSlashPct: parsePct(env.EMPLOYER_SLASH_PCT),
+    treasurySlashPct: parsePct(env.TREASURY_SLASH_PCT ?? '100'),
+    commitWindow: env.COMMIT_WINDOW ?? '3600',
+    revealWindow: env.REVEAL_WINDOW ?? '3600',
+    appealFee: env.DISPUTE_FEE ?? '1',
+    disputeWindow: env.DISPUTE_WINDOW ?? '86400',
+    burnPct: parsePct(env.FEEPOOL_BURN_PCT),
+    feePct: parsePct(env.JOB_FEE_PCT),
+    jobStake: env.JOB_STAKE ?? '0',
+  };
+  validateOneclickConfig({ econ }, decimals);
+  // Numeric seconds are already validated; avoid a millisecond conversion
+  // that can round a valid integer near Number.MAX_SAFE_INTEGER.
+  const seconds = (value: string) =>
+    /^[0-9]+$/.test(value) ? Number(value) : parseDuration(value, 's')!;
+  const committeeBound = (key: 'MIN_VALIDATORS' | 'MAX_VALIDATORS') => {
+    const input = env[key] ?? '3';
+    const value = Number(input);
+    if (!/^[0-9]+$/.test(input) || !Number.isSafeInteger(value) || value < 3) {
+      throw new Error(`${key} must be a safe integer of at least 3`);
+    }
+    return value;
+  };
+  const minValidators = committeeBound('MIN_VALIDATORS');
+  const maxValidators = committeeBound('MAX_VALIDATORS');
+  if (maxValidators < minValidators) {
+    throw new Error('MAX_VALIDATORS must be at least MIN_VALIDATORS');
+  }
+  return {
+    minStake: parseUnits(econ.minStake, decimals),
+    employerSlashPct: econ.employerSlashPct,
+    treasurySlashPct: econ.treasurySlashPct,
+    commitWindow: seconds(econ.commitWindow),
+    revealWindow: seconds(econ.revealWindow),
+    minValidators,
+    maxValidators,
+    disputeFee: parseUnits(econ.appealFee, decimals),
+    disputeWindow: seconds(econ.disputeWindow),
+    burnPct: econ.burnPct,
+    feePct: econ.feePct,
+    jobStake: parseUnits(econ.jobStake, decimals),
+  };
+}
+
 async function ensureLocalToken(
   tokenConfig: TokenConfig
 ): Promise<{ tokenAddress: string; tokenIsMock: boolean }> {
@@ -171,15 +226,27 @@ type DeploymentContext = {
   tokenIsMock: boolean;
   tokenConfig: TokenConfig;
   ensConfig: EnsConfig;
+  configuration: ReturnType<typeof readProviderConfiguration>;
 };
 
 async function deployContracts(ctx: DeploymentContext) {
-  const { deployer, treasury, decimals, ensConfig } = ctx;
+  const { deployer, treasury, ensConfig, configuration } = ctx;
   const deployerAddress = await deployer.getAddress();
 
-  const minStake = parseUnits(process.env.MIN_STAKE || '0', decimals);
-  const employerSlashPct = parsePct(process.env.EMPLOYER_SLASH_PCT);
-  const treasurySlashPct = parsePct(process.env.TREASURY_SLASH_PCT || '100');
+  const {
+    minStake,
+    employerSlashPct,
+    treasurySlashPct,
+    commitWindow,
+    revealWindow,
+    minValidators,
+    maxValidators,
+    disputeFee,
+    disputeWindow,
+    burnPct,
+    feePct,
+    jobStake,
+  } = configuration;
 
   const Stake = await ethers.getContractFactory(
     'contracts/v2/StakeManager.sol:StakeManager'
@@ -227,10 +294,6 @@ async function deployContracts(ctx: DeploymentContext) {
   const Validation = await ethers.getContractFactory(
     'contracts/v2/ValidationModule.sol:ValidationModule'
   );
-  const commitWindow = Number(process.env.COMMIT_WINDOW || 3600);
-  const revealWindow = Number(process.env.REVEAL_WINDOW || 3600);
-  const minValidators = Number(process.env.MIN_VALIDATORS || 3);
-  const maxValidators = Number(process.env.MAX_VALIDATORS || 3);
   const validation = await Validation.deploy(
     ethers.ZeroAddress,
     await stake.getAddress(),
@@ -262,8 +325,6 @@ async function deployContracts(ctx: DeploymentContext) {
   const Dispute = await ethers.getContractFactory(
     'contracts/v2/modules/DisputeModule.sol:DisputeModule'
   );
-  const disputeFee = parseUnits(process.env.DISPUTE_FEE || '1', decimals);
-  const disputeWindow = Number(process.env.DISPUTE_WINDOW || 86400);
   const dispute = await Dispute.deploy(
     ethers.ZeroAddress,
     disputeFee,
@@ -291,7 +352,6 @@ async function deployContracts(ctx: DeploymentContext) {
   const FeePool = await ethers.getContractFactory(
     'contracts/v2/FeePool.sol:FeePool'
   );
-  const burnPct = parsePct(process.env.FEEPOOL_BURN_PCT);
   const feePool = await FeePool.deploy(
     await stake.getAddress(),
     burnPct,
@@ -303,8 +363,6 @@ async function deployContracts(ctx: DeploymentContext) {
   const JobRegistry = await ethers.getContractFactory(
     'contracts/v2/JobRegistry.sol:JobRegistry'
   );
-  const feePct = parsePct(process.env.JOB_FEE_PCT);
-  const jobStake = parseUnits(process.env.JOB_STAKE || '0', decimals);
   const registry = await JobRegistry.deploy(
     ethers.ZeroAddress,
     await stake.getAddress(),
@@ -713,7 +771,7 @@ async function transferOwnership(
   );
 }
 
-async function main() {
+export async function deployProviderAgnostic() {
   const [deployer] = await ethers.getSigners();
   const deployerAddress = await deployer.getAddress();
   const networkKey = inferNetworkKey({
@@ -736,6 +794,7 @@ async function main() {
   });
 
   const decimals = Number(tokenConfig.decimals ?? 18);
+  const configuration = readProviderConfiguration(decimals);
   const { tokenAddress, tokenIsMock } = await ensureLocalToken(tokenConfig);
   await verifyTokenMetadata(tokenConfigPath, ethers.provider, tokenIsMock);
 
@@ -770,6 +829,7 @@ async function main() {
     tokenIsMock,
     tokenConfig,
     ensConfig,
+    configuration,
   };
 
   console.log(`Deploying with signer ${deployerAddress} on ${network.name}`);
@@ -807,7 +867,9 @@ async function main() {
   );
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exitCode = 1;
-});
+if (require.main === module) {
+  deployProviderAgnostic().catch((err) => {
+    console.error(err);
+    process.exitCode = 1;
+  });
+}

@@ -441,7 +441,7 @@ test('original vision graph and README systems map are preserved', () => {
   const readme = fs.readFileSync(path.join(p.DEMO, 'README.md'), 'utf8');
   assert.ok(
     readme.includes(
-      'flowchart LR\n    Operators((Mission Owners)) --> demo_REDENOMINATION[[Demo → Redenomination]]\n    demo_REDENOMINATION --> Core[[AGI Jobs v0 (v2) Core Intelligence]]\n    Core --> Observability[[Unified CI / CD & Observability]]\n    Core --> Governance[[Owner Control Plane]]'
+      'flowchart LR\n    Operators((Mission Owners)) --> demo_REDENOMINATION[[Demo → Redenomination]]\n    demo_REDENOMINATION --> Core[["AGI Jobs v0 (v2) Core Intelligence"]]\n    Core --> Observability[[Unified CI / CD & Observability]]\n    Core --> Governance[[Owner Control Plane]]'
     )
   );
   const provenance = JSON.parse(

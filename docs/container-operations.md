@@ -38,7 +38,7 @@ On main and release tags, CI publishes architecture-specific candidates with pro
 | Enterprise / validator UIs | Production Next.js server boots and serves the application. Browser voting and wallet integration have their own tests. |
 | Owner console / CULTURE studio | Nginx configuration and a served application/health endpoint. |
 | Notification service | HTTP boot plus write/read of a stored notification. |
-| Alpha bridge / meta API | Listening gRPC service with packaged protocol definition / Python HTTP health. Upstream integrations require separate commissioning. |
+| Alpha bridge / meta API | Listening gRPC service with packaged protocol definition / Python readiness check against a real isolated Anvil RPC. Upstream integrations require separate commissioning. |
 | Historical and configured integrations | Every Dockerfile builds; the corresponding CLI, entry point or graph dependency probe runs. An entry-point check is explicitly not evidence of a commissioned chain, database, oracle or external agent. |
 
 Application dependency findings are handled by the separate release dependency gate. Container success does not waive that gate, an independent security review, deployment signing requirements, or the live commissioning work in [production readiness](production/readiness.md).

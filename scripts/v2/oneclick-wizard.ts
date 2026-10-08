@@ -3,6 +3,12 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import readline from 'readline';
 import { deployOneClick } from './oneclick-deploy';
+const {
+  deploymentNetwork,
+  runtimeEnvironment,
+  verifyRuntimeNetwork,
+  composeNetworkEnvironment,
+} = require('./lib/runtime-network.cjs');
 
 interface DeployConfig {
   network?: string;
@@ -191,6 +197,12 @@ async function main() {
   }
 
   await ensureEnvFile(envFile);
+  const identity = deploymentNetwork({}, network);
+  const preflightEnvironment = runtimeEnvironment(
+    await fs.readFile(path.resolve(envFile), 'utf8'),
+    identity
+  );
+  await verifyRuntimeNetwork(preflightEnvironment, identity);
 
   const proceed = await confirm(
     'Deploy contracts with npm run deploy:oneclick?',
@@ -210,6 +222,8 @@ async function main() {
         '--',
         '--input',
         snapshot,
+        '--network',
+        network,
         '--template',
         path.resolve(envFile),
         '--output',
@@ -227,6 +241,23 @@ async function main() {
   }
 
   if (startCompose) {
+    const launchEnvironment = runtimeEnvironment(
+      await fs.readFile(path.resolve(envFile), 'utf8'),
+      identity
+    );
+    if (
+      !identity.local &&
+      (!/^0x[0-9a-fA-F]{40}$/.test(
+        launchEnvironment.JOB_REGISTRY_ADDRESS || ''
+      ) ||
+        /^0x0{40}$/.test(launchEnvironment.JOB_REGISTRY_ADDRESS))
+    )
+      throw new Error(
+        'Generated environment must contain the deployed JobRegistry before launch'
+      );
+    await verifyRuntimeNetwork(launchEnvironment, identity, {
+      registry: launchEnvironment.JOB_REGISTRY_ADDRESS,
+    });
     const composeArgs = [
       'compose',
       '--env-file',
@@ -241,7 +272,9 @@ async function main() {
       composeArgs.push('--detach');
     }
     try {
-      await runCommand('docker', composeArgs);
+      await runCommand('docker', composeArgs, {
+        env: composeNetworkEnvironment(launchEnvironment),
+      });
       console.log('🚀 Docker Compose stack is starting...');
     } catch (error) {
       console.error(

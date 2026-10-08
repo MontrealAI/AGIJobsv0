@@ -27,18 +27,18 @@ Hardhat automatically picks the right config variant based on `--network`,
 
 ## Environment Variables
 
-| Variable                                    | Description                                                                                                                                         |
-| ------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `GOVERNANCE_ADDRESS`                        | Multisig/timelock address that will own the system after deployment. Defaults to `governance.govSafe` in the token config or the deployer if unset. |
-| `TREASURY_ADDRESS`                          | Treasury recipient for `StakeManager`/`FeePool` (defaults to the configured deployment treasury, otherwise the zero address; review before deployment).                                                                         |
-| `MIN_STAKE`                                 | Optional minimum agent stake (tokens with 18 decimals).                                                                                             |
-| `EMPLOYER_SLASH_PCT` / `TREASURY_SLASH_PCT` | Optional StakeManager slashing split (0–100).                                                                                                       |
-| `DISPUTE_FEE` / `DISPUTE_WINDOW`            | Optional dispute configuration.                                                                                                                     |
-| `COMMIT_WINDOW` / `REVEAL_WINDOW`           | Validator commit/reveal windows (seconds).                                                                                                          |
-| `MIN_VALIDATORS` / `MAX_VALIDATORS`         | Validation committee bounds.                                                                                                                        |
-| `JOB_FEE_PCT` / `JOB_STAKE`                 | Initial JobRegistry fee percentage and stake requirement.                                                                                           |
-| `FEEPOOL_BURN_PCT`                          | Portion of collected fees to burn (0–100).                                                                                                          |
-| `TAX_POLICY_URI` / `TAX_ACK_TEXT`           | Initial tax policy metadata.                                                                                                                        |
+| Variable                                    | Description                                                                                                                                             |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GOVERNANCE_ADDRESS`                        | Multisig/timelock address that will own the system after deployment. Defaults to `governance.govSafe` in the token config or the deployer if unset.     |
+| `TREASURY_ADDRESS`                          | Treasury recipient for `StakeManager`/`FeePool` (defaults to the configured deployment treasury, otherwise the zero address; review before deployment). |
+| `MIN_STAKE`                                 | Optional minimum agent stake (tokens with 18 decimals).                                                                                                 |
+| `EMPLOYER_SLASH_PCT` / `TREASURY_SLASH_PCT` | Optional StakeManager slashing split (0–100).                                                                                                           |
+| `DISPUTE_FEE` / `DISPUTE_WINDOW`            | Optional dispute fee and nonnegative duration (whole seconds or explicit units).                                                                        |
+| `COMMIT_WINDOW` / `REVEAL_WINDOW`           | Positive whole seconds or explicit duration units (for example, `1800`, `30m`, or `1h 30m`).                                                            |
+| `MIN_VALIDATORS` / `MAX_VALIDATORS`         | Whole-number validation committee bounds, at least 3; maximum must be at least the minimum.                                                             |
+| `JOB_FEE_PCT` / `JOB_STAKE`                 | Initial JobRegistry fee percentage and stake requirement.                                                                                               |
+| `FEEPOOL_BURN_PCT`                          | Portion of collected fees to burn (0–100).                                                                                                              |
+| `TAX_POLICY_URI` / `TAX_ACK_TEXT`           | Initial tax policy metadata.                                                                                                                            |
 
 Environment variables override JSON config values. Parameters not supplied
 fall back to sensible defaults.

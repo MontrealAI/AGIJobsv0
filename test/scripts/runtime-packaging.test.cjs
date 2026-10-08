@@ -38,3 +38,13 @@ test('compiled gateway can load its gRPC schema', () => {
   );
   assert.ok(Object.keys(schema).length > 0);
 });
+
+test('compiled gateway includes its receipt-attestation runtime dependency graph', async () => {
+  const attestation = require('../../agent-gateway/dist/agent-gateway/attestation');
+  attestation.setReceiptAttester(null);
+  const result = await attestation.attestExecutionReceipt({
+    jobId: 'packaging-smoke',
+  });
+  assert.match(result.digest, /^0x[0-9a-f]{64}$/i);
+  assert.equal(result.attestation, undefined);
+});

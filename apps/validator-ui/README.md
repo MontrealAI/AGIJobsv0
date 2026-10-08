@@ -58,6 +58,8 @@ The current contract accepts an opaque commitment without an expected-round argu
 
 ## Verification
 
+The development toolchain pins patched Vitest `4.1.11` and retains its supported Vite `7.3.6` peer. Node 22 type declarations are explicit so clean container builds do not depend on transitive packages or globally installed types. The checked-in lockfile is verified with the repository's pinned `npm ci`.
+
 ```bash
 # From the repository root; compile contracts first if artifacts are absent.
 npx hardhat test --no-compile test/validator-ui/commitReveal.test.js

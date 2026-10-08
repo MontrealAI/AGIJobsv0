@@ -198,9 +198,9 @@ test('task pins the complete source and admits no live jobs by default', () => {
   assert.deepEqual(profiles['asi-takeoff'].approvedJobs, []);
   assert.throws(() => review(candidate(), 'No dossier'));
 });
-test('original systems flowchart is preserved verbatim', () => {
+test('original systems flowchart is preserved with valid Mermaid quoting', () => {
   const original =
-    'flowchart LR\n    Operators((Mission Owners)) --> demo_asi_takeoff[[Demo → ASI Takeoff]]\n    demo_asi_takeoff --> Core[[AGI Jobs v0 (v2) Core Intelligence]]\n    Core --> Observability[[Unified CI / CD & Observability]]\n    Core --> Governance[[Owner Control Plane]]';
+    'flowchart LR\n    Operators((Mission Owners)) --> demo_asi_takeoff[[Demo → ASI Takeoff]]\n    demo_asi_takeoff --> Core[["AGI Jobs v0 (v2) Core Intelligence"]]\n    Core --> Observability[[Unified CI / CD & Observability]]\n    Core --> Governance[[Owner Control Plane]]';
   assert.ok(
     fs.readFileSync(path.join(ROOT, 'README.md'), 'utf8').includes(original)
   );

@@ -1,11 +1,76 @@
-const { ethers } = require('ethers');
-const {
+import { Contract, Provider, Signer, ethers } from 'ethers';
+import {
   VALIDATION_PROTOCOL_ABI,
   VALIDATION_REGISTRY_ABI,
   prepareValidationCommitment,
   validationCommitmentHash,
   assertValidationReveal,
-} = require('../../../shared/validationProtocol');
+} from '../../../shared/validationProtocol';
+
+export interface VoteRecord {
+  version: 2;
+  jobId: string;
+  chainId: string;
+  nonce: string;
+  module: string;
+  registry: string;
+  validator: string;
+  domain: string;
+  specHash: string;
+  approve: boolean;
+  salt: string;
+  burnTxHash: string;
+  commitHash: string;
+  commitDeadline: string;
+  revealDeadline: string;
+  observedBlock: number;
+  observedBlockHash: string;
+  subdomain: string;
+  proof: string[];
+  status:
+    | 'commit-intent'
+    | 'commit-broadcast'
+    | 'committed'
+    | 'reveal-intent'
+    | 'reveal-broadcast'
+    | 'revealed';
+  commitTx?: string;
+  revealTx?: string;
+}
+
+type VoteStorage = Pick<Storage, 'length' | 'key' | 'getItem' | 'setItem'>;
+interface VoteContext {
+  validation: Contract;
+  registry: Contract;
+  provider: Provider;
+  signer: Signer;
+  storage: VoteStorage;
+}
+interface CommitContext extends VoteContext {
+  jobId: string;
+  approve: boolean;
+  expectedSpecHash: string;
+  subdomain: string;
+  proof: string[];
+}
+interface RecoveryContext extends VoteContext {
+  record: VoteRecord;
+}
+const ROUND_FIELDS = [
+  'nonce',
+  'specHash',
+  'commitDeadline',
+  'revealDeadline',
+] as const;
+
+function storedCommitmentHash(record: VoteRecord): string {
+  return validationCommitmentHash({
+    ...record,
+    jobId: BigInt(record.jobId),
+    nonce: BigInt(record.nonce),
+    chainId: BigInt(record.chainId),
+  });
+}
 
 const STORAGE_PREFIX = 'agi-jobs.validator.v2:';
 const UI_VALIDATION_ABI = [
@@ -15,7 +80,9 @@ const UI_VALIDATION_ABI = [
   'event ValidationRevealed(uint256 indexed jobId,address indexed validator,bool approve,bytes32 burnTxHash,string subdomain)',
 ];
 
-function recordKey(record) {
+function recordKey(
+  record: Pick<VoteRecord, 'chainId' | 'module' | 'validator' | 'jobId'>
+): string {
   return `${STORAGE_PREFIX}${
     record.chainId
   }:${record.module.toLowerCase()}:${record.validator.toLowerCase()}:${
@@ -23,7 +90,7 @@ function recordKey(record) {
   }`;
 }
 
-function decodeRecord(raw) {
+function decodeRecord(raw: string | null): VoteRecord {
   if (typeof raw !== 'string' || raw.length > 16384)
     throw new Error('Invalid recovery record. Preserve your original backup.');
   const record = JSON.parse(raw);
@@ -81,22 +148,22 @@ function decodeRecord(raw) {
     record.subdomain.length > 255 ||
     !Array.isArray(record.proof) ||
     record.proof.length > 64 ||
-    record.proof.some((value) => !ethers.isHexString(value, 32))
+    record.proof.some((value: unknown) => !ethers.isHexString(value, 32))
   )
     throw new Error('Invalid saved identity proof.');
   for (const field of ['commitTx', 'revealTx'])
     if (record[field] !== undefined && !ethers.isHexString(record[field], 32))
       throw new Error('Invalid saved transaction hash.');
   if (
-    validationCommitmentHash(record).toLowerCase() !==
+    storedCommitmentHash(record).toLowerCase() !==
     record.commitHash.toLowerCase()
   )
     throw new Error('Recovery commitment does not match its saved decision.');
   return record;
 }
 
-function loadRecords(storage) {
-  const records = [];
+function loadRecords(storage: VoteStorage): VoteRecord[] {
+  const records: VoteRecord[] = [];
   for (let index = 0; index < storage.length; index++) {
     const key = storage.key(index);
     if (key && key.startsWith(STORAGE_PREFIX) && !key.includes(':archive:')) {
@@ -109,7 +176,7 @@ function loadRecords(storage) {
   return records;
 }
 
-function saveRecord(storage, record) {
+function saveRecord(storage: VoteStorage, record: VoteRecord): void {
   const raw = JSON.stringify(record);
   decodeRecord(raw);
   storage.setItem(recordKey(record), raw);
@@ -119,7 +186,13 @@ function saveRecord(storage, record) {
     );
 }
 
-async function readScope(validation, registry, provider, jobId, validator) {
+async function readScope(
+  validation: Contract,
+  registry: Contract,
+  provider: Provider,
+  jobId: string,
+  validator: string
+) {
   const [
     network,
     domain,
@@ -168,11 +241,11 @@ async function readScope(validation, registry, provider, jobId, validator) {
 }
 
 async function assertScope(
-  record,
-  validation,
-  registry,
-  provider,
-  signer,
+  record: VoteRecord,
+  validation: Contract,
+  registry: Contract,
+  provider: Provider,
+  signer: Signer,
   requireCurrentRound = true
 ) {
   const address = await signer.getAddress();
@@ -190,10 +263,8 @@ async function assertScope(
     'validator',
     'jobId',
     'domain',
-    ...(requireCurrentRound
-      ? ['nonce', 'specHash', 'commitDeadline', 'revealDeadline']
-      : []),
-  ])
+    ...(requireCurrentRound ? ROUND_FIELDS : []),
+  ] as const)
     if (
       String(scope[field]).toLowerCase() !== String(record[field]).toLowerCase()
     )
@@ -221,7 +292,7 @@ async function commitVote({
   expectedSpecHash,
   subdomain,
   proof,
-}) {
+}: CommitContext): Promise<VoteRecord> {
   if (typeof approve !== 'boolean')
     throw new Error('An explicit review decision is required.');
   const validator = await signer.getAddress();
@@ -247,7 +318,7 @@ async function commitVote({
     );
   if (
     !(await validation.validators(jobId)).some(
-      (address) => address.toLowerCase() === validator.toLowerCase()
+      (address: string) => address.toLowerCase() === validator.toLowerCase()
     )
   )
     throw new Error(
@@ -294,28 +365,37 @@ async function commitVote({
     approve,
     ethers.hexlify(ethers.randomBytes(32))
   );
-  const record = {
+  const record: VoteRecord = {
     ...prepared,
-    ...scope,
     version: 2,
     status: 'commit-intent',
+    chainId: scope.chainId,
+    module: scope.module,
+    registry: scope.registry,
+    validator: scope.validator,
+    jobId: scope.jobId,
+    domain: scope.domain,
+    nonce: scope.nonce,
+    specHash: scope.specHash,
+    commitDeadline: scope.commitDeadline,
+    revealDeadline: scope.revealDeadline,
+    observedBlock: scope.observedBlock,
+    observedBlockHash: scope.observedBlockHash,
     subdomain,
     proof,
   };
-  delete record.timestamp;
-  delete record.tallied;
-  record.jobId = String(record.jobId);
-  record.nonce = String(record.nonce);
-  record.chainId = String(record.chainId);
-  if (validationCommitmentHash(record) !== prepared.commitHash)
+  if (storedCommitmentHash(record) !== prepared.commitHash)
     throw new Error(
       'The validation context changed during preparation. Refresh and review again.'
     );
   await assertScope(record, validation, registry, provider, signer);
   saveRecord(storage, record);
-  const tx = await validation
-    .connect(signer)
-    .commitValidation(jobId, record.commitHash, subdomain, proof);
+  const tx = await (validation.connect(signer) as Contract).commitValidation(
+    jobId,
+    record.commitHash,
+    subdomain,
+    proof
+  );
   record.commitTx = tx.hash;
   record.status = 'commit-broadcast';
   saveRecord(storage, record);
@@ -329,7 +409,11 @@ async function commitVote({
   return record;
 }
 
-async function confirmedRevealTransaction(record, validation, provider) {
+async function confirmedRevealTransaction(
+  record: VoteRecord,
+  validation: Contract,
+  provider: Provider
+): Promise<string> {
   const filter = validation.filters.ValidationRevealed(
     record.jobId,
     record.validator
@@ -350,7 +434,7 @@ async function confirmedRevealTransaction(record, validation, provider) {
       const event = events[index];
       if (
         event.removed ||
-        !event.args ||
+        !('args' in event) ||
         event.args.approve !== record.approve ||
         event.args.burnTxHash.toLowerCase() !== record.burnTxHash.toLowerCase()
       )
@@ -373,6 +457,7 @@ async function confirmedRevealTransaction(record, validation, provider) {
       }
       if (
         !reveal ||
+        !transaction ||
         !['revealValidation', 'revealVote'].includes(reveal.name) ||
         String(reveal.args.jobId) !== record.jobId ||
         reveal.args.approve !== record.approve ||
@@ -408,7 +493,11 @@ async function checkVote({
   provider,
   signer,
   storage,
-}) {
+}: RecoveryContext): Promise<{
+  record: VoteRecord;
+  ready: boolean;
+  message: string;
+}> {
   decodeRecord(JSON.stringify(record));
   const current = decodeRecord(storage.getItem(recordKey(record)));
   if (current.commitHash !== record.commitHash)
@@ -422,12 +511,7 @@ async function checkVote({
     signer,
     false
   );
-  const sameRound = [
-    'nonce',
-    'specHash',
-    'commitDeadline',
-    'revealDeadline',
-  ].every(
+  const sameRound = ROUND_FIELDS.every(
     (field) =>
       String(scope[field]).toLowerCase() === String(record[field]).toLowerCase()
   );
@@ -500,22 +584,20 @@ async function checkVote({
   };
 }
 
-async function revealVote(context) {
+async function revealVote(context: RecoveryContext): Promise<VoteRecord> {
   const { record, validation, signer, storage } = context;
   const checked = await checkVote(context);
   if (!checked.ready) throw new Error(checked.message);
   record.status = 'reveal-intent';
   saveRecord(storage, record);
-  const tx = await validation
-    .connect(signer)
-    .revealValidation(
-      record.jobId,
-      record.approve,
-      record.burnTxHash,
-      record.salt,
-      record.subdomain,
-      record.proof
-    );
+  const tx = await (validation.connect(signer) as Contract).revealValidation(
+    record.jobId,
+    record.approve,
+    record.burnTxHash,
+    record.salt,
+    record.subdomain,
+    record.proof
+  );
   record.revealTx = tx.hash;
   record.status = 'reveal-broadcast';
   saveRecord(storage, record);
@@ -529,7 +611,7 @@ async function revealVote(context) {
   return record;
 }
 
-module.exports = {
+export {
   UI_VALIDATION_ABI,
   VALIDATION_REGISTRY_ABI,
   STORAGE_PREFIX,

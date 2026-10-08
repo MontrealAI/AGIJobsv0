@@ -1,7 +1,10 @@
-FROM node:22.23.3-bullseye
+FROM node:22.23.3-bookworm-slim
 WORKDIR /app
 ENV CYPRESS_INSTALL_BINARY=0
 
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends python3 make g++ \
+    && rm -rf /var/lib/apt/lists/*
 COPY package*.json ./
 RUN npm ci
 

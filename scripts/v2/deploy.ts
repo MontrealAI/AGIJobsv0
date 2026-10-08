@@ -545,6 +545,8 @@ export async function deployOneClickModules() {
   console.log('PlatformIncentives:', await incentives.getAddress());
 
   const addresses = {
+    network: network.name,
+    chainId: (await ethers.provider.getNetwork()).chainId.toString(),
     implementations: await readImplementationAddresses({
       StakeManager: await stake.getAddress(),
       JobRegistry: await registry.getAddress(),
@@ -578,7 +580,7 @@ export async function deployOneClickModules() {
   );
 
   await verify(await stake.getAddress(), [
-    0,
+    minStake,
     0,
     0,
     treasury,
