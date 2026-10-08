@@ -35,11 +35,11 @@ WORKDIR /app
 COPY --from=builder /app/package.json ./
 COPY --from=builder /app/package-lock.json ./
 COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/agent-gateway/dist ./agent-gateway/dist
+COPY --from=builder --chown=node:node /app/agent-gateway/dist ./agent-gateway/dist
 COPY --from=builder /app/scripts/start-telemetry.sh ./scripts/start-telemetry.sh
 RUN apk upgrade --no-cache \
     && chmod +x ./scripts/start-telemetry.sh \
     && mkdir -p /app/storage /app/logs /app/agent-gateway/dist/storage /app/agent-gateway/dist/logs \
-    && chown -R node:node /app
+    && chown node:node /app/storage /app/logs /app/agent-gateway/dist/storage /app/agent-gateway/dist/logs
 USER node
 CMD ["node", "agent-gateway/dist/agent-gateway/index.js"]

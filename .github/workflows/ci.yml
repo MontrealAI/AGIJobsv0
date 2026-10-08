@@ -150,6 +150,8 @@ jobs:
           node --test apps/orchestrator/dist/apps/orchestrator/__tests__/computerWork.test.js
       - name: Hardhat tests
         run: npm test
+      - name: Gateway TypeScript interaction regressions
+        run: npx hardhat test --no-compile test/gateway/routesValidation.test.ts test/taskExecution.test.ts test/certificateMetadata.test.ts
       - name: Phase 6 contract and TypeScript regression tests
         run: npx hardhat test --no-compile test/v2/Phase6ExpansionManager.test.js test/scripts/phase6*.test.ts
       - name: ABI diff check

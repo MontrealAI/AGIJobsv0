@@ -28,6 +28,10 @@ describe('agent gateway request validation', function () {
   let originalRevealHelper: typeof import('../../agent-gateway/utils')['revealHelper'];
   let commitCapture: CommitCapture | undefined;
   let revealCapture: RevealCapture | undefined;
+  let originalRegistry: typeof utils.registry;
+  let originalCheckEnsSubdomain: typeof utils.checkEnsSubdomain;
+  let originalApiKey: string;
+  let registryCalls: unknown[][];
   const envBackup: Record<string, string | undefined> = {};
 
   before(async function () {
@@ -47,6 +51,9 @@ describe('agent gateway request validation', function () {
     originalWalletManager = utils.walletManager;
     originalCommitHelper = utils.commitHelper;
     originalRevealHelper = utils.revealHelper;
+    originalRegistry = utils.registry;
+    originalCheckEnsSubdomain = utils.checkEnsSubdomain;
+    originalApiKey = utils.GATEWAY_API_KEY;
 
     ({ default: app } = await import('../../agent-gateway/routes'));
   });
@@ -54,6 +61,22 @@ describe('agent gateway request validation', function () {
   beforeEach(function () {
     commitCapture = undefined;
     revealCapture = undefined;
+    registryCalls = [];
+    (utils as any).GATEWAY_API_KEY = API_KEY;
+    (utils as any).checkEnsSubdomain = async () => 'worker.agent.agi.eth';
+    (utils as any).registry = {
+      connect: () => ({
+        applyForJob: async (...args: unknown[]) => {
+          originalRegistry.interface.encodeFunctionData('applyForJob', args);
+          registryCalls.push(args);
+          return { hash: '0xapplied', wait: async () => {} };
+        },
+        acknowledgeTaxPolicy: async () => {
+          registryCalls.push(['unexpected tax acknowledgement']);
+          throw new Error('must not acknowledge invalid submissions');
+        },
+      }),
+    };
     (utils as any).walletManager = {
       get: (address: string) => {
         if (!address) {
@@ -96,6 +119,9 @@ describe('agent gateway request validation', function () {
     (utils as any).walletManager = originalWalletManager;
     (utils as any).commitHelper = originalCommitHelper;
     (utils as any).revealHelper = originalRevealHelper;
+    (utils as any).registry = originalRegistry;
+    (utils as any).checkEnsSubdomain = originalCheckEnsSubdomain;
+    (utils as any).GATEWAY_API_KEY = originalApiKey;
   });
 
   after(function () {
@@ -176,5 +202,36 @@ describe('agent gateway request validation', function () {
     expect(response.status).to.equal(200);
     expect(revealCapture?.approve).to.equal(undefined);
     expect(revealCapture?.salt).to.equal('0x99');
+  });
+
+  it('applies with the verified ENS label and current proof array', async function () {
+    const response = await request(app)
+      .post('/jobs/42/apply')
+      .set('X-Api-Key', API_KEY)
+      .send({ address: WALLET, proofBytes: [ethers.ZeroHash] });
+    expect(response.status).to.equal(200);
+    expect(registryCalls).to.deep.equal([['42', 'worker', [ethers.ZeroHash]]]);
+  });
+
+  for (const endpoint of ['apply', 'submit', 'deliverables']) {
+    it(`rejects malformed ${endpoint} identity proofs before chain writes`, async function () {
+      const response = await request(app)
+        .post(`/jobs/42/${endpoint}`)
+        .set('X-Api-Key', API_KEY)
+        .send({ address: WALLET, proofBytes: '0x1234', resultUri: 'ipfs://result' });
+      expect(response.status).to.equal(400);
+      expect(response.body.error).to.match(/bytes32/);
+      expect(registryCalls).to.deep.equal([]);
+    });
+  }
+
+  it('rejects finalizeOnly as a client error before chain writes', async function () {
+    const response = await request(app)
+      .post('/jobs/42/deliverables')
+      .set('X-Api-Key', API_KEY)
+      .send({ address: WALLET, finalizeOnly: true, resultUri: 'ipfs://result' });
+    expect(response.status).to.equal(400);
+    expect(response.body.error).to.match(/finalizeOnly/);
+    expect(registryCalls).to.deep.equal([]);
   });
 });

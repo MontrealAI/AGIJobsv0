@@ -8,7 +8,34 @@ import { registry, jobs } from './utils';
 import { acknowledgeTaxPolicy as ensureTaxAcknowledgement } from './stakeCoordinator';
 import { publishCertificateMetadata } from './certificateMetadata';
 
-type SubmissionMethod = 'finalizeJob' | 'submit' | 'none';
+type SubmissionMethod = 'submit' | 'none';
+
+export class SubmissionInputError extends Error {}
+
+/** Convert legacy packed proof bytes or a bytes32 array to the current ABI. */
+export function normaliseIdentityProof(value: unknown): string[] {
+  if (value === undefined || value === null || value === '' || value === '0x')
+    return [];
+  if (Array.isArray(value)) {
+    if (
+      [...value].every(
+        (word) => typeof word === 'string' && ethers.isHexString(word, 32)
+      )
+    )
+      return [...value];
+  } else if (
+    typeof value === 'string' &&
+    /^0x(?:[0-9a-fA-F]{64})+$/.test(value)
+  ) {
+    return value
+      .slice(2)
+      .match(/.{64}/g)!
+      .map((word) => `0x${word}`);
+  }
+  throw new SubmissionInputError(
+    'Identity proof must contain complete bytes32 words'
+  );
+}
 
 export interface SubmitDeliverableOptions {
   jobId: string;
@@ -17,7 +44,8 @@ export interface SubmitDeliverableOptions {
   resultCid?: string;
   resultRef?: string;
   resultHash?: string;
-  proofBytes?: string;
+  proofBytes?: string | string[];
+  subdomain?: string;
   proof?: unknown;
   success?: boolean;
   finalize?: boolean;
@@ -48,9 +76,7 @@ function canonicalisePayload(payload: unknown): string {
   }
 }
 
-function normaliseProof(
-  proof: unknown
-): Record<string, unknown> | undefined {
+function normaliseProof(proof: unknown): Record<string, unknown> | undefined {
   if (!proof) {
     return undefined;
   }
@@ -77,11 +103,10 @@ export async function submitDeliverable(
     resultRef,
     resultHash,
     proofBytes,
+    subdomain,
     proof,
     success,
-    finalize,
     finalizeOnly,
-    preferFinalize,
     metadata,
     telemetry,
     telemetryCid,
@@ -98,6 +123,14 @@ export async function submitDeliverable(
   if (!wallet) {
     throw new Error('wallet is required');
   }
+  if (finalizeOnly) {
+    throw new SubmissionInputError(
+      'finalizeOnly is unsupported: submit results for independent validation before settlement'
+    );
+  }
+  const identityProof = normaliseIdentityProof(
+    proofBytes ?? (typeof proof === 'string' ? proof : undefined)
+  );
 
   const resolvedResultRef =
     (resultRef && resultRef.trim().length > 0 ? resultRef : undefined) ||
@@ -106,6 +139,8 @@ export async function submitDeliverable(
 
   let resolvedHash: string;
   if (resultHash && resultHash.trim().length > 0) {
+    if (!ethers.isHexString(resultHash, 32))
+      throw new SubmissionInputError('resultHash must be a bytes32 value');
     resolvedHash = resultHash;
   } else if (resolvedResultRef) {
     resolvedHash = ethers.id(resolvedResultRef);
@@ -115,9 +150,7 @@ export async function submitDeliverable(
 
   if (signature && signedPayload !== undefined) {
     const canonical = canonicalisePayload(signedPayload);
-    const recovered = ethers
-      .verifyMessage(canonical, signature)
-      .toLowerCase();
+    const recovered = ethers.verifyMessage(canonical, signature).toLowerCase();
     if (recovered !== wallet.address.toLowerCase()) {
       throw new Error('signature mismatch');
     }
@@ -125,49 +158,24 @@ export async function submitDeliverable(
 
   let submissionMethod: SubmissionMethod = 'none';
   let txHash: string | undefined;
-  const shouldAttemptFinalize =
-    preferFinalize !== undefined
-      ? preferFinalize && Boolean(resolvedResultRef)
-      : finalize !== false && Boolean(resolvedResultRef);
-
-  const proofBytesNormalised =
-    typeof proofBytes === 'string' && proofBytes.trim().length > 0
-      ? proofBytes
-      : typeof proof === 'string' && proof.trim().length > 0
-      ? proof
-      : '0x';
-
   await ensureTaxAcknowledgement(wallet);
-
-  if (shouldAttemptFinalize && resolvedResultRef) {
-    try {
-      const finalizeTx = await (registry as any)
-        .connect(wallet)
-        .finalizeJob(jobId, resolvedResultRef);
-      await finalizeTx.wait();
-      submissionMethod = 'finalizeJob';
-      txHash = finalizeTx.hash;
-    } catch (err) {
-      if (finalizeOnly) {
-        throw err;
-      }
-      console.warn('finalizeJob failed, falling back to submit', err);
-    }
-  }
-
-  if (submissionMethod !== 'finalizeJob') {
-    const submissionUri = resultUri || resolvedResultRef || '';
-    try {
-      const submitTx = await (registry as any)
-        .connect(wallet)
-        .submit(jobId, resolvedHash, submissionUri, '', proofBytesNormalised);
-      await submitTx.wait();
-      submissionMethod = 'submit';
-      txHash = submitTx.hash;
-    } catch (err) {
-      console.error('submit transaction failed', err);
-      throw new Error('Failed to submit job result transaction');
-    }
+  const submissionUri = resultUri || resolvedResultRef || '';
+  try {
+    const submitTx = await (registry as any)
+      .connect(wallet)
+      .submit(
+        jobId,
+        resolvedHash,
+        submissionUri,
+        subdomain ?? '',
+        identityProof
+      );
+    await submitTx.wait();
+    submissionMethod = 'submit';
+    txHash = submitTx.hash;
+  } catch (err) {
+    console.error('submit transaction failed', err);
+    throw new Error('Failed to submit job result transaction');
   }
 
   const submittedAt = new Date().toISOString();

@@ -34,7 +34,7 @@ import {
   normaliseMetadata,
   resolveAgentAddress,
 } from './apiHelpers';
-import { submitDeliverable } from './agentActions';
+import { SubmissionInputError, submitDeliverable } from './agentActions';
 import {
   ensureStake,
   getStakeBalance,
@@ -771,8 +771,9 @@ async function handleSubmitResult(
     respondWithError(callback, err, grpc.status.INVALID_ARGUMENT);
     return;
   }
+  let subdomain: string;
   try {
-    await checkEnsSubdomain(wallet.address);
+    subdomain = (await checkEnsSubdomain(wallet.address)).split('.')[0];
   } catch (err) {
     respondWithError(callback, err, grpc.status.PERMISSION_DENIED);
     return;
@@ -829,6 +830,7 @@ async function handleSubmitResult(
       resultRef: request.result_ref,
       resultHash: request.result_hash,
       proofBytes: request.proof_bytes,
+      subdomain,
       proof,
       success,
       finalize: finalizePreference,
@@ -853,9 +855,11 @@ async function handleSubmitResult(
     callback(null, response);
   } catch (err: any) {
     const message = err?.message || String(err);
-    const code = message && message.toLowerCase().includes('signature')
-      ? grpc.status.INVALID_ARGUMENT
-      : grpc.status.INTERNAL;
+    const code =
+      err instanceof SubmissionInputError ||
+      (message && message.toLowerCase().includes('signature'))
+        ? grpc.status.INVALID_ARGUMENT
+        : grpc.status.INTERNAL;
     callback(createServiceError(code, message), null);
   }
 }

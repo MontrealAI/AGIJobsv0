@@ -60,14 +60,11 @@ contract SimpleJobRegistry {
             address agent,
             uint128 reward,
             uint96 stake,
-            uint32 feePct,
-            uint8 state,
-            bool success,
-            uint8 agentTypes,
-            uint64 deadline,
-            uint64 assignedAt,
+            uint128 burnReceiptAmount,
             bytes32 uriHash,
-            bytes32 resultHash
+            bytes32 resultHash,
+            bytes32 specHash,
+            uint256 packedMetadata
         )
     {
         Job storage storedJob = jobStore[jobId];
@@ -75,16 +72,15 @@ contract SimpleJobRegistry {
         agent = storedJob.agent;
         reward = uint128(storedJob.reward);
         stake = 0;
-        feePct = 0;
-        state = storedJob.finalized
-            ? 5
+        burnReceiptAmount = 0;
+        uint8 state = storedJob.finalized
+            ? 6
             : (storedJob.submitted ? 3 : (storedJob.agent == address(0) ? 1 : 2));
-        success = storedJob.finalized;
-        agentTypes = 0;
-        deadline = storedJob.deadline;
-        assignedAt = storedJob.agent == address(0) ? 0 : uint64(block.timestamp);
-        uriHash = storedJob.specHash;
+        uriHash = keccak256(bytes(storedJob.uri));
         resultHash = storedJob.resultHash;
+        specHash = storedJob.specHash;
+        packedMetadata = uint256(state) | (storedJob.finalized ? 8 : 0)
+            | (uint256(3) << 5) | (uint256(storedJob.deadline) << 77);
     }
 
     function taxPolicy() external pure returns (address) {
@@ -118,7 +114,7 @@ contract SimpleJobRegistry {
     function applyForJob(
         uint256 jobId,
         string calldata subdomain,
-        bytes calldata /* proof */
+        bytes32[] calldata /* proof */
     ) external {
         Job storage storedJob = jobStore[jobId];
         require(storedJob.employer != address(0), "job missing");
@@ -133,7 +129,7 @@ contract SimpleJobRegistry {
         bytes32 resultHash,
         string calldata resultURI,
         string calldata /* subdomain */,
-        bytes calldata /* proof */
+        bytes32[] calldata /* proof */
     ) external {
         Job storage storedJob = jobStore[jobId];
         require(storedJob.agent == msg.sender, "not agent");

@@ -48,7 +48,7 @@ export interface TaskExecutionResult {
   outputPath: string | null;
   energy: EnergySample | null;
   rawOutput: unknown;
-  submissionMethod: 'finalizeJob' | 'submit';
+  submissionMethod: 'submit';
   invocationMetrics?: JobInvocationMetrics;
   receiptDigest: string;
   receiptAttestationUid?: string;
@@ -513,7 +513,7 @@ export async function executeJob(
   let outputPath = '';
   let error: Error | null = null;
   let energySample: EnergySample | null = null;
-  let submissionMethod: 'finalizeJob' | 'submit' = 'submit';
+  const submissionMethod = 'submit';
   let invocation: AgentTaskRunResult | null = null;
   let receiptDigest = '';
   let receiptAttestationUid: string | undefined;
@@ -564,36 +564,13 @@ export async function executeJob(
     await acknowledgeTaxPolicy(wallet);
 
     const contract = (registry as any).connect(wallet);
-    let tx:
-      | {
-          hash: string;
-          wait: () => Promise<unknown>;
-        }
-      | undefined;
-
-    if (typeof contract?.finalizeJob === 'function') {
-      try {
-        tx = await contract.finalizeJob(job.jobId, resultURI);
-        submissionMethod = 'finalizeJob';
-      } catch (finalizeError) {
-        submissionMethod = 'submit';
-        console.warn(
-          'finalizeJob invocation failed, falling back to submit',
-          finalizeError
-        );
-      }
-    }
-
-    if (!tx) {
-      tx = await contract.submit(
-        job.jobId,
-        resultHash,
-        resultURI,
-        identity.label ?? '',
-        []
-      );
-      submissionMethod = 'submit';
-    }
+    const tx = await contract.submit(
+      job.jobId,
+      resultHash,
+      resultURI,
+      identity.label ?? '',
+      []
+    );
 
     if (!tx) {
       throw new Error('Failed to submit job result transaction');

@@ -64,7 +64,12 @@ async function main() {
   async function deploy(source, contract, args = []) {
     const artifact = JSON.parse(
       fs.readFileSync(
-        path.join(root, 'artifacts', source, `${contract}.json`),
+        path.join(
+          root,
+          'cache/container-fixtures/artifacts',
+          source,
+          `${contract}.json`
+        ),
         'utf8'
       )
     );
@@ -175,6 +180,26 @@ async function main() {
   await ready();
   if (docker('inspect', '--format', '{{.Config.User}}', name).trim() !== 'node')
     throw new Error('Gateway does not run as node');
+  docker(
+    'exec',
+    name,
+    'node',
+    '-e',
+    `const fs = require('node:fs');
+const assert = require('node:assert/strict');
+assert.notEqual(process.getuid(), 0);
+for (const target of ['/app', '/app/package.json', '/app/package-lock.json', '/app/node_modules', '/app/node_modules/ethers', '/app/node_modules/ethers/package.json', '/app/scripts', '/app/scripts/start-telemetry.sh']) {
+  assert.equal(fs.statSync(target).uid, 0, target + ' must remain root-owned');
+  assert.throws(() => fs.accessSync(target, fs.constants.W_OK), { code: 'EACCES' }, target + ' must not be writable by the runtime user');
+}
+for (const target of ['/app/storage', '/app/logs', '/app/agent-gateway/dist', '/app/agent-gateway/dist/storage', '/app/agent-gateway/dist/logs', '/app/agent-gateway/dist/config']) {
+  assert.equal(fs.statSync(target).uid, process.getuid(), target + ' must belong to the runtime user');
+  const probe = fs.mkdtempSync(target + '/.write-probe-');
+  fs.writeFileSync(probe + '/record', 'runtime-write');
+  assert.equal(fs.readFileSync(probe + '/record', 'utf8'), 'runtime-write');
+  fs.rmSync(probe, { recursive: true });
+}`
+  );
   const block = await provider.getBlock('latest');
   const record = {
     jobId: '1',
@@ -221,7 +246,7 @@ async function main() {
     )})process.exit(1)`
   );
   console.log(
-    'PASS: gateway token verification, wallet loading, HTTP/gRPC boot, non-root process, durable record across recreation and graceful shutdown (local contract fixtures).'
+    'PASS: gateway token verification, wallet loading, HTTP/gRPC boot, non-root process, protected dependencies, writable runtime state, durable record across recreation and graceful shutdown (local contract fixtures).'
   );
 }
 

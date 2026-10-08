@@ -105,7 +105,9 @@ function resolveResourceUri(value: string): string | undefined {
   return trimmed;
 }
 
-async function fetchJobSpec(uri?: string): Promise<Record<string, unknown> | null> {
+async function fetchJobSpec(
+  uri?: string
+): Promise<Record<string, unknown> | null> {
   const resolved = uri ? resolveResourceUri(uri) : undefined;
   if (!resolved) return null;
   try {
@@ -118,12 +120,17 @@ async function fetchJobSpec(uri?: string): Promise<Record<string, unknown> | nul
       return json as Record<string, unknown>;
     }
   } catch (err) {
-    console.warn('Failed to fetch job specification for certificate metadata', err);
+    console.warn(
+      'Failed to fetch job specification for certificate metadata',
+      err
+    );
   }
   return null;
 }
 
-function extractSlaDetail(spec: Record<string, unknown> | null): SlaDetail | undefined {
+function extractSlaDetail(
+  spec: Record<string, unknown> | null
+): SlaDetail | undefined {
   if (!spec) return undefined;
   const direct = spec.sla as Record<string, unknown> | undefined;
   const fallback =
@@ -134,11 +141,12 @@ function extractSlaDetail(spec: Record<string, unknown> | null): SlaDetail | und
     return undefined;
   }
   const uri = normaliseUri(
-    (fallback.uri as string | undefined) ||
-      (fallback.url as string | undefined)
+    (fallback.uri as string | undefined) || (fallback.url as string | undefined)
   );
   const requiresSignature = Boolean(
-    fallback.requiresSignature ?? fallback.signatureRequired ?? fallback.mustSign
+    fallback.requiresSignature ??
+      fallback.signatureRequired ??
+      fallback.mustSign
   );
   const title = normaliseUri(fallback.title as string | undefined);
   const version = normaliseUri(
@@ -175,23 +183,41 @@ async function resolveJobContext(
       context.specUri = cached.uri;
     }
   }
-  if (!context.employer || !context.agent || !context.specHash || !context.uriHash) {
+  if (
+    !context.employer ||
+    !context.agent ||
+    !context.specHash ||
+    !context.uriHash
+  ) {
     try {
       const chainJob = await (registry as any).jobs(jobId);
       if (chainJob) {
         context.employer = context.employer ?? (chainJob.employer as string);
         context.agent = context.agent ?? (chainJob.agent as string);
-        const chainSpecHash = (chainJob.specHash ?? chainJob[7]) as string | undefined;
-        if (chainSpecHash) {
+        const chainSpecHash = (chainJob.specHash ?? chainJob[7]) as
+          | string
+          | undefined;
+        if (
+          typeof chainSpecHash === 'string' &&
+          ethers.isHexString(chainSpecHash, 32)
+        ) {
           context.specHash = context.specHash ?? chainSpecHash;
         }
-        const chainUriHash = (chainJob.uriHash ?? chainJob[5]) as string | undefined;
-        if (chainUriHash) {
+        const chainUriHash = (chainJob.uriHash ?? chainJob[5]) as
+          | string
+          | undefined;
+        if (
+          typeof chainUriHash === 'string' &&
+          ethers.isHexString(chainUriHash, 32)
+        ) {
           context.uriHash = context.uriHash ?? chainUriHash;
         }
       }
     } catch (err) {
-      console.warn('Unable to load on-chain job context for certificate metadata', err);
+      console.warn(
+        'Unable to load on-chain job context for certificate metadata',
+        err
+      );
     }
   }
 
@@ -230,7 +256,10 @@ async function resolveJobContext(
       const hash = ethers.keccak256(ethers.toUtf8Bytes(context.specUri));
       context.uriHash = hash;
     } catch (err) {
-      console.warn('Failed to compute specification hash for certificate metadata', err);
+      console.warn(
+        'Failed to compute specification hash for certificate metadata',
+        err
+      );
     }
   }
 
@@ -265,7 +294,9 @@ export async function publishCertificateMetadata(
     return null;
   }
   if (input.success === false) {
-    console.warn('Skipping certificate metadata publication for failed submission');
+    console.warn(
+      'Skipping certificate metadata publication for failed submission'
+    );
     return null;
   }
 
@@ -281,8 +312,12 @@ export async function publishCertificateMetadata(
     issuedAt,
     job: {
       id: jobId,
-      employer: jobContext.employer ? normaliseAddress(jobContext.employer) : undefined,
-      agent: jobContext.agent ? normaliseAddress(jobContext.agent) : agentAddress,
+      employer: jobContext.employer
+        ? normaliseAddress(jobContext.employer)
+        : undefined,
+      agent: jobContext.agent
+        ? normaliseAddress(jobContext.agent)
+        : agentAddress,
       specUri: jobContext.specUri,
       specHash: jobContext.specHash,
       uriHash: jobContext.uriHash,
@@ -329,22 +364,28 @@ export async function publishCertificateMetadata(
   });
   const fileStat = await ipfs.files.stat(filePath);
   const directoryStat = await ipfs.files.stat(directoryPath);
-  const fileCid = fileStat?.cid?.toString?.() ?? directoryStat?.cid?.toString?.();
+  const fileCid =
+    fileStat?.cid?.toString?.() ?? directoryStat?.cid?.toString?.();
 
   let ipnsName: string | undefined;
   if (CERTIFICATE_IPNS_KEY && ipfs.name?.publish) {
     try {
-      const publication = await ipfs.name.publish(`/ipfs/${directoryStat.cid}`, {
-        key: CERTIFICATE_IPNS_KEY,
-        resolve: false,
-      });
+      const publication = await ipfs.name.publish(
+        `/ipfs/${directoryStat.cid}`,
+        {
+          key: CERTIFICATE_IPNS_KEY,
+          resolve: false,
+        }
+      );
       ipnsName = publication?.name ?? CERTIFICATE_IPNS_KEY;
     } catch (err) {
       console.warn('Failed to publish certificate metadata IPNS record', err);
     }
   }
 
-  const base = ipnsName ? `ipfs://${ipnsName}/` : `ipfs://${directoryStat.cid}/`;
+  const base = ipnsName
+    ? `ipfs://${ipnsName}/`
+    : `ipfs://${directoryStat.cid}/`;
   const uri = `${base}${jobId}`;
 
   return {

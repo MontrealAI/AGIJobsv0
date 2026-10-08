@@ -2,6 +2,7 @@ import { ethers, Contract, Wallet, JsonRpcProvider } from 'ethers';
 import { WebSocketServer, WebSocket } from 'ws';
 import { loadTokenConfig } from '../scripts/config';
 import WalletManager from './wallet';
+import { decodeJobMetadata } from './jobMetadata';
 import { Job, AgentInfo, CommitData } from './types';
 import {
   loadCommitRecord,
@@ -183,27 +184,27 @@ export const AUTH_MESSAGE = 'Agent Gateway Auth';
 export const provider: JsonRpcProvider = new ethers.JsonRpcProvider(RPC_URL);
 
 // Minimal ABI for JobRegistry interactions
-const JOB_REGISTRY_ABI = [
+export const JOB_REGISTRY_ABI = [
   ...VALIDATION_REGISTRY_ABI,
   'event JobCreated(uint256 indexed jobId, address indexed employer, address indexed agent, uint256 reward, uint256 stake, uint256 fee, bytes32 specHash, string uri)',
   'event ApplicationSubmitted(uint256 indexed jobId, address indexed applicant, string subdomain)',
   'event AgentAssigned(uint256 indexed jobId, address indexed agent, string subdomain)',
   'event ResultSubmitted(uint256 indexed jobId, address indexed worker, bytes32 resultHash, string resultURI, string subdomain)',
-  'function applyForJob(uint256 jobId, string subdomain, bytes proof) external',
+  'event JobCompleted(uint256 indexed jobId, bool success)',
+  'function applyForJob(uint256 jobId, string subdomain, bytes32[] proof) external',
   'function createJob(uint256 reward, uint64 deadline, bytes32 specHash, string uri) external returns (uint256)',
-  'function submit(uint256 jobId, bytes32 resultHash, string resultURI, string subdomain, bytes proof) external',
-  'function finalizeJob(uint256 jobId, string resultRef) external',
+  'function submit(uint256 jobId, bytes32 resultHash, string resultURI, string subdomain, bytes32[] proof) external',
   'function acknowledgeTaxPolicy() external returns (string)',
   'function cancelExpiredJob(uint256 jobId) external',
   'function taxPolicy() view returns (address)',
-  'function jobs(uint256 jobId) view returns (address employer,address agent,uint128 reward,uint96 stake,uint32 feePct,uint8 state,bool success,uint8 agentTypes,uint64 deadline,uint64 assignedAt,bytes32 uriHash,bytes32 resultHash)',
+  'function jobs(uint256 jobId) view returns (address employer,address agent,uint128 reward,uint96 stake,uint128 burnReceiptAmount,bytes32 uriHash,bytes32 resultHash,bytes32 specHash,uint256 packedMetadata)',
+  'function decodeJobMetadata(uint256 packed) pure returns (tuple(uint8 state,bool success,bool burnConfirmed,uint8 agentTypes,uint32 feePct,uint32 agentPct,uint64 deadline,uint64 assignedAt))',
   'function expirationGracePeriod() view returns (uint256)',
   'function nextJobId() view returns (uint256)',
 ];
 
 const STAKE_MANAGER_ABI = [
   'event RewardPaid(bytes32 indexed jobId,address indexed to,uint256 amount)',
-  'function stake(uint8 role, uint256 amount)',
   'function depositStake(uint8 role, uint256 amount)',
   'function stakeOf(address user, uint8 role) view returns (uint256)',
   'function minStake() view returns (uint256)',
@@ -221,9 +222,9 @@ const VALIDATION_MODULE_ABI = [
 ];
 
 const DISPUTE_MODULE_ABI = [
-  'event DisputeRaised(uint256 indexed jobId, address indexed claimant, bytes32 indexed evidenceHash)',
+  'event DisputeRaised(uint256 indexed jobId, address indexed claimant, bytes32 indexed evidenceHash, string reason)',
   'event DisputeResolved(uint256 indexed jobId, address indexed resolver, bool employerWins)',
-  'function disputes(uint256 jobId) view returns (tuple(address claimant,uint256 raisedAt,bool resolved,uint256 fee,bytes32 evidenceHash))',
+  'function disputes(uint256 jobId) view returns (address claimant,uint256 raisedAt,bool resolved,uint256 fee,bytes32 evidenceHash,string reason)',
 ];
 
 export const registry = new Contract(
@@ -458,15 +459,21 @@ export async function scheduleExpiration(jobId: string): Promise<void> {
   try {
     const job = await registry.jobs(jobId);
     const grace = await registry.expirationGracePeriod();
-    const deadline = Number(job.deadline) + Number(grace);
-    const delay = deadline - Math.floor(Date.now() / 1000);
-    if (delay <= 0) {
+    const metadata = decodeJobMetadata(job.packedMetadata);
+    const deadline = metadata.deadline + BigInt(grace) + 1n;
+    const delay = deadline - BigInt(Math.floor(Date.now() / 1000));
+    if (delay <= 0n) {
       await expireJob(jobId);
     } else {
       if (expiryTimers.has(jobId)) clearTimeout(expiryTimers.get(jobId));
       expiryTimers.set(
         jobId,
-        setTimeout(() => expireJob(jobId), delay * 1000)
+        // Node truncates larger delays to 1ms. Recheck long deadlines instead
+        // of accidentally attempting immediate expiration.
+        setTimeout(
+          () => scheduleExpiration(jobId),
+          Number(delay * 1000n > 2147483647n ? 2147483647n : delay * 1000n)
+        )
       );
     }
   } catch (err) {

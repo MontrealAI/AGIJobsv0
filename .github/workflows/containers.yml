@@ -75,9 +75,10 @@ jobs:
         if: matrix.image.name == 'gateway'
         env:
           CYPRESS_INSTALL_BINARY: '0'
+          NODE_OPTIONS: --max-old-space-size=4096
         run: |
           ./scripts/ci/npm-ci.sh
-          npx hardhat compile
+          npx hardhat compile --config scripts/docker/hardhat.fixtures.config.cjs --concurrency 1
 
       # Generate fixture artifacts before the first build so the executed image
       # and attested publish below use the same workspace/build context.

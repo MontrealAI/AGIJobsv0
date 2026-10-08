@@ -1,5 +1,6 @@
 import { WebSocketServer } from 'ws';
 import { ethers } from 'ethers';
+import { decodeJobMetadata } from './jobMetadata';
 import {
   registry,
   validation,
@@ -177,13 +178,7 @@ export function registerEvents(
           }
           employer = (chainJob.employer as string) || undefined;
           agentAddress = (chainJob.agent as string) || undefined;
-          const typeValue =
-            typeof chainJob.agentTypes !== 'undefined'
-              ? Number(chainJob.agentTypes)
-              : undefined;
-          if (!Number.isNaN(typeValue as number)) {
-            agentType = typeValue as number;
-          }
+          agentType = decodeJobMetadata(chainJob.packedMetadata).agentTypes;
         }
       } catch (err) {
         console.warn('Failed to load job details for training log', id, err);

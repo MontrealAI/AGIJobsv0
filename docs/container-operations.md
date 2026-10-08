@@ -15,6 +15,8 @@ The container catalog in [`scripts/docker/container-catalog.json`](../scripts/do
 
 The root stack binds published ports to loopback. Its gateway listens on port 8090, and the orchestrator runs the One-Box HTTP server on port 8080. The gateway stores its compiled-runtime state in the `gateway_storage` volume; validation commitments must survive container recreation. Back up this volume before upgrades. Older deployments that wrote state into an unmounted container directory require a deliberate state migration before replacement; do not discard those containers or their reveal secrets.
 
+The gateway runs as the unprivileged `node` user. Installed dependencies, package manifests and the telemetry helper stay root-owned and read-only to that user. The compiled runtime remains owned by `node` because its validation anchor, generated agent configuration, training records and telemetry write beneath that tree. Image construction assigns ownership when copying the compiled runtime and only adjusts the writable storage/log directories; it does not rewrite the entire dependency tree into another image layer. The gateway image probe checks these permissions and performs actual state writes.
+
 The generated environment supplies both `JOB_REGISTRY` and `JOB_REGISTRY_ADDRESS`. The gateway accepts the validated nonzero `AGIALPHA_TOKEN` deployment address and still checks the token's name, symbol and decimals against its configuration on chain. Set `KEYSTORE_URL` and `KEYSTORE_TOKEN` for the real internal keystore; the template intentionally does not contain a working production credential. Deployed addresses alone do not commission wallets, workers or independent reviewers.
 
 ## Browser configuration
@@ -33,7 +35,7 @@ On main and release tags, CI publishes architecture-specific candidates with pro
 
 | Probe | Evidence produced |
 | --- | --- |
-| Gateway | Positive boot against isolated local Hardhat token/registry/validation fixtures and an ephemeral local keystore; token metadata check, wallet load, HTTP and gRPC listeners, non-root process, a durable validation record across container recreation, and graceful shutdown. No external worker or paid settlement is implied. |
+| Gateway | Positive boot against isolated local Hardhat token/registry/validation fixtures and an ephemeral local keystore; token metadata check, wallet load, HTTP and gRPC listeners, non-root process, protected dependency permissions and writable runtime state, a durable validation record across container recreation, and graceful shutdown. No external worker or paid settlement is implied. |
 | Node runner / One-Box | HTTP health and rejection of an unauthenticated API request. Contract lifecycle behavior is covered separately by the end-to-end tests. |
 | Enterprise / validator UIs | Production Next.js server boots and serves the application. Browser voting and wallet integration have their own tests. |
 | Owner console / CULTURE studio | Nginx configuration and a served application/health endpoint. |
@@ -51,4 +53,6 @@ python3 scripts/docker/validate-catalog.py
 bash scripts/docker/container-smoke.sh webapp agi-smoke:webapp
 ```
 
-The gateway probe additionally needs the pinned root Node/npm toolchain, installed locked dependencies, and `npx hardhat compile`. It launches an isolated chain itself. It does not use production keys.
+The gateway probe additionally needs the pinned root Node/npm toolchain, installed locked dependencies, and `npx hardhat compile --config scripts/docker/hardhat.fixtures.config.cjs --concurrency 1`. This compiles the three repository gateway fixture contracts and their imports into a separate artifact directory, keeping solcjs input bounded. Full production contract compilation remains a separate required gate. The probe launches an isolated chain itself and does not use production keys.
+
+The October 8 checks observed a compiler limitation with the pinned Solidity 0.8.25: compiling the full project through its WASM/solcjs fallback failed with `memory access out of bounds` on the native ARM64 runner and when forced locally on AMD64. A single sequential compilation with a 4096 MB Node heap reproduced the failure. Use the native AMD64 Solidity compiler for the full production build, as the contract CI does; increasing Node's heap is not an established fix. This observation concerns that compiler and source input, not all ARM64 compilation. Native ARM64 container execution and the bounded gateway fixture compilation are verified separately.

@@ -10,6 +10,8 @@ Corrections include Compose syntax and build contexts, server commands and ports
 
 The gateway probe uses isolated local contracts and an ephemeral local keystore. It checks token metadata, loaded wallets, HTTP/gRPC listeners, non-root execution, a record surviving container recreation, and shutdown. Published architecture candidates must have the same image identity as the images executed and scanned before multi-architecture promotion.
 
+At PR commit `2cfa4519c5d33a1581201f877e6e976bfbe0bdd9`, the full 267-source input failed inside Solidity 0.8.25's WASM/solcjs compiler on the native ARM64 runner. Forcing the same compiler locally on AMD64 reproduced the exact memory-bounds failure with one sequential input and a 4096 MB Node heap. Native AMD64 production compilation passes; this is an observed compiler/input limitation, not a blanket claim that ARM64 cannot compile Solidity. The gateway probe now compiles only its three repository fixture contracts and imports, with isolated artifacts and bounded concurrency. Native ARM64 image execution and production contract compilation remain separate checks; a larger Node heap is not claimed to fix the full-source WASM failure.
+
 ## Deployment and validator correctness
 
 - The on-chain installer accepts nominated two-step ownership before protected setters. Deployment no longer depends on local RPC account impersonation. Missing module references, authorized callers, fee-pool wiring and ownership handoffs are completed and checked.
@@ -24,6 +26,10 @@ The follow-up validation uses the same `COMMIT_WINDOW=30m` and `REVEAL_WINDOW=30
 
 The validator proxy constructs its destination from validated operator configuration and a bounded numeric path segment, with origin preservation, redirect rejection and response limits. Its commit module uses typed ESM imports and passes an isolated image-equivalent build. Vitest 4.1.11 fixes the reported development-tool advisories; both full and production-only validator audits report zero findings, and the lockfile installs with the pinned npm version.
 
+The real gateway image probe subsequently exposed stale client interfaces that startup-only stubs had missed. Gateway event topics, job tuple decoding, Merkle proof arrays, dispute records and expiration scheduling now match the current deployed contracts. Job creation uses its own confirmed receipt instead of a shared counter; worker result submission remains separate from independent validation and authorized settlement. Existing HTTP/gRPC proof fields remain compatible, malformed inputs fail before writes, and the obsolete finalization fallback is removed. Staking uses the current deposit method and stops on uncertain prerequisite reads or receipt responses instead of sending a fallback transaction.
+
+The final combined gateway TypeScript/local-chain E2E run passed **22 tests**; the complete contract run uses CI's 30-minute windows. Gateway regressions compare every configured function and startup event with compiled module interfaces, exercise actual registry transactions, and preserve exact packed metadata values. The local-chain E2E uses the same proof shape as production; its old conversion shim is removed. Previously undiscovered TypeScript interaction suites are now explicitly required in CI, and their test hooks/configuration are isolated. Gateway operator guides describe the actual compiled service, keystore, unary gRPC API, persisted paths and remaining recovery/commissioning boundaries.
+
 ## Preserved diagrams and current guidance
 
 The source audit renders tracked Markdown fences, standalone Mermaid files and static Mermaid blocks in HTML directly with the locked renderer, without the website's legacy repair adapters. Syntax corrections preserve the diagrams' substantive nodes, relationships, labels and historical measurements. A file containing two complete graphs is split into two linked diagrams so both can render.
@@ -34,7 +40,7 @@ The [computer-work guide](../computer-work.md) reflects the checked official Ope
 
 ## Verification and release boundary
 
-Local validation compiled **267 Solidity files**, passed **745 contract/integration tests**, and passed the production bytecode-size gate, both service builds, **64 compiled runtime/provider/packaging checks** and **71 release/deployment regression checks**. Validator UI verification passed **8 real-contract tests**, **6 unit tests**, a production build and a browser smoke journey. Workflow validation passed actionlint, formatting, the 24 core and nine companion context checks, and all 23 required CI-summary dependencies.
+Local validation compiled **267 Solidity files**, passed **766 contract/integration tests**, and passed the production bytecode-size gate, both service builds, **64 compiled runtime/provider/packaging checks** and **71 release/deployment regression checks**. Validator UI verification passed **8 real-contract tests**, **6 unit tests**, a production build and a browser smoke journey. Workflow validation passed actionlint, formatting, the 24 core and nine companion context checks, and all 23 required CI-summary dependencies.
 
 The website builds **76 demo pages, 345 guides and 267 diagrams**. Its **55 model/site tests**, **41 main browser check groups** and the separate Phase 8, Business 3, OmniSovereign, Meta Alpha, Hypernova, Huxley-Gödel, program-synthesis and CULTURE browser journeys passed. The direct source gate rendered **504 static Mermaid sources**; one server-template target is explicitly inventoried separately. Runtime-generated diagrams require their application-specific checks. These counts describe the tested source, not every possible external renderer or deployed configuration.
 

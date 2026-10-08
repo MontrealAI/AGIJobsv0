@@ -106,7 +106,11 @@ import {
   parseContributors,
 } from './apiHelpers';
 import { getRewardPayouts } from './events';
-import { submitDeliverable } from './agentActions';
+import {
+  normaliseIdentityProof,
+  SubmissionInputError,
+  submitDeliverable,
+} from './agentActions';
 import { serialiseChainJob } from './jobSerialization';
 
 const app = express();
@@ -1440,18 +1444,24 @@ app.post(
   '/jobs/:id/apply',
   authMiddleware,
   async (req: express.Request, res: express.Response) => {
-    const { address } = req.body as { address: string };
+    const { address, proofBytes } = req.body as {
+      address: string;
+      proofBytes?: unknown;
+    };
     const wallet = walletManager.get(address);
     if (!wallet) return res.status(400).json({ error: 'unknown wallet' });
+    let subdomain: string;
+    let identityProof: string[];
     try {
-      await checkEnsSubdomain(wallet.address);
+      identityProof = normaliseIdentityProof(proofBytes);
+      subdomain = (await checkEnsSubdomain(wallet.address)).split('.')[0];
     } catch (err: any) {
       return res.status(400).json({ error: err.message });
     }
     try {
       const tx = await (registry as any)
         .connect(wallet)
-        .applyForJob(req.params.id, '', '0x');
+        .applyForJob(req.params.id, subdomain, identityProof);
       await tx.wait();
       res.json({ tx: tx.hash });
     } catch (err: any) {
@@ -1465,11 +1475,18 @@ app.post(
   '/jobs/:id/submit',
   authMiddleware,
   async (req: express.Request, res: express.Response) => {
-    const { address, result } = req.body as { address: string; result: string };
+    const { address, result, proofBytes } = req.body as {
+      address: string;
+      result: string;
+      proofBytes?: unknown;
+    };
     const wallet = walletManager.get(address);
     if (!wallet) return res.status(400).json({ error: 'unknown wallet' });
+    let subdomain: string;
+    let identityProof: string[];
     try {
-      await checkEnsSubdomain(wallet.address);
+      identityProof = normaliseIdentityProof(proofBytes);
+      subdomain = (await checkEnsSubdomain(wallet.address)).split('.')[0];
     } catch (err: any) {
       return res.status(400).json({ error: err.message });
     }
@@ -1478,7 +1495,7 @@ app.post(
       await ensureTaxAcknowledgement(wallet);
       const tx = await (registry as any)
         .connect(wallet)
-        .submit(req.params.id, hash, result || '', '', '0x');
+        .submit(req.params.id, hash, result || '', subdomain, identityProof);
       await tx.wait();
       const deliverable = recordDeliverable({
         jobId: req.params.id,
@@ -1514,8 +1531,14 @@ app.post(
       res.status(400).json({ error: 'unknown wallet' });
       return;
     }
+    let subdomain: string;
+    let identityProof: string[];
     try {
-      await checkEnsSubdomain(wallet.address);
+      identityProof = normaliseIdentityProof(
+        body.proofBytes ??
+          (typeof body.proof === 'string' ? body.proof : undefined)
+      );
+      subdomain = (await checkEnsSubdomain(wallet.address)).split('.')[0];
     } catch (err: any) {
       res.status(400).json({ error: err?.message || String(err) });
       return;
@@ -1534,13 +1557,6 @@ app.post(
         : resultRef
         ? ethers.id(resultRef)
         : ethers.ZeroHash;
-    const proofBytes =
-      typeof body.proofBytes === 'string' && body.proofBytes
-        ? body.proofBytes
-        : typeof body.proof === 'string' && body.proof
-        ? body.proof
-        : '0x';
-
     let contributors: DeliverableContributor[] | undefined;
     try {
       contributors = parseContributors(body.contributors);
@@ -1562,7 +1578,8 @@ app.post(
         resultCid,
         resultRef,
         resultHash,
-        proofBytes,
+        proofBytes: identityProof,
+        subdomain,
         proof: (body as { proof?: unknown }).proof,
         success: body.success !== false,
         finalize: body.finalize !== false,
@@ -1592,7 +1609,11 @@ app.post(
       });
     } catch (err: any) {
       const message = err?.message || String(err);
-      const status = message && message.includes('signature') ? 400 : 500;
+      const status =
+        err instanceof SubmissionInputError ||
+        (message && message.includes('signature'))
+          ? 400
+          : 500;
       res.status(status).json({ error: message });
     }
   }

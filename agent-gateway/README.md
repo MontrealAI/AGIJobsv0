@@ -35,10 +35,11 @@ flowchart LR
 
 - **REST + WebSocket API** – `/jobs`, `/agents`, `/deliverables`, `/telemetry`, `/metrics`, and `/auth/challenge` endpoints power
   agent UX and operator dashboards. Authentication accepts either an API key or signature-based challenge using the rotating
-  nonce defined in `utils.ts` (nonce rotates after each successful signature). [Source](routes.ts)
-- **gRPC control plane** – The gRPC server mirrors the REST surface for high-throughput integrations and streams results to the
-  Alpha Bridge client. All protobuf types live in `protos/agi/alpha/bridge/v1`. The service adapts HTTP errors back to canonical
-  gRPC codes so clients always receive deterministic error handling. [Source](grpc.ts)
+  challenge nonce returned by `/auth/challenge` (nonce rotates after each successful signature). [Source](routes.ts)
+- **gRPC control plane** – `agentgateway.v1.AgentGateway` exposes seven unary RPCs for result submission, heartbeats, telemetry,
+  job information, staking and reward claims. Its schema is [`protos/agent_gateway.proto`](protos/agent_gateway.proto).
+  It shares submission and staking helpers with REST and uses gRPC status codes for failures. Job event broadcasts use the
+  separate WebSocket interface; the Alpha Bridge has its own protocol. [Source](grpc.ts)
 - **Telemetry + audit anchoring** – Incoming telemetry is validated, stored, and exported both via `/metrics` and the anchoring
   tasks under `auditAnchoring.ts`, supporting verifiable audit records when anchoring is configured and confirmed. [Source](auditAnchoring.ts) [Source](telemetry.ts)
 - **Staking automation** – `stakeCoordinator.ts` wraps the stake manager ABI so agents can top-up, withdraw, or restake directly
@@ -52,29 +53,56 @@ Set the following variables before launching the service:
 
 | Variable | Purpose |
 | -------- | ------- |
-| `RPC_URL` | JSON-RPC endpoint for contract interactions (HTTP or WS). [Source](utils.ts) |
+| `RPC_URL` | HTTP(S) JSON-RPC endpoint for the service's `JsonRpcProvider`. [Source](utils.ts) |
 | `JOB_REGISTRY_ADDRESS` | Registry contract address controlling job lifecycle. [Source](utils.ts) |
 | `VALIDATION_MODULE_ADDRESS` | Validator commit/reveal module used for quorum management. [Source](utils.ts) |
 | `STAKE_MANAGER_ADDRESS` | Optional; enables reward logging + stake info feeds. [Source](utils.ts) |
 | `DISPUTE_MODULE_ADDRESS` | Optional dispute integration for escalations. [Source](utils.ts) |
-| `KEYSTORE_URL` + `KEYSTORE_TOKEN` | Remote keystore endpoint from which signing keys are fetched. HTTPS enforced. [Source](utils.ts) |
-| `BOT_WALLET`, `ORCHESTRATOR_WALLET` | Optional hot wallets surfaced in startup logs for monitoring. [Source](utils.ts) |
-| `PORT`, `GRPC_PORT` | HTTP and gRPC listener ports (default 3000 / 50051). [Source](utils.ts) |
+| `KEYSTORE_URL` + `KEYSTORE_TOKEN` | Required wallet-key endpoint and optional bearer credential. It returns `{ "keys": ["<private-key>"] }`. Use an authenticated HTTPS service outside isolated local fixtures; the loader accepts HTTP(S). [Source](utils.ts) |
+| `BOT_WALLET`, `ORCHESTRATOR_WALLET` | Select automation and orchestration addresses already loaded from the keystore. Defaults use the first wallet, then the automation wallet. [Source](utils.ts) |
+| `PORT`, `GRPC_PORT` | HTTP/WebSocket and gRPC listener ports (default 3000 / 50051); `GRPC_PORT=0` disables gRPC. [Source](utils.ts) |
 | `GATEWAY_API_KEY` | Optional API key for non-signature automation flows. [Source](routes.ts) |
 
-Token metadata (`TOKEN_DECIMALS`, symbol, name, address) are resolved from `config/agialpha*.json`, so updating those manifests
-automatically reconfigures the gateway after redeploy. [Source](utils.ts)
+Token metadata (decimals, symbol and name) comes from the selected `config/agialpha*.json` manifest. `AGIALPHA_TOKEN` can explicitly
+select the deployed token address; startup checks its metadata on chain. `AGIALPHA_NETWORK` or `NETWORK` selects the manifest.
+`AGENT_PRIVATE_KEY` is used by separate examples; this service obtains wallets through `KEYSTORE_URL`. [Source](utils.ts)
 
 ## Local development
 
+Run from the repository root with Node.js 22.23.3 and npm 10.8.2. Export the environment from the
+[setup guide](../docs/gateway-setup.md#running-the-gateway), then:
+
 ```bash
 npm ci
-npm run agent:gateway          # Start the service with live reload (uses ts-node + nodemon)
-PORT=4000 RPC_URL=http://127.0.0.1:8545 JOB_REGISTRY_ADDRESS=<addr> VALIDATION_MODULE_ADDRESS=<addr> KEYSTORE_URL=https://... npm run agent:gateway
+npm run gateway
+# Or build once and start the packaged service separately:
+npm run build:gateway
+node agent-gateway/dist/agent-gateway/index.js
 ```
+
+`npm run gateway` builds and starts the service; `npm run agent:gateway` launches the separate example in
+`examples/agentic/v2-agent-gateway.js`. Neither command provides automatic live reload. The service's HTTP and gRPC listeners
+use plaintext transports; configure TLS termination and the intended network access controls for deployment.
 
 A Prometheus-compatible metrics stream is available at `GET /metrics`. WebSocket clients connect to the same origin; the gateway
 uses `registerEvents` to broadcast validator assignments and job changes. [Source](index.ts)
+
+Result submission calls the registry's current `submit` function with an ENS identity proof. It does not settle a job. See
+[proof formats and request examples](../docs/gateway-setup.md#proofs-and-result-submission) for REST/gRPC compatibility and the
+separate independent-validation and settlement steps. A deliverable's `success` field is a worker report, not a validator verdict.
+
+## Persistence and restart recovery
+
+Deliverables, heartbeats and telemetry records are stored under `storage/deliverables`; employer plans live under
+`storage/employer/plans` and are loaded on startup. These paths are relative to the runtime package: repository-root `storage`
+for source execution, or `agent-gateway/dist/storage` for the compiled service. The container uses
+`/app/agent-gateway/dist/storage`; persist it on a writable volume owned by the service user. Validator commitments may use
+the separate `VALIDATION_STORAGE_DIR` described below. [Source](deliverableStore.ts) [Source](jobPlanner.ts)
+
+The live jobs/agents maps, pending delivery queues and timers remain in memory. Event listeners do not provide a durable,
+checkpointed replay of every missed job event. After a restart, verify active jobs against canonical contract state, re-register
+external agents as needed, and reconcile outstanding transactions before resuming work. File-backed plans and evidence are
+useful recovery records, but do not provide multi-instance coordination or replace deployment recovery testing.
 
 ## Private validator state
 
