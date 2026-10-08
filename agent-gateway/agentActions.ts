@@ -248,7 +248,6 @@ export async function submitDeliverable(
   }
   assertDeliverableStorageReady();
 
-  let submissionMethod: SubmissionMethod = 'none';
   let txHash: string | undefined;
   await ensureTaxAcknowledgement(wallet);
   const submissionUri = resultUri || resolvedResultRef || '';
@@ -263,13 +262,13 @@ export async function submitDeliverable(
         identityProof
       );
     await submitTx.wait();
-    submissionMethod = 'submit';
     txHash = submitTx.hash;
   } catch (err) {
     console.error('submit transaction failed', err);
     throw new Error('Failed to submit job result transaction');
   }
 
+  const submissionMethod: SubmissionMethod = 'submit';
   const submittedAt = new Date().toISOString();
   const cachedJob = jobs.get(jobId);
   let certificateMetadata;

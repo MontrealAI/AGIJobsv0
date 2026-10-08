@@ -278,7 +278,9 @@ const store = require('./agent-gateway/dist/agent-gateway/deliverableStore.js');
 const record = store.getDeliverableById(${JSON.stringify(evidence.id)});
 assert.ok(record, 'Deliverable must survive container recreation');
 assert.equal(record.jobId, '1');
-assert.equal(record.agent, ${JSON.stringify(evidenceInput.agent)});
+assert.equal(record.agent, require('ethers').getAddress(${JSON.stringify(
+      evidenceInput.agent
+    )}));
 assert.equal(record.success, true);
 assert.equal(record.telemetry?.digest, ${JSON.stringify(evidence.digest)});
 assert.deepEqual(store.loadStoredPayload(record.telemetry), ${JSON.stringify(
