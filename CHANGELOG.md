@@ -78,3 +78,12 @@ Release candidate prepared on 2026-10-03; publication remains subject to the rel
 ## v0
 
 - Initial release of AGIJobManager with core job management, reputation, and NFT marketplace features.
+
+## Corrective Successor Release Candidate (2026-03-31)
+
+- Added `contracts/AGIJobManager.sol` successor enforcing create-time employer-funded burn only.
+- Burn removed from completion/refund/cancel/expiry/dispute settlement paths.
+- Added AGIALPHA mainnet pinning and disabled token mutability (`AGIALPHATokenPinned`).
+- Added Etherscan-first read helpers and `EmployerBurnReadHelper`.
+- Added live unpaused owner surplus withdrawal via `withdrawAGI(amount)` bounded by `withdrawableAGI()`.
+- Deprecated old paused release for corrected requirement.
