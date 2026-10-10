@@ -11,7 +11,7 @@ npm run demo:aurora:local
 This:
 
 1. Boots `anvil`.
-2. Deploys v2 defaults (`scripts/v2/deployDefaults.ts`) with verification disabled for speed and writes a deployment summary.
+2. Deploys paused v2 defaults (`scripts/v2/deployDefaults.ts`) with verification disabled for speed and writes a deployment summary.
 3. Mints mock `$AGIALPHA`, configures validator bounds, and runs the full job lifecycle end‑to‑end.
 4. Applies governance‑grade thermostat tuning from `config/aurora.thermostat@v2.json` (if present) to demonstrate owner control.
 4. Exercises governance controls (system-wide pause drill, stake minimum tuning, job stake retuning) with every action logged to `governance.json`.
@@ -32,3 +32,5 @@ npm run demo:aurora:sepolia
 * Thermostat governance transactions captured in `reports/<net>/aurora/receipts/governance.json`
 * `owner:verify-control` diff = clean
 * Report files under `reports/<net>/aurora/`
+
+The pause drill reads all eight managed pause states before acting. It preserves the paused handoff, pauses only remaining active modules when needed, and records the governance resume transaction before running synthetic jobs. Already-paused modules do not produce fabricated pause receipts.

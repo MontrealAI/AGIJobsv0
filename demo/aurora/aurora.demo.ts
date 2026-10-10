@@ -998,12 +998,50 @@ async function main() {
     }
   }
 
-  await recordDirectGovernanceCall(
-    'SystemPause',
-    'pauseAll',
-    () => systemPause.pauseAll(),
-    'Emergency drill: pause every core module'
+  const pauseTargets = await Promise.all(
+    [
+      'jobRegistry',
+      'stakeManager',
+      'validationModule',
+      'disputeModule',
+      'platformRegistry',
+      'feePool',
+      'reputationEngine',
+      'arbitratorCommittee',
+    ].map(async (name) => {
+      const address = await systemPause[name]();
+      const module = new ethers.Contract(
+        address,
+        ['function paused() view returns (bool)', 'function pause()'],
+        employer
+      );
+      return { name, address, module, paused: await module.paused() };
+    })
   );
+  if (pauseTargets.every((target) => !target.paused)) {
+    await recordDirectGovernanceCall(
+      'SystemPause',
+      'pauseAll',
+      () => systemPause.pauseAll(),
+      'Emergency drill: pause every core module'
+    );
+  } else {
+    // Staged deployment already pauses the stack. Never invent a pause receipt
+    // or call pauseAll against a mixed state, which would revert atomically.
+    for (const target of pauseTargets.filter((entry) => !entry.paused)) {
+      await recordForwardGovernanceCall(
+        target.name,
+        target.address,
+        target.module.interface,
+        'pause',
+        [],
+        { notes: 'Complete the pause drill from a partly paused deployment' }
+      );
+    }
+    console.log(
+      'Verified every managed module is paused before the resume drill.'
+    );
+  }
   await recordDirectGovernanceCall(
     'SystemPause',
     'unpauseAll',
