@@ -41,6 +41,8 @@ The production release workflow enforces `npm run release:audit-dependencies` be
 
 ## Verification records
 
+- [Deployment and operator update, 2026-10-10](deployment-update-2026-10-10.md): paused handoff, configuration-bound recovery, governance call preparation and remaining gates.
+
 - [Container, deployment and diagram update, 2026-10-08](platform-update-2026-10-08.md): current changes and validation boundaries.
 - [Platform and website update, 2026-10-07](platform-update-2026-10-07.md): earlier integration, dependency refresh and validation scope.
 - [Computer-work correctness and remaining gates](readiness-2026-10-04.md).

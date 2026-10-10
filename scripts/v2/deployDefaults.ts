@@ -963,7 +963,15 @@ export async function main(argv = process.argv.slice(2)) {
           `${name} pending governance does not match the requested owner`
         );
       if (ethers.getAddress(governance) === ethers.getAddress(owner.address)) {
-        await (await ownable.acceptOwnership()).wait();
+        const acceptance = await ownable.acceptOwnership();
+        checkpoint({
+          status: 'governance-acceptance-submitted',
+          ownershipTransactions: [
+            ...((progress.ownershipTransactions as unknown[]) ?? []),
+            { contract: name, address, hash: acceptance.hash },
+          ],
+        });
+        await acceptance.wait();
         if (
           ethers.getAddress(await ownable.owner()) !==
           ethers.getAddress(governance)

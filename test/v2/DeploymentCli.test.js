@@ -66,6 +66,7 @@ describe('Deployment CLI rehearsals', function () {
     expect(report.productionApproved).to.equal(false);
     expect(report.coordinator).to.match(/^0x[0-9a-fA-F]{40}$/);
     expect(report.transactions).to.have.lengthOf(24);
+    expect(report.ownershipTransactions).to.have.lengthOf(2);
   });
 
   it('reports outstanding governance acceptance without impersonation', function () {
