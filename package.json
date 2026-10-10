@@ -163,8 +163,8 @@
     "ci:lock-integrity": "node scripts/ci/check-lock-integrity.js",
     "ci:preflight": "npm run ci:verify-toolchain --silent && npm run ci:lock-integrity --silent",
     "compile": "ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/generate-constants.ts && hardhat compile",
-    "compile:mainnet": "npm run compile -- --network mainnet && npm run release:check-size",
-    "compile:sepolia": "npm run compile -- --network sepolia",
+    "compile:mainnet": "node scripts/deploy/compile-network.cjs mainnet",
+    "compile:sepolia": "node scripts/deploy/compile-network.cjs sepolia",
     "console:alpha-agi-mark": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/alpha-agi-mark/scripts/operatorConsole.ts",
     "contract:size": "npx hardhat size-contracts",
     "coverage": "node scripts/ci/run-coverage.js",
@@ -539,8 +539,11 @@
     "successor:qa": "node scripts/pages/successor-qa.mjs",
     "successor": "node packages/successor-core/bin/successor.mjs",
     "build:validator": "tsc -p apps/validator/tsconfig.json && node scripts/package-runtime-assets.cjs validator",
-    "validator:service": "node apps/validator/dist/apps/validator/index.js"
+    "validator:service": "node apps/validator/dist/apps/validator/index.js",
+    "deploy:plan": "ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/plan-deploy.ts",
+    "deploy:staged": "hardhat run scripts/v2/deployDefaults.ts",
+    "deploy:local": "hardhat run scripts/v2/deployDefaults.ts --network hardhat"
   },
   "type": "commonjs",
-  "version": "2.1.0-rc.1"
+  "version": "2.1.0-rc.2"
 }

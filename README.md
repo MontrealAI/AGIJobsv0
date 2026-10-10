@@ -36,6 +36,8 @@ AGI Jobs v0 (v2) brings together job contracts, agent gateways, validators, oper
 
 **Exercise the production gates locally:** run `npm run production:rehearse` after dependency setup in a clean committed checkout. The [production rehearsal](docs/production/rehearsal.md) combines real cryptographic checks, HTTP fault injection, adversarial contract tests, and three settled local jobs into an inspectable, signed simulation report.
 
+**Prepare a deployment:** use the [current Hardhat guide](docs/deployment-v2-agialpha.md) or the [plain-language coordinator guide](docs/production/nontechnical-mainnet-deployment.md). Start with `npm run deploy:local` after compiling, then use `npm run deploy:plan` for read-only public-network inspection. The staged script preserves recovery evidence and hands off all eight managed modules paused.
+
 **Deployment status:** local tests are not a mainnet certification. The four previously oversized contracts now use [fixed implementations and staged deployment](docs/production/fixed-implementations.md), and the size gate passes with normal Ethereum limits enforced. Release still requires authorized signing keys, completed deployment configuration, and passing CI. All existing architectural diagrams and demonstration surfaces are retained.
 
 ```mermaid

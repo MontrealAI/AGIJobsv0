@@ -60,6 +60,12 @@ describe('Deployment CLI rehearsals', function () {
     expect(report.econ.jobStake).to.be.a('string');
     expect(report.pendingOwnership).to.deep.equal([]);
     expect(report.contracts.SystemPause).to.match(/^0x[0-9a-fA-F]{40}$/);
+    expect(report.status).to.equal('awaiting-commissioning');
+    expect(report.pauseState).to.have.lengthOf(8);
+    expect(report.pauseState.every((item) => item.paused)).to.equal(true);
+    expect(report.productionApproved).to.equal(false);
+    expect(report.coordinator).to.match(/^0x[0-9a-fA-F]{40}$/);
+    expect(report.transactions).to.have.lengthOf(24);
   });
 
   it('reports outstanding governance acceptance without impersonation', function () {
@@ -92,7 +98,8 @@ describe('Deployment CLI rehearsals', function () {
     expect(
       report.pendingOwnership.every((item) => item.pendingOwner === governance)
     ).to.equal(true);
-    expect(report.taxPolicy.uri).to.equal('ipfs://policy');
+    expect(report.taxPolicy.uri).to.equal('ipfs://reviewed-policy');
+    expect(report.taxPolicy.acknowledgement).to.equal('Reviewed policy');
     expect(result.log).to.include('Governance acceptance required');
   });
 
@@ -105,6 +112,75 @@ describe('Deployment CLI rehearsals', function () {
     expect(result.status, result.log).to.equal(0);
     expect(result.log).to.include('Integration scenario finalized job');
     expect(result.log).to.include('must still call acceptOwnership()');
+  });
+
+  it('refuses an existing evidence file before deploying a coordinator', function () {
+    const output = path.join(directory, 'keep.json');
+    fs.writeFileSync(output, 'original evidence');
+    const result = run('scripts/v2/deployDefaults.ts', {
+      DEPLOY_DEFAULTS_SKIP_VERIFY: '1',
+      DEPLOY_DEFAULTS_OUTPUT: output,
+    });
+    expect(result.status).to.equal(1);
+    expect(fs.readFileSync(output, 'utf8')).to.equal('original evidence');
+    expect(result.log).not.to.include('Deployment coordinator:');
+  });
+
+  it('recovers a finalized deployment without a second transaction and refuses configuration drift', async function () {
+    const { main } = require('../../scripts/v2/deployDefaults.ts');
+    const { ethers } = require('hardhat');
+    const config = path.join(directory, 'reviewed.json');
+    fs.writeFileSync(
+      config,
+      JSON.stringify({
+        econ: { feePct: 6 },
+        tax: { uri: 'ipfs://reviewed', description: 'Reviewed terms' },
+      })
+    );
+    const initial = path.join(directory, 'initial.json');
+    const common = ['--config', config, '--skip-verify'];
+    await main([...common, '--output', initial]);
+    const report = JSON.parse(fs.readFileSync(initial, 'utf8'));
+    const [signer] = await ethers.getSigners();
+    const nonce = await ethers.provider.getTransactionCount(signer.address);
+    const recovered = path.join(directory, 'recovered.json');
+    await main([
+      ...common,
+      '--resume-deployer',
+      report.coordinator,
+      '--output',
+      recovered,
+    ]);
+    expect(await ethers.provider.getTransactionCount(signer.address)).to.equal(
+      nonce
+    );
+    const restored = JSON.parse(fs.readFileSync(recovered, 'utf8'));
+    expect(restored.contracts).to.deep.equal(report.contracts);
+    expect(restored.configurationHash).to.equal(report.configurationHash);
+    expect(restored.econ.feePct).to.equal(6);
+    fs.writeFileSync(
+      config,
+      JSON.stringify({
+        econ: { feePct: 7 },
+        tax: { uri: 'ipfs://reviewed', description: 'Reviewed terms' },
+      })
+    );
+    let failure;
+    try {
+      await main([
+        ...common,
+        '--resume-deployer',
+        report.coordinator,
+        '--output',
+        path.join(directory, 'changed.json'),
+      ]);
+    } catch (error) {
+      failure = error;
+    }
+    expect(failure.message).to.include('Deployment configuration changed');
+    expect(await ethers.provider.getTransactionCount(signer.address)).to.equal(
+      nonce
+    );
   });
 
   it('rejects the ValidationStub fixture on external networks before contacting RPC', function () {

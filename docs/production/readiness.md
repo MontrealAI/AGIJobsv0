@@ -15,6 +15,12 @@ The [container operations guide](../container-operations.md) identifies every ma
 The [SUCCESSOR Ω local guide](../successor/README.md) adds compiled missions, executable discovery, signed evaluation mechanics, durable state and portable knowledge. The public/local missions are synthetic rehearsals. The new mission-bound computer-work route and action broker refuse live dispatch; legacy admitted computer-work behavior is preserved. A local signed fixture is not I3 independent proof, and export/restoration grants no authority.
 
 Read the [acceptance matrix](../successor/acceptance-matrix.md) and [security review](../successor/security-review.md) before commissioning this subsystem. Its current local verification does not clear any existing production gate below.
+## Current deployment tooling
+
+Use the [staged Hardhat guide](../deployment-v2-agialpha.md) for new deployments and the [plain-language coordinator guide](nontechnical-mainnet-deployment.md) for review. The current script validates public-network configuration and compiler evidence before transactions, commits the resolved plan on its coordinator, and hands off all eight managed modules paused. Submitted transactions and recovery checkpoints are retained in a private report and append-only journal. Tax metadata is installed before ownership transfer; explorer failures and pending governance actions remain explicit.
+
+This does not retrofit existing coordinators or migrate deployed state. Historical direct coordinator entrypoints keep their unpaused behavior; use the supported script for a new paused deployment. Only governance may authorize unpausing after the gates below.
+
 ## What a live deployment still needs
 
 | Gate | Evidence needed |

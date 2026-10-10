@@ -20,14 +20,14 @@ The existing storage fields retain their offsets. `ValidationModule.DOMAIN_SEPAR
 
 ## Size limits
 
-With Solidity 0.8.25, viaIR, 200 optimizer runs, and the Cancun EVM target:
+For v2.1.0-rc.2, with Solidity 0.8.25, viaIR, 200 optimizer runs, and the Cancun EVM target:
 
 | Contract | Previous runtime bytes | Candidate runtime bytes | Candidate initcode bytes |
 | --- | ---: | ---: | ---: |
 | JobRegistry | 48,855 | 8,004 | 11,847 |
 | StakeManager | 45,337 | 7,881 | 10,396 |
 | ValidationModule | 28,199 | 6,368 | 8,980 |
-| Deployer | 234,082 | 10,116 | 10,239 |
+| Deployer | 234,082 | 12,435 | 12,558 |
 
 All 66 non-mock deployable v2 artifacts, including the ten implementations, fit the 24,576-byte runtime and 49,152-byte initcode limits. Constructor arguments add to initcode and must also fit. Normal Hardhat tests enforce these limits, with a 30 million block gas limit and automatic transaction gas estimation. Staged deployment tests additionally require every component transaction and final wiring to use less than 16,777,216 gas.
 
@@ -74,7 +74,7 @@ This is for new deployments. Matching storage offsets does not turn an existing 
 1. Deploy the small coordinator and record its address.
 2. Deploy the fixed implementations, then send each component's creation code to `deployComponent` in a separate transaction. The coordinator records component addresses and creation-code hashes. Controllers are paused atomically when created.
 3. Register the component set. Registration checks code presence, distinct addresses, and coordinator ownership, including any pending two-step ownership transfers.
-4. Call the existing `deploy`, `deployDefaults`, or tax-policy-free variant. It validates and wires the stack, unpauses controllers, and transfers control to governance atomically. A revert leaves the staged controllers paused.
+4. The current CLI calls `deployPaused`, which wires the stack and transfers control with all eight managed modules paused. Its committed configuration digest prevents recovery drift. The legacy `deploy`, `deployDefaults` and tax-policy-free variants retain their historical unpaused handoff. A revert leaves staging state intact. Use the [current deployment guide](../deployment-v2-agialpha.md) for execution and recovery.
 
 `scripts/deploy/stage-protocol.cjs` implements staging. Supply the same `econ` configuration to staging and finalization, including any custom minimum stake. It reuses recorded components on retry and rejects changed constructor configuration or bytecode. The existing `scripts/v2/deployDefaults.ts` and Truffle migration use this helper.
 

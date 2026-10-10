@@ -123,9 +123,9 @@ jobs:
       - name: Compile
         env:
           COVERAGE_MIN: 90
+          RELEASE_NETWORK: ${{ steps.network.outputs.network }}
         run: |
-          npx ts-node --compiler-options '{"module":"commonjs"}' scripts/generate-constants.ts
-          npx hardhat compile
+          node scripts/deploy/compile-network.cjs "$RELEASE_NETWORK"
 
       - name: Enforce production contract size limits
         run: npm run release:check-size

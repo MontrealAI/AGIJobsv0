@@ -1,247 +1,294 @@
 import { promises as fs } from 'fs';
 import path from 'path';
-
 import parseDuration from '../utils/parseDuration';
 import { ethers } from 'hardhat';
-
 import { AGIALPHA_DECIMALS } from '../constants';
+const { validateOneclickConfig } = require('./lib/oneclick-config.cjs');
 
-interface SecureDefaultsConfig {
-  pauseOnLaunch?: boolean;
-  maxJobRewardAgia?: number;
-  maxJobDurationSeconds?: number;
-  validatorCommitWindowSeconds?: number;
-  validatorRevealWindowSeconds?: number;
-}
-
-interface EconConfig {
-  minStake?: string | number;
-  jobStake?: string | number;
-  commitWindow?: string | number;
-  revealWindow?: string | number;
-  employerSlashPct?: number;
-  treasurySlashPct?: number;
-  validatorSlashRewardPct?: number;
-  burnPct?: number;
-}
-
-interface DeployConfig {
-  secureDefaults?: SecureDefaultsConfig;
-  econ?: EconConfig;
-  output?: string;
-}
-
-interface AddressBook {
-  jobRegistry?: string;
-  validationModule?: string;
-  stakeManager?: string;
-  systemPause?: string;
-}
-
-type Args = {
-  [key: string]: string | boolean;
+type Configuration = {
+  chainId?: number | string;
+  econ?: Record<string, any>;
+  secureDefaults?: Record<string, any>;
+};
+type AddressBook = Record<string, any>;
+export type GovernanceAction = {
+  label: string;
+  to: string;
+  data: string;
+  requiredCaller: string;
+};
+const managed = [
+  'jobRegistry',
+  'stakeManager',
+  'validationModule',
+  'disputeModule',
+  'platformRegistry',
+  'feePool',
+  'reputationEngine',
+  'arbitratorCommittee',
+];
+const contractNames: Record<string, string> = {
+  jobRegistry: 'JobRegistry',
+  validationModule: 'ValidationModule',
+  stakeManager: 'StakeManager',
+  systemPause: 'SystemPause',
 };
 
-function parseArgs(): Args {
-  const argv = process.argv.slice(2);
-  const args: Args = {};
-  for (let i = 0; i < argv.length; i += 1) {
-    const token = argv[i];
-    if (!token.startsWith('--')) continue;
-    const key = token.slice(2);
-    const next = argv[i + 1];
-    if (next && !next.startsWith('--')) {
-      args[key] = next;
-      i += 1;
-    } else {
-      args[key] = true;
-    }
-  }
-  return args;
-}
-
-function ensureAddress(value: string | undefined, label: string): string {
-  if (!value) {
-    throw new Error(`${label} address missing in deployment artefacts`);
-  }
+function address(book: AddressBook, key: string): string {
+  const value = book.contracts?.[contractNames[key]] ?? book[key];
+  if (!value || !ethers.isAddress(value) || value === ethers.ZeroAddress)
+    throw new Error(`${contractNames[key]} address missing or invalid`);
   return ethers.getAddress(value);
 }
-
-async function readJson<T>(filePath: string): Promise<T> {
-  const absolute = path.resolve(filePath);
-  const raw = await fs.readFile(absolute, 'utf8');
-  return JSON.parse(raw) as T;
+function seconds(value: string | number): number {
+  return typeof value === 'number' || /^[0-9]+$/.test(value)
+    ? Number(value)
+    : Number(parseDuration(value, 's'));
 }
 
-function parseTokenAmount(value: string | number | undefined, decimals = AGIALPHA_DECIMALS): bigint | undefined {
-  if (value === undefined || value === null) {
-    return undefined;
-  }
-  if (typeof value === 'number') {
-    if (!Number.isFinite(value)) {
-      throw new Error(`Invalid numeric token amount ${value}`);
-    }
-    return ethers.parseUnits(value.toString(), decimals);
-  }
-  const trimmed = value.trim();
-  if (!trimmed) {
-    return undefined;
-  }
-  return ethers.parseUnits(trimmed, decimals);
-}
-
-function parseSeconds(value: string | number | undefined): number | undefined {
-  if (value === undefined || value === null || value === '') {
-    return undefined;
-  }
-  if (typeof value === 'number') {
-    return Math.max(0, Math.floor(value));
-  }
-  const trimmed = value.trim();
-  if (!trimmed) {
-    return undefined;
-  }
-  const parsed = parseDuration(trimmed, 's');
-  if (parsed === null || parsed === undefined) {
-    throw new Error(`Unable to parse duration "${value}"`);
-  }
-  return Math.max(0, Math.floor(parsed));
-}
-
-function parsePercentage(value: number | undefined): number | undefined {
-  if (value === undefined || value === null) {
-    return undefined;
-  }
-  if (!Number.isFinite(value)) {
-    throw new Error(`Invalid percentage value ${value}`);
-  }
-  const scaled = value > 0 && value < 1 ? value * 100 : value;
-  if (scaled < 0 || scaled > 100) {
-    throw new Error(`Percentage out of range 0-100: ${value}`);
-  }
-  return Math.round(scaled);
-}
-
-async function applySecureDefaults(config: DeployConfig, addresses: AddressBook) {
-  const registryAddress = ensureAddress(addresses.jobRegistry, 'JobRegistry');
-  const validationAddress = ensureAddress(addresses.validationModule, 'ValidationModule');
-  const stakeAddress = ensureAddress(addresses.stakeManager, 'StakeManager');
-
-  const registry = await ethers.getContractAt('contracts/v2/JobRegistry.sol:JobRegistry', registryAddress);
-  const validation = await ethers.getContractAt(
-    'contracts/v2/ValidationModule.sol:ValidationModule',
-    validationAddress,
-  );
-  const stake = await ethers.getContractAt('contracts/v2/StakeManager.sol:StakeManager', stakeAddress);
-
-  const defaults = config.secureDefaults || {};
-  const econ = config.econ || {};
-
-  const minStake = parseTokenAmount(econ.minStake);
-  if (minStake !== undefined) {
-    const tx = await stake.setMinStake(minStake);
-    await tx.wait();
-    console.log(`✓ Set StakeManager minStake to ${ethers.formatUnits(minStake, AGIALPHA_DECIMALS)}`);
-  }
-
-  const employerPct = parsePercentage(econ.employerSlashPct);
-  const treasuryPct = parsePercentage(econ.treasurySlashPct);
-  const validatorPct = parsePercentage(econ.validatorSlashRewardPct);
-  if (employerPct !== undefined || treasuryPct !== undefined || validatorPct !== undefined) {
-    const currentEmployer = employerPct ?? 0;
-    const currentTreasury = treasuryPct ?? 100;
-    const currentValidator = validatorPct ?? 0;
-    const tx = await stake.setSlashingDistribution(currentEmployer, currentTreasury, currentValidator);
-    await tx.wait();
-    console.log(
-      `✓ Updated slashing distribution employer=${currentEmployer}% treasury=${currentTreasury}% validator=${currentValidator}%`,
-    );
-  }
-
-  const commitWindow = defaults.validatorCommitWindowSeconds ?? parseSeconds(econ.commitWindow);
-  if (commitWindow && commitWindow > 0) {
-    const tx = await validation.setCommitWindow(commitWindow);
-    await tx.wait();
-    console.log(`✓ ValidationModule commit window set to ${commitWindow}s`);
-  }
-
-  const revealWindow = defaults.validatorRevealWindowSeconds ?? parseSeconds(econ.revealWindow);
-  if (revealWindow && revealWindow > 0) {
-    const tx = await validation.setRevealWindow(revealWindow);
-    await tx.wait();
-    console.log(`✓ ValidationModule reveal window set to ${revealWindow}s`);
-  }
-
-  const jobReward = defaults.maxJobRewardAgia;
-  const jobStake = econ.jobStake;
-  if (jobReward !== undefined || jobStake !== undefined) {
-    const rewardAmount = jobReward !== undefined
-      ? ethers.parseUnits(jobReward.toString(), AGIALPHA_DECIMALS)
-      : 0n;
-    const stakeAmount = parseTokenAmount(jobStake) ?? 0n;
-    const tx = await registry.setJobParameters(rewardAmount, stakeAmount);
-    await tx.wait();
-    console.log(
-      `✓ JobRegistry job parameters capped at reward=${ethers.formatUnits(rewardAmount, AGIALPHA_DECIMALS)} AGIA, stake=${ethers.formatUnits(stakeAmount, AGIALPHA_DECIMALS)}`,
-    );
-  }
-
-  const durationLimit = defaults.maxJobDurationSeconds;
-  if (durationLimit !== undefined && durationLimit > 0) {
-    const tx = await registry.setJobDurationLimit(durationLimit);
-    await tx.wait();
-    console.log(`✓ JobRegistry job duration limit set to ${durationLimit}s`);
-  }
-
-  if (defaults.pauseOnLaunch) {
-    const pauseAddress = addresses.systemPause;
-    if (pauseAddress && pauseAddress !== ethers.ZeroAddress) {
-      const systemPause = await ethers.getContractAt(
-        'contracts/v2/SystemPause.sol:SystemPause',
-        ethers.getAddress(pauseAddress),
+/** Reads and validates every requested action before any transaction is sent. */
+export async function planSecureDefaults(
+  config: Configuration,
+  book: AddressBook
+): Promise<GovernanceAction[]> {
+  validateOneclickConfig(config, AGIALPHA_DECIMALS);
+  const chainId = (await ethers.provider.getNetwork()).chainId;
+  for (const source of [config, book]) {
+    if (source.chainId !== undefined && BigInt(source.chainId) !== chainId)
+      throw new Error(
+        'Configuration or deployment report chain ID does not match the connected chain'
       );
-      const tx = await systemPause.pauseAll();
-      await tx.wait();
-      console.log('✓ SystemPause.pauseAll invoked – contracts start in paused state');
+  }
+  const contracts: Record<string, any> = {};
+  for (const key of ['jobRegistry', 'validationModule', 'stakeManager']) {
+    const target = address(book, key);
+    if ((await ethers.provider.getCode(target)) === '0x')
+      throw new Error(`${contractNames[key]} has no deployed code`);
+    contracts[key] = await ethers.getContractAt(
+      `contracts/v2/${contractNames[key]}.sol:${contractNames[key]}`,
+      target
+    );
+  }
+  const pauseValue = book.contracts?.SystemPause ?? book.systemPause;
+  const pause =
+    pauseValue && pauseValue !== ethers.ZeroAddress
+      ? await ethers.getContractAt('SystemPause', address(book, 'systemPause'))
+      : undefined;
+  const pauseAddress = pause ? await pause.getAddress() : undefined;
+  const actions: GovernanceAction[] = [];
+  const enqueue = async (
+    contract: any,
+    method: string,
+    args: any[],
+    label: string
+  ) => {
+    const target = await contract.getAddress();
+    const owner = ethers.getAddress(await contract.owner());
+    const data = contract.interface.encodeFunctionData(method, args);
+    if (pause && owner === pauseAddress) {
+      // Refuse an address book that points at a different managed deployment.
+      let known = false;
+      for (const key of managed)
+        if (ethers.getAddress(await pause[key]()) === target) known = true;
+      if (!known)
+        throw new Error(`${label}: target is not managed by SystemPause`);
+      actions.push({
+        label,
+        to: pauseAddress!,
+        data: pause.interface.encodeFunctionData('executeGovernanceCall', [
+          target,
+          data,
+        ]),
+        requiredCaller: ethers.getAddress(await pause.owner()),
+      });
     } else {
-      console.warn('⚠️  SystemPause address missing; unable to pause automatically.');
+      actions.push({ label, to: target, data, requiredCaller: owner });
+    }
+  };
+  const econ = config.econ ?? {};
+  const defaults = config.secureDefaults ?? {};
+  const units = (value: string | number) =>
+    ethers.parseUnits(String(value), AGIALPHA_DECIMALS);
+  if (econ.minStake !== undefined)
+    await enqueue(
+      contracts.stakeManager,
+      'setMinStake',
+      [units(econ.minStake)],
+      'Set minimum stake'
+    );
+  if (
+    ['employerSlashPct', 'treasurySlashPct', 'validatorSlashRewardPct'].some(
+      (key) => econ[key] !== undefined
+    )
+  ) {
+    // Preserve the historical config defaults, validated as a complete distribution.
+    await enqueue(
+      contracts.stakeManager,
+      'setSlashingDistribution',
+      [
+        econ.employerSlashPct ?? 0,
+        econ.treasurySlashPct ?? 100,
+        econ.validatorSlashRewardPct ?? 0,
+      ],
+      'Set slashing distribution'
+    );
+  }
+  for (const [setting, fallback, method] of [
+    ['validatorCommitWindowSeconds', 'commitWindow', 'setCommitWindow'],
+    ['validatorRevealWindowSeconds', 'revealWindow', 'setRevealWindow'],
+  ]) {
+    const value = defaults[setting] ?? econ[fallback];
+    if (value !== undefined)
+      await enqueue(
+        contracts.validationModule,
+        method,
+        [seconds(value)],
+        `Set ${fallback}`
+      );
+  }
+  if (defaults.maxJobRewardAgia !== undefined || econ.jobStake !== undefined) {
+    const reward =
+      defaults.maxJobRewardAgia === undefined
+        ? await contracts.jobRegistry.maxJobReward()
+        : units(defaults.maxJobRewardAgia);
+    const stake =
+      econ.jobStake === undefined
+        ? await contracts.jobRegistry.jobStake()
+        : units(econ.jobStake);
+    await enqueue(
+      contracts.jobRegistry,
+      'setJobParameters',
+      [reward, stake],
+      'Set job reward limit and stake'
+    );
+  }
+  if (defaults.maxJobDurationSeconds !== undefined)
+    await enqueue(
+      contracts.jobRegistry,
+      'setJobDurationLimit',
+      [defaults.maxJobDurationSeconds],
+      'Set job duration limit'
+    );
+  if (defaults.pauseOnLaunch) {
+    if (!pause)
+      throw new Error('SystemPause address is required for pauseOnLaunch');
+    // pauseAll reverts if any module is already paused. Handle mixed states safely.
+    for (const key of managed) {
+      const target = await pause[key]();
+      const module = await ethers.getContractAt(
+        [
+          'function owner() view returns (address)',
+          'function paused() view returns (bool)',
+          'function pause()',
+        ],
+        target
+      );
+      if (ethers.getAddress(await module.owner()) !== pauseAddress)
+        throw new Error(`${key} is not owned by SystemPause`);
+      if (!(await module.paused()))
+        await enqueue(module, 'pause', [], `Pause ${key}`);
     }
   }
+  return actions;
 }
 
-async function main() {
-  const args = parseArgs();
-  const getArg = (key: string): string | boolean | undefined => {
-    if (Object.prototype.hasOwnProperty.call(args, key)) {
-      return args[key];
-    }
-    const lower = key.toLowerCase();
-    if (lower !== key && Object.prototype.hasOwnProperty.call(args, lower)) {
-      return args[lower];
-    }
-    const envKey = `ONECLICK_${key
-      .replace(/([A-Z])/g, '_$1')
-      .replace(/__/g, '_')
-      .toUpperCase()}`;
-    if (process.env[envKey] !== undefined) {
-      return process.env[envKey];
-    }
-    return undefined;
-  };
-
-  const configPath =
-    (getArg('config') as string) ??
-    path.join('deployment-config', 'deployer.sample.json');
-  const addressesPath =
-    (getArg('addresses') as string) ?? path.join('docs', 'deployment-addresses.json');
-
-  const config = await readJson<DeployConfig>(configPath);
-  const addresses = await readJson<AddressBook>(addressesPath);
-
-  await applySecureDefaults(config, addresses);
+export async function applySecureDefaults(
+  config: Configuration,
+  book: AddressBook,
+  options: { dryRun?: boolean; signer?: any } = {}
+) {
+  const actions = await planSecureDefaults(config, book);
+  if (options.dryRun) return actions;
+  const signer = options.signer ?? (await ethers.getSigners())[0];
+  if (!signer)
+    throw new Error(
+      'Execution requires a connected governance signer; use ONECLICK_DRY_RUN=1 to prepare calls'
+    );
+  const caller = ethers.getAddress(await signer.getAddress());
+  for (const action of actions) {
+    if (action.requiredCaller !== caller)
+      throw new Error(
+        `${action.label} requires governance ${action.requiredCaller}; prepare the calls with ONECLICK_DRY_RUN=1 for your multisig or timelock`
+      );
+    // Validate all independent setters before the first mutation.
+    await ethers.provider.call({
+      from: caller,
+      to: action.to,
+      data: action.data,
+    });
+  }
+  for (const action of actions) {
+    const tx = await signer.sendTransaction({
+      to: action.to,
+      data: action.data,
+    });
+    console.log(`${action.label}: submitted ${tx.hash}`);
+    await tx.wait();
+    console.log(`${action.label}: confirmed`);
+  }
+  return actions;
 }
 
-main().catch((error) => {
-  console.error(error);
-  process.exitCode = 1;
-});
+export async function main(argv = process.argv.slice(2)) {
+  const args: Record<string, string | boolean> = {};
+  for (let i = 0; i < argv.length; i++) {
+    const key = argv[i].replace(/^--/, '');
+    if (
+      !argv[i].startsWith('--') ||
+      !['config', 'addresses', 'dry-run', 'help'].includes(key) ||
+      args[key] !== undefined
+    )
+      throw new Error(`Unknown or duplicate option: ${argv[i]}`);
+    if (key === 'dry-run' || key === 'help') args[key] = true;
+    else {
+      if (!argv[i + 1] || argv[i + 1].startsWith('--'))
+        throw new Error(`Missing value for --${key}`);
+      args[key] = argv[++i];
+    }
+  }
+  if (args.help) {
+    console.log(
+      'Set ONECLICK_CONFIG and ONECLICK_ADDRESSES. ONECLICK_DRY_RUN=1 prints governance calls without transactions. Run with Hardhat --network <reviewed-network>.'
+    );
+    return;
+  }
+  const configPath = String(
+    args.config ??
+      process.env.ONECLICK_CONFIG ??
+      path.join('deployment-config', 'deployer.sample.json')
+  );
+  const addressesPath = String(
+    args.addresses ??
+      process.env.ONECLICK_ADDRESSES ??
+      path.join('docs', 'deployment-addresses.json')
+  );
+  const config = JSON.parse(
+    await fs.readFile(path.resolve(configPath), 'utf8')
+  );
+  const book = JSON.parse(
+    await fs.readFile(path.resolve(addressesPath), 'utf8')
+  );
+  const dryRun =
+    args['dry-run'] === true || process.env.ONECLICK_DRY_RUN === '1';
+  const actions = await applySecureDefaults(config, book, { dryRun });
+  if (dryRun)
+    console.log(
+      JSON.stringify(
+        {
+          schema: 'agi-jobs/governance-calls/v1',
+          chainId: String((await ethers.provider.getNetwork()).chainId),
+          readOnly: true,
+          actions,
+        },
+        null,
+        2
+      )
+    );
+}
+if (require.main === module)
+  main().catch(() => {
+    console.error(
+      'Secure-defaults operation failed. Check the reviewed config, chain, module ownership and transaction receipts before retrying. Use ONECLICK_DRY_RUN=1 to inspect the required governance calls.'
+    );
+    process.exitCode = 1;
+  });

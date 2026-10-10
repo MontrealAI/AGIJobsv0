@@ -5,37 +5,13 @@ institutional launch. It assumes contracts are already deployed and wired
 per the procedures in `README.md` and focuses on governance hand-off,
 admin role management, and emergency response.
 
-## 1. Governance hand-off to a multisig or timelock
+## 1. Preserve the staged governance topology
 
-1. **Stand up the controller.** Deploy a Gnosis Safe or
-   OpenZeppelin `TimelockController` and configure a strict majority
-   threshold (e.g. 2-of-3, 3-of-5). Store the address securely.
-2. **Transfer Governable modules.** From the deployer EOA call
-   `setGovernance(controller)` on:
-   - `StakeManager`
-   - `JobRegistry`
-   - `SystemPause`
-   - `Thermostat`, `HamiltonianMonitor`, `RewardEngineMB`, and any other
-     module inheriting `Governable`
-   Each transaction emits both `GovernanceUpdated` and
-   `OwnershipTransferred(previousOwner, controller)`.
-3. **Transfer Ownable modules.** Execute `transferOwnership(controller)`
-   on:
-   - `ValidationModule`, `ReputationEngine`, `FeePool`, `PlatformRegistry`
-   - `IdentityRegistry`, `CertificateNFT`, `DisputeModule`
-   - `PlatformIncentives`, `JobRouter`, `TaxPolicy`, `ArbitratorCommittee`
-   - `ModuleInstaller` (if still in use)
-   Confirm the `OwnershipTransferred` event references the controller
-   address.
-4. **Verify control.** From a read-only console check `owner()` or
-   `governance()` for each module. Do not archive the deployer key until
-   all modules report the controller address.
-5. **Document the change.** Record the block numbers and transaction
-   hashes for internal audit logs.
+For a new deployment use the [current Hardhat guide](deployment-v2-agialpha.md). Its paused handoff makes SystemPause the owner of JobRegistry, StakeManager, ValidationModule, ReputationEngine, DisputeModule, PlatformRegistry, FeePool and ArbitratorCommittee. The requested governance owns SystemPause. Do not replace this with a blanket transfer of operational modules to a wallet.
 
-> **Tip:** multisig and timelock transactions should be tagged with a
-> human-readable description ("Set StakeManager governance") so future
-> reviewers can audit intent without parsing calldata.
+CertificateNFT, JobRouter and PlatformIncentives are owned directly by governance. IdentityRegistry and TaxPolicy require `acceptOwnership()` by their pending governance owner; inspect `pendingOwnership` in the deployment report. Record acceptance receipts and verify actual owners before archiving the deploying account.
+
+Managed-module setters go through `SystemPause.executeGovernanceCall(target, data)` from its actual governance. Additional modules deployed separately retain their own authority rules. Review their ABI and owner before any rotation. The script does not impersonate a multisig.
 
 ## 2. Configure emergency pausers
 

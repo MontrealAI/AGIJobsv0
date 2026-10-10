@@ -303,7 +303,7 @@ async function buildDeploymentCandidate(options) {
         id: 'release-evidence',
         action:
           'Verify the signed release, exact-commit CI, dependency audit and independent security review.',
-        reference: 'docs/production/readiness-2026-10-03.md',
+        reference: 'docs/production/readiness.md',
       },
       {
         id: 'coordinator',
@@ -320,7 +320,7 @@ async function buildDeploymentCandidate(options) {
       {
         id: 'wiring',
         action:
-          'Register the complete module set, finalize economic/identity wiring, and inspect confirmed on-chain values.',
+          'Register the complete module set, finalize through deployPaused, and inspect confirmed wiring and all eight pause states.',
         reference: 'contracts/v2/Deployer.sol',
       },
       {
@@ -333,7 +333,7 @@ async function buildDeploymentCandidate(options) {
         id: 'secure-defaults',
         action:
           'Review and apply launch limits and pause controls using the confirmed addressbook and the actual governance authority.',
-        reference: 'scripts/v2/apply-secure-defaults.ts',
+        reference: 'docs/deployment-v2-agialpha.md',
       },
       {
         id: 'commissioning',

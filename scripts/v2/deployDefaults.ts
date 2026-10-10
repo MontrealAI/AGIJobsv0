@@ -2,9 +2,15 @@ import { stageProtocol } from '../deploy/stage-protocol.cjs';
 import { readImplementationAddresses } from '../deploy/implementations.cjs';
 import * as fs from 'fs';
 import * as path from 'path';
+import { createHash } from 'node:crypto';
 import { artifacts, ethers, network, run } from 'hardhat';
 import { AGIALPHA, AGIALPHA_DECIMALS } from '../constants';
-import { loadEnsConfig } from '../config';
+import { loadEnsConfig, loadTokenConfig } from '../config';
+const { buildDeploymentCandidate } = require('./lib/deployment-candidate.cjs');
+const { reserveDeploymentOutput } = require('./lib/reserved-output.cjs');
+const {
+  createVerifiedArtifactReader,
+} = require('../deploy/verified-artifact.cjs');
 
 type CliArgs = Record<string, string | boolean>;
 
@@ -41,6 +47,7 @@ interface DeployerConfig {
   identity?: IdentityConfig;
   tax?: TaxConfig;
   output?: unknown;
+  secureDefaults?: { pauseOnLaunch?: boolean; [key: string]: unknown };
 }
 
 async function ensureAgialphaToken(): Promise<void> {
@@ -65,9 +72,7 @@ async function ensureAgialphaToken(): Promise<void> {
   } catch (error) {
     // Fall through to install a local stub.
     console.warn(
-      `⚠️  AGIALPHA token missing on ${
-        network.name
-      }; installing LocalAgialpha stub (${String(error)})`
+      `⚠️  AGIALPHA token missing on ${network.name}; installing LocalAgialpha stub`
     );
   }
 
@@ -143,36 +148,51 @@ async function getLocalGasLimitOverride(): Promise<bigint | undefined> {
 
 function parseArgs(argv: string[]): CliArgs {
   const args: CliArgs = {};
+  const switches = new Set(['help', 'skip-verify', 'with-tax', 'no-tax']);
+  const values = new Set([
+    'config',
+    'output',
+    'governance',
+    'tax-uri',
+    'tax-description',
+    'fee',
+    'burn',
+    'employer-slash',
+    'treasury-slash',
+    'validator-slash',
+    'commit-window',
+    'reveal-window',
+    'min-stake',
+    'job-stake',
+    'ens',
+    'name-wrapper',
+    'club-root',
+    'agent-root',
+    'validator-merkle',
+    'agent-merkle',
+    'resume-deployer',
+  ]);
   for (let i = 0; i < argv.length; i++) {
     const token = argv[i];
-    if (!token.startsWith('--')) continue;
+    if (!token.startsWith('--'))
+      throw new Error(`Unexpected argument: ${token}`);
     const key = token.slice(2);
+    if (Object.hasOwn(args, key)) throw new Error(`Duplicate option: --${key}`);
+    if (switches.has(key)) {
+      args[key] = true;
+      continue;
+    }
+    if (!values.has(key))
+      throw new Error(`Unknown option: --${key}. Use --help.`);
     const next = argv[i + 1];
     if (next && !next.startsWith('--')) {
       args[key] = next;
       i++;
     } else {
-      args[key] = true;
+      throw new Error(`Missing value for --${key}`);
     }
   }
   return args;
-}
-
-function readJsonConfig(filePath: string): DeployerConfig {
-  const resolved = path.resolve(filePath);
-  if (!fs.existsSync(resolved)) {
-    throw new Error(`Configuration file not found: ${resolved}`);
-  }
-  const raw = fs.readFileSync(resolved, 'utf8');
-  try {
-    return JSON.parse(raw);
-  } catch (err) {
-    throw new Error(
-      `Unable to parse configuration JSON at ${resolved}: ${
-        (err as Error).message
-      }`
-    );
-  }
 }
 
 function toStringOrUndefined(value: unknown): string | undefined {
@@ -403,8 +423,13 @@ async function verify(address: string, args: any[] = [], contract?: string) {
       constructorArguments: args,
       ...(contract ? { contract } : {}),
     });
+    return { address, status: 'verified' };
   } catch (err) {
-    console.error(`verification failed for ${address}`, err);
+    // Provider errors may contain credential-bearing URLs. Keep reports public-safe.
+    console.error(
+      `Explorer verification incomplete for ${address}; inspect the explorer and retry verification separately.`
+    );
+    return { address, status: 'pending' };
   }
 }
 
@@ -417,16 +442,20 @@ function reportNumber(value: bigint, label: string): number {
   return number;
 }
 
-async function main() {
-  const [owner] = await ethers.getSigners();
-  if (!owner)
-    throw new Error('No deployment signer configured for this network');
-  const cli = parseArgs(process.argv.slice(2));
+export async function main(argv = process.argv.slice(2)) {
+  const cli = parseArgs(argv);
+  if (cli.help) {
+    console.log(
+      'Staged deployment: sends transactions. Public networks require a reviewed config and fresh output file.\nHardhat: DEPLOY_DEFAULTS_CONFIG=<file> DEPLOY_DEFAULTS_OUTPUT=<new-file> npx hardhat run scripts/v2/deployDefaults.ts --network sepolia\nRead-only preflight: npm run deploy:plan -- --network sepolia --config <file>\nRecovery: set DEPLOYER_ADDRESS to the recorded coordinator and use a NEW output file with the SAME config.\nLocal rehearsal: DEPLOY_DEFAULTS_SKIP_VERIFY=1 npx hardhat run scripts/v2/deployDefaults.ts\nUse docs/deployment-v2-agialpha.md. This command does not certify production readiness.'
+    );
+    return;
+  }
   const envOutput = toStringOrUndefined(process.env.DEPLOY_DEFAULTS_OUTPUT);
   const skipVerifyEnv = (
     process.env.DEPLOY_DEFAULTS_SKIP_VERIFY || ''
   ).toLowerCase();
   const skipVerify =
+    LOCAL_NETWORKS.has(network.name) ||
     cli['skip-verify'] === true ||
     skipVerifyEnv === '1' ||
     skipVerifyEnv === 'true';
@@ -434,9 +463,68 @@ async function main() {
   const configPath =
     (cli.config && typeof cli.config === 'string' ? cli.config : undefined) ||
     envConfig;
-  const config = configPath
-    ? readJsonConfig(configPath)
+  const configBytes = configPath
+    ? fs.readFileSync(path.resolve(configPath), 'utf8')
+    : '{}';
+  let config = configPath
+    ? (JSON.parse(configBytes) as DeployerConfig)
     : ({} as DeployerConfig);
+
+  const publicNetwork = !LOCAL_NETWORKS.has(network.name);
+  const outputCandidate =
+    toStringOrUndefined(cli.output) ??
+    envOutput ??
+    toStringOrUndefined(config.output);
+  if (publicNetwork) {
+    if (!configPath || !outputCandidate)
+      throw new Error(
+        'Public deployment requires DEPLOY_DEFAULTS_CONFIG and a fresh DEPLOY_DEFAULTS_OUTPUT. Run deploy:plan first.'
+      );
+    if (
+      Object.keys(cli).some(
+        (key) =>
+          !['config', 'output', 'resume-deployer', 'skip-verify'].includes(key)
+      )
+    )
+      throw new Error(
+        'Public deployment parameters must come from the reviewed JSON, without CLI overrides.'
+      );
+    const token = loadTokenConfig({ network: network.name }).config;
+    if (
+      ethers.getAddress(token.address) !== ethers.getAddress(AGIALPHA) ||
+      token.decimals !== AGIALPHA_DECIMALS
+    )
+      throw new Error(
+        'Compiled token constants differ from the selected network. Recompile for that network before deployment.'
+      );
+    const candidate = await buildDeploymentCandidate({
+      network: network.name,
+      config,
+      configBytes,
+      token,
+      provider: ethers.provider,
+      readArtifact: createVerifiedArtifactReader(),
+    });
+    if (candidate.blockers.length)
+      throw new Error(
+        `Deployment preflight blocked: ${candidate.blockers
+          .map((item) => `${item.gate}: ${item.detail}`)
+          .join('; ')}`
+      );
+    config = candidate.config;
+  }
+  if (cli['with-tax'] && cli['no-tax'])
+    throw new Error('Choose either --with-tax or --no-tax.');
+  if (
+    config.secureDefaults?.pauseOnLaunch !== undefined &&
+    typeof config.secureDefaults.pauseOnLaunch !== 'boolean'
+  )
+    throw new Error('secureDefaults.pauseOnLaunch must be boolean');
+  const pauseOnLaunch =
+    publicNetwork || config.secureDefaults?.pauseOnLaunch !== false;
+  const [owner] = await ethers.getSigners();
+  if (!owner)
+    throw new Error('No deployment signer configured for this network');
 
   const configGovernance = toStringOrUndefined(config.governance);
   const governance = requireAddress(
@@ -592,296 +680,389 @@ async function main() {
     );
   }
 
-  await ensureAgialphaToken();
-
-  const gasLimitOverride = await getLocalGasLimitOverride();
-  const txOverrides = gasLimitOverride ? { gasLimit: gasLimitOverride } : {};
-
-  const Deployer = await ethers.getContractFactory(
-    'contracts/v2/Deployer.sol:Deployer'
+  const outputPath = path.resolve(
+    outputCandidate ?? `reports/deployment-${network.name}-${Date.now()}.json`
   );
-  const resumeAddress =
-    toStringOrUndefined(cli['resume-deployer']) ?? process.env.DEPLOYER_ADDRESS;
-  const deployer = resumeAddress
-    ? Deployer.attach(ethers.getAddress(resumeAddress))
-    : await Deployer.deploy({ ...txOverrides });
-  await deployer.waitForDeployment();
-  const deployerAddress = await deployer.getAddress();
-  if ((await deployer.owner()).toLowerCase() !== owner.address.toLowerCase()) {
-    throw new Error(
-      'The connected signer does not own the deployment coordinator'
+  fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+  const chainId = Number((await ethers.provider.getNetwork()).chainId);
+  const output = reserveDeploymentOutput(outputPath);
+  let journal;
+  try {
+    journal = reserveDeploymentOutput(`${outputPath}.journal.jsonl`);
+  } catch (error) {
+    output.close();
+    throw error;
+  }
+  const progress: Record<string, unknown> = {
+    schema: 'agi-jobs/staged-deployment/v1',
+    status: 'prepared',
+    network: network.name,
+    chainId,
+    governance,
+    token: AGIALPHA,
+    pauseOnLaunch,
+    configSha256: createHash('sha256').update(configBytes).digest('hex'),
+    transactions: [],
+    creationRecords: {},
+    productionApproved: false,
+    journal: `${outputPath}.journal.jsonl`,
+  };
+  function checkpoint(values: Record<string, unknown>) {
+    Object.assign(progress, values, { updatedAt: new Date().toISOString() });
+    journal.append(
+      JSON.stringify(progress, (_key, value) =>
+        typeof value === 'bigint' ? value.toString() : value
+      ) + '\n'
+    );
+    output.write(
+      JSON.stringify(
+        progress,
+        (_key, value) => (typeof value === 'bigint' ? value.toString() : value),
+        2
+      ) + '\n'
     );
   }
-  if (await deployer.deployed()) {
-    console.log(
-      'Coordinator already finalized. Component addresses:',
-      Array.from(await deployer.stagedModules())
+  console.log(`Deployment evidence: ${outputPath}`);
+  try {
+    checkpoint({});
+    await ensureAgialphaToken();
+
+    const gasLimitOverride = await getLocalGasLimitOverride();
+    const txOverrides = gasLimitOverride ? { gasLimit: gasLimitOverride } : {};
+
+    const Deployer = await ethers.getContractFactory(
+      'contracts/v2/Deployer.sol:Deployer'
     );
-    return;
-  }
-  console.log('Deployment coordinator:', deployerAddress);
-  console.log(
-    `To resume an interrupted run, use DEPLOYER_ADDRESS=${deployerAddress} with the same configuration.`
-  );
-
-  const creationRecords: Record<
-    string,
-    { address: string; args: unknown[]; source: string }
-  > = {};
-  await stageProtocol(deployer, identity, governance, {
-    econ,
-    withTaxPolicy: withTax,
-    overrides: txOverrides,
-    onDeployed: async (name, contract, args, source) => {
-      const address = await contract.getAddress();
-      creationRecords[name] = { address, args, source };
-      console.log(`${name} deployed at ${address}`);
-    },
-  });
-
-  const tx = withTax
-    ? hasEconOverrides
-      ? await deployer.deploy(econ, identity, governance, txOverrides)
-      : await deployer.deployDefaults(identity, governance, txOverrides)
-    : hasEconOverrides
-    ? await deployer.deployWithoutTaxPolicy(
-        econ,
-        identity,
-        governance,
-        txOverrides
-      )
-    : await deployer.deployDefaultsWithoutTaxPolicy(
-        identity,
-        governance,
-        txOverrides
-      );
-
-  const receipt = await tx.wait();
-  const deployLog = receipt.logs.find((log) => log.address === deployerAddress);
-  if (!deployLog) {
-    throw new Error('Deployment transaction missing Deployed event');
-  }
-  const decoded = deployer.interface.decodeEventLog(
-    'Deployed',
-    deployLog.data,
-    deployLog.topics
-  );
-
-  const [
-    stakeManager,
-    jobRegistry,
-    validationModule,
-    reputationEngine,
-    disputeModule,
-    certificateNFT,
-    platformRegistry,
-    jobRouter,
-    platformIncentives,
-    feePool,
-    taxPolicy,
-    identityRegistry,
-    systemPause,
-  ] = decoded as string[];
-
-  // Report confirmed contract state, not duplicated defaults that can drift
-  // from the deployed implementation (including burn and timing parameters).
-  const deployedStake = await ethers.getContractAt(
-    'contracts/v2/StakeManager.sol:StakeManager',
-    stakeManager
-  );
-  const deployedRegistry = await ethers.getContractAt(
-    'contracts/v2/JobRegistry.sol:JobRegistry',
-    jobRegistry
-  );
-  const deployedValidation = await ethers.getContractAt(
-    'contracts/v2/ValidationModule.sol:ValidationModule',
-    validationModule
-  );
-  const deployedPool = await ethers.getContractAt(
-    'contracts/v2/FeePool.sol:FeePool',
-    feePool
-  );
-  const [
-    effectiveFeePct,
-    effectiveBurnPct,
-    effectiveEmployerSlash,
-    effectiveTreasurySlash,
-    effectiveValidatorSlash,
-    effectiveCommitWindow,
-    effectiveRevealWindow,
-    effectiveMinStake,
-    effectiveJobStake,
-  ] = await Promise.all([
-    deployedRegistry.feePct(),
-    deployedPool.burnPct(),
-    deployedStake.employerSlashPct(),
-    deployedStake.treasurySlashPct(),
-    deployedStake.validatorSlashRewardPct(),
-    deployedValidation.commitWindow(),
-    deployedValidation.revealWindow(),
-    deployedStake.minStake(),
-    deployedRegistry.jobStake(),
-  ]);
-
-  const pendingOwnership: Array<{
-    contract: string;
-    address: string;
-    pendingOwner: string;
-  }> = [];
-  for (const [name, address] of [
-    ['IdentityRegistry', identityRegistry],
-    ...(withTax ? [['TaxPolicy', taxPolicy]] : []),
-  ]) {
-    const ownable = await ethers.getContractAt(
-      [
-        'function owner() view returns (address)',
-        'function pendingOwner() view returns (address)',
-        'function acceptOwnership()',
-      ],
-      address,
-      owner
-    );
-    const currentOwner = ethers.getAddress(await ownable.owner());
-    if (currentOwner === ethers.getAddress(governance)) continue;
-    const pendingOwner = await ownable.pendingOwner();
-    if (ethers.getAddress(pendingOwner) !== ethers.getAddress(governance))
+    const resumeAddress =
+      toStringOrUndefined(cli['resume-deployer']) ??
+      process.env.DEPLOYER_ADDRESS;
+    const deployer = resumeAddress
+      ? Deployer.attach(ethers.getAddress(resumeAddress))
+      : await Deployer.deploy({ ...txOverrides });
+    const coordinatorTx = deployer.deploymentTransaction();
+    if (coordinatorTx)
+      checkpoint({
+        status: 'coordinator-submitted',
+        coordinatorTransaction: coordinatorTx.hash,
+        coordinator: await deployer.getAddress(),
+      });
+    await deployer.waitForDeployment();
+    const deployerAddress = await deployer.getAddress();
+    if (
+      (await ethers.provider.getCode(deployerAddress)) !==
+      (await artifacts.readArtifact('contracts/v2/Deployer.sol:Deployer'))
+        .deployedBytecode
+    )
       throw new Error(
-        `${name} pending governance does not match the requested owner`
+        'Coordinator runtime differs from this compiled release; use its matching release for recovery.'
       );
-    if (ethers.getAddress(governance) === ethers.getAddress(owner.address)) {
-      await (await ownable.acceptOwnership()).wait();
-      if (
-        ethers.getAddress(await ownable.owner()) !==
-        ethers.getAddress(governance)
+    if (
+      (await deployer.owner()).toLowerCase() !== owner.address.toLowerCase()
+    ) {
+      throw new Error(
+        'The connected signer does not own the deployment coordinator'
+      );
+    }
+    const alreadyFinalized = await deployer.deployed();
+    const configurationHash = ethers.keccak256(
+      ethers.toUtf8Bytes(
+        JSON.stringify(
+          {
+            chainId,
+            token: AGIALPHA,
+            governance,
+            econ,
+            identity,
+            pauseOnLaunch,
+            tax: withTax
+              ? { uri: requestedTaxUri, description: requestedTaxDescription }
+              : null,
+            secureDefaults: Object.fromEntries(
+              Object.entries(config.secureDefaults ?? {}).sort(([a], [b]) =>
+                a.localeCompare(b)
+              )
+            ),
+          },
+          (_key, value) =>
+            typeof value === 'bigint' ? value.toString() : value
+        )
       )
-        throw new Error(`${name} governance acceptance did not complete`);
+    );
+    const committed = await deployer.configurationHash();
+    if (committed !== ethers.ZeroHash && committed !== configurationHash)
+      throw new Error(
+        'Deployment configuration changed. Resume using the exact reviewed parameters; no further transactions were sent.'
+      );
+    if (committed === ethers.ZeroHash) {
+      if (alreadyFinalized)
+        throw new Error(
+          'Finalized coordinator has no matching plan commitment. Reconcile it using the original deployment procedure.'
+        );
+      const transaction = await deployer.commitConfiguration(configurationHash);
+      checkpoint({
+        configurationHash,
+        configurationTransaction: transaction.hash,
+      });
+      await transaction.wait();
+    }
+    checkpoint({
+      configurationHash,
+      status: alreadyFinalized ? 'recovering-finalized' : 'staging',
+      coordinator: deployerAddress,
+    });
+    console.log('Deployment coordinator:', deployerAddress);
+    console.log(
+      `To resume an interrupted run, use DEPLOYER_ADDRESS=${deployerAddress} with the same configuration.`
+    );
+
+    const creationRecords: Record<
+      string,
+      { address: string; args: unknown[]; source: string }
+    > = {};
+    await stageProtocol(deployer, identity, governance, {
+      econ,
+      withTaxPolicy: withTax,
+      tax: { uri: requestedTaxUri, description: requestedTaxDescription },
+      overrides: txOverrides,
+      onSubmitted: async (name, hash) => {
+        (progress.transactions as Array<unknown>).push({ name, hash });
+        checkpoint({});
+      },
+      onDeployed: async (name, contract, args, source) => {
+        const address = await contract.getAddress();
+        creationRecords[name] = { address, args, source };
+        checkpoint({ creationRecords });
+        console.log(`${name} deployed at ${address}`);
+      },
+    });
+
+    if (!alreadyFinalized) {
+      const tx = pauseOnLaunch
+        ? await deployer.deployPaused(
+            econ,
+            identity,
+            governance,
+            withTax,
+            txOverrides
+          )
+        : withTax
+        ? hasEconOverrides
+          ? await deployer.deploy(econ, identity, governance, txOverrides)
+          : await deployer.deployDefaults(identity, governance, txOverrides)
+        : hasEconOverrides
+        ? await deployer.deployWithoutTaxPolicy(
+            econ,
+            identity,
+            governance,
+            txOverrides
+          )
+        : await deployer.deployDefaultsWithoutTaxPolicy(
+            identity,
+            governance,
+            txOverrides
+          );
+
+      checkpoint({
+        status: 'finalization-submitted',
+        finalizationTransaction: tx.hash,
+      });
+      const receipt = await tx.wait();
+      const deployLog = receipt.logs.find(
+        (log) =>
+          log.address.toLowerCase() === deployerAddress.toLowerCase() &&
+          log.topics[0] === deployer.interface.getEvent('Deployed')!.topicHash
+      );
+      if (!deployLog) {
+        throw new Error('Deployment transaction missing Deployed event');
+      }
+      checkpoint({
+        status: 'finalized',
+        finalizationBlock: receipt.blockNumber,
+      });
+    }
+
+    const [
+      stakeManager,
+      jobRegistry,
+      validationModule,
+      reputationEngine,
+      disputeModule,
+      certificateNFT,
+      platformRegistry,
+      jobRouter,
+      platformIncentives,
+      feePool,
+      taxPolicy,
+      identityRegistry,
+      systemPause,
+    ] = Array.from(await deployer.stagedModules()) as string[];
+
+    // Report confirmed contract state, not duplicated defaults that can drift
+    // from the deployed implementation (including burn and timing parameters).
+    const deployedStake = await ethers.getContractAt(
+      'contracts/v2/StakeManager.sol:StakeManager',
+      stakeManager
+    );
+    const deployedRegistry = await ethers.getContractAt(
+      'contracts/v2/JobRegistry.sol:JobRegistry',
+      jobRegistry
+    );
+    const deployedValidation = await ethers.getContractAt(
+      'contracts/v2/ValidationModule.sol:ValidationModule',
+      validationModule
+    );
+    const deployedPool = await ethers.getContractAt(
+      'contracts/v2/FeePool.sol:FeePool',
+      feePool
+    );
+    const [
+      effectiveFeePct,
+      effectiveBurnPct,
+      effectiveEmployerSlash,
+      effectiveTreasurySlash,
+      effectiveValidatorSlash,
+      effectiveCommitWindow,
+      effectiveRevealWindow,
+      effectiveMinStake,
+      effectiveJobStake,
+    ] = await Promise.all([
+      deployedRegistry.feePct(),
+      deployedPool.burnPct(),
+      deployedStake.employerSlashPct(),
+      deployedStake.treasurySlashPct(),
+      deployedStake.validatorSlashRewardPct(),
+      deployedValidation.commitWindow(),
+      deployedValidation.revealWindow(),
+      deployedStake.minStake(),
+      deployedRegistry.jobStake(),
+    ]);
+
+    const pendingOwnership: Array<{
+      contract: string;
+      address: string;
+      pendingOwner: string;
+    }> = [];
+    for (const [name, address] of [
+      ['IdentityRegistry', identityRegistry],
+      ...(withTax ? [['TaxPolicy', taxPolicy]] : []),
+    ]) {
+      const ownable = await ethers.getContractAt(
+        [
+          'function owner() view returns (address)',
+          'function pendingOwner() view returns (address)',
+          'function acceptOwnership()',
+        ],
+        address,
+        owner
+      );
+      const currentOwner = ethers.getAddress(await ownable.owner());
+      if (currentOwner === ethers.getAddress(governance)) continue;
+      const pendingOwner = await ownable.pendingOwner();
+      if (ethers.getAddress(pendingOwner) !== ethers.getAddress(governance))
+        throw new Error(
+          `${name} pending governance does not match the requested owner`
+        );
+      if (ethers.getAddress(governance) === ethers.getAddress(owner.address)) {
+        await (await ownable.acceptOwnership()).wait();
+        if (
+          ethers.getAddress(await ownable.owner()) !==
+          ethers.getAddress(governance)
+        )
+          throw new Error(`${name} governance acceptance did not complete`);
+      } else {
+        pendingOwnership.push({ contract: name, address, pendingOwner });
+      }
+    }
+    if (pendingOwnership.length) {
+      console.log(
+        'Governance acceptance required before commissioning:',
+        pendingOwnership
+      );
+    }
+
+    console.log('\nEconomic parameters applied');
+    console.table(
+      Object.entries({
+        feePct: `${effectiveFeePct}%`,
+        burnPct: `${effectiveBurnPct}%`,
+        employerSlashPct: `${effectiveEmployerSlash}%`,
+        treasurySlashPct: `${effectiveTreasurySlash}%`,
+        validatorSlashRewardPct: `${effectiveValidatorSlash}%`,
+        commitWindowSeconds: effectiveCommitWindow,
+        revealWindowSeconds: effectiveRevealWindow,
+        minStakeWei: effectiveMinStake.toString(),
+        jobStakeWei: effectiveJobStake.toString(),
+      }).map(([parameter, value]) => ({ parameter, value }))
+    );
+
+    console.log('\nIdentity parameters applied');
+    console.table(
+      Object.entries({
+        ens: identity.ens,
+        nameWrapper: identity.nameWrapper,
+        clubRootNode: identity.clubRootNode,
+        agentRootNode: identity.agentRootNode,
+        validatorMerkleRoot: identity.validatorMerkleRoot,
+        agentMerkleRoot: identity.agentMerkleRoot,
+      }).map(([parameter, value]) => ({ parameter, value }))
+    );
+
+    const implementations = await readImplementationAddresses({
+      StakeManager: stakeManager,
+      JobRegistry: jobRegistry,
+      ValidationModule: validationModule,
+    });
+    const explorerVerification: Array<{ address: string; status: string }> = [];
+    if (!skipVerify) {
+      explorerVerification.push(await verify(deployerAddress));
+      for (const { address, args, source } of Object.values(creationRecords)) {
+        explorerVerification.push(await verify(address, args, source));
+      }
+      for (const address of Object.values(implementations)) {
+        explorerVerification.push(await verify(address as string, []));
+      }
     } else {
-      pendingOwnership.push({ contract: name, address, pendingOwner });
+      explorerVerification.push({
+        address: deployerAddress,
+        status: 'skipped',
+      });
+      console.log(
+        '\nExplorer verification skipped for this run; it remains a commissioning requirement on public networks.'
+      );
     }
-  }
-  if (pendingOwnership.length) {
-    console.log(
-      'Governance acceptance required before commissioning:',
-      pendingOwnership
-    );
-  }
 
-  console.log('\nEconomic parameters applied');
-  console.table(
-    Object.entries({
-      feePct: `${effectiveFeePct}%`,
-      burnPct: `${effectiveBurnPct}%`,
-      employerSlashPct: `${effectiveEmployerSlash}%`,
-      treasurySlashPct: `${effectiveTreasurySlash}%`,
-      validatorSlashRewardPct: `${effectiveValidatorSlash}%`,
-      commitWindowSeconds: effectiveCommitWindow,
-      revealWindowSeconds: effectiveRevealWindow,
-      minStakeWei: effectiveMinStake.toString(),
-      jobStakeWei: effectiveJobStake.toString(),
-    }).map(([parameter, value]) => ({ parameter, value }))
-  );
-
-  console.log('\nIdentity parameters applied');
-  console.table(
-    Object.entries({
-      ens: identity.ens,
-      nameWrapper: identity.nameWrapper,
-      clubRootNode: identity.clubRootNode,
-      agentRootNode: identity.agentRootNode,
-      validatorMerkleRoot: identity.validatorMerkleRoot,
-      agentMerkleRoot: identity.agentMerkleRoot,
-    }).map(([parameter, value]) => ({ parameter, value }))
-  );
-
-  const implementations = await readImplementationAddresses({
-    StakeManager: stakeManager,
-    JobRegistry: jobRegistry,
-    ValidationModule: validationModule,
-  });
-  if (!skipVerify) {
-    await verify(deployerAddress);
-    for (const { address, args, source } of Object.values(creationRecords)) {
-      await verify(address, args, source);
+    let appliedTaxUri: string | null = null;
+    let appliedTaxDescription: string | null = null;
+    if (withTax) {
+      const policy = await ethers.getContractAt(
+        'contracts/v2/TaxPolicy.sol:TaxPolicy',
+        taxPolicy
+      );
+      [appliedTaxUri, appliedTaxDescription] = await Promise.all([
+        policy.policyURI(),
+        policy.acknowledgement(),
+      ]);
     }
-    for (const address of Object.values(implementations)) {
-      await verify(address as string, []);
-    }
-  } else {
-    console.log(
-      '\nSkipping contract verification (DEPLOY_DEFAULTS_SKIP_VERIFY enabled).'
-    );
-  }
 
-  let appliedTaxUri = DEFAULT_TAX_URI;
-  let appliedTaxDescription = DEFAULT_TAX_DESCRIPTION;
-  if (withTax) {
-    const shouldUpdatePolicy =
-      requestedTaxUri !== DEFAULT_TAX_URI ||
-      requestedTaxDescription !== DEFAULT_TAX_DESCRIPTION;
-    if (shouldUpdatePolicy) {
-      const governanceSigner =
-        ethers.getAddress(governance) === ethers.getAddress(owner.address)
-          ? owner
-          : null;
-      if (!governanceSigner) {
-        console.warn(
-          'Tax policy metadata remains unchanged. Governance must acceptOwnership() then call setPolicy(uri, text).'
-        );
-      }
-      if (governanceSigner) {
-        const taxContract = await ethers.getContractAt(
-          'contracts/v2/TaxPolicy.sol:TaxPolicy',
-          taxPolicy,
-          governanceSigner
-        );
-        try {
-          const policyTx = await taxContract.setPolicy(
-            requestedTaxUri,
-            requestedTaxDescription
-          );
-          const receipt = await policyTx.wait();
-          appliedTaxUri = requestedTaxUri;
-          appliedTaxDescription = requestedTaxDescription;
-          console.log(
-            `Updated tax policy metadata in tx ${receipt?.hash ?? '<unknown>'}`
-          );
-        } catch (err) {
-          console.warn(
-            `Automatic tax policy update failed: ${
-              (err as Error).message
-            }. Use setPolicy(uri, text) manually if required.`
-          );
-        }
-      }
-    }
-  }
+    const summary = {
+      StakeManager: stakeManager,
+      JobRegistry: jobRegistry,
+      ValidationModule: validationModule,
+      ReputationEngine: reputationEngine,
+      DisputeModule: disputeModule,
+      CertificateNFT: certificateNFT,
+      PlatformRegistry: platformRegistry,
+      JobRouter: jobRouter,
+      PlatformIncentives: platformIncentives,
+      FeePool: feePool,
+      TaxPolicy: withTax ? taxPolicy : 'disabled',
+      IdentityRegistry: identityRegistry,
+      SystemPause: systemPause,
+    } as Record<string, string>;
 
-  const summary = {
-    StakeManager: stakeManager,
-    JobRegistry: jobRegistry,
-    ValidationModule: validationModule,
-    ReputationEngine: reputationEngine,
-    DisputeModule: disputeModule,
-    CertificateNFT: certificateNFT,
-    PlatformRegistry: platformRegistry,
-    JobRouter: jobRouter,
-    PlatformIncentives: platformIncentives,
-    FeePool: feePool,
-    TaxPolicy: withTax ? taxPolicy : 'disabled',
-    IdentityRegistry: identityRegistry,
-    SystemPause: systemPause,
-  } as Record<string, string>;
+    console.log('\nDeployment summary');
+    console.table(summary);
 
-  console.log('\nDeployment summary');
-  console.table(summary);
-
-  const outputCandidate =
-    toStringOrUndefined(cli.output) ??
-    envOutput ??
-    toStringOrUndefined(config.output);
-
-  if (outputCandidate) {
-    const outputPath = path.resolve(outputCandidate);
     const payload = {
       timestamp: new Date().toISOString(),
       network: network.name,
@@ -920,22 +1101,87 @@ async function main() {
       implementations,
       creationRecords,
     };
-    fs.mkdirSync(path.dirname(outputPath), { recursive: true });
-    fs.writeFileSync(
-      outputPath,
-      JSON.stringify(
-        payload,
-        (_key, value) => (typeof value === 'bigint' ? value.toString() : value),
-        2
-      )
+    const managed = [
+      stakeManager,
+      jobRegistry,
+      validationModule,
+      reputationEngine,
+      disputeModule,
+      platformRegistry,
+      feePool,
+      (await deployer.stagedModules())[13],
+    ];
+    const pauseState = await Promise.all(
+      managed.map(async (address) => {
+        const module = await ethers.getContractAt(
+          [
+            'function paused() view returns (bool)',
+            'function owner() view returns (address)',
+          ],
+          address
+        );
+        return {
+          address,
+          paused: await module.paused(),
+          owner: await module.owner(),
+        };
+      })
     );
-    console.log(`Deployment summary written to ${outputPath}`);
+    const pause = await ethers.getContractAt(
+      'contracts/v2/SystemPause.sol:SystemPause',
+      systemPause
+    );
+    if (
+      ethers.getAddress(await pause.owner()) !== governance ||
+      pauseState.some(
+        (item) =>
+          ethers.getAddress(item.owner) !== ethers.getAddress(systemPause)
+      )
+    )
+      throw new Error(
+        'Observed ownership differs from the expected SystemPause/governance topology.'
+      );
+    const allPaused = pauseState.every((item) => item.paused);
+    checkpoint({
+      ...payload,
+      status: allPaused ? 'awaiting-commissioning' : 'requires-pause-review',
+      pauseState,
+      explorerVerification,
+      requestedSecureDefaults: config.secureDefaults ?? {},
+      remainingActions: [
+        'Complete pending two-step ownership acceptance.',
+        'Review and apply launch limits through the actual governance authority.',
+        'Complete source verification and independent security/worker/settlement commissioning before governance unpauses the stack.',
+      ],
+    });
+    console.log(`Deployment evidence written to ${outputPath}`);
+    console.log(
+      allPaused
+        ? '\nDeployment recorded. Managed modules remain paused for commissioning.'
+        : '\nDeployment recorded. Inspect pause state before commissioning.'
+    );
+  } catch (error) {
+    try {
+      checkpoint({
+        status: 'interrupted',
+        recovery:
+          'Reconcile recorded transactions and coordinator state. Resume the same release and configuration using DEPLOYER_ADDRESS and a NEW output filename.',
+      });
+    } catch {
+      /* Preserve existing evidence if its reservation was changed. */
+    }
+    throw error;
+  } finally {
+    journal.close();
+    output.close();
   }
-
-  console.log('\nDeployment complete');
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+if (require.main === module)
+  main().catch((err) => {
+    const message = err?.code
+      ? 'RPC, filesystem or transaction operation failed. Inspect the retained evidence and provider privately; reconcile before retrying.'
+      : String(err?.message ?? 'Unknown deployment failure');
+    console.error(`Deployment stopped: ${message}`);
+    process.exitCode = 1;
+  });

@@ -28,7 +28,7 @@ This repository contains smart contracts, agent and validator services, operator
 | Inspect a delivery and record review findings | [Evidence review guide](EVIDENCE_REVIEW.md) and [local reviewer](https://montrealai.github.io/AGIJobsv0/review/) |
 | Run a validator with explicit review and restart recovery | [Validator service guide](../apps/validator/README.md) |
 | Understand owner controls | [Operator runbook](../OperatorRunbook.md) |
-| Prepare a production deployment | [Readiness report](production/readiness.md), then [security deployment guide](security-deployment-guide.md) |
+| Prepare a production deployment | [Readiness report](production/readiness.md), then [staged Hardhat deployment](deployment-v2-agialpha.md) |
 
 ## Reproduce the local baseline
 
