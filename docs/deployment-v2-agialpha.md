@@ -110,6 +110,8 @@ npx hardhat run --no-compile scripts/v2/apply-secure-defaults.ts --network sepol
 
 Review each returned `to`, `data`, `requiredCaller` and chain ID. A multisig or timelock must execute these calls through its approved process. A directly connected governance signer may remove `ONECLICK_DRY_RUN=1` to execute; this sends transactions and prints each hash before waiting. All configuration and caller checks run before the first send. The helper preserves omitted job reward/stake values and can pause a partly paused stack. Reconcile receipts before any retry; several setter transactions are not an atomic batch.
 
+For an existing legacy one-click deployment whose modules remain owned by governance, the helper sends setters directly to the module owner and pause calls through SystemPause after validating its delegated pauser role. It supports mixed pause states and rejects missing pause authority before sending any transaction. This compatibility path does not change the staged ownership topology above.
+
 Only the actual governance authority may approve `SystemPause.unpauseAll()` after those gates pass. A restart or recovery run is never an instruction to unpause.
 
 ## Troubleshooting

@@ -178,15 +178,29 @@ export async function planSecureDefaults(
       const module = await ethers.getContractAt(
         [
           'function owner() view returns (address)',
+          'function pauser() view returns (address)',
           'function paused() view returns (bool)',
           'function pause()',
         ],
         target
       );
-      if (ethers.getAddress(await module.owner()) !== pauseAddress)
-        throw new Error(`${key} is not owned by SystemPause`);
+      if (
+        ethers.getAddress(await module.owner()) !== pauseAddress &&
+        ethers.getAddress(await module.pauser()) !== pauseAddress
+      )
+        throw new Error(`${key} does not authorize SystemPause to pause`);
       if (!(await module.paused()))
-        await enqueue(module, 'pause', [], `Pause ${key}`);
+        // The legacy one-click path retains governance ownership and delegates
+        // only pausing. Route this operation through its validated pauser too.
+        actions.push({
+          label: `Pause ${key}`,
+          to: pauseAddress!,
+          data: pause.interface.encodeFunctionData('executeGovernanceCall', [
+            target,
+            module.interface.encodeFunctionData('pause'),
+          ]),
+          requiredCaller: ethers.getAddress(await pause.owner()),
+        });
     }
   }
   return actions;

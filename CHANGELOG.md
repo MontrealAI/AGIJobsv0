@@ -2,7 +2,7 @@
 
 ## v2.1.0-rc.2
 
-- Added read-only governance call preparation for launch limits; the configuration helper supports the staged SystemPause topology, preserves omitted job limits and handles mixed pause states.
+- Added read-only governance call preparation for launch limits; the configuration helper supports the staged SystemPause topology and legacy delegated-pauser topology, preserves omitted job limits and handles mixed pause states.
 
 Deployment safety and operator documentation source candidate (2026-10-10).
 
