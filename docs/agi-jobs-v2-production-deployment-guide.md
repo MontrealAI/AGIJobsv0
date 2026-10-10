@@ -1,6 +1,6 @@
 # AGIJobs v2 Sprint Plan and Deployment Guide
 
-This document consolidates the final sprint plan with the operational deployment guide and reflects the production-ready configuration for AGIJobs v2.
+**Historical sprint and Etherscan reference.** This document describes an earlier deployment design. Use the [current staged Hardhat guide](deployment-v2-agialpha.md) for new deployments and the [current readiness record](production/readiness.md) for release gates. The older constructor and manual wiring examples below are not the current production procedure.
 
 ## Summary
 

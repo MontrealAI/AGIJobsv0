@@ -1,6 +1,8 @@
-# AGI Jobs v0 Non-Technical Deployment Guide
+# Historical AGI Jobs v0 Non-Technical Deployment Guide
 
-This guide walks contract owners and program managers through deploying the AGI Jobs v0 stack without writing code. It wraps the one-click deployment scripts, container bundle, and monitoring utilities that ship with the repository so you can launch, observe, and roll back the platform from a laptop or workstation.
+> **Historical one-click reference.** For a new deployment, use the [current plain-language coordinator guide](production/nontechnical-mainnet-deployment.md) and [staged Hardhat guide](deployment-v2-agialpha.md). The older examples below are not the current public-network release procedure. Container shutdown or changing a Git checkout does not undo on-chain transactions.
+
+This guide walks contract owners and program managers through deploying the AGI Jobs v0 stack without writing code. It wraps the one-click deployment scripts, container bundle, and monitoring utilities that ship with the repository so you can understand the earlier local deployment workflow.
 
 ## Quick reference checklist
 
@@ -14,7 +16,7 @@ This guide walks contract owners and program managers through deploying the AGI 
 
 ## 1. Prerequisites
 
-1. **Install toolchain:** Docker Desktop (or the Docker Engine CLI), Node.js 18+ (see `.nvmrc`), npm 9+, and Git.
+1. **Install toolchain:** Docker Desktop (or the Docker Engine CLI), the exact Node.js and npm versions pinned in `.nvmrc` and `package.json`, and Git.
 2. **Access secrets:** Obtain RPC URLs, API tokens, and multisig addresses for the target network. Store them outside Git until you populate `deployment-config/oneclick.env`.
 3. **Clone the repository:**
    ```bash

@@ -5,9 +5,7 @@ For detailed production deployment instructions see
 explanation of module responsibilities and how they interact, refer to
 [architecture-v2.md](architecture-v2.md).
 
-This note outlines a minimal sequence for deploying the modular v2 stack
-and wiring contracts together. The `$AGIALPHA` token, ENS roots, Merkle
-roots and all numeric parameters can be updated later by the owner.
+The manual sequence below is historical architecture context. New deployments must use the [current staged Hardhat procedure](deployment-v2-agialpha.md), including fixed implementations, paused wiring and governance handoff. The `$AGIALPHA` token and implementation addresses are compiled or immutable settings; do not assume governance can replace them. ENS roots and supported numeric parameters use their documented governance setters.
 Prefer automated helpers when possible:
 
 - [`scripts/v2/deployDefaults.ts`](../scripts/v2/deployDefaults.ts) reads

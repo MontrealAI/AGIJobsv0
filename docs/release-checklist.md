@@ -1,116 +1,60 @@
 # Release checklist
 
-Use this list before tagging a new production release. The current [readiness record](production/readiness-2026-10-03.md) lists unresolved blockers; completing this checklist is a requirement, not a statement that the repository already satisfies it.
+Use the [current readiness report](production/readiness.md) before choosing a release type. A **source prerelease** publishes reviewable source with explicit limitations. A **production release** requires every production gate below. Neither a GitHub release nor a Pages deployment authorizes on-chain deployment.
 
-Before tagging, merge the reviewed changes, wait for successful CI on that exact `main` commit, and run `npm run ci:verify-signers` and `npm run release:check-size` after a fresh compile. The expected workflow list is in `scripts/release/check-release-ci.js`; run path-filtered workflows manually on `main` when that commit has no result. Do not tag a different commit after checking CI.
+## 1. Freeze a reviewable candidate
 
-1. **Compile and lint**
-   ```bash
-   npm run compile
-   npm run lint:check       # runs solhint + eslint with zero warnings
-   npm run format:check     # prettier guardrails
-   ```
-2. **Run tests and enforce coverage**
-   ```bash
-   npm test
-   npm run coverage:full
-   node scripts/check-coverage.js 90
-   forge test --ffi
-   ```
-3. **Run fuzzing & invariants**
-   ```bash
-   npm run echidna
-   npm run echidna:commit-reveal   # deterministic seed for reproducibility
-   ```
-4. **Static analysis**
-   ```bash
-   docker run --rm -u root -v "$PWD":/src -w /src "$SLITHER_IMAGE" slither . --fail-high --exclude-dependencies \
-     --compile-force-framework solc --solc-remaps '@openzeppelin=node_modules/@openzeppelin' \
-     --solc-args '--base-path . --include-path node_modules --allow-paths .,node_modules' --sarif results.sarif
-   ```
-   - Upload `results.sarif` to GitHub code scanning if new issues are introduced.
-   - Optional: run MythX when credentials are configured.
-5. **Generate ABI docs and gas reports**
-   ```bash
-   forge doc || npx hardhat docgen
-   npm run gas:snapshot || npx hardhat test --report-gas
-   ```
-6. **Run fork & testnet drills**
-   ```bash
-   export MAINNET_RPC_URL="https://mainnet.example"
-   npm run test:fork
-   npx hardhat run scripts/deploy/providerAgnosticDeploy.ts --network sepolia
-   npx hardhat run scripts/audit/drills/validator-misbehaves.ts --network hardhat
-   ```
-   - Archive logs under `internal_docs/security/drills/`.
-   - Store `gas-snapshots/*.json` produced during the fork.
-7. **Update deployment addresses**
-   - Refresh `docs/deployment-addresses.json` and `docs/deployment-summary.json` with the post-deployment snapshot.
-   - Commit the generated files so the release manifest and verification plan have canonical references.
-8. **Generate release manifest, notes & SBOM**
-   ```bash
-   npm run sbom:generate
-   npm run release:manifest
-   npm run release:manifest:validate -- --fail-on-warnings --require-addresses
-   npm run release:notes -- --network mainnet --version X.Y.Z
-   jq '.warnings' reports/release/manifest.json
-   ```
-   - The validator enforces clean git/toolchain metadata and non-zero contract
-     addresses before release artefacts are published.
-   - Ensure the warnings array is empty before publishing the release.
-   - Inspect `reports/release/notes.md` for the generated contract inventory and toolchain summary. This file is published as the release body.
-   - Attach the manifest, release notes, and SBOM JSON files to the signed tag artefacts.
-9. **Prime automated explorer verification** ([guide](release-explorer-verification.md))
-   ```bash
-   # populate constructor arguments under deployment-config/verification/args/<network>/
-   node scripts/release/run-etherscan-verification.js --network mainnet --dry-run
-   node scripts/release/run-etherscan-verification.js --network sepolia --dry-run
-   ```
-   - Ensure every contract resolves to a non-zero address and the dry run succeeds before tagging.
-   - Prefer storing explorer credentials in AWS Secrets Manager and expose them to the workflow via:
-     - `AWS_ETHERSCAN_ROLE_ARN` / `AWS_ETHERSCAN_REGION` – GitHub OIDC role assumption parameters.
-     - `AWS_ETHERSCAN_SECRET_NAME` – Secrets Manager identifier containing the API key payload.
-     - `AWS_ETHERSCAN_SECRET_JSON_KEY` _(optional)_ – selector when storing multiple credentials in a single JSON blob.
-   - Fallback environment secrets (`ETHERSCAN_API_KEY_MAINNET`, `ETHERSCAN_API_KEY_SEPOLIA`, or `ETHERSCAN_API_KEY`) remain supported for self-hosted deployments.
-10. **Transfer ownership to governance**
+- Update the root package/lockfile version and add its exact `## vX.Y.Z` heading to `CHANGELOG.md`.
+- Describe behavior changes, compatibility, contract/deployment impact and recovery in the PR.
+- Run the pinned Node 22.23.3 / npm 10.8.2 toolchain with `npm ci` and `npm run ci:preflight`.
+- Review generated constants and bundles. Preserve demos, flowcharts and existing protocol behavior unless a separately reviewed migration changes them.
 
-- Use the calls file as a guide for final `setGovernance` or `transferOwnership` transactions.
+## 2. Verify contracts, tooling and documentation
 
-11. **Final production checks**
+```bash
+npm run compile
+npm run release:check-size
+npm test
+node --test test/scripts/deployment-candidate.test.cjs test/scripts/release-inventory.test.cjs test/scripts/release-provenance.test.cjs test/scripts/release-ci.test.cjs test/scripts/dependency-audit.test.cjs
+npm run format:check
+npm run lint:ci
+npm run docs:verify
+npm run site:build
+npm run site:test
+npm run site:qa
+```
 
-    - Confirm `$AGIALPHA` exposes a public `burn` and that fee burning reduces total supply.
-    - Run an employer‑initiated burn through `FeePool.distributeFees` and verify the burn receipt.
-    - Ensure all entry points enforcing `TaxPolicy` acknowledgement are covered by tests.
-    - Verify ENS subdomain ownership for a sample agent and validator including NameWrapper fallback and Merkle bypass.
-    - Double‑check slashing parameters (`employerSlashPct`, `treasurySlashPct`, validator rewards) for rational incentives.
-    - Review emitted events for job lifecycle, staking changes and policy updates to guarantee on‑chain traceability.
-    - Re‑read deployment and user guides to confirm they match the final code and address list.
-    - Ensure GitHub branch protection marks the `build`, `slither`, `coverage`, `echidna`, and `gas-snapshot` workflows as required checks.
-    - Confirm mainnet deployment dry-run (`npm run migrate:wizard -- --network mainnet`) succeeded at least once with pinned block numbers.
-    - Package audit artefacts (coverage HTML, Slither SARIF, Echidna logs, fork drill outputs) for hand-off.
+For contract changes, retain the required hosted Slither, Foundry, coverage, gas and invariant results as well. Use the exact target network compilation command when preparing a deployment: `npm run compile:mainnet` or `npm run compile:sepolia`. Never qualify fast/coverage artifacts as production bytecode. Constructor arguments and transaction gas require separate deployment evidence in addition to runtime/initcode limits.
 
-12. **Sign and verify the release tag**
+## 3. Measure production blockers without hiding them
 
-    ```bash
-    git tag -s vX.Y.Z -m "vX.Y.Z"
-    git tag -v vX.Y.Z
-    git push origin vX.Y.Z
-    ```
+```bash
+npm run release:audit-dependencies
+npm run ci:verify-signers
+```
 
-    - Ensure the hardware-backed key used above appears in `.github/signers/allowed_signers`.
-    - The CI gate rejects invalid or illustrative key bytes as well as an empty registry. Configure verified maintainer public keys before tagging.
-    - Confirm `scripts/ci/ensure-tag-signature.js` reports a verified SSH signature and checkout commit. Manual release invocations must select the matching signed tag as their workflow ref.
+The dependency gate audits every tracked npm/pnpm production lockfile and retains registry responses. High/critical findings or unavailable evidence block production release. Do not broaden an allowlist or force incompatible versions to change the report's color. Signing trust requires real authorized maintainer public keys; illustrative keys are not usable trust identities.
 
-13. **Refresh monitoring sentinels**
-    ```bash
-    cp monitoring/onchain/address-map.sample.json monitoring/onchain/address-map.mainnet.json
-    # Update addresses to the freshly deployed contracts
-    npm run monitoring:sentinels -- \
-      --network mainnet \
-      --map-file monitoring/onchain/address-map.mainnet.json \
-      --manifest reports/release/manifest.json
-    ```
-    - Attach the rendered JSON under `monitoring/onchain/rendered/` to the release archive or Defender workspace.
-    - Confirm Forta/Defender alert routing matches the incident-response runbooks.
+Independent security review, effective protected-review rules, provider/worker enforcement, real acceptance and target-network commissioning are separate evidence requirements. Simulations and self-signed fixtures do not satisfy them.
 
-Tick each item to ensure deployments remain reproducible and auditable.
+## 4. Merge the exact reviewed source
+
+Wait for all required PR checks and resolve review findings. Merge without overriding required checks. Compare the merged source tree with the reviewed tree. Verify the post-merge website deployment's source revision and inspect the changed public experience.
+
+For a production tag, wait for the required workflows on that exact `main` commit. The authoritative list is `scripts/release/check-release-ci.js`. If a path-filtered workflow has no result, run the documented workflow on that commit; do not use a result from another revision.
+
+## 5. Publish the correct kind of release
+
+### Source prerelease
+
+Use an explicit `source-vX.Y.Z` tag at the reviewed merged commit and mark the GitHub release **Pre-release**. State what passed, the exact commit/tree, every unresolved production blocker and whether any on-chain deployment occurred. Do not label source archives as signed production artifacts. Verify the published tag target, non-draft state and prerelease label after publication.
+
+### Production release
+
+Complete all production gates first. Use the [signing guide](release-signing.md), [manifest guide](release-manifest.md), [explorer verification](release-explorer-verification.md) and [provenance procedure](release-provenance.md). Create and verify the authorized signed `vX.Y.Z` tag on the exact qualified commit. Run the release workflow on that matching tag.
+
+The workflow checks tag trust and exact-commit CI, audits dependencies, compiles the selected network, checks size, validates real addresses in the manifest, verifies deployed source and signs artifacts/images. Inspect its staged draft and evidence before publication. A failed gate remains a failed gate.
+
+## 6. Commission separately
+
+Follow the [staged deployment guide](deployment-v2-agialpha.md). Retain constructor records, implementations, actual economic values, governance acceptances, explorer results and eight paused managed modules. Apply reviewed limits through governance, rehearse recovery and validate real worker/reviewer/settlement behavior before opening the service. Preserve old deployment evidence; a source release does not migrate existing chain state.

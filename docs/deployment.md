@@ -1,6 +1,6 @@
 # Deployment Notes
 
-Start with the [current staged deployment guide](deployment-v2-agialpha.md) for the modular v2 contracts. The [production readiness record](production/readiness-2026-10-03.md) lists the external release gates that remain mandatory. Use the repository-pinned toolchain, `npm ci`, `npm run compile`, and `npm run release:check-size` before deployment.
+Start with the [current staged deployment guide](deployment-v2-agialpha.md) for the modular v2 contracts. The [production readiness record](production/readiness.md) lists the external release gates that remain mandatory. Use the repository-pinned toolchain, `npm ci`, `npm run compile`, and `npm run release:check-size` before deployment.
 
 - `scripts/v2/deployDefaults.ts`: resumable component deployment, atomic registration/wiring, and explicit governance handoff.
 - `npm run deploy:oneclick`: direct-owner deployment and secure-default application; governance must be the connected deployer. Its minimum stake must be positive (one token by default) and initializes the minimum-stake floor; the configured tax URI and acknowledgement are applied at construction. Tax-disabled or Kleros variants require their separately reviewed deployment routes. Use the staged route for a multisig. One-click does not supply external workers, storage, certificate metadata, audit approval, or funded validators.

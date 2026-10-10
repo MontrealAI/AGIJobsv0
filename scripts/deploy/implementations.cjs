@@ -4,7 +4,12 @@ const modules = require('../../config/implementation-modules.json');
 const deployments = new WeakMap();
 
 /** Deploy fixed implementations before a controller, reusing code on this provider. */
-async function deployImplementations(contractName, signer, runtime) {
+async function deployImplementations(
+  contractName,
+  signer,
+  runtime,
+  options = {}
+) {
   const ethers = runtime || require('hardhat').ethers;
   const names = modules[contractName];
   if (!names) throw new Error(`Unknown modular controller: ${contractName}`);
@@ -25,6 +30,11 @@ async function deployImplementations(contractName, signer, runtime) {
         signer
       );
       const implementation = await factory.deploy();
+      if (options.onSubmitted)
+        await options.onSubmitted(
+          name,
+          implementation.deploymentTransaction().hash
+        );
       await implementation.waitForDeployment();
       address = await implementation.getAddress();
       cached.set(name, { address, code: await provider.getCode(address) });

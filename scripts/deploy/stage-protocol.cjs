@@ -27,26 +27,25 @@ async function stageProtocol(deployer, ids, governance, options = {}) {
     if (controller) {
       args.push(
         address === zero
-          ? await deployImplementations(name, signer, ethers)
+          ? await deployImplementations(name, signer, ethers, options)
           : Array.from(await factory.attach(address).implementationModules())
       );
     }
     const { data } = await factory.getDeployTransaction(...args);
     if (address === zero) {
       try {
-        await (
-          await deployer.deployComponent(
-            componentId,
-            data,
-            controller,
-            overrides
-          )
-        ).wait();
+        const transaction = await deployer.deployComponent(
+          componentId,
+          data,
+          controller,
+          overrides
+        );
+        if (options.onSubmitted)
+          await options.onSubmitted(name, transaction.hash);
+        await transaction.wait();
       } catch (error) {
         throw new Error(
-          `${name} deployment failed at coordinator ${coordinator}: ${
-            error.shortMessage || error.message
-          }. Keep this coordinator address to resume with the same configuration.`,
+          `${name} deployment failed at coordinator ${coordinator}. Reconcile submitted transactions and keep this coordinator address to resume with the same configuration.`,
           { cause: error }
         );
       }
@@ -105,8 +104,9 @@ async function stageProtocol(deployer, ids, governance, options = {}) {
   const certificate = await create('CertificateNFT', ['Cert', 'CERT']);
   const policy = withTaxPolicy
     ? await create('TaxPolicy', [
-        'ipfs://policy',
-        'All taxes on participants; contract and owner exempt',
+        options.tax?.uri ?? 'ipfs://policy',
+        options.tax?.description ??
+          'All taxes on participants; contract and owner exempt',
       ])
     : zero;
   const pool = await create('FeePool', [stake, 1, zero, policy]);

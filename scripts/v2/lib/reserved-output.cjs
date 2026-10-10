@@ -9,7 +9,8 @@ function reserveDeploymentOutput(file) {
   const fd = fs.openSync(file, 'wx+', 0o600);
   const identity = fs.fstatSync(fd);
   let closed = false;
-  let expected;
+  let expected = Buffer.alloc(0);
+  let copied = false;
   function verify() {
     if (closed) throw new Error('Deployment output reservation is closed');
     const current = fs.lstatSync(file);
@@ -21,7 +22,7 @@ function reserveDeploymentOutput(file) {
       throw new Error(
         'Reserved deployment output was replaced; original receipts are retained'
       );
-    if (expected) {
+    {
       const actual = Buffer.alloc(expected.length);
       const count = fs.readSync(fd, actual, 0, actual.length, 0);
       if (
@@ -36,15 +37,57 @@ function reserveDeploymentOutput(file) {
   }
   return {
     verify,
+    append(bytes) {
+      verify();
+      const next = Buffer.from(bytes);
+      let offset = 0;
+      while (offset < next.length) {
+        const written = fs.writeSync(
+          fd,
+          next,
+          offset,
+          next.length - offset,
+          expected.length + offset
+        );
+        if (!written)
+          throw new Error('Deployment journal write did not advance');
+        offset += written;
+      }
+      fs.fsyncSync(fd);
+      expected = Buffer.concat([expected, next]);
+      verify();
+    },
+    write(bytes) {
+      verify();
+      const next = Buffer.from(bytes);
+      let offset = 0;
+      while (offset < next.length) {
+        const written = fs.writeSync(
+          fd,
+          next,
+          offset,
+          next.length - offset,
+          offset
+        );
+        if (!written)
+          throw new Error('Deployment evidence write did not advance');
+        offset += written;
+      }
+      fs.ftruncateSync(fd, next.length);
+      fs.fsyncSync(fd);
+      expected = next;
+      verify();
+    },
     copyFrom(source) {
       verify();
-      if (expected)
+      if (copied || expected.length)
         throw new Error('Deployment addressbook was already written');
       const bytes = fs.readFileSync(source);
       // Write the held descriptor, never reopen a potentially replaced path.
       fs.writeFileSync(fd, bytes);
       fs.fsyncSync(fd);
       expected = Buffer.from(bytes);
+      copied = true;
       verify();
       return bytes;
     },

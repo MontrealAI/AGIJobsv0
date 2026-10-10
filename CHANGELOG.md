@@ -1,5 +1,21 @@
 # Changelog
 
+## v2.1.0-rc.2
+
+- Added read-only governance call preparation for launch limits; the configuration helper supports the staged SystemPause topology and legacy delegated-pauser topology, preserves omitted job limits and handles mixed pause states.
+
+Deployment safety and operator documentation source candidate (2026-10-10).
+
+- Add an atomic paused handoff for all eight SystemPause-managed contracts while retaining legacy coordinator entrypoint behavior.
+- Commit the resolved deployment configuration on the coordinator; refuse changed recovery parameters and mismatched coordinator runtime.
+- Validate public-network configuration, pinned chain/token dependencies and current production compiler evidence before broadcasting.
+- Reserve fresh evidence, retain submitted transaction hashes and append-only recovery checkpoints, and regenerate reports for finalized deployments.
+- Install reviewed tax metadata before handoff; report actual chain values, pending ownership and incomplete explorer verification.
+- Compile the selected network's token constants before artifacts, including in production release preparation.
+- Replace outdated current deployment instructions with the supported Hardhat path and a plain-language coordinator guide. Preserve historical diagrams and mark the Truffle path as historical.
+
+Production signing, dependency remediation, independent review and live commissioning remain required. Existing deployed contracts and token economics are not migrated by this source release.
+
 ## Onboarding refinement — 2026-10-10
 
 - Preserve bounded same-tab progress and larger-text preference across refreshes and EN/FR changes; explain blocked storage and provide reversible clearing.

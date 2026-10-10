@@ -7,6 +7,9 @@ const {
   buildDeploymentCandidate,
   CHAIN_IDS,
 } = require('./lib/deployment-candidate.cjs');
+const {
+  createVerifiedArtifactReader,
+} = require('../deploy/verified-artifact.cjs');
 
 async function main() {
   const argv = process.argv.slice(2);
@@ -64,13 +67,7 @@ async function main() {
       token,
       provider,
       revision,
-      readArtifact: ({ name, source }: { name: string; source: string }) =>
-        JSON.parse(
-          fs.readFileSync(
-            path.join('artifacts', source, `${name}.json`),
-            'utf8'
-          )
-        ),
+      readArtifact: createVerifiedArtifactReader(),
     });
     const json = `${JSON.stringify(report, null, 2)}\n`;
     if (args['--out']) {

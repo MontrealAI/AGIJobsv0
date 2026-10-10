@@ -1,4 +1,6 @@
-# Deploying AGIJobs v2 to Ethereum Mainnet (CLI Guide)
+# Historical Truffle deployment reference
+
+> **Historical reference — not the current launch procedure.** For new deployments use the [staged Hardhat guide](deployment-v2-agialpha.md) and [current readiness report](production/readiness.md). Constructor, ownership and pause assumptions below belong to the earlier workflow. Preserve its diagrams for reference; do not combine its commands with a current deployment.
 
 This guide walks through deploying the complete AGIJobs v2 stack to Ethereum mainnet using [Truffle](https://trufflesuite.com). It assumes you are preparing a production deployment and want the full suite of contracts wired together in one command.
 

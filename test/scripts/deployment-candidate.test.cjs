@@ -297,3 +297,115 @@ test('inventory covers actual staged component names and source references exist
   for (const stage of report.stages)
     assert.ok(fs.existsSync(stage.reference), stage.reference);
 });
+
+test('deployment artifacts reject stale dependencies, ABI changes and nonproduction compiler settings', () => {
+  const {
+    verifyCompiledArtifact,
+  } = require('../../scripts/deploy/verified-artifact.cjs');
+  const artifact = {
+    sourceName: 'contracts/C.sol',
+    contractName: 'C',
+    bytecode: '0x6001',
+    deployedBytecode: '0x6002',
+    abi: [],
+  };
+  const build = {
+    solcVersion: '0.8.25',
+    input: {
+      settings: {
+        viaIR: true,
+        optimizer: { enabled: true, runs: 200 },
+        evmVersion: 'cancun',
+      },
+      sources: {
+        'contracts/C.sol': { content: 'controller' },
+        'contracts/D.sol': { content: 'dependency' },
+        'contracts/Unrelated.sol': { content: 'old unrelated' },
+      },
+    },
+    output: {
+      contracts: {
+        'contracts/C.sol': {
+          C: {
+            abi: [],
+            evm: {
+              bytecode: { object: '6001' },
+              deployedBytecode: { object: '6002' },
+            },
+          },
+        },
+      },
+      sources: {
+        'contracts/C.sol': {
+          ast: {
+            nodes: [
+              { nodeType: 'ImportDirective', absolutePath: 'contracts/D.sol' },
+            ],
+          },
+        },
+        'contracts/D.sol': { ast: { nodes: [] } },
+      },
+    },
+  };
+  const read = (name) =>
+    ({
+      'contracts/C.sol': 'controller',
+      'contracts/D.sol': 'dependency',
+      'contracts/Unrelated.sol': 'new unrelated',
+    }[name]);
+  assert.equal(verifyCompiledArtifact(artifact, build, read), artifact);
+  assert.throws(
+    () =>
+      verifyCompiledArtifact(artifact, build, (name) =>
+        name.endsWith('/D.sol') ? 'changed' : read(name)
+      ),
+    /stale/
+  );
+  assert.throws(
+    () =>
+      verifyCompiledArtifact(
+        { ...artifact, abi: [{ type: 'function', name: 'changed' }] },
+        build,
+        read
+      ),
+    /compiler output/
+  );
+  const fast = structuredClone(build);
+  fast.input.settings.optimizer.runs = 50;
+  assert.throws(
+    () => verifyCompiledArtifact(artifact, fast, read),
+    /Production artifacts/
+  );
+  const noAst = structuredClone(build);
+  delete noAst.output.sources['contracts/D.sol'];
+  assert.throws(
+    () => verifyCompiledArtifact(artifact, noAst, read),
+    /dependency evidence/
+  );
+});
+
+test('deployment evidence retains append-only checkpoints and rejects replaced or altered files', () => {
+  const os = require('node:os');
+  const path = require('node:path');
+  const {
+    reserveDeploymentOutput,
+  } = require('../../scripts/v2/lib/reserved-output.cjs');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'deployment-journal-'));
+  const file = path.join(dir, 'report');
+  const evidence = reserveDeploymentOutput(file);
+  try {
+    evidence.append('{"stage":1}\n');
+    evidence.append('{"stage":2}\n');
+    assert.deepEqual(
+      fs.readFileSync(file, 'utf8').trim().split('\n').map(JSON.parse),
+      [{ stage: 1 }, { stage: 2 }]
+    );
+    assert.throws(() => reserveDeploymentOutput(file), /EEXIST/);
+    fs.appendFileSync(file, 'changed');
+    assert.throws(() => evidence.write('new data'), /contents changed/);
+    assert.throws(() => evidence.append('new data'), /contents changed/);
+  } finally {
+    evidence.close();
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});

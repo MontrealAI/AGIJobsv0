@@ -2,6 +2,8 @@
 
 This checklist condenses the operational knowledge required to take the AGI Jobs v0 orchestrator to production at scale. It mirrors the planner → simulator → runner pipeline that powers the `/onebox` endpoints and highlights the owner controls that must be verified before any launch.
 
+For contract deployment and release decisions, use the [current deployment readiness index](production/deployment-readiness-index.md) and [release checklist](release-checklist.md). This application-specific checklist supplements those gates; it does not demonstrate global-scale capacity.
+
 ## 1. Pipeline Integrity
 
 - **Planner** (`POST /onebox/plan`)

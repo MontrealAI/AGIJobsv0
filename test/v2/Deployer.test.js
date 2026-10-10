@@ -4,6 +4,291 @@ const { ethers, artifacts, network } = require('hardhat');
 const { AGIALPHA } = require('../../scripts/constants');
 
 describe('Deployer', function () {
+  it('binds recovery parameters and hands every managed module to governance while paused', async function () {
+    const [owner, governance, stranger] = await ethers.getSigners();
+    const artifact = await artifacts.readArtifact(
+      'contracts/test/MockERC20.sol:MockERC20'
+    );
+    await network.provider.send('hardhat_setCode', [
+      AGIALPHA,
+      artifact.deployedBytecode,
+    ]);
+    const deployer = await (
+      await ethers.getContractFactory('contracts/v2/Deployer.sol:Deployer')
+    ).deploy();
+    const digest = ethers.id('reviewed deployment');
+    await expect(
+      deployer.connect(stranger).commitConfiguration(digest)
+    ).to.be.revertedWithCustomError(deployer, 'OwnableUnauthorizedAccount');
+    await expect(
+      deployer.commitConfiguration(ethers.ZeroHash)
+    ).to.be.revertedWith('configuration hash');
+    await deployer.commitConfiguration(digest);
+    await expect(
+      deployer.commitConfiguration(ethers.id('changed'))
+    ).to.be.revertedWith('configuration changed');
+    const econ = {
+      feePct: 0,
+      burnPct: 0,
+      employerSlashPct: 0,
+      treasurySlashPct: 0,
+      validatorSlashRewardPct: 0,
+      commitWindow: 0,
+      revealWindow: 0,
+      minStake: 0,
+      jobStake: 0,
+    };
+    const ids = {
+      ens: ethers.ZeroAddress,
+      nameWrapper: ethers.ZeroAddress,
+      clubRootNode: ethers.ZeroHash,
+      agentRootNode: ethers.ZeroHash,
+      validatorMerkleRoot: ethers.ZeroHash,
+      agentMerkleRoot: ethers.ZeroHash,
+    };
+    const staged = await stageProtocol(deployer, ids, governance.address, {
+      tax: { uri: 'ipfs://reviewed-policy', description: 'Reviewed terms' },
+    });
+    await expect(
+      deployer.deployPaused(econ, ids, governance.address, false)
+    ).to.be.revertedWith('tax policy mode');
+    await expect(
+      deployer
+        .connect(stranger)
+        .deployPaused(econ, ids, governance.address, true)
+    ).to.be.revertedWithCustomError(deployer, 'OwnableUnauthorizedAccount');
+    const receipt = await (
+      await deployer.deployPaused(econ, ids, governance.address, true)
+    ).wait();
+    expect(receipt.gasUsed).to.be.lessThan(16777216n);
+    const managed = [0, 1, 2, 3, 4, 6, 9, 13];
+    for (const index of managed) {
+      const module = await ethers.getContractAt(
+        [
+          'function paused() view returns (bool)',
+          'function owner() view returns (address)',
+        ],
+        staged[index]
+      );
+      expect(await module.paused()).to.equal(true);
+      expect(await module.owner()).to.equal(staged[12]);
+    }
+    const policy = await ethers.getContractAt('TaxPolicy', staged[10]);
+    expect(await policy.policyURI()).to.equal('ipfs://reviewed-policy');
+    expect(await policy.acknowledgement()).to.equal('Reviewed terms');
+    expect(await policy.pendingOwner()).to.equal(governance.address);
+    const pause = await ethers.getContractAt('SystemPause', staged[12]);
+    await expect(pause.connect(stranger).unpauseAll()).to.be.reverted;
+    const {
+      applySecureDefaults,
+    } = require('../../scripts/v2/apply-secure-defaults.ts');
+    const book = {
+      chainId: 31337,
+      contracts: {
+        JobRegistry: staged[1],
+        StakeManager: staged[0],
+        ValidationModule: staged[2],
+        SystemPause: staged[12],
+      },
+    };
+    const config = {
+      econ: { commitWindow: '3600' },
+      secureDefaults: {
+        pauseOnLaunch: true,
+        maxJobRewardAgia: '3000',
+        maxJobDurationSeconds: 86400,
+      },
+    };
+    const registry = await ethers.getContractAt('JobRegistry', staged[1]);
+    const existingStake = await registry.jobStake();
+    const nonce = await ethers.provider.getTransactionCount(owner.address);
+    const calls = await applySecureDefaults(config, book, { dryRun: true });
+    expect(calls).to.have.lengthOf(3);
+    expect(
+      calls.every(
+        (call) =>
+          call.to === staged[12] && call.requiredCaller === governance.address
+      )
+    ).to.equal(true);
+    expect(await ethers.provider.getTransactionCount(owner.address)).to.equal(
+      nonce
+    );
+    await expect(
+      applySecureDefaults(config, book, { signer: owner })
+    ).to.be.rejectedWith('requires governance');
+    await expect(
+      applySecureDefaults(
+        { secureDefaults: { maxJobDurationSeconds: -1 } },
+        book,
+        { signer: governance }
+      )
+    ).to.be.rejectedWith('safe integer seconds');
+    await expect(
+      applySecureDefaults(config, { ...book, chainId: 1 }, { dryRun: true })
+    ).to.be.rejectedWith('chain ID');
+    await applySecureDefaults(config, book, { signer: governance });
+    expect(await registry.jobStake()).to.equal(existingStake);
+    expect(await registry.maxJobReward()).to.equal(ethers.parseEther('3000'));
+    expect(
+      await (
+        await ethers.getContractAt(
+          'contracts/v2/ValidationModule.sol:ValidationModule',
+          staged[2]
+        )
+      ).commitWindow()
+    ).to.equal(3600);
+    // A mixed pause state must be recoverable without pauseAll reverting.
+    await pause
+      .connect(governance)
+      .executeGovernanceCall(
+        staged[1],
+        registry.interface.encodeFunctionData('unpause')
+      );
+    const pauseOnly = { secureDefaults: { pauseOnLaunch: true } };
+    expect(
+      await applySecureDefaults(pauseOnly, book, { dryRun: true })
+    ).to.have.lengthOf(1);
+    await applySecureDefaults(pauseOnly, book, { signer: governance });
+    expect(await registry.paused()).to.equal(true);
+    await pause.connect(governance).unpauseAll();
+    for (const index of managed) {
+      const module = await ethers.getContractAt(
+        ['function paused() view returns (bool)'],
+        staged[index]
+      );
+      expect(await module.paused()).to.equal(false);
+    }
+    expect(await deployer.configurationHash()).to.equal(digest);
+    await expect(
+      deployer.deployPaused(econ, ids, governance.address, true)
+    ).to.be.revertedWith('deployed');
+    expect(await deployer.owner()).to.equal(owner.address);
+  });
+  it('commissions the legacy governance-owned, delegated-pauser topology safely', async function () {
+    const [, governance, stranger] = await ethers.getSigners();
+    const token = await artifacts.readArtifact(
+      'contracts/test/MockERC20.sol:MockERC20'
+    );
+    await network.provider.send('hardhat_setCode', [
+      AGIALPHA,
+      token.deployedBytecode,
+    ]);
+    const deployer = await (
+      await ethers.getContractFactory('contracts/v2/Deployer.sol:Deployer')
+    ).deploy();
+    const econ = {
+      feePct: 0,
+      burnPct: 0,
+      employerSlashPct: 0,
+      treasurySlashPct: 0,
+      validatorSlashRewardPct: 0,
+      commitWindow: 0,
+      revealWindow: 0,
+      minStake: 0,
+      jobStake: 0,
+    };
+    const ids = {
+      ens: ethers.ZeroAddress,
+      nameWrapper: ethers.ZeroAddress,
+      clubRootNode: ethers.ZeroHash,
+      agentRootNode: ethers.ZeroHash,
+      validatorMerkleRoot: ethers.ZeroHash,
+      agentMerkleRoot: ethers.ZeroHash,
+    };
+    const staged = await stageProtocol(deployer, ids, governance.address, {
+      econ,
+    });
+    await deployer.deploy(econ, ids, governance.address);
+    const pause = await ethers.getContractAt(
+      'SystemPause',
+      staged[12],
+      governance
+    );
+    const modules = [];
+    for (const index of [0, 1, 2, 3, 4, 6, 9, 13]) {
+      const module = await ethers.getContractAt(
+        [
+          'function owner() view returns (address)',
+          'function pauser() view returns (address)',
+          'function paused() view returns (bool)',
+          'function transferOwnership(address)',
+          'function setPauser(address)',
+          'function setPauserManager(address)',
+          'function pause()',
+        ],
+        staged[index],
+        governance
+      );
+      await pause.executeGovernanceCall(
+        staged[index],
+        module.interface.encodeFunctionData('setPauser', [staged[12]])
+      );
+      await pause.executeGovernanceCall(
+        staged[index],
+        module.interface.encodeFunctionData('setPauserManager', [
+          governance.address,
+        ])
+      );
+      await pause.executeGovernanceCall(
+        staged[index],
+        module.interface.encodeFunctionData('transferOwnership', [
+          governance.address,
+        ])
+      );
+      expect(await module.owner()).to.equal(governance.address);
+      expect(await module.pauser()).to.equal(staged[12]);
+      modules.push(module);
+    }
+    const {
+      applySecureDefaults,
+    } = require('../../scripts/v2/apply-secure-defaults.ts');
+    const book = {
+      jobRegistry: staged[1],
+      stakeManager: staged[0],
+      validationModule: staged[2],
+      systemPause: staged[12],
+    };
+    const config = {
+      secureDefaults: { pauseOnLaunch: true, maxJobDurationSeconds: 86400 },
+    };
+    const calls = await applySecureDefaults(config, book, { dryRun: true });
+    expect(calls).to.have.lengthOf(9);
+    expect(calls[0].to).to.equal(staged[1]);
+    expect(
+      calls
+        .slice(1)
+        .every(
+          (call) =>
+            call.to === staged[12] && call.requiredCaller === governance.address
+        )
+    ).to.equal(true);
+    await expect(
+      applySecureDefaults(config, book, { signer: stranger })
+    ).to.be.rejectedWith('requires governance');
+    // Invalid delegation must fail before the preceding setter can be sent.
+    await modules[7].setPauser(stranger.address);
+    const nonce = await ethers.provider.getTransactionCount(governance.address);
+    await expect(
+      applySecureDefaults(config, book, { signer: governance })
+    ).to.be.rejectedWith('does not authorize SystemPause to pause');
+    expect(
+      await ethers.provider.getTransactionCount(governance.address)
+    ).to.equal(nonce);
+    await modules[7].setPauser(staged[12]);
+    await modules[0].pause();
+    expect(
+      await applySecureDefaults(config, book, { dryRun: true })
+    ).to.have.lengthOf(8);
+    await applySecureDefaults(config, book, { signer: governance });
+    for (const module of modules) expect(await module.paused()).to.equal(true);
+    expect(
+      await applySecureDefaults(
+        { secureDefaults: { pauseOnLaunch: true } },
+        book,
+        { dryRun: true }
+      )
+    ).to.have.lengthOf(0);
+  });
   it('deploys and wires modules, transferring ownership', async function () {
     const [, governance] = await ethers.getSigners();
     const artifact = await artifacts.readArtifact(

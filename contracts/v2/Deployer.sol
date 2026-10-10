@@ -78,6 +78,22 @@ contract Deployer is Ownable {
     /// @dev Order matches Deployed, followed by ArbitratorCommittee. The pause controller is index 12.
     address[14] private _staged;
     bool public registered;
+    /// @notice Optional reviewed-plan commitment used by the staged deployment CLI.
+    /// @dev Immutable once recorded; legacy entrypoints remain available.
+    bytes32 public configurationHash;
+    bool private _launchPaused;
+    event ConfigurationCommitted(bytes32 indexed configurationHash);
+
+    function commitConfiguration(bytes32 digest) external onlyOwner {
+        require(digest != bytes32(0), "configuration hash");
+        if (configurationHash != bytes32(0)) {
+            require(configurationHash == digest, "configuration changed");
+            return;
+        }
+        require(!registered && !deployed, "registered");
+        configurationHash = digest;
+        emit ConfigurationCommitted(digest);
+    }
     error InvalidStagedModule(uint256 index, address module);
     error ModulesNotRegistered();
     event ModulesRegistered(address[14] modules);
@@ -116,7 +132,7 @@ contract Deployer is Ownable {
 
     /// @notice Economic configuration applied during deployment.
     /// @dev Zero values use each module's baked-in default such as a 5% fee,
-    ///      5% burn, 1-day commit/reveal windows and a TOKEN_SCALE minimum stake.
+    ///      1% burn, 1-day commit/reveal windows and a TOKEN_SCALE minimum stake.
     struct EconParams {
         uint256 feePct; // protocol fee percentage for JobRegistry
         uint256 burnPct; // portion of fees burned by FeePool
@@ -304,6 +320,21 @@ contract Deployer is Ownable {
         return _deploy(econ, ids, governance);
     }
 
+    /// @notice Wire the stack and transfer ownership with every managed module paused.
+    /// @dev Recommended for new deployments. Governance must complete commissioning
+    ///      before calling SystemPause.unpauseAll(). Existing entrypoints retain
+    ///      their historical unpaused behavior for compatibility.
+    function deployPaused(
+        EconParams calldata econ,
+        IdentityParams calldata ids,
+        address governance,
+        bool withTaxPolicy
+    ) external onlyOwner {
+        _checkDeploymentMode(withTaxPolicy);
+        _launchPaused = true;
+        _deploy(econ, ids, governance);
+    }
+
     // Keep mode checks outside the common wiring routine so viaIR does not
     // specialize and duplicate the complete deployment body for each mode.
     function _checkDeploymentMode(bool withTaxPolicy) private view {
@@ -434,9 +465,22 @@ contract Deployer is Ownable {
         reputation.setAuthorizedCaller(address(registry), true);
         reputation.setAuthorizedCaller(address(validation), true);
 
-        registry.unpause();
-        stake.unpause();
-        validation.unpause();
+        if (_launchPaused) {
+            // Registration also supports externally staged modules. Check state
+            // before pausing so both staged paths have the same atomic outcome.
+            if (!registry.paused()) registry.pause();
+            if (!stake.paused()) stake.pause();
+            if (!validation.paused()) validation.pause();
+            if (!dispute.paused()) dispute.pause();
+            if (!pRegistry.paused()) pRegistry.pause();
+            if (!pool.paused()) pool.pause();
+            if (!reputation.paused()) reputation.pause();
+            if (!committee.paused()) committee.pause();
+        } else {
+            registry.unpause();
+            stake.unpause();
+            validation.unpause();
+        }
 
         // Transfer governance/ownership through the common Ownable-compatible surface.
         // IdentityRegistry and TaxPolicy retain their two-step acceptance requirements.
