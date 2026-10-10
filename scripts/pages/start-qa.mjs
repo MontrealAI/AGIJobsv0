@@ -174,8 +174,21 @@ export async function verifyStart({
           path: path.join(artifacts, `onboarding-${lang}-${width}.png`),
           fullPage: true,
         });
+        await page.locator('#large-text').click();
+        assert.equal(
+          await page.locator('#large-text').getAttribute('aria-pressed'),
+          'true'
+        );
+        await page.screenshot({
+          path: path.join(artifacts, `onboarding-${lang}-${width}-large.png`),
+          fullPage: true,
+        });
       }
     }
+    assert.equal(
+      await page.locator('#large-text').getAttribute('aria-pressed'),
+      'true'
+    );
     await a11y('onboarding-large-' + lang);
   }
   checks.push(
