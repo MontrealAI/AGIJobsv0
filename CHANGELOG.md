@@ -1,5 +1,20 @@
 # Changelog
 
+## Onboarding refinement — 2026-10-10
+
+- Preserve bounded same-tab progress and larger-text preference across refreshes and EN/FR changes; explain blocked storage and provide reversible clearing.
+- Undo examples, reopen simple editable drafts in the guide, and save/print a readable work request without technical planner setup. Advanced drafts retain their full-planner route.
+- Respect browser font preferences, strengthen keyboard focus, keep enlarged text and controls inside narrow screens, and provide a direct mobile guide shortcut.
+- Exercise recovery, rejected imports, printing, text spacing and all-step enlarged-text layouts in the existing Pages gate. Live-service and production qualification boundaries remain explicit.
+
+## Source preview — guided onboarding (2026-10-10)
+
+- Dedicated English and French welcome pages with four plain-language journeys, large controls, larger text and useful examples.
+- Downloadable editable job drafts and an explicit same-tab handoff into the existing planner; no wallet, account, payment or live job submission.
+- Prominent entry points in the repository, homepage, navigation and setup guide; original demos and flowcharts retained.
+- Keyboard, responsive-layout, accessibility, validation and draft-transfer regression checks in Pages CI.
+- This source preview does not waive the existing production signing, dependency, review or commissioning requirements.
+
 ## v2.1.0-rc.1 — SUCCESSOR Ω release candidate
 
 - Add a shared mission constitution, 21 coverage templates, five-stage SEIZE record, sealed job compiler and dependency invalidation registry.

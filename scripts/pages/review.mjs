@@ -5,7 +5,9 @@ export function renderReviewPage(base, guide) {
     <p class="section-description">Match a worker's delivered files to the admitted task, verify their fingerprints and record your findings against each acceptance criterion.</p>
     <div class="work-page-links"><a href="${base}work/">Design a job →</a><a href="${guide(
     'docs/EVIDENCE_REVIEW.md'
-  )}">Review guide →</a></div>
+  )}">Review guide →</a><a href="${guide(
+    'apps/validator/README.md'
+  )}">Validator setup →</a></div>
     <p class="notice">Your selected files stay in this tab. Nothing is uploaded or executed. Use approved public, licensed or synthetic evidence; do not open secrets or private data. Reloading clears the review.</p>
     <section class="section" aria-labelledby="review-input-title"><p class="eyebrow">01 / MATCH THE DELIVERY</p><h2 id="review-input-title">Start with the admitted task.</h2>
       <p>Get the original task, job ID and deployment ID from the operator's admission record. Get the completed receipt from the operator's persistent dispatch journal. Do not take the expected identity from the untrusted receipt alone.</p>
@@ -43,6 +45,9 @@ export function renderReviewPage(base, guide) {
       <details open><summary>What gets verified?</summary><p>The expected job and deployment, normalized task digest, exact task and receipt file fingerprints, required deliverable names and types, UTF-8 byte counts, each file's SHA-256 and JSON syntax where required.</p></details>
       <details><summary>Can a fabricated receipt pass?</summary><p>Yes. Someone can fabricate mutually consistent content and hashes. Compare this receipt with trusted operator records, verify provider and attempt provenance, reproduce the substantive checks and establish reviewer independence outside this page.</p></details>
       <details><summary>Does an acceptance recommendation release payment?</summary><p>No. It records the reviewer's stated recommendation, bound to the exact supplied files. It neither signs nor sends a transaction, authenticates a reviewer, changes the operator's journal, nor grants production approval.</p></details>
+      <details><summary>How do I submit a validator decision?</summary><p>After independent review, an authorized validator can follow the <a href="${guide(
+        'apps/validator/README.md'
+      )}">validator setup and recovery guide</a>. Its admission file binds a decision to the actual chain, contract, round, specification and result. This page's unsigned assessment is supporting evidence; it is not that admission file.</p></details>
       <details><summary>What if inspection fails?</summary><p>Preserve the original files and request the correct task or receipt from the operator. Do not rewrite a digest to make it pass or automatically redispatch work. A missing or incomplete journal requires operator reconciliation.</p></details>
     </section>
   </main>`;

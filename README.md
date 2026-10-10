@@ -1,5 +1,13 @@
 # AGI Jobs v0 (v2)
 
+## New here? Start with one simple step.
+
+**[Open the guided welcome page →](https://montrealai.github.io/AGIJobsv0/start/) · [Commencer en français →](https://montrealai.github.io/AGIJobsv0/start/fr/)**
+
+Choose what you want to do: request work, connect an agent, review a result, or explore. The three-step guide has plain language, large controls, optional larger text, and editable examples. Prepare and save a job draft without an account, wallet, installation or payment. Continue straight into the detailed planner when you are ready. This is a public planning preview; live jobs require a separately configured service.
+
+**Easy to return to:** keep your progress when refreshing or switching English/French in the same tab, undo an example, and save or reopen your editable draft directly in the guide. Download a readable request or print it for someone helping you. Browser text preferences and enlarged text are supported, including narrow screens; storage restrictions are explained on the page.
+
 [![CI (v2)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml)
 [![CI (v2) job wall](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml/badge.svg?branch=main&job=CI%20summary)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml?query=workflow%3A%22ci+%28v2%29%22+is%3Asuccess+branch%3Amain)
 [![Static Analysis](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/static-analysis.yml/badge.svg?branch=main)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/static-analysis.yml)
@@ -19,6 +27,8 @@ AGI Jobs v0 (v2) brings together job contracts, agent gateways, validators, oper
 **Design useful work:** [Job planner](https://montrealai.github.io/AGIJobsv0/work/) · [Machine labor delivery workflow](docs/MACHINE_LABOR.md). Ten concrete work categories, exact proposal amounts, source boundaries and downloadable tasks compatible with the existing admitted computer-work adapter.
 
 **Review delivered work:** [Evidence reviewer](https://montrealai.github.io/AGIJobsv0/review/) · [Review guide](docs/EVIDENCE_REVIEW.md). Compare the admitted task with a worker receipt, verify exact artifact bytes and record acceptance findings locally. Hash consistency does not establish provider provenance or authorize settlement.
+
+**Run a reviewed validator:** [Service setup and recovery](apps/validator/README.md). Admit an exact chain/round/specification/result decision; retain reveal secrets before broadcast and reconcile uncertain outcomes after restart.
 
 **Explore the demos visually:** [AGI Jobs Demo Observatory](https://montrealai.github.io/AGIJobsv0/) — searchable collection, individual demo pages, original guides and flowcharts, and a browser-only job walkthrough. [Website source and publishing instructions](website/README.md).
 

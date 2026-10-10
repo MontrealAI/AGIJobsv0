@@ -4,6 +4,8 @@ Release candidate for **α-AGI Ascension → SUCCESSOR Ω**. Base: `5b4cebb309a8
 
 This candidate also integrates the separately reviewed deployment, gateway, validator and diagram repairs from main commit `d25842f609dd525582bf5fcbccea778e7443d3df` (PR #3914). The original source baseline remains the first published release; validation of the combined tree is recorded in the release PR.
 
+The October 10 integration also retains main `dfcb5b8106446d900d4fdb31e384f25b87947e61`: CodeQL action alignment, validator admission/recovery and the guided EN/FR onboarding from PRs #3916–#3918. Both onboarding and SUCCESSOR routes, browser gates and all original diagrams remain present. Current results belong to the final combined revision recorded in PR #3915; earlier measurements below describe their original validation revisions.
+
 ## What changes
 
 AGI Jobs gains a shared mission layer for bounded discovery, sealed work, comparative evidence and retained knowledge. The package, CLI and EN/FR public journey use the same core calculations. Models and operators can change while the mission's methods, evidence and failures remain inspectable.
@@ -64,6 +66,10 @@ The initial hosted CodeQL review found a CLI file-check/read race and two unused
 ## Integration test-fixture correction
 
 Hosted CULTURE coverage exposed two indexer tests timing out while each launched Prisma migrations inside its five-second test deadline. The fixture now runs the actual migrations once per test file in a bounded setup hook and copies the closed, empty database for each context. Tests retain their five-second deadline and all four 90% coverage thresholds. Cleanup retains the actual Prisma disconnect method across restored spies and reports failures instead of silently ignoring them. Isolation regressions verify separate records, the checksum migration, repeated cleanup and fresh contexts. All 34 indexer tests pass locally with 92.94% statements/lines, 90.78% branches and 95% functions; hosted confirmation is recorded in the release PR.
+
+## October 10 engineering review
+
+The October 10 additional engineering review identified a verifier-side assurance-label gap: directly signed public fixture receipts could claim I2 despite the issuer refusing that label. Verification now enforces the same synthetic-public I0/I1 ceiling independently of the issuer and trusted key maximum. A regression signs I2, I3 and I4 claims outside the issuer and rejects all three, while valid I0/I1 labels remain accepted. The integrated core suite passes 99 tests. This correction does not imply protected evaluation, live effects or production admission.
 
 ## Containment and rollback
 

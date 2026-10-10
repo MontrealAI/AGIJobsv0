@@ -179,7 +179,8 @@ test('every demo has a unique route and all built local page/asset links resolve
       Number(Boolean(manifest.cultureStudioRoute)) +
       Number(Boolean(manifest.oneboxRoute)) +
       Number(Boolean(manifest.workRoute)) +
-      Number(Boolean(manifest.reviewRoute))
+      Number(Boolean(manifest.reviewRoute)) +
+      Object.keys(manifest.onboardingRoutes || {}).length
   );
 });
 

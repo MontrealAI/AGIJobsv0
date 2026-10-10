@@ -37,3 +37,7 @@ apps/**/storage
 services/**/storage
 demo/**/storage
 **/dist
+
+apps/validator/dist
+storage/validator-service-reveals
+storage/validation-reports

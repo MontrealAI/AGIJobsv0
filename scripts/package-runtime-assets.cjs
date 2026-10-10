@@ -7,13 +7,20 @@ const target = process.argv[2];
 const outputs = {
   gateway: 'agent-gateway/dist',
   orchestrator: 'apps/orchestrator/dist',
+  validator: 'apps/validator/dist',
 };
 if (!Object.hasOwn(outputs, target))
   throw new Error(
-    'Usage: node scripts/package-runtime-assets.cjs gateway|orchestrator'
+    'Usage: node scripts/package-runtime-assets.cjs gateway|orchestrator|validator'
   );
 const out = path.join(root, outputs[target]);
 const assets = ['config/agents.json', 'config/agialpha.json'];
+if (target === 'validator')
+  assets.push(
+    'apps/validator/persona.json',
+    'apps/validator/review-admission.cjs',
+    'examples/agentic/validator-recovery.js'
+  );
 if (target === 'orchestrator')
   assets.push(
     'config/contracts.orchestrator.json',

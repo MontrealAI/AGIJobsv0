@@ -134,3 +134,7 @@ demo/LARGE-SCALE-OMEGA-BUSINESS-3/.artifacts/
 *.sqlite
 *.sqlite-wal
 *.sqlite-shm
+# Built validator service and private operator state
+apps/validator/dist/
+storage/validator-service-reveals/
+storage/validation-reports/

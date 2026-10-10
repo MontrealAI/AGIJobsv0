@@ -441,6 +441,7 @@ pre {
   font-weight: 550;
 }
 #site-nav a {
+  white-space: nowrap;
   padding: 12px 0;
 }
 #site-nav .nav-repo {
@@ -2049,6 +2050,40 @@ input::placeholder {
     margin-inline: auto;
   }
 }
+@media (max-width: 1360px) {
+  .menu-toggle {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    background: #191121;
+    padding: 8px 12px;
+    font-size: 11px;
+  }
+  #site-nav {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #110c1bed;
+    padding: 18px;
+    border-bottom: 1px solid var(--line);
+    flex-direction: column;
+    align-items: stretch;
+    gap: 5px;
+  }
+  #site-nav.is-open {
+    display: flex;
+  }
+  #site-nav a {
+    padding: 10px;
+  }
+  #site-nav .nav-repo {
+    margin-top: 7px;
+  }
+}
 @media (max-width: 760px) {
   :root {
     scroll-padding-top: 85px;
@@ -2069,38 +2104,6 @@ input::placeholder {
   }
   .brand-mark {
     font-size: 35px;
-  }
-  .menu-toggle {
-    display: flex;
-    gap: 12px;
-    align-items: center;
-    border: 1px solid var(--line);
-    border-radius: 5px;
-    background: #191121;
-    padding: 8px 12px;
-    font-size: 11px;
-  }
-  #site-nav {
-    display: none;
-    position: absolute;
-    top: 72px;
-    left: 0;
-    right: 0;
-    background: #110c1bed;
-    padding: 18px;
-    border-bottom: 1px solid var(--line);
-    flex-direction: column;
-    align-items: stretch;
-    gap: 5px;
-  }
-  #site-nav.is-open {
-    display: flex;
-  }
-  #site-nav a {
-    padding: 10px;
-  }
-  #site-nav .nav-repo {
-    margin-top: 7px;
   }
   .hero {
     grid-template-columns: 1fr;
@@ -2633,7 +2636,7 @@ html:not(.js) [data-copy] {
 .hero > * {
   min-width: 0;
 }
-@media (max-width: 700px) {
+@media (max-width: 1360px) {
   html:not(.js) .header-inner {
     flex-wrap: wrap;
     padding-block: 18px;
@@ -2643,6 +2646,8 @@ html:not(.js) [data-copy] {
   }
   html:not(.js) #site-nav {
     display: flex;
+    flex-direction: row;
+    gap: 8px 20px;
     position: static;
     flex-wrap: wrap;
     width: 100%;

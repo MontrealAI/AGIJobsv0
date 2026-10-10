@@ -820,4 +820,74 @@ describe('generic validator durable reveal recovery', () => {
     fs.chmodSync(target, 0o755);
     assert.throws(() => journalAt(target), /JOURNAL_PERMISSIONS/);
   });
+  it('abstains without durable vote state when the asynchronous reviewer has no admission', async () => {
+    const journal = journalAt(directory);
+    const { options, calls } = fixture(journal);
+    const runtime = createValidatorRuntime({
+      ...options,
+      decide: async (context) => {
+        assert.equal(context.jobId, '7');
+        assert.equal(context.nonce, '1');
+        assert.equal(context.specHash, specHash);
+        assert.deepEqual(context.scope, scope);
+        assert.deepEqual(context.selection, selection);
+        return null;
+      },
+    });
+    assert.equal(
+      await runtime.selected(7n, [scope.validator]),
+      'review-required'
+    );
+    assert.equal(journal.records().length, 0);
+    assert.equal(calls.commit.length, 0);
+  });
+
+  it('rejects malformed or failed reviewer decisions before saving secrets or broadcasting', async () => {
+    const journal = journalAt(directory);
+    const { options, calls } = fixture(journal);
+    for (const decide of [
+      async () => 'approve',
+      async () => {
+        throw new Error('review unavailable');
+      },
+    ]) {
+      await assert.rejects(
+        createValidatorRuntime({ ...options, decide }).selected(7n, [
+          scope.validator,
+        ])
+      );
+    }
+    assert.equal(journal.records().length, 0);
+    assert.equal(calls.commit.length, 0);
+  });
+
+  it('rechecks reviewer revocation before sending a saved preparation and preserves its rejection verdict', async () => {
+    const journal = journalAt(directory);
+    const { options, calls } = fixture(journal);
+    const first = createValidatorRuntime({
+      ...options,
+      decide: async () => false,
+      authorizeCommit: async () => false,
+    });
+    assert.equal(
+      await first.selected(7n, [scope.validator]),
+      'review-required'
+    );
+    const record = journal.records()[0];
+    assert.equal(record.approve, false);
+    assert.equal(journal.has(record, 'commit'), false);
+    assert.equal(calls.commit.length, 0);
+    const resumed = createValidatorRuntime({
+      ...options,
+      decide: async () => {
+        throw new Error('must preserve decision');
+      },
+      authorizeCommit: async () => true,
+    });
+    assert.deepEqual(await resumed.recover(), [
+      { jobId: '7', status: 'committed' },
+    ]);
+    assert.equal(journal.records()[0].salt, record.salt);
+    assert.equal(calls.commit.length, 1);
+  });
 });

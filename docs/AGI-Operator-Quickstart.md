@@ -229,7 +229,7 @@ gantt
 | Console HUD | `npm --prefix apps/console run dev` | Public/operator narrative portal linking to live demos. |
 | Orchestrator console | `npm --prefix apps/orchestrator run dev` | Visualises orchestrator flows, service health, job pipeline. |
 | Enterprise portal | `npm --prefix apps/enterprise-portal run dev` | Client delivery + signature validation (see `apps/enterprise-portal/README.md`). |
-| Validator UI | `npm --prefix apps/validator run dev` & `npm --prefix apps/validator-ui run dev` | Combined CLI + UI flows for validator onboarding. |
+| Validator UI | `npm run build:validator`, then `npm run validator:service`; browser UI: `npm --prefix apps/validator-ui run dev` | [Explicit reviewer admission and recovery](../apps/validator/README.md), plus browser onboarding. |
 | OneBox | `npm --prefix apps/onebox run dev` | Local command capsule mirroring CI scenario tests. |
 | OneBox Static | `npm --prefix apps/onebox-static run dev` | Static export for offline ops; pair with `apps/onebox` diagnostics. |
 

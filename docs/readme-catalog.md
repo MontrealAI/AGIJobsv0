@@ -32,6 +32,7 @@ briefings, and subsystem manuals when coordinating releases or audits.
 | `apps/onebox-static/README.md` | AGI Jobs v0 (v2) — Onebox Static Console | README |
 | `apps/onebox-static/v2/README.md` | AGI Jobs v0 (v2) — Onebox Static Console v2 | README |
 | `apps/onebox/README.md` | AGI Jobs v0 (v2) — Onebox Next.js Console | README |
+| `apps/validator/README.md` | Validator service: explicit review and durable recovery | README |
 | `apps/validator-ui/README.md` | AGI Jobs v0 (v2) — Validator UI | README |
 
 ## ci

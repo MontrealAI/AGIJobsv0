@@ -936,6 +936,11 @@ export async function verifyProof(
   );
   const level = INDEPENDENCE.indexOf(report.independence);
   requireAssurance(
+    !(report.evidenceMode === 'synthetic-public' && level > 1),
+    'FIXTURE_INDEPENDENCE_DENIED',
+    'Public fixtures cannot claim independent protected evaluation'
+  );
+  requireAssurance(
     level >= INDEPENDENCE.indexOf(protocol.requiredIndependence),
     'INDEPENDENCE_REQUIRED',
     'Proof does not meet its preregistered independence requirement'

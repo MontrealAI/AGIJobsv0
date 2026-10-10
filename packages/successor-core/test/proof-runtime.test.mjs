@@ -433,6 +433,41 @@ test('P02 signed fixture passing metrics never become independent qualification'
     { code: 'FIXTURE_LIVE_DENIED' }
   );
 });
+test('P02 externally signed public fixtures cannot promote their independence label', async () => {
+  const trustStore = clone(fixture.trustStore);
+  trustStore.keys[0].maxIndependence = 'I4';
+  for (const independence of ['I2', 'I3', 'I4']) {
+    const proof = await signPayload(
+      { ...fixture.proof.payload, independence },
+      {
+        identity: fixture.identities.evaluator,
+        purpose: 'successor.proof.v1',
+        context: fixture.context,
+        issuedAt: fixture.proof.issuedAt,
+      }
+    );
+    await assert.rejects(
+      verifyProof(proof, { ...proofOptions(), trustStore }),
+      { code: 'FIXTURE_INDEPENDENCE_DENIED' }
+    );
+  }
+  for (const independence of ['I0', 'I1']) {
+    const proof = await signPayload(
+      { ...fixture.proof.payload, independence },
+      {
+        identity: fixture.identities.evaluator,
+        purpose: 'successor.proof.v1',
+        context: fixture.context,
+        issuedAt: fixture.proof.issuedAt,
+      }
+    );
+    const verified = await verifyProof(proof, {
+      ...proofOptions(),
+      trustStore,
+    });
+    assert.equal(verified.payload.independence, independence);
+  }
+});
 test('P02 stale, conditional and undersampled evidence cannot yield independent proof', async () => {
   await assert.rejects(
     verifyProof(fixture.proof, {
