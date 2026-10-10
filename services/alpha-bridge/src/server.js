@@ -47,6 +47,18 @@ function normalizeMetadata(metadata) {
   return output;
 }
 
+function sanitizeHeaderKey(value) {
+  if (typeof value !== "string") {
+    return "";
+  }
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9-]/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 function parseJsonOrThrow(label, value, { allowEmptyArray = false } = {}) {
   if (typeof value !== "string" || !value.trim()) {
     if (allowEmptyArray) {
@@ -134,7 +146,11 @@ function buildHeaders({
   }
   if (metadata) {
     for (const [key, value] of Object.entries(metadata)) {
-      headers[`x-agi-meta-${key.toLowerCase()}`] = value;
+      const sanitizedKey = sanitizeHeaderKey(key);
+      if (!sanitizedKey) {
+        continue;
+      }
+      headers[`x-agi-meta-${sanitizedKey}`] = value;
     }
   }
   return headers;

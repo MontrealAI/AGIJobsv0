@@ -245,7 +245,11 @@ test("alpha-bridge proxies canonical flows via gRPC", async (t) => {
           trace_id: flow.traceId,
           require_consent: flow.requiresConsent,
           consent_token: flow.consentToken,
-          metadata: { flow: flow.name, stage: "plan" },
+          metadata: {
+            flow: flow.name,
+            stage: "plan",
+            "Region Zone": "US-East/1",
+          },
         },
         (error, response) => {
           if (error) {
@@ -271,7 +275,11 @@ test("alpha-bridge proxies canonical flows via gRPC", async (t) => {
           trace_id: planResponse.trace_id,
           consent_granted: flow.expectedConsent,
           consent_token: planResponse.consent_token,
-          metadata: { flow: flow.name, stage: "execute" },
+          metadata: {
+            flow: flow.name,
+            stage: "execute",
+            "Region Zone": "US-East/1",
+          },
         },
         (error, response) => {
           if (error) {
@@ -304,6 +312,7 @@ test("alpha-bridge proxies canonical flows via gRPC", async (t) => {
     }
     assert.equal(planHeaders["x-agi-meta-flow"], flow.name);
     assert.equal(planHeaders["x-agi-meta-stage"], "plan");
+    assert.equal(planHeaders["x-agi-meta-region-zone"], "US-East/1");
 
     const executeHeaders = receivedExecuteHeaders[index];
     assert.equal(executeHeaders["x-agi-trace-id"], flow.traceId);
@@ -316,5 +325,6 @@ test("alpha-bridge proxies canonical flows via gRPC", async (t) => {
     }
     assert.equal(executeHeaders["x-agi-meta-flow"], flow.name);
     assert.equal(executeHeaders["x-agi-meta-stage"], "execute");
+    assert.equal(executeHeaders["x-agi-meta-region-zone"], "US-East/1");
   }
 });
