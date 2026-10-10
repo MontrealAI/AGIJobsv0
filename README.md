@@ -51,6 +51,11 @@ The loop above describes the intended verification path. CI checks owner authori
 
 The repository’s manuals, runbooks, and subsystem READMEs are catalogued in [`docs/readme-catalog.md`](docs/readme-catalog.md). Use it to locate operator instructions and subsystem diagrams. The [demo guide](demo/README.md) adds a generated inventory of every tracked demo directory and its nested guides; the [Demo gallery workflow](.github/workflows/demo-gallery.yml) rejects a stale demo inventory. Document indexing and test results establish their stated coverage, not automatic verification of every narrative claim.
 
+### Documentation
+
+- [AGIJobManager v1 mainnet deployment & security overview](docs/security/mainnet-deployment-and-trust-model.md)
+- [Local Truffle test status](docs/test-status.md)
+
 ```mermaid
 mindmap
   root((Knowledge lattice))
