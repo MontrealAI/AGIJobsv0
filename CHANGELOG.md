@@ -1,5 +1,13 @@
 # Changelog
 
+## Source preview — guided onboarding (2026-10-10)
+
+- Dedicated English and French welcome pages with four plain-language journeys, large controls, larger text and useful examples.
+- Downloadable editable job drafts and an explicit same-tab handoff into the existing planner; no wallet, account, payment or live job submission.
+- Prominent entry points in the repository, homepage, navigation and setup guide; original demos and flowcharts retained.
+- Keyboard, responsive-layout, accessibility, validation and draft-transfer regression checks in Pages CI.
+- This source preview does not waive the existing production signing, dependency, review or commissioning requirements.
+
 ## Demo experience expansion — 2026-10-04
 
 - Add source-grounded walkthroughs, expected results, experiments, troubleshooting and verification links for all 76 demo/support entries.

@@ -1,3 +1,4 @@
+import { verifyStart } from './start-qa.mjs';
 import { verifyAlphaMark } from './alpha-mark-qa.mjs';
 import { verifyPhase6 } from './phase6-qa.mjs';
 import { verifyWorkPlanner } from './work-qa.mjs';
@@ -410,6 +411,7 @@ try {
     [],
     'Every preserved diagram must parse and render'
   );
+  await verifyStart({ page, context, url, artifacts, a11y, checks });
   await verifyWorkPlanner({ page, context, url, artifacts, a11y, checks });
   await verifyAlphaMark({ page, context, url, artifacts, a11y, checks });
   assert.equal(manifest.dashboardRoutes.length, 15);
