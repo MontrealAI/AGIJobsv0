@@ -29,3 +29,8 @@ A fabricated receipt with consistent hashes can pass this integrity check. Match
 If a check fails, preserve the originals and request the correct evidence. Do not edit hashes until they pass. Missing evidence, interrupted execution or an uncertain external effect requires operator reconciliation before another dispatch. Settlement follows the configured contracts and authorized signing path, separately from this review page.
 
 See the [delivery workflow](MACHINE_LABOR.md) and [current readiness requirements](production/readiness.md).
+
+
+## Institutional proof and portable knowledge
+
+The [SUCCESSOR Ω core](successor/README.md) adds separately signed evaluation records, exact release bindings, current trust checks and accountable admission mechanics. This browser reviewer remains an unsigned integrity/inspection aid. Neither its export, a paid job nor a restored Mission Pack creates independent proof or production authority. Failed comparative evaluations may still be valid accepted work when their frozen deliverable criteria require an accurate report rather than a favorable verdict.

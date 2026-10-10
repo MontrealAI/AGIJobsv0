@@ -66,3 +66,16 @@ if (target === 'orchestrator') {
     external: ['ethers'],
   });
 }
+
+// Preserve native ESM institutional modules beside the compiled orchestrator.
+if (target === 'orchestrator') {
+  fs.copyFileSync(
+    path.join(root, 'apps/orchestrator/successor-runtime.cjs'),
+    path.join(out, 'apps/orchestrator/successor-runtime.cjs')
+  );
+  fs.cpSync(
+    path.join(root, 'packages/successor-core/src'),
+    path.join(out, 'packages/successor-core/src'),
+    { recursive: true }
+  );
+}

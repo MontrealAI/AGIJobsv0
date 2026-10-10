@@ -1,0 +1,25 @@
+{
+  "name": "@agijobs/successor-core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Bounded mission formation, evidence and governance for AGI Jobs",
+  "license": "MIT",
+  "engines": {
+    "node": "22.23.3"
+  },
+  "bin": {
+    "successor": "./bin/successor.mjs"
+  },
+  "exports": {
+    "./domain": "./src/domain.mjs",
+    "./compiler": "./src/compiler.mjs",
+    "./discovery": "./src/discovery.mjs",
+    "./pack": "./src/pack.mjs",
+    "./runtime": "./src/runtime.mjs"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "demo": "node bin/successor.mjs demo"
+  }
+}

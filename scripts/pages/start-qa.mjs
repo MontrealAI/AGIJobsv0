@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { openEditableDraft } from '../../website/assets/work-model.mjs';
+import { verifyStartRecovery } from './start-recovery-qa.mjs';
+import { verifyStartVisual } from './start-visual-qa.mjs';
 
 export async function verifyStart({
   page,
@@ -12,12 +14,25 @@ export async function verifyStart({
   checks,
 }) {
   const key = new URL(url).pathname + 'start-draft/v1';
+  const progressKey = new URL(url).pathname + 'start-progress/v1';
+  const fresh = async (route) => {
+    await page.goto(route);
+    await page.evaluate((k) => sessionStorage.removeItem(k), progressKey);
+    await page.reload();
+  };
   for (const lang of ['en', 'fr']) {
-    await page.goto(url + 'start/' + (lang === 'fr' ? 'fr/' : ''));
+    await fresh(url + 'start/' + (lang === 'fr' ? 'fr/' : ''));
     assert.equal(await page.locator('html').getAttribute('lang'), lang);
     await page.locator('#guide-next').click();
     assert.notEqual(await page.locator('#guide-status').innerText(), '');
     assert.equal(await page.locator('[data-step="0"]').isVisible(), true);
+    assert.equal(
+      await page
+        .locator('[name="role"]')
+        .first()
+        .evaluate((el) => document.activeElement === el),
+      true
+    );
     await a11y('onboarding-' + lang);
     await page.locator('[name="role"][value="buyer"]').focus();
     await page.keyboard.press('Space');
@@ -77,7 +92,7 @@ export async function verifyStart({
     );
   }
   for (const role of ['worker', 'reviewer', 'explorer']) {
-    await page.goto(url + 'start/');
+    await fresh(url + 'start/');
     await page.locator(`[name="role"][value="${role}"]`).check();
     await page.locator('#guide-next').click();
     assert.equal(
@@ -91,7 +106,7 @@ export async function verifyStart({
     await page.waitForURL(new URL(href, url).href);
     checks.push('onboarding route: ' + role);
   }
-  await page.goto(url + 'start/');
+  await fresh(url + 'start/');
   await page.locator('[name="role"][value="buyer"]').check();
   await page.locator('#guide-next').click();
   await page.locator('[data-preset="research"]').click();
@@ -107,6 +122,7 @@ export async function verifyStart({
   assert.equal(page.url(), url + 'start/');
   await page.locator('#guide-restart').click();
   assert.equal(await page.locator('[data-step="0"]').isVisible(), true);
+  await page.locator('#clear-start-progress').click();
   await page.reload();
   assert.equal(await page.locator('#start-goal').inputValue(), '');
   await page.goto(url + 'work/#from-start');
@@ -142,7 +158,7 @@ export async function verifyStart({
     'onboarding: blocked storage, restart, refresh, missing and malformed transfer recovery'
   );
   for (const lang of ['en', 'fr']) {
-    await page.goto(url + 'start/' + (lang === 'fr' ? 'fr/' : ''));
+    await fresh(url + 'start/' + (lang === 'fr' ? 'fr/' : ''));
     for (const width of [320, 390, 768, 1024, 1440]) {
       await page.setViewportSize({ width, height: 1000 });
       for (const enlarged of [false, true]) {
@@ -215,5 +231,7 @@ export async function verifyStart({
     await noJS.close();
   }
   checks.push('onboarding: useful no-JavaScript routes in both languages');
+  await verifyStartRecovery({ page, context, url, artifacts, a11y, checks });
+  await verifyStartVisual({ page, context, url, artifacts, a11y, checks });
   await page.setViewportSize({ width: 1440, height: 1050 });
 }

@@ -173,7 +173,43 @@ describe('JobRegistry integration', function () {
         BigInt(reward) + (BigInt(reward) * 10n) / 100n
       );
     const deadline = (await time.latest()) + 1000;
-    const specHash = ethers.id('spec');
+    const {
+      loadSuccessorIntegrity,
+      reconcileSuccessorSettlement,
+    } = require('../../apps/orchestrator/successor-runtime.cjs');
+    const { digestObject } = await loadSuccessorIntegrity();
+    // The commission buys a complete, accurate comparison, irrespective of
+    // whether the candidate earns a favorable evaluation verdict.
+    const acceptanceCriteria = Object.freeze({
+      requiredComparators: ['incumbent', 'frontier-beta'],
+      reportMustReproduceObservedCounts: true,
+      reportMustDiscloseCriticalMisses: true,
+      favorableCandidateVerdictRequired: false,
+    });
+    const acceptanceCriteriaDigest = await digestObject(
+      'fixture-evaluation-acceptance-v1',
+      acceptanceCriteria
+    );
+    const workOrder = Object.freeze({
+      missionId: 'invoice-evaluation',
+      objective: 'Reproduce the bounded synthetic comparison accurately',
+      acceptanceCriteria,
+      promotionRule: 'Beat both comparators with zero critical misses',
+    });
+    const workOrderDigest = await digestObject(
+      'fixture-evaluation-work-order-v1',
+      workOrder
+    );
+    const committedSpec = JSON.stringify({
+      workOrder,
+      metadata: {
+        successorComputerWork: {
+          missionId: 'invoice-evaluation',
+          workOrderDigest,
+        },
+      },
+    });
+    const specHash = ethers.keccak256(ethers.toUtf8Bytes(committedSpec));
     await expect(
       registry
         .connect(employer)
@@ -208,7 +244,34 @@ describe('JobRegistry integration', function () {
     await validation.connect(owner).setResult(true);
     const committee = [owner.address, treasury.address];
     await validation.connect(owner).setValidators(committee);
-    const resultHash = ethers.id('result');
+    const evaluationReport = {
+      schemaVersion: '1.0.0',
+      mode: 'fixture',
+      missionId: workOrder.missionId,
+      workOrderDigest,
+      evidence: [
+        { system: 'candidate', cases: 10, correct: 8, criticalMisses: 2 },
+        { system: 'incumbent', cases: 10, correct: 9, criticalMisses: 0 },
+        { system: 'frontier-beta', cases: 10, correct: 9, criticalMisses: 0 },
+      ],
+      evaluationVerdict: 'FAIL',
+      verification: {
+        verifier: 'fixture-independent-reviewer',
+        reportAccuracyVerdict: 'PASS',
+      },
+      acceptance: {
+        owner: employer.address,
+        criteriaDigest: acceptanceCriteriaDigest,
+        accepted: true,
+        reason: 'Accurate comparison delivered against frozen criteria',
+      },
+      candidateStatus: 'FAILED_UNADMITTED',
+      authority: null,
+    };
+    const completedDeliverable = JSON.stringify(evaluationReport);
+    const resultHash = ethers.keccak256(
+      ethers.toUtf8Bytes(completedDeliverable)
+    );
     await expect(
       registry.connect(agent).submit(jobId, resultHash, 'result', 'agent', [])
     )
@@ -224,11 +287,84 @@ describe('JobRegistry integration', function () {
     for (const member of committee) {
       expect(await registry.getJobValidatorVote(jobId, member)).to.equal(true);
     }
-    await expect(registry.connect(employer).finalize(jobId))
+    const settlement = await registry.connect(employer).finalize(jobId);
+    await expect(settlement)
       .to.emit(registry, 'JobPayout')
       .withArgs(jobId, agent.address, reward, 0, 0)
       .and.to.emit(registry, 'JobFinalized')
       .withArgs(jobId, agent.address);
+
+    const deployment = {
+      mode: 'fixture',
+      chainId: (await ethers.provider.getNetwork()).chainId.toString(),
+      registryAddress: await registry.getAddress(),
+      tokenAddress: AGIALPHA,
+      tokenSymbol: 'AGIALPHA',
+      decimals: 18,
+      minConfirmations: 1,
+    };
+    const request = {
+      missionId: 'invoice-evaluation',
+      workOrderDigest,
+      jobId: String(jobId),
+      transactionHash: settlement.hash,
+      committedSpec,
+      completedDeliverable,
+    };
+    const linked = await reconcileSuccessorSettlement(
+      registry,
+      request,
+      deployment
+    );
+    expect(linked.chainObserved).to.equal(true);
+    expect(linked.simulated).to.equal(true);
+    expect(linked.link.amountMinor).to.equal(String(reward));
+    expect(linked.link.transactionHash).to.equal(settlement.hash);
+    expect(linked.specHash).to.equal(specHash);
+    expect(linked.resultHash).to.equal(resultHash);
+    expect((await registry.jobs(jobId)).resultHash).to.equal(resultHash);
+    expect(evaluationReport.acceptance.accepted).to.equal(true);
+    expect(evaluationReport.evaluationVerdict).to.equal('FAIL');
+    expect(evaluationReport.candidateStatus).to.equal('FAILED_UNADMITTED');
+    expect(evaluationReport.authority).to.equal(null);
+    expect(linked.proofApproved).to.equal(false);
+    expect(linked.authorityGranted).to.equal(false);
+    // Payment commissions the evaluation; it cannot turn a FAIL conclusion into proof.
+    expect(linked.buyerAccepted).to.equal(false);
+    await expect(
+      reconcileSuccessorSettlement(
+        registry,
+        {
+          ...request,
+          completedDeliverable: completedDeliverable.replace(
+            '"evaluationVerdict":"FAIL"',
+            '"evaluationVerdict":"PASS"'
+          ),
+        },
+        deployment
+      )
+    ).to.be.rejectedWith('on-chain result commitment');
+    await expect(
+      reconcileSuccessorSettlement(
+        registry,
+        { ...request, workOrderDigest: `sha256:${'c'.repeat(64)}` },
+        deployment
+      )
+    ).to.be.rejectedWith('does not bind');
+    await expect(
+      reconcileSuccessorSettlement(registry, request, {
+        ...deployment,
+        minConfirmations: 100,
+      })
+    ).to.be.rejectedWith('finality threshold');
+    const unrelated = await token.connect(employer).transfer(owner.address, 1);
+    await expect(
+      reconcileSuccessorSettlement(
+        registry,
+        { ...request, transactionHash: unrelated.hash },
+        deployment
+      )
+    ).to.be.rejectedWith('JobFinalized');
 
     expect(await registry.getJobValidators(jobId)).to.deep.equal([]);
     for (const member of committee) {

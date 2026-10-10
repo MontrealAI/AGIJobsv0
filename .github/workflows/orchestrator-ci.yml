@@ -4,6 +4,8 @@ on:
   pull_request:
     paths:
       - 'apps/orchestrator/**'
+      - 'packages/successor-core/**'
+      - 'scripts/package-runtime-assets.cjs'
       - 'agent-gateway/agentEndpoint.ts'
       - 'demo/One-Box/computer-work/**'
       - 'package*.json'
@@ -12,6 +14,8 @@ on:
     branches: [main]
     paths:
       - 'apps/orchestrator/**'
+      - 'packages/successor-core/**'
+      - 'scripts/package-runtime-assets.cjs'
       - 'agent-gateway/agentEndpoint.ts'
       - 'demo/One-Box/computer-work/**'
       - 'package*.json'
@@ -40,7 +44,9 @@ jobs:
       - name: Build and verify computer-work boundaries
         run: |
           npm run build:orchestrator
-          node --test apps/orchestrator/dist/apps/orchestrator/__tests__/computerWork.test.js
+          node --test apps/orchestrator/dist/apps/orchestrator/__tests__/computerWork.test.js apps/orchestrator/dist/apps/orchestrator/__tests__/successorComputerWork.test.js
+          npm run successor:test
+          npm run successor:verify
       - name: Install test browser
         run: npx playwright install --with-deps chromium
       - name: Verify actual browser work and independent rejection
@@ -50,5 +56,7 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: computer-work-browser-evidence
-          path: reports/computer-work/
+          path: |
+            reports/computer-work/
+            reports/successor/
           retention-days: 14

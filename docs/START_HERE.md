@@ -4,6 +4,8 @@
 
 Choose a goal, follow three short steps, and prepare an editable draft without a wallet or installation. Large controls, a larger-text option, examples and a fully translated introductory journey make it easy to begin. The technical setup instructions below are for the next stage.
 
+The guide keeps progress in the same browser tab across refreshes and language changes when browser storage is available. Save an editable draft to reopen it in the guide another day, or download/print a readable request for a person helping you. Examples and clearing actions can be undone while you remain on the page. Advanced planner drafts open in the full planner so none of their details are silently discarded.
+
 This repository contains smart contracts, agent and validator services, operator interfaces, and demonstrations of an agent-work marketplace. Begin locally, inspect the evidence, and then follow the deployment runbooks for your chosen environment.
 
 **Current release posture:** local development and demonstrations are testable. The contract-size blocker is resolved through fixed implementations and staged deployment. Release remains blocked by unconfigured maintainer signing trust and the integration/configuration requirements in the readiness report. Read the [readiness report](production/readiness.md) before preparing any deployment.
@@ -12,6 +14,7 @@ This repository contains smart contracts, agent and validator services, operator
 
 | Your goal | Open this |
 | --- | --- |
+| Rehearse SUCCESSOR Ω missions, proof boundaries and portable knowledge | [SUCCESSOR Ω guide](successor/README.md) |
 | Understand the architecture and its diagrams | [Repository overview](../README.md#architecture-panorama) |
 | Explore a working model demo without a wallet | [Tiny Recursive Model setup](../demo/Tiny-Recursive-Model-v0/README.md#run-the-headless-demo) |
 | Execute a job from creation to local settlement | [AURORA walkthrough](../demo/aurora/README.md#run-the-local-job-lifecycle) |

@@ -6,6 +6,8 @@
 
 Choose what you want to do: request work, connect an agent, review a result, or explore. The three-step guide has plain language, large controls, optional larger text, and editable examples. Prepare and save a job draft without an account, wallet, installation or payment. Continue straight into the detailed planner when you are ready. This is a public planning preview; live jobs require a separately configured service.
 
+**Easy to return to:** keep your progress when refreshing or switching English/French in the same tab, undo an example, and save or reopen your editable draft directly in the guide. Download a readable request or print it for someone helping you. Browser text preferences and enlarged text are supported, including narrow screens; storage restrictions are explained on the page.
+
 [![CI (v2)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml)
 [![CI (v2) job wall](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml/badge.svg?branch=main&job=CI%20summary)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml?query=workflow%3A%22ci+%28v2%29%22+is%3Asuccess+branch%3Amain)
 [![Static Analysis](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/static-analysis.yml/badge.svg?branch=main)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/static-analysis.yml)
@@ -17,6 +19,8 @@ Choose what you want to do: request work, connect an agent, review a result, or 
 [![Security Scorecard](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/scorecard.yml/badge.svg?branch=main)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/scorecard.yml)
 
 AGI Jobs v0 (v2) brings together job contracts, agent gateways, validators, operator consoles, orchestration, simulations, and demos. The architecture aims to support verifiable agent work with owner-controlled governance and observable execution.
+
+**Develop enduring mission intelligence:** [SUCCESSOR Ω local guide](docs/successor/README.md) · [Architecture and trust boundaries](docs/successor/architecture.md). Run `npm run successor:demo` to compile sealed work, examine an invoice, search executable world models, compare resource plans, and restore knowledge without permissions. Synthetic rehearsal does not establish independent proof or production authority.
 
 **Start here:** [Local setup and role guide](docs/START_HERE.md) · [Production readiness and remaining blockers](docs/production/readiness.md) · [Demo guide and complete catalog](demo/README.md) · [Documentation catalog](docs/readme-catalog.md).
 

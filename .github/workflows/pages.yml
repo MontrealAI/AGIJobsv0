@@ -10,6 +10,7 @@ on:
       - 'orchestrator/analytics.py'
       - 'apps/onebox-static/**'
       - 'website/**'
+      - 'packages/successor-core/**'
       - 'scripts/pages/**'
       - 'scripts/demo/**'
       - 'test/pages/**'
@@ -28,6 +29,7 @@ on:
       - 'orchestrator/analytics.py'
       - 'apps/onebox-static/**'
       - 'website/**'
+      - 'packages/successor-core/**'
       - 'scripts/pages/**'
       - 'scripts/demo/**'
       - 'test/pages/**'
@@ -79,6 +81,8 @@ jobs:
           npm run docs:verify
           npm run site:build
           npm run site:test
+          npm run successor:test
+          npm run successor:verify
       - name: Verify interactions, accessibility, layouts and diagrams
         run: |
           npm run site:qa

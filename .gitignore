@@ -129,6 +129,11 @@ demo/LARGE-SCALE-OMEGA-BUSINESS-3/.artifacts/
 /reports/localhost/zenith-hypernova/
 /reports/localhost/zenith-hypernova-previous-*/
 
+# SUCCESSOR local evidence and institutional database (never source secrets)
+/reports/successor/
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
 # Built validator service and private operator state
 apps/validator/dist/
 storage/validator-service-reveals/

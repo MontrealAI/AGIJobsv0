@@ -1,5 +1,6 @@
 import { verifyStart } from './start-qa.mjs';
 import { verifyAlphaMark } from './alpha-mark-qa.mjs';
+import { verifySuccessor } from './successor-qa.mjs';
 import { verifyPhase6 } from './phase6-qa.mjs';
 import { verifyWorkPlanner } from './work-qa.mjs';
 import { verifyEvidenceReview } from './review-qa.mjs';
@@ -230,7 +231,8 @@ try {
   await page.screenshot({ path: path.join(artifacts, 'guide-diagram.png') });
   checks.push('demo detail, original guide, live Mermaid rendering');
   for (const width of [
-    320, 390, 768, 900, 1024, 1100, 1101, 1280, 1281, 1440,
+    320, 390, 768, 900, 1024, 1100, 1101, 1280, 1281, 1360, 1361, 1440, 1441,
+    1600,
   ]) {
     await page.setViewportSize({ width, height: 900 });
     for (const route of ['', 'demos/aurora/']) {
@@ -243,7 +245,7 @@ try {
         `overflow at ${width}: ${route}`
       );
       const collapsed = await page.locator('#menu-toggle').isVisible();
-      assert.equal(collapsed, width <= 1280, `navigation mode at ${width}`);
+      assert.equal(collapsed, width <= 1360, `navigation mode at ${width}`);
       if (collapsed) await page.locator('#menu-toggle').click();
       const headerFits = await page.evaluate(() => {
         const box = document
@@ -446,6 +448,7 @@ try {
     [],
     'Every preserved diagram must parse and render'
   );
+  await verifySuccessor({ page, context, url, artifacts, a11y, checks });
   await verifyStart({ page, context, url, artifacts, a11y, checks });
   await verifyWorkPlanner({ page, context, url, artifacts, a11y, checks });
   await verifyAlphaMark({ page, context, url, artifacts, a11y, checks });

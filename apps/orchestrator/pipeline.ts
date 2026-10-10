@@ -65,7 +65,14 @@ export function buildPipeline(
 ): StageDefinition[] {
   if (
     context.category !== 'computer-work' &&
-    Object.prototype.hasOwnProperty.call(context.metadata ?? {}, 'computerWork')
+    (Object.prototype.hasOwnProperty.call(
+      context.metadata ?? {},
+      'computerWork'
+    ) ||
+      Object.prototype.hasOwnProperty.call(
+        context.metadata ?? {},
+        'successorComputerWork'
+      ))
   )
     throw new Error(
       'Computer-work metadata requires the computer-work category'

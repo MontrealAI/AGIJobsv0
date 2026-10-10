@@ -14,6 +14,7 @@ import { renderWorkIntro, renderVision, renderWorkPage } from './work.mjs';
 import { renderReviewPage } from './review.mjs';
 import { renderStartPage } from './start.mjs';
 import { renderAlphaMarkPage } from './alpha-mark.mjs';
+import { renderSuccessorPage } from './successor.mjs';
 import { buildPhase6Site } from './phase6-build.mjs';
 
 const require = createRequire(import.meta.url);
@@ -232,9 +233,10 @@ function chrome({
   canonical = '',
   body,
   active = '',
+  language = 'en',
 }) {
   const href = (value) => base + value;
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="dark"><meta name="theme-color" content="#0b0914"><meta name="description" content="${escape(
+  return `<!doctype html><html lang="${language}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="dark"><meta name="theme-color" content="#0b0914"><meta name="description" content="${escape(
     description
   )}"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'"><meta name="referrer" content="strict-origin-when-cross-origin"><title>${escape(
     title
@@ -250,15 +252,19 @@ function chrome({
     'assets/site.css'
   )}"><script type="module" src="${href(
     'assets/site.js'
-  )}"></script></head><body><a class="skip-link" href="#main">Skip to content</a><header class="site-header"><div class="header-inner"><a class="brand" href="${base}" aria-label="AGI Jobs home"><span class="brand-mark" aria-hidden="true">✧</span><span>AGI <strong>JOBS</strong><small>DEMO OBSERVATORY</small></span></a><button id="menu-toggle" class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav">Menu <span aria-hidden="true">☰</span></button><nav id="site-nav" aria-label="Primary navigation"><a class="nav-start" href="${base}start/">Start here</a><a href="${href(
-    'work/'
-  )}">Design a job</a><a href="${href('#featured')}">Featured demos</a><a ${
+  )}"></script></head><body><a class="skip-link" href="#main">${
+    language === 'fr' ? 'Aller au contenu' : 'Skip to content'
+  }</a><header class="site-header" lang="en"><div class="header-inner"><a class="brand" href="${base}" aria-label="AGI Jobs home"><span class="brand-mark" aria-hidden="true">✧</span><span>AGI <strong>JOBS</strong><small>DEMO OBSERVATORY</small></span></a><button id="menu-toggle" class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav">Menu <span aria-hidden="true">☰</span></button><nav id="site-nav" aria-label="Primary navigation"><a class="nav-start" href="${base}start/">Start here</a><a href="${href(
+    'successor/'
+  )}">SUCCESSOR Ω</a><a href="${href('work/')}">Design a job</a><a href="${href(
+    '#featured'
+  )}">Featured demos</a><a ${
     active === 'catalog' ? 'aria-current="page"' : ''
   } href="${href('#explore')}">Explore demos</a><a href="${href(
     '#walkthrough'
   )}">How it works</a><a href="${href(
     '#start'
-  )}">Start locally</a><a class="nav-repo" href="${repo}">Repository <span aria-hidden="true">↗</span></a></nav></div></header>${body}<footer class="site-footer"><a class="brand footer-brand" href="${base}"><span class="brand-mark" aria-hidden="true">✧</span><span>AGI <strong>JOBS</strong><small>INTELLIGENCE. EVIDENCE. EXECUTION.</small></span></a><div><a href="${href(
+  )}">Start locally</a><a class="nav-repo" href="${repo}">Repository <span aria-hidden="true">↗</span></a></nav></div></header>${body}<footer class="site-footer" lang="en"><a class="brand footer-brand" href="${base}"><span class="brand-mark" aria-hidden="true">✧</span><span>AGI <strong>JOBS</strong><small>INTELLIGENCE. EVIDENCE. EXECUTION.</small></span></a><div><a href="${href(
     '#explore'
   )}">All demos</a><a href="${repo}/blob/main/demo/README.md">Repository guide ↗</a><a href="${repo}/actions">CI evidence ↗</a><a href="${repo}/blob/main/LICENSE">MIT license ↗</a></div><p>Open source by MONTREAL.AI · Built from <a href="${repo}/commit/${revision}">${revision.slice(
     0,
@@ -327,6 +333,9 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
       'docs/EVIDENCE_REVIEW.md',
       'apps/validator/README.md',
       'docs/production/rehearsal.md',
+      ...[...tracked].filter(
+        (file) => file.startsWith('docs/successor/') && file.endsWith('.md')
+      ),
       ...catalog.flatMap((demo) => demo.guides),
     ]),
   ].sort();
@@ -529,6 +538,27 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
       body: renderAlphaMarkPage(base, guideURL),
     })
   );
+  for (const language of ['en', 'fr']) {
+    const canonical = language === 'en' ? 'successor/' : 'successor/fr/';
+    write(
+      canonical + 'index.html',
+      chrome({
+        title:
+          language === 'en'
+            ? 'SUCCESSOR Ω — Own the mission'
+            : 'SUCCESSOR Ω — Préserver la mission',
+        description:
+          language === 'en'
+            ? 'Three bounded synthetic missions. Compare candidates, preserve failures, rehearse admission and restore knowledge without permissions.'
+            : 'Trois missions synthétiques bornées. Comparez les candidats, préservez les échecs et restaurez les connaissances sans permissions.',
+        base,
+        revision,
+        canonical,
+        language,
+        body: renderSuccessorPage(base, revision, language),
+      })
+    );
+  }
   const flowSources = [];
   for (const file of documents) {
     const originalSource = fs.readFileSync(path.join(root, file), 'utf8');
@@ -719,8 +749,10 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
   await bundle({
     entryPoints: [
       path.join(root, 'website/assets/site.js'),
+      path.join(root, 'website/assets/successor.js'),
       path.join(root, 'website/assets/start.js'),
     ],
+    platform: 'browser',
     outdir: path.join(output, 'assets'),
     bundle: true,
     splitting: true,
@@ -730,6 +762,10 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
     legalComments: 'linked',
     logLevel: 'warning',
   });
+  fs.copyFileSync(
+    path.join(root, 'website/assets/successor.css'),
+    path.join(output, 'assets/successor.css')
+  );
   const deckRoot = 'demo/AGI-Jobs-Platform-at-Kardashev-II-Scale/';
   const dashboardRoutes = [
     'experiments/alpha-agi-mark/',
@@ -915,6 +951,7 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
 
     cultureStudioRoute: 'experiments/culture/',
     dashboardRoutes,
+    successorRoutes: ['successor/', 'successor/fr/'],
     onboardingRoutes: { en: 'start/', fr: 'start/fr/' },
     workRoute: 'work/',
     reviewRoute: 'review/',
@@ -945,6 +982,7 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
     'start/fr/',
     'review/',
     ...dashboardRoutes,
+    ...manifest.successorRoutes,
     ...archiveRoutes,
     'experiments/culture/',
     'experiments/one-box/',

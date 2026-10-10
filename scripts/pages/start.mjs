@@ -19,6 +19,7 @@ const copy = {
     intro:
       'Tell us what you want to do. We’ll help you find your way, one step at a time.',
     welcome: 'No technical experience needed.',
+    beginGuide: 'Start the guide',
     free: 'Free guided preview',
     account: 'No account or wallet needed',
     preview:
@@ -58,7 +59,48 @@ const copy = {
     chooseError: 'Choose one of the four options to continue.',
     next: 'Continue',
     back: 'Back',
-    restart: 'Start again',
+    restart: 'Choose another path',
+    undoExample: 'Undo the last example',
+    draftTools: 'Keep your work, or continue a saved draft.',
+    openDraft: 'Open my saved draft',
+    openDraftHelp:
+      'Choose the editable draft file you saved from this guide. It stays on your device.',
+    clearProgress: 'Clear this guide',
+    clearHelp:
+      'Clears the progress saved in this tab. Save a file first if you want to keep a copy.',
+    undoClear: 'Undo clearing',
+    sessionReady:
+      'Your progress is kept in this tab, including when you change language or refresh. Save a file to continue another day.',
+    sessionUnavailable:
+      'This browser cannot keep your progress. Stay on this page and save an editable draft before refreshing or changing language.',
+    sessionRestored: 'Your progress is back. Continue where you left off.',
+    sessionInvalid:
+      'The saved progress could not be opened safely. Start here or open a saved draft file.',
+    sessionCleared:
+      'This guide has been cleared. You can undo this until you leave the page.',
+    sessionClearFailed:
+      'The saved progress could not be cleared. Close this tab to end this browser session.',
+    undoStatus: 'Your previous words are back.',
+    restoredStatus: 'Your previous progress is back.',
+    openedStatus: 'Your draft is open. You can edit your words and continue.',
+    fileError:
+      'This file could not be opened. Choose an editable draft saved by this guide, smaller than 100 KB. Your current words are unchanged.',
+    fileChanged:
+      'Your draft changed while this file was opening, so we kept your newer work. Choose the file again when you are ready.',
+    advancedDraft:
+      'This draft contains details that the short guide cannot show. Open it in the full planner to keep every detail. Your current words are unchanged.',
+    downloadBrief: 'Save a readable brief',
+    printBrief: 'Print my brief',
+    briefSaved:
+      'Your readable brief is ready to download. Keep the editable draft too if you want to reopen it here.',
+    downloadError:
+      'The download could not be prepared. Your words are still here; try again or print your brief.',
+    briefTitle: 'AGI Jobs — my work request',
+    briefHeading: 'What I would like done',
+    briefNext:
+      'Next: add public source links, agree on what a good result looks like, and ask the person running an AGI Jobs service to review the scope and budget.',
+    briefBoundary:
+      'Planning draft only. No job has been posted, no worker has been hired, and no payment or execution has been authorized.',
     prepare: 'Let’s make it concrete.',
     prepareHelp: 'A small, clear starting point makes the next step easier.',
     goalLabel: 'What would you like done?',
@@ -116,7 +158,7 @@ const copy = {
     brief: 'YOUR JOB BRIEF',
     buyerTitle: 'A useful job starts with a clear request.',
     buyerNote:
-      'Your draft is ready to refine. Next, add the source links, decide how the result will be checked, and set a budget with your operator.',
+      'You have a clear starting request. Save or print it now. To run the work, a person managing an AGI Jobs service must help you agree on the sources, checks and budget.',
     buyerAction: 'Continue to the job planner',
     download: 'Save my editable draft',
     handoffNote:
@@ -130,7 +172,7 @@ const copy = {
     toolsLanguage:
       'The detailed tools and technical guides are currently in English.',
     draftSaved:
-      'Editable draft saved. Open it in the job planner to continue later.',
+      'Your editable draft is ready to download. Use “Open my saved draft” in this guide to continue later.',
     storageError:
       'Your browser cannot carry this draft to the next page. Save the editable draft, then open it using “Open saved editable draft” in the planner.',
     openPlanner: 'Open the planner',
@@ -167,7 +209,7 @@ const copy = {
       ],
       [
         'Can I come back later?',
-        'Yes. On the final step of the job-request path, choose “Save my editable draft”. Open that file in the job planner later. Refreshing this guide clears unsaved text.',
+        'Yes. This tab keeps your progress when browser storage is available, including across language changes and refreshes. To keep a copy after closing the tab, choose “Save my editable draft” at the final step. Reopen that file here with “Open my saved draft”. You can also save or print a readable brief.',
       ],
       [
         'Where can I get more help?',
@@ -193,6 +235,7 @@ const copy = {
     intro:
       'Dites-nous ce que vous voulez faire. Nous vous guiderons, une étape à la fois.',
     welcome: 'Aucune expérience technique nécessaire.',
+    beginGuide: 'Commencer le guide',
     free: 'Guide gratuit',
     account: 'Sans compte ni portefeuille',
     preview:
@@ -232,7 +275,50 @@ const copy = {
     chooseError: 'Choisissez une des quatre options pour continuer.',
     next: 'Continuer',
     back: 'Retour',
-    restart: 'Recommencer',
+    restart: 'Choisir un autre parcours',
+    undoExample: 'Annuler le dernier exemple',
+    draftTools: 'Conservez votre travail ou reprenez un brouillon.',
+    openDraft: 'Ouvrir mon brouillon enregistré',
+    openDraftHelp:
+      'Choisissez le brouillon modifiable enregistré depuis ce guide. Il reste sur votre appareil.',
+    clearProgress: 'Effacer ce guide',
+    clearHelp:
+      'Efface la progression conservée dans cet onglet. Enregistrez d’abord un fichier pour garder une copie.',
+    undoClear: 'Annuler l’effacement',
+    sessionReady:
+      'Votre progression reste dans cet onglet, même après un changement de langue ou une actualisation. Enregistrez un fichier pour revenir un autre jour.',
+    sessionUnavailable:
+      'Ce navigateur ne peut pas conserver votre progression. Restez sur cette page et enregistrez un brouillon modifiable avant d’actualiser ou de changer de langue.',
+    sessionRestored:
+      'Votre progression est rétablie. Reprenez là où vous en étiez.',
+    sessionInvalid:
+      'La progression enregistrée n’a pas pu être ouverte de manière sûre. Commencez ici ou ouvrez un fichier de brouillon.',
+    sessionCleared:
+      'Ce guide a été effacé. Vous pouvez annuler cette action jusqu’à ce que vous quittiez la page.',
+    sessionClearFailed:
+      'La progression enregistrée n’a pas pu être effacée. Fermez cet onglet pour terminer cette session du navigateur.',
+    undoStatus: 'Votre texte précédent est rétabli.',
+    restoredStatus: 'Votre progression précédente est rétablie.',
+    openedStatus:
+      'Votre brouillon est ouvert. Modifiez votre texte et continuez.',
+    fileError:
+      'Ce fichier n’a pas pu être ouvert. Choisissez un brouillon modifiable de ce guide de moins de 100 ko. Votre texte actuel reste inchangé.',
+    fileChanged:
+      'Votre brouillon a changé pendant l’ouverture du fichier. Vos dernières modifications sont conservées. Choisissez à nouveau le fichier lorsque vous serez prêt.',
+    advancedDraft:
+      'Ce brouillon contient des détails que le guide court ne peut pas afficher. Ouvrez-le dans le planificateur complet pour tout conserver. Votre texte actuel reste inchangé.',
+    downloadBrief: 'Enregistrer une demande lisible',
+    printBrief: 'Imprimer ma demande',
+    briefSaved:
+      'Votre demande lisible est prête à télécharger. Gardez aussi le brouillon modifiable pour le rouvrir ici.',
+    downloadError:
+      'Le téléchargement n’a pas pu être préparé. Votre texte est toujours ici. Réessayez ou imprimez votre demande.',
+    briefTitle: 'AGI Jobs — ma demande de travail',
+    briefHeading: 'Ce que je souhaite faire réaliser',
+    briefNext:
+      'Ensuite : ajoutez les sources publiques, définissez les critères de réussite et demandez à la personne qui gère un service AGI Jobs de vérifier le périmètre et le budget.',
+    briefBoundary:
+      'Brouillon de préparation uniquement. Aucun travail n’a été publié, aucun agent n’a été engagé et aucun paiement ni aucune exécution n’ont été autorisés.',
     prepare: 'Passons au concret.',
     prepareHelp: 'Un objectif simple et précis facilite la suite.',
     goalLabel: 'Quel travail souhaitez-vous faire réaliser?',
@@ -291,7 +377,7 @@ const copy = {
     brief: 'VOTRE DEMANDE',
     buyerTitle: 'Un travail utile commence par une demande claire.',
     buyerNote:
-      'Votre brouillon est prêt à être précisé. Ajoutez ensuite les sources, les critères de vérification et un budget avec votre opérateur.',
+      'Votre demande de départ est prête. Enregistrez-la ou imprimez-la. Pour réaliser le travail, la personne qui gère un service AGI Jobs doit vous aider à définir les sources, les vérifications et le budget.',
     buyerAction: 'Ouvrir le planificateur de travail',
     download: 'Enregistrer mon brouillon modifiable',
     handoffNote:
@@ -305,7 +391,7 @@ const copy = {
     toolsLanguage:
       'Les outils détaillés et les guides techniques sont actuellement en anglais.',
     draftSaved:
-      'Brouillon modifiable enregistré. Ouvrez-le dans le planificateur pour continuer plus tard.',
+      'Votre brouillon modifiable est prêt à télécharger. Utilisez « Ouvrir mon brouillon enregistré » dans ce guide pour continuer plus tard.',
     storageError:
       'Votre navigateur ne peut pas transférer le brouillon. Enregistrez-le, puis utilisez « Open saved editable draft » dans le planificateur pour l’ouvrir.',
     openPlanner: 'Ouvrir le planificateur',
@@ -342,7 +428,7 @@ const copy = {
       ],
       [
         'Puis-je continuer plus tard?',
-        'Oui. À la dernière étape du parcours de demande, choisissez « Enregistrer mon brouillon modifiable ». Ouvrez ce fichier dans le planificateur plus tard. Actualiser ce guide efface le texte non enregistré.',
+        'Oui. Cet onglet conserve votre progression si le stockage du navigateur est disponible, même après un changement de langue ou une actualisation. Pour garder une copie après la fermeture de l’onglet, choisissez « Enregistrer mon brouillon modifiable » à la dernière étape. Rouvrez ce fichier ici avec « Ouvrir mon brouillon enregistré ». Vous pouvez aussi enregistrer ou imprimer une demande lisible.',
       ],
       [
         'Où trouver plus d’aide?',
@@ -369,6 +455,28 @@ export function renderStartPage({ base, guide, revision, lang = 'en' }) {
     explorer: base + '#walkthrough',
   };
   const action = (role) => t[role + 'Action'];
+  const messages = Object.fromEntries(
+    [
+      'sessionReady',
+      'sessionUnavailable',
+      'sessionRestored',
+      'sessionInvalid',
+      'sessionCleared',
+      'sessionClearFailed',
+      'undoStatus',
+      'restoredStatus',
+      'openedStatus',
+      'fileError',
+      'fileChanged',
+      'advancedDraft',
+      'briefSaved',
+      'downloadError',
+      'briefTitle',
+      'briefHeading',
+      'briefNext',
+      'briefBoundary',
+    ].map((key) => [key, t[key]])
+  );
   const list = (items) =>
     `<ol class="simple-list">${items
       .map((s) => `<li>${escape(s)}</li>`)
@@ -404,7 +512,9 @@ export function renderStartPage({ base, guide, revision, lang = 'en' }) {
     t.intro
   }</p><p class="welcome-note">${
     t.welcome
-  }</p><div class="trust"><span><i aria-hidden="true">✓</i>${
+  }</p><a class="begin-guide button secondary" href="#guide">${
+    t.beginGuide
+  } <span aria-hidden="true">→</span></a><div class="trust"><span><i aria-hidden="true">✓</i>${
     t.free
   }</span><span><i aria-hidden="true">✓</i>${
     t.account
@@ -414,13 +524,13 @@ export function renderStartPage({ base, guide, revision, lang = 'en' }) {
   <div id="guide" class="guide" tabindex="-1"><div id="guide-fallback"><h2>${
     t.direct
   }</h2><p>${t.nojs}</p>${direct}<p>${t.toolsLanguage}</p></div>
-  <div id="wizard" hidden data-role-error="${escape(
-    t.chooseError
-  )}" data-goal-error="${escape(t.goalError)}" data-example-status="${escape(
-    t.selected
-  )}" data-saved-status="${escape(t.draftSaved)}" data-transfer-error="${escape(
-    t.storageError
-  )}">
+  <div id="wizard" hidden data-messages="${escape(
+    JSON.stringify(messages)
+  )}" data-role-error="${escape(t.chooseError)}" data-goal-error="${escape(
+    t.goalError
+  )}" data-example-status="${escape(t.selected)}" data-saved-status="${escape(
+    t.draftSaved
+  )}" data-transfer-error="${escape(t.storageError)}">
     <ol class="progress" aria-label="${t.stepLabel}">${t.steps
     .map(
       (s, i) =>
@@ -433,12 +543,12 @@ export function renderStartPage({ base, guide, revision, lang = 'en' }) {
     t.of
   } 3</p><h2 tabindex="-1">${t.choose}</h2><p class="step-help">${
     t.chooseHelp
-  }</p><fieldset class="choices"><legend class="sr-only">${
+  }</p><fieldset id="role-choices" class="choices" aria-describedby="guide-status"><legend class="sr-only">${
     t.choose
   }</legend>${t.roles
     .map(
       ([id, title, subtitle]) =>
-        `<label class="choice"><input type="radio" name="role" value="${id}"><span><strong>${escape(
+        `<label class="choice"><input type="radio" name="role" value="${id}" aria-describedby="guide-status"><span><strong>${escape(
           title
         )}</strong><small>${escape(
           subtitle
@@ -458,7 +568,11 @@ export function renderStartPage({ base, guide, revision, lang = 'en' }) {
           goal
         )}">${escape(title)}</button>`
     )
-    .join('')}</div><label class="field-label" for="start-goal">${
+    .join(
+      ''
+    )}</div><button class="text-button" type="button" id="undo-example" hidden>${
+    t.undoExample
+  }</button><label class="field-label" for="start-goal">${
     t.goalLabel
   }</label><textarea id="start-goal" rows="5" maxlength="2000" aria-describedby="goal-help guide-status" placeholder="${escape(
     t.goalPlaceholder
@@ -488,11 +602,13 @@ export function renderStartPage({ base, guide, revision, lang = 'en' }) {
     t.buyerAction
   } <span aria-hidden="true">→</span></a><button class="button secondary" id="save-start-draft" type="button">${
     t.download
-  } <span aria-hidden="true">↓</span></button><p class="field-help">${
+  } <span aria-hidden="true">↓</span></button><button class="button secondary" id="save-readable-brief" type="button">${
+    t.downloadBrief
+  } <span aria-hidden="true">↓</span></button><button class="button secondary" id="print-start-brief" type="button">${
+    t.printBrief
+  }</button><p class="field-help">${t.briefBoundary}</p><p class="field-help">${
     t.handoffNote
-  }</p><a id="planner-fallback" href="${routes.buyer}" hidden>${
-    t.openPlanner
-  } →</a></div>${['worker', 'reviewer', 'explorer']
+  }</p></div>${['worker', 'reviewer', 'explorer']
     .map(
       (r) =>
         `<div data-result="${r}" hidden><div class="ready-icon" aria-hidden="true">✓</div><h3>${
@@ -502,12 +618,31 @@ export function renderStartPage({ base, guide, revision, lang = 'en' }) {
         }">${action(r)} <span aria-hidden="true">→</span></a></div>`
     )
     .join('')}<p class="field-help">${t.toolsLanguage}</p></section>
-    <p id="guide-status" role="status" tabindex="-1"></p><div class="wizard-actions"><button type="button" class="button secondary" id="guide-back" hidden>← ${
-      t.back
-    }</button><button type="button" class="button primary" id="guide-next">${
+    <p id="guide-status" role="status" tabindex="-1"></p><a class="button secondary" id="planner-fallback" href="${
+      routes.buyer
+    }" hidden>${
+    t.openPlanner
+  } →</a><div class="wizard-actions"><button type="button" class="button secondary" id="guide-back" hidden>← ${
+    t.back
+  }</button><button type="button" class="button primary" id="guide-next">${
     t.next
   } <span aria-hidden="true">→</span></button><button type="button" class="text-button" id="guide-restart" hidden>${
     t.restart
+  }</button></div>
+    <p id="draft-session-note" class="draft-session-note" role="status"></p><div class="draft-tools"><p>${
+      t.draftTools
+    }</p><button class="button secondary" id="open-start-draft-button" type="button">${
+    t.openDraft
+  } <span aria-hidden="true">↑</span></button><input id="open-start-draft" type="file" accept=".json,application/json" aria-label="${
+    t.openDraft
+  }" hidden><p class="field-help" id="open-draft-help">${
+    t.openDraftHelp
+  }</p><button class="text-button" id="clear-start-progress" type="button" aria-describedby="clear-start-help" hidden>${
+    t.clearProgress
+  }</button><p id="clear-start-help" class="field-help" hidden>${
+    t.clearHelp
+  }</p><button class="text-button" id="undo-clear" type="button" hidden>${
+    t.undoClear
   }</button></div>
   </div><p class="privacy"><span aria-hidden="true">◇</span> ${
     t.privacy

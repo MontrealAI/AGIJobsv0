@@ -10,6 +10,11 @@ The [local evidence reviewer](../EVIDENCE_REVIEW.md) checks delivered artifact i
 
 The [container operations guide](../container-operations.md) identifies every maintained and historical Dockerfile, its startup probe, and the additional setup needed for live operation. The [validator review console](../../apps/validator-ui/README.md) supports an explicit human verdict, current round deadlines, and private browser recovery records; browser storage and downloaded backups are unencrypted. Neither a successful health check nor a structurally valid delivery establishes acceptance of the work.
 
+## SUCCESSOR Ω release candidate
+
+The [SUCCESSOR Ω local guide](../successor/README.md) adds compiled missions, executable discovery, signed evaluation mechanics, durable state and portable knowledge. The public/local missions are synthetic rehearsals. The new mission-bound computer-work route and action broker refuse live dispatch; legacy admitted computer-work behavior is preserved. A local signed fixture is not I3 independent proof, and export/restoration grants no authority.
+
+Read the [acceptance matrix](../successor/acceptance-matrix.md) and [security review](../successor/security-review.md) before commissioning this subsystem. Its current local verification does not clear any existing production gate below.
 ## What a live deployment still needs
 
 | Gate | Evidence needed |

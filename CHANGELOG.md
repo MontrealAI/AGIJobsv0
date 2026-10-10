@@ -1,5 +1,12 @@
 # Changelog
 
+## Onboarding refinement — 2026-10-10
+
+- Preserve bounded same-tab progress and larger-text preference across refreshes and EN/FR changes; explain blocked storage and provide reversible clearing.
+- Undo examples, reopen simple editable drafts in the guide, and save/print a readable work request without technical planner setup. Advanced drafts retain their full-planner route.
+- Respect browser font preferences, strengthen keyboard focus, keep enlarged text and controls inside narrow screens, and provide a direct mobile guide shortcut.
+- Exercise recovery, rejected imports, printing, text spacing and all-step enlarged-text layouts in the existing Pages gate. Live-service and production qualification boundaries remain explicit.
+
 ## Source preview — guided onboarding (2026-10-10)
 
 - Dedicated English and French welcome pages with four plain-language journeys, large controls, larger text and useful examples.
@@ -7,6 +14,17 @@
 - Prominent entry points in the repository, homepage, navigation and setup guide; original demos and flowcharts retained.
 - Keyboard, responsive-layout, accessibility, validation and draft-transfer regression checks in Pages CI.
 - This source preview does not waive the existing production signing, dependency, review or commissioning requirements.
+
+## v2.1.0-rc.1 — SUCCESSOR Ω release candidate
+
+- Add a shared mission constitution, 21 coverage templates, five-stage SEIZE record, sealed job compiler and dependency invalidation registry.
+- Run three local missions: invoice integrity, bounded symbolic WORLD discovery, and sequential evidence/resource planning. Preserve unsafe candidates and cases where a conventional alternative removes claimed advantage.
+- Add complete candidate freezes, separately runnable signed evaluation, explicit admission/authority mechanics and a fixture-only action broker with SQLite reservations, restart reconciliation and revocation.
+- Preserve schemaVersion 1 computer-work tasks while requiring separate sealed mission bindings. Link actual local-chain settlement receipts to exact work-order/report bytes without converting payment into mission proof.
+- Export and verify JSON Mission Packs; restore negative knowledge and create a successor without inherited permissions. Add actual bounded substitution of two local formation algorithms.
+- Add EN/FR SUCCESSOR workbenches while preserving existing demo routes and Mermaid sources.
+
+The first source baseline was published before implementation as `source-v2.0.0-baseline.1`. This candidate introduces no token migration, contract storage change or commissioned live SUCCESSOR authority. Independent examination, production signing, dependency remediation and remote worker commissioning remain separate gates; see [release notes](docs/successor/release-notes.md).
 
 ## Demo experience expansion — 2026-10-04
 
