@@ -2050,7 +2050,7 @@ input::placeholder {
     margin-inline: auto;
   }
 }
-@media (max-width: 1100px) {
+@media (max-width: 1280px) {
   .menu-toggle {
     display: flex;
     gap: 12px;
@@ -2636,7 +2636,7 @@ html:not(.js) [data-copy] {
 .hero > * {
   min-width: 0;
 }
-@media (max-width: 1100px) {
+@media (max-width: 1280px) {
   html:not(.js) .header-inner {
     flex-wrap: wrap;
     padding-block: 18px;

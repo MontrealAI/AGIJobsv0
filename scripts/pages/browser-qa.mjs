@@ -229,7 +229,9 @@ try {
   await a11y('guide');
   await page.screenshot({ path: path.join(artifacts, 'guide-diagram.png') });
   checks.push('demo detail, original guide, live Mermaid rendering');
-  for (const width of [320, 390, 768, 900, 1024, 1100, 1101, 1440]) {
+  for (const width of [
+    320, 390, 768, 900, 1024, 1100, 1101, 1280, 1281, 1440,
+  ]) {
     await page.setViewportSize({ width, height: 900 });
     for (const route of ['', 'demos/aurora/']) {
       await page.goto(url + route, { waitUntil: 'networkidle' });
@@ -241,7 +243,7 @@ try {
         `overflow at ${width}: ${route}`
       );
       const collapsed = await page.locator('#menu-toggle').isVisible();
-      assert.equal(collapsed, width <= 1100, `navigation mode at ${width}`);
+      assert.equal(collapsed, width <= 1280, `navigation mode at ${width}`);
       if (collapsed) await page.locator('#menu-toggle').click();
       const headerFits = await page.evaluate(() => {
         const box = document
