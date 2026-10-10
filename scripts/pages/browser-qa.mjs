@@ -1,3 +1,4 @@
+import { verifyStart } from './start-qa.mjs';
 import { verifyAlphaMark } from './alpha-mark-qa.mjs';
 import { verifyPhase6 } from './phase6-qa.mjs';
 import { verifyWorkPlanner } from './work-qa.mjs';
@@ -228,7 +229,9 @@ try {
   await a11y('guide');
   await page.screenshot({ path: path.join(artifacts, 'guide-diagram.png') });
   checks.push('demo detail, original guide, live Mermaid rendering');
-  for (const width of [320, 390, 768, 900, 1024, 1440]) {
+  for (const width of [
+    320, 390, 768, 900, 1024, 1100, 1101, 1280, 1281, 1440,
+  ]) {
     await page.setViewportSize({ width, height: 900 });
     for (const route of ['', 'demos/aurora/']) {
       await page.goto(url + route, { waitUntil: 'networkidle' });
@@ -239,8 +242,41 @@ try {
         false,
         `overflow at ${width}: ${route}`
       );
+      const collapsed = await page.locator('#menu-toggle').isVisible();
+      assert.equal(collapsed, width <= 1280, `navigation mode at ${width}`);
+      if (collapsed) await page.locator('#menu-toggle').click();
+      const headerFits = await page.evaluate(() => {
+        const box = document
+          .querySelector('.header-inner')
+          .getBoundingClientRect();
+        const brand = document
+          .querySelector('.header-inner .brand')
+          .getBoundingClientRect();
+        const nav = document.querySelector('#site-nav').getBoundingClientRect();
+        const toggle = document.querySelector('#menu-toggle');
+        const expanded = getComputedStyle(toggle).display !== 'none';
+        const linksFit = [...document.querySelectorAll('#site-nav a')].every(
+          (el) => {
+            const r = el.getBoundingClientRect();
+            return r.left >= 0 && r.right <= innerWidth + 1;
+          }
+        );
+        return (
+          linksFit &&
+          (expanded
+            ? toggle.getBoundingClientRect().left >= brand.right &&
+              nav.top >= box.bottom - 1
+            : nav.left >= brand.right && nav.right <= box.right + 1)
+        );
+      });
+      assert.equal(
+        headerFits,
+        true,
+        `navigation overlap at ${width}: ${route}`
+      );
+      if (collapsed) await page.keyboard.press('Escape');
     }
-    checks.push('responsive layout: ' + width);
+    checks.push('responsive layout and navigation fit: ' + width);
   }
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(url, { waitUntil: 'networkidle' });
@@ -410,6 +446,7 @@ try {
     [],
     'Every preserved diagram must parse and render'
   );
+  await verifyStart({ page, context, url, artifacts, a11y, checks });
   await verifyWorkPlanner({ page, context, url, artifacts, a11y, checks });
   await verifyAlphaMark({ page, context, url, artifacts, a11y, checks });
   assert.equal(manifest.dashboardRoutes.length, 15);

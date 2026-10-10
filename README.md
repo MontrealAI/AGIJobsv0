@@ -1,5 +1,11 @@
 # AGI Jobs v0 (v2)
 
+## New here? Start with one simple step.
+
+**[Open the guided welcome page →](https://montrealai.github.io/AGIJobsv0/start/) · [Commencer en français →](https://montrealai.github.io/AGIJobsv0/start/fr/)**
+
+Choose what you want to do: request work, connect an agent, review a result, or explore. The three-step guide has plain language, large controls, optional larger text, and editable examples. Prepare and save a job draft without an account, wallet, installation or payment. Continue straight into the detailed planner when you are ready. This is a public planning preview; live jobs require a separately configured service.
+
 [![CI (v2)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml)
 [![CI (v2) job wall](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml/badge.svg?branch=main&job=CI%20summary)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml?query=workflow%3A%22ci+%28v2%29%22+is%3Asuccess+branch%3Amain)
 [![Static Analysis](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/static-analysis.yml/badge.svg?branch=main)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/static-analysis.yml)

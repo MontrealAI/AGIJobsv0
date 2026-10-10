@@ -12,6 +12,7 @@ import { loadExperiences, renderExperience } from './experiences.mjs';
 import { renderFeaturedDemos, renderHeroSpotlight } from './featured.mjs';
 import { renderWorkIntro, renderVision, renderWorkPage } from './work.mjs';
 import { renderReviewPage } from './review.mjs';
+import { renderStartPage } from './start.mjs';
 import { renderAlphaMarkPage } from './alpha-mark.mjs';
 import { buildPhase6Site } from './phase6-build.mjs';
 
@@ -249,7 +250,7 @@ function chrome({
     'assets/site.css'
   )}"><script type="module" src="${href(
     'assets/site.js'
-  )}"></script></head><body><a class="skip-link" href="#main">Skip to content</a><header class="site-header"><div class="header-inner"><a class="brand" href="${base}" aria-label="AGI Jobs home"><span class="brand-mark" aria-hidden="true">✧</span><span>AGI <strong>JOBS</strong><small>DEMO OBSERVATORY</small></span></a><button id="menu-toggle" class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav">Menu <span aria-hidden="true">☰</span></button><nav id="site-nav" aria-label="Primary navigation"><a href="${href(
+  )}"></script></head><body><a class="skip-link" href="#main">Skip to content</a><header class="site-header"><div class="header-inner"><a class="brand" href="${base}" aria-label="AGI Jobs home"><span class="brand-mark" aria-hidden="true">✧</span><span>AGI <strong>JOBS</strong><small>DEMO OBSERVATORY</small></span></a><button id="menu-toggle" class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav">Menu <span aria-hidden="true">☰</span></button><nav id="site-nav" aria-label="Primary navigation"><a class="nav-start" href="${base}start/">Start here</a><a href="${href(
     'work/'
   )}">Design a job</a><a href="${href('#featured')}">Featured demos</a><a ${
     active === 'catalog' ? 'aria-current="page"' : ''
@@ -435,7 +436,7 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
     )
     .join('');
   const setup = `git clone https://github.com/MontrealAI/AGIJobsv0.git\ncd AGIJobsv0\nnvm install\nnvm use\nnpm ci\nnpm run demo:aurora:local`;
-  const body = `<main id="main"><section class="hero section-wrap"><div class="hero-copy"><p class="eyebrow"><span></span> AGI JOBS / THE MACHINE LABOR LAYER</p><h1>Intelligence,<br><em>put to work.</em></h1><p class="hero-description">A scalable machine labor layer for authorized, lawful screen-based work. Coordinate specialized agents, produce reviewable evidence, and verify useful outcomes before settlement.</p><div class="hero-actions"><a class="button primary" href="${base}work/">Design a useful job <span aria-hidden="true">↗</span></a><a class="text-link" href="#walkthrough"><span class="play-icon" aria-hidden="true">▷</span> See how a job works</a></div><p class="hero-note">Open source. Inspectable. Start without a wallet.</p>${renderHeroSpotlight(
+  const body = `<main id="main"><section class="hero section-wrap"><div class="hero-copy"><p class="eyebrow"><span></span> AGI JOBS / THE MACHINE LABOR LAYER</p><h1>Intelligence,<br><em>put to work.</em></h1><p class="hero-description">Turn an idea into useful work. Describe what you need, let an authorized agent prepare a result, and have the work checked before accepting it.</p><div class="hero-actions"><a class="button primary" href="${base}start/">Start here — we’ll guide you <span aria-hidden="true">→</span></a><a class="text-link" href="#walkthrough"><span class="play-icon" aria-hidden="true">▷</span> See how a job works</a></div><p class="hero-note">No account or wallet needed. <a href="${base}start/fr/" lang="fr">Commencer en français →</a></p>${renderHeroSpotlight(
     base
   )}</div>${orbit()}</section>${renderWorkIntro(
     base,
@@ -486,6 +487,12 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
       body,
     })
   );
+  for (const lang of ['en', 'fr']) {
+    write(
+      `start/${lang === 'fr' ? 'fr/' : ''}index.html`,
+      renderStartPage({ base, guide: guideURL, revision, lang })
+    );
+  }
   write(
     'work/index.html',
     chrome({
@@ -705,8 +712,15 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
     path.join(root, 'website/assets/site.css'),
     path.join(output, 'assets/site.css')
   );
+  fs.copyFileSync(
+    path.join(root, 'website/assets/start.css'),
+    path.join(output, 'assets/start.css')
+  );
   await bundle({
-    entryPoints: [path.join(root, 'website/assets/site.js')],
+    entryPoints: [
+      path.join(root, 'website/assets/site.js'),
+      path.join(root, 'website/assets/start.js'),
+    ],
     outdir: path.join(output, 'assets'),
     bundle: true,
     splitting: true,
@@ -901,6 +915,7 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
 
     cultureStudioRoute: 'experiments/culture/',
     dashboardRoutes,
+    onboardingRoutes: { en: 'start/', fr: 'start/fr/' },
     workRoute: 'work/',
     reviewRoute: 'review/',
     archiveRoutes,
@@ -926,6 +941,8 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
   const routes = [
     '',
     'work/',
+    'start/',
+    'start/fr/',
     'review/',
     ...dashboardRoutes,
     ...archiveRoutes,

@@ -1,5 +1,15 @@
 # AGI Jobs Demo Observatory
 
+## Guided public welcome
+
+**[Start here](https://montrealai.github.io/AGIJobsv0/start/)** and **[Commencer en français](https://montrealai.github.io/AGIJobsv0/start/fr/)** provide a dedicated three-step introduction for first-time visitors. The homepage primary action, site navigation and repository overview feature this entrance. Both pages are generated from `scripts/pages/start.mjs`; `start.js` and `start.css` load independently of the demo and diagram interface.
+
+Four journeys cover requesting work, connecting a worker, reviewing files and exploring. A buyer can choose an editable example, save the canonical `agi-jobs-work-draft/v1` file, and continue into the existing planner. Only that explicit continuation places the draft into same-tab session storage. The planner removes the transfer before parsing it, uses the existing bounded draft parser, and never imports approvals, execution authority or evidence. Missing and blocked storage provide recovery instructions. Unsaved guide text does not survive reload; language links open the other language from the beginning. Detailed tools currently remain in English, as stated before leaving the guide.
+
+Large controls, visible keyboard focus, semantic radio choices, step announcements, larger text, a no-JavaScript route list, responsive layouts and a complete French introduction support accessible onboarding. The guide makes no network requests, connects no wallet and posts no jobs. Its static distribution can be cached, but no visitor scale, billion-user capacity, live enrollment or production commissioning is claimed. Deployment readiness remains in the existing readiness index.
+
+The Pages browser gate exercises each journey, EN/FR, validation, back navigation, exact draft downloads, same-tab transfer and removal, blocked storage, keyboard use, text enlargement, mobile reflow and WCAG A/AA checks. After building, `node scripts/pages/start-browser-qa.mjs` runs the focused onboarding checks. The full `npm run site:qa` includes the same checks.
+
 The **[evidence reviewer](https://montrealai.github.io/AGIJobsv0/review/)** completes the local planning-to-review journey. It matches an admitted task and operator-supplied job/deployment identity with a completed receipt, verifies UTF-8 byte counts and SHA-256, displays untrusted artifacts as text, and exports unsigned criterion-by-criterion assessments. Files stay in the browser tab. See the [review guide](../docs/EVIDENCE_REVIEW.md) for formats and verification limits. `website/assets/review-model.mjs` owns the bounded integrity checks, and `review.js` invalidates results on input changes or stale asynchronous reads. Browser QA covers tampering, downloads, input races, accessibility and responsive layouts; model integration tests consume receipts produced by the actual adapter.
 
 The public showcase at <https://montrealai.github.io/AGIJobsv0/> is built from the repository's tracked demo inventory. It provides a searchable collection, an individual page for every demo/support directory, original guides with Mermaid diagrams, and a clearly labeled browser-only lifecycle walkthrough.

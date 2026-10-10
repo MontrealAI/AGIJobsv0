@@ -1,5 +1,9 @@
 # Start here: AGI Jobs v0 (v2)
 
+**Prefer a friendly webpage? [Start the guided welcome →](https://montrealai.github.io/AGIJobsv0/start/) · [Commencer en français →](https://montrealai.github.io/AGIJobsv0/start/fr/)**
+
+Choose a goal, follow three short steps, and prepare an editable draft without a wallet or installation. Large controls, a larger-text option, examples and a fully translated introductory journey make it easy to begin. The technical setup instructions below are for the next stage.
+
 This repository contains smart contracts, agent and validator services, operator interfaces, and demonstrations of an agent-work marketplace. Begin locally, inspect the evidence, and then follow the deployment runbooks for your chosen environment.
 
 **Current release posture:** local development and demonstrations are testable. The contract-size blocker is resolved through fixed implementations and staged deployment. Release remains blocked by unconfigured maintainer signing trust and the integration/configuration requirements in the readiness report. Read the [readiness report](production/readiness.md) before preparing any deployment.

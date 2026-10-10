@@ -166,6 +166,32 @@ export function initWorkPlanner() {
   selectType();
   $('work-status').textContent =
     'Choose a category, describe the scope and add approved source URLs. Your draft stays in this browser tab.';
+  if (location.hash === '#from-start') {
+    const key = `${location.pathname.replace(/work\/$/, '')}start-draft/v1`;
+    try {
+      const saved = sessionStorage.getItem(key);
+      sessionStorage.removeItem(key);
+      if (saved) {
+        const fields = openEditableDraft(saved);
+        for (const [name, value] of Object.entries(fields))
+          field(name).value = value;
+        selectType(true);
+        $('work-status').textContent =
+          'Your guided draft is here. Add the scope and approved sources, then choose the worker, budget and review allowances with your operator. Nothing has been posted or authorized.';
+      } else {
+        $('work-status').textContent =
+          'No guided draft is available in this tab. Open a saved editable draft or enter your request below.';
+      }
+    } catch {
+      $('work-status').textContent =
+        'The guided draft could not be opened. Use Open saved editable draft to load your downloaded copy, or enter your request below.';
+    }
+    history.replaceState(
+      null,
+      '',
+      location.pathname + location.search + '#planner'
+    );
+  }
   form.querySelector('button[type="submit"]').disabled = false;
   $('work-save').disabled = false;
   $('work-open').disabled = false;
