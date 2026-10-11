@@ -5,13 +5,12 @@ import path from "node:path";
 import { performance } from "node:perf_hooks";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-import { CarReader } from "@ipld/car";
 import namehashModule from "eth-ens-namehash";
 import { ethers } from "ethers";
 import contentHash from "content-hash";
 import { packToFs } from "ipfs-car/pack/fs";
 import PinataClientModule from "@pinata/sdk";
-import { Web3Storage } from "web3.storage";
+import { uploadCarFile } from "../../../scripts/lib/w3up-upload.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const appDir = path.resolve(__dirname, "..");
@@ -230,45 +229,15 @@ async function createCarArchive() {
   return rootCid;
 }
 
-async function uploadToWeb3Storage(rootCid, releaseName) {
+async function uploadToWeb3Storage(rootCid, _releaseName) {
   if (dryRun || skipWeb3) {
-    log("Skipping web3.storage upload (dry run or --skip-web3)");
+    log("Skipping w3up upload (dry run or --skip-web3)");
     return null;
   }
-  const token = process.env.WEB3_STORAGE_TOKEN || process.env.W3S_TOKEN;
-  if (!token) {
-    throw formatError(
-      "WEB3_STORAGE_TOKEN (or W3S_TOKEN) must be set to upload to web3.storage",
-    );
-  }
-  log("Uploading CAR to web3.storage...");
-  const client = new Web3Storage({ token });
-  const carBytes = await fs.readFile(carOutputPath);
-  const carReader = await CarReader.fromBytes(carBytes);
-  const uploadCid = await client.putCar(carReader, { name: releaseName });
-  if (uploadCid !== rootCid) {
-    throw formatError(
-      `CID mismatch from web3.storage upload (expected ${rootCid}, received ${uploadCid})`,
-    );
-  }
-  const status = await client.status(rootCid).catch((err) => {
-    log("Warning: unable to fetch web3.storage status", err.message ?? err);
-    return null;
-  });
-  log("web3.storage upload complete.");
-  return {
-    cid: uploadCid,
-    status: status
-      ? {
-          cid: status.cid,
-          dagSize: status.dagSize,
-          pins: status.pins?.map(({ region, status: pinStatus }) => ({
-            region,
-            status: pinStatus,
-          })),
-        }
-      : null,
-  };
+  log("Uploading the existing CAR to w3up...");
+  const result = await uploadCarFile(carOutputPath, rootCid);
+  log("w3up upload and CID readback complete (not a storage-deal guarantee).");
+  return result;
 }
 
 function normalizeGateway(base) {

@@ -4,7 +4,9 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
-import { Web3Storage, getFilesFromPath } from 'web3.storage';
+import os from 'node:os';
+import { packToFs } from 'ipfs-car/pack/fs';
+import { uploadCarFile, readW3upConfig } from '../lib/w3up-upload.mjs';
 import pinataSDK from '@pinata/sdk';
 import { ethers } from 'ethers';
 import contentHash from 'content-hash';
@@ -41,29 +43,19 @@ async function ensureDistPresent() {
   }
 }
 
-async function uploadToWeb3Storage(token) {
-  const client = new Web3Storage({ token });
-  const files = await getFilesFromPath(DIST_DIR);
-  const cid = await client.put(files, {
-    wrapWithDirectory: true,
-    name: `onebox-static-${new Date().toISOString()}`,
-  });
-  const status = await waitFor(async () => {
-    const info = await client.status(cid);
-    if (!info) {
-      return null;
-    }
-    const pinned = info.pins?.find((pin) => pin.status === 'Pinned');
-    if (pinned) {
-      return { info, pinned };
-    }
-    return null;
-  }, { label: 'web3.storage pin', attempts: 10, delayMs: 5000 });
-
-  return {
-    cid,
-    status: status?.info ?? null,
-  };
+async function uploadToWeb3Storage() {
+  const staging = await fs.mkdtemp(path.join(os.tmpdir(), 'onebox-release-car-'));
+  try {
+    const carPath = path.join(staging, 'release.car');
+    const { root } = await packToFs({
+      input: DIST_DIR,
+      output: carPath,
+      wrapWithDirectory: true,
+    });
+    return await uploadCarFile(carPath, root.toString());
+  } finally {
+    await fs.rm(staging, { recursive: true, force: true });
+  }
 }
 
 async function pinWithPinata(jwt, cid) {
@@ -156,17 +148,17 @@ async function waitFor(fn, { attempts, delayMs, label }) {
 async function main() {
   await ensureDistPresent();
 
-  const web3Token = requiredEnv('ONEBOX_W3S_TOKEN');
+  readW3upConfig();
   const pinataJwt = requiredEnv('ONEBOX_PINATA_JWT');
   const rpcUrl = requiredEnv('ONEBOX_RPC_URL');
   const signerKey = requiredEnv('ONEBOX_SIGNER_KEY');
   const resolverAddress = requiredEnv('ONEBOX_ENS_RESOLVER');
   const ensName = requiredEnv('ONEBOX_ENS_NAME');
 
-  console.log('Uploading onebox-static dist/ bundle to web3.storage...');
-  const web3Result = await uploadToWeb3Storage(web3Token);
+  console.log('Uploading onebox-static dist/ CAR to w3up...');
+  const web3Result = await uploadToWeb3Storage();
   const { cid } = web3Result;
-  console.log(`✔ Uploaded to web3.storage with root CID: ${cid}`);
+  console.log(`✔ w3up upload index confirmed root CID: ${cid}`);
 
   console.log('Pinning CID to Pinata...');
   const pinataResult = await pinWithPinata(pinataJwt, cid);
@@ -198,6 +190,8 @@ async function main() {
     gateways,
     pins: {
       web3Storage: {
+        provider: 'w3up',
+        uploadIndex: web3Result.status,
         status: web3Result.status?.pins ?? [],
         dagSize: web3Result.status?.dagSize ?? null,
         deals: web3Result.status?.deals ?? [],

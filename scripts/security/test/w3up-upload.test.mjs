@@ -8,7 +8,7 @@ import { packToFs } from 'ipfs-car/pack/fs';
 import { CarReader } from '@ipld/car';
 import {
   readW3upConfig, createW3upClient, uploadCarBytes, uploadCarFile,
-} from '../../scripts/lib/w3up-upload.mjs';
+} from '../../lib/w3up-upload.mjs';
 
 async function fixture() {
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'w3up-compat-'));

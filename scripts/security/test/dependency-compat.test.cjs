@@ -5,7 +5,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { createRequire } = require('node:module');
 const { execFileSync } = require('node:child_process');
-const root = path.resolve(__dirname, '../..');
+const root = path.resolve(__dirname, '../../..');
 const lock = JSON.parse(fs.readFileSync(path.join(root, 'package-lock.json'), 'utf8'));
 
 test('retains the original installed Hardhat and EAS contract package identities', () => {
