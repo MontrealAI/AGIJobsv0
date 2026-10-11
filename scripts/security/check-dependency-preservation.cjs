@@ -49,6 +49,13 @@ function checkGenerated() {
     execFileSync(process.execPath, [cli, '--compiler-options', '{"module":"commonjs"}',
       'scripts/generate-constants.ts'], { cwd: worktree, timeout: 60000, maxBuffer: 4 * 1024 * 1024,
       env: { PATH: process.env.PATH, HOME: process.env.HOME, CI: '1' } });
+    // deploy:local also calls the unchanged ENS loader, which persists computed
+    // alias namehash/label metadata. Reproduce that exact baseline operation;
+    // comparing only the constants generator misses this legitimate output.
+    execFileSync(process.execPath, ['-e',
+      "require('./scripts/config').loadEnsConfig({ network: 'hardhat' })"],
+    { cwd: worktree, timeout: 60000, maxBuffer: 4 * 1024 * 1024,
+      env: { PATH: process.env.PATH, HOME: process.env.HOME, CI: '1' } });
     const files = names(git(['ls-files', '-z'])).filter(protectedPath);
     const generated = names(git(['diff', '--name-only', '-z'], worktree)).filter(protectedPath);
     const local = names(git(['diff', '--name-only', '-z'])).filter(protectedPath);
@@ -59,9 +66,9 @@ function checkGenerated() {
     assert.deepEqual(names(git(['ls-files', '--others', '--exclude-standard', '-z'])).filter(protectedPath), [],
       'Unexpected generated Solidity/configuration file');
     return { ...result, mode: 'generated', comparedFiles: files.length,
-      baselineGeneratorReproduced: true,
+      baselineGeneratorReproduced: true, baselineEnsNormalizationReproduced: true,
       generatedFiles: generated.map((name) => ({ path: name, sha256: sha256(fs.readFileSync(path.join(ROOT, name))) })),
-      scope: 'Identical baseline-generated files in disposable checkouts; no generated deployment settings are committed.' };
+      scope: 'Identical baseline-generated and ENS-normalized files in disposable checkouts; no generated deployment settings are committed.' };
   } finally {
     if (added) git(['worktree', 'remove', '--force', worktree]);
     fs.rmSync(temp, { recursive: true, force: true });

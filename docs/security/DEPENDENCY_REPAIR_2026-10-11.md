@@ -83,7 +83,7 @@ npm run deploy:local
 node scripts/security/check-dependency-preservation.cjs generated
 ```
 
-`deploy:local` is the unchanged in-process Hardhat rehearsal, not a public-network deployment. No remote RPC or real-wallet key is used. Compiler-generated configuration changes in the disposable checkout are compared against running the unchanged baseline generator with the same dependencies. They are not committed into the PR or silently treated as new deployment settings.
+`deploy:local` is the unchanged in-process Hardhat rehearsal, not a public-network deployment. No remote RPC or real-wallet key is used. Generated configuration changes in the disposable checkout are compared against the unchanged baseline constants generator **and the ENS loader used by local deployment**, with the same dependencies. The loader adds derived alias namehash/label metadata; comparing only the constants generator would miss that existing behavior. All protected files still require exact byte equality with these baseline outputs, and unexpected changes fail. Generated deployment settings are not committed into the PR.
 
 Run both audit views and the existing all-lockfile release gate. Any new high/critical finding or unavailable evidence remains a failure; do not ignore it with `|| true`:
 
