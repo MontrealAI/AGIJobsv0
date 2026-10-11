@@ -180,7 +180,8 @@
   color: #435c48;
   margin-bottom: 18px;
 }
-.club-name {
+.club-page .club-name {
+  margin: 0;
   font-weight: 750;
   font-size: 1rem;
   line-height: 1.5;
@@ -205,6 +206,9 @@
   border-radius: 10px;
 }
 .meeting-label {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.5;
   font-weight: 650;
 }
 .meeting-time {
@@ -220,7 +224,7 @@
   background: #fff;
   color: #344239;
 }
-.club-original .club-name {
+.club-page.club-original .club-name {
   margin-bottom: 20px;
 }
 .example-explanation {

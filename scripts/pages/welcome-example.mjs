@@ -184,7 +184,7 @@ export function renderWelcomeExample({ base, revision, lang = 'en' }) {
     ['next', 'none', 'some', 'all', 'changed'].map((key) => [key, t[key]])
   );
   const sample = () =>
-    `<div class="club-page"><p class="sample-label">${t.publicPage}</p><p class="club-name"><span aria-hidden="true">✿</span> ${t.club}</p><p class="club-invite">${t.invite}</p><div class="meeting"><p class="meeting-label">${t.nextMeeting}</p><p class="meeting-time">${t.time}</p><p>${t.place}</p></div><p class="club-welcome">${t.welcome}</p></div>`;
+    `<div class="club-page"><p class="sample-label">${t.publicPage}</p><h3 class="club-name"><span aria-hidden="true">✿</span> ${t.club}</h3><p class="club-invite">${t.invite}</p><div class="meeting"><h4 class="meeting-label">${t.nextMeeting}</h4><p class="meeting-time">${t.time}</p><p>${t.place}</p></div><p class="club-welcome">${t.welcome}</p></div>`;
   const heading = (i, title, help) =>
     `<p class="example-count">${t.step} ${i + 1} ${
       t.of
@@ -267,7 +267,7 @@ export function renderWelcomeExample({ base, revision, lang = 'en' }) {
     t.before
   }</p><div class="club-page club-original"><p class="sample-label">${
     t.publicPage
-  }</p><p class="club-name">${t.club}</p><p>${
+  }</p><h3 class="club-name">${t.club}</h3><p>${
     t.original
   }</p></div></div><div data-example-panel="after"><p class="version-label">${
     t.after

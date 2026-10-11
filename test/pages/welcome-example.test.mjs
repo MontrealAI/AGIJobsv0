@@ -26,6 +26,11 @@ for (const lang of ['en', 'fr']) {
         0
       );
       assert.equal(doc.querySelectorAll('input:checked').length, 0);
+      assert.equal(doc.querySelectorAll('.club-page h3.club-name').length, 3);
+      assert.equal(
+        doc.querySelectorAll('.club-page h4.meeting-label').length,
+        2
+      );
       assert.match(
         doc.querySelector('[http-equiv="Content-Security-Policy"]').content,
         /connect-src 'none'/
