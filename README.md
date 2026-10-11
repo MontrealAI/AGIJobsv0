@@ -4,6 +4,8 @@
 
 **[Open the guided welcome page →](https://montrealai.github.io/AGIJobsv0/start/) · [Commencer en français →](https://montrealai.github.io/AGIJobsv0/start/fr/)**
 
+**See it before you start:** [try a simple example](https://montrealai.github.io/AGIJobsv0/start/example/) · [essayer en français](https://montrealai.github.io/AGIJobsv0/start/fr/example/). Help a fictional local club improve its website: follow the request, compare two prepared pages and practice checking the result. No account, payment or technical knowledge is needed.
+
 Choose what you want to do: request work, connect an agent, review a result, or explore. The three-step guide has plain language, large controls, optional larger text, and editable examples. Prepare and save a job draft without an account, wallet, installation or payment. Continue straight into the detailed planner when you are ready. This is a public planning preview; live jobs require a separately configured service.
 
 **Easy to return to:** keep your progress when refreshing or switching English/French in the same tab, undo an example, and save or reopen your editable draft directly in the guide. Download a readable request or print it for someone helping you. Browser text preferences and enlarged text are supported, including narrow screens; storage restrictions are explained on the page.
