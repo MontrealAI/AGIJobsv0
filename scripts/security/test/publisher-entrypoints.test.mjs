@@ -105,3 +105,33 @@ test('legacy direct release command refuses missing w3up credentials before prov
     noNetwork(f);
   } finally { f.close(); }
 });
+
+test('static publisher retains upload-index evidence in latest and history without claiming storage deals', () => {
+  const entry = 'apps/onebox-static/scripts/publish.mjs';
+  const f = fixture(entry);
+  try {
+    const historical = { cid: 'historical-cid', pins: { web3: { pins: ['historical-pin'] } } };
+    fs.writeFileSync(f.config, JSON.stringify({ latest: historical, history: [historical] }));
+    // Stub only the upload boundary; execute the actual publisher and durable
+    // metadata writes with every network API denied by the fixture preload.
+    fs.writeFileSync(path.join(f.root, 'scripts/lib/w3up-upload.mjs'), `
+      export async function uploadCarFile(_file, root) {
+        return { cid: root, status: { provider: 'w3up', root, shards: [root],
+          confirmation: 'upload-index-readback', storageDealsVerified: false } };
+      }
+    `);
+    const child = run(f, entry, ['--skip-build', '--skip-pinata', '--skip-ens', '--skip-health']);
+    assert.equal(child.status, 0, child.stdout + child.stderr);
+    noNetwork(f);
+    const release = JSON.parse(fs.readFileSync(path.join(f.dist, 'release.json'), 'utf8'));
+    const deployed = JSON.parse(fs.readFileSync(f.config, 'utf8'));
+    const expected = { cid: release.cid, pins: null, provider: 'w3up', root: release.cid,
+      shards: [release.cid], confirmation: 'upload-index-readback', storageDealsVerified: false };
+    assert.deepEqual(deployed.latest.pins.web3, expected);
+    assert.deepEqual(deployed.history[0], deployed.latest);
+    assert.deepEqual(deployed.history[1], historical);
+    assert.equal(deployed.history.length, 2);
+    assert.equal(deployed.latest.pins.pinata, null);
+    assert.equal(deployed.latest.ens, null);
+  } finally { f.close(); }
+});

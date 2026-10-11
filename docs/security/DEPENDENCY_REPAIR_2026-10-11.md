@@ -69,6 +69,8 @@ The browser's legacy bearer-token uploader and orchestrator HTTP-pinner defaults
 
 Use a separate development checkout, not the operator's preserved rc.3 directory. Retain the baseline install and its audit evidence.
 
+Preservation checks use the candidate's merge base with the current PR base, not a permanently frozen rc.3 commit. Actions supplies the event's base SHA through `DEPENDENCY_PRESERVATION_BASE_SHA`; local runs use the fetched `origin/main` unless an explicit full base SHA is supplied. Missing or invalid CI base evidence fails. The report records both the base tip and the merge base, and still rejects protected changes and selected dependency-identity changes introduced by the candidate. The historical rc.3 baseline above describes this repair only; subsequently reviewed changes on main are not attributed to unrelated future PRs.
+
 ```bash
 npm run ci:preflight
 npm ci

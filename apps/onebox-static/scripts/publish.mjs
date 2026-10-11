@@ -154,6 +154,11 @@ function summarisePins(web3Result, pinataResult) {
     ? {
         cid: web3Result.cid ?? null,
         pins: web3Result.status?.pins ?? null,
+        provider: web3Result.status?.provider ?? null,
+        root: web3Result.status?.root ?? null,
+        shards: web3Result.status?.shards ?? null,
+        confirmation: web3Result.status?.confirmation ?? null,
+        storageDealsVerified: web3Result.status?.storageDealsVerified ?? null,
       }
     : null;
   const pinataSummary = pinataResult

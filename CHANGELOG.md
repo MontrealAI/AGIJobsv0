@@ -6,8 +6,9 @@ Dependency remediation and storage-publisher migration source candidate (2026-10
 
 - Update Handlebars, CycloneDX and Cypress; remove the obsolete nested EAS Hardhat toolchain while preserving the selected compiler, contract libraries and root Hardhat identities.
 - Maintain a provenance-checked Braces 3.0.3 depth-limit patch, locally identified as `3.0.4-agi.1`, with original-crash, differential and upstream regression tests. This is a downstream patch, not a published upstream fix; exceptionally deep patterns now fail with a controlled error. Root container installs receive the same verified archive.
-- Migrate the three Node release publishers from legacy Web3.Storage bearer tokens to an explicitly delegated Storacha upload agent. Validate CAR roots and same-root upload-index readback without claiming storage-deal verification or automatic rollback.
+- Migrate the three Node release publishers from legacy Web3.Storage bearer tokens to an explicitly delegated Storacha upload agent. Validate CAR roots and same-root upload-index readback, retain that confirmation in deployment history, and do not claim storage-deal verification or automatic rollback.
 - Require exact-source dependency qualification and unchanged full/production audit thresholds. Moderate and low findings remain; audit success alone does not certify the local patch or establish production readiness.
+- Compare preservation against each PR's merge base and qualify changes to the release-audit implementation, keeping protected source and dependency-identity checks enforced as main evolves.
 
 Solidity, economic behavior, compiler/network/deployment settings, demos and diagrams are preserved. Maintainer signing, independent review and live commissioning remain outstanding. Upload credentials must migrate; the browser legacy uploader and orchestrator provider defaults still require separate migration/commissioning. No public-chain deployment is included.
 

@@ -6,22 +6,30 @@ const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 const { createHash } = require('node:crypto');
 const ROOT = path.resolve(__dirname, '../..');
-const BASE = 'd0d7aabca5507b031cbe582b0ed68eff4e92d22f';
 const protectedPath = (name) => name.endsWith('.sol') ||
   /(^|\/)hardhat\.config\.[cm]?[jt]s$/.test(name) ||
   /^(config|deployment-config|scripts\/v2|scripts\/config|scripts\/deploy)\//.test(name) ||
   /^scripts\/(generate-constants(?:-impl)?\.ts|constants\.ts|release\/audit-dependencies\.)/.test(name) ||
   ['foundry.toml', 'remappings.txt'].includes(name);
-const git = (args, cwd = ROOT) => execFileSync('git', args, { cwd, encoding: 'utf8', maxBuffer: 20 * 1024 * 1024 });
+const git = (args, cwd = ROOT) => execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], maxBuffer: 20 * 1024 * 1024 });
 const names = (value) => value.split('\0').filter(Boolean);
 const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex');
 
-function checkSource() {
-  assert.equal(git(['rev-parse', '--verify', BASE + '^{commit}']).trim(), BASE);
-  const changed = names(git(['diff', '--name-only', '-z', BASE, 'HEAD']));
+function checkSource({ root = ROOT, env = process.env } = {}) {
+  // CI supplies the event's immutable base SHA. Local checks use the fetched
+  // main ref. Compare from the merge base so unrelated base-branch changes do
+  // not become changes attributed to this PR, and never fall back to rc.3.
+  const requestedBase = env.DEPENDENCY_PRESERVATION_BASE_SHA;
+  if (env.GITHUB_ACTIONS === 'true') assert(requestedBase, 'PR base SHA is required in Actions');
+  if (requestedBase !== undefined) assert.match(requestedBase, /^[0-9a-f]{40}$/i, 'Invalid PR base SHA');
+  const baseRef = requestedBase ?? 'refs/remotes/origin/main';
+  const baseTip = git(['rev-parse', '--verify', baseRef + '^{commit}'], root).trim();
+  const baseline = git(['merge-base', baseTip, 'HEAD'], root).trim();
+  assert.match(baseline, /^[0-9a-f]{40}$/i, 'A merge base is required');
+  const changed = names(git(['diff', '--name-only', '-z', baseline, 'HEAD'], root));
   assert.deepEqual(changed.filter(protectedPath), [], 'Protected source changed in the PR');
-  const before = JSON.parse(git(['show', BASE + ':package-lock.json'])).packages;
-  const after = JSON.parse(fs.readFileSync(path.join(ROOT, 'package-lock.json'), 'utf8')).packages;
+  const before = JSON.parse(git(['show', baseline + ':package-lock.json'], root)).packages;
+  const after = JSON.parse(fs.readFileSync(path.join(root, 'package-lock.json'), 'utf8')).packages;
   const preserved = {};
   for (const name of ['hardhat', 'solc', 'ethers', '@openzeppelin/contracts', '@prb/math',
     '@ethereum-attestation-service/eas-contracts', '@ethereum-attestation-service/eas-sdk']) {
@@ -31,7 +39,7 @@ function checkSource() {
     assert.deepEqual(fields.map((field) => after[key][field]), fields.map((field) => before[key][field]), name);
     preserved[name] = after[key].version;
   }
-  return { baseline: BASE, head: git(['rev-parse', 'HEAD']).trim(),
+  return { baseline, baseTip, head: git(['rev-parse', 'HEAD'], root).trim(),
     protectedSourceChanged: false, selectedDependencyIdentitiesPreserved: preserved };
 }
 
@@ -42,7 +50,7 @@ function checkGenerated() {
   const worktree = path.join(temp, 'source');
   let added = false;
   try {
-    git(['worktree', 'add', '--quiet', '--detach', worktree, BASE]);
+    git(['worktree', 'add', '--quiet', '--detach', worktree, result.baseline]);
     added = true;
     fs.symlinkSync(path.join(ROOT, 'node_modules'), path.join(worktree, 'node_modules'), 'dir');
     const cli = path.join(ROOT, 'node_modules/ts-node/dist/bin.js');

@@ -6,6 +6,7 @@ on:
       - 'package.json'
       - 'package-lock.json'
       - 'scripts/security/**'
+      - 'scripts/release/audit-dependencies.cjs'
       - 'vendor/braces/**'
       - 'scripts/lib/w3up-upload.mjs'
       - 'scripts/onebox-static/release.mjs'
@@ -45,6 +46,7 @@ jobs:
       - name: Run compatibility checks and retain every actual result
         env:
           SURFACE: ${{ matrix.surface }}
+          DEPENDENCY_PRESERVATION_BASE_SHA: ${{ github.event.pull_request.base.sha }}
           npm_config_fetch_retries: '0'
           npm_config_fetch_timeout: '30000'
           CI: '1'
