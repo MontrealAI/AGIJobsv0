@@ -1,0 +1,177 @@
+name: Dependency repair candidate (temporary)
+on:
+  push:
+    branches: [fix/dependency-repair-20261011]
+    paths: [.github/workflows/dependency-repair-resolve.yml]
+permissions:
+  contents: read
+concurrency:
+  group: dependency-repair-candidate
+  cancel-in-progress: false
+jobs:
+  resolve:
+    if: github.repository == 'MontrealAI/AGIJobsv0' && github.ref == 'refs/heads/fix/dependency-repair-20261011'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    outputs:
+      candidate: ${{ steps.commit.outputs.candidate }}
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: '.nvmrc'
+      - name: Select the pinned package manager without lifecycle execution
+        run: npm install --global npm@10.8.2 --ignore-scripts --no-audit --fund=false
+      - name: Apply bounded source changes and resolve the lockfile without lifecycle execution
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(node --version)" = v22.23.3
+          test "$(npm --version)" = 10.8.2
+          npm view @ucanto/principal@9.0.3 name version dist.integrity --json
+          echo 'c94dbc4ebbec93ca5e656fe92132397c3605e835bb6aa74416f0583b894af88f  .github/repairs/publishers.patch' | sha256sum -c -
+          git apply --check .github/repairs/publishers.patch
+          git apply .github/repairs/publishers.patch
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p = Path('package.json')
+          data = json.loads(p.read_text())
+          assert data['version'] == '2.1.0-rc.3'
+          assert data['dependencies'].pop('web3.storage') == '^4.5.5'
+          assert data['devDependencies']['@cyclonedx/cyclonedx-npm'] == '^4.0.3'
+          assert data['devDependencies']['cypress'] == '^13.15.0'
+          data['dependencies']['@web3-storage/w3up-client'] = '17.3.0'
+          data['dependencies']['@ucanto/principal'] = '9.0.3'
+          data['devDependencies']['@cyclonedx/cyclonedx-npm'] = '6.0.1'
+          data['devDependencies']['cypress'] = '16.1.1'
+          data['overrides']['handlebars'] = '4.7.10'
+          data['overrides']['@ethereum-attestation-service/eas-contracts'] = {'hardhat': '2.29.1'}
+          data['scripts']['test:dependency-compat'] = 'node --test scripts/security/test/dependency-compat.test.cjs scripts/security/test/w3up-upload.test.mjs'
+          p.write_text(json.dumps(data, indent=2) + '\n')
+          dest = Path('scripts/security/test')
+          dest.mkdir(parents=True, exist_ok=True)
+          for name in ['dependency-compat.test.cjs', 'w3up-upload.test.mjs']:
+              src = Path('test/security') / name
+              content = src.read_text()
+              content = content.replace("path.resolve(__dirname, '../..')", "path.resolve(__dirname, '../../..')")
+              content = content.replace("'../../scripts/lib/w3up-upload.mjs'", "'../../lib/w3up-upload.mjs'")
+              (dest / name).write_text(content)
+              src.unlink()
+          PY
+          npm install --package-lock-only --ignore-scripts --no-audit --fund=false
+          python3 - <<'PY'
+          import json, subprocess
+          from pathlib import Path
+          before = json.loads(subprocess.check_output(['git','show','HEAD:package-lock.json']))['packages']
+          after = json.loads(Path('package-lock.json').read_text())['packages']
+          for name in ['hardhat','solc','@openzeppelin/contracts','@prb/math','@ethereum-attestation-service/eas-contracts']:
+              key = 'node_modules/' + name
+              if key not in before: continue
+              assert key in after, key
+              for field in ['version','resolved','integrity']:
+                  assert before[key].get(field) == after[key].get(field), (key,field)
+          allowed = {'package.json','package-lock.json','apps/onebox/scripts/publish.mjs','apps/onebox-static/scripts/publish.mjs','scripts/onebox-static/release.mjs','test/security/dependency-compat.test.cjs','test/security/w3up-upload.test.mjs','scripts/security/test/dependency-compat.test.cjs','scripts/security/test/w3up-upload.test.mjs'}
+          changed = subprocess.check_output(['git','diff','--name-only'],text=True).splitlines()
+          added = subprocess.check_output(['git','ls-files','--others','--exclude-standard'],text=True).splitlines()
+          assert set(changed + added) <= allowed, (changed,added)
+          print('PRESERVATION: Solidity, compiler/config/deployment files and selected compiler-library packages unchanged.')
+          PY
+      - name: Commit generated candidate only to this repair branch
+        id: commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = refs/heads/fix/dependency-repair-20261011
+          test "$(git ls-remote origin "$GITHUB_REF" | cut -f1)" = "$GITHUB_SHA"
+          git add -- package.json package-lock.json apps/onebox/scripts/publish.mjs apps/onebox-static/scripts/publish.mjs scripts/onebox-static/release.mjs test/security/dependency-compat.test.cjs test/security/w3up-upload.test.mjs scripts/security/test
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'Resolve focused security updates and migrate release CAR uploads to w3up'
+          export AUTH_HEADER="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)"
+          git -c http.https://github.com/.extraheader="$AUTH_HEADER" push origin HEAD:refs/heads/fix/dependency-repair-20261011
+          unset AUTH_HEADER GH_TOKEN
+          echo "candidate=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          git show --stat --oneline HEAD
+  compatibility:
+    needs: resolve
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          ref: ${{ needs.resolve.outputs.candidate }}
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: '.nvmrc'
+      - run: npm install --global npm@10.8.2 --ignore-scripts --no-audit --fund=false
+      - run: npm ci
+      - run: npm run ci:preflight
+      - name: Installed dependency and uploader compatibility
+        run: npm run test:dependency-compat
+      - name: Existing receipt digest regression
+        run: node --test test/scripts/receipt-digest.test.cjs
+      - name: Compile unchanged contracts
+        run: npm run compile
+      - name: Contract size gate
+        run: npm run release:check-size
+      - name: Local paused staged deployment only
+        run: npm run deploy:local
+      - name: SBOM CLI smoke
+        run: npm run sbom:generate
+      - name: Cypress executable verification
+        run: npx --no-install cypress verify
+      - name: Preservation after tests
+        if: always()
+        run: git diff --exit-code -- contracts hardhat.config.js deployment-config config scripts/v2 scripts/generate-constants.ts
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: dependency-compatibility-${{ needs.resolve.outputs.candidate }}
+          path: |
+            reports/
+            artifacts/build-info/
+          if-no-files-found: warn
+          retention-days: 14
+  audits:
+    needs: resolve
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          ref: ${{ needs.resolve.outputs.candidate }}
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: '.nvmrc'
+      - run: npm install --global npm@10.8.2 --ignore-scripts --no-audit --fund=false
+      - name: Capture both audit scopes without suppressing the outcome
+        shell: bash
+        run: |
+          set -uo pipefail
+          mkdir -p reports/dependency-repair
+          npm audit --package-lock-only --ignore-scripts --include=dev --json --audit-level=high > reports/dependency-repair/audit-full.json
+          full=$?
+          npm audit --package-lock-only --ignore-scripts --omit=dev --json --audit-level=high > reports/dependency-repair/audit-production.json
+          production=$?
+          printf 'full=%s\nproduction=%s\n' "$full" "$production" | tee reports/dependency-repair/audit-exits.txt
+          node -e 'for(const s of ["full","production"]){const r=require("./reports/dependency-repair/audit-"+s+".json");console.log(s,JSON.stringify(r.metadata?.vulnerabilities));for(const [n,v] of Object.entries(r.vulnerabilities||{}))if(["critical","high"].includes(v.severity))console.log(n,JSON.stringify(v.via));}'
+          test "$full" = 0 && test "$production" = 0
+      - name: Existing all-lockfile production gate
+        if: always()
+        run: npm run release:audit-dependencies
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: dependency-audits-${{ needs.resolve.outputs.candidate }}
+          path: |
+            reports/dependency-repair/
+            reports/release/dependency-audit/
+          if-no-files-found: error
+          retention-days: 14
