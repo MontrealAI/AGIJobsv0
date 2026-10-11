@@ -25,14 +25,25 @@ export function readW3upConfig(env = process.env) {
 export async function createW3upClient(env = process.env) {
   const config = readW3upConfig(env);
   try {
-    const [Client, Signer, Proof, { StoreMemory }] = await Promise.all([
+    const [Client, Signer, Proof, Delegation, { StoreMemory }] = await Promise.all([
       import('@storacha/client'),
       import('@ucanto/principal/ed25519'),
       import('@storacha/client/proof'),
+      import('@storacha/client/delegation'),
       import('@storacha/client/stores/memory'),
     ]);
     const principal = Signer.parse(config.key);
-    const proof = await Proof.parse(config.proof);
+    let proof;
+    // Modern delegation.archive() CARs have an archive descriptor, not the
+    // legacy last-block root assumed by the SDK's raw-base64 fallback.
+    if (/^[A-Za-z0-9+/]+={0,2}$/.test(config.proof)) {
+      const bytes = Buffer.from(config.proof, 'base64');
+      if (bytes.toString('base64').replace(/=+$/, '') === config.proof.replace(/=+$/, '')) {
+        const extracted = await Delegation.extract(bytes);
+        if (extracted.ok) proof = extracted.ok;
+      }
+    }
+    proof ??= await Proof.parse(config.proof);
     const now = Math.floor(Date.now() / 1000);
     if (proof.audience.did() !== principal.did() ||
       (proof.expiration !== Infinity &&
