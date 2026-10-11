@@ -1,0 +1,30 @@
+name: Dependency repair registry inspection (temporary)
+on:
+  push:
+    branches: [fix/dependency-repair-20261011]
+    paths: [.github/workflows/dependency-repair-research.yml]
+permissions:
+  contents: read
+jobs:
+  inspect:
+    if: github.repository == 'MontrealAI/AGIJobsv0' && github.ref == 'refs/heads/fix/dependency-repair-20261011'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: .nvmrc
+      - name: Inspect published package candidates without installing or executing them
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --version
+          npm --version
+          for package in handlebars@4.7.10 @cyclonedx/cyclonedx-npm@6.0.1 extract-zip@latest braces@latest node-forge@latest @ethereum-attestation-service/eas-sdk@latest @ethereum-attestation-service/eas-contracts@latest @web3-storage/w3up-client@latest; do
+            echo "=== $package ==="
+            npm view "$package" name version engines dependencies peerDependencies dist.integrity repository --json
+          done
+          git diff --exit-code
