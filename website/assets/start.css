@@ -196,6 +196,16 @@ p {
 .begin-guide.button.secondary:hover {
   background: #fff;
 }
+.try-example {
+  display: inline-flex;
+  align-items: center;
+  min-height: 52px;
+  gap: 10px;
+  margin-top: 18px;
+  font-size: 1rem;
+  font-weight: 650;
+  color: #f0defe;
+}
 .eyebrow {
   font-size: 0.65rem;
   letter-spacing: 0.14em;
@@ -368,7 +378,7 @@ p {
 }
 .step-help {
   color: var(--muted);
-  font-size: 0.87rem;
+  font-size: 1rem;
   margin: 15px 0 24px;
 }
 .choices {
@@ -412,7 +422,7 @@ p {
 }
 .choice strong {
   display: block;
-  font-size: 0.95rem;
+  font-size: 1rem;
   line-height: 1.4;
   letter-spacing: -0.01em;
 }
@@ -421,7 +431,7 @@ p {
 }
 .choice small {
   display: block;
-  font-size: 0.875rem;
+  font-size: 1rem;
   color: var(--muted);
   margin-top: 4px;
   line-height: 1.5;
@@ -505,7 +515,7 @@ p {
   margin-top: 14px;
 }
 .guide [data-result] > p {
-  font-size: 0.9rem;
+  font-size: 1rem;
   color: var(--muted);
   margin-top: 20px;
 }
@@ -528,7 +538,7 @@ p {
 }
 .example-label,
 .field-help {
-  font-size: 0.875rem;
+  font-size: 1rem;
   color: var(--muted);
   margin: 14px 0;
   line-height: 1.6;
@@ -556,7 +566,7 @@ p {
 }
 .field-label {
   display: block;
-  font-size: 0.9rem;
+  font-size: 1rem;
   font-weight: 650;
   margin-bottom: 10px;
 }
@@ -569,7 +579,7 @@ textarea {
   min-height: 155px;
   padding: 14px;
   width: 100%;
-  font-size: 0.9rem;
+  font-size: 1rem;
   line-height: 1.6;
 }
 textarea::placeholder {
@@ -580,7 +590,7 @@ textarea[aria-invalid='true'] {
 }
 .simple-list {
   padding-left: 26px;
-  font-size: 0.91rem;
+  font-size: 1rem;
   line-height: 1.7;
   margin: 22px 0;
 }
@@ -596,7 +606,7 @@ textarea[aria-invalid='true'] {
   background: #f0ebf6;
   border-radius: 12px;
   padding: 18px;
-  font-size: 0.875rem;
+  font-size: 1rem;
   color: #66516f;
 }
 .ready-icon {
@@ -649,13 +659,13 @@ textarea[aria-invalid='true'] {
 .guide-disclosure summary {
   min-height: 48px;
   padding: 12px 4px;
-  font-size: 0.9rem;
+  font-size: 1rem;
   font-weight: 600;
   color: #482175;
   line-height: 1.5;
 }
 .guide-disclosure > p {
-  font-size: 0.9rem;
+  font-size: 1rem;
   color: var(--muted);
   padding: 0 4px 14px;
 }
@@ -700,7 +710,7 @@ textarea[aria-invalid='true'] {
   line-height: 1.4;
 }
 .how p:not(.eyebrow) {
-  font-size: 0.85rem;
+  font-size: 1rem;
   color: #d9cbe5;
   line-height: 1.7;
 }
@@ -721,7 +731,7 @@ textarea[aria-invalid='true'] {
   line-height: 1.5;
 }
 .faq details p {
-  font-size: 0.87rem;
+  font-size: 1rem;
   color: #d9cbe5;
   padding: 0 5px 25px;
   line-height: 1.8;

@@ -20,6 +20,7 @@ const copy = {
       'Tell us what you want to do. We’ll help you find your way, one step at a time.',
     welcome: 'No technical experience needed.',
     beginGuide: 'Start the guide',
+    tryExample: 'Try a simple example first',
     free: 'Free guided preview',
     account: 'No account or wallet needed',
     preview:
@@ -165,11 +166,11 @@ const copy = {
     ],
     reviewerNote:
       'The browser reviewer checks local files and records your findings. It does not approve a payment. An operator supplies the task and delivery files.',
-    explorerTitle: 'Imagine a simple comparison job.',
+    explorerTitle: 'Imagine a clearer website for a local club.',
     explorerItems: [
-      'You ask for a comparison of three public software tools.',
-      'An agent delivers a comparison table with source links.',
-      'A reviewer checks the facts against the original sources.',
+      'You ask for a meeting’s time and place to be easy to find on a phone.',
+      'A worker delivers an updated page and explains what changed.',
+      'You check the page against what you asked for.',
     ],
     explorerNote:
       'Clear request → useful delivery → independent review. Try a browser example next, with no installation or money involved.',
@@ -256,6 +257,7 @@ const copy = {
       'Dites-nous ce que vous voulez faire. Nous vous guiderons, une étape à la fois.',
     welcome: 'Aucune expérience technique nécessaire.',
     beginGuide: 'Commencer le guide',
+    tryExample: 'Essayer d’abord un exemple simple',
     free: 'Guide gratuit',
     account: 'Sans compte ni portefeuille',
     preview:
@@ -404,11 +406,11 @@ const copy = {
     ],
     reviewerNote:
       'L’outil de vérification lit des fichiers locaux et consigne vos conclusions. Il n’autorise aucun paiement. Un opérateur fournit la demande et les fichiers livrés.',
-    explorerTitle: 'Imaginez un simple travail de comparaison.',
+    explorerTitle: 'Imaginez un site plus clair pour un club de quartier.',
     explorerItems: [
-      'Vous demandez une comparaison de trois logiciels publics.',
-      'Un agent livre un tableau comparatif avec les liens vers ses sources.',
-      'Une autre personne vérifie les faits dans les sources originales.',
+      'Vous demandez que l’heure et le lieu d’une rencontre soient faciles à trouver sur un téléphone.',
+      'Un travailleur livre une page mise à jour et explique les changements.',
+      'Vous vérifiez la page par rapport à votre demande.',
     ],
     explorerNote:
       'Demande claire → livraison utile → vérification indépendante. Essayez ensuite un exemple dans votre navigateur, sans installation ni paiement.',
@@ -492,7 +494,7 @@ export function renderStartPage({ base, guide, revision, lang = 'en' }) {
     buyer: base + 'work/',
     worker: guide('docs/computer-work.md'),
     reviewer: base + 'review/',
-    explorer: base + '#walkthrough',
+    explorer: base + 'start/' + (lang === 'fr' ? 'fr/' : '') + 'example/',
   };
   const action = (role) => t[role + 'Action'];
   const messages = Object.fromEntries(
@@ -556,7 +558,11 @@ export function renderStartPage({ base, guide, revision, lang = 'en' }) {
     t.welcome
   }</p><a class="begin-guide button secondary" href="#guide">${
     t.beginGuide
-  } <span aria-hidden="true">→</span></a><div class="trust"><span><i aria-hidden="true">✓</i>${
+  } <span aria-hidden="true">→</span></a><a class="try-example" href="${
+    routes.explorer
+  }"><span aria-hidden="true">▷</span> ${
+    t.tryExample
+  }</a><div class="trust"><span><i aria-hidden="true">✓</i>${
     t.free
   }</span><span><i aria-hidden="true">✓</i>${
     t.account
