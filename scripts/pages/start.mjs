@@ -30,6 +30,26 @@ const copy = {
     of: 'of',
     choose: 'What would you like to do?',
     chooseHelp: 'Choose the option that sounds most like you.',
+    stepHelp: 'A little help with this step',
+    helpChoose:
+      'Not sure? Choose “I’m just exploring”. You can change your choice later. An AI agent is software that uses tools to carry out a task.',
+    helpPrepare:
+      'Take your time. An example gives you a starting point, and you can change every word. A good request says what you need and what you want delivered.',
+    helpOther:
+      'You are learning the steps here. Nothing is being registered or submitted. Use Back whenever you want to choose a different path.',
+    helpReady:
+      'Your request is still a draft. Copy, save or print it for someone helping you. The job planner adds more detail; opening it does not post your job.',
+    helpNext:
+      'The next link opens the tool or guide for your choice. You can return here at any time. The detailed tools are currently in English.',
+    savedTools: 'Saved drafts and starting over',
+    editBrief: 'Edit my request',
+    copyBrief: 'Copy my request',
+    copiedBrief:
+      'Copied. You can paste your request into a document or a message to someone helping you.',
+    copyFallback:
+      'Your browser could not copy automatically. Your request is selected below: press Ctrl+C (Windows) or ⌘C (Mac), or touch and hold to copy. You can also save or print it.',
+    copyLabel: 'Your request, ready to copy',
+    saveOptions: 'Save a readable copy or print',
     roles: [
       [
         'buyer',
@@ -70,7 +90,7 @@ const copy = {
       'Clears the progress saved in this tab. Save a file first if you want to keep a copy.',
     undoClear: 'Undo clearing',
     sessionReady:
-      'Your progress is kept in this tab, including when you change language or refresh. Save a file to continue another day.',
+      'Progress stays in this tab. Save an editable draft to keep it after closing the tab.',
     sessionUnavailable:
       'This browser cannot keep your progress. Stay on this page and save an editable draft before refreshing or changing language.',
     sessionRestored: 'Your progress is back. Continue where you left off.',
@@ -246,6 +266,26 @@ const copy = {
     of: 'sur',
     choose: 'Que souhaitez-vous faire?',
     chooseHelp: 'Choisissez l’option qui vous correspond.',
+    stepHelp: 'Un peu d’aide pour cette étape',
+    helpChoose:
+      'Vous hésitez? Choisissez « Je veux simplement découvrir ». Vous pourrez changer de choix. Un agent IA est un logiciel qui utilise des outils pour accomplir une tâche.',
+    helpPrepare:
+      'Prenez votre temps. Un exemple vous aide à commencer, et vous pouvez modifier chaque mot. Une bonne demande précise votre besoin et le résultat attendu.',
+    helpOther:
+      'Vous découvrez les étapes ici. Rien n’est inscrit ni soumis. Utilisez Retour pour choisir un autre parcours.',
+    helpReady:
+      'Votre demande reste un brouillon. Copiez-la, enregistrez-la ou imprimez-la pour une personne qui vous aide. Le planificateur permet de préciser les détails; l’ouvrir ne publie pas votre travail.',
+    helpNext:
+      'Le prochain lien ouvre l’outil ou le guide correspondant à votre choix. Vous pouvez revenir ici en tout temps. Les outils détaillés sont actuellement en anglais.',
+    savedTools: 'Brouillons enregistrés et nouveau départ',
+    editBrief: 'Modifier ma demande',
+    copyBrief: 'Copier ma demande',
+    copiedBrief:
+      'Copié. Vous pouvez coller votre demande dans un document ou un message à une personne qui vous aide.',
+    copyFallback:
+      'Votre navigateur n’a pas pu copier automatiquement. Votre demande est sélectionnée ci-dessous : appuyez sur Ctrl+C (Windows) ou ⌘C (Mac), ou faites un appui long pour copier. Vous pouvez aussi l’enregistrer ou l’imprimer.',
+    copyLabel: 'Votre demande, prête à copier',
+    saveOptions: 'Enregistrer une copie lisible ou imprimer',
     roles: [
       [
         'buyer',
@@ -286,7 +326,7 @@ const copy = {
       'Efface la progression conservée dans cet onglet. Enregistrez d’abord un fichier pour garder une copie.',
     undoClear: 'Annuler l’effacement',
     sessionReady:
-      'Votre progression reste dans cet onglet, même après un changement de langue ou une actualisation. Enregistrez un fichier pour revenir un autre jour.',
+      'Votre progression reste dans cet onglet. Enregistrez un brouillon modifiable pour le garder après la fermeture de l’onglet.',
     sessionUnavailable:
       'Ce navigateur ne peut pas conserver votre progression. Restez sur cette page et enregistrez un brouillon modifiable avant d’actualiser ou de changer de langue.',
     sessionRestored:
@@ -475,6 +515,8 @@ export function renderStartPage({ base, guide, revision, lang = 'en' }) {
       'briefHeading',
       'briefNext',
       'briefBoundary',
+      'copiedBrief',
+      'copyFallback',
     ].map((key) => [key, t[key]])
   );
   const list = (items) =>
@@ -594,7 +636,9 @@ export function renderStartPage({ base, guide, revision, lang = 'en' }) {
     t.readyHelp
   }</p><div data-result="buyer" hidden><div class="brief"><p class="eyebrow">${
     t.brief
-  }</p><p id="goal-summary"></p></div><p>${
+  }</p><p id="goal-summary"></p><button class="text-button" id="edit-start-brief" type="button">${
+    t.editBrief
+  }</button></div><p>${
     t.buyerNote
   }</p><a class="button primary" id="planner-handoff" href="${
     routes.buyer
@@ -602,13 +646,23 @@ export function renderStartPage({ base, guide, revision, lang = 'en' }) {
     t.buyerAction
   } <span aria-hidden="true">→</span></a><button class="button secondary" id="save-start-draft" type="button">${
     t.download
-  } <span aria-hidden="true">↓</span></button><button class="button secondary" id="save-readable-brief" type="button">${
+  } <span aria-hidden="true">↓</span></button><button class="button secondary" id="copy-start-brief" type="button">${
+    t.copyBrief
+  }</button><div id="copy-brief-fallback" hidden><label class="field-label" for="copy-brief-text">${
+    t.copyLabel
+  }</label><textarea id="copy-brief-text" rows="7" readonly aria-describedby="guide-status"></textarea></div><details id="brief-save-options" class="guide-disclosure"><summary>${
+    t.saveOptions
+  }</summary><div class="save-options"><button class="button secondary" id="save-readable-brief" type="button">${
     t.downloadBrief
   } <span aria-hidden="true">↓</span></button><button class="button secondary" id="print-start-brief" type="button">${
     t.printBrief
-  }</button><p class="field-help">${t.briefBoundary}</p><p class="field-help">${
-    t.handoffNote
-  }</p></div>${['worker', 'reviewer', 'explorer']
+  }</button></div></details><p class="field-help">${
+    t.briefBoundary
+  }</p><p class="field-help">${t.handoffNote}</p></div>${[
+    'worker',
+    'reviewer',
+    'explorer',
+  ]
     .map(
       (r) =>
         `<div data-result="${r}" hidden><div class="ready-icon" aria-hidden="true">✓</div><h3>${
@@ -629,9 +683,24 @@ export function renderStartPage({ base, guide, revision, lang = 'en' }) {
   } <span aria-hidden="true">→</span></button><button type="button" class="text-button" id="guide-restart" hidden>${
     t.restart
   }</button></div>
-    <p id="draft-session-note" class="draft-session-note" role="status"></p><div class="draft-tools"><p>${
-      t.draftTools
-    }</p><button class="button secondary" id="open-start-draft-button" type="button">${
+    <details id="step-help" class="guide-disclosure"><summary>${
+      t.stepHelp
+    }</summary><p data-help-step="0">${
+    t.helpChoose
+  }</p><p data-help-step="1" data-help-role="buyer" hidden>${
+    t.helpPrepare
+  }</p><p data-help-step="1" data-help-role="other" hidden>${
+    t.helpOther
+  }</p><p data-help-step="2" data-help-role="buyer" hidden>${
+    t.helpReady
+  }</p><p data-help-step="2" data-help-role="other" hidden>${
+    t.helpNext
+  }</p></details>
+    <p id="draft-session-note" class="draft-session-note" role="status"></p><details id="saved-draft-tools" class="guide-disclosure"><summary>${
+      t.savedTools
+    }</summary><div class="draft-tools"><p>${
+    t.draftTools
+  }</p><button class="button secondary" id="open-start-draft-button" type="button">${
     t.openDraft
   } <span aria-hidden="true">↑</span></button><input id="open-start-draft" type="file" accept=".json,application/json" aria-label="${
     t.openDraft
@@ -643,7 +712,7 @@ export function renderStartPage({ base, guide, revision, lang = 'en' }) {
     t.clearHelp
   }</p><button class="text-button" id="undo-clear" type="button" hidden>${
     t.undoClear
-  }</button></div>
+  }</button></div></details>
   </div><p class="privacy"><span aria-hidden="true">◇</span> ${
     t.privacy
   }</p></div></section>

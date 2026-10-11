@@ -399,6 +399,10 @@ p {
 .choice:hover {
   border-color: #9c7cb8;
 }
+.choice:focus-within {
+  outline: 3px solid #482175;
+  outline-offset: 4px;
+}
 .choice input {
   accent-color: #6537a5;
   width: 21px;
@@ -636,6 +640,39 @@ textarea[aria-invalid='true'] {
 .draft-tools > * {
   min-width: 0;
   max-width: 100%;
+}
+.guide-disclosure {
+  border-top: 1px solid var(--line);
+  margin-top: 18px;
+  min-width: 0;
+}
+.guide-disclosure summary {
+  min-height: 48px;
+  padding: 12px 4px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #482175;
+  line-height: 1.5;
+}
+.guide-disclosure > p {
+  font-size: 0.9rem;
+  color: var(--muted);
+  padding: 0 4px 14px;
+}
+.save-options {
+  display: grid;
+  gap: 12px;
+  padding-bottom: 12px;
+}
+#copy-brief-fallback {
+  margin-top: 20px;
+}
+#copy-brief-text {
+  min-height: 180px;
+}
+.brief .text-button {
+  margin-top: 10px;
+  padding-left: 0;
 }
 .how {
   padding: 56px 0;
@@ -951,6 +988,8 @@ textarea[aria-invalid='true'] {
   .privacy,
   .begin-guide.button,
   .draft-tools,
+  .guide-disclosure,
+  #copy-brief-fallback,
   .guide button,
   .guide [data-result] > a {
     display: none;

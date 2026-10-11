@@ -42,6 +42,18 @@ if (wizard) {
       runMinutes: '',
       reviewerMinutes: '',
     });
+  const readableBrief = () =>
+    [
+      messages.briefTitle,
+      messages.briefHeading,
+      goal.value,
+      messages.briefNext,
+      messages.briefBoundary,
+    ].join('\n\n') + '\n';
+  function clearCopyFallback() {
+    $('copy-brief-fallback').hidden = true;
+    $('copy-brief-text').value = '';
+  }
   function sessionNote() {
     const text = storageAvailable
       ? messages.sessionReady
@@ -79,6 +91,11 @@ if (wizard) {
       panel.hidden = panel.dataset.detail !== role;
     for (const panel of wizard.querySelectorAll('[data-result]'))
       panel.hidden = panel.dataset.result !== role;
+    for (const tip of wizard.querySelectorAll('[data-help-step]'))
+      tip.hidden =
+        Number(tip.dataset.helpStep) !== step ||
+        (tip.dataset.helpRole &&
+          tip.dataset.helpRole !== (role === 'buyer' ? 'buyer' : 'other'));
     for (const item of wizard.querySelectorAll('[data-progress]')) {
       if (Number(item.dataset.progress) === step)
         item.setAttribute('aria-current', 'step');
@@ -88,6 +105,7 @@ if (wizard) {
     $('guide-next').hidden = step === 2;
     $('guide-restart').hidden = step !== 2;
     $('planner-fallback').hidden = true;
+    clearCopyFallback();
     $('goal-summary').textContent = goal.value;
     status.textContent = '';
     updateTools();
@@ -139,6 +157,10 @@ if (wizard) {
     });
   $('guide-back').addEventListener('click', () => show(Math.max(0, step - 1)));
   $('guide-restart').addEventListener('click', () => show(0));
+  $('edit-start-brief').addEventListener('click', () => {
+    show(1, false);
+    goal.focus();
+  });
   goal.addEventListener('input', () => {
     goal.removeAttribute('aria-invalid');
     status.textContent = '';
@@ -228,20 +250,32 @@ if (wizard) {
     }
   });
   $('save-readable-brief').addEventListener('click', () => {
-    const text =
-      [
-        messages.briefTitle,
-        messages.briefHeading,
-        goal.value,
-        messages.briefNext,
-        messages.briefBoundary,
-      ].join('\n\n') + '\n';
     download(
-      text,
+      readableBrief(),
       'agi-jobs-work-request.txt',
       'text/plain;charset=utf-8',
       messages.briefSaved
     );
+  });
+  $('copy-start-brief').addEventListener('click', async () => {
+    const copying = editVersion;
+    const text = readableBrief();
+    const button = $('copy-start-brief');
+    button.disabled = true;
+    clearCopyFallback();
+    try {
+      await navigator.clipboard.writeText(text);
+      if (copying === editVersion) status.textContent = messages.copiedBrief;
+    } catch {
+      if (copying !== editVersion) return;
+      $('copy-brief-fallback').hidden = false;
+      $('copy-brief-text').value = text;
+      status.textContent = messages.copyFallback;
+      $('copy-brief-text').focus();
+      $('copy-brief-text').select();
+    } finally {
+      button.disabled = false;
+    }
   });
   $('print-start-brief').addEventListener('click', () => window.print());
   $('open-start-draft-button').addEventListener('click', () =>

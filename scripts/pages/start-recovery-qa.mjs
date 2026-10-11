@@ -131,6 +131,10 @@ export async function verifyStartRecovery({
       key: transferKey,
       text: saveEditableDraft(draftFields(goal, 'feature')),
     });
+    if (
+      (await page.locator('#saved-draft-tools').getAttribute('open')) === null
+    )
+      await page.locator('#saved-draft-tools > summary').click();
     await page.locator('#clear-start-progress').click();
     assert.equal(await page.locator('[data-step="0"]').isVisible(), true);
     assert.equal(await page.locator('[name="role"]:checked').count(), 0);
@@ -272,6 +276,10 @@ export async function verifyStartRecovery({
       assert.equal(await page.locator('#start-goal').inputValue(), newerGoal);
       assert.deepEqual(await readProgress(), newerState);
       await beginDelayedRead();
+      if (
+        (await page.locator('#saved-draft-tools').getAttribute('open')) === null
+      )
+        await page.locator('#saved-draft-tools > summary').click();
       await page.locator('#clear-start-progress').click();
       await completeDelayedRead();
       assert.equal(await page.locator('[data-step="0"]').isVisible(), true);
@@ -298,6 +306,7 @@ export async function verifyStartRecovery({
     );
     await page.locator('#start-goal').fill(goal);
     await page.locator('#guide-next').click();
+    await page.locator('#brief-save-options > summary').click();
     const downloaded = page.waitForEvent('download');
     await page.locator('#save-readable-brief').click();
     const download = await downloaded;

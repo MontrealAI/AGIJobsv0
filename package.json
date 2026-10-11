@@ -545,5 +545,5 @@
     "deploy:local": "hardhat run scripts/v2/deployDefaults.ts --network hardhat"
   },
   "type": "commonjs",
-  "version": "2.1.0-rc.2"
+  "version": "2.1.0-rc.3"
 }
