@@ -17,13 +17,13 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version-file: .nvmrc
-      - name: Inspect published package candidates without installing or executing them
+      - name: Inspect published compatibility candidates without installing or executing them
         shell: bash
         run: |
           set -euo pipefail
           node --version
           npm --version
-          for package in handlebars@4.7.10 @cyclonedx/cyclonedx-npm@6.0.1 extract-zip@latest braces@latest node-forge@latest @ethereum-attestation-service/eas-sdk@latest @ethereum-attestation-service/eas-contracts@latest @web3-storage/w3up-client@latest; do
+          for package in hardhat@2.29.1 cypress@16.1.1 micromatch@latest jest@30.5.2 jest-config@30.5.2 jest-haste-map@30.5.2 ts-jest@latest tailwindcss@3.4.19 fast-glob@latest @ucanto/principal@9.0.3; do
             echo "=== $package ==="
             npm view "$package" name version engines dependencies peerDependencies dist.integrity repository --json
           done
