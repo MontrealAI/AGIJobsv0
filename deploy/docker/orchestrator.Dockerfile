@@ -12,6 +12,7 @@ ENV \
 
 RUN apk upgrade --no-cache && apk add --no-cache python3 make g++
 COPY package*.json .npmrc ./
+COPY vendor/braces/braces-3.0.4-agi.1.tgz ./vendor/braces/braces-3.0.4-agi.1.tgz
 RUN --mount=type=cache,target=/root/.npm \
     set -eu; \
     npm ci --no-progress --registry=https://registry.npmjs.org/ \
@@ -32,6 +33,7 @@ ENV \
 
 RUN apk upgrade --no-cache && apk add --no-cache python3 make g++
 COPY package*.json .npmrc ./
+COPY vendor/braces/braces-3.0.4-agi.1.tgz ./vendor/braces/braces-3.0.4-agi.1.tgz
 RUN --mount=type=cache,target=/root/.npm \
     set -eu; \
     npm ci --omit=dev --no-progress --registry=https://registry.npmjs.org/ \

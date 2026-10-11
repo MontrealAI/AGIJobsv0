@@ -21,6 +21,7 @@ RUN chmod +x /usr/local/bin/npm-ci-retry.sh
 
 FROM base-build AS builder
 COPY package.json package-lock.json ./
+COPY vendor/braces/braces-3.0.4-agi.1.tgz ./vendor/braces/braces-3.0.4-agi.1.tgz
 RUN npm-ci-retry.sh
 COPY . .
 RUN npm run build:gateway \

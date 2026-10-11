@@ -1,0 +1,50 @@
+{
+  "advisory": "GHSA-vfj7-8cjw-p6xm",
+  "upstream": {
+    "version": "3.0.3",
+    "integrity": "sha512-yQbXgO/OSZVD2IsiLlro+7Hf6Q18EJrKSEsdoMzKePKXct3gvD8oLcOQdIzGupr5Fj+EDe8gO/lxc1BzfMpxvA==",
+    "files": {
+      "LICENSE": "35bdd8a44339719441900fb50fbefc5e2dca1ca662cbaed7a687de842c8b70f2",
+      "README.md": "947b0fc3cc12eaaa070207126213fbdf9ab2bf8cd13dcc6e4007b36b79309866",
+      "index.js": "332ea07c7b006361aad12aa994ca75dc1db8e8382b884909e2f38f10b85c88a4",
+      "lib/compile.js": "dc98f22eee3d511785d92a00758d5f0d48efed5f5813bdecc2de430c529b5c9f",
+      "lib/constants.js": "c18ac5adb57308f1ce42a28552da3a31f5d83709743ebd9a636336813a744d4b",
+      "lib/expand.js": "41ccc196ebfa7b7781a634e721eb744e4e7bcb54cba427a7e3d6806a1b9e58f7",
+      "lib/parse.js": "e572166565f15fa6ad9865ae49d678218e32aabfd1b3720f6d0d43d39800d310",
+      "lib/stringify.js": "379f22d77bfa1478341ccd49c5e4267464aabcbba03558bab332aac23fc6f23a",
+      "lib/utils.js": "b5a7596aa67730412b3c029ef09e84e6b67b8e445cffd35d1d295549c89066c7",
+      "package.json": "56f08b888a4f30dc7cf8a7dbb36ffe92b737912ba36abe9d069d32167c957ac7"
+    },
+    "registryArchive": "https://registry.npmjs.org/braces/-/braces-3.0.3.tgz",
+    "sourceCommit": "74b2db2938fad48a2ea54a9c8bf27a37a62c350d"
+  },
+  "patched": {
+    "version": "3.0.4-agi.1",
+    "integrity": "sha512-gjbnGuR2aRX8Rqmn/7UstyhTl8fyow4WV25mks+odp2Zhzc4IqPsiJ6bRDNPUXpJMOLgjC7Ijf2czVRKVLPHOQ==",
+    "files": {
+      "LICENSE": "35bdd8a44339719441900fb50fbefc5e2dca1ca662cbaed7a687de842c8b70f2",
+      "README.md": "947b0fc3cc12eaaa070207126213fbdf9ab2bf8cd13dcc6e4007b36b79309866",
+      "index.js": "332ea07c7b006361aad12aa994ca75dc1db8e8382b884909e2f38f10b85c88a4",
+      "lib/compile.js": "1ccaeb1345b83d02b7e07f05792c005238bf83aeb4a4b1252c4e1ad8a7ade98b",
+      "lib/constants.js": "c18ac5adb57308f1ce42a28552da3a31f5d83709743ebd9a636336813a744d4b",
+      "lib/depth.js": "c72a67342f7cc0ff657cb4dfe624559737f3a91496de4f85a7c682749e17cef1",
+      "lib/expand.js": "d811a93efe40757dbf3e8715a494abf0263ba19cbd9b163a0bd10f850f025d4a",
+      "lib/parse.js": "ca4c899b2e7343ad6ebaaf330fc798242bdab756112b01d976e8dddf3201324f",
+      "lib/stringify.js": "7976a9b633a45860cc6e1dbe37525464f051f5174ca9515d1878fe583cab7623",
+      "lib/utils.js": "b5a7596aa67730412b3c029ef09e84e6b67b8e445cffd35d1d295549c89066c7",
+      "package.json": "c40f3ec496a6606b52a529badc47fc965e2ca91f0d41286b6b228a0a8c0d8860"
+    }
+  },
+  "upstreamTests": {
+    "sourceCommit": "74b2db2938fad48a2ea54a9c8bf27a37a62c350d",
+    "scope": "Unmodified compile, parse, regression, multiple-pattern, minimatch and README suites. Bash-comparison suites are not included.",
+    "files": {
+      "braces.compile.js": "c47a9565c0be7287958667f31f64a060a38f91fbe98d27953b770ee2736ff077",
+      "braces.parse.js": "4688e08098264b7851f03ea894d30bd992fea307f8a334bf833a4e2bdae30a87",
+      "minimatch.js": "6b65901c2a0a2b680dbe1178311578037ee6601eab1631929ac2d10b2e37dd08",
+      "multiples.js": "d0b779166faf40693b5898a3766ae6c91aec600a714cf1b36a8b85067e90b7ac",
+      "readme.js": "91202e5e3e926d47b11ebe5f2b04db560c1048aac97e67f61d521ce0cb220b15",
+      "regression.js": "1595ae9cea47947b1ea258673151c2428a780859fc1efd5d9d92b035f1887470"
+    }
+  }
+}

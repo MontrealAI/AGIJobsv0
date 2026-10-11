@@ -6,6 +6,7 @@ on:
       - 'package.json'
       - 'package-lock.json'
       - 'scripts/security/**'
+      - 'vendor/braces/**'
       - 'scripts/lib/w3up-upload.mjs'
       - 'scripts/onebox-static/release.mjs'
       - 'apps/onebox/scripts/publish.mjs'
@@ -64,6 +65,7 @@ jobs:
             return "$code"
           }
           run_check source-preservation node scripts/security/check-dependency-preservation.cjs source
+          run_check braces-provenance node scripts/security/verify-braces-patch.cjs --source
           case "$SURFACE" in
             libraries)
               run_check preflight npm run ci:preflight
