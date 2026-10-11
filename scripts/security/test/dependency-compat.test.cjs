@@ -59,8 +59,12 @@ test('Handlebars rejects code-bearing NumberLiteral AST without executing it', (
   } finally { delete globalThis.__agiHandlebarsExecuted; }
 });
 test('Cypress and SBOM tool upgrades have their expected installed versions', () => {
-  assert.equal(require('cypress/package.json').version, '15.21.1');
-  assert.equal(require('@cyclonedx/cyclonedx-npm/package.json').version, '6.0.1');
+  for (const [name, version] of [['cypress', '15.21.1'], ['@cyclonedx/cyclonedx-npm', '6.0.1']]) {
+    const item = JSON.parse(fs.readFileSync(path.join(root, 'node_modules', name, 'package.json'), 'utf8'));
+    assert.equal(item.name, name);
+    assert.equal(item.version, version);
+    assert.equal(lock.packages['node_modules/' + name].version, version);
+  }
 });
 test('legacy storage, libp2p-crypto, node-forge and extract-zip are absent from the root lock graph', () => {
   const forbidden = /(?:^|\/)node_modules\/(web3\.storage|libp2p-crypto|node-forge|extract-zip)$/;
