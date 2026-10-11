@@ -33,7 +33,12 @@ export async function createW3upClient(env = process.env) {
     ]);
     const principal = Signer.parse(config.key);
     const proof = await Proof.parse(config.proof);
-    if (proof.audience.did() !== principal.did()) {
+    const now = Math.floor(Date.now() / 1000);
+    if (proof.audience.did() !== principal.did() ||
+      (proof.expiration !== Infinity &&
+        (!Number.isSafeInteger(proof.expiration) || proof.expiration <= now)) ||
+      (proof.notBefore !== undefined &&
+        (!Number.isSafeInteger(proof.notBefore) || proof.notBefore > now))) {
       throw fail('W3UP_AUTHORIZATION_INVALID');
     }
     const client = await Client.create({ principal, store: new StoreMemory() });
