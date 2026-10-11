@@ -55,8 +55,8 @@ test('invalid principal/proof error cannot leak either secret or a cause', async
 });
 test('installed w3up client supports in-memory Ed25519 agents without provisioning', async () => {
   const [{ create }, Signer, { StoreMemory }] = await Promise.all([
-    import('@web3-storage/w3up-client'), import('@ucanto/principal/ed25519'),
-    import('@web3-storage/w3up-client/stores/memory'),
+    import('@storacha/client'), import('@ucanto/principal/ed25519'),
+    import('@storacha/client/stores/memory'),
   ]);
   const principal = await Signer.generate();
   const client = await create({ principal, store: new StoreMemory() });

@@ -39,8 +39,8 @@
     "ws": "^8.22.0",
     "yargs": "^17.7.2",
     "zod": "^3.25.76",
-    "@web3-storage/w3up-client": "17.3.0",
-    "@ucanto/principal": "9.0.3"
+    "@ucanto/principal": "9.0.3",
+    "@storacha/client": "2.1.4"
   },
   "description": "[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE) [![CI](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml?query=branch%3Amain)",
   "packageManager": "npm@10.8.2",
@@ -548,7 +548,7 @@
     "deploy:plan": "ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/plan-deploy.ts",
     "deploy:staged": "hardhat run scripts/v2/deployDefaults.ts",
     "deploy:local": "hardhat run scripts/v2/deployDefaults.ts --network hardhat",
-    "test:dependency-compat": "node --test scripts/security/test/dependency-compat.test.cjs scripts/security/test/w3up-upload.test.mjs"
+    "test:dependency-compat": "node --test scripts/security/test/*.test.cjs scripts/security/test/*.test.mjs"
   },
   "type": "commonjs",
   "version": "2.1.0-rc.3"

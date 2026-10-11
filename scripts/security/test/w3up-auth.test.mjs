@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as Signer from '@ucanto/principal/ed25519';
-import { delegate } from '@web3-storage/w3up-client/delegation';
+import { delegate } from '@storacha/client/delegation';
 import { createW3upClient } from '../../lib/w3up-upload.mjs';
 
 async function authorization(overrides = {}) {

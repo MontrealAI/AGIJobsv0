@@ -26,10 +26,10 @@ export async function createW3upClient(env = process.env) {
   const config = readW3upConfig(env);
   try {
     const [Client, Signer, Proof, { StoreMemory }] = await Promise.all([
-      import('@web3-storage/w3up-client'),
+      import('@storacha/client'),
       import('@ucanto/principal/ed25519'),
-      import('@web3-storage/w3up-client/proof'),
-      import('@web3-storage/w3up-client/stores/memory'),
+      import('@storacha/client/proof'),
+      import('@storacha/client/stores/memory'),
     ]);
     const principal = Signer.parse(config.key);
     const proof = await Proof.parse(config.proof);
