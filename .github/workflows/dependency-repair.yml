@@ -1,0 +1,122 @@
+name: Dependency repair qualification
+
+on:
+  pull_request:
+    paths:
+      - 'package.json'
+      - 'package-lock.json'
+      - 'scripts/security/**'
+      - 'scripts/release/audit-dependencies.cjs'
+      - 'vendor/braces/**'
+      - 'scripts/lib/w3up-upload.mjs'
+      - 'scripts/onebox-static/release.mjs'
+      - 'apps/onebox/scripts/publish.mjs'
+      - 'apps/onebox-static/scripts/publish.mjs'
+      - 'docs/security/DEPENDENCY_REPAIR_2026-10-11.md'
+      - '.github/workflows/dependency-repair.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dependency-repair-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  compatibility:
+    strategy:
+      fail-fast: false
+      matrix:
+        surface: [libraries, contracts, browser, production-audit, full-audit]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: '.nvmrc'
+      - run: npm install --global npm@10.8.2 --ignore-scripts --no-audit --fund=false
+      - name: Install the committed dependency graph
+        if: matrix.surface != 'production-audit' && matrix.surface != 'full-audit'
+        run: npm ci --fetch-retries=1 --fetch-timeout=60000
+      - name: Run compatibility checks and retain every actual result
+        env:
+          SURFACE: ${{ matrix.surface }}
+          DEPENDENCY_PRESERVATION_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          npm_config_fetch_retries: '0'
+          npm_config_fetch_timeout: '30000'
+          CI: '1'
+        shell: bash
+        run: |
+          set +e
+          set -uo pipefail
+          evidence="reports/dependency-repair-$SURFACE"
+          mkdir -p "$evidence"
+          failed=0
+          run_check() {
+            name="$1"; shift
+            "$@" > "$evidence/$name.log" 2>&1
+            code=$?
+            printf '%s %s\n' "$name" "$code" | tee -a "$evidence/exits.txt"
+            cat "$evidence/$name.log"
+            if [ "$code" != 0 ]; then failed=1; fi
+            return "$code"
+          }
+          run_check source-preservation node scripts/security/check-dependency-preservation.cjs source
+          run_check braces-provenance node scripts/security/verify-braces-patch.cjs --source
+          case "$SURFACE" in
+            libraries)
+              run_check preflight npm run ci:preflight
+              run_check compatibility npm run test:dependency-compat
+              run_check eas-receipts node --test attestation/eas/test/receipt-digest.test.mjs
+              run_check sbom npm run sbom:generate
+              run_check publisher-syntax node --check scripts/onebox-static/release.mjs
+              ;;
+            contracts)
+              if run_check compile npm run compile; then
+                run_check size npm run release:check-size
+                run_check local-deploy npm run deploy:local
+                run_check deployer-tests npx --no-install hardhat test --no-compile test/v2/Deployer.test.js test/v2/DeploymentScripts.test.js test/v2/DeploymentCli.test.js
+                run_check generated-preservation node scripts/security/check-dependency-preservation.cjs generated
+              fi
+              ;;
+            browser)
+              run_check console-install npm --prefix apps/console ci --fetch-retries=1 --fetch-timeout=60000
+              run_check cypress-verify npx --no-install cypress verify
+              run_check browser npm run webapp:e2e
+              ;;
+            production-audit)
+              run_check all-locks npm run release:audit-dependencies
+              npm audit --package-lock-only --ignore-scripts --omit=dev --json --audit-level=high > "$evidence/audit-production.json"
+              code=$?
+              printf 'production-audit %s\n' "$code" | tee -a "$evidence/exits.txt"
+              if [ "$code" != 0 ]; then failed=1; fi
+              node -e 'const a=require("./reports/dependency-repair-production-audit/audit-production.json");if(a.error||!a.metadata?.vulnerabilities)process.exit(1);console.log(JSON.stringify(a.metadata.vulnerabilities));' || failed=1
+              ;;
+            full-audit)
+              npm audit --package-lock-only --ignore-scripts --include=dev --include=optional --include=peer --json --audit-level=high > "$evidence/audit-full.json"
+              code=$?
+              printf 'full-audit %s\n' "$code" | tee -a "$evidence/exits.txt"
+              if [ "$code" != 0 ]; then failed=1; fi
+              node -e 'const a=require("./reports/dependency-repair-full-audit/audit-full.json");if(a.error||!a.metadata?.vulnerabilities)process.exit(1);console.log(JSON.stringify(a.metadata.vulnerabilities));for(const [n,v]of Object.entries(a.vulnerabilities||{}))if(["high","critical"].includes(v.severity))console.log(n,v.severity,JSON.stringify(v.via));' || failed=1
+              ;;
+          esac
+          git rev-parse HEAD > "$evidence/candidate.txt"
+          node --version > "$evidence/node-version.txt"
+          npm --version > "$evidence/npm-version.txt"
+          exit "$failed"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: dependency-${{ matrix.surface }}-${{ github.event.pull_request.head.sha }}
+          path: |
+            reports/dependency-repair-${{ matrix.surface }}/
+            reports/release/dependency-audit/
+            reports/sbom/
+            cypress/screenshots/
+          if-no-files-found: warn
+          retention-days: 14

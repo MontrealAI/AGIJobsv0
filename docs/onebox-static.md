@@ -87,7 +87,7 @@ The static client ships with a **friendly error dictionary** (`FRIENDLY_ERROR_RU
 The `apps/onebox-static/scripts/publish.mjs` helper (surfaced as `npm run onebox:static:publish`) automates the full release flow:
 
 1. Unless `--skip-build` is supplied, it executes the hashed asset build (`npm run onebox:static:build`) and integrity audit (`npm run verify:sri`).
-2. It packs `dist/` into a deterministic CAR file, uploads the archive to web3.storage, and requests a redundant Pinata pin (each step can be disabled with `--skip-web3` or `--skip-pinata`).
+2. It packs `dist/` into a deterministic CAR file, uploads the same archive through the maintained `@storacha/client` w3up API, verifies the returned CID and upload-index record, and requests a redundant Pinata pin (each step can be disabled with `--skip-web3` or `--skip-pinata`).
 3. When ENS credentials are provided it sets the contenthash for the configured name and probes every configured gateway plus the `.limo` URL to measure cold-load performance against the 99.9% availability SLO (skip with `--skip-ens` or `--skip-health`).
 
 On success the script prints the root CID, known gateways, the ENS transaction hash, and the live `eth.limo` URL for handoff. It also writes `apps/onebox-static/dist/release.json` **and** updates `deployment-config/onebox-static.json` with a `latest` snapshot plus a rolling `history` array so SLO dashboards can track when each revision went live and which gateways should be probed.
@@ -96,7 +96,9 @@ On success the script prints the root CID, known gateways, the ENS transaction h
 
 | Variable | Purpose | Source |
 | -------- | ------- | ------ |
-| `WEB3_STORAGE_TOKEN` *(or `W3S_TOKEN`)* | API token for web3.storage uploads and pin verification. | web3.storage console (scoped to static hosting uploads). |
+| `W3UP_KEY` | Serialized Ed25519 release-agent key; never an Ethereum key or browser secret. | Dedicated Storacha upload agent. |
+| `W3UP_PROOF` | Delegation CAR encoded as base64, addressed to that agent and authorizing the selected space. | Authorized space administrator. |
+| `W3UP_SPACE_DID` | Exact `did:key:...` of the provisioned upload space. | Reviewed Storacha space. |
 | `PINATA_JWT` *(or `PINATA_API_KEY` + `PINATA_SECRET_API_KEY`)* | Credentials used to request a redundant pin via Pinata. | Pinata API keys. |
 | `PINATA_HOST_NODES` *(optional)* | Comma-separated multiaddrs to hint preferred Pinata pinning nodes. | Pinata gateway configuration. |
 | `ENS_NAME` *(or `ONEBOX_ENS_NAME`)* | ENS name that should resolve to the published bundle (e.g., `onebox.alice.eth`). | ENS delegation plan. |
@@ -104,6 +106,8 @@ On success the script prints the root CID, known gateways, the ENS transaction h
 | `ENS_RPC_URL` *(or `ONEBOX_ENS_RPC_URL`)* | HTTPS RPC endpoint for the target network (e.g., Base mainnet). | Alchemy, Infura, or in-house node. |
 | `ENS_RESOLVER` *(optional)* | Resolver contract that exposes `setContenthash` if the default lookup should be overridden. | ENS registry/resolver configuration. |
 | `ONEBOX_RELEASE_LABEL` *(optional)* | Override for the default timestamp-based release name (useful for CI tagging). | Release automation. |
+
+Legacy bearer-token variables are not accepted by these Node publishers. The separate browser upload configuration below is not migrated by this change. See [dependency repair and storage migration](security/DEPENDENCY_REPAIR_2026-10-11.md) for authority, metadata and validation boundaries. Upload-index confirmation is not proof of storage deals or permanent availability.
 
 Ensure the signer has the necessary permissions on the resolver before running the release script.
 
