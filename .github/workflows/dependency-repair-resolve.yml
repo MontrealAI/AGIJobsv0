@@ -25,36 +25,34 @@ jobs:
         with:
           node-version-file: '.nvmrc'
       - run: npm install --global npm@10.8.2 --ignore-scripts --no-audit --fund=false
-      - name: Resolve exact compatible candidates using registry metadata, not edited package identities
+      - name: Resolve the maintained published client without running dependency lifecycle scripts
         shell: bash
         run: |
           set -euo pipefail
-          test "$(node --version)" = v22.23.3
-          test "$(npm --version)" = 10.8.2
+          npm view @storacha/client@2.1.4 name version deprecated engines dependencies dist.integrity --json > "$RUNNER_TEMP/client.json"
+          cat "$RUNNER_TEMP/client.json"
           python3 - <<'PY'
-          import json
+          import json, os
           from pathlib import Path
-          p = Path('package.json')
-          data = json.loads(p.read_text())
-          assert data['devDependencies']['cypress'] == '16.1.1'
-          assert data['overrides']['@ethereum-attestation-service/eas-contracts']['hardhat'] == '2.29.1'
-          data['devDependencies']['cypress'] = '15.21.1'
+          meta = json.loads(Path(os.environ['RUNNER_TEMP'],'client.json').read_text())
+          assert meta['name'] == '@storacha/client' and meta['version'] == '2.1.4'
+          assert not meta.get('deprecated')
+          p = Path('package.json'); data = json.loads(p.read_text())
+          assert data['dependencies'].pop('@web3-storage/w3up-client') == '17.3.0'
+          data['dependencies']['@storacha/client'] = '2.1.4'
+          data['scripts']['test:dependency-compat'] = 'node --test scripts/security/test/*.test.cjs scripts/security/test/*.test.mjs'
           p.write_text(json.dumps(data, indent=2, ensure_ascii=False) + '\n')
-          t = Path('scripts/security/test/dependency-compat.test.cjs')
-          text = t.read_text()
-          assert text.count("'16.1.1'") == 1
-          t.write_text(text.replace("'16.1.1'", "'15.21.1'"))
-          # npm retained the old nested resolution despite the reviewed override.
-          # Invalidate only that parent's lock subtree, then let npm fetch/resolve
-          # real metadata and integrity. Do not manufacture versions or hashes.
-          p = Path('package-lock.json')
-          lock = json.loads(p.read_text())
-          parent = 'node_modules/@ethereum-attestation-service/eas-contracts'
-          stale = [key for key in lock['packages'] if key == parent or key.startswith(parent + '/')]
-          assert parent + '/node_modules/hardhat' in stale
-          for key in stale: del lock['packages'][key]
-          print('Re-resolving EAS lock subtree entries:', len(stale))
-          p.write_text(json.dumps(lock, indent=2, ensure_ascii=False) + '\n')
+          for name in ['scripts/lib/w3up-upload.mjs','scripts/security/test/w3up-upload.test.mjs','scripts/security/test/w3up-auth.test.mjs']:
+              p = Path(name); text = p.read_text()
+              assert '@web3-storage/w3up-client' in text, name
+              p.write_text(text.replace('@web3-storage/w3up-client', '@storacha/client'))
+          p = Path('docs/onebox-static.md'); text = p.read_text()
+          before = '| `WEB3_STORAGE_TOKEN` *(or `W3S_TOKEN`)* | API token for web3.storage uploads and pin verification. | web3.storage console (scoped to static hosting uploads). |'
+          assert before in text
+          text = text.replace(before, '| `W3UP_KEY` | Serialized Ed25519 release-agent key; never an Ethereum key or browser secret. | Dedicated Storacha upload agent. |\n| `W3UP_PROOF` | Delegation CAR encoded as base64, addressed to that agent and authorizing the selected space. | Authorized space administrator. |\n| `W3UP_SPACE_DID` | Exact `did:key:...` of the provisioned upload space. | Reviewed Storacha space. |')
+          text = text.replace('uploads the archive to web3.storage, and requests', 'uploads the same archive through the maintained `@storacha/client` w3up API, verifies the returned CID and upload-index record, and requests')
+          text = text.replace('Ensure the signer has the necessary permissions on the resolver before running the release script.', 'Legacy bearer-token variables are not accepted by these Node publishers. The separate browser upload configuration below is not migrated by this change. See [dependency repair and storage migration](security/DEPENDENCY_REPAIR_2026-10-11.md) for authority, metadata and validation boundaries. Upload-index confirmation is not proof of storage deals or permanent availability.\n\nEnsure the signer has the necessary permissions on the resolver before running the release script.')
+          p.write_text(text)
           PY
           npm install --package-lock-only --ignore-scripts --no-audit --fund=false
           python3 - <<'PY'
@@ -67,30 +65,26 @@ jobs:
               if key not in before: continue
               for field in ['version','resolved','integrity']:
                   assert before[key].get(field) == after[key].get(field), (key,field)
-          for p,v in after.items():
-              if p.endswith('/node_modules/hardhat') or p == 'node_modules/hardhat':
-                  print('HARDHAT_RESOLUTION', p, v['version'])
-                  assert v['version'] == '2.29.1', p
-          allowed = {'package.json','package-lock.json','scripts/security/test/dependency-compat.test.cjs'}
+          assert after['node_modules/@storacha/client']['version'] == '2.1.4'
+          assert 'node_modules/@web3-storage/w3up-client' not in after
+          allowed = {'package.json','package-lock.json','scripts/lib/w3up-upload.mjs','scripts/security/test/w3up-upload.test.mjs','scripts/security/test/w3up-auth.test.mjs','docs/onebox-static.md'}
           assert set(subprocess.check_output(['git','diff','--name-only'],text=True).splitlines()) <= allowed
           print('PRESERVATION: Solidity/compiler/deployment source and selected dependency identities unchanged.')
           PY
-      - name: Commit the generated candidate only to this repair branch
+      - name: Commit exact generated files to this repair branch only
         id: commit
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
-          test "$GITHUB_REF" = refs/heads/fix/dependency-repair-20261011
           test "$(git ls-remote origin "$GITHUB_REF" | cut -f1)" = "$GITHUB_SHA"
-          git add -- package.json package-lock.json scripts/security/test/dependency-compat.test.cjs
-          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'Resolve peer-compatible patched Cypress and the reviewed EAS Hardhat override'
+          git add -- package.json package-lock.json scripts/lib/w3up-upload.mjs scripts/security/test/w3up-upload.test.mjs scripts/security/test/w3up-auth.test.mjs docs/onebox-static.md
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'Use maintained Storacha client for CAR-preserving release uploads'
           export AUTH_HEADER="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)"
           git -c http.https://github.com/.extraheader="$AUTH_HEADER" push origin HEAD:refs/heads/fix/dependency-repair-20261011
           unset AUTH_HEADER GH_TOKEN
           echo "candidate=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
-          git show --stat --oneline HEAD
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
@@ -100,12 +94,17 @@ jobs:
             package-lock.json
             scripts/security/test/
             scripts/lib/w3up-upload.mjs
+            docs/onebox-static.md
             apps/onebox/scripts/publish.mjs
             apps/onebox-static/scripts/publish.mjs
             scripts/onebox-static/release.mjs
           retention-days: 14
-  compatibility:
+  validate:
     needs: resolve
+    strategy:
+      fail-fast: false
+      matrix:
+        surface: [compatibility, contracts, browser, audits]
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
@@ -117,82 +116,69 @@ jobs:
         with:
           node-version-file: '.nvmrc'
       - run: npm install --global npm@10.8.2 --ignore-scripts --no-audit --fund=false
-      - run: npm ci
-      - name: Independent compatibility checks; every failure remains a failed result
+      - if: matrix.surface != 'audits'
+        run: npm ci
+      - name: Run selected checks and preserve actual exit codes
+        env:
+          SURFACE: ${{ matrix.surface }}
         shell: bash
         run: |
           set +e
           set -uo pipefail
-          mkdir -p reports/dependency-repair-validation
+          evidence="reports/dependency-repair-$SURFACE"
+          mkdir -p "$evidence"
           failed=0
           run_check() {
             name="$1"; shift
-            "$@" > "reports/dependency-repair-validation/$name.log" 2>&1
+            "$@" > "$evidence/$name.log" 2>&1
             code=$?
-            printf '%s %s\n' "$name" "$code" | tee -a reports/dependency-repair-validation/exits.txt
-            tail -n 50 "reports/dependency-repair-validation/$name.log"
+            printf '%s %s\n' "$name" "$code" | tee -a "$evidence/exits.txt"
+            tail -n 70 "$evidence/$name.log"
             if [ "$code" != 0 ]; then failed=1; fi
             return "$code"
           }
-          run_check preflight npm run ci:preflight
-          run_check compatibility npm run test:dependency-compat
-          run_check receipt node --test attestation/eas/test/receipt-digest.test.mjs
-          run_check sbom npm run sbom:generate
-          run_check cypress npx --no-install cypress verify
-          if run_check compile npm run compile; then
-            run_check size npm run release:check-size
-            run_check local-deploy npm run deploy:local
-            run_check deployer-tests npx --no-install hardhat test --no-compile test/v2/Deployer.test.js test/v2/DeploymentScripts.test.js test/v2/DeploymentCli.test.js
-          fi
+          case "$SURFACE" in
+            compatibility)
+              run_check preflight npm run ci:preflight
+              run_check compatibility npm run test:dependency-compat
+              run_check receipt node --test attestation/eas/test/receipt-digest.test.mjs
+              run_check sbom npm run sbom:generate
+              run_check publisher-syntax node --check scripts/onebox-static/release.mjs
+              ;;
+            contracts)
+              if run_check compile npm run compile; then
+                run_check size npm run release:check-size
+                run_check local-deploy npm run deploy:local
+                run_check deployer-tests npx --no-install hardhat test --no-compile test/v2/Deployer.test.js test/v2/DeploymentScripts.test.js test/v2/DeploymentCli.test.js
+              fi
+              ;;
+            browser)
+              run_check console-install npm --prefix apps/console ci
+              run_check cypress-verify npx --no-install cypress verify
+              run_check browser npm run webapp:e2e
+              ;;
+            audits)
+              npm audit --package-lock-only --ignore-scripts --include=dev --json --audit-level=high > "$evidence/audit-full.json"
+              full=$?
+              npm audit --package-lock-only --ignore-scripts --omit=dev --json --audit-level=high > "$evidence/audit-production.json"
+              production=$?
+              printf 'full %s\nproduction %s\n' "$full" "$production" | tee "$evidence/exits.txt"
+              if [ "$full" != 0 ] || [ "$production" != 0 ]; then failed=1; fi
+              node -e 'for(const s of ["full","production"]){const r=require("./reports/dependency-repair-audits/audit-"+s+".json");console.log(s,JSON.stringify(r.metadata?.vulnerabilities));}'
+              run_check all-locks npm run release:audit-dependencies
+              ;;
+          esac
           run_check preservation git diff --exit-code -- contracts hardhat.config.js deployment-config config scripts/v2 scripts/generate-constants.ts
-          git rev-parse HEAD > reports/dependency-repair-validation/candidate.txt
+          git rev-parse HEAD > "$evidence/candidate.txt"
           exit "$failed"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
-          name: dependency-validation-${{ needs.resolve.outputs.candidate }}
+          name: dependency-${{ matrix.surface }}-${{ needs.resolve.outputs.candidate }}
           path: |
-            reports/dependency-repair-validation/
-            reports/sbom/
-            reports/deployment-*.json
-            reports/deployment-*.json.journal.jsonl
-          if-no-files-found: warn
-          retention-days: 14
-  audits:
-    needs: resolve
-    runs-on: ubuntu-24.04
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
-        with:
-          ref: ${{ needs.resolve.outputs.candidate }}
-          persist-credentials: false
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
-        with:
-          node-version-file: '.nvmrc'
-      - run: npm install --global npm@10.8.2 --ignore-scripts --no-audit --fund=false
-      - name: Capture both audit scopes without suppressing the outcome
-        shell: bash
-        run: |
-          set +e
-          set -uo pipefail
-          mkdir -p reports/dependency-repair
-          npm audit --package-lock-only --ignore-scripts --include=dev --json --audit-level=high > reports/dependency-repair/audit-full.json
-          full=$?
-          npm audit --package-lock-only --ignore-scripts --omit=dev --json --audit-level=high > reports/dependency-repair/audit-production.json
-          production=$?
-          printf 'full=%s\nproduction=%s\n' "$full" "$production" | tee reports/dependency-repair/audit-exits.txt
-          node -e 'for(const s of ["full","production"]){const r=require("./reports/dependency-repair/audit-"+s+".json");console.log(s,JSON.stringify(r.metadata?.vulnerabilities));for(const [n,v] of Object.entries(r.vulnerabilities||{}))if(["critical","high"].includes(v.severity))console.log(n,JSON.stringify(v.via));}'
-          test "$full" = 0 && test "$production" = 0
-      - name: Existing all-lockfile production gate
-        if: always()
-        run: npm run release:audit-dependencies
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        if: always()
-        with:
-          name: dependency-audits-${{ needs.resolve.outputs.candidate }}
-          path: |
-            reports/dependency-repair/
+            reports/dependency-repair-${{ matrix.surface }}/
             reports/release/dependency-audit/
-          if-no-files-found: error
+            reports/sbom/
+            cypress/screenshots/
+          if-no-files-found: warn
           retention-days: 14
