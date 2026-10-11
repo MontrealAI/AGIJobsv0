@@ -4,6 +4,7 @@ import path from 'node:path';
 import { openEditableDraft } from '../../website/assets/work-model.mjs';
 import { verifyStartRecovery } from './start-recovery-qa.mjs';
 import { verifyStartVisual } from './start-visual-qa.mjs';
+import { verifyStartCompletion } from './start-completion-qa.mjs';
 
 export async function verifyStart({
   page,
@@ -122,6 +123,8 @@ export async function verifyStart({
   assert.equal(page.url(), url + 'start/');
   await page.locator('#guide-restart').click();
   assert.equal(await page.locator('[data-step="0"]').isVisible(), true);
+  if ((await page.locator('#saved-draft-tools').getAttribute('open')) === null)
+    await page.locator('#saved-draft-tools > summary').click();
   await page.locator('#clear-start-progress').click();
   await page.reload();
   assert.equal(await page.locator('#start-goal').inputValue(), '');
@@ -233,5 +236,6 @@ export async function verifyStart({
   checks.push('onboarding: useful no-JavaScript routes in both languages');
   await verifyStartRecovery({ page, context, url, artifacts, a11y, checks });
   await verifyStartVisual({ page, context, url, artifacts, a11y, checks });
+  await verifyStartCompletion({ page, context, url, artifacts, a11y, checks });
   await page.setViewportSize({ width: 1440, height: 1050 });
 }

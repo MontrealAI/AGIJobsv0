@@ -1,5 +1,17 @@
 # Changelog
 
+## v2.1.0-rc.3
+
+Guided onboarding completion source candidate (2026-10-11).
+
+- Add English/French help that follows the current step and chosen route, with plain explanations and no time pressure.
+- Keep saved-draft and print options in native, keyboard-accessible expandable sections so the main action remains easy to find.
+- Edit a finished request directly; copy the exact readable brief with a selected-text fallback when clipboard access is unavailable.
+- Preserve newer edits and navigation when asynchronous copying completes late; keep all draft, authorization and session formats compatible.
+- Strengthen whole-card keyboard focus and verify clipboard/download parity, keyboard disclosure, narrow layouts and both languages through the existing Pages gate.
+
+This source preview does not change contracts, settlement, dependencies or deployment scripts. Production signing, dependency remediation, independent review and live commissioning remain outstanding. Automated checks do not establish billion-user capacity or replace usability testing with older and nontechnical participants.
+
 ## v2.1.0-rc.2
 
 - Added read-only governance call preparation for launch limits; the configuration helper supports the staged SystemPause topology and legacy delegated-pauser topology, preserves omitted job limits and handles mixed pause states.

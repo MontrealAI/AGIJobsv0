@@ -8,6 +8,8 @@ Choose what you want to do: request work, connect an agent, review a result, or 
 
 **Easy to return to:** keep your progress when refreshing or switching English/French in the same tab, undo an example, and save or reopen your editable draft directly in the guide. Download a readable request or print it for someone helping you. Browser text preferences and enlarged text are supported, including narrow screens; storage restrictions are explained on the page.
 
+**Help at every step:** open a short explanation beside the guide, edit your finished request directly, or copy it for someone helping you. If your browser cannot copy automatically, the guide selects a readable copy with clear instructions. Saved drafts and printing are available under labeled, keyboard-accessible sections, keeping the main path easy to follow in English and French.
+
 [![CI (v2)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml)
 [![CI (v2) job wall](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml/badge.svg?branch=main&job=CI%20summary)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml?query=workflow%3A%22ci+%28v2%29%22+is%3Asuccess+branch%3Amain)
 [![Static Analysis](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/static-analysis.yml/badge.svg?branch=main)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/static-analysis.yml)
