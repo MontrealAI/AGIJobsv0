@@ -2,6 +2,8 @@
 
 This is the stable entry point for deployment status. Dated reports describe the exact checks and limitations observed at the time; they are not perpetual production certifications.
 
+**October 12 Ethereum mainnet update:** the existing staged AGIJobsv0 deployment was finalized **paused**. Browser/operator evidence reports **23/24 Etherscan verifications**, while StakeManagerEscrow remains unpublished on Etherscan. Ledger acceptance for IdentityRegistry and coordinator ownership handoff remain outstanding. The [dated 24-address deployment and verification record](ethereum-mainnet-2026-10-12.md) distinguishes actual mainnet deployment from uncommissioned paid operation. **Production approval remains false; no unpause or paid intake.**
+
 ## What can be used now
 
 The public website provides the complete preserved demo collection, guided experiences, original diagrams, browser workbenches and a local job planner. The repository supplies executable local-chain workflows and an operator-admitted OpenClaw computer-work adapter. These capabilities require their documented environments and have distinct evidence boundaries.

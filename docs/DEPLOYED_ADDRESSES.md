@@ -1,5 +1,7 @@
 # DEPLOYED_ADDRESSES.md — AGIJobs v2
 
+**Actual Ethereum mainnet deployment (2026-10-12):** [24-contract, public-address and verification record](production/ethereum-mainnet-2026-10-12.md) · [machine-readable snapshot](production/ethereum-mainnet-2026-10-12.json). The deployed protocol is **paused and uncommissioned**; the snapshot reports **23/24 Etherscan verifications**, with StakeManagerEscrow outstanding. The placeholder form below is a **template for other deployments**, not the current mainnet registry. Never substitute its example Safe, fee, treasury, or proxy fields for observed mainnet state.
+
 > **Purpose:** Canonical registry of contract addresses and deployment metadata. Commit this file to the repo after each environment deployment.
 
 ---

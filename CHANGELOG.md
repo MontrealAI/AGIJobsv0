@@ -1,5 +1,15 @@
 # Changelog
 
+## Source evidence snapshot — 2026-10-12 (post-rc.4)
+
+- Record the real paused Ethereum mainnet deployment and the exact deployed source commit `b4c5b66ea05a6bb27f1f1cb197f055c179bbd38e`, without mislabeling subsequent site code as deployed Solidity.
+- Publish all 24 mainnet addresses and operator-evidence status: **23/24 Etherscan-verified by the latest browser screenshots**, plus five independent Sourcify exact matches. `StakeManagerEscrow` remains unverified on Etherscan.
+- Document the escrow 267-source exact compiler replay, failed smaller-input replays and still-open browser verification, and prohibit changes to deployment bytecode as a verification shortcut.
+- Link the Ledger governance address, pending IdentityRegistry acceptance, unfinished coordinator transfer and outstanding FeePool/commissioning gates.
+- Carry forward accessible bilingual first-example onboarding from PR #3923. Add an independently gated **source-only evidence prerelease** workflow; production signing and mainnet release gates remain unchanged.
+
+This is a dated documentation snapshot. No new Ethereum transaction, production approval, signing claim or unpause is included; the root source package version remains `2.1.0-rc.4`.
+
 ## v2.1.0-rc.4
 
 Dependency remediation and storage-publisher migration source candidate (2026-10-11).

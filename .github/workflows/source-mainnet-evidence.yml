@@ -1,0 +1,95 @@
+name: Publish paused-mainnet source evidence
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/production/ethereum-mainnet-2026-10-12.json'
+
+permissions:
+  contents: write
+  checks: read
+  actions: read
+
+concurrency:
+  group: publish-paused-mainnet-evidence-2026-10-12
+  cancel-in-progress: false
+
+jobs:
+  source-evidence:
+    name: Publish source evidence (not production)
+    if: github.repository == 'MontrealAI/AGIJobsv0'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+        with:
+          egress-policy: audit
+
+      - name: Checkout exact candidate
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up pinned Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: Prove this is a documentation-only descendant of deployed source
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test "$(node -p 'require("./package.json").version')" = '2.1.0-rc.4'
+          git merge-base --is-ancestor b4c5b66ea05a6bb27f1f1cb197f055c179bbd38e "$GITHUB_SHA"
+          git diff --exit-code b4c5b66ea05a6bb27f1f1cb197f055c179bbd38e "$GITHUB_SHA" --             contracts/ scripts/deploy/ hardhat.config.js config/implementation-modules.json
+          node scripts/ci/check-mainnet-evidence.mjs
+          node --test test/scripts/source-evidence-gate.test.mjs
+
+      - name: Wait for required CI on the exact source snapshot
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_SHA: ${{ github.sha }}
+        run: node scripts/ci/wait-source-evidence-checks.mjs
+
+      - name: Stop if main moved or the release tag already exists
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: source-v2.1.0-rc.4-mainnet-evidence.1
+        shell: bash
+        run: |
+          set -euo pipefail
+          current="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq '.object.sha')"
+          test "$current" = "$GITHUB_SHA" || { echo "::error::main moved; no release"; exit 1; }
+          if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" >/dev/null 2>&1; then
+            echo "::error::release tag already exists; do not overwrite"; exit 1
+          fi
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "::error::release already exists"; exit 1
+          fi
+
+      - name: Create documented, unsigned source-only prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: source-v2.1.0-rc.4-mainnet-evidence.1
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/mainnet-source-evidence"
+          cp docs/production/ethereum-mainnet-2026-10-12.json "$RUNNER_TEMP/mainnet-source-evidence/"
+          cp docs/production/ethereum-mainnet-2026-10-12.md "$RUNNER_TEMP/mainnet-source-evidence/"
+          (
+            cd "$RUNNER_TEMP/mainnet-source-evidence"
+            sha256sum ethereum-mainnet-2026-10-12.json ethereum-mainnet-2026-10-12.md > SHA256SUMS.txt
+          )
+          gh release create "$TAG"             "$RUNNER_TEMP/mainnet-source-evidence/ethereum-mainnet-2026-10-12.json"             "$RUNNER_TEMP/mainnet-source-evidence/ethereum-mainnet-2026-10-12.md"             "$RUNNER_TEMP/mainnet-source-evidence/SHA256SUMS.txt"             --target "$GITHUB_SHA"             --title 'AGI Jobs v2 — paused Ethereum mainnet evidence (source-only)'             --notes-file docs/production/RELEASE_NOTES_MAINNET_2026-10-12.md             --prerelease
+          tag_sha="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" --jq '.object.sha')"
+          test "$tag_sha" = "$GITHUB_SHA" || {
+            echo "::error::source release tag does not point to exact qualified commit"
+            exit 1
+          }
+          gh release view "$TAG" --json url,tagName,isPrerelease,isDraft
