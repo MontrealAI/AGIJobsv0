@@ -1,0 +1,64 @@
+name: Mainnet publication readback evidence
+
+on:
+  push:
+    branches: ['diagnostic/escrow-self-service-20261012']
+    paths: ['.github/workflows/mainnet-publication-readback.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  public-evidence:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Collect pinned repository files and public explorer pages
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib, json, pathlib, time, urllib.request
+          from datetime import datetime, timezone
+          root = pathlib.Path('evidence'); root.mkdir()
+          commit = 'd745dea885e3eb602a247c6fe33add64e40cdef1'
+          base = f'https://raw.githubusercontent.com/MontrealAI/AGIJobsv0/{commit}/'
+          paths = ['docs/deployments/ethereum-mainnet-2026-10-12.json', 'docs/production/mainnet-deployment-2026-10-12.md', 'docs/production/readiness.md', 'CHANGELOG.md', 'README.md', 'scripts/build-site.js', 'package.json', '.github/workflows/ci.yml', '.github/workflows/pages.yml']
+          def get(url):
+              req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (compatible; AGIJobsv0-ReadOnly-PublicationCheck/1.0)'})
+              with urllib.request.urlopen(req, timeout=30) as response:
+                  return response.read(6000000)
+          for name in paths:
+              dest = root / 'repository' / name; dest.parent.mkdir(parents=True, exist_ok=True)
+              try: dest.write_bytes(get(base + name))
+              except Exception as error:
+                  if name.startswith(('docs/', 'CHANGELOG', 'README', 'package')): raise
+                  print('Optional file unavailable:', name, type(error).__name__)
+          manifest = json.loads((root / 'repository' / paths[0]).read_text())
+          entries = manifest['contracts']
+          assert len(entries) == 24 and len({x['address'].lower() for x in entries}) == 24
+          records = []
+          for item in entries:
+              url = item['explorerUrl']
+              assert url == 'https://etherscan.io/address/' + item['address'] + '#code'
+              record = {'name': item['name'], 'address': item['address'], 'url': url, 'requestedAt': datetime.now(timezone.utc).isoformat()}
+              try:
+                  data = get(url)
+                  dest = root / 'pages' / (item['name'] + '.html'); dest.parent.mkdir(exist_ok=True)
+                  dest.write_bytes(data)
+                  record.update({'bytes': len(data), 'pageSha256': hashlib.sha256(data).hexdigest(), 'file': str(dest.relative_to(root)), 'observedAt': datetime.now(timezone.utc).isoformat()})
+              except Exception as error: record['errorType'] = type(error).__name__
+              records.append(record)
+              time.sleep(1)
+          (root / 'READBACK.json').write_text(json.dumps({'schema': 'agijobsv0/raw-publication-observation/1', 'repositoryCommit': commit, 'records': records, 'sourceSubmissions': 0, 'ethereumTransactions': 0, 'rpcCalls': 0, 'classification': 'RAW PAGES ONLY; exact-match labels and contract identities still require inspection'}, indent=2) + '\n')
+          members = sorted(x for x in root.rglob('*') if x.is_file())
+          (root / 'SHA256SUMS.txt').write_text(''.join(hashlib.sha256(x.read_bytes()).hexdigest() + '  ' + str(x.relative_to(root)) + '\n' for x in members))
+          PY
+      - name: Preserve raw read-only evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: mainnet-publication-readback-20261012
+          path: evidence/
+          retention-days: 7
+          if-no-files-found: error
