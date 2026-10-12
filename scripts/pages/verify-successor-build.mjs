@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { compileJobs, verifyWorkOrderSeal } from '../../packages/successor-core/src/compiler.mjs';
 import { digestObject, canonicalize } from '../../packages/successor-core/src/integrity.mjs';
-import { validateRequest, validateCandidate, generateCandidates, digest as alphaDigest, VERSION as ALPHA_VERSION } from './vendor/alpha-successor/engine.mjs';
+import { validateRequest, validateCandidate, generateCandidates, discover, evaluate, digest as alphaDigest, VERSION as ALPHA_VERSION } from './vendor/alpha-successor/engine.mjs';
 const alphaProvenance=JSON.parse(fs.readFileSync(new URL('./vendor/alpha-successor/provenance.json',import.meta.url),'utf8'));
 const workshopMission=JSON.parse(fs.readFileSync(new URL('./successor-workshop-mission.json',import.meta.url),'utf8'));
 
@@ -72,11 +72,11 @@ export async function verifyBuildPack(pack) {
   if (!matches(pack.settlement, {status:'NOT_CONNECTED', spentBaseUnits:'0', transactions:[], allowanceIs:'ILLUSTRATIVE_NOT_FUNDED'})) throw Error('A workshop cannot attest live settlement');
   requireKeys(pack,['schema','createdAt','title','scope','request','compilation','discovery','frozen','evaluation','token','settlement','admission','chronicle','integrityDigest']);
   for(const [key,shape] of Object.entries(alphaSections))requireShape(pack[key],shape);
-  if(pack.evaluation.institutional_verdict!=='HOLD' || pack.evaluation.scope!=='browser-rehearsal' || pack.chronicle.length!==1 || pack.chronicle.some(note=>note.inheritedProof!==false || note.inheritedAuthority!==false)) throw Error('A workshop cannot grant or inherit authority');
+  if(pack.evaluation.institutional_verdict!=='HOLD' || pack.evaluation.scope!=='browser-rehearsal' || !matches(pack.chronicle,[{kind:'local-observation',candidateRelease:pack.frozen.release_hash,reusable:'Configuration hypothesis only; rerun tests.',inheritedProof:false,inheritedAuthority:false}])) throw Error('A workshop cannot grant or inherit authority');
   if(!matches(pack.evaluation.missing,['independent-verifier','frontier-comparator','measured-peak-memory','accepted-realized-economics','principal-issued-authority']))throw Error('Workshop proof remains incomplete');
   const manifest=pack.frozen.manifest;
   validateRequest(pack.request);validateCandidate(manifest.grammar);
-  if(manifest.engine!==ALPHA_VERSION || manifest.engine_source_hash!==alphaProvenance.sha256 || manifest.protocol!=='browser-local-aggregation-v1' || manifest.correctness_required!==true || manifest.minimum_speedup_ppm!==50000 || !matches(manifest.comparators,['current-one-pass-map-v1','beta-sorted-reduction-v1']))throw Error('Unsupported workshop engine or protocol');
+  if(manifest.schema_version!==1 || pack.evaluation.schema_version!==1 || manifest.engine!==ALPHA_VERSION || manifest.engine_source_hash!==alphaProvenance.sha256 || manifest.protocol!=='browser-local-aggregation-v1' || manifest.correctness_required!==true || manifest.minimum_speedup_ppm!==50000 || !matches(manifest.comparators,['current-one-pass-map-v1','beta-sorted-reduction-v1']))throw Error('Unsupported workshop engine or protocol');
   if(manifest.request_hash!==await alphaDigest('request',pack.request) || manifest.candidate_hash!==await alphaDigest('candidate',manifest.grammar) || pack.frozen.release_hash!==await alphaDigest('release',manifest) || pack.evaluation.release_hash!==pack.frozen.release_hash || pack.chronicle[0].candidateRelease!==pack.frozen.release_hash)throw Error('Workshop Alpha commitment mismatch');
   if(!matches(pack.discovery.selected.config,manifest.grammar) || pack.discovery.selected.artifact_hash!==manifest.candidate_hash || !pack.discovery.attempts.some(item=>matches(item,pack.discovery.selected)))throw Error('Workshop selected candidate mismatch');
   for(const item of pack.discovery.attempts){validateCandidate(item.config);if(item.artifact_hash!==await alphaDigest('candidate',item.config))throw Error('Workshop candidate commitment mismatch');}
@@ -96,7 +96,14 @@ export async function verifyBuildPack(pack) {
   }
   const rebuilt = await compileJobs(pack.compilation.constitution, {jobs, edges:pack.compilation.graph.edges, now:pack.createdAt});
   if (canonicalize(rebuilt) !== canonicalize(pack.compilation)) throw Error('Compilation does not reproduce');
-  return { integrity: 'CONSISTENT_NOT_AUTHENTICATED', workOrders: jobs.length, recompilation: 'MATCH', independentProof: false, authority: [], settlement: 'NOT_CONNECTED', scope: 'Historical package consistency only; no mission correctness, present validity or live admission is established.' };
+  const replay=await discover(pack.request);
+  for(const [index,item] of replay.attempts.entries()){
+    const recorded=pack.discovery.attempts[index];
+    if(!matches(item.config,recorded.config) || item.correctness!==recorded.correctness || item.rows!==recorded.rows)throw Error('Workshop deterministic discovery outcomes mismatch');
+  }
+  const evaluated=await evaluate(pack.request,pack.frozen);
+  if(evaluated.correctness!==pack.evaluation.correctness || evaluated.cases.some((item,index)=>item.exact_output!==pack.evaluation.cases[index].exact_output || item.events!==pack.evaluation.cases[index].events))throw Error('Workshop deterministic evaluation outcomes mismatch');
+  return { integrity: 'CONSISTENT_NOT_AUTHENTICATED', workOrders: jobs.length, recompilation: 'MATCH', deterministicReplay: 'MATCH', timingAuthenticity: 'UNVERIFIED', independentProof: false, authority: [], settlement: 'NOT_CONNECTED', scope: 'Historical package consistency and fixed synthetic replay only; no authentic timing, real-world mission dominance, present rights or live admission is established.' };
 }
 export function readBuildPack(file) {
   if (!file) throw Error('Supply a workshop JSON package of at most 2 MB');

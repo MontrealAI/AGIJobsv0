@@ -89,6 +89,8 @@ test('a complete real export reproduces and rejects forged claims throughout its
     p=>{p.evaluation.cases[2].events=64;},
     p=>{p.discovery.world.observation.nested_mean_ns+=1;},
     p=>{p.discovery.actual_candidates=1;},
+    p=>{p.discovery.attempts.find(item=>item.artifact_hash!==p.discovery.selected.artifact_hash).correctness=false;},
+    p=>{p.discovery.attempts.find(item=>item.artifact_hash!==p.discovery.selected.artifact_hash).rows+=1;},
   ];
   for(const mutate of mutations){
     const {integrityDigest,...forged}=structuredClone(pack);mutate(forged);
@@ -96,7 +98,7 @@ test('a complete real export reproduces and rejects forged claims throughout its
   }
   const {integrityDigest,...failed}=structuredClone(pack);
   failed.evaluation.cases[0].exact_output=false;failed.evaluation.correctness=false;failed.evaluation.local_verdict='FAIL';
-  assert.equal((await verifyBuildPack({...failed,integrityDigest:await digestObject('successor-build-example.v1',failed)})).recompilation,'MATCH');
+  await assert.rejects(verifyBuildPack({...failed,integrityDigest:await digestObject('successor-build-example.v1',failed)}),/deterministic evaluation outcomes/);
 });
 test('resealing a broader mission cannot turn the local workshop into payment authority',async()=>{
   const {integrityDigest,...forged}=readBuildPack(new URL('./fixtures/successor-build-pack.json',import.meta.url));
