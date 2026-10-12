@@ -37,7 +37,11 @@ def _normalize_output_dir(raw: str | Path) -> Path:
 
     parsed = urlparse(raw)
     if parsed.scheme == "file":
-        parsed_path = unquote(parsed.path)
+        if parsed.netloc and parsed.netloc not in ("", "localhost"):
+            parsed_path = f"//{parsed.netloc}{parsed.path}"
+        else:
+            parsed_path = parsed.path
+        parsed_path = unquote(parsed_path)
         if not parsed_path:
             raise ValueError(f"Output directory URL is missing a path: {raw}")
         return Path(parsed_path)

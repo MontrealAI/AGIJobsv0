@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib.util
 import json
 import os
 import subprocess
@@ -13,6 +14,16 @@ PROJECT_ROOT = Path(__file__).resolve().parents[3]
 DEMO_ROOT = PROJECT_ROOT / "demo" / "AGI-Jobs-Platform-at-Kardashev-II-Scale"
 PYTHON_ENTRYPOINT = DEMO_ROOT / "run_demo.py"
 NODE_ENTRYPOINT = DEMO_ROOT / "run-demo.cjs"
+
+
+def _load_run_demo_module():
+    spec = importlib.util.spec_from_file_location("kardashev_run_demo", PYTHON_ENTRYPOINT)
+    if spec is None or spec.loader is None:
+        raise RuntimeError("Unable to load Kardashev II demo wrapper module")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
 
 
 @pytest.mark.skipif(not PYTHON_ENTRYPOINT.exists(), reason="Demo entrypoint is missing")
@@ -29,6 +40,14 @@ def test_run_demo_check_mode(tmp_path: Path) -> None:
     assert "validated (check mode)" in result.stdout
     assert "Free energy margin" in result.stdout
     assert "Sentient welfare equilibrium" in result.stdout
+
+
+def test_normalize_output_dir_handles_unc_file_url() -> None:
+    """UNC-style file URLs should retain their host segment."""
+
+    module = _load_run_demo_module()
+    output_dir = module._normalize_output_dir("file://nebula/share/telemetry")
+    assert output_dir == Path("//nebula/share/telemetry")
 
 
 @pytest.mark.skipif(not PYTHON_ENTRYPOINT.exists(), reason="Demo entrypoint is missing")
