@@ -38,3 +38,11 @@ This document tracks contract and configuration migrations required when deployi
 
 - All migration-related pull requests must keep the `ci (v2) / HGM guardrails` status check green. The job validates the AGIALPHA profile configuration, runs the HGM regression suites, lints the demo assets, and smoke-tests the guided launcher.
 - Run `ci/hgm-suite.sh` locally (after `npm ci` and `pip install -r requirements-python.txt`) before raising change-control requests so the HGM guardrails job passes deterministically in CI.
+
+## Corrective successor cutover (paused legacy -> AGIJobManager successor)
+
+1. Keep old paused address paused.
+2. Deploy new AGIJobManager successor with AGIALPHA pinned.
+3. If ENSJobPages integration is used, call `ENSJobPages.setJobManager(newManager)`.
+4. If new manager stores ENSJobPages pointer, call `newManager.setEnsJobPages(existingEnsJobPages)` when available.
+5. Settlement correctness must not depend on ENS; ENS is UX routing only.
