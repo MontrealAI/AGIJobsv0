@@ -1,7 +1,7 @@
 {
   "_comment": "Ethereum mainnet (chain ID 1), recorded 2026-10-12. Source and evidence: docs/deployments/ethereum-mainnet-2026-10-12.json. Existing paused deployment; not production commissioning or authorization to transfer ownership/unpause. Zero entries are disabled or absent from this recorded stack; jobManagerV0 is a separate deployment and is not selected here.",
-  "_network": "mainnet",
-  "_chainId": 1,
+  "network": "mainnet",
+  "chainId": 1,
   "token": "0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA",
   "deployer": "0xeF1Be4B8251a9C4a584140C113508B95fd8B2543",
   "stakeManager": "0xFd970F60363984A6274342776D34423EC37b5432",

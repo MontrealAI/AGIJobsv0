@@ -153,6 +153,10 @@ test('canonical mainnet address book matches all 24 recorded contracts without l
   const record = require('../../docs/deployments/ethereum-mainnet-2026-10-12.json');
   const implementations = new Set(Object.values(modules).flat());
   assert.equal(record.chainId, 1);
+  assert.equal(book.network, 'mainnet');
+  assert.equal(book.chainId, record.chainId);
+  const { deploymentNetwork } = require('../../scripts/v2/lib/runtime-network.cjs');
+  assert.deepEqual(deploymentNetwork(book), { network: 'mainnet', chainId: String(record.chainId), local: false });
   assert.equal(book.token, record.token.address);
   assert.equal(record.contracts.length, 24);
   assert.equal(Object.keys(book.implementations).length, 10);
@@ -173,7 +177,7 @@ test('canonical mainnet address book matches all 24 recorded contracts without l
   }
   const recorded = new Set(record.contracts.map((contract) => contract.address));
   for (const [key, value] of Object.entries(book)) {
-    if (key.startsWith('_') || key === 'token' || key === 'implementations') continue;
+    if (key.startsWith('_') || ['network', 'chainId', 'token', 'implementations'].includes(key)) continue;
     assert.ok(value === '0x' + '0'.repeat(40) || recorded.has(value), key);
   }
   for (const key of ['taxPolicy', 'jobManagerV0', 'rewardEngine', 'thermostat', 'hgmControlModule', 'attestationRegistry']) {

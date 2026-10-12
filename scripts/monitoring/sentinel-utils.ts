@@ -150,7 +150,7 @@ export async function buildAddressIndex(options: AddressIndexOptions): Promise<M
   const deploymentAddresses = await readJsonFile<AddressBook>(
     path.resolve(process.cwd(), 'docs', 'deployment-addresses.json')
   );
-  if (!deploymentAddresses?._network || deploymentAddresses._network === network) {
+  if (!deploymentAddresses?.network || deploymentAddresses.network === network) {
     sources.push({ book: deploymentAddresses, source: 'docs/deployment-addresses.json' });
   }
 
