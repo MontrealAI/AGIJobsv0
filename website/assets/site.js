@@ -115,14 +115,16 @@ if (search) {
 }
 
 document.querySelectorAll('[data-copy]').forEach((button) => {
+  const originalLabel = button.textContent;
   button.addEventListener('click', async () => {
     const text = document.getElementById(button.dataset.copy).textContent;
+    const label = button.dataset.copyLabel || 'Command';
     try {
       await navigator.clipboard.writeText(text);
       button.textContent = 'Copied';
-      $('#copy-status').textContent = 'Command copied to clipboard.';
+      $('#copy-status').textContent = `${label} copied to clipboard.`;
       setTimeout(() => {
-        button.textContent = 'Copy';
+        button.textContent = originalLabel;
       }, 1800);
     } catch {
       const selection = window.getSelection();
@@ -130,10 +132,12 @@ document.querySelectorAll('[data-copy]').forEach((button) => {
       range.selectNodeContents(document.getElementById(button.dataset.copy));
       selection.removeAllRanges();
       selection.addRange(range);
-      $('#copy-status').textContent =
-        'Command selected. Use your keyboard or browser menu to copy.';
+      $(
+        '#copy-status'
+      ).textContent = `${label} selected. Use your keyboard or browser menu to copy.`;
     }
   });
+  if (button.classList.contains('ecosystem-copy')) button.hidden = false;
 });
 
 const simulator = $('#walkthrough');

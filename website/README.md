@@ -1,5 +1,13 @@
 # AGI Jobs Demo Observatory
 
+## The paired ecosystem and deployed contract directory
+
+The homepage features the shared Ethereum mainnet **$AGIALPHA** token and its full, selectable address near the introduction. The static [`ecosystem/` guide](https://montrealai.github.io/AGIJobsv0/ecosystem/) explains how AGI Alpha Agent and AGI Jobs can turn a selected idea into accountable work, follows an illustrative task and lists all **5 Alpha + 24 Jobs contract instances** with plain-language roles and explorer links.
+
+`scripts/pages/ecosystem.mjs` renders the guide and homepage entries from [`website/data/ecosystem.json`](data/ecosystem.json). The directory pins the public deployment records by source revision and separates their dated evidence from current readiness guidance. `catalog.json` records `ecosystemRoute`, and `ecosystem/contracts.json` provides the same downloadable address directory. Update addresses only against the corresponding public deployment evidence; a new website or repository release is not a redeployment.
+
+All essential content and explorer links are present in the generated HTML without JavaScript. Long addresses wrap on narrow screens. The optional token-copy control uses the existing clipboard fallback and announces its result through the shared status region. The source, token and readiness mappings are checked in `test/pages/ecosystem.test.mjs`; the existing site-wide link and diagram checks also cover this route. `ecosystem-qa.mjs` runs within the established browser gate and covers desktop, 390px and 320px layouts, the full address directory, exact clipboard content and fallback selection, keyboard disclosure, no-JavaScript reading, network/console failures and accessibility. Screenshots and `ecosystem-browser-report.json` are saved under the existing `reports/pages/` artifact directory. No wallet, contract approval, RPC query or transaction is added to the public site. See the [repository ecosystem guide](../docs/ECOSYSTEM.md) for the market-routing and identity-admission boundaries.
+
 ## Guided public welcome
 
 **[Start here](https://montrealai.github.io/AGIJobsv0/start/)** and **[Commencer en français](https://montrealai.github.io/AGIJobsv0/start/fr/)** provide a dedicated three-step introduction for first-time visitors. The homepage primary action, site navigation and repository overview feature this entrance. Both pages are generated from `scripts/pages/start.mjs`; `start.js` and `start.css` load independently of the demo and diagram interface.

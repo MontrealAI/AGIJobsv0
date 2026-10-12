@@ -792,6 +792,10 @@ test('A02 revocation after proposal but before dispatch prevents the effect and 
 test('A03 concurrent actions cannot exceed aggregate budget, including outstanding liabilities', async () => {
   const store = storeWithBudget();
   let calls = 0;
+  let markEntered;
+  const entered = new Promise((resolve) => {
+    markEntered = resolve;
+  });
   let release;
   const gate = new Promise((resolve) => {
     release = resolve;
@@ -800,6 +804,7 @@ test('A03 concurrent actions cannot exceed aggregate budget, including outstandi
     const runtime = broker(store, {
       execute: async ({ effectId }) => {
         calls++;
+        markEntered();
         await gate;
         return {
           status: 'completed',
@@ -819,7 +824,8 @@ test('A03 concurrent actions cannot exceed aggregate budget, including outstandi
       costMinor: '6',
     });
     const first = runtime.execute(one);
-    await new Promise((resolve) => setImmediate(resolve));
+    await Promise.race([entered, first]);
+    assert.equal(calls, 1, 'the first action must enter its gated driver');
     await assert.rejects(runtime.execute(two), { code: 'BUDGET_EXHAUSTED' });
     release();
     await first;
