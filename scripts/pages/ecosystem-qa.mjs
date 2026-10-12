@@ -205,7 +205,16 @@ export async function verifyEcosystem({
         );
       }
     }
+    assert.equal(
+      fallback.frames().length,
+      1,
+      'no-JavaScript accessibility audit requires a single document'
+    );
+    // Run axe in the actual no-JavaScript document. The default partial-result
+    // path fails in this context; with no child frames, direct axe.run retains
+    // the full audit without cross-origin frame coverage to omit.
     const accessibility = await new AxeBuilder({ page: fallback })
+      .setLegacyMode(true)
       .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
       .analyze();
     fs.writeFileSync(
@@ -223,6 +232,11 @@ export async function verifyEcosystem({
     assert.deepEqual(failures, [], 'ecosystem console and network errors');
     status = 'passed';
     checks.push(...completed.map((check) => `ecosystem: ${check}`));
+  } catch (error) {
+    failures.push(
+      error instanceof Error ? error.stack || error.message : String(error)
+    );
+    throw error;
   } finally {
     if (status !== 'passed')
       await page
