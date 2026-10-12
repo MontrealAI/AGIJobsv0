@@ -77,7 +77,7 @@ function collectAddressesFromBook(book: AddressBook | null, source: string): Map
     if (rawKey.startsWith('_') || typeof value !== 'string') {
       continue;
     }
-    if (!ADDRESS_PATTERN.test(value)) {
+    if (!ADDRESS_PATTERN.test(value) || /^0x0{40}$/i.test(value)) {
       continue;
     }
     const placeholder = toSnakePlaceholder(rawKey);
@@ -105,7 +105,7 @@ function extractAddressesFromManifest(
     if (!entry?.addresses) continue;
     const placeholder = toSnakePlaceholder(name);
     const value = entry.addresses?.[network];
-    if (typeof value === 'string' && ADDRESS_PATTERN.test(value)) {
+    if (typeof value === 'string' && ADDRESS_PATTERN.test(value) && !/^0x0{40}$/i.test(value)) {
       mapping.set(placeholder, {
         placeholder,
         address: value,
@@ -123,7 +123,7 @@ function extractInlineOverrides(overrides: Record<string, string> | undefined): 
     return mapping;
   }
   for (const [rawKey, value] of Object.entries(overrides)) {
-    if (!ADDRESS_PATTERN.test(value)) continue;
+    if (!ADDRESS_PATTERN.test(value) || /^0x0{40}$/i.test(value)) continue;
     const placeholder = rawKey === rawKey.toUpperCase() ? rawKey : toSnakePlaceholder(rawKey);
     mapping.set(placeholder, {
       placeholder,

@@ -70,6 +70,7 @@ const DEFAULT_ADDRESS_BOOK = path.join(
   __dirname,
   '..',
   '..',
+  '..',
   'docs',
   'deployment-addresses.json'
 );

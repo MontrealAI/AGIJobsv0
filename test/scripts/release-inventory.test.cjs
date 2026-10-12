@@ -147,3 +147,70 @@ test('verification rejects unresolved and malformed contract addresses before ex
     );
   }
 });
+
+test('canonical mainnet address book matches all 24 recorded contracts without legacy placeholders', () => {
+  const book = require('../../docs/deployment-addresses.json');
+  const record = require('../../docs/deployments/ethereum-mainnet-2026-10-12.json');
+  const implementations = new Set(Object.values(modules).flat());
+  assert.equal(record.chainId, 1);
+  assert.equal(book.token, record.token.address);
+  assert.equal(record.contracts.length, 24);
+  assert.equal(Object.keys(book.implementations).length, 10);
+  for (const contract of record.contracts) {
+    const key = contract.name[0].toLowerCase() + contract.name.slice(1);
+    const actual = implementations.has(contract.name)
+      ? book.implementations[contract.name]
+      : book[key];
+    assert.equal(actual, contract.address, contract.name);
+    const target = CONTRACT_TARGETS.find((item) => item.name === contract.name);
+    if (target) {
+      assert.equal(
+        collectContractMetadata(target, book, {}).contractEntry.addresses.config,
+        contract.address,
+        `release manifest address for ${contract.name}`
+      );
+    }
+  }
+  const recorded = new Set(record.contracts.map((contract) => contract.address));
+  for (const [key, value] of Object.entries(book)) {
+    if (key.startsWith('_') || key === 'token' || key === 'implementations') continue;
+    assert.ok(value === '0x' + '0'.repeat(40) || recorded.has(value), key);
+  }
+  for (const key of ['taxPolicy', 'jobManagerV0', 'rewardEngine', 'thermostat', 'hgmControlModule', 'attestationRegistry']) {
+    assert.equal(book[key], '0x' + '0'.repeat(40), key);
+  }
+});
+
+function loadTypeScript(relativePath, mocks = {}) {
+  const filename = path.resolve(__dirname, relativePath);
+  const localRequire = require('node:module').createRequire(filename);
+  const output = require('typescript').transpileModule(fs.readFileSync(filename, 'utf8'), {
+    compilerOptions: { module: 1, target: 9, esModuleInterop: true },
+  }).outputText;
+  const module = { exports: {} };
+  require('node:vm').runInNewContext(output, {
+    module, exports: module.exports, __dirname: path.dirname(filename), process,
+    require: (name) => Object.prototype.hasOwnProperty.call(mocks, name) ? mocks[name] : localRequire(name),
+  }, { filename });
+  return module.exports;
+}
+
+test('owner-verifier default resolves the checked-in operational address book', () => {
+  const { DEFAULT_ADDRESS_BOOK } = loadTypeScript('../../scripts/v2/lib/ownerControlVerification.ts', {
+    hardhat: {}, '../../config': {}, './utils': {},
+  });
+  assert.equal(DEFAULT_ADDRESS_BOOK, path.resolve(__dirname, '../../docs/deployment-addresses.json'));
+  assert.equal(JSON.parse(fs.readFileSync(DEFAULT_ADDRESS_BOOK, 'utf8')).deployer,
+    require('../../docs/deployments/ethereum-mainnet-2026-10-12.json').coordinator);
+});
+
+test('monitoring retains deployed addresses instead of zero summary or override placeholders', async () => {
+  const { buildAddressIndex } = loadTypeScript('../../scripts/monitoring/sentinel-utils.ts');
+  const zero = '0x' + '0'.repeat(40);
+  const index = await buildAddressIndex({ network: 'mainnet', inlineMap: { STAKE_MANAGER: zero } });
+  const book = require('../../docs/deployment-addresses.json');
+  assert.equal(index.get('STAKE_MANAGER').address, book.stakeManager);
+  assert.equal(index.get('JOB_REGISTRY').address, book.jobRegistry);
+  assert.equal(index.has('TAX_POLICY'), false);
+  for (const resolution of index.values()) assert.notEqual(resolution.address, zero);
+});
