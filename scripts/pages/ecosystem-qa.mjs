@@ -205,29 +205,105 @@ export async function verifyEcosystem({
         );
       }
     }
+    completed.push(
+      'no JavaScript: all 29 links, essential content, selectable token and hidden copy controls'
+    );
     assert.equal(
       fallback.frames().length,
       1,
       'no-JavaScript accessibility audit requires a single document'
     );
-    // Run axe in the actual no-JavaScript document. The default partial-result
-    // path fails in this context; with no child frames, direct axe.run retains
-    // the full audit without cross-origin frame coverage to omit.
-    const accessibility = await new AxeBuilder({ page: fallback })
-      .setLegacyMode(true)
-      .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
-      .analyze();
-    fs.writeFileSync(
-      path.join(artifacts, 'accessibility-ecosystem-nojs.json'),
-      JSON.stringify(accessibility.violations, null, 2)
+    assert.equal(
+      await fallback.locator('noscript').count(),
+      0,
+      'axe instrumentation must not change noscript display semantics'
     );
-    assert.deepEqual(
-      accessibility.violations,
-      [],
-      'ecosystem no-JavaScript accessibility'
-    );
+    const captureStaticDocument = () =>
+      fallback.evaluate(() => ({
+        url: location.href,
+        html: document.documentElement.outerHTML,
+        viewport: [innerWidth, innerHeight],
+        size: [
+          document.documentElement.scrollWidth,
+          document.documentElement.scrollHeight,
+        ],
+        elements: Array.from(
+          document.querySelectorAll(
+            'main, section, [data-contract-name], .ecosystem-copy'
+          ),
+          (element) => {
+            const rect = element.getBoundingClientRect();
+            const style = getComputedStyle(element);
+            return {
+              rect: [
+                rect.x + scrollX,
+                rect.y + scrollY,
+                rect.width,
+                rect.height,
+              ],
+              display: style.display,
+              visibility: style.visibility,
+              hidden: element.hidden,
+            };
+          }
+        ),
+      }));
+    const staticDocument = await captureStaticDocument();
+    const guardScripts = async (route) => {
+      if (route.request().resourceType() === 'script') {
+        failures.push(
+          `Script requested during axe instrumentation: ${route
+            .request()
+            .url()}`
+        );
+        await route.abort('blockedbyclient');
+      } else await route.continue();
+    };
+    await fallback.route('**/*', guardScripts);
+    const inspector = await noJS.newCDPSession(fallback);
+    try {
+      // Native no-JS evidence is complete above. Axe needs timers, so allow its
+      // instrumentation on this already-loaded document without reloading it.
+      // A new inspector session must first establish its own disabled override.
+      await inspector.send('Emulation.setScriptExecutionDisabled', {
+        value: true,
+      });
+      await inspector.send('Emulation.setScriptExecutionDisabled', {
+        value: false,
+      });
+      assert.deepEqual(
+        await captureStaticDocument(),
+        staticDocument,
+        'enabling axe instrumentation preserves the no-JS DOM, layout and controls'
+      );
+      const accessibility = await new AxeBuilder({ page: fallback })
+        .setLegacyMode(true)
+        .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+        .analyze();
+      fs.writeFileSync(
+        path.join(artifacts, 'accessibility-ecosystem-nojs.json'),
+        JSON.stringify(accessibility.violations, null, 2)
+      );
+      assert.deepEqual(
+        accessibility.violations,
+        [],
+        'ecosystem no-JS static DOM accessibility with axe instrumentation'
+      );
+      assert.deepEqual(
+        await captureStaticDocument(),
+        staticDocument,
+        'axe instrumentation preserves the no-JS DOM, layout and controls'
+      );
+    } finally {
+      await inspector.send('Emulation.setScriptExecutionDisabled', {
+        value: true,
+      });
+      await fallback.unroute('**/*', guardScripts);
+      // Keep the inspector attached until context teardown below: detaching it
+      // while this page is live would reset its disabled-script override.
+    }
     completed.push(
-      'no JavaScript: all 29 links, essential content, selectable token and hidden copy controls'
+      'no-JS static DOM: axe instrumentation with unchanged DOM, layout and hidden controls'
     );
     assert.deepEqual(failures, [], 'ecosystem console and network errors');
     status = 'passed';
