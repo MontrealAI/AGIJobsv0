@@ -13,6 +13,7 @@ const provenance=JSON.parse(fs.readFileSync(new URL('provenance.json',directory)
 const ecosystem=JSON.parse(fs.readFileSync(new URL('../../website/data/ecosystem.json',import.meta.url),'utf8'));
 
 test('portable workshop mirror retains exact source bytes, CSP and both deployment suites',()=>{
+  assert.equal((page.match(/<main id="main">/g)||[]).length,1);
   assert.equal(createHash('sha256').update(page).digest('hex'),provenance.sha256);
   for(const content of [page.match(/<style>([\s\S]*?)<\/style>/)[1],page.match(/<script>([\s\S]*?)<\/script>/)[1]]){
     assert.ok(page.includes('sha256-'+createHash('sha256').update(content).digest('base64')));
