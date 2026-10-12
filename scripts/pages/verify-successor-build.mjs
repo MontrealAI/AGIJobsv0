@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { compileJobs, verifyWorkOrderSeal } from '../../packages/successor-core/src/compiler.mjs';
 import { digestObject, canonicalize } from '../../packages/successor-core/src/integrity.mjs';
-import { validateRequest, validateCandidate, digest as alphaDigest, VERSION as ALPHA_VERSION } from './vendor/alpha-successor/engine.mjs';
+import { validateRequest, validateCandidate, generateCandidates, digest as alphaDigest, VERSION as ALPHA_VERSION } from './vendor/alpha-successor/engine.mjs';
 const alphaProvenance=JSON.parse(fs.readFileSync(new URL('./vendor/alpha-successor/provenance.json',import.meta.url),'utf8'));
 
 const configuration={version:'number',layout:'string',cache_last:'boolean',update:'string'};
@@ -29,6 +29,37 @@ function requireShape(value,shape) {
   requireKeys(value,Object.keys(shape));
   for(const key of Object.keys(shape))requireShape(value[key],shape[key]);
 }
+function verifyEvaluation(pack) {
+  const evaluation=pack.evaluation, totals={current:0,beta:0,candidate:0};
+  if(evaluation.cases.length!==6 || pack.discovery.selected.correctness!==true)throw Error('Workshop evaluation requires six cases and a feasible candidate');
+  for(const [index,item] of evaluation.cases.entries()){
+    if(item.case_index!==index || item.events!==(index<2?64:pack.request.max_events))throw Error('Workshop evaluation case binding mismatch');
+    for(const key of Object.keys(totals)){
+      const elapsed=item[key+'_ns'];
+      if(!Number.isSafeInteger(elapsed) || elapsed<1)throw Error('Invalid workshop timing');
+      totals[key]+=elapsed;
+      if(!Number.isSafeInteger(totals[key]))throw Error('Invalid workshop timing total');
+    }
+  }
+  const correctness=evaluation.cases.every(item=>item.exact_output);
+  const best=totals.current<=totals.beta?'current':'beta';
+  const verdict=!correctness?'FAIL':totals.candidate>=totals[best]?(best==='beta'?'RETAIN_ALTERNATIVE':'RETAIN_INCUMBENT'):totals.candidate/totals[best]>0.95?'INSUFFICIENT_MARGIN':'LOCAL_SPEEDUP_OBSERVED';
+  if(canonicalize(evaluation.totals_ns)!==canonicalize(totals) || evaluation.correctness!==correctness || evaluation.best_comparator!==best || evaluation.local_verdict!==verdict)throw Error('Workshop evaluation derived results mismatch');
+}
+function verifyDiscovery(pack) {
+  const discovery=pack.discovery, attempts=discovery.attempts;
+  const configurations=generateCandidates(pack.request.seed,pack.request.max_candidates);
+  configurations.sort((a,b)=>Number(b.layout==='nested')-Number(a.layout==='nested'));
+  if(pack.request.max_candidates!==4 || discovery.generation_budget!==4 || discovery.actual_candidates!==4 || attempts.length!==4 || discovery.source!==ALPHA_VERSION || discovery.world.version!==1)throw Error('Workshop discovery budget or source mismatch');
+  for(const [index,item] of attempts.entries()){
+    if(canonicalize(item.config)!==canonicalize(configurations[index]) || !Number.isSafeInteger(item.elapsed_ns) || item.elapsed_ns<1 || !Number.isSafeInteger(item.rows) || item.rows<0 || canonicalize(item.construction)!==canonicalize({operator:'bounded-grammar-composition',seed:pack.request.seed,parent:ALPHA_VERSION}))throw Error('Workshop discovery attempt mismatch');
+  }
+  const feasible=attempts.filter(item=>item.correctness).sort((a,b)=>a.elapsed_ns-b.elapsed_ns);
+  if(!feasible.length || canonicalize(discovery.selected)!==canonicalize(feasible[0]))throw Error('Workshop discovery selection mismatch');
+  const mean=layout=>{const items=attempts.filter(item=>item.config.layout===layout);return Math.round(items.reduce((sum,item)=>sum+item.elapsed_ns,0)/(items.length||1));};
+  const nested=mean('nested'),tuple=mean('tuple');
+  if(discovery.world.observation.nested_mean_ns!==nested || discovery.world.observation.tuple_mean_ns!==tuple || discovery.world.falsified_in_this_run!==(nested>=tuple))throw Error('Workshop discovery observation mismatch');
+}
 
 export async function verifyBuildPack(pack) {
   if (!pack || pack.schema !== 'successor-build-example/v1' || pack.scope !== 'LOCAL_REHEARSAL') throw Error('Unsupported workshop package');
@@ -48,6 +79,7 @@ export async function verifyBuildPack(pack) {
   if(manifest.request_hash!==await alphaDigest('request',pack.request) || manifest.candidate_hash!==await alphaDigest('candidate',manifest.grammar) || pack.frozen.release_hash!==await alphaDigest('release',manifest) || pack.evaluation.release_hash!==pack.frozen.release_hash || pack.chronicle[0].candidateRelease!==pack.frozen.release_hash)throw Error('Workshop Alpha commitment mismatch');
   if(!matches(pack.discovery.selected.config,manifest.grammar) || pack.discovery.selected.artifact_hash!==manifest.candidate_hash || !pack.discovery.attempts.some(item=>matches(item,pack.discovery.selected)))throw Error('Workshop selected candidate mismatch');
   for(const item of pack.discovery.attempts){validateCandidate(item.config);if(item.artifact_hash!==await alphaDigest('candidate',item.config))throw Error('Workshop candidate commitment mismatch');}
+  verifyDiscovery(pack);verifyEvaluation(pack);
   const jobs = pack.compilation?.graph?.nodes;
   if (!Array.isArray(jobs) || jobs.length !== 21) throw Error('Expected 21 work orders');
   for (const job of jobs) {

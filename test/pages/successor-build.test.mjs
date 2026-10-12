@@ -78,9 +78,22 @@ test('a complete real export reproduces and rejects forged claims throughout its
     p=>{p.request.language='fr';},
     p=>{p.frozen.release_hash='0'.repeat(64);},
     p=>{p.discovery.selected.artifact_hash='0'.repeat(64);},
+    p=>{p.evaluation.cases[0].exact_output=false;},
+    p=>{p.evaluation.totals_ns.current=0;},
+    p=>{p.evaluation.local_verdict='ADMITTED';},
+    p=>{p.evaluation.best_comparator='candidate';},
+    p=>{p.evaluation.cases.pop();},
+    p=>{p.evaluation.cases[0].case_index=1;},
+    p=>{p.evaluation.cases[0].current_ns=-1;},
+    p=>{p.evaluation.cases[2].events=64;},
+    p=>{p.discovery.world.observation.nested_mean_ns+=1;},
+    p=>{p.discovery.actual_candidates=1;},
   ];
   for(const mutate of mutations){
     const {integrityDigest,...forged}=structuredClone(pack);mutate(forged);
     await assert.rejects(verifyBuildPack({...forged,integrityDigest:await digestObject('successor-build-example.v1',forged)}),/workshop|Workshop/);
   }
+  const {integrityDigest,...failed}=structuredClone(pack);
+  failed.evaluation.cases[0].exact_output=false;failed.evaluation.correctness=false;failed.evaluation.local_verdict='FAIL';
+  assert.equal((await verifyBuildPack({...failed,integrityDigest:await digestObject('successor-build-example.v1',failed)})).recompilation,'MATCH');
 });

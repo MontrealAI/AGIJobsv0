@@ -3,7 +3,7 @@
   "sourceRepository": "https://github.com/MontrealAI/AGI-Alpha-Agent-v0",
   "sourcePath": "docs/successor/build/index.html",
   "sourceGuide": "examples/build-successor/README.md",
-  "sha256": "5d4ec19e14d08a5f7cc76ad1d3cf3c10bf6c16c58a4b87130e8149d386ba1c2a",
+  "sha256": "62006f1997f667efbce3549396e71090a6e56d111404cd617487d8f4fec262ef",
   "agijobsCompiler": {
     "repository": "https://github.com/MontrealAI/AGIJobsv0",
     "revision": "ead296b4f515580c108ebae13e993eb4a83d780d",
@@ -29,6 +29,6 @@
     ]
   },
   "license": "Apache-2.0 workshop and Alpha engine; MIT AGI Jobs compiler; complete licenses embedded",
-  "sourceRevision": "cc854023aff94fd0006aa79d63aa418e4c148800",
-  "sourceUrl": "https://github.com/MontrealAI/AGI-Alpha-Agent-v0/blob/cc854023aff94fd0006aa79d63aa418e4c148800/docs/successor/build/index.html"
+  "sourceRevision": "47a0cf545d9e10e6323b1bef902184038bdf91ff",
+  "sourceUrl": "https://github.com/MontrealAI/AGI-Alpha-Agent-v0/blob/47a0cf545d9e10e6323b1bef902184038bdf91ff/docs/successor/build/index.html"
 }

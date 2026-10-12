@@ -1,6 +1,6 @@
 {
   "schema": "successor-build-example/v1",
-  "createdAt": "2026-10-12T22:14:48.559Z",
+  "createdAt": "2026-10-12T22:56:00.712Z",
   "title": "Atlas Ω",
   "scope": "LOCAL_REHEARSAL",
   "request": {
@@ -12,7 +12,7 @@
     "formation_trials": 2,
     "max_events": 1000,
     "language": "en",
-    "request_id": "5e0e6fbd-a89c-4130-ac8a-3c01e2249afb"
+    "request_id": "638f3cb3-5d73-4bc8-afc6-d653deab474a"
   },
   "compilation": {
     "schemaVersion": "1.0.0",
@@ -27,7 +27,7 @@
       ],
       "alternatives": [
         {
-          "description": "Measured deterministic map baseline; not a frontier AI comparator.",
+          "description": "Measured deterministic sort-and-reduce baseline; not a frontier AI comparator.",
           "id": "alpha-beta",
           "version": "successor-browser-v1"
         }
@@ -76,7 +76,7 @@
         "chronicle-authority",
         "capital-requalification"
       ],
-      "expiresAt": "2026-10-19T22:14:48.559Z",
+      "expiresAt": "2026-10-19T22:56:00.712Z",
       "hardGates": [
         {
           "description": "All grouped counts and durations agree exactly.",
@@ -95,7 +95,7 @@
         }
       ],
       "incumbent": {
-        "description": "Measured scan-based baseline.",
+        "description": "Measured one-pass Map baseline.",
         "id": "alpha-current",
         "version": "successor-browser-v1"
       },
@@ -118,7 +118,7 @@
       "rights": [
         {
           "dataClass": "synthetic",
-          "expiresAt": "2026-10-19T22:14:48.559Z",
+          "expiresAt": "2026-10-19T22:56:00.712Z",
           "license": "Apache-2.0 generator; synthetic nonpersonal outputs",
           "permittedUses": [
             "mission-evaluation",
@@ -365,7 +365,7 @@
           },
           "chronicle": {
             "eligible": false,
-            "expiresAt": "2026-10-19T22:14:48.559Z",
+            "expiresAt": "2026-10-19T22:56:00.712Z",
             "rights": "Requires a separate rights and admission review.",
             "scope": "Produce exact daily service metrics, compare bounded implementations, and prepare reviewable work orders."
           },
@@ -377,7 +377,7 @@
             "complete-cost",
             "failure-record"
           ],
-          "expiresAt": "2026-10-19T22:14:48.559Z",
+          "expiresAt": "2026-10-19T22:56:00.712Z",
           "family": "constitution",
           "jobId": "streaming-metrics-builder-v1:mission-constitution",
           "kind": "SealedWorkOrder",
@@ -419,7 +419,7 @@
           "version": "1",
           "sealed": true,
           "signatureStatus": "UNSIGNED_COMMITMENT",
-          "digest": "sha256:d095517d06fcdc07cd6b8077a60e38034dce17c78d0413df526f89b43826441c"
+          "digest": "sha256:050ab47854345150f5b7fc10d7829b94314aae8661b50782a8b47b209d6a4bb0"
         },
         {
           "acceptance": {
@@ -427,7 +427,7 @@
               "synthetic-events"
             ],
             "owner": "example-acceptor",
-            "predicate": "incumbent.json: exact outputs and observed timings for the existing scan-based implementation. Preserve failures and missing evidence. Separate review is required."
+            "predicate": "incumbent.json: exact outputs and observed timings for the existing one-pass Map implementation. Preserve failures and missing evidence. Separate review is required."
           },
           "actor": "example-producer",
           "authorizedInputs": [
@@ -442,7 +442,7 @@
           },
           "chronicle": {
             "eligible": false,
-            "expiresAt": "2026-10-19T22:14:48.559Z",
+            "expiresAt": "2026-10-19T22:56:00.712Z",
             "rights": "Requires a separate rights and admission review.",
             "scope": "Produce exact daily service metrics, compare bounded implementations, and prepare reviewable work orders."
           },
@@ -454,12 +454,12 @@
             "complete-cost",
             "failure-record"
           ],
-          "expiresAt": "2026-10-19T22:14:48.559Z",
+          "expiresAt": "2026-10-19T22:56:00.712Z",
           "family": "evidence",
           "jobId": "streaming-metrics-builder-v1:incumbent-baseline",
           "kind": "SealedWorkOrder",
           "missionId": "streaming-metrics-builder-v1",
-          "objective": "Measure accepted quality, complete cost, risk, time, human burden and authority. Streaming-metrics deliverable: incumbent.json: exact outputs and observed timings for the existing scan-based implementation.",
+          "objective": "Measure accepted quality, complete cost, risk, time, human burden and authority. Streaming-metrics deliverable: incumbent.json: exact outputs and observed timings for the existing one-pass Map implementation.",
           "outputSchema": {
             "required": [
               "evidence",
@@ -496,7 +496,7 @@
           "version": "1",
           "sealed": true,
           "signatureStatus": "UNSIGNED_COMMITMENT",
-          "digest": "sha256:0516261f39727625b7ecbf72dd20a9ac5ebac9947981d3f7846d71a776db6f43"
+          "digest": "sha256:9dfad1bca9485bf4f58c2f0dd3f2b0a101d985015ca0236a7bbce8c14f7b95d2"
         },
         {
           "acceptance": {
@@ -504,7 +504,7 @@
               "synthetic-events"
             ],
             "owner": "example-acceptor",
-            "predicate": "alternatives.json: compare the deterministic map baseline; record that a frontier comparison is missing. Preserve failures and missing evidence. Separate review is required."
+            "predicate": "alternatives.json: compare the deterministic sort-and-reduce baseline; record that a frontier comparison is missing. Preserve failures and missing evidence. Separate review is required."
           },
           "actor": "example-producer",
           "authorizedInputs": [
@@ -519,7 +519,7 @@
           },
           "chronicle": {
             "eligible": false,
-            "expiresAt": "2026-10-19T22:14:48.559Z",
+            "expiresAt": "2026-10-19T22:56:00.712Z",
             "rights": "Requires a separate rights and admission review.",
             "scope": "Produce exact daily service metrics, compare bounded implementations, and prepare reviewable work orders."
           },
@@ -531,12 +531,12 @@
             "complete-cost",
             "failure-record"
           ],
-          "expiresAt": "2026-10-19T22:14:48.559Z",
+          "expiresAt": "2026-10-19T22:56:00.712Z",
           "family": "constitution",
           "jobId": "streaming-metrics-builder-v1:alternative-set",
           "kind": "SealedWorkOrder",
           "missionId": "streaming-metrics-builder-v1",
-          "objective": "Document the strongest credible frontier, specialist, human, hybrid, software and no-action alternatives. Streaming-metrics deliverable: alternatives.json: compare the deterministic map baseline; record that a frontier comparison is missing.",
+          "objective": "Document the strongest credible frontier, specialist, human, hybrid, software and no-action alternatives. Streaming-metrics deliverable: alternatives.json: compare the deterministic sort-and-reduce baseline; record that a frontier comparison is missing.",
           "outputSchema": {
             "required": [
               "evidence",
@@ -573,7 +573,7 @@
           "version": "1",
           "sealed": true,
           "signatureStatus": "UNSIGNED_COMMITMENT",
-          "digest": "sha256:a2502c4275290cebcf81554c1d092759b0f87fb5338c84760bbc375af4f407f7"
+          "digest": "sha256:3f41098a21d03ee1226b2271be59d50d30974f397aa98247a27718e2cabba2f4"
         },
         {
           "acceptance": {
@@ -596,7 +596,7 @@
           },
           "chronicle": {
             "eligible": false,
-            "expiresAt": "2026-10-19T22:14:48.559Z",
+            "expiresAt": "2026-10-19T22:56:00.712Z",
             "rights": "Requires a separate rights and admission review.",
             "scope": "Produce exact daily service metrics, compare bounded implementations, and prepare reviewable work orders."
           },
@@ -608,7 +608,7 @@
             "complete-cost",
             "failure-record"
           ],
-          "expiresAt": "2026-10-19T22:14:48.559Z",
+          "expiresAt": "2026-10-19T22:56:00.712Z",
           "family": "constitution",
           "jobId": "streaming-metrics-builder-v1:rights-data",
           "kind": "SealedWorkOrder",
@@ -650,7 +650,7 @@
           "version": "1",
           "sealed": true,
           "signatureStatus": "UNSIGNED_COMMITMENT",
-          "digest": "sha256:7b12df70a761eb547dcf4466f67c67481e209a42f0bc0700bd310ace65fc492a"
+          "digest": "sha256:8ff412d1b4a11680daaffab48c205b954af53d6e0a4e099d4531228f9b5b957d"
         },
         {
           "acceptance": {
@@ -675,7 +675,7 @@
           },
           "chronicle": {
             "eligible": false,
-            "expiresAt": "2026-10-19T22:14:48.559Z",
+            "expiresAt": "2026-10-19T22:56:00.712Z",
             "rights": "Requires a separate rights and admission review.",
             "scope": "Produce exact daily service metrics, compare bounded implementations, and prepare reviewable work orders."
           },
@@ -687,7 +687,7 @@
             "complete-cost",
             "failure-record"
           ],
-          "expiresAt": "2026-10-19T22:14:48.559Z",
+          "expiresAt": "2026-10-19T22:56:00.712Z",
           "family": "formation",
           "jobId": "streaming-metrics-builder-v1:mission-gym",
           "kind": "SealedWorkOrder",
@@ -729,7 +729,7 @@
           "version": "1",
           "sealed": true,
           "signatureStatus": "UNSIGNED_COMMITMENT",
-          "digest": "sha256:d8884612512688224b061f56d07b3a5a98102867ed5cc6e95f435fec8f1b9993"
+          "digest": "sha256:d559e2b2f5791b6c9a2e58770c818544e40f6f49675daa9c3f6e1d8bff212ece"
         },
         {
           "acceptance": {
@@ -752,7 +752,7 @@
           },
           "chronicle": {
             "eligible": false,
-            "expiresAt": "2026-10-19T22:14:48.559Z",
+            "expiresAt": "2026-10-19T22:56:00.712Z",
             "rights": "Requires a separate rights and admission review.",
             "scope": "Produce exact daily service metrics, compare bounded implementations, and prepare reviewable work orders."
           },
@@ -764,7 +764,7 @@
             "complete-cost",
             "failure-record"
           ],
-          "expiresAt": "2026-10-19T22:14:48.559Z",
+          "expiresAt": "2026-10-19T22:56:00.712Z",
           "family": "evidence",
           "jobId": "streaming-metrics-builder-v1:oracle-teacher",
           "kind": "SealedWorkOrder",
@@ -806,7 +806,7 @@
           "version": "1",
           "sealed": true,
           "signatureStatus": "UNSIGNED_COMMITMENT",
-          "digest": "sha256:37832018fc5ec62d5a8d4ad1645aabd6877b724f13a643ff530d6761c0699de2"
+          "digest": "sha256:c5da410b33ef8f9a0b4bf3404347f49bd19412e62a6aca9de73eeaf95cc055e9"
         },
         {
           "acceptance": {
@@ -829,7 +829,7 @@
           },
           "chronicle": {
             "eligible": false,
-            "expiresAt": "2026-10-19T22:14:48.559Z",
+            "expiresAt": "2026-10-19T22:56:00.712Z",
             "rights": "Requires a separate rights and admission review.",
             "scope": "Produce exact daily service metrics, compare bounded implementations, and prepare reviewable work orders."
           },
@@ -841,7 +841,7 @@
             "complete-cost",
             "failure-record"
           ],
-          "expiresAt": "2026-10-19T22:14:48.559Z",
+          "expiresAt": "2026-10-19T22:56:00.712Z",
           "family": "challenge",
           "jobId": "streaming-metrics-builder-v1:failure-taxonomy",
           "kind": "SealedWorkOrder",
@@ -883,7 +883,7 @@
           "version": "1",
           "sealed": true,
           "signatureStatus": "UNSIGNED_COMMITMENT",
-          "digest": "sha256:66ce85d0befcc8e737f07f84f5d176c6b3c643d691be809a99c8373dcc9bb270"
+          "digest": "sha256:3650ac39f1b8bbcde277b838ac4c6a1603ccd9999d369347ef69b5adec0b3b98"
         },
         {
           "acceptance": {
@@ -909,7 +909,7 @@
           },
           "chronicle": {
             "eligible": false,
-            "expiresAt": "2026-10-19T22:14:48.559Z",
+            "expiresAt": "2026-10-19T22:56:00.712Z",
             "rights": "Requires a separate rights and admission review.",
             "scope": "Produce exact daily service metrics, compare bounded implementations, and prepare reviewable work orders."
           },
@@ -921,7 +921,7 @@
             "complete-cost",
             "failure-record"
           ],
-          "expiresAt": "2026-10-19T22:14:48.559Z",
+          "expiresAt": "2026-10-19T22:56:00.712Z",
           "family": "formation",
           "jobId": "streaming-metrics-builder-v1:architecture-frontier",
           "kind": "SealedWorkOrder",
@@ -963,7 +963,7 @@
           "version": "1",
           "sealed": true,
           "signatureStatus": "UNSIGNED_COMMITMENT",
-          "digest": "sha256:0764e36836609f9f78a30dece12a661ba3579e308e5389b910589a6f92f19856"
+          "digest": "sha256:ae9efcb2c12c54b29fc769d6dc42a01de710899f7a55b7333907de76a250cc89"
         },
         {
           "acceptance": {
@@ -987,7 +987,7 @@
           },
           "chronicle": {
             "eligible": false,
-            "expiresAt": "2026-10-19T22:14:48.559Z",
+            "expiresAt": "2026-10-19T22:56:00.712Z",
             "rights": "Requires a separate rights and admission review.",
             "scope": "Produce exact daily service metrics, compare bounded implementations, and prepare reviewable work orders."
           },
@@ -999,7 +999,7 @@
             "complete-cost",
             "failure-record"
           ],
-          "expiresAt": "2026-10-19T22:14:48.559Z",
+          "expiresAt": "2026-10-19T22:56:00.712Z",
           "family": "formation",
           "jobId": "streaming-metrics-builder-v1:experience-formation",
           "kind": "SealedWorkOrder",
@@ -1041,7 +1041,7 @@
           "version": "1",
           "sealed": true,
           "signatureStatus": "UNSIGNED_COMMITMENT",
-          "digest": "sha256:aed9835d20752d78b180ff8b282da1c4e246dba2c56a77959072232f2acfab71"
+          "digest": "sha256:ad9f6f7bca261bcffc2d531f3c4a078ce7ac14e59016800e4fc73b1ae62981e9"
         },
         {
           "acceptance": {
@@ -1065,7 +1065,7 @@
           },
           "chronicle": {
             "eligible": false,
-            "expiresAt": "2026-10-19T22:14:48.559Z",
+            "expiresAt": "2026-10-19T22:56:00.712Z",
             "rights": "Requires a separate rights and admission review.",
             "scope": "Produce exact daily service metrics, compare bounded implementations, and prepare reviewable work orders."
           },
@@ -1077,7 +1077,7 @@
             "complete-cost",
             "failure-record"
           ],
-          "expiresAt": "2026-10-19T22:14:48.559Z",
+          "expiresAt": "2026-10-19T22:56:00.712Z",
           "family": "formation",
           "jobId": "streaming-metrics-builder-v1:specialist-formation",
           "kind": "SealedWorkOrder",
@@ -1119,7 +1119,7 @@
           "version": "1",
           "sealed": true,
           "signatureStatus": "UNSIGNED_COMMITMENT",
-          "digest": "sha256:8e54af35399d06f31934e05cff3f87a5b067ae44368719ec848d54304382ba4d"
+          "digest": "sha256:6eb025ff26f1de3fa08348f53e868345b7634ea6fcfbc2b318b14c22cd82d4cc"
         },
         {
           "acceptance": {
@@ -1142,7 +1142,7 @@
           },
           "chronicle": {
             "eligible": false,
-            "expiresAt": "2026-10-19T22:14:48.559Z",
+            "expiresAt": "2026-10-19T22:56:00.712Z",
             "rights": "Requires a separate rights and admission review.",
             "scope": "Produce exact daily service metrics, compare bounded implementations, and prepare reviewable work orders."
           },
@@ -1154,7 +1154,7 @@
             "complete-cost",
             "failure-record"
           ],
-          "expiresAt": "2026-10-19T22:14:48.559Z",
+          "expiresAt": "2026-10-19T22:56:00.712Z",
           "family": "formation",
           "jobId": "streaming-metrics-builder-v1:tools-retrieval",
           "kind": "SealedWorkOrder",
@@ -1196,7 +1196,7 @@
           "version": "1",
           "sealed": true,
           "signatureStatus": "UNSIGNED_COMMITMENT",
-          "digest": "sha256:e46eb17315c52de2ae090360a5a1545b48e6a7869958867f7b11dcda4cf1a2c1"
+          "digest": "sha256:48c3f15ec34ea9e24b31bbd1520b8c7239fc79f232b48228a356ac8b94d1dde0"
         },
         {
           "acceptance": {
@@ -1221,7 +1221,7 @@
           },
           "chronicle": {
             "eligible": false,
-            "expiresAt": "2026-10-19T22:14:48.559Z",
+            "expiresAt": "2026-10-19T22:56:00.712Z",
             "rights": "Requires a separate rights and admission review.",
             "scope": "Produce exact daily service metrics, compare bounded implementations, and prepare reviewable work orders."
           },
@@ -1233,7 +1233,7 @@
             "complete-cost",
             "failure-record"
           ],
-          "expiresAt": "2026-10-19T22:14:48.559Z",
+          "expiresAt": "2026-10-19T22:56:00.712Z",
           "family": "verification",
           "jobId": "streaming-metrics-builder-v1:verifier-formation",
           "kind": "SealedWorkOrder",
@@ -1275,7 +1275,7 @@
           "version": "1",
           "sealed": true,
           "signatureStatus": "UNSIGNED_COMMITMENT",
-          "digest": "sha256:1c3d846b201d617b40036ce5a885835efd47ede944232471f569b443462efcb5"
+          "digest": "sha256:77aca1768c90ffc7d0f2ca89e8c156fa83f9febd2cbcfbdc02da5e69ed3ebd75"
         },
         {
           "acceptance": {
@@ -1299,7 +1299,7 @@
           },
           "chronicle": {
             "eligible": false,
-            "expiresAt": "2026-10-19T22:14:48.559Z",
+            "expiresAt": "2026-10-19T22:56:00.712Z",
             "rights": "Requires a separate rights and admission review.",
             "scope": "Produce exact daily service metrics, compare bounded implementations, and prepare reviewable work orders."
           },
@@ -1311,7 +1311,7 @@
             "complete-cost",
             "failure-record"
           ],
-          "expiresAt": "2026-10-19T22:14:48.559Z",
+          "expiresAt": "2026-10-19T22:56:00.712Z",
           "family": "verification",
           "jobId": "streaming-metrics-builder-v1:security-privacy",
           "kind": "SealedWorkOrder",
@@ -1353,7 +1353,7 @@
           "version": "1",
           "sealed": true,
           "signatureStatus": "UNSIGNED_COMMITMENT",
-          "digest": "sha256:b6e135cc64c5201419661fed5669f150c50d9b59b9a75026468f8e1726e8721d"
+          "digest": "sha256:8c1df779cf2c909d337111a680dc2d0b0cf4531a42dca811763944687c7ade2d"
         },
         {
           "acceptance": {
@@ -1378,7 +1378,7 @@
           },
           "chronicle": {
             "eligible": false,
-            "expiresAt": "2026-10-19T22:14:48.559Z",
+            "expiresAt": "2026-10-19T22:56:00.712Z",
             "rights": "Requires a separate rights and admission review.",
             "scope": "Produce exact daily service metrics, compare bounded implementations, and prepare reviewable work orders."
           },
@@ -1390,7 +1390,7 @@
             "complete-cost",
             "failure-record"
           ],
-          "expiresAt": "2026-10-19T22:14:48.559Z",
+          "expiresAt": "2026-10-19T22:56:00.712Z",
           "family": "evidence",
           "jobId": "streaming-metrics-builder-v1:complete-economics",
           "kind": "SealedWorkOrder",
@@ -1432,7 +1432,7 @@
           "version": "1",
           "sealed": true,
           "signatureStatus": "UNSIGNED_COMMITMENT",
-          "digest": "sha256:d8ee667d1fca40e6b7ff9386198a269c4ee9af5d1954216da65aa787b945459d"
+          "digest": "sha256:8c290698c419a9e307dff0899dcc34c7593f2b32b9d07f822544dabce06deacd"
         },
         {
           "acceptance": {
@@ -1456,7 +1456,7 @@
           },
           "chronicle": {
             "eligible": false,
-            "expiresAt": "2026-10-19T22:14:48.559Z",
+            "expiresAt": "2026-10-19T22:56:00.712Z",
             "rights": "Requires a separate rights and admission review.",
             "scope": "Produce exact daily service metrics, compare bounded implementations, and prepare reviewable work orders."
           },
@@ -1468,7 +1468,7 @@
             "complete-cost",
             "failure-record"
           ],
-          "expiresAt": "2026-10-19T22:14:48.559Z",
+          "expiresAt": "2026-10-19T22:56:00.712Z",
           "family": "constitution",
           "jobId": "streaming-metrics-builder-v1:human-agency",
           "kind": "SealedWorkOrder",
@@ -1510,7 +1510,7 @@
           "version": "1",
           "sealed": true,
           "signatureStatus": "UNSIGNED_COMMITMENT",
-          "digest": "sha256:8d71bb85cc9b3afc6d799cf1574885f2d23c5e4e7f6ea6a6165677854f3d6b37"
+          "digest": "sha256:020fada0a206bf44c6bc6655d3ae2689599d3046b6810e220db5a1cd29a0cc6b"
         },
         {
           "acceptance": {
@@ -1534,7 +1534,7 @@
           },
           "chronicle": {
             "eligible": false,
-            "expiresAt": "2026-10-19T22:14:48.559Z",
+            "expiresAt": "2026-10-19T22:56:00.712Z",
             "rights": "Requires a separate rights and admission review.",
             "scope": "Produce exact daily service metrics, compare bounded implementations, and prepare reviewable work orders."
           },
@@ -1546,7 +1546,7 @@
             "complete-cost",
             "failure-record"
           ],
-          "expiresAt": "2026-10-19T22:14:48.559Z",
+          "expiresAt": "2026-10-19T22:56:00.712Z",
           "family": "verification",
           "jobId": "streaming-metrics-builder-v1:resilience-rollback",
           "kind": "SealedWorkOrder",
@@ -1588,7 +1588,7 @@
           "version": "1",
           "sealed": true,
           "signatureStatus": "UNSIGNED_COMMITMENT",
-          "digest": "sha256:6fd89decfeefeff4ddf601ffec1f21608718098fdb25b901047f95c4d12543c9"
+          "digest": "sha256:cb0cf043159d800caf02e4daecf79e0ae6f5b10b5a8ae41e49c8e33eaa116e58"
         },
         {
           "acceptance": {
@@ -1616,7 +1616,7 @@
           },
           "chronicle": {
             "eligible": false,
-            "expiresAt": "2026-10-19T22:14:48.559Z",
+            "expiresAt": "2026-10-19T22:56:00.712Z",
             "rights": "Requires a separate rights and admission review.",
             "scope": "Produce exact daily service metrics, compare bounded implementations, and prepare reviewable work orders."
           },
@@ -1628,7 +1628,7 @@
             "complete-cost",
             "failure-record"
           ],
-          "expiresAt": "2026-10-19T22:14:48.559Z",
+          "expiresAt": "2026-10-19T22:56:00.712Z",
           "family": "verification",
           "jobId": "streaming-metrics-builder-v1:fresh-evaluation",
           "kind": "SealedWorkOrder",
@@ -1670,7 +1670,7 @@
           "version": "1",
           "sealed": true,
           "signatureStatus": "UNSIGNED_COMMITMENT",
-          "digest": "sha256:8e8f3a79c5065cda2dc659b669ba980a97b9dce4ed04d6fdabf576a93e227606"
+          "digest": "sha256:ccfd6207da75780a3c7a14796e5e751a601a58222a7ff56523a967624ce2ce80"
         },
         {
           "acceptance": {
@@ -1693,7 +1693,7 @@
           },
           "chronicle": {
             "eligible": false,
-            "expiresAt": "2026-10-19T22:14:48.559Z",
+            "expiresAt": "2026-10-19T22:56:00.712Z",
             "rights": "Requires a separate rights and admission review.",
             "scope": "Produce exact daily service metrics, compare bounded implementations, and prepare reviewable work orders."
           },
@@ -1705,7 +1705,7 @@
             "complete-cost",
             "failure-record"
           ],
-          "expiresAt": "2026-10-19T22:14:48.559Z",
+          "expiresAt": "2026-10-19T22:56:00.712Z",
           "family": "verification",
           "jobId": "streaming-metrics-builder-v1:independent-validation",
           "kind": "SealedWorkOrder",
@@ -1747,7 +1747,7 @@
           "version": "1",
           "sealed": true,
           "signatureStatus": "UNSIGNED_COMMITMENT",
-          "digest": "sha256:8f7a26e6ef7f62c64c98dadc61664cd258845ebeb44c03e50b9f1bb58f70e1a7"
+          "digest": "sha256:0fbd72cc5dbf4a767fe58422b4d8e47b083c11b6676a24fe28a1d4f301c2e5a5"
         },
         {
           "acceptance": {
@@ -1770,7 +1770,7 @@
           },
           "chronicle": {
             "eligible": false,
-            "expiresAt": "2026-10-19T22:14:48.559Z",
+            "expiresAt": "2026-10-19T22:56:00.712Z",
             "rights": "Requires a separate rights and admission review.",
             "scope": "Produce exact daily service metrics, compare bounded implementations, and prepare reviewable work orders."
           },
@@ -1782,7 +1782,7 @@
             "complete-cost",
             "failure-record"
           ],
-          "expiresAt": "2026-10-19T22:14:48.559Z",
+          "expiresAt": "2026-10-19T22:56:00.712Z",
           "family": "admission",
           "jobId": "streaming-metrics-builder-v1:accountable-acceptance",
           "kind": "SealedWorkOrder",
@@ -1824,7 +1824,7 @@
           "version": "1",
           "sealed": true,
           "signatureStatus": "UNSIGNED_COMMITMENT",
-          "digest": "sha256:3afdb8547a6596e7bfdb962aa3d4e1b2091a6b21f102d103bb8d799ada9a95e5"
+          "digest": "sha256:b85861642f9cb33603358655c8b2c1114d60137962915da06f1e1b26dcac91e4"
         },
         {
           "acceptance": {
@@ -1847,7 +1847,7 @@
           },
           "chronicle": {
             "eligible": false,
-            "expiresAt": "2026-10-19T22:14:48.559Z",
+            "expiresAt": "2026-10-19T22:56:00.712Z",
             "rights": "Requires a separate rights and admission review.",
             "scope": "Produce exact daily service metrics, compare bounded implementations, and prepare reviewable work orders."
           },
@@ -1859,7 +1859,7 @@
             "complete-cost",
             "failure-record"
           ],
-          "expiresAt": "2026-10-19T22:14:48.559Z",
+          "expiresAt": "2026-10-19T22:56:00.712Z",
           "family": "admission",
           "jobId": "streaming-metrics-builder-v1:chronicle-authority",
           "kind": "SealedWorkOrder",
@@ -1901,7 +1901,7 @@
           "version": "1",
           "sealed": true,
           "signatureStatus": "UNSIGNED_COMMITMENT",
-          "digest": "sha256:e3b4af5d35fe1b5c5d881cbc8f74bf21d84d2541c995493479e6d57651847266"
+          "digest": "sha256:15b0f64f08766f8cfbb3f5378c579dc5618e783a10fae86d51a918715333cba0"
         },
         {
           "acceptance": {
@@ -1924,7 +1924,7 @@
           },
           "chronicle": {
             "eligible": false,
-            "expiresAt": "2026-10-19T22:14:48.559Z",
+            "expiresAt": "2026-10-19T22:56:00.712Z",
             "rights": "Requires a separate rights and admission review.",
             "scope": "Produce exact daily service metrics, compare bounded implementations, and prepare reviewable work orders."
           },
@@ -1936,7 +1936,7 @@
             "complete-cost",
             "failure-record"
           ],
-          "expiresAt": "2026-10-19T22:14:48.559Z",
+          "expiresAt": "2026-10-19T22:56:00.712Z",
           "family": "renewal",
           "jobId": "streaming-metrics-builder-v1:capital-requalification",
           "kind": "SealedWorkOrder",
@@ -1978,12 +1978,12 @@
           "version": "1",
           "sealed": true,
           "signatureStatus": "UNSIGNED_COMMITMENT",
-          "digest": "sha256:37d2030181cc71c514c15696200357021f52f69c27bb864fe49786c972ecd00a"
+          "digest": "sha256:a7beeae9eccb0e427f4b679bab29014867f92bf1a9435f035143b84e0b4f8f33"
         }
       ],
       "schemaVersion": "1.0.0",
       "version": "1",
-      "digest": "sha256:2a8c60cc99417351dec7e2cf2378e020ca89121ddc2d82c0026767e87e9db997"
+      "digest": "sha256:f8230b69597a1af380c6d959e8d914472a3046edd879686f3ac3110596cf0fa6"
     },
     "executionOrder": [
       "streaming-metrics-builder-v1:mission-constitution",
@@ -2862,7 +2862,7 @@
     },
     "authorityCreated": "NONE",
     "signatureStatus": "UNSIGNED_COMMITMENT",
-    "digest": "sha256:05b94841891f2d876bd5c24dd226fc96db31173661c0498bfec0c3ae69cad706"
+    "digest": "sha256:99cfe0675bce9e7b6e0d9b5ef28cf3fddd174ad2555d4eb6ba1c03e7055aa280"
   },
   "discovery": {
     "world": {
@@ -2872,8 +2872,8 @@
       "experiment": "prioritize nested-map compositions, then test tuple-map alternatives within the same budget",
       "selection_rule": "minimum measured development elapsed_ns among correct candidates; not final proof",
       "observation": {
-        "nested_mean_ns": 1764328,
-        "tuple_mean_ns": 1753542,
+        "nested_mean_ns": 1327807,
+        "tuple_mean_ns": 1167095,
         "interpretation": "development observation only; confounded by composition and browser timing"
       },
       "falsified_in_this_run": true
@@ -2893,7 +2893,7 @@
         },
         "artifact_hash": "aa18bcba02b1e2f383cba206f58e2c72087630952399a6da7a514a2b4cc2bde2",
         "correctness": true,
-        "elapsed_ns": 2821128,
+        "elapsed_ns": 1954575,
         "rows": 21
       },
       {
@@ -2910,7 +2910,7 @@
         },
         "artifact_hash": "ba8af8a21c9ba988391824adfad99f8dd339ef24ca6d019ea3506a7fe9f69e09",
         "correctness": true,
-        "elapsed_ns": 707528,
+        "elapsed_ns": 701039,
         "rows": 21
       },
       {
@@ -2927,7 +2927,7 @@
         },
         "artifact_hash": "f28637fae0ba92e69104b6cd603159fc10c430bd7de09b709278837dc337b1fe",
         "correctness": true,
-        "elapsed_ns": 1402807,
+        "elapsed_ns": 1156734,
         "rows": 21
       },
       {
@@ -2944,7 +2944,7 @@
         },
         "artifact_hash": "ad81e04702f3e72edc8ac974837b45a4da3cf0756aa913de276e64846ed93121",
         "correctness": true,
-        "elapsed_ns": 2104276,
+        "elapsed_ns": 1177455,
         "rows": 21
       }
     ],
@@ -2962,7 +2962,7 @@
       },
       "artifact_hash": "ba8af8a21c9ba988391824adfad99f8dd339ef24ca6d019ea3506a7fe9f69e09",
       "correctness": true,
-      "elapsed_ns": 707528,
+      "elapsed_ns": 701039,
       "rows": 21
     },
     "generation_budget": 4,
@@ -2972,7 +2972,7 @@
   "frozen": {
     "manifest": {
       "schema_version": 1,
-      "request_hash": "f7188cd69edc92fc5794d77fe376b21203c761b70625c150f9bd19ad070b7c0f",
+      "request_hash": "ef6159157c7c3a86a1f25bb53bf09c7e973426bc44b950b13a8abb8b82cc7897",
       "grammar": {
         "version": 1,
         "layout": "nested",
@@ -2996,67 +2996,67 @@
       },
       "authority": []
     },
-    "release_hash": "d63ed9512eb80eb9904095cc521ce90a2fd58fa588398901c331ed65cb22ea81"
+    "release_hash": "72cbfb53f6cf5d4faa180883bcd1994ddbebc5d2afed2dd8a32b52a2e02b5219"
   },
   "evaluation": {
     "schema_version": 1,
     "scope": "browser-rehearsal",
-    "release_hash": "d63ed9512eb80eb9904095cc521ce90a2fd58fa588398901c331ed65cb22ea81",
+    "release_hash": "72cbfb53f6cf5d4faa180883bcd1994ddbebc5d2afed2dd8a32b52a2e02b5219",
     "cases": [
       {
         "case_index": 0,
         "events": 64,
-        "current_ns": 217041,
-        "beta_ns": 313715,
-        "candidate_ns": 96603,
+        "current_ns": 205875,
+        "beta_ns": 333274,
+        "candidate_ns": 98696,
         "exact_output": true
       },
       {
         "case_index": 1,
         "events": 64,
-        "current_ns": 275849,
-        "beta_ns": 283490,
-        "candidate_ns": 260406,
+        "current_ns": 283430,
+        "beta_ns": 280095,
+        "candidate_ns": 241508,
         "exact_output": true
       },
       {
         "case_index": 2,
         "events": 1000,
-        "current_ns": 950608,
-        "beta_ns": 9015431,
-        "candidate_ns": 1161460,
+        "current_ns": 950378,
+        "beta_ns": 9179099,
+        "candidate_ns": 1097937,
         "exact_output": true
       },
       {
         "case_index": 3,
         "events": 1000,
-        "current_ns": 9639516,
-        "beta_ns": 8792762,
-        "candidate_ns": 9079676,
+        "current_ns": 9518672,
+        "beta_ns": 8081653,
+        "candidate_ns": 8981817,
         "exact_output": true
       },
       {
         "case_index": 4,
         "events": 1000,
-        "current_ns": 1267066,
-        "beta_ns": 9662960,
-        "candidate_ns": 700407,
+        "current_ns": 865272,
+        "beta_ns": 9657227,
+        "candidate_ns": 799575,
         "exact_output": true
       },
       {
         "case_index": 5,
         "events": 1000,
-        "current_ns": 8755347,
-        "beta_ns": 8868955,
-        "candidate_ns": 9012457,
+        "current_ns": 9191637,
+        "beta_ns": 8428657,
+        "candidate_ns": 9148814,
         "exact_output": true
       }
     ],
     "correctness": true,
     "totals_ns": {
-      "current": 21105427,
-      "beta": 36937313,
-      "candidate": 20311009
+      "current": 21015264,
+      "beta": 35960005,
+      "candidate": 20368347
     },
     "best_comparator": "current",
     "local_verdict": "INSUFFICIENT_MARGIN",
@@ -3092,11 +3092,11 @@
   "chronicle": [
     {
       "kind": "local-observation",
-      "candidateRelease": "d63ed9512eb80eb9904095cc521ce90a2fd58fa588398901c331ed65cb22ea81",
+      "candidateRelease": "72cbfb53f6cf5d4faa180883bcd1994ddbebc5d2afed2dd8a32b52a2e02b5219",
       "reusable": "Configuration hypothesis only; rerun tests.",
       "inheritedProof": false,
       "inheritedAuthority": false
     }
   ],
-  "integrityDigest": "sha256:a52c58bf922d2f163de35bb33d72534a1dde01c97d886b99020f1eb9bcf9faa8"
+  "integrityDigest": "sha256:0eaae3eedf81a03b0819825e2229d7091a1f8202b0ddf7f17cd1cb658268dbc6"
 }
