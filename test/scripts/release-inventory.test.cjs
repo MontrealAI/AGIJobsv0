@@ -199,46 +199,55 @@ function loadTypeScript(relativePath, mocks = {}) {
   return module.exports;
 }
 
-test('owner-verifier default resolves the checked-in operational address book', () => {
-  const { DEFAULT_ADDRESS_BOOK } = loadTypeScript('../../scripts/v2/lib/ownerControlVerification.ts', {
-    hardhat: {}, '../../config': {}, './utils': {},
-  });
-  assert.equal(DEFAULT_ADDRESS_BOOK, path.resolve(__dirname, '../../docs/deployment-addresses.json'));
-  assert.equal(JSON.parse(fs.readFileSync(DEFAULT_ADDRESS_BOOK, 'utf8')).deployer,
-    require('../../docs/deployments/ethereum-mainnet-2026-10-12.json').coordinator);
+test('canonical address book cannot be relabeled for another network', () => {
+  const { deploymentNetwork } = require('../../scripts/v2/lib/runtime-network.cjs');
+  const book = require('../../docs/deployment-addresses.json');
+  for (const network of ['hardhat', 'sepolia']) {
+    assert.throws(() => deploymentNetwork(book, network), /conflicts with the deployment addressbook/);
+  }
 });
 
-test('owner verification selects mainnet addresses only for chain ID 1', async () => {
-  for (const chainId of [1n, 31337n, 11155111n]) {
-    const queried = [];
-    const { verifyOwnerControl } = loadTypeScript('../../scripts/v2/lib/ownerControlVerification.ts', {
-      hardhat: {
-        network: { name: chainId === 1n ? 'mainnet' : 'hardhat' },
-        ethers: {
-          ...require('ethers'),
-          getSigners: async () => [],
-          provider: {
-            getNetwork: async () => ({ chainId, name: 'fixture' }),
-            getCode: async (value) => { queried.push(value); return '0x'; },
+test('protected owner verifier accepts explicit mainnet and isolated local address books', async () => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'agi-owner-books-'));
+  const localBook = path.join(directory, 'local.json');
+  fs.writeFileSync(localBook, '{}\n');
+  try {
+    for (const chainId of [1n, 31337n, 11155111n]) {
+      const queried = [];
+      const { verifyOwnerControl } = loadTypeScript('../../scripts/v2/lib/ownerControlVerification.ts', {
+        hardhat: {
+          network: { name: chainId === 1n ? 'mainnet' : 'hardhat' },
+          ethers: {
+            ...require('ethers'),
+            getSigners: async () => [],
+            provider: {
+              getNetwork: async () => ({ chainId, name: 'fixture' }),
+              getCode: async (value) => { queried.push(value); return '0x'; },
+            },
           },
         },
-      },
-      '../../config': {
-        inferNetworkKey: (value) => value.name,
-        loadOwnerControlConfig: () => ({ config: { modules: { stakeManager: { type: 'ownable' } } }, path: 'fixture' }),
-      },
-      './utils': {},
-    });
-    const result = await verifyOwnerControl();
-    if (chainId === 1n) {
-      assert.deepEqual(queried, [require('../../docs/deployment-addresses.json').stakeManager]);
-      assert.equal(result.summary.error, 1); // No code in this mocked provider: fail closed.
-    } else {
-      assert.deepEqual(queried, []);
-      assert.equal(result.summary.missingAddress, 1);
-      assert.equal(result.summary.error, 0);
-      assert.ok(result.metadata.addressBookPath.endsWith(`deployment-addresses.${chainId}.json`));
+        '../../config': {
+          inferNetworkKey: (value) => value.name,
+          loadOwnerControlConfig: () => ({ config: { modules: { stakeManager: { type: 'ownable' } } }, path: 'fixture' }),
+        },
+        './utils': {},
+      });
+      const addressBookPath = chainId === 1n
+        ? path.resolve(__dirname, '../../docs/deployment-addresses.json')
+        : localBook;
+      const result = await verifyOwnerControl({ addressBookPath });
+      assert.equal(result.metadata.addressBookPath, addressBookPath);
+      if (chainId === 1n) {
+        assert.deepEqual(queried, [require('../../docs/deployment-addresses.json').stakeManager]);
+        assert.equal(result.summary.error, 1); // No code in this mocked provider: fail closed.
+      } else {
+        assert.deepEqual(queried, []);
+        assert.equal(result.summary.missingAddress, 1);
+        assert.equal(result.summary.error, 0);
+      }
     }
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
   }
 });
 

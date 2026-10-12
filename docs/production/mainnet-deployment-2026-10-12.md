@@ -21,7 +21,16 @@ This is the AGIALPHA deployment of **AGIJobsv0**. **AGIJobManager / ENSJobPages 
 
 [Download/read the machine-readable address and evidence record](../deployments/ethereum-mainnet-2026-10-12.json). It includes all constructor arguments, fully qualified source names, original artifact/build identities, runtime-template digests and dated explorer observations. It is an informational inventory, not an executable deployment configuration.
 
-The existing operational loaders use [the canonical address book](../deployment-addresses.json), now reconciled to this inventory: thirteen protocol components and the coordinator at the top level, with the ten fixed implementations under `implementations`. Its `network: mainnet` and `chainId: 1` fields are also understood by the environment generator. TaxPolicy and modules absent from this stack are explicitly zero; the separate legacy JobManager is not selected. Owner verification reads this file by default only on chain ID 1; other chains use `docs/deployment-addresses.<chainId>.json` or an explicit address book. Monitoring respects the book’s `network` tag and ignores zero placeholders, so another network or the older summary template cannot overwrite this selection. Explicit configuration, environment and command-line overrides still require operator review. The address book records locations only: it does not approve generic ownership-transfer commands, change the SystemPause topology or establish current ownership/pause state.
+The existing operational loaders use [the canonical address book](../deployment-addresses.json), now reconciled to this inventory: thirteen protocol components and the coordinator at the top level, with the ten fixed implementations under `implementations`. Its `network: mainnet` and `chainId: 1` fields are also understood by the environment generator. TaxPolicy and modules absent from this stack are explicitly zero; the separate legacy JobManager is not selected. For owner verification, select this inventory explicitly using the existing `OWNER_VERIFY_ADDRESS_BOOK` override and the mainnet network, as shown below. The protected verifier and its legacy default path are unchanged; do not rely on that default to select this inventory. Local and test-network reports require their own address book and network. Monitoring respects the book’s `network` tag and ignores zero placeholders, so another network or the older summary template cannot overwrite this selection. Explicit configuration, environment and command-line overrides still require operator review. The address book records locations only: it does not approve generic ownership-transfer commands, change the SystemPause topology or establish current ownership/pause state.
+
+For a read-only mainnet owner report, after configuring the intended chain-1 provider and reviewed expected-owner settings:
+
+```sh
+OWNER_VERIFY_ADDRESS_BOOK=docs/deployment-addresses.json OWNER_VERIFY_STRICT=1 \
+  npm run owner:verify-control -- --network mainnet
+```
+
+Strict verification fails on missing addresses, missing expected owners, ownership mismatches or read errors. Disabled/absent modules and the SystemPause ownership topology must be reconciled in the reviewed owner configuration; this example does not claim that commissioning already passes. It sends no ownership transaction. Check the report’s chain ID and selected address-book path before using the result.
 
 ## What happened
 

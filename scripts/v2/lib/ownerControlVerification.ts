@@ -70,7 +70,6 @@ const DEFAULT_ADDRESS_BOOK = path.join(
   __dirname,
   '..',
   '..',
-  '..',
   'docs',
   'deployment-addresses.json'
 );
@@ -442,6 +441,10 @@ export function summariseResults(results: ModuleCheck[]): OwnerControlSummary {
 export async function verifyOwnerControl(
   options: OwnerControlVerificationOptions = {}
 ): Promise<OwnerControlVerificationResult> {
+  const addressBookPath = options.addressBookPath
+    ? path.resolve(options.addressBookPath)
+    : DEFAULT_ADDRESS_BOOK;
+  const addressBook = await readAddressBook(addressBookPath);
   const addressOverrides = { ...(options.addressOverrides ?? {}) };
 
   const { config, path: configPath } = loadOwnerControlConfig({
@@ -453,15 +456,6 @@ export async function verifyOwnerControl(
     provider.getNetwork(),
     Promise.resolve(inferNetworkKey(network) ?? network.name),
   ]);
-
-  // The canonical book records Ethereum mainnet. Other chains must use a
-  // chain-specific book or explicit operator-supplied addresses.
-  const addressBookPath = options.addressBookPath
-    ? path.resolve(options.addressBookPath)
-    : networkInfo.chainId === 1n
-    ? DEFAULT_ADDRESS_BOOK
-    : path.join(path.dirname(DEFAULT_ADDRESS_BOOK), `deployment-addresses.${networkInfo.chainId}.json`);
-  const addressBook = await readAddressBook(addressBookPath);
 
   let signerAddress: string | null = null;
   try {
