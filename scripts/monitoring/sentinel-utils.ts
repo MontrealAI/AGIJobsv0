@@ -154,6 +154,18 @@ export async function buildAddressIndex(options: AddressIndexOptions): Promise<M
     sources.push({ book: deploymentAddresses, source: 'docs/deployment-addresses.json' });
   }
 
+  // Select recorded deployments by network; generic transaction scripts keep a
+  // zero-address default until their chain and ownership-topology guards exist.
+  if (network === 'mainnet') {
+    const mainnetAddresses = await readJsonFile<AddressBook>(
+      path.resolve(process.cwd(), 'docs', 'deployment-addresses.mainnet.json')
+    );
+    if (mainnetAddresses?.network !== 'mainnet' || Number(mainnetAddresses?.chainId) !== 1) {
+      throw new Error('Mainnet monitoring address book must identify chain 1');
+    }
+    sources.push({ book: mainnetAddresses, source: 'docs/deployment-addresses.mainnet.json' });
+  }
+
   const deploymentSummary = await readJsonFile<AddressBook>(
     path.resolve(process.cwd(), 'docs', 'deployment-summary.json')
   );

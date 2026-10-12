@@ -10,9 +10,11 @@ Mainnet deployment record and welcoming example source candidate (2026-10-12).
 - Link the address directory from the repository overview, readiness record, deployment guides and generated Pages documentation. The existing AGIALPHA deployment remains distinct from AGIJobManager/ENSJobPages USDC.
 - Include the previously merged English/French garden-club example and reading improvements from #3923.
 - Stabilize the existing concurrent-budget regression test by waiting for the first driver call before testing the outstanding reservation; runtime enforcement and assertions remain intact.
-- Reconcile the operational address book with all 24 deployed contracts, including ten implementations; mark disabled/absent modules as zero, document the existing owner-verifier address-book override, and prevent zero-valued monitoring templates from replacing recorded addresses.
-- Bind the canonical book to mainnet with standard network/chain fields; monitoring ignores a book tagged for another network. Preserve the protected owner-verifier source and select the reviewed address book explicitly for mainnet reports.
+- Reconcile the explicit mainnet operational address book with all 24 deployed contracts, including ten implementations; mark disabled/absent modules as zero, document the existing owner-verifier address-book override, and prevent zero-valued monitoring templates from replacing recorded addresses.
+- Bind the explicit mainnet book to mainnet with standard network/chain fields; monitoring ignores a book tagged for another network. Preserve the protected owner-verifier source and select the reviewed address book explicitly for mainnet reports.
 - Align the mainnet parameter-change sentinel with disabled TaxPolicy: monitor the three deployed emitters and retain both TaxPolicyUpdated event conditions; validate and render all sentinel templates against the recorded inventory.
+
+- Keep generic transaction defaults empty (zero addresses); select `docs/deployment-addresses.mainnet.json` explicitly for mainnet reports and monitoring, preserving protected scripts until transaction chain/topology guards are reviewed.
 
 This source prerelease does not change Solidity, deployment configuration, settlement rules or dependencies, and sends no blockchain transaction. Production signing and independent security/provider/worker commissioning remain unresolved. All existing demos and flowcharts are preserved.
 

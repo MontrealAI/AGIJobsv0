@@ -21,12 +21,16 @@ This is the AGIALPHA deployment of **AGIJobsv0**. **AGIJobManager / ENSJobPages 
 
 [Download/read the machine-readable address and evidence record](../deployments/ethereum-mainnet-2026-10-12.json). It includes all constructor arguments, fully qualified source names, original artifact/build identities, runtime-template digests and dated explorer observations. It is an informational inventory, not an executable deployment configuration.
 
-The existing operational loaders use [the canonical address book](../deployment-addresses.json), now reconciled to this inventory: thirteen protocol components and the coordinator at the top level, with the ten fixed implementations under `implementations`. Its `network: mainnet` and `chainId: 1` fields are also understood by the environment generator. TaxPolicy and modules absent from this stack are explicitly zero; the separate legacy JobManager is not selected. For owner verification, select this inventory explicitly using the existing `OWNER_VERIFY_ADDRESS_BOOK` override and the mainnet network, as shown below. The protected verifier and its legacy default path are unchanged; do not rely on that default to select this inventory. Local and test-network reports require their own address book and network. Monitoring respects the book’s `network` tag and ignores zero placeholders, so another network or the older summary template cannot overwrite this selection. Explicit configuration, environment and command-line overrides still require operator review. The address book records locations only: it does not approve generic ownership-transfer commands, change the SystemPause topology or establish current ownership/pause state.
+The [explicit mainnet address book](../deployment-addresses.mainnet.json) is reconciled to this inventory: thirteen protocol components and the coordinator at the top level, with ten fixed implementations under `implementations`. Its `network: mainnet` and `chainId: 1` fields are understood by the environment generator. TaxPolicy and absent modules are explicitly zero; the separate legacy JobManager is not selected. Select this file explicitly for reviewed chain-1 read-only reports. Monitoring selects it only for mainnet and ignores zero placeholders.
+
+The [generic default book](../deployment-addresses.json) deliberately contains only zero addresses. Existing transaction-capable scripts, including `transfer-ownership.ts` and `auditIdentityRegistry.ts --clear`, do not enforce the book's chain ID; supplying live addresses there could target the wrong chain or ownership topology. Their source is preserved. Default ownership transfer skips these absent addresses, and default identity clearing rejects the missing registry before a contract lookup. Transaction use requires a separately reviewed chain guard, deployment selection and SystemPause topology; do not populate the generic file to bypass that review. Explicit CLI/configuration overrides remain the operator's responsibility.
+
+For owner verification, use the existing `OWNER_VERIFY_ADDRESS_BOOK` override below. The protected verifier and its legacy default path are unchanged. Local and test-network reports require their own address book and network. This inventory records locations only; it does not approve ownership transfers or establish current ownership/pause state.
 
 For a read-only mainnet owner report, after configuring the intended chain-1 provider and reviewed expected-owner settings:
 
 ```sh
-OWNER_VERIFY_ADDRESS_BOOK=docs/deployment-addresses.json OWNER_VERIFY_STRICT=1 \
+OWNER_VERIFY_ADDRESS_BOOK=docs/deployment-addresses.mainnet.json OWNER_VERIFY_STRICT=1 \
   npm run owner:verify-control -- --network mainnet
 ```
 
