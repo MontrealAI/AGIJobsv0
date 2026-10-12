@@ -9,6 +9,7 @@ Mainnet deployment record and welcoming example source candidate (2026-10-12).
 - Separate recorded paused governance and runtime-template comparison from explorer source publication and live-service commissioning; retain unresolved ownership and commissioning boundaries.
 - Link the address directory from the repository overview, readiness record, deployment guides and generated Pages documentation. The existing AGIALPHA deployment remains distinct from AGIJobManager/ENSJobPages USDC.
 - Include the previously merged English/French garden-club example and reading improvements from #3923.
+- Stabilize the existing concurrent-budget regression test by waiting for the first driver call before testing the outstanding reservation; runtime enforcement and assertions remain intact.
 
 This source prerelease does not change Solidity, deployment configuration, settlement rules or dependencies, and sends no blockchain transaction. Production signing and independent security/provider/worker commissioning remain unresolved. All existing demos and flowcharts are preserved.
 

@@ -793,13 +793,19 @@ test('A03 concurrent actions cannot exceed aggregate budget, including outstandi
   const store = storeWithBudget();
   let calls = 0;
   let release;
+  let first;
+  let signalStarted;
   const gate = new Promise((resolve) => {
     release = resolve;
+  });
+  const started = new Promise((resolve) => {
+    signalStarted = resolve;
   });
   try {
     const runtime = broker(store, {
       execute: async ({ effectId }) => {
         calls++;
+        signalStarted();
         await gate;
         return {
           status: 'completed',
@@ -818,8 +824,12 @@ test('A03 concurrent actions cannot exceed aggregate budget, including outstandi
       nonce: 'concurrent-nonce-2',
       costMinor: '6',
     });
-    const first = runtime.execute(one);
-    await new Promise((resolve) => setImmediate(resolve));
+    first = runtime.execute(one);
+    // Signature verification is asynchronous; one event-loop tick need not
+    // reach the reservation. Wait for the held driver call instead.
+    await Promise.race([started, first]);
+    assert.equal(calls, 1);
+    assert.equal(store.read().budgets['formation-budget'].reservedMinor, '6');
     await assert.rejects(runtime.execute(two), { code: 'BUDGET_EXHAUSTED' });
     release();
     await first;
@@ -827,6 +837,7 @@ test('A03 concurrent actions cannot exceed aggregate budget, including outstandi
     assert.equal(store.read().budgets['formation-budget'].spentMinor, '6');
   } finally {
     release?.();
+    await first?.catch(() => {});
     store.close();
   }
 });
