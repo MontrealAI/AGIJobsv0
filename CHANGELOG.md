@@ -5,7 +5,8 @@
 Mainnet deployment record and welcoming example source candidate (2026-10-12).
 
 - Publish a dated, evidence-qualified inventory of all 24 existing Ethereum mainnet contracts, their deployed rc.4 source identity, constructor arguments and compiler/artifact provenance.
-- Separate recorded paused governance and runtime-template comparison from explorer source publication and live-service commissioning; retain incomplete verification and ownership boundaries.
+- Record completion of **24/24 exact-match Etherscan source verifications**, including the final StakeManagerEscrow success; preserve earlier partial results as history.
+- Separate recorded paused governance and runtime-template comparison from explorer source publication and live-service commissioning; retain unresolved ownership and commissioning boundaries.
 - Link the address directory from the repository overview, readiness record, deployment guides and generated Pages documentation. The existing AGIALPHA deployment remains distinct from AGIJobManager/ENSJobPages USDC.
 - Include the previously merged English/French garden-club example and reading improvements from #3923.
 

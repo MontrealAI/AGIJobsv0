@@ -12,7 +12,7 @@
 | Contracts | **24**: coordinator, thirteen protocol components and ten fixed implementations |
 | Recorded runtime comparison | **24/24 template matches** in the operator's saved run; compiler immutable locations were masked |
 | Recorded operating state | All **eight** managed modules paused and owned by SystemPause |
-| Current explorer observation | **23/24 exact source matches; StakeManagerEscrow remains unverified** |
+| Current explorer observation | **24/24 exact source matches, including StakeManagerEscrow** |
 | Governance | Ledger `0xa9eD0539c2fbc5C6BC15a2E168bd9BCd07c01201`; ownership boundaries below |
 | TaxPolicy | **Disabled** for this deployment |
 | Open for live work? | **No commissioning approval is established by this record.** |
@@ -31,7 +31,7 @@ The deployment source tree is `4c95939614f0b21681ac94915e5365623f5bee48`. The re
 
 ## Contract address directory
 
-Explorer observations were collected by read-only HTTPS requests from **2026-10-12T16:23:34.497469+00:00** through **2026-10-12T16:24:16.111647+00:00**. For each successful entry, Etherscan displayed **Source Code Verified — Exact Match** and the matching contract name. These are dated source-publication results, not a smart-contract security audit. The JSON record retains each page's SHA-256 and observation time.
+Explorer observations were collected by read-only HTTPS requests from **2026-10-12T16:23:34.497469+00:00** through **2026-10-12T16:24:16.111647+00:00**, with StakeManagerEscrow checked again at **2026-10-12T17:12:43.458780+00:00** after its successful source publication. For each successful entry, Etherscan displayed **Source Code Verified — Exact Match** and the matching contract name. These are dated source-publication results, not a smart-contract security audit. The JSON record retains each page's SHA-256 and observation time.
 
 | Contract | Ethereum address / explorer | Source publication |
 | --- | --- | --- |
@@ -54,7 +54,7 @@ Explorer observations were collected by read-only HTTPS requests from **2026-10-
 | JobRegistrySettlement | [`0x70EBFBa633E1519c9b4a5A659A9137Fd31662d0e`](https://etherscan.io/address/0x70EBFBa633E1519c9b4a5A659A9137Fd31662d0e#code) | Exact match |
 | StakeManagerConfiguration | [`0x6D46fF00d11acF432E4E8f882EABB9C974F0d72E`](https://etherscan.io/address/0x6D46fF00d11acF432E4E8f882EABB9C974F0d72E#code) | Exact match |
 | StakeManagerStaking | [`0x44dA2237A94B4b07B9C1e3E44742C9AF4AA77a7A`](https://etherscan.io/address/0x44dA2237A94B4b07B9C1e3E44742C9AF4AA77a7A#code) | Exact match |
-| StakeManagerEscrow | [`0x97A17aAC4F6bD865d9e38d53411526B3291e88ae`](https://etherscan.io/address/0x97A17aAC4F6bD865d9e38d53411526B3291e88ae#code) | **Unverified** |
+| StakeManagerEscrow | [`0x97A17aAC4F6bD865d9e38d53411526B3291e88ae`](https://etherscan.io/address/0x97A17aAC4F6bD865d9e38d53411526B3291e88ae#code) | Exact match |
 | StakeManagerSlashing | [`0xEbB4c5FB19fe64712Fe8996638bEf092aa8347F5`](https://etherscan.io/address/0xEbB4c5FB19fe64712Fe8996638bEf092aa8347F5#code) | Exact match |
 | ValidationModuleConfiguration | [`0x53221f2DF17EbD5F022DBa1eAcc856957074c723`](https://etherscan.io/address/0x53221f2DF17EbD5F022DBa1eAcc856957074c723#code) | Exact match |
 | ValidationModuleVoting | [`0x04af6F94C7F74933BEeE4f6D39ceC4B2d9f7A42A`](https://etherscan.io/address/0x04af6F94C7F74933BEeE4f6D39ceC4B2d9f7A42A#code) | Exact match |
@@ -66,17 +66,17 @@ The eight managed contracts are **JobRegistry, StakeManager, ValidationModule, R
 
 The recovery completion message initially left IdentityRegistry acceptance and coordinator handoff outstanding. The later verifier reports the three direct-owner modules under Ledger control, but does **not** prove coordinator ownership. Reconcile current `owner()` / `pendingOwner()` and all applicable acceptances before retiring the temporary deployer. This publication neither asserts coordinator handoff completion nor requests any ownership transaction or unpause.
 
-## Explorer verification history and remaining issue
+## Explorer verification completed
 
-The preserved API journal at **2026-10-12T02:47:18Z** records **19 verified / 5 failed**. Later operator-reported progress was **22/24**. The fresh page inspection for this record is **23/24**, including **StakeManager**, and supersedes those earlier counts for this observation window. Preserve earlier journals as history; they are not evidence of a new regression.
+The preserved API journal at **2026-10-12T02:47:18Z** records **19 verified / 5 failed**. Later operator-reported progress was **22/24**. The initial page inspection at 16:23–16:24 UTC found **23/24**, including **StakeManager**. The subsequent operator success screen and fresh StakeManagerEscrow page inspection at 17:12 UTC bring the current recorded total to **24/24 exact source matches**. Earlier 19/24, 22/24 and 23/24 results are retained as history, not current failures.
 
-**StakeManagerEscrow** is the remaining unverified address. The latest supplied browser result at 12:11 local on 12 October shows `err_code_5`, an empty selected contract name and compiled bytecode `0x`; the subsequent page inspection still offers source verification. The service's underlying failure stage is unestablished. It is not evidence that the deployed code is empty or that the original Solidity source must be changed.
+**StakeManagerEscrow is now source verified.** The latest supplied browser result shows successful generation of matching bytecode and ABI for `0x97A17aAC4F6bD865d9e38d53411526B3291e88ae`. The independent read-only page check displays **Source Code Verified — Exact Match**, contract name **StakeManagerEscrow**, and compiler **v0.8.25+commit.b61c2a91**. This supersedes the earlier 12:11 Toronto-time `err_code_5` result, empty selected contract name and `0x` compiled-bytecode display. Those earlier errors did not establish a Solidity defect. Source verification is complete for the recorded inventory; commissioning and current-state checks remain separate.
 
 The original build uses Solidity **0.8.25+commit.b61c2a91**, optimizer **200** runs, **viaIR**, and **Cancun**. Preserve the original compiler input and settings, exact fully qualified target, constructor arguments and local replay proof when investigating. Do not redeploy or alter token economics, Solidity, ABI/events or compilation settings merely to obtain an explorer badge. Verification troubleshooting and source publication send no Ethereum transaction and require no wallet key.
 
 ## What remains before opening
 
-Use the [current production readiness record](readiness.md) for the complete gates. Remaining work includes finishing escrow source verification; fresh, block-bound ownership/pause/immutable and configuration checks; coordinator handoff reconciliation; authorized production signing; independent security review; and real provider, worker, reviewer, settlement, monitoring and recovery commissioning. The source release does not waive any of these requirements.
+Use the [current production readiness record](readiness.md) for the complete gates. Remaining work includes fresh, block-bound ownership/pause/immutable and configuration checks; coordinator handoff reconciliation; authorized production signing; independent security review; and real provider, worker, reviewer, settlement, monitoring and recovery commissioning. The source release does not waive any of these requirements.
 
 You can use the [English welcome guide](https://montrealai.github.io/AGIJobsv0/start/), [French guide](https://montrealai.github.io/AGIJobsv0/start/fr/), saved job drafts and local SUCCESSOR Ω experiences now within their documented limits. The previously merged garden-club example in [PR #3923](https://github.com/MontrealAI/AGIJobsv0/pull/3923) is included in rc.5, alongside the rc.4 dependency and storage-credential repairs. Existing demos and flowcharts are retained.
 

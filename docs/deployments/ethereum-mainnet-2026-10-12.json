@@ -1,6 +1,6 @@
 {
   "schema": "agijobsv0/mainnet-deployment-record/1",
-  "recordedAt": "2026-10-12T16:26:03.250623+00:00",
+  "recordedAt": "2026-10-12T17:13:49.175146+00:00",
   "repository": "MontrealAI/AGIJobsv0",
   "chainId": 1,
   "network": "ethereum-mainnet",
@@ -39,12 +39,12 @@
     "coordinatorOwnershipReconciledForThisRecord": false
   },
   "explorerSummary": {
-    "exactMatch": 23,
-    "unverified": 1,
+    "exactMatch": 24,
+    "unverified": 0,
     "unknown": 0,
     "observedFrom": "2026-10-12T16:23:34.497469+00:00",
-    "observedThrough": "2026-10-12T16:24:16.111647+00:00",
-    "method": "Read-only HTTPS GET of every Etherscan contract page; exact-match label and displayed contract name checked. No source submission.",
+    "observedThrough": "2026-10-12T17:12:43.458780+00:00",
+    "method": "Read-only HTTPS GET of every Etherscan contract page, followed by a fresh StakeManagerEscrow page check after the operator reported verification success; exact-match labels and contract names checked. No source submission by this publication.",
     "limitations": "Dated explorer observations, not a security audit or live ownership/pause proof."
   },
   "evidenceSources": [
@@ -66,6 +66,11 @@
     {
       "name": "Screenshot from 2026-10-12 12-11-41.png",
       "scope": "Escrow browser attempt returned err_code_5, empty selected contract name and 0x compiled bytecode. Does not establish a Solidity defect."
+    },
+    {
+      "name": "image(20261012-171043).png",
+      "sha256": "108333319ec2e99a25cf04bd1a077b49a61ec9be3a907a3ea6104a355ef13b28",
+      "scope": "Operator-supplied Etherscan success screen for StakeManagerEscrow, received 12 October 2026; independently corroborated by the exact-match contract page observation at 2026-10-12T17:12:43.458780+00:00."
     }
   ],
   "contracts": [
@@ -696,18 +701,31 @@
         "name": "StakeManagerEscrow",
         "address": "0x97A17aAC4F6bD865d9e38d53411526B3291e88ae",
         "url": "https://etherscan.io/address/0x97A17aAC4F6bD865d9e38d53411526B3291e88ae#code",
-        "observedAt": "2026-10-12T16:24:10.597201+00:00",
-        "sourceStatus": "unverified",
-        "contractName": null,
-        "pageSha256": "207f6d7a74930da10cdcbe29e5c6f049e622772bf879b89410b34387179cac12",
-        "evidenceText": "Are you the contract creator? Verify and Publish your contract source code today!",
-        "compilerVersion": null
+        "observedAt": "2026-10-12T17:12:43.458780+00:00",
+        "sourceStatus": "verified-exact-match",
+        "contractName": "StakeManagerEscrow",
+        "pageSha256": "3c38bc52d8bca9fdf231abc2395c14cdce6cdf0938ef198bd9b367fd48e510ec",
+        "evidenceText": "Source Code Verified Exact Match",
+        "compilerVersion": "v0.8.25+commit.b61c2a91"
       },
       "historicalApiResult": {
         "status": "failed",
         "updatedAt": "2026-10-12T02:34:10.751684+00:00",
         "inputHash": "a37c2e01f348434c6d1cb998c67abd8dbcc9b167fc3769176835633d8517e9bd"
-      }
+      },
+      "explorerObservationHistory": [
+        {
+          "name": "StakeManagerEscrow",
+          "address": "0x97A17aAC4F6bD865d9e38d53411526B3291e88ae",
+          "url": "https://etherscan.io/address/0x97A17aAC4F6bD865d9e38d53411526B3291e88ae#code",
+          "observedAt": "2026-10-12T16:24:10.597201+00:00",
+          "sourceStatus": "unverified",
+          "contractName": null,
+          "pageSha256": "207f6d7a74930da10cdcbe29e5c6f049e622772bf879b89410b34387179cac12",
+          "evidenceText": "Are you the contract creator? Verify and Publish your contract source code today!",
+          "compilerVersion": null
+        }
+      ]
     },
     {
       "name": "StakeManagerSlashing",
@@ -836,6 +854,17 @@
         "updatedAt": "2026-10-12T02:47:18.503798+00:00",
         "inputHash": "a474dd644e61e8639764a18bcfafe7f24dffdf44b6e57fa2d4308733152a3de7"
       }
+    }
+  ],
+  "explorerObservationHistory": [
+    {
+      "exactMatch": 23,
+      "unverified": 1,
+      "unknown": 0,
+      "observedFrom": "2026-10-12T16:23:34.497469+00:00",
+      "observedThrough": "2026-10-12T16:24:16.111647+00:00",
+      "method": "Read-only HTTPS GET of every Etherscan contract page; exact-match label and displayed contract name checked. No source submission.",
+      "limitations": "Dated explorer observations, not a security audit or live ownership/pause proof."
     }
   ]
 }
