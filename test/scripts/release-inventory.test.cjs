@@ -204,6 +204,40 @@ test('owner-verifier default resolves the checked-in operational address book', 
     require('../../docs/deployments/ethereum-mainnet-2026-10-12.json').coordinator);
 });
 
+test('owner verification selects mainnet addresses only for chain ID 1', async () => {
+  for (const chainId of [1n, 31337n, 11155111n]) {
+    const queried = [];
+    const { verifyOwnerControl } = loadTypeScript('../../scripts/v2/lib/ownerControlVerification.ts', {
+      hardhat: {
+        network: { name: chainId === 1n ? 'mainnet' : 'hardhat' },
+        ethers: {
+          ...require('ethers'),
+          getSigners: async () => [],
+          provider: {
+            getNetwork: async () => ({ chainId, name: 'fixture' }),
+            getCode: async (value) => { queried.push(value); return '0x'; },
+          },
+        },
+      },
+      '../../config': {
+        inferNetworkKey: (value) => value.name,
+        loadOwnerControlConfig: () => ({ config: { modules: { stakeManager: { type: 'ownable' } } }, path: 'fixture' }),
+      },
+      './utils': {},
+    });
+    const result = await verifyOwnerControl();
+    if (chainId === 1n) {
+      assert.deepEqual(queried, [require('../../docs/deployment-addresses.json').stakeManager]);
+      assert.equal(result.summary.error, 1); // No code in this mocked provider: fail closed.
+    } else {
+      assert.deepEqual(queried, []);
+      assert.equal(result.summary.missingAddress, 1);
+      assert.equal(result.summary.error, 0);
+      assert.ok(result.metadata.addressBookPath.endsWith(`deployment-addresses.${chainId}.json`));
+    }
+  }
+});
+
 test('monitoring retains deployed addresses instead of zero summary or override placeholders', async () => {
   const { buildAddressIndex } = loadTypeScript('../../scripts/monitoring/sentinel-utils.ts');
   const zero = '0x' + '0'.repeat(40);
@@ -213,4 +247,9 @@ test('monitoring retains deployed addresses instead of zero summary or override 
   assert.equal(index.get('JOB_REGISTRY').address, book.jobRegistry);
   assert.equal(index.has('TAX_POLICY'), false);
   for (const resolution of index.values()) assert.notEqual(resolution.address, zero);
+  const testnet = await buildAddressIndex({ network: 'sepolia' });
+  for (const resolution of testnet.values()) {
+    assert.notEqual(resolution.address, book.stakeManager);
+    assert.notEqual(resolution.address, book.jobRegistry);
+  }
 });

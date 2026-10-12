@@ -11,6 +11,7 @@ Mainnet deployment record and welcoming example source candidate (2026-10-12).
 - Include the previously merged English/French garden-club example and reading improvements from #3923.
 - Stabilize the existing concurrent-budget regression test by waiting for the first driver call before testing the outstanding reservation; runtime enforcement and assertions remain intact.
 - Reconcile the operational address book with all 24 deployed contracts, including ten implementations; mark disabled/absent modules as zero, correct the owner-verifier default path, and prevent zero-valued monitoring templates from replacing recorded addresses.
+- Bind the canonical book to mainnet: other owner-verification chains use a chain-specific book or explicit overrides, and monitoring ignores a book tagged for another network. Local demos do not probe mainnet addresses by default.
 
 This source prerelease does not change Solidity, deployment configuration, settlement rules or dependencies, and sends no blockchain transaction. Production signing and independent security/provider/worker commissioning remain unresolved. All existing demos and flowcharts are preserved.
 
