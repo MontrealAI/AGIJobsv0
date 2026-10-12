@@ -1,0 +1,37 @@
+name: Escrow self-service compiler diagnostic
+
+on:
+  push:
+    branches: ['diagnostic/escrow-self-service-20261012']
+    paths: ['.github/workflows/escrow-self-service-diagnostic.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  pinned-compiler:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Retrieve and verify the original public compiler
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p evidence
+          curl --fail --location --retry 2 --max-time 90 \
+            'https://binaries.soliditylang.org/linux-amd64/solc-linux-amd64-v0.8.25+commit.b61c2a91' \
+            -o evidence/solc-0.8.25
+          printf '%s  %s\n' \
+            'c42aada7a52057ddbed93ec011235e256c564c440b68dbaac5ae482babbb3d6d' \
+            'evidence/solc-0.8.25' | sha256sum -c -
+          chmod 500 evidence/solc-0.8.25
+          evidence/solc-0.8.25 --version | tee evidence/VERSION.txt
+          sha256sum evidence/solc-0.8.25 > evidence/SHA256SUMS.txt
+          printf '%s\n' 'Compiler-only diagnostic: no checkout, repository source execution, secrets, wallet access, RPC, verification submissions or transactions.' > evidence/SCOPE.txt
+      - name: Preserve the checksum-verified public compiler
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: escrow-pinned-solc-0.8.25
+          path: evidence/
+          retention-days: 3
+          if-no-files-found: error
