@@ -249,6 +249,404 @@
     padding: 22px;
   }
 }
+/* Static paired ecosystem guide; long public addresses remain selectable. */
+.ecosystem-hero-token {
+  margin: 25px 0;
+  padding: 18px 20px;
+  border: 1px solid #665084;
+  border-radius: 14px;
+  background: linear-gradient(125deg, #302041, #171320);
+  text-align: left;
+}
+.ecosystem-hero-token > p {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  align-items: baseline;
+}
+.ecosystem-hero-token strong {
+  color: #eadcff;
+  font-size: 20px;
+}
+.ecosystem-hero-token > p > span {
+  color: #c8c0d5;
+  font-size: 12px;
+}
+.ecosystem-address {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+  align-items: center;
+  min-width: 0;
+  margin: 12px 0;
+}
+.ecosystem-address > a,
+.ecosystem-contract-list a {
+  min-width: 0;
+  max-width: 100%;
+  color: #b4eee0;
+}
+.ecosystem-address code,
+.ecosystem-contract-list code {
+  font-size: 13px;
+  line-height: 1.8;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  user-select: text;
+}
+.ecosystem-copy {
+  display: none;
+  padding: 8px 0;
+  color: #e6d6ff;
+  font-size: 13px;
+}
+.js .ecosystem-copy {
+  display: inline-flex;
+}
+.ecosystem-pair-link {
+  display: block;
+  color: #e6d6ff;
+  font-size: 14px;
+  line-height: 1.6;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.ecosystem-overview {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: 40px;
+  margin-top: 32px;
+  padding: 38px;
+  border: 1px solid #534165;
+  border-radius: 20px;
+  background: radial-gradient(ellipse at 80% 10%, #382449, #17131f 80%);
+}
+.ecosystem-overview h2 {
+  margin: 12px 0 20px;
+  font-size: clamp(28px, 3vw, 40px);
+}
+.ecosystem-overview p,
+.ecosystem-overview-actions p {
+  color: #d2c9df;
+}
+.ecosystem-overview-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 18px;
+  min-width: 0;
+}
+.ecosystem-overview-actions strong {
+  color: #f3eefb;
+}
+.ecosystem-page {
+  padding-top: 32px;
+  padding-bottom: 80px;
+  font-size: 18px;
+  line-height: 1.75;
+}
+.ecosystem-heading {
+  max-width: 960px;
+  padding: 50px 0 36px;
+}
+.ecosystem-heading h1 {
+  margin: 18px 0 28px;
+  font-size: clamp(40px, 5.5vw, 76px);
+  letter-spacing: -2px;
+}
+.ecosystem-heading h1 em {
+  color: #c8a5ff;
+  font-style: normal;
+}
+.ecosystem-lead {
+  max-width: 900px;
+  color: #d2c9df;
+  font-size: clamp(18px, 2vw, 21px);
+  line-height: 1.75;
+}
+.ecosystem-jump-links,
+.ecosystem-inventory-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 22px;
+  padding: 20px 0;
+  border-top: 1px solid #41354f;
+  border-bottom: 1px solid #41354f;
+  font-size: 15px;
+}
+.ecosystem-page a:not(.button),
+.ecosystem-overview .text-link {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.ecosystem-section {
+  padding-top: 76px;
+}
+.ecosystem-section > h2 {
+  margin: 12px 0 28px;
+  font-size: clamp(30px, 4vw, 48px);
+  letter-spacing: -1px;
+}
+.ecosystem-role-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+  margin-top: 30px;
+}
+.ecosystem-role-card,
+.ecosystem-evidence-card {
+  min-width: 0;
+  padding: 32px;
+  border: 1px solid #483756;
+  border-radius: 18px;
+  background: #1d1629;
+}
+.ecosystem-role-number {
+  color: #baa1db;
+  font-size: 12px;
+  letter-spacing: 1.5px;
+}
+.ecosystem-role-card h3,
+.ecosystem-evidence-card h3 {
+  margin: 14px 0 20px;
+  font-size: 27px;
+}
+.ecosystem-role-card p,
+.ecosystem-evidence-card p,
+.ecosystem-benefits p,
+.ecosystem-steps p {
+  color: #c9c0d6;
+}
+.ecosystem-role-card > a,
+.ecosystem-evidence-card > a {
+  display: block;
+  margin-top: 20px;
+  color: #dfc9ff;
+  font-size: 16px;
+}
+.ecosystem-benefits {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 30px;
+  margin: 38px 0 24px;
+}
+.ecosystem-benefits h3 {
+  margin-bottom: 12px;
+  font-size: 21px;
+}
+.ecosystem-supporting,
+.ecosystem-note {
+  margin-top: 26px;
+  max-width: 1000px;
+  color: #bfb5ce;
+  font-size: 16px;
+}
+.ecosystem-steps {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px 48px;
+  padding-left: 26px;
+  margin: 36px 0;
+}
+.ecosystem-steps li {
+  padding-left: 10px;
+}
+.ecosystem-steps li::marker {
+  color: #c8a5ff;
+  font-weight: 700;
+}
+.ecosystem-steps h3 {
+  margin-bottom: 12px;
+  font-size: 22px;
+}
+.ecosystem-token-panel {
+  max-width: 950px;
+  padding: 30px;
+  border: 1px solid #796097;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #382549, #191420);
+}
+.ecosystem-token-panel > div:first-child {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+.ecosystem-token-symbol {
+  color: #d0b1fa;
+  font-size: 54px;
+  line-height: 1;
+}
+.ecosystem-token-panel h3 {
+  font-size: 28px;
+}
+.ecosystem-token-panel p {
+  margin-top: 14px;
+  color: #d3cadf;
+}
+.ecosystem-token-panel > div:first-child p {
+  margin-top: 6px;
+  font-size: 14px;
+}
+.ecosystem-token-panel .ecosystem-address {
+  margin-top: 28px;
+  padding: 14px 0;
+  border-top: 1px solid #675076;
+  border-bottom: 1px solid #675076;
+}
+.ecosystem-token-panel .ecosystem-address code {
+  font-size: 16px;
+}
+.ecosystem-token-panel > a {
+  display: inline-block;
+  margin-top: 20px;
+}
+.ecosystem-subheading {
+  margin: 40px 0 16px;
+  font-size: 27px;
+}
+.ecosystem-details {
+  margin-top: 24px;
+  border: 1px solid #493858;
+  border-radius: 14px;
+  background: #17121f;
+}
+.ecosystem-details summary {
+  padding: 22px 26px;
+  cursor: pointer;
+  color: #e5d5fa;
+  font-size: 17px;
+}
+.ecosystem-details > div {
+  padding: 0 26px 26px;
+  color: #c9c0d6;
+  font-size: 16px;
+}
+.ecosystem-inventory-links {
+  margin-top: 30px;
+}
+.ecosystem-contract-group {
+  margin-top: 56px;
+}
+.ecosystem-group-heading {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 22px;
+}
+.ecosystem-group-heading > div {
+  max-width: 760px;
+}
+.ecosystem-group-heading h3 {
+  margin: 12px 0;
+  font-size: clamp(24px, 3vw, 30px);
+}
+.ecosystem-group-heading p:not(.eyebrow),
+.ecosystem-group-heading > a {
+  color: #c8bdd8;
+  font-size: 15px;
+}
+.ecosystem-contract-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.ecosystem-contract-list li {
+  min-width: 0;
+  padding: 24px;
+  border: 1px solid #42324e;
+  border-radius: 14px;
+  background: #18121f;
+}
+.ecosystem-contract-list h4 {
+  margin: 0 0 10px;
+  color: #e9dcfc;
+  font-size: 18px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.ecosystem-contract-list p {
+  color: #c8bdd8;
+  font-size: 15px;
+  line-height: 1.65;
+}
+.ecosystem-contract-list a {
+  display: block;
+  margin-top: 18px;
+}
+.ecosystem-explorer-label {
+  display: block;
+  margin-top: 6px;
+  color: #c3b0dc;
+  font-size: 12px;
+}
+.ecosystem-next {
+  margin-top: 42px;
+  padding: 32px;
+  border: 1px solid #5c4672;
+  border-radius: 18px;
+  background: #21162e;
+}
+.ecosystem-next h3 {
+  margin-bottom: 16px;
+  font-size: 28px;
+}
+@media (max-width: 800px) {
+  .ecosystem-overview,
+  .ecosystem-role-grid,
+  .ecosystem-benefits,
+  .ecosystem-contract-list,
+  .ecosystem-steps {
+    grid-template-columns: 1fr;
+  }
+  .ecosystem-overview {
+    padding: 26px;
+    gap: 26px;
+  }
+  .ecosystem-heading h1 {
+    letter-spacing: -1px;
+  }
+  .ecosystem-role-card,
+  .ecosystem-evidence-card,
+  .ecosystem-token-panel,
+  .ecosystem-next {
+    padding: 24px;
+  }
+  .ecosystem-section {
+    padding-top: 56px;
+  }
+}
+@media (max-width: 420px) {
+  .ecosystem-page {
+    font-size: 17px;
+  }
+  .ecosystem-heading {
+    padding-top: 32px;
+  }
+  .ecosystem-heading h1 {
+    font-size: 38px;
+  }
+  .ecosystem-token-panel > div:first-child {
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .ecosystem-token-symbol {
+    font-size: 38px;
+  }
+  .ecosystem-contract-list li,
+  .ecosystem-hero-token {
+    padding: 18px;
+  }
+  .ecosystem-token-panel .ecosystem-address code {
+    font-size: 14px;
+  }
+}
 :root {
   --bg: #0b0914;
   --surface: #12101d;
