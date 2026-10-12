@@ -1,3 +1,8 @@
+> **[Build your own SUCCESSOR Ω with Alpha Agent + AGI Jobs →](https://montrealai.github.io/AGIJobsv0/successor/build/)**
+> Name your mission, run four candidate programs, compile 21 bounded job drafts, and keep the working lab offline.
+> English / Français · Large text · No account, wallet or installation. [Source and reproduction guide](docs/successor/BUILD_YOUR_OMEGA.md).
+> The example runs both projects’ code locally. Independent proof remains absent; admission stays on HOLD.
+
 # AGI Jobs v0 (v2)
 
 ## AGI Alpha Agent + AGI Jobs: one shared ecosystem

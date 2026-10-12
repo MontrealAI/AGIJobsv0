@@ -46,6 +46,7 @@ export function renderSuccessorPage(base, revision, language = 'en') {
     t.chooseTitle
   )} ↓</a></div><div class="omega-emblem" aria-hidden="true"><span>Ω</span><small>MISSION · EVIDENCE · MEMORY</small></div></section>
     <p class="omega-boundary">${esc(t.boundary)}</p>
+    <p class="omega-boundary"><a href="${base}successor/build/${language === 'fr' ? '?lang=fr' : ''}">${language === 'fr' ? 'Construire votre Ω avec Alpha Agent + AGI Jobs →' : 'Build your Ω with Alpha Agent + AGI Jobs →'}</a></p>
     <section id="omega-mission" class="omega-panel" aria-labelledby="omega-mission-title"><p class="eyebrow">${esc(
       t.choose
     )}</p><h2 id="omega-mission-title">${esc(

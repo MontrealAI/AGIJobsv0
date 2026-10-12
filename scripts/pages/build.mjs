@@ -531,6 +531,8 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
     })
   );
   write('ecosystem/contracts.json', JSON.stringify(ecosystem, null, 2) + '\n');
+  write('successor/build/index.html', fs.readFileSync(path.join(root, 'website/successor-build/index.html'), 'utf8'));
+  write('successor/build/provenance.json', fs.readFileSync(path.join(root, 'website/successor-build/provenance.json'), 'utf8'));
   write(
     'work/index.html',
     chrome({
@@ -985,7 +987,7 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
 
     cultureStudioRoute: 'experiments/culture/',
     dashboardRoutes,
-    successorRoutes: ['successor/', 'successor/fr/'],
+    successorRoutes: ['successor/', 'successor/fr/', 'successor/build/'],
     onboardingRoutes: { en: 'start/', fr: 'start/fr/' },
     onboardingExampleRoutes: { en: 'start/example/', fr: 'start/fr/example/' },
     workRoute: 'work/',
