@@ -30,6 +30,9 @@ and verdicts from the cases. New execution timings cannot authenticate the old r
 The consumer accepts this workshop's fixed local-only mission template. Only its name, whole-token
 planning allowance and creation/expiry timestamps vary. Recompiling broader permissions does not make
 them a valid workshop package; a different mission needs its own explicit schema and review.
+The complete plan is regenerated from the pinned Alpha workshop model. Its only adaptations are declared
+import paths to this checkout's Jobs compiler; tests reconstruct the original source and check its hash.
+Fixed evidence metadata is compared with replayed metadata, while historical timings remain unverified.
 
 `MATCH` means historical consistency plus replay of this fixed synthetic workload. It does not authenticate
 a producer or their timings, prove correctness on a real-world mission, establish fresh rights or grant current authority. It never broadcasts

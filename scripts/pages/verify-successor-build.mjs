@@ -4,8 +4,8 @@ import { pathToFileURL } from 'node:url';
 import { compileJobs, verifyWorkOrderSeal } from '../../packages/successor-core/src/compiler.mjs';
 import { digestObject, canonicalize } from '../../packages/successor-core/src/integrity.mjs';
 import { validateRequest, validateCandidate, generateCandidates, discover, evaluate, digest as alphaDigest, VERSION as ALPHA_VERSION } from './vendor/alpha-successor/engine.mjs';
+import { missionFor, compilePlan } from './vendor/alpha-successor/model.mjs';
 const alphaProvenance=JSON.parse(fs.readFileSync(new URL('./vendor/alpha-successor/provenance.json',import.meta.url),'utf8'));
-const workshopMission=JSON.parse(fs.readFileSync(new URL('./successor-workshop-mission.json',import.meta.url),'utf8'));
 
 const configuration={version:'number',layout:'string',cache_last:'boolean',update:'string'};
 const attempt={config:configuration,construction:{operator:'string',seed:'number',parent:'string'},artifact_hash:'string',correctness:'boolean',elapsed_ns:'number',rows:'number'};
@@ -83,12 +83,12 @@ export async function verifyBuildPack(pack) {
   verifyDiscovery(pack);verifyEvaluation(pack);
   const jobs = pack.compilation?.graph?.nodes;
   if (!Array.isArray(jobs) || jobs.length !== 21) throw Error('Expected 21 work orders');
-  const mission=pack.compilation.constitution, expected=structuredClone(workshopMission);
+  const mission=pack.compilation.constitution;
   if(typeof pack.title!=='string' || !pack.title.trim() || pack.title!==pack.title.trim() || pack.title.length>48 || typeof pack.createdAt!=='string' || !Number.isFinite(Date.parse(pack.createdAt)))throw Error('Invalid workshop mission settings');
   const units=mission?.budget?.limitBaseUnits;
   if(typeof units!=='string' || !/^[0-9]+$/.test(units) || units.length>25 || BigInt(units)<10n**18n || BigInt(units)>1000000n*10n**18n || BigInt(units)%10n**18n!==0n)throw Error('Invalid workshop planning allowance');
-  expected.title=pack.title;expected.budget.limitBaseUnits=units;
-  expected.expiresAt=new Date(Date.parse(pack.createdAt)+7*86400000).toISOString();expected.rights[0].expiresAt=expected.expiresAt;
+  const options={name:pack.title,budget:(BigInt(units)/10n**18n).toString(),now:pack.createdAt};
+  const expected=missionFor(options);
   if(!matches(mission,expected))throw Error('Workshop constitution must retain its local-only capability template');
   for (const job of jobs) {
     if(!matches(job.permittedActions,expected.allowedActions) || !matches(job.permittedTools,expected.allowedTools) || !matches(job.prohibitedActions,expected.authorityCeiling.prohibitedActions) || job.verifier?.independence!=='I0' || job.chronicle?.eligible!==false)throw Error('Workshop jobs cannot escalate capabilities or proof');
@@ -96,13 +96,23 @@ export async function verifyBuildPack(pack) {
   }
   const rebuilt = await compileJobs(pack.compilation.constitution, {jobs, edges:pack.compilation.graph.edges, now:pack.createdAt});
   if (canonicalize(rebuilt) !== canonicalize(pack.compilation)) throw Error('Compilation does not reproduce');
+  if(!matches(await compilePlan(options),pack.compilation))throw Error('Workshop plan differs from the pinned local template');
   const replay=await discover(pack.request);
   for(const [index,item] of replay.attempts.entries()){
     const recorded=pack.discovery.attempts[index];
     if(!matches(item.config,recorded.config) || item.correctness!==recorded.correctness || item.rows!==recorded.rows)throw Error('Workshop deterministic discovery outcomes mismatch');
+    item.elapsed_ns=recorded.elapsed_ns;
   }
+  replay.selected=replay.attempts.find(item=>item.artifact_hash===pack.discovery.selected.artifact_hash);
+  replay.world.observation.nested_mean_ns=pack.discovery.world.observation.nested_mean_ns;
+  replay.world.observation.tuple_mean_ns=pack.discovery.world.observation.tuple_mean_ns;
+  replay.world.falsified_in_this_run=pack.discovery.world.falsified_in_this_run;
+  if(!matches(replay,pack.discovery))throw Error('Workshop fixed discovery metadata mismatch');
   const evaluated=await evaluate(pack.request,pack.frozen);
   if(evaluated.correctness!==pack.evaluation.correctness || evaluated.cases.some((item,index)=>item.exact_output!==pack.evaluation.cases[index].exact_output || item.events!==pack.evaluation.cases[index].events))throw Error('Workshop deterministic evaluation outcomes mismatch');
+  for(const [index,item] of evaluated.cases.entries())for(const key of ['current_ns','beta_ns','candidate_ns'])item[key]=pack.evaluation.cases[index][key];
+  evaluated.totals_ns=pack.evaluation.totals_ns;evaluated.best_comparator=pack.evaluation.best_comparator;evaluated.local_verdict=pack.evaluation.local_verdict;
+  if(!matches(evaluated,pack.evaluation))throw Error('Workshop fixed evaluation metadata mismatch');
   return { integrity: 'CONSISTENT_NOT_AUTHENTICATED', workOrders: jobs.length, recompilation: 'MATCH', deterministicReplay: 'MATCH', timingAuthenticity: 'UNVERIFIED', independentProof: false, authority: [], settlement: 'NOT_CONNECTED', scope: 'Historical package consistency and fixed synthetic replay only; no authentic timing, real-world mission dominance, present rights or live admission is established.' };
 }
 export function readBuildPack(file) {

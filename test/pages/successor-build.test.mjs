@@ -28,6 +28,11 @@ test('portable workshop mirror retains exact source bytes, CSP and both deployme
   const alphaDirectory=new URL('../../scripts/pages/vendor/alpha-successor/',import.meta.url);
   const alphaProvenance=JSON.parse(fs.readFileSync(new URL('provenance.json',alphaDirectory),'utf8'));
   assert.equal(createHash('sha256').update(fs.readFileSync(new URL('engine.mjs',alphaDirectory))).digest('hex'),alphaProvenance.sha256);
+  const modelProvenance=JSON.parse(fs.readFileSync(new URL('model-provenance.json',alphaDirectory),'utf8'));
+  let modelSource=fs.readFileSync(new URL('model.mjs',alphaDirectory),'utf8');
+  assert.equal(createHash('sha256').update(modelSource).digest('hex'),modelProvenance.sha256);
+  for(const [original,adapted] of modelProvenance.importRewrites)modelSource=modelSource.replace("from '"+adapted+"'","from '"+original+"'");
+  assert.equal(createHash('sha256').update(modelSource).digest('hex'),modelProvenance.originalSha256);
 });
 test('Jobs consumer rejects changed integrity and false authority even with a recomputed digest',async()=>{
   await assert.rejects(verifyBuildPack({schema:'successor-build-example/v1',scope:'LOCAL_REHEARSAL',integrityDigest:'changed'}),/digest mismatch/);
@@ -91,6 +96,8 @@ test('a complete real export reproduces and rejects forged claims throughout its
     p=>{p.discovery.actual_candidates=1;},
     p=>{p.discovery.attempts.find(item=>item.artifact_hash!==p.discovery.selected.artifact_hash).correctness=false;},
     p=>{p.discovery.attempts.find(item=>item.artifact_hash!==p.discovery.selected.artifact_hash).rows+=1;},
+    p=>{p.evaluation.timing_limitations='Independent authenticated benchmark.';},
+    p=>{p.discovery.world.prediction='Independent proof already earned.';},
   ];
   for(const mutate of mutations){
     const {integrityDigest,...forged}=structuredClone(pack);mutate(forged);
@@ -108,4 +115,8 @@ test('resealing a broader mission cannot turn the local workshop into payment au
   const jobs=forged.compilation.graph.nodes.map(job=>({...job,permittedActions:[...mission.allowedActions],prohibitedActions:[...mission.authorityCeiling.prohibitedActions]}));
   forged.compilation=await compileJobs(mission,{jobs,edges:forged.compilation.graph.edges,now:forged.createdAt});
   await assert.rejects(verifyBuildPack({...forged,integrityDigest:await digestObject('successor-build-example.v1',forged)}),/local-only capability/);
+  const {integrityDigest:oldDigest,...changed}=readBuildPack(new URL('./fixtures/successor-build-pack.json',import.meta.url));
+  const altered=changed.compilation.graph.nodes.map((job,index)=>index===0?{...job,objective:'Silently replace the promised deliverable.'}:job);
+  changed.compilation=await compileJobs(changed.compilation.constitution,{jobs:altered,edges:changed.compilation.graph.edges,now:changed.createdAt});
+  await assert.rejects(verifyBuildPack({...changed,integrityDigest:await digestObject('successor-build-example.v1',changed)}),/pinned local template/);
 });

@@ -1,0 +1,27 @@
+{
+  "repository": "https://github.com/MontrealAI/AGI-Alpha-Agent-v0",
+  "revision": "47a0cf545d9e10e6323b1bef902184038bdf91ff",
+  "path": "examples/build-successor/model.mjs",
+  "originalSha256": "8ea94108ef2ed27bce0fcff0b5d312f2e8f6db6584246cc66ab8c1c8d9281175",
+  "sha256": "e5368e8f44c05e33a92a8f6bd6cd37583e121d07119dde39c71f1484798bbf5b",
+  "license": "Apache-2.0",
+  "scope": "Only import paths are adapted to the adjacent unchanged Alpha engine and this checkout\u2019s own AGI Jobs compiler. All model code and template terms remain unchanged.",
+  "importRewrites": [
+    [
+      "../../docs/assets/successor/engine.mjs",
+      "./engine.mjs"
+    ],
+    [
+      "./vendor/agijobs/compiler.mjs",
+      "../../../../packages/successor-core/src/compiler.mjs"
+    ],
+    [
+      "./vendor/agijobs/templates.mjs",
+      "../../../../packages/successor-core/src/templates.mjs"
+    ],
+    [
+      "./vendor/agijobs/integrity.mjs",
+      "../../../../packages/successor-core/src/integrity.mjs"
+    ]
+  ]
+}
