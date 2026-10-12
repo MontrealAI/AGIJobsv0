@@ -1,0 +1,8 @@
+{
+  "repository": "https://github.com/MontrealAI/AGI-Alpha-Agent-v0",
+  "revision": "7a708faaf103f384e7250047abc7c33f7bb84063",
+  "path": "docs/assets/successor/engine.mjs",
+  "sha256": "38c4f38978bf9fc29f207bae3adee0755bc6530d04502a36c491cc430787e488",
+  "license": "Apache-2.0",
+  "scope": "Unmodified bounded Alpha engine; consumer uses its request/candidate validators and commitment digests only."
+}

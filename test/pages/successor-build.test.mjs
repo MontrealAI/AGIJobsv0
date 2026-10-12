@@ -24,6 +24,9 @@ test('portable workshop mirror retains exact source bytes, CSP and both deployme
     const bytes=fs.readFileSync(new URL('../../'+file.path,import.meta.url));
     assert.equal(createHash('sha256').update(bytes).digest('hex'),file.sha256);
   }
+  const alphaDirectory=new URL('../../scripts/pages/vendor/alpha-successor/',import.meta.url);
+  const alphaProvenance=JSON.parse(fs.readFileSync(new URL('provenance.json',alphaDirectory),'utf8'));
+  assert.equal(createHash('sha256').update(fs.readFileSync(new URL('engine.mjs',alphaDirectory))).digest('hex'),alphaProvenance.sha256);
 });
 test('Jobs consumer rejects changed integrity and false authority even with a recomputed digest',async()=>{
   await assert.rejects(verifyBuildPack({schema:'successor-build-example/v1',scope:'LOCAL_REHEARSAL',integrityDigest:'changed'}),/digest mismatch/);
@@ -52,10 +55,32 @@ test('package reader enforces the byte limit on the bytes it actually reads',()=
   const file=path.join(directory,'pack.json');
   try{
     fs.writeFileSync(file,'{}'+' '.repeat(1999998));
-    assert.deepEqual(readBuildPack(file),{});
+    assert.equal(JSON.stringify(readBuildPack(file)),'{}');
     fs.appendFileSync(file,' ');
     assert.throws(()=>readBuildPack(file),/at most 2 MB/);
     fs.writeFileSync(file,'invalid');
     assert.throws(()=>readBuildPack(file),SyntaxError);
   }finally{fs.rmSync(directory,{recursive:true,force:true});}
+});
+test('a complete real export reproduces and rejects forged claims throughout its Alpha evidence',async()=>{
+  const pack=readBuildPack(new URL('./fixtures/successor-build-pack.json',import.meta.url));
+  assert.equal((await verifyBuildPack(pack)).recompilation,'MATCH');
+  const mutations=[
+    p=>{p.evaluation.institutional_verdict='ADMITTED';},
+    p=>{p.evaluation.authority=['ADMIN'];},
+    p=>{p.frozen.manifest.authority=['ADMIN'];},
+    p=>{p.evaluation.granted=true;},
+    p=>{p.discovery.selected.authority=['ADMIN'];},
+    p=>{p.authority=['ADMIN'];},
+    p=>{p.chronicle[0].inheritedAuthority=true;},
+    p=>{p.chronicle[0].inheritedProof=true;},
+    p=>{p.evaluation.missing=[];},
+    p=>{p.request.language='fr';},
+    p=>{p.frozen.release_hash='0'.repeat(64);},
+    p=>{p.discovery.selected.artifact_hash='0'.repeat(64);},
+  ];
+  for(const mutate of mutations){
+    const {integrityDigest,...forged}=structuredClone(pack);mutate(forged);
+    await assert.rejects(verifyBuildPack({...forged,integrityDigest:await digestObject('successor-build-example.v1',forged)}),/workshop|Workshop/);
+  }
 });

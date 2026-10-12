@@ -1,0 +1,3102 @@
+{
+  "schema": "successor-build-example/v1",
+  "createdAt": "2026-10-12T22:14:48.559Z",
+  "title": "Atlas Ω",
+  "scope": "LOCAL_REHEARSAL",
+  "request": {
+    "schema_version": 1,
+    "kind": "successor-rehearsal",
+    "mission": "streaming-metrics-v1",
+    "seed": 42,
+    "max_candidates": 4,
+    "formation_trials": 2,
+    "max_events": 1000,
+    "language": "en",
+    "request_id": "5e0e6fbd-a89c-4130-ac8a-3c01e2249afb"
+  },
+  "compilation": {
+    "schemaVersion": "1.0.0",
+    "status": "SEALED",
+    "mode": "SYNTHETIC_REHEARSAL",
+    "constitution": {
+      "allowedActions": [
+        "inspect-local"
+      ],
+      "allowedTools": [
+        "fixed-aggregation-engine"
+      ],
+      "alternatives": [
+        {
+          "description": "Measured deterministic map baseline; not a frontier AI comparator.",
+          "id": "alpha-beta",
+          "version": "successor-browser-v1"
+        }
+      ],
+      "authorityCeiling": {
+        "externalEffects": false,
+        "level": "A0",
+        "permittedActions": [
+          "inspect-local"
+        ],
+        "prohibitedActions": [
+          "send-payment",
+          "post-live-job",
+          "access-private-data",
+          "self-admit"
+        ]
+      },
+      "beneficiary": "Owner of this local synthetic mission",
+      "budget": {
+        "limitBaseUnits": "2100000000000000000000",
+        "maxDurationMs": 60000,
+        "maxJobs": 21,
+        "maxRetries": 0,
+        "unit": "AGIALPHA"
+      },
+      "criticalFunctions": [
+        "mission-constitution",
+        "incumbent-baseline",
+        "alternative-set",
+        "rights-data",
+        "mission-gym",
+        "oracle-teacher",
+        "failure-taxonomy",
+        "architecture-frontier",
+        "experience-formation",
+        "specialist-formation",
+        "tools-retrieval",
+        "verifier-formation",
+        "security-privacy",
+        "complete-economics",
+        "human-agency",
+        "resilience-rollback",
+        "fresh-evaluation",
+        "independent-validation",
+        "accountable-acceptance",
+        "chronicle-authority",
+        "capital-requalification"
+      ],
+      "expiresAt": "2026-10-19T22:14:48.559Z",
+      "hardGates": [
+        {
+          "description": "All grouped counts and durations agree exactly.",
+          "id": "exact-output",
+          "maxViolations": 0
+        },
+        {
+          "description": "Malformed and unsupported records are rejected.",
+          "id": "invalid-input",
+          "maxViolations": 0
+        },
+        {
+          "description": "No network request, live job, payment or authority grant.",
+          "id": "no-external-effect",
+          "maxViolations": 0
+        }
+      ],
+      "incumbent": {
+        "description": "Measured scan-based baseline.",
+        "id": "alpha-current",
+        "version": "successor-browser-v1"
+      },
+      "institutionId": "local-successor-workshop",
+      "kind": "MissionConstitution",
+      "missionId": "streaming-metrics-builder-v1",
+      "objective": "Produce exact daily service metrics, compare bounded implementations, and prepare reviewable work orders.",
+      "principal": "example-human-principal",
+      "proofProtocol": {
+        "criticalErrorCeiling": 0,
+        "custodian": "example-verifier",
+        "formationOwner": "example-producer",
+        "id": "public-local-rehearsal",
+        "minimumMargin": 0.05,
+        "mode": "SYNTHETIC_REHEARSAL",
+        "requiredIndependence": "I0",
+        "scope": "Public synthetic cases in one process; no independent proof, mission alpha or operational admission.",
+        "version": "1"
+      },
+      "rights": [
+        {
+          "dataClass": "synthetic",
+          "expiresAt": "2026-10-19T22:14:48.559Z",
+          "license": "Apache-2.0 generator; synthetic nonpersonal outputs",
+          "permittedUses": [
+            "mission-evaluation",
+            "fixture-export"
+          ],
+          "sourceId": "synthetic-events"
+        }
+      ],
+      "roles": {
+        "acceptor": "example-acceptor",
+        "admitter": "example-admitter",
+        "producer": "example-producer",
+        "verifier": "example-verifier"
+      },
+      "rollback": {
+        "available": true,
+        "reason": "Discard the local candidate and return to the retained fixed baseline.",
+        "target": "alpha-current"
+      },
+      "schemaVersion": "1.0.0",
+      "title": "Atlas Ω",
+      "version": "1"
+    },
+    "graph": {
+      "authorityCreated": "NONE",
+      "edges": [
+        {
+          "from": "streaming-metrics-builder-v1:mission-constitution",
+          "kind": "evidence",
+          "to": "streaming-metrics-builder-v1:incumbent-baseline"
+        },
+        {
+          "from": "streaming-metrics-builder-v1:mission-constitution",
+          "kind": "evidence",
+          "to": "streaming-metrics-builder-v1:alternative-set"
+        },
+        {
+          "from": "streaming-metrics-builder-v1:mission-constitution",
+          "kind": "evidence",
+          "to": "streaming-metrics-builder-v1:rights-data"
+        },
+        {
+          "from": "streaming-metrics-builder-v1:incumbent-baseline",
+          "kind": "evidence",
+          "to": "streaming-metrics-builder-v1:mission-gym"
+        },
+        {
+          "from": "streaming-metrics-builder-v1:alternative-set",
+          "kind": "evidence",
+          "to": "streaming-metrics-builder-v1:mission-gym"
+        },
+        {
+          "from": "streaming-metrics-builder-v1:rights-data",
+          "kind": "evidence",
+          "to": "streaming-metrics-builder-v1:mission-gym"
+        },
+        {
+          "from": "streaming-metrics-builder-v1:mission-gym",
+          "kind": "evidence",
+          "to": "streaming-metrics-builder-v1:oracle-teacher"
+        },
+        {
+          "from": "streaming-metrics-builder-v1:mission-gym",
+          "kind": "evidence",
+          "to": "streaming-metrics-builder-v1:failure-taxonomy"
+        },
+        {
+          "from": "streaming-metrics-builder-v1:incumbent-baseline",
+          "kind": "evidence",
+          "to": "streaming-metrics-builder-v1:architecture-frontier"
+        },
+        {
+          "from": "streaming-metrics-builder-v1:alternative-set",
+          "kind": "evidence",
+          "to": "streaming-metrics-builder-v1:architecture-frontier"
+        },
+        {
+          "from": "streaming-metrics-builder-v1:oracle-teacher",
+          "kind": "evidence",
+          "to": "streaming-metrics-builder-v1:architecture-frontier"
+        },
+        {
+          "from": "streaming-metrics-builder-v1:failure-taxonomy",
+          "kind": "evidence",
+          "to": "streaming-metrics-builder-v1:architecture-frontier"
+        },
+        {
+          "from": "streaming-metrics-builder-v1:rights-data",
+          "kind": "evidence",
+          "to": "streaming-metrics-builder-v1:experience-formation"
+        },
+        {
+          "from": "streaming-metrics-builder-v1:mission-gym",
+          "kind": "evidence",
+          "to": "streaming-metrics-builder-v1:experience-formation"
+        },
+        {
+          "from": "streaming-metrics-builder-v1:architecture-frontier",
+          "kind": "evidence",
+          "to": "streaming-metrics-builder-v1:specialist-formation"
+        },
+        {
+          "from": "streaming-metrics-builder-v1:experience-formation",
+          "kind": "evidence",
+          "to": "streaming-metrics-builder-v1:specialist-formation"
+        },
+        {
+          "from": "streaming-metrics-builder-v1:specialist-formation",
+          "kind": "evidence",
+          "to": "streaming-metrics-builder-v1:tools-retrieval"
+        },
+        {
+          "from": "streaming-metrics-builder-v1:mission-gym",
+          "kind": "evidence",
+          "to": "streaming-metrics-builder-v1:verifier-formation"
+        },
+        {
+          "from": "streaming-metrics-builder-v1:failure-taxonomy",
+          "kind": "evidence",
+          "to": "streaming-metrics-builder-v1:verifier-formation"
+        },
+        {
+          "from": "streaming-metrics-builder-v1:tools-retrieval",
+          "kind": "evidence",
+          "to": "streaming-metrics-builder-v1:verifier-formation"
+        },
+        {
+          "from": "streaming-metrics-builder-v1:tools-retrieval",
+          "kind": "evidence",
+          "to": "streaming-metrics-builder-v1:security-privacy"
+        },
+        {
+          "from": "streaming-metrics-builder-v1:verifier-formation",
+          "kind": "evidence",
+          "to": "streaming-metrics-builder-v1:security-privacy"
+        },
+        {
+          "from": "streaming-metrics-builder-v1:incumbent-baseline",
+          "kind": "evidence",
+          "to": "streaming-metrics-builder-v1:complete-economics"
+        },
+        {
+          "from": "streaming-metrics-builder-v1:alternative-set",
+          "kind": "evidence",
+          "to": "streaming-metrics-builder-v1:complete-economics"
+        },
+        {
+          "from": "streaming-metrics-builder-v1:specialist-formation",
+          "kind": "evidence",
+          "to": "streaming-metrics-builder-v1:complete-economics"
+        },
+        {
+          "from": "streaming-metrics-builder-v1:mission-constitution",
+          "kind": "evidence",
+          "to": "streaming-metrics-builder-v1:human-agency"
+        },
+        {
+          "from": "streaming-metrics-builder-v1:complete-economics",
+          "kind": "evidence",
+          "to": "streaming-metrics-builder-v1:human-agency"
+        },
+        {
+          "from": "streaming-metrics-builder-v1:tools-retrieval",
+          "kind": "evidence",
+          "to": "streaming-metrics-builder-v1:resilience-rollback"
+        },
+        {
+          "from": "streaming-metrics-builder-v1:security-privacy",
+          "kind": "evidence",
+          "to": "streaming-metrics-builder-v1:resilience-rollback"
+        },
+        {
+          "from": "streaming-metrics-builder-v1:specialist-formation",
+          "kind": "evidence",
+          "to": "streaming-metrics-builder-v1:fresh-evaluation"
+        },
+        {
+          "from": "streaming-metrics-builder-v1:verifier-formation",
+          "kind": "evidence",
+          "to": "streaming-metrics-builder-v1:fresh-evaluation"
+        },
+        {
+          "from": "streaming-metrics-builder-v1:security-privacy",
+          "kind": "evidence",
+          "to": "streaming-metrics-builder-v1:fresh-evaluation"
+        },
+        {
+          "from": "streaming-metrics-builder-v1:complete-economics",
+          "kind": "evidence",
+          "to": "streaming-metrics-builder-v1:fresh-evaluation"
+        },
+        {
+          "from": "streaming-metrics-builder-v1:human-agency",
+          "kind": "evidence",
+          "to": "streaming-metrics-builder-v1:fresh-evaluation"
+        },
+        {
+          "from": "streaming-metrics-builder-v1:resilience-rollback",
+          "kind": "evidence",
+          "to": "streaming-metrics-builder-v1:fresh-evaluation"
+        },
+        {
+          "from": "streaming-metrics-builder-v1:fresh-evaluation",
+          "kind": "evidence",
+          "to": "streaming-metrics-builder-v1:independent-validation"
+        },
+        {
+          "from": "streaming-metrics-builder-v1:independent-validation",
+          "kind": "evidence",
+          "to": "streaming-metrics-builder-v1:accountable-acceptance"
+        },
+        {
+          "from": "streaming-metrics-builder-v1:accountable-acceptance",
+          "kind": "evidence",
+          "to": "streaming-metrics-builder-v1:chronicle-authority"
+        },
+        {
+          "from": "streaming-metrics-builder-v1:chronicle-authority",
+          "kind": "evidence",
+          "to": "streaming-metrics-builder-v1:capital-requalification"
+        }
+      ],
+      "graphId": "streaming-metrics-builder-v1:graph",
+      "kind": "JobGraph",
+      "missionId": "streaming-metrics-builder-v1",
+      "nodes": [
+        {
+          "acceptance": {
+            "evidenceSources": [
+              "synthetic-events"
+            ],
+            "owner": "example-acceptor",
+            "predicate": "mission.json: count, sum, maximum duration and error count by day and service; zero incorrect totals. Preserve failures and missing evidence. Separate review is required."
+          },
+          "actor": "example-producer",
+          "authorizedInputs": [
+            "synthetic-events"
+          ],
+          "budget": {
+            "limitBaseUnits": "100000000000000000000",
+            "maxDurationMs": 60000,
+            "maxRetries": 0,
+            "unit": "AGIALPHA"
+          },
+          "chronicle": {
+            "eligible": false,
+            "expiresAt": "2026-10-19T22:14:48.559Z",
+            "rights": "Requires a separate rights and admission review.",
+            "scope": "Produce exact daily service metrics, compare bounded implementations, and prepare reviewable work orders."
+          },
+          "covers": [
+            "mission-constitution"
+          ],
+          "evidenceObligation": [
+            "source-lineage",
+            "complete-cost",
+            "failure-record"
+          ],
+          "expiresAt": "2026-10-19T22:14:48.559Z",
+          "family": "constitution",
+          "jobId": "streaming-metrics-builder-v1:mission-constitution",
+          "kind": "SealedWorkOrder",
+          "missionId": "streaming-metrics-builder-v1",
+          "objective": "Freeze objective, beneficiary, accountable principal, hard constraints and prohibitions. Streaming-metrics deliverable: mission.json: count, sum, maximum duration and error count by day and service; zero incorrect totals.",
+          "outputSchema": {
+            "required": [
+              "evidence",
+              "findings",
+              "cost"
+            ],
+            "type": "object"
+          },
+          "permittedActions": [
+            "inspect-local"
+          ],
+          "permittedTools": [
+            "fixed-aggregation-engine"
+          ],
+          "principal": "example-human-principal",
+          "prohibitedActions": [
+            "send-payment",
+            "post-live-job",
+            "access-private-data",
+            "self-admit"
+          ],
+          "rollback": {
+            "available": true,
+            "reason": "Discard the local candidate and return to the retained fixed baseline.",
+            "target": "alpha-current"
+          },
+          "schemaVersion": "1.0.0",
+          "state": "DRAFT",
+          "verifier": {
+            "identity": "example-verifier",
+            "independence": "I0",
+            "method": "Independent examination against frozen purpose-specific criteria; template is not executed proof."
+          },
+          "version": "1",
+          "sealed": true,
+          "signatureStatus": "UNSIGNED_COMMITMENT",
+          "digest": "sha256:d095517d06fcdc07cd6b8077a60e38034dce17c78d0413df526f89b43826441c"
+        },
+        {
+          "acceptance": {
+            "evidenceSources": [
+              "synthetic-events"
+            ],
+            "owner": "example-acceptor",
+            "predicate": "incumbent.json: exact outputs and observed timings for the existing scan-based implementation. Preserve failures and missing evidence. Separate review is required."
+          },
+          "actor": "example-producer",
+          "authorizedInputs": [
+            "synthetic-events",
+            "streaming-metrics-builder-v1:mission-constitution"
+          ],
+          "budget": {
+            "limitBaseUnits": "100000000000000000000",
+            "maxDurationMs": 60000,
+            "maxRetries": 0,
+            "unit": "AGIALPHA"
+          },
+          "chronicle": {
+            "eligible": false,
+            "expiresAt": "2026-10-19T22:14:48.559Z",
+            "rights": "Requires a separate rights and admission review.",
+            "scope": "Produce exact daily service metrics, compare bounded implementations, and prepare reviewable work orders."
+          },
+          "covers": [
+            "incumbent-baseline"
+          ],
+          "evidenceObligation": [
+            "source-lineage",
+            "complete-cost",
+            "failure-record"
+          ],
+          "expiresAt": "2026-10-19T22:14:48.559Z",
+          "family": "evidence",
+          "jobId": "streaming-metrics-builder-v1:incumbent-baseline",
+          "kind": "SealedWorkOrder",
+          "missionId": "streaming-metrics-builder-v1",
+          "objective": "Measure accepted quality, complete cost, risk, time, human burden and authority. Streaming-metrics deliverable: incumbent.json: exact outputs and observed timings for the existing scan-based implementation.",
+          "outputSchema": {
+            "required": [
+              "evidence",
+              "findings",
+              "cost"
+            ],
+            "type": "object"
+          },
+          "permittedActions": [
+            "inspect-local"
+          ],
+          "permittedTools": [
+            "fixed-aggregation-engine"
+          ],
+          "principal": "example-human-principal",
+          "prohibitedActions": [
+            "send-payment",
+            "post-live-job",
+            "access-private-data",
+            "self-admit"
+          ],
+          "rollback": {
+            "available": true,
+            "reason": "Discard the local candidate and return to the retained fixed baseline.",
+            "target": "alpha-current"
+          },
+          "schemaVersion": "1.0.0",
+          "state": "DRAFT",
+          "verifier": {
+            "identity": "example-verifier",
+            "independence": "I0",
+            "method": "Independent examination against frozen purpose-specific criteria; template is not executed proof."
+          },
+          "version": "1",
+          "sealed": true,
+          "signatureStatus": "UNSIGNED_COMMITMENT",
+          "digest": "sha256:0516261f39727625b7ecbf72dd20a9ac5ebac9947981d3f7846d71a776db6f43"
+        },
+        {
+          "acceptance": {
+            "evidenceSources": [
+              "synthetic-events"
+            ],
+            "owner": "example-acceptor",
+            "predicate": "alternatives.json: compare the deterministic map baseline; record that a frontier comparison is missing. Preserve failures and missing evidence. Separate review is required."
+          },
+          "actor": "example-producer",
+          "authorizedInputs": [
+            "synthetic-events",
+            "streaming-metrics-builder-v1:mission-constitution"
+          ],
+          "budget": {
+            "limitBaseUnits": "100000000000000000000",
+            "maxDurationMs": 60000,
+            "maxRetries": 0,
+            "unit": "AGIALPHA"
+          },
+          "chronicle": {
+            "eligible": false,
+            "expiresAt": "2026-10-19T22:14:48.559Z",
+            "rights": "Requires a separate rights and admission review.",
+            "scope": "Produce exact daily service metrics, compare bounded implementations, and prepare reviewable work orders."
+          },
+          "covers": [
+            "alternative-set"
+          ],
+          "evidenceObligation": [
+            "source-lineage",
+            "complete-cost",
+            "failure-record"
+          ],
+          "expiresAt": "2026-10-19T22:14:48.559Z",
+          "family": "constitution",
+          "jobId": "streaming-metrics-builder-v1:alternative-set",
+          "kind": "SealedWorkOrder",
+          "missionId": "streaming-metrics-builder-v1",
+          "objective": "Document the strongest credible frontier, specialist, human, hybrid, software and no-action alternatives. Streaming-metrics deliverable: alternatives.json: compare the deterministic map baseline; record that a frontier comparison is missing.",
+          "outputSchema": {
+            "required": [
+              "evidence",
+              "findings",
+              "cost"
+            ],
+            "type": "object"
+          },
+          "permittedActions": [
+            "inspect-local"
+          ],
+          "permittedTools": [
+            "fixed-aggregation-engine"
+          ],
+          "principal": "example-human-principal",
+          "prohibitedActions": [
+            "send-payment",
+            "post-live-job",
+            "access-private-data",
+            "self-admit"
+          ],
+          "rollback": {
+            "available": true,
+            "reason": "Discard the local candidate and return to the retained fixed baseline.",
+            "target": "alpha-current"
+          },
+          "schemaVersion": "1.0.0",
+          "state": "DRAFT",
+          "verifier": {
+            "identity": "example-verifier",
+            "independence": "I0",
+            "method": "Independent examination against frozen purpose-specific criteria; template is not executed proof."
+          },
+          "version": "1",
+          "sealed": true,
+          "signatureStatus": "UNSIGNED_COMMITMENT",
+          "digest": "sha256:a2502c4275290cebcf81554c1d092759b0f87fb5338c84760bbc375af4f407f7"
+        },
+        {
+          "acceptance": {
+            "evidenceSources": [
+              "synthetic-events"
+            ],
+            "owner": "example-acceptor",
+            "predicate": "rights.json: synthetic nonpersonal events only; list code licenses and permitted reuse. Preserve failures and missing evidence. Separate review is required."
+          },
+          "actor": "example-producer",
+          "authorizedInputs": [
+            "synthetic-events",
+            "streaming-metrics-builder-v1:mission-constitution"
+          ],
+          "budget": {
+            "limitBaseUnits": "100000000000000000000",
+            "maxDurationMs": 60000,
+            "maxRetries": 0,
+            "unit": "AGIALPHA"
+          },
+          "chronicle": {
+            "eligible": false,
+            "expiresAt": "2026-10-19T22:14:48.559Z",
+            "rights": "Requires a separate rights and admission review.",
+            "scope": "Produce exact daily service metrics, compare bounded implementations, and prepare reviewable work orders."
+          },
+          "covers": [
+            "rights-data"
+          ],
+          "evidenceObligation": [
+            "source-lineage",
+            "complete-cost",
+            "failure-record"
+          ],
+          "expiresAt": "2026-10-19T22:14:48.559Z",
+          "family": "constitution",
+          "jobId": "streaming-metrics-builder-v1:rights-data",
+          "kind": "SealedWorkOrder",
+          "missionId": "streaming-metrics-builder-v1",
+          "objective": "Establish source provenance, licenses, retention, exclusions and permitted reuse. Streaming-metrics deliverable: rights.json: synthetic nonpersonal events only; list code licenses and permitted reuse.",
+          "outputSchema": {
+            "required": [
+              "evidence",
+              "findings",
+              "cost"
+            ],
+            "type": "object"
+          },
+          "permittedActions": [
+            "inspect-local"
+          ],
+          "permittedTools": [
+            "fixed-aggregation-engine"
+          ],
+          "principal": "example-human-principal",
+          "prohibitedActions": [
+            "send-payment",
+            "post-live-job",
+            "access-private-data",
+            "self-admit"
+          ],
+          "rollback": {
+            "available": true,
+            "reason": "Discard the local candidate and return to the retained fixed baseline.",
+            "target": "alpha-current"
+          },
+          "schemaVersion": "1.0.0",
+          "state": "DRAFT",
+          "verifier": {
+            "identity": "example-verifier",
+            "independence": "I0",
+            "method": "Independent examination against frozen purpose-specific criteria; template is not executed proof."
+          },
+          "version": "1",
+          "sealed": true,
+          "signatureStatus": "UNSIGNED_COMMITMENT",
+          "digest": "sha256:7b12df70a761eb547dcf4466f67c67481e209a42f0bc0700bd310ace65fc492a"
+        },
+        {
+          "acceptance": {
+            "evidenceSources": [
+              "synthetic-events"
+            ],
+            "owner": "example-acceptor",
+            "predicate": "gym.json: version the event generator, malformed-input cases, public partitions and zero-error gate. Preserve failures and missing evidence. Separate review is required."
+          },
+          "actor": "example-producer",
+          "authorizedInputs": [
+            "synthetic-events",
+            "streaming-metrics-builder-v1:incumbent-baseline",
+            "streaming-metrics-builder-v1:alternative-set",
+            "streaming-metrics-builder-v1:rights-data"
+          ],
+          "budget": {
+            "limitBaseUnits": "100000000000000000000",
+            "maxDurationMs": 60000,
+            "maxRetries": 0,
+            "unit": "AGIALPHA"
+          },
+          "chronicle": {
+            "eligible": false,
+            "expiresAt": "2026-10-19T22:14:48.559Z",
+            "rights": "Requires a separate rights and admission review.",
+            "scope": "Produce exact daily service metrics, compare bounded implementations, and prepare reviewable work orders."
+          },
+          "covers": [
+            "mission-gym"
+          ],
+          "evidenceObligation": [
+            "source-lineage",
+            "complete-cost",
+            "failure-record"
+          ],
+          "expiresAt": "2026-10-19T22:14:48.559Z",
+          "family": "formation",
+          "jobId": "streaming-metrics-builder-v1:mission-gym",
+          "kind": "SealedWorkOrder",
+          "missionId": "streaming-metrics-builder-v1",
+          "objective": "Specify states, observations, actions, transitions, rewards, constraints, partitions, verifier and basis risk; freeze representative distribution, protected custody, critical failures and thresholds. Streaming-metrics deliverable: gym.json: version the event generator, malformed-input cases, public partitions and zero-error gate.",
+          "outputSchema": {
+            "required": [
+              "evidence",
+              "findings",
+              "cost"
+            ],
+            "type": "object"
+          },
+          "permittedActions": [
+            "inspect-local"
+          ],
+          "permittedTools": [
+            "fixed-aggregation-engine"
+          ],
+          "principal": "example-human-principal",
+          "prohibitedActions": [
+            "send-payment",
+            "post-live-job",
+            "access-private-data",
+            "self-admit"
+          ],
+          "rollback": {
+            "available": true,
+            "reason": "Discard the local candidate and return to the retained fixed baseline.",
+            "target": "alpha-current"
+          },
+          "schemaVersion": "1.0.0",
+          "state": "DRAFT",
+          "verifier": {
+            "identity": "example-verifier",
+            "independence": "I0",
+            "method": "Independent examination against frozen purpose-specific criteria; template is not executed proof."
+          },
+          "version": "1",
+          "sealed": true,
+          "signatureStatus": "UNSIGNED_COMMITMENT",
+          "digest": "sha256:d8884612512688224b061f56d07b3a5a98102867ed5cc6e95f435fec8f1b9993"
+        },
+        {
+          "acceptance": {
+            "evidenceSources": [
+              "synthetic-events"
+            ],
+            "owner": "example-acceptor",
+            "predicate": "teacher.json: disclose that this example uses fixed code and no external model or teaching calls. Preserve failures and missing evidence. Separate review is required."
+          },
+          "actor": "example-producer",
+          "authorizedInputs": [
+            "synthetic-events",
+            "streaming-metrics-builder-v1:mission-gym"
+          ],
+          "budget": {
+            "limitBaseUnits": "100000000000000000000",
+            "maxDurationMs": 60000,
+            "maxRetries": 0,
+            "unit": "AGIALPHA"
+          },
+          "chronicle": {
+            "eligible": false,
+            "expiresAt": "2026-10-19T22:14:48.559Z",
+            "rights": "Requires a separate rights and admission review.",
+            "scope": "Produce exact daily service metrics, compare bounded implementations, and prepare reviewable work orders."
+          },
+          "covers": [
+            "oracle-teacher"
+          ],
+          "evidenceObligation": [
+            "source-lineage",
+            "complete-cost",
+            "failure-record"
+          ],
+          "expiresAt": "2026-10-19T22:14:48.559Z",
+          "family": "evidence",
+          "jobId": "streaming-metrics-builder-v1:oracle-teacher",
+          "kind": "SealedWorkOrder",
+          "missionId": "streaming-metrics-builder-v1",
+          "objective": "Declare external teaching signals, hidden-call prohibition and transfer hypothesis. Streaming-metrics deliverable: teacher.json: disclose that this example uses fixed code and no external model or teaching calls.",
+          "outputSchema": {
+            "required": [
+              "evidence",
+              "findings",
+              "cost"
+            ],
+            "type": "object"
+          },
+          "permittedActions": [
+            "inspect-local"
+          ],
+          "permittedTools": [
+            "fixed-aggregation-engine"
+          ],
+          "principal": "example-human-principal",
+          "prohibitedActions": [
+            "send-payment",
+            "post-live-job",
+            "access-private-data",
+            "self-admit"
+          ],
+          "rollback": {
+            "available": true,
+            "reason": "Discard the local candidate and return to the retained fixed baseline.",
+            "target": "alpha-current"
+          },
+          "schemaVersion": "1.0.0",
+          "state": "DRAFT",
+          "verifier": {
+            "identity": "example-verifier",
+            "independence": "I0",
+            "method": "Independent examination against frozen purpose-specific criteria; template is not executed proof."
+          },
+          "version": "1",
+          "sealed": true,
+          "signatureStatus": "UNSIGNED_COMMITMENT",
+          "digest": "sha256:37832018fc5ec62d5a8d4ad1645aabd6877b724f13a643ff530d6761c0699de2"
+        },
+        {
+          "acceptance": {
+            "evidenceSources": [
+              "synthetic-events"
+            ],
+            "owner": "example-acceptor",
+            "predicate": "failures.json: test empty data, invalid numbers, malformed Unicode and unusual service keys. Preserve failures and missing evidence. Separate review is required."
+          },
+          "actor": "example-producer",
+          "authorizedInputs": [
+            "synthetic-events",
+            "streaming-metrics-builder-v1:mission-gym"
+          ],
+          "budget": {
+            "limitBaseUnits": "100000000000000000000",
+            "maxDurationMs": 60000,
+            "maxRetries": 0,
+            "unit": "AGIALPHA"
+          },
+          "chronicle": {
+            "eligible": false,
+            "expiresAt": "2026-10-19T22:14:48.559Z",
+            "rights": "Requires a separate rights and admission review.",
+            "scope": "Produce exact daily service metrics, compare bounded implementations, and prepare reviewable work orders."
+          },
+          "covers": [
+            "failure-taxonomy"
+          ],
+          "evidenceObligation": [
+            "source-lineage",
+            "complete-cost",
+            "failure-record"
+          ],
+          "expiresAt": "2026-10-19T22:14:48.559Z",
+          "family": "challenge",
+          "jobId": "streaming-metrics-builder-v1:failure-taxonomy",
+          "kind": "SealedWorkOrder",
+          "missionId": "streaming-metrics-builder-v1",
+          "objective": "Classify errors, severity, causes, abstention, adversarial cases and stop conditions. Streaming-metrics deliverable: failures.json: test empty data, invalid numbers, malformed Unicode and unusual service keys.",
+          "outputSchema": {
+            "required": [
+              "evidence",
+              "findings",
+              "cost"
+            ],
+            "type": "object"
+          },
+          "permittedActions": [
+            "inspect-local"
+          ],
+          "permittedTools": [
+            "fixed-aggregation-engine"
+          ],
+          "principal": "example-human-principal",
+          "prohibitedActions": [
+            "send-payment",
+            "post-live-job",
+            "access-private-data",
+            "self-admit"
+          ],
+          "rollback": {
+            "available": true,
+            "reason": "Discard the local candidate and return to the retained fixed baseline.",
+            "target": "alpha-current"
+          },
+          "schemaVersion": "1.0.0",
+          "state": "DRAFT",
+          "verifier": {
+            "identity": "example-verifier",
+            "independence": "I0",
+            "method": "Independent examination against frozen purpose-specific criteria; template is not executed proof."
+          },
+          "version": "1",
+          "sealed": true,
+          "signatureStatus": "UNSIGNED_COMMITMENT",
+          "digest": "sha256:66ce85d0befcc8e737f07f84f5d176c6b3c643d691be809a99c8373dcc9bb270"
+        },
+        {
+          "acceptance": {
+            "evidenceSources": [
+              "synthetic-events"
+            ],
+            "owner": "example-acceptor",
+            "predicate": "candidates.json: preserve all four bounded aggregation configurations and rejected attempts. Preserve failures and missing evidence. Separate review is required."
+          },
+          "actor": "example-producer",
+          "authorizedInputs": [
+            "synthetic-events",
+            "streaming-metrics-builder-v1:incumbent-baseline",
+            "streaming-metrics-builder-v1:alternative-set",
+            "streaming-metrics-builder-v1:oracle-teacher",
+            "streaming-metrics-builder-v1:failure-taxonomy"
+          ],
+          "budget": {
+            "limitBaseUnits": "100000000000000000000",
+            "maxDurationMs": 60000,
+            "maxRetries": 0,
+            "unit": "AGIALPHA"
+          },
+          "chronicle": {
+            "eligible": false,
+            "expiresAt": "2026-10-19T22:14:48.559Z",
+            "rights": "Requires a separate rights and admission review.",
+            "scope": "Produce exact daily service metrics, compare bounded implementations, and prepare reviewable work orders."
+          },
+          "covers": [
+            "architecture-frontier"
+          ],
+          "evidenceObligation": [
+            "source-lineage",
+            "complete-cost",
+            "failure-record"
+          ],
+          "expiresAt": "2026-10-19T22:14:48.559Z",
+          "family": "formation",
+          "jobId": "streaming-metrics-builder-v1:architecture-frontier",
+          "kind": "SealedWorkOrder",
+          "missionId": "streaming-metrics-builder-v1",
+          "objective": "Form diverse complete candidates and retain non-dominated reserve options. Streaming-metrics deliverable: candidates.json: preserve all four bounded aggregation configurations and rejected attempts.",
+          "outputSchema": {
+            "required": [
+              "evidence",
+              "findings",
+              "cost"
+            ],
+            "type": "object"
+          },
+          "permittedActions": [
+            "inspect-local"
+          ],
+          "permittedTools": [
+            "fixed-aggregation-engine"
+          ],
+          "principal": "example-human-principal",
+          "prohibitedActions": [
+            "send-payment",
+            "post-live-job",
+            "access-private-data",
+            "self-admit"
+          ],
+          "rollback": {
+            "available": true,
+            "reason": "Discard the local candidate and return to the retained fixed baseline.",
+            "target": "alpha-current"
+          },
+          "schemaVersion": "1.0.0",
+          "state": "DRAFT",
+          "verifier": {
+            "identity": "example-verifier",
+            "independence": "I0",
+            "method": "Independent examination against frozen purpose-specific criteria; template is not executed proof."
+          },
+          "version": "1",
+          "sealed": true,
+          "signatureStatus": "UNSIGNED_COMMITMENT",
+          "digest": "sha256:0764e36836609f9f78a30dece12a661ba3579e308e5389b910589a6f92f19856"
+        },
+        {
+          "acceptance": {
+            "evidenceSources": [
+              "synthetic-events"
+            ],
+            "owner": "example-acceptor",
+            "predicate": "experience.json: record seeds, workload sizes and generator version; no protected claims. Preserve failures and missing evidence. Separate review is required."
+          },
+          "actor": "example-producer",
+          "authorizedInputs": [
+            "synthetic-events",
+            "streaming-metrics-builder-v1:rights-data",
+            "streaming-metrics-builder-v1:mission-gym"
+          ],
+          "budget": {
+            "limitBaseUnits": "100000000000000000000",
+            "maxDurationMs": 60000,
+            "maxRetries": 0,
+            "unit": "AGIALPHA"
+          },
+          "chronicle": {
+            "eligible": false,
+            "expiresAt": "2026-10-19T22:14:48.559Z",
+            "rights": "Requires a separate rights and admission review.",
+            "scope": "Produce exact daily service metrics, compare bounded implementations, and prepare reviewable work orders."
+          },
+          "covers": [
+            "experience-formation"
+          ],
+          "evidenceObligation": [
+            "source-lineage",
+            "complete-cost",
+            "failure-record"
+          ],
+          "expiresAt": "2026-10-19T22:14:48.559Z",
+          "family": "formation",
+          "jobId": "streaming-metrics-builder-v1:experience-formation",
+          "kind": "SealedWorkOrder",
+          "missionId": "streaming-metrics-builder-v1",
+          "objective": "Build rights-cleared examples and simulation experience with explicit quality controls. Streaming-metrics deliverable: experience.json: record seeds, workload sizes and generator version; no protected claims.",
+          "outputSchema": {
+            "required": [
+              "evidence",
+              "findings",
+              "cost"
+            ],
+            "type": "object"
+          },
+          "permittedActions": [
+            "inspect-local"
+          ],
+          "permittedTools": [
+            "fixed-aggregation-engine"
+          ],
+          "principal": "example-human-principal",
+          "prohibitedActions": [
+            "send-payment",
+            "post-live-job",
+            "access-private-data",
+            "self-admit"
+          ],
+          "rollback": {
+            "available": true,
+            "reason": "Discard the local candidate and return to the retained fixed baseline.",
+            "target": "alpha-current"
+          },
+          "schemaVersion": "1.0.0",
+          "state": "DRAFT",
+          "verifier": {
+            "identity": "example-verifier",
+            "independence": "I0",
+            "method": "Independent examination against frozen purpose-specific criteria; template is not executed proof."
+          },
+          "version": "1",
+          "sealed": true,
+          "signatureStatus": "UNSIGNED_COMMITMENT",
+          "digest": "sha256:aed9835d20752d78b180ff8b282da1c4e246dba2c56a77959072232f2acfab71"
+        },
+        {
+          "acceptance": {
+            "evidenceSources": [
+              "synthetic-events"
+            ],
+            "owner": "example-acceptor",
+            "predicate": "candidate.json: freeze the selected grammar and engine SHA-256 before comparative evaluation. Preserve failures and missing evidence. Separate review is required."
+          },
+          "actor": "example-producer",
+          "authorizedInputs": [
+            "synthetic-events",
+            "streaming-metrics-builder-v1:architecture-frontier",
+            "streaming-metrics-builder-v1:experience-formation"
+          ],
+          "budget": {
+            "limitBaseUnits": "100000000000000000000",
+            "maxDurationMs": 60000,
+            "maxRetries": 0,
+            "unit": "AGIALPHA"
+          },
+          "chronicle": {
+            "eligible": false,
+            "expiresAt": "2026-10-19T22:14:48.559Z",
+            "rights": "Requires a separate rights and admission review.",
+            "scope": "Produce exact daily service metrics, compare bounded implementations, and prepare reviewable work orders."
+          },
+          "covers": [
+            "specialist-formation"
+          ],
+          "evidenceObligation": [
+            "source-lineage",
+            "complete-cost",
+            "failure-record"
+          ],
+          "expiresAt": "2026-10-19T22:14:48.559Z",
+          "family": "formation",
+          "jobId": "streaming-metrics-builder-v1:specialist-formation",
+          "kind": "SealedWorkOrder",
+          "missionId": "streaming-metrics-builder-v1",
+          "objective": "Construct or adapt candidate components with exact immutable release identities. Streaming-metrics deliverable: candidate.json: freeze the selected grammar and engine SHA-256 before comparative evaluation.",
+          "outputSchema": {
+            "required": [
+              "evidence",
+              "findings",
+              "cost"
+            ],
+            "type": "object"
+          },
+          "permittedActions": [
+            "inspect-local"
+          ],
+          "permittedTools": [
+            "fixed-aggregation-engine"
+          ],
+          "principal": "example-human-principal",
+          "prohibitedActions": [
+            "send-payment",
+            "post-live-job",
+            "access-private-data",
+            "self-admit"
+          ],
+          "rollback": {
+            "available": true,
+            "reason": "Discard the local candidate and return to the retained fixed baseline.",
+            "target": "alpha-current"
+          },
+          "schemaVersion": "1.0.0",
+          "state": "DRAFT",
+          "verifier": {
+            "identity": "example-verifier",
+            "independence": "I0",
+            "method": "Independent examination against frozen purpose-specific criteria; template is not executed proof."
+          },
+          "version": "1",
+          "sealed": true,
+          "signatureStatus": "UNSIGNED_COMMITMENT",
+          "digest": "sha256:8e54af35399d06f31934e05cff3f87a5b067ae44368719ec848d54304382ba4d"
+        },
+        {
+          "acceptance": {
+            "evidenceSources": [
+              "synthetic-events"
+            ],
+            "owner": "example-acceptor",
+            "predicate": "tools.json: allow only the fixed aggregation engine; no arbitrary code, browsing or money movement. Preserve failures and missing evidence. Separate review is required."
+          },
+          "actor": "example-producer",
+          "authorizedInputs": [
+            "synthetic-events",
+            "streaming-metrics-builder-v1:specialist-formation"
+          ],
+          "budget": {
+            "limitBaseUnits": "100000000000000000000",
+            "maxDurationMs": 60000,
+            "maxRetries": 0,
+            "unit": "AGIALPHA"
+          },
+          "chronicle": {
+            "eligible": false,
+            "expiresAt": "2026-10-19T22:14:48.559Z",
+            "rights": "Requires a separate rights and admission review.",
+            "scope": "Produce exact daily service metrics, compare bounded implementations, and prepare reviewable work orders."
+          },
+          "covers": [
+            "tools-retrieval"
+          ],
+          "evidenceObligation": [
+            "source-lineage",
+            "complete-cost",
+            "failure-record"
+          ],
+          "expiresAt": "2026-10-19T22:14:48.559Z",
+          "family": "formation",
+          "jobId": "streaming-metrics-builder-v1:tools-retrieval",
+          "kind": "SealedWorkOrder",
+          "missionId": "streaming-metrics-builder-v1",
+          "objective": "Build bounded deterministic checks, retrieval, planners, sandboxes and interfaces. Streaming-metrics deliverable: tools.json: allow only the fixed aggregation engine; no arbitrary code, browsing or money movement.",
+          "outputSchema": {
+            "required": [
+              "evidence",
+              "findings",
+              "cost"
+            ],
+            "type": "object"
+          },
+          "permittedActions": [
+            "inspect-local"
+          ],
+          "permittedTools": [
+            "fixed-aggregation-engine"
+          ],
+          "principal": "example-human-principal",
+          "prohibitedActions": [
+            "send-payment",
+            "post-live-job",
+            "access-private-data",
+            "self-admit"
+          ],
+          "rollback": {
+            "available": true,
+            "reason": "Discard the local candidate and return to the retained fixed baseline.",
+            "target": "alpha-current"
+          },
+          "schemaVersion": "1.0.0",
+          "state": "DRAFT",
+          "verifier": {
+            "identity": "example-verifier",
+            "independence": "I0",
+            "method": "Independent examination against frozen purpose-specific criteria; template is not executed proof."
+          },
+          "version": "1",
+          "sealed": true,
+          "signatureStatus": "UNSIGNED_COMMITMENT",
+          "digest": "sha256:e46eb17315c52de2ae090360a5a1545b48e6a7869958867f7b11dcda4cf1a2c1"
+        },
+        {
+          "acceptance": {
+            "evidenceSources": [
+              "synthetic-events"
+            ],
+            "owner": "example-acceptor",
+            "predicate": "verifier.json: reproduce exact outputs and reject invalid inputs; identify missing independent custody. Preserve failures and missing evidence. Separate review is required."
+          },
+          "actor": "example-producer",
+          "authorizedInputs": [
+            "synthetic-events",
+            "streaming-metrics-builder-v1:mission-gym",
+            "streaming-metrics-builder-v1:failure-taxonomy",
+            "streaming-metrics-builder-v1:tools-retrieval"
+          ],
+          "budget": {
+            "limitBaseUnits": "100000000000000000000",
+            "maxDurationMs": 60000,
+            "maxRetries": 0,
+            "unit": "AGIALPHA"
+          },
+          "chronicle": {
+            "eligible": false,
+            "expiresAt": "2026-10-19T22:14:48.559Z",
+            "rights": "Requires a separate rights and admission review.",
+            "scope": "Produce exact daily service metrics, compare bounded implementations, and prepare reviewable work orders."
+          },
+          "covers": [
+            "verifier-formation"
+          ],
+          "evidenceObligation": [
+            "source-lineage",
+            "complete-cost",
+            "failure-record"
+          ],
+          "expiresAt": "2026-10-19T22:14:48.559Z",
+          "family": "verification",
+          "jobId": "streaming-metrics-builder-v1:verifier-formation",
+          "kind": "SealedWorkOrder",
+          "missionId": "streaming-metrics-builder-v1",
+          "objective": "Calibrate independent evaluation, replay, attacks, hidden ground truth and scoring. Streaming-metrics deliverable: verifier.json: reproduce exact outputs and reject invalid inputs; identify missing independent custody.",
+          "outputSchema": {
+            "required": [
+              "evidence",
+              "findings",
+              "cost"
+            ],
+            "type": "object"
+          },
+          "permittedActions": [
+            "inspect-local"
+          ],
+          "permittedTools": [
+            "fixed-aggregation-engine"
+          ],
+          "principal": "example-human-principal",
+          "prohibitedActions": [
+            "send-payment",
+            "post-live-job",
+            "access-private-data",
+            "self-admit"
+          ],
+          "rollback": {
+            "available": true,
+            "reason": "Discard the local candidate and return to the retained fixed baseline.",
+            "target": "alpha-current"
+          },
+          "schemaVersion": "1.0.0",
+          "state": "DRAFT",
+          "verifier": {
+            "identity": "example-verifier",
+            "independence": "I0",
+            "method": "Independent examination against frozen purpose-specific criteria; template is not executed proof."
+          },
+          "version": "1",
+          "sealed": true,
+          "signatureStatus": "UNSIGNED_COMMITMENT",
+          "digest": "sha256:1c3d846b201d617b40036ce5a885835efd47ede944232471f569b443462efcb5"
+        },
+        {
+          "acceptance": {
+            "evidenceSources": [
+              "synthetic-events"
+            ],
+            "owner": "example-acceptor",
+            "predicate": "security.json: confirm no external requests, keys, personal data or wallet approvals are required. Preserve failures and missing evidence. Separate review is required."
+          },
+          "actor": "example-producer",
+          "authorizedInputs": [
+            "synthetic-events",
+            "streaming-metrics-builder-v1:tools-retrieval",
+            "streaming-metrics-builder-v1:verifier-formation"
+          ],
+          "budget": {
+            "limitBaseUnits": "100000000000000000000",
+            "maxDurationMs": 60000,
+            "maxRetries": 0,
+            "unit": "AGIALPHA"
+          },
+          "chronicle": {
+            "eligible": false,
+            "expiresAt": "2026-10-19T22:14:48.559Z",
+            "rights": "Requires a separate rights and admission review.",
+            "scope": "Produce exact daily service metrics, compare bounded implementations, and prepare reviewable work orders."
+          },
+          "covers": [
+            "security-privacy"
+          ],
+          "evidenceObligation": [
+            "source-lineage",
+            "complete-cost",
+            "failure-record"
+          ],
+          "expiresAt": "2026-10-19T22:14:48.559Z",
+          "family": "verification",
+          "jobId": "streaming-metrics-builder-v1:security-privacy",
+          "kind": "SealedWorkOrder",
+          "missionId": "streaming-metrics-builder-v1",
+          "objective": "Test credential controls, isolation, threat model, incidents and provider risks. Streaming-metrics deliverable: security.json: confirm no external requests, keys, personal data or wallet approvals are required.",
+          "outputSchema": {
+            "required": [
+              "evidence",
+              "findings",
+              "cost"
+            ],
+            "type": "object"
+          },
+          "permittedActions": [
+            "inspect-local"
+          ],
+          "permittedTools": [
+            "fixed-aggregation-engine"
+          ],
+          "principal": "example-human-principal",
+          "prohibitedActions": [
+            "send-payment",
+            "post-live-job",
+            "access-private-data",
+            "self-admit"
+          ],
+          "rollback": {
+            "available": true,
+            "reason": "Discard the local candidate and return to the retained fixed baseline.",
+            "target": "alpha-current"
+          },
+          "schemaVersion": "1.0.0",
+          "state": "DRAFT",
+          "verifier": {
+            "identity": "example-verifier",
+            "independence": "I0",
+            "method": "Independent examination against frozen purpose-specific criteria; template is not executed proof."
+          },
+          "version": "1",
+          "sealed": true,
+          "signatureStatus": "UNSIGNED_COMMITMENT",
+          "digest": "sha256:b6e135cc64c5201419661fed5669f150c50d9b59b9a75026468f8e1726e8721d"
+        },
+        {
+          "acceptance": {
+            "evidenceSources": [
+              "synthetic-events"
+            ],
+            "owner": "example-acceptor",
+            "predicate": "economics.json: record all observed costs; mark compute price, human review and maintenance unmeasured. Preserve failures and missing evidence. Separate review is required."
+          },
+          "actor": "example-producer",
+          "authorizedInputs": [
+            "synthetic-events",
+            "streaming-metrics-builder-v1:incumbent-baseline",
+            "streaming-metrics-builder-v1:alternative-set",
+            "streaming-metrics-builder-v1:specialist-formation"
+          ],
+          "budget": {
+            "limitBaseUnits": "100000000000000000000",
+            "maxDurationMs": 60000,
+            "maxRetries": 0,
+            "unit": "AGIALPHA"
+          },
+          "chronicle": {
+            "eligible": false,
+            "expiresAt": "2026-10-19T22:14:48.559Z",
+            "rights": "Requires a separate rights and admission review.",
+            "scope": "Produce exact daily service metrics, compare bounded implementations, and prepare reviewable work orders."
+          },
+          "covers": [
+            "complete-economics"
+          ],
+          "evidenceObligation": [
+            "source-lineage",
+            "complete-cost",
+            "failure-record"
+          ],
+          "expiresAt": "2026-10-19T22:14:48.559Z",
+          "family": "evidence",
+          "jobId": "streaming-metrics-builder-v1:complete-economics",
+          "kind": "SealedWorkOrder",
+          "missionId": "streaming-metrics-builder-v1",
+          "objective": "Count construction, operation, human rescue, maintenance, requalification and unwind. Streaming-metrics deliverable: economics.json: record all observed costs; mark compute price, human review and maintenance unmeasured.",
+          "outputSchema": {
+            "required": [
+              "evidence",
+              "findings",
+              "cost"
+            ],
+            "type": "object"
+          },
+          "permittedActions": [
+            "inspect-local"
+          ],
+          "permittedTools": [
+            "fixed-aggregation-engine"
+          ],
+          "principal": "example-human-principal",
+          "prohibitedActions": [
+            "send-payment",
+            "post-live-job",
+            "access-private-data",
+            "self-admit"
+          ],
+          "rollback": {
+            "available": true,
+            "reason": "Discard the local candidate and return to the retained fixed baseline.",
+            "target": "alpha-current"
+          },
+          "schemaVersion": "1.0.0",
+          "state": "DRAFT",
+          "verifier": {
+            "identity": "example-verifier",
+            "independence": "I0",
+            "method": "Independent examination against frozen purpose-specific criteria; template is not executed proof."
+          },
+          "version": "1",
+          "sealed": true,
+          "signatureStatus": "UNSIGNED_COMMITMENT",
+          "digest": "sha256:d8ee667d1fca40e6b7ff9386198a269c4ee9af5d1954216da65aa787b945459d"
+        },
+        {
+          "acceptance": {
+            "evidenceSources": [
+              "synthetic-events"
+            ],
+            "owner": "example-acceptor",
+            "predicate": "roles.json: separate producer, verifier, acceptance owner and admitter; labels are unauthenticated. Preserve failures and missing evidence. Separate review is required."
+          },
+          "actor": "example-producer",
+          "authorizedInputs": [
+            "synthetic-events",
+            "streaming-metrics-builder-v1:mission-constitution",
+            "streaming-metrics-builder-v1:complete-economics"
+          ],
+          "budget": {
+            "limitBaseUnits": "100000000000000000000",
+            "maxDurationMs": 60000,
+            "maxRetries": 0,
+            "unit": "AGIALPHA"
+          },
+          "chronicle": {
+            "eligible": false,
+            "expiresAt": "2026-10-19T22:14:48.559Z",
+            "rights": "Requires a separate rights and admission review.",
+            "scope": "Produce exact daily service metrics, compare bounded implementations, and prepare reviewable work orders."
+          },
+          "covers": [
+            "human-agency"
+          ],
+          "evidenceObligation": [
+            "source-lineage",
+            "complete-cost",
+            "failure-record"
+          ],
+          "expiresAt": "2026-10-19T22:14:48.559Z",
+          "family": "constitution",
+          "jobId": "streaming-metrics-builder-v1:human-agency",
+          "kind": "SealedWorkOrder",
+          "missionId": "streaming-metrics-builder-v1",
+          "objective": "Define reviewer capacity, escalation, contestability and accountable decision rights. Streaming-metrics deliverable: roles.json: separate producer, verifier, acceptance owner and admitter; labels are unauthenticated.",
+          "outputSchema": {
+            "required": [
+              "evidence",
+              "findings",
+              "cost"
+            ],
+            "type": "object"
+          },
+          "permittedActions": [
+            "inspect-local"
+          ],
+          "permittedTools": [
+            "fixed-aggregation-engine"
+          ],
+          "principal": "example-human-principal",
+          "prohibitedActions": [
+            "send-payment",
+            "post-live-job",
+            "access-private-data",
+            "self-admit"
+          ],
+          "rollback": {
+            "available": true,
+            "reason": "Discard the local candidate and return to the retained fixed baseline.",
+            "target": "alpha-current"
+          },
+          "schemaVersion": "1.0.0",
+          "state": "DRAFT",
+          "verifier": {
+            "identity": "example-verifier",
+            "independence": "I0",
+            "method": "Independent examination against frozen purpose-specific criteria; template is not executed proof."
+          },
+          "version": "1",
+          "sealed": true,
+          "signatureStatus": "UNSIGNED_COMMITMENT",
+          "digest": "sha256:8d71bb85cc9b3afc6d799cf1574885f2d23c5e4e7f6ea6a6165677854f3d6b37"
+        },
+        {
+          "acceptance": {
+            "evidenceSources": [
+              "synthetic-events"
+            ],
+            "owner": "example-acceptor",
+            "predicate": "rollback.json: retain the baseline and demonstrate clearing the active candidate without external effects. Preserve failures and missing evidence. Separate review is required."
+          },
+          "actor": "example-producer",
+          "authorizedInputs": [
+            "synthetic-events",
+            "streaming-metrics-builder-v1:tools-retrieval",
+            "streaming-metrics-builder-v1:security-privacy"
+          ],
+          "budget": {
+            "limitBaseUnits": "100000000000000000000",
+            "maxDurationMs": 60000,
+            "maxRetries": 0,
+            "unit": "AGIALPHA"
+          },
+          "chronicle": {
+            "eligible": false,
+            "expiresAt": "2026-10-19T22:14:48.559Z",
+            "rights": "Requires a separate rights and admission review.",
+            "scope": "Produce exact daily service metrics, compare bounded implementations, and prepare reviewable work orders."
+          },
+          "covers": [
+            "resilience-rollback"
+          ],
+          "evidenceObligation": [
+            "source-lineage",
+            "complete-cost",
+            "failure-record"
+          ],
+          "expiresAt": "2026-10-19T22:14:48.559Z",
+          "family": "verification",
+          "jobId": "streaming-metrics-builder-v1:resilience-rollback",
+          "kind": "SealedWorkOrder",
+          "missionId": "streaming-metrics-builder-v1",
+          "objective": "Prove graceful degradation, kill switch, portability and known-good restoration. Streaming-metrics deliverable: rollback.json: retain the baseline and demonstrate clearing the active candidate without external effects.",
+          "outputSchema": {
+            "required": [
+              "evidence",
+              "findings",
+              "cost"
+            ],
+            "type": "object"
+          },
+          "permittedActions": [
+            "inspect-local"
+          ],
+          "permittedTools": [
+            "fixed-aggregation-engine"
+          ],
+          "principal": "example-human-principal",
+          "prohibitedActions": [
+            "send-payment",
+            "post-live-job",
+            "access-private-data",
+            "self-admit"
+          ],
+          "rollback": {
+            "available": true,
+            "reason": "Discard the local candidate and return to the retained fixed baseline.",
+            "target": "alpha-current"
+          },
+          "schemaVersion": "1.0.0",
+          "state": "DRAFT",
+          "verifier": {
+            "identity": "example-verifier",
+            "independence": "I0",
+            "method": "Independent examination against frozen purpose-specific criteria; template is not executed proof."
+          },
+          "version": "1",
+          "sealed": true,
+          "signatureStatus": "UNSIGNED_COMMITMENT",
+          "digest": "sha256:6fd89decfeefeff4ddf601ffec1f21608718098fdb25b901047f95c4d12543c9"
+        },
+        {
+          "acceptance": {
+            "evidenceSources": [
+              "synthetic-events"
+            ],
+            "owner": "example-acceptor",
+            "predicate": "evaluation.json: compare the frozen candidate with both baselines on six further public workloads. Preserve failures and missing evidence. Separate review is required."
+          },
+          "actor": "example-producer",
+          "authorizedInputs": [
+            "synthetic-events",
+            "streaming-metrics-builder-v1:specialist-formation",
+            "streaming-metrics-builder-v1:verifier-formation",
+            "streaming-metrics-builder-v1:security-privacy",
+            "streaming-metrics-builder-v1:complete-economics",
+            "streaming-metrics-builder-v1:human-agency",
+            "streaming-metrics-builder-v1:resilience-rollback"
+          ],
+          "budget": {
+            "limitBaseUnits": "100000000000000000000",
+            "maxDurationMs": 60000,
+            "maxRetries": 0,
+            "unit": "AGIALPHA"
+          },
+          "chronicle": {
+            "eligible": false,
+            "expiresAt": "2026-10-19T22:14:48.559Z",
+            "rights": "Requires a separate rights and admission review.",
+            "scope": "Produce exact daily service metrics, compare bounded implementations, and prepare reviewable work orders."
+          },
+          "covers": [
+            "fresh-evaluation"
+          ],
+          "evidenceObligation": [
+            "source-lineage",
+            "complete-cost",
+            "failure-record"
+          ],
+          "expiresAt": "2026-10-19T22:14:48.559Z",
+          "family": "verification",
+          "jobId": "streaming-metrics-builder-v1:fresh-evaluation",
+          "kind": "SealedWorkOrder",
+          "missionId": "streaming-metrics-builder-v1",
+          "objective": "Evaluate one frozen challenger on unseen representative work with full intervention costs. Streaming-metrics deliverable: evaluation.json: compare the frozen candidate with both baselines on six further public workloads.",
+          "outputSchema": {
+            "required": [
+              "evidence",
+              "findings",
+              "cost"
+            ],
+            "type": "object"
+          },
+          "permittedActions": [
+            "inspect-local"
+          ],
+          "permittedTools": [
+            "fixed-aggregation-engine"
+          ],
+          "principal": "example-human-principal",
+          "prohibitedActions": [
+            "send-payment",
+            "post-live-job",
+            "access-private-data",
+            "self-admit"
+          ],
+          "rollback": {
+            "available": true,
+            "reason": "Discard the local candidate and return to the retained fixed baseline.",
+            "target": "alpha-current"
+          },
+          "schemaVersion": "1.0.0",
+          "state": "DRAFT",
+          "verifier": {
+            "identity": "example-verifier",
+            "independence": "I0",
+            "method": "Independent examination against frozen purpose-specific criteria; template is not executed proof."
+          },
+          "version": "1",
+          "sealed": true,
+          "signatureStatus": "UNSIGNED_COMMITMENT",
+          "digest": "sha256:8e8f3a79c5065cda2dc659b669ba980a97b9dce4ed04d6fdabf576a93e227606"
+        },
+        {
+          "acceptance": {
+            "evidenceSources": [
+              "synthetic-events"
+            ],
+            "owner": "example-acceptor",
+            "predicate": "review.json: obtain a separately attributable review; this browser leaves independent proof absent. Preserve failures and missing evidence. Separate review is required."
+          },
+          "actor": "example-producer",
+          "authorizedInputs": [
+            "synthetic-events",
+            "streaming-metrics-builder-v1:fresh-evaluation"
+          ],
+          "budget": {
+            "limitBaseUnits": "100000000000000000000",
+            "maxDurationMs": 60000,
+            "maxRetries": 0,
+            "unit": "AGIALPHA"
+          },
+          "chronicle": {
+            "eligible": false,
+            "expiresAt": "2026-10-19T22:14:48.559Z",
+            "rights": "Requires a separate rights and admission review.",
+            "scope": "Produce exact daily service metrics, compare bounded implementations, and prepare reviewable work orders."
+          },
+          "covers": [
+            "independent-validation"
+          ],
+          "evidenceObligation": [
+            "source-lineage",
+            "complete-cost",
+            "failure-record"
+          ],
+          "expiresAt": "2026-10-19T22:14:48.559Z",
+          "family": "verification",
+          "jobId": "streaming-metrics-builder-v1:independent-validation",
+          "kind": "SealedWorkOrder",
+          "missionId": "streaming-metrics-builder-v1",
+          "objective": "Independently examine evidence, limitations, critical errors, basis risk and fit for stated purpose. Streaming-metrics deliverable: review.json: obtain a separately attributable review; this browser leaves independent proof absent.",
+          "outputSchema": {
+            "required": [
+              "evidence",
+              "findings",
+              "cost"
+            ],
+            "type": "object"
+          },
+          "permittedActions": [
+            "inspect-local"
+          ],
+          "permittedTools": [
+            "fixed-aggregation-engine"
+          ],
+          "principal": "example-human-principal",
+          "prohibitedActions": [
+            "send-payment",
+            "post-live-job",
+            "access-private-data",
+            "self-admit"
+          ],
+          "rollback": {
+            "available": true,
+            "reason": "Discard the local candidate and return to the retained fixed baseline.",
+            "target": "alpha-current"
+          },
+          "schemaVersion": "1.0.0",
+          "state": "DRAFT",
+          "verifier": {
+            "identity": "example-verifier",
+            "independence": "I0",
+            "method": "Independent examination against frozen purpose-specific criteria; template is not executed proof."
+          },
+          "version": "1",
+          "sealed": true,
+          "signatureStatus": "UNSIGNED_COMMITMENT",
+          "digest": "sha256:8f7a26e6ef7f62c64c98dadc61664cd258845ebeb44c03e50b9f1bb58f70e1a7"
+        },
+        {
+          "acceptance": {
+            "evidenceSources": [
+              "synthetic-events"
+            ],
+            "owner": "example-acceptor",
+            "predicate": "acceptance.json: require evidence against the frozen terms; all work orders remain DRAFT here. Preserve failures and missing evidence. Separate review is required."
+          },
+          "actor": "example-producer",
+          "authorizedInputs": [
+            "synthetic-events",
+            "streaming-metrics-builder-v1:independent-validation"
+          ],
+          "budget": {
+            "limitBaseUnits": "100000000000000000000",
+            "maxDurationMs": 60000,
+            "maxRetries": 0,
+            "unit": "AGIALPHA"
+          },
+          "chronicle": {
+            "eligible": false,
+            "expiresAt": "2026-10-19T22:14:48.559Z",
+            "rights": "Requires a separate rights and admission review.",
+            "scope": "Produce exact daily service metrics, compare bounded implementations, and prepare reviewable work orders."
+          },
+          "covers": [
+            "accountable-acceptance"
+          ],
+          "evidenceObligation": [
+            "source-lineage",
+            "complete-cost",
+            "failure-record"
+          ],
+          "expiresAt": "2026-10-19T22:14:48.559Z",
+          "family": "admission",
+          "jobId": "streaming-metrics-builder-v1:accountable-acceptance",
+          "kind": "SealedWorkOrder",
+          "missionId": "streaming-metrics-builder-v1",
+          "objective": "Record the attributable purpose-specific acceptance decision separately from independent validation and authority admission. Streaming-metrics deliverable: acceptance.json: require evidence against the frozen terms; all work orders remain DRAFT here.",
+          "outputSchema": {
+            "required": [
+              "evidence",
+              "findings",
+              "cost"
+            ],
+            "type": "object"
+          },
+          "permittedActions": [
+            "inspect-local"
+          ],
+          "permittedTools": [
+            "fixed-aggregation-engine"
+          ],
+          "principal": "example-human-principal",
+          "prohibitedActions": [
+            "send-payment",
+            "post-live-job",
+            "access-private-data",
+            "self-admit"
+          ],
+          "rollback": {
+            "available": true,
+            "reason": "Discard the local candidate and return to the retained fixed baseline.",
+            "target": "alpha-current"
+          },
+          "schemaVersion": "1.0.0",
+          "state": "DRAFT",
+          "verifier": {
+            "identity": "example-verifier",
+            "independence": "I0",
+            "method": "Independent examination against frozen purpose-specific criteria; template is not executed proof."
+          },
+          "version": "1",
+          "sealed": true,
+          "signatureStatus": "UNSIGNED_COMMITMENT",
+          "digest": "sha256:3afdb8547a6596e7bfdb962aa3d4e1b2091a6b21f102d103bb8d799ada9a95e5"
+        },
+        {
+          "acceptance": {
+            "evidenceSources": [
+              "synthetic-events"
+            ],
+            "owner": "example-acceptor",
+            "predicate": "authority.json: retain HOLD with zero grants until separate, scoped, expiring, revocable admission. Preserve failures and missing evidence. Separate review is required."
+          },
+          "actor": "example-producer",
+          "authorizedInputs": [
+            "synthetic-events",
+            "streaming-metrics-builder-v1:accountable-acceptance"
+          ],
+          "budget": {
+            "limitBaseUnits": "100000000000000000000",
+            "maxDurationMs": 60000,
+            "maxRetries": 0,
+            "unit": "AGIALPHA"
+          },
+          "chronicle": {
+            "eligible": false,
+            "expiresAt": "2026-10-19T22:14:48.559Z",
+            "rights": "Requires a separate rights and admission review.",
+            "scope": "Produce exact daily service metrics, compare bounded implementations, and prepare reviewable work orders."
+          },
+          "covers": [
+            "chronicle-authority"
+          ],
+          "evidenceObligation": [
+            "source-lineage",
+            "complete-cost",
+            "failure-record"
+          ],
+          "expiresAt": "2026-10-19T22:14:48.559Z",
+          "family": "admission",
+          "jobId": "streaming-metrics-builder-v1:chronicle-authority",
+          "kind": "SealedWorkOrder",
+          "missionId": "streaming-metrics-builder-v1",
+          "objective": "Record separate knowledge and authority decisions, scope, expiry, monitoring and revocation. Streaming-metrics deliverable: authority.json: retain HOLD with zero grants until separate, scoped, expiring, revocable admission.",
+          "outputSchema": {
+            "required": [
+              "evidence",
+              "findings",
+              "cost"
+            ],
+            "type": "object"
+          },
+          "permittedActions": [
+            "inspect-local"
+          ],
+          "permittedTools": [
+            "fixed-aggregation-engine"
+          ],
+          "principal": "example-human-principal",
+          "prohibitedActions": [
+            "send-payment",
+            "post-live-job",
+            "access-private-data",
+            "self-admit"
+          ],
+          "rollback": {
+            "available": true,
+            "reason": "Discard the local candidate and return to the retained fixed baseline.",
+            "target": "alpha-current"
+          },
+          "schemaVersion": "1.0.0",
+          "state": "DRAFT",
+          "verifier": {
+            "identity": "example-verifier",
+            "independence": "I0",
+            "method": "Independent examination against frozen purpose-specific criteria; template is not executed proof."
+          },
+          "version": "1",
+          "sealed": true,
+          "signatureStatus": "UNSIGNED_COMMITMENT",
+          "digest": "sha256:e3b4af5d35fe1b5c5d881cbc8f74bf21d84d2541c995493479e6d57651847266"
+        },
+        {
+          "acceptance": {
+            "evidenceSources": [
+              "synthetic-events"
+            ],
+            "owner": "example-acceptor",
+            "predicate": "renewal.json: propose the next test and preserve lessons; a successor inherits no proof or authority. Preserve failures and missing evidence. Separate review is required."
+          },
+          "actor": "example-producer",
+          "authorizedInputs": [
+            "synthetic-events",
+            "streaming-metrics-builder-v1:chronicle-authority"
+          ],
+          "budget": {
+            "limitBaseUnits": "100000000000000000000",
+            "maxDurationMs": 60000,
+            "maxRetries": 0,
+            "unit": "AGIALPHA"
+          },
+          "chronicle": {
+            "eligible": false,
+            "expiresAt": "2026-10-19T22:14:48.559Z",
+            "rights": "Requires a separate rights and admission review.",
+            "scope": "Produce exact daily service metrics, compare bounded implementations, and prepare reviewable work orders."
+          },
+          "covers": [
+            "capital-requalification"
+          ],
+          "evidenceObligation": [
+            "source-lineage",
+            "complete-cost",
+            "failure-record"
+          ],
+          "expiresAt": "2026-10-19T22:14:48.559Z",
+          "family": "renewal",
+          "jobId": "streaming-metrics-builder-v1:capital-requalification",
+          "kind": "SealedWorkOrder",
+          "missionId": "streaming-metrics-builder-v1",
+          "objective": "Allocate verified available value and define next-successor and fresh-transfer triggers. Streaming-metrics deliverable: renewal.json: propose the next test and preserve lessons; a successor inherits no proof or authority.",
+          "outputSchema": {
+            "required": [
+              "evidence",
+              "findings",
+              "cost"
+            ],
+            "type": "object"
+          },
+          "permittedActions": [
+            "inspect-local"
+          ],
+          "permittedTools": [
+            "fixed-aggregation-engine"
+          ],
+          "principal": "example-human-principal",
+          "prohibitedActions": [
+            "send-payment",
+            "post-live-job",
+            "access-private-data",
+            "self-admit"
+          ],
+          "rollback": {
+            "available": true,
+            "reason": "Discard the local candidate and return to the retained fixed baseline.",
+            "target": "alpha-current"
+          },
+          "schemaVersion": "1.0.0",
+          "state": "DRAFT",
+          "verifier": {
+            "identity": "example-verifier",
+            "independence": "I0",
+            "method": "Independent examination against frozen purpose-specific criteria; template is not executed proof."
+          },
+          "version": "1",
+          "sealed": true,
+          "signatureStatus": "UNSIGNED_COMMITMENT",
+          "digest": "sha256:37d2030181cc71c514c15696200357021f52f69c27bb864fe49786c972ecd00a"
+        }
+      ],
+      "schemaVersion": "1.0.0",
+      "version": "1",
+      "digest": "sha256:2a8c60cc99417351dec7e2cf2378e020ca89121ddc2d82c0026767e87e9db997"
+    },
+    "executionOrder": [
+      "streaming-metrics-builder-v1:mission-constitution",
+      "streaming-metrics-builder-v1:alternative-set",
+      "streaming-metrics-builder-v1:incumbent-baseline",
+      "streaming-metrics-builder-v1:rights-data",
+      "streaming-metrics-builder-v1:mission-gym",
+      "streaming-metrics-builder-v1:experience-formation",
+      "streaming-metrics-builder-v1:failure-taxonomy",
+      "streaming-metrics-builder-v1:oracle-teacher",
+      "streaming-metrics-builder-v1:architecture-frontier",
+      "streaming-metrics-builder-v1:specialist-formation",
+      "streaming-metrics-builder-v1:complete-economics",
+      "streaming-metrics-builder-v1:human-agency",
+      "streaming-metrics-builder-v1:tools-retrieval",
+      "streaming-metrics-builder-v1:verifier-formation",
+      "streaming-metrics-builder-v1:security-privacy",
+      "streaming-metrics-builder-v1:resilience-rollback",
+      "streaming-metrics-builder-v1:fresh-evaluation",
+      "streaming-metrics-builder-v1:independent-validation",
+      "streaming-metrics-builder-v1:accountable-acceptance",
+      "streaming-metrics-builder-v1:chronicle-authority",
+      "streaming-metrics-builder-v1:capital-requalification"
+    ],
+    "coverage": [
+      {
+        "functionId": "mission-constitution",
+        "jobIds": [
+          "streaming-metrics-builder-v1:mission-constitution"
+        ],
+        "status": "PLANNED_NOT_ACCEPTED"
+      },
+      {
+        "functionId": "incumbent-baseline",
+        "jobIds": [
+          "streaming-metrics-builder-v1:incumbent-baseline"
+        ],
+        "status": "PLANNED_NOT_ACCEPTED"
+      },
+      {
+        "functionId": "alternative-set",
+        "jobIds": [
+          "streaming-metrics-builder-v1:alternative-set"
+        ],
+        "status": "PLANNED_NOT_ACCEPTED"
+      },
+      {
+        "functionId": "rights-data",
+        "jobIds": [
+          "streaming-metrics-builder-v1:rights-data"
+        ],
+        "status": "PLANNED_NOT_ACCEPTED"
+      },
+      {
+        "functionId": "mission-gym",
+        "jobIds": [
+          "streaming-metrics-builder-v1:mission-gym"
+        ],
+        "status": "PLANNED_NOT_ACCEPTED"
+      },
+      {
+        "functionId": "oracle-teacher",
+        "jobIds": [
+          "streaming-metrics-builder-v1:oracle-teacher"
+        ],
+        "status": "PLANNED_NOT_ACCEPTED"
+      },
+      {
+        "functionId": "failure-taxonomy",
+        "jobIds": [
+          "streaming-metrics-builder-v1:failure-taxonomy"
+        ],
+        "status": "PLANNED_NOT_ACCEPTED"
+      },
+      {
+        "functionId": "architecture-frontier",
+        "jobIds": [
+          "streaming-metrics-builder-v1:architecture-frontier"
+        ],
+        "status": "PLANNED_NOT_ACCEPTED"
+      },
+      {
+        "functionId": "experience-formation",
+        "jobIds": [
+          "streaming-metrics-builder-v1:experience-formation"
+        ],
+        "status": "PLANNED_NOT_ACCEPTED"
+      },
+      {
+        "functionId": "specialist-formation",
+        "jobIds": [
+          "streaming-metrics-builder-v1:specialist-formation"
+        ],
+        "status": "PLANNED_NOT_ACCEPTED"
+      },
+      {
+        "functionId": "tools-retrieval",
+        "jobIds": [
+          "streaming-metrics-builder-v1:tools-retrieval"
+        ],
+        "status": "PLANNED_NOT_ACCEPTED"
+      },
+      {
+        "functionId": "verifier-formation",
+        "jobIds": [
+          "streaming-metrics-builder-v1:verifier-formation"
+        ],
+        "status": "PLANNED_NOT_ACCEPTED"
+      },
+      {
+        "functionId": "security-privacy",
+        "jobIds": [
+          "streaming-metrics-builder-v1:security-privacy"
+        ],
+        "status": "PLANNED_NOT_ACCEPTED"
+      },
+      {
+        "functionId": "complete-economics",
+        "jobIds": [
+          "streaming-metrics-builder-v1:complete-economics"
+        ],
+        "status": "PLANNED_NOT_ACCEPTED"
+      },
+      {
+        "functionId": "human-agency",
+        "jobIds": [
+          "streaming-metrics-builder-v1:human-agency"
+        ],
+        "status": "PLANNED_NOT_ACCEPTED"
+      },
+      {
+        "functionId": "resilience-rollback",
+        "jobIds": [
+          "streaming-metrics-builder-v1:resilience-rollback"
+        ],
+        "status": "PLANNED_NOT_ACCEPTED"
+      },
+      {
+        "functionId": "fresh-evaluation",
+        "jobIds": [
+          "streaming-metrics-builder-v1:fresh-evaluation"
+        ],
+        "status": "PLANNED_NOT_ACCEPTED"
+      },
+      {
+        "functionId": "independent-validation",
+        "jobIds": [
+          "streaming-metrics-builder-v1:independent-validation"
+        ],
+        "status": "PLANNED_NOT_ACCEPTED"
+      },
+      {
+        "functionId": "accountable-acceptance",
+        "jobIds": [
+          "streaming-metrics-builder-v1:accountable-acceptance"
+        ],
+        "status": "PLANNED_NOT_ACCEPTED"
+      },
+      {
+        "functionId": "chronicle-authority",
+        "jobIds": [
+          "streaming-metrics-builder-v1:chronicle-authority"
+        ],
+        "status": "PLANNED_NOT_ACCEPTED"
+      },
+      {
+        "functionId": "capital-requalification",
+        "jobIds": [
+          "streaming-metrics-builder-v1:capital-requalification"
+        ],
+        "status": "PLANNED_NOT_ACCEPTED"
+      }
+    ],
+    "criticalEvidenceCuts": [
+      {
+        "functionId": "mission-constitution",
+        "removeJobIds": [
+          "streaming-metrics-builder-v1:mission-constitution"
+        ],
+        "exhaustive": false
+      },
+      {
+        "functionId": "incumbent-baseline",
+        "removeJobIds": [
+          "streaming-metrics-builder-v1:incumbent-baseline"
+        ],
+        "exhaustive": false
+      },
+      {
+        "functionId": "alternative-set",
+        "removeJobIds": [
+          "streaming-metrics-builder-v1:alternative-set"
+        ],
+        "exhaustive": false
+      },
+      {
+        "functionId": "rights-data",
+        "removeJobIds": [
+          "streaming-metrics-builder-v1:rights-data"
+        ],
+        "exhaustive": false
+      },
+      {
+        "functionId": "mission-gym",
+        "removeJobIds": [
+          "streaming-metrics-builder-v1:mission-gym"
+        ],
+        "exhaustive": false
+      },
+      {
+        "functionId": "oracle-teacher",
+        "removeJobIds": [
+          "streaming-metrics-builder-v1:oracle-teacher"
+        ],
+        "exhaustive": false
+      },
+      {
+        "functionId": "failure-taxonomy",
+        "removeJobIds": [
+          "streaming-metrics-builder-v1:failure-taxonomy"
+        ],
+        "exhaustive": false
+      },
+      {
+        "functionId": "architecture-frontier",
+        "removeJobIds": [
+          "streaming-metrics-builder-v1:architecture-frontier"
+        ],
+        "exhaustive": false
+      },
+      {
+        "functionId": "experience-formation",
+        "removeJobIds": [
+          "streaming-metrics-builder-v1:experience-formation"
+        ],
+        "exhaustive": false
+      },
+      {
+        "functionId": "specialist-formation",
+        "removeJobIds": [
+          "streaming-metrics-builder-v1:specialist-formation"
+        ],
+        "exhaustive": false
+      },
+      {
+        "functionId": "tools-retrieval",
+        "removeJobIds": [
+          "streaming-metrics-builder-v1:tools-retrieval"
+        ],
+        "exhaustive": false
+      },
+      {
+        "functionId": "verifier-formation",
+        "removeJobIds": [
+          "streaming-metrics-builder-v1:verifier-formation"
+        ],
+        "exhaustive": false
+      },
+      {
+        "functionId": "security-privacy",
+        "removeJobIds": [
+          "streaming-metrics-builder-v1:security-privacy"
+        ],
+        "exhaustive": false
+      },
+      {
+        "functionId": "complete-economics",
+        "removeJobIds": [
+          "streaming-metrics-builder-v1:complete-economics"
+        ],
+        "exhaustive": false
+      },
+      {
+        "functionId": "human-agency",
+        "removeJobIds": [
+          "streaming-metrics-builder-v1:human-agency"
+        ],
+        "exhaustive": false
+      },
+      {
+        "functionId": "resilience-rollback",
+        "removeJobIds": [
+          "streaming-metrics-builder-v1:resilience-rollback"
+        ],
+        "exhaustive": false
+      },
+      {
+        "functionId": "fresh-evaluation",
+        "removeJobIds": [
+          "streaming-metrics-builder-v1:fresh-evaluation"
+        ],
+        "exhaustive": false
+      },
+      {
+        "functionId": "independent-validation",
+        "removeJobIds": [
+          "streaming-metrics-builder-v1:independent-validation"
+        ],
+        "exhaustive": false
+      },
+      {
+        "functionId": "accountable-acceptance",
+        "removeJobIds": [
+          "streaming-metrics-builder-v1:accountable-acceptance"
+        ],
+        "exhaustive": false
+      },
+      {
+        "functionId": "chronicle-authority",
+        "removeJobIds": [
+          "streaming-metrics-builder-v1:chronicle-authority"
+        ],
+        "exhaustive": false
+      },
+      {
+        "functionId": "capital-requalification",
+        "removeJobIds": [
+          "streaming-metrics-builder-v1:capital-requalification"
+        ],
+        "exhaustive": false
+      }
+    ],
+    "budgetReservations": {
+      "unit": "AGIALPHA",
+      "reservedBaseUnits": "2100000000000000000000",
+      "limitBaseUnits": "2100000000000000000000",
+      "includesRetries": true
+    },
+    "dependencyMap": {
+      "streaming-metrics-builder-v1:mission-constitution": [],
+      "streaming-metrics-builder-v1:incumbent-baseline": [
+        {
+          "jobId": "streaming-metrics-builder-v1:mission-constitution",
+          "kind": "evidence"
+        }
+      ],
+      "streaming-metrics-builder-v1:alternative-set": [
+        {
+          "jobId": "streaming-metrics-builder-v1:mission-constitution",
+          "kind": "evidence"
+        }
+      ],
+      "streaming-metrics-builder-v1:rights-data": [
+        {
+          "jobId": "streaming-metrics-builder-v1:mission-constitution",
+          "kind": "evidence"
+        }
+      ],
+      "streaming-metrics-builder-v1:mission-gym": [
+        {
+          "jobId": "streaming-metrics-builder-v1:incumbent-baseline",
+          "kind": "evidence"
+        },
+        {
+          "jobId": "streaming-metrics-builder-v1:alternative-set",
+          "kind": "evidence"
+        },
+        {
+          "jobId": "streaming-metrics-builder-v1:rights-data",
+          "kind": "evidence"
+        }
+      ],
+      "streaming-metrics-builder-v1:oracle-teacher": [
+        {
+          "jobId": "streaming-metrics-builder-v1:mission-gym",
+          "kind": "evidence"
+        }
+      ],
+      "streaming-metrics-builder-v1:failure-taxonomy": [
+        {
+          "jobId": "streaming-metrics-builder-v1:mission-gym",
+          "kind": "evidence"
+        }
+      ],
+      "streaming-metrics-builder-v1:architecture-frontier": [
+        {
+          "jobId": "streaming-metrics-builder-v1:incumbent-baseline",
+          "kind": "evidence"
+        },
+        {
+          "jobId": "streaming-metrics-builder-v1:alternative-set",
+          "kind": "evidence"
+        },
+        {
+          "jobId": "streaming-metrics-builder-v1:oracle-teacher",
+          "kind": "evidence"
+        },
+        {
+          "jobId": "streaming-metrics-builder-v1:failure-taxonomy",
+          "kind": "evidence"
+        }
+      ],
+      "streaming-metrics-builder-v1:experience-formation": [
+        {
+          "jobId": "streaming-metrics-builder-v1:rights-data",
+          "kind": "evidence"
+        },
+        {
+          "jobId": "streaming-metrics-builder-v1:mission-gym",
+          "kind": "evidence"
+        }
+      ],
+      "streaming-metrics-builder-v1:specialist-formation": [
+        {
+          "jobId": "streaming-metrics-builder-v1:architecture-frontier",
+          "kind": "evidence"
+        },
+        {
+          "jobId": "streaming-metrics-builder-v1:experience-formation",
+          "kind": "evidence"
+        }
+      ],
+      "streaming-metrics-builder-v1:tools-retrieval": [
+        {
+          "jobId": "streaming-metrics-builder-v1:specialist-formation",
+          "kind": "evidence"
+        }
+      ],
+      "streaming-metrics-builder-v1:verifier-formation": [
+        {
+          "jobId": "streaming-metrics-builder-v1:mission-gym",
+          "kind": "evidence"
+        },
+        {
+          "jobId": "streaming-metrics-builder-v1:failure-taxonomy",
+          "kind": "evidence"
+        },
+        {
+          "jobId": "streaming-metrics-builder-v1:tools-retrieval",
+          "kind": "evidence"
+        }
+      ],
+      "streaming-metrics-builder-v1:security-privacy": [
+        {
+          "jobId": "streaming-metrics-builder-v1:tools-retrieval",
+          "kind": "evidence"
+        },
+        {
+          "jobId": "streaming-metrics-builder-v1:verifier-formation",
+          "kind": "evidence"
+        }
+      ],
+      "streaming-metrics-builder-v1:complete-economics": [
+        {
+          "jobId": "streaming-metrics-builder-v1:incumbent-baseline",
+          "kind": "evidence"
+        },
+        {
+          "jobId": "streaming-metrics-builder-v1:alternative-set",
+          "kind": "evidence"
+        },
+        {
+          "jobId": "streaming-metrics-builder-v1:specialist-formation",
+          "kind": "evidence"
+        }
+      ],
+      "streaming-metrics-builder-v1:human-agency": [
+        {
+          "jobId": "streaming-metrics-builder-v1:mission-constitution",
+          "kind": "evidence"
+        },
+        {
+          "jobId": "streaming-metrics-builder-v1:complete-economics",
+          "kind": "evidence"
+        }
+      ],
+      "streaming-metrics-builder-v1:resilience-rollback": [
+        {
+          "jobId": "streaming-metrics-builder-v1:tools-retrieval",
+          "kind": "evidence"
+        },
+        {
+          "jobId": "streaming-metrics-builder-v1:security-privacy",
+          "kind": "evidence"
+        }
+      ],
+      "streaming-metrics-builder-v1:fresh-evaluation": [
+        {
+          "jobId": "streaming-metrics-builder-v1:specialist-formation",
+          "kind": "evidence"
+        },
+        {
+          "jobId": "streaming-metrics-builder-v1:verifier-formation",
+          "kind": "evidence"
+        },
+        {
+          "jobId": "streaming-metrics-builder-v1:security-privacy",
+          "kind": "evidence"
+        },
+        {
+          "jobId": "streaming-metrics-builder-v1:complete-economics",
+          "kind": "evidence"
+        },
+        {
+          "jobId": "streaming-metrics-builder-v1:human-agency",
+          "kind": "evidence"
+        },
+        {
+          "jobId": "streaming-metrics-builder-v1:resilience-rollback",
+          "kind": "evidence"
+        }
+      ],
+      "streaming-metrics-builder-v1:independent-validation": [
+        {
+          "jobId": "streaming-metrics-builder-v1:fresh-evaluation",
+          "kind": "evidence"
+        }
+      ],
+      "streaming-metrics-builder-v1:accountable-acceptance": [
+        {
+          "jobId": "streaming-metrics-builder-v1:independent-validation",
+          "kind": "evidence"
+        }
+      ],
+      "streaming-metrics-builder-v1:chronicle-authority": [
+        {
+          "jobId": "streaming-metrics-builder-v1:accountable-acceptance",
+          "kind": "evidence"
+        }
+      ],
+      "streaming-metrics-builder-v1:capital-requalification": [
+        {
+          "jobId": "streaming-metrics-builder-v1:chronicle-authority",
+          "kind": "evidence"
+        }
+      ]
+    },
+    "invalidationMap": {
+      "synthetic-events": [
+        "streaming-metrics-builder-v1:mission-constitution",
+        "streaming-metrics-builder-v1:incumbent-baseline",
+        "streaming-metrics-builder-v1:alternative-set",
+        "streaming-metrics-builder-v1:rights-data",
+        "streaming-metrics-builder-v1:mission-gym",
+        "streaming-metrics-builder-v1:oracle-teacher",
+        "streaming-metrics-builder-v1:failure-taxonomy",
+        "streaming-metrics-builder-v1:architecture-frontier",
+        "streaming-metrics-builder-v1:experience-formation",
+        "streaming-metrics-builder-v1:specialist-formation",
+        "streaming-metrics-builder-v1:tools-retrieval",
+        "streaming-metrics-builder-v1:verifier-formation",
+        "streaming-metrics-builder-v1:security-privacy",
+        "streaming-metrics-builder-v1:complete-economics",
+        "streaming-metrics-builder-v1:human-agency",
+        "streaming-metrics-builder-v1:resilience-rollback",
+        "streaming-metrics-builder-v1:fresh-evaluation",
+        "streaming-metrics-builder-v1:independent-validation",
+        "streaming-metrics-builder-v1:accountable-acceptance",
+        "streaming-metrics-builder-v1:chronicle-authority",
+        "streaming-metrics-builder-v1:capital-requalification"
+      ],
+      "streaming-metrics-builder-v1:mission-constitution": [
+        "streaming-metrics-builder-v1:incumbent-baseline",
+        "streaming-metrics-builder-v1:alternative-set",
+        "streaming-metrics-builder-v1:rights-data",
+        "streaming-metrics-builder-v1:human-agency"
+      ],
+      "streaming-metrics-builder-v1:incumbent-baseline": [
+        "streaming-metrics-builder-v1:mission-gym",
+        "streaming-metrics-builder-v1:architecture-frontier",
+        "streaming-metrics-builder-v1:complete-economics"
+      ],
+      "streaming-metrics-builder-v1:alternative-set": [
+        "streaming-metrics-builder-v1:mission-gym",
+        "streaming-metrics-builder-v1:architecture-frontier",
+        "streaming-metrics-builder-v1:complete-economics"
+      ],
+      "streaming-metrics-builder-v1:rights-data": [
+        "streaming-metrics-builder-v1:mission-gym",
+        "streaming-metrics-builder-v1:experience-formation"
+      ],
+      "streaming-metrics-builder-v1:mission-gym": [
+        "streaming-metrics-builder-v1:oracle-teacher",
+        "streaming-metrics-builder-v1:failure-taxonomy",
+        "streaming-metrics-builder-v1:experience-formation",
+        "streaming-metrics-builder-v1:verifier-formation"
+      ],
+      "streaming-metrics-builder-v1:oracle-teacher": [
+        "streaming-metrics-builder-v1:architecture-frontier"
+      ],
+      "streaming-metrics-builder-v1:failure-taxonomy": [
+        "streaming-metrics-builder-v1:architecture-frontier",
+        "streaming-metrics-builder-v1:verifier-formation"
+      ],
+      "streaming-metrics-builder-v1:architecture-frontier": [
+        "streaming-metrics-builder-v1:specialist-formation"
+      ],
+      "streaming-metrics-builder-v1:experience-formation": [
+        "streaming-metrics-builder-v1:specialist-formation"
+      ],
+      "streaming-metrics-builder-v1:specialist-formation": [
+        "streaming-metrics-builder-v1:tools-retrieval",
+        "streaming-metrics-builder-v1:complete-economics",
+        "streaming-metrics-builder-v1:fresh-evaluation"
+      ],
+      "streaming-metrics-builder-v1:tools-retrieval": [
+        "streaming-metrics-builder-v1:verifier-formation",
+        "streaming-metrics-builder-v1:security-privacy",
+        "streaming-metrics-builder-v1:resilience-rollback"
+      ],
+      "streaming-metrics-builder-v1:verifier-formation": [
+        "streaming-metrics-builder-v1:security-privacy",
+        "streaming-metrics-builder-v1:fresh-evaluation"
+      ],
+      "streaming-metrics-builder-v1:security-privacy": [
+        "streaming-metrics-builder-v1:resilience-rollback",
+        "streaming-metrics-builder-v1:fresh-evaluation"
+      ],
+      "streaming-metrics-builder-v1:complete-economics": [
+        "streaming-metrics-builder-v1:human-agency",
+        "streaming-metrics-builder-v1:fresh-evaluation"
+      ],
+      "streaming-metrics-builder-v1:human-agency": [
+        "streaming-metrics-builder-v1:fresh-evaluation"
+      ],
+      "streaming-metrics-builder-v1:resilience-rollback": [
+        "streaming-metrics-builder-v1:fresh-evaluation"
+      ],
+      "streaming-metrics-builder-v1:fresh-evaluation": [
+        "streaming-metrics-builder-v1:independent-validation"
+      ],
+      "streaming-metrics-builder-v1:independent-validation": [
+        "streaming-metrics-builder-v1:accountable-acceptance"
+      ],
+      "streaming-metrics-builder-v1:accountable-acceptance": [
+        "streaming-metrics-builder-v1:chronicle-authority"
+      ],
+      "streaming-metrics-builder-v1:chronicle-authority": [
+        "streaming-metrics-builder-v1:capital-requalification"
+      ],
+      "streaming-metrics-builder-v1:capital-requalification": []
+    },
+    "capabilityRequests": [
+      {
+        "jobId": "streaming-metrics-builder-v1:mission-constitution",
+        "actor": "example-producer",
+        "tools": [
+          "fixed-aggregation-engine"
+        ],
+        "actions": [
+          "inspect-local"
+        ],
+        "status": "REQUESTED_NOT_GRANTED"
+      },
+      {
+        "jobId": "streaming-metrics-builder-v1:incumbent-baseline",
+        "actor": "example-producer",
+        "tools": [
+          "fixed-aggregation-engine"
+        ],
+        "actions": [
+          "inspect-local"
+        ],
+        "status": "REQUESTED_NOT_GRANTED"
+      },
+      {
+        "jobId": "streaming-metrics-builder-v1:alternative-set",
+        "actor": "example-producer",
+        "tools": [
+          "fixed-aggregation-engine"
+        ],
+        "actions": [
+          "inspect-local"
+        ],
+        "status": "REQUESTED_NOT_GRANTED"
+      },
+      {
+        "jobId": "streaming-metrics-builder-v1:rights-data",
+        "actor": "example-producer",
+        "tools": [
+          "fixed-aggregation-engine"
+        ],
+        "actions": [
+          "inspect-local"
+        ],
+        "status": "REQUESTED_NOT_GRANTED"
+      },
+      {
+        "jobId": "streaming-metrics-builder-v1:mission-gym",
+        "actor": "example-producer",
+        "tools": [
+          "fixed-aggregation-engine"
+        ],
+        "actions": [
+          "inspect-local"
+        ],
+        "status": "REQUESTED_NOT_GRANTED"
+      },
+      {
+        "jobId": "streaming-metrics-builder-v1:oracle-teacher",
+        "actor": "example-producer",
+        "tools": [
+          "fixed-aggregation-engine"
+        ],
+        "actions": [
+          "inspect-local"
+        ],
+        "status": "REQUESTED_NOT_GRANTED"
+      },
+      {
+        "jobId": "streaming-metrics-builder-v1:failure-taxonomy",
+        "actor": "example-producer",
+        "tools": [
+          "fixed-aggregation-engine"
+        ],
+        "actions": [
+          "inspect-local"
+        ],
+        "status": "REQUESTED_NOT_GRANTED"
+      },
+      {
+        "jobId": "streaming-metrics-builder-v1:architecture-frontier",
+        "actor": "example-producer",
+        "tools": [
+          "fixed-aggregation-engine"
+        ],
+        "actions": [
+          "inspect-local"
+        ],
+        "status": "REQUESTED_NOT_GRANTED"
+      },
+      {
+        "jobId": "streaming-metrics-builder-v1:experience-formation",
+        "actor": "example-producer",
+        "tools": [
+          "fixed-aggregation-engine"
+        ],
+        "actions": [
+          "inspect-local"
+        ],
+        "status": "REQUESTED_NOT_GRANTED"
+      },
+      {
+        "jobId": "streaming-metrics-builder-v1:specialist-formation",
+        "actor": "example-producer",
+        "tools": [
+          "fixed-aggregation-engine"
+        ],
+        "actions": [
+          "inspect-local"
+        ],
+        "status": "REQUESTED_NOT_GRANTED"
+      },
+      {
+        "jobId": "streaming-metrics-builder-v1:tools-retrieval",
+        "actor": "example-producer",
+        "tools": [
+          "fixed-aggregation-engine"
+        ],
+        "actions": [
+          "inspect-local"
+        ],
+        "status": "REQUESTED_NOT_GRANTED"
+      },
+      {
+        "jobId": "streaming-metrics-builder-v1:verifier-formation",
+        "actor": "example-producer",
+        "tools": [
+          "fixed-aggregation-engine"
+        ],
+        "actions": [
+          "inspect-local"
+        ],
+        "status": "REQUESTED_NOT_GRANTED"
+      },
+      {
+        "jobId": "streaming-metrics-builder-v1:security-privacy",
+        "actor": "example-producer",
+        "tools": [
+          "fixed-aggregation-engine"
+        ],
+        "actions": [
+          "inspect-local"
+        ],
+        "status": "REQUESTED_NOT_GRANTED"
+      },
+      {
+        "jobId": "streaming-metrics-builder-v1:complete-economics",
+        "actor": "example-producer",
+        "tools": [
+          "fixed-aggregation-engine"
+        ],
+        "actions": [
+          "inspect-local"
+        ],
+        "status": "REQUESTED_NOT_GRANTED"
+      },
+      {
+        "jobId": "streaming-metrics-builder-v1:human-agency",
+        "actor": "example-producer",
+        "tools": [
+          "fixed-aggregation-engine"
+        ],
+        "actions": [
+          "inspect-local"
+        ],
+        "status": "REQUESTED_NOT_GRANTED"
+      },
+      {
+        "jobId": "streaming-metrics-builder-v1:resilience-rollback",
+        "actor": "example-producer",
+        "tools": [
+          "fixed-aggregation-engine"
+        ],
+        "actions": [
+          "inspect-local"
+        ],
+        "status": "REQUESTED_NOT_GRANTED"
+      },
+      {
+        "jobId": "streaming-metrics-builder-v1:fresh-evaluation",
+        "actor": "example-producer",
+        "tools": [
+          "fixed-aggregation-engine"
+        ],
+        "actions": [
+          "inspect-local"
+        ],
+        "status": "REQUESTED_NOT_GRANTED"
+      },
+      {
+        "jobId": "streaming-metrics-builder-v1:independent-validation",
+        "actor": "example-producer",
+        "tools": [
+          "fixed-aggregation-engine"
+        ],
+        "actions": [
+          "inspect-local"
+        ],
+        "status": "REQUESTED_NOT_GRANTED"
+      },
+      {
+        "jobId": "streaming-metrics-builder-v1:accountable-acceptance",
+        "actor": "example-producer",
+        "tools": [
+          "fixed-aggregation-engine"
+        ],
+        "actions": [
+          "inspect-local"
+        ],
+        "status": "REQUESTED_NOT_GRANTED"
+      },
+      {
+        "jobId": "streaming-metrics-builder-v1:chronicle-authority",
+        "actor": "example-producer",
+        "tools": [
+          "fixed-aggregation-engine"
+        ],
+        "actions": [
+          "inspect-local"
+        ],
+        "status": "REQUESTED_NOT_GRANTED"
+      },
+      {
+        "jobId": "streaming-metrics-builder-v1:capital-requalification",
+        "actor": "example-producer",
+        "tools": [
+          "fixed-aggregation-engine"
+        ],
+        "actions": [
+          "inspect-local"
+        ],
+        "status": "REQUESTED_NOT_GRANTED"
+      }
+    ],
+    "evaluationPlan": {
+      "criticalErrorCeiling": 0,
+      "custodian": "example-verifier",
+      "formationOwner": "example-producer",
+      "id": "public-local-rehearsal",
+      "minimumMargin": 0.05,
+      "mode": "SYNTHETIC_REHEARSAL",
+      "requiredIndependence": "I0",
+      "scope": "Public synthetic cases in one process; no independent proof, mission alpha or operational admission.",
+      "version": "1"
+    },
+    "authorityCreated": "NONE",
+    "signatureStatus": "UNSIGNED_COMMITMENT",
+    "digest": "sha256:05b94841891f2d876bd5c24dd226fc96db31173661c0498bfec0c3ae69cad706"
+  },
+  "discovery": {
+    "world": {
+      "version": 1,
+      "prediction": "nested map reduces tuple-key serialization",
+      "uncertainty": "allocation and sorting may dominate",
+      "experiment": "prioritize nested-map compositions, then test tuple-map alternatives within the same budget",
+      "selection_rule": "minimum measured development elapsed_ns among correct candidates; not final proof",
+      "observation": {
+        "nested_mean_ns": 1764328,
+        "tuple_mean_ns": 1753542,
+        "interpretation": "development observation only; confounded by composition and browser timing"
+      },
+      "falsified_in_this_run": true
+    },
+    "attempts": [
+      {
+        "config": {
+          "version": 1,
+          "layout": "nested",
+          "cache_last": true,
+          "update": "builtin"
+        },
+        "construction": {
+          "operator": "bounded-grammar-composition",
+          "seed": 42,
+          "parent": "successor-browser-v1"
+        },
+        "artifact_hash": "aa18bcba02b1e2f383cba206f58e2c72087630952399a6da7a514a2b4cc2bde2",
+        "correctness": true,
+        "elapsed_ns": 2821128,
+        "rows": 21
+      },
+      {
+        "config": {
+          "version": 1,
+          "layout": "nested",
+          "cache_last": false,
+          "update": "branch"
+        },
+        "construction": {
+          "operator": "bounded-grammar-composition",
+          "seed": 42,
+          "parent": "successor-browser-v1"
+        },
+        "artifact_hash": "ba8af8a21c9ba988391824adfad99f8dd339ef24ca6d019ea3506a7fe9f69e09",
+        "correctness": true,
+        "elapsed_ns": 707528,
+        "rows": 21
+      },
+      {
+        "config": {
+          "version": 1,
+          "layout": "tuple",
+          "cache_last": true,
+          "update": "builtin"
+        },
+        "construction": {
+          "operator": "bounded-grammar-composition",
+          "seed": 42,
+          "parent": "successor-browser-v1"
+        },
+        "artifact_hash": "f28637fae0ba92e69104b6cd603159fc10c430bd7de09b709278837dc337b1fe",
+        "correctness": true,
+        "elapsed_ns": 1402807,
+        "rows": 21
+      },
+      {
+        "config": {
+          "version": 1,
+          "layout": "tuple",
+          "cache_last": false,
+          "update": "branch"
+        },
+        "construction": {
+          "operator": "bounded-grammar-composition",
+          "seed": 42,
+          "parent": "successor-browser-v1"
+        },
+        "artifact_hash": "ad81e04702f3e72edc8ac974837b45a4da3cf0756aa913de276e64846ed93121",
+        "correctness": true,
+        "elapsed_ns": 2104276,
+        "rows": 21
+      }
+    ],
+    "selected": {
+      "config": {
+        "version": 1,
+        "layout": "nested",
+        "cache_last": false,
+        "update": "branch"
+      },
+      "construction": {
+        "operator": "bounded-grammar-composition",
+        "seed": 42,
+        "parent": "successor-browser-v1"
+      },
+      "artifact_hash": "ba8af8a21c9ba988391824adfad99f8dd339ef24ca6d019ea3506a7fe9f69e09",
+      "correctness": true,
+      "elapsed_ns": 707528,
+      "rows": 21
+    },
+    "generation_budget": 4,
+    "actual_candidates": 4,
+    "source": "successor-browser-v1"
+  },
+  "frozen": {
+    "manifest": {
+      "schema_version": 1,
+      "request_hash": "f7188cd69edc92fc5794d77fe376b21203c761b70625c150f9bd19ad070b7c0f",
+      "grammar": {
+        "version": 1,
+        "layout": "nested",
+        "cache_last": false,
+        "update": "branch"
+      },
+      "candidate_hash": "ba8af8a21c9ba988391824adfad99f8dd339ef24ca6d019ea3506a7fe9f69e09",
+      "engine": "successor-browser-v1",
+      "engine_source_hash": "38c4f38978bf9fc29f207bae3adee0755bc6530d04502a36c491cc430787e488",
+      "comparators": [
+        "current-one-pass-map-v1",
+        "beta-sorted-reduction-v1"
+      ],
+      "protocol": "browser-local-aggregation-v1",
+      "correctness_required": true,
+      "minimum_speedup_ppm": 50000,
+      "costs": {
+        "money": null,
+        "review": null,
+        "memory": null
+      },
+      "authority": []
+    },
+    "release_hash": "d63ed9512eb80eb9904095cc521ce90a2fd58fa588398901c331ed65cb22ea81"
+  },
+  "evaluation": {
+    "schema_version": 1,
+    "scope": "browser-rehearsal",
+    "release_hash": "d63ed9512eb80eb9904095cc521ce90a2fd58fa588398901c331ed65cb22ea81",
+    "cases": [
+      {
+        "case_index": 0,
+        "events": 64,
+        "current_ns": 217041,
+        "beta_ns": 313715,
+        "candidate_ns": 96603,
+        "exact_output": true
+      },
+      {
+        "case_index": 1,
+        "events": 64,
+        "current_ns": 275849,
+        "beta_ns": 283490,
+        "candidate_ns": 260406,
+        "exact_output": true
+      },
+      {
+        "case_index": 2,
+        "events": 1000,
+        "current_ns": 950608,
+        "beta_ns": 9015431,
+        "candidate_ns": 1161460,
+        "exact_output": true
+      },
+      {
+        "case_index": 3,
+        "events": 1000,
+        "current_ns": 9639516,
+        "beta_ns": 8792762,
+        "candidate_ns": 9079676,
+        "exact_output": true
+      },
+      {
+        "case_index": 4,
+        "events": 1000,
+        "current_ns": 1267066,
+        "beta_ns": 9662960,
+        "candidate_ns": 700407,
+        "exact_output": true
+      },
+      {
+        "case_index": 5,
+        "events": 1000,
+        "current_ns": 8755347,
+        "beta_ns": 8868955,
+        "candidate_ns": 9012457,
+        "exact_output": true
+      }
+    ],
+    "correctness": true,
+    "totals_ns": {
+      "current": 21105427,
+      "beta": 36937313,
+      "candidate": 20311009
+    },
+    "best_comparator": "current",
+    "local_verdict": "INSUFFICIENT_MARGIN",
+    "institutional_verdict": "HOLD",
+    "missing": [
+      "independent-verifier",
+      "frontier-comparator",
+      "measured-peak-memory",
+      "accepted-realized-economics",
+      "principal-issued-authority"
+    ],
+    "authority": [],
+    "timing_limitations": "Single browser process; timer resolution, order, JIT and device load confound timings. Descriptive measurements only."
+  },
+  "token": {
+    "symbol": "AGIALPHA",
+    "chainId": 1,
+    "address": "0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA",
+    "decimals": 18
+  },
+  "settlement": {
+    "status": "NOT_CONNECTED",
+    "transactions": [],
+    "spentBaseUnits": "0",
+    "allowanceIs": "ILLUSTRATIVE_NOT_FUNDED"
+  },
+  "admission": {
+    "decision": "HOLD",
+    "independentProof": false,
+    "authority": [],
+    "specialistASI": false
+  },
+  "chronicle": [
+    {
+      "kind": "local-observation",
+      "candidateRelease": "d63ed9512eb80eb9904095cc521ce90a2fd58fa588398901c331ed65cb22ea81",
+      "reusable": "Configuration hypothesis only; rerun tests.",
+      "inheritedProof": false,
+      "inheritedAuthority": false
+    }
+  ],
+  "integrityDigest": "sha256:a52c58bf922d2f163de35bb33d72534a1dde01c97d886b99020f1eb9bcf9faa8"
+}

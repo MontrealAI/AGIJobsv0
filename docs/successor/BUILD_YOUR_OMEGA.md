@@ -23,6 +23,9 @@ node scripts/pages/verify-successor-build.mjs /path/to/successor-build-pack.json
 The verifier checks the package digest and canonical token, verifies every unsigned draft commitment,
 recompiles the complete job graph using this checkout's compiler, and requires equality with the exported
 compilation. It rejects altered terms, admitted jobs, forged authority and claimed settlement.
+It also rejects unknown evidence fields and checks Alpha's request, candidate and release commitments
+using an unchanged, source-pinned copy of the Apache-2.0 Alpha engine. This does not rerun or authenticate
+the reported timings; the returned result remains a historical consistency check.
 
 `MATCH` means historical consistency at the recorded creation time. It does not authenticate a producer,
 prove the Alpha algorithm correct, establish fresh rights or grant current authority. It never broadcasts
