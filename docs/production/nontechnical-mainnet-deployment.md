@@ -4,6 +4,12 @@
 
 The current publication is a source prerelease. A green local demonstration is not a live launch approval. The signing key, dependency findings, independent security review and commissioning requirements must be cleared first.
 
+## The existing Ethereum deployment
+
+The contracts have already been deployed for paused commissioning. [See the current address directory and evidence](mainnet-deployment-2026-10-12.md). “Deployed” means the contracts exist; “source verified” means the explorer has matched their published source; “open for work” requires separate operational approval. These are different checkpoints. You can continue using the public examples and save your own drafts while commissioning is incomplete.
+
+The six checkpoints below describe the general process for a new deployment. They are not a request to deploy the existing stack again.
+
 ## The six checkpoints
 
 1. **Try it locally.** The operator runs `npm ci`, `npm run compile` and `npm run deploy:local`. No real wallet or funds are needed. Ask to see the JSON report.

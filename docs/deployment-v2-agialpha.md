@@ -4,6 +4,8 @@ Use this guide for a **new deployment**. Existing deployments are not upgraded b
 
 Start with the [current readiness report](production/readiness.md). A source prerelease is useful for review and rehearsal, but is not authorization to commission a production service. The signing, dependency, independent review and commissioning gates still apply.
 
+**Looking for the stack already deployed on Ethereum?** Use the [mainnet address directory and status record](production/mainnet-deployment-2026-10-12.md). Do not run a new deployment to refresh documentation or retry explorer verification. The example configuration files below remain templates, not the address directory or instructions to replace the existing stack.
+
 ## 1. Choose the right operation
 
 | Your goal | Command or guide | What it changes |

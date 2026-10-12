@@ -42,7 +42,7 @@ AGI Jobs v0 (v2) brings together job contracts, agent gateways, validators, oper
 
 **Prepare a deployment:** use the [current Hardhat guide](docs/deployment-v2-agialpha.md) or the [plain-language coordinator guide](docs/production/nontechnical-mainnet-deployment.md). Start with `npm run deploy:local` after compiling, then use `npm run deploy:plan` for read-only public-network inspection. The staged script preserves recovery evidence and hands off all eight managed modules paused.
 
-**Deployment status:** local tests are not a mainnet certification. The four previously oversized contracts now use [fixed implementations and staged deployment](docs/production/fixed-implementations.md), and the size gate passes with normal Ethereum limits enforced. Release still requires authorized signing keys, completed deployment configuration, and passing CI. All existing architectural diagrams and demonstration surfaces are retained.
+**Ethereum mainnet deployment recorded:** the [12 October deployment record](docs/production/mainnet-deployment-2026-10-12.md) lists all 24 contracts, the deployed source commit, explorer links and verification evidence. The eight operational modules were observed paused under SystemPause; this is not an open live service. This stack uses **18-decimal AGIALPHA**, not the separate AGIJobManager USDC deployment. Read the [remaining production gates](docs/production/readiness.md) before commissioning.
 
 ```mermaid
 flowchart LR

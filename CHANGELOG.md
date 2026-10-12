@@ -1,5 +1,16 @@
 # Changelog
 
+## v2.1.0-rc.5
+
+Mainnet deployment record and welcoming example source candidate (2026-10-12).
+
+- Publish a dated, evidence-qualified inventory of all 24 existing Ethereum mainnet contracts, their deployed rc.4 source identity, constructor arguments and compiler/artifact provenance.
+- Separate recorded paused governance and runtime-template comparison from explorer source publication and live-service commissioning; retain incomplete verification and ownership boundaries.
+- Link the address directory from the repository overview, readiness record, deployment guides and generated Pages documentation. The existing AGIALPHA deployment remains distinct from AGIJobManager/ENSJobPages USDC.
+- Include the previously merged English/French garden-club example and reading improvements from #3923.
+
+This source prerelease does not change Solidity, deployment configuration, settlement rules or dependencies, and sends no blockchain transaction. Production signing and independent security/provider/worker commissioning remain unresolved. All existing demos and flowcharts are preserved.
+
 ## v2.1.0-rc.4
 
 Dependency remediation and storage-publisher migration source candidate (2026-10-11).
