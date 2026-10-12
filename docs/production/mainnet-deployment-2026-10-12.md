@@ -74,6 +74,8 @@ The preserved API journal at **2026-10-12T02:47:18Z** records **19 verified / 5 
 
 The original build uses Solidity **0.8.25+commit.b61c2a91**, optimizer **200** runs, **viaIR**, and **Cancun**. Preserve the original compiler input and settings, exact fully qualified target, constructor arguments and local replay proof when investigating. Do not redeploy or alter token economics, Solidity, ABI/events or compilation settings merely to obtain an explorer badge. Verification troubleshooting and source publication send no Ethereum transaction and require no wallet key.
 
+The [Escrow verification retrospective and offline reproduction guide](escrow-verification-2026-10-12.md) preserves the successful **39-source v5 solution**, exact input and source hashes, portable replay tool, and regression evidence. It explains why the two additional original files must be retained for this input. The contract is already verified: use the tool for archival reproduction, not another submission.
+
 ## What remains before opening
 
 Use the [current production readiness record](readiness.md) for the complete gates. Remaining work includes fresh, block-bound ownership/pause/immutable and configuration checks; coordinator handoff reconciliation; authorized production signing; independent security review; and real provider, worker, reviewer, settlement, monitoring and recovery commissioning. The source release does not waive any of these requirements.

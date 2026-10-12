@@ -1,0 +1,32 @@
+name: Escrow replay regression
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/verification/**'
+      - 'docs/deployments/evidence/escrow-*.json'
+      - '.github/workflows/escrow-replay-regression.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/verification/**'
+      - 'docs/deployments/evidence/escrow-*.json'
+      - '.github/workflows/escrow-replay-regression.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: escrow-replay-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  offline-regression:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          persist-credentials: false
+      - name: Run isolated offline fixtures
+        run: python3 -m unittest discover -s scripts/verification/tests -v
