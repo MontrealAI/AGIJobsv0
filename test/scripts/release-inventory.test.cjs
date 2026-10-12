@@ -257,3 +257,25 @@ test('monitoring retains deployed addresses instead of zero summary or override 
     assert.notEqual(resolution.address, book.jobRegistry);
   }
 });
+
+test('mainnet sentinel templates resolve only recorded contracts while retaining policy-change alerts', async () => {
+  const { buildAddressIndex, substitutePlaceholders, ensureSentinelSchema } = loadTypeScript('../../scripts/monitoring/sentinel-utils.ts');
+  const index = await buildAddressIndex({ network: 'mainnet' });
+  const record = require('../../docs/deployments/ethereum-mainnet-2026-10-12.json');
+  const deployed = new Set(record.contracts.map((contract) => contract.address));
+  const directory = path.resolve(__dirname, '../../monitoring/onchain');
+  for (const filename of ['parameter-change-sentinel.json', 'pause-governance-sentinel.json', 'role-rotation-sentinel.json']) {
+    const { rendered, missing } = substitutePlaceholders(fs.readFileSync(path.join(directory, filename), 'utf8'), index);
+    assert.equal(missing.length, 0, filename);
+    const sentinel = JSON.parse(rendered);
+    ensureSentinelSchema(sentinel);
+    assert.ok(sentinel.addresses.length > 0);
+    for (const value of sentinel.addresses) assert.ok(deployed.has(value), `${filename}: ${value}`);
+    if (filename === 'parameter-change-sentinel.json') {
+      assert.equal(sentinel.addresses.length, 3);
+      for (const event of ['TaxPolicyUpdated(address)', 'TaxPolicyUpdated(address,uint256)']) {
+        assert.ok(sentinel.conditions.some((condition) => condition.event === event), event);
+      }
+    }
+  }
+});

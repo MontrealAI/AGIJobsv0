@@ -64,6 +64,8 @@ Explorer observations were collected by read-only HTTPS requests from **2026-10-
 
 ## Governance and pause state
 
+The mainnet parameter-change sentinel watches the deployed StakeManager, FeePool and JobRegistry. TaxPolicy is disabled and has no address to monitor; both `TaxPolicyUpdated` event conditions remain on those protocol emitters. All three checked-in sentinel templates resolve against this inventory without zero addresses. Rendering these files does not activate an external monitoring service; notification-channel mapping and operational commissioning remain required.
+
 The eight managed contracts are **JobRegistry, StakeManager, ValidationModule, ReputationEngine, ArbitratorCommittee, DisputeModule, PlatformRegistry and FeePool**. Their recorded owner is **SystemPause**, whose governance authority is the Ledger address above. The saved later verifier also reports Ledger control of **CertificateNFT, IdentityRegistry and JobRouter**. Do not transfer the managed contracts directly to a wallet: the SystemPause ownership topology is intentional.
 
 The recovery completion message initially left IdentityRegistry acceptance and coordinator handoff outstanding. The later verifier reports the three direct-owner modules under Ledger control, but does **not** prove coordinator ownership. Reconcile current `owner()` / `pendingOwner()` and all applicable acceptances before retiring the temporary deployer. This publication neither asserts coordinator handoff completion nor requests any ownership transaction or unpause.

@@ -6,8 +6,7 @@
   "addresses": [
     "{{STAKE_MANAGER}}",
     "{{FEE_POOL}}",
-    "{{JOB_REGISTRY}}",
-    "{{TAX_POLICY}}"
+    "{{JOB_REGISTRY}}"
   ],
   "abi": [
     { "anonymous": false, "inputs": [{ "indexed": false, "internalType": "uint256", "name": "pct", "type": "uint256" }], "name": "FeePctUpdated", "type": "event" },
@@ -72,5 +71,5 @@
   "confirmations": 1,
   "paused": false,
   "notifyOnAddressActivity": true,
-  "notes": "Map notification channel slugs to Defender or Forta targets before enabling."
+  "notes": "Ethereum mainnet inventory recorded 2026-10-12 has TaxPolicy disabled, so no TaxPolicy contract address is monitored. TaxPolicyUpdated conditions remain on the monitored protocol contracts. Review the address inventory if a policy is later enabled. Map notification channel slugs to Defender or Forta targets before enabling."
 }
