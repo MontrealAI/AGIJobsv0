@@ -7,6 +7,7 @@ import path from 'node:path';
 import { createHash } from 'node:crypto';
 import { verifyBuildPack, readBuildPack } from '../../scripts/pages/verify-successor-build.mjs';
 import { digestObject } from '../../packages/successor-core/src/integrity.mjs';
+import { compileJobs } from '../../packages/successor-core/src/compiler.mjs';
 const directory=new URL('../../website/successor-build/',import.meta.url);
 const page=fs.readFileSync(new URL('index.html',directory),'utf8');
 const provenance=JSON.parse(fs.readFileSync(new URL('provenance.json',directory),'utf8'));
@@ -96,4 +97,13 @@ test('a complete real export reproduces and rejects forged claims throughout its
   const {integrityDigest,...failed}=structuredClone(pack);
   failed.evaluation.cases[0].exact_output=false;failed.evaluation.correctness=false;failed.evaluation.local_verdict='FAIL';
   assert.equal((await verifyBuildPack({...failed,integrityDigest:await digestObject('successor-build-example.v1',failed)})).recompilation,'MATCH');
+});
+test('resealing a broader mission cannot turn the local workshop into payment authority',async()=>{
+  const {integrityDigest,...forged}=readBuildPack(new URL('./fixtures/successor-build-pack.json',import.meta.url));
+  const mission=forged.compilation.constitution;
+  mission.authorityCeiling={level:'A4',externalEffects:true,permittedActions:['inspect-local','send-payment'],prohibitedActions:['self-admit']};
+  mission.allowedActions=['inspect-local','send-payment'];
+  const jobs=forged.compilation.graph.nodes.map(job=>({...job,permittedActions:[...mission.allowedActions],prohibitedActions:[...mission.authorityCeiling.prohibitedActions]}));
+  forged.compilation=await compileJobs(mission,{jobs,edges:forged.compilation.graph.edges,now:forged.createdAt});
+  await assert.rejects(verifyBuildPack({...forged,integrityDigest:await digestObject('successor-build-example.v1',forged)}),/local-only capability/);
 });

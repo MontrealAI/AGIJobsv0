@@ -5,6 +5,7 @@ import { compileJobs, verifyWorkOrderSeal } from '../../packages/successor-core/
 import { digestObject, canonicalize } from '../../packages/successor-core/src/integrity.mjs';
 import { validateRequest, validateCandidate, generateCandidates, digest as alphaDigest, VERSION as ALPHA_VERSION } from './vendor/alpha-successor/engine.mjs';
 const alphaProvenance=JSON.parse(fs.readFileSync(new URL('./vendor/alpha-successor/provenance.json',import.meta.url),'utf8'));
+const workshopMission=JSON.parse(fs.readFileSync(new URL('./successor-workshop-mission.json',import.meta.url),'utf8'));
 
 const configuration={version:'number',layout:'string',cache_last:'boolean',update:'string'};
 const attempt={config:configuration,construction:{operator:'string',seed:'number',parent:'string'},artifact_hash:'string',correctness:'boolean',elapsed_ns:'number',rows:'number'};
@@ -82,7 +83,15 @@ export async function verifyBuildPack(pack) {
   verifyDiscovery(pack);verifyEvaluation(pack);
   const jobs = pack.compilation?.graph?.nodes;
   if (!Array.isArray(jobs) || jobs.length !== 21) throw Error('Expected 21 work orders');
+  const mission=pack.compilation.constitution, expected=structuredClone(workshopMission);
+  if(typeof pack.title!=='string' || !pack.title.trim() || pack.title!==pack.title.trim() || pack.title.length>48 || typeof pack.createdAt!=='string' || !Number.isFinite(Date.parse(pack.createdAt)))throw Error('Invalid workshop mission settings');
+  const units=mission?.budget?.limitBaseUnits;
+  if(typeof units!=='string' || !/^[0-9]+$/.test(units) || units.length>25 || BigInt(units)<10n**18n || BigInt(units)>1000000n*10n**18n || BigInt(units)%10n**18n!==0n)throw Error('Invalid workshop planning allowance');
+  expected.title=pack.title;expected.budget.limitBaseUnits=units;
+  expected.expiresAt=new Date(Date.parse(pack.createdAt)+7*86400000).toISOString();expected.rights[0].expiresAt=expected.expiresAt;
+  if(!matches(mission,expected))throw Error('Workshop constitution must retain its local-only capability template');
   for (const job of jobs) {
+    if(!matches(job.permittedActions,expected.allowedActions) || !matches(job.permittedTools,expected.allowedTools) || !matches(job.prohibitedActions,expected.authorityCeiling.prohibitedActions) || job.verifier?.independence!=='I0' || job.chronicle?.eligible!==false)throw Error('Workshop jobs cannot escalate capabilities or proof');
     if (job.state !== 'DRAFT' || job.signatureStatus !== 'UNSIGNED_COMMITMENT' || !(await verifyWorkOrderSeal(job))) throw Error('Invalid draft commitment');
   }
   const rebuilt = await compileJobs(pack.compilation.constitution, {jobs, edges:pack.compilation.graph.edges, now:pack.createdAt});

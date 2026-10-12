@@ -26,6 +26,9 @@ compilation. It rejects altered terms, admitted jobs, forged authority and claim
 It also rejects unknown evidence fields and checks Alpha's request, candidate and release commitments
 using an unchanged, source-pinned copy of the Apache-2.0 Alpha engine. This does not rerun or authenticate
 the reported timings; the returned result remains a historical consistency check.
+The consumer accepts this workshop's fixed local-only mission template. Only its name, whole-token
+planning allowance and creation/expiry timestamps vary. Recompiling broader permissions does not make
+them a valid workshop package; a different mission needs its own explicit schema and review.
 
 `MATCH` means historical consistency at the recorded creation time. It does not authenticate a producer,
 prove the Alpha algorithm correct, establish fresh rights or grant current authority. It never broadcasts
