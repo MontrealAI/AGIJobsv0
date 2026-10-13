@@ -5,13 +5,16 @@ on:
     paths:
       - '.github/workflows/source-release.yml'
       - 'scripts/release/qualify-source-release.cjs'
+      - 'scripts/release/publish-source-release.cjs'
       - 'test/scripts/source-release-gate.test.cjs'
+      - 'test/scripts/source-release-publish.test.cjs'
   push:
     branches: [main]
     paths:
       - 'package.json'
       - '.github/workflows/source-release.yml'
       - 'scripts/release/qualify-source-release.cjs'
+      - 'scripts/release/publish-source-release.cjs'
 
 permissions:
   contents: read
@@ -31,7 +34,7 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version-file: '.nvmrc'
-      - run: node --test test/scripts/source-release-gate.test.cjs
+      - run: node --test test/scripts/source-release-gate.test.cjs test/scripts/source-release-publish.test.cjs
 
   publish:
     name: Publish qualified source prerelease
@@ -84,19 +87,6 @@ jobs:
           name: source-rc5-${{ github.sha }}
           path: reports/source-release/
           if-no-files-found: error
-      - name: Create and verify a draft before publication
-        run: |
-          set -euo pipefail
-          current="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq '.object.sha')"
-          test "$current" = "$GITHUB_SHA"
-          gh api --method POST "repos/$GITHUB_REPOSITORY/git/refs" -f "ref=refs/tags/$TAG" -f "sha=$GITHUB_SHA"
-          # Creation refuses an existing release instead of overwriting it.
-          gh release create "$TAG" reports/source-release/* --verify-tag --title 'source-v2.1.0-rc.5 — mainnet evidence and SUCCESSOR Ω workshop' --notes-file docs/production/RELEASE_NOTES_SOURCE_RC5.md --prerelease --draft
-          gh release download "$TAG" --dir "$RUNNER_TEMP/source-release-readback"
-          (cd "$RUNNER_TEMP/source-release-readback" && sha256sum --check SHA256SUMS.txt)
-          tag_sha="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" --jq '.object.sha')"
-          test "$tag_sha" = "$GITHUB_SHA"
-          current="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq '.object.sha')"
-          test "$current" = "$GITHUB_SHA"
-          gh release edit "$TAG" --draft=false --prerelease --latest=false
-          gh release view "$TAG" --json url,tagName,isDraft,isPrerelease
+          overwrite: true
+      - name: Resume or create the exact source release and verify all assets
+        run: node scripts/release/publish-source-release.cjs

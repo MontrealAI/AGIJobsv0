@@ -6,6 +6,32 @@ const {
   requiredChecks,
 } = require('../../scripts/release/qualify-source-release.cjs');
 const sha = 'a'.repeat(40);
+test('every path-filtered dependency runs for every source publication trigger', () => {
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const root = path.resolve(__dirname, '../..');
+  const pushPaths = (file) => {
+    const lines = fs.readFileSync(path.join(root, file), 'utf8').split('\n');
+    const start = lines.indexOf('  push:');
+    assert.notEqual(start, -1, `${file} must run on push`);
+    const block = [];
+    for (let i = start + 1; i < lines.length; i++) {
+      if (lines[i].trim() && !lines[i].startsWith('    ')) break;
+      block.push(lines[i]);
+    }
+    if (!block.includes('    paths:')) return null;
+    return block
+      .filter((line) => line.startsWith("      - '"))
+      .map((line) => line.slice(9, -1));
+  };
+  const triggers = pushPaths('.github/workflows/source-release.yml');
+  for (const workflow of requiredPaths) {
+    const filters = pushPaths(workflow);
+    if (filters)
+      for (const trigger of triggers)
+        assert.ok(filters.includes(trigger), `${workflow} omits ${trigger}`);
+  }
+});
 function fixture() {
   return {
     runs: requiredPaths.map((path) => ({

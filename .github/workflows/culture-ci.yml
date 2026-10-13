@@ -3,12 +3,20 @@ name: CULTURE Demo CI
 on:
   push:
     paths:
+      - 'package.json'
+      - '.github/workflows/source-release.yml'
+      - 'scripts/release/qualify-source-release.cjs'
+      - 'scripts/release/publish-source-release.cjs'
       - 'demo/CULTURE-v0/**'
       - 'shared/structuredLogger.ts'
       - '.nvmrc'
       - '.github/workflows/culture-ci.yml'
   pull_request:
     paths:
+      - 'package.json'
+      - '.github/workflows/source-release.yml'
+      - 'scripts/release/qualify-source-release.cjs'
+      - 'scripts/release/publish-source-release.cjs'
       - 'demo/CULTURE-v0/**'
       - 'shared/structuredLogger.ts'
       - '.nvmrc'

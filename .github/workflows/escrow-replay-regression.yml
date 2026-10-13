@@ -3,12 +3,20 @@ name: Escrow replay regression
 on:
   pull_request:
     paths:
+      - 'package.json'
+      - '.github/workflows/source-release.yml'
+      - 'scripts/release/qualify-source-release.cjs'
+      - 'scripts/release/publish-source-release.cjs'
       - 'scripts/verification/**'
       - 'docs/deployments/evidence/escrow-*.json'
       - '.github/workflows/escrow-replay-regression.yml'
   push:
     branches: [main]
     paths:
+      - 'package.json'
+      - '.github/workflows/source-release.yml'
+      - 'scripts/release/qualify-source-release.cjs'
+      - 'scripts/release/publish-source-release.cjs'
       - 'scripts/verification/**'
       - 'docs/deployments/evidence/escrow-*.json'
       - '.github/workflows/escrow-replay-regression.yml'

@@ -12,6 +12,8 @@ Build your own local SUCCESSOR Ω and inspect the deployed AGIALPHA systems from
 
 Publication is gated on the exact merged source SHA: all checked-in required contexts, the core release workflows, Pages, actionlint, Escrow regression and every other observed main-push workflow must succeed. The attached `provenance.json` records the source commit/tree, producer run, check results and workflow URLs. `SHA256SUMS.txt` covers the source ZIP and evidence files; all assets are downloaded and checksum-verified before the draft is published.
 
+Path-filtered qualification workflows also run whenever the source publisher is triggered. Interrupted publication can resume only for the same source SHA: owned drafts are verified before publication, existing published assets are verified without modification, and tags are never moved or deleted.
+
 The deployed Solidity/compiler identity remains commit `b4c5b66ea05a6bb27f1f1cb197f055c179bbd38e` (`source-v2.1.0-rc.4`). This release adds source/documentation and existing-workshop updates; it does not change deployed contracts or send blockchain transactions. Its source archive is not a new deployment recipe for the already-deployed stack.
 
 ## Remaining production gates
