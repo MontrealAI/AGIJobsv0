@@ -10,7 +10,7 @@ versions, how they are enforced, and the safe procedure for updating them.
 | --- | --- | --- | --- |
 | Solidity | 0.8.37+commit.f401782d | `config/solidity-compiler.json`, build configurations, `ci:verify-toolchain`, and deployment artifact admission | Production: viaIR, optimizer 200, Cancun. [Advisory assessment and existing-deployment guidance](production/compiler-warnings-2026-10-13.md); remaining upstream notices are visible and bounded. |
 | Node.js | 22.23.3 | `.nvmrc`, `package.json` `engines.node`, CI `actions/setup-node` steps, and `npm run ci:verify-toolchain` | Node 22 Maintenance LTS replaces the end-of-life Node 20 pin. Update `.node-version` and root lockfile engine metadata together; `npm ci` verifies the existing lockfile. |
-| Foundry toolchain | v1.4.4 | `foundry-rs/foundry-toolchain@v1` steps in every workflow explicitly request `v1.4.4`; `ci:verify-toolchain` asserts the pin | Guarantees that `forge`/`anvil`/`cast` behave consistently across CI, fuzzing, and release pipelines. |
+| Foundry toolchain | v1.4.4 | `config/foundry-toolchain.json` retains the canonical release; workflow installers are checked against it and release manifests record it | Guarantees that `forge`/`anvil`/`cast` behave consistently across CI, fuzzing, and release pipelines. |
 
 ## Why the lock matters
 

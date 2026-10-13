@@ -4,12 +4,16 @@ const fs = require('node:fs');
 const path = require('node:path');
 const modules = require('../../config/implementation-modules.json');
 const { inventory } = require('../v2/lib/deployment-candidate.cjs');
+const {
+  createVerifiedArtifactReader,
+} = require('../deploy/verified-artifact.cjs');
+const { Interface } = require('ethers');
 const { missionPlan } = require('../../demo/aurora/bin/mission-plan.cjs');
 const address = /^0x[0-9a-fA-F]{40}$/;
 const txHash = /^0x[0-9a-fA-F]{64}$/;
 function checkCommissioning(
   receipts,
-  { expectedJobs = 3, committees, deploymentFile } = {}
+  { expectedJobs = 3, committees, deploymentFile, readArtifact } = {}
 ) {
   assert.ok(Number.isSafeInteger(expectedJobs) && expectedJobs > 0);
   const read = (name) =>
@@ -32,6 +36,7 @@ function checkCommissioning(
     addresses.every((value) => address.test(value) && !/^0x0{40}$/.test(value))
   );
   const targets = inventory();
+  const compiled = readArtifact || createVerifiedArtifactReader();
   assert.deepEqual(
     Object.keys(deployment.creationRecords || {}).sort(),
     targets.map(({ name }) => name).sort(),
@@ -44,6 +49,13 @@ function checkCommissioning(
     const target = targets.find((item) => item.name === name);
     assert.equal(record.source, `${target.source}:${name}`);
     assert.match(record.constructorArguments, /^0x(?:[a-fA-F0-9]{2})*$/);
+    assert.equal(
+      record.constructorArguments.toLowerCase(),
+      new Interface(compiled(target).abi)
+        .encodeDeploy(record.args)
+        .toLowerCase(),
+      `Encoded constructor arguments differ from the recorded values for ${name}`
+    );
     if (name === 'Deployer' || expected.includes(name)) {
       assert.deepEqual(record.args, []);
       assert.equal(record.constructorArguments, '0x');

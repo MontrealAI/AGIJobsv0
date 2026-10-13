@@ -10,6 +10,7 @@ const modules = Object.values(
   require('../../config/implementation-modules.json')
 ).flat();
 const address = (n) => '0x' + n.toString(16).padStart(40, '0');
+const { Interface } = require('ethers');
 const tx = (n) => '0x' + n.toString(16).padStart(64, '0');
 const { inventory } = require('../../scripts/v2/lib/deployment-candidate.cjs');
 
@@ -29,16 +30,23 @@ function fixture(t, sizes) {
       .filter(({ name }) => !modules.includes(name))
       .map(({ name }, i) => [name, address(i + 21)])
   );
+  const constructorAbi = ['constructor(uint256 amount, address owner)'];
+  const argsFor = (name) =>
+    name === 'Deployer' || modules.includes(name) ? [] : ['123', address(777)];
+  const abiFor = (name) =>
+    name === 'Deployer' || modules.includes(name) ? [] : constructorAbi;
   const creationRecords = Object.fromEntries(
     Object.entries({ ...implementations, ...contracts }).map(
       ([name, value]) => [
         name,
         {
           address: value,
-          args: [],
+          args: argsFor(name),
           source:
             inventory().find((item) => item.name === name).source + ':' + name,
-          constructorArguments: '0x',
+          constructorArguments: new Interface(abiFor(name)).encodeDeploy(
+            argsFor(name)
+          ),
         },
       ]
     )
@@ -85,7 +93,15 @@ function fixture(t, sizes) {
       ),
     });
   }
-  return { root, write, options: { expectedJobs: sizes.length, committees } };
+  return {
+    root,
+    write,
+    options: {
+      expectedJobs: sizes.length,
+      committees,
+      readArtifact: ({ name }) => ({ abi: abiFor(name) }),
+    },
+  };
 }
 test('commissioning supports configured mixed committee sizes and four-job missions', (t) => {
   const mixed = fixture(t, [5, 4, 5]);
@@ -95,7 +111,10 @@ test('commissioning supports configured mixed committee sizes and four-job missi
   );
   const atlas = fixture(t, [5, 5, 5, 5]);
   assert.equal(checkCommissioning(atlas.root, atlas.options).settledJobs, 4);
-  assert.throws(() => checkCommissioning(atlas.root), /Every configured/);
+  assert.throws(
+    () => checkCommissioning(atlas.root, { ...atlas.options, expectedJobs: 3 }),
+    /Every configured/
+  );
 });
 test('commissioning rejects omitted implementations and incorrect constructor evidence', (t) => {
   const data = fixture(t, [3, 3, 3]);
@@ -120,7 +139,10 @@ test('commissioning rejects omitted implementations and incorrect constructor ev
       d.creationRecords.JobRegistry.source = 'Wrong.sol:JobRegistry';
     },
     (d) => {
-      d.creationRecords.JobRegistry.constructorArguments = 'invalid';
+      d.creationRecords.JobRegistry.constructorArguments = '0x01';
+    },
+    (d) => {
+      d.creationRecords.JobRegistry.args[0] = '124';
     },
   ]) {
     const altered = structuredClone(deployment);
