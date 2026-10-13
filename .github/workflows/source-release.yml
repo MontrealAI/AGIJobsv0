@@ -20,7 +20,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: source-release-rc6-${{ github.ref }}
+  group: source-release-rc7-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -48,7 +48,7 @@ jobs:
       checks: read
     env:
       GH_TOKEN: ${{ github.token }}
-      TAG: source-v2.1.0-rc.6
+      TAG: source-v2.1.0-rc.7
     steps:
       - name: Harden runner
         uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
@@ -73,7 +73,7 @@ jobs:
           cp docs/deployments/ethereum-mainnet-2026-10-12.json "$out/"
           cp docs/deployments/evidence/configuration-readback-2026-10-13.json "$out/"
           cp docs/production/mainnet-deployment-2026-10-12.md "$out/"
-          cp docs/production/RELEASE_NOTES_SOURCE_RC6.md "$out/"
+          cp docs/production/RELEASE_NOTES_SOURCE_RC7.md "$out/"
           cp docs/production/compiler-warnings-2026-10-13.md "$out/"
           cp config/solidity-compiler.json "$out/"
           cp docs/deployment-addresses.mainnet.json "$out/"
@@ -83,7 +83,7 @@ jobs:
       - name: Retain exact release producer evidence
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: source-rc6-${{ github.sha }}
+          name: source-rc7-${{ github.sha }}
           path: reports/source-release/
           if-no-files-found: error
           overwrite: true

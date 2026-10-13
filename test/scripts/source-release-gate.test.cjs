@@ -12,7 +12,7 @@ const sha = 'a'.repeat(40);
 function sourceFixture() {
   return {
     sha,
-    version: '2.1.0-rc.6',
+    version: '2.1.0-rc.7',
     compilerBaseline: 'b'.repeat(40),
     policy: {
       version: '0.8.37',
@@ -68,10 +68,11 @@ test('source release rejects missing review, old compiler, changed production se
       () => verifySourceScope({ ...sourceFixture(), compilerBaseline }),
       /reviewed compiler/
     );
-  assert.throws(
-    () => verifySourceScope({ ...sourceFixture(), version: '2.1.0-rc.5' }),
-    /mismatch/
-  );
+  for (const version of ['2.1.0-rc.5', '2.1.0-rc.6', '2.1.0'])
+    assert.throws(
+      () => verifySourceScope({ ...sourceFixture(), version }),
+      /mismatch/
+    );
   for (const change of [
     { version: '0.8.25' },
     { longVersion: '0.8.37+commit.other' },
@@ -87,6 +88,20 @@ test('source release rejects missing review, old compiler, changed production se
           policy: { ...fixture.policy, ...change },
         }),
       /mismatch/
+    );
+  }
+});
+test('rc.7 source qualification agrees with both package version records', () => {
+  const packageJson = require('../../package.json');
+  const lock = require('../../package-lock.json');
+  for (const version of [
+    packageJson.version,
+    lock.version,
+    lock.packages[''].version,
+  ]) {
+    assert.equal(version, '2.1.0-rc.7');
+    assert.doesNotThrow(() =>
+      verifySourceScope({ ...sourceFixture(), version })
     );
   }
 });

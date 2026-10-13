@@ -43,10 +43,12 @@ WORKDIR /app
 ENV NODE_ENV=production \
     PORT=3000
 COPY apps/enterprise-portal/package.json apps/enterprise-portal/package-lock.json ./
-RUN npm ci --omit=dev
+# The server needs Node.js, but not the package manager used to install it.
+RUN npm ci --omit=dev \
+    && rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx /root/.npm
 COPY --from=builder --chown=node:node /app/.next ./.next
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/next.config.mjs ./next.config.mjs
 USER node
 EXPOSE 3000
-CMD ["npm", "run", "start"]
+CMD ["node", "node_modules/next/dist/bin/next", "start"]

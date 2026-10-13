@@ -109,16 +109,15 @@ jobs:
             --ignorefile /etc/trivy/.trivyignore \
             --severity HIGH,CRITICAL --exit-code 1 'agi-smoke:${{ matrix.image.name }}'
 
-      - name: Trivy scan (application packages, advisory)
-        continue-on-error: true
+      - name: Trivy scan (application packages, native architecture)
         run: |
           docker run --rm \
             -v /var/run/docker.sock:/var/run/docker.sock \
             -v "$PWD/.trivyignore":/etc/trivy/.trivyignore:ro \
             aquasec/trivy:0.75.0 \
-            image --scanners vuln --pkg-types library \
+            image --scanners vuln --pkg-types library --platform linux/${{ matrix.arch.name }} \
             --ignorefile /etc/trivy/.trivyignore \
-            --severity HIGH,CRITICAL --exit-code 0 'agi-smoke:${{ matrix.image.name }}'
+            --severity HIGH,CRITICAL --exit-code 1 'agi-smoke:${{ matrix.image.name }}'
 
       - name: Publish attested native candidate
         if: github.event_name != 'pull_request'
