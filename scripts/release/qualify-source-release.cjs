@@ -6,6 +6,93 @@ const { setTimeout: delay } = require('node:timers/promises');
 const { requiredWorkflows } = require('./check-release-ci.js');
 
 const ownPath = '.github/workflows/source-release.yml';
+const releaseVersion = '2.1.0-rc.6';
+const deployedSourceBaseline = 'b4c5b66ea05a6bb27f1f1cb197f055c179bbd38e';
+const evidenceBaseline = '9c730e0188594089e27ed0589c2b5ca57eec5cf5';
+// Reviewed compiler candidate; publication also requires exact merged-SHA CI.
+const compilerSourceBaseline = 'fbaa8a44b3e476ffd3a9f9a5410dc9ab76c86214';
+const preservedEvidencePaths = [
+  'docs/deployments/',
+  'docs/deployment-addresses.json',
+  'docs/deployment-addresses.mainnet.json',
+  'docs/production/mainnet-deployment-2026-10-12.md',
+  'docs/production/escrow-verification-2026-10-12.md',
+  'docs/production/RELEASE_NOTES_SOURCE_RC5.md',
+  'scripts/verification/',
+];
+const reviewedCompilerPaths = [
+  'contracts/',
+  'scripts/deploy/',
+  'scripts/v2/',
+  'scripts/generate-constants.ts',
+  'scripts/generate-constants-impl.ts',
+  'scripts/ci/',
+  'hardhat.config.js',
+  'hardhat.coverage.config.js',
+  'foundry.toml',
+  'truffle-config.js',
+  'config/solidity-compiler.json',
+  'config/implementation-modules.json',
+  'config/foundry-toolchain.json',
+  'scripts/production/commissioning.cjs',
+  'scripts/production/rehearse.cjs',
+  'demo/',
+  '.github/workflows/release.yml',
+  'scripts/release/',
+  ':(exclude)scripts/release/qualify-source-release.cjs',
+  ':(exclude)scripts/release/publish-source-release.cjs',
+  'ci/',
+];
+
+function verifySourceScope({
+  git,
+  sha,
+  policy,
+  version,
+  compilerBaseline = compilerSourceBaseline,
+}) {
+  if (!/^[a-f0-9]{40}$/.test(compilerBaseline))
+    throw Error('A reviewed compiler source SHA is required');
+  if (
+    version !== releaseVersion ||
+    policy?.version !== '0.8.37' ||
+    policy.longVersion !== '0.8.37+commit.f401782d' ||
+    policy.evmVersion !== 'cancun' ||
+    policy.optimizerRuns !== 200 ||
+    policy.viaIR !== true
+  )
+    throw Error('Source release version or compiler policy mismatch');
+  for (const baseline of [
+    deployedSourceBaseline,
+    evidenceBaseline,
+    compilerBaseline,
+  ])
+    git('merge-base', '--is-ancestor', baseline, sha);
+  git(
+    'diff',
+    '--exit-code',
+    evidenceBaseline,
+    sha,
+    '--',
+    ...preservedEvidencePaths
+  );
+  git(
+    'diff',
+    '--exit-code',
+    compilerBaseline,
+    sha,
+    '--',
+    ...reviewedCompilerPaths
+  );
+  return {
+    deployedSourceBaseline,
+    evidenceBaseline,
+    compilerSourceBaseline: compilerBaseline,
+    preservedEvidencePaths,
+    reviewedCompilerPaths,
+    compiler: policy.longVersion,
+  };
+}
 const requiredPaths = [
   ...requiredWorkflows,
   'pages.yml',
@@ -117,6 +204,14 @@ async function main() {
     execFileSync('git', args, { encoding: 'utf8' }).trim();
   if (git('rev-parse', 'HEAD') !== sha)
     throw Error('Checkout does not match release SHA');
+  const sourceScope = verifySourceScope({
+    git,
+    sha,
+    policy: JSON.parse(
+      fs.readFileSync('config/solidity-compiler.json', 'utf8')
+    ),
+    version: JSON.parse(fs.readFileSync('package.json', 'utf8')).version,
+  });
   const deadline = Date.now() + 85 * 60000;
   while (Date.now() < deadline) {
     const [runs, checks] = await Promise.all([
@@ -134,12 +229,13 @@ async function main() {
           {
             schema: 'agijobsv0/source-release-provenance/1',
             repository,
-            tag: 'source-v2.1.0-rc.5',
+            tag: 'source-v2.1.0-rc.6',
             sha,
             tree: git('rev-parse', 'HEAD^{tree}'),
             recordedAt: new Date().toISOString(),
             productionApproved: false,
             artifactSigning: 'unsigned source and evidence only',
+            sourceScope,
             producer: {
               runId: process.env.GITHUB_RUN_ID,
               runAttempt: process.env.GITHUB_RUN_ATTEMPT,
@@ -183,7 +279,17 @@ async function main() {
   throw Error('Exact merged SHA qualification timed out; no publication');
 }
 
-module.exports = { evaluate, requiredPaths, requiredChecks };
+module.exports = {
+  evaluate,
+  requiredPaths,
+  requiredChecks,
+  verifySourceScope,
+  compilerSourceBaseline,
+  evidenceBaseline,
+  deployedSourceBaseline,
+  preservedEvidencePaths,
+  reviewedCompilerPaths,
+};
 if (require.main === module)
   main().catch((error) => {
     console.error(error.message);

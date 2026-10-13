@@ -1,12 +1,17 @@
 # Changelog
 
-## Unreleased — compiler advisory remediation
+## v2.1.0-rc.6 — compiler advisory remediation
 
-- Move new contract builds to Solidity 0.8.37 across supported build paths, retaining the production Cancun target and optimizer settings.
-- Correct project-source diagnostics while preserving public ABI parameter names and fixed-implementation behavior; refresh bundled demo bytecode.
-- Reject stale compiler builds and unexpected diagnostics at deployment admission; retain exact-source, bounded upstream deprecation notices and publish compiler evidence in contract CI.
-- Archive exact compiler inputs before public deployment, retain encoded constructor arguments and fully qualified verification targets, and reject failed or interrupted explorer commands.
-- Explain existing immutable deployments, historical verification, visible upstream/tooling notices and replacement-deployment requirements in the [operator guide](docs/production/compiler-warnings-2026-10-13.md).
+Compiler-remediation source prerelease (2026-10-13 UTC).
+
+- Pin new builds to Solidity 0.8.37 and correct project-source diagnostics while preserving ABI names, settlement policy and fixed-implementation behavior.
+- Enforce compiler identity, production settings, source freshness, deployable sizes and the bounded, exact-source upstream warning policy before admitting a new deployment candidate.
+- Archive exact original compiler inputs before public deployment, preserve encoded constructor arguments and fully qualified targets, and reject failed or interrupted explorer commands.
+- Preserve the original mainnet deployment and difficult Escrow verification evidence; explain historical verification/recovery and the separate requirements for any replacement deployment.
+- Publish a reviewed compiler-source snapshot with exact-commit hosted qualification, checksummed source/evidence/compiler-policy assets and the exact compiler archive, verified downloads and producer provenance. Existing tags are never moved or overwritten.
+- Retain the 13 pinned OpenZeppelin future-keyword notices and the Hardhat 0.8.37 stack-trace support limitation explicitly. No source release changes existing deployed bytecode or clears its explorer notices.
+
+This is an unsigned source prerelease. Production signing, independent security review, effective protected-review enforcement and live commissioning remain unresolved. No explorer submission, blockchain transaction, unpause or balance migration is performed by this publisher.
 
 ## v2.1.0-rc.5
 

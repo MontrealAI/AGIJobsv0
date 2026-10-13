@@ -20,7 +20,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: source-release-rc5-${{ github.ref }}
+  group: source-release-rc6-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -48,7 +48,7 @@ jobs:
       checks: read
     env:
       GH_TOKEN: ${{ github.token }}
-      TAG: source-v2.1.0-rc.5
+      TAG: source-v2.1.0-rc.6
     steps:
       - name: Harden runner
         uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
@@ -61,14 +61,10 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version-file: '.nvmrc'
-      - name: Preserve deployed contract and compiler identity
-        run: |
-          set -euo pipefail
-          test "$(node -p 'require("./package.json").version')" = '2.1.0-rc.5'
-          git merge-base --is-ancestor b4c5b66ea05a6bb27f1f1cb197f055c179bbd38e "$GITHUB_SHA"
-          git diff --exit-code b4c5b66ea05a6bb27f1f1cb197f055c179bbd38e "$GITHUB_SHA" -- contracts/ scripts/deploy/ scripts/v2/deploy.ts hardhat.config.js config/implementation-modules.json
       - name: Qualify every required check and observed main workflow on this exact commit
         run: node scripts/release/qualify-source-release.cjs
+      - name: Retain and verify the qualified compiler producer archive
+        run: node scripts/release/publish-source-release.cjs --collect-compiler-evidence
       - name: Build checksummed source and evidence assets
         run: |
           set -euo pipefail
@@ -77,14 +73,17 @@ jobs:
           cp docs/deployments/ethereum-mainnet-2026-10-12.json "$out/"
           cp docs/deployments/evidence/configuration-readback-2026-10-13.json "$out/"
           cp docs/production/mainnet-deployment-2026-10-12.md "$out/"
-          cp docs/production/RELEASE_NOTES_SOURCE_RC5.md "$out/"
+          cp docs/production/RELEASE_NOTES_SOURCE_RC6.md "$out/"
+          cp docs/production/compiler-warnings-2026-10-13.md "$out/"
+          cp config/solidity-compiler.json "$out/"
+          cp docs/deployment-addresses.mainnet.json "$out/"
           cd "$out"
           sha256sum -- *.json *.md *.zip > SHA256SUMS.txt
           sha256sum --check SHA256SUMS.txt
       - name: Retain exact release producer evidence
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: source-rc5-${{ github.sha }}
+          name: source-rc6-${{ github.sha }}
           path: reports/source-release/
           if-no-files-found: error
           overwrite: true
