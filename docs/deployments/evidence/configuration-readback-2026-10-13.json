@@ -1,0 +1,520 @@
+{
+  "startedAt": "2026-10-13T00:12:38.249432+00:00",
+  "completedAt": "2026-10-13T00:17:46.861917+00:00",
+  "sourceCommit": "b4c5b66ea05a6bb27f1f1cb197f055c179bbd38e",
+  "snapshot": {
+    "number": 26179827,
+    "hash": "0xfd801d479a6e103d6785adad5fcc6521907afc2eab8594cbbb09932999a8cef5",
+    "timestamp": 1791849431,
+    "requestedTag": "finalized"
+  },
+  "runtimeChecks": {
+    "Deployer": {
+      "bytes": 12435,
+      "sha256": "0295367487c747258536747b9bbd6c760349bffe141fe21606ca71d823d1d694",
+      "exactMatchIncludingImmutables": true
+    },
+    "StakeManager": {
+      "bytes": 7881,
+      "sha256": "16862860c7b8ab1ace4217dcb9ff10b810c33c4678a7bcbefdf900642e44bbe0",
+      "exactMatchIncludingImmutables": true
+    },
+    "JobRegistry": {
+      "bytes": 8004,
+      "sha256": "465d8bad1cf602526dea93009de5864732a551d4226dd5f78475fbf545e87ebf",
+      "exactMatchIncludingImmutables": true
+    },
+    "ValidationModule": {
+      "bytes": 6368,
+      "sha256": "f6fcc101d51e64b4e26322cde0d362cc1f526189e64b0fd8b079531537d67a3f",
+      "exactMatchIncludingImmutables": true
+    },
+    "ReputationEngine": {
+      "bytes": 6744,
+      "sha256": "b32a22ac9eb0d2222e0c9d1484362020bf883f993d7a6d539b9694da73883580",
+      "exactMatchIncludingImmutables": true
+    },
+    "ArbitratorCommittee": {
+      "bytes": 4993,
+      "sha256": "94195e305477eb6f3e762c16a8e21314673eaea08477e01475250beacd6a70bb",
+      "exactMatchIncludingImmutables": true
+    },
+    "DisputeModule": {
+      "bytes": 10660,
+      "sha256": "27eba8b04f35d22b937e3ab908015ba42d62e4a5a4bfee8a0583991e68fcf824",
+      "exactMatchIncludingImmutables": true
+    },
+    "CertificateNFT": {
+      "bytes": 8641,
+      "sha256": "37fa4148694be67951706333c3f3e45b76d3149dd13492004653e9b27d138986",
+      "exactMatchIncludingImmutables": true
+    },
+    "FeePool": {
+      "bytes": 8722,
+      "sha256": "c0ab6d53bf8eb2e86401784e3948c67dab242fc827c662599189be7b33f54060",
+      "exactMatchIncludingImmutables": true
+    },
+    "IdentityRegistry": {
+      "bytes": 19923,
+      "sha256": "86029ca458a267a20007280e73d25ea5bb424f1283f46ae2392de7dbf7219c06",
+      "exactMatchIncludingImmutables": true
+    },
+    "PlatformRegistry": {
+      "bytes": 7965,
+      "sha256": "16fbb3b34757d6ee12626d045e3e3792f5d0fd262d1c2e37249860f69d2c0b5c",
+      "exactMatchIncludingImmutables": true
+    },
+    "JobRouter": {
+      "bytes": 4266,
+      "sha256": "e18aa055a90469e9a25b5fddda2fd6bc9841e9a842fd6b390020b558b0658694",
+      "exactMatchIncludingImmutables": true
+    },
+    "PlatformIncentives": {
+      "bytes": 2840,
+      "sha256": "6ddefeed7772b475ec672926bc4532b18524924ae2be131b4c0f93f27e7fa10f",
+      "exactMatchIncludingImmutables": true
+    },
+    "SystemPause": {
+      "bytes": 8946,
+      "sha256": "67e4f058fc8afe085876abacbb40f1e73fe432ce81920fc04fd3883469c51c9d",
+      "exactMatchIncludingImmutables": true
+    },
+    "JobRegistryConfiguration": {
+      "bytes": 16893,
+      "sha256": "1430e604c66995bee396d5473582c3198c6964d629dc6a42c5d858155325e44f",
+      "exactMatchIncludingImmutables": true
+    },
+    "JobRegistryLifecycle": {
+      "bytes": 21012,
+      "sha256": "98c827be4a1b81da01d7131f4ed46544e7d25bebb069ce36ddcbb17b4fe6ffd2",
+      "exactMatchIncludingImmutables": true
+    },
+    "JobRegistrySettlement": {
+      "bytes": 23597,
+      "sha256": "def7941cfa5c0d403e37e138ff91e755fb1cb3d0f2f83e69800f85900865636c",
+      "exactMatchIncludingImmutables": true
+    },
+    "StakeManagerConfiguration": {
+      "bytes": 15756,
+      "sha256": "068e9d9f6be5a31c8f0bf18fc09b546da01571ba2662058bdd4d19e662436d4e",
+      "exactMatchIncludingImmutables": true
+    },
+    "StakeManagerStaking": {
+      "bytes": 11249,
+      "sha256": "3028786ada5d151eeed51f49e3ebb5b960e222e9aa672fcea779ea2d802319f1",
+      "exactMatchIncludingImmutables": true
+    },
+    "StakeManagerEscrow": {
+      "bytes": 14309,
+      "sha256": "06034abb9ba641a310d8351145facaecbe02b8858a1ff9e78aa6ea0f8f05f520",
+      "exactMatchIncludingImmutables": true
+    },
+    "StakeManagerSlashing": {
+      "bytes": 20492,
+      "sha256": "ca96d9163d27e71d0a7945770cacf497a518f8279d4aefa031632fb083d4c1c3",
+      "exactMatchIncludingImmutables": true
+    },
+    "ValidationModuleConfiguration": {
+      "bytes": 12463,
+      "sha256": "a86b8f0add7bf93b0b46cfa9de3a417ac664146dcafe4d5a17300e17d5608b94",
+      "exactMatchIncludingImmutables": true
+    },
+    "ValidationModuleVoting": {
+      "bytes": 16600,
+      "sha256": "162a7e64b6c1203d6fc0fc2a1e8f091c3777b9257c2b93d947fc082d7fe22211",
+      "exactMatchIncludingImmutables": true
+    },
+    "ValidationModuleSelection": {
+      "bytes": 13178,
+      "sha256": "f63783f8b695f68f5b689f844580cb20cb2d34841516e733d69232980416714f",
+      "exactMatchIncludingImmutables": true
+    }
+  },
+  "scopeLimits": [
+    "Provider-reported finalized-block observation, not an independently verified state proof.",
+    "Only enumerated views and selected temporary-wallet mappings; no complete event/role history.",
+    "No external token, ENS/NameWrapper/resolver ownership or off-chain credential audit.",
+    "No validator independence, live worker, real settlement or independent security certification.",
+    "Recorded policy comparisons do not establish economically optimal settings.",
+    "Does not authorize any configuration changes, withdrawals or unpause."
+  ],
+  "productionApproved": false,
+  "globalAuthorityTransferComplete": false,
+  "schema": "agijobsv0/configuration-evidence-extract/1",
+  "sourceFile": "CONFIGURATION_REPORT.json",
+  "sourceFileSha256": "e3e03830f53259829f6f275f622503047abbfcaa70500a210cd76449688f0743",
+  "evidenceClass": "operator-supplied finalized-block report; not independently replayed for this release",
+  "freshRpcReadPerformedForThisRecord": false,
+  "observations": {
+    "Deployer": {
+      "configurationHash": "0xc56498b62c87c9589bac2cb8f6d42efd7373251acf2db7a8c9826ce6b934cbea",
+      "deployed": true,
+      "owner": "0xa9ed0539c2fbc5c6bc15a2e168bd9bcd07c01201",
+      "registered": true,
+      "stagedModules": [
+        "0xfd970f60363984a6274342776d34423ec37b5432",
+        "0x72ec2ccc9403b643c4d6ca3ef05e06ca8faa3084",
+        "0xccfc0adae434446d1809f0551b34990de5fbe3ea",
+        "0x863b985a3a1a5fff292178ac91cd75d62f2b7664",
+        "0x946a84df069764f18ee4a472cc67890d585ac6bd",
+        "0xd3851e3525080d8914e282cc89ff40cd7d4be77d",
+        "0x1cfd99f0a4937bd279aba93c1184a270fee6fe21",
+        "0xb471be24a09345c503eaa55b2a490f4d9488a37e",
+        "0x243c6d5b1104d76c7dfe31418b14ea1a4db2a0d0",
+        "0xa6091c773f3e400124744cc2bb47f16d347ca091",
+        "0x0000000000000000000000000000000000000000",
+        "0xffe52fb27d66dcccdf03376b400d6e399dec3eec",
+        "0xcaef0cd10bf7dfb3894362d2ddd69d26d771bcd2",
+        "0xf8ebd86d66cdda12c3f881a38c5e5db4feceb2d1"
+      ]
+    },
+    "StakeManager": {
+      "autoStakeTuning": false,
+      "burnPct": 0,
+      "burnSlashPct": 0,
+      "disputeCount": 0,
+      "disputeModule": "0x946a84df069764f18ee4a472cc67890d585ac6bd",
+      "disputeWeight": 1,
+      "employerSlashPct": 10,
+      "feePct": 0,
+      "feePool": "0xa6091c773f3e400124744cc2bb47f16d347ca091",
+      "governance": "0xcaef0cd10bf7dfb3894362d2ddd69d26d771bcd2",
+      "hamiltonianFeed": "0x0000000000000000000000000000000000000000",
+      "hamiltonianWeight": 0,
+      "implementationModules": [
+        "0x6d46ff00d11acf432e4e8f882eabb9c974f0d72e",
+        "0x44da2237a94b4b07b9c1e3e44742c9af4aa77a7a",
+        "0x97a17aac4f6bd865d9e38d53411526b3291e88ae",
+        "0xebb4c5fb19fe64712fe8996638bef092aa8347f5"
+      ],
+      "jobRegistry": "0x72ec2ccc9403b643c4d6ca3ef05e06ca8faa3084",
+      "lastStakeTune": 1791752543,
+      "maxAGITypes": 50,
+      "maxMinStake": 0,
+      "maxStakePerAddress": 0,
+      "maxTotalPayoutPct": 200,
+      "minStake": "1000000000000000000000",
+      "minStakeFloor": "1000000000000000000000",
+      "operatorRewardPool": 0,
+      "operatorSlashPct": 0,
+      "owner": "0xcaef0cd10bf7dfb3894362d2ddd69d26d771bcd2",
+      "paused": true,
+      "pauser": "0x0000000000000000000000000000000000000000",
+      "pauserManager": "0x0000000000000000000000000000000000000000",
+      "stakeDecreasePct": 10,
+      "stakeDisputeThreshold": 10,
+      "stakeHamiltonianThreshold": 0,
+      "stakeIncreasePct": 20,
+      "stakeTempThreshold": 0,
+      "stakeTuneWindow": 604800,
+      "temperatureWeight": 0,
+      "thermostat": "0x0000000000000000000000000000000000000000",
+      "token": "0xa61a3b3a130a9c20768eebf97e21515a6046a1fa",
+      "treasury": "0xa9ed0539c2fbc5c6bc15a2e168bd9bcd07c01201",
+      "treasurySlashPct": 90,
+      "unbondingPeriod": 604800,
+      "validationModule": "0xccfc0adae434446d1809f0551b34990de5fbe3ea",
+      "validatorRewardPct": 0,
+      "validatorSlashRewardPct": 0,
+      "version": 2,
+      "validatorLockManagers(0x6c8b8897fb6b08b4070387233b89b3e9a94ed00e)": false,
+      "treasuryAllowlist(0x6c8b8897fb6b08b4070387233b89b3e9a94ed00e)": false
+    },
+    "JobRegistry": {
+      "agentAuthCacheDuration": 0,
+      "agentAuthCacheVersion": 1,
+      "auditModule": "0x0000000000000000000000000000000000000000",
+      "certificateNFT": "0xd3851e3525080d8914e282cc89ff40cd7d4be77d",
+      "disputeModule": "0x946a84df069764f18ee4a472cc67890d585ac6bd",
+      "expirationGracePeriod": 0,
+      "feePct": 5,
+      "feePool": "0xa6091c773f3e400124744cc2bb47f16d347ca091",
+      "governance": "0xcaef0cd10bf7dfb3894362d2ddd69d26d771bcd2",
+      "identityRegistry": "0xffe52fb27d66dcccdf03376b400d6e399dec3eec",
+      "implementationModules": [
+        "0x175b9087a8d088073c9896f0cbf7b072b6ed11bf",
+        "0x4f40ce804dd40a87667bdd0e03d8d5a2ba402fb6",
+        "0x70ebfba633e1519c9b4a5a659a9137fd31662d0e"
+      ],
+      "jobStake": "500000000000000000000",
+      "maxActiveJobsPerAgent": 0,
+      "maxJobDuration": 0,
+      "maxJobReward": 0,
+      "minAgentStake": 0,
+      "nextJobId": 0,
+      "owner": "0xcaef0cd10bf7dfb3894362d2ddd69d26d771bcd2",
+      "paused": true,
+      "pauser": "0x0000000000000000000000000000000000000000",
+      "pauserManager": "0x0000000000000000000000000000000000000000",
+      "reputationEngine": "0x863b985a3a1a5fff292178ac91cd75d62f2b7664",
+      "stakeManager": "0xfd970f60363984a6274342776d34423ec37b5432",
+      "taxPolicy": "0x0000000000000000000000000000000000000000",
+      "treasury": "0x0000000000000000000000000000000000000000",
+      "validationModule": "0xccfc0adae434446d1809f0551b34990de5fbe3ea",
+      "validatorRewardPct": 8,
+      "version": 2,
+      "acknowledgers(0x6c8b8897fb6b08b4070387233b89b3e9a94ed00e)": false
+    },
+    "ValidationModule": {
+      "DOMAIN_SEPARATOR": "0x0602f3b82e9774eb33aae678e5e58c8202ced2c9d276a82f356fce249cdab6a0",
+      "approvalThreshold": 66,
+      "autoApprovalTarget": true,
+      "commitWindow": 86400,
+      "earlyFinalizeDelay": 300,
+      "forceFinalizeGrace": 3600,
+      "identityRegistry": "0xffe52fb27d66dcccdf03376b400d6e399dec3eec",
+      "implementationModules": [
+        "0x53221f2df17ebd5f022dba1eacc856957074c723",
+        "0x04af6f94c7f74933beee4f6d39cec4b2d9f7a42a",
+        "0x5454686c3f6866fa958a4d6ea87c596e56bba625"
+      ],
+      "jobRegistry": "0x72ec2ccc9403b643c4d6ca3ef05e06ca8faa3084",
+      "maxValidatorPoolSize": 1000,
+      "maxValidators": 5,
+      "maxValidatorsPerJob": 100,
+      "minRevealValidators": 3,
+      "minValidators": 3,
+      "nonRevealBanBlocks": 7200,
+      "nonRevealPenaltyBps": 50,
+      "owner": "0xcaef0cd10bf7dfb3894362d2ddd69d26d771bcd2",
+      "paused": true,
+      "pauser": "0x0000000000000000000000000000000000000000",
+      "pauserManager": "0x0000000000000000000000000000000000000000",
+      "randaoCoordinator": "0x0000000000000000000000000000000000000000",
+      "reputationEngine": "0x863b985a3a1a5fff292178ac91cd75d62f2b7664",
+      "requiredValidatorApprovals": 2,
+      "revealQuorumPct": 67,
+      "revealWindow": 86400,
+      "selectionStrategy": 0,
+      "stakeManager": "0xfd970f60363984a6274342776d34423ec37b5432",
+      "validatorAuthCacheDuration": 0,
+      "validatorAuthCacheVersion": 0,
+      "validatorPoolRotation": 0,
+      "validatorPoolSampleSize": 100,
+      "validatorSlashingPercentage": 50,
+      "validatorsPerJob": 3,
+      "version": 2
+    },
+    "ReputationEngine": {
+      "owner": "0xcaef0cd10bf7dfb3894362d2ddd69d26d771bcd2",
+      "paused": true,
+      "pauser": "0x0000000000000000000000000000000000000000",
+      "pauserManager": "0x0000000000000000000000000000000000000000",
+      "premiumThreshold": 0,
+      "reputationWeight": "1000000000000000000",
+      "stakeManager": "0xfd970f60363984a6274342776d34423ec37b5432",
+      "stakeWeight": "1000000000000000000",
+      "validationRewardPercentage": 8,
+      "version": 2,
+      "callers(0x6c8b8897fb6b08b4070387233b89b3e9a94ed00e)": false
+    },
+    "ArbitratorCommittee": {
+      "absenteeSlash": 0,
+      "commitWindow": 86400,
+      "disputeModule": "0x946a84df069764f18ee4a472cc67890d585ac6bd",
+      "jobRegistry": "0x72ec2ccc9403b643c4d6ca3ef05e06ca8faa3084",
+      "owner": "0xcaef0cd10bf7dfb3894362d2ddd69d26d771bcd2",
+      "paused": true,
+      "pauser": "0x0000000000000000000000000000000000000000",
+      "pauserManager": "0x0000000000000000000000000000000000000000",
+      "revealWindow": 86400
+    },
+    "DisputeModule": {
+      "committee": "0xf8ebd86d66cdda12c3f881a38c5e5db4feceb2d1",
+      "disputeFee": "1000000000000000000",
+      "disputeWindow": 86400,
+      "governance": "0xcaef0cd10bf7dfb3894362d2ddd69d26d771bcd2",
+      "jobRegistry": "0x72ec2ccc9403b643c4d6ca3ef05e06ca8faa3084",
+      "owner": "0xcaef0cd10bf7dfb3894362d2ddd69d26d771bcd2",
+      "paused": true,
+      "pauser": "0x0000000000000000000000000000000000000000",
+      "pauserManager": "0x0000000000000000000000000000000000000000",
+      "stakeManager": "0xfd970f60363984a6274342776d34423ec37b5432",
+      "taxPolicy": "0x0000000000000000000000000000000000000000",
+      "totalModeratorWeight": 0,
+      "version": 2,
+      "moderatorWeights(0x6c8b8897fb6b08b4070387233b89b3e9a94ed00e)": 0
+    },
+    "CertificateNFT": {
+      "baseURILocked": false,
+      "jobRegistry": "0x72ec2ccc9403b643c4d6ca3ef05e06ca8faa3084",
+      "owner": "0xa9ed0539c2fbc5c6bc15a2e168bd9bcd07c01201",
+      "paused": false,
+      "stakeManager": "0xfd970f60363984a6274342776d34423ec37b5432",
+      "version": 2
+    },
+    "FeePool": {
+      "burnPct": 1,
+      "cumulativePerToken": 0,
+      "governance": "0xa9ed0539c2fbc5c6bc15a2e168bd9bcd07c01201",
+      "owner": "0xcaef0cd10bf7dfb3894362d2ddd69d26d771bcd2",
+      "paused": true,
+      "pauser": "0x0000000000000000000000000000000000000000",
+      "pauserManager": "0x0000000000000000000000000000000000000000",
+      "pendingFees": 0,
+      "rewardRole": 2,
+      "stakeManager": "0xfd970f60363984a6274342776d34423ec37b5432",
+      "taxPolicy": "0x0000000000000000000000000000000000000000",
+      "token": "0xa61a3b3a130a9c20768eebf97e21515a6046a1fa",
+      "treasury": "0xd76ad27a1bcf8652e7e46be603fa742fd1c10a99",
+      "version": 2,
+      "treasuryAllowlist(0x6c8b8897fb6b08b4070387233b89b3e9a94ed00e)": false,
+      "treasuryAllowlist(0xa9ed0539c2fbc5c6bc15a2e168bd9bcd07c01201)": false,
+      "treasuryAllowlist(0xd76ad27a1bcf8652e7e46be603fa742fd1c10a99)": true,
+      "rewarders(0x6c8b8897fb6b08b4070387233b89b3e9a94ed00e)": false
+    },
+    "IdentityRegistry": {
+      "agentMerkleRoot": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "agentRootNode": "0x2c9c6189b2e92da4d0407e9deb38ff6870729ad063af7e8576cb7b7898c88e2d",
+      "attestationRegistry": "0x0000000000000000000000000000000000000000",
+      "clubRootNode": "0x39eb848f88bdfb0a6371096249dd451f56859dfe2cd3ddeab1e26d5bb68ede16",
+      "ens": "0x00000000000c2e074ec69a0dfb2997ba6c7d2e1e",
+      "getAgentRootNodeAliases": [],
+      "getClubRootNodeAliases": [],
+      "getNodeRootNodeAliases": [],
+      "nameWrapper": "0xd4416b13d2b3a9abae7acd5d6c2bbdbe25686401",
+      "nodeRootNode": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "owner": "0xa9ed0539c2fbc5c6bc15a2e168bd9bcd07c01201",
+      "pendingOwner": "0x0000000000000000000000000000000000000000",
+      "reputationEngine": "0x863b985a3a1a5fff292178ac91cd75d62f2b7664",
+      "validatorMerkleRoot": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "version": 2,
+      "additionalAgents(0x6c8b8897fb6b08b4070387233b89b3e9a94ed00e)": false,
+      "additionalValidators(0x6c8b8897fb6b08b4070387233b89b3e9a94ed00e)": false,
+      "additionalNodeOperators(0x6c8b8897fb6b08b4070387233b89b3e9a94ed00e)": false
+    },
+    "PlatformRegistry": {
+      "minPlatformStake": "1000000000000000000",
+      "owner": "0xcaef0cd10bf7dfb3894362d2ddd69d26d771bcd2",
+      "paused": true,
+      "pauser": "0x0000000000000000000000000000000000000000",
+      "pauserManager": "0x0000000000000000000000000000000000000000",
+      "reputationEngine": "0x863b985a3a1a5fff292178ac91cd75d62f2b7664",
+      "stakeManager": "0xfd970f60363984a6274342776d34423ec37b5432",
+      "registrars(0x6c8b8897fb6b08b4070387233b89b3e9a94ed00e)": false
+    },
+    "JobRouter": {
+      "owner": "0xa9ed0539c2fbc5c6bc15a2e168bd9bcd07c01201",
+      "platformRegistry": "0x1cfd99f0a4937bd279aba93c1184a270fee6fe21",
+      "version": 2,
+      "registrars(0x6c8b8897fb6b08b4070387233b89b3e9a94ed00e)": false
+    },
+    "PlatformIncentives": {
+      "jobRouter": "0xb471be24a09345c503eaa55b2a490f4d9488a37e",
+      "maxDiscountPct": 20,
+      "owner": "0xa9ed0539c2fbc5c6bc15a2e168bd9bcd07c01201",
+      "platformRegistry": "0x1cfd99f0a4937bd279aba93c1184a270fee6fe21",
+      "stakeManager": "0xfd970f60363984a6274342776d34423ec37b5432"
+    },
+    "SystemPause": {
+      "activePauser": "0x0000000000000000000000000000000000000000",
+      "arbitratorCommittee": "0xf8ebd86d66cdda12c3f881a38c5e5db4feceb2d1",
+      "disputeModule": "0x946a84df069764f18ee4a472cc67890d585ac6bd",
+      "feePool": "0xa6091c773f3e400124744cc2bb47f16d347ca091",
+      "governance": "0xa9ed0539c2fbc5c6bc15a2e168bd9bcd07c01201",
+      "jobRegistry": "0x72ec2ccc9403b643c4d6ca3ef05e06ca8faa3084",
+      "owner": "0xa9ed0539c2fbc5c6bc15a2e168bd9bcd07c01201",
+      "platformRegistry": "0x1cfd99f0a4937bd279aba93c1184a270fee6fe21",
+      "reputationEngine": "0x863b985a3a1a5fff292178ac91cd75d62f2b7664",
+      "stakeManager": "0xfd970f60363984a6274342776d34423ec37b5432",
+      "validationModule": "0xccfc0adae434446d1809f0551b34990de5fbe3ea"
+    },
+    "JobRegistryConfiguration": {
+      "governance": "0xa9ed0539c2fbc5c6bc15a2e168bd9bcd07c01201",
+      "moduleId": "0x1657183a553db9cb284464240d01b812c1bd8e864a57484e51c64c1d59d1578a",
+      "owner": "0xa9ed0539c2fbc5c6bc15a2e168bd9bcd07c01201",
+      "acknowledgers(0x6c8b8897fb6b08b4070387233b89b3e9a94ed00e)": false
+    },
+    "JobRegistryLifecycle": {
+      "governance": "0xa9ed0539c2fbc5c6bc15a2e168bd9bcd07c01201",
+      "moduleId": "0x4a86ca7bdd8d0388230b816fffa7457f1df262d704651db73c6f4489da4250a8",
+      "owner": "0xa9ed0539c2fbc5c6bc15a2e168bd9bcd07c01201",
+      "acknowledgers(0x6c8b8897fb6b08b4070387233b89b3e9a94ed00e)": false
+    },
+    "JobRegistrySettlement": {
+      "governance": "0xa9ed0539c2fbc5c6bc15a2e168bd9bcd07c01201",
+      "moduleId": "0x49b64724142ed70da171985ab8490acc186a7684e4b7c5b1bbd5d81d3c8fd48d",
+      "owner": "0xa9ed0539c2fbc5c6bc15a2e168bd9bcd07c01201",
+      "acknowledgers(0x6c8b8897fb6b08b4070387233b89b3e9a94ed00e)": false
+    },
+    "StakeManagerConfiguration": {
+      "governance": "0xa9ed0539c2fbc5c6bc15a2e168bd9bcd07c01201",
+      "moduleId": "0x87627c3b4460554ab5fd89c2ac03073f4200a1c76932203066b83ff2c2d807ab",
+      "owner": "0xa9ed0539c2fbc5c6bc15a2e168bd9bcd07c01201",
+      "validatorLockManagers(0x6c8b8897fb6b08b4070387233b89b3e9a94ed00e)": false,
+      "treasuryAllowlist(0x6c8b8897fb6b08b4070387233b89b3e9a94ed00e)": false
+    },
+    "StakeManagerStaking": {
+      "governance": "0xa9ed0539c2fbc5c6bc15a2e168bd9bcd07c01201",
+      "moduleId": "0x29beb7e461be3c934763178327c2115c0ee4aff9ef075f7406fcbc983e201f31",
+      "owner": "0xa9ed0539c2fbc5c6bc15a2e168bd9bcd07c01201",
+      "validatorLockManagers(0x6c8b8897fb6b08b4070387233b89b3e9a94ed00e)": false,
+      "treasuryAllowlist(0x6c8b8897fb6b08b4070387233b89b3e9a94ed00e)": false
+    },
+    "StakeManagerEscrow": {
+      "governance": "0xa9ed0539c2fbc5c6bc15a2e168bd9bcd07c01201",
+      "moduleId": "0xb74685a7ac47a856d0286ade5d8e29f83c680d2c5a78a79b54c777cd5eff9c93",
+      "owner": "0xa9ed0539c2fbc5c6bc15a2e168bd9bcd07c01201",
+      "validatorLockManagers(0x6c8b8897fb6b08b4070387233b89b3e9a94ed00e)": false,
+      "treasuryAllowlist(0x6c8b8897fb6b08b4070387233b89b3e9a94ed00e)": false
+    },
+    "StakeManagerSlashing": {
+      "governance": "0xa9ed0539c2fbc5c6bc15a2e168bd9bcd07c01201",
+      "moduleId": "0x7263e7bd6d9614c228fc9f2a51e1597b7a6c36c077165e82dc711c00e646f4e8",
+      "owner": "0xa9ed0539c2fbc5c6bc15a2e168bd9bcd07c01201",
+      "validatorLockManagers(0x6c8b8897fb6b08b4070387233b89b3e9a94ed00e)": false,
+      "treasuryAllowlist(0x6c8b8897fb6b08b4070387233b89b3e9a94ed00e)": false
+    },
+    "ValidationModuleConfiguration": {
+      "moduleId": "0xb6d42aed59f0cffb0b6a38209f4cd6e8807303d2ed1a49afa4a0579e0a08756b",
+      "owner": "0xa9ed0539c2fbc5c6bc15a2e168bd9bcd07c01201"
+    },
+    "ValidationModuleVoting": {
+      "moduleId": "0xed4f64113ac1793f826233f3745f1e7eae27c921ef4129111d9bc0839202c0f0",
+      "owner": "0xa9ed0539c2fbc5c6bc15a2e168bd9bcd07c01201"
+    },
+    "ValidationModuleSelection": {
+      "moduleId": "0xe9fc583187973eb5dca33c13bae0840c0999e04b7b9e691a3541f0e8cfbba0fa",
+      "owner": "0xa9ed0539c2fbc5c6bc15a2e168bd9bcd07c01201"
+    }
+  },
+  "validatorPool": [],
+  "accountCode": {
+    "temporary": {
+      "address": "0x6c8B8897Fb6b08B4070387233B89b3E9A94eD00E",
+      "bytes": 23,
+      "code": "0xef010063c0c19a282a1b52b07dd5a65b58948a07dae32b",
+      "sha256": "7652a45dda6a3f58cf50f4b74a64b449053dba0d37db5c509169b6447b03dcd8",
+      "delegatedImplementation": "0x63c0c19a282a1b52b07dd5a65b58948a07dae32b"
+    },
+    "ledger": {
+      "address": "0xa9eD0539c2fbc5C6BC15a2E168bd9BCd07c01201",
+      "bytes": 0,
+      "code": "0x",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "treasury": {
+      "address": "0xd76AD27a1Bcf8652e7e46BE603FA742FD1c10A99",
+      "bytes": 0,
+      "code": "0x",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "laterRewardCapObservation": {
+    "evidenceClass": "operator-supplied Etherscan transaction and read-contract screenshots; not a new finalized RPC read",
+    "transactionHash": "0xafe09f8ab789a118716e26953ebeeb5c2f5c0ce0120792d73352e12dd0b016f6",
+    "block": 26180024,
+    "timestamp": "2026-10-13T00:36:35Z",
+    "displayedStatus": "Success",
+    "target": "0x72ec2ccc9403b643c4d6ca3ef05e06ca8faa3084",
+    "method": "setMaxJobReward(uint256) via SystemPause.executeGovernanceCall",
+    "maxJobRewardBaseUnits": "88888888000000000000000000",
+    "maxJobRewardAGIALPHA": "88888888",
+    "sourceScreenshots": [
+      "Screenshot from 2026-10-12 20-37-33.png",
+      "Screenshot from 2026-10-12 20-37-55.png"
+    ],
+    "jobStakePctImplemented": false,
+    "jobStakeBaseUnitsLastFinalizedObservation": "500000000000000000000"
+  }
+}

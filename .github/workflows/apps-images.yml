@@ -4,12 +4,20 @@ on:
   workflow_dispatch:
   pull_request:
     paths:
+      - 'package.json'
+      - '.github/workflows/source-release.yml'
+      - 'scripts/release/qualify-source-release.cjs'
+      - 'scripts/release/publish-source-release.cjs'
       - 'apps/**'
       - '.nvmrc'
       - '.github/workflows/apps-images.yml'
   push:
     branches: [main]
     paths:
+      - 'package.json'
+      - '.github/workflows/source-release.yml'
+      - 'scripts/release/qualify-source-release.cjs'
+      - 'scripts/release/publish-source-release.cjs'
       - 'apps/**'
       - '.nvmrc'
       - '.github/workflows/apps-images.yml'

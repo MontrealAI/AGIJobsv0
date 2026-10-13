@@ -334,6 +334,7 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
       'docs/production/readiness-2026-10-04.md',
       'docs/production/dependency-review-2026-10-04.md',
       'docs/production/readiness.md',
+      'docs/production/mainnet-deployment-2026-10-12.md',
       'docs/production/platform-update-2026-10-07.md',
       'docs/production/platform-update-2026-10-08.md',
       'docs/container-operations.md',

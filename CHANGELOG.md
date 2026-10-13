@@ -1,5 +1,25 @@
 # Changelog
 
+## v2.1.0-rc.5
+
+Mainnet configuration evidence and SUCCESSOR Ω workshop source candidate (2026-10-13 UTC).
+
+- Publish a dated, evidence-qualified inventory of all 24 existing Ethereum mainnet contracts, their deployed rc.4 source identity, constructor arguments and compiler/artifact provenance.
+- Record completion of **24/24 exact-match Etherscan source verifications**, including the final StakeManagerEscrow success; preserve earlier partial results as history.
+- Separate recorded paused governance and runtime-template comparison from explorer source publication and live-service commissioning; retain unresolved ownership and commissioning boundaries.
+- Link the address directory from the repository overview, readiness record, deployment guides and generated Pages documentation. The existing AGIALPHA deployment remains distinct from AGIJobManager/ENSJobPages USDC.
+- Include the previously merged English/French garden-club example (#3923), shared AGIALPHA directory (#3926), and SUCCESSOR Ω workshop (#3927).
+- Reconcile the later finalized-block Ledger handoff and runtime report, FeePool treasury, and separate 88,888,888 AGIALPHA cap screenshots. Keep fixed 500 AGIALPHA job stake, empty validator pool and scope limits explicit.
+- Add exact-commit CI gating and checksummed provenance for unsigned source-only publication.
+- Stabilize the existing concurrent-budget regression test by waiting for the first driver call before testing the outstanding reservation; runtime enforcement and assertions remain intact.
+- Reconcile the explicit mainnet operational address book with all 24 deployed contracts, including ten implementations; mark disabled/absent modules as zero, document the existing owner-verifier address-book override, and prevent zero-valued monitoring templates from replacing recorded addresses.
+- Bind the explicit mainnet book to mainnet with standard network/chain fields; monitoring ignores a book tagged for another network. Preserve the protected owner-verifier source and select the reviewed address book explicitly for mainnet reports.
+- Align the mainnet parameter-change sentinel with disabled TaxPolicy: monitor the three deployed emitters and retain both TaxPolicyUpdated event conditions; validate and render all sentinel templates against the recorded inventory.
+
+- Keep generic transaction defaults empty (zero addresses); select `docs/deployment-addresses.mainnet.json` explicitly for mainnet reports and monitoring, preserving protected scripts until transaction chain/topology guards are reviewed.
+
+This source prerelease does not change Solidity, deployment configuration, settlement rules or dependencies, and sends no blockchain transaction. Production signing and independent security/provider/worker commissioning remain unresolved. All existing demos and flowcharts are preserved.
+
 ## v2.1.0-rc.4
 
 Dependency remediation and storage-publisher migration source candidate (2026-10-11).

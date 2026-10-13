@@ -1,0 +1,872 @@
+{
+  "schema": "agijobsv0/mainnet-deployment-record/1",
+  "recordedAt": "2026-10-12T17:13:49.175146+00:00",
+  "repository": "MontrealAI/AGIJobsv0",
+  "chainId": 1,
+  "network": "ethereum-mainnet",
+  "deploymentSource": {
+    "commit": "b4c5b66ea05a6bb27f1f1cb197f055c179bbd38e",
+    "tree": "4c95939614f0b21681ac94915e5365623f5bee48",
+    "tag": "source-v2.1.0-rc.4",
+    "sourceConfigSha256": "5c16902d703dc8694c2f4b20deaaa98329ed2541d46f5051c6ca112d30ebe4be"
+  },
+  "token": {
+    "address": "0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA",
+    "decimals": 18,
+    "symbol": "AGIALPHA",
+    "name": "AGI ALPHA"
+  },
+  "coordinator": "0xeF1Be4B8251a9C4a584140C113508B95fd8B2543",
+  "governance": "0xa9eD0539c2fbc5C6BC15a2E168bd9BCd07c01201",
+  "taxPolicyEnabled": false,
+  "productionApproved": false,
+  "liveIntakeOpen": false,
+  "recordedFinalization": {
+    "method": "deployPaused",
+    "transactionHash": "0x982bb93de4d3922e3cdfd2886468b5d4943344c3b852e2741b3c6bdcfa1aeb5f",
+    "evidence": "Operator deployment transcript; not freshly replayed by this publication."
+  },
+  "recordedReadback": {
+    "referenceBlock": 26172980,
+    "matchedRuntimeTemplates": 24,
+    "pausedManagedModules": 8,
+    "managedModuleOwner": "SystemPause",
+    "governanceReadback": "Ledger controls SystemPause and three direct-owner modules",
+    "source": "Pasted text(20261012-010652).txt, final live verification run",
+    "freshRpcReadPerformedForThisRecord": false,
+    "atomicSnapshot": false,
+    "immutableValuesIndependentlyVerified": false,
+    "coordinatorOwnershipReconciledForThisRecord": false
+  },
+  "explorerSummary": {
+    "exactMatch": 24,
+    "unverified": 0,
+    "unknown": 0,
+    "observedFrom": "2026-10-12T16:23:34.497469+00:00",
+    "observedThrough": "2026-10-12T17:12:43.458780+00:00",
+    "method": "Read-only HTTPS GET of every Etherscan contract page, followed by a fresh StakeManagerEscrow page check after the operator reported verification success; exact-match labels and contract names checked. No source submission by this publication.",
+    "limitations": "Dated explorer observations, not a security audit or live ownership/pause proof."
+  },
+  "evidenceSources": [
+    {
+      "name": "manifest.json",
+      "sha256RecordedInVerificationJournal": "77ff7e3fb0996d33228cc9a52b6913f35ea078152f5018e08490f15886fdb005",
+      "scope": "Original 24-address inventory, constructor arguments, runtime templates and compiler/artifact identities."
+    },
+    {
+      "name": "mainnet-resume.json",
+      "sha256RecordedInManifest": "16df5dadd4d6960eb66d7096b8483406fec88c431e44ddc3b0e3ecbf46d551ac",
+      "scope": "Original deployment report identity only; full report is retained by operator."
+    },
+    {
+      "name": "verification-state-v1.5.json",
+      "updatedAt": "2026-10-12T02:47:18.503825+00:00",
+      "scope": "Historical 19 verified / 5 failed API snapshot; superseded for current explorer status by per-address observations."
+    },
+    {
+      "name": "Screenshot from 2026-10-12 12-11-41.png",
+      "scope": "Escrow browser attempt returned err_code_5, empty selected contract name and 0x compiled bytecode. Does not establish a Solidity defect."
+    },
+    {
+      "name": "image(20261012-171043).png",
+      "sha256": "108333319ec2e99a25cf04bd1a077b49a61ec9be3a907a3ea6104a355ef13b28",
+      "scope": "Operator-supplied Etherscan success screen for StakeManagerEscrow, received 12 October 2026; independently corroborated by the exact-match contract page observation at 2026-10-12T17:12:43.458780+00:00."
+    }
+  ],
+  "contracts": [
+    {
+      "name": "Deployer",
+      "address": "0xeF1Be4B8251a9C4a584140C113508B95fd8B2543",
+      "source": "contracts/v2/Deployer.sol:Deployer",
+      "encodedArgs": "",
+      "solcLongVersion": "v0.8.25+commit.b61c2a91",
+      "optimizerRuns": 200,
+      "evmVersion": "cancun",
+      "buildInfoSha256": "5f9fccbca58b1a25275c4de75dc79a38e5b987dfba45212546836cd39045b12d",
+      "compilerInputHash": "7245c609d82b5661375f942b9ae60fa7caf9478197ef34bcbc32bdc1a79a8813",
+      "artifactSha256": "405d9ec0a63b51226c4f74831c0d85acc456f458a8b6027900ef541a384cc12c",
+      "explorerUrl": "https://etherscan.io/address/0xeF1Be4B8251a9C4a584140C113508B95fd8B2543#code",
+      "runtimeTemplateBytes": 12435,
+      "runtimeTemplateSha256": "0295367487c747258536747b9bbd6c760349bffe141fe21606ca71d823d1d694",
+      "runtimeComparison": "Operator-reported template match; compiler immutable locations were masked. Not an independent immutable-value or atomic-state proof.",
+      "explorer": {
+        "name": "Deployer",
+        "address": "0xeF1Be4B8251a9C4a584140C113508B95fd8B2543",
+        "url": "https://etherscan.io/address/0xeF1Be4B8251a9C4a584140C113508B95fd8B2543#code",
+        "observedAt": "2026-10-12T16:23:34.940743+00:00",
+        "sourceStatus": "verified-exact-match",
+        "contractName": "Deployer",
+        "pageSha256": "60a45c7e691fb17615a6289b2c22ea1dfddb990267da8cb5119fb15207d34a2e",
+        "evidenceText": "Source Code Verified Exact Match",
+        "compilerVersion": "v0.8.25+commit.b61c2a91"
+      },
+      "historicalApiResult": {
+        "status": "verified",
+        "updatedAt": "2026-10-12T02:34:12.310930+00:00",
+        "inputHash": "70487ebd3f538ee826f68c5357318ca590cb086c7205877e77a3ef853dbc15ea"
+      }
+    },
+    {
+      "name": "StakeManager",
+      "address": "0xFd970F60363984A6274342776D34423EC37b5432",
+      "source": "contracts/v2/StakeManager.sol:StakeManager",
+      "encodedArgs": "00000000000000000000000000000000000000000000003635c9adc5dea0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000ef1be4b8251a9c4a584140c113508b95fd8b25430000000000000000000000006d46ff00d11acf432e4e8f882eabb9c974f0d72e00000000000000000000000044da2237a94b4b07b9c1e3e44742c9af4aa77a7a00000000000000000000000097a17aac4f6bd865d9e38d53411526b3291e88ae000000000000000000000000ebb4c5fb19fe64712fe8996638bef092aa8347f5",
+      "solcLongVersion": "v0.8.25+commit.b61c2a91",
+      "optimizerRuns": 200,
+      "evmVersion": "cancun",
+      "buildInfoSha256": "5f9fccbca58b1a25275c4de75dc79a38e5b987dfba45212546836cd39045b12d",
+      "compilerInputHash": "7245c609d82b5661375f942b9ae60fa7caf9478197ef34bcbc32bdc1a79a8813",
+      "artifactSha256": "2b5bb7d2406309968c0b921659bc56be37150ab808c7f6dfcfbd2f6cc74c197f",
+      "explorerUrl": "https://etherscan.io/address/0xFd970F60363984A6274342776D34423EC37b5432#code",
+      "runtimeTemplateBytes": 7881,
+      "runtimeTemplateSha256": "f5a14f1c5241b1e327b32dc6d0dcfe6a54acc79896b68d8f838fc42bd2cb7a45",
+      "runtimeComparison": "Operator-reported template match; compiler immutable locations were masked. Not an independent immutable-value or atomic-state proof.",
+      "explorer": {
+        "name": "StakeManager",
+        "address": "0xFd970F60363984A6274342776D34423EC37b5432",
+        "url": "https://etherscan.io/address/0xFd970F60363984A6274342776D34423EC37b5432#code",
+        "observedAt": "2026-10-12T16:23:34.524109+00:00",
+        "sourceStatus": "verified-exact-match",
+        "contractName": "StakeManager",
+        "pageSha256": "7c71fae4d0477e3a8b23b25c3adbab3f12206168b6e2fbf33240bc3ca9b909ef",
+        "evidenceText": "Source Code Verified Exact Match",
+        "compilerVersion": "v0.8.25+commit.b61c2a91"
+      },
+      "historicalApiResult": {
+        "status": "failed",
+        "updatedAt": "2026-10-12T02:37:24.093973+00:00",
+        "inputHash": "d29cd928f8421d8ce6240a52033c6c3d4f5be87b08a89e915865f6d18e1b3d87"
+      }
+    },
+    {
+      "name": "JobRegistry",
+      "address": "0x72Ec2CcC9403b643C4d6CA3eF05E06ca8faa3084",
+      "source": "contracts/v2/JobRegistry.sol:JobRegistry",
+      "encodedArgs": "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001c0000000000000000000000000ef1be4b8251a9c4a584140c113508b95fd8b2543000000000000000000000000175b9087a8d088073c9896f0cbf7b072b6ed11bf0000000000000000000000004f40ce804dd40a87667bdd0e03d8d5a2ba402fb600000000000000000000000070ebfba633e1519c9b4a5a659a9137fd31662d0e0000000000000000000000000000000000000000000000000000000000000000",
+      "solcLongVersion": "v0.8.25+commit.b61c2a91",
+      "optimizerRuns": 200,
+      "evmVersion": "cancun",
+      "buildInfoSha256": "5f9fccbca58b1a25275c4de75dc79a38e5b987dfba45212546836cd39045b12d",
+      "compilerInputHash": "7245c609d82b5661375f942b9ae60fa7caf9478197ef34bcbc32bdc1a79a8813",
+      "artifactSha256": "57f032602f5e11ed35ae6009c5e11d96ffb3d90839244e79b2d4a42e3cf8ab28",
+      "explorerUrl": "https://etherscan.io/address/0x72Ec2CcC9403b643C4d6CA3eF05E06ca8faa3084#code",
+      "runtimeTemplateBytes": 8004,
+      "runtimeTemplateSha256": "7079f61031fecc236f344c766e4599724fa1d8cf676ff64973ee4df4f818bde8",
+      "runtimeComparison": "Operator-reported template match; compiler immutable locations were masked. Not an independent immutable-value or atomic-state proof.",
+      "explorer": {
+        "name": "JobRegistry",
+        "address": "0x72Ec2CcC9403b643C4d6CA3eF05E06ca8faa3084",
+        "url": "https://etherscan.io/address/0x72Ec2CcC9403b643C4d6CA3eF05E06ca8faa3084#code",
+        "observedAt": "2026-10-12T16:23:34.497469+00:00",
+        "sourceStatus": "verified-exact-match",
+        "contractName": "JobRegistry",
+        "pageSha256": "343867da3aaa948399c36d7830e267af6e51c9703325185f5941bb195d8ca458",
+        "evidenceText": "Source Code Verified Exact Match",
+        "compilerVersion": "v0.8.25+commit.b61c2a91"
+      },
+      "historicalApiResult": {
+        "status": "verified",
+        "updatedAt": "2026-10-12T02:37:25.573445+00:00",
+        "inputHash": "ff2c9f42da210349b88a1000f7b0544450743fe5242827f9ec45cde96991da73"
+      }
+    },
+    {
+      "name": "ValidationModule",
+      "address": "0xCcfC0Adae434446D1809f0551b34990dE5fBe3eA",
+      "source": "contracts/v2/ValidationModule.sol:ValidationModule",
+      "encodedArgs": "00000000000000000000000072ec2ccc9403b643c4d6ca3ef05e06ca8faa3084000000000000000000000000fd970f60363984a6274342776d34423ec37b54320000000000000000000000000000000000000000000000000000000000015180000000000000000000000000000000000000000000000000000000000001518000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000014000000000000000000000000053221f2df17ebd5f022dba1eacc856957074c72300000000000000000000000004af6f94c7f74933beee4f6d39cec4b2d9f7a42a0000000000000000000000005454686c3f6866fa958a4d6ea87c596e56bba6250000000000000000000000000000000000000000000000000000000000000000",
+      "solcLongVersion": "v0.8.25+commit.b61c2a91",
+      "optimizerRuns": 200,
+      "evmVersion": "cancun",
+      "buildInfoSha256": "5f9fccbca58b1a25275c4de75dc79a38e5b987dfba45212546836cd39045b12d",
+      "compilerInputHash": "7245c609d82b5661375f942b9ae60fa7caf9478197ef34bcbc32bdc1a79a8813",
+      "artifactSha256": "7a7bee761a21a37dc1649daeb6370c8e6611714bfa92ff2667c6aa965f7369bc",
+      "explorerUrl": "https://etherscan.io/address/0xCcfC0Adae434446D1809f0551b34990dE5fBe3eA#code",
+      "runtimeTemplateBytes": 6368,
+      "runtimeTemplateSha256": "4a19f79c4f57376133642ced5fd09a1c46556569b5a5fa6adade4cb00328deba",
+      "runtimeComparison": "Operator-reported template match; compiler immutable locations were masked. Not an independent immutable-value or atomic-state proof.",
+      "explorer": {
+        "name": "ValidationModule",
+        "address": "0xCcfC0Adae434446D1809f0551b34990dE5fBe3eA",
+        "url": "https://etherscan.io/address/0xCcfC0Adae434446D1809f0551b34990dE5fBe3eA#code",
+        "observedAt": "2026-10-12T16:23:39.833724+00:00",
+        "sourceStatus": "verified-exact-match",
+        "contractName": "ValidationModule",
+        "pageSha256": "9d60f881ae4632c85f037f35b4af608a3459c94904540a316c36922f7af79c5d",
+        "evidenceText": "Source Code Verified Exact Match",
+        "compilerVersion": "v0.8.25+commit.b61c2a91"
+      },
+      "historicalApiResult": {
+        "status": "verified",
+        "updatedAt": "2026-10-12T02:37:26.864364+00:00",
+        "inputHash": "acbc9896387f28d3b2cce68edc4ff60966f08202a0bf14cd9cb454ac1608866c"
+      }
+    },
+    {
+      "name": "ReputationEngine",
+      "address": "0x863B985A3a1a5fFf292178aC91Cd75d62F2b7664",
+      "source": "contracts/v2/ReputationEngine.sol:ReputationEngine",
+      "encodedArgs": "000000000000000000000000fd970f60363984a6274342776d34423ec37b5432",
+      "solcLongVersion": "v0.8.25+commit.b61c2a91",
+      "optimizerRuns": 200,
+      "evmVersion": "cancun",
+      "buildInfoSha256": "5f9fccbca58b1a25275c4de75dc79a38e5b987dfba45212546836cd39045b12d",
+      "compilerInputHash": "7245c609d82b5661375f942b9ae60fa7caf9478197ef34bcbc32bdc1a79a8813",
+      "artifactSha256": "d4fed6c4de22c6fe28ed75dff234cc20a8c2a733aa4c49acb30a2022dc5b4ac7",
+      "explorerUrl": "https://etherscan.io/address/0x863B985A3a1a5fFf292178aC91Cd75d62F2b7664#code",
+      "runtimeTemplateBytes": 6744,
+      "runtimeTemplateSha256": "b32a22ac9eb0d2222e0c9d1484362020bf883f993d7a6d539b9694da73883580",
+      "runtimeComparison": "Operator-reported template match; compiler immutable locations were masked. Not an independent immutable-value or atomic-state proof.",
+      "explorer": {
+        "name": "ReputationEngine",
+        "address": "0x863B985A3a1a5fFf292178aC91Cd75d62F2b7664",
+        "url": "https://etherscan.io/address/0x863B985A3a1a5fFf292178aC91Cd75d62F2b7664#code",
+        "observedAt": "2026-10-12T16:23:39.633718+00:00",
+        "sourceStatus": "verified-exact-match",
+        "contractName": "ReputationEngine",
+        "pageSha256": "884b469eb6f525fc2a77b930414ed6ead861952d210ac7f277ffb8aedb63ff9a",
+        "evidenceText": "Source Code Verified Exact Match",
+        "compilerVersion": "v0.8.25+commit.b61c2a91"
+      },
+      "historicalApiResult": {
+        "status": "verified",
+        "updatedAt": "2026-10-12T02:37:28.087391+00:00",
+        "inputHash": "0410ceb6610f7b4bee6a1a86296df3def8e1463735c39b7a84d1babbdfdcfe9f"
+      }
+    },
+    {
+      "name": "ArbitratorCommittee",
+      "address": "0xF8eBD86d66CDda12C3F881a38c5e5db4FeCeb2d1",
+      "source": "contracts/v2/ArbitratorCommittee.sol:ArbitratorCommittee",
+      "encodedArgs": "00000000000000000000000072ec2ccc9403b643c4d6ca3ef05e06ca8faa30840000000000000000000000000000000000000000000000000000000000000000",
+      "solcLongVersion": "v0.8.25+commit.b61c2a91",
+      "optimizerRuns": 200,
+      "evmVersion": "cancun",
+      "buildInfoSha256": "5f9fccbca58b1a25275c4de75dc79a38e5b987dfba45212546836cd39045b12d",
+      "compilerInputHash": "7245c609d82b5661375f942b9ae60fa7caf9478197ef34bcbc32bdc1a79a8813",
+      "artifactSha256": "b38c0525d8fa11f57556daff280d8b454d4b8b12a78dd8dc89d72b4b5cac42f0",
+      "explorerUrl": "https://etherscan.io/address/0xF8eBD86d66CDda12C3F881a38c5e5db4FeCeb2d1#code",
+      "runtimeTemplateBytes": 4993,
+      "runtimeTemplateSha256": "94195e305477eb6f3e762c16a8e21314673eaea08477e01475250beacd6a70bb",
+      "runtimeComparison": "Operator-reported template match; compiler immutable locations were masked. Not an independent immutable-value or atomic-state proof.",
+      "explorer": {
+        "name": "ArbitratorCommittee",
+        "address": "0xF8eBD86d66CDda12C3F881a38c5e5db4FeCeb2d1",
+        "url": "https://etherscan.io/address/0xF8eBD86d66CDda12C3F881a38c5e5db4FeCeb2d1#code",
+        "observedAt": "2026-10-12T16:23:39.924881+00:00",
+        "sourceStatus": "verified-exact-match",
+        "contractName": "ArbitratorCommittee",
+        "pageSha256": "fa737a9b23c4798dd6d26b80ed999355cdfdf576a9744b39c8047645dbb3eb8a",
+        "evidenceText": "Source Code Verified Exact Match",
+        "compilerVersion": "v0.8.25+commit.b61c2a91"
+      },
+      "historicalApiResult": {
+        "status": "verified",
+        "updatedAt": "2026-10-12T02:37:29.389797+00:00",
+        "inputHash": "f9826a6708caf028319b027b8f3a5fc391cd9b6882c41d34e817ce6420e639c1"
+      }
+    },
+    {
+      "name": "DisputeModule",
+      "address": "0x946A84df069764f18eE4A472Cc67890d585AC6Bd",
+      "source": "contracts/v2/modules/DisputeModule.sol:DisputeModule",
+      "encodedArgs": "00000000000000000000000072ec2ccc9403b643c4d6ca3ef05e06ca8faa308400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f8ebd86d66cdda12c3f881a38c5e5db4feceb2d1000000000000000000000000ef1be4b8251a9c4a584140c113508b95fd8b2543",
+      "solcLongVersion": "v0.8.25+commit.b61c2a91",
+      "optimizerRuns": 200,
+      "evmVersion": "cancun",
+      "buildInfoSha256": "5f9fccbca58b1a25275c4de75dc79a38e5b987dfba45212546836cd39045b12d",
+      "compilerInputHash": "7245c609d82b5661375f942b9ae60fa7caf9478197ef34bcbc32bdc1a79a8813",
+      "artifactSha256": "ba19a25574f1463d92180b631455072a33e5ea566843c5c8c4b61161f171ce8c",
+      "explorerUrl": "https://etherscan.io/address/0x946A84df069764f18eE4A472Cc67890d585AC6Bd#code",
+      "runtimeTemplateBytes": 10660,
+      "runtimeTemplateSha256": "27eba8b04f35d22b937e3ab908015ba42d62e4a5a4bfee8a0583991e68fcf824",
+      "runtimeComparison": "Operator-reported template match; compiler immutable locations were masked. Not an independent immutable-value or atomic-state proof.",
+      "explorer": {
+        "name": "DisputeModule",
+        "address": "0x946A84df069764f18eE4A472Cc67890d585AC6Bd",
+        "url": "https://etherscan.io/address/0x946A84df069764f18eE4A472Cc67890d585AC6Bd#code",
+        "observedAt": "2026-10-12T16:23:46.067270+00:00",
+        "sourceStatus": "verified-exact-match",
+        "contractName": "DisputeModule",
+        "pageSha256": "346adcd994066f34bf7f12764842428b26aa4ef17b222cdf9f70a1064e3fe6cb",
+        "evidenceText": "Source Code Verified Exact Match",
+        "compilerVersion": "v0.8.25+commit.b61c2a91"
+      },
+      "historicalApiResult": {
+        "status": "verified",
+        "updatedAt": "2026-10-12T02:37:30.780155+00:00",
+        "inputHash": "ba6fe12966dbed408a9ff4c60743188e160b3702446a6d8d04c5710908304dc3"
+      }
+    },
+    {
+      "name": "CertificateNFT",
+      "address": "0xd3851E3525080d8914e282Cc89Ff40cD7D4be77D",
+      "source": "contracts/v2/CertificateNFT.sol:CertificateNFT",
+      "encodedArgs": "000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000004436572740000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000044345525400000000000000000000000000000000000000000000000000000000",
+      "solcLongVersion": "v0.8.25+commit.b61c2a91",
+      "optimizerRuns": 200,
+      "evmVersion": "cancun",
+      "buildInfoSha256": "5f9fccbca58b1a25275c4de75dc79a38e5b987dfba45212546836cd39045b12d",
+      "compilerInputHash": "7245c609d82b5661375f942b9ae60fa7caf9478197ef34bcbc32bdc1a79a8813",
+      "artifactSha256": "0148d17a62c8c0d46f24ea7e656c04e680c6b25ac7c620987531909738d6469c",
+      "explorerUrl": "https://etherscan.io/address/0xd3851E3525080d8914e282Cc89Ff40cD7D4be77D#code",
+      "runtimeTemplateBytes": 8641,
+      "runtimeTemplateSha256": "37fa4148694be67951706333c3f3e45b76d3149dd13492004653e9b27d138986",
+      "runtimeComparison": "Operator-reported template match; compiler immutable locations were masked. Not an independent immutable-value or atomic-state proof.",
+      "explorer": {
+        "name": "CertificateNFT",
+        "address": "0xd3851E3525080d8914e282Cc89Ff40cD7D4be77D",
+        "url": "https://etherscan.io/address/0xd3851E3525080d8914e282Cc89Ff40cD7D4be77D#code",
+        "observedAt": "2026-10-12T16:23:46.338553+00:00",
+        "sourceStatus": "verified-exact-match",
+        "contractName": "CertificateNFT",
+        "pageSha256": "1d7b40e220780f86377f63c7ebe26dbb024759097eb70356748b65428d8fc8cd",
+        "evidenceText": "Source Code Verified Exact Match",
+        "compilerVersion": "v0.8.25+commit.b61c2a91"
+      },
+      "historicalApiResult": {
+        "status": "verified",
+        "updatedAt": "2026-10-12T02:37:32.061213+00:00",
+        "inputHash": "a1ae20ddde850c1c216bf3d90864975e489cd204ff1a4920200c973a3961329f"
+      }
+    },
+    {
+      "name": "FeePool",
+      "address": "0xa6091C773f3e400124744cc2bb47f16D347cA091",
+      "source": "contracts/v2/FeePool.sol:FeePool",
+      "encodedArgs": "000000000000000000000000fd970f60363984a6274342776d34423ec37b5432000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "solcLongVersion": "v0.8.25+commit.b61c2a91",
+      "optimizerRuns": 200,
+      "evmVersion": "cancun",
+      "buildInfoSha256": "5f9fccbca58b1a25275c4de75dc79a38e5b987dfba45212546836cd39045b12d",
+      "compilerInputHash": "7245c609d82b5661375f942b9ae60fa7caf9478197ef34bcbc32bdc1a79a8813",
+      "artifactSha256": "fc972009200663a7daa8cbdcf8f660d91cb05a754c306e16a20bc0ea8c570426",
+      "explorerUrl": "https://etherscan.io/address/0xa6091C773f3e400124744cc2bb47f16D347cA091#code",
+      "runtimeTemplateBytes": 8722,
+      "runtimeTemplateSha256": "b16445fac12a26ac8943daa453e6d660a88ef061b63e6eb37bc1d4998ac74c12",
+      "runtimeComparison": "Operator-reported template match; compiler immutable locations were masked. Not an independent immutable-value or atomic-state proof.",
+      "explorer": {
+        "name": "FeePool",
+        "address": "0xa6091C773f3e400124744cc2bb47f16D347cA091",
+        "url": "https://etherscan.io/address/0xa6091C773f3e400124744cc2bb47f16D347cA091#code",
+        "observedAt": "2026-10-12T16:23:46.838180+00:00",
+        "sourceStatus": "verified-exact-match",
+        "contractName": "FeePool",
+        "pageSha256": "df593516c41fbaa69358a304ad10b600332e36059ab14b14b815d2770ff98f4d",
+        "evidenceText": "Source Code Verified Exact Match",
+        "compilerVersion": "v0.8.25+commit.b61c2a91"
+      },
+      "historicalApiResult": {
+        "status": "verified",
+        "updatedAt": "2026-10-12T02:37:33.325539+00:00",
+        "inputHash": "02651dbaa26581aa84abbab0d409cf37c81314d43df73a422be8394f7f0df565"
+      }
+    },
+    {
+      "name": "IdentityRegistry",
+      "address": "0xFfE52FB27d66dcCCDF03376b400d6E399DeC3EEC",
+      "source": "contracts/v2/IdentityRegistry.sol:IdentityRegistry",
+      "encodedArgs": "00000000000000000000000000000000000c2e074ec69a0dfb2997ba6c7d2e1e000000000000000000000000d4416b13d2b3a9abae7acd5d6c2bbdbe25686401000000000000000000000000863b985a3a1a5fff292178ac91cd75d62f2b76642c9c6189b2e92da4d0407e9deb38ff6870729ad063af7e8576cb7b7898c88e2d39eb848f88bdfb0a6371096249dd451f56859dfe2cd3ddeab1e26d5bb68ede16",
+      "solcLongVersion": "v0.8.25+commit.b61c2a91",
+      "optimizerRuns": 200,
+      "evmVersion": "cancun",
+      "buildInfoSha256": "5f9fccbca58b1a25275c4de75dc79a38e5b987dfba45212546836cd39045b12d",
+      "compilerInputHash": "7245c609d82b5661375f942b9ae60fa7caf9478197ef34bcbc32bdc1a79a8813",
+      "artifactSha256": "9ae4691e99a740518820e347e2c59a0253aedc49ef71bd7c6a39c1aca5aa37ce",
+      "explorerUrl": "https://etherscan.io/address/0xFfE52FB27d66dcCCDF03376b400d6E399DeC3EEC#code",
+      "runtimeTemplateBytes": 19923,
+      "runtimeTemplateSha256": "86029ca458a267a20007280e73d25ea5bb424f1283f46ae2392de7dbf7219c06",
+      "runtimeComparison": "Operator-reported template match; compiler immutable locations were masked. Not an independent immutable-value or atomic-state proof.",
+      "explorer": {
+        "name": "IdentityRegistry",
+        "address": "0xFfE52FB27d66dcCCDF03376b400d6E399DeC3EEC",
+        "url": "https://etherscan.io/address/0xFfE52FB27d66dcCCDF03376b400d6E399DeC3EEC#code",
+        "observedAt": "2026-10-12T16:23:53.887174+00:00",
+        "sourceStatus": "verified-exact-match",
+        "contractName": "IdentityRegistry",
+        "pageSha256": "836a6e4a351ce0d3297278b5087f291c63a379c2fd3aa49e3cc6c43db90b32be",
+        "evidenceText": "Source Code Verified Exact Match",
+        "compilerVersion": "v0.8.25+commit.b61c2a91"
+      },
+      "historicalApiResult": {
+        "status": "verified",
+        "updatedAt": "2026-10-12T02:37:34.626685+00:00",
+        "inputHash": "8f8b1e8cac5294cdd05e5067463fe40f3192b298adb52035e76064d9efb539bf"
+      }
+    },
+    {
+      "name": "PlatformRegistry",
+      "address": "0x1cfd99F0a4937BD279aBa93c1184a270FEe6FE21",
+      "source": "contracts/v2/PlatformRegistry.sol:PlatformRegistry",
+      "encodedArgs": "000000000000000000000000fd970f60363984a6274342776d34423ec37b5432000000000000000000000000863b985a3a1a5fff292178ac91cd75d62f2b76640000000000000000000000000000000000000000000000000000000000000000",
+      "solcLongVersion": "v0.8.25+commit.b61c2a91",
+      "optimizerRuns": 200,
+      "evmVersion": "cancun",
+      "buildInfoSha256": "5f9fccbca58b1a25275c4de75dc79a38e5b987dfba45212546836cd39045b12d",
+      "compilerInputHash": "7245c609d82b5661375f942b9ae60fa7caf9478197ef34bcbc32bdc1a79a8813",
+      "artifactSha256": "3908922827ba5044e026449ab755dfb4acb3d8ed67f93fac054b4cfdd9e68075",
+      "explorerUrl": "https://etherscan.io/address/0x1cfd99F0a4937BD279aBa93c1184a270FEe6FE21#code",
+      "runtimeTemplateBytes": 7965,
+      "runtimeTemplateSha256": "16fbb3b34757d6ee12626d045e3e3792f5d0fd262d1c2e37249860f69d2c0b5c",
+      "runtimeComparison": "Operator-reported template match; compiler immutable locations were masked. Not an independent immutable-value or atomic-state proof.",
+      "explorer": {
+        "name": "PlatformRegistry",
+        "address": "0x1cfd99F0a4937BD279aBa93c1184a270FEe6FE21",
+        "url": "https://etherscan.io/address/0x1cfd99F0a4937BD279aBa93c1184a270FEe6FE21#code",
+        "observedAt": "2026-10-12T16:23:54.173804+00:00",
+        "sourceStatus": "verified-exact-match",
+        "contractName": "PlatformRegistry",
+        "pageSha256": "c99f880cbe017392832f702b976aeb68b9c96f9fe7cd86585a27508c629a8d36",
+        "evidenceText": "Source Code Verified Exact Match",
+        "compilerVersion": "v0.8.25+commit.b61c2a91"
+      },
+      "historicalApiResult": {
+        "status": "verified",
+        "updatedAt": "2026-10-12T02:37:35.885569+00:00",
+        "inputHash": "b8408b53b8d7a2036fd073b61fc32c74d342e2227af821ed34719f19432aa5d9"
+      }
+    },
+    {
+      "name": "JobRouter",
+      "address": "0xb471BE24a09345C503eaA55B2A490f4d9488A37E",
+      "source": "contracts/v2/modules/JobRouter.sol:JobRouter",
+      "encodedArgs": "0000000000000000000000001cfd99f0a4937bd279aba93c1184a270fee6fe21",
+      "solcLongVersion": "v0.8.25+commit.b61c2a91",
+      "optimizerRuns": 200,
+      "evmVersion": "cancun",
+      "buildInfoSha256": "5f9fccbca58b1a25275c4de75dc79a38e5b987dfba45212546836cd39045b12d",
+      "compilerInputHash": "7245c609d82b5661375f942b9ae60fa7caf9478197ef34bcbc32bdc1a79a8813",
+      "artifactSha256": "8c0a7fce4d52a8e711e723b58b36bdda0744064074f9bd012a8bdc42f3a82048",
+      "explorerUrl": "https://etherscan.io/address/0xb471BE24a09345C503eaA55B2A490f4d9488A37E#code",
+      "runtimeTemplateBytes": 4266,
+      "runtimeTemplateSha256": "e18aa055a90469e9a25b5fddda2fd6bc9841e9a842fd6b390020b558b0658694",
+      "runtimeComparison": "Operator-reported template match; compiler immutable locations were masked. Not an independent immutable-value or atomic-state proof.",
+      "explorer": {
+        "name": "JobRouter",
+        "address": "0xb471BE24a09345C503eaA55B2A490f4d9488A37E",
+        "url": "https://etherscan.io/address/0xb471BE24a09345C503eaA55B2A490f4d9488A37E#code",
+        "observedAt": "2026-10-12T16:23:54.340654+00:00",
+        "sourceStatus": "verified-exact-match",
+        "contractName": "JobRouter",
+        "pageSha256": "649d5a165cac31c11767e064595332778c5ecc08f5b2dd461ff7d07c473791df",
+        "evidenceText": "Source Code Verified Exact Match",
+        "compilerVersion": "v0.8.25+commit.b61c2a91"
+      },
+      "historicalApiResult": {
+        "status": "verified",
+        "updatedAt": "2026-10-12T02:37:37.145705+00:00",
+        "inputHash": "996f6ddcbc4dd012014b048f13da5cb5f648a14b6222e79326a73c114a0a0b62"
+      }
+    },
+    {
+      "name": "PlatformIncentives",
+      "address": "0x243c6D5B1104d76c7dfE31418b14Ea1a4DB2a0d0",
+      "source": "contracts/v2/PlatformIncentives.sol:PlatformIncentives",
+      "encodedArgs": "000000000000000000000000fd970f60363984a6274342776d34423ec37b54320000000000000000000000001cfd99f0a4937bd279aba93c1184a270fee6fe21000000000000000000000000b471be24a09345c503eaa55b2a490f4d9488a37e",
+      "solcLongVersion": "v0.8.25+commit.b61c2a91",
+      "optimizerRuns": 200,
+      "evmVersion": "cancun",
+      "buildInfoSha256": "5f9fccbca58b1a25275c4de75dc79a38e5b987dfba45212546836cd39045b12d",
+      "compilerInputHash": "7245c609d82b5661375f942b9ae60fa7caf9478197ef34bcbc32bdc1a79a8813",
+      "artifactSha256": "1afa3007151863885c1eb19c4311c6ce5cadea752d5987c130d26e6ff369b824",
+      "explorerUrl": "https://etherscan.io/address/0x243c6D5B1104d76c7dfE31418b14Ea1a4DB2a0d0#code",
+      "runtimeTemplateBytes": 2840,
+      "runtimeTemplateSha256": "6ddefeed7772b475ec672926bc4532b18524924ae2be131b4c0f93f27e7fa10f",
+      "runtimeComparison": "Operator-reported template match; compiler immutable locations were masked. Not an independent immutable-value or atomic-state proof.",
+      "explorer": {
+        "name": "PlatformIncentives",
+        "address": "0x243c6D5B1104d76c7dfE31418b14Ea1a4DB2a0d0",
+        "url": "https://etherscan.io/address/0x243c6D5B1104d76c7dfE31418b14Ea1a4DB2a0d0#code",
+        "observedAt": "2026-10-12T16:23:58.894362+00:00",
+        "sourceStatus": "verified-exact-match",
+        "contractName": "PlatformIncentives",
+        "pageSha256": "cef5b8844164c49456e301f13c980e8f98349f3caad751225427fd20a4b0c753",
+        "evidenceText": "Source Code Verified Exact Match",
+        "compilerVersion": "v0.8.25+commit.b61c2a91"
+      },
+      "historicalApiResult": {
+        "status": "verified",
+        "updatedAt": "2026-10-12T02:37:38.482011+00:00",
+        "inputHash": "aa76a3f916b9ddbbb1f392ce946aa95373755a257507ace0ccc932e0c009a661"
+      }
+    },
+    {
+      "name": "SystemPause",
+      "address": "0xcAEf0CD10Bf7DfB3894362D2Ddd69D26D771BCd2",
+      "source": "contracts/v2/SystemPause.sol:SystemPause",
+      "encodedArgs": "00000000000000000000000072ec2ccc9403b643c4d6ca3ef05e06ca8faa3084000000000000000000000000fd970f60363984a6274342776d34423ec37b5432000000000000000000000000ccfc0adae434446d1809f0551b34990de5fbe3ea000000000000000000000000946a84df069764f18ee4a472cc67890d585ac6bd0000000000000000000000001cfd99f0a4937bd279aba93c1184a270fee6fe21000000000000000000000000a6091c773f3e400124744cc2bb47f16d347ca091000000000000000000000000863b985a3a1a5fff292178ac91cd75d62f2b7664000000000000000000000000f8ebd86d66cdda12c3f881a38c5e5db4feceb2d1000000000000000000000000a9ed0539c2fbc5c6bc15a2e168bd9bcd07c01201",
+      "solcLongVersion": "v0.8.25+commit.b61c2a91",
+      "optimizerRuns": 200,
+      "evmVersion": "cancun",
+      "buildInfoSha256": "5f9fccbca58b1a25275c4de75dc79a38e5b987dfba45212546836cd39045b12d",
+      "compilerInputHash": "7245c609d82b5661375f942b9ae60fa7caf9478197ef34bcbc32bdc1a79a8813",
+      "artifactSha256": "26e7889fd5a5db2b649b79c2ddb483dbe39cfc3739fe3a1e557ccf8fac9e6176",
+      "explorerUrl": "https://etherscan.io/address/0xcAEf0CD10Bf7DfB3894362D2Ddd69D26D771BCd2#code",
+      "runtimeTemplateBytes": 8946,
+      "runtimeTemplateSha256": "67e4f058fc8afe085876abacbb40f1e73fe432ce81920fc04fd3883469c51c9d",
+      "runtimeComparison": "Operator-reported template match; compiler immutable locations were masked. Not an independent immutable-value or atomic-state proof.",
+      "explorer": {
+        "name": "SystemPause",
+        "address": "0xcAEf0CD10Bf7DfB3894362D2Ddd69D26D771BCd2",
+        "url": "https://etherscan.io/address/0xcAEf0CD10Bf7DfB3894362D2Ddd69D26D771BCd2#code",
+        "observedAt": "2026-10-12T16:23:59.319253+00:00",
+        "sourceStatus": "verified-exact-match",
+        "contractName": "SystemPause",
+        "pageSha256": "95fac881a54b15db358109dc91af8169a90f83d56203cc21a167cd6aa36d968b",
+        "evidenceText": "Source Code Verified Exact Match",
+        "compilerVersion": "v0.8.25+commit.b61c2a91"
+      },
+      "historicalApiResult": {
+        "status": "verified",
+        "updatedAt": "2026-10-12T02:37:40.006429+00:00",
+        "inputHash": "a1b545f2893fdbbfe52fb2e87296208f82868b1f95e3afe1064c83ab591a911f"
+      }
+    },
+    {
+      "name": "JobRegistryConfiguration",
+      "address": "0x175B9087a8d088073C9896F0CbF7b072b6ED11Bf",
+      "source": "contracts/v2/implementation/JobRegistryConfiguration.sol:JobRegistryConfiguration",
+      "encodedArgs": "",
+      "solcLongVersion": "v0.8.25+commit.b61c2a91",
+      "optimizerRuns": 200,
+      "evmVersion": "cancun",
+      "buildInfoSha256": "5f9fccbca58b1a25275c4de75dc79a38e5b987dfba45212546836cd39045b12d",
+      "compilerInputHash": "7245c609d82b5661375f942b9ae60fa7caf9478197ef34bcbc32bdc1a79a8813",
+      "artifactSha256": "b0a93a7dda005622052fc71c3fa1fb4765288b95d6281a50f50020f4f0d9ac4e",
+      "explorerUrl": "https://etherscan.io/address/0x175B9087a8d088073C9896F0CbF7b072b6ED11Bf#code",
+      "runtimeTemplateBytes": 16893,
+      "runtimeTemplateSha256": "d618ea4804368c2ae030d3b291fab0a14f398dca0477bdf93996eb00901c24d9",
+      "runtimeComparison": "Operator-reported template match; compiler immutable locations were masked. Not an independent immutable-value or atomic-state proof.",
+      "explorer": {
+        "name": "JobRegistryConfiguration",
+        "address": "0x175B9087a8d088073C9896F0CbF7b072b6ED11Bf",
+        "url": "https://etherscan.io/address/0x175B9087a8d088073C9896F0CbF7b072b6ED11Bf#code",
+        "observedAt": "2026-10-12T16:23:59.066393+00:00",
+        "sourceStatus": "verified-exact-match",
+        "contractName": "JobRegistryConfiguration",
+        "pageSha256": "3bf973c79cc774f8a3071e6b4805147428b3d89a948afc76741dbebf4a7640d6",
+        "evidenceText": "Source Code Verified Exact Match",
+        "compilerVersion": "v0.8.25+commit.b61c2a91"
+      },
+      "historicalApiResult": {
+        "status": "verified",
+        "updatedAt": "2026-10-12T02:37:41.185230+00:00",
+        "inputHash": "e7fbc54e33935fdf045533746242ef4ee0697390b01dff4403006e1dabdab252"
+      }
+    },
+    {
+      "name": "JobRegistryLifecycle",
+      "address": "0x4f40CE804DD40A87667bDD0e03d8D5A2bA402FB6",
+      "source": "contracts/v2/implementation/JobRegistryLifecycle.sol:JobRegistryLifecycle",
+      "encodedArgs": "",
+      "solcLongVersion": "v0.8.25+commit.b61c2a91",
+      "optimizerRuns": 200,
+      "evmVersion": "cancun",
+      "buildInfoSha256": "5f9fccbca58b1a25275c4de75dc79a38e5b987dfba45212546836cd39045b12d",
+      "compilerInputHash": "7245c609d82b5661375f942b9ae60fa7caf9478197ef34bcbc32bdc1a79a8813",
+      "artifactSha256": "1a7061679d26f00e20887a31c430689d66cc3bb31e016080e8f98e5bdeda7d88",
+      "explorerUrl": "https://etherscan.io/address/0x4f40CE804DD40A87667bDD0e03d8D5A2bA402FB6#code",
+      "runtimeTemplateBytes": 21012,
+      "runtimeTemplateSha256": "34fd58a2578135cb29227b3e2cebfdfd9df3e32fc952cfe939f0091ef2af704f",
+      "runtimeComparison": "Operator-reported template match; compiler immutable locations were masked. Not an independent immutable-value or atomic-state proof.",
+      "explorer": {
+        "name": "JobRegistryLifecycle",
+        "address": "0x4f40CE804DD40A87667bDD0e03d8D5A2bA402FB6",
+        "url": "https://etherscan.io/address/0x4f40CE804DD40A87667bDD0e03d8D5A2bA402FB6#code",
+        "observedAt": "2026-10-12T16:24:05.344791+00:00",
+        "sourceStatus": "verified-exact-match",
+        "contractName": "JobRegistryLifecycle",
+        "pageSha256": "23d949992ba138b0be7ea5660ca04ac137df414989a30dd92e4c6408d08a62ab",
+        "evidenceText": "Source Code Verified Exact Match",
+        "compilerVersion": "v0.8.25+commit.b61c2a91"
+      },
+      "historicalApiResult": {
+        "status": "verified",
+        "updatedAt": "2026-10-12T02:37:42.485385+00:00",
+        "inputHash": "f35d6fcebfef10c4bf01bb36a84c46e56685ef424077bda20dd000d83ea1ee02"
+      }
+    },
+    {
+      "name": "JobRegistrySettlement",
+      "address": "0x70EBFBa633E1519c9b4a5A659A9137Fd31662d0e",
+      "source": "contracts/v2/implementation/JobRegistrySettlement.sol:JobRegistrySettlement",
+      "encodedArgs": "",
+      "solcLongVersion": "v0.8.25+commit.b61c2a91",
+      "optimizerRuns": 200,
+      "evmVersion": "cancun",
+      "buildInfoSha256": "5f9fccbca58b1a25275c4de75dc79a38e5b987dfba45212546836cd39045b12d",
+      "compilerInputHash": "7245c609d82b5661375f942b9ae60fa7caf9478197ef34bcbc32bdc1a79a8813",
+      "artifactSha256": "d95d7ceb2b26383f055f3455c3b82f07b17ad176b79def84c5dba8204e28e9db",
+      "explorerUrl": "https://etherscan.io/address/0x70EBFBa633E1519c9b4a5A659A9137Fd31662d0e#code",
+      "runtimeTemplateBytes": 23597,
+      "runtimeTemplateSha256": "98eb8b6ab996798930d461ecc56384dfeca8bcc1412efdd44c09b2b906765404",
+      "runtimeComparison": "Operator-reported template match; compiler immutable locations were masked. Not an independent immutable-value or atomic-state proof.",
+      "explorer": {
+        "name": "JobRegistrySettlement",
+        "address": "0x70EBFBa633E1519c9b4a5A659A9137Fd31662d0e",
+        "url": "https://etherscan.io/address/0x70EBFBa633E1519c9b4a5A659A9137Fd31662d0e#code",
+        "observedAt": "2026-10-12T16:24:04.762371+00:00",
+        "sourceStatus": "verified-exact-match",
+        "contractName": "JobRegistrySettlement",
+        "pageSha256": "661f045cd948e09b05cfaf2435afbc29c4eed01040fc34405bf19150e4834152",
+        "evidenceText": "Source Code Verified Exact Match",
+        "compilerVersion": "v0.8.25+commit.b61c2a91"
+      },
+      "historicalApiResult": {
+        "status": "verified",
+        "updatedAt": "2026-10-12T02:37:43.828495+00:00",
+        "inputHash": "ac175171dbea857bab8b8d18e6d8c49bc7e63f55b9af497a7d957b22e837939e"
+      }
+    },
+    {
+      "name": "StakeManagerConfiguration",
+      "address": "0x6D46fF00d11acF432E4E8f882EABB9C974F0d72E",
+      "source": "contracts/v2/implementation/StakeManagerConfiguration.sol:StakeManagerConfiguration",
+      "encodedArgs": "",
+      "solcLongVersion": "v0.8.25+commit.b61c2a91",
+      "optimizerRuns": 200,
+      "evmVersion": "cancun",
+      "buildInfoSha256": "5f9fccbca58b1a25275c4de75dc79a38e5b987dfba45212546836cd39045b12d",
+      "compilerInputHash": "7245c609d82b5661375f942b9ae60fa7caf9478197ef34bcbc32bdc1a79a8813",
+      "artifactSha256": "5318322d864a3516873d8ada2d6fb61f481e81be4c3effb846a14a4f5ba1ff1d",
+      "explorerUrl": "https://etherscan.io/address/0x6D46fF00d11acF432E4E8f882EABB9C974F0d72E#code",
+      "runtimeTemplateBytes": 15756,
+      "runtimeTemplateSha256": "a985c99bccb195d586eae66dc890d4119b06e3f403e4a98cb0a725b12af220c0",
+      "runtimeComparison": "Operator-reported template match; compiler immutable locations were masked. Not an independent immutable-value or atomic-state proof.",
+      "explorer": {
+        "name": "StakeManagerConfiguration",
+        "address": "0x6D46fF00d11acF432E4E8f882EABB9C974F0d72E",
+        "url": "https://etherscan.io/address/0x6D46fF00d11acF432E4E8f882EABB9C974F0d72E#code",
+        "observedAt": "2026-10-12T16:24:05.024606+00:00",
+        "sourceStatus": "verified-exact-match",
+        "contractName": "StakeManagerConfiguration",
+        "pageSha256": "a61d599ed6563c2f1b6e7840d97a80a58a2ecf1cbba5ea45d1badae510929a1e",
+        "evidenceText": "Source Code Verified Exact Match",
+        "compilerVersion": "v0.8.25+commit.b61c2a91"
+      },
+      "historicalApiResult": {
+        "status": "failed",
+        "updatedAt": "2026-10-12T02:40:50.418595+00:00",
+        "inputHash": "0c6e1d1831c413970184dea608e53d12f922a1b156903f96aaf5023a7b9bcf1c"
+      }
+    },
+    {
+      "name": "StakeManagerStaking",
+      "address": "0x44dA2237A94B4b07B9C1e3E44742C9AF4AA77a7A",
+      "source": "contracts/v2/implementation/StakeManagerStaking.sol:StakeManagerStaking",
+      "encodedArgs": "",
+      "solcLongVersion": "v0.8.25+commit.b61c2a91",
+      "optimizerRuns": 200,
+      "evmVersion": "cancun",
+      "buildInfoSha256": "5f9fccbca58b1a25275c4de75dc79a38e5b987dfba45212546836cd39045b12d",
+      "compilerInputHash": "7245c609d82b5661375f942b9ae60fa7caf9478197ef34bcbc32bdc1a79a8813",
+      "artifactSha256": "0649b2f3beed5f211d0bbd634455de2060d52fe8790a6d8658830697e68739f1",
+      "explorerUrl": "https://etherscan.io/address/0x44dA2237A94B4b07B9C1e3E44742C9AF4AA77a7A#code",
+      "runtimeTemplateBytes": 11249,
+      "runtimeTemplateSha256": "feb1e1a8a147d2c643e759730a547541e1bbe4c1a7d571d09036d08e18f72528",
+      "runtimeComparison": "Operator-reported template match; compiler immutable locations were masked. Not an independent immutable-value or atomic-state proof.",
+      "explorer": {
+        "name": "StakeManagerStaking",
+        "address": "0x44dA2237A94B4b07B9C1e3E44742C9AF4AA77a7A",
+        "url": "https://etherscan.io/address/0x44dA2237A94B4b07B9C1e3E44742C9AF4AA77a7A#code",
+        "observedAt": "2026-10-12T16:24:10.486995+00:00",
+        "sourceStatus": "verified-exact-match",
+        "contractName": "StakeManagerStaking",
+        "pageSha256": "5561cd986652bf50688b3abc9c0bd89faf30c0fdb940e323d6cf0f22ecd97de7",
+        "evidenceText": "Source Code Verified Exact Match",
+        "compilerVersion": "v0.8.25+commit.b61c2a91"
+      },
+      "historicalApiResult": {
+        "status": "failed",
+        "updatedAt": "2026-10-12T02:44:02.519122+00:00",
+        "inputHash": "baee223ed2de7fa7c27e99a1074fb1798f93c11fe32bbfc718128faacb29516f"
+      }
+    },
+    {
+      "name": "StakeManagerEscrow",
+      "address": "0x97A17aAC4F6bD865d9e38d53411526B3291e88ae",
+      "source": "contracts/v2/implementation/StakeManagerEscrow.sol:StakeManagerEscrow",
+      "encodedArgs": "",
+      "solcLongVersion": "v0.8.25+commit.b61c2a91",
+      "optimizerRuns": 200,
+      "evmVersion": "cancun",
+      "buildInfoSha256": "5f9fccbca58b1a25275c4de75dc79a38e5b987dfba45212546836cd39045b12d",
+      "compilerInputHash": "7245c609d82b5661375f942b9ae60fa7caf9478197ef34bcbc32bdc1a79a8813",
+      "artifactSha256": "2e485245b0f8ed9858da2a38051562a415aad548f4e25bcdedf6041330a1e09b",
+      "explorerUrl": "https://etherscan.io/address/0x97A17aAC4F6bD865d9e38d53411526B3291e88ae#code",
+      "runtimeTemplateBytes": 14309,
+      "runtimeTemplateSha256": "fe5c8ddb363525fefc69025d6b8eef8d0e9531a2a4e4d2271c2ca99e2e3e0dff",
+      "runtimeComparison": "Operator-reported template match; compiler immutable locations were masked. Not an independent immutable-value or atomic-state proof.",
+      "explorer": {
+        "name": "StakeManagerEscrow",
+        "address": "0x97A17aAC4F6bD865d9e38d53411526B3291e88ae",
+        "url": "https://etherscan.io/address/0x97A17aAC4F6bD865d9e38d53411526B3291e88ae#code",
+        "observedAt": "2026-10-12T17:12:43.458780+00:00",
+        "sourceStatus": "verified-exact-match",
+        "contractName": "StakeManagerEscrow",
+        "pageSha256": "3c38bc52d8bca9fdf231abc2395c14cdce6cdf0938ef198bd9b367fd48e510ec",
+        "evidenceText": "Source Code Verified Exact Match",
+        "compilerVersion": "v0.8.25+commit.b61c2a91"
+      },
+      "historicalApiResult": {
+        "status": "failed",
+        "updatedAt": "2026-10-12T02:34:10.751684+00:00",
+        "inputHash": "a37c2e01f348434c6d1cb998c67abd8dbcc9b167fc3769176835633d8517e9bd"
+      },
+      "explorerObservationHistory": [
+        {
+          "name": "StakeManagerEscrow",
+          "address": "0x97A17aAC4F6bD865d9e38d53411526B3291e88ae",
+          "url": "https://etherscan.io/address/0x97A17aAC4F6bD865d9e38d53411526B3291e88ae#code",
+          "observedAt": "2026-10-12T16:24:10.597201+00:00",
+          "sourceStatus": "unverified",
+          "contractName": null,
+          "pageSha256": "207f6d7a74930da10cdcbe29e5c6f049e622772bf879b89410b34387179cac12",
+          "evidenceText": "Are you the contract creator? Verify and Publish your contract source code today!",
+          "compilerVersion": null
+        }
+      ]
+    },
+    {
+      "name": "StakeManagerSlashing",
+      "address": "0xEbB4c5FB19fe64712Fe8996638bEf092aa8347F5",
+      "source": "contracts/v2/implementation/StakeManagerSlashing.sol:StakeManagerSlashing",
+      "encodedArgs": "",
+      "solcLongVersion": "v0.8.25+commit.b61c2a91",
+      "optimizerRuns": 200,
+      "evmVersion": "cancun",
+      "buildInfoSha256": "5f9fccbca58b1a25275c4de75dc79a38e5b987dfba45212546836cd39045b12d",
+      "compilerInputHash": "7245c609d82b5661375f942b9ae60fa7caf9478197ef34bcbc32bdc1a79a8813",
+      "artifactSha256": "d159507e402d4dcec7bb3db4c9481921c57c456974de831c9d9c2bea7b2bd50e",
+      "explorerUrl": "https://etherscan.io/address/0xEbB4c5FB19fe64712Fe8996638bEf092aa8347F5#code",
+      "runtimeTemplateBytes": 20492,
+      "runtimeTemplateSha256": "d9fd19942644663a63a78e5148835212764cbf6b166890ebbad3a09ecd38d8e5",
+      "runtimeComparison": "Operator-reported template match; compiler immutable locations were masked. Not an independent immutable-value or atomic-state proof.",
+      "explorer": {
+        "name": "StakeManagerSlashing",
+        "address": "0xEbB4c5FB19fe64712Fe8996638bEf092aa8347F5",
+        "url": "https://etherscan.io/address/0xEbB4c5FB19fe64712Fe8996638bEf092aa8347F5#code",
+        "observedAt": "2026-10-12T16:24:10.526789+00:00",
+        "sourceStatus": "verified-exact-match",
+        "contractName": "StakeManagerSlashing",
+        "pageSha256": "fc52eeb14fd52eb4d0330e12d1c093efff184a6e0faf8fee1bd8f56c18b51e2c",
+        "evidenceText": "Source Code Verified Exact Match",
+        "compilerVersion": "v0.8.25+commit.b61c2a91"
+      },
+      "historicalApiResult": {
+        "status": "failed",
+        "updatedAt": "2026-10-12T02:47:14.470776+00:00",
+        "inputHash": "c2535113387f9e64554e3d8048a00a4958da24a8e775c3f098483cf435a9bec8"
+      }
+    },
+    {
+      "name": "ValidationModuleConfiguration",
+      "address": "0x53221f2DF17EbD5F022DBa1eAcc856957074c723",
+      "source": "contracts/v2/implementation/ValidationModuleConfiguration.sol:ValidationModuleConfiguration",
+      "encodedArgs": "",
+      "solcLongVersion": "v0.8.25+commit.b61c2a91",
+      "optimizerRuns": 200,
+      "evmVersion": "cancun",
+      "buildInfoSha256": "5f9fccbca58b1a25275c4de75dc79a38e5b987dfba45212546836cd39045b12d",
+      "compilerInputHash": "7245c609d82b5661375f942b9ae60fa7caf9478197ef34bcbc32bdc1a79a8813",
+      "artifactSha256": "091289d4acf24eb8d5379b3a5d7339d1aad0e5ecba8336390bd3392b67d1c14a",
+      "explorerUrl": "https://etherscan.io/address/0x53221f2DF17EbD5F022DBa1eAcc856957074c723#code",
+      "runtimeTemplateBytes": 12463,
+      "runtimeTemplateSha256": "a0b63e55b2f04ddb05d03a695516c972ddc506d935245fe472281473957d2ed5",
+      "runtimeComparison": "Operator-reported template match; compiler immutable locations were masked. Not an independent immutable-value or atomic-state proof.",
+      "explorer": {
+        "name": "ValidationModuleConfiguration",
+        "address": "0x53221f2DF17EbD5F022DBa1eAcc856957074c723",
+        "url": "https://etherscan.io/address/0x53221f2DF17EbD5F022DBa1eAcc856957074c723#code",
+        "observedAt": "2026-10-12T16:24:16.111647+00:00",
+        "sourceStatus": "verified-exact-match",
+        "contractName": "ValidationModuleConfiguration",
+        "pageSha256": "4161cda6ffe0ee09ec436b3db4b381ed601de14caa899a82a868e12339780633",
+        "evidenceText": "Source Code Verified Exact Match",
+        "compilerVersion": "v0.8.25+commit.b61c2a91"
+      },
+      "historicalApiResult": {
+        "status": "verified",
+        "updatedAt": "2026-10-12T02:47:16.040749+00:00",
+        "inputHash": "91c26b350b97c3478fd799a0e69492f8b542d8f3e5c121a76659786d6340ba5a"
+      }
+    },
+    {
+      "name": "ValidationModuleVoting",
+      "address": "0x04af6F94C7F74933BEeE4f6D39ceC4B2d9f7A42A",
+      "source": "contracts/v2/implementation/ValidationModuleVoting.sol:ValidationModuleVoting",
+      "encodedArgs": "",
+      "solcLongVersion": "v0.8.25+commit.b61c2a91",
+      "optimizerRuns": 200,
+      "evmVersion": "cancun",
+      "buildInfoSha256": "5f9fccbca58b1a25275c4de75dc79a38e5b987dfba45212546836cd39045b12d",
+      "compilerInputHash": "7245c609d82b5661375f942b9ae60fa7caf9478197ef34bcbc32bdc1a79a8813",
+      "artifactSha256": "a0487d578b5030cb928d310cc7f0627d30250763b9d606cbadd4ce80a352232f",
+      "explorerUrl": "https://etherscan.io/address/0x04af6F94C7F74933BEeE4f6D39ceC4B2d9f7A42A#code",
+      "runtimeTemplateBytes": 16600,
+      "runtimeTemplateSha256": "da56cedaf072112a6f3378a24ec80cb444f6b00d98ff0bb6b06557bed02691c7",
+      "runtimeComparison": "Operator-reported template match; compiler immutable locations were masked. Not an independent immutable-value or atomic-state proof.",
+      "explorer": {
+        "name": "ValidationModuleVoting",
+        "address": "0x04af6F94C7F74933BEeE4f6D39ceC4B2d9f7A42A",
+        "url": "https://etherscan.io/address/0x04af6F94C7F74933BEeE4f6D39ceC4B2d9f7A42A#code",
+        "observedAt": "2026-10-12T16:24:15.511944+00:00",
+        "sourceStatus": "verified-exact-match",
+        "contractName": "ValidationModuleVoting",
+        "pageSha256": "1f7e659e8111bfb19cfdc884b09098683e6975a7ffcb19bb90012f622e9ae2cc",
+        "evidenceText": "Source Code Verified Exact Match",
+        "compilerVersion": "v0.8.25+commit.b61c2a91"
+      },
+      "historicalApiResult": {
+        "status": "verified",
+        "updatedAt": "2026-10-12T02:47:17.239306+00:00",
+        "inputHash": "ed889d29563bdaa21be0d51d5df8608607070db2e78713a2c94cf1439c65c706"
+      }
+    },
+    {
+      "name": "ValidationModuleSelection",
+      "address": "0x5454686c3F6866fA958A4D6Ea87c596E56BbA625",
+      "source": "contracts/v2/implementation/ValidationModuleSelection.sol:ValidationModuleSelection",
+      "encodedArgs": "",
+      "solcLongVersion": "v0.8.25+commit.b61c2a91",
+      "optimizerRuns": 200,
+      "evmVersion": "cancun",
+      "buildInfoSha256": "5f9fccbca58b1a25275c4de75dc79a38e5b987dfba45212546836cd39045b12d",
+      "compilerInputHash": "7245c609d82b5661375f942b9ae60fa7caf9478197ef34bcbc32bdc1a79a8813",
+      "artifactSha256": "0684ad3141473c4a05cca67569839a4c3f49934bd675d84dac7f7fffb5847b82",
+      "explorerUrl": "https://etherscan.io/address/0x5454686c3F6866fA958A4D6Ea87c596E56BbA625#code",
+      "runtimeTemplateBytes": 13178,
+      "runtimeTemplateSha256": "9e4b0c7bf9d7dc991580dc3612410ae8b1e3465d99849594ccbc8919a9528586",
+      "runtimeComparison": "Operator-reported template match; compiler immutable locations were masked. Not an independent immutable-value or atomic-state proof.",
+      "explorer": {
+        "name": "ValidationModuleSelection",
+        "address": "0x5454686c3F6866fA958A4D6Ea87c596E56BbA625",
+        "url": "https://etherscan.io/address/0x5454686c3F6866fA958A4D6Ea87c596E56BbA625#code",
+        "observedAt": "2026-10-12T16:24:15.758870+00:00",
+        "sourceStatus": "verified-exact-match",
+        "contractName": "ValidationModuleSelection",
+        "pageSha256": "6f9575acef741a39edd2ebbef2f1e36bb16a10b05ad8b8812ea4c403c3c73f5b",
+        "evidenceText": "Source Code Verified Exact Match",
+        "compilerVersion": "v0.8.25+commit.b61c2a91"
+      },
+      "historicalApiResult": {
+        "status": "verified",
+        "updatedAt": "2026-10-12T02:47:18.503798+00:00",
+        "inputHash": "a474dd644e61e8639764a18bcfafe7f24dffdf44b6e57fa2d4308733152a3de7"
+      }
+    }
+  ],
+  "explorerObservationHistory": [
+    {
+      "exactMatch": 23,
+      "unverified": 1,
+      "unknown": 0,
+      "observedFrom": "2026-10-12T16:23:34.497469+00:00",
+      "observedThrough": "2026-10-12T16:24:16.111647+00:00",
+      "method": "Read-only HTTPS GET of every Etherscan contract page; exact-match label and displayed contract name checked. No source submission.",
+      "limitations": "Dated explorer observations, not a security audit or live ownership/pause proof."
+    }
+  ],
+  "laterConfigurationEvidence": "evidence/configuration-readback-2026-10-13.json",
+  "historicalReadbackNotice": "recordedReadback preserves the earlier deployment observation; laterConfigurationEvidence supersedes its coordinator handoff uncertainty within the later report scope."
+}

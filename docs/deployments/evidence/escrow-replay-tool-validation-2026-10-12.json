@@ -1,0 +1,42 @@
+{
+  "schema": "agijobsv0/escrow-replay-tool-validation/1",
+  "recordedAt": "2026-10-12T17:28:17.669880+00:00",
+  "scope": "Portable repository reproduction tooling validation, not a new Etherscan acceptance or live chain-state audit.",
+  "offlineRegression": {
+    "tests": 46,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "fixtureType": "Synthetic unit fixtures; separate from native replay"
+  },
+  "nativeReplay": {
+    "schema": "agijobsv0/escrow-offline-replay/1",
+    "utc": "2026-10-12T17:25:00.290418+00:00",
+    "chainId": 1,
+    "address": "0x97A17aAC4F6bD865d9e38d53411526B3291e88ae",
+    "sourceCommit": "b4c5b66ea05a6bb27f1f1cb197f055c179bbd38e",
+    "inputSha256": "cbc1dc2b32036ae56239cb1caf8c26c2cbd2ebbeb18814203570f3b0d834e046",
+    "inputBytes": 244730,
+    "sourceCount": 39,
+    "compilerSha256": "c42aada7a52057ddbed93ec011235e256c564c440b68dbaac5ae482babbb3d6d",
+    "comparison": "fresh-full267-native-replay",
+    "exactCreationRuntimeAbiMetadataLinksMethodsImmutableLayout": true,
+    "freshExplorerRead": false,
+    "freshChainRead": false,
+    "transactions": 0,
+    "sourceSubmissions": 0,
+    "productionApproved": false
+  },
+  "sourceFiles": {
+    "scripts/verification/escrow_exact39.py": "e8b4566e8c1a1b559f0338c5b49ac1ff54fc36e52df94c8d905aeed7b15dde11",
+    "scripts/verification/tests/test_escrow_exact39.py": "08af15f4b215cf141d80386792f5c3220363264b3a23b2b8ecd223aed06284f3"
+  },
+  "nativeOutputSha256": {
+    "original267-target.output.json": "0c3071ac302080cc1a9cb5236cb6e5571545d12ee8e1cd38c243b0849edde8d2",
+    "exact39-global.output.json": "6d7d3194cc30252416bf5a53acb13a37610c16377283821cdbaab112e41c7fae"
+  },
+  "productionApproved": false,
+  "dependenciesAdded": 0,
+  "solidityFilesChanged": 0,
+  "ethereumTransactions": 0
+}

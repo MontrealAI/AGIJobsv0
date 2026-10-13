@@ -1,5 +1,7 @@
 # DEPLOYED_ADDRESSES.md — AGIJobs v2
 
+**Existing Ethereum deployment:** use the [24-contract directory and current evidence](production/mainnet-deployment-2026-10-12.md) and the explicitly selected [mainnet address book](deployment-addresses.mainnet.json). The placeholders below are a template for a separately reviewed deployment, not the recorded mainnet addresses.
+
 > **Purpose:** Canonical registry of contract addresses and deployment metadata. Commit this file to the repo after each environment deployment.
 
 ---

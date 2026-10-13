@@ -36,7 +36,9 @@ export function toSnakePlaceholder(key: string): string {
   return normalised;
 }
 
-export async function readJsonFile<T = unknown>(filePath: string): Promise<T | null> {
+export async function readJsonFile<T = unknown>(
+  filePath: string
+): Promise<T | null> {
   try {
     const data = await fs.readFile(filePath, 'utf8');
     return JSON.parse(data) as T;
@@ -69,7 +71,10 @@ export async function listJsonFiles(directory: string): Promise<string[]> {
   return files;
 }
 
-function collectAddressesFromBook(book: AddressBook | null, source: string): Map<string, PlaceholderResolution> {
+function collectAddressesFromBook(
+  book: AddressBook | null,
+  source: string
+): Map<string, PlaceholderResolution> {
   const mapping = new Map<string, PlaceholderResolution>();
   if (!book) return mapping;
 
@@ -77,7 +82,7 @@ function collectAddressesFromBook(book: AddressBook | null, source: string): Map
     if (rawKey.startsWith('_') || typeof value !== 'string') {
       continue;
     }
-    if (!ADDRESS_PATTERN.test(value)) {
+    if (!ADDRESS_PATTERN.test(value) || /^0x0{40}$/i.test(value)) {
       continue;
     }
     const placeholder = toSnakePlaceholder(rawKey);
@@ -86,7 +91,10 @@ function collectAddressesFromBook(book: AddressBook | null, source: string): Map
   return mapping;
 }
 
-function mergeAddressMaps(target: Map<string, PlaceholderResolution>, source: Map<string, PlaceholderResolution>) {
+function mergeAddressMaps(
+  target: Map<string, PlaceholderResolution>,
+  source: Map<string, PlaceholderResolution>
+) {
   for (const [placeholder, record] of source.entries()) {
     target.set(placeholder, record);
   }
@@ -105,7 +113,11 @@ function extractAddressesFromManifest(
     if (!entry?.addresses) continue;
     const placeholder = toSnakePlaceholder(name);
     const value = entry.addresses?.[network];
-    if (typeof value === 'string' && ADDRESS_PATTERN.test(value)) {
+    if (
+      typeof value === 'string' &&
+      ADDRESS_PATTERN.test(value) &&
+      !/^0x0{40}$/i.test(value)
+    ) {
       mapping.set(placeholder, {
         placeholder,
         address: value,
@@ -117,14 +129,17 @@ function extractAddressesFromManifest(
   return mapping;
 }
 
-function extractInlineOverrides(overrides: Record<string, string> | undefined): Map<string, PlaceholderResolution> {
+function extractInlineOverrides(
+  overrides: Record<string, string> | undefined
+): Map<string, PlaceholderResolution> {
   const mapping = new Map<string, PlaceholderResolution>();
   if (!overrides) {
     return mapping;
   }
   for (const [rawKey, value] of Object.entries(overrides)) {
-    if (!ADDRESS_PATTERN.test(value)) continue;
-    const placeholder = rawKey === rawKey.toUpperCase() ? rawKey : toSnakePlaceholder(rawKey);
+    if (!ADDRESS_PATTERN.test(value) || /^0x0{40}$/i.test(value)) continue;
+    const placeholder =
+      rawKey === rawKey.toUpperCase() ? rawKey : toSnakePlaceholder(rawKey);
     mapping.set(placeholder, {
       placeholder,
       address: value,
@@ -134,43 +149,93 @@ function extractInlineOverrides(overrides: Record<string, string> | undefined): 
   return mapping;
 }
 
-export async function buildAddressIndex(options: AddressIndexOptions): Promise<Map<string, PlaceholderResolution>> {
+export async function buildAddressIndex(
+  options: AddressIndexOptions
+): Promise<Map<string, PlaceholderResolution>> {
   const { network, manifestPath, mapFiles = [], inlineMap } = options;
   const index = new Map<string, PlaceholderResolution>();
   const sources: Array<{ book: AddressBook | null; source: string }> = [];
 
-  const deploymentConfigPath = path.resolve(process.cwd(), 'deployment-config', `${network}.json`);
+  const deploymentConfigPath = path.resolve(
+    process.cwd(),
+    'deployment-config',
+    `${network}.json`
+  );
   const networkConfig = await readJsonFile<AddressBook>(deploymentConfigPath);
   sources.push({ book: networkConfig, source: `${network} deployment config` });
 
-  const latestDeploymentPath = path.resolve(process.cwd(), 'deployment-config', `latest-deployment.${network}.json`);
-  const latestDeployment = await readJsonFile<AddressBook>(latestDeploymentPath);
-  sources.push({ book: latestDeployment, source: 'latest deployment snapshot' });
+  const latestDeploymentPath = path.resolve(
+    process.cwd(),
+    'deployment-config',
+    `latest-deployment.${network}.json`
+  );
+  const latestDeployment = await readJsonFile<AddressBook>(
+    latestDeploymentPath
+  );
+  sources.push({
+    book: latestDeployment,
+    source: 'latest deployment snapshot',
+  });
 
   const deploymentAddresses = await readJsonFile<AddressBook>(
     path.resolve(process.cwd(), 'docs', 'deployment-addresses.json')
   );
-  sources.push({ book: deploymentAddresses, source: 'docs/deployment-addresses.json' });
+  if (
+    !deploymentAddresses?.network ||
+    deploymentAddresses.network === network
+  ) {
+    sources.push({
+      book: deploymentAddresses,
+      source: 'docs/deployment-addresses.json',
+    });
+  }
+
+  // Select recorded deployments by network; generic transaction scripts keep a
+  // zero-address default until their chain and ownership-topology guards exist.
+  if (network === 'mainnet') {
+    const mainnetAddresses = await readJsonFile<AddressBook>(
+      path.resolve(process.cwd(), 'docs', 'deployment-addresses.mainnet.json')
+    );
+    if (
+      mainnetAddresses?.network !== 'mainnet' ||
+      Number(mainnetAddresses?.chainId) !== 1
+    ) {
+      throw new Error('Mainnet monitoring address book must identify chain 1');
+    }
+    sources.push({
+      book: mainnetAddresses,
+      source: 'docs/deployment-addresses.mainnet.json',
+    });
+  }
 
   const deploymentSummary = await readJsonFile<AddressBook>(
     path.resolve(process.cwd(), 'docs', 'deployment-summary.json')
   );
-  sources.push({ book: deploymentSummary, source: 'docs/deployment-summary.json' });
+  sources.push({
+    book: deploymentSummary,
+    source: 'docs/deployment-summary.json',
+  });
 
   for (const { book, source } of sources) {
     mergeAddressMaps(index, collectAddressesFromBook(book, source));
   }
 
-  const manifestCandidates = manifestPath ? [manifestPath] : ['reports/release/manifest.json'];
+  const manifestCandidates = manifestPath
+    ? [manifestPath]
+    : ['reports/release/manifest.json'];
   for (const candidate of manifestCandidates) {
-    const manifest = await readJsonFile<ReleaseManifest>(path.resolve(process.cwd(), candidate));
+    const manifest = await readJsonFile<ReleaseManifest>(
+      path.resolve(process.cwd(), candidate)
+    );
     if (manifest) {
       mergeAddressMaps(index, extractAddressesFromManifest(manifest, network));
     }
   }
 
   for (const mapFile of mapFiles) {
-    const record = await readJsonFile<AddressBook>(path.resolve(process.cwd(), mapFile));
+    const record = await readJsonFile<AddressBook>(
+      path.resolve(process.cwd(), mapFile)
+    );
     mergeAddressMaps(index, collectAddressesFromBook(record, mapFile));
   }
 
@@ -192,7 +257,8 @@ export function substitutePlaceholders(
 
   const rendered = content.replace(PLACEHOLDER_PATTERN, (_, token: string) => {
     const placeholder = token.trim();
-    const resolution = index.get(placeholder) || index.get(toSnakePlaceholder(placeholder));
+    const resolution =
+      index.get(placeholder) || index.get(toSnakePlaceholder(placeholder));
     if (!resolution) {
       missing.push(placeholder);
       return `{{${placeholder}}}`;
