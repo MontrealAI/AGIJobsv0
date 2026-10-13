@@ -792,20 +792,19 @@ test('A02 revocation after proposal but before dispatch prevents the effect and 
 test('A03 concurrent actions cannot exceed aggregate budget, including outstanding liabilities', async () => {
   const store = storeWithBudget();
   let calls = 0;
+  let markEntered;
+  const entered = new Promise((resolve) => {
+    markEntered = resolve;
+  });
   let release;
-  let first;
-  let signalStarted;
   const gate = new Promise((resolve) => {
     release = resolve;
-  });
-  const started = new Promise((resolve) => {
-    signalStarted = resolve;
   });
   try {
     const runtime = broker(store, {
       execute: async ({ effectId }) => {
         calls++;
-        signalStarted();
+        markEntered();
         await gate;
         return {
           status: 'completed',
@@ -824,11 +823,9 @@ test('A03 concurrent actions cannot exceed aggregate budget, including outstandi
       nonce: 'concurrent-nonce-2',
       costMinor: '6',
     });
-    first = runtime.execute(one);
-    // Signature verification is asynchronous; one event-loop tick need not
-    // reach the reservation. Wait for the held driver call instead.
-    await Promise.race([started, first]);
-    assert.equal(calls, 1);
+    const first = runtime.execute(one);
+    await Promise.race([entered, first]);
+    assert.equal(calls, 1, 'the first action must enter its gated driver');
     assert.equal(store.read().budgets['formation-budget'].reservedMinor, '6');
     await assert.rejects(runtime.execute(two), { code: 'BUDGET_EXHAUSTED' });
     release();
@@ -837,7 +834,6 @@ test('A03 concurrent actions cannot exceed aggregate budget, including outstandi
     assert.equal(store.read().budgets['formation-budget'].spentMinor, '6');
   } finally {
     release?.();
-    await first?.catch(() => {});
     store.close();
   }
 });

@@ -866,5 +866,7 @@
       "method": "Read-only HTTPS GET of every Etherscan contract page; exact-match label and displayed contract name checked. No source submission.",
       "limitations": "Dated explorer observations, not a security audit or live ownership/pause proof."
     }
-  ]
+  ],
+  "laterConfigurationEvidence": "evidence/configuration-readback-2026-10-13.json",
+  "historicalReadbackNotice": "recordedReadback preserves the earlier deployment observation; laterConfigurationEvidence supersedes its coordinator handoff uncertainty within the later report scope."
 }

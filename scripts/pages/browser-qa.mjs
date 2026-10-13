@@ -4,6 +4,7 @@ import { verifySuccessor } from './successor-qa.mjs';
 import { verifyPhase6 } from './phase6-qa.mjs';
 import { verifyWorkPlanner } from './work-qa.mjs';
 import { verifyEvidenceReview } from './review-qa.mjs';
+import { verifyEcosystem } from './ecosystem-qa.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import http from 'node:http';
@@ -108,6 +109,7 @@ try {
     checks.push(label + ': accessibility');
   };
   await a11y('home');
+  await verifyEcosystem({ page, context, url, artifacts, a11y, checks });
   await page
     .locator('#site-nav')
     .getByRole('link', { name: 'Featured demos' })

@@ -1,0 +1,102 @@
+name: Qualified source release
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/source-release.yml'
+      - 'scripts/release/qualify-source-release.cjs'
+      - 'test/scripts/source-release-gate.test.cjs'
+  push:
+    branches: [main]
+    paths:
+      - 'package.json'
+      - '.github/workflows/source-release.yml'
+      - 'scripts/release/qualify-source-release.cjs'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: source-release-rc5-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: '.nvmrc'
+      - run: node --test test/scripts/source-release-gate.test.cjs
+
+  publish:
+    name: Publish qualified source prerelease
+    needs: validate
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'MontrealAI/AGIJobsv0'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 95
+    permissions:
+      contents: write
+      actions: read
+      checks: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: source-v2.1.0-rc.5
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: '.nvmrc'
+      - name: Preserve deployed contract and compiler identity
+        run: |
+          set -euo pipefail
+          test "$(node -p 'require("./package.json").version')" = '2.1.0-rc.5'
+          git merge-base --is-ancestor b4c5b66ea05a6bb27f1f1cb197f055c179bbd38e "$GITHUB_SHA"
+          git diff --exit-code b4c5b66ea05a6bb27f1f1cb197f055c179bbd38e "$GITHUB_SHA" -- contracts/ scripts/deploy/ scripts/v2/deploy.ts hardhat.config.js config/implementation-modules.json
+      - name: Qualify every required check and observed main workflow on this exact commit
+        run: node scripts/release/qualify-source-release.cjs
+      - name: Build checksummed source and evidence assets
+        run: |
+          set -euo pipefail
+          out=reports/source-release
+          git archive --format=zip --prefix=AGIJobsv0/ "$GITHUB_SHA" > "$out/$TAG-source.zip"
+          cp docs/deployments/ethereum-mainnet-2026-10-12.json "$out/"
+          cp docs/deployments/evidence/configuration-readback-2026-10-13.json "$out/"
+          cp docs/production/mainnet-deployment-2026-10-12.md "$out/"
+          cp docs/production/RELEASE_NOTES_SOURCE_RC5.md "$out/"
+          cd "$out"
+          sha256sum *.json *.md *.zip > SHA256SUMS.txt
+          sha256sum --check SHA256SUMS.txt
+      - name: Retain exact release producer evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: source-rc5-${{ github.sha }}
+          path: reports/source-release/
+          if-no-files-found: error
+      - name: Create and verify a draft before publication
+        run: |
+          set -euo pipefail
+          current="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq '.object.sha')"
+          test "$current" = "$GITHUB_SHA"
+          gh api --method POST "repos/$GITHUB_REPOSITORY/git/refs" -f "ref=refs/tags/$TAG" -f "sha=$GITHUB_SHA"
+          # Creation refuses an existing release instead of overwriting it.
+          gh release create "$TAG" reports/source-release/* --verify-tag --title 'source-v2.1.0-rc.5 — mainnet evidence and SUCCESSOR Ω workshop' --notes-file docs/production/RELEASE_NOTES_SOURCE_RC5.md --prerelease --draft
+          gh release download "$TAG" --dir "$RUNNER_TEMP/source-release-readback"
+          (cd "$RUNNER_TEMP/source-release-readback" && sha256sum --check SHA256SUMS.txt)
+          tag_sha="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" --jq '.object.sha')"
+          test "$tag_sha" = "$GITHUB_SHA"
+          current="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq '.object.sha')"
+          test "$current" = "$GITHUB_SHA"
+          gh release edit "$TAG" --draft=false --prerelease --latest=false
+          gh release view "$TAG" --json url,tagName,isDraft,isPrerelease

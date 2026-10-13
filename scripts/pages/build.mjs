@@ -14,6 +14,12 @@ import { renderWorkIntro, renderVision, renderWorkPage } from './work.mjs';
 import { renderReviewPage } from './review.mjs';
 import { renderStartPage } from './start.mjs';
 import { renderWelcomeExample } from './welcome-example.mjs';
+import {
+  ecosystem,
+  renderEcosystemHero,
+  renderEcosystemIntro,
+  renderEcosystemPage,
+} from './ecosystem.mjs';
 import { renderAlphaMarkPage } from './alpha-mark.mjs';
 import { renderSuccessorPage } from './successor.mjs';
 import { buildPhase6Site } from './phase6-build.mjs';
@@ -267,7 +273,9 @@ function chrome({
     '#start'
   )}">Start locally</a><a class="nav-repo" href="${repo}">Repository <span aria-hidden="true">↗</span></a></nav></div></header>${body}<footer class="site-footer" lang="en"><a class="brand footer-brand" href="${base}"><span class="brand-mark" aria-hidden="true">✧</span><span>AGI <strong>JOBS</strong><small>INTELLIGENCE. EVIDENCE. EXECUTION.</small></span></a><div><a href="${href(
     '#explore'
-  )}">All demos</a><a href="${repo}/blob/main/demo/README.md">Repository guide ↗</a><a href="${repo}/actions">CI evidence ↗</a><a href="${repo}/blob/main/LICENSE">MIT license ↗</a></div><p>Open source by MONTREAL.AI · Built from <a href="${repo}/commit/${revision}">${revision.slice(
+  )}">All demos</a><a href="${href(
+    'ecosystem/'
+  )}">The shared ecosystem</a><a href="${repo}/blob/main/demo/README.md">Repository guide ↗</a><a href="${repo}/actions">CI evidence ↗</a><a href="${repo}/blob/main/LICENSE">MIT license ↗</a></div><p>Open source by MONTREAL.AI · Built from <a href="${repo}/commit/${revision}">${revision.slice(
     0,
     8
   )}</a><br>Scenario names describe demonstrations and research ambitions. Read each guide for its execution scope.</p></footer><span id="copy-status" class="sr-only" role="status"></span></body></html>`;
@@ -333,6 +341,7 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
       'docs/computer-work.md',
       'docs/MACHINE_LABOR.md',
       'docs/EVIDENCE_REVIEW.md',
+      'docs/ECOSYSTEM.md',
       'apps/validator/README.md',
       'docs/production/rehearsal.md',
       ...[...tracked].filter(
@@ -447,9 +456,11 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
     )
     .join('');
   const setup = `git clone https://github.com/MontrealAI/AGIJobsv0.git\ncd AGIJobsv0\nnvm install\nnvm use\nnpm ci\nnpm run demo:aurora:local`;
-  const body = `<main id="main"><section class="hero section-wrap"><div class="hero-copy"><p class="eyebrow"><span></span> AGI JOBS / THE MACHINE LABOR LAYER</p><h1>Intelligence,<br><em>put to work.</em></h1><p class="hero-description">Turn an idea into useful work. Describe what you need, let an authorized agent prepare a result, and have the work checked before accepting it.</p><div class="hero-actions"><a class="button primary" href="${base}start/">Start here — we’ll guide you <span aria-hidden="true">→</span></a><a class="text-link" href="${base}start/example/"><span class="play-icon" aria-hidden="true">▷</span> Try a simple example</a></div><p class="hero-note">No account or wallet needed. <a href="${base}start/fr/" lang="fr">Commencer en français →</a></p>${renderHeroSpotlight(
+  const body = `<main id="main"><section class="hero section-wrap"><div class="hero-copy"><p class="eyebrow"><span></span> AGI JOBS / THE MACHINE LABOR LAYER</p><h1>Intelligence,<br><em>put to work.</em></h1><p class="hero-description">Turn an idea into useful work. Describe what you need, let an authorized agent prepare a result, and have the work checked before accepting it.</p>${renderEcosystemHero(
     base
-  )}</div>${orbit()}</section>${renderWorkIntro(
+  )}<div class="hero-actions"><a class="button primary" href="${base}start/">Start here — we’ll guide you <span aria-hidden="true">→</span></a><a class="text-link" href="${base}start/example/"><span class="play-icon" aria-hidden="true">▷</span> Try a simple example</a></div><p class="hero-note">No account or wallet needed. <a href="${base}start/fr/" lang="fr">Commencer en français →</a></p>${renderHeroSpotlight(
+    base
+  )}</div>${orbit()}</section>${renderEcosystemIntro(base)}${renderWorkIntro(
     base,
     guideURL
   )}${renderFeaturedDemos(
@@ -508,6 +519,21 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
       renderWelcomeExample({ base, revision, lang })
     );
   }
+  write(
+    'ecosystem/index.html',
+    chrome({
+      title: 'AGI Alpha Agent + AGI Jobs · The shared ecosystem',
+      description:
+        'Explore how AGI Alpha Agent and AGI Jobs can turn selected ideas into accountable work, with the shared AGIALPHA token and all 29 deployed Ethereum mainnet contract instances.',
+      base,
+      revision,
+      canonical: 'ecosystem/',
+      body: renderEcosystemPage(base, guideURL),
+    })
+  );
+  write('ecosystem/contracts.json', JSON.stringify(ecosystem, null, 2) + '\n');
+  write('successor/build/index.html', fs.readFileSync(path.join(root, 'website/successor-build/index.html'), 'utf8'));
+  write('successor/build/provenance.json', fs.readFileSync(path.join(root, 'website/successor-build/provenance.json'), 'utf8'));
   write(
     'work/index.html',
     chrome({
@@ -962,10 +988,11 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
 
     cultureStudioRoute: 'experiments/culture/',
     dashboardRoutes,
-    successorRoutes: ['successor/', 'successor/fr/'],
+    successorRoutes: ['successor/', 'successor/fr/', 'successor/build/'],
     onboardingRoutes: { en: 'start/', fr: 'start/fr/' },
     onboardingExampleRoutes: { en: 'start/example/', fr: 'start/fr/example/' },
     workRoute: 'work/',
+    ecosystemRoute: 'ecosystem/',
     reviewRoute: 'review/',
     archiveRoutes,
     experiences: Object.keys(experiences).length,
@@ -990,6 +1017,7 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
   const routes = [
     '',
     'work/',
+    manifest.ecosystemRoute,
     'start/',
     'start/fr/',
     ...Object.values(manifest.onboardingExampleRoutes),

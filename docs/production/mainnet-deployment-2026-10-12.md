@@ -1,6 +1,6 @@
 # Ethereum mainnet: deployed contracts and commissioning status
 
-**Updated 12 October 2026. The contracts are deployed; the recorded operational state is paused.** The public website remains a planning and demonstration experience. Deployment and explorer verification do not open live jobs or authorize payments.
+**Updated 13 October 2026 UTC (12 October in Toronto). The contracts are deployed; the recorded operational state is paused.** The public website remains a planning and demonstration experience. Deployment and explorer verification do not open live jobs or authorize payments.
 
 ## At a glance
 
@@ -10,7 +10,7 @@
 | Settlement token | **AGIALPHA**, 18 decimals, [`0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA`](https://etherscan.io/address/0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA) |
 | Deployed source | [`source-v2.1.0-rc.4`](https://github.com/MontrealAI/AGIJobsv0/tree/source-v2.1.0-rc.4), commit `b4c5b66ea05a6bb27f1f1cb197f055c179bbd38e` |
 | Contracts | **24**: coordinator, thirteen protocol components and ten fixed implementations |
-| Recorded runtime comparison | **24/24 template matches** in the operator's saved run; compiler immutable locations were masked |
+| Recorded runtime comparison | Later finalized-block report records **24/24 exact matches including immutables**; original masked-template evidence remains historical |
 | Recorded operating state | All **eight** managed modules paused and owned by SystemPause |
 | Current explorer observation | **24/24 exact source matches, including StakeManagerEscrow** |
 | Governance | Ledger `0xa9eD0539c2fbc5C6BC15a2E168bd9BCd07c01201`; ownership boundaries below |
@@ -81,7 +81,28 @@ The mainnet parameter-change sentinel watches the deployed StakeManager, FeePool
 
 The eight managed contracts are **JobRegistry, StakeManager, ValidationModule, ReputationEngine, ArbitratorCommittee, DisputeModule, PlatformRegistry and FeePool**. Their recorded owner is **SystemPause**, whose governance authority is the Ledger address above. The saved later verifier also reports Ledger control of **CertificateNFT, IdentityRegistry and JobRouter**. Do not transfer the managed contracts directly to a wallet: the SystemPause ownership topology is intentional.
 
-The recovery completion message initially left IdentityRegistry acceptance and coordinator handoff outstanding. The later verifier reports the three direct-owner modules under Ledger control, but does **not** prove coordinator ownership. Reconcile current `owner()` / `pendingOwner()` and all applicable acceptances before retiring the temporary deployer. This publication neither asserts coordinator handoff completion nor requests any ownership transaction or unpause.
+The initial recovery report left IdentityRegistry acceptance and coordinator handoff outstanding. The later operator-supplied finalized-block report at **26,179,827** records the coordinator, all ten implementation owners, IdentityRegistry (with zero pending owner), and all other direct-owner components under the Ledger. The eight managed owners remain SystemPause. This supersedes the earlier handoff uncertainty for the enumerated contracts and views, without proving every historical role or external permission was removed.
+
+## Latest configuration and reward policy
+
+The [public configuration extract](../deployments/evidence/configuration-readback-2026-10-13.json) preserves the source report's SHA-256, snapshot block/hash, exact large integer values as decimal strings, all 24 recorded runtime checks and the timing of the later cap observation.
+
+| Setting | Recorded value | Evidence boundary |
+| --- | --- | --- |
+| Eight managed modules | Paused; owner SystemPause | Provider-reported finalized block 26,179,827 |
+| Ledger handoff | Coordinator, ten implementations and direct-owner components under the Ledger | Enumerated owner/governance/pending-owner views; not every possible authority |
+| Runtime bytecode | 24/24 exact matches including immutables | Operator's saved report; no independent replay by this release |
+| FeePool treasury | `0xd76AD27a1Bcf8652e7e46BE603FA742FD1c10A99`, allowlisted | Same finalized snapshot |
+| Maximum job reward | **88,888,888 AGIALPHA** = `88888888000000000000000000` base units | Later transaction/read-contract screenshots; supersedes the earlier zero/unlimited reading |
+| Job stake | **500 AGIALPHA fixed** = `500000000000000000000` base units | Last finalized observation; no percentage-stake change established |
+| Minimum staking floor | **1,000 AGIALPHA** | Same finalized snapshot; separate from job stake |
+| Validator pool | Empty | Same finalized snapshot; live selection remains uncommissioned |
+
+The cap screenshot records successful [governance transaction `0xafe09f8a…`](https://etherscan.io/tx/0xafe09f8ab789a118716e26953ebeeb5c2f5c0ce0120792d73352e12dd0b016f6) at block **26,180,024**, **2026-10-13 00:36:35 UTC**, followed by the JobRegistry read-contract value. These later screenshots are not folded into the earlier finalized snapshot or claimed as fresh finality verification.
+
+**The requested 10% job stake is not implemented by this deployed contract.** Its `jobStake` is an absolute token amount; setting it to `10` would not introduce percentage semantics. Percentage staking requires a separately reviewed contract/design change, compatibility tests and an explicitly authorized deployment or migration. This source release changes no on-chain economics.
+
+The report also records EIP-7702 account code on the temporary deployer wallet. Clearing that delegation is separate wallet cleanup; it is not evidence of continuing ownership of these contracts. The selected deployer role mappings in the report are false/zero. No additional removal transaction is required by this release, and no global claim of zero remaining authority is made: the report explicitly leaves `globalAuthorityTransferComplete` and `productionApproved` false. External token/ENS permissions, full event/role history and off-chain credentials were outside its scope.
 
 ## Explorer verification completed
 
@@ -95,10 +116,10 @@ The [Escrow verification retrospective and offline reproduction guide](escrow-ve
 
 ## What remains before opening
 
-Use the [current production readiness record](readiness.md) for the complete gates. Remaining work includes fresh, block-bound ownership/pause/immutable and configuration checks; coordinator handoff reconciliation; authorized production signing; independent security review; and real provider, worker, reviewer, settlement, monitoring and recovery commissioning. The source release does not waive any of these requirements.
+Use the [current production readiness record](readiness.md) for the complete gates. Remaining work includes a fresh pre-opening ownership/pause/configuration check, finalized confirmation of the later reward cap, validator-pool commissioning, authorized production signing; independent security review; and real provider, worker, reviewer, settlement, monitoring and recovery commissioning. The source release does not waive any of these requirements.
 
 The `source-v2.1.0-rc.5` tag publishes this source and evidence record. It does not trigger the signed production release workflow, which accepts `v*` tags. That workflow's generic full-stack manifest still requires TaxPolicy, RewardEngine and Thermostat addresses; those components are intentionally absent here. A future production release requires a reviewed deployment-specific inventory and its strict validation, in addition to signing and commissioning. This source update does not relax required-address or warning gates to make that production workflow pass.
 
-You can use the [English welcome guide](https://montrealai.github.io/AGIJobsv0/start/), [French guide](https://montrealai.github.io/AGIJobsv0/start/fr/), saved job drafts and local SUCCESSOR Ω experiences now within their documented limits. The previously merged garden-club example in [PR #3923](https://github.com/MontrealAI/AGIJobsv0/pull/3923) is included in rc.5, alongside the rc.4 dependency and storage-credential repairs. Existing demos and flowcharts are retained.
+You can use the [English welcome guide](https://montrealai.github.io/AGIJobsv0/start/), [French guide](https://montrealai.github.io/AGIJobsv0/start/fr/), saved job drafts and local SUCCESSOR Ω experiences now within their documented limits. The previously merged garden-club example in [PR #3923](https://github.com/MontrealAI/AGIJobsv0/pull/3923) is included in rc.5, alongside the rc.4 dependency and storage-credential repairs and the merged shared-token directory and SUCCESSOR Ω workshop (#3926 and #3927). Existing demos and flowcharts are retained.
 
 For a **new, separately approved deployment**, use the [Hardhat guide](../deployment-v2-agialpha.md). To investigate this existing deployment, begin with its preserved evidence and addresses above; the checked-in generic configuration templates are not a command to deploy again.

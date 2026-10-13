@@ -1,4 +1,19 @@
+> **[Build your own SUCCESSOR Ω with Alpha Agent + AGI Jobs →](https://montrealai.github.io/AGIJobsv0/successor/build/)**
+> Name your mission, run four candidate programs, compile 21 bounded job drafts, and keep the working lab offline.
+> English / Français · Large text · No account, wallet or installation. [Source and reproduction guide](docs/successor/BUILD_YOUR_OMEGA.md).
+> The example runs both projects’ code locally. Independent proof remains absent; admission stays on HOLD.
+
 # AGI Jobs v0 (v2)
+
+## AGI Alpha Agent + AGI Jobs: one shared ecosystem
+
+**Explore ideas. Define useful work. Check the result.** AGI Alpha Agent helps develop a promising plan; AGI Jobs supplies work orders, evidence, review and settlement rules. Their deployed Ethereum suites share **$AGIALPHA**, with 18 decimals on Ethereum mainnet:
+
+**[0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA](https://etherscan.io/token/0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA)**
+
+**[See how they work together →](https://montrealai.github.io/AGIJobsv0/ecosystem/) · [Inspect both deployed suites: 5 Alpha + 24 Jobs instances](https://montrealai.github.io/AGIJobsv0/ecosystem/#contracts) · [Read the ecosystem guide and source evidence](docs/ECOSYSTEM.md)**
+
+The pairing is strongest for bounded digital tasks with checkable outputs. A shared token does not create an automatic mainnet bridge: compatible job interfaces, admitted identities and operational commissioning remain necessary. The guide distinguishes recorded deployments from readiness for live work.
 
 ## New here? Start with one simple step.
 
@@ -42,7 +57,9 @@ AGI Jobs v0 (v2) brings together job contracts, agent gateways, validators, oper
 
 **Prepare a deployment:** use the [current Hardhat guide](docs/deployment-v2-agialpha.md) or the [plain-language coordinator guide](docs/production/nontechnical-mainnet-deployment.md). Start with `npm run deploy:local` after compiling, then use `npm run deploy:plan` for read-only public-network inspection. The staged script preserves recovery evidence and hands off all eight managed modules paused.
 
-**Ethereum mainnet deployment recorded:** the [12 October deployment record](docs/production/mainnet-deployment-2026-10-12.md) lists all 24 contracts, the deployed source commit, explorer links and verification evidence. **All 24 contract sources are now verified as exact matches on Etherscan, including StakeManagerEscrow.** The eight operational modules were observed paused under SystemPause; this is not an open live service. This stack uses **18-decimal AGIALPHA**, not the separate AGIJobManager USDC deployment. Read the [remaining production gates](docs/production/readiness.md) before commissioning.
+**Deployment status:** the [source-pinned mainnet directory](docs/ECOSYSTEM.md#the-deployed-contract-directory) identifies the recorded 24 Jobs instances and 5 Alpha instances, with full explorer links and separate readiness guidance. The four previously oversized Jobs contracts use [fixed implementations and staged deployment](docs/production/fixed-implementations.md). New releases and live operations require their own authorized signing, completed configuration, commissioning and passing gates. Local tests do not provide mainnet certification. All existing architectural diagrams and demonstration surfaces are retained.
+
+**Latest mainnet evidence:** [24-contract deployment and configuration record](docs/production/mainnet-deployment-2026-10-12.md): 24/24 recorded explorer exact matches, Ledger handoff readback, and the later **88,888,888 AGIALPHA reward cap** observation. The eight operational modules remain recorded as paused. The deployed job stake is a **fixed 500 AGIALPHA**, not 10% of reward. [Source and timing limits](docs/production/mainnet-deployment-2026-10-12.md#latest-configuration-and-reward-policy).
 
 ```mermaid
 flowchart LR
