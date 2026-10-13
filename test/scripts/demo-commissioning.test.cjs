@@ -11,6 +11,7 @@ const modules = Object.values(
 ).flat();
 const address = (n) => '0x' + n.toString(16).padStart(40, '0');
 const tx = (n) => '0x' + n.toString(16).padStart(64, '0');
+const { inventory } = require('../../scripts/v2/lib/deployment-candidate.cjs');
 
 function fixture(t, sizes) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'demo-receipts-'));
@@ -24,15 +25,21 @@ function fixture(t, sizes) {
     modules.map((name, i) => [name, address(i + 1)])
   );
   const contracts = Object.fromEntries(
-    ['JobRegistry', 'StakeManager', 'ValidationModule', 'DisputeModule'].map(
-      (name, i) => [name, address(i + 21)]
-    )
+    inventory()
+      .filter(({ name }) => !modules.includes(name))
+      .map(({ name }, i) => [name, address(i + 21)])
   );
   const creationRecords = Object.fromEntries(
     Object.entries({ ...implementations, ...contracts }).map(
       ([name, value]) => [
         name,
-        { address: value, args: [], source: name + '.sol:' + name },
+        {
+          address: value,
+          args: [],
+          source:
+            inventory().find((item) => item.name === name).source + ':' + name,
+          constructorArguments: '0x',
+        },
       ]
     )
   );
@@ -89,6 +96,38 @@ test('commissioning supports configured mixed committee sizes and four-job missi
   const atlas = fixture(t, [5, 5, 5, 5]);
   assert.equal(checkCommissioning(atlas.root, atlas.options).settledJobs, 4);
   assert.throws(() => checkCommissioning(atlas.root), /Every configured/);
+});
+test('commissioning rejects omitted implementations and incorrect constructor evidence', (t) => {
+  const data = fixture(t, [3, 3, 3]);
+  const deployment = JSON.parse(
+    fs.readFileSync(path.join(data.root, 'deploy.json'))
+  );
+  assert.equal(
+    checkCommissioning(data.root, data.options).constructorRecords,
+    25
+  );
+  for (const change of [
+    (d) => {
+      delete d.creationRecords.StakeManagerEscrow;
+    },
+    (d) => {
+      d.creationRecords.StakeManagerEscrow.constructorArguments = '0x01';
+    },
+    (d) => {
+      d.creationRecords.Deployer.args = [1];
+    },
+    (d) => {
+      d.creationRecords.JobRegistry.source = 'Wrong.sol:JobRegistry';
+    },
+    (d) => {
+      d.creationRecords.JobRegistry.constructorArguments = 'invalid';
+    },
+  ]) {
+    const altered = structuredClone(deployment);
+    change(altered);
+    data.write('deploy.json', altered);
+    assert.throws(() => checkCommissioning(data.root, data.options));
+  }
 });
 test('commissioning rejects placeholder hashes, wrong committees and unpaid validators', (t) => {
   const data = fixture(t, [5, 4, 5]);
