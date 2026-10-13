@@ -8,7 +8,7 @@ Compiler-remediation source prerelease (2026-10-13 UTC).
 - Enforce compiler identity, production settings, source freshness, deployable sizes and the bounded, exact-source upstream warning policy before admitting a new deployment candidate.
 - Archive exact original compiler inputs before public deployment, preserve encoded constructor arguments and fully qualified targets, and reject failed or interrupted explorer commands.
 - Preserve the original mainnet deployment and difficult Escrow verification evidence; explain historical verification/recovery and the separate requirements for any replacement deployment.
-- Publish a reviewed compiler-source snapshot with exact-commit hosted qualification, checksummed source/evidence/compiler-policy assets, verified downloads and producer provenance. Existing tags are never moved or overwritten.
+- Publish a reviewed compiler-source snapshot with exact-commit hosted qualification, checksummed source/evidence/compiler-policy assets and the exact compiler archive, verified downloads and producer provenance. Existing tags are never moved or overwritten.
 - Retain the 13 pinned OpenZeppelin future-keyword notices and the Hardhat 0.8.37 stack-trace support limitation explicitly. No source release changes existing deployed bytecode or clears its explorer notices.
 
 This is an unsigned source prerelease. Production signing, independent security review, effective protected-review enforcement and live commissioning remain unresolved. No explorer submission, blockchain transaction, unpause or balance migration is performed by this publisher.

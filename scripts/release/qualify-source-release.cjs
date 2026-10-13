@@ -10,7 +10,7 @@ const releaseVersion = '2.1.0-rc.6';
 const deployedSourceBaseline = 'b4c5b66ea05a6bb27f1f1cb197f055c179bbd38e';
 const evidenceBaseline = '9c730e0188594089e27ed0589c2b5ca57eec5cf5';
 // Reviewed compiler candidate; publication also requires exact merged-SHA CI.
-const compilerSourceBaseline = '385d326b0d33629683557ec8cb73290368908a11';
+const compilerSourceBaseline = '28454ea7c95219d43e22ed86e093065d6947353c';
 const preservedEvidencePaths = [
   'docs/deployments/',
   'docs/deployment-addresses.json',
@@ -35,6 +35,7 @@ const reviewedCompilerPaths = [
   'config/implementation-modules.json',
   'config/foundry-toolchain.json',
   'scripts/production/commissioning.cjs',
+  'scripts/production/rehearse.cjs',
   'demo/',
   '.github/workflows/release.yml',
   'scripts/release/',

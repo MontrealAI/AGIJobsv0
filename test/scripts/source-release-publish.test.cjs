@@ -9,8 +9,6 @@ const {
   publish,
   expectedAssets,
   verifyDownloadedAssets,
-  validateCompilerArtifact,
-  verifyCompilerArchive,
 } = require('../../scripts/release/publish-source-release.cjs');
 const {
   compilerSourceBaseline,
@@ -21,6 +19,47 @@ const {
 } = require('../../scripts/release/qualify-source-release.cjs');
 const sha = 'a'.repeat(40),
   tag = 'source-v2.1.0-rc.6';
+function compilerArchiveFixture(contents = {}) {
+  const compiler = require('../../config/solidity-compiler.json').longVersion;
+  const payloads = {
+    'artifact.json': JSON.stringify({ contractName: 'C', abi: [] }),
+    'input.json': JSON.stringify({ language: 'Solidity', sources: {} }),
+    'build-info.json': JSON.stringify({ solcLongVersion: compiler }),
+    ...contents,
+  };
+  const contract = {
+    contract: 'C',
+    source: 'contracts/v2/C.sol',
+    artifact: 'artifact.json',
+    standardInput: 'input.json',
+    buildInfo: 'build-info.json',
+  };
+  return {
+    'verification/index.json': JSON.stringify({
+      schema: 'agijobsv0/verification-inputs/1',
+      compiler,
+      contracts: [contract],
+      files: Object.fromEntries(
+        Object.entries(payloads).map(([name, bytes]) => [
+          name,
+          crypto.createHash('sha256').update(bytes).digest('hex'),
+        ])
+      ),
+    }),
+    'build.json': JSON.stringify({
+      compiler,
+      projectSourceWarnings: 0,
+      sizeGatePassed: true,
+      contracts: [contract],
+    }),
+    ...Object.fromEntries(
+      Object.entries(payloads).map(([name, bytes]) => [
+        `verification/${name}`,
+        bytes,
+      ])
+    ),
+  };
+}
 function assetFixture(t) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'source-release-test-'));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
@@ -37,10 +76,10 @@ function assetFixture(t) {
     producer: { workflow: '.github/workflows/source-release.yml' },
     workflows: [
       {
-        id: 77,
         path: '.github/workflows/contracts.yml',
+        id: 7,
+        run_attempt: 2,
         head_sha: sha,
-        run_attempt: 1,
         conclusion: 'success',
       },
     ],
@@ -76,82 +115,93 @@ function assetFixture(t) {
         : `fixture:${name}`
     );
   }
-  const archive = path.join(root, 'compiler');
-  const source = 'contracts/v2/Example.sol';
-  const contract = 'Example';
-  const compiler = '0.8.37+commit.f401782d';
-  const inputs = {
-    'artifacts/Example.json': '{"abi":[]}',
-    'build-info/Example.json': '{"output":{}}',
-    'standard-input/Example.json': '{"sources":{}}',
+  const writeCompilerZip = (target, contents = compilerArchiveFixture()) => {
+    const staging = fs.mkdtempSync(path.join(root, 'compiler-files-'));
+    for (const [name, bytes] of Object.entries(contents)) {
+      fs.mkdirSync(path.dirname(path.join(staging, name)), { recursive: true });
+      fs.writeFileSync(path.join(staging, name), bytes);
+    }
+    fs.rmSync(target, { force: true });
+    execFileSync('zip', ['-q', '-r', target, '.'], { cwd: staging });
+    return crypto
+      .createHash('sha256')
+      .update(fs.readFileSync(target))
+      .digest('hex');
   };
-  const files = {};
-  for (const [name, bytes] of Object.entries(inputs)) {
-    const file = path.join(archive, 'verification', name);
-    fs.mkdirSync(path.dirname(file), { recursive: true });
-    fs.writeFileSync(file, bytes);
-    files[name] = crypto.createHash('sha256').update(bytes).digest('hex');
-  }
-  fs.writeFileSync(
-    path.join(archive, 'build.json'),
-    JSON.stringify({
-      compiler,
-      projectSourceWarnings: 0,
-      sizeGatePassed: true,
-      contracts: [{ source, contract }],
-    })
+  const compilerDigest = writeCompilerZip(
+    path.join(directory, 'compiler-evidence.zip')
   );
-  fs.writeFileSync(
-    path.join(archive, 'verification/index.json'),
-    JSON.stringify({
-      schema: 'agijobsv0/verification-inputs/1',
-      compiler,
-      files,
-      contracts: [
-        {
-          source,
-          contract,
-          artifact: 'artifacts/Example.json',
-          buildInfo: 'build-info/Example.json',
-          standardInput: 'standard-input/Example.json',
-        },
-      ],
-    })
-  );
-  const zip = path.join(directory, 'compiler-evidence.zip');
-  fs.unlinkSync(zip);
-  execFileSync('zip', ['-q', '-r', zip, 'build.json', 'verification'], {
-    cwd: archive,
-  });
-  const digest = crypto
-    .createHash('sha256')
-    .update(fs.readFileSync(zip))
-    .digest('hex');
+  const compilerArtifact = {
+    id: 8,
+    name: `compiler-evidence-${sha}-7-2`,
+    expired: false,
+    digest: `sha256:${compilerDigest}`,
+    workflow_run: { id: 7, head_sha: sha },
+  };
+  const compilerRun = {
+    id: 7,
+    run_attempt: 2,
+    path: '.github/workflows/contracts.yml',
+    head_sha: sha,
+    head_branch: 'main',
+    event: 'push',
+    status: 'completed',
+    conclusion: 'success',
+    repository: { full_name: provenance.repository },
+  };
+  const compilerProvenance = {
+    schema: 'agijobsv0/compiler-artifact-provenance/1',
+    repository: provenance.repository,
+    sha,
+    workflow: compilerRun.path,
+    runId: compilerRun.id,
+    runAttempt: compilerRun.run_attempt,
+    artifactId: compilerArtifact.id,
+    artifactName: compilerArtifact.name,
+    githubDigest: compilerArtifact.digest,
+    downloadedSha256: compilerDigest,
+    compiler: '0.8.37+commit.f401782d',
+    contracts: 1,
+  };
   fs.writeFileSync(
     path.join(directory, 'compiler-provenance.json'),
-    JSON.stringify({
-      repository: provenance.repository,
-      sha,
-      workflow: '.github/workflows/contracts.yml',
-      runId: 77,
-      runAttempt: 1,
-      artifactId: 123,
-      artifactName: `compiler-evidence-${sha}`,
-      githubDigest: `sha256:${digest}`,
-      downloadedSha256: digest,
-      compiler,
-      contracts: 1,
-    })
+    JSON.stringify(compilerProvenance)
   );
   checksums(directory);
   for (const name of expectedAssets(tag))
     fs.copyFileSync(path.join(directory, name), path.join(downloaded, name));
-  const verify = (draft = true) =>
-    verifyDownloadedAssets({ directory, downloaded, draft, ...provenance });
-  return { directory, downloaded, provenance, verify, checksums };
+  const verify = (draft = true, overrides = {}) =>
+    verifyDownloadedAssets({
+      directory,
+      downloaded,
+      draft,
+      ...provenance,
+      compilerArtifact,
+      compilerRun,
+      ...overrides,
+    });
+  return {
+    directory,
+    downloaded,
+    provenance,
+    verify,
+    checksums,
+    compilerArtifact,
+    compilerRun,
+    compilerProvenance,
+    writeCompilerZip,
+  };
 }
 test('compiler and evidence assets must match the complete checksum inventory and producer', (t) => {
   const fixture = assetFixture(t);
+  assert.equal(expectedAssets(tag).length, 12);
+  assert.equal(
+    fs
+      .readFileSync(path.join(fixture.downloaded, 'SHA256SUMS.txt'), 'utf8')
+      .trim()
+      .split('\n').length,
+    11
+  );
   fixture.verify();
   fs.appendFileSync(
     path.join(fixture.downloaded, 'solidity-compiler.json'),
@@ -195,30 +245,111 @@ test('same-SHA published retries accept the original producer evidence without c
   assert.throws(() => fixture.verify(), /Producer\/readback mismatch/);
   fixture.verify(false);
 });
-test('published compiler archives remain bound to their original qualified producer', (t) => {
+test('published compiler provenance requires the authentic artifact and successful exact run attempt', (t) => {
   const fixture = assetFixture(t);
-  const file = path.join(fixture.downloaded, 'compiler-provenance.json');
-  const compiler = JSON.parse(fs.readFileSync(file));
-  for (const mutate of [
-    (item) => {
-      item.sha = 'd'.repeat(40);
-    },
-    (item) => {
-      item.runId = 78;
-    },
-    (item) => {
-      item.githubDigest = 'sha256:' + '0'.repeat(64);
-    },
+  fixture.verify(false);
+  for (const changed of [
+    { schema: 'untrusted/schema' },
+    { artifactId: 9 },
+    { runAttempt: 3 },
+    { artifactName: `compiler-evidence-${sha}-7-1` },
   ]) {
-    const changed = structuredClone(compiler);
-    mutate(changed);
-    fs.writeFileSync(file, JSON.stringify(changed));
-    fixture.checksums(fixture.downloaded);
-    assert.throws(
-      () => fixture.verify(false),
-      /compiler producer provenance mismatch/
+    fs.writeFileSync(
+      path.join(fixture.downloaded, 'compiler-provenance.json'),
+      JSON.stringify({ ...fixture.compilerProvenance, ...changed })
     );
+    fixture.checksums(fixture.downloaded);
+    assert.throws(() => fixture.verify(false), /compiler producer provenance/);
   }
+  fs.writeFileSync(
+    path.join(fixture.downloaded, 'compiler-provenance.json'),
+    JSON.stringify(fixture.compilerProvenance)
+  );
+  fixture.checksums(fixture.downloaded);
+  for (const changed of [
+    { run_attempt: 1 },
+    { head_sha: 'b'.repeat(40) },
+    { repository: { full_name: 'another/repository' } },
+    { event: 'pull_request' },
+    { head_branch: 'feature' },
+    { status: 'in_progress' },
+    { conclusion: 'failure' },
+  ])
+    assert.throws(
+      () =>
+        fixture.verify(false, {
+          compilerRun: { ...fixture.compilerRun, ...changed },
+        }),
+      /compiler producer provenance/
+    );
+  assert.throws(
+    () =>
+      fixture.verify(false, {
+        compilerArtifact: { ...fixture.compilerArtifact, id: 9 },
+      }),
+    /compiler producer provenance/
+  );
+  assert.throws(
+    () => fixture.verify(false, { compilerArtifact: undefined }),
+    /qualified exact-SHA producer/
+  );
+});
+test('self-consistent replacement compiler ZIP and release checksums cannot replace GitHub producer bytes', (t) => {
+  const fixture = assetFixture(t);
+  const replacement = compilerArchiveFixture({
+    'input.json': JSON.stringify({
+      language: 'Solidity',
+      sources: { forged: {} },
+    }),
+  });
+  const {
+    verifyCompilerArchive,
+  } = require('../../scripts/release/publish-source-release.cjs');
+  assert.doesNotThrow(() =>
+    verifyCompilerArchive(Object.keys(replacement), (name) =>
+      Buffer.from(replacement[name])
+    )
+  );
+  const digest = fixture.writeCompilerZip(
+    path.join(fixture.downloaded, 'compiler-evidence.zip'),
+    replacement
+  );
+  fs.writeFileSync(
+    path.join(fixture.downloaded, 'compiler-provenance.json'),
+    JSON.stringify({
+      ...fixture.compilerProvenance,
+      downloadedSha256: digest,
+      githubDigest: `sha256:${digest}`,
+    })
+  );
+  fixture.checksums(fixture.downloaded);
+  assert.throws(() => fixture.verify(false), /compiler producer provenance/);
+});
+test('producer archive readback checks its internal file checksums', (t) => {
+  const fixture = assetFixture(t);
+  const malformed = compilerArchiveFixture();
+  malformed['verification/input.json'] = 'tampered after indexing';
+  const digest = fixture.writeCompilerZip(
+    path.join(fixture.downloaded, 'compiler-evidence.zip'),
+    malformed
+  );
+  const githubDigest = `sha256:${digest}`;
+  fs.writeFileSync(
+    path.join(fixture.downloaded, 'compiler-provenance.json'),
+    JSON.stringify({
+      ...fixture.compilerProvenance,
+      downloadedSha256: digest,
+      githubDigest,
+    })
+  );
+  fixture.checksums(fixture.downloaded);
+  assert.throws(
+    () =>
+      fixture.verify(false, {
+        compilerArtifact: { ...fixture.compilerArtifact, digest: githubDigest },
+      }),
+    /Compiler archive checksum mismatch/
+  );
 });
 test('workflow packages every declared immutable release asset', () => {
   const workflow = fs.readFileSync(
@@ -245,7 +376,9 @@ test('workflow packages every declared immutable release asset', () => {
     workflow.includes('sha256sum -- *.json *.md *.zip > SHA256SUMS.txt')
   );
   assert.ok(
-    workflow.includes('publish-source-release.cjs --collect-compiler-evidence')
+    workflow.includes(
+      'node scripts/release/publish-source-release.cjs --collect-compiler-evidence'
+    )
   );
 });
 function fixture() {
@@ -377,12 +510,16 @@ test('verification failure never publishes and public verification failure never
 });
 
 test('compiler evidence rejects another head, producer, name, expiration or missing digest', () => {
+  const {
+    validateCompilerArtifact,
+  } = require('../../scripts/release/publish-source-release.cjs');
   const provenance = {
     sha,
     workflows: [
       {
         path: '.github/workflows/contracts.yml',
         id: 7,
+        run_attempt: 2,
         head_sha: sha,
         conclusion: 'success',
       },
@@ -390,7 +527,7 @@ test('compiler evidence rejects another head, producer, name, expiration or miss
   };
   const artifact = {
     id: 8,
-    name: `compiler-evidence-${sha}`,
+    name: `compiler-evidence-${sha}-7-2`,
     expired: false,
     digest: `sha256:${'b'.repeat(64)}`,
     workflow_run: { id: 7, head_sha: sha },
@@ -400,6 +537,9 @@ test('compiler evidence rejects another head, producer, name, expiration or miss
     { ...artifact, expired: true },
     { ...artifact, name: 'other' },
     { ...artifact, digest: null },
+    { ...artifact, id: 0 },
+    { ...artifact, id: 1.5 },
+    { ...artifact, name: `compiler-evidence-${sha}-7-1` },
     { ...artifact, workflow_run: { id: 9, head_sha: sha } },
     { ...artifact, workflow_run: { id: 7, head_sha: 'c'.repeat(40) } },
   ])
@@ -407,9 +547,28 @@ test('compiler evidence rejects another head, producer, name, expiration or miss
       () => validateCompilerArtifact(provenance, changed),
       /producer/
     );
+  for (const changed of [
+    { id: 0 },
+    { run_attempt: 0 },
+    { run_attempt: undefined },
+  ])
+    assert.throws(
+      () =>
+        validateCompilerArtifact(
+          {
+            ...provenance,
+            workflows: [{ ...provenance.workflows[0], ...changed }],
+          },
+          artifact
+        ),
+      /producer/
+    );
 });
 
 test('compiler archive rejects tampered bytes, omitted files and mismatched inventories', () => {
+  const {
+    verifyCompilerArchive,
+  } = require('../../scripts/release/publish-source-release.cjs');
   const { createHash } = require('node:crypto');
   const compiler = require('../../config/solidity-compiler.json').longVersion;
   const contents = {
