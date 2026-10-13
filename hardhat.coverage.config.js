@@ -5,8 +5,9 @@ require('solidity-coverage');
 
 module.exports = {
   solidity: {
-    version: '0.8.25',
+    version: '0.8.37',
     settings: {
+      evmVersion: 'cancun',
       optimizer: { enabled: false, runs: 0 },
     },
   },

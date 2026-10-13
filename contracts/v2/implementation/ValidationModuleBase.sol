@@ -1597,26 +1597,32 @@ abstract contract ValidationModuleBase is IValidationModule, Ownable, TaxAcknowl
     error UnsupportedImplementationSelector();
 
     function setPauser(address _pauser) external virtual {
+        _pauser;
         revert UnsupportedImplementationSelector();
     }
 
     function setPauserManager(address manager) external virtual {
+        manager;
         revert UnsupportedImplementationSelector();
     }
 
     function setNonRevealPenalty(uint256 penaltyBps, uint256 banBlocks) external virtual {
+        banBlocks; penaltyBps;
         revert UnsupportedImplementationSelector();
     }
 
     function setRevealQuorum(uint256 pct, uint256 minValidators_) external virtual {
+        minValidators_; pct;
         revert UnsupportedImplementationSelector();
     }
 
     function setEarlyFinalizeDelay(uint256 delay) external virtual {
+        delay;
         revert UnsupportedImplementationSelector();
     }
 
     function setForceFinalizeGrace(uint256 grace) external virtual {
+        grace;
         revert UnsupportedImplementationSelector();
     }
 
@@ -1626,30 +1632,37 @@ abstract contract ValidationModuleBase is IValidationModule, Ownable, TaxAcknowl
         uint64 extension,
         string calldata reason
     ) external virtual {
+        action; extension; jobId; reason;
         revert UnsupportedImplementationSelector();
     }
 
     function setValidatorPool(address[] calldata newPool) external virtual {
+        newPool;
         revert UnsupportedImplementationSelector();
     }
 
     function setReputationEngine(IReputationEngine engine) external virtual {
+        engine;
         revert UnsupportedImplementationSelector();
     }
 
     function setJobRegistry(IJobRegistry registry) external virtual {
+        registry;
         revert UnsupportedImplementationSelector();
     }
 
     function setStakeManager(IStakeManager manager) external virtual {
+        manager;
         revert UnsupportedImplementationSelector();
     }
 
     function setIdentityRegistry(IIdentityRegistry registry) external virtual {
+        registry;
         revert UnsupportedImplementationSelector();
     }
 
     function setRandaoCoordinator(IRandaoCoordinator coordinator) external virtual {
+        coordinator;
         revert UnsupportedImplementationSelector();
     }
 
@@ -1662,22 +1675,27 @@ abstract contract ValidationModuleBase is IValidationModule, Ownable, TaxAcknowl
     }
 
     function setValidatorPoolSampleSize(uint256 size) external virtual {
+        size;
         revert UnsupportedImplementationSelector();
     }
 
     function setMaxValidatorPoolSize(uint256 size) external virtual {
+        size;
         revert UnsupportedImplementationSelector();
     }
 
     function setMaxValidatorsPerJob(uint256 max) external virtual {
+        max;
         revert UnsupportedImplementationSelector();
     }
 
     function setSelectionStrategy(IValidationModule.SelectionStrategy strategy) external virtual {
+        strategy;
         revert UnsupportedImplementationSelector();
     }
 
     function setValidatorAuthCacheDuration(uint256 duration) external virtual {
+        duration;
         revert UnsupportedImplementationSelector();
     }
 
@@ -1692,66 +1710,82 @@ abstract contract ValidationModuleBase is IValidationModule, Ownable, TaxAcknowl
         uint256 approvalPct,
         uint256 slashPct
     ) external virtual override {
+        approvalPct; commitDur; committeeSize; revealDur; slashPct;
         revert UnsupportedImplementationSelector();
     }
 
     function setParameters(uint256 validatorCount, uint256 commitDur, uint256 revealDur) public virtual {
+        commitDur; revealDur; validatorCount;
         revert UnsupportedImplementationSelector();
     }
 
     function setValidatorSubdomains(address[] calldata accounts, string[] calldata subdomains) external virtual {
+        accounts; subdomains;
         revert UnsupportedImplementationSelector();
     }
 
     function setMySubdomain(string calldata subdomain) external virtual {
+        subdomain;
         revert UnsupportedImplementationSelector();
     }
 
     function setCommitRevealWindows(uint256 commitDur, uint256 revealDur) external virtual override {
+        commitDur; revealDur;
         revert UnsupportedImplementationSelector();
     }
 
     function setTiming(uint256 commitDur, uint256 revealDur) external virtual {
+        commitDur; revealDur;
         revert UnsupportedImplementationSelector();
     }
 
     function setValidatorBounds(uint256 minVals, uint256 maxVals) external virtual override {
+        maxVals; minVals;
         revert UnsupportedImplementationSelector();
     }
 
     function setValidatorsPerJob(uint256 count) external virtual override {
+        count;
         revert UnsupportedImplementationSelector();
     }
 
     function setCommitWindow(uint256 commitDur) external virtual {
+        commitDur;
         revert UnsupportedImplementationSelector();
     }
 
     function setRevealWindow(uint256 revealDur) external virtual {
+        revealDur;
         revert UnsupportedImplementationSelector();
     }
 
     function setMinValidators(uint256 minVals) external virtual {
+        minVals;
         revert UnsupportedImplementationSelector();
     }
 
     function setMaxValidators(uint256 maxVals) external virtual {
+        maxVals;
         revert UnsupportedImplementationSelector();
     }
 
     function setValidatorSlashingPct(uint256 pct) external virtual {
+        pct;
         revert UnsupportedImplementationSelector();
     }
 
     function setApprovalThreshold(uint256 pct) external virtual {
+        pct;
         revert UnsupportedImplementationSelector();
     }
 
     function setRequiredValidatorApprovals(uint256 count) external virtual override {
+        count;
         revert UnsupportedImplementationSelector();
     }
 
     function setAutoApprovalTarget(bool enabled) external virtual override {
+        enabled;
         revert UnsupportedImplementationSelector();
     }
 
@@ -1761,10 +1795,12 @@ abstract contract ValidationModuleBase is IValidationModule, Ownable, TaxAcknowl
         override
         returns (address[] memory selected)
     {
+        entropy; jobId; selected;
         revert UnsupportedImplementationSelector();
     }
 
     function start(uint256 jobId, uint256 entropy) external virtual override returns (address[] memory) {
+        entropy; jobId;
         revert UnsupportedImplementationSelector();
     }
 
@@ -1773,6 +1809,7 @@ abstract contract ValidationModuleBase is IValidationModule, Ownable, TaxAcknowl
         virtual
         override
     {
+        commitHash; jobId; proof; subdomain;
         revert UnsupportedImplementationSelector();
     }
 
@@ -1784,6 +1821,7 @@ abstract contract ValidationModuleBase is IValidationModule, Ownable, TaxAcknowl
         string calldata subdomain,
         bytes32[] calldata proof
     ) public virtual override {
+        approve; burnTxHash; jobId; proof; salt; subdomain;
         revert UnsupportedImplementationSelector();
     }
 
@@ -1791,6 +1829,7 @@ abstract contract ValidationModuleBase is IValidationModule, Ownable, TaxAcknowl
         external
         virtual
     {
+        commitHash; jobId; proof; subdomain;
         revert UnsupportedImplementationSelector();
     }
 
@@ -1802,26 +1841,32 @@ abstract contract ValidationModuleBase is IValidationModule, Ownable, TaxAcknowl
         string calldata subdomain,
         bytes32[] calldata proof
     ) external virtual {
+        approve; burnTxHash; jobId; proof; salt; subdomain;
         revert UnsupportedImplementationSelector();
     }
 
     function finalize(uint256 jobId) external virtual override returns (bool success) {
+        jobId; success;
         revert UnsupportedImplementationSelector();
     }
 
     function finalizeValidation(uint256 jobId) external virtual override returns (bool success) {
+        jobId; success;
         revert UnsupportedImplementationSelector();
     }
 
     function forceFinalize(uint256 jobId) external virtual override returns (bool success) {
+        jobId; success;
         revert UnsupportedImplementationSelector();
     }
 
     function resetJobNonce(uint256 jobId) external virtual override {
+        jobId;
         revert UnsupportedImplementationSelector();
     }
 
     function resetSelection(uint256 jobId) external virtual {
+        jobId;
         revert UnsupportedImplementationSelector();
     }
 }

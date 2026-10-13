@@ -5,7 +5,7 @@ import {StakeManagerBase} from "../../contracts/v2/implementation/StakeManagerBa
 import {FixedImplementationFixtures} from "./helpers/FixedImplementationFixtures.sol";
 
 import "forge-std/Test.sol";
-import {StakeManager, MaxStakeExceeded, BelowMinimumStake, InvalidParams} from "../../contracts/v2/StakeManager.sol";
+import {StakeManager} from "../../contracts/v2/StakeManager.sol";
 import {AGIALPHAToken} from "../../contracts/test/AGIALPHAToken.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ITaxPolicy} from "../../contracts/v2/interfaces/ITaxPolicy.sol";
@@ -63,7 +63,7 @@ contract StakeManagerFuzz is Test {
         vm.prank(address(2));
         token.approve(address(stake), second);
         vm.prank(address(2));
-        vm.expectRevert(MaxStakeExceeded.selector);
+        vm.expectRevert(StakeManager.MaxStakeExceeded.selector);
         stake.depositStake(StakeManagerBase.Role.Agent, second);
     }
 
@@ -71,7 +71,7 @@ contract StakeManagerFuzz is Test {
         vm.assume(minRec > 0);
         vm.assume(maxRec > 0);
         vm.assume(maxRec < minRec);
-        vm.expectRevert(InvalidParams.selector);
+        vm.expectRevert(StakeManager.InvalidParams.selector);
         stake.setStakeRecommendations(minRec, maxRec);
     }
 
@@ -92,7 +92,7 @@ contract StakeManagerFuzz is Test {
         vm.prank(address(3));
         token.approve(address(stake), below);
         vm.prank(address(3));
-        vm.expectRevert(BelowMinimumStake.selector);
+        vm.expectRevert(StakeManager.BelowMinimumStake.selector);
         stake.depositStake(StakeManagerBase.Role.Agent, below);
 
         // above max should revert
@@ -101,7 +101,7 @@ contract StakeManagerFuzz is Test {
         vm.prank(address(4));
         token.approve(address(stake), above);
         vm.prank(address(4));
-        vm.expectRevert(MaxStakeExceeded.selector);
+        vm.expectRevert(StakeManager.MaxStakeExceeded.selector);
         stake.depositStake(StakeManagerBase.Role.Agent, above);
     }
 }

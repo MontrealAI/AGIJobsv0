@@ -26,6 +26,7 @@ if (process.argv.length !== 3 || !['mainnet', 'sepolia'].includes(network)) {
     ],
     [require.resolve('hardhat/internal/cli/cli'), 'compile'],
     ['scripts/release/check-contract-size.js'],
+    ['scripts/ci/check-solidity-build.cjs'],
   ]) {
     const result = spawnSync(process.execPath, args, { env, stdio: 'inherit' });
     if (result.error || result.status !== 0) {

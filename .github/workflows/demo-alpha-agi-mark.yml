@@ -45,6 +45,7 @@ jobs:
             actions-results.githubusercontent.com:443
             pipelines.actions.githubusercontent.com:443
             registry.npmjs.org:443
+            binaries.soliditylang.org:443
             nodejs.org:443
 
       - name: Setup Node.js

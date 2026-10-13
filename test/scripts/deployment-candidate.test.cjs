@@ -310,7 +310,8 @@ test('deployment artifacts reject stale dependencies, ABI changes and nonproduct
     abi: [],
   };
   const build = {
-    solcVersion: '0.8.25',
+    solcVersion: '0.8.37',
+    solcLongVersion: '0.8.37+commit.f401782d',
     input: {
       settings: {
         viaIR: true,

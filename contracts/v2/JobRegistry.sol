@@ -18,10 +18,12 @@ import {IAuditModule} from "./interfaces/IAuditModule.sol";
 import {TOKEN_SCALE} from "./Constants.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import "./implementation/JobRegistryBase.sol";
+import { JobRegistryBase } from "./implementation/JobRegistryBase.sol";
 import "./implementation/FixedDelegate.sol";
 
 /// @notice JobRegistry with immutable, separately deployed implementations.
+/// @dev Named ABI inputs are intentionally referenced before forwarding the original
+///      msg.data. Their names remain available to wallets and explorers.
 contract JobRegistry is JobRegistryBase, FixedDelegate {
     error JobParametersUnset();
     error RewardOverflow();
@@ -164,20 +166,24 @@ contract JobRegistry is JobRegistryBase, FixedDelegate {
     /// @notice Records evidence of a token burn by the employer.
     /// @dev Employers must acknowledge the active tax policy before calling.
     function submitBurnReceipt(uint256 jobId, bytes32 burnTxHash, uint256 amount, uint256 blockNumber) external {
+        jobId; burnTxHash; amount; blockNumber;
         _delegate(_lifecycle);
     }
 
     /// @notice Confirms previously submitted burn evidence.
     /// @dev Employers must acknowledge the active tax policy before calling.
     function confirmEmployerBurn(uint256 jobId, bytes32 burnTxHash) external {
+        jobId; burnTxHash;
         _delegate(_lifecycle);
     }
 
     function setPauser(address _pauser) external {
+        _pauser;
         _delegate(_configuration);
     }
 
     function setPauserManager(address manager) external {
+        manager;
         _delegate(_configuration);
     }
 
@@ -190,58 +196,68 @@ contract JobRegistry is JobRegistryBase, FixedDelegate {
         IFeePool _feePool,
         address[] calldata _ackModules
     ) external {
+        _validation; _stakeMgr; _reputation; _disputeModule; _certNFT; _feePool; _ackModules;
         _delegate(_configuration);
     }
 
     /// @notice Update the identity registry used for agent verification.
     /// @param registry Address of the IdentityRegistry contract.
     function setIdentityRegistry(IIdentityRegistry registry) external {
+        registry;
         _delegate(_configuration);
     }
 
     /// @notice Switch the active dispute module.
     /// @param module Address of the new dispute module contract.
     function setDisputeModule(IDisputeModule module) external {
+        module;
         _delegate(_configuration);
     }
 
     /// @notice Update the validation module used to source validator lists.
     /// @param module ValidationModule contract address.
     function setValidationModule(IValidationModule module) external {
+        module;
         _delegate(_configuration);
     }
 
     /// @notice Update the audit module used for post-completion spot checks.
     /// @param module Address of the audit module contract (zero to disable).
     function setAuditModule(IAuditModule module) external {
+        module;
         _delegate(_configuration);
     }
 
     /// @notice Update the stake manager reference.
     /// @param manager StakeManager contract address.
     function setStakeManager(IStakeManager manager) external {
+        manager;
         _delegate(_configuration);
     }
 
     /// @notice Update the reputation engine reference.
     function setReputationEngine(IReputationEngine engine) external {
+        engine;
         _delegate(_configuration);
     }
 
     /// @notice Update the certificate NFT module reference.
     function setCertificateNFT(ICertificateNFT nft) external {
+        nft;
         _delegate(_configuration);
     }
 
     /// @notice Update the ENS root node used for agent verification.
     /// @param node Namehash of the agent parent node (e.g. `agent.agi.eth`).
     function setAgentRootNode(bytes32 node) external {
+        node;
         _delegate(_configuration);
     }
 
     /// @notice Update the Merkle root for the agent allowlist.
     /// @param root Merkle root of approved agent addresses.
     function setAgentMerkleRoot(bytes32 root) external {
+        root;
         _delegate(_configuration);
     }
 
@@ -254,12 +270,14 @@ contract JobRegistry is JobRegistryBase, FixedDelegate {
     /// @notice Update the ENS root node used for validator verification.
     /// @param node Namehash of the validator parent node (e.g. `club.agi.eth`).
     function setValidatorRootNode(bytes32 node) external {
+        node;
         _delegate(_configuration);
     }
 
     /// @notice Update the Merkle root for the validator allowlist.
     /// @param root Merkle root of approved validator addresses.
     function setValidatorMerkleRoot(bytes32 root) external {
+        root;
         _delegate(_configuration);
     }
 
@@ -267,64 +285,76 @@ contract JobRegistry is JobRegistryBase, FixedDelegate {
     /// @param agent Address of the agent being updated.
     /// @param authorized True to refresh the cache entry, false to invalidate it.
     function updateAgentAuthCache(address agent, bool authorized) external {
+        agent; authorized;
         _delegate(_configuration);
     }
 
     /// @notice Update the duration for cached agent authorizations.
     /// @param duration Seconds an authorization remains valid in cache.
     function setAgentAuthCacheDuration(uint256 duration) external {
+        duration;
         _delegate(_configuration);
     }
 
     /// @notice update the FeePool contract used for revenue sharing
     function setFeePool(IFeePool _feePool) external {
+        _feePool;
         _delegate(_configuration);
     }
 
     /// @notice update the treasury address used for blacklisted payouts
     /// @dev Treasury must be zero (burn) or a non-owner address
     function setTreasury(address _treasury) external {
+        _treasury;
         _delegate(_configuration);
     }
 
     /// @notice update the required agent stake for each job
     function setJobStake(uint96 stake) external {
+        stake;
         _delegate(_configuration);
     }
 
     /// @notice update the minimum global stake required for agents when applying
     function setMinAgentStake(uint256 stake) external {
+        stake;
         _delegate(_configuration);
     }
 
     /// @notice update the percentage of each job reward taken as a protocol fee
     function setFeePct(uint256 _feePct) external {
+        _feePct;
         _delegate(_configuration);
     }
 
     /// @notice update validator reward percentage of job reward
     function setValidatorRewardPct(uint256 pct) external {
+        pct;
         _delegate(_configuration);
     }
 
     /// @notice set the maximum allowed job reward
     function setMaxJobReward(uint256 maxReward) external {
+        maxReward;
         _delegate(_configuration);
     }
 
     /// @notice set the maximum allowed job duration in seconds
     function setJobDurationLimit(uint256 limit) external {
+        limit;
         _delegate(_configuration);
     }
 
     /// @notice Set the maximum number of simultaneously active jobs an agent may hold.
     /// @dev A value of zero disables the limit.
     function setMaxActiveJobsPerAgent(uint256 limit) external {
+        limit;
         _delegate(_configuration);
     }
 
     /// @notice set additional grace period after a job's deadline before it can expire
     function setExpirationGracePeriod(uint256 period) external {
+        period;
         _delegate(_configuration);
     }
 
@@ -332,6 +362,7 @@ contract JobRegistry is JobRegistryBase, FixedDelegate {
     /// @dev Only callable by the owner; the policy address cannot be zero and
     /// must explicitly report tax exemption.
     function setTaxPolicy(ITaxPolicy _policy) external {
+        _policy;
         _delegate(_configuration);
     }
 
@@ -350,6 +381,7 @@ contract JobRegistry is JobRegistryBase, FixedDelegate {
     /// @param acknowledger Address granted permission to acknowledge for users.
     /// @param allowed True to allow the address, false to revoke.
     function setAcknowledger(address acknowledger, bool allowed) external {
+        acknowledger; allowed;
         _delegate(_configuration);
     }
 
@@ -360,6 +392,7 @@ contract JobRegistry is JobRegistryBase, FixedDelegate {
     /// @return ack Human‑readable disclaimer confirming the caller bears all
     /// tax responsibility.
     function acknowledgeTaxPolicy() external returns (string memory ack) {
+        ack;
         _delegate(_lifecycle);
     }
 
@@ -367,10 +400,13 @@ contract JobRegistry is JobRegistryBase, FixedDelegate {
     /// @param user Address acknowledging the policy.
     /// @return ack Human-readable disclaimer confirming the caller bears all tax responsibility.
     function acknowledgeFor(address user) external returns (string memory ack) {
+        ack;
+        user;
         _delegate(_lifecycle);
     }
 
     function setJobParameters(uint256 maxReward, uint256 stake) external {
+        maxReward; stake;
         _delegate(_configuration);
     }
 
@@ -383,6 +419,7 @@ contract JobRegistry is JobRegistryBase, FixedDelegate {
         AcknowledgerUpdate[] calldata acknowledgerUpdates,
         address[] calldata ackModules
     ) external {
+        config; acknowledgerUpdates; ackModules;
         _delegate(_configuration);
     }
 
@@ -390,6 +427,8 @@ contract JobRegistry is JobRegistryBase, FixedDelegate {
         external
         returns (uint256 jobId)
     {
+        jobId;
+        reward; deadline; specHash; uri;
         _delegate(_lifecycle);
     }
 
@@ -400,6 +439,8 @@ contract JobRegistry is JobRegistryBase, FixedDelegate {
         bytes32 specHash,
         string calldata uri
     ) external returns (uint256 jobId) {
+        jobId;
+        reward; deadline; agentTypes; specHash; uri;
         _delegate(_lifecycle);
     }
 
@@ -415,6 +456,8 @@ contract JobRegistry is JobRegistryBase, FixedDelegate {
         external
         returns (uint256 jobId)
     {
+        jobId;
+        reward; deadline; specHash; uri;
         _delegate(_lifecycle);
     }
 
@@ -425,10 +468,13 @@ contract JobRegistry is JobRegistryBase, FixedDelegate {
         bytes32 specHash,
         string calldata uri
     ) external returns (uint256 jobId) {
+        jobId;
+        reward; deadline; agentTypes; specHash; uri;
         _delegate(_lifecycle);
     }
 
     function applyForJob(uint256 jobId, string calldata subdomain, bytes32[] calldata proof) external {
+        jobId; subdomain; proof;
         _delegate(_lifecycle);
     }
 
@@ -440,6 +486,7 @@ contract JobRegistry is JobRegistryBase, FixedDelegate {
      * @param jobId Identifier of the job to apply for.
      */
     function acknowledgeAndApply(uint256 jobId, string calldata subdomain, bytes32[] calldata proof) external {
+        jobId; subdomain; proof;
         _delegate(_lifecycle);
     }
 
@@ -456,6 +503,7 @@ contract JobRegistry is JobRegistryBase, FixedDelegate {
     function stakeAndApply(uint256 jobId, uint256 amount, string calldata subdomain, bytes32[] calldata proof)
         external
     {
+        jobId; amount; subdomain; proof;
         _delegate(_lifecycle);
     }
 
@@ -470,6 +518,7 @@ contract JobRegistry is JobRegistryBase, FixedDelegate {
         string calldata subdomain,
         bytes32[] calldata proof
     ) public {
+        jobId; resultHash; resultURI; subdomain; proof;
         _delegate(_lifecycle);
     }
 
@@ -481,22 +530,26 @@ contract JobRegistry is JobRegistryBase, FixedDelegate {
         string calldata subdomain,
         bytes32[] calldata proof
     ) external {
+        jobId; resultHash; resultURI; subdomain; proof;
         _delegate(_lifecycle);
     }
 
     /// @notice Record that reputation updates have already been applied for a job.
     /// @param jobId Identifier of the job that triggered the update.
     function markReputationProcessed(uint256 jobId) external {
+        jobId;
         _delegate(_lifecycle);
     }
 
     /// @param jobId Identifier of the job being finalised.
     /// @param success True if validators approved the job.
     function finalizeAfterValidation(uint256 jobId, bool success) external {
+        jobId; success;
         _delegate(_settlement);
     }
 
     function validationComplete(uint256 jobId, bool success) external {
+        jobId; success;
         _delegate(_settlement);
     }
 
@@ -506,6 +559,7 @@ contract JobRegistry is JobRegistryBase, FixedDelegate {
     ///      reputation changes.
     /// @param jobId Identifier of the job being recorded.
     function forceFinalize(uint256 jobId) external {
+        jobId;
         _delegate(_settlement);
     }
 
@@ -514,6 +568,7 @@ contract JobRegistry is JobRegistryBase, FixedDelegate {
     /// @param success True if validators approved the job
     /// @param validators Validators that participated in validation
     function onValidationResult(uint256 jobId, bool success, address[] calldata validators) external {
+        jobId; success; validators;
         _delegate(_lifecycle);
     }
 
@@ -522,6 +577,7 @@ contract JobRegistry is JobRegistryBase, FixedDelegate {
     /// @param evidenceHash Keccak256 hash of the evidence stored off-chain.
     /// @param reason Plain-text description or URI describing the dispute.
     function dispute(uint256 jobId, bytes32 evidenceHash, string calldata reason) public {
+        jobId; evidenceHash; reason;
         _delegate(_settlement);
     }
 
@@ -530,12 +586,14 @@ contract JobRegistry is JobRegistryBase, FixedDelegate {
     /// @param jobId Identifier of the job requiring manual intervention.
     /// @param reason Context string explaining the escalation.
     function escalateToDispute(uint256 jobId, string calldata reason) external {
+        jobId; reason;
         _delegate(_settlement);
     }
 
     /// @notice Backwards-compatible wrapper for legacy integrations.
     /// @dev Calls {dispute} with the provided evidence hash.
     function raiseDispute(uint256 jobId, bytes32 evidenceHash) public {
+        jobId; evidenceHash;
         _delegate(_settlement);
     }
 
@@ -543,6 +601,7 @@ contract JobRegistry is JobRegistryBase, FixedDelegate {
     /// @param jobId Identifier of the disputed job.
     /// @param reason Plain-text or URI reason for the dispute.
     function raiseDispute(uint256 jobId, string calldata reason) public {
+        jobId; reason;
         _delegate(_settlement);
     }
 
@@ -555,11 +614,13 @@ contract JobRegistry is JobRegistryBase, FixedDelegate {
      * @param evidenceHash Keccak256 hash of the off-chain evidence.
      */
     function acknowledgeAndDispute(uint256 jobId, bytes32 evidenceHash, string calldata reason) public {
+        jobId; evidenceHash; reason;
         _delegate(_settlement);
     }
 
     /// @notice Backwards-compatible helper without a reason string.
     function acknowledgeAndDispute(uint256 jobId, bytes32 evidenceHash) external {
+        jobId; evidenceHash;
         _delegate(_settlement);
     }
 
@@ -570,6 +631,7 @@ contract JobRegistry is JobRegistryBase, FixedDelegate {
     /// @param jobId Identifier of the disputed job
     /// @param employerWins True if the employer won the dispute
     function resolveDispute(uint256 jobId, bool employerWins) external {
+        jobId; employerWins;
         _delegate(_settlement);
     }
 
@@ -577,18 +639,21 @@ contract JobRegistry is JobRegistryBase, FixedDelegate {
     /// @dev The dispute module may call this without acknowledgement as it
     ///      merely relays the arbiter's ruling and holds no tax liability.
     function finalize(uint256 jobId) public {
+        jobId;
         _delegate(_settlement);
     }
 
     /// @notice Acknowledge the tax policy and finalise the job in one call.
     /// @param jobId Identifier of the job to finalise
     function acknowledgeAndFinalize(uint256 jobId) external {
+        jobId;
         _delegate(_settlement);
     }
 
     /// @notice Acknowledge the tax policy and cancel a job in one call.
     /// @param jobId Identifier of the job to cancel
     function acknowledgeAndCancel(uint256 jobId) external {
+        jobId;
         _delegate(_settlement);
     }
 
@@ -598,22 +663,26 @@ contract JobRegistry is JobRegistryBase, FixedDelegate {
     /// refunds any locked reward back to the employer.
     /// @param jobId Identifier of the job to cancel.
     function cancel(uint256 jobId) external {
+        jobId;
         _delegate(_settlement);
     }
 
     function cancelJob(uint256 jobId) public {
+        jobId;
         _delegate(_settlement);
     }
 
     /// @notice Owner can delist an unassigned job and refund the employer.
     /// @param jobId Identifier of the job to delist.
     function delistJob(uint256 jobId) external {
+        jobId;
         _delegate(_configuration);
     }
 
     /// @notice Mark an applied job as timed out and settle funds directly.
     /// @param jobId Identifier of the job to mark as timed out.
     function claimTimeout(uint256 jobId) external {
+        jobId;
         _delegate(_settlement);
     }
 
@@ -621,6 +690,7 @@ contract JobRegistry is JobRegistryBase, FixedDelegate {
     /// @dev Only the employer or governance may trigger this after the deadline.
     /// @param jobId Identifier of the job to cancel.
     function cancelExpiredJob(uint256 jobId) public {
+        jobId;
         _delegate(_settlement);
     }
 }

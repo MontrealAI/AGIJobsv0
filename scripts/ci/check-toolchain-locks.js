@@ -111,14 +111,24 @@ function checkWorkflows() {
 }
 
 function checkFoundryVersion() {
-  const foundryToml = readFileTrim('foundry.toml');
-  if (!foundryToml) {
+  const { version } = require('../../config/foundry-toolchain.json');
+  if (!/^\d+\.\d+\.\d+$/.test(version)) {
+    problems.push('config/foundry-toolchain.json must pin a release version');
     return;
   }
-
-  const forgeVersionMatches = /forge_version\s*=\s*"1\.4\.4"/.test(foundryToml);
-  if (!forgeVersionMatches) {
-    problems.push('foundry.toml must pin forge_version = "1.4.4"');
+  for (const file of fs.readdirSync(path.join(repoRoot, '.github/workflows'))) {
+    if (!/\.ya?ml$/.test(file)) continue;
+    const steps = readFileTrim(`.github/workflows/${file}`).split(/\n\s*-\s/);
+    for (const step of steps) {
+      const installedVersion = step.match(
+        /\n\s+version:\s*(['"]?)(v\d+\.\d+\.\d+)\1\s*(?:\n|$)/
+      )?.[2];
+      if (
+        /uses:\s*foundry-rs\/foundry-toolchain@/.test(step) &&
+        installedVersion !== `v${version}`
+      )
+        problems.push(`${file} must install Foundry v${version}`);
+    }
   }
 }
 
@@ -142,10 +152,38 @@ function checkRootLockfile() {
   }
 }
 
+function checkSolidityVersion() {
+  const { version } = require('../../config/solidity-compiler.json');
+  const files = [
+    ['hardhat.config.js', `const SOLIDITY_VERSIONS = ['${version}'];`],
+    ['hardhat.coverage.config.js', `version: '${version}'`],
+    ['truffle-config.js', `version: '${version}'`],
+    ['foundry.toml', `solc_version = "${version}"`],
+    ['demo/CULTURE-v0/hardhat.config.ts', `version: '${version}'`],
+    ['demo/CULTURE-v0/foundry.toml', `solc_version = "${version}"`],
+    ['demo/CULTURE-v0/slither.config.json', `"solc": "${version}"`],
+    [
+      'demo/Trustless-Economic-Core-v0/hardhat.config.ts',
+      `version: '${version}'`,
+    ],
+    [
+      'demo/LARGE-SCALE-OMEGA-BUSINESS-3/hardhat.config.cjs',
+      `version: '${version}'`,
+    ],
+    ['demo/alpha-agi-mark/hardhat.config.ts', `version: "${version}"`],
+    ['demo/alpha-agi-insight-mark/hardhat.config.ts', `version: "${version}"`],
+  ];
+  for (const [file, pin] of files) {
+    if (!readFileTrim(file).includes(pin))
+      problems.push(`${file} must pin Solidity ${version}`);
+  }
+}
+
 checkNodeVersion();
 checkWorkflows();
 checkFoundryVersion();
 checkRootLockfile();
+checkSolidityVersion();
 
 if (problems.length > 0) {
   console.error('\n❌ Toolchain lock verification failed:');

@@ -14,10 +14,12 @@ import {ITaxPolicy} from "./interfaces/ITaxPolicy.sol";
 import {IRandaoCoordinator} from "./interfaces/IRandaoCoordinator.sol";
 import {TaxAcknowledgement} from "./libraries/TaxAcknowledgement.sol";
 
-import "./implementation/ValidationModuleBase.sol";
+import { ValidationModuleBase } from "./implementation/ValidationModuleBase.sol";
 import "./implementation/FixedDelegate.sol";
 
 /// @notice ValidationModule with immutable, separately deployed implementations.
+/// @dev Named ABI inputs are intentionally referenced before forwarding the original
+///      msg.data. Their names remain available to wallets and explorers.
 contract ValidationModule is ValidationModuleBase, FixedDelegate {
     // Preserve delegated custom errors in the public controller ABI.
     error InvalidJobRegistry();
@@ -136,10 +138,12 @@ contract ValidationModule is ValidationModuleBase, FixedDelegate {
     }
 
     function setPauser(address _pauser) external override {
+        _pauser;
         _delegate(_configuration);
     }
 
     function setPauserManager(address manager) external override {
+        manager;
         _delegate(_configuration);
     }
 
@@ -147,6 +151,7 @@ contract ValidationModule is ValidationModuleBase, FixedDelegate {
     /// @param penaltyBps Slash applied in basis points of validator stake.
     /// @param banBlocks Number of blocks a validator is banned from new committees.
     function setNonRevealPenalty(uint256 penaltyBps, uint256 banBlocks) external override {
+        penaltyBps; banBlocks;
         _delegate(_configuration);
     }
 
@@ -154,18 +159,21 @@ contract ValidationModule is ValidationModuleBase, FixedDelegate {
     /// @param pct Percentage of the committee that must reveal (0-100).
     /// @param minValidators_ Absolute minimum number of reveals required.
     function setRevealQuorum(uint256 pct, uint256 minValidators_) external override {
+        pct; minValidators_;
         _delegate(_configuration);
     }
 
     /// @notice Update the cool-off delay before early finalization is permitted.
     /// @param delay Seconds to wait after quorum is met before allowing finalize.
     function setEarlyFinalizeDelay(uint256 delay) external override {
+        delay;
         _delegate(_configuration);
     }
 
     /// @notice Update the grace period before force finalize can be triggered.
     /// @param grace Additional seconds allowed after the reveal window closes.
     function setForceFinalizeGrace(uint256 grace) external override {
+        grace;
         _delegate(_configuration);
     }
 
@@ -180,38 +188,45 @@ contract ValidationModule is ValidationModuleBase, FixedDelegate {
         uint64 extension,
         string calldata reason
     ) external override {
+        jobId; action; extension; reason;
         _delegate(_voting);
     }
 
     /// @notice Update the list of eligible validators.
     /// @param newPool Addresses of validators.
     function setValidatorPool(address[] calldata newPool) external override {
+        newPool;
         _delegate(_configuration);
     }
 
     /// @notice Update the reputation engine used for validator feedback.
     function setReputationEngine(IReputationEngine engine) external override {
+        engine;
         _delegate(_configuration);
     }
 
     /// @notice Update the JobRegistry reference.
     function setJobRegistry(IJobRegistry registry) external override {
+        registry;
         _delegate(_configuration);
     }
 
     /// @notice Update the StakeManager reference.
     function setStakeManager(IStakeManager manager) external override {
+        manager;
         _delegate(_configuration);
     }
 
     /// @notice Update the identity registry used for validator verification.
     function setIdentityRegistry(IIdentityRegistry registry) external override {
+        registry;
         _delegate(_configuration);
     }
 
     /// @notice Set the Randao coordinator used for randomness.
     /// @param coordinator Address of the RandaoCoordinator contract.
     function setRandaoCoordinator(IRandaoCoordinator coordinator) external override {
+        coordinator;
         _delegate(_configuration);
     }
 
@@ -228,30 +243,35 @@ contract ValidationModule is ValidationModuleBase, FixedDelegate {
     /// @notice Update the maximum number of pool entries sampled during selection.
     /// @param size Maximum number of validators examined on-chain.
     function setValidatorPoolSampleSize(uint256 size) external override {
+        size;
         _delegate(_configuration);
     }
 
     /// @notice Update the maximum allowable size of the validator pool.
     /// @param size Maximum number of validators permitted in the pool.
     function setMaxValidatorPoolSize(uint256 size) external override {
+        size;
         _delegate(_configuration);
     }
 
     /// @notice Update the maximum number of validators allowed per job.
     /// @param max Maximum validators permitted for any job.
     function setMaxValidatorsPerJob(uint256 max) external override {
+        max;
         _delegate(_configuration);
     }
 
     /// @notice Configure the validator sampling strategy.
     /// @param strategy Sampling algorithm to employ when selecting validators.
     function setSelectionStrategy(IValidationModule.SelectionStrategy strategy) external override {
+        strategy;
         _delegate(_configuration);
     }
 
     /// @notice Update the duration for cached validator authorizations.
     /// @param duration Seconds an authorization remains valid in cache.
     function setValidatorAuthCacheDuration(uint256 duration) external override {
+        duration;
         _delegate(_configuration);
     }
 
@@ -274,6 +294,7 @@ contract ValidationModule is ValidationModuleBase, FixedDelegate {
         uint256 approvalPct,
         uint256 slashPct
     ) external override {
+        committeeSize; commitDur; revealDur; approvalPct; slashPct;
         _delegate(_configuration);
     }
 
@@ -282,6 +303,7 @@ contract ValidationModule is ValidationModuleBase, FixedDelegate {
     /// @param commitDur Duration of the commit phase in seconds.
     /// @param revealDur Duration of the reveal phase in seconds.
     function setParameters(uint256 validatorCount, uint256 commitDur, uint256 revealDur) public override {
+        validatorCount; commitDur; revealDur;
         _delegate(_configuration);
     }
 
@@ -289,73 +311,87 @@ contract ValidationModule is ValidationModuleBase, FixedDelegate {
     /// @param accounts Validator addresses to configure.
     /// @param subdomains ENS labels owned by each validator.
     function setValidatorSubdomains(address[] calldata accounts, string[] calldata subdomains) external override {
+        accounts; subdomains;
         _delegate(_configuration);
     }
 
     /// @notice Map the caller to an ENS subdomain for selection checks.
     /// @param subdomain ENS label owned by the caller.
     function setMySubdomain(string calldata subdomain) external override {
+        subdomain;
         _delegate(_configuration);
     }
 
     /// @notice Update the commit and reveal windows.
     function setCommitRevealWindows(uint256 commitDur, uint256 revealDur) external override {
+        commitDur; revealDur;
         _delegate(_configuration);
     }
 
     /// @notice Convenience wrapper matching original API naming.
     /// @dev Alias for {setCommitRevealWindows}.
     function setTiming(uint256 commitDur, uint256 revealDur) external override {
+        commitDur; revealDur;
         _delegate(_configuration);
     }
 
     /// @notice Set minimum and maximum validators per round.
     function setValidatorBounds(uint256 minVals, uint256 maxVals) external override {
+        minVals; maxVals;
         _delegate(_configuration);
     }
 
     /// @notice Set number of validators selected per job.
     function setValidatorsPerJob(uint256 count) external override {
+        count;
         _delegate(_configuration);
     }
 
     /// @notice Individually update commit window duration.
     function setCommitWindow(uint256 commitDur) external override {
+        commitDur;
         _delegate(_configuration);
     }
 
     /// @notice Individually update reveal window duration.
     function setRevealWindow(uint256 revealDur) external override {
+        revealDur;
         _delegate(_configuration);
     }
 
     /// @notice Individually update minimum validators.
     function setMinValidators(uint256 minVals) external override {
+        minVals;
         _delegate(_configuration);
     }
 
     /// @notice Individually update maximum validators.
     function setMaxValidators(uint256 maxVals) external override {
+        maxVals;
         _delegate(_configuration);
     }
 
     function setValidatorSlashingPct(uint256 pct) external override {
+        pct;
         _delegate(_configuration);
     }
 
     /// @notice Update approval threshold percentage.
     function setApprovalThreshold(uint256 pct) external override {
+        pct;
         _delegate(_configuration);
     }
 
     /// @notice Set the required number of validator approvals.
     function setRequiredValidatorApprovals(uint256 count) external override {
+        count;
         _delegate(_configuration);
     }
 
     /// @notice Toggle automatic supermajority targeting for required approvals.
     /// @param enabled When true, the approval count tracks the configured threshold.
     function setAutoApprovalTarget(bool enabled) external override {
+        enabled;
         _delegate(_configuration);
     }
 
@@ -367,11 +403,14 @@ contract ValidationModule is ValidationModuleBase, FixedDelegate {
     ///      `msg.sender` as fallback) to avoid external randomness providers and
     ///      minimize miner influence.
     function selectValidators(uint256 jobId, uint256 entropy) public override returns (address[] memory selected) {
+        selected;
+        jobId; entropy;
         _delegate(_selection);
     }
 
     /// @inheritdoc IValidationModule
     function start(uint256 jobId, uint256 entropy) external override returns (address[] memory) {
+        jobId; entropy;
         _delegate(_selection);
     }
 
@@ -380,6 +419,7 @@ contract ValidationModule is ValidationModuleBase, FixedDelegate {
         public
         override
     {
+        jobId; commitHash; subdomain; proof;
         _delegate(_voting);
     }
 
@@ -392,6 +432,7 @@ contract ValidationModule is ValidationModuleBase, FixedDelegate {
         string calldata subdomain,
         bytes32[] calldata proof
     ) public override {
+        jobId; approve; burnTxHash; salt; subdomain; proof;
         _delegate(_voting);
     }
 
@@ -400,6 +441,7 @@ contract ValidationModule is ValidationModuleBase, FixedDelegate {
         external
         override
     {
+        jobId; commitHash; subdomain; proof;
         _delegate(_voting);
     }
 
@@ -412,15 +454,20 @@ contract ValidationModule is ValidationModuleBase, FixedDelegate {
         string calldata subdomain,
         bytes32[] calldata proof
     ) external override {
+        jobId; approve; burnTxHash; salt; subdomain; proof;
         _delegate(_voting);
     }
 
     /// @notice Tally revealed votes, apply slashing/rewards, and push result to JobRegistry.
     function finalize(uint256 jobId) external override returns (bool success) {
+        success;
+        jobId;
         _delegate(_voting);
     }
 
     function finalizeValidation(uint256 jobId) external override returns (bool success) {
+        success;
+        jobId;
         _delegate(_voting);
     }
 
@@ -429,18 +476,22 @@ contract ValidationModule is ValidationModuleBase, FixedDelegate {
     /// @param jobId Identifier of the job
     /// @return success True if validators approved the job
     function forceFinalize(uint256 jobId) external override returns (bool success) {
+        success;
+        jobId;
         _delegate(_voting);
     }
 
     /// @notice Reset the validation nonce for a job after finalization or dispute resolution.
     /// @param jobId Identifier of the job
     function resetJobNonce(uint256 jobId) external override {
+        jobId;
         _delegate(_selection);
     }
 
     /// @notice Reset pending entropy and selection block for a job to allow reselection.
     /// @param jobId Identifier of the job.
     function resetSelection(uint256 jobId) external override {
+        jobId;
         _delegate(_selection);
     }
 }

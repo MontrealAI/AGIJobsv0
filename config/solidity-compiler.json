@@ -1,0 +1,72 @@
+{
+  "version": "0.8.37",
+  "longVersion": "0.8.37+commit.f401782d",
+  "evmVersion": "cancun",
+  "optimizerRuns": 200,
+  "viaIR": true,
+  "reviewedAt": "2026-10-13",
+  "upstreamRelease": "https://github.com/argotorg/solidity/releases/tag/v0.8.37",
+  "knownBugsSource": "https://github.com/argotorg/solidity/blob/v0.8.37/docs/bugs.json",
+  "linuxAmd64Sha256": "5de843c2c93563cc66425c99a4fb13fdbf32b4c4ae07469480faaf126e14404a",
+  "screenshotAdvisories": [
+    {
+      "uid": "SOL-2026-5",
+      "name": "MemoryByteArrayElementDeleteClearsWholeWord",
+      "fixed": "0.8.37",
+      "conditions": {
+        "viaIR": false
+      }
+    },
+    {
+      "uid": "SOL-2026-4",
+      "name": "SpillSlotCollisionAcrossMutualRecursion",
+      "fixed": "0.8.37",
+      "conditions": {
+        "viaIR": true
+      }
+    },
+    {
+      "uid": "SOL-2026-2",
+      "name": "UnsoundSpillInMutualRecursion",
+      "fixed": "0.8.36",
+      "conditions": {
+        "viaIR": true
+      }
+    },
+    {
+      "uid": "SOL-2025-1",
+      "name": "LostStorageArrayWriteOnSlotOverflow",
+      "fixed": "0.8.32"
+    }
+  ],
+  "reviewedUpstreamWarnings": [
+    {
+      "file": "@openzeppelin/contracts/utils/cryptography/ECDSA.sol",
+      "errorCode": "6335",
+      "sourceSha256": "0964ddd02f4a7a8cf9ba130e3aeead588ca3d425d5bc13cc4221358c69108ed0",
+      "maximumCount": 4,
+      "reason": "OpenZeppelin 5.4.0 identifier scheduled for reservation in a future Solidity language version. Retained verbatim for dependency compatibility; not a known compiler miscompilation advisory."
+    },
+    {
+      "file": "@openzeppelin/contracts/utils/structs/EnumerableSet.sol",
+      "errorCode": "6335",
+      "sourceSha256": "53507e71995d0e76d29d6dd897d0bcc3f069fd81f03cb431d7342bdfcc0d5345",
+      "maximumCount": 5,
+      "reason": "OpenZeppelin 5.4.0 identifier scheduled for reservation in a future Solidity language version. Retained verbatim for dependency compatibility; not a known compiler miscompilation advisory."
+    },
+    {
+      "file": "@openzeppelin/contracts/utils/structs/Checkpoints.sol",
+      "errorCode": "6335",
+      "sourceSha256": "d908ee19a12ef183693ba9635c4bd5ec902614c493fb7967898de286218e42f7",
+      "maximumCount": 3,
+      "reason": "OpenZeppelin 5.4.0 identifier scheduled for reservation in a future Solidity language version. Retained verbatim for dependency compatibility; not a known compiler miscompilation advisory."
+    },
+    {
+      "file": "@openzeppelin/contracts/utils/structs/DoubleEndedQueue.sol",
+      "errorCode": "6335",
+      "sourceSha256": "463c51e14acbb0b9afef3f1f6903203cce5798fb168742ccd7e049e0397b2184",
+      "maximumCount": 1,
+      "reason": "OpenZeppelin 5.4.0 identifier scheduled for reservation in a future Solidity language version. Retained verbatim for dependency compatibility; not a known compiler miscompilation advisory."
+    }
+  ]
+}

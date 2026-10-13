@@ -5,7 +5,7 @@ import {StakeManagerBase} from "../../contracts/v2/implementation/StakeManagerBa
 import {FixedImplementationFixtures} from "./helpers/FixedImplementationFixtures.sol";
 
 import "forge-std/Test.sol";
-import {StakeManager, TokenNotBurnable, InvalidMinStake} from "../../contracts/v2/StakeManager.sol";
+import {StakeManager} from "../../contracts/v2/StakeManager.sol";
 import {AGIALPHAToken} from "../../contracts/test/AGIALPHAToken.sol";
 import {AGIALPHA, BURN_ADDRESS} from "../../contracts/v2/Constants.sol";
 
@@ -53,7 +53,7 @@ contract StakeManagerBurnTest is Test {
     function testBurnTokenRevertsWithoutBurnFunction() public {
         NoBurnToken nb = new NoBurnToken();
         vm.etch(AGIALPHA, address(nb).code);
-        vm.expectRevert(TokenNotBurnable.selector);
+        vm.expectRevert(StakeManager.TokenNotBurnable.selector);
         stake.exposedBurn(1);
     }
 
@@ -89,7 +89,7 @@ contract StakeManagerBurnTest is Test {
     }
 
     function testSetMinStakeZeroReverts() public {
-        vm.expectRevert(InvalidMinStake.selector);
+        vm.expectRevert(StakeManager.InvalidMinStake.selector);
         stake.setMinStake(0);
     }
 }

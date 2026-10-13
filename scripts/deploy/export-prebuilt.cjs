@@ -8,7 +8,11 @@ const output = path.join(root, 'scripts/v2/lib/prebuilt');
 
 function readArtifact(name, implementation = false) {
   const source = `contracts/v2/${
-    implementation ? 'implementation/' : ''
+    implementation
+      ? 'implementation/'
+      : name === 'DisputeModule'
+      ? 'modules/'
+      : ''
   }${name}.sol`;
   const { abi, bytecode } = JSON.parse(
     fs.readFileSync(
@@ -27,6 +31,15 @@ function writeArtifact(name, artifact) {
 }
 
 const implementations = {};
+for (const name of [
+  'CertificateNFT',
+  'DisputeModule',
+  'FeePool',
+  'IdentityRegistry',
+  'QuadraticVoting',
+  'ReputationEngine',
+])
+  writeArtifact(name, readArtifact(name));
 for (const [controller, names] of Object.entries(modules)) {
   writeArtifact(controller, readArtifact(controller));
   for (const name of names) implementations[name] = readArtifact(name, true);

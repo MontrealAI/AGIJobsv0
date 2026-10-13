@@ -200,6 +200,15 @@ describe('Fixed implementations production compatibility', function () {
   });
 
   it('keeps no-compile demo bytecode in sync with the compiled modular contracts', async function () {
+    for (const name of [
+      'CertificateNFT', 'DisputeModule', 'FeePool', 'IdentityRegistry',
+      'QuadraticVoting', 'ReputationEngine',
+    ]) {
+      const bundled = require(`../../scripts/v2/lib/prebuilt/${name}.json`);
+      const source = `contracts/v2/${name === 'DisputeModule' ? 'modules/' : ''}${name}.sol`;
+      const compiled = await artifacts.readArtifact(`${source}:${name}`);
+      expect(bundled, name).to.deep.equal({ abi: compiled.abi, bytecode: compiled.bytecode });
+    }
     const prebuilt = require('../../scripts/v2/lib/prebuilt/ImplementationModules.json');
     expect(Object.keys(prebuilt).sort()).to.deep.equal(
       Object.values(modules).flat().sort()

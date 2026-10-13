@@ -329,3 +329,37 @@ test('existing transaction entrypoints make no contract calls with generic defau
     }
   }
 });
+
+test('release provenance retains the canonical Forge pin without unsupported TOML options', () => {
+  const {
+    parseFoundryToolchain,
+  } = require('../../scripts/release/generate-manifest.js');
+  assert.deepEqual(parseFoundryToolchain(), { solc: '0.8.37', forge: '1.4.4' });
+  const prior = process.cwd();
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'forge-provenance-'));
+  try {
+    fs.writeFileSync(
+      path.join(directory, 'foundry.toml'),
+      'solc_version = "0.8.37"\n'
+    );
+    process.chdir(directory);
+    assert.throws(() => parseFoundryToolchain(), /File not found/);
+    fs.mkdirSync('config');
+    fs.writeFileSync(
+      'config/foundry-toolchain.json',
+      JSON.stringify({ version: 'nightly' })
+    );
+    assert.throws(() => parseFoundryToolchain(), /canonical Foundry/);
+    fs.writeFileSync(
+      'config/foundry-toolchain.json',
+      JSON.stringify({ version: '1.4.4' })
+    );
+    assert.deepEqual(parseFoundryToolchain(), {
+      solc: '0.8.37',
+      forge: '1.4.4',
+    });
+  } finally {
+    process.chdir(prior);
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});

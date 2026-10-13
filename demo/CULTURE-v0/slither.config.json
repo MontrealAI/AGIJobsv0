@@ -1,5 +1,5 @@
 {
-  "solc": "0.8.25",
+  "solc": "0.8.37",
   "detectors_to_exclude": ["arbitrary-send", "reentrancy-events"],
   "filter_paths": "contracts/test",
   "exclude_informational": true,

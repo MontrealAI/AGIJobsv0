@@ -12,6 +12,10 @@ on:
       - 'scripts/**'
       - 'test/**'
       - 'hardhat.config.*'
+      - 'hardhat.coverage.config.js'
+      - 'foundry.toml'
+      - 'truffle-config.js'
+      - 'config/solidity-compiler.json'
       - 'package*.json'
       - '.github/workflows/contracts.yml'
   push:
@@ -25,6 +29,10 @@ on:
       - 'scripts/**'
       - 'test/**'
       - 'hardhat.config.*'
+      - 'hardhat.coverage.config.js'
+      - 'foundry.toml'
+      - 'truffle-config.js'
+      - 'config/solidity-compiler.json'
       - 'package*.json'
       - '.github/workflows/contracts.yml'
 
@@ -95,6 +103,22 @@ jobs:
 
       - name: Enforce production contract sizes
         run: npm run release:check-size
+
+      - name: Enforce compiler identity, fresh sources and diagnostic policy
+        run: |
+          mkdir -p reports/compiler
+          node scripts/ci/check-solidity-build.cjs > reports/compiler/build.json
+          cat reports/compiler/build.json
+          node scripts/deploy/archive-verification.cjs --output reports/compiler/verification
+
+      - name: Retain compiler evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: compiler-evidence-${{ github.sha }}
+          path: reports/compiler/
+          if-no-files-found: error
+          overwrite: true
 
       - name: Node/Hardhat tests
         run: npm test

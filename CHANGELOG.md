@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased — compiler advisory remediation
+
+- Move new contract builds to Solidity 0.8.37 across supported build paths, retaining the production Cancun target and optimizer settings.
+- Correct project-source diagnostics while preserving public ABI parameter names and fixed-implementation behavior; refresh bundled demo bytecode.
+- Reject stale compiler builds and unexpected diagnostics at deployment admission; retain exact-source, bounded upstream deprecation notices and publish compiler evidence in contract CI.
+- Archive exact compiler inputs before public deployment, retain encoded constructor arguments and fully qualified verification targets, and reject failed or interrupted explorer commands.
+- Explain existing immutable deployments, historical verification, visible upstream/tooling notices and replacement-deployment requirements in the [operator guide](docs/production/compiler-warnings-2026-10-13.md).
+
 ## v2.1.0-rc.5
 
 Mainnet configuration evidence and SUCCESSOR Ω workshop source candidate (2026-10-13 UTC).

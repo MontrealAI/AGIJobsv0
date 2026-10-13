@@ -3,12 +3,17 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const modules = require('../../config/implementation-modules.json');
+const { inventory } = require('../v2/lib/deployment-candidate.cjs');
+const {
+  createVerifiedArtifactReader,
+} = require('../deploy/verified-artifact.cjs');
+const { Interface } = require('ethers');
 const { missionPlan } = require('../../demo/aurora/bin/mission-plan.cjs');
 const address = /^0x[0-9a-fA-F]{40}$/;
 const txHash = /^0x[0-9a-fA-F]{64}$/;
 function checkCommissioning(
   receipts,
-  { expectedJobs = 3, committees, deploymentFile } = {}
+  { expectedJobs = 3, committees, deploymentFile, readArtifact } = {}
 ) {
   assert.ok(Number.isSafeInteger(expectedJobs) && expectedJobs > 0);
   const read = (name) =>
@@ -30,14 +35,37 @@ function checkCommissioning(
   assert.ok(
     addresses.every((value) => address.test(value) && !/^0x0{40}$/.test(value))
   );
-  assert.equal(Object.keys(deployment.creationRecords || {}).length, 14);
+  const targets = inventory().filter(
+    ({ name }) => deployment.withTax !== false || name !== 'TaxPolicy'
+  );
+  const compiled = readArtifact || createVerifiedArtifactReader();
+  assert.deepEqual(
+    Object.keys(deployment.creationRecords || {}).sort(),
+    targets.map(({ name }) => name).sort(),
+    'Constructor evidence must cover every controller, implementation and coordinator'
+  );
   for (const [name, record] of Object.entries(deployment.creationRecords)) {
     assert.ok(address.test(record.address));
     assert.ok(!/^0x0{40}$/.test(record.address));
     assert.ok(Array.isArray(record.args));
-    assert.ok(record.source.endsWith(`:${name}`));
+    const target = targets.find((item) => item.name === name);
+    assert.equal(record.source, `${target.source}:${name}`);
+    assert.match(record.constructorArguments, /^0x(?:[a-fA-F0-9]{2})*$/);
+    assert.equal(
+      record.constructorArguments.toLowerCase(),
+      new Interface(compiled(target).abi)
+        .encodeDeploy(record.args)
+        .toLowerCase(),
+      `Encoded constructor arguments differ from the recorded values for ${name}`
+    );
+    if (name === 'Deployer' || expected.includes(name)) {
+      assert.deepEqual(record.args, []);
+      assert.equal(record.constructorArguments, '0x');
+    }
     const deployedAddress =
-      deployment.contracts[name] || deployment.implementations[name];
+      deployment.contracts[name] ||
+      deployment.implementations[name] ||
+      (name === 'Deployer' ? deployment.coordinator : undefined);
     if (deployedAddress) assert.equal(record.address, deployedAddress);
   }
   const mission = read('mission.json');
@@ -111,7 +139,7 @@ function checkCommissioning(
       ? mission.jobs.map((job) => committees[job.slug].n)
       : 3,
     fixedImplementations: expected.length,
-    constructorRecords: 14,
+    constructorRecords: targets.length,
     simulatedTokenAndWork: true,
     independentOperators: false,
   };

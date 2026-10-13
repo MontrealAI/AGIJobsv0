@@ -158,10 +158,10 @@ function parseFoundryToolchain() {
   if (solcMatch) {
     toolchain.solc = solcMatch[1];
   }
-  const forgeMatch = content.match(/forge_version\s*=\s*"([^"]+)"/);
-  if (forgeMatch) {
-    toolchain.forge = forgeMatch[1];
-  }
+  const foundry = readJsonAbsolute('config/foundry-toolchain.json');
+  if (!/^\d+\.\d+\.\d+$/.test(foundry?.version || ''))
+    throw new Error('Missing or malformed canonical Foundry version');
+  toolchain.forge = foundry.version;
   return toolchain;
 }
 
@@ -607,4 +607,4 @@ function main() {
 }
 
 if (require.main === module) main();
-module.exports = { CONTRACT_TARGETS, collectContractMetadata, buildManifest };
+module.exports = { CONTRACT_TARGETS, collectContractMetadata, buildManifest, parseFoundryToolchain };

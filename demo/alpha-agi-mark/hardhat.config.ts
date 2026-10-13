@@ -1,17 +1,8 @@
-import { HardhatUserConfig, subtask } from "hardhat/config";
-import { TASK_COMPILE_SOLIDITY_GET_SOLC_BUILD } from "hardhat/builtin-tasks/task-names";
+import { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox";
 import * as dotenv from "dotenv";
 
 dotenv.config();
-
-// Use the compiler already pinned by the repository lockfile, including offline runs.
-const longVersion: string = require("solc").version();
-if (!longVersion.startsWith("0.8.26+")) throw new Error("Alpha MARK requires lockfile solc 0.8.26");
-subtask(TASK_COMPILE_SOLIDITY_GET_SOLC_BUILD).setAction(async ({ solcVersion }: { solcVersion: string }) => {
-  if (solcVersion !== "0.8.26") throw new Error("Unexpected Alpha MARK compiler version");
-  return { compilerPath: require.resolve("solc/soljson.js"), isSolcJs: true, version: solcVersion, longVersion };
-});
 
 function parseKeyList(value?: string): string[] {
   if (!value) return [];
@@ -52,8 +43,8 @@ if (hasExternalConfig) {
 const config: HardhatUserConfig = {
   defaultNetwork: "hardhat",
   solidity: {
-    version: "0.8.26",
-    settings: {
+    version: "0.8.37",
+    settings: { evmVersion: "cancun",
       viaIR: true,
       optimizer: {
         enabled: true,

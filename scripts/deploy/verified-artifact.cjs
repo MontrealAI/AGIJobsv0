@@ -1,19 +1,14 @@
 'use strict';
 const fs = require('node:fs');
 const path = require('node:path');
+const {
+  checkCompiler,
+  checkDiagnostics,
+} = require('../ci/solidity-policy.cjs');
 
 function verifyCompiledArtifact(artifact, build, readSource) {
-  const settings = build?.input?.settings;
-  if (
-    build?.solcVersion !== '0.8.25' ||
-    settings?.viaIR !== true ||
-    settings?.optimizer?.enabled !== true ||
-    settings?.optimizer?.runs !== 200 ||
-    settings?.evmVersion !== 'cancun'
-  )
-    throw new Error(
-      'Production artifacts require Solidity 0.8.25, viaIR, 200 optimizer runs and Cancun. Recompile without fast/coverage overrides.'
-    );
+  checkCompiler(build);
+  checkDiagnostics(build);
   const compiled =
     build.output?.contracts?.[artifact.sourceName]?.[artifact.contractName];
   if (

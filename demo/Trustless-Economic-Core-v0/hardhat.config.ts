@@ -5,8 +5,9 @@ console.log('[Trustless Economic Core] Loading dedicated Hardhat config');
 
 const config: HardhatUserConfig = {
   solidity: {
-    version: '0.8.25',
+    version: '0.8.37',
     settings: {
+      evmVersion: 'cancun',
       optimizer: { enabled: true, runs: 200 },
     },
   },

@@ -8,6 +8,7 @@ import { AGIALPHA, AGIALPHA_DECIMALS } from '../constants';
 import { loadEnsConfig, loadTokenConfig } from '../config';
 const { buildDeploymentCandidate } = require('./lib/deployment-candidate.cjs');
 const { reserveDeploymentOutput } = require('./lib/reserved-output.cjs');
+const { archiveVerification } = require('../deploy/archive-verification.cjs');
 const {
   createVerifiedArtifactReader,
 } = require('../deploy/verified-artifact.cjs');
@@ -725,6 +726,11 @@ export async function main(argv = process.argv.slice(2)) {
   console.log(`Deployment evidence: ${outputPath}`);
   try {
     checkpoint({});
+    if (publicNetwork) {
+      checkpoint({
+        verificationBundle: archiveVerification(`${outputPath}.verification`),
+      });
+    }
     await ensureAgialphaToken();
 
     const gasLimitOverride = await getLocalGasLimitOverride();
@@ -817,8 +823,20 @@ export async function main(argv = process.argv.slice(2)) {
 
     const creationRecords: Record<
       string,
-      { address: string; args: unknown[]; source: string }
-    > = {};
+      {
+        address: string;
+        args: unknown[];
+        source: string;
+        constructorArguments: string;
+      }
+    > = {
+      Deployer: {
+        address: deployerAddress,
+        args: [],
+        source: 'contracts/v2/Deployer.sol:Deployer',
+        constructorArguments: '0x',
+      },
+    };
     await stageProtocol(deployer, identity, governance, {
       econ,
       withTaxPolicy: withTax,
@@ -830,7 +848,12 @@ export async function main(argv = process.argv.slice(2)) {
       },
       onDeployed: async (name, contract, args, source) => {
         const address = await contract.getAddress();
-        creationRecords[name] = { address, args, source };
+        creationRecords[name] = {
+          address,
+          args,
+          source,
+          constructorArguments: contract.interface.encodeDeploy(args),
+        };
         checkpoint({ creationRecords });
         console.log(`${name} deployed at ${address}`);
       },
@@ -1020,14 +1043,19 @@ export async function main(argv = process.argv.slice(2)) {
       JobRegistry: jobRegistry,
       ValidationModule: validationModule,
     });
+    for (const [name, address] of Object.entries(implementations)) {
+      creationRecords[name] = {
+        address: address as string,
+        args: [],
+        source: `contracts/v2/implementation/${name}.sol:${name}`,
+        constructorArguments: '0x',
+      };
+    }
+    checkpoint({ creationRecords, implementations });
     const explorerVerification: Array<{ address: string; status: string }> = [];
     if (!skipVerify) {
-      explorerVerification.push(await verify(deployerAddress));
       for (const { address, args, source } of Object.values(creationRecords)) {
         explorerVerification.push(await verify(address, args, source));
-      }
-      for (const address of Object.values(implementations)) {
-        explorerVerification.push(await verify(address as string, []));
       }
     } else {
       explorerVerification.push({

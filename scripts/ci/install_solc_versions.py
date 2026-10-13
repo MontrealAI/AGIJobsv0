@@ -14,7 +14,7 @@ This helper adds two safeguards:
   when the primary endpoint returns errors.
 
 Usage:
-    python scripts/ci/install_solc_versions.py --default 0.8.25 0.8.25 0.8.23 0.8.21
+    python scripts/ci/install_solc_versions.py --default 0.8.37 0.8.37
 
 Environment:
 * SOLC_SELECT_MIRROR (optional): override the primary mirror base URL.
@@ -120,7 +120,7 @@ def parse_args(argv: List[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "versions",
         nargs="+",
-        help="Solc versions to install (e.g., 0.8.25 0.8.23).",
+        help="Solc versions to install (e.g., 0.8.37).",
     )
     parser.add_argument(
         "--default",

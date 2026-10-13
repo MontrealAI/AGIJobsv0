@@ -131,18 +131,18 @@ contract Thermostat is Governable {
     /// @param backlog Current backlog age error.
     /// @param sla Current SLA hit rate error.
     function tick(int256 emission, int256 backlog, int256 sla) external onlyGovernance {
-        int256 error =
+        int256 controlError =
             wEmission * emission + wBacklog * backlog + wSla * sla;
-        integral += error;
+        integral += controlError;
         if (integral < integralMin) integral = integralMin;
         if (integral > integralMax) integral = integralMax;
-        int256 derivative = error - lastError;
-        int256 delta = kp * error + ki * integral + kd * derivative;
+        int256 derivative = controlError - lastError;
+        int256 delta = kp * controlError + ki * integral + kd * derivative;
         systemTemperature += delta;
         if (systemTemperature < minTemp) systemTemperature = minTemp;
         if (systemTemperature > maxTemp) systemTemperature = maxTemp;
         require(systemTemperature > 0, "temp");
-        lastError = error;
+        lastError = controlError;
         emit TemperatureUpdated(systemTemperature);
         emit Tick(emission, backlog, sla, systemTemperature);
     }

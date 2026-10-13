@@ -10,7 +10,9 @@ const modules = Object.values(
   require('../../config/implementation-modules.json')
 ).flat();
 const address = (n) => '0x' + n.toString(16).padStart(40, '0');
+const { Interface } = require('ethers');
 const tx = (n) => '0x' + n.toString(16).padStart(64, '0');
+const { inventory } = require('../../scripts/v2/lib/deployment-candidate.cjs');
 
 function fixture(t, sizes) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'demo-receipts-'));
@@ -24,15 +26,28 @@ function fixture(t, sizes) {
     modules.map((name, i) => [name, address(i + 1)])
   );
   const contracts = Object.fromEntries(
-    ['JobRegistry', 'StakeManager', 'ValidationModule', 'DisputeModule'].map(
-      (name, i) => [name, address(i + 21)]
-    )
+    inventory()
+      .filter(({ name }) => !modules.includes(name))
+      .map(({ name }, i) => [name, address(i + 21)])
   );
+  const constructorAbi = ['constructor(uint256 amount, address owner)'];
+  const argsFor = (name) =>
+    name === 'Deployer' || modules.includes(name) ? [] : ['123', address(777)];
+  const abiFor = (name) =>
+    name === 'Deployer' || modules.includes(name) ? [] : constructorAbi;
   const creationRecords = Object.fromEntries(
     Object.entries({ ...implementations, ...contracts }).map(
       ([name, value]) => [
         name,
-        { address: value, args: [], source: name + '.sol:' + name },
+        {
+          address: value,
+          args: argsFor(name),
+          source:
+            inventory().find((item) => item.name === name).source + ':' + name,
+          constructorArguments: new Interface(abiFor(name)).encodeDeploy(
+            argsFor(name)
+          ),
+        },
       ]
     )
   );
@@ -78,7 +93,15 @@ function fixture(t, sizes) {
       ),
     });
   }
-  return { root, write, options: { expectedJobs: sizes.length, committees } };
+  return {
+    root,
+    write,
+    options: {
+      expectedJobs: sizes.length,
+      committees,
+      readArtifact: ({ name }) => ({ abi: abiFor(name) }),
+    },
+  };
 }
 test('commissioning supports configured mixed committee sizes and four-job missions', (t) => {
   const mixed = fixture(t, [5, 4, 5]);
@@ -88,7 +111,86 @@ test('commissioning supports configured mixed committee sizes and four-job missi
   );
   const atlas = fixture(t, [5, 5, 5, 5]);
   assert.equal(checkCommissioning(atlas.root, atlas.options).settledJobs, 4);
-  assert.throws(() => checkCommissioning(atlas.root), /Every configured/);
+  assert.throws(
+    () => checkCommissioning(atlas.root, { ...atlas.options, expectedJobs: 3 }),
+    /Every configured/
+  );
+});
+test('commissioning accepts explicitly disabled tax policy and still requires every deployed constructor', (t) => {
+  const data = fixture(t, [3, 3, 3]);
+  const deployment = JSON.parse(
+    fs.readFileSync(path.join(data.root, 'deploy.json'))
+  );
+  data.write('deploy.json', { ...deployment, withTax: true });
+  assert.equal(
+    checkCommissioning(data.root, data.options).constructorRecords,
+    25
+  );
+  const withoutTax = structuredClone(deployment);
+  withoutTax.withTax = false;
+  withoutTax.contracts.TaxPolicy = 'disabled';
+  delete withoutTax.creationRecords.TaxPolicy;
+  data.write('deploy.json', withoutTax);
+  const report = checkCommissioning(data.root, data.options);
+  assert.equal(report.constructorRecords, 24);
+  assert.equal(report.settledJobs, 3);
+  for (const change of [
+    (d) => {
+      d.withTax = true;
+    },
+    (d) => {
+      delete d.withTax;
+    },
+    (d) => {
+      d.creationRecords.TaxPolicy = deployment.creationRecords.TaxPolicy;
+    },
+    (d) => {
+      delete d.creationRecords.JobRegistry;
+    },
+    (d) => {
+      d.creationRecords.FeePool.constructorArguments = '0x01';
+    },
+  ]) {
+    const altered = structuredClone(withoutTax);
+    change(altered);
+    data.write('deploy.json', altered);
+    assert.throws(() => checkCommissioning(data.root, data.options));
+  }
+});
+test('commissioning rejects omitted implementations and incorrect constructor evidence', (t) => {
+  const data = fixture(t, [3, 3, 3]);
+  const deployment = JSON.parse(
+    fs.readFileSync(path.join(data.root, 'deploy.json'))
+  );
+  assert.equal(
+    checkCommissioning(data.root, data.options).constructorRecords,
+    25
+  );
+  for (const change of [
+    (d) => {
+      delete d.creationRecords.StakeManagerEscrow;
+    },
+    (d) => {
+      d.creationRecords.StakeManagerEscrow.constructorArguments = '0x01';
+    },
+    (d) => {
+      d.creationRecords.Deployer.args = [1];
+    },
+    (d) => {
+      d.creationRecords.JobRegistry.source = 'Wrong.sol:JobRegistry';
+    },
+    (d) => {
+      d.creationRecords.JobRegistry.constructorArguments = '0x01';
+    },
+    (d) => {
+      d.creationRecords.JobRegistry.args[0] = '124';
+    },
+  ]) {
+    const altered = structuredClone(deployment);
+    change(altered);
+    data.write('deploy.json', altered);
+    assert.throws(() => checkCommissioning(data.root, data.options));
+  }
 });
 test('commissioning rejects placeholder hashes, wrong committees and unpaid validators', (t) => {
   const data = fixture(t, [5, 4, 5]);

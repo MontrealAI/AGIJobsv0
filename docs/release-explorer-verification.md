@@ -16,7 +16,7 @@ the release manifest, and publishes an SBOM.
    credentials fetched from AWS Secrets Manager via GitHub OIDC and falling
    back to repository/organization secrets (`ETHERSCAN_API_KEY_<NETWORK>` or
    `ETHERSCAN_API_KEY`). It then prepares
-   constructor argument bundles, and calls `npx hardhat verify --no-compile`
+   constructor argument bundles, and calls `npx hardhat verify`
    for each module listed in the verification plan.
 4. A JSON summary is uploaded as `release-verification` for auditors. It
    captures the explorer name, API credential source, and verification status
@@ -84,14 +84,19 @@ The dry-run prints the exact Hardhat commands without hitting the explorer.
 Once addresses and constructor arguments are in place, remove `--dry-run` to
 perform an end-to-end verification rehearsal using a disposable API key.
 
+## Preserve the original compiler inputs
+
+Follow the [compiler and verification guide](production/compiler-warnings-2026-10-13.md) before deployment. Public staged deployments save a checksummed verification bundle before the first transaction. Keep this bundle with the deployment journal. For manual export, run `node scripts/deploy/archive-verification.cjs --output reports/new-verification-bundle` after compiling. The output directory must not already exist.
+
+The bundled Standard JSON retains the entire original input, including source files that a guessed dependency closure could miss. Use its compiler version and the journal's original ABI-encoded constructor arguments. A new compiler build cannot verify bytecode deployed from an older release.
+
 ## Troubleshooting
 
 - **Missing manifest warnings** – the script depends on
   `reports/release/manifest.json`. Re-run `npm run release:manifest` before
   invoking the verifier.
 - **Address unresolved** – ensure `docs/deployment-addresses.json` and
-  `docs/deployment-summary.json` include the contract address. The script skips
-  zero addresses to avoid false positives.
+  `docs/deployment-summary.json` include the contract address. The script rejects zero addresses before invoking the explorer.
 - **Constructor mismatch** – update the args file for the affected contract.
   Hardhat will emit the expected constructor signature in the failure output.
 - **Already verified** – the command reports `already_verified` but exits
@@ -99,5 +104,4 @@ perform an end-to-end verification rehearsal using a disposable API key.
   trail.
 
 With these controls wired into CI, every tagged release automatically produces
-verifiable source metadata, satisfying the "Best-ever" institutional readiness
-requirements.
+verification evidence. Exact source matching does not establish security or authorize activation.

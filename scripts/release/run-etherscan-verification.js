@@ -183,39 +183,62 @@ function writeConstructorArgsTempFile(argsArray, label) {
   return tempFile;
 }
 
-function runHardhatVerify({ network, address, fullyQualified, libraries, constructorArgsFile, dryRun }) {
-  const args = ['hardhat', 'verify', '--no-compile', '--network', network, address];
+function runHardhatVerify(
+  { network, address, fullyQualified, libraries, constructorArgsFile, dryRun },
+  spawn = spawnSync
+) {
+  const args = ['hardhat', 'verify', '--network', network, address];
 
   if (fullyQualified) {
     args.push('--contract', fullyQualified);
   }
 
+  let libraryDirectory;
   if (libraries && Object.keys(libraries).length > 0) {
-    for (const [name, value] of Object.entries(libraries)) {
-      args.push('--libraries', `${name}:${value}`);
-    }
+    libraryDirectory = fs.mkdtempSync(
+      path.join(os.tmpdir(), 'agijobs-verify-libraries-')
+    );
+    const libraryFile = path.join(libraryDirectory, 'libraries.cjs');
+    fs.writeFileSync(
+      libraryFile,
+      `module.exports = ${JSON.stringify(libraries)};\n`,
+      { flag: 'wx' }
+    );
+    args.push('--libraries', libraryFile);
   }
 
   if (constructorArgsFile) {
     args.push('--constructor-args', constructorArgsFile);
   }
 
-  if (dryRun) {
-    console.log(`[dry-run] npx ${args.join(' ')}`);
-    return { status: 0, alreadyVerified: false };
+  try {
+    if (dryRun) {
+      console.log(`[dry-run] npx ${args.join(' ')}`);
+      return { status: 0, alreadyVerified: false };
+    }
+    const result = spawn('npx', args, {
+      encoding: 'utf8',
+      timeout: 180000,
+      maxBuffer: 8 * 1024 * 1024,
+    });
+    if (result.stdout) process.stdout.write(result.stdout);
+    if (result.stderr) process.stderr.write(result.stderr);
+    // A killed/missing child has null status. Never coerce that to success.
+    const status =
+      result.error || result.signal || !Number.isInteger(result.status)
+        ? 1
+        : result.status;
+    const combined = `${result.stdout || ''}\n${
+      result.stderr || ''
+    }`.toLowerCase();
+    return {
+      status,
+      alreadyVerified: status === 0 && combined.includes('already verified'),
+    };
+  } finally {
+    if (libraryDirectory)
+      fs.rmSync(libraryDirectory, { recursive: true, force: true });
   }
-
-  const result = spawnSync('npx', args, { encoding: 'utf8' });
-  if (result.stdout) {
-    process.stdout.write(result.stdout);
-  }
-  if (result.stderr) {
-    process.stderr.write(result.stderr);
-  }
-
-  const combined = `${result.stdout || ''}\n${result.stderr || ''}`.toLowerCase();
-  const alreadyVerified = combined.includes('already verified');
-  return { status: result.status || 0, alreadyVerified };
 }
 
 function ensureDirectory(filePath) {
@@ -321,7 +344,7 @@ function main() {
         fs.unlinkSync(tempFile);
       }
 
-      if (status !== 0 && !alreadyVerified) {
+      if (status !== 0) {
         summary.contracts.push({
           name: contract.name,
           status: 'failed',
@@ -349,4 +372,4 @@ function main() {
 }
 
 if (require.main === module) main();
-module.exports = { validateVerificationInventory };
+module.exports = { validateVerificationInventory, runHardhatVerify };
