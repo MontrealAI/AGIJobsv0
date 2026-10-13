@@ -1,0 +1,44 @@
+name: Ledger release review export
+on:
+  push:
+    branches: ['diagnostic/ledger-release-review-20261013']
+    paths: ['.github/workflows/ledger-release-review-export.yml']
+permissions:
+  contents: read
+  actions: read
+  checks: read
+  pull-requests: read
+jobs:
+  export:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Export public source histories and review metadata only
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p evidence
+          git clone --bare --depth 40 --branch main https://github.com/MontrealAI/AGIJobsv0.git source.git
+          git -C source.git fetch --depth 40 origin a1dea46d2f9dfa5680d11e24529f107d65cd4369:refs/heads/pr3924
+          git -C source.git fetch --depth 1 origin refs/pull/3925/head:refs/heads/pr3925
+          git -C source.git fetch --depth 1 origin b4c5b66ea05a6bb27f1f1cb197f055c179bbd38e:refs/heads/deployed
+          git -C source.git rev-parse main pr3924 pr3925 deployed | tee evidence/REFS.txt
+          tar -czf evidence/public-source.git.tgz source.git
+          gh api repos/MontrealAI/AGIJobsv0/pulls/3924 > evidence/pr3924.json
+          gh api --paginate repos/MontrealAI/AGIJobsv0/pulls/3924/reviews > evidence/pr3924-reviews.json
+          gh api --paginate repos/MontrealAI/AGIJobsv0/pulls/3924/comments > evidence/pr3924-comments.json
+          gh api --paginate repos/MontrealAI/AGIJobsv0/issues/3924/comments > evidence/pr3924-timeline.json
+          gh api 'repos/MontrealAI/AGIJobsv0/actions/runs?head_sha=a1dea46d2f9dfa5680d11e24529f107d65cd4369&per_page=100' > evidence/pr3924-runs.json
+          gh api 'repos/MontrealAI/AGIJobsv0/commits/a1dea46d2f9dfa5680d11e24529f107d65cd4369/check-runs?per_page=100' > evidence/pr3924-checks.json
+          gh api 'repos/MontrealAI/AGIJobsv0/releases?per_page=3' > evidence/releases.json
+          printf '%s\n' 'Public source and metadata only. No repository code executed, no production secrets requested, no chain/RPC calls, no writes to main, no signing or publishing.' > evidence/SCOPE.txt
+          (cd evidence && sha256sum public-source.git.tgz REFS.txt SCOPE.txt *.json > SHA256SUMS.txt)
+      - name: Preserve review input
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ledger-release-review-public-sources
+          path: evidence/
+          retention-days: 3
+          if-no-files-found: error
