@@ -4,6 +4,10 @@ on:
   workflow_dispatch:
   pull_request:
     paths:
+      - 'package.json'
+      - '.github/workflows/source-release.yml'
+      - 'scripts/release/qualify-source-release.cjs'
+      - 'scripts/release/publish-source-release.cjs'
       - 'contracts/**'
       - 'scripts/**'
       - 'test/**'
@@ -17,6 +21,10 @@ on:
   push:
     branches: [main]
     paths:
+      - 'package.json'
+      - '.github/workflows/source-release.yml'
+      - 'scripts/release/qualify-source-release.cjs'
+      - 'scripts/release/publish-source-release.cjs'
       - 'contracts/**'
       - 'scripts/**'
       - 'test/**'
@@ -101,6 +109,7 @@ jobs:
           mkdir -p reports/compiler
           node scripts/ci/check-solidity-build.cjs > reports/compiler/build.json
           cat reports/compiler/build.json
+          node scripts/deploy/archive-verification.cjs --output reports/compiler/verification
 
       - name: Retain compiler evidence
         if: always()

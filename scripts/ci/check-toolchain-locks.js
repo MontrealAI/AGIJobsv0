@@ -111,14 +111,16 @@ function checkWorkflows() {
 }
 
 function checkFoundryVersion() {
-  const foundryToml = readFileTrim('foundry.toml');
-  if (!foundryToml) {
-    return;
-  }
-
-  const forgeVersionMatches = /forge_version\s*=\s*"1\.4\.4"/.test(foundryToml);
-  if (!forgeVersionMatches) {
-    problems.push('foundry.toml must pin forge_version = "1.4.4"');
+  for (const file of fs.readdirSync(path.join(repoRoot, '.github/workflows'))) {
+    if (!/\.ya?ml$/.test(file)) continue;
+    const steps = readFileTrim(`.github/workflows/${file}`).split(/\n\s*-\s/);
+    for (const step of steps) {
+      if (
+        /uses:\s*foundry-rs\/foundry-toolchain@/.test(step) &&
+        !/\n\s+version:\s*(['"]?)v1\.4\.4\1\s*(?:\n|$)/.test(step)
+      )
+        problems.push(`${file} must install Foundry v1.4.4`);
+    }
   }
 }
 
@@ -150,6 +152,8 @@ function checkSolidityVersion() {
     ['truffle-config.js', `version: '${version}'`],
     ['foundry.toml', `solc_version = "${version}"`],
     ['demo/CULTURE-v0/hardhat.config.ts', `version: '${version}'`],
+    ['demo/CULTURE-v0/foundry.toml', `solc_version = "${version}"`],
+    ['demo/CULTURE-v0/slither.config.json', `"solc": "${version}"`],
     [
       'demo/Trustless-Economic-Core-v0/hardhat.config.ts',
       `version: '${version}'`,

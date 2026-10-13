@@ -826,6 +826,7 @@ test('A03 concurrent actions cannot exceed aggregate budget, including outstandi
     const first = runtime.execute(one);
     await Promise.race([entered, first]);
     assert.equal(calls, 1, 'the first action must enter its gated driver');
+    assert.equal(store.read().budgets['formation-budget'].reservedMinor, '6');
     await assert.rejects(runtime.execute(two), { code: 'BUDGET_EXHAUSTED' });
     release();
     await first;

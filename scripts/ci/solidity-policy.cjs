@@ -11,7 +11,9 @@ function checkCompiler(build) {
     settings?.viaIR !== policy.viaIR ||
     settings?.optimizer?.enabled !== true ||
     settings?.optimizer?.runs !== policy.optimizerRuns ||
+    settings?.optimizer?.details !== undefined ||
     settings?.evmVersion !== policy.evmVersion ||
+    settings.metadata?.appendCBOR === false ||
     (settings.metadata?.bytecodeHash !== undefined &&
       settings.metadata.bytecodeHash !== 'ipfs')
   ) {

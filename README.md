@@ -61,6 +61,8 @@ AGI Jobs v0 (v2) brings together job contracts, agent gateways, validators, oper
 
 **Deployment status:** the [source-pinned mainnet directory](docs/ECOSYSTEM.md#the-deployed-contract-directory) identifies the recorded 24 Jobs instances and 5 Alpha instances, with full explorer links and separate readiness guidance. The four previously oversized Jobs contracts use [fixed implementations and staged deployment](docs/production/fixed-implementations.md). New releases and live operations require their own authorized signing, completed configuration, commissioning and passing gates. Local tests do not provide mainnet certification. All existing architectural diagrams and demonstration surfaces are retained.
 
+**Latest mainnet evidence:** [24-contract deployment and configuration record](docs/production/mainnet-deployment-2026-10-12.md): 24/24 recorded explorer exact matches, Ledger handoff readback, and the later **88,888,888 AGIALPHA reward cap** observation. The eight operational modules remain recorded as paused. The deployed job stake is a **fixed 500 AGIALPHA**, not 10% of reward. [Source and timing limits](docs/production/mainnet-deployment-2026-10-12.md#latest-configuration-and-reward-policy).
+
 ```mermaid
 flowchart LR
     classDef core fill:#f3e8ff,stroke:#7c3aed,color:#2e1065,stroke-width:1px;

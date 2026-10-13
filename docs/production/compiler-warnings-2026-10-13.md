@@ -21,6 +21,7 @@ Sources: [Solidity's known-bug list](https://docs.soliditylang.org/en/latest/bug
 - Selective base imports eliminate duplicate-error shadow warnings while retaining controller error selectors. Explicit references to intentionally forwarded parameters preserve their ABI names, original calldata, caller, return data and revert data. Virtual fallback stubs retain their existing revert behavior.
 - Thermostat's local variable no longer uses a future reserved identifier. CertificateNFT compares token addresses explicitly.
 - New-deployment admission checks the exact compiler build identity, production settings, source dependency contents and diagnostics. It rejects 0.8.25 artifacts, fast/coverage artifacts, unexpected warnings and truncated diagnostic output. Regenerated local demo bundles use the new compiler.
+- Public staged deployments archive the full original Standard JSON inputs, build-info and artifacts before their first transaction, with SHA-256 checksums. The deployment journal retains original constructor arguments, including ABI-encoded arguments and fully qualified names for the coordinator and implementations. Verification no longer passes the unsupported `--no-compile` flag, uses the correct library-file interface, and rejects interrupted or failed child processes.
 - CI retains a machine-readable compiler report alongside the normal contract, deployment, fuzz, invariant, coverage and security checks. Run `node scripts/ci/check-solidity-build.cjs` after compiling to see the report.
 
 ## Remaining notices are visible
@@ -37,6 +38,20 @@ Hardhat 2.29.1 also prints an incomplete-support notice for Solidity 0.8.37; adv
 4. If replacement is chosen, prepare and review a new deployment with the existing local rehearsal, read-only plan, paused staging and governance handoff. Inventory and reconcile existing jobs, commitments, stakes and escrow before planning any cutover. There is no automatic balance migration or universal sweep.
 5. Verify every replacement controller and implementation against its own build, complete independent security review and operational commissioning, then separately authorize any activation. This source update sends no blockchain transactions.
 
+## Keep verification reproducible
+
+The first deployment's hardest verification was StakeManagerEscrow: its exact 0.8.25 replay required 39 original sources, including IERC1271 and IERC5267. A guessed source closure or a later whole-project compilation did not reproduce that historical build. Keep the rc.4 replay with the rc.4 deployment; do not apply it to 0.8.37 artifacts.
+
+For a new build, export its original inputs before any cleanup:
+
+```bash
+node scripts/deploy/archive-verification.cjs --output reports/new-verification-bundle
+```
+
+The destination must be new. `index.json` maps every deployable contract to its original Standard JSON, full compiler output and artifact, and records checksums. Public `deployDefaults.ts` runs create this bundle automatically beside the deployment report, before sending transactions. Keep the entire bundle and the `.journal.jsonl` together. Use the recorded compiler long version, fully qualified contract name, full Standard JSON and original constructor arguments when retrying Etherscan verification. Constructor-free implementations have empty arguments (`0x`); do not substitute the controller's arguments.
+
+If a transaction or explorer request times out, inspect the saved transaction hash and chain state before retrying. Do not restart deployment to fix verification. Resume the same coordinator only with its matching release and configuration, and use a new report filename to retain earlier evidence. A compiler archive, an exact explorer match and a completed local rehearsal are separate facts; none authorizes unpausing.
+
 ## Reproduce the source checks
 
 Use the repository's pinned Node.js version and committed dependency lockfile:
@@ -46,7 +61,7 @@ nvm use
 npm ci
 npm run compile
 node scripts/ci/check-solidity-build.cjs
-node --test test/scripts/solidity-policy.test.cjs test/scripts/deployment-candidate.test.cjs
+node --test test/scripts/solidity-policy.test.cjs test/scripts/deployment-candidate.test.cjs test/scripts/verification-evidence.test.cjs
 npx hardhat test --no-compile test/v2/FixedImplementations.test.js test/v2/Deployer.test.js test/v2/DeploymentScripts.test.js test/v2/DeploymentCli.test.js
 npm test
 ```

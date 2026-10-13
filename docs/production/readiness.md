@@ -2,6 +2,12 @@
 
 This is the stable entry point for deployment status. Dated reports describe the exact checks and limitations observed at the time; they are not perpetual production certifications.
 
+## Recorded Ethereum mainnet deployment — 12 October 2026
+
+The [deployment record and address directory](mainnet-deployment-2026-10-12.md) now identify the existing mainnet stack, deployed from `b4c5b66ea05a6bb27f1f1cb197f055c179bbd38e` (`source-v2.1.0-rc.4`). The operator's saved readback reports 24 runtime-template matches, all eight managed modules paused under SystemPause, and Ledger control of SystemPause and three direct-owner modules. **All 24 contract sources have exact-match Etherscan verification**, including StakeManagerEscrow confirmed at 17:12 UTC on 12 October. The record keeps dated explorer evidence separate from runtime and operational approval. This is the AGIALPHA stack; it must not be confused with AGIJobManager/ENSJobPages and its USDC settlement.
+
+The [later configuration extract](../deployments/evidence/configuration-readback-2026-10-13.json) records all 24 exact runtime matches including immutables and the Ledger ownership handoff at provider-reported finalized block 26,179,827. Later operator screenshots record the 88,888,888 AGIALPHA reward cap; they are separate from that snapshot. The job stake remains a fixed 500 AGIALPHA, and a requested 10% rate is not implemented. The validator pool was empty and temporary-wallet EIP-7702 code remained present. The source release does not redeploy, migrate, unpause or open paid intake. These observations do not establish global authority cleanup or independent commissioning.
+
 ## What can be used now
 
 The public website provides the complete preserved demo collection, guided experiences, original diagrams, browser workbenches and a local job planner. The repository supplies executable local-chain workflows and an operator-admitted OpenClaw computer-work adapter. These capabilities require their documented environments and have distinct evidence boundaries.
@@ -31,7 +37,7 @@ This does not retrofit existing coordinators or migrate deployed state. Historic
 | Security               | Independent review, current dependency findings resolved or explicitly assessed, and validated provider configuration                                                   |
 | Worker commissioning   | An isolated real runtime with verified permissions, account selection, action/network policy, spending limits, stop behavior and representative success/rejection cases |
 | Independent acceptance | Reviewers qualified for the work category, conflict disclosures, reproducible checks and actual buyer acceptance                                                        |
-| Network commissioning  | Correct token/chain/addresses, deployment and ownership verification, identity/tax/stake prerequisites, monitored settlement and tested recovery                        |
+| Network commissioning  | Reconcile the recorded mainnet inventory with current ownership/pause/immutable readback; complete identity/tax/stake checks, monitored settlement and recovery |
 | Recovery               | Reconciled uncertain actions, durable dispatch/settlement journals and a validated procedure for lost validator reveal secrets                                          |
 
 The `agent:validator` rehearsal example now persists private, deployment-scoped reveal secrets before broadcasting and reconciles retained records after restart. Its explicit fixed decision is a rehearsal input, not an independent content assessment; see the [validator quickstart](../AGENTIC_QUICKSTART.md). The [reviewed validator service](../../apps/validator/README.md) now uses the current domain-bound protocol, exact round/specification/result review admission, pre-broadcast private records and restart reconciliation. Its structural evaluator cannot authorize a vote. Other validator paths still require separate recovery commissioning: `apps/orchestrator/service.ts` retains an in-memory commit map and gateway validators use a separate persisted-record format. These changes do not retrofit or certify those separate paths. Computer-work evidence requires independent acceptance and is not automatically approved by structural validation. The three Node release publishers now use delegated Storacha upload-agent credentials with CAR/root and upload-index checks; see the [migration guide](../security/DEPENDENCY_REPAIR_2026-10-11.md). Their live space and permissions still require commissioning. The browser legacy uploader and orchestrator HTTP-pinner defaults remain separate provider-migration surfaces. The static GitHub Pages site does not use those APIs.
@@ -41,6 +47,8 @@ The current contract commit entry point accepts an opaque hash without an expect
 The production release workflow enforces `npm run release:audit-dependencies` before publishing release artifacts. It audits all tracked npm and pnpm production lockfiles, preserves raw registry responses and exact input hashes, and fails on critical/high findings, malformed responses or unavailable audit evidence. A passing website deployment does not bypass this release gate. The rc.4 source candidate includes dependency updates and a provenance-checked maintained Braces depth patch; local full/production audits report no high or critical findings, while moderate and low findings remain. A registry audit does not certify a downstream patch. Exact-source integrity, adversarial/compatibility tests and final hosted qualification remain required, along with independent security review; forcing incompatible dependency versions is not remediation.
 
 ## Verification records
+
+- [Recorded mainnet deployment and explorer status, 2026-10-12](mainnet-deployment-2026-10-12.md): all 24 addresses, deployed source, paused governance evidence and remaining commissioning work.
 
 - [Dependency repair and upload-credential migration, 2026-10-11](../security/DEPENDENCY_REPAIR_2026-10-11.md): maintained patch provenance, qualification boundaries and residual findings.
 

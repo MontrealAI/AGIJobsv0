@@ -5,7 +5,7 @@ import {StakeManagerBase} from "../../contracts/v2/implementation/StakeManagerBa
 import {FixedImplementationFixtures} from "./helpers/FixedImplementationFixtures.sol";
 
 import "forge-std/Test.sol";
-import {StakeManager, InvalidPercentage} from "../../contracts/v2/StakeManager.sol";
+import {StakeManager} from "../../contracts/v2/StakeManager.sol";
 import {AGIALPHAToken} from "../../contracts/test/AGIALPHAToken.sol";
 import {AGIALPHA} from "../../contracts/v2/Constants.sol";
 import {ITaxPolicy} from "../../contracts/v2/interfaces/ITaxPolicy.sol";
@@ -130,7 +130,7 @@ contract StakeManagerSlashTest is Test {
     }
 
     function testSetSlashPercentsRevertsWhenTotalExceedsBps() public {
-        vm.expectRevert(InvalidPercentage.selector);
+        vm.expectRevert(StakeManager.InvalidPercentage.selector);
         stake.setSlashPercents(6_000, 3_000, 1_500, 0, 1_000);
     }
 }

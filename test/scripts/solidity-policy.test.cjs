@@ -55,6 +55,12 @@ test('production compiler identity rejects old, falsely labelled and altered bui
     (b) => {
       b.input.settings.metadata = { bytecodeHash: 'none' };
     },
+    (b) => {
+      b.input.settings.metadata = { appendCBOR: false };
+    },
+    (b) => {
+      b.input.settings.optimizer.details = { yul: false };
+    },
   ]) {
     const candidate = build();
     alter(candidate);

@@ -6,7 +6,7 @@ import {ValidationModuleBase} from "../../contracts/v2/implementation/Validation
 import {FixedImplementationFixtures} from "./helpers/FixedImplementationFixtures.sol";
 
 import "forge-std/Test.sol";
-import {ValidationModule, InvalidCommitWindow} from "../../contracts/v2/ValidationModule.sol";
+import {ValidationModule} from "../../contracts/v2/ValidationModule.sol";
 import {StakeManager} from "../../contracts/v2/StakeManager.sol";
 import {IdentityRegistryToggle} from "../../contracts/v2/mocks/IdentityRegistryToggle.sol";
 import {AGIALPHAToken} from "../../contracts/test/AGIALPHAToken.sol";
@@ -185,7 +185,7 @@ contract ValidationFinalizeGas is Test {
     }
 
     function testSetCommitWindowZeroReverts() public {
-        vm.expectRevert(InvalidCommitWindow.selector);
+        vm.expectRevert(ValidationModule.InvalidCommitWindow.selector);
         validation.setCommitWindow(0);
     }
 }
