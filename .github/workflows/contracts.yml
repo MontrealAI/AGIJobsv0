@@ -118,6 +118,7 @@ jobs:
           name: compiler-evidence-${{ github.sha }}
           path: reports/compiler/
           if-no-files-found: error
+          overwrite: true
 
       - name: Node/Hardhat tests
         run: npm test
