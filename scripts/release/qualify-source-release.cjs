@@ -10,7 +10,7 @@ const releaseVersion = '2.1.0-rc.6';
 const deployedSourceBaseline = 'b4c5b66ea05a6bb27f1f1cb197f055c179bbd38e';
 const evidenceBaseline = '9c730e0188594089e27ed0589c2b5ca57eec5cf5';
 // Reviewed compiler candidate; publication also requires exact merged-SHA CI.
-const compilerSourceBaseline = '2161679321009f4bb808c7e9bbd6f2f2837dca26';
+const compilerSourceBaseline = '4cc674982616a6f72392ca365a544de067edb20d';
 const preservedEvidencePaths = [
   'docs/deployments/',
   'docs/deployment-addresses.json',
@@ -33,6 +33,8 @@ const reviewedCompilerPaths = [
   'truffle-config.js',
   'config/solidity-compiler.json',
   'config/implementation-modules.json',
+  'config/foundry-toolchain.json',
+  'scripts/production/commissioning.cjs',
   'demo/',
   '.github/workflows/release.yml',
   'scripts/release/',
