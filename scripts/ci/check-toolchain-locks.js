@@ -116,19 +116,16 @@ function checkFoundryVersion() {
     problems.push('config/foundry-toolchain.json must pin a release version');
     return;
   }
-  const pin = new RegExp(
-    `\\n\\s+version:\\s*(['"]?)v${version.replace(
-      /\./g,
-      '\\.'
-    )}\\1\\s*(?:\\n|$)`
-  );
   for (const file of fs.readdirSync(path.join(repoRoot, '.github/workflows'))) {
     if (!/\.ya?ml$/.test(file)) continue;
     const steps = readFileTrim(`.github/workflows/${file}`).split(/\n\s*-\s/);
     for (const step of steps) {
+      const installedVersion = step.match(
+        /\n\s+version:\s*(['"]?)(v\d+\.\d+\.\d+)\1\s*(?:\n|$)/
+      )?.[2];
       if (
         /uses:\s*foundry-rs\/foundry-toolchain@/.test(step) &&
-        !pin.test(step)
+        installedVersion !== `v${version}`
       )
         problems.push(`${file} must install Foundry v${version}`);
     }
