@@ -76,7 +76,7 @@ jobs:
           cp docs/production/mainnet-deployment-2026-10-12.md "$out/"
           cp docs/production/RELEASE_NOTES_SOURCE_RC5.md "$out/"
           cd "$out"
-          sha256sum *.json *.md *.zip > SHA256SUMS.txt
+          sha256sum -- *.json *.md *.zip > SHA256SUMS.txt
           sha256sum --check SHA256SUMS.txt
       - name: Retain exact release producer evidence
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
