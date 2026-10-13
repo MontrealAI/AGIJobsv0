@@ -6,12 +6,12 @@
 
 The screenshot of coordinator `0xeF1Be4B8251a9C4a584140C113508B95fd8B2543` shows Etherscan's known-bug notices for Solidity 0.8.25. This is a compiler-version advisory, not proof that the deployed contract exercises each bug and not an ordinary compilation failure. An exact source match also does not establish that a contract is free of vulnerabilities.
 
-| Advisory | Fixed in | Trigger relevant to an assessment of the original build |
-| --- | --- | --- |
-| `MemoryByteArrayElementDeleteClearsWholeWord` | 0.8.37 | Deleting a memory byte-array element in the legacy pipeline; viaIR builds are excluded by the upstream condition. |
-| `SpillSlotCollisionAcrossMutualRecursion` | 0.8.37 | viaIR stack spilling combined with a particular mutually recursive call graph. |
-| `UnsoundSpillInMutualRecursion` | 0.8.36 | viaIR stack spilling and intersecting recursive call cycles. |
-| `LostStorageArrayWriteOnSlotOverflow` | 0.8.32 | Array operations that cross the end of the storage address space. |
+| Advisory                                      | Fixed in | Trigger relevant to an assessment of the original build                                                           |
+| --------------------------------------------- | -------- | ----------------------------------------------------------------------------------------------------------------- |
+| `MemoryByteArrayElementDeleteClearsWholeWord` | 0.8.37   | Deleting a memory byte-array element in the legacy pipeline; viaIR builds are excluded by the upstream condition. |
+| `SpillSlotCollisionAcrossMutualRecursion`     | 0.8.37   | viaIR stack spilling combined with a particular mutually recursive call graph.                                    |
+| `UnsoundSpillInMutualRecursion`               | 0.8.36   | viaIR stack spilling and intersecting recursive call cycles.                                                      |
+| `LostStorageArrayWriteOnSlotOverflow`         | 0.8.32   | Array operations that cross the end of the storage address space.                                                 |
 
 Sources: [Solidity's known-bug list](https://docs.soliditylang.org/en/latest/bugs.html), [version-pinned bug record](https://github.com/argotorg/solidity/blob/v0.8.37/docs/bugs.json), and [0.8.37 release](https://github.com/argotorg/solidity/releases/tag/v0.8.37). The review date is 13 October 2026 UTC. Later discoveries require a new assessment; this is not a claim that a compiler or contract is flawless.
 
@@ -33,6 +33,12 @@ Hardhat 2.29.1 also prints an incomplete-support notice for Solidity 0.8.37; adv
 ## Reviewed gas measurements
 
 The pinned compiler also changes exact gas snapshots. The root commit/reveal fixture now measures 27,973 and 74,629 gas (previous recorded snapshots: 30,880 and 83,207). Both deterministic checks pass with the regenerated snapshot. These are complete test-function measurements, not mainnet transaction quotations. The [CULTURE review](../../demo/CULTURE-v0/gas-snapshots/REVIEW-2026-10-13.md) records all four budgeted scenarios and both runtime sizes; all existing gas and bytecode ceilings remain unchanged.
+
+## Runtime image checks
+
+Container review also found high-severity advisories in the global npm tooling inherited from the Node base image. The node-runner, validator-runner, gateway and webapp do not need that package manager after their dependencies are installed. Their final images remove global npm/npx; application dependencies and build-stage tools remain intact. The webapp launches the same Next.js server directly with Node.
+
+The container workflow requires a successful boot test and separate OS-package and application-library scans for each primary image on native amd64 and arm64. Both scans fail on high or critical findings; the application scan is no longer advisory. Expired vulnerability suppressions were removed. These checks apply to the built images and current scanner database, and do not replace independent security review or live commissioning.
 
 ## If you operate the existing mainnet deployment
 

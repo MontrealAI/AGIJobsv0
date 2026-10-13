@@ -24,7 +24,7 @@ FROM node:22.23.3-alpine3.23
 WORKDIR /srv/app
 ENV NODE_ENV=production
 
-# Reuse npm network configuration in the runtime image as well.
+# Keep retry settings for dependency installation in the final build stage.
 ENV \
     NPM_CONFIG_FETCH_RETRIES=10 \
     NPM_CONFIG_FETCH_RETRY_MINTIMEOUT=20000 \
@@ -38,6 +38,8 @@ RUN --mount=type=cache,target=/root/.npm \
     set -eu; \
     npm ci --omit=dev --no-progress --registry=https://registry.npmjs.org/ \
     || (echo "npm ci --omit=dev failed once, retrying after short backoff" && sleep 5 && npm ci --omit=dev --no-progress --registry=https://registry.npmjs.org/)
+# The service runs directly with Node; package-manager tooling is not required.
+RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx /root/.npm
 COPY --from=build /srv/app/apps/orchestrator/dist ./
 COPY --from=build /srv/app/apps/orchestrator/*.json ./apps/orchestrator/
 CMD ["node", "apps/orchestrator/main.js"]

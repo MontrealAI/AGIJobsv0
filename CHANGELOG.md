@@ -1,5 +1,14 @@
 # Changelog
 
+## v2.1.0-rc.7 — runtime image security
+
+Runtime-image source prerelease (2026-10-13 UTC), including the compiler and verification improvements from rc.6.
+
+- Remove unused global npm/npx tooling from the four primary Node runtime images, launch the webapp directly with Node, remove expired vulnerability suppressions, and enforce high/critical application-library scans on both native architectures.
+- Keep the same exact-commit release qualification, compiler archive authentication and immutable historical deployment evidence.
+
+This is an unsigned source prerelease. No blockchain transaction, explorer submission, unpause or balance migration is performed.
+
 ## v2.1.0-rc.6 — compiler advisory remediation
 
 Compiler-remediation source prerelease (2026-10-13 UTC).

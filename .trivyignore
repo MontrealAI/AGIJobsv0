@@ -1,5 +1,2 @@
-# Node package vulnerabilities that are not shipped in runtime images.
-# Expiry: 2026-01-31 (review quarterly)
-CVE-2019-10790
-CVE-2024-21538
-CVE-2024-37890
+# No vulnerability suppressions are currently approved.
+# Expired legacy Node-package entries were removed on 2026-10-13.

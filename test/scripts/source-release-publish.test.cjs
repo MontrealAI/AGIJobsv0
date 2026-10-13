@@ -18,7 +18,7 @@ const {
   reviewedCompilerPaths,
 } = require('../../scripts/release/qualify-source-release.cjs');
 const sha = 'a'.repeat(40),
-  tag = 'source-v2.1.0-rc.6';
+  tag = 'source-v2.1.0-rc.7';
 function compilerArchiveFixture(contents = {}) {
   const compiler = require('../../config/solidity-compiler.json').longVersion;
   const payloads = {
@@ -356,6 +356,12 @@ test('workflow packages every declared immutable release asset', () => {
     path.resolve(__dirname, '../../.github/workflows/source-release.yml'),
     'utf8'
   );
+  assert.ok(workflow.includes(`TAG: ${tag}`));
+  assert.ok(workflow.includes('group: source-release-rc7-${{ github.ref }}'));
+  assert.ok(workflow.includes('name: source-rc7-${{ github.sha }}'));
+  assert.ok(expectedAssets(tag).includes('RELEASE_NOTES_SOURCE_RC7.md'));
+  assert.ok(!expectedAssets(tag).includes('RELEASE_NOTES_SOURCE_RC6.md'));
+  assert.ok(!workflow.includes('source-v2.1.0-rc.6'));
   for (const name of expectedAssets(tag)) {
     if (
       [
