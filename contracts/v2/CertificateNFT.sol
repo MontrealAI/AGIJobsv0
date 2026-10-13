@@ -90,7 +90,7 @@ contract CertificateNFT is ERC721, Ownable, Pausable, ReentrancyGuard, ICertific
         if (IStakeManager(manager).version() != version) {
             revert InvalidStakeManagerVersion();
         }
-        if (IStakeManager(manager).token() != IERC20(AGIALPHA)) {
+        if (address(IStakeManager(manager).token()) != AGIALPHA) {
             revert InvalidStakeManagerToken();
         }
         stakeManager = IStakeManager(manager);

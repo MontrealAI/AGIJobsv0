@@ -1,5 +1,7 @@
 # Deploy AGI Jobs v2: the current Hardhat path
 
+**Compiler update:** new deployments use Solidity 0.8.37. Keep the original release for recovery or verification of existing deployments. [Understand the warnings and replacement boundary](production/compiler-warnings-2026-10-13.md).
+
 Use this guide for a **new deployment**. Existing deployments are not upgraded by a new source release. This repository uses the compiled **18-decimal $AGIALPHA** token; do not copy token or settlement assumptions from another AGI Jobs repository.
 
 Start with the [current readiness report](production/readiness.md). A source prerelease is useful for review and rehearsal, but is not authorization to commission a production service. The signing, dependency, independent review and commissioning gates still apply.

@@ -7,7 +7,7 @@ const { keccak256 } = require("ethereum-cryptography/keccak");
 const { bytesToHex } = require("ethereum-cryptography/utils");
 const envPaths = require("env-paths");
 
-const SOLC_VERSION = "0.8.25";
+const SOLC_VERSION = "0.8.37";
 const PRIMARY_REPO = "https://binaries.soliditylang.org";
 const FALLBACK_REPO = "https://solc-bin.ethereum.org";
 

@@ -8,7 +8,7 @@ const config: HardhatUserConfig = {
     localhost: { url: process.env.RPC_URL ?? 'http://127.0.0.1:8545', chainId: 31337 }
   },
   solidity: {
-    version: '0.8.25',
+    version: '0.8.37',
     settings: {
       evmVersion: 'cancun',
       optimizer: {

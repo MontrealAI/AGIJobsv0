@@ -142,10 +142,36 @@ function checkRootLockfile() {
   }
 }
 
+function checkSolidityVersion() {
+  const { version } = require('../../config/solidity-compiler.json');
+  const files = [
+    ['hardhat.config.js', `const SOLIDITY_VERSIONS = ['${version}'];`],
+    ['hardhat.coverage.config.js', `version: '${version}'`],
+    ['truffle-config.js', `version: '${version}'`],
+    ['foundry.toml', `solc_version = "${version}"`],
+    ['demo/CULTURE-v0/hardhat.config.ts', `version: '${version}'`],
+    [
+      'demo/Trustless-Economic-Core-v0/hardhat.config.ts',
+      `version: '${version}'`,
+    ],
+    [
+      'demo/LARGE-SCALE-OMEGA-BUSINESS-3/hardhat.config.cjs',
+      `version: '${version}'`,
+    ],
+    ['demo/alpha-agi-mark/hardhat.config.ts', `version: "${version}"`],
+    ['demo/alpha-agi-insight-mark/hardhat.config.ts', `version: "${version}"`],
+  ];
+  for (const [file, pin] of files) {
+    if (!readFileTrim(file).includes(pin))
+      problems.push(`${file} must pin Solidity ${version}`);
+  }
+}
+
 checkNodeVersion();
 checkWorkflows();
 checkFoundryVersion();
 checkRootLockfile();
+checkSolidityVersion();
 
 if (problems.length > 0) {
   console.error('\n❌ Toolchain lock verification failed:');

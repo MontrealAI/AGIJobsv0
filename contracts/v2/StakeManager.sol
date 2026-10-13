@@ -21,10 +21,12 @@ import {IJobRegistry} from "./interfaces/IJobRegistry.sol";
 import {Thermostat} from "./Thermostat.sol";
 import {IHamiltonian} from "./interfaces/IHamiltonian.sol";
 
-import "./implementation/StakeManagerBase.sol";
+import { StakeManagerBase } from "./implementation/StakeManagerBase.sol";
 import "./implementation/FixedDelegate.sol";
 
 /// @notice StakeManager with immutable, separately deployed implementations.
+/// @dev Named ABI inputs are intentionally referenced before forwarding the original
+///      msg.data. Their names remain available to wallets and explorers.
 contract StakeManager is StakeManagerBase, FixedDelegate {
     error SafeERC20FailedOperation(address token);
     // Preserve delegated custom errors in the public controller ABI.
@@ -143,24 +145,29 @@ contract StakeManager is StakeManagerBase, FixedDelegate {
     }
 
     function setPauser(address _pauser) external {
+        _pauser;
         _delegate(_configuration);
     }
 
     function setPauserManager(address manager) external {
+        manager;
         _delegate(_configuration);
     }
 
     function setThermostat(address _thermostat) external {
+        _thermostat;
         _delegate(_configuration);
     }
 
     function setHamiltonianFeed(address _feed) external {
+        _feed;
         _delegate(_configuration);
     }
 
     /// @notice enable or disable automatic tuning of minStake based on disputes
     /// @param enabled true to enable auto tuning
     function autoTuneStakes(bool enabled) external {
+        enabled;
         _delegate(_configuration);
     }
 
@@ -184,6 +191,7 @@ contract StakeManager is StakeManagerBase, FixedDelegate {
         uint256 tempW,
         uint256 hamW
     ) external {
+        threshold; upPct; downPct; window; floor; ceil; tempThreshold; hThreshold; disputeW; tempW; hamW;
         _delegate(_configuration);
     }
 
@@ -203,6 +211,7 @@ contract StakeManager is StakeManagerBase, FixedDelegate {
     /// @param role participant role whose override should change
     /// @param amount minimum stake in 18 decimal tokens (0 disables the override)
     function setRoleMinimum(Role role, uint256 amount) external {
+        role; amount;
         _delegate(_configuration);
     }
 
@@ -211,12 +220,14 @@ contract StakeManager is StakeManagerBase, FixedDelegate {
     /// @param validator minimum stake for validators (0 disables override)
     /// @param platform minimum stake for platforms (0 disables override)
     function setRoleMinimums(uint256 agent, uint256 validator, uint256 platform) external {
+        agent; validator; platform;
         _delegate(_configuration);
     }
 
     /// @notice update the minimum stake required
     /// @param _minStake minimum token amount with 18 decimals
     function setMinStake(uint256 _minStake) external {
+        _minStake;
         _delegate(_configuration);
     }
 
@@ -233,6 +244,7 @@ contract StakeManager is StakeManagerBase, FixedDelegate {
         uint16 operatorSlashPctBps,
         uint16 burnSlashPctBps
     ) public {
+        employerSlashPctBps; treasurySlashPctBps; validatorSlashPctBps; operatorSlashPctBps; burnSlashPctBps;
         _delegate(_configuration);
     }
 
@@ -240,6 +252,7 @@ contract StakeManager is StakeManagerBase, FixedDelegate {
     /// @param _employerSlashPct percentage sent to employer (0-100 or 0-10_000)
     /// @param _treasurySlashPct percentage sent to treasury (0-100 or 0-10_000)
     function setSlashingPercentages(uint256 _employerSlashPct, uint256 _treasurySlashPct) external {
+        _employerSlashPct; _treasurySlashPct;
         _delegate(_configuration);
     }
 
@@ -247,12 +260,14 @@ contract StakeManager is StakeManagerBase, FixedDelegate {
     /// @param _employerSlashPct percentage sent to employer (0-100 or 0-10_000)
     /// @param _treasurySlashPct percentage sent to treasury (0-100 or 0-10_000)
     function setSlashingParameters(uint256 _employerSlashPct, uint256 _treasurySlashPct) external {
+        _employerSlashPct; _treasurySlashPct;
         _delegate(_configuration);
     }
 
     /// @notice update the validator share of slashed stakes
     /// @param _validatorSlashPct percentage of the total slashed amount distributed to validators (0-100 or 0-10_000)
     function setValidatorSlashRewardPct(uint256 _validatorSlashPct) external {
+        _validatorSlashPct;
         _delegate(_configuration);
     }
 
@@ -263,12 +278,14 @@ contract StakeManager is StakeManagerBase, FixedDelegate {
     function setSlashingDistribution(uint256 _employerSlashPct, uint256 _treasurySlashPct, uint256 _validatorSlashPct)
         external
     {
+        _employerSlashPct; _treasurySlashPct; _validatorSlashPct;
         _delegate(_configuration);
     }
 
     /// @notice update the operator share of slashed stakes
     /// @param _operatorSlashPct percentage of the total slashed amount added to the operator reward pool (0-100 or 0-10_000)
     function setOperatorSlashPct(uint256 _operatorSlashPct) external {
+        _operatorSlashPct;
         _delegate(_configuration);
     }
 
@@ -283,6 +300,7 @@ contract StakeManager is StakeManagerBase, FixedDelegate {
         uint256 _operatorSlashPct,
         uint256 _validatorSlashPct
     ) external {
+        _employerSlashPct; _treasurySlashPct; _operatorSlashPct; _validatorSlashPct;
         _delegate(_configuration);
     }
 
@@ -290,6 +308,7 @@ contract StakeManager is StakeManagerBase, FixedDelegate {
     /// @dev Treasury must be zero (burn) or an allowlisted address distinct from the owner
     /// @param _treasury address receiving treasury slash share
     function setTreasury(address _treasury) external {
+        _treasury;
         _delegate(_configuration);
     }
 
@@ -297,6 +316,7 @@ contract StakeManager is StakeManagerBase, FixedDelegate {
     /// @param _treasury Treasury candidate
     /// @param allowed True to allow, false to revoke
     function setTreasuryAllowlist(address _treasury, bool allowed) external {
+        _treasury; allowed;
         _delegate(_configuration);
     }
 
@@ -304,18 +324,21 @@ contract StakeManager is StakeManagerBase, FixedDelegate {
     /// @dev Staking is disabled until a nonzero registry is configured.
     /// @param _jobRegistry registry contract enforcing tax acknowledgements
     function setJobRegistry(address _jobRegistry) external {
+        _jobRegistry;
         _delegate(_configuration);
     }
 
     /// @notice set the dispute module authorized to manage dispute fees
     /// @param module module contract allowed to move dispute fees
     function setDisputeModule(address module) external {
+        module;
         _delegate(_configuration);
     }
 
     /// @notice set the validation module used to source validator lists
     /// @param module ValidationModule contract address
     function setValidationModule(address module) external {
+        module;
         _delegate(_configuration);
     }
 
@@ -323,6 +346,7 @@ contract StakeManager is StakeManagerBase, FixedDelegate {
     /// @param manager address permitted to manage validator stake locks
     /// @param allowed true to allow, false to revoke
     function setValidatorLockManager(address manager, bool allowed) external {
+        manager; allowed;
         _delegate(_configuration);
     }
 
@@ -331,6 +355,7 @@ contract StakeManager is StakeManagerBase, FixedDelegate {
     /// @param _jobRegistry registry contract enforcing tax acknowledgements
     /// @param _disputeModule module contract allowed to move dispute fees
     function setModules(address _jobRegistry, address _disputeModule) external {
+        _jobRegistry; _disputeModule;
         _delegate(_configuration);
     }
 
@@ -347,36 +372,42 @@ contract StakeManager is StakeManagerBase, FixedDelegate {
     /// @notice update protocol fee percentage
     /// @param pct percentage of released amount sent to FeePool (0-100)
     function setFeePct(uint256 pct) external {
+        pct;
         _delegate(_configuration);
     }
 
     /// @notice update FeePool contract
     /// @param pool FeePool receiving protocol fees
     function setFeePool(IFeePool pool) external {
+        pool;
         _delegate(_configuration);
     }
 
     /// @notice update burn percentage applied on release
     /// @param pct percentage of released amount burned (0-100)
     function setBurnPct(uint256 pct) external {
+        pct;
         _delegate(_configuration);
     }
 
     /// @notice update validator reward percentage
     /// @param pct percentage of released amount allocated to validators (0-100)
     function setValidatorRewardPct(uint256 pct) external {
+        pct;
         _delegate(_configuration);
     }
 
     /// @notice update the unbonding period for withdrawals
     /// @param newPeriod duration in seconds tokens remain locked after withdrawal request
     function setUnbondingPeriod(uint256 newPeriod) external {
+        newPeriod;
         _delegate(_configuration);
     }
 
     /// @notice set maximum total stake allowed per address (0 disables limit)
     /// @param maxStake cap on combined stake per address using 18 decimals
     function setMaxStakePerAddress(uint256 maxStake) external {
+        maxStake;
         _delegate(_configuration);
     }
 
@@ -385,16 +416,19 @@ contract StakeManager is StakeManagerBase, FixedDelegate {
     /// @param newMin recommended minimum stake with 18 decimals
     /// @param newMax recommended maximum total stake per address with 18 decimals
     function setStakeRecommendations(uint256 newMin, uint256 newMax) external {
+        newMin; newMax;
         _delegate(_configuration);
     }
 
     /// @notice Update the maximum number of AGI types allowed
     function setMaxAGITypes(uint256 newMax) external {
+        newMax;
         _delegate(_configuration);
     }
 
     /// @notice Update the maximum total payout percentage across AGI types
     function setMaxTotalPayoutPct(uint256 newMax) external {
+        newMax;
         _delegate(_configuration);
     }
 
@@ -405,6 +439,7 @@ contract StakeManager is StakeManagerBase, FixedDelegate {
     function applyConfiguration(ConfigUpdate calldata config, TreasuryAllowlistUpdate[] calldata allowlistUpdates)
         external
     {
+        config; allowlistUpdates;
         _delegate(_configuration);
     }
 
@@ -414,11 +449,13 @@ contract StakeManager is StakeManagerBase, FixedDelegate {
     ///      can provide a discount. The percentage must not exceed
     ///      {MAX_PAYOUT_PCT}.
     function addAGIType(address nft, uint256 payoutPct) external {
+        nft; payoutPct;
         _delegate(_configuration);
     }
 
     /// @notice Remove an AGI type
     function removeAGIType(address nft) external {
+        nft;
         _delegate(_configuration);
     }
 
@@ -427,6 +464,7 @@ contract StakeManager is StakeManagerBase, FixedDelegate {
     /// @param amount token amount with 18 decimals
     /// @param lockTime seconds until the stake unlocks
     function lockStake(address user, uint256 amount, uint64 lockTime) external {
+        user; amount; lockTime;
         _delegate(_staking);
     }
 
@@ -434,6 +472,7 @@ contract StakeManager is StakeManagerBase, FixedDelegate {
     /// @param user address whose stake is being unlocked
     /// @param amount token amount with 18 decimals to unlock
     function releaseStake(address user, uint256 amount) external {
+        user; amount;
         _delegate(_staking);
     }
 
@@ -443,6 +482,7 @@ contract StakeManager is StakeManagerBase, FixedDelegate {
     /// @param amount token amount with 18 decimals
     /// @param lockTime seconds until the stake unlocks
     function lockValidatorStake(uint256 jobId, address user, uint256 amount, uint64 lockTime) external {
+        jobId; user; amount; lockTime;
         _delegate(_staking);
     }
 
@@ -451,6 +491,7 @@ contract StakeManager is StakeManagerBase, FixedDelegate {
     /// @param user validator address whose stake is being unlocked
     /// @param amount token amount with 18 decimals to unlock
     function unlockValidatorStake(uint256 jobId, address user, uint256 amount) external {
+        jobId; user; amount;
         _delegate(_staking);
     }
 
@@ -464,6 +505,7 @@ contract StakeManager is StakeManagerBase, FixedDelegate {
     /// @param role participant role for the stake
     /// @param amount token amount with 18 decimals
     function depositStakeFor(address user, Role role, uint256 amount) external {
+        user; role; amount;
         _delegate(_staking);
     }
 
@@ -471,6 +513,7 @@ contract StakeManager is StakeManagerBase, FixedDelegate {
     /// @param role participant role for the stake
     /// @param amount token amount with 18 decimals; caller must approve first
     function depositStake(Role role, uint256 amount) external {
+        role; amount;
         _delegate(_staking);
     }
 
@@ -483,6 +526,7 @@ contract StakeManager is StakeManagerBase, FixedDelegate {
      * @param amount Stake amount in $AGIALPHA with 18 decimals.
      */
     function acknowledgeAndDeposit(Role role, uint256 amount) external {
+        role; amount;
         _delegate(_staking);
     }
 
@@ -497,6 +541,7 @@ contract StakeManager is StakeManagerBase, FixedDelegate {
      * @param amount Stake amount in $AGIALPHA with 18 decimals.
      */
     function acknowledgeAndDepositFor(address user, Role role, uint256 amount) external {
+        user; role; amount;
         _delegate(_staking);
     }
 
@@ -505,6 +550,7 @@ contract StakeManager is StakeManagerBase, FixedDelegate {
     /// @param role participant role of the stake
     /// @param amount token amount with 18 decimals to withdraw
     function requestWithdraw(Role role, uint256 amount) external {
+        role; amount;
         _delegate(_staking);
     }
 
@@ -512,6 +558,7 @@ contract StakeManager is StakeManagerBase, FixedDelegate {
     /// @dev Enforces the current tax policy via `requiresTaxAcknowledgement`.
     /// @param role participant role of the stake being withdrawn
     function finalizeWithdraw(Role role) external {
+        role;
         _delegate(_staking);
     }
 
@@ -523,6 +570,7 @@ contract StakeManager is StakeManagerBase, FixedDelegate {
      * @param amount Token amount with 18 decimals to withdraw.
      */
     function withdrawStake(Role role, uint256 amount) external {
+        role; amount;
         _delegate(_staking);
     }
 
@@ -535,6 +583,7 @@ contract StakeManager is StakeManagerBase, FixedDelegate {
      * @param amount Withdraw amount in $AGIALPHA with 18 decimals.
      */
     function acknowledgeAndWithdraw(Role role, uint256 amount) external {
+        role; amount;
         _delegate(_staking);
     }
 
@@ -549,6 +598,7 @@ contract StakeManager is StakeManagerBase, FixedDelegate {
      * @param amount Withdraw amount in $AGIALPHA with 18 decimals.
      */
     function acknowledgeAndWithdrawFor(address user, Role role, uint256 amount) external {
+        user; role; amount;
         _delegate(_staking);
     }
 
@@ -558,6 +608,7 @@ contract StakeManager is StakeManagerBase, FixedDelegate {
     /// @param from employer providing the escrow
     /// @param amount token amount with 18 decimals; employer must approve first
     function lockReward(bytes32 jobId, address from, uint256 amount) external {
+        jobId; from; amount;
         _delegate(_escrow);
     }
 
@@ -568,6 +619,7 @@ contract StakeManager is StakeManagerBase, FixedDelegate {
     /// @param from Address providing the funds; must approve first.
     /// @param amount Token amount with 18 decimals to lock.
     function lock(address from, uint256 amount) external {
+        from; amount;
         _delegate(_escrow);
     }
 
@@ -581,6 +633,7 @@ contract StakeManager is StakeManagerBase, FixedDelegate {
     ///      periodically to settle rewards.
     /// @param applyBoost When true, applies AGI NFT payout multipliers to `amount`.
     function releaseReward(bytes32 jobId, address employer, address to, uint256 amount, bool applyBoost) external {
+        jobId; employer; to; amount; applyBoost;
         _delegate(_escrow);
     }
 
@@ -589,16 +642,19 @@ contract StakeManager is StakeManagerBase, FixedDelegate {
     /// @param to Recipient of the refund.
     /// @param amount Token amount with 18 decimals to refund.
     function refundEscrow(bytes32 jobId, address to, uint256 amount) external {
+        jobId; to; amount;
         _delegate(_escrow);
     }
 
     function redistributeEscrow(bytes32 jobId, address recipient, uint256 amount) external {
+        jobId; recipient; amount;
         _delegate(_escrow);
     }
 
     function redistributeEscrow(bytes32 jobId, address recipient, uint256 amount, address[] calldata validators)
         external
     {
+        jobId; recipient; amount; validators;
         _delegate(_escrow);
     }
 
@@ -611,6 +667,7 @@ contract StakeManager is StakeManagerBase, FixedDelegate {
     /// @param amount Base token amount with 18 decimals before AGI bonus.
     /// @param applyBoost When true, applies AGI NFT payout multipliers to `amount`.
     function release(address employer, address to, uint256 amount, bool applyBoost) external {
+        employer; to; amount; applyBoost;
         _delegate(_escrow);
     }
 
@@ -632,6 +689,7 @@ contract StakeManager is StakeManagerBase, FixedDelegate {
         IFeePool _feePool,
         bool byGovernance
     ) external {
+        jobId; employer; agent; reward; validatorReward; fee; _feePool; byGovernance;
         _delegate(_escrow);
     }
 
@@ -646,12 +704,14 @@ contract StakeManager is StakeManagerBase, FixedDelegate {
         IFeePool _feePool,
         bool byGovernance
     ) external {
+        jobId; employer; agent; agentPct; reward; validatorReward; fee; _feePool; byGovernance;
         _delegate(_escrow);
     }
 
     /// @notice fund the operator reward pool
     /// @param amount token amount with 18 decimals to add
     function fundOperatorRewardPool(uint256 amount) external {
+        amount;
         _delegate(_escrow);
     }
 
@@ -659,6 +719,7 @@ contract StakeManager is StakeManagerBase, FixedDelegate {
     /// @param to recipient of the tokens
     /// @param amount token amount with 18 decimals to withdraw
     function withdrawOperatorRewardPool(address to, uint256 amount) external {
+        to; amount;
         _delegate(_escrow);
     }
 
@@ -666,6 +727,7 @@ contract StakeManager is StakeManagerBase, FixedDelegate {
     /// @param jobId unique job identifier
     /// @param amount total validator reward pool
     function distributeValidatorRewards(bytes32 jobId, uint256 amount) external {
+        jobId; amount;
         _delegate(_escrow);
     }
 
@@ -674,6 +736,7 @@ contract StakeManager is StakeManagerBase, FixedDelegate {
     /// @param payer address providing the fee, must approve first
     /// @param amount token amount with 18 decimals
     function lockDisputeFee(address payer, uint256 amount) external {
+        payer; amount;
         _delegate(_escrow);
     }
 
@@ -681,6 +744,7 @@ contract StakeManager is StakeManagerBase, FixedDelegate {
     /// @param to recipient of the fee payout
     /// @param amount token amount with 18 decimals
     function payDisputeFee(address to, uint256 amount) external {
+        to; amount;
         _delegate(_escrow);
     }
 
@@ -690,10 +754,12 @@ contract StakeManager is StakeManagerBase, FixedDelegate {
     /// @param amount token amount with 18 decimals to slash
     /// @param employer recipient of the employer share
     function slash(address user, Role role, uint256 amount, address employer) external {
+        user; role; amount; employer;
         _delegate(_slashing);
     }
 
     function slash(address user, Role role, uint256 amount, address employer, address[] calldata validators) external {
+        user; role; amount; employer; validators;
         _delegate(_slashing);
     }
 
@@ -702,10 +768,12 @@ contract StakeManager is StakeManagerBase, FixedDelegate {
     /// @param amount token amount with 18 decimals to slash
     /// @param recipient address receiving the slashed share
     function slash(address user, uint256 amount, address recipient) external {
+        user; amount; recipient;
         _delegate(_slashing);
     }
 
     function slash(address user, uint256 amount, address recipient, address[] calldata validators) external {
+        user; amount; recipient; validators;
         _delegate(_slashing);
     }
 
@@ -721,6 +789,8 @@ contract StakeManager is StakeManagerBase, FixedDelegate {
         external
         returns (uint256 amount)
     {
+        amount;
+        user; role; pctBps; beneficiary;
         _delegate(_slashing);
     }
 
@@ -728,6 +798,7 @@ contract StakeManager is StakeManagerBase, FixedDelegate {
     /// @param user address whose boosted stake is being updated
     /// @param role participant role for the stake
     function syncBoostedStake(address user, Role role) public {
+        user; role;
         _delegate(_staking);
     }
 }

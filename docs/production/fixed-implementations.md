@@ -20,6 +20,8 @@ The existing storage fields retain their offsets. `ValidationModule.DOMAIN_SEPAR
 
 ## Size limits
 
+Current builds use Solidity 0.8.37. See the [compiler update](compiler-warnings-2026-10-13.md) and run `node scripts/ci/check-solidity-build.cjs` for current sizes and diagnostic evidence. The table below is the retained historical measurement for rc.2.
+
 For v2.1.0-rc.2, with Solidity 0.8.25, viaIR, 200 optimizer runs, and the Cancun EVM target:
 
 | Contract | Previous runtime bytes | Candidate runtime bytes | Candidate initcode bytes |

@@ -132,7 +132,7 @@ const jobRegistryViaIR =
     ? false
     : true;
 
-const SOLIDITY_VERSIONS = ['0.8.25', '0.8.23', '0.8.21'];
+const SOLIDITY_VERSIONS = ['0.8.37'];
 
 const solidityVersions =
   isCoverageRun || isFastCompile ? [SOLIDITY_VERSIONS[0]] : SOLIDITY_VERSIONS;
