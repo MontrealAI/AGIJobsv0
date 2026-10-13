@@ -6,6 +6,147 @@ const os = require('node:os');
 const crypto = require('node:crypto');
 const { execFileSync } = require('node:child_process');
 
+function validateCompilerArtifact(provenance, artifact) {
+  const run = provenance.workflows?.find(
+    (item) => item.path === '.github/workflows/contracts.yml'
+  );
+  if (
+    !/^[a-f0-9]{40}$/.test(provenance.sha || '') ||
+    !run ||
+    run.conclusion !== 'success' ||
+    run.head_sha !== provenance.sha ||
+    artifact?.name !== `compiler-evidence-${provenance.sha}` ||
+    artifact.expired !== false ||
+    artifact.workflow_run?.id !== run.id ||
+    artifact.workflow_run?.head_sha !== provenance.sha ||
+    !/^sha256:[a-f0-9]{64}$/.test(artifact.digest || '')
+  )
+    throw Error(
+      'Compiler artifact does not match the qualified exact-SHA producer'
+    );
+  return run;
+}
+
+function verifyCompilerArchive(files, read) {
+  const index = JSON.parse(read('verification/index.json'));
+  const report = JSON.parse(read('build.json'));
+  const policy = require('../../config/solidity-compiler.json');
+  if (
+    index.schema !== 'agijobsv0/verification-inputs/1' ||
+    index.compiler !== policy.longVersion ||
+    report.compiler !== policy.longVersion ||
+    report.projectSourceWarnings !== 0 ||
+    report.sizeGatePassed !== true ||
+    !Array.isArray(index.contracts) ||
+    !index.contracts.length ||
+    index.contracts.length !== report.contracts?.length
+  )
+    throw Error('Compiler archive policy or inventory mismatch');
+  const entries = Object.entries(index.files || {});
+  const expected = ['build.json', 'verification/index.json'];
+  for (const [name, digest] of entries) {
+    if (
+      !/^[A-Za-z0-9_./@-]+$/.test(name) ||
+      name.startsWith('/') ||
+      name.split('/').includes('..') ||
+      !/^[a-f0-9]{64}$/.test(digest)
+    )
+      throw Error('Malformed compiler archive checksum entry');
+    const file = `verification/${name}`;
+    expected.push(file);
+    if (crypto.createHash('sha256').update(read(file)).digest('hex') !== digest)
+      throw Error(`Compiler archive checksum mismatch: ${file}`);
+  }
+  if (JSON.stringify([...files].sort()) !== JSON.stringify(expected.sort()))
+    throw Error('Compiler archive file inventory mismatch');
+  for (const item of index.contracts) {
+    for (const file of [item.artifact, item.buildInfo, item.standardInput])
+      if (!Object.hasOwn(index.files, file))
+        throw Error('Missing contract compiler evidence');
+  }
+  const identities = (items) =>
+    items.map((item) => `${item.source}:${item.contract}`).sort();
+  if (
+    JSON.stringify(identities(index.contracts)) !==
+    JSON.stringify(identities(report.contracts))
+  )
+    throw Error('Compiler report and archive contract identities differ');
+  return { compiler: index.compiler, contracts: index.contracts.length };
+}
+
+function collectCompilerEvidence() {
+  const repository = process.env.GITHUB_REPOSITORY;
+  const sha = process.env.GITHUB_SHA;
+  const directory = path.resolve('reports/source-release');
+  const provenance = JSON.parse(
+    fs.readFileSync(path.join(directory, 'provenance.json'))
+  );
+  if (
+    repository !== 'MontrealAI/AGIJobsv0' ||
+    provenance.repository !== repository ||
+    provenance.sha !== sha
+  )
+    throw Error('Invalid compiler evidence publication identity');
+  const run = provenance.workflows.find(
+    (item) => item.path === '.github/workflows/contracts.yml'
+  );
+  if (!run) throw Error('Missing qualified contracts workflow');
+  const cli = (...args) =>
+    execFileSync('gh', args, { maxBuffer: 128 * 1024 * 1024 });
+  const response = JSON.parse(
+    cli(
+      'api',
+      `repos/${repository}/actions/runs/${run.id}/artifacts?per_page=100`
+    )
+  );
+  if (response.total_count > 100)
+    throw Error('Refusing truncated compiler artifact inventory');
+  const artifacts = response.artifacts.filter(
+    (item) => item.name === `compiler-evidence-${sha}`
+  );
+  if (artifacts.length !== 1)
+    throw Error('Missing or ambiguous compiler evidence artifact');
+  const artifact = artifacts[0];
+  validateCompilerArtifact(provenance, artifact);
+  const bytes = cli(
+    'api',
+    `repos/${repository}/actions/artifacts/${artifact.id}/zip`
+  );
+  const digest = crypto.createHash('sha256').update(bytes).digest('hex');
+  if (`sha256:${digest}` !== artifact.digest)
+    throw Error('Downloaded compiler artifact digest mismatch');
+  const zip = path.join(directory, 'compiler-evidence.zip');
+  fs.writeFileSync(zip, bytes, { flag: 'wx' });
+  const read = (name) =>
+    execFileSync('unzip', ['-p', zip, name], { maxBuffer: 128 * 1024 * 1024 });
+  const files = execFileSync('unzip', ['-Z1', zip], { encoding: 'utf8' })
+    .trim()
+    .split('\n')
+    .filter((name) => !name.endsWith('/'));
+  const summary = verifyCompilerArchive(files, read);
+  fs.writeFileSync(
+    path.join(directory, 'compiler-provenance.json'),
+    JSON.stringify(
+      {
+        schema: 'agijobsv0/compiler-artifact-provenance/1',
+        repository,
+        sha,
+        workflow: run.path,
+        runId: run.id,
+        runAttempt: run.run_attempt,
+        artifactId: artifact.id,
+        artifactName: artifact.name,
+        githubDigest: artifact.digest,
+        downloadedSha256: digest,
+        ...summary,
+      },
+      null,
+      2
+    ) + '\n',
+    { flag: 'wx' }
+  );
+}
+
 function assertTag(ref, sha) {
   if (ref?.object?.type !== 'commit' || ref.object.sha !== sha)
     throw Error('Release tag belongs to a different commit or object type');
@@ -29,7 +170,7 @@ async function publish({ sha, tag, notes, api, upload, verify }) {
       target_commitish: sha,
       draft: true,
       prerelease: true,
-      name: `${tag} — mainnet evidence and SUCCESSOR Ω workshop`,
+      name: `${tag} — compiler advisory and verification remediation`,
       body: `${notes.trim()}\n\n${marker}\n`,
     });
   }
@@ -78,7 +219,7 @@ async function main() {
   if (
     repository !== 'MontrealAI/AGIJobsv0' ||
     !/^[a-f0-9]{40}$/.test(sha || '') ||
-    tag !== 'source-v2.1.0-rc.5' ||
+    tag !== 'source-v2.1.0-rc.6' ||
     !token
   )
     throw Error('Invalid source publication identity or authorization');
@@ -102,7 +243,11 @@ async function main() {
     'ethereum-mainnet-2026-10-12.json',
     'configuration-readback-2026-10-13.json',
     'mainnet-deployment-2026-10-12.md',
-    'RELEASE_NOTES_SOURCE_RC5.md',
+    'RELEASE_NOTES_SOURCE_RC6.md',
+    'compiler-evidence.zip',
+    'compiler-provenance.json',
+    'solidity-compiler.json',
+    'compiler-warnings-2026-10-13.md',
   ].sort();
   if (JSON.stringify(files) !== JSON.stringify(expected))
     throw Error('Unexpected or missing source assets');
@@ -164,7 +309,15 @@ async function main() {
       if (seen.size !== expected.length - 1)
         throw Error('Incomplete remote checksums');
       for (const name of expected) {
-        if (!draft && ['provenance.json', 'SHA256SUMS.txt'].includes(name))
+        if (
+          !draft &&
+          [
+            'provenance.json',
+            'SHA256SUMS.txt',
+            'compiler-evidence.zip',
+            'compiler-provenance.json',
+          ].includes(name)
+        )
           continue;
         if (
           digest(path.join(downloaded, name)) !==
@@ -184,6 +337,38 @@ async function main() {
         provenance.producer?.workflow !== '.github/workflows/source-release.yml'
       )
         throw Error('Remote provenance identity mismatch');
+      const compiler = JSON.parse(
+        fs.readFileSync(path.join(downloaded, 'compiler-provenance.json'))
+      );
+      const producer = provenance.workflows?.find(
+        (item) => item.path === '.github/workflows/contracts.yml'
+      );
+      const zip = path.join(downloaded, 'compiler-evidence.zip');
+      if (
+        compiler.repository !== repository ||
+        compiler.sha !== sha ||
+        compiler.workflow !== producer?.path ||
+        compiler.runId !== producer?.id ||
+        compiler.runAttempt !== producer?.run_attempt ||
+        compiler.artifactName !== `compiler-evidence-${sha}` ||
+        compiler.downloadedSha256 !== digest(zip) ||
+        compiler.githubDigest !== `sha256:${digest(zip)}`
+      )
+        throw Error('Remote compiler producer provenance mismatch');
+      const files = execFileSync('unzip', ['-Z1', zip], { encoding: 'utf8' })
+        .trim()
+        .split('\n')
+        .filter((name) => !name.endsWith('/'));
+      const summary = verifyCompilerArchive(files, (name) =>
+        execFileSync('unzip', ['-p', zip, name], {
+          maxBuffer: 128 * 1024 * 1024,
+        })
+      );
+      if (
+        compiler.compiler !== summary.compiler ||
+        compiler.contracts !== summary.contracts
+      )
+        throw Error('Remote compiler summary mismatch');
     } finally {
       fs.rmSync(downloaded, { recursive: true, force: true });
     }
@@ -194,7 +379,7 @@ async function main() {
     api,
     verify,
     notes: fs.readFileSync(
-      'docs/production/RELEASE_NOTES_SOURCE_RC5.md',
+      'docs/production/RELEASE_NOTES_SOURCE_RC6.md',
       'utf8'
     ),
     upload: async () =>
@@ -218,9 +403,22 @@ async function main() {
   );
 }
 
-module.exports = { publish, assertTag };
+module.exports = {
+  publish,
+  assertTag,
+  validateCompilerArtifact,
+  verifyCompilerArchive,
+};
 if (require.main === module)
-  main().catch((error) => {
-    console.error(error.message);
-    process.exitCode = 1;
-  });
+  Promise.resolve()
+    .then(() => {
+      if (process.argv[2] === '--collect-compiler-evidence')
+        return collectCompilerEvidence();
+      if (process.argv.length !== 2)
+        throw Error('Unknown source publication argument');
+      return main();
+    })
+    .catch((error) => {
+      console.error(error.message);
+      process.exitCode = 1;
+    });

@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased — compiler advisory remediation
+## v2.1.0-rc.6 — compiler and verification remediation (2026-10-13 UTC)
 
 - Move new contract builds to Solidity 0.8.37 across supported build paths, retaining the production Cancun target and optimizer settings.
 - Correct project-source diagnostics while preserving public ABI parameter names and fixed-implementation behavior; refresh bundled demo bytecode.
