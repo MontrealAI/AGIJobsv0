@@ -1,15 +1,21 @@
 # Explorer Verification Automation
 
-This guide explains how the GitHub Actions release workflow automatically
-verifies AGI Jobs v0 (v2) contracts on Etherscan/Blockscout. It complements
-the institutional deployment readiness punch-list by ensuring every release
-produces public, reproducible source verification evidence.
+This guide describes explorer verification in the signed `v*` production release
+workflow (`.github/workflows/release.yml`). Its signing, qualification and
+commissioning requirements remain in force; a tag alone does not establish
+successful source verification or production readiness.
+
+The separate `source-v*` publisher archives source and dated evidence. It sends
+no explorer submission or blockchain transaction and does not run this production
+verification workflow. Keep existing deployments tied to their original source,
+compiler input and constructor arguments; see the [compiler warning and historical
+verification guide](production/compiler-warnings-2026-10-13.md).
 
 ## Workflow overview
 
-1. `release.yml` compiles contracts, regenerates TypeChain artefacts, builds
-the release manifest, and publishes an SBOM.
-2. The new **Verify deployed contracts** job downloads the manifest, resolves
+1. The signed `v*` production workflow in `release.yml` compiles contracts, regenerates TypeChain artefacts, builds
+   the release manifest, and publishes an SBOM.
+2. The **Verify deployed contracts** job downloads the manifest, resolves
    deployed addresses, and executes
    `scripts/release/run-etherscan-verification.js` for the selected network.
 3. The script determines the correct API key, preferring the short-lived
@@ -57,7 +63,7 @@ workflow through the following variables:
   to mint temporary credentials via GitHub OIDC.
 - `AWS_ETHERSCAN_SECRET_NAME` – Secrets Manager identifier that stores the API
   key or a JSON object containing per-network keys.
-- `AWS_ETHERSCAN_SECRET_JSON_KEY` *(optional)* – selector when the secret holds
+- `AWS_ETHERSCAN_SECRET_JSON_KEY` _(optional)_ – selector when the secret holds
   multiple credential sets.
 
 When these values are present, the release workflow loads the secret at runtime
@@ -68,8 +74,8 @@ same names.
 
 Document the provisioning policy in your operations runbook so the incident
 commander can rotate credentials quickly. The verification job fails fast when
-no API key is available, preventing unsigned releases from reaching production
-unnoticed.
+no API key is available. Signing and production readiness are separate gates;
+explorer credentials do not authorize a release or a chain transaction.
 
 ## Dry-run before tagging
 
@@ -95,13 +101,23 @@ The bundled Standard JSON retains the entire original input, including source fi
 - **Missing manifest warnings** – the script depends on
   `reports/release/manifest.json`. Re-run `npm run release:manifest` before
   invoking the verifier.
-- **Address unresolved** – ensure `docs/deployment-addresses.json` and
-  `docs/deployment-summary.json` include the contract address. The script rejects zero addresses before invoking the explorer.
-- **Constructor mismatch** – update the args file for the affected contract.
-  Hardhat will emit the expected constructor signature in the failure output.
+- **Address unresolved** – inspect the selected manifest and verification plan
+  against the explicit reviewed `docs/deployment-addresses.mainnet.json` inventory
+  for chain 1. Use a reviewed deployment-specific manifest or an explicit plan
+  address/`addressSource` override for the correct network. Generic
+  `docs/deployment-addresses.json` defaults intentionally remain zero because some
+  transaction consumers do not enforce network identity; do not populate them
+  with live addresses to silence a warning. The verifier rejects zero addresses before invoking the explorer. Inspect each
+  summary entry rather than treating an omitted contract as verified.
+- **Constructor mismatch** – reconcile the original deployment transaction,
+  saved constructor arguments and matching build before correcting the selected
+  argument file. Preserve the originals. Never substitute a new compiler build
+  or controller arguments for an already-deployed implementation.
 - **Already verified** – the command reports `already_verified` but exits
   successfully. The summary still records the contract to provide an audit
   trail.
 
-With these controls wired into CI, every tagged release automatically produces
-verification evidence. Exact source matching does not establish security or authorize activation.
+A successful signed `v*` production workflow retains its verification summary.
+Review each contract result and the source/build identity. A `source-v*` release
+only preserves source and evidence; it does not submit verification, transact,
+commission the deployment or certify flawless operation.

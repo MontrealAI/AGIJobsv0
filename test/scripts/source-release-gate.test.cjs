@@ -4,8 +4,92 @@ const {
   evaluate,
   requiredPaths,
   requiredChecks,
+  verifySourceScope,
+  preservedEvidencePaths,
+  reviewedCompilerPaths,
 } = require('../../scripts/release/qualify-source-release.cjs');
 const sha = 'a'.repeat(40);
+function sourceFixture() {
+  return {
+    sha,
+    version: '2.1.0-rc.6',
+    compilerBaseline: 'b'.repeat(40),
+    policy: {
+      version: '0.8.37',
+      longVersion: '0.8.37+commit.f401782d',
+      evmVersion: 'cancun',
+      optimizerRuns: 200,
+      viaIR: true,
+    },
+    git: () => '',
+  };
+}
+test('source scope preserves historical evidence and the reviewed compiler tree', () => {
+  const calls = [];
+  const scope = verifySourceScope({
+    ...sourceFixture(),
+    git: (...args) => calls.push(args),
+  });
+  assert.equal(calls.filter(([command]) => command === 'merge-base').length, 3);
+  assert.ok(
+    calls.some(
+      (args) =>
+        args[0] === 'diff' &&
+        args.includes('docs/deployments/') &&
+        args.includes('scripts/verification/')
+    )
+  );
+  assert.ok(
+    calls.some(
+      (args) =>
+        args[0] === 'diff' &&
+        args.includes('contracts/') &&
+        args.includes('hardhat.config.js')
+    )
+  );
+  assert.deepEqual(scope.preservedEvidencePaths, preservedEvidencePaths);
+  assert.deepEqual(scope.reviewedCompilerPaths, reviewedCompilerPaths);
+  for (const command of ['merge-base', 'diff']) {
+    assert.throws(
+      () =>
+        verifySourceScope({
+          ...sourceFixture(),
+          git: (...args) => {
+            if (args[0] === command) throw Error('source drift');
+          },
+        }),
+      /source drift/
+    );
+  }
+});
+test('source release rejects missing review, old compiler, changed production settings and wrong version', () => {
+  for (const compilerBaseline of ['', 'REVIEW_REQUIRED', 'source-v2.1.0-rc.5'])
+    assert.throws(
+      () => verifySourceScope({ ...sourceFixture(), compilerBaseline }),
+      /reviewed compiler/
+    );
+  assert.throws(
+    () => verifySourceScope({ ...sourceFixture(), version: '2.1.0-rc.5' }),
+    /mismatch/
+  );
+  for (const change of [
+    { version: '0.8.25' },
+    { longVersion: '0.8.37+commit.other' },
+    { evmVersion: 'osaka' },
+    { optimizerRuns: 1 },
+    { viaIR: false },
+  ]) {
+    const fixture = sourceFixture();
+    assert.throws(
+      () =>
+        verifySourceScope({
+          ...fixture,
+          policy: { ...fixture.policy, ...change },
+        }),
+      /mismatch/
+    );
+  }
+});
 test('every path-filtered dependency runs for every source publication trigger', () => {
   const fs = require('node:fs');
   const path = require('node:path');

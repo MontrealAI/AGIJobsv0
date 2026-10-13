@@ -5,6 +5,95 @@ const path = require('node:path');
 const os = require('node:os');
 const crypto = require('node:crypto');
 const { execFileSync } = require('node:child_process');
+const {
+  compilerSourceBaseline,
+  evidenceBaseline,
+  deployedSourceBaseline,
+  preservedEvidencePaths,
+  reviewedCompilerPaths,
+} = require('./qualify-source-release.cjs');
+
+function expectedAssets(tag) {
+  return [
+    'SHA256SUMS.txt',
+    'provenance.json',
+    `${tag}-source.zip`,
+    'ethereum-mainnet-2026-10-12.json',
+    'configuration-readback-2026-10-13.json',
+    'mainnet-deployment-2026-10-12.md',
+    'RELEASE_NOTES_SOURCE_RC6.md',
+    'compiler-warnings-2026-10-13.md',
+    'solidity-compiler.json',
+    'deployment-addresses.mainnet.json',
+  ].sort();
+}
+
+function verifyDownloadedAssets({
+  downloaded,
+  directory,
+  draft,
+  sha,
+  tree,
+  tag,
+  repository,
+}) {
+  const expected = expectedAssets(tag);
+  const digest = (file) =>
+    crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex');
+  if (
+    JSON.stringify(fs.readdirSync(downloaded).sort()) !==
+    JSON.stringify(expected)
+  )
+    throw Error('Remote asset inventory mismatch');
+  const sums = fs
+    .readFileSync(path.join(downloaded, 'SHA256SUMS.txt'), 'utf8')
+    .trim()
+    .split('\n');
+  const seen = new Set();
+  for (const line of sums) {
+    const match = /^([a-f0-9]{64})  ([A-Za-z0-9._-]+)$/.exec(line);
+    if (
+      !match ||
+      match[2] === 'SHA256SUMS.txt' ||
+      !expected.includes(match[2]) ||
+      seen.has(match[2])
+    )
+      throw Error('Malformed remote checksum inventory');
+    seen.add(match[2]);
+    if (digest(path.join(downloaded, match[2])) !== match[1])
+      throw Error(`Remote checksum mismatch: ${match[2]}`);
+  }
+  if (seen.size !== expected.length - 1)
+    throw Error('Incomplete remote checksums');
+  for (const name of expected) {
+    if (!draft && ['provenance.json', 'SHA256SUMS.txt'].includes(name))
+      continue;
+    if (
+      digest(path.join(downloaded, name)) !== digest(path.join(directory, name))
+    )
+      throw Error(`Producer/readback mismatch: ${name}`);
+  }
+  const provenance = JSON.parse(
+    fs.readFileSync(path.join(downloaded, 'provenance.json'), 'utf8')
+  );
+  if (
+    provenance.sha !== sha ||
+    provenance.tree !== tree ||
+    provenance.tag !== tag ||
+    provenance.repository !== repository ||
+    provenance.productionApproved !== false ||
+    provenance.producer?.workflow !== '.github/workflows/source-release.yml' ||
+    provenance.sourceScope?.compilerSourceBaseline !== compilerSourceBaseline ||
+    provenance.sourceScope?.evidenceBaseline !== evidenceBaseline ||
+    provenance.sourceScope?.deployedSourceBaseline !== deployedSourceBaseline ||
+    provenance.sourceScope?.compiler !== '0.8.37+commit.f401782d' ||
+    JSON.stringify(provenance.sourceScope?.preservedEvidencePaths) !==
+      JSON.stringify(preservedEvidencePaths) ||
+    JSON.stringify(provenance.sourceScope?.reviewedCompilerPaths) !==
+      JSON.stringify(reviewedCompilerPaths)
+  )
+    throw Error('Remote provenance identity mismatch');
+}
 
 function assertTag(ref, sha) {
   if (ref?.object?.type !== 'commit' || ref.object.sha !== sha)
@@ -29,7 +118,7 @@ async function publish({ sha, tag, notes, api, upload, verify }) {
       target_commitish: sha,
       draft: true,
       prerelease: true,
-      name: `${tag} — mainnet evidence and SUCCESSOR Ω workshop`,
+      name: `${tag} — compiler remediation and preserved deployment evidence`,
       body: `${notes.trim()}\n\n${marker}\n`,
     });
   }
@@ -78,7 +167,7 @@ async function main() {
   if (
     repository !== 'MontrealAI/AGIJobsv0' ||
     !/^[a-f0-9]{40}$/.test(sha || '') ||
-    tag !== 'source-v2.1.0-rc.5' ||
+    tag !== 'source-v2.1.0-rc.6' ||
     !token
   )
     throw Error('Invalid source publication identity or authorization');
@@ -95,19 +184,9 @@ async function main() {
   const tree = git('rev-parse', 'HEAD^{tree}');
   const directory = path.resolve('reports/source-release');
   const files = fs.readdirSync(directory).sort();
-  const expected = [
-    'SHA256SUMS.txt',
-    'provenance.json',
-    `${tag}-source.zip`,
-    'ethereum-mainnet-2026-10-12.json',
-    'configuration-readback-2026-10-13.json',
-    'mainnet-deployment-2026-10-12.md',
-    'RELEASE_NOTES_SOURCE_RC5.md',
-  ].sort();
+  const expected = expectedAssets(tag);
   if (JSON.stringify(files) !== JSON.stringify(expected))
     throw Error('Unexpected or missing source assets');
-  const digest = (file) =>
-    crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex');
   const api = async (method, resource, body, optional = false) => {
     const response = await fetch(
       `https://api.github.com/repos/${repository}/${resource}`,
@@ -138,52 +217,15 @@ async function main() {
     );
     try {
       cli('release', 'download', tag, '--dir', downloaded);
-      if (
-        JSON.stringify(fs.readdirSync(downloaded).sort()) !==
-        JSON.stringify(expected)
-      )
-        throw Error('Remote asset inventory mismatch');
-      const sums = fs
-        .readFileSync(path.join(downloaded, 'SHA256SUMS.txt'), 'utf8')
-        .trim()
-        .split('\n');
-      const seen = new Set();
-      for (const line of sums) {
-        const match = /^([a-f0-9]{64})  ([A-Za-z0-9._-]+)$/.exec(line);
-        if (
-          !match ||
-          match[2] === 'SHA256SUMS.txt' ||
-          !expected.includes(match[2]) ||
-          seen.has(match[2])
-        )
-          throw Error('Malformed remote checksum inventory');
-        seen.add(match[2]);
-        if (digest(path.join(downloaded, match[2])) !== match[1])
-          throw Error(`Remote checksum mismatch: ${match[2]}`);
-      }
-      if (seen.size !== expected.length - 1)
-        throw Error('Incomplete remote checksums');
-      for (const name of expected) {
-        if (!draft && ['provenance.json', 'SHA256SUMS.txt'].includes(name))
-          continue;
-        if (
-          digest(path.join(downloaded, name)) !==
-          digest(path.join(directory, name))
-        )
-          throw Error(`Producer/readback mismatch: ${name}`);
-      }
-      const provenance = JSON.parse(
-        fs.readFileSync(path.join(downloaded, 'provenance.json'), 'utf8')
-      );
-      if (
-        provenance.sha !== sha ||
-        provenance.tree !== tree ||
-        provenance.tag !== tag ||
-        provenance.repository !== repository ||
-        provenance.productionApproved !== false ||
-        provenance.producer?.workflow !== '.github/workflows/source-release.yml'
-      )
-        throw Error('Remote provenance identity mismatch');
+      verifyDownloadedAssets({
+        downloaded,
+        directory,
+        draft,
+        sha,
+        tree,
+        tag,
+        repository,
+      });
     } finally {
       fs.rmSync(downloaded, { recursive: true, force: true });
     }
@@ -194,7 +236,7 @@ async function main() {
     api,
     verify,
     notes: fs.readFileSync(
-      'docs/production/RELEASE_NOTES_SOURCE_RC5.md',
+      'docs/production/RELEASE_NOTES_SOURCE_RC6.md',
       'utf8'
     ),
     upload: async () =>
@@ -218,7 +260,7 @@ async function main() {
   );
 }
 
-module.exports = { publish, assertTag };
+module.exports = { publish, assertTag, expectedAssets, verifyDownloadedAssets };
 if (require.main === module)
   main().catch((error) => {
     console.error(error.message);
