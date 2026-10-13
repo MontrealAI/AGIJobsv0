@@ -35,7 +35,9 @@ function checkCommissioning(
   assert.ok(
     addresses.every((value) => address.test(value) && !/^0x0{40}$/.test(value))
   );
-  const targets = inventory();
+  const targets = inventory().filter(
+    ({ name }) => deployment.withTax !== false || name !== 'TaxPolicy'
+  );
   const compiled = readArtifact || createVerifiedArtifactReader();
   assert.deepEqual(
     Object.keys(deployment.creationRecords || {}).sort(),
