@@ -10,7 +10,7 @@ const releaseVersion = '2.1.0-rc.6';
 const deployedSourceBaseline = 'b4c5b66ea05a6bb27f1f1cb197f055c179bbd38e';
 const evidenceBaseline = '9c730e0188594089e27ed0589c2b5ca57eec5cf5';
 // Reviewed compiler candidate; publication also requires exact merged-SHA CI.
-const compilerSourceBaseline = '28454ea7c95219d43e22ed86e093065d6947353c';
+const compilerSourceBaseline = 'f08fa509e41b385a4ddc94630ba3c0c099af5275';
 const preservedEvidencePaths = [
   'docs/deployments/',
   'docs/deployment-addresses.json',
