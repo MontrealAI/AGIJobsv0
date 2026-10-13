@@ -63,6 +63,8 @@ jobs:
           node-version-file: '.nvmrc'
       - name: Qualify every required check and observed main workflow on this exact commit
         run: node scripts/release/qualify-source-release.cjs
+      - name: Retain and verify the qualified compiler producer archive
+        run: node scripts/release/publish-source-release.cjs --collect-compiler-evidence
       - name: Build checksummed source and evidence assets
         run: |
           set -euo pipefail
