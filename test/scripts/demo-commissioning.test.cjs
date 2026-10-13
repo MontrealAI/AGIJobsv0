@@ -116,6 +116,47 @@ test('commissioning supports configured mixed committee sizes and four-job missi
     /Every configured/
   );
 });
+test('commissioning accepts explicitly disabled tax policy and still requires every deployed constructor', (t) => {
+  const data = fixture(t, [3, 3, 3]);
+  const deployment = JSON.parse(
+    fs.readFileSync(path.join(data.root, 'deploy.json'))
+  );
+  data.write('deploy.json', { ...deployment, withTax: true });
+  assert.equal(
+    checkCommissioning(data.root, data.options).constructorRecords,
+    25
+  );
+  const withoutTax = structuredClone(deployment);
+  withoutTax.withTax = false;
+  withoutTax.contracts.TaxPolicy = 'disabled';
+  delete withoutTax.creationRecords.TaxPolicy;
+  data.write('deploy.json', withoutTax);
+  const report = checkCommissioning(data.root, data.options);
+  assert.equal(report.constructorRecords, 24);
+  assert.equal(report.settledJobs, 3);
+  for (const change of [
+    (d) => {
+      d.withTax = true;
+    },
+    (d) => {
+      delete d.withTax;
+    },
+    (d) => {
+      d.creationRecords.TaxPolicy = deployment.creationRecords.TaxPolicy;
+    },
+    (d) => {
+      delete d.creationRecords.JobRegistry;
+    },
+    (d) => {
+      d.creationRecords.FeePool.constructorArguments = '0x01';
+    },
+  ]) {
+    const altered = structuredClone(withoutTax);
+    change(altered);
+    data.write('deploy.json', altered);
+    assert.throws(() => checkCommissioning(data.root, data.options));
+  }
+});
 test('commissioning rejects omitted implementations and incorrect constructor evidence', (t) => {
   const data = fixture(t, [3, 3, 3]);
   const deployment = JSON.parse(

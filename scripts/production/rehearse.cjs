@@ -7,6 +7,9 @@ const net = require('node:net');
 const { spawn, execFileSync } = require('node:child_process');
 const { sealBundle } = require('./evidence.cjs');
 const { checkCommissioning } = require('./commissioning.cjs');
+const {
+  createVerifiedArtifactReader,
+} = require('../deploy/verified-artifact.cjs');
 const root = path.resolve(__dirname, '../..');
 const node = process.execPath;
 const environment = Object.fromEntries(
@@ -302,7 +305,9 @@ async function main() {
       exitCode: 1,
     };
     report.checks.push(evidenceCheck);
-    report.commissioning = checkCommissioning(receipts);
+    report.commissioning = checkCommissioning(receipts, {
+      readArtifact: createVerifiedArtifactReader(checkout),
+    });
     fs.cpSync(receipts, path.join(output, 'receipts'), { recursive: true });
     evidenceCheck.status = 'passed';
     evidenceCheck.exitCode = 0;
