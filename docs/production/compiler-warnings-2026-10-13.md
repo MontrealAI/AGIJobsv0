@@ -30,6 +30,10 @@ The pinned OpenZeppelin 5.4.0 sources emit 13 notices (`6335`) because `at` and 
 
 Hardhat 2.29.1 also prints an incomplete-support notice for Solidity 0.8.37; advanced stack traces may be limited. The compiler itself is the authentic 0.8.37 build. This release does not claim full Hardhat debugging support. Updating a framework or a contract library is a separately qualified compatibility change; changing security dependencies merely to hide these notices would not prove safer operation.
 
+## Reviewed gas measurements
+
+The pinned compiler also changes exact gas snapshots. The root commit/reveal fixture now measures 27,973 and 74,629 gas (previous recorded snapshots: 30,880 and 83,207). Both deterministic checks pass with the regenerated snapshot. These are complete test-function measurements, not mainnet transaction quotations. The [CULTURE review](../../demo/CULTURE-v0/gas-snapshots/REVIEW-2026-10-13.md) records all four budgeted scenarios and both runtime sizes; all existing gas and bytecode ceilings remain unchanged.
+
 ## If you operate the existing mainnet deployment
 
 1. Keep the original release, compiler input, build-info, verification files, addresses and transaction evidence. The deployed source remains associated with `source-v2.1.0-rc.4`; new source must not be presented as an exact match for that old bytecode.
