@@ -62,5 +62,9 @@
     "event ResultSubmitted(uint256 indexed jobId,address indexed worker,bytes32 resultHash,string resultURI,string subdomain)",
     "event JobCompleted(uint256 indexed jobId,bool success)",
     "event JobFinalized(uint256 indexed jobId,address indexed worker)"
-  ]
+  ],
+  "limits": {
+    "maxArtifactBytes": 8388608,
+    "hashConvention": "sha256-exact-utf8-bytes"
+  }
 }

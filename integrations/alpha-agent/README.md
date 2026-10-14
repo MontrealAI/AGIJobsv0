@@ -35,6 +35,10 @@ markets interchangeable.
    verify current Applied state and admission requirements before execution.
 5. Execute only the agreed bounded mission under Alpha's operator controls.
    Preserve the exact exported artifact bytes and their SHA-256 digest.
+   Alpha export/verification and the Jobs local submission helper share an 8 MiB
+   (8,388,608-byte) artifact ceiling; oversized files fail before submission.
+   The receipt verifier reads only the committed bytes32 digest and URI, never
+   the full artifact. A digest receipt does not verify artifact signatures or content.
 6. An authorized wallet may separately submit the artifact commitment. Verify
    `ResultSubmitted` for the exact worker, job, digest and URI. Submission is
    not validation approval. `JobCompleted(success=true)` is not finalization.
@@ -106,7 +110,8 @@ For a new cross-repository rehearsal:
 
 1. Start a disposable Hardhat localhost chain with chain ID 31337.
 2. Run `npx hardhat run --network localhost integrations/alpha-agent/deploy-local-fixture.cjs`.
-   It refuses a non-loopback RPC or other chain. Output defaults to
+   It refuses a non-loopback RPC or other chain. `ALPHA_WORK_SPEC` can select an alternate exact-byte bounded specification.
+   Output defaults to
    `/tmp/agijobsv0-alpha-fixture.json` (`ALPHA_FIXTURE_OUTPUT` overrides it).
 3. Install its exact addresses/runtime pins as the Alpha operator's explicit
    `agialpha.jobs-v0-profile.v1` **disposable-local-fixture** profile. Map
@@ -127,3 +132,16 @@ these known disposable accounts on a live chain. The scripts do not install
 credentials or write any production configuration. The full cross-repository
 rehearsal needs Alpha's matching adapter; the repository-local CI regression
 uses the retained artifact rather than downloading another repository at test time.
+
+### Large-artifact regression
+
+`fixtures/large-local-acceptance.json` records a second real cross-repository
+rehearsal using a 480 KB work specification and a 2,078,954-byte signed artifact,
+above the former Alpha verifier's 2 MB limit. Alpha commit
+`5cf5bdb51e6c9b4172e10dd45ba77cad8a645c02` executed, reviewed, exported and verified
+it; the Jobs helper then read it within the shared 8 MiB cap and verified the
+actual submission, approval and finalization receipts. The isolated mock payout
+was 100 base units. This is historical local evidence, not production approval.
+The large raw artifact and disposable identity are not published in this repository.
+The exact 8 MiB and 8 MiB + 1 boundaries are separately covered by reader tests;
+they are not mislabeled as signed end-to-end missions.

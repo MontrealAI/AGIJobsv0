@@ -1,6 +1,6 @@
 'use strict';
 const fs = require('node:fs');
-const crypto = require('node:crypto');
+const { readArtifactCommitment } = require('./artifact-commitment.cjs');
 const assert = require('node:assert/strict');
 const { ethers, network } = require('hardhat');
 const { verifyReceipt } = require('./verify-receipt.cjs');
@@ -22,13 +22,10 @@ async function main() {
       process.env.ALPHA_RESULT || '/tmp/agijobsv0-alpha-result.json'
     )
   );
-  const artifact = fs.readFileSync(
+  const artifact = readArtifactCommitment(
     process.env.ALPHA_ARTIFACT || '/tmp/agijobsv0-alpha-artifact.json'
   );
-  assert.equal(
-    result.resultHash,
-    '0x' + crypto.createHash('sha256').update(artifact).digest('hex')
-  );
+  assert.equal(result.resultHash, artifact.resultHash);
   const [owner, employer, agent, treasury] = await ethers.getSigners();
   assert.equal(agent.address, fixture.worker);
   assert.equal(employer.address, fixture.employer);
@@ -113,6 +110,7 @@ async function main() {
     productionApproved: false,
     sourceCommit: '9ea22d49414751a49f7f8cd9d9e65c26e8317570',
     specHash: fixture.specHash,
+    artifactBytes: artifact.bytes.length,
     resultHash: result.resultHash,
     resultURI: result.resultURI,
     assignment,
@@ -120,11 +118,7 @@ async function main() {
     approval,
     finalization,
     observedMockTokenPayoutBaseUnits: String(balanceAfter - balanceBefore),
-    negativeChecks: [
-      'Wrong exact artifact digest rejected',
-      'Duplicate Alpha admission reused same binding',
-      'Export pinned-key signature verified by Alpha',
-    ],
+    negativeChecks: ['Wrong exact artifact digest rejected'],
     limitations: fixture.limitations.concat([
       'Local fixture operator review is not independent marketplace review',
       'Artifact URI is a fixture label, not a published IPFS artifact',

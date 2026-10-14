@@ -244,3 +244,34 @@ test('retained local acceptance matches the exact reviewed artifact bytes', () =
   assert.equal(evidence.approval.finalizationEventProven, false);
   assert.equal(evidence.finalization.finalizationEventProven, true);
 });
+
+test('shared artifact reader accepts exactly 8 MiB and rejects the next byte', () => {
+  const fs = require('node:fs');
+  const os = require('node:os');
+  const path = require('node:path');
+  const crypto = require('node:crypto');
+  const {
+    MAX_ARTIFACT_BYTES,
+    readArtifactCommitment,
+  } = require('../../integrations/alpha-agent/artifact-commitment.cjs');
+  assert.equal(MAX_ARTIFACT_BYTES, profile.limits.maxArtifactBytes);
+  const dir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'alpha-artifact-boundary-')
+  );
+  try {
+    const file = path.join(dir, 'artifact.json');
+    const bytes = Buffer.alloc(MAX_ARTIFACT_BYTES, 0x20);
+    fs.writeFileSync(file, bytes);
+    const accepted = readArtifactCommitment(file);
+    assert.equal(accepted.bytes.length, MAX_ARTIFACT_BYTES);
+    assert.equal(
+      accepted.resultHash,
+      '0x' + crypto.createHash('sha256').update(bytes).digest('hex')
+    );
+    fs.appendFileSync(file, ' ');
+    assert.throws(() => readArtifactCommitment(file), /8 MiB/);
+    assert.throws(() => readArtifactCommitment(dir), /regular file/);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});

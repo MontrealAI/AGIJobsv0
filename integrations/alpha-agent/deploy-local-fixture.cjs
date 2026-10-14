@@ -169,7 +169,8 @@ async function main() {
     .connect(owner)
     .setIdentityRegistry(await identity.getAddress());
   const workSpec = fs.readFileSync(
-    path.join(__dirname, 'fixtures/work-spec.json')
+    process.env.ALPHA_WORK_SPEC ||
+      path.join(__dirname, 'fixtures/work-spec.json')
   );
   const specHash =
     '0x' + crypto.createHash('sha256').update(workSpec).digest('hex');
