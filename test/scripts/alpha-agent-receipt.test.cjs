@@ -35,7 +35,16 @@ function fixture(event = 'ResultSubmitted') {
     status: 1,
     blockNumber: 10,
     blockHash: h('2'),
-    logs: [{ ...eventLog, address: registry, index: 0 }],
+    logs: [
+      {
+        ...eventLog,
+        address: registry,
+        index: 0,
+        transactionHash: h('1'),
+        blockHash: h('2'),
+        blockNumber: 10,
+      },
+    ],
   };
   const deployment = {
     backend: profile.backend,
@@ -66,6 +75,39 @@ for (const event of [
   });
 }
 const mutations = {
+  'log from another transaction': (f) => {
+    f.receipt.logs[0].transactionHash = h('9');
+  },
+  'log from another block hash': (f) => {
+    f.receipt.logs[0].blockHash = h('9');
+  },
+  'log from another block number': (f) => {
+    f.receipt.logs[0].blockNumber = 9;
+  },
+  'missing log transaction': (f) => {
+    delete f.receipt.logs[0].transactionHash;
+  },
+  'missing log block hash': (f) => {
+    delete f.receipt.logs[0].blockHash;
+  },
+  'missing log block number': (f) => {
+    delete f.receipt.logs[0].blockNumber;
+  },
+  'negative log index': (f) => {
+    f.receipt.logs[0].index = -1;
+  },
+  'fractional log index': (f) => {
+    f.receipt.logs[0].index = 0.5;
+  },
+  'unsafe log index': (f) => {
+    f.receipt.logs[0].index = Number.MAX_SAFE_INTEGER + 1;
+  },
+  'missing log index': (f) => {
+    delete f.receipt.logs[0].index;
+  },
+  'invalid receipt block number': (f) => {
+    f.receipt.blockNumber = -1;
+  },
   'wrong backend': (f) => {
     f.deployment.backend = 'mark';
   },

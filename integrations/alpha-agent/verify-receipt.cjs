@@ -87,6 +87,10 @@ async function verifyReceipt(provider, trustedDeployment, expected) {
     'Receipt transaction mismatch'
   );
   requireValue(hash(receipt.blockHash), 'Invalid receipt block hash');
+  requireValue(
+    Number.isSafeInteger(receipt.blockNumber) && receipt.blockNumber >= 0,
+    'Invalid receipt block number'
+  );
   const block = await provider.getBlock(receipt.blockNumber);
   requireValue(
     block && same(block.hash, receipt.blockHash),
@@ -107,6 +111,22 @@ async function verifyReceipt(provider, trustedDeployment, expected) {
   for (const log of receipt.logs) {
     if (!same(log.address, registry)) continue;
     requireValue(!log.removed, 'Removed log');
+    requireValue(
+      same(log.transactionHash, receipt.hash),
+      'Log transaction mismatch'
+    );
+    requireValue(
+      same(log.blockHash, receipt.blockHash),
+      'Log block hash mismatch'
+    );
+    requireValue(
+      log.blockNumber === receipt.blockNumber,
+      'Log block number mismatch'
+    );
+    requireValue(
+      Number.isSafeInteger(log.index) && log.index >= 0,
+      'Invalid log index'
+    );
     let decoded;
     try {
       decoded = abi.parseLog(log);

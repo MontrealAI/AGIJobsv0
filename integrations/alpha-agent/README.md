@@ -85,6 +85,7 @@ requires exact `resultHash` and `resultURI`; `JobCompleted` requires `success`.
 
 The verifier fetches the receipt itself, checks chain, transaction success,
 canonical block and depth, emitter/runtime identity and exact event fields,
+binds each registry log to the receipt transaction/block and a valid log index,
 rejects duplicate or removed matching logs, and rechecks the block afterward.
 It never signs, submits, approves, deposits, acknowledges policy or settles.
 
