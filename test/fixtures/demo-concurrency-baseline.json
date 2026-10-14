@@ -1,0 +1,10 @@
+{
+  "sourceCommit": "9ea22d49414751a49f7f8cd9d9e65c26e8317570",
+  "scope": "All parsed workflow values excluding new concurrency; baseline preserves triggers, permissions, jobs and steps",
+  "workflows": {
+    "demo-asi-takeoff.yml": "63b1058c1a1fa6d9b60908f435ae6fceb59b10f6f6c29ce5556ba0127cb7e0c4",
+    "demo-asi-global.yml": "ec14f972d1e9cd0248e537df4ea6c572f5277b0a95b3ff10a82354cba7380481",
+    "demo-zenith-hypernova.yml": "f534d4291ed856bbe03ebe3d7c76845031638b130e57cc8dea21197a2aead280",
+    "demo-planetary-orchestrator-fabric.yml": "7219c8a73f116da9011ce89eb52e1e112c94e3ff84650864888f3ac59a3209b6"
+  }
+}
