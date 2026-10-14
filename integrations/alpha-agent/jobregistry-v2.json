@@ -1,0 +1,66 @@
+{
+  "schema": "agijobsv0/alpha-agent-profile/1",
+  "backend": "agijobsv0-jobregistry-v2",
+  "sourceCommit": "9ea22d49414751a49f7f8cd9d9e65c26e8317570",
+  "contract": "contracts/v2/JobRegistry.sol:JobRegistry",
+  "version": 2,
+  "token": {
+    "address": "0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA",
+    "decimals": 18,
+    "symbol": "AGIALPHA",
+    "name": "AGI ALPHA"
+  },
+  "historicalDeployment": {
+    "record": "docs/deployments/ethereum-mainnet-2026-10-12.json",
+    "sourceCommit": "b4c5b66ea05a6bb27f1f1cb197f055c179bbd38e",
+    "chainId": 1,
+    "productionApproved": false,
+    "liveIntakeOpen": false,
+    "addresses": {
+      "StakeManager": "0xFd970F60363984A6274342776D34423EC37b5432",
+      "JobRegistry": "0x72Ec2CcC9403b643C4d6CA3eF05E06ca8faa3084",
+      "ValidationModule": "0xCcfC0Adae434446D1809f0551b34990dE5fBe3eA",
+      "IdentityRegistry": "0xFfE52FB27d66dcCCDF03376b400d6E399DeC3EEC",
+      "JobRegistryConfiguration": "0x175B9087a8d088073C9896F0CbF7b072b6ED11Bf",
+      "JobRegistryLifecycle": "0x4f40CE804DD40A87667bDD0e03d8D5A2bA402FB6",
+      "JobRegistrySettlement": "0x70EBFBa633E1519c9b4a5A659A9137Fd31662d0e"
+    },
+    "runtimeKeccak256": null,
+    "warning": "Recorded masked runtime template SHA256 values are not full deployed runtime keccak256 hashes or live state proof."
+  },
+  "states": {
+    "None": 0,
+    "Created": 1,
+    "Applied": 2,
+    "Submitted": 3,
+    "Completed": 4,
+    "Disputed": 5,
+    "Finalized": 6,
+    "Cancelled": 7
+  },
+  "metadataOffsets": {
+    "state": 0,
+    "success": 3,
+    "burnConfirmed": 4,
+    "agentTypes": 5,
+    "feePct": 13,
+    "agentPct": 45,
+    "deadline": 77,
+    "assignedAt": 141
+  },
+  "abi": [
+    "function version() view returns (uint256)",
+    "function implementationModules() view returns (address[3])",
+    "function paused() view returns (bool)",
+    "function stakeManager() view returns (address)",
+    "function validationModule() view returns (address)",
+    "function identityRegistry() view returns (address)",
+    "function jobs(uint256) view returns (address employer,address agent,uint128 reward,uint96 stake,uint128 burnReceiptAmount,bytes32 uriHash,bytes32 resultHash,bytes32 specHash,uint256 packedMetadata)",
+    "function applyForJob(uint256 jobId,string subdomain,bytes32[] proof)",
+    "function submit(uint256 jobId,bytes32 resultHash,string resultURI,string subdomain,bytes32[] proof)",
+    "event AgentAssigned(uint256 indexed jobId,address indexed agent,string subdomain)",
+    "event ResultSubmitted(uint256 indexed jobId,address indexed worker,bytes32 resultHash,string resultURI,string subdomain)",
+    "event JobCompleted(uint256 indexed jobId,bool success)",
+    "event JobFinalized(uint256 indexed jobId,address indexed worker)"
+  ]
+}

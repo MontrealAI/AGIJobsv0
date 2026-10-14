@@ -700,3 +700,7 @@ flowchart TD
 
 ## License
 Released under the MIT License. See [`LICENSE`](LICENSE) for details.
+
+### Bounded Alpha and Fleet interoperability
+
+Use the explicit [JobRegistry v2 integration guide](integrations/alpha-agent/README.md) to distinguish the $AGIALPHA market, bounded execution, exact artifact commitments, and independently verified lifecycle receipts. Historical deployment evidence does not enable production intake.

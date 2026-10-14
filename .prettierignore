@@ -4,3 +4,6 @@ demo/Huxley-Godel-Machine-v0/ui/bootstrap.min.css
 
 # Simulator output is generated JSON, not maintained website source.
 demo/Huxley-Godel-Machine-v0/web/artifacts/
+# Byte-exact, signed cross-repository integration fixtures. Do not reserialize.
+integrations/alpha-agent/fixtures/work-spec.json
+integrations/alpha-agent/fixtures/reviewed-artifact.json
