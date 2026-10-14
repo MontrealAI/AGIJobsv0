@@ -10,6 +10,8 @@ describe('JobRegistry Treasury', function () {
   let owner, treasury;
 
   beforeEach(async function () {
+    // Replacing fixed-address token code does not clear storage from earlier tests.
+    await network.provider.send('hardhat_reset');
     [owner, treasury] = await ethers.getSigners();
 
     const artifact = await artifacts.readArtifact(
