@@ -21,7 +21,7 @@ function expectedAssets(tag) {
     'ethereum-mainnet-2026-10-12.json',
     'configuration-readback-2026-10-13.json',
     'mainnet-deployment-2026-10-12.md',
-    'RELEASE_NOTES_SOURCE_RC7.md',
+    'RELEASE_NOTES_SOURCE_RC8.md',
     'compiler-warnings-2026-10-13.md',
     'solidity-compiler.json',
     'deployment-addresses.mainnet.json',
@@ -324,7 +324,7 @@ async function publish({ sha, tag, notes, api, upload, verify }) {
       target_commitish: sha,
       draft: true,
       prerelease: true,
-      name: `${tag} — hardened runtime images and preserved deployment evidence`,
+      name: `${tag} — bounded Alpha interoperability and preserved deployment evidence`,
       body: `${notes.trim()}\n\n${marker}\n`,
     });
   }
@@ -373,7 +373,7 @@ async function main() {
   if (
     repository !== 'MontrealAI/AGIJobsv0' ||
     !/^[a-f0-9]{40}$/.test(sha || '') ||
-    tag !== 'source-v2.1.0-rc.7' ||
+    tag !== 'source-v2.1.0-rc.8' ||
     !token
   )
     throw Error('Invalid source publication identity or authorization');
@@ -464,7 +464,7 @@ async function main() {
     api,
     verify,
     notes: fs.readFileSync(
-      'docs/production/RELEASE_NOTES_SOURCE_RC7.md',
+      'docs/production/RELEASE_NOTES_SOURCE_RC8.md',
       'utf8'
     ),
     upload: async () =>
