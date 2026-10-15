@@ -1,11 +1,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { JSDOM } from 'jsdom';
 import {
   assertDashboardRoutes,
+  assertCatalogKindLinks,
+  expectedCatalogKindLinks,
+  expectedDesignLinks,
+  originalDesignNames,
   expectedDashboardRoutes,
   implementedDashboards,
   legacyDashboardRoutes,
@@ -85,3 +90,62 @@ for (const { route, source } of implementedDashboards(root)) {
       );
   });
 }
+
+test('catalog kind filter follows implemented source transitions and rejects wrong same-count cards', () => {
+  const catalog = [
+    { id: 'first', kindId: 'design' },
+    { id: 'second', kindId: 'design' },
+    { id: 'working', kindId: 'code' },
+  ];
+  const before = expectedCatalogKindLinks(catalog, '/AGIJobsv0/', 'design');
+  assertCatalogKindLinks(
+    ['/AGIJobsv0/demos/second/', '/AGIJobsv0/demos/first/'],
+    before
+  );
+  catalog[0].kindId = 'code';
+  const after = expectedCatalogKindLinks(catalog, '/AGIJobsv0/', 'design');
+  assert.deepEqual(after, ['/AGIJobsv0/demos/second/']);
+  assert.throws(() =>
+    assertCatalogKindLinks(['/AGIJobsv0/demos/working/'], after)
+  );
+  assert.throws(() => assertCatalogKindLinks([], after));
+  assert.throws(() => assertCatalogKindLinks([...after, ...after], after));
+  catalog[1].kindId = 'code';
+  assertCatalogKindLinks(
+    [],
+    expectedCatalogKindLinks(catalog, '/AGIJobsv0/', 'design')
+  );
+  assert.throws(() =>
+    expectedCatalogKindLinks(
+      [
+        { id: 'same', kindId: 'design' },
+        { id: 'same', kindId: 'design' },
+      ],
+      '/',
+      'design'
+    )
+  );
+});
+
+test('fixed original design identities reject stale classifications and unexpected substitutions', (t) => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'design-filter-'));
+  t.after(() => fs.rmSync(directory, { recursive: true, force: true }));
+  const catalog = originalDesignNames.map((name, i) => ({
+    name,
+    id: `design-${i}`,
+    kindId: 'design',
+  }));
+  assert.equal(expectedDesignLinks(catalog, directory, '/').length, 7);
+  fs.mkdirSync(path.join(directory, 'demo', originalDesignNames[0], 'web'), {
+    recursive: true,
+  });
+  assert.throws(() => expectedDesignLinks(catalog, directory, '/'));
+  catalog[0].kindId = 'code';
+  assert.equal(expectedDesignLinks(catalog, directory, '/').length, 6);
+  const wrong = catalog.map((entry) => ({ ...entry }));
+  wrong[1].name = 'unreviewed-design';
+  assert.throws(() => expectedDesignLinks(wrong, directory, '/'));
+  assert.throws(() =>
+    expectedDesignLinks(catalog.slice(0, -1), directory, '/')
+  );
+});
