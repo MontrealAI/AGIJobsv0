@@ -29,6 +29,160 @@ function fixture(t) {
   };
 }
 
+// Execute only copied launchers in a private tree. In particular, the mainnet
+// wrapper is operational: its npm commands must never reach the real runtime.
+function tridentFixture(t, launcher) {
+  const f = fixture(t);
+  const repo = path.join(f.dir, 'repository with spaces');
+  const launchers = path.join(
+    repo,
+    'demo/TRIDENT-SOVEREIGN-AGI-ORCHESTRATOR/bin'
+  );
+  const cwd = path.join(f.dir, 'unrelated working directory');
+  const bin = path.join(f.dir, 'bin');
+  fs.mkdirSync(launchers, { recursive: true });
+  fs.mkdirSync(cwd);
+  fs.copyFileSync(
+    path.join(root, 'demo/TRIDENT-SOVEREIGN-AGI-ORCHESTRATOR/bin', launcher),
+    path.join(launchers, launcher)
+  );
+  for (const name of ['npm', 'npx'])
+    fs.writeFileSync(
+      path.join(bin, name),
+      `#!${process.execPath}\n` +
+        `const fs = require('node:fs');\n` +
+        `const path = require('node:path');\n` +
+        `fs.appendFileSync(process.env.COMMAND_LOG, JSON.stringify({\n` +
+        `  command: path.basename(process.argv[1]),\n` +
+        `  cwd: process.cwd(),\n` +
+        `  args: process.argv.slice(2),\n` +
+        `}) + '\\n');\n`,
+      { mode: 0o755 }
+    );
+  // The restricted PATH contains no real package manager or network tools.
+  for (const command of ['bash', 'dirname', 'mkdir']) {
+    const executable = execFileSync(
+      'sh',
+      ['-c', 'command -v "$1"', 'sh', command],
+      { encoding: 'utf8', env: { PATH: process.env.PATH } }
+    ).trim();
+    assert.ok(path.isAbsolute(executable));
+    fs.symlinkSync(executable, path.join(bin, command));
+  }
+  return {
+    ...f,
+    repo,
+    cwd,
+    launcher: path.join(launchers, launcher),
+    env: { PATH: bin, COMMAND_LOG: f.log, HOME: f.dir, TMPDIR: f.dir },
+  };
+}
+
+const forwardedTridentArgs = [
+  '--label',
+  'mission with spaces',
+  '',
+  'quotes: "double" and \'single\'',
+  '*?[abc]',
+  '$HOME; $(printf literal)',
+  'line one\nline two',
+];
+
+for (const { launcher, commands } of [
+  {
+    launcher: 'trident-sovereign.sh',
+    commands: [
+      {
+        command: 'npx',
+        args: [
+          'ts-node',
+          '--compiler-options',
+          '{"module":"commonjs"}',
+          'demo/TRIDENT-SOVEREIGN-AGI-ORCHESTRATOR/orchestrator.ts',
+          ...forwardedTridentArgs,
+        ],
+      },
+    ],
+  },
+  {
+    launcher: 'trident-ui.sh',
+    commands: [
+      {
+        command: 'npm',
+        args: [
+          '--prefix',
+          'apps/enterprise-portal',
+          'run',
+          'dev',
+          ...forwardedTridentArgs,
+        ],
+      },
+    ],
+  },
+  {
+    launcher: 'trident-mainnet.sh',
+    commands: [
+      {
+        command: 'npm',
+        args: ['run', 'deploy:env', '--', '--network', 'mainnet'],
+      },
+      {
+        command: 'npm',
+        args: ['run', 'deploy:checklist', '--', '--network', 'mainnet'],
+      },
+      {
+        command: 'npm',
+        args: [
+          'run',
+          'deploy:oneclick:auto',
+          '--',
+          '--network',
+          'mainnet',
+          ...forwardedTridentArgs,
+        ],
+      },
+      {
+        command: 'npm',
+        args: [
+          'run',
+          'owner:change-ticket',
+          '--',
+          '--network',
+          'mainnet',
+          '--format',
+          'markdown',
+          '--output',
+          'reports/trident-sovereign/mainnet-change-ticket.md',
+        ],
+      },
+    ],
+  },
+]) {
+  test(`Trident ${launcher} uses the repository root and preserves exact arguments in an inert private fixture`, (t) => {
+    const f = tridentFixture(t, launcher);
+    execFileSync('bash', [f.launcher, ...forwardedTridentArgs], {
+      cwd: f.cwd,
+      env: f.env,
+      stdio: 'pipe',
+    });
+    const actual = fs
+      .readFileSync(f.log, 'utf8')
+      .trim()
+      .split('\n')
+      .map(JSON.parse);
+    assert.deepEqual(
+      actual,
+      commands.map((command) => ({ ...command, cwd: f.repo }))
+    );
+    assert.deepEqual(fs.readdirSync(f.cwd), []);
+    if (launcher === 'trident-mainnet.sh')
+      assert.deepEqual(
+        fs.readdirSync(path.join(f.repo, 'reports/trident-sovereign')),
+        []
+      );
+  });
+}
+
 test('Helios governance runs every documented report from repository root when launched elsewhere', (t) => {
   const f = fixture(t);
   execFileSync(
