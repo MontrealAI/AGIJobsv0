@@ -22,7 +22,8 @@ describe('Owner console overview', () => {
             treasury: '0x0000000000000000000000000000000000000001',
           },
           jobRegistry: {
-            jobStakeLabel: '100 AGIA',
+            jobStakeBps: '1000',
+            jobStakeRateLabel: '10% (1000 bps)',
             maxJobRewardLabel: '250 AGIA',
             maxJobDurationLabel: '7 days',
             feePctLabel: '2%',
@@ -55,6 +56,9 @@ describe('Owner console overview', () => {
     cy.wait('@snapshot');
     cy.contains('Minimum Stake').parent().should('contain.text', '5000 AGIA');
     cy.contains('Validator Reward %').parent().should('contain.text', '30%');
+    cy.contains('Future-job stake rate')
+      .parent()
+      .should('contain.text', '10% (1000 bps)');
     cy.contains('Identity Roots');
     cy.wait('@metrics');
     cy.contains('500 AGIA');

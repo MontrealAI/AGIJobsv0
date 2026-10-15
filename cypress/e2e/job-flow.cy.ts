@@ -10,27 +10,37 @@ describe('Owner governance job flow', () => {
       },
     }).as('snapshot');
 
-    cy.intercept('POST', 'https://orchestrator.example/governance/preview', (req) => {
-      const body = req.body as Record<string, any>;
-      req.reply({
-        statusCode: 200,
-        body: {
-          diff: {
-            action: body?.key,
-            value: body?.value ?? null,
+    cy.intercept(
+      'POST',
+      'https://orchestrator.example/governance/preview',
+      (req) => {
+        const body = req.body as Record<string, any>;
+        expect(body.key).to.equal('jobRegistry.setJobStakeBps');
+        expect(String(body.value)).to.equal('1500');
+        req.reply({
+          statusCode: 200,
+          body: {
+            diff: {
+              action: body?.key,
+              value: body?.value ?? null,
+            },
+            bundle: {
+              digest: '0xabc123',
+              targets: ['jobRegistry'],
+            },
           },
-          bundle: {
-            digest: '0xabc123',
-            targets: ['jobRegistry'],
-          },
-        },
-      });
-    }).as('preview');
+        });
+      }
+    ).as('preview');
 
-    cy.intercept('GET', /https:\/\/orchestrator\.example\/governance\/receipts.*/, {
-      statusCode: 200,
-      fixture: 'governance/receipts-agent-win.json',
-    }).as('receipts');
+    cy.intercept(
+      'GET',
+      /https:\/\/orchestrator\.example\/governance\/receipts.*/,
+      {
+        statusCode: 200,
+        fixture: 'governance/receipts-agent-win.json',
+      }
+    ).as('receipts');
   });
 
   it('previews configuration updates and inspects receipts', () => {
@@ -38,8 +48,11 @@ describe('Owner governance job flow', () => {
     cy.wait('@snapshot');
     cy.contains('AGI Jobs Owner Console');
 
-    cy.get('#governance-key').select('jobRegistry.setJobStake');
-    cy.get('#governance-value').clear().type('150');
+    cy.get('#governance-key option[value="jobRegistry.setJobStake"]').should(
+      'not.exist'
+    );
+    cy.get('#governance-key').select('jobRegistry.setJobStakeBps');
+    cy.get('#governance-value').clear().type('1500');
     cy.get('button').contains('Preview Change').click();
     cy.wait('@preview');
     cy.contains('Diff');
