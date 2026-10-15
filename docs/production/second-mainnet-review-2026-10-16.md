@@ -1,6 +1,6 @@
 # Second mainnet deployment: review and owner-accepted omissions
 
-Status: preparation only; DEPLOYMENT BLOCKED by confirmed inherited ReputationEngine P1. Not deployment authorization or production certification.
+Status: preparation only; DEPLOYMENT BLOCKED pending reputation payout-unit and terminal-scoring corrections, independent review and full candidate qualification. The [separate growth correction](reputation-growth-correction-2026-10-15.md) fixes the reproduced positive-credit underflow in new source builds. It is not deployment authorization or production certification.
 Review baseline: `7b21ce05b0b18b46162da66c2f528334101f6f40` on 15 October 2026.
 Target window: Friday evening, 16 October 2026, America/Toronto (Montreal, UTC−04:00), and the following weekend; exact signing time remains owner-controlled.
 

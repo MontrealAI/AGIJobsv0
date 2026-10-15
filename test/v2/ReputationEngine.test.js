@@ -126,6 +126,56 @@ describe('ReputationEngine', function () {
     );
   });
 
+  it('preserves a high score on zero and rounded-to-zero credit through every positive entry point', async () => {
+    await engine.connect(caller).add(user.address, 20000);
+    expect(await engine.reputationOf(user.address)).to.equal(19036n);
+    for (const credit of [0, 1]) {
+      await expect(engine.connect(caller).add(user.address, credit))
+        .to.emit(engine, 'ReputationUpdated').withArgs(user.address, 0, 19036);
+      await engine.connect(caller).update(user.address, credit);
+      await engine.connect(caller).rewardValidator(user.address, credit);
+      await engine.connect(caller).onFinalize(user.address, true, 0, credit);
+      expect(await engine.reputationOf(user.address)).to.equal(19036n);
+    }
+  });
+
+  it('credits repeated successful work and high-score validators without reattenuating their history', async () => {
+    for (const who of [user, validator]) await engine.connect(caller).add(who.address, 20000);
+    const payout = ethers.parseEther('100');
+    expect(await engine.calculateReputationPoints(payout, 100000)).to.equal(34);
+    await expect(engine.connect(caller).updateScores(1, user.address, [validator.address], true, [true], [true], payout, 100000))
+      .to.emit(engine, 'ReputationUpdated').withArgs(user.address, 32, 19068)
+      .and.to.emit(engine, 'ReputationUpdated').withArgs(validator.address, 1, 19037);
+    await engine.connect(caller).onFinalize(user.address, true, payout, 100000);
+    expect(await engine.reputationOf(user.address)).to.equal(19100);
+    await engine.connect(caller).update(user.address, 34);
+    expect(await engine.reputationOf(user.address)).to.equal(19132);
+  });
+
+  it('bounds uint256 awards and reaches the score cap without overflow', async () => {
+    await engine.connect(caller).add(user.address, ethers.MaxUint256);
+    expect(await engine.reputationOf(user.address)).to.equal(44444);
+    for (let i = 0; i < 4; i++) await engine.connect(caller).add(user.address, ethers.MaxUint256);
+    expect(await engine.reputationOf(user.address)).to.equal(88888);
+    await expect(engine.connect(caller).add(user.address, ethers.MaxUint256))
+      .to.emit(engine, 'ReputationUpdated').withArgs(user.address, 0, 88888);
+  });
+
+  it('retains explicit penalties, blacklisting, rehabilitation, and access control at high scores', async () => {
+    await engine.connect(caller).add(user.address, 20000);
+    await engine.connect(caller).onFinalize(user.address, false, ethers.parseEther('100'), 100000);
+    expect(await engine.reputationOf(user.address)).to.equal(19002);
+    await engine.connect(caller).subtract(user.address, 19001);
+    expect(await engine.reputationOf(user.address)).to.equal(1);
+    expect(await engine.isBlacklisted(user.address)).to.equal(true);
+    await engine.connect(caller).add(user.address, 3);
+    expect(await engine.reputationOf(user.address)).to.equal(3);
+    expect(await engine.isBlacklisted(user.address)).to.equal(false);
+    for (const method of ['add', 'update', 'rewardValidator']) {
+      await expect(engine.connect(user)[method](user.address, 20000)).to.be.revertedWith('not authorized');
+    }
+  });
+
   it('handles large payouts without overflow', async () => {
     const largePayout = ethers.parseEther('1000000000'); // 1 billion tokens
     const largeDuration = 1000000;

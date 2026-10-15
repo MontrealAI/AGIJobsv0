@@ -46,6 +46,13 @@ The owner dry-run now deposits the full 10% collateral and accounts for separate
 
 ## Confirmed inherited deployment blocker and reconciled fixtures
 
+**Later correction in this candidate:** the separately scoped
+[positive-growth repair](reputation-growth-correction-2026-10-15.md) preserves
+earned scores and fixes the arithmetic panic described in this historical
+checkpoint. Actual Registry settlement, payout and collateral-release regressions
+now pass. Payout-unit and terminal/dispute-scoring defects remain deployment
+blockers; no production approval follows from this correction.
+
 **Deployment/release blocked:** the unchanged baseline ReputationEngine can reduce an accumulated score during a positive award and underflow `newScore - current`. The [executed diagnostic receipt](reputation-growth-blocker-2026-10-15.json) records `add(20000) → 19036`, then arithmetic panic `0x11` on `add(1)` and on the successful-finalization hook (34 calculated points). This local diagnostic uses the actual engine and MockStakeManager. Registry settlement rollback is an implication of its uncaught hook call; this diagnostic does not claim a real Registry settlement execution. Concurrent PR #3970 separately reports that reproduction. A separately reviewed reputation repair, producer-unit/exactly-once review and fresh whole-candidate qualification are mandatory. The owner's audit/Sepolia omissions do not waive this defect.
 
 The published stake-stage commits from #3970 and owner-plan #3969 are reconciled as merge parents, preserving their ancestry alongside the additional real-collateral/invariant/HGM/demo work. Core percentage contracts match the other stake stage; production Solidity remains byte-for-byte unchanged from the canonical 6ca2230 checkpoint. The bounded compiler-metadata comparison is retained, and neither the additional collateral tests nor Foundry properties were removed.

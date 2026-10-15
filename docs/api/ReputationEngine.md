@@ -2,6 +2,30 @@
 
 Tracks reputation scores for agents and validators.
 
+## Positive credit and penalties
+
+New source builds apply diminishing returns to **new points only**. Previously
+earned reputation is preserved by successful work and other positive credits.
+With `M = 88,888`, `S = 10^18`, current score `c`, and incoming points `p`:
+
+1. Bound the incoming award to `b = min(p, M)` before multiplication.
+2. Calculate `factor = S + floor((c + b)^2 * S / M^2)`.
+3. Add `floor(b * S / factor)` to `c`, saturating the score at `M`.
+
+A score already at the cap remains capped. Integer rounding can produce zero
+credit, including a one-point award, but never a negative credit. The first
+20,000-point award still produces 19,036; a later successful 34-point award adds
+32, producing 19,068. Larger existing scores damp new credits more strongly.
+Explicit negative updates, subtraction, failed-work penalties, blacklist and
+rehabilitation rules retain their existing behavior. Payout inputs use
+18-decimal token base units.
+
+Historical prebuilt demo artifacts retain their original bytes and the old
+growth defect. They are not repaired by updating source and must not be used as
+the corrected deployment candidate. See
+[the correction record](../production/reputation-growth-correction-2026-10-15.md)
+for evidence and remaining deployment gates.
+
 ## Functions
 
 - `setCaller(address caller, bool allowed)` – owner designates authorized modules.

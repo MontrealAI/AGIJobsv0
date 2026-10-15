@@ -58,6 +58,19 @@ describe('Percentage stake: real collateral lifecycle',function(){
   const {id,deadline}=await post();await apply(id);await registry.setJobStakeBps(0);await time.increaseTo(deadline+1);await registry.connect(buyer).claimTimeout(id);
   expect(await stake.stakes(agent.address,0)).eq(489);expect(await stake.lockedStakes(agent.address)).eq(0);expect(await token.balanceOf(buyer.address)).eq(10011);expect((await registry.jobs(id)).stake).eq(0);await expect(registry.connect(buyer).claimTimeout(id)).to.be.reverted;await expect(apply(id)).to.be.reverted;
  });
+ it('settles a high-reputation worker without rolling back payout or the 11-unit collateral release',async()=>{
+  const RF=await ethers.getContractFactory('contracts/v2/ReputationEngine.sol:ReputationEngine');
+  const reputation=await RF.deploy(await stake.getAddress());
+  await reputation.setCaller(owner.address,true);await reputation.setCaller(await registry.getAddress(),true);
+  await reputation.add(agent.address,20000);expect(await reputation.reputation(agent.address)).eq(19036);
+  await registry.setReputationEngine(await reputation.getAddress());
+  const {id}=await post();await apply(id);expect(await stake.lockedStakes(agent.address)).eq(11);
+  await settle(id,true);
+  expect(await token.balanceOf(agent.address)).eq(601);expect(await stake.stakes(agent.address,0)).eq(500);
+  expect(await stake.lockedStakes(agent.address)).eq(0);expect(await reputation.reputation(agent.address)).eq(19036);
+  await expect(registry.connect(buyer).finalize(id)).to.be.revertedWithCustomError(registry,'NotReady');
+  expect(await token.balanceOf(agent.address)).eq(601);expect(await stake.lockedStakes(agent.address)).eq(0);
+ });
  it('zero job rate does not bypass global minimum; tiny reward locks one base unit',async()=>{
   await registry.setJobStakeBps(0);const zero=await post();await registry.setMinAgentStake(501);await expect(apply(zero.id)).to.be.revertedWithCustomError(registry,'InsufficientAgentStake');
   await registry.setMinAgentStake(500);await apply(zero.id);expect(await stake.lockedStakes(agent.address)).eq(0);expect(await stake.minStakeFloor()).eq(initialFloor);expect(await stake.minStake()).eq(1);

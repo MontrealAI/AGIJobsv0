@@ -215,7 +215,7 @@ describe('Fixed implementations production compatibility', function () {
     };
     for (const name of [
       'CertificateNFT', 'DisputeModule', 'FeePool', 'IdentityRegistry',
-      'QuadraticVoting', 'ReputationEngine',
+      'QuadraticVoting',
     ]) {
       const bundled = require(`../../scripts/v2/lib/prebuilt/${name}.json`);
       const source = `contracts/v2/${name === 'DisputeModule' ? 'modules/' : ''}${name}.sol`;
@@ -242,6 +242,30 @@ describe('Fixed implementations production compatibility', function () {
         expectSemanticBundle(prebuilt[name], compiled, name);
       }
     }
+  });
+
+  it('preserves the historical ReputationEngine bundle and proves only freshly compiled code fixes its growth defect', async function () {
+    const { createHash } = require('node:crypto');
+    const { readFileSync } = require('node:fs');
+    const path = require('node:path').resolve(__dirname, '../../scripts/v2/lib/prebuilt/ReputationEngine.json');
+    expect(createHash('sha256').update(readFileSync(path)).digest('hex'))
+      .to.equal('8a21b153e6ce189d14ee4f69288301118c22eeaa0026627338764412e0060c36');
+    const bundled = require(path);
+    const compiled = await artifacts.readArtifact('contracts/v2/ReputationEngine.sol:ReputationEngine');
+    expect(bundled.abi).to.deep.equal(compiled.abi);
+    expect(bundled.bytecode).not.to.equal(compiled.bytecode);
+    const [owner] = await ethers.getSigners();
+    const stake = await (await ethers.getContractFactory('MockStakeManager')).deploy();
+    const historical = await new ethers.ContractFactory(bundled.abi, bundled.bytecode, owner).deploy(await stake.getAddress());
+    const current = await new ethers.ContractFactory(compiled.abi, compiled.bytecode, owner).deploy(await stake.getAddress());
+    for (const engine of [historical, current]) {
+      await engine.setCaller(owner.address, true);
+      await engine.add(owner.address, 20000);
+      expect(await engine.reputationOf(owner.address)).to.equal(19036);
+    }
+    await expect(historical.add(owner.address, 1)).to.be.revertedWithPanic(0x11);
+    await expect(current.add(owner.address, 1)).not.to.be.reverted;
+    expect(await current.reputationOf(owner.address)).to.equal(19036);
   });
 
   it('keeps historical no-compile demos on matched v1 bundles and rejects mixing them with percentage controllers', async function () {
