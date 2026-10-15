@@ -38,7 +38,7 @@ def parse(raw):
     def nonfinite(value):
         raise ValueError(f"Nonfinite JSON value: {value}")
 
-    return json.loads(raw, object_pairs_hook=pairs, parse_constant=nonfinite)
+    return json.loads(raw.decode("utf-8") if isinstance(raw, bytes) else raw, object_pairs_hook=pairs, parse_constant=nonfinite)
 
 
 def evaluate(packet):

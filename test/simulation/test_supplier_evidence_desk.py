@@ -16,6 +16,12 @@ FIXTURE = RUN.with_name("packet.json")
 
 
 class SupplierEvidenceDesk(unittest.TestCase):
+    def test_parser_rejects_bom_utf16_and_malformed_utf8(self):
+        for raw in [b"\xef\xbb\xbf{}", "{}".encode("utf-16"), b"\xff{}"]:
+            with self.subTest(raw=raw), self.assertRaises(ValueError):
+                module.parse(raw)
+
+
     def packet(self):
         return json.loads(FIXTURE.read_text())
 

@@ -199,6 +199,44 @@ export async function verifyIconic({ page, url, artifacts, a11y, checks }) {
   await page.locator('#language').focus();
   await page.keyboard.press('Enter');
   assert.equal(await page.locator('html').getAttribute('lang'), 'en');
+  await page.locator('#import').setInputFiles({
+    name: 'bom.json',
+    mimeType: 'application/json',
+    buffer: Buffer.concat([Buffer.from([0xef, 0xbb, 0xbf]), bytes]),
+  });
+  await page.locator('#error').waitFor({ state: 'visible' });
+  assert.equal(await page.locator('#result').isVisible(), false);
+  const large = JSON.parse(bytes);
+  large.receipt.artifacts.find((f) => f.name === 'recommendation.md').content =
+    '\u0000'.repeat(166480);
+  const importLarge = async (buffer) => {
+    await page
+      .locator('#import')
+      .setInputFiles({
+        name: 'large.json',
+        mimeType: 'application/json',
+        buffer: Buffer.from(buffer),
+      });
+    await page.waitForFunction(
+      () => document.getElementById('import').value === ''
+    );
+  };
+  await importLarge(JSON.stringify(large));
+  await page.locator('#result').waitFor({ state: 'visible' });
+  const packetDownload = page.waitForEvent('download');
+  await page.locator('#download').click();
+  const packetBytes = fs.readFileSync(await (await packetDownload).path());
+  assert.ok(packetBytes.length <= 1000000);
+  await importLarge(packetBytes);
+  assert.equal(await page.locator('#result').isVisible(), true);
+  const evidenceDownload = page.waitForEvent('download');
+  await page.locator('#evidence').click();
+  const largeEvidence = fs.readFileSync(await (await evidenceDownload).path());
+  assert.ok(largeEvidence.length > 1000000 && largeEvidence.length <= 2000000);
+  await importLarge(largeEvidence);
+  assert.equal(await page.locator('#result').isVisible(), true);
+  await importLarge(Buffer.concat([bytes, Buffer.alloc(1000000, 32)]));
+  assert.equal(await page.locator('#error').isVisible(), true);
   const malformed = Buffer.from(bytes);
   malformed[malformed.indexOf(Buffer.from('title')) + 9] = 255;
   await page.locator('#import').setInputFiles({

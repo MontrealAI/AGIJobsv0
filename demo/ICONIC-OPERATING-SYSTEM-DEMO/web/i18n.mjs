@@ -11,7 +11,7 @@ export const fr = {
   unknown:
     'Laissez l’usage ou le coût vide pour conserver « inconnu ». Zéro est un zéro déclaré, pas une donnée absente. Coûts en micro-USD entiers : 1 000 000 = 1 USD.',
   execution: 'Conditions d’exécution déclarées',
-  import: 'Rouvrir un dossier ou des preuves · JSON, 1 Mo maximum',
+  import: 'Rouvrir JSON · dossier : 1 Mo; enveloppe de preuves : 2 Mo',
   privacy:
     'Les entrées restent dans cet onglet, sans sauvegarde automatique. Les résultats et empreintes importés sont ignorés ; le dossier est vérifié à nouveau.',
   run: 'Vérifier les livrables et examiner les déclarations',

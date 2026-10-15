@@ -1,6 +1,6 @@
-export function parseJSON(text, integerOnly = true) {
-  if (new TextEncoder().encode(text).length > 1000000)
-    throw new Error('Scenario exceeds 1 MB');
+export function parseJSON(text, integerOnly = true, maximumBytes = 1000000) {
+  if (new TextEncoder().encode(text).length > maximumBytes)
+    throw new Error('JSON exceeds byte limit');
   let at = 0;
   const ws = () => {
     while (/[\t\n\r ]/.test(text[at] || '\0')) at++;

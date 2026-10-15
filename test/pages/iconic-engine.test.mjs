@@ -105,3 +105,39 @@ test('full Python and browser evaluator parity for sixty policy/artifact cases',
     JSON.parse(r.stdout)
   );
 });
+
+test('near-limit packet and evidence roundtrip preserve strict inner byte cap', () => {
+  const p = copy();
+  p.receipt.artifacts.find((f) => f.name === 'recommendation.md').content =
+    '\u0000'.repeat(166480);
+  const compact = JSON.stringify(p);
+  assert.ok(Buffer.byteLength(compact) <= 1000000);
+  assert.equal(JSON.stringify(parsePacket(compact)), JSON.stringify(p));
+  const envelope = JSON.stringify(
+    {
+      schema: 'agijobs.supplier-browser-evidence.v1',
+      packet: p,
+      result: { forged: true },
+      downloadedPacketSha256: 'ignored',
+      hashScope: 'ignored',
+    },
+    null,
+    2
+  );
+  assert.ok(Buffer.byteLength(envelope) > 1000000);
+  assert.equal(JSON.stringify(parsePacket(envelope)), JSON.stringify(p));
+  assert.throws(() => parsePacket(compact + ' '.repeat(1000000)));
+  p.receipt.artifacts.find((f) => f.name === 'recommendation.md').content +=
+    '\u0000'.repeat(10);
+  assert.throws(() =>
+    parsePacket(
+      JSON.stringify({
+        schema: 'agijobs.supplier-browser-evidence.v1',
+        packet: p,
+        result: {},
+        downloadedPacketSha256: '',
+        hashScope: '',
+      })
+    )
+  );
+});

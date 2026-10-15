@@ -125,17 +125,25 @@ export function validate(p) {
   for (const v of Object.values(p.policy)) integer(v);
   return p;
 }
+export function boundedPacket(packet) {
+  validate(packet);
+  if (new TextEncoder().encode(JSON.stringify(packet)).length > 1000000)
+    throw Error('Packet exceeds 1 MB');
+  return packet;
+}
 export function parsePacket(text) {
-  const value = parseJSON(text);
+  const value = parseJSON(text, true, 2000000);
   if (value?.schema === 'agijobs.supplier-browser-evidence.v1') {
     keys(
       value,
       ['schema', 'packet', 'result', 'downloadedPacketSha256', 'hashScope'],
       'evidence'
     );
-    return validate(value.packet);
+    return boundedPacket(value.packet);
   }
-  return validate(value);
+  if (new TextEncoder().encode(text).length > 1000000)
+    throw Error('Packet exceeds 1 MB');
+  return boundedPacket(value);
 }
 export async function sha256(text) {
   if (!globalThis.crypto?.subtle)

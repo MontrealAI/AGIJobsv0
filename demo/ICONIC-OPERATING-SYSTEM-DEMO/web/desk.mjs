@@ -3,7 +3,7 @@ function integerText(value) {
     throw Error('Use whole-number digits without decimals or exponents');
   return Number(value);
 }
-import { evaluate, parsePacket, sha256 } from './engine.mjs';
+import { evaluate, parsePacket, sha256, boundedPacket } from './engine.mjs';
 import { example, quotes } from './fixtures.mjs';
 import { fr, names, words, artifactNames } from './i18n.mjs';
 const $ = (id) => document.getElementById(id),
@@ -163,8 +163,8 @@ async function run(focus = false) {
   $('error').hidden = true;
   $('status').textContent = w('working');
   try {
-    const p = input(),
-      bytes = JSON.stringify(p, null, 2) + '\n',
+    const p = boundedPacket(input()),
+      bytes = JSON.stringify(p),
       result = await evaluate(p),
       hash = await sha256(bytes);
     if (ticket !== revision) return;
@@ -213,11 +213,12 @@ $('import').onchange = async () => {
     file = $('import').files[0];
   if (!file) return;
   try {
-    if (file.size > 1000000) throw Error('1 MB maximum');
+    if (file.size > 2000000) throw Error('2 MB envelope maximum');
     $('status').textContent = w('loading');
-    const text = new TextDecoder('utf-8', { fatal: true }).decode(
-      await file.arrayBuffer()
-    );
+    const text = new TextDecoder('utf-8', {
+      fatal: true,
+      ignoreBOM: true,
+    }).decode(await file.arrayBuffer());
     if (ticket !== revision) return;
     load(parsePacket(text));
     await run();
@@ -246,17 +247,13 @@ $('download').onclick = () => {
 $('evidence').onclick = () => {
   if (current)
     download(
-      JSON.stringify(
-        {
-          schema: 'agijobs.supplier-browser-evidence.v1',
-          packet: current.packet,
-          result: current.result,
-          downloadedPacketSha256: current.hash,
-          hashScope: 'Exact UTF-8 bytes of supplier-packet.json',
-        },
-        null,
-        2
-      ) + '\n',
+      JSON.stringify({
+        schema: 'agijobs.supplier-browser-evidence.v1',
+        packet: current.packet,
+        result: current.result,
+        downloadedPacketSha256: current.hash,
+        hashScope: 'Exact UTF-8 bytes of supplier-packet.json',
+      }),
       'supplier-evidence.json'
     );
 };
