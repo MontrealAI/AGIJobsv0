@@ -20,6 +20,31 @@ const root = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   '../..'
 );
+// Keyboard.press sends key events; it does not await same-document navigation.
+// Keep one real Enter activation and wait for its exact URL outcome, bounded.
+export async function verifyEmpowermentSkipLink(page) {
+  assert.notEqual(
+    new URL(page.url()).hash,
+    '#main',
+    'Start before skip navigation'
+  );
+  const skip = page.locator('a.skip');
+  assert.equal(await skip.getAttribute('href'), '#main');
+  await skip.focus();
+  assert.equal(
+    await skip.evaluate((element) => element === document.activeElement),
+    true
+  );
+  const destination = new URL(page.url());
+  destination.hash = 'main';
+  await Promise.all([
+    page.waitForURL(destination.href, { timeout: 5000 }),
+    page.keyboard.press('Enter'),
+  ]);
+  assert.equal(new URL(page.url()).hash, '#main');
+  assert.equal(await page.locator('main#main').count(), 1);
+}
+
 export async function verifyEmpowerment({
   page,
   origin,
@@ -45,10 +70,7 @@ export async function verifyEmpowerment({
       .getAttribute('content'),
     /script-src 'self'/
   );
-  await page.locator('a.skip').focus();
-  await page.keyboard.press('Enter');
-  assert.equal(new URL(page.url()).hash, '#main');
-  assert.equal(await page.locator('main#main').count(), 1);
+  await verifyEmpowermentSkipLink(page);
   assert.match(
     await page.locator('h1').innerText(),
     /initiative\s+an evidence/
