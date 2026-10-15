@@ -64,7 +64,7 @@ The actual node startup inherits the dedicated local config, whose only networks
 are in-process Hardhat and loopback localhost. No fork, external provider,
 external signing keys, or arbitrary governance config/address override is used.
 
-The launcher first checks the unchanged TypeScript scripts' CommonJS runtime
+The launcher first checks the TypeScript scripts' CommonJS runtime
 compatibility, then compiles and runs governance tests on in-process Hardhat.
 The guard requires a newly owned listener, an unforked chain at block zero, and a
 stable instance ID before execution. It rechecks ownership/identity before each
@@ -82,20 +82,33 @@ shell startup; they are not an OS sandbox against a hostile operator or concurre
 process. Do not share the disposable RPC. See the shared
 [guard limitations](../../aurora/bin/LOCAL-NODE-SAFETY.md).
 
-## Known compatibility blocker and qualification boundary
+## Runtime compatibility and remaining qualification boundary
 
-This safety change has only inert private-fixture, parser, configuration, and
-artifact-verifier qualification. No real local governance, compiler, provider,
-deployment, or AGI OS operational run was performed for this change.
+The safety and runtime-compatibility changes have only inert private-fixture,
+parser, configuration, loader, and artifact-verifier qualification. No real local
+governance, Solidity compiler, provider, deployment, or AGI OS operational run was
+performed for these changes.
 
-The current `deploy-governance.ts` contains `import.meta.url` and redeclares
-`__filename`/`__dirname`, while this repository runs
-TypeScript as CommonJS. The nonexecuting runtime preflight detects this and
-blocks local rehearsal before starting a node. The original governance scripts are
-preserved for a separate focused compatibility repair. The export entrypoint is
-forwarded directly through installed ts-node with `HARDHAT_NETWORK=localhost` so
-its `--output` argument is not misinterpreted by Hardhat's CLI. Neither this
-forwarding nor stubbed guard tests establish a completed operational rehearsal.
+`deploy-governance.ts` now uses the CommonJS runtime's own `__dirname`, matching
+the other entrypoints and repository tsconfig. All four governance scripts pass
+the nonexecuting launcher preflight and installed ts-node/CommonJS-wrapper
+syntax checks. Inert tests execute the exact deployment/export script sources
+with stubbed Hardhat, provider, and filesystem interfaces, checking unchanged
+deployment inputs, serialized output, and failure propagation. The export
+entrypoint is forwarded directly through installed ts-node with
+`HARDHAT_NETWORK=localhost` so its `--output <path>` argument reaches the script.
+Missing values, unknown flags, duplicate flags, and extra positional arguments
+fail with usage information before filesystem or contract calls.
+
+The bundled `config/multinational-governance.json` still has a 22-byte
+`pauserRole`, 24/27-byte nation IDs, and an 18-byte mandate ID, while
+`GlobalGovernanceCouncil` expects
+`bytes32` for these fields. This is a separate input-schema blocker. The loader
+tests deliberately preserve and forward the original values; they do not prove
+ABI validity, pad identifiers, or reinterpret governance intent. A validated
+fixture-schema repair and a full disposable deploy/seed/vote/export/cleanup run
+remain necessary. Never skip a failed governance or export stage to qualify a
+rehearsal. Neither forwarding nor stubbed tests establish an operational pass.
 
 The flagship's AGI OS stage remains explicitly offline even when governance is
 local. Its separate on-chain pipeline is outside this launcher's guarded scope.
@@ -125,4 +138,11 @@ Run the inert regression suite without installing dependencies:
 python3 test/simulation/test_cosmic_modes.py
 node --test test/scripts/cosmic-local-config.test.cjs
 bash -n demo/cosmic-omni-sovereign-symphony/bin/{flagship-demo,orchestrate,modes,execution}.sh
+```
+
+With the repository's locked TypeScript and ts-node dependencies already
+installed, also run the inert loader/argument suite (CI requires it):
+
+```bash
+node --test test/scripts/cosmic-runtime.test.cjs
 ```

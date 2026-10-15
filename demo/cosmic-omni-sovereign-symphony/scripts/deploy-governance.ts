@@ -1,10 +1,6 @@
 import fs from "fs";
 import path from "path";
-import { fileURLToPath } from "url";
 import { ethers } from "hardhat";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 const CONFIG_PATH = process.env.AGIJOBS_GOV_CONFIG ?? path.join(__dirname, "..", "config", "multinational-governance.json");
 

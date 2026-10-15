@@ -18,8 +18,9 @@ cryptographic rigor.
    no linting, compilation, tests, signing, or transactions.
 2. For synthetic report fixtures, select `--mode offline-fixture`. For guarded
    local governance, select `--mode local-rehearsal` and first review the
-   [flagship runbook](flagship-runbook.md), including its current runtime
-   compatibility blocker. Neither mode loads `.env` or authorizes production.
+   [flagship runbook](flagship-runbook.md), including its remaining input-schema
+   blocker and qualification boundary. Neither mode loads `.env` or authorizes
+   production.
 3. Review the evidence mode and limitations before archiving artifacts. A plan
    or fixture does not replace production-specific qualification and approval.
 

@@ -8,8 +8,10 @@ on:
       - 'demo/aurora/bin/local-*'
       - 'test/simulation/test_cosmic_modes.py'
       - 'test/scripts/cosmic-local-config.test.cjs'
+      - 'test/scripts/cosmic-runtime.test.cjs'
       - 'package.json'
       - 'package-lock.json'
+      - 'tsconfig.json'
       - '.github/workflows/demo-cosmic-flagship.yml'
   workflow_dispatch:
 
@@ -63,6 +65,9 @@ jobs:
         env:
           CYPRESS_INSTALL_BINARY: '0'
         run: npm ci
+
+      - name: Check governance CommonJS loaders and export arguments with inert stubs
+        run: node --test test/scripts/cosmic-runtime.test.cjs
 
       - name: Generate synthetic governance and offline mission fixtures
         run: bash demo/cosmic-omni-sovereign-symphony/bin/flagship-demo.sh --ci --mode offline-fixture

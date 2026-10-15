@@ -222,6 +222,7 @@ args = sys.argv[1:]
 with capture.open('a') as log:
     log.write(json.dumps({{'tool': pathlib.Path(sys.argv[0]).name, 'args': args,
                           'config': os.environ.get('HARDHAT_CONFIG'),
+                          'network': os.environ.get('HARDHAT_NETWORK'),
                           'secret': os.environ.get('MAINNET_PRIVATE_KEY'),
                           'skip': os.environ.get('AGIJOBS_FLAGSHIP_SKIP_ONCHAIN')}}) + '\\n')
 '''
@@ -273,6 +274,14 @@ if mode == 'cleanup':
                         self.assertEqual(len(batches), 4)
                         for index in batches:
                             self.assertEqual(events[index - 1]['args'][1], 'check')
+                        exports = [events[index] for index in batches if
+                                   any(a.endswith('/export-ledger.ts') for a in events[index]['args'])]
+                        self.assertEqual(len(exports), 1)
+                        self.assertEqual(exports[0]['network'], 'localhost')
+                        self.assertEqual(exports[0]['args'], [
+                            '-r', str(root / 'node_modules/ts-node/register/transpile-only'),
+                            str(root / DEMO / 'scripts/export-ledger.ts'), '--output',
+                            str(root / DEMO / 'logs/ledger-latest.json')])
                         if entry == 'flagship-demo.sh':
                             mission = [e for e in events if any(a.endswith('/agiOperatingSystemDemo.ts') for a in e['args'])]
                             self.assertEqual(len(mission), 1)

@@ -6,11 +6,21 @@ const CONFIG_PATH = process.env.AGIJOBS_GOV_CONFIG ?? path.join(__dirname, "..",
 const DEPLOYMENT_LOG = path.join(__dirname, "..", "logs", "deployment-latest.json");
 
 function parseArgs() {
-  const outputIndex = process.argv.indexOf("--output");
-  if (outputIndex === -1 || outputIndex + 1 >= process.argv.length) {
-    throw new Error("--output <path> is required");
+  const args = process.argv.slice(2);
+  const usage = "Usage: export-ledger.ts --output <path>";
+  if (args.length === 0) {
+    throw new Error(`--output <path> is required. ${usage}`);
   }
-  return process.argv[outputIndex + 1];
+  if (args[0] !== "--output") {
+    throw new Error(`Unknown argument ${JSON.stringify(args[0])}. ${usage}`);
+  }
+  if (!args[1]?.trim() || args[1].startsWith("-")) {
+    throw new Error(`--output <path> is required. ${usage}`);
+  }
+  if (args.length !== 2) {
+    throw new Error(`Unexpected argument ${JSON.stringify(args[2])}. ${usage}`);
+  }
+  return args[1];
 }
 
 async function main() {
