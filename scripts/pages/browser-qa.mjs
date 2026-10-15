@@ -12,7 +12,13 @@ import http from 'node:http';
 import assert from 'node:assert/strict';
 import { chromium } from 'playwright';
 import AxeBuilder from '@axe-core/playwright';
-import { root } from './build.mjs';
+import { root, makeCatalog } from './build.mjs';
+import {
+  assertDashboardRoutes,
+  expectedDashboardRoutes,
+  assertCatalogKindLinks,
+  expectedDesignLinks,
+} from '../../test/pages/dashboard-contract.mjs';
 
 const profiles = JSON.parse(
   fs.readFileSync(path.join(root, 'website/demo-experiences.json'), 'utf8')
@@ -151,7 +157,12 @@ try {
   assert.equal(await page.locator('#catalog-empty').isVisible(), true);
   await page.getByRole('button', { name: 'Clear filters' }).click();
   await page.getByLabel('Experience', { exact: true }).selectOption('design');
-  assert.equal(await page.locator('[data-demo-card]:visible').count(), 7);
+  assertCatalogKindLinks(
+    await page
+      .locator('[data-demo-card]:visible h3 a')
+      .evaluateAll((links) => links.map((link) => link.getAttribute('href'))),
+    expectedDesignLinks(makeCatalog(), root, manifest.basePath)
+  );
   await page.getByRole('button', { name: 'Clear filters' }).click();
   await page.getByRole('button', { name: 'Show more demos' }).click();
   assert.equal(await page.locator('[data-demo-card]:visible').count(), 24);
@@ -455,7 +466,10 @@ try {
   await verifyStart({ page, context, url, artifacts, a11y, checks });
   await verifyWorkPlanner({ page, context, url, artifacts, a11y, checks });
   await verifyAlphaMark({ page, context, url, artifacts, a11y, checks });
-  assert.equal(manifest.dashboardRoutes.length, 15);
+  assertDashboardRoutes(
+    manifest.dashboardRoutes,
+    expectedDashboardRoutes(root)
+  );
   assert.ok(manifest.dashboardRoutes.includes('experiments/phase6/'));
   assert.ok(manifest.dashboardRoutes.includes('experiments/zenith-hypernova/'));
   assert.ok(manifest.dashboardRoutes.includes('experiments/phase8/workbench/'));
