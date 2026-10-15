@@ -3956,6 +3956,7 @@ html:not(.js) [data-copy] {
 
 /* Four complementary systems: static, accessible wayfinding with no implied authority. */
 .ecosystem-map {
+  overflow-wrap: anywhere;
   position: relative;
   background: radial-gradient(ellipse at 90% 0%, #51336c 0, transparent 50%),
     #170f29;

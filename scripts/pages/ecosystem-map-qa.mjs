@@ -30,6 +30,19 @@ export async function verifyEcosystemMap({ page, artifacts, checks }) {
         true,
         `${width}px/${scale}: ecosystem reflows`
       );
+      assert.deepEqual(
+        await map
+          .locator('h2,h3,p,.ecosystem-kicker,a')
+          .evaluateAll((elements) =>
+            elements
+              .filter(
+                (element) => element.scrollWidth > element.clientWidth + 1
+              )
+              .map((element) => element.textContent)
+          ),
+        [],
+        `${width}px/${scale}: text wraps within its own box`
+      );
       for (const link of await links.all()) {
         await link.focus();
         assert.equal(
