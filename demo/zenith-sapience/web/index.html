@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none';script-src 'self';style-src 'self';connect-src 'self';base-uri 'none';form-action 'none'"
+    />
+    <title>Zenith • Regional reconciliation desk</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <a class="skip" href="#main" data-t="skip">Skip to reconciliation</a>
+    <nav aria-label="Primary">
+      <a href="../../">AGI JOBS</a>
+      <div>
+        <a href="../../demos/" data-t="directory">Demo directory</a
+        ><button id="language" type="button" aria-label="Passer en français">
+          FR
+        </button>
+      </div>
+    </nav>
+    <header>
+      <p class="eyebrow">ZENITH / REGIONAL RECONCILIATION</p>
+      <h1 data-t="heading">
+        Keep unknowns visible. Reconcile before reallocating.
+      </h1>
+      <p class="lead" data-t="lead">
+        Compare regional envelopes, planned work and reported amounts. Inspect
+        conservative transfer proposals only when all costs are supplied and
+        allocations balance.
+      </p>
+      <p class="notice" data-t="notice">
+        Reported costs are supplied assumptions, not verified invoices. This
+        browser makes no transfers, currency conversions or settlement
+        decisions.
+      </p>
+    </header>
+    <main id="main">
+      <noscript
+        ><p>
+          JavaScript required / JavaScript requis.
+          <a
+            href="https://github.com/MontrealAI/AGIJobsv0/tree/main/demo/zenith-sapience"
+            >Original local guide / Guide local</a
+          >
+        </p></noscript
+      >
+      <section class="panel">
+        <div class="section-head">
+          <h2 data-t="inputs">1. Supply the regional picture</h2>
+          <button id="reset" type="button" data-t="reset">
+            Restore example
+          </button>
+        </div>
+        <label for="import" data-t="import"
+          >Reopen scenario or evidence · UTF-8 JSON up to 1 MB</label
+        ><input id="import" type="file" accept=".json,application/json" />
+        <form id="planner">
+          <label for="title" data-t="title">Scenario title</label
+          ><input id="title" maxlength="200" required />
+          <div class="pair">
+            <div>
+              <label for="unit" data-t="unit">Declared unit</label
+              ><input id="unit" maxlength="40" required />
+            </div>
+            <div>
+              <label for="total" data-t="total"
+                >Total envelope · whole-number digits</label
+              ><input
+                id="total"
+                inputmode="numeric"
+                pattern="0|[1-9][0-9]{0,23}"
+                required
+              />
+            </div>
+          </div>
+          <p class="hint" data-t="amountHint">
+            Amounts are exact integer strings, up to 24 digits. No
+            floating-point rounding or exchange rate is applied.
+          </p>
+          <h3 data-t="regions">Regional envelopes</h3>
+          <div id="regions"></div>
+          <button id="add-region" type="button" data-t="addRegion">
+            Add region
+          </button>
+          <h3 data-t="jobs">Planned and reported work</h3>
+          <div id="jobs"></div>
+          <button id="add-job" type="button" data-t="addJob">
+            Add work item
+          </button>
+          <p class="notice" data-t="unknownHint">
+            Unknown reported amounts stay unknown and hold every transfer
+            proposal. Known-only subtotals are not complete spending totals.
+          </p>
+          <button type="submit" class="primary" data-t="run">
+            Reconcile supplied amounts
+          </button>
+        </form>
+        <p id="error" role="alert" hidden></p>
+        <p id="status" role="status" aria-live="polite"></p>
+      </section>
+      <section id="result" class="panel" hidden>
+        <h2 data-t="results">2. Inspect balances and proposals</h2>
+        <p id="summary" role="status"></p>
+        <p id="totals"></p>
+        <div id="balances"></div>
+        <h3 data-t="proposals">Proposed envelope changes</h3>
+        <p data-t="proposalHint">
+          Proposals follow region input order and conserve the declared unit. A
+          partially covered deficit remains unresolved. Nothing is transferred.
+        </p>
+        <ul id="proposals"></ul>
+        <p id="uncovered"></p>
+        <p class="notice" data-t="bounds">
+          Cost attestation, executed transfers, production approval and
+          settlement approval remain false even when supplied amounts reconcile.
+        </p>
+        <div class="actions">
+          <button id="download" type="button" data-t="download">
+            Download scenario</button
+          ><button id="evidence" type="button" data-t="evidence">
+            Download recomputed evidence
+          </button>
+        </div>
+        <p id="digest" class="hint"></p>
+        <details>
+          <summary data-t="raw">Inspect complete result JSON</summary>
+          <pre id="raw"></pre>
+        </details>
+      </section>
+      <section class="panel">
+        <h2 data-t="method">Reproduce the analysis</h2>
+        <p data-t="methodText">
+          This page bundles the exact original reconciliation engine and its
+          existing Hypernova analyzer. The local command produces the same
+          result from the same scenario. Browser evidence is recomputed after
+          reopening; saved results are ignored.
+        </p>
+        <p data-t="privacy">
+          Files stay in this tab. Export your scenario to keep changes. This
+          workspace is not connected to financial accounts or infrastructure.
+        </p>
+        <a
+          href="https://github.com/MontrealAI/AGIJobsv0/tree/main/demo/zenith-sapience"
+          data-t="source"
+          >Original runtime, schema and local guide</a
+        >
+      </section>
+    </main>
+    <footer data-t="footer">
+      ZENITH · Exact declared-unit reconciliation · No transfer or settlement
+      authority
+    </footer>
+    <script type="module" src="app.mjs"></script>
+  </body>
+</html>

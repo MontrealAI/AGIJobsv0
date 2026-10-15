@@ -1,3 +1,4 @@
+import { buildZenithSite } from './zenith-build.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
@@ -934,6 +935,8 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
   );
   dashboardRoutes.push(phase8Site.route);
   archiveRoutes.push(...phase8Site.archiveRoutes);
+  await buildZenithSite(path.join(output, 'experiments/zenith'));
+  dashboardRoutes.push('experiments/zenith/');
   // Compile the same Studio shipped in the pnpm workspace, in explicit offline mode.
   const studio = path.join(root, 'demo/CULTURE-v0/apps/culture-studio');
   execFileSync(

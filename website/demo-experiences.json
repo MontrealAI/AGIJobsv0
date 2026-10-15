@@ -1739,30 +1739,33 @@
     "related": ["agi-governance"]
   },
   "zenith-sapience": {
-    "question": "Which parts are architecture, and where can I try the related implementation?",
-    "purpose": "For readers of the project vision: study this preserved design, identify the components it proposes and continue to a concrete related implementation.",
+    "question": "Do reported regional amounts reconcile before any envelope change is proposed?",
+    "purpose": "For operators reviewing regional plans: preserve unknown costs, compare exact declared-unit envelopes, and inspect conservative transfer proposals without executing them.",
     "steps": [
       {
-        "title": "Read the design",
+        "title": "Supply planned and reported amounts",
+        "source": "demo/zenith-sapience/scenario.json",
+        "explanation": "Amounts are exact whole-number strings in one declared unit. Unknown reported costs stay null and hold all proposals."
+      },
+      {
+        "title": "Inspect the original reconciliation engine",
+        "source": "demo/zenith-sapience/engine.mjs",
+        "explanation": "The browser bundles this exact engine and existing Hypernova analyzer. Proposals follow input order, conserve units and leave uncovered deficits visible."
+      },
+      {
+        "title": "Reproduce the local analysis",
         "source": "demo/zenith-sapience/README.md",
-        "explanation": "This directory is documentation-only. Its architecture and ambitions are preserved; it does not contain a standalone executable demo."
-      },
-      {
-        "title": "Locate the implementation",
-        "source": "demo/zenith-sapience-initiative-global-governance/README.md",
-        "explanation": "The related implementation has its own scope, prerequisites and evidence. It should not be assumed to realize every aspiration in this design."
-      },
-      {
-        "title": "Understand evidence boundaries",
-        "source": "docs/production/readiness-2026-10-03.md",
-        "explanation": "Compare demonstrated behavior with outstanding signing, integration, security review and commissioning requirements. A simulation cannot replace authentic evidence for those gates."
+        "explanation": "Run the original Node command. Supplied reports are not verified invoices; no token conversion, transfer, production or settlement approval occurs."
       }
     ],
-    "command": null,
-    "expected": "Open the related experience below for its guided inspection and run instructions. Reading this design does not execute or commission the proposed system.",
-    "experiment": "Choose a component from the diagram and map it to code, a test and an output in the related demo. Record any component that still has only a design description.",
-    "mode": "design",
-    "related": ["zenith-sapience-initiative-global-governance"]
+    "command": "node demo/zenith-sapience/run.mjs",
+    "expected": "JSON reports known-only subtotals, unknown amounts, regional variances, proposal holds and any remaining deficit. Fully funded is true only when complete balanced data has no uncovered deficit.",
+    "experiment": "Supply the missing report, inspect the proposed 5000-unit transfer, then raise that report beyond available envelopes to expose a remaining deficit.",
+    "mode": "node",
+    "dashboard": "experiments/zenith/",
+    "related": [
+      "zenith-sapience-initiative-supra-sovereign-hypernova-governance"
+    ]
   },
   "zenith-sapience-initiative-omega-omni-operating-system": {
     "question": "Which parts are architecture, and where can I try the related implementation?",

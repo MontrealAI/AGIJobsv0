@@ -151,6 +151,8 @@ jobs:
           npm run build:validator
           node --test test/scripts/runtime-packaging.test.cjs
           node --test apps/orchestrator/dist/apps/orchestrator/__tests__/computerWork.test.js
+      - name: Zenith regional budget reconciliation regressions
+        run: node --test test/demo/zenith-reconciliation.test.mjs
       - name: Hardhat tests
         run: npm test
       - name: Gateway TypeScript interaction regressions
