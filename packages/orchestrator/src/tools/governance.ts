@@ -24,7 +24,16 @@ const IDENTITY_CONFIG = path.resolve(process.cwd(), "config", "identity-registry
 interface GovernanceSnapshot {
   timestamp: string;
   chainId: string;
-  onChain: Record<string, Record<string, string>>;
+  onChain: {
+    stakeManager: Record<string, string>;
+    feePool: Record<string, string>;
+    identityRegistry: Record<string, string>;
+    jobRegistry: Record<
+      'address' | 'jobStakeRateLabel' | 'maxJobReward' | 'maxJobRewardLabel' |
+      'maxJobDuration' | 'maxJobDurationLabel' | 'feePct' | 'feePctLabel' |
+      'validatorRewardPct' | 'validatorRewardPctLabel', string
+    > & { jobStakeBps: string | null };
+  };
   configs: Record<string, unknown>;
 }
 

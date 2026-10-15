@@ -1,0 +1,30 @@
+{
+  "schema": "agijobsv0/reputation-growth-blocker/v1",
+  "severity": "P1 \u2014 deployment/release blocked",
+  "inheritedFrom": "7b21ce05b0b18b46162da66c2f528334101f6f40",
+  "unchangedSource": "contracts/v2/ReputationEngine.sol",
+  "sourceSha256": "318e7a9445f31a6f55c107316a13ebf6b09bed959afcdd4833e03f1d593f78db",
+  "sourceEqualsBaseline": true,
+  "diagnosticSource": "scripts/diagnostics/reputation-growth-repro.cjs",
+  "diagnosticSha256": "f3c08e44bb0be1a120bf1d115e39c4d87c46f1b9f161bafff4c0694e39ccadab",
+  "logSha256": "332cacd75eb016e6dd3439458b2a5bd7dd98d5566499c7277870ed39ef39f44e",
+  "observed": {
+    "authorizedAdd": 20000,
+    "resultingScore": 19036,
+    "addOneArithmeticPanic": "0x11",
+    "successfulOnFinalizeHookArithmeticPanic": "0x11",
+    "hookPayoutTokenUnits": "100",
+    "hookDurationSeconds": 100000,
+    "calculatedPoints": 34,
+    "scoreUnchangedAfterReverts": true
+  },
+  "fixture": "Private in-process unforked Hardhat; actual ReputationEngine and MockStakeManager. No real Registry settlement claimed by this local reproduction.",
+  "analysis": "The growth helper reattenuates the whole accumulated score. The resulting lower score underflows newScore-current. Registry finalization calls this hook without catching the revert; full settlement rollback is inferred from that source path. PR3970 separately reports a real Registry reproduction.",
+  "requires": [
+    "Separate reviewed monotonic-growth repair",
+    "Review scoring producer units and terminal exactly-once handling",
+    "Adversarial/fuzz/full regression and exact-candidate qualification after repair"
+  ],
+  "qualification": "Known defect reproduced, NOT PASSED for deployment",
+  "externalTransactions": false
+}

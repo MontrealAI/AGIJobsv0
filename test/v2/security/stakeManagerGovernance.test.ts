@@ -2,7 +2,6 @@ import { deployImplementations } from '../../../scripts/deploy/implementations.c
 import { expect } from 'chai';
 import { ethers } from 'hardhat';
 import {
-  loadFixture,
   setBalance,
 } from '@nomicfoundation/hardhat-network-helpers';
 const AGIALPHA = '0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA';
@@ -44,9 +43,11 @@ async function deployStakeManager() {
   return { deployer, stake, timelock };
 }
 
+// Deploy independently: the repository-wide setup restores its own snapshot before each test,
+// which invalidates snapshots cached by loadFixture across test cases.
 describe('StakeManager governance access control', function () {
   it('allows the timelock controller to update the minimum stake', async function () {
-    const { stake, timelock } = await loadFixture(deployStakeManager);
+    const { stake, timelock } = await deployStakeManager();
     const timelockSigner = await ethers.getImpersonatedSigner(
       await timelock.getAddress()
     );
@@ -59,7 +60,7 @@ describe('StakeManager governance access control', function () {
   });
 
   it('rejects arbitrary callers attempting to tune stake thresholds', async function () {
-    const { stake, timelock } = await loadFixture(deployStakeManager);
+    const { stake, timelock } = await deployStakeManager();
     const governanceAddress = await timelock.getAddress();
 
     for (let i = 0; i < 12; i++) {

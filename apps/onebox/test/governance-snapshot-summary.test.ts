@@ -89,3 +89,13 @@ test('buildOwnerTelemetryCards gracefully ignores malformed sections', () => {
   assert.equal(identityCard.metrics[0].value, 'agent.agi.eth');
 });
 
+
+test('percentage-rate telemetry distinguishes zero from unsupported legacy capability', () => {
+  const rate = (jobRegistry: Record<string, unknown>) =>
+    buildOwnerTelemetryCards({ onChain: { jobRegistry } })
+      .find((card) => card.id === 'job-policy')?.metrics
+      .find((metric) => metric.label === 'Future-job stake rate')?.value;
+  assert.equal(rate({ jobStakeBps: '0', jobStakeRateLabel: '0 bps (future jobs only)' }), '0 bps (future jobs only)');
+  assert.equal(rate({ jobStakeBps: null, jobStakeRateLabel: 'Unavailable' }), 'Unavailable');
+  assert.equal(rate({ jobStake: '500000000000000000000' }), undefined);
+});

@@ -1,6 +1,6 @@
 # Second mainnet deployment: review and owner-accepted omissions
 
-Status: preparation only; not deployment authorization or production certification.
+Status: preparation only; DEPLOYMENT BLOCKED by confirmed inherited ReputationEngine P1. Not deployment authorization or production certification.
 Review baseline: `7b21ce05b0b18b46162da66c2f528334101f6f40` on 15 October 2026.
 Target window: Friday evening, 16 October 2026, America/Toronto (Montreal, UTC−04:00), and the following weekend; exact signing time remains owner-controlled.
 
@@ -102,3 +102,9 @@ The local mainnet-fork lifecycle passed at block **26,200,139**, hash `0x5ba8945
 ### Final caller-migration checkpoint
 
 The additive [caller migration receipt](percentage-stake-caller-migration-evidence.json) records a subsequent canonical build and 867 official Hardhat passes. Redenomination retains basis points unchanged, HGM has an explicit percentage setter and rejects fixed units, and owner/ASI/Aurora demo callers use the correct collateral. Local browser, deterministic kit and 1-job/3-job simulated EVM journeys passed within the receipt's stated scope. Earlier receipts remain unchanged; complete supplemental TypeScript, exact-head hosted/security review, full fork/obligation/configuration and signing-plan gates remain open.
+
+### Confirmed reputation blocker — separate repair required
+
+The [reproduction receipt](reputation-growth-blocker-2026-10-15.json) records an inherited arithmetic panic on positive reputation growth and the successful-finalization hook. This stage does not repair ReputationEngine or imply production readiness. Canonical compilation, passing stake/fork tests and the accepted audit/Sepolia omissions cannot override this blocker. Review monotonic growth, producer token units and terminal exactly-once scoring in a separate repair.
+
+The previously unqualified supplemental fixture migration is now reconciled from published #3970 and #3969 without dropping original branch ancestry or the added economic/invariant tests: 723 recursive v2 tests and 20 focused lifecycle/governance cases pass. These are local overlapping counts, not a final-head hosted release or complete cutover rehearsal.
