@@ -1,0 +1,297 @@
+{
+  "schema": "agijobs.omega-replay-evidence.v1",
+  "scope": "deterministic local code on synthetic quotes; process-interruption recovery only",
+  "records": [
+    {
+      "schema": "agijobs.omega-stage-checkpoint.v1",
+      "runId": "run-07bbc8ca-83f2-4e52-9205-9122d48d8ea0",
+      "stage": 1,
+      "name": "validate-quotes",
+      "sourcePins": {
+        "engine.cjs": "d786f3275a128f95239c207cf090453658782c7e08a281489185777b1d686dcf",
+        "run.cjs": "369da15b633a56da322498b6ca6d9c5efb85fe67157ec65d2ef4eb7030c83007",
+        "../One-Box/computer-work/review.cjs": "7c49ed577ca4c1f9cf55d41140a315d388d19343bfd0bb092a92055bb9311c69",
+        "../One-Box/computer-work/quotes.json": "6015c539288816d3b404a09bf0e483ba79a85afc1ed3bdae11706f91adfc5668"
+      },
+      "options": {
+        "injectError": false
+      },
+      "previousSha256": null,
+      "data": {
+        "quotes": [
+          {
+            "supplier": "Boreal",
+            "quantity": 40,
+            "unitCents": 1250,
+            "shippingCents": 3000,
+            "deliveryDays": 5
+          },
+          {
+            "supplier": "Laurentian",
+            "quantity": 40,
+            "unitCents": 1100,
+            "shippingCents": 2000,
+            "deliveryDays": 12
+          },
+          {
+            "supplier": "Stellar",
+            "quantity": 40,
+            "unitCents": 1200,
+            "shippingCents": 1000,
+            "deliveryDays": 7
+          }
+        ],
+        "maxDeliveryDays": 7,
+        "source": "fixed One-Box synthetic supplier quotes",
+        "physicalWorkExecuted": false
+      }
+    },
+    {
+      "schema": "agijobs.omega-stage-checkpoint.v1",
+      "runId": "run-07bbc8ca-83f2-4e52-9205-9122d48d8ea0",
+      "stage": 2,
+      "name": "compare-quotes",
+      "sourcePins": {
+        "engine.cjs": "d786f3275a128f95239c207cf090453658782c7e08a281489185777b1d686dcf",
+        "run.cjs": "369da15b633a56da322498b6ca6d9c5efb85fe67157ec65d2ef4eb7030c83007",
+        "../One-Box/computer-work/review.cjs": "7c49ed577ca4c1f9cf55d41140a315d388d19343bfd0bb092a92055bb9311c69",
+        "../One-Box/computer-work/quotes.json": "6015c539288816d3b404a09bf0e483ba79a85afc1ed3bdae11706f91adfc5668"
+      },
+      "options": {
+        "injectError": false
+      },
+      "previousSha256": "a4bb82bb8e5d2e97a51608c666fde07a524c0533f24391a01fbcaef5f2912a82",
+      "data": {
+        "maxDeliveryDays": 7,
+        "quotes": [
+          {
+            "supplier": "Boreal",
+            "totalCents": 53000,
+            "eligible": true
+          },
+          {
+            "supplier": "Laurentian",
+            "totalCents": 46000,
+            "eligible": false
+          },
+          {
+            "supplier": "Stellar",
+            "totalCents": 49000,
+            "eligible": true
+          }
+        ],
+        "recommendedSupplier": "Stellar",
+        "purchaseExecuted": false
+      }
+    },
+    {
+      "schema": "agijobs.omega-stage-checkpoint.v1",
+      "runId": "run-07bbc8ca-83f2-4e52-9205-9122d48d8ea0",
+      "stage": 3,
+      "name": "write-recommendation",
+      "sourcePins": {
+        "engine.cjs": "d786f3275a128f95239c207cf090453658782c7e08a281489185777b1d686dcf",
+        "run.cjs": "369da15b633a56da322498b6ca6d9c5efb85fe67157ec65d2ef4eb7030c83007",
+        "../One-Box/computer-work/review.cjs": "7c49ed577ca4c1f9cf55d41140a315d388d19343bfd0bb092a92055bb9311c69",
+        "../One-Box/computer-work/quotes.json": "6015c539288816d3b404a09bf0e483ba79a85afc1ed3bdae11706f91adfc5668"
+      },
+      "options": {
+        "injectError": false
+      },
+      "previousSha256": "834c200c4f11604d5babd4829fadab92897efec2c06a14c7521d59b30f50fe8c",
+      "data": {
+        "artifacts": [
+          {
+            "name": "comparison.json",
+            "content": "{\n  \"maxDeliveryDays\": 7,\n  \"quotes\": [\n    {\n      \"supplier\": \"Boreal\",\n      \"totalCents\": 53000,\n      \"eligible\": true\n    },\n    {\n      \"supplier\": \"Laurentian\",\n      \"totalCents\": 46000,\n      \"eligible\": false\n    },\n    {\n      \"supplier\": \"Stellar\",\n      \"totalCents\": 49000,\n      \"eligible\": true\n    }\n  ],\n  \"recommendedSupplier\": \"Stellar\",\n  \"purchaseExecuted\": false\n}\n",
+            "sha256": "0aa6de053fb19baa40585269d1cbdccde56b3173647d69cb6b6f116fcba12673"
+          },
+          {
+            "name": "recommendation.md",
+            "content": "# Supplier recommendation\n\nStellar is recommended for review. No purchase executed.\n",
+            "sha256": "0b2283550469281209e61c432e4dd10d8dab10a14e2131bac4b29429b37d84e9"
+          }
+        ]
+      }
+    },
+    {
+      "schema": "agijobs.omega-stage-checkpoint.v1",
+      "runId": "run-07bbc8ca-83f2-4e52-9205-9122d48d8ea0",
+      "stage": 4,
+      "name": "independent-review",
+      "sourcePins": {
+        "engine.cjs": "d786f3275a128f95239c207cf090453658782c7e08a281489185777b1d686dcf",
+        "run.cjs": "369da15b633a56da322498b6ca6d9c5efb85fe67157ec65d2ef4eb7030c83007",
+        "../One-Box/computer-work/review.cjs": "7c49ed577ca4c1f9cf55d41140a315d388d19343bfd0bb092a92055bb9311c69",
+        "../One-Box/computer-work/quotes.json": "6015c539288816d3b404a09bf0e483ba79a85afc1ed3bdae11706f91adfc5668"
+      },
+      "options": {
+        "injectError": false
+      },
+      "previousSha256": "bb4b1b117b2559fd0d29a794c27ce60f16eb5571ece66b7ffdf3e2745acc14ae",
+      "data": {
+        "receipt": {
+          "artifacts": [
+            {
+              "name": "comparison.json",
+              "content": "{\n  \"maxDeliveryDays\": 7,\n  \"quotes\": [\n    {\n      \"supplier\": \"Boreal\",\n      \"totalCents\": 53000,\n      \"eligible\": true\n    },\n    {\n      \"supplier\": \"Laurentian\",\n      \"totalCents\": 46000,\n      \"eligible\": false\n    },\n    {\n      \"supplier\": \"Stellar\",\n      \"totalCents\": 49000,\n      \"eligible\": true\n    }\n  ],\n  \"recommendedSupplier\": \"Stellar\",\n  \"purchaseExecuted\": false\n}\n",
+              "sha256": "0aa6de053fb19baa40585269d1cbdccde56b3173647d69cb6b6f116fcba12673"
+            },
+            {
+              "name": "recommendation.md",
+              "content": "# Supplier recommendation\n\nStellar is recommended for review. No purchase executed.\n",
+              "sha256": "0b2283550469281209e61c432e4dd10d8dab10a14e2131bac4b29429b37d84e9"
+            }
+          ]
+        },
+        "review": {
+          "schemaVersion": 1,
+          "reviewer": "deterministic fixture acceptance rules",
+          "accepted": true,
+          "settlementApproved": false,
+          "productionApproved": false,
+          "checks": [
+            {
+              "name": "Exactly two unique deliverables",
+              "passed": true
+            },
+            {
+              "name": "Integrity: comparison.json",
+              "passed": true
+            },
+            {
+              "name": "Integrity: recommendation.md",
+              "passed": true
+            },
+            {
+              "name": "Delivery limit is 7 days",
+              "passed": true
+            },
+            {
+              "name": "All quotes appear once",
+              "passed": true
+            },
+            {
+              "name": "Boreal: total and eligibility",
+              "passed": true
+            },
+            {
+              "name": "Laurentian: total and eligibility",
+              "passed": true
+            },
+            {
+              "name": "Stellar: total and eligibility",
+              "passed": true
+            },
+            {
+              "name": "Lowest eligible total wins",
+              "passed": true
+            },
+            {
+              "name": "No purchase claimed",
+              "passed": true
+            },
+            {
+              "name": "Brief names the recommendation and no-purchase boundary",
+              "passed": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "schema": "agijobs.omega-stage-checkpoint.v1",
+      "runId": "run-07bbc8ca-83f2-4e52-9205-9122d48d8ea0",
+      "stage": 5,
+      "name": "export-receipt",
+      "sourcePins": {
+        "engine.cjs": "d786f3275a128f95239c207cf090453658782c7e08a281489185777b1d686dcf",
+        "run.cjs": "369da15b633a56da322498b6ca6d9c5efb85fe67157ec65d2ef4eb7030c83007",
+        "../One-Box/computer-work/review.cjs": "7c49ed577ca4c1f9cf55d41140a315d388d19343bfd0bb092a92055bb9311c69",
+        "../One-Box/computer-work/quotes.json": "6015c539288816d3b404a09bf0e483ba79a85afc1ed3bdae11706f91adfc5668"
+      },
+      "options": {
+        "injectError": false
+      },
+      "previousSha256": "c4a98dcdd47cd0cf1261f60c1a63491779f1317a021e271c302dc7ca1b2df185",
+      "data": {
+        "schema": "agijobs.omega-local-delivery.v1",
+        "receipt": {
+          "artifacts": [
+            {
+              "name": "comparison.json",
+              "content": "{\n  \"maxDeliveryDays\": 7,\n  \"quotes\": [\n    {\n      \"supplier\": \"Boreal\",\n      \"totalCents\": 53000,\n      \"eligible\": true\n    },\n    {\n      \"supplier\": \"Laurentian\",\n      \"totalCents\": 46000,\n      \"eligible\": false\n    },\n    {\n      \"supplier\": \"Stellar\",\n      \"totalCents\": 49000,\n      \"eligible\": true\n    }\n  ],\n  \"recommendedSupplier\": \"Stellar\",\n  \"purchaseExecuted\": false\n}\n",
+              "sha256": "0aa6de053fb19baa40585269d1cbdccde56b3173647d69cb6b6f116fcba12673"
+            },
+            {
+              "name": "recommendation.md",
+              "content": "# Supplier recommendation\n\nStellar is recommended for review. No purchase executed.\n",
+              "sha256": "0b2283550469281209e61c432e4dd10d8dab10a14e2131bac4b29429b37d84e9"
+            }
+          ]
+        },
+        "review": {
+          "schemaVersion": 1,
+          "reviewer": "deterministic fixture acceptance rules",
+          "accepted": true,
+          "settlementApproved": false,
+          "productionApproved": false,
+          "checks": [
+            {
+              "name": "Exactly two unique deliverables",
+              "passed": true
+            },
+            {
+              "name": "Integrity: comparison.json",
+              "passed": true
+            },
+            {
+              "name": "Integrity: recommendation.md",
+              "passed": true
+            },
+            {
+              "name": "Delivery limit is 7 days",
+              "passed": true
+            },
+            {
+              "name": "All quotes appear once",
+              "passed": true
+            },
+            {
+              "name": "Boreal: total and eligibility",
+              "passed": true
+            },
+            {
+              "name": "Laurentian: total and eligibility",
+              "passed": true
+            },
+            {
+              "name": "Stellar: total and eligibility",
+              "passed": true
+            },
+            {
+              "name": "Lowest eligible total wins",
+              "passed": true
+            },
+            {
+              "name": "No purchase claimed",
+              "passed": true
+            },
+            {
+              "name": "Brief names the recommendation and no-purchase boundary",
+              "passed": true
+            }
+          ]
+        },
+        "executionMode": "deterministic-local-code",
+        "providerCalled": false,
+        "browserUsed": false,
+        "admitted": false,
+        "settlementApproved": false,
+        "productionApproved": false
+      }
+    }
+  ],
+  "productionApproved": false,
+  "settlementApproved": false
+}

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none';script-src 'self';style-src 'self';connect-src 'self';base-uri 'none';form-action 'none'"
+    />
+    <title>Omega • Checkpoint replay desk</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <a class="skip" href="#main" data-t="skip">Skip to checkpoints</a>
+    <nav aria-label="Primary">
+      <a href="../../">AGI JOBS</a>
+      <div>
+        <a href="../../demos/" data-t="directory">Demo directory</a
+        ><button id="language" type="button" aria-label="Passer en français">
+          FR
+        </button>
+      </div>
+    </nav>
+    <header>
+      <p class="eyebrow">OMEGA / CHECKPOINT REPLAY</p>
+      <h1 data-t="heading">Pause. Reopen. Recompute the work.</h1>
+      <p class="lead" data-t="lead">
+        Inspect five real deterministic artifact stages. Reopen a checkpoint,
+        verify its source and hash chain, and continue only after independent
+        artifact review.
+      </p>
+      <p class="notice" data-t="notice">
+        Synthetic supplier quotes and local code only. No AI provider,
+        computer-use session, purchase or settlement runs here. Browser replay
+        does not attest disk persistence or physical execution.
+      </p>
+    </header>
+    <main id="main">
+      <noscript
+        ><p>
+          JavaScript required / JavaScript requis.
+          <a
+            href="https://github.com/MontrealAI/AGIJobsv0/tree/main/demo/zenith-sapience-initiative-omega-omni-operating-system"
+            >Original local guide / Guide local</a
+          >
+        </p></noscript
+      >
+      <section class="panel">
+        <h2 data-t="controls">1. Inspect or generate a replay</h2>
+        <div class="actions">
+          <button id="reset" data-t="reset">Inspect bundled local run</button
+          ><button id="start" data-t="start">Start browser-local work</button
+          ><button id="start-error" data-t="startError">
+            Start with a wrong recommendation
+          </button>
+        </div>
+        <p data-t="startHint">
+          New work begins with fixed quote validation. Advance one stage at a
+          time, export a checkpoint, and reopen it to recompute retained data.
+          Browser changes disappear unless exported.
+        </p>
+        <label for="import" data-t="import"
+          >Reopen checkpoint or reviewed evidence · UTF-8 JSON up to 256
+          KiB</label
+        ><input id="import" type="file" accept=".json,application/json" />
+        <p id="error" role="alert" hidden></p>
+        <p id="status" role="status" aria-live="polite"></p>
+      </section>
+      <section id="result" class="panel" hidden>
+        <h2 data-t="results">2. Inspect recomputed stages</h2>
+        <p id="summary" role="status"></p>
+        <p id="scope"></p>
+        <ol id="stages"></ol>
+        <button id="advance" class="primary" data-t="advance">
+          Compute the next stage
+        </button>
+        <h3 data-t="artifacts">Deliverable contents</h3>
+        <div id="artifacts"></div>
+        <h3 data-t="checks">Independent artifact checks</h3>
+        <ul id="checks"></ul>
+        <p class="notice" data-t="bounds">
+          Source and data consistency do not authenticate who ran a checkpoint.
+          Imported verdicts are ignored. Original receipt flags describe the
+          deterministic fixture; this page adds browser-local replay context
+          without claiming computer-use execution.
+        </p>
+        <div class="actions">
+          <button id="download" data-t="download">
+            Download replay checkpoint</button
+          ><button id="evidence" data-t="evidence">
+            Download recomputed review
+          </button>
+        </div>
+        <p id="digest" class="hint"></p>
+        <details>
+          <summary data-t="raw">Inspect complete replay and review</summary>
+          <pre id="raw"></pre>
+        </details>
+        <details>
+          <summary data-t="pins">Inspect build-bound source hashes</summary>
+          <pre id="pins"></pre>
+        </details>
+      </section>
+      <section class="panel">
+        <h2 data-t="method">Run the original local pipeline</h2>
+        <p data-t="methodText">
+          The Node command writes immutable stage files and recomputes retained
+          records after a process interruption. Its local recovery proof does
+          not establish power-loss durability. This browser bundles the exact
+          stage engine and One-Box reviewer with a bounded SHA-256 adapter.
+        </p>
+        <p data-t="privacy">
+          Files remain in this tab. No automatic disk checkpoint is created.
+          Download a replay before closing, then reopen it with the same source
+          version.
+        </p>
+        <a
+          href="https://github.com/MontrealAI/AGIJobsv0/tree/main/demo/zenith-sapience-initiative-omega-omni-operating-system"
+          data-t="source"
+          >Original runtime, process-recovery guide and tests</a
+        >
+      </section>
+    </main>
+    <footer data-t="footer">
+      OMEGA · Recomputed artifact checkpoints · No production or settlement
+      authority
+    </footer>
+    <script type="module" src="app.mjs"></script>
+  </body>
+</html>

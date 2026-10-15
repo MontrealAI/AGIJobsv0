@@ -1765,30 +1765,33 @@
     "related": ["zenith-sapience-initiative-global-governance"]
   },
   "zenith-sapience-initiative-omega-omni-operating-system": {
-    "question": "Which parts are architecture, and where can I try the related implementation?",
-    "purpose": "For readers of the project vision: study this preserved design, identify the components it proposes and continue to a concrete related implementation.",
+    "question": "Can retained artifact stages be recomputed safely before work continues?",
+    "purpose": "For operators testing recovery: inspect source-bound local checkpoints, generate browser-local stages and reject inconsistent or independently failed artifacts.",
     "steps": [
       {
-        "title": "Read the design",
+        "title": "Inspect the source-bound checkpoint fixture",
+        "source": "demo/zenith-sapience-initiative-omega-omni-operating-system/local-fixture.json",
+        "explanation": "Five deterministic stages use fixed synthetic supplier quotes. Imported source hashes and predecessor hashes are checked against this build, then all stage data is recomputed."
+      },
+      {
+        "title": "Recompute exact original stage logic",
+        "source": "demo/zenith-sapience-initiative-omega-omni-operating-system/engine.cjs",
+        "explanation": "The browser bundles this engine and the existing independent One-Box reviewer. A deliberately wrong recommendation is rejected at stage four; no delivery receipt follows."
+      },
+      {
+        "title": "Reproduce process-interruption recovery locally",
         "source": "demo/zenith-sapience-initiative-omega-omni-operating-system/README.md",
-        "explanation": "This directory is documentation-only. Its architecture and ambitions are preserved; it does not contain a standalone executable demo."
-      },
-      {
-        "title": "Locate the implementation",
-        "source": "demo/zenith-sapience-initiative-omnidominion-governance/README.md",
-        "explanation": "The related implementation has its own scope, prerequisites and evidence. It should not be assumed to realize every aspiration in this design."
-      },
-      {
-        "title": "Understand evidence boundaries",
-        "source": "docs/production/readiness-2026-10-03.md",
-        "explanation": "Compare demonstrated behavior with outstanding signing, integration, security review and commissioning requirements. A simulation cannot replace authentic evidence for those gates."
+        "explanation": "The Node pipeline writes immutable files and resumes only after exact-byte recomputation. Browser export/reopen is separate and does not attest disk persistence, power-loss durability or physical work."
       }
     ],
-    "command": null,
-    "expected": "Open the related experience below for its guided inspection and run instructions. Reading this design does not execute or commission the proposed system.",
-    "experiment": "Choose a component from the diagram and map it to code, a test and an output in the related demo. Record any component that still has only a design description.",
-    "mode": "design",
-    "related": ["zenith-sapience-initiative-omnidominion-governance"]
+    "command": "node demo/zenith-sapience-initiative-omega-omni-operating-system/run.cjs",
+    "expected": "Five actual local artifact stages produce comparison/recommendation files and a checked delivery receipt. Use --stop-after 2 then --resume with the generated run ID to verify retained stages. Production and settlement remain unapproved.",
+    "experiment": "Start browser-local work, advance two stages, download/reopen the checkpoint and continue. Start a separate wrong-recommendation run to see independent review block its final stage.",
+    "mode": "node",
+    "dashboard": "experiments/omega/",
+    "related": [
+      "One-Box"
+    ]
   },
   "AlphaEvolve_v0": {
     "question": "Why does this demo also have an underscore-style package name?",

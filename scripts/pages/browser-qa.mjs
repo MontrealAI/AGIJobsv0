@@ -1,3 +1,4 @@
+import { verifyOmega } from './omega-qa.mjs';
 import { verifyStart } from './start-qa.mjs';
 import { verifyAlphaMark } from './alpha-mark-qa.mjs';
 import { verifySuccessor } from './successor-qa.mjs';
@@ -545,6 +546,7 @@ try {
     'published Meta-Agentic ALPHA route evaluates twelve briefs and rejects incorrect evidence'
   );
   await verifyPhase6({ page, context, url, artifacts, a11y, checks });
+  await verifyOmega({ page, context, url, artifacts, a11y, checks });
   await verifyEvidenceReview({ page, context, url, artifacts, a11y, checks });
   assert.deepEqual(requests, [], 'Unexpected external network requests');
   assert.deepEqual(errors, [], 'Browser errors');
