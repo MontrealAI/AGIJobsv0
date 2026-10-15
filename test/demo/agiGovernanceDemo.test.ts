@@ -73,15 +73,114 @@ describe('Solving α-AGI Governance mission dossier', function () {
     expect(hamiltonian.kineticTerm).to.be.greaterThan(hamiltonian.potentialTerm);
   });
 
-  it('produces coherent equilibria across solvers', function () {
+  it('finds the exact interior equilibrium without claiming cyclic trajectories converge', function () {
     const probabilitySum = equilibrium.replicator.reduce((sum, value) => sum + value, 0);
 
     expect(equilibrium.labels).to.have.lengthOf(mission.gameTheory.strategies.length);
-    expect(equilibrium.methodConsistency).to.equal(true);
+    // Independent oracle: this fixture is 1 + an antisymmetric cyclic game.
+    // Every strategy earns exactly 1 at the uniform interior equilibrium.
+    expect(mission.gameTheory.payoffMatrix).to.deep.equal([
+      [1, 0.9, 1.1],
+      [1.1, 1, 0.9],
+      [0.9, 1.1, 1],
+    ]);
+    equilibrium.closedForm.forEach((value) => expect(value).to.be.closeTo(1 / 3, 1e-12));
+    mission.gameTheory.payoffMatrix.forEach((row) => {
+      expect(row.reduce((sum, value) => sum + value / 3, 0)).to.be.closeTo(1, 1e-12);
+    });
+    expect(equilibrium.kktCertified).to.equal(true);
+    expect(equilibrium.methodConsistency).to.equal(false);
+    expect(equilibrium.maxMethodDeviation).to.be.greaterThan(equilibrium.consistencyThreshold);
+    expect(equilibrium.replicatorConverged).to.equal(false);
+    expect(equilibrium.replicatorEstimate).to.equal('tail-average-ensemble');
+    expect(equilibrium.replicatorIterations).to.equal(50000);
+    expect(equilibrium.replicatorDeviation).to.be.greaterThan(1e-6);
+    expect(equilibrium.replicator).to.not.deep.equal(equilibrium.closedForm);
+    expect(equilibrium.continuousConverged).to.equal(false);
+    expect(equilibrium.continuousIterations).to.equal(25000);
     expect(probabilitySum).to.be.closeTo(1, 1e-9);
     expect(equilibrium.divergenceAtEquilibrium).to.be.at.most(
       mission.hamiltonian.divergenceTolerance + 1e-6,
     );
+  });
+
+  it('preserves the exact continuous cyclic invariant instead of manufacturing convergence', function () {
+    // For x'=.1*x*(z-y), y'=.1*y*(x-z), z'=.1*z*(y-x),
+    // d(log(x*y*z))/dt is identically zero. The initial product is 0.03381,
+    // strictly below the unique maximum 1/27 at the uniform equilibrium.
+    const [x, y, z] = equilibrium.continuous;
+    expect(x * y * z).to.be.closeTo(0.42 * 0.35 * 0.23, 1e-10);
+    expect(x * y * z).to.be.lessThan(1 / 27 - 0.003);
+    const derivative = [0.1 * x * (z - y), 0.1 * y * (x - z), 0.1 * z * (y - x)];
+    const norm = Math.hypot(...derivative);
+    expect(norm).to.be.greaterThan(0.001);
+    expect(equilibrium.continuousDerivativeNorm).to.be.closeTo(norm, 1e-12);
+    expect(equilibrium.continuous.reduce((sum, value) => sum + value, 0)).to.be.closeTo(1, 1e-12);
+    equilibrium.continuous.forEach((value) => expect(value).to.be.greaterThan(0));
+  });
+
+  it('does not let an agreement tolerance rewrite solver output or convergence status', function () {
+    const permissive = structuredClone(mission);
+    permissive.gameTheory.consistencyThreshold = 2;
+    const result = computeEquilibrium(permissive);
+
+    expect(result.methodConsistency).to.equal(true);
+    expect(result.consistencyThreshold).to.equal(2);
+    expect(result.replicator).to.deep.equal(equilibrium.replicator);
+    expect(result.replicatorIterations).to.equal(equilibrium.replicatorIterations);
+    expect(result.replicatorDeviation).to.equal(equilibrium.replicatorDeviation);
+    expect(result.continuous).to.deep.equal(equilibrium.continuous);
+    expect(result.maxMethodDeviation).to.equal(equilibrium.maxMethodDeviation);
+    expect(result.replicatorConverged).to.equal(false);
+    expect(result.continuousConverged).to.equal(false);
+  });
+
+  it('converges to the known uniform equilibrium in a stable anti-coordination game', function () {
+    const stable = structuredClone(mission);
+    stable.gameTheory.payoffMatrix = [[1, 2, 2], [2, 1, 2], [2, 2, 1]];
+    stable.gameTheory.monteCarlo.iterations = 64;
+    const result = computeEquilibrium(stable);
+
+    expect(result.methodConsistency).to.equal(true);
+    expect(result.replicatorConverged).to.equal(true);
+    expect(result.replicatorEstimate).to.equal('terminal-ensemble');
+    expect(result.continuousConverged).to.equal(true);
+    expect(result.continuousDerivativeNorm).to.be.lessThan(1e-8);
+    expect(result.replicatorIterations).to.be.greaterThan(0);
+    for (const vector of [result.closedForm, result.replicator, result.continuous]) {
+      vector.forEach((value) => expect(value).to.be.closeTo(1 / 3, 1e-6));
+    }
+  });
+
+  it('keeps distinct coordination limits separate from the interior equilibrium', function () {
+    const coordination = structuredClone(mission);
+    coordination.gameTheory.payoffMatrix = [[2, 1, 1], [1, 2, 1], [1, 1, 2]];
+    coordination.gameTheory.monteCarlo.iterations = 64;
+    const result = computeEquilibrium(coordination);
+
+    result.closedForm.forEach((value) => expect(value).to.be.closeTo(1 / 3, 1e-12));
+    expect(result.continuousConverged).to.equal(true);
+    expect(result.continuous[0]).to.be.greaterThan(0.99999);
+    expect(result.replicatorIterations).to.be.greaterThan(0);
+    expect(result.replicatorDeviation).to.be.greaterThan(0.1);
+    expect(result.replicator).to.not.deep.equal(result.closedForm);
+    expect(result.methodConsistency).to.equal(false);
+  });
+
+  it('does not mistake a Perron eigenvector for a general game equilibrium', function () {
+    const asymmetric = structuredClone(mission);
+    asymmetric.gameTheory.payoffMatrix = [[1, 2, 2], [2, 1, 2], [2, 2, 0.5]];
+    asymmetric.gameTheory.monteCarlo.iterations = 64;
+    const result = computeEquilibrium(asymmetric);
+    // Exact equal-payoff solution: (3/8, 3/8, 1/4), each payoff 13/8.
+    [3 / 8, 3 / 8, 1 / 4].forEach((value, index) => {
+      expect(result.closedForm[index]).to.be.closeTo(value, 1e-12);
+      expect(result.continuous[index]).to.be.closeTo(value, 1e-6);
+    });
+    expect(result.closedFormPayoff).to.be.closeTo(13 / 8, 1e-12);
+    expect(result.continuousConverged).to.equal(true);
+    expect(result.eigenvector[2]).to.be.greaterThan(0.3);
+    expect(result.methodConsistency).to.equal(false);
   });
 
   it('confirms antifragility with positive curvature', function () {
@@ -107,10 +206,14 @@ describe('Solving α-AGI Governance mission dossier', function () {
     expect(incentives.mint.equalityOk).to.equal(true);
     expect(incentives.mint.agentShare).to.not.equal(null);
 
-    expect(incentives.burn.burned + incentives.burn.treasury + incentives.burn.employer).to.be.closeTo(
+    expect(incentives.burn.burned + incentives.burn.treasury + incentives.burn.employer + incentives.burn.retained).to.be.closeTo(
       incentives.burn.jobEscrow,
       1e-6,
     );
+    expect(incentives.burn.burned).to.equal(3000);
+    expect(incentives.burn.treasury).to.equal(1000);
+    expect(incentives.burn.employer).to.equal(1000);
+    expect(incentives.burn.retained).to.equal(45000);
 
     for (const severity of incentives.slashing.severities) {
       expect(severity.slashAmount).to.be.closeTo(
@@ -118,6 +221,26 @@ describe('Solving α-AGI Governance mission dossier', function () {
         1e-6,
       );
     }
+  });
+
+  it('conserves escrow at the zero-allocation and full-allocation boundaries', function () {
+    for (const burnBps of [0, 10000]) {
+      const boundary = structuredClone(mission);
+      Object.assign(boundary.incentives.burnRule, { burnBps, treasuryBps: 0, employerBps: 0 });
+      expect(() => assertValidConfig(boundary)).not.to.throw();
+      const { burn } = computeIncentiveReport(boundary);
+      expect(burn.burned).to.equal(burnBps === 0 ? 0 : burn.jobEscrow);
+      expect(burn.retained).to.equal(burnBps === 0 ? burn.jobEscrow : 0);
+      expect(burn.burned + burn.treasury + burn.employer + burn.retained).to.equal(burn.jobEscrow);
+    }
+  });
+
+  it('rejects escrow over-allocation and negative allocations during validation', function () {
+    const invalid = structuredClone(mission);
+    invalid.incentives.burnRule.burnBps = 10001;
+    expect(() => assertValidConfig(invalid)).to.throw('burn rule percentages cannot exceed 100% of escrow');
+    invalid.incentives.burnRule.burnBps = -1;
+    expect(() => assertValidConfig(invalid)).to.throw('burn rule basis points must be non-negative');
   });
 
   it('guarantees owner command coverage', function () {
