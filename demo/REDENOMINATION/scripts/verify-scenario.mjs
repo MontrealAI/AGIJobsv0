@@ -316,7 +316,7 @@ expect(
   'Job registry config missing or invalid'
 );
 const jobRegistryKeys = [
-  'jobStakeTokens',
+  'jobStakeBps',
   'minAgentStakeTokens',
   'maxJobRewardTokens',
   'jobDurationLimitSeconds',
@@ -400,18 +400,25 @@ try {
   );
   const unit = (value) =>
     planner.parseUnits(value, exportData.token.targetDecimals);
-  const bond = unit(jobRegistryConfig.jobStakeTokens),
-    reward = unit(jobRegistryConfig.maxJobRewardTokens);
-  expectWarn(
-    bond > 0n,
-    'Job bond positive',
-    'Zero job bond: review the scenario admission policy'
+  const bps = planner.jobStakeBps(jobRegistryConfig.jobStakeBps);
+  const reward = unit(jobRegistryConfig.maxJobRewardTokens);
+  expect(
+    bps === exportData.modules.jobRegistry.before.jobStakeBps &&
+      bps === exportData.modules.jobRegistry.after.jobStakeBps,
+    'Dimensionless job stake rate is unchanged (0–10000 basis points)',
+    'Job stake rate changed during redenomination'
   );
-  expectWarn(
-    reward === 0n || reward >= bond,
-    'Reward cap covers job bond or is unlimited',
-    'Reward cap below job bond: review job economics'
-  );
+  if (exportData.modules.jobRegistry.after.jobStakeAtRewardCap) {
+    const bond = planner.quoteJobStake(reward, bps);
+    expect(
+      bond ===
+        BigInt(exportData.modules.jobRegistry.after.jobStakeAtRewardCap.raw),
+      'Reward-cap stake quote uses ceiling rounding in target base units',
+      'Reward-specific stake quote disagrees'
+    );
+  }
+  if (reward > 0n && !exportData.modules.jobRegistry.after.jobStakeAtRewardCap)
+    record('warn', exportData.modules.jobRegistry.after.jobStakeQuoteNote);
   expect(
     planner.integer(stakeManagerConfig.unbondingPeriodSeconds, 'unbonding') >
       0n,

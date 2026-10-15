@@ -89,7 +89,9 @@ export function PoliciesPanel({
         <div className="stat-grid">
           <div className="stat-card">
             <h3>Future-job stake rate</h3>
-            <p>{formatLabel(snapshot?.onChain.jobRegistry?.jobStakeRateLabel)}</p>
+            <p>
+              {formatLabel(snapshot?.onChain.jobRegistry?.jobStakeRateLabel)}
+            </p>
           </div>
           <div className="stat-card">
             <h3>Max Reward</h3>

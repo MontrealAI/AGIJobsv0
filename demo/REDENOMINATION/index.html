@@ -587,8 +587,18 @@
 
         const jobEntries = [
           {
-            label: 'Job stake requirement',
-            value: formatTokenDisplay(jobConfig?.jobStakeTokens),
+            label: 'Job stake rate (owner-adjustable 0–10000 bps)',
+            value: `${jobConfig.jobStakeBps} bps (${
+              jobConfig.jobStakeBps / 100
+            }%)`,
+          },
+          {
+            label: 'Stake quote at reward cap',
+            value:
+              exportData.modules.jobRegistry.after.jobStakeAtRewardCap
+                ?.formatted ??
+              exportData.modules.jobRegistry.after.jobStakeQuoteNote ??
+              'Unlimited reward cap; quote each offered reward separately',
           },
           {
             label: 'Minimum agent stake',
@@ -815,7 +825,7 @@
       ])
         .then(([scenario, translations, exportData]) => {
           if (
-            exportData.meta?.version !== '2.0.0' ||
+            exportData.meta?.version !== '3.0.0' ||
             !exportData.configSnapshots
           )
             throw new Error(
@@ -823,7 +833,19 @@
             );
           translationState.languages = translations.languages ?? ['en'];
           translationState.strings = translations.strings ?? { en: {} };
-          state.jobConfig = exportData.configSnapshots.jobRegistry;
+          const job = exportData.configSnapshots.jobRegistry;
+          if (
+            !Number.isInteger(job?.jobStakeBps) ||
+            job.jobStakeBps < 0 ||
+            job.jobStakeBps > 10000 ||
+            Object.keys(job).some(
+              (key) => key.startsWith('jobStake') && key !== 'jobStakeBps'
+            )
+          )
+            throw new Error(
+              'Invalid job stake policy; regenerate the plan with jobStakeBps.'
+            );
+          state.jobConfig = job;
           state.stakeConfig = exportData.configSnapshots.stakeManager;
           state.exportData = exportData ?? {};
           const navigatorLang = navigator.language?.slice(0, 2).toLowerCase();
@@ -919,8 +941,7 @@
             aria-live="polite"
             aria-label="Governed redenomination orchestration graph"
           >
-            flowchart TD
-            Loading["Loading Mermaid orchestration…"]
+            flowchart TD Loading["Loading Mermaid orchestration…"]
           </div>
         </div>
       </section>

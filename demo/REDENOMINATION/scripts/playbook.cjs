@@ -6,6 +6,7 @@ const ROOT = path.resolve(__dirname, '../../..');
 const DEMO = path.resolve(__dirname, '..');
 const UINT256_MAX = (1n << 256n) - 1n;
 const UINT96_MAX = (1n << 96n) - 1n;
+const UINT128_MAX = (1n << 128n) - 1n;
 const SOURCE_FILES = [
   'agialpha.json',
   'owner-control.json',
@@ -31,6 +32,20 @@ function integer(value, label, max = UINT256_MAX) {
   const result = BigInt(value);
   if (result > max) throw new Error(`${label}: exceeds supported range`);
   return result;
+}
+function jobStakeBps(value) {
+  if (!Number.isInteger(value) || value < 0 || value > 10000)
+    throw new Error('jobStakeBps must be an integer from 0 to 10000');
+  return value;
+}
+function quoteJobStake(reward, bps) {
+  reward = integer(reward, 'job reward: contract uint128', UINT128_MAX);
+  const rate = BigInt(jobStakeBps(bps));
+  return integer(
+    (reward * rate + 9999n) / 10000n,
+    'quoted job stake: contract uint96',
+    UINT96_MAX
+  );
 }
 function decimals(value, label = 'decimals') {
   const result = integer(value, label, 77n);
@@ -194,9 +209,16 @@ function percentageTotal(config, keys, label) {
 function buildPlaybook(inputs, supplied = {}) {
   const options = { ...defaults(), ...supplied };
   const [token, owner, stake, job, fee] = inputs.configs;
+  for (const key of Object.keys(job)) {
+    if (key.startsWith('jobStake') && key !== 'jobStakeBps')
+      throw new Error(
+        `Legacy or ambiguous ${key} is unsupported; use jobStakeBps`
+      );
+  }
   inputs.configs.forEach((config, index) =>
     validateConfig(config, SOURCE_FILES[index])
   );
+  const stakeBps = jobStakeBps(job.jobStakeBps);
   const currentDecimals = decimals(token.decimals);
   const targetDecimals = decimals(options.newDecimals ?? currentDecimals);
   const currentSymbol = token.symbol;
@@ -325,7 +347,7 @@ function buildPlaybook(inputs, supplied = {}) {
         afterStake
       );
   }
-  for (const key of ['jobStake', 'minAgentStake', 'maxJobReward'])
+  for (const key of ['minAgentStake', 'maxJobReward'])
     amount(job, jobDraft, `${key}Tokens`, key, key, beforeJob, afterJob, true);
   for (const [src, before, after] of [
     [stake, beforeStake, afterStake],
@@ -334,6 +356,7 @@ function buildPlaybook(inputs, supplied = {}) {
     for (const [key, value] of Object.entries(src)) {
       if (
         key.endsWith('Pct') ||
+        key === 'jobStakeBps' ||
         key.endsWith('Seconds') ||
         key === 'maxActiveJobsPerAgent'
       )
@@ -350,8 +373,11 @@ function buildPlaybook(inputs, supplied = {}) {
       if (s[key] && rawOf(s, key) === 0n)
         throw new Error(`${key} must be positive`);
     }
-    for (const key of ['jobStake', 'minAgentStake'])
-      integer(rawOf(j, key), `${key}: contract uint96`, UINT96_MAX);
+    integer(
+      rawOf(j, 'minAgentStake'),
+      'minAgentStake: contract uint96',
+      UINT96_MAX
+    );
     for (const [maximum, minimum] of [
       ['maxStakePerAddress', 'minStake'],
       ['stakeRecommendations.max', 'stakeRecommendations.min'],
@@ -361,24 +387,46 @@ function buildPlaybook(inputs, supplied = {}) {
         throw new Error(`${maximum} is below ${minimum}`);
     }
   }
+  // Quotes are recomputed from each reward in its own units. Never scale an
+  // already-rounded quote or treat the reward cap as a fixed job bond.
+  for (const [values, precision, symbol] of [
+    [beforeJob, currentDecimals, currentSymbol],
+    [afterJob, targetDecimals, options.newSymbol],
+  ]) {
+    const reward = rawOf(values, 'maxJobReward');
+    if (reward === 0n) continue; // Zero means unlimited, not a zero-reward job.
+    const rawQuote = (reward * BigInt(stakeBps) + 9999n) / 10000n;
+    if (reward > UINT128_MAX || rawQuote > UINT96_MAX) {
+      values.jobStakeQuoteNote =
+        'No quote at this reward cap: the reward exceeds uint128 or its stake exceeds uint96. Quote a supported individual reward.';
+      continue;
+    }
+    const quoted = snapshot(quoteJobStake(reward, stakeBps), precision, symbol);
+    values.jobStakeAtRewardCap = {
+      ...quoted,
+      reward: { ...values.maxJobReward },
+      rounding: 'ceil',
+      formatted: `${quoted.formatted} for reward ${values.maxJobReward.formatted} (rounded up)`,
+    };
+  }
   // These relationships are operator choices, not contract validity constraints.
-  if (
-    rawOf(afterJob, 'maxJobReward') &&
-    rawOf(afterJob, 'maxJobReward') < rawOf(afterJob, 'jobStake')
-  )
+  const cappedStake = rawOf(afterJob, 'jobStakeAtRewardCap');
+  if (afterJob.jobStakeQuoteNote)
+    policyObservations.push(afterJob.jobStakeQuoteNote);
+  if (!rawOf(afterJob, 'maxJobReward') && stakeBps > 0)
     policyObservations.push(
-      'Reward cap is below the job bond; review job economics.'
+      'Reward cap is unlimited; quote job stake separately for each offered reward.'
     );
-  if (rawOf(afterJob, 'minAgentStake') < rawOf(afterJob, 'jobStake'))
+  if (rawOf(afterJob, 'minAgentStake') < cappedStake)
     policyObservations.push(
-      'Agent minimum is below the job bond; review admission and available stake.'
+      'Agent minimum is below the stake quoted at the reward cap; review admission and available stake.'
     );
   if (
     rawOf(afterStake, 'roleMinimums.agent') &&
-    rawOf(afterStake, 'roleMinimums.agent') < rawOf(afterJob, 'jobStake')
+    rawOf(afterStake, 'roleMinimums.agent') < cappedStake
   )
     policyObservations.push(
-      'Agent role override is below the job bond; review role policy.'
+      'Agent role override is below the stake quoted at the reward cap; review role policy.'
     );
   if (
     rawOf(afterStake, 'roleMinimums.validator') &&
@@ -417,7 +465,7 @@ function buildPlaybook(inputs, supplied = {}) {
       generatedAt: new Date().toISOString(),
       generator: 'demo/REDENOMINATION/scripts/playbook.cjs',
       scenario: options.scenario,
-      version: '2.0.0',
+      version: '3.0.0',
       mode: 'planning-only',
       source: 'local configuration; no on-chain state queried',
       liveProvider: false,
@@ -473,7 +521,7 @@ function buildPlaybook(inputs, supplied = {}) {
         before: beforeJob,
         after: afterJob,
         summary:
-          'Proposed nominal thresholds. Existing escrow and obligations are not changed by this generator.',
+          'Token thresholds are converted; jobStakeBps stays dimensionless and unchanged. Reward-specific stake quotes round up in each denomination. Existing jobs retain their original stake snapshots.',
       },
       feePool: {
         before: { burnPct: fee.burnPct, rewardRole: fee.rewardRole },
@@ -545,6 +593,7 @@ function buildPlaybook(inputs, supplied = {}) {
       'For exact conversion: targetRaw × factor × 10^currentDecimals = sourceRaw × 10^targetDecimals.',
       'For floor conversion, retain the exact remainder fraction for every affected value; do not discard liabilities.',
       'Fees, slashing splits, duration limits and unrelated configuration remain unchanged.',
+      'jobStakeBps remains unchanged (0–10000); each new job stake is ceil(rewardRaw × jobStakeBps / 10000), quoted in its reward denomination.',
       'Reject precision loss by default and prevent positive thresholds from silently becoming zero.',
       'Independent validation, authorization and chain finality remain separate from agent execution.',
     ],
@@ -667,6 +716,8 @@ module.exports = {
   SOURCE_FILES,
   UINT256_MAX,
   integer,
+  jobStakeBps,
+  quoteJobStake,
   parseUnits,
   formatUnits,
   convert,

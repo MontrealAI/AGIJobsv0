@@ -20,16 +20,16 @@ The planner and both dashboards operate without a provider connection. Diagram r
 
 ## Commands and outputs
 
-| Command | What it actually does |
-| --- | --- |
-| `npm run demo:redenomination` | Prints the mission transcript and original graph; does not execute its narrative |
-| `npm run demo:redenomination:control-room` | Generates a plan, then serves both dashboards locally |
-| `npm run demo:redenomination:export -- --current-supply 42000000` | Generates proposed configurations and a JSON plan with an illustrative supply conversion |
-| `npm run demo:redenomination:verify` | Checks assets, exact arithmetic, input hashes, preserved policies and agreement between the plan and drafts |
-| `npm run demo:redenomination:owner-console` | Presents draft parameters, safe preview commands and approval requirements |
-| `npm run demo:redenomination:mission-control` | Presents the mission, phases, governance, timeline, invariants, graph and verification steps |
-| `npm run demo:redenomination:guardian-drill` | Checks saved artifacts and prints pause, parameter and dispute rehearsals; does not perform them |
-| `node --test demo/REDENOMINATION/tests/*.test.cjs` | Runs regression and negative-path tests without external dependencies |
+| Command                                                           | What it actually does                                                                                       |
+| ----------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `npm run demo:redenomination`                                     | Prints the mission transcript and original graph; does not execute its narrative                            |
+| `npm run demo:redenomination:control-room`                        | Generates a plan, then serves both dashboards locally                                                       |
+| `npm run demo:redenomination:export -- --current-supply 42000000` | Generates proposed configurations and a JSON plan with an illustrative supply conversion                    |
+| `npm run demo:redenomination:verify`                              | Checks assets, exact arithmetic, input hashes, preserved policies and agreement between the plan and drafts |
+| `npm run demo:redenomination:owner-console`                       | Presents draft parameters, safe preview commands and approval requirements                                  |
+| `npm run demo:redenomination:mission-control`                     | Presents the mission, phases, governance, timeline, invariants, graph and verification steps                |
+| `npm run demo:redenomination:guardian-drill`                      | Checks saved artifacts and prints pause, parameter and dispute rehearsals; does not perform them            |
+| `node --test demo/REDENOMINATION/tests/*.test.cjs`                | Runs regression and negative-path tests without external dependencies                                       |
 
 The consoles print their complete review when stdin/stdout is not a terminal or `NON_INTERACTIVE=1`. Script paths are anchored to the repository, so direct `node /absolute/path/to/script` invocation works from other directories. Root `package.json` retains all existing command names; the two older TypeScript entry points remain compatibility wrappers.
 
@@ -47,18 +47,21 @@ All arithmetic uses `BigInt`. Amounts in JSON are decimal strings. Fields ending
 
 The planner checks configured values against the existing [stake owner planner](../../scripts/v2/lib/stakeManagerPlan.ts), [job owner planner](../../scripts/v2/lib/jobRegistryPlan.ts) and contract limits:
 
-| Check | Rule |
-| --- | --- |
-| Owner slashing policy | Employer + treasury + validator slashing reward must be **at most 100%**; an unallocated remainder is valid |
-| Contract slash distribution | Employer + treasury + any explicitly configured operator/burn slash shares must be at most 100%; the contract handles validator rewards separately |
-| Fee policies | Stake fee + burn + validator reward, and job fee + validator reward, must each be at most 100% |
-| Job bond and agent minimum | Both source and converted raw values must fit `uint96`; other converted amounts must fit `uint256` |
-| Positive policies | Global minimum stake, an explicitly configured recommendation minimum, and unbonding period must be positive; `maxAGITypes` must be 1–50 |
-| Independent role choices | Zero disables a role override. Validator and agent overrides need not be ordered; economic relationships appear as review observations instead of invalid-configuration errors |
+| Check                       | Rule                                                                                                                                                                                     |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Owner slashing policy       | Employer + treasury + validator slashing reward must be **at most 100%**; an unallocated remainder is valid                                                                              |
+| Contract slash distribution | Employer + treasury + any explicitly configured operator/burn slash shares must be at most 100%; the contract handles validator rewards separately                                       |
+| Fee policies                | Stake fee + burn + validator reward, and job fee + validator reward, must each be at most 100%                                                                                           |
+| Job stake rate and quotes   | `jobStakeBps` is an explicit integer from 0–10000, unchanged by redenomination. Quotes use `ceil(rewardRaw × jobStakeBps / 10000)`; rewards fit `uint128` and quoted stakes fit `uint96` |
+| Agent minimum               | Both source and converted raw values must fit `uint96`; other converted amounts must fit `uint256`                                                                                       |
+| Positive policies           | Global minimum stake, an explicitly configured recommendation minimum, and unbonding period must be positive; `maxAGITypes` must be 1–50                                                 |
+| Independent role choices    | Zero disables a role override. Validator and agent overrides need not be ordered; economic relationships appear as review observations instead of invalid-configuration errors           |
 
 These checks use the owner configuration's **whole percentages**. They do not resolve omitted settings or current on-chain state. The owner planner's combined slashing rule is stricter than the contract's separate validator-reward bound; keep that distinction when commissioning an actual update. Nonzero stake caps and ceilings must cover their corresponding minimum/floor. `autoStake.threshold` is a **dispute count**, not a token amount; counts, weights, temperature/Hamiltonian thresholds and time windows remain unchanged. Only its token floor and ceiling are converted.
 
-For example, **42,000,000 AGIALPHA → 42,000 AGIΩ** with factor 1,000. If precision changes from 18 to 6, the resulting supply is `42000000000` new base units. The default source configuration produces a `0.001 AGIΩ` job bond, `0.1 AGIΩ` agent-role minimum and `1.0 AGIΩ` validator-role minimum. These are illustrative local configuration values, not chain observations.
+A zero `jobStakeBps` disables the percentage stake and remains zero. Legacy `jobStake`/`jobStakeTokens` and ambiguous stake-policy fields are rejected, including when mixed with `jobStakeBps`; missing rates are not inferred. Schema v3 rejects old fixed-bond exports. The reward-cap quote is illustrative: a zero cap means unlimited, so no fixed quote is shown. A cap above the contract’s concrete reward/stake quote range remains a valid upper guardrail; the plan preserves it and displays an explicit unavailable-quote note. Individual offered rewards still require valid quotes. Quotes are recomputed from the reward in each denomination, never scaled after rounding. Existing jobs keep their captured stake obligations.
+
+For example, **42,000,000 AGIALPHA → 42,000 AGIΩ** with factor 1,000. If precision changes from 18 to 6, the resulting supply is `42000000000` new base units. The default source configuration keeps the owner-adjustable `1000` basis-point (10%) job stake policy unchanged. A reward of `1000 AGIALPHA` becomes `1.0 AGIΩ`; its ceiling-rounded stake quote is `100 AGIALPHA` before and `0.1 AGIΩ` after conversion. The agent-role minimum is `0.1 AGIΩ` and validator-role minimum is `1.0 AGIΩ`. These are illustrative local configuration values, not chain observations.
 
 ```bash
 npm run demo:redenomination:export -- --ratio 1000 --new-decimals 6 --symbol AGIOMEGA --current-supply 42000000
@@ -75,11 +78,11 @@ Changing a symbol or precision here does **not** replace the token address, alte
 
 The opportunity includes lawful work performed through a keyboard, mouse and screen: research, spreadsheets, document preparation, software QA, reconciliation and business application workflows. Redenomination is one concrete job category. Measure success through accepted outcomes, task-specific quality, cost, duration and recovery evidence; the ability to operate a UI alone does not prove reliable completion of every human job.
 
-| Execution surface | Supported path |
-| --- | --- |
-| OpenClaw with native Codex Computer Use, managed browser, code, files and approved integrations | Use the existing repository Responses adapter, dedicated worker profile, exact-task admission and persistent dispatch journal |
-| ChatGPT Work with enabled Computer Use | An operator carries out the scoped task and exports the candidate files for independent review; no remote Work API or automated login is invented |
-| OpenAI API computer-use tools | Commission a separate runtime that supplies the environment and handles tool actions, exposed through an approved worker endpoint |
+| Execution surface                                                                               | Supported path                                                                                                                                    |
+| ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| OpenClaw with native Codex Computer Use, managed browser, code, files and approved integrations | Use the existing repository Responses adapter, dedicated worker profile, exact-task admission and persistent dispatch journal                     |
+| ChatGPT Work with enabled Computer Use                                                          | An operator carries out the scoped task and exports the candidate files for independent review; no remote Work API or automated login is invented |
+| OpenAI API computer-use tools                                                                   | Commission a separate runtime that supplies the environment and handles tool actions, exposed through an approved worker endpoint                 |
 
 Read [the integration and recovery guide](../../docs/computer-work.md) and [the working browser lab](../One-Box/computer-work/README.md). The lab exercises real browser interactions with deterministic worker decisions; it is not a live-provider benchmark. Work tools and OpenClaw tools depend on actual versions, account access, plugins and OS permissions. OpenClaw sandboxing is not automatically enabled by describing a task as isolated. Use dedicated accounts/profiles, enforced app/origin policy, bounded execution and explicit approval controls in the worker environment. Never put signing keys in that environment.
 
@@ -139,15 +142,15 @@ The larger original job-lifecycle flowchart remains verbatim in [scenario.json](
 
 ## Production acceptance requirements
 
-| Area | Evidence required before live approval |
-| --- | --- |
-| Source of truth | Chain ID, token address and precision, snapshot block, byte-hashed input ledger and independently reconciled liabilities |
-| Migration | Reviewed token/contract strategy, account-level allocation and dust policy, supply conservation, replay/idempotency controls, audited migration code and recovery plan |
-| Authority | Actual owner, multisig, timelock and contract permissions; independent signers and recorded authorization |
-| Worker | Commissioned versions, isolated accounts, tool/network policy, cancellation, cost/time limits, prompt-injection and interruption tests |
-| Acceptance | Task-specific independent reviewer, artifact integrity, source/application verification, rejection/correction and dispute procedure |
-| Settlement | Actual transaction receipts, final contract outcomes and chain finality; no inference from a local report or provider response |
-| Operations | Monitored events, durable dispatch/settlement journals, backups, incident rehearsal and a staged rollout with named operators |
+| Area            | Evidence required before live approval                                                                                                                                 |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Source of truth | Chain ID, token address and precision, snapshot block, byte-hashed input ledger and independently reconciled liabilities                                               |
+| Migration       | Reviewed token/contract strategy, account-level allocation and dust policy, supply conservation, replay/idempotency controls, audited migration code and recovery plan |
+| Authority       | Actual owner, multisig, timelock and contract permissions; independent signers and recorded authorization                                                              |
+| Worker          | Commissioned versions, isolated accounts, tool/network policy, cancellation, cost/time limits, prompt-injection and interruption tests                                 |
+| Acceptance      | Task-specific independent reviewer, artifact integrity, source/application verification, rejection/correction and dispute procedure                                    |
+| Settlement      | Actual transaction receipts, final contract outcomes and chain finality; no inference from a local report or provider response                                         |
+| Operations      | Monitored events, durable dispatch/settlement journals, backups, incident rehearsal and a staged rollout with named operators                                          |
 
 The local tests establish bounded arithmetic, interface and fixture behavior. They do not establish live-provider reliability, security-audit completion, a funded marketplace, deployed migration correctness or universal job capability. All changes land through a PR with the repository's required checks green before merge. See [RUNBOOK.md](../../RUNBOOK.md), [OperatorRunbook.md](../../OperatorRunbook.md), [governance](../../docs/governance.md), [system pause](../../docs/system-pause.md) and [observability](../../docs/institutional-observability.md).
 
@@ -155,20 +158,20 @@ Safe pause/unpause examples in the generated plan call the actual `systemPauseAc
 
 ## Troubleshooting
 
-| Symptom | Action |
-| --- | --- |
-| `Non-exact conversion` | Increase target precision or explicitly review `--rounding floor` and every residual; never suppress the error blindly |
-| Positive threshold would become zero | Choose a representable ratio/precision or separately redesign the policy |
-| `contract uint96` range error | Reduce target precision or redesign the stake amount through a separately reviewed policy change; a mathematically valid `uint256` conversion may still exceed this contract field |
-| Policy observation | Review the economic or role relationship; this is an operator choice, not a failed contract-bound check |
-| Local same-origin access required | Open the printed `127.0.0.1` URL directly; proxy hosts and requests from another website are rejected |
-| Verifier reports mismatched source/draft | Review source changes, regenerate the plan, then rerun verification |
-| Missing export or unsupported plan version | Run `npm run demo:redenomination:export` and reload the dashboard |
-| Port in use | Stop the old server or choose `PORT`; update and re-admit any task using the old origin |
-| Diagram does not render | Open the bundled SVG or preserved source; allow or locally mirror the pinned renderer if desired |
-| CLI waits for input | Use `NON_INTERACTIVE=1` for automation; all consoles also detect non-terminal input |
-| Worker not admitted | Inspect the exact normalized task hash and protected profile; do not weaken admission |
-| Worker outcome unknown | Preserve its journal and inspect actual effects before authorizing a new attempt |
+| Symptom                                    | Action                                                                                                                                                                             |
+| ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Non-exact conversion`                     | Increase target precision or explicitly review `--rounding floor` and every residual; never suppress the error blindly                                                             |
+| Positive threshold would become zero       | Choose a representable ratio/precision or separately redesign the policy                                                                                                           |
+| `contract uint96` range error              | Reduce target precision or redesign the stake amount through a separately reviewed policy change; a mathematically valid `uint256` conversion may still exceed this contract field |
+| Policy observation                         | Review the economic or role relationship; this is an operator choice, not a failed contract-bound check                                                                            |
+| Local same-origin access required          | Open the printed `127.0.0.1` URL directly; proxy hosts and requests from another website are rejected                                                                              |
+| Verifier reports mismatched source/draft   | Review source changes, regenerate the plan, then rerun verification                                                                                                                |
+| Missing export or unsupported plan version | Run `npm run demo:redenomination:export` and reload the dashboard                                                                                                                  |
+| Port in use                                | Stop the old server or choose `PORT`; update and re-admit any task using the old origin                                                                                            |
+| Diagram does not render                    | Open the bundled SVG or preserved source; allow or locally mirror the pinned renderer if desired                                                                                   |
+| CLI waits for input                        | Use `NON_INTERACTIVE=1` for automation; all consoles also detect non-terminal input                                                                                                |
+| Worker not admitted                        | Inspect the exact normalized task hash and protected profile; do not weaken admission                                                                                              |
+| Worker outcome unknown                     | Preserve its journal and inspect actual effects before authorizing a new attempt                                                                                                   |
 
 ## Files and validation
 

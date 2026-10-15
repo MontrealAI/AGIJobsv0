@@ -53,7 +53,9 @@ describe('reviewed validator service with current deployed contracts', function 
       await deployImplementations('JobRegistry', Registry.runner)
     );
     await actualRegistry.setIdentityRegistry(await identity.getAddress());
-    await actualRegistry.setJobParameters(1000, 0);
+    await actualRegistry.setMaxJobReward(1000);
+    await actualRegistry.setJobStakeBps(1000);
+    assert.equal(await actualRegistry.quoteJobStake(100), 10n);
     const Validation = await ethers.getContractFactory(
       'contracts/v2/ValidationModule.sol:ValidationModule'
     );
@@ -81,6 +83,7 @@ describe('reviewed validator service with current deployed contracts', function 
         ethers.id('independently reviewed work specification'),
         'ipfs://reviewed-spec'
       );
+    assert.equal((await actualRegistry.jobs(1)).stake, 10n);
     await actualRegistry.connect(agent).applyForJob(1, 'agent', []);
     await actualRegistry
       .connect(agent)

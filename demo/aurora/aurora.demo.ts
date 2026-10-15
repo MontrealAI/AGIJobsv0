@@ -957,10 +957,6 @@ async function main() {
     (acc, job) => acc + job.rewardAmount,
     0n
   );
-  const maxReward = resolvedJobs.reduce(
-    (acc, job) => (job.rewardAmount > acc ? job.rewardAmount : acc),
-    0n
-  );
   const maxWorkerStake = resolvedJobs.reduce(
     (acc, job) => (job.workerStakeAmount > acc ? job.workerStakeAmount : acc),
     0n
@@ -970,10 +966,20 @@ async function main() {
       job.validatorStakeAmount > acc ? job.validatorStakeAmount : acc,
     0n
   );
+  // Prospective quotes fund this local fixture; each mined snapshot is checked again below.
+  // The owner rate is never lowered to make a demo fit its funding.
+  const jobStakeBps = await jobRegistry.jobStakeBps();
+  const quotedStakes: bigint[] = await Promise.all(
+    resolvedJobs.map((job) => jobRegistry.quoteJobStake(job.rewardAmount))
+  );
+  const fundedWorkerStake = quotedStakes.reduce(
+    (maximum, amount) => (amount > maximum ? amount : maximum),
+    maxWorkerStake
+  );
   const computedMint = [
     baselineMint,
-    totalReward + maxWorkerStake,
-    maxWorkerStake + maxValidatorStake,
+    totalReward + fundedWorkerStake,
+    fundedWorkerStake + maxValidatorStake,
   ].reduce((acc, value) => (value > acc ? value : acc));
   const mintAmount = computedMint;
 
@@ -1095,23 +1101,6 @@ async function main() {
     }
   );
 
-  const originalJobStake = await jobRegistry.jobStake();
-  const fallbackJobStake = maxReward / 10n > 0n ? maxReward / 10n : 1n;
-  const adjustedJobStake =
-    fallbackJobStake > maxWorkerStake ? maxWorkerStake : fallbackJobStake;
-
-  await recordForwardGovernanceCall(
-    'JobRegistry',
-    addresses.JobRegistry,
-    jobRegistry.interface,
-    'setJobStake',
-    [adjustedJobStake],
-    {
-      notes: 'Set worker collateral within the funded demo stake',
-      before: { stake: formatUnits(originalJobStake, decimals) },
-      after: { stake: formatUnits(adjustedJobStake, decimals) },
-    }
-  );
   await recordForwardGovernanceCall(
     'JobRegistry',
     addresses.JobRegistry,
@@ -1303,12 +1292,12 @@ async function main() {
 
   const workerStakeTx = await stakeManager
     .connect(worker)
-    .acknowledgeAndDeposit(agentRole, maxWorkerStake);
+    .acknowledgeAndDeposit(agentRole, fundedWorkerStake);
   const workerStakeReceipt = await workerStakeTx.wait();
   stakeEntries.push({
     role: 'agent',
     address: worker.address,
-    amount: formatUnits(maxWorkerStake, decimals),
+    amount: formatUnits(fundedWorkerStake, decimals),
     txHash: workerStakeReceipt?.hash || workerStakeTx.hash,
   });
 
@@ -1338,6 +1327,8 @@ async function main() {
     slug: string;
     jobId: string;
     reward: string;
+    collateral: string;
+    prospectiveRateBps: string;
     deadline: string;
     resultURI: string;
     txHash: string;
@@ -1400,10 +1391,42 @@ async function main() {
     if (jobId === 0n) {
       throw new Error('Job creation receipt is missing its JobCreated event');
     }
+    const snapshot = await jobRegistry.jobs(jobId);
+    const currentStake = await stakeManager.stakeOf(worker.address, agentRole);
+    const lockedStake = await stakeManager.lockedStakes(worker.address);
+    const roleMinimum = await stakeManager.roleMinimumStake(agentRole);
+    const admissionMinimum =
+      roleMinimum === 0n ? await stakeManager.minStake() : roleMinimum;
+    const requiredStake = [
+      lockedStake + snapshot.stake,
+      admissionMinimum,
+      await stakeManager.minStakeFloor(),
+      await jobRegistry.minAgentStake(),
+    ].reduce((maximum, amount) => (amount > maximum ? amount : maximum), 0n);
+    if (requiredStake > currentStake) {
+      const shortfall = requiredStake - currentStake;
+      if ((await token.balanceOf(worker.address)) < shortfall) {
+        throw new Error(
+          'Worker cannot fund mined collateral and independent admission minima'
+        );
+      }
+      const tx = await stakeManager
+        .connect(worker)
+        .acknowledgeAndDeposit(agentRole, shortfall);
+      const receipt = await tx.wait();
+      stakeEntries.push({
+        role: 'agent',
+        address: worker.address,
+        amount: formatUnits(shortfall, decimals),
+        txHash: receipt?.hash || tx.hash,
+      });
+    }
     const postRecord = {
       jobId: jobId.toString(),
       txHash: postReceipt?.hash || postTx.hash,
       reward: formatUnits(job.rewardAmount, decimals),
+      collateral: formatUnits(snapshot.stake, decimals),
+      prospectiveRateBps: jobStakeBps.toString(),
       deadline: deadline.toString(),
       specHash,
       specPath: job.specPath,
@@ -1418,6 +1441,12 @@ async function main() {
       .connect(worker)
       .acknowledgeAndApply(jobId, job.agentSubdomain, []);
     await applyTx.wait();
+    if (
+      (await stakeManager.lockedStakes(worker.address)) !==
+      lockedStake + snapshot.stake
+    ) {
+      throw new Error('Application did not lock the mined collateral snapshot');
+    }
 
     const resultHash = ethers.keccak256(ethers.toUtf8Bytes(job.resultUri));
     const submitTx = await jobRegistry
@@ -1561,6 +1590,12 @@ async function main() {
       );
     }
 
+    if ((await stakeManager.lockedStakes(worker.address)) !== lockedStake) {
+      throw new Error(
+        'Successful settlement did not release exactly the job collateral'
+      );
+    }
+
     const payouts: Record<
       string,
       { before: string; after: string; delta: string }
@@ -1617,6 +1652,8 @@ async function main() {
       slug: job.slug,
       jobId: jobId.toString(),
       reward: formatUnits(job.rewardAmount, decimals),
+      collateral: formatUnits(snapshot.stake, decimals),
+      prospectiveRateBps: jobStakeBps.toString(),
       deadline: deadline.toString(),
       resultURI: job.resultUri,
       txHash: postReceipt?.hash || postTx.hash,
@@ -1674,19 +1711,6 @@ async function main() {
         validator: formatUnits(stakeMinimumBaseline.validator, decimals),
         platform: formatUnits(stakeMinimumBaseline.platform, decimals),
       },
-    }
-  );
-
-  await recordForwardGovernanceCall(
-    'JobRegistry',
-    addresses.JobRegistry,
-    jobRegistry.interface,
-    'setJobStake',
-    [originalJobStake],
-    {
-      notes: 'Return job stake policy to its baseline value',
-      before: { stake: formatUnits(adjustedJobStake, decimals) },
-      after: { stake: formatUnits(originalJobStake, decimals) },
     }
   );
 
