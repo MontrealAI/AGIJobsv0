@@ -17,7 +17,10 @@ export NODE_ENV="${NODE_ENV:-production}"
 npm run demo:agi-os:first-class -- "$@"
 
 # The separate local replay does not consume ASI_TAKEOFF_PLAN_PATH. Pin its
-# supported shared fixture rather than implying a branded-plan conversion.
-printf '%s\n' 'Executing a separate localhost ASI replay with the shared mission@v2.json fixture.'
-AURORA_MISSION_CONFIG="$ROOT/demo/asi-takeoff/config/mission@v2.json" npm run demo:asi-takeoff:local
+# selected Aurora mission config, with the shared fixture as its default.
+printf '%s\n' 'Executing a separate localhost ASI replay using AURORA_MISSION_CONFIG (shared mission@v2.json by default).'
+(
+  unset ASI_TAKEOFF_PLAN_PATH
+  AURORA_MISSION_CONFIG="${AURORA_MISSION_CONFIG:-$ROOT/demo/asi-takeoff/config/mission@v2.json}" npm run demo:asi-takeoff:local
+)
 printf '%s\n' 'Selected pipelines completed. Inspect separate evidence; no production qualification is implied.'

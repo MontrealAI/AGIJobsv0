@@ -532,7 +532,7 @@ const callers = [
 function shellFixture(
   t,
   caller,
-  { failScript = '', dependencies = true } = {}
+  { failScript = '', dependencies = true, missionConfig } = {}
 ) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'first-class-inert-'));
   t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
@@ -584,6 +584,9 @@ function shellFixture(
     CI: 'true',
     ASTRAL_OS_AUTO: 'true',
     IMPERATRIX_SKIP_INSTALL: '0',
+    ...(missionConfig !== undefined
+      ? { AURORA_MISSION_CONFIG: missionConfig }
+      : {}),
   };
   return {
     repo,
@@ -687,12 +690,34 @@ for (const [caller, profile] of callers) {
             : 'meta-agentic-alpha-agi/project-plan.meta-alpha.json'
         )
       );
+      assert.equal(commands.at(-1).plan, undefined);
       assert.equal(
         commands.at(-1).mission,
         path.join(f.repo, 'demo/asi-takeoff/config/mission@v2.json')
       );
     }
   });
+  if (profile !== 'first-class') {
+    test(`${caller}: local replay clears only the scenario plan and preserves a selected mission config`, (t) => {
+      const missionConfig = '/reviewed/selected mission with spaces.json';
+      const f = shellFixture(t, caller, { missionConfig });
+      const result = f.invoke(execute);
+      assert.equal(result.status, 0, result.stderr);
+      const commands = f.commands();
+      assert.ok(
+        commands[0].plan.endsWith(
+          profile === 'alpha-meta'
+            ? '/alpha-meta/config/project-plan.alpha-meta.json'
+            : '/meta-agentic-alpha-agi/project-plan.meta-alpha.json'
+        )
+      );
+      assert.equal(commands[0].mission, missionConfig);
+      assert.equal(commands.at(-1).plan, undefined);
+      assert.equal(commands.at(-1).mission, missionConfig);
+      if (profile === 'alpha-meta')
+        assert.equal(commands[1].plan, commands[0].plan);
+    });
+  }
   test(`${caller}: missing dependencies never auto-install`, (t) => {
     const f = shellFixture(t, caller, { dependencies: false });
     assert.equal(f.invoke(execute).status, 2);
