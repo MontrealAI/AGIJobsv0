@@ -62,6 +62,33 @@ test('catalog includes design-only, nested, Unicode and supporting directories w
   );
 });
 
+test('regenerate the catalog after implementation files become tracked', (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'demo-catalog-order-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  fs.mkdirSync(path.join(root, 'demo', 'Design'), { recursive: true });
+  fs.writeFileSync(path.join(root, 'package.json'), '{"scripts":{}}');
+  fs.writeFileSync(path.join(root, 'demo', 'Design', 'README.md'), '# Design');
+  execFileSync('git', ['init', '-q', root]);
+  execFileSync('git', ['-C', root, 'add', '.']);
+  const before = render(inventory(root));
+  const code = path.join(root, 'demo', 'Design', 'run.cjs');
+  fs.writeFileSync(
+    code,
+    "throw new Error('Catalog must never execute demos');\n"
+  );
+  assert.equal(
+    render(inventory(root)),
+    before,
+    'Untracked code is not catalog evidence'
+  );
+  execFileSync('git', ['-C', root, 'add', 'demo/Design/run.cjs']);
+  const after = render(inventory(root));
+  assert.notEqual(after, before, 'The previously generated guide is now stale');
+  assert.equal(inventory(root).demos[0].kind, 'Code and guide');
+  assert.equal(updateDocument(before, after), after);
+  assert.equal(updateDocument(after, render(inventory(root))), after);
+});
+
 test('mission preflight preserves mixed committees and rejects incomplete or colliding jobs', (t) => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'demo-mission-'));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));

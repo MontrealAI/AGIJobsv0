@@ -144,7 +144,7 @@ The generated section includes every tracked top-level directory and every neste
 | [Trustless-Economic-Core-v0](Trustless-Economic-Core-v0/README.md) | Code and guide | Open the guide or source directory |
 | [validator_constellation_v0](validator_constellation_v0) | Supporting code / assets | Open the guide or source directory |
 | [Validator-Constellation-v0](Validator-Constellation-v0/README.md) | Code and guide | `demo:validator-constellation`, `demo:validator-constellation:scenario`, `demo:validator-constellation:operator-console` |
-| [zenith-sapience](zenith-sapience/README.md) | Design guide | Open the guide or source directory |
+| [zenith-sapience](zenith-sapience/README.md) | Code and guide | Open the guide or source directory |
 | [zenith-sapience-initiative-celestial-archon-governance](zenith-sapience-initiative-celestial-archon-governance/README.md) | Code and guide | `demo:zenith-sapience-celestial-archon`, `demo:zenith-sapience-celestial-archon:local` |
 | [zenith-sapience-initiative-global-governance](zenith-sapience-initiative-global-governance/README.md) | Code and guide | `demo:zenith-sapience-initiative`, `demo:zenith-sapience-initiative:local` |
 | [zenith-sapience-initiative-omega-omni-operating-system](zenith-sapience-initiative-omega-omni-operating-system/README.md) | Design guide | Open the guide or source directory |
