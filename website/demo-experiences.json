@@ -1661,30 +1661,38 @@
     "related": ["One-Box"]
   },
   "OMNI-CONCORD-ASCENSION-ATLAS": {
-    "question": "Which parts are architecture, and where can I try the related implementation?",
-    "purpose": "For readers of the project vision: study this preserved design, identify the components it proposes and continue to a concrete related implementation.",
+    "question": "What does a failed prerequisite change, and what would recovery cost?",
+    "purpose": "Rehearse a bounded maintenance dependency graph, retain completed work and inspect charged attempts before any real execution.",
     "steps": [
       {
-        "title": "Read the design",
+        "title": "Set the scenario",
+        "source": "demo/OMNI-CONCORD-ASCENSION-ATLAS/scenario.json",
+        "explanation": "Choose integer-cent budget, job dependencies, modeled durations and assumed success/failure outcomes."
+      },
+      {
+        "title": "Compare two passes",
+        "source": "demo/OMNI-CONCORD-ASCENSION-ATLAS/run.py",
+        "explanation": "The evaluator uses input-order greedy priority, unlimited modeled parallelism and assumed successful selected repairs. Failed attempts and retries are charged; completed work is retained in memory."
+      },
+      {
+        "title": "Inspect the evidence",
         "source": "demo/OMNI-CONCORD-ASCENSION-ATLAS/README.md",
-        "explanation": "This directory is documentation-only. Its architecture and ambitions are preserved; it does not contain a standalone executable demo."
-      },
-      {
-        "title": "Locate the implementation",
-        "source": "demo/atlas-conductor/README.md",
-        "explanation": "The related implementation has its own scope, prerequisites and evidence. It should not be assumed to realize every aspiration in this design."
-      },
-      {
-        "title": "Understand evidence boundaries",
-        "source": "docs/production/readiness-2026-10-03.md",
-        "explanation": "Compare demonstrated behavior with outstanding signing, integration, security review and commissioning requirements. A simulation cannot replace authentic evidence for those gates."
+        "explanation": "Review first-pass and recovered states, exact attempt ledger and input-byte digest. No physical work or settlement is performed. Original design diagrams and separate Atlas Conductor route remain preserved."
       }
     ],
-    "command": null,
-    "expected": "Open the related experience below for its guided inspection and run instructions. Reading this design does not execute or commission the proposed system.",
-    "experiment": "Choose a component from the diagram and map it to code, a test and an output in the related demo. Record any component that still has only a design description.",
-    "mode": "design",
-    "related": ["atlas-conductor"]
+    "command": "python demo/OMNI-CONCORD-ASCENSION-ATLAS/run.py --scenario demo/OMNI-CONCORD-ASCENSION-ATLAS/scenario.json",
+    "expected": "Default first pass spends 9000 cents. Assumed repair recovery completes at modeled minute 95 with 19000 spent and 1000 remaining. Exit 0 means modeled completion, 1 means blocked/failed work, 2 means invalid input. executedExternalWork and settlementApproved stay false.",
+    "experiment": "Lower the budget to 15000 cents, clear repair recovery, or introduce a dependency cycle. Inspect blocked/rejected cases and reopen your exported scenario.",
+    "mode": "stdlib",
+    "related": ["atlas-conductor", "astral-citadel"],
+    "dashboards": [
+      {
+        "title": "Open Atlas recovery rehearsal",
+        "route": "experiments/atlas/",
+        "source": "demo/OMNI-CONCORD-ASCENSION-ATLAS/web/index.html"
+      }
+    ],
+    "dashboardDescription": "EN/FR editable dependency, failure and recovery model with retained-work ledger, exact-cent costs, downloads and strict recomputed import. No wallet or external execution."
   },
   "polaris-concordat": {
     "question": "Which parts are architecture, and where can I try the related implementation?",

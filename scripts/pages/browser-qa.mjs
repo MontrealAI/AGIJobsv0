@@ -1,3 +1,4 @@
+import { verifyAtlas } from './atlas-qa.mjs';
 import { verifyStart } from './start-qa.mjs';
 import { verifyAlphaMark } from './alpha-mark-qa.mjs';
 import { verifySuccessor } from './successor-qa.mjs';
@@ -546,6 +547,7 @@ try {
   );
   await verifyPhase6({ page, context, url, artifacts, a11y, checks });
   await verifyEvidenceReview({ page, context, url, artifacts, a11y, checks });
+  await verifyAtlas({ page, context, url, artifacts, a11y, checks });
   assert.deepEqual(requests, [], 'Unexpected external network requests');
   assert.deepEqual(errors, [], 'Browser errors');
   fs.writeFileSync(

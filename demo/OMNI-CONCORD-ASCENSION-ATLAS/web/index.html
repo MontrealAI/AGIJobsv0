@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta
+      name="description"
+      content="Explore dependency failures, budgets and modeled recovery with an editable offline Atlas rehearsal."
+    />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self' data:; base-uri 'none'; form-action 'none'"
+    />
+    <title>Atlas • Recovery rehearsal</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <a class="skip" href="#main" data-t="skip">Skip to rehearsal</a>
+    <nav aria-label="Primary">
+      <a href="../../">AGI JOBS</a>
+      <div>
+        <a href="../../demos/" data-t="directory">Demo directory</a
+        ><button id="language" type="button" aria-label="Passer en français">
+          FR
+        </button>
+      </div>
+    </nav>
+    <header>
+      <p class="eyebrow" data-t="eyebrow">ATLAS / DEPENDENCIES & RECOVERY</p>
+      <h1 data-t="heading">Keep the work. Recover the plan.</h1>
+      <p class="lead" data-t="lead">
+        Change a budget, model a failed prerequisite and see what recovery would
+        cost. Every attempt stays visible.
+      </p>
+      <p class="notice" data-t="notice">
+        Offline scenario model. Job outcomes and repairs are supplied
+        assumptions. No external work, payment or settlement is performed.
+      </p>
+    </header>
+    <main id="main">
+      <noscript
+        ><p>
+          This interface requires JavaScript. / Cette interface nécessite
+          JavaScript.
+          <a
+            href="https://github.com/MontrealAI/AGIJobsv0/tree/main/demo/OMNI-CONCORD-ASCENSION-ATLAS"
+            >Read the original demo and Python launch guide / Lire le guide
+            Python.</a
+          >
+        </p></noscript
+      >
+      <form id="form">
+        <section class="panel">
+          <div class="section-head">
+            <h2 data-t="scenario">Your scenario</h2>
+            <button class="quiet" type="button" id="reset" data-t="reset">
+              Restore example
+            </button>
+          </div>
+          <label for="title" data-t="title">Scenario title</label
+          ><input id="title" maxlength="200" required />
+          <div class="pair">
+            <div>
+              <label for="budget" data-t="budget"
+                >Total budget · integer cents</label
+              ><input
+                id="budget"
+                type="number"
+                min="0"
+                max="1000000000000"
+                step="1"
+                required
+              />
+            </div>
+            <div>
+              <label for="import" data-t="import"
+                >Reopen scenario or evidence · JSON, up to 1 MB</label
+              ><input id="import" type="file" accept=".json,application/json" />
+            </div>
+          </div>
+          <p class="hint" data-t="inputNote">
+            Amounts are integer cents in your scenario’s chosen currency. Labels
+            and imported data are preserved in their original language. Inputs
+            stay in this browser tab.
+          </p>
+        </section>
+        <section class="panel">
+          <h2 data-t="jobs">Jobs & dependencies</h2>
+          <p class="hint" data-t="priority">
+            Input order gives greedy budget priority among available jobs. This
+            is not a budget optimizer.
+          </p>
+          <div id="jobs"></div>
+          <button type="button" class="quiet" id="add" data-t="add">
+            Add job</button
+          ><button type="submit" class="primary" data-t="run">
+            Recompute both passes
+          </button>
+          <p id="error" role="alert" hidden></p>
+          <p id="status" role="status" aria-live="polite"></p>
+        </section>
+      </form>
+      <section class="panel" id="result" hidden aria-labelledby="result-title">
+        <h2 id="result-title" tabindex="-1"></h2>
+        <div class="metrics" id="metrics"></div>
+        <div class="passes">
+          <section>
+            <h3 data-t="first">First pass</h3>
+            <ol id="first"></ol>
+          </section>
+          <section>
+            <h3 data-t="after">After assumed recovery</h3>
+            <ol id="after"></ol>
+          </section>
+        </div>
+        <h3 data-t="attempts">Attempt ledger</h3>
+        <ol id="attempts"></ol>
+        <p class="hint" data-t="retained">
+          Completed jobs are retained. Failed attempts and retries both consume
+          the modeled budget.
+        </p>
+        <div class="actions">
+          <button type="button" class="quiet" id="download" data-t="download">
+            Download scenario</button
+          ><button type="button" class="quiet" id="evidence" data-t="evidence">
+            Download recomputed evidence
+          </button>
+        </div>
+        <p id="digest" class="hint"></p>
+        <details>
+          <summary data-t="raw">Inspect the full result</summary>
+          <pre id="raw"></pre>
+        </details>
+      </section>
+      <section class="panel method">
+        <h2 data-t="method">Read the model carefully</h2>
+        <p data-t="assumptions">
+          Independent branches have unlimited modeled parallelism. Recovery
+          starts after the first pass’s latest attempt, and selected repairs are
+          assumed to succeed. These timings are not measured human effort or
+          observed machine runtime.
+        </p>
+        <p data-t="recovery">
+          Reopen your downloaded scenario or evidence to continue. Imported
+          results are ignored and recomputed. Changes hide stale results;
+          nothing is saved automatically.
+        </p>
+        <p>
+          <a
+            href="https://github.com/MontrealAI/AGIJobsv0/tree/main/demo/OMNI-CONCORD-ASCENSION-ATLAS"
+            data-t="source"
+            >Original demo, Python command and behavioral tests</a
+          >
+        </p>
+      </section>
+    </main>
+    <footer data-t="footer">
+      ATLAS · Bounded recovery rehearsal · No execution authority
+    </footer>
+    <script type="module" src="atlas.mjs"></script>
+  </body>
+</html>

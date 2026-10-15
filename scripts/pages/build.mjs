@@ -934,6 +934,12 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
   );
   dashboardRoutes.push(phase8Site.route);
   archiveRoutes.push(...phase8Site.archiveRoutes);
+  fs.cpSync(
+    path.join(root, 'demo/OMNI-CONCORD-ASCENSION-ATLAS/web'),
+    path.join(output, 'experiments/atlas'),
+    { recursive: true }
+  );
+  dashboardRoutes.push('experiments/atlas/');
   // Compile the same Studio shipped in the pnpm workspace, in explicit offline mode.
   const studio = path.join(root, 'demo/CULTURE-v0/apps/culture-studio');
   execFileSync(
