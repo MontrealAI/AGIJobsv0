@@ -1,3 +1,4 @@
+import { verifyEcosystemMap } from './ecosystem-map-qa.mjs';
 import { verifyStart } from './start-qa.mjs';
 import { verifyAlphaMark } from './alpha-mark-qa.mjs';
 import { verifySuccessor } from './successor-qa.mjs';
@@ -109,6 +110,7 @@ try {
     checks.push(label + ': accessibility');
   };
   await a11y('home');
+  await verifyEcosystemMap({ page, artifacts, checks });
   await verifyEcosystem({ page, context, url, artifacts, a11y, checks });
   await page
     .locator('#site-nav')
