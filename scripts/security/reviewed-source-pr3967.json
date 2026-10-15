@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "dependencyBaseline": "7b21ce05b0b18b46162da66c2f528334101f6f40",
-  "reviewedSourceCheckpoint": "f22b283959918380bd7dcc908b06371f212844c1",
+  "reviewedSourceCheckpoint": "d267cc4f326d28bdbceda55aa9242da60146aa88",
   "transitions": [
     {
       "path": "demo/alpha-agi-insight-mark/hardhat.config.ts",

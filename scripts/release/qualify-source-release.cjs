@@ -9,10 +9,11 @@ const ownPath = '.github/workflows/source-release.yml';
 const releaseVersion = '2.1.0-rc.9';
 const deployedSourceBaseline = 'b4c5b66ea05a6bb27f1f1cb197f055c179bbd38e';
 const evidenceBaseline = '9c730e0188594089e27ed0589c2b5ca57eec5cf5';
-// Reviewed combined source checkpoint, including demo and launcher sources.
+// Reachable reviewed source checkpoint after the demo, launcher, security and
+// CI-discovery corrections. This exact ancestor binds the final protected tree.
 // Compiler policy and historical deployment guards remain unchanged; publication
 // additionally requires qualification of the exact merged SHA.
-const compilerSourceBaseline = 'f22b283959918380bd7dcc908b06371f212844c1';
+const compilerSourceBaseline = 'd267cc4f326d28bdbceda55aa9242da60146aa88';
 const preservedEvidencePaths = [
   'docs/deployments/',
   'docs/deployment-addresses.json',
