@@ -37,7 +37,7 @@ def parse_scenario(raw: bytes) -> dict:
     def reject_constant(value):
         raise ValueError(f"Non-finite JSON number: {value}")
 
-    return json.loads(raw, object_pairs_hook=unique, parse_constant=reject_constant)
+    return json.loads(raw.decode("utf-8"), object_pairs_hook=unique, parse_constant=reject_constant)
 
 
 def evaluate(scenario: dict) -> dict:

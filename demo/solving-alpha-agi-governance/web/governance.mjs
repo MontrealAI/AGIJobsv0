@@ -319,7 +319,7 @@ $('import').onchange = async (event) => {
   const token = revision;
   try {
     if (file.size > 1000000) throw new Error('Scenario exceeds 1 MB');
-    const text = new TextDecoder('utf-8', { fatal: true }).decode(
+    const text = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(
       await file.arrayBuffer()
     );
     if (token !== revision) return;

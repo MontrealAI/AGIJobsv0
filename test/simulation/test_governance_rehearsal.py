@@ -17,6 +17,12 @@ spec.loader.exec_module(module)
 
 
 class GovernanceRehearsalTests(unittest.TestCase):
+    def test_parser_rejects_bom_utf16_and_malformed_utf8(self):
+        for raw in [b"\xef\xbb\xbf{}", "{}".encode("utf-16"), b"\xff{}"]:
+            with self.subTest(raw=raw), self.assertRaises(ValueError):
+                module.parse_scenario(raw)
+
+
     def setUp(self):
         self.scenario = json.loads((DEMO / "scenario.json").read_text())
 
