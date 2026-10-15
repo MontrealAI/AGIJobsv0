@@ -71,30 +71,52 @@ class Mission:
         )
 
 
-def _stable_partition(levels: Iterable[EnergyLevel], beta: float, scale: float) -> tuple[float, float]:
-    """Compute a partition function and expected energy with log-sum-exp stability."""
-
-    energies: List[float] = [level.energy * scale for level in levels]
-    if not energies:
-        return 0.0, 0.0
-
-    min_energy = min(energies)
-    weights = [
-        level.degeneracy * math.exp(-beta * (energy - min_energy))
-        for level, energy in zip(levels, energies)
-    ]
-
-    partition = sum(weights)
-    if partition == 0:
-        return 0.0, 0.0
-
-    expected_energy = sum(weight * energy for weight, energy in zip(weights, energies)) / partition
-    return partition, expected_energy
+def _stable_partition(levels: Iterable[EnergyLevel], beta: float, scale: float) -> dict[str, float | str | None]:
+    """Log-sum-exp without mislabeling shifted normalization as physical Z."""
+    rows = list(levels)
+    if not rows:
+        return {"partition_function": None, "partition_status": "not-supplied",
+                "log_partition_function": None, "shifted_normalization": None,
+                "log_weight_offset": None, "expected_energy_kj": None}
+    if not math.isfinite(beta) or not math.isfinite(scale):
+        raise ValueError("Supply finite beta/energy scaling")
+    energies, logits = [], []
+    for level in rows:
+        if type(level.degeneracy) is not int or level.degeneracy < 1:
+            raise ValueError("Energy degeneracy must be a positive integer")
+        energy = level.energy * scale
+        logit = math.log(level.degeneracy) - beta * energy
+        if not math.isfinite(energy) or not math.isfinite(logit):
+            raise ValueError("Energy and log weights must remain finite")
+        energies.append(energy)
+        logits.append(logit)
+    offset = max(logits)
+    weights = [math.exp(value - offset) for value in logits]
+    normalization = math.fsum(weights)
+    log_partition = offset + math.log(normalization)
+    if not math.isfinite(log_partition):
+        raise ValueError("Log partition exceeds finite numeric range")
+    try:
+        partition = math.exp(log_partition)
+    except OverflowError:
+        partition = None
+    status = "representable" if partition is not None and partition > 0 else (
+        "overflow" if partition is None else "underflow")
+    if status != "representable":
+        partition = None
+    # Normalize before multiplying to avoid an overflowing numerator.
+    expected = math.fsum((weight / normalization) * energy for weight, energy in zip(weights, energies))
+    if not math.isfinite(expected):
+        raise ValueError("Expected energy exceeds finite numeric range")
+    return {"partition_function": partition, "partition_status": status,
+            "log_partition_function": log_partition,
+            "shifted_normalization": normalization, "log_weight_offset": offset,
+            "expected_energy_kj": expected}
 
 
 def compute_governance_metrics(mission: Mission) -> dict[str, float | list[str]]:
     gibbs_free_energy = mission.enthalpy_kj - mission.temperature_k * mission.entropy_kj_per_k
-    partition, expected_energy = _stable_partition(mission.levels, mission.beta, mission.energy_scaling)
+    partition = _stable_partition(mission.levels, mission.beta, mission.energy_scaling)
 
     owner_categories = set(mission.owner_control_categories)
     missing_categories = [
@@ -105,9 +127,12 @@ def compute_governance_metrics(mission: Mission) -> dict[str, float | list[str]]
 
     return {
         "title": mission.title,
+        "evidence_mode": "supplied-input mathematical model",
+        "owner_controls_enforced": False,
+        "production_approved": False,
+        "settlement_approved": False,
         "gibbs_free_energy_kj": gibbs_free_energy,
-        "partition_function": partition,
-        "expected_energy_kj": expected_energy,
+        **partition,
         "strategy_entropy": _strategy_entropy(mission.strategy_shares),
         "missing_owner_categories": missing_categories,
     }
@@ -127,8 +152,10 @@ def _format_report(metrics: Mapping[str, object]) -> str:
         [
             f"🌌 Mission: {metrics.get('title', '')}",
             f"  • Gibbs free energy (kJ): {metrics['gibbs_free_energy_kj']:.2f}",
-            f"  • Partition function: {metrics['partition_function']:.4f}",
-            f"  • Expected energy (kJ): {metrics['expected_energy_kj']:.2f}",
+            f"  • Log partition function: {metrics['log_partition_function']}",
+            f"  • Partition representability: {metrics['partition_status']}",
+            f"  • Shifted normalization: {metrics['shifted_normalization']}",
+            f"  • Expected energy (kJ): {metrics['expected_energy_kj']}",
             f"  • Strategy entropy: {metrics['strategy_entropy']:.4f}",
             _owner_summary(metrics.get("missing_owner_categories", [])),
         ]

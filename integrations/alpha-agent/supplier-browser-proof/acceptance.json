@@ -1,0 +1,71 @@
+{
+  "schema": "agijobsv0/alpha-local-acceptance/1",
+  "scope": "disposable-local-fixture",
+  "productionApproved": false,
+  "sourceCommit": "9ea22d49414751a49f7f8cd9d9e65c26e8317570",
+  "specHash": "0xf25b50d25fb1f697763d0a122865bda37c32c5ce0080fec1d1f94716e207b3f0",
+  "artifactBytes": 7323,
+  "resultHash": "0x5f34a8dec5d6295a876abae0d425777a994d3127accd3b6b910ce23b10c23d55",
+  "resultURI": "fixture://alpha/supplier-browser-reviewed-artifact",
+  "assignment": {
+    "backend": "agijobsv0-jobregistry-v2",
+    "chainId": 31337,
+    "registry": "0x9A676e781A523b5d0C0e43731313A708CB607508",
+    "transactionHash": "0x2886f5231f5e35e75ae77485c993059ea61f0f603eb35bb5150ae34071fd8187",
+    "blockHash": "0x721aebba37351cc1192119c95f9f239d343e9693de80872475bf2a4ee085d873",
+    "blockNumber": 47,
+    "logIndex": 4,
+    "event": "AgentAssigned",
+    "jobId": "1",
+    "finalizationEventProven": false
+  },
+  "submission": {
+    "backend": "agijobsv0-jobregistry-v2",
+    "chainId": 31337,
+    "registry": "0x9A676e781A523b5d0C0e43731313A708CB607508",
+    "transactionHash": "0x95f2c02fcf87d6adedb9c3d04d9a0aaae05cf68b4a27bc6a41c3ec4b392a5313",
+    "blockHash": "0x378703c9bc8f95e1714913f9211bef20bf3dfe3b97d6d181aa398a284596c1e9",
+    "blockNumber": 50,
+    "logIndex": 1,
+    "event": "ResultSubmitted",
+    "jobId": "1",
+    "finalizationEventProven": false
+  },
+  "approval": {
+    "backend": "agijobsv0-jobregistry-v2",
+    "chainId": 31337,
+    "registry": "0x9A676e781A523b5d0C0e43731313A708CB607508",
+    "transactionHash": "0x3192b31c99eb1e1744415126ababa7c55e045fff2fd3a4a06ae9338ad2ee7026",
+    "blockHash": "0x4cf37412a786fc5c2573c33380085d40296e8e6d0f1c2a765a66aacbed6f982a",
+    "blockNumber": 51,
+    "logIndex": 0,
+    "event": "JobCompleted",
+    "jobId": "1",
+    "finalizationEventProven": false
+  },
+  "finalization": {
+    "backend": "agijobsv0-jobregistry-v2",
+    "chainId": 31337,
+    "registry": "0x9A676e781A523b5d0C0e43731313A708CB607508",
+    "transactionHash": "0xecfd5304d0d866bee0653d120ae824f99a9e7ab96f7ec936501f020214173b30",
+    "blockHash": "0xf280d724aed1a4cdcfd2d58563454a4a120895f0eb175fae5a1124a842b1628d",
+    "blockNumber": 52,
+    "logIndex": 10,
+    "event": "JobFinalized",
+    "jobId": "1",
+    "finalizationEventProven": true
+  },
+  "observedMockTokenPayoutBaseUnits": "100",
+  "negativeChecks": [
+    "Wrong exact artifact digest rejected"
+  ],
+  "limitations": [
+    "Mock token installed at configured AGIALPHA address",
+    "Permissive identity mock",
+    "Operator-controlled validation stub",
+    "Not mainnet or economic assurance",
+    "Local fixture operator review is not independent marketplace review",
+    "Artifact URI is a fixture label, not a published IPFS artifact",
+    "No production transaction or deployment"
+  ]
+}

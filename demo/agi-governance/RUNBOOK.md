@@ -32,7 +32,7 @@ Outputs `reports/governance-demo-report.md` with:
 - Statistical-physics partition validation (partition function, scaled free energy, entropy, Gibbs delta tolerance, heat capacity).
 - Jarzynski equality reconciliation (log ⟨e<sup>−βW</sup>⟩ vs e<sup>−βΔF</sup> confirming the Landauer-aligned free-energy gap).
 - Incentive free-energy ledger (mint/burn/slash parity, treasury mirroring, owner-tunable slashing curves).
-- Five-method equilibrium confirmation (discrete replicator, RK4 continuous flow, Perron eigenvector, closed-form, Monte-Carlo) with maximum deviation score.
+- Five-method diagnostics (discrete replicator, RK4 continuous flow, Perron eigenvector, closed-form, Monte-Carlo), including actual convergence flags, iteration counts, and the configured agreement threshold.
 - Analytic vs numeric Jacobian matrices (Gershgorin, spectral radius, max delta) and antifragility curvature plus welfare growth curve for adversarial shocks.
 - Alpha-field sovereign assurance scoreboard validating Stackelberg bounds, Gibbs tolerances, antifragility minimums, sigma welfare gains, owner coverage, owner supremacy index, thermo ↔ quantum alignment, quantum confidence, superintelligence index, and energy margin with assurance breakdowns.
 - Quantum governance lattice (coherence confidence vs floor, quantum free-energy delta, Noether charge alignment, state entropy, superposition weights).
@@ -42,6 +42,27 @@ Outputs `reports/governance-demo-report.md` with:
 - CI enforcement proof (required contexts, concurrency, access-control coverage).
 
 Review the report. It references exact commands to execute each owner action on Ethereum or via AGI Jobs automation scripts.
+
+### Read equilibrium and conservation diagnostics correctly
+
+The supplied `mission@v1.json` is a neutral cyclic game. Its exact interior equal-payoff equilibrium is `(1/3, 1/3, 1/3)`, with payoff `1` for every strategy. That establishes equilibrium existence, not convergence from the configured initial state `(0.42, 0.35, 0.23)`.
+
+For its continuous replicator equations, the product `x*y*z` is conserved at `0.03381`, below the value `1/27` at the uniform equilibrium. The trajectory therefore cannot converge to that interior point. An RK4 endpoint off equilibrium and a `continuousConverged: false` result are expected. Raising `consistencyThreshold` does not change the dynamics or establish convergence.
+
+The report keeps the methods separate:
+
+- `closedForm` solves the interior equal-payoff equations. Its payoff and simplex residuals are reported independently.
+- `replicator` is the ensemble of discrete run estimates. `replicatorEstimate` identifies terminal estimates, tail-time averages after the iteration limit, or a mixture; `replicatorIterations` is the actual mean iteration count. A time average can be close to equilibrium while the trajectory continues moving.
+- `replicatorConverged` requires all sampled discrete trajectories to meet numerical step and unilateral-payoff-gap tolerances. Tiny steps near an invadable boundary do not count as convergence.
+- `continuous` is the actual RK4 endpoint. `continuousConverged` requires both the derivative norm and unilateral payoff gap to meet numerical tolerance. `continuousDerivativeNorm` remains visible even when the iteration limit is reached. These finite numerical criteria do not prove asymptotic stability or uniqueness.
+- `eigenvector` is a Perron diagnostic, which need not equal the game's equilibrium for a general payoff matrix. `monteCarlo` is a random-start average; its RMS error describes individual final-state disagreement with the closed-form solution.
+- `methodConsistency` only compares maximum pairwise vector distance with the explicitly reported `consistencyThreshold`. It does not assert that trajectories converged, that the equilibrium is unique, or that all five methods solve the same problem. The configured discount factor is not used to prove any such claim.
+
+In particular, a coordination game can converge to boundary states different from the interior equilibrium. The Alpha-Meta mission reuses this engine and declares a wide agreement threshold; inspect the raw vectors, convergence flags, and errors even if that threshold passes. No solver output is replaced with the closed-form result to improve agreement.
+
+Escrow conservation includes all four components: `burned + treasury + employer + retained = jobEscrow`. The supplied fixture allocates `3,000 + 1,000 + 1,000 + 45,000 = 50,000`. The retained amount is the remaining worker-payout allocation, not missing funds. Configuration validation rejects negative basis points or allocation totals above 10,000 basis points.
+
+Historical committed reports preserve the engine output from their original generation. Fresh reports add the diagnostics above and may differ from old summaries; generate a new dossier in a separate output directory before replaying it. Generation and same-engine replay demonstrate reproducibility, not independent mathematical certification or an on-chain execution. The focused governance tests include exact cyclic invariants and known stable/nonconvergent counterexamples as separate checks.
 
 ---
 

@@ -1,0 +1,37 @@
+{
+  "schema": "agijobs.celestial-resource-contingency.v1",
+  "title": "Keep communications and backups available during a capacity outage",
+  "normalCapacity": { "energyUnits": 100, "computeUnits": 100 },
+  "outageCapacity": { "energyUnits": 65, "computeUnits": 55 },
+  "protectedReserve": { "energyUnits": 10, "computeUnits": 10 },
+  "jobs": [
+    {
+      "id": "communications",
+      "label": "Communications relay",
+      "priority": 100,
+      "energyUnits": 25,
+      "computeUnits": 15
+    },
+    {
+      "id": "backup",
+      "label": "Verified backup copy",
+      "priority": 90,
+      "energyUnits": 20,
+      "computeUnits": 25
+    },
+    {
+      "id": "indexing",
+      "label": "Search index refresh",
+      "priority": 50,
+      "energyUnits": 30,
+      "computeUnits": 30
+    },
+    {
+      "id": "archive",
+      "label": "Archive compression",
+      "priority": 20,
+      "energyUnits": 10,
+      "computeUnits": 20
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "description": "Exact artifacts produced by code/evidence.py from evidence/example.json; same-evaluator recomputation only, not independent observation.",
+  "runtimeSha256": "919d32b70d7154bc9c8bfe3bb34226db4386000b3b5bbc1786ee671aacee2c5a",
+  "packetSha256": "4305560672a956191d0d3ef099512ff0fb749028505ec6196af91ce305568bb9",
+  "ledgerSha256": "97f636a5e381339494160d4a6b3366d6a2754d28a8c44c4fab8c4b372d584b03",
+  "reportSha256": "90f4a301c842fb95c0be7bb0ea7b77db93695e9cd10f5211d6943110646ed622",
+  "receiptSha256": "9e5b14c4d7638197b28218a1045fa80934f3f7ba428ab6719789d21bf066733f",
+  "sourceAuthenticityVerified": false,
+  "realWorldImpactVerified": false,
+  "independentHumanApproval": false
+}

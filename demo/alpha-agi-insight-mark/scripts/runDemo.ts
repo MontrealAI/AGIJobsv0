@@ -1,10 +1,11 @@
-import { mkdir, writeFile, readFile, stat } from "fs/promises";
+import { mkdir, writeFile, readFile, stat, rm } from "fs/promises";
 import path from "path";
 import { createHash } from "crypto";
 import { createInterface } from "readline/promises";
 import { stdin as input, stdout as output } from "process";
 
-import { ethers } from "hardhat";
+import { ethers, network as hardhatNetwork } from "hardhat";
+const { requireExecutionMode, requireDistinctActors } = require("./utils/executionPreflight.cjs");
 import type { ContractTransactionReceipt, ContractTransactionResponse } from "ethers";
 
 import type { AlphaInsightExchange, AlphaInsightNovaSeed, InsightAccessToken } from "../typechain-types";
@@ -256,13 +257,14 @@ interface MintedInsightRecord {
   resolutionTxHash?: string;
 }
 
+const { collectLocalReceipts } = require("./utils/localReceipts.cjs");
+
 async function main() {
-  await ensureReportsDir();
+  const executionMode = await requireExecutionMode(hardhatNetwork, process.env.AGIJOBS_DEMO_DRY_RUN);
   const scenarioPath = resolveScenarioFile();
   const config = await loadScenarioConfig(scenarioPath);
 
-  const dryRunFlag = (process.env.AGIJOBS_DEMO_DRY_RUN ?? "true").toLowerCase();
-  const requireLaunchConfirmation = dryRunFlag === "false";
+  const requireLaunchConfirmation = executionMode === "broadcast";
 
   if (requireLaunchConfirmation) {
     const rl = createInterface({ input, output });
@@ -279,12 +281,13 @@ async function main() {
   }
 
   const [operator, oracle, strategist, buyerA, buyerB] = await ethers.getSigners();
+  requireDistinctActors([operator, oracle, strategist, buyerA, buyerB]);
   const network = await ethers.provider.getNetwork();
 
   const expectedNetworkName = process.env.INSIGHT_MARK_NETWORK;
-  if (expectedNetworkName && expectedNetworkName !== network.name) {
+  if (expectedNetworkName && expectedNetworkName !== hardhatNetwork.name) {
     throw new Error(
-      `Network mismatch: expected ${expectedNetworkName} (INSIGHT_MARK_NETWORK) but connected to ${network.name}.`
+      `Network mismatch: expected ${expectedNetworkName} (INSIGHT_MARK_NETWORK) but selected ${hardhatNetwork.name}.`
     );
   }
 
@@ -302,6 +305,10 @@ async function main() {
     );
   }
 
+  await ensureReportsDir();
+  // Invalidate completion markers before a new run; a failed run cannot reuse them.
+  await rm(path.join(reportsDir, "insight-manifest.json"), { force: true });
+  await rm(path.join(reportsDir, "insight-local-receipts.json"), { force: true });
   const AccessToken = await ethers.getContractFactory("InsightAccessToken");
   const accessToken = (await AccessToken.deploy(operator.address)) as unknown as InsightAccessToken;
   await accessToken.waitForDeployment();
@@ -727,6 +734,7 @@ async function main() {
 
   const recap = {
     generatedAt: new Date().toISOString(),
+    executionMode,
     network: { chainId: network.chainId.toString(), name: network.name },
     contracts: {
       novaSeed: novaSeedAddress,
@@ -1893,7 +1901,15 @@ ${htmlRows}
   await writeFile(ownerSupremacyPath, JSON.stringify(ownerSupremacy, null, 2));
   await writeFile(ownerLatticePath, ownerSupremacyMermaid);
 
+  const receiptEvidence = await collectLocalReceipts(hardhatNetwork.provider, executionMode);
+  const receiptPath = path.join(reportsDir, "insight-local-receipts.json");
+  // A broadcast dossier must never acquire stale local evidence from an earlier run.
   const manifestEntries: { path: string; sha256: string }[] = [];
+  if (receiptEvidence) {
+    const content = JSON.stringify(receiptEvidence, null, 2);
+    await writeFile(receiptPath, content);
+    manifestEntries.push({ path: "reports/insight-local-receipts.json", sha256: sha256(content) });
+  }
   for (const file of [
     recapPath,
     reportPath,

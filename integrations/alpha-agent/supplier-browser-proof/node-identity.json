@@ -1,0 +1,11 @@
+{
+  "schema": "agijobsv0/disposable-node-identity/1",
+  "ownedProcessListener": true,
+  "metadata": {
+    "clientVersion": "edr/0.3.8/revm/33.1.0",
+    "chainId": 31337,
+    "instanceId": "0x4554f353632d7208dabf184482f6604ec05e6b0f1b2e8f15838283b12da961b7",
+    "latestBlockNumber": 0,
+    "latestBlockHash": "0x450da9f5a117786d98136c4616279d01c1cf48605ae0afa07609de154f6c466d"
+  }
+}

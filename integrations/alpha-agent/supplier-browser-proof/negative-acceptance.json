@@ -1,0 +1,10 @@
+{
+  "schema": "agijobsv0/supplier-browser-negative/1",
+  "jobId": "1",
+  "observedStatus": "Applied",
+  "resultHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+  "artifactExported": false,
+  "submissionPerformed": false,
+  "finalizationPerformed": false,
+  "productionApproved": false
+}

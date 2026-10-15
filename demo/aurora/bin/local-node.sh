@@ -1,48 +1,58 @@
 #!/usr/bin/env bash
 
-# Sourced by local demos. Only the process launched here is ever stopped.
+# Linux /proc ownership and inherited locks are mandatory, never best effort.
+lock_local_demo() {
+  if [[ "${AGI_LOCAL_LOCK_ENTRY:-}" != "$0" ]]; then
+    exec python3 "$ROOT/demo/aurora/bin/local-demo-lock.py" bash "$0" "$@"
+  fi
+  python3 "$ROOT/demo/aurora/bin/local-demo-lock.py" --verify true
+}
+
 prepare_local_node() {
-  node "$ROOT/demo/aurora/bin/local-rpc.cjs" preflight
+  node "$ROOT/demo/aurora/bin/local-rpc.cjs" preflight || return $?
   export DEMO_PORT="${DEMO_PORT:-8545}"
   export RPC_URL="http://127.0.0.1:${DEMO_PORT}"
   export LOCALHOST_RPC_URL="$RPC_URL"
   export AGI_RPC_URL="$RPC_URL"
   export CHAIN_ID=31337
-  LOG_FILE="$(mktemp "${TMPDIR:-/tmp}/agi-demo-node.XXXXXX")"
-}
-
-start_local_node() {
-  # Compilation can be lengthy; recheck immediately before taking the port.
-  node "$ROOT/demo/aurora/bin/local-rpc.cjs" preflight
-  if command -v anvil >/dev/null 2>&1; then
-    anvil --host 127.0.0.1 --port "$DEMO_PORT" --chain-id 31337 --silent --block-time 1 >"$LOG_FILE" 2>&1 &
-  else
-    echo 'Anvil not found; using the installed Hardhat node.' >&2
-    "$ROOT/node_modules/.bin/hardhat" node --hostname 127.0.0.1 --port "$DEMO_PORT" >"$LOG_FILE" 2>&1 &
-  fi
-  NODE_PID=$!
+  LOCAL_NODE_STATE="$(mktemp -d "${TMPDIR:-/tmp}/agi-demo-node.XXXXXX")" || return $?
+  LOG_FILE="$LOCAL_NODE_STATE/node-private.log"
   trap cleanup_local_node EXIT
   trap 'exit 130' INT
   trap 'exit 143' TERM
-  for attempt in {1..120}; do
-    if ! kill -0 "$NODE_PID" 2>/dev/null; then
-      echo "Local node exited. Inspect $LOG_FILE." >&2
-      return 1
-    fi
-    if node "$ROOT/demo/aurora/bin/local-rpc.cjs" ready >/dev/null 2>&1; then
-      if kill -0 "$NODE_PID" 2>/dev/null; then return; fi
-      echo "Local node exited during startup. Inspect $LOG_FILE." >&2
-      return 1
-    fi
-    sleep 0.25
-  done
-  echo "Local RPC did not become ready. Inspect $LOG_FILE." >&2
-  return 1
+}
+
+start_local_node() {
+  node "$ROOT/demo/aurora/bin/local-rpc.cjs" preflight || return $?
+  local engine="${DEMO_NODE_ENGINE:-auto}"
+  if [[ "$engine" == auto ]]; then
+    if command -v anvil >/dev/null 2>&1; then engine=anvil; else engine=hardhat; fi
+  fi
+  case "$engine" in
+    anvil)
+      # Automining preserves a verifiable block-zero startup before transactions.
+      python3 "$ROOT/demo/aurora/bin/local-node-guard.py" launch "$LOCAL_NODE_STATE" anvil --host 127.0.0.1 --port "$DEMO_PORT" --chain-id 31337 --silent || return $?
+      ;;
+    hardhat)
+      python3 "$ROOT/demo/aurora/bin/local-node-guard.py" launch "$LOCAL_NODE_STATE" node "$ROOT/node_modules/hardhat/internal/cli/cli.js" node --hostname 127.0.0.1 --port "$DEMO_PORT" || return $?
+      ;;
+    *) echo 'DEMO_NODE_ENGINE must be auto, hardhat, or anvil.' >&2; return 1 ;;
+  esac
+  python3 "$ROOT/demo/aurora/bin/local-node-guard.py" start "$LOCAL_NODE_STATE" "$DEMO_PORT" "$engine" || return $?
+}
+
+check_local_node() {
+  python3 "$ROOT/demo/aurora/bin/local-node-guard.py" check "$LOCAL_NODE_STATE" "$DEMO_PORT"
 }
 
 cleanup_local_node() {
-  if [[ -n "${NODE_PID:-}" ]]; then
-    kill "$NODE_PID" 2>/dev/null || true
-    wait "$NODE_PID" 2>/dev/null || true
+  local status=$?
+  trap - EXIT INT TERM
+  if [[ -f "${LOCAL_NODE_STATE:-}/process.json" ]]; then
+    python3 "$ROOT/demo/aurora/bin/local-node-guard.py" cleanup "$LOCAL_NODE_STATE" || status=1
   fi
+  if [[ "$status" != 0 ]]; then
+    echo "Local demo failed. Private node diagnostics: ${LOCAL_NODE_STATE:-unavailable}. Do not publish node-private.log (development keys may appear)." >&2
+  fi
+  exit "$status"
 }

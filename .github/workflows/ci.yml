@@ -67,7 +67,15 @@ jobs:
       - name: Verify CI summary coverage vs workflow
         run: npm run ci:verify-summary-needs
       - name: Release provenance regression tests
-        run: node --test test/scripts/alpha-agent-receipt.test.cjs test/scripts/deployment-candidate.test.cjs test/scripts/runner-egress.test.cjs test/scripts/demo-report-paths.test.cjs test/scripts/local-demo-rpc.test.cjs test/scripts/release-provenance.test.cjs test/scripts/release-inventory.test.cjs test/scripts/contract-size.test.cjs test/scripts/release-ci.test.cjs test/scripts/dependency-audit.test.cjs test/scripts/slither-policy.test.cjs test/scripts/dispute-overloads.test.js test/hamiltonian-monitor.config.test.js
+        run: node --test test/alpha-supplier-proof.test.cjs test/scripts/alpha-agent-receipt.test.cjs test/scripts/deployment-candidate.test.cjs test/scripts/runner-egress.test.cjs test/scripts/demo-report-paths.test.cjs test/scripts/aurora-report.test.cjs test/scripts/demo-launchers.test.cjs test/scripts/local-demo-rpc.test.cjs test/scripts/release-provenance.test.cjs test/scripts/release-inventory.test.cjs test/scripts/contract-size.test.cjs test/scripts/release-ci.test.cjs test/scripts/dependency-audit.test.cjs test/scripts/slither-policy.test.cjs test/scripts/dispute-overloads.test.js test/hamiltonian-monitor.config.test.js
+      - name: First-class launcher safety regression tests (inert only)
+        run: |
+          node --test test/scripts/first-class-modes.test.cjs
+          node node_modules/typescript/bin/tsc --noEmit --target es2020 --module commonjs --moduleResolution node --esModuleInterop --skipLibCheck --types node scripts/v2/agiOsFirstClassDemo.ts
+      - name: Shared scenario plan and governance-kit binding (inert files)
+        run: node --test test/scripts/shared-plan-kit.test.cjs
+      - name: Omniphoenix bounded disruption and recovery tests
+        run: node --test test/scripts/omniphoenix-disruption.test.cjs
       - name: Compiler admission regression tests
         run: node --test test/scripts/demo-concurrency.test.cjs test/scripts/solidity-policy.test.cjs test/scripts/verification-evidence.test.cjs
       - name: Prettier formatting check
@@ -151,6 +159,12 @@ jobs:
           npm run build:validator
           node --test test/scripts/runtime-packaging.test.cjs
           node --test apps/orchestrator/dist/apps/orchestrator/__tests__/computerWork.test.js
+      - name: Polaris disposable quorum and receipt regressions
+        run: node --test test/demo/polaris-quorum.test.cjs
+      - name: Zenith regional budget reconciliation regressions
+        run: node --test test/demo/zenith-reconciliation.test.mjs
+      - name: Omega local artifact pipeline and replay regressions
+        run: node --test test/demo/omega-pipeline.test.cjs
       - name: Hardhat tests
         run: npm test
       - name: Gateway TypeScript interaction regressions
@@ -187,6 +201,8 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements-python.txt
+      - name: Report archive launcher regressions (inert fixtures)
+        run: python -m pytest --confcutdir=test/simulation test/simulation/test_report_archive_launchers.py test/simulation/test_shared_plan_routing.py
       - name: Run unit test suite
         run: |
           coverage run --rcfile=.coveragerc -m pytest -m "not requires_torch" \
@@ -194,10 +210,13 @@ jobs:
             test/tools \
             test/orchestrator \
             test/simulation
+          coverage run --rcfile=.coveragerc --append -m pytest demo/superintelligent-empowerment/tests
           coverage run --rcfile=.coveragerc --append -m pytest -m "not requires_torch" tests
           coverage run --rcfile=.coveragerc --append -m pytest -m "not requires_torch" packages/hgm-core/tests
           coverage run --rcfile=.coveragerc --append -m pytest -m "not requires_torch" demo/Huxley-Godel-Machine-v0/tests
           coverage run --rcfile=.coveragerc --append -m pytest demo/Phase-6-Scaling-Multi-Domain-Expansion/tests
+          coverage run --rcfile=.coveragerc --append -m pytest demo/AlphaEvolve-v0/tests demo/agi-governance/tests demo/Planetary-Orchestrator-Fabric-v0/tests/test_simulation.py
+          coverage run --rcfile=.coveragerc --append -m pytest "demo/Kardashev-II Omega-Grade-α-AGI Business-3/kardashev_ii_omega_grade_alpha_agi_business_3_demo_ultra/tests"
       - name: Export unit coverage data
         run: |
           mkdir -p reports/python-coverage

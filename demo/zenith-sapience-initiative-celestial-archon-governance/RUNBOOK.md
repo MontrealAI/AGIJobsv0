@@ -1,5 +1,12 @@
 # Celestial Archon Mission Runbook
 
+> **Local evidence scope:** The `:local` command uses the shared ASI Global
+> contract-lifecycle fixture, not this directory's branded `project-plan.json`.
+> The non-local governance-kit command reads that plan as reporting context.
+> Neither path proves delivery of its proposed real-world programmes. See the
+> [shared-scenario contract](../asi-global/LOCAL-SCENARIOS.md) for the actual local
+> mission, supported override, and rejected `ASI_GLOBAL_PLAN_PATH` setting.
+
 This runbook exposes every stage of the deterministic
 `npm run demo:zenith-sapience-celestial-archon` pipeline. All commands rely on
 existing AGI Jobs v0 (v2) tooling — no bespoke scripts are introduced.

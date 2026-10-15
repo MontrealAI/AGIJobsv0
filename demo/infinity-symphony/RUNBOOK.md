@@ -1,120 +1,102 @@
-# Infinity Symphony Runbook — Operator Drill
+# Infinity Symphony Runbook — Local Report Harness
 
-This runbook turns Infinity Symphony into a reproducible, audit-ready demonstration. Every step relies on existing AGI Jobs v0 (v2) scripts. The flow assumes access to a mainnet-equivalent RPC or Anvil fork and can be executed unattended inside CI.
+The launcher combines the ASI Take-Off pipeline, its governance kit, an AURORA
+report, and owner reports. Its supported network selector is `localhost` only.
+The launcher does not create or verify a disposable RPC node itself; downstream
+commands retain their own execution requirements. A local network selector or a
+report bundle is not evidence of production readiness or completed settlement.
 
-## 0. Preconditions
+## 1. Preconditions and inputs
 
-- Install dependencies (`npm install`) and ensure `ts-node` is available via the repo toolchain.
-- Export a network context (`NETWORK=localhost`, `NETWORK=sepolia`, or custom mainnet RPC via Hardhat).
-- If broadcasting, provision a funded deployer key using the `DEPLOYER_PRIVATE_KEY` env variable (CI path stays offline).
+- Use the repository's installed toolchain and downstream pipeline prerequisites.
+  The report lock requires Linux, Python 3, and readable `/proc`.
+- Leave `NETWORK` unset or set it to exactly `localhost`.
+- Leave `AURORA_REPORT_SCOPE` unset or set it to exactly `infinity-symphony`.
+- Unset `ASI_TAKEOFF_REPORT_ROOT`. The launcher rejects any configured value,
+  including an empty value, and isolates pipeline output inside its own scope.
+- Optionally set `ASI_TAKEOFF_PLAN_PATH` to an existing reviewed project-plan JSON.
+  The default is `demo/infinity-symphony/project-plan.json`. Relative paths resolve
+  against this checkout, and paths containing spaces are supported.
+- `AURORA_MISSION_CONFIG`, `AURORA_THERMOSTAT_CONFIG`, and `AURORA_REPORT_TITLE`
+  retain their existing overrides. Their defaults are the Infinity mission and
+  thermostat files and the Infinity report title. These are separate from the
+  ASI Take-Off project plan.
 
-## 1. Mission Environment Bootstrap
+The [environment example](env.example) shows the fixed network and scope. Do not
+replace the local network with a mainnet or testnet name. Review downstream
+credentials, RPC configuration, and execution mode separately before running.
 
-1. Copy the environment overlay:
-   ```bash
-   cp demo/infinity-symphony/env.example .env
-   ```
-2. Double-check the mission paths:
-   - `AURORA_MISSION_CONFIG` → `demo/infinity-symphony/config/mission@v2.json`
-   - `AURORA_THERMOSTAT_CONFIG` → `demo/infinity-symphony/config/infinity-symphony.thermostat@v2.json`
-   - `AURORA_REPORT_SCOPE` → `infinity-symphony`
-3. Optional: override `ASI_TAKEOFF_PLAN_PATH` to a forked charter before running automation.
+## 2. Run the supported launcher
 
-## 2. Deterministic Dry-Run Harness
+From the repository root:
 
-1. Execute the dry-run pipeline with the Infinity plan:
-   ```bash
-   export ASI_TAKEOFF_PLAN_PATH=demo/infinity-symphony/project-plan.json
-   npm run demo:asi-takeoff
-   ```
-2. Inspect `reports/asi-takeoff/mission-control.md` and confirm the scenarios labelled `Global Stabilisation`, `Emergency Swarm`, and `Trade Equilibrium` all read `status: pass`.
-3. Run the governance kit generator for completeness:
-   ```bash
-   npm run demo:asi-takeoff:kit -- \
-     --report-root reports/asi-takeoff \
-     --summary-md reports/asi-takeoff/infinity-symphony-summary.md \
-     --bundle reports/asi-takeoff/mission-bundle \
-     --logs reports/asi-takeoff/logs
-   ```
-4. Hash the receipts (optional, recommended for CI):
-   ```bash
-   find reports/asi-takeoff -type f -print0 | sort -z | xargs -0 shasum -a 256 > reports/asi-takeoff/SHA256SUMS
-   ```
+```bash
+unset ASI_TAKEOFF_REPORT_ROOT
+NETWORK=localhost bash demo/infinity-symphony/bin/infinity-symphony-local.sh
+```
 
-## 3. Mission Compendium (AURORA)
+The script also works when invoked by its absolute path from another directory;
+it always uses its own checkout. To add the owner wiring verification command:
 
-1. Mirror the dry-run outputs into the Infinity scope:
-   ```bash
-   mkdir -p reports/localhost/infinity-symphony/receipts
-   rsync -a reports/asi-takeoff/ reports/localhost/infinity-symphony/receipts/
-   ```
-2. Render the mission report:
-   ```bash
-   npm run demo:aurora:report
-   ```
-3. Verify `reports/localhost/infinity-symphony/infinity-symphony-report.md` contains the four mission jobs and thermostat overlays.
+```bash
+NETWORK=localhost bash demo/infinity-symphony/bin/infinity-symphony-local.sh --ci
+```
 
-## 4. Owner Command Fabric Proofs
+No other arguments, repeated `--ci` flags, custom report scopes, or non-local
+network values are supported. Invalid selections and missing plan files fail
+before locks or report preparation. `--ci` adds `owner:verify-control`; it does not
+convert downstream execution into an offline simulation or grant permission to
+broadcast transactions.
 
-1. Atlas parameter lattice:
-   ```bash
-   npm run owner:atlas -- --format markdown --output reports/localhost/infinity-symphony/governance/atlas.md
-   ```
-2. Command center dossier:
-   ```bash
-   npm run owner:command-center -- --format markdown --output reports/localhost/infinity-symphony/governance/command-center.md --network ${NETWORK:-localhost}
-   ```
-3. Mission control workbook:
-   ```bash
-   npm run owner:mission-control -- --output reports/localhost/infinity-symphony/governance/mission-control.md --network ${NETWORK:-localhost}
-   ```
-4. Render the owner governance mermaid diagram for verification:
-   ```bash
-   npm run owner:diagram -- --output reports/localhost/infinity-symphony/governance/control.mmd --network ${NETWORK:-localhost}
-   ```
+The selected project plan is supplied through `ASI_TAKEOFF_PLAN_PATH` to the
+pipeline and through `--plan` to the separate governance-kit command. The kit does
+not infer that selection from the pipeline's environment variable.
 
-````mermaid
-stateDiagram-v2
-    [*] --> DryRun
-    DryRun --> Receipts
-    Receipts --> Atlas
-    Receipts --> CommandCenter
-    CommandCenter --> MissionControl
-    MissionControl --> Publish
-    Atlas --> Publish
-    Publish --> [*]
-````
+## 3. Inspect the evidence
 
-## 5. Thermostat & Economic Audits
+Current evidence lives under `reports/localhost/infinity-symphony`:
 
-1. Generate the thermodynamics report:
-   ```bash
-   npm run thermodynamics:report -- --output reports/localhost/infinity-symphony/governance/thermodynamics.md
-   ```
-2. Trigger the owner parameter matrix (CI gating):
-   ```bash
-   npm run owner:parameters -- --output reports/localhost/infinity-symphony/governance/parameter-matrix.md --network ${NETWORK:-localhost}
-   ```
-3. Optional: run the Hamiltonian tracker for energy policy overlays:
-   ```bash
-   npm run hamiltonian:report -- --output reports/localhost/infinity-symphony/governance/hamiltonian.md --network ${NETWORK:-localhost}
-   ```
+- `dry-run/`: the isolated ASI Take-Off output, kit, and `SHA256SUMS` when `shasum`
+  is available. The digest excludes itself and covers the pipeline/kit files at
+  the time it is generated.
+- `receipts/`: a copy of that run's pipeline/kit files, including hidden files.
+- `infinity-symphony-report.md`: the AURORA report produced by the downstream
+  renderer. Check which receipts actually exist before interpreting its content.
+- `governance/`: atlas, command center, mission control, control diagram, parameter
+  matrix, and thermodynamics outputs produced by their respective commands.
 
-## 6. Publication Surface
+The shared `reports/asi-takeoff` directory is neither used nor cleaned by this
+launcher. The pipeline's own mode and status reports determine whether evidence
+is simulated, partial, or a completed local rehearsal. A successful wrapper exit
+means its commands returned successfully; it is not an independent contract or
+production verification.
 
-1. Summarise artefacts:
-   ```bash
-   tree reports/localhost/infinity-symphony
-   ```
-2. Pin or archive:
-   - `ipfs-car` / `web3.storage` for decentralised publication.
-   - `git lfs` or artifact storage for CI.
-3. Announce via ENS text records using `npm run identity:update` if mainnet ready.
+## 4. Repeat runs and failures
 
-## 7. Regression / CI Hooks
+Before any pipeline command, the entire existing Infinity scope is renamed to a
+unique `reports/localhost/infinity-symphony-previous-*/reports` directory. The new
+run receives a fresh scope. Existing evidence is never erased with recursive
+cleanup or delete-mode mirroring, and unrelated report scopes remain untouched.
 
-- **CI gating:** Fail the pipeline if `reports/asi-takeoff/SHA256SUMS` changes unexpectedly.
-- **Drift detection:** Run `npm run owner:verify-control` after the harness to assert owner supremacy wiring.
-- **Incident drill:** Pair this runbook with `npm run owner:emergency` to test pause / resume loops.
+If a command fails, the launcher stops and preserves both the archived predecessor
+and the new partial output. Do not publish partial output as a completed mission.
+The repository and per-user port advisory locks are held through the entire run;
+a competing supported launcher fails before archival.
 
-Infinity Symphony stays completely inside AGI Jobs v0 (v2) functionality, yet surfaces the civilisation-grade intelligence choreography referenced in our mandate.
+Symlink, dangling-link, and non-directory report path components are refused.
+These checks require a trusted local filesystem and do not protect against
+uncooperative concurrent directory changes or guarantee power-loss durability.
+Do not remove lock files while a run is active. The complete archive and advisory
+lock contract is documented in [launcher report safety](../aurora/bin/LOCAL-REPORTS.md).
+
+## 5. Source-safety regressions
+
+```bash
+PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python3 -m pytest --confcutdir=test/simulation \
+  test/simulation/test_report_archive_launchers.py \
+  test/simulation/test_zenith_local_wrappers.py
+```
+
+These tests use private temporary fixtures and inert downstream substitutes.
+They verify launcher safety and bindings without npm execution, RPC calls,
+deployments, or live-provider activity. They do not establish mission completion.

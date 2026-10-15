@@ -4,6 +4,13 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 cd "$ROOT"
 
+if [[ "${ASI_TAKEOFF_PLAN_PATH+x}" == x ]]; then
+  echo 'WARNING: demo:asi-takeoff:local ignores ASI_TAKEOFF_PLAN_PATH. It uses AURORA_MISSION_CONFIG (default: demo/asi-takeoff/config/mission@v2.json); supplied scenario jobs are not executed. Use demo:asi-takeoff for plan-context reports.' >&2
+fi
+
+source "$ROOT/demo/aurora/bin/local-node.sh"
+lock_local_demo "$@"
+
 NET="localhost"
 SCOPE="${AURORA_REPORT_SCOPE:-asi-takeoff}"
 SCOPE="$(AURORA_REPORT_SCOPE="$SCOPE" node -e 'console.log(require("./demo/aurora/bin/report-paths.cjs").resolveNamespace(process.env.AURORA_REPORT_SCOPE))')"
@@ -36,7 +43,6 @@ HARDHAT_ENV=(
 
 mkdir -p "$REPORT_DIR"
 
-source "$ROOT/demo/aurora/bin/local-node.sh"
 prepare_local_node
 node demo/aurora/bin/mission-plan.cjs "$MISSION_CONFIG"
 
@@ -63,6 +69,7 @@ compile_contracts
 start_local_node
 
 dep_env() {
+  check_local_node
   DEPLOY_DEFAULTS_SKIP_VERIFY=1 \
   DEPLOY_DEFAULTS_CONFIG="demo/aurora/config/deployer.hardhat.json" \
   DEPLOY_DEFAULTS_OUTPUT="$DEPLOY_OUTPUT" \
@@ -70,6 +77,7 @@ dep_env() {
 }
 
 run_demo() {
+  check_local_node
   AURORA_DEPLOY_OUTPUT="$DEPLOY_OUTPUT" \
   AURORA_REPORT_SCOPE="$SCOPE" \
   AURORA_MISSION_CONFIG="$MISSION_CONFIG" \

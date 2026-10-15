@@ -1,0 +1,185 @@
+{
+  "schema": "agijobs.supplier-browser-lab-summary.v1",
+  "scope": "Synthetic direct-process laboratory; scripted provider responses and real Chromium",
+  "liveProvider": false,
+  "productionApproved": false,
+  "settlementApproved": false,
+  "runs": [
+    {
+      "injectedError": false,
+      "advisorSha256": "b0f496675b7752e97c1570c3f459ba132586d30289ec54db8a2c29e7afbf8c4e",
+      "workerSha256": "d48f97cabdfbb2cb1b2db670609eaef814189ff071f01718f41b5b699b6f7c86",
+      "taskSha256": "f98fcf8fb6174e6ba15455daa6d0cbae5a3a3cc232ce39686edce2d203831569",
+      "providerFixtureCalls": 3,
+      "externalFetches": 0,
+      "workerTerminated": true,
+      "cleanup": {
+        "leaderExited": true,
+        "liveGroupMembers": [],
+        "groupClosed": true
+      },
+      "elapsedSeconds": 1.8339507639975636,
+      "usage": [
+        {
+          "attempt": 1,
+          "status": "UNKNOWN",
+          "cost": null
+        },
+        {
+          "attempt": 2,
+          "status": "UNKNOWN",
+          "cost": null
+        },
+        {
+          "attempt": 3,
+          "status": "UNKNOWN",
+          "cost": null
+        }
+      ],
+      "review": {
+        "schemaVersion": 1,
+        "reviewer": "deterministic fixture acceptance rules",
+        "accepted": true,
+        "settlementApproved": false,
+        "productionApproved": false,
+        "checks": [
+          {
+            "name": "Exactly two unique deliverables",
+            "passed": true
+          },
+          {
+            "name": "Integrity: comparison.json",
+            "passed": true
+          },
+          {
+            "name": "Integrity: recommendation.md",
+            "passed": true
+          },
+          {
+            "name": "Delivery limit is 7 days",
+            "passed": true
+          },
+          {
+            "name": "All quotes appear once",
+            "passed": true
+          },
+          {
+            "name": "Boreal: total and eligibility",
+            "passed": true
+          },
+          {
+            "name": "Laurentian: total and eligibility",
+            "passed": true
+          },
+          {
+            "name": "Stellar: total and eligibility",
+            "passed": true
+          },
+          {
+            "name": "Lowest eligible total wins",
+            "passed": true
+          },
+          {
+            "name": "No purchase claimed",
+            "passed": true
+          },
+          {
+            "name": "Brief names the recommendation and no-purchase boundary",
+            "passed": true
+          }
+        ]
+      }
+    },
+    {
+      "injectedError": true,
+      "advisorSha256": "b0f496675b7752e97c1570c3f459ba132586d30289ec54db8a2c29e7afbf8c4e",
+      "workerSha256": "d48f97cabdfbb2cb1b2db670609eaef814189ff071f01718f41b5b699b6f7c86",
+      "taskSha256": "f98fcf8fb6174e6ba15455daa6d0cbae5a3a3cc232ce39686edce2d203831569",
+      "providerFixtureCalls": 3,
+      "externalFetches": 0,
+      "workerTerminated": true,
+      "cleanup": {
+        "leaderExited": true,
+        "liveGroupMembers": [],
+        "groupClosed": true
+      },
+      "elapsedSeconds": 1.8760827670012077,
+      "usage": [
+        {
+          "attempt": 1,
+          "status": "UNKNOWN",
+          "cost": null
+        },
+        {
+          "attempt": 2,
+          "status": "UNKNOWN",
+          "cost": null
+        },
+        {
+          "attempt": 3,
+          "status": "UNKNOWN",
+          "cost": null
+        }
+      ],
+      "review": {
+        "schemaVersion": 1,
+        "reviewer": "deterministic fixture acceptance rules",
+        "accepted": false,
+        "settlementApproved": false,
+        "productionApproved": false,
+        "checks": [
+          {
+            "name": "Exactly two unique deliverables",
+            "passed": true
+          },
+          {
+            "name": "Integrity: comparison.json",
+            "passed": true
+          },
+          {
+            "name": "Integrity: recommendation.md",
+            "passed": true
+          },
+          {
+            "name": "Delivery limit is 7 days",
+            "passed": true
+          },
+          {
+            "name": "All quotes appear once",
+            "passed": true
+          },
+          {
+            "name": "Boreal: total and eligibility",
+            "passed": true
+          },
+          {
+            "name": "Laurentian: total and eligibility",
+            "passed": true
+          },
+          {
+            "name": "Stellar: total and eligibility",
+            "passed": true
+          },
+          {
+            "name": "Lowest eligible total wins",
+            "passed": false
+          },
+          {
+            "name": "No purchase claimed",
+            "passed": true
+          },
+          {
+            "name": "Brief names the recommendation and no-purchase boundary",
+            "passed": false
+          }
+        ]
+      }
+    }
+  ],
+  "helperRegressionTests": 6,
+  "failureRecovery": {
+    "case": "unavailable browser",
+    "retainedPartialEvidence": true,
+    "groupClosed": true
+  }
+}

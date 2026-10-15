@@ -1,0 +1,21 @@
+{
+  "schema": "agijobs.governance-rehearsal.v1",
+  "title": "Approve a bounded maintenance budget",
+  "proposal": {
+    "id": "maintenance-001",
+    "requestedCents": 420000,
+    "availableCents": 500000
+  },
+  "policy": {
+    "eligibleWeight": 100,
+    "quorumPercent": 60,
+    "approvalPercent": 67,
+    "requiredControls": ["pause", "budget", "review"]
+  },
+  "controls": ["pause", "budget", "review"],
+  "votes": [
+    { "voter": "operations", "weight": 40, "choice": "approve" },
+    { "voter": "maintenance", "weight": 30, "choice": "approve" },
+    { "voter": "risk", "weight": 20, "choice": "reject" }
+  ]
+}

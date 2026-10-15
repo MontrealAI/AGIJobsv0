@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self'; font-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'"
+    />
+    <title>Omniphoenix · Dependency disruption desk</title>
+    <link rel="stylesheet" href="./style.css" />
+    <script type="module" src="./main.mjs"></script>
+  </head>
+  <body>
+    <a class="skip" href="#main" data-i18n="skip">Skip to planner</a>
+    <header>
+      <a href="../../#explore" data-i18n="back">← Explore the collection</a
+      ><button id="language" type="button" lang="fr">Français</button>
+    </header>
+    <main id="main" tabindex="-1">
+      <section class="hero">
+        <p class="eyebrow" data-i18n="eyebrow">OMNIPHOENIX / PLANNING LAB</p>
+        <h1 data-i18n="title">When one dependency slips, what follows?</h1>
+        <p data-i18n="intro">
+          Explore the original seven-job hyperstructure plan. Delay a job, block
+          a dependency, and inspect the causal path before commissioning any
+          work.
+        </p>
+        <p class="notice" data-i18n="assumptions">
+          Durations begin after all dependencies finish. Resources are unlimited
+          and parallel. Physical capacity and real-world impact are unknown. No
+          providers, execution, transactions or settlement.
+        </p>
+      </section>
+      <section aria-labelledby="controls-title">
+        <div class="section-title">
+          <h2 id="controls-title" data-i18n="controls">
+            01 / Shape a disruption
+          </h2>
+          <button id="reset" type="button" data-i18n="reset">
+            Restore original plan
+          </button>
+        </div>
+        <p data-i18n="controlHelp">
+          Whole decimal digits only. Delays: 0–365000 days; horizon: 1–365000
+          days. Combined duration per job: at most 365000 days. Delay adds days
+          to the job duration; blocking prevents that job and its descendants
+          from finishing.
+        </p>
+        <label for="horizon" data-i18n="horizon"
+          >Planning horizon in days (blank = unknown)</label
+        ><input
+          id="horizon"
+          type="text"
+          inputmode="numeric"
+          maxlength="20"
+          autocomplete="off"
+        />
+        <div id="job-controls" class="control-grid"></div>
+        <button
+          id="calculate"
+          type="button"
+          class="primary"
+          data-i18n="calculate"
+        >
+          Recompute scenario
+        </button>
+        <p id="status" role="status" aria-live="polite"></p>
+      </section>
+      <section id="results" aria-labelledby="results-title" hidden>
+        <h2 id="results-title" data-i18n="results">
+          02 / Compare the dependency paths
+        </h2>
+        <div id="metrics" class="metrics"></div>
+        <p class="notice" data-i18n="exposureHelp">
+          Reward exposure is the exact sum assigned to blocked jobs and
+          descendants. It is a planning total, never lost, earned, paid or
+          recoverable money.
+        </p>
+        <h3 data-i18n="traceTitle">Causal trace, job by job</h3>
+        <p data-i18n="traceHelp">
+          Arrows show dependency reachability from each disruption origin, not
+          proof that every delay changes the finish date. Ties follow source
+          order.
+        </p>
+        <div id="trace" class="trace"></div>
+        <details>
+          <summary data-i18n="provenance">
+            Source and report fingerprints
+          </summary>
+          <p data-i18n="hashHelp">
+            The source hash covers exact accepted UTF-8 bytes, including
+            whitespace. The report hash covers canonical key-sorted report
+            content. Checksums show consistency, not authenticity or authority.
+          </p>
+          <dl id="fingerprints"></dl>
+        </details>
+      </section>
+      <section aria-labelledby="source-title">
+        <h2 id="source-title" data-i18n="source">
+          03 / Inspect, import, recover
+        </h2>
+        <p data-i18n="sourceHelp">
+          Everything is computed locally. Plan: at most 256 KiB and 100 jobs.
+          Recovery: at most 4 MiB. Duplicate keys, BOM, malformed UTF-8 and
+          altered recovery reports are rejected.
+        </p>
+        <div class="files">
+          <label for="plan-file" data-i18n="importPlan"
+            >Import source plan JSON</label
+          ><input
+            id="plan-file"
+            type="file"
+            accept="application/json,.json"
+          /><label for="recovery-file" data-i18n="importRecovery"
+            >Import validated recovery JSON</label
+          ><input
+            id="recovery-file"
+            type="file"
+            accept="application/json,.json"
+          />
+        </div>
+        <details>
+          <summary data-i18n="editSource">
+            Inspect or edit exact source text
+          </summary>
+          <label for="source-text" data-i18n="sourceText"
+            >Exact source JSON (supplied, unverified metadata; no
+            authority)</label
+          ><textarea id="source-text" spellcheck="false"></textarea>
+        </details>
+        <div class="actions">
+          <button
+            id="download-source"
+            type="button"
+            disabled
+            data-i18n="downloadSource"
+          >
+            Download accepted source bytes</button
+          ><button
+            id="download-recovery"
+            type="button"
+            disabled
+            data-i18n="downloadRecovery"
+          >
+            Download validated recovery
+          </button>
+        </div>
+      </section>
+      <footer data-i18n="footer">
+        A bounded dependency model. Decisions and real-world feasibility remain
+        yours to review.
+      </footer>
+    </main>
+  </body>
+</html>

@@ -94,7 +94,7 @@ The generated section includes every tracked top-level directory and every neste
 | [astral-omnidominion-operating-system-command-theatre](astral-omnidominion-operating-system-command-theatre/README.md) | Code and guide | Open the guide or source directory |
 | [atlas-conductor](atlas-conductor/README.md) | Code and guide | `demo:atlas-conductor:local` |
 | [aurora](aurora/README.md) | Code and guide | `demo:asi-takeoff:report`, `demo:aurora:local`, `demo:aurora:report` |
-| [CELESTIAL-SOVEREIGN-ORBITAL-AGI-OS-GRAND-DEMONSTRATION](CELESTIAL-SOVEREIGN-ORBITAL-AGI-OS-GRAND-DEMONSTRATION/README.md) | Design guide | Open the guide or source directory |
+| [CELESTIAL-SOVEREIGN-ORBITAL-AGI-OS-GRAND-DEMONSTRATION](CELESTIAL-SOVEREIGN-ORBITAL-AGI-OS-GRAND-DEMONSTRATION/README.md) | Code and guide | Open the guide or source directory |
 | [cosmic-omni-sovereign-symphony](cosmic-omni-sovereign-symphony/README.md) | Code and guide | `demo:flagship` |
 | [cosmic-omniversal-grand-symphony](cosmic-omniversal-grand-symphony/README.md) | Code and guide | Open the guide or source directory |
 | [CULTURE-v0](CULTURE-v0/README.md) | Code and guide | Open the guide or source directory |
@@ -103,7 +103,7 @@ The generated section includes every tracked top-level directory and every neste
 | [helios-omniversal-symphony](helios-omniversal-symphony/README.md) | Code and guide | Open the guide or source directory |
 | [huxley_godel_machine_v0](huxley_godel_machine_v0) | Supporting code / assets | Open the guide or source directory |
 | [Huxley-Godel-Machine-v0](Huxley-Godel-Machine-v0/README.md) | Code and guide | `demo:hgm:qa`, `demo:hgm:worker` |
-| [ICONIC-OPERATING-SYSTEM-DEMO](ICONIC-OPERATING-SYSTEM-DEMO/README.md) | Design guide | Open the guide or source directory |
+| [ICONIC-OPERATING-SYSTEM-DEMO](ICONIC-OPERATING-SYSTEM-DEMO/README.md) | Code and guide | Open the guide or source directory |
 | [imperatrix-celestia-operating-system](imperatrix-celestia-operating-system/README.md) | Code and guide | Open the guide or source directory |
 | [infinity-symphony](infinity-symphony/README.md) | Code and guide | Open the guide or source directory |
 | [kardashev_ii_omega_grade_alpha_agi_business_3](kardashev_ii_omega_grade_alpha_agi_business_3/README.md) | Code and guide | `demo:kardashev-business:serve`, `demo:kardashev-business:plan`, `demo:kardashev-business:worker` |
@@ -119,7 +119,7 @@ The generated section includes every tracked top-level directory and every neste
 | [Meta-Agentic-Program-Synthesis-v0](Meta-Agentic-Program-Synthesis-v0/README.md) | Code and guide | `demo:meta-agentic-program-synthesis`, `demo:meta-agentic-program-synthesis:briefing`, `demo:meta-agentic-program-synthesis:full` |
 | [MuZero-style-v0](MuZero-style-v0/README.md) | Code and guide | Open the guide or source directory |
 | [National-Supply-Chain-v0](National-Supply-Chain-v0/README.md) | Code and guide | `demo:national-supply-chain:export` |
-| [OMNI-CONCORD-ASCENSION-ATLAS](OMNI-CONCORD-ASCENSION-ATLAS/README.md) | Design guide | Open the guide or source directory |
+| [OMNI-CONCORD-ASCENSION-ATLAS](OMNI-CONCORD-ASCENSION-ATLAS/README.md) | Code and guide | Open the guide or source directory |
 | [omni-orchestrator-singularity](omni-orchestrator-singularity/README.md) | Code and guide | Open the guide or source directory |
 | [omni-sovereign-ascension-operating-system](omni-sovereign-ascension-operating-system/README.md) | Code and guide | `demo:omni-sovereign` |
 | [OMNIGENESIS-GLOBAL-SOVEREIGN-SYMPHONY](OMNIGENESIS-GLOBAL-SOVEREIGN-SYMPHONY/README.md) | Code and guide | Open the guide or source directory |
@@ -131,23 +131,23 @@ The generated section includes every tracked top-level directory and every neste
 | [Phase-6-Scaling-Multi-Domain-Expansion](Phase-6-Scaling-Multi-Domain-Expansion/README.md) | Code and guide | `demo:phase6:did`, `demo:phase6:iot`, `demo:phase6:orchestrate` |
 | [Phase-8-Universal-Value-Dominance](Phase-8-Universal-Value-Dominance/README.md) | Code and guide | `demo:phase8:bootstrap`, `demo:phase8:orchestrate`, `demo:phase8:work` |
 | [Planetary-Orchestrator-Fabric-v0](Planetary-Orchestrator-Fabric-v0/README.md) | Code and guide | `demo:planetary-orchestrator-fabric`, `demo:planetary-orchestrator-fabric:restart`, `demo:planetary-orchestrator-fabric:acceptance` |
-| [polaris-concordat](polaris-concordat/README.md) | Design guide | Open the guide or source directory |
+| [polaris-concordat](polaris-concordat/README.md) | Code and guide | Open the guide or source directory |
 | [presentation](presentation) | Supporting code / assets | Open the guide or source directory |
 | [REDENOMINATION](REDENOMINATION/README.md) | Code and guide | `demo:redenomination`, `demo:redenomination:control-room`, `demo:redenomination:export` |
-| [solving-alpha-agi-governance](solving-alpha-agi-governance/README.md) | Design guide | Open the guide or source directory |
+| [solving-alpha-agi-governance](solving-alpha-agi-governance/README.md) | Code and guide | Open the guide or source directory |
 | [sovereign-constellation](sovereign-constellation/README.md) | Code and guide | `demo:sovereign-constellation`, `demo:sovereign-constellation:asi-takes-off`, `demo:sovereign-constellation:asi-takes-off:flight-plan` |
 | [sovereign-mesh](sovereign-mesh/README.md) | Code and guide | Open the guide or source directory |
-| [superintelligent-empowerment](superintelligent-empowerment/docs/README.md) | Code and guide | Open the guide or source directory |
+| [superintelligent-empowerment](superintelligent-empowerment/README.md) | Code and guide | Open the guide or source directory |
 | [tests](tests) | Supporting code / assets | Open the guide or source directory |
 | [Tiny-Recursive-Model-v0](Tiny-Recursive-Model-v0/README.md) | Code and guide | Open the guide or source directory |
 | [TRIDENT-SOVEREIGN-AGI-ORCHESTRATOR](TRIDENT-SOVEREIGN-AGI-ORCHESTRATOR/README.md) | Code and guide | `demo:trident-sovereign`, `demo:trident-sovereign:ui` |
 | [Trustless-Economic-Core-v0](Trustless-Economic-Core-v0/README.md) | Code and guide | Open the guide or source directory |
 | [validator_constellation_v0](validator_constellation_v0) | Supporting code / assets | Open the guide or source directory |
 | [Validator-Constellation-v0](Validator-Constellation-v0/README.md) | Code and guide | `demo:validator-constellation`, `demo:validator-constellation:scenario`, `demo:validator-constellation:operator-console` |
-| [zenith-sapience](zenith-sapience/README.md) | Design guide | Open the guide or source directory |
+| [zenith-sapience](zenith-sapience/README.md) | Code and guide | Open the guide or source directory |
 | [zenith-sapience-initiative-celestial-archon-governance](zenith-sapience-initiative-celestial-archon-governance/README.md) | Code and guide | `demo:zenith-sapience-celestial-archon`, `demo:zenith-sapience-celestial-archon:local` |
 | [zenith-sapience-initiative-global-governance](zenith-sapience-initiative-global-governance/README.md) | Code and guide | `demo:zenith-sapience-initiative`, `demo:zenith-sapience-initiative:local` |
-| [zenith-sapience-initiative-omega-omni-operating-system](zenith-sapience-initiative-omega-omni-operating-system/README.md) | Design guide | Open the guide or source directory |
+| [zenith-sapience-initiative-omega-omni-operating-system](zenith-sapience-initiative-omega-omni-operating-system/README.md) | Code and guide | Open the guide or source directory |
 | [zenith-sapience-initiative-omnidominion-governance](zenith-sapience-initiative-omnidominion-governance/README.md) | Code and guide | `demo:zenith-sapience-omnidominion`, `demo:zenith-sapience-omnidominion:local` |
 | [zenith-sapience-initiative-planetary-operating-system-governance](zenith-sapience-initiative-planetary-operating-system-governance/README.md) | Code and guide | `demo:zenith-sapience-planetary-os`, `demo:zenith-sapience-planetary-os:local` |
 | [zenith-sapience-initiative-supra-sovereign-hypernova-governance](zenith-sapience-initiative-supra-sovereign-hypernova-governance/README.md) | Code and guide | `demo:zenith-hypernova`, `demo:zenith-hypernova:local`, `demo:zenith-hypernova:work` |
@@ -196,6 +196,7 @@ The generated section includes every tracked top-level directory and every neste
 - [Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_v8/README.md](Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_v8/README.md)
 - [Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_v9/README.md](Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_v9/README.md)
 - [Meta-Agentic-ALPHA-AGI-Jobs-v0/reports/owner-playbook.md](Meta-Agentic-ALPHA-AGI-Jobs-v0/reports/owner-playbook.md)
+- [OMNIPHOENIX-ASCENDANT-HYPERSTRUCTURE/disruption/README.md](OMNIPHOENIX-ASCENDANT-HYPERSTRUCTURE/disruption/README.md)
 - [One-Box/computer-work/README.md](One-Box/computer-work/README.md)
 - [Phase-8-Universal-Value-Dominance/output/phase8-guardian-response-playbook.md](Phase-8-Universal-Value-Dominance/output/phase8-guardian-response-playbook.md)
 - [TRIDENT-SOVEREIGN-AGI-ORCHESTRATOR/ui/operator-playbook.md](TRIDENT-SOVEREIGN-AGI-ORCHESTRATOR/ui/operator-playbook.md)
@@ -218,5 +219,6 @@ The generated section includes every tracked top-level directory and every neste
 - [kardashev_ii_omega_grade_alpha_agi_business_3/workbench/README.md](kardashev_ii_omega_grade_alpha_agi_business_3/workbench/README.md)
 - [sovereign-constellation/asi-takes-off-demo/README.md](sovereign-constellation/asi-takes-off-demo/README.md)
 - [superintelligent-empowerment/docs/README.md](superintelligent-empowerment/docs/README.md)
+- [superintelligent-empowerment/web/README.md](superintelligent-empowerment/web/README.md)
 
 <!-- demo-catalog:end -->

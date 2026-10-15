@@ -4,30 +4,11 @@ import * as dotenv from "dotenv";
 
 dotenv.config();
 
-function parseKeyList(value?: string): string[] {
-  if (!value) return [];
-  return Array.from(
-    new Set(
-      value
-        .split(",")
-        .map((key) => key.trim())
-        .filter((key) => key.length > 0),
-    ),
-  );
-}
-
-const rpcUrl = process.env.INSIGHT_MARK_RPC_URL;
-const networkName = process.env.INSIGHT_MARK_NETWORK ?? "hardhat";
-const chainIdRaw = process.env.INSIGHT_MARK_CHAIN_ID;
-const chainId = chainIdRaw ? Number(chainIdRaw) : undefined;
-
-const ownerKey = process.env.INSIGHT_MARK_OWNER_KEY;
-const participantKeys = parseKeyList(process.env.INSIGHT_MARK_PARTICIPANT_KEYS);
-const oracleKeys = parseKeyList(process.env.INSIGHT_MARK_ORACLE_KEYS);
-
-const externalAccounts = [ownerKey, ...participantKeys, ...oracleKeys].filter((value): value is string => Boolean(value));
+const { externalNetworkConfig } = require("./scripts/utils/executionPreflight.cjs");
+const externalNetworks = externalNetworkConfig(process.env);
 
 const config: HardhatUserConfig = {
+  defaultNetwork: "hardhat",
   solidity: {
     version: "0.8.37",
     settings: {
@@ -50,15 +31,7 @@ const config: HardhatUserConfig = {
     hardhat: {
       chainId: 31337,
     },
-    ...(rpcUrl && ownerKey
-      ? {
-          [networkName]: {
-            url: rpcUrl,
-            accounts: externalAccounts,
-            ...(chainId ? { chainId } : {}),
-          },
-        }
-      : {}),
+    ...externalNetworks,
   },
 };
 

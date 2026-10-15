@@ -85,6 +85,12 @@ def run_demo(args: argparse.Namespace) -> None:
 
     reports = asyncio.run(_loop())
     output = {
+        "execution_mode": "local-scripted-heuristic-search",
+        "live_provider": False,
+        "actual_chain": False,
+        "costs_are_modeled": True,
+        "production_approved": False,
+        "settlement_approved": False,
         "baseline": config.baseline_metrics,
         "final": reports[-1].metrics if reports else config.baseline_metrics,
         "champion": atlas.champion.metrics if atlas.champion else {},

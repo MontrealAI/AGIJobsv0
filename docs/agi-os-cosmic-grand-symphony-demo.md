@@ -1,5 +1,7 @@
 # AGI Jobs v0 (v2) – Cosmic Omniversal Grand Symphony Demo Guide
 
+> The launcher defaults to an effect-free plan. Read the [mode upgrade](./agi-os-first-class-mode-upgrade.md) for explicit execution and separate Hardhat/deployment evidence boundaries.
+
 This guide documents the production-grade workflow for the **Cosmic Omniversal Grand Symphony** demonstration – the “first-class operating system” experience for AGI Jobs v0 (v2). It stitches together only existing tooling (Docker one-click deploy, `demo:agi-os:first-class`, owner control verifiers, and reporting utilities) so operators can execute a complete mission rehearsal with zero code changes.
 
 ## Audience
@@ -25,13 +27,13 @@ This guide documents the production-grade workflow for the **Cosmic Omniversal G
    ```bash
    npm run ci:verify-branch-protection
    ```
-3. **Run the demo** using either path:
+3. **Inspect the effect-free plan** using either path:
    ```bash
    npm run demo:agi-os:first-class
    # or
    demo/cosmic-omniversal-grand-symphony/bin/grand-symphony.sh
    ```
-4. **Respond to wizard prompts** (network selection, Docker confirmation, governance signer details). Defaults target the local Hardhat (Anvil) network for a deterministic rehearsal.
+4. **Explicitly execute after review** with `npm run demo:agi-os:first-class -- --mode execute --network localhost --yes --compose`. This may sign transactions and start services. No environment/terminal condition supplies consent. Use `--no-compose` for an operator-managed runtime.
 5. **Monitor progress** – the script streams emoji-coded updates for every stage (preflight, deployment, simulation, governance synthesis, audit packaging, integrity verification).
 6. **Open interfaces** when instructed:
    - Owner Console: `http://localhost:3000`
@@ -51,7 +53,7 @@ This guide documents the production-grade workflow for the **Cosmic Omniversal G
 | `reports/agi-os/first-class/owner-control-map.mmd` | Mermaid diagram of owner/timelock relationships and pause circuitry. |
 | `reports/agi-os/first-class/logs/*.log` | Raw stdout/stderr captured for reproducibility. |
 
-These outputs align with the CI v2 artefacts, ensuring the demonstration reflects production readiness.
+The first-class report/manifest label deployment and Hardhat fixture evidence separately. These outputs do not establish production readiness.
 
 ## Owner Control Responsibilities
 
@@ -62,7 +64,7 @@ These outputs align with the CI v2 artefacts, ensuring the demonstration reflect
 ## Troubleshooting
 
 - **Docker not running** – start Docker Desktop / Engine and rerun the demo. The preflight stage will revalidate.
-- **Wizard prompts loop** – ensure the terminal is interactive; add `--yes` to run headless (`npm run demo:agi-os:first-class -- --yes`).
+- **Invocation rejected** – use `--help` alone and provide the full explicit execution contract. `--yes` alone leaves the launcher in plan mode; legacy automation aliases are rejected.
 - **Port conflicts** – stop other services on ports 3000-3002 or adjust Compose overrides before launching.
 - **CI mismatch** – rerun the demo, then execute `npm run ci` locally. Compare logs to `reports/agi-os/first-class/first-class-run.json` to ensure parity.
 

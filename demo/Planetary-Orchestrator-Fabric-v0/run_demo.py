@@ -62,6 +62,10 @@ def main(argv: list[str] | None = None) -> int:
         "completion_rate": result.completion_rate,
         "max_depth_delta": result.max_depth_delta(),
         "reassigned_jobs": result.reassigned_jobs,
+        "interruption_performed": result.interruption_performed,
+        "interrupted_assignments": result.interrupted_assignments,
+        "checkpoint_sha256": result.checkpoint_sha256,
+        "interruption_boundary": "after assignment, before simulated execution" if result.interruption_performed else None,
         "total_runtime": result.total_runtime,
     }
     print(json.dumps(output, indent=2))

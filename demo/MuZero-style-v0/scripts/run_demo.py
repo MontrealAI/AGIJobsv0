@@ -1,4 +1,5 @@
 """Helper script to execute the MuZero demo end-to-end."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -11,9 +12,12 @@ if str(PACKAGE_ROOT) not in sys.path:
 from muzero_demo.cli import app  # noqa: E402  pylint: disable=wrong-import-position
 
 
-def main() -> None:
-    config_path = PACKAGE_ROOT / "config" / "muzero_demo.yaml"
-    app(["demo", "--config", str(config_path)])
+def main(argv: list[str] | None = None) -> None:
+    args = list(sys.argv[1:] if argv is None else argv)
+    if not args:
+        config_path = PACKAGE_ROOT / "config" / "muzero_demo.yaml"
+        args = ["demo", "--config", str(config_path)]
+    app(args)
 
 
 if __name__ == "__main__":

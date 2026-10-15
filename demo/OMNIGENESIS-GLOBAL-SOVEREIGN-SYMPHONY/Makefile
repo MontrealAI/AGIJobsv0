@@ -1,16 +1,20 @@
 SHELL := /bin/bash
-ROOT := $(shell pwd)
-PLAN ?= $(ROOT)/project-plan.json
+MODULE_DIR := $(shell cd "$$(dirname "$(MAKEFILE_LIST)")" && pwd)/
+PLAN ?= $(MODULE_DIR)project-plan.json
 REPORT_ROOT ?= reports/localhost/omnigenesis-global-symphony
+.DEFAULT_GOAL := help
 
-.PHONY: ci plan preview
+.PHONY: help ci plan preview
 
+help:
+	@bash "$(MODULE_DIR)bin/omnigenesis-ci.sh" --help
+
+# Explicit fixture execution; the scenario jobs remain report context only.
 ci:
-	./bin/omnigenesis-ci.sh "$(PLAN)" "$(REPORT_ROOT)"
+	bash "$(MODULE_DIR)bin/omnigenesis-ci.sh" --rehearse "$(PLAN)" "$(REPORT_ROOT)"
 
 plan:
-	jq '.' project-plan.json
+	bash "$(MODULE_DIR)bin/omnigenesis-ci.sh" --plan "$(PLAN)"
 
 preview:
-	@echo "Plan: $(PLAN)"
-	@echo "Report root: $(REPORT_ROOT)"
+	@printf 'Plan (report context only): %s\nReport root: %s\n' "$(PLAN)" "$(REPORT_ROOT)"

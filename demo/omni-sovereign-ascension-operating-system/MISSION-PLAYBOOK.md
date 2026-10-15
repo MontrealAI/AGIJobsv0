@@ -1,5 +1,12 @@
 # Omni-Sovereign Ascension Mission Playbook
 
+> **Launcher upgrade:** A bare launch now prints an effect-free plan. Review the
+> [strict execution contract and evidence boundaries](../../docs/agi-os-first-class-mode-upgrade.md).
+> The in-memory Hardhat fixture does not verify a selected deployment. Compound
+> Meta-Agentic/Alpha-Meta launchers support localhost only; their later ASI replay
+> uses the shared `mission@v2.json`, not a converted branded project plan.
+
+
 This playbook distils the governance, observability, and audit moves required to run the Omni-Sovereign Ascension Operating System Showcase in a production-critical rehearsal. Every step references scripts and tooling that are already present in AGI Jobs v0 (v2).
 
 ---
@@ -42,7 +49,7 @@ Artifacts to capture:
 
 1. Run the automation:
    ```bash
-   npm run demo:agi-os:first-class -- --auto-yes
+   npm run demo:agi-os:first-class -- --mode execute --network localhost --yes --no-compose
    ```
 2. Observe the progress stream:
    - ✅ **Compilation** – Hardhat build
