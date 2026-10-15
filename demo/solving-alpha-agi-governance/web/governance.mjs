@@ -1,3 +1,8 @@
+function integerText(value) {
+  if (!/^(0|[1-9][0-9]*)$/.test(value))
+    throw Error('Use whole-number digits without decimals or exponents');
+  return Number(value);
+}
 // SPDX-License-Identifier: MIT
 import { evaluate, parseScenario } from './engine.mjs';
 import { word, toggle } from './i18n.mjs';
@@ -137,20 +142,21 @@ function reset() {
     })),
   });
 }
-const number = (id) => ($(id).value.trim() ? Number($(id).value) : NaN);
-function read() {
+const number = (id) => integerText($(id).value);
+function read(raw = false) {
+  const numeric = (id) => (raw ? $(id).value : number(id));
   return {
     schema: 'agijobs.governance-rehearsal.v1',
     title: $('title').value,
     proposal: {
       id: proposalId,
-      requestedCents: number('requested'),
-      availableCents: number('available'),
+      requestedCents: numeric('requested'),
+      availableCents: numeric('available'),
     },
     policy: {
-      eligibleWeight: number('eligible'),
-      quorumPercent: number('quorum'),
-      approvalPercent: number('approval'),
+      eligibleWeight: numeric('eligible'),
+      quorumPercent: numeric('quorum'),
+      approvalPercent: numeric('approval'),
       requiredControls: [...requiredControls],
     },
     controls: [...$('controls').querySelectorAll('input:checked')].map(
@@ -158,9 +164,9 @@ function read() {
     ),
     votes: [...$('votes').children].map((row) => ({
       voter: row.dataset.voter,
-      weight: row.querySelector('[data-key=weight]').value.trim()
-        ? Number(row.querySelector('[data-key=weight]').value)
-        : NaN,
+      weight: raw
+        ? row.querySelector('[data-key=weight]').value
+        : integerText(row.querySelector('[data-key=weight]').value),
       choice: row.querySelector('select').value,
     })),
   };
@@ -300,7 +306,7 @@ $('evidence-download').onclick = () => {
     );
 };
 $('language').onclick = () => {
-  const s = read();
+  const s = read(true);
   toggle();
   drawVotes(s.votes);
   drawControls(s.controls);
@@ -313,7 +319,9 @@ $('import').onchange = async (event) => {
   const token = revision;
   try {
     if (file.size > 1000000) throw new Error('Scenario exceeds 1 MB');
-    const text = await file.text();
+    const text = new TextDecoder('utf-8', { fatal: true }).decode(
+      await file.arrayBuffer()
+    );
     if (token !== revision) return;
     load(parseScenario(text));
   } catch (error) {

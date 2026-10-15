@@ -11,6 +11,20 @@ export async function verifyGovernance({ page, url, artifacts, a11y, checks }) {
     await page.locator('#result').waitFor({ state: 'visible' });
     return JSON.parse(await page.locator('#artifact').textContent());
   };
+  for (const selector of ['#requested', '#votes [data-key=weight]']) {
+    const input = page.locator(selector).first(),
+      previous = await input.inputValue();
+    for (const value of ['1.00000000000000001', '1e1']) {
+      await input.fill(value);
+      await page.locator('#language').click();
+      assert.equal(await page.locator(selector).first().inputValue(), value);
+      await page.locator('#language').click();
+      await page.locator('button[type=submit]').click();
+      await page.locator('#error').waitFor({ state: 'visible' });
+      assert.equal(await page.locator('#result').isVisible(), false);
+    }
+    await input.fill(previous);
+  }
   const first = await run();
   assert.equal(first.result.accepted, true);
   assert.equal(first.result.remainingCentsIfApproved, 80000);
@@ -121,8 +135,8 @@ export async function verifyGovernance({ page, url, artifacts, a11y, checks }) {
   assert.equal(await page.locator('#result').isVisible(), false);
   await page.evaluate(() => {
     crypto.subtle.digest = window.originalDigest;
-    window.originalFileText = File.prototype.text;
-    File.prototype.text = function () {
+    window.originalFileText = File.prototype.arrayBuffer;
+    File.prototype.arrayBuffer = function () {
       const file = this;
       return new Promise((resolve) =>
         setTimeout(() => resolve(window.originalFileText.call(file)), 100)
@@ -144,6 +158,15 @@ export async function verifyGovernance({ page, url, artifacts, a11y, checks }) {
     await page.locator('.skip').evaluate((el) => el === document.activeElement),
     true
   );
+  const malformed = Buffer.from(bytes);
+  malformed[malformed.indexOf(Buffer.from('title')) + 9] = 255;
+  await page.locator('#import').setInputFiles({
+    name: 'invalid.json',
+    mimeType: 'application/json',
+    buffer: malformed,
+  });
+  await page.locator('#error').waitFor({ state: 'visible' });
+  assert.equal(await page.locator('#result').isVisible(), false);
   checks.push(
     'governance: EN/FR, gates, abstention, exact-byte exports, strict evidence recovery, delayed import/hash invalidation, keyboard, responsive200%'
   );
