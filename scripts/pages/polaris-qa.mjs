@@ -44,6 +44,11 @@ export async function verifyPolaris({ page, url, artifacts, a11y, checks }) {
   await importData('{"schema":1,"schema":2}');
   assert.equal(await page.locator('#error').isVisible(), true);
   assert.equal(await page.locator('#result').isVisible(), false);
+  const malformed = Buffer.from(bytes);
+  malformed[malformed.indexOf(Buffer.from('schema')) + 10] = 255;
+  await importData(malformed);
+  assert.equal(await page.locator('#error').isVisible(), true);
+  assert.equal(await page.locator('#result').isVisible(), false);
   await importData(bytes);
   assert.deepEqual(await read(), first);
   for (const [reveals, approvals, expectedFirst, expectedReplacement] of [
@@ -62,6 +67,24 @@ export async function verifyPolaris({ page, url, artifacts, a11y, checks }) {
     assert.deepEqual(await read(), first);
     assert.ok((await page.locator('#digest').textContent()).includes(digest));
   }
+  for (const selector of ['#reveals', '#approvals']) {
+    const input = page.locator(selector),
+      previous = await input.inputValue();
+    for (const raw of ['1.00000000000000001', '1e0']) {
+      await input.fill(raw);
+      await page.locator('button[type=submit]').click();
+      assert.equal(await page.locator('#prediction').isVisible(), false);
+    }
+    await input.fill(previous);
+  }
+  await page.locator('#reveals').fill('2');
+  assert.equal(await page.locator('#calculator-error').isVisible(), false);
+  await page.locator('#reveals').fill('1e0');
+  await page.locator('button[type=submit]').click();
+  assert.equal(await page.locator('#calculator-error').isVisible(), true);
+  await page.locator('#language').click();
+  assert.equal(await page.locator('#calculator-error').isVisible(), false);
+  await page.locator('#language').click();
   await page.locator('#reveals').fill('');
   await page.locator('#language').click();
   assert.equal(await page.locator('#reveals').inputValue(), '');
@@ -122,9 +145,9 @@ export async function verifyPolaris({ page, url, artifacts, a11y, checks }) {
   assert.equal(await page.locator('#result').isVisible(), false);
   await page.evaluate(() => window.restoreDigest());
   await page.evaluate(() => {
-    const original = File.prototype.text;
-    window.restoreFile = () => (File.prototype.text = original);
-    File.prototype.text = function () {
+    const original = File.prototype.arrayBuffer;
+    window.restoreFile = () => (File.prototype.arrayBuffer = original);
+    File.prototype.arrayBuffer = function () {
       const file = this;
       return new Promise(
         (resolve) =>

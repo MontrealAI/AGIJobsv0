@@ -2,6 +2,11 @@ import { review, validateEvidence } from './reviewer.mjs';
 import { parseJSON } from './json.mjs';
 import { calculate } from './calculator.mjs';
 import { fr, words, checkName } from './i18n.mjs';
+function integerText(value) {
+  if (!/^(0|[1-9][0-9]*)$/.test(value))
+    throw Error('Whole-number digits required');
+  return Number(value);
+}
 const $ = (id) => document.getElementById(id),
   original = new Map(
     [...document.querySelectorAll('[data-t]')].map((e) => [e, e.textContent])
@@ -18,6 +23,7 @@ const node = (tag, text) => {
   return e;
 };
 function translate() {
+  $('calculator-error').hidden = true;
   document.documentElement.lang = lang;
   for (const [e, text] of original)
     e.textContent = lang === 'fr' ? fr[e.dataset.t] ?? text : text;
@@ -153,7 +159,9 @@ $('import').onchange = async () => {
   if (!file) return;
   try {
     if (file.size > 262144) throw Error('256 KiB maximum');
-    const text = await file.text();
+    const text = new TextDecoder('utf-8', { fatal: true }).decode(
+      await file.arrayBuffer()
+    );
     if (ticket !== revision) return;
     await compute(text, ticket);
   } catch (e) {
@@ -174,19 +182,26 @@ $('language').onclick = () => {
 };
 $('calculator').onsubmit = (e) => {
   e.preventDefault();
+  $('calculator-error').hidden = true;
   try {
     prediction = calculate(
-      Number($('reveals').value),
-      Number($('approvals').value)
+      integerText($('reveals').value),
+      integerText($('approvals').value)
     );
     renderPrediction();
   } catch (e) {
     prediction = null;
     $('prediction').hidden = true;
+    $('calculator-error').hidden = false;
+    $('calculator-error').textContent =
+      lang === 'fr'
+        ? 'Saisissez uniquement les chiffres d’un entier de 0 à 3.'
+        : 'Enter whole-number digits from 0 to 3 only.';
   }
 };
 for (const type of ['input', 'change'])
   $('calculator').addEventListener(type, () => {
+    $('calculator-error').hidden = true;
     prediction = null;
     $('prediction').hidden = true;
   });
