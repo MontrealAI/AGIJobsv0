@@ -2,6 +2,13 @@
 
 ## Current operating path
 
+The shell launcher resolves the repository package root independently of your current directory.
+Use `bin/run-demo.sh --max-cycles 3 --no-resume` from this directory for a finite three-cycle local simulation,
+or invoke the launcher by absolute path from another directory. Output paths still follow
+the selected configuration; use explicit checkpoint/log overrides when isolating artifacts. A cycle limit
+means the simulation stopped; it does not mean every posted job finalized.
+
+
 [Open the Business 3 workbench guide](../kardashev_ii_omega_grade_alpha_agi_business_3/workbench/README.md) for the shared website, bounded launch commands, ten computer-work templates and approved-task worker integration. Run `npm run demo:kardashev-business:serve` from the repository root.
 
 This directory implements a **synthetic orchestration simulation**. Its token, energy, planetary and validator metrics are not evidence of live settlement, physical infrastructure or production-ready autonomous work. The preserved architecture below describes the intended system; qualify a live deployment using the workbench guide.
