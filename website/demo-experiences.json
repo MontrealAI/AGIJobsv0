@@ -546,31 +546,37 @@
     "install": "python -m pip install PyYAML==6.0.2"
   },
   "superintelligent-empowerment": {
-    "question": "How do mission goals become a stakeholder impact report?",
-    "purpose": "For mission designers: turn named initiatives, beneficiaries and stated targets into a readable impact narrative while keeping goals separate from measured outcomes.",
+    "question": "Which initiative claims have consistent supplied evidence, and which remain blocked?",
+    "purpose": "For project reviewers: bind reported observations to explicit integer criteria and dependency holds. Generate and reopen real artifacts while keeping source authenticity, observed impact and human approval unverified.",
     "steps": [
       {
-        "title": "Read the initiatives",
-        "source": "demo/superintelligent-empowerment/configs/mission.yaml",
-        "explanation": "Each initiative lists beneficiaries, capability vectors and success metrics. Growth and resilience values are stated targets, not measured results."
+        "title": "Inspect the synthetic evidence packet",
+        "source": "demo/superintelligent-empowerment/evidence/example.json",
+        "explanation": "One criterion is met, one lacks evidence, and another remains held by its dependency. Source bytes are hashed exactly; a hash does not authenticate their origin."
       },
       {
-        "title": "Follow report construction",
+        "title": "Follow the consistency checks",
+        "source": "demo/superintelligent-empowerment/code/evidence.py",
+        "explanation": "Strict UTF-8 and integer schemas, exact metric/unit matching and the existing Astral DAG engine produce a review ledger. Artifact review recomputes from submitted inputs."
+      },
+      {
+        "title": "Keep the original narrative in context",
         "source": "demo/superintelligent-empowerment/code/run_demo.py",
-        "explanation": "The orchestrator loads YAML, constructs initiative summaries and serializes an impact report. It synthesizes a narrative rather than executing the described real-world programs."
-      },
-      {
-        "title": "Inspect the example report",
-        "source": "demo/superintelligent-empowerment/output/report.json",
-        "explanation": "Compare the recorded report with the configuration. Trace every quantitative claim back to its target or calculation before using it in a presentation."
+        "explanation": "The preserved YAML report generator describes supplied goals and aspirations. It does not measure the real-world programs it describes."
       }
     ],
-    "command": "python demo/superintelligent-empowerment/code/run_demo.py --output /tmp/empowerment-report.json",
-    "expected": "The terminal displays initiative information and writes /tmp/empowerment-report.json. No real-world impact is measured by this command.",
-    "experiment": "Copy mission.yaml, replace one initiative with your own measurable acceptance criterion, and run with --config. Identify the evidence you would later collect to assess it.",
-    "mode": "python",
+    "command": "python demo/superintelligent-empowerment/code/evidence.py run --packet demo/superintelligent-empowerment/evidence/example.json --output /tmp/initiative-evidence-run",
+    "expected": "A new directory contains the exact packet, ledger, checklist and hash receipt. Consistency verification passes while the proposal remains incomplete; no provider or chain calls occur.",
+    "experiment": "Open the browser studio, recover the actual CLI fixture, change an acceptance threshold, and observe the dependency hold. Compare an unavailable observation with a reported value that fails its criterion.",
+    "mode": "stdlib",
     "related": [],
-    "install": "python -m pip install -r demo/superintelligent-empowerment/code/requirements.txt"
+    "dashboards": [
+      {
+        "title": "Initiative Evidence Studio",
+        "route": "experiments/empowerment/",
+        "source": "demo/superintelligent-empowerment/web/index.html"
+      }
+    ]
   },
   "agi-governance": {
     "question": "How do mission rules translate into governance diagnostics?",

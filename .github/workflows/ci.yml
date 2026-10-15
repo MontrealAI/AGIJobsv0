@@ -194,6 +194,7 @@ jobs:
             test/tools \
             test/orchestrator \
             test/simulation
+          coverage run --rcfile=.coveragerc --append -m pytest demo/superintelligent-empowerment/tests
           coverage run --rcfile=.coveragerc --append -m pytest -m "not requires_torch" tests
           coverage run --rcfile=.coveragerc --append -m pytest -m "not requires_torch" packages/hgm-core/tests
           coverage run --rcfile=.coveragerc --append -m pytest -m "not requires_torch" demo/Huxley-Godel-Machine-v0/tests

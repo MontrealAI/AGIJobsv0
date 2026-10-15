@@ -1,3 +1,4 @@
+import { verifyEmpowerment } from './empowerment-browser-qa.mjs';
 import { verifyStart } from './start-qa.mjs';
 import { verifyAlphaMark } from './alpha-mark-qa.mjs';
 import { verifySuccessor } from './successor-qa.mjs';
@@ -546,6 +547,15 @@ try {
   );
   await verifyPhase6({ page, context, url, artifacts, a11y, checks });
   await verifyEvidenceReview({ page, context, url, artifacts, a11y, checks });
+  await verifyEmpowerment({
+    page,
+    origin: new URL(url).origin,
+    route: manifest.basePath + 'experiments/empowerment/',
+    artifactsDirectory: path.join(artifacts, 'empowerment'),
+  });
+  checks.push(
+    'Initiative evidence studio: exact CLI artifact recovery, strict inputs and bilingual accessibility'
+  );
   assert.deepEqual(requests, [], 'Unexpected external network requests');
   assert.deepEqual(errors, [], 'Browser errors');
   fs.writeFileSync(

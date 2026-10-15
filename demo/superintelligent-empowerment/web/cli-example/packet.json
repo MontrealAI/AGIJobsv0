@@ -1,0 +1,57 @@
+{
+  "schema": "agijobsv0.initiative-evidence.v1",
+  "title": "Community project evidence rehearsal",
+  "initiatives": [
+    {
+      "id": "pilot-review",
+      "title": "Review the supplied pilot deliverables",
+      "claim": "The example source reports eight reviewed deliverables. Its origin is unverified.",
+      "dependencies": [],
+      "criterion": {
+        "metric": "reviewed-deliverables",
+        "unit": "count",
+        "operator": "gte",
+        "threshold": 8
+      },
+      "evidenceId": "pilot-report"
+    },
+    {
+      "id": "follow-up",
+      "title": "Collect follow-up outcome evidence",
+      "claim": "A successful long-term outcome is a proposed target, with no evidence supplied.",
+      "dependencies": [
+        "pilot-review"
+      ],
+      "criterion": {
+        "metric": "sustained-projects",
+        "unit": "count",
+        "operator": "gte",
+        "threshold": 5
+      },
+      "evidenceId": null
+    },
+    {
+      "id": "expansion",
+      "title": "Review an expansion proposal after follow-up",
+      "claim": "Expansion remains dependent on reviewed follow-up evidence.",
+      "dependencies": [
+        "follow-up"
+      ],
+      "criterion": {
+        "metric": "reviewed-deliverables",
+        "unit": "count",
+        "operator": "gte",
+        "threshold": 6
+      },
+      "evidenceId": "pilot-report"
+    }
+  ],
+  "evidence": [
+    {
+      "id": "pilot-report",
+      "label": "Synthetic supplied observation; not a real community measurement",
+      "sourceText": "{\"metric\":\"reviewed-deliverables\",\"unit\":\"count\",\"value\":8}",
+      "sha256": "056a8f6f72eb0f965a87d0466cbded767118a06d023daed1dc95c0a6e543fd92"
+    }
+  ]
+}

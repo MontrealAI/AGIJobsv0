@@ -23,6 +23,7 @@ import {
 import { renderAlphaMarkPage } from './alpha-mark.mjs';
 import { renderSuccessorPage } from './successor.mjs';
 import { buildPhase6Site } from './phase6-build.mjs';
+import { buildEmpowermentSite } from './empowerment-build.mjs';
 
 const require = createRequire(import.meta.url);
 const { inventory } = require('../demo/catalog.cjs');
@@ -933,6 +934,10 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
     path.join(output, 'experiments/phase8')
   );
   dashboardRoutes.push(phase8Site.route);
+  await buildEmpowermentSite(path.join(output, 'experiments/empowerment'), {
+    base,
+  });
+  dashboardRoutes.push('experiments/empowerment/');
   archiveRoutes.push(...phase8Site.archiveRoutes);
   // Compile the same Studio shipped in the pnpm workspace, in explicit offline mode.
   const studio = path.join(root, 'demo/CULTURE-v0/apps/culture-studio');
