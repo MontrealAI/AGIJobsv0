@@ -4,7 +4,8 @@ import { createHash } from "crypto";
 import { createInterface } from "readline/promises";
 import { stdin as input, stdout as output } from "process";
 
-import { ethers } from "hardhat";
+import { ethers, network as hardhatNetwork } from "hardhat";
+const { requireExecutionMode, requireDistinctActors } = require("./utils/executionPreflight.cjs");
 import type { ContractTransactionReceipt, ContractTransactionResponse } from "ethers";
 
 import type { AlphaInsightExchange, AlphaInsightNovaSeed, InsightAccessToken } from "../typechain-types";
@@ -257,12 +258,11 @@ interface MintedInsightRecord {
 }
 
 async function main() {
-  await ensureReportsDir();
+  const executionMode = await requireExecutionMode(hardhatNetwork, process.env.AGIJOBS_DEMO_DRY_RUN);
   const scenarioPath = resolveScenarioFile();
   const config = await loadScenarioConfig(scenarioPath);
 
-  const dryRunFlag = (process.env.AGIJOBS_DEMO_DRY_RUN ?? "true").toLowerCase();
-  const requireLaunchConfirmation = dryRunFlag === "false";
+  const requireLaunchConfirmation = executionMode === "broadcast";
 
   if (requireLaunchConfirmation) {
     const rl = createInterface({ input, output });
@@ -279,12 +279,13 @@ async function main() {
   }
 
   const [operator, oracle, strategist, buyerA, buyerB] = await ethers.getSigners();
+  requireDistinctActors([operator, oracle, strategist, buyerA, buyerB]);
   const network = await ethers.provider.getNetwork();
 
   const expectedNetworkName = process.env.INSIGHT_MARK_NETWORK;
-  if (expectedNetworkName && expectedNetworkName !== network.name) {
+  if (expectedNetworkName && expectedNetworkName !== hardhatNetwork.name) {
     throw new Error(
-      `Network mismatch: expected ${expectedNetworkName} (INSIGHT_MARK_NETWORK) but connected to ${network.name}.`
+      `Network mismatch: expected ${expectedNetworkName} (INSIGHT_MARK_NETWORK) but selected ${hardhatNetwork.name}.`
     );
   }
 
@@ -302,6 +303,7 @@ async function main() {
     );
   }
 
+  await ensureReportsDir();
   const AccessToken = await ethers.getContractFactory("InsightAccessToken");
   const accessToken = (await AccessToken.deploy(operator.address)) as unknown as InsightAccessToken;
   await accessToken.waitForDeployment();
@@ -727,6 +729,7 @@ async function main() {
 
   const recap = {
     generatedAt: new Date().toISOString(),
+    executionMode,
     network: { chainId: network.chainId.toString(), name: network.name },
     contracts: {
       novaSeed: novaSeedAddress,

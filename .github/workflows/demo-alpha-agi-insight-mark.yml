@@ -61,6 +61,9 @@ jobs:
       - name: Install dependencies
         run: ./scripts/ci/npm-ci.sh --no-audit --prefer-offline --progress=false
 
+      - name: Verify execution-mode safety with inert fixtures
+        run: node --test demo/alpha-agi-insight-mark/script-tests/execution-preflight.test.cjs
+
       - name: Run α-AGI Insight MARK unit tests
         run: npm run test:alpha-agi-insight-mark
 

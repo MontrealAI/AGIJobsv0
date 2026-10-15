@@ -1,5 +1,26 @@
 # AGI Jobs v0 (v2) — Demo → Alpha AGI Insight Mark
 
+## Execution boundary
+
+The default run is a **disposable local rehearsal**. Before any contract write,
+it requires the actual in-process Hardhat EDR provider, chain 31337, block zero,
+a valid instance identity and no fork. The legacy `AGIJOBS_DEMO_DRY_RUN=true`
+name means local simulated transactions, not a read-only external-network run.
+An external network with this default fails closed.
+
+External configuration must explicitly name a non-reserved network, HTTP(S) RPC,
+positive chain ID and valid distinct account keys. It cannot replace the reserved
+`hardhat` network. External execution additionally requires
+`AGIJOBS_DEMO_DRY_RUN=false` and the existing interactive `LAUNCH` confirmation.
+Five distinct configured actors are required. RPC chain ID and configured owner
+checks occur before deployment. These gates do not authorize a transaction on
+anyone's behalf or establish adequate funding/production readiness.
+
+The execution-mode regression uses inert provider/configuration fixtures only;
+no external RPC, key or deployment is used. Actual local/production commissioning
+remains a separate end-to-end gate. Recaps record `executionMode` explicitly.
+
+
 > AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `demo/alpha-agi-insight-mark`.
 
 ## Overview
