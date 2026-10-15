@@ -1,3 +1,4 @@
+import { createOmniphoenixDownloader } from './omniphoenix-download-qa.mjs';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -54,13 +55,7 @@ export async function verifyOmniphoenix({
     await page.locator('#trace').textContent(),
     /CLIMATE-SWARM-DEPLOY → INFRA-REGEN-DEPLOY/
   );
-  const download = async (id) => {
-    const [item] = await Promise.all([
-      page.waitForEvent('download'),
-      page.locator(id).click(),
-    ]);
-    return fs.readFileSync(await item.path());
-  };
+  const download = createOmniphoenixDownloader(page);
   assert.deepEqual(await download('#download-source'), original);
   const recovery = await download('#download-recovery');
   assert.deepEqual(desk.importRecovery(recovery).report, browserReport);
