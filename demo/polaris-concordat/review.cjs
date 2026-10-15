@@ -51,6 +51,9 @@ function validateEvidence(result) {
     'settlementApproved',
     'review',
   ]);
+  if (typeof result.scope !== 'string' || result.scope.length > 256 || !result.scope.trim())
+    throw Error('Scope must be nonempty text of at most 256 characters');
+  hex(result.instanceId, 64);
   object(result.options, ['initialReveals', 'replacementApprovals']);
   Object.values(result.options).forEach((x) => integer(x, 3));
   for (const p of [result.policyBefore, result.policyAfter]) {

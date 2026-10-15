@@ -10,7 +10,7 @@ export const fr = {
   reset: 'Restaurer le cas fourni',
   receiptNote:
     'Le cas fourni contient deux missions simulées distinctes sur une EVM jetable locale. La mission 1 est finalisée ; la mission 2 utilise un nouveau comité, sans rouvrir la première. Les reçus importés sont des données fournies ; réussir les contrôles de cohérence n’authentifie pas leur origine.',
-  import: 'Rouvrir un cas ou des preuves vérifiées · JSON, 256 Kio maximum',
+  import: 'Rouvrir JSON · cas : 256 Kio; enveloppe de preuves : 512 Kio',
   first: 'Résultat initial enregistré',
   replacement: 'Résultat de remplacement enregistré',
   claims:

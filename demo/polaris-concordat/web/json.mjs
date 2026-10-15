@@ -1,5 +1,10 @@
-export function parseJSON(text, integerOnly = true) {
-  if (new TextEncoder().encode(text).length > 262144)
+export function parseJSON(
+  text,
+  integerOnly = true,
+  maximumBytes = 262144,
+  maximumDepth = 32
+) {
+  if (new TextEncoder().encode(text).length > maximumBytes)
     throw new Error('Fixture exceeds 256 KiB');
   let at = 0;
   const ws = () => {
@@ -20,7 +25,7 @@ export function parseJSON(text, integerOnly = true) {
     fail();
   }
   function value(depth = 0) {
-    if (depth > 32) throw new Error('Input nesting is too deep');
+    if (depth > maximumDepth) throw new Error('Input nesting is too deep');
     ws();
     const c = text[at];
     if (c === '"') return string();

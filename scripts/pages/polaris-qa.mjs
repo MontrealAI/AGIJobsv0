@@ -44,6 +44,59 @@ export async function verifyPolaris({ page, url, artifacts, a11y, checks }) {
   await importData('{"schema":1,"schema":2}');
   assert.equal(await page.locator('#error').isVisible(), true);
   assert.equal(await page.locator('#result').isVisible(), false);
+  await importData(Buffer.concat([Buffer.from([0xef, 0xbb, 0xbf]), bytes]));
+  assert.equal(await page.locator('#error').isVisible(), true);
+  assert.equal(await page.locator('#result').isVisible(), false);
+  const largeFixture = JSON.parse(bytes);
+  const log = structuredClone(largeFixture.first.receipt.logs[0]);
+  log.address = '0x' + '0'.repeat(40);
+  log.topics = [];
+  log.data = '0x' + '0'.repeat(8192);
+  for (let i = 0; i < 28; i++)
+    largeFixture.first.receipt.logs.push({ ...log, index: 100 + i });
+  await importData(JSON.stringify(largeFixture));
+  assert.equal((await read()).accepted, true);
+  const largeDownload = page.waitForEvent('download');
+  await page.locator('#download').click();
+  const largeBytes = fs.readFileSync(await (await largeDownload).path());
+  assert.ok(largeBytes.length <= 262144);
+  await importData(largeBytes);
+  assert.equal((await read()).accepted, true);
+  const largeReportDownload = page.waitForEvent('download');
+  await page.locator('#evidence').click();
+  const largeReportBytes = fs.readFileSync(
+    await (await largeReportDownload).path()
+  );
+  assert.ok(largeReportBytes.length <= 524288);
+  await importData(largeReportBytes);
+  assert.equal((await read()).accepted, true);
+  const nested = JSON.parse(bytes);
+  nested.review = Array(50000).fill(0);
+  for (let i = 0; i < 30; i++) nested.review = [nested.review];
+  await importData(JSON.stringify(nested));
+  assert.equal((await read()).accepted, true);
+  const nestedDownload = page.waitForEvent('download');
+  await page.locator('#evidence').click();
+  const nestedBytes = fs.readFileSync(await (await nestedDownload).path());
+  assert.ok(nestedBytes.length <= 524288);
+  await importData(nestedBytes);
+  assert.equal((await read()).accepted, true);
+  const envelope = {
+    schema: 'agijobs.polaris-browser-evidence.v1',
+    fixture: JSON.parse(bytes),
+    result: { supplied: 'x'.repeat(270000) },
+    downloadedFixtureSha256: 'ignored',
+    hashScope: 'ignored',
+  };
+  await importData(JSON.stringify(envelope));
+  assert.deepEqual(await read(), first);
+  const exported = page.waitForEvent('download');
+  await page.locator('#evidence').click();
+  const envelopeBytes = fs.readFileSync(await (await exported).path());
+  await importData(envelopeBytes);
+  assert.deepEqual(await read(), first);
+  await importData(Buffer.concat([bytes, Buffer.alloc(262144, 32)]));
+  assert.equal(await page.locator('#error').isVisible(), true);
   const malformed = Buffer.from(bytes);
   malformed[malformed.indexOf(Buffer.from('schema')) + 10] = 255;
   await importData(malformed);

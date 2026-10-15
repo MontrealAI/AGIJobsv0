@@ -65,6 +65,11 @@ test('browser bundle reuses original receipt reviewer for exact fixture and tamp
       (p) => (p.recovery.requestedApprovalCount = 0),
       (p) => (p.first.receipt.logs = []),
       (p) => (p.liveAssets = true),
+      (p) => (p.scope = 'x'.repeat(257)),
+      (p) => (p.scope = {}),
+      (p) => (p.instanceId = {}),
+      (p) => (p.instanceId = 'unbounded-text'),
+      (p) => (p.scope = '   '),
     ];
     for (const change of mutations) {
       const p = structuredClone(fixture);

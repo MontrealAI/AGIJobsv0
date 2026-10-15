@@ -104,7 +104,7 @@ function error(e) {
   $('status').textContent = '';
 }
 function parse(text) {
-  const value = parseJSON(text);
+  const value = parseJSON(text, true, 524288, 34);
   let fixture = value;
   if (value?.schema === 'agijobs.polaris-browser-evidence.v1') {
     const expected = [
@@ -119,14 +119,18 @@ function parse(text) {
     if (Object.keys(value).sort().join('|') !== expected)
       throw Error('Unexpected evidence fields');
     fixture = value.fixture;
-  }
+  } else if (new TextEncoder().encode(text).length > 262144)
+    throw Error('Fixture exceeds 256 KiB');
+  if (new TextEncoder().encode(JSON.stringify(fixture)).length > 262144)
+    throw Error('Fixture exceeds 256 KiB');
+  parseJSON(JSON.stringify(fixture));
   validateEvidence(fixture);
   return fixture;
 }
 async function compute(text, ticket) {
   const fixture = parse(text),
     result = review(fixture),
-    bytes = JSON.stringify(fixture, null, 2) + '\n';
+    bytes = JSON.stringify(fixture);
   if (!crypto.subtle) throw Error('Web Crypto is required');
   const hash = [
     ...new Uint8Array(
@@ -158,10 +162,11 @@ $('import').onchange = async () => {
     file = $('import').files[0];
   if (!file) return;
   try {
-    if (file.size > 262144) throw Error('256 KiB maximum');
-    const text = new TextDecoder('utf-8', { fatal: true }).decode(
-      await file.arrayBuffer()
-    );
+    if (file.size > 524288) throw Error('512 KiB envelope maximum');
+    const text = new TextDecoder('utf-8', {
+      fatal: true,
+      ignoreBOM: true,
+    }).decode(await file.arrayBuffer());
     if (ticket !== revision) return;
     await compute(text, ticket);
   } catch (e) {
@@ -223,17 +228,13 @@ $('download').onclick = () => {
 $('evidence').onclick = () => {
   if (current)
     download(
-      JSON.stringify(
-        {
-          schema: 'agijobs.polaris-browser-evidence.v1',
-          fixture: current.fixture,
-          result: current.result,
-          downloadedFixtureSha256: current.hash,
-          hashScope: 'Exact UTF-8 bytes of polaris-fixture.json',
-        },
-        null,
-        2
-      ) + '\n',
+      JSON.stringify({
+        schema: 'agijobs.polaris-browser-evidence.v1',
+        fixture: current.fixture,
+        result: current.result,
+        downloadedFixtureSha256: current.hash,
+        hashScope: 'Exact UTF-8 bytes of polaris-fixture.json',
+      }),
       'polaris-evidence.json'
     );
 };
