@@ -1687,29 +1687,30 @@
     "related": ["atlas-conductor"]
   },
   "polaris-concordat": {
-    "question": "Which parts are architecture, and where can I try the related implementation?",
-    "purpose": "For readers of the project vision: study this preserved design, identify the components it proposes and continue to a concrete related implementation.",
+    "question": "Can a fresh committee recover availability without weakening quorum policy?",
+    "purpose": "For validation operators: inspect two actual disposable-chain mock jobs, check their receipt and stake consistency, and compare hypothetical quorum outcomes.",
     "steps": [
       {
-        "title": "Read the design",
+        "title": "Inspect recorded evidence",
+        "source": "demo/polaris-concordat/local-fixture.json",
+        "explanation": "Review the bundled local EVM receipts. The first job is finalized with insufficient reveals; a separate second job uses a fresh committee. Token, identity and job registry are mocks."
+      },
+      {
+        "title": "Recompute consistency checks",
+        "source": "demo/polaris-concordat/review.cjs",
+        "explanation": "The browser bundles this same reviewer. It cross-checks canonical logs, policy and balances, but cannot authenticate an imported chain or attest runtime provenance."
+      },
+      {
+        "title": "Reproduce a fresh local run",
         "source": "demo/polaris-concordat/README.md",
-        "explanation": "This directory is documentation-only. Its architecture and ambitions are preserved; it does not contain a standalone executable demo."
-      },
-      {
-        "title": "Locate the implementation",
-        "source": "demo/sovereign-constellation/README.md",
-        "explanation": "The related implementation has its own scope, prerequisites and evidence. It should not be assumed to realize every aspiration in this design."
-      },
-      {
-        "title": "Understand evidence boundaries",
-        "source": "docs/production/readiness-2026-10-03.md",
-        "explanation": "Compare demonstrated behavior with outstanding signing, integration, security review and commissioning requirements. A simulation cannot replace authentic evidence for those gates."
+        "explanation": "Use the pinned Node toolchain and locked dependencies, compile contracts, then run the guarded in-process Hardhat fixture. No remote chain, wallet or live assets are needed."
       }
     ],
-    "command": null,
-    "expected": "Open the related experience below for its guided inspection and run instructions. Reading this design does not execute or commission the proposed system.",
-    "experiment": "Choose a component from the diagram and map it to code, a test and an output in the related demo. Record any component that still has only a design description.",
-    "mode": "design",
+    "command": "npm run compile && node demo/polaris-concordat/run.cjs",
+    "expected": "A new reports/polaris-*/result.json records both mock jobs, unchanged policy, missing-reveal penalties and fresh-committee outcome. Default first job fails and replacement job succeeds. Chain attestation and production/settlement approval remain false.",
+    "experiment": "Compare two versus three first-round reveals and one versus two replacement approvals in the separate expected-outcome calculator. It does not rerun the EVM or modify receipt evidence.",
+    "mode": "local",
+    "dashboard": "experiments/polaris/",
     "related": ["sovereign-constellation"]
   },
   "solving-alpha-agi-governance": {
