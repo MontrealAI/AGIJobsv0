@@ -1609,30 +1609,33 @@
     "dashboardDescription": "Interactive local analysis, ten work-order templates, source-bound evidence and reviewer-constrained capacity. Live work and settlement require separate commissioning."
   },
   "CELESTIAL-SOVEREIGN-ORBITAL-AGI-OS-GRAND-DEMONSTRATION": {
-    "question": "Which parts are architecture, and where can I try the related implementation?",
-    "purpose": "For readers of the project vision: study this preserved design, identify the components it proposes and continue to a concrete related implementation.",
+    "question": "Which infrastructure requests still fit when capacity drops?",
+    "purpose": "For infrastructure planners: compare normal and outage allocation while protecting reserves, respecting declared priority and explaining every deferred request.",
     "steps": [
       {
-        "title": "Read the design",
+        "title": "Set capacity and protected reserve",
+        "source": "demo/CELESTIAL-SOVEREIGN-ORBITAL-AGI-OS-GRAND-DEMONSTRATION/scenario.json",
+        "explanation": "Supply energy and compute planning units. A shortfall in either protected reserve pauses all dispatch in that snapshot."
+      },
+      {
+        "title": "Inspect the original reservation engine",
+        "source": "demo/CELESTIAL-SOVEREIGN-ORBITAL-AGI-OS-GRAND-DEMONSTRATION/run.py",
+        "explanation": "The Python wrapper uses the existing Omega resource engine. Highest priority goes first, with input-order ties and indivisible requests; greedy selection is not globally optimal."
+      },
+      {
+        "title": "Compare and reproduce",
         "source": "demo/CELESTIAL-SOVEREIGN-ORBITAL-AGI-OS-GRAND-DEMONSTRATION/README.md",
-        "explanation": "This directory is documentation-only. Its architecture and ambitions are preserved; it does not contain a standalone executable demo."
-      },
-      {
-        "title": "Locate the implementation",
-        "source": "demo/zenith-sapience-initiative-celestial-archon-governance/README.md",
-        "explanation": "The related implementation has its own scope, prerequisites and evidence. It should not be assumed to realize every aspiration in this design."
-      },
-      {
-        "title": "Understand evidence boundaries",
-        "source": "docs/production/readiness-2026-10-03.md",
-        "explanation": "Compare demonstrated behavior with outstanding signing, integration, security review and commissioning requirements. A simulation cannot replace authentic evidence for those gates."
+        "explanation": "The browser mirrors the bounded rules with full-result parity tests. Normal and outage plans are independent hypothetical snapshots, not observed cancellations or physical recovery."
       }
     ],
-    "command": null,
-    "expected": "Open the related experience below for its guided inspection and run instructions. Reading this design does not execute or commission the proposed system.",
-    "experiment": "Choose a component from the diagram and map it to code, a test and an output in the related demo. Record any component that still has only a design description.",
-    "mode": "design",
-    "related": ["zenith-sapience-initiative-celestial-archon-governance"]
+    "command": "python3 demo/CELESTIAL-SOVEREIGN-ORBITAL-AGI-OS-GRAND-DEMONSTRATION/run.py",
+    "expected": "JSON shows reserved and deferred requests, protected reserve shortfall, conserved resources and changed selections. Exit 1 indicates a protected-reserve shortfall; no physical execution or settlement is authorized.",
+    "experiment": "Lower outage energy below the protected reserve to pause all dispatch, then restore capacity. Change a request priority and compare which requests fit.",
+    "mode": "stdlib",
+    "dashboard": "experiments/celestial/",
+    "related": [
+      "zenith-sapience-initiative-celestial-archon-governance"
+    ]
   },
   "ICONIC-OPERATING-SYSTEM-DEMO": {
     "question": "Which parts are architecture, and where can I try the related implementation?",

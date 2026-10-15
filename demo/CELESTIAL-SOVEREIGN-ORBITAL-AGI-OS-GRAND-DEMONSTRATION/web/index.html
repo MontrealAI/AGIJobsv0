@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none';script-src 'self';style-src 'self';connect-src 'self';base-uri 'none';form-action 'none'"
+    />
+    <title>Celestial • Resource contingency desk</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <a class="skip" href="#main" data-t="skip">Skip to planner</a>
+    <nav aria-label="Primary">
+      <a href="../../">AGI JOBS</a>
+      <div>
+        <a href="../../demos/" data-t="directory">Demo directory</a
+        ><button id="language" type="button" aria-label="Passer en français">
+          FR
+        </button>
+      </div>
+    </nav>
+    <header>
+      <p class="eyebrow">CELESTIAL / RESOURCE CONTINGENCY</p>
+      <h1 data-t="heading">Protect the reserve. See what still fits.</h1>
+      <p class="lead" data-t="lead">
+        Compare normal and outage capacity. Adjust two resource budgets and
+        infrastructure requests, then inspect every allocation and deferral.
+      </p>
+      <p class="notice" data-t="notice">
+        Offline planning with declared units. This desk does not measure
+        infrastructure, dispatch work or authorize settlement.
+      </p>
+    </header>
+    <main id="main">
+      <noscript
+        ><p>
+          JavaScript required / JavaScript requis.
+          <a
+            href="https://github.com/MontrealAI/AGIJobsv0/tree/main/demo/CELESTIAL-SOVEREIGN-ORBITAL-AGI-OS-GRAND-DEMONSTRATION"
+            >Original local guide / Guide local</a
+          >
+        </p></noscript
+      >
+      <section class="panel">
+        <div class="section-head">
+          <h2 data-t="inputs">1. Define capacity and requests</h2>
+          <button id="reset" type="button" data-t="reset">
+            Restore example
+          </button>
+        </div>
+        <label for="import" data-t="import"
+          >Reopen scenario or evidence · JSON up to 256 KiB</label
+        ><input id="import" type="file" accept=".json,application/json" />
+        <form id="planner">
+          <label for="title" data-t="title">Scenario title</label
+          ><input id="title" maxlength="200" required />
+          <div id="capacities"></div>
+          <h3 data-t="jobs">Infrastructure requests</h3>
+          <p class="hint" data-t="jobHint">
+            Priority 0–100, highest first. Ties preserve input order. Whole
+            requests are accepted or deferred; this greedy plan is not globally
+            optimized.
+          </p>
+          <div id="jobs"></div>
+          <button id="add" type="button" class="quiet" data-t="add">
+            Add request
+          </button>
+          <p class="notice" data-t="reserveHint">
+            If either protected reserve cannot be held, all dispatch is paused.
+            Normal and outage are independent snapshots, not actual
+            cancellations or observed recovery.
+          </p>
+          <button type="submit" class="primary" data-t="run">
+            Compare allocation plans
+          </button>
+        </form>
+        <p id="error" role="alert" hidden></p>
+        <p id="status" role="status" aria-live="polite"></p>
+      </section>
+      <section class="panel" id="result" hidden>
+        <h2 data-t="results">2. Inspect the changed plan</h2>
+        <p id="summary" role="status"></p>
+        <div id="phases"></div>
+        <p id="changes"></p>
+        <p class="notice" data-t="bounds">
+          All resource units and priorities are supplied assumptions. A changed
+          plan does not prove execution, availability, cost or production
+          readiness.
+        </p>
+        <div class="actions">
+          <button id="download" type="button" data-t="download">
+            Download scenario</button
+          ><button id="evidence" type="button" data-t="evidence">
+            Download recomputed evidence
+          </button>
+        </div>
+        <p class="hint" id="digest"></p>
+        <details>
+          <summary data-t="raw">Inspect complete result JSON</summary>
+          <pre id="raw"></pre>
+        </details>
+      </section>
+      <section class="panel">
+        <h2 data-t="method">Reproduce and understand</h2>
+        <p data-t="methodText">
+          The original Python demo uses the existing Omega resource reservation
+          engine. This browser uses a bounded parity-tested implementation of
+          the same rules. Resources are conserved: held reserve + allocated
+          requests + remaining capacity equals total capacity.
+        </p>
+        <p data-t="privacy">
+          Files remain in this tab. Export to keep your work. Reopened evidence
+          ignores its saved result and recomputes from the scenario.
+        </p>
+        <a
+          href="https://github.com/MontrealAI/AGIJobsv0/tree/main/demo/CELESTIAL-SOVEREIGN-ORBITAL-AGI-OS-GRAND-DEMONSTRATION"
+          data-t="source"
+          >Original runtime, scenario and local guide</a
+        >
+      </section>
+    </main>
+    <footer data-t="footer">
+      CELESTIAL · Bounded resource planning · No execution or settlement
+      authority
+    </footer>
+    <script type="module" src="app.mjs"></script>
+  </body>
+</html>
