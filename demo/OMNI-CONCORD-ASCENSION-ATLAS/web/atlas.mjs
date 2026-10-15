@@ -297,7 +297,7 @@ $('import').onchange = async () => {
   try {
     if (file.size > 1000000) throw Error('1 MB maximum');
     $('status').textContent = w('loading');
-    const raw = new TextDecoder('utf-8', { fatal: true }).decode(
+    const raw = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(
       await file.arrayBuffer()
     );
     if (ticket !== revision) return;

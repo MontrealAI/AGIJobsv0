@@ -184,6 +184,15 @@ export async function verifyAtlas({ page, url, artifacts, a11y, checks }) {
   await page.waitForTimeout(50);
   assert.equal(await page.locator('#result').isVisible(), false);
   await page.evaluate(() => window.restoreFile());
+  await page
+    .locator('#import')
+    .setInputFiles({
+      name: 'bom.json',
+      mimeType: 'application/json',
+      buffer: Buffer.concat([Buffer.from([0xef, 0xbb, 0xbf]), bytes]),
+    });
+  await page.locator('#error').waitFor({ state: 'visible' });
+  assert.equal(await page.locator('#result').isVisible(), false);
   const malformed = Buffer.from(bytes);
   malformed[malformed.indexOf(Buffer.from('title')) + 9] = 255;
   await page.locator('#import').setInputFiles({

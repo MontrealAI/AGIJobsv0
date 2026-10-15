@@ -17,6 +17,12 @@ SCENARIO = RUN.with_name("scenario.json")
 
 
 class AtlasRecovery(unittest.TestCase):
+    def test_parser_rejects_bom_utf16_and_malformed_utf8(self):
+        for raw in [b"\xef\xbb\xbf{}", "{}".encode("utf-16"), b"\xff{}"]:
+            with self.subTest(raw=raw), self.assertRaises(ValueError):
+                module.parse(raw)
+
+
     def scenario(self):
         return json.loads(SCENARIO.read_text())
 
