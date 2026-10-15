@@ -932,6 +932,12 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
   const phase8Site = await buildPhase8Site(
     path.join(output, 'experiments/phase8')
   );
+  fs.cpSync(
+    path.join(root, 'demo/solving-alpha-agi-governance/web'),
+    path.join(output, 'experiments/governance'),
+    { recursive: true }
+  );
+  dashboardRoutes.push('experiments/governance/');
   dashboardRoutes.push(phase8Site.route);
   archiveRoutes.push(...phase8Site.archiveRoutes);
   // Compile the same Studio shipped in the pnpm workspace, in explicit offline mode.

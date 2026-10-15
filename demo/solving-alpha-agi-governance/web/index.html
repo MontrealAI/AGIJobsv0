@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'none'; base-uri 'none'; form-action 'none'"
+    />
+    <title>Governance rehearsal · A decision you can inspect</title>
+    <link rel="stylesheet" href="style.css" />
+    <script type="module" src="governance.mjs"></script>
+  </head>
+  <body>
+    <a class="skip" href="#workbench">Skip to rehearsal</a>
+    <nav>
+      <a href="../../">AGI JOBS · DEMO OBSERVATORY</a>
+      <div>
+        <span>LOCAL SIMULATION</span>
+        <button
+          id="language"
+          type="button"
+          lang="fr"
+          aria-label="Passer en français"
+        >
+          FR
+        </button>
+      </div>
+    </nav>
+    <header>
+      <p class="eyebrow">GOVERNANCE / BEFORE A DECISION BECOMES ACTION</p>
+      <h1>Rehearse the vote.<br />Understand the boundary.</h1>
+      <p class="lead">
+        Test a maintenance-budget proposal against quorum, approval, available
+        funds and owner controls. See exactly why it passes or stops.
+      </p>
+      <p class="notice">
+        This is an offline decision model. Votes are supplied examples, funds
+        are hypothetical and no contract is called. A passing rehearsal neither
+        enacts the proposal nor authorizes settlement.
+      </p>
+    </header>
+    <main id="workbench">
+      <noscript
+        ><p>
+          JavaScript is required for this interface. Run the Python scenario
+          from the demo’s source guide instead.
+        </p></noscript
+      >
+      <div class="layout">
+        <form id="form" class="panel">
+          <div class="section-head">
+            <h2>Your proposal</h2>
+            <button id="reset" type="button" class="quiet">
+              Reset example
+            </button>
+          </div>
+          <label for="title">Proposal title</label
+          ><input
+            id="title"
+            maxlength="200"
+            required
+            value="Approve a bounded maintenance budget"
+          />
+          <div class="pair">
+            <div>
+              <label for="requested">Requested amount (cents)</label
+              ><input
+                id="requested"
+                type="number"
+                min="1"
+                max="1000000000000"
+                step="1"
+                value="420000"
+                required
+              />
+            </div>
+            <div>
+              <label for="available">Available budget (cents)</label
+              ><input
+                id="available"
+                type="number"
+                min="0"
+                max="1000000000000"
+                step="1"
+                value="500000"
+                required
+              />
+            </div>
+          </div>
+          <p class="hint">
+            One consistent hypothetical currency. Integer cents avoid rounding
+            ambiguity.
+          </p>
+          <h3>Decision policy</h3>
+          <label for="eligible">Total eligible vote weight</label
+          ><input
+            id="eligible"
+            type="number"
+            min="1"
+            max="1000000000"
+            step="1"
+            value="100"
+            required
+          />
+          <div class="pair">
+            <div>
+              <label for="quorum">Quorum (%)</label
+              ><input
+                id="quorum"
+                type="number"
+                min="1"
+                max="100"
+                step="1"
+                value="60"
+                required
+              />
+            </div>
+            <div>
+              <label for="approval">Approval threshold (%)</label
+              ><input
+                id="approval"
+                type="number"
+                min="1"
+                max="100"
+                step="1"
+                value="67"
+                required
+              />
+            </div>
+          </div>
+          <p class="hint">
+            Quorum uses cast / eligible weight. Approval uses approved / all
+            cast weight, including abstentions.
+          </p>
+          <fieldset id="controls">
+            <legend>Owner controls present</legend>
+            <label><input id="pause" type="checkbox" checked /> Pause</label
+            ><label
+              ><input id="budget" type="checkbox" checked /> Budget limit</label
+            ><label><input id="review" type="checkbox" checked /> Review</label>
+          </fieldset>
+          <p class="hint">
+            The listed required controls describe assumptions, not deployed
+            controls.
+          </p>
+          <h3>Supplied votes</h3>
+          <div id="votes"></div>
+          <label for="import"
+            >Reopen scenario or evidence JSON (maximum 1 MB)</label
+          ><input id="import" type="file" accept="application/json,.json" />
+          <button class="primary" type="submit">Evaluate proposal →</button>
+          <p id="status" role="status" aria-live="polite"></p>
+          <p id="error" role="alert" hidden></p>
+        </form>
+        <div>
+          <section id="empty" class="panel empty">
+            <p class="eyebrow">READY WHEN YOU ARE</p>
+            <h2>Four gates.<br />No hidden approval.</h2>
+            <p>
+              Run the example, then raise the quorum, reduce the budget or
+              remove pause control. Every result is computed from the inputs
+              shown.
+            </p>
+          </section>
+          <section id="result" class="panel" hidden aria-labelledby="decision">
+            <p class="eyebrow">REHEARSAL RESULT</p>
+            <h2 id="decision"></h2>
+            <p id="summary"></p>
+            <ul id="checks"></ul>
+            <div class="metrics" id="metrics"></div>
+            <div class="actions">
+              <button id="scenario-download" class="quiet" type="button">
+                Download scenario</button
+              ><button id="evidence-download" class="quiet" type="button">
+                Download evidence
+              </button>
+            </div>
+            <details>
+              <summary>Inspect the full evidence</summary>
+              <pre id="artifact"></pre>
+            </details>
+          </section>
+          <section class="panel method">
+            <h2>Take it to the local engine.</h2>
+            <p>
+              Download the exact scenario and rerun it with the independent
+              Python implementation. Compare each gate, totals and the SHA-256
+              of the scenario bytes.
+            </p>
+            <pre>
+python demo/solving-alpha-agi-governance/run.py --scenario scenario.json</pre
+            >
+            <p class="hint">
+              Exit code 0 means the rehearsal passes; 1 means a policy gate
+              rejects it; 2 means invalid input. No proposal is enacted in any
+              case.
+            </p>
+            <p>
+              Changing any input clears the old result and disables export until
+              you evaluate again.
+            </p>
+          </section>
+        </div>
+      </div>
+    </main>
+    <footer>
+      AGI Jobs · Useful experiments, inspectable evidence. No wallet or provider
+      required.
+    </footer>
+  </body>
+</html>

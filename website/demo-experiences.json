@@ -1713,30 +1713,38 @@
     "related": ["sovereign-constellation"]
   },
   "solving-alpha-agi-governance": {
-    "question": "Which parts are architecture, and where can I try the related implementation?",
-    "purpose": "For readers of the project vision: study this preserved design, identify the components it proposes and continue to a concrete related implementation.",
+    "question": "When should a bounded maintenance proposal pass or stop?",
+    "purpose": "For operators reviewing a proposal before enactment: rehearse integer-weight voting, budget constraints and explicit owner controls, then inspect each gate.",
     "steps": [
       {
-        "title": "Read the design",
+        "title": "Define the scenario",
+        "source": "demo/solving-alpha-agi-governance/scenario.json",
+        "explanation": "Inspect requested and available cents, eligible vote weight, thresholds, controls and supplied votes. These are hypothetical inputs."
+      },
+      {
+        "title": "Compute the decision",
+        "source": "demo/solving-alpha-agi-governance/run.py",
+        "explanation": "Run the bounded Python evaluator. Quorum uses cast over eligible weight; approval includes abstentions in the all-cast denominator. No transaction or proposal enactment occurs."
+      },
+      {
+        "title": "Inspect reproducible evidence",
         "source": "demo/solving-alpha-agi-governance/README.md",
-        "explanation": "This directory is documentation-only. Its architecture and ambitions are preserved; it does not contain a standalone executable demo."
-      },
-      {
-        "title": "Locate the implementation",
-        "source": "demo/agi-governance/README.md",
-        "explanation": "The related implementation has its own scope, prerequisites and evidence. It should not be assumed to realize every aspiration in this design."
-      },
-      {
-        "title": "Understand evidence boundaries",
-        "source": "docs/production/readiness-2026-10-03.md",
-        "explanation": "Compare demonstrated behavior with outstanding signing, integration, security review and commissioning requirements. A simulation cannot replace authentic evidence for those gates."
+        "explanation": "Compare checks, rejection reasons and exact scenario-byte digest. The browser download has its own digest; reserialization changes bytes. Original design diagrams remain reference material beyond this bounded scenario."
       }
     ],
-    "command": null,
-    "expected": "Open the related experience below for its guided inspection and run instructions. Reading this design does not execute or commission the proposed system.",
-    "experiment": "Choose a component from the diagram and map it to code, a test and an output in the related demo. Record any component that still has only a design description.",
-    "mode": "design",
-    "related": ["agi-governance"]
+    "command": "python demo/solving-alpha-agi-governance/run.py --scenario demo/solving-alpha-agi-governance/scenario.json",
+    "expected": "The default proposal passes four modeled gates with approved weight 70 of 90 cast, 420000 requested cents and 80000 remaining. Exit 0 means a passing rehearsal; 1 means policy rejection; 2 means invalid input. Enacted and settlementApproved remain false.",
+    "experiment": "Raise quorum to 95%, lower available cents below 420000, or remove pause control; inspect the independently rejected gate and rerun the downloaded scenario locally.",
+    "mode": "stdlib",
+    "related": ["agi-governance"],
+    "dashboards": [
+      {
+        "title": "Open the governance rehearsal",
+        "route": "experiments/governance/",
+        "source": "demo/solving-alpha-agi-governance/web/index.html"
+      }
+    ],
+    "dashboardDescription": "Interactive local decision model with editable votes, policy and budget, exact scenario downloads and recomputable evidence. No wallet, provider or enactment."
   },
   "zenith-sapience": {
     "question": "Which parts are architecture, and where can I try the related implementation?",
