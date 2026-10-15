@@ -237,23 +237,33 @@ test('Helios digest excludes itself and remains verifiable on repeat generation'
   }
 });
 
-test('Cosmic launcher resolves repository root and forwards arguments without running a provider', (t) => {
+test('Cosmic launcher help does not invoke a package manager', (t) => {
   const f = fixture(t);
-  execFileSync(
-    'bash',
-    [
-      path.join(
-        root,
-        'demo/cosmic-omniversal-grand-symphony/bin/grand-symphony.sh'
-      ),
-      '--help',
-    ],
-    { cwd: f.dir, env: f.env }
+  const repo = path.join(f.dir, 'copied repository');
+  const script = path.join(
+    repo,
+    'demo/cosmic-omniversal-grand-symphony/bin/grand-symphony.sh'
   );
-  assert.equal(
-    fs.readFileSync(f.log, 'utf8').trim(),
-    `${root}|run demo:agi-os:first-class -- --help`
+  fs.mkdirSync(path.dirname(script), { recursive: true });
+  fs.mkdirSync(path.join(repo, 'scripts/lib'), { recursive: true });
+  fs.copyFileSync(
+    path.join(
+      root,
+      'demo/cosmic-omniversal-grand-symphony/bin/grand-symphony.sh'
+    ),
+    script
   );
+  fs.copyFileSync(
+    path.join(root, 'scripts/lib/agi-os-first-class-launcher.sh'),
+    path.join(repo, 'scripts/lib/agi-os-first-class-launcher.sh')
+  );
+  const output = execFileSync('bash', [script, '--help'], {
+    cwd: f.dir,
+    env: f.env,
+    encoding: 'utf8',
+  });
+  assert.match(output, /plan first/);
+  assert.ok(!fs.existsSync(f.log));
 });
 
 test('all tracked demo shell entrypoints parse without executing them', () => {

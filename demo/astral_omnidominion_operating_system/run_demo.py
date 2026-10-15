@@ -37,8 +37,17 @@ def _load_primary_module() -> ModuleType:
         raise ImportError(f"Unable to load primary demo from {PRIMARY_DEMO_PATH}")
 
     module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
+    # Execute source directly so compatibility plan/help never writes a
+    # canonical-module bytecode cache before argument validation.
+    code = compile(PRIMARY_DEMO_PATH.read_bytes(), str(PRIMARY_DEMO_PATH), "exec")
+    exec(code, module.__dict__)
     return module
+
+
+def build_command(args: Iterable[str]) -> list[str]:
+    """Use the canonical validation and exact npm argument construction."""
+
+    return _load_primary_module().build_command(args)
 
 
 def run(

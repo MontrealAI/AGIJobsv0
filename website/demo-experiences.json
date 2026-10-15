@@ -1186,7 +1186,7 @@
       {
         "title": "Read the wrapper",
         "source": "demo/astral-omnidominion-operating-system/run_demo.py",
-        "explanation": "A Python wrapper applies non-interactive localhost defaults and forwards arguments to demo:agi-os:first-class. The default --skip-deploy assumes an already prepared local environment."
+        "explanation": "The Python wrapper renders effect-free plan/help locally. Explicit execution requires a network, Compose choice and --yes; it forwards validated arguments to demo:agi-os:first-class without inferring consent from automation."
       },
       {
         "title": "Inspect the shared entry point",
@@ -1212,7 +1212,7 @@
       {
         "title": "Read the wrapper",
         "source": "demo/cosmic-omniversal-grand-symphony/bin/grand-symphony.sh",
-        "explanation": "A shell wrapper forwards arguments to demo:agi-os:first-class. Its scenario identity does not create a separate execution engine."
+        "explanation": "The shell wrapper defaults to an effect-free plan and forwards only a validated explicit execution to demo:agi-os:first-class. Its scenario identity does not create a separate execution engine."
       },
       {
         "title": "Inspect the shared entry point",
@@ -1238,7 +1238,7 @@
       {
         "title": "Read the wrapper",
         "source": "demo/imperatrix-celestia-operating-system/bin/launch.sh",
-        "explanation": "The launcher delegates to the first-class AGI OS workflow and forwards caller arguments. Inspect defaults before choosing an execution network."
+        "explanation": "The launcher defaults to an effect-free plan, never auto-installs dependencies, and requires explicit mode, network, Compose choice and --yes before forwarding execution to the first-class workflow."
       },
       {
         "title": "Inspect the shared entry point",
@@ -1264,7 +1264,7 @@
       {
         "title": "Read the wrapper",
         "source": "demo/meta-agentic-alpha-agi/bin/launch.sh",
-        "explanation": "The launcher runs the first-class AGI OS workflow and then the ASI Take-Off local mission. Its project plan provides scenario context."
+        "explanation": "The launcher defaults to an effect-free plan. Explicit localhost execution runs the first-class workflow with its branded synthetic plan, then a separate ASI local replay using shared mission@v2.json. The local replay does not consume the branded plan."
       },
       {
         "title": "Inspect the shared entry point",
@@ -1290,7 +1290,7 @@
       {
         "title": "Read the wrapper",
         "source": "demo/omni-sovereign-ascension-operating-system/bin/launch.sh",
-        "explanation": "This wrapper invokes a deployment wizard before the first-class AGI OS workflow. It is a setup-dependent launch path, not an offline simulation."
+        "explanation": "The wrapper validates mode and arguments before any runtime work. Default plan/help are inert; explicit execution calls the shared first-class workflow once, with no preliminary wizard bypass. Operational stages still require separate qualification."
       },
       {
         "title": "Inspect the shared entry point",

@@ -137,7 +137,7 @@ The generated section includes every tracked top-level directory and every neste
 | [solving-alpha-agi-governance](solving-alpha-agi-governance/README.md) | Design guide | Open the guide or source directory |
 | [sovereign-constellation](sovereign-constellation/README.md) | Code and guide | `demo:sovereign-constellation`, `demo:sovereign-constellation:asi-takes-off`, `demo:sovereign-constellation:asi-takes-off:flight-plan` |
 | [sovereign-mesh](sovereign-mesh/README.md) | Code and guide | Open the guide or source directory |
-| [superintelligent-empowerment](superintelligent-empowerment/docs/README.md) | Code and guide | Open the guide or source directory |
+| [superintelligent-empowerment](superintelligent-empowerment/README.md) | Code and guide | Open the guide or source directory |
 | [tests](tests) | Supporting code / assets | Open the guide or source directory |
 | [Tiny-Recursive-Model-v0](Tiny-Recursive-Model-v0/README.md) | Code and guide | Open the guide or source directory |
 | [TRIDENT-SOVEREIGN-AGI-ORCHESTRATOR](TRIDENT-SOVEREIGN-AGI-ORCHESTRATOR/README.md) | Code and guide | `demo:trident-sovereign`, `demo:trident-sovereign:ui` |
@@ -218,5 +218,6 @@ The generated section includes every tracked top-level directory and every neste
 - [kardashev_ii_omega_grade_alpha_agi_business_3/workbench/README.md](kardashev_ii_omega_grade_alpha_agi_business_3/workbench/README.md)
 - [sovereign-constellation/asi-takes-off-demo/README.md](sovereign-constellation/asi-takes-off-demo/README.md)
 - [superintelligent-empowerment/docs/README.md](superintelligent-empowerment/docs/README.md)
+- [superintelligent-empowerment/web/README.md](superintelligent-empowerment/web/README.md)
 
 <!-- demo-catalog:end -->

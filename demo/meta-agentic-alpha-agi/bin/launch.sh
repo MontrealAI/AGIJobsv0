@@ -1,23 +1,23 @@
 #!/usr/bin/env bash
 set -euo pipefail
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. && pwd)"
-ROOT_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
-PLAN_PATH="${SCRIPT_DIR}/project-plan.meta-alpha.json"
 
-printf '\n🚀  Meta-Agentic α-AGI grand demonstration — initiated.\n\n'
+# Validate/help/plan before root resolution, environment changes or subprocesses.
+SCRIPT_DIR="${BASH_SOURCE[0]%/*}"
+if [[ "$SCRIPT_DIR" == "${BASH_SOURCE[0]}" ]]; then SCRIPT_DIR=.; fi
+source "$SCRIPT_DIR/../../../scripts/lib/agi-os-first-class-launcher.sh"
+agi_os_guard meta-agentic "$@"
 
-if [[ -z "${NODE_ENV:-}" ]]; then
-  export NODE_ENV=production
-fi
+ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+[[ -d "$ROOT/node_modules" ]] || agi_os_fail 'Dependencies are missing; install the reviewed lockfile separately before explicit execution'
+cd "$ROOT"
 
-export ASI_TAKEOFF_PLAN_PATH="${PLAN_PATH}"
+# This export is consumed by the first-class synthetic fixture only.
+export ASI_TAKEOFF_PLAN_PATH="$ROOT/demo/meta-agentic-alpha-agi/project-plan.meta-alpha.json"
+export NODE_ENV="${NODE_ENV:-production}"
+npm run demo:agi-os:first-class -- "$@"
 
-cd "${ROOT_DIR}"
-
-# 1. Run the flagship first-class operating system demo (deploy, simulate, report, manifest).
-npm run demo:agi-os:first-class -- --auto-yes "$@"
-
-# 2. Replay the ASI take-off harness against the meta-agentic plan to populate multi-actor receipts.
-npm run demo:asi-takeoff:local
-
-printf '\n✅  Meta-Agentic α-AGI orchestration complete. Artifacts under reports/agi-os/ and reports/asi-takeoff/.\n\n'
+# The separate local replay does not consume ASI_TAKEOFF_PLAN_PATH. Pin its
+# supported shared fixture rather than implying a branded-plan conversion.
+printf '%s\n' 'Executing a separate localhost ASI replay with the shared mission@v2.json fixture.'
+AURORA_MISSION_CONFIG="$ROOT/demo/asi-takeoff/config/mission@v2.json" npm run demo:asi-takeoff:local
+printf '%s\n' 'Selected pipelines completed. Inspect separate evidence; no production qualification is implied.'

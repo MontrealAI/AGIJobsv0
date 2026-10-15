@@ -1,26 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+# Validate/help/plan before root resolution, environment changes or subprocesses.
+SCRIPT_DIR="${BASH_SOURCE[0]%/*}"
+if [[ "$SCRIPT_DIR" == "${BASH_SOURCE[0]}" ]]; then SCRIPT_DIR=.; fi
+source "$SCRIPT_DIR/../../../scripts/lib/agi-os-first-class-launcher.sh"
+agi_os_guard first-class "$@"
+
+ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+[[ -d "$ROOT/node_modules" ]] || agi_os_fail 'Dependencies are missing; install the reviewed lockfile separately before explicit execution'
 cd "$ROOT"
 
-if [[ ! -d node_modules && "${IMPERATRIX_SKIP_INSTALL:-0}" != "1" ]]; then
-  echo "ℹ️  Installing workspace dependencies (first run)." >&2
-  npm install
-fi
-
-ARGS=("$@")
-if (( ${#ARGS[@]} == 0 )); then
-  ARGS=(--yes --network localhost --compose)
-fi
-
-if [[ ${ARGS[0]:-} == "interactive" ]]; then
-  ARGS=("${ARGS[@]:1}")
-fi
-
-echo "🚀 Launching AGI Jobs v0 (v2) first-class operating system demonstration..." >&2
-if (( ${#ARGS[@]} == 0 )); then
-  npm run demo:agi-os:first-class
-else
-  npm run demo:agi-os:first-class -- "${ARGS[@]}"
-fi
+npm run demo:agi-os:first-class -- "$@"

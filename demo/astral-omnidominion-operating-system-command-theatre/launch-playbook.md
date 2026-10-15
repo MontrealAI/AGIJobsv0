@@ -36,13 +36,13 @@ This existing path may deploy contracts and start services. It is distinct from 
 For an explicit local deployment with Compose:
 
 ```bash
-npm run demo:agi-os:first-class -- --network localhost --compose
+npm run demo:agi-os:first-class -- --mode execute --network localhost --yes --compose
 ```
 
 For a previously prepared local deployment:
 
 ```bash
-npm run demo:agi-os:first-class -- --network localhost --yes --no-compose --skip-deploy
+npm run demo:agi-os:first-class -- --mode execute --network localhost --yes --no-compose --skip-deploy
 ```
 
 The script supports `localhost` and `sepolia`. “Local Hardhat (Anvil)” is its existing preset label; Hardhat and Anvil are different tools. Check which runtime is actually running. Do not select a funded network for the first rehearsal.

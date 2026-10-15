@@ -1,5 +1,15 @@
 # AGI Jobs v0 (v2) — Demo → Alpha Meta
 
+## Launcher safety and mode upgrade
+
+The launcher now defaults to an effect-free plan. `--help` and exact
+`--dry-run` also perform no runtime work. Execution requires an explicit
+`--mode execute`, network, Compose choice and `--yes`; dependencies are never
+installed automatically. See the [mode upgrade and evidence boundaries](../../docs/agi-os-first-class-mode-upgrade.md)
+before using operational commands below. Planning and inert tests do not
+qualify a deployment or establish production readiness.
+
+
 ## Developer typecheck
 
 Run `npx --no-install tsc --project demo/alpha-meta/tsconfig.json --noEmit`

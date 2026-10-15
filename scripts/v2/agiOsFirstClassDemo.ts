@@ -5,7 +5,6 @@ import { createHash } from 'crypto';
 import { promises as fs, existsSync } from 'fs';
 import os from 'os';
 import path from 'path';
-import readline from 'readline';
 
 const ROOT = path.resolve(__dirname, '..', '..');
 const REPORT_ROOT = path.join(ROOT, 'reports', 'agi-os');
@@ -84,10 +83,8 @@ type DemoContext = {
   configPath: string;
   envPath: string;
   hardhatNetwork: string;
-  autoYes: boolean;
   launchCompose: boolean;
   dockerAvailable?: boolean;
-  runtimeUnavailable?: boolean;
   skipDeployment: boolean;
   startTimestamp: string;
   gitCommit?: string;
@@ -125,49 +122,82 @@ type GrandSummary = {
   control?: ControlMatrix | null;
 };
 
-type ManifestReport = {
-  entries?: ManifestEntry[];
-};
-
+// Parse the entire invocation before prompts, configuration reads, writes or processes.
+// Environment variables and terminal state are never execution approval.
 function parseArgs(argv: string[] = process.argv.slice(2)): CliArgs {
   const result: CliArgs = {};
+  if (argv.length === 1 && ['-h', '-?', '--help'].includes(argv[0])) {
+    return { help: true };
+  }
+  const switches = new Set([
+    'yes',
+    'non-interactive',
+    'compose',
+    'no-compose',
+    'skip-deploy',
+  ]);
   for (let i = 0; i < argv.length; i += 1) {
     const token = argv[i];
-    if (['-h', '-?', '--help'].includes(token)) {
-      result.help = true;
+    if (token === '--dry-run') {
+      if (result.mode !== undefined)
+        throw new Error('Duplicate or conflicting mode');
+      result.mode = 'plan';
       continue;
     }
-    if (!token.startsWith('--')) continue;
     const key = token.slice(2);
-    const next = argv[i + 1];
-    if (next && !next.startsWith('--')) {
-      result[key] = next;
-      i += 1;
-    } else {
-      result[key] = true;
+    if (
+      !token.startsWith('--') ||
+      (!switches.has(key) && !['mode', 'network'].includes(key))
+    ) {
+      throw new Error(
+        `Unsupported argument: ${token}. Use --help alone; --dry-run accepts no value.`
+      );
     }
+    if (result[key] !== undefined) throw new Error(`Duplicate --${key}`);
+    if (switches.has(key)) {
+      result[key] = true;
+    } else {
+      const value = argv[++i];
+      if (!value || value.startsWith('-'))
+        throw new Error(`--${key} requires a value`);
+      result[key] = value;
+    }
+  }
+  result.mode ??= 'plan';
+  if (!['plan', 'execute'].includes(String(result.mode))) {
+    throw new Error('--mode must be plan or execute');
+  }
+  if (
+    result.network !== undefined &&
+    !Object.prototype.hasOwnProperty.call(
+      NETWORK_PRESETS,
+      String(result.network)
+    )
+  ) {
+    throw new Error('--network must be localhost or sepolia');
+  }
+  if (result.compose && result['no-compose']) {
+    throw new Error('--compose conflicts with --no-compose');
+  }
+  if (result.compose && result['skip-deploy']) {
+    throw new Error(
+      '--compose requires the deployment wizard; it conflicts with --skip-deploy'
+    );
+  }
+  if (result.mode === 'execute') {
+    if (!result.network)
+      throw new Error('Execute requires an explicit --network');
+    if (!result.compose && !result['no-compose']) {
+      throw new Error('Execute requires --compose or --no-compose');
+    }
+    if (!shouldAutoAccept(result))
+      throw new Error('Execute requires explicit --yes approval');
   }
   return result;
 }
 
-function parseBool(value: string | boolean | undefined): boolean | undefined {
-  if (typeof value === 'boolean') return value;
-  if (typeof value === 'string') {
-    const normalised = value.trim().toLowerCase();
-    if (['1', 'true', 'yes', 'y', 'on'].includes(normalised)) return true;
-    if (['0', 'false', 'no', 'n', 'off'].includes(normalised)) return false;
-  }
-  return undefined;
-}
-
 function shouldAutoAccept(args: CliArgs): boolean {
-  const cliRequest =
-    parseBool(args.yes) ?? parseBool(args['non-interactive']);
-  const envRequest =
-    parseBool(process.env.ASTRAL_OS_AUTO) ?? parseBool(process.env.CI);
-  const nonInteractive = !process.stdin.isTTY;
-
-  return Boolean(cliRequest ?? envRequest ?? nonInteractive);
+  return args.yes === true;
 }
 
 function printUsage(): void {
@@ -176,92 +206,66 @@ function printUsage(): void {
 
 function buildUsage(): string {
   return [
-    'Astral Omnidominion Operating System Demo',
+    'AGI OS first-class launcher: plan first',
     '',
     'Usage: ts-node scripts/v2/agiOsFirstClassDemo.ts [options]',
     '',
-    'Options:',
-    '  -h, --help                 Show this help message and exit.',
-    '  --network <name>           Select network preset (localhost | sepolia).',
-    '  --yes, --non-interactive   Assume defaults for all prompts.',
-    '  --compose                  Launch Docker Compose automatically.',
-    '  --no-compose               Skip Docker Compose auto-launch.',
-    '  --skip-deploy              Run demo steps without the deployment wizard.',
+    '  -h, -?, --help            Show help (must be used alone).',
+    '  --mode plan|execute      Default: effect-free plan.',
+    '  --dry-run                Exact alias for plan; accepts no value.',
+    '  --network localhost|sepolia  Explicit target required for execute.',
+    '  --yes                    Explicit approval required for execute.',
+    '  --non-interactive        Never supplies approval or chooses defaults.',
+    '  --compose | --no-compose Explicit choice required for execute.',
+    '  --skip-deploy            Skip only the wizard; requires --no-compose.',
     '',
-    'Examples:',
-    '  ts-node ... --help',
-    '  ts-node ... --network localhost --yes --compose',
+    'Plan/help never read configuration, write files, install or start processes.',
+    'Execute can sign transactions, start services and replace reports.',
+    'CI, non-TTY and ASTRAL_OS_AUTO never authorize execution.',
+    'Unknown, duplicate, conflicting and legacy --auto/--auto-yes flags fail.',
+    '',
+    'Example after reviewing configuration, ownership and signing authority:',
+    '  ts-node ... --mode execute --network localhost --yes --compose',
+    'Sepolia remains unqualified: the bundled Hardhat fixture is separate evidence.',
   ].join('\n');
 }
 
-async function promptYesNo(
-  question: string,
-  defaultValue: boolean,
-  autoYes: boolean
-): Promise<boolean> {
-  if (autoYes) {
-    return defaultValue;
-  }
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  });
-  const suffix = defaultValue ? ' [Y/n] ' : ' [y/N] ';
-  const answer: string = await new Promise((resolve) =>
-    rl.question(`${question}${suffix}`, resolve)
-  );
-  rl.close();
-  const normalised = answer.trim().toLowerCase();
-  if (!normalised) return defaultValue;
-  return ['y', 'yes'].includes(normalised);
+function evidenceBoundary(network: NetworkKey) {
+  return {
+    deploymentAndOwnerChecks: network,
+    bundledRehearsal: 'hardhat',
+    qualification:
+      'source-only; operational qualification requires separate reviewed evidence',
+    limitation:
+      'Hardhat fixture results do not verify the selected deployment, its ownership, or production readiness.',
+  };
 }
 
-async function promptSelect<
-  T extends { key: string; label: string; description?: string }
->(
-  question: string,
-  options: T[],
-  defaultKey: string,
-  autoYes: boolean
-): Promise<T> {
-  if (autoYes) {
-    const fallback = options.find((option) => option.key === defaultKey);
-    if (!fallback) {
-      throw new Error(`Default option ${defaultKey} not found`);
-    }
-    return fallback;
-  }
-  console.log(question);
-  options.forEach((option, index) => {
-    const prefix = option.key === defaultKey ? '*' : ' ';
-    const description = option.description ? ` — ${option.description}` : '';
-    console.log(`  ${prefix} [${index + 1}] ${option.label}${description}`);
-  });
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  });
-  const answer: string = await new Promise((resolve) =>
-    rl.question(`Select 1-${options.length} (default ${defaultKey}): `, resolve)
-  );
-  rl.close();
-  const trimmed = answer.trim();
-  if (!trimmed) {
-    const fallback = options.find((option) => option.key === defaultKey);
-    if (!fallback) throw new Error(`Default option ${defaultKey} not found`);
-    return fallback;
-  }
-  const index = Number.parseInt(trimmed, 10);
-  if (Number.isInteger(index) && index >= 1 && index <= options.length) {
-    return options[index - 1];
-  }
-  const direct = options.find(
-    (option) =>
-      option.key === trimmed ||
-      option.label.toLowerCase() === trimmed.toLowerCase()
-  );
-  if (direct) return direct;
-  throw new Error(`Invalid selection: ${answer}`);
+function buildPlan(args: CliArgs): string {
+  return [
+    'Read-only plan: no commands executed; no configuration or runtime qualified.',
+    `Selected deployment/owner target: ${
+      args.network ?? 'not selected (required for execute)'
+    }.`,
+    `Deployment wizard: ${
+      args['skip-deploy']
+        ? 'skipped by request'
+        : 'would deploy and may sign transactions'
+    }.`,
+    `Docker Compose: ${
+      args.compose
+        ? 'requested'
+        : args['no-compose']
+        ? 'disabled'
+        : 'not selected (required for execute)'
+    }.`,
+    'Then: separate in-memory Hardhat mission fixture; selected-target owner map and verification;',
+    'then report rendering, manifest packaging and internal artifact consistency checks.',
+    'Hardhat fixture evidence does not verify a localhost/Sepolia deployment.',
+    'Execution requires --mode execute --network localhost|sepolia --yes and --compose|--no-compose.',
+    '--skip-deploy skips only the wizard; subsequent runtime commands still execute.',
+    'Review prerequisites, endpoints, owners and signing authority separately. Nothing is installed automatically.',
+  ].join('\n');
 }
 
 function createPrefixedWriter(prefix: string) {
@@ -323,7 +327,7 @@ async function runCommand(
   const exitCode: number = await new Promise((resolve, reject) => {
     child.on('error', reject);
     child.on('exit', (code) => {
-      resolve(code ?? 0);
+      resolve(code ?? 1);
     });
   });
 
@@ -361,11 +365,14 @@ async function runPreflight(ctx: DemoContext): Promise<StepResult> {
   details.nodeVersion = ctx.nodeVersion;
 
   const dockerCheck = await tryCommandCapture('docker', ['--version']);
+  ctx.dockerAvailable = dockerCheck.success;
   const dockerRequired = ctx.launchCompose;
   if (!dockerCheck.success) {
     details.dockerAvailable = false;
     notes.push(
-      'Docker is not available in PATH. Auto-launch for Compose will be skipped; start any required services manually.'
+      ctx.launchCompose
+        ? 'Docker is unavailable; the explicitly requested Compose execution cannot proceed.'
+        : 'Docker is unavailable; --no-compose leaves the selected runtime to the operator. No network fallback is applied.'
     );
     if (dockerRequired) {
       const endedAt = new Date();
@@ -588,10 +595,7 @@ async function generateHtmlSummary(): Promise<void> {
   await fs.writeFile(GRAND_SUMMARY_HTML, html, 'utf8');
 }
 
-async function buildManifest(
-  ctx: DemoContext,
-  steps: StepResult[]
-): Promise<ManifestEntry[]> {
+async function buildManifest(ctx: DemoContext): Promise<ManifestEntry[]> {
   const candidates = [
     GRAND_SUMMARY_MD,
     GRAND_SUMMARY_JSON,
@@ -605,18 +609,25 @@ async function buildManifest(
     OWNER_CONTROL_MAP,
   ];
 
+  const required = new Set([
+    GRAND_SUMMARY_MD,
+    GRAND_SUMMARY_JSON,
+    GRAND_SUMMARY_HTML,
+    OWNER_CONTROL_MATRIX,
+    FIRST_CLASS_RUN,
+    OWNER_CONTROL_MAP,
+  ]);
   const entries: ManifestEntry[] = [];
   for (const candidate of candidates) {
     if (!(await pathExists(candidate))) {
-      steps.push({
-        key: `manifest:${path.basename(candidate)}`,
-        title: `Manifest placeholder for ${path.relative(ROOT, candidate)}`,
-        status: 'skipped',
-        startedAt: new Date().toISOString(),
-        endedAt: new Date().toISOString(),
-        durationMs: 0,
-        notes: ['File missing during manifest generation'],
-      });
+      if (required.has(candidate)) {
+        throw new Error(
+          `Required current-run artifact missing: ${path.relative(
+            ROOT,
+            candidate
+          )}`
+        );
+      }
       continue;
     }
     const buffer = await fs.readFile(candidate);
@@ -627,12 +638,14 @@ async function buildManifest(
       sha256: hash,
     });
   }
+  const pendingPath = `${FIRST_CLASS_MANIFEST}.pending`;
   await fs.writeFile(
-    FIRST_CLASS_MANIFEST,
+    pendingPath,
     JSON.stringify(
       {
         generatedAt: new Date().toISOString(),
         network: ctx.network,
+        evidenceBoundary: evidenceBoundary(ctx.network),
         entries,
       },
       null,
@@ -640,7 +653,24 @@ async function buildManifest(
     ),
     'utf8'
   );
+  // Only complete bytes become the current manifest. A failed write leaves a
+  // clearly pending file, never a seemingly valid current-run success.
+  await fs.rename(pendingPath, FIRST_CLASS_MANIFEST);
   return entries;
+}
+
+async function archivePriorRun(): Promise<void> {
+  const previous: string[] = [];
+  for (const file of [FIRST_CLASS_RUN, FIRST_CLASS_MANIFEST]) {
+    if (await pathExists(file)) previous.push(file);
+  }
+  if (previous.length === 0) return;
+  const history = await fs.mkdtemp(
+    path.join(FIRST_CLASS_ROOT, 'previous-run-')
+  );
+  for (const file of previous) {
+    await fs.rename(file, path.join(history, path.basename(file)));
+  }
 }
 
 async function ensureEnvFile(envPath: string): Promise<void> {
@@ -664,67 +694,27 @@ async function ensureEnvFile(envPath: string): Promise<void> {
   throw new Error(`Missing environment template for ${resolved}`);
 }
 
-async function main() {
-  const args = parseArgs();
+async function main(argv: string[] = process.argv.slice(2)) {
+  const args = parseArgs(argv);
   if (args.help) {
     printUsage();
     return;
   }
-  const autoYes = shouldAutoAccept(args);
-  const networkArg = args.network as string | undefined;
-  const skipDeploy = Boolean(parseBool(args['skip-deploy']));
-  const launchComposeOverride =
-    parseBool(args.compose) ??
-    (parseBool(args['no-compose']) === true ? false : undefined);
-
-  const networkPreset =
-    networkArg && networkArg in NETWORK_PRESETS
-      ? NETWORK_PRESETS[networkArg as NetworkKey]
-      : undefined;
-
-  const networkSelection =
-    networkPreset ??
-    (autoYes
-      ? NETWORK_PRESETS.localhost
-      : await promptSelect(
-          'Select target network for the Astral Omnidominion demo:',
-          Object.values(NETWORK_PRESETS),
-          'localhost',
-          autoYes
-        ));
-
-  const dockerAvailable = (
-    await tryCommandCapture('docker', ['--version'])
-  ).success;
-
-  const launchCompose =
-    launchComposeOverride !== undefined
-      ? launchComposeOverride
-      : await promptYesNo(
-          'Launch Docker Compose stack automatically?',
-          dockerAvailable && networkSelection.key === 'localhost',
-          autoYes
-        );
-
-  const runtimeUnavailable =
-    !dockerAvailable && !launchCompose && networkSelection.key === 'localhost';
-  const skipDeployment = skipDeploy || runtimeUnavailable;
-
-  if (runtimeUnavailable) {
-    console.log(
-      'ℹ️  Deployment wizard disabled because no local node or Compose target is available.'
-    );
+  if (args.mode === 'plan') {
+    console.log(buildPlan(args));
+    return;
   }
+  // parseArgs has validated explicit target, Compose choice and approval.
+  const networkSelection = NETWORK_PRESETS[args.network as NetworkKey];
+  const launchCompose = args.compose === true;
+  const skipDeployment = args['skip-deploy'] === true;
 
   const context: DemoContext = {
     network: networkSelection.key as NetworkKey,
     configPath: networkSelection.configPath,
     envPath: networkSelection.envPath,
     hardhatNetwork: networkSelection.hardhatNetwork,
-    autoYes,
     launchCompose,
-    dockerAvailable,
-    runtimeUnavailable,
     skipDeployment,
     startTimestamp: new Date().toISOString(),
     nodeVersion: process.version,
@@ -742,10 +732,17 @@ async function main() {
   console.log(
     `   • Skip deployment:  ${context.skipDeployment ? 'yes' : 'no'}`
   );
+  console.log(
+    '   • Bundled fixture:  hardhat (separate from deployment/owner evidence)'
+  );
+  console.log(
+    '   • Qualification:    source-only; this run does not establish production readiness'
+  );
   console.log('');
 
   await fs.mkdir(FIRST_CLASS_ROOT, { recursive: true });
   await fs.mkdir(LOG_ROOT, { recursive: true });
+  await archivePriorRun();
   await ensureEnvFile(context.envPath);
 
   const results: StepResult[] = [];
@@ -760,10 +757,8 @@ async function main() {
       key: 'deployment',
       title: 'One-click deployment wizard',
       skip: (ctx) => ctx.skipDeployment,
-      skipReason: (ctx) =>
-        ctx.runtimeUnavailable
-          ? 'Runtime unavailable (no local node/Compose); deployment disabled.'
-          : 'Deployment skipped by operator flag.',
+      skipReason: () =>
+        'Deployment skipped by operator flag; runtime checks still execute.',
       run: async (ctx) => {
         const wizardArgs = [
           'run',
@@ -788,27 +783,22 @@ async function main() {
     },
     {
       key: 'demo',
-      title: 'AGI OS grand demonstration',
-      skip: (ctx) => ctx.runtimeUnavailable,
-      skipReason: () =>
-        'Runtime dependencies unavailable; start Hardhat/Anvil or enable Docker Compose to run the full demo.',
-      run: async (ctx) =>
+      title:
+        'Separate in-memory Hardhat mission fixture (not deployment verification)',
+      run: async () =>
         runCommand(
           'demo',
-          'AGI OS grand demonstration',
+          'Separate in-memory Hardhat mission fixture (not deployment verification)',
           'npm',
           ['run', 'demo:agi-os'],
           {
-            env: { HARDHAT_NETWORK: ctx.hardhatNetwork },
+            env: { HARDHAT_NETWORK: 'hardhat' },
           }
         ),
     },
     {
       key: 'owner-diagram',
       title: 'Owner systems map (Mermaid)',
-      skip: (ctx) => ctx.runtimeUnavailable,
-      skipReason: () =>
-        'Owner diagram generation requires runtime outputs; start the stack or enable Compose.',
       run: async (ctx) =>
         runCommand(
           'owner-diagram',
@@ -828,9 +818,6 @@ async function main() {
     {
       key: 'owner-verify',
       title: 'Verify owner control surface',
-      skip: (ctx) => ctx.runtimeUnavailable,
-      skipReason: () =>
-        'Owner control verification requires a reachable runtime; start the stack or enable Compose.',
       run: async (ctx) =>
         runCommand(
           'owner-verify',
@@ -864,24 +851,6 @@ async function main() {
       },
     },
     {
-      key: 'manifest',
-      title: 'Compile first-class manifest',
-      run: async (ctx) => {
-        const startedAt = new Date();
-        const manifestEntries = await buildManifest(ctx, results);
-        const endedAt = new Date();
-        return {
-          key: 'manifest',
-          title: 'Compile first-class manifest',
-          status: 'success',
-          startedAt: startedAt.toISOString(),
-          endedAt: endedAt.toISOString(),
-          durationMs: endedAt.getTime() - startedAt.getTime(),
-          details: { totalFiles: manifestEntries.length },
-        };
-      },
-    },
-    {
       key: 'integrity-check',
       title: 'Cross-verify mission artefacts',
       run: async () => {
@@ -890,7 +859,9 @@ async function main() {
         const requiredFiles = [
           { path: OWNER_CONTROL_MATRIX, label: 'Owner control matrix' },
           { path: GRAND_SUMMARY_JSON, label: 'Grand summary JSON' },
-          { path: FIRST_CLASS_MANIFEST, label: 'First-class manifest' },
+          { path: GRAND_SUMMARY_MD, label: 'Grand summary markdown' },
+          { path: GRAND_SUMMARY_HTML, label: 'Grand summary HTML' },
+          { path: OWNER_CONTROL_MAP, label: 'Selected-target owner map' },
         ];
 
         for (const file of requiredFiles) {
@@ -904,12 +875,14 @@ async function main() {
           return {
             key: 'integrity-check',
             title: 'Cross-verify mission artefacts',
-            status: 'skipped',
+            status: 'failed',
             startedAt: startedAt.toISOString(),
             endedAt: endedAt.toISOString(),
             durationMs: endedAt.getTime() - startedAt.getTime(),
             notes: [
-              `Missing artefacts: ${missing.join(', ')}. Run the demo stack or supply the files to enable integrity checks.`,
+              `Missing artefacts: ${missing.join(
+                ', '
+              )}. Run the demo stack or supply the files to enable integrity checks.`,
             ],
           };
         }
@@ -950,31 +923,12 @@ async function main() {
           );
         }
 
-        const manifestReport = await readJsonFile<ManifestReport>(
-          FIRST_CLASS_MANIFEST
-        );
-        const manifestEntries = manifestReport.entries ?? [];
-        const manifestPaths = new Set(
-          manifestEntries.map((entry) => entry.path)
-        );
-        const requiredPaths = [
-          path.relative(ROOT, GRAND_SUMMARY_MD),
-          path.relative(ROOT, GRAND_SUMMARY_JSON),
-          path.relative(ROOT, GRAND_SUMMARY_HTML),
-          path.relative(ROOT, OWNER_CONTROL_MATRIX),
-        ];
-        requiredPaths.forEach((requiredPath) => {
-          if (!manifestPaths.has(requiredPath)) {
-            issues.push(`Manifest missing required artefact ${requiredPath}`);
-          }
-        });
-
         const endedAt = new Date();
         const status: StepStatus = issues.length === 0 ? 'success' : 'failed';
         const notes =
           status === 'success'
             ? [
-                `Validated ${modules.length} owner modules and ${requiredPaths.length} critical artefacts across mission reports.`,
+                `Validated ${modules.length} owner module records and ${requiredFiles.length} required artifacts for internal consistency only.`,
               ]
             : issues;
 
@@ -988,7 +942,7 @@ async function main() {
           notes,
           details: {
             ownerModules: modules.length,
-            manifestEntries: manifestEntries.length,
+            requiredArtifacts: requiredFiles.length,
           },
         };
       },
@@ -1055,11 +1009,11 @@ async function main() {
     host: os.hostname(),
     network: context.network,
     hardhatNetwork: context.hardhatNetwork,
+    evidenceBoundary: evidenceBoundary(context.network),
     configPath: path.resolve(context.configPath),
     envPath: path.resolve(context.envPath),
     launchCompose: context.launchCompose,
     dockerAvailable: context.dockerAvailable ?? null,
-    runtimeUnavailable: context.runtimeUnavailable ?? false,
     skipDeployment: context.skipDeployment,
     gitCommit: context.gitCommit ?? null,
     gitBranch: context.gitBranch ?? null,
@@ -1068,6 +1022,7 @@ async function main() {
     composeVersion: context.composeVersion ?? null,
     nodeVersion: context.nodeVersion,
     steps: results,
+    manifestRequiredForCompleteBundle: true,
   };
 
   await fs.writeFile(
@@ -1083,14 +1038,38 @@ async function main() {
   );
 
   const lastStep = results[results.length - 1];
-  if (lastStep?.status === 'failed') {
+  if (lastStep?.status !== 'failed') {
+    try {
+      // FIRST_CLASS_RUN now contains this invocation, not a previous success.
+      // The manifest itself is deliberately excluded from its candidate list.
+      await buildManifest(context);
+    } catch (error) {
+      await fs.rm(FIRST_CLASS_MANIFEST, { force: true });
+      const now = new Date().toISOString();
+      results.push({
+        key: 'manifest',
+        title: 'Finalize current-run manifest',
+        status: 'failed',
+        startedAt: now,
+        endedAt: now,
+        durationMs: 0,
+        notes: [error instanceof Error ? error.message : String(error)],
+      });
+      await fs.writeFile(
+        FIRST_CLASS_RUN,
+        JSON.stringify(runReport, null, 2),
+        'utf8'
+      );
+    }
+  }
+  if (results.some((step) => step.status === 'failed')) {
     process.exitCode = 1;
     console.error(
-      'Astral Omnidominion demo completed with failures. Review the run report for remediation guidance.'
+      'Selected execution failed. No current-run manifest is available; fixture evidence does not qualify the deployment.'
     );
   } else {
     console.log(
-      '🌠 Astral Omnidominion demo completed successfully. Share the reports in reports/agi-os/.'
+      `Selected steps completed for ${context.network}; separate Hardhat fixture evidence is included. This does not establish operational qualification or production readiness. Review reports/agi-os/first-class/first-class-run.json and its finalized manifest.`
     );
   }
 }
@@ -1102,4 +1081,12 @@ if (require.main === module) {
   });
 }
 
-export { buildUsage, parseArgs, printUsage };
+export {
+  buildUsage,
+  buildPlan,
+  parseArgs,
+  printUsage,
+  shouldAutoAccept,
+  evidenceBoundary,
+  main,
+};
