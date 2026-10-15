@@ -147,7 +147,7 @@ The generated section includes every tracked top-level directory and every neste
 | [zenith-sapience](zenith-sapience/README.md) | Design guide | Open the guide or source directory |
 | [zenith-sapience-initiative-celestial-archon-governance](zenith-sapience-initiative-celestial-archon-governance/README.md) | Code and guide | `demo:zenith-sapience-celestial-archon`, `demo:zenith-sapience-celestial-archon:local` |
 | [zenith-sapience-initiative-global-governance](zenith-sapience-initiative-global-governance/README.md) | Code and guide | `demo:zenith-sapience-initiative`, `demo:zenith-sapience-initiative:local` |
-| [zenith-sapience-initiative-omega-omni-operating-system](zenith-sapience-initiative-omega-omni-operating-system/README.md) | Design guide | Open the guide or source directory |
+| [zenith-sapience-initiative-omega-omni-operating-system](zenith-sapience-initiative-omega-omni-operating-system/README.md) | Code and guide | Open the guide or source directory |
 | [zenith-sapience-initiative-omnidominion-governance](zenith-sapience-initiative-omnidominion-governance/README.md) | Code and guide | `demo:zenith-sapience-omnidominion`, `demo:zenith-sapience-omnidominion:local` |
 | [zenith-sapience-initiative-planetary-operating-system-governance](zenith-sapience-initiative-planetary-operating-system-governance/README.md) | Code and guide | `demo:zenith-sapience-planetary-os`, `demo:zenith-sapience-planetary-os:local` |
 | [zenith-sapience-initiative-supra-sovereign-hypernova-governance](zenith-sapience-initiative-supra-sovereign-hypernova-governance/README.md) | Code and guide | `demo:zenith-hypernova`, `demo:zenith-hypernova:local`, `demo:zenith-hypernova:work` |
