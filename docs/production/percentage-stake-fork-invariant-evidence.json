@@ -1,0 +1,51 @@
+{
+  "schema": "agijobsv0/percentage-stake-fork-invariant-evidence/v1",
+  "candidateCommit": "ee74d271d3f46851993b71e7140c5859809d30c8",
+  "candidateTree": "e966447cf3286c0031a8756efec2aac5a80d0401",
+  "originalLocalReceiptSha256": "301a748da58a645b6aded80b691f68766b5f95e591f719aa3991dfb0c9eae71f",
+  "additionalSourceSha256": {
+    "test/fork/mainnet-job-lifecycle.fork.test.ts": "87e5c14b82d30801347e3b5570a073c20aedd6a8c8508ac6cfe69d3d1066c586"
+  },
+  "forkBlock": {
+    "number": 26200139,
+    "hash": "0x5ba89450466ec7979fd0ab037d86077799089630aab9d8923cf63753a7cb11be"
+  },
+  "forkScope": "Local mainnet fork: actual AGIALPHA token code/state with synthetic test balances, local ENS/identity fixtures and operator-controlled ValidationStub. One happy-path lifecycle, percentage snapshot after owner rate change, certificate sale and exact wallet/stake accounting. Not a full real ENS/committee/old-obligation cutover rehearsal.",
+  "forkCases": {
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0
+  },
+  "foundry": {
+    "version": "1.7.1",
+    "suites": 6,
+    "testsPassed": 15,
+    "testsFailed": 0,
+    "testsSkipped": 0,
+    "fuzzRunsPerProperty": 256,
+    "separatePercentageFuzzRunsPerProperty": 1000
+  },
+  "logs": {
+    "jobs-mainnet-fork2.log": {
+      "sha256": "bb89830e1258bb177d800b7d68df6b82d382092f7636da7c2acd48b606621dec",
+      "bytes": 594
+    },
+    "jobs-all-invariants.log": {
+      "sha256": "fe13cb042d1c2ff8f8ae949a5b228af7a2c63561cef5b3407b5ac6535a096249",
+      "bytes": 45937
+    },
+    "jobs-stake-fuzz2.log": {
+      "sha256": "5d3c4ea05ec065fdbcc6bf323610171e0ddebba7bb6b3c1719a672dadbd0cd39",
+      "bytes": 28658
+    }
+  },
+  "externalTransactions": false,
+  "productionApproved": false,
+  "remaining": [
+    "exact-final-head hosted gates",
+    "supplemental TypeScript fixture migration",
+    "independent source/security review",
+    "full actual ENS/committee/old-stack-obligation rehearsal",
+    "reviewed governance/tax/signer/treasury settings"
+  ]
+}

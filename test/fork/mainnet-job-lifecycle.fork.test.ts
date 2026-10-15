@@ -265,6 +265,10 @@ describeFork('Mainnet fork · job lifecycle drill', function () {
       .connect(employer)
       .createJob(reward, deadline, specHash, 'ipfs://job');
 
+    expect((await registry.jobs(1)).stake).to.equal(reward / 10n);
+    await registry.setJobStakeBps(10000);
+    expect(await registry.quoteJobStake(reward)).to.equal(reward);
+    expect((await registry.jobs(1)).stake).to.equal(reward / 10n);
     await registry.connect(agent).applyForJob(1, subdomain, []);
     const resultHash = ethers.id('ipfs://result');
     await registry
@@ -280,8 +284,10 @@ describeFork('Mainnet fork · job lifecycle drill', function () {
     await nft.connect(buyer).purchase(1);
 
     expect(await nft.ownerOf(1)).to.equal(buyer.address);
+    expect(await stake.lockedStakes(agent.address)).to.equal(0);
+    expect(await stake.stakes(agent.address, Role.Agent)).to.equal(stakeAmount);
     expect(await token.balanceOf(agent.address)).to.equal(
-      ethers.parseUnits('1149', AGIALPHA_DECIMALS)
+      ethers.parseUnits(MINT_PER_ACCOUNT, AGIALPHA_DECIMALS) - stakeAmount + reward + price
     );
   });
 });
