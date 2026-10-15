@@ -1,3 +1,4 @@
+import { renderEcosystemMap } from './ecosystem-map.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
@@ -460,7 +461,7 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
     base
   )}<div class="hero-actions"><a class="button primary" href="${base}start/">Start here — we’ll guide you <span aria-hidden="true">→</span></a><a class="text-link" href="${base}start/example/"><span class="play-icon" aria-hidden="true">▷</span> Try a simple example</a></div><p class="hero-note">No account or wallet needed. <a href="${base}start/fr/" lang="fr">Commencer en français →</a></p>${renderHeroSpotlight(
     base
-  )}</div>${orbit()}</section>${renderEcosystemIntro(base)}${renderWorkIntro(
+  )}</div>${orbit()}</section>${renderEcosystemIntro(base)}${renderEcosystemMap()}${renderWorkIntro(
     base,
     guideURL
   )}${renderFeaturedDemos(
