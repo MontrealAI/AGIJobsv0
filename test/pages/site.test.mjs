@@ -1,3 +1,7 @@
+import {
+  assertDashboardRoutes,
+  expectedDashboardRoutes,
+} from './dashboard-contract.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -382,7 +386,10 @@ test('all published command decks retain their local assets and navigation', () 
   const manifest = JSON.parse(
     fs.readFileSync(path.join(output, 'catalog.json'))
   );
-  assert.equal(manifest.dashboardRoutes.length, 15);
+  assertDashboardRoutes(
+    manifest.dashboardRoutes,
+    expectedDashboardRoutes(root)
+  );
   assert.ok(manifest.dashboardRoutes.includes('experiments/phase6/'));
   assert.ok(manifest.dashboardRoutes.includes('experiments/zenith-hypernova/'));
   assert.ok(manifest.dashboardRoutes.includes('experiments/phase8/workbench/'));

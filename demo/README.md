@@ -196,6 +196,7 @@ The generated section includes every tracked top-level directory and every neste
 - [Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_v8/README.md](Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_v8/README.md)
 - [Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_v9/README.md](Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_v9/README.md)
 - [Meta-Agentic-ALPHA-AGI-Jobs-v0/reports/owner-playbook.md](Meta-Agentic-ALPHA-AGI-Jobs-v0/reports/owner-playbook.md)
+- [OMNIPHOENIX-ASCENDANT-HYPERSTRUCTURE/disruption/README.md](OMNIPHOENIX-ASCENDANT-HYPERSTRUCTURE/disruption/README.md)
 - [One-Box/computer-work/README.md](One-Box/computer-work/README.md)
 - [Phase-8-Universal-Value-Dominance/output/phase8-guardian-response-playbook.md](Phase-8-Universal-Value-Dominance/output/phase8-guardian-response-playbook.md)
 - [TRIDENT-SOVEREIGN-AGI-ORCHESTRATOR/ui/operator-playbook.md](TRIDENT-SOVEREIGN-AGI-ORCHESTRATOR/ui/operator-playbook.md)

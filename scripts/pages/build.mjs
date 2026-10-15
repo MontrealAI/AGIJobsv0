@@ -23,6 +23,7 @@ import {
 import { renderAlphaMarkPage } from './alpha-mark.mjs';
 import { renderSuccessorPage } from './successor.mjs';
 import { buildPhase6Site } from './phase6-build.mjs';
+import { buildOmniphoenixSite } from './omniphoenix-build.mjs';
 
 const require = createRequire(import.meta.url);
 const { inventory } = require('../demo/catalog.cjs');
@@ -809,6 +810,8 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
     'experiments/phase6/',
   ];
   await buildPhase6Site(path.join(output, 'experiments/phase6'), { base });
+  await buildOmniphoenixSite(path.join(output, 'experiments/omniphoenix'));
+  dashboardRoutes.push('experiments/omniphoenix/');
   for (const file of tracked) {
     if (!file.startsWith(deckRoot)) continue;
     const relative = file.slice(deckRoot.length);

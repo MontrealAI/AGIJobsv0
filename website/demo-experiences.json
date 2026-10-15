@@ -988,7 +988,7 @@
       {
         "title": "Review architecture and variants",
         "source": "demo/Phase-6-Scaling-Multi-Domain-Expansion/README.md",
-        "explanation": "Use the preserved original guide and additional flowcharts to connect components. Read each variant’s own prerequisites before running it."
+        "explanation": "Use the preserved original guide and additional flowcharts to connect components. Read each variant\u2019s own prerequisites before running it."
       }
     ],
     "command": "npm run demo:phase6:orchestrate",
@@ -1022,7 +1022,7 @@
       {
         "title": "Review architecture and variants",
         "source": "demo/Phase-8-Universal-Value-Dominance/README.md",
-        "explanation": "Use the preserved original guide and additional flowcharts to connect components. Read each variant’s own prerequisites before running it."
+        "explanation": "Use the preserved original guide and additional flowcharts to connect components. Read each variant\u2019s own prerequisites before running it."
       }
     ],
     "command": "npm run demo:phase8:work -- run /tmp/phase8-work",
@@ -1408,13 +1408,18 @@
     "related": ["asi-takeoff"]
   },
   "OMNIPHOENIX-ASCENDANT-HYPERSTRUCTURE": {
-    "question": "How can an ambitious mission be translated into a reviewable plan?",
-    "purpose": "For mission designers: analyze the preserved scenario plan without execution, then explicitly choose shared fixture reports whose scope is stated in the runbook.",
+    "question": "Which dependencies become blocked, and which delays actually change the planning horizon?",
+    "purpose": "For mission designers: inspect exact dependency disruption and planning reward exposure before commissioning, with explicit duration and unlimited-parallelism assumptions.",
     "steps": [
       {
         "title": "Inspect the mission plan",
         "source": "demo/OMNIPHOENIX-ASCENDANT-HYPERSTRUCTURE/project-plan.hyperstructure.json",
         "explanation": "Read planned job labels, dependencies and budgets. A project plan is an input artifact; its targets are not evidence of completed work."
+      },
+      {
+        "title": "Inspect a bounded disruption",
+        "source": "demo/OMNIPHOENIX-ASCENDANT-HYPERSTRUCTURE/disruption/README.md",
+        "explanation": "Apply delays or blocked jobs, compare the finite schedule and exposed planning rewards, then reopen exact-byte evidence through recomputation."
       },
       {
         "title": "Read the operating sequence",
@@ -1427,11 +1432,19 @@
         "explanation": "The TypeScript pipeline reads the scenario for summaries and kit metadata. Its fixed lifecycle/pause and separately bootstrapped reporting fixtures do not execute the scenario job list. The separate :local launcher consumes AURORA_MISSION_CONFIG instead."
       }
     ],
-    "command": "node -e 'const {analyze}=require(\"./demo/asi-takeoff/scripts/plan.cjs\"); console.log(JSON.stringify(analyze(require(\"./demo/OMNIPHOENIX-ASCENDANT-HYPERSTRUCTURE/project-plan.hyperstructure.json\")),null,2));'",
-    "expected": "Read-only planning output with budgets and dependencies. No report directory, compiler, contract fixture, transaction or provider work is started.",
-    "experiment": "Compare the selected plan hash with an explicitly generated governance kit. Keep fixture evidence distinct from planned scenario jobs and from any separately authorized operator action.",
+    "command": "node demo/OMNIPHOENIX-ASCENDANT-HYPERSTRUCTURE/disruption/cli.cjs",
+    "expected": "Read-only baseline and counterfactual graph analysis, exact planned amounts and source/report hashes. No output directory unless explicitly requested; no jobs or transactions are executed.",
+    "experiment": "Delay PAN-PAYMENTS-NETTING by 20 then 30 days to inspect schedule slack, or block CLIMATE-SWARM-DEPLOY and trace its descendants. Export and reopen the analysis; modified stored results must be rejected.",
     "mode": "node",
-    "related": ["asi-takeoff"]
+    "related": ["asi-takeoff"],
+    "dashboardDescription": "An original EN/FR dependency-disruption desk for the preserved seven-job plan. Compare delays and blocked descendants, exact reward exposure, causal chains and validated portable recovery. Duration assumptions and unknown capacity remain explicit; no execution or transactions.",
+    "dashboards": [
+      {
+        "title": "Omniphoenix dependency disruption desk",
+        "route": "experiments/omniphoenix/",
+        "source": "demo/OMNIPHOENIX-ASCENDANT-HYPERSTRUCTURE/web/index.html"
+      }
+    ]
   },
   "omnisovereign": {
     "question": "How can useful machine work scale across city, regional and planetary planning layers?",

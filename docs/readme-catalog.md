@@ -6,8 +6,8 @@ briefings, and subsystem manuals when coordinating releases or audits.
 
 ## Summary
 
-- Total README-like files: 171
-- README documents: 131
+- Total README-like files: 172
+- README documents: 132
 - Runbooks and emergency guides: 40
 
 ## Root
@@ -119,6 +119,7 @@ briefings, and subsystem manuals when coordinating releases or audits.
 | `demo/OMNIGENESIS-GLOBAL-SOVEREIGN-SYMPHONY/README.md` | Omnigenesis Global Sovereign Symphony | README |
 | `demo/OMNIGENESIS-GLOBAL-SOVEREIGN-SYMPHONY/RUNBOOK.md` | Omnigenesis Global Sovereign Symphony — Fixture Runbook | RUNBOOK |
 | `demo/OMNIPHOENIX-ASCENDANT-HYPERSTRUCTURE/README.md` | Omniphoenix Ascendant Hyperstructure | README |
+| `demo/OMNIPHOENIX-ASCENDANT-HYPERSTRUCTURE/disruption/README.md` | Dependency disruption desk | README |
 | `demo/OMNIPHOENIX-ASCENDANT-HYPERSTRUCTURE/RUNBOOK.md` | Omniphoenix Ascendant Hyperstructure — Fixture Runbook | RUNBOOK |
 | `demo/One-Box/README.md` | AGI Jobs v0 (v2) — Demo → One Box | README |
 | `demo/One-Box/computer-work/README.md` | Computer-work lab: a supplier decision you can verify | README |
