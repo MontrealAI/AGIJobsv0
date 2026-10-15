@@ -4,6 +4,9 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 cd "$ROOT"
 
+source "$ROOT/demo/aurora/bin/local-node.sh"
+lock_local_demo "$@"
+
 REPORT_ROOT="reports/zenith-sapience"
 
 export ASI_GLOBAL_PLAN_PATH="demo/zenith-sapience-initiative-global-governance/project-plan.json"
@@ -20,7 +23,6 @@ export ASI_GLOBAL_ADDITIONAL_ARTIFACTS_APPEND='[
   {"key":"zenithOwnerControl","path":"demo/zenith-sapience-initiative-global-governance/OWNER-CONTROL.md","description":"Owner control dossier for Zenith Sapience."}
 ]'
 
-rm -rf "$REPORT_ROOT"
-mkdir -p "$REPORT_ROOT"
+node demo/aurora/bin/prepare-local-reports.cjs --kit zenith-sapience
 
 npm run demo:asi-global -- "$@"

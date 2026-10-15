@@ -7,10 +7,21 @@ const scopes = new Set([
   'zenith-omnidominion',
   'zenith-planetary-os',
 ]);
-function prepare(scope, root = path.resolve(__dirname, '../../..')) {
-  if (!scopes.has(scope)) throw new Error('Unknown local report scope');
+function prepare(
+  scope,
+  root = path.resolve(__dirname, '../../..'),
+  mode = 'local'
+) {
+  // Never accept a caller-supplied path or network. These are the complete
+  // supported targets; the local wrappers keep their original default mode.
+  if (
+    !['local', 'kit'].includes(mode) ||
+    (!scopes.has(scope) && !(mode === 'local' && scope === 'infinity-symphony'))
+  )
+    throw new Error('Unknown report scope or mode');
   root = path.resolve(root);
-  const relative = ['reports', 'localhost', scope];
+  const relative =
+    mode === 'kit' ? ['reports', scope] : ['reports', 'localhost', scope];
   let cursor = root;
   for (const component of relative) {
     cursor = path.join(cursor, component);
@@ -37,9 +48,11 @@ function prepare(scope, root = path.resolve(__dirname, '../../..')) {
 module.exports = { prepare, scopes };
 if (require.main === module) {
   try {
-    if (process.argv.length !== 3)
-      throw new Error('Supply one local report scope');
-    prepare(process.argv[2]);
+    const args = process.argv.slice(2);
+    if (args.length === 1) prepare(args[0]);
+    else if (args.length === 2 && args[0] === '--kit')
+      prepare(args[1], undefined, 'kit');
+    else throw new Error('Supply one local scope, or --kit and one kit scope');
   } catch (error) {
     console.error(error.message);
     process.exitCode = 1;
