@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - 'demo/agi-governance/**'
+      - 'demo/alpha-meta/**'
       - '.github/workflows/demo-agi-governance.yml'
       - 'package.json'
       - 'package-lock.json'
@@ -11,6 +12,7 @@ on:
     branches: [main]
     paths:
       - 'demo/agi-governance/**'
+      - 'demo/alpha-meta/**'
       - '.github/workflows/demo-agi-governance.yml'
       - 'package.json'
       - 'package-lock.json'
@@ -51,6 +53,9 @@ jobs:
 
       - name: Install dependencies
         run: ./scripts/ci/npm-ci.sh --no-audit --prefer-offline --progress=false
+
+      - name: Typecheck Alpha-Meta and its shared governance engine
+        run: npx --no-install tsc --project demo/alpha-meta/tsconfig.json --noEmit
 
       - name: Generate governance dossier
         run: npm run demo:agi-governance

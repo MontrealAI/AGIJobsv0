@@ -1,5 +1,15 @@
 # AGI Jobs v0 (v2) — Demo → Alpha Meta
 
+## Developer typecheck
+
+Run `npx --no-install tsc --project demo/alpha-meta/tsconfig.json --noEmit`
+with the locked repository dependencies installed. The source root includes the
+sibling governance engine imported by Alpha-Meta. CI runs this native project
+check whenever either demo changes. This checks TypeScript compatibility; it does
+not execute the full mission pipeline or establish solver convergence. If emitting
+JavaScript manually, the demo source hierarchy is retained beneath `dist/`.
+
+
 > AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `demo/alpha-meta`.
 
 ## Overview
