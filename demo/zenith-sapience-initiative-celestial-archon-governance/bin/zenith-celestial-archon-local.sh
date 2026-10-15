@@ -4,7 +4,11 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 cd "$ROOT"
 
-NETWORK_NAME="${NETWORK:-localhost}"
+if [[ "$#" -ne 0 || "${NETWORK-localhost}" != "localhost" ]]; then
+  echo 'This local rehearsal accepts no arguments and requires NETWORK=localhost.' >&2
+  exit 1
+fi
+NETWORK_NAME="localhost"
 LOCAL_REPORT_ROOT="reports/${NETWORK_NAME}/zenith-celestial-archon"
 
 export ASI_GLOBAL_PLAN_PATH="demo/zenith-sapience-initiative-celestial-archon-governance/project-plan.json"
@@ -24,7 +28,6 @@ export ASI_GLOBAL_ADDITIONAL_ARTIFACTS_APPEND='[
 export AURORA_REPORT_SCOPE="zenith-celestial-archon"
 export AURORA_REPORT_TITLE="Zenith Sapience Celestial Archon — Mission Report"
 
-rm -rf "$LOCAL_REPORT_ROOT"
-mkdir -p "$LOCAL_REPORT_ROOT"
+node demo/aurora/bin/prepare-local-reports.cjs zenith-celestial-archon
 
-NETWORK="$NETWORK_NAME" npm run demo:asi-global:local -- "$@"
+NETWORK="$NETWORK_NAME" npm run demo:asi-global:local
