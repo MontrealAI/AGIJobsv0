@@ -119,7 +119,7 @@ The generated section includes every tracked top-level directory and every neste
 | [Meta-Agentic-Program-Synthesis-v0](Meta-Agentic-Program-Synthesis-v0/README.md) | Code and guide | `demo:meta-agentic-program-synthesis`, `demo:meta-agentic-program-synthesis:briefing`, `demo:meta-agentic-program-synthesis:full` |
 | [MuZero-style-v0](MuZero-style-v0/README.md) | Code and guide | Open the guide or source directory |
 | [National-Supply-Chain-v0](National-Supply-Chain-v0/README.md) | Code and guide | `demo:national-supply-chain:export` |
-| [OMNI-CONCORD-ASCENSION-ATLAS](OMNI-CONCORD-ASCENSION-ATLAS/README.md) | Design guide | Open the guide or source directory |
+| [OMNI-CONCORD-ASCENSION-ATLAS](OMNI-CONCORD-ASCENSION-ATLAS/README.md) | Code and guide | Open the guide or source directory |
 | [omni-orchestrator-singularity](omni-orchestrator-singularity/README.md) | Code and guide | Open the guide or source directory |
 | [omni-sovereign-ascension-operating-system](omni-sovereign-ascension-operating-system/README.md) | Code and guide | `demo:omni-sovereign` |
 | [OMNIGENESIS-GLOBAL-SOVEREIGN-SYMPHONY](OMNIGENESIS-GLOBAL-SOVEREIGN-SYMPHONY/README.md) | Code and guide | Open the guide or source directory |
