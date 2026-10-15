@@ -94,7 +94,7 @@ The generated section includes every tracked top-level directory and every neste
 | [astral-omnidominion-operating-system-command-theatre](astral-omnidominion-operating-system-command-theatre/README.md) | Code and guide | Open the guide or source directory |
 | [atlas-conductor](atlas-conductor/README.md) | Code and guide | `demo:atlas-conductor:local` |
 | [aurora](aurora/README.md) | Code and guide | `demo:asi-takeoff:report`, `demo:aurora:local`, `demo:aurora:report` |
-| [CELESTIAL-SOVEREIGN-ORBITAL-AGI-OS-GRAND-DEMONSTRATION](CELESTIAL-SOVEREIGN-ORBITAL-AGI-OS-GRAND-DEMONSTRATION/README.md) | Design guide | Open the guide or source directory |
+| [CELESTIAL-SOVEREIGN-ORBITAL-AGI-OS-GRAND-DEMONSTRATION](CELESTIAL-SOVEREIGN-ORBITAL-AGI-OS-GRAND-DEMONSTRATION/README.md) | Code and guide | Open the guide or source directory |
 | [cosmic-omni-sovereign-symphony](cosmic-omni-sovereign-symphony/README.md) | Code and guide | `demo:flagship` |
 | [cosmic-omniversal-grand-symphony](cosmic-omniversal-grand-symphony/README.md) | Code and guide | Open the guide or source directory |
 | [CULTURE-v0](CULTURE-v0/README.md) | Code and guide | Open the guide or source directory |
