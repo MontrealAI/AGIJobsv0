@@ -48,7 +48,99 @@ def fixture(tmp_path, kind, launcher):
         "PATH": str(bins) + os.pathsep + os.environ["PATH"],
         "NPM_CALLED": str(tmp_path / "npm-called"),
     }
+    for key in ("ASI_GLOBAL_PLAN_PATH", "AURORA_MISSION_CONFIG"):
+        env.pop(key, None)
     return root, target, env
+
+
+@pytest.mark.parametrize("kind,launcher,scope", WRAPPERS)
+@pytest.mark.parametrize("plan_value", ["", " ", "project-plan.json", "missing.json"])
+def test_ignored_plan_override_rejected_before_locks_reports_or_execution(
+    tmp_path, kind, launcher, scope, plan_value
+):
+    root, script, env = fixture(tmp_path, kind, launcher)
+    reports = root / "reports/localhost" / scope
+    reports.mkdir(parents=True)
+    (reports / "sentinel").write_text("original evidence")
+    marker = tmp_path / "early-process-called"
+    # Catch lock acquisition, report preparation and downstream execution without
+    # letting a regression start any real process or chain.
+    for command in ("python3", "node", "npm"):
+        stub = tmp_path / "bin" / command
+        stub.write_text(
+            '#!/bin/sh\nprintf "%s\\n" "$0" >> "$EARLY_PROCESS_CALLED"\nexit 97\n'
+        )
+        stub.chmod(0o700)
+    result = subprocess.run(
+        ["bash", str(script)],
+        env={
+            **env,
+            "NETWORK": "localhost",
+            "ASI_GLOBAL_PLAN_PATH": plan_value,
+            "AURORA_MISSION_CONFIG": "reviewed-mission.json",
+            "EARLY_PROCESS_CALLED": str(marker),
+        },
+        capture_output=True,
+        text=True,
+        timeout=5,
+    )
+    assert result.returncode == 1
+    assert "ASI_GLOBAL_PLAN_PATH is unsupported" in result.stderr
+    assert "AURORA_MISSION_CONFIG" in result.stderr
+    assert not marker.exists()
+    assert not (root / ".local-demo.lock").exists()
+    assert (reports / "sentinel").read_text() == "original evidence"
+    assert list(reports.iterdir()) == [reports / "sentinel"]
+    assert not list(reports.parent.glob(scope + "-previous-*"))
+    assert not Path(env["NPM_CALLED"]).exists()
+
+
+@pytest.mark.parametrize("kind,launcher,scope", WRAPPERS)
+@pytest.mark.parametrize("mission_override", [None, "", "custom"])
+def test_shared_fixture_and_supported_mission_override_reach_takeoff(
+    tmp_path, kind, launcher, scope, mission_override
+):
+    root, script, env = fixture(tmp_path, kind, launcher)
+    # Exercise the real ASI Global shell defaults, then capture at the Take-Off
+    # boundary instead of running contracts. This is configuration evidence only.
+    global_script = Path("demo/asi-global/bin/asi-global-local.sh")
+    (root / global_script).parent.mkdir(parents=True)
+    shutil.copyfile(ROOT / global_script, root / global_script)
+    npm = tmp_path / "bin/npm"
+    npm.write_text(
+        "#!/bin/sh\n"
+        '[ "$1" = run ] && [ "$2" = demo:asi-global:local ] || exit 96\n'
+        'exec bash "$PWD/demo/asi-global/bin/asi-global-local.sh"\n'
+    )
+    takeoff = root / "demo/asi-takeoff/bin/asi-takeoff-local.sh"
+    takeoff.parent.mkdir(parents=True)
+    takeoff.write_text(
+        "#!/bin/sh\n"
+        'printf "%s\\n" "$AURORA_MISSION_CONFIG" "$AURORA_REPORT_SCOPE" '
+        '"$AURORA_REPORT_TITLE" "${ASI_GLOBAL_PLAN_PATH+set}" > "$MISSION_CAPTURE"\n'
+    )
+    capture = tmp_path / "mission-capture"
+    env.update(NETWORK="localhost", MISSION_CAPTURE=str(capture))
+    default = "demo/asi-global/config/mission@v2.json"
+    expected = default
+    if mission_override == "custom":
+        custom = tmp_path / "reviewed mission.json"
+        shutil.copyfile(ROOT / default, custom)
+        expected = str(custom)
+        env["AURORA_MISSION_CONFIG"] = expected
+    elif mission_override is not None:
+        env["AURORA_MISSION_CONFIG"] = mission_override
+    result = subprocess.run(
+        ["bash", str(script)], env=env, capture_output=True, text=True, timeout=5
+    )
+    assert result.returncode == 0, result.stderr
+    mission, report_scope, title, plan_setting = capture.read_text().splitlines()
+    assert mission == expected
+    assert report_scope == scope
+    assert "Contract-Lifecycle Fixture Report" in title
+    assert plan_setting == ""
+    assert f"Contract-lifecycle fixture: {expected}" in result.stderr
+    assert "project-plan.json is design context; it is not executed" in result.stderr
 
 
 @pytest.mark.parametrize("kind,launcher,scope", WRAPPERS)
