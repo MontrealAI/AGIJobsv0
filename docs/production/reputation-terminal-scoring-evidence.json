@@ -1,0 +1,153 @@
+{
+  "schema": "agijobsv0/reputation-terminal-scoring-evidence/v1",
+  "recordedAt": "2026-10-15T23:26:15.811388+00:00",
+  "reviewedProductionCheckpoint": "4164b4c23e78a71ff7d543f1cacac6be42c5a5d2",
+  "reviewedProductionTree": "69c8c69e6897e65062531256efd2bf0725d6df5e",
+  "mergedGrowthAndCypressParent": "a612487a14e2f03d056ec780aa55c93747f6a1e1",
+  "productionBytesUnchangedAfterReview": true,
+  "productionSourceSha256": {
+    "contracts/v2/JobRegistry.sol": "63135774d6bef8e83c9d1328f063f340f90fb95977f76b8c537d9ee5e1e3a22f",
+    "contracts/v2/ValidationModule.sol": "135979fcb52e004f2982661aa31808fc88f9777506523fae8ac71479e39dd13b",
+    "contracts/v2/implementation/JobRegistryBase.sol": "d2e1c5b335d9b4533bcc74dcaa89ff12e05dd8cf9861d6dfa65c8ada98655276",
+    "contracts/v2/implementation/JobRegistryConfiguration.sol": "bd794b532592b8f5887a4ec892a12e5771048100e1fada8000999c2e2c2ec334",
+    "contracts/v2/implementation/JobRegistryLifecycle.sol": "6bd0467228d9a0b565374a4cca509589ce3b4a10182d82439aca1d82975af100",
+    "contracts/v2/implementation/JobRegistrySettlement.sol": "157705f303ad7ea0473a08291a8fffcb60bef23c887d75ffb340d1aa870cd3fd",
+    "contracts/v2/implementation/ValidationModuleBase.sol": "b7e245f8e3ba06d10a4312e9569353235b5f37c32ba6d2116ae26306c418dfc5",
+    "contracts/v2/implementation/ValidationModuleConfiguration.sol": "404d20a5b575f5b2778f12cade05b1bb33a0796146a2711666e209c1896fdb16",
+    "contracts/v2/implementation/ValidationModuleSelection.sol": "13b8f5491b0ee46e48cce244e3538727d7b99c68758273ff0e33548c9d8309bb",
+    "contracts/v2/implementation/ValidationModuleVoting.sol": "f17294cafbe6ef4a6cfbe3c85fc8e470d991c6bc726f205d3e8be96e57020cb2",
+    "contracts/v2/interfaces/IValidationModule.sol": "ef76720b3a17aff4d908ee0fa5fd8a3dfd4b0c894ee1b9c343bcb737057714d9",
+    "contracts/v2/mocks/ValidationStub.sol": "d28f6f39243219ee4992d34f86874fd5237f3a80de1aaecbb7bc091f5588a054",
+    "contracts/v2/modules/NoValidationModule.sol": "354be8b679a85a407ecdd7e686f2392006b035a4818f09e2819896c5348cb94e",
+    "contracts/v2/modules/OracleValidationModule.sol": "fa44b536942294b844033877268d1d1523cca1e6f07acfe872ccc4c6244a148c",
+    "scripts/deploy/implementations.cjs": "efd6d199a7c0c8a800d0207b5aaca2f66e26399412638bcca7466d65ad6d1130"
+  },
+  "verificationSourceSha256": {
+    "test/v2/ReputationTerminalSettlement.test.js": "d8fa195b339eb22c977445c2c8ac7b937c032bfc33c63f830f961460597e0b62",
+    "test/v2/FixedImplementations.test.js": "a432caa7238228d36734f69f1f1ec8c7ca850e1fa88585f57aad63f0b792ea8b",
+    "cypress/e2e/job-flow.cy.ts": "f46f017adc012feb4e632b12e8b2fd2fc4432e381f4ebd563b3bdc4e6086e732",
+    "cypress/e2e/owner-console.cy.ts": "90e59251fba40d09e06251479629d09c1fca61472b42f754b2467db9f4a704f2"
+  },
+  "priorGrowthReceiptSha256": "32df968eedac827e6bcf328031a2afe1da9b7fc01e789afa38f8d69324e86227",
+  "logSha256": {
+    "officialHardhat": "fb4d359c52cc5cad31f40b4e5b76861c15dd6ed4af2465488fba3a222a0086e4",
+    "recursiveV2": "154fbd3c9f43f4b08b60f656758099e7c9b87a6d1c45e1834a77fd39650202b4",
+    "foundry": "5d5a70e383f5830c4e0e8a58b4a2593a73a61f0f070dfe43316fddd00f6eabce",
+    "actualTokenFork": "bf6589d1b5554483b834884975ba64dec4cacd0469f557033d6217971dd00a13",
+    "finalCommittee": "6d7a64eb46a33349d04fee75a2941acd2f76798cf8943353072dcae7f898ac5e",
+    "sourceArtifactAndSize": "f3e494ec0d436e073b4ad5f4205e6ca72a1438c1c8edd6eee7598ed062e2535a",
+    "ownerConsoleChromium": "24f8a448e0fe3d46250a413c6ccf3f3ad25c1ea1947a7e6ceb58948b8d531ed5",
+    "cypressSpecTypes": "db12ad97221988bf346c55d06788e21a01bb6a683d69266bf732ed4d6d9763c8",
+    "cypressSpecFormatting": "13f04c286e41fb96bff50434df202733a7bead9eb2934d4fbc10f6dd1076f0c2"
+  },
+  "checks": {
+    "officialHardhat": {
+      "passed": 880,
+      "failed": 0,
+      "skipped": 0,
+      "scope": "Complete documented-source suite before adding the extra atomic rollback assertion; production sources remain identical"
+    },
+    "recursiveV2": {
+      "files": 149,
+      "passed": 736,
+      "failed": 0,
+      "skipped": 0,
+      "scope": "All recursive JS/TS v2 suites before the extra rollback case; unchanged production code"
+    },
+    "foundry": {
+      "suites": 40,
+      "passed": 238,
+      "failed": 0,
+      "skipped": 0,
+      "scope": "Complete suite, default fuzz/invariant settings, no file filters"
+    },
+    "finalCommittee": {
+      "passed": 7,
+      "failed": 0,
+      "skipped": 0,
+      "actualProtocolCommittee": true,
+      "tokenAndIdentityFixtures": true,
+      "bothDisputeReversals": true,
+      "originalVotesAndRevealsRetained": true,
+      "native18DecimalPayout": true,
+      "settlementDelaySeconds": 30000,
+      "delayDoesNotAddReputation": true,
+      "scoreHookFailureRollsBackFundsAndMarker": true,
+      "repeatSettlementRejected": true,
+      "legacyMarkerAndExternalSelfCallRejected": true
+    },
+    "ownerConsole": {
+      "chromiumJourneysPassed": 2,
+      "mockBackend": true,
+      "percentageTransportBps": 1500,
+      "snapshotBps": 1000,
+      "legacyOptionAbsent": true,
+      "cypressSpecTypes": "PASS",
+      "cypressSpecFormatting": "PASS",
+      "localCypress": "NOT_RUN \u2014 official download returned Site Unavailable HTML instead of a ZIP",
+      "hostedCypress": "PENDING for combined head"
+    },
+    "strictBuild": {
+      "compiler": "0.8.37+commit.f401782d",
+      "projectWarnings": 0,
+      "reviewedUpstreamWarnings": 13,
+      "deployableContracts": 66,
+      "sizeGatePassed": true,
+      "lifecycleRuntimeBytes": 23274,
+      "settlementRuntimeBytes": 20913
+    }
+  },
+  "storage": {
+    "earlierSlotsPreserved": true,
+    "percentageField": {
+      "slot": 39,
+      "offset": 0
+    },
+    "newMapping": {
+      "name": "_reputationSnapshots",
+      "slot": 40,
+      "offset": 0
+    },
+    "allDelegatesMatchController": true
+  },
+  "historicalBundlesUnchanged": true,
+  "localToolchain": {
+    "node": "22.23.3",
+    "forge": "1.7.1",
+    "hostedForge": "1.4.4 \u2014 pending hosted gate",
+    "solc": "0.8.37+commit.f401782d"
+  },
+  "actualTokenFork": {
+    "passed": 2,
+    "failed": 0,
+    "chainId": 1,
+    "blockNumber": 26200139,
+    "blockHash": "0x5ba89450466ec7979fd0ab037d86077799089630aab9d8923cf63753a7cb11be",
+    "token": "0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA",
+    "actualRuntimeUnchanged": true,
+    "syntheticBalancesAndExactSupplyDelta": true,
+    "localENSAndValidationFixtures": true,
+    "qualification": "PARTIAL \u2014 no full committee, exact owner plan or independent buyer acceptance"
+  },
+  "independentReview": {
+    "kind": "Codex AI code review",
+    "pullRequest": 3972,
+    "commit": "4164b4c23e78a71ff7d543f1cacac6be42c5a5d2",
+    "findings": false,
+    "externalAudit": false,
+    "combinedHead": "PENDING fresh checks and review"
+  },
+  "remaining": [
+    "Exact-head hosted qualification including Cypress and pinned Foundry",
+    "Jobs owner/governance, tax, treasury, signer and deployment limits",
+    "Exact unsigned owner plan",
+    "Complete actual-token committee/adversarial lifecycle and historical obligations",
+    "Separately authorized commissioning"
+  ],
+  "externalAuditAndSepolia": "NOT PERFORMED \u2014 OWNER-ACCEPTED OMISSION; no technical gate waived",
+  "productionApproved": false,
+  "externalTransactions": false,
+  "funding": false,
+  "signatures": false,
+  "privilegedHostChanges": false
+}

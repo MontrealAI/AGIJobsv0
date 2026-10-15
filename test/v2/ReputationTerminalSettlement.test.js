@@ -112,6 +112,17 @@ describe('Reputation: terminal settlement with the actual committee', function (
     expect(await scores()).to.deep.equal([before[0], before[1], before[2]-1n, before[3]-1n]);
     expect(await settleAndRepeatGuard(400)).to.deep.equal([before[0], before[1], before[2]-1n, before[3]-1n]);
   });
+  it('rolls back funds, locks, outcome and the processing marker if the score hook rejects', async function () {
+    await round([true, true, false]);
+    const before = { scores: await scores(), job: await registry.jobs(1), locked: await stake.lockedStakes(agent.address), balances: await Promise.all([buyer.address, agent.address, await stake.getAddress()].map(address => token.balanceOf(address))) };
+    await reputation.pause();
+    await expect(registry.connect(buyer).finalize(1)).to.be.revertedWithCustomError(reputation, 'EnforcedPause');
+    expect(await scores()).to.deep.equal(before.scores); expect(await registry.jobs(1)).to.deep.equal(before.job);
+    expect(await stake.lockedStakes(agent.address)).to.equal(before.locked); expect(await registry.reputationProcessed(1)).to.equal(false);
+    expect(await Promise.all([buyer.address, agent.address, await stake.getAddress()].map(address => token.balanceOf(address)))).to.deep.equal(before.balances);
+    await reputation.unpause();
+    const after = await settleAndRepeatGuard(); expect(after[0]).to.be.greaterThan(before.scores[0]);
+  });
   it('rejects participant self-call routes and the obsolete early validator marker', async function () {
     await expect(registry.processTerminalReputation(1, reward)).to.be.reverted;
     const address = await validation.getAddress(); await network.provider.send('hardhat_setBalance', [address, '0x1000000000000000000']);
