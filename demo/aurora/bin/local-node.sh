@@ -9,13 +9,13 @@ lock_local_demo() {
 }
 
 prepare_local_node() {
-  node "$ROOT/demo/aurora/bin/local-rpc.cjs" preflight
+  node "$ROOT/demo/aurora/bin/local-rpc.cjs" preflight || return $?
   export DEMO_PORT="${DEMO_PORT:-8545}"
   export RPC_URL="http://127.0.0.1:${DEMO_PORT}"
   export LOCALHOST_RPC_URL="$RPC_URL"
   export AGI_RPC_URL="$RPC_URL"
   export CHAIN_ID=31337
-  LOCAL_NODE_STATE="$(mktemp -d "${TMPDIR:-/tmp}/agi-demo-node.XXXXXX")"
+  LOCAL_NODE_STATE="$(mktemp -d "${TMPDIR:-/tmp}/agi-demo-node.XXXXXX")" || return $?
   LOG_FILE="$LOCAL_NODE_STATE/node-private.log"
   trap cleanup_local_node EXIT
   trap 'exit 130' INT
@@ -23,7 +23,7 @@ prepare_local_node() {
 }
 
 start_local_node() {
-  node "$ROOT/demo/aurora/bin/local-rpc.cjs" preflight
+  node "$ROOT/demo/aurora/bin/local-rpc.cjs" preflight || return $?
   local engine="${DEMO_NODE_ENGINE:-auto}"
   if [[ "$engine" == auto ]]; then
     if command -v anvil >/dev/null 2>&1; then engine=anvil; else engine=hardhat; fi
@@ -31,14 +31,14 @@ start_local_node() {
   case "$engine" in
     anvil)
       # Automining preserves a verifiable block-zero startup before transactions.
-      python3 "$ROOT/demo/aurora/bin/local-node-guard.py" launch "$LOCAL_NODE_STATE" anvil --host 127.0.0.1 --port "$DEMO_PORT" --chain-id 31337 --silent
+      python3 "$ROOT/demo/aurora/bin/local-node-guard.py" launch "$LOCAL_NODE_STATE" anvil --host 127.0.0.1 --port "$DEMO_PORT" --chain-id 31337 --silent || return $?
       ;;
     hardhat)
-      python3 "$ROOT/demo/aurora/bin/local-node-guard.py" launch "$LOCAL_NODE_STATE" node "$ROOT/node_modules/hardhat/internal/cli/cli.js" node --hostname 127.0.0.1 --port "$DEMO_PORT"
+      python3 "$ROOT/demo/aurora/bin/local-node-guard.py" launch "$LOCAL_NODE_STATE" node "$ROOT/node_modules/hardhat/internal/cli/cli.js" node --hostname 127.0.0.1 --port "$DEMO_PORT" || return $?
       ;;
     *) echo 'DEMO_NODE_ENGINE must be auto, hardhat, or anvil.' >&2; return 1 ;;
   esac
-  python3 "$ROOT/demo/aurora/bin/local-node-guard.py" start "$LOCAL_NODE_STATE" "$DEMO_PORT" "$engine"
+  python3 "$ROOT/demo/aurora/bin/local-node-guard.py" start "$LOCAL_NODE_STATE" "$DEMO_PORT" "$engine" || return $?
 }
 
 check_local_node() {

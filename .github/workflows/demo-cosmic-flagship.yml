@@ -5,6 +5,9 @@ on:
     paths:
       - 'demo/cosmic-omni-sovereign-symphony/**'
       - 'scripts/v2/**'
+      - 'demo/aurora/bin/local-*'
+      - 'test/simulation/test_cosmic_modes.py'
+      - 'test/scripts/cosmic-local-config.test.cjs'
       - 'package.json'
       - 'package-lock.json'
       - '.github/workflows/demo-cosmic-flagship.yml'
@@ -16,6 +19,7 @@ permissions:
 
 jobs:
   flagship-dry-run:
+    name: Flagship explicit offline fixture and safety
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
@@ -49,8 +53,22 @@ jobs:
           node-version-file: '.nvmrc'
           cache: 'npm'
 
-      - name: Execute flagship demo (dry run)
-        run: bash demo/cosmic-omni-sovereign-symphony/bin/flagship-demo.sh --ci --dry-run
+      - name: Check inert mode and local configuration boundaries
+        run: |
+          python3 test/simulation/test_cosmic_modes.py
+          node --test test/scripts/cosmic-local-config.test.cjs
+          bash -n demo/cosmic-omni-sovereign-symphony/bin/{flagship-demo,orchestrate,modes,execution}.sh
+
+      - name: Install locked dependencies explicitly
+        env:
+          CYPRESS_INSTALL_BINARY: '0'
+        run: npm ci
+
+      - name: Generate synthetic governance and offline mission fixtures
+        run: bash demo/cosmic-omni-sovereign-symphony/bin/flagship-demo.sh --ci --mode offline-fixture
+
+      - name: Verify substantive flagship artifacts
+        run: node demo/cosmic-omni-sovereign-symphony/scripts/verify-flagship-report.mjs --reports-root reports/agi-os
 
       - name: Upload flagship artefacts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
@@ -60,5 +78,7 @@ jobs:
             demo/cosmic-omni-sovereign-symphony/logs/flagship-demo/**
             demo/cosmic-omni-sovereign-symphony/logs/ledger-latest.json
             demo/cosmic-omni-sovereign-symphony/logs/vote-simulation.json
+            demo/cosmic-omni-sovereign-symphony/logs/execution-plan.json
+            demo/cosmic-omni-sovereign-symphony/logs/run-status.json
             reports/agi-os/**
-          if-no-files-found: ignore
+          if-no-files-found: error
