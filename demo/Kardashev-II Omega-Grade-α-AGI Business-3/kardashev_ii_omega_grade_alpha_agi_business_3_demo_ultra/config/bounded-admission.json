@@ -1,0 +1,64 @@
+{
+  "mission": {
+    "name": "Bounded single-plan admission rehearsal",
+    "vision": "Inspect admission of one supplied synthetic plan under unchanged resource capacity.",
+    "runtime_hours": 96,
+    "autopilot_cycles": 0,
+    "checkpoint_rotation": 24,
+    "archive_path": "artifacts/status/archive",
+    "deadline_warning_minutes": 120,
+    "archive_interval_seconds": 120,
+    "jobs": [
+      {
+        "title": "Dyson Swarm Expansion Blueprint",
+        "description": "Draft the phase-3 Dyson swarm lattice covering heliocentric orbits with resource forecasts.",
+        "required_skills": [
+          "strategy",
+          "energy-architect"
+        ],
+        "reward_tokens": 125000,
+        "deadline_hours": 12,
+        "validation_window_hours": 3,
+        "energy_budget": 750000,
+        "compute_budget": 350000,
+        "metadata": {
+          "employer": "macro-strategist",
+          "priority": "critical"
+        }
+      }
+    ]
+  },
+  "orchestrator": {
+    "mission_name": "Kardashev-II Omega-Grade Ultra Mission",
+    "base_agent_tokens": 180000.0,
+    "energy_capacity": 2500000.0,
+    "compute_capacity": 7200000.0,
+    "cycle_sleep_seconds": 0.15,
+    "insight_interval_seconds": 20,
+    "checkpoint_interval_seconds": 45,
+    "simulation_hours_per_tick": 2.0,
+    "simulation_tick_seconds": 0.75,
+    "worker_specs": {
+      "energy-architect": 1.7,
+      "supply-chain": 1.4,
+      "validator-ops": 1.1
+    },
+    "strategist_names": [
+      "macro-strategist"
+    ],
+    "validator_names": [
+      "validator-1",
+      "validator-2",
+      "validator-3",
+      "validator-4"
+    ],
+    "governance": {
+      "worker_stake_ratio": 0.12,
+      "validator_stake": 3200,
+      "approvals_required": 3,
+      "validator_commit_window": 1200,
+      "validator_reveal_window": 900,
+      "slash_ratio": 0.35
+    }
+  }
+}
