@@ -528,3 +528,53 @@ test('published One-Box is the offline console with intact integrity metadata', 
     );
   }
 });
+
+test('heading IDs use inert parsed text with Unicode and duplicate anchors', () => {
+  const rendered = renderMarkdown(
+    '# Héllo *world*\n\n# Héllo *world*\n\n# <scr<script>ipt>alert(1)</scr</script>ipt>\n\n# &lt;img src=x onerror=alert(1)&gt;\n\n[Anchor](#héllo-world)',
+    'demo/example/README.md',
+    {
+      base: '/AGIJobsv0/',
+      revision: 'abc',
+      guideRoutes: new Map(),
+      tracked: new Set(),
+      images: new Set(),
+    }
+  );
+  const document = new JSDOM(rendered.html).window.document;
+  const headings = [...document.querySelectorAll('h1')];
+  assert.equal(headings[0].id, 'héllo-world');
+  assert.equal(headings[1].id, 'héllo-world-1');
+  for (const heading of headings)
+    assert.match(heading.id, /^[\p{L}\p{N}_-]*$/u);
+  assert.equal(document.querySelectorAll('script,[onerror],iframe').length, 0);
+  assert.equal(
+    decodeURIComponent(document.querySelector('a').getAttribute('href')),
+    '#héllo-world'
+  );
+});
+
+test('heading entity omission preserves published legacy fragment IDs', () => {
+  const cases = [
+    ['Research &amp; development', 'research--development'],
+    ['Alpha&nbsp;Beta', 'alphabeta'],
+    ['Alpha&#32;Beta', 'alphabeta'],
+    ['A &lt; B &gt; C', 'a--b--c'],
+    ['**Bold** and `code`', 'bold-and-code'],
+    ['[Linked title](https://example.com)', 'linked-title'],
+  ];
+  for (const [source, expected] of cases) {
+    const rendered = renderMarkdown('# ' + source, 'demo/example/README.md', {
+      base: '/AGIJobsv0/',
+      revision: 'abc',
+      guideRoutes: new Map(),
+      tracked: new Set(),
+      images: new Set(),
+    });
+    assert.equal(
+      new JSDOM(rendered.html).window.document.querySelector('h1').id,
+      expected,
+      source
+    );
+  }
+});

@@ -363,6 +363,29 @@ async function publish({ sha, tag, notes, api, upload, verify }) {
   return release;
 }
 
+function producerId(value) {
+  if (!Number.isSafeInteger(value) || value < 1)
+    throw Error('Malformed remote compiler producer identity');
+  // Normalize only after strict type/range validation; never coerce strings.
+  return Number(value);
+}
+
+function sourceApiUrl(method, resource) {
+  const allowed = {
+    GET: /^(?:git\/ref\/(?:heads\/main|tags\/source-v2\.1\.0-rc\.9)|releases\/tags\/source-v2\.1\.0-rc\.9|actions\/artifacts\/[1-9][0-9]*|actions\/runs\/[1-9][0-9]*\/attempts\/[1-9][0-9]*)$/,
+    POST: /^(?:git\/refs|releases)$/,
+    PATCH: /^releases\/[1-9][0-9]*$/,
+  };
+  if (
+    typeof method !== 'string' ||
+    typeof resource !== 'string' ||
+    !Object.hasOwn(allowed, method) ||
+    allowed[method].exec(resource)?.[0] !== resource
+  )
+    throw Error('Unsupported source publication API route');
+  return `https://api.github.com/repos/MontrealAI/AGIJobsv0/${resource}`;
+}
+
 async function main() {
   const {
     GITHUB_SHA: sha,
@@ -394,21 +417,18 @@ async function main() {
   if (JSON.stringify(files) !== JSON.stringify(expected))
     throw Error('Unexpected or missing source assets');
   const api = async (method, resource, body, optional = false) => {
-    const response = await fetch(
-      `https://api.github.com/repos/${repository}/${resource}`,
-      {
-        method,
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: 'application/vnd.github+json',
-          'X-GitHub-Api-Version': '2022-11-28',
-          'Content-Type': 'application/json',
-        },
-        body: body === undefined ? undefined : JSON.stringify(body),
-        redirect: 'error',
-        signal: AbortSignal.timeout(30000),
-      }
-    );
+    const response = await fetch(sourceApiUrl(method, resource), {
+      method,
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/vnd.github+json',
+        'X-GitHub-Api-Version': '2022-11-28',
+        'Content-Type': 'application/json',
+      },
+      body: body === undefined ? undefined : JSON.stringify(body),
+      redirect: 'error',
+      signal: AbortSignal.timeout(30000),
+    });
     if (optional && response.status === 404) return null;
     if (!response.ok)
       throw Error(`GitHub ${method} ${resource}: HTTP ${response.status}`);
@@ -429,19 +449,12 @@ async function main() {
           'utf8'
         )
       );
-      for (const id of [
-        compiler.artifactId,
-        compiler.runId,
-        compiler.runAttempt,
-      ])
-        if (!Number.isSafeInteger(id) || id < 1)
-          throw Error('Malformed remote compiler producer identity');
+      const artifactId = producerId(compiler.artifactId);
+      const runId = producerId(compiler.runId);
+      const runAttempt = producerId(compiler.runAttempt);
       const [compilerArtifact, compilerRun] = await Promise.all([
-        api('GET', `actions/artifacts/${compiler.artifactId}`),
-        api(
-          'GET',
-          `actions/runs/${compiler.runId}/attempts/${compiler.runAttempt}`
-        ),
+        api('GET', `actions/artifacts/${artifactId}`),
+        api('GET', `actions/runs/${runId}/attempts/${runAttempt}`),
       ]);
       verifyDownloadedAssets({
         downloaded,
@@ -489,6 +502,8 @@ async function main() {
 }
 
 module.exports = {
+  producerId,
+  sourceApiUrl,
   publish,
   assertTag,
   expectedAssets,

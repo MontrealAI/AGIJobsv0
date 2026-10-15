@@ -133,10 +133,11 @@ export function renderMarkdown(
   const renderer = new marked.Renderer();
   renderer.heading = function (token) {
     const text = this.parser.parseInline(token.tokens);
-    const plain = text
-      .replace(/<[^>]*>/g, '')
-      .replace(/&[^;]+;/g, '')
-      .toLowerCase();
+    // Parse markup as inert text; deleting tag-shaped substrings can reconstruct tags.
+    // Retain legacy entity omission so existing guide fragment links stay stable.
+    const plain = JSDOM.fragment(
+      text.replace(/&[^;]+;/g, '')
+    ).textContent.toLowerCase();
     const stem = plain.replace(/[^\p{L}\p{N}_\-\s]/gu, '').replace(/\s/g, '-');
     const count = usedHeadings.get(stem) || 0;
     usedHeadings.set(stem, count + 1);
