@@ -325,7 +325,12 @@ function buildPlaybook(inputs, supplied = {}) {
         afterStake
       );
   }
-  for (const key of ['jobStake', 'minAgentStake', 'maxJobReward'])
+  if (Object.hasOwn(job, 'jobStake') || Object.hasOwn(job, 'jobStakeTokens'))
+    throw new Error('Legacy fixed job stake requires explicit migration to jobStakeBps');
+  if (!Number.isInteger(job.jobStakeBps) || job.jobStakeBps < 0 || job.jobStakeBps > 10000)
+    throw new Error('jobStakeBps must be an integer from 0 through 10000');
+  beforeJob.jobStakeBps = afterJob.jobStakeBps = job.jobStakeBps;
+  for (const key of ['minAgentStake', 'maxJobReward'])
     amount(job, jobDraft, `${key}Tokens`, key, key, beforeJob, afterJob, true);
   for (const [src, before, after] of [
     [stake, beforeStake, afterStake],
@@ -350,7 +355,7 @@ function buildPlaybook(inputs, supplied = {}) {
       if (s[key] && rawOf(s, key) === 0n)
         throw new Error(`${key} must be positive`);
     }
-    for (const key of ['jobStake', 'minAgentStake'])
+    for (const key of ['minAgentStake'])
       integer(rawOf(j, key), `${key}: contract uint96`, UINT96_MAX);
     for (const [maximum, minimum] of [
       ['maxStakePerAddress', 'minStake'],
@@ -361,25 +366,12 @@ function buildPlaybook(inputs, supplied = {}) {
         throw new Error(`${maximum} is below ${minimum}`);
     }
   }
-  // These relationships are operator choices, not contract validity constraints.
-  if (
-    rawOf(afterJob, 'maxJobReward') &&
-    rawOf(afterJob, 'maxJobReward') < rawOf(afterJob, 'jobStake')
-  )
-    policyObservations.push(
-      'Reward cap is below the job bond; review job economics.'
-    );
-  if (rawOf(afterJob, 'minAgentStake') < rawOf(afterJob, 'jobStake'))
-    policyObservations.push(
-      'Agent minimum is below the job bond; review admission and available stake.'
-    );
-  if (
-    rawOf(afterStake, 'roleMinimums.agent') &&
-    rawOf(afterStake, 'roleMinimums.agent') < rawOf(afterJob, 'jobStake')
-  )
-    policyObservations.push(
-      'Agent role override is below the job bond; review role policy.'
-    );
+  // Eligibility is a separate floor; available collateral is checked per job.
+  const cap = rawOf(afterJob, 'maxJobReward');
+  const capCollateral = (cap * BigInt(job.jobStakeBps) + 9999n) / 10000n;
+  if (cap && rawOf(afterJob, 'minAgentStake') < capCollateral)
+    policyObservations.push('The eligibility minimum does not cover collateral for a maximum-reward job; workers need enough available stake for each concurrent lock.');
+  if (!cap) policyObservations.push('Unlimited reward cap: quote rounded-up percentage collateral for every proposed job.');
   if (
     rawOf(afterStake, 'roleMinimums.validator') &&
     rawOf(afterStake, 'roleMinimums.validator') <
@@ -417,7 +409,7 @@ function buildPlaybook(inputs, supplied = {}) {
       generatedAt: new Date().toISOString(),
       generator: 'demo/REDENOMINATION/scripts/playbook.cjs',
       scenario: options.scenario,
-      version: '2.0.0',
+      version: '2.1.0',
       mode: 'planning-only',
       source: 'local configuration; no on-chain state queried',
       liveProvider: false,
@@ -542,6 +534,8 @@ function buildPlaybook(inputs, supplied = {}) {
       },
     ],
     invariants: [
+      'jobStakeBps is dimensionless and remains unchanged across token denominations; collateral is rounded up from each gross reward at creation.',
+      'Eligibility floors and available collateral for concurrent jobs are separate requirements.',
       'For exact conversion: targetRaw × factor × 10^currentDecimals = sourceRaw × 10^targetDecimals.',
       'For floor conversion, retain the exact remainder fraction for every affected value; do not discard liabilities.',
       'Fees, slashing splits, duration limits and unrelated configuration remain unchanged.',

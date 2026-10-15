@@ -130,12 +130,10 @@ test('drafts retain all unrelated policies and convert full token guardrails', (
   assert.equal(stake.stakeRecommendations.maxTokens, '5.0');
   assert.equal(stake.roleMinimums.validatorTokens, '1.0');
   assert.equal(stake.roleMinimums.platformTokens, '0.0');
-  assert.equal(job.jobStakeTokens, '0.001');
-  assert.equal(report.modules.jobRegistry.after.jobStake.raw, '1000');
-  assert.equal(
-    report.modules.jobRegistry.after.jobStake.formatted,
-    '0.001 NEW'
-  );
+  assert.equal(job.jobStakeBps, 1000);
+  assert.equal(report.modules.jobRegistry.before.jobStakeBps, 1000);
+  assert.equal(report.modules.jobRegistry.after.jobStakeBps, 1000);
+  assert.equal(Object.hasOwn(job, 'jobStakeTokens'), false);
   assert.deepEqual(stake.customPolicy, data.configs[2].customPolicy);
   assert.equal(stake.autoStake.increasePct, before[2].autoStake.increasePct);
   assert.equal(stake.autoStake.threshold, before[2].autoStake.threshold);
@@ -174,7 +172,7 @@ test('positive thresholds cannot disappear through floor rounding', () => {
   assert.throws(
     () =>
       p.buildPlaybook(input(), {
-        ratio: 10000000n,
+        ratio: 1000000000n,
         newDecimals: 6,
         rounding: 'floor',
       }),
@@ -246,9 +244,9 @@ test('fee policy totals cannot exceed 100 percent', () => {
     assert.throws(() => p.buildPlaybook(data), /fees: .*cannot exceed 100/);
   }
 });
-test('job bond and agent minimum fit uint96 before and after precision changes', () => {
+test('agent minimum fits uint96 before and after precision changes', () => {
   const max = (1n << 96n) - 1n;
-  for (const key of ['jobStake', 'minAgentStake']) {
+  for (const key of ['minAgentStake']) {
     const data = input();
     delete data.configs[3][`${key}Tokens`];
     data.configs[3][key] = max.toString();
@@ -298,7 +296,9 @@ test('independent roles and economic choices are observations, not invented vali
   data.configs[2].roleMinimums.agentTokens = '0.5';
   data.configs[2].roleMinimums.validatorTokens = '0.25';
   const report = p.buildPlaybook(data);
-  assert.equal(report.policyObservations.length, 4);
+  assert.equal(report.policyObservations.length, 2);
+  assert.match(report.policyObservations[0], /eligibility minimum/);
+  assert.match(report.policyObservations[1], /independent role policies/);
   assert.equal(
     report.configSnapshots.stakeManager.roleMinimums.validatorTokens,
     '0.00025'
@@ -308,9 +308,9 @@ test('independent roles and economic choices are observations, not invented vali
     validatorTokens: '0',
     platformTokens: '0',
   };
-  assert.equal(p.buildPlaybook(data).policyObservations.length, 2);
+  assert.equal(p.buildPlaybook(data).policyObservations.length, 1);
   delete data.configs[2].roleMinimums;
-  assert.equal(p.buildPlaybook(data).policyObservations.length, 2);
+  assert.equal(p.buildPlaybook(data).policyObservations.length, 1);
 });
 test('supply example is exact and preserves zero explicitly', () => {
   const report = p.buildPlaybook(input(), {
@@ -393,7 +393,7 @@ test('artifact verification rejects corrupted arithmetic, snapshots, provenance 
       r.token.redenominationFactor = '7';
     },
     (r) => {
-      r.modules.jobRegistry.after.jobStake.raw = '1';
+      r.modules.jobRegistry.after.jobStakeBps = 999;
     },
     (r) => {
       r.meta.productionApproved = true;
@@ -469,4 +469,22 @@ test('checked-in sample uses the current schema and exact conversion data', () =
   assert.equal(sample.meta.version, expected.meta.version);
   assert.deepEqual(sample.token, expected.token);
   assert.deepEqual(sample.configSnapshots, expected.configSnapshots);
+});
+
+test('basis points never redenominate and old token fields fail closed', () => {
+  for (const rate of [0, 1, 1000, 10000]) for (const precision of [6, 18, 24]) {
+    const data = input(); data.configs[3].jobStakeBps = rate;
+    const result = p.buildPlaybook(data, { newDecimals: precision });
+    assert.equal(result.modules.jobRegistry.before.jobStakeBps, rate);
+    assert.equal(result.modules.jobRegistry.after.jobStakeBps, rate);
+    assert.equal(result.configSnapshots.jobRegistry.jobStakeBps, rate);
+  }
+  for (const rate of [-1, 10001, 1.5, '1000', null]) {
+    const data = input(); data.configs[3].jobStakeBps = rate;
+    assert.throws(() => p.buildPlaybook(data), /jobStakeBps/);
+  }
+  for (const field of ['jobStake', 'jobStakeTokens']) {
+    const data = input(); data.configs[3][field] = '0';
+    assert.throws(() => p.buildPlaybook(data), /Legacy fixed/);
+  }
 });

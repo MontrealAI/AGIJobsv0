@@ -18,6 +18,9 @@ contract HGMJobRegistryMock is IJobRegistryControl {
     address public treasury;
     ITaxPolicy public taxPolicy;
     uint96 public jobStake;
+    uint256 public jobStakeBps = 1000;
+
+    function setJobStakeBps(uint256 bps) external { jobStakeBps = bps; }
     uint256 public minAgentStake;
     uint256 public feePct;
     uint256 public validatorRewardPct;

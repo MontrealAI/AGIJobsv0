@@ -419,7 +419,7 @@ async function runJobLifecycleScenario(): Promise<ScenarioReport> {
   );
   await envFixture.wrapper.setOwner(BigInt(subnode), envFixture.agent.address);
 
-  const stakeAmount = ethers.parseUnits('1', AGIALPHA_DECIMALS);
+  const stakeAmount = ethers.parseUnits('10', AGIALPHA_DECIMALS);
   await runStep(
     steps,
     'job.agent-approve',
@@ -502,7 +502,7 @@ async function runJobLifecycleScenario(): Promise<ScenarioReport> {
     actor: envFixture.employer.address,
   }));
 
-  const expectedBalance = ethers.parseUnits('1099', AGIALPHA_DECIMALS);
+  const expectedBalance = ethers.parseUnits('1000', AGIALPHA_DECIMALS) - stakeAmount + reward;
   await runStep(
     steps,
     'job.verify-payout',

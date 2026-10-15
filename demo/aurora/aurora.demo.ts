@@ -1095,21 +1095,24 @@ async function main() {
     }
   );
 
-  const originalJobStake = await jobRegistry.jobStake();
-  const fallbackJobStake = maxReward / 10n > 0n ? maxReward / 10n : 1n;
-  const adjustedJobStake =
-    fallbackJobStake > maxWorkerStake ? maxWorkerStake : fallbackJobStake;
+  const originalJobStakeBps = await jobRegistry.jobStakeBps();
+  // Bound the percentage by funded collateral at the largest demo reward.
+  // Floor the rate, then verify the contract's rounded-up quote fits the stake.
+  const adjustedJobStakeBps = maxReward === 0n ? 1000n :
+    (maxWorkerStake * 10000n / maxReward < 1000n ? maxWorkerStake * 10000n / maxReward : 1000n);
+  if ((maxReward * adjustedJobStakeBps + 9999n) / 10000n > maxWorkerStake)
+    throw new Error('Rounded demo collateral exceeds funded worker stake');
 
   await recordForwardGovernanceCall(
     'JobRegistry',
     addresses.JobRegistry,
     jobRegistry.interface,
-    'setJobStake',
-    [adjustedJobStake],
+    'setJobStakeBps',
+    [adjustedJobStakeBps],
     {
       notes: 'Set worker collateral within the funded demo stake',
-      before: { stake: formatUnits(originalJobStake, decimals) },
-      after: { stake: formatUnits(adjustedJobStake, decimals) },
+      before: { basisPoints: originalJobStakeBps.toString() },
+      after: { basisPoints: adjustedJobStakeBps.toString() },
     }
   );
   await recordForwardGovernanceCall(
@@ -1681,12 +1684,12 @@ async function main() {
     'JobRegistry',
     addresses.JobRegistry,
     jobRegistry.interface,
-    'setJobStake',
-    [originalJobStake],
+    'setJobStakeBps',
+    [originalJobStakeBps],
     {
       notes: 'Return job stake policy to its baseline value',
-      before: { stake: formatUnits(adjustedJobStake, decimals) },
-      after: { stake: formatUnits(originalJobStake, decimals) },
+      before: { basisPoints: adjustedJobStakeBps.toString() },
+      after: { basisPoints: originalJobStakeBps.toString() },
     }
   );
 

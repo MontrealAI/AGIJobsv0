@@ -316,7 +316,7 @@ expect(
   'Job registry config missing or invalid'
 );
 const jobRegistryKeys = [
-  'jobStakeTokens',
+  'jobStakeBps',
   'minAgentStakeTokens',
   'maxJobRewardTokens',
   'jobDurationLimitSeconds',
@@ -400,12 +400,13 @@ try {
   );
   const unit = (value) =>
     planner.parseUnits(value, exportData.token.targetDecimals);
-  const bond = unit(jobRegistryConfig.jobStakeTokens),
-    reward = unit(jobRegistryConfig.maxJobRewardTokens);
+  const rate = planner.integer(jobRegistryConfig.jobStakeBps, 'jobStakeBps', 10000n);
+  const reward = unit(jobRegistryConfig.maxJobRewardTokens);
+  const bond = (reward * rate + 9999n) / 10000n;
   expectWarn(
-    bond > 0n,
-    'Job bond positive',
-    'Zero job bond: review the scenario admission policy'
+    rate > 0n,
+    'Future-job percentage collateral positive',
+    'Zero percentage collateral: review the scenario admission policy'
   );
   expectWarn(
     reward === 0n || reward >= bond,

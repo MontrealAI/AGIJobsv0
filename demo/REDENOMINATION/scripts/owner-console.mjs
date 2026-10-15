@@ -189,8 +189,8 @@ function printParameterSummary() {
 
   const registryItems = [
     {
-      label: 'Job stake requirement',
-      value: formatTokens(jobRegistryConfig.jobStakeTokens),
+      label: 'Future-job collateral rate',
+      value: `${jobRegistryConfig.jobStakeBps} bps (ceil gross reward × rate / 10000)`,
     },
     {
       label: 'Minimum agent stake',

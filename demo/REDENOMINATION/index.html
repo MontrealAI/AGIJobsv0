@@ -587,8 +587,8 @@
 
         const jobEntries = [
           {
-            label: 'Job stake requirement',
-            value: formatTokenDisplay(jobConfig?.jobStakeTokens),
+            label: 'Future-job collateral rate',
+            value: `${jobConfig?.jobStakeBps} bps (ceil gross reward × rate / 10000)`,
           },
           {
             label: 'Minimum agent stake',

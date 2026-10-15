@@ -188,8 +188,8 @@ function renderOwnerControls(playbook = {}, jobConfig = {}, stakeConfig = {}) {
 
   const jobEntries = [
     {
-      label: 'Job stake requirement',
-      value: formatTokens(jobConfig?.jobStakeTokens),
+      label: 'Future-job collateral rate',
+      value: `${jobConfig?.jobStakeBps} bps (ceil gross reward × rate / 10000)`,
     },
     {
       label: 'Minimum agent stake',

@@ -90,7 +90,7 @@ async function main() {
       });
     await page.goto(`${base}/ui/`);
     await page.waitForSelector('.owner-controls');
-    assert.ok((await page.locator('#app').innerText()).includes('0.001 AGIΩ'));
+    assert.ok((await page.locator('#app').innerText()).includes('1000 bps'));
     assert.ok(
       await page.evaluate(
         () => document.documentElement.scrollWidth <= innerWidth + 1
@@ -127,7 +127,8 @@ async function main() {
       fs.readFileSync(path.join(DEMO, 'ui/export/latest.json'))
     );
     saved.token.targetSymbol = '<img src=x onerror="window.compromised=1">';
-    saved.configSnapshots.jobRegistry.jobStakeTokens = '0.000000000000000001';
+    saved.configSnapshots.jobRegistry.jobStakeBps = 1234;
+    saved.configSnapshots.jobRegistry.minAgentStakeTokens = '0.000000000000000001';
     saved.policyObservations = [
       'Reward cap is below the job bond; review job economics.',
     ];
@@ -139,9 +140,10 @@ async function main() {
     await page.waitForSelector('.owner-controls');
     assert.ok(
       (await page.locator('.owner-controls').innerText()).includes(
-        '0.000000000000000001'
+        '1234 bps'
       )
     );
+    assert.ok((await page.locator('.owner-controls').innerText()).includes('0.000000000000000001'));
     assert.equal(await page.locator('#app img').count(), 0);
     assert.equal(await page.evaluate(() => window.compromised), undefined);
     assert.ok(

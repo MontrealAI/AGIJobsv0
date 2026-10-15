@@ -84,7 +84,8 @@ function summarizeInvariants() {
   const validatorStake = toNumber(
     stakeManagerConfig.roleMinimums?.validatorTokens
   );
-  const jobBond = toNumber(jobRegistryConfig.jobStakeTokens);
+  const jobRate = planner.integer(jobRegistryConfig.jobStakeBps, 'jobStakeBps', 10000n);
+  const jobBond = (toNumber(jobRegistryConfig.maxJobRewardTokens) * jobRate + 9999n) / 10000n;
   const rewardCap = toNumber(jobRegistryConfig.maxJobRewardTokens);
   const unbonding = planner.integer(
     stakeManagerConfig.unbondingPeriodSeconds,
@@ -94,7 +95,7 @@ function summarizeInvariants() {
   console.log(
     `${COLORS.bright}${COLORS.magenta}Critical Invariants${COLORS.reset}`
   );
-  formatCheck('Agent minimum stake covers job bond', agentStake >= jobBond);
+  formatCheck('Percentage rate is bounded; eligibility is separate from per-job collateral', jobRate <= 10000n);
   formatCheck(
     'Validator stake exceeds agent minimum',
     validatorStake >= agentStake
