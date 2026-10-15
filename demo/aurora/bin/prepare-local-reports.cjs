@@ -16,7 +16,11 @@ function prepare(
   // supported targets; the local wrappers keep their original default mode.
   if (
     !['local', 'kit'].includes(mode) ||
-    (!scopes.has(scope) && !(mode === 'local' && scope === 'infinity-symphony'))
+    (!scopes.has(scope) &&
+      !(
+        mode === 'local' &&
+        ['infinity-symphony', 'omnigenesis-global-symphony'].includes(scope)
+      ))
   )
     throw new Error('Unknown report scope or mode');
   root = path.resolve(root);

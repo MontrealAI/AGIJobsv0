@@ -1,18 +1,21 @@
-# AGI Jobs v0 (v2) — Demo → Omniphoenix Ascendant Hyperstructure
+# Omniphoenix Ascendant Hyperstructure
 
-> AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `demo/OMNIPHOENIX-ASCENDANT-HYPERSTRUCTURE`.
+A preserved scenario design and a guide to shared ASI Take-Off fixtures. The plan's jobs, participant handles, governance labels and physical projects are illustrative context. These files do not establish deployed identities, completed work or production readiness.
 
-## Overview
-- **Path:** `demo/OMNIPHOENIX-ASCENDANT-HYPERSTRUCTURE/README.md`
-- **Module Focus:** Anchors Demo → Omniphoenix Ascendant Hyperstructure inside the AGI Jobs v0 (v2) lattice so teams can orchestrate economic, governance, and operational missions with deterministic guardrails.
-- **Integration Role:** Interfaces with the unified owner control plane, telemetry mesh, and contract registry to deliver end-to-end resilience.
+## Supported path
 
-## Capabilities
-- Provides opinionated configuration and assets tailored to `demo/OMNIPHOENIX-ASCENDANT-HYPERSTRUCTURE` while remaining interoperable with the global AGI Jobs v0 (v2) runtime.
-- Ships with safety-first defaults so non-technical operators can activate the experience without compromising security or compliance.
-- Publishes ready-to-automate hooks for CI, observability, and ledger reconciliation.
+This directory has no independent executable entrypoint. Its runbook binds the existing scenario plan to the shared ASI Take-Off report pipeline.
 
-## Systems Map
+Read the [runbook](RUNBOOK.md) and the [root setup](../../docs/START_HERE.md#reproduce-the-local-baseline). Use the pinned toolchain and locked dependencies. The plan remains in [project-plan.hyperstructure.json](project-plan.hyperstructure.json); no conversion to the Aurora mission schema is implied.
+
+- `demo:asi-takeoff` reads `ASI_TAKEOFF_PLAN_PATH` for report context. Its normal mode runs fixed lifecycle/pause fixtures and separately bootstrapped reporting fixtures, not the scenario job list.
+- `demo:asi-takeoff:local` is a different launcher. It uses `AURORA_MISSION_CONFIG`, defaults to the shared three-job `mission@v2.json`, and does not consume `ASI_TAKEOFF_PLAN_PATH`.
+- `demo:asi-takeoff:kit -- --plan FILE ...` hashes the explicitly selected plan and supplied report files. It does not verify completed scenario work or ownership authority.
+
+## Systems map — preserved original design
+
+The original diagram describes the intended architecture, not execution evidence.
+
 ```mermaid
 flowchart LR
     Operators((Mission Owners)) --> demo_OMNIPHOENIX_ASCENDANT_HYPERSTRUCTURE[[Demo → Omniphoenix Ascendant Hyperstructure]]
@@ -21,23 +24,6 @@ flowchart LR
     Core --> Governance[[Owner Control Plane]]
 ```
 
-## Working With This Module
-1. From the repository root run `npm install` once to hydrate all workspaces.
-2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `demo/OMNIPHOENIX-ASCENDANT-HYPERSTRUCTURE`.
-3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
-4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../../OperatorRunbook.md).
+## Separate operator workflows
 
-## Directory Guide
-### Key Files
-- `project-plan.hyperstructure.json`
-- `RUNBOOK.md`
-
-## Quality & Governance
-- Every change must land through a pull request with all required checks green (unit, integration, linting, security scan).
-- Reference [`RUNBOOK.md`](../../RUNBOOK.md) and [`OperatorRunbook.md`](../../OperatorRunbook.md) for escalation patterns and owner approvals.
-- Keep secrets outside the tree; use the secure parameter stores wired to the AGI Jobs v0 (v2) guardian mesh.
-
-## Next Steps
-- Review this module's issue board for open automation, data, or research threads.
-- Link new deliverables back to the central manifest via `npm run release:manifest`.
-- Publish artefacts (dashboards, mermaid charts, datasets) into `reports/` for downstream intelligence alignment.
+Owner-control changes, monitoring, validator operations, emergency drills and publication require their own configuration, evidence and authorization. See the [operator runbook](../../OperatorRunbook.md) and [ASI Take-Off runbook](../asi-takeoff/RUNBOOK.md). A successful fixture run does not authorize production operations.

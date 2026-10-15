@@ -1383,54 +1383,54 @@
   },
   "OMNIGENESIS-GLOBAL-SOVEREIGN-SYMPHONY": {
     "question": "How can an ambitious mission be translated into a reviewable plan?",
-    "purpose": "For mission designers: inspect this scenario\u2019s task graph and operator runbook, then connect it to a related executable local workflow.",
+    "purpose": "For mission designers: analyze the preserved scenario plan without execution, then explicitly choose shared fixture reports whose scope is stated in the runbook.",
     "steps": [
       {
         "title": "Inspect the mission plan",
         "source": "demo/OMNIGENESIS-GLOBAL-SOVEREIGN-SYMPHONY/project-plan.json",
-        "explanation": "Read task identities, dependencies, budgets and acceptance descriptions. A project plan is an input artifact; its targets are not evidence of completed work."
+        "explanation": "Read planned job labels, dependencies and budgets. A project plan is an input artifact; its targets are not evidence of completed work."
       },
       {
         "title": "Read the operating sequence",
         "source": "demo/OMNIGENESIS-GLOBAL-SOVEREIGN-SYMPHONY/RUNBOOK.md",
-        "explanation": "Follow the scenario-specific runbook and separate plan generation, owner diagnostics and contract execution. Some steps require a configured environment."
+        "explanation": "Start with read-only planning. Rehearsals require explicit intent and treat the scenario jobs as report context; owner operations remain separate workflows."
       },
       {
-        "title": "Inspect the execution reference",
-        "source": "demo/asi-takeoff/config/mission@v2.json",
-        "explanation": "This related local demo provides concrete executable job specifications. Compare the mission plan with the jobs actually selected by a launcher before claiming scenario-specific execution."
+        "title": "Trace the shared report pipeline",
+        "source": "scripts/v2/asiTakeoffDemo.ts",
+        "explanation": "The TypeScript pipeline reads the scenario for summaries and kit metadata. Its fixed lifecycle/pause and separately bootstrapped reporting fixtures do not execute the scenario job list. The separate :local launcher consumes AURORA_MISSION_CONFIG instead."
       }
     ],
-    "command": "npm run demo:asi-takeoff:local",
-    "expected": "The related ASI Take-Off workflow generates local contract evidence. It demonstrates the execution mechanism; it does not itself execute every task in this scenario\u2019s project plan.",
-    "experiment": "Choose one task from this plan and specify its real input, acceptance test, validator evidence and settlement condition. Identify what the related local demonstration covers.",
-    "mode": "local",
+    "command": "bash demo/OMNIGENESIS-GLOBAL-SOVEREIGN-SYMPHONY/bin/omnigenesis-ci.sh --plan",
+    "expected": "Read-only planning output with budgets and dependencies. No report directory, compiler, contract fixture, transaction or provider work is started.",
+    "experiment": "Compare the selected plan hash with an explicitly generated governance kit. Keep fixture evidence distinct from planned scenario jobs and from any separately authorized operator action.",
+    "mode": "node",
     "related": ["asi-takeoff"]
   },
   "OMNIPHOENIX-ASCENDANT-HYPERSTRUCTURE": {
     "question": "How can an ambitious mission be translated into a reviewable plan?",
-    "purpose": "For mission designers: inspect this scenario\u2019s task graph and operator runbook, then connect it to a related executable local workflow.",
+    "purpose": "For mission designers: analyze the preserved scenario plan without execution, then explicitly choose shared fixture reports whose scope is stated in the runbook.",
     "steps": [
       {
         "title": "Inspect the mission plan",
         "source": "demo/OMNIPHOENIX-ASCENDANT-HYPERSTRUCTURE/project-plan.hyperstructure.json",
-        "explanation": "Read task identities, dependencies, budgets and acceptance descriptions. A project plan is an input artifact; its targets are not evidence of completed work."
+        "explanation": "Read planned job labels, dependencies and budgets. A project plan is an input artifact; its targets are not evidence of completed work."
       },
       {
         "title": "Read the operating sequence",
         "source": "demo/OMNIPHOENIX-ASCENDANT-HYPERSTRUCTURE/RUNBOOK.md",
-        "explanation": "Follow the scenario-specific runbook and separate plan generation, owner diagnostics and contract execution. Some steps require a configured environment."
+        "explanation": "Start with read-only planning. Rehearsals require explicit intent and treat the scenario jobs as report context; owner operations remain separate workflows."
       },
       {
-        "title": "Inspect the execution reference",
-        "source": "demo/asi-takeoff/config/mission@v2.json",
-        "explanation": "This related local demo provides concrete executable job specifications. Compare the mission plan with the jobs actually selected by a launcher before claiming scenario-specific execution."
+        "title": "Trace the shared report pipeline",
+        "source": "scripts/v2/asiTakeoffDemo.ts",
+        "explanation": "The TypeScript pipeline reads the scenario for summaries and kit metadata. Its fixed lifecycle/pause and separately bootstrapped reporting fixtures do not execute the scenario job list. The separate :local launcher consumes AURORA_MISSION_CONFIG instead."
       }
     ],
-    "command": "npm run demo:asi-takeoff:local",
-    "expected": "The related ASI Take-Off workflow generates local contract evidence. It demonstrates the execution mechanism; it does not itself execute every task in this scenario\u2019s project plan.",
-    "experiment": "Choose one task from this plan and specify its real input, acceptance test, validator evidence and settlement condition. Identify what the related local demonstration covers.",
-    "mode": "local",
+    "command": "node -e 'const {analyze}=require(\"./demo/asi-takeoff/scripts/plan.cjs\"); console.log(JSON.stringify(analyze(require(\"./demo/OMNIPHOENIX-ASCENDANT-HYPERSTRUCTURE/project-plan.hyperstructure.json\")),null,2));'",
+    "expected": "Read-only planning output with budgets and dependencies. No report directory, compiler, contract fixture, transaction or provider work is started.",
+    "experiment": "Compare the selected plan hash with an explicitly generated governance kit. Keep fixture evidence distinct from planned scenario jobs and from any separately authorized operator action.",
+    "mode": "node",
     "related": ["asi-takeoff"]
   },
   "omnisovereign": {

@@ -1,55 +1,95 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-if ROOT=$(cd "$SCRIPT_DIR" && git rev-parse --show-toplevel 2>/dev/null); then
-  ROOT="${ROOT}"
-else
-  ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
-fi
-cd "$ROOT"
-
-PLAN_PATH="${1:-demo/OMNIGENESIS-GLOBAL-SOVEREIGN-SYMPHONY/project-plan.json}"
-REPORT_ROOT="${2:-reports/localhost/omnigenesis-global-symphony}"
-SCOPE="${AURORA_REPORT_SCOPE:-omnigenesis-global-symphony}"
-NETWORK="${NETWORK:-localhost}"
-REPORT_TITLE="${AURORA_REPORT_TITLE:-Omnigenesis Global Sovereign Symphony — Mission Report}"
-
-mkdir -p "$REPORT_ROOT/receipts"
-
-export ASI_TAKEOFF_PLAN_PATH="$PLAN_PATH"
-export OMNIGENESIS_REPORT_ROOT="$REPORT_ROOT"
-export OWNER_REPORT_ROOT="$REPORT_ROOT"
-export AURORA_REPORT_SCOPE="$SCOPE"
-export AURORA_REPORT_TITLE="$REPORT_TITLE"
-export REPORT_ROOT
-
-log() {
-  echo "[omnigenesis-ci] $*" >&2
+usage() {
+  cat <<'HELP'
+Usage: omnigenesis-ci.sh [--help | --plan [PLAN] | --rehearse [PLAN [REPORT_ROOT]]]
+Default/help: print this message without running a pipeline or writing reports.
+--plan: read-only analysis of an existing ASI Take-Off scenario plan.
+--rehearse: explicitly run shared Hardhat fixtures and bind the plan as report context.
+  Scenario jobs, identities and physical projects are not executed or verified.
+  AGIJOBS_FLAGSHIP_SKIP_ONCHAIN=true selects illustrative offline reports instead.
+  REPORT_ROOT must be reports/localhost/omnigenesis-global-symphony (or its absolute path).
+HELP
 }
 
-log "Compiling protocol and refreshing constants"
-npm run compile
+MODE="${1:---help}"
+case "$MODE" in
+  --help|-h)
+    [[ "$#" -le 1 ]] || { usage >&2; exit 1; }
+    usage
+    exit 0
+    ;;
+  --plan|--rehearse) shift ;;
+  *) usage >&2; echo 'Choose --plan or explicitly authorize fixtures with --rehearse.' >&2; exit 1 ;;
+esac
+if [[ "$#" -gt 2 || ( "$MODE" == --plan && "$#" -gt 1 ) ]]; then
+  usage >&2
+  exit 1
+fi
 
-log "Executing Omnigenesis ASI take-off demo"
-NETWORK="$NETWORK" npm run demo:asi-takeoff:local
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+cd "$ROOT"
+PLAN_PATH="${1-${ASI_TAKEOFF_PLAN_PATH-$ROOT/demo/OMNIGENESIS-GLOBAL-SOVEREIGN-SYMPHONY/project-plan.json}}"
+REPORT_ROOT="$ROOT/reports/localhost/omnigenesis-global-symphony"
 
-log "Rendering governance kit"
-npm run demo:asi-takeoff:kit -- --report-root "$REPORT_ROOT" --summary-md "$REPORT_ROOT/omnigenesis-report.md" --bundle "$REPORT_ROOT/receipts"
+if [[ "$MODE" == --plan ]]; then
+  node - "$PLAN_PATH" <<'NODE'
+const fs = require('node:fs');
+const { analyze } = require('./demo/asi-takeoff/scripts/plan.cjs');
+console.log(JSON.stringify(analyze(JSON.parse(fs.readFileSync(process.argv[2], 'utf8'))), null, 2));
+NODE
+  exit 0
+fi
 
-log "Producing owner surfaces"
-OWNER_REPORT_ROOT="$REPORT_ROOT" npm run owner:mission-control >"$REPORT_ROOT/owner-mission-control.md"
-OWNER_REPORT_ROOT="$REPORT_ROOT" npm run owner:atlas >"$REPORT_ROOT/owner-atlas.md"
-npm run owner:diagram -- --report-root "$REPORT_ROOT"
-OWNER_REPORT_ROOT="$REPORT_ROOT" npm run owner:parameters -- --report-root "$REPORT_ROOT" >"$REPORT_ROOT/owner-parameters.md"
+if [[ "${NETWORK-localhost}" != localhost || "${AURORA_REPORT_SCOPE-omnigenesis-global-symphony}" != omnigenesis-global-symphony || "${HARDHAT_NETWORK-hardhat}" != hardhat ]]; then
+  echo 'Omnigenesis requires NETWORK=localhost, AURORA_REPORT_SCOPE=omnigenesis-global-symphony and HARDHAT_NETWORK=hardhat (or leave them unset). These are shared local fixtures only.' >&2
+  exit 1
+fi
+if [[ "${ASI_TAKEOFF_REPORT_ROOT+x}" == x ]]; then
+  echo 'ASI_TAKEOFF_REPORT_ROOT overrides are unsupported by this launcher; unset it to use the isolated Omnigenesis report scope.' >&2
+  exit 1
+fi
+if [[ "${AGIJOBS_FLAGSHIP_SKIP_ONCHAIN-false}" != true && "${AGIJOBS_FLAGSHIP_SKIP_ONCHAIN-false}" != false ]]; then
+  echo 'AGIJOBS_FLAGSHIP_SKIP_ONCHAIN must be true or false (or leave it unset).' >&2
+  exit 1
+fi
 
-log "Running thermodynamic and monitoring checks"
-REPORT_ROOT="$REPORT_ROOT" npm run thermodynamics:report >"$REPORT_ROOT/thermodynamics-report.md"
-REPORT_ROOT="$REPORT_ROOT" npm run monitoring:sentinels >"$REPORT_ROOT/monitoring-sentinels.json"
-npm run monitoring:validate -- --report-root "$REPORT_ROOT" >"$REPORT_ROOT/monitoring-validate.log"
+# Validate every selected input before acquiring locks or archiving old evidence.
+PLAN_PATH="$(node - "$PLAN_PATH" "${2-${OMNIGENESIS_REPORT_ROOT-$REPORT_ROOT}}" "$REPORT_ROOT" <<'NODE'
+const fs = require('node:fs');
+const path = require('node:path');
+const { analyze } = require('./demo/asi-takeoff/scripts/plan.cjs');
+const [input, output, expected] = process.argv.slice(2);
+if (!output || path.resolve(output) !== expected)
+  throw new Error('REPORT_ROOT must be reports/localhost/omnigenesis-global-symphony (or its absolute path).');
+if (!input || /[\r\n]/.test(input)) throw new Error('PLAN must name an existing scenario JSON file.');
+const plan = fs.realpathSync(input);
+if (plan === expected || plan.startsWith(expected + path.sep))
+  throw new Error('Keep the source plan outside the report scope that will be archived.');
+analyze(JSON.parse(fs.readFileSync(plan, 'utf8')));
+console.log(plan);
+NODE
+)"
 
-log "Verifying governance wiring"
-npm run owner:verify-control -- --report-root "$REPORT_ROOT" >"$REPORT_ROOT/owner-verify-control.log"
-npm run owner:pulse -- --report-root "$REPORT_ROOT" >"$REPORT_ROOT/owner-pulse.log"
+source "$ROOT/demo/aurora/bin/local-node.sh"
+lock_local_demo --rehearse "$PLAN_PATH" "$REPORT_ROOT"
+node "$ROOT/demo/aurora/bin/prepare-local-reports.cjs" omnigenesis-global-symphony
 
-log "Mission completed. Artefacts available under $REPORT_ROOT"
+export ASI_TAKEOFF_PLAN_PATH="$PLAN_PATH"
+export ASI_TAKEOFF_REPORT_ROOT="$REPORT_ROOT"
+export HARDHAT_NETWORK=hardhat
+
+printf '%s\n' '[omnigenesis-ci] Shared fixture rehearsal; the supplied plan is report context only.' >&2
+npm run demo:asi-takeoff
+
+printf '%s\n' '[omnigenesis-ci] Binding the same scenario plan and report files into the governance kit.' >&2
+npm run demo:asi-takeoff:kit -- \
+  --plan "$PLAN_PATH" \
+  --report-root "$REPORT_ROOT" \
+  --summary-md "$REPORT_ROOT/summary.md" \
+  --bundle "$REPORT_ROOT/mission-bundle" \
+  --logs "$REPORT_ROOT/logs" \
+  --network hardhat
+
+printf '%s\n' "[omnigenesis-ci] Reports available under $REPORT_ROOT; no scenario execution or production approval is implied." >&2

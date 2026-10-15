@@ -4,6 +4,10 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 cd "$ROOT"
 
+if [[ "${ASI_TAKEOFF_PLAN_PATH+x}" == x ]]; then
+  echo 'WARNING: demo:asi-takeoff:local ignores ASI_TAKEOFF_PLAN_PATH. It uses AURORA_MISSION_CONFIG (default: demo/asi-takeoff/config/mission@v2.json); supplied scenario jobs are not executed. Use demo:asi-takeoff for plan-context reports.' >&2
+fi
+
 source "$ROOT/demo/aurora/bin/local-node.sh"
 lock_local_demo "$@"
 

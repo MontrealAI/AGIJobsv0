@@ -15,6 +15,11 @@
   copied from there into a fresh `receipts` child without deleting old evidence.
   It never uses the shared `reports/asi-takeoff` directory.
 
+- Omnigenesis prepares only `reports/localhost/omnigenesis-global-symphony`.
+  Default/help and `--plan` are inert; explicit `--rehearse` binds the selected
+  scenario as report context to the shared TS pipeline and kit. The plan's jobs
+  are not executed. See its [runbook](../../OMNIGENESIS-GLOBAL-SOVEREIGN-SYMPHONY/RUNBOOK.md).
+
 The four Zenith local wrappers accept an unset `NETWORK` (defaulting to
 `localhost`) or the explicit value `localhost`. Other values, including an
 explicit empty string, and positional arguments are rejected before report
@@ -51,7 +56,7 @@ than following those links.
 
 ## Locking and scope of protection
 
-All nine supported wrappers acquire the existing repository and per-user port
+All ten supported wrappers acquire the existing repository and per-user port
 advisory locks before preparation, and retain them through downstream execution.
 They require Linux, Python 3, and readable `/proc`. The kit-only wrappers acquire
 the same conservative locks even though they do not start a node themselves.
@@ -69,9 +74,10 @@ for the distinct disposable-node lifecycle protections.
 ## Regression coverage
 
 The mandatory `python_unit` CI job explicitly runs
-`test/simulation/test_report_archive_launchers.py`; its ordinary `test/simulation`
+`test/simulation/test_report_archive_launchers.py` and
+`test/simulation/test_shared_plan_routing.py`; its ordinary `test/simulation`
 collection also includes these tests and the existing local-wrapper regressions.
-The new suite uses private temporary checkouts with inert npm substitutes and
+These suites use private temporary checkouts with inert npm substitutes and
 forbidden-command guards. It covers invalid input, exact-target archive boundaries,
 symlink/file parents, repeat and failed runs, lock ordering, inherited locks,
 plan binding, argument boundaries, isolated Infinity output, and digest validity.
