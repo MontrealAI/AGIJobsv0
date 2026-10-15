@@ -9,6 +9,20 @@ export async function verifyIconic({ page, url, artifacts, a11y, checks }) {
     await page.locator('#result').waitFor({ state: 'visible' });
     return JSON.parse(await page.locator('#raw').textContent());
   };
+  for (const selector of ['#inputTokens', '#maximumCalls']) {
+    const input = page.locator(selector).first(),
+      previous = await input.inputValue();
+    for (const value of ['1.00000000000000001', '1e1']) {
+      await input.fill(value);
+      await page.locator('#language').click();
+      assert.equal(await page.locator(selector).first().inputValue(), value);
+      await page.locator('#language').click();
+      await page.locator('button[type=submit]').click();
+      await page.locator('#error').waitFor({ state: 'visible' });
+      assert.equal(await page.locator('#result').isVisible(), false);
+    }
+    await input.fill(previous);
+  }
   const first = await run();
   assert.equal(first.artifactReview.accepted, true);
   assert.equal(first.artifactReview.checks.length, 11);
@@ -162,9 +176,9 @@ export async function verifyIconic({ page, url, artifacts, a11y, checks }) {
   assert.equal(await page.locator('#result').isVisible(), false);
   await page.evaluate(() => window.restoreDigest());
   await page.evaluate(() => {
-    const original = File.prototype.text;
-    window.restoreFile = () => (File.prototype.text = original);
-    File.prototype.text = function () {
+    const original = File.prototype.arrayBuffer;
+    window.restoreFile = () => (File.prototype.arrayBuffer = original);
+    File.prototype.arrayBuffer = function () {
       const file = this;
       return new Promise((resolve) => {
         window.releaseFile = async () => resolve(await original.call(file));
@@ -185,6 +199,15 @@ export async function verifyIconic({ page, url, artifacts, a11y, checks }) {
   await page.locator('#language').focus();
   await page.keyboard.press('Enter');
   assert.equal(await page.locator('html').getAttribute('lang'), 'en');
+  const malformed = Buffer.from(bytes);
+  malformed[malformed.indexOf(Buffer.from('title')) + 9] = 255;
+  await page.locator('#import').setInputFiles({
+    name: 'invalid.json',
+    mimeType: 'application/json',
+    buffer: malformed,
+  });
+  await page.locator('#error').waitFor({ state: 'visible' });
+  assert.equal(await page.locator('#result').isVisible(), false);
   checks.push(
     'ICONIC: eleven artifact checks; unknown and reported-complete packet states; costs/cleanup/tamper failures; EN/FR16layouts/Axe; exact hashes/reopen; stale async guards and keyboard'
   );

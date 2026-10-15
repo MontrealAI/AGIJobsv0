@@ -1,3 +1,8 @@
+function integerText(value) {
+  if (!/^(0|[1-9][0-9]*)$/.test(value))
+    throw Error('Use whole-number digits without decimals or exponents');
+  return Number(value);
+}
 import { evaluate, parsePacket, sha256 } from './engine.mjs';
 import { example, quotes } from './fixtures.mjs';
 import { fr, names, words, artifactNames } from './i18n.mjs';
@@ -77,11 +82,15 @@ function translate() {
       ? 'ICONIC • Bureau des preuves fournisseur'
       : 'ICONIC • Supplier evidence desk';
 }
-function input() {
+function input(raw = false) {
   const p = structuredClone(packet);
   for (const [group, key, optional] of fields) {
     const value = $(key).value;
-    p[group][key] = optional && value === '' ? null : Number(value);
+    p[group][key] = raw
+      ? value
+      : optional && value === ''
+      ? null
+      : integerText(value);
   }
   for (const key of ['browserObserved', 'workerTerminated'])
     p.execution[key] = $(key).checked;
@@ -187,7 +196,7 @@ $('language').onclick = () => {
     e.id,
     e.value,
   ]);
-  packet = input();
+  packet = input(true);
   lang = lang === 'fr' ? 'en' : 'fr';
   translate();
   build();
@@ -206,7 +215,9 @@ $('import').onchange = async () => {
   try {
     if (file.size > 1000000) throw Error('1 MB maximum');
     $('status').textContent = w('loading');
-    const text = await file.text();
+    const text = new TextDecoder('utf-8', { fatal: true }).decode(
+      await file.arrayBuffer()
+    );
     if (ticket !== revision) return;
     load(parsePacket(text));
     await run();
