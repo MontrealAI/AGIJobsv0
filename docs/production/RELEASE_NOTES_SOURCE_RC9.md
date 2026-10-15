@@ -2,6 +2,12 @@
 
 This source prerelease consolidates the reviewed changes from pull requests #3935–3966 while preserving their commit ancestry. It builds on the explicit Alpha JobRegistry integration in rc.8. Original design documents and diagrams remain available alongside the bounded implementations.
 
+## Known contract defect — deployment blocked
+
+The inherited ReputationEngine can reduce an accumulated score while applying positive credit and then revert with arithmetic panic `0x11`, rolling back job settlement. A 20,000-point award produces 19,036; a subsequent one-point award or successful-finalization hook can trigger the defect. The separately scoped [repair in PR #3971](https://github.com/MontrealAI/AGIJobsv0/pull/3971) has local regression and fuzz evidence but is not included in this demo-only source snapshot. Reputation payout-unit and terminal/dispute-scoring corrections also remain open. Do not deploy or commission these contracts from this prerelease.
+
+This release distributes source and evidence for bounded demo evaluation. Passing demo/software checks do not clear those contract defects. The separately developed percentage-stake policy is also excluded. Existing deployments remain governed by their own source and obligations; no migration or live settlement approval is implied.
+
 ## Useful, inspectable workspaces
 
 Nine browser workspaces provide governance rehearsal, dependency and recovery planning, supplier evidence review, quorum receipt exploration, resource contingency planning, exact regional budget reconciliation, checkpoint replay, initiative evidence review and disruption planning. Their interfaces provide English and French labels, explicit assumptions, bounded inputs and recovery/export checks. Submitted evidence is recomputed; a self-consistent report does not authenticate its origin, establish real-world impact or authorize a transaction.
