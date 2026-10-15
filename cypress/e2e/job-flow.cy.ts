@@ -38,10 +38,14 @@ describe('Owner governance job flow', () => {
     cy.wait('@snapshot');
     cy.contains('AGI Jobs Owner Console');
 
-    cy.get('#governance-key').select('jobRegistry.setJobStake');
+    cy.get('#governance-key').select('jobRegistry.setJobStakeBps');
+    cy.contains('Future-job rate in basis points');
     cy.get('#governance-value').clear().type('150');
     cy.get('button').contains('Preview Change').click();
-    cy.wait('@preview');
+    cy.wait('@preview').its('request.body').should('include', {
+      key: 'jobRegistry.setJobStakeBps',
+      value: 150,
+    });
     cy.contains('Diff');
     cy.contains('jobRegistry');
 
