@@ -17,6 +17,12 @@ on:
 permissions:
   contents: read
 
+# Supersede only older commits of this workflow on the same PR.
+# Main/tag/manual runs get a unique run ID and are never cancelled here.
+concurrency:
+  group: demo-pr-${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   asi-takeoff-local:
     runs-on: ubuntu-24.04
