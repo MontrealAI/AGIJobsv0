@@ -1,4 +1,4 @@
-import { mkdir, writeFile, readFile, stat } from "fs/promises";
+import { mkdir, writeFile, readFile, stat, rm } from "fs/promises";
 import path from "path";
 import { createHash } from "crypto";
 import { createInterface } from "readline/promises";
@@ -257,6 +257,8 @@ interface MintedInsightRecord {
   resolutionTxHash?: string;
 }
 
+const { collectLocalReceipts } = require("./utils/localReceipts.cjs");
+
 async function main() {
   const executionMode = await requireExecutionMode(hardhatNetwork, process.env.AGIJOBS_DEMO_DRY_RUN);
   const scenarioPath = resolveScenarioFile();
@@ -304,6 +306,9 @@ async function main() {
   }
 
   await ensureReportsDir();
+  // Invalidate completion markers before a new run; a failed run cannot reuse them.
+  await rm(path.join(reportsDir, "insight-manifest.json"), { force: true });
+  await rm(path.join(reportsDir, "insight-local-receipts.json"), { force: true });
   const AccessToken = await ethers.getContractFactory("InsightAccessToken");
   const accessToken = (await AccessToken.deploy(operator.address)) as unknown as InsightAccessToken;
   await accessToken.waitForDeployment();
@@ -1896,7 +1901,15 @@ ${htmlRows}
   await writeFile(ownerSupremacyPath, JSON.stringify(ownerSupremacy, null, 2));
   await writeFile(ownerLatticePath, ownerSupremacyMermaid);
 
+  const receiptEvidence = await collectLocalReceipts(hardhatNetwork.provider, executionMode);
+  const receiptPath = path.join(reportsDir, "insight-local-receipts.json");
+  // A broadcast dossier must never acquire stale local evidence from an earlier run.
   const manifestEntries: { path: string; sha256: string }[] = [];
+  if (receiptEvidence) {
+    const content = JSON.stringify(receiptEvidence, null, 2);
+    await writeFile(receiptPath, content);
+    manifestEntries.push({ path: "reports/insight-local-receipts.json", sha256: sha256(content) });
+  }
   for (const file of [
     recapPath,
     reportPath,
