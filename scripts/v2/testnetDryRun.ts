@@ -458,7 +458,7 @@ async function runJobLifecycleScenario(): Promise<ScenarioReport> {
     roleMinimum === 0n ? await envFixture.stake.minStake() : roleMinimum;
   const admissionMinimum = await envFixture.registry.minAgentStake();
   const minimumFloor = await envFixture.stake.minStakeFloor();
-  const requiredTotal = [
+  const requiredTotal: bigint = [
     startingLocked + jobStake,
     globalMinimum,
     admissionMinimum,
