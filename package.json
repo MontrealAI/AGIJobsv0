@@ -554,5 +554,5 @@
     "test:dependency-compat": "node --test scripts/security/test/*.test.cjs scripts/security/test/*.test.mjs"
   },
   "type": "commonjs",
-  "version": "2.1.0-rc.8"
+  "version": "2.1.0-rc.9"
 }
