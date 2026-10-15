@@ -373,11 +373,14 @@ test('legacy schedules preserve relative timing without inventing dates or missi
   assert.match(chart, /line \[0.33, 0.67\]/);
 });
 
-test('nested demo documentation is discovered without misclassifying the implementation as an alias', () => {
+test('Empowerment root guide takes precedence while nested implementation guides remain discoverable', () => {
   const demo = makeCatalog().find(
     (d) => d.name === 'superintelligent-empowerment'
   );
-  assert.equal(demo.readme, 'demo/superintelligent-empowerment/docs/README.md');
+  assert.equal(demo.readme, 'demo/superintelligent-empowerment/README.md');
+  for (const guide of ['docs/README.md', 'web/README.md']) {
+    assert.ok(demo.guides.includes('demo/superintelligent-empowerment/' + guide));
+  }
   assert.equal(demo.kindId, 'code');
 });
 
