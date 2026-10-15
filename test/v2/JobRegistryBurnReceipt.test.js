@@ -16,6 +16,8 @@ describe('JobRegistry burn receipt validation', function () {
   const mintAmount = 1000n;
 
   beforeEach(async () => {
+    // Replacing fixed-address token code does not clear storage from earlier tests.
+    await network.provider.send('hardhat_reset');
     [owner, employer, agent] = await ethers.getSigners();
     const artifact = await artifacts.readArtifact(
       'contracts/test/MockERC20.sol:MockERC20'

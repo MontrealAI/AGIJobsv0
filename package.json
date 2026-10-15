@@ -147,6 +147,7 @@
     "agent:gateway": "node examples/agentic/v2-agent-gateway.js",
     "agent:validator": "node examples/agentic/v2-validator.js",
     "alpha-bridge:start": "node services/alpha-bridge/src/server.js",
+    "alpha-agent:verify:test": "node --test test/scripts/alpha-agent-receipt.test.cjs",
     "alpha-bridge:test": "node --test services/alpha-bridge/test/alpha-bridge.test.js",
     "audit:dossier": "bash scripts/audit/export-dossier.sh",
     "audit:final": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/audit/final-readiness.ts",
@@ -553,5 +554,5 @@
     "test:dependency-compat": "node --test scripts/security/test/*.test.cjs scripts/security/test/*.test.mjs"
   },
   "type": "commonjs",
-  "version": "2.1.0-rc.7"
+  "version": "2.1.0-rc.8"
 }

@@ -26,6 +26,8 @@ describe('JobRegistry integration', function () {
   const disputeFee = 1_000_000_000_000_000_000n;
 
   beforeEach(async () => {
+    // hardhat_setCode replaces code, not storage: isolate fixed-address token balances.
+    await network.provider.send('hardhat_reset');
     [owner, employer, agent, treasury, auditor] = await ethers.getSigners();
     const artifact = await artifacts.readArtifact(
       'contracts/test/MockERC20.sol:MockERC20'
@@ -1009,5 +1011,102 @@ describe('JobRegistry integration', function () {
       .withArgs(jobId, agent.address, 'agent')
       .and.to.emit(registry, 'AgentAssigned')
       .withArgs(jobId, agent.address, 'agent');
+  });
+  it('binds bounded Alpha artifact bytes to the exact JobRegistry lifecycle', async () => {
+    const fs = require('node:fs');
+    const path = require('node:path');
+    const crypto = require('node:crypto');
+    const {
+      verifyReceipt,
+      abi,
+    } = require('../../integrations/alpha-agent/verify-receipt.cjs');
+    const hashFile = (name) =>
+      '0x' +
+      crypto
+        .createHash('sha256')
+        .update(
+          fs.readFileSync(
+            path.join(
+              __dirname,
+              '../../integrations/alpha-agent/fixtures',
+              name
+            )
+          )
+        )
+        .digest('hex');
+    // Profile ABI is checked against the actually compiled controller, including outputs.
+    for (const fragment of abi.fragments) {
+      const compiled =
+        fragment.type === 'event'
+          ? registry.interface.getEvent(fragment.name)
+          : registry.interface.getFunction(fragment.name);
+      expect(compiled.format('sighash')).to.equal(fragment.format('sighash'));
+      if (fragment.type === 'function')
+        expect(compiled.outputs.map((x) => x.type)).to.deep.equal(
+          fragment.outputs.map((x) => x.type)
+        );
+    }
+    const specHash = hashFile('work-spec.json');
+    const resultHash = hashFile('reviewed-artifact.json');
+    await token
+      .connect(employer)
+      .approve(await stakeManager.getAddress(), 1000);
+    await registry
+      .connect(employer)
+      .createJob(
+        reward,
+        (await time.latest()) + 1000,
+        specHash,
+        'fixture://alpha/work'
+      );
+    const assigned = await registry.connect(agent).applyForJob(1, 'agent', []);
+    await assigned.wait();
+    const deployment = {
+      backend: 'agijobsv0-jobregistry-v2',
+      chainId: 31337,
+      registry: await registry.getAddress(),
+      runtimeKeccak256: ethers.keccak256(
+        await ethers.provider.getCode(await registry.getAddress())
+      ),
+    };
+    const base = { jobId: '1', worker: agent.address, minimumConfirmations: 1 };
+    await verifyReceipt(ethers.provider, deployment, {
+      ...base,
+      event: 'AgentAssigned',
+      transactionHash: assigned.hash,
+    });
+    expect((await registry.jobs(1)).specHash).to.equal(specHash);
+    await validation.setResult(true);
+    await validation.setValidators([owner.address, treasury.address]);
+    const tx = await registry
+      .connect(agent)
+      .submit(1, resultHash, 'fixture://alpha/artifact', 'agent', []);
+    await tx.wait();
+    const submitted = await verifyReceipt(ethers.provider, deployment, {
+      ...base,
+      event: 'ResultSubmitted',
+      transactionHash: tx.hash,
+      resultHash,
+      resultURI: 'fixture://alpha/artifact',
+    });
+    expect(submitted.finalizationEventProven).to.equal(false);
+    const completed = await validation.finalize(1);
+    await completed.wait();
+    const approved = await verifyReceipt(ethers.provider, deployment, {
+      ...base,
+      event: 'JobCompleted',
+      transactionHash: completed.hash,
+      success: true,
+    });
+    expect(approved.finalizationEventProven).to.equal(false);
+    const finalized = await registry.connect(employer).finalize(1);
+    await finalized.wait();
+    const proof = await verifyReceipt(ethers.provider, deployment, {
+      ...base,
+      event: 'JobFinalized',
+      transactionHash: finalized.hash,
+    });
+    expect(proof.finalizationEventProven).to.equal(true);
+    expect((await registry.jobs(1)).resultHash).to.equal(resultHash);
   });
 });

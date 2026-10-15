@@ -6,6 +6,8 @@
 Alpha Bridge exposes a gRPC façade for the Alpha agent HTTP API. It normalises metadata headers, streams plan requests, and maps
 HTTP errors to canonical gRPC status codes so orchestrators and validators can integrate through a single binary interface.
 
+For bounded on-chain work, use the distinct [JobRegistry v2 integration](../../integrations/alpha-agent/README.md). This planner proxy does not verify assignments, execute missions, submit results, or prove settlement.
+
 ## Service behaviour
 
 - Loads the protobuf definition from `proto/alpha_bridge.proto` and publishes the `AlphaBridge` service via `@grpc/grpc-js`.【F:services/alpha-bridge/src/server.js†L1-L40】

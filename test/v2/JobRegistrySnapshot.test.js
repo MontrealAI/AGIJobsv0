@@ -12,6 +12,8 @@ describe('JobRegistry payout snapshot', function () {
   let token, stakeManager, validation, registry, identity, nft;
 
   beforeEach(async () => {
+    // Replacing fixed-address token code does not clear storage from earlier tests.
+    await network.provider.send('hardhat_reset');
     [owner, employer, agent, other] = await ethers.getSigners();
 
     const { address: AGIALPHA } = require('../../config/agialpha.json');
