@@ -78,3 +78,55 @@ export function assertDashboardRoutes(actual, expected) {
     'Dashboard routes must match the explicit source inventory (no missing or unexpected routes)'
   );
 }
+
+export function expectedCatalogKindLinks(catalog, basePath, kind) {
+  const links = catalog
+    .filter((demo) => demo.kindId === kind)
+    .map((demo) => `${basePath}demos/${demo.id}/`);
+  assert.equal(
+    new Set(links).size,
+    links.length,
+    'Source catalog IDs must be unique'
+  );
+  return links;
+}
+
+export function assertCatalogKindLinks(actual, expected) {
+  assert.equal(
+    new Set(actual).size,
+    actual.length,
+    'Visible catalog cards must be unique'
+  );
+  assert.deepEqual(
+    [...actual].sort(),
+    [...expected].sort(),
+    'Visible filtered cards must exactly match the source catalog, including empty categories'
+  );
+}
+
+// These are the seven original design-only entries. Each becomes a bounded
+// implementation only when its reviewed workspace exists in this source tree.
+export const originalDesignNames = [
+  'CELESTIAL-SOVEREIGN-ORBITAL-AGI-OS-GRAND-DEMONSTRATION',
+  'ICONIC-OPERATING-SYSTEM-DEMO',
+  'OMNI-CONCORD-ASCENSION-ATLAS',
+  'polaris-concordat',
+  'solving-alpha-agi-governance',
+  'zenith-sapience',
+  'zenith-sapience-initiative-omega-omni-operating-system',
+];
+
+export function expectedDesignLinks(catalog, root, basePath) {
+  const expectedNames = originalDesignNames.filter(
+    (name) => !fs.existsSync(path.join(root, 'demo', name, 'web'))
+  );
+  const actualNames = catalog
+    .filter((demo) => demo.kindId === 'design')
+    .map((demo) => demo.name);
+  assert.deepEqual(
+    [...actualNames].sort(),
+    [...expectedNames].sort(),
+    'Design classifications must match the fixed original identities minus implemented workspaces'
+  );
+  return expectedCatalogKindLinks(catalog, basePath, 'design');
+}
