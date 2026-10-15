@@ -20,7 +20,7 @@ describe('Employer reputation', function () {
   let feePool;
 
   const reward = 100;
-  const stake = 200;
+  const stake = 10;
   const disputeFee = 1_000_000_000_000_000_000n;
 
   beforeEach(async () => {
@@ -117,7 +117,8 @@ describe('Employer reputation', function () {
         []
       );
     await validation.setJobRegistry(await registry.getAddress());
-    await registry.connect(owner).setJobParameters(reward, stake);
+    await registry.connect(owner).setMaxJobReward(reward);
+    await registry.connect(owner).setJobStakeBps(1000);
     await registry.connect(owner).setMaxJobReward(1000000);
     await registry.connect(owner).setJobDurationLimit(86400);
     await registry.connect(owner).setFeePct(0);

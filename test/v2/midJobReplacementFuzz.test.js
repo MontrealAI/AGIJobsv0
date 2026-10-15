@@ -161,7 +161,7 @@ describe('Mid-job module replacement fuzz', function () {
         AGIALPHA_DECIMALS
       );
       const result = Math.random() > 0.5;
-      const stakeAmount = ethers.parseUnits('1', AGIALPHA_DECIMALS);
+      const stakeAmount = await registry.quoteJobStake(reward);
       await token.connect(agent).approve(await stake.getAddress(), stakeAmount);
       await stake.connect(agent).depositStake(0, stakeAmount);
       await token

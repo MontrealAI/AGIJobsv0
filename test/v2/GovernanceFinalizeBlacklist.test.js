@@ -9,7 +9,7 @@ describe('JobRegistry governance finalization', function () {
   let token, stakeManager, rep, registry, identity;
   let owner, employer, agent, treasury;
   const reward = 100n;
-  const stake = 200n;
+  const stake = 10n;
 
   beforeEach(async () => {
     await network.provider.send('hardhat_reset');
@@ -83,7 +83,8 @@ describe('JobRegistry governance finalization', function () {
       .connect(owner)
       .setIdentityRegistry(await identity.getAddress());
 
-    await registry.connect(owner).setJobParameters(reward, stake);
+    await registry.connect(owner).setMaxJobReward(reward);
+    await registry.connect(owner).setJobStakeBps(1000);
     await registry.connect(owner).setMaxJobReward(1000000);
     await registry.connect(owner).setJobDurationLimit(86400);
     await registry.connect(owner).setFeePct(0);

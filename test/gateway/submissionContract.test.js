@@ -560,7 +560,8 @@ describe('gateway current registry submissions', function () {
       owner.address,
       await deployImplementations('JobRegistry', Registry.runner)
     );
-    await registry.setJobParameters(ethers.parseEther('10'), 0);
+    await registry.setMaxJobReward(ethers.parseEther('10'));
+    await registry.setJobStakeBps(0);
     let persisted;
     const { postJob } = loadGateway('employer.ts', {
       fs: {

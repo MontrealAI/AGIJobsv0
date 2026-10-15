@@ -57,7 +57,7 @@ describe('Deployment CLI rehearsals', function () {
     expect(report.econ.commitWindow).to.equal(86400);
     expect(report.econ.revealWindow).to.equal(86400);
     expect(report.econ.minStake).to.be.a('string');
-    expect(report.econ.jobStake).to.be.a('string');
+    expect(report.econ.jobStakeBps).to.be.a('string');
     expect(report.pendingOwnership).to.deep.equal([]);
     expect(report.contracts.SystemPause).to.match(/^0x[0-9a-fA-F]{40}$/);
     expect(report.status).to.equal('awaiting-commissioning');

@@ -146,21 +146,13 @@ export async function planSecureDefaults(
         `Set ${fallback}`
       );
   }
-  if (defaults.maxJobRewardAgia !== undefined || econ.jobStake !== undefined) {
-    const reward =
-      defaults.maxJobRewardAgia === undefined
-        ? await contracts.jobRegistry.maxJobReward()
-        : units(defaults.maxJobRewardAgia);
-    const stake =
-      econ.jobStake === undefined
-        ? await contracts.jobRegistry.jobStake()
-        : units(econ.jobStake);
-    await enqueue(
-      contracts.jobRegistry,
-      'setJobParameters',
-      [reward, stake],
-      'Set job reward limit and stake'
-    );
+  if (econ.jobStake !== undefined) throw new Error('Legacy jobStake is unsupported; use jobStakeBps');
+  if (defaults.maxJobRewardAgia !== undefined)
+    await enqueue(contracts.jobRegistry, 'setMaxJobReward', [units(defaults.maxJobRewardAgia)], 'Set job reward limit');
+  if (econ.jobStakeBps !== undefined) {
+    if (!Number.isInteger(econ.jobStakeBps) || econ.jobStakeBps < 0 || econ.jobStakeBps > 10000)
+      throw new Error('jobStakeBps must be an integer from 0 to 10000');
+    await enqueue(contracts.jobRegistry, 'setJobStakeBps', [econ.jobStakeBps], 'Set future-job stake basis points');
   }
   if (defaults.maxJobDurationSeconds !== undefined)
     await enqueue(

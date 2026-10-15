@@ -231,7 +231,7 @@ describeFork('Mainnet fork · job lifecycle drill', function () {
     await registry.connect(employer).acknowledgeTaxPolicy();
     await registry.connect(agent).acknowledgeTaxPolicy();
 
-    const stakeAmount = ethers.parseUnits('1', AGIALPHA_DECIMALS);
+    const stakeAmount = ethers.parseUnits('10', AGIALPHA_DECIMALS);
     await token.connect(agent).approve(await stake.getAddress(), stakeAmount);
     expect(
       await token.allowance(agent.address, await stake.getAddress())

@@ -139,7 +139,8 @@ describe('job finalization integration', function () {
     await policy
       .connect(owner)
       .setAcknowledger(await registry.getAddress(), true);
-    await registry.setJobParameters(0, stakeRequired);
+    // Preserve this fixture's 200 collateral on its 1000 reward with an explicit 20% rate.
+    await registry.setJobStakeBps(2000);
     await registry.setMaxJobReward(reward);
     await registry.setJobDurationLimit(86400);
     await stakeManager.setJobRegistry(await registry.getAddress());

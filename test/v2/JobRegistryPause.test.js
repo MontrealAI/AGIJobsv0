@@ -34,7 +34,7 @@ describe('JobRegistry pause', function () {
     await registry
       .connect(owner)
       .setIdentityRegistry(await identity.getAddress());
-    await registry.connect(owner).setJobParameters(0, 0);
+    await registry.connect(owner).setJobStakeBps(0);
   });
 
   it('restricts pause and unpause to governance or pauser', async () => {

@@ -104,7 +104,7 @@ async function deploySystem() {
   const Registry = await ethers.getContractFactory(
     'contracts/v2/JobRegistry.sol:JobRegistry'
   );
-  const stakeAmt = ethers.parseUnits('1', AGIALPHA_DECIMALS);
+  const stakeAmt = ethers.parseUnits('10', AGIALPHA_DECIMALS);
   const registry = await Registry.deploy(
     await validation.getAddress(),
     await stake.getAddress(),
@@ -114,7 +114,7 @@ async function deploySystem() {
     ethers.ZeroAddress,
     ethers.ZeroAddress,
     0,
-    stakeAmt,
+    0,
     [],
     owner.address,
     await deployImplementations('JobRegistry', Registry.runner)

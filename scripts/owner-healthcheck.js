@@ -22,7 +22,7 @@ async function deploySystem(owner) {
     commitWindow: 0,
     revealWindow: 0,
     minStake: 0,
-    jobStake: 0,
+    jobStakeBps: 1000,
   };
   const ids = {
     ens: ethers.ZeroAddress,

@@ -142,7 +142,7 @@ contract Deployer is Ownable {
         uint256 commitWindow; // validator commit window in seconds
         uint256 revealWindow; // validator reveal window in seconds
         uint256 minStake; // global minimum stake in StakeManager (18 decimals)
-        uint96 jobStake; // minimum agent stake per job in JobRegistry (18 decimals)
+        uint256 jobStakeBps; // explicit 0..10,000 basis points of gross reward; zero is valid
     }
 
     struct IdentityParams {
@@ -279,6 +279,7 @@ contract Deployer is Ownable {
         )
     {
         EconParams memory econ;
+        econ.jobStakeBps = 1000;
         _checkDeploymentMode(true);
         return _deploy(econ, ids, governance);
     }
@@ -316,6 +317,7 @@ contract Deployer is Ownable {
         )
     {
         EconParams memory econ;
+        econ.jobStakeBps = 1000;
         _checkDeploymentMode(false);
         return _deploy(econ, ids, governance);
     }
@@ -380,7 +382,7 @@ contract Deployer is Ownable {
         } else {
             require(slashTotal <= 100, "invalid slash split");
         }
-        uint96 jobStake = econ.jobStake;
+        require(econ.jobStakeBps <= 10_000, "job stake bps");
         StakeManager stake = StakeManager(payable(payable(_staged[0])));
         JobRegistry registry = JobRegistry(payable(payable(_staged[1])));
         ValidationModule validation = ValidationModule(payable(payable(_staged[2])));
@@ -412,7 +414,7 @@ contract Deployer is Ownable {
         stake.setTreasuryAllowlist(governance, true);
         stake.setTreasury(governance);
         registry.setFeePct(feePct);
-        registry.setJobStake(jobStake == 0 ? registry.DEFAULT_JOB_STAKE() : jobStake);
+        registry.setJobStakeBps(econ.jobStakeBps);
         registry.setAcknowledger(address(stake), true);
         validation.setTiming(commitWindow, revealWindow);
         pool.setBurnPct(burnPct);

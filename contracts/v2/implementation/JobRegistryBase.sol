@@ -19,6 +19,7 @@ import {TOKEN_SCALE} from "../Constants.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 error JobParametersUnset();
+error LegacyFixedStakeUnsupported();
 error RewardOverflow();
 error RewardTooHigh();
 error InvalidDeadline();
@@ -607,15 +608,30 @@ abstract contract JobRegistryBase is Governable, ReentrancyGuard, TaxAcknowledge
         emit TreasuryUpdated(_treasury);
     }
 
-    function _setJobStake(uint96 stake) internal {
-        jobStake = stake;
-        emit JobParametersUpdated(0, stake, maxJobReward, maxJobDuration, minAgentStake);
+    /// @dev Legacy fixed-token configuration is deliberately unsupported, never reinterpreted as bps.
+    function _setJobStake(uint96) internal pure {
+        revert LegacyFixedStakeUnsupported();
+    }
+
+    function _entry_setJobStakeBps(uint256 bps) internal onlyGovernance {
+        if (bps > 10_000) revert InvalidPercentage();
+        uint256 previous = _jobStakeBps;
+        _jobStakeBps = uint16(bps);
+        emit JobStakeBpsUpdated(previous, bps);
+    }
+
+    function _quoteJobStake(uint256 reward) internal view returns (uint96) {
+        if (reward > type(uint128).max) revert RewardOverflow();
+        // reward <= uint128.max and bps <= 10_000: this product cannot overflow uint256.
+        uint256 amount = (reward * uint256(_jobStakeBps) + 9_999) / 10_000;
+        if (amount > type(uint96).max) revert StakeOverflow();
+        return uint96(amount);
     }
 
     function _setMinAgentStake(uint256 stake) internal {
         if (stake > type(uint96).max) revert StakeOverflow();
         minAgentStake = uint96(stake);
-        emit JobParametersUpdated(0, jobStake, maxJobReward, maxJobDuration, stake);
+        emit JobParametersUpdated(0, 0, maxJobReward, maxJobDuration, stake);
     }
 
     function _applyFeeConfiguration(
@@ -640,12 +656,12 @@ abstract contract JobRegistryBase is Governable, ReentrancyGuard, TaxAcknowledge
 
     function _setMaxJobReward(uint256 maxReward) internal {
         maxJobReward = maxReward;
-        emit JobParametersUpdated(0, jobStake, maxReward, maxJobDuration, minAgentStake);
+        emit JobParametersUpdated(0, 0, maxReward, maxJobDuration, minAgentStake);
     }
 
     function _setJobDurationLimit(uint256 limit) internal {
         maxJobDuration = limit;
-        emit JobParametersUpdated(0, jobStake, maxJobReward, limit, minAgentStake);
+        emit JobParametersUpdated(0, 0, maxJobReward, limit, minAgentStake);
     }
 
     function _setMaxActiveJobsPerAgent(uint256 limit) internal {
@@ -797,9 +813,9 @@ abstract contract JobRegistryBase is Governable, ReentrancyGuard, TaxAcknowledge
     }
 
     // default agent stake requirement configured by owner
-    uint96 public jobStake;
+    uint96 internal _legacyJobStake; // Retains the old storage slot; never an active per-job floor.
     uint96 public minAgentStake;
-    uint96 public constant DEFAULT_JOB_STAKE = uint96(TOKEN_SCALE);
+
     uint256 public feePct;
     uint256 public constant DEFAULT_FEE_PCT = 5;
     uint256 public maxJobReward;
@@ -807,6 +823,10 @@ abstract contract JobRegistryBase is Governable, ReentrancyGuard, TaxAcknowledge
     uint256 public validatorRewardPct;
     uint256 public constant DEFAULT_VALIDATOR_REWARD_PCT = 8;
     uint256 public expirationGracePeriod;
+
+    // Appended storage; existing Job.stake snapshots and all preceding slots remain unchanged.
+    uint16 internal _jobStakeBps;
+    event JobStakeBpsUpdated(uint256 previousBps, uint256 newBps);
 
     // module configuration events
     event ModuleUpdated(string module, address indexed newAddress);
@@ -1118,7 +1138,7 @@ abstract contract JobRegistryBase is Governable, ReentrancyGuard, TaxAcknowledge
     }
 
     /// @notice update the required agent stake for each job
-    function _entry_setJobStake(uint96 stake) internal onlyGovernance {
+    function _entry_setJobStake(uint96 stake) internal view onlyGovernance {
         _setJobStake(stake);
     }
 
@@ -1236,10 +1256,8 @@ abstract contract JobRegistryBase is Governable, ReentrancyGuard, TaxAcknowledge
         ack = _acknowledge(user);
     }
 
-    function _entry_setJobParameters(uint256 maxReward, uint256 stake) internal onlyGovernance {
-        if (stake > type(uint96).max) revert StakeOverflow();
-        _setJobStake(uint96(stake));
-        _setMaxJobReward(maxReward);
+    function _entry_setJobParameters(uint256, uint256) internal view onlyGovernance {
+        revert LegacyFixedStakeUnsupported();
     }
 
     /// @notice Apply a batch of configuration updates atomically.
@@ -1362,10 +1380,7 @@ abstract contract JobRegistryBase is Governable, ReentrancyGuard, TaxAcknowledge
             flags.treasuryUpdated = true;
         }
 
-        if (config.setJobStake) {
-            _setJobStake(config.jobStake);
-            flags.jobStakeUpdated = true;
-        }
+        if (config.setJobStake) revert LegacyFixedStakeUnsupported();
 
         if (config.setMinAgentStake) {
             _setMinAgentStake(config.minAgentStake);
@@ -1450,7 +1465,7 @@ abstract contract JobRegistryBase is Governable, ReentrancyGuard, TaxAcknowledge
         nonReentrant
         returns (uint256 jobId)
     {
-        if (reward == 0 && jobStake == 0) revert JobParametersUnset();
+        if (reward == 0) revert JobParametersUnset();
         if (reward > type(uint128).max) revert RewardOverflow();
         if (maxJobReward != 0 && reward > maxJobReward) revert RewardTooHigh();
         if (deadline <= block.timestamp) revert InvalidDeadline();
@@ -1481,7 +1496,7 @@ abstract contract JobRegistryBase is Governable, ReentrancyGuard, TaxAcknowledge
     function _emitJobCreated(uint256 jobId, uint256 reward, uint256 fee, bytes32 specHash, string calldata uri)
         internal
     {
-        emit JobCreated(jobId, msg.sender, address(0), reward, uint256(jobStake), fee, specHash, uri);
+        emit JobCreated(jobId, msg.sender, address(0), reward, uint256(jobs[jobId].stake), fee, specHash, uri);
     }
 
     function _initialiseJobStorage(
@@ -1508,7 +1523,7 @@ abstract contract JobRegistryBase is Governable, ReentrancyGuard, TaxAcknowledge
         job.employer = msg.sender;
         job.agent = address(0);
         job.reward = uint128(reward);
-        job.stake = jobStake;
+        job.stake = _quoteJobStake(reward);
         job.burnReceiptAmount = 0;
         job.uriHash = uriHash;
         job.resultHash = bytes32(0);

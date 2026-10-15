@@ -23,15 +23,15 @@
       "function escalateToDispute(uint256 jobId, string reason)",
       "function feePct() view returns (uint256)",
       "function validatorRewardPct() view returns (uint256)",
-      "function jobs(uint256 jobId) view returns (address employer,address agent,uint128 reward,uint96 stake,uint32 feePct,uint8 state,bool success,uint8 agentTypes,uint64 deadline,uint64 assignedAt,bytes32 uriHash,bytes32 resultHash)",
+      "function jobs(uint256 jobId) view returns (address employer,address agent,uint128 reward,uint96 stake,uint128 burnReceiptAmount,bytes32 uriHash,bytes32 resultHash,bytes32 specHash,uint256 packedMetadata)",
       "function getSpecHash(uint256 jobId) view returns (bytes32)",
-      "function jobStake() view returns (uint96)",
+      "function jobStakeBps() view returns (uint256)",
       "function maxJobReward() view returns (uint256)",
       "function maxJobDuration() view returns (uint256)",
-      "function setJobStake(uint96 stake)",
+      "function setJobStakeBps(uint256 bps)",
       "function setMaxJobReward(uint256 maxReward)",
       "function setJobDurationLimit(uint256 limit)",
-      "function setJobParameters(uint256 maxReward, uint256 stake)"
+      "function quoteJobStake(uint256 reward) view returns (uint96)"
     ]
   },
   "stakeManager": {

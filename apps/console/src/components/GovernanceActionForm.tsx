@@ -44,10 +44,10 @@ const ACTIONS: ActionDefinition[] = [
     hint: '0x-prefixed address.',
   },
   {
-    key: 'jobRegistry.setJobStake',
-    label: 'JobRegistry · setJobStake',
-    kind: 'token',
-    hint: 'AGIA amount (decimals allowed).',
+    key: 'jobRegistry.setJobStakeBps',
+    label: 'JobRegistry · setJobStakeBps',
+    kind: 'number',
+    hint: 'Future-job rate in basis points (0–10000; 1000 = 10%). The rate at creation mining determines collateral; prepared quotes can change. Existing job stakes do not change.',
   },
   {
     key: 'jobRegistry.setMaxJobReward',
@@ -60,12 +60,6 @@ const ACTIONS: ActionDefinition[] = [
     label: 'JobRegistry · setJobDurationLimit',
     kind: 'number',
     hint: 'Duration in seconds or whole days (e.g. 86400).',
-  },
-  {
-    key: 'jobRegistry.setJobParameters',
-    label: 'JobRegistry · setJobParameters',
-    kind: 'json',
-    hint: 'JSON object with { "maxReward": "500", "jobStake": "50" } in AGIA.',
   },
   {
     key: 'jobRegistry.setValidatorRewardPct',

@@ -261,7 +261,7 @@ async function buildGovernanceSnapshot(): Promise<GovernanceSnapshot> {
     safeReadBigInt(stakeManager, "burnPct"),
     safeReadBigInt(stakeManager, "validatorRewardPct"),
     safeReadAddress(stakeManager, "treasury"),
-    safeReadBigInt(jobRegistry, "jobStake"),
+    safeReadBigInt(jobRegistry, "jobStakeBps"),
     safeReadBigInt(jobRegistry, "maxJobReward"),
     safeReadBigInt(jobRegistry, "maxJobDuration"),
     safeReadBigInt(jobRegistry, "feePct"),
@@ -303,8 +303,8 @@ async function buildGovernanceSnapshot(): Promise<GovernanceSnapshot> {
       },
       jobRegistry: {
         address: (jobRegistry.target as string) ?? ethers.ZeroAddress,
-        jobStake: registryStake?.toString() ?? "0",
-        jobStakeLabel: formatAGIA(registryStake) ?? "0",
+        jobStakeBps: registryStake?.toString() ?? null,
+        jobStakeRateLabel: registryStake === undefined ? "Unavailable" : `${registryStake} bps (future jobs only)`,
         maxJobReward: registryMaxReward?.toString() ?? "0",
         maxJobRewardLabel: formatAGIA(registryMaxReward) ?? "0",
         maxJobDuration: registryMaxDuration?.toString() ?? "0",
@@ -567,27 +567,19 @@ const ACTION_DEFINITIONS: ActionDefinition[] = [
     },
   },
   {
-    key: "jobRegistry.setJobStake",
+    key: "jobRegistry.setJobStakeBps",
     module: "jobRegistry",
-    method: "setJobStake",
+    method: "setJobStakeBps",
     async prepare(value, ctx) {
-      const amount = toWei(value as string | number | bigint);
-      const before = ctx.snapshot.onChain.jobRegistry?.jobStake;
-      const beforeLabel = ctx.snapshot.onChain.jobRegistry?.jobStakeLabel;
-      const afterLabel = formatAGIA(amount) ?? amount.toString();
+      if (!/^[0-9]+$/.test(String(value))) throw new Error("Stake rate must be integer basis points (0–10000)");
+      const bps = BigInt(String(value));
+      if (bps > 10000n) throw new Error("Stake rate must be integer basis points (0–10000)");
+      const before = ctx.snapshot.onChain.jobRegistry?.jobStakeBps;
+      if (before === null || before === undefined) throw new Error("Percentage-stake contract capability is unavailable; do not target a legacy deployment");
       return {
-        args: [amount],
-        diff: buildDiffRecord({
-          before,
-          beforeLabel,
-          after: amount.toString(),
-          afterLabel,
-          units: "wei",
-        }),
-        metadata: {
-          amountWei: amount.toString(),
-          amountAGIA: ethers.formatEther(amount),
-        },
+        args: [bps],
+        diff: buildDiffRecord({ before, after: bps.toString(), units: "basis points" }),
+        metadata: { jobStakeBps: bps.toString(), scope: "New jobs at transaction mining; existing Job.stake snapshots remain unchanged" },
       };
     },
   },
@@ -636,51 +628,6 @@ const ACTION_DEFINITIONS: ActionDefinition[] = [
         }),
         metadata: {
           durationSeconds: duration.toString(),
-        },
-      };
-    },
-  },
-  {
-    key: "jobRegistry.setJobParameters",
-    module: "jobRegistry",
-    method: "setJobParameters",
-    async prepare(value, ctx) {
-      if (typeof value !== "object" || value === null) {
-        throw new Error("setJobParameters requires an object value");
-      }
-      const record = value as Record<string, unknown>;
-      const maxRewardInput = normalizeBigNumberish(
-        record.maxReward ?? record.maxJobReward,
-        0n
-      );
-      const stakeInput = normalizeBigNumberish(record.jobStake ?? record.stake, 0n);
-      const maxReward = toWei(maxRewardInput);
-      const stake = toWei(stakeInput);
-      const beforeReward = ctx.snapshot.onChain.jobRegistry?.maxJobReward;
-      const beforeRewardLabel = ctx.snapshot.onChain.jobRegistry?.maxJobRewardLabel;
-      const beforeStake = ctx.snapshot.onChain.jobRegistry?.jobStake;
-      const beforeStakeLabel = ctx.snapshot.onChain.jobRegistry?.jobStakeLabel;
-      return {
-        args: [maxReward, stake],
-        diff: {
-          reward: buildDiffRecord({
-            before: beforeReward,
-            beforeLabel: beforeRewardLabel,
-            after: maxReward.toString(),
-            afterLabel: formatAGIA(maxReward) ?? maxReward.toString(),
-            units: "wei",
-          }),
-          stake: buildDiffRecord({
-            before: beforeStake,
-            beforeLabel: beforeStakeLabel,
-            after: stake.toString(),
-            afterLabel: formatAGIA(stake) ?? stake.toString(),
-            units: "wei",
-          }),
-        },
-        metadata: {
-          maxRewardWei: maxReward.toString(),
-          jobStakeWei: stake.toString(),
         },
       };
     },

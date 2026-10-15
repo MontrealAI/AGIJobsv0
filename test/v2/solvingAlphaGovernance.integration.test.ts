@@ -213,7 +213,7 @@ async function deploySolvingGovernanceFixture() {
     .connect(owner)
     .setIdentityRegistry(await identity.getAddress());
   await registry.connect(owner).setValidatorRewardPct(0);
-  await registry.connect(owner).setJobParameters(0, 0);
+  await registry.connect(owner).setJobStakeBps(0);
 
   await certificates.connect(owner).setJobRegistry(await registry.getAddress());
   await certificates

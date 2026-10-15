@@ -115,8 +115,8 @@ export const buildOwnerTelemetryCards = (
     );
     appendMetric(
       metrics,
-      'Mandatory stake',
-      labelOrValue(jobRegistry, 'jobStakeLabel', 'jobStake')
+      'Future-job stake rate',
+      labelOrValue(jobRegistry, 'jobStakeRateLabel', 'jobStakeBps')
     );
     appendMetric(
       metrics,

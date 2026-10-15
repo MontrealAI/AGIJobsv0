@@ -53,7 +53,8 @@ describe('reviewed validator service with current deployed contracts', function 
       await deployImplementations('JobRegistry', Registry.runner)
     );
     await actualRegistry.setIdentityRegistry(await identity.getAddress());
-    await actualRegistry.setJobParameters(1000, 0);
+    await actualRegistry.setMaxJobReward(1000);
+    await actualRegistry.setJobStakeBps(0);
     const Validation = await ethers.getContractFactory(
       'contracts/v2/ValidationModule.sol:ValidationModule'
     );

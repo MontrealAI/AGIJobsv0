@@ -16,8 +16,8 @@ export interface GovernanceSnapshot {
     };
     jobRegistry: {
       address: string;
-      jobStake: string;
-      jobStakeLabel: string;
+      jobStakeBps: string | null;
+      jobStakeRateLabel: string;
       maxJobReward: string;
       maxJobRewardLabel: string;
       maxJobDuration: string;

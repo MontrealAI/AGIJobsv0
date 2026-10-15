@@ -10,7 +10,7 @@ test('buildOwnerTelemetryCards summarises on-chain policies', () => {
       jobRegistry: {
         address: '0x0000000000000000000000000000000000000001',
         maxJobRewardLabel: '250 AGIA',
-        jobStakeLabel: '75 AGIA',
+        jobStakeRateLabel: '1000 bps (future jobs only)',
         maxJobDurationLabel: '10 days',
         validatorRewardPctLabel: '12%',
         feePctLabel: '3%',
