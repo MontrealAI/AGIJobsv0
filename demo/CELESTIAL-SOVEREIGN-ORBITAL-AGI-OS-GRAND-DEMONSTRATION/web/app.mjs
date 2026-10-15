@@ -264,7 +264,7 @@ $('import').onchange = async () => {
   try {
     if (file.size > 262144) throw Error('256 KiB maximum');
     let s = parseJSON(
-      new TextDecoder('utf-8', { fatal: true }).decode(await file.arrayBuffer())
+      new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(await file.arrayBuffer())
     );
     if (ticket !== revision) return;
     if (s?.schema === 'agijobs.celestial-browser-evidence.v1') {

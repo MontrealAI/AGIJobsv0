@@ -110,6 +110,9 @@ export async function verifyCelestial({ page, url, artifacts, a11y, checks }) {
   await importData('{"schema":1,"schema":2}');
   assert.equal(await page.locator('#error').isVisible(), true);
   assert.equal(await page.locator('#result').isVisible(), false);
+  await importData(Buffer.concat([Buffer.from([0xef, 0xbb, 0xbf]), bytes]));
+  assert.equal(await page.locator('#error').isVisible(), true);
+  assert.equal(await page.locator('#result').isVisible(), false);
   const malformed = Buffer.from(bytes);
   malformed[malformed.indexOf(Buffer.from('Keep'))] = 255;
   await importData(malformed);
