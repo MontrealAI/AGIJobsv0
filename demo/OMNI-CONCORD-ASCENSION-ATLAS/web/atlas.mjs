@@ -1,3 +1,8 @@
+function integerText(value) {
+  if (!/^(0|[1-9][0-9]*)$/.test(value))
+    throw Error('Use whole-number digits without decimals or exponents');
+  return Number(value);
+}
 import { evaluate, parseScenario } from './engine.mjs';
 import example from './example.mjs';
 import { fr, words } from './i18n.mjs';
@@ -98,7 +103,7 @@ function load(s) {
   $('jobs').replaceChildren();
   for (const j of s.jobs) addJob(j, s.recoveredIds.includes(j.id));
 }
-function input() {
+function input(raw = false) {
   const jobs = [],
     recoveredIds = [];
   for (const row of $('jobs').children) {
@@ -107,8 +112,8 @@ function input() {
     jobs.push({
       id,
       label: val('label'),
-      costCents: Number(val('cost')),
-      durationMinutes: Number(val('duration')),
+      costCents: raw ? val('cost') : integerText(val('cost')),
+      durationMinutes: raw ? val('duration') : integerText(val('duration')),
       dependsOn: val('dependencies')
         .split(',')
         .map((x) => x.trim())
@@ -121,7 +126,7 @@ function input() {
   return {
     schema: 'agijobs.atlas-recovery.v1',
     title: $('title').value,
-    budgetCents: Number($('budget').value),
+    budgetCents: raw ? $('budget').value : integerText($('budget').value),
     jobs,
     recoveredIds,
   };
@@ -246,7 +251,9 @@ $('add').onclick = () => {
   }
   invalidate();
   let id = 'job' + ++serial;
-  const ids = new Set(input().jobs.map((j) => j.id));
+  const ids = new Set(
+    [...$('jobs').querySelectorAll('[data-field=id]')].map((e) => e.value)
+  );
   while (ids.has(id)) id = 'job' + ++serial;
   addJob(
     {
@@ -261,7 +268,7 @@ $('add').onclick = () => {
   );
 };
 $('language').onclick = () => {
-  const s = input(),
+  const s = input(true),
     prior = current,
     rawBudget = $('budget').value,
     rawFields = [...$('jobs').querySelectorAll('[data-field]')].map((e) => ({
@@ -290,7 +297,9 @@ $('import').onchange = async () => {
   try {
     if (file.size > 1000000) throw Error('1 MB maximum');
     $('status').textContent = w('loading');
-    const raw = await file.text();
+    const raw = new TextDecoder('utf-8', { fatal: true }).decode(
+      await file.arrayBuffer()
+    );
     if (ticket !== revision) return;
     const s = parseScenario(raw);
     load(s);

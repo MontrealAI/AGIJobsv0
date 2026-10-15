@@ -9,6 +9,24 @@ export async function verifyAtlas({ page, url, artifacts, a11y, checks }) {
     await page.locator('#result').waitFor({ state: 'visible' });
     return JSON.parse(await page.locator('#raw').textContent());
   };
+  for (const selector of [
+    '#budget',
+    '#jobs [data-field=cost]',
+    '#jobs [data-field=duration]',
+  ]) {
+    const input = page.locator(selector).first(),
+      previous = await input.inputValue();
+    for (const value of ['1.00000000000000001', '1e1']) {
+      await input.fill(value);
+      await page.locator('#language').click();
+      assert.equal(await page.locator(selector).first().inputValue(), value);
+      await page.locator('#language').click();
+      await page.locator('button[type=submit]').click();
+      await page.locator('#error').waitFor({ state: 'visible' });
+      assert.equal(await page.locator('#result').isVisible(), false);
+    }
+    await input.fill(previous);
+  }
   const first = await run();
   assert.equal(first.spentCents, 19000);
   assert.equal(first.firstPass.spentCents, 9000);
@@ -150,9 +168,9 @@ export async function verifyAtlas({ page, url, artifacts, a11y, checks }) {
   assert.equal(await page.locator('#result').isVisible(), false);
   await page.evaluate(() => window.restoreDigest());
   await page.evaluate(() => {
-    const original = File.prototype.text;
-    window.restoreFile = () => (File.prototype.text = original);
-    File.prototype.text = function () {
+    const original = File.prototype.arrayBuffer;
+    window.restoreFile = () => (File.prototype.arrayBuffer = original);
+    File.prototype.arrayBuffer = function () {
       const file = this;
       return new Promise((resolve) => {
         window.releaseFile = async () => resolve(await original.call(file));
@@ -166,6 +184,15 @@ export async function verifyAtlas({ page, url, artifacts, a11y, checks }) {
   await page.waitForTimeout(50);
   assert.equal(await page.locator('#result').isVisible(), false);
   await page.evaluate(() => window.restoreFile());
+  const malformed = Buffer.from(bytes);
+  malformed[malformed.indexOf(Buffer.from('title')) + 9] = 255;
+  await page.locator('#import').setInputFiles({
+    name: 'invalid.json',
+    mimeType: 'application/json',
+    buffer: malformed,
+  });
+  await page.locator('#error').waitFor({ state: 'visible' });
+  assert.equal(await page.locator('#result').isVisible(), false);
   checks.push(
     'Atlas: exact cents and retry ledger; recovery/budget/cycle cases; EN/FR; eight layouts200%; Axe; scenario/evidence reopen and strict rejection; add/remove and keyboard'
   );
