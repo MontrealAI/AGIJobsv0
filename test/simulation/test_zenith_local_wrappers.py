@@ -34,6 +34,10 @@ def fixture(tmp_path, kind, launcher):
     helper = Path("demo/aurora/bin/prepare-local-reports.cjs")
     (root / helper).parent.mkdir(parents=True)
     shutil.copyfile(ROOT / helper, root / helper)
+    for name in ("local-node.sh", "local-demo-lock.py"):
+        shutil.copyfile(
+            ROOT / "demo/aurora/bin" / name, root / "demo/aurora/bin" / name
+        )
     bins = tmp_path / "bin"
     bins.mkdir()
     npm = bins / "npm"
@@ -122,3 +126,48 @@ def test_report_symlink_refused_without_touching_target(
     assert result.returncode != 0 and "real directories" in result.stderr
     assert (outside / "sentinel").read_text() == "keep"
     assert not Path(env["NPM_CALLED"]).exists()
+
+
+@pytest.mark.parametrize("kind,launcher,scope", WRAPPERS)
+def test_concurrent_launch_rejected_before_archival(tmp_path, kind, launcher, scope):
+    import sys
+    import time
+
+    root, script, env = fixture(tmp_path, kind, launcher)
+    reports = root / "reports/localhost" / scope
+    reports.mkdir(parents=True)
+    (reports / "sentinel").write_text("original evidence")
+    env["NETWORK"] = "localhost"
+    ready = tmp_path / "lock-ready"
+    holder = subprocess.Popen(
+        [
+            sys.executable,
+            str(root / "demo/aurora/bin/local-demo-lock.py"),
+            "bash",
+            "-c",
+            'touch "$1"; sleep 30',
+            "holder",
+            str(ready),
+        ],
+        env=env,
+        start_new_session=True,
+    )
+    try:
+        deadline = time.monotonic() + 5
+        while not ready.exists() and time.monotonic() < deadline:
+            time.sleep(0.02)
+        assert ready.exists()
+        result = subprocess.run(
+            ["bash", str(script)], env=env, capture_output=True, text=True, timeout=5
+        )
+        assert (
+            result.returncode != 0 and "Another supported local demo" in result.stderr
+        )
+        assert (reports / "sentinel").read_text() == "original evidence"
+        assert not list(reports.parent.glob(scope + "-previous-*"))
+        assert not Path(env["NPM_CALLED"]).exists()
+    finally:
+        import signal
+
+        os.killpg(holder.pid, signal.SIGTERM)
+        holder.wait(timeout=5)

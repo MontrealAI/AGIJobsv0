@@ -8,6 +8,9 @@ if [[ "$#" -ne 0 || "${NETWORK-localhost}" != "localhost" ]]; then
   echo 'This local rehearsal accepts no arguments and requires NETWORK=localhost.' >&2
   exit 1
 fi
+source "$ROOT/demo/aurora/bin/local-node.sh"
+lock_local_demo "$@"
+
 NETWORK_NAME="localhost"
 LOCAL_REPORT_ROOT="reports/${NETWORK_NAME}/zenith-celestial-archon"
 
