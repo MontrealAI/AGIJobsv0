@@ -101,3 +101,17 @@ The [dedicated workflow](../../.github/workflows/demo-planetary-orchestrator-fab
 - [Original presentation PDF](presentation/Planetary_Orchestrator_Fabric_v0.pdf) · [Original PowerPoint](presentation/Planetary_Orchestrator_Fabric_v0.pptx)
 
 The presentation files are preserved design material. Current runnable behavior and qualification limits are documented here and in the computer-work runbook.
+
+
+### Deterministic Python interruption evidence
+
+The separate Python teaching model now interrupts **after an observed assignment,
+before simulated execution**, rather than waiting for a timer that small runs can
+finish before. Its checkpoint records assigned jobs; resume clears stale assignment
+state and requeues that work. Output includes `interruption_performed`,
+`interrupted_assignments`, the interrupted checkpoint's SHA-256 and the actual
+`reassigned_jobs` count. Even `--jobs 1` demonstrates one interrupted/recovered
+assignment. `--no-restart` explicitly reports no interruption and no checkpoint hash.
+This is controlled local asynchronous simulation, not a process crash, external
+worker loss, physical distribution or exactly-once real-world side-effect guarantee.
+The retained checksum detects byte changes; it is not an authenticated origin proof.
