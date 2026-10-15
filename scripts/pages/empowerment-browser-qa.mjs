@@ -13,6 +13,8 @@ import {
   bytes,
   digest,
   canonical,
+  MAX_BYTES,
+  BUNDLE_MAX_BYTES,
 } from '../../demo/superintelligent-empowerment/web/model.mjs';
 const root = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -27,7 +29,26 @@ export async function verifyEmpowerment({
   fs.mkdirSync(artifactsDirectory, { recursive: true });
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
+  const cspViolations = [];
+  await page.exposeFunction('recordEmpowermentCspViolation', (directive) =>
+    cspViolations.push(directive)
+  );
+  await page.addInitScript(() => {
+    document.addEventListener('securitypolicyviolation', (event) => {
+      window.recordEmpowermentCspViolation(event.effectiveDirective);
+    });
+  });
   await page.goto(origin + route);
+  assert.match(
+    await page
+      .locator('meta[http-equiv="Content-Security-Policy"]')
+      .getAttribute('content'),
+    /script-src 'self'/
+  );
+  await page.locator('a.skip').focus();
+  await page.keyboard.press('Enter');
+  assert.equal(new URL(page.url()).hash, '#main');
+  assert.equal(await page.locator('main#main').count(), 1);
   assert.match(
     await page.locator('h1').innerText(),
     /initiative\s+an evidence/
@@ -180,6 +201,23 @@ export async function verifyEmpowerment({
   await page.waitForFunction(() =>
     document.querySelector('#status').textContent.startsWith('Check failed')
   );
+  for (const [selector, limit] of [
+    ['#import-packet', MAX_BYTES],
+    ['#import-bundle', BUNDLE_MAX_BYTES],
+  ]) {
+    await page.locator(selector).setInputFiles({
+      name: 'oversized.json',
+      mimeType: 'application/json',
+      buffer: Buffer.alloc(limit + 1, 32),
+    });
+    await page.waitForFunction(() =>
+      document
+        .querySelector('#status')
+        .textContent.includes('File exceeds byte limit')
+    );
+    assert.equal(await page.locator('#export-bundle').isDisabled(), true);
+    assert.equal(await page.locator('#ledger li').count(), 0);
+  }
   // A slower file import must never replace a newer editor action.
   await page.evaluate(() => {
     const original = File.prototype.arrayBuffer;
@@ -292,9 +330,17 @@ export async function verifyEmpowerment({
   );
   assert.equal(await page.locator('#export-bundle').isDisabled(), true);
   assert.deepEqual(errors, []);
+  assert.deepEqual(
+    cspViolations,
+    [],
+    'All exercised UI flows must run under the declared CSP'
+  );
   return {
     passed: true,
     checks: [
+      'enforced CSP without violations',
+      'skip navigation',
+      'oversized packet and bundle rejection',
       'actual CLI artifacts',
       'EN/FR Axe',
       '390px reflow with 200-character unbroken title',
