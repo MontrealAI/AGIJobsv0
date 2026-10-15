@@ -11,7 +11,7 @@ With the repository's pinned Node version and locked dependencies installed:
 ```sh
 npm run compile
 node demo/polaris-concordat/run.cjs
-node --test test/demo/polaris-quorum.test.cjs
+node --test test/scripts/polaris-quorum.test.cjs
 ```
 
 The default first committee has three validators but only one reveal. The real contract fails its unchanged 100% reveal quorum, deducts 1% of each missing validator's mock stake, transfers those mock penalties to the fixture employer and records temporary bans. A separate retry job uses three fresh, already-staked validators. Their three reveals and three approvals succeed. This illustrates replacement availability; it does not reopen a finalized job or demonstrate production identity selection.

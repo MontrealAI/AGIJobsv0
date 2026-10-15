@@ -9,7 +9,7 @@ This offline workspace reuses the existing Hypernova workbench's exact-integer a
 ```sh
 node demo/zenith-sapience/run.mjs
 node demo/zenith-sapience/run.mjs path/to/scenario.json
-node --test test/demo/zenith-reconciliation.test.mjs
+node --test test/pages/zenith-reconciliation.test.mjs
 ```
 
 Use the repository's pinned Node version. This entry point uses standard Node modules and existing repository code; no provider credentials are required. Input amounts are nonnegative integer strings, with up to 24 digits. JSON imports reject duplicate keys, noninteger numeric tokens, excessive nesting, unknown fields and invalid identifiers.

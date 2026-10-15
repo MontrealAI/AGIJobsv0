@@ -59,7 +59,7 @@ integration source that verifies it. These are intentionally separate source ide
 ## Fast retained-evidence checks
 
 ```bash
-node --test test/alpha-supplier-proof.test.cjs
+node --test test/scripts/alpha-supplier-proof.test.cjs
 python3 -m unittest discover -s test/simulation -p test_supplier_proof_guard.py
 ```
 

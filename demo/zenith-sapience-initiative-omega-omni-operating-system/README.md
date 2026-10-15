@@ -10,7 +10,7 @@ This bounded executable performs real local file work using the fixed One-Box sy
 node demo/zenith-sapience-initiative-omega-omni-operating-system/run.cjs
 node demo/zenith-sapience-initiative-omega-omni-operating-system/run.cjs --stop-after 2
 node demo/zenith-sapience-initiative-omega-omni-operating-system/run.cjs --resume RUN_ID_FROM_OUTPUT
-node --test test/demo/omega-pipeline.test.cjs
+node --test test/scripts/omega-pipeline.test.cjs
 ```
 
 Five built-in stages validate the fixed quotes, compute a comparison, write a recommendation, independently review both artifacts and export a delivery receipt. The outputs are actual JSON/Markdown files in a newly created `reports/omega-local-pipeline/run-...` directory. They are deterministic code-generated work, not model-generated output or computer-use evidence.

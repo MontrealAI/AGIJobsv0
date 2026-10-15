@@ -4,10 +4,10 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
-const { review } = require('../demo/One-Box/computer-work/review.cjs');
+const { review } = require('../../demo/One-Box/computer-work/review.cjs');
 const root = path.join(
   __dirname,
-  '../integrations/alpha-agent/supplier-browser-proof'
+  '../../integrations/alpha-agent/supplier-browser-proof'
 );
 const read = (name) => JSON.parse(fs.readFileSync(path.join(root, name)));
 const hash = (bytes) => crypto.createHash('sha256').update(bytes).digest('hex');
