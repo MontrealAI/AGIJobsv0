@@ -32,7 +32,7 @@ try {
   } finally {
     await file.close();
   }
-  const text = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+  const text = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(bytes);
   const result = evaluate(parseScenario(text));
   result.scenarioSha256 = createHash('sha256').update(bytes).digest('hex');
   console.log(JSON.stringify(result, null, 2));

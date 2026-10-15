@@ -285,7 +285,7 @@ $('import').onchange = async () => {
   try {
     if (file.size > 1000000) throw Error('1 MB maximum');
     let s = parseStrictJson(
-      new TextDecoder('utf-8', { fatal: true }).decode(await file.arrayBuffer())
+      new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(await file.arrayBuffer())
     );
     if (ticket !== revision) return;
     if (s?.schema === 'agijobs.zenith-browser-evidence.v1') {

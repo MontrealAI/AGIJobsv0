@@ -119,3 +119,22 @@ test('no deficit and held proposals remain distinct outcomes', () => {
   assert.equal(unknown.fullyFundedAfterProposal, false);
   assert.equal(unknown.proposalHoldReasons.length, 1);
 });
+
+test('CLI rejects BOM and non-UTF8 input bytes without normalization', async () => {
+  const { mkdtempSync, writeFileSync, rmSync } = await import('node:fs');
+  const { tmpdir } = await import('node:os');
+  const { join } = await import('node:path');
+  const directory = mkdtempSync(join(tmpdir(), 'zenith-encoding-'));
+  const file = join(directory, 'scenario.json');
+  const run = () => spawnSync(process.execPath, ['demo/zenith-sapience/run.mjs', file], { encoding: 'utf8', timeout: 5000 });
+  try {
+    writeFileSync(file, raw);
+    assert.equal(run().status, 1, 'valid fixture reaches incomplete-cost evaluation');
+    for (const bytes of [Buffer.concat([Buffer.from([0xef, 0xbb, 0xbf]), Buffer.from(raw)]), Buffer.from(raw, 'utf16le'), Buffer.from([0xff, 0x7b, 0x7d])]) {
+      writeFileSync(file, bytes);
+      const result = run();
+      assert.equal(result.status, 2, result.stderr);
+      assert.match(result.stderr, /Cannot reconcile/);
+    }
+  } finally { rmSync(directory, { recursive: true, force: true }); }
+});
