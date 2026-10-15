@@ -157,6 +157,8 @@ jobs:
         run: npx hardhat test --no-compile test/gateway/routesValidation.test.ts test/taskExecution.test.ts test/certificateMetadata.test.ts
       - name: Phase 6 contract and TypeScript regression tests
         run: npx hardhat test --no-compile test/v2/Phase6ExpansionManager.test.js test/scripts/phase6*.test.ts
+      - name: Current owner-plan ABI and pause regressions
+        run: npx hardhat test --no-compile test/v2/platformRegistryPlan.test.ts test/v2/GlobalGovernanceCouncil.test.ts
       - name: ABI diff check
         run: npm run abi:diff
 

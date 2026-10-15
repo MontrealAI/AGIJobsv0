@@ -1227,7 +1227,7 @@ function normalisePlatformRegistryConfig(config = {}) {
     result.address = ensureAddress(value, 'PlatformRegistry address');
   }
 
-  const addressKeys = ['stakeManager', 'reputationEngine', 'pauser'];
+  const addressKeys = ['stakeManager', 'reputationEngine', 'pauser', 'pauserManager'];
   for (const key of addressKeys) {
     if (result[key] !== undefined) {
       const value = result[key];

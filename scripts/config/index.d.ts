@@ -231,6 +231,7 @@ export interface PlatformRegistryConfig {
   minPlatformStake?: string | null;
   minPlatformStakeTokens?: string | number | null;
   pauser?: string | null;
+  pauserManager?: string | null;
   registrars?: Record<string, boolean>;
   blacklist?: Record<string, boolean>;
   [key: string]: unknown;
