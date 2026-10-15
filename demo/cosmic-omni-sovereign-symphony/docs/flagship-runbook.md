@@ -93,22 +93,28 @@ performed for these changes.
 the other entrypoints and repository tsconfig. All four governance scripts pass
 the nonexecuting launcher preflight and installed ts-node/CommonJS-wrapper
 syntax checks. Inert tests execute the exact deployment/export script sources
-with stubbed Hardhat, provider, and filesystem interfaces, checking unchanged
-deployment inputs, serialized output, and failure propagation. The export
+with stubbed Hardhat, provider, and filesystem interfaces, checking canonical
+deployment inputs, strict shared validation, seed/vote bindings, serialized output,
+and failure propagation. The export
 entrypoint is forwarded directly through installed ts-node with
 `HARDHAT_NETWORK=localhost` so its `--output <path>` argument reaches the script.
 Missing values, unknown flags, duplicate flags, and extra positional arguments
 fail with usage information before filesystem or contract calls.
 
-The bundled `config/multinational-governance.json` still has a 22-byte
-`pauserRole`, 24/27-byte nation IDs, and an 18-byte mandate ID, while
-`GlobalGovernanceCouncil` expects
-`bytes32` for these fields. This is a separate input-schema blocker. The loader
-tests deliberately preserve and forward the original values; they do not prove
-ABI validity, pad identifiers, or reinterpret governance intent. A validated
-fixture-schema repair and a full disposable deploy/seed/vote/export/cleanup run
+The bundled configuration now uses the explicit
+[version 1 fixture schema](governance-config-v1.md). Its original ASCII role,
+nation and mandate identifiers are right-zero-padded to exact bytes32 values in
+the checked-in synthetic fixture; vote references use the same bytes. Runtime
+inputs are strictly validated without padding or other conversion. All four
+entry points require the complete versioned config and reject malformed raw JSON,
+keys/types, addresses, duplicate IDs, unknown references and unsafe numeric/time
+values before Hardhat/provider calls. Export fails for an absent on-chain mandate.
+
+These schema changes have only source and inert qualification. Independent schema
+review and a complete qualified disposable deploy/seed/vote/export/cleanup run
 remain necessary. Never skip a failed governance or export stage to qualify a
-rehearsal. Neither forwarding nor stubbed tests establish an operational pass.
+rehearsal. Neither valid ABI encoding nor stubbed tests establish an operational
+pass. Existing deployed/live configuration is not migrated by this repair.
 
 The flagship's AGI OS stage remains explicitly offline even when governance is
 local. Its separate on-chain pipeline is outside this launcher's guarded scope.
@@ -141,7 +147,7 @@ bash -n demo/cosmic-omni-sovereign-symphony/bin/{flagship-demo,orchestrate,modes
 ```
 
 With the repository's locked TypeScript and ts-node dependencies already
-installed, also run the inert loader/argument suite (CI requires it):
+installed, also run the inert schema/ABI/loader/argument suite (CI requires it):
 
 ```bash
 node --test test/scripts/cosmic-runtime.test.cjs

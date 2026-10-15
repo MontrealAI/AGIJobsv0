@@ -30,11 +30,11 @@ launch children. `--ci` alone never opts into execution.
 - `--mode offline-fixture`: explicitly generate synthetic governance and offline
   AGI OS reports; CI retains substantive artifact verification in this mode.
 - `--mode local-rehearsal`: attempt disposable, guarded localhost governance.
-  CommonJS preflight and inert loader tests pass; bundled governance inputs still
-  need bytes32 schema repair, and this mode is not operationally qualified.
+  CommonJS preflight and inert schema/loader tests cover canonical bundled
+  bytes32 inputs; a qualified disposable run is still required.
 
 See the [mode/evidence runbook](docs/flagship-runbook.md) for prerequisites,
-limitations, and the separate input-schema repair still required. These modes
+limitations, and the [versioned fixture schema](docs/governance-config-v1.md). These modes
 never use external credentials or provider fallback. Original production tools
 and designs remain separate.
 
