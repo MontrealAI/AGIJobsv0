@@ -13,7 +13,7 @@ describe('Provider-agnostic deployment configuration', function () {
       REVEAL_WINDOW: '1h 30m',
       DISPUTE_WINDOW: '86400',
       MIN_STAKE: '1.25',
-      JOB_STAKE: '0.5',
+      JOB_STAKE_BPS: '2500',
       JOB_FEE_PCT: '0.02',
     });
     expect(
@@ -24,7 +24,7 @@ describe('Provider-agnostic deployment configuration', function () {
     expect(config.revealWindow).to.equal(5400);
     expect(config.disputeWindow).to.equal(86400);
     expect(config.minStake).to.equal(ethers.parseEther('1.25'));
-    expect(config.jobStake).to.equal(ethers.parseEther('0.5'));
+    expect(config.jobStakeBps).to.equal(2500);
     expect(config.feePct).to.equal(2);
     expect(
       readProviderConfiguration(18, { COMMIT_WINDOW: '0.5m' }).commitWindow

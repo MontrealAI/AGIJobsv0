@@ -225,6 +225,7 @@ interface IJobRegistry {
     function setJobParameters(uint256 maxReward, uint256 stake) external;
 
     /// @notice set the required agent stake for each job
+    /// @dev Deprecated fixed-token setter; new deployments reject this call.
     function setJobStake(uint96 stake) external;
 
     /// @notice set the minimum unstaked balance agents must maintain to apply

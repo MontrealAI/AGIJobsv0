@@ -64,7 +64,7 @@ describe('JobRegistry agent gating', function () {
     await registry.connect(owner).setMaxJobReward(1000);
     await registry.connect(owner).setJobDurationLimit(1000);
     await registry.connect(owner).setFeePct(0);
-    await registry.connect(owner).setJobParameters(0, 0);
+    await registry.connect(owner).setJobStakeBps(0);
     await verifier.setAgentRootNode(ethers.id('agi'));
     await verifier.setResult(false);
   });

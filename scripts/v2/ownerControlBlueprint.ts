@@ -310,7 +310,7 @@ async function buildBlueprint(
         formatAddress(hgmControlConfig.targets?.reputationEngine) ?? 'not set',
     },
     jobRegistry: {
-      'Stake requirement': tokenAmount(jobRegistry.config.jobStakeTokens, decimals, symbol),
+      'Future-job stake rate': `${jobRegistry.config.jobStakeBps ?? 'unset'} bps`,
       'Minimum agent stake': tokenAmount(jobRegistry.config.minAgentStakeTokens, decimals, symbol),
       'Maximum job reward': tokenAmount(jobRegistry.config.maxJobRewardTokens, decimals, symbol),
       'Protocol fee %': percent(jobRegistry.config.feePct),

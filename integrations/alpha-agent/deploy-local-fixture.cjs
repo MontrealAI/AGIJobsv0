@@ -126,7 +126,8 @@ async function main() {
       []
     );
   await validation.setJobRegistry(await registry.getAddress());
-  await registry.connect(owner).setJobParameters(reward, stake);
+  // The 200-unit deposit is admission collateral; this fixture uses 10% per-job locks.
+  await registry.connect(owner).setJobStakeBps(1000);
   await registry.connect(owner).setMaxJobReward(1000000);
   await registry.connect(owner).setJobDurationLimit(86400);
   await registry.connect(owner).setFeePct(0);

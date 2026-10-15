@@ -445,10 +445,9 @@ async function runJobLifecycleScenario(): Promise<ScenarioReport> {
   );
 
   const reward = ethers.parseUnits('100', AGIALPHA_DECIMALS);
-  const jobStake = await envFixture.registry.jobStake();
   const feePct = await envFixture.registry.feePct();
   const feeAmount = (reward * BigInt(feePct)) / 100n;
-  const employerEscrow = reward + jobStake + feeAmount;
+  const employerEscrow = reward + feeAmount;
   await runStep(
     steps,
     'job.employer-approve',
@@ -590,7 +589,7 @@ async function runSystemPauseScenario(): Promise<ScenarioReport> {
         commitWindow: 0,
         revealWindow: 0,
         minStake: 0,
-        jobStake: 0,
+        jobStakeBps: 1000,
       };
       const ids = {
         ens: ethers.ZeroAddress,

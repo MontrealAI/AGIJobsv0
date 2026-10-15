@@ -385,15 +385,8 @@ function summariseJobRegistry(
   context: SummaryContext
 ): ParameterSummary[] {
   const rows: ParameterSummary[] = [];
-  const jobStake = formatTokenWithRaw(
-    config?.jobStake,
-    config?.jobStakeTokens,
-    context.tokenDecimals,
-    context.tokenSymbol
-  );
-  if (jobStake) {
-    rows.push({ label: 'Job stake', value: jobStake });
-  }
+  if (config?.jobStakeBps !== undefined)
+    rows.push({ label: 'Future-job stake rate', value: `${config.jobStakeBps} bps` });
   const minAgentStake = formatTokenWithRaw(
     config?.minAgentStake,
     config?.minAgentStakeTokens,

@@ -663,42 +663,12 @@ async function configureJobRegistry(
   const updated: JobRegistryConfig = { ...config };
   const changes: ChangeEntry[] = [];
 
-  const jobStakeCurrent = computeTokenBaseFromConfig(
-    updated,
-    'jobStake',
-    'jobStakeTokens',
-    decimals
-  );
-  const jobStake = await promptToken(
-    rl,
-    'Minimum stake an employer deposits per job (tokens or raw:<amount>)',
-    symbol,
-    decimals,
-    jobStakeCurrent
-  );
-  if (jobStake.changed) {
-    const previous = describeToken(jobStakeCurrent.base, decimals, symbol);
-    if (jobStake.mode === 'tokens') {
-      updated.jobStakeTokens = jobStake.tokens;
-      delete (updated as any).jobStake;
-      changes.push({
-        module: 'JobRegistry',
-        key: 'jobStakeTokens',
-        previous,
-        next: describeToken(jobStake.base, decimals, symbol),
-        configPath,
-      });
-    } else {
-      updated.jobStake = jobStake.raw;
-      delete (updated as any).jobStakeTokens;
-      changes.push({
-        module: 'JobRegistry',
-        key: 'jobStake',
-        previous,
-        next: describeToken(jobStake.base, decimals, symbol),
-        configPath,
-      });
-    }
+  if (updated.jobStake !== undefined || updated.jobStakeTokens !== undefined)
+    throw new Error('Legacy fixed job stake configuration requires explicit migration to jobStakeBps');
+  const stakeRate = await promptInteger(rl, 'Future-job stake rate (basis points; 1000 = 10%)', updated.jobStakeBps, { min: 0, max: 10000 });
+  if (stakeRate.changed) {
+    changes.push({ module: 'JobRegistry', key: 'jobStakeBps', previous: `${updated.jobStakeBps ?? 'unset'} bps`, next: `${stakeRate.value} bps`, configPath });
+    updated.jobStakeBps = stakeRate.value;
   }
 
   const minAgentStakeCurrent = computeTokenBaseFromConfig(

@@ -115,6 +115,9 @@ export async function buildPlatformRegistryPlan(
     minPlatformStake: currentMinStakeValue,
     setPauser: false,
     pauser: currentPauserAddress,
+    // Required tuple fields; this plan does not alter delegated pauser management.
+    setPauserManager: false,
+    pauserManager: ethers.ZeroAddress,
   };
 
   const registrarUpdates: Array<{ registrar: string; allowed: boolean }> = [];

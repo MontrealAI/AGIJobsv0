@@ -17,7 +17,7 @@ interface EconConfig {
   feePct?: number;
   burnPct?: number;
   minStake?: string | number;
-  jobStake?: string | number;
+  jobStakeBps?: number;
   minPlatformStake?: string | number;
   commitWindow?: string | number;
   revealWindow?: string | number;

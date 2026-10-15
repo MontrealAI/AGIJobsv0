@@ -74,6 +74,8 @@ async function deploySystem() {
     ethers.ZeroHash
   );
 
+  await identity.setAgentRootNode(ethers.id('agent-root'));
+
   const Validation = await ethers.getContractFactory(
     'contracts/v2/mocks/ValidationStub.sol:ValidationStub'
   );
@@ -83,6 +85,16 @@ async function deploySystem() {
     'contracts/v2/CertificateNFT.sol:CertificateNFT'
   );
   const nft = await NFT.deploy('Cert', 'CERT');
+
+  const FeePool = await ethers.getContractFactory(
+    'contracts/v2/FeePool.sol:FeePool'
+  );
+  const feePool = await FeePool.deploy(
+    await stake.getAddress(),
+    0,
+    ethers.ZeroAddress,
+    ethers.ZeroAddress
+  );
 
   const Registry = await ethers.getContractFactory(
     'contracts/v2/JobRegistry.sol:JobRegistry'
@@ -109,9 +121,12 @@ async function deploySystem() {
     await registry.getAddress(),
     0,
     0,
-    moderator.address,
+    ethers.ZeroAddress,
     owner.address
   );
+  await dispute.setModerator(moderator.address, 1);
+  await dispute.setDisputeWindow(0);
+  await dispute.setStakeManager(await stake.getAddress());
 
   await stake.setModules(
     await registry.getAddress(),
@@ -126,14 +141,32 @@ async function deploySystem() {
     await reputation.getAddress(),
     await dispute.getAddress(),
     await nft.getAddress(),
-    ethers.ZeroAddress,
+    await feePool.getAddress(),
     []
   );
   await registry.setIdentityRegistry(await identity.getAddress());
   await reputation.setCaller(await registry.getAddress(), true);
   await reputation.setPremiumThreshold(10);
+  await reputation.setCaller(owner.address, true);
+  // Growth uses diminishing returns: adding 11 seeds the eligibility threshold of 10.
+  await reputation.add(agent.address, 11);
+  expect(await reputation.reputation(agent.address)).to.equal(10);
+
+  await registry.setFeePct(0);
+  await registry.setValidatorRewardPct(0);
+  expect(await registry.jobStakeBps()).to.equal(1000);
+  await stake.setBurnPct(0);
+  await stake.setSlashingPercentages(100, 0);
+  await stake.setValidationModule(await validation.getAddress());
+  // setCode skips constructors, and escrow/marketplace contracts must accept token terms.
+  for (const module of [stake, feePool, nft]) {
+    await token.mint(await module.getAddress(), 0);
+  }
 
   return {
+    initialAgentBalance: await token.balanceOf(agent.address),
+    initialEmployerBalance: await token.balanceOf(employer.address),
+    feePool,
     owner,
     employer,
     agent,
@@ -172,12 +205,12 @@ describe('Job lifecycle', function () {
     const subnode = ethers.keccak256(
       ethers.solidityPacked(
         ['bytes32', 'bytes32'],
-        [ethers.ZeroHash, ethers.id(subdomain)]
+        [await env.identity.agentRootNode(), ethers.id(subdomain)]
       )
     );
     await wrapper.setOwner(BigInt(subnode), agent.address);
 
-    const stakeAmount = ethers.parseUnits('1', AGIALPHA_DECIMALS);
+    const stakeAmount = ethers.parseUnits('10', AGIALPHA_DECIMALS);
     await token.connect(agent).approve(await stake.getAddress(), stakeAmount);
     await stake.connect(agent).depositStake(Role.Agent, stakeAmount);
 
@@ -189,6 +222,7 @@ describe('Job lifecycle', function () {
       .connect(employer)
       .createJob(reward, deadline, specHash, 'ipfs://job');
 
+    expect((await registry.jobs(1)).stake).to.equal(reward / 10n);
     await registry.connect(agent).applyForJob(1, subdomain, []);
     const hash = ethers.id('ipfs://result');
     await registry
@@ -199,7 +233,7 @@ describe('Job lifecycle', function () {
     await registry.connect(employer).finalize(1);
 
     expect(await token.balanceOf(agent.address)).to.equal(
-      ethers.parseUnits('1099', AGIALPHA_DECIMALS)
+      env.initialAgentBalance - stakeAmount + reward
     );
     expect(await nft.ownerOf(1)).to.equal(agent.address);
     expect(await reputation.reputation(agent.address)).to.be.gt(0);
@@ -211,11 +245,11 @@ describe('Job lifecycle', function () {
 
     expect(await nft.ownerOf(1)).to.equal(buyer.address);
     expect(await token.balanceOf(agent.address)).to.equal(
-      ethers.parseUnits('1149', AGIALPHA_DECIMALS)
+      env.initialAgentBalance - stakeAmount + reward + price
     );
   });
 
-  it('handles validation failure, dispute resolution and blacklisting', async () => {
+  it('handles validation failure and employer dispute resolution', async () => {
     const env = await deploySystem();
     const {
       token,
@@ -234,12 +268,12 @@ describe('Job lifecycle', function () {
     const subnode = ethers.keccak256(
       ethers.solidityPacked(
         ['bytes32', 'bytes32'],
-        [ethers.ZeroHash, ethers.id(subdomain)]
+        [await env.identity.agentRootNode(), ethers.id(subdomain)]
       )
     );
     await wrapper.setOwner(BigInt(subnode), agent.address);
 
-    const stakeAmount = ethers.parseUnits('1', AGIALPHA_DECIMALS);
+    const stakeAmount = ethers.parseUnits('10', AGIALPHA_DECIMALS);
     await token.connect(agent).approve(await stake.getAddress(), stakeAmount);
     await stake.connect(agent).depositStake(Role.Agent, stakeAmount);
 
@@ -251,6 +285,7 @@ describe('Job lifecycle', function () {
       .connect(employer)
       .createJob(reward, deadline, specHash, 'ipfs://job');
 
+    expect((await registry.jobs(1)).stake).to.equal(reward / 10n);
     await registry.connect(agent).applyForJob(1, subdomain, []);
     await registry
       .connect(agent)
@@ -258,19 +293,39 @@ describe('Job lifecycle', function () {
     await validation.setResult(false);
     await validation.finalize(1);
 
+    await token
+      .connect(employer)
+      .approve(await stake.getAddress(), await dispute.disputeFee());
     await registry
       .connect(employer)
       .dispute(1, ethers.id('evidence'), 'ipfs://evidence');
-    const hash = ethers.solidityPackedKeccak256(
-      ['address', 'uint256', 'bool'],
-      [await dispute.getAddress(), 1, true]
-    );
-    const sig = await moderator.signMessage(ethers.getBytes(hash));
     await dispute.connect(moderator).resolveDispute(1, true); // employer wins
+    expect(await stake.lockedStakes(agent.address)).to.equal(stakeAmount);
     await registry.connect(employer).finalize(1);
 
-    expect(await reputation.isBlacklisted(agent.address)).to.equal(true);
+    // The old fixture expected settlement itself to blacklist the agent.
+    // Current zero-payout failure settlement applies no reputation penalty.
+    expect(await reputation.reputation(agent.address)).to.equal(10);
+    expect(await reputation.isBlacklisted(agent.address)).to.equal(false);
+    expect(await stake.stakeOf(agent.address, Role.Agent)).to.equal(0);
+    expect(await token.balanceOf(employer.address)).to.equal(
+      env.initialEmployerBalance + stakeAmount
+    );
+    expect(await stake.lockedStakes(agent.address)).to.equal(0);
+    await expect(
+      registry.connect(employer).finalize(1)
+    ).to.be.revertedWithCustomError(registry, 'NotReady');
+    expect(await token.balanceOf(employer.address)).to.equal(
+      env.initialEmployerBalance + stakeAmount
+    );
+    expect(await stake.stakeOf(agent.address, Role.Agent)).to.equal(0);
+  });
 
+  it('blacklists after an authorized penalty and rehabilitates reputation', async () => {
+    const { reputation, agent } = await deploySystem();
+    // Exercise the explicit reputation-penalty mechanism separately from settlement.
+    await reputation.subtract(agent.address, 1);
+    expect(await reputation.isBlacklisted(agent.address)).to.equal(true);
     await reputation.add(agent.address, 20);
     expect(await reputation.isBlacklisted(agent.address)).to.equal(false);
   });

@@ -54,7 +54,7 @@ describe('JobRegistry agent auth cache', function () {
     await registry.connect(owner).setMaxJobReward(1000);
     await registry.connect(owner).setJobDurationLimit(1000);
     await registry.connect(owner).setFeePct(0);
-    await registry.connect(owner).setJobParameters(0, 0);
+    await registry.connect(owner).setJobStakeBps(0);
   });
 
   it('reverts when enabling zero acknowledger', async () => {
@@ -181,7 +181,7 @@ describe('JobRegistry agent auth cache', function () {
     await registry2.connect(owner).setMaxJobReward(1000);
     await registry2.connect(owner).setJobDurationLimit(1000);
     await registry2.connect(owner).setFeePct(0);
-    await registry2.connect(owner).setJobParameters(0, 0);
+    await registry2.connect(owner).setJobStakeBps(0);
     await registry2.connect(owner).setAgentAuthCacheDuration(1000);
 
     let deadline = (await time.latest()) + 100;
@@ -269,7 +269,7 @@ describe('JobRegistry agent auth cache', function () {
     await reg.connect(owner).setMaxJobReward(1000);
     await reg.connect(owner).setJobDurationLimit(1000);
     await reg.connect(owner).setFeePct(0);
-    await reg.connect(owner).setJobParameters(0, 0);
+    await reg.connect(owner).setJobStakeBps(0);
     await reg.connect(owner).setAgentAuthCacheDuration(5);
 
     let deadline = (await time.latest()) + 100;
@@ -333,7 +333,7 @@ describe('JobRegistry agent auth cache', function () {
     await reg.connect(owner).setMaxJobReward(1000);
     await reg.connect(owner).setJobDurationLimit(1000);
     await reg.connect(owner).setFeePct(0);
-    await reg.connect(owner).setJobParameters(0, 0);
+    await reg.connect(owner).setJobStakeBps(0);
     await reg.connect(owner).setAgentAuthCacheDuration(1000);
 
     let deadline = (await time.latest()) + 100;
@@ -398,7 +398,7 @@ describe('JobRegistry agent auth cache', function () {
     await registry2.connect(owner).setMaxJobReward(1000);
     await registry2.connect(owner).setJobDurationLimit(1000);
     await registry2.connect(owner).setFeePct(0);
-    await registry2.connect(owner).setJobParameters(0, 0);
+    await registry2.connect(owner).setJobStakeBps(0);
     await registry2.connect(owner).setAgentAuthCacheDuration(1000);
 
     let deadline = (await time.latest()) + 100;
@@ -462,7 +462,7 @@ describe('JobRegistry agent auth cache', function () {
     await registry2.connect(owner).setMaxJobReward(1000);
     await registry2.connect(owner).setJobDurationLimit(1000);
     await registry2.connect(owner).setFeePct(0);
-    await registry2.connect(owner).setJobParameters(0, 0);
+    await registry2.connect(owner).setJobStakeBps(0);
     await registry2.connect(owner).setAgentAuthCacheDuration(1000);
 
     let deadline = (await time.latest()) + 100;

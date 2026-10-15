@@ -22,7 +22,7 @@ describe('JobRegistry integration', function () {
   let feePool, audit;
 
   const reward = 100;
-  const stake = 200;
+  const stake = 10;
   const disputeFee = 1_000_000_000_000_000_000n;
 
   beforeEach(async () => {
@@ -121,7 +121,8 @@ describe('JobRegistry integration', function () {
         []
       );
     await validation.setJobRegistry(await registry.getAddress());
-    await registry.connect(owner).setJobParameters(reward, stake);
+    await registry.connect(owner).setMaxJobReward(reward);
+    await registry.connect(owner).setJobStakeBps(1000);
     await registry.connect(owner).setMaxJobReward(1000000);
     await registry.connect(owner).setJobDurationLimit(86400);
     await registry.connect(owner).setFeePct(0);
@@ -373,7 +374,7 @@ describe('JobRegistry integration', function () {
       expect(await registry.getJobValidatorVote(jobId, member)).to.equal(false);
     }
 
-    expect(await token.balanceOf(agent.address)).to.equal(disputeFee + 900n);
+    expect(await token.balanceOf(agent.address)).to.equal(disputeFee + BigInt(1000 + reward - stake));
     expect(await rep.reputation(agent.address)).to.equal(0);
     expect(await rep.isBlacklisted(agent.address)).to.equal(false);
     expect(await nft.balanceOf(agent.address)).to.equal(1);
@@ -451,7 +452,8 @@ describe('JobRegistry integration', function () {
     const burnAmount = (feeAmount * BigInt(burnPct)) / 100n;
     const netFee = feeAmount - burnAmount;
 
-    await registry.connect(owner).setJobParameters(rewardAmount, stake);
+    await registry.connect(owner).setMaxJobReward(rewardAmount);
+    await registry.connect(owner).setJobStakeBps(10); // 0.1% of 10,000 = 10 collateral in this fee-routing fixture.
     await registry.connect(owner).setFeePct(feePct);
     await feePool.connect(owner).setBurnPct(burnPct);
 
@@ -495,7 +497,8 @@ describe('JobRegistry integration', function () {
 
   it('acknowledges and applies in one call for zero-stake jobs', async () => {
     const [, , , newAgent] = await ethers.getSigners();
-    await registry.connect(owner).setJobParameters(reward, 0);
+    await registry.connect(owner).setMaxJobReward(reward);
+    await registry.connect(owner).setJobStakeBps(0);
     await token
       .connect(employer)
       .approve(await stakeManager.getAddress(), reward);
@@ -521,7 +524,8 @@ describe('JobRegistry integration', function () {
 
   it('blocks additional agents once a job has been assigned', async () => {
     const [, , , , secondAgent] = await ethers.getSigners();
-    await registry.connect(owner).setJobParameters(reward, 0);
+    await registry.connect(owner).setMaxJobReward(reward);
+    await registry.connect(owner).setJobStakeBps(0);
     await policy.connect(secondAgent).acknowledge();
 
     await token
@@ -950,18 +954,13 @@ describe('JobRegistry integration', function () {
     expect(await identity.additionalAgents(treasury.address)).to.equal(false);
   });
 
-  it('updates defaults via setJobParameters', async () => {
+  it('updates percentage rate and reward limit through explicit setters', async () => {
     const newMaxReward = 5000;
-    const newStake = 300;
-    const duration = await registry.maxJobDuration();
-
-    await expect(
-      registry.connect(owner).setJobParameters(newMaxReward, newStake)
-    )
-      .to.emit(registry, 'JobParametersUpdated')
-      .withArgs(0, newStake, newMaxReward, duration, 0);
-
-    expect(await registry.jobStake()).to.equal(newStake);
+    await registry.connect(owner).setMaxJobReward(newMaxReward);
+    await expect(registry.connect(owner).setJobStakeBps(300))
+      .to.emit(registry, 'JobStakeBpsUpdated').withArgs(1000, 300);
+    expect(await registry.jobStakeBps()).to.equal(300);
+    expect(await registry.quoteJobStake(100)).to.equal(3);
     expect(await registry.maxJobReward()).to.equal(newMaxReward);
   });
 
@@ -972,7 +971,7 @@ describe('JobRegistry integration', function () {
 
     await expect(registry.connect(owner).setMinAgentStake(minStake))
       .to.emit(registry, 'JobParametersUpdated')
-      .withArgs(0, stake, maxRewardLimit, durationLimit, minStake);
+      .withArgs(0, 0, maxRewardLimit, durationLimit, minStake); // Legacy fixed-stake event slot is inactive.
 
     await token
       .connect(employer)

@@ -83,7 +83,7 @@ describe("GlobalGovernanceCouncil", function () {
 
     await contract.pause();
     await expect(contract.connect(govA).recordNationVote(mandateId, nationA, true, "uri"))
-      .to.be.revertedWith("Pausable: paused");
+      .to.be.revertedWithCustomError(contract, "EnforcedPause");
 
     await contract.unpause();
     await contract.connect(govA).recordNationVote(mandateId, nationA, true, "uri");

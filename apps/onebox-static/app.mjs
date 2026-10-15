@@ -160,9 +160,9 @@ const OWNER_ACTIONS = {
     placeholder: '0x0000...dead',
     hint: 'Destination address or burn address.',
   },
-  'jobRegistry.setJobStake': {
-    placeholder: '50',
-    hint: 'Minimum stake (AGIA) required per job.',
+  'jobRegistry.setJobStakeBps': {
+    placeholder: '1000',
+    hint: 'Future-job rate, 0–10000 basis points (1000 = 10%). Existing job snapshots stay unchanged.',
   },
   'jobRegistry.setMaxJobReward': {
     placeholder: '500',
@@ -172,10 +172,7 @@ const OWNER_ACTIONS = {
     placeholder: '{"days": 7}',
     hint: 'Provide seconds or JSON like {"days": 7}.',
   },
-  'jobRegistry.setJobParameters': {
-    placeholder: '{"maxReward": "500", "jobStake": "50"}',
-    hint: 'JSON object with maxReward and jobStake fields (AGIA).',
-  },
+
   'feePool.setBurnPct': {
     placeholder: '1',
     hint: 'Protocol burn percentage (0-100).',

@@ -132,7 +132,7 @@ describe('JobRegistry tax policy integration', function () {
   });
 
   it('requires re-acknowledgement after version bump', async () => {
-    await registry.connect(owner).setJobParameters(0, 0);
+    await registry.connect(owner).setJobStakeBps(0);
     await registry.connect(owner).setMaxJobReward(10);
     await registry.connect(owner).setJobDurationLimit(86400);
     await registry.connect(owner).setTaxPolicy(await policy.getAddress());
@@ -180,7 +180,7 @@ describe('JobRegistry tax policy integration', function () {
   });
 
   it('rejects burn receipt submission without tax acknowledgement', async () => {
-    await registry.connect(owner).setJobParameters(0, 0);
+    await registry.connect(owner).setJobStakeBps(0);
     await registry.connect(owner).setMaxJobReward(10);
     await registry.connect(owner).setJobDurationLimit(86400);
     await registry.connect(owner).setTaxPolicy(await policy.getAddress());
@@ -196,7 +196,7 @@ describe('JobRegistry tax policy integration', function () {
   });
 
   it('rejects burn confirmation without tax acknowledgement', async () => {
-    await registry.connect(owner).setJobParameters(0, 0);
+    await registry.connect(owner).setJobStakeBps(0);
     await registry.connect(owner).setMaxJobReward(10);
     await registry.connect(owner).setJobDurationLimit(86400);
     await registry.connect(owner).setTaxPolicy(await policy.getAddress());

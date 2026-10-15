@@ -52,6 +52,8 @@ export interface TokenConfigResult {
 }
 
 export interface JobRegistryConfig {
+  jobStakeBps?: number;
+  /** Deprecated fixed-token input; new deployment tools reject it. */
   jobStake?: string;
   jobStakeTokens?: string | number;
   minAgentStake?: string;
@@ -462,6 +464,8 @@ export interface DeploymentPlanEconConfig {
   commitWindow?: number;
   revealWindow?: number;
   minStake?: string;
+  jobStakeBps?: number;
+  /** Deprecated fixed-token input; new deployment tools reject it. */
   jobStake?: string;
   [key: string]: unknown;
 }

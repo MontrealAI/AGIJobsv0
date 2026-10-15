@@ -573,8 +573,8 @@ describe('Governance configuration surfaces', function () {
         taxPolicy: await replacementPolicy.getAddress(),
         setTreasury: true,
         treasury: newTreasury.address,
-        setJobStake: true,
-        jobStake: 2n * 10n ** 18n,
+        setJobStake: false,
+        jobStake: 0,
         setMinAgentStake: true,
         minAgentStake: 5n * 10n ** 17n,
         setFeePct: true,
@@ -605,6 +605,12 @@ describe('Governance configuration surfaces', function () {
         agentAuthCacheDuration: 86_400,
         bumpAgentAuthCacheVersion: true,
       };
+
+      await expect(registry.connect(owner).applyConfiguration(
+        { ...config, setJobStake: true, jobStake: 2n * 10n ** 18n },
+        acknowledgerUpdates, ackModules
+      )).to.be.revertedWithCustomError(registry, 'LegacyFixedStakeUnsupported');
+      await registry.connect(owner).setJobStakeBps(2000);
 
       await expect(
         registry
@@ -639,7 +645,7 @@ describe('Governance configuration surfaces', function () {
         await replacementPolicy.getAddress()
       );
       expect(await registry.treasury()).to.equal(newTreasury.address);
-      expect(await registry.jobStake()).to.equal(2n * 10n ** 18n);
+      expect(await registry.jobStakeBps()).to.equal(2000n);
       expect(await registry.minAgentStake()).to.equal(5n * 10n ** 17n);
       expect(await registry.feePct()).to.equal(4n);
       expect(await registry.validatorRewardPct()).to.equal(6n);
