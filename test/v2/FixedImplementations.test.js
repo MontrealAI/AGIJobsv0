@@ -164,7 +164,7 @@ describe('Fixed implementations production compatibility', function () {
     );
     for (const [name, address] of Object.entries(inventory)) {
       const implementation = await ethers.getContractAt(name, address);
-      expect(await implementation.moduleId()).to.equal(ethers.id(`${name}:${name.startsWith('JobRegistry') ? 'percentage-stake-v2' : 'v1'}`));
+      expect(await implementation.moduleId()).to.equal(ethers.id(`${name}:${name.startsWith('JobRegistry') ? 'percentage-stake-v3' : name.startsWith('ValidationModule') ? 'terminal-reputation-v2' : 'v1'}`));
     }
     expect(
       Array.from(
@@ -229,7 +229,7 @@ describe('Fixed implementations production compatibility', function () {
     );
     for (const [controller, names] of Object.entries(modules)) {
       // Percentage JobRegistry intentionally has new semantics and module IDs.
-      if (controller === 'JobRegistry') continue;
+      if (['JobRegistry', 'ValidationModule'].includes(controller)) continue;
       const bundledController = require(`../../scripts/v2/lib/prebuilt/${controller}.json`);
       const compiledController = await artifacts.readArtifact(
         `contracts/v2/${controller}.sol:${controller}`
@@ -284,6 +284,28 @@ describe('Fixed implementations production compatibility', function () {
     }
   });
 
+  it('preserves historical validation bundles and rejects each incompatible delegate generation', async function () {
+    const fs = require('node:fs'), path = require('node:path'), { createHash } = require('node:crypto');
+    const pins = {'ValidationModule': 'cb90c9f64134b7ec1e162b38a06282e08431fc8005b751eabfd2b072ace6fadd', 'ImplementationModules': '0cc22007c98958a60628a1669a56f4468a1caf106760dcf563660d26e643a6f8'};
+    for (const [name, digest] of Object.entries(pins)) {
+      expect(createHash('sha256').update(fs.readFileSync(path.resolve(__dirname, '../../scripts/v2/lib/prebuilt/' + name + '.json'))).digest('hex')).to.equal(digest);
+    }
+    const [owner] = await ethers.getSigners();
+    const Identity = await ethers.getContractFactory('LegacyJobImplementationIdentity');
+    for (const controller of ['JobRegistry', 'ValidationModule']) {
+      const Factory = await ethers.getContractFactory(`contracts/v2/${controller}.sol:${controller}`);
+      const current = await deployImplementations(controller, owner);
+      const args = controller === 'JobRegistry'
+        ? [ethers.ZeroAddress,ethers.ZeroAddress,ethers.ZeroAddress,ethers.ZeroAddress,ethers.ZeroAddress,ethers.ZeroAddress,ethers.ZeroAddress,0,0,[],owner.address]
+        : [ethers.ZeroAddress,ethers.ZeroAddress,60,60,3,3,[]];
+      for (let i = 0; i < current.length; i++) {
+        const old = await Identity.deploy(ethers.id(`${modules[controller][i]}:${controller === 'JobRegistry' ? 'percentage-stake-v2' : 'v1'}`));
+        const mixed = [...current]; mixed[i] = await old.getAddress();
+        await expect(Factory.deploy(...args, mixed)).to.be.revertedWithCustomError(Factory, 'InvalidImplementation');
+      }
+    }
+  });
+
   for (const [controller, implementations] of Object.entries(modules)) {
     it(`${controller} preserves every previous function, event, and error signature`, async function () {
       const baseline = require(`../fixtures/modular-baseline/${controller}.json`);
@@ -320,7 +342,7 @@ describe('Fixed implementations production compatibility', function () {
           ['DOMAIN_SEPARATOR']
         );
       } else if (controller === 'JobRegistry') {
-        expect(actual.slice(previous.length).map((field) => field.label)).to.deep.equal(['_jobStakeBps']);
+        expect(actual.slice(previous.length).map((field) => field.label)).to.deep.equal(['_jobStakeBps', '_reputationSnapshots']);
       } else expect(actual.length).to.equal(previous.length);
       for (const implementation of implementations) {
         expect(

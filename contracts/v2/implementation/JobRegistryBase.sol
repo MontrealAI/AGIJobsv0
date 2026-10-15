@@ -34,6 +34,11 @@ error InvalidPercentage();
 error InvalidValidationModule();
 error InvalidStakeManager();
 error InvalidReputationModule();
+error ReputationDeferredUntilSettlement(uint256 jobId);
+error OnlyRegistrySelf();
+interface IRegistryTerminalReputation {
+    function processTerminalReputation(uint256 jobId, uint256 payout) external;
+}
 error InvalidDisputeModule();
 error InvalidCertificateNFT();
 error InvalidAuditModule();
@@ -826,6 +831,15 @@ abstract contract JobRegistryBase is Governable, ReentrancyGuard, TaxAcknowledge
 
     // Appended storage; existing Job.stake snapshots and all preceding slots remain unchanged.
     uint16 internal _jobStakeBps;
+
+    struct ReputationSnapshot {
+        address[] validators;
+        bool[] revealed;
+        bool[] votes;
+        uint256 talliedAt;
+    }
+    // Appended state: independent of the financial committee across disputes.
+    mapping(uint256 => ReputationSnapshot) internal _reputationSnapshots;
     event JobStakeBpsUpdated(uint256 previousBps, uint256 newBps);
 
     // module configuration events
@@ -1795,17 +1809,18 @@ abstract contract JobRegistryBase is Governable, ReentrancyGuard, TaxAcknowledge
         Job storage job = jobs[jobId];
         if (_getState(job) != State.Submitted) revert NotSubmitted();
         _clearValidationStart(jobId);
+        _reputationSnapshots[jobId].talliedAt = block.timestamp;
         _setSuccess(job, success);
         _setState(job, success ? State.Completed : State.Disputed);
         emit JobCompleted(jobId, success);
     }
 
-    /// @notice Record that reputation updates have already been applied for a job.
+    /// @notice Deprecated marker; outcome scoring occurs only at terminal settlement.
     /// @param jobId Identifier of the job that triggered the update.
-    function _entry_markReputationProcessed(uint256 jobId) internal {
+    function _entry_markReputationProcessed(uint256 jobId) internal view {
         if (msg.sender != address(validationModule)) revert OnlyValidationModule();
-        reputationProcessed[jobId] = true;
-        emit ReputationProcessingMarked(jobId);
+        // Retained ABI rejects validators that attempt to score before settlement.
+        revert ReputationDeferredUntilSettlement(jobId);
     }
 
     /// @param jobId Identifier of the job being finalised.
@@ -1843,6 +1858,7 @@ abstract contract JobRegistryBase is Governable, ReentrancyGuard, TaxAcknowledge
         Job storage job = jobs[jobId];
         if (_getState(job) != State.Submitted) revert NotSubmitted();
         _clearValidationStart(jobId);
+        _reputationSnapshots[jobId].talliedAt = block.timestamp;
         _setSuccess(job, false);
         _setState(job, State.Completed);
         emit JobCompleted(jobId, false);
@@ -1858,13 +1874,20 @@ abstract contract JobRegistryBase is Governable, ReentrancyGuard, TaxAcknowledge
         nonReentrant
         requiresTaxAcknowledgement(taxPolicy, msg.sender, owner(), address(disputeModule), address(validationModule))
     {
+        if (msg.sender != address(validationModule)) revert OnlyValidationModule();
         _clearValidatorData(jobId);
+        delete _reputationSnapshots[jobId];
+        ReputationSnapshot storage snapshot = _reputationSnapshots[jobId];
         if (validators.length > 0) {
             address[] storage storedValidators = jobValidators[jobId];
             for (uint256 i; i < validators.length;) {
                 address validator = validators[i];
+                bool approved = validationModule.votes(jobId, validator);
                 storedValidators.push(validator);
-                jobValidatorVotes[jobId][validator] = validationModule.votes(jobId, validator);
+                jobValidatorVotes[jobId][validator] = approved;
+                snapshot.validators.push(validator);
+                snapshot.revealed.push(validationModule.revealed(jobId, validator));
+                snapshot.votes.push(approved);
                 unchecked {
                     ++i;
                 }
@@ -1983,10 +2006,8 @@ abstract contract JobRegistryBase is Governable, ReentrancyGuard, TaxAcknowledge
 
         _setSuccess(job, !employerWins);
         _setState(job, State.Completed);
+        // Financial treatment remains unchanged; participation survives for scoring.
         _clearValidatorData(jobId);
-        if (reputationProcessed[jobId]) {
-            delete reputationProcessed[jobId];
-        }
         emit DisputeResolved(jobId, employerWins);
     }
 
@@ -2032,7 +2053,7 @@ abstract contract JobRegistryBase is Governable, ReentrancyGuard, TaxAcknowledge
         bool fundsRedirected;
         address[] memory validators = jobValidators[jobId];
         bool success = _getSuccess(job);
-        bool reputationHandled = reputationProcessed[jobId];
+        uint256 reputationPayout;
         if (success) {
             IFeePool pool = feePool;
             uint256 validatorReward;
@@ -2085,23 +2106,8 @@ abstract contract JobRegistryBase is Governable, ReentrancyGuard, TaxAcknowledge
                     }
                 }
             }
-            if (address(reputationEngine) != address(0) && !reputationHandled) {
-                uint256 completionTime = block.timestamp - uint256(_getAssignedAt(job));
-                uint256 payout = agentAmount * 1e12;
-                uint256 agentGain = reputationEngine.calculateReputationPoints(payout, completionTime);
-                reputationEngine.onFinalize(job.agent, true, payout, completionTime);
-                if (validators.length > 0) {
-                    for (uint256 i; i < validators.length;) {
-                        address val = validators[i];
-                        if (jobValidatorVotes[jobId][val]) {
-                            reputationEngine.rewardValidator(val, agentGain);
-                        }
-                        unchecked {
-                            ++i;
-                        }
-                    }
-                }
-            }
+            // AGIALPHA payout is already expressed in 18-decimal base units.
+            reputationPayout = agentAmount;
             if (address(certificateNFT) != address(0)) {
                 certificateNFT.mint(job.agent, jobId, job.uriHash);
             }
@@ -2122,10 +2128,9 @@ abstract contract JobRegistryBase is Governable, ReentrancyGuard, TaxAcknowledge
                     stakeManager.slash(job.agent, IStakeManager.Role.Agent, uint256(job.stake), recipient, validators);
                 }
             }
-            if (address(reputationEngine) != address(0) && !reputationHandled) {
-                reputationEngine.onFinalize(job.agent, false, 0, 0);
-            }
         }
+        // Fixed lifecycle delegate keeps settlement within production code limits.
+        IRegistryTerminalReputation(address(this)).processTerminalReputation(jobId, reputationPayout);
         if (success) {
             employerStats[job.employer].successful++;
         } else {
@@ -2149,9 +2154,29 @@ abstract contract JobRegistryBase is Governable, ReentrancyGuard, TaxAcknowledge
             }
         }
         _clearValidatorData(jobId);
-        if (reputationProcessed[jobId]) {
-            delete reputationProcessed[jobId];
+    }
+
+    /// @dev Only a Registry self-call during atomic terminal settlement can score.
+    function _entry_processTerminalReputation(uint256 jobId, uint256 payout) internal {
+        if (msg.sender != address(this)) revert OnlyRegistrySelf();
+        Job storage job = jobs[jobId];
+        if (_getState(job) != State.Finalized) revert NotReady();
+        if (address(reputationEngine) != address(0) && !reputationProcessed[jobId]) {
+            reputationProcessed[jobId] = true;
+            ReputationSnapshot storage snapshot = _reputationSnapshots[jobId];
+            bool success = _getSuccess(job);
+            // Preserve the observed tally time through disputes and owner delays.
+            // A governance-only outcome without a tally keeps the prior fallback.
+            uint256 end = snapshot.talliedAt == 0 ? block.timestamp : snapshot.talliedAt;
+            uint256 assigned = uint256(_getAssignedAt(job));
+            uint256 duration = success && assigned != 0 && end > assigned ? end - assigned : 0;
+            reputationEngine.updateScores(
+                jobId, job.agent, snapshot.validators, success, snapshot.revealed,
+                snapshot.votes, payout, duration
+            );
+            emit ReputationProcessingMarked(jobId);
         }
+        delete _reputationSnapshots[jobId];
     }
 
     /// @notice Acknowledge the tax policy and finalise the job in one call.

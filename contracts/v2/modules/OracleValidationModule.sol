@@ -184,6 +184,10 @@ contract OracleValidationModule is IValidationModule, Ownable {
     }
 
     /// @inheritdoc IValidationModule
+    function revealed(uint256, address) external pure override returns (bool) {
+        return false;
+    }
+
     function votes(uint256, address)
         external
         pure

@@ -26,7 +26,7 @@ contract JobRegistryLifecycle is JobRegistryBase, DelegateOnly {
     constructor() JobRegistryBase(msg.sender) {}
 
     function moduleId() external pure returns (bytes32) {
-        return keccak256("JobRegistryLifecycle:percentage-stake-v2");
+        return keccak256("JobRegistryLifecycle:percentage-stake-v3");
     }
 
     /// @notice Records evidence of a token burn by the employer.
@@ -165,11 +165,16 @@ contract JobRegistryLifecycle is JobRegistryBase, DelegateOnly {
         return _entry_acknowledgeAndSubmit(jobId, resultHash, resultURI, subdomain, proof);
     }
 
-    /// @notice Record that reputation updates have already been applied for a job.
+    /// @notice Deprecated marker; outcome scoring occurs only at terminal settlement.
     /// @param jobId Identifier of the job that triggered the update.
-    function markReputationProcessed(uint256 jobId) external onlyDelegateCall {
+    function markReputationProcessed(uint256 jobId) external view onlyDelegateCall {
         return _entry_markReputationProcessed(jobId);
     }
+
+    function processTerminalReputation(uint256 jobId, uint256 payout) external onlyDelegateCall {
+        return _entry_processTerminalReputation(jobId, payout);
+    }
+
 
     /// @notice Receive validation outcome from the ValidationModule
     /// @param jobId Identifier of the job

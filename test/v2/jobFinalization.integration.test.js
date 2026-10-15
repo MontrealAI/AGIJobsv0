@@ -211,7 +211,7 @@ describe('job finalization integration', function () {
     expect(employerAfter).to.equal(mintAmount - reward - fee);
     expect(v1Bal).to.equal(vReward / 2n);
     expect(v2Bal).to.equal(vReward / 2n);
-    expect(await rep.reputation(agent.address)).to.equal(152n);
+    expect(await rep.reputation(agent.address)).to.equal(32n);
     expect(await nft.balanceOf(agent.address)).to.equal(1n);
   });
 
@@ -309,7 +309,7 @@ describe('job finalization integration', function () {
     expect(employerAfter).to.equal(employerBefore);
     expect(v1Bal - v1Before).to.equal(0n);
     expect(v2Bal - v2Before).to.equal(0n);
-    expect(await rep.reputation(agent.address)).to.equal(152n);
+    expect(await rep.reputation(agent.address)).to.equal(33n);
     expect(await nft.balanceOf(agent.address)).to.equal(1n);
   });
 

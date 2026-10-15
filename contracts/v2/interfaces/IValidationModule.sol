@@ -207,6 +207,9 @@ interface IValidationModule {
     /// @return validators Array of validator addresses
     function validators(uint256 jobId) external view returns (address[] memory validators);
 
+    /// @notice Whether a validator revealed before round cleanup.
+    function revealed(uint256 jobId, address validator) external view returns (bool);
+
     /// @notice Retrieve a validator's vote outcome for a job
     /// @param jobId Identifier of the job
     /// @param validator Address of the validator

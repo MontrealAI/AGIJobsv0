@@ -48,3 +48,18 @@ for evidence and remaining deployment gates.
 - `StakeManagerUpdated(address stakeManager)`
 - `ScoringWeightsUpdated(uint256 stakeWeight, uint256 reputationWeight)`
 - `ValidationRewardPercentageUpdated(uint256 percentage)`
+
+## Registry settlement integration
+
+The terminal-scoring candidate uses `updateScores` once during the Registry's
+atomic fund settlement. AGIALPHA payout is already in 18-decimal base units;
+producers must not multiply it by `1e12`. The Registry retains original
+validator vote/reveal observations across validation cleanup and dispute
+resolution, then compares them with the final outcome. It records the tally
+time so a later employer settlement does not earn extra duration credit.
+
+The previous `markReputationProcessed` entry point remains in the ABI but
+rejects early scoring. Explicit authorized engine hooks remain available under
+the existing caller policy. Forced-quorum non-reveal fault deductions remain
+separate from outcome scoring; no new automatic agent-failure penalty is added.
+See the [terminal correction and qualification scope](../production/reputation-terminal-scoring-2026-10-15.md).

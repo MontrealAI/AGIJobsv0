@@ -44,7 +44,7 @@ async function deployImplementations(
       address,
       signer
     );
-    if ((await implementation.moduleId()) !== ethers.id(`${name}:${name.startsWith('JobRegistry') ? 'percentage-stake-v2' : 'v1'}`)) {
+    if ((await implementation.moduleId()) !== ethers.id(`${name}:${name.startsWith('JobRegistry') ? 'percentage-stake-v3' : name.startsWith('ValidationModule') ? 'terminal-reputation-v2' : 'v1'}`)) {
       cached.delete(name);
       throw new Error(
         `Implementation identity mismatch: ${name} at ${address}`

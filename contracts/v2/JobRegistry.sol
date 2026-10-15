@@ -100,9 +100,9 @@ contract JobRegistry is JobRegistryBase, FixedDelegate {
         address _timelock, // timelock or multisig controller
         address[3] memory implementations
     ) JobRegistryBase(_timelock) {
-        _configuration = _checkedImplementation(implementations[0], keccak256("JobRegistryConfiguration:percentage-stake-v2"));
-        _lifecycle = _checkedImplementation(implementations[1], keccak256("JobRegistryLifecycle:percentage-stake-v2"));
-        _settlement = _checkedImplementation(implementations[2], keccak256("JobRegistrySettlement:percentage-stake-v2"));
+        _configuration = _checkedImplementation(implementations[0], keccak256("JobRegistryConfiguration:percentage-stake-v3"));
+        _lifecycle = _checkedImplementation(implementations[1], keccak256("JobRegistryLifecycle:percentage-stake-v3"));
+        _settlement = _checkedImplementation(implementations[2], keccak256("JobRegistrySettlement:percentage-stake-v3"));
 
         uint256 pct = _feePct == 0 ? DEFAULT_FEE_PCT : _feePct;
         if (pct > 100) revert InvalidPercentage();
@@ -557,12 +557,19 @@ contract JobRegistry is JobRegistryBase, FixedDelegate {
         _delegate(_lifecycle);
     }
 
-    /// @notice Record that reputation updates have already been applied for a job.
+    /// @notice Deprecated marker; outcome scoring occurs only at terminal settlement.
     /// @param jobId Identifier of the job that triggered the update.
     function markReputationProcessed(uint256 jobId) external {
         jobId;
         _delegate(_lifecycle);
     }
+
+    /// @notice Registry self-call for atomic terminal reputation processing.
+    function processTerminalReputation(uint256 jobId, uint256 payout) external {
+        jobId; payout;
+        _delegate(_lifecycle);
+    }
+
 
     /// @param jobId Identifier of the job being finalised.
     /// @param success True if validators approved the job.

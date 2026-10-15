@@ -351,7 +351,7 @@ describe('ValidationModule V2', function () {
           ? ethers.parseEther('50')
           : ethers.parseEther('10');
       expect(stake).to.equal(expectedStake);
-      expect(await reputation.reputation(addr)).to.equal(1n);
+      expect(await reputation.reputation(addr)).to.equal(0n); // Outcome reputation waits for Registry settlement.
     }
   });
 
@@ -398,8 +398,8 @@ describe('ValidationModule V2', function () {
     expect(await stakeManager.stakeOf(v3.address, 1)).to.equal(
       stakeBefore / 2n
     );
-    expect(await reputation.reputation(v1.address)).to.equal(1n);
-    expect(await reputation.reputation(v2.address)).to.equal(1n);
+    expect(await reputation.reputation(v1.address)).to.equal(0n); // Outcome reputation waits for Registry settlement.
+    expect(await reputation.reputation(v2.address)).to.equal(0n); // Outcome reputation waits for Registry settlement.
     expect(await reputation.reputation(v3.address)).to.equal(0n);
   });
 

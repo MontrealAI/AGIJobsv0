@@ -71,6 +71,10 @@ contract ValidationStub is IValidationModule {
         vals = validatorList;
     }
 
+    function revealed(uint256, address) external pure override returns (bool) {
+        return true;
+    }
+
     function votes(uint256, address)
         external
         view
