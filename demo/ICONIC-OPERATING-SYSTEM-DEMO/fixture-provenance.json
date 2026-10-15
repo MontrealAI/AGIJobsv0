@@ -1,0 +1,29 @@
+{
+  "schema": "agijobs.iconic-fixture-provenance.v1",
+  "scope": "Actual synthetic Chromium lab with scripted provider responses; source hashes are observations, not signed attestations",
+  "alphaSourceCommit": "586fbdbd7feb8c55ea04b9d1589bba87e7c2f858",
+  "jobsHarnessCommit": "fee0f3e3ab9e0bad0e5d1d2d6f145eccf9b2151a",
+  "advisorSha256": "0a8b257b3f15ab0f49e4bc22938bc5ce40a1986e14d908d753a53b7aaa5ed1bf",
+  "workerSha256": "d48f97cabdfbb2cb1b2db670609eaef814189ff071f01718f41b5b699b6f7c86",
+  "providerFixtureCalls": 3,
+  "externalFetches": 0,
+  "cleanup": {
+    "leaderExited": true,
+    "liveGroupMembers": [],
+    "groupClosed": true
+  },
+  "liveProvider": false,
+  "productionApproved": false,
+  "settlementApproved": false,
+  "laboratoryReceiptFileSha256": "2796ef5e168bc20decbda8c8b494337c304b9f80e2ee7e679a3af7300e2785e1",
+  "artifactCommitments": [
+    {
+      "name": "comparison.json",
+      "sha256": "61713d3ec0aeb383f0f0090ce11184ddaa49ad947165d53cfcf3e2034481a4cd"
+    },
+    {
+      "name": "recommendation.md",
+      "sha256": "06f8a25f80e83bb378b8da248b05983e42287ee89b8d1009e2056496da38983d"
+    }
+  ]
+}

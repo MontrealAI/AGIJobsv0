@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta
+      name="description"
+      content="Inspect supplier deliverables and reported execution budgets with a bounded local evidence desk."
+    />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'none'"
+    />
+    <title>ICONIC • Supplier evidence desk</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <a class="skip" href="#main" data-t="skip">Skip to evidence</a>
+    <nav aria-label="Primary">
+      <a href="../../">AGI JOBS</a>
+      <div>
+        <a href="../../demos/" data-t="directory">Demo directory</a
+        ><button id="language" type="button" aria-label="Passer en français">
+          FR
+        </button>
+      </div>
+    </nav>
+    <header>
+      <p class="eyebrow" data-t="eyebrow">ICONIC / SUPPLIER EVIDENCE DESK</p>
+      <h1 data-t="heading">Good output. Clear evidence.</h1>
+      <p class="lead" data-t="lead">
+        Check the supplier comparison independently. Then inspect which reported
+        usage, budget and cleanup fields are still missing.
+      </p>
+      <p class="notice" data-t="notice">
+        Offline review of supplied evidence. This page does not operate a
+        computer, call an AI provider, place an order or attest that execution
+        occurred. Reported costs are not verified bills.
+      </p>
+    </header>
+    <main id="main">
+      <noscript
+        ><p>
+          JavaScript and Web Crypto are required. / JavaScript et Web Crypto
+          sont requis.
+          <a
+            href="https://github.com/MontrealAI/AGIJobsv0/tree/main/demo/ICONIC-OPERATING-SYSTEM-DEMO"
+            >Read the original Python guide / Lire le guide Python.</a
+          >
+        </p></noscript
+      >
+      <form id="form">
+        <section class="panel">
+          <div class="section-head">
+            <h2 data-t="packet">Reported packet</h2>
+            <button type="button" class="quiet" id="reset" data-t="reset">
+              Restore example
+            </button>
+          </div>
+          <p class="hint" data-t="unknown">
+            Leave usage or cost blank to preserve “unknown”. Zero means an
+            explicit reported zero, not missing data. Costs use integer
+            micro-USD: 1,000,000 = $1.
+          </p>
+          <div class="pair" id="fields"></div>
+          <fieldset>
+            <legend data-t="execution">Reported execution conditions</legend>
+            <div id="conditions"></div>
+          </fieldset>
+          <label for="import" data-t="import"
+            >Reopen a packet or evidence · JSON up to 1 MB</label
+          ><input id="import" type="file" accept=".json,application/json" />
+          <p class="hint" data-t="privacy">
+            Inputs stay in this browser tab. There is no automatic save.
+            Imported outputs and hashes are ignored; the packet is checked
+            again.
+          </p>
+          <button type="submit" class="primary" data-t="run">
+            Verify artifacts & inspect reported fields
+          </button>
+          <p id="error" role="alert" hidden></p>
+          <p id="status" role="status" aria-live="polite"></p>
+        </section>
+      </form>
+      <section class="panel" id="result" hidden>
+        <h2 id="result-title" tabindex="-1" data-t="result">
+          Two separate questions
+        </h2>
+        <div class="metrics">
+          <div>
+            <span data-t="artifactQuestion"
+              >Do artifacts meet the fixture criteria?</span
+            ><strong id="artifact-status"></strong>
+          </div>
+          <div>
+            <span data-t="packetQuestion"
+              >Are reported fields complete under policy?</span
+            ><strong id="packet-status"></strong>
+          </div>
+        </div>
+        <p class="notice" data-t="notAttested">
+          Even when both pass, executionAttested, costAttested, admitted,
+          productionApproved and settlementApproved remain false.
+        </p>
+        <div class="passes">
+          <section>
+            <h3 data-t="artifactChecks">11 artifact checks</h3>
+            <ol id="artifact-checks"></ol>
+          </section>
+          <section>
+            <h3 data-t="packetChecks">Reported-field gates</h3>
+            <ol id="packet-checks"></ol>
+          </section>
+        </div>
+        <h3 data-t="unresolved">Unresolved gates</h3>
+        <p id="unresolved"></p>
+        <details>
+          <summary data-t="inspect">
+            Inspect source quotes and supplied deliverables
+          </summary>
+          <p data-t="fixtureNote">
+            Synthetic supplier fixture: 40 units each. Eligible delivery is at
+            most 7 days. Totals include shipping; no purchase is executed.
+          </p>
+          <pre id="quotes"></pre>
+          <div id="artifacts"></div>
+        </details>
+        <div class="actions">
+          <button type="button" class="quiet" id="download" data-t="download">
+            Download packet</button
+          ><button type="button" class="quiet" id="evidence" data-t="evidence">
+            Download checked evidence
+          </button>
+        </div>
+        <p id="digest" class="hint"></p>
+        <details>
+          <summary data-t="raw">Inspect full result JSON</summary>
+          <pre id="raw"></pre>
+        </details>
+      </section>
+      <section class="panel method">
+        <h2 data-t="method">What this establishes</h2>
+        <p data-t="scope">
+          The default packet contains supplier deliverables from a scripted
+          browser lab. Their hashes and arithmetic can be checked here. Token
+          usage and cost were not measured and remain unknown. Completing
+          reported fields does not independently attest execution, cleanup,
+          provider usage or cost.
+        </p>
+        <p data-t="tamper">
+          To inspect a different packet, edit the exported JSON and reopen it.
+          Artifact contents are shown as text, never executed. Changing an
+          artifact without its matching commitment fails integrity checks.
+        </p>
+        <a
+          href="https://github.com/MontrealAI/AGIJobsv0/tree/main/demo/ICONIC-OPERATING-SYSTEM-DEMO"
+          data-t="source"
+          >Original demo, actual lab provenance and local Python review</a
+        >
+      </section>
+    </main>
+    <footer data-t="footer">
+      ICONIC · Bounded evidence inspection · No execution or settlement
+      authority
+    </footer>
+    <script type="module" src="desk.mjs"></script>
+  </body>
+</html>

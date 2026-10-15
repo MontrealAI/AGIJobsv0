@@ -1635,30 +1635,38 @@
     "related": ["zenith-sapience-initiative-celestial-archon-governance"]
   },
   "ICONIC-OPERATING-SYSTEM-DEMO": {
-    "question": "Which parts are architecture, and where can I try the related implementation?",
-    "purpose": "For readers of the project vision: study this preserved design, identify the components it proposes and continue to a concrete related implementation.",
+    "question": "Do the supplier artifacts pass, and which reported execution fields remain unresolved?",
+    "purpose": "Inspect a bounded supplier evidence packet, independently check artifact integrity and arithmetic, then assess reported usage, budget and cleanup fields without granting authority.",
     "steps": [
       {
-        "title": "Read the design",
+        "title": "Inspect the supplied packet",
+        "source": "demo/ICONIC-OPERATING-SYSTEM-DEMO/packet.json",
+        "explanation": "The default contains real scripted-browser-lab deliverables. Token usage and cost were not measured and remain null, rather than assumed free."
+      },
+      {
+        "title": "Review artifacts and reported fields separately",
+        "source": "demo/ICONIC-OPERATING-SYSTEM-DEMO/run.py",
+        "explanation": "The original One-Box deterministic reviewer checks eleven artifact criteria. Separate gates inspect task identity, reported observation/cleanup, calls, usage and cost limits."
+      },
+      {
+        "title": "Understand the evidence boundary",
         "source": "demo/ICONIC-OPERATING-SYSTEM-DEMO/README.md",
-        "explanation": "This directory is documentation-only. Its architecture and ambitions are preserved; it does not contain a standalone executable demo."
-      },
-      {
-        "title": "Locate the implementation",
-        "source": "demo/One-Box/README.md",
-        "explanation": "The related implementation has its own scope, prerequisites and evidence. It should not be assumed to realize every aspiration in this design."
-      },
-      {
-        "title": "Understand evidence boundaries",
-        "source": "docs/production/readiness-2026-10-03.md",
-        "explanation": "Compare demonstrated behavior with outstanding signing, integration, security review and commissioning requirements. A simulation cannot replace authentic evidence for those gates."
+        "explanation": "Packet completeness means reported fields complete under policy, not attested execution or cost. All admission, production and settlement flags stay false. Original design diagrams remain preserved."
       }
     ],
-    "command": null,
-    "expected": "Open the related experience below for its guided inspection and run instructions. Reading this design does not execute or commission the proposed system.",
-    "experiment": "Choose a component from the diagram and map it to code, a test and an output in the related demo. Record any component that still has only a design description.",
-    "mode": "design",
-    "related": ["One-Box"]
+    "command": "python demo/ICONIC-OPERATING-SYSTEM-DEMO/run.py --packet demo/ICONIC-OPERATING-SYSTEM-DEMO/packet.json",
+    "expected": "Default artifact acceptance passes eleven checks, but packetComplete is false because usage and cost are unknown. Exit 0 means reported fields complete under policy, 1 means unresolved gates, 2 means invalid input. Execution and cost attestation always remain false.",
+    "experiment": "Enter reported usage and cost, reduce a budget, clear reported cleanup, or alter an artifact and reopen the packet. Inspect both artifact correctness and unresolved reported-field gates.",
+    "mode": "python-node",
+    "related": ["One-Box"],
+    "dashboards": [
+      {
+        "title": "Open the supplier evidence desk",
+        "route": "experiments/iconic/",
+        "source": "demo/ICONIC-OPERATING-SYSTEM-DEMO/web/index.html"
+      }
+    ],
+    "dashboardDescription": "EN/FR local evidence inspection with Web Crypto artifact commitments, editable reported usage/policy, exact packet export and strict recomputed reopen. No provider call or external execution."
   },
   "OMNI-CONCORD-ASCENSION-ATLAS": {
     "question": "Which parts are architecture, and where can I try the related implementation?",
