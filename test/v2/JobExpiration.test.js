@@ -122,6 +122,7 @@ describe('Job expiration', function () {
     await rep
       .connect(owner)
       .setAuthorizedCaller(await registry.getAddress(), true);
+    await rep.connect(owner).setJobRegistry(await registry.getAddress(), true);
     await rep.connect(owner).setThreshold(0);
     await registry.connect(owner).setMaxJobReward(reward);
     await registry.connect(owner).setJobStakeBps(1000);

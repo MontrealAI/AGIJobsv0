@@ -8,6 +8,8 @@ import {IJobRegistry} from "../interfaces/IJobRegistry.sol";
 contract ValidationStub is IValidationModule {
     /// @notice Module version for compatibility checks.
     uint256 public constant version = 2;
+    /// @dev Test-only current-controller capability; this stub does not model committee scoring.
+    bytes32 public constant terminalPolicyId = keccak256("AGIJobs:terminal-reputation-v3");
 
     bool public result;
     address public jobRegistry;

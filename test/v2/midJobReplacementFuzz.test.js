@@ -121,6 +121,7 @@ async function deploySystem() {
   );
   await registry.setIdentityRegistry(await identity.getAddress());
   await reputation.setCaller(await registry.getAddress(), true);
+  await reputation.setJobRegistry(await registry.getAddress(), true);
   await stake.setFeePool(await feePool.getAddress());
 
   return {

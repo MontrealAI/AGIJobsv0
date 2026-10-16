@@ -1,0 +1,29 @@
+{
+  "externalHead": "495e82a62019c23ddcf1f2c6a342578363fb3bd4",
+  "files": [
+    {
+      "upstreamPath": "docs/api/ReputationEngine.md",
+      "preservedFile": "ReputationEngine.md",
+      "gitBlobSha": "ffc321fc0a081862962272e2be920ee3bf98651f",
+      "sha256": "f4cdd7f3094083e74afbfc9b238333f1b58db04c4525bb2d7c225956f9ca7956"
+    },
+    {
+      "upstreamPath": "docs/production/reputation-terminal-interface-evidence.json",
+      "preservedFile": "reputation-terminal-interface-evidence.json",
+      "gitBlobSha": "4ff6e9fd402d6b7aa84b73cd39510e268a5e5db2",
+      "sha256": "2cdd953a11ca43bfe7a5f06498364069ea304c2a0adb738915a05770980d5fc7"
+    },
+    {
+      "upstreamPath": "docs/production/reputation-terminal-scoring-2026-10-15.md",
+      "preservedFile": "reputation-terminal-scoring-2026-10-15.md",
+      "gitBlobSha": "49dc01c307ac9cc7482941cbb17d6c0c1672d6be",
+      "sha256": "c3e70273cfca95621dce698d7cc8e43415e6c403e423aa9a372549ca93f38aac"
+    },
+    {
+      "upstreamPath": "docs/production/reputation-terminal-scoring-evidence.json",
+      "preservedFile": "reputation-terminal-scoring-evidence.json",
+      "gitBlobSha": "c2c3114d1499b193aead0da59c9669890455312e",
+      "sha256": "35b5cfd88210c04ccf0102db1e257e37eb8a8931b511a6dcee6d92c547bcb3f0"
+    }
+  ]
+}

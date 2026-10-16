@@ -43,7 +43,18 @@ function fixture() {
     fs.mkdirSync(path.dirname(sourceFile), { recursive: true });
     fs.writeFileSync(sourceFile, content);
     build.input.sources[source] = { content };
-    build.output.sources[source] = { ast: { nodes: [] } };
+    build.output.sources[source] = {
+      ast: {
+        nodes: [
+          {
+            nodeType: 'ContractDefinition',
+            name,
+            contractKind: 'contract',
+            abstract: false,
+          },
+        ],
+      },
+    };
     build.output.contracts[source] = {
       [name]: {
         abi: [],
@@ -123,6 +134,10 @@ test('verification archive refuses a stale or historical build before reserving 
     );
     assert.throws(() => archiveVerification(f.out, f.root), /stale/);
     assert.equal(fs.existsSync(f.out), false);
+    fs.writeFileSync(
+      path.join(f.root, 'contracts/v2/Deployer.sol'),
+      f.build.input.sources['contracts/v2/Deployer.sol'].content
+    );
     f.build.solcVersion = '0.8.25';
     fs.writeFileSync(f.buildFile, JSON.stringify(f.build));
     assert.throws(

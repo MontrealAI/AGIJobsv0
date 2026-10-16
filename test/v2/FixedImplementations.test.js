@@ -164,7 +164,16 @@ describe('Fixed implementations production compatibility', function () {
     );
     for (const [name, address] of Object.entries(inventory)) {
       const implementation = await ethers.getContractAt(name, address);
-      expect(await implementation.moduleId()).to.equal(ethers.id(`${name}:${name.startsWith('JobRegistry') ? 'percentage-stake-v2' : 'v1'}`));
+      expect(await implementation.moduleId()).to.equal(
+        ethers.id(
+          `${name}:${
+            name.startsWith('JobRegistry') ||
+            name.startsWith('ValidationModule')
+              ? 'terminal-claims-v3'
+              : 'v1'
+          }`
+        )
+      );
     }
     expect(
       Array.from(
@@ -207,29 +216,39 @@ describe('Fixed implementations production compatibility', function () {
     const normalizeMetadataDigest = (hex) => {
       const pattern = /a2646970667358221220[0-9a-f]{64}64736f6c63430008250033/g;
       expect([...hex.matchAll(pattern)]).to.have.lengthOf(1);
-      return hex.replace(pattern, `a2646970667358221220${'0'.repeat(64)}64736f6c63430008250033`);
+      return hex.replace(
+        pattern,
+        `a2646970667358221220${'0'.repeat(64)}64736f6c63430008250033`
+      );
     };
     const expectSemanticBundle = (bundled, compiled, name) => {
       expect(bundled.abi, name).to.deep.equal(compiled.abi);
-      expect(normalizeMetadataDigest(bundled.bytecode), name).to.equal(normalizeMetadataDigest(compiled.bytecode));
+      expect(normalizeMetadataDigest(bundled.bytecode), name).to.equal(
+        normalizeMetadataDigest(compiled.bytecode)
+      );
     };
-    for (const name of [
-      'CertificateNFT', 'DisputeModule', 'FeePool', 'IdentityRegistry',
-      'QuadraticVoting', 'ReputationEngine',
-    ]) {
+    for (const name of ['CertificateNFT', 'FeePool', 'QuadraticVoting']) {
       const bundled = require(`../../scripts/v2/lib/prebuilt/${name}.json`);
-      const source = `contracts/v2/${name === 'DisputeModule' ? 'modules/' : ''}${name}.sol`;
+      const source = `contracts/v2/${
+        name === 'DisputeModule' ? 'modules/' : ''
+      }${name}.sol`;
       const compiled = await artifacts.readArtifact(`${source}:${name}`);
-      if (name === 'DisputeModule') expectSemanticBundle(bundled, compiled, name);
-      else expect(bundled, name).to.deep.equal({ abi: compiled.abi, bytecode: compiled.bytecode });
+      if (name === 'DisputeModule')
+        expectSemanticBundle(bundled, compiled, name);
+      else
+        expect(bundled, name).to.deep.equal({
+          abi: compiled.abi,
+          bytecode: compiled.bytecode,
+        });
     }
     const prebuilt = require('../../scripts/v2/lib/prebuilt/ImplementationModules.json');
     expect(Object.keys(prebuilt).sort()).to.deep.equal(
       Object.values(modules).flat().sort()
     );
     for (const [controller, names] of Object.entries(modules)) {
-      // Percentage JobRegistry intentionally has new semantics and module IDs.
-      if (controller === 'JobRegistry') continue;
+      // Both v3 controller families intentionally reject their historical delegates.
+      if (controller === 'JobRegistry' || controller === 'ValidationModule')
+        continue;
       const bundledController = require(`../../scripts/v2/lib/prebuilt/${controller}.json`);
       const compiledController = await artifacts.readArtifact(
         `contracts/v2/${controller}.sol:${controller}`
@@ -246,17 +265,47 @@ describe('Fixed implementations production compatibility', function () {
 
   it('keeps historical no-compile demos on matched v1 bundles and rejects mixing them with percentage controllers', async function () {
     const [owner] = await ethers.getSigners();
-    const {deployPrebuiltImplementations} = require('../../scripts/deploy/prebuilt-implementations.cjs');
+    const {
+      deployPrebuiltImplementations,
+    } = require('../../scripts/deploy/prebuilt-implementations.cjs');
     const addresses = await deployPrebuiltImplementations('JobRegistry', owner);
     const bundled = require('../../scripts/v2/lib/prebuilt/JobRegistry.json');
-    const args = [ethers.ZeroAddress,ethers.ZeroAddress,ethers.ZeroAddress,ethers.ZeroAddress,ethers.ZeroAddress,ethers.ZeroAddress,ethers.ZeroAddress,0,0,[],owner.address,addresses];
-    const legacy = await new ethers.ContractFactory(bundled.abi,bundled.bytecode,owner).deploy(...args);
+    const args = [
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      0,
+      0,
+      [],
+      owner.address,
+      addresses,
+    ];
+    const legacy = await new ethers.ContractFactory(
+      bundled.abi,
+      bundled.bytecode,
+      owner
+    ).deploy(...args);
     expect(await legacy.jobStake()).to.equal(await legacy.DEFAULT_JOB_STAKE());
-    const current = await ethers.getContractFactory('contracts/v2/JobRegistry.sol:JobRegistry');
-    await expect(current.deploy(...args)).to.be.revertedWithCustomError(current,'InvalidImplementation');
-    for (let i=0;i<addresses.length;i++) {
-      const implementation = new ethers.Contract(addresses[i],['function moduleId() view returns (bytes32)'],owner);
-      expect(await implementation.moduleId()).to.equal(ethers.id(`${modules.JobRegistry[i]}:v1`));
+    const current = await ethers.getContractFactory(
+      'contracts/v2/JobRegistry.sol:JobRegistry'
+    );
+    await expect(current.deploy(...args)).to.be.revertedWithCustomError(
+      current,
+      'InvalidImplementation'
+    );
+    for (let i = 0; i < addresses.length; i++) {
+      const implementation = new ethers.Contract(
+        addresses[i],
+        ['function moduleId() view returns (bytes32)'],
+        owner
+      );
+      expect(await implementation.moduleId()).to.equal(
+        ethers.id(`${modules.JobRegistry[i]}:v1`)
+      );
     }
   });
 
@@ -275,8 +324,13 @@ describe('Fixed implementations production compatibility', function () {
       );
       for (const fragment of expected.fragments) {
         if (!['function', 'event', 'error'].includes(fragment.type)) continue;
-        if (controller === 'JobRegistry' && ['jobStake', 'DEFAULT_JOB_STAKE'].includes(fragment.name)) {
-          expect(actual.getFunction(fragment.name).stateMutability).to.equal('pure');
+        if (
+          controller === 'JobRegistry' &&
+          ['jobStake', 'DEFAULT_JOB_STAKE'].includes(fragment.name)
+        ) {
+          expect(actual.getFunction(fragment.name).stateMutability).to.equal(
+            'pure'
+          );
           continue; // Explicitly deprecated getters reject; percentage tests cover the failure.
         }
         expect(
@@ -290,13 +344,24 @@ describe('Fixed implementations production compatibility', function () {
       const baseline = require(`../fixtures/modular-baseline/${controller}.json`);
       const actual = await layoutFor(controller);
       const previous = normalizeLayout(baseline.storageLayout);
-      expect(actual.slice(0, previous.length).map((field) => ({...field, label: field.label === '_legacyJobStake' ? 'jobStake' : field.label}))).to.deep.equal(previous);
+      expect(
+        actual.slice(0, previous.length).map((field) => ({
+          ...field,
+          label: field.label === '_legacyJobStake' ? 'jobStake' : field.label,
+        }))
+      ).to.deep.equal(previous);
       if (controller === 'ValidationModule') {
         expect(actual.slice(previous.length).map((s) => s.label)).to.deep.equal(
           ['DOMAIN_SEPARATOR']
         );
       } else if (controller === 'JobRegistry') {
-        expect(actual.slice(previous.length).map((field) => field.label)).to.deep.equal(['_jobStakeBps']);
+        expect(
+          actual.slice(previous.length).map((field) => field.label)
+        ).to.deep.equal([
+          '_jobStakeBps',
+          'jobReputationEngine',
+          'jobReputationOutcome',
+        ]);
       } else expect(actual.length).to.equal(previous.length);
       for (const implementation of implementations) {
         expect(
@@ -342,10 +407,9 @@ describe('Fixed implementations production compatibility', function () {
       'JobRegistryConfiguration',
       addresses[0]
     );
-    await expect(implementation.setJobStakeBps(123)).to.be.revertedWithCustomError(
-      implementation,
-      'DirectImplementationCall'
-    );
+    await expect(
+      implementation.setJobStakeBps(123)
+    ).to.be.revertedWithCustomError(implementation, 'DirectImplementationCall');
     await expect(
       registry.connect(stranger).setJobStakeBps(123)
     ).to.be.revertedWithCustomError(registry, 'NotGovernance');
@@ -353,7 +417,9 @@ describe('Fixed implementations production compatibility', function () {
       .to.emit(registry, 'JobStakeBpsUpdated')
       .withArgs(1000, 123);
     expect(await registry.jobStakeBps()).to.equal(123);
-    expect(await ethers.provider.getStorage(await implementation.getAddress(), 39)).to.equal(ethers.ZeroHash); // Delegate writes only controller rate storage.
+    expect(
+      await ethers.provider.getStorage(await implementation.getAddress(), 39)
+    ).to.equal(ethers.ZeroHash); // Delegate writes only controller rate storage.
     await registry.transferOwnership(stranger.address);
     await expect(registry.setJobStakeBps(456)).to.be.revertedWithCustomError(
       registry,

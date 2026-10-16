@@ -1,0 +1,251 @@
+{
+  "scope": "Local ordinary functional gas measurements only",
+  "sourceManifestSha256": "888754a776cf8b78e6bd817fa5daa4aac98064f05a4d1268058e657a7499dd6f",
+  "originalOsakaBlockLimit": 30000000,
+  "confirmedOsakaTransactionCap": 16777216,
+  "conservativelyTestedSelectedCommitteeSize": 3,
+  "selected100and256OnOriginalProfile": "selection failed",
+  "full256Closure": "unmeasured; resource-bounded stop; no extrapolation",
+  "fullClosureRows": [
+    {
+      "profile": "native-protocol-default3",
+      "committee": 3,
+      "pool": 3,
+      "case": "early-all-approve",
+      "gas_used_receipt": 567604,
+      "estimate_gas": 722809,
+      "tx_gas_limit": 16777216,
+      "block_gas_limit": 30000000,
+      "calldata_bytes": 36,
+      "hash": "0x7d485baf82a72807a96a721ba13ceab1ff7ec636817ba4fb2850c2418b308360"
+    },
+    {
+      "profile": "native-protocol-default3",
+      "committee": 3,
+      "pool": 3,
+      "case": "early-mixed",
+      "gas_used_receipt": 655264,
+      "estimate_gas": 834438,
+      "tx_gas_limit": 16777216,
+      "block_gas_limit": 30000000,
+      "calldata_bytes": 36,
+      "hash": "0x7d485baf82a72807a96a721ba13ceab1ff7ec636817ba4fb2850c2418b308360"
+    },
+    {
+      "profile": "native-protocol-default3",
+      "committee": 3,
+      "pool": 3,
+      "case": "timeout-one-missing",
+      "gas_used_receipt": 705139,
+      "estimate_gas": 897262,
+      "tx_gas_limit": 16777216,
+      "block_gas_limit": 30000000,
+      "calldata_bytes": 36,
+      "hash": "0x1c35217689811e97fd853c9e1c110d15be2c73c384abb2956ed129b8456c51f9"
+    },
+    {
+      "profile": "native-protocol-default3",
+      "committee": 3,
+      "pool": 3,
+      "case": "timeout-none",
+      "gas_used_receipt": 701932,
+      "estimate_gas": 893182,
+      "tx_gas_limit": 16777216,
+      "block_gas_limit": 30000000,
+      "calldata_bytes": 36,
+      "hash": "0xf3c5d62e2967be3c70b3fa2f17d7dbf3f5543347b29b4bec5a01a1d45db26dd2"
+    },
+    {
+      "profile": "native-protocol-default3",
+      "committee": 3,
+      "pool": 3,
+      "case": "force-timeout-none",
+      "gas_used_receipt": 623040,
+      "estimate_gas": 793403,
+      "tx_gas_limit": 16777216,
+      "block_gas_limit": 30000000,
+      "calldata_bytes": 36,
+      "hash": "0x938858d96efec1e019dea7ae648fe4312968837754be3ff6a9a0ae4ed3c40b9c"
+    },
+    {
+      "profile": "native-default-large-pools",
+      "committee": 3,
+      "pool": 100,
+      "case": "early-all-approve",
+      "gas_used_receipt": 567604,
+      "estimate_gas": 722809,
+      "tx_gas_limit": 16777216,
+      "block_gas_limit": 30000000,
+      "calldata_bytes": 36,
+      "hash": "0x4af4a3e4d02731c707666072f61a6cd6b08a339b55ff5c02d8adc9b0b55e5dd8"
+    },
+    {
+      "profile": "native-default-large-pools",
+      "committee": 3,
+      "pool": 100,
+      "case": "timeout-none",
+      "gas_used_receipt": 701932,
+      "estimate_gas": 893182,
+      "tx_gas_limit": 16777216,
+      "block_gas_limit": 30000000,
+      "calldata_bytes": 36,
+      "hash": "0x4af4a3e4d02731c707666072f61a6cd6b08a339b55ff5c02d8adc9b0b55e5dd8"
+    },
+    {
+      "profile": "native-default-large-pools",
+      "committee": 3,
+      "pool": 256,
+      "case": "early-all-approve",
+      "gas_used_receipt": 567604,
+      "estimate_gas": 722809,
+      "tx_gas_limit": 16777216,
+      "block_gas_limit": 30000000,
+      "calldata_bytes": 36,
+      "hash": "0x60071d36f5da023a00e022d67e05b0745ea8b50cafdc7e8628df1883c92fafab"
+    },
+    {
+      "profile": "native-default-large-pools",
+      "committee": 3,
+      "pool": 256,
+      "case": "timeout-none",
+      "gas_used_receipt": 701932,
+      "estimate_gas": 893182,
+      "tx_gas_limit": 16777216,
+      "block_gas_limit": 30000000,
+      "calldata_bytes": 36,
+      "hash": "0x60071d36f5da023a00e022d67e05b0745ea8b50cafdc7e8628df1883c92fafab"
+    },
+    {
+      "profile": "native-sparse-pool256",
+      "committee": 3,
+      "pool": 256,
+      "case": "early-all-approve",
+      "gas_used_receipt": 567604,
+      "estimate_gas": 722809,
+      "tx_gas_limit": 16777216,
+      "block_gas_limit": 30000000,
+      "calldata_bytes": 36,
+      "hash": "0xbc8e8077eb7603f1f9611c8f82b85c79f03713d47adf499411a807e5ff205737"
+    },
+    {
+      "profile": "native-sparse-pool256",
+      "committee": 3,
+      "pool": 256,
+      "case": "timeout-none",
+      "gas_used_receipt": 701932,
+      "estimate_gas": 893182,
+      "tx_gas_limit": 16777216,
+      "block_gas_limit": 30000000,
+      "calldata_bytes": 36,
+      "hash": "0xbc8e8077eb7603f1f9611c8f82b85c79f03713d47adf499411a807e5ff205737"
+    },
+    {
+      "profile": "diagnostic-cancun",
+      "committee": 100,
+      "pool": 100,
+      "case": "early-all-approve",
+      "gas_used_receipt": 11598231,
+      "estimate_gas": 14761036,
+      "tx_gas_limit": 30000000,
+      "block_gas_limit": 30000000,
+      "calldata_bytes": 36,
+      "hash": "0x8b442bd90f91f98e32e23893fa1196c76c05c3cfd9530dcf197669acfc61d018"
+    },
+    {
+      "profile": "diagnostic-cancun",
+      "committee": 100,
+      "pool": 100,
+      "case": "early-mixed",
+      "gas_used_receipt": 12046495,
+      "estimate_gas": 15307582,
+      "tx_gas_limit": 30000000,
+      "block_gas_limit": 30000000,
+      "calldata_bytes": 36,
+      "hash": "0x8b442bd90f91f98e32e23893fa1196c76c05c3cfd9530dcf197669acfc61d018"
+    },
+    {
+      "profile": "diagnostic-cancun",
+      "committee": 100,
+      "pool": 100,
+      "case": "timeout-one-missing",
+      "gas_used_receipt": 11676712,
+      "estimate_gas": 14861816,
+      "tx_gas_limit": 30000000,
+      "block_gas_limit": 30000000,
+      "calldata_bytes": 36,
+      "hash": "0x8b442bd90f91f98e32e23893fa1196c76c05c3cfd9530dcf197669acfc61d018"
+    },
+    {
+      "profile": "diagnostic-cancun",
+      "committee": 100,
+      "pool": 100,
+      "case": "timeout-none",
+      "gas_used_receipt": 14981749,
+      "estimate_gas": 19029637,
+      "tx_gas_limit": 30000000,
+      "block_gas_limit": 30000000,
+      "calldata_bytes": 36,
+      "hash": "0x8b442bd90f91f98e32e23893fa1196c76c05c3cfd9530dcf197669acfc61d018"
+    },
+    {
+      "profile": "diagnostic-cancun",
+      "committee": 100,
+      "pool": 100,
+      "case": "force-timeout-none",
+      "gas_used_receipt": 12607494,
+      "estimate_gas": 16038438,
+      "tx_gas_limit": 30000000,
+      "block_gas_limit": 30000000,
+      "calldata_bytes": 36,
+      "hash": "0x7e16316bbc1e8ecf9e6febd59897aeb76181e029390543bb6b8a02dbc1e73cfc"
+    }
+  ],
+  "runStatus": {
+    "native-osaka.initial": {
+      "status": "completed initial attempt",
+      "note": "Both selected100/256 failed. Initial runner omitted failed receipts."
+    },
+    "native-osaka": {
+      "status": "partial host termination",
+      "exitCode": 137,
+      "note": "100 failure receipt captured; run killed during256 setup. Use native-osaka256 for completed256 failure receipt."
+    },
+    "native-osaka256": {
+      "status": "completed",
+      "note": "Selected256 rejected under original cap; failed receipt captured."
+    },
+    "diagnostic-cancun": {
+      "status": "completed",
+      "note": "Selected100 and all five full closures measured; selected256 failed with60M setup transaction gas."
+    },
+    "diagnostic-cancun256": {
+      "status": "partial host termination",
+      "exitCode": 137,
+      "note": "Real selected256 setup receipt74,654,299 gas captured at100M ceiling. Process killed before any full closure receipt."
+    },
+    "diagnostic-cancun256-guarded": {
+      "exitCode": -15,
+      "peakRssBytes": 1805676544,
+      "elapsedSeconds": 7.073954473991762,
+      "stopReason": "RSS exceeded explicit 1536 MiB resource budget",
+      "rssLimitBytes": 1610612736,
+      "timeLimitSeconds": 180
+    },
+    "native-default-pool3": {
+      "status": "completed",
+      "note": "Bare constructor approvals2. Initial early-mixed row inadvertently used3 approvals and is redundant all-approve coverage, not a mixed-vote result."
+    },
+    "native-default-large-pools": {
+      "status": "completed",
+      "note": "Bare constructor approvals2; pools100 then256."
+    },
+    "native-protocol-default3": {
+      "status": "completed",
+      "note": "Explicit protocol requiredApprovals3; all five cases valid, including2approve/1reject."
+    },
+    "native-sparse-pool256": {
+      "status": "completed",
+      "note": "Explicit approvals3; pool256, all staked, only3 identity-eligible."
+    }
+  }
+}

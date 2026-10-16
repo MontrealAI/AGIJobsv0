@@ -3,6 +3,19 @@ name: Dependency repair qualification
 on:
   pull_request:
     paths:
+      - 'contracts/**'
+      - '**/*.sol'
+      - 'config/**'
+      - 'deployment-config/**'
+      - 'scripts/**'
+      - '**/hardhat.config.*'
+      - 'foundry.toml'
+      - 'remappings.txt'
+      - '.nvmrc'
+      - '.npmrc'
+      - '.node-version'
+      - 'tsconfig*.json'
+      - 'types/**'
       - 'package.json'
       - 'package-lock.json'
       - 'scripts/security/**'
@@ -58,15 +71,48 @@ jobs:
           mkdir -p "$evidence"
           failed=0
           run_check() {
-            name="$1"; shift
-            "$@" > "$evidence/$name.log" 2>&1
+            local name="$1"; shift
+            local code
+            if [ "$1" = run_preservation ]; then
+              shift
+              run_preservation "$@" > "$evidence/$name.log" 2>&1
+            else
+              "$@" > "$evidence/$name.log" 2>&1
+            fi
             code=$?
             printf '%s %s\n' "$name" "$code" | tee -a "$evidence/exits.txt"
             cat "$evidence/$name.log"
             if [ "$code" != 0 ]; then failed=1; fi
             return "$code"
           }
-          run_check source-preservation node scripts/security/check-dependency-preservation.cjs source
+          # Functional reviewed-source binding; this editable workflow is not
+          # an independent approval authority or a deployment authorization.
+          run_preservation() {
+            local mode="$1"
+            local policy_commit="35fd56967c9e36fdb5f86814b3dc3bdfb1feef1f"
+            local bundle name origin_url
+            # Explicit-head checkout fetches branches, not necessarily the event's
+            # synthetic merge object. Fetch only that immutable SHA if absent;
+            # the pinned checker still proves its exact parents and head tree.
+            [[ "$GITHUB_SHA" =~ ^[0-9a-fA-F]{40}$ ]] || return 1
+            origin_url="$(git --no-replace-objects remote get-url origin)" || return 1
+            case "$origin_url" in
+              https://github.com/MontrealAI/AGIJobsv0|https://github.com/MontrealAI/AGIJobsv0.git) ;;
+              *) return 1 ;;
+            esac
+            if ! git --no-replace-objects cat-file -e "$GITHUB_SHA^{commit}"; then
+              git --no-replace-objects fetch --no-tags --no-recurse-submodules origin "$GITHUB_SHA" || return 1
+            fi
+            git --no-replace-objects cat-file -e "$policy_commit^{commit}" || return 1
+            git --no-replace-objects merge-base --is-ancestor "$policy_commit" HEAD || return 1
+            bundle="$(mktemp -d "$RUNNER_TEMP/jobs-source-policy.XXXXXX")" || return 1
+            for name in check-dependency-preservation.cjs source-preservation-lib.cjs unreleased-source-policy.index.json unreleased-source-policy.json; do
+              git --no-replace-objects show "$policy_commit:scripts/security/$name" > "$bundle/$name" || return 1
+            done
+            printf '%s  %s\n' '3e0fff09c845ebf721ee62fff167ac4b036a15f10d3326c0bf2cfcbe5afb590a' "$bundle/unreleased-source-policy.json" | sha256sum --check --status || return 1
+            node "$bundle/check-dependency-preservation.cjs" "$mode" --root "$GITHUB_WORKSPACE"
+          }
+          run_check source-preservation run_preservation source
           run_check braces-provenance node scripts/security/verify-braces-patch.cjs --source
           case "$SURFACE" in
             libraries)
@@ -81,7 +127,7 @@ jobs:
                 run_check size npm run release:check-size
                 run_check local-deploy npm run deploy:local
                 run_check deployer-tests npx --no-install hardhat test --no-compile test/v2/Deployer.test.js test/v2/DeploymentScripts.test.js test/v2/DeploymentCli.test.js
-                run_check generated-preservation node scripts/security/check-dependency-preservation.cjs generated
+                run_check generated-preservation run_preservation generated
               fi
               ;;
             browser)

@@ -199,7 +199,7 @@ contract IdentityRegistry is Ownable2Step {
             emit NameWrapperUpdated(address(_nameWrapper));
         }
         if (address(_reputationEngine) != address(0)) {
-            if (_reputationEngine.version() != 2) {
+            if (_reputationEngine.version() != 2 && _reputationEngine.version() != 3) {
                 revert IncompatibleReputationEngine();
             }
             reputationEngine = _reputationEngine;
@@ -507,7 +507,7 @@ contract IdentityRegistry is Ownable2Step {
         if (engine == address(0)) {
             revert ZeroAddress();
         }
-        if (IReputationEngine(engine).version() != 2) {
+        if (IReputationEngine(engine).version() != 2 && IReputationEngine(engine).version() != 3) {
             revert IncompatibleReputationEngine();
         }
         reputationEngine = IReputationEngine(engine);

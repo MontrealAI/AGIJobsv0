@@ -149,6 +149,7 @@ async function deployFullSystem() {
     []
   );
   await reputation.setCaller(await registry.getAddress(), true);
+  await reputation.setJobRegistry(await registry.getAddress(), true);
 
   await registry.setFeePct(0);
   await registry.setValidatorRewardPct(0);

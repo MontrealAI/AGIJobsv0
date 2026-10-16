@@ -65,7 +65,44 @@ describe('Deployment CLI rehearsals', function () {
     expect(report.pauseState.every((item) => item.paused)).to.equal(true);
     expect(report.productionApproved).to.equal(false);
     expect(report.coordinator).to.match(/^0x[0-9a-fA-F]{40}$/);
-    expect(report.transactions).to.have.lengthOf(24);
+    // The append-only journal includes both directly mined identity/tax creations.
+    // Assert the complete ordered operation inventory, not only an aggregate count.
+    expect(report.transactions.map((item) => item.name)).to.deep.equal([
+      'Deployer',
+      'StakeManagerConfiguration',
+      'StakeManagerStaking',
+      'StakeManagerEscrow',
+      'StakeManagerSlashing',
+      'StakeManager',
+      'JobRegistryConfiguration',
+      'JobRegistryLifecycle',
+      'JobRegistrySettlement',
+      'JobRegistry',
+      'ValidationModuleConfiguration',
+      'ValidationModuleVoting',
+      'ValidationModuleSelection',
+      'ValidationModule',
+      'ReputationEngine',
+      'ArbitratorCommittee',
+      'DisputeModule',
+      'CertificateNFT',
+      'TaxPolicy',
+      'FeePool',
+      'IdentityRegistry',
+      'PlatformRegistry',
+      'JobRouter',
+      'PlatformIncentives',
+      'SystemPause',
+      'registerModules',
+    ]);
+    expect(Object.keys(report.creationRecords)).to.have.lengthOf(25);
+    for (const name of ['IdentityRegistry', 'TaxPolicy']) {
+      const submitted = report.transactions.find((item) => item.name === name);
+      expect(submitted.hash).to.match(/^0x[0-9a-fA-F]{64}$/);
+      expect(report.creationRecords[name].address).to.equal(
+        report.contracts[name]
+      );
+    }
     expect(report.ownershipTransactions).to.have.lengthOf(2);
   });
 

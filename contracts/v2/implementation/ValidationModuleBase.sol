@@ -8,6 +8,7 @@ import {IJobRegistry} from "../interfaces/IJobRegistry.sol";
 import {IJobRegistryTax} from "../interfaces/IJobRegistryTax.sol";
 import {IStakeManager} from "../interfaces/IStakeManager.sol";
 import {IReputationEngine} from "../interfaces/IReputationEngine.sol";
+import {ITerminalReputation, ITerminalJobRegistry} from "../interfaces/ITerminalReputation.sol";
 import {IValidationModule} from "../interfaces/IValidationModule.sol";
 import {IIdentityRegistry} from "../interfaces/IIdentityRegistry.sol";
 import {ITaxPolicy} from "../interfaces/ITaxPolicy.sol";
@@ -72,6 +73,7 @@ error NoActiveRound();
 abstract contract ValidationModuleBase is IValidationModule, Ownable, TaxAcknowledgement, Pausable, ReentrancyGuard {
     /// @notice Module version for compatibility checks.
     uint256 public constant version = 2;
+    bytes32 public constant terminalPolicyId = keccak256("AGIJobs:terminal-reputation-v3");
 
     /// @notice Domain separator used for typed commit hashes.
     // Appended storage field below preserves all existing storage offsets.
@@ -373,13 +375,14 @@ abstract contract ValidationModuleBase is IValidationModule, Ownable, TaxAcknowl
 
     /// @notice Update the reputation engine used for validator feedback.
     function _entry_setReputationEngine(IReputationEngine engine) internal onlyOwner {
+        if (address(engine) != address(0) && (engine.version() != 3 || ITerminalReputation(address(engine)).terminalPolicyId() != terminalPolicyId)) revert InvalidJobRegistry();
         reputationEngine = engine;
         emit ReputationEngineUpdated(address(engine));
     }
 
     /// @notice Update the JobRegistry reference.
     function _entry_setJobRegistry(IJobRegistry registry) internal onlyOwner {
-        if (address(registry) == address(0) || registry.version() != 2) {
+        if (address(registry) == address(0) || registry.version() != 2 || ITerminalJobRegistry(address(registry)).terminalPolicyId() != terminalPolicyId) {
             revert InvalidJobRegistry();
         }
         jobRegistry = registry;
@@ -1319,7 +1322,6 @@ abstract contract ValidationModuleBase is IValidationModule, Ownable, TaxAcknowl
             revert RevealPending();
         }
         uint256 size = r.committeeSize == 0 ? validatorsPerJob : r.committeeSize;
-        if (size > maxValidatorsPerJob) size = maxValidatorsPerJob;
         uint256 quorumTarget = _quorumTarget(size);
         if (quorumTarget == 0 || r.revealedCount >= quorumTarget) {
             return _finalize(jobId);
@@ -1329,7 +1331,6 @@ abstract contract ValidationModuleBase is IValidationModule, Ownable, TaxAcknowl
 
         IJobRegistry.Job memory job = jobRegistry.jobs(jobId);
         uint256 vlen = r.validators.length;
-        if (vlen > maxValidatorsPerJob) vlen = maxValidatorsPerJob;
         (bool burnRequired, bool burnSatisfied) = jobRegistry.burnEvidenceStatus(jobId);
         bool skipPenalties = burnRequired && !burnSatisfied;
         for (uint256 i; i < vlen;) {
@@ -1346,20 +1347,36 @@ abstract contract ValidationModuleBase is IValidationModule, Ownable, TaxAcknowl
                     validatorBanUntil[val] = untilBlock;
                     emit ValidatorBanApplied(val, untilBlock);
                 }
-                if (address(reputationEngine) != address(0)) {
-                    reputationEngine.subtract(val, 1);
-                }
             }
             unchecked {
                 ++i;
             }
         }
+        _recordForcedRound(jobId, r, !skipPenalties);
         r.tallied = true;
         emit ValidationTallied(jobId, false, r.approvals, r.rejections);
         emit ValidationResult(jobId, false);
         jobRegistry.forceFinalize(jobId);
         _cleanup(jobId);
         return false;
+    }
+
+    function _recordForcedRound(uint256 jobId, Round storage r, bool penalizeNonReveal) internal {
+        address engine = ITerminalJobRegistry(address(jobRegistry)).jobReputationEngine(jobId);
+        if (engine == address(0)) return;
+        uint256 count = r.validators.length;
+        address[] memory committee = new address[](count);
+        bool[] memory revealStates = new bool[](count);
+        bool[] memory voteStates = new bool[](count);
+        for (uint256 i; i < count; ++i) {
+            address validator = r.validators[i];
+            committee[i] = validator;
+            revealStates[i] = revealed[jobId][validator];
+            voteStates[i] = votes[jobId][validator];
+        }
+        ITerminalReputation(engine).recordRound(
+            address(jobRegistry), jobId, entropyRound[jobId], committee, revealStates, voteStates, penalizeNonReveal
+        );
     }
 
     function _quorumTarget(uint256 committee) internal view returns (uint256) {
@@ -1392,21 +1409,18 @@ abstract contract ValidationModuleBase is IValidationModule, Ownable, TaxAcknowl
     function _finalize(uint256 jobId) internal returns (bool success) {
         Round storage r = rounds[jobId];
         if (r.tallied) revert AlreadyTallied();
-        bool earlyWindowReached = r.earlyFinalizeEligibleAt != 0 && block.timestamp >= r.earlyFinalizeEligibleAt;
-        if (r.revealedCount != r.validators.length) {
-            if (!earlyWindowReached && block.timestamp <= r.revealDeadline) {
-                revert RevealPending();
-            }
+        // Quorum cannot revoke the remaining validators' promised reveal window.
+        // Early closure is safe only once every selected participant has revealed.
+        if (r.revealedCount != r.validators.length && block.timestamp <= r.revealDeadline) {
+            revert RevealPending();
         }
 
         uint256 total = r.approvals + r.rejections;
         uint256 size = r.committeeSize == 0 ? validatorsPerJob : r.committeeSize;
-        if (size > maxValidatorsPerJob) size = maxValidatorsPerJob;
         uint256 quorumTarget = _quorumTarget(size);
         bool quorum = quorumTarget == 0 || r.revealedCount >= quorumTarget;
         uint256 approvalCount;
         uint256 vlen = r.validators.length;
-        if (vlen > maxValidatorsPerJob) vlen = maxValidatorsPerJob;
         for (uint256 i; i < vlen;) {
             address v = r.validators[i];
             if (revealed[jobId][v] && votes[jobId][v]) {
@@ -1442,30 +1456,11 @@ abstract contract ValidationModuleBase is IValidationModule, Ownable, TaxAcknowl
             }
         }
 
-        if (address(reputationEngine) != address(0)) {
-            uint256 payout;
-            uint256 duration;
-            if (success) {
-                IJobRegistry.JobMetadata memory metadata = jobRegistry.decodeJobMetadata(job.packedMetadata);
-                uint256 validatorPct = jobRegistry.validatorRewardPct();
-                uint256 rewardAfterValidator = uint256(job.reward);
-                if (committee.length > 0 && validatorPct > 0) {
-                    uint256 validatorReward = (uint256(job.reward) * validatorPct) / 100;
-                    rewardAfterValidator -= validatorReward;
-                }
-                uint256 agentPctRaw = metadata.agentPct;
-                uint256 agentPct = agentPctRaw == 0 ? 100 : agentPctRaw;
-                uint256 agentAmount = (rewardAfterValidator * agentPct) / 100;
-                payout = agentAmount * 1e12;
-                if (metadata.assignedAt != 0 && block.timestamp > metadata.assignedAt) {
-                    duration = block.timestamp - uint256(metadata.assignedAt);
-                }
-            }
-
-            reputationEngine.updateScores(
-                jobId, job.agent, committee, success, revealedStates, voteStates, payout, duration
+        address jobEngine = ITerminalJobRegistry(address(jobRegistry)).jobReputationEngine(jobId);
+        if (jobEngine != address(0)) {
+            ITerminalReputation(jobEngine).recordRound(
+                address(jobRegistry), jobId, entropyRound[jobId], committee, revealedStates, voteStates, true
             );
-            jobRegistry.markReputationProcessed(jobId);
         }
 
         for (uint256 i; i < vlen;) {

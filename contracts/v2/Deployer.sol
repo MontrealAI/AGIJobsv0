@@ -465,6 +465,7 @@ contract Deployer is Ownable {
         pRegistry.setRegistrar(address(incentives), true);
         router.setRegistrar(address(incentives), true);
         reputation.setAuthorizedCaller(address(registry), true);
+        reputation.setJobRegistry(address(registry), true);
         reputation.setAuthorizedCaller(address(validation), true);
 
         if (_launchPaused) {

@@ -178,7 +178,8 @@ function parseArgs(argv: string[]): CliArgs {
     if (!token.startsWith('--'))
       throw new Error(`Unexpected argument: ${token}`);
     const key = token.slice(2);
-    if (Object.prototype.hasOwnProperty.call(args, key)) throw new Error(`Duplicate option: --${key}`);
+    if (Object.prototype.hasOwnProperty.call(args, key))
+      throw new Error(`Duplicate option: --${key}`);
     if (switches.has(key)) {
       args[key] = true;
       continue;
@@ -424,7 +425,8 @@ async function verify(address: string, args: any[] = [], contract?: string) {
       constructorArguments: args,
       ...(contract ? { contract } : {}),
     });
-    return { address, status: 'verified' };
+    // Plugin success or already-verified text is not an exact explorer identity proof.
+    return { address, status: 'submitted-unqualified' };
   } catch (err) {
     // Provider errors may contain credential-bearing URLs. Keep reports public-safe.
     console.error(
@@ -444,9 +446,11 @@ function reportNumber(value: bigint, label: string): number {
 }
 
 export function parseJobStakeBps(value: unknown): number {
-  if (!/^[0-9]+$/.test(String(value))) throw new Error('jobStakeBps must be an integer from 0 to 10000');
+  if (!/^[0-9]+$/.test(String(value)))
+    throw new Error('jobStakeBps must be an integer from 0 to 10000');
   const bps = Number(value);
-  if (!Number.isSafeInteger(bps) || bps > 10000) throw new Error('jobStakeBps must be an integer from 0 to 10000');
+  if (!Number.isSafeInteger(bps) || bps > 10000)
+    throw new Error('jobStakeBps must be an integer from 0 to 10000');
   return bps;
 }
 
@@ -479,7 +483,9 @@ export async function main(argv = process.argv.slice(2)) {
     : ({} as DeployerConfig);
 
   if (Object.prototype.hasOwnProperty.call(config.econ ?? {}, 'jobStake'))
-    throw new Error('Legacy econ.jobStake uses token amounts and is unsupported; explicitly configure econ.jobStakeBps');
+    throw new Error(
+      'Legacy econ.jobStake uses token amounts and is unsupported; explicitly configure econ.jobStakeBps'
+    );
   const publicNetwork = !LOCAL_NETWORKS.has(network.name);
   const outputCandidate =
     toStringOrUndefined(cli.output) ??
@@ -593,7 +599,9 @@ export async function main(argv = process.argv.slice(2)) {
       toStringOrUndefined(cli['min-stake']) ?? econConfig.minStake,
       'Global minimum stake'
     ),
-    jobStakeBps: parseJobStakeBps(cli['job-stake-bps'] ?? econConfig.jobStakeBps ?? 1000),
+    jobStakeBps: parseJobStakeBps(
+      cli['job-stake-bps'] ?? econConfig.jobStakeBps ?? 1000
+    ),
   };
 
   if (
@@ -615,7 +623,6 @@ export async function main(argv = process.argv.slice(2)) {
   if (econ.minStake < 0) {
     throw new Error('Global minimum stake must be non-negative');
   }
-
 
   const hasEconOverrides =
     econ.feePct !== 0 ||
@@ -706,6 +713,7 @@ export async function main(argv = process.argv.slice(2)) {
     configSha256: createHash('sha256').update(configBytes).digest('hex'),
     transactions: [],
     creationRecords: {},
+    creationAttempts: [],
     productionApproved: false,
     journal: `${outputPath}.journal.jsonl`,
   };
@@ -748,6 +756,17 @@ export async function main(argv = process.argv.slice(2)) {
       : await Deployer.deploy({ ...txOverrides });
     const coordinatorTx = deployer.deploymentTransaction();
     if (coordinatorTx)
+      (progress.transactions as Array<unknown>).push({
+        name: 'Deployer',
+        hash: coordinatorTx.hash,
+        fullyQualified: 'contracts/v2/Deployer.sol:Deployer',
+        constructorArguments: '0x',
+        from: coordinatorTx.from,
+        nonce: coordinatorTx.nonce,
+        chainId: coordinatorTx.chainId.toString(),
+        input: coordinatorTx.data,
+      });
+    if (coordinatorTx)
       checkpoint({
         status: 'coordinator-submitted',
         coordinatorTransaction: coordinatorTx.hash,
@@ -755,6 +774,17 @@ export async function main(argv = process.argv.slice(2)) {
       });
     await deployer.waitForDeployment();
     const deployerAddress = await deployer.getAddress();
+    if (coordinatorTx) {
+      (progress.creationAttempts as Array<unknown>).push({
+        name: 'Deployer',
+        fullyQualified: 'contracts/v2/Deployer.sol:Deployer',
+        address: deployerAddress,
+        constructorArguments: '0x',
+        transactionHash: coordinatorTx.hash,
+        kind: 'direct',
+      });
+      checkpoint({});
+    }
     if (
       (await ethers.provider.getCode(deployerAddress)) !==
       (await artifacts.readArtifact('contracts/v2/Deployer.sol:Deployer'))
@@ -843,8 +873,17 @@ export async function main(argv = process.argv.slice(2)) {
       withTaxPolicy: withTax,
       tax: { uri: requestedTaxUri, description: requestedTaxDescription },
       overrides: txOverrides,
-      onSubmitted: async (name, hash) => {
-        (progress.transactions as Array<unknown>).push({ name, hash });
+      onSubmitted: async (name, hash, evidence) => {
+        (progress.transactions as Array<unknown>).push({
+          name,
+          hash,
+          ...evidence,
+        });
+        checkpoint({});
+      },
+      onCreation: async (record) => {
+        // Append by transaction/address identity. Never replace orphan or duplicate-name attempts.
+        (progress.creationAttempts as Array<unknown>).push(record);
         checkpoint({});
       },
       onDeployed: async (name, contract, args, source) => {
@@ -1095,6 +1134,8 @@ export async function main(argv = process.argv.slice(2)) {
       TaxPolicy: withTax ? taxPolicy : 'disabled',
       IdentityRegistry: identityRegistry,
       SystemPause: systemPause,
+      Deployer: deployerAddress,
+      ArbitratorCommittee: (await deployer.stagedModules())[13],
     } as Record<string, string>;
 
     console.log('\nDeployment summary');
@@ -1137,6 +1178,12 @@ export async function main(argv = process.argv.slice(2)) {
       contracts: summary,
       implementations,
       creationRecords,
+      creationAttempts: progress.creationAttempts,
+      qualification: {
+        status: 'unqualified',
+        reason:
+          'Run verification-only reconciliation against all retained journals and the archived standard input before qualified activation.',
+      },
     };
     const managed = [
       stakeManager,

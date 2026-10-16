@@ -330,7 +330,7 @@ describe('PlatformRegistry', function () {
     await registry.connect(platform).register();
     expect(await registry.getScore(platform.address)).to.equal(STAKE);
     await reputationEngine.add(platform.address, 5);
-    expect(await registry.getScore(platform.address)).to.equal(STAKE + 4n);
+    expect(await registry.getScore(platform.address)).to.equal(STAKE + 5n);
   });
 
   it('owner can update settings', async () => {

@@ -5,6 +5,7 @@ import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 import {IJobRegistry} from "../interfaces/IJobRegistry.sol";
+import {ITerminalJobRegistry} from "../interfaces/ITerminalReputation.sol";
 import {IStakeManager} from "../interfaces/IStakeManager.sol";
 import {IValidationModule} from "../interfaces/IValidationModule.sol";
 import {ITaxPolicy} from "../interfaces/ITaxPolicy.sol";
@@ -26,7 +27,7 @@ contract DisputeModule is Governable, Pausable {
     /// @dev Typed data hash for moderator approvals.
     bytes32 private constant _RESOLVE_TYPEHASH =
         keccak256(
-            "ResolveDispute(uint256 jobId,bool employerWins,address module,uint256 chainId)"
+            "ResolveDisputeV3(uint256 jobId,bool employerWins,address module,uint256 chainId,address registry,uint256 disputeRound)"
         );
 
     IJobRegistry public jobRegistry;
@@ -66,12 +67,15 @@ contract DisputeModule is Governable, Pausable {
 
     /// @dev Tracks active disputes by jobId.
     mapping(uint256 => Dispute) public disputes;
+    event AttributedResolution(uint256 indexed jobId, uint256 indexed round, uint8 outcome, bytes32 evidenceHash, address resolver);
+    error InvalidAttributedOutcome();
 
     /// @notice Moderator voting weight expressed as whole numbers.
     mapping(address => uint96) public moderatorWeights;
 
     /// @notice Aggregate moderator weight used when evaluating quorum.
     uint96 public totalModeratorWeight;
+    mapping(uint256 => uint256) public disputeRound;
 
     event DisputeRaised(
         uint256 indexed jobId,
@@ -329,6 +333,7 @@ contract DisputeModule is Governable, Pausable {
 
         d.claimant = claimant;
         d.raisedAt = block.timestamp;
+        ++disputeRound[jobId];
         d.resolved = false;
         d.fee = disputeFee;
         d.evidenceHash = evidenceHash;
@@ -362,6 +367,7 @@ contract DisputeModule is Governable, Pausable {
 
         d.claimant = claimant;
         d.raisedAt = block.timestamp;
+        ++disputeRound[jobId];
         d.resolved = false;
         d.fee = 0;
         d.evidenceHash = bytes32(0);
@@ -397,15 +403,42 @@ contract DisputeModule is Governable, Pausable {
         bool employerWins,
         bytes[] calldata signatures
     ) external whenNotPaused {
-        if (signatures.length == 0) revert InvalidModeratorWeight();
-        Dispute storage d = disputes[jobId];
-        require(d.raisedAt != 0 && !d.resolved, "no dispute");
-        require(block.timestamp >= d.raisedAt + disputeWindow, "window");
+        _checkModeratorSignatures(resolutionMessageHash(jobId, employerWins), signatures);
+        _resolve(jobId, employerWins, msg.sender);
+    }
 
+    /// @notice Versioned protocol attribution: 1=success, 2=unattributed refund, 3=agent breach.
+    /// @dev Evidence hashes bind the adjudication record, not the truth of its contents.
+    function resolveDisputeOutcome(uint256 jobId, uint8 outcome, bytes32 evidenceHash) external whenNotPaused {
+        _checkDirectResolutionAuthority(msg.sender);
+        _checkOutcome(outcome, evidenceHash);
+        _resolve(jobId, outcome != 1, msg.sender, outcome, evidenceHash);
+    }
+
+    function resolveOutcomeWithSignatures(uint256 jobId, uint8 outcome, bytes32 evidenceHash, bytes[] calldata signatures)
+        external whenNotPaused
+    {
+        _checkOutcome(outcome, evidenceHash);
+        _checkModeratorSignatures(outcomeMessageHash(jobId, outcome, evidenceHash), signatures);
+        _resolve(jobId, outcome != 1, msg.sender, outcome, evidenceHash);
+    }
+
+    function _checkOutcome(uint8 outcome, bytes32 evidenceHash) internal pure {
+        if (outcome == 0 || outcome > 3 || evidenceHash == bytes32(0)) revert InvalidAttributedOutcome();
+    }
+
+    function outcomeMessageHash(uint256 jobId, uint8 outcome, bytes32 evidenceHash) public view returns (bytes32) {
+        return MessageHashUtils.toEthSignedMessageHash(keccak256(abi.encode(
+            keccak256("AGIJobs:attributed-resolution-v3"), address(this), block.chainid,
+            address(jobRegistry), jobId, disputeRound[jobId], outcome, evidenceHash
+        )));
+    }
+
+    function _checkModeratorSignatures(bytes32 digest, bytes[] calldata signatures) internal view {
+        if (signatures.length == 0) revert InvalidModeratorWeight();
         uint96 totalWeight = totalModeratorWeight;
         if (totalWeight == 0) revert NoModeratorsConfigured();
 
-        bytes32 digest = resolutionMessageHash(jobId, employerWins);
         uint96 accumulated;
         address[] memory seen = new address[](signatures.length);
         for (uint256 i; i < signatures.length; ++i) {
@@ -425,7 +458,6 @@ contract DisputeModule is Governable, Pausable {
             revert InsufficientModeratorWeight(accumulated, totalWeight);
         }
 
-        _resolve(jobId, employerWins, msg.sender);
     }
 
     /// @notice Submit additional evidence or context for an existing dispute.
@@ -513,6 +545,10 @@ contract DisputeModule is Governable, Pausable {
     }
 
     function _resolve(uint256 jobId, bool employerWins, address resolver) internal {
+        _resolve(jobId, employerWins, resolver, 0, bytes32(0));
+    }
+
+    function _resolve(uint256 jobId, bool employerWins, address resolver, uint8 outcome, bytes32 evidenceHash) internal {
         Dispute storage d = disputes[jobId];
         require(d.raisedAt != 0 && !d.resolved, "no dispute");
         require(block.timestamp >= d.raisedAt + disputeWindow, "window");
@@ -528,7 +564,13 @@ contract DisputeModule is Governable, Pausable {
         uint256 fee = d.fee;
         delete disputes[jobId];
 
-        jobRegistry.resolveDispute(jobId, employerWins);
+        if (outcome == 0) {
+            // Legacy Boolean adapters retain all fund effects but assert no reputation attribution.
+            jobRegistry.resolveDispute(jobId, employerWins);
+        } else {
+            ITerminalJobRegistry(address(jobRegistry)).resolveDisputeOutcome(jobId, outcome, evidenceHash);
+            emit AttributedResolution(jobId, disputeRound[jobId], outcome, evidenceHash, resolver);
+        }
 
         IStakeManager sm = _stakeManager();
         if (fee > 0 && address(sm) != address(0)) {
@@ -566,20 +608,21 @@ contract DisputeModule is Governable, Pausable {
         emit DisputeResolved(jobId, resolver, employerWins);
     }
 
-    /// @notice Returns the digest moderators must sign when approving a resolution.
+    /// @notice Returns the v3 digest bound to this registry and current dispute round.
+    /// @dev Legacy v2 signed payloads are unsupported; Boolean rulings remain unattributed.
     function resolutionMessageHash(uint256 jobId, bool employerWins)
         public
         view
         returns (bytes32)
     {
         bytes32 structHash = keccak256(
-            abi.encode(_RESOLVE_TYPEHASH, jobId, employerWins, address(this), block.chainid)
+            abi.encode(_RESOLVE_TYPEHASH, jobId, employerWins, address(this), block.chainid, address(jobRegistry), disputeRound[jobId])
         );
         return MessageHashUtils.toEthSignedMessageHash(structHash);
     }
 
-    /// @notice Confirms the module and its owner cannot accrue tax liabilities.
-    /// @return Always true, signalling perpetual tax exemption.
+    /// @notice Return the protocol tax-policy compatibility flag.
+    /// @return Always true; this is not a determination of legal tax exemption.
     function isTaxExempt() external pure returns (bool) {
         return true;
     }

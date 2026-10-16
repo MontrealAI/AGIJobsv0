@@ -68,6 +68,9 @@ describe('Identity verification enforcement', function () {
       await rep
         .connect(owner)
         .setAuthorizedCaller(await registry.getAddress(), true);
+      await rep
+        .connect(owner)
+        .setJobRegistry(await registry.getAddress(), true);
       await rep.connect(owner).setAuthorizedCaller(owner.address, true);
 
       const Policy = await ethers.getContractFactory(

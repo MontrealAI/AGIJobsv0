@@ -182,6 +182,7 @@ async function deploySystem() {
   await nft.setJobRegistry(await registry.getAddress());
   await nft.setStakeManager(await stake.getAddress());
   await reputation.setCaller(await registry.getAddress(), true);
+  await reputation.setJobRegistry(await registry.getAddress(), true);
 
   await registry.setFeePct(0);
   expect(await registry.jobStakeBps()).to.equal(1000);

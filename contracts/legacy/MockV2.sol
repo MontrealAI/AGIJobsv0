@@ -236,6 +236,10 @@ contract MockStakeManager is IStakeManager {
 
 contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
     uint256 public constant version = 2;
+    /// @dev Current validation fixture capability; terminal economics use the real-registry suites.
+    bytes32 public constant terminalPolicyId = keccak256("AGIJobs:terminal-reputation-v3");
+    function jobReputationEngine(uint256) external pure returns (address) { return address(0); }
+
 
     uint256 private constant _STATUS_OFFSET = 0;
     uint256 private constant _SUCCESS_OFFSET = 3;
@@ -826,8 +830,9 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
 }
 
 contract MockReputationEngine is IReputationEngine {
-    /// @notice Module version for compatibility checks.
-    uint256 public constant version = 2;
+    /// @notice Current read-only reputation fixture; terminal accounting uses real-engine tests.
+    uint256 public constant version = 3;
+    bytes32 public constant terminalPolicyId = keccak256("AGIJobs:terminal-reputation-v3");
 
     mapping(address => uint256) private _rep;
     mapping(address => uint256) private _entropy;

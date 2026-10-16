@@ -345,6 +345,7 @@ async function deployJobFixture(): Promise<JobFixture> {
   );
   await registry.setIdentityRegistry(await identity.getAddress());
   await reputation.setCaller(await registry.getAddress(), true);
+  await reputation.setJobRegistry(await registry.getAddress(), true);
   await reputation.setPremiumThreshold(0);
 
   return {

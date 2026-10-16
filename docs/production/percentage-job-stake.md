@@ -2,6 +2,8 @@
 
 This is a new deployment candidate, not an upgrade of the recorded mainnet contracts. It is separate from source release rc8 and its artifacts. No deployment, migration, unpause or token movement is authorized by this document.
 
+> Historical stake-only stage: PR3970. The subsequent terminal-reputation-v3 candidate changes engine/controller compatibility and supersedes the module IDs below; see [terminal policy and qualification gates](terminal-reputation-v3.md). No old deployment is altered.
+
 ## Economics
 
 - Default rate: 1,000 basis points (10%). Only the registry's actual governance authority can set `setJobStakeBps(uint256)`; the accepted range is 0 through 10,000 inclusive. Zero explicitly disables per-job collateral for future jobs. One basis point is 0.01%; fractional basis points and rates over 100% are unsupported.

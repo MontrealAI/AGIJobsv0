@@ -2,8 +2,10 @@
 
 import readline from 'node:readline/promises';
 import { stdin as input, stdout as output } from 'node:process';
-import { ethers, network } from 'hardhat';
+import { artifacts, ethers, network } from 'hardhat';
 import { loadTokenConfig } from '../config';
+const { guardFiles } = require('../verification/verify-release.cjs');
+const { safeError } = require('../verification/evidence.cjs');
 
 type Action = 'pause' | 'unpause';
 
@@ -13,6 +15,9 @@ type CliOptions = {
   autoYes: boolean;
   from?: string;
   signerIndex?: number;
+  manifest?: string;
+  archive?: string;
+  qualification?: string;
 };
 
 function parseAction(value: string | undefined): Action | undefined {
@@ -39,7 +44,7 @@ function parseAction(value: string | undefined): Action | undefined {
 
 function parseArgs(argv: string[]): CliOptions {
   const options: CliOptions = {
-    dryRun: false,
+    dryRun: true,
     autoYes: false,
   };
 
@@ -54,6 +59,20 @@ function parseArgs(argv: string[]): CliOptions {
         }
         options.action = parseAction(value);
         i += 1;
+        break;
+      }
+      case '--execute':
+        if (argv.includes('--dry-run'))
+          throw new Error('Choose --execute or --dry-run');
+        options.dryRun = false;
+        break;
+      case '--manifest':
+      case '--archive':
+      case '--qualification': {
+        const value = argv[++i];
+        if (!value || value.startsWith('--'))
+          throw new Error(`${arg} requires a file or directory`);
+        (options as any)[arg.slice(2)] = value;
         break;
       }
       case '--dry-run':
@@ -125,7 +144,9 @@ async function prompt(question: string, autoYes: boolean): Promise<boolean> {
 async function selectSigner(options: CliOptions) {
   const signers = await ethers.getSigners();
   if (signers.length === 0) {
-    throw new Error('No signers available. Configure private keys in hardhat.config.js or via environment variables.');
+    throw new Error(
+      'No signers available. Configure private keys in hardhat.config.js or via environment variables.'
+    );
   }
 
   if (options.from) {
@@ -165,11 +186,20 @@ type ModuleState = {
 const MODULE_DESCRIPTORS: ModuleDescriptor[] = [
   { label: 'JobRegistry', getAddress: (pause) => pause.jobRegistry() },
   { label: 'StakeManager', getAddress: (pause) => pause.stakeManager() },
-  { label: 'ValidationModule', getAddress: (pause) => pause.validationModule() },
+  {
+    label: 'ValidationModule',
+    getAddress: (pause) => pause.validationModule(),
+  },
   { label: 'DisputeModule', getAddress: (pause) => pause.disputeModule() },
-  { label: 'PlatformRegistry', getAddress: (pause) => pause.platformRegistry() },
+  {
+    label: 'PlatformRegistry',
+    getAddress: (pause) => pause.platformRegistry(),
+  },
   { label: 'FeePool', getAddress: (pause) => pause.feePool() },
-  { label: 'ReputationEngine', getAddress: (pause) => pause.reputationEngine() },
+  {
+    label: 'ReputationEngine',
+    getAddress: (pause) => pause.reputationEngine(),
+  },
   {
     label: 'ArbitratorCommittee',
     getAddress: (pause) => pause.arbitratorCommittee(),
@@ -189,7 +219,7 @@ async function fetchModuleStates(pause: any): Promise<ModuleState[]> {
         label: descriptor.label,
         address: null,
         paused: null,
-        error: `failed to fetch module address: ${(error as Error).message}`,
+        error: `failed to fetch module address: ${safeError(error).code}`,
       });
       continue;
     }
@@ -205,18 +235,23 @@ async function fetchModuleStates(pause: any): Promise<ModuleState[]> {
     }
 
     try {
-      const moduleContract = await ethers.getContractAt(
+      const moduleContract = new ethers.Contract(
+        address,
         ['function paused() view returns (bool)'],
-        address
+        ethers.provider
       );
       const isPaused = await moduleContract.paused();
-      modules.push({ label: descriptor.label, address, paused: Boolean(isPaused) });
+      modules.push({
+        label: descriptor.label,
+        address,
+        paused: Boolean(isPaused),
+      });
     } catch (error) {
       modules.push({
         label: descriptor.label,
         address,
         paused: null,
-        error: `failed to query paused(): ${(error as Error).message}`,
+        error: `failed to query paused(): ${safeError(error).code}`,
       });
     }
   }
@@ -230,9 +265,12 @@ function summarisePauseState(modules: ModuleState[]): {
   allUnpaused: boolean;
 } {
   const actionable = modules.filter((module) => module.paused !== null);
-  const allPaused = actionable.length > 0 && actionable.every((module) => module.paused === true);
+  const allPaused =
+    actionable.length > 0 &&
+    actionable.every((module) => module.paused === true);
   const allUnpaused =
-    actionable.length > 0 && actionable.every((module) => module.paused === false);
+    actionable.length > 0 &&
+    actionable.every((module) => module.paused === false);
   const anyPaused = actionable.some((module) => module.paused === true);
   const anyUnpaused = actionable.some((module) => module.paused === false);
 
@@ -251,7 +289,9 @@ function summarisePauseState(modules: ModuleState[]): {
 async function execute(): Promise<void> {
   const options = parseArgs(process.argv.slice(2));
   if (!options.action) {
-    throw new Error('Missing --action. Use --action pause or --action unpause.');
+    throw new Error(
+      'Missing --action. Use --action pause or --action unpause.'
+    );
   }
 
   const networkName = network.name;
@@ -262,22 +302,37 @@ async function execute(): Promise<void> {
     'SystemPause address (config.modules.systemPause)'
   );
 
-  const pause = await ethers.getContractAt('SystemPause', pauseAddress);
+  const pause = new ethers.Contract(
+    pauseAddress,
+    (await artifacts.readArtifact('SystemPause')).abi,
+    ethers.provider
+  );
+  // Emergency pause never depends on explorer availability. Unpause fails before signer lookup.
+  if (options.action === 'unpause') {
+    await guardFiles({
+      provider: ethers.provider,
+      manifestFile: options.manifest,
+      archiveDirectory: options.archive,
+      receiptFile: options.qualification,
+      target: pauseAddress,
+    });
+  }
   const governance = await pause.governance();
   const governanceAddress = ethers.getAddress(governance);
   const modules = await fetchModuleStates(pause);
   const pauseSummary = summarisePauseState(modules);
 
-  const signer = await selectSigner(options);
-  const signerAddress = ethers.getAddress(await signer.getAddress());
-
-  if (governanceAddress !== ethers.ZeroAddress) {
-    if (signerAddress !== governanceAddress) {
-      throw new Error(
-        `Signer ${signerAddress} is not the SystemPause governance (${governanceAddress}). ` +
-          'Configure the correct private key (e.g. GOVERNANCE_PRIVATE_KEY) and retry.'
-      );
-    }
+  // Read-only runs simulate from governance without loading an account or signer.
+  const signerAddress = options.dryRun
+    ? normaliseAddress(options.from ?? governanceAddress, 'simulation address')
+    : ethers.getAddress(await (await selectSigner(options)).getAddress());
+  if (
+    governanceAddress !== ethers.ZeroAddress &&
+    signerAddress !== governanceAddress
+  ) {
+    throw new Error(
+      `Requested authority ${signerAddress} is not SystemPause governance ${governanceAddress}`
+    );
   }
 
   const targetState = options.action === 'pause';
@@ -286,7 +341,9 @@ async function execute(): Promise<void> {
     : pauseSummary.allUnpaused;
   if (targetSatisfied && !options.dryRun) {
     throw new Error(
-      `All SystemPause modules are already ${targetState ? 'paused' : 'unpaused'}. ` +
+      `All SystemPause modules are already ${
+        targetState ? 'paused' : 'unpaused'
+      }. ` +
         'Use --dry-run to verify permissions or choose the opposite action.'
     );
   }
@@ -328,17 +385,38 @@ async function execute(): Promise<void> {
   }
 
   if (options.dryRun) {
-    await pause.connect(signer)[method].staticCall();
-    console.log('✅ Dry run successful. Signer can execute the requested action.');
+    await ethers.provider.call({
+      from: signerAddress,
+      to: pauseAddress,
+      data: pause.interface.encodeFunctionData(method),
+    });
+    console.log(
+      'Dry run successful. No signer loaded or transaction broadcast. Use --execute for the explicitly requested action.'
+    );
     return;
   }
 
-  const confirmed = await prompt('Proceed with the transaction?', options.autoYes);
+  const confirmed = await prompt(
+    'Proceed with the transaction?',
+    options.autoYes
+  );
   if (!confirmed) {
     console.log('Aborted by operator. No transaction sent.');
     return;
   }
 
+  // Recheck immediately before signing, after any interactive confirmation delay.
+  if (options.action === 'unpause')
+    await guardFiles({
+      provider: ethers.provider,
+      manifestFile: options.manifest,
+      archiveDirectory: options.archive,
+      receiptFile: options.qualification,
+      target: pauseAddress,
+    });
+  const signer = await selectSigner(options);
+  if (ethers.getAddress(await signer.getAddress()) !== signerAddress)
+    throw new Error('Signer identity changed before execution');
   const tx = await pause.connect(signer)[method]();
   console.log(`⏳ Transaction submitted: ${tx.hash}`);
   const receipt = await tx.wait();
@@ -346,6 +424,6 @@ async function execute(): Promise<void> {
 }
 
 execute().catch((error) => {
-  console.error('owner:system-pause failed:', error);
+  console.error('owner:system-pause failed:', safeError(error));
   process.exitCode = 1;
 });

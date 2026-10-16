@@ -55,6 +55,28 @@ export async function migrateValidationModule(options: {
     oldAddress,
     caller
   );
+  if (
+    (await replacement.version(at)) !== 2n ||
+    (await oldValidation.version(at)) !== 2n
+  ) {
+    throw new Error('Only version-2 validation modules are supported');
+  }
+  // Check the exact supported policy before reading governance authority or
+  // preparing any transaction. Matching arbitrary policies is insufficient.
+  const expectedPolicy = ethers.id('AGIJobs:terminal-reputation-v3');
+  for (const [label, contract] of [
+    ['Replacement', replacement],
+    ['JobRegistry', registry],
+  ] as const) {
+    try {
+      if ((await contract.terminalPolicyId(at)) !== expectedPolicy)
+        throw new Error('Unsupported terminal policy');
+    } catch {
+      throw new Error(
+        `${label} must expose terminalPolicyId AGIJobs:terminal-reputation-v3`
+      );
+    }
+  }
   const stakeAddress = await registry.stakeManager(at);
   const reputationAddress = await registry.reputationEngine(at);
   const identityAddress = await registry.identityRegistry(at);
@@ -100,14 +122,6 @@ export async function migrateValidationModule(options: {
   ] as const) {
     if (!(await contract.paused(at)))
       throw new Error(`${label} must be paused`);
-  }
-  if (
-    (await replacement.version(at)) !== 2n ||
-    (await oldValidation.version(at)) !== 2n
-  ) {
-    throw new Error(
-      'Only the current version-2 validation interface is supported'
-    );
   }
   const checkWiring = async (overrides: { blockTag: number }) => {
     assertAddress(

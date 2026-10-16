@@ -125,9 +125,13 @@ export function readProviderConfiguration(
   decimals: number,
   env: NodeJS.ProcessEnv = process.env
 ) {
-  if (env.JOB_STAKE !== undefined) throw new Error('JOB_STAKE is unsupported; explicitly configure JOB_STAKE_BPS');
+  if (env.JOB_STAKE !== undefined)
+    throw new Error(
+      'JOB_STAKE is unsupported; explicitly configure JOB_STAKE_BPS'
+    );
   const bpsInput = env.JOB_STAKE_BPS ?? '1000';
-  if (!/^[0-9]+$/.test(bpsInput) || Number(bpsInput) > 10000) throw new Error('JOB_STAKE_BPS must be an integer from 0 to 10000');
+  if (!/^[0-9]+$/.test(bpsInput) || Number(bpsInput) > 10000)
+    throw new Error('JOB_STAKE_BPS must be an integer from 0 to 10000');
   const econ = {
     minStake: env.MIN_STAKE ?? '0',
     employerSlashPct: parsePct(env.EMPLOYER_SLASH_PCT),
@@ -449,6 +453,9 @@ async function deployContracts(ctx: DeploymentContext) {
 
   await (await reputation.setCaller(await registry.getAddress(), true)).wait();
   await (
+    await reputation.setJobRegistry(await registry.getAddress(), true)
+  ).wait();
+  await (
     await reputation.setCaller(await validation.getAddress(), true)
   ).wait();
 
@@ -609,8 +616,12 @@ async function runIntegrationScenario(
         let alreadySelected = false;
         if (typeof data === 'string') {
           try {
-            alreadySelected = validation.interface.parseError(data)?.name === 'ValidatorsAlreadySelected';
-          } catch { /* Unknown errors must propagate. */ }
+            alreadySelected =
+              validation.interface.parseError(data)?.name ===
+              'ValidatorsAlreadySelected';
+          } catch {
+            /* Unknown errors must propagate. */
+          }
         }
         if (!alreadySelected) throw err;
       }

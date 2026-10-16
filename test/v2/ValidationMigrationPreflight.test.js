@@ -137,6 +137,42 @@ async function expectPreflightRejection(env, message) {
   );
 }
 
+async function expectCompatibilityRejection(env, message) {
+  const provider = ethers.provider;
+  const originalCall = provider.call;
+  let authorityReads = 0;
+  provider.call = async function (transaction) {
+    if (transaction.data?.startsWith(ethers.id('owner()').slice(0, 10)))
+      authorityReads += 1;
+    return originalCall.call(this, transaction);
+  };
+  try {
+    await env.installer.owner();
+    expect(
+      authorityReads,
+      'authority-read instrumentation must be active'
+    ).to.equal(1);
+    authorityReads = 0;
+    await expectPreflightRejection(env, message);
+    expect(
+      authorityReads,
+      'compatibility must precede authority reads'
+    ).to.equal(0);
+  } finally {
+    provider.call = originalCall;
+  }
+}
+
+async function replacePolicy(address, policy) {
+  const code = await ethers.provider.getCode(address);
+  const expected = ethers.id('AGIJobs:terminal-reputation-v3').slice(2);
+  expect(code).to.include(expected);
+  await network.provider.send('hardhat_setCode', [
+    address,
+    code.split(expected).join(policy.slice(2)),
+  ]);
+}
+
 describe('Validation migration preflight', function () {
   it('confirms complete current-module wiring and ownership without unpausing', async function () {
     const env = await preparedStack();
@@ -165,6 +201,79 @@ describe('Validation migration preflight', function () {
     await env.prepare();
     await (await env.installer.transferOwnership(env.other.address)).wait();
     await expectPreflightRejection(env, 'Installer owner mismatch');
+  });
+
+  it('rejects a version-2 optional adapter without the policy before authority reads', async function () {
+    const env = await preparedStack();
+    await env.prepare();
+    const legacy = await artifacts.readArtifact(
+      'contracts/v2/modules/NoValidationModule.sol:NoValidationModule'
+    );
+    await network.provider.send('hardhat_setCode', [
+      env.options.newValidation,
+      legacy.deployedBytecode,
+    ]);
+    expect(await env.replacement.version()).to.equal(2n);
+    await expectCompatibilityRejection(
+      env,
+      'Replacement must expose terminalPolicyId AGIJobs:terminal-reputation-v3'
+    );
+  });
+
+  it('rejects a wrong replacement policy before authority reads', async function () {
+    const env = await preparedStack();
+    await env.prepare();
+    await replacePolicy(
+      env.options.newValidation,
+      ethers.id('unsupported-policy')
+    );
+    await expectCompatibilityRejection(
+      env,
+      'Replacement must expose terminalPolicyId AGIJobs:terminal-reputation-v3'
+    );
+  });
+
+  it('rejects a wrong registry policy before authority reads', async function () {
+    const env = await preparedStack();
+    await env.prepare();
+    await replacePolicy(env.options.registry, ethers.id('unsupported-policy'));
+    await expectCompatibilityRejection(
+      env,
+      'JobRegistry must expose terminalPolicyId AGIJobs:terminal-reputation-v3'
+    );
+  });
+
+  it('rejects equal but unsupported replacement and registry policies', async function () {
+    const env = await preparedStack();
+    await env.prepare();
+    const policy = ethers.id('matching-but-unsupported-policy');
+    await replacePolicy(env.options.newValidation, policy);
+    await replacePolicy(env.options.registry, policy);
+    await expectCompatibilityRejection(
+      env,
+      'Replacement must expose terminalPolicyId AGIJobs:terminal-reputation-v3'
+    );
+  });
+
+  it('rejects the wrong replacement version before authority reads', async function () {
+    const env = await preparedStack();
+    await env.prepare();
+    const version = await artifacts.readArtifact(
+      'contracts/v2/mocks/VersionMock.sol:VersionMock'
+    );
+    await network.provider.send('hardhat_setCode', [
+      env.options.newValidation,
+      version.deployedBytecode,
+    ]);
+    await network.provider.send('hardhat_setStorageAt', [
+      env.options.newValidation,
+      '0x0',
+      ethers.toBeHex(3, 32),
+    ]);
+    await expectCompatibilityRejection(
+      env,
+      'Only version-2 validation modules are supported'
+    );
   });
 
   it('rejects an unpaused registry before broadcasting', async function () {

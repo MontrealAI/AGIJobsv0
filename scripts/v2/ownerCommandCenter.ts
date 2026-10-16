@@ -180,7 +180,10 @@ function normaliseNumber(value: unknown): number | undefined {
 }
 
 function escapeMarkdownTable(value: string): string {
-  return value.replace(/\|/g, '\\|').replace(/\n/g, '<br />');
+  return value
+    .replace(/\\/g, '\\\\')
+    .replace(/\|/g, '\\|')
+    .replace(/\n/g, '<br />');
 }
 
 function riskEmoji(level: RiskLevel): string {

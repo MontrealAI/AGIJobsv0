@@ -198,6 +198,7 @@ The generated section includes every tracked top-level directory and every neste
 - [Meta-Agentic-ALPHA-AGI-Jobs-v0/reports/owner-playbook.md](Meta-Agentic-ALPHA-AGI-Jobs-v0/reports/owner-playbook.md)
 - [One-Box/computer-work/README.md](One-Box/computer-work/README.md)
 - [Phase-8-Universal-Value-Dominance/output/phase8-guardian-response-playbook.md](Phase-8-Universal-Value-Dominance/output/phase8-guardian-response-playbook.md)
+- [REDENOMINATION/archives/fixed-stake-before-percentage/README.md](REDENOMINATION/archives/fixed-stake-before-percentage/README.md)
 - [TRIDENT-SOVEREIGN-AGI-ORCHESTRATOR/ui/operator-playbook.md](TRIDENT-SOVEREIGN-AGI-ORCHESTRATOR/ui/operator-playbook.md)
 - [Validator-Constellation-v0/v2/README.md](Validator-Constellation-v0/v2/README.md)
 - [agi-governance/alpha-v13/README.md](agi-governance/alpha-v13/README.md)

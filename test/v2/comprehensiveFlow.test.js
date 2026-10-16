@@ -156,6 +156,7 @@ describe('comprehensive job flows', function () {
     await nft.setJobRegistry(await registry.getAddress());
     await nft.setStakeManager(await stakeManager.getAddress());
     await rep.setAuthorizedCaller(await registry.getAddress(), true);
+    await rep.setJobRegistry(await registry.getAddress(), true);
     await rep.setThreshold(0);
     await nft.transferOwnership(await registry.getAddress());
 
