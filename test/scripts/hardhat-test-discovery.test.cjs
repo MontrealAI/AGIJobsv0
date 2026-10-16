@@ -104,6 +104,12 @@ const dedicated = [
   ['tests', 'test/scripts/omega-pipeline.test.cjs'],
   ['tests', 'test/scripts/hardhat-test-discovery.test.cjs'],
 ];
+const receiverSuites = [
+  'integrations/alpha-agent/tests/alpha-project-source.test.mjs',
+  'integrations/alpha-agent/tests/alpha-project-name.test.mjs',
+  'integrations/alpha-agent/tests/alpha-project-transfer.test.mjs',
+  'integrations/alpha-agent/tests/alpha-project-receipt.test.cjs',
+];
 
 test('actual aggregate discovery excludes every node:test suite and retains native Mocha files', async () => {
   const { all, selected } = await discover();
@@ -155,11 +161,45 @@ test('explicit native JavaScript and TypeScript selections survive the registere
   );
 });
 
+test('receiver suites stay outside native contract discovery', async () => {
+  const { all, selected } = await discover();
+  for (const file of receiverSuites) {
+    const absolute = path.join(root, file);
+    assert.ok(fs.existsSync(absolute), `missing receiver suite: ${file}`);
+    assert.ok(
+      !all.includes(absolute),
+      `receiver suite entered native discovery: ${file}`
+    );
+    assert.ok(
+      !selected.includes(absolute),
+      `receiver suite reached Mocha: ${file}`
+    );
+  }
+});
+
+test('documented project npm command runs all relocated receiver suites', () => {
+  const packageJson = JSON.parse(
+    fs.readFileSync(path.join(root, 'package.json'), 'utf8')
+  );
+  assert.deepEqual(
+    packageJson.scripts['alpha-agent:project:test'].trim().split(/\s+/),
+    ['node', '--test', ...receiverSuites]
+  );
+  for (const file of receiverSuites)
+    assert.ok(
+      fs.statSync(path.join(root, file)).isFile(),
+      `missing npm project suite: ${file}`
+    );
+});
+
 test('isolated suites retain mandatory fresh-process CI registrations', () => {
   const workflow = yaml.load(
     fs.readFileSync(path.join(root, '.github/workflows/ci.yml'), 'utf8')
   );
-  for (const [jobName, file] of dedicated) {
+  for (const [jobName, file] of [
+    ...dedicated,
+    ...receiverSuites.map((file) => ['lint', file]),
+  ]) {
     const job = workflow.jobs[jobName];
     assert.ok(
       job && !job.if && !job['continue-on-error'],

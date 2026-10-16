@@ -15,6 +15,10 @@
 
 The pairing is strongest for bounded digital tasks with checkable outputs. A shared token does not create an automatic mainnet bridge: compatible job interfaces, admitted identities and operational commissioning remain necessary. The guide distinguishes recorded deployments from readiness for live work.
 
+## Ideas behind the ecosystem
+
+[Read four selected essays](https://montrealai.github.io/AGIJobsv0/#reading) on provider selection, demonstrated talent, invention and review economics. Each links to the current $AGIALPHA ecosystem guides. [Reading notes / Notes de lecture](docs/READING.md).
+
 ## New here? Start with one simple step.
 
 **[Open the guided welcome page →](https://montrealai.github.io/AGIJobsv0/start/) · [Commencer en français →](https://montrealai.github.io/AGIJobsv0/start/fr/)**
@@ -702,5 +706,7 @@ flowchart TD
 Released under the MIT License. See [`LICENSE`](LICENSE) for details.
 
 ### Bounded Alpha and Fleet interoperability
+
+**Continue an Alpha project with its complete history:** [native project receiver](integrations/alpha-agent/PROJECT_CONTINUITY.md). Import the unchanged dossier, explicitly select a separately priced AGIALPHA allowance, compile bounded unfunded drafts, run the actual local CSV task, and export the complete result for the guided Alpha/Fleet journey. Manager remains a separate USDC route.
 
 Use the explicit [JobRegistry v2 integration guide](integrations/alpha-agent/README.md) to distinguish the $AGIALPHA market, bounded execution, exact artifact commitments, and independently verified lifecycle receipts. Historical deployment evidence does not enable production intake.

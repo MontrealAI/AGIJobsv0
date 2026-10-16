@@ -1,3 +1,4 @@
+import { renderReading } from './reading.mjs';
 import { renderEcosystemMap } from './ecosystem-map.mjs';
 import { buildPolarisSite } from './polaris-build.mjs';
 import { buildZenithSite } from './zenith-build.mjs';
@@ -349,6 +350,7 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
       'docs/MACHINE_LABOR.md',
       'docs/EVIDENCE_REVIEW.md',
       'docs/ECOSYSTEM.md',
+      'docs/READING.md',
       'apps/validator/README.md',
       'docs/production/rehearsal.md',
       ...[...tracked].filter(
@@ -506,7 +508,7 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
   )}">Rehearsal guide ↗</a></div></div></section>${renderVision(
     base,
     guideURL
-  )}</main>`;
+  )}${renderReading(guideURL)}</main>`;
   write(
     'index.html',
     chrome({
