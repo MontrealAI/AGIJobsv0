@@ -2,14 +2,14 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { createHash } from 'node:crypto';
-import { canonical, digest } from '../../integrations/alpha-agent/vendor/alpha/docs/assets/successor/engine.mjs';
-import * as alpha from '../../integrations/alpha-agent/vendor/alpha/examples/successor-project/engine.mjs';
-import * as native from '../../integrations/alpha-agent/vendor/alpha/examples/successor-workbench/mission-record.mjs';
-import { example, run } from '../../integrations/alpha-agent/vendor/alpha/examples/successor-workbench/engine.mjs';
-import { createBrief } from '../../integrations/alpha-agent/vendor/alpha/examples/alpha-discovery/engine.mjs';
-import { SOURCE_PATHS } from '../../integrations/alpha-agent/project-source-policy.mjs';
-import { ALPHA_NATIVE_SOURCE, JOBS_COMPILER_SOURCE, RECEIVER_SOURCE } from '../../integrations/alpha-agent/project-native-source.mjs';
-import { PROJECT_SOURCE, importAlphaProject, inspectProjectTransfer, runProjectTransfer } from '../../integrations/alpha-agent/project-transfer.mjs';
+import { canonical, digest } from '../vendor/alpha/docs/assets/successor/engine.mjs';
+import * as alpha from '../vendor/alpha/examples/successor-project/engine.mjs';
+import * as native from '../vendor/alpha/examples/successor-workbench/mission-record.mjs';
+import { example, run } from '../vendor/alpha/examples/successor-workbench/engine.mjs';
+import { createBrief } from '../vendor/alpha/examples/alpha-discovery/engine.mjs';
+import { SOURCE_PATHS } from '../project-source-policy.mjs';
+import { ALPHA_NATIVE_SOURCE, JOBS_COMPILER_SOURCE, RECEIVER_SOURCE } from '../project-native-source.mjs';
+import { PROJECT_SOURCE, importAlphaProject, inspectProjectTransfer, runProjectTransfer } from '../project-transfer.mjs';
 
 const sourceHash = 'a'.repeat(64), sources = { discovery: { repository:'MontrealAI/AGI-Alpha-Agent-v0',commit:'b'.repeat(40),path:'examples/alpha-discovery/engine.mjs',sha256:'c'.repeat(64) }, mission: {repository:'MontrealAI/AGI-Alpha-Agent-v0',commit:'b'.repeat(40),path:'examples/successor-workbench/mission-record.mjs',sha256:'d'.repeat(64)} };
 const choices = { family:'public-data', selection:'explicit-user-selection', duplicatePolicy:'sum-all-rows-no-deduplication', unitPolicy:'unchanged-integer-units', dataRights:'synthetic' };
@@ -23,14 +23,14 @@ async function setup(csv,name,license) {
 async function reseal(transfer) { delete transfer.sha256; transfer.sha256 = await alpha.exactDigest(canonical(transfer)); return canonical(transfer); }
 test('native closure and compiler bytes match the reviewed source lock', () => {
   for(const file of ALPHA_NATIVE_SOURCE.files) {
-    const bytes=fs.readFileSync(new URL('../../integrations/alpha-agent/vendor/alpha/'+file.path,import.meta.url));
+    const bytes=fs.readFileSync(new URL('../vendor/alpha/'+file.path,import.meta.url));
     assert.equal(createHash('sha256').update(bytes).digest('hex'),file.sha256,file.path);
   }
   for(const file of RECEIVER_SOURCE.files) {
-    assert.equal(createHash('sha256').update(fs.readFileSync(new URL('../../'+file.path,import.meta.url))).digest('hex'),file.sha256,file.path);
+    assert.equal(createHash('sha256').update(fs.readFileSync(new URL('../../../'+file.path,import.meta.url))).digest('hex'),file.sha256,file.path);
   }
   for(const file of JOBS_COMPILER_SOURCE.files) {
-    assert.equal(createHash('sha256').update(fs.readFileSync(new URL('../../'+file.path,import.meta.url))).digest('hex'),file.sha256,file.path);
+    assert.equal(createHash('sha256').update(fs.readFileSync(new URL('../../../'+file.path,import.meta.url))).digest('hex'),file.sha256,file.path);
   }
 });
 test('trusted source manifests reject array truncation and nested file mutations through every export', async () => {
@@ -167,7 +167,7 @@ test('CLI imports, computes and inspects real files while refusing overwrite and
   try {
     const input=path.join(dir,'alpha.json'),draft=path.join(dir,'draft.json'),result=path.join(dir,'result.json'),link=path.join(dir,'link.json');
     fs.writeFileSync(input,await setup('group,amount\nActual,9\nActual,-1\n'));
-    const cli=new URL('../../integrations/alpha-agent/project-cli.mjs',import.meta.url);
+    const cli=new URL('../project-cli.mjs',import.meta.url);
     const invoke=args=>spawnSync(process.execPath,[cli.pathname,...args],{encoding:'utf8',timeout:20000});
     assert.equal(invoke(['import',input,'7000',options.compiledAt,draft]).status,0);
     assert.equal(invoke(['run',draft,result]).status,0);
@@ -181,7 +181,7 @@ test('CLI rejects BOM-prefixed raw files without stripping bytes, creating outpu
   const os=await import('node:os'),path=await import('node:path'),{spawnSync}=await import('node:child_process');
   const dir=fs.mkdtempSync(path.join(os.tmpdir(),'jobs-project-cli-bom-'));
   try {
-    const cli=new URL('../../integrations/alpha-agent/project-cli.mjs',import.meta.url);
+    const cli=new URL('../project-cli.mjs',import.meta.url);
     const invoke=args=>spawnSync(process.execPath,[cli.pathname,...args],{encoding:'utf8',timeout:20000});
     const input=path.join(dir,'alpha.json'),bomInput=path.join(dir,'alpha-bom.json'),draft=path.join(dir,'draft.json'),bomDraft=path.join(dir,'draft-bom.json'),output=path.join(dir,'output.json'),existing=path.join(dir,'existing.json');
     const original=Buffer.from('\n'+await setup()+'\n','utf8'),bom=Buffer.from([0xef,0xbb,0xbf]);
@@ -227,8 +227,8 @@ test('exported source inventories are recursively immutable and mutation cannot 
 
 test('manifest arrays cannot be cleared before the receiver module is imported',async()=>{
   const {spawnSync}=await import('node:child_process');
-  const manifest=new URL('../../integrations/alpha-agent/project-native-source.mjs',import.meta.url).href;
-  const receiver=new URL('../../integrations/alpha-agent/project-transfer.mjs',import.meta.url).href;
+  const manifest=new URL('../project-native-source.mjs',import.meta.url).href;
+  const receiver=new URL('../project-transfer.mjs',import.meta.url).href;
   const program=`const receiverSourceCount=${SOURCE_PATHS.length};import assert from 'node:assert/strict';const {ALPHA_NATIVE_SOURCE,JOBS_COMPILER_SOURCE,RECEIVER_SOURCE}=await import(${JSON.stringify(manifest)});for(const s of [ALPHA_NATIVE_SOURCE,JOBS_COMPILER_SOURCE,RECEIVER_SOURCE]){assert.throws(()=>{s.files.length=0;},TypeError);assert.throws(()=>{s.files[0].sha256='0'.repeat(64);},TypeError);}const {PROJECT_SOURCE}=await import(${JSON.stringify(receiver)});assert.equal(PROJECT_SOURCE.alpha.files.length,13);assert.equal(PROJECT_SOURCE.compiler.files.length,4);assert.equal(PROJECT_SOURCE.receiver.files.length,receiverSourceCount);`;
   const result=spawnSync(process.execPath,['--input-type=module','-e',program],{encoding:'utf8',timeout:20000});assert.equal(result.status,0,result.stderr);
 });

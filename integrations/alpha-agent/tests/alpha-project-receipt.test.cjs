@@ -2,19 +2,19 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { keccak256, Interface } = require('ethers');
-const { abi, profile } = require('../../integrations/alpha-agent/verify-receipt.cjs');
-const { verifyProjectReceipt } = require('../../integrations/alpha-agent/project-receipt.cjs');
+const { abi, profile } = require('../verify-receipt.cjs');
+const { verifyProjectReceipt } = require('../project-receipt.cjs');
 const registry='0x1111111111111111111111111111111111111111',worker='0x2222222222222222222222222222222222222222',stake='0x3333333333333333333333333333333333333333',token='0x4444444444444444444444444444444444444444';
 const h=n=>'0x'+n.repeat(64);
 const tokenAbi=new Interface(['function token() view returns (address)','function decimals() view returns (uint8)']);
 async function projectTransfer(projectId='receipt-project',amountBaseUnits='7000') {
-  const base='../../integrations/alpha-agent/vendor/alpha/';
+  const base='../vendor/alpha/';
   const {canonical}=await import(base+'docs/assets/successor/engine.mjs');
   const {createProject,publicDataOpportunity}=await import(base+'examples/successor-project/engine.mjs');
   const {createRecord}=await import(base+'examples/successor-workbench/mission-record.mjs');
   const {example}=await import(base+'examples/successor-workbench/engine.mjs');
   const {createBrief}=await import(base+'examples/alpha-discovery/engine.mjs');
-  const {importAlphaProject,runProjectTransfer}=await import('../../integrations/alpha-agent/project-transfer.mjs');
+  const {importAlphaProject,runProjectTransfer}=await import('../project-transfer.mjs');
   const sourceHash='a'.repeat(64),source=path=>({repository:'MontrealAI/AGI-Alpha-Agent-v0',commit:'b'.repeat(40),path,sha256:'c'.repeat(64)});
   const project=await createProject({projectId,cycleId:'receipt-cycle',sourceHash,discoveryBytes:canonical(await createBrief(publicDataOpportunity(),sourceHash)),record:await createRecord({missionId:'receipt-task',sourceHash,spec:example('public-data')}),choices:{family:'public-data',selection:'explicit-user-selection',duplicatePolicy:'sum-all-rows-no-deduplication',unitPolicy:'unchanged-integer-units',dataRights:'synthetic'},sources:{discovery:source('examples/alpha-discovery/engine.mjs'),mission:source('examples/successor-workbench/mission-record.mjs')}});
   return runProjectTransfer(await importAlphaProject(canonical(project),{amountBaseUnits,compiledAt:'2026-10-16T00:00:00.000Z'}));
@@ -78,11 +78,11 @@ test('reviewed deployment rejects a mock token before and after exported profile
 
 test('cached JSON poisoning before verifier import cannot replace trusted reviewed token or ABI pins',async()=>{
   const {spawnSync}=require('node:child_process'),f=await fixture('AgentAssigned');
-  const json=require.resolve('../../integrations/alpha-agent/jobregistry-v2.json'),verifier=require.resolve('../../integrations/alpha-agent/verify-receipt.cjs'),project=require.resolve('../../integrations/alpha-agent/project-receipt.cjs');
+  const json=require.resolve('../jobregistry-v2.json'),verifier=require.resolve('../verify-receipt.cjs'),project=require.resolve('../project-receipt.cjs');
   const program=`'use strict';const assert=require('node:assert/strict'),fs=require('node:fs');const cached=require(${JSON.stringify(json)});cached.token.address=${JSON.stringify(token)};cached.abi.length=0;cached.historicalDeployment.addresses.JobRegistry=${JSON.stringify(worker)};const {profile}=require(${JSON.stringify(verifier)});assert.equal(profile.token.address,'0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA');assert.ok(profile.abi.length>0);assert.notEqual(profile.historicalDeployment.addresses.JobRegistry,${JSON.stringify(worker)});assert.equal(Object.isFrozen(profile.token),true);const {verifyProjectReceipt}=require(${JSON.stringify(project)});verifyProjectReceipt(fs.readFileSync(0,'utf8'),{provider:{},trustedDeployment:{scope:'reviewed-deployment',token:${JSON.stringify(token)}},expected:{event:'AgentAssigned'}}).then(()=>{throw Error('poisoned token accepted');},error=>{assert.match(error.message,/JOBS_PROJECT_TOKEN/);}).catch(error=>{process.stderr.write(error.message);process.exitCode=1;});`;
   const result=spawnSync(process.execPath,['-e',program],{input:f.raw,encoding:'utf8',timeout:20000});assert.equal(result.status,0,result.stderr);
 });
 
 test('project receipt public API record cannot be replaced through its owned export alias',()=>{
-  const api=require('../../integrations/alpha-agent/project-receipt.cjs');assert.equal(Object.isFrozen(api),true);assert.throws(()=>{api.verifyProjectReceipt=()=>{throw Error('substituted verifier');};},TypeError);assert.equal(api.verifyProjectReceipt,verifyProjectReceipt);
+  const api=require('../project-receipt.cjs');assert.equal(Object.isFrozen(api),true);assert.throws(()=>{api.verifyProjectReceipt=()=>{throw Error('substituted verifier');};},TypeError);assert.equal(api.verifyProjectReceipt,verifyProjectReceipt);
 });

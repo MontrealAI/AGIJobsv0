@@ -1,9 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { adaptExecutionSpec } from '../../integrations/alpha-agent/project-name.mjs';
-import { canonical, parseBounded } from '../../integrations/alpha-agent/vendor/alpha/docs/assets/successor/engine.mjs';
-import { example, validate, plan, run } from '../../integrations/alpha-agent/vendor/alpha/examples/successor-workbench/engine.mjs';
-import { createRecord, startRun, completeRun, validateRecord } from '../../integrations/alpha-agent/vendor/alpha/examples/successor-workbench/mission-record.mjs';
+import { adaptExecutionSpec } from '../project-name.mjs';
+import { canonical, parseBounded } from '../vendor/alpha/docs/assets/successor/engine.mjs';
+import { example, validate, plan, run } from '../vendor/alpha/examples/successor-workbench/engine.mjs';
+import { createRecord, startRun, completeRun, validateRecord } from '../vendor/alpha/examples/successor-workbench/mission-record.mjs';
 
 const sourceHash = 'a'.repeat(64), compiledAt = '2026-10-16T00:00:00.000Z';
 const cases = [
