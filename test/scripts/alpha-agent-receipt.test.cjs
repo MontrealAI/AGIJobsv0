@@ -275,3 +275,24 @@ test('shared artifact reader accepts exactly 8 MiB and rejects the next byte', (
     fs.rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test('trusted profile exports are recursively frozen while returned metadata remains detached', async () => {
+  const api = require('../../integrations/alpha-agent/verify-receipt.cjs');
+  const frozen=value=>{if(value&&typeof value==='object'){assert.equal(Object.isFrozen(value),true);for(const child of Object.values(value))frozen(child);}};
+  assert.equal(Object.isFrozen(api),true);frozen(profile);
+  for(const mutate of [()=>{profile.token.address=registry;},()=>{profile.abi.length=0;},()=>{profile.historicalDeployment.addresses.JobRegistry=worker;},()=>{api.profile={};}])assert.throws(mutate,TypeError);
+  const f=fixture(),observed=await verifyReceipt(f.provider,f.deployment,f.expected);observed.backend='substituted';
+  assert.equal((await verifyReceipt(f.provider,f.deployment,f.expected)).backend,profile.backend);
+});
+
+test('mutating the detached public ABI cannot forge private lifecycle verification', async () => {
+  const previous = Object.getOwnPropertyDescriptor(abi,'parseLog');
+  try {
+    const valid=fixture();abi.parseLog=()=>{throw Error('untrusted public parser');};
+    assert.equal((await verifyReceipt(valid.provider,valid.deployment,valid.expected)).event,'ResultSubmitted');
+    const forged=fixture(),wrong=abi.encodeEventLog(abi.getEvent('ResultSubmitted'),[42,worker,h('9'),forged.expected.resultURI,'agent']);
+    Object.assign(forged.receipt.logs[0],wrong);
+    abi.parseLog=()=>({name:'ResultSubmitted',args:{jobId:42n,worker,resultHash:forged.expected.resultHash,resultURI:forged.expected.resultURI}});
+    await assert.rejects(verifyReceipt(forged.provider,forged.deployment,forged.expected),/Artifact hash mismatch/);
+  } finally { if(previous)Object.defineProperty(abi,'parseLog',previous);else delete abi.parseLog; }
+});

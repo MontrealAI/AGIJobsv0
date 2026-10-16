@@ -1,8 +1,19 @@
 'use strict';
 
 // Read-only verification. Never signs, submits, approves, stakes or settles.
+const fs = require('node:fs');
 const { Interface, getAddress } = require('ethers');
-const profile = require('./jobregistry-v2.json');
+function freezeProfile(value) {
+  if (value && typeof value === 'object') {
+    for (const nested of Object.values(value)) freezeProfile(nested);
+    Object.freeze(value);
+  }
+  return value;
+}
+// Read fresh trusted bytes so a caller's JSON require-cache alias cannot select pins.
+const profile = freezeProfile(JSON.parse(new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(fs.readFileSync(__dirname + '/jobregistry-v2.json'))));
+const verificationAbi = new Interface(profile.abi);
+// Compatibility encoders/parsers are detached from the private verification parser.
 const abi = new Interface(profile.abi);
 const hash = (value) =>
   typeof value === 'string' && /^0x[0-9a-fA-F]{64}$/.test(value);
@@ -129,7 +140,7 @@ async function verifyReceipt(provider, trustedDeployment, expected) {
     );
     let decoded;
     try {
-      decoded = abi.parseLog(log);
+      decoded = verificationAbi.parseLog(log);
     } catch {
       continue;
     }
@@ -186,4 +197,4 @@ async function verifyReceipt(provider, trustedDeployment, expected) {
     finalizationEventProven: expected.event === 'JobFinalized',
   };
 }
-module.exports = { verifyReceipt, profile, abi };
+module.exports = Object.freeze({ verifyReceipt, profile, abi });
