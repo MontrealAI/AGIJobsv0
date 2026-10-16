@@ -36,6 +36,26 @@ function write(file, value, mode = 0o600) {
     { mode }
   );
 }
+// Only new disposable source fixtures receive their manifest-declared mode.
+// Private inputs continue through write() with 0600. O_EXCL/O_NOFOLLOW prevents
+// this test helper from changing an existing file or following a replacement.
+function createSourceFile(file, value) {
+  fs.mkdirSync(path.dirname(file), { recursive: true, mode: 0o700 });
+  const fd = fs.openSync(
+    file,
+    fs.constants.O_WRONLY |
+      fs.constants.O_CREAT |
+      fs.constants.O_EXCL |
+      fs.constants.O_NOFOLLOW,
+    0o600
+  );
+  try {
+    fs.writeFileSync(fd, value);
+    fs.fchmodSync(fd, 0o644);
+  } finally {
+    fs.closeSync(fd);
+  }
+}
 function fixture(t) {
   const base = fs.mkdtempSync(path.join(os.tmpdir(), 'jobs-profile-unit-'));
   t.after(() => fs.rmSync(base, { recursive: true, force: true }));
@@ -58,14 +78,13 @@ function fixture(t) {
     'config/implementation-modules.json',
   ]);
   for (const file of REQUIRED_SOURCE_FILES)
-    write(
+    createSourceFile(
       path.join(root, file),
       executable.has(file)
         ? fs.readFileSync(path.join(SOURCE, file))
         : file.endsWith('.json')
         ? '{}\n'
-        : '// independently reviewed fixture\n',
-      0o644
+        : '// independently reviewed fixture\n'
     );
   const api = require(path.join(root, 'scripts/deploy/external-profile.cjs'));
   const configPath = path.join(privateRoot, 'configuration.json'),
@@ -183,6 +202,57 @@ test('loads only reviewed source, configuration and address-only signer without 
   assert.equal(typeof result.initialize, 'function');
   assert.equal(f.providerCalls(), 0);
   assert.equal(Object.isFrozen(result.plan.fees), true);
+  for (const entry of f.manifest.files)
+    assert.equal(
+      fs.statSync(path.join(f.root, entry.path)).mode & 0o777,
+      0o644
+    );
+  for (const file of [
+    f.configPath,
+    f.profilePath,
+    f.profile.planFile,
+    f.profile.sourceManifestFile,
+  ])
+    assert.equal(fs.statSync(file).mode & 0o777, 0o600);
+  const original = path.join(f.root, f.manifest.files[0].path),
+    bytes = fs.readFileSync(original),
+    link = path.join(f.root, 'replacement-link');
+  assert.throws(() => createSourceFile(original, 'replacement'), {
+    code: 'EEXIST',
+  });
+  fs.symlinkSync(original, link);
+  assert.throws(() => createSourceFile(link, 'replacement'), {
+    code: 'EEXIST',
+  });
+  assert.deepEqual(fs.readFileSync(original), bytes);
+  assert.equal(fs.statSync(original).mode & 0o777, 0o644);
+  assert.equal(fs.lstatSync(link).isSymbolicLink(), true);
+  if (!process.env.JOBS_TEST_SOURCE_FIXTURE_CHILD) {
+    // Exercise this exact fixture in fresh processes under both ordinary and
+    // hosted-private umasks. No production source/private mode is relaxed.
+    for (const mask of [0o022, 0o077]) {
+      const child = spawnSync(
+        process.execPath,
+        [
+          '--max-old-space-size=256',
+          '-e',
+          `process.umask(${mask});require(${JSON.stringify(__filename)})`,
+        ],
+        {
+          env: { ...process.env, JOBS_TEST_SOURCE_FIXTURE_CHILD: '1' },
+          timeout: 30000,
+          maxBuffer: 1024 * 1024,
+        }
+      );
+      assert.equal(child.error, undefined);
+      assert.equal(child.signal, null);
+      assert.equal(
+        child.status,
+        0,
+        `source fixture subprocess failed for umask ${mask.toString(8)}`
+      );
+    }
+  }
 });
 test('profile, source manifest and raw configuration have exact independently pinned identities', (t) => {
   const f = fixture(t);
@@ -234,7 +304,7 @@ test('manifest rejects missing minimum deployment/runtime/helper/config/source e
     assert.throws(f.load, /incomplete/);
   }
   f.manifest.files = original;
-  write(path.join(f.root, 'contracts/New.sol'), 'contract New {}\n', 0o644);
+  createSourceFile(path.join(f.root, 'contracts/New.sol'), 'contract New {}\n');
   f.pinReview();
   assert.throws(f.load, /incomplete/);
 });
@@ -343,7 +413,7 @@ test('initial source hashing and repeated validation reuse one bounded read buff
     relative = 'contracts/Large.sol',
     file = path.join(f.root, relative),
     bytes = Buffer.alloc(2 * 1024 * 1024 + 19, 0x6d);
-  write(file, bytes, 0o644);
+  createSourceFile(file, bytes);
   f.manifest.files.push({ path: relative, sha256: sha(bytes), mode: '100644' });
   f.pinReview();
   const open = fs.openSync,
@@ -488,7 +558,7 @@ test('streamed validation retains descriptor/path identity and hardlink checks',
     ) {
       replaced = true;
       fs.renameSync(file, file + '.original');
-      write(file, bytes, 0o644);
+      createSourceFile(file, bytes);
     }
     return count;
   });
@@ -519,10 +589,9 @@ test('configuration/profile/plan/manifest remain pinned after await boundaries',
     fs.writeFileSync(file, bytes);
     assert.equal(result.revalidateSource(), true);
   }
-  write(
+  createSourceFile(
     path.join(f.root, 'scripts/deploy/unreviewed.cjs'),
-    'module.exports = {};\n',
-    0o644
+    'module.exports = {};\n'
   );
   assert.throws(result.revalidateSource, /closure changed/);
   assert.equal(f.providerCalls(), 0);
