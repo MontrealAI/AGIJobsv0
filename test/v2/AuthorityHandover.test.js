@@ -43,7 +43,9 @@ describe('Journaled staged authority handover', function () {
     readSource,
     pinProvider,
     snapshot;
-  before(async function () {
+  // The repository root beforeEach restores its own chain snapshot. Build this
+  // fixture after that hook so full-suite execution cannot erase its contracts.
+  beforeEach(async function () {
     [creator, governor, treasury] = await ethers.getSigners();
     directory = fs.mkdtempSync(path.join(os.tmpdir(), 'jobs-authority-test-'));
     const lockDirectory = path.join(directory, 'locks');
@@ -108,8 +110,6 @@ describe('Journaled staged authority handover', function () {
   afterEach(async function () {
     await ethers.provider.send('evm_revert', [snapshot]);
     snapshot = await ethers.provider.send('evm_snapshot', []);
-  });
-  after(function () {
     delete process.env.DEPLOYMENT_LOCK_DIRECTORY;
     fs.rmSync(directory, { recursive: true, force: true });
   });
@@ -199,16 +199,44 @@ describe('Journaled staged authority handover', function () {
       'FeePool.governance',
     ]);
   });
-  it('independently certifies the bounded final roles without a signer after manual governance completion', async function () {
+  it('records bounded final roles without certifying complete authority or explorer acceptance', async function () {
     await configure();
     const nonce = await ethers.provider.getTransactionCount(creator.address);
     const certificate = await audit(verified());
-    expect(certificate.blockers).to.deep.equal([]);
-    expect(certificate.authorityComplete).to.equal(true);
-    expect(certificate.activationReady).to.equal(true);
+    expect(certificate.boundedChecksComplete).to.equal(true);
+    expect(certificate.reportedExplorerVerificationComplete).to.equal(true);
+    expect(certificate.sourceVerificationComplete).to.equal(false);
+    expect(certificate.authorityComplete).to.equal(false);
+    expect(certificate.activationReady).to.equal(false);
+    expect(certificate.blockers).to.have.length(2);
     expect(certificate.productionApproved).to.equal(false);
     expect(await ethers.provider.getTransactionCount(creator.address)).to.equal(
       nonce
+    );
+  });
+  it('does not certify complete authority when an unlisted third-party rewarder is present', async function () {
+    const { call } = await configure();
+    await call('FeePool', 'setRewarder', [treasury.address, true]);
+    const pool = await ethers.getContractAt(
+      'FeePool',
+      report.contracts.FeePool
+    );
+    expect(await pool.rewarders(treasury.address)).to.equal(true);
+    expect(await pool.rewarders(creator.address)).to.equal(false);
+    const certificate = await audit(verified());
+    expect(certificate.boundedChecksComplete).to.equal(true);
+    expect(certificate.reportedExplorerVerificationComplete).to.equal(true);
+    expect(certificate.sourceVerificationComplete).to.equal(false);
+    expect(certificate.authorityComplete).to.equal(false);
+    expect(certificate.activationReady).to.equal(false);
+    await rejects(
+      () =>
+        requireActivationReady(verified(), {
+          provider: pinProvider,
+          readSource,
+          blockTag: 'latest',
+        }),
+      'Activation blocked'
     );
   });
   it('recovers after the coordinator transfer with no second deployment or transfer', async function () {

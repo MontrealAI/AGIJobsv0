@@ -1,6 +1,6 @@
 {
   "network": "localhost",
-  "governance": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+  "governance": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
   "tax": {
     "enabled": true,
     "uri": "ipfs://QmExamplePolicyHash",
@@ -32,5 +32,10 @@
     "validatorCommitWindowSeconds": 60,
     "validatorRevealWindowSeconds": 60
   },
-  "output": "deployment-config/latest-deployment.json"
+  "chainId": 31337,
+  "authority": {
+    "stakeManagerTreasury": "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f",
+    "feePoolTreasury": "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f",
+    "feePoolGovernance": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720"
+  }
 }

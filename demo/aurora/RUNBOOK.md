@@ -1,36 +1,19 @@
 # AURORA Runbook (Operators)
 
-> Assumes `.env` configured (RPC_URL, PRIVATE_KEY / SAFE settings if needed).
-
-## Local (Anvil)
+## Disposable local mission
 
 ```bash
 npm run demo:aurora:local
 ```
 
-This:
+The launcher requires an unused loopback port and proves that it owns a fresh, unforked Anvil or Hardhat process on chain 31337. It keeps the inherited exclusive demo lock and refuses to attach to an existing node. The shared ASI takeoff launcher uses the same checks.
 
-1. Boots `anvil`.
-2. Deploys paused v2 defaults (`scripts/v2/deployDefaults.ts`) with verification disabled for speed and writes a deployment summary.
-3. Mints mock `$AGIALPHA`, configures validator bounds, and runs the full job lifecycle end‑to‑end.
-4. Applies governance‑grade thermostat tuning from `config/aurora.thermostat@v2.json` (if present) to demonstrate owner control.
-4. Exercises governance controls (system-wide pause drill, stake minimum tuning, job stake retuning) with every action logged to `governance.json`.
-5. Captures receipts + owner snapshots, and
-6. Writes `aurora-report.md` summarising the mission.
+It selects the explicit local role template, generates a fresh campaign block anchor, and deploys a new paused stack. The creation account, unlocked local governor and treasury are separate. The runner reconciles source/initcode/runtime, creation receipts, the exact raw config and every consumed address before governor calls. It accepts IdentityRegistry/TaxPolicy handoffs and applies only the template's distinct treasury/FeePool governance fields.
 
-## Target network
+Before its local pause/resume drill, it repeats the bounded readback. Only the two explicitly absent local ENS fixtures are permitted as bounded blockers. `local-authority.json` labels this disposable simulation; `authorityComplete`, `sourceVerificationComplete`, `activationReady` and `productionApproved` remain false. Explorer verification is never invented. The demo uses fixture identities/mock tokens and records validation and actual settlement separately.
 
-```bash
-# set RPC_URL, CHAIN_ID, signer keys and module addresses
-npm run demo:aurora:sepolia
-```
+Reports and governance transaction receipts are written under `reports/localhost/aurora/`. An interrupted run is not resumed on an old stack; start a fresh owned local instance and preserve its diagnostics/evidence. Do not publish private node logs, which may contain development keys.
 
-## What to expect
+## Public networks
 
-* `JobCreated`, `ResultSubmitted`, `ValidationCommit`, `ValidationReveal`, `JobCompleted`
-* Stake balances + payouts recorded as JSON receipts
-* Thermostat governance transactions captured in `reports/<net>/aurora/receipts/governance.json`
-* `owner:verify-control` diff = clean
-* Report files under `reports/<net>/aurora/`
-
-The pause drill reads all eight managed pause states before acting. It preserves the paused handoff, pauses only remaining active modules when needed, and records the governance resume transaction before running synthetic jobs. Already-paused modules do not produce fabricated pause receipts.
+`demo:aurora:sepolia` now fails closed before governor acquisition or writes. There is no development-key, simulated-ENS or source-verification shortcut for a public network. Use the [current deployment guide](../../docs/deployment-v2-agialpha.md) for separately authorized new deployments; hardware/delegated signing and complete public activation qualification remain separate requirements.

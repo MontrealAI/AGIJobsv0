@@ -67,11 +67,12 @@ compile_contracts() {
 compile_contracts
 
 start_local_node
+prepare_local_deployment_config
 
 dep_env() {
   check_local_node
   DEPLOY_DEFAULTS_SKIP_VERIFY=1 \
-  DEPLOY_DEFAULTS_CONFIG="demo/aurora/config/deployer.hardhat.json" \
+  DEPLOY_DEFAULTS_CONFIG="$AURORA_LOCAL_DEPLOY_CONFIG" \
   DEPLOY_DEFAULTS_OUTPUT="$DEPLOY_OUTPUT" \
   env "${HARDHAT_ENV[@]}" npx hardhat run --no-compile --network localhost scripts/v2/deployDefaults.ts
 }

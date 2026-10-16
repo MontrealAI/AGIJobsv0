@@ -42,7 +42,7 @@ const STAGED = [
   'ArbitratorCommittee',
 ];
 
-// Signer-free, bounded authority certificate. Saved completion flags are ignored:
+// Signer-free, bounded authority observations. Saved completion flags are ignored:
 // all source, address, owner, wiring and permission observations are read again.
 async function auditAuthority(
   report,
@@ -533,7 +533,7 @@ async function auditAuthority(
     }
   }
   const verification = report.explorerVerification || [];
-  const sourceVerificationComplete =
+  const reportedExplorerVerificationComplete =
     verification.length === targets.length &&
     new Set(verification.map((item) => item.address.toLowerCase())).size ===
       targets.length &&
@@ -544,6 +544,20 @@ async function auditAuthority(
           item.status === 'verified'
       )
     );
+  const boundedBlockers = [...blockers];
+  const boundedChecksComplete = boundedBlockers.length === 0;
+  // Named account reads cannot enumerate non-enumerable permissions or prove
+  // every setup operation and indirect ENS controller. A creator-controlled
+  // third party can retain authority even when the creator's own entries are
+  // false. No report-supplied flag can turn this bounded audit into clearance.
+  blockers.push(
+    'Complete setup history and indirect authority remain unqualified; bounded readback cannot certify zero retained creator authority'
+  );
+  // The deployment report records task outcomes, not independently observed
+  // exact explorer acceptance bound to each compiler input and constructor.
+  blockers.push(
+    'Exact explorer source acceptance remains unqualified; report address/status entries are insufficient'
+  );
   await pin.finish();
   return {
     schema: 'agi-jobs/authority-certificate/v1',
@@ -555,9 +569,12 @@ async function auditAuthority(
     deploymentId: report.deploymentId,
     creationScope: report.creationScope,
     configurationHash: report.configurationHash,
-    authorityComplete: blockers.length === 0,
-    sourceVerificationComplete,
-    activationReady: blockers.length === 0 && sourceVerificationComplete,
+    boundedChecksComplete,
+    boundedBlockers,
+    authorityComplete: false,
+    reportedExplorerVerificationComplete,
+    sourceVerificationComplete: false,
+    activationReady: false,
     productionApproved: false,
     sourceRecords,
     checks,

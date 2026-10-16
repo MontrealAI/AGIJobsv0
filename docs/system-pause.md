@@ -97,6 +97,8 @@ owner complete control over protocol parameters.
 
 ### Emergency operations
 
+These are contract capabilities, not deployment clearance or permission to operate an existing stack. The current unpause CLI requires original new-deployment evidence and a fresh audit; its bounded observations cannot qualify public activation. See the [current deployment guide](deployment-v2-agialpha.md).
+
 1. **Pause** – From the timelock or multisig, call `SystemPause.pauseAll()` to
    halt job creation, staking, validation, disputes, and platform registry
    updates in a single transaction.

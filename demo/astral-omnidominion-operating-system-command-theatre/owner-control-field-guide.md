@@ -46,7 +46,7 @@ HARDHAT_NETWORK=localhost npx ts-node --compiler-options '{"module":"commonjs"}'
 
 This requires the configured `SystemPause` deployment and signer. It queries module state and simulates the call; it does not broadcast in dry-run mode. Review errors and incomplete module responses; do not treat an aggregate label as proof that every module was queried successfully.
 
-After verifying the exact deployment and authorizing a real **local** pause, remove `--dry-run`. The script asks for confirmation before broadcasting. To resume, use `--action unpause` with the same preview/review procedure. Neither successful simulation nor transaction submission guarantees finality: inspect the mined receipt and re-query each relevant module. For multisig/timelock governance, use that authority's actual approval/execution flow.
+After verifying the exact deployment and authorizing a real **local** pause, remove `--dry-run`. The script asks for confirmation before broadcasting. The current unpause path, including preview, requires original new-deployment authority evidence and remains blocked until complete setup-history, indirect-authority and exact explorer-acceptance qualification is available. It cannot be used to authorize historical-stack changes; see [the current guide](../../docs/deployment-v2-agialpha.md). Neither successful simulation nor transaction submission guarantees finality: inspect the mined receipt and re-query each relevant module. For multisig/timelock governance, use that authority's actual approval/execution flow.
 
 ## 4. Governance forwarding (advanced)
 

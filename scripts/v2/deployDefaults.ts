@@ -571,6 +571,10 @@ export async function main(argv = process.argv.slice(2)) {
     throw new Error('No deployment signer configured for this network');
 
   const configGovernance = toStringOrUndefined(config.governance);
+  if (!configGovernance && !toStringOrUndefined(cli.governance))
+    throw new Error(
+      'Explicit governance/config required. For a disposable Hardhat rehearsal use npm run deploy:local (demo/aurora/config/deployer.hardhat.json); public networks require your separately reviewed deployment config.'
+    );
   const governance = requireAddress(
     'Governance',
     toStringOrUndefined(cli.governance) ?? configGovernance
@@ -1324,7 +1328,9 @@ export async function main(argv = process.argv.slice(2)) {
     const pendingCommissioning =
       /^(Deployer\.owner$|(?:IdentityRegistry|TaxPolicy)\.(?:owner|pendingOwner)$|StakeManager\.treasury(?:$|Allowlist\()|FeePool\.(?:governance$|treasury(?:$|Allowlist\())|ENS\.|NameWrapper\.)/;
     if (
-      beforeHandover.blockers.some((role) => !pendingCommissioning.test(role))
+      beforeHandover.boundedBlockers.some(
+        (role) => !pendingCommissioning.test(role)
+      )
     )
       throw new Error(
         'Fixed wiring or deployment-granted authority differs from the reviewed topology'
@@ -1347,7 +1353,7 @@ export async function main(argv = process.argv.slice(2)) {
       requestedSecureDefaults: config.secureDefaults ?? {},
       remainingActions: [
         'Complete pending two-step ownership acceptance and explicit FeePool governance/treasury and StakeManager treasury configuration.',
-        'Run signer-free authority-audit.cjs at a finalized block with complete explorer verification evidence; activation remains blocked until it passes.',
+        'Run signer-free authority-audit.cjs at a finalized block for bounded observations. Complete setup-history/indirect-authority and exact explorer-acceptance qualification are still required; activation remains blocked.',
         'Review and apply launch limits through the actual governance authority.',
         'Complete source verification and independent security/worker/settlement commissioning before governance unpauses the stack.',
       ],

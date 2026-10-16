@@ -90,7 +90,7 @@ When a validator, orchestrator, or governance key is compromised:
 
 ## 5. Post-incident checklist
 
-- Resume the platform with `npm run owner:system-pause -- --network <network> --action unpause` once all verifications are green.【F:scripts/v2/systemPauseAction.ts†L1-L200】
+- Public unpause (including preview) remains blocked by the current bounded audit. The new deployment route requires its original authority journal and independently qualified setup history/explorer evidence; it does not authorize old-stack operations. Follow the [current deployment guide](docs/deployment-v2-agialpha.md) before any separately approved resumption.【F:scripts/v2/systemPauseAction.ts†L1-L200】
 - Re-run the readiness handshake to prove the wall is green again (`ci:status-wall`, `ci/hgm-suite.sh`, owner briefings, Day-One demo).【F:scripts/ci/check-ci-status-wall.ts†L93-L332】【F:ci/hgm-suite.sh†L1-L194】
 - Archive updated artefacts under `reports/` (status, owner-control, demo outputs) for auditability.【F:.github/workflows/ci.yml†L393-L440】【F:.github/workflows/ci.yml†L1026-L1155】
 - File a retrospective referencing the exact CI runs and owner control exports to close the incident with provable assurance.【F:.github/workflows/ci.yml†L393-L440】【F:.github/workflows/ci.yml†L1026-L1155】
