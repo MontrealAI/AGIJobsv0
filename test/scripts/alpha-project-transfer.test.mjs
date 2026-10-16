@@ -197,3 +197,34 @@ test('CLI rejects BOM-prefixed raw files without stripping bytes, creating outpu
     const inspected=invoke(['inspect',bomDraft]);assert.notEqual(inspected.status,0);assert.equal(inspected.stdout,'');assert.deepEqual(fs.readFileSync(bomDraft),draftBom);
   } finally { fs.rmSync(dir,{recursive:true,force:true}); }
 });
+
+test('exported source inventories are recursively immutable and mutation cannot change a sealed project source',async()=>{
+  const allFrozen=value=>{if(value&&typeof value==='object'){assert.equal(Object.isFrozen(value),true);for(const nested of Object.values(value))allFrozen(nested);}};
+  for(const source of [PROJECT_SOURCE,ALPHA_NATIVE_SOURCE,JOBS_COMPILER_SOURCE,RECEIVER_SOURCE])allFrozen(source);
+  const original=await setup(),before=await importAlphaProject(original,options),sourceBefore=canonical(PROJECT_SOURCE);
+  for(const mutate of [
+    ()=>{PROJECT_SOURCE.alpha.files.length=0;},
+    ()=>{PROJECT_SOURCE.alpha.files.splice(0);},
+    ()=>{PROJECT_SOURCE.alpha.files[0].sha256='0'.repeat(64);},
+    ()=>{PROJECT_SOURCE.compiler.files[0].path='unreviewed.mjs';},
+    ()=>{PROJECT_SOURCE.receiver.files=[];},
+    ()=>{ALPHA_NATIVE_SOURCE.files.pop();},
+    ()=>{JOBS_COMPILER_SOURCE.files[0].sha256='0'.repeat(64);},
+    ()=>{RECEIVER_SOURCE.files[0].path='unreviewed.mjs';},
+  ])assert.throws(mutate,TypeError);
+  assert.equal(Reflect.set(PROJECT_SOURCE.alpha.files,'length',0),false);
+  assert.equal(Reflect.deleteProperty(PROJECT_SOURCE.receiver.files,0),false);
+  assert.equal(canonical(PROJECT_SOURCE),sourceBefore);
+  const after=await importAlphaProject(original,options);assert.equal(after,before);
+  const checked=await inspectProjectTransfer(await runProjectTransfer(after));
+  assert.equal(checked.transfer.source.alpha.files.length,13);assert.equal(checked.transfer.source.compiler.files.length,4);assert.equal(checked.transfer.source.receiver.files.length,3);
+  assert.equal(checked.lastRecord.result.pack.result.summary.total,295);
+});
+
+test('manifest arrays cannot be cleared before the receiver module is imported',async()=>{
+  const {spawnSync}=await import('node:child_process');
+  const manifest=new URL('../../integrations/alpha-agent/project-native-source.mjs',import.meta.url).href;
+  const receiver=new URL('../../integrations/alpha-agent/project-transfer.mjs',import.meta.url).href;
+  const program=`import assert from 'node:assert/strict';const {ALPHA_NATIVE_SOURCE,JOBS_COMPILER_SOURCE,RECEIVER_SOURCE}=await import(${JSON.stringify(manifest)});for(const s of [ALPHA_NATIVE_SOURCE,JOBS_COMPILER_SOURCE,RECEIVER_SOURCE]){assert.throws(()=>{s.files.length=0;},TypeError);assert.throws(()=>{s.files[0].sha256='0'.repeat(64);},TypeError);}const {PROJECT_SOURCE}=await import(${JSON.stringify(receiver)});assert.equal(PROJECT_SOURCE.alpha.files.length,13);assert.equal(PROJECT_SOURCE.compiler.files.length,4);assert.equal(PROJECT_SOURCE.receiver.files.length,3);`;
+  const result=spawnSync(process.execPath,['--input-type=module','-e',program],{encoding:'utf8',timeout:20000});assert.equal(result.status,0,result.stderr);
+});
