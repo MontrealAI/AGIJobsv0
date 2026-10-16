@@ -90,5 +90,23 @@
     "Qualified compiler producer collection and immutable asset/readback verification",
     "Jobs owner parameters, exact unsigned owner plan and owner-plan fork qualification",
     "Historical obligations and separate commissioning"
-  ]
+  ],
+  "qualifiedReleasePreparation": {
+    "commit": "a0941d0df002d8cc6399e7c2feca2a4eed5470db",
+    "tree": "a4fce4b67044d2baa3fb0c57bbab0b6fd6e8a39f",
+    "scope": "Release code and package metadata checked locally at an identical tree; the remote commit has the same source parent and content."
+  },
+  "sourceScopeVerification": {
+    "realGitCompilerScopePassed": true,
+    "compilerScopeLogSha256": "69d5d496776b8785bcfb8f226e1ff7b51c05244e9471978353b7b12fe18db5c5",
+    "sourcePreservationLogSha256": "b59cbae19381ee3d0fb3bcc04139b018138540a3575ba8e37b42c827d33d1eab"
+  },
+  "generatedSourceVerification": {
+    "comparedFiles": 530,
+    "baselineGeneratorReproduced": true,
+    "baselineEnsNormalizationReproduced": true,
+    "cleanNodePreloadEnvironment": true,
+    "logSha256": "43d1f3fcf4773fb4bf041c9a6effdd812b5d468d72fafa58f7dfff8a09cd2513",
+    "generatedSettingsCommitted": false
+  }
 }
