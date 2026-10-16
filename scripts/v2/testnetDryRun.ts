@@ -419,31 +419,6 @@ async function runJobLifecycleScenario(): Promise<ScenarioReport> {
   );
   await envFixture.wrapper.setOwner(BigInt(subnode), envFixture.agent.address);
 
-  const stakeAmount = ethers.parseUnits('10', AGIALPHA_DECIMALS);
-  await runStep(
-    steps,
-    'job.agent-approve',
-    'Agent approves stake manager',
-    async () => ({
-      tx: await envFixture.token
-        .connect(envFixture.agent)
-        .approve(await envFixture.stake.getAddress(), stakeAmount),
-      actor: envFixture.agent.address,
-    })
-  );
-
-  await runStep(
-    steps,
-    'job.agent-stake',
-    'Agent deposits initial stake',
-    async () => ({
-      tx: await envFixture.stake
-        .connect(envFixture.agent)
-        .depositStake(ROLE_AGENT, stakeAmount),
-      actor: envFixture.agent.address,
-    })
-  );
-
   const reward = ethers.parseUnits('100', AGIALPHA_DECIMALS);
   const feePct = await envFixture.registry.feePct();
   const feeAmount = (reward * BigInt(feePct)) / 100n;
@@ -468,6 +443,65 @@ async function runJobLifecycleScenario(): Promise<ScenarioReport> {
       .createJob(reward, deadline, specHash, 'ipfs://job'),
     actor: envFixture.employer.address,
   }));
+
+  // Fund the mined job snapshot, not a stale fixed amount or a prospective quote.
+  const jobStake = (await envFixture.registry.jobs(1)).stake;
+  const startingStake = await envFixture.stake.stakeOf(
+    envFixture.agent.address,
+    ROLE_AGENT
+  );
+  const startingLocked = await envFixture.stake.lockedStakes(
+    envFixture.agent.address
+  );
+  const roleMinimum = await envFixture.stake.roleMinimumStake(ROLE_AGENT);
+  const globalMinimum =
+    roleMinimum === 0n ? await envFixture.stake.minStake() : roleMinimum;
+  const admissionMinimum = await envFixture.registry.minAgentStake();
+  const minimumFloor = await envFixture.stake.minStakeFloor();
+  const requiredTotal: bigint = [
+    startingLocked + jobStake,
+    globalMinimum,
+    admissionMinimum,
+    minimumFloor,
+  ].reduce((maximum, value) => (value > maximum ? value : maximum), 0n);
+  const stakeAmount =
+    requiredTotal > startingStake ? requiredTotal - startingStake : 0n;
+  const startingAgentBalance = await envFixture.token.balanceOf(
+    envFixture.agent.address
+  );
+  if (startingAgentBalance < stakeAmount)
+    throw new Error(
+      'Agent fixture balance cannot fund snapshotted stake and admission minimums'
+    );
+  summary.push(
+    `Mined job collateral: ${ethers.formatUnits(
+      jobStake,
+      AGIALPHA_DECIMALS
+    )} ${AGIALPHA_SYMBOL}; admission minimums checked independently.`
+  );
+  await runStep(
+    steps,
+    'job.agent-approve',
+    'Agent approves stake manager',
+    async () => ({
+      tx: await envFixture.token
+        .connect(envFixture.agent)
+        .approve(await envFixture.stake.getAddress(), stakeAmount),
+      actor: envFixture.agent.address,
+    })
+  );
+
+  await runStep(
+    steps,
+    'job.agent-stake',
+    'Agent deposits initial stake',
+    async () => ({
+      tx: await envFixture.stake
+        .connect(envFixture.agent)
+        .depositStake(ROLE_AGENT, stakeAmount),
+      actor: envFixture.agent.address,
+    })
+  );
 
   await runStep(steps, 'job.apply', 'Agent applies for job', async () => ({
     tx: await envFixture.registry
@@ -502,7 +536,7 @@ async function runJobLifecycleScenario(): Promise<ScenarioReport> {
     actor: envFixture.employer.address,
   }));
 
-  const expectedBalance = ethers.parseUnits('1000', AGIALPHA_DECIMALS) - stakeAmount + reward;
+  const expectedBalance = startingAgentBalance - stakeAmount + reward;
   await runStep(
     steps,
     'job.verify-payout',
@@ -517,6 +551,21 @@ async function runJobLifecycleScenario(): Promise<ScenarioReport> {
             balance,
             AGIALPHA_DECIMALS
           )} ${AGIALPHA_SYMBOL} did not match expected payout`
+        );
+      }
+      const endingStake = await envFixture.stake.stakeOf(
+        envFixture.agent.address,
+        ROLE_AGENT
+      );
+      const endingLocked = await envFixture.stake.lockedStakes(
+        envFixture.agent.address
+      );
+      if (
+        endingStake !== startingStake + stakeAmount ||
+        endingLocked !== startingLocked
+      ) {
+        throw new Error(
+          'Successful settlement did not preserve deposited collateral and release the job lock'
         );
       }
       summary.push(

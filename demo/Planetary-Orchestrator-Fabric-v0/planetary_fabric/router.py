@@ -21,8 +21,11 @@ class RouterMetrics:
 class RegionalRouter:
     """Dispatches jobs to local nodes while monitoring their health."""
 
-    def __init__(self, region: str) -> None:
+    def __init__(self, region: str, execution_gate: asyncio.Event | None = None, assignment_event: asyncio.Event | None = None) -> None:
         self.region = region
+        self.execution_gate = execution_gate
+        self.assignment_event = assignment_event
+        self._state_lookup: Dict[str, JobState] = {}
         self.queue: asyncio.PriorityQueue[tuple[int, str]] = asyncio.PriorityQueue()
         self._job_lookup: Dict[str, Job] = {}
         self._nodes: List[Node] = []
@@ -74,6 +77,7 @@ class RegionalRouter:
 
     async def submit(self, job_state: JobState) -> None:
         self._job_lookup[job_state.job.job_id] = job_state.job
+        self._state_lookup[job_state.job.job_id] = job_state
         await self.queue.put((job_state.job.priority, job_state.job.job_id))
 
     async def take_job(self) -> Optional[Job]:
@@ -102,9 +106,16 @@ class RegionalRouter:
             _, job_id = priority_job
             job = self._job_lookup[job_id]
             try:
+                assigned = self._state_lookup[job_id]
+                assigned.status = "running"
+                assigned.assigned_node = node.config.node_id
+                if self.assignment_event is not None:
+                    self.assignment_event.set()
+                if self.execution_gate is not None:
+                    await self.execution_gate.wait()
                 result = await node.process(job)
                 self.metrics.assignments += 1
-                state = JobState(job=job, status="completed", result=result, assigned_node=node.config.node_id)
+                state = JobState(job=job, status="completed", result=result, assigned_node=node.config.node_id, attempts=assigned.attempts)
                 self.metrics.completed += 1
                 await self._on_complete.put(state)
             except NodeOfflineError:

@@ -400,19 +400,25 @@ try {
   );
   const unit = (value) =>
     planner.parseUnits(value, exportData.token.targetDecimals);
-  const rate = planner.integer(jobRegistryConfig.jobStakeBps, 'jobStakeBps', 10000n);
+  const bps = planner.jobStakeBps(jobRegistryConfig.jobStakeBps);
   const reward = unit(jobRegistryConfig.maxJobRewardTokens);
-  const bond = (reward * rate + 9999n) / 10000n;
-  expectWarn(
-    rate > 0n,
-    'Future-job percentage collateral positive',
-    'Zero percentage collateral: review the scenario admission policy'
+  expect(
+    bps === exportData.modules.jobRegistry.before.jobStakeBps &&
+      bps === exportData.modules.jobRegistry.after.jobStakeBps,
+    'Dimensionless job stake rate is unchanged (0–10000 basis points)',
+    'Job stake rate changed during redenomination'
   );
-  expectWarn(
-    reward === 0n || reward >= bond,
-    'Reward cap covers job bond or is unlimited',
-    'Reward cap below job bond: review job economics'
-  );
+  if (exportData.modules.jobRegistry.after.jobStakeAtRewardCap) {
+    const bond = planner.quoteJobStake(reward, bps);
+    expect(
+      bond ===
+        BigInt(exportData.modules.jobRegistry.after.jobStakeAtRewardCap.raw),
+      'Reward-cap stake quote uses ceiling rounding in target base units',
+      'Reward-specific stake quote disagrees'
+    );
+  }
+  if (reward > 0n && !exportData.modules.jobRegistry.after.jobStakeAtRewardCap)
+    record('warn', exportData.modules.jobRegistry.after.jobStakeQuoteNote);
   expect(
     planner.integer(stakeManagerConfig.unbondingPeriodSeconds, 'unbonding') >
       0n,

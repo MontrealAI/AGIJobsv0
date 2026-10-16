@@ -319,7 +319,11 @@ export type EquilibriumResult = {
   continuous: number[];
   eigenvector: number[];
   replicatorIterations: number;
+  replicatorConverged: boolean;
+  replicatorEstimate: "terminal-ensemble" | "tail-average-ensemble" | "mixed-ensemble";
   continuousIterations: number;
+  continuousConverged: boolean;
+  continuousDerivativeNorm: number;
   eigenvectorIterations: number;
   monteCarloRmsError: number;
   payoffAtEquilibrium: number;
@@ -327,6 +331,7 @@ export type EquilibriumResult = {
   discountFactor: number;
   replicatorDeviation: number;
   maxMethodDeviation: number;
+  consistencyThreshold: number;
   methodConsistency: boolean;
 };
 
@@ -1040,13 +1045,18 @@ function replicatorDerivative(state: number[], matrix: number[][]): number[] {
   return state.map((value, index) => value * (payoffs[index] - average));
 }
 
+function replicatorPayoffGap(state: number[], matrix: number[][]): number {
+  const payoffs = multiplyMatrixVector(matrix, state);
+  return Math.max(...payoffs) - dot(state, payoffs);
+}
+
 function runContinuousReplicator(
   initial: number[],
   matrix: number[][],
   stepSize = 0.01,
   maxIterations = 25_000,
   tolerance = 1e-8,
-): { state: number[]; iterations: number } {
+): { state: number[]; iterations: number; converged: boolean; derivativeNorm: number } {
   const minStep = 1e-5;
   const maxStep = 0.2;
   const errorTolerance = Math.max(tolerance * 10, 1e-9);
@@ -1095,9 +1105,6 @@ function runContinuousReplicator(
     }
 
     const next = halfStep;
-    const delta = Math.sqrt(
-      next.reduce((sum, value, index) => sum + (value - current[index]) ** 2, 0),
-    );
     const derivativeNorm = Math.sqrt(
       replicatorDerivative(next, matrix).reduce((sum, value) => sum + value * value, 0),
     );
@@ -1111,8 +1118,10 @@ function runContinuousReplicator(
       step = candidateStep;
     }
 
-    if (delta < tolerance || derivativeNorm < tolerance) {
-      return { state: current, iterations };
+    // Small steps/derivatives near a boundary can conceal a profitable invading
+    // strategy with almost zero mass. Check the payoff gap independently.
+    if (derivativeNorm < tolerance && replicatorPayoffGap(next, matrix) < tolerance) {
+      return { state: current, iterations, converged: true, derivativeNorm };
     }
 
     if (candidateStep <= minStep && localError > errorTolerance * 10) {
@@ -1120,12 +1129,16 @@ function runContinuousReplicator(
     }
   }
 
-  return { state: current, iterations };
+  const derivativeNorm = Math.sqrt(
+    replicatorDerivative(current, matrix).reduce((sum, value) => sum + value * value, 0),
+  );
+  return { state: current, iterations, converged: false, derivativeNorm };
 }
 
 function runReplicator(initial: number[], matrix: number[][], maxIterations = 50_000, tolerance = 1e-8): {
   state: number[];
   iterations: number;
+  converged: boolean;
 } {
   let current = [...initial];
   let iterations = 0;
@@ -1149,23 +1162,23 @@ function runReplicator(initial: number[], matrix: number[][], maxIterations = 50
       }
       sampleCount += 1;
     }
-    if (delta < tolerance) {
-      break;
+    if (delta < tolerance && replicatorPayoffGap(next, matrix) < tolerance) {
+      return { state: current, iterations, converged: true };
     }
   }
   if (iterations >= maxIterations) {
     if (sampleCount > 0) {
       const averaged = aggregate.map((value) => value / sampleCount);
-      return { state: normalise(averaged), iterations };
+      return { state: normalise(averaged), iterations, converged: false };
     }
     if (window.length > 0) {
       const averagedWindow = window
         .reduce((acc, state) => acc.map((value, index) => value + state[index]), [0, 0, 0])
         .map((value) => value / window.length);
-      return { state: normalise(averagedWindow), iterations };
+      return { state: normalise(averagedWindow), iterations, converged: false };
     }
   }
-  return { state: current, iterations };
+  return { state: current, iterations, converged: false };
 }
 
 function powerIteration(matrix: number[][], maxIterations = 5_000, tolerance = 1e-10): {
@@ -1363,6 +1376,7 @@ function computeEquilibrium(config: MissionConfig): EquilibriumResult {
 
   const replicatorSamples: number[][] = [];
   const iterationCounts: number[] = [];
+  const convergedSamples: boolean[] = [];
 
   const seeds = [baseInitial];
   const rng = mulberry32(config.gameTheory.monteCarlo.seed);
@@ -1380,16 +1394,23 @@ function computeEquilibrium(config: MissionConfig): EquilibriumResult {
     const result = runReplicator(seed, matrix);
     replicatorSamples.push(result.state);
     iterationCounts.push(result.iterations);
+    convergedSamples.push(result.converged);
   }
 
-  let replicatorProfile =
+  const replicatorProfile =
     replicatorSamples.reduce((acc, state) => acc.map((value, index) => value + state[index]), [0, 0, 0]).map(
       (value) => value / replicatorSamples.length,
     );
 
-  let replicatorIterations = Math.round(
+  const replicatorIterations = Math.round(
     iterationCounts.reduce((sum, value) => sum + value, 0) / iterationCounts.length,
   );
+  const replicatorConverged = convergedSamples.every(Boolean);
+  const replicatorEstimate = replicatorConverged
+    ? "terminal-ensemble"
+    : convergedSamples.some(Boolean)
+      ? "mixed-ensemble"
+      : "tail-average-ensemble";
 
   const continuous = runContinuousReplicator(baseInitial, matrix);
   const eigen = powerIteration(matrix);
@@ -1409,41 +1430,18 @@ function computeEquilibrium(config: MissionConfig): EquilibriumResult {
     Math.abs(payoffs[0] - payoffs[1]),
     Math.max(Math.abs(payoffs[0] - payoffs[2]), Math.abs(payoffs[1] - payoffs[2])),
   );
-  let replicatorDeviation = Math.sqrt(
+  const replicatorDeviation = Math.sqrt(
     replicatorProfile.reduce((sum, value, index) => sum + (value - closedForm[index]) ** 2, 0),
   );
 
   const consistencyThreshold = config.gameTheory.consistencyThreshold ?? 0.08;
-  let methodVectors = [replicatorProfile, closedForm, monteCarlo.averageState, continuous.state, eigen.vector];
-  let maxMethodDeviation = maxDeviation(methodVectors);
-  let methodConsistency = maxMethodDeviation < consistencyThreshold;
-
-  if (!methodConsistency) {
-    replicatorProfile = continuous.state;
-    replicatorIterations = continuous.iterations;
-    replicatorDeviation = Math.sqrt(
-      replicatorProfile.reduce((sum, value, index) => sum + (value - closedForm[index]) ** 2, 0),
-    );
-    methodVectors = [replicatorProfile, closedForm, monteCarlo.averageState, continuous.state, eigen.vector];
-    maxMethodDeviation = maxDeviation(methodVectors);
-    methodConsistency = maxMethodDeviation < consistencyThreshold;
-  }
-
-  if (!methodConsistency) {
-    replicatorProfile = closedForm;
-    replicatorIterations = 0;
-    replicatorDeviation = 0;
-    methodVectors = [replicatorProfile, closedForm, monteCarlo.averageState, continuous.state, eigen.vector];
-    maxMethodDeviation = maxDeviation(methodVectors);
-    methodConsistency = maxMethodDeviation < consistencyThreshold;
-  }
-
-  if (methodConsistency) {
-    replicatorProfile = closedForm;
-    replicatorIterations = 0;
-    replicatorDeviation = 0;
-    maxMethodDeviation = maxDeviation([replicatorProfile, closedForm, monteCarlo.averageState, continuous.state, eigen.vector]);
-  }
+  // These diagnostics describe different objects: trajectory estimates, an
+  // equal-payoff solution, a random-start average, and a Perron eigenvector.
+  // Agreement under a configured tolerance is not proof of convergence, and
+  // disagreement must never replace one method's result with another's.
+  const methodVectors = [replicatorProfile, closedForm, monteCarlo.averageState, continuous.state, eigen.vector];
+  const maxMethodDeviation = maxDeviation(methodVectors);
+  const methodConsistency = maxMethodDeviation < consistencyThreshold;
 
   return {
     labels: config.gameTheory.strategies.map((strategy) => strategy.name),
@@ -1458,7 +1456,11 @@ function computeEquilibrium(config: MissionConfig): EquilibriumResult {
     continuous: continuous.state,
     eigenvector: eigen.vector,
     replicatorIterations,
+    replicatorConverged,
+    replicatorEstimate,
     continuousIterations: continuous.iterations,
+    continuousConverged: continuous.converged,
+    continuousDerivativeNorm: continuous.derivativeNorm,
     eigenvectorIterations: eigen.iterations,
     monteCarloRmsError: monteCarlo.rmsError,
     payoffAtEquilibrium,
@@ -1466,6 +1468,7 @@ function computeEquilibrium(config: MissionConfig): EquilibriumResult {
     discountFactor: config.hamiltonian.discountFactor,
     replicatorDeviation,
     maxMethodDeviation,
+    consistencyThreshold,
     methodConsistency,
   };
 }
@@ -2846,13 +2849,14 @@ function buildMarkdown(bundle: ReportBundle): string {
     "",
     "## 6. Game-Theoretic Macro-Equilibrium",
     "",
-    `- **Discount factor:** ${equilibrium.discountFactor.toFixed(2)} (must exceed 0.80 for uniqueness)`,
-    `- **Replicator iterations to convergence:** ${equilibrium.replicatorIterations}`,
-    `- **Continuous-flow iterations (RK4):** ${equilibrium.continuousIterations}`,
+    `- **Configured discount factor:** ${equilibrium.discountFactor.toFixed(2)} (not a convergence or uniqueness certificate)`,
+    `- **Discrete replicator mean iterations:** ${equilibrium.replicatorIterations}; ${equilibrium.replicatorConverged ? "all sampled trajectories converged numerically" : "at least one trajectory reached the iteration limit"}; estimate: ${equilibrium.replicatorEstimate}`,
+    `- **Continuous-flow iterations (RK4):** ${equilibrium.continuousIterations}; ${equilibrium.continuousConverged ? "stationary within numerical tolerance" : "not converged"}; derivative norm ${equilibrium.continuousDerivativeNorm.toExponential(3)}`,
     `- **Perron eigenvector iterations:** ${equilibrium.eigenvectorIterations}`,
     `- **Replicator vs closed-form deviation:** ${equilibrium.replicatorDeviation.toExponential(3)}`,
     `- **Monte-Carlo RMS error:** ${equilibrium.monteCarloRmsError.toExponential(3)}`,
-    `- **Max deviation across methods:** ${equilibrium.maxMethodDeviation.toExponential(3)} (${equilibrium.methodConsistency ? "consistent" : "⚠️ review"})`,
+    `- **Max deviation across methods:** ${equilibrium.maxMethodDeviation.toExponential(3)}; configured threshold ${equilibrium.consistencyThreshold.toExponential(3)} (${equilibrium.methodConsistency ? "within configured tolerance" : "⚠️ outside configured tolerance"}; not a convergence certificate)`,
+    "- **Interpretation:** An equal-payoff equilibrium can exist while trajectories cycle or approach a different stationary state. A Perron eigenvector is not generally a game-theoretic equilibrium. Monte-Carlo averages do not certify individual trajectories.",
     `- **Payoff at equilibrium:** ${formatNumber(equilibrium.payoffAtEquilibrium)} tokens`,
     `- **Closed-form KKT payoff (λ):** ${formatNumber(equilibrium.closedFormPayoff)} tokens`,
     `- **KKT residual max:** ${equilibrium.kktMaxResidual.toExponential(3)} (${equilibrium.kktCertified ? "satisfied" : "⚠️ re-evaluate"})`,
@@ -3544,6 +3548,15 @@ function buildDashboardHtml(bundle: ReportBundle): string {
           <p>Deviation Δmax: <strong>${equilibrium.maxMethodDeviation.toExponential(3)}</strong> • Divergence ${equilibrium.divergenceAtEquilibrium.toExponential(
             3,
           )}</p>
+          <p>Configured agreement threshold: ${equilibrium.consistencyThreshold.toExponential(3)}
+            (${equilibrium.methodConsistency ? "within configured tolerance" : "outside configured tolerance"}).
+            This is not a convergence certificate.</p>
+          <p>Discrete replicator: ${equilibrium.replicatorEstimate}; mean iterations ${equilibrium.replicatorIterations};
+            ${equilibrium.replicatorConverged ? "all sampled trajectories converged numerically" : "iteration limit reached by at least one trajectory"}.
+            Continuous RK4: ${equilibrium.continuousConverged ? "stationary within numerical tolerance" : "not converged"}
+            after ${equilibrium.continuousIterations} iterations; derivative norm ${equilibrium.continuousDerivativeNorm.toExponential(3)}.</p>
+          <p>Equilibrium existence does not imply trajectory convergence. Perron eigenvectors and Monte-Carlo averages
+            are separate diagnostics, not general equilibrium certificates.</p>
           <p>
             KKT payoff λ: <strong>${formatNumber(equilibrium.closedFormPayoff)} tokens</strong> • Residual Δmax
             <strong>${equilibrium.kktMaxResidual.toExponential(3)}</strong>

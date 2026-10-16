@@ -189,8 +189,17 @@ function printParameterSummary() {
 
   const registryItems = [
     {
-      label: 'Future-job collateral rate',
-      value: `${jobRegistryConfig.jobStakeBps} bps (ceil gross reward × rate / 10000)`,
+      label: 'Job stake rate (owner-adjustable 0–10000 bps)',
+      value: `${jobRegistryConfig.jobStakeBps} bps (${
+        jobRegistryConfig.jobStakeBps / 100
+      }%)`,
+    },
+    {
+      label: 'Stake quote at reward cap',
+      value:
+        exportData.modules.jobRegistry.after.jobStakeAtRewardCap?.formatted ??
+        exportData.modules.jobRegistry.after.jobStakeQuoteNote ??
+        'Unlimited reward cap; quote each offered reward separately',
     },
     {
       label: 'Minimum agent stake',

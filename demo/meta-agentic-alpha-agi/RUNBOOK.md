@@ -1,5 +1,12 @@
 # Meta-Agentic α-AGI Mission Runbook
 
+> **Launcher upgrade:** A bare launch now prints an effect-free plan. Review the
+> [strict execution contract and evidence boundaries](../../docs/agi-os-first-class-mode-upgrade.md).
+> The in-memory Hardhat fixture does not verify a selected deployment. Compound
+> Meta-Agentic/Alpha-Meta launchers support localhost only; their later ASI replay
+> uses the shared `mission@v2.json`, not a converted branded project plan.
+
+
 This runbook guides a non-technical operator through the end-to-end Meta-Agentic α-AGI demonstration using only commands and dashboards that already ship with AGI Jobs v0 (v2). Follow the sections sequentially; each step produces audit-ready artefacts and reinforces that the contract owner retains absolute control.
 
 ## 0. Prerequisites
@@ -26,10 +33,10 @@ Execute the bundled launch script from the repo root:
 demo/meta-agentic-alpha-agi/bin/launch.sh
 ```
 
-What happens:
+The command above only prints a plan. To run the compound local pipeline after separate review, use `demo/meta-agentic-alpha-agi/bin/launch.sh --mode execute --network localhost --yes --no-compose`. Then:
 
-1. `npm run demo:agi-os:first-class -- --auto-yes` deploys/refreshes contracts, runs the Astral Omnidominion OS demo, generates the Owner Control Matrix, produces `grand-summary.{md,json,html}`, and writes the first-class manifest under `reports/agi-os/first-class/`.
-2. `npm run demo:asi-takeoff:local` replays the ASI take-off harness with `project-plan.meta-alpha.json`, populating mission receipts for the nation + wallet coalition.
+1. `npm run demo:agi-os:first-class -- --mode execute --network localhost --yes --no-compose` deploys/refreshes contracts, runs the Astral Omnidominion OS demo, generates the Owner Control Matrix, produces `grand-summary.{md,json,html}`, and writes the first-class manifest under `reports/agi-os/first-class/`.
+2. `npm run demo:asi-takeoff:local` performs a separate local deployment/replay using the shared `demo/asi-takeoff/config/mission@v2.json`. The branded `project-plan.meta-alpha.json` export applies only to the earlier synthetic take-off stage, not this local replay.
 
 Confirm the bundle:
 
@@ -99,10 +106,11 @@ On http://localhost:3000:
 For CLI parity you can also run:
 
 ```bash
-npm run demo:agi-os:first-class -- --skip-deploy --stage commit-reveal
+# --stage commit-reveal is unsupported by the first-class launcher.
+# Use the portal flow above; no stage-selecting CLI is provided here.
 ```
 
-This replays the validation helper on the deployed contracts using the same deterministic salts.
+The first-class launcher does not provide a commit/reveal-only replay. Do not treat its separate Hardhat fixture as evidence for a deployed job.
 
 ## 6. Observe thermodynamic incentives
 

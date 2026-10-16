@@ -58,3 +58,25 @@ flowchart LR
 - Review this module's issue board for open automation, data, or research threads.
 - Link new deliverables back to the central manifest via `npm run release:manifest`.
 - Publish artefacts (dashboards, mermaid charts, datasets) into `reports/` for downstream intelligence alignment.
+
+
+## Verify admission separately from completion
+
+A finite run can exit successfully while work is still pending. Inspect
+`mission_admission` in the emitted status snapshot and the `mission_plan_partial`
+or `mission_plan_seeded` event. `planned_count`, `admitted_count`, `missing_paths`
+and `finalized_count` come from the actual local registry. `all_admitted` does not
+imply `all_work_finalized`. No live execution or settlement is attested.
+
+The default supplied plan admits four of its five nodes with current capacity;
+the remaining node is refused rather than silently expanding the resource budget.
+To examine a fully admitted **smaller plan**, use the included single-node variant:
+
+```bash
+python -m demo.kardashev_ii_omega_grade_alpha_agi_business_3_demo_ultra launch --cycles 3 --no-sim --config 'demo/Kardashev-II Omega-Grade-α-AGI Business-3/kardashev_ii_omega_grade_alpha_agi_business_3_demo_ultra/config/bounded-admission.json'
+```
+
+It preserves the original resource capacities and selects only the existing root
+job. The observed short run admits one of one requested jobs, with finalization
+still pending. Use a fresh working/output directory when retaining separate runs.
+The full original mission and diagrams remain available for partial-admission study.

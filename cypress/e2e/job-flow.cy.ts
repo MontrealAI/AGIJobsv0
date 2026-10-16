@@ -52,9 +52,13 @@ describe('Owner governance job flow', () => {
       'not.exist'
     );
     cy.get('#governance-key').select('jobRegistry.setJobStakeBps');
+    cy.contains('Future-job rate in basis points');
     cy.get('#governance-value').clear().type('1500');
     cy.get('button').contains('Preview Change').click();
-    cy.wait('@preview');
+    cy.wait('@preview').its('request.body').should('include', {
+      key: 'jobRegistry.setJobStakeBps',
+      value: 1500,
+    });
     cy.contains('Diff');
     cy.contains('jobRegistry');
 

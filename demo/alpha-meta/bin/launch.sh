@@ -1,26 +1,29 @@
 #!/usr/bin/env bash
 set -euo pipefail
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. && pwd)"
-ROOT_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
-PLAN_PATH="${SCRIPT_DIR}/config/project-plan.alpha-meta.json"
 
-printf '\n🚀  Alpha-Meta meta-agentic sovereign orchestration — ignition.\n\n'
+# Validate/help/plan before root resolution, environment changes or subprocesses.
+SCRIPT_DIR="${BASH_SOURCE[0]%/*}"
+if [[ "$SCRIPT_DIR" == "${BASH_SOURCE[0]}" ]]; then SCRIPT_DIR=.; fi
+source "$SCRIPT_DIR/../../../scripts/lib/agi-os-first-class-launcher.sh"
+agi_os_guard alpha-meta "$@"
 
-if [[ -z "${NODE_ENV:-}" ]]; then
-  export NODE_ENV=production
-fi
+ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+[[ -d "$ROOT/node_modules" ]] || agi_os_fail 'Dependencies are missing; install the reviewed lockfile separately before explicit execution'
+cd "$ROOT"
 
-export ASI_TAKEOFF_PLAN_PATH="${PLAN_PATH}"
+# This export is consumed by the first-class synthetic fixture only.
+export ASI_TAKEOFF_PLAN_PATH="$ROOT/demo/alpha-meta/config/project-plan.alpha-meta.json"
+export NODE_ENV="${NODE_ENV:-production}"
+npm run demo:agi-os:first-class -- "$@"
 
-cd "${ROOT_DIR}"
-
-# 1. Execute the first-class operating system drill with unstoppable owner supremacy.
-npm run demo:agi-os:first-class -- --auto-yes "$@"
-
-# 2. Generate the Alpha-Meta governance dossier, CI audit, owner diagnostics, and triangulation bundle.
+# Preserve the distinct dossier pipeline; fail closed if it fails.
 npm run demo:alpha-meta:full
 
-# 3. Replay the ASI take-off harness using the alpha-meta constellation mission plan.
-npm run demo:asi-takeoff:local "$@"
-
-printf '\n✅  Alpha-Meta constellation sealed. Artifacts under demo/alpha-meta/reports and reports/agi-os|asi-takeoff.\n\n'
+# The separate local replay does not consume ASI_TAKEOFF_PLAN_PATH. Pin its
+# selected Aurora mission config, with the shared fixture as its default.
+printf '%s\n' 'Executing a separate localhost ASI replay using AURORA_MISSION_CONFIG (shared mission@v2.json by default).'
+(
+  unset ASI_TAKEOFF_PLAN_PATH
+  AURORA_MISSION_CONFIG="${AURORA_MISSION_CONFIG:-$ROOT/demo/asi-takeoff/config/mission@v2.json}" npm run demo:asi-takeoff:local
+)
+printf '%s\n' 'Selected pipelines completed. Inspect separate evidence; no production qualification is implied.'

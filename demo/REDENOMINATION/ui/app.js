@@ -188,8 +188,15 @@ function renderOwnerControls(playbook = {}, jobConfig = {}, stakeConfig = {}) {
 
   const jobEntries = [
     {
-      label: 'Future-job collateral rate',
-      value: `${jobConfig?.jobStakeBps} bps (ceil gross reward × rate / 10000)`,
+      label: 'Job stake rate (owner-adjustable 0–10000 bps)',
+      value: `${jobConfig.jobStakeBps} bps (${jobConfig.jobStakeBps / 100}%)`,
+    },
+    {
+      label: 'Stake quote at reward cap',
+      value:
+        playbook.modules.jobRegistry.after.jobStakeAtRewardCap?.formatted ??
+        playbook.modules.jobRegistry.after.jobStakeQuoteNote ??
+        'Unlimited reward cap; quote each offered reward separately',
     },
     {
       label: 'Minimum agent stake',
@@ -463,9 +470,21 @@ function renderModules(modules = {}) {
 
 async function loadPlaybook() {
   const playbook = await fetchJson(EXPORT_PATH);
-  if (playbook.meta?.version !== '2.0.0' || !playbook.configSnapshots)
+  if (playbook.meta?.version !== '3.0.0' || !playbook.configSnapshots)
     throw new Error(
       'Unsupported plan. Run npm run demo:redenomination:export, then reload.'
+    );
+  const job = playbook.configSnapshots.jobRegistry;
+  if (
+    !Number.isInteger(job?.jobStakeBps) ||
+    job.jobStakeBps < 0 ||
+    job.jobStakeBps > 10000 ||
+    Object.keys(job).some(
+      (key) => key.startsWith('jobStake') && key !== 'jobStakeBps'
+    )
+  )
+    throw new Error(
+      'Invalid job stake policy; regenerate the plan with jobStakeBps.'
     );
   return {
     playbook,

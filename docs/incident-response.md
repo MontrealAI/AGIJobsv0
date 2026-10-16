@@ -79,8 +79,10 @@ template.
    proposing the fix.
 2. **Safe-mode operations** – If user withdrawals need to continue while paused, utilise
    the paymaster fallback or manual settlement scripts (`scripts/v2/manual-settlement.ts`).
-3. **Upgrade execution** – Deploy hotfix via `scripts/v2/oneclick-stack.ts` in dry-run
-   mode first, then the production network with pre-reviewed parameters. Immediately
+3. **Upgrade execution** – Rehearse the hotfix in a separately qualified disposable environment
+   first. `scripts/v2/oneclick-stack.ts` is an execution wrapper, not a dry-run tool;
+   it rejects `--dry-run`. Production execution requires explicit operator approval
+   and pre-reviewed parameters. Immediately
    verify contracts on Etherscan (CI release workflow does this automatically).
 4. **Gradual unpause** – Use staged unpause: first `JobRouter`, then `StakeManager`, then
    ancillary modules, confirming invariants via Foundry tests between each stage.

@@ -22,6 +22,9 @@ class SimulationResult:
     reassigned_jobs: int
     total_runtime: float
     total_jobs: int
+    interruption_performed: bool = False
+    interrupted_assignments: int = 0
+    checkpoint_sha256: str | None = None
 
     def max_depth_delta(self) -> int:
         if not self.shard_depths:
@@ -58,7 +61,7 @@ async def _populate_jobs(
 
 
 async def _prepare_orchestrator(
-    config: SimulationConfig, *, resume: bool = False
+    config: SimulationConfig, *, resume: bool = False, execution_gate: asyncio.Event | None = None
 ) -> PlanetaryOrchestrator:
     if resume:
         orchestrator = await PlanetaryOrchestrator.from_checkpoint(
@@ -72,6 +75,7 @@ async def _prepare_orchestrator(
         orchestrator = PlanetaryOrchestrator(
             regions=list(config.regions), checkpoint=config.checkpoint,
             rebalance_interval=config.rebalance_interval, heartbeat_interval=config.heartbeat_interval,
+            execution_gate=execution_gate,
         )
     for node_cfg in config.nodes:
         await orchestrator.register_node(node_cfg)
@@ -91,7 +95,10 @@ async def run_high_load_simulation(
         raise ValueError("jobs must be an integer between 1 and 1000000")
     rng = random.Random(seed)
     config = SimulationConfig.demo(base_dir)
-    orchestrator = await _prepare_orchestrator(config)
+    execution_gate = asyncio.Event() if kill_and_resume else None
+    orchestrator = await _prepare_orchestrator(config, execution_gate=execution_gate)
+    interrupted_assignments = 0
+    checkpoint_sha256 = None
     shard_metrics: Dict[str, List[int]] = {region.name: [] for region in config.regions}
 
     await _populate_jobs(orchestrator, job_count, [r.name for r in config.regions], rng)
@@ -116,8 +123,15 @@ async def run_high_load_simulation(
 
     try:
         if kill_and_resume:
-            await asyncio.sleep(config.kill_after_seconds)
+            # Interrupt after observed assignment, before simulated execution.
+            # A timer alone can miss all work in small scenarios.
+            await asyncio.wait_for(orchestrator.assignment_event.wait(), timeout=5)
+            interrupted_assignments = sum(state.status == "running" for state in orchestrator.jobs.values())
+            if interrupted_assignments < 1:
+                raise RuntimeError("No assigned work observed for interruption")
             await orchestrator.shutdown(persist_state=True)
+            import hashlib
+            checkpoint_sha256 = hashlib.sha256(config.checkpoint.resolve_path().read_bytes()).hexdigest()
             await _cancel_monitor()
             orchestrator = await _prepare_orchestrator(config, resume=True)
             shard_metrics = {region.name: [] for region in config.regions}
@@ -144,6 +158,9 @@ async def run_high_load_simulation(
         reassigned_jobs=snapshot["metrics"]["reassigned_jobs"],
         total_runtime=snapshot["metrics"]["runtime_seconds"],
         total_jobs=snapshot["metrics"]["total_jobs"],
+        interruption_performed=kill_and_resume,
+        interrupted_assignments=interrupted_assignments,
+        checkpoint_sha256=checkpoint_sha256,
     )
 
 

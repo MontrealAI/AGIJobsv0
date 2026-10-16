@@ -131,9 +131,15 @@ test('drafts retain all unrelated policies and convert full token guardrails', (
   assert.equal(stake.roleMinimums.validatorTokens, '1.0');
   assert.equal(stake.roleMinimums.platformTokens, '0.0');
   assert.equal(job.jobStakeBps, 1000);
-  assert.equal(report.modules.jobRegistry.before.jobStakeBps, 1000);
-  assert.equal(report.modules.jobRegistry.after.jobStakeBps, 1000);
-  assert.equal(Object.hasOwn(job, 'jobStakeTokens'), false);
+  assert.equal('jobStakeTokens' in job, false);
+  assert.equal(
+    report.modules.jobRegistry.after.jobStakeAtRewardCap.raw,
+    '100000'
+  );
+  assert.equal(
+    report.modules.jobRegistry.after.jobStakeAtRewardCap.formatted,
+    '0.1 NEW for reward 1.0 NEW (rounded up)'
+  );
   assert.deepEqual(stake.customPolicy, data.configs[2].customPolicy);
   assert.equal(stake.autoStake.increasePct, before[2].autoStake.increasePct);
   assert.equal(stake.autoStake.threshold, before[2].autoStake.threshold);
@@ -293,15 +299,13 @@ test('independent roles and economic choices are observations, not invented vali
   const data = input();
   data.configs[3].maxJobRewardTokens = '0.5';
   data.configs[3].minAgentStakeTokens = '0';
-  data.configs[2].roleMinimums.agentTokens = '0.5';
-  data.configs[2].roleMinimums.validatorTokens = '0.25';
+  data.configs[2].roleMinimums.agentTokens = '0.025';
+  data.configs[2].roleMinimums.validatorTokens = '0.01';
   const report = p.buildPlaybook(data);
-  assert.equal(report.policyObservations.length, 2);
-  assert.match(report.policyObservations[0], /eligibility minimum/);
-  assert.match(report.policyObservations[1], /independent role policies/);
+  assert.equal(report.policyObservations.length, 3);
   assert.equal(
     report.configSnapshots.stakeManager.roleMinimums.validatorTokens,
-    '0.00025'
+    '0.00001'
   );
   data.configs[2].roleMinimums = {
     agentTokens: '0',
@@ -393,7 +397,19 @@ test('artifact verification rejects corrupted arithmetic, snapshots, provenance 
       r.token.redenominationFactor = '7';
     },
     (r) => {
-      r.modules.jobRegistry.after.jobStakeBps = 999;
+      r.modules.jobRegistry.after.jobStakeAtRewardCap.raw = '1';
+    },
+    (r) => {
+      r.modules.jobRegistry.after.jobStakeBps = 1;
+    },
+    (r) => {
+      r.modules.jobRegistry.after.jobStakeAtRewardCap.reward.raw = '1';
+    },
+    (r) => {
+      r.configSnapshots.jobRegistry.jobStakeTokens = '1';
+    },
+    (r) => {
+      r.meta.version = '2.0.0';
     },
     (r) => {
       r.meta.productionApproved = true;
@@ -471,20 +487,152 @@ test('checked-in sample uses the current schema and exact conversion data', () =
   assert.deepEqual(sample.configSnapshots, expected.configSnapshots);
 });
 
-test('basis points never redenominate and old token fields fail closed', () => {
-  for (const rate of [0, 1, 1000, 10000]) for (const precision of [6, 18, 24]) {
-    const data = input(); data.configs[3].jobStakeBps = rate;
-    const result = p.buildPlaybook(data, { newDecimals: precision });
-    assert.equal(result.modules.jobRegistry.before.jobStakeBps, rate);
-    assert.equal(result.modules.jobRegistry.after.jobStakeBps, rate);
-    assert.equal(result.configSnapshots.jobRegistry.jobStakeBps, rate);
+test('dimensionless BPS survives ratio and precision changes including zero and 100%', () => {
+  for (const bps of [0, 1, 1000, 9999, 10000])
+    for (const ratio of [1n, 10n, 1000n])
+      for (const newDecimals of [6, 18, 24]) {
+        const data = input();
+        data.configs[3].jobStakeBps = bps;
+        const report = p.buildPlaybook(data, { ratio, newDecimals });
+        assert.equal(report.configSnapshots.jobRegistry.jobStakeBps, bps);
+        assert.equal(report.modules.jobRegistry.before.jobStakeBps, bps);
+        assert.equal(report.modules.jobRegistry.after.jobStakeBps, bps);
+        const reward = BigInt(
+          report.modules.jobRegistry.after.maxJobReward.raw
+        );
+        assert.equal(
+          report.modules.jobRegistry.after.jobStakeAtRewardCap.raw,
+          ((reward * BigInt(bps) + 9999n) / 10000n).toString()
+        );
+        if (bps === 0)
+          assert.equal(
+            report.modules.jobRegistry.after.jobStakeAtRewardCap.raw,
+            '0'
+          );
+        assert.ok(
+          report.token.dust.every(
+            (entry) => !entry.field.startsWith('jobStake')
+          )
+        );
+      }
+});
+test('legacy, mixed, missing and ambiguous stake configurations fail closed', () => {
+  for (const key of [
+    'jobStake',
+    'jobStakeTokens',
+    'jobStakePct',
+    'jobStakeBpsTokens',
+  ]) {
+    for (const value of [0, '0', 1, '1', null, undefined]) {
+      const data = input();
+      data.configs[3][key] = value;
+      assert.throws(() => p.buildPlaybook(data), /Legacy or ambiguous/);
+      delete data.configs[3].jobStakeBps;
+      assert.throws(() => p.buildPlaybook(data), /Legacy or ambiguous/);
+    }
   }
-  for (const rate of [-1, 10001, 1.5, '1000', null]) {
-    const data = input(); data.configs[3].jobStakeBps = rate;
-    assert.throws(() => p.buildPlaybook(data), /jobStakeBps/);
+  for (const bps of [
+    -1,
+    10001,
+    0.1,
+    '1000',
+    null,
+    undefined,
+    NaN,
+    Infinity,
+    {},
+    true,
+  ]) {
+    const data = input();
+    data.configs[3].jobStakeBps = bps;
+    assert.throws(() => p.buildPlaybook(data), /jobStakeBps.*0 to 10000/);
   }
-  for (const field of ['jobStake', 'jobStakeTokens']) {
-    const data = input(); data.configs[3][field] = '0';
-    assert.throws(() => p.buildPlaybook(data), /Legacy fixed/);
+});
+test('stake quotes round up per reward without floating-point arithmetic', () => {
+  for (const reward of [0n, 1n, 9n, 10n, 11n, 10001n, 9007199254740993123n])
+    for (const bps of [0, 1, 999, 1000, 9999, 10000]) {
+      const quote = p.quoteJobStake(reward, bps);
+      const numerator = reward * BigInt(bps);
+      assert.equal(quote, (numerator + 9999n) / 10000n);
+      assert.ok(quote * 10000n >= numerator);
+      if (quote) assert.ok((quote - 1n) * 10000n < numerator);
+    }
+  assert.equal(p.quoteJobStake(1n, 1000), 1n);
+  assert.equal(p.quoteJobStake(11n, 1000), 2n);
+  assert.equal(p.quoteJobStake(11n, 0), 0n);
+});
+test('quotes use converted reward, never a scaled previously-rounded stake', () => {
+  const data = input();
+  data.configs[0].decimals = 0;
+  data.configs[3].maxJobRewardTokens = '23';
+  const report = p.buildPlaybook(data, {
+    ratio: 2n,
+    newDecimals: 0,
+    rounding: 'floor',
+  });
+  assert.equal(report.modules.jobRegistry.before.jobStakeAtRewardCap.raw, '3');
+  assert.equal(report.modules.jobRegistry.after.maxJobReward.raw, '11');
+  assert.equal(report.modules.jobRegistry.after.jobStakeAtRewardCap.raw, '2');
+  assert.equal(report.modules.jobRegistry.after.jobStakeBps, 1000);
+  assert.ok(report.token.dust.some((entry) => entry.field === 'maxJobReward'));
+});
+test('unlimited reward caps are preserved without inventing a fixed bond', () => {
+  for (const bps of [0, 1000, 10000]) {
+    const data = input();
+    data.configs[3].maxJobRewardTokens = '0';
+    data.configs[3].jobStakeBps = bps;
+    const report = p.buildPlaybook(data, { newDecimals: 6 });
+    assert.equal(report.modules.jobRegistry.after.maxJobReward.raw, '0');
+    assert.equal(
+      report.modules.jobRegistry.after.jobStakeAtRewardCap,
+      undefined
+    );
+    assert.equal(report.configSnapshots.jobRegistry.jobStakeBps, bps);
+  }
+});
+test('reward uint128 and ceiling-rounded stake uint96 boundaries match the contract', () => {
+  const max96 = (1n << 96n) - 1n,
+    max128 = (1n << 128n) - 1n;
+  assert.equal(p.quoteJobStake(max96, 10000), max96);
+  assert.throws(() => p.quoteJobStake(max96 + 1n, 10000), /contract uint96/);
+  assert.equal(p.quoteJobStake(max96 * 10n, 1000), max96);
+  assert.throws(
+    () => p.quoteJobStake(max96 * 10n + 1n, 1000),
+    /contract uint96/
+  );
+  assert.equal(p.quoteJobStake(max128, 0), 0n);
+  assert.throws(() => p.quoteJobStake(max128 + 1n, 0), /contract uint128/);
+  assert.throws(() => p.quoteJobStake(-1n, 1000), /unsigned/);
+  assert.throws(() => p.quoteJobStake(1n, 10001), /jobStakeBps/);
+});
+
+test('unquotable reward caps remain upper guardrails with explicit unavailable-quote notes', () => {
+  for (const [cap, bps] of [
+    [1n << 128n, 0],
+    [1n << 96n, 10000],
+  ]) {
+    const data = input();
+    delete data.configs[3].maxJobRewardTokens;
+    data.configs[3].maxJobReward = cap.toString();
+    data.configs[3].jobStakeBps = bps;
+    const report = p.buildPlaybook(data, { ratio: 1n });
+    assert.equal(
+      report.configSnapshots.jobRegistry.maxJobReward,
+      cap.toString()
+    );
+    assert.equal(
+      report.modules.jobRegistry.after.jobStakeAtRewardCap,
+      undefined
+    );
+    assert.match(
+      report.modules.jobRegistry.after.jobStakeQuoteNote,
+      /No quote.*uint128.*uint96/
+    );
+    assert.ok(
+      report.policyObservations.includes(
+        report.modules.jobRegistry.after.jobStakeQuoteNote
+      )
+    );
+    assert.throws(() => p.quoteJobStake(cap, bps), /contract uint/);
   }
 });

@@ -4,6 +4,9 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 cd "$ROOT"
 
+source "$ROOT/demo/aurora/bin/local-node.sh"
+lock_local_demo "$@"
+
 REPORT_ROOT="reports/zenith-planetary-os"
 
 export ASI_GLOBAL_PLAN_PATH="demo/zenith-sapience-initiative-planetary-operating-system-governance/project-plan.json"
@@ -22,7 +25,6 @@ export ASI_GLOBAL_ADDITIONAL_ARTIFACTS_APPEND='[
   {"key":"zenithPlanetaryOverview","path":"demo/zenith-sapience-initiative-planetary-operating-system-governance/README.md","description":"Demo overview for Zenith Sapience Planetary OS."}
 ]'
 
-rm -rf "$REPORT_ROOT"
-mkdir -p "$REPORT_ROOT"
+node demo/aurora/bin/prepare-local-reports.cjs --kit zenith-planetary-os
 
 npm run demo:asi-global -- "$@"

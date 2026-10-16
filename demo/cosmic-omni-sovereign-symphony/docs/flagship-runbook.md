@@ -1,122 +1,154 @@
-# AGI Jobs v0 (v2) Flagship Demo Runbook
+# Cosmic flagship modes and evidence
 
-This runbook explains how a non-technical owner can execute the full "Operating
-System for AGI Work" showcase using only the tooling that already ships in the
-repository.
-
-## Objectives
-
-- Deploy and exercise the `GlobalGovernanceCouncil` with simulated multi-nation
-  voters and owner-controlled pausing.
-- Replay the AGI labour market mission bundle (jobs, validators, payouts) using
-  the existing `npm run demo:agi-os` script.
-- Produce audit-grade artefacts that confirm the owner can adjust every
-  governance and economic parameter at will.
-- Surface UI/UX endpoints (One-Box portal, validator dashboard, owner console)
-  for stakeholders to interact with during the rehearsal.
-
-## 1. Environment Preparation
-
-1. Clone the repository and switch to the desired branch (typically `main`).
-2. Copy the provided `.env` template and insert RPC URLs plus wallet keys:
-   ```bash
-   cp demo/cosmic-omni-sovereign-symphony/config/.env.example \
-      demo/cosmic-omni-sovereign-symphony/.env
-   ```
-3. Ensure Docker is available if you plan to launch the UI layer via the
-   existing one-click stack (`npm run deploy:oneclick:auto -- --network
-   localhost --compose`).
-
-## 2. Execute the Flagship Launcher
-
-Run the wrapper script from the repository root. The `--dry-run` flag keeps all
-transactions local to the Hardhat network, making it safe for repeated
-rehearsals.
+The two launchers share the same safety boundary:
 
 ```bash
-demo/cosmic-omni-sovereign-symphony/bin/flagship-demo.sh --dry-run
+bash demo/cosmic-omni-sovereign-symphony/bin/flagship-demo.sh
+bash demo/cosmic-omni-sovereign-symphony/bin/orchestrate.sh --dry-run
 ```
 
-What happens under the hood:
+Both commands print a plan using Bash builtins only. The default, `--dry-run`,
+`--mode plan`, and standalone `--help` do not load `.env`, create logs, install
+packages, spawn children, start nodes, or send transactions. `--ci` changes logging
+only; it never opts into execution. Unknown, duplicate, missing, or conflicting
+arguments fail before execution. Help cannot be combined with other flags.
 
-1. `npm ci` reproduces the exact dependency tree enforced by CI v2.
-2. `bin/orchestrate.sh` spins up a Hardhat node, deploys
-   `GlobalGovernanceCouncil`, seeds nation wallets from
-   `config/multinational-governance.json`, records their votes, and runs the
-   owner pause/unpause drill.
-3. The script switches to the repository root and runs `npm run demo:agi-os`,
-   which performs the AGI labour-market simulation (job postings, agent
-   completions, validator commit/reveal votes, thermodynamic adjustments) and
-   assembles the mission bundle in `reports/agi-os/`.
-4. `npm run owner:parameters` generates
-   `reports/agi-os/owner-control-matrix.json`, demonstrating exactly which
-   commands the owner may use to tune fees, staking thresholds, reward engines,
-   pausers, etc.
-5. If the Mermaid CLI is available (`mmdc` binary or
-   `@mermaid-js/mermaid-cli`), the architecture diagram in
-   `docs/architecture.mmd` is converted to SVG for boardroom slides.
-6. A concise summary of all outputs is written to
-   `logs/flagship-demo/summary.txt` for rapid sharing.
+## Explicit offline fixture
 
-## 3. Review Artefacts
-
-- **Governance evidence:**
-  `demo/cosmic-omni-sovereign-symphony/logs/ledger-latest.json` and
-  `vote-simulation.json` log every vote, quorum status, and owner intervention.
-- **Mission bundle:** Located at `reports/agi-os/` and includes `grand-summary`
-  (executive report), `manifest.json` (checksums), `mission-bundle/` (full data
-  room), and thermodynamic telemetry.
-- **Owner authority:** `reports/agi-os/owner-control-matrix.json` plus the
-  optional Mermaid SVG prove that the owner can pause, update parameters, rotate
-  controllers, and execute safe-upgrade plans without redeploying contracts.
-- **Automated verification:** Run
-  `node demo/cosmic-omni-sovereign-symphony/scripts/verify-flagship-report.mjs`
-  to generate `logs/flagship-demo/verification.json`. The script fails fast if
-  any ledger, vote transcript, mission bundle, or summary evidence is missing,
-  providing a machine-readable ✅/❌ indicator for auditors.
-
-## 4. UI Touchpoints (optional)
-
-If you launched the Docker stack beforehand, the following URLs become
-available for live interaction while the scripts run:
-
-- `http://localhost:3000` – Owner console with pause/resume controls and status
-  dashboards.
-- `http://localhost:3001` – Enterprise One-Box portal for natural-language job
-  submission using the Job Registry.
-- `http://localhost:3002` – Validator UI for commit/reveal voting with wallet
-  signatures handled by the front-end.
-
-These interfaces read from the same local Hardhat network used by the demo,
-allowing stakeholders to observe or participate in real time without touching
-command-line tooling.
-
-## 5. Post-Run Governance Exercises
-
-To rehearse parameter changes after the flagship script completes:
+Provision the repository's locked dependencies separately, then run:
 
 ```bash
-npm run owner:wizard
-npm run owner:update-all -- --only thermostat --network hardhat
-npm run owner:verify-control
+bash demo/cosmic-omni-sovereign-symphony/bin/flagship-demo.sh --mode offline-fixture --ci
 ```
 
-These commands, executed from the repository root, validate that the owner can
-modify thermostat policies (or any other module), push safe transaction bundles,
-and verify the resulting addresses against the canonical config.
+This mode writes synthetic governance records, runs the existing AGI OS offline
+report-generation pipeline, and verifies the ledger, vote fixture, execution
+plan, summary, mission bundle, control matrix, and grand summary. Synthetic votes
+and pause/unpause entries are examples, not performed governance actions. Both
+JSON evidence and the summary label this scope. AGI OS's mission and control
+matrix are illustrative/configuration reports, not proof of economic settlement,
+owner authority, production readiness, or real-world work.
 
-## 6. Clean-up
+There is no dependency installation or download fallback in either launcher.
+The optional Mermaid rendering uses only the installed repository CLI. The
+separate owner-parameter description can warn if configuration is incomplete;
+the AGI OS control-matrix artifact is still required by the verifier.
 
-- The flagship launcher stops its own Hardhat node on exit. Interrupt an active run with Ctrl+C in its terminal; leave unrelated nodes running.
-- If Docker was used, shut down the stack with `docker compose down
-  --remove-orphans`.
+The checked-in CI workflow installs locked dependencies in a separate, visible
+step, runs inert mode/configuration tests, executes this explicit fixture mode,
+and reruns the substantive artifact verifier. It does not claim local contract
+or production qualification. `--ci --dry-run` alone is only a plan now.
 
-All generated artefacts remain in place so they can be archived, committed to
-`reports/`, or shared with auditors.
+## Explicit local governance rehearsal
 
----
+```bash
+bash demo/cosmic-omni-sovereign-symphony/bin/orchestrate.sh --mode local-rehearsal
+# Or include the offline AGI OS report pipeline afterward:
+bash demo/cosmic-omni-sovereign-symphony/bin/flagship-demo.sh --mode local-rehearsal
+```
 
-**Outcome:** After following this runbook a non-technical operator holds a
-battle-tested, mainnet-ready mission report demonstrating governance,
-automation, UI readiness, and total owner authority over the AGI Jobs v0 (v2)
-platform.
+Requirements: Linux with readable `/proc`, Python 3, the installed locked Node
+packages, and the existing Hardhat compiler cache containing Solidity 0.8.37 with
+exact compiler identity `0.8.37+commit.f401782d` and matching Keccak checksum.
+The checksum checks integrity against the trusted local cache index; it does not
+independently authenticate that index or establish compiler provenance. The dedicated local config
+retains the repository's Solidity optimizer (200 runs), via-IR, Cancun, and
+storage-layout settings. A missing, incompatible, or checksum-mismatched compiler
+fails closed. It never downloads or substitutes a different compiler.
+
+This mode uses the shared Aurora repository/port lock and owned-node guard. It
+only launches installed Hardhat at `http://127.0.0.1:8545`, chain 31337; `DEMO_PORT`
+can select another port from 1024 through 65535. Any supplied RPC aliases must
+match that exact loopback URL. A different chain or node engine is rejected.
+The actual node startup inherits the dedicated local config, whose only networks
+are in-process Hardhat and loopback localhost. No fork, external provider,
+external signing keys, or arbitrary governance config/address override is used.
+
+The launcher first checks the TypeScript scripts' CommonJS runtime
+compatibility, then compiles and runs governance tests on in-process Hardhat.
+The guard requires a newly owned listener, an unforked chain at block zero, and a
+stable instance ID before execution. It rechecks ownership/identity before each
+deploy, seed, voting, and ledger-export batch. Cleanup stops only its recorded
+process group, with TERM/KILL deadlines. Completion is recorded only after
+successful cleanup. A failed stage stops the pipeline.
+
+All explicit launches enter an allowlisted environment. `.env` is neither sourced
+by the shell nor loaded by the dedicated Hardhat configuration. The only inherited
+operator context is the trusted installed-tool `PATH`, `HOME` for the compiler
+cache, the validated demo port, and lock ownership metadata (which the lock helper
+verifies against a live ancestor). npm is forced offline with user/global npm
+configuration disabled. These controls assume trusted checkout/tool binaries and
+shell startup; they are not an OS sandbox against a hostile operator or concurrent
+process. Do not share the disposable RPC. See the shared
+[guard limitations](../../aurora/bin/LOCAL-NODE-SAFETY.md).
+
+## Runtime compatibility and remaining qualification boundary
+
+The safety and runtime-compatibility changes have only inert private-fixture,
+parser, configuration, loader, and artifact-verifier qualification. No real local
+governance, Solidity compiler, provider, deployment, or AGI OS operational run was
+performed for these changes.
+
+`deploy-governance.ts` now uses the CommonJS runtime's own `__dirname`, matching
+the other entrypoints and repository tsconfig. All four governance scripts pass
+the nonexecuting launcher preflight and installed ts-node/CommonJS-wrapper
+syntax checks. Inert tests execute the exact deployment/export script sources
+with stubbed Hardhat, provider, and filesystem interfaces, checking canonical
+deployment inputs, strict shared validation, seed/vote bindings, serialized output,
+and failure propagation. The export
+entrypoint is forwarded directly through installed ts-node with
+`HARDHAT_NETWORK=localhost` so its `--output <path>` argument reaches the script.
+Missing values, unknown flags, duplicate flags, and extra positional arguments
+fail with usage information before filesystem or contract calls.
+
+The bundled configuration now uses the explicit
+[version 1 fixture schema](governance-config-v1.md). Its original ASCII role,
+nation and mandate identifiers are right-zero-padded to exact bytes32 values in
+the checked-in synthetic fixture; vote references use the same bytes. Runtime
+inputs are strictly validated without padding or other conversion. All four
+entry points require the complete versioned config and reject malformed raw JSON,
+keys/types, addresses, duplicate IDs, unknown references and unsafe numeric/time
+values before Hardhat/provider calls. Export fails for an absent on-chain mandate.
+
+These schema changes have only source and inert qualification. Independent schema
+review and a complete qualified disposable deploy/seed/vote/export/cleanup run
+remain necessary. Never skip a failed governance or export stage to qualify a
+rehearsal. Neither valid ABI encoding nor stubbed tests establish an operational
+pass. Existing deployed/live configuration is not migrated by this repair.
+
+The flagship's AGI OS stage remains explicitly offline even when governance is
+local. Its separate on-chain pipeline is outside this launcher's guarded scope.
+No mainnet-ready, end-to-end local, UI, or production claim follows from these
+fixture results.
+
+## Review and cleanup
+
+- Governance artifacts: `logs/ledger-latest.json`, `vote-simulation.json`,
+  `execution-plan.json`, and `run-status.json` inside this demo.
+- Flagship summary and verification: `logs/flagship-demo/`.
+- Offline mission and control reports: repository-root `reports/agi-os/`.
+- Run the verifier from the repository root:
+  `node demo/cosmic-omni-sovereign-symphony/scripts/verify-flagship-report.mjs`.
+  It requires a completed, explicitly labeled governance run and substantive
+  report contents; pass means artifact consistency within the declared scope.
+- Interrupt a local run with Ctrl+C. Never stop someone else's node to free a port.
+  Private node diagnostics remain in a mode-0700 temporary directory. Never
+  publish `node-private.log`; it may contain development keys. SIGKILL/OS failure
+  cannot run cleanup traps.
+- Original production scripts, contracts, designs, and dashboards remain separate.
+  These launchers do not authorize or perform production rollout.
+
+Run the inert regression suite without installing dependencies:
+
+```bash
+python3 test/simulation/test_cosmic_modes.py
+node --test test/scripts/cosmic-local-config.test.cjs
+bash -n demo/cosmic-omni-sovereign-symphony/bin/{flagship-demo,orchestrate,modes,execution}.sh
+```
+
+With the repository's locked TypeScript and ts-node dependencies already
+installed, also run the inert schema/ABI/loader/argument suite (CI requires it):
+
+```bash
+node --test test/scripts/cosmic-runtime.test.cjs
+```

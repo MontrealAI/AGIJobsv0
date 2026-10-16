@@ -44,6 +44,8 @@ class UltraOrchestrator(OmegaUpgradeOrchestrator):
 
     async def _seed_plan_once(self) -> None:
         await self._paused.wait()
+        # Reject ambiguous plans/registries before any admission side effect.
+        self._mission_admission_snapshot()
         existing_paths = {
             record.spec.metadata.get("plan_path")
             for record in self.job_registry.iter_jobs()
@@ -51,11 +53,50 @@ class UltraOrchestrator(OmegaUpgradeOrchestrator):
         }
         for plan in self.mission.job_plan:
             await self._ensure_plan_node(plan, parent_id=None, existing_paths=existing_paths)
+        admission = self._mission_admission_snapshot()
         self._info(
-            "mission_plan_seeded",
+            "mission_plan_seeded" if admission["all_admitted"] else "mission_plan_partial",
             mission=self.mission.name,
-            jobs=len(existing_paths) or len(self.mission.job_plan),
+            jobs=admission["admitted_count"],
+            **admission,
         )
+
+    def _mission_admission_snapshot(self) -> Dict[str, Any]:
+        """Count actual registered plan jobs separately from requested work."""
+        planned = []
+        def visit(nodes):
+            for node in nodes:
+                planned.append(node.plan_path)
+                visit(node.children)
+        visit(self.mission.job_plan)
+        expected = set(planned)
+        if len(expected) != len(planned):
+            raise ValueError("Mission plan paths must be unique")
+        registered = {}
+        for record in self.job_registry.iter_jobs():
+            path = record.spec.metadata.get("plan_path")
+            if path in expected:
+                if path in registered:
+                    raise ValueError(f"Ambiguous registered mission plan path: {path}")
+                registered[path] = record
+        admitted = [path for path in planned if path in registered]
+        missing = [path for path in planned if path not in registered]
+        finalized = [path for path in admitted if registered[path].status == JobStatus.FINALIZED]
+        return {
+            "planned_count": len(planned), "admitted_count": len(admitted),
+            "admitted_paths": admitted, "missing_paths": missing,
+            "finalized_count": len(finalized), "finalized_paths": finalized,
+            "all_admitted": bool(planned) and not missing,
+            "all_work_finalized": bool(planned) and len(finalized) == len(planned),
+            "status": "fully-admitted" if planned and not missing else "partial" if admitted else "not-admitted",
+            "scope": "local simulation plan admission; no external execution attestation",
+        }
+
+    def _collect_status_snapshot(self) -> Dict[str, Any]:
+        snapshot = super()._collect_status_snapshot()
+        snapshot["mission_admission"] = self._mission_admission_snapshot()
+        return snapshot
+
 
     async def _ensure_plan_node(
         self,

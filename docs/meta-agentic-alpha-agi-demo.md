@@ -1,5 +1,7 @@
 # Meta-Agentic α-AGI Platform Demonstration (AGI Jobs v0/v2)
 
+> The launch script now defaults to an effect-free plan. See the [mode upgrade and evidence boundaries](./agi-os-first-class-mode-upgrade.md). The compound operational path is localhost-only, and its two ASI stages consume different plan formats.
+
 This document is the canonical reference for the Meta-Agentic α-AGI showcase. It combines only the first-class tooling that already ships with AGI Jobs v0 (v2) to deliver an iconic, production-grade rehearsal that non-technical owners can run end-to-end.
 
 ## Objectives
@@ -21,9 +23,10 @@ This document is the canonical reference for the Meta-Agentic α-AGI showcase. I
 
 ## Execution flow
 
-1. `demo/meta-agentic-alpha-agi/bin/launch.sh`
-   - Runs `demo:agi-os:first-class` with `--auto-yes` to deploy contracts, run simulations, verify owner controls, and assemble manifests.
-   - Runs `demo:asi-takeoff:local` with `ASI_TAKEOFF_PLAN_PATH` pointing at the meta-agentic plan to populate mission receipts.
+1. `demo/meta-agentic-alpha-agi/bin/launch.sh` prints a plan without invoking npm.
+   - Explicit reviewed execution: `demo/meta-agentic-alpha-agi/bin/launch.sh --mode execute --network localhost --yes --no-compose`.
+   - The first-class stage exports the branded `ASI_TAKEOFF_PLAN_PATH` for its separate synthetic Hardhat take-off fixture, and runs selected-target deployment/owner steps.
+   - The later `demo:asi-takeoff:local` stage does not consume that export. It deploys/replays the supported shared `demo/asi-takeoff/config/mission@v2.json` fixture, not the branded plan.
 2. Optional dashboards:
    - `docker compose up validator-ui enterprise-portal`
    - `npm --prefix apps/console run dev`
@@ -59,18 +62,14 @@ The first-class demo emits `reports/agi-os/owner-control-matrix.json` confirming
 
 Operators can further inspect the Mermaid diagram (`reports/agi-os/first-class/owner-control-map.mmd`) or run `npm run owner:dashboard` for a CLI snapshot.
 
-## Deploying beyond localhost
+## External network boundary
 
-To rehearse on Sepolia or mainnet:
-
-```bash
-export HARDHAT_NETWORK=sepolia
-export RPC_URL=https://sepolia.infura.io/v3/<key>
-export PRIVATE_KEY=<governance signer>
-demo/meta-agentic-alpha-agi/bin/launch.sh --network sepolia --compose
-```
-
-The same plan, runbook, and verification commands apply. Ensure wallets referenced in the mission plan are configured on-chain (ENS subdomains under `agent.agi.eth` / `club.agi.eth`) or added through the Identity Registry owner overrides (`npm run identity:update`).
+The compound launcher rejects Sepolia/mainnet: its final replay is local-only.
+There is no silent external-to-local fallback. The shared first-class launcher
+retains an explicitly selected Sepolia outer path, but its bundled mission
+fixture remains in-memory Hardhat. See the [mode upgrade](./agi-os-first-class-mode-upgrade.md)
+for the complete contract and separate evidence labels. This safety update does
+not qualify Sepolia deployment or convert branded plans into local mission format.
 
 ## Evidence collection
 

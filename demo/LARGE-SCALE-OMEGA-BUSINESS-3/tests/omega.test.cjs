@@ -705,6 +705,11 @@ test('mainnet validates the selected config economics before accepting execution
     validatorRevealWindowSeconds: 60,
   };
   assert.equal(check(valid).execute, true);
+  for (const rate of [0, 10000]) {
+    const boundary = clone(valid);
+    boundary.econ.jobStakeBps = rate;
+    assert.equal(check(boundary).execute, true);
+  }
   for (const [section, key, value] of [
     ['econ', 'feePct', 101],
     ['econ', 'feePtc', 5],
@@ -717,7 +722,9 @@ test('mainnet validates the selected config economics before accepting execution
     ['econ', 'minPlatformStake', true],
     ['econ', 'minStake', '0.0000000000000000001'],
     ['econ', 'jobStake', '79228162515'],
+    ['econ', 'jobStakeBps', -1],
     ['econ', 'jobStakeBps', 10001],
+    ['econ', 'jobStakeBps', 0.5],
     ['econ', 'jobStakeBps', '1000'],
     ['econ', 'appealFee', '9'.repeat(80)],
     ['econ', 'commitWindow', '-1d'],

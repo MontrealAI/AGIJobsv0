@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "dependencyBaseline": "7b21ce05b0b18b46162da66c2f528334101f6f40",
+  "reviewedSourceCheckpoint": "d267cc4f326d28bdbceda55aa9242da60146aa88",
+  "transitions": [
+    {
+      "path": "demo/alpha-agi-insight-mark/hardhat.config.ts",
+      "before": "59c72df8983d6f4de2277840f6895c54d41c53ac",
+      "after": "1cec124c760101bb2cb06c06b573ee336d23eac9"
+    },
+    {
+      "path": "scripts/v2/__tests__/agiOsFirstClassDemo.test.ts",
+      "before": "2d5ecd4000b284314b966b8dad6bcad2e9f90876",
+      "after": "95e599bd1e79e188cc0ad2723e2ded8beb4a352e"
+    },
+    {
+      "path": "scripts/v2/agiOsFirstClassDemo.ts",
+      "before": "76bbafa7ac86a8294189572978c61aff6cd5b51a",
+      "after": "125fed92359799aeb6be1f87deaaeda030d737bd"
+    },
+    {
+      "path": "scripts/v2/oneclick-stack.ts",
+      "before": "19f87e6458a5de8a78905cc75e0fac4074284956",
+      "after": "c5b324aad31ea1044387aa7af60cd262f2c67ec5"
+    }
+  ]
+}

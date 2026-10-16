@@ -85,3 +85,111 @@ test('missing, malformed and unavailable CI base evidence fails closed', (t) => 
   }
   assert.throws(() => checkSource({ root: f.root, env: { DEPENDENCY_PRESERVATION_BASE_SHA: 'a'.repeat(40) } }));
 });
+
+const { createHash } = require('node:crypto');
+const { _test } = require('../check-dependency-preservation.cjs');
+const reviewedPaths = ['demo/example/hardhat.config.ts', 'scripts/v2/example.ts',
+  'scripts/v2/other.ts', 'scripts/v2/__tests__/example.test.ts'];
+const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
+function reviewedFixture(t) {
+  const f = fixture(t);
+  for (const name of reviewedPaths) f.write(name, 'before\n');
+  const base = f.commit('rc8 baseline');
+  for (const name of reviewedPaths) f.write(name, 'reviewed\n');
+  const checkpoint = f.commit('independent reviewed source');
+  f.write('README.md', 'aggregate candidate\n');
+  f.commit('aggregate');
+  const record = { schemaVersion: 1, dependencyBaseline: base, reviewedSourceCheckpoint: checkpoint,
+    transitions: reviewedPaths.map((name) => ({ path: name,
+      before: f.git('rev-parse', base + ':' + name), after: f.git('rev-parse', checkpoint + ':' + name) })) };
+  const bytes = Buffer.from(JSON.stringify(record));
+  const trust = { bytes, digest: hash(bytes) };
+  const check = (override = trust, baseline = base) => _test.checkSourceWithRecord({ root: f.root,
+    env: { DEPENDENCY_PRESERVATION_BASE_SHA: baseline } }, override);
+  return { ...f, base, checkpoint, record, trust, check };
+}
+
+test('reviewed aggregate pins source checkpoint while preserving original dependency baseline', (t) => {
+  const f = reviewedFixture(t);
+  const result = f.check();
+  assert.equal(result.baseline, f.base);
+  assert.equal(result.generatedSourceBaseline, f.checkpoint);
+  assert.equal(result.reviewedSourceReconciled, true);
+  assert.equal(result.protectedSourceChanged, true);
+  assert.throws(() => checkSource({ root: f.root, env: { DEPENDENCY_PRESERVATION_BASE_SHA: f.base } }),
+    /Protected source changed/); // A fixture record cannot affect the production trust anchor.
+});
+
+test('forged record and substituted dependency baseline fail closed', (t) => {
+  const f = reviewedFixture(t);
+  const forged = Buffer.from(JSON.stringify({ ...f.record, dependencyBaseline: f.checkpoint }));
+  assert.throws(() => f.check({ ...f.trust, bytes: forged }), /record digest mismatch/);
+  assert.throws(() => _test.verifyReviewedSource({ root: f.root, baseline: f.checkpoint,
+    head: f.git('rev-parse', 'HEAD'), ...f.trust }), /dependency baseline mismatch/);
+  assert.throws(() => f.check(f.trust, f.original), /Protected source changed/);
+});
+
+test('incorrect recorded blob identity and transition set are rejected', (t) => {
+  const f = reviewedFixture(t);
+  const changed = structuredClone(f.record);
+  changed.transitions[0].after = '0'.repeat(40);
+  let bytes = Buffer.from(JSON.stringify(changed));
+  assert.throws(() => f.check({ bytes, digest: hash(bytes) }), /Reviewed blob mismatch/);
+  changed.transitions[0] = { ...changed.transitions[1] };
+  bytes = Buffer.from(JSON.stringify(changed));
+  assert.throws(() => f.check({ bytes, digest: hash(bytes) }), /Duplicate reviewed transition/);
+});
+
+for (const [label, change] of [
+  ['changed blob', (f) => f.write(reviewedPaths[0], 'unreviewed\n')],
+  ['extra protected path', (f) => f.write('contracts/Extra.sol', 'unreviewed\n')],
+  ['missing file', (f) => fs.unlinkSync(path.join(f.root, reviewedPaths[0]))],
+  ['missing transition', (f) => f.write(reviewedPaths[0], 'before\n')],
+]) {
+  test('reviewed aggregate rejects ' + label, (t) => {
+    const f = reviewedFixture(t);
+    change(f);
+    f.commit(label);
+    assert.throws(() => f.check(), /Protected source differs from reviewed checkpoint/);
+  });
+}
+
+test('reviewed aggregate still rejects dependency identity drift from rc8', (t) => {
+  const f = reviewedFixture(t);
+  const lock = JSON.parse(fs.readFileSync(path.join(f.root, 'package-lock.json')));
+  lock.packages['node_modules/hardhat'].version = '99.0.0';
+  f.write('package-lock.json', JSON.stringify(lock));
+  f.commit('dependency drift');
+  assert.throws(() => f.check(), /hardhat/);
+});
+
+test('generated-byte comparison rejects mixed source even with identical generated change lists', (t) => {
+  const f = reviewedFixture(t);
+  const other = fs.mkdtempSync(path.join(os.tmpdir(), 'agi-generated-source-test-'));
+  t.after(() => fs.rmSync(other, { recursive: true, force: true }));
+  execFileSync('git', ['clone', '-q', '--no-hardlinks', f.root, other]);
+  execFileSync('git', ['checkout', '-q', f.checkpoint], { cwd: other });
+  assert.doesNotThrow(() => _test.compareGeneratedSources(f.root, other));
+  // Both sides normalize the same generated file. A source mismatch elsewhere
+  // must still fail, even though their generated path lists are identical.
+  fs.writeFileSync(path.join(other, 'config/network.json'), 'generated\n');
+  f.write('config/network.json', 'generated\n');
+  assert.doesNotThrow(() => _test.compareGeneratedSources(f.root, other));
+  execFileSync('git', ['checkout', '-q', f.base, '--', reviewedPaths[0]], { cwd: other });
+  assert.throws(() => _test.compareGeneratedSources(f.root, other), /hardhat.config.ts/);
+});
+
+
+test('ordinary post-merge PRs use their newer base and retain strict source protection', (t) => {
+  const f = reviewedFixture(t);
+  const mergedBase = f.git('rev-parse', 'HEAD');
+  f.write('README.md', 'ordinary future dependency PR\n');
+  f.commit('future PR');
+  const result = f.check(f.trust, mergedBase);
+  assert.equal(result.baseline, mergedBase);
+  assert.equal(result.generatedSourceBaseline, mergedBase);
+  assert.equal(result.reviewedSourceReconciled, false);
+  f.write(reviewedPaths[0], 'new unreviewed change\n');
+  f.commit('future protected change');
+  assert.throws(() => f.check(f.trust, mergedBase), /Protected source changed/);
+});

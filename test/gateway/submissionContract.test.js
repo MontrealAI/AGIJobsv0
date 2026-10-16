@@ -561,7 +561,10 @@ describe('gateway current registry submissions', function () {
       await deployImplementations('JobRegistry', Registry.runner)
     );
     await registry.setMaxJobReward(ethers.parseEther('10'));
-    await registry.setJobStakeBps(0);
+    await registry.setJobStakeBps(1000);
+    expect(await registry.quoteJobStake(ethers.parseEther('1'))).to.equal(
+      ethers.parseEther('0.1')
+    );
     let persisted;
     const { postJob } = loadGateway('employer.ts', {
       fs: {
@@ -582,6 +585,9 @@ describe('gateway current registry submissions', function () {
     );
     expect(created.jobId).to.equal(1);
     expect(await registry.nextJobId()).to.equal(1n);
+    expect((await registry.jobs(created.jobId)).stake).to.equal(
+      ethers.parseEther('0.1')
+    );
     expect((await registry.jobs(created.jobId)).employer).to.equal(
       employer.address
     );

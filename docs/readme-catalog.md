@@ -6,8 +6,8 @@ briefings, and subsystem manuals when coordinating releases or audits.
 
 ## Summary
 
-- Total README-like files: 171
-- README documents: 131
+- Total README-like files: 172
+- README documents: 132
 - Runbooks and emergency guides: 40
 
 ## Root
@@ -116,10 +116,11 @@ briefings, and subsystem manuals when coordinating releases or audits.
 | `demo/National-Supply-Chain-v0/README.md` | AGI Jobs v0 (v2) — Demo → National Supply Chain v0 | README |
 | `demo/National-Supply-Chain-v0/RUNBOOK.md` | Mission Control Runbook – National Supply Chain Demo | RUNBOOK |
 | `demo/OMNI-CONCORD-ASCENSION-ATLAS/README.md` | AGI Jobs v0 (v2) — Demo → Omni Concord Ascension Atlas | README |
-| `demo/OMNIGENESIS-GLOBAL-SOVEREIGN-SYMPHONY/README.md` | AGI Jobs v0 (v2) — Demo → Omnigenesis Global Sovereign Symphony | README |
-| `demo/OMNIGENESIS-GLOBAL-SOVEREIGN-SYMPHONY/RUNBOOK.md` | OMNIGENESIS GLOBAL SOVEREIGN SYMPHONY — OPERATOR RUNBOOK | RUNBOOK |
-| `demo/OMNIPHOENIX-ASCENDANT-HYPERSTRUCTURE/README.md` | AGI Jobs v0 (v2) — Demo → Omniphoenix Ascendant Hyperstructure | README |
-| `demo/OMNIPHOENIX-ASCENDANT-HYPERSTRUCTURE/RUNBOOK.md` | Omniphoenix Ascendant Hyperstructure — Operator Runbook | RUNBOOK |
+| `demo/OMNIGENESIS-GLOBAL-SOVEREIGN-SYMPHONY/README.md` | Omnigenesis Global Sovereign Symphony | README |
+| `demo/OMNIGENESIS-GLOBAL-SOVEREIGN-SYMPHONY/RUNBOOK.md` | Omnigenesis Global Sovereign Symphony — Fixture Runbook | RUNBOOK |
+| `demo/OMNIPHOENIX-ASCENDANT-HYPERSTRUCTURE/README.md` | Omniphoenix Ascendant Hyperstructure | README |
+| `demo/OMNIPHOENIX-ASCENDANT-HYPERSTRUCTURE/disruption/README.md` | Dependency disruption desk | README |
+| `demo/OMNIPHOENIX-ASCENDANT-HYPERSTRUCTURE/RUNBOOK.md` | Omniphoenix Ascendant Hyperstructure — Fixture Runbook | RUNBOOK |
 | `demo/One-Box/README.md` | AGI Jobs v0 (v2) — Demo → One Box | README |
 | `demo/One-Box/computer-work/README.md` | Computer-work lab: a supplier decision you can verify | README |
 | `demo/Open-Endedness-v0/README.md` | AGI Jobs v0 (v2) — Demo → Open Endedness v0 | README |

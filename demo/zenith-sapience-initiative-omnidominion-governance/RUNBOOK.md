@@ -1,5 +1,12 @@
 # OmniDominion Mission Runbook
 
+> **Local evidence scope:** The `:local` command uses the shared ASI Global
+> contract-lifecycle fixture, not this directory's branded `project-plan.json`.
+> The non-local governance-kit command reads that plan as reporting context.
+> Neither path proves delivery of its proposed real-world programmes. See the
+> [shared-scenario contract](../asi-global/LOCAL-SCENARIOS.md) for the actual local
+> mission, supported override, and rejected `ASI_GLOBAL_PLAN_PATH` setting.
+
 This runbook walks an operator through the complete life cycle of the **Zenith Sapience OmniDominion Governance Exemplar**. Every command references tooling that already ships with AGI Jobs v0 (v2). Follow the checklists in order; each task emits an artefact that feeds later stages.
 
 ## Pre-flight (15 minutes)

@@ -7,7 +7,7 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const DEFAULT_DEMO_ROOT = path.resolve(__dirname, "..");
-const DEFAULT_REPO_ROOT = path.resolve(DEFAULT_DEMO_ROOT, "..");
+const DEFAULT_REPO_ROOT = path.resolve(DEFAULT_DEMO_ROOT, "../..");
 const DEFAULT_REPORT_ROOT = path.join(DEFAULT_REPO_ROOT, "reports", "agi-os");
 const DEFAULT_SUMMARY_PATH = path.join(
   DEFAULT_DEMO_ROOT,
@@ -148,6 +148,28 @@ async function main() {
   const missionBundleDir = path.join(reportsRoot, "mission-bundle");
   const ownerMatrixPath = path.join(reportsRoot, "owner-control-matrix.json");
   const grandSummaryPath = path.join(reportsRoot, "grand-summary.json");
+
+  const runStatusPath = path.join(demoRoot, "logs", "run-status.json");
+  let evidenceMode;
+  try {
+    const run = await readJson(runStatusPath);
+    evidenceMode = run.mode;
+    if (run.status !== "completed" || !["offline-fixture", "local-rehearsal"].includes(evidenceMode)) {
+      throw new Error("No completed explicitly selected governance run");
+    }
+    if (evidenceMode === "offline-fixture") {
+      for (const artifact of [ledgerPath, voteSimulationPath, executionPlanPath]) {
+        const fixture = await readJson(artifact);
+        if (fixture.evidenceMode !== "offline-fixture" || fixture.synthetic !== true) {
+          throw new Error("Offline governance artifacts must be labeled synthetic fixtures");
+        }
+      }
+    }
+    results.push({ key: "evidence", label: "Evidence scope", status: "pass",
+      details: `${evidenceMode}; AGI OS mission is an offline fixture; no production certification` });
+  } catch (error) {
+    results.push({ key: "evidence", label: "Evidence scope", status: "fail", details: errorMessage(error) });
+  }
 
   const ledgerExists = await pathExists(ledgerPath);
   if (!ledgerExists) {
@@ -309,7 +331,7 @@ async function main() {
     });
   } else {
     const contents = await fs.readFile(summaryPath, "utf8");
-    if (!contents.includes("Flagship Demo Completed")) {
+    if (!contents.includes("Flagship Demo Completed") && !contents.includes("Flagship Demo Artifacts Awaiting Verification")) {
       results.push({
         key: "summary",
         label: "Summary report",
@@ -435,6 +457,9 @@ async function main() {
   const aggregate = aggregateStatus(results);
   const payload = {
     generatedAt: new Date().toISOString(),
+    evidenceMode,
+    missionEvidenceMode: "offline-fixture",
+    productionApproved: false,
     demoRoot,
     reportsRoot,
     summaryPath,

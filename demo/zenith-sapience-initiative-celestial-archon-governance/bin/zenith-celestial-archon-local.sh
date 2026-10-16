@@ -4,10 +4,21 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 cd "$ROOT"
 
-NETWORK_NAME="${NETWORK:-localhost}"
+if [[ "$#" -ne 0 || "${NETWORK-localhost}" != "localhost" ]]; then
+  echo 'This local rehearsal accepts no arguments and requires NETWORK=localhost.' >&2
+  exit 1
+fi
+# The local Aurora lifecycle consumes mission configs, not governance-kit plans.
+if [[ "${ASI_GLOBAL_PLAN_PATH+x}" == x ]]; then
+  echo 'ASI_GLOBAL_PLAN_PATH is unsupported by this local rehearsal. Unset it; use AURORA_MISSION_CONFIG with an Aurora mission config. project-plan.json is design context only.' >&2
+  exit 1
+fi
+source "$ROOT/demo/aurora/bin/local-node.sh"
+lock_local_demo "$@"
+
+NETWORK_NAME="localhost"
 LOCAL_REPORT_ROOT="reports/${NETWORK_NAME}/zenith-celestial-archon"
 
-export ASI_GLOBAL_PLAN_PATH="demo/zenith-sapience-initiative-celestial-archon-governance/project-plan.json"
 export ASI_GLOBAL_REPORT_ROOT="$LOCAL_REPORT_ROOT"
 export ASI_GLOBAL_OUTPUT_BASENAME="zenith-celestial-archon-kit"
 export ASI_GLOBAL_BUNDLE_NAME="zenith-celestial-archon"
@@ -22,9 +33,11 @@ export ASI_GLOBAL_ADDITIONAL_ARTIFACTS_APPEND='[
 ]'
 
 export AURORA_REPORT_SCOPE="zenith-celestial-archon"
-export AURORA_REPORT_TITLE="Zenith Sapience Celestial Archon — Mission Report"
+export AURORA_REPORT_TITLE="Zenith Sapience Celestial Archon — Contract-Lifecycle Fixture Report"
 
-rm -rf "$LOCAL_REPORT_ROOT"
-mkdir -p "$LOCAL_REPORT_ROOT"
+printf 'Contract-lifecycle fixture: %s\nBranded project-plan.json is design context; it is not executed by this local rehearsal.\n' \
+  "${AURORA_MISSION_CONFIG:-demo/asi-global/config/mission@v2.json}" >&2
 
-NETWORK="$NETWORK_NAME" npm run demo:asi-global:local -- "$@"
+node demo/aurora/bin/prepare-local-reports.cjs zenith-celestial-archon
+
+NETWORK="$NETWORK_NAME" npm run demo:asi-global:local

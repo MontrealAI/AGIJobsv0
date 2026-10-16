@@ -21,6 +21,23 @@ flowchart LR
     Core --> Governance[[Owner Control Plane]]
 ```
 
+## Safe launcher modes
+
+Both `bin/flagship-demo.sh` and `bin/orchestrate.sh` default to an effect-free plan.
+`--dry-run` and `--help` do not create logs, load `.env`, install dependencies, or
+launch children. `--ci` alone never opts into execution.
+
+- `--mode offline-fixture`: explicitly generate synthetic governance and offline
+  AGI OS reports; CI retains substantive artifact verification in this mode.
+- `--mode local-rehearsal`: attempt disposable, guarded localhost governance.
+  CommonJS preflight and inert schema/loader tests cover canonical bundled
+  bytes32 inputs; a qualified disposable run is still required.
+
+See the [mode/evidence runbook](docs/flagship-runbook.md) for prerequisites,
+limitations, and the [versioned fixture schema](docs/governance-config-v1.md). These modes
+never use external credentials or provider fallback. Original production tools
+and designs remain separate.
+
 ## Working With This Module
 1. From the repository root run `npm install` once to hydrate all workspaces.
 2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `demo/cosmic-omni-sovereign-symphony`.

@@ -1,9 +1,9 @@
 {
   "meta": {
-    "generatedAt": "2026-10-15T20:46:40.279Z",
+    "generatedAt": "2026-10-15T21:11:57.901Z",
     "generator": "demo/REDENOMINATION/scripts/playbook.cjs",
     "scenario": "AGI Jobs redenomination planning rehearsal",
-    "version": "2.1.0",
+    "version": "3.0.0",
     "mode": "planning-only",
     "source": "local configuration; no on-chain state queried",
     "liveProvider": false,
@@ -259,7 +259,6 @@
     },
     "jobRegistry": {
       "before": {
-        "jobStakeBps": 1000,
         "minAgentStake": {
           "raw": "100000000000000000000",
           "tokens": "100.0",
@@ -274,10 +273,21 @@
         "maxActiveJobsPerAgent": 3,
         "expirationGracePeriodSeconds": 86400,
         "feePct": 5,
-        "validatorRewardPct": 10
+        "validatorRewardPct": 10,
+        "jobStakeBps": 1000,
+        "jobStakeAtRewardCap": {
+          "raw": "100000000000000000000",
+          "tokens": "100.0",
+          "formatted": "100.0 AGIALPHA for reward 1000.0 AGIALPHA (rounded up)",
+          "reward": {
+            "raw": "1000000000000000000000",
+            "tokens": "1000.0",
+            "formatted": "1000.0 AGIALPHA"
+          },
+          "rounding": "ceil"
+        }
       },
       "after": {
-        "jobStakeBps": 1000,
         "minAgentStake": {
           "raw": "100000000000000000",
           "tokens": "0.1",
@@ -292,9 +302,21 @@
         "maxActiveJobsPerAgent": 3,
         "expirationGracePeriodSeconds": 86400,
         "feePct": 5,
-        "validatorRewardPct": 10
+        "validatorRewardPct": 10,
+        "jobStakeBps": 1000,
+        "jobStakeAtRewardCap": {
+          "raw": "100000000000000000",
+          "tokens": "0.1",
+          "formatted": "0.1 AGIΩ for reward 1.0 AGIΩ (rounded up)",
+          "reward": {
+            "raw": "1000000000000000000",
+            "tokens": "1.0",
+            "formatted": "1.0 AGIΩ"
+          },
+          "rounding": "ceil"
+        }
       },
-      "summary": "Proposed nominal thresholds. Existing escrow and obligations are not changed by this generator."
+      "summary": "Token thresholds are converted; jobStakeBps stays dimensionless and unchanged. Reward-specific stake quotes round up in each denomination. Existing jobs retain their original stake snapshots."
     },
     "feePool": {
       "before": {
@@ -437,6 +459,7 @@
     "For exact conversion: targetRaw × factor × 10^currentDecimals = sourceRaw × 10^targetDecimals.",
     "For floor conversion, retain the exact remainder fraction for every affected value; do not discard liabilities.",
     "Fees, slashing splits, duration limits and unrelated configuration remain unchanged.",
+    "jobStakeBps remains unchanged (0–10000); each new job stake is ceil(rewardRaw × jobStakeBps / 10000), quoted in its reward denomination.",
     "Reject precision loss by default and prevent positive thresholds from silently becoming zero.",
     "Independent validation, authorization and chain finality remain separate from agent execution."
   ],
