@@ -9,7 +9,7 @@ function prepare(options) {
   const index = { schemaVersion: 1, records: [{ repository: options.repository, pullRequest: options.pullRequest, file: 'unreleased-source-policy.json', sha256: digest }] };
   fs.mkdirSync(options.output, { recursive: true });
   for (const [name, data] of [['unreleased-source-policy.json', bytes], ['unreleased-source-policy.index.json', p.canonical(index)]]) {
-    const target = path.join(options.output, name); assert(!fs.existsSync(target), 'Refusing to overwrite existing policy: ' + target); fs.writeFileSync(target, data, { flag: 'wx' });
+    const target = path.join(options.output, name); fs.writeFileSync(target, data, { flag: 'wx' });
   }
   return { recordSha256: digest, sourceCheckpoint: record.sourceCheckpoint, sourceTree: record.sourceTree, dependencyBaseline: record.dependencyBaseline, transitionCount: record.transitionCount,
     sourceProtectedFiles: record.sourceInventory.length, baselineProtectedFiles: record.baselineInventory.length, generatorClosureFiles: record.generatorClosure.length,

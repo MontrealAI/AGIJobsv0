@@ -147,8 +147,32 @@ function ensureParents(root, name) {
   for (const piece of pieces) { current = path.join(current, piece); assert(fs.lstatSync(current).isDirectory() && !fs.lstatSync(current).isSymbolicLink(), 'Source directory is not a real directory: ' + name); }
 }
 function fileEntry(root, name) {
-  ensureParents(root, name); const file = path.join(root, name); const stat = fs.lstatSync(file); assert(stat.isFile() && !stat.isSymbolicLink(), 'Source path must be regular: ' + name);
-  const bytes = fs.readFileSync(file); return { path: name, mode: stat.mode & 0o111 ? '100755' : '100644', type: 'blob', blob: createHash('sha1').update(Buffer.from('blob ' + bytes.length + '\0')).update(bytes).digest('hex') };
+  // Parent-directory checks are defense in depth, not an atomic directory-fd
+  // walk. This functional snapshot assumes the workspace/parent directories
+  // are not concurrently replaced by an adversarial writer.
+  ensureParents(root, name);
+  const file = path.join(root, name);
+  assert(Number.isInteger(fs.constants.O_NOFOLLOW), 'O_NOFOLLOW support is required');
+  const descriptor = fs.openSync(file, fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW | fs.constants.O_NONBLOCK);
+  try {
+    const before = fs.fstatSync(descriptor, { bigint: true });
+    assert(before.isFile(), 'Source path must be regular: ' + name);
+    const bytes = fs.readFileSync(descriptor);
+    const after = fs.fstatSync(descriptor, { bigint: true });
+    for (const field of ['dev', 'ino', 'mode', 'nlink', 'size', 'mtimeNs', 'ctimeNs']) {
+      assert.equal(after[field], before[field], 'Source file changed while reading: ' + name);
+    }
+    assert.equal(BigInt(bytes.length), after.size, 'Source file size changed while reading: ' + name);
+    // A descriptor reads one object even if its directory entry is replaced.
+    // Also reject a replacement visible at this final point-in-time check.
+    const current = fs.lstatSync(file, { bigint: true });
+    assert(current.isFile() && !current.isSymbolicLink() && current.dev === after.dev && current.ino === after.ino,
+      'Source path was replaced while reading: ' + name);
+    return { path: name, mode: after.mode & 0o111n ? '100755' : '100644', type: 'blob',
+      blob: createHash('sha1').update(Buffer.from('blob ' + bytes.length + '\0')).update(bytes).digest('hex') };
+  } finally {
+    fs.closeSync(descriptor);
+  }
 }
 function indexInventory(root, predicate) {
   return names(git(root, ['ls-files', '--stage', '-z'])).map((entry) => {

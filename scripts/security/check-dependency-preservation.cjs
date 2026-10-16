@@ -21,6 +21,36 @@ function verifyBundleCopies(root, head) {
     assert.deepEqual(fs.readFileSync(path.join(root, 'scripts/security', name)), local, 'Working policy copy differs from pinned bundle: ' + name);
   }
 }
+// The event payload's merge_commit_sha is advisory: GitHub may regenerate the
+// runtime merge after that payload snapshot. Prove the actual immutable runtime
+// object instead, without fetching or substituting a mutable merge ref here.
+function verifyEventCheckout({ root, checkoutHead, baseTip, context, env }) {
+  p.oid(context.head, 'Event head');
+  p.oid(context.base, 'Event base');
+  if (context.merge) p.oid(context.merge, 'Payload merge');
+  assert.equal(baseTip, context.base, 'PR event base mismatch');
+  const head = p.commit(root, context.head);
+  const runtimeSha = env.GITHUB_SHA ?? null;
+  let runtimeMerge = null;
+  if (runtimeSha !== null) {
+    p.oid(runtimeSha, 'GitHub runtime SHA');
+    assert.equal(p.commit(root, runtimeSha), runtimeSha, 'GitHub runtime SHA must name a commit');
+    if (runtimeSha !== head) {
+      const mergeParents = p.parents(root, runtimeSha);
+      assert.deepEqual(mergeParents, [baseTip, head], 'Runtime merge must have exactly event base and head as ordered parents');
+      const mergeTree = p.treeId(root, runtimeSha);
+      assert.equal(mergeTree, p.treeId(root, head), 'Runtime merge tree differs from event head');
+      runtimeMerge = { commit: runtimeSha, parents: mergeParents, tree: mergeTree };
+    }
+  }
+  if (checkoutHead !== head) {
+    assert(runtimeMerge, 'Runtime GITHUB_SHA proof is required for a merge checkout');
+    assert.equal(checkoutHead, runtimeMerge.commit, 'Checkout is neither event head nor proven runtime merge');
+  }
+  return { head, checkoutHead, runtimeSha, runtimeMerge,
+    payloadMerge: context.merge ?? null,
+    payloadMergeMatchesRuntime: context.merge && runtimeSha ? context.merge === runtimeSha : null };
+}
 function checkSource(options = {}) {
   const { root = ROOT, env = process.env } = options;
   const requestedBase = env.DEPENDENCY_PRESERVATION_BASE_SHA;
@@ -30,25 +60,8 @@ function checkSource(options = {}) {
   const baseTip = p.commit(root, requestedBase ?? 'refs/remotes/origin/main');
   const checkoutHead = p.commit(root, 'HEAD');
   const context = options.context === undefined ? p.readContext(env) : options.context;
-  let head = checkoutHead;
-  if (context) {
-    p.oid(context.head, 'Event head'); p.oid(context.base, 'Event base'); assert.equal(baseTip, context.base, 'PR event base mismatch');
-    head = p.commit(root, context.head);
-    if (checkoutHead !== head) {
-      assert.equal(checkoutHead, context.merge, 'Checkout is neither event head nor declared synthetic merge');
-      assert.equal(p.treeId(root, checkoutHead), p.treeId(root, head), 'Synthetic merge tree differs from event head');
-      const mergeParents = p.parents(root, checkoutHead);
-      assert(mergeParents.includes(head) && mergeParents.includes(baseTip), 'Synthetic merge parent binding mismatch');
-    }
-    if (env.GITHUB_SHA) {
-      // pull_request workflows can explicitly check out head while GITHUB_SHA
-      // remains the event's synthetic merge identity. It is metadata only in
-      // that case; an actual merge checkout has already passed tree/parent checks.
-      p.oid(env.GITHUB_SHA, 'GitHub event SHA');
-      const allowed = checkoutHead === head ? [head, context.merge].filter(Boolean) : [checkoutHead];
-      assert(allowed.includes(env.GITHUB_SHA), 'GitHub checkout/event SHA mismatch');
-    }
-  }
+  const eventCheckoutBinding = context ? verifyEventCheckout({ root, checkoutHead, baseTip, context, env }) : null;
+  const head = eventCheckoutBinding?.head ?? checkoutHead;
   const bases = p.git(root, ['merge-base', '--all', baseTip, head]).trim().split(/\s+/).filter(Boolean);
   assert.equal(bases.length, 1, 'Exactly one merge base is required'); const baseline = bases[0]; p.oid(baseline, 'Merge base');
   if (p.git(root, ['rev-parse', '--is-shallow-repository']).trim() === 'true') assert.equal(baseTip, baseline, 'Complete base-divergence history is required for an advanced event base');
@@ -72,7 +85,7 @@ function checkSource(options = {}) {
   p.selectedIdentities(p.lockAt(root, head)).forEach((entry, index) => assert.deepEqual(entry, before[index], entry.name));
   const filesystemLock = JSON.parse(fs.readFileSync(path.join(root, 'package-lock.json'), 'utf8'));
   p.selectedIdentities(filesystemLock).forEach((entry, index) => assert.deepEqual(entry, before[index], entry.name));
-  return { baseline, baseTip, head, checkoutHead, headTree: p.treeId(root, head), generatedSourceBaseline, dependencyBaseline,
+  return { baseline, baseTip, head, checkoutHead, eventCheckoutBinding, headTree: p.treeId(root, head), generatedSourceBaseline, dependencyBaseline,
     mode: record ? 'unreleased-source-transition' : 'ordinary', protectedSourceChanged: changed.length > 0,
     exactTransitionCount: record?.transitionCount ?? 0,
     selectedDependencyIdentitiesPreserved: Object.fromEntries(before.map((entry) => [entry.name, entry.version])),
@@ -147,7 +160,7 @@ function checkGenerated(options = {}) {
       scope: 'Functional reproduction from immutable reviewed source using the existing shared installed toolchain. This is not independent toolchain integrity or a security review.' };
   } finally { fs.rmSync(temp, { recursive: true, force: true }); }
 }
-module.exports = { protectedPath: p.protectedPath, checkSource, checkGenerated, compareGenerated, materialize, verifyBundleCopies };
+module.exports = { protectedPath: p.protectedPath, checkSource, checkGenerated, compareGenerated, materialize, verifyBundleCopies, verifyEventCheckout };
 if (require.main === module) {
   try {
     assert(!process.env.NODE_OPTIONS && !process.env.NODE_PATH, 'Unexpected Node preload settings');

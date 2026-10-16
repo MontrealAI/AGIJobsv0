@@ -21,11 +21,21 @@ Until P/Q are actually created and their native checks pass, the policy is an un
 
 ## Source and generated modes
 
-Source mode verifies event/base/head identities, anchored ancestry, exact protected and generator snapshots, filesystem/index consistency and original dependency tuples. A synthetic merge must be identified separately from the logical PR head; an explicit-head checkout accepts the event's declared synthetic metadata without mistaking it for the checked-out source.
+Source mode verifies event/base/head identities, anchored ancestry, exact protected and generator snapshots, filesystem/index consistency and original dependency tuples. It keeps the logical event head separate from the checkout and runtime `GITHUB_SHA`. A supplied runtime SHA must resolve to that exact commit object. If it differs from the event head, its ordered parents must be exactly `[event base, event head]` and its tree must equal the event head tree. Checkout must be the event head or that proved runtime merge. The payload's `pull_request.merge_commit_sha` is advisory metadata: it may be stale or null, and never authorizes an arbitrary runtime SHA. Receipts retain both identities and the proof result.
+
+The checker is offline and fails when a required runtime object is missing. The workflow must acquire that exact validated SHA when checkout has fetched only heads/tags; a mutable pull-merge ref or stale payload SHA cannot substitute for it. A head-only local diagnostic may omit `GITHUB_SHA` and reports that omission; it does not establish a native merge-object proof.
 
 Generated mode reproduces the constants generator and hardhat ENS normalization from immutable A; ordinary mode continues reproducing from its ordinary merge base. The recipe uses an ephemeral home and excludes application/TypeScript overrides. It compares every protected file plus `scripts/generated/protocol-defaults.ts`, which was outside the previous protected predicate. Only declared constants/defaults/ENS products may change transiently. Unexpected, staged, missing, ignored or additional source files fail. No generated deployment configuration is committed or treated as owner-approved settings.
 
 The source walk excludes root .git and root node_modules, not arbitrary ignored or nested dependency directories. The current root npm graph has no workspaces; browser's nested installation occurs after its source check. Native runner layout must still pass the gate.
+
+## File snapshot and proposal-write guarantees
+
+The supported execution target is the hosted Linux runner, with Node providing `fs.constants.O_NOFOLLOW`; the helper fails explicitly if that flag is unavailable. Other operating systems have not been qualified. Each source-file snapshot opens the final component with `O_NOFOLLOW`, verifies a regular file using `fstat`, reads from that same descriptor, and closes it in `finally`. Descriptor metadata is checked before/after reading; a final pathname identity snapshot also rejects a visible replacement. `O_NONBLOCK` prevents a non-regular FIFO from blocking before the type check. Tests cover symlink swaps, in-place mutation, directory-entry replacement and failure cleanup.
+
+These are functional snapshots, not an atomic workspace sandbox. Parent-directory checks are non-atomic and assume a trusted workspace whose parents are not concurrently replaced by an adversarial writer. The check does not claim protection against all concurrent changes after its final snapshot.
+
+Proposal generation uses exclusive `wx` creation directly, without an `existsSync` precheck. Existing record/index bytes and symlink targets remain untouched on `EEXIST`. The two output files are not an atomic transaction: failure creating the second may leave the newly created first file for inspection.
 
 ## Evidence limits
 
