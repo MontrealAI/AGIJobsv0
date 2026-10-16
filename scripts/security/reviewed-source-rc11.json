@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "dependencyBaseline": "7b21ce05b0b18b46162da66c2f528334101f6f40",
-  "reviewedSourceCheckpoint": "b17e40f5272b22368d0cbfb93e36a8bc89b30921",
+  "reviewedSourceCheckpoint": "29721b96ab4443e213afecfd423422aef1b327fe",
   "transitionCount": 55,
   "scope": "Retain all 54 prior reviewed transitions and before-blobs, the corrected reputation/percentage-collateral contracts, exact native receiver selection and immutable deployment evidence. Review complete literal-text escaping, import-safe renderer exports and CLI guards in the three owner reports, plus the explicitly inventoried new Markdown literal helper (absent at dependency baseline). No protected-path exemption, dependency, compiler or network change. Fresh independent exact-head source review, CodeQL and full integrated qualification remain mandatory; production approval remains false.",
   "transitions": [

@@ -6,9 +6,12 @@ Production approval remains **false**. Publication requires successful independe
 
 ## Complete owner-report corrections
 
-The functional-source checkpoint is `b17e40f5272b22368d0cbfb93e36a8bc89b30921`,
-tree `5c0c8beeab58dfa3f95d5f9ac32fc8ab2aebd105`. It normally integrates the
-complete owner-report correction from PR #3977 with the retained-project source.
+The functional-source checkpoint is `29721b96ab4443e213afecfd423422aef1b327fe`,
+tree `c07bef0bc098cfcdbec5b075bcca6bf623c2813b`. It preserves current main
+`5d7d89ccba236cc1fdf7067223dfae813bd64387` and the complete PR #3977 integration
+`0b7404e99f197b3659fcb1598a93a0572b8bf6d5` through normal merge ancestry.
+The earlier report checkpoint `b17e40f5272b22368d0cbfb93e36a8bc89b30921`, tree
+`5c0c8beeab58dfa3f95d5f9ac32fc8ab2aebd105`, remains in that retained history.
 The three reports encode literal punctuation before Markdown parsing, preserving
 backslashes, table cells, links, emphasis, HTML-like text and entity-like input as
 literal values. Command Center adds deliberate severity formatting and line breaks
