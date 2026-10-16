@@ -90,7 +90,11 @@ async function main() {
       });
     await page.goto(`${base}/ui/`);
     await page.waitForSelector('.owner-controls');
-    assert.ok((await page.locator('#app').innerText()).includes('0.001 AGIΩ'));
+    assert.ok(
+      (await page.locator('#app').innerText()).includes(
+        '0.1 AGIΩ for reward 1.0 AGIΩ (rounded up)'
+      )
+    );
     assert.ok(
       await page.evaluate(
         () => document.documentElement.scrollWidth <= innerWidth + 1
@@ -127,9 +131,13 @@ async function main() {
       fs.readFileSync(path.join(DEMO, 'ui/export/latest.json'))
     );
     saved.token.targetSymbol = '<img src=x onerror="window.compromised=1">';
-    saved.configSnapshots.jobRegistry.jobStakeTokens = '0.000000000000000001';
+    saved.configSnapshots.jobRegistry.jobStakeBps = 1;
+    saved.configSnapshots.jobRegistry.minAgentStakeTokens =
+      '0.000000000000000001';
+    saved.modules.jobRegistry.after.jobStakeAtRewardCap.formatted =
+      '0.000000000000000001 AGIΩ for reward 0.000000000000000001 AGIΩ (rounded up)';
     saved.policyObservations = [
-      'Reward cap is below the job bond; review job economics.',
+      'Agent minimum is below the stake quoted at the reward cap; review admission and available stake.',
     ];
     saved.configSnapshots.stakeManager.validatorSlashRewardPct = 7;
     await page.route('**/ui/export/latest.json*', (route) =>
@@ -137,6 +145,9 @@ async function main() {
     );
     await page.locator('#refresh-button').click();
     await page.waitForSelector('.owner-controls');
+    assert.ok(
+      (await page.locator('.owner-controls').innerText()).includes('1 bps')
+    );
     assert.ok(
       (await page.locator('.owner-controls').innerText()).includes(
         '0.000000000000000001'
@@ -155,6 +166,44 @@ async function main() {
       )
     );
     findings.policyObservations = true;
+    assert.ok(
+      (await page.locator('.owner-controls').innerText()).includes(
+        '1 bps (0.01%)'
+      )
+    );
+    saved.configSnapshots.jobRegistry.jobStakeBps = 0;
+    saved.modules.jobRegistry.after.jobStakeAtRewardCap.formatted =
+      '0.0 AGIΩ for reward 1.0 AGIΩ (rounded up)';
+    await page.locator('#refresh-button').click();
+    await page.waitForSelector('.owner-controls');
+    assert.ok(
+      (await page.locator('.owner-controls').innerText()).includes('0 bps (0%)')
+    );
+    assert.ok(
+      (await page.locator('.owner-controls').innerText()).includes(
+        '0.0 AGIΩ for reward 1.0 AGIΩ'
+      )
+    );
+    saved.configSnapshots.jobRegistry.jobStakeBps = 10000;
+    saved.modules.jobRegistry.after.jobStakeAtRewardCap.formatted =
+      '1.0 AGIΩ for reward 1.0 AGIΩ (rounded up)';
+    await page.locator('#refresh-button').click();
+    await page.waitForSelector('.owner-controls');
+    assert.ok(
+      (await page.locator('.owner-controls').innerText()).includes(
+        '10000 bps (100%)'
+      )
+    );
+    saved.configSnapshots.jobRegistry.jobStakeTokens = '1';
+    await page.locator('#refresh-button').click();
+    await page.waitForSelector('[role="alert"]');
+    assert.equal(await page.locator('.owner-controls').count(), 0);
+    delete saved.configSnapshots.jobRegistry.jobStakeTokens;
+    saved.meta.version = '2.0.0';
+    await page.locator('#refresh-button').click();
+    await page.waitForSelector('[role="alert"]');
+    assert.equal(await page.locator('.owner-controls').count(), 0);
+    saved.meta.version = '3.0.0';
     findings.exactValues = true;
     const scenario = JSON.parse(
       fs.readFileSync(path.join(DEMO, 'scenario.json'))

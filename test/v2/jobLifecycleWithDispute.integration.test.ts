@@ -201,11 +201,11 @@ describe('job lifecycle with dispute and validator failure', function () {
 
     const stakeAmount = ethers.parseUnits('1', AGIALPHA_DECIMALS);
     for (const signer of [agent, v1, v2, v3]) {
-      await token
-        .connect(signer)
-        .approve(await stake.getAddress(), stakeAmount);
+      // Agent collateral is 10% of the 100-token reward; validator admission stays independent.
+      const deposit = signer === agent ? ethers.parseUnits('10', AGIALPHA_DECIMALS) : stakeAmount;
+      await token.connect(signer).approve(await stake.getAddress(), deposit);
       const role = signer === agent ? Role.Agent : Role.Validator;
-      await stake.connect(signer).depositStake(role, stakeAmount);
+      await stake.connect(signer).depositStake(role, deposit);
     }
     const initialAgentBalance = await token.balanceOf(agent.address);
 

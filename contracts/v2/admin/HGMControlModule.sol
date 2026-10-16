@@ -2,6 +2,7 @@
 pragma solidity ^0.8.25;
 
 import {Ownable2Step} from "../utils/Ownable2Step.sol";
+import {IJobStakePolicy} from "../interfaces/IJobStakePolicy.sol";
 import {IJobRegistryControl} from "../interfaces/IJobRegistryControl.sol";
 import {IStakeManagerControl} from "../interfaces/IStakeManagerControl.sol";
 import {ISystemPauseControl} from "../interfaces/ISystemPauseControl.sol";
@@ -174,6 +175,10 @@ contract HGMControlModule is Ownable2Step {
 
     error ControlTargetUnset(bytes32 key);
     error ArrayLengthMismatch();
+    error LegacyFixedStakeUnsupported();
+    error InvalidPercentage();
+
+    event JobStakeRateConfigured(uint256 basisPoints, address indexed actor);
 
     constructor(ControlTargets memory targets, address initialOwner)
         Ownable2Step(initialOwner == address(0) ? msg.sender : initialOwner)
@@ -204,9 +209,8 @@ contract HGMControlModule is Ownable2Step {
     function updateJobEconomics(JobEconomics calldata config) external onlyOwner {
         IJobRegistryControl registry = _requireJobRegistry();
 
-        if (config.setJobStake) {
-            registry.setJobStake(config.jobStake);
-        }
+        // Preserve the old tuple layout but never reinterpret its token units.
+        if (config.setJobStake) revert LegacyFixedStakeUnsupported();
         if (config.setMinAgentStake) {
             registry.setMinAgentStake(config.minAgentStake);
         }
@@ -230,6 +234,13 @@ contract HGMControlModule is Ownable2Step {
         }
 
         emit JobEconomicsConfigured(config, _msgSender());
+    }
+
+    /// @notice Explicit percentage policy for new jobs; existing snapshots do not change.
+    function updateJobStakeBps(uint256 basisPoints) external onlyOwner {
+        if (basisPoints > 10000) revert InvalidPercentage();
+        IJobStakePolicy(address(_requireJobRegistry())).setJobStakeBps(basisPoints);
+        emit JobStakeRateConfigured(basisPoints, _msgSender());
     }
 
     function updateJobAccess(JobAccess calldata config) external onlyOwner {

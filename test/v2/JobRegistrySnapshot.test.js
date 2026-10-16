@@ -84,7 +84,7 @@ describe('JobRegistry payout snapshot', function () {
       .setValidationModule(await validation.getAddress());
     await registry.connect(owner).setFeePct(0);
     await registry.connect(owner).setValidatorRewardPct(0);
-    await registry.connect(owner).setJobParameters(0, 0);
+    await registry.connect(owner).setJobStakeBps(0);
 
     const NFT = await ethers.getContractFactory(
       'contracts/legacy/MockERC721.sol:MockERC721'

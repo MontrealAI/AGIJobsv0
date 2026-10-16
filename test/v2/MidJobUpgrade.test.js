@@ -158,7 +158,8 @@ describe('Mid-job module upgrades', function () {
       feePool,
     } = env;
 
-    const stakeAmount = ethers.parseUnits('1', AGIALPHA_DECIMALS);
+    // Deposit the default 10% collateral for the 100-token job.
+    const stakeAmount = ethers.parseUnits('10', AGIALPHA_DECIMALS);
     await token.connect(agent).approve(await stake.getAddress(), stakeAmount);
     await stake.connect(agent).depositStake(Role.Agent, stakeAmount);
 

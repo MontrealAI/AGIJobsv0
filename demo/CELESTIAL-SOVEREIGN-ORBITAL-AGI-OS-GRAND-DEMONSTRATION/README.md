@@ -2,9 +2,27 @@
 
 > AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `demo/CELESTIAL-SOVEREIGN-ORBITAL-AGI-OS-GRAND-DEMONSTRATION`.
 
-## Execution status
+## Run the resource outage planning desk
 
-This directory contains design documentation and preserved architecture diagrams; it has no standalone executable. For a related runnable workflow, use [zenith-sapience-initiative-celestial-archon-governance](../zenith-sapience-initiative-celestial-archon-governance/README.md). See the [complete demo guide](../README.md) for setup and evidence boundaries.
+This bounded, offline rehearsal compares infrastructure job reservations before and during a declared capacity outage. It reuses the existing Omega demo's `ResourceManager.reserve_budget` engine. It does not control satellites, energy systems, compute workers, wallets or production jobs.
+
+```sh
+python demo/CELESTIAL-SOVEREIGN-ORBITAL-AGI-OS-GRAND-DEMONSTRATION/run.py
+python demo/CELESTIAL-SOVEREIGN-ORBITAL-AGI-OS-GRAND-DEMONSTRATION/run.py path/to/scenario.json
+python -m pytest test/simulation/test_celestial_contingency.py
+```
+
+Python 3.12 and the standard library run the rehearsal; the repository's test dependencies provide pytest. Input is strict JSON with unique keys, bounded integers, unique job identifiers and explicit normal/outage capacities. Energy and compute units are declared planning units, not measured physical quantities or token balances.
+
+The default normal plan reserves communications, backups, indexing and archive compression. The outage plan keeps communications and backups while deferring the two lower-priority requests. Every phase reports held reserve, shortfall, allocated and remaining units, and verifies conservation independently of the reservation engine. If the outage cannot cover the protected reserve, all dispatch is paused, even if some capacity remains in the other resource.
+
+Higher priority wins; equal priority preserves input order. Jobs are indivisible. A large request that does not fit is deferred while later smaller requests may fit. This greedy rule does not promise global optimality. The two plans are independent snapshots: a displaced job represents a changed plan, not an actual cancellation, successful recovery or execution. No monetary reward, price, transfer or stake operation is invoked.
+
+The CLI prints a JSON result with the SHA-256 of the exact input bytes. Exit `0` means a valid plan; `1` means protected-reserve shortfall pauses outage dispatch; `2` means invalid or unreadable input. Deferred jobs may remain in an otherwise valid plan. All execution, production and settlement approval flags stay false.
+
+## Preserved design context
+
+The original diagram and design below describe broader goals. The implemented capability is the bounded resource reservation comparison above.
 
 ## Overview
 - **Path:** `demo/CELESTIAL-SOVEREIGN-ORBITAL-AGI-OS-GRAND-DEMONSTRATION/README.md`

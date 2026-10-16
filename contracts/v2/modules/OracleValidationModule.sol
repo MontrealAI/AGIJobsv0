@@ -20,6 +20,9 @@ contract OracleValidationModule is IValidationModule, Ownable {
     /// @notice Module version for compatibility checks.
     uint256 public constant version = 2;
 
+    /// @notice Terminal scoring interface, including persistent reveal facts.
+    uint256 public constant reputationInterfaceVersion = 1;
+
     IJobRegistry public jobRegistry;
     IValidationOracle public oracle;
 
@@ -184,6 +187,10 @@ contract OracleValidationModule is IValidationModule, Ownable {
     }
 
     /// @inheritdoc IValidationModule
+    function revealed(uint256, address) external pure override returns (bool) {
+        return false;
+    }
+
     function votes(uint256, address)
         external
         pure

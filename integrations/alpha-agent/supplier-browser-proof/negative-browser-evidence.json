@@ -1,0 +1,41 @@
+{
+  "scope": "actual fixed Chromium worker selected wrong delivery limit; scripted responses",
+  "rejected": true,
+  "reason": "Observed comparison fails independent supplied-quote acceptance",
+  "state": "interrupted",
+  "providerCalls": 2,
+  "actions": 3,
+  "observations": [
+    {
+      "sha256": "895016a5865b868a6ef3c09233560cb4fe0aed3ff14d7ed4b11e95a9b184bc56",
+      "textSha256": "f0a63582a14ade78edc8f0b9f307c7abb20134db07d0a78b1d61291841f1b048",
+      "url": "about:blank"
+    },
+    {
+      "sha256": "4b8acd0fba627c7bc55ace89311bd27984e1522c8990f86aa397584cd9d5a49f",
+      "textSha256": "f0a63582a14ade78edc8f0b9f307c7abb20134db07d0a78b1d61291841f1b048",
+      "url": "about:blank"
+    },
+    {
+      "sha256": "23ca7da099e280c9e4d37a4307cdfbcdb68962b57ab8c9cb6fc472f64721a551",
+      "textSha256": "f0a63582a14ade78edc8f0b9f307c7abb20134db07d0a78b1d61291841f1b048",
+      "url": "about:blank"
+    },
+    {
+      "sha256": "387a2aade4105ccbe83c1556d41eae0b1b1619161a0c66739fc8a39d3f739361",
+      "textSha256": "76c864a2082fc0fd1d7e3dbfa4505a102590a4188f45e4e518f5d35e5f9ea634",
+      "url": "about:blank"
+    }
+  ],
+  "externalFetches": 0,
+  "cleanup": [
+    {
+      "leaderExited": true,
+      "liveGroupMembers": [],
+      "groupClosed": true
+    }
+  ],
+  "artifactExported": false,
+  "productionApproved": false,
+  "settlementApproved": false
+}

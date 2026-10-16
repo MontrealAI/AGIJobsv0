@@ -18,7 +18,7 @@ const {
   reviewedCompilerPaths,
 } = require('../../scripts/release/qualify-source-release.cjs');
 const sha = 'a'.repeat(40),
-  tag = 'source-v2.1.0-rc.9';
+  tag = 'source-v2.1.0-rc.11';
 function compilerArchiveFixture(contents = {}) {
   const compiler = require('../../config/solidity-compiler.json').longVersion;
   const payloads = {
@@ -357,14 +357,26 @@ test('workflow packages every declared immutable release asset', () => {
     'utf8'
   );
   assert.ok(workflow.includes(`TAG: ${tag}`));
-  assert.ok(workflow.includes('group: source-release-rc9-${{ github.ref }}'));
-  assert.ok(workflow.includes('name: source-rc9-${{ github.sha }}'));
-  assert.ok(expectedAssets(tag).includes('RELEASE_NOTES_SOURCE_RC9.md'));
-  assert.ok(!expectedAssets(tag).includes('RELEASE_NOTES_SOURCE_RC7.md'));
+  assert.ok(workflow.includes('group: source-release-rc11-${{ github.ref }}'));
+  assert.ok(workflow.includes('name: source-rc11-${{ github.sha }}'));
+  assert.ok(expectedAssets(tag).includes('RELEASE_NOTES_SOURCE_RC11.md'));
+  for (const prior of ['RC7', 'RC8', 'RC9', 'RC10']) {
+    assert.ok(
+      !expectedAssets(tag).includes(`RELEASE_NOTES_SOURCE_${prior}.md`)
+    );
+    assert.ok(
+      fs.existsSync(
+        path.resolve(
+          __dirname,
+          `../../docs/production/RELEASE_NOTES_SOURCE_${prior}.md`
+        )
+      )
+    );
+  }
   const notes = fs.readFileSync(
     path.resolve(
       __dirname,
-      '../../docs/production/RELEASE_NOTES_SOURCE_RC9.md'
+      '../../docs/production/RELEASE_NOTES_SOURCE_RC11.md'
     ),
     'utf8'
   );
@@ -661,4 +673,67 @@ test('compiler archive rejects tampered bytes, omitted files and mismatched inve
       }),
     /identities/
   );
+});
+
+test('producer identities require positive safe numeric scalars', () => {
+  const {
+    producerId,
+  } = require('../../scripts/release/publish-source-release.cjs');
+  for (const id of [1, 123, Number.MAX_SAFE_INTEGER])
+    assert.equal(producerId(id), id);
+  for (const id of [
+    '1',
+    '../1',
+    'https://example.com',
+    {},
+    [],
+    null,
+    true,
+    0,
+    -1,
+    1.5,
+    NaN,
+    Infinity,
+    Number.MAX_SAFE_INTEGER + 1,
+  ])
+    assert.throws(() => producerId(id), /Malformed/);
+});
+test('source API boundary allows only exact supported methods and routes', () => {
+  const {
+    sourceApiUrl,
+  } = require('../../scripts/release/publish-source-release.cjs');
+  for (const [method, resource] of [
+    ['GET', 'git/ref/heads/main'],
+    ['GET', `git/ref/tags/${tag}`],
+    ['GET', `releases/tags/${tag}`],
+    ['GET', 'actions/artifacts/123'],
+    ['GET', 'actions/runs/456/attempts/2'],
+    ['POST', 'git/refs'],
+    ['POST', 'releases'],
+    ['PATCH', 'releases/789'],
+  ])
+    assert.equal(
+      sourceApiUrl(method, resource),
+      `https://api.github.com/repos/MontrealAI/AGIJobsv0/${resource}`
+    );
+  for (const [method, resource] of [
+    ['DELETE', 'releases/1'],
+    ['POST', 'actions/artifacts/1'],
+    ['GET', 'actions/artifacts/../secrets'],
+    ['GET', 'actions/artifacts/1?x=2'],
+    ['GET', 'actions/artifacts/1\n'],
+    ['GET', 'actions/artifacts/0'],
+    ['GET', 'actions/artifacts/1/extra'],
+    ['GET', '//example.com'],
+    ['GET', 'https://example.com'],
+    ['GET', 'git/ref/heads/other'],
+    ['GET', 'git/ref/tags/source-v2.1.0-rc.10'],
+    ['GET', 'releases/tags/source-v2.1.0-rc.10'],
+    ['GET', 'git/ref/tags/source-v2.1.0-rc.9'],
+    ['GET', 'releases/tags/source-v2.1.0-rc.9'],
+    ['GET', 'releases/tags/source-v2.1.0-rc.8'],
+    ['toString', 'releases'],
+    ['GET', null],
+  ])
+    assert.throws(() => sourceApiUrl(method, resource), /Unsupported/);
 });

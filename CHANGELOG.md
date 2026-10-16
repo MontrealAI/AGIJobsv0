@@ -1,6 +1,6 @@
 # Changelog
 
-## v2.1.0-rc.9 — retained Alpha project history and bounded Jobs drafts
+## v2.1.0-rc.11 — retained Alpha project history and bounded Jobs drafts
 
 Source prerelease candidate (2026-10-16 UTC).
 

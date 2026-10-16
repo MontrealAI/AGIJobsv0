@@ -1,4 +1,8 @@
 import test from 'node:test';
+import {
+  assertDashboardRoutes,
+  expectedDashboardRoutes,
+} from './dashboard-contract.mjs';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -369,11 +373,16 @@ test('legacy schedules preserve relative timing without inventing dates or missi
   assert.match(chart, /line \[0.33, 0.67\]/);
 });
 
-test('nested demo documentation is discovered without misclassifying the implementation as an alias', () => {
+test('Empowerment root guide takes precedence while nested implementation guides remain discoverable', () => {
   const demo = makeCatalog().find(
     (d) => d.name === 'superintelligent-empowerment'
   );
-  assert.equal(demo.readme, 'demo/superintelligent-empowerment/docs/README.md');
+  assert.equal(demo.readme, 'demo/superintelligent-empowerment/README.md');
+  for (const guide of ['docs/README.md', 'web/README.md']) {
+    assert.ok(
+      demo.guides.includes('demo/superintelligent-empowerment/' + guide)
+    );
+  }
   assert.equal(demo.kindId, 'code');
 });
 
@@ -382,7 +391,10 @@ test('all published command decks retain their local assets and navigation', () 
   const manifest = JSON.parse(
     fs.readFileSync(path.join(output, 'catalog.json'))
   );
-  assert.equal(manifest.dashboardRoutes.length, 15);
+  assertDashboardRoutes(
+    manifest.dashboardRoutes,
+    expectedDashboardRoutes(root)
+  );
   assert.ok(manifest.dashboardRoutes.includes('experiments/phase6/'));
   assert.ok(manifest.dashboardRoutes.includes('experiments/zenith-hypernova/'));
   assert.ok(manifest.dashboardRoutes.includes('experiments/phase8/workbench/'));
@@ -513,6 +525,56 @@ test('published One-Box is the offline console with intact integrity metadata', 
           element.getAttribute('src') || element.getAttribute('href')
         )
       )
+    );
+  }
+});
+
+test('heading IDs use inert parsed text with Unicode and duplicate anchors', () => {
+  const rendered = renderMarkdown(
+    '# Héllo *world*\n\n# Héllo *world*\n\n# <scr<script>ipt>alert(1)</scr</script>ipt>\n\n# &lt;img src=x onerror=alert(1)&gt;\n\n[Anchor](#héllo-world)',
+    'demo/example/README.md',
+    {
+      base: '/AGIJobsv0/',
+      revision: 'abc',
+      guideRoutes: new Map(),
+      tracked: new Set(),
+      images: new Set(),
+    }
+  );
+  const document = new JSDOM(rendered.html).window.document;
+  const headings = [...document.querySelectorAll('h1')];
+  assert.equal(headings[0].id, 'héllo-world');
+  assert.equal(headings[1].id, 'héllo-world-1');
+  for (const heading of headings)
+    assert.match(heading.id, /^[\p{L}\p{N}_-]*$/u);
+  assert.equal(document.querySelectorAll('script,[onerror],iframe').length, 0);
+  assert.equal(
+    decodeURIComponent(document.querySelector('a').getAttribute('href')),
+    '#héllo-world'
+  );
+});
+
+test('heading entity omission preserves published legacy fragment IDs', () => {
+  const cases = [
+    ['Research &amp; development', 'research--development'],
+    ['Alpha&nbsp;Beta', 'alphabeta'],
+    ['Alpha&#32;Beta', 'alphabeta'],
+    ['A &lt; B &gt; C', 'a--b--c'],
+    ['**Bold** and `code`', 'bold-and-code'],
+    ['[Linked title](https://example.com)', 'linked-title'],
+  ];
+  for (const [source, expected] of cases) {
+    const rendered = renderMarkdown('# ' + source, 'demo/example/README.md', {
+      base: '/AGIJobsv0/',
+      revision: 'abc',
+      guideRoutes: new Map(),
+      tracked: new Set(),
+      images: new Set(),
+    });
+    assert.equal(
+      new JSDOM(rendered.html).window.document.querySelector('h1').id,
+      expected,
+      source
     );
   }
 });

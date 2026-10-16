@@ -11,6 +11,10 @@ const esc = (value) =>
       ]
   );
 const setups = {
+  'python-node': [
+    'Python + Node.js, built-in modules only',
+    'From the repository root, use Python 3.12 and the Node version pinned in .nvmrc. This evaluator invokes the tracked Node reviewer using built-in modules; no local chain, provider credential or extra Python package is required.',
+  ],
   local: [
     'Disposable local chain',
     'From the repository root, use nvm install, nvm use and npm ci with the pinned Node/npm versions. The local driver uses mock assets; its owned development node stops at the end. If port 8545 is occupied, use DEMO_PORT=18545.',
@@ -193,7 +197,7 @@ export function renderExperience(demo, profile, ctx) {
             'Read the first failed transaction or validation step. Compare the effective mission, committee thresholds and report scope; a partial report is not a completed run.',
           ],
         ]
-      : ['python', 'trm', 'stdlib'].includes(profile.mode)
+      : ['python', 'trm', 'stdlib', 'python-node'].includes(profile.mode)
         ? [
             [
               'Import or dependency error',

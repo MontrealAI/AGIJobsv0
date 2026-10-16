@@ -1,5 +1,12 @@
 # AGI Jobs v0 (v2) – Astral Omnidominion Operating System Demo
 
+> **Mode upgrade:** No arguments, `--mode plan`, and exact `--dry-run` now
+> print an effect-free plan. They do not launch the mission. See the
+> [strict invocation contract and evidence boundaries](./agi-os-first-class-mode-upgrade.md).
+> The bundled in-memory Hardhat rehearsal is separate from selected-network
+> deployment and owner-check evidence; neither is qualified by planning.
+
+
 The Astral Omnidominion demo is the flagship showcase of the AGI Jobs v0 (v2) operating system. It turns the end-to-end ASI take-off rehearsal, owner control checks, and audit bundle packaging into a guided tour that a non-technical owner can launch with a single command.
 
 ## Audience
@@ -16,7 +23,7 @@ The Astral Omnidominion demo is the flagship showcase of the AGI Jobs v0 (v2) op
 | Git | To clone the repository. |
 | Unix shell (macOS, Linux, WSL) | The helper script is POSIX-friendly; Windows users can run it inside WSL2 or Git Bash. |
 
-Node.js 22.23.3, Hardhat, Foundry, and other toolchains are bundled inside the repository scripts. You do not need to install them globally.
+Use the locked Node.js 22.23.3 toolchain and separately install reviewed repository dependencies before explicit execution. Shell/Python planning and help need no npm dependencies. The launcher never installs them automatically.
 
 ## Launching the Demo
 
@@ -25,16 +32,19 @@ Node.js 22.23.3, Hardhat, Foundry, and other toolchains are bundled inside the r
    git clone https://github.com/MontrealAI/AGIJobsv0.git
    cd AGIJobsv0
    ```
-2. Run the Astral Omnidominion orchestrator (both commands are equivalent):
+2. Inspect the effect-free plan (both commands describe the shared pipeline):
    ```bash
    npm run demo:agi-os:first-class
    # or
    demo/astral-omnidominion-operating-system/bin/astral-omnidominion.sh
    ```
-3. Follow the wizard prompts:
-   - Choose **Local Hardhat (Anvil)** for an end-to-end offline rehearsal.
-   - Confirm Docker Compose launch if you want the Owner Console, Enterprise Portal, and Validator Dashboard to start automatically.
-   - Provide optional overrides (e.g. governance address) if you are targeting a shared testnet.
+3. After reviewing configuration, endpoints, ownership and signing authority, explicitly select execution:
+   ```bash
+   npm run demo:agi-os:first-class -- --mode execute --network localhost --yes --compose
+   ```
+   Use `--no-compose` instead for an operator-managed runtime. Missing Docker
+   fails `--compose`; there is no automatic deployment skip. `--skip-deploy`
+   with `--no-compose` skips only the wizard, not subsequent runtime commands.
 4. Watch the live status log. Each phase emits emoji-coded lines:
    - ✅ successful checks and steps
    - ⚙️ commands currently running
@@ -55,7 +65,7 @@ After a successful run you will find the following:
   - `logs/*.log` (stdout/stderr for each command)
   - `owner-control-map.mmd` (Mermaid graph of owner/pausable relationships)
 
-Every file is timestamped in ISO 8601 format, enabling auditors to prove freshness and reproducibility.
+Review timestamps, source revisions and stage-specific evidence. The first-class run report and manifest carry an `evidenceBoundary` object separating the selected deployment/owner target from the in-memory Hardhat fixture.
 
 ## Integrity Cross-Checks
 
@@ -65,7 +75,7 @@ Before marking the run as successful, the orchestrator rehydrates the freshly ge
 - It inspects `first-class-manifest.json` to verify that the Markdown, JSON, HTML, and matrix outputs are all hashed and tracked.
 - Any discrepancy produces an immediate ❌ failure with explicit remediation notes in `first-class-run.json`.
 
-These cross-checks guarantee that the evidence bundle is internally consistent and audit-ready.
+These are internal consistency checks, not independent deployment verification or an audit-readiness guarantee.
 
 ## Owner Control Verification
 
@@ -91,11 +101,11 @@ You can also explore the Owner Console UI at `http://localhost:3000` to trigger 
 3. Complete the conversational form describing your task and budget.
 4. Click **Submit job** – the portal handles wallet prompts and transaction submission. Validators will see the job in real time at `http://localhost:3002`.
 
-The simulation data from `demo:agi-os` is sufficient for a full dry-run: no additional seeding is required.
+The bundled `demo:agi-os` rehearsal uses separate in-memory Hardhat fixtures. The launcher's `--dry-run` mode only prints a plan and generates no simulation data.
 
 ## Resetting & Re-running
 
-The demo is idempotent. Rerun the command to refresh all artefacts. To wipe state completely:
+Explicit execution can replace reports and submit new transactions. Review existing state before rerunning. The following destructive manual reset removes local report/configuration directories:
 
 ```bash
 rm -rf deployment-config/generated reports/agi-os reports/asi-takeoff
@@ -105,7 +115,7 @@ Then rerun the orchestrator. New manifests and hashes are generated each time.
 
 ## CI Alignment & Branch Protection
 
-- The orchestrator executes the same compilation, simulation, and owner-control checks that power CI v2, guaranteeing alignment between the demo and required GitHub checks.
+- Launcher-safety CI uses inert fixtures and validates invocation handling. A passing safety check does not qualify the operational stack or replace required CI checks.
 - To confirm branch protection settings, run `npm run ci:verify-branch-protection`. The output lists required contexts (lint, tests, fuzzing, coverage, CI summary, end-to-end checks, webapp build, container scan).
 - Always merge through a pull request so GitHub enforces the required checks on `main`.
 
@@ -124,4 +134,4 @@ Then rerun the orchestrator. New manifests and hashes are generated each time.
 - **Emergency controls** – run `npm run owner:emergency` to view the emergency response playbook.
 - **Security posture** – see [the security deployment guide](./security-deployment-guide.md) for incident response integration.
 
-The Astral Omnidominion demo is the recommended path to onboard new executives, investors, and auditors onto the AGI Jobs platform. It proves readiness, safety, and operational control in under an hour.
+Use the mission as an operator walkthrough. Operational readiness, safety and ownership claims require separate reviewed evidence for the actual target network.

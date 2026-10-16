@@ -1,0 +1,1 @@
+Historical fixed-token planning snapshots, preserved before the percentage-stake migration. These are not current configuration or executed deployment evidence. Original input hashes remain inside the reports. Do not import the legacy fixed stake into the new controller.

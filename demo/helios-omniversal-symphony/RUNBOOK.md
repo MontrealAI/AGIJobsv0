@@ -21,6 +21,12 @@ This runbook choreographs the Helios mission so operators, auditors, and regulat
 
 ## 2. Launch Sequence
 
+The Makefile resolves repository-relative paths from its own location, including when invoked with `make -C`. The default network is `hardhat`; an ambient `NETWORK` environment variable cannot select another network. Select another network only with an explicit `NETWORK=...` make argument after checking its configuration and authorization. These commands do not establish production readiness or authorize signing.
+
+`REPORT_ROOT` defaults to `reports/helios-omniversal-symphony`. Cleanup accepts only a named subdirectory beneath this repository's `reports/` directory, including absolute paths to that subtree. Empty paths, the repository or reports root, external directories and symbolic-link traversal are rejected. Use a distinct report subdirectory for each mission; `mission` deletes that chosen directory before generating artifacts. Paths containing spaces are supported. Cleanup and production stages run in order even with `make -j`. The digest excludes its own `SHA256SUMS` file and can be checked with `sha256sum --check SHA256SUMS` from the report directory.
+
+Launcher regression tests use stub commands and isolated temporary files. They verify dispatch, ordering and cleanup safety without claiming a full live mission or performing provider calls, installations or chain transactions.
+
 ```mermaid
 flowchart LR
   A[Prep] --> B[make mission]

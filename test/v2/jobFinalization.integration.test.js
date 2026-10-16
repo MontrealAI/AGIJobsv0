@@ -139,7 +139,8 @@ describe('job finalization integration', function () {
     await policy
       .connect(owner)
       .setAcknowledger(await registry.getAddress(), true);
-    await registry.setJobParameters(0, stakeRequired);
+    // Preserve this fixture's 200 collateral on its 1000 reward with an explicit 20% rate.
+    await registry.setJobStakeBps(2000);
     await registry.setMaxJobReward(reward);
     await registry.setJobDurationLimit(86400);
     await stakeManager.setJobRegistry(await registry.getAddress());
@@ -210,7 +211,7 @@ describe('job finalization integration', function () {
     expect(employerAfter).to.equal(mintAmount - reward - fee);
     expect(v1Bal).to.equal(vReward / 2n);
     expect(v2Bal).to.equal(vReward / 2n);
-    expect(await rep.reputation(agent.address)).to.equal(152n);
+    expect(await rep.reputation(agent.address)).to.equal(32n);
     expect(await nft.balanceOf(agent.address)).to.equal(1n);
   });
 
@@ -308,7 +309,7 @@ describe('job finalization integration', function () {
     expect(employerAfter).to.equal(employerBefore);
     expect(v1Bal - v1Before).to.equal(0n);
     expect(v2Bal - v2Before).to.equal(0n);
-    expect(await rep.reputation(agent.address)).to.equal(152n);
+    expect(await rep.reputation(agent.address)).to.equal(33n);
     expect(await nft.balanceOf(agent.address)).to.equal(1n);
   });
 

@@ -26,7 +26,7 @@ contract JobRegistryConfiguration is JobRegistryBase, DelegateOnly {
     constructor() JobRegistryBase(msg.sender) {}
 
     function moduleId() external pure returns (bytes32) {
-        return keccak256("JobRegistryConfiguration:v1");
+        return keccak256("JobRegistryConfiguration:percentage-stake-v4");
     }
 
     function setPauser(address _pauser) external onlyDelegateCall {
@@ -144,7 +144,11 @@ contract JobRegistryConfiguration is JobRegistryBase, DelegateOnly {
     }
 
     /// @notice update the required agent stake for each job
-    function setJobStake(uint96 stake) external onlyDelegateCall {
+    function setJobStakeBps(uint256 bps) external onlyDelegateCall {
+        _entry_setJobStakeBps(bps);
+    }
+
+    function setJobStake(uint96 stake) external view onlyDelegateCall {
         return _entry_setJobStake(stake);
     }
 
@@ -209,7 +213,7 @@ contract JobRegistryConfiguration is JobRegistryBase, DelegateOnly {
         return _entry_setAcknowledger(acknowledger, allowed);
     }
 
-    function setJobParameters(uint256 maxReward, uint256 stake) external onlyDelegateCall {
+    function setJobParameters(uint256 maxReward, uint256 stake) external view onlyDelegateCall {
         return _entry_setJobParameters(maxReward, stake);
     }
 

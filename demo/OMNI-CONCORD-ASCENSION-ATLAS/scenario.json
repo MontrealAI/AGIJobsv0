@@ -1,0 +1,48 @@
+{
+  "schema": "agijobs.atlas-recovery.v1",
+  "title": "Maintenance package: retain accepted work and repair a failed prerequisite",
+  "budgetCents": 20000,
+  "jobs": [
+    {
+      "id": "inspect",
+      "label": "Inspect the synthetic maintenance request",
+      "costCents": 2000,
+      "durationMinutes": 10,
+      "dependsOn": [],
+      "outcome": "success"
+    },
+    {
+      "id": "repair",
+      "label": "Prepare the repair plan",
+      "costCents": 6000,
+      "durationMinutes": 30,
+      "dependsOn": ["inspect"],
+      "outcome": "fail"
+    },
+    {
+      "id": "verify",
+      "label": "Verify the repaired plan",
+      "costCents": 3000,
+      "durationMinutes": 20,
+      "dependsOn": ["repair"],
+      "outcome": "success"
+    },
+    {
+      "id": "report",
+      "label": "Publish the accepted maintenance dossier",
+      "costCents": 1000,
+      "durationMinutes": 5,
+      "dependsOn": ["verify", "audit"],
+      "outcome": "success"
+    },
+    {
+      "id": "audit",
+      "label": "Audit the declared scope independently",
+      "costCents": 1000,
+      "durationMinutes": 15,
+      "dependsOn": [],
+      "outcome": "success"
+    }
+  ],
+  "recoveredIds": ["repair"]
+}

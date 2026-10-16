@@ -1,5 +1,4 @@
 {
-  "jobStakeTokens": "0.001",
   "minAgentStakeTokens": "0.1",
   "maxJobRewardTokens": "1.0",
   "jobDurationLimitSeconds": 604800,
@@ -9,5 +8,6 @@
   "validatorRewardPct": 10,
   "treasury": "0x0000000000000000000000000000000000000000",
   "taxPolicy": "0x0000000000000000000000000000000000000000",
-  "acknowledgers": {}
+  "acknowledgers": {},
+  "jobStakeBps": 1000
 }

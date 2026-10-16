@@ -26,6 +26,7 @@ import "./implementation/FixedDelegate.sol";
 ///      msg.data. Their names remain available to wallets and explorers.
 contract JobRegistry is JobRegistryBase, FixedDelegate {
     error JobParametersUnset();
+    error LegacyFixedStakeUnsupported();
     error RewardOverflow();
     error RewardTooHigh();
     error InvalidDeadline();
@@ -99,21 +100,20 @@ contract JobRegistry is JobRegistryBase, FixedDelegate {
         address _timelock, // timelock or multisig controller
         address[3] memory implementations
     ) JobRegistryBase(_timelock) {
-        _configuration = _checkedImplementation(implementations[0], keccak256("JobRegistryConfiguration:v1"));
-        _lifecycle = _checkedImplementation(implementations[1], keccak256("JobRegistryLifecycle:v1"));
-        _settlement = _checkedImplementation(implementations[2], keccak256("JobRegistrySettlement:v1"));
+        _configuration = _checkedImplementation(implementations[0], keccak256("JobRegistryConfiguration:percentage-stake-v4"));
+        _lifecycle = _checkedImplementation(implementations[1], keccak256("JobRegistryLifecycle:percentage-stake-v4"));
+        _settlement = _checkedImplementation(implementations[2], keccak256("JobRegistrySettlement:percentage-stake-v4"));
 
         uint256 pct = _feePct == 0 ? DEFAULT_FEE_PCT : _feePct;
         if (pct > 100) revert InvalidPercentage();
         feePct = pct;
-        jobStake = _jobStake == 0 ? DEFAULT_JOB_STAKE : _jobStake;
+        if (_jobStake != 0) revert LegacyFixedStakeUnsupported();
+        _jobStakeBps = 1000;
+        emit JobStakeBpsUpdated(0, 1000);
         validatorRewardPct = DEFAULT_VALIDATOR_REWARD_PCT;
         emit ValidatorRewardPctUpdated(validatorRewardPct);
         if (address(_validation) != address(0)) {
-            if (_validation.version() != 2) revert InvalidValidationModule();
-            validationModule = _validation;
-            emit ValidationModuleUpdated(address(_validation));
-            emit ModuleUpdated("ValidationModule", address(_validation));
+            _setValidationModule(_validation);
         }
         if (address(_stakeMgr) != address(0)) {
             if (_stakeMgr.version() != 2) revert InvalidStakeManager();
@@ -310,6 +310,26 @@ contract JobRegistry is JobRegistryBase, FixedDelegate {
     }
 
     /// @notice update the required agent stake for each job
+    /// @notice Legacy fixed-token getter is unsupported. Use quoteJobStake(reward) or jobs(jobId).stake.
+    function DEFAULT_JOB_STAKE() external pure returns (uint96) {
+        revert LegacyFixedStakeUnsupported();
+    }
+
+    function jobStake() external pure returns (uint96) {
+        revert LegacyFixedStakeUnsupported();
+    }
+
+    function jobStakeBps() external view returns (uint256) { return _jobStakeBps; }
+
+    /// @notice Ceiling-rounded stake on gross reward, excluding fees; existing jobs retain their snapshots.
+    function quoteJobStake(uint256 reward) external view returns (uint96) { return _quoteJobStake(reward); }
+
+    /// @notice Set the rate for future jobs only, from 0 to 10,000 basis points.
+    function setJobStakeBps(uint256 bps) external {
+        bps;
+        _delegate(_configuration);
+    }
+
     function setJobStake(uint96 stake) external {
         stake;
         _delegate(_configuration);
@@ -534,12 +554,19 @@ contract JobRegistry is JobRegistryBase, FixedDelegate {
         _delegate(_lifecycle);
     }
 
-    /// @notice Record that reputation updates have already been applied for a job.
+    /// @notice Deprecated marker; outcome scoring occurs only at terminal settlement.
     /// @param jobId Identifier of the job that triggered the update.
     function markReputationProcessed(uint256 jobId) external {
         jobId;
         _delegate(_lifecycle);
     }
+
+    /// @notice Registry self-call for atomic terminal reputation processing.
+    function processTerminalReputation(uint256 jobId, uint256 payout) external {
+        jobId; payout;
+        _delegate(_lifecycle);
+    }
+
 
     /// @param jobId Identifier of the job being finalised.
     /// @param success True if validators approved the job.

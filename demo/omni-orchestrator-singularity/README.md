@@ -2,6 +2,23 @@
 
 > AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `demo/omni-orchestrator-singularity`.
 
+## Safe launcher modes
+
+Run `bash demo/omni-orchestrator-singularity/bin/orchestrate.sh --network localhost`
+for a read-only plan. This is now the default: no package command, RPC, deployment,
+or report write occurs. `--help` works independently. Missing, duplicate, unknown
+or unsupported values fail before any side effect. Only `localhost` is accepted.
+
+This changes the earlier implicit execution default. To request the existing
+operational path, supply `--mode execute` explicitly after separately qualifying
+the local RPC/configuration, signer authority and deployment prerequisites. That
+path has not been commissioned by the parser tests. The network label alone does
+not prove endpoint ownership or isolation.
+
+The downstream `scripts/v2/oneclick-stack.ts` never supported a dry-run. It now
+rejects `--dry-run` before spawning its deployment wizard, rather than silently
+ignoring it. The launcher does not invoke that script for its read-only plan.
+
 ## Overview
 - **Path:** `demo/omni-orchestrator-singularity/README.md`
 - **Module Focus:** Anchors Demo → Omni Orchestrator Singularity inside the AGI Jobs v0 (v2) lattice so teams can orchestrate economic, governance, and operational missions with deterministic guardrails.

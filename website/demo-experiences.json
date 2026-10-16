@@ -546,31 +546,37 @@
     "install": "python -m pip install PyYAML==6.0.2"
   },
   "superintelligent-empowerment": {
-    "question": "How do mission goals become a stakeholder impact report?",
-    "purpose": "For mission designers: turn named initiatives, beneficiaries and stated targets into a readable impact narrative while keeping goals separate from measured outcomes.",
+    "question": "Which initiative claims have consistent supplied evidence, and which remain blocked?",
+    "purpose": "For project reviewers: bind reported observations to explicit integer criteria and dependency holds. Generate and reopen real artifacts while keeping source authenticity, observed impact and human approval unverified.",
     "steps": [
       {
-        "title": "Read the initiatives",
-        "source": "demo/superintelligent-empowerment/configs/mission.yaml",
-        "explanation": "Each initiative lists beneficiaries, capability vectors and success metrics. Growth and resilience values are stated targets, not measured results."
+        "title": "Inspect the synthetic evidence packet",
+        "source": "demo/superintelligent-empowerment/evidence/example.json",
+        "explanation": "One criterion is met, one lacks evidence, and another remains held by its dependency. Source bytes are hashed exactly; a hash does not authenticate their origin."
       },
       {
-        "title": "Follow report construction",
+        "title": "Follow the consistency checks",
+        "source": "demo/superintelligent-empowerment/code/evidence.py",
+        "explanation": "Strict UTF-8 and integer schemas, exact metric/unit matching and the existing Astral DAG engine produce a review ledger. Artifact review recomputes from submitted inputs."
+      },
+      {
+        "title": "Keep the original narrative in context",
         "source": "demo/superintelligent-empowerment/code/run_demo.py",
-        "explanation": "The orchestrator loads YAML, constructs initiative summaries and serializes an impact report. It synthesizes a narrative rather than executing the described real-world programs."
-      },
-      {
-        "title": "Inspect the example report",
-        "source": "demo/superintelligent-empowerment/output/report.json",
-        "explanation": "Compare the recorded report with the configuration. Trace every quantitative claim back to its target or calculation before using it in a presentation."
+        "explanation": "The preserved YAML report generator describes supplied goals and aspirations. It does not measure the real-world programs it describes."
       }
     ],
-    "command": "python demo/superintelligent-empowerment/code/run_demo.py --output /tmp/empowerment-report.json",
-    "expected": "The terminal displays initiative information and writes /tmp/empowerment-report.json. No real-world impact is measured by this command.",
-    "experiment": "Copy mission.yaml, replace one initiative with your own measurable acceptance criterion, and run with --config. Identify the evidence you would later collect to assess it.",
-    "mode": "python",
+    "command": "python demo/superintelligent-empowerment/code/evidence.py run --packet demo/superintelligent-empowerment/evidence/example.json --output /tmp/initiative-evidence-run",
+    "expected": "A new directory contains the exact packet, ledger, checklist and hash receipt. Consistency verification passes while the proposal remains incomplete; no provider or chain calls occur.",
+    "experiment": "Open the browser studio, recover the actual CLI fixture, change an acceptance threshold, and observe the dependency hold. Compare an unavailable observation with a reported value that fails its criterion.",
+    "mode": "stdlib",
     "related": [],
-    "install": "python -m pip install -r demo/superintelligent-empowerment/code/requirements.txt"
+    "dashboards": [
+      {
+        "title": "Initiative Evidence Studio",
+        "route": "experiments/empowerment/",
+        "source": "demo/superintelligent-empowerment/web/index.html"
+      }
+    ]
   },
   "agi-governance": {
     "question": "How do mission rules translate into governance diagnostics?",
@@ -988,7 +994,7 @@
       {
         "title": "Review architecture and variants",
         "source": "demo/Phase-6-Scaling-Multi-Domain-Expansion/README.md",
-        "explanation": "Use the preserved original guide and additional flowcharts to connect components. Read each variant’s own prerequisites before running it."
+        "explanation": "Use the preserved original guide and additional flowcharts to connect components. Read each variant\u2019s own prerequisites before running it."
       }
     ],
     "command": "npm run demo:phase6:orchestrate",
@@ -1022,7 +1028,7 @@
       {
         "title": "Review architecture and variants",
         "source": "demo/Phase-8-Universal-Value-Dominance/README.md",
-        "explanation": "Use the preserved original guide and additional flowcharts to connect components. Read each variant’s own prerequisites before running it."
+        "explanation": "Use the preserved original guide and additional flowcharts to connect components. Read each variant\u2019s own prerequisites before running it."
       }
     ],
     "command": "npm run demo:phase8:work -- run /tmp/phase8-work",
@@ -1180,7 +1186,7 @@
       {
         "title": "Read the wrapper",
         "source": "demo/astral-omnidominion-operating-system/run_demo.py",
-        "explanation": "A Python wrapper applies non-interactive localhost defaults and forwards arguments to demo:agi-os:first-class. The default --skip-deploy assumes an already prepared local environment."
+        "explanation": "The Python wrapper renders effect-free plan/help locally. Explicit execution requires a network, Compose choice and --yes; it forwards validated arguments to demo:agi-os:first-class without inferring consent from automation."
       },
       {
         "title": "Inspect the shared entry point",
@@ -1206,7 +1212,7 @@
       {
         "title": "Read the wrapper",
         "source": "demo/cosmic-omniversal-grand-symphony/bin/grand-symphony.sh",
-        "explanation": "A shell wrapper forwards arguments to demo:agi-os:first-class. Its scenario identity does not create a separate execution engine."
+        "explanation": "The shell wrapper defaults to an effect-free plan and forwards only a validated explicit execution to demo:agi-os:first-class. Its scenario identity does not create a separate execution engine."
       },
       {
         "title": "Inspect the shared entry point",
@@ -1232,7 +1238,7 @@
       {
         "title": "Read the wrapper",
         "source": "demo/imperatrix-celestia-operating-system/bin/launch.sh",
-        "explanation": "The launcher delegates to the first-class AGI OS workflow and forwards caller arguments. Inspect defaults before choosing an execution network."
+        "explanation": "The launcher defaults to an effect-free plan, never auto-installs dependencies, and requires explicit mode, network, Compose choice and --yes before forwarding execution to the first-class workflow."
       },
       {
         "title": "Inspect the shared entry point",
@@ -1258,7 +1264,7 @@
       {
         "title": "Read the wrapper",
         "source": "demo/meta-agentic-alpha-agi/bin/launch.sh",
-        "explanation": "The launcher runs the first-class AGI OS workflow and then the ASI Take-Off local mission. Its project plan provides scenario context."
+        "explanation": "The launcher defaults to an effect-free plan. Explicit localhost execution runs the first-class workflow with its branded synthetic plan, then a separate ASI local replay using shared mission@v2.json. The local replay does not consume the branded plan."
       },
       {
         "title": "Inspect the shared entry point",
@@ -1284,7 +1290,7 @@
       {
         "title": "Read the wrapper",
         "source": "demo/omni-sovereign-ascension-operating-system/bin/launch.sh",
-        "explanation": "This wrapper invokes a deployment wizard before the first-class AGI OS workflow. It is a setup-dependent launch path, not an offline simulation."
+        "explanation": "The wrapper validates mode and arguments before any runtime work. Default plan/help are inert; explicit execution calls the shared first-class workflow once, with no preliminary wizard bypass. Operational stages still require separate qualification."
       },
       {
         "title": "Inspect the shared entry point",
@@ -1383,55 +1389,68 @@
   },
   "OMNIGENESIS-GLOBAL-SOVEREIGN-SYMPHONY": {
     "question": "How can an ambitious mission be translated into a reviewable plan?",
-    "purpose": "For mission designers: inspect this scenario\u2019s task graph and operator runbook, then connect it to a related executable local workflow.",
+    "purpose": "For mission designers: analyze the preserved scenario plan without execution, then explicitly choose shared fixture reports whose scope is stated in the runbook.",
     "steps": [
       {
         "title": "Inspect the mission plan",
         "source": "demo/OMNIGENESIS-GLOBAL-SOVEREIGN-SYMPHONY/project-plan.json",
-        "explanation": "Read task identities, dependencies, budgets and acceptance descriptions. A project plan is an input artifact; its targets are not evidence of completed work."
+        "explanation": "Read planned job labels, dependencies and budgets. A project plan is an input artifact; its targets are not evidence of completed work."
       },
       {
         "title": "Read the operating sequence",
         "source": "demo/OMNIGENESIS-GLOBAL-SOVEREIGN-SYMPHONY/RUNBOOK.md",
-        "explanation": "Follow the scenario-specific runbook and separate plan generation, owner diagnostics and contract execution. Some steps require a configured environment."
+        "explanation": "Start with read-only planning. Rehearsals require explicit intent and treat the scenario jobs as report context; owner operations remain separate workflows."
       },
       {
-        "title": "Inspect the execution reference",
-        "source": "demo/asi-takeoff/config/mission@v2.json",
-        "explanation": "This related local demo provides concrete executable job specifications. Compare the mission plan with the jobs actually selected by a launcher before claiming scenario-specific execution."
+        "title": "Trace the shared report pipeline",
+        "source": "scripts/v2/asiTakeoffDemo.ts",
+        "explanation": "The TypeScript pipeline reads the scenario for summaries and kit metadata. Its fixed lifecycle/pause and separately bootstrapped reporting fixtures do not execute the scenario job list. The separate :local launcher consumes AURORA_MISSION_CONFIG instead."
       }
     ],
-    "command": "npm run demo:asi-takeoff:local",
-    "expected": "The related ASI Take-Off workflow generates local contract evidence. It demonstrates the execution mechanism; it does not itself execute every task in this scenario\u2019s project plan.",
-    "experiment": "Choose one task from this plan and specify its real input, acceptance test, validator evidence and settlement condition. Identify what the related local demonstration covers.",
-    "mode": "local",
+    "command": "bash demo/OMNIGENESIS-GLOBAL-SOVEREIGN-SYMPHONY/bin/omnigenesis-ci.sh --plan",
+    "expected": "Read-only planning output with budgets and dependencies. No report directory, compiler, contract fixture, transaction or provider work is started.",
+    "experiment": "Compare the selected plan hash with an explicitly generated governance kit. Keep fixture evidence distinct from planned scenario jobs and from any separately authorized operator action.",
+    "mode": "node",
     "related": ["asi-takeoff"]
   },
   "OMNIPHOENIX-ASCENDANT-HYPERSTRUCTURE": {
-    "question": "How can an ambitious mission be translated into a reviewable plan?",
-    "purpose": "For mission designers: inspect this scenario\u2019s task graph and operator runbook, then connect it to a related executable local workflow.",
+    "question": "Which dependencies become blocked, and which delays actually change the planning horizon?",
+    "purpose": "For mission designers: inspect exact dependency disruption and planning reward exposure before commissioning, with explicit duration and unlimited-parallelism assumptions.",
     "steps": [
       {
         "title": "Inspect the mission plan",
         "source": "demo/OMNIPHOENIX-ASCENDANT-HYPERSTRUCTURE/project-plan.hyperstructure.json",
-        "explanation": "Read task identities, dependencies, budgets and acceptance descriptions. A project plan is an input artifact; its targets are not evidence of completed work."
+        "explanation": "Read planned job labels, dependencies and budgets. A project plan is an input artifact; its targets are not evidence of completed work."
+      },
+      {
+        "title": "Inspect a bounded disruption",
+        "source": "demo/OMNIPHOENIX-ASCENDANT-HYPERSTRUCTURE/disruption/README.md",
+        "explanation": "Apply delays or blocked jobs, compare the finite schedule and exposed planning rewards, then reopen exact-byte evidence through recomputation."
       },
       {
         "title": "Read the operating sequence",
         "source": "demo/OMNIPHOENIX-ASCENDANT-HYPERSTRUCTURE/RUNBOOK.md",
-        "explanation": "Follow the scenario-specific runbook and separate plan generation, owner diagnostics and contract execution. Some steps require a configured environment."
+        "explanation": "Start with read-only planning. Rehearsals require explicit intent and treat the scenario jobs as report context; owner operations remain separate workflows."
       },
       {
-        "title": "Inspect the execution reference",
-        "source": "demo/asi-takeoff/config/mission@v2.json",
-        "explanation": "This related local demo provides concrete executable job specifications. Compare the mission plan with the jobs actually selected by a launcher before claiming scenario-specific execution."
+        "title": "Trace the shared report pipeline",
+        "source": "scripts/v2/asiTakeoffDemo.ts",
+        "explanation": "The TypeScript pipeline reads the scenario for summaries and kit metadata. Its fixed lifecycle/pause and separately bootstrapped reporting fixtures do not execute the scenario job list. The separate :local launcher consumes AURORA_MISSION_CONFIG instead."
       }
     ],
-    "command": "npm run demo:asi-takeoff:local",
-    "expected": "The related ASI Take-Off workflow generates local contract evidence. It demonstrates the execution mechanism; it does not itself execute every task in this scenario\u2019s project plan.",
-    "experiment": "Choose one task from this plan and specify its real input, acceptance test, validator evidence and settlement condition. Identify what the related local demonstration covers.",
-    "mode": "local",
-    "related": ["asi-takeoff"]
+    "command": "node demo/OMNIPHOENIX-ASCENDANT-HYPERSTRUCTURE/disruption/cli.cjs",
+    "expected": "Read-only baseline and counterfactual graph analysis, exact planned amounts and source/report hashes. No output directory unless explicitly requested; no jobs or transactions are executed.",
+    "experiment": "Delay PAN-PAYMENTS-NETTING by 20 then 30 days to inspect schedule slack, or block CLIMATE-SWARM-DEPLOY and trace its descendants. Export and reopen the analysis; modified stored results must be rejected.",
+    "mode": "node",
+    "related": ["asi-takeoff"],
+    "dashboardDescription": "An original EN/FR dependency-disruption desk for the preserved seven-job plan. Compare delays and blocked descendants, exact reward exposure, causal chains and validated portable recovery. Duration assumptions and unknown capacity remain explicit; no execution or transactions.",
+    "dashboards": [
+      {
+        "title": "Omniphoenix dependency disruption desk",
+        "route": "experiments/omniphoenix/",
+        "source": "demo/OMNIPHOENIX-ASCENDANT-HYPERSTRUCTURE/web/index.html"
+      }
+    ]
   },
   "omnisovereign": {
     "question": "How can useful machine work scale across city, regional and planetary planning layers?",
@@ -1609,186 +1628,220 @@
     "dashboardDescription": "Interactive local analysis, ten work-order templates, source-bound evidence and reviewer-constrained capacity. Live work and settlement require separate commissioning."
   },
   "CELESTIAL-SOVEREIGN-ORBITAL-AGI-OS-GRAND-DEMONSTRATION": {
-    "question": "Which parts are architecture, and where can I try the related implementation?",
-    "purpose": "For readers of the project vision: study this preserved design, identify the components it proposes and continue to a concrete related implementation.",
+    "question": "Which infrastructure requests still fit when capacity drops?",
+    "purpose": "For infrastructure planners: compare normal and outage allocation while protecting reserves, respecting declared priority and explaining every deferred request.",
     "steps": [
       {
-        "title": "Read the design",
+        "title": "Set capacity and protected reserve",
+        "source": "demo/CELESTIAL-SOVEREIGN-ORBITAL-AGI-OS-GRAND-DEMONSTRATION/scenario.json",
+        "explanation": "Supply energy and compute planning units. A shortfall in either protected reserve pauses all dispatch in that snapshot."
+      },
+      {
+        "title": "Inspect the original reservation engine",
+        "source": "demo/CELESTIAL-SOVEREIGN-ORBITAL-AGI-OS-GRAND-DEMONSTRATION/run.py",
+        "explanation": "The Python wrapper uses the existing Omega resource engine. Highest priority goes first, with input-order ties and indivisible requests; greedy selection is not globally optimal."
+      },
+      {
+        "title": "Compare and reproduce",
         "source": "demo/CELESTIAL-SOVEREIGN-ORBITAL-AGI-OS-GRAND-DEMONSTRATION/README.md",
-        "explanation": "This directory is documentation-only. Its architecture and ambitions are preserved; it does not contain a standalone executable demo."
-      },
-      {
-        "title": "Locate the implementation",
-        "source": "demo/zenith-sapience-initiative-celestial-archon-governance/README.md",
-        "explanation": "The related implementation has its own scope, prerequisites and evidence. It should not be assumed to realize every aspiration in this design."
-      },
-      {
-        "title": "Understand evidence boundaries",
-        "source": "docs/production/readiness-2026-10-03.md",
-        "explanation": "Compare demonstrated behavior with outstanding signing, integration, security review and commissioning requirements. A simulation cannot replace authentic evidence for those gates."
+        "explanation": "The browser mirrors the bounded rules with full-result parity tests. Normal and outage plans are independent hypothetical snapshots, not observed cancellations or physical recovery."
       }
     ],
-    "command": null,
-    "expected": "Open the related experience below for its guided inspection and run instructions. Reading this design does not execute or commission the proposed system.",
-    "experiment": "Choose a component from the diagram and map it to code, a test and an output in the related demo. Record any component that still has only a design description.",
-    "mode": "design",
-    "related": ["zenith-sapience-initiative-celestial-archon-governance"]
+    "command": "python3 demo/CELESTIAL-SOVEREIGN-ORBITAL-AGI-OS-GRAND-DEMONSTRATION/run.py",
+    "expected": "JSON shows reserved and deferred requests, protected reserve shortfall, conserved resources and changed selections. Exit 1 indicates a protected-reserve shortfall; no physical execution or settlement is authorized.",
+    "experiment": "Lower outage energy below the protected reserve to pause all dispatch, then restore capacity. Change a request priority and compare which requests fit.",
+    "mode": "stdlib",
+    "dashboard": "experiments/celestial/",
+    "related": [
+      "zenith-sapience-initiative-celestial-archon-governance"
+    ]
   },
   "ICONIC-OPERATING-SYSTEM-DEMO": {
-    "question": "Which parts are architecture, and where can I try the related implementation?",
-    "purpose": "For readers of the project vision: study this preserved design, identify the components it proposes and continue to a concrete related implementation.",
+    "question": "Do the supplier artifacts pass, and which reported execution fields remain unresolved?",
+    "purpose": "Inspect a bounded supplier evidence packet, independently check artifact integrity and arithmetic, then assess reported usage, budget and cleanup fields without granting authority.",
     "steps": [
       {
-        "title": "Read the design",
+        "title": "Inspect the supplied packet",
+        "source": "demo/ICONIC-OPERATING-SYSTEM-DEMO/packet.json",
+        "explanation": "The default contains real scripted-browser-lab deliverables. Token usage and cost were not measured and remain null, rather than assumed free."
+      },
+      {
+        "title": "Review artifacts and reported fields separately",
+        "source": "demo/ICONIC-OPERATING-SYSTEM-DEMO/run.py",
+        "explanation": "The original One-Box deterministic reviewer checks eleven artifact criteria. Separate gates inspect task identity, reported observation/cleanup, calls, usage and cost limits."
+      },
+      {
+        "title": "Understand the evidence boundary",
         "source": "demo/ICONIC-OPERATING-SYSTEM-DEMO/README.md",
-        "explanation": "This directory is documentation-only. Its architecture and ambitions are preserved; it does not contain a standalone executable demo."
-      },
-      {
-        "title": "Locate the implementation",
-        "source": "demo/One-Box/README.md",
-        "explanation": "The related implementation has its own scope, prerequisites and evidence. It should not be assumed to realize every aspiration in this design."
-      },
-      {
-        "title": "Understand evidence boundaries",
-        "source": "docs/production/readiness-2026-10-03.md",
-        "explanation": "Compare demonstrated behavior with outstanding signing, integration, security review and commissioning requirements. A simulation cannot replace authentic evidence for those gates."
+        "explanation": "Packet completeness means reported fields complete under policy, not attested execution or cost. All admission, production and settlement flags stay false. Original design diagrams remain preserved."
       }
     ],
-    "command": null,
-    "expected": "Open the related experience below for its guided inspection and run instructions. Reading this design does not execute or commission the proposed system.",
-    "experiment": "Choose a component from the diagram and map it to code, a test and an output in the related demo. Record any component that still has only a design description.",
-    "mode": "design",
-    "related": ["One-Box"]
+    "command": "python demo/ICONIC-OPERATING-SYSTEM-DEMO/run.py --packet demo/ICONIC-OPERATING-SYSTEM-DEMO/packet.json",
+    "expected": "Default artifact acceptance passes eleven checks, but packetComplete is false because usage and cost are unknown. Exit 0 means reported fields complete under policy, 1 means unresolved gates, 2 means invalid input. Execution and cost attestation always remain false.",
+    "experiment": "Enter reported usage and cost, reduce a budget, clear reported cleanup, or alter an artifact and reopen the packet. Inspect both artifact correctness and unresolved reported-field gates.",
+    "mode": "python-node",
+    "related": ["One-Box"],
+    "dashboards": [
+      {
+        "title": "Open the supplier evidence desk",
+        "route": "experiments/iconic/",
+        "source": "demo/ICONIC-OPERATING-SYSTEM-DEMO/web/index.html"
+      }
+    ],
+    "dashboardDescription": "EN/FR local evidence inspection with Web Crypto artifact commitments, editable reported usage/policy, exact packet export and strict recomputed reopen. No provider call or external execution."
   },
   "OMNI-CONCORD-ASCENSION-ATLAS": {
-    "question": "Which parts are architecture, and where can I try the related implementation?",
-    "purpose": "For readers of the project vision: study this preserved design, identify the components it proposes and continue to a concrete related implementation.",
+    "question": "What does a failed prerequisite change, and what would recovery cost?",
+    "purpose": "Rehearse a bounded maintenance dependency graph, retain completed work and inspect charged attempts before any real execution.",
     "steps": [
       {
-        "title": "Read the design",
+        "title": "Set the scenario",
+        "source": "demo/OMNI-CONCORD-ASCENSION-ATLAS/scenario.json",
+        "explanation": "Choose integer-cent budget, job dependencies, modeled durations and assumed success/failure outcomes."
+      },
+      {
+        "title": "Compare two passes",
+        "source": "demo/OMNI-CONCORD-ASCENSION-ATLAS/run.py",
+        "explanation": "The evaluator uses input-order greedy priority, unlimited modeled parallelism and assumed successful selected repairs. Failed attempts and retries are charged; completed work is retained in memory."
+      },
+      {
+        "title": "Inspect the evidence",
         "source": "demo/OMNI-CONCORD-ASCENSION-ATLAS/README.md",
-        "explanation": "This directory is documentation-only. Its architecture and ambitions are preserved; it does not contain a standalone executable demo."
-      },
-      {
-        "title": "Locate the implementation",
-        "source": "demo/atlas-conductor/README.md",
-        "explanation": "The related implementation has its own scope, prerequisites and evidence. It should not be assumed to realize every aspiration in this design."
-      },
-      {
-        "title": "Understand evidence boundaries",
-        "source": "docs/production/readiness-2026-10-03.md",
-        "explanation": "Compare demonstrated behavior with outstanding signing, integration, security review and commissioning requirements. A simulation cannot replace authentic evidence for those gates."
+        "explanation": "Review first-pass and recovered states, exact attempt ledger and input-byte digest. No physical work or settlement is performed. Original design diagrams and separate Atlas Conductor route remain preserved."
       }
     ],
-    "command": null,
-    "expected": "Open the related experience below for its guided inspection and run instructions. Reading this design does not execute or commission the proposed system.",
-    "experiment": "Choose a component from the diagram and map it to code, a test and an output in the related demo. Record any component that still has only a design description.",
-    "mode": "design",
-    "related": ["atlas-conductor"]
+    "command": "python demo/OMNI-CONCORD-ASCENSION-ATLAS/run.py --scenario demo/OMNI-CONCORD-ASCENSION-ATLAS/scenario.json",
+    "expected": "Default first pass spends 9000 cents. Assumed repair recovery completes at modeled minute 95 with 19000 spent and 1000 remaining. Exit 0 means modeled completion, 1 means blocked/failed work, 2 means invalid input. executedExternalWork and settlementApproved stay false.",
+    "experiment": "Lower the budget to 15000 cents, clear repair recovery, or introduce a dependency cycle. Inspect blocked/rejected cases and reopen your exported scenario.",
+    "mode": "stdlib",
+    "related": ["atlas-conductor", "astral-citadel"],
+    "dashboards": [
+      {
+        "title": "Open Atlas recovery rehearsal",
+        "route": "experiments/atlas/",
+        "source": "demo/OMNI-CONCORD-ASCENSION-ATLAS/web/index.html"
+      }
+    ],
+    "dashboardDescription": "EN/FR editable dependency, failure and recovery model with retained-work ledger, exact-cent costs, downloads and strict recomputed import. No wallet or external execution."
   },
   "polaris-concordat": {
-    "question": "Which parts are architecture, and where can I try the related implementation?",
-    "purpose": "For readers of the project vision: study this preserved design, identify the components it proposes and continue to a concrete related implementation.",
+    "question": "Can a fresh committee recover availability without weakening quorum policy?",
+    "purpose": "For validation operators: inspect two actual disposable-chain mock jobs, check their receipt and stake consistency, and compare hypothetical quorum outcomes.",
     "steps": [
       {
-        "title": "Read the design",
+        "title": "Inspect recorded evidence",
+        "source": "demo/polaris-concordat/local-fixture.json",
+        "explanation": "Review the bundled local EVM receipts. The first job is finalized with insufficient reveals; a separate second job uses a fresh committee. Token, identity and job registry are mocks."
+      },
+      {
+        "title": "Recompute consistency checks",
+        "source": "demo/polaris-concordat/review.cjs",
+        "explanation": "The browser bundles this same reviewer. It cross-checks canonical logs, policy and balances, but cannot authenticate an imported chain or attest runtime provenance."
+      },
+      {
+        "title": "Reproduce a fresh local run",
         "source": "demo/polaris-concordat/README.md",
-        "explanation": "This directory is documentation-only. Its architecture and ambitions are preserved; it does not contain a standalone executable demo."
-      },
-      {
-        "title": "Locate the implementation",
-        "source": "demo/sovereign-constellation/README.md",
-        "explanation": "The related implementation has its own scope, prerequisites and evidence. It should not be assumed to realize every aspiration in this design."
-      },
-      {
-        "title": "Understand evidence boundaries",
-        "source": "docs/production/readiness-2026-10-03.md",
-        "explanation": "Compare demonstrated behavior with outstanding signing, integration, security review and commissioning requirements. A simulation cannot replace authentic evidence for those gates."
+        "explanation": "Use the pinned Node toolchain and locked dependencies, compile contracts, then run the guarded in-process Hardhat fixture. No remote chain, wallet or live assets are needed."
       }
     ],
-    "command": null,
-    "expected": "Open the related experience below for its guided inspection and run instructions. Reading this design does not execute or commission the proposed system.",
-    "experiment": "Choose a component from the diagram and map it to code, a test and an output in the related demo. Record any component that still has only a design description.",
-    "mode": "design",
+    "command": "npm run compile && node demo/polaris-concordat/run.cjs",
+    "expected": "A new reports/polaris-*/result.json records both mock jobs, unchanged policy, missing-reveal penalties and fresh-committee outcome. Default first job fails and replacement job succeeds. Chain attestation and production/settlement approval remain false.",
+    "experiment": "Compare two versus three first-round reveals and one versus two replacement approvals in the separate expected-outcome calculator. It does not rerun the EVM or modify receipt evidence.",
+    "mode": "local",
+    "dashboard": "experiments/polaris/",
     "related": ["sovereign-constellation"]
   },
   "solving-alpha-agi-governance": {
-    "question": "Which parts are architecture, and where can I try the related implementation?",
-    "purpose": "For readers of the project vision: study this preserved design, identify the components it proposes and continue to a concrete related implementation.",
+    "question": "When should a bounded maintenance proposal pass or stop?",
+    "purpose": "For operators reviewing a proposal before enactment: rehearse integer-weight voting, budget constraints and explicit owner controls, then inspect each gate.",
     "steps": [
       {
-        "title": "Read the design",
+        "title": "Define the scenario",
+        "source": "demo/solving-alpha-agi-governance/scenario.json",
+        "explanation": "Inspect requested and available cents, eligible vote weight, thresholds, controls and supplied votes. These are hypothetical inputs."
+      },
+      {
+        "title": "Compute the decision",
+        "source": "demo/solving-alpha-agi-governance/run.py",
+        "explanation": "Run the bounded Python evaluator. Quorum uses cast over eligible weight; approval includes abstentions in the all-cast denominator. No transaction or proposal enactment occurs."
+      },
+      {
+        "title": "Inspect reproducible evidence",
         "source": "demo/solving-alpha-agi-governance/README.md",
-        "explanation": "This directory is documentation-only. Its architecture and ambitions are preserved; it does not contain a standalone executable demo."
-      },
-      {
-        "title": "Locate the implementation",
-        "source": "demo/agi-governance/README.md",
-        "explanation": "The related implementation has its own scope, prerequisites and evidence. It should not be assumed to realize every aspiration in this design."
-      },
-      {
-        "title": "Understand evidence boundaries",
-        "source": "docs/production/readiness-2026-10-03.md",
-        "explanation": "Compare demonstrated behavior with outstanding signing, integration, security review and commissioning requirements. A simulation cannot replace authentic evidence for those gates."
+        "explanation": "Compare checks, rejection reasons and exact scenario-byte digest. The browser download has its own digest; reserialization changes bytes. Original design diagrams remain reference material beyond this bounded scenario."
       }
     ],
-    "command": null,
-    "expected": "Open the related experience below for its guided inspection and run instructions. Reading this design does not execute or commission the proposed system.",
-    "experiment": "Choose a component from the diagram and map it to code, a test and an output in the related demo. Record any component that still has only a design description.",
-    "mode": "design",
-    "related": ["agi-governance"]
+    "command": "python demo/solving-alpha-agi-governance/run.py --scenario demo/solving-alpha-agi-governance/scenario.json",
+    "expected": "The default proposal passes four modeled gates with approved weight 70 of 90 cast, 420000 requested cents and 80000 remaining. Exit 0 means a passing rehearsal; 1 means policy rejection; 2 means invalid input. Enacted and settlementApproved remain false.",
+    "experiment": "Raise quorum to 95%, lower available cents below 420000, or remove pause control; inspect the independently rejected gate and rerun the downloaded scenario locally.",
+    "mode": "stdlib",
+    "related": ["agi-governance"],
+    "dashboards": [
+      {
+        "title": "Open the governance rehearsal",
+        "route": "experiments/governance/",
+        "source": "demo/solving-alpha-agi-governance/web/index.html"
+      }
+    ],
+    "dashboardDescription": "Interactive local decision model with editable votes, policy and budget, exact scenario downloads and recomputable evidence. No wallet, provider or enactment."
   },
   "zenith-sapience": {
-    "question": "Which parts are architecture, and where can I try the related implementation?",
-    "purpose": "For readers of the project vision: study this preserved design, identify the components it proposes and continue to a concrete related implementation.",
+    "question": "Do reported regional amounts reconcile before any envelope change is proposed?",
+    "purpose": "For operators reviewing regional plans: preserve unknown costs, compare exact declared-unit envelopes, and inspect conservative transfer proposals without executing them.",
     "steps": [
       {
-        "title": "Read the design",
+        "title": "Supply planned and reported amounts",
+        "source": "demo/zenith-sapience/scenario.json",
+        "explanation": "Amounts are exact whole-number strings in one declared unit. Unknown reported costs stay null and hold all proposals."
+      },
+      {
+        "title": "Inspect the original reconciliation engine",
+        "source": "demo/zenith-sapience/engine.mjs",
+        "explanation": "The browser bundles this exact engine and existing Hypernova analyzer. Proposals follow input order, conserve units and leave uncovered deficits visible."
+      },
+      {
+        "title": "Reproduce the local analysis",
         "source": "demo/zenith-sapience/README.md",
-        "explanation": "This directory is documentation-only. Its architecture and ambitions are preserved; it does not contain a standalone executable demo."
-      },
-      {
-        "title": "Locate the implementation",
-        "source": "demo/zenith-sapience-initiative-global-governance/README.md",
-        "explanation": "The related implementation has its own scope, prerequisites and evidence. It should not be assumed to realize every aspiration in this design."
-      },
-      {
-        "title": "Understand evidence boundaries",
-        "source": "docs/production/readiness-2026-10-03.md",
-        "explanation": "Compare demonstrated behavior with outstanding signing, integration, security review and commissioning requirements. A simulation cannot replace authentic evidence for those gates."
+        "explanation": "Run the original Node command. Supplied reports are not verified invoices; no token conversion, transfer, production or settlement approval occurs."
       }
     ],
-    "command": null,
-    "expected": "Open the related experience below for its guided inspection and run instructions. Reading this design does not execute or commission the proposed system.",
-    "experiment": "Choose a component from the diagram and map it to code, a test and an output in the related demo. Record any component that still has only a design description.",
-    "mode": "design",
-    "related": ["zenith-sapience-initiative-global-governance"]
+    "command": "node demo/zenith-sapience/run.mjs",
+    "expected": "JSON reports known-only subtotals, unknown amounts, regional variances, proposal holds and any remaining deficit. Fully funded is true only when complete balanced data has no uncovered deficit.",
+    "experiment": "Supply the missing report, inspect the proposed 5000-unit transfer, then raise that report beyond available envelopes to expose a remaining deficit.",
+    "mode": "node",
+    "dashboard": "experiments/zenith/",
+    "related": [
+      "zenith-sapience-initiative-supra-sovereign-hypernova-governance"
+    ]
   },
   "zenith-sapience-initiative-omega-omni-operating-system": {
-    "question": "Which parts are architecture, and where can I try the related implementation?",
-    "purpose": "For readers of the project vision: study this preserved design, identify the components it proposes and continue to a concrete related implementation.",
+    "question": "Can retained artifact stages be recomputed safely before work continues?",
+    "purpose": "For operators testing recovery: inspect source-bound local checkpoints, generate browser-local stages and reject inconsistent or independently failed artifacts.",
     "steps": [
       {
-        "title": "Read the design",
+        "title": "Inspect the source-bound checkpoint fixture",
+        "source": "demo/zenith-sapience-initiative-omega-omni-operating-system/local-fixture.json",
+        "explanation": "Five deterministic stages use fixed synthetic supplier quotes. Imported source hashes and predecessor hashes are checked against this build, then all stage data is recomputed."
+      },
+      {
+        "title": "Recompute exact original stage logic",
+        "source": "demo/zenith-sapience-initiative-omega-omni-operating-system/engine.cjs",
+        "explanation": "The browser bundles this engine and the existing independent One-Box reviewer. A deliberately wrong recommendation is rejected at stage four; no delivery receipt follows."
+      },
+      {
+        "title": "Reproduce process-interruption recovery locally",
         "source": "demo/zenith-sapience-initiative-omega-omni-operating-system/README.md",
-        "explanation": "This directory is documentation-only. Its architecture and ambitions are preserved; it does not contain a standalone executable demo."
-      },
-      {
-        "title": "Locate the implementation",
-        "source": "demo/zenith-sapience-initiative-omnidominion-governance/README.md",
-        "explanation": "The related implementation has its own scope, prerequisites and evidence. It should not be assumed to realize every aspiration in this design."
-      },
-      {
-        "title": "Understand evidence boundaries",
-        "source": "docs/production/readiness-2026-10-03.md",
-        "explanation": "Compare demonstrated behavior with outstanding signing, integration, security review and commissioning requirements. A simulation cannot replace authentic evidence for those gates."
+        "explanation": "The Node pipeline writes immutable files and resumes only after exact-byte recomputation. Browser export/reopen is separate and does not attest disk persistence, power-loss durability or physical work."
       }
     ],
-    "command": null,
-    "expected": "Open the related experience below for its guided inspection and run instructions. Reading this design does not execute or commission the proposed system.",
-    "experiment": "Choose a component from the diagram and map it to code, a test and an output in the related demo. Record any component that still has only a design description.",
-    "mode": "design",
-    "related": ["zenith-sapience-initiative-omnidominion-governance"]
+    "command": "node demo/zenith-sapience-initiative-omega-omni-operating-system/run.cjs",
+    "expected": "Five actual local artifact stages produce comparison/recommendation files and a checked delivery receipt. Use --stop-after 2 then --resume with the generated run ID to verify retained stages. Production and settlement remain unapproved.",
+    "experiment": "Start browser-local work, advance two stages, download/reopen the checkpoint and continue. Start a separate wrong-recommendation run to see independent review block its final stage.",
+    "mode": "node",
+    "dashboard": "experiments/omega/",
+    "related": [
+      "One-Box"
+    ]
   },
   "AlphaEvolve_v0": {
     "question": "Why does this demo also have an underscore-style package name?",

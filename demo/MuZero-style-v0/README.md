@@ -2,6 +2,23 @@
 
 > AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `demo/MuZero-style-v0`.
 
+## Run the bounded local planner
+
+The launcher forwards the selected command exactly. Help is available with Python alone:
+
+```sh
+python demo/MuZero-style-v0/scripts/run_demo.py --help
+python demo/MuZero-style-v0/scripts/run_demo.py smoke-tests --help
+```
+
+Training, evaluation and smoke tests require PyTorch for your platform plus this directory's `requirements.txt`, installed in a dedicated environment. Missing dependencies produce an actionable exit code 2 before training. The smoke command performs a small real planning/training check; it is not equivalent to a help or launcher-dispatch test:
+
+```sh
+python demo/MuZero-style-v0/scripts/run_demo.py smoke-tests --config demo/MuZero-style-v0/config/muzero_demo.yaml
+```
+
+With no arguments the historical full `demo` command remains the default. This is a local simulated job-planning experiment; these commands do not submit or settle on-chain jobs.
+
 ## Overview
 - **Path:** `demo/MuZero-style-v0/README.md`
 - **Module Focus:** Anchors Demo → MuZero style v0 inside the AGI Jobs v0 (v2) lattice so teams can orchestrate economic, governance, and operational missions with deterministic guardrails.

@@ -45,13 +45,15 @@ class PlanetaryOrchestrator:
         checkpoint: CheckpointConfig,
         rebalance_interval: float = 0.25,
         heartbeat_interval: float = 0.2,
+        execution_gate: asyncio.Event | None = None,
     ) -> None:
         self.regions = regions
         self.checkpoint_config = checkpoint
         self.rebalance_interval = rebalance_interval
         self.heartbeat_interval = heartbeat_interval
         self.node_registry = NodeRegistry()
-        self.routers: Dict[str, RegionalRouter] = {r.name: RegionalRouter(r.name) for r in regions}
+        self.assignment_event = asyncio.Event()
+        self.routers: Dict[str, RegionalRouter] = {r.name: RegionalRouter(r.name, execution_gate, self.assignment_event) for r in regions}
         self.jobs: Dict[str, JobState] = {}
         self.metrics = FabricMetrics()
         self._running = False
@@ -250,16 +252,22 @@ class PlanetaryOrchestrator:
         if not path.exists():
             return orchestrator
         data = json.loads(path.read_text())
+        recovered_assignments = 0
         for job_state in data["jobs"]:
             state = JobState.from_dict(job_state)
             orchestrator.jobs[state.job.job_id] = state
             if state.status != "completed":
+                if state.status == "running":
+                    recovered_assignments += 1
+                    state.attempts += 1
+                state.status = "pending"
+                state.assigned_node = None
                 await orchestrator.routers[state.job.region].submit(state)
             else:
                 orchestrator.metrics.completed_jobs += 1
         orchestrator.metrics.total_jobs = data["metrics"]["total_jobs"]
         orchestrator.metrics.failed_jobs = data["metrics"]["failed_jobs"]
-        orchestrator.metrics.reassigned_jobs = data["metrics"]["reassigned_jobs"]
+        orchestrator.metrics.reassigned_jobs = data["metrics"]["reassigned_jobs"] + recovered_assignments
         if orchestrator.metrics.completed_jobs >= orchestrator.metrics.total_jobs:
             orchestrator._completion_event.set()
         return orchestrator

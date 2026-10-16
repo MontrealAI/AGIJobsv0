@@ -76,7 +76,7 @@ function validateOneclickConfig(config, decimals) {
         'feePct',
         'burnPct',
         'minStake',
-        'jobStake',
+        'jobStakeBps',
         'minPlatformStake',
         'commitWindow',
         'revealWindow',
@@ -102,6 +102,8 @@ function validateOneclickConfig(config, decimals) {
     )
       throw new Error(`econ.${key} must be a whole percentage from 0 to 100`);
   }
+  if (econ.jobStakeBps !== undefined && (!Number.isInteger(econ.jobStakeBps) || econ.jobStakeBps < 0 || econ.jobStakeBps > 10000))
+    throw new Error('econ.jobStakeBps must be an integer from 0 to 10000');
   // Mirror apply-secure-defaults' omitted-share defaults and the public setter.
   if (
     (econ.employerSlashPct ?? 0) +
@@ -110,13 +112,13 @@ function validateOneclickConfig(config, decimals) {
     100
   )
     throw new Error('Slashing distribution exceeds 100 percent');
-  for (const key of ['minStake', 'jobStake', 'minPlatformStake', 'appealFee'])
+  for (const key of ['minStake', 'minPlatformStake', 'appealFee'])
     if (econ[key] !== undefined)
       token(
         econ[key],
         `econ.${key}`,
         decimals,
-        key === 'jobStake' ? (1n << 96n) - 1n : UINT256_MAX
+        UINT256_MAX
       );
   for (const key of ['commitWindow', 'revealWindow', 'disputeWindow'])
     if (econ[key] !== undefined)

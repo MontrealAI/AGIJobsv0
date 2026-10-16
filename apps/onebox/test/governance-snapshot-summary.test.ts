@@ -10,7 +10,7 @@ test('buildOwnerTelemetryCards summarises on-chain policies', () => {
       jobRegistry: {
         address: '0x0000000000000000000000000000000000000001',
         maxJobRewardLabel: '250 AGIA',
-        jobStakeLabel: '75 AGIA',
+        jobStakeRateLabel: '1000 bps (future jobs only)',
         maxJobDurationLabel: '10 days',
         validatorRewardPctLabel: '12%',
         feePctLabel: '3%',
@@ -89,3 +89,13 @@ test('buildOwnerTelemetryCards gracefully ignores malformed sections', () => {
   assert.equal(identityCard.metrics[0].value, 'agent.agi.eth');
 });
 
+
+test('percentage-rate telemetry distinguishes zero from unsupported legacy capability', () => {
+  const rate = (jobRegistry: Record<string, unknown>) =>
+    buildOwnerTelemetryCards({ onChain: { jobRegistry } })
+      .find((card) => card.id === 'job-policy')?.metrics
+      .find((metric) => metric.label === 'Future-job stake rate')?.value;
+  assert.equal(rate({ jobStakeBps: '0', jobStakeRateLabel: '0 bps (future jobs only)' }), '0 bps (future jobs only)');
+  assert.equal(rate({ jobStakeBps: null, jobStakeRateLabel: 'Unavailable' }), 'Unavailable');
+  assert.equal(rate({ jobStake: '500000000000000000000' }), undefined);
+});

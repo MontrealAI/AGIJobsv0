@@ -5,7 +5,7 @@ const { expect } = require('chai');
 const { ethers } = require('hardhat');
 
 describe('JobRegistry ack module validation', function () {
-  let owner, registry, good, goodAck, badAck;
+  let owner, registry, good, goodValidation, goodAck, badAck;
 
   beforeEach(async function () {
     [owner] = await ethers.getSigners();
@@ -30,6 +30,9 @@ describe('JobRegistry ack module validation', function () {
       'contracts/v2/mocks/VersionMock.sol:VersionMock'
     );
     good = await Version.deploy(2);
+    goodValidation = await (
+      await ethers.getContractFactory('ValidationStub')
+    ).deploy();
     const AckStub = await ethers.getContractFactory(
       'contracts/v2/mocks/JobRegistryAckStub.sol:JobRegistryAckStub'
     );
@@ -45,7 +48,7 @@ describe('JobRegistry ack module validation', function () {
       registry
         .connect(owner)
         .setModules(
-          await good.getAddress(),
+          await goodValidation.getAddress(),
           await good.getAddress(),
           await good.getAddress(),
           await good.getAddress(),
@@ -61,7 +64,7 @@ describe('JobRegistry ack module validation', function () {
       registry
         .connect(owner)
         .setModules(
-          await good.getAddress(),
+          await goodValidation.getAddress(),
           await good.getAddress(),
           await good.getAddress(),
           await good.getAddress(),
@@ -76,7 +79,7 @@ describe('JobRegistry ack module validation', function () {
     await registry
       .connect(owner)
       .setModules(
-        await good.getAddress(),
+        await goodValidation.getAddress(),
         await good.getAddress(),
         await good.getAddress(),
         await good.getAddress(),

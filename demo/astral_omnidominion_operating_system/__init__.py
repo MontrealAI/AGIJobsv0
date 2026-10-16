@@ -14,7 +14,10 @@ def _load_run_demo_module():
 
     module = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = module
-    spec.loader.exec_module(module)
+    # Execute source directly so compatibility plan/help never writes a
+    # canonical-module bytecode cache before argument validation.
+    code = compile(module_path.read_bytes(), str(module_path), "exec")
+    exec(code, module.__dict__)
     sys.modules[f"{__name__}.run_demo"] = module
     return module
 

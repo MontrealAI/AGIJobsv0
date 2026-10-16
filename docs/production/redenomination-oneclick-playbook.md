@@ -67,32 +67,30 @@ and sign before advancing.
 
 ---
 
-## 2. Generate the deployment plan
+## 2. Review configuration and rehearse in a disposable environment
 
 1. **Prepare configuration JSON** – copy `deployment-config/deployer.sample.json`
    to an environment-specific file (e.g. `deployment-config/mainnet.json`) and
    update governance, treasury, thermodynamics, and validator limits.
 
-2. **Dry-run the wizard** – preview the full stack without executing blockchain
-   transactions:
+2. **Review before running** – inspect the configuration and deployment scripts
+   without starting the wizard. The wizard is an operational tool: it can query
+   RPC and prepare environment files before asking whether to deploy. It is not
+   a read-only dry-run. Do not accept its deployment prompt during document review.
+
+3. **Explicit disposable rehearsal** – only after qualifying a disposable local
+   network, signer authority and configuration, the following executes a real
+   rehearsal deployment:
 
    ```bash
-   npm run deploy:oneclick:wizard -- --config deployment-config/<network>.json --network <network>
+   npm run deploy:oneclick:auto -- --config deployment-config/<local-fixture>.json --network localhost --no-compose
    ```
 
-   - The wizard validates the config, confirms the `.env` template exists, and
-     prints the Compose overrides it will generate if you continue.【F:scripts/v2/oneclick-wizard.ts†L68-L168】
-
-3. **Non-interactive rehearsal** – when ready for a deterministic run, trigger
-   the wrapper that defaults to Docker Compose with detached containers:
-
-   ```bash
-   npm run deploy:oneclick:auto -- --config deployment-config/<network>.json --network <network> --no-compose
-   ```
-
-   - Passing `--no-compose` is recommended during planning; re-run without the
-     flag when you are ready to boot services immediately. The helper simply
-     forwards arguments to the wizard so both code paths remain in sync.【F:scripts/v2/oneclick-stack.ts†L33-L83】
+   - The wrapper passes `--yes` to the deployment wizard. `--no-compose` only
+     suppresses starting containers; it does not prevent contract transactions
+     or deployment/environment file writes. Do not use it as a planning flag.
+   - `scripts/v2/oneclick-stack.ts --dry-run` is rejected before the wizard starts.
+     Production execution requires its own explicit approval and reviewed inputs.
 
 4. **Document outputs** – store the generated `deployment-config/latest-deployment.json`
    and diff it against version-controlled expectations via `git diff`. Attach the

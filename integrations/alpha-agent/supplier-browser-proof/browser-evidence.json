@@ -1,0 +1,86 @@
+{
+  "scope": "direct-process laboratory with actual fixed Chromium worker; scripted model responses",
+  "workerSha256": "d48f97cabdfbb2cb1b2db670609eaef814189ff071f01718f41b5b699b6f7c86",
+  "sourcePins": {
+    "alpha_factory_v1/core/runtime/successor/computer_worker.py": "d48f97cabdfbb2cb1b2db670609eaef814189ff071f01718f41b5b699b6f7c86",
+    "alpha_factory_v1/core/runtime/successor/computer.py": "137f334fc2349c59f8b2de045cdcbc073ad46663b2b94c4a98fc65b5ec16b267",
+    "alpha_factory_v1/core/runtime/supplier_browser.py": "35f391a748adb4a8618db2f38a90649e55bd39780895d9274a34ce3237268edf",
+    "alpha_factory_v1/core/runtime/supplier_browser_spec.py": "0ccd63b1bf77d25d5a01fd5f6e8fd817f9a538531dddd723983fe957927c7cd8",
+    "alpha_factory_v1/core/runtime/web/supplier-lab.html": "b332a1441012b1023832a03df247b637dac2dd50ddbf65d8b02544de034aa987"
+  },
+  "specHash": "0xf25b50d25fb1f697763d0a122865bda37c32c5ce0080fec1d1f94716e207b3f0",
+  "artifactBytes": 7323,
+  "resultHash": "0x5f34a8dec5d6295a876abae0d425777a994d3127accd3b6b910ce23b10c23d55",
+  "verification": {
+    "valid": true,
+    "result_hash": "0x5f34a8dec5d6295a876abae0d425777a994d3127accd3b6b910ce23b10c23d55",
+    "authority": [],
+    "productionApproved": false,
+    "settlementApproved": false
+  },
+  "assignment": {
+    "backend": "agijobsv0-jobregistry-v2",
+    "chain_id": 31337,
+    "registry": "0x9a676e781a523b5d0c0e43731313a708cb607508",
+    "token": "0xa61a3b3a130a9c20768eebf97e21515a6046a1fa",
+    "decimals": 18,
+    "job_id": "1",
+    "worker": "0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc",
+    "employer": "0x70997970c51812dc3a010c7d01b50e0d17dc79c8",
+    "spec_hash": "0xf25b50d25fb1f697763d0a122865bda37c32c5ce0080fec1d1f94716e207b3f0",
+    "state": 2,
+    "deadline": "1792123073",
+    "reward": "100",
+    "stake": "200",
+    "result_hash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+    "assignment_transaction": "0x2886f5231f5e35e75ae77485c993059ea61f0f603eb35bb5150ae34071fd8187",
+    "assignment_block_hash": "0x721aebba37351cc1192119c95f9f239d343e9693de80872475bf2a4ee085d873",
+    "block_number": "0x2f",
+    "block_hash": "0x721aebba37351cc1192119c95f9f239d343e9693de80872475bf2a4ee085d873",
+    "observed_at": 1792036675,
+    "profile_digest": "a7c7159a4c0932a6912146304ce47910d8fee74dd477d499c0fdc7304bf40c2f",
+    "authority": "read-only"
+  },
+  "providerCalls": 2,
+  "actions": 4,
+  "observations": [
+    {
+      "sha256": "895016a5865b868a6ef3c09233560cb4fe0aed3ff14d7ed4b11e95a9b184bc56",
+      "textSha256": "f0a63582a14ade78edc8f0b9f307c7abb20134db07d0a78b1d61291841f1b048",
+      "url": "about:blank"
+    },
+    {
+      "sha256": "4b8acd0fba627c7bc55ace89311bd27984e1522c8990f86aa397584cd9d5a49f",
+      "textSha256": "f0a63582a14ade78edc8f0b9f307c7abb20134db07d0a78b1d61291841f1b048",
+      "url": "about:blank"
+    },
+    {
+      "sha256": "fa5d0ddddf69bc21e8bbb896ffe715e9cf54eab74d459eafc24f2e4fa1b3f425",
+      "textSha256": "f0a63582a14ade78edc8f0b9f307c7abb20134db07d0a78b1d61291841f1b048",
+      "url": "about:blank"
+    },
+    {
+      "sha256": "e37c68eaf7b7ffe3f45beed69a62ff24c880b9999c2b88278e2e15b664ebd253",
+      "textSha256": "f0a63582a14ade78edc8f0b9f307c7abb20134db07d0a78b1d61291841f1b048",
+      "url": "about:blank"
+    },
+    {
+      "sha256": "31d253bfdcab3edc15de3173416aff302179278a1882c8c40e61703ce36c06bd",
+      "textSha256": "07bfc93d98b0c713e662e06af8d3f92e9b2d8299355589ceb2443abdfe305224",
+      "url": "about:blank"
+    }
+  ],
+  "externalFetches": 0,
+  "cleanup": [
+    {
+      "leaderExited": true,
+      "liveGroupMembers": [],
+      "groupClosed": true
+    }
+  ],
+  "dockerQualified": false,
+  "liveProvider": false,
+  "providerCostKnown": false,
+  "productionApproved": false,
+  "settlementApproved": false
+}

@@ -1,0 +1,687 @@
+{
+  "schema": "agijobsv0/percentage-stake-local-evidence/v1",
+  "baseCommit": "7b21ce05b0b18b46162da66c2f528334101f6f40",
+  "scope": "Local executed evidence; not independent review, hosted qualification, mainnet-fork completion or deployment authorization",
+  "sourceSha256": {
+    ".github/workflows/ci.yml": "a700b05eb291b31264673580ba9903eaae327934056e88e0c6d3abe8440a5812",
+    "apps/console/src/components/GovernanceActionForm.tsx": "ccd10bc4d65faa63e3282c22e1af64899ff05db558ace94493f4dc887bb2b83a",
+    "apps/console/src/components/PoliciesPanel.tsx": "82b6fd68252b55a45bb08725f286036ad069d9078f161732faaedb7eb388e7f0",
+    "apps/console/src/types.ts": "67cf2cc8cb949788242e549ecc79735e546e28673d47c5fd3f309d81802a7c29",
+    "apps/onebox-static/app.mjs": "43f85da39af75611cf225dbeb6fb14a75ea8faca7354de4cab8807f85d5df8ee",
+    "apps/onebox-static/index.html": "ca55ecae2b1e67ea3f67f5ba04524b918e58efee0cd30f8858c6cfddb514f8ec",
+    "apps/onebox/src/lib/governanceSnapshot.ts": "be654b7d227b947f672b2ba77ccbee6d31c9b3fabe5d1e85346f0e69ebba98e4",
+    "apps/onebox/test/governance-snapshot-summary.test.ts": "9a0bdc4b36d63ba95d138fd512705dab123ee4338ebc08fd797d360dde86e0cf",
+    "config/contracts.orchestrator.json": "44a507cea08cf8d66916274f8182b07f146efb0a74d2d106e7cb34ef111096f5",
+    "config/job-registry.ci.json": "1e50e35dd01b6bf4eb19e564ef7ef0ea815914bdb8feac50403c9f4621ba939a",
+    "config/job-registry.json": "07a2404208d12553d2be59fbae0ced289266b709ee520311adbe3c5cce43742b",
+    "contracts/test/LegacyJobImplementationIdentity.sol": "db0da9e2374dee9eb4dd00dd0d5cb5823be65bfcf47236b972c560ebbda94cd8",
+    "contracts/v2/Deployer.sol": "855d3871b7d0d521285e20bf39ef1ccd0dad99a5bbb06240160312c4849f638b",
+    "contracts/v2/JobRegistry.sol": "d9409b0864f81352b51a634641496d61f1b1b594435a36f1699d10f4a7c176a8",
+    "contracts/v2/implementation/JobRegistryBase.sol": "9d5d6a89550a60f331f9916a24debb726833f8dd44c3acc51c7658081e50acc5",
+    "contracts/v2/implementation/JobRegistryConfiguration.sol": "452b67319a5e9a41411907697efdfde7072fe4996f604bcc5d7f69c24e958600",
+    "contracts/v2/implementation/JobRegistryLifecycle.sol": "8f5a3b4cbd272babec0610dcb28ada32d88c080ba8cc547b63c8d9550ba96156",
+    "contracts/v2/implementation/JobRegistrySettlement.sol": "e8cba0630361c4d030014b893b05deeaa9ea5bff77ec8abe77c98b0914f485b9",
+    "contracts/v2/interfaces/IJobRegistry.sol": "2a9b08a403d7f5f1356e8ccdb95af2eb416e79ec48e62bce3821c67b461e0b86",
+    "contracts/v2/interfaces/IJobRegistryControl.sol": "ea8a05f2fb425aeaa71d8327e4ae1437802eb326cb865f06a8e8193d5ab96c9a",
+    "contracts/v2/interfaces/IJobStakePolicy.sol": "6f811a685f10202c53dc881a86434b0e5dfc7a05a1c772fc93910fa3b453ef6c",
+    "deployment-config/deployer.sample.json": "ea00cce369e3f031e64265bbfe7f8f63ae18e3a8b415d688027adbbe19886bc6",
+    "deployment-config/mainnet.json": "df0d9bafe07721e108c057a27cd99a82a3e60be9126e6545c591c41e52c27afc",
+    "deployment-config/sepolia.json": "e401043b960f650460c9940b1b634c2d594bad0775e7b82b3b37fbef5db6bbcb",
+    "docs/production/percentage-job-stake.md": "1fc82c919fba7b375dc9cd7d21ca4c15fdd3eb1161cc66bb4a9cbe8219ccab1a",
+    "docs/production/second-mainnet-review-2026-10-16.md": "31d3070f90b99a2b45399d1b74be40fc602f80d1af12b43d91894fd9cff6831e",
+    "integrations/alpha-agent/deploy-local-fixture.cjs": "a3dba88e0be5e1b2f67631c8885e6142acdc18905c738b786b352a617180fa7f",
+    "packages/orchestrator/src/tools/governance.ts": "aa3e7102ac6b6ed6e416eba0da1d690066f5afc0778acdcd3b6fab70d1ea2457",
+    "scripts/config/index.d.ts": "3b714bbd72c4cadc4c843dbd64fafa6ba1001eceac99bee3919acb22aa2c333d",
+    "scripts/config/index.js": "3dd7e2296ccb8e0dddbcc899265e82275403df9267b7fb5c3e1174553a85880a",
+    "scripts/deploy/implementations.cjs": "eb2ac04b7f977ae43851b9fa4737af42638b34cb39d211fa385ed35f48f8be53",
+    "scripts/deploy/prebuilt-implementations.cjs": "f0af22801c82877231d207efa1e70281ae4c95c2a6f7cb58a3cffb333d1ee162",
+    "scripts/deploy/providerAgnosticDeploy.ts": "ff6a7f9684f4313eaeaec604d8470f4d3eb318b4da63c1b63bc87807d81bcb2a",
+    "scripts/owner-healthcheck.js": "4d5f7e0f3d50aff21b0a6a0cc346bda6e3727321b27f2f3d8e299277fcdedec7",
+    "scripts/v2/apply-secure-defaults.ts": "90cbde2cf726c756835520594c306b75aabd6af20e27b87cfb9e4ecad0b9011a",
+    "scripts/v2/deploy.ts": "a118d2adf53a518f67b70d7eec9a2c47bd8d70f7e662c2c734b52d168f36eeb8",
+    "scripts/v2/deployDefaults.ts": "ea766097381003abd4467811520548d9988d57d65fd8ca47521f936f0151d737",
+    "scripts/v2/lib/deployment-candidate.cjs": "2c52336d038522dd58b77c7e041324282349840f14a3c424c620c56353ac7b4a",
+    "scripts/v2/lib/jobRegistryPlan.ts": "a9d657f2a5832ce375b66c62ba9117f5d9e5880e56d8d89fc517deeeef7e69f8",
+    "scripts/v2/lib/oneclick-config.cjs": "9bcba3e9a7970bb154d9463c96a179b4e30f40d807280ab549590a13d9965806",
+    "scripts/v2/oneclick-deploy.ts": "79cc533ec58b9fa3a75f0ba2b932638d252e2b36c49bd73b3b21a5bf884ce854",
+    "scripts/v2/owner-config-wizard.ts": "2ed14276d2975318402dd805f60741e2867209a5ffc8f9d52a9a4415c2e29bc1",
+    "scripts/v2/ownerCommandCenter.ts": "09751982a6775bb125ed312e2a5fa5bc55fc5143174fec41d35476f2f378c439",
+    "scripts/v2/ownerControlAtlas.ts": "0c6911c78a546ea24965cdc926519843da81eecc69c64449302c267eeb34a66c",
+    "scripts/v2/ownerControlBlueprint.ts": "be7f2dd0b7da6cb919dd3477eedf1d5d1b03e017e10add1a189e3aa402d2a0ff",
+    "scripts/v2/ownerControlSurface.ts": "eb49f035e42f4e5131bacd3e96dbfb0636cd90003ce8cf5fb62b208fe8ec75cf",
+    "scripts/v2/testnetDryRun.ts": "9a6563f5bf32125900bb9ac7ea2921c853693aafa14f7f2255d489197a8dd0a3",
+    "test/agentic/validator-service.spec.js": "c9d533689975519331ae2425e9f891afb92998beab2d2f4b4a09a0deb4092bf2",
+    "test/fork/mainnet-job-lifecycle.fork.test.ts": "6df4951448780a3ef904a3831fc5b76e33f558824e82adfbe55f74ddf6f7b494",
+    "test/gateway/submissionContract.test.js": "0e262e3269bc1072f353eb041de652f1e93c05d4941ccdb4baa2c0d4b82042a6",
+    "test/scripts/deployment-candidate.test.cjs": "56eaa49e45886968b49185cdd0a99bf9edfce00173c6b9a24509f11e2d570540",
+    "test/scripts/job-stake-config.test.cjs": "fdbfce2b7b9d1dbc30abc8dac7dbb183433aa1e30badc758d9ac5d7493f7d4a5",
+    "test/v2/ContractEmployerFinalize.test.js": "649530827b6fb601de3c3f8fd8447bb4a7b202700ed6b7275fa679af9ab31247",
+    "test/v2/Deployer.test.js": "6f03f30dcbbf0b2ab8fd99070fcafbe802a270a229a5c446719ebdb73e77b2b5",
+    "test/v2/DeploymentCli.test.js": "bf7946d456b24745efa9520e1d30b63597cebff1d7edad98afb1d6e98c9b8092",
+    "test/v2/EmployerReputation.test.js": "d8aa48caebe2525b338fe63facf34411c2c36678eab35cf41925d3c0d0e16f85",
+    "test/v2/FixedImplementations.test.js": "9a2134d56fcdadecfc9dc1649ccbcce87fa9553369ee3852b6b9d574dae600cf",
+    "test/v2/GatewayRegistryCompatibility.test.js": "f4d950ea9cbb86cea131762342c8b0e32b57f223978bb01e815bdcc0998898b4",
+    "test/v2/GovernanceConfiguration.test.js": "0b32c7faeec91a94e573603b0d43e0f7fc62629c1e791b17b4ec74c2d7baf52b",
+    "test/v2/GovernanceFinalizeBlacklist.test.js": "7c33026f35e6f5ba7058a772a5bded5b28dff8d71ba8d158cc79d86b5f050a41",
+    "test/v2/IdentityVerification.test.js": "e6306d473df111bda2af2121958f6bd62a1a95d88dcf434cd23e106296560ba1",
+    "test/v2/JobExpiration.test.js": "1052fd667a1bf9aa1212bf6d803c2d03fb08175258208a177b9525a9d4129f86",
+    "test/v2/JobExpirationBoundary.test.js": "2d276834c52b5450ed4a6fa529a8953c7449c76cd12abd1fa29cbad0eb40ffaa",
+    "test/v2/JobRegistry.test.js": "14310da9dc6f0ca8207b94f024c375bb70cbbd6dbc9db955d56c6804f28949aa",
+    "test/v2/JobRegistryApply.test.js": "af276f4c37b1f4fe431e418f9dbd4887d671b23d8a3c9676edeb2c3b3b697d7c",
+    "test/v2/JobRegistryAuthCache.test.js": "c11b6b7904d75cb873c0fca9924ac03678c5ee1bd0a64bbc635338e9c9edf0f2",
+    "test/v2/JobRegistryAuthCacheExpiry.test.js": "ee7d14cb6f094ae5fa8ecc0206c98b1b943789b5cc1e13b14b3d1d89d457ab92",
+    "test/v2/JobRegistryBurnReceipt.test.js": "1f875f750580a84f2791396f5151b6a133a2efc97bb5a5a9933bf995514c9f1e",
+    "test/v2/JobRegistryPause.test.js": "689acbeaa4c5c47dd4b58e8d16f4496fb160ba6d81e5e9c7503f10ebf5178c2e",
+    "test/v2/JobRegistrySnapshot.test.js": "cb466864939ac19a27982112124afe62c106bb4963aab4db3dc9288181cfd439",
+    "test/v2/JobStakeLifecycle.test.js": "2c0db4b9f8859187bfb348ae6004a6209b94472e31de663b8ebb245e69564f94",
+    "test/v2/JobStakePercentage.test.js": "305c830ba0642b7858b217c5d15483cc08699cf23ef19bf835978976538ff71f",
+    "test/v2/MidJobUpgrade.test.js": "66b5654d3e1cde0ca4337e8786048ce49e7a412c1ce4ba614ee201e8f2f1cb0f",
+    "test/v2/ModuleReplacement.test.js": "72da112725a862b770d1b94953b4a3cc3b66d82eddae971dabb45e1314908455",
+    "test/v2/Ownership.test.js": "ae536999ae9ea47a0ed1ba962581479c73b643df2f6cdbbb6a7f02dc5c70bf1c",
+    "test/v2/OwnershipTimelock.test.js": "59c767bed118e66733861e210fb61ab864bc359fc135174bd964ba1bef95308b",
+    "test/v2/ProviderDeploymentConfig.test.js": "39c13511dded5b1efbde1fae5f2c94df0378201407e2a4f6924644f040b4c170",
+    "test/v2/SystemPause.test.js": "a4598c0f8cd784812a0338aa27993e16f5ce8bbeb9778dc21483b86052065c9c",
+    "test/v2/TaxPolicyIntegration.test.js": "89005c8138b7e8574dcf719820c28734c6cf87475345aa19275049cc917ec25e",
+    "test/v2/comprehensiveFlow.test.js": "a53b6c7acf0afcb270c158f3b0851834f329e42cf47839e2482cdb6cd4007868",
+    "test/v2/endToEnd.integration.test.js": "1e2dbc60a88d45f7bebda9d29223fd3ab2843f42680f21eeed2d8345ed06bce8",
+    "test/v2/invariant/JobStakePercentageInvariant.t.sol": "388e83de8d9fa9b3246a4eef4104a267d31a4606763b184d59faad69172d8af5",
+    "test/v2/jobCommitRevealFlow.test.ts": "313910b9d9b9291ab4f60830f8e2647b30aa2acb897b3417c4ca186c4dcbcb0a",
+    "test/v2/jobFinalization.integration.test.js": "9ab3695b14676511153ba8a732648b2a16b2c2ba72f22daebc744434f4d1962c",
+    "test/v2/jobLifecycleWithDispute.integration.test.ts": "a38d78630b44315dbfbcf3c6b9dcdfc3c1d5b54946c0e2194370d9b282897fef",
+    "test/v2/midJobReplacementFuzz.test.js": "970e1a9a464bac896426c1ade8f986b1919039e62cef221102e4e62adaa4c677",
+    "test/v2/multiOperatorLifecycle.integration.test.js": "79318bcd2498372d82d99a9bcf8ea20badb23d75f40ee9f132e4483275fb9bde",
+    "test/v2/planetaryTakeoff.integration.test.ts": "02162d82f6847514a4eed4fce9d8e8321d1cba7d314bc96f588235f16a48b6ec",
+    "test/v2/solvingAlphaGovernance.integration.test.ts": "52bd8bca0d72e8f10cdaec2392881c63b8908bef63264002e8cfa290b84cb1c0"
+  },
+  "build": {
+    "compiler": "0.8.37+commit.f401782d",
+    "knownAdvisoryReviewDate": "2026-10-13",
+    "projectSourceWarnings": 0,
+    "reviewedUpstreamWarningCount": 13,
+    "fullyWarningFree": false,
+    "scope": "New source builds only. Existing mainnet bytecode and explorer advisories are unchanged.",
+    "builds": [
+      {
+        "buildInfo": "artifacts/build-info/00334ea726e24c166d7b953cab6d4975.json",
+        "compiler": "0.8.37+commit.f401782d",
+        "reviewedUpstreamWarnings": [
+          {
+            "file": "@openzeppelin/contracts/utils/cryptography/ECDSA.sol",
+            "errorCode": "6335",
+            "message": "\"error\" will be promoted to keyword in the future and will not be allowed as an identifier anymore."
+          },
+          {
+            "file": "@openzeppelin/contracts/utils/cryptography/ECDSA.sol",
+            "errorCode": "6335",
+            "message": "\"error\" will be promoted to keyword in the future and will not be allowed as an identifier anymore."
+          },
+          {
+            "file": "@openzeppelin/contracts/utils/cryptography/ECDSA.sol",
+            "errorCode": "6335",
+            "message": "\"error\" will be promoted to keyword in the future and will not be allowed as an identifier anymore."
+          },
+          {
+            "file": "@openzeppelin/contracts/utils/cryptography/ECDSA.sol",
+            "errorCode": "6335",
+            "message": "\"error\" will be promoted to keyword in the future and will not be allowed as an identifier anymore."
+          },
+          {
+            "file": "@openzeppelin/contracts/utils/structs/DoubleEndedQueue.sol",
+            "errorCode": "6335",
+            "message": "\"at\" will be promoted to keyword in the future and will not be allowed as an identifier anymore."
+          },
+          {
+            "file": "@openzeppelin/contracts/utils/structs/Checkpoints.sol",
+            "errorCode": "6335",
+            "message": "\"at\" will be promoted to keyword in the future and will not be allowed as an identifier anymore."
+          },
+          {
+            "file": "@openzeppelin/contracts/utils/structs/Checkpoints.sol",
+            "errorCode": "6335",
+            "message": "\"at\" will be promoted to keyword in the future and will not be allowed as an identifier anymore."
+          },
+          {
+            "file": "@openzeppelin/contracts/utils/structs/Checkpoints.sol",
+            "errorCode": "6335",
+            "message": "\"at\" will be promoted to keyword in the future and will not be allowed as an identifier anymore."
+          },
+          {
+            "file": "@openzeppelin/contracts/utils/structs/EnumerableSet.sol",
+            "errorCode": "6335",
+            "message": "\"at\" will be promoted to keyword in the future and will not be allowed as an identifier anymore."
+          },
+          {
+            "file": "@openzeppelin/contracts/utils/structs/EnumerableSet.sol",
+            "errorCode": "6335",
+            "message": "\"at\" will be promoted to keyword in the future and will not be allowed as an identifier anymore."
+          },
+          {
+            "file": "@openzeppelin/contracts/utils/structs/EnumerableSet.sol",
+            "errorCode": "6335",
+            "message": "\"at\" will be promoted to keyword in the future and will not be allowed as an identifier anymore."
+          },
+          {
+            "file": "@openzeppelin/contracts/utils/structs/EnumerableSet.sol",
+            "errorCode": "6335",
+            "message": "\"at\" will be promoted to keyword in the future and will not be allowed as an identifier anymore."
+          },
+          {
+            "file": "@openzeppelin/contracts/utils/structs/EnumerableSet.sol",
+            "errorCode": "6335",
+            "message": "\"at\" will be promoted to keyword in the future and will not be allowed as an identifier anymore."
+          }
+        ]
+      }
+    ],
+    "runtimeLimitBytes": 24576,
+    "initcodeLimitBytes": 49152,
+    "sizeGatePassed": true,
+    "contracts": [
+      {
+        "contract": "AGIGovernor",
+        "source": "contracts/v2/governance/AGIGovernor.sol",
+        "runtimeBytes": 14977,
+        "initcodeBytes": 17831,
+        "deployableSize": true
+      },
+      {
+        "contract": "AGITimelock",
+        "source": "contracts/v2/governance/AGITimelock.sol",
+        "runtimeBytes": 5450,
+        "initcodeBytes": 6755,
+        "deployableSize": true
+      },
+      {
+        "contract": "ArbitratorCommittee",
+        "source": "contracts/v2/ArbitratorCommittee.sol",
+        "runtimeBytes": 5051,
+        "initcodeBytes": 5335,
+        "deployableSize": true
+      },
+      {
+        "contract": "ArtifactRegistry",
+        "source": "contracts/v2/ArtifactRegistry.sol",
+        "runtimeBytes": 9174,
+        "initcodeBytes": 10617,
+        "deployableSize": true
+      },
+      {
+        "contract": "AttestationRegistry",
+        "source": "contracts/v2/AttestationRegistry.sol",
+        "runtimeBytes": 1953,
+        "initcodeBytes": 2325,
+        "deployableSize": true
+      },
+      {
+        "contract": "AuditModule",
+        "source": "contracts/v2/AuditModule.sol",
+        "runtimeBytes": 3060,
+        "initcodeBytes": 3330,
+        "deployableSize": true
+      },
+      {
+        "contract": "CertificateNFT",
+        "source": "contracts/v2/CertificateNFT.sol",
+        "runtimeBytes": 8394,
+        "initcodeBytes": 9416,
+        "deployableSize": true
+      },
+      {
+        "contract": "CertificateNFT",
+        "source": "contracts/v2/modules/CertificateNFT.sol",
+        "runtimeBytes": 6306,
+        "initcodeBytes": 7323,
+        "deployableSize": true
+      },
+      {
+        "contract": "CultureRegistry",
+        "source": "contracts/v2/CultureRegistry.sol",
+        "runtimeBytes": 4685,
+        "initcodeBytes": 5435,
+        "deployableSize": true
+      },
+      {
+        "contract": "DayOneUtilityController",
+        "source": "contracts/v2/modules/DayOneUtilityController.sol",
+        "runtimeBytes": 2786,
+        "initcodeBytes": 3730,
+        "deployableSize": true
+      },
+      {
+        "contract": "Deployer",
+        "source": "contracts/v2/Deployer.sol",
+        "runtimeBytes": 12418,
+        "initcodeBytes": 12536,
+        "deployableSize": true
+      },
+      {
+        "contract": "DiscoveryModule",
+        "source": "contracts/v2/modules/DiscoveryModule.sol",
+        "runtimeBytes": 3442,
+        "initcodeBytes": 3885,
+        "deployableSize": true
+      },
+      {
+        "contract": "DisputeModule",
+        "source": "contracts/v2/modules/DisputeModule.sol",
+        "runtimeBytes": 10570,
+        "initcodeBytes": 11222,
+        "deployableSize": true
+      },
+      {
+        "contract": "EnergyOracle",
+        "source": "contracts/v2/EnergyOracle.sol",
+        "runtimeBytes": 3821,
+        "initcodeBytes": 5099,
+        "deployableSize": true
+      },
+      {
+        "contract": "ENSIdentityVerifier",
+        "source": "contracts/v2/ENSIdentityVerifier.sol",
+        "runtimeBytes": 57,
+        "initcodeBytes": 85,
+        "deployableSize": true
+      },
+      {
+        "contract": "ENSOwnershipVerifier",
+        "source": "contracts/v2/modules/ENSOwnershipVerifier.sol",
+        "runtimeBytes": 3717,
+        "initcodeBytes": 4150,
+        "deployableSize": true
+      },
+      {
+        "contract": "EscrowVault",
+        "source": "contracts/v2/kernel/EscrowVault.sol",
+        "runtimeBytes": 2016,
+        "initcodeBytes": 2309,
+        "deployableSize": true
+      },
+      {
+        "contract": "FeePool",
+        "source": "contracts/v2/FeePool.sol",
+        "runtimeBytes": 8648,
+        "initcodeBytes": 9765,
+        "deployableSize": true
+      },
+      {
+        "contract": "GlobalGovernanceCouncil",
+        "source": "contracts/v2/governance/GlobalGovernanceCouncil.sol",
+        "runtimeBytes": 6405,
+        "initcodeBytes": 6622,
+        "deployableSize": true
+      },
+      {
+        "contract": "GovernanceReward",
+        "source": "contracts/v2/GovernanceReward.sol",
+        "runtimeBytes": 3765,
+        "initcodeBytes": 4603,
+        "deployableSize": true
+      },
+      {
+        "contract": "HamiltonianMonitor",
+        "source": "contracts/v2/HamiltonianMonitor.sol",
+        "runtimeBytes": 2507,
+        "initcodeBytes": 2814,
+        "deployableSize": true
+      },
+      {
+        "contract": "HGMControlModule",
+        "source": "contracts/v2/admin/HGMControlModule.sol",
+        "runtimeBytes": 11480,
+        "initcodeBytes": 12310,
+        "deployableSize": true
+      },
+      {
+        "contract": "IdentityRegistry",
+        "source": "contracts/v2/IdentityRegistry.sol",
+        "runtimeBytes": 20226,
+        "initcodeBytes": 20957,
+        "deployableSize": true
+      },
+      {
+        "contract": "JobEscrow",
+        "source": "contracts/v2/modules/JobEscrow.sol",
+        "runtimeBytes": 4495,
+        "initcodeBytes": 5004,
+        "deployableSize": true
+      },
+      {
+        "contract": "JobRegistry",
+        "source": "contracts/v2/JobRegistry.sol",
+        "runtimeBytes": 8337,
+        "initcodeBytes": 11890,
+        "deployableSize": true
+      },
+      {
+        "contract": "JobRegistryConfiguration",
+        "source": "contracts/v2/implementation/JobRegistryConfiguration.sol",
+        "runtimeBytes": 16829,
+        "initcodeBytes": 16996,
+        "deployableSize": true
+      },
+      {
+        "contract": "JobRegistryLifecycle",
+        "source": "contracts/v2/implementation/JobRegistryLifecycle.sol",
+        "runtimeBytes": 20725,
+        "initcodeBytes": 20892,
+        "deployableSize": true
+      },
+      {
+        "contract": "JobRegistrySettlement",
+        "source": "contracts/v2/implementation/JobRegistrySettlement.sol",
+        "runtimeBytes": 24238,
+        "initcodeBytes": 24405,
+        "deployableSize": true
+      },
+      {
+        "contract": "JobRouter",
+        "source": "contracts/v2/modules/JobRouter.sol",
+        "runtimeBytes": 4192,
+        "initcodeBytes": 4474,
+        "deployableSize": true
+      },
+      {
+        "contract": "KernelConfig",
+        "source": "contracts/v2/kernel/Config.sol",
+        "runtimeBytes": 1666,
+        "initcodeBytes": 1952,
+        "deployableSize": true
+      },
+      {
+        "contract": "KernelJobRegistry",
+        "source": "contracts/v2/kernel/JobRegistry.sol",
+        "runtimeBytes": 8641,
+        "initcodeBytes": 9186,
+        "deployableSize": true
+      },
+      {
+        "contract": "KernelStakeManager",
+        "source": "contracts/v2/kernel/StakeManager.sol",
+        "runtimeBytes": 4034,
+        "initcodeBytes": 4314,
+        "deployableSize": true
+      },
+      {
+        "contract": "KlerosDisputeModule",
+        "source": "contracts/v2/modules/KlerosDisputeModule.sol",
+        "runtimeBytes": 3107,
+        "initcodeBytes": 3358,
+        "deployableSize": true
+      },
+      {
+        "contract": "ModuleInstaller",
+        "source": "contracts/v2/ModuleInstaller.sol",
+        "runtimeBytes": 5633,
+        "initcodeBytes": 5751,
+        "deployableSize": true
+      },
+      {
+        "contract": "NoValidationModule",
+        "source": "contracts/v2/modules/NoValidationModule.sol",
+        "runtimeBytes": 2268,
+        "initcodeBytes": 2557,
+        "deployableSize": true
+      },
+      {
+        "contract": "OracleValidationModule",
+        "source": "contracts/v2/modules/OracleValidationModule.sol",
+        "runtimeBytes": 2558,
+        "initcodeBytes": 2947,
+        "deployableSize": true
+      },
+      {
+        "contract": "OwnerConfigurator",
+        "source": "contracts/v2/admin/OwnerConfigurator.sol",
+        "runtimeBytes": 2023,
+        "initcodeBytes": 2259,
+        "deployableSize": true
+      },
+      {
+        "contract": "Phase6ExpansionManager",
+        "source": "contracts/v2/Phase6ExpansionManager.sol",
+        "runtimeBytes": 18854,
+        "initcodeBytes": 19098,
+        "deployableSize": true
+      },
+      {
+        "contract": "Phase8UniversalValueManager",
+        "source": "contracts/v2/Phase8UniversalValueManager.sol",
+        "runtimeBytes": 23103,
+        "initcodeBytes": 23347,
+        "deployableSize": true
+      },
+      {
+        "contract": "PlatformIncentives",
+        "source": "contracts/v2/PlatformIncentives.sol",
+        "runtimeBytes": 2779,
+        "initcodeBytes": 3274,
+        "deployableSize": true
+      },
+      {
+        "contract": "PlatformRegistry",
+        "source": "contracts/v2/PlatformRegistry.sol",
+        "runtimeBytes": 7928,
+        "initcodeBytes": 8463,
+        "deployableSize": true
+      },
+      {
+        "contract": "QuadraticVoting",
+        "source": "contracts/v2/QuadraticVoting.sol",
+        "runtimeBytes": 4121,
+        "initcodeBytes": 4503,
+        "deployableSize": true
+      },
+      {
+        "contract": "RandaoCoordinator",
+        "source": "contracts/v2/RandaoCoordinator.sol",
+        "runtimeBytes": 3807,
+        "initcodeBytes": 4437,
+        "deployableSize": true
+      },
+      {
+        "contract": "ReputationEngine",
+        "source": "contracts/v2/ReputationEngine.sol",
+        "runtimeBytes": 6954,
+        "initcodeBytes": 7561,
+        "deployableSize": true
+      },
+      {
+        "contract": "RevenueDistributor",
+        "source": "contracts/v2/modules/RevenueDistributor.sol",
+        "runtimeBytes": 3083,
+        "initcodeBytes": 3593,
+        "deployableSize": true
+      },
+      {
+        "contract": "RewardEngine",
+        "source": "contracts/v2/kernel/RewardEngine.sol",
+        "runtimeBytes": 1173,
+        "initcodeBytes": 1558,
+        "deployableSize": true
+      },
+      {
+        "contract": "RewardEngineMB",
+        "source": "contracts/v2/RewardEngineMB.sol",
+        "runtimeBytes": 14509,
+        "initcodeBytes": 15330,
+        "deployableSize": true
+      },
+      {
+        "contract": "RoutingModule",
+        "source": "contracts/v2/modules/RoutingModule.sol",
+        "runtimeBytes": 4714,
+        "initcodeBytes": 4984,
+        "deployableSize": true
+      },
+      {
+        "contract": "SelfPlayArena",
+        "source": "contracts/v2/SelfPlayArena.sol",
+        "runtimeBytes": 8885,
+        "initcodeBytes": 9592,
+        "deployableSize": true
+      },
+      {
+        "contract": "ShardJobQueue",
+        "source": "contracts/v2/modules/ShardJobQueue.sol",
+        "runtimeBytes": 4211,
+        "initcodeBytes": 4470,
+        "deployableSize": true
+      },
+      {
+        "contract": "ShardRegistry",
+        "source": "contracts/v2/modules/ShardRegistry.sol",
+        "runtimeBytes": 7385,
+        "initcodeBytes": 7625,
+        "deployableSize": true
+      },
+      {
+        "contract": "StakeManager",
+        "source": "contracts/v2/StakeManager.sol",
+        "runtimeBytes": 7673,
+        "initcodeBytes": 10107,
+        "deployableSize": true
+      },
+      {
+        "contract": "StakeManagerConfiguration",
+        "source": "contracts/v2/implementation/StakeManagerConfiguration.sol",
+        "runtimeBytes": 15720,
+        "initcodeBytes": 15978,
+        "deployableSize": true
+      },
+      {
+        "contract": "StakeManagerEscrow",
+        "source": "contracts/v2/implementation/StakeManagerEscrow.sol",
+        "runtimeBytes": 13263,
+        "initcodeBytes": 13675,
+        "deployableSize": true
+      },
+      {
+        "contract": "StakeManagerSlashing",
+        "source": "contracts/v2/implementation/StakeManagerSlashing.sol",
+        "runtimeBytes": 15864,
+        "initcodeBytes": 16220,
+        "deployableSize": true
+      },
+      {
+        "contract": "StakeManagerStaking",
+        "source": "contracts/v2/implementation/StakeManagerStaking.sol",
+        "runtimeBytes": 10696,
+        "initcodeBytes": 10961,
+        "deployableSize": true
+      },
+      {
+        "contract": "SystemPause",
+        "source": "contracts/v2/SystemPause.sol",
+        "runtimeBytes": 9477,
+        "initcodeBytes": 10372,
+        "deployableSize": true
+      },
+      {
+        "contract": "TaxPolicy",
+        "source": "contracts/v2/TaxPolicy.sol",
+        "runtimeBytes": 4602,
+        "initcodeBytes": 5888,
+        "deployableSize": true
+      },
+      {
+        "contract": "ThermoMath",
+        "source": "contracts/v2/libraries/ThermoMath.sol",
+        "runtimeBytes": 57,
+        "initcodeBytes": 85,
+        "deployableSize": true
+      },
+      {
+        "contract": "Thermostat",
+        "source": "contracts/v2/Thermostat.sol",
+        "runtimeBytes": 2550,
+        "initcodeBytes": 2923,
+        "deployableSize": true
+      },
+      {
+        "contract": "ValidationModule",
+        "source": "contracts/v2/ValidationModule.sol",
+        "runtimeBytes": 6408,
+        "initcodeBytes": 8874,
+        "deployableSize": true
+      },
+      {
+        "contract": "ValidationModule",
+        "source": "contracts/v2/kernel/ValidationModule.sol",
+        "runtimeBytes": 4442,
+        "initcodeBytes": 4721,
+        "deployableSize": true
+      },
+      {
+        "contract": "ValidationModuleConfiguration",
+        "source": "contracts/v2/implementation/ValidationModuleConfiguration.sol",
+        "runtimeBytes": 12441,
+        "initcodeBytes": 12648,
+        "deployableSize": true
+      },
+      {
+        "contract": "ValidationModuleSelection",
+        "source": "contracts/v2/implementation/ValidationModuleSelection.sol",
+        "runtimeBytes": 13078,
+        "initcodeBytes": 13285,
+        "deployableSize": true
+      },
+      {
+        "contract": "ValidationModuleVoting",
+        "source": "contracts/v2/implementation/ValidationModuleVoting.sol",
+        "runtimeBytes": 16445,
+        "initcodeBytes": 16652,
+        "deployableSize": true
+      },
+      {
+        "contract": "VerifyOwnership",
+        "source": "contracts/v2/modules/VerifyOwnership.sol",
+        "runtimeBytes": 57,
+        "initcodeBytes": 85,
+        "deployableSize": true
+      }
+    ]
+  },
+  "logs": {
+    "jobs-compile.log": {
+      "sha256": "e89ec4bad205ef2808a47d37b4069b91ee997a299d801da4bf55eb542faf28e4",
+      "bytes": 23443
+    },
+    "jobs-official-tests2.log": {
+      "sha256": "a869e0c36ddee5c46a30f0d120914f1fa834e7d6881e1c3a76f5178c884b7498",
+      "bytes": 109415
+    },
+    "jobs-config-final.log": {
+      "sha256": "bb30c6fc6406342d5776bcceae0da9312129815ae0ed0480113734e9ce161636",
+      "bytes": 4283
+    },
+    "jobs-fixed-tests.log": {
+      "sha256": "f1f5d1020622ac4cd1d1a0950c8ec29507bb831c8ff5dab45c0ce67862db7c4c",
+      "bytes": 1767
+    },
+    "jobs-stake-randao-tests.log": {
+      "sha256": "d110e40770e160fd1a313475b92f4a33077638970824da4028fe687c179128d1",
+      "bytes": 2328
+    },
+    "jobs-stake-fuzz2.log": {
+      "sha256": "5d3c4ea05ec065fdbcc6bf323610171e0ddebba7bb6b3c1719a672dadbd0cd39",
+      "bytes": 28658
+    },
+    "jobs-gateway-build.log": {
+      "sha256": "977ed8a726f87eddad03526f534893be8595aa57559d0b0178498d32ab10cacb",
+      "bytes": 516
+    },
+    "jobs-orchestrator-build.log": {
+      "sha256": "1449873bea0ab9ff90ffdcece16f8cbf00910d5a6cfa8e0c8f50479bd959d512",
+      "bytes": 710
+    },
+    "jobs-validator-build.log": {
+      "sha256": "e0e5ed9d6157389ff3fbf8c5fb44cc2ba7d9839606ac05fdc4672cfbe0370caf",
+      "bytes": 522
+    }
+  },
+  "hostedQualification": "PENDING",
+  "supplementalTypescriptRegressions": "UNRESOLVED",
+  "productionConfiguration": "UNSET",
+  "productionApproved": false,
+  "liveIntakeOpen": false
+}

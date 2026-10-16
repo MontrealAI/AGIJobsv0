@@ -52,3 +52,20 @@ flowchart LR
 - Publish artefacts (dashboards, mermaid charts, datasets) into `reports/` for downstream intelligence alignment.
 
 Mermaid rendering corrections dated October 8, 2026 are recorded in the [historical report manifest](reports/governance-demo-manifest.json). They preserve the original simulation values and timestamps; they do not represent a new execution or new production evidence.
+
+
+### Offline Python mathematical check
+
+Run `python demo/agi-governance/run_demo.py --json` to recompute the supplied
+mission's thermodynamic arithmetic and declared owner-control category coverage.
+This teaching model does not enforce controls or observe a deployed system.
+`log_partition_function` is the stable log of the Boltzmann partition sum.
+`shifted_normalization` and `log_weight_offset` expose its log-sum-exp calculation;
+the shifted sum is **not** the partition function. `partition_function` is `null`
+when exponentiation would overflow or underflow, with `partition_status` explaining
+which case occurred. Expected energy remains computed from normalized weights.
+When energy levels are omitted (for example, the owner-control-only wrapper),
+partition metrics are null with status `not-supplied`; no fictitious energy levels
+are inserted. The default supplied mission underflows in ordinary floating-point partition space;
+its finite log-partition is the meaningful output. These are model inputs, not
+measured physical energy or a governance effectiveness claim.

@@ -127,3 +127,43 @@ def test_fresh_run_invalidates_only_stale_checkpoint_before_first_save(tmp_path:
             await recovered.shutdown(persist_state=False)
 
     asyncio.run(scenario())
+
+
+def test_small_run_proves_actual_checkpoint_reassignment(tmp_path: Path) -> None:
+    result = run_high_load_blocking(tmp_path, job_count=1, kill_and_resume=True)
+    assert result.completion_rate == 1
+    assert result.interruption_performed is True
+    assert result.interrupted_assignments == 1
+    assert result.reassigned_jobs == 1
+    assert len(result.checkpoint_sha256) == 64
+
+
+def test_no_restart_does_not_claim_interruption(tmp_path: Path) -> None:
+    result = run_high_load_blocking(tmp_path, job_count=1, kill_and_resume=False)
+    assert result.completion_rate == 1
+    assert result.interruption_performed is False
+    assert result.interrupted_assignments == 0
+    assert result.checkpoint_sha256 is None
+
+
+def test_router_completion_preserves_recovered_attempt_metadata():
+    import asyncio
+    from planetary_fabric.config import DemoJobPayload, NodeConfig
+    from planetary_fabric.jobs import Job, JobState
+    from planetary_fabric.nodes import Node
+    from planetary_fabric.router import RegionalRouter
+    async def scenario():
+        router = RegionalRouter("Earth")
+        node = Node(NodeConfig("restored", "Earth", 1, ["general"]))
+        complete, requeue = asyncio.Queue(), asyncio.Queue()
+        state = JobState(Job("resumed", "Earth", DemoJobPayload("synthetic")), attempts=3)
+        await router.add_node(node)
+        await router.submit(state)
+        await router.start(complete,requeue)
+        try:
+            observed = await asyncio.wait_for(complete.get(),1)
+            assert observed.attempts == 3
+            assert observed.status == "completed"
+        finally:
+            await router.shutdown()
+    asyncio.run(scenario())

@@ -1,5 +1,12 @@
 # Zenith Sapience Planetary Operating System – Operator Runbook
 
+> **Local evidence scope:** The `:local` command uses the shared ASI Global
+> contract-lifecycle fixture, not this directory's branded `project-plan.json`.
+> The non-local governance-kit command reads that plan as reporting context.
+> Neither path proves delivery of its proposed real-world programmes. See the
+> [shared-scenario contract](../asi-global/LOCAL-SCENARIOS.md) for the actual local
+> mission, supported override, and rejected `ASI_GLOBAL_PLAN_PATH` setting.
+
 This runbook walks a non-technical steward through running the **Zenith Sapience Planetary Operating System** demo either locally or in CI. Every command delegates to shipping AGI Jobs v0 (v2) tooling; the operator never needs to modify code.
 
 ---

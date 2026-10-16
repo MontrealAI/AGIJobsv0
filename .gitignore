@@ -138,3 +138,6 @@ demo/LARGE-SCALE-OMEGA-BUSINESS-3/.artifacts/
 apps/validator/dist/
 storage/validator-service-reveals/
 storage/validation-reports/
+
+# Advisory lock retained across supported disposable local demos.
+.local-demo.lock

@@ -1,0 +1,171 @@
+{
+  "schema": "agijobsv0/reputation-growth-correction/v1",
+  "createdAt": "2026-10-15T21:33:37.145390+00:00",
+  "baseCommit": "c4e5d536cf2803d47d780df1651b6aa67b8f6fbd",
+  "baseTree": "02c21d50eb2c0ee1251555e3e65a9381c99b8a57",
+  "changedSourceSha256": {
+    "contracts/v2/ReputationEngine.sol": "fa583556571a45280f3e1e181e16ea4c5c68ea978a5398d766055a7f4a6a21e2",
+    "docs/api/ReputationEngine.md": "8d16183c6b2e4f3bd7c2f570a44b5871541752d156d8f3def7212cd3f104f633",
+    "docs/production/percentage-job-stake.md": "60ba052f2d04bb21c41e83de103c54de33bd0cc1fccea3ed0ac238c1ef170710",
+    "docs/production/reputation-growth-correction-2026-10-15.md": "6a334b1e0de88ba8922e2f1db0132bfa67c3af49cd556137d8178a4eeec55b45",
+    "docs/production/second-mainnet-review-2026-10-16.md": "ea28e8a0d3bbb49da43b169e5933fd8a0adada8885641e68738aaba014a79d5a",
+    "scripts/diagnostics/reputation-growth-fixed.cjs": "0ea97ff8026aae0bca2bb17050d4796f0e15df5945549fc9641340e4a68f6146",
+    "test/fork/mainnet-job-lifecycle.fork.test.ts": "915ebc565714109a83ba6b69921ff6e585c80cae6902378400d754adc0a4d7e2",
+    "test/v2/FixedImplementations.test.js": "94ca172319a0df76bdd8df666f363b51b4e576a6d6c29355a88efb51a71eabfe",
+    "test/v2/JobStakeLifecycle.test.js": "a4f297f0088440ead5dffb1e740f5e5948457ef89b0a810193b973f96e141298",
+    "test/v2/ReputationEngine.test.js": "3c80ff0a6412cf84878435dd44172a0d9bd333b22217b72b5b5ae27254a45f34",
+    "test/v2/invariant/ReputationGrowthInvariant.t.sol": "f53f30c83272fb5170f02ad56cdf813cb92f65f354ea923bfc8c1a06796be772"
+  },
+  "historicalBundleSha256": "8a21b153e6ce189d14ee4f69288301118c22eeaa0026627338764412e0060c36",
+  "beforeFix": {
+    "actualRegistryRegression": "FAIL \u2014 panic 0x11 through ReputationEngine._finalizeAgent and JobRegistrySettlement._finalize",
+    "test": "test/v2/JobStakeLifecycle.test.js \u2014 high-reputation worker",
+    "initialScore": 19036,
+    "mockToken": true,
+    "validationStub": true,
+    "actualModularRegistry": true,
+    "actualStakeManager": true,
+    "externalTransactions": false
+  },
+  "afterFix": {
+    "positiveCreditCannotLowerScore": true,
+    "creditDampedUsingProspectiveScore": true,
+    "incomingAwardBoundBeforeArithmetic": 88888,
+    "maximumScore": 88888,
+    "firstAward20000": 19036,
+    "subsequentAward1": 19036,
+    "subsequentSuccessful34PointHook": 19068,
+    "actualRegistryPayoutBaseUnits": 101,
+    "actualRegistryCollateralReleased": 11,
+    "generalStakeRetained": 500,
+    "repeatFinalization": "NotReady \u2014 wallet and collateral unchanged"
+  },
+  "build": {
+    "compiler": "0.8.37+commit.f401782d",
+    "viaIR": true,
+    "optimizerRuns": 200,
+    "evmVersion": "cancun",
+    "metadataBytecodeHash": "ipfs",
+    "strictSourceArtifactBindingPassed": true,
+    "projectWarnings": 0,
+    "reviewedUpstreamWarnings": 13,
+    "fullyWarningFree": false,
+    "deployableContracts": 66,
+    "sizeGatePassed": true,
+    "reputationEngineRuntimeBytes": 7015,
+    "reputationEngineInitcodeBytes": 7622,
+    "settlementRuntimeBytes": 24238,
+    "abiUnchanged": true,
+    "storageFieldsUnchanged": 13
+  },
+  "tests": {
+    "focused": {
+      "passed": 33,
+      "failed": 0
+    },
+    "officialHardhat": {
+      "passed": 873,
+      "failed": 0
+    },
+    "recursiveV2": {
+      "files": 148,
+      "passed": 729,
+      "failed": 0
+    },
+    "fullFoundry": {
+      "passed": 238,
+      "suites": 40,
+      "failed": 0,
+      "skipped": 0,
+      "fuzzRuns": 1000,
+      "scope": "Full suite before final strengthening of the three new properties; all production code unchanged. Final property version executed separately below."
+    },
+    "finalReputationProperties": {
+      "properties": 3,
+      "casesPerProperty": 1000,
+      "failed": 0,
+      "coverage": [
+        "arbitrary uint256 and bounded awards",
+        "nondecreasing scores and caps",
+        "zero awards",
+        "larger award cannot reduce credit",
+        "repeated bounded credits at high scores",
+        "explicit subtraction and renewed growth"
+      ]
+    },
+    "countsOverlap": true
+  },
+  "localFork": {
+    "passed": 2,
+    "failed": 0,
+    "chainId": 1,
+    "blockNumber": 26200139,
+    "blockHash": "0x5ba89450466ec7979fd0ab037d86077799089630aab9d8923cf63753a7cb11be",
+    "token": "0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA",
+    "actualTokenCodePreserved": true,
+    "syntheticBalanceAndExactSupplyDelta": true,
+    "mockENSAndValidation": true,
+    "highScoreWorkerSettles": true,
+    "repeatFinalizeRejected": true,
+    "certificatePurchase": true,
+    "qualification": "PARTIAL \u2014 no full committee, exact owner plan, or independent buyer acceptance"
+  },
+  "toolchain": {
+    "node": "22.23.3",
+    "npm": "10.8.2",
+    "forge": "1.7.1",
+    "hostedFoundryPinUnchanged": "1.4.4"
+  },
+  "logHashes": {
+    "beforeFixActualRegistry": {
+      "path": "/tmp/jobs-reputation-registry-before.log",
+      "sha256": "fe1c8087049a425561aa4f64416687c81ff075558158b5f29ab7d8a58cfafd0f"
+    },
+    "canonicalCompile": {
+      "path": "/tmp/jobs-reputation-compile.log",
+      "sha256": "39e9f6c5abbdb3fc9919eb34b8fb435b8fb5c0715c0e08bd748f9ded6c81d403"
+    },
+    "focused": {
+      "path": "/tmp/jobs-reputation-focused.log",
+      "sha256": "4d0551848315a6fed5980e4d0d17fa7a957389fb2c1e9aedfec8691bf793bc72"
+    },
+    "official": {
+      "path": "/tmp/jobs-reputation-official.log",
+      "sha256": "73a0591951a47b9ecad37d24893e5ac8dd0c4bc8fb786699a82cd7ad0e1da0e9"
+    },
+    "recursiveV2": {
+      "path": "/tmp/jobs-reputation-recursive-v2.log",
+      "sha256": "f43705b38573ebab4ecc488b275c81aa7a1cdd4fb344e8079ed800e4a0089a87"
+    },
+    "foundryAll": {
+      "path": "/tmp/jobs-reputation-foundry-all.log",
+      "sha256": "6241d6e8c48134c38aee9a66479ff7bedfc895df2089372e4f55fd2569221518"
+    },
+    "finalFuzz": {
+      "path": "/tmp/jobs-reputation-fuzz-final.log",
+      "sha256": "e3cb63db8eece16f1e964bd83692d6ccc793a72b965de0ebff1f425ee371e959"
+    },
+    "finalTokenFork": {
+      "path": "/tmp/jobs-reputation-token-fork-final.log",
+      "sha256": "06da9852e374b5fe7ddbc694dafc07af7934c4f4bd501c4098295fe7bdb09451"
+    },
+    "historicalAndCurrentDiagnostic": {
+      "path": "/tmp/jobs-reputation-fixed-diagnostic.log",
+      "sha256": "f513dd77b1e6df678e0075b0e4b9a134d9c9b6bebfc175094f05c6fff746581a"
+    }
+  },
+  "remainingBlockers": [
+    "Registry and ValidationModule payout producers still multiply 18-decimal payout by 1e12",
+    "Validation-stage scoring can precede terminal outcome; dispute reversal does not undo prior score",
+    "Independent review and exact-head hosted qualification",
+    "Complete fork/adversarial lifecycle and historical obligations",
+    "Explicit owner deployment settings and unsigned plan"
+  ],
+  "externalAudit": "NOT PERFORMED \u2014 OWNER-ACCEPTED OMISSION",
+  "sepolia": "NOT PERFORMED \u2014 OWNER-ACCEPTED OMISSION",
+  "independentReview": "NOT PERFORMED",
+  "externalTransactions": false,
+  "funding": false,
+  "productionApproved": false,
+  "qualification": "Positive-growth arithmetic defect corrected and locally tested; deployment blocked by remaining gates"
+}

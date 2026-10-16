@@ -30,7 +30,7 @@ interface EconConfig {
   commitWindow?: unknown;
   revealWindow?: unknown;
   minStake?: unknown;
-  jobStake?: unknown;
+  jobStakeBps?: unknown;
 }
 
 interface IdentityConfig {
@@ -164,7 +164,7 @@ function parseArgs(argv: string[]): CliArgs {
     'commit-window',
     'reveal-window',
     'min-stake',
-    'job-stake',
+    'job-stake-bps',
     'ens',
     'name-wrapper',
     'club-root',
@@ -178,7 +178,7 @@ function parseArgs(argv: string[]): CliArgs {
     if (!token.startsWith('--'))
       throw new Error(`Unexpected argument: ${token}`);
     const key = token.slice(2);
-    if (Object.hasOwn(args, key)) throw new Error(`Duplicate option: --${key}`);
+    if (Object.prototype.hasOwnProperty.call(args, key)) throw new Error(`Duplicate option: --${key}`);
     if (switches.has(key)) {
       args[key] = true;
       continue;
@@ -443,6 +443,13 @@ function reportNumber(value: bigint, label: string): number {
   return number;
 }
 
+export function parseJobStakeBps(value: unknown): number {
+  if (!/^[0-9]+$/.test(String(value))) throw new Error('jobStakeBps must be an integer from 0 to 10000');
+  const bps = Number(value);
+  if (!Number.isSafeInteger(bps) || bps > 10000) throw new Error('jobStakeBps must be an integer from 0 to 10000');
+  return bps;
+}
+
 export async function main(argv = process.argv.slice(2)) {
   const cli = parseArgs(argv);
   if (cli.help) {
@@ -471,6 +478,8 @@ export async function main(argv = process.argv.slice(2)) {
     ? (JSON.parse(configBytes) as DeployerConfig)
     : ({} as DeployerConfig);
 
+  if (Object.prototype.hasOwnProperty.call(config.econ ?? {}, 'jobStake'))
+    throw new Error('Legacy econ.jobStake uses token amounts and is unsupported; explicitly configure econ.jobStakeBps');
   const publicNetwork = !LOCAL_NETWORKS.has(network.name);
   const outputCandidate =
     toStringOrUndefined(cli.output) ??
@@ -584,10 +593,7 @@ export async function main(argv = process.argv.slice(2)) {
       toStringOrUndefined(cli['min-stake']) ?? econConfig.minStake,
       'Global minimum stake'
     ),
-    jobStake: parseTokenAmount(
-      toStringOrUndefined(cli['job-stake']) ?? econConfig.jobStake,
-      'Per-job validator stake'
-    ),
+    jobStakeBps: parseJobStakeBps(cli['job-stake-bps'] ?? econConfig.jobStakeBps ?? 1000),
   };
 
   if (
@@ -609,12 +615,7 @@ export async function main(argv = process.argv.slice(2)) {
   if (econ.minStake < 0) {
     throw new Error('Global minimum stake must be non-negative');
   }
-  if (econ.jobStake < 0) {
-    throw new Error('Per-job validator stake must be non-negative');
-  }
-  if (econ.jobStake > MAX_UINT96) {
-    throw new Error('Per-job validator stake exceeds uint96 range');
-  }
+
 
   const hasEconOverrides =
     econ.feePct !== 0 ||
@@ -625,7 +626,7 @@ export async function main(argv = process.argv.slice(2)) {
     econ.commitWindow !== 0 ||
     econ.revealWindow !== 0 ||
     econ.minStake !== 0n ||
-    econ.jobStake !== 0n;
+    econ.jobStakeBps !== 1000;
 
   const identityConfig: IdentityConfig = config.identity ?? {};
 
@@ -947,7 +948,7 @@ export async function main(argv = process.argv.slice(2)) {
       effectiveCommitWindow,
       effectiveRevealWindow,
       effectiveMinStake,
-      effectiveJobStake,
+      effectiveJobStakeBps,
     ] = await Promise.all([
       deployedRegistry.feePct(),
       deployedPool.burnPct(),
@@ -957,7 +958,7 @@ export async function main(argv = process.argv.slice(2)) {
       deployedValidation.commitWindow(),
       deployedValidation.revealWindow(),
       deployedStake.minStake(),
-      deployedRegistry.jobStake(),
+      deployedRegistry.jobStakeBps(),
     ]);
 
     const pendingOwnership: Array<{
@@ -1022,7 +1023,7 @@ export async function main(argv = process.argv.slice(2)) {
         commitWindowSeconds: effectiveCommitWindow,
         revealWindowSeconds: effectiveRevealWindow,
         minStakeWei: effectiveMinStake.toString(),
-        jobStakeWei: effectiveJobStake.toString(),
+        jobStakeBps: effectiveJobStakeBps.toString(),
       }).map(([parameter, value]) => ({ parameter, value }))
     );
 
@@ -1130,7 +1131,7 @@ export async function main(argv = process.argv.slice(2)) {
         commitWindow: reportNumber(effectiveCommitWindow, 'commitWindow'),
         revealWindow: reportNumber(effectiveRevealWindow, 'revealWindow'),
         minStake: effectiveMinStake.toString(),
-        jobStake: effectiveJobStake.toString(),
+        jobStakeBps: effectiveJobStakeBps.toString(),
       },
       identity,
       contracts: summary,

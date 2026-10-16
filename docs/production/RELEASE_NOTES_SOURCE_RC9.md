@@ -1,84 +1,37 @@
-# source-v2.1.0-rc.9 — retained Alpha project history and bounded Jobs drafts
+# source-v2.1.0-rc.9 — reviewed demo workspaces and safer local operations
 
-This unsigned source prerelease adds a native project receiver for the guided
-“Find your Alpha. Build your SUCCESSOR Ω.” journey. It preserves the exact
-original project and its work history, prepares separately priced AGIALPHA
-work-order drafts, and produces real bounded local public-data results. It does
-not open paid intake or qualify a production deployment.
+This source prerelease consolidates the reviewed changes from pull requests #3935–3966 while preserving their commit ancestry. It builds on the explicit Alpha JobRegistry integration in rc.8. Original design documents and diagrams remain available alongside the bounded implementations.
 
-## Continue a project with its evidence
+## Known contract defect — deployment blocked
 
-- Import the native Alpha `successor-project/v1` dossier using the pinned native
-  validator. Retain its exact UTF-8 bytes, project/cycle identity, earlier cycles,
-  failed attempts and rejected reviews. Native result semantics are checked;
-  recomputed outer checksums cannot authorize changed outputs.
-- Compile seven bounded, unsigned **DRAFT** work orders with Jobs v0's actual
-  compiler. Select the AGIALPHA allowance explicitly in exact 18-decimal base
-  units. Every draft gets a positive amount and integer remainders are retained.
-  Manager's **USDC** proposal price is a separate choice with no conversion.
-- Execute the fixed JavaScript integer-CSV task, preserving every duplicate row
-  and source unit. Append the full native mission record and result pack with
-  actual elapsed time. Keep compute price and human time unmeasured, reviews
-  absent and protected evaluation unresolved.
-- Bind `agijobsv0.successor-public-data-work.v1` to the exact project/cycle,
-  upstream bytes, source identity, explicit market/executor, native specification,
-  selected allowance and compiled graph. This source-only project namespace is
-  separate from the existing Python `agialpha.bounded-work-spec.v1` adapter.
-- Provide a dependency-free browser module for the guided interface and a local
-  CLI that refuses overwrites and unstable, oversized, special-file or symlink
-  inputs. Stop at the 2 MB/eight-checkpoint limit without pruning history.
-- Preserve Alpha's native source closure, Apache license and nested MIT compiler
-  license/provenance, plus the actual Jobs compiler and receiver hash inventories.
+The inherited ReputationEngine can reduce an accumulated score while applying positive credit and then revert with arithmetic panic `0x11`, rolling back job settlement. A 20,000-point award produces 19,036; a subsequent one-point award or successful-finalization hook can trigger the defect. The separately scoped [repair in PR #3971](https://github.com/MontrealAI/AGIJobsv0/pull/3971) has local regression and fuzz evidence but is not included in this demo-only source snapshot. Reputation payout-unit and terminal/dispute-scoring corrections also remain open. Do not deploy or commission these contracts from this prerelease.
 
-A Manager wrapper requires an explicitly installed, separately reviewed native
-Manager inspector. Imported files cannot choose code, providers or executable
-checkouts. Fleet receives a separate bounded task and retains its local execution
-and internal-check evidence. Its executor choice does not change the AGIALPHA
-market, grant permissions or establish an unrelated independent reviewer.
+This release distributes source and evidence for bounded demo evaluation. Passing demo/software checks do not clear those contract defects. The separately developed percentage-stake policy is also excluded. Existing deployments remain governed by their own source and obligations; no migration or live settlement approval is implied.
 
-See the [project continuity guide](https://github.com/MontrealAI/AGIJobsv0/blob/source-v2.1.0-rc.9/integrations/alpha-agent/PROJECT_CONTINUITY.md)
-for the API, CLI, supported public-data task and trust boundaries.
+## Useful, inspectable workspaces
 
-## Bind receipt observations to the exact project
+Nine browser workspaces provide governance rehearsal, dependency and recovery planning, supplier evidence review, quorum receipt exploration, resource contingency planning, exact regional budget reconciliation, checkpoint replay, initiative evidence review and disruption planning. Their interfaces provide English and French labels, explicit assumptions, bounded inputs and recovery/export checks. Submitted evidence is recomputed; a self-consistent report does not authenticate its origin, establish real-world impact or authorize a transaction.
 
-The added read-only adapter first validates the native history, then fetches and
-verifies the canonical JobRegistry lifecycle receipt. It checks chain, full
-registry runtime pin, event, worker, confirmation depth and log provenance. It
-reads the job at the same block and requires the exact committed project-work
-hash, selected contract reward, delivered native-record digest and staking token,
-including its actual 18 decimals. It rechecks the canonical block afterward.
+The original fifteen dashboard routes remain in the explicit route inventory. Mandatory Pages qualification exercises every added workspace, including malformed-input rejection, exact-byte recovery, keyboard use and accessibility. The Omniphoenix download test preserves all twenty-nine exact-byte assertions while pacing download requests at the browser's documented throttle boundary.
 
-The resulting attachment retains the complete transfer and observed event. It
-creates no payout authorization or operational admission; payout reconciliation
-remains false. Assignment, submission, validation and finalization remain distinct.
-The focused new receipt tests use RPC doubles, including identical CSV attached
-to different projects or prices, substituted results/tokens, wrong decimals and
-reorgs. They do not constitute a new local-chain or live paid acceptance run.
-Existing rc.8 disposable-chain evidence remains historical and unchanged.
+## Safer launchers and honest results
 
-## Qualification and immutable publication
+Launcher changes make planning explicit and prevent non-interactive execution from implying consent. Local rehearsals use bounded ownership/readiness checks, scoped report archives and advisory locks. Unsupported plan settings are rejected or visibly identified as context for a shared fixture. These checks assume the documented trusted local filesystem and Linux process inspection; they do not provide operating-system containment against an adversarial worker.
 
-Publication still requires every configured required context, named workflow and
-observed main-push workflow to succeed on the exact merged source commit. The
-reviewed compiler checkpoint, Solidity 0.8.37 / Cancun / viaIR / 200 optimizer-run
-policy and historical deployment-evidence guards remain unchanged.
+Other corrections preserve planned versus admitted work counts, recovered attempt history, numerical stability and actual solver convergence diagnostics. Optional MuZero dependencies are loaded only when execution needs them. An absent training environment remains an unqualified training path.
 
-The twelve assets retain the checksummed source archive, exact compiler producer
-archive and provenance, compiler policy/guide, original deployment/configuration
-evidence, recorded address book, deployment guide and these notes. Downloaded
-assets must match the producer and exact source identity before publication.
-Interrupted publication resumes only for the same snapshot; existing assets are
-not overwritten and tags are never moved or deleted. **rc.8 remains immutable.**
+Aurora reports distinguish validator finalization from JobRegistry settlement and bind the displayed settlement transaction to the matching job summary. Placeholder URI hashing remains distinct from artifact-content verification.
 
-## Production boundaries
+## Retained local integration evidence
 
-No contract change, public-chain transaction, explorer submission, migration,
-unpause, production signing or intake activation is performed. Existing deployed
-bytecode and source evidence remain distinct from this source candidate. MARK /
-AscensionJobMarket remains a separate market; Manager USDC and Jobs v0 AGIALPHA
-remain separate economic routes.
+The supplier browser proof connects a fresh disposable JobRegistry assignment to the fixed Alpha browser worker, observed output, deterministic review, explicit local approval, signed delivery and mock settlement. Model responses are scripted laboratory data; Docker and live-provider commissioning are not established by that proof. The negative path refuses an incorrect observed comparison before export or submission.
 
-The local guided journey does not establish independent evaluation, qualified
-remote Fleet execution, provider/worker commissioning, protected review,
-production security review, settlement readiness or production approval. See
-[production readiness](https://github.com/MontrealAI/AGIJobsv0/blob/source-v2.1.0-rc.9/docs/production/readiness.md).
+Cosmic evidence covers four actual governance scripts on an owned, unforked disposable chain, with source/artifact consistency checks, receipt decoding, pause behavior and cleanup. It does not qualify the complete flagship pipeline or independently rebuild the compiler output.
+
+Insight retains the source-bound compiler inputs, three artifacts, report manifest and raw local block/receipt/log evidence. Its qualified CI archive supports independent structural and event review. Archive consistency is not an independent compiler rebuild, replay or deployed-runtime attestation.
+
+## Exact-source publication
+
+Publication still requires every checked-in required context, named release workflow and observed main-push workflow on the exact merged commit. A reviewed combined source checkpoint replaces the earlier source-scope checkpoint because these changes include demo and launcher sources. The Solidity 0.8.37 / Cancun / viaIR / 200 optimizer-run policy and historical deployment-evidence baseline remain unchanged.
+
+The publisher verifies immutable tag identity, checksummed assets and the qualified compiler producer archive. Existing rc.7 and rc.8 identities and assets are never replaced. This is an unsigned source prerelease; production profiles, independent security review, provider/worker commissioning, signing and live settlement remain separate admission requirements.

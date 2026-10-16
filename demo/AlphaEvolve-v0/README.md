@@ -1,16 +1,28 @@
 # AGI Jobs v0 (v2) — Demo → AlphaEvolve v0
 
-> AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `demo/AlphaEvolve-v0`.
+Explore a bounded local search over job-allocation heuristics. Compare candidate
+utility, modeled cost, fairness and acceptance against a supplied baseline, then
+inspect why guardrails accepted or rejected each generation.
 
-## Overview
-- **Path:** `demo/AlphaEvolve-v0/README.md`
-- **Module Focus:** Anchors Demo → AlphaEvolve v0 inside the AGI Jobs v0 (v2) lattice so teams can orchestrate economic, governance, and operational missions with deterministic guardrails.
-- **Integration Role:** Interfaces with the unified owner control plane, telemetry mesh, and contract registry to deliver end-to-end resilience.
+## Run the implemented experiment
 
-## Capabilities
-- Provides opinionated configuration and assets tailored to `demo/AlphaEvolve-v0` while remaining interoperable with the global AGI Jobs v0 (v2) runtime.
-- Ships with safety-first defaults so non-technical operators can activate the experience without compromising security or compliance.
-- Publishes ready-to-automate hooks for CI, observability, and ledger reconciliation.
+```bash
+python demo/AlphaEvolve-v0/run_demo.py run --seed 7 --generations 5 --output /tmp/alphaevolve-report.json
+python -m pytest demo/AlphaEvolve-v0/tests
+```
+
+The root launcher uses `alphaevolve_runner.py` and `alphaevolve/`. It generates
+synthetic agents/jobs and uses `ScriptedLLMClient` to propose bounded heuristic
+changes. The evaluator computes outcomes locally; no live model, wallet, contract
+transaction or real purchase occurs. Cost and utility are model quantities, not
+measured provider bills or earned revenue. A passing guardrail authorizes only
+promotion within this local search experiment.
+
+The JSON report includes baseline/final/champion metrics, per-generation decisions,
+guardrail reasons and explicit execution-scope fields. Existing `alphaevolve_demo/`
+is a separate implementation; do not assume a test of this launcher qualifies it.
+The broader integration diagram below describes the design context, not an automatic
+production route established by this command.
 
 ## Systems Map
 ```mermaid

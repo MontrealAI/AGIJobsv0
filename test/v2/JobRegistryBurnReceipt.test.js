@@ -79,7 +79,8 @@ describe('JobRegistry burn receipt validation', function () {
     await registry
       .connect(owner)
       .setIdentityRegistry(await identity.getAddress());
-    await registry.connect(owner).setJobParameters(1000, 0);
+    await registry.connect(owner).setMaxJobReward(1000);
+    await registry.connect(owner).setJobStakeBps(0);
     await registry.connect(owner).setJobDurationLimit(86400);
     await registry.connect(owner).setValidatorRewardPct(0);
     await stakeManager
@@ -274,7 +275,8 @@ describe('Validation burn evidence gating', function () {
     await validation
       .connect(owner)
       .setValidatorPool([v1.address, v2.address, v3.address]);
-    await registry.connect(owner).setJobParameters(1000, 0);
+    await registry.connect(owner).setMaxJobReward(1000);
+    await registry.connect(owner).setJobStakeBps(0);
     await registry.connect(owner).setJobDurationLimit(86400);
     await registry.connect(owner).setValidatorRewardPct(0);
   });
