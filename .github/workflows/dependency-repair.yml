@@ -71,8 +71,14 @@ jobs:
           mkdir -p "$evidence"
           failed=0
           run_check() {
-            name="$1"; shift
-            "$@" > "$evidence/$name.log" 2>&1
+            local name="$1"; shift
+            local code
+            if [ "$1" = run_preservation ]; then
+              shift
+              run_preservation "$@" > "$evidence/$name.log" 2>&1
+            else
+              "$@" > "$evidence/$name.log" 2>&1
+            fi
             code=$?
             printf '%s %s\n' "$name" "$code" | tee -a "$evidence/exits.txt"
             cat "$evidence/$name.log"
@@ -83,8 +89,20 @@ jobs:
           # an independent approval authority or a deployment authorization.
           run_preservation() {
             local mode="$1"
-            local policy_commit="eae487b9f216fd8744381ae78f571137eeb1d508"
-            local bundle
+            local policy_commit="35fd56967c9e36fdb5f86814b3dc3bdfb1feef1f"
+            local bundle name origin_url
+            # Explicit-head checkout fetches branches, not necessarily the event's
+            # synthetic merge object. Fetch only that immutable SHA if absent;
+            # the pinned checker still proves its exact parents and head tree.
+            [[ "$GITHUB_SHA" =~ ^[0-9a-fA-F]{40}$ ]] || return 1
+            origin_url="$(git --no-replace-objects remote get-url origin)" || return 1
+            case "$origin_url" in
+              https://github.com/MontrealAI/AGIJobsv0|https://github.com/MontrealAI/AGIJobsv0.git) ;;
+              *) return 1 ;;
+            esac
+            if ! git --no-replace-objects cat-file -e "$GITHUB_SHA^{commit}"; then
+              git --no-replace-objects fetch --no-tags --no-recurse-submodules origin "$GITHUB_SHA" || return 1
+            fi
             git --no-replace-objects cat-file -e "$policy_commit^{commit}" || return 1
             git --no-replace-objects merge-base --is-ancestor "$policy_commit" HEAD || return 1
             bundle="$(mktemp -d "$RUNNER_TEMP/jobs-source-policy.XXXXXX")" || return 1

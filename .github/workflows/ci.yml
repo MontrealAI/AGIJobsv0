@@ -68,6 +68,8 @@ jobs:
         run: npm run ci:verify-summary-needs
       - name: Owner Markdown rendering regression tests
         run: node --test test/scripts/owner-markdown-escaping.test.cjs
+      - name: Dependency preservation workflow regression tests
+        run: node --test test/scripts/dependency-workflow-wrapper.test.cjs
       - name: Release provenance regression tests
         run: node --test test/scripts/alpha-agent-receipt.test.cjs test/scripts/deployment-candidate.test.cjs test/scripts/runner-egress.test.cjs test/scripts/demo-report-paths.test.cjs test/scripts/local-demo-rpc.test.cjs test/scripts/release-provenance.test.cjs test/scripts/release-inventory.test.cjs test/scripts/contract-size.test.cjs test/scripts/release-ci.test.cjs test/scripts/dependency-audit.test.cjs test/scripts/slither-policy.test.cjs test/scripts/dispute-overloads.test.js test/hamiltonian-monitor.config.test.js
       - name: Compiler admission regression tests
