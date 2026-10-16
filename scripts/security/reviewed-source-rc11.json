@@ -1,9 +1,9 @@
 {
   "schemaVersion": 2,
   "dependencyBaseline": "7b21ce05b0b18b46162da66c2f528334101f6f40",
-  "reviewedSourceCheckpoint": "fd6b91a5a81e0faa1721d345e7cdc4b3d537552f",
-  "transitionCount": 54,
-  "scope": "Retain main rc.10 contract/economic source, immutable receiver 36957c and externally corrected receiver test relocation. Only the three explicitly reviewed Markdown renderers change protected source. All compiler settings, dependencies and network settings remain unchanged. Bind actual immutable snapshot E before branch publication; fresh exact-head CI and corrected-source CodeQL remain required. Production approval remains false.",
+  "reviewedSourceCheckpoint": "29721b96ab4443e213afecfd423422aef1b327fe",
+  "transitionCount": 55,
+  "scope": "Retain all 54 prior reviewed transitions and before-blobs, the corrected reputation/percentage-collateral contracts, exact native receiver selection and immutable deployment evidence. Review complete literal-text escaping, import-safe renderer exports and CLI guards in the three owner reports, plus the explicitly inventoried new Markdown literal helper (absent at dependency baseline). No protected-path exemption, dependency, compiler or network change. Fresh independent exact-head source review, CodeQL and full integrated qualification remain mandatory; production approval remains false.",
   "transitions": [
     {
       "path": "config/contracts.orchestrator.json",
@@ -211,6 +211,11 @@
       "after": "ca216433fa8ee18e145e2276bb883c4c118ab2b2"
     },
     {
+      "path": "scripts/v2/lib/markdownLiteral.ts",
+      "before": null,
+      "after": "b5bc8edcd2b065a4feda6d2f0633047690ef1bea"
+    },
+    {
       "path": "scripts/v2/lib/oneclick-config.cjs",
       "before": "c14bb65d240f75e6ef6fd97726b38d0bf551abdc",
       "after": "384dd2ca3165f28fa650808426e5dedba725c19d"
@@ -243,12 +248,12 @@
     {
       "path": "scripts/v2/ownerCommandCenter.ts",
       "before": "30fc23f9285742ccaed5b445958ae7bcd570235c",
-      "after": "08a5ecec6ddb8e351dc11d23b427c7cbfc8eaff5"
+      "after": "4b7df16ec872433c2dd2f31d081969cb4e544caf"
     },
     {
       "path": "scripts/v2/ownerControlAtlas.ts",
       "before": "f2d0a3ecbbb4bb3c0665e2f273d6ea8545454fb0",
-      "after": "b511c887d8f8d89d511916dc6cd305faf0331c2a"
+      "after": "52bb6fdc81fd8bdc34176947976b6f60c835e768"
     },
     {
       "path": "scripts/v2/ownerControlBlueprint.ts",
@@ -258,7 +263,7 @@
     {
       "path": "scripts/v2/ownerControlSurface.ts",
       "before": "e4f077334bdf020dfa50dd66aa3fbadce010cf96",
-      "after": "bcda7596bf3a343114d77a8264dc3aa657e5e02e"
+      "after": "78876dc1206efec422b63c9a5b5ee433541bd156"
     },
     {
       "path": "scripts/v2/testnetDryRun.ts",

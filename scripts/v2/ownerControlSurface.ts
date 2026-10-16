@@ -2,6 +2,7 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import { createHash } from 'crypto';
 import { ethers } from 'ethers';
+import { escapeMarkdownLiteral } from './lib/markdownLiteral';
 import {
   loadTokenConfig,
   loadOwnerControlConfig,
@@ -827,10 +828,10 @@ function renderHumanReport(
 }
 
 function escapeMarkdown(value: string): string {
-  return value.replace(/\\/g, '\\\\').replace(/\|/g, '\\|');
+  return escapeMarkdownLiteral(value);
 }
 
-function renderMarkdownReport(reports: ModuleReport[]): string {
+export function renderMarkdownReport(reports: ModuleReport[]): string {
   const header =
     '| Module | Status | Owner | Governance | Address | Config | Key parameters | Warnings |\n| --- | --- | --- | --- | --- | --- | --- | --- |';
   const rows = reports.map((report) => {
@@ -1059,7 +1060,9 @@ async function main(): Promise<void> {
   }
 }
 
-main().catch((err) => {
-  console.error(`Fatal error: ${(err as Error).stack || err}`);
-  process.exit(1);
-});
+if (require.main === module) {
+  main().catch((err) => {
+    console.error(`Fatal error: ${(err as Error).stack || err}`);
+    process.exit(1);
+  });
+}

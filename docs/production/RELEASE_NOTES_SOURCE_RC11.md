@@ -4,13 +4,43 @@ This source and evidence prerelease integrates the native Alpha project receiver
 
 Production approval remains **false**. Publication requires successful independent review and every required check and observed main workflow on the exact final merged commit. A source prerelease does not authorize deployment, migration, funding or live settlement.
 
-## Narrow functional corrections
+## Complete owner-report corrections
 
-The functional-source checkpoint is `fd6b91a5a81e0faa1721d345e7cdc4b3d537552f`, tree `c173457f3380a8cfa67cc002bbc135d2270bce32`. This immutable snapshot retains both the current receiver integration and its history-link follow-up. The three Markdown renderers escape existing backslashes before table pipes. Their regression test runs in the mandatory CI lane. The separately retained receiver-suite relocation in `a967012d4ec962e5b493a188aa92e4a302cbece9` preserves the original test bodies and moves all four suites into the integration-owned directory, with mandatory Node CI registration and native-discovery regressions.
+The functional-source checkpoint is `29721b96ab4443e213afecfd423422aef1b327fe`,
+tree `c07bef0bc098cfcdbec5b075bcca6bf623c2813b`. It preserves current main
+`5d7d89ccba236cc1fdf7067223dfae813bd64387` and the complete PR #3977 integration
+`0b7404e99f197b3659fcb1598a93a0572b8bf6d5` through normal merge ancestry.
+The earlier report checkpoint `b17e40f5272b22368d0cbfb93e36a8bc89b30921`, tree
+`5c0c8beeab58dfa3f95d5f9ac32fc8ab2aebd105`, remains in that retained history.
+The three reports encode literal punctuation before Markdown parsing, preserving
+backslashes, table cells, links, emphasis, HTML-like text and entity-like input as
+literal values. Command Center adds deliberate severity formatting and line breaks
+after escaping data. Importing the actual renderers stays inert; direct CLI help
+and invalid-argument refusal remain available.
 
-Contracts, compiler settings, economic behavior, dependencies, network settings, Hardhat configuration, receiver source pins, original project bytes and retained history are unchanged by these functional corrections. The source record retains dependency baseline `7b21ce05b0b18b46162da66c2f528334101f6f40`, the original 54 transitions and every original before-blob. Only the three reviewed renderer after-blobs change; no protected path is exempted.
+The existing mandatory owner-Markdown CI entry now runs all 43 actual
+marked/jsdom renderer, CLI and import regressions plus targeted TypeScript checks.
+Restoring the exact earlier `fd6b91a5` escaping algorithm causes 23 of those cases
+to fail. The earlier implementation-string assertions are retained in Git history;
+the current checks assess the rendered values and adjacent cells. The documented
+retained-project command separately passes all 66 cases. Receiver-suite relocation
+preserves the four original suites outside native Hardhat discovery, with mandatory
+Node CI registration and actual discovery/command regressions.
 
-Fresh exact-head and merged-main qualification, including the corrected-source scan, remains mandatory. Historical test counts and a differential scan with no new alerts do not qualify this increment. Local bounded tests do not replace actual-source ancestry qualification or the incomplete independent boundary review.
+The owner-report findings correspond to confirmed inherited CodeQL High alerts
+#931, #932 and #936 (`js/incomplete-sanitization`) in the published rc.10 source.
+The complete remedy's original `62a024a` PR scan reports no new alerts. That is
+historical differential evidence; fresh full-head review and integrated/main scans
+remain mandatory. No alert is dismissed or declared closed by these notes.
+
+Contracts, compiler settings, economic behavior, dependencies, network settings,
+Hardhat configuration, receiver source pins, original project bytes and retained
+history remain unchanged by these corrections. The source record keeps dependency
+baseline `7b21ce05b0b18b46162da66c2f528334101f6f40`, all 54 original transitions
+and every original before-blob. The three reviewed renderer after-blobs change;
+the new literal helper is an explicit 55th transition with absence at the baseline.
+No protected path is exempted. The updated record and complete merged source
+require fresh independent exact-head review and qualification.
 
 ## Continue a project with its evidence
 
