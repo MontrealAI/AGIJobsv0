@@ -56,15 +56,15 @@ async function workFor(project, amountBaseUnits, compiledAt, upstreamSha256) {
   fail(cycle.mapping.choices.family === 'public-data' && record.spec.family === 'public-data', 'JOBS_PROJECT_MAPPING_UNAVAILABLE');
   const spec = validate(record.spec);
   const nativeSpecRaw = canonical(spec), nativeSpecSha256 = await exactDigest(nativeSpecRaw);
-  const { spec: executorSpec, mapping: nameMapping } = adaptExecutionSpec(spec);
+  const { spec: executorSpec, mapping: nameMapping, licenseMapping } = adaptExecutionSpec(spec);
   const executorSpecRaw = canonical(executorSpec), executorSpecSha256 = await exactDigest(executorSpecRaw);
   const compiledRaw = canonical(await compile(executorSpec, amountBaseUnits, compiledAt)), compiledSha256 = await exactDigest(compiledRaw);
   const envelope = { schema: 'agijobsv0.successor-public-data-work.v1', project: identity(project), upstreamSha256, source: PROJECT_SOURCE, route: PROJECT_ROUTE, executor: 'fixed-js-public-data-v1',
     native: { namespace: 'successor-workbench/v1', raw: nativeSpecRaw, sha256: nativeSpecSha256 },
-    execution: { namespace: 'successor-workbench/v1', raw: executorSpecRaw, sha256: executorSpecSha256, nameMapping },
+    execution: { namespace: 'successor-workbench/v1', raw: executorSpecRaw, sha256: executorSpecSha256, nameMapping, licenseMapping },
     planning: { amountBaseUnits, decimals: 18, status: 'unfunded-proposal' }, compiled: { sha256: compiledSha256, compiledAt } };
   const specRaw = canonical(envelope);
-  return { namespace: envelope.schema, executor: envelope.executor, nativeSpecRaw, nativeSpecSha256, executorSpecRaw, executorSpecSha256, nameMapping, specRaw, specSha256: await exactDigest(specRaw), compiledRaw, compiledSha256, compiledAt };
+  return { namespace: envelope.schema, executor: envelope.executor, nativeSpecRaw, nativeSpecSha256, executorSpecRaw, executorSpecSha256, nameMapping, licenseMapping, specRaw, specSha256: await exactDigest(specRaw), compiledRaw, compiledSha256, compiledAt };
 }
 async function seal(value) {
   const raw = canonical({ ...value, sha256: await exactDigest(canonical(value)) });

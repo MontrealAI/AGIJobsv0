@@ -19,7 +19,7 @@ for (const [label, originalName, compiledName] of cases) test(label + ': display
   const before = canonical(original);
   assert.equal(canonical(validate(original)), before);
   const adapted = adaptExecutionSpec(original);
-  assert.deepEqual(adapted.mapping, { policy: 'unicode-scalar-prefix-48-or-successor-label/v1', originalName, compiledName, maximumUtf16Units: 48 });
+  assert.deepEqual(adapted.mapping, { policy: 'nfc-unicode-scalar-prefix-48-or-successor-label/v1', originalName, compiledName, maximumUtf16Units: 48 });
   assert.equal(adapted.spec.name, compiledName);
   assert.ok(adapted.spec.name.length <= 48);
   assert.equal(canonical(adapted.spec), canonical({ ...original, name: compiledName }));
@@ -62,4 +62,32 @@ test('different originals sharing a compiled display label retain their exact da
     assert.deepEqual(packs[index].spec.inputs, originals[index].inputs);
     assert.equal(canonical(originals[index]), before[index]);
   }
+});
+
+test('a native-valid 64-unit decomposed name uses an NFC display label with exact original metadata', async () => {
+  const original = example('public-data'); original.name = 'e\u0301'.repeat(32);
+  const before = canonical(original); validate(original);
+  const adapted = adaptExecutionSpec(original);
+  assert.equal(adapted.mapping.originalName,original.name);
+  assert.equal(adapted.spec.name,'é'.repeat(32));
+  assert.equal(adapted.mapping.policy,'nfc-unicode-scalar-prefix-48-or-successor-label/v1');
+  assert.equal(canonical(original),before);
+  const planned = await plan(adapted.spec,'2026-10-16T00:00:00.000Z');
+  assert.equal(planned.constitution.title,adapted.spec.name);
+  const pack = await run(adapted.spec,{sourceHash:'a'.repeat(64)});
+  const record = await createRecord({missionId:'nfc-name',sourceHash:'a'.repeat(64),spec:adapted.spec});
+  const running = await startRun(record,{expectedRevision:record.revision,runId:'nfc-run'});
+  const completed = await completeRun(running,pack,{expectedRevision:running.revision,runId:'nfc-run'});
+  assert.equal((await validateRecord(completed)).result.pack.result.summary.total,295);
+});
+
+test('compiler-facing license NFC is explicit and noncompiler text stays exact', async () => {
+  const original=example('public-data');original.rights.license='e\u0301';original.rights.source='e\u0301';original.owner='e\u0301';original.inputs.unit='e\u0301';
+  const before=canonical(original);validate(original);
+  const adapted=adaptExecutionSpec(original);
+  assert.equal(adapted.spec.rights.license,'é');assert.equal(adapted.licenseMapping.originalLicense,original.rights.license);assert.equal(adapted.licenseMapping.compiledLicense,'é');
+  assert.equal(adapted.spec.rights.source,original.rights.source);assert.equal(adapted.spec.owner,original.owner);assert.equal(adapted.spec.inputs.unit,original.inputs.unit);assert.equal(canonical(original),before);
+  const pack=await run(adapted.spec,{sourceHash}),record=await createRecord({missionId:'license-mapping',sourceHash,spec:adapted.spec}),running=await startRun(record,{expectedRevision:record.revision,runId:'license-run'});
+  const completed=await completeRun(running,pack,{expectedRevision:running.revision,runId:'license-run'});assert.equal((await validateRecord(completed)).result.pack.result.summary.total,295);
+  const tooLarge=example('public-data');tooLarge.rights.license='\u0344'.repeat(1000);validate(tooLarge);const exact=canonical(tooLarge);assert.throws(()=>adaptExecutionSpec(tooLarge),/LICENSE_NORMALIZATION_UNAVAILABLE/);assert.equal(canonical(tooLarge),exact);
 });

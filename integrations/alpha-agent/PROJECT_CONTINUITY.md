@@ -18,10 +18,14 @@ existing Python Alpha market adapter.
 This is not a translation to Alpha's Python research/allocation work kinds.
 Every duplicate source row and integer unit remains unchanged. Native names
 of up to 64 UTF-16 units are preserved exactly in the original specification.
-The new local execution record and compiled jobs use an explicit Unicode-scalar
+The new local execution record and compiled jobs use an explicit NFC-normalized Unicode-scalar
 prefix of at most 48 UTF-16 units, with a nonblank fallback label when needed.
 `work.executorSpecRaw` and `work.nameMapping` commit this display-only adaptation;
-`work.nativeSpecRaw` retains the original. Both specifications and their exact
+`work.nativeSpecRaw` retains the original. The compiler-facing license text is also NFC-normalized explicitly in
+`work.licenseMapping`; its exact original remains in the native specification.
+If NFC expansion exceeds the native 1,000-unit license limit, mapping fails
+before drafting or execution without truncating license text. Owner, source,
+CSV and unit strings are retained unchanged. Both specifications and their exact
 hashes remain bound to the project work envelope, so equal shortened labels
 cannot rebind another original project. Source rights are
 supplied declarations that require review, not automatically established licenses.

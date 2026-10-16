@@ -14,8 +14,8 @@ import { PROJECT_SOURCE, importAlphaProject, inspectProjectTransfer, runProjectT
 const sourceHash = 'a'.repeat(64), sources = { discovery: { repository:'MontrealAI/AGI-Alpha-Agent-v0',commit:'b'.repeat(40),path:'examples/alpha-discovery/engine.mjs',sha256:'c'.repeat(64) }, mission: {repository:'MontrealAI/AGI-Alpha-Agent-v0',commit:'b'.repeat(40),path:'examples/successor-workbench/mission-record.mjs',sha256:'d'.repeat(64)} };
 const choices = { family:'public-data', selection:'explicit-user-selection', duplicatePolicy:'sum-all-rows-no-deduplication', unitPolicy:'unchanged-integer-units', dataRights:'synthetic' };
 const options = { amountBaseUnits:'7000000000000000000', compiledAt:'2026-10-16T00:00:00.000Z' };
-async function setup(csv,name) {
-  const spec = example('public-data'); if(csv) spec.inputs.csv = csv; if(name)spec.name=name;
+async function setup(csv,name,license) {
+  const spec = example('public-data'); if(csv) spec.inputs.csv = csv; if(name)spec.name=name; if(license!==undefined)spec.rights.license=license;
   const record = await native.createRecord({ missionId:'mission-1', sourceHash, spec });
   const p = await alpha.createProject({projectId:'project-1',cycleId:'cycle-1',sourceHash,discoveryBytes:canonical(await createBrief(alpha.publicDataOpportunity(),sourceHash)),record,choices,sources});
   return canonical(p);
@@ -108,6 +108,7 @@ test('rejected native review and a genuinely different second dataset survive im
 });
 for(const [name,mutate] of Object.entries({
   'executor display label rewrite': async t=>{const v=JSON.parse(t.work.executorSpecRaw);v.name='Substituted label';t.work.executorSpecRaw=canonical(v);t.work.executorSpecSha256=await alpha.exactDigest(t.work.executorSpecRaw);},
+  'license mapping rewrite': t=>{t.work.licenseMapping.compiledLicense='Substituted license';},
   'name mapping rewrite': t=>{t.work.nameMapping.compiledName='Substituted label';},
   'executor substitution': t=>{t.work.executor='alpha-native-v1';},
   'work namespace substitution': t=>{t.work.namespace='agialpha.bounded-work-spec.v1';},
@@ -232,7 +233,7 @@ test('manifest arrays cannot be cleared before the receiver module is imported',
   const result=spawnSync(process.execPath,['--input-type=module','-e',program],{encoding:'utf8',timeout:20000});assert.equal(result.status,0,result.stderr);
 });
 
-for(const [label,name] of [['49ASCII','A'.repeat(49)],['64ASCII','B'.repeat(64)],['astral-boundary','C'.repeat(47)+'🧠'+'tail'],['blank-prefix',' '.repeat(48)+'Z']])test('original '+label+' name survives actual Jobs import, execution and replay',async()=>{
+for(const [label,name] of [['49ASCII','A'.repeat(49)],['64ASCII','B'.repeat(64)],['astral-boundary','C'.repeat(47)+'🧠'+'tail'],['blank-prefix',' '.repeat(48)+'Z'],['decomposed-64','e\u0301'.repeat(32)]])test('original '+label+' name survives actual Jobs import, execution and replay',async()=>{
   const original=await setup('group,amount\nLong,9\nLong,-2\n',name),draft=await importAlphaProject(original,options);
   const imported=await inspectProjectTransfer(draft),work=imported.transfer.work,execution=JSON.parse(work.executorSpecRaw);
   assert.equal(JSON.parse(work.nativeSpecRaw).name,name);assert.equal(work.nameMapping.originalName,name);assert.ok(execution.name.length<=48);assert.ok(execution.name.trim());
@@ -246,4 +247,17 @@ test('two original names sharing one compiled label retain distinct full project
   const names=['D'.repeat(48)+'first','D'.repeat(48)+'second'],transfers=[];
   for(const name of names)transfers.push((await inspectProjectTransfer(await importAlphaProject(await setup(undefined,name),options))).transfer);
   assert.equal(transfers[0].work.executorSpecRaw,transfers[1].work.executorSpecRaw);assert.notEqual(transfers[0].work.nativeSpecSha256,transfers[1].work.nativeSpecSha256);assert.notEqual(transfers[0].work.specSha256,transfers[1].work.specSha256);assert.notEqual(transfers[0].project.projectDigest,transfers[1].project.projectDigest);
+});
+
+test('native NFD license is preserved exactly with explicit NFC executor mapping and actual replay',async()=>{
+  const original=await setup(undefined,'License mapping','e\u0301'),draft=await importAlphaProject(original,options);
+  const actual=await inspectProjectTransfer(await runProjectTransfer(draft)),work=actual.transfer.work;
+  assert.equal(JSON.parse(work.nativeSpecRaw).rights.license,'e\u0301');assert.equal(JSON.parse(work.executorSpecRaw).rights.license,'é');
+  assert.equal(work.licenseMapping.originalLicense,'e\u0301');assert.equal(work.licenseMapping.compiledLicense,'é');assert.equal(actual.lastRecord.spec.rights.license,'é');assert.equal(actual.transfer.original.raw,original);assert.equal(actual.lastRecord.result.pack.result.summary.total,295);
+});
+
+test('license NFC expansion beyond native capacity fails before a draft or work is created',async()=>{
+  const original=await setup(undefined,'License expansion','\u0344'.repeat(1000));
+  await assert.rejects(importAlphaProject(original,options),/LICENSE_NORMALIZATION_UNAVAILABLE/);
+  assert.equal((await alpha.validateProject(original)).projectId,'project-1');
 });
