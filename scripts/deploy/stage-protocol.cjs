@@ -17,6 +17,8 @@ async function stageProtocol(deployer, ids, governance, options = {}) {
       `${source}:${name}`,
       signer
     );
+    if (options.authority)
+      options.authority.checkFactory(name, factory, `${source}:${name}`);
     const componentId = ethers.id(name);
     let address = await deployer.components(componentId);
     const controller = [
@@ -26,23 +28,49 @@ async function stageProtocol(deployer, ids, governance, options = {}) {
     ].includes(name);
     if (controller) {
       args.push(
-        address === zero
-          ? await deployImplementations(name, signer, ethers, options)
+        address === zero || options.authority
+          ? await deployImplementations(name, signer, ethers, {
+              ...options,
+              existingAddresses:
+                address === zero
+                  ? undefined
+                  : Array.from(
+                      await factory.attach(address).implementationModules()
+                    ),
+            })
           : Array.from(await factory.attach(address).implementationModules())
       );
     }
+    if (options.authority)
+      options.authority.checkFactory(name, factory, `${source}:${name}`);
     const { data } = await factory.getDeployTransaction(...args);
     if (address === zero) {
       try {
-        const transaction = await deployer.deployComponent(
-          componentId,
-          data,
-          controller,
-          overrides
-        );
-        if (options.onSubmitted)
-          await options.onSubmitted(name, transaction.hash);
-        await transaction.wait();
+        if (options.authority) {
+          const operation = await options.authority.send(
+            `component:${name}`,
+            'Deployer',
+            coordinator,
+            deployer.interface.encodeFunctionData('deployComponent', [
+              componentId,
+              data,
+              controller,
+            ]),
+            overrides
+          );
+          if (options.onSubmitted)
+            await options.onSubmitted(name, operation.hash);
+        } else {
+          const transaction = await deployer.deployComponent(
+            componentId,
+            data,
+            controller,
+            overrides
+          );
+          if (options.onSubmitted)
+            await options.onSubmitted(name, transaction.hash);
+          await transaction.wait();
+        }
       } catch (error) {
         throw new Error(
           `${name} deployment failed at coordinator ${coordinator}. Reconcile submitted transactions and keep this coordinator address to resume with the same configuration.`,
@@ -58,6 +86,8 @@ async function stageProtocol(deployer, ids, governance, options = {}) {
         `Cannot resume ${name}: constructor configuration or bytecode changed`
       );
     }
+    if (options.authority)
+      await options.authority.checkComponentRuntime(name, address, args);
     const contract = factory.attach(address);
     if (options.onDeployed)
       await options.onDeployed(name, contract, args, `${source}:${name}`);
@@ -157,7 +187,15 @@ async function stageProtocol(deployer, ids, governance, options = {}) {
     committee,
   ];
   if (!alreadyRegistered) {
-    await (await deployer.registerModules(addresses, overrides)).wait();
+    if (options.authority) {
+      await options.authority.send(
+        'register',
+        'Deployer',
+        coordinator,
+        deployer.interface.encodeFunctionData('registerModules', [addresses]),
+        overrides
+      );
+    } else await (await deployer.registerModules(addresses, overrides)).wait();
   }
   return addresses;
 }

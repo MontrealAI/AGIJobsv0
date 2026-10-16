@@ -550,7 +550,7 @@
     "validator:service": "node apps/validator/dist/apps/validator/index.js",
     "deploy:plan": "ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/plan-deploy.ts",
     "deploy:staged": "hardhat run scripts/v2/deployDefaults.ts",
-    "deploy:local": "hardhat run scripts/v2/deployDefaults.ts --network hardhat",
+    "deploy:local": "node demo/aurora/bin/deploy-hardhat.cjs",
     "test:dependency-compat": "node --test scripts/security/test/*.test.cjs scripts/security/test/*.test.mjs",
     "alpha-agent:project": "node integrations/alpha-agent/project-cli.mjs",
     "alpha-agent:project:test": "node --test integrations/alpha-agent/tests/alpha-project-source.test.mjs integrations/alpha-agent/tests/alpha-project-name.test.mjs integrations/alpha-agent/tests/alpha-project-transfer.test.mjs integrations/alpha-agent/tests/alpha-project-receipt.test.cjs"

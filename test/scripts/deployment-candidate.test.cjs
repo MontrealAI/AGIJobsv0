@@ -18,7 +18,13 @@ function config() {
   return {
     network: 'mainnet',
     chainId: 1,
+    campaign: { chainId: 1, blockNumber: 42, blockHash: ethers.id('block') },
     governance: addresses.governance,
+    authority: {
+      stakeManagerTreasury: addresses.governance,
+      feePoolTreasury: addresses.governance,
+      feePoolGovernance: addresses.governance,
+    },
     agialpha: addresses.token,
     econ: {
       feePct: 5,
@@ -109,6 +115,24 @@ test('valid read-only candidate pins evidence, normalizes ENS and keeps executio
 });
 test('rejects wrong target, zero governance, token mismatch, ambiguous economics and launch unpause', () => {
   const mutations = [
+    [
+      (c) => {
+        delete c.campaign;
+      },
+      /campaign/,
+    ],
+    [
+      (c) => {
+        c.campaign.chainId = 11155111;
+      },
+      /campaign/,
+    ],
+    [
+      (c) => {
+        c.campaign.blockHash = '0x12';
+      },
+      /campaign/,
+    ],
     [
       (c) => {
         c.chainId = 11155111;
@@ -412,14 +436,20 @@ test('deployment evidence retains append-only checkpoints and rejects replaced o
 });
 
 test('percentage configuration rejects fixed amounts and requires explicit valid bps', () => {
-  const old = config(); old.econ.jobStake = '500';
-  assert.throws(() => validateConfig(old, 'mainnet', token), /Legacy econ.jobStake/);
+  const old = config();
+  old.econ.jobStake = '500';
+  assert.throws(
+    () => validateConfig(old, 'mainnet', token),
+    /Legacy econ.jobStake/
+  );
   for (const bps of [-1, 10001, 1.5, '1000', null, undefined]) {
-    const c = config(); c.econ.jobStakeBps = bps;
+    const c = config();
+    c.econ.jobStakeBps = bps;
     assert.throws(() => validateConfig(c, 'mainnet', token), /jobStakeBps/);
   }
   for (const bps of [0, 1000, 10000]) {
-    const c = config(); c.econ.jobStakeBps = bps;
+    const c = config();
+    c.econ.jobStakeBps = bps;
     assert.equal(validateConfig(c, 'mainnet', token).econ.jobStakeBps, bps);
   }
 });

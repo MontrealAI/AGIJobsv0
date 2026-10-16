@@ -16,6 +16,7 @@ prepare_local_node() {
   export AGI_RPC_URL="$RPC_URL"
   export CHAIN_ID=31337
   LOCAL_NODE_STATE="$(mktemp -d "${TMPDIR:-/tmp}/agi-demo-node.XXXXXX")" || return $?
+  export LOCAL_NODE_STATE
   LOG_FILE="$LOCAL_NODE_STATE/node-private.log"
   trap cleanup_local_node EXIT
   trap 'exit 130' INT
@@ -55,4 +56,14 @@ cleanup_local_node() {
     echo "Local demo failed. Private node diagnostics: ${LOCAL_NODE_STATE:-unavailable}. Do not publish node-private.log (development keys may appear)." >&2
   fi
   exit "$status"
+}
+
+# Bind the demo template to this newly launched, exclusively owned chain.
+prepare_local_deployment_config() {
+  check_local_node || return $?
+  export AURORA_LOCAL_DEPLOY_CONFIG="$LOCAL_NODE_STATE/deployer.json"
+  export DEPLOYMENT_LOCK_DIRECTORY="$LOCAL_NODE_STATE/creator-locks"
+  mkdir "$DEPLOYMENT_LOCK_DIRECTORY" || return $?
+  node "$ROOT/demo/aurora/bin/local-authority.cjs" prepare \
+    "$ROOT/demo/aurora/config/deployer.hardhat.json" "$AURORA_LOCAL_DEPLOY_CONFIG"
 }

@@ -70,7 +70,7 @@ protection rule in lock-step with the manifests.【F:.github/workflows/ci.yml†
 
 - **Pause / resume** – `npm run owner:system-pause -- --network <network>` toggles the global pause switch declared in
   `config/system-pause.json`. The script emits structured JSON so non-technical owners can confirm the transaction before
-  broadcasting.【F:scripts/v2/systemPauseAction.ts†L1-L289】
+  broadcasting.【F:scripts/v2/systemPauseAction.ts†L1-L289】 Public unpause, including dry runs, now requires original new-deployment authority evidence and remains blocked while full history/indirect-authority/explorer qualification is incomplete. Historical addressbooks are unsupported by this path; see [the current guide](../docs/deployment-v2-agialpha.md).
 - **Parameter matrix** – `npm run owner:parameters -- --network <network>` renders the current treasury, fee, thermostat, and
   validator settings from every manifest, matching the matrix generated in CI for compliance artefacts.【F:scripts/v2/ownerParameterMatrix.ts†L1-L612】
 - **Bulk upgrades** – `npm run owner:update-all -- --network <network>` walks each manifest and applies the updated values

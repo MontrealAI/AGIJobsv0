@@ -6,6 +6,11 @@ import { randomBytes } from 'crypto';
 import { ethers } from 'ethers';
 import { resolveNamespace } from './bin/report-paths.cjs';
 import { quorum as validateQuorum, missionPlan } from './bin/mission-plan.cjs';
+const {
+  requireOwnedLocal,
+  commissionLocalAuthority,
+  readLocalAuthority,
+} = require('./bin/local-authority.cjs');
 
 type DeploySummary = {
   contracts: Record<string, string>;
@@ -287,60 +292,6 @@ function createNonceManagedSigner(
   bufferGasEstimates(wallet);
   const manager = new ethers.NonceManager(wallet);
   return Object.assign(manager, { address: wallet.address }) as AddressedSigner;
-}
-
-async function impersonateSigner(
-  provider: ethers.JsonRpcProvider,
-  address: string
-): Promise<AddressedSigner> {
-  const normalised = ethers.getAddress(address);
-  const methods = ['hardhat_impersonateAccount', 'anvil_impersonateAccount'];
-  let impersonated = false;
-  for (const method of methods) {
-    try {
-      await provider.send(method, [normalised]);
-      impersonated = true;
-      break;
-    } catch (err) {
-      // Continue trying other RPC namespaces.
-    }
-  }
-  if (!impersonated) {
-    throw new Error(
-      `Unable to impersonate required account ${normalised}. Provide a PRIVATE_KEY with control or enable impersonation.`
-    );
-  }
-  let signer;
-  try {
-    signer = await provider.getSigner(normalised);
-  } catch (err) {
-    throw new Error(
-      `Provider cannot supply signer for ${normalised}: ${
-        (err as Error).message
-      }`
-    );
-  }
-  bufferGasEstimates(signer);
-  const manager = new ethers.NonceManager(signer);
-  return Object.assign(manager, { address: normalised }) as AddressedSigner;
-}
-
-async function stopImpersonating(
-  provider: ethers.JsonRpcProvider,
-  address: string
-) {
-  const normalised = ethers.getAddress(address);
-  const methods = [
-    'hardhat_stopImpersonatingAccount',
-    'anvil_stopImpersonatingAccount',
-  ];
-  for (const method of methods) {
-    try {
-      await provider.send(method, [normalised]);
-    } catch (err) {
-      // Ignore errors so cleanup is best-effort.
-    }
-  }
 }
 
 async function ensureAgialpha(
@@ -694,7 +645,8 @@ async function main() {
     cacheTimeout: -1,
   });
   const chain = await provider.getNetwork();
-  if (chain.chainId === 31337n) provider.pollingInterval = 100;
+  await requireOwnedLocal(provider, networkName);
+  provider.pollingInterval = 100;
   const decimals = Number(AGIALPHA_CONFIG.decimals || 18);
 
   const governanceActions: GovernanceAction[] = [];
@@ -838,6 +790,17 @@ async function main() {
     throw new Error(`Deployment summary missing contracts map: ${summaryPath}`);
   }
 
+  const localConfig = process.env.AURORA_LOCAL_DEPLOY_CONFIG;
+  if (!localConfig)
+    throw new Error('Missing fresh owned-chain deployment configuration.');
+  const { governor, actions, certificate } = await commissionLocalAuthority(
+    deploySummary,
+    provider,
+    localConfig
+  );
+  governanceActions.push(...actions);
+  writeReceipt(networkName, 'local-authority.json', certificate);
+
   const addresses = deploySummary.contracts;
   const thermostatAddress = addresses.Thermostat;
   if (thermostatConfig && !thermostatAddress) {
@@ -887,16 +850,16 @@ async function main() {
   const identityRegistry = new ethers.Contract(
     addresses.IdentityRegistry,
     identityRegistryArtifact.abi,
-    employer
+    governor
   );
   const systemPause = new ethers.Contract(
     addresses.SystemPause,
     systemPauseArtifact.abi,
-    employer
+    governor
   );
   const thermostat =
     thermostatArtifact && thermostatAddress
-      ? new ethers.Contract(thermostatAddress, thermostatArtifact.abi, employer)
+      ? new ethers.Contract(thermostatAddress, thermostatArtifact.abi, governor)
       : null;
 
   const recordForwardGovernanceCall = async (
@@ -1048,6 +1011,12 @@ async function main() {
       'Verified every managed module is paused before the resume drill.'
     );
   }
+  // Fresh complete controlled-contract readback gates this disposable-only drill.
+  writeReceipt(
+    networkName,
+    'local-authority.json',
+    await readLocalAuthority(deploySummary, provider, localConfig)
+  );
   await recordDirectGovernanceCall(
     'SystemPause',
     'unpauseAll',
@@ -1119,11 +1088,10 @@ async function main() {
     throw new Error('StakeManager is not registered as a tax acknowledger.');
   }
 
-  let identityCleanup: (() => Promise<void>) | null = null;
   let identityReady = true;
   try {
     const pendingIdentityOwner = await identityRegistry.pendingOwner();
-    if (pendingIdentityOwner.toLowerCase() === employer.address.toLowerCase()) {
+    if (pendingIdentityOwner.toLowerCase() === governor.address.toLowerCase()) {
       await recordDirectGovernanceCall(
         'IdentityRegistry',
         'acceptOwnership',
@@ -1135,29 +1103,11 @@ async function main() {
     const normalisedIdentityOwner = identityOwnerAddress
       ? identityOwnerAddress.toLowerCase()
       : ethers.ZeroAddress;
-    let identityOwnerSigner: AddressedSigner = employer;
-    if (normalisedIdentityOwner !== employer.address.toLowerCase()) {
-      const ownerCode = await provider.getCode(identityOwnerAddress);
-      if (ownerCode !== '0x') {
-        throw new Error(
-          `Identity owner ${identityOwnerAddress} is a contract. Skipping manual allowlist; configure ENS proofs instead.`
-        );
-      }
-      identityOwnerSigner = await impersonateSigner(
-        provider,
-        identityOwnerAddress
+    const identityOwnerSigner: AddressedSigner = governor;
+    if (normalisedIdentityOwner !== governor.address.toLowerCase())
+      throw new Error(
+        'IdentityRegistry owner differs from the commissioned local governor.'
       );
-      const balance = await provider.getBalance(identityOwnerAddress);
-      const minimumBalance = ethers.parseEther('0.1');
-      if (balance < minimumBalance) {
-        const fundTx = await employer.sendTransaction({
-          to: identityOwnerAddress,
-          value: minimumBalance,
-        });
-        await fundTx.wait();
-      }
-      identityCleanup = () => stopImpersonating(provider, identityOwnerAddress);
-    }
 
     const identityWithOwner = identityRegistry.connect(identityOwnerSigner);
     await recordDirectGovernanceCall(
@@ -1180,10 +1130,6 @@ async function main() {
       '⚠️  Unable to apply identity overrides automatically:',
       (err as Error).message
     );
-  } finally {
-    if (identityCleanup) {
-      await identityCleanup();
-    }
   }
 
   if (!identityReady) {

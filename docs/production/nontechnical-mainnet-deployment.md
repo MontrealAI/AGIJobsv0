@@ -12,7 +12,7 @@ The six checkpoints below describe the general process for a new deployment. The
 
 ## The six checkpoints
 
-1. **Try it locally.** The operator runs `npm ci`, `npm run compile` and `npm run deploy:local`. No real wallet or funds are needed. Ask to see the JSON report.
+1. **Try it locally.** The operator runs `npm ci`, `npm run compile` and `npm run deploy:local`. This selects an explicit, role-separated disposable Hardhat fixture and leaves it paused. No real wallet or funds are needed. Ask to see the JSON report; public signing and activation remain separately blocked.
 2. **Review one plan.** Confirm the network, token, governance address, ENS roots, fees, stakes, tax wording and launch limits. These belong in one reviewed JSON file. Never send private keys through a document or chat.
 3. **Inspect before spending.** `npm run deploy:plan` produces a read-only report. Ask the operator to explain every blocker. Offline inspection cannot verify a blockchain.
 4. **Deploy while paused.** After approvals, the operator uses the staged Hardhat command from the current guide. It records transactions and keeps the eight managed modules paused through handoff.
