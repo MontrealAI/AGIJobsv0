@@ -1,0 +1,309 @@
+{
+  "schemaVersion": 2,
+  "dependencyBaseline": "7b21ce05b0b18b46162da66c2f528334101f6f40",
+  "reviewedSourceCheckpoint": "1b24aecca7ed1d73bb4a8ea49ed68a36060628ac",
+  "transitionCount": 60,
+  "scope": "Retain all 54 prior reviewed transitions and before-blobs, the corrected reputation/percentage-collateral contracts, exact native receiver selection and immutable deployment evidence. Review complete literal-text escaping, import-safe renderer exports and CLI guards in the three owner reports, plus the explicitly inventoried new Markdown literal helper (absent at dependency baseline). No protected-path exemption, dependency, compiler or network change. Fresh independent exact-head source review, CodeQL and full integrated qualification remain mandatory; production approval remains false. Additional independently reviewed tooling: journal new-campaign creation/authority handover, source-bound receipts, cooperative sender exclusion, explicit separate fee/treasury roles and signer-free activation evidence. Solidity, compiler, numeric economics and historical deployment evidence remain unchanged.",
+  "transitions": [
+    {
+      "path": "config/contracts.orchestrator.json",
+      "before": "4c5a49cce256dc352e2f709daa4ced6e7737edf4",
+      "after": "68b5588aadb3e02d45bf61e580d762475b52ec06"
+    },
+    {
+      "path": "config/job-registry.ci.json",
+      "before": "74a2b81f095722e1094d7e53b3e94bcce5d3b9a9",
+      "after": "f067d08306bb7bd72607df6d8e01829e8d17e2de"
+    },
+    {
+      "path": "config/job-registry.json",
+      "before": "c41ef79a339a7c5bcbf02ef1b1f423f64ff8b9c5",
+      "after": "59b72207f40979de9e04f61b077c9c9357f8589b"
+    },
+    {
+      "path": "contracts/test/HGMJobRegistryMock.sol",
+      "before": "1d4713e6bcb1135c95db70b3a00a94d23ea34c33",
+      "after": "aff7465c171b87c482e99561d6f9bc278ef1b650"
+    },
+    {
+      "path": "contracts/test/LegacyJobImplementationIdentity.sol",
+      "before": null,
+      "after": "3c9b988c69a8e6a10d3536044df0f39a8c5214f9"
+    },
+    {
+      "path": "contracts/v2/Deployer.sol",
+      "before": "26b98e15c90fdd2d2260f4e9f45dbd37edbfee44",
+      "after": "a7fe43cabee7c9937b5e523d18071e5a6d51f306"
+    },
+    {
+      "path": "contracts/v2/JobRegistry.sol",
+      "before": "c64d46ceb685a7deefa65db386ecbfe155f6c634",
+      "after": "685e0c58ae2794881a73f4c75f9fc22f48eb020a"
+    },
+    {
+      "path": "contracts/v2/ReputationEngine.sol",
+      "before": "e8de64d2ed9cc4edb27cb596f172d950493178aa",
+      "after": "44214ac8ce209cd70a68beb34427de6a6c48e007"
+    },
+    {
+      "path": "contracts/v2/ValidationModule.sol",
+      "before": "2d95054f977c1b68867443c8fd5eda4a711015ff",
+      "after": "84b2039b17506f2e24fef91f73f3d13925ea9916"
+    },
+    {
+      "path": "contracts/v2/admin/HGMControlModule.sol",
+      "before": "ef881f901da8f68dab123b9e848fd90271aacdb3",
+      "after": "4b7668bdfb64eaf164259ae9dc0505a2e817ea28"
+    },
+    {
+      "path": "contracts/v2/implementation/JobRegistryBase.sol",
+      "before": "84df1fcb6a7cdf99261c30aab34f0ed8f88dc9ac",
+      "after": "ec113637bf0d6eef8ec4b665fd3d21f79aef607a"
+    },
+    {
+      "path": "contracts/v2/implementation/JobRegistryConfiguration.sol",
+      "before": "1c24ea9893fb06a1df9997329b88d4cc34948bb7",
+      "after": "e09120352c9263db80e56e1017db26de8f13aa04"
+    },
+    {
+      "path": "contracts/v2/implementation/JobRegistryLifecycle.sol",
+      "before": "d8d41faeebfe543719ce8955bccbe9f2ac519076",
+      "after": "31472b6322649026d20d7a09527068ab54b1a84c"
+    },
+    {
+      "path": "contracts/v2/implementation/JobRegistrySettlement.sol",
+      "before": "ffe98a08d8294f49d4571ec5a06fe7c14a06cef4",
+      "after": "35f3cfed23906a34eb73fdfdcc25145a54edc68d"
+    },
+    {
+      "path": "contracts/v2/implementation/ValidationModuleBase.sol",
+      "before": "1b958bff262ec1986e2d95a486b01d21d1742929",
+      "after": "560cd9926e5dd9e5209361298a00135915b252d6"
+    },
+    {
+      "path": "contracts/v2/implementation/ValidationModuleConfiguration.sol",
+      "before": "c955fba9069c49f143bc527d9dd84a8c33329bda",
+      "after": "a43d0fd877934b3326a383263cf47e7b3c4fe9e8"
+    },
+    {
+      "path": "contracts/v2/implementation/ValidationModuleSelection.sol",
+      "before": "b6191486606f65e296b0c9f4b6b44f66738c6a93",
+      "after": "952245225e9ed23a89938a2a57dab1f986aa7659"
+    },
+    {
+      "path": "contracts/v2/implementation/ValidationModuleVoting.sol",
+      "before": "286c1338e907ff85e512414fcbe7f9b412334bf7",
+      "after": "4eb9b20832b2bf1a0648d98eb10a61e133b80f74"
+    },
+    {
+      "path": "contracts/v2/interfaces/IJobRegistry.sol",
+      "before": "c49fb0d8bbfc386a1cfb4cb031a7e334b66348b6",
+      "after": "79bee7d2fe86c7a290b30f2a55a19a88adedf27a"
+    },
+    {
+      "path": "contracts/v2/interfaces/IJobRegistryControl.sol",
+      "before": "93492640464cc7464e51b3aed6fd67033b5db4ae",
+      "after": "a449445be5d00ac48f489fc0a4a291a96a4e9c1c"
+    },
+    {
+      "path": "contracts/v2/interfaces/IJobStakePolicy.sol",
+      "before": null,
+      "after": "58d3ab1302a6d6e22d6f344ec976ba5e997fe601"
+    },
+    {
+      "path": "contracts/v2/interfaces/IValidationModule.sol",
+      "before": "42e3561cd9c7a0f19b4c35435ae5852209ccaf0e",
+      "after": "bc157819a1969d09eca236cfa6b15f93f679070e"
+    },
+    {
+      "path": "contracts/v2/mocks/ValidationStub.sol",
+      "before": "f9b3dfac7c1ee4affa5778c999d66c69cf84d5de",
+      "after": "369a001c076994b2e15316e75bdadbd5cb88cb68"
+    },
+    {
+      "path": "contracts/v2/modules/NoValidationModule.sol",
+      "before": "d8beebdd1b5c2217e32c2a2a7ef2e7ec642e9c20",
+      "after": "97889dd71e0388d722b9021882c3f9fa59f8c3a7"
+    },
+    {
+      "path": "contracts/v2/modules/OracleValidationModule.sol",
+      "before": "8e4e0ff1898ae35150d8e551d3d31022e18661ab",
+      "after": "90d48592ce89a0e3c22b0c66de4d59d05f748c8c"
+    },
+    {
+      "path": "demo/alpha-agi-insight-mark/hardhat.config.ts",
+      "before": "59c72df8983d6f4de2277840f6895c54d41c53ac",
+      "after": "1cec124c760101bb2cb06c06b573ee336d23eac9"
+    },
+    {
+      "path": "deployment-config/deployer.sample.json",
+      "before": "85e0b7dce4a4f764ad4a4568e80a6ade90523d3a",
+      "after": "03ee2e0c9f1f2a440f16a96073b9ff592d8b75df"
+    },
+    {
+      "path": "deployment-config/mainnet.json",
+      "before": "548c15449de4a5e762d51b09ee2a1e8c68d4d019",
+      "after": "d36f451dfa5bb9b6a227af23fc898aafaf6dec68"
+    },
+    {
+      "path": "deployment-config/sepolia.json",
+      "before": "79c2e73c9d9f091776e88b71e14981c265970381",
+      "after": "9de5f5014a11ae43921808381f9685e4a4959b97"
+    },
+    {
+      "path": "scripts/config/index.d.ts",
+      "before": "8fcbaf30da28b41bca4c34761cbd4846ac7e614b",
+      "after": "328be2dca5a9abb3db35c8647199c136aead8359"
+    },
+    {
+      "path": "scripts/config/index.js",
+      "before": "dd0166385e2eda90e02763c71888264160837d4d",
+      "after": "d7b79574d7ec42826c94f1dfd5f400cbd51aee9a"
+    },
+    {
+      "path": "scripts/deploy/authority-audit.cjs",
+      "before": null,
+      "after": "808c6d5c4903299160f90bb0e108eb00078cee6a"
+    },
+    {
+      "path": "scripts/deploy/authority-handover.cjs",
+      "before": null,
+      "after": "003d8242d9c31a231e96a7a2a25089da21a3a396"
+    },
+    {
+      "path": "scripts/deploy/authority-runtime.cjs",
+      "before": null,
+      "after": "2132fbd1e24874ed3809fae3ce0bb14a03a88377"
+    },
+    {
+      "path": "scripts/deploy/implementations.cjs",
+      "before": "36d1e885cc03100d5b9485876fd8eb2bb2b3225b",
+      "after": "78a5d6c58866c203b7327d71fb92720491145f6f"
+    },
+    {
+      "path": "scripts/deploy/prebuilt-implementations.cjs",
+      "before": "fb5368e7d35b8cc9c64abb16b08b4e100082b3f9",
+      "after": "e56ac6393039b4cb370e7462ff0804686b6aa1f7"
+    },
+    {
+      "path": "scripts/deploy/providerAgnosticDeploy.ts",
+      "before": "9a965713b78bfec7eae3523dd3bcdf5795478c65",
+      "after": "93e76dd73aa980f18cbfce33f480b7a7717c24a6"
+    },
+    {
+      "path": "scripts/deploy/stage-protocol.cjs",
+      "before": "f8ff5a83c22f6031f5fa32413a3056133fa82379",
+      "after": "744219becb9eb844a0b3b4d4002cfdfc8f72727c"
+    },
+    {
+      "path": "scripts/v2/__tests__/agiOsFirstClassDemo.test.ts",
+      "before": "2d5ecd4000b284314b966b8dad6bcad2e9f90876",
+      "after": "95e599bd1e79e188cc0ad2723e2ded8beb4a352e"
+    },
+    {
+      "path": "scripts/v2/agiOsFirstClassDemo.ts",
+      "before": "76bbafa7ac86a8294189572978c61aff6cd5b51a",
+      "after": "125fed92359799aeb6be1f87deaaeda030d737bd"
+    },
+    {
+      "path": "scripts/v2/apply-secure-defaults.ts",
+      "before": "fe23636435b4bc6e7b8eebefa906b80931feaa60",
+      "after": "38da5b75f19360fe43fd03af05e360712bfca72f"
+    },
+    {
+      "path": "scripts/v2/deploy.ts",
+      "before": "bd064473dee1a034b4f193f2e31c33213393b395",
+      "after": "ec8bc02db483e595653dfdb91f1467ce8d764637"
+    },
+    {
+      "path": "scripts/v2/deployDefaults.ts",
+      "before": "07b7e1859a4ea386c2f84a31cf8cbb5c4a1f28ca",
+      "after": "76c0e1a7310d612b95fbb9cbf6923ea7e59db176"
+    },
+    {
+      "path": "scripts/v2/lib/deployment-candidate.cjs",
+      "before": "219901529cc1e331fc3dbf6429cc4d6ebbf85dcd",
+      "after": "7dde78155db482d9c0332d94131a954d6a77ad73"
+    },
+    {
+      "path": "scripts/v2/lib/jobRegistryPlan.ts",
+      "before": "912e0ec8aad339469074e9bfe65c0577058f6a11",
+      "after": "ca216433fa8ee18e145e2276bb883c4c118ab2b2"
+    },
+    {
+      "path": "scripts/v2/lib/markdownLiteral.ts",
+      "before": null,
+      "after": "b5bc8edcd2b065a4feda6d2f0633047690ef1bea"
+    },
+    {
+      "path": "scripts/v2/lib/oneclick-config.cjs",
+      "before": "c14bb65d240f75e6ef6fd97726b38d0bf551abdc",
+      "after": "384dd2ca3165f28fa650808426e5dedba725c19d"
+    },
+    {
+      "path": "scripts/v2/lib/platformRegistryPlan.ts",
+      "before": "531de6e8cf109505759f83e7c761730e2a24bb3d",
+      "after": "2069db0151172961b203ce101d4943506b81b779"
+    },
+    {
+      "path": "scripts/v2/migrateValidationModule.ts",
+      "before": "7474cc6ab6a2909b484599832ccfacdc86388027",
+      "after": "9d1a056f5204dca3347dd9aa7ca1834eb0444ff9"
+    },
+    {
+      "path": "scripts/v2/oneclick-deploy.ts",
+      "before": "5c49173fde7ea0574a219440fa943188c8fd77dd",
+      "after": "c704f95acda974d6c3d20cfbe81e90afb7401865"
+    },
+    {
+      "path": "scripts/v2/oneclick-stack.ts",
+      "before": "19f87e6458a5de8a78905cc75e0fac4074284956",
+      "after": "c5b324aad31ea1044387aa7af60cd262f2c67ec5"
+    },
+    {
+      "path": "scripts/v2/owner-config-wizard.ts",
+      "before": "62f6f525fc1ae68270c9324ac76c67b8a5446c6e",
+      "after": "205148fae9d85c96aad96d88924719dcba1f77f1"
+    },
+    {
+      "path": "scripts/v2/ownerCommandCenter.ts",
+      "before": "30fc23f9285742ccaed5b445958ae7bcd570235c",
+      "after": "4b7df16ec872433c2dd2f31d081969cb4e544caf"
+    },
+    {
+      "path": "scripts/v2/ownerControlAtlas.ts",
+      "before": "f2d0a3ecbbb4bb3c0665e2f273d6ea8545454fb0",
+      "after": "52bb6fdc81fd8bdc34176947976b6f60c835e768"
+    },
+    {
+      "path": "scripts/v2/ownerControlBlueprint.ts",
+      "before": "f10346c3cd07850397fb3e01c05192bd0592ec60",
+      "after": "623d465466bb9c34911b963e24d84a462d8ea837"
+    },
+    {
+      "path": "scripts/v2/ownerControlSurface.ts",
+      "before": "e4f077334bdf020dfa50dd66aa3fbadce010cf96",
+      "after": "78876dc1206efec422b63c9a5b5ee433541bd156"
+    },
+    {
+      "path": "scripts/v2/systemPauseAction.ts",
+      "before": "64d8212e3b7ccc7717b972d6bf2cf5339e7c24c6",
+      "after": "33ce0cf100b76ba81fee9695a6885251ba45d784"
+    },
+    {
+      "path": "scripts/v2/testnetDryRun.ts",
+      "before": "993e563366212b0b4959cf07baa8b005b2b12b45",
+      "after": "f2dcdf973e8d7d0f20861092714ef0bf4ec5d0b0"
+    },
+    {
+      "path": "test/v2/invariant/JobStakePercentageInvariant.t.sol",
+      "before": null,
+      "after": "f3dadcb923170928c5fb35bc7aa435a06f067c3b"
+    },
+    {
+      "path": "test/v2/invariant/ReputationGrowthInvariant.t.sol",
+      "before": null,
+      "after": "83e9faaa7191e0c83974014672c13b9da316d896"
+    }
+  ]
+}

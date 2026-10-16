@@ -14,7 +14,7 @@ const evidenceBaseline = '9c730e0188594089e27ed0589c2b5ca57eec5cf5';
 // the final protected tree; fresh independent review remains a merge gate.
 // Compiler policy and historical deployment guards remain unchanged; publication
 // additionally requires qualification of the exact merged SHA.
-const compilerSourceBaseline = '29721b96ab4443e213afecfd423422aef1b327fe';
+const compilerSourceBaseline = '1b24aecca7ed1d73bb4a8ea49ed68a36060628ac';
 const preservedEvidencePaths = [
   'docs/deployments/',
   'docs/deployment-addresses.json',

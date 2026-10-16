@@ -29,9 +29,11 @@ const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex');
 // This digest pins the reviewed record itself, not just paths supplied by it.
 // Changing this trust anchor requires a new independent source review.
 const REVIEWED_RECORD_SHA256 =
-  '0c042f20bab1cd9cab3fed7ae833ed489eec61e0fc0064452c941fef48b50b25';
+  'e36e2c1d807d0d4ff45c88ef3da06be1312a025dbf8e23ef437236d611b44ddc';
 const reviewedRecord = () => ({
-  bytes: fs.readFileSync(path.join(__dirname, 'reviewed-source-rc11.json')),
+  bytes: fs.readFileSync(
+    path.join(__dirname, 'reviewed-source-jobs-handover-20261016.json')
+  ),
   digest: REVIEWED_RECORD_SHA256,
 });
 
