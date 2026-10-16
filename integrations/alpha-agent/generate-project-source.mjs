@@ -18,7 +18,7 @@ export function sourceSnapshot(commit) {
   fail(typeof commit === 'string' && /^[0-9a-f]{40}$/.test(commit), 'JOBS_SOURCE_COMMIT');
   fail(git('cat-file','-t',commit).toString('utf8').trim() === 'commit', 'JOBS_SOURCE_COMMIT');
   const refs = git('for-each-ref','--format=%(objectname)','refs/remotes/origin/').toString('utf8').trim().split('\n').filter(Boolean);
-  const fetched = refs.some(ref => { try { git('merge-base','--is-ancestor',commit,ref); return true; } catch { return false; } });
+  const fetched = refs.includes(commit) || git('for-each-ref','--contains='+commit,'--format=%(refname)','refs/remotes/origin/').toString('utf8').trim().length > 0;
   fail(fetched, 'JOBS_SOURCE_PUBLISHED_REF_REQUIRED');
   const tree = git('rev-parse',commit+'^{tree}').toString('utf8').trim();
   fail(/^[0-9a-f]{40}$/.test(tree), 'JOBS_SOURCE_TREE');
