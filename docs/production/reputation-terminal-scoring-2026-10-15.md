@@ -29,8 +29,14 @@ The old validator marker remains ABI-compatible but rejects early scoring.
 A Registry-only self-call routes score processing through its fixed lifecycle
 delegate to preserve the settlement module's production size budget. External
 callers cannot invoke it. All Registry delegate IDs advance to
-`percentage-stake-v3`; Validation delegate IDs advance to
-`terminal-reputation-v2`. Mixed preceding delegate generations are rejected.
+`percentage-stake-v4`; Validation delegate IDs advance to
+`terminal-reputation-v3`. Mixed preceding delegate generations are rejected.
+The Registry requires a separate `reputationInterfaceVersion() == 1` from
+validation modules at construction and every configuration route. Older modules
+are rejected before jobs can be funded, including third-party modules without
+`revealed()`. Global module `version() == 2` stays compatible with shared staking
+wiring. Replacement preflight enforces the new interface before broadcasting.
+
 One mapping is appended after the percentage field; every earlier storage slot
 and controller signature remains compatible. Historical bundles are hash-pinned
 and retain their original semantics; they are not relabeled as corrected code.
@@ -43,26 +49,29 @@ partial reveal, forced-quorum non-reveal, forbidden early/self-call routes and
 atomic rollback when the scoring hook rejects.
 They also check native payout units, 30,000 seconds of delayed settlement,
 retained vote facts, payout/collateral accounting and repeat-finalization
-rejection. The token and identity registry are declared local fixtures; this
-is not mainnet execution or independent buyer acceptance.
+rejection. The default cases use declared local token and identity fixtures. The fork
+mode below uses the actual token runtime with a local identity fixture; neither
+mode constitutes mainnet execution or independent buyer acceptance.
 
-The documented source passes 880 official Hardhat cases, 736 recursive v2
-cases across 149 files, and 238 Foundry cases across all 40 suites, without
-failures or skips. The final focused committee suite adds and passes an atomic
-rollback case (seven cases total). The pinned actual-token fork passes both
-existing lifecycle paths at block 26200139 with its expected block hash,
-unchanged token code, synthetic balances/supply delta and declared local ENS
-and validation fixtures. This remains partial fork evidence, rather than a
-full committee/owner-plan fork rehearsal.
+The compatibility follow-up source `e646acf4765a27bb61b0caccea12fc05917e57d1` (tree `cd345cab6702d8c623571408f843710c60798161`) passes
+883 official Hardhat cases, 740 recursive v2 cases across 150 tracked JavaScript
+and TypeScript files, and 238 Foundry cases across all 40 suites, without
+failures or skips. Its 36 focused compatibility, migration, storage/ABI and
+committee cases pass. The seven committee scenarios also pass against actual
+AGIALPHA bytecode at block 26200139, using the expected block hash and unchanged
+token code, synthetic balances/supply delta, local identity fixtures and a local
+zero-base-fee rehearsal. This is stronger joint token/committee evidence; an
+exact owner-plan rehearsal and independent buyer acceptance remain open.
 
 Canonical Solidity 0.8.37 with via-IR, 200 optimizer runs, Cancun and IPFS
 metadata passes strict source/artifact binding, diagnostics and all 66
 production runtime/initcode size checks: zero project warnings and 13 reviewed
 upstream warnings. Lifecycle runtime is 23,274 bytes; settlement is 20,913.
 The local Foundry executable is 1.7.1; hosted 1.4.4 remains a separate gate.
-The final production sources are byte-identical to reviewed checkpoint
-`4164b4c23e78a71ff7d543f1cacac6be42c5a5d2`. Its separate Codex review reported
-no findings; that is independent AI review, not an external audit.
+The older review of `4164b4c23e78a71ff7d543f1cacac6be42c5a5d2` does not qualify
+the changed interface guard. Its [historical receipt](reputation-terminal-scoring-evidence.json)
+remains unchanged; the [additive compatibility receipt](reputation-terminal-interface-evidence.json)
+binds the new source, tests and log hashes. Fresh independent review remains required.
 
 The inherited Cypress journey now selects the percentage setter, verifies
 1500-bps transport without token scaling, rejects the retired option and
@@ -70,8 +79,7 @@ renders the 10% snapshot. Both equivalent actual Chromium journeys pass with
 a declared mocked backend; the updated Cypress specs pass formatting and
 TypeScript checks. The local Cypress download returned unavailable HTML, so
 no local Cypress execution is claimed. Fresh hosted qualification, Cypress
-and review remain mandatory for the final combined head. Detailed source,
-log and prior-receipt identities are in the [additive evidence receipt](reputation-terminal-scoring-evidence.json).
+and review remain mandatory for the final combined head. The compatibility receipt records the current source and retains the prior receipt identity.
 
 Owner/governance, treasury, tax, signer and deployment limits remain unset.
 No Alpha EOA setting is inferred for Jobs. Exact unsigned deployment planning,

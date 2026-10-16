@@ -58,6 +58,11 @@ validator vote/reveal observations across validation cleanup and dispute
 resolution, then compares them with the final outcome. It records the tally
 time so a later employer settlement does not earn extra duration credit.
 
+Validation modules must advertise `reputationInterfaceVersion() == 1`, including
+persistent `revealed(jobId, validator)` facts and deferred outcome scoring. The
+Registry rejects older modules during construction and configuration. The
+shared module `version()` remains 2; it alone does not establish compatibility.
+
 The previous `markReputationProcessed` entry point remains in the ABI but
 rejects early scoring. Explicit authorized engine hooks remain available under
 the existing caller policy. Forced-quorum non-reveal fault deductions remain

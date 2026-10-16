@@ -1,0 +1,140 @@
+{
+  "schema": "agijobsv0/reputation-terminal-interface-followup/v1",
+  "recordedAt": "2026-10-16T00:09:33.941948+00:00",
+  "qualifiedSourceCommit": "e646acf4765a27bb61b0caccea12fc05917e57d1",
+  "qualifiedSourceTree": "cd345cab6702d8c623571408f843710c60798161",
+  "parentCommit": "1ba24f044b50a9359c033dbb91cce78eccdb6b7f",
+  "previousReceipt": {
+    "path": "docs/production/reputation-terminal-scoring-evidence.json",
+    "sha256": "35b5cfd88210c04ccf0102db1e257e37eb8a8931b511a6dcee6d92c547bcb3f0",
+    "scope": "Frozen prior checkpoint; not evidence for the changed interface guard."
+  },
+  "reviewFinding": {
+    "id": 4289325059,
+    "class": "P2",
+    "problem": "Previously accepted third-party version-2 validation modules can omit revealed() and revert at finalization.",
+    "resolution": "Constructor, direct setter, setModules and installer require reputationInterfaceVersion() == 1 before accepting validation. Migration preflight checks the replacement before authority reads or any transaction. Global version() remains 2 for shared staking compatibility; reveal facts are never inferred."
+  },
+  "delegateGenerations": {
+    "JobRegistry": "percentage-stake-v4",
+    "ValidationModule": "terminal-reputation-v3",
+    "rejectPriorGenerations": true
+  },
+  "productionSourceSha256": {
+    "contracts/v2/JobRegistry.sol": "c04da2562d48da7eb6652c1252b27ec684f7ad78048e8e2f4ee08080ff93d350",
+    "contracts/v2/ValidationModule.sol": "3d28b79ae6102a5b5f07c2bef91f03758e69a592ce58d653c68dd66a9c65cc7a",
+    "contracts/v2/implementation/JobRegistryBase.sol": "2e728787cc351fe4f474e2b81ed1cb942a13eb631a0733f0b93c8b2fbcde679e",
+    "contracts/v2/implementation/JobRegistryConfiguration.sol": "331a0ba056ee910bca3137c84cf33618ca39c613fea7b57254d6153dbafab876",
+    "contracts/v2/implementation/JobRegistryLifecycle.sol": "b0eb67fc9e1c38cee309c9e0d5ad6d3e40a1c5da2b2ac9cb921fa1dfa65ebace",
+    "contracts/v2/implementation/JobRegistrySettlement.sol": "6a3b21216add9242d3e14a8dd2d8c6a4213439451b009dc7296c1b147b6d8d33",
+    "contracts/v2/implementation/ValidationModuleBase.sol": "a18b69a25150477967f19ab61c6c8616816a82a1982c91a766cfccc92ed15640",
+    "contracts/v2/implementation/ValidationModuleConfiguration.sol": "c98c4f947be618069e850560e6a77e61c5729ad07a9b12eb65b083676e57c05e",
+    "contracts/v2/implementation/ValidationModuleSelection.sol": "9b11bf31751f1dc4b179383747e3a32364efad471ba71d368f711d52c3aaca7f",
+    "contracts/v2/implementation/ValidationModuleVoting.sol": "f079bef77679d34991e63309bf556b8d99c113b6e88ed096f24aee5bd6834f60",
+    "contracts/v2/interfaces/IValidationModule.sol": "c5dfea1d6ec05159c1f80a8d13ca97673b44f9a259eaeeb90029a555df8de385",
+    "contracts/v2/mocks/ValidationStub.sol": "65516b9821c561a0da972294fda3d38212c52f97407310fd636429be83a7abab",
+    "contracts/v2/modules/NoValidationModule.sol": "c20ae909efbbfc3152e93d2e4db6ae669a7eeed00c227b04778bd681563d0720",
+    "contracts/v2/modules/OracleValidationModule.sol": "afb33e01f525c2520b006fda3c1c697149e85fb66630d6fbf4613842722d0e63",
+    "scripts/deploy/implementations.cjs": "fe1e3ca7e27f67ce6ff4ecc07653899fdc9e7eb7188c044167c6bb28ad24fa98",
+    "scripts/v2/lib/jobRegistryPlan.ts": "fc48fd95298bafec34813d202d8394119a9bc267a71fdb64b7bdb9915bfac9d5",
+    "scripts/v2/migrateValidationModule.ts": "4d937fac53beeec625e55dfe17189654695e278045e1e52529343e3c4d6eea40"
+  },
+  "changedVerificationSourceSha256": {
+    "test/v2/AckModuleValidation.test.js": "479fdc8de8f6ccb14650ec93bd023e96ad64e24c8a4a23eb6ef3fac9579b9584",
+    "test/v2/FixedImplementations.test.js": "829a909d7839a7ec1b7e1086cbad3ab025c1074934a566ac0857aa8f32b5c29e",
+    "test/v2/JobRegistryModuleVersion.test.js": "d40d9c38697fc6b56336d4bd3277a83c4e03a89a60071b6992b9cf6d829230b9",
+    "test/v2/ReputationTerminalSettlement.test.js": "730a43ca2138b00b0f8b0b68eef97aad5003db9dd81bdb4748e758339a6f83d2",
+    "test/v2/ValidationMigrationPreflight.test.js": "7463f507e7f84769d27782233dc048afc6a7c798cf9f905e45ee4c633605c0c9"
+  },
+  "checks": {
+    "official": {
+      "passed": 883,
+      "failed": 0,
+      "logName": "jobs-terminal-capability-official-final.log",
+      "logSha256": "ff8820e2ba8a78038d73ef7407df6039651e36fe13d9f22252104fb302e459f6"
+    },
+    "recursiveV2": {
+      "passed": 740,
+      "failed": 0,
+      "logName": "jobs-terminal-capability-recursive-all.log",
+      "logSha256": "b8740bc29cd22fc4da350eede6846cc67c7615de86b85be91717be51e9fe237d"
+    },
+    "focused": {
+      "passed": 36,
+      "failed": 0,
+      "logName": "jobs-terminal-capability-focused-final.log",
+      "logSha256": "aaadda9643c6eb0acfd678fe1434c79b5c992d9b081de96ef7ce881f23028aa2"
+    },
+    "actualTokenCommitteeFork": {
+      "passed": 7,
+      "failed": 0,
+      "logName": "jobs-terminal-capability-actual-token-committee-fork.log",
+      "logSha256": "d6e58f08598d8c1e0d43d1d47535cc14222f2b7c6769ebe3592b8d8edbf02c8b"
+    },
+    "foundry": {
+      "passed": 238,
+      "failed": 0,
+      "logName": "jobs-terminal-capability-foundry.log",
+      "logSha256": "20651aa0d9841684930f34459339b78dcfed00ce9467e21f44d3b549e92ae703"
+    }
+  },
+  "recursiveV2Scope": {
+    "loadedTrackedJsAndTsFiles": 150,
+    "includesNestedLifecycleAndTypeScriptCases": true
+  },
+  "foundryScope": {
+    "suites": 40,
+    "skipped": 0,
+    "localVersion": "1.7.1",
+    "hostedPin": "1.4.4",
+    "hostedPinQualification": "Required separately; local tool does not substitute."
+  },
+  "build": {
+    "compiler": "0.8.37+commit.f401782d",
+    "optimizerRuns": 200,
+    "viaIR": true,
+    "evmVersion": "cancun",
+    "metadataBytecodeHash": "ipfs",
+    "productionContracts": 66,
+    "sizeGatePassed": true,
+    "projectSourceWarnings": 0,
+    "reviewedUpstreamWarnings": 13,
+    "policyLogSha256": "c9de11d2d1d4586183d4e134a714581bf004affed5609c8a935745f7324c98a2",
+    "runtimeBytes": {
+      "JobRegistryLifecycle": 23274,
+      "JobRegistrySettlement": 20913
+    }
+  },
+  "fork": {
+    "scope": "Actual AGIALPHA bytecode and actual committee in seven adversarial terminal-settlement scenarios",
+    "blockNumber": 26200139,
+    "blockHash": "0x5ba89450466ec7979fd0ab037d86077799089630aab9d8923cf63753a7cb11be",
+    "tokenRuntimeKeccak256": "0xb2f6d0bbf5e047601a71fc099779bd3932274a484f2175fd1e830e613349c310",
+    "syntheticBalanceAndSupplyDelta": true,
+    "localIdentityFixtures": true,
+    "localBaseFeeZero": true,
+    "tokenCodeAndSupplyPreservedAcrossCases": true,
+    "externalTransactions": false,
+    "exactOwnerPlanRehearsal": false,
+    "independentBuyerAcceptance": false,
+    "sourceChainId": 1,
+    "localChainId": 31337
+  },
+  "historicalPrebuiltSha256": {
+    "scripts/v2/lib/prebuilt/ReputationEngine.json": "8a21b153e6ce189d14ee4f69288301118c22eeaa0026627338764412e0060c36",
+    "scripts/v2/lib/prebuilt/ValidationModule.json": "cb90c9f64134b7ec1e162b38a06282e08431fc8005b751eabfd2b072ace6fadd",
+    "scripts/v2/lib/prebuilt/ImplementationModules.json": "0cc22007c98958a60628a1669a56f4468a1caf106760dcf563660d26e643a6f8"
+  },
+  "storageAndAbi": "All earlier controller function/event/error signatures and storage offsets pass; the prior appended percentage field and reputation snapshot remain in place. Interface-version constants add no storage.",
+  "productionApproved": false,
+  "externalTransactions": false,
+  "remainingGates": [
+    "Fresh exact-final-head hosted CI, including pinned Foundry and Cypress",
+    "Fresh independent review of the final combined head",
+    "Qualified source-release version and freeze preparation before economic changes reach main",
+    "Jobs owner/governance, treasury, tax, signer and deployment limits",
+    "Exact unsigned owner plan and actual-token rehearsal with that plan",
+    "Historical obligation reconciliation and separate commissioning"
+  ],
+  "auditAndSepolia": "NOT PERFORMED \u2014 OWNER-ACCEPTED OMISSION; technical gates remain required"
+}
