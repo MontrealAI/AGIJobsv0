@@ -711,6 +711,7 @@ export async function main(argv = process.argv.slice(2)) {
   const identityConfig: IdentityConfig = config.identity ?? {};
 
   const { config: ensConfig } = loadEnsConfig({
+    persist: false,
     network: network.name,
     chainId: network.config?.chainId,
   });

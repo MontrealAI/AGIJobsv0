@@ -8,6 +8,8 @@ Start with the [current readiness report](production/readiness.md). A source pre
 
 **Looking for the stack already deployed on Ethereum?** Use the [mainnet address directory and status record](production/mainnet-deployment-2026-10-12.md). Do not run a new deployment to refresh documentation or retry explorer verification. The example configuration files below remain templates, not the address directory or instructions to replace the existing stack.
 
+For creation from an Ubuntu terminal using a locally entered ephemeral key, use the [conventional hidden-TTY launcher](conventional-tty-deployment.md). It preserves the ordinary staged writer and explicit governor handover; the key is never supplied in arguments, environment variables or a file. Review and qualify the exact launcher source before use. Mac/Ledger governor commissioning follows the paused creation.
+
 ## 1. Choose the right operation
 
 | Your goal | Command or guide | What it changes |
