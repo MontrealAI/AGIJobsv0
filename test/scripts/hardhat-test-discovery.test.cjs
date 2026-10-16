@@ -177,6 +177,21 @@ test('receiver suites stay outside native contract discovery', async () => {
   }
 });
 
+test('documented project npm command runs all relocated receiver suites', () => {
+  const packageJson = JSON.parse(
+    fs.readFileSync(path.join(root, 'package.json'), 'utf8')
+  );
+  assert.deepEqual(
+    packageJson.scripts['alpha-agent:project:test'].trim().split(/\s+/),
+    ['node', '--test', ...receiverSuites]
+  );
+  for (const file of receiverSuites)
+    assert.ok(
+      fs.statSync(path.join(root, file)).isFile(),
+      `missing npm project suite: ${file}`
+    );
+});
+
 test('isolated suites retain mandatory fresh-process CI registrations', () => {
   const workflow = yaml.load(
     fs.readFileSync(path.join(root, '.github/workflows/ci.yml'), 'utf8')
