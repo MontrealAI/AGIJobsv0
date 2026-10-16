@@ -45,4 +45,4 @@ async function verifyProjectReceipt(raw, { provider, trustedDeployment, expected
     trust: 'rpc-observation-reverify-before-use', authority: 'none', qualification: 'source-only', settlement: 'not-connected', payoutReconciled: false, productionApproved: false };
   return canonical({ ...body, sha256: await exactDigest(canonical(body)) });
 }
-module.exports = { verifyProjectReceipt };
+module.exports = Object.freeze({ verifyProjectReceipt });

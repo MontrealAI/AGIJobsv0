@@ -67,3 +67,22 @@ test('assignment from identical CSV cannot be attached to another project or a d
     await assert.rejects(verifyProjectReceipt(other,f),/SPEC_BINDING/);
   }
 });
+
+test('reviewed deployment rejects a mock token before and after exported profile mutation attempts',async()=>{
+  const f=await fixture('AgentAssigned');f.trustedDeployment.scope='reviewed-deployment';
+  await assert.rejects(verifyProjectReceipt(f.raw,f),/JOBS_PROJECT_TOKEN/);
+  assert.throws(()=>{profile.token.address=f.trustedDeployment.token;},TypeError);
+  await assert.rejects(verifyProjectReceipt(f.raw,f),/JOBS_PROJECT_TOKEN/);
+  assert.equal(profile.token.address,'0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA');
+});
+
+test('cached JSON poisoning before verifier import cannot replace trusted reviewed token or ABI pins',async()=>{
+  const {spawnSync}=require('node:child_process'),f=await fixture('AgentAssigned');
+  const json=require.resolve('../../integrations/alpha-agent/jobregistry-v2.json'),verifier=require.resolve('../../integrations/alpha-agent/verify-receipt.cjs'),project=require.resolve('../../integrations/alpha-agent/project-receipt.cjs');
+  const program=`'use strict';const assert=require('node:assert/strict'),fs=require('node:fs');const cached=require(${JSON.stringify(json)});cached.token.address=${JSON.stringify(token)};cached.abi.length=0;cached.historicalDeployment.addresses.JobRegistry=${JSON.stringify(worker)};const {profile}=require(${JSON.stringify(verifier)});assert.equal(profile.token.address,'0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA');assert.ok(profile.abi.length>0);assert.notEqual(profile.historicalDeployment.addresses.JobRegistry,${JSON.stringify(worker)});assert.equal(Object.isFrozen(profile.token),true);const {verifyProjectReceipt}=require(${JSON.stringify(project)});verifyProjectReceipt(fs.readFileSync(0,'utf8'),{provider:{},trustedDeployment:{scope:'reviewed-deployment',token:${JSON.stringify(token)}},expected:{event:'AgentAssigned'}}).then(()=>{throw Error('poisoned token accepted');},error=>{assert.match(error.message,/JOBS_PROJECT_TOKEN/);}).catch(error=>{process.stderr.write(error.message);process.exitCode=1;});`;
+  const result=spawnSync(process.execPath,['-e',program],{input:f.raw,encoding:'utf8',timeout:20000});assert.equal(result.status,0,result.stderr);
+});
+
+test('project receipt public API record cannot be replaced through its owned export alias',()=>{
+  const api=require('../../integrations/alpha-agent/project-receipt.cjs');assert.equal(Object.isFrozen(api),true);assert.throws(()=>{api.verifyProjectReceipt=()=>{throw Error('substituted verifier');};},TypeError);assert.equal(api.verifyProjectReceipt,verifyProjectReceipt);
+});

@@ -32,6 +32,9 @@ test('complete ordered inventory covers every local import/require and preserves
       if(['ImportDeclaration','ExportNamedDeclaration','ExportAllDeclaration'].includes(node.type)&&node.source)imports.push(node.source.value);
       if(node.type==='CallExpression'&&((node.callee.type==='Identifier'&&node.callee.name==='require')||node.callee.type==='Import')) { assert.equal(node.arguments[0]?.type,'StringLiteral','Uninventoried dynamic dependency'); imports.push(node.arguments[0].value); }
       if(node.type==='ImportExpression') { assert.equal(node.source.type,'StringLiteral');imports.push(node.source.value); }
+      if(relative.endsWith('/verify-receipt.cjs')&&node.type==='CallExpression'&&node.callee.type==='MemberExpression'&&node.callee.object.name==='fs'&&node.callee.property.name==='readFileSync') {
+        const target=node.arguments[0];assert.equal(target.type,'BinaryExpression','Trusted profile read must have an inventoried static path');assert.equal(target.operator,'+');assert.equal(target.left.type,'Identifier');assert.equal(target.left.name,'__dirname');assert.equal(target.right.type,'StringLiteral');assert.equal(target.right.value,'/jobregistry-v2.json');imports.push('.'+target.right.value);
+      }
       for(const [key,nested] of Object.entries(node))if(!['loc','tokens','comments'].includes(key)) { if(Array.isArray(nested))nested.forEach(visit);else if(nested&&typeof nested==='object')visit(nested); }
     }
     visit(tree);
