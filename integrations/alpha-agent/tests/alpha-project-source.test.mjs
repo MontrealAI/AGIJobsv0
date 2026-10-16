@@ -5,12 +5,12 @@ import path from 'node:path';
 import { createHash } from 'node:crypto';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
-import { SOURCE_PATHS, SOURCE_SELECTOR_PATH, pendingSourceSelection, readSourceSelection, renderSourceSelector, validateSelectorModule, assertPinnedSelection } from '../../integrations/alpha-agent/project-source-policy.mjs';
-import { RECEIVER_SOURCE } from '../../integrations/alpha-agent/project-native-source.mjs';
-import { canonical } from '../../integrations/alpha-agent/vendor/alpha/docs/assets/successor/engine.mjs';
-import { verifySelectedSource } from '../../integrations/alpha-agent/generate-project-source.mjs';
+import { SOURCE_PATHS, SOURCE_SELECTOR_PATH, pendingSourceSelection, readSourceSelection, renderSourceSelector, validateSelectorModule, assertPinnedSelection } from '../project-source-policy.mjs';
+import { RECEIVER_SOURCE } from '../project-native-source.mjs';
+import { canonical } from '../vendor/alpha/docs/assets/successor/engine.mjs';
+import { verifySelectedSource } from '../generate-project-source.mjs';
 const require = createRequire(import.meta.url), { parsers } = require('prettier/parser-babel');
-const root = fileURLToPath(new URL('../..',import.meta.url));
+const root = fileURLToPath(new URL('../../..',import.meta.url));
 test('selector is exactly a generated primitive string and cannot carry excluded executable code',()=>{
   const pending = pendingSourceSelection(), bytes = renderSourceSelector(pending);
   assert.equal(validateSelectorModule(bytes).status,'pending-source-pin');
@@ -64,7 +64,7 @@ test('pinned selector matches actual fetched Git commit/tree and every installed
 
 test('pending source selection cannot be used by normal receiver APIs',async()=>{
   if(RECEIVER_SOURCE.status!=='pending-source-pin')return;
-  const receiver=await import('../../integrations/alpha-agent/project-transfer.mjs');
+  const receiver=await import('../project-transfer.mjs');
   await assert.rejects(receiver.importAlphaProject('{}',{amountBaseUnits:'7000',compiledAt:'2026-10-16T00:00:00.000Z'}),/PIN_REQUIRED/);
   await assert.rejects(receiver.inspectProjectTransfer('{}'),/PIN_REQUIRED/);
   await assert.rejects(receiver.runProjectTransfer('{}'),/PIN_REQUIRED/);
