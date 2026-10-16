@@ -10,7 +10,8 @@ function read(file) {
     while (length < buffer.length) { const n = fs.readSync(fd, buffer, length, buffer.length - length, length); if (!n) break; length += n; }
     const after = fs.fstatSync(fd, { bigint: true });
     if (length > PROJECT_TRANSFER_LIMIT || before.size !== after.size || before.mtimeNs !== after.mtimeNs || before.ctimeNs !== after.ctimeNs || BigInt(length) !== after.size) throw Error('JOBS_PROJECT_INPUT_CHANGED');
-    return new TextDecoder('utf-8', { fatal: true }).decode(buffer.subarray(0, length));
+    // Keep a leading BOM visible so strict JSON rejects it without changing source bytes.
+    return new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(buffer.subarray(0, length));
   } finally { fs.closeSync(fd); }
 }
 async function main() {

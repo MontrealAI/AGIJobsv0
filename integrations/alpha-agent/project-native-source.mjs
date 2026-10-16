@@ -93,7 +93,7 @@ export const RECEIVER_SOURCE = Object.freeze({
     },
     {
       "path": "integrations/alpha-agent/project-cli.mjs",
-      "sha256": "f94ad3416a0e01d1e69ac3d20b239dbbd5f2e4588c62e3ed848edc7114621173"
+      "sha256": "46991dc1700bed8316da63388c6231300f4e86975eed4fa27bbaca1a1d03cb35"
     }
   ]
 });

@@ -138,3 +138,28 @@ test('CLI imports, computes and inspects real files while refusing overwrite and
     fs.symlinkSync(result,link);assert.notEqual(invoke(['inspect',link]).status,0);
   } finally { fs.rmSync(dir,{recursive:true,force:true}); }
 });
+
+test('CLI rejects BOM-prefixed raw files without stripping bytes, creating output or changing existing output',async()=>{
+  const os=await import('node:os'),path=await import('node:path'),{spawnSync}=await import('node:child_process');
+  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'jobs-project-cli-bom-'));
+  try {
+    const cli=new URL('../../integrations/alpha-agent/project-cli.mjs',import.meta.url);
+    const invoke=args=>spawnSync(process.execPath,[cli.pathname,...args],{encoding:'utf8',timeout:20000});
+    const input=path.join(dir,'alpha.json'),bomInput=path.join(dir,'alpha-bom.json'),draft=path.join(dir,'draft.json'),bomDraft=path.join(dir,'draft-bom.json'),output=path.join(dir,'output.json'),existing=path.join(dir,'existing.json');
+    const original=Buffer.from('\n'+await setup()+'\n','utf8'),bom=Buffer.from([0xef,0xbb,0xbf]);
+    fs.writeFileSync(input,original);fs.writeFileSync(bomInput,Buffer.concat([bom,original]));
+    const originalBom=fs.readFileSync(bomInput);
+    const rejected=invoke(['import',bomInput,'7000',options.compiledAt,output]);
+    assert.notEqual(rejected.status,0);assert.equal(rejected.stdout,'');assert.equal(fs.existsSync(output),false);assert.deepEqual(fs.readFileSync(bomInput),originalBom);
+    const malformed=Buffer.concat([Buffer.from([0xff]),original]);fs.writeFileSync(bomInput,malformed);
+    assert.notEqual(invoke(['import',bomInput,'7000',options.compiledAt,output]).status,0);assert.equal(fs.existsSync(output),false);assert.deepEqual(fs.readFileSync(bomInput),malformed);
+    fs.writeFileSync(bomInput,originalBom);
+    fs.writeFileSync(existing,'retained existing output');
+    assert.notEqual(invoke(['import',bomInput,'7000',options.compiledAt,existing]).status,0);assert.equal(fs.readFileSync(existing,'utf8'),'retained existing output');
+    assert.equal(invoke(['import',input,'7000',options.compiledAt,draft]).status,0);
+    assert.deepEqual(Buffer.from(JSON.parse(fs.readFileSync(draft,'utf8')).original.raw,'utf8'),original);
+    const draftBom=Buffer.concat([bom,fs.readFileSync(draft)]);fs.writeFileSync(bomDraft,draftBom);
+    assert.notEqual(invoke(['run',bomDraft,output]).status,0);assert.equal(fs.existsSync(output),false);
+    const inspected=invoke(['inspect',bomDraft]);assert.notEqual(inspected.status,0);assert.equal(inspected.stdout,'');assert.deepEqual(fs.readFileSync(bomDraft),draftBom);
+  } finally { fs.rmSync(dir,{recursive:true,force:true}); }
+});

@@ -43,7 +43,8 @@ observed elapsed time. The execution itself has zero provider/settlement spend;
 compute price and human time remain unmeasured. Results remain unreviewed.
 
 Every output refuses to overwrite an existing file. Stable, regular, no-symlink
-UTF-8 inputs and native dossier validation are required. The transfer has a
+UTF-8 inputs and native dossier validation are required. Leading UTF-8 BOMs
+and malformed UTF-8 are rejected without normalizing the original bytes. The transfer has a
 2 MB UTF-8 limit and eight checkpoints. A full or oversized transfer fails
 without pruning its history; retain the last unchanged checkpoint.
 
