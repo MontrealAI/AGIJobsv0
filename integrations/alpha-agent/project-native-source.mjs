@@ -1,4 +1,13 @@
-export const ALPHA_NATIVE_SOURCE = Object.freeze({
+// Trusted source identity is shared by sealing and inspection. Freeze its full
+// graph so consumers cannot change the authoritative manifests through exports.
+function deepFreeze(value) {
+  for (const nested of Object.values(value)) {
+    if (nested && typeof nested === 'object') deepFreeze(nested);
+  }
+  return Object.freeze(value);
+}
+
+export const ALPHA_NATIVE_SOURCE = deepFreeze({
   "repository": "MontrealAI/AGI-Alpha-Agent-v0",
   "commit": "92e227c007d484323c7fd2a7001b9bb5b229e717",
   "license": "Apache-2.0; vendored agijobs compiler retains MIT provenance",
@@ -57,7 +66,7 @@ export const ALPHA_NATIVE_SOURCE = Object.freeze({
     }
   ]
 });
-export const JOBS_COMPILER_SOURCE = Object.freeze({
+export const JOBS_COMPILER_SOURCE = deepFreeze({
   "repository": "MontrealAI/AGIJobsv0",
   "commit": "7b21ce05b0b18b46162da66c2f528334101f6f40",
   "files": [
@@ -79,7 +88,7 @@ export const JOBS_COMPILER_SOURCE = Object.freeze({
     }
   ]
 });
-export const RECEIVER_SOURCE = Object.freeze({
+export const RECEIVER_SOURCE = deepFreeze({
   "repository": "MontrealAI/AGIJobsv0",
   "adapterVersion": "agijobsv0-project-receiver/v1",
   "files": [

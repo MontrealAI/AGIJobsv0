@@ -8,7 +8,7 @@ import * as native from '../../integrations/alpha-agent/vendor/alpha/examples/su
 import { example, run } from '../../integrations/alpha-agent/vendor/alpha/examples/successor-workbench/engine.mjs';
 import { createBrief } from '../../integrations/alpha-agent/vendor/alpha/examples/alpha-discovery/engine.mjs';
 import { ALPHA_NATIVE_SOURCE, JOBS_COMPILER_SOURCE, RECEIVER_SOURCE } from '../../integrations/alpha-agent/project-native-source.mjs';
-import { importAlphaProject, inspectProjectTransfer, runProjectTransfer } from '../../integrations/alpha-agent/project-transfer.mjs';
+import { PROJECT_SOURCE, importAlphaProject, inspectProjectTransfer, runProjectTransfer } from '../../integrations/alpha-agent/project-transfer.mjs';
 
 const sourceHash = 'a'.repeat(64), sources = { discovery: { repository:'MontrealAI/AGI-Alpha-Agent-v0',commit:'b'.repeat(40),path:'examples/alpha-discovery/engine.mjs',sha256:'c'.repeat(64) }, mission: {repository:'MontrealAI/AGI-Alpha-Agent-v0',commit:'b'.repeat(40),path:'examples/successor-workbench/mission-record.mjs',sha256:'d'.repeat(64)} };
 const choices = { family:'public-data', selection:'explicit-user-selection', duplicatePolicy:'sum-all-rows-no-deduplication', unitPolicy:'unchanged-integer-units', dataRights:'synthetic' };
@@ -31,6 +31,40 @@ test('native closure and compiler bytes match the reviewed source lock', () => {
   for(const file of JOBS_COMPILER_SOURCE.files) {
     assert.equal(createHash('sha256').update(fs.readFileSync(new URL('../../'+file.path,import.meta.url))).digest('hex'),file.sha256,file.path);
   }
+});
+test('trusted source manifests reject array truncation and nested file mutations through every export', async () => {
+  const before = canonical(PROJECT_SOURCE);
+  for (const source of [ALPHA_NATIVE_SOURCE, JOBS_COMPILER_SOURCE, RECEIVER_SOURCE, PROJECT_SOURCE.alpha, PROJECT_SOURCE.compiler, PROJECT_SOURCE.receiver]) {
+    assert.ok(Object.isFrozen(source));
+    assert.ok(Object.isFrozen(source.files));
+    assert.ok(Object.isFrozen(source.files[0]));
+    assert.throws(() => { source.files.length = 0; }, TypeError);
+    assert.throws(() => { source.files[0].sha256 = '0'.repeat(64); }, TypeError);
+    assert.throws(() => { source.files[0].path = 'substituted.mjs'; }, TypeError);
+    assert.throws(() => { source.files[0] = { path: 'substituted.mjs', sha256: '0'.repeat(64) }; }, TypeError);
+  }
+  assert.equal(canonical(PROJECT_SOURCE), before);
+  const raw = await importAlphaProject(await setup(), options);
+  assert.equal(canonical((await inspectProjectTransfer(raw)).transfer.source), before);
+});
+test('mutating returned source metadata cannot change trusted identity or authorize modified transfers', async () => {
+  const original = await setup(), raw = await importAlphaProject(original, options);
+  const before = canonical(PROJECT_SOURCE);
+  const checked = await inspectProjectTransfer(raw);
+  checked.transfer.source.alpha.files.length = 0;
+  checked.transfer.source.compiler.files[0].sha256 = '0'.repeat(64);
+  checked.transfer.source.receiver.files[0].path = 'substituted.mjs';
+  checked.transfer.upstreamValidation.source.files.length = 0;
+  assert.equal(canonical(PROJECT_SOURCE), before);
+  await assert.rejects(inspectProjectTransfer(await reseal(checked.transfer)), /SOURCE_DRIFT/);
+  const reinspected = await inspectProjectTransfer(raw);
+  assert.equal(canonical(reinspected.transfer.source), before);
+  assert.equal(reinspected.transfer.original.raw, original);
+  assert.equal(canonical(reinspected.transfer.upstreamValidation.source), canonical(ALPHA_NATIVE_SOURCE));
+  const executed = await inspectProjectTransfer(await runProjectTransfer(raw));
+  assert.equal(canonical(executed.transfer.source), before);
+  assert.equal(executed.transfer.history.length, 2);
+  assert.equal(executed.lastRecord.result.pack.result.summary.total, 295);
 });
 test('real native project → Jobs draft → actual repeated computation preserves exact source and full history', async () => {
   const original = await setup('group,amount\nSame,3\nSame,3\nOther,-2\n');
