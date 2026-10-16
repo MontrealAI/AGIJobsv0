@@ -1,6 +1,6 @@
 # Percentage-based collateral for new JobRegistry deployments
 
-This is a new deployment candidate, not an upgrade of the recorded mainnet contracts. It is separate from source release rc8 and its artifacts. No deployment, migration, unpause or token movement is authorized by this document.
+The percentage policy and the subsequent reputation corrections are merged in source release `source-v2.1.0-rc.12` (`b936efe066dc1b1f7a2fcc18ab9950d77cdf96d5`). This is source qualification for a separate new deployment; it does not qualify a Mainnet signing campaign or update recorded deployments. The dated test checkpoints below retain their original scope and limitations. No deployment, migration, unpause or token movement is authorized by this document.
 
 ## Economics
 
@@ -20,11 +20,13 @@ Legacy `jobStake()`, `DEFAULT_JOB_STAKE()`, `setJobStake(uint96)` and `setJobPar
 
 Deployment JSON uses integer `econ.jobStakeBps`, normally 1000. `econ.jobStake` is rejected, including on local staged deployment. Public deployment requires explicit basis points; configuration samples still require real governance, reviewed tax choices and other launch settings. The coordinator's economic tuple changes its last field from uint96 fixed stake to uint256 basis points, intentionally changing function selectors. Old calldata must be regenerated; it must not be relabeled.
 
-The three JobRegistry delegates use `JobRegistryConfiguration:percentage-stake-v2`, `JobRegistryLifecycle:percentage-stake-v2`, and `JobRegistrySettlement:percentage-stake-v2` module IDs. The new controller rejects v1 implementations. This prevents a new percentage quote from being paired with an old fixed-stake lifecycle. Preserve complete matched controller/implementation sets. Historical prebuilt demo bundles retain their matched v1 controller and v1 delegates and are not production candidates.
+The current three JobRegistry delegates use `JobRegistryConfiguration:percentage-stake-v4`, `JobRegistryLifecycle:percentage-stake-v4`, and `JobRegistrySettlement:percentage-stake-v4` module IDs, incorporating the terminal-reputation correction. The current controller rejects earlier generations. Preserve complete matched controller/implementation sets. Historical prebuilt demo bundles retain their original matched controller and delegates and are not production candidates.
 
-The old fixed storage slot is retained as an inactive internal slot, and rate storage is appended. This does **not** make old immutable controllers upgradeable, authorize storage transplantation or establish a migration mechanism. Deploy a separately verified new stack; reconcile and drain old jobs, escrow, claims and stakes under their existing rules. Do not repoint old clients or token approvals until their supported version and the user's migration decision are explicit.
+The old fixed storage slot is retained as an inactive internal slot, and rate storage is appended. This does **not** make old immutable controllers upgradeable, authorize storage transplantation or establish a migration mechanism. Deploy a separately verified new stack. Previous deployments are strictly outside this campaign's mutation scope: clearing old jobs, escrow, claims or stakes is not a prerequisite. Do not transact with old deployments, repoint their clients or change their approvals as part of this campaign.
 
-## Review and tests
+## Historical review requirements and checkpoint evidence
+
+The following requirements and observations retain their original checkpoint scope. References below to an unreleased candidate, pending whole-head qualification or inherited reputation defects are historical and superseded by the merged rc.12 status above; they are not current defect claims or deployment approval.
 
 Required coverage: boundary/reference arithmetic; zero and tiny rewards; bounded owner access and events; mixed-version rejection; mined-time snapshot behavior; real-token funded fee exclusion; global minimum interaction; concurrent locks and repeated application; cancellation/refund, successful release, rejection and timeout slash; stale getter/setter/constructor/config rejection; frontend and owner-tool basis-point units; exact compiled runtime/initcode sizes and immutable comparisons.
 
@@ -32,7 +34,7 @@ Compilation and local test results must identify their exact source snapshot. No
 
 The current HGMControlModule preserves the old economic tuple layout but rejects its `setJobStake` flag with `LegacyFixedStakeUnsupported`. Its separate owner-only `updateJobStakeBps(uint256)` calls the new registry policy, accepts 0–10000 and is tested against a real percentage registry. Do not relabel old tuple calldata or deploy old automation expecting fixed-stake updates. Historical prebuilt demo artifacts and their matched v1 tests are retained as historical compatibility evidence, not advertised as percentage-enabled deployments.
 
-## Current candidate evidence
+## Historical candidate evidence (superseded source status)
 
 The recovered prototype now has a canonical native 0.8.37 build, 865 passing official Hardhat tests, the real-collateral lifecycle suite and 1,000 cases per new fuzz property. See [the current preparation record](second-mainnet-review-2026-10-16.md#recovered-percentage-candidate--current-local-observations) for scope, source/log hashes and the explicitly unresolved supplemental TypeScript fixtures. This is a draft economic candidate, not a released or deployed policy.
 
@@ -44,7 +46,7 @@ The redenomination planner keeps dimensionless basis points unchanged while conv
 
 The owner dry-run now deposits the full 10% collateral and accounts for separately retained stake. Aurora uses explicit basis points bounded by funded demo collateral, restores the original basis-point rate and rejects legacy deployment configuration. The deterministic ASI kit, one-job local Aurora journey and three-job local ASI journey passed with simulated token/work inputs and operator-controlled validators. These journeys occurred before the additive HGM change; the final 867-test run covers that separate facade. Existing retained `reports/asi-takeoff` examples are preserved rather than overwritten by this run. These are not independent reviews, real revenue, mainnet-fork completion or commissioning.
 
-## Confirmed inherited deployment blocker and reconciled fixtures
+## Historical inherited blocker and reconciled fixtures (repaired in rc.12)
 
 **Later correction in this candidate:** the separately scoped
 [positive-growth repair](reputation-growth-correction-2026-10-15.md) preserves
