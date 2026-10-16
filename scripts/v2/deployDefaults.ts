@@ -2,7 +2,8 @@ import { stageProtocol } from '../deploy/stage-protocol.cjs';
 import { readImplementationAddresses } from '../deploy/implementations.cjs';
 import * as fs from 'fs';
 import * as path from 'path';
-import { createHash } from 'node:crypto';
+import * as os from 'node:os';
+import { createHash, randomUUID } from 'node:crypto';
 import { artifacts, ethers, network, run } from 'hardhat';
 import { AGIALPHA, AGIALPHA_DECIMALS } from '../constants';
 import { loadEnsConfig, loadTokenConfig } from '../config';
@@ -12,6 +13,19 @@ const { archiveVerification } = require('../deploy/archive-verification.cjs');
 const {
   createVerifiedArtifactReader,
 } = require('../deploy/verified-artifact.cjs');
+
+const {
+  createAuthorityHandover,
+  validateAuthorityRoles,
+  acquireDeploymentLock,
+  readRecoveryEvidence,
+  assertNewAddress,
+  assertCreationScope,
+} = require('../deploy/authority-handover.cjs');
+const {
+  createAuthoritySourceReader,
+} = require('../deploy/authority-runtime.cjs');
+const { auditAuthority } = require('../deploy/authority-audit.cjs');
 
 type CliArgs = Record<string, string | boolean>;
 
@@ -44,6 +58,12 @@ interface IdentityConfig {
 
 interface DeployerConfig {
   governance?: unknown;
+  campaign?: { chainId: number; blockNumber: number; blockHash: string };
+  authority?: {
+    stakeManagerTreasury: string;
+    feePoolTreasury: string;
+    feePoolGovernance: string;
+  };
   econ?: EconConfig;
   identity?: IdentityConfig;
   tax?: TaxConfig;
@@ -172,13 +192,15 @@ function parseArgs(argv: string[]): CliArgs {
     'validator-merkle',
     'agent-merkle',
     'resume-deployer',
+    'resume-evidence',
   ]);
   for (let i = 0; i < argv.length; i++) {
     const token = argv[i];
     if (!token.startsWith('--'))
       throw new Error(`Unexpected argument: ${token}`);
     const key = token.slice(2);
-    if (Object.prototype.hasOwnProperty.call(args, key)) throw new Error(`Duplicate option: --${key}`);
+    if (Object.prototype.hasOwnProperty.call(args, key))
+      throw new Error(`Duplicate option: --${key}`);
     if (switches.has(key)) {
       args[key] = true;
       continue;
@@ -444,9 +466,11 @@ function reportNumber(value: bigint, label: string): number {
 }
 
 export function parseJobStakeBps(value: unknown): number {
-  if (!/^[0-9]+$/.test(String(value))) throw new Error('jobStakeBps must be an integer from 0 to 10000');
+  if (!/^[0-9]+$/.test(String(value)))
+    throw new Error('jobStakeBps must be an integer from 0 to 10000');
   const bps = Number(value);
-  if (!Number.isSafeInteger(bps) || bps > 10000) throw new Error('jobStakeBps must be an integer from 0 to 10000');
+  if (!Number.isSafeInteger(bps) || bps > 10000)
+    throw new Error('jobStakeBps must be an integer from 0 to 10000');
   return bps;
 }
 
@@ -454,7 +478,7 @@ export async function main(argv = process.argv.slice(2)) {
   const cli = parseArgs(argv);
   if (cli.help) {
     console.log(
-      'Staged deployment: sends transactions. Public networks require a reviewed config and fresh output file.\nHardhat: DEPLOY_DEFAULTS_CONFIG=<file> DEPLOY_DEFAULTS_OUTPUT=<new-file> npx hardhat run scripts/v2/deployDefaults.ts --network sepolia\nRead-only preflight: npm run deploy:plan -- --network sepolia --config <file>\nRecovery: set DEPLOYER_ADDRESS to the recorded coordinator and use a NEW output file with the SAME config.\nLocal rehearsal: DEPLOY_DEFAULTS_SKIP_VERIFY=1 npx hardhat run scripts/v2/deployDefaults.ts\nUse docs/deployment-v2-agialpha.md. This command does not certify production readiness.'
+      'Staged deployment: sends transactions. Public networks require a reviewed config and fresh output file.\nHardhat: DEPLOY_DEFAULTS_CONFIG=<file> DEPLOY_DEFAULTS_OUTPUT=<new-file> npx hardhat run scripts/v2/deployDefaults.ts --network sepolia\nRead-only preflight: npm run deploy:plan -- --network sepolia --config <file>\nRecovery: set DEPLOYER_ADDRESS and DEPLOY_DEFAULTS_RESUME_EVIDENCE to the prior report; use a NEW output file with the SAME config. Public execution requires DEPLOYMENT_LOCK_DIRECTORY. Explicit distinct governance and separate authority roles are required.\nLocal rehearsal: DEPLOY_DEFAULTS_CONFIG=<reviewed-local.json> DEPLOY_DEFAULTS_SKIP_VERIFY=1 npx hardhat run scripts/v2/deployDefaults.ts\nUse docs/deployment-v2-agialpha.md. This command does not certify production readiness.'
     );
     return;
   }
@@ -479,7 +503,9 @@ export async function main(argv = process.argv.slice(2)) {
     : ({} as DeployerConfig);
 
   if (Object.prototype.hasOwnProperty.call(config.econ ?? {}, 'jobStake'))
-    throw new Error('Legacy econ.jobStake uses token amounts and is unsupported; explicitly configure econ.jobStakeBps');
+    throw new Error(
+      'Legacy econ.jobStake uses token amounts and is unsupported; explicitly configure econ.jobStakeBps'
+    );
   const publicNetwork = !LOCAL_NETWORKS.has(network.name);
   const outputCandidate =
     toStringOrUndefined(cli.output) ??
@@ -493,7 +519,13 @@ export async function main(argv = process.argv.slice(2)) {
     if (
       Object.keys(cli).some(
         (key) =>
-          !['config', 'output', 'resume-deployer', 'skip-verify'].includes(key)
+          ![
+            'config',
+            'output',
+            'resume-deployer',
+            'resume-evidence',
+            'skip-verify',
+          ].includes(key)
       )
     )
       throw new Error(
@@ -532,6 +564,8 @@ export async function main(argv = process.argv.slice(2)) {
     throw new Error('secureDefaults.pauseOnLaunch must be boolean');
   const pauseOnLaunch =
     publicNetwork || config.secureDefaults?.pauseOnLaunch !== false;
+  if (!pauseOnLaunch)
+    throw new Error('The authority-handover route requires a paused launch');
   const [owner] = await ethers.getSigners();
   if (!owner)
     throw new Error('No deployment signer configured for this network');
@@ -539,7 +573,13 @@ export async function main(argv = process.argv.slice(2)) {
   const configGovernance = toStringOrUndefined(config.governance);
   const governance = requireAddress(
     'Governance',
-    toStringOrUndefined(cli.governance) ?? configGovernance ?? owner.address
+    toStringOrUndefined(cli.governance) ?? configGovernance
+  );
+
+  const creator = ethers.getAddress(await owner.getAddress());
+  const authorityRoles = validateAuthorityRoles(
+    { governance, authority: config.authority },
+    creator
   );
 
   const taxConfig: TaxConfig = config.tax ?? {};
@@ -593,7 +633,9 @@ export async function main(argv = process.argv.slice(2)) {
       toStringOrUndefined(cli['min-stake']) ?? econConfig.minStake,
       'Global minimum stake'
     ),
-    jobStakeBps: parseJobStakeBps(cli['job-stake-bps'] ?? econConfig.jobStakeBps ?? 1000),
+    jobStakeBps: parseJobStakeBps(
+      cli['job-stake-bps'] ?? econConfig.jobStakeBps ?? 1000
+    ),
   };
 
   if (
@@ -615,18 +657,6 @@ export async function main(argv = process.argv.slice(2)) {
   if (econ.minStake < 0) {
     throw new Error('Global minimum stake must be non-negative');
   }
-
-
-  const hasEconOverrides =
-    econ.feePct !== 0 ||
-    econ.burnPct !== 0 ||
-    econ.employerSlashPct !== 0 ||
-    econ.treasurySlashPct !== 0 ||
-    econ.validatorSlashRewardPct !== 0 ||
-    econ.commitWindow !== 0 ||
-    econ.revealWindow !== 0 ||
-    econ.minStake !== 0n ||
-    econ.jobStakeBps !== 1000;
 
   const identityConfig: IdentityConfig = config.identity ?? {};
 
@@ -687,6 +717,83 @@ export async function main(argv = process.argv.slice(2)) {
   );
   fs.mkdirSync(path.dirname(outputPath), { recursive: true });
   const chainId = Number((await ethers.provider.getNetwork()).chainId);
+  const resumeAddress =
+    toStringOrUndefined(cli['resume-deployer']) ?? process.env.DEPLOYER_ADDRESS;
+  const resumeFile =
+    toStringOrUndefined(cli['resume-evidence']) ??
+    process.env.DEPLOY_DEFAULTS_RESUME_EVIDENCE;
+  if (Boolean(resumeAddress) !== Boolean(resumeFile))
+    throw new Error(
+      'Recovery requires both the recorded coordinator and DEPLOY_DEFAULTS_RESUME_EVIDENCE (the prior complete report or journal checkpoint).'
+    );
+  const previous = resumeFile
+    ? readRecoveryEvidence(path.resolve(resumeFile))
+    : undefined;
+  const configSha256 = createHash('sha256').update(configBytes).digest('hex');
+  if (
+    previous &&
+    (previous.authorityJournalVersion !== 1 ||
+      previous.provenance !== 'new-staged-creation' ||
+      !previous.deploymentId ||
+      !previous.authorityOperations?.['create:Deployer'] ||
+      ethers.getAddress(
+        previous.authorityOperations['create:Deployer'].address
+      ) !== ethers.getAddress(resumeAddress!))
+  )
+    throw new Error(
+      'Recovery requires the original new-creation journal; historical addressbooks cannot authorize this writer'
+    );
+  if (
+    previous &&
+    (previous.schema !== 'agi-jobs/staged-deployment/v1' ||
+      previous.chainId !== chainId ||
+      previous.creator !== creator ||
+      previous.governance !== governance ||
+      previous.configSha256 !== configSha256 ||
+      ethers.getAddress(
+        previous.coordinator ??
+          previous.authorityOperations['create:Deployer'].address
+      ) !== ethers.getAddress(resumeAddress!))
+  )
+    throw new Error(
+      'Deployment configuration changed or recovery evidence belongs to another chain, creator or coordinator'
+    );
+  const initialBlock = await ethers.provider.getBlock('latest');
+  const localGenesis = publicNetwork
+    ? undefined
+    : await ethers.provider.getBlock(0);
+  const campaign =
+    config.campaign ??
+    (localGenesis
+      ? { chainId, blockNumber: 0, blockHash: localGenesis.hash }
+      : undefined);
+  if (!campaign)
+    throw new Error(
+      'Public creation requires an explicit reviewed campaign block anchor'
+    );
+  const creationScope = previous
+    ? previous.creationScope
+    : {
+        chainId,
+        creator,
+        governance,
+        campaign,
+        initialBlock: {
+          number: initialBlock!.number,
+          hash: initialBlock!.hash,
+          timestamp: initialBlock!.timestamp,
+        },
+      };
+  if (JSON.stringify(creationScope?.campaign) !== JSON.stringify(campaign))
+    throw new Error(
+      'Recovery campaign differs from the reviewed configuration'
+    );
+  await assertCreationScope(ethers.provider, chainId, creationScope);
+  if (previous) {
+    assertNewAddress(resumeAddress!);
+    for (const record of Object.values(previous.creationRecords ?? {}) as any[])
+      assertNewAddress(record.address);
+  }
   const output = reserveDeploymentOutput(outputPath);
   let journal;
   try {
@@ -697,14 +804,21 @@ export async function main(argv = process.argv.slice(2)) {
   }
   const progress: Record<string, unknown> = {
     schema: 'agi-jobs/staged-deployment/v1',
+    authorityJournalVersion: 1,
+    provenance: 'new-staged-creation',
+    deploymentId: previous?.deploymentId ?? randomUUID(),
     status: 'prepared',
     network: network.name,
     chainId,
     governance,
+    creator,
+    authority: authorityRoles,
+    authorityOperations: previous?.authorityOperations ?? {},
+    creationScope,
     token: AGIALPHA,
     pauseOnLaunch,
-    configSha256: createHash('sha256').update(configBytes).digest('hex'),
-    transactions: [],
+    configSha256,
+    transactions: previous?.transactions ?? [],
     creationRecords: {},
     productionApproved: false,
     journal: `${outputPath}.journal.jsonl`,
@@ -725,6 +839,8 @@ export async function main(argv = process.argv.slice(2)) {
     );
   }
   console.log(`Deployment evidence: ${outputPath}`);
+  let deploymentLock;
+  let completed = false;
   try {
     checkpoint({});
     if (publicNetwork) {
@@ -732,27 +848,53 @@ export async function main(argv = process.argv.slice(2)) {
         verificationBundle: archiveVerification(`${outputPath}.verification`),
       });
     }
+    const lockDirectory =
+      process.env.DEPLOYMENT_LOCK_DIRECTORY ??
+      (publicNetwork
+        ? undefined
+        : path.join(os.tmpdir(), 'agi-deployment-locks'));
+    if (!publicNetwork && lockDirectory)
+      fs.mkdirSync(lockDirectory, { recursive: true, mode: 0o700 });
+    deploymentLock = acquireDeploymentLock(lockDirectory, {
+      chainId,
+      creator,
+      governance,
+      configSha256,
+      outputPath,
+    });
+    checkpoint({ deploymentLock: deploymentLock.path });
+    const readAuthoritySource = createAuthoritySourceReader();
+    const authority = createAuthorityHandover({
+      provider: ethers.provider,
+      signer: owner,
+      runtime: ethers,
+      chainId,
+      creator,
+      governance,
+      creationScope,
+      token: AGIALPHA,
+      readSource: readAuthoritySource,
+      operations: progress.authorityOperations,
+      checkpoint,
+    });
+    if (previous) await authority.reconcile();
     await ensureAgialphaToken();
 
     const gasLimitOverride = await getLocalGasLimitOverride();
     const txOverrides = gasLimitOverride ? { gasLimit: gasLimitOverride } : {};
 
-    const Deployer = await ethers.getContractFactory(
-      'contracts/v2/Deployer.sol:Deployer'
-    );
-    const resumeAddress =
-      toStringOrUndefined(cli['resume-deployer']) ??
-      process.env.DEPLOYER_ADDRESS;
-    const deployer = resumeAddress
-      ? Deployer.attach(ethers.getAddress(resumeAddress))
-      : await Deployer.deploy({ ...txOverrides });
-    const coordinatorTx = deployer.deploymentTransaction();
-    if (coordinatorTx)
-      checkpoint({
-        status: 'coordinator-submitted',
-        coordinatorTransaction: coordinatorTx.hash,
-        coordinator: await deployer.getAddress(),
-      });
+    const deployer = await authority.deploy('Deployer', txOverrides);
+    if (
+      resumeAddress &&
+      ethers.getAddress(resumeAddress) !== (await deployer.getAddress())
+    )
+      throw new Error(
+        'Coordinator differs from the canonical creation journal'
+      );
+    checkpoint({
+      status: 'coordinator-recorded',
+      coordinator: await deployer.getAddress(),
+    });
     await deployer.waitForDeployment();
     const deployerAddress = await deployer.getAddress();
     if (
@@ -763,38 +905,42 @@ export async function main(argv = process.argv.slice(2)) {
       throw new Error(
         'Coordinator runtime differs from this compiled release; use its matching release for recovery.'
       );
-    if (
-      (await deployer.owner()).toLowerCase() !== owner.address.toLowerCase()
-    ) {
-      throw new Error(
-        'The connected signer does not own the deployment coordinator'
-      );
-    }
     const alreadyFinalized = await deployer.deployed();
-    const configurationHash = ethers.keccak256(
-      ethers.toUtf8Bytes(
-        JSON.stringify(
-          {
-            chainId,
-            token: AGIALPHA,
-            governance,
-            econ,
-            identity,
-            pauseOnLaunch,
-            tax: withTax
-              ? { uri: requestedTaxUri, description: requestedTaxDescription }
-              : null,
-            secureDefaults: Object.fromEntries(
-              Object.entries(config.secureDefaults ?? {}).sort(([a], [b]) =>
-                a.localeCompare(b)
-              )
-            ),
-          },
-          (_key, value) =>
-            typeof value === 'bigint' ? value.toString() : value
-        )
+    const coordinatorOwner = ethers.getAddress(await deployer.owner());
+    if (
+      coordinatorOwner !== creator &&
+      !(alreadyFinalized && coordinatorOwner === governance)
+    )
+      throw new Error(
+        'Unexpected coordinator owner; unfinished deployment requires its creation signer'
+      );
+    const configuration = JSON.parse(
+      JSON.stringify(
+        {
+          chainId,
+          token: AGIALPHA,
+          governance,
+          authority: authorityRoles,
+          creationScope,
+          econ,
+          identity,
+          pauseOnLaunch,
+          tax: withTax
+            ? { uri: requestedTaxUri, description: requestedTaxDescription }
+            : null,
+          secureDefaults: Object.fromEntries(
+            Object.entries(config.secureDefaults ?? {}).sort(([a], [b]) =>
+              a.localeCompare(b)
+            )
+          ),
+        },
+        (_key, value) => (typeof value === 'bigint' ? value.toString() : value)
       )
     );
+    const configurationHash = ethers.keccak256(
+      ethers.toUtf8Bytes(JSON.stringify(configuration))
+    );
+    checkpoint({ configuration, configurationHash });
     const committed = await deployer.configurationHash();
     if (committed !== ethers.ZeroHash && committed !== configurationHash)
       throw new Error(
@@ -805,12 +951,19 @@ export async function main(argv = process.argv.slice(2)) {
         throw new Error(
           'Finalized coordinator has no matching plan commitment. Reconcile it using the original deployment procedure.'
         );
-      const transaction = await deployer.commitConfiguration(configurationHash);
+      const operation = await authority.send(
+        'commit',
+        'Deployer',
+        deployerAddress,
+        deployer.interface.encodeFunctionData('commitConfiguration', [
+          configurationHash,
+        ]),
+        txOverrides
+      );
       checkpoint({
         configurationHash,
-        configurationTransaction: transaction.hash,
+        configurationTransaction: operation.hash,
       });
-      await transaction.wait();
     }
     checkpoint({
       configurationHash,
@@ -839,6 +992,7 @@ export async function main(argv = process.argv.slice(2)) {
       },
     };
     await stageProtocol(deployer, identity, governance, {
+      authority,
       econ,
       withTaxPolicy: withTax,
       tax: { uri: requestedTaxUri, description: requestedTaxDescription },
@@ -861,36 +1015,29 @@ export async function main(argv = process.argv.slice(2)) {
     });
 
     if (!alreadyFinalized) {
-      const tx = pauseOnLaunch
-        ? await deployer.deployPaused(
-            econ,
-            identity,
-            governance,
-            withTax,
-            txOverrides
-          )
-        : withTax
-        ? hasEconOverrides
-          ? await deployer.deploy(econ, identity, governance, txOverrides)
-          : await deployer.deployDefaults(identity, governance, txOverrides)
-        : hasEconOverrides
-        ? await deployer.deployWithoutTaxPolicy(
-            econ,
-            identity,
-            governance,
-            txOverrides
-          )
-        : await deployer.deployDefaultsWithoutTaxPolicy(
-            identity,
-            governance,
-            txOverrides
-          );
-
+      if (!pauseOnLaunch)
+        throw new Error(
+          'The authority-handover route requires a paused launch'
+        );
+      const operation = await authority.send(
+        'finalize',
+        'Deployer',
+        deployerAddress,
+        deployer.interface.encodeFunctionData('deployPaused', [
+          econ,
+          identity,
+          governance,
+          withTax,
+        ]),
+        txOverrides
+      );
       checkpoint({
-        status: 'finalization-submitted',
-        finalizationTransaction: tx.hash,
+        status: 'finalization-recorded',
+        finalizationTransaction: operation.hash,
       });
-      const receipt = await tx.wait();
+      const receipt = await ethers.provider.getTransactionReceipt(
+        operation.hash
+      );
       const deployLog = receipt.logs.find(
         (log) =>
           log.address.toLowerCase() === deployerAddress.toLowerCase() &&
@@ -981,29 +1128,14 @@ export async function main(argv = process.argv.slice(2)) {
       );
       const currentOwner = ethers.getAddress(await ownable.owner());
       if (currentOwner === ethers.getAddress(governance)) continue;
+      if (currentOwner !== ethers.getAddress(deployerAddress))
+        throw new Error(`${name} has an unexpected current owner`);
       const pendingOwner = await ownable.pendingOwner();
       if (ethers.getAddress(pendingOwner) !== ethers.getAddress(governance))
         throw new Error(
           `${name} pending governance does not match the requested owner`
         );
-      if (ethers.getAddress(governance) === ethers.getAddress(owner.address)) {
-        const acceptance = await ownable.acceptOwnership();
-        checkpoint({
-          status: 'governance-acceptance-submitted',
-          ownershipTransactions: [
-            ...((progress.ownershipTransactions as unknown[]) ?? []),
-            { contract: name, address, hash: acceptance.hash },
-          ],
-        });
-        await acceptance.wait();
-        if (
-          ethers.getAddress(await ownable.owner()) !==
-          ethers.getAddress(governance)
-        )
-          throw new Error(`${name} governance acceptance did not complete`);
-      } else {
-        pendingOwnership.push({ contract: name, address, pendingOwner });
-      }
+      pendingOwnership.push({ contract: name, address, pendingOwner });
     }
     if (pendingOwnership.length) {
       console.log(
@@ -1095,6 +1227,7 @@ export async function main(argv = process.argv.slice(2)) {
       TaxPolicy: withTax ? taxPolicy : 'disabled',
       IdentityRegistry: identityRegistry,
       SystemPause: systemPause,
+      ArbitratorCommittee: (await deployer.stagedModules())[13],
     } as Record<string, string>;
 
     console.log('\nDeployment summary');
@@ -1179,18 +1312,47 @@ export async function main(argv = process.argv.slice(2)) {
         'Observed ownership differs from the expected SystemPause/governance topology.'
       );
     const allPaused = pauseState.every((item) => item.paused);
+    // Record the complete fixed-source/constructor inventory before the final
+    // coordinator transfer. External treasury/governance roles stay manual.
+    checkpoint({ ...payload, pauseState, explorerVerification });
+    await authority.reconcile();
+    const beforeHandover = await auditAuthority(progress, {
+      provider: ethers.provider,
+      readSource: readAuthoritySource,
+      blockTag: 'latest',
+    });
+    const pendingCommissioning =
+      /^(Deployer\.owner$|(?:IdentityRegistry|TaxPolicy)\.(?:owner|pendingOwner)$|StakeManager\.treasury(?:$|Allowlist\()|FeePool\.(?:governance$|treasury(?:$|Allowlist\())|ENS\.|NameWrapper\.)/;
+    if (
+      beforeHandover.blockers.some((role) => !pendingCommissioning.test(role))
+    )
+      throw new Error(
+        'Fixed wiring or deployment-granted authority differs from the reviewed topology'
+      );
+    if (!allPaused)
+      throw new Error('Authority handover requires all managed modules paused');
+    await authority.handover('Deployer', deployerAddress);
+    const authorityCertificate = await auditAuthority(progress, {
+      provider: ethers.provider,
+      readSource: readAuthoritySource,
+      blockTag: 'latest',
+    });
     checkpoint({
+      authorityCertificate,
+      activationReady: false,
       ...payload,
       status: allPaused ? 'awaiting-commissioning' : 'requires-pause-review',
       pauseState,
       explorerVerification,
       requestedSecureDefaults: config.secureDefaults ?? {},
       remainingActions: [
-        'Complete pending two-step ownership acceptance.',
+        'Complete pending two-step ownership acceptance and explicit FeePool governance/treasury and StakeManager treasury configuration.',
+        'Run signer-free authority-audit.cjs at a finalized block with complete explorer verification evidence; activation remains blocked until it passes.',
         'Review and apply launch limits through the actual governance authority.',
         'Complete source verification and independent security/worker/settlement commissioning before governance unpauses the stack.',
       ],
     });
+    completed = true;
     console.log(`Deployment evidence written to ${outputPath}`);
     console.log(
       allPaused
@@ -1202,7 +1364,7 @@ export async function main(argv = process.argv.slice(2)) {
       checkpoint({
         status: 'interrupted',
         recovery:
-          'Reconcile recorded transactions and coordinator state. Resume the same release and configuration using DEPLOYER_ADDRESS and a NEW output filename.',
+          'Reconcile recorded transactions and coordinator state. Resume the same release and configuration using DEPLOYER_ADDRESS, DEPLOY_DEFAULTS_RESUME_EVIDENCE and a NEW output filename. Retained sender locks require manual receipt reconciliation before removal.',
       });
     } catch {
       /* Preserve existing evidence if its reservation was changed. */
@@ -1211,6 +1373,7 @@ export async function main(argv = process.argv.slice(2)) {
   } finally {
     journal.close();
     output.close();
+    if (completed) deploymentLock?.release();
   }
 }
 

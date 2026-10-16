@@ -20,7 +20,23 @@ async function deployImplementations(
   let cached = deployments.get(provider);
   if (!cached) deployments.set(provider, (cached = new Map()));
   const addresses = [];
-  for (const name of names) {
+  for (const [index, name] of names.entries()) {
+    if (options.authority) {
+      const address = await options.authority.implementation(
+        name,
+        options.existingAddresses?.[index]
+      );
+      const source = `contracts/v2/implementation/${name}.sol:${name}`;
+      if (options.onDeployed)
+        await options.onDeployed(
+          name,
+          await ethers.getContractAt(source, address, signer),
+          [],
+          source
+        );
+      addresses.push(address);
+      continue;
+    }
     const previous = cached.get(name);
     let address = previous?.address;
     // Snapshots and chain resets may have removed a cached deployment.

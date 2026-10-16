@@ -79,13 +79,44 @@ function validateConfig(config, network, token) {
       'Configuration network/chainId must match the selected target'
     );
   if (Object.hasOwn(config.econ || {}, 'jobStake'))
-    throw new Error('Legacy econ.jobStake is unsupported; configure jobStakeBps explicitly');
-  if (!Number.isInteger(config.econ?.jobStakeBps) || config.econ.jobStakeBps < 0 || config.econ.jobStakeBps > 10000)
+    throw new Error(
+      'Legacy econ.jobStake is unsupported; configure jobStakeBps explicitly'
+    );
+  if (
+    !Number.isInteger(config.econ?.jobStakeBps) ||
+    config.econ.jobStakeBps < 0 ||
+    config.econ.jobStakeBps > 10000
+  )
     throw new Error('Explicit jobStakeBps must be an integer from 0 to 10000');
   validateOneclickConfig(config, token.decimals);
   if (token.decimals !== 18)
     throw new Error('Current protocol requires 18 token decimals');
   const governance = address(config.governance, 'governance');
+  if (
+    !config.campaign ||
+    config.campaign.chainId !== CHAIN_IDS[network] ||
+    !Number.isSafeInteger(config.campaign.blockNumber) ||
+    config.campaign.blockNumber < 0
+  )
+    throw new Error(
+      'Explicit reviewed campaign chain/block anchor is required'
+    );
+  bytes32(config.campaign.blockHash, 'campaign.blockHash');
+
+  const authorityKeys = [
+    'stakeManagerTreasury',
+    'feePoolTreasury',
+    'feePoolGovernance',
+  ];
+  if (
+    !config.authority ||
+    Object.keys(config.authority).sort().join() !== authorityKeys.sort().join()
+  )
+    throw new Error(
+      'Explicit separate authority treasury/governance roles are required'
+    );
+  for (const key of authorityKeys)
+    address(config.authority[key], `authority.${key}`);
   const agialpha = address(config.agialpha, 'agialpha');
   if (agialpha !== address(token.address, 'configured token'))
     throw new Error(
@@ -234,6 +265,15 @@ async function buildDeploymentCandidate(options) {
         observedContracts: [],
       };
       if (normalizedConfig) {
+        const campaign = normalizedConfig.campaign;
+        if (
+          campaign.blockNumber > block.number ||
+          (await provider.getBlock(campaign.blockNumber))?.hash !==
+            campaign.blockHash
+        )
+          throw new ChainInspectionError(
+            'Reviewed campaign block anchor is not canonical'
+          );
         const dependencies = {
           token: normalizedConfig.agialpha,
           ens: normalizedConfig.identity.ens,

@@ -29,10 +29,10 @@ npm ci
 npm run ci:preflight
 npm run compile
 npm run release:check-size
-npm run deploy:local
+DEPLOY_DEFAULTS_CONFIG=deployment-config/reviewed-local.json npm run deploy:local
 ```
 
-The last command prints a unique evidence filename under `reports/`. It uses a local token fixture, deploys ten fixed implementations and fourteen components, wires the stack and records actual chain values. The in-process chain disappears when the command exits. Use a persistent local node and `--network localhost` when testing recovery or services.
+Prepare the local JSON with a distinct local governor and all three explicit `authority` addresses (the same fields described below). Local runs no longer default privileged roles to the creation signer. The last command prints a unique evidence filename under `reports/`. It uses a local token fixture, deploys ten fixed implementations and fourteen components, wires the stack and records actual chain values. The in-process chain disappears when the command exits. Use a persistent local node and `--network localhost` when testing recovery or services.
 
 Expected final message: **Managed modules remain paused for commissioning.** Review `status`, `pauseState`, `pendingOwnership`, `explorerVerification`, `coordinator` and `configurationHash` in the JSON report. Local success does not clear production gates.
 
@@ -42,8 +42,11 @@ Copy `deployment-config/sepolia.json` or `deployment-config/mainnet.json` to a n
 
 | Field | What to enter |
 | --- | --- |
+| `campaign` | Reviewed `{chainId, blockNumber, blockHash}` from a fresh canonical block before this new campaign; never reuse a historical campaign anchor |
 | `network`, `chainId` | `sepolia` / `11155111`, or `mainnet` / `1` |
-| `governance` | The verified, nonzero governance address |
+| `governance` | The verified, nonzero governance address, distinct from the creation signer |
+| `authority.stakeManagerTreasury` | Explicit reviewed StakeManager treasury; never inferred from governance |
+| `authority.feePoolTreasury`, `authority.feePoolGovernance` | Two explicit reviewed FeePool roles; never inferred from ownership |
 | `agialpha` | The token address in the selected `config/agialpha.<network>.json`; 18 decimals |
 | `econ` | All nine documented fee, burn, slashing, timing and stake fields; whole percentages and decimal token strings |
 | `identity` | Deployed ENS registry, optional wrapper, matching names/root hashes and explicit Merkle roots |
@@ -51,6 +54,8 @@ Copy `deployment-config/sepolia.json` or `deployment-config/mainnet.json` to a n
 | `secureDefaults.pauseOnLaunch` | `true` until commissioning |
 | Other `secureDefaults` | Requested reward/duration/timing limits; these remain pending governance application and appear in the report |
 | `output` | A new evidence path; never reuse a prior report |
+
+Each authority address must be nonzero and distinct from the creation signer. For the current proposed new campaign, governance is `0xd76AD27a1Bcf8652e7e46BE603FA742FD1c10A99`; the separately proposed StakeManager treasury is `0xa9eD0539c2fbc5C6BC15a2E168bd9BCd07c01201` and FeePool treasury is `0xd76AD27a1Bcf8652e7e46BE603FA742FD1c10A99`. FeePool governance remains its own reviewed field. These are proposed configuration inputs, not permission to change an existing stack. No treasury or fee-governance setter is sent automatically.
 
 Economic zero values in the coordinator select its defaults: 5% fee, 1% burn, one-day windows, token-scale minimum stake and the registry's default job stake. If you intend an actual zero fee or stake, plan an explicit governance change while paused. The public preflight requires slashing shares to total 100. It rejects unsupported economic fields rather than silently ignoring them.
 
@@ -71,6 +76,7 @@ Planner exit codes: **0** means a candidate is ready for review, **2** means a v
 A public deployment requires the separately approved signing account, gas funding, exact-commit CI, valid release signing, a passing dependency gate and independent security review. A GitHub source prerelease does not substitute for those requirements.
 
 ```bash
+DEPLOYMENT_LOCK_DIRECTORY=/absolute/shared/deployment-locks \
 DEPLOY_DEFAULTS_CONFIG=deployment-config/reviewed-sepolia.json \
 DEPLOY_DEFAULTS_OUTPUT=reports/sepolia-deployment-01.json \
 npm run deploy:staged -- --network sepolia
@@ -78,7 +84,11 @@ npm run deploy:staged -- --network sepolia
 
 Hardhat accepts `--network`, but does **not** forward arbitrary script flags. Its `--config` option selects a Hardhat JavaScript/TypeScript file, not deployment JSON. Use the environment variables above. Public-network parameter overrides on the script CLI are rejected so the reviewed JSON remains authoritative.
 
-The script reserves a new private evidence file before transactions. It records coordinator and component transaction hashes, commits a digest of the resolved plan on the coordinator, and updates evidence as components confirm. Its append-only `.journal.jsonl` companion retains prior checkpoints if the latest report write is interrupted; use the last complete journal line and reconcile every submitted hash. Tax metadata is installed during creation, before ownership handoff. `Deployer.deployPaused` wires and hands off all eight managed modules atomically in the paused state. Existing direct coordinator entrypoints retain their historical unpaused behavior for compatibility; the current script uses the paused path by default.
+The script reserves a new private evidence file before transactions. It records coordinator and component transaction hashes, commits a digest of the resolved plan on the coordinator, and updates evidence as components confirm. Its append-only `.journal.jsonl` companion retains prior checkpoints if the latest report write is interrupted; use the last complete journal line and reconcile every submitted hash. Tax metadata is installed during creation, before ownership handoff. `Deployer.deployPaused` wires and hands off all eight managed modules atomically in the paused state. The staged CLI refuses an unpaused launch. Existing direct coordinator entrypoints retain their historical behavior for compatibility; this tooling does not call them.
+
+The ten fixed implementation owners are transferred explicitly to governance, and the coordinator is transferred only after finalization and topology readback. Seven implementation contracts update their Governable owner/governance together; the other three and coordinator use Ownable. No renounce or zero-address workaround is used. Every signed creation/transfer/staging intent is journaled and fsynced before submission, binding chain, actual sender, role, nonce, target, zero value and input hash. The report preserves the initial canonical block anchor and resolved plan commitment. Ownership handover does not expand the implementations' delegate-only capabilities.
+
+`DEPLOYMENT_LOCK_DIRECTORY` must be an existing shared absolute directory used by every cooperating deployment repository. Atomic directories named `<chainId>-<lowercase actual signer address>` serialize the whole run. A failed run retains its lock; there is no stale-lock auto-break. This is cooperative same-filesystem exclusion, **not** protection against another machine, an external wallet action, or a script ignoring the lock. Prohibit all such concurrent signing. This CLI signs only with the creator; later manual governance calls must be serialized separately across Jobs, Alpha and Manager using the same actual-signer namespace. Different creators sharing one governor are not protected by creator-only locks. A nonce observation or unsigned allocation is never a reservation.
 
 The report is deliberately labelled `productionApproved: false`. Explorer verification failures remain visible as `pending`; skipping verification does not count as success. The report contains public addresses and configuration, never private keys or raw provider errors.
 
@@ -89,19 +99,21 @@ The report is deliberately labelled `productionApproved: false`. Explorer verifi
 3. Use the **same source release and resolved parameters**, the original `coordinator`, and a **new** output filename:
 
 ```bash
+DEPLOYMENT_LOCK_DIRECTORY=/absolute/shared/deployment-locks \
 DEPLOYER_ADDRESS=0xYourRecordedCoordinator \
+DEPLOY_DEFAULTS_RESUME_EVIDENCE=reports/sepolia-deployment-01.json \
 DEPLOY_DEFAULTS_CONFIG=deployment-config/reviewed-sepolia.json \
 DEPLOY_DEFAULTS_OUTPUT=reports/sepolia-recovery-02.json \
 npm run deploy:staged -- --network sepolia
 ```
 
-The script checks coordinator runtime, signer ownership, the committed plan digest, and each existing component's creation-code hash. It refuses configuration drift. A fully finalized deployment can regenerate its report without deploying another stack. Outstanding connected-owner acceptance may still require transactions. An implementation submitted before interruption can remain unused; reconcile it before budgeting a retry. Never treat a blind rerun as free or universally idempotent.
+Use the original report or its `.journal.jsonl` companion. Reconcile a retained lock manually before removing it; never delete a lock because it merely appears old. Recovery verifies actual canonical creation transactions/receipts, creator, nonce, exact initcode/runtime, original block anchor, selected roles and committed configuration. The journal’s initial block must be at or after the separately reviewed configuration campaign anchor, and every creation receipt must be strictly later. Public plans require that explicit anchor; disposable local chains may default to their own genesis. The old mainnet addressbook is explicitly excluded. A schema version or new deployment UUID cannot turn a historical addressbook into a new deployment journal. The reviewed campaign configuration remains an authorization trust boundary: no unsigned file can prove that an operator has approved its contents. Do not authorize a backdated anchor or substitute a new config to relabel old receipts.
 
-An old coordinator without the current plan commitment must be reconciled using its original release and procedure. Do not use the new script to pretend it was deployed with the new safeguards.
+An interrupted implementation creation or handover is resumed by its exact transaction hash, or a bounded scan of at most 2,048 canonical blocks for its recorded creator/nonce and input. A missing, pending, replaced, failed or ambiguous submission is fatal; the CLI never guesses that it is safe to resend. A fully finalized, handed-over deployment can regenerate its evidence without a second creation or transfer. Changed code, chain, role, owner, source, constructor arguments or commitment fails closed. Only this campaign's newly journaled contracts can be handed over. Previous deployments, funds, approvals and settlement are outside this procedure.
 
 ## 6. Complete governance and commissioning
 
-The eight managed modules are JobRegistry, StakeManager, ValidationModule, ReputationEngine, DisputeModule, PlatformRegistry, FeePool and ArbitratorCommittee. Their owner is **SystemPause**; SystemPause's owner is the requested governance. CertificateNFT, JobRouter and PlatformIncentives are owned directly by governance. IdentityRegistry and TaxPolicy use two-step acceptance, listed under `pendingOwnership` until complete.
+The eight managed modules are JobRegistry, StakeManager, ValidationModule, ReputationEngine, DisputeModule, PlatformRegistry, FeePool and ArbitratorCommittee. Their owner remains **SystemPause**; SystemPause's owner is the requested governance. CertificateNFT, JobRouter and PlatformIncentives are owned directly by governance. IdentityRegistry and TaxPolicy use two-step acceptance, listed under `pendingOwnership` until complete.
 
 Keep this topology. For a managed-module setter, governance calls `SystemPause.executeGovernanceCall(target, encodedCall)`; a direct EOA call to that module is not the same authority. Configure requested launch limits while paused, compare confirmed values with the reviewed plan, then complete source verification, token burnability, ENS/identity admission, worker isolation, independent review, settlement, monitoring and recovery drills. The limits helper accepts the staged report and routes managed setters through SystemPause. Prepare the calls without transactions first:
 
@@ -114,9 +126,22 @@ npx hardhat run --no-compile scripts/v2/apply-secure-defaults.ts --network sepol
 
 Review each returned `to`, `data`, `requiredCaller` and chain ID. A multisig or timelock must execute these calls through its approved process. A directly connected governance signer may remove `ONECLICK_DRY_RUN=1` to execute; this sends transactions and prints each hash before waiting. All configuration and caller checks run before the first send. The helper preserves omitted job reward/stake values and can pause a partly paused stack. Reconcile receipts before any retry; several setter transactions are not an atomic batch.
 
-For an existing legacy one-click deployment whose modules remain owned by governance, the helper sends setters directly to the module owner and pause calls through SystemPause after validating its delegated pauser role. It supports mixed pause states and rejects missing pause authority before sending any transaction. This compatibility path does not change the staged ownership topology above.
+### Independent authority readback and activation
 
-Only the actual governance authority may approve `SystemPause.unpauseAll()` after those gates pass. A restart or recovery run is never an instruction to unpause.
+After manual two-step acceptances, separate treasury/governance configuration and complete explorer verification, run a signer-free audit using the same reviewed source and compiler evidence:
+
+```bash
+AUTHORITY_RPC_URL=<read-only-rpc> node scripts/deploy/authority-audit.cjs \
+  reports/sepolia-deployment-01.json reports/sepolia-authority-finalized.json
+```
+
+The audit pins a finalized canonical block (EIP-1898 on public chains), checks all 24 contracts or 25 with TaxPolicy, compiled source closure/ABI/initcode/runtime, fixed delegates, creation receipts, exact owners, pending owners, SystemPause wiring/pausers and listed creator-specific privileged mappings. Missing, stale, duplicate, skipped, failed or interrupted verification evidence blocks activation. Saved completion flags never replace fresh readback. Explorer-status evidence is an input from the existing strict verification workflow, not an independent explorer attestation by this audit.
+
+Configured ENS roots and their current owners' operator approvals are checked read-only; incomplete reads fail closed. The certificate explicitly does not claim global enumeration of mappings, ancestor ENS authority, unrelated aliases, token/NFT approvals or unrelated external permissions. Unreviewed identity aliases or attestation controllers block this campaign's certificate.
+
+`systemPauseAction.ts` requires `DEPLOYMENT_AUTHORITY_EVIDENCE` pointing to the complete staged deployment report before **any unpause**, including a dry run. It performs a fresh finalized audit and requires the selected SystemPause to match. This route intentionally refuses historical-stack unpause, including dry runs; operators must keep the original release for any separately authorized legacy operation. This campaign does not authorize such an operation. This is a tooling gate, not a new on-chain restriction: a governor using another tool can still call the contract, so independent security, worker, settlement, monitoring and recovery approval remain mandatory. The certificate always retains `productionApproved: false`. Neither deployment, recovery nor auditing automatically unpauses or changes policy numbers.
+
+Only the actual governance authority may approve `SystemPause.unpauseAll()` after those gates pass. Signing remains manual and transaction-specific; funding and balances are managed separately by the operator.
 
 ## Troubleshooting
 

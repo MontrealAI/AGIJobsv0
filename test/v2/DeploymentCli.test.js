@@ -11,10 +11,32 @@ describe('Deployment CLI rehearsals', function () {
     directory = fs.mkdtempSync(path.join(os.tmpdir(), 'agi-deployment-cli-'));
   });
   afterEach(function () {
+    delete process.env.DEPLOYMENT_LOCK_DIRECTORY;
     fs.rmSync(directory, { recursive: true, force: true });
   });
   function run(script, extraEnv = {}, network = 'hardhat') {
     const env = { ...process.env };
+    if (
+      script === 'scripts/v2/deployDefaults.ts' &&
+      !extraEnv.DEPLOY_DEFAULTS_CONFIG
+    ) {
+      const file = path.join(directory, 'distinct-governance.json');
+      fs.writeFileSync(
+        file,
+        JSON.stringify({
+          governance: '0x0000000000000000000000000000000000001234',
+          authority: {
+            stakeManagerTreasury: '0x0000000000000000000000000000000000005678',
+            feePoolTreasury: '0x0000000000000000000000000000000000005678',
+            feePoolGovernance: '0x0000000000000000000000000000000000001234',
+          },
+        })
+      );
+      extraEnv = { ...extraEnv, DEPLOY_DEFAULTS_CONFIG: file };
+    }
+    const locks = path.join(directory, 'locks');
+    fs.mkdirSync(locks, { recursive: true });
+    extraEnv = { ...extraEnv, DEPLOYMENT_LOCK_DIRECTORY: locks };
     for (const key of Object.keys(env)) {
       if (
         /^(ONECLICK_|DEPLOY_DEFAULTS_|DEPLOYER_ADDRESS$|GOVERNANCE_ADDRESS$|SKIP_MOCK_AGIALPHA$)/.test(
@@ -44,7 +66,7 @@ describe('Deployment CLI rehearsals', function () {
     return { ...result, log: `${result.stdout || ''}\n${result.stderr || ''}` };
   }
 
-  it('reports confirmed staged defaults and completes connected-owner acceptance', function () {
+  it('reports confirmed staged defaults and explicit pending governor acceptance', function () {
     const output = path.join(directory, 'deployment.json');
     const result = run('scripts/v2/deployDefaults.ts', {
       DEPLOY_DEFAULTS_SKIP_VERIFY: '1',
@@ -58,15 +80,20 @@ describe('Deployment CLI rehearsals', function () {
     expect(report.econ.revealWindow).to.equal(86400);
     expect(report.econ.minStake).to.be.a('string');
     expect(report.econ.jobStakeBps).to.be.a('string');
-    expect(report.pendingOwnership).to.deep.equal([]);
+    expect(report.pendingOwnership).to.have.lengthOf(2);
     expect(report.contracts.SystemPause).to.match(/^0x[0-9a-fA-F]{40}$/);
     expect(report.status).to.equal('awaiting-commissioning');
     expect(report.pauseState).to.have.lengthOf(8);
     expect(report.pauseState.every((item) => item.paused)).to.equal(true);
     expect(report.productionApproved).to.equal(false);
     expect(report.coordinator).to.match(/^0x[0-9a-fA-F]{40}$/);
-    expect(report.transactions).to.have.lengthOf(24);
-    expect(report.ownershipTransactions).to.have.lengthOf(2);
+    expect(report.transactions).to.have.lengthOf(14);
+    expect(
+      Object.keys(report.authorityOperations).filter((key) =>
+        key.startsWith('handover:')
+      )
+    ).to.have.lengthOf(11);
+    expect(report.authorityCertificate.activationReady).to.equal(false);
   });
 
   it('reports outstanding governance acceptance without impersonation', function () {
@@ -77,6 +104,11 @@ describe('Deployment CLI rehearsals', function () {
       config,
       JSON.stringify({
         governance,
+        authority: {
+          stakeManagerTreasury: governance,
+          feePoolTreasury: governance,
+          feePoolGovernance: governance,
+        },
         econ: { burnPct: 1 },
         tax: {
           uri: 'ipfs://reviewed-policy',
@@ -131,9 +163,20 @@ describe('Deployment CLI rehearsals', function () {
     const { main } = require('../../scripts/v2/deployDefaults.ts');
     const { ethers } = require('hardhat');
     const config = path.join(directory, 'reviewed.json');
+    const governance = '0x0000000000000000000000000000000000001234';
+    const authority = {
+      stakeManagerTreasury: governance,
+      feePoolTreasury: governance,
+      feePoolGovernance: governance,
+    };
+    const locks = path.join(directory, 'resume-locks');
+    fs.mkdirSync(locks);
+    process.env.DEPLOYMENT_LOCK_DIRECTORY = locks;
     fs.writeFileSync(
       config,
       JSON.stringify({
+        governance,
+        authority,
         econ: { feePct: 6 },
         tax: { uri: 'ipfs://reviewed', description: 'Reviewed terms' },
       })
@@ -149,6 +192,8 @@ describe('Deployment CLI rehearsals', function () {
       ...common,
       '--resume-deployer',
       report.coordinator,
+      '--resume-evidence',
+      initial,
       '--output',
       recovered,
     ]);
@@ -162,6 +207,8 @@ describe('Deployment CLI rehearsals', function () {
     fs.writeFileSync(
       config,
       JSON.stringify({
+        governance,
+        authority,
         econ: { feePct: 7 },
         tax: { uri: 'ipfs://reviewed', description: 'Reviewed terms' },
       })
@@ -172,6 +219,8 @@ describe('Deployment CLI rehearsals', function () {
         ...common,
         '--resume-deployer',
         report.coordinator,
+        '--resume-evidence',
+        initial,
         '--output',
         path.join(directory, 'changed.json'),
       ]);
