@@ -1,6 +1,6 @@
 # Percentage-based collateral for new JobRegistry deployments
 
-This is a new deployment candidate, not an upgrade of the recorded mainnet contracts. It is separate from source release rc8 and its artifacts. No deployment, migration, unpause or token movement is authorized by this document.
+The percentage policy and the subsequent reputation corrections are merged in source release `source-v2.1.0-rc.12` (`b936efe066dc1b1f7a2fcc18ab9950d77cdf96d5`). This is source qualification for a separate new deployment; it does not qualify a Mainnet signing campaign or update recorded deployments. The dated test checkpoints below retain their original scope and limitations. No deployment, migration, unpause or token movement is authorized by this document.
 
 ## Economics
 
@@ -20,9 +20,9 @@ Legacy `jobStake()`, `DEFAULT_JOB_STAKE()`, `setJobStake(uint96)` and `setJobPar
 
 Deployment JSON uses integer `econ.jobStakeBps`, normally 1000. `econ.jobStake` is rejected, including on local staged deployment. Public deployment requires explicit basis points; configuration samples still require real governance, reviewed tax choices and other launch settings. The coordinator's economic tuple changes its last field from uint96 fixed stake to uint256 basis points, intentionally changing function selectors. Old calldata must be regenerated; it must not be relabeled.
 
-The three JobRegistry delegates use `JobRegistryConfiguration:percentage-stake-v2`, `JobRegistryLifecycle:percentage-stake-v2`, and `JobRegistrySettlement:percentage-stake-v2` module IDs. The new controller rejects v1 implementations. This prevents a new percentage quote from being paired with an old fixed-stake lifecycle. Preserve complete matched controller/implementation sets. Historical prebuilt demo bundles retain their matched v1 controller and v1 delegates and are not production candidates.
+The current three JobRegistry delegates use `JobRegistryConfiguration:percentage-stake-v4`, `JobRegistryLifecycle:percentage-stake-v4`, and `JobRegistrySettlement:percentage-stake-v4` module IDs, incorporating the terminal-reputation correction. The current controller rejects earlier generations. Preserve complete matched controller/implementation sets. Historical prebuilt demo bundles retain their original matched controller and delegates and are not production candidates.
 
-The old fixed storage slot is retained as an inactive internal slot, and rate storage is appended. This does **not** make old immutable controllers upgradeable, authorize storage transplantation or establish a migration mechanism. Deploy a separately verified new stack; reconcile and drain old jobs, escrow, claims and stakes under their existing rules. Do not repoint old clients or token approvals until their supported version and the user's migration decision are explicit.
+The old fixed storage slot is retained as an inactive internal slot, and rate storage is appended. This does **not** make old immutable controllers upgradeable, authorize storage transplantation or establish a migration mechanism. Deploy a separately verified new stack. Previous deployments are strictly outside this campaign's mutation scope: clearing old jobs, escrow, claims or stakes is not a prerequisite. Do not transact with old deployments, repoint their clients or change their approvals as part of this campaign.
 
 ## Review and tests
 
