@@ -553,7 +553,7 @@
     "deploy:local": "hardhat run scripts/v2/deployDefaults.ts --network hardhat",
     "test:dependency-compat": "node --test scripts/security/test/*.test.cjs scripts/security/test/*.test.mjs",
     "alpha-agent:project": "node integrations/alpha-agent/project-cli.mjs",
-    "alpha-agent:project:test": "node --test test/scripts/alpha-project-source.test.mjs test/scripts/alpha-project-name.test.mjs test/scripts/alpha-project-transfer.test.mjs test/scripts/alpha-project-receipt.test.cjs"
+    "alpha-agent:project:test": "node --test integrations/alpha-agent/tests/alpha-project-source.test.mjs integrations/alpha-agent/tests/alpha-project-name.test.mjs integrations/alpha-agent/tests/alpha-project-transfer.test.mjs integrations/alpha-agent/tests/alpha-project-receipt.test.cjs"
   },
   "type": "commonjs",
   "version": "2.1.0-rc.11"
