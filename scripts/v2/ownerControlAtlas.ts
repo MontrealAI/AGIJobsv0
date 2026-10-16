@@ -1,6 +1,7 @@
 import { promises as fs, existsSync, readFileSync } from 'fs';
 import path from 'path';
 import { ethers } from 'ethers';
+import { escapeMarkdownLiteral } from './lib/markdownLiteral';
 import {
   loadOwnerControlConfig,
   loadStakeManagerConfig,
@@ -842,7 +843,7 @@ export function renderMarkdown(
   atlas.subsystems.forEach((subsystem) => {
     const status = subsystem.issues.length > 0 ? '⚠️' : '✅';
     const controls = subsystem.summary
-      .map((line) => line.replace(/\\/g, '\\\\').replace(/\|/g, '\\|'))
+      .map(escapeMarkdownLiteral)
       .join('<br />');
     lines.push(
       `| ${status} | ${subsystem.label} | \`${subsystem.configPath}\` | \`${subsystem.updateCommand}\` | \`${subsystem.verifyCommand}\` | ${controls} |`

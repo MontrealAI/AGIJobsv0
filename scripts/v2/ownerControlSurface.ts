@@ -2,6 +2,7 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import { createHash } from 'crypto';
 import { ethers } from 'ethers';
+import { escapeMarkdownLiteral } from './lib/markdownLiteral';
 import {
   loadTokenConfig,
   loadOwnerControlConfig,
@@ -827,7 +828,7 @@ function renderHumanReport(
 }
 
 function escapeMarkdown(value: string): string {
-  return value.replace(/\\/g, '\\\\').replace(/\|/g, '\\|');
+  return escapeMarkdownLiteral(value);
 }
 
 export function renderMarkdownReport(reports: ModuleReport[]): string {

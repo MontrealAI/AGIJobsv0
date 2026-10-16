@@ -19,6 +19,13 @@ const samples = [
   'one\\|pipe',
   'two\\\\|pipe',
   'path\\segment|pipe',
+  String.raw`\*literal*`,
+  String.raw`\[label](https://example.invalid/path)`,
+  '*literal* _underscore_ **strong** ~~removed~~ `code`',
+  '[label](https://example.invalid/path?x=1&y=2)',
+  'https://example.invalid/path',
+  '<img src=x onerror="bad()"> &copy; <b>literal</b>',
+  '&amp; &#124; &#x5c; &#42;',
 ];
 
 async function renderedTable(markdown) {
@@ -35,6 +42,13 @@ function cells(table, expectedColumns) {
   assert.equal(rows.length, 1);
   const result = rows[0].querySelectorAll('td');
   assert.equal(result.length, expectedColumns);
+  assert.equal(
+    table.querySelectorAll(
+      'tbody a, tbody em, tbody del, tbody img, tbody script, tbody b'
+    ).length,
+    0,
+    'report values must remain literal text rather than active Markdown or HTML'
+  );
   return Array.from(result, (cell) => cell.textContent);
 }
 
@@ -137,7 +151,7 @@ for (const value of samples) {
       value,
       value,
       value,
-      `config/${value}.json`,
+      path.relative(repo, path.join(repo, 'config', `${value}.json`)),
       `Input: ${value}`,
       sentinel,
     ]);
@@ -168,7 +182,7 @@ test('control atlas preserves summary line breaks without consuming another row'
   assert.equal(row[5], samples.join(''));
   assert.equal(
     table.querySelectorAll('tbody td')[5].querySelectorAll('br').length,
-    3
+    samples.length - 1
   );
 });
 
@@ -179,7 +193,7 @@ test('control surface preserves warning line breaks and literal backslashes', as
   assert.equal(row[7], samples.join(''));
   assert.equal(
     table.querySelectorAll('tbody td')[7].querySelectorAll('br').length,
-    3
+    samples.length - 1
   );
 });
 

@@ -1,6 +1,7 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 import { ethers } from 'ethers';
+import { escapeMarkdownLiteral } from './lib/markdownLiteral';
 import {
   loadOwnerControlConfig,
   loadFeePoolConfig,
@@ -180,10 +181,7 @@ function normaliseNumber(value: unknown): number | undefined {
 }
 
 function escapeMarkdownTable(value: string): string {
-  return value
-    .replace(/\\/g, '\\\\')
-    .replace(/\|/g, '\\|')
-    .replace(/\n/g, '<br />');
+  return escapeMarkdownLiteral(value).replace(/\n/g, '<br />');
 }
 
 function riskEmoji(level: RiskLevel): string {
@@ -996,14 +994,14 @@ export function renderMarkdown(
     const issuesText = module.issues
       .map((issue) => {
         const severity = issue.severity === 'critical' ? '**Critical**' : '**Warning**';
-        return `${severity} ${issue.message}`;
+        return `${severity} ${escapeMarkdownTable(issue.message)}`;
       })
       .join('<br />');
     const actionText = module.issues
-      .map((issue) => issue.recommendation ?? 'See documentation for remediation steps.')
+      .map((issue) => escapeMarkdownTable(issue.recommendation ?? 'See documentation for remediation steps.'))
       .join('<br />');
     lines.push(
-      `| ${module.label} | ${status} | ${escapeMarkdownTable(issuesText)} | ${escapeMarkdownTable(actionText)} |`
+      `| ${module.label} | ${status} | ${issuesText} | ${actionText} |`
     );
   });
   lines.push('');
