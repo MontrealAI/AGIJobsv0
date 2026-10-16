@@ -125,6 +125,9 @@ export function readProviderConfiguration(
   decimals: number,
   env: NodeJS.ProcessEnv = process.env
 ) {
+  if (env.JOB_STAKE !== undefined) throw new Error('JOB_STAKE is unsupported; explicitly configure JOB_STAKE_BPS');
+  const bpsInput = env.JOB_STAKE_BPS ?? '1000';
+  if (!/^[0-9]+$/.test(bpsInput) || Number(bpsInput) > 10000) throw new Error('JOB_STAKE_BPS must be an integer from 0 to 10000');
   const econ = {
     minStake: env.MIN_STAKE ?? '0',
     employerSlashPct: parsePct(env.EMPLOYER_SLASH_PCT),
@@ -135,7 +138,7 @@ export function readProviderConfiguration(
     disputeWindow: env.DISPUTE_WINDOW ?? '86400',
     burnPct: parsePct(env.FEEPOOL_BURN_PCT),
     feePct: parsePct(env.JOB_FEE_PCT),
-    jobStake: env.JOB_STAKE ?? '0',
+    jobStakeBps: Number(bpsInput),
   };
   validateOneclickConfig({ econ }, decimals);
   // Numeric seconds are already validated; avoid a millisecond conversion
@@ -167,7 +170,7 @@ export function readProviderConfiguration(
     disputeWindow: seconds(econ.disputeWindow),
     burnPct: econ.burnPct,
     feePct: econ.feePct,
-    jobStake: parseUnits(econ.jobStake, decimals),
+    jobStakeBps: econ.jobStakeBps,
   };
 }
 
@@ -245,7 +248,7 @@ async function deployContracts(ctx: DeploymentContext) {
     disputeWindow,
     burnPct,
     feePct,
-    jobStake,
+    jobStakeBps,
   } = configuration;
 
   const Stake = await ethers.getContractFactory(
@@ -372,12 +375,13 @@ async function deployContracts(ctx: DeploymentContext) {
     ethers.ZeroAddress,
     ethers.ZeroAddress,
     feePct,
-    jobStake,
+    0,
     [],
     deployerAddress,
     await deployImplementations('JobRegistry', JobRegistry.runner)
   );
   await registry.waitForDeployment();
+  await (await registry.setJobStakeBps(jobStakeBps)).wait();
 
   const Committee = await ethers.getContractFactory(
     'contracts/v2/ArbitratorCommittee.sol:ArbitratorCommittee'
@@ -531,7 +535,7 @@ async function runIntegrationScenario(
   ).wait();
 
   await (
-    await registry.setJobParameters(ethers.parseUnits('100000', decimals), 0)
+    await registry.setMaxJobReward(ethers.parseUnits('100000', decimals))
   ).wait();
   await (await registry.setFeePct(0)).wait();
   await (await registry.setValidatorRewardPct(0)).wait();
@@ -600,10 +604,15 @@ async function runIntegrationScenario(
           await validation.connect(signer).selectValidators(jobId, entropy)
         ).wait();
       } catch (err) {
-        const message = (err as Error).message || '';
-        if (!message.includes('ValidatorsAlreadySelected')) {
-          throw err;
+        // Decode the exact custom error even when the RPC omits its name.
+        const data = (err as { data?: string }).data;
+        let alreadySelected = false;
+        if (typeof data === 'string') {
+          try {
+            alreadySelected = validation.interface.parseError(data)?.name === 'ValidatorsAlreadySelected';
+          } catch { /* Unknown errors must propagate. */ }
         }
+        if (!alreadySelected) throw err;
       }
     };
     await trySelect(deployer, 1);

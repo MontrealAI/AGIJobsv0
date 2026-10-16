@@ -36,7 +36,7 @@ describe('Deployer', function () {
       commitWindow: 0,
       revealWindow: 0,
       minStake: 0,
-      jobStake: 0,
+      jobStakeBps: 1000,
     };
     const ids = {
       ens: ethers.ZeroAddress,
@@ -100,7 +100,7 @@ describe('Deployer', function () {
       },
     };
     const registry = await ethers.getContractAt('JobRegistry', staged[1]);
-    const existingStake = await registry.jobStake();
+    const existingStake = await registry.jobStakeBps();
     const nonce = await ethers.provider.getTransactionCount(owner.address);
     const calls = await applySecureDefaults(config, book, { dryRun: true });
     expect(calls).to.have.lengthOf(3);
@@ -127,7 +127,7 @@ describe('Deployer', function () {
       applySecureDefaults(config, { ...book, chainId: 1 }, { dryRun: true })
     ).to.be.rejectedWith('chain ID');
     await applySecureDefaults(config, book, { signer: governance });
-    expect(await registry.jobStake()).to.equal(existingStake);
+    expect(await registry.jobStakeBps()).to.equal(existingStake);
     expect(await registry.maxJobReward()).to.equal(ethers.parseEther('3000'));
     expect(
       await (
@@ -185,7 +185,7 @@ describe('Deployer', function () {
       commitWindow: 0,
       revealWindow: 0,
       minStake: 0,
-      jobStake: 0,
+      jobStakeBps: 1000,
     };
     const ids = {
       ens: ethers.ZeroAddress,
@@ -313,7 +313,7 @@ describe('Deployer', function () {
       commitWindow: 0,
       revealWindow: 0,
       minStake: 0,
-      jobStake: 0,
+      jobStakeBps: 1000,
     };
     const ids = {
       ens: ethers.ZeroAddress,
@@ -493,7 +493,7 @@ describe('Deployer', function () {
       commitWindow: 0,
       revealWindow: 0,
       minStake: 0,
-      jobStake: 0,
+      jobStakeBps: 1000,
     };
     const ids = {
       ens: ethers.ZeroAddress,

@@ -160,6 +160,29 @@ describe('Validation migration preflight', function () {
     expect(await env.replacement.paused()).to.equal(true);
   });
 
+  it('rejects a version-2 replacement before authority reads or broadcasting', async function () {
+    const env = await preparedStack();
+    await env.prepare();
+    const legacy = await (
+      await ethers.getContractFactory('VersionMock')
+    ).deploy(2);
+    await network.provider.send('hardhat_setCode', [
+      env.options.newValidation,
+      await ethers.provider.getCode(await legacy.getAddress()),
+    ]);
+    // Adversarial fixture: the replacement advertises the legacy interface
+    // version and omits the new getter. No governance transaction may be sent.
+    await network.provider.send('hardhat_setStorageAt', [
+      env.options.newValidation,
+      '0x0',
+      ethers.toBeHex(2, 32),
+    ]);
+    await expectPreflightRejection(
+      env,
+      'Replacement must expose terminal reputation interface version 1'
+    );
+  });
+
   it('rejects wrong authority before broadcasting', async function () {
     const env = await preparedStack();
     await env.prepare();

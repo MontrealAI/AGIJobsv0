@@ -7,6 +7,9 @@ interface IValidationModule {
     /// @notice Module version for compatibility checks.
     function version() external view returns (uint256);
 
+    /// @notice Version 1 requires revealed() and defers outcome scoring to settlement.
+    function reputationInterfaceVersion() external view returns (uint256);
+
     enum SelectionStrategy {
         Rotating,
         Reservoir
@@ -206,6 +209,9 @@ interface IValidationModule {
     /// @param jobId Identifier of the job
     /// @return validators Array of validator addresses
     function validators(uint256 jobId) external view returns (address[] memory validators);
+
+    /// @notice Whether a validator revealed before round cleanup.
+    function revealed(uint256 jobId, address validator) external view returns (bool);
 
     /// @notice Retrieve a validator's vote outcome for a job
     /// @param jobId Identifier of the job

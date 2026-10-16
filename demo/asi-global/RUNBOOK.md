@@ -46,5 +46,7 @@ operators to inspect intermediate states on a disposable local chain.
   chains.
 - All scripts are idempotent; re-running them overwrites previous artefacts.
 - The deployment and mission receipts record the modules that actually ran. Thermostat adjustments are reported as skipped when that optional module is not deployed.
-- Review `demo/asi-global/project-plan.json` to adapt the scenario with new regions or
-  governance policies without changing any code.
+- The local scenario comes from `demo/asi-global/config/mission@v2.json`, or a
+  compatible `AURORA_MISSION_CONFIG` override. `project-plan.json` is design and
+  governance-kit reporting context; editing it does not change the local jobs.
+  See the [Zenith shared-scenario contract](LOCAL-SCENARIOS.md).

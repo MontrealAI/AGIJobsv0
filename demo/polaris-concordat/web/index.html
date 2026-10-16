@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta
+      name="description"
+      content="Inspect disposable-chain quorum receipts and explore a separate hypothetical recovery policy calculator."
+    />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'none'"
+    />
+    <title>Polaris • Quorum evidence explorer</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <a class="skip" href="#main" data-t="skip">Skip to evidence</a>
+    <nav aria-label="Primary">
+      <a href="../../">AGI JOBS</a>
+      <div>
+        <a href="../../#explore" data-t="directory">Demo directory</a
+        ><button id="language" type="button" aria-label="Passer en français">
+          FR
+        </button>
+      </div>
+    </nav>
+    <header>
+      <p class="eyebrow" data-t="eyebrow">POLARIS / QUORUM & RECOVERY</p>
+      <h1 data-t="heading">Keep the policy. Inspect the proof.</h1>
+      <p class="lead" data-t="lead">
+        Follow a failed reveal quorum and a fresh replacement committee through
+        actual disposable-chain receipts. Explore alternative assumptions
+        separately.
+      </p>
+      <p class="notice" data-t="notice">
+        Offline consistency review of a local EVM fixture. This browser does not
+        deploy contracts, connect a wallet or attest a chain. Tokens, job
+        registry and identity are mocks.
+      </p>
+    </header>
+    <main id="main">
+      <noscript
+        ><p>
+          JavaScript is required. / JavaScript est requis.
+          <a
+            href="https://github.com/MontrealAI/AGIJobsv0/tree/main/demo/polaris-concordat"
+            >Read the original local launch guide / Lire le guide local.</a
+          >
+        </p></noscript
+      >
+      <section class="panel">
+        <div class="section-head">
+          <h2 data-t="receiptTitle">1. Inspect recorded receipt evidence</h2>
+          <button type="button" class="quiet" id="reset" data-t="reset">
+            Restore bundled fixture
+          </button>
+        </div>
+        <p data-t="receiptNote">
+          The bundled fixture contains two separate mock jobs on a disposable
+          in-process EVM. Job 1 is finalized; job 2 uses a fresh committee
+          rather than reopening job 1. Imported receipts are supplied data;
+          passing consistency checks does not authenticate their chain origin.
+        </p>
+        <label for="import" data-t="import"
+          >Reopen JSON · fixture up to 256 KiB; evidence envelope up to 512 KiB</label
+        ><input id="import" type="file" accept=".json,application/json" />
+        <p id="status" role="status" aria-live="polite"></p>
+        <p id="error" role="alert" hidden></p>
+        <div id="result" hidden>
+          <h3 id="review-status" tabindex="-1"></h3>
+          <div class="metrics">
+            <div>
+              <span data-t="first">Recorded first outcome</span
+              ><strong id="first"></strong>
+            </div>
+            <div>
+              <span data-t="replacement">Recorded replacement outcome</span
+              ><strong id="replacement"></strong>
+            </div>
+          </div>
+          <p class="hint" data-t="claims">
+            These recorded outcomes are cross-checked against canonical receipt
+            logs. Failure of a consistency check leaves the claimed outcomes
+            unverified.
+          </p>
+          <h3 data-t="checks">Recomputed consistency checks</h3>
+          <ol id="checks"></ol>
+          <h3 data-t="contracts">Fixture contracts and mock boundaries</h3>
+          <ul id="contracts"></ul>
+          <h3 data-t="policy">Before / after policy</h3>
+          <pre id="policy"></pre>
+          <details>
+            <summary data-t="receipts">
+              Inspect canonical receipts, logs and stake snapshots
+            </summary>
+            <pre id="receipts"></pre>
+          </details>
+          <div class="actions">
+            <button type="button" class="quiet" id="download" data-t="download">
+              Download fixture</button
+            ><button
+              type="button"
+              class="quiet"
+              id="evidence"
+              data-t="evidence"
+            >
+              Download recomputed review
+            </button>
+          </div>
+          <p id="digest" class="hint"></p>
+          <details>
+            <summary data-t="raw">Inspect complete review JSON</summary>
+            <pre id="raw"></pre>
+          </details>
+        </div>
+      </section>
+      <section class="panel">
+        <h2 data-t="calculatorTitle">2. Explore a hypothetical alternative</h2>
+        <p class="notice" data-t="calculatorNotice">
+          This calculator does not rerun the EVM or alter the recorded receipts
+          above. It predicts only the fixture’s fixed quorum and approval rules.
+        </p>
+        <form id="calculator">
+          <div class="pair">
+            <div>
+              <label for="reveals" data-t="reveals"
+                >First committee reveals · 0 to 3</label
+              ><input
+                id="reveals"
+                type="number"
+                min="0"
+                max="3"
+                step="1"
+                value="1"
+                required
+              />
+            </div>
+            <div>
+              <label for="approvals" data-t="approvals"
+                >Replacement approvals · 0 to 3</label
+              ><input
+                id="approvals"
+                type="number"
+                min="0"
+                max="3"
+                step="1"
+                value="3"
+                required
+              />
+            </div>
+          </div>
+          <button type="submit" class="primary" data-t="calculate">
+            Calculate expected outcomes
+          </button>
+        </form>
+        <p id="calculator-error" role="alert" hidden></p>
+        <div id="prediction" hidden>
+          <p id="prediction-summary" role="status"></p>
+          <pre id="prediction-json"></pre>
+        </div>
+        <p class="hint" data-t="calculatorScope">
+          All three replacement validators reveal. At least two approvals
+          satisfy the 66% threshold. Each missing first-round revealer loses 1%
+          of its mock stake. The first committee’s revealed votes are assumed to
+          approve.
+        </p>
+      </section>
+      <section class="panel method">
+        <h2 data-t="method">Reproduce the actual local run</h2>
+        <p data-t="methodText">
+          Use the original guarded Hardhat command for new receipts. It requires
+          a fresh, unforked in-process chain with ID 31337. The original
+          validation and stake contracts are exercised alongside explicit mock
+          dependencies. No mainnet or paid-work authority follows from this
+          fixture.
+        </p>
+        <p data-t="privacy">
+          Files stay in this tab. Nothing is saved automatically. Reopening
+          checked evidence ignores its saved review and recomputes from the
+          supplied fixture.
+        </p>
+        <a
+          href="https://github.com/MontrealAI/AGIJobsv0/tree/main/demo/polaris-concordat"
+          data-t="source"
+          >Original runtime, reviewer, fixture and local launch guide</a
+        >
+      </section>
+    </main>
+    <footer data-t="footer">
+      POLARIS · Receipt consistency, not chain attestation · No settlement
+      authority
+    </footer>
+    <script type="module" src="polaris.mjs"></script>
+  </body>
+</html>

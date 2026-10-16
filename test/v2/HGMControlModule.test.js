@@ -1,5 +1,6 @@
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
+const { deployImplementations } = require('../../scripts/deploy/implementations.cjs');
 
 async function deployMocks() {
   const JobMock = await ethers.getContractFactory('HGMJobRegistryMock');
@@ -58,7 +59,7 @@ describe('HGMControlModule', function () {
 
   it('updates job economics in batch', async function () {
     await module.updateJobEconomics({
-      setJobStake: true,
+      setJobStake: false,
       jobStake: 5n,
       setMinAgentStake: true,
       minAgentStake: 6n,
@@ -76,7 +77,9 @@ describe('HGMControlModule', function () {
       expirationGracePeriod: 12n,
     });
 
-    expect(await mocks.jobMock.jobStake()).to.equal(5n);
+    expect(await mocks.jobMock.jobStake()).to.equal(0n);
+    await expect(module.updateJobStakeBps(2500)).to.emit(module, 'JobStakeRateConfigured').withArgs(2500, owner.address);
+    expect(await mocks.jobMock.jobStakeBps()).to.equal(2500);
     expect(await mocks.jobMock.minAgentStake()).to.equal(6n);
     expect(await mocks.jobMock.feePct()).to.equal(7n);
     expect(await mocks.jobMock.validatorRewardPct()).to.equal(8n);
@@ -84,6 +87,34 @@ describe('HGMControlModule', function () {
     expect(await mocks.jobMock.jobDurationLimit()).to.equal(10n);
     expect(await mocks.jobMock.maxActiveJobsPerAgent()).to.equal(11n);
     expect(await mocks.jobMock.expirationGracePeriod()).to.equal(12n);
+  });
+
+  it('rejects old fixed units, out-of-range percentages and unauthorized percentage calls', async function () {
+    const legacy = {
+      setJobStake: true, jobStake: 500n, setMinAgentStake: true, minAgentStake: 6n,
+      setFeePct: false, feePct: 0, setValidatorRewardPct: false, validatorRewardPct: 0,
+      setMaxJobReward: false, maxJobReward: 0, setJobDurationLimit: false, jobDurationLimit: 0,
+      setMaxActiveJobsPerAgent: false, maxActiveJobsPerAgent: 0,
+      setExpirationGracePeriod: false, expirationGracePeriod: 0,
+    };
+    await expect(module.updateJobEconomics(legacy)).to.be.revertedWithCustomError(module, 'LegacyFixedStakeUnsupported');
+    expect(await mocks.jobMock.minAgentStake()).to.equal(0);
+    expect(await mocks.jobMock.jobStake()).to.equal(0);
+    await expect(module.updateJobStakeBps(10001)).to.be.revertedWithCustomError(module, 'InvalidPercentage');
+    await expect(module.connect(other).updateJobStakeBps(1000)).to.be.revertedWithCustomError(module, 'OwnableUnauthorizedAccount');
+    for (const bps of [0, 10000]) { await module.updateJobStakeBps(bps); expect(await mocks.jobMock.jobStakeBps()).to.equal(bps); }
+  });
+
+  it('configures a real percentage registry through its governance facade', async function () {
+    const Factory = await ethers.getContractFactory('contracts/v2/JobRegistry.sol:JobRegistry');
+    const modules = await deployImplementations('JobRegistry', Factory.runner);
+    const z = ethers.ZeroAddress;
+    const registry = await Factory.deploy(z,z,z,z,z,z,z,0,0,[],await module.getAddress(),modules);
+    await module.updateControlTargets([await registry.getAddress(), await mocks.stakeMock.getAddress(), await mocks.pauseMock.getAddress(), await mocks.platformMock.getAddress(), await mocks.reputationMock.getAddress()]);
+    await module.updateJobStakeBps(2500);
+    expect(await registry.jobStakeBps()).to.equal(2500);
+    expect(await registry.quoteJobStake(11)).to.equal(3);
+    await expect(registry.connect(other).setJobStakeBps(1000)).to.be.reverted;
   });
 
   it('updates job access metadata', async function () {

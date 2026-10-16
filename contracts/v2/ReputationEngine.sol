@@ -267,7 +267,7 @@ contract ReputationEngine is Ownable, Pausable, IReputationEngineV2 {
         require(reputation[user] >= premiumThreshold, "insufficient reputation");
     }
 
-    /// @notice Finalise a job and update reputation using v1 formulas.
+    /// @notice Finalise a job using payout/duration points and monotonic positive growth.
     function onFinalize(
         address user,
         bool success,
@@ -356,17 +356,21 @@ contract ReputationEngine is Ownable, Pausable, IReputationEngineV2 {
         }
     }
 
-    /// @notice Apply diminishing returns and cap to reputation growth using v1 formula.
+    /// @notice Dampen new credit without reducing previously earned reputation.
+    /// @dev Retains the v1 damping factor for bounded current + points, but applies
+    ///      it only to the incoming points. Bound the award before multiplication
+    ///      and saturate the result at MAX_REPUTATION. Integer rounding may yield
+    ///      zero credit; a positive award must never subtract existing reputation.
     function _enforceReputationGrowth(uint256 current, uint256 points) internal pure returns (uint256) {
-        uint256 newReputation = current + points;
+        if (current >= MAX_REPUTATION) return MAX_REPUTATION;
+        uint256 boundedPoints = points > MAX_REPUTATION ? MAX_REPUTATION : points;
+        uint256 newReputation = current + boundedPoints;
         uint256 numerator = newReputation * newReputation * TOKEN_SCALE;
         uint256 denominator = MAX_REPUTATION * MAX_REPUTATION;
         uint256 factor = TOKEN_SCALE + (numerator / denominator);
-        uint256 diminishedReputation = (newReputation * TOKEN_SCALE) / factor;
-        if (diminishedReputation > MAX_REPUTATION) {
-            return MAX_REPUTATION;
-        }
-        return diminishedReputation;
+        uint256 gain = (boundedPoints * TOKEN_SCALE) / factor;
+        uint256 remaining = MAX_REPUTATION - current;
+        return gain >= remaining ? MAX_REPUTATION : current + gain;
     }
 
     function _finalizeAgent(

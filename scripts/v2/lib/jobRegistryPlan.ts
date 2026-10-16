@@ -64,7 +64,7 @@ export async function buildJobRegistryPlan(
     currentAgentAuthCacheDuration,
     currentAgentAuthCacheVersion,
   ] = await Promise.all([
-    registry.jobStake(),
+    registry.jobStakeBps(),
     registry.maxJobReward(),
     registry.minAgentStake(),
     registry.feePct(),
@@ -142,12 +142,19 @@ export async function buildJobRegistryPlan(
     );
   }
 
-  const desiredJobStake = parseTokenAmount(
-    config.jobStake,
-    config.jobStakeTokens,
-    decimals,
-    'jobStake'
-  );
+  if (config.jobStake !== undefined || config.jobStakeTokens !== undefined)
+    throw new Error(
+      'Legacy fixed job stake configuration is unsupported; use jobStakeBps'
+    );
+  if (
+    config.jobStakeBps !== undefined &&
+    (!Number.isInteger(config.jobStakeBps) ||
+      config.jobStakeBps < 0 ||
+      config.jobStakeBps > 10000)
+  )
+    throw new Error('jobStakeBps must be an integer from 0 to 10000');
+  const desiredJobStake =
+    config.jobStakeBps === undefined ? undefined : BigInt(config.jobStakeBps);
   const desiredMinAgentStake = parseTokenAmount(
     config.minAgentStake,
     config.minAgentStakeTokens,
@@ -353,7 +360,7 @@ export async function buildJobRegistryPlan(
       current: describeModuleBundle(moduleBundleCurrent),
       desired: describeModuleBundle(moduleBundleDesired),
       notes: [
-        'Apply after verifying each module reports version() == 2.',
+        'Apply after verifying every module reports version() == 2, and ValidationModule additionally reports reputationInterfaceVersion() == 1 (including revealed()).',
         'Keeps job creation → validation → dispute routing deterministic.',
       ],
     });
@@ -477,19 +484,15 @@ export async function buildJobRegistryPlan(
   }
 
   if (desiredJobStake !== undefined && desiredJobStake !== currentJobStake) {
-    if (desiredJobStake > MAX_UINT96) {
-      throw new Error('jobStake exceeds uint96 range');
-    }
     actions.push({
-      label: `Update job stake to ${formatToken(
-        desiredJobStake,
-        decimals,
-        symbol
-      )}`,
-      method: 'setJobStake',
+      label: `Update future-job stake rate to ${desiredJobStake} bps`,
+      method: 'setJobStakeBps',
       args: [desiredJobStake],
-      current: formatToken(currentJobStake, decimals, symbol),
-      desired: formatToken(desiredJobStake, decimals, symbol),
+      current: `${currentJobStake} bps`,
+      desired: `${desiredJobStake} bps`,
+      notes: [
+        'Applies to future jobs only; existing Job.stake snapshots are unchanged.',
+      ],
     });
   }
 

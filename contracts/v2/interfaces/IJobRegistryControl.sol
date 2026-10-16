@@ -26,6 +26,7 @@ interface IJobRegistryControl {
 
     function setTreasury(address treasury) external;
 
+    /// @dev Deprecated fixed-token setter; new deployments reject this call.
     function setJobStake(uint96 stake) external;
 
     function setMinAgentStake(uint256 stake) external;

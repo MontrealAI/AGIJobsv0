@@ -18,7 +18,7 @@
     "commitWindow": "1d",
     "revealWindow": "1d",
     "minStake": "1000",
-    "jobStake": "500"
+    "jobStakeBps": 1000
   },
   "identity": {
     "ens": "0x0000000000000000000000000000000000000000",

@@ -78,6 +78,10 @@ function validateConfig(config, network, token) {
     throw new Error(
       'Configuration network/chainId must match the selected target'
     );
+  if (Object.hasOwn(config.econ || {}, 'jobStake'))
+    throw new Error('Legacy econ.jobStake is unsupported; configure jobStakeBps explicitly');
+  if (!Number.isInteger(config.econ?.jobStakeBps) || config.econ.jobStakeBps < 0 || config.econ.jobStakeBps > 10000)
+    throw new Error('Explicit jobStakeBps must be an integer from 0 to 10000');
   validateOneclickConfig(config, token.decimals);
   if (token.decimals !== 18)
     throw new Error('Current protocol requires 18 token decimals');
@@ -96,7 +100,7 @@ function validateConfig(config, network, token) {
     'commitWindow',
     'revealWindow',
     'minStake',
-    'jobStake',
+    'jobStakeBps',
   ];
   for (const key of Object.keys(config.econ || {})) {
     if (!econKeys.includes(key))

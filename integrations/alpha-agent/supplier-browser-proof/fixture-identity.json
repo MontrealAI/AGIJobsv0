@@ -1,0 +1,8 @@
+{
+  "scope": "Disposable test identity only; not an operator trust root",
+  "publicKey": "d31365be05aff745d434925b0e292c48eec8ae3479d07a02aed94cf3c5ed6f4d",
+  "alphaSourceCommit": "b234de125b19544eb8cc27ee6fe6629b7e682c1f",
+  "jobsSourceCommit": "5e7f7ba5547f2cfc2e49108a6edc62e178a37ae2",
+  "buildInfoSha256": "0149118872555585caae0a7b3f77dafb7b8da2f5c733bbb559ee674ff0843a9d",
+  "artifactCount": 200
+}

@@ -55,6 +55,20 @@ export async function migrateValidationModule(options: {
     oldAddress,
     caller
   );
+  if (
+    (await replacement.version(at)) !== 2n ||
+    (await oldValidation.version(at)) !== 2n
+  ) {
+    throw new Error('Only version-2 validation modules are supported');
+  }
+  try {
+    if ((await replacement.reputationInterfaceVersion(at)) !== 1n)
+      throw new Error('Unsupported terminal reputation interface');
+  } catch {
+    throw new Error(
+      'Replacement must expose terminal reputation interface version 1'
+    );
+  }
   const stakeAddress = await registry.stakeManager(at);
   const reputationAddress = await registry.reputationEngine(at);
   const identityAddress = await registry.identityRegistry(at);
@@ -100,14 +114,6 @@ export async function migrateValidationModule(options: {
   ] as const) {
     if (!(await contract.paused(at)))
       throw new Error(`${label} must be paused`);
-  }
-  if (
-    (await replacement.version(at)) !== 2n ||
-    (await oldValidation.version(at)) !== 2n
-  ) {
-    throw new Error(
-      'Only the current version-2 validation interface is supported'
-    );
   }
   const checkWiring = async (overrides: { blockTag: number }) => {
     assertAddress(

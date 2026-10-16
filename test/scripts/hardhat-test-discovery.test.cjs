@@ -1,0 +1,206 @@
+'use strict';
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const vm = require('node:vm');
+const { createRequire } = require('node:module');
+const yaml = require('js-yaml');
+const {
+  TASK_TEST_GET_TEST_FILES,
+} = require('hardhat/builtin-tasks/task-names');
+const root = path.resolve(__dirname, '../..');
+
+// Register the installed Hardhat task and the entire real project override,
+// without loading plugins, Mocha, contracts, or any discovered test module.
+function discoveryActions() {
+  const actions = [];
+  const register = (name) => {
+    const builder = new Proxy(
+      {},
+      {
+        get:
+          (_, method) =>
+          (...args) => {
+            if (method === 'setAction' && name === TASK_TEST_GET_TEST_FILES)
+              actions.push(args[0]);
+            return builder;
+          },
+      }
+    );
+    return builder;
+  };
+  const builtin = require.resolve('hardhat/builtin-tasks/test');
+  const builtinRequire = createRequire(builtin);
+  vm.runInNewContext(
+    fs.readFileSync(builtin, 'utf8'),
+    {
+      exports: {},
+      process,
+      require: (name) =>
+        name === '../internal/core/config/config-env'
+          ? { task: register, subtask: register }
+          : builtinRequire(name),
+    },
+    { filename: builtin }
+  );
+  const plugins = new Set([
+    'ts-node/register/transpile-only',
+    '@nomicfoundation/hardhat-toolbox',
+    'hardhat-gas-reporter',
+    'solidity-coverage',
+    'hardhat-contract-sizer',
+  ]);
+  const configFile = path.join(root, 'hardhat.config.js');
+  vm.runInNewContext(
+    fs.readFileSync(configFile, 'utf8'),
+    {
+      __dirname: root,
+      module: { exports: {} },
+      process: { env: {} },
+      require: (name) => {
+        if (name === 'hardhat/config') return { subtask: register };
+        if (name === 'dotenv') return { config() {} };
+        if (plugins.has(name)) return {};
+        return require(name);
+      },
+    },
+    { filename: configFile }
+  );
+  assert.equal(
+    actions.length,
+    2,
+    'base discovery and project override must both register'
+  );
+  return actions;
+}
+
+async function discover(testFiles = []) {
+  const [base, override] = discoveryActions();
+  const context = {
+    config: {
+      paths: {
+        tests: path.join(root, 'test'),
+        configFile: path.join(root, 'hardhat.config.js'),
+      },
+    },
+  };
+  const args = { testFiles };
+  const all = Array.from(await base(args, context));
+  const selected = Array.from(
+    await override(args, context, async (forwarded) => {
+      assert.equal(forwarded, args, 'discovery arguments must reach runSuper');
+      return all;
+    })
+  );
+  return { all, selected };
+}
+
+const dedicated = [
+  ['lint', 'test/scripts/alpha-supplier-proof.test.cjs'],
+  ['lint', 'test/scripts/omni-stack-mode.test.cjs'],
+  ['tests', 'test/scripts/polaris-quorum.test.cjs'],
+  ['tests', 'test/pages/zenith-reconciliation.test.mjs'],
+  ['tests', 'test/scripts/omega-pipeline.test.cjs'],
+  ['tests', 'test/scripts/hardhat-test-discovery.test.cjs'],
+];
+
+test('actual aggregate discovery excludes every node:test suite and retains native Mocha files', async () => {
+  const { all, selected } = await discover();
+  for (const [, file] of dedicated) {
+    const absolute = path.join(root, file);
+    assert.ok(
+      all.includes(absolute),
+      `Hardhat must discover ${file} before filtering`
+    );
+    assert.ok(
+      !selected.includes(absolute),
+      `${file} requires a fresh node:test process`
+    );
+  }
+  const native = all.filter(
+    (file) =>
+      /\b(?:describe|it)\s*\(/.test(fs.readFileSync(file, 'utf8')) &&
+      !fs.readFileSync(file, 'utf8').includes('node:test')
+  );
+  assert.ok(
+    native.length > 100,
+    'exercise the real native contract suite inventory'
+  );
+  for (const file of native)
+    assert.ok(selected.includes(file), `lost Mocha suite: ${file}`);
+  for (const file of selected)
+    assert.ok(
+      !fs.readFileSync(file, 'utf8').includes('node:test'),
+      `native runner would load node:test suite: ${file}`
+    );
+});
+
+test('explicit native JavaScript and TypeScript selections survive the registered override', async () => {
+  const phase6 = fs
+    .readdirSync(path.join(root, 'test/scripts'))
+    .find((name) => /^phase6.*\.test\.ts$/.test(name));
+  assert.ok(phase6, 'the explicit Phase 6 TypeScript CI suite must exist');
+  const files = [
+    'test/v2/Phase6ExpansionManager.test.js',
+    `test/scripts/${phase6}`,
+  ];
+  for (const file of files) assert.ok(fs.existsSync(path.join(root, file)));
+  const { selected } = await discover(
+    files.map((file) => path.join(root, file))
+  );
+  assert.deepEqual(
+    selected,
+    files.map((file) => path.join(root, file))
+  );
+});
+
+test('isolated suites retain mandatory fresh-process CI registrations', () => {
+  const workflow = yaml.load(
+    fs.readFileSync(path.join(root, '.github/workflows/ci.yml'), 'utf8')
+  );
+  for (const [jobName, file] of dedicated) {
+    const job = workflow.jobs[jobName];
+    assert.ok(
+      job && !job.if && !job['continue-on-error'],
+      `${jobName} must remain mandatory`
+    );
+    const steps = job.steps.filter((step) =>
+      (step.run || '').split('\n').some((line) => {
+        const words = line.trim().split(/\s+/);
+        return (
+          words[0] === 'node' &&
+          words[1] === '--test' &&
+          words.includes(file) &&
+          !/[;&|]/.test(line)
+        );
+      })
+    );
+    assert.equal(
+      steps.length,
+      1,
+      `${file} must have one explicit node --test CI invocation`
+    );
+    assert.ok(
+      !steps[0].if && !steps[0]['continue-on-error'],
+      `${file} must not be optional`
+    );
+    const installIndex = job.steps.findIndex(
+      (step) =>
+        (step.run || '').startsWith('./scripts/ci/npm-ci.sh ') &&
+        !step.if &&
+        !step['continue-on-error']
+    );
+    assert.ok(
+      installIndex >= 0 && installIndex < job.steps.indexOf(steps[0]),
+      `${file} must run after the mandatory locked dependency install`
+    );
+  }
+  assert.ok(
+    workflow.jobs.tests.steps.some(
+      (step) =>
+        step.run === 'npm test' && !step.if && !step['continue-on-error']
+    ),
+    'aggregate Hardhat suite remains mandatory'
+  );
+});

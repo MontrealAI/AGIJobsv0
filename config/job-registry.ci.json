@@ -1,5 +1,4 @@
 {
-  "jobStakeTokens": "10",
   "minAgentStakeTokens": "500",
   "maxJobRewardTokens": "5000",
   "jobDurationLimitSeconds": 604800,
@@ -19,5 +18,6 @@
   "stakeManager": "0x6666666666666666666666666666666666666666",
   "reputationModule": "0xEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE",
   "certificateNFT": "0xF222222222222222222222222222222222222222",
-  "feePool": "0x9999999999999999999999999999999999999999"
+  "feePool": "0x9999999999999999999999999999999999999999",
+  "jobStakeBps": 1000
 }

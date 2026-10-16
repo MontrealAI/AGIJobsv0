@@ -22,7 +22,7 @@ contract ValidationModuleConfiguration is ValidationModuleBase, DelegateOnly {
     constructor() ValidationModuleBase() {}
 
     function moduleId() external pure returns (bytes32) {
-        return keccak256("ValidationModuleConfiguration:v1");
+        return keccak256("ValidationModuleConfiguration:terminal-reputation-v3");
     }
 
     function setPauser(address _pauser) external override onlyDelegateCall {

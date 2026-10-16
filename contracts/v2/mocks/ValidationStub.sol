@@ -9,6 +9,9 @@ contract ValidationStub is IValidationModule {
     /// @notice Module version for compatibility checks.
     uint256 public constant version = 2;
 
+    /// @notice Terminal scoring interface, including persistent reveal facts.
+    uint256 public constant reputationInterfaceVersion = 1;
+
     bool public result;
     address public jobRegistry;
     address[] public validatorList;
@@ -69,6 +72,10 @@ contract ValidationStub is IValidationModule {
 
     function validators(uint256) external view override returns (address[] memory vals) {
         vals = validatorList;
+    }
+
+    function revealed(uint256, address) external pure override returns (bool) {
+        return true;
     }
 
     function votes(uint256, address)

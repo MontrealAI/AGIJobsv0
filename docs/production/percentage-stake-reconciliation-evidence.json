@@ -1,0 +1,66 @@
+{
+  "schema": "agijobsv0/percentage-stage-reconciliation/v1",
+  "firstParent": "6ca2230660d1b461e2f6f570b3bc60cdac0f5847",
+  "incorporatedParents": [
+    {
+      "commit": "d01b2774d175bfe742721dbe865b873e6fea0aa6",
+      "pr": 3970
+    },
+    {
+      "commit": "c0e806d15000924400f823573e08c85d2849c546",
+      "pr": 3969
+    }
+  ],
+  "changedSourceSha256": {
+    ".github/workflows/ci.yml": "ce0ea0a5fbbf4f65faba71e714cfd8c45e4562fdabc0dd584c56e29ae9bf4371",
+    "apps/console/src/types.ts": "de8e41b30b5c8ea3ca92a74b2af7bc6f17ce4e971664e317b39e07e26e51a944",
+    "apps/onebox/test/governance-snapshot-summary.test.ts": "9f413e38ecd304c02e2281db745b1ebd1ac28ffd4222bfb5b5aac6c99526a02c",
+    "docs/production/owner-plan-abi-correction.md": "15c597c559481b0b5c829eba104fa654eb528b6cecfcde124c45f181fad6b219",
+    "docs/production/percentage-job-stake.md": "4604fd24ed2e81547f555d39234a199c704a9448cc19147743518ea04f334000",
+    "docs/production/reputation-growth-blocker-2026-10-15.json": "7563713f90f71782a959ec169f16be2cc1d8a507d46d52141587fb06f6176bd5",
+    "docs/production/second-mainnet-review-2026-10-16.md": "c31f5ff278e127358297277953986c8c86d663707a94364acf824aa1afdc5883",
+    "packages/orchestrator/src/tools/governance.ts": "fb9c447e20cfd8c5c4d379421b291daf0b1672c03913c18768051c6f9b6497d9",
+    "scripts/config/index.d.ts": "b25d51c80990d9de23d11e9951d19e05db301e37247b16974498b21b8d4bbcce",
+    "scripts/config/index.js": "ef14091cdf7fca3c69360785efb5fc935939dc7a1b7d10e0c205bd7861b20815",
+    "scripts/diagnostics/reputation-growth-repro.cjs": "f3c08e44bb0be1a120bf1d115e39c4d87c46f1b9f161bafff4c0694e39ccadab",
+    "scripts/v2/lib/platformRegistryPlan.ts": "039fa276507345c46ea9d5f2dfc9632c0e05ae8adc3c8e473e7bbbc431cf1261",
+    "test/v2/GlobalGovernanceCouncil.test.ts": "e635fd7adf4ea5c8e80a0ca438e0dfce3faeef9bc6dbc4bc865422f75a01970e",
+    "test/v2/jobCommitRevealFlow.test.ts": "5d7f227dc636a7338c14a32b3c0279df71f85d21d9b24fb3e2cccca99436c2c8",
+    "test/v2/jobLifecycle.test.ts": "fa72a5f930e4f5ad7735ebb761e5792738aeb0d996d91eaf597e64ca5b18164a",
+    "test/v2/klerosArbitration.integration.test.ts": "8bfee27a5619d36a540a138bd86e3adc94c789cf0e04ac59dae73dcd745e3779",
+    "test/v2/platformRegistryPlan.test.ts": "b58c72e9a3b1132047ac14b639174f0748a9d28e830fa7a0cb8e38663e54e5c9",
+    "test/v2/regression.integration.test.ts": "6be0d84eb93c35f52dc65bbfc9b77bc1632675068c9ea51b54dfe0a96098119a",
+    "test/v2/security/stakeManagerGovernance.test.ts": "7ffef16bab1a36b72a5a2bf9cba190782c085802af9d6970ff40b5e603a3914d",
+    "test/v2/validatorParticipation.integration.test.ts": "d976f44ff2c8409a6542043f3ea409da0e604bbd0dfae070d1da2872245a6765"
+  },
+  "productionSolidityUnchangedFromCanonicalFirstParent": true,
+  "results": {
+    "officialHardhatPassed": 867,
+    "recursiveV2Passed": 723,
+    "recursiveV2Files": 148,
+    "focusedTypeScriptPassed": 20,
+    "countsOverlap": true,
+    "oneboxSnapshot": "pass",
+    "standardOrchestratorBuild": "pass",
+    "workflowFormatting": "pass",
+    "testsRemoved": false,
+    "minimumValidatorsRelaxed": false
+  },
+  "logSha256": {
+    "jobs-reconciled-official-tests.log": "bc1c5aa3371a07dce180a4861a766349d72b6ba6772df5125c010168cbfb0d8b",
+    "jobs-reconciled-recursive-v2.log": "bd2ad78b2df4adf371d332458685e083d15c542410401d3fef10c6c4836c7d22",
+    "jobs-reconciled-ts-regressions.log": "222333bbda73afe2c3ad3dccaa02ddefd58886ea4dfdfc70504189375a34cc24",
+    "jobs-reconciled-onebox.log": "50daab35c8fddbad5e33af9e2f7d5e84199d49baf3068e6af447822b316f7aff",
+    "jobs-reconciled-standard-orchestrator.log": "e98887370867b32b5b9a8f120850b04ebb71abe3a9fbb1754181c2b6e822e113",
+    "jobs-reconciled-workflow-format.log": "13f04c286e41fb96bff50434df202733a7bead9eb2934d4fbc10f6dd1076f0c2",
+    "jobs-reputation-repro-final.log": "332cacd75eb016e6dd3439458b2a5bd7dd98d5566499c7277870ed39ef39f44e"
+  },
+  "rejectedNonstandardInvocation": {
+    "command": "npm run build --prefix packages/orchestrator without its local package install",
+    "result": "Missing @agi/receipt-attestation local package link; the repository standard build:orchestrator passed",
+    "logSha256": "41c6cd2344c3d1e88afe6c20f300a0f55089b7359de36a167b40a83f8950467a"
+  },
+  "knownBlocker": "ReputationEngine inherited P1 reproduced; see reputation-growth-blocker-2026-10-15.json",
+  "qualification": "UNRELEASED; deployment blocked; exact-head hosted checks and independent review remain required",
+  "externalTransactions": false
+}

@@ -482,11 +482,11 @@ function buildFeePoolModule(context: ReportContext, feePool: any): ModuleSummary
 
 function buildJobRegistryModule(context: ReportContext, jobRegistry: any): ModuleSummary {
   const tracker = createIssueTracker();
-  if (isZeroLike(jobRegistry?.jobStakeTokens)) {
+  if (jobRegistry?.jobStakeBps === undefined) {
     tracker.register(
       'warning',
-      'Job stake requirement is zero. Employers can post jobs without bonded funds.',
-      'Set `jobStakeTokens` in config/job-registry.json to a positive value.'
+      'Future-job collateral rate is unset; choose an explicit basis-point value before deployment.',
+      'Set explicit `jobStakeBps` in config/job-registry.json (0–10000; 1000 = 10%).'
     );
   }
   if (isZeroLike(jobRegistry?.minAgentStakeTokens)) {
@@ -521,9 +521,9 @@ function buildJobRegistryModule(context: ReportContext, jobRegistry: any): Modul
     verifyCommand: `npm run owner:dashboard -- --network ${context.networkPlaceholder}`,
     controls: [
       {
-        name: 'Job stake requirement',
-        value: `${jobRegistry?.jobStakeTokens ?? '0'} ${context.tokenSymbol}`,
-        description: 'Tokens escrowed per job posting.',
+        name: 'Future-job stake rate',
+        value: `${jobRegistry?.jobStakeBps ?? 'unset'} bps`,
+        description: 'Agent collateral rate snapshotted when creation is mined; existing jobs retain their amount.',
       },
       {
         name: 'Minimum agent stake',

@@ -29,7 +29,7 @@ function config() {
       commitWindow: '1d',
       revealWindow: '1d',
       minStake: '1000',
-      jobStake: '500',
+      jobStakeBps: 1000,
     },
     identity: {
       ens: addresses.ens,
@@ -141,9 +141,9 @@ test('rejects wrong target, zero governance, token mismatch, ambiguous economics
     ],
     [
       (c) => {
-        delete c.econ.jobStake;
+        delete c.econ.jobStakeBps;
       },
-      /Explicit econ.jobStake/,
+      /jobStakeBps/,
     ],
     [
       (c) => {
@@ -408,5 +408,18 @@ test('deployment evidence retains append-only checkpoints and rejects replaced o
   } finally {
     evidence.close();
     fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('percentage configuration rejects fixed amounts and requires explicit valid bps', () => {
+  const old = config(); old.econ.jobStake = '500';
+  assert.throws(() => validateConfig(old, 'mainnet', token), /Legacy econ.jobStake/);
+  for (const bps of [-1, 10001, 1.5, '1000', null, undefined]) {
+    const c = config(); c.econ.jobStakeBps = bps;
+    assert.throws(() => validateConfig(c, 'mainnet', token), /jobStakeBps/);
+  }
+  for (const bps of [0, 1000, 10000]) {
+    const c = config(); c.econ.jobStakeBps = bps;
+    assert.equal(validateConfig(c, 'mainnet', token).econ.jobStakeBps, bps);
   }
 });

@@ -61,6 +61,9 @@ jobs:
       - name: Install dependencies
         run: ./scripts/ci/npm-ci.sh --no-audit --prefer-offline --progress=false
 
+      - name: Verify execution-mode safety with inert fixtures
+        run: node --test demo/alpha-agi-insight-mark/script-tests/execution-preflight.test.cjs demo/alpha-agi-insight-mark/script-tests/retention-evidence.test.cjs
+
       - name: Run α-AGI Insight MARK unit tests
         run: npm run test:alpha-agi-insight-mark
 
@@ -195,17 +198,16 @@ jobs:
       - name: Run α-AGI Insight MARK dossier verifier
         run: npm run verify:alpha-agi-insight-mark
 
-      - name: Upload α-AGI Insight MARK dossiers
+      - name: Stage bounded local execution and compiler evidence
+        env:
+          INSIGHT_CI_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          node demo/alpha-agi-insight-mark/scripts/retainEvidence.cjs stage "$RUNNER_TEMP/insight-evidence-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          node demo/alpha-agi-insight-mark/scripts/retainEvidence.cjs verify "$RUNNER_TEMP/insight-evidence-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+
+      - name: Upload verified α-AGI Insight MARK evidence
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: alpha-agi-insight-mark-dossiers
-          path: |
-            demo/alpha-agi-insight-mark/reports/insight-recap.json
-            demo/alpha-agi-insight-mark/reports/insight-report.md
-            demo/alpha-agi-insight-mark/reports/insight-report.html
-            demo/alpha-agi-insight-mark/reports/insight-control-matrix.json
-            demo/alpha-agi-insight-mark/reports/insight-control-map.mmd
-            demo/alpha-agi-insight-mark/reports/insight-superintelligence.mmd
-            demo/alpha-agi-insight-mark/reports/insight-lifecycle.mmd
-            demo/alpha-agi-insight-mark/reports/insight-manifest.json
-            demo/alpha-agi-insight-mark/reports/insight-telemetry.log
+          if-no-files-found: error
+          path: ${{ runner.temp }}/insight-evidence-${{ github.run_id }}-${{ github.run_attempt }}/

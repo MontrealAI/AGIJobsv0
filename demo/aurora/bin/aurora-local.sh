@@ -4,18 +4,21 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 cd "$ROOT"
 
+source "$ROOT/demo/aurora/bin/local-node.sh"
+lock_local_demo "$@"
+
 NET="localhost"
 REPORT_DIR="reports/${NET}/aurora/receipts"
 DEPLOY_OUTPUT="${REPORT_DIR}/deploy.json"
 
 mkdir -p "$REPORT_DIR"
 
-source "$ROOT/demo/aurora/bin/local-node.sh"
 prepare_local_node
 npx hardhat compile --concurrency 1
 start_local_node
 
 dep_env() {
+  check_local_node
   DEPLOY_DEFAULTS_SKIP_VERIFY=1 \
   DEPLOY_DEFAULTS_CONFIG="demo/aurora/config/deployer.hardhat.json" \
   DEPLOY_DEFAULTS_OUTPUT="$DEPLOY_OUTPUT" \
@@ -23,6 +26,7 @@ dep_env() {
 }
 
 run_demo() {
+  check_local_node
   AURORA_DEPLOY_OUTPUT="$DEPLOY_OUTPUT" \
   NETWORK="$NET" \
   npx ts-node --transpile-only demo/aurora/aurora.demo.ts --network localhost

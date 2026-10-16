@@ -355,7 +355,7 @@ function summariseJobRegistry(
   }
 
   const summary: string[] = [
-    `Job stake: ${formatTokens(config?.jobStakeTokens ?? '—', symbol)} | Max reward: ${formatTokens(
+    `Future-job stake rate: ${config?.jobStakeBps ?? 'unset'} bps | Max reward: ${formatTokens(
       config?.maxJobRewardTokens ?? '—',
       symbol
     )}.`,

@@ -1,20 +1,43 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT_DIR=$(git rev-parse --show-toplevel)
-SCOPE=${AURORA_REPORT_SCOPE:-infinity-symphony}
-NETWORK=${NETWORK:-localhost}
-PLAN_PATH=${ASI_TAKEOFF_PLAN_PATH:-$ROOT_DIR/demo/infinity-symphony/project-plan.json}
-REPORT_ROOT="$ROOT_DIR/reports/$NETWORK/$SCOPE"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+cd "$ROOT"
+
+NETWORK=${NETWORK-localhost}
+SCOPE=${AURORA_REPORT_SCOPE-infinity-symphony}
+if [[ "$NETWORK" != localhost || "$SCOPE" != infinity-symphony ]]; then
+  echo 'Infinity Symphony requires NETWORK=localhost and AURORA_REPORT_SCOPE=infinity-symphony (or leave them unset).' >&2
+  exit 1
+fi
+if [[ "${ASI_TAKEOFF_REPORT_ROOT+x}" == x ]]; then
+  echo 'ASI_TAKEOFF_REPORT_ROOT overrides are unsupported by this launcher. Unset it; outputs are isolated in reports/localhost/infinity-symphony/dry-run.' >&2
+  exit 1
+fi
+CI_MODE=false
+if [[ "$#" -eq 1 && "$1" == --ci ]]; then
+  CI_MODE=true
+elif [[ "$#" -ne 0 ]]; then
+  echo 'Infinity Symphony accepts only the optional --ci flag.' >&2
+  exit 1
+fi
+
+PLAN_PATH=${ASI_TAKEOFF_PLAN_PATH:-$ROOT/demo/infinity-symphony/project-plan.json}
+# Resolve relative plans against this checkout, independent of the invoking cwd.
+if [[ "$PLAN_PATH" != /* ]]; then PLAN_PATH="$ROOT/$PLAN_PATH"; fi
+if [[ ! -f "$PLAN_PATH" ]]; then
+  echo 'ASI_TAKEOFF_PLAN_PATH must name an existing plan file.' >&2
+  exit 1
+fi
+
+source "$ROOT/demo/aurora/bin/local-node.sh"
+lock_local_demo "$@"
+
+REPORT_ROOT="$ROOT/reports/localhost/infinity-symphony"
 RECEIPT_MIRROR="$REPORT_ROOT/receipts"
 GOV_ROOT="$REPORT_ROOT/governance"
-DRY_RUN_ROOT="$ROOT_DIR/reports/asi-takeoff"
-CI_MODE=false
-
-if [[ ${1:-} == "--ci" ]]; then
-  CI_MODE=true
-  shift
-fi
+DRY_RUN_ROOT="$REPORT_ROOT/dry-run"
+node "$ROOT/demo/aurora/bin/prepare-local-reports.cjs" infinity-symphony
 
 info() {
   echo "[infinity] $*"
@@ -24,10 +47,12 @@ mkdir -p "$RECEIPT_MIRROR" "$GOV_ROOT"
 
 info "Running deterministic dry-run with plan: $PLAN_PATH"
 export ASI_TAKEOFF_PLAN_PATH="$PLAN_PATH"
+export ASI_TAKEOFF_REPORT_ROOT="$DRY_RUN_ROOT"
 npm run demo:asi-takeoff
 
 info "Generating governance kit"
 npm run demo:asi-takeoff:kit -- \
+  --plan "$PLAN_PATH" \
   --report-root "$DRY_RUN_ROOT" \
   --summary-md "$DRY_RUN_ROOT/infinity-symphony-summary.md" \
   --bundle "$DRY_RUN_ROOT/mission-bundle" \
@@ -35,21 +60,17 @@ npm run demo:asi-takeoff:kit -- \
 
 if command -v shasum >/dev/null 2>&1; then
   info "Fingerprinting dry-run artefacts"
-  (cd "$DRY_RUN_ROOT" && find . -type f -print0 | sort -z | xargs -0 shasum -a 256) > "$DRY_RUN_ROOT/SHA256SUMS"
+  (cd "$DRY_RUN_ROOT" && find . -type f ! -path ./SHA256SUMS -print0 | sort -z | xargs -0 shasum -a 256) > "$DRY_RUN_ROOT/SHA256SUMS"
 fi
 
 info "Mirroring receipts into scope: $RECEIPT_MIRROR"
-if command -v rsync >/dev/null 2>&1; then
-  rsync -a --delete "$DRY_RUN_ROOT/" "$RECEIPT_MIRROR/"
-else
-  rm -rf "$RECEIPT_MIRROR"/*
-  cp -a "$DRY_RUN_ROOT/." "$RECEIPT_MIRROR/"
-fi
+# The entire old scope was archived before execution; this destination is new.
+cp -a "$DRY_RUN_ROOT/." "$RECEIPT_MIRROR/"
 
 info "Rendering AURORA mission report"
 export AURORA_REPORT_SCOPE="$SCOPE"
-export AURORA_MISSION_CONFIG=${AURORA_MISSION_CONFIG:-$ROOT_DIR/demo/infinity-symphony/config/mission@v2.json}
-export AURORA_THERMOSTAT_CONFIG=${AURORA_THERMOSTAT_CONFIG:-$ROOT_DIR/demo/infinity-symphony/config/infinity-symphony.thermostat@v2.json}
+export AURORA_MISSION_CONFIG=${AURORA_MISSION_CONFIG:-$ROOT/demo/infinity-symphony/config/mission@v2.json}
+export AURORA_THERMOSTAT_CONFIG=${AURORA_THERMOSTAT_CONFIG:-$ROOT/demo/infinity-symphony/config/infinity-symphony.thermostat@v2.json}
 export AURORA_REPORT_TITLE=${AURORA_REPORT_TITLE:-"Infinity Symphony — Planetary Mission Report"}
 export NETWORK
 npm run demo:aurora:report

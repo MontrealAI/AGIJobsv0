@@ -1,5 +1,20 @@
 # AGI Jobs v0 (v2) — Demo → Zenith Sapience Initiative Celestial Archon Governance
 
+## Local execution scope
+
+`npm run demo:zenith-sapience-celestial-archon:local` rehearses the shared ASI Global contract-lifecycle
+fixture at `demo/asi-global/config/mission@v2.json`, with reports under
+`reports/localhost/zenith-celestial-archon/`. The three fixture jobs are Renewable Capacity
+Surge, Climate Resilience Mesh, and Governance Synchronisation. This does not
+execute this directory's branded `project-plan.json` or establish delivery of its
+proposed real-world programmes. The plan remains design and governance-kit context.
+
+A valid `AURORA_MISSION_CONFIG` can select another Aurora mission fixture; setting
+`ASI_GLOBAL_PLAN_PATH` (even to an empty string) is rejected by this local wrapper
+before locks, report archival, or node startup. See the
+[shared-scenario contract](../asi-global/LOCAL-SCENARIOS.md) for configuration and
+evidence limits.
+
 > AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `demo/zenith-sapience-initiative-celestial-archon-governance`.
 
 ## Overview

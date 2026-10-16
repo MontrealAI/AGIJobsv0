@@ -19,7 +19,7 @@ describe('Job expiration', function () {
     feePool;
   let owner, employer, agent, treasury;
   const reward = 100;
-  const stake = 200;
+  const stake = 10;
 
   beforeEach(async () => {
     [owner, employer, agent, treasury] = await ethers.getSigners();
@@ -123,7 +123,8 @@ describe('Job expiration', function () {
       .connect(owner)
       .setAuthorizedCaller(await registry.getAddress(), true);
     await rep.connect(owner).setThreshold(0);
-    await registry.connect(owner).setJobParameters(reward, stake);
+    await registry.connect(owner).setMaxJobReward(reward);
+    await registry.connect(owner).setJobStakeBps(1000);
     await registry.connect(owner).setMaxJobReward(1000000);
     await registry.connect(owner).setJobDurationLimit(1000);
     await registry.connect(owner).setFeePct(0);
@@ -164,8 +165,8 @@ describe('Job expiration', function () {
       .and.to.emit(registry, 'JobFinalized')
       .withArgs(jobId, agent.address);
 
-    expect(await token.balanceOf(employer.address)).to.equal(1200);
-    expect(await token.balanceOf(agent.address)).to.equal(800);
+    expect(await token.balanceOf(employer.address)).to.equal(1000 + stake);
+    expect(await token.balanceOf(agent.address)).to.equal(1000 - stake);
     const job = enrichJob(await registry.jobs(jobId));
     expect(job.state).to.equal(6);
     expect(job.success).to.equal(false);

@@ -80,11 +80,7 @@ function printBanner() {
 }
 
 function summarizeInvariants() {
-  const agentStake = toNumber(stakeManagerConfig.roleMinimums?.agentTokens);
-  const validatorStake = toNumber(
-    stakeManagerConfig.roleMinimums?.validatorTokens
-  );
-  const jobBond = toNumber(jobRegistryConfig.jobStakeTokens);
+  const bps = planner.jobStakeBps(jobRegistryConfig.jobStakeBps);
   const rewardCap = toNumber(jobRegistryConfig.maxJobRewardTokens);
   const unbonding = planner.integer(
     stakeManagerConfig.unbondingPeriodSeconds,
@@ -94,15 +90,29 @@ function summarizeInvariants() {
   console.log(
     `${COLORS.bright}${COLORS.magenta}Critical Invariants${COLORS.reset}`
   );
-  formatCheck('Agent minimum stake covers job bond', agentStake >= jobBond);
   formatCheck(
-    'Validator stake exceeds agent minimum',
-    validatorStake >= agentStake
+    'Dimensionless job stake rate stays unchanged (0–10000 basis points)',
+    bps === report.modules.jobRegistry.before.jobStakeBps &&
+      bps === report.modules.jobRegistry.after.jobStakeBps
   );
-  formatCheck(
-    'Reward cap is unlimited (zero) or covers the bond',
-    rewardCap === 0n || rewardCap >= jobBond
-  );
+  if (report.modules.jobRegistry.after.jobStakeAtRewardCap) {
+    const jobBond = planner.quoteJobStake(rewardCap, bps);
+    formatCheck(
+      'Reward-specific stake quote rounds up at the configured reward cap',
+      jobBond ===
+        BigInt(report.modules.jobRegistry.after.jobStakeAtRewardCap.raw)
+    );
+    console.log(
+      ` Quote: ${report.modules.jobRegistry.after.jobStakeAtRewardCap.formatted}`
+    );
+  } else {
+    console.log(
+      report.modules.jobRegistry.after.jobStakeQuoteNote ??
+        'Reward cap is unlimited; quote each offered reward separately.'
+    );
+  }
+  for (const observation of report.policyObservations)
+    console.log(` Review observation: ${observation}`);
   formatCheck('Unbonding period enforces cooldown (> 0)', unbonding > 0);
   console.log();
 }

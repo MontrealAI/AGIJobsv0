@@ -39,6 +39,104 @@ function renderKeyValues(record: Record<string, string>): string {
     .join(', ');
 }
 
+function transactionHash(value: unknown): value is string {
+  return (
+    typeof value === 'string' &&
+    /^0x[0-9a-fA-F]{64}$/.test(value) &&
+    !/^0x0{64}$/.test(value)
+  );
+}
+
+// The runner writes uint256 IDs as decimal strings. Accept safe JSON integers
+// as an equivalent representation without coercing other JSON types.
+function canonicalJobId(value: unknown): string | null {
+  if (typeof value === 'number') {
+    return Number.isSafeInteger(value) && value > 0 ? String(value) : null;
+  }
+  if (typeof value !== 'string' || !/^[1-9][0-9]*$/.test(value)) return null;
+  return BigInt(value) <= (1n << 256n) - 1n ? value : null;
+}
+
+function validationFinalization(validate: any): string {
+  const label = '- Validation finalization tx (ValidationModule.finalize): ';
+  return transactionHash(validate?.finalizeTx)
+    ? label + '`' + validate.finalizeTx + '`'
+    : label + 'unavailable (missing or invalid validate.json.finalizeTx).';
+}
+
+function settlementSummary(
+  finalize: any,
+  validate: any,
+  expectedJobIds: unknown[],
+  placeholder: boolean
+): { lines: string[]; usable: boolean } {
+  const label = '- Settlement tx (JobRegistry.finalize): ';
+  const unavailable = (reason: string) => ({
+    lines: [label + 'unavailable (' + reason + ').'],
+    usable: false,
+  });
+  if (placeholder || finalize?.evidenceClass === 'placeholder') {
+    return unavailable('placeholder fixture; no settlement executed');
+  }
+  if (!transactionHash(finalize?.txHash)) {
+    return unavailable('missing or invalid finalize.json.txHash');
+  }
+  if (
+    transactionHash(validate?.finalizeTx) &&
+    finalize.txHash.toLowerCase() === validate.finalizeTx.toLowerCase()
+  ) {
+    return unavailable('conflicts with validation finalization tx');
+  }
+  const finalJobId = canonicalJobId(finalize.jobId);
+  if (finalJobId === null) {
+    return unavailable('missing or invalid finalize.json.jobId');
+  }
+  const jobIds = expectedJobIds
+    .filter((value) => value !== undefined)
+    .map(canonicalJobId);
+  if (jobIds.some((jobId) => jobId === null)) {
+    return unavailable(
+      'invalid job ID in mission, creation, or validation summary'
+    );
+  }
+  if (jobIds.length === 0) {
+    return unavailable('no job ID to compare');
+  }
+  if (jobIds.some((jobId) => jobId !== finalJobId)) {
+    return unavailable('finalize.json.jobId does not match this job');
+  }
+  return { lines: [label + '`' + finalize.txHash + '`'], usable: true };
+}
+
+function recordedPayouts(payouts: unknown): {
+  lines: string[];
+  malformed: boolean;
+} {
+  if (payouts == null) return { lines: [], malformed: false };
+  if (typeof payouts !== 'object' || Array.isArray(payouts)) {
+    return { lines: [], malformed: true };
+  }
+  const lines: string[] = [];
+  let malformed = false;
+  for (const [address, payout] of Object.entries(payouts)) {
+    if (
+      !payout ||
+      !['before', 'after', 'delta'].every(
+        (key) =>
+          typeof payout[key] === 'string' &&
+          /^-?\d+(?:\.\d+)?$/.test(payout[key])
+      )
+    ) {
+      malformed = true;
+      continue;
+    }
+    lines.push(
+      `${address}: ${payout.before} → ${payout.after} (Δ ${payout.delta})`
+    );
+  }
+  return { lines, malformed };
+}
+
 (async () => {
   fs.mkdirSync(path.dirname(mdFile), { recursive: true });
 
@@ -58,6 +156,17 @@ function renderKeyValues(record: Record<string, string>): string {
       '**PLACEHOLDER FIXTURE — no on-chain work or settlement was executed.**'
     );
   }
+  parts.push(
+    'Evidence scope: this report renders saved receipt summaries; it does not independently verify transaction execution, settlement, or payouts.'
+  );
+  if (net === 'localhost' || String(deploy?.chainId) === '31337') {
+    parts.push(
+      'Local demo scope: disposable-chain transactions, mock tokens, and fixture identities/work. Transaction hashes are shown without public explorer links.'
+    );
+  }
+  parts.push(
+    'Result-hash scope: the AURORA runner hashes the result URI string, including placeholder URIs; it does not fetch or verify the referenced artifact content.'
+  );
 
   if (mission) {
     parts.push(section('Mission Summary'));
@@ -128,18 +237,25 @@ function renderKeyValues(record: Record<string, string>): string {
           );
         }
       }
-      if (validate.finalizeTx) {
-        parts.push('- Finalize tx: `' + validate.finalizeTx + '`');
-      }
     }
-
-    if (finalize?.payouts && Object.keys(finalize.payouts).length > 0) {
-      parts.push(section('Payouts'));
-      for (const [address, payout] of Object.entries(
-        finalize.payouts as Record<string, any>
-      )) {
+    parts.push(validationFinalization(validate));
+    parts.push(section('Settlement'));
+    const settlement = settlementSummary(
+      finalize,
+      validate,
+      [post?.jobId, validate?.jobId],
+      placeholder
+    );
+    parts.push(...settlement.lines);
+    if (settlement.usable) {
+      const payouts = recordedPayouts(finalize.payouts);
+      if (payouts.lines.length > 0) {
+        parts.push(section('Payouts'));
+        parts.push(...payouts.lines.map((line) => '- ' + line));
+      }
+      if (payouts.malformed) {
         parts.push(
-          `- ${address}: ${payout.before} → ${payout.after} (Δ ${payout.delta})`
+          '- Payout data: unavailable for malformed balance-change entries.'
         );
       }
     }
@@ -192,21 +308,28 @@ function renderKeyValues(record: Record<string, string>): string {
             `  - ${validator.address}: commit \`${validator.commitTx}\`, reveal \`${validator.revealTx}\``
           );
         }
-        if (validate.finalizeTx) {
-          parts.push('- Finalize tx: `' + validate.finalizeTx + '`');
-        }
       }
+      parts.push(validationFinalization(validate));
 
       const finalize = job.receipts?.finalize
         ? load(job.receipts.finalize)
         : load(path.join('jobs', jobSlug, 'finalize.json'));
-      if (finalize?.payouts && Object.keys(finalize.payouts).length > 0) {
-        parts.push('- **Payouts**:');
-        for (const [address, payout] of Object.entries(
-          finalize.payouts as Record<string, any>
-        )) {
+      const settlement = settlementSummary(
+        finalize,
+        validate,
+        [job.jobId, post?.jobId, validate?.jobId],
+        placeholder
+      );
+      parts.push(...settlement.lines);
+      if (settlement.usable) {
+        const payouts = recordedPayouts(finalize.payouts);
+        if (payouts.lines.length > 0) {
+          parts.push('- **Payouts**:');
+          parts.push(...payouts.lines.map((line) => '  - ' + line));
+        }
+        if (payouts.malformed) {
           parts.push(
-            `  - ${address}: ${payout.before} → ${payout.after} (Δ ${payout.delta})`
+            '- Payout data: unavailable for malformed balance-change entries.'
           );
         }
       }

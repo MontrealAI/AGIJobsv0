@@ -1,36 +1,40 @@
-"""MuZero-style AGI Jobs planning demo package."""
-from . import torch_compat as _torch_compat
-from .configuration import DemoConfig, load_demo_config
-from .environment import AGIJobsPlanningEnv, EnvironmentConfig, PlannerObservation, StepResult, vector_size
-from .mcts import MuZeroPlanner, PlannerSettings
-from .network import MuZeroNetwork, NetworkConfig, make_network
-from .sentinel import SentinelConfig, SentinelMonitor, SentinelStatus
-from .thermostat import PlanningThermostat, ThermostatConfig
-from .training import Episode, MuZeroTrainer, TrainingConfig, discount_returns
+"""MuZero-style planning demo with lazy optional runtime dependencies."""
 
-_torch_compat.patch_torch_from_numpy()
-del _torch_compat
+from importlib import import_module
 
-__all__ = [
-    "AGIJobsPlanningEnv",
-    "DemoConfig",
-    "EnvironmentConfig",
-    "Episode",
-    "MuZeroNetwork",
-    "MuZeroPlanner",
-    "MuZeroTrainer",
-    "NetworkConfig",
-    "PlannerObservation",
-    "PlannerSettings",
-    "PlanningThermostat",
-    "SentinelConfig",
-    "SentinelMonitor",
-    "SentinelStatus",
-    "StepResult",
-    "ThermostatConfig",
-    "TrainingConfig",
-    "discount_returns",
-    "load_demo_config",
-    "make_network",
-    "vector_size",
-]
+_EXPORTS = {
+    "DemoConfig": "configuration",
+    "load_demo_config": "configuration",
+    "AGIJobsPlanningEnv": "environment",
+    "EnvironmentConfig": "environment",
+    "PlannerObservation": "environment",
+    "StepResult": "environment",
+    "vector_size": "environment",
+    "MuZeroPlanner": "mcts",
+    "PlannerSettings": "mcts",
+    "MuZeroNetwork": "network",
+    "NetworkConfig": "network",
+    "make_network": "network",
+    "SentinelConfig": "sentinel",
+    "SentinelMonitor": "sentinel",
+    "SentinelStatus": "sentinel",
+    "PlanningThermostat": "thermostat",
+    "ThermostatConfig": "thermostat",
+    "Episode": "training",
+    "MuZeroTrainer": "training",
+    "TrainingConfig": "training",
+    "discount_returns": "training",
+}
+__all__ = list(_EXPORTS)
+
+
+def __getattr__(name):
+    module = _EXPORTS.get(name)
+    if module is None:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    from .torch_compat import patch_torch_from_numpy
+
+    patch_torch_from_numpy()
+    value = getattr(import_module(f".{module}", __name__), name)
+    globals()[name] = value
+    return value

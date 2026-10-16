@@ -68,11 +68,13 @@ export async function buildPlatformRegistryPlan(
     currentReputationEngine,
     currentMinStake,
     currentPauser,
+    currentPauserManager,
   ] = await Promise.all([
     platformRegistry.stakeManager(),
     platformRegistry.reputationEngine(),
     platformRegistry.minPlatformStake(),
     platformRegistry.pauser(),
+    platformRegistry.pauserManager(),
   ]);
 
   const currentMinStakeValue = BigInt(currentMinStake);
@@ -97,6 +99,7 @@ export async function buildPlatformRegistryPlan(
     allowZero: true,
   });
   const desiredPauser = normaliseAddress(config.pauser);
+  const desiredPauserManager = normaliseAddress(config.pauserManager, { allowZero: true });
   const desiredMinStake = parseTokenAmount(
     config.minPlatformStake,
     config.minPlatformStakeTokens,
@@ -115,6 +118,8 @@ export async function buildPlatformRegistryPlan(
     minPlatformStake: currentMinStakeValue,
     setPauser: false,
     pauser: currentPauserAddress,
+    setPauserManager: false,
+    pauserManager: ethers.getAddress(currentPauserManager),
   };
 
   const registrarUpdates: Array<{ registrar: string; allowed: boolean }> = [];
@@ -180,6 +185,12 @@ export async function buildPlatformRegistryPlan(
     );
   }
 
+  if (desiredPauserManager !== undefined && !sameAddress(desiredPauserManager, currentPauserManager)) {
+    configUpdate.setPauserManager = true;
+    configUpdate.pauserManager = desiredPauserManager;
+    changeSummaries.push(`Pauser manager: ${currentPauserManager} → ${desiredPauserManager}`);
+  }
+
   const registrarConfig = config.registrars || {};
   const sortedRegistrars = Object.keys(registrarConfig).sort((a, b) =>
     a.localeCompare(b)
@@ -230,7 +241,8 @@ export async function buildPlatformRegistryPlan(
     configUpdate.setStakeManager ||
     configUpdate.setReputationEngine ||
     configUpdate.setMinPlatformStake ||
-    configUpdate.setPauser;
+    configUpdate.setPauser ||
+    configUpdate.setPauserManager;
   const hasListChanges =
     registrarUpdates.length > 0 || blacklistUpdates.length > 0;
 

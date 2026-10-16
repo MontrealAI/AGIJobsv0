@@ -1,0 +1,34 @@
+{
+  "schema": "agijobs.zenith-regional-reconciliation.v1",
+  "title": "Reconcile regional infrastructure work before proposing budget changes",
+  "unit": "declared budget units",
+  "totalUnits": "100000",
+  "regions": [
+    { "id": "north", "name": "North", "allocationUnits": "40000" },
+    { "id": "central", "name": "Central", "allocationUnits": "35000" },
+    { "id": "south", "name": "South", "allocationUnits": "25000" }
+  ],
+  "jobs": [
+    {
+      "id": "relay",
+      "label": "Relay inspection",
+      "regionId": "north",
+      "plannedUnits": "35000",
+      "reportedUnits": "45000"
+    },
+    {
+      "id": "backup",
+      "label": "Backup maintenance",
+      "regionId": "central",
+      "plannedUnits": "30000",
+      "reportedUnits": "25000"
+    },
+    {
+      "id": "archive",
+      "label": "Archive migration",
+      "regionId": "south",
+      "plannedUnits": "20000",
+      "reportedUnits": null
+    }
+  ]
+}

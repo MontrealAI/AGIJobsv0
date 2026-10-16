@@ -202,7 +202,8 @@ describe('Planetary-scale ASI take-off demo', function () {
       .connect(owner)
       .setIdentityRegistry(await identity.getAddress());
     await registry.connect(owner).setTaxPolicy(await policy.getAddress());
-    await registry.connect(owner).setJobParameters(0, stakeRequirement);
+    // Admission deposits remain 500; each new job independently locks 10% of its reward.
+    await registry.connect(owner).setJobStakeBps(1000);
     await registry.connect(owner).setFeePct(Number(initialFeePct));
     await registry.connect(owner).setValidatorRewardPct(0);
     await reputation

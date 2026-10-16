@@ -1,5 +1,15 @@
 # AGI Jobs v0 (v2) — Demo → Imperatrix Celestia Operating System
 
+## Launcher safety and mode upgrade
+
+The launcher now defaults to an effect-free plan. `--help` and exact
+`--dry-run` also perform no runtime work. Execution requires an explicit
+`--mode execute`, network, Compose choice and `--yes`; dependencies are never
+installed automatically. See the [mode upgrade and evidence boundaries](../../docs/agi-os-first-class-mode-upgrade.md)
+before using operational commands below. Planning and inert tests do not
+qualify a deployment or establish production readiness.
+
+
 > AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `demo/imperatrix-celestia-operating-system`.
 
 ## Overview

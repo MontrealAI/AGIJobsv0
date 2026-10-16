@@ -1,4 +1,7 @@
 import { renderEcosystemMap } from './ecosystem-map.mjs';
+import { buildPolarisSite } from './polaris-build.mjs';
+import { buildZenithSite } from './zenith-build.mjs';
+import { buildOmegaSite } from './omega-build.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
@@ -24,6 +27,8 @@ import {
 import { renderAlphaMarkPage } from './alpha-mark.mjs';
 import { renderSuccessorPage } from './successor.mjs';
 import { buildPhase6Site } from './phase6-build.mjs';
+import { buildEmpowermentSite } from './empowerment-build.mjs';
+import { buildOmniphoenixSite } from './omniphoenix-build.mjs';
 
 const require = createRequire(import.meta.url);
 const { inventory } = require('../demo/catalog.cjs');
@@ -128,10 +133,11 @@ export function renderMarkdown(
   const renderer = new marked.Renderer();
   renderer.heading = function (token) {
     const text = this.parser.parseInline(token.tokens);
-    const plain = text
-      .replace(/<[^>]*>/g, '')
-      .replace(/&[^;]+;/g, '')
-      .toLowerCase();
+    // Parse markup as inert text; deleting tag-shaped substrings can reconstruct tags.
+    // Retain legacy entity omission so existing guide fragment links stay stable.
+    const plain = JSDOM.fragment(
+      text.replace(/&[^;]+;/g, '')
+    ).textContent.toLowerCase();
     const stem = plain.replace(/[^\p{L}\p{N}_\-\s]/gu, '').replace(/\s/g, '-');
     const count = usedHeadings.get(stem) || 0;
     usedHeadings.set(stem, count + 1);
@@ -461,7 +467,9 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
     base
   )}<div class="hero-actions"><a class="button primary" href="${base}start/">Start here — we’ll guide you <span aria-hidden="true">→</span></a><a class="text-link" href="${base}start/example/"><span class="play-icon" aria-hidden="true">▷</span> Try a simple example</a></div><p class="hero-note">No account or wallet needed. <a href="${base}start/fr/" lang="fr">Commencer en français →</a></p>${renderHeroSpotlight(
     base
-  )}</div>${orbit()}</section>${renderEcosystemIntro(base)}${renderEcosystemMap()}${renderWorkIntro(
+  )}</div>${orbit()}</section>${renderEcosystemIntro(
+    base
+  )}${renderEcosystemMap()}${renderWorkIntro(
     base,
     guideURL
   )}${renderFeaturedDemos(
@@ -533,8 +541,20 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
     })
   );
   write('ecosystem/contracts.json', JSON.stringify(ecosystem, null, 2) + '\n');
-  write('successor/build/index.html', fs.readFileSync(path.join(root, 'website/successor-build/index.html'), 'utf8'));
-  write('successor/build/provenance.json', fs.readFileSync(path.join(root, 'website/successor-build/provenance.json'), 'utf8'));
+  write(
+    'successor/build/index.html',
+    fs.readFileSync(
+      path.join(root, 'website/successor-build/index.html'),
+      'utf8'
+    )
+  );
+  write(
+    'successor/build/provenance.json',
+    fs.readFileSync(
+      path.join(root, 'website/successor-build/provenance.json'),
+      'utf8'
+    )
+  );
   write(
     'work/index.html',
     chrome({
@@ -810,6 +830,8 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
     'experiments/phase6/',
   ];
   await buildPhase6Site(path.join(output, 'experiments/phase6'), { base });
+  await buildOmniphoenixSite(path.join(output, 'experiments/omniphoenix'));
+  dashboardRoutes.push('experiments/omniphoenix/');
   for (const file of tracked) {
     if (!file.startsWith(deckRoot)) continue;
     const relative = file.slice(deckRoot.length);
@@ -933,8 +955,45 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
   const phase8Site = await buildPhase8Site(
     path.join(output, 'experiments/phase8')
   );
+  fs.cpSync(
+    path.join(root, 'demo/solving-alpha-agi-governance/web'),
+    path.join(output, 'experiments/governance'),
+    { recursive: true }
+  );
+  dashboardRoutes.push('experiments/governance/');
   dashboardRoutes.push(phase8Site.route);
+  await buildEmpowermentSite(path.join(output, 'experiments/empowerment'), {
+    base,
+  });
+  dashboardRoutes.push('experiments/empowerment/');
   archiveRoutes.push(...phase8Site.archiveRoutes);
+  fs.cpSync(
+    path.join(root, 'demo/OMNI-CONCORD-ASCENSION-ATLAS/web'),
+    path.join(output, 'experiments/atlas'),
+    { recursive: true }
+  );
+  dashboardRoutes.push('experiments/atlas/');
+  fs.cpSync(
+    path.join(root, 'demo/ICONIC-OPERATING-SYSTEM-DEMO/web'),
+    path.join(output, 'experiments/iconic'),
+    { recursive: true }
+  );
+  dashboardRoutes.push('experiments/iconic/');
+  await buildPolarisSite(path.join(output, 'experiments/polaris'));
+  dashboardRoutes.push('experiments/polaris/');
+  fs.cpSync(
+    path.join(
+      root,
+      'demo/CELESTIAL-SOVEREIGN-ORBITAL-AGI-OS-GRAND-DEMONSTRATION/web'
+    ),
+    path.join(output, 'experiments/celestial'),
+    { recursive: true }
+  );
+  dashboardRoutes.push('experiments/celestial/');
+  await buildZenithSite(path.join(output, 'experiments/zenith'));
+  dashboardRoutes.push('experiments/zenith/');
+  await buildOmegaSite(path.join(output, 'experiments/omega'));
+  dashboardRoutes.push('experiments/omega/');
   // Compile the same Studio shipped in the pnpm workspace, in explicit offline mode.
   const studio = path.join(root, 'demo/CULTURE-v0/apps/culture-studio');
   execFileSync(

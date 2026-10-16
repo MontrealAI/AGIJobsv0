@@ -23,7 +23,9 @@ function parseArgs(): Args {
   return args;
 }
 
-function resolveBoolean(value: string | boolean | undefined): boolean | undefined {
+function resolveBoolean(
+  value: string | boolean | undefined
+): boolean | undefined {
   if (typeof value === 'boolean') {
     return value;
   }
@@ -42,10 +44,22 @@ function pushFlag(target: string[], flag: string, value?: string) {
 }
 
 async function main() {
+  // Never allow a caller to mistake this operational wrapper for a planner.
+  // Check raw tokens too: the permissive legacy parser accepts --key=value.
+  if (
+    process.argv
+      .slice(2)
+      .some((arg) => arg === '--dry-run' || arg.startsWith('--dry-run='))
+  ) {
+    throw new Error(
+      '--dry-run is unsupported by oneclick-stack.ts; no deployment was started. Use a read-only planning tool instead.'
+    );
+  }
   const args = parseArgs();
 
   const composePreference = resolveBoolean(args.compose);
-  const skipCompose = resolveBoolean(args['no-compose']) ?? resolveBoolean(args['skip-compose']);
+  const skipCompose =
+    resolveBoolean(args['no-compose']) ?? resolveBoolean(args['skip-compose']);
   const compose = skipCompose === true ? false : composePreference ?? true;
 
   const detachPreference = resolveBoolean(args.detach);
@@ -73,9 +87,13 @@ async function main() {
   for (const [key, flag] of passthroughKeys) {
     const raw = args[key as string];
     if (typeof raw === 'string' && raw.length > 0) {
-      const resolved = flag === '--config' || flag === '--env' || flag === '--compose-file' || flag === '--deployment-output'
-        ? path.resolve(raw)
-        : raw;
+      const resolved =
+        flag === '--config' ||
+        flag === '--env' ||
+        flag === '--compose-file' ||
+        flag === '--deployment-output'
+          ? path.resolve(raw)
+          : raw;
       pushFlag(wizardArgs, flag, resolved);
     }
   }
@@ -90,7 +108,9 @@ async function main() {
       if (code === 0) {
         resolve();
       } else {
-        reject(new Error(`npm ${wizardArgs.join(' ')} exited with code ${code}`));
+        reject(
+          new Error(`npm ${wizardArgs.join(' ')} exited with code ${code}`)
+        );
       }
     });
     child.on('error', (error) => reject(error));

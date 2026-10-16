@@ -65,7 +65,8 @@ describe('Gateway current registry compatibility', function () {
       await deployImplementations('JobRegistry', Registry.runner)
     );
     await registry.setIdentityRegistry(await identity.getAddress());
-    await registry.setJobParameters(1000, 0);
+    await registry.setMaxJobReward(1000);
+    await registry.setJobStakeBps(0);
     await registry.setExpirationGracePeriod(17);
     const gateway = new ethers.Contract(
       await registry.getAddress(),

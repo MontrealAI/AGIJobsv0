@@ -19,6 +19,7 @@ describe('PlatformRegistry plan builder', function () {
     // Seed existing registrar/blacklist state to exercise toggles.
     await platformRegistry.setRegistrar(registrarB.address, true);
     await platformRegistry.setBlacklist(blacklistB.address, true);
+    await platformRegistry.setPauserManager(owner.address);
 
     const VersionMock = await ethers.getContractFactory(
       'contracts/v2/mocks/VersionMock.sol:VersionMock'
@@ -49,64 +50,57 @@ describe('PlatformRegistry plan builder', function () {
       ownerAddress: owner.address,
     });
 
-    expect(plan.actions).to.have.length(8);
-
-    function findAction(
-      method: string,
-      predicate: (action: { method: string; args: unknown[] }) => boolean
-    ) {
-      return plan.actions.find(
-        (action) => action.method === method && predicate(action)
-      );
-    }
-
-    expect(
-      findAction('setStakeManager', () => true),
-      'setStakeManager action'
-    ).to.not.equal(undefined);
-    expect(
-      findAction('setReputationEngine', () => true),
-      'setReputationEngine action'
-    ).to.not.equal(undefined);
-    expect(
-      findAction('setMinPlatformStake', () => true),
-      'setMinPlatformStake action'
-    ).to.not.equal(undefined);
-    expect(
-      findAction('setPauser', (action) => action.args[0] === pauser.address),
-      'setPauser action'
-    ).to.not.equal(undefined);
-    expect(
-      findAction(
-        'setRegistrar',
-        (action) =>
-          action.args[0] === registrarA.address && action.args[1] === true
-      ),
-      'registrarA authorisation'
-    ).to.not.equal(undefined);
-    expect(
-      findAction(
-        'setRegistrar',
-        (action) =>
-          action.args[0] === registrarB.address && action.args[1] === false
-      ),
-      'registrarB revocation'
-    ).to.not.equal(undefined);
-    expect(
-      findAction(
-        'setBlacklist',
-        (action) =>
-          action.args[0] === blacklistA.address && action.args[1] === true
-      ),
-      'blacklistA set'
-    ).to.not.equal(undefined);
-    expect(
-      findAction(
-        'setBlacklist',
-        (action) =>
-          action.args[0] === blacklistB.address && action.args[1] === false
-      ),
-      'blacklistB removal'
-    ).to.not.equal(undefined);
+    expect(plan.actions).to.have.length(1);
+    expect(plan.actions[0].method).to.equal('applyConfiguration');
+    const [update, registrars, blacklist] = plan.actions[0].args as [any, any[], any[]];
+    expect(update.setStakeManager).to.equal(true);
+    expect(update.setReputationEngine).to.equal(true);
+    expect(update.setMinPlatformStake).to.equal(true);
+    expect(update.setPauser).to.equal(true);
+    expect(update.setPauserManager).to.equal(false);
+    expect(update.pauserManager).to.equal(owner.address);
+    expect(update).to.deep.equal({
+      setStakeManager: true, stakeManager: await stakeManager.getAddress(),
+      setReputationEngine: true, reputationEngine: await reputationEngine.getAddress(),
+      setMinPlatformStake: true, minPlatformStake: ethers.parseUnits('2',18),
+      setPauser: true, pauser: pauser.address,
+      setPauserManager: false, pauserManager: owner.address,
+    });
+    expect(registrars).to.have.deep.members([{registrar:registrarA.address,allowed:true},{registrar:registrarB.address,allowed:false}]);
+    expect(blacklist).to.have.deep.members([{operator:blacklistA.address,status:true},{operator:blacklistB.address,status:false}]);
+    expect(registrars).to.have.length(2);
+    expect(blacklist).to.have.length(2);
+    await platformRegistry.applyConfiguration(update, registrars, blacklist);
+    expect(await platformRegistry.stakeManager()).to.equal(await stakeManager.getAddress());
+    expect(await platformRegistry.reputationEngine()).to.equal(await reputationEngine.getAddress());
+    expect(await platformRegistry.minPlatformStake()).to.equal(ethers.parseEther('2'));
+    expect(await platformRegistry.pauser()).to.equal(pauser.address);
+    expect(await platformRegistry.pauserManager()).to.equal(owner.address);
+    expect(await platformRegistry.registrars(registrarA.address)).to.equal(true);
+    expect(await platformRegistry.registrars(registrarB.address)).to.equal(false);
+    expect(await platformRegistry.blacklist(blacklistA.address)).to.equal(true);
+    expect(await platformRegistry.blacklist(blacklistB.address)).to.equal(false);
+    const repeated = await buildPlatformRegistryPlan({platformRegistry,config,decimals:18,symbol:'AGIALPHA',ownerAddress:owner.address});
+    expect(repeated.actions).to.have.length(0);
   });
+  it('plans an explicit pauser-manager update or removal without changing unrelated fields', async function () {
+    const [owner, manager] = await ethers.getSigners();
+    const Factory = await ethers.getContractFactory('contracts/v2/PlatformRegistry.sol:PlatformRegistry');
+    const platformRegistry = await Factory.deploy(ZERO, ZERO, 0);
+    for (const address of [manager.address, ZERO]) {
+      const plan = await buildPlatformRegistryPlan({ platformRegistry, config: { pauserManager: address }, decimals: 18, symbol: 'AGIALPHA', ownerAddress: owner.address });
+      expect(plan.actions).to.have.length(1);
+      const [update, registrars, blacklist] = plan.actions[0].args as [any, any[], any[]];
+      expect(update.setPauserManager).to.equal(true);
+      expect(update.setPauser).to.equal(false);
+      expect(update.setStakeManager).to.equal(false);
+      await platformRegistry.applyConfiguration(update, registrars, blacklist);
+      expect(await platformRegistry.pauserManager()).to.equal(address);
+      expect(await platformRegistry.pauser()).to.equal(ZERO);
+      expect(await platformRegistry.stakeManager()).to.equal(ZERO);
+    }
+    const unchanged = await buildPlatformRegistryPlan({ platformRegistry, config: { pauserManager: ZERO }, decimals: 18, symbol: 'AGIALPHA', ownerAddress: owner.address });
+    expect(unchanged.actions).to.have.length(0);
+  });
+
 });

@@ -27,11 +27,16 @@ describeFork('Mainnet fork · job lifecycle drill', function () {
   const JOB_REWARD = '100';
 
   let snapshotId: string;
+  let tokenCodeHash: string;
 
   before(async function () {
     if (!FORK_URL) {
       this.skip();
       return;
+    }
+
+    if (network.name !== 'hardhat' || 'url' in network.config) {
+      throw new Error('This rehearsal requires a disposable in-process Hardhat network');
     }
 
     const blockNumber = process.env.MAINNET_FORK_BLOCK
@@ -49,6 +54,15 @@ describeFork('Mainnet fork · job lifecycle drill', function () {
         },
       ],
     });
+    const forkMetadata = await ethers.provider.send('hardhat_metadata', []);
+    expect(forkMetadata.forkedNetwork.chainId).to.equal(1);
+    if (blockNumber) expect(forkMetadata.forkedNetwork.forkBlockNumber).to.equal(blockNumber);
+    if (process.env.MAINNET_FORK_BLOCK_HASH) {
+      expect(forkMetadata.forkedNetwork.forkBlockHash).to.equal(process.env.MAINNET_FORK_BLOCK_HASH);
+    }
+    const tokenCode = await ethers.provider.getCode(AGIALPHA);
+    expect(tokenCode).not.to.equal('0x');
+    tokenCodeHash = ethers.keccak256(tokenCode);
     await network.provider.send('hardhat_setNextBlockBaseFeePerGas', ['0x0']);
 
     const token = await ethers.getContractAt(
@@ -72,12 +86,14 @@ describeFork('Mainnet fork · job lifecycle drill', function () {
       treasury.address,
     ];
 
+    let additional = 0n;
     for (const holder of holders) {
+      const previous = await token.balanceOf(holder);
+      additional += mintAmount - previous;
       await setErc20Balance(AGIALPHA, holder, mintAmount);
     }
 
     const existingSupply = await token.totalSupply();
-    const additional = mintAmount * BigInt(holders.length);
     await setUintStorage(
       AGIALPHA,
       TOTAL_SUPPLY_SLOT,
@@ -101,7 +117,10 @@ describeFork('Mainnet fork · job lifecycle drill', function () {
     snapshotId = await network.provider.send('evm_snapshot');
   });
 
-  it('executes the happy-path job lifecycle using forked $AGIALPHA state', async function () {
+  for (const highReputation of [false, true]) {
+  it(highReputation
+    ? 'settles and releases collateral for a high-reputation worker using actual forked $AGIALPHA code'
+    : 'executes the happy-path job lifecycle using forked $AGIALPHA state', async function () {
     const [owner, employer, agent, validator, buyer, moderator, treasury] =
       await ethers.getSigners();
 
@@ -222,6 +241,12 @@ describeFork('Mainnet fork · job lifecycle drill', function () {
     await registry.setIdentityRegistry(await identity.getAddress());
     await reputation.setCaller(await registry.getAddress(), true);
     await reputation.setPremiumThreshold(0);
+    if (highReputation) {
+      await reputation.setCaller(owner.address, true);
+      await reputation.add(agent.address, 20000);
+      await reputation.setCaller(owner.address, false);
+      expect(await reputation.reputationOf(agent.address)).to.equal(19036);
+    }
 
     const token = await ethers.getContractAt(
       '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol:IERC20Metadata',
@@ -231,7 +256,7 @@ describeFork('Mainnet fork · job lifecycle drill', function () {
     await registry.connect(employer).acknowledgeTaxPolicy();
     await registry.connect(agent).acknowledgeTaxPolicy();
 
-    const stakeAmount = ethers.parseUnits('1', AGIALPHA_DECIMALS);
+    const stakeAmount = ethers.parseUnits('10', AGIALPHA_DECIMALS);
     await token.connect(agent).approve(await stake.getAddress(), stakeAmount);
     expect(
       await token.allowance(agent.address, await stake.getAddress())
@@ -265,6 +290,10 @@ describeFork('Mainnet fork · job lifecycle drill', function () {
       .connect(employer)
       .createJob(reward, deadline, specHash, 'ipfs://job');
 
+    expect((await registry.jobs(1)).stake).to.equal(reward / 10n);
+    await registry.setJobStakeBps(10000);
+    expect(await registry.quoteJobStake(reward)).to.equal(reward);
+    expect((await registry.jobs(1)).stake).to.equal(reward / 10n);
     await registry.connect(agent).applyForJob(1, subdomain, []);
     const resultHash = ethers.id('ipfs://result');
     await registry
@@ -273,6 +302,10 @@ describeFork('Mainnet fork · job lifecycle drill', function () {
     await validation.setResult(true);
     await validation.finalize(1);
     await registry.connect(employer).finalize(1);
+    if (highReputation) expect(await reputation.reputationOf(agent.address)).to.be.gte(19036);
+    const afterPayout = await token.balanceOf(agent.address);
+    await expect(registry.connect(employer).finalize(1)).to.be.revertedWithCustomError(registry, 'NotReady');
+    expect(await token.balanceOf(agent.address)).to.equal(afterPayout);
 
     const price = ethers.parseUnits(NFT_PRICE, AGIALPHA_DECIMALS);
     await nft.connect(agent).list(1, price);
@@ -280,8 +313,12 @@ describeFork('Mainnet fork · job lifecycle drill', function () {
     await nft.connect(buyer).purchase(1);
 
     expect(await nft.ownerOf(1)).to.equal(buyer.address);
+    expect(await stake.lockedStakes(agent.address)).to.equal(0);
+    expect(await stake.stakes(agent.address, Role.Agent)).to.equal(stakeAmount);
     expect(await token.balanceOf(agent.address)).to.equal(
-      ethers.parseUnits('1149', AGIALPHA_DECIMALS)
+      ethers.parseUnits(MINT_PER_ACCOUNT, AGIALPHA_DECIMALS) - stakeAmount + reward + price
     );
+    expect(ethers.keccak256(await ethers.provider.getCode(AGIALPHA))).to.equal(tokenCodeHash);
   });
+  }
 });

@@ -16,8 +16,8 @@ export interface GovernanceSnapshot {
     };
     jobRegistry: {
       address: string;
-      jobStake: string;
-      jobStakeLabel: string;
+      jobStakeBps: string | null;
+      jobStakeRateLabel: string;
       maxJobReward: string;
       maxJobRewardLabel: string;
       maxJobDuration: string;
@@ -40,7 +40,7 @@ export interface GovernanceSnapshot {
       agentMerkleRoot: string;
       validatorMerkleRoot: string;
     };
-    [key: string]: Record<string, string> | undefined;
+    [key: string]: Record<string, string | null> | undefined;
   };
   configs: Record<string, unknown> & {
     identity?: {

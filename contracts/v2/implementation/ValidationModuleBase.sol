@@ -73,6 +73,9 @@ abstract contract ValidationModuleBase is IValidationModule, Ownable, TaxAcknowl
     /// @notice Module version for compatibility checks.
     uint256 public constant version = 2;
 
+    /// @notice Terminal scoring interface, including persistent reveal facts.
+    uint256 public constant reputationInterfaceVersion = 1;
+
     /// @notice Domain separator used for typed commit hashes.
     // Appended storage field below preserves all existing storage offsets.
 
@@ -172,7 +175,7 @@ abstract contract ValidationModuleBase is IValidationModule, Ownable, TaxAcknowl
     mapping(uint256 => Round) public rounds;
     mapping(uint256 => FailoverState) public failoverStates;
     mapping(uint256 => mapping(address => mapping(uint256 => bytes32))) public commitments;
-    mapping(uint256 => mapping(address => bool)) public revealed;
+    mapping(uint256 => mapping(address => bool)) public override revealed;
     mapping(uint256 => mapping(address => bool)) public votes;
     mapping(uint256 => mapping(address => uint256)) public validatorStakes;
     mapping(uint256 => mapping(address => uint256)) public validatorStakeLocks;
@@ -1429,44 +1432,8 @@ abstract contract ValidationModuleBase is IValidationModule, Ownable, TaxAcknowl
             success = false;
         }
         IJobRegistry.Job memory job = jobRegistry.jobs(jobId);
-        address[] memory committee = new address[](vlen);
-        bool[] memory revealedStates = new bool[](vlen);
-        bool[] memory voteStates = new bool[](vlen);
-        for (uint256 i; i < vlen;) {
-            address validator = r.validators[i];
-            committee[i] = validator;
-            revealedStates[i] = revealed[jobId][validator];
-            voteStates[i] = votes[jobId][validator];
-            unchecked {
-                ++i;
-            }
-        }
-
-        if (address(reputationEngine) != address(0)) {
-            uint256 payout;
-            uint256 duration;
-            if (success) {
-                IJobRegistry.JobMetadata memory metadata = jobRegistry.decodeJobMetadata(job.packedMetadata);
-                uint256 validatorPct = jobRegistry.validatorRewardPct();
-                uint256 rewardAfterValidator = uint256(job.reward);
-                if (committee.length > 0 && validatorPct > 0) {
-                    uint256 validatorReward = (uint256(job.reward) * validatorPct) / 100;
-                    rewardAfterValidator -= validatorReward;
-                }
-                uint256 agentPctRaw = metadata.agentPct;
-                uint256 agentPct = agentPctRaw == 0 ? 100 : agentPctRaw;
-                uint256 agentAmount = (rewardAfterValidator * agentPct) / 100;
-                payout = agentAmount * 1e12;
-                if (metadata.assignedAt != 0 && block.timestamp > metadata.assignedAt) {
-                    duration = block.timestamp - uint256(metadata.assignedAt);
-                }
-            }
-
-            reputationEngine.updateScores(
-                jobId, job.agent, committee, success, revealedStates, voteStates, payout, duration
-            );
-            jobRegistry.markReputationProcessed(jobId);
-        }
+        // Registry snapshots participation before cleanup and scores only the
+        // final settled outcome, including any dispute reversal.
 
         for (uint256 i; i < vlen;) {
             address val = r.validators[i];

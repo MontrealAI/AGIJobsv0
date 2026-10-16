@@ -1,31 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../../.. && pwd)"
-cd "$ROOT_DIR"
+# Validate/help/plan before root resolution, environment changes or subprocesses.
+SCRIPT_DIR="${BASH_SOURCE[0]%/*}"
+if [[ "$SCRIPT_DIR" == "${BASH_SOURCE[0]}" ]]; then SCRIPT_DIR=.; fi
+source "$SCRIPT_DIR/../../../scripts/lib/agi-os-first-class-launcher.sh"
+agi_os_guard first-class "$@"
 
-banner() {
-  printf '\n\033[1;96m%s\033[0m\n' "$1"
-}
+ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+[[ -d "$ROOT/node_modules" ]] || agi_os_fail 'Dependencies are missing; install the reviewed lockfile separately before explicit execution'
+cd "$ROOT"
 
-banner "🛡️  Omni-Sovereign Ascension :: Preflight"
-node --version
-npm --version
-
-banner "🚀 Launching One-Click Deployment Wizard"
-npm run deploy:oneclick:wizard
-
-banner "🌌 Executing First-Class Operating System Demo"
-npm run demo:agi-os:first-class -- --auto-yes "$@"
-
-banner "📡 Live Interfaces"
-cat <<INFO
-Owner Console:      http://localhost:3000
-Enterprise Portal:  http://localhost:3001
-Validator Ops:      http://localhost:3002
-
-Mission bundle:     reports/agi-os/first-class/
-Grand summary:      reports/agi-os/grand-summary.md
-INFO
-
-banner "✅ Showcase complete"
+npm run demo:agi-os:first-class -- "$@"

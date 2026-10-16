@@ -74,7 +74,7 @@ describe('Job finalization with contract employer', function () {
     await registry
       .connect(owner)
       .setIdentityRegistry(await identity.getAddress());
-    await registry.connect(owner).setJobParameters(0, 0);
+    await registry.connect(owner).setJobStakeBps(0);
 
     const Employer = await ethers.getContractFactory(
       'contracts/test/EmployerContract.sol:EmployerContract'

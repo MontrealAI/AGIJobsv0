@@ -503,8 +503,11 @@ function normaliseDeploymentPlan(plan = {}) {
     result.withTax = Boolean(plan.withTax);
   }
 
-  const rawOverrides =
-    plan.overrides && typeof plan.overrides === 'object' ? plan.overrides : {};
+  if (plan.econ !== undefined && plan.overrides !== undefined)
+    throw new Error('Ambiguous deployment economics: use econ or overrides, not both');
+  const rawOverrides = plan.econ ?? plan.overrides ?? {};
+  if (!rawOverrides || typeof rawOverrides !== 'object' || Array.isArray(rawOverrides))
+    throw new Error('Deployment economics must be an object');
 
   const econ = {};
   const feePct = normalisePercentage(rawOverrides.feePct, 'feePct');
@@ -556,11 +559,12 @@ function normaliseDeploymentPlan(plan = {}) {
   if (minStake !== undefined) {
     econ.minStake = minStake;
   }
-  const jobStake = normaliseTokenAmount(rawOverrides.jobStake, 'jobStake', {
-    max: MAX_UINT96,
-  });
-  if (jobStake !== undefined) {
-    econ.jobStake = jobStake;
+  if (Object.hasOwn(rawOverrides, 'jobStake') || Object.hasOwn(rawOverrides, 'jobStakeTokens'))
+    throw new Error('Legacy fixed job stake is unsupported; use jobStakeBps');
+  if (rawOverrides.jobStakeBps !== undefined) {
+    if (!Number.isInteger(rawOverrides.jobStakeBps) || rawOverrides.jobStakeBps < 0 || rawOverrides.jobStakeBps > 10000)
+      throw new Error('jobStakeBps must be an integer from 0 to 10000');
+    econ.jobStakeBps = rawOverrides.jobStakeBps;
   }
 
   if (Object.keys(econ).length > 0) {
@@ -671,13 +675,10 @@ function normaliseJobRegistryConfig(config = {}) {
   setAddress('certificateNFT', 'JobRegistry certificate NFT');
   setAddress('feePool', 'JobRegistry fee pool');
 
-  if (result.jobStake !== undefined) {
-    const raw = BigInt(result.jobStake);
-    if (raw < 0n || raw > MAX_UINT96) {
-      throw new Error('jobStake must be between 0 and 2^96-1');
-    }
-    result.jobStake = raw.toString();
-  }
+  if (Object.hasOwn(result, 'jobStake') || Object.hasOwn(result, 'jobStakeTokens'))
+    throw new Error('Legacy fixed job stake is unsupported; use jobStakeBps');
+  if (result.jobStakeBps !== undefined && (!Number.isInteger(result.jobStakeBps) || result.jobStakeBps < 0 || result.jobStakeBps > 10000))
+    throw new Error('jobStakeBps must be an integer from 0 to 10000');
 
   if (result.minAgentStake !== undefined) {
     const raw = BigInt(result.minAgentStake);
@@ -1227,7 +1228,7 @@ function normalisePlatformRegistryConfig(config = {}) {
     result.address = ensureAddress(value, 'PlatformRegistry address');
   }
 
-  const addressKeys = ['stakeManager', 'reputationEngine', 'pauser'];
+  const addressKeys = ['stakeManager', 'reputationEngine', 'pauser', 'pauserManager'];
   for (const key of addressKeys) {
     if (result[key] !== undefined) {
       const value = result[key];

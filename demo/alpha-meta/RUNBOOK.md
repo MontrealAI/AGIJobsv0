@@ -1,5 +1,12 @@
 # Alpha-Meta Meta-Agentic Mission Runbook
 
+> **Launcher upgrade:** A bare launch now prints an effect-free plan. Review the
+> [strict execution contract and evidence boundaries](../../docs/agi-os-first-class-mode-upgrade.md).
+> The in-memory Hardhat fixture does not verify a selected deployment. Compound
+> Meta-Agentic/Alpha-Meta launchers support localhost only; their later ASI replay
+> uses the shared `mission@v2.json`, not a converted branded project plan.
+
+
 This runbook enables a non-technical owner to execute the entire Alpha-Meta Sovereign Hypergraph demonstration. Every step uses first-class tooling shipped with AGI Jobs v0 (v2) and produces immutable artefacts for auditors, regulators, and partners.
 
 ## 0. Prerequisites
@@ -25,11 +32,11 @@ docker compose version
 demo/alpha-meta/bin/launch.sh
 ```
 
-The launcher orchestrates:
+The bare command only prints a plan. After separate review, use `demo/alpha-meta/bin/launch.sh --mode execute --network localhost --yes --no-compose`. The explicit execution orchestrates:
 
 1. First-class operating system rehearsal (`demo:agi-os:first-class`).
 2. Alpha-Meta dossier computation (`demo:alpha-meta:full`, now auto-runs the triangulation cross-check).
-3. ASI take-off replay with `config/project-plan.alpha-meta.json`.
+3. A separate ASI local deployment/replay with shared `demo/asi-takeoff/config/mission@v2.json`. The branded plan export applies only to the first-class synthetic stage.
 
 Artifacts appear under `demo/alpha-meta/reports/`, `reports/agi-os/`, and `reports/asi-takeoff/`.
 
@@ -117,7 +124,8 @@ On http://localhost:3000:
 For CLI parity, replay the deterministic salts:
 
 ```bash
-npm run demo:agi-os:first-class -- --skip-deploy --stage commit-reveal
+# --stage commit-reveal is unsupported by the first-class launcher.
+# Use the portal flow above; no stage-selecting CLI is provided here.
 ```
 
 ## 6. Inspect thermodynamic and quantum telemetry
@@ -181,11 +189,14 @@ npm run ci:verify-branch-protection
 
 All commands must exit with code 0. Any drift (e.g. missing CI jobs or coverage thresholds) is reported immediately.
 
-## 10. Targeting Sepolia/Mainnet
+## 10. External network boundary
 
-- Export RPC URLs and funded keys (`export HARDHAT_NETWORK=sepolia`).
-- Launch with `demo/alpha-meta/bin/launch.sh --network sepolia --auto-yes`.
-- Confirm timelocks before executing queued upgrades; the generated owner diagnostics include queue status.
+The compound Alpha-Meta launcher supports localhost only and rejects external
+networks and legacy `--auto-yes`. Do not use it to transition into Sepolia or
+mainnet. The shared first-class entry point retains an explicitly selected
+Sepolia outer path, but its bundled rehearsal remains in-memory Hardhat and
+is not deployment verification. Read the [mode upgrade](../../docs/agi-os-first-class-mode-upgrade.md)
+for source-only, unqualified network scope and the complete execution contract.
 
 ## 11. Troubleshooting
 

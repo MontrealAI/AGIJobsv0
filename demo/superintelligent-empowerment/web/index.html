@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'none'"
+    />
+    <title>Initiative Evidence Ledger · AGI Jobs</title>
+    <link rel="stylesheet" href="./styles.css" />
+    <script type="module" src="./app.mjs"></script>
+  </head>
+  <body>
+    <a class="skip" href="#main" data-t="skip">Skip to ledger</a>
+    <header>
+      <a href="https://montrealai.github.io/AGIJobsv0/"
+        >AGI JOBS <span> / EVIDENCE STUDIO</span></a
+      ><button id="language" lang="fr" type="button">Français</button>
+    </header>
+    <main id="main">
+      <section class="hero">
+        <div>
+          <p class="eyebrow" data-t="eyebrow">
+            SUPERINTELLIGENT EMPOWERMENT / BOUNDED REHEARSAL
+          </p>
+          <h1 data-t="heading">Give an initiative <br />an evidence trail.</h1>
+          <p class="lead" data-t="lead">
+            Separate a reported claim from a checked criterion. Follow
+            dependencies. See what still needs a human.
+          </p>
+        </div>
+        <aside class="scope">
+          <span class="orbit" aria-hidden="true">◎</span>
+          <h2 data-t="boundaryTitle">A precise, limited check</h2>
+          <p data-t="boundary">
+            This ledger checks supplied observations against supplied criteria.
+            It cannot verify a source’s origin, real-world impact or independent
+            human approval.
+          </p>
+          <p class="quiet" data-t="local">
+            Runs in your browser. No provider calls, chain transactions or
+            settlement.
+          </p>
+        </aside>
+      </section>
+      <section class="workspace" aria-labelledby="input-title">
+        <div class="panel input-panel">
+          <p class="step" data-t="step1">01 / SUPPLIED INPUT</p>
+          <h2 id="input-title" data-t="inputTitle">Your evidence packet</h2>
+          <p data-t="inputHelp">
+            Start with the synthetic example, or import your UTF-8 JSON packet.
+            Changing an observation requires its exact-byte SHA-256 hash.
+          </p>
+          <div class="actions">
+            <button id="example" data-t="example">Load example</button
+            ><button id="cli" data-t="cli">Verify CLI example</button>
+          </div>
+          <label for="packet" data-t="packetLabel"
+            >Packet JSON (up to 256 KiB)</label
+          ><textarea
+            id="packet"
+            spellcheck="false"
+            rows="16"
+            aria-describedby="limits"
+          ></textarea>
+          <p id="limits" class="quiet" data-t="limits">
+            1–30 initiatives · 0–30 sources · 16 KiB per source · integer values
+            0–1,000,000,000 · gte / lte
+          </p>
+          <div class="actions">
+            <button class="primary" id="evaluate" data-t="evaluate">
+              Evaluate packet</button
+            ><button id="restore" data-t="restore">
+              Restore last verified session
+            </button>
+          </div>
+          <div class="imports">
+            <label for="import-packet" data-t="importPacket"
+              >Import packet JSON</label
+            ><input
+              id="import-packet"
+              type="file"
+              accept=".json,application/json"
+            /><label for="import-bundle" data-t="importBundle"
+              >Import exact-byte artifact bundle</label
+            ><input
+              id="import-bundle"
+              type="file"
+              accept=".json,application/json"
+            />
+          </div>
+        </div>
+        <div class="panel output-panel">
+          <p class="step" data-t="step2">02 / RECOMPUTED LEDGER</p>
+          <h2 data-t="resultTitle">What the evidence supports</h2>
+          <p id="status" role="status" aria-live="polite"></p>
+          <div id="summary"></div>
+          <ol id="ledger"></ol>
+          <div class="actions">
+            <button id="export-bundle" disabled data-t="exportBundle">
+              Export recovery bundle</button
+            ><button id="export-packet" disabled data-t="exportPacket">
+              Export exact packet</button
+            ><button id="export-report" disabled data-t="exportReport">
+              Export report
+            </button>
+          </div>
+          <p class="quiet" data-t="reviewLimit">
+            Artifact review uses the same evaluator to recompute supplied input.
+            Even a fully replaced, self-consistent bundle can pass. Its origin
+            remains unverified.
+          </p>
+        </div>
+      </section>
+      <section class="notes">
+        <div>
+          <h2 data-t="readTitle">Read the three signals</h2>
+          <p data-t="read">
+            Criterion met: the supplied number satisfies its threshold. Held: a
+            dependency is not ready. Ready for human review: the criterion is
+            met and its dependencies are ready. None of these is approval or
+            proven impact.
+          </p>
+        </div>
+        <div>
+          <h2 data-t="recoverTitle">Keep the exact evidence</h2>
+          <p data-t="recover">
+            The bundle preserves packet, ledger, report and receipt bytes.
+            Import recomputes the result and rejects changed output even if its
+            receipt was rehashed. The last successful session is stored on this
+            device when browser storage is available.
+          </p>
+          <button id="forget" data-t="forget">Forget saved session</button>
+        </div>
+      </section>
+      <footer>
+        <a href="../README.md" id="guide" data-t="guide"
+          >Read the runtime guide</a
+        >
+        <p data-t="footer">Supplied evidence. Visible holds. Human judgment.</p>
+      </footer>
+    </main>
+  </body>
+</html>
