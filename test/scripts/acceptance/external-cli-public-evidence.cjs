@@ -206,7 +206,7 @@ function projectEvidence(input) {
         d.sourceGate.preservedHistoricalEvidence
       ),
       reviewedSourceReconciled: bool(d.sourceGate.reviewedSourceReconciled),
-      transitionCount: integer(d.sourceGate.transitionCount, 67),
+      transitionCount: integer(d.sourceGate.transitionCount, 71),
     };
   if (d.canonicalCompiler)
     out.canonicalCompiler = {
@@ -427,7 +427,7 @@ function projectEvidence(input) {
     }
     assert.equal(out.sourceGate.head, out.source.sourceCommit);
     assert.equal(out.sourceGate.reviewedSourceReconciled, true);
-    assert.equal(out.sourceGate.transitionCount, 67);
+    assert.equal(out.sourceGate.transitionCount, 71);
     assert.equal(out.sourceGate.preservedHistoricalEvidence, true);
     assert.equal(out.canonicalCompiler.sizeGatePassed, true);
     assert.equal(out.ensNormalization?.restored, true);

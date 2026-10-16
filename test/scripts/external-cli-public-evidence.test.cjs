@@ -153,7 +153,7 @@ function fixture() {
         compilerSourceBaseline: commit,
         preservedHistoricalEvidence: true,
         reviewedSourceReconciled: true,
-        transitionCount: 67,
+        transitionCount: 71,
       },
       canonicalCompiler: {
         compiler: '0.8.37+commit.f401782d',
@@ -227,6 +227,50 @@ function fixture() {
 test('exports a bounded complete success with all approval flags false', () => {
   const out = projectEvidence(fixture());
   assert.equal(out.passed, true);
+  assert.equal(out.sourceGate.transitionCount, 71);
+  // Exercise the actual driver's strict record check and emitted count. The
+  // independent source-preservation process still verifies every exact blob.
+  const driver = require('node:fs').readFileSync(
+    require.resolve('./acceptance/run-hosted-qualification.cjs'),
+    'utf8'
+  );
+  const checkStart = driver.indexOf(
+    '  assert.equal(\n    record.transitionCount,'
+  );
+  const checkEnd = driver.indexOf('  const releaseGate =', checkStart);
+  const emitStart = driver.indexOf('  state.sourceGate = {', checkEnd);
+  const emitEnd = driver.indexOf('  save();', emitStart);
+  assert(checkStart >= 0 && checkEnd > checkStart);
+  assert(emitStart > checkEnd && emitEnd > emitStart);
+  const check = driver.slice(checkStart, checkEnd);
+  const emit = driver.slice(emitStart, emitEnd);
+  for (const count of [0, 61, 67, 70, 71, 72, '71', null]) {
+    const context = {
+      assert,
+      record: { transitionCount: count },
+      state: {},
+      releaseGate: { compilerSourceBaseline: commit },
+      gate: {
+        baseline: commit,
+        baseTip: commit,
+        head: commit,
+        generatedSourceBaseline: commit,
+      },
+    };
+    const execute = () =>
+      require('node:vm').runInNewContext(check + emit, context);
+    const input = fixture();
+    input.driver.sourceGate.transitionCount = count;
+    if (count === 71) {
+      execute();
+      assert.equal(context.state.sourceGate.transitionCount, count);
+      assert.equal(projectEvidence(input).sourceGate.transitionCount, count);
+    } else {
+      assert.throws(execute);
+      assert.equal(context.state.sourceGate, undefined);
+      assert.throws(() => projectEvidence(input));
+    }
+  }
   assert.equal(out.operations.length, 39);
   assert.equal(out.metrics.length, 475);
   for (const mutate of [

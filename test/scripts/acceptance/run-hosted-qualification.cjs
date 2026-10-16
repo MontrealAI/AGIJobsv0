@@ -231,8 +231,8 @@ async function main() {
   );
   assert.equal(
     record.transitionCount,
-    67,
-    'Reviewed 67-transition binding must already exist'
+    71,
+    'Reviewed 71-transition binding must already exist'
   );
   const releaseGate = require('../../../scripts/release/qualify-source-release.cjs');
   releaseGate.verifySourceScope({
@@ -249,7 +249,7 @@ async function main() {
     head: gate.head,
     generatedSourceBaseline: gate.generatedSourceBaseline,
     reviewedSourceReconciled: true,
-    transitionCount: 67,
+    transitionCount: record.transitionCount,
   };
   save();
   const focused = await node('focused-node-84', [
