@@ -4,7 +4,7 @@ This successor preserves the fully corrected source merged as
 `11c26f28751cf9042e2795782edf225cee9e6828`, tree
 `3b8c6f314210670e1e647b9ebfbdf164ee26cb61`. Its release-identity update changes
 only package versions, publication selectors, notes and their regression tests.
-The immutable [published rc.11 release](https://github.com/MontrealAI/AGIJobsv0/releases/tag/source-v2.1.0-rc.11)
+The published [rc.11 release](https://github.com/MontrealAI/AGIJobsv0/releases/tag/source-v2.1.0-rc.11)
 instead targets `5d7d89ccba236cc1fdf7067223dfae813bd64387`, with partial
 owner-report escaping. Its [exact original notes](history/RELEASE_NOTES_SOURCE_RC11_PUBLISHED.md),
 tag and assets remain historical and unchanged. The functional-source checkpoint

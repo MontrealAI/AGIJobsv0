@@ -1,6 +1,6 @@
 # source-v2.1.0-rc.11 — published historical source
 
-The immutable [rc.11 release](https://github.com/MontrealAI/AGIJobsv0/releases/tag/source-v2.1.0-rc.11)
+The published [rc.11 release](https://github.com/MontrealAI/AGIJobsv0/releases/tag/source-v2.1.0-rc.11)
 was published on 2026-10-16 from `5d7d89ccba236cc1fdf7067223dfae813bd64387`.
 It contains partial owner-report escaping, before the complete literal Markdown
 correction was integrated. It is not production approval. Do not treat this
