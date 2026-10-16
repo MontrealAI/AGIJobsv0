@@ -252,7 +252,7 @@ async function main() {
     transitionCount: 67,
   };
   save();
-  const focused = await node('focused-node-70', [
+  const focused = await node('focused-node-84', [
     '--test',
     '--test-reporter=tap',
     'test/scripts/authority-handover.test.cjs',
@@ -261,7 +261,7 @@ async function main() {
     'test/scripts/external-profile.test.cjs',
     'test/scripts/external-session.test.cjs',
   ]);
-  state.stages.at(-1).counts = tapCounts(focused, 70);
+  state.stages.at(-1).counts = tapCounts(focused, 84);
   save();
   const completion = await node('child-completion-43', [
     'test/scripts/external-cli-child-completion.test.cjs',
@@ -421,7 +421,7 @@ async function main() {
   state.passed = true;
   save();
   console.log(
-    'PASS: canonical compile, strict source binding, 70 focused Node cases, 43 child-close checks, 33 public/safety checks, 22 direct/v1 cases and the full 39-operation fresh-CLI fixture.'
+    'PASS: canonical compile, strict source binding, 84 focused Node cases, 43 child-close checks, 33 public/safety checks, 22 direct/v1 cases and the full 39-operation fresh-CLI fixture.'
   );
 }
 for (const signal of ['SIGINT', 'SIGTERM'])

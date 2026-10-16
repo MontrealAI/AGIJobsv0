@@ -166,15 +166,23 @@ jobs:
           node --test test/scripts/runtime-packaging.test.cjs
           node --test apps/orchestrator/dist/apps/orchestrator/__tests__/computerWork.test.js
       - name: Hardhat test-runner isolation regressions
-        run: node --test test/scripts/hardhat-test-discovery.test.cjs
+        run: node --test test/scripts/hardhat-test-discovery.test.cjs test/scripts/hardhat-test-partition.test.cjs
       - name: Polaris disposable quorum and receipt regressions
         run: node --test test/scripts/polaris-quorum.test.cjs
       - name: Zenith regional budget reconciliation regressions
         run: node --test test/pages/zenith-reconciliation.test.mjs
       - name: Omega local artifact pipeline and replay regressions
         run: node --test test/scripts/omega-pipeline.test.cjs
-      - name: Hardhat tests
-        run: npm test
+      - name: Hardhat core tests
+        env:
+          HARDHAT_TEST_TIMEOUT_MS: '900000'
+        run: npm test -- --grep "$(node scripts/ci/hardhat-test-partition.cjs pattern core)" --reporter json --reporter-options '{"output":"/tmp/jobs-hardhat-core.json"}'
+      - name: Hardhat external manual tests
+        env:
+          HARDHAT_TEST_TIMEOUT_MS: '900000'
+        run: npm test -- --grep "$(node scripts/ci/hardhat-test-partition.cjs pattern external)" --reporter json --reporter-options '{"output":"/tmp/jobs-hardhat-external.json"}'
+      - name: Compare complete Hardhat partition coverage
+        run: node scripts/ci/hardhat-test-partition.cjs compare /tmp/jobs-hardhat-core.json /tmp/jobs-hardhat-external.json
       - name: Gateway TypeScript interaction regressions
         run: npx hardhat test --no-compile test/gateway/routesValidation.test.ts test/taskExecution.test.ts test/certificateMetadata.test.ts
       - name: Phase 6 contract and TypeScript regression tests

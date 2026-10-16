@@ -161,6 +161,71 @@ function fileHash(file) {
     fs.closeSync(fd);
   }
 }
+// Keep the active-command inode allocated for the command's entire lifetime.
+// Path metadata alone cannot distinguish unlink/recreate if an inode is reused.
+function createOwnerFile(file, value) {
+  const bytes = Buffer.from(JSON.stringify(value, null, 2) + '\n');
+  const expectedHash = crypto.createHash('sha256').update(bytes).digest('hex');
+  const fd = fs.openSync(
+    file,
+    fs.constants.O_RDWR |
+      fs.constants.O_CREAT |
+      fs.constants.O_EXCL |
+      fs.constants.O_NOFOLLOW,
+    0o600
+  );
+  try {
+    fs.writeFileSync(fd, bytes);
+    fs.fsyncSync(fd);
+    syncDirectory(path.dirname(file));
+    return { fd, expectedHash };
+  } catch (error) {
+    fs.closeSync(fd);
+    throw error;
+  }
+}
+function checkOpenOwner(p, fd) {
+  const before = fs.fstatSync(fd, { bigint: true });
+  const descriptorIdentity = (s) => ({
+    dev: String(s.dev),
+    ino: String(s.ino),
+    mode: String(s.mode),
+    uid: String(s.uid),
+    kind: 'file',
+  });
+  need(
+    before.isFile() &&
+      before.nlink === 1n &&
+      same(descriptorIdentity(before), p.identity),
+    'External active-command owner identity changed'
+  );
+  unchanged(p);
+  const hash = crypto.createHash('sha256');
+  let position = 0,
+    count;
+  while (
+    (count = fs.readSync(fd, hashBuffer, 0, hashBuffer.length, position))
+  ) {
+    position += count;
+    need(
+      BigInt(position) <= before.size,
+      'External active-command owner bytes changed'
+    );
+    hash.update(hashBuffer.subarray(0, count));
+  }
+  const after = fs.fstatSync(fd, { bigint: true });
+  need(
+    after.nlink === 1n &&
+      same(descriptorIdentity(after), p.identity) &&
+      after.size === before.size &&
+      after.mtimeNs === before.mtimeNs &&
+      after.ctimeNs === before.ctimeNs &&
+      BigInt(position) === before.size &&
+      hash.digest('hex') === p.hash,
+    'External active-command owner bytes or identity changed'
+  );
+  unchanged(p);
+}
 function pin(file, kind, privateEntry = true) {
   return {
     file,
@@ -543,7 +608,7 @@ function createExternalSession({
   async function command(action, allowHeadLag = false) {
     need(!busy, 'An external session command is already active');
     busy = true;
-    let active, activePin, ownerPin, ancestorPins, state, guard;
+    let active, activePin, ownerPin, ownerFd, ancestorPins, state, guard;
     try {
       state = loadState(directory, plan, expectedPlanHash, allowHeadLag);
       source();
@@ -555,7 +620,7 @@ function createExternalSession({
       // Bind the owner and all guards to a fresh snapshot under exclusivity.
       state = loadState(directory, plan, expectedPlanHash, allowHeadLag);
       source();
-      writeNew(path.join(active, 'owner.json'), {
+      const heldOwner = createOwnerFile(path.join(active, 'owner.json'), {
         token: crypto.randomUUID(),
         planHash: expectedPlanHash,
         head: state.previous,
@@ -563,14 +628,22 @@ function createExternalSession({
         directoryIdentity: activePin.identity,
         parentIdentities: ancestorPins,
       });
-      ownerPin = pin(path.join(active, 'owner.json'), 'file');
+      ownerFd = heldOwner.fd;
+      const createdOwnerPin = pin(path.join(active, 'owner.json'), 'file');
+      need(
+        createdOwnerPin.hash === heldOwner.expectedHash,
+        'External active-command owner bytes changed during creation'
+      );
+      checkOpenOwner(createdOwnerPin, ownerFd);
+      // Cleanup may use only the original descriptor and intended bytes.
+      ownerPin = createdOwnerPin;
       syncDirectory(directory);
       guard = pinState(state);
       const check = () => {
         source();
         ancestorPins.forEach(unchanged);
         unchanged(activePin);
-        unchanged(ownerPin);
+        checkOpenOwner(ownerPin, ownerFd);
         checkPins(guard);
       };
       const awaited = async (promise) => {
@@ -641,17 +714,21 @@ function createExternalSession({
     } finally {
       busy = false;
       // Never clean up a substituted parent/owner/inode, even on an exception.
-      if (ownerPin) {
-        source();
-        ancestorPins.forEach(unchanged);
-        unchanged(activePin);
-        unchanged(ownerPin);
-        if (guard) checkPins(guard);
-        fs.unlinkSync(ownerPin.file);
-        ancestorPins.forEach(unchanged);
-        unchanged(activePin);
-        fs.rmdirSync(active);
-        syncDirectory(directory);
+      try {
+        if (ownerPin) {
+          source();
+          ancestorPins.forEach(unchanged);
+          unchanged(activePin);
+          checkOpenOwner(ownerPin, ownerFd);
+          if (guard) checkPins(guard);
+          fs.unlinkSync(ownerPin.file);
+          ancestorPins.forEach(unchanged);
+          unchanged(activePin);
+          fs.rmdirSync(active);
+          syncDirectory(directory);
+        }
+      } finally {
+        if (ownerFd !== undefined) fs.closeSync(ownerFd);
       }
     }
   }

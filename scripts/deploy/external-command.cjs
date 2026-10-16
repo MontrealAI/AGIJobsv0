@@ -73,7 +73,8 @@ function privatePath(file) {
   need(
     typeof file === 'string' &&
       path.isAbsolute(file) &&
-      path.resolve(file) === file,
+      path.resolve(file) === file &&
+      !/[\u0000-\u001f\u007f]/.test(file),
     'exact absolute local paths required'
   );
   const root = path.resolve(__dirname, '../..');
@@ -81,13 +82,69 @@ function privatePath(file) {
     file !== root && !file.startsWith(root + path.sep),
     'private input/output must remain outside source checkout'
   );
-  entry(path.dirname(file), 'directory', true);
+  return entry(path.dirname(file), 'directory', true);
 }
 function parentPins(directory) {
   const pins = [];
   for (let current = directory; ; current = path.dirname(current)) {
     pins.push(entry(current, 'directory'));
     if (current === path.dirname(current)) return pins;
+  }
+}
+function readCommandRequest(file) {
+  const privateParent = privatePath(file);
+  const parents = [privateParent, ...parentPins(path.dirname(file))];
+  // Acquire the input before inspecting it. NONBLOCK prevents a FIFO from
+  // blocking before the descriptor's regular-file requirement can reject it.
+  const fd = fs.openSync(
+    file,
+    fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW | fs.constants.O_NONBLOCK
+  );
+  try {
+    const before = fs.fstatSync(fd, { bigint: true });
+    need(
+      before.isFile() &&
+        before.uid === BigInt(process.getuid()) &&
+        (before.mode & 0o077n) === 0n &&
+        before.nlink === 1n &&
+        before.size > 0n &&
+        before.size <= 64n * 1024n,
+      'command request must be a bounded owner-only regular file'
+    );
+    const pin = entry(file, 'file', true);
+    need(
+      canonicalJson(statIdentity(before)) === canonicalJson(pin.identity),
+      'command request descriptor and path differ'
+    );
+    parents.forEach(verify);
+    const bytes = Buffer.alloc(Number(before.size));
+    let offset = 0;
+    while (offset < bytes.length) {
+      const count = fs.readSync(
+        fd,
+        bytes,
+        offset,
+        bytes.length - offset,
+        offset
+      );
+      need(count > 0, 'command request ended before its pinned size');
+      offset += count;
+    }
+    const after = fs.fstatSync(fd, { bigint: true });
+    need(
+      after.isFile() &&
+        canonicalJson(statIdentity(after)) ===
+          canonicalJson(statIdentity(before)) &&
+        after.size === before.size &&
+        after.mtimeNs === before.mtimeNs &&
+        after.ctimeNs === before.ctimeNs,
+      'command request changed during reading'
+    );
+    verify(pin);
+    parents.forEach(verify);
+    return parseJson(bytes);
+  } finally {
+    fs.closeSync(fd);
   }
 }
 function syncDirectory(directory) {
@@ -313,4 +370,4 @@ if (require.main === module) {
   );
   process.exitCode = 1;
 }
-module.exports = { runCommand, COMMANDS };
+module.exports = { runCommand, readCommandRequest, COMMANDS };

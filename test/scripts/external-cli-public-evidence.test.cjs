@@ -14,7 +14,7 @@ const hash = '0x' + 'a'.repeat(64),
   address = '0x' + 'd'.repeat(40);
 const stageNames = [
   'source-preservation',
-  'focused-node-70',
+  'focused-node-84',
   'child-completion-43',
   'public-export-tests',
   'canonical-compile',
@@ -75,7 +75,7 @@ function fixture() {
     unexpectedRemainingGroupMembers: false,
   }));
   for (const [name, count] of [
-    ['focused-node-70', 70],
+    ['focused-node-84', 84],
     ['child-completion-43', 43],
     ['public-export-tests', 33],
     ['direct-v1-22', 22],

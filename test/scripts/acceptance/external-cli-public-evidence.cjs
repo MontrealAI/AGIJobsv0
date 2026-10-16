@@ -77,7 +77,7 @@ const PAUSED_NAMES = Object.freeze([
 ]);
 const stages = [
   'source-preservation',
-  'focused-node-70',
+  'focused-node-84',
   'child-completion-43',
   'public-export-tests',
   'canonical-compile',
@@ -412,7 +412,7 @@ function projectEvidence(input) {
       )
     );
     for (const [name, count] of [
-      ['focused-node-70', 70],
+      ['focused-node-84', 84],
       ['child-completion-43', 43],
       ['public-export-tests', 33],
       ['direct-v1-22', 22],

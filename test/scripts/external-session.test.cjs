@@ -232,6 +232,235 @@ test('owner file replacement during await is preserved and rejected before clean
     )
   );
 });
+// Observe only active-owner read descriptors; never change their runtime behavior.
+function watchOwnerDescriptors(t) {
+  const open = fs.openSync,
+    close = fs.closeSync;
+  const active = new Map(),
+    opened = [];
+  fs.openSync = function (file, flags, ...args) {
+    const fd = open.call(this, file, flags, ...args);
+    if (
+      typeof file === 'string' &&
+      file.endsWith(path.join('active-command', 'owner.json')) &&
+      typeof flags === 'number' &&
+      (flags & fs.constants.O_WRONLY) === 0
+    ) {
+      const item = { fd, closed: false };
+      active.set(fd, item);
+      opened.push(item);
+    }
+    return fd;
+  };
+  fs.closeSync = function (fd) {
+    const result = close.call(this, fd);
+    const item = active.get(fd);
+    if (item) {
+      item.closed = true;
+      active.delete(fd);
+    }
+    return result;
+  };
+  let restored = false;
+  const restore = () => {
+    if (!restored) {
+      fs.openSync = open;
+      fs.closeSync = close;
+      restored = true;
+    }
+  };
+  t.after(restore);
+  return { active, opened, restore };
+}
+test('held owner descriptor detects identical unlink/recreate and closes without deleting replacement', async (t) => {
+  const f = fixture(t);
+  await f.session.initialize();
+  const e = await f.prepare();
+  const watch = watchOwnerDescriptors(t);
+  const owner = path.join(f.options.directory, 'active-command', 'owner.json');
+  const head = fs.readFileSync(path.join(f.options.directory, 'head.json'));
+  let held, replacement;
+  f.provider.getCode = async () => {
+    assert.equal(
+      watch.active.size,
+      1,
+      'Original owner descriptor stays open across await'
+    );
+    held = [...watch.active.keys()][0];
+    replacement = fs.readFileSync(owner);
+    fs.unlinkSync(owner);
+    fs.writeFileSync(owner, replacement, { mode: 0o600 });
+    assert.equal(
+      fs.fstatSync(held).nlink,
+      0,
+      'Unlinked original remains independently observable'
+    );
+    return '0x';
+  };
+  await assert.rejects(f.session.handoff(f.review(e)), /identity changed/);
+  assert.deepEqual(fs.readFileSync(owner), replacement);
+  assert.deepEqual(
+    fs.readFileSync(path.join(f.options.directory, 'head.json')),
+    head
+  );
+  assert.throws(() => fs.fstatSync(held), { code: 'EBADF' });
+  assert.equal(watch.active.size, 0);
+  assert(watch.opened.every((item) => item.closed));
+});
+test('held owner descriptor rejects rename and extra links while preserving foreign entries', async (t) => {
+  for (const variant of ['rename', 'link']) {
+    const f = fixture(t);
+    await f.session.initialize();
+    const e = await f.prepare();
+    const watch = watchOwnerDescriptors(t);
+    const owner = path.join(
+      f.options.directory,
+      'active-command',
+      'owner.json'
+    );
+    const foreign = owner + '.foreign';
+    let expected;
+    f.provider.getCode = async () => {
+      assert.equal(watch.active.size, 1);
+      expected = fs.readFileSync(owner);
+      if (variant === 'rename') {
+        fs.renameSync(owner, foreign);
+        fs.writeFileSync(owner, expected, { mode: 0o600 });
+      } else fs.linkSync(owner, foreign);
+      return '0x';
+    };
+    try {
+      await assert.rejects(
+        f.session.handoff(f.review(e)),
+        /identity changed|hard-linked/
+      );
+      assert.deepEqual(fs.readFileSync(owner), expected);
+      assert.deepEqual(fs.readFileSync(foreign), expected);
+      assert.equal(watch.active.size, 0);
+      assert(watch.opened.every((item) => item.closed));
+    } finally {
+      watch.restore();
+    }
+  }
+});
+test('active owner descriptors close after success, provider failure and source refusal', async (t) => {
+  for (const variant of ['success', 'provider', 'source']) {
+    const f = fixture(t);
+    await f.session.initialize();
+    const e = await f.prepare();
+    const watch = watchOwnerDescriptors(t);
+    const owner = path.join(
+      f.options.directory,
+      'active-command',
+      'owner.json'
+    );
+    f.provider.getCode = async () => {
+      assert.equal(watch.active.size, 1);
+      if (variant === 'provider') throw new Error('synthetic provider failure');
+      if (variant === 'source') f.source(false);
+      return '0x';
+    };
+    try {
+      if (variant === 'success') await f.session.handoff(f.review(e));
+      else
+        await assert.rejects(
+          f.session.handoff(f.review(e)),
+          /synthetic provider failure|source validation/
+        );
+      assert.equal(watch.active.size, 0);
+      assert(watch.opened.every((item) => item.closed));
+      assert.equal(fs.existsSync(owner), variant === 'source');
+    } finally {
+      watch.restore();
+    }
+  }
+});
+test('active owner descriptor compares exact contents and closes on same-inode mutation', async (t) => {
+  const f = fixture(t);
+  await f.session.initialize();
+  const e = await f.prepare();
+  const watch = watchOwnerDescriptors(t);
+  const owner = path.join(f.options.directory, 'active-command', 'owner.json');
+  let replacement;
+  f.provider.getCode = async () => {
+    assert.equal(watch.active.size, 1);
+    const before = fs.statSync(owner).ino;
+    const value = JSON.parse(fs.readFileSync(owner, 'utf8'));
+    value.token = 'foreign-owner';
+    replacement = Buffer.from(JSON.stringify(value));
+    fs.writeFileSync(owner, replacement);
+    assert.equal(fs.statSync(owner).ino, before);
+    return '0x';
+  };
+  await assert.rejects(f.session.handoff(f.review(e)), /bytes changed/);
+  assert.deepEqual(fs.readFileSync(owner), replacement);
+  assert.equal(watch.active.size, 0);
+  assert(watch.opened.every((item) => item.closed));
+});
+test('original creation descriptor rejects substitution before the first path pin', async (t) => {
+  const f = fixture(t);
+  await f.session.initialize();
+  const e = await f.prepare();
+  const watch = watchOwnerDescriptors(t);
+  const owner = path.join(f.options.directory, 'active-command', 'owner.json');
+  const foreign = owner + '.original';
+  const sync = fs.fsyncSync;
+  let replaced = false,
+    expected;
+  fs.fsyncSync = function (fd) {
+    const result = sync.call(this, fd);
+    if (!replaced && watch.active.has(fd)) {
+      replaced = true;
+      expected = fs.readFileSync(owner);
+      fs.renameSync(owner, foreign);
+      fs.writeFileSync(owner, expected, { mode: 0o600 });
+    }
+    return result;
+  };
+  try {
+    await assert.rejects(f.session.handoff(f.review(e)), /identity changed/);
+    assert.equal(replaced, true);
+    assert.deepEqual(fs.readFileSync(owner), expected);
+    assert.deepEqual(fs.readFileSync(foreign), expected);
+    assert.equal(watch.active.size, 0);
+    assert(watch.opened.every((item) => item.closed));
+  } finally {
+    fs.fsyncSync = sync;
+  }
+});
+test('initial same-inode owner mutation is preserved and its creation descriptor closes', async (t) => {
+  const f = fixture(t);
+  await f.session.initialize();
+  const e = await f.prepare();
+  const watch = watchOwnerDescriptors(t);
+  const owner = path.join(f.options.directory, 'active-command', 'owner.json');
+  const sync = fs.fsyncSync;
+  let changed = false,
+    expected;
+  fs.fsyncSync = function (fd) {
+    const result = sync.call(this, fd);
+    if (!changed && watch.active.has(fd)) {
+      changed = true;
+      const value = JSON.parse(fs.readFileSync(owner, 'utf8'));
+      value.token = 'foreign-owner-during-creation';
+      expected = Buffer.from(JSON.stringify(value));
+      fs.writeFileSync(owner, expected);
+    }
+    return result;
+  };
+  try {
+    await assert.rejects(
+      f.session.handoff(f.review(e)),
+      /bytes changed during creation/
+    );
+    assert.equal(changed, true);
+    assert.deepEqual(fs.readFileSync(owner), expected);
+    assert.equal(watch.active.size, 0);
+    assert(watch.opened.every((item) => item.closed));
+  } finally {
+    fs.fsyncSync = sync;
+  }
+});
 test('journal truncation, symlink and canonical receipt drift cannot advance', async (t) => {
   const f = fixture(t);
   await f.session.initialize();

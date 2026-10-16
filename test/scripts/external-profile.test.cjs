@@ -15,6 +15,7 @@ const {
 } = require('../../scripts/deploy/external-profile.cjs');
 const {
   runCommand,
+  readCommandRequest,
   COMMANDS,
 } = require('../../scripts/deploy/external-command.cjs');
 const SOURCE = path.resolve(__dirname, '../..');
@@ -806,5 +807,254 @@ test('duplicate deployment configuration fields reject even with matching review
     f.pinReview();
     assert.throws(f.load, /duplicate|JSON/);
     assert.equal(f.providerCalls(), 0);
+  }
+});
+
+// Hooks schedule deterministic mutations while exercising real local files.
+// They never open a provider, sign, relay, or modify permission configuration.
+function requestFixture(t, bytes = '{"command":"inspect"}') {
+  const f = commandFixture(t),
+    file = f.output();
+  write(file, bytes);
+  return { ...f, file };
+}
+function watchRequest(file, hooks = {}) {
+  const original = Object.fromEntries(
+    ['openSync', 'closeSync', 'fstatSync', 'readSync'].map((key) => [
+      key,
+      fs[key],
+    ])
+  );
+  let fd,
+    opens = 0,
+    closes = 0,
+    stats = 0;
+  fs.openSync = function (name, flags, ...rest) {
+    const result = original.openSync.call(this, name, flags, ...rest);
+    if (
+      name === file &&
+      typeof flags === 'number' &&
+      (flags & 3) === fs.constants.O_RDONLY
+    ) {
+      fd = result;
+      opens++;
+      hooks.open?.(result, flags);
+    }
+    return result;
+  };
+  fs.closeSync = function (value) {
+    const result = original.closeSync.call(this, value);
+    if (value === fd) closes++;
+    return result;
+  };
+  fs.fstatSync = function (value, ...rest) {
+    const result = original.fstatSync.call(this, value, ...rest);
+    return value === fd ? hooks.stat?.(result, ++stats) ?? result : result;
+  };
+  fs.readSync = function (value, ...rest) {
+    if (value === fd && hooks.read)
+      return hooks.read(original.readSync.bind(this), value, ...rest);
+    return original.readSync.call(this, value, ...rest);
+  };
+  return {
+    closed() {
+      assert.equal(opens, 1);
+      assert.equal(closes, 1);
+      assert.throws(() => original.fstatSync(fd), { code: 'EBADF' });
+    },
+    restore() {
+      Object.assign(fs, original);
+    },
+  };
+}
+test('private request reader accepts bounded strict JSON and rejects invalid encodings or duplicate keys', (t) => {
+  const f = requestFixture(t);
+  assert.deepEqual(readCommandRequest(f.file), { command: 'inspect' });
+  for (const bytes of [
+    '{"command":1,"command":2}',
+    '{} trailing',
+    Buffer.from([0xff]),
+  ]) {
+    fs.writeFileSync(f.file, bytes);
+    const watch = watchRequest(f.file);
+    try {
+      assert.throws(() => readCommandRequest(f.file));
+      watch.closed();
+    } finally {
+      watch.restore();
+    }
+  }
+});
+test('private request reader refuses nonexact, source-tree and symlink paths', (t) => {
+  const f = requestFixture(t),
+    link = f.output();
+  fs.symlinkSync(f.file, link);
+  for (const file of [
+    link,
+    './relative.json',
+    f.root + '/./0.json',
+    f.root + '/bad\nname',
+    path.join(SOURCE, 'package.json'),
+  ])
+    assert.throws(() => readCommandRequest(file));
+  assert.deepEqual(readCommandRequest(f.file), { command: 'inspect' });
+});
+test('private request reader rejects directories and FIFO input without blocking', (t) => {
+  const f = requestFixture(t),
+    directory = path.join(f.root, 'directory'),
+    fifo = path.join(f.root, 'fifo');
+  fs.mkdirSync(directory, { mode: 0o700 });
+  const watch = watchRequest(directory);
+  try {
+    assert.throws(() => readCommandRequest(directory), /regular file/);
+    watch.closed();
+  } finally {
+    watch.restore();
+  }
+  const made = spawnSync('mkfifo', ['-m', '600', fifo], { timeout: 2000 });
+  assert.equal(made.status, 0, 'local POSIX FIFO fixture must be created');
+  const child = spawnSync(
+    process.execPath,
+    [
+      '-e',
+      `const {readCommandRequest}=require(${JSON.stringify(
+        path.join(SOURCE, 'scripts/deploy/external-command.cjs')
+      )});try {readCommandRequest(process.argv[1]);process.exitCode=2;}catch(e){if(!/regular file/.test(e.message))process.exitCode=3;}`,
+      fifo,
+    ],
+    { timeout: 2000 }
+  );
+  assert.equal(child.error, undefined);
+  assert.equal(child.signal, null);
+  assert.equal(child.status, 0);
+});
+test('private request reader rejects empty, oversized, public, wrong-owner and linked descriptors', (t) => {
+  for (const variant of ['empty', 'oversized', 'mode', 'uid', 'link']) {
+    const f = requestFixture(
+      t,
+      variant === 'empty'
+        ? ''
+        : variant === 'oversized'
+        ? ' '.repeat(65537)
+        : '{}'
+    );
+    const watch = watchRequest(f.file, {
+      stat(stat) {
+        if (variant === 'mode') stat.mode |= 0o040n;
+        if (variant === 'uid') stat.uid += 1n;
+        if (variant === 'link') stat.nlink = 2n;
+        return stat;
+      },
+    });
+    try {
+      assert.throws(() => readCommandRequest(f.file), /regular file/);
+      watch.closed();
+    } finally {
+      watch.restore();
+    }
+    assert(fs.existsSync(f.file));
+  }
+});
+test('private request reader rejects post-read descriptor metadata and byte-length drift', (t) => {
+  for (const field of ['mode', 'uid', 'nlink', 'size', 'mtimeNs', 'ctimeNs']) {
+    const f = requestFixture(t);
+    const watch = watchRequest(f.file, {
+      stat(stat, count) {
+        if (count === 2) stat[field] += 1n;
+        return stat;
+      },
+    });
+    try {
+      assert.throws(() => readCommandRequest(f.file), /changed during reading/);
+      watch.closed();
+    } finally {
+      watch.restore();
+    }
+  }
+});
+test('private request reader refuses parent replacement even with the same input inode', (t) => {
+  const f = requestFixture(t),
+    old = f.root + '.original';
+  t.after(() => fs.rmSync(old, { recursive: true, force: true }));
+  let replaced = false,
+    originalCtime;
+  const watch = watchRequest(f.file, {
+    stat(stat, count) {
+      // File rename updates ctime on some platforms; mask only that timestamp
+      // to independently exercise the real replaced-parent identity guard.
+      if (count === 1) originalCtime = stat.ctimeNs;
+      else stat.ctimeNs = originalCtime;
+      return stat;
+    },
+    read(read, fd, ...args) {
+      const count = read(fd, ...args);
+      if (!replaced) {
+        replaced = true;
+        fs.renameSync(f.root, old);
+        fs.mkdirSync(f.root, { mode: 0o700 });
+        fs.renameSync(path.join(old, path.basename(f.file)), f.file);
+      }
+      return count;
+    },
+  });
+  try {
+    assert.throws(() => readCommandRequest(f.file), /identity changed/);
+    watch.closed();
+  } finally {
+    watch.restore();
+  }
+  assert.equal(replaced, true);
+  assert(fs.existsSync(f.file));
+});
+test('private request reader preserves identical replacement inputs and closes the original descriptor', (t) => {
+  const f = requestFixture(t),
+    bytes = fs.readFileSync(f.file);
+  let replaced = false;
+  const watch = watchRequest(f.file, {
+    read(read, fd, ...args) {
+      const count = read(fd, ...args);
+      if (!replaced) {
+        replaced = true;
+        fs.unlinkSync(f.file);
+        write(f.file, bytes);
+      }
+      return count;
+    },
+  });
+  try {
+    assert.throws(() => readCommandRequest(f.file), /changed during reading/);
+    watch.closed();
+  } finally {
+    watch.restore();
+  }
+  assert.deepEqual(fs.readFileSync(f.file), bytes);
+});
+test('private request reader closes descriptors on stat/read errors and short input but handles partial reads', (t) => {
+  for (const variant of ['stat', 'read', 'eof', 'partial']) {
+    const f = requestFixture(t);
+    const watch = watchRequest(f.file, {
+      stat(stat) {
+        if (variant === 'stat') throw new Error('synthetic stat failure');
+        return stat;
+      },
+      read(read, fd, buffer, offset, length, position) {
+        if (variant === 'read') throw new Error('synthetic read failure');
+        if (variant === 'eof') return 0;
+        return read(fd, buffer, offset, Math.min(length, 2), position);
+      },
+    });
+    try {
+      if (variant === 'partial')
+        assert.deepEqual(readCommandRequest(f.file), { command: 'inspect' });
+      else
+        assert.throws(
+          () => readCommandRequest(f.file),
+          /synthetic|pinned size/
+        );
+      watch.closed();
+    } finally {
+      watch.restore();
+    }
+    assert(fs.existsSync(f.file));
   }
 });
