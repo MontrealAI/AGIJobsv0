@@ -838,7 +838,9 @@ function renderMarkdown(atlas: AtlasPayload, includeMermaid: boolean): string {
 
   atlas.subsystems.forEach((subsystem) => {
     const status = subsystem.issues.length > 0 ? '⚠️' : '✅';
-    const controls = subsystem.summary.map((line) => line.replace(/\|/g, '\\|')).join('<br />');
+    const controls = subsystem.summary
+      .map((line) => line.replace(/\\/g, '\\\\').replace(/\|/g, '\\|'))
+      .join('<br />');
     lines.push(
       `| ${status} | ${subsystem.label} | \`${subsystem.configPath}\` | \`${subsystem.updateCommand}\` | \`${subsystem.verifyCommand}\` | ${controls} |`
     );
