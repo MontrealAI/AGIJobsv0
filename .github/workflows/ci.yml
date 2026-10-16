@@ -68,6 +68,10 @@ jobs:
         run: npm run ci:verify-summary-needs
       - name: Release provenance regression tests
         run: node --test test/scripts/alpha-supplier-proof.test.cjs test/scripts/alpha-agent-receipt.test.cjs test/scripts/deployment-candidate.test.cjs test/scripts/job-stake-config.test.cjs test/scripts/runner-egress.test.cjs test/scripts/demo-report-paths.test.cjs test/scripts/aurora-report.test.cjs test/scripts/demo-launchers.test.cjs test/scripts/local-demo-rpc.test.cjs test/scripts/release-provenance.test.cjs test/scripts/release-inventory.test.cjs test/scripts/contract-size.test.cjs test/scripts/release-ci.test.cjs test/scripts/dependency-audit.test.cjs test/scripts/slither-policy.test.cjs test/scripts/dispute-overloads.test.js test/hamiltonian-monitor.config.test.js
+      - name: Owner report Markdown regression tests (inert only)
+        run: |
+          node --test test/scripts/owner-report-markdown.test.cjs
+          node node_modules/typescript/bin/tsc --noEmit --target es2020 --module commonjs --moduleResolution node --esModuleInterop --skipLibCheck --types node scripts/v2/ownerCommandCenter.ts scripts/v2/ownerControlAtlas.ts scripts/v2/ownerControlSurface.ts
       - name: First-class launcher safety regression tests (inert only)
         run: |
           node --test test/scripts/first-class-modes.test.cjs

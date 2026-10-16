@@ -806,7 +806,10 @@ function renderMermaid(atlas: AtlasPayload): string {
   return lines.join('\n');
 }
 
-function renderMarkdown(atlas: AtlasPayload, includeMermaid: boolean): string {
+export function renderMarkdown(
+  atlas: AtlasPayload,
+  includeMermaid: boolean
+): string {
   const lines: string[] = [];
   lines.push(`# Owner Control Atlas`);
   lines.push('');
@@ -838,7 +841,9 @@ function renderMarkdown(atlas: AtlasPayload, includeMermaid: boolean): string {
 
   atlas.subsystems.forEach((subsystem) => {
     const status = subsystem.issues.length > 0 ? '⚠️' : '✅';
-    const controls = subsystem.summary.map((line) => line.replace(/\|/g, '\\|')).join('<br />');
+    const controls = subsystem.summary
+      .map((line) => line.replace(/\\/g, '\\\\').replace(/\|/g, '\\|'))
+      .join('<br />');
     lines.push(
       `| ${status} | ${subsystem.label} | \`${subsystem.configPath}\` | \`${subsystem.updateCommand}\` | \`${subsystem.verifyCommand}\` | ${controls} |`
     );
@@ -962,7 +967,12 @@ async function main() {
   }
 }
 
-main().catch((error) => {
-  console.error('Unexpected error:', error instanceof Error ? error.stack ?? error.message : error);
-  process.exit(1);
-});
+if (require.main === module) {
+  main().catch((error) => {
+    console.error(
+      'Unexpected error:',
+      error instanceof Error ? error.stack ?? error.message : error
+    );
+    process.exit(1);
+  });
+}

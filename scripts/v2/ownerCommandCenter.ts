@@ -180,7 +180,10 @@ function normaliseNumber(value: unknown): number | undefined {
 }
 
 function escapeMarkdownTable(value: string): string {
-  return value.replace(/\|/g, '\\|').replace(/\n/g, '<br />');
+  return value
+    .replace(/\\/g, '\\\\')
+    .replace(/\|/g, '\\|')
+    .replace(/\n/g, '<br />');
 }
 
 function riskEmoji(level: RiskLevel): string {
@@ -965,7 +968,11 @@ function renderHuman(context: ReportContext, modules: ModuleSummary[], includeMe
   return lines.join('\n');
 }
 
-function renderMarkdown(context: ReportContext, modules: ModuleSummary[], includeMermaid: boolean): string {
+export function renderMarkdown(
+  context: ReportContext,
+  modules: ModuleSummary[],
+  includeMermaid: boolean
+): string {
   const lines: string[] = [];
   lines.push('# AGIJobs Owner Command Center');
   lines.push('');
@@ -1224,7 +1231,9 @@ async function main(): Promise<void> {
   }
 }
 
-main().catch((error) => {
-  console.error('ownerCommandCenter failed:', error);
-  process.exitCode = 1;
-});
+if (require.main === module) {
+  main().catch((error) => {
+    console.error('ownerCommandCenter failed:', error);
+    process.exitCode = 1;
+  });
+}
