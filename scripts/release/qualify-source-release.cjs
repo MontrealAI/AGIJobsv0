@@ -6,7 +6,7 @@ const { setTimeout: delay } = require('node:timers/promises');
 const { requiredWorkflows } = require('./check-release-ci.js');
 
 const ownPath = '.github/workflows/source-release.yml';
-const releaseVersion = '2.1.0-rc.8';
+const releaseVersion = '2.1.0-rc.9';
 const deployedSourceBaseline = 'b4c5b66ea05a6bb27f1f1cb197f055c179bbd38e';
 const evidenceBaseline = '9c730e0188594089e27ed0589c2b5ca57eec5cf5';
 // Reviewed compiler candidate; publication also requires exact merged-SHA CI.
@@ -229,7 +229,7 @@ async function main() {
           {
             schema: 'agijobsv0/source-release-provenance/1',
             repository,
-            tag: 'source-v2.1.0-rc.8',
+            tag: 'source-v2.1.0-rc.9',
             sha,
             tree: git('rev-parse', 'HEAD^{tree}'),
             recordedAt: new Date().toISOString(),

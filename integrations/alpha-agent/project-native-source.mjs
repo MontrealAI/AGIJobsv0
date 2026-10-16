@@ -46,6 +46,14 @@ export const ALPHA_NATIVE_SOURCE = Object.freeze({
     {
       "path": "LICENSE",
       "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+    },
+    {
+      "path": "examples/build-successor/vendor/agijobs/LICENSE",
+      "sha256": "70842e0e7ae73b3ce65baa06a1c62b466bdb694570301969031cc48d9ac705d1"
+    },
+    {
+      "path": "examples/build-successor/vendor/agijobs/provenance.json",
+      "sha256": "92e4fb81d4561dbf251fb8797883fe06a43398d1de395c8469eff606434ebd28"
     }
   ]
 });
