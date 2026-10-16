@@ -1,10 +1,15 @@
 {
   "schemaVersion": 2,
   "dependencyBaseline": "7b21ce05b0b18b46162da66c2f528334101f6f40",
-  "reviewedSourceCheckpoint": "1b24aecca7ed1d73bb4a8ea49ed68a36060628ac",
-  "transitionCount": 60,
-  "scope": "Retain all 54 prior reviewed transitions and before-blobs, the corrected reputation/percentage-collateral contracts, exact native receiver selection and immutable deployment evidence. Review complete literal-text escaping, import-safe renderer exports and CLI guards in the three owner reports, plus the explicitly inventoried new Markdown literal helper (absent at dependency baseline). No protected-path exemption, dependency, compiler or network change. Fresh independent exact-head source review, CodeQL and full integrated qualification remain mandatory; production approval remains false. Additional independently reviewed tooling: journal new-campaign creation/authority handover, source-bound receipts, cooperative sender exclusion, explicit separate fee/treasury roles and signer-free activation evidence. Solidity, compiler, numeric economics and historical deployment evidence remain unchanged.",
+  "reviewedSourceCheckpoint": "3c17153942251116ee51163055eb1a25d652454b",
+  "transitionCount": 61,
+  "scope": "Retain all 54 prior reviewed transitions and before-blobs, the corrected reputation/percentage-collateral contracts, exact native receiver selection and immutable deployment evidence. Review complete literal-text escaping, import-safe renderer exports and CLI guards in the three owner reports, plus the explicitly inventoried new Markdown literal helper (absent at dependency baseline). No protected-path exemption, dependency, compiler or network change. Fresh independent exact-head source review, CodeQL and full integrated qualification remain mandatory; production approval remains false. Additional independently reviewed tooling: journal new-campaign creation/authority handover, source-bound receipts, cooperative sender exclusion, explicit separate fee/treasury roles and signer-free activation evidence. Solidity, compiler, numeric economics and historical deployment evidence remain unchanged. Additional correction: bounded-only authority/explorer observations, explicit role-separated disposable callers and exact local process/config/address binding. Public activation remains unqualified.",
   "transitions": [
+    {
+      "path": "config/README.md",
+      "before": "88d40d52f2fd038af3baa736022cbd2b92badad1",
+      "after": "2136a9330842cbb13f6c866c14a7a4ad2dec45f4"
+    },
     {
       "path": "config/contracts.orchestrator.json",
       "before": "4c5a49cce256dc352e2f709daa4ced6e7737edf4",
@@ -163,7 +168,7 @@
     {
       "path": "scripts/deploy/authority-audit.cjs",
       "before": null,
-      "after": "808c6d5c4903299160f90bb0e108eb00078cee6a"
+      "after": "9165aae234b2d43cf82ea72c75d8fa1e55f3d413"
     },
     {
       "path": "scripts/deploy/authority-handover.cjs",
@@ -218,7 +223,7 @@
     {
       "path": "scripts/v2/deployDefaults.ts",
       "before": "07b7e1859a4ea386c2f84a31cf8cbb5c4a1f28ca",
-      "after": "76c0e1a7310d612b95fbb9cbf6923ea7e59db176"
+      "after": "74f4f260a0bdd3207ddf328a724e9ee4d6412112"
     },
     {
       "path": "scripts/v2/lib/deployment-candidate.cjs",
