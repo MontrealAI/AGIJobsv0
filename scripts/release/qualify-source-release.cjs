@@ -6,14 +6,15 @@ const { setTimeout: delay } = require('node:timers/promises');
 const { requiredWorkflows } = require('./check-release-ci.js');
 
 const ownPath = '.github/workflows/source-release.yml';
-const releaseVersion = '2.1.0-rc.9';
+const releaseVersion = '2.1.0-rc.10';
 const deployedSourceBaseline = 'b4c5b66ea05a6bb27f1f1cb197f055c179bbd38e';
 const evidenceBaseline = '9c730e0188594089e27ed0589c2b5ca57eec5cf5';
-// Reachable reviewed source checkpoint after the demo, launcher, security and
-// CI-discovery corrections. This exact ancestor binds the final protected tree.
+// Frozen combined economic source: percentage policy, terminal reputation,
+// preserved demos and BigInt dry-run correction. This exact ancestor binds
+// the final protected tree; fresh independent review remains a merge gate.
 // Compiler policy and historical deployment guards remain unchanged; publication
 // additionally requires qualification of the exact merged SHA.
-const compilerSourceBaseline = 'd267cc4f326d28bdbceda55aa9242da60146aa88';
+const compilerSourceBaseline = '91496bba7e80ffef2b86310ee6301655c441988d';
 const preservedEvidencePaths = [
   'docs/deployments/',
   'docs/deployment-addresses.json',
@@ -232,7 +233,7 @@ async function main() {
           {
             schema: 'agijobsv0/source-release-provenance/1',
             repository,
-            tag: 'source-v2.1.0-rc.9',
+            tag: 'source-v2.1.0-rc.10',
             sha,
             tree: git('rev-parse', 'HEAD^{tree}'),
             recordedAt: new Date().toISOString(),

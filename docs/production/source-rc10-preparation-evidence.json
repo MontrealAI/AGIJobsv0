@@ -1,0 +1,94 @@
+{
+  "schema": "agijobsv0/source-rc10-preparation/v1",
+  "recordedAt": "2026-10-16T00:39:59.526786+00:00",
+  "combinedApplicationSource": {
+    "commit": "91496bba7e80ffef2b86310ee6301655c441988d",
+    "tree": "3c5c4e256141f7a97acc358be6c929b999089629",
+    "parents": [
+      "495e82a62019c23ddcf1f2c6a342578363fb3bd4",
+      "36232243d2a06c808832ff332de03eca08527e12",
+      "f541031bf64bf9ba4b217b5cbc9d434b6acedbfe"
+    ],
+    "history": "All three source parents retained; no tracked file deletion in the combination."
+  },
+  "contractSourcesByteIdenticalTo": "495e82a62019c23ddcf1f2c6a342578363fb3bd4",
+  "priorReputationReceipt": {
+    "path": "docs/production/reputation-terminal-interface-evidence.json",
+    "sha256": "2cdd953a11ca43bfe7a5f06498364069ea304c2a0adb738915a05770980d5fc7",
+    "scope": "Qualified corrected-contract checkpoint; the combined demos and release metadata have their own checks below."
+  },
+  "checks": {
+    "combinedOfficialHardhat": {
+      "passed": 883,
+      "failed": 0,
+      "logName": "jobs-rc10-merged-official.log",
+      "logSha256": "ced78f4cbb716515f08df0ea99f6c9d2f6fd3e3f3621e5df0fbe382ac1c92100"
+    },
+    "combinedPolicyAndDemo": {
+      "passed": 79,
+      "failed": 0,
+      "logName": "jobs-rc10-merged-policy-tests.log",
+      "logSha256": "6c4da2a2e76de44cbe65acb53b6bcadef3c5b9b97e3d2a1b0cac552a96d88f61"
+    },
+    "sourceAndPublicationGuards": {
+      "passed": 43,
+      "failed": 0,
+      "logName": "jobs-rc10-release-guard-tests-final.log",
+      "logSha256": "8f8163447053bcc2429b83fc0dacf4df8cadccf1d2668e069fa963af35ec8b5a"
+    }
+  },
+  "guardTestsOverlap": "The 43 source/publication guard cases include the 21 source-preservation cases; these counts are not additive.",
+  "build": {
+    "compiler": "0.8.37+commit.f401782d",
+    "productionContracts": 66,
+    "sizeGatePassed": true,
+    "projectSourceWarnings": 0,
+    "reviewedUpstreamWarnings": 13,
+    "logSha256": "c9de11d2d1d4586183d4e134a714581bf004affed5609c8a935745f7324c98a2"
+  },
+  "redenominationBrowser": {
+    "desktop": true,
+    "mobile": true,
+    "french": true,
+    "exactValues": true,
+    "untrustedText": true,
+    "missingExport": true,
+    "diagramFallback": true,
+    "liveDiagram": false,
+    "workHandoff": true,
+    "policyObservations": true,
+    "logSha256": "fd1a16f58d1b46e235f401ac5a2a5075f9eb5f76bb6b3252c24ba7012ea0d1fe"
+  },
+  "protectedSourceFreeze": {
+    "record": "scripts/security/reviewed-source-rc10.json",
+    "sha256": "fa31c742d63f8b59975176b8b8c5b647aebc51e34f8f64b4261c2ad861be297c",
+    "sourceCheckpoint": "91496bba7e80ffef2b86310ee6301655c441988d",
+    "transitionCount": 54,
+    "laterProtectedSourceChangesRejected": true,
+    "schema1HistoricalRulesRetained": true,
+    "intermediateReviewedMergeBasesSupported": true,
+    "newerOrdinaryBranchesRetainStrictProtection": true
+  },
+  "releasePreparationSourceSha256": {
+    ".github/workflows/source-release.yml": "34ddf095bd4f00a7f2815a06df7fb9f6a8b01c8e1e0397de4e777ac5cfd7d804",
+    "docs/production/RELEASE_NOTES_SOURCE_RC10.md": "5b4fafca0751cc51dc11ae065ad547b43318e8afa6e391430a3c5f2081b05379",
+    "package-lock.json": "eea6eddf6711dfd651b1bdba6a15acce21fa42269e6071d188d90b582488b61f",
+    "package.json": "9352ddec49e006f064389b42a9a3d3860ac9cbce8d107f9a05520c427deeee79",
+    "scripts/release/publish-source-release.cjs": "fef708b44077061dd6296770b4c2845836d7be2d645f2605c9362258a8b3f308",
+    "scripts/release/qualify-source-release.cjs": "9e9a42b7d9ce8990a811de02bb5a542d5b71061d1822870ed7c80257d50d4e18",
+    "scripts/security/check-dependency-preservation.cjs": "84a31f2d8fb8fb4c86166141825c77b7c62226f591749f36f191367cb879f38e",
+    "scripts/security/reviewed-source-rc10.json": "fa31c742d63f8b59975176b8b8c5b647aebc51e34f8f64b4261c2ad861be297c",
+    "scripts/security/test/dependency-preservation.test.cjs": "8d7a0bd599b440d549547c87caa53f1988d8f0f267bebe16f2bf311b3c7f2e15",
+    "test/scripts/source-release-gate.test.cjs": "54d1b9563e2cb08ec0e73d91f28d5d420c352605c8a3df0b4099e349b57dbbd6",
+    "test/scripts/source-release-publish.test.cjs": "87ea8e9f581e555a36754a412021fb87773e9eebe33874c8a4be4270e4b990be"
+  },
+  "productionApproved": false,
+  "externalTransactions": false,
+  "remainingGates": [
+    "Independent review of the final preparation head",
+    "Fresh hosted PR and exact-final-main workflows",
+    "Qualified compiler producer collection and immutable asset/readback verification",
+    "Jobs owner parameters, exact unsigned owner plan and owner-plan fork qualification",
+    "Historical obligations and separate commissioning"
+  ]
+}

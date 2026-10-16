@@ -18,7 +18,7 @@ const {
   reviewedCompilerPaths,
 } = require('../../scripts/release/qualify-source-release.cjs');
 const sha = 'a'.repeat(40),
-  tag = 'source-v2.1.0-rc.9';
+  tag = 'source-v2.1.0-rc.10';
 function compilerArchiveFixture(contents = {}) {
   const compiler = require('../../config/solidity-compiler.json').longVersion;
   const payloads = {
@@ -357,10 +357,10 @@ test('workflow packages every declared immutable release asset', () => {
     'utf8'
   );
   assert.ok(workflow.includes(`TAG: ${tag}`));
-  assert.ok(workflow.includes('group: source-release-rc9-${{ github.ref }}'));
-  assert.ok(workflow.includes('name: source-rc9-${{ github.sha }}'));
-  assert.ok(expectedAssets(tag).includes('RELEASE_NOTES_SOURCE_RC9.md'));
-  for (const prior of ['RC7', 'RC8']) {
+  assert.ok(workflow.includes('group: source-release-rc10-${{ github.ref }}'));
+  assert.ok(workflow.includes('name: source-rc10-${{ github.sha }}'));
+  assert.ok(expectedAssets(tag).includes('RELEASE_NOTES_SOURCE_RC10.md'));
+  for (const prior of ['RC7', 'RC8', 'RC9']) {
     assert.ok(
       !expectedAssets(tag).includes(`RELEASE_NOTES_SOURCE_${prior}.md`)
     );
@@ -376,7 +376,7 @@ test('workflow packages every declared immutable release asset', () => {
   const notes = fs.readFileSync(
     path.resolve(
       __dirname,
-      '../../docs/production/RELEASE_NOTES_SOURCE_RC9.md'
+      '../../docs/production/RELEASE_NOTES_SOURCE_RC10.md'
     ),
     'utf8'
   );
@@ -727,6 +727,8 @@ test('source API boundary allows only exact supported methods and routes', () =>
     ['GET', '//example.com'],
     ['GET', 'https://example.com'],
     ['GET', 'git/ref/heads/other'],
+    ['GET', 'git/ref/tags/source-v2.1.0-rc.9'],
+    ['GET', 'releases/tags/source-v2.1.0-rc.9'],
     ['GET', 'releases/tags/source-v2.1.0-rc.8'],
     ['toString', 'releases'],
     ['GET', null],
