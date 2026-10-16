@@ -5,6 +5,11 @@ It does not replace Alpha's MARK / AscensionJobMarket route, the legacy
 AGIJobManager, or the separate USDC Manager. Sharing a token symbol does not make
 markets interchangeable.
 
+Continue a native Alpha dossier with retained history using the
+[project receiver and bounded Jobs drafts](PROJECT_CONTINUITY.md). It preserves
+the original bytes and performs actual fixed public-data work; its AGIALPHA
+allowance remains an unfunded proposal.
+
 ## Choose your goal
 
 | Goal                                       | Route                                      | What is supported here                                                      |

@@ -60,3 +60,7 @@ Choisissez une décision récurrente, un résultat mesurable, un responsable et 
 La facture synthétique conduit à **SUSPENDRE ET SOUMETTRE AU RESPONSABLE** (`HOLD_AND_ESCALATE`). Elle ne démontre pas une fraude et ne déclenche aucun paiement. Les résultats de répétition locale ne constituent ni une preuve indépendante, ni une admission en production.
 
 Les modèles peuvent changer. La mission, les méthodes autorisées, les preuves et les leçons peuvent être préservées. Une restauration ou un descendant commence sans autorité de production héritée.
+
+## Continue an existing Alpha dossier
+
+The [native project receiver](../../integrations/alpha-agent/PROJECT_CONTINUITY.md) preserves the exact original project and its failed or rejected work. It compiles unsigned, unfunded AGIALPHA work orders and executes the bounded public-data task locally. Its versioned project work envelope is separate from the Python Alpha market work-spec namespace. Fleet execution and internal checking, operational admission, independent review and on-chain settlement remain separate decisions.
