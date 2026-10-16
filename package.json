@@ -149,7 +149,7 @@
     "alpha-bridge:start": "node services/alpha-bridge/src/server.js",
     "alpha-agent:verify:test": "node --test test/scripts/alpha-agent-receipt.test.cjs",
     "alpha-agent:project": "node integrations/alpha-agent/project-cli.mjs",
-    "alpha-agent:project:test": "node --test test/scripts/alpha-project-transfer.test.mjs test/scripts/alpha-project-receipt.test.cjs",
+    "alpha-agent:project:test": "node --test test/scripts/alpha-project-source.test.mjs test/scripts/alpha-project-name.test.mjs test/scripts/alpha-project-transfer.test.mjs test/scripts/alpha-project-receipt.test.cjs",
     "alpha-bridge:test": "node --test services/alpha-bridge/test/alpha-bridge.test.js",
     "audit:dossier": "bash scripts/audit/export-dossier.sh",
     "audit:final": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/audit/final-readiness.ts",

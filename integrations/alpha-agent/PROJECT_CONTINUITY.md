@@ -16,7 +16,14 @@ native specification and selected base-unit allowance. It is a source-only
 project work envelope, not `agialpha.bounded-work-spec.v1` accepted by the
 existing Python Alpha market adapter.
 This is not a translation to Alpha's Python research/allocation work kinds.
-Every duplicate source row and integer unit remains unchanged. Source rights are
+Every duplicate source row and integer unit remains unchanged. Native names
+of up to 64 UTF-16 units are preserved exactly in the original specification.
+The new local execution record and compiled jobs use an explicit Unicode-scalar
+prefix of at most 48 UTF-16 units, with a nonblank fallback label when needed.
+`work.executorSpecRaw` and `work.nameMapping` commit this display-only adaptation;
+`work.nativeSpecRaw` retains the original. Both specifications and their exact
+hashes remain bound to the project work envelope, so equal shortened labels
+cannot rebind another original project. Source rights are
 supplied declarations that require review, not automatically established licenses.
 
 ## Three local steps
@@ -64,8 +71,20 @@ const { transfer, project, spec, lastRecord } = await inspectProjectTransfer(res
 No imported file selects code, a provider, an executable checkout or a callback.
 The vendored validator's complete ten-module closure and license are recorded
 in `project-native-source.mjs`, pinned to Alpha commit
-`92e227c007d484323c7fd2a7001b9bb5b229e717`. The receiver, receipt adapter and CLI have a separate complete source hash
-inventory; the four actual Jobs compiler files are pinned separately. Regression tests compare every installed byte to these
+`92e227c007d484323c7fd2a7001b9bb5b229e717`. The complete receiver dependency closure has an ordered exact-byte source
+inventory, including the source-identity loader, receipt verifier, JobRegistry
+profile, every local imported module, generator and preserved licenses.
+An immutable published code commit and tree pin that inventory. The generated
+selector is an inert primitive canonical-JSON string, excluded explicitly from
+its own source snapshot to avoid a circular self-hash. Its exact generator
+syntax is checked; pending selectors cannot import, inspect or execute work.
+Alpha's outer bundle also hashes the selector bytes. Built-in Node modules and
+the installed ethers package are external runtime dependencies; this inventory
+does not claim to hash node_modules. Run `node integrations/alpha-agent/generate-project-source.mjs --check`
+to compare the selected commit/tree and all installed dependency bytes with
+fetched immutable Git objects; a metadata-only publication commit selects the
+previously published code snapshot. The four native Jobs compiler files remain
+pinned separately as well. Regression tests compare every installed byte to these
 inventories.
 
 An application may install a separately reviewed Manager-native inspector as
