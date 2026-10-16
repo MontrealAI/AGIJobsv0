@@ -21,7 +21,7 @@ function expectedAssets(tag) {
     'ethereum-mainnet-2026-10-12.json',
     'configuration-readback-2026-10-13.json',
     'mainnet-deployment-2026-10-12.md',
-    'RELEASE_NOTES_SOURCE_RC10.md',
+    'RELEASE_NOTES_SOURCE_RC11.md',
     'compiler-warnings-2026-10-13.md',
     'solidity-compiler.json',
     'deployment-addresses.mainnet.json',
@@ -324,7 +324,7 @@ async function publish({ sha, tag, notes, api, upload, verify }) {
       target_commitish: sha,
       draft: true,
       prerelease: true,
-      name: `${tag} — bounded Alpha interoperability and preserved deployment evidence`,
+      name: `${tag} — retained Alpha projects and corrected reputation`,
       body: `${notes.trim()}\n\n${marker}\n`,
     });
   }
@@ -372,7 +372,7 @@ function producerId(value) {
 
 function sourceApiUrl(method, resource) {
   const allowed = {
-    GET: /^(?:git\/ref\/(?:heads\/main|tags\/source-v2\.1\.0-rc\.10)|releases\/tags\/source-v2\.1\.0-rc\.10|actions\/artifacts\/[1-9][0-9]*|actions\/runs\/[1-9][0-9]*\/attempts\/[1-9][0-9]*)$/,
+    GET: /^(?:git\/ref\/(?:heads\/main|tags\/source-v2\.1\.0-rc\.11)|releases\/tags\/source-v2\.1\.0-rc\.11|actions\/artifacts\/[1-9][0-9]*|actions\/runs\/[1-9][0-9]*\/attempts\/[1-9][0-9]*)$/,
     POST: /^(?:git\/refs|releases)$/,
     PATCH: /^releases\/[1-9][0-9]*$/,
   };
@@ -396,7 +396,7 @@ async function main() {
   if (
     repository !== 'MontrealAI/AGIJobsv0' ||
     !/^[a-f0-9]{40}$/.test(sha || '') ||
-    tag !== 'source-v2.1.0-rc.10' ||
+    tag !== 'source-v2.1.0-rc.11' ||
     !token
   )
     throw Error('Invalid source publication identity or authorization');
@@ -477,7 +477,7 @@ async function main() {
     api,
     verify,
     notes: fs.readFileSync(
-      'docs/production/RELEASE_NOTES_SOURCE_RC10.md',
+      'docs/production/RELEASE_NOTES_SOURCE_RC11.md',
       'utf8'
     ),
     upload: async () =>

@@ -1,5 +1,19 @@
 # Changelog
 
+## v2.1.0-rc.11 — retained Alpha projects and corrected reputation
+
+Source prerelease candidate (2026-10-16 UTC).
+
+- Inherit the published rc.10 reputation corrections, percentage-collateral policy and exact protected source/compiler freeze without changing contracts or dependencies.
+- Receive the native Alpha public-data project through an actual pinned native validator, retaining exact upstream bytes, every cycle, rejected work and reviews.
+- Compile seven unsigned, unfunded AGIALPHA work orders with the native Jobs compiler; allocate exact base-unit allowances without rounding away remainders. Manager USDC drafts remain separately priced.
+- Execute the bounded JavaScript CSV task and append complete, semantically checked native records. Preserve all duplicate rows and integer units; imported history creates no operational authority or independent proof.
+- Bind a distinct project work-spec envelope to project/cycle identity, complete upstream commitment, source, route, executor, native specification, allowance and compiled graph. Keep the existing Python Alpha bounded-work namespace and MARK market separate.
+- Verify a separately supplied canonical JobRegistry receipt against that exact project specification, result, assigned worker, contract reward and actual 18-decimal staking token. RPC-fixture regressions reject unrelated projects, changed prices, substituted results and reorgs; they are not new live settlement evidence.
+- Provide a browser-safe receiver, a no-overwrite local CLI and complete pinned source/license inventories for the guided Alpha/Jobs/Fleet history. Keep existing source-qualification and immutable publisher gates.
+
+This remains an unsigned source prerelease. Historical deployments, all earlier release assets including rc.10, paused intake, corrected settlement rules and production qualification boundaries are preserved. Live provider/worker commissioning and independent review remain separate requirements.
+
 ## v2.1.0-rc.7 — runtime image security
 
 Runtime-image source prerelease (2026-10-13 UTC), including the compiler and verification improvements from rc.6.

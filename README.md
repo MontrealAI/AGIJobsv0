@@ -703,4 +703,6 @@ Released under the MIT License. See [`LICENSE`](LICENSE) for details.
 
 ### Bounded Alpha and Fleet interoperability
 
+**Continue an Alpha project with its complete history:** [native project receiver](integrations/alpha-agent/PROJECT_CONTINUITY.md). Import the unchanged dossier, explicitly select a separately priced AGIALPHA allowance, compile bounded unfunded drafts, run the actual local CSV task, and export the complete result for the guided Alpha/Fleet journey. Manager remains a separate USDC route.
+
 Use the explicit [JobRegistry v2 integration guide](integrations/alpha-agent/README.md) to distinguish the $AGIALPHA market, bounded execution, exact artifact commitments, and independently verified lifecycle receipts. Historical deployment evidence does not enable production intake.
