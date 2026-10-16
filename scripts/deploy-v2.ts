@@ -213,6 +213,7 @@ async function main() {
   await dispute.setTaxPolicy(await tax.getAddress());
   await validation.setIdentityRegistry(await identity.getAddress());
   await reputation.setCaller(await registry.getAddress(), true);
+  await reputation.setJobRegistry(await registry.getAddress(), true);
 
   const ensureContract = async (addr: string, name: string) => {
     if ((await ethers.provider.getCode(addr)) === '0x') {

@@ -131,6 +131,7 @@ describe('JobRegistry integration', function () {
     await rep
       .connect(owner)
       .setAuthorizedCaller(await registry.getAddress(), true);
+    await rep.connect(owner).setJobRegistry(await registry.getAddress(), true);
     await rep.connect(owner).setThreshold(0);
     await stakeManager
       .connect(owner)
@@ -374,7 +375,9 @@ describe('JobRegistry integration', function () {
       expect(await registry.getJobValidatorVote(jobId, member)).to.equal(false);
     }
 
-    expect(await token.balanceOf(agent.address)).to.equal(disputeFee + BigInt(1000 + reward - stake));
+    expect(await token.balanceOf(agent.address)).to.equal(
+      disputeFee + BigInt(1000 + reward - stake)
+    );
     expect(await rep.reputation(agent.address)).to.equal(0);
     expect(await rep.isBlacklisted(agent.address)).to.equal(false);
     expect(await nft.balanceOf(agent.address)).to.equal(1);
@@ -958,7 +961,8 @@ describe('JobRegistry integration', function () {
     const newMaxReward = 5000;
     await registry.connect(owner).setMaxJobReward(newMaxReward);
     await expect(registry.connect(owner).setJobStakeBps(300))
-      .to.emit(registry, 'JobStakeBpsUpdated').withArgs(1000, 300);
+      .to.emit(registry, 'JobStakeBpsUpdated')
+      .withArgs(1000, 300);
     expect(await registry.jobStakeBps()).to.equal(300);
     expect(await registry.quoteJobStake(100)).to.equal(3);
     expect(await registry.maxJobReward()).to.equal(newMaxReward);

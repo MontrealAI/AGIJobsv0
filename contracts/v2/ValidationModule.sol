@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
+import {ITerminalJobRegistry} from "./interfaces/ITerminalReputation.sol";
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
@@ -86,9 +87,9 @@ contract ValidationModule is ValidationModuleBase, FixedDelegate {
         address[] memory _validatorPool,
         address[3] memory implementations
     ) ValidationModuleBase() {
-        _configuration = _checkedImplementation(implementations[0], keccak256("ValidationModuleConfiguration:v1"));
-        _voting = _checkedImplementation(implementations[1], keccak256("ValidationModuleVoting:v1"));
-        _selection = _checkedImplementation(implementations[2], keccak256("ValidationModuleSelection:v1"));
+        _configuration = _checkedImplementation(implementations[0], keccak256("ValidationModuleConfiguration:terminal-claims-v3"));
+        _voting = _checkedImplementation(implementations[1], keccak256("ValidationModuleVoting:terminal-claims-v3"));
+        _selection = _checkedImplementation(implementations[2], keccak256("ValidationModuleSelection:terminal-claims-v3"));
 
         DOMAIN_SEPARATOR = keccak256(
             abi.encode(
@@ -99,6 +100,7 @@ contract ValidationModule is ValidationModuleBase, FixedDelegate {
             )
         );
         if (address(_jobRegistry) != address(0)) {
+            if (ITerminalJobRegistry(address(_jobRegistry)).terminalPolicyId() != terminalPolicyId) revert InvalidJobRegistry();
             jobRegistry = _jobRegistry;
             emit JobRegistryUpdated(address(_jobRegistry));
         }

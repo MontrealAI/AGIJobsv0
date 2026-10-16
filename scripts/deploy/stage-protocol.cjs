@@ -41,8 +41,27 @@ async function stageProtocol(deployer, ids, governance, options = {}) {
           overrides
         );
         if (options.onSubmitted)
-          await options.onSubmitted(name, transaction.hash);
+          await options.onSubmitted(name, transaction.hash, {
+            fullyQualified: `${source}:${name}`,
+            constructorArguments: factory.interface.encodeDeploy(args),
+            from: transaction.from,
+            nonce: transaction.nonce,
+            chainId: transaction.chainId.toString(),
+            input: transaction.data,
+            initcode: data,
+            coordinator,
+          });
         await transaction.wait();
+        if (options.onCreation)
+          await options.onCreation({
+            name,
+            fullyQualified: `${source}:${name}`,
+            address: await deployer.components(componentId),
+            constructorArguments: factory.interface.encodeDeploy(args),
+            transactionHash: transaction.hash,
+            kind: 'coordinator',
+            coordinator,
+          });
       } catch (error) {
         throw new Error(
           `${name} deployment failed at coordinator ${coordinator}. Reconcile submitted transactions and keep this coordinator address to resume with the same configuration.`,
@@ -157,7 +176,15 @@ async function stageProtocol(deployer, ids, governance, options = {}) {
     committee,
   ];
   if (!alreadyRegistered) {
-    await (await deployer.registerModules(addresses, overrides)).wait();
+    const transaction = await deployer.registerModules(addresses, overrides);
+    if (options.onSubmitted)
+      await options.onSubmitted('registerModules', transaction.hash, {
+        from: transaction.from,
+        nonce: transaction.nonce,
+        chainId: transaction.chainId.toString(),
+        input: transaction.data,
+      });
+    await transaction.wait();
   }
   return addresses;
 }

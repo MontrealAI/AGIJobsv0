@@ -6,6 +6,10 @@ const policy = require('../../config/solidity-compiler.json');
 function checkCompiler(build) {
   const settings = build?.input?.settings;
   if (
+    build?.diagnostic === true ||
+    build?.compilerProvenance?.diagnostic === true ||
+    (build?.compilerProvenance?.actualVersion !== undefined &&
+      build.compilerProvenance.actualVersion !== build.solcLongVersion) ||
     build?.solcVersion !== policy.version ||
     build?.solcLongVersion !== policy.longVersion ||
     settings?.viaIR !== policy.viaIR ||
@@ -62,4 +66,22 @@ function checkDiagnostics(build) {
   return reviewed;
 }
 
-module.exports = { policy, checkCompiler, checkDiagnostics };
+function checkDiagnosticCompiler(build) {
+  if (
+    build?.compilerProvenance?.actualVersion !==
+    `${policy.longVersion}.Emscripten.clang`
+  )
+    throw new Error('Unknown diagnostic compiler provenance');
+  checkCompiler({
+    ...build,
+    diagnostic: false,
+    compilerProvenance: undefined,
+    solcLongVersion: policy.longVersion,
+  });
+}
+module.exports = {
+  policy,
+  checkCompiler,
+  checkDiagnosticCompiler,
+  checkDiagnostics,
+};

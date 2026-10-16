@@ -41,9 +41,15 @@ async function verify(address: string, args: any[] = []) {
 }
 
 export async function deployOneClickModules() {
-  if (process.env.ONECLICK_JOB_STAKE !== undefined) throw new Error('ONECLICK_JOB_STAKE is unsupported; use ONECLICK_JOB_STAKE_BPS');
+  if (process.env.ONECLICK_JOB_STAKE !== undefined)
+    throw new Error(
+      'ONECLICK_JOB_STAKE is unsupported; use ONECLICK_JOB_STAKE_BPS'
+    );
   const stakeBpsInput = process.env.ONECLICK_JOB_STAKE_BPS ?? '1000';
-  if (!/^[0-9]+$/.test(stakeBpsInput) || Number(stakeBpsInput) > 10000) throw new Error('ONECLICK_JOB_STAKE_BPS must be an integer from 0 to 10000');
+  if (!/^[0-9]+$/.test(stakeBpsInput) || Number(stakeBpsInput) > 10000)
+    throw new Error(
+      'ONECLICK_JOB_STAKE_BPS must be an integer from 0 to 10000'
+    );
   const [deployer] = await ethers.getSigners();
   if (!deployer) {
     throw new Error('No deployment signer configured for this network');
@@ -375,6 +381,9 @@ export async function deployOneClickModules() {
   await (await nft.setJobRegistry(await registry.getAddress())).wait();
   await (await nft.setStakeManager(await stake.getAddress())).wait();
   await (await reputation.setCaller(await registry.getAddress(), true)).wait();
+  await (
+    await reputation.setJobRegistry(await registry.getAddress(), true)
+  ).wait();
   await (
     await reputation.setCaller(await validation.getAddress(), true)
   ).wait();

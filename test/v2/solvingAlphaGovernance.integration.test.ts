@@ -222,6 +222,9 @@ async function deploySolvingGovernanceFixture() {
   await reputation.connect(owner).setCaller(await registry.getAddress(), true);
   await reputation
     .connect(owner)
+    .setJobRegistry(await registry.getAddress(), true);
+  await reputation
+    .connect(owner)
     .setCaller(await validation.getAddress(), true);
 
   await identity.connect(owner).addAdditionalAgent(nationA.address);

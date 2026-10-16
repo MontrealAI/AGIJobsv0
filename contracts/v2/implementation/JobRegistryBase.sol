@@ -11,6 +11,7 @@ import {IStakeManager} from "../interfaces/IStakeManager.sol";
 import {IFeePool} from "../interfaces/IFeePool.sol";
 import {IIdentityRegistry} from "../interfaces/IIdentityRegistry.sol";
 import {IReputationEngine} from "../interfaces/IReputationEngine.sol";
+import {ITerminalReputation} from "../interfaces/ITerminalReputation.sol";
 import {IDisputeModule} from "../interfaces/IDisputeModule.sol";
 import {ICertificateNFT} from "../interfaces/ICertificateNFT.sol";
 import {IJobRegistryAck} from "../interfaces/IJobRegistryAck.sol";
@@ -83,6 +84,7 @@ error EmptySubdomain();
 abstract contract JobRegistryBase is Governable, ReentrancyGuard, TaxAcknowledgement, Pausable {
     /// @notice Module version for compatibility checks.
     uint256 public constant version = 2;
+    bytes32 public constant terminalPolicyId = keccak256("AGIJobs:terminal-reputation-v3");
 
     enum State {
         None,
@@ -540,7 +542,7 @@ abstract contract JobRegistryBase is Governable, ReentrancyGuard, TaxAcknowledge
 
     function _setValidationModule(IValidationModule module) internal {
         if (address(module) == address(0)) revert InvalidValidationModule();
-        if (module.version() != 2) revert InvalidValidationModule();
+        if (module.version() != 2 || ITerminalReputation(address(module)).terminalPolicyId() != terminalPolicyId) revert InvalidValidationModule();
         validationModule = module;
         emit ValidationModuleUpdated(address(module));
         emit ModuleUpdated("ValidationModule", address(module));
@@ -571,7 +573,7 @@ abstract contract JobRegistryBase is Governable, ReentrancyGuard, TaxAcknowledge
 
     function _setReputationEngine(IReputationEngine _reputation) internal {
         if (address(_reputation) == address(0)) revert InvalidReputationModule();
-        if (_reputation.version() != 2) revert InvalidReputationModule();
+        if (_reputation.version() != 3 || ITerminalReputation(address(_reputation)).terminalPolicyId() != terminalPolicyId) revert InvalidReputationModule();
         reputationEngine = _reputation;
         emit ReputationEngineUpdated(address(_reputation));
         emit ModuleUpdated("ReputationEngine", address(_reputation));
@@ -826,6 +828,10 @@ abstract contract JobRegistryBase is Governable, ReentrancyGuard, TaxAcknowledge
 
     // Appended storage; existing Job.stake snapshots and all preceding slots remain unchanged.
     uint16 internal _jobStakeBps;
+
+    mapping(uint256 => address) public jobReputationEngine;
+    mapping(uint256 => uint8) public jobReputationOutcome;
+    event ReputationOutcomeRecorded(uint256 indexed jobId, uint8 outcome, bytes32 evidenceHash);
     event JobStakeBpsUpdated(uint256 previousBps, uint256 newBps);
 
     // module configuration events
@@ -1482,6 +1488,9 @@ abstract contract JobRegistryBase is Governable, ReentrancyGuard, TaxAcknowledge
         jobId = nextJobId;
         uint32 feePctSnapshot = uint32(feePct);
         _initialiseJobStorage(jobId, reward, deadline, agentTypes, specHash, uri, feePctSnapshot);
+        address engine = address(reputationEngine);
+        jobReputationEngine[jobId] = engine;
+        if (engine != address(0)) ITerminalReputation(engine).registerJob(jobId);
         uint256 fee = _fundJob(jobId, reward, feePctSnapshot);
         _emitJobCreated(jobId, reward, fee, specHash, uri);
     }
@@ -1608,6 +1617,8 @@ abstract contract JobRegistryBase is Governable, ReentrancyGuard, TaxAcknowledge
         _setAgentPct(job, agentPct);
         _setState(job, State.Applied);
         _setAssignedAt(job, uint64(block.timestamp));
+        address engine = jobReputationEngine[jobId];
+        if (engine != address(0)) ITerminalReputation(engine).assignJob(jobId, msg.sender);
         activeJobs[msg.sender] = activeJobs[msg.sender] + 1;
         emit AgentAssigned(jobId, msg.sender, subdomain);
         emit JobApplied(jobId, msg.sender, subdomain);
@@ -1753,6 +1764,8 @@ abstract contract JobRegistryBase is Governable, ReentrancyGuard, TaxAcknowledge
         _validateAgentSubmission(job, subdomain, proof);
         job.resultHash = resultHash;
         _setState(job, State.Submitted);
+        address engine = jobReputationEngine[jobId];
+        if (engine != address(0)) ITerminalReputation(engine).submitJob(jobId);
         emit ResultSubmitted(jobId, msg.sender, resultHash, resultURI, subdomain);
         emit JobSubmitted(jobId, msg.sender, resultHash, resultURI, subdomain);
         _maybeStartValidation(jobId, resultHash);
@@ -1800,12 +1813,12 @@ abstract contract JobRegistryBase is Governable, ReentrancyGuard, TaxAcknowledge
         emit JobCompleted(jobId, success);
     }
 
-    /// @notice Record that reputation updates have already been applied for a job.
-    /// @param jobId Identifier of the job that triggered the update.
-    function _entry_markReputationProcessed(uint256 jobId) internal {
+    /// @notice Disabled legacy provisional-reputation marker; v3 accounts only at settlement.
+    /// @param jobId Legacy job identifier; no state is changed.
+    function _entry_markReputationProcessed(uint256 jobId) internal view {
         if (msg.sender != address(validationModule)) revert OnlyValidationModule();
-        reputationProcessed[jobId] = true;
-        emit ReputationProcessingMarked(jobId);
+        jobId;
+        revert InvalidValidationModule();
     }
 
     /// @param jobId Identifier of the job being finalised.
@@ -1981,13 +1994,28 @@ abstract contract JobRegistryBase is Governable, ReentrancyGuard, TaxAcknowledge
         Job storage job = jobs[jobId];
         if (_getState(job) != State.Disputed) revert NoDispute();
 
+        // Each resolution replaces prior attribution; legacy rulings stay unattributed.
+        delete jobReputationOutcome[jobId];
         _setSuccess(job, !employerWins);
         _setState(job, State.Completed);
         _clearValidatorData(jobId);
-        if (reputationProcessed[jobId]) {
-            delete reputationProcessed[jobId];
-        }
         emit DisputeResolved(jobId, employerWins);
+    }
+
+    /// @notice Record explicit protocol adjudication without changing legacy fund outcomes.
+    function _entry_resolveDisputeOutcome(uint256 jobId, uint8 outcome, bytes32 evidenceHash) internal {
+        if (outcome == 0 || outcome > 3 || evidenceHash == bytes32(0)) revert EvidenceMissing();
+        _entry_resolveDispute(jobId, outcome != 1);
+        jobReputationOutcome[jobId] = outcome;
+        emit ReputationOutcomeRecorded(jobId, outcome, evidenceHash);
+    }
+
+    function _settleReputation(uint256 jobId, address agent, bool success, uint256 payout) internal {
+        address engine = jobReputationEngine[jobId];
+        if (engine == address(0)) return;
+        uint8 outcome = jobReputationOutcome[jobId];
+        ITerminalReputation(engine).finalizeJob(jobId, agent, success, outcome == 1 || outcome == 3, payout);
+        reputationProcessed[jobId] = true;
     }
 
     /// @notice Finalize a job and trigger payouts and reputation changes.
@@ -2032,7 +2060,6 @@ abstract contract JobRegistryBase is Governable, ReentrancyGuard, TaxAcknowledge
         bool fundsRedirected;
         address[] memory validators = jobValidators[jobId];
         bool success = _getSuccess(job);
-        bool reputationHandled = reputationProcessed[jobId];
         if (success) {
             IFeePool pool = feePool;
             uint256 validatorReward;
@@ -2085,23 +2112,7 @@ abstract contract JobRegistryBase is Governable, ReentrancyGuard, TaxAcknowledge
                     }
                 }
             }
-            if (address(reputationEngine) != address(0) && !reputationHandled) {
-                uint256 completionTime = block.timestamp - uint256(_getAssignedAt(job));
-                uint256 payout = agentAmount * 1e12;
-                uint256 agentGain = reputationEngine.calculateReputationPoints(payout, completionTime);
-                reputationEngine.onFinalize(job.agent, true, payout, completionTime);
-                if (validators.length > 0) {
-                    for (uint256 i; i < validators.length;) {
-                        address val = validators[i];
-                        if (jobValidatorVotes[jobId][val]) {
-                            reputationEngine.rewardValidator(val, agentGain);
-                        }
-                        unchecked {
-                            ++i;
-                        }
-                    }
-                }
-            }
+            _settleReputation(jobId, job.agent, true, agentAmount);
             if (address(certificateNFT) != address(0)) {
                 certificateNFT.mint(job.agent, jobId, job.uriHash);
             }
@@ -2122,9 +2133,7 @@ abstract contract JobRegistryBase is Governable, ReentrancyGuard, TaxAcknowledge
                     stakeManager.slash(job.agent, IStakeManager.Role.Agent, uint256(job.stake), recipient, validators);
                 }
             }
-            if (address(reputationEngine) != address(0) && !reputationHandled) {
-                reputationEngine.onFinalize(job.agent, false, 0, 0);
-            }
+            _settleReputation(jobId, job.agent, false, 0);
         }
         if (success) {
             employerStats[job.employer].successful++;
@@ -2149,9 +2158,6 @@ abstract contract JobRegistryBase is Governable, ReentrancyGuard, TaxAcknowledge
             }
         }
         _clearValidatorData(jobId);
-        if (reputationProcessed[jobId]) {
-            delete reputationProcessed[jobId];
-        }
     }
 
     /// @notice Acknowledge the tax policy and finalise the job in one call.
@@ -2189,9 +2195,7 @@ abstract contract JobRegistryBase is Governable, ReentrancyGuard, TaxAcknowledge
             stakeManager.refundEscrow(bytes32(jobId), job.employer, uint256(job.reward) + fee);
         }
         _clearValidatorData(jobId);
-        if (reputationProcessed[jobId]) {
-            delete reputationProcessed[jobId];
-        }
+        _settleReputation(jobId, address(0), false, 0);
         emit JobCancelled(jobId);
     }
 
@@ -2253,6 +2257,7 @@ abstract contract JobRegistryBase is Governable, ReentrancyGuard, TaxAcknowledge
             }
         }
 
+        _settleReputation(jobId, agent, false, 0);
         employerStats[employer].failed++;
 
         job.agent = address(0);
@@ -2271,9 +2276,6 @@ abstract contract JobRegistryBase is Governable, ReentrancyGuard, TaxAcknowledge
             }
         }
         _clearValidatorData(jobId);
-        if (reputationProcessed[jobId]) {
-            delete reputationProcessed[jobId];
-        }
         emit JobTimedOut(jobId, msg.sender);
     }
 

@@ -97,6 +97,8 @@ elapsed, giving the community time to review upcoming changes.
 
 StakeManager defaults to routing all seized stake to the treasury (`employerSlashPct = 0`, `treasurySlashPct = 100`, `validatorSlashRewardPct = 0`). This avoids giving employers a windfall for slashing and funds shared infrastructure. Governance can later adjust the split with `setSlashingDistribution` or `setValidatorSlashRewardPct` to refund employers, pay validators for enforcement, or burn the remainder.
 
+**Legacy v2 example only:** the terminal-reputation-v3 Registry rejects `NoValidationModule` and `OracleValidationModule` because they do not implement its terminal policy capability. Compatible optional-adapter support remains unresolved; use the real committee ValidationModule for the currently tested v3 path. See [the current compatibility limitation](production/terminal-reputation-v3.md#external-terminal-candidate-reconciliation). The historical example below does not authorize a v3 configuration.
+
 Example of swapping validation logic:
 
 ```solidity

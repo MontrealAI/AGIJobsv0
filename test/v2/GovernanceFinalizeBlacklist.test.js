@@ -73,6 +73,7 @@ describe('JobRegistry governance finalization', function () {
     await rep
       .connect(owner)
       .setAuthorizedCaller(await registry.getAddress(), true);
+    await rep.connect(owner).setJobRegistry(await registry.getAddress(), true);
     await rep.connect(owner).setThreshold(0);
 
     const Identity = await ethers.getContractFactory(

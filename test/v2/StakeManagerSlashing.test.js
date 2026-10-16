@@ -249,16 +249,38 @@ describe('StakeManager multi-validator slashing', function () {
       expectedTreasuryShare
     );
 
-    const agentGain = 100n;
-    await engine
-      .connect(registrySigner)
-      .rewardValidator(val1.address, agentGain);
-    await engine
-      .connect(registrySigner)
-      .rewardValidator(val2.address, agentGain);
-
-    expect(await engine.reputationOf(val1.address)).to.be.gt(0n);
-    expect(await engine.reputationOf(val2.address)).to.be.gt(0n);
+    // Reputation now requires a separately identified terminal job, not an unkeyed reward call.
+    const Harness = await ethers.getContractFactory(
+      'TerminalReputationRegistryHarness'
+    );
+    const terminal = await Harness.deploy();
+    const terminalAddress = await terminal.getAddress();
+    await engine.setJobRegistry(terminalAddress, true);
+    await terminal.setValidationModule(owner.address);
+    await terminal.open(1, await engine.getAddress());
+    await terminal.assign(1, agent.address);
+    await terminal.submit(1);
+    await engine.recordRound(
+      terminalAddress,
+      1,
+      1,
+      [val1.address, val2.address],
+      [true, true],
+      [true, true],
+      true
+    );
+    await terminal.settle(
+      1,
+      agent.address,
+      true,
+      false,
+      ethers.parseEther('100')
+    );
+    expect(await engine.reputationOf(agent.address)).to.equal(24);
+    await engine.accountValidator(terminalAddress, 1, 0);
+    await engine.accountValidator(terminalAddress, 1, 1);
+    expect(await engine.reputationOf(val1.address)).to.equal(1);
+    expect(await engine.reputationOf(val2.address)).to.equal(1);
   });
 
   it('refunds employer share when an agent is slashed', async () => {

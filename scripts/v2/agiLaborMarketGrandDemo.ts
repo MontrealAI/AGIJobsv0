@@ -40,7 +40,12 @@ interface TimelineEntry {
   meta?: Record<string, unknown>;
 }
 
-type InsightCategory = 'Owner' | 'Agents' | 'Validators' | 'Economy' | 'Disputes';
+type InsightCategory =
+  | 'Owner'
+  | 'Agents'
+  | 'Validators'
+  | 'Economy'
+  | 'Disputes';
 
 interface DemoInsight {
   category: InsightCategory;
@@ -54,13 +59,7 @@ interface DemoInsight {
 interface ActorProfile {
   key: string;
   name: string;
-  role:
-    | 'Owner'
-    | 'Nation'
-    | 'Agent'
-    | 'Validator'
-    | 'Moderator'
-    | 'Protocol';
+  role: 'Owner' | 'Nation' | 'Agent' | 'Validator' | 'Moderator' | 'Protocol';
   address: string;
 }
 
@@ -396,8 +395,8 @@ function isValidatorsAlreadySelectedError(error: unknown): boolean {
     typeof nested === 'string'
       ? nested
       : typeof candidate === 'string'
-        ? candidate
-        : undefined;
+      ? candidate
+      : undefined;
   return typeof payload === 'string' && payload.startsWith('0x7c5a2649');
 }
 
@@ -454,7 +453,9 @@ function expectJobProgress(
     assert.strictEqual(
       metadata.state,
       expectations.state,
-      `Job ${jobId} expected state ${JOB_STATE_LABELS[expectations.state] ?? expectations.state} during ${expectations.context}`
+      `Job ${jobId} expected state ${
+        JOB_STATE_LABELS[expectations.state] ?? expectations.state
+      } during ${expectations.context}`
     );
   }
   if (expectations.success !== undefined) {
@@ -610,8 +611,13 @@ async function deployPrebuiltContract(
   factory: ethers.ContractFactory,
   args: readonly unknown[]
 ): Promise<ethers.Contract> {
-  const deploymentArgs = ['StakeManager', 'JobRegistry', 'ValidationModule'].includes(label)
-    ? [...args, await deployPrebuiltImplementations(label, factory.runner)] : [...args];
+  const deploymentArgs = [
+    'StakeManager',
+    'JobRegistry',
+    'ValidationModule',
+  ].includes(label)
+    ? [...args, await deployPrebuiltImplementations(label, factory.runner)]
+    : [...args];
   const contract = await factory.deploy(...deploymentArgs);
   const deploymentTx = contract.deploymentTransaction();
   if (deploymentTx) {
@@ -716,7 +722,9 @@ async function logAgentPortfolios(
     console.log(`    Reputation score: ${reputation.toString()}`);
 
     if (ownedCertificates.length === 0) {
-      console.log('    Certificates: none yet — future completions will mint AGI credentials.');
+      console.log(
+        '    Certificates: none yet — future completions will mint AGI credentials.'
+      );
     } else {
       const descriptors = ownedCertificates.map((entry) => {
         const uriSuffix = entry.uri ? ` ← ${entry.uri}` : '';
@@ -789,7 +797,9 @@ async function summarizeMarketState(
   const highestJobId = await env.registry.nextJobId();
   const minted = await gatherCertificates(env.certificate, highestJobId);
   const totalJobs = highestJobId;
-  console.log(`\n📈 Jobs orchestrated in this session: ${totalJobs.toString()}`);
+  console.log(
+    `\n📈 Jobs orchestrated in this session: ${totalJobs.toString()}`
+  );
   assert.strictEqual(
     minted.length,
     Number(totalJobs),
@@ -813,7 +823,8 @@ async function summarizeMarketState(
   );
 
   const finalSupply = await env.token.totalSupply();
-  const burned = env.initialSupply > finalSupply ? env.initialSupply - finalSupply : 0n;
+  const burned =
+    env.initialSupply > finalSupply ? env.initialSupply - finalSupply : 0n;
   assert.ok(
     finalSupply <= env.initialSupply,
     'Final supply should never exceed the initial minted supply'
@@ -848,7 +859,9 @@ async function summarizeMarketState(
     console.log('\n🎓 Certificates minted:');
     for (const entry of minted) {
       const uriSuffix = entry.uri ? ` ← ${entry.uri}` : '';
-      console.log(`  Job #${entry.jobId.toString()} → ${entry.owner}${uriSuffix}`);
+      console.log(
+        `  Job #${entry.jobId.toString()} → ${entry.owner}${uriSuffix}`
+      );
     }
   }
 
@@ -903,7 +916,11 @@ function computeResilienceScore(context: {
   if (ownerDrill.registry && ownerDrill.stake && ownerDrill.validation) {
     score += 18;
   }
-  if (moderatorDrill.registry && moderatorDrill.stake && moderatorDrill.validation) {
+  if (
+    moderatorDrill.registry &&
+    moderatorDrill.stake &&
+    moderatorDrill.validation
+  ) {
     score += 12;
   }
   if (context.mintedCertificates >= 2) {
@@ -932,7 +949,8 @@ function computeResilienceScore(context: {
     score += 4;
   }
   if (
-    ownerControl.upgraded.unbondingPeriodSeconds > ownerControl.baseline.unbondingPeriodSeconds
+    ownerControl.upgraded.unbondingPeriodSeconds >
+    ownerControl.baseline.unbondingPeriodSeconds
   ) {
     score += 4;
   }
@@ -945,7 +963,12 @@ function buildAutomationPlan(
   env: DemoEnvironment,
   market: MarketSummary,
   ownerControl: OwnerControlSnapshot,
-  context: { scenarios: ScenarioExport[]; ownerActions: OwnerActionRecord[]; insights: DemoInsight[]; timeline: TimelineEntry[] }
+  context: {
+    scenarios: ScenarioExport[];
+    ownerActions: OwnerActionRecord[];
+    insights: DemoInsight[];
+    timeline: TimelineEntry[];
+  }
 ): AutomationPlaybook {
   const mintedCount = market.mintedCertificates.length;
   const { resilienceScore, unstoppableScore } = computeResilienceScore({
@@ -1284,15 +1307,19 @@ async function deployEnvironment(): Promise<DemoEnvironment> {
 
   const token = await configureToken();
   const mintAmount = ethers.parseUnits('2000', AGIALPHA_DECIMALS);
-  await mintInitialBalances(token, [
-    nationA,
-    nationB,
-    agentAlice,
-    agentBob,
-    validatorCharlie,
-    validatorDora,
-    validatorEvan,
-  ], mintAmount);
+  await mintInitialBalances(
+    token,
+    [
+      nationA,
+      nationB,
+      agentAlice,
+      agentBob,
+      validatorCharlie,
+      validatorDora,
+      validatorEvan,
+    ],
+    mintAmount
+  );
   const initialSupply = await token.totalSupply();
   recordTimeline('summary', 'Initial AGIα liquidity minted to actors', {
     amount: formatTokens(mintAmount),
@@ -1340,11 +1367,9 @@ async function deployEnvironment(): Promise<DemoEnvironment> {
     ethers.ZeroAddress,
     await owner.getAddress(),
   ] as const;
-  const stake = await deployPrebuiltContract(
-    'StakeManager',
-    Stake,
-    [...stakeArgs]
-  );
+  const stake = await deployPrebuiltContract('StakeManager', Stake, [
+    ...stakeArgs,
+  ]);
   const stakeAddress = await stake.getAddress();
   await token.connect(owner).mint(stakeAddress, 0n);
 
@@ -1356,31 +1381,19 @@ async function deployEnvironment(): Promise<DemoEnvironment> {
   );
 
   const Identity = createFactory(identityRegistryArtifact, owner);
-  const identity = await deployPrebuiltContract(
-    'IdentityRegistry',
-    Identity,
-    [
-      ethers.ZeroAddress,
-      ethers.ZeroAddress,
-      await reputation.getAddress(),
-      ethers.ZeroHash,
-      ethers.ZeroHash,
-    ]
-  );
+  const identity = await deployPrebuiltContract('IdentityRegistry', Identity, [
+    ethers.ZeroAddress,
+    ethers.ZeroAddress,
+    await reputation.getAddress(),
+    ethers.ZeroHash,
+    ethers.ZeroHash,
+  ]);
 
   const Validation = createFactory(validationModuleArtifact, owner);
   const validation = await deployPrebuiltContract(
     'ValidationModule',
     Validation,
-    [
-      ethers.ZeroAddress,
-      ethers.ZeroAddress,
-      0n,
-      0n,
-      0n,
-      0n,
-      [],
-    ]
+    [ethers.ZeroAddress, ethers.ZeroAddress, 0n, 0n, 0n, 0n, []]
   );
 
   const Certificate = createFactory(certificateNftArtifact, owner);
@@ -1391,37 +1404,36 @@ async function deployEnvironment(): Promise<DemoEnvironment> {
   );
 
   const Registry = createFactory(jobRegistryArtifact, owner);
-  const registry = await deployPrebuiltContract(
-    'JobRegistry',
-    Registry,
-    [
-      await validation.getAddress(),
-      await stake.getAddress(),
-      await reputation.getAddress(),
-      ethers.ZeroAddress,
-      await certificate.getAddress(),
-      ethers.ZeroAddress,
-      ethers.ZeroAddress,
-      0n,
-      0n,
-      [],
-      await owner.getAddress(),
-    ]
-  );
+  const registry = await deployPrebuiltContract('JobRegistry', Registry, [
+    await validation.getAddress(),
+    await stake.getAddress(),
+    await reputation.getAddress(),
+    ethers.ZeroAddress,
+    await certificate.getAddress(),
+    ethers.ZeroAddress,
+    ethers.ZeroAddress,
+    0n,
+    0n,
+    [],
+    await owner.getAddress(),
+  ]);
 
   const Dispute = createFactory(disputeModuleArtifact, owner);
-  const dispute = await deployPrebuiltContract(
-    'DisputeModule',
-    Dispute,
-    [await registry.getAddress(), 0n, 0n, ethers.ZeroAddress, await owner.getAddress()]
-  );
+  const dispute = await deployPrebuiltContract('DisputeModule', Dispute, [
+    await registry.getAddress(),
+    0n,
+    0n,
+    ethers.ZeroAddress,
+    await owner.getAddress(),
+  ]);
 
   const FeePool = createFactory(feePoolArtifact, owner);
-  const feePool = await deployPrebuiltContract(
-    'FeePool',
-    FeePool,
-    [stakeAddress, 0n, ethers.ZeroAddress, ethers.ZeroAddress]
-  );
+  const feePool = await deployPrebuiltContract('FeePool', FeePool, [
+    stakeAddress,
+    0n,
+    ethers.ZeroAddress,
+    ethers.ZeroAddress,
+  ]);
   const reputationAddress = await reputation.getAddress();
   const identityAddress = await identity.getAddress();
   const validationAddress = await validation.getAddress();
@@ -1434,52 +1446,95 @@ async function deployEnvironment(): Promise<DemoEnvironment> {
 
   logStep('Wiring governance relationships and module cross-links');
   await certificate.connect(owner).setJobRegistry(registryAddress);
-  recordOwnerAction('Linked certificate to job registry', `CertificateNFT@${certificateAddress}`, 'setJobRegistry', {
-    registry: registryAddress,
-  });
+  recordOwnerAction(
+    'Linked certificate to job registry',
+    `CertificateNFT@${certificateAddress}`,
+    'setJobRegistry',
+    {
+      registry: registryAddress,
+    }
+  );
   await certificate.connect(owner).setStakeManager(stakeAddress);
-  recordOwnerAction('Linked certificate to stake manager', `CertificateNFT@${certificateAddress}`, 'setStakeManager', {
-    stake: stakeAddress,
-  });
+  recordOwnerAction(
+    'Linked certificate to stake manager',
+    `CertificateNFT@${certificateAddress}`,
+    'setStakeManager',
+    {
+      stake: stakeAddress,
+    }
+  );
 
   await stake.connect(owner).setFeePool(await feePool.getAddress());
   await stake
     .connect(owner)
     .setModules(await registry.getAddress(), await dispute.getAddress());
   await stake.connect(owner).setBurnPct(0);
-  await stake
-    .connect(owner)
-    .setValidationModule(await validation.getAddress());
+  await stake.connect(owner).setValidationModule(await validation.getAddress());
   await stake.connect(owner).setFeePool(feePoolAddress);
-  recordOwnerAction('Connected stake manager fee pool', `StakeManager@${stakeAddress}`, 'setFeePool', {
-    feePool: feePoolAddress,
-  });
+  recordOwnerAction(
+    'Connected stake manager fee pool',
+    `StakeManager@${stakeAddress}`,
+    'setFeePool',
+    {
+      feePool: feePoolAddress,
+    }
+  );
   await stake.connect(owner).setModules(registryAddress, disputeAddress);
-  recordOwnerAction('Connected stake modules', `StakeManager@${stakeAddress}`, 'setModules', {
-    registry: registryAddress,
-    dispute: disputeAddress,
-  });
+  recordOwnerAction(
+    'Connected stake modules',
+    `StakeManager@${stakeAddress}`,
+    'setModules',
+    {
+      registry: registryAddress,
+      dispute: disputeAddress,
+    }
+  );
   await stake.connect(owner).setValidationModule(validationAddress);
-  recordOwnerAction('Linked stake to validation module', `StakeManager@${stakeAddress}`, 'setValidationModule', {
-    validation: validationAddress,
-  });
+  recordOwnerAction(
+    'Linked stake to validation module',
+    `StakeManager@${stakeAddress}`,
+    'setValidationModule',
+    {
+      validation: validationAddress,
+    }
+  );
 
   await validation.connect(owner).setJobRegistry(registryAddress);
-  recordOwnerAction('Validation module registry link', `ValidationModule@${validationAddress}`, 'setJobRegistry', {
-    registry: registryAddress,
-  });
+  recordOwnerAction(
+    'Validation module registry link',
+    `ValidationModule@${validationAddress}`,
+    'setJobRegistry',
+    {
+      registry: registryAddress,
+    }
+  );
   await validation.connect(owner).setIdentityRegistry(identityAddress);
-  recordOwnerAction('Validation module identity link', `ValidationModule@${validationAddress}`, 'setIdentityRegistry', {
-    identity: identityAddress,
-  });
+  recordOwnerAction(
+    'Validation module identity link',
+    `ValidationModule@${validationAddress}`,
+    'setIdentityRegistry',
+    {
+      identity: identityAddress,
+    }
+  );
   await validation.connect(owner).setReputationEngine(reputationAddress);
-  recordOwnerAction('Validation module reputation link', `ValidationModule@${validationAddress}`, 'setReputationEngine', {
-    reputation: reputationAddress,
-  });
+  recordOwnerAction(
+    'Validation module reputation link',
+    `ValidationModule@${validationAddress}`,
+    'setReputationEngine',
+    {
+      reputation: reputationAddress,
+    }
+  );
   await validation.connect(owner).setStakeManager(stakeAddress);
-  recordOwnerAction('Validation module stake link', `ValidationModule@${validationAddress}`, 'setStakeManager', {
-    stake: stakeAddress,
-  });
+  recordOwnerAction(
+    'Validation module stake link',
+    `ValidationModule@${validationAddress}`,
+    'setStakeManager',
+    {
+      stake: stakeAddress,
+    }
+  );
 
   await registry
     .connect(owner)
@@ -1492,100 +1547,177 @@ async function deployEnvironment(): Promise<DemoEnvironment> {
       feePoolAddress,
       []
     );
-  recordOwnerAction('Registry module wiring finalised', `JobRegistry@${registryAddress}`, 'setModules', {
-    validation: validationAddress,
-    stake: stakeAddress,
-    reputation: reputationAddress,
-    dispute: disputeAddress,
-    certificate: certificateAddress,
-    feePool: feePoolAddress,
-  });
+  recordOwnerAction(
+    'Registry module wiring finalised',
+    `JobRegistry@${registryAddress}`,
+    'setModules',
+    {
+      validation: validationAddress,
+      stake: stakeAddress,
+      reputation: reputationAddress,
+      dispute: disputeAddress,
+      certificate: certificateAddress,
+      feePool: feePoolAddress,
+    }
+  );
   await registry.connect(owner).setIdentityRegistry(identityAddress);
-  recordOwnerAction('Registry identity registry set', `JobRegistry@${registryAddress}`, 'setIdentityRegistry', {
-    identity: identityAddress,
-  });
+  recordOwnerAction(
+    'Registry identity registry set',
+    `JobRegistry@${registryAddress}`,
+    'setIdentityRegistry',
+    {
+      identity: identityAddress,
+    }
+  );
   await registry.connect(owner).setValidatorRewardPct(20);
-  recordOwnerAction('Validator reward percentage configured', `JobRegistry@${registryAddress}`, 'setValidatorRewardPct', {
-    pct: 20,
-  });
+  recordOwnerAction(
+    'Validator reward percentage configured',
+    `JobRegistry@${registryAddress}`,
+    'setValidatorRewardPct',
+    {
+      pct: 20,
+    }
+  );
 
   await reputation.connect(owner).setCaller(registryAddress, true);
-  recordOwnerAction('Registry authorised to update reputation', `ReputationEngine@${reputationAddress}`, 'setCaller', {
-    caller: registryAddress,
-    allowed: true,
-  });
+  await reputation.connect(owner).setJobRegistry(registryAddress, true);
+  recordOwnerAction(
+    'Registry authorised to update reputation',
+    `ReputationEngine@${reputationAddress}`,
+    'setCaller',
+    {
+      caller: registryAddress,
+      allowed: true,
+    }
+  );
   await reputation.connect(owner).setCaller(validationAddress, true);
-  recordOwnerAction('Validation authorised to update reputation', `ReputationEngine@${reputationAddress}`, 'setCaller', {
-    caller: validationAddress,
-    allowed: true,
-  });
+  recordOwnerAction(
+    'Validation authorised to update reputation',
+    `ReputationEngine@${reputationAddress}`,
+    'setCaller',
+    {
+      caller: validationAddress,
+      allowed: true,
+    }
+  );
 
   await dispute.connect(owner).setStakeManager(stakeAddress);
-  recordOwnerAction('Dispute module stake link', `DisputeModule@${disputeAddress}`, 'setStakeManager', {
-    stake: stakeAddress,
-  });
+  recordOwnerAction(
+    'Dispute module stake link',
+    `DisputeModule@${disputeAddress}`,
+    'setStakeManager',
+    {
+      stake: stakeAddress,
+    }
+  );
 
   logStep('Configuring policy parameters for rapid local simulation');
   await validation.connect(owner).setCommitRevealWindows(60, 60);
-  recordOwnerAction('Commit/reveal windows tuned', `ValidationModule@${validationAddress}`, 'setCommitRevealWindows', {
-    commitWindow: 60,
-    revealWindow: 60,
-  });
+  recordOwnerAction(
+    'Commit/reveal windows tuned',
+    `ValidationModule@${validationAddress}`,
+    'setCommitRevealWindows',
+    {
+      commitWindow: 60,
+      revealWindow: 60,
+    }
+  );
   await validation.connect(owner).setValidatorsPerJob(3);
-  recordOwnerAction('Validator quorum set', `ValidationModule@${validationAddress}`, 'setValidatorsPerJob', {
-    count: 3,
-  });
+  recordOwnerAction(
+    'Validator quorum set',
+    `ValidationModule@${validationAddress}`,
+    'setValidatorsPerJob',
+    {
+      count: 3,
+    }
+  );
   await validation
     .connect(owner)
-    .setValidatorPool([
-      charlieAddress,
-      doraAddress,
-      evanAddress,
-    ]);
-  recordOwnerAction('Validator pool curated', `ValidationModule@${validationAddress}`, 'setValidatorPool', {
-    validators: [charlieAddress, doraAddress, evanAddress],
-  });
+    .setValidatorPool([charlieAddress, doraAddress, evanAddress]);
+  recordOwnerAction(
+    'Validator pool curated',
+    `ValidationModule@${validationAddress}`,
+    'setValidatorPool',
+    {
+      validators: [charlieAddress, doraAddress, evanAddress],
+    }
+  );
   await validation.connect(owner).setRevealQuorum(0, 2);
-  recordOwnerAction('Reveal quorum configured', `ValidationModule@${validationAddress}`, 'setRevealQuorum', {
-    minYesVotes: 0,
-    minRevealers: 2,
-  });
+  recordOwnerAction(
+    'Reveal quorum configured',
+    `ValidationModule@${validationAddress}`,
+    'setRevealQuorum',
+    {
+      minYesVotes: 0,
+      minRevealers: 2,
+    }
+  );
   await validation.connect(owner).setNonRevealPenalty(100, 1);
-  recordOwnerAction('Non-reveal penalty set', `ValidationModule@${validationAddress}`, 'setNonRevealPenalty', {
-    penaltyBps: 100,
-    penaltyDivisor: 1,
-  });
+  recordOwnerAction(
+    'Non-reveal penalty set',
+    `ValidationModule@${validationAddress}`,
+    'setNonRevealPenalty',
+    {
+      penaltyBps: 100,
+      penaltyDivisor: 1,
+    }
+  );
 
   await feePool.connect(owner).setBurnPct(5);
-  recordOwnerAction('Fee pool burn percentage adjusted', `FeePool@${feePoolAddress}`, 'setBurnPct', {
-    burnPct: 5,
-  });
+  recordOwnerAction(
+    'Fee pool burn percentage adjusted',
+    `FeePool@${feePoolAddress}`,
+    'setBurnPct',
+    {
+      burnPct: 5,
+    }
+  );
   await certificate
     .connect(owner)
     .setBaseURI('ipfs://agi-jobs/demo/certificates/');
-  recordOwnerAction('Certificate base URI set', `CertificateNFT@${certificateAddress}`, 'setBaseURI', {
-    baseURI: 'ipfs://agi-jobs/demo/certificates/',
-  });
+  recordOwnerAction(
+    'Certificate base URI set',
+    `CertificateNFT@${certificateAddress}`,
+    'setBaseURI',
+    {
+      baseURI: 'ipfs://agi-jobs/demo/certificates/',
+    }
+  );
 
   logStep('Seeding IdentityRegistry with emergency allowlists');
   for (const signer of [agentAlice, agentBob]) {
     const address = await signer.getAddress();
     await identity.connect(owner).addAdditionalAgent(address);
-    recordOwnerAction('Emergency AI agent allowlisted', `IdentityRegistry@${identityAddress}`, 'addAdditionalAgent', {
-      agent: address,
-    });
+    recordOwnerAction(
+      'Emergency AI agent allowlisted',
+      `IdentityRegistry@${identityAddress}`,
+      'addAdditionalAgent',
+      {
+        agent: address,
+      }
+    );
     await identity.connect(owner).setAgentType(address, 1); // mark as AI agents
-    recordOwnerAction('Agent type annotated', `IdentityRegistry@${identityAddress}`, 'setAgentType', {
-      agent: address,
-      agentType: 1,
-    });
+    recordOwnerAction(
+      'Agent type annotated',
+      `IdentityRegistry@${identityAddress}`,
+      'setAgentType',
+      {
+        agent: address,
+        agentType: 1,
+      }
+    );
   }
   for (const signer of [validatorCharlie, validatorDora, validatorEvan]) {
     const address = await signer.getAddress();
     await identity.connect(owner).addAdditionalValidator(address);
-    recordOwnerAction('Validator council seat granted', `IdentityRegistry@${identityAddress}`, 'addAdditionalValidator', {
-      validator: address,
-    });
+    recordOwnerAction(
+      'Validator council seat granted',
+      `IdentityRegistry@${identityAddress}`,
+      'addAdditionalValidator',
+      {
+        validator: address,
+      }
+    );
   }
 
   logStep('Initial token approvals and staking for actors');
@@ -1597,9 +1729,7 @@ async function deployEnvironment(): Promise<DemoEnvironment> {
     [validatorDora, Role.Validator],
     [validatorEvan, Role.Validator],
   ] as Array<[ethers.Signer, Role]>) {
-    await token
-      .connect(signer)
-      .approve(await stake.getAddress(), stakeAmount);
+    await token.connect(signer).approve(await stake.getAddress(), stakeAmount);
     await stake.connect(signer).depositStake(role, stakeAmount);
   }
 
@@ -1630,7 +1760,9 @@ async function deployEnvironment(): Promise<DemoEnvironment> {
 async function ownerCommandCenterDrill(
   env: DemoEnvironment
 ): Promise<OwnerControlSnapshot> {
-  logSection('Owner mission control – unstoppable command authority demonstration');
+  logSection(
+    'Owner mission control – unstoppable command authority demonstration'
+  );
 
   const {
     owner,
@@ -1700,13 +1832,18 @@ async function ownerCommandCenterDrill(
   const upgradedRevealWindow = originalRevealWindow + 30n;
   const upgradedRevealQuorumPct = Math.max(50, originalRevealQuorumPct);
   const upgradedMinRevealers = Math.max(2, originalMinRevealers);
-  const upgradedNonRevealPenaltyBps = Math.max(150, originalNonRevealPenaltyBps);
+  const upgradedNonRevealPenaltyBps = Math.max(
+    150,
+    originalNonRevealPenaltyBps
+  );
   const upgradedNonRevealBanBlocks = Math.max(12, originalNonRevealBanBlocks);
-  const upgradedMinStakeRaw = previousMinStakeRaw + ethers.parseUnits('5', AGIALPHA_DECIMALS);
+  const upgradedMinStakeRaw =
+    previousMinStakeRaw + ethers.parseUnits('5', AGIALPHA_DECIMALS);
   const upgradedMaxStakePerAddress =
     previousMaxStakePerAddress === 0n
       ? ethers.parseUnits('1000', AGIALPHA_DECIMALS)
-      : previousMaxStakePerAddress + ethers.parseUnits('200', AGIALPHA_DECIMALS);
+      : previousMaxStakePerAddress +
+        ethers.parseUnits('200', AGIALPHA_DECIMALS);
   const upgradedUnbondingPeriod = previousUnbondingPeriod + 3600n;
 
   logStep('Owner calibrates market economics and validator incentives');
@@ -1716,32 +1853,49 @@ async function ownerCommandCenterDrill(
     upgradedFeePct,
     'Registry fee pct should reflect owner command'
   );
-  recordOwnerAction('Protocol fee temporarily increased', `JobRegistry@${registryAddress}`, 'setFeePct', {
-    previous: previousFeePct,
-    pct: upgradedFeePct,
-  });
+  recordOwnerAction(
+    'Protocol fee temporarily increased',
+    `JobRegistry@${registryAddress}`,
+    'setFeePct',
+    {
+      previous: previousFeePct,
+      pct: upgradedFeePct,
+    }
+  );
   await registry.connect(owner).setValidatorRewardPct(upgradedValidatorReward);
   assert.strictEqual(
     Number(await registry.validatorRewardPct()),
     upgradedValidatorReward,
     'Validator reward pct should update immediately'
   );
-  recordOwnerAction('Validator rewards boosted', `JobRegistry@${registryAddress}`, 'setValidatorRewardPct', {
-    previous: previousValidatorReward,
-    pct: upgradedValidatorReward,
-  });
+  recordOwnerAction(
+    'Validator rewards boosted',
+    `JobRegistry@${registryAddress}`,
+    'setValidatorRewardPct',
+    {
+      previous: previousValidatorReward,
+      pct: upgradedValidatorReward,
+    }
+  );
   await feePool.connect(owner).setBurnPct(upgradedBurnPct);
   assert.strictEqual(
     Number(await feePool.burnPct()),
     upgradedBurnPct,
     'Fee pool burn pct should update immediately'
   );
-  recordOwnerAction('Fee pool burn widened', `FeePool@${feePoolAddress}`, 'setBurnPct', {
-    previous: previousBurnPct,
-    burnPct: upgradedBurnPct,
-  });
+  recordOwnerAction(
+    'Fee pool burn widened',
+    `FeePool@${feePoolAddress}`,
+    'setBurnPct',
+    {
+      previous: previousBurnPct,
+      burnPct: upgradedBurnPct,
+    }
+  );
   console.log(
-    `   Fee percentage adjusted: ${previousFeePct}% → ${Number(await registry.feePct())}%`
+    `   Fee percentage adjusted: ${previousFeePct}% → ${Number(
+      await registry.feePct()
+    )}%`
   );
   console.log(
     `   Validator reward share: ${previousValidatorReward}% → ${Number(
@@ -1749,10 +1903,14 @@ async function ownerCommandCenterDrill(
     )}%`
   );
   console.log(
-    `   Fee burn rate: ${previousBurnPct}% → ${Number(await feePool.burnPct())}%`
+    `   Fee burn rate: ${previousBurnPct}% → ${Number(
+      await feePool.burnPct()
+    )}%`
   );
 
-  logStep('Owner updates validation committee cadence and accountability levers');
+  logStep(
+    'Owner updates validation committee cadence and accountability levers'
+  );
   await validation
     .connect(owner)
     .setCommitRevealWindows(upgradedCommitWindow, upgradedRevealWindow);
@@ -1766,12 +1924,17 @@ async function ownerCommandCenterDrill(
     upgradedRevealWindow,
     'Reveal window should match owner configuration'
   );
-  recordOwnerAction('Commit/reveal windows extended', `ValidationModule@${validationAddress}`, 'setCommitRevealWindows', {
-    previousCommitWindow: formatSeconds(originalCommitWindow),
-    previousRevealWindow: formatSeconds(originalRevealWindow),
-    commitWindow: formatSeconds(upgradedCommitWindow),
-    revealWindow: formatSeconds(upgradedRevealWindow),
-  });
+  recordOwnerAction(
+    'Commit/reveal windows extended',
+    `ValidationModule@${validationAddress}`,
+    'setCommitRevealWindows',
+    {
+      previousCommitWindow: formatSeconds(originalCommitWindow),
+      previousRevealWindow: formatSeconds(originalRevealWindow),
+      commitWindow: formatSeconds(upgradedCommitWindow),
+      revealWindow: formatSeconds(upgradedRevealWindow),
+    }
+  );
   await validation
     .connect(owner)
     .setRevealQuorum(upgradedRevealQuorumPct, upgradedMinRevealers);
@@ -1785,15 +1948,23 @@ async function ownerCommandCenterDrill(
     upgradedMinRevealers,
     'Minimum revealers should reflect owner update'
   );
-  recordOwnerAction('Reveal quorum tightened', `ValidationModule@${validationAddress}`, 'setRevealQuorum', {
-    previousPct: originalRevealQuorumPct,
-    previousMinRevealers: originalMinRevealers,
-    pct: upgradedRevealQuorumPct,
-    minRevealers: upgradedMinRevealers,
-  });
+  recordOwnerAction(
+    'Reveal quorum tightened',
+    `ValidationModule@${validationAddress}`,
+    'setRevealQuorum',
+    {
+      previousPct: originalRevealQuorumPct,
+      previousMinRevealers: originalMinRevealers,
+      pct: upgradedRevealQuorumPct,
+      minRevealers: upgradedMinRevealers,
+    }
+  );
   await validation
     .connect(owner)
-    .setNonRevealPenalty(upgradedNonRevealPenaltyBps, upgradedNonRevealBanBlocks);
+    .setNonRevealPenalty(
+      upgradedNonRevealPenaltyBps,
+      upgradedNonRevealBanBlocks
+    );
   assert.strictEqual(
     Number(await validation.nonRevealPenaltyBps()),
     upgradedNonRevealPenaltyBps,
@@ -1804,32 +1975,39 @@ async function ownerCommandCenterDrill(
     upgradedNonRevealBanBlocks,
     'Non-reveal ban duration should reflect owner update'
   );
-  recordOwnerAction('Non-reveal penalty escalated', `ValidationModule@${validationAddress}`, 'setNonRevealPenalty', {
-    previousBps: originalNonRevealPenaltyBps,
-    previousBanBlocks: originalNonRevealBanBlocks,
-    bps: upgradedNonRevealPenaltyBps,
-    banBlocks: upgradedNonRevealBanBlocks,
-  });
+  recordOwnerAction(
+    'Non-reveal penalty escalated',
+    `ValidationModule@${validationAddress}`,
+    'setNonRevealPenalty',
+    {
+      previousBps: originalNonRevealPenaltyBps,
+      previousBanBlocks: originalNonRevealBanBlocks,
+      bps: upgradedNonRevealPenaltyBps,
+      banBlocks: upgradedNonRevealBanBlocks,
+    }
+  );
 
   console.log(
-    `   Commit window extended: ${formatSeconds(originalCommitWindow)} → ${formatSeconds(
-      await validation.commitWindow()
-    )}`
+    `   Commit window extended: ${formatSeconds(
+      originalCommitWindow
+    )} → ${formatSeconds(await validation.commitWindow())}`
   );
   console.log(
-    `   Reveal window extended: ${formatSeconds(originalRevealWindow)} → ${formatSeconds(
-      await validation.revealWindow()
-    )}`
+    `   Reveal window extended: ${formatSeconds(
+      originalRevealWindow
+    )} → ${formatSeconds(await validation.revealWindow())}`
   );
   console.log(
-    `   Reveal quorum now ${Number(await validation.revealQuorumPct())}% with minimum ${Number(
+    `   Reveal quorum now ${Number(
+      await validation.revealQuorumPct()
+    )}% with minimum ${Number(
       await validation.minRevealValidators()
     )} validators`
   );
   console.log(
-    `   Non-reveal penalty now ${Number(await validation.nonRevealPenaltyBps())} bps with ${Number(
-      await validation.nonRevealBanBlocks()
-    )} block ban`
+    `   Non-reveal penalty now ${Number(
+      await validation.nonRevealPenaltyBps()
+    )} bps with ${Number(await validation.nonRevealBanBlocks())} block ban`
   );
 
   logStep('Owner reroutes treasuries and reinforces stake guardrails');
@@ -1841,83 +2019,132 @@ async function ownerCommandCenterDrill(
     true,
     'Stake treasury candidate should become allowlisted'
   );
-  recordOwnerAction('Stake treasury candidate allowlisted', `StakeManager@${stakeAddress}`, 'setTreasuryAllowlist', {
-    treasury: stakeTreasuryCandidate,
-    allowed: true,
-  });
+  recordOwnerAction(
+    'Stake treasury candidate allowlisted',
+    `StakeManager@${stakeAddress}`,
+    'setTreasuryAllowlist',
+    {
+      treasury: stakeTreasuryCandidate,
+      allowed: true,
+    }
+  );
   await stake.connect(owner).setTreasury(stakeTreasuryCandidate);
   assert.strictEqual(
     await stake.treasury(),
     stakeTreasuryCandidate,
     'Stake treasury should reroute to the delegated nation'
   );
-  recordOwnerAction('Stake treasury rerouted', `StakeManager@${stakeAddress}`, 'setTreasury', {
-    treasury: stakeTreasuryCandidate,
-  });
+  recordOwnerAction(
+    'Stake treasury rerouted',
+    `StakeManager@${stakeAddress}`,
+    'setTreasury',
+    {
+      treasury: stakeTreasuryCandidate,
+    }
+  );
   await stake.connect(owner).setMinStake(upgradedMinStakeRaw);
   assert.strictEqual(
     await stake.minStake(),
     upgradedMinStakeRaw,
     'Minimum stake should increase during drill'
   );
-  recordOwnerAction('Minimum stake raised', `StakeManager@${stakeAddress}`, 'setMinStake', {
-    previous: formatTokens(previousMinStakeRaw),
-    minStake: formatTokens(upgradedMinStakeRaw),
-  });
+  recordOwnerAction(
+    'Minimum stake raised',
+    `StakeManager@${stakeAddress}`,
+    'setMinStake',
+    {
+      previous: formatTokens(previousMinStakeRaw),
+      minStake: formatTokens(upgradedMinStakeRaw),
+    }
+  );
   await stake.connect(owner).setMaxStakePerAddress(upgradedMaxStakePerAddress);
   assert.strictEqual(
     await stake.maxStakePerAddress(),
     upgradedMaxStakePerAddress,
     'Maximum stake per address should reflect owner command'
   );
-  recordOwnerAction('Maximum stake per address tuned', `StakeManager@${stakeAddress}`, 'setMaxStakePerAddress', {
-    previous:
-      previousMaxStakePerAddress === 0n ? 'Unlimited' : formatTokens(previousMaxStakePerAddress),
-    maxStake: upgradedMaxStakePerAddress === 0n ? 'Unlimited' : formatTokens(upgradedMaxStakePerAddress),
-  });
+  recordOwnerAction(
+    'Maximum stake per address tuned',
+    `StakeManager@${stakeAddress}`,
+    'setMaxStakePerAddress',
+    {
+      previous:
+        previousMaxStakePerAddress === 0n
+          ? 'Unlimited'
+          : formatTokens(previousMaxStakePerAddress),
+      maxStake:
+        upgradedMaxStakePerAddress === 0n
+          ? 'Unlimited'
+          : formatTokens(upgradedMaxStakePerAddress),
+    }
+  );
   await stake.connect(owner).setUnbondingPeriod(upgradedUnbondingPeriod);
   assert.strictEqual(
     await stake.unbondingPeriod(),
     upgradedUnbondingPeriod,
     'Unbonding period should reflect owner configuration'
   );
-  recordOwnerAction('Unbonding period extended', `StakeManager@${stakeAddress}`, 'setUnbondingPeriod', {
-    previous: formatSeconds(previousUnbondingPeriod),
-    unbondingPeriod: formatSeconds(upgradedUnbondingPeriod),
-  });
+  recordOwnerAction(
+    'Unbonding period extended',
+    `StakeManager@${stakeAddress}`,
+    'setUnbondingPeriod',
+    {
+      previous: formatSeconds(previousUnbondingPeriod),
+      unbondingPeriod: formatSeconds(upgradedUnbondingPeriod),
+    }
+  );
   await stake.connect(owner).setPauserManager(moderatorAddress);
   assert.strictEqual(
     await stake.pauserManager(),
     moderatorAddress,
     'Moderator should become stake pauser manager'
   );
-  recordOwnerAction('Stake pauser manager delegated', `StakeManager@${stakeAddress}`, 'setPauserManager', {
-    manager: moderatorAddress,
-  });
+  recordOwnerAction(
+    'Stake pauser manager delegated',
+    `StakeManager@${stakeAddress}`,
+    'setPauserManager',
+    {
+      manager: moderatorAddress,
+    }
+  );
 
-  await feePool.connect(owner).setTreasuryAllowlist(feePoolTreasuryCandidate, true);
+  await feePool
+    .connect(owner)
+    .setTreasuryAllowlist(feePoolTreasuryCandidate, true);
   assert.strictEqual(
     await feePool.treasuryAllowlist(feePoolTreasuryCandidate),
     true,
     'Fee pool treasury candidate should become allowlisted'
   );
-  recordOwnerAction('Fee pool treasury allowlisted', `FeePool@${feePoolAddress}`, 'setTreasuryAllowlist', {
-    treasury: feePoolTreasuryCandidate,
-    allowed: true,
-  });
+  recordOwnerAction(
+    'Fee pool treasury allowlisted',
+    `FeePool@${feePoolAddress}`,
+    'setTreasuryAllowlist',
+    {
+      treasury: feePoolTreasuryCandidate,
+      allowed: true,
+    }
+  );
   await feePool.connect(owner).setTreasury(feePoolTreasuryCandidate);
   assert.strictEqual(
     await feePool.treasury(),
     feePoolTreasuryCandidate,
     'Fee pool treasury should reroute during the drill'
   );
-  recordOwnerAction('Fee pool treasury rerouted', `FeePool@${feePoolAddress}`, 'setTreasury', {
-    treasury: feePoolTreasuryCandidate,
-  });
+  recordOwnerAction(
+    'Fee pool treasury rerouted',
+    `FeePool@${feePoolAddress}`,
+    'setTreasury',
+    {
+      treasury: feePoolTreasuryCandidate,
+    }
+  );
   console.log(
-    `   Stake guardrails reinforced: minStake ${formatTokens(previousMinStakeRaw)} → ${formatTokens(
-      upgradedMinStakeRaw
-    )}, unbonding ${formatSeconds(previousUnbondingPeriod)} → ${formatSeconds(upgradedUnbondingPeriod)}`
+    `   Stake guardrails reinforced: minStake ${formatTokens(
+      previousMinStakeRaw
+    )} → ${formatTokens(upgradedMinStakeRaw)}, unbonding ${formatSeconds(
+      previousUnbondingPeriod
+    )} → ${formatSeconds(upgradedUnbondingPeriod)}`
   );
   console.log(
     `   Treasuries delegated → stake:${stakeTreasuryCandidate} feePool:${feePoolTreasuryCandidate}`
@@ -1945,38 +2172,68 @@ async function ownerCommandCenterDrill(
     moderatorAddress,
     'Moderator should gain registry pause authority'
   );
-  recordOwnerAction('Registry pauser delegated', `JobRegistry@${registryAddress}`, 'setPauser', {
-    newPauser: moderatorAddress,
-  });
+  recordOwnerAction(
+    'Registry pauser delegated',
+    `JobRegistry@${registryAddress}`,
+    'setPauser',
+    {
+      newPauser: moderatorAddress,
+    }
+  );
   await stake.connect(owner).setPauser(moderatorAddress);
   assert.strictEqual(
     await stake.pauser(),
     moderatorAddress,
     'Moderator should gain stake pause authority'
   );
-  recordOwnerAction('Stake manager pauser delegated', `StakeManager@${stakeAddress}`, 'setPauser', {
-    newPauser: moderatorAddress,
-  });
+  recordOwnerAction(
+    'Stake manager pauser delegated',
+    `StakeManager@${stakeAddress}`,
+    'setPauser',
+    {
+      newPauser: moderatorAddress,
+    }
+  );
   await validation.connect(owner).setPauser(moderatorAddress);
   assert.strictEqual(
     await validation.pauser(),
     moderatorAddress,
     'Moderator should gain validation pause authority'
   );
-  recordOwnerAction('Validation module pauser delegated', `ValidationModule@${validationAddress}`, 'setPauser', {
-    newPauser: moderatorAddress,
-  });
+  recordOwnerAction(
+    'Validation module pauser delegated',
+    `ValidationModule@${validationAddress}`,
+    'setPauser',
+    {
+      newPauser: moderatorAddress,
+    }
+  );
 
   await registry.connect(owner).pause();
-  recordOwnerAction('Registry paused for drill', `JobRegistry@${registryAddress}`, 'pause', { by: ownerAddress });
+  recordOwnerAction(
+    'Registry paused for drill',
+    `JobRegistry@${registryAddress}`,
+    'pause',
+    { by: ownerAddress }
+  );
   await stake.connect(owner).pause();
-  recordOwnerAction('Stake manager paused for drill', `StakeManager@${stakeAddress}`, 'pause', {
-    by: ownerAddress,
-  });
+  recordOwnerAction(
+    'Stake manager paused for drill',
+    `StakeManager@${stakeAddress}`,
+    'pause',
+    {
+      by: ownerAddress,
+    }
+  );
   await validation.connect(owner).pause();
-  recordOwnerAction('Validation module paused for drill', `ValidationModule@${validationAddress}`, 'pause', {
-    by: ownerAddress,
-  });
+  recordOwnerAction(
+    'Validation module paused for drill',
+    `ValidationModule@${validationAddress}`,
+    'pause',
+    {
+      by: ownerAddress,
+    }
+  );
   const ownerPauseStatus: PauseStatus = {
     registry: await registry.paused(),
     stake: await stake.paused(),
@@ -1992,31 +2249,73 @@ async function ownerCommandCenterDrill(
   );
 
   await registry.connect(owner).unpause();
-  recordOwnerAction('Registry unpaused after drill', `JobRegistry@${registryAddress}`, 'unpause', { by: ownerAddress });
+  recordOwnerAction(
+    'Registry unpaused after drill',
+    `JobRegistry@${registryAddress}`,
+    'unpause',
+    { by: ownerAddress }
+  );
   await stake.connect(owner).unpause();
-  recordOwnerAction('Stake manager unpaused after drill', `StakeManager@${stakeAddress}`, 'unpause', {
-    by: ownerAddress,
-  });
+  recordOwnerAction(
+    'Stake manager unpaused after drill',
+    `StakeManager@${stakeAddress}`,
+    'unpause',
+    {
+      by: ownerAddress,
+    }
+  );
   await validation.connect(owner).unpause();
-  recordOwnerAction('Validation module unpaused after drill', `ValidationModule@${validationAddress}`, 'unpause', {
-    by: ownerAddress,
-  });
-  assert.strictEqual(await registry.paused(), false, 'Registry should resume after owner drill');
-  assert.strictEqual(await stake.paused(), false, 'Stake manager should resume after owner drill');
-  assert.strictEqual(await validation.paused(), false, 'Validation should resume after owner drill');
+  recordOwnerAction(
+    'Validation module unpaused after drill',
+    `ValidationModule@${validationAddress}`,
+    'unpause',
+    {
+      by: ownerAddress,
+    }
+  );
+  assert.strictEqual(
+    await registry.paused(),
+    false,
+    'Registry should resume after owner drill'
+  );
+  assert.strictEqual(
+    await stake.paused(),
+    false,
+    'Stake manager should resume after owner drill'
+  );
+  assert.strictEqual(
+    await validation.paused(),
+    false,
+    'Validation should resume after owner drill'
+  );
 
   await registry.connect(moderator).pause();
-  recordOwnerAction('Registry paused by delegated moderator', `JobRegistry@${registryAddress}`, 'pause', {
-    by: moderatorAddress,
-  });
+  recordOwnerAction(
+    'Registry paused by delegated moderator',
+    `JobRegistry@${registryAddress}`,
+    'pause',
+    {
+      by: moderatorAddress,
+    }
+  );
   await stake.connect(moderator).pause();
-  recordOwnerAction('Stake manager paused by delegated moderator', `StakeManager@${stakeAddress}`, 'pause', {
-    by: moderatorAddress,
-  });
+  recordOwnerAction(
+    'Stake manager paused by delegated moderator',
+    `StakeManager@${stakeAddress}`,
+    'pause',
+    {
+      by: moderatorAddress,
+    }
+  );
   await validation.connect(moderator).pause();
-  recordOwnerAction('Validation module paused by delegated moderator', `ValidationModule@${validationAddress}`, 'pause', {
-    by: moderatorAddress,
-  });
+  recordOwnerAction(
+    'Validation module paused by delegated moderator',
+    `ValidationModule@${validationAddress}`,
+    'pause',
+    {
+      by: moderatorAddress,
+    }
+  );
   const moderatorPauseStatus: PauseStatus = {
     registry: await registry.paused(),
     stake: await stake.paused(),
@@ -2032,20 +2331,47 @@ async function ownerCommandCenterDrill(
   );
 
   await registry.connect(moderator).unpause();
-  recordOwnerAction('Registry unpaused by delegated moderator', `JobRegistry@${registryAddress}`, 'unpause', {
-    by: moderatorAddress,
-  });
+  recordOwnerAction(
+    'Registry unpaused by delegated moderator',
+    `JobRegistry@${registryAddress}`,
+    'unpause',
+    {
+      by: moderatorAddress,
+    }
+  );
   await stake.connect(moderator).unpause();
-  recordOwnerAction('Stake manager unpaused by delegated moderator', `StakeManager@${stakeAddress}`, 'unpause', {
-    by: moderatorAddress,
-  });
+  recordOwnerAction(
+    'Stake manager unpaused by delegated moderator',
+    `StakeManager@${stakeAddress}`,
+    'unpause',
+    {
+      by: moderatorAddress,
+    }
+  );
   await validation.connect(moderator).unpause();
-  recordOwnerAction('Validation module unpaused by delegated moderator', `ValidationModule@${validationAddress}`, 'unpause', {
-    by: moderatorAddress,
-  });
-  assert.strictEqual(await registry.paused(), false, 'Registry should resume after moderator drill');
-  assert.strictEqual(await stake.paused(), false, 'Stake manager should resume after moderator drill');
-  assert.strictEqual(await validation.paused(), false, 'Validation should resume after moderator drill');
+  recordOwnerAction(
+    'Validation module unpaused by delegated moderator',
+    `ValidationModule@${validationAddress}`,
+    'unpause',
+    {
+      by: moderatorAddress,
+    }
+  );
+  assert.strictEqual(
+    await registry.paused(),
+    false,
+    'Registry should resume after moderator drill'
+  );
+  assert.strictEqual(
+    await stake.paused(),
+    false,
+    'Stake manager should resume after moderator drill'
+  );
+  assert.strictEqual(
+    await validation.paused(),
+    false,
+    'Validation should resume after moderator drill'
+  );
 
   console.log('   Emergency controls verified and reset to active state.');
 
@@ -2055,13 +2381,21 @@ async function ownerCommandCenterDrill(
     feePool,
     stake
   );
-  assert.strictEqual(upgraded.feePct, upgradedFeePct, 'Upgraded fee pct should be recorded');
+  assert.strictEqual(
+    upgraded.feePct,
+    upgradedFeePct,
+    'Upgraded fee pct should be recorded'
+  );
   assert.strictEqual(
     upgraded.validatorRewardPct,
     upgradedValidatorReward,
     'Upgraded validator reward should be recorded'
   );
-  assert.strictEqual(upgraded.burnPct, upgradedBurnPct, 'Upgraded burn pct should be recorded');
+  assert.strictEqual(
+    upgraded.burnPct,
+    upgradedBurnPct,
+    'Upgraded burn pct should be recorded'
+  );
   assert.strictEqual(
     upgraded.commitWindowSeconds,
     Number(upgradedCommitWindow),
@@ -2150,89 +2484,183 @@ async function ownerCommandCenterDrill(
 
   logStep('Owner restores baseline configuration to prepare live scenarios');
   await registry.connect(owner).setFeePct(previousFeePct);
-  recordOwnerAction('Protocol fee restored', `JobRegistry@${registryAddress}`, 'setFeePct', {
-    pct: previousFeePct,
-  });
+  recordOwnerAction(
+    'Protocol fee restored',
+    `JobRegistry@${registryAddress}`,
+    'setFeePct',
+    {
+      pct: previousFeePct,
+    }
+  );
   await registry.connect(owner).setValidatorRewardPct(previousValidatorReward);
-  recordOwnerAction('Validator reward restored', `JobRegistry@${registryAddress}`, 'setValidatorRewardPct', {
-    pct: previousValidatorReward,
-  });
+  recordOwnerAction(
+    'Validator reward restored',
+    `JobRegistry@${registryAddress}`,
+    'setValidatorRewardPct',
+    {
+      pct: previousValidatorReward,
+    }
+  );
   await feePool.connect(owner).setBurnPct(previousBurnPct);
-  recordOwnerAction('Fee pool burn restored', `FeePool@${feePoolAddress}`, 'setBurnPct', {
-    burnPct: previousBurnPct,
-  });
+  recordOwnerAction(
+    'Fee pool burn restored',
+    `FeePool@${feePoolAddress}`,
+    'setBurnPct',
+    {
+      burnPct: previousBurnPct,
+    }
+  );
   await validation
     .connect(owner)
     .setCommitRevealWindows(originalCommitWindow, originalRevealWindow);
-  recordOwnerAction('Commit/reveal cadence restored', `ValidationModule@${validationAddress}`, 'setCommitRevealWindows', {
-    commitWindow: formatSeconds(originalCommitWindow),
-    revealWindow: formatSeconds(originalRevealWindow),
-  });
+  recordOwnerAction(
+    'Commit/reveal cadence restored',
+    `ValidationModule@${validationAddress}`,
+    'setCommitRevealWindows',
+    {
+      commitWindow: formatSeconds(originalCommitWindow),
+      revealWindow: formatSeconds(originalRevealWindow),
+    }
+  );
   await validation
     .connect(owner)
     .setRevealQuorum(originalRevealQuorumPct, originalMinRevealers);
-  recordOwnerAction('Reveal quorum restored', `ValidationModule@${validationAddress}`, 'setRevealQuorum', {
-    pct: originalRevealQuorumPct,
-    minRevealers: originalMinRevealers,
-  });
+  recordOwnerAction(
+    'Reveal quorum restored',
+    `ValidationModule@${validationAddress}`,
+    'setRevealQuorum',
+    {
+      pct: originalRevealQuorumPct,
+      minRevealers: originalMinRevealers,
+    }
+  );
   await validation
     .connect(owner)
-    .setNonRevealPenalty(originalNonRevealPenaltyBps, originalNonRevealBanBlocks);
-  recordOwnerAction('Non-reveal penalty restored', `ValidationModule@${validationAddress}`, 'setNonRevealPenalty', {
-    bps: originalNonRevealPenaltyBps,
-    banBlocks: originalNonRevealBanBlocks,
-  });
+    .setNonRevealPenalty(
+      originalNonRevealPenaltyBps,
+      originalNonRevealBanBlocks
+    );
+  recordOwnerAction(
+    'Non-reveal penalty restored',
+    `ValidationModule@${validationAddress}`,
+    'setNonRevealPenalty',
+    {
+      bps: originalNonRevealPenaltyBps,
+      banBlocks: originalNonRevealBanBlocks,
+    }
+  );
   await stake.connect(owner).setMinStake(previousMinStakeRaw);
-  recordOwnerAction('Minimum stake restored', `StakeManager@${stakeAddress}`, 'setMinStake', {
-    minStake: formatTokens(previousMinStakeRaw),
-  });
+  recordOwnerAction(
+    'Minimum stake restored',
+    `StakeManager@${stakeAddress}`,
+    'setMinStake',
+    {
+      minStake: formatTokens(previousMinStakeRaw),
+    }
+  );
   await stake.connect(owner).setMaxStakePerAddress(previousMaxStakePerAddress);
-  recordOwnerAction('Maximum stake per address restored', `StakeManager@${stakeAddress}`, 'setMaxStakePerAddress', {
-    maxStake:
-      previousMaxStakePerAddress === 0n ? 'Unlimited' : formatTokens(previousMaxStakePerAddress),
-  });
+  recordOwnerAction(
+    'Maximum stake per address restored',
+    `StakeManager@${stakeAddress}`,
+    'setMaxStakePerAddress',
+    {
+      maxStake:
+        previousMaxStakePerAddress === 0n
+          ? 'Unlimited'
+          : formatTokens(previousMaxStakePerAddress),
+    }
+  );
   await stake.connect(owner).setUnbondingPeriod(previousUnbondingPeriod);
-  recordOwnerAction('Unbonding period restored', `StakeManager@${stakeAddress}`, 'setUnbondingPeriod', {
-    unbondingPeriod: formatSeconds(previousUnbondingPeriod),
-  });
+  recordOwnerAction(
+    'Unbonding period restored',
+    `StakeManager@${stakeAddress}`,
+    'setUnbondingPeriod',
+    {
+      unbondingPeriod: formatSeconds(previousUnbondingPeriod),
+    }
+  );
   await stake.connect(owner).setTreasury(previousStakeTreasury);
-  recordOwnerAction('Stake treasury restored', `StakeManager@${stakeAddress}`, 'setTreasury', {
-    treasury: previousStakeTreasury,
-  });
+  recordOwnerAction(
+    'Stake treasury restored',
+    `StakeManager@${stakeAddress}`,
+    'setTreasury',
+    {
+      treasury: previousStakeTreasury,
+    }
+  );
   if (!previousStakeTreasuryAllowed) {
-    await stake.connect(owner).setTreasuryAllowlist(stakeTreasuryCandidate, false);
-    recordOwnerAction('Stake treasury candidate revoked', `StakeManager@${stakeAddress}`, 'setTreasuryAllowlist', {
-      treasury: stakeTreasuryCandidate,
-      allowed: false,
-    });
+    await stake
+      .connect(owner)
+      .setTreasuryAllowlist(stakeTreasuryCandidate, false);
+    recordOwnerAction(
+      'Stake treasury candidate revoked',
+      `StakeManager@${stakeAddress}`,
+      'setTreasuryAllowlist',
+      {
+        treasury: stakeTreasuryCandidate,
+        allowed: false,
+      }
+    );
   }
   await stake.connect(owner).setPauserManager(previousStakePauserManager);
-  recordOwnerAction('Stake pauser manager restored', `StakeManager@${stakeAddress}`, 'setPauserManager', {
-    manager: previousStakePauserManager,
-  });
+  recordOwnerAction(
+    'Stake pauser manager restored',
+    `StakeManager@${stakeAddress}`,
+    'setPauserManager',
+    {
+      manager: previousStakePauserManager,
+    }
+  );
   await feePool.connect(owner).setTreasury(previousFeePoolTreasury);
-  recordOwnerAction('Fee pool treasury restored', `FeePool@${feePoolAddress}`, 'setTreasury', {
-    treasury: previousFeePoolTreasury,
-  });
+  recordOwnerAction(
+    'Fee pool treasury restored',
+    `FeePool@${feePoolAddress}`,
+    'setTreasury',
+    {
+      treasury: previousFeePoolTreasury,
+    }
+  );
   if (!previousFeePoolTreasuryAllowed) {
-    await feePool.connect(owner).setTreasuryAllowlist(feePoolTreasuryCandidate, false);
-    recordOwnerAction('Fee pool treasury candidate revoked', `FeePool@${feePoolAddress}`, 'setTreasuryAllowlist', {
-      treasury: feePoolTreasuryCandidate,
-      allowed: false,
-    });
+    await feePool
+      .connect(owner)
+      .setTreasuryAllowlist(feePoolTreasuryCandidate, false);
+    recordOwnerAction(
+      'Fee pool treasury candidate revoked',
+      `FeePool@${feePoolAddress}`,
+      'setTreasuryAllowlist',
+      {
+        treasury: feePoolTreasuryCandidate,
+        allowed: false,
+      }
+    );
   }
   await registry.connect(owner).setPauser(ownerAddress);
-  recordOwnerAction('Registry pauser returned to owner', `JobRegistry@${registryAddress}`, 'setPauser', {
-    newPauser: ownerAddress,
-  });
+  recordOwnerAction(
+    'Registry pauser returned to owner',
+    `JobRegistry@${registryAddress}`,
+    'setPauser',
+    {
+      newPauser: ownerAddress,
+    }
+  );
   await stake.connect(owner).setPauser(ownerAddress);
-  recordOwnerAction('Stake manager pauser returned to owner', `StakeManager@${stakeAddress}`, 'setPauser', {
-    newPauser: ownerAddress,
-  });
+  recordOwnerAction(
+    'Stake manager pauser returned to owner',
+    `StakeManager@${stakeAddress}`,
+    'setPauser',
+    {
+      newPauser: ownerAddress,
+    }
+  );
   await validation.connect(owner).setPauser(ownerAddress);
-  recordOwnerAction('Validation module pauser returned to owner', `ValidationModule@${validationAddress}`, 'setPauser', {
-    newPauser: ownerAddress,
-  });
+  recordOwnerAction(
+    'Validation module pauser returned to owner',
+    `ValidationModule@${validationAddress}`,
+    'setPauser',
+    {
+      newPauser: ownerAddress,
+    }
+  );
 
   const restored = await readOwnerControlParameters(
     registry,
@@ -2240,13 +2668,21 @@ async function ownerCommandCenterDrill(
     feePool,
     stake
   );
-  assert.strictEqual(restored.feePct, previousFeePct, 'Fee pct should return to baseline');
+  assert.strictEqual(
+    restored.feePct,
+    previousFeePct,
+    'Fee pct should return to baseline'
+  );
   assert.strictEqual(
     restored.validatorRewardPct,
     previousValidatorReward,
     'Validator reward should return to baseline'
   );
-  assert.strictEqual(restored.burnPct, previousBurnPct, 'Burn pct should return to baseline');
+  assert.strictEqual(
+    restored.burnPct,
+    previousBurnPct,
+    'Burn pct should return to baseline'
+  );
   assert.strictEqual(
     restored.commitWindowSeconds,
     baseline.commitWindowSeconds,
@@ -2277,10 +2713,26 @@ async function ownerCommandCenterDrill(
     baseline.nonRevealBanBlocks,
     'Non-reveal ban duration should return to baseline'
   );
-  assert.strictEqual(restored.registryPauser, ownerAddress, 'Owner should reclaim registry pause power');
-  assert.strictEqual(restored.stakePauser, ownerAddress, 'Owner should reclaim stake pause power');
-  assert.strictEqual(restored.validationPauser, ownerAddress, 'Owner should reclaim validation pause power');
-  assert.strictEqual(restored.minStakeRaw, previousMinStakeRaw, 'Minimum stake should return to baseline');
+  assert.strictEqual(
+    restored.registryPauser,
+    ownerAddress,
+    'Owner should reclaim registry pause power'
+  );
+  assert.strictEqual(
+    restored.stakePauser,
+    ownerAddress,
+    'Owner should reclaim stake pause power'
+  );
+  assert.strictEqual(
+    restored.validationPauser,
+    ownerAddress,
+    'Owner should reclaim validation pause power'
+  );
+  assert.strictEqual(
+    restored.minStakeRaw,
+    previousMinStakeRaw,
+    'Minimum stake should return to baseline'
+  );
   assert.strictEqual(
     restored.maxStakePerAddressRaw,
     previousMaxStakePerAddress,
@@ -2291,7 +2743,11 @@ async function ownerCommandCenterDrill(
     Number(previousUnbondingPeriod),
     'Unbonding period should return to baseline'
   );
-  assert.strictEqual(restored.stakeTreasury, previousStakeTreasury, 'Stake treasury should return to baseline');
+  assert.strictEqual(
+    restored.stakeTreasury,
+    previousStakeTreasury,
+    'Stake treasury should return to baseline'
+  );
   assert.strictEqual(
     restored.stakeTreasuryAllowed,
     previousStakeTreasuryAllowed,
@@ -2302,7 +2758,11 @@ async function ownerCommandCenterDrill(
     previousStakePauserManager,
     'Stake pauser manager should match baseline'
   );
-  assert.strictEqual(restored.feePoolTreasury, previousFeePoolTreasury, 'Fee pool treasury should return to baseline');
+  assert.strictEqual(
+    restored.feePoolTreasury,
+    previousFeePoolTreasury,
+    'Fee pool treasury should return to baseline'
+  );
   assert.strictEqual(
     restored.feePoolTreasuryAllowed,
     previousFeePoolTreasuryAllowed,
@@ -2471,7 +2931,13 @@ async function logJobSummary(
   const job = await registry.jobs(jobId);
   const metadata = decodeJobMetadata(job.packedMetadata) as JobMetadataView;
   console.log(
-    `\n📦 Job ${jobId} summary (${context}):\n  State: ${JOB_STATE_LABELS[metadata.state] ?? metadata.state}\n  Success flag: ${metadata.success}\n  Burn confirmed: ${metadata.burnConfirmed}\n  Reward: ${formatTokens(job.reward)}\n  Employer: ${job.employer}\n  Agent: ${job.agent}`
+    `\n📦 Job ${jobId} summary (${context}):\n  State: ${
+      JOB_STATE_LABELS[metadata.state] ?? metadata.state
+    }\n  Success flag: ${metadata.success}\n  Burn confirmed: ${
+      metadata.burnConfirmed
+    }\n  Reward: ${formatTokens(job.reward)}\n  Employer: ${
+      job.employer
+    }\n  Agent: ${job.agent}`
   );
   recordTimeline('job-summary', `Job ${jobId} (${context})`, {
     jobId: jobId.toString(),
@@ -2492,7 +2958,8 @@ async function showBalances(
   participants: Array<{ name: string; address: string }>
 ): Promise<void> {
   console.log(`\n💰 ${label}`);
-  const snapshot: Array<{ name: string; address: string; balance: string }> = [];
+  const snapshot: Array<{ name: string; address: string; balance: string }> =
+    [];
   for (const participant of participants) {
     const balance = await token.balanceOf(participant.address);
     console.log(`  ${participant.name}: ${formatTokens(balance)}`);
@@ -2506,7 +2973,8 @@ async function showBalances(
 }
 
 async function runHappyPath(env: DemoEnvironment): Promise<void> {
-  const scenarioTitle = 'Scenario 1 – Cooperative intergovernmental AI labour success';
+  const scenarioTitle =
+    'Scenario 1 – Cooperative intergovernmental AI labour success';
   logSection(scenarioTitle);
 
   const {
@@ -2528,9 +2996,7 @@ async function runHappyPath(env: DemoEnvironment): Promise<void> {
   const employerAddr = await nationA.getAddress();
 
   logStep('Nation A approves escrow and posts a climate-coordination job');
-  await token
-    .connect(nationA)
-    .approve(await stake.getAddress(), reward + fee);
+  await token.connect(nationA).approve(await stake.getAddress(), reward + fee);
   const specHash = ethers.id('ipfs://specs/climate-task');
   const deadline = BigInt((await time.latest()) + 3600);
   await registry
@@ -2580,13 +3046,11 @@ async function runHappyPath(env: DemoEnvironment): Promise<void> {
   logStep(
     'Nation A records burn proof and primes the validation committee selection'
   );
-  const burnTxHash = ethers.keccak256(ethers.toUtf8Bytes('burn:climate:success'));
-  await registry
-    .connect(nationA)
-    .submitBurnReceipt(jobId, burnTxHash, 0, 0);
-  await registry
-    .connect(nationA)
-    .confirmEmployerBurn(jobId, burnTxHash);
+  const burnTxHash = ethers.keccak256(
+    ethers.toUtf8Bytes('burn:climate:success')
+  );
+  await registry.connect(nationA).submitBurnReceipt(jobId, burnTxHash, 0, 0);
+  await registry.connect(nationA).confirmEmployerBurn(jobId, burnTxHash);
 
   console.log(
     `   StakeManager burn requirement: ${(await stake.burnPct()).toString()}%`
@@ -2621,7 +3085,14 @@ async function runHappyPath(env: DemoEnvironment): Promise<void> {
   for (let i = 0; i < validators.length; i++) {
     await validation
       .connect(validators[i])
-      .revealValidation(jobId, approvals[i], burnTxHash, salts[i], 'validator', []);
+      .revealValidation(
+        jobId,
+        approvals[i],
+        burnTxHash,
+        salts[i],
+        'validator',
+        []
+      );
   }
 
   const nowAfterReveal = BigInt(await time.latest());
@@ -2643,7 +3114,9 @@ async function runHappyPath(env: DemoEnvironment): Promise<void> {
     burnConfirmed: true,
   });
 
-  logStep('Nation A finalizes payment, rewarding Alice and the validator cohort');
+  logStep(
+    'Nation A finalizes payment, rewarding Alice and the validator cohort'
+  );
   await registry.connect(nationA).finalize(jobId);
   const finalizedMetadata = await logJobSummary(
     registry,
@@ -2666,7 +3139,10 @@ async function runHappyPath(env: DemoEnvironment): Promise<void> {
   const participants = [
     { name: 'Nation A', address: employerAddr },
     { name: 'Alice (agent)', address: await agentAlice.getAddress() },
-    { name: 'Charlie (validator)', address: await validatorCharlie.getAddress() },
+    {
+      name: 'Charlie (validator)',
+      address: await validatorCharlie.getAddress(),
+    },
     { name: 'Dora (validator)', address: await validatorDora.getAddress() },
     { name: 'Evan (validator)', address: await validatorEvan.getAddress() },
   ];
@@ -2693,7 +3169,8 @@ async function runHappyPath(env: DemoEnvironment): Promise<void> {
 }
 
 async function runDisputeScenario(env: DemoEnvironment): Promise<void> {
-  const scenarioTitle = 'Scenario 2 – Cross-border dispute resolved by owner governance';
+  const scenarioTitle =
+    'Scenario 2 – Cross-border dispute resolved by owner governance';
   logSection(scenarioTitle);
 
   const {
@@ -2720,9 +3197,7 @@ async function runDisputeScenario(env: DemoEnvironment): Promise<void> {
   const moderatorAddress = await moderator.getAddress();
 
   logStep('Nation B funds a frontier language translation initiative');
-  await token
-    .connect(nationB)
-    .approve(await stake.getAddress(), reward + fee);
+  await token.connect(nationB).approve(await stake.getAddress(), reward + fee);
   const specHash = ethers.id('ipfs://specs/translation-task');
   const deadline = BigInt((await time.latest()) + 3600);
   await registry
@@ -2741,17 +3216,19 @@ async function runDisputeScenario(env: DemoEnvironment): Promise<void> {
   await registry.connect(agentBob).applyForJob(jobId, 'bob', []);
   await registry
     .connect(agentBob)
-    .submit(jobId, ethers.id('ipfs://results/draft'), 'ipfs://results/draft', 'bob', []);
+    .submit(
+      jobId,
+      ethers.id('ipfs://results/draft'),
+      'ipfs://results/draft',
+      'bob',
+      []
+    );
 
   const burnTxHash = ethers.keccak256(
     ethers.toUtf8Bytes('burn:translation:checkpoint')
   );
-  await registry
-    .connect(nationB)
-    .submitBurnReceipt(jobId, burnTxHash, 0, 0);
-  await registry
-    .connect(nationB)
-    .confirmEmployerBurn(jobId, burnTxHash);
+  await registry.connect(nationB).submitBurnReceipt(jobId, burnTxHash, 0, 0);
+  await registry.connect(nationB).confirmEmployerBurn(jobId, burnTxHash);
 
   let round = await ensureValidatorsSelected(validation, nationB, jobId);
   const nonce = await validation.jobNonce(jobId);
@@ -2780,7 +3257,9 @@ async function runDisputeScenario(env: DemoEnvironment): Promise<void> {
     await time.increase(Number(waitCommit));
   }
 
-  logStep('Partial reveals occur – one validator abstains, triggering penalties');
+  logStep(
+    'Partial reveals occur – one validator abstains, triggering penalties'
+  );
   await validation
     .connect(validatorCharlie)
     .revealValidation(jobId, true, burnTxHash, salts[0], 'validator', []);
@@ -2812,35 +3291,71 @@ async function runDisputeScenario(env: DemoEnvironment): Promise<void> {
     'Bob leverages dispute rights; governance moderates and sides with the agent'
   );
   await dispute.connect(owner).setDisputeFee(0);
-  recordOwnerAction('Dispute fee waived for demonstration', `DisputeModule@${disputeAddress}`, 'setDisputeFee', {
-    fee: 0,
-  });
+  recordOwnerAction(
+    'Dispute fee waived for demonstration',
+    `DisputeModule@${disputeAddress}`,
+    'setDisputeFee',
+    {
+      fee: 0,
+    }
+  );
   await registry
     .connect(agentBob)
     ['raiseDispute(uint256,bytes32)'](jobId, ethers.id('ipfs://evidence/bob'));
   await dispute.connect(owner).setDisputeWindow(0);
-  recordOwnerAction('Dispute window accelerated', `DisputeModule@${disputeAddress}`, 'setDisputeWindow', {
-    window: 0,
-  });
+  recordOwnerAction(
+    'Dispute window accelerated',
+    `DisputeModule@${disputeAddress}`,
+    'setDisputeWindow',
+    {
+      window: 0,
+    }
+  );
   await dispute.connect(owner).setModerator(ownerAddress, 1);
-  recordOwnerAction('Owner enrolled as dispute moderator', `DisputeModule@${disputeAddress}`, 'setModerator', {
-    moderator: ownerAddress,
-    enabled: 1,
-  });
+  recordOwnerAction(
+    'Owner enrolled as dispute moderator',
+    `DisputeModule@${disputeAddress}`,
+    'setModerator',
+    {
+      moderator: ownerAddress,
+      enabled: 1,
+    }
+  );
   await dispute.connect(owner).setModerator(moderatorAddress, 1);
-  recordOwnerAction('External moderator empowered', `DisputeModule@${disputeAddress}`, 'setModerator', {
-    moderator: moderatorAddress,
-    enabled: 1,
-  });
+  recordOwnerAction(
+    'External moderator empowered',
+    `DisputeModule@${disputeAddress}`,
+    'setModerator',
+    {
+      moderator: moderatorAddress,
+      enabled: 1,
+    }
+  );
 
   const typeHash = ethers.id(
-    'ResolveDispute(uint256 jobId,bool employerWins,address module,uint256 chainId)'
+    'ResolveDisputeV3(uint256 jobId,bool employerWins,address module,uint256 chainId,address registry,uint256 disputeRound)'
   );
   const network = await ethers.provider.getNetwork();
   const structHash = ethers.keccak256(
     ethers.AbiCoder.defaultAbiCoder().encode(
-      ['bytes32', 'uint256', 'bool', 'address', 'uint256'],
-      [typeHash, jobId, false, await dispute.getAddress(), network.chainId]
+      [
+        'bytes32',
+        'uint256',
+        'bool',
+        'address',
+        'uint256',
+        'address',
+        'uint256',
+      ],
+      [
+        typeHash,
+        jobId,
+        false,
+        await dispute.getAddress(),
+        network.chainId,
+        await dispute.jobRegistry(),
+        await dispute.disputeRound(jobId),
+      ]
     )
   );
   const sigOwner = await owner.signMessage(ethers.getBytes(structHash));
@@ -2849,7 +3364,9 @@ async function runDisputeScenario(env: DemoEnvironment): Promise<void> {
     .connect(moderator)
     .resolveWithSignatures(jobId, false, [sigOwner, sigModerator]);
 
-  logStep('Nation B finalizes, distributing escrow and validator rewards post-dispute');
+  logStep(
+    'Nation B finalizes, distributing escrow and validator rewards post-dispute'
+  );
   await registry.connect(nationB).finalize(jobId);
   const finalizedMetadata = await logJobSummary(
     registry,
@@ -2877,7 +3394,10 @@ async function runDisputeScenario(env: DemoEnvironment): Promise<void> {
   const participants = [
     { name: 'Nation B', address: await nationB.getAddress() },
     { name: 'Bob (agent)', address: await agentBob.getAddress() },
-    { name: 'Charlie (validator)', address: await validatorCharlie.getAddress() },
+    {
+      name: 'Charlie (validator)',
+      address: await validatorCharlie.getAddress(),
+    },
     { name: 'Dora (validator)', address: await validatorDora.getAddress() },
     { name: 'Evan (validator)', address: await validatorEvan.getAddress() },
   ];
@@ -2903,7 +3423,10 @@ async function main(): Promise<void> {
     { name: 'Nation B', address: await env.nationB.getAddress() },
     { name: 'Alice (agent)', address: await env.agentAlice.getAddress() },
     { name: 'Bob (agent)', address: await env.agentBob.getAddress() },
-    { name: 'Charlie (validator)', address: await env.validatorCharlie.getAddress() },
+    {
+      name: 'Charlie (validator)',
+      address: await env.validatorCharlie.getAddress(),
+    },
     { name: 'Dora (validator)', address: await env.validatorDora.getAddress() },
     { name: 'Evan (validator)', address: await env.validatorEvan.getAddress() },
   ]);
@@ -2920,13 +3443,17 @@ async function main(): Promise<void> {
     timeline,
   });
 
-  logSection('Demo complete – AGI Jobs v2 sovereignty market simulation finished');
+  logSection(
+    'Demo complete – AGI Jobs v2 sovereignty market simulation finished'
+  );
 
   if (exportPath) {
     const resolved = resolve(exportPath);
     mkdirSync(dirname(resolved), { recursive: true });
     const network = await ethers.provider.getNetwork();
-    const ownerControlExport = sanitizeValue(ownerControl) as OwnerControlSnapshot;
+    const ownerControlExport = sanitizeValue(
+      ownerControl
+    ) as OwnerControlSnapshot;
     const payload: DemoExportPayload = {
       generatedAt: nowIso(),
       network: `${network.name ?? 'hardhat'} (chainId ${network.chainId})`,

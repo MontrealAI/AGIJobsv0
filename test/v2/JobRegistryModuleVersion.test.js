@@ -5,7 +5,7 @@ const { expect } = require('chai');
 const { ethers } = require('hardhat');
 
 describe('JobRegistry module version checks', function () {
-  let owner, registry, good, bad;
+  let owner, registry, goodReputation, good, bad;
 
   beforeEach(async function () {
     [owner] = await ethers.getSigners();
@@ -30,6 +30,7 @@ describe('JobRegistry module version checks', function () {
       'contracts/v2/mocks/VersionMock.sol:VersionMock'
     );
     good = await Version.deploy(2);
+    goodReputation = await Version.deploy(3);
     bad = await Version.deploy(3);
   });
 
@@ -40,7 +41,7 @@ describe('JobRegistry module version checks', function () {
         .setModules(
           await bad.getAddress(),
           await good.getAddress(),
-          await good.getAddress(),
+          await goodReputation.getAddress(),
           await good.getAddress(),
           await good.getAddress(),
           await good.getAddress(),
@@ -56,7 +57,7 @@ describe('JobRegistry module version checks', function () {
         .setModules(
           await good.getAddress(),
           await bad.getAddress(),
-          await good.getAddress(),
+          await goodReputation.getAddress(),
           await good.getAddress(),
           await good.getAddress(),
           await good.getAddress(),
@@ -72,7 +73,7 @@ describe('JobRegistry module version checks', function () {
         .setModules(
           await good.getAddress(),
           await good.getAddress(),
-          await bad.getAddress(),
+          await good.getAddress(),
           await good.getAddress(),
           await good.getAddress(),
           await good.getAddress(),
@@ -88,7 +89,7 @@ describe('JobRegistry module version checks', function () {
         .setModules(
           await good.getAddress(),
           await good.getAddress(),
-          await good.getAddress(),
+          await goodReputation.getAddress(),
           await bad.getAddress(),
           await good.getAddress(),
           await good.getAddress(),
@@ -104,7 +105,7 @@ describe('JobRegistry module version checks', function () {
         .setModules(
           await good.getAddress(),
           await good.getAddress(),
-          await good.getAddress(),
+          await goodReputation.getAddress(),
           await good.getAddress(),
           await bad.getAddress(),
           await good.getAddress(),
@@ -119,7 +120,7 @@ describe('JobRegistry module version checks', function () {
       .setModules(
         await good.getAddress(),
         await good.getAddress(),
-        await good.getAddress(),
+        await goodReputation.getAddress(),
         await good.getAddress(),
         await good.getAddress(),
         await good.getAddress(),

@@ -69,7 +69,9 @@ jobs:
       - name: Release provenance regression tests
         run: node --test test/scripts/alpha-agent-receipt.test.cjs test/scripts/deployment-candidate.test.cjs test/scripts/runner-egress.test.cjs test/scripts/demo-report-paths.test.cjs test/scripts/local-demo-rpc.test.cjs test/scripts/release-provenance.test.cjs test/scripts/release-inventory.test.cjs test/scripts/contract-size.test.cjs test/scripts/release-ci.test.cjs test/scripts/dependency-audit.test.cjs test/scripts/slither-policy.test.cjs test/scripts/dispute-overloads.test.js test/hamiltonian-monitor.config.test.js
       - name: Compiler admission regression tests
-        run: node --test test/scripts/demo-concurrency.test.cjs test/scripts/solidity-policy.test.cjs test/scripts/verification-evidence.test.cjs
+        run: node --test test/scripts/demo-concurrency.test.cjs test/scripts/solidity-policy.test.cjs test/scripts/verification-evidence.test.cjs test/scripts/all-contract-verification.test.cjs test/scripts/qualified-activation-cli.test.cjs test/scripts/trace-evidence.test.cjs test/scripts/geth-trace-integration.test.cjs
+      - name: Verification entrypoint semantic types
+        run: node scripts/ci/check-verification-types.cjs
       - name: Prettier formatting check
         run: npm run format:check
       - name: Targeted lint suite

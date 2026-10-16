@@ -184,6 +184,8 @@ All setters remain accessible through block-explorer interfaces, keeping adminis
 
 ### Swapping validation modules
 
+**Legacy v2 example only:** the terminal-reputation-v3 Registry rejects `NoValidationModule` and `OracleValidationModule` because they do not implement its terminal policy capability. Compatible optional-adapter support remains unresolved; use the real committee ValidationModule for the currently tested v3 path. See [the current compatibility limitation](production/terminal-reputation-v3.md#external-terminal-candidate-reconciliation). The historical example below does not authorize a v3 configuration.
+
 Different validation strategies can be wired into `JobRegistry` by calling `setValidationModule` with the address of the desired implementation:
 
 ```solidity

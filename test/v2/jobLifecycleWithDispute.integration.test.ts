@@ -164,6 +164,9 @@ async function deployFullSystem() {
     .connect(owner)
     .setIdentityRegistry(await identity.getAddress());
   await reputation.connect(owner).setCaller(await registry.getAddress(), true);
+  await reputation
+    .connect(owner)
+    .setJobRegistry(await registry.getAddress(), true);
 
   return {
     owner,
@@ -202,7 +205,10 @@ describe('job lifecycle with dispute and validator failure', function () {
     const stakeAmount = ethers.parseUnits('1', AGIALPHA_DECIMALS);
     for (const signer of [agent, v1, v2, v3]) {
       // Agent collateral is 10% of the 100-token reward; validator admission stays independent.
-      const deposit = signer === agent ? ethers.parseUnits('10', AGIALPHA_DECIMALS) : stakeAmount;
+      const deposit =
+        signer === agent
+          ? ethers.parseUnits('10', AGIALPHA_DECIMALS)
+          : stakeAmount;
       await token.connect(signer).approve(await stake.getAddress(), deposit);
       const role = signer === agent ? Role.Agent : Role.Validator;
       await stake.connect(signer).depositStake(role, deposit);
@@ -301,13 +307,29 @@ describe('job lifecycle with dispute and validator failure', function () {
     await dispute.connect(owner).setModerator(owner.address, 1);
     await dispute.connect(owner).setModerator(moderator.address, 1);
     const typeHash = ethers.id(
-      'ResolveDispute(uint256 jobId,bool employerWins,address module,uint256 chainId)'
+      'ResolveDisputeV3(uint256 jobId,bool employerWins,address module,uint256 chainId,address registry,uint256 disputeRound)'
     );
     const network = await ethers.provider.getNetwork();
     const structHash = ethers.keccak256(
       ethers.AbiCoder.defaultAbiCoder().encode(
-        ['bytes32', 'uint256', 'bool', 'address', 'uint256'],
-        [typeHash, 1n, false, await dispute.getAddress(), network.chainId]
+        [
+          'bytes32',
+          'uint256',
+          'bool',
+          'address',
+          'uint256',
+          'address',
+          'uint256',
+        ],
+        [
+          typeHash,
+          1n,
+          false,
+          await dispute.getAddress(),
+          network.chainId,
+          await dispute.jobRegistry(),
+          await dispute.disputeRound(1),
+        ]
       )
     );
     const sigOwner = await owner.signMessage(ethers.getBytes(structHash));

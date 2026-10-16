@@ -209,6 +209,9 @@ describe('Planetary-scale ASI take-off demo', function () {
     await reputation
       .connect(owner)
       .setAuthorizedCaller(await registry.getAddress(), true);
+    await reputation
+      .connect(owner)
+      .setJobRegistry(await registry.getAddress(), true);
 
     await policy
       .connect(owner)

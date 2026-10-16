@@ -26,7 +26,7 @@ contract JobRegistrySettlement is JobRegistryBase, DelegateOnly {
     constructor() JobRegistryBase(msg.sender) {}
 
     function moduleId() external pure returns (bytes32) {
-        return keccak256("JobRegistrySettlement:percentage-stake-v2");
+        return keccak256("JobRegistrySettlement:terminal-claims-v3");
     }
 
     /// @param jobId Identifier of the job being finalised.
@@ -105,6 +105,10 @@ contract JobRegistrySettlement is JobRegistryBase, DelegateOnly {
     /// @param employerWins True if the employer won the dispute
     function resolveDispute(uint256 jobId, bool employerWins) external onlyDelegateCall {
         return _entry_resolveDispute(jobId, employerWins);
+    }
+
+    function resolveDisputeOutcome(uint256 jobId, uint8 outcome, bytes32 evidenceHash) external onlyDelegateCall {
+        _entry_resolveDisputeOutcome(jobId, outcome, evidenceHash);
     }
 
     /// @notice Finalize a job and trigger payouts and reputation changes.

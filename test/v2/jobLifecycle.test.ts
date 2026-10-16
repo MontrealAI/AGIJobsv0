@@ -146,10 +146,11 @@ async function deploySystem() {
   );
   await registry.setIdentityRegistry(await identity.getAddress());
   await reputation.setCaller(await registry.getAddress(), true);
+  await reputation.setJobRegistry(await registry.getAddress(), true);
   await reputation.setPremiumThreshold(10);
   await reputation.setCaller(owner.address, true);
-  // Growth uses diminishing returns: adding 11 seeds the eligibility threshold of 10.
-  await reputation.add(agent.address, 11);
+  // Increment-only growth at score zero credits the exact eligibility threshold.
+  await reputation.add(agent.address, 10);
   expect(await reputation.reputation(agent.address)).to.equal(10);
 
   await registry.setFeePct(0);

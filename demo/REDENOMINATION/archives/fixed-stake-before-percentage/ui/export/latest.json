@@ -1,0 +1,478 @@
+{
+  "meta": {
+    "generatedAt": "2026-10-05T18:44:00.336Z",
+    "generator": "demo/REDENOMINATION/scripts/playbook.cjs",
+    "scenario": "AGI Jobs redenomination planning rehearsal",
+    "version": "2.0.0",
+    "mode": "planning-only",
+    "source": "local configuration; no on-chain state queried",
+    "liveProvider": false,
+    "transactionsSubmitted": false,
+    "productionApproved": false,
+    "inputs": [
+      {
+        "path": "config/agialpha.json",
+        "sha256": "a6ce5c39468c7ad8445ee1f2007b588e648e049c36f5b8abca5c5329f0510286"
+      },
+      {
+        "path": "config/owner-control.json",
+        "sha256": "41d423736740423f2d4ee5bcedd92710e9ba0ce25c2e6c7d9a507125c0ee0364"
+      },
+      {
+        "path": "config/stake-manager.json",
+        "sha256": "68bee818297ad49f87027417234ffe4a2b5b94a2d71addcd6ef6262bcfbf024c"
+      },
+      {
+        "path": "config/job-registry.json",
+        "sha256": "c3d4b7a5c68e4ebd5886dbab6715a6e8a56d09569e70abf70488c433d03b747f"
+      },
+      {
+        "path": "config/fee-pool.json",
+        "sha256": "f5d10c0e1b256f0ed63a732823013d799d98a752459d9df35e2e1e822ea2520f"
+      }
+    ]
+  },
+  "token": {
+    "currentSymbol": "AGIALPHA",
+    "targetSymbol": "AGIΩ",
+    "targetName": "AGI Omega",
+    "currentDecimals": 18,
+    "targetDecimals": 18,
+    "redenominationFactor": "1000",
+    "conversion": "1000 old tokens = 1 new token",
+    "formula": "targetRaw = sourceRaw × 10^targetDecimals ÷ (factor × 10^currentDecimals)",
+    "rounding": "reject",
+    "dust": [],
+    "supplyBefore": {
+      "raw": "42000000000000000000000000",
+      "tokens": "42000000.0",
+      "formatted": "42000000.0 AGIALPHA"
+    },
+    "supplyAfter": {
+      "raw": "42000000000000000000000",
+      "tokens": "42000.0",
+      "formatted": "42000.0 AGIΩ"
+    },
+    "rationale": [
+      "Change the nominal unit while explicitly reconciling every base unit.",
+      "Preserve percentage policies and review all token-denominated thresholds.",
+      "This report proposes values; it does not replace token contracts, migrate balances or guarantee purchasing power."
+    ]
+  },
+  "governance": [
+    {
+      "label": "Protocol owner",
+      "address": "0x0000000000000000000000000000000000000000",
+      "role": "Configured authority; verify against the actual chain"
+    },
+    {
+      "label": "Governance multisig",
+      "address": "0x0000000000000000000000000000000000000000",
+      "role": "Review and authorize separately"
+    },
+    {
+      "label": "hgmControlModule owner",
+      "role": "Configuration only; not a verified deployment"
+    },
+    {
+      "label": "stakeManager owner",
+      "role": "Configuration only; not a verified deployment"
+    },
+    {
+      "label": "jobRegistry owner",
+      "role": "Configuration only; not a verified deployment"
+    },
+    {
+      "label": "rewardEngine owner",
+      "role": "Configuration only; not a verified deployment"
+    },
+    {
+      "label": "thermostat owner",
+      "role": "Configuration only; not a verified deployment"
+    },
+    {
+      "label": "systemPause owner",
+      "role": "Configuration only; not a verified deployment"
+    },
+    {
+      "label": "feePool owner",
+      "role": "Configuration only; not a verified deployment"
+    },
+    {
+      "label": "platformRegistry owner",
+      "role": "Configuration only; not a verified deployment"
+    },
+    {
+      "label": "platformIncentives owner",
+      "role": "Configuration only; not a verified deployment"
+    },
+    {
+      "label": "jobRouter owner",
+      "role": "Configuration only; not a verified deployment"
+    },
+    {
+      "label": "validationModule owner",
+      "role": "Configuration only; not a verified deployment"
+    },
+    {
+      "label": "reputationEngine owner",
+      "role": "Configuration only; not a verified deployment"
+    },
+    {
+      "label": "disputeModule owner",
+      "role": "Configuration only; not a verified deployment"
+    },
+    {
+      "label": "arbitratorCommittee owner",
+      "role": "Configuration only; not a verified deployment"
+    },
+    {
+      "label": "certificateNFT owner",
+      "role": "Configuration only; not a verified deployment"
+    },
+    {
+      "label": "taxPolicy owner",
+      "role": "Configuration only; not a verified deployment"
+    },
+    {
+      "label": "identityRegistry owner",
+      "role": "Configuration only; not a verified deployment"
+    },
+    {
+      "label": "attestationRegistry owner",
+      "role": "Configuration only; not a verified deployment"
+    }
+  ],
+  "modules": {
+    "stakeManager": {
+      "before": {
+        "minStake": {
+          "raw": "100000000000000000000",
+          "tokens": "100.0",
+          "formatted": "100.0 AGIALPHA"
+        },
+        "maxStakePerAddress": {
+          "raw": "0",
+          "tokens": "0.0",
+          "formatted": "0.0 AGIALPHA"
+        },
+        "roleMinimums.agent": {
+          "raw": "100000000000000000000",
+          "tokens": "100.0",
+          "formatted": "100.0 AGIALPHA"
+        },
+        "roleMinimums.validator": {
+          "raw": "1000000000000000000000",
+          "tokens": "1000.0",
+          "formatted": "1000.0 AGIALPHA"
+        },
+        "roleMinimums.platform": {
+          "raw": "0",
+          "tokens": "0.0",
+          "formatted": "0.0 AGIALPHA"
+        },
+        "stakeRecommendations.min": {
+          "raw": "100000000000000000000",
+          "tokens": "100.0",
+          "formatted": "100.0 AGIALPHA"
+        },
+        "stakeRecommendations.max": {
+          "raw": "0",
+          "tokens": "0.0",
+          "formatted": "0.0 AGIALPHA"
+        },
+        "autoStake.floor": {
+          "raw": "100000000000000000000",
+          "tokens": "100.0",
+          "formatted": "100.0 AGIALPHA"
+        },
+        "autoStake.ceiling": {
+          "raw": "0",
+          "tokens": "0.0",
+          "formatted": "0.0 AGIALPHA"
+        },
+        "employerSlashPct": 50,
+        "treasurySlashPct": 50,
+        "feePct": 5,
+        "burnPct": 1,
+        "validatorRewardPct": 10,
+        "validatorSlashRewardPct": 0,
+        "unbondingPeriodSeconds": 604800,
+        "maxTotalPayoutPct": 200
+      },
+      "after": {
+        "minStake": {
+          "raw": "100000000000000000",
+          "tokens": "0.1",
+          "formatted": "0.1 AGIΩ"
+        },
+        "maxStakePerAddress": {
+          "raw": "0",
+          "tokens": "0.0",
+          "formatted": "0.0 AGIΩ"
+        },
+        "roleMinimums.agent": {
+          "raw": "100000000000000000",
+          "tokens": "0.1",
+          "formatted": "0.1 AGIΩ"
+        },
+        "roleMinimums.validator": {
+          "raw": "1000000000000000000",
+          "tokens": "1.0",
+          "formatted": "1.0 AGIΩ"
+        },
+        "roleMinimums.platform": {
+          "raw": "0",
+          "tokens": "0.0",
+          "formatted": "0.0 AGIΩ"
+        },
+        "stakeRecommendations.min": {
+          "raw": "100000000000000000",
+          "tokens": "0.1",
+          "formatted": "0.1 AGIΩ"
+        },
+        "stakeRecommendations.max": {
+          "raw": "0",
+          "tokens": "0.0",
+          "formatted": "0.0 AGIΩ"
+        },
+        "autoStake.floor": {
+          "raw": "100000000000000000",
+          "tokens": "0.1",
+          "formatted": "0.1 AGIΩ"
+        },
+        "autoStake.ceiling": {
+          "raw": "0",
+          "tokens": "0.0",
+          "formatted": "0.0 AGIΩ"
+        },
+        "employerSlashPct": 50,
+        "treasurySlashPct": 50,
+        "feePct": 5,
+        "burnPct": 1,
+        "validatorRewardPct": 10,
+        "validatorSlashRewardPct": 0,
+        "unbondingPeriodSeconds": 604800,
+        "maxTotalPayoutPct": 200
+      },
+      "summary": "Token amounts converted with exact integer arithmetic; policy, addresses and time limits retained in the draft."
+    },
+    "jobRegistry": {
+      "before": {
+        "jobStake": {
+          "raw": "1000000000000000000",
+          "tokens": "1.0",
+          "formatted": "1.0 AGIALPHA"
+        },
+        "minAgentStake": {
+          "raw": "100000000000000000000",
+          "tokens": "100.0",
+          "formatted": "100.0 AGIALPHA"
+        },
+        "maxJobReward": {
+          "raw": "1000000000000000000000",
+          "tokens": "1000.0",
+          "formatted": "1000.0 AGIALPHA"
+        },
+        "jobDurationLimitSeconds": 604800,
+        "maxActiveJobsPerAgent": 3,
+        "expirationGracePeriodSeconds": 86400,
+        "feePct": 5,
+        "validatorRewardPct": 10
+      },
+      "after": {
+        "jobStake": {
+          "raw": "1000000000000000",
+          "tokens": "0.001",
+          "formatted": "0.001 AGIΩ"
+        },
+        "minAgentStake": {
+          "raw": "100000000000000000",
+          "tokens": "0.1",
+          "formatted": "0.1 AGIΩ"
+        },
+        "maxJobReward": {
+          "raw": "1000000000000000000",
+          "tokens": "1.0",
+          "formatted": "1.0 AGIΩ"
+        },
+        "jobDurationLimitSeconds": 604800,
+        "maxActiveJobsPerAgent": 3,
+        "expirationGracePeriodSeconds": 86400,
+        "feePct": 5,
+        "validatorRewardPct": 10
+      },
+      "summary": "Proposed nominal thresholds. Existing escrow and obligations are not changed by this generator."
+    },
+    "feePool": {
+      "before": {
+        "burnPct": 1,
+        "rewardRole": "platform"
+      },
+      "after": {
+        "burnPct": 1,
+        "rewardRole": "platform"
+      },
+      "summary": "Configured percentages stay unchanged. No balances or purchasing power are inferred."
+    }
+  },
+  "configSnapshots": {
+    "stakeManager": {
+      "minStakeTokens": "0.1",
+      "employerSlashPct": 50,
+      "treasurySlashPct": 50,
+      "feePct": 5,
+      "burnPct": 1,
+      "validatorRewardPct": 10,
+      "validatorSlashRewardPct": 0,
+      "treasury": "0x0000000000000000000000000000000000000000",
+      "treasuryAllowlist": {},
+      "unbondingPeriodSeconds": 604800,
+      "maxStakePerAddressTokens": "0.0",
+      "stakeRecommendations": {
+        "minTokens": "0.1",
+        "maxTokens": "0.0"
+      },
+      "roleMinimums": {
+        "agentTokens": "0.1",
+        "validatorTokens": "1.0",
+        "platformTokens": "0.0"
+      },
+      "autoStake": {
+        "enabled": false,
+        "threshold": 10,
+        "increasePct": 20,
+        "decreasePct": 10,
+        "windowSeconds": 604800,
+        "floorTokens": "0.1",
+        "ceilingTokens": "0.0",
+        "temperatureThreshold": 0,
+        "hamiltonianThreshold": 0,
+        "disputeWeight": 1,
+        "temperatureWeight": 1,
+        "hamiltonianWeight": 1
+      },
+      "pauser": "0x0000000000000000000000000000000000000000",
+      "jobRegistry": "0x0000000000000000000000000000000000000000",
+      "disputeModule": "0x0000000000000000000000000000000000000000",
+      "validationModule": "0x0000000000000000000000000000000000000000",
+      "thermostat": "0x0000000000000000000000000000000000000000",
+      "hamiltonianFeed": "0x0000000000000000000000000000000000000000",
+      "feePool": "0x0000000000000000000000000000000000000000",
+      "maxAGITypes": 50,
+      "maxTotalPayoutPct": 200
+    },
+    "jobRegistry": {
+      "jobStakeTokens": "0.001",
+      "minAgentStakeTokens": "0.1",
+      "maxJobRewardTokens": "1.0",
+      "jobDurationLimitSeconds": 604800,
+      "maxActiveJobsPerAgent": 3,
+      "expirationGracePeriodSeconds": 86400,
+      "feePct": 5,
+      "validatorRewardPct": 10,
+      "treasury": "0x0000000000000000000000000000000000000000",
+      "taxPolicy": "0x0000000000000000000000000000000000000000",
+      "acknowledgers": {}
+    }
+  },
+  "policyObservations": [],
+  "timeline": [
+    {
+      "id": "snapshot",
+      "title": "Capture and reconcile the source",
+      "description": "Record chain ID, token address/decimals, snapshot block, balances, escrow, stakes and pending claims. This file only reads local configuration.",
+      "commands": [
+        "npm run demo:redenomination:verify"
+      ],
+      "checkpoints": [
+        "Compare source configuration with independently captured chain state.",
+        "Reject conflicting units and account for all liabilities."
+      ]
+    },
+    {
+      "id": "pause",
+      "title": "Preview the authorized pause",
+      "description": "Use the actual governance authority after rehearsal. This command simulates against an already prepared local deployment.",
+      "commands": [
+        "HARDHAT_NETWORK=localhost npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/systemPauseAction.ts --action pause --dry-run"
+      ],
+      "checkpoints": [
+        "Verify every module and in-flight worker before a real pause.",
+        "The report is not permission to sign."
+      ]
+    },
+    {
+      "id": "migrate-ledgers",
+      "title": "Prepare a separately audited migration",
+      "description": "No ledger migration implementation ships in this demo. Supply a reviewed migration, rollback/recovery plan, dust allocation and independent reconciliation before changing real balances.",
+      "commands": [
+        "npm run demo:redenomination:export"
+      ],
+      "checkpoints": [
+        "Old token amount = new token amount × factor for exact conversions.",
+        "Sum of per-account floors can differ from floor of total supply; assign and reconcile dust explicitly."
+      ]
+    },
+    {
+      "id": "update-parameters",
+      "title": "Review draft guardrails",
+      "description": "Compare the embedded configSnapshots and source hashes. Existing contracts use their configured token and scale; editing decimals or a symbol here does not migrate them.",
+      "commands": [
+        "npm run demo:redenomination:owner-console"
+      ],
+      "checkpoints": [
+        "Do not apply a new-token draft to old-token contracts.",
+        "Preserve addresses, slashing splits, max stake and auto-stake bounds."
+      ]
+    },
+    {
+      "id": "resume",
+      "title": "Verify before authorized resumption",
+      "description": "Reconcile actual balances, pending jobs, disputes and worker outcomes. Resume through the configured authority only after deployment-specific approval.",
+      "commands": [
+        "HARDHAT_NETWORK=localhost npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/systemPauseAction.ts --action unpause --dry-run"
+      ],
+      "checkpoints": [
+        "Verify transaction receipts and final chain state after real execution.",
+        "No approval, certificate, payout or live readiness is inferred from this plan."
+      ]
+    }
+  ],
+  "invariants": [
+    "For exact conversion: targetRaw × factor × 10^currentDecimals = sourceRaw × 10^targetDecimals.",
+    "For floor conversion, retain the exact remainder fraction for every affected value; do not discard liabilities.",
+    "Fees, slashing splits, duration limits and unrelated configuration remain unchanged.",
+    "Reject precision loss by default and prevent positive thresholds from silently becoming zero.",
+    "Independent validation, authorization and chain finality remain separate from agent execution."
+  ],
+  "verification": [
+    "npm run demo:redenomination:verify",
+    "node --test demo/REDENOMINATION/tests/*.test.cjs",
+    "npm run demo:redenomination:guardian-drill"
+  ],
+  "references": [
+    "demo/REDENOMINATION/README.md",
+    "docs/computer-work.md",
+    "docs/system-pause.md",
+    "scripts/v2/updateStakeManager.ts",
+    "scripts/v2/updateJobRegistry.ts"
+  ],
+  "computerWork": {
+    "scope": "Lawful work performed with a keyboard, mouse and screen",
+    "surfaces": [
+      "OpenClaw with approved browser, files, code and native Codex tools",
+      "Operator-led ChatGPT Work with enabled Computer Use",
+      "Separately implemented OpenAI API computer-use runtime"
+    ],
+    "task": "Produce a candidate conversion dossier, spreadsheet and reconciliation tests from public, licensed non-personal or synthetic inputs.",
+    "acceptance": [
+      "Independent checker recomputes every conversion from source base units.",
+      "Reviewer reconciles source totals, liabilities and dust; tests rounding, precision and interruption.",
+      "Separate governance signer authorizes any deployment or settlement."
+    ],
+    "marketAnnualUsd": "40000000000000",
+    "marketBasis": "Project planning assumption; unverified, not platform revenue",
+    "settlement": "USDC job-budget planning is separate from the AGIALPHA token-conversion example; no settlement token change is performed."
+  }
+}

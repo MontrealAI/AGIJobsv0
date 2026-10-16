@@ -65,6 +65,11 @@ function archiveVerification(directory, root = process.cwd()) {
     schema: 'agijobsv0/verification-inputs/1',
     compiler: report.compiler,
     contracts,
+    developmentInventory: {
+      sources: report.sources,
+      contracts: report.contracts,
+      exclusions: report.exclusions,
+    },
     files,
     note: 'Compiler evidence only. Pair with the deployment journal for chain, addresses, transactions and original constructor arguments. Not explorer verification or production approval.',
   };

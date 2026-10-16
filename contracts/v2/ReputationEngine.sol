@@ -3,19 +3,24 @@ pragma solidity ^0.8.25;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
+import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 import {IStakeManager} from "./interfaces/IStakeManager.sol";
 import {IReputationEngineV2} from "./interfaces/IReputationEngineV2.sol";
 import {TOKEN_SCALE} from "./Constants.sol";
+import {ITerminalJobRegistry} from "./interfaces/ITerminalReputation.sol";
 
 /// @title ReputationEngine
 /// @notice Tracks reputation scores with blacklist enforcement.
 /// Only authorised callers may update scores.
-/// @dev Holds no funds and rejects ether so neither the contract nor the
-///      owner ever custodies assets or incurs tax liabilities.
+/// @dev Holds no funds and rejects ether. Protocol flags do not determine
+///      the legal or tax obligations of any contract participant or owner.
 contract ReputationEngine is Ownable, Pausable, IReputationEngineV2 {
     error NotOwnerOrPauserManager();
     /// @notice Module version for compatibility checks.
-    uint256 public constant version = 2;
+    uint256 public constant version = 3;
+
+    /// @notice Exact capability identity for terminal-only, 18-decimal job scoring.
+    bytes32 public constant terminalPolicyId = keccak256("AGIJobs:terminal-reputation-v3");
 
     /// @notice Scaling divisor for the cubed payout component.
     uint256 public constant PAYOUT_SCALE = 1e5;
@@ -27,7 +32,8 @@ contract ReputationEngine is Ownable, Pausable, IReputationEngineV2 {
     ///      18 decimals.
     uint256 public constant LOG_FACTOR = 1e6;
 
-    /// @notice Divisor applied to job duration when computing reputation gain.
+    /// @notice Historical duration divisor retained for ABI compatibility.
+    /// @dev Legacy ABI constant only; elapsed duration earns no points under v3.
     uint256 public constant DURATION_SCALE = 10_000;
 
     /// @notice Denominator for percentage calculations (100%).
@@ -67,6 +73,207 @@ contract ReputationEngine is Ownable, Pausable, IReputationEngineV2 {
     event PauserManagerUpdated(address indexed pauserManager);
 
     error ArrayLengthMismatch();
+    error ScoringPayoutTooLarge(uint256 payout);
+
+    /// @notice Maximum canonical payout: uint128 reward at the 200% payout cap.
+    uint256 public constant MAX_SCORING_PAYOUT = uint256(type(uint128).max) * 2;
+
+    uint16 public failurePenaltyBps = 1000;
+    uint32 public failurePenaltyCap = 10;
+    mapping(address => bool) public jobRegistries;
+
+    struct JobAccounting {
+        address agent;
+        uint40 createdAt;
+        uint40 assignedAt;
+        uint40 submittedAt;
+        uint16 penaltyBps;
+        uint32 penaltyCap;
+        uint32 maximumDebit;
+        uint8 validatorRewardPct;
+        bool exists;
+        bool assigned;
+        bool submitted;
+        bool settled;
+        bool success;
+        bool attributed;
+        bool roundRecorded;
+        uint32 actualAgentGain;
+        uint256 roundId;
+        uint256 validatorCount;
+    }
+
+    /// @dev One storage word per immutable participant. Claims never delete facts.
+    struct ValidatorFact {
+        address validator;
+        bool revealed;
+        bool vote;
+    }
+
+    mapping(bytes32 => JobAccounting) private _jobAccounting;
+    mapping(bytes32 => mapping(uint256 => ValidatorFact)) private _validatorFacts;
+    mapping(bytes32 => mapping(uint256 => uint256)) private _accountedValidators;
+
+    error InvalidTerminalRegistry();
+    error InvalidFailurePenalty();
+    error InvalidJobAccountingState();
+    error InvalidRound();
+    error ValidatorAlreadyAccounted();
+    event JobRegistryAuthorizationUpdated(address indexed registry, bool allowed);
+    event FailurePenaltyPolicyUpdated(uint256 basisPoints, uint256 maximumPoints);
+    event JobPolicySnapshotted(address indexed registry, uint256 indexed jobId, uint256 penaltyBps, uint256 penaltyCap, uint256 validatorRewardPct);
+    event AssignmentScoreSnapshotted(address indexed registry, uint256 indexed jobId, address indexed agent, uint256 score, uint256 maximumDebit);
+    event SubmissionTimeRecorded(address indexed registry, uint256 indexed jobId, uint256 submittedAt);
+    event RoundFactsRecorded(address indexed registry, uint256 indexed jobId, uint256 roundId, uint256 validatorCount);
+    event JobReputationFinalized(address indexed registry, uint256 indexed jobId, address indexed agent, bool success, bool attributed, uint256 credited, uint256 debited);
+    event ValidatorReputationAccounted(address indexed registry, uint256 indexed jobId, uint256 indexed index, address validator, uint256 credited, uint256 debited);
+
+    modifier onlyJobRegistry() {
+        if (!jobRegistries[msg.sender]) revert InvalidTerminalRegistry();
+        _;
+    }
+
+    function setJobRegistry(address registry, bool allowed) external onlyOwner {
+        if (allowed && (registry.code.length == 0 || ITerminalJobRegistry(registry).terminalPolicyId() != terminalPolicyId)) {
+            revert InvalidTerminalRegistry();
+        }
+        jobRegistries[registry] = allowed;
+        emit JobRegistryAuthorizationUpdated(registry, allowed);
+    }
+
+    function setFailurePenaltyPolicy(uint256 basisPoints, uint256 maximumPoints) external onlyOwner {
+        if (basisPoints > 10_000 || maximumPoints > MAX_REPUTATION) revert InvalidFailurePenalty();
+        failurePenaltyBps = uint16(basisPoints);
+        failurePenaltyCap = uint32(maximumPoints);
+        emit FailurePenaltyPolicyUpdated(basisPoints, maximumPoints);
+    }
+
+    function jobKey(address registry, uint256 jobId) public pure returns (bytes32) {
+        return keccak256(abi.encode(registry, jobId));
+    }
+
+    function jobAccounting(address registry, uint256 jobId) external view returns (JobAccounting memory) {
+        return _jobAccounting[jobKey(registry, jobId)];
+    }
+
+    function validatorFact(address registry, uint256 jobId, uint256 index) external view returns (ValidatorFact memory) {
+        return _validatorFacts[jobKey(registry, jobId)][index];
+    }
+
+    function validatorAccounted(address registry, uint256 jobId, uint256 index) public view returns (bool) {
+        return (_accountedValidators[jobKey(registry, jobId)][index >> 8] & (uint256(1) << (index & 255))) != 0;
+    }
+
+    function registerJob(uint256 jobId) external onlyJobRegistry whenNotPaused {
+        if (ITerminalJobRegistry(msg.sender).jobReputationEngine(jobId) != address(this)) revert InvalidTerminalRegistry();
+        JobAccounting storage account = _jobAccounting[jobKey(msg.sender, jobId)];
+        if (account.exists) revert InvalidJobAccountingState();
+        account.exists = true;
+        account.createdAt = uint40(block.timestamp);
+        account.penaltyBps = failurePenaltyBps;
+        account.penaltyCap = failurePenaltyCap;
+        account.validatorRewardPct = uint8(validationRewardPercentage);
+        emit JobPolicySnapshotted(msg.sender, jobId, failurePenaltyBps, failurePenaltyCap, validationRewardPercentage);
+    }
+
+    function assignJob(uint256 jobId, address agent) external onlyJobRegistry whenNotPaused {
+        JobAccounting storage account = _jobAccounting[jobKey(msg.sender, jobId)];
+        if (!account.exists || account.assigned || account.settled || agent == address(0)) revert InvalidJobAccountingState();
+        account.agent = agent;
+        account.assigned = true;
+        account.assignedAt = uint40(block.timestamp);
+        uint256 score = reputation[agent];
+        uint256 debit = Math.mulDiv(score, account.penaltyBps, 10_000, Math.Rounding.Ceil);
+        if (debit > account.penaltyCap) debit = account.penaltyCap;
+        account.maximumDebit = uint32(debit);
+        emit AssignmentScoreSnapshotted(msg.sender, jobId, agent, score, debit);
+    }
+
+    function submitJob(uint256 jobId) external onlyJobRegistry whenNotPaused {
+        JobAccounting storage account = _jobAccounting[jobKey(msg.sender, jobId)];
+        if (!account.assigned || account.submitted || account.settled) revert InvalidJobAccountingState();
+        account.submitted = true;
+        account.submittedAt = uint40(block.timestamp);
+        emit SubmissionTimeRecorded(msg.sender, jobId, block.timestamp);
+    }
+
+    /// @notice Snapshot the actual completed committee; later size limits do not truncate it.
+    /// @dev Closure work remains linear in the selected committee, as validation already is.
+    function recordRound(
+        address registry, uint256 jobId, uint256 roundId,
+        address[] calldata validators, bool[] calldata revealed, bool[] calldata votes, bool penalizeNonReveal
+    ) external whenNotPaused {
+        if (!jobRegistries[registry] || msg.sender != ITerminalJobRegistry(registry).validationModule()) revert InvalidTerminalRegistry();
+        bytes32 key = jobKey(registry, jobId);
+        JobAccounting storage account = _jobAccounting[key];
+        uint256 count = validators.length;
+        if (!account.submitted || account.settled || account.roundRecorded || roundId == 0) revert InvalidRound();
+        if (count != revealed.length || count != votes.length) revert ArrayLengthMismatch();
+        account.roundRecorded = true;
+        account.roundId = roundId;
+        account.validatorCount = count;
+        for (uint256 i; i < count; ++i) {
+            address validator = validators[i];
+            if (validator == address(0)) revert InvalidRound();
+            _validatorFacts[key][i] = ValidatorFact(validator, revealed[i], votes[i]);
+            // Objective non-reveal uses the existing administrative penalty semantics.
+            if (!revealed[i] && penalizeNonReveal) _decreaseReputation(validator, 1);
+        }
+        emit RoundFactsRecorded(registry, jobId, roundId, count);
+    }
+
+    /// @notice Account for the final agent outcome once; no validator claim is required.
+    function finalizeJob(uint256 jobId, address agent, bool success, bool attributed, uint256 payout)
+        external onlyJobRegistry whenNotPaused returns (uint256 actualGain)
+    {
+        JobAccounting storage account = _jobAccounting[jobKey(msg.sender, jobId)];
+        if (!account.exists || account.settled || agent != account.agent) revert InvalidJobAccountingState();
+        if (success && (!account.submitted || !account.assigned)) revert InvalidJobAccountingState();
+        if ((!success && payout != 0) || (attributed && !account.assigned)) revert InvalidJobAccountingState();
+        account.settled = true;
+        account.success = success;
+        account.attributed = attributed;
+        uint256 debited;
+        if (success) {
+            actualGain = _increaseReputation(agent, calculateReputationPoints(payout, 0));
+            account.actualAgentGain = uint32(actualGain);
+        } else if (attributed) {
+            debited = _decreaseWithoutBlacklist(agent, account.maximumDebit);
+        }
+        emit JobReputationFinalized(msg.sender, jobId, agent, success, attributed, actualGain, debited);
+    }
+
+    /// @notice Permissionlessly process one immutable validator fact after settlement.
+    /// @dev No expiry and no claim-completion dependency on agent payout. Each call is O(1).
+    function accountValidator(address registry, uint256 jobId, uint256 index) external whenNotPaused {
+        bytes32 key = jobKey(registry, jobId);
+        JobAccounting storage account = _jobAccounting[key];
+        if (!account.settled || index >= account.validatorCount) revert InvalidJobAccountingState();
+        uint256 mask = uint256(1) << (index & 255);
+        uint256 word = index >> 8;
+        if ((_accountedValidators[key][word] & mask) != 0) revert ValidatorAlreadyAccounted();
+        _accountedValidators[key][word] |= mask;
+        ValidatorFact storage fact = _validatorFacts[key][index];
+        uint256 credited;
+        uint256 debited;
+        if (fact.revealed) {
+            if (account.success && fact.vote) {
+                uint256 points = Math.mulDiv(account.actualAgentGain, account.validatorRewardPct, PERCENTAGE_SCALE);
+                credited = _increaseReputation(fact.validator, points);
+            } else if (account.attributed && fact.vote != account.success) {
+                // Protocol-outcome disagreement is not proof of dishonesty.
+                debited = _decreaseWithoutBlacklist(fact.validator, 1);
+            }
+        }
+        emit ValidatorReputationAccounted(registry, jobId, index, fact.validator, credited, debited);
+    }
+
+    function _decreaseWithoutBlacklist(address user, uint256 maximum) internal returns (uint256 debit) {
+        uint256 current = reputation[user];
+        debit = maximum < current ? maximum : current;
+        reputation[user] = current - debit;
+        emit ReputationUpdated(user, -int256(debit), current - debit);
+    }
 
     modifier onlyOwnerOrPauser() {
         require(
@@ -193,10 +400,10 @@ contract ReputationEngine is Ownable, Pausable, IReputationEngineV2 {
     }
 
     /// @notice Internal helper to increase reputation and handle blacklist logic.
-    function _increaseReputation(address user, uint256 amount) internal {
+    function _increaseReputation(address user, uint256 amount) internal returns (uint256 delta) {
         uint256 current = reputation[user];
         uint256 newScore = _enforceReputationGrowth(current, amount);
-        uint256 delta = newScore - current;
+        delta = newScore - current;
         reputation[user] = newScore;
         emit ReputationUpdated(user, int256(delta), newScore);
         if (blacklisted[user] && newScore >= premiumThreshold) {
@@ -267,68 +474,38 @@ contract ReputationEngine is Ownable, Pausable, IReputationEngineV2 {
         require(reputation[user] >= premiumThreshold, "insufficient reputation");
     }
 
-    /// @notice Finalise a job and update reputation using v1 formulas.
-    function onFinalize(
-        address user,
-        bool success,
-        uint256 payout,
-        uint256 duration
-    ) external onlyCaller whenNotPaused {
-        _finalizeAgent(user, success, payout, duration);
+    error LegacyReputationLifecycleUnsupported();
+
+    /// @notice Legacy unkeyed lifecycle hooks cannot provide exactly-once accounting.
+    function onFinalize(address, bool, uint256, uint256) external pure {
+        revert LegacyReputationLifecycleUnsupported();
     }
 
-    /// @notice Reward a validator based on an agent's reputation gain.
-    /// @param validator The validator address
-    /// @param agentGain Reputation points awarded to the agent
-    function rewardValidator(address validator, uint256 agentGain) external onlyCaller whenNotPaused {
-        _rewardValidator(validator, agentGain);
+    function rewardValidator(address, uint256) external pure {
+        revert LegacyReputationLifecycleUnsupported();
     }
 
-    /// @notice Update agent and validator reputation for a completed job.
     function updateScores(
-        uint256,
-        address agent,
-        address[] calldata validators,
-        bool success,
-        bool[] calldata validatorRevealed,
-        bool[] calldata validatorVotes,
-        uint256 payout,
-        uint256 duration
-    ) external onlyCaller whenNotPaused {
-        uint256 length = validators.length;
-        if (length != validatorRevealed.length || length != validatorVotes.length) {
-            revert ArrayLengthMismatch();
-        }
-
-        uint256 agentGain = _finalizeAgent(agent, success, payout, duration);
-
-        for (uint256 i; i < length;) {
-            address validator = validators[i];
-            if (!validatorRevealed[i]) {
-                _decreaseReputation(validator, 1);
-            } else if (validatorVotes[i] != success) {
-                _decreaseReputation(validator, 1);
-            } else if (success) {
-                _rewardValidator(validator, agentGain);
-            }
-            unchecked {
-                ++i;
-            }
-        }
+        uint256, address, address[] calldata, bool, bool[] calldata,
+        bool[] calldata, uint256, uint256
+    ) external pure {
+        revert LegacyReputationLifecycleUnsupported();
     }
 
-    /// @notice Compute reputation gain based on payout and duration.
-    function calculateReputationPoints(uint256 payout, uint256 duration) public pure returns (uint256) {
+    /// @notice Compute payout-only reputation points in 18-decimal token units.
+    /// @dev The legacy duration argument is retained for ABI compatibility but earns no points.
+    function calculateReputationPoints(uint256 payout, uint256) public pure returns (uint256) {
+        if (payout > MAX_SCORING_PAYOUT) revert ScoringPayoutTooLarge(payout);
         // Convert the 18-decimal payout into whole tokens so subsequent math
         // remains independent of token precision.
         uint256 scaledPayout = payout / TOKEN_SCALE;
         uint256 payoutPoints = (scaledPayout ** PAYOUT_EXPONENT) / PAYOUT_SCALE;
-        return log2(1 + payoutPoints * LOG_FACTOR) + duration / DURATION_SCALE;
+        return log2(1 + payoutPoints * LOG_FACTOR);
     }
 
     /// @notice Compute validator reputation gain from agent gain.
     function calculateValidatorReputationPoints(uint256 agentReputationGain) public view returns (uint256) {
-        return (agentReputationGain * validationRewardPercentage) / PERCENTAGE_SCALE;
+        return Math.mulDiv(agentReputationGain, validationRewardPercentage, PERCENTAGE_SCALE);
     }
 
     /// @notice Log base 2 implementation from v1.
@@ -356,61 +533,15 @@ contract ReputationEngine is Ownable, Pausable, IReputationEngineV2 {
         }
     }
 
-    /// @notice Apply diminishing returns and cap to reputation growth using v1 formula.
+    /// @notice Attenuate only the incoming increment, floor-round, and cap growth.
+    /// @dev Zero/tiny gains may round to zero. Existing score is never reduced.
     function _enforceReputationGrowth(uint256 current, uint256 points) internal pure returns (uint256) {
-        uint256 newReputation = current + points;
-        uint256 numerator = newReputation * newReputation * TOKEN_SCALE;
-        uint256 denominator = MAX_REPUTATION * MAX_REPUTATION;
-        uint256 factor = TOKEN_SCALE + (numerator / denominator);
-        uint256 diminishedReputation = (newReputation * TOKEN_SCALE) / factor;
-        if (diminishedReputation > MAX_REPUTATION) {
-            return MAX_REPUTATION;
-        }
-        return diminishedReputation;
-    }
-
-    function _finalizeAgent(
-        address user,
-        bool success,
-        uint256 payout,
-        uint256 duration
-    ) internal returns (uint256 agentGain) {
-        uint256 points = calculateReputationPoints(payout, duration);
-        if (success) {
-            agentGain = points;
-            uint256 current = reputation[user];
-            uint256 newScore = _enforceReputationGrowth(current, points);
-            reputation[user] = newScore;
-            uint256 delta = newScore - current;
-            emit ReputationUpdated(user, int256(delta), newScore);
-            if (blacklisted[user] && newScore >= premiumThreshold) {
-                blacklisted[user] = false;
-                emit BlacklistUpdated(user, false);
-            }
-        } else {
-            uint256 current = reputation[user];
-            uint256 newScore = current > points ? current - points : 0;
-            reputation[user] = newScore;
-            uint256 delta = current - newScore;
-            emit ReputationUpdated(user, -int256(delta), newScore);
-            if (!blacklisted[user] && newScore < premiumThreshold) {
-                blacklisted[user] = true;
-                emit BlacklistUpdated(user, true);
-            }
-        }
-    }
-
-    function _rewardValidator(address validator, uint256 agentGain) internal {
-        uint256 gain = calculateValidatorReputationPoints(agentGain);
-        uint256 current = reputation[validator];
-        uint256 newScore = _enforceReputationGrowth(current, gain);
-        reputation[validator] = newScore;
-        uint256 delta = newScore - current;
-        emit ReputationUpdated(validator, int256(delta), newScore);
-        if (blacklisted[validator] && newScore >= premiumThreshold) {
-            blacklisted[validator] = false;
-            emit BlacklistUpdated(validator, false);
-        }
+        if (points == 0 || current >= MAX_REPUTATION) return current;
+        uint256 squaredCap = MAX_REPUTATION * MAX_REPUTATION;
+        uint256 gain = Math.mulDiv(points, squaredCap, squaredCap + current * current);
+        uint256 remaining = MAX_REPUTATION - current;
+        if (gain > remaining) gain = remaining;
+        return current + gain;
     }
 
     /// @notice Return the combined operator score based on stake and reputation.
@@ -425,8 +556,8 @@ contract ReputationEngine is Ownable, Pausable, IReputationEngineV2 {
         return ((stake * stakeWeight) + (rep * reputationWeight)) / TOKEN_SCALE;
     }
 
-    /// @notice Confirms the contract and its owner cannot incur tax obligations.
-    /// @return Always true, signalling perpetual tax exemption.
+    /// @notice Return the protocol tax-policy compatibility flag.
+    /// @return Always true; this is not a determination of legal tax exemption.
     function isTaxExempt() external pure returns (bool) {
         return true;
     }

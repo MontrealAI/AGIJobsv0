@@ -1,0 +1,35 @@
+{
+  "source_page": "https://geth.ethereum.org/downloads",
+  "official_linux_builder_fingerprint": "FDE5A1A044FA13D2F7ADA019A61A13569BA28146",
+  "downloads": [
+    {
+      "name": "geth-linux-amd64-1.17.6-3d84c6b2.tar.gz",
+      "url": "https://gethstore.blob.core.windows.net/builds/geth-linux-amd64-1.17.6-3d84c6b2.tar.gz",
+      "bytes": 24507747,
+      "sha256": "7e393b54ed1347221b3088efc290c0c6aaa8173f6a1d5b9d9b090bc8e04a43ad"
+    },
+    {
+      "name": "geth-linux-amd64-1.17.6-3d84c6b2.tar.gz.asc",
+      "url": "https://gethstore.blob.core.windows.net/builds/geth-linux-amd64-1.17.6-3d84c6b2.tar.gz.asc",
+      "bytes": 800,
+      "sha256": "4a76ebdbdb1e88ab5be7cf3360c1caaa80d641139e7fe11839b6f03a1f483003"
+    },
+    {
+      "name": "linux-builder.asc",
+      "url": "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0xA61A13569BA28146",
+      "bytes": 2244,
+      "sha256": "91e742aba960d6eb738f4954bd88fe9caeb82a1de1befe4868c2631de296fcc8"
+    }
+  ],
+  "signature_valid": true,
+  "signer_fingerprint": "FDE5A1A044FA13D2F7ADA019A61A13569BA28146",
+  "fingerprint_source": "https://geth.ethereum.org/downloads",
+  "binary_bytes": 62113816,
+  "binary_sha256": "1ad5c01dd2dc7c71ff064ed188d962a90fbf0372b77854d364aa7504f15d8f42",
+  "gpg_note": "Public-key import succeeded but optional agent startup failed; public signature verified successfully with --no-autostart. Official fingerprint pinned; no global trust changes.",
+  "clientVersion": "Geth/v1.17.6-stable-3d84c6b2/linux-amd64/go1.27.1",
+  "fixtureSha256": "b58c925afe850ccbd2154ecec5b06ac93636f5aa188ebab5c179e34842047750",
+  "scope": "Disposable local peerless dev chain, loopback RPC, test account, no external provider or explorer calls; not production qualification",
+  "rawCaptureSha256": "42093d65eff154c47b7cc4963e73a8e5e9b3e81cfc1b2563ce21dfc29e3e16c2",
+  "fixtureFormatting": "Whitespace-only JSON formatting; original raw RPC result values retained, original serialized capture archived separately."
+}

@@ -7,6 +7,7 @@ import {ITaxPolicy} from "../interfaces/ITaxPolicy.sol";
 
 /// @dev JobRegistry mock that ignores acknowledgement calls.
 contract JobRegistryAckStub is IJobRegistryAck, IJobRegistryTax {
+    bytes32 public constant terminalPolicyId = keccak256("AGIJobs:terminal-reputation-v3");
     ITaxPolicy public policy;
 
     constructor(ITaxPolicy _policy) {

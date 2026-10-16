@@ -22,7 +22,7 @@ contract ValidationModuleSelection is ValidationModuleBase, DelegateOnly {
     constructor() ValidationModuleBase() {}
 
     function moduleId() external pure returns (bytes32) {
-        return keccak256("ValidationModuleSelection:v1");
+        return keccak256("ValidationModuleSelection:terminal-claims-v3");
     }
 
     /// @inheritdoc IValidationModule

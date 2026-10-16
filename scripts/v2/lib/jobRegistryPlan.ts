@@ -143,10 +143,18 @@ export async function buildJobRegistryPlan(
   }
 
   if (config.jobStake !== undefined || config.jobStakeTokens !== undefined)
-    throw new Error('Legacy fixed job stake configuration is unsupported; use jobStakeBps');
-  if (config.jobStakeBps !== undefined && (!Number.isInteger(config.jobStakeBps) || config.jobStakeBps < 0 || config.jobStakeBps > 10000))
+    throw new Error(
+      'Legacy fixed job stake configuration is unsupported; use jobStakeBps'
+    );
+  if (
+    config.jobStakeBps !== undefined &&
+    (!Number.isInteger(config.jobStakeBps) ||
+      config.jobStakeBps < 0 ||
+      config.jobStakeBps > 10000)
+  )
     throw new Error('jobStakeBps must be an integer from 0 to 10000');
-  const desiredJobStake = config.jobStakeBps === undefined ? undefined : BigInt(config.jobStakeBps);
+  const desiredJobStake =
+    config.jobStakeBps === undefined ? undefined : BigInt(config.jobStakeBps);
   const desiredMinAgentStake = parseTokenAmount(
     config.minAgentStake,
     config.minAgentStakeTokens,
@@ -336,6 +344,50 @@ export async function buildJobRegistryPlan(
     ].join(', ');
 
   if (modulesDiffer) {
+    const runner = registry.runner;
+    const provider = runner?.provider;
+    if (!runner || !provider) {
+      throw new Error(
+        'JobRegistry contract runner and provider are required for module preflight'
+      );
+    }
+    const at = { blockTag: await provider.getBlockNumber() };
+    const expectedPolicy = ethers.id('AGIJobs:terminal-reputation-v3');
+    const compatibilityAbi = [
+      'function version() view returns (uint256)',
+      'function terminalPolicyId() view returns (bytes32)',
+    ];
+    const requirePolicy = async (contract: Contract, label: string) => {
+      try {
+        if ((await contract.terminalPolicyId(at)) !== expectedPolicy)
+          throw new Error('Unsupported terminal policy');
+      } catch {
+        throw new Error(
+          `${label} must expose terminalPolicyId AGIJobs:terminal-reputation-v3`
+        );
+      }
+    };
+    await requirePolicy(
+      new ethers.Contract(registry.target, compatibilityAbi, runner),
+      'JobRegistry'
+    );
+    for (const [label, address] of Object.entries(moduleBundleDesired)) {
+      const expectedVersion = label === 'reputation' ? 3n : 2n;
+      const target = new ethers.Contract(address, compatibilityAbi, runner);
+      try {
+        if (
+          address === ethers.ZeroAddress ||
+          (await target.version(at)) !== expectedVersion
+        )
+          throw new Error('Unsupported module version');
+      } catch {
+        throw new Error(
+          `${label} module must expose version() == ${expectedVersion}`
+        );
+      }
+      if (label === 'validation' || label === 'reputation')
+        await requirePolicy(target, `${label} module`);
+    }
     actions.push({
       label:
         'Update module bundle (validation, stake, reputation, dispute, certificate, fee pool)',
@@ -352,7 +404,7 @@ export async function buildJobRegistryPlan(
       current: describeModuleBundle(moduleBundleCurrent),
       desired: describeModuleBundle(moduleBundleDesired),
       notes: [
-        'Apply after verifying each module reports version() == 2.',
+        `Module interfaces checked at block ${at.blockTag}: ReputationEngine version 3; other bundle modules version 2; Registry, ValidationModule and ReputationEngine expose terminalPolicyId AGIJobs:terminal-reputation-v3.`,
         'Keeps job creation → validation → dispute routing deterministic.',
       ],
     });
@@ -478,9 +530,13 @@ export async function buildJobRegistryPlan(
   if (desiredJobStake !== undefined && desiredJobStake !== currentJobStake) {
     actions.push({
       label: `Update future-job stake rate to ${desiredJobStake} bps`,
-      method: 'setJobStakeBps', args: [desiredJobStake],
-      current: `${currentJobStake} bps`, desired: `${desiredJobStake} bps`,
-      notes: ['Applies to future jobs only; existing Job.stake snapshots are unchanged.'],
+      method: 'setJobStakeBps',
+      args: [desiredJobStake],
+      current: `${currentJobStake} bps`,
+      desired: `${desiredJobStake} bps`,
+      notes: [
+        'Applies to future jobs only; existing Job.stake snapshots are unchanged.',
+      ],
     });
   }
 

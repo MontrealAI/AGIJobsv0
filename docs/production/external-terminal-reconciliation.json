@@ -1,0 +1,164 @@
+{
+  "externalHead": "1ba24f044b50a9359c033dbb91cce78eccdb6b7f",
+  "externalParent": "a612487a14e2f03d056ec780aa55c93747f6a1e1",
+  "status": "manual functional/source reconciliation; no independent security approval",
+  "files": [
+    {
+      "externalPath": "contracts/v2/JobRegistry.sol",
+      "externalSha256": "63135774d6bef8e83c9d1328f063f340f90fb95977f76b8c537d9ee5e1e3a22f",
+      "activePath": "contracts/v2/JobRegistry.sol",
+      "activeSha256": "985d2cac7e6456e97798fdea482ac683e365958125abce6455287d4344f9ec91",
+      "decision": "Evaluate and retain approved v3 implementation: native payout units, terminal keyed agent accounting, explicit attribution, immutable engine-held facts, O(1) independent claims, pinned engine/module capabilities and full reveal deadlines. Do not replace with v2 unkeyed hooks, duration bonus or settlement-wide validator loop."
+    },
+    {
+      "externalPath": "contracts/v2/ValidationModule.sol",
+      "externalSha256": "135979fcb52e004f2982661aa31808fc88f9777506523fae8ac71479e39dd13b",
+      "activePath": "contracts/v2/ValidationModule.sol",
+      "activeSha256": "a44317b034cfc1393d5fd5657cb974c5aaa54c325057865ccb7e818871bbbdb1",
+      "decision": "Evaluate and retain approved v3 implementation: native payout units, terminal keyed agent accounting, explicit attribution, immutable engine-held facts, O(1) independent claims, pinned engine/module capabilities and full reveal deadlines. Do not replace with v2 unkeyed hooks, duration bonus or settlement-wide validator loop."
+    },
+    {
+      "externalPath": "contracts/v2/implementation/JobRegistryBase.sol",
+      "externalSha256": "d2e1c5b335d9b4533bcc74dcaa89ff12e05dd8cf9861d6dfa65c8ada98655276",
+      "activePath": "contracts/v2/implementation/JobRegistryBase.sol",
+      "activeSha256": "b0fc0d232734b475a89c4e75a6eaba893eee76028f78fbbf98e66dd1919dee54",
+      "decision": "Evaluate and retain approved v3 implementation: native payout units, terminal keyed agent accounting, explicit attribution, immutable engine-held facts, O(1) independent claims, pinned engine/module capabilities and full reveal deadlines. Do not replace with v2 unkeyed hooks, duration bonus or settlement-wide validator loop."
+    },
+    {
+      "externalPath": "contracts/v2/implementation/JobRegistryConfiguration.sol",
+      "externalSha256": "bd794b532592b8f5887a4ec892a12e5771048100e1fada8000999c2e2c2ec334",
+      "activePath": "contracts/v2/implementation/JobRegistryConfiguration.sol",
+      "activeSha256": "b0e5c91b95aeee691f088ca0410f0aa5a71e410e78432c483535d9bf334c0197",
+      "decision": "Evaluate and retain approved v3 implementation: native payout units, terminal keyed agent accounting, explicit attribution, immutable engine-held facts, O(1) independent claims, pinned engine/module capabilities and full reveal deadlines. Do not replace with v2 unkeyed hooks, duration bonus or settlement-wide validator loop."
+    },
+    {
+      "externalPath": "contracts/v2/implementation/JobRegistryLifecycle.sol",
+      "externalSha256": "6bd0467228d9a0b565374a4cca509589ce3b4a10182d82439aca1d82975af100",
+      "activePath": "contracts/v2/implementation/JobRegistryLifecycle.sol",
+      "activeSha256": "d12503768a34c4fa25a2f308acac6cb3379e5cf5cda68da8ace94f22246b5f89",
+      "decision": "Evaluate and retain approved v3 implementation: native payout units, terminal keyed agent accounting, explicit attribution, immutable engine-held facts, O(1) independent claims, pinned engine/module capabilities and full reveal deadlines. Do not replace with v2 unkeyed hooks, duration bonus or settlement-wide validator loop."
+    },
+    {
+      "externalPath": "contracts/v2/implementation/JobRegistrySettlement.sol",
+      "externalSha256": "157705f303ad7ea0473a08291a8fffcb60bef23c887d75ffb340d1aa870cd3fd",
+      "activePath": "contracts/v2/implementation/JobRegistrySettlement.sol",
+      "activeSha256": "202532006339c87ca791ef20b388186f2d85507ac83cc42f9d47f049cd774bdf",
+      "decision": "Evaluate and retain approved v3 implementation: native payout units, terminal keyed agent accounting, explicit attribution, immutable engine-held facts, O(1) independent claims, pinned engine/module capabilities and full reveal deadlines. Do not replace with v2 unkeyed hooks, duration bonus or settlement-wide validator loop."
+    },
+    {
+      "externalPath": "contracts/v2/implementation/ValidationModuleBase.sol",
+      "externalSha256": "b7e245f8e3ba06d10a4312e9569353235b5f37c32ba6d2116ae26306c418dfc5",
+      "activePath": "contracts/v2/implementation/ValidationModuleBase.sol",
+      "activeSha256": "82c6b7fb4b314fde388e2bfeeca5d245e067657da7480cbe6fa0d34a33e0e014",
+      "decision": "Evaluate and retain approved v3 implementation: native payout units, terminal keyed agent accounting, explicit attribution, immutable engine-held facts, O(1) independent claims, pinned engine/module capabilities and full reveal deadlines. Do not replace with v2 unkeyed hooks, duration bonus or settlement-wide validator loop."
+    },
+    {
+      "externalPath": "contracts/v2/implementation/ValidationModuleConfiguration.sol",
+      "externalSha256": "404d20a5b575f5b2778f12cade05b1bb33a0796146a2711666e209c1896fdb16",
+      "activePath": "contracts/v2/implementation/ValidationModuleConfiguration.sol",
+      "activeSha256": "0a71a5c9f4ffef632a56b186953241e7e7acfe8d677a2f60d4f1bfbdb7797367",
+      "decision": "Evaluate and retain approved v3 implementation: native payout units, terminal keyed agent accounting, explicit attribution, immutable engine-held facts, O(1) independent claims, pinned engine/module capabilities and full reveal deadlines. Do not replace with v2 unkeyed hooks, duration bonus or settlement-wide validator loop."
+    },
+    {
+      "externalPath": "contracts/v2/implementation/ValidationModuleSelection.sol",
+      "externalSha256": "13b8f5491b0ee46e48cce244e3538727d7b99c68758273ff0e33548c9d8309bb",
+      "activePath": "contracts/v2/implementation/ValidationModuleSelection.sol",
+      "activeSha256": "fc8d57d79dbdd29f1b8f54029a0d5d9057573cfe94c83856617328c1680abd59",
+      "decision": "Evaluate and retain approved v3 implementation: native payout units, terminal keyed agent accounting, explicit attribution, immutable engine-held facts, O(1) independent claims, pinned engine/module capabilities and full reveal deadlines. Do not replace with v2 unkeyed hooks, duration bonus or settlement-wide validator loop."
+    },
+    {
+      "externalPath": "contracts/v2/implementation/ValidationModuleVoting.sol",
+      "externalSha256": "f17294cafbe6ef4a6cfbe3c85fc8e470d991c6bc726f205d3e8be96e57020cb2",
+      "activePath": "contracts/v2/implementation/ValidationModuleVoting.sol",
+      "activeSha256": "b4dba62967bd21214a628ea6bd7264686b23e3af904126ce7a034bc3231b90ec",
+      "decision": "Evaluate and retain approved v3 implementation: native payout units, terminal keyed agent accounting, explicit attribution, immutable engine-held facts, O(1) independent claims, pinned engine/module capabilities and full reveal deadlines. Do not replace with v2 unkeyed hooks, duration bonus or settlement-wide validator loop."
+    },
+    {
+      "externalPath": "contracts/v2/interfaces/IValidationModule.sol",
+      "externalSha256": "ef76720b3a17aff4d908ee0fa5fd8a3dfd4b0c894ee1b9c343bcb737057714d9",
+      "activePath": "contracts/v2/interfaces/IValidationModule.sol",
+      "activeSha256": "d9c978d389f069a73144ea01f32722928bba8e82d191b6f7aab5d49d9272cbf4",
+      "decision": "Do not add legacy revealed() pull requirement. V3 real Validation pushes immutable complete round facts directly to the authorized engine; optional compatibility limits documented."
+    },
+    {
+      "externalPath": "contracts/v2/mocks/ValidationStub.sol",
+      "externalSha256": "d28f6f39243219ee4992d34f86874fd5237f3a80de1aaecbb7bc091f5588a054",
+      "activePath": "contracts/v2/mocks/ValidationStub.sol",
+      "activeSha256": "d4f596cba45388c19196be0e38c423e180883474f7bf8925b046491eeddc4e38",
+      "decision": "Retain current capability-aware v3 test stub and version rejection coverage; legacy revealed() pull API is not used."
+    },
+    {
+      "externalPath": "contracts/v2/modules/NoValidationModule.sol",
+      "externalSha256": "354be8b679a85a407ecdd7e686f2392006b035a4818f09e2819896c5348cb94e",
+      "activePath": "contracts/v2/modules/NoValidationModule.sol",
+      "activeSha256": "77b4f1deeffb4679b58854a3f9295ec573fb08f8ade630b5b3083fb06be226f3",
+      "decision": "Retain historical optional adapter unchanged. External revealed() addition serves its legacy snapshot architecture. This adapter does not implement terminalPolicyId and is explicitly unsupported by the v3 Registry; no false compatibility advertised."
+    },
+    {
+      "externalPath": "contracts/v2/modules/OracleValidationModule.sol",
+      "externalSha256": "fa44b536942294b844033877268d1d1523cca1e6f07acfe872ccc4c6244a148c",
+      "activePath": "contracts/v2/modules/OracleValidationModule.sol",
+      "activeSha256": "f7c65f4af927b4f83cf0606bc4e3d6a58563224a8f4e11df2dac61058123aa51",
+      "decision": "Retain historical optional adapter unchanged. External revealed() addition serves its legacy snapshot architecture. This adapter does not implement terminalPolicyId and is explicitly unsupported by the v3 Registry; no false compatibility advertised."
+    },
+    {
+      "externalPath": "docs/api/ReputationEngine.md",
+      "externalSha256": "52c910a007e8ae35063b451bf5b50bbab9f43f5f8ad1410656596989929cafdb",
+      "activePath": "docs/api/ReputationEngine.md",
+      "activeSha256": "6a9bf74077f1e761e240049c9774aff04eb624d61c71caa3bb6750a696083c8e",
+      "decision": "Retain accurate v3 API documentation: payout-only, bounded monotonic increments, explicit attribution, snapshot defaults, independent claims and legacy-hook rejection."
+    },
+    {
+      "externalPath": "docs/production/reputation-terminal-scoring-2026-10-15.md",
+      "externalSha256": "fa3177ece934bdff39ec5c04412c52030e3198f408b07d12b92c3f57c8291199",
+      "activePath": "docs/production/evidence/external-pr3972/reputation-terminal-scoring-2026-10-15.md",
+      "activeSha256": "fa3177ece934bdff39ec5c04412c52030e3198f408b07d12b92c3f57c8291199",
+      "decision": "Preserved byte-for-byte as labeled historical author evidence; not qualification of current v3."
+    },
+    {
+      "externalPath": "docs/production/reputation-terminal-scoring-evidence.json",
+      "externalSha256": "35b5cfd88210c04ccf0102db1e257e37eb8a8931b511a6dcee6d92c547bcb3f0",
+      "activePath": "docs/production/evidence/external-pr3972/reputation-terminal-scoring-evidence.json",
+      "activeSha256": "35b5cfd88210c04ccf0102db1e257e37eb8a8931b511a6dcee6d92c547bcb3f0",
+      "decision": "Preserved byte-for-byte as labeled historical author evidence; not qualification of current v3."
+    },
+    {
+      "externalPath": "scripts/deploy/implementations.cjs",
+      "externalSha256": "efd6d199a7c0c8a800d0207b5aaca2f66e26399412638bcca7466d65ad6d1130",
+      "activePath": "scripts/deploy/implementations.cjs",
+      "activeSha256": "c54c7f20184daae1cf8ecff92fe86888dd12717298e29bf1e2cda9bc01436481",
+      "decision": "Retain verified creation callbacks and terminal-claims-v3 identities for both Registry/Validation; StakeManager v1 unchanged. External percentage-stake-v3/Validation-v2 IDs are incompatible semantics."
+    },
+    {
+      "externalPath": "test/v2/FixedImplementations.test.js",
+      "externalSha256": "a432caa7238228d36734f69f1f1ec8c7ca850e1fa88585f57aad63f0b792ea8b",
+      "activePath": "test/v2/FixedImplementations.test.js",
+      "activeSha256": "aa7e9a3044fd4144b577834541e99842765f7df784848af896a686b3e6f91d8a",
+      "decision": "Retain stronger current v3 appended-layout, controller/delegate equality, original slot preservation, legacy ABI, capability and all production size checks; external snapshot layout is distinct."
+    },
+    {
+      "externalPath": "test/v2/ReputationTerminalSettlement.test.js",
+      "externalSha256": "d8fa195b339eb22c977445c2c8ac7b937c032bfc33c63f830f961460597e0b62",
+      "activePath": "test/v2/ReputationExternalReconciliationV3.test.js",
+      "activeSha256": "b93c8b2e368ca6266851c7a63b99dcf6299ee1fad6a33c8093a7fe6c32838710",
+      "decision": "All seven actual-committee regression intents adapted and executed under v3: native units, both reversals, genuine nonreveal once, forced quorum, atomic rollback and legacy route rejection. Explicit payout-only/claims/attribution policy differences retained."
+    },
+    {
+      "externalPath": "test/v2/ValidationModule.test.js",
+      "externalSha256": "1092b66bb067139ba441392421a1276a355f15cda78e33cb23f9cd7f66157a95",
+      "activePath": "test/v2/ValidationModule.test.js",
+      "activeSha256": "b0781099a59ae991bf297d8ccffa2772a2c007905c924499f52f91d741205f96",
+      "decision": "Retain migrated v3 fixtures and assertions; seven dedicated external intent regressions cover equivalent terminal behavior with documented policy differences."
+    },
+    {
+      "externalPath": "test/v2/jobFinalization.integration.test.js",
+      "externalSha256": "661a492ea9a8dbf0d96d97b72cde8f04c04a735269a74491026f456e0bf92ffe",
+      "activePath": "test/v2/jobFinalization.integration.test.js",
+      "activeSha256": "cd70a72f8109afb4e09362b35013bb0cdeb80933b35fb2ed3e29b1c5458ba7b0",
+      "decision": "Retain migrated v3 fixtures and assertions; seven dedicated external intent regressions cover equivalent terminal behavior with documented policy differences."
+    }
+  ],
+  "externalReportedResults": "Historical author reports only; current-source tests are separately recorded.",
+  "subsequentExternalHead": "495e82a62019c23ddcf1f2c6a342578363fb3bd4",
+  "implementationFamily": "terminal-claims-v3"
+}

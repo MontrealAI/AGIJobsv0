@@ -149,6 +149,7 @@ describe('job finalization integration', function () {
     await stakeManager.setSlashingPercentages(100, 0);
     await nft.setJobRegistry(await registry.getAddress());
     await rep.setAuthorizedCaller(await registry.getAddress(), true);
+    await rep.setJobRegistry(await registry.getAddress(), true);
     await rep.setThreshold(0);
     await nft.transferOwnership(await registry.getAddress());
 
@@ -211,12 +212,12 @@ describe('job finalization integration', function () {
     expect(employerAfter).to.equal(mintAmount - reward - fee);
     expect(v1Bal).to.equal(vReward / 2n);
     expect(v2Bal).to.equal(vReward / 2n);
-    expect(await rep.reputation(agent.address)).to.equal(152n);
+    expect(await rep.reputation(agent.address)).to.equal(33n);
     expect(await nft.balanceOf(agent.address)).to.equal(1n);
   });
 
   it('finalizes failed job after employer dispute', async () => {
-    // seed reputation to observe subtraction
+    // Seed an exact score; an unattributed financial refund must not invent a reputation debit.
     await rep.connect(owner).setAuthorizedCaller(owner.address, true);
     await rep.connect(owner).add(agent.address, 5);
 
@@ -260,7 +261,7 @@ describe('job finalization integration', function () {
     expect(agentAfter).to.equal(agentBefore);
     const feePoolAfter = await token.balanceOf(feePoolAddress);
     expect(feePoolAfter).to.equal(feePoolBefore);
-    expect(await rep.reputation(agent.address)).to.equal(4);
+    expect(await rep.reputation(agent.address)).to.equal(5);
     expect(await nft.balanceOf(agent.address)).to.equal(0n);
   });
 
@@ -309,7 +310,7 @@ describe('job finalization integration', function () {
     expect(employerAfter).to.equal(employerBefore);
     expect(v1Bal - v1Before).to.equal(0n);
     expect(v2Bal - v2Before).to.equal(0n);
-    expect(await rep.reputation(agent.address)).to.equal(152n);
+    expect(await rep.reputation(agent.address)).to.equal(34n);
     expect(await nft.balanceOf(agent.address)).to.equal(1n);
   });
 

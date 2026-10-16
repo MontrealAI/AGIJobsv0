@@ -11,6 +11,7 @@ import {IStakeManager} from "./interfaces/IStakeManager.sol";
 import {IFeePool} from "./interfaces/IFeePool.sol";
 import {IIdentityRegistry} from "./interfaces/IIdentityRegistry.sol";
 import {IReputationEngine} from "./interfaces/IReputationEngine.sol";
+import {ITerminalReputation} from "./interfaces/ITerminalReputation.sol";
 import {IDisputeModule} from "./interfaces/IDisputeModule.sol";
 import {ICertificateNFT} from "./interfaces/ICertificateNFT.sol";
 import {IJobRegistryAck} from "./interfaces/IJobRegistryAck.sol";
@@ -100,9 +101,9 @@ contract JobRegistry is JobRegistryBase, FixedDelegate {
         address _timelock, // timelock or multisig controller
         address[3] memory implementations
     ) JobRegistryBase(_timelock) {
-        _configuration = _checkedImplementation(implementations[0], keccak256("JobRegistryConfiguration:percentage-stake-v2"));
-        _lifecycle = _checkedImplementation(implementations[1], keccak256("JobRegistryLifecycle:percentage-stake-v2"));
-        _settlement = _checkedImplementation(implementations[2], keccak256("JobRegistrySettlement:percentage-stake-v2"));
+        _configuration = _checkedImplementation(implementations[0], keccak256("JobRegistryConfiguration:terminal-claims-v3"));
+        _lifecycle = _checkedImplementation(implementations[1], keccak256("JobRegistryLifecycle:terminal-claims-v3"));
+        _settlement = _checkedImplementation(implementations[2], keccak256("JobRegistrySettlement:terminal-claims-v3"));
 
         uint256 pct = _feePct == 0 ? DEFAULT_FEE_PCT : _feePct;
         if (pct > 100) revert InvalidPercentage();
@@ -113,7 +114,7 @@ contract JobRegistry is JobRegistryBase, FixedDelegate {
         validatorRewardPct = DEFAULT_VALIDATOR_REWARD_PCT;
         emit ValidatorRewardPctUpdated(validatorRewardPct);
         if (address(_validation) != address(0)) {
-            if (_validation.version() != 2) revert InvalidValidationModule();
+            if (_validation.version() != 2 || ITerminalReputation(address(_validation)).terminalPolicyId() != terminalPolicyId) revert InvalidValidationModule();
             validationModule = _validation;
             emit ValidationModuleUpdated(address(_validation));
             emit ModuleUpdated("ValidationModule", address(_validation));
@@ -125,7 +126,7 @@ contract JobRegistry is JobRegistryBase, FixedDelegate {
             emit ModuleUpdated("StakeManager", address(_stakeMgr));
         }
         if (address(_reputation) != address(0)) {
-            if (_reputation.version() != 2) revert InvalidReputationModule();
+            if (_reputation.version() != 3 || ITerminalReputation(address(_reputation)).terminalPolicyId() != terminalPolicyId) revert InvalidReputationModule();
             reputationEngine = _reputation;
             emit ReputationEngineUpdated(address(_reputation));
             emit ModuleUpdated("ReputationEngine", address(_reputation));
@@ -655,6 +656,11 @@ contract JobRegistry is JobRegistryBase, FixedDelegate {
     /// @param employerWins True if the employer won the dispute
     function resolveDispute(uint256 jobId, bool employerWins) external {
         jobId; employerWins;
+        _delegate(_settlement);
+    }
+
+    function resolveDisputeOutcome(uint256 jobId, uint8 outcome, bytes32 evidenceHash) external {
+        jobId; outcome; evidenceHash;
         _delegate(_settlement);
     }
 

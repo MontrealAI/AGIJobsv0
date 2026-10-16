@@ -33,10 +33,27 @@ async function deployImplementations(
       if (options.onSubmitted)
         await options.onSubmitted(
           name,
-          implementation.deploymentTransaction().hash
+          implementation.deploymentTransaction().hash,
+          {
+            fullyQualified: `contracts/v2/implementation/${name}.sol:${name}`,
+            constructorArguments: '0x',
+            from: implementation.deploymentTransaction().from,
+            nonce: implementation.deploymentTransaction().nonce,
+            chainId: implementation.deploymentTransaction().chainId.toString(),
+            input: implementation.deploymentTransaction().data,
+          }
         );
       await implementation.waitForDeployment();
       address = await implementation.getAddress();
+      if (options.onCreation)
+        await options.onCreation({
+          name,
+          fullyQualified: `contracts/v2/implementation/${name}.sol:${name}`,
+          address,
+          constructorArguments: '0x',
+          transactionHash: implementation.deploymentTransaction().hash,
+          kind: 'direct',
+        });
       cached.set(name, { address, code: await provider.getCode(address) });
     }
     const implementation = await ethers.getContractAt(
@@ -44,7 +61,16 @@ async function deployImplementations(
       address,
       signer
     );
-    if ((await implementation.moduleId()) !== ethers.id(`${name}:${name.startsWith('JobRegistry') ? 'percentage-stake-v2' : 'v1'}`)) {
+    if (
+      (await implementation.moduleId()) !==
+      ethers.id(
+        `${name}:${
+          name.startsWith('JobRegistry') || name.startsWith('ValidationModule')
+            ? 'terminal-claims-v3'
+            : 'v1'
+        }`
+      )
+    ) {
       cached.delete(name);
       throw new Error(
         `Implementation identity mismatch: ${name} at ${address}`

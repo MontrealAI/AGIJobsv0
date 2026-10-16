@@ -1,45 +1,19 @@
 #!/usr/bin/env node
 'use strict';
 
-const fs = require('node:fs');
-const path = require('node:path');
-const { checkArtifacts } = require('../release/check-contract-size.js');
-const {
-  createVerifiedArtifactReader,
-} = require('../deploy/verified-artifact.cjs');
-const {
-  policy,
-  checkCompiler,
-  checkDiagnostics,
-} = require('./solidity-policy.cjs');
+const { policy } = require('./solidity-policy.cjs');
 
 function inspectBuild(root = process.cwd()) {
-  const artifactsRoot = path.join(root, 'artifacts');
-  const size = checkArtifacts(artifactsRoot);
-  if (!size.sizeGatePassed)
+  const inventory =
+    require('../verification/source-inventory.cjs').inspectSources(root);
+  if (!inventory.sizeGatePassed)
     throw new Error('Production contract bytecode exceeds chain limits');
-  const readArtifact = createVerifiedArtifactReader(root);
-  const builds = new Map();
-  for (const contract of size.contracts) {
-    readArtifact({ name: contract.contract, source: contract.source });
-    const debugPath = path.join(
-      artifactsRoot,
-      contract.source,
-      `${contract.contract}.dbg.json`
-    );
-    const debug = JSON.parse(fs.readFileSync(debugPath, 'utf8'));
-    const buildPath = path.resolve(path.dirname(debugPath), debug.buildInfo);
-    if (!builds.has(buildPath)) {
-      const build = JSON.parse(fs.readFileSync(buildPath, 'utf8'));
-      checkCompiler(build);
-      builds.set(buildPath, {
-        buildInfo: path.relative(root, buildPath),
-        compiler: build.solcLongVersion,
-        reviewedUpstreamWarnings: checkDiagnostics(build),
-      });
-    }
-  }
-  const results = [...builds.values()];
+  const size = {
+    runtimeLimitBytes: 24576,
+    initcodeLimitBytes: 49152,
+    ...inventory,
+  };
+  const results = inventory.builds;
   return {
     compiler: policy.longVersion,
     knownAdvisoryReviewDate: policy.reviewedAt,
