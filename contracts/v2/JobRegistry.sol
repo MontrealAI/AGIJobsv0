@@ -100,9 +100,9 @@ contract JobRegistry is JobRegistryBase, FixedDelegate {
         address _timelock, // timelock or multisig controller
         address[3] memory implementations
     ) JobRegistryBase(_timelock) {
-        _configuration = _checkedImplementation(implementations[0], keccak256("JobRegistryConfiguration:percentage-stake-v3"));
-        _lifecycle = _checkedImplementation(implementations[1], keccak256("JobRegistryLifecycle:percentage-stake-v3"));
-        _settlement = _checkedImplementation(implementations[2], keccak256("JobRegistrySettlement:percentage-stake-v3"));
+        _configuration = _checkedImplementation(implementations[0], keccak256("JobRegistryConfiguration:percentage-stake-v4"));
+        _lifecycle = _checkedImplementation(implementations[1], keccak256("JobRegistryLifecycle:percentage-stake-v4"));
+        _settlement = _checkedImplementation(implementations[2], keccak256("JobRegistrySettlement:percentage-stake-v4"));
 
         uint256 pct = _feePct == 0 ? DEFAULT_FEE_PCT : _feePct;
         if (pct > 100) revert InvalidPercentage();
@@ -113,10 +113,7 @@ contract JobRegistry is JobRegistryBase, FixedDelegate {
         validatorRewardPct = DEFAULT_VALIDATOR_REWARD_PCT;
         emit ValidatorRewardPctUpdated(validatorRewardPct);
         if (address(_validation) != address(0)) {
-            if (_validation.version() != 2) revert InvalidValidationModule();
-            validationModule = _validation;
-            emit ValidationModuleUpdated(address(_validation));
-            emit ModuleUpdated("ValidationModule", address(_validation));
+            _setValidationModule(_validation);
         }
         if (address(_stakeMgr) != address(0)) {
             if (_stakeMgr.version() != 2) revert InvalidStakeManager();

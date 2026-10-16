@@ -86,9 +86,9 @@ contract ValidationModule is ValidationModuleBase, FixedDelegate {
         address[] memory _validatorPool,
         address[3] memory implementations
     ) ValidationModuleBase() {
-        _configuration = _checkedImplementation(implementations[0], keccak256("ValidationModuleConfiguration:terminal-reputation-v2"));
-        _voting = _checkedImplementation(implementations[1], keccak256("ValidationModuleVoting:terminal-reputation-v2"));
-        _selection = _checkedImplementation(implementations[2], keccak256("ValidationModuleSelection:terminal-reputation-v2"));
+        _configuration = _checkedImplementation(implementations[0], keccak256("ValidationModuleConfiguration:terminal-reputation-v3"));
+        _voting = _checkedImplementation(implementations[1], keccak256("ValidationModuleVoting:terminal-reputation-v3"));
+        _selection = _checkedImplementation(implementations[2], keccak256("ValidationModuleSelection:terminal-reputation-v3"));
 
         DOMAIN_SEPARATOR = keccak256(
             abi.encode(

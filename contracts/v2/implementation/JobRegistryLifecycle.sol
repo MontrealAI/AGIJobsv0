@@ -26,7 +26,7 @@ contract JobRegistryLifecycle is JobRegistryBase, DelegateOnly {
     constructor() JobRegistryBase(msg.sender) {}
 
     function moduleId() external pure returns (bytes32) {
-        return keccak256("JobRegistryLifecycle:percentage-stake-v3");
+        return keccak256("JobRegistryLifecycle:percentage-stake-v4");
     }
 
     /// @notice Records evidence of a token burn by the employer.

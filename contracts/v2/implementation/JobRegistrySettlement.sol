@@ -26,7 +26,7 @@ contract JobRegistrySettlement is JobRegistryBase, DelegateOnly {
     constructor() JobRegistryBase(msg.sender) {}
 
     function moduleId() external pure returns (bytes32) {
-        return keccak256("JobRegistrySettlement:percentage-stake-v3");
+        return keccak256("JobRegistrySettlement:percentage-stake-v4");
     }
 
     /// @param jobId Identifier of the job being finalised.

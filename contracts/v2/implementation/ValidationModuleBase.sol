@@ -73,6 +73,9 @@ abstract contract ValidationModuleBase is IValidationModule, Ownable, TaxAcknowl
     /// @notice Module version for compatibility checks.
     uint256 public constant version = 2;
 
+    /// @notice Terminal scoring interface, including persistent reveal facts.
+    uint256 public constant reputationInterfaceVersion = 1;
+
     /// @notice Domain separator used for typed commit hashes.
     // Appended storage field below preserves all existing storage offsets.
 

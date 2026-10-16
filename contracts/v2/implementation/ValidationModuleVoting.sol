@@ -22,7 +22,7 @@ contract ValidationModuleVoting is ValidationModuleBase, DelegateOnly {
     constructor() ValidationModuleBase() {}
 
     function moduleId() external pure returns (bytes32) {
-        return keccak256("ValidationModuleVoting:terminal-reputation-v2");
+        return keccak256("ValidationModuleVoting:terminal-reputation-v3");
     }
 
     /// @notice Trigger a circuit-breaker style failover for an in-flight validation round.

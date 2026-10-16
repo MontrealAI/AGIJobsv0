@@ -546,6 +546,12 @@ abstract contract JobRegistryBase is Governable, ReentrancyGuard, TaxAcknowledge
     function _setValidationModule(IValidationModule module) internal {
         if (address(module) == address(0)) revert InvalidValidationModule();
         if (module.version() != 2) revert InvalidValidationModule();
+        // Reject legacy modules before funding jobs; never infer reveal facts.
+        try module.reputationInterfaceVersion() returns (uint256 capability) {
+            if (capability != 1) revert InvalidValidationModule();
+        } catch {
+            revert InvalidValidationModule();
+        }
         validationModule = module;
         emit ValidationModuleUpdated(address(module));
         emit ModuleUpdated("ValidationModule", address(module));

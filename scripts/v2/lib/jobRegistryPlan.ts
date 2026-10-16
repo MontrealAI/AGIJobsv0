@@ -143,10 +143,18 @@ export async function buildJobRegistryPlan(
   }
 
   if (config.jobStake !== undefined || config.jobStakeTokens !== undefined)
-    throw new Error('Legacy fixed job stake configuration is unsupported; use jobStakeBps');
-  if (config.jobStakeBps !== undefined && (!Number.isInteger(config.jobStakeBps) || config.jobStakeBps < 0 || config.jobStakeBps > 10000))
+    throw new Error(
+      'Legacy fixed job stake configuration is unsupported; use jobStakeBps'
+    );
+  if (
+    config.jobStakeBps !== undefined &&
+    (!Number.isInteger(config.jobStakeBps) ||
+      config.jobStakeBps < 0 ||
+      config.jobStakeBps > 10000)
+  )
     throw new Error('jobStakeBps must be an integer from 0 to 10000');
-  const desiredJobStake = config.jobStakeBps === undefined ? undefined : BigInt(config.jobStakeBps);
+  const desiredJobStake =
+    config.jobStakeBps === undefined ? undefined : BigInt(config.jobStakeBps);
   const desiredMinAgentStake = parseTokenAmount(
     config.minAgentStake,
     config.minAgentStakeTokens,
@@ -352,7 +360,7 @@ export async function buildJobRegistryPlan(
       current: describeModuleBundle(moduleBundleCurrent),
       desired: describeModuleBundle(moduleBundleDesired),
       notes: [
-        'Apply after verifying each module reports version() == 2.',
+        'Apply after verifying every module reports version() == 2, and ValidationModule additionally reports reputationInterfaceVersion() == 1 (including revealed()).',
         'Keeps job creation → validation → dispute routing deterministic.',
       ],
     });
@@ -478,9 +486,13 @@ export async function buildJobRegistryPlan(
   if (desiredJobStake !== undefined && desiredJobStake !== currentJobStake) {
     actions.push({
       label: `Update future-job stake rate to ${desiredJobStake} bps`,
-      method: 'setJobStakeBps', args: [desiredJobStake],
-      current: `${currentJobStake} bps`, desired: `${desiredJobStake} bps`,
-      notes: ['Applies to future jobs only; existing Job.stake snapshots are unchanged.'],
+      method: 'setJobStakeBps',
+      args: [desiredJobStake],
+      current: `${currentJobStake} bps`,
+      desired: `${desiredJobStake} bps`,
+      notes: [
+        'Applies to future jobs only; existing Job.stake snapshots are unchanged.',
+      ],
     });
   }
 

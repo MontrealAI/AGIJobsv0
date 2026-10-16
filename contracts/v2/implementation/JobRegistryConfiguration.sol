@@ -26,7 +26,7 @@ contract JobRegistryConfiguration is JobRegistryBase, DelegateOnly {
     constructor() JobRegistryBase(msg.sender) {}
 
     function moduleId() external pure returns (bytes32) {
-        return keccak256("JobRegistryConfiguration:percentage-stake-v3");
+        return keccak256("JobRegistryConfiguration:percentage-stake-v4");
     }
 
     function setPauser(address _pauser) external onlyDelegateCall {

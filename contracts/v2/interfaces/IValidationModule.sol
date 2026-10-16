@@ -7,6 +7,9 @@ interface IValidationModule {
     /// @notice Module version for compatibility checks.
     function version() external view returns (uint256);
 
+    /// @notice Version 1 requires revealed() and defers outcome scoring to settlement.
+    function reputationInterfaceVersion() external view returns (uint256);
+
     enum SelectionStrategy {
         Rotating,
         Reservoir
