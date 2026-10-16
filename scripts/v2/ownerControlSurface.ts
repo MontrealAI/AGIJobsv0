@@ -827,7 +827,7 @@ function renderHumanReport(
 }
 
 function escapeMarkdown(value: string): string {
-  return value.replace(/\|/g, '\\|');
+  return value.replace(/\\/g, '\\\\').replace(/\|/g, '\\|');
 }
 
 function renderMarkdownReport(reports: ModuleReport[]): string {

@@ -5,6 +5,7 @@ import { strict as assert } from 'node:assert';
 import type { ContractTransactionReceipt, InterfaceAbi } from 'ethers';
 import { ethers } from 'hardhat';
 import { deployPrebuiltImplementations } from '../deploy/prebuilt-implementations.cjs';
+import { assertHistoricalDemoArtifacts } from './lib/historical-demo-artifacts.cjs';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 
@@ -1273,6 +1274,14 @@ async function configureToken(): Promise<ethers.Contract> {
 }
 
 async function deployEnvironment(): Promise<DemoEnvironment> {
+  assertHistoricalDemoArtifacts(
+    reputationEngineArtifact,
+    jobRegistryArtifact,
+    disputeModuleArtifact
+  );
+  logStep(
+    'Historical prebuilt v2 demo: legacy caller grants and dispute signatures (no v3 replay protection).'
+  );
   logSection('Bootstrapping AGI Jobs v2 grand demo environment');
 
   const [
@@ -1655,8 +1664,8 @@ async function deployEnvironment(): Promise<DemoEnvironment> {
     }
   );
 
+  // The pinned historical Engine/Registry pair uses legacy caller authorization.
   await reputation.connect(owner).setCaller(registryAddress, true);
-  await reputation.connect(owner).setJobRegistry(registryAddress, true);
   recordOwnerAction(
     'Registry authorised to update reputation',
     `ReputationEngine@${reputationAddress}`,
@@ -3484,30 +3493,15 @@ async function runDisputeScenario(env: DemoEnvironment): Promise<void> {
     }
   );
 
+  // Historical fixture only; this signature does not exercise v3 replay protection.
   const typeHash = ethers.id(
-    'ResolveDisputeV3(uint256 jobId,bool employerWins,address module,uint256 chainId,address registry,uint256 disputeRound)'
+    'ResolveDispute(uint256 jobId,bool employerWins,address module,uint256 chainId)'
   );
   const network = await ethers.provider.getNetwork();
   const structHash = ethers.keccak256(
     ethers.AbiCoder.defaultAbiCoder().encode(
-      [
-        'bytes32',
-        'uint256',
-        'bool',
-        'address',
-        'uint256',
-        'address',
-        'uint256',
-      ],
-      [
-        typeHash,
-        jobId,
-        false,
-        await dispute.getAddress(),
-        network.chainId,
-        await dispute.jobRegistry(),
-        await dispute.disputeRound(jobId),
-      ]
+      ['bytes32', 'uint256', 'bool', 'address', 'uint256'],
+      [typeHash, jobId, false, await dispute.getAddress(), network.chainId]
     )
   );
   const sigOwner = await owner.signMessage(ethers.getBytes(structHash));

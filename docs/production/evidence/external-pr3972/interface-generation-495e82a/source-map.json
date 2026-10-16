@@ -18,6 +18,12 @@
       "preservedFile": "reputation-terminal-scoring-2026-10-15.md",
       "gitBlobSha": "49dc01c307ac9cc7482941cbb17d6c0c1672d6be",
       "sha256": "c3e70273cfca95621dce698d7cc8e43415e6c403e423aa9a372549ca93f38aac"
+    },
+    {
+      "upstreamPath": "docs/production/reputation-terminal-scoring-evidence.json",
+      "preservedFile": "reputation-terminal-scoring-evidence.json",
+      "gitBlobSha": "c2c3114d1499b193aead0da59c9669890455312e",
+      "sha256": "35b5cfd88210c04ccf0102db1e257e37eb8a8931b511a6dcee6d92c547bcb3f0"
     }
   ]
 }
