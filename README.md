@@ -15,6 +15,10 @@
 
 The pairing is strongest for bounded digital tasks with checkable outputs. A shared token does not create an automatic mainnet bridge: compatible job interfaces, admitted identities and operational commissioning remain necessary. The guide distinguishes recorded deployments from readiness for live work.
 
+## Ideas behind the ecosystem
+
+[Read four selected essays](https://montrealai.github.io/AGIJobsv0/#reading) on provider selection, demonstrated talent, invention and review economics. Each links to the current $AGIALPHA ecosystem guides. [Reading notes / Notes de lecture](docs/READING.md).
+
 ## New here? Start with one simple step.
 
 **[Open the guided welcome page →](https://montrealai.github.io/AGIJobsv0/start/) · [Commencer en français →](https://montrealai.github.io/AGIJobsv0/start/fr/)**
