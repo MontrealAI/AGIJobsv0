@@ -1,9 +1,9 @@
 {
   "schemaVersion": 2,
   "dependencyBaseline": "7b21ce05b0b18b46162da66c2f528334101f6f40",
-  "reviewedSourceCheckpoint": "3c17153942251116ee51163055eb1a25d652454b",
-  "transitionCount": 61,
-  "scope": "Retain all 54 prior reviewed transitions and before-blobs, the corrected reputation/percentage-collateral contracts, exact native receiver selection and immutable deployment evidence. Review complete literal-text escaping, import-safe renderer exports and CLI guards in the three owner reports, plus the explicitly inventoried new Markdown literal helper (absent at dependency baseline). No protected-path exemption, dependency, compiler or network change. Fresh independent exact-head source review, CodeQL and full integrated qualification remain mandatory; production approval remains false. Additional independently reviewed tooling: journal new-campaign creation/authority handover, source-bound receipts, cooperative sender exclusion, explicit separate fee/treasury roles and signer-free activation evidence. Solidity, compiler, numeric economics and historical deployment evidence remain unchanged. Additional correction: bounded-only authority/explorer observations, explicit role-separated disposable callers and exact local process/config/address binding. Public activation remains unqualified.",
+  "reviewedSourceCheckpoint": "6ed63f4684617785b51e56e79bce4f25f3dfe80e",
+  "transitionCount": 71,
+  "scope": "Retain all 54 prior reviewed transitions and before-blobs, the corrected reputation/percentage-collateral contracts, exact native receiver selection and immutable deployment evidence. Review complete literal-text escaping, import-safe renderer exports and CLI guards in the three owner reports, plus the explicitly inventoried new Markdown literal helper (absent at dependency baseline). No protected-path exemption, dependency, compiler or network change. Fresh independent exact-head source review, CodeQL and full integrated qualification remain mandatory; production approval remains false. Additional independently reviewed tooling: journal new-campaign creation/authority handover, source-bound receipts, cooperative sender exclusion, explicit separate fee/treasury roles and signer-free activation evidence. Solidity, compiler, numeric economics and historical deployment evidence remain unchanged. Additional correction: bounded-only authority/explorer observations, explicit role-separated disposable callers and exact local process/config/address binding. Public activation remains unqualified. Additional external-manual creator tooling: exact type-2 envelopes, private durable39-operation sessions, source/role/chain/nonce binding and explicit signature-import/relay-authority boundaries. Existing direct/local journals, contracts, numeric economics and historical deployments remain unchanged. Hosted disposable-chain qualification is required; hardware, delegated creators, trusted-machine bootstrap and production activation remain unqualified. Bounded follow-up retains the original active-owner creation descriptor, preserves substituted evidence during cleanup, and reads private command requests descriptor-first with exact metadata/path/parent checks. CI retains default discovery with exact complementary title partitions and unchanged per-run limits. Fresh hosted CodeQL and full39 qualification remain required. Additional conventional creator entry: owner-entered hidden terminal key held in-process, explicit public source/config/artifact and nonce/fee review, existing direct authority journal and paused handover, and non-persisting ENS resolution. Four new runtime modules are inventoried explicitly. No Solidity, compiler, dependency, economics or historical-state change. Complete exact-head hosted bounded-signer39 acceptance remains required after locally observed preflight failures and exit137. Original local logs were lost with the temporary workspace; no production or hardware approval is implied.",
   "transitions": [
     {
       "path": "config/README.md",
@@ -168,17 +168,42 @@
     {
       "path": "scripts/deploy/authority-audit.cjs",
       "before": null,
-      "after": "9165aae234b2d43cf82ea72c75d8fa1e55f3d413"
+      "after": "06277cc85b3f75e54717561d70f96480341e8384"
     },
     {
       "path": "scripts/deploy/authority-handover.cjs",
       "before": null,
-      "after": "003d8242d9c31a231e96a7a2a25089da21a3a396"
+      "after": "39fb7a5c259a83c874821f8cec9c58be90c6089f"
     },
     {
       "path": "scripts/deploy/authority-runtime.cjs",
       "before": null,
       "after": "2132fbd1e24874ed3809fae3ce0bb14a03a88377"
+    },
+    {
+      "path": "scripts/deploy/external-command.cjs",
+      "before": null,
+      "after": "8e3c21aaf69b0565f7a588fb7564ffec524a22e1"
+    },
+    {
+      "path": "scripts/deploy/external-envelope.cjs",
+      "before": null,
+      "after": "0deda0ee3f8d95040e7b5364ed667c98473b411a"
+    },
+    {
+      "path": "scripts/deploy/external-profile.cjs",
+      "before": null,
+      "after": "63a2e72547c760fd867e3f22f07751ed7a9d3be7"
+    },
+    {
+      "path": "scripts/deploy/external-session.cjs",
+      "before": null,
+      "after": "e7f2da00f2360a193e5bc9cc4c7a5191ebf2d8c8"
+    },
+    {
+      "path": "scripts/deploy/external-signer.cjs",
+      "before": null,
+      "after": "0a0ddc5b0d18384f9314363693784f9aec93a72d"
     },
     {
       "path": "scripts/deploy/implementations.cjs",
@@ -198,7 +223,27 @@
     {
       "path": "scripts/deploy/stage-protocol.cjs",
       "before": "f8ff5a83c22f6031f5fa32413a3056133fa82379",
-      "after": "744219becb9eb844a0b3b4d4002cfdfc8f72727c"
+      "after": "c77489149dde321ad28c7ae17512fa36d829a3e7"
+    },
+    {
+      "path": "scripts/deploy/tty-fee-signer.cjs",
+      "before": null,
+      "after": "2615ed44ed3d9a27bedea948ca7bf7690788b9e0"
+    },
+    {
+      "path": "scripts/deploy/tty-launcher.cjs",
+      "before": null,
+      "after": "00ec12af83b1fdea3f30827867847fa5f94371e6"
+    },
+    {
+      "path": "scripts/deploy/tty-secret.cjs",
+      "before": null,
+      "after": "c36f47b99cd77a2874932f204c357f592ce10704"
+    },
+    {
+      "path": "scripts/deploy/tty-source.cjs",
+      "before": null,
+      "after": "6c451c8c7f2d3ce9e6ffbf54e6e57d6b2e69d49a"
     },
     {
       "path": "scripts/v2/__tests__/agiOsFirstClassDemo.test.ts",
@@ -223,7 +268,12 @@
     {
       "path": "scripts/v2/deployDefaults.ts",
       "before": "07b7e1859a4ea386c2f84a31cf8cbb5c4a1f28ca",
-      "after": "74f4f260a0bdd3207ddf328a724e9ee4d6412112"
+      "after": "d540162c55e29541373e80f3568fb6c11f1fb36f"
+    },
+    {
+      "path": "scripts/v2/externalManual.ts",
+      "before": null,
+      "after": "a05d6e8dff0e96c13a9a79db2728224d43c491a9"
     },
     {
       "path": "scripts/v2/lib/deployment-candidate.cjs",

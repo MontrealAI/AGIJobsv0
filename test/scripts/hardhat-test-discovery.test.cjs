@@ -103,6 +103,7 @@ const dedicated = [
   ['tests', 'test/pages/zenith-reconciliation.test.mjs'],
   ['tests', 'test/scripts/omega-pipeline.test.cjs'],
   ['tests', 'test/scripts/hardhat-test-discovery.test.cjs'],
+  ['tests', 'test/scripts/hardhat-test-partition.test.cjs'],
 ];
 const receiverSuites = [
   'integrations/alpha-agent/tests/alpha-project-source.test.mjs',
@@ -236,11 +237,17 @@ test('isolated suites retain mandatory fresh-process CI registrations', () => {
       `${file} must run after the mandatory locked dependency install`
     );
   }
-  assert.ok(
-    workflow.jobs.tests.steps.some(
+  for (const partition of ['core', 'external']) {
+    const steps = workflow.jobs.tests.steps.filter(
       (step) =>
-        step.run === 'npm test' && !step.if && !step['continue-on-error']
-    ),
-    'aggregate Hardhat suite remains mandatory'
-  );
+        (step.run || '').startsWith('npm test -- --grep ') &&
+        step.run.includes(`hardhat-test-partition.cjs pattern ${partition})`)
+    );
+    assert.equal(
+      steps.length,
+      1,
+      `${partition} Hardhat partition must remain mandatory`
+    );
+    assert.ok(!steps[0].if && !steps[0]['continue-on-error']);
+  }
 });

@@ -1,0 +1,85 @@
+name: Jobs external manual disposable qualification
+
+# Read-only PR qualification before merge; optional manual runs after registration.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - '.github/workflows/jobs-external-manual-qualification.yml'
+      - 'test/scripts/acceptance/**'
+      - 'test/scripts/external-cli-*.test.cjs'
+      - 'test/scripts/external-*.test.cjs'
+      - 'test/scripts/authority-handover.test.cjs'
+      - 'test/scripts/deployment-candidate.test.cjs'
+      - 'test/v2/AuthorityHandover.test.js'
+      - 'test/v2/ExternalManualHandover.test.js'
+      - 'scripts/deploy/**'
+      - 'scripts/config/**'
+      - 'scripts/ci/**'
+      - 'scripts/generate-constants*.ts'
+      - 'deployment-config/**'
+      - 'demo/aurora/config/deployer.hardhat.json'
+      - 'test/setup.js'
+      - 'scripts/v2/deployDefaults.ts'
+      - 'scripts/v2/externalManual.ts'
+      - 'scripts/security/check-dependency-preservation.cjs'
+      - 'scripts/security/reviewed-source-jobs-handover-20261016.json'
+      - 'scripts/release/qualify-source-release.cjs'
+      - 'hardhat.config.js'
+      - 'config/**'
+      - 'contracts/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.nvmrc'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: jobs-external-manual-${{ github.event.pull_request.head.sha || github.sha }}
+  cancel-in-progress: false
+
+jobs:
+  qualify:
+    name: Canonical source and 39 fresh CLI operations
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    steps:
+      - name: Harden disposable runner
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: '.nvmrc'
+      - name: Exact repository npm and toolchain checks
+        run: |
+          npm install --global npm@10.8.2 --ignore-scripts --no-audit --fund=false
+          npm run ci:preflight
+      - name: Install the committed graph with the existing CI installer
+        run: ./scripts/ci/npm-ci.sh --no-audit --prefer-offline --progress=false
+      - name: Require clean real source and run every qualification stage
+        id: qualify
+        env:
+          JOBS_QUALIFICATION_EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          JOBS_QUALIFICATION_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: node --max-old-space-size=256 test/scripts/acceptance/run-hosted-qualification.cjs --run
+      - name: Export fixed-schema metadata with explicit owned-group cleanup status
+        if: always() && steps.qualify.outcome != 'skipped'
+        env:
+          JOBS_QUALIFICATION_EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: node --max-old-space-size=256 test/scripts/acceptance/external-cli-public-evidence.cjs
+      - name: Retain the sole public metadata file
+        if: always() && steps.qualify.outcome != 'skipped'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: jobs-external-manual-${{ github.event.pull_request.head.sha || github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: /tmp/jobs-external-manual-hosted/public/qualification.json
+          if-no-files-found: error
+          retention-days: 14

@@ -71,7 +71,7 @@ jobs:
           node --test test/scripts/owner-markdown-escaping.test.cjs
           node node_modules/typescript/bin/tsc --noEmit --target es2020 --module commonjs --moduleResolution node --esModuleInterop --skipLibCheck --types node scripts/v2/ownerCommandCenter.ts scripts/v2/ownerControlAtlas.ts scripts/v2/ownerControlSurface.ts
       - name: Release provenance regression tests
-        run: node --test test/scripts/alpha-supplier-proof.test.cjs test/scripts/alpha-agent-receipt.test.cjs integrations/alpha-agent/tests/alpha-project-source.test.mjs integrations/alpha-agent/tests/alpha-project-name.test.mjs integrations/alpha-agent/tests/alpha-project-transfer.test.mjs integrations/alpha-agent/tests/alpha-project-receipt.test.cjs test/scripts/deployment-candidate.test.cjs test/scripts/authority-handover.test.cjs test/scripts/local-authority.test.cjs test/scripts/job-stake-config.test.cjs test/scripts/runner-egress.test.cjs test/scripts/demo-report-paths.test.cjs test/scripts/aurora-report.test.cjs test/scripts/demo-launchers.test.cjs test/scripts/local-demo-rpc.test.cjs test/scripts/release-provenance.test.cjs test/scripts/release-inventory.test.cjs test/scripts/contract-size.test.cjs test/scripts/release-ci.test.cjs test/scripts/dependency-audit.test.cjs test/scripts/slither-policy.test.cjs test/scripts/dispute-overloads.test.js test/hamiltonian-monitor.config.test.js
+        run: node --test test/scripts/alpha-supplier-proof.test.cjs test/scripts/alpha-agent-receipt.test.cjs integrations/alpha-agent/tests/alpha-project-source.test.mjs integrations/alpha-agent/tests/alpha-project-name.test.mjs integrations/alpha-agent/tests/alpha-project-transfer.test.mjs integrations/alpha-agent/tests/alpha-project-receipt.test.cjs test/scripts/deployment-candidate.test.cjs test/scripts/authority-handover.test.cjs test/scripts/external-envelope.test.cjs test/scripts/external-session.test.cjs test/scripts/external-profile.test.cjs test/scripts/tty-secret.test.cjs test/scripts/tty-fee-signer.test.cjs test/scripts/tty-launcher.test.cjs test/scripts/local-authority.test.cjs test/scripts/job-stake-config.test.cjs test/scripts/runner-egress.test.cjs test/scripts/demo-report-paths.test.cjs test/scripts/aurora-report.test.cjs test/scripts/demo-launchers.test.cjs test/scripts/local-demo-rpc.test.cjs test/scripts/release-provenance.test.cjs test/scripts/release-inventory.test.cjs test/scripts/contract-size.test.cjs test/scripts/release-ci.test.cjs test/scripts/dependency-audit.test.cjs test/scripts/slither-policy.test.cjs test/scripts/dispute-overloads.test.js test/hamiltonian-monitor.config.test.js
       - name: First-class launcher safety regression tests (inert only)
         run: |
           node --test test/scripts/first-class-modes.test.cjs
@@ -166,15 +166,23 @@ jobs:
           node --test test/scripts/runtime-packaging.test.cjs
           node --test apps/orchestrator/dist/apps/orchestrator/__tests__/computerWork.test.js
       - name: Hardhat test-runner isolation regressions
-        run: node --test test/scripts/hardhat-test-discovery.test.cjs
+        run: node --test test/scripts/hardhat-test-discovery.test.cjs test/scripts/hardhat-test-partition.test.cjs
       - name: Polaris disposable quorum and receipt regressions
         run: node --test test/scripts/polaris-quorum.test.cjs
       - name: Zenith regional budget reconciliation regressions
         run: node --test test/pages/zenith-reconciliation.test.mjs
       - name: Omega local artifact pipeline and replay regressions
         run: node --test test/scripts/omega-pipeline.test.cjs
-      - name: Hardhat tests
-        run: npm test
+      - name: Hardhat core tests
+        env:
+          HARDHAT_TEST_TIMEOUT_MS: '900000'
+        run: npm test -- --grep "$(node scripts/ci/hardhat-test-partition.cjs pattern core)" --reporter json --reporter-options '{"output":"/tmp/jobs-hardhat-core.json"}'
+      - name: Hardhat external manual tests
+        env:
+          HARDHAT_TEST_TIMEOUT_MS: '900000'
+        run: npm test -- --grep "$(node scripts/ci/hardhat-test-partition.cjs pattern external)" --reporter json --reporter-options '{"output":"/tmp/jobs-hardhat-external.json"}'
+      - name: Compare complete Hardhat partition coverage
+        run: node scripts/ci/hardhat-test-partition.cjs compare /tmp/jobs-hardhat-core.json /tmp/jobs-hardhat-external.json
       - name: Gateway TypeScript interaction regressions
         run: npx hardhat test --no-compile test/gateway/routesValidation.test.ts test/taskExecution.test.ts test/certificateMetadata.test.ts
       - name: Phase 6 contract and TypeScript regression tests

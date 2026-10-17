@@ -72,6 +72,7 @@ async function stageProtocol(deployer, ids, governance, options = {}) {
           await transaction.wait();
         }
       } catch (error) {
+        if (error?.code === 'AWAITING_EXTERNAL_SIGNATURE') throw error;
         throw new Error(
           `${name} deployment failed at coordinator ${coordinator}. Reconcile submitted transactions and keep this coordinator address to resume with the same configuration.`,
           { cause: error }
