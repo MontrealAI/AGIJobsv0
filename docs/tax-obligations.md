@@ -1,5 +1,7 @@
 # Tax Obligations in the AGI Job Platform Ecosystem
 
+> **Historical guide:** The tax discussion below and the [original tax-policy draft](legacy/TaxPolicyv0.md) are retained for historical reference. For the new participant policy, see [AGI Jobs Participant Tax Responsibilities, version 1.0](tax-policy.md). Earlier statements of universal exemption or absence of tax duties should not be relied on as tax advice. Publishing the new policy does not change existing contracts or acknowledgements retroactively.
+
 **Summary**
 
 - Employers, agents, and validators shoulder all tax liability.
