@@ -1,5 +1,14 @@
 # Reputation growth correction — 2026-10-15
 
+Current source status (October 16): this repair and the later
+[producer/terminal-scoring correction](reputation-terminal-scoring-2026-10-15.md)
+are merged in `source-v2.1.0-rc.12`
+(`b936efe066dc1b1f7a2fcc18ab9950d77cdf96d5`). The observations and remaining gates
+below describe this earlier checkpoint; its two producer/terminal defects were
+subsequently corrected. Source publication does not qualify the new Mainnet
+signing workflow. Previous deployments remain outside its mutation scope;
+historical obligations are not a prerequisite to a separate new deployment.
+
 The inherited engine reattenuated the entire accumulated score when applying
 positive credit. After an authorized 20,000-point award produced a score of
 19,036, an additional one-point award or successful finalization could reduce
