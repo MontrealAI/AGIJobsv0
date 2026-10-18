@@ -566,7 +566,44 @@ export async function main(argv = process.argv.slice(2)) {
     publicNetwork || config.secureDefaults?.pauseOnLaunch !== false;
   if (!pauseOnLaunch)
     throw new Error('The authority-handover route requires a paused launch');
-  const [owner] = await ethers.getSigners();
+  const externalProfilePath = process.env.DEPLOYMENT_EXTERNAL_PROFILE;
+  if (
+    externalProfilePath &&
+    Object.keys(cli).some(
+      (key) =>
+        ![
+          'config',
+          'output',
+          'resume-deployer',
+          'resume-evidence',
+          'skip-verify',
+        ].includes(key)
+    )
+  )
+    throw new Error(
+      'External-manual contract parameters must come only from the exact reviewed configuration'
+    );
+  if (
+    externalProfilePath &&
+    publicNetwork &&
+    (!Array.isArray((network.config as any).accounts) ||
+      (network.config as any).accounts.length !== 0)
+  )
+    throw new Error(
+      'External-manual public profile requires no configured key, mnemonic, or unlocked network accounts'
+    );
+  const externalProfile = externalProfilePath
+    ? require('../deploy/external-profile.cjs').loadExternalProfile(
+        externalProfilePath,
+        {
+          provider: ethers.provider,
+          root: process.cwd(),
+          configBytes,
+          configPath,
+        }
+      )
+    : undefined;
+  const owner = externalProfile?.signer ?? (await ethers.getSigners())[0];
   if (!owner)
     throw new Error('No deployment signer configured for this network');
 
@@ -594,6 +631,15 @@ export async function main(argv = process.argv.slice(2)) {
     : cliNoTax
     ? false
     : taxConfig.enabled ?? true;
+
+  if (externalProfile && !withTax)
+    throw new Error(
+      'Initial external-manual profile requires the exact tax-enabled 39-operation scope'
+    );
+  if (externalProfile && externalProfile.plan.governor !== governance)
+    throw new Error(
+      'External reviewed governor differs from deployment configuration'
+    );
 
   const requestedTaxUri =
     toStringOrUndefined(cli['tax-uri']) ?? taxConfig.uri ?? DEFAULT_TAX_URI;
@@ -665,6 +711,7 @@ export async function main(argv = process.argv.slice(2)) {
   const identityConfig: IdentityConfig = config.identity ?? {};
 
   const { config: ensConfig } = loadEnsConfig({
+    persist: false,
     network: network.name,
     chainId: network.config?.chainId,
   });
@@ -736,7 +783,7 @@ export async function main(argv = process.argv.slice(2)) {
   const configSha256 = createHash('sha256').update(configBytes).digest('hex');
   if (
     previous &&
-    (previous.authorityJournalVersion !== 1 ||
+    (previous.authorityJournalVersion !== (externalProfile ? 2 : 1) ||
       previous.provenance !== 'new-staged-creation' ||
       !previous.deploymentId ||
       !previous.authorityOperations?.['create:Deployer'] ||
@@ -754,6 +801,8 @@ export async function main(argv = process.argv.slice(2)) {
       previous.creator !== creator ||
       previous.governance !== governance ||
       previous.configSha256 !== configSha256 ||
+      (externalProfile &&
+        previous.externalPlanHash !== externalProfile.session.planHash) ||
       ethers.getAddress(
         previous.coordinator ??
           previous.authorityOperations['create:Deployer'].address
@@ -762,7 +811,9 @@ export async function main(argv = process.argv.slice(2)) {
     throw new Error(
       'Deployment configuration changed or recovery evidence belongs to another chain, creator or coordinator'
     );
-  const initialBlock = await ethers.provider.getBlock('latest');
+  const initialBlock = await ethers.provider.getBlock(
+    externalProfile ? externalProfile.plan.initialBlock.number : 'latest'
+  );
   const localGenesis = publicNetwork
     ? undefined
     : await ethers.provider.getBlock(0);
@@ -793,6 +844,27 @@ export async function main(argv = process.argv.slice(2)) {
       'Recovery campaign differs from the reviewed configuration'
     );
   await assertCreationScope(ethers.provider, chainId, creationScope);
+  if (externalProfile) {
+    if (
+      process.env.DEPLOYMENT_LOCK_DIRECTORY &&
+      process.env.DEPLOYMENT_LOCK_DIRECTORY !==
+        externalProfile.plan.lockDirectory
+    )
+      throw new Error('External lock directory differs from the reviewed plan');
+    const { digest } = require('../deploy/external-session.cjs');
+    if (
+      externalProfile.plan.chainId !== chainId ||
+      externalProfile.plan.creator !== creator ||
+      externalProfile.plan.configHash !== `0x${configSha256}` ||
+      externalProfile.plan.creationScopeHash !== digest(creationScope)
+    )
+      throw new Error(
+        'External reviewed plan differs from the source-bound creation scope'
+      );
+    if (!fs.existsSync(externalProfile.sessionDirectory))
+      await externalProfile.session.initialize();
+    else await externalProfile.session.inspect();
+  }
   if (previous) {
     assertNewAddress(resumeAddress!);
     for (const record of Object.values(previous.creationRecords ?? {}) as any[])
@@ -808,7 +880,10 @@ export async function main(argv = process.argv.slice(2)) {
   }
   const progress: Record<string, unknown> = {
     schema: 'agi-jobs/staged-deployment/v1',
-    authorityJournalVersion: 1,
+    authorityJournalVersion: externalProfile ? 2 : 1,
+    ...(externalProfile
+      ? { externalPlanHash: externalProfile.session.planHash }
+      : {}),
     provenance: 'new-staged-creation',
     deploymentId: previous?.deploymentId ?? randomUUID(),
     status: 'prepared',
@@ -853,19 +928,27 @@ export async function main(argv = process.argv.slice(2)) {
       });
     }
     const lockDirectory =
+      externalProfile?.plan.lockDirectory ??
       process.env.DEPLOYMENT_LOCK_DIRECTORY ??
       (publicNetwork
         ? undefined
         : path.join(os.tmpdir(), 'agi-deployment-locks'));
-    if (!publicNetwork && lockDirectory)
+    if (!externalProfile && !publicNetwork && lockDirectory)
       fs.mkdirSync(lockDirectory, { recursive: true, mode: 0o700 });
-    deploymentLock = acquireDeploymentLock(lockDirectory, {
-      chainId,
-      creator,
-      governance,
-      configSha256,
-      outputPath,
-    });
+    deploymentLock = externalProfile
+      ? {
+          path: path.join(
+            externalProfile.plan.lockDirectory,
+            `${chainId}-${creator.toLowerCase()}`
+          ),
+        }
+      : acquireDeploymentLock(lockDirectory, {
+          chainId,
+          creator,
+          governance,
+          configSha256,
+          outputPath,
+        });
     checkpoint({ deploymentLock: deploymentLock.path });
     const readAuthoritySource = createAuthoritySourceReader();
     const authority = createAuthorityHandover({
@@ -882,7 +965,18 @@ export async function main(argv = process.argv.slice(2)) {
       checkpoint,
     });
     if (previous) await authority.reconcile();
-    await ensureAgialphaToken();
+    if (!externalProfile) await ensureAgialphaToken();
+    else {
+      const token = new ethers.Contract(
+        AGIALPHA,
+        ['function decimals() view returns(uint8)'],
+        ethers.provider
+      );
+      if (Number(await token.decimals()) !== AGIALPHA_DECIMALS)
+        throw new Error(
+          'External signing requires the reviewed token already present; no fixture or balance changes'
+        );
+    }
 
     const gasLimitOverride = await getLocalGasLimitOverride();
     const txOverrides = gasLimitOverride ? { gasLimit: gasLimitOverride } : {};
@@ -1321,6 +1415,12 @@ export async function main(argv = process.argv.slice(2)) {
     checkpoint({ ...payload, pauseState, explorerVerification });
     await authority.reconcile();
     const beforeHandover = await auditAuthority(progress, {
+      allowPendingCoordinatorHandover: Boolean(
+        externalProfile &&
+          !(progress.authorityOperations as Record<string, unknown>)[
+            'handover:Deployer'
+          ]
+      ),
       provider: ethers.provider,
       readSource: readAuthoritySource,
       blockTag: 'latest',
@@ -1368,18 +1468,27 @@ export async function main(argv = process.argv.slice(2)) {
   } catch (error) {
     try {
       checkpoint({
-        status: 'interrupted',
+        status:
+          (error as any)?.code === 'AWAITING_EXTERNAL_SIGNATURE'
+            ? 'awaiting-external-manual-signature'
+            : 'interrupted',
         recovery:
           'Reconcile recorded transactions and coordinator state. Resume the same release and configuration using DEPLOYER_ADDRESS, DEPLOY_DEFAULTS_RESUME_EVIDENCE and a NEW output filename. Retained sender locks require manual receipt reconciliation before removal.',
       });
     } catch {
       /* Preserve existing evidence if its reservation was changed. */
     }
+    if ((error as any)?.code === 'AWAITING_EXTERNAL_SIGNATURE') {
+      console.log(
+        'External operation prepared or awaiting canonical observation. Continue through the private manual session; no transaction was sent.'
+      );
+      return { status: 'awaiting-external-manual-signature', outputPath };
+    }
     throw error;
   } finally {
     journal.close();
     output.close();
-    if (completed) deploymentLock?.release();
+    if (completed && !externalProfile) deploymentLock?.release();
   }
 }
 

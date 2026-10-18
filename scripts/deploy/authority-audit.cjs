@@ -50,12 +50,13 @@ async function auditAuthority(
     provider,
     readSource = createAuthoritySourceReader(),
     blockTag = 'finalized',
+    allowPendingCoordinatorHandover = false,
   } = {}
 ) {
   if (
     !provider ||
     report.schema !== 'agi-jobs/staged-deployment/v1' ||
-    report.authorityJournalVersion !== 1 ||
+    ![1, 2].includes(report.authorityJournalVersion) ||
     report.provenance !== 'new-staged-creation' ||
     !report.deploymentId ||
     !report.creator ||
@@ -137,6 +138,22 @@ async function auditAuthority(
     )
   )
     throw new Error('Fixed implementation address evidence mismatch');
+  const externalJournal = report.authorityJournalVersion === 2;
+  const { OPERATION_KEYS, digest } = require('./external-session.cjs');
+  const { requireTransactionEnvelope } = require('./external-envelope.cjs');
+  if (
+    externalJournal &&
+    (!ethers.isHexString(report.externalPlanHash, 32) ||
+      Object.keys(report.authorityOperations || {}).length !==
+        (allowPendingCoordinatorHandover === true ? 38 : 39) ||
+      report.withTax === false ||
+      Object.keys(report.authorityOperations || {}).some(
+        (key, index) => key !== OPERATION_KEYS[index]
+      ))
+  )
+    throw new Error(
+      'External authority evidence is outside the exact reviewed operation prefix'
+    );
   const usedNonces = new Set();
   for (const [key, op] of Object.entries(report.authorityOperations || {})) {
     const source = readSource(op.name, op.to || op.address, {
@@ -150,6 +167,27 @@ async function auditAuthority(
     )
       throw new Error(`Authority transaction source mismatch: ${key}`);
     const tx = op.hash ? await provider.getTransaction(op.hash) : null;
+    if (externalJournal) {
+      const envelope = op.externalEnvelope;
+      if (
+        !envelope ||
+        envelope.context.planHash !== report.externalPlanHash ||
+        envelope.context.operationKey !== key ||
+        envelope.context.operationIndex !== OPERATION_KEYS.indexOf(key) ||
+        envelope.context.creator !== creator ||
+        envelope.context.governor !== governance ||
+        envelope.context.configHash !== `0x${report.configSha256}` ||
+        envelope.context.creationScopeHash !== digest(report.creationScope) ||
+        envelope.context.compilerInputSha256 !== source.compilerInputSha256
+      )
+        throw new Error(
+          'External authority envelope differs from deployment evidence'
+        );
+      requireTransactionEnvelope(envelope, tx);
+    } else if (op.externalEnvelope)
+      throw new Error(
+        'External envelope cannot be relabeled as a direct authority journal'
+      );
     const receipt = op.hash
       ? await provider.getTransactionReceipt(op.hash)
       : null;

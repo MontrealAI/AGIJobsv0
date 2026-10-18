@@ -203,6 +203,19 @@ function createAuthorityHandover({
     creationScope?.chainId !== chainId
   )
     throw new Error('Invalid authority handover context');
+  const external = signer?.externalManual ? signer.session : null;
+  const { ExternalWait, digest } = require('./external-session.cjs');
+  const { canonicalJson } = require('./external-envelope.cjs');
+  if (
+    external &&
+    (external.plan.creator !== creator ||
+      external.plan.governor !== governance ||
+      external.plan.chainId !== chainId ||
+      external.plan.creationScopeHash !== digest(creationScope))
+  )
+    throw new Error(
+      'External authority context differs from the reviewed private plan'
+    );
   const ownableAbi = [
     'function owner() view returns(address)',
     'function governance() view returns(address)',
@@ -210,10 +223,35 @@ function createAuthorityHandover({
     'function moduleId() view returns(bytes32)',
     'function transferOwnership(address)',
   ];
+  // Only successful durable checkpoints advance this in-process baseline.
+  // A failed write must never make a later call mistake mutated memory for
+  // persisted evidence. Fresh runs begin from their supplied original journal.
+  const durableOperationRecords = external
+    ? new Map(
+        Object.entries(operations).map(([key, op]) => [key, canonicalJson(op)])
+      )
+    : null;
   async function save() {
+    const snapshot = external ? canonicalJson(operations) : null;
     await checkpoint({ authorityOperations: operations });
+    if (external) {
+      if (canonicalJson(operations) !== snapshot)
+        throw new Error(
+          'Authority operations changed during durable checkpoint'
+        );
+      durableOperationRecords.clear();
+      for (const [key, op] of Object.entries(JSON.parse(snapshot)))
+        durableOperationRecords.set(key, canonicalJson(op));
+    }
   }
   async function checkedReceipt(op, transaction) {
+    // External sessions resume once per manual operation. Preserve every live
+    // check below, but do not duplicate an already durable identical receipt.
+    // Direct/v1 journal checkpoint behavior remains unchanged.
+    const priorDurableRecord = external
+      ? durableOperationRecords.get(op.role)
+      : null;
+    const recordBeforeReadback = external ? canonicalJson(op) : null;
     await assertCreationScope(provider, chainId, creationScope);
     if (
       !transaction ||
@@ -225,6 +263,14 @@ function createAuthorityHandover({
       BigInt(transaction.value) !== 0n
     )
       throw new Error(`Authority transaction identity mismatch: ${op.name}`);
+    if (op.externalEnvelope) {
+      if (!external)
+        throw new Error(
+          'External authority journal requires its original manual session'
+        );
+      signer.requireEnvelope(op.externalEnvelope, transaction);
+      await external.requireObserved(op.role, transaction);
+    }
     const receipt = await provider.getTransactionReceipt(transaction.hash);
     if (!receipt)
       throw new Error(
@@ -256,7 +302,13 @@ function createAuthorityHandover({
       status: receipt.status,
       contractAddress: receipt.contractAddress,
     };
-    await save();
+    if (
+      !external ||
+      canonicalJson(op) !== priorDurableRecord ||
+      canonicalJson(op) !== recordBeforeReadback
+    )
+      await save();
+    if (op.externalEnvelope) await external.accept(op.role, transaction.hash);
     return receipt;
   }
   async function recover(op) {
@@ -268,6 +320,42 @@ function createAuthorityHandover({
     )
       throw new Error(`Authority journal source mismatch: ${op.name}`);
     await assertChain(provider, chainId);
+    if (external) {
+      const prepared = await external.operation(op.role);
+      if (!prepared) {
+        if (op.externalEnvelope || op.hash)
+          throw new Error(
+            'External operation is missing from its private session'
+          );
+        return null; // Durable unsigned intent only. Exact source replay must prepare it.
+      }
+      if (
+        op.externalEnvelope &&
+        canonicalJson(op.externalEnvelope) !== canonicalJson(prepared.envelope)
+      )
+        throw new Error(
+          'External authority envelope differs from its private session'
+        );
+      if (!op.externalEnvelope) {
+        op.externalEnvelope = prepared.envelope;
+        await save();
+      }
+      if (!['observed', 'accepted'].includes(prepared.state))
+        throw new ExternalWait(
+          prepared.envelope.context.operationIndex,
+          prepared.state
+        );
+      if (op.hash && op.hash !== prepared.transactionHash)
+        throw new Error(
+          'External authority hash differs from private observation'
+        );
+      return checkedReceipt(
+        op,
+        await provider.getTransaction(prepared.transactionHash)
+      );
+    }
+    if (op.externalEnvelope)
+      throw new Error('External operation cannot use a direct signer');
     if (op.hash)
       return checkedReceipt(op, await provider.getTransaction(op.hash));
     const latest = await provider.getBlock('latest');
@@ -319,7 +407,23 @@ function createAuthorityHandover({
         !Number.isSafeInteger(op.nonce)
       )
         throw new Error(`Authority journal identity mismatch: ${key}`);
-      await recover(op);
+      const recovered = await recover(op);
+      if (external && recovered === null) {
+        op.externalEnvelope = await signer.prepareAuthorityOperation({
+          key,
+          name,
+          to,
+          data,
+          source,
+          operations,
+          operation: op,
+        });
+        await save();
+        throw new ExternalWait(
+          op.externalEnvelope.context.operationIndex,
+          'prepared'
+        );
+      }
       return op;
     }
     if (!signer || ethers.getAddress(await signer.getAddress()) !== creator)
@@ -346,6 +450,20 @@ function createAuthorityHandover({
     };
     if (op.address) assertNewAddress(op.address);
     await save();
+    if (external) {
+      const envelope = await signer.prepareAuthorityOperation({
+        key,
+        name,
+        to,
+        data,
+        source,
+        operations,
+        operation: op,
+      });
+      op.externalEnvelope = envelope;
+      await save();
+      throw new ExternalWait(envelope.context.operationIndex, 'prepared');
+    }
     const tx = await submit(nonce);
     op.hash = tx.hash;
     await save();
@@ -421,6 +539,10 @@ function createAuthorityHandover({
     const data = contract.interface.encodeFunctionData('transferOwnership', [
       governance,
     ]);
+    if (external && current === governance && !operations[`handover:${name}`])
+      throw new Error(
+        `External handover requires this session's exact transfer provenance: ${name}`
+      );
     if (operations[`handover:${name}`]) {
       await execute(`handover:${name}`, name, address, data);
     } else if (current === creator) {

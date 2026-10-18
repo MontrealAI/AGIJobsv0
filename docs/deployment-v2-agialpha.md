@@ -8,6 +8,8 @@ Start with the [current readiness report](production/readiness.md). A source pre
 
 **Looking for the stack already deployed on Ethereum?** Use the [mainnet address directory and status record](production/mainnet-deployment-2026-10-12.md). Do not run a new deployment to refresh documentation or retry explorer verification. The example configuration files below remain templates, not the address directory or instructions to replace the existing stack.
 
+For creation from an Ubuntu terminal using a locally entered ephemeral key, use the [conventional hidden-TTY launcher](conventional-tty-deployment.md). It preserves the ordinary staged writer and explicit governor handover; the key is never supplied in arguments, environment variables or a file. Review and qualify the exact launcher source before use. Mac/Ledger governor commissioning follows the paused creation.
+
 ## 1. Choose the right operation
 
 | Your goal | Command or guide | What it changes |
@@ -85,6 +87,8 @@ npm run deploy:staged -- --network sepolia
 Hardhat accepts `--network`, but does **not** forward arbitrary script flags. Its `--config` option selects a Hardhat JavaScript/TypeScript file, not deployment JSON. Use the environment variables above. Public-network parameter overrides on the script CLI are rejected so the reviewed JSON remains authoritative.
 
 The script reserves a new private evidence file before transactions. It records coordinator and component transaction hashes, commits a digest of the resolved plan on the coordinator, and updates evidence as components confirm. Its append-only `.journal.jsonl` companion retains prior checkpoints if the latest report write is interrupted; use the last complete journal line and reconcile every submitted hash. Tax metadata is installed during creation, before ownership handoff. `Deployer.deployPaused` wires and hands off all eight managed modules atomically in the paused state. The staged CLI refuses an unpaused launch. Existing direct coordinator entrypoints retain their historical behavior for compatibility; this tooling does not call them.
+
+For the SDK-independent prepare/stop/manual-signature path, see [external manual signing](deployment-external-manual.md). Its initial profile and separate hardware/runtime qualification limits are explicit; it does not automatically sign, relay or activate.
 
 The ten fixed implementation owners are transferred explicitly to governance, and the coordinator is transferred only after finalization and topology readback. Seven implementation contracts update their Governable owner/governance together; the other three and coordinator use Ownable. No renounce or zero-address workaround is used. Every signed creation/transfer/staging intent is journaled and fsynced before submission, binding chain, actual sender, role, nonce, target, zero value and input hash. The report preserves the initial canonical block anchor and resolved plan commitment. Ownership handover does not expand the implementations' delegate-only capabilities.
 
