@@ -6,7 +6,30 @@ when improvement has not been established.
 
 ## Try the free flagship
 
-Open [Find your Alpha](https://montrealai.github.io/AGIJobsv0/successor/alpha/)
+Open [Find your Alpha](https://montrealai.github.io/AGIJobsv0/successor/computer/)
+([Français](https://montrealai.github.io/AGIJobsv0/successor/computer/fr/)).
+Start with a supplier mission: deliver ten units by day seven and forty by day
+fourteen. Discover and revise executable strategies, inspect their failures, freeze
+one exact method, and compare it on distinct public cases. With explicit approval,
+question the unnecessary assumption that every unit must arrive early from one
+supplier. All actual quantities, deadlines and the budget remain binding.
+
+The illustrative staged plan costs $360 instead of $490. A credible conventional
+strategy also achieves $360; this difference establishes neither unique Alpha nor
+same-task superiority. If all forty units really are due by day seven, the $490
+plan remains. The incumbent stays retained pending independent proof.
+
+Operate the desk yourself or run explicitly scripted free browser practice.
+The reproducible Chromium laboratory performs actual keyboard, mouse and screenshot
+actions using the pinned native Alpha worker. Export the exact task for an
+operator-owned Computer Use runtime, or copy a bounded mission for ChatGPT Work.
+A prepared prompt is not an executed or qualified model run. See the
+[Computer Use, Level 3 and Level 4 guide](COMPUTER_USE_LEVELS.md) for reproduction,
+bounded claims, evidence review and native runtime preparation.
+
+## Reconcile catalogs in the free laboratory
+
+Open the [catalog laboratory](https://montrealai.github.io/AGIJobsv0/successor/alpha/)
 ([Français](https://montrealai.github.io/AGIJobsv0/successor/alpha/?lang=fr)).
 Reconcile two public or synthetic CSV catalogs, preserve duplicate rows, inspect
 unmatched entries and discrepancies, then download the output, report and reusable
@@ -46,12 +69,12 @@ closing; this page does not upload or automatically save the source.
 
 ## What the stages mean
 
-| Stage | Useful result | Boundary |
-| --- | --- | --- |
-| Alpha | A specific advantage worth building, with costs and constraints | A hypothesis is not a demonstrated win |
-| Gym | Competing methods and reproducible local observations | Training does not certify capability |
-| Specialist ASI | A mission-specific capability that beats Current and the best credible alternative on agreed fresh protected work | The browser example does not award this designation |
-| SUCCESSOR Ω | Retained methods, evidence, skills and operating memory after proof and explicit bounded authorization | Local exports grant no execution or financial authority |
+| Stage          | Useful result                                                                                                     | Boundary                                                |
+| -------------- | ----------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| Alpha          | A specific advantage worth building, with costs and constraints                                                   | A hypothesis is not a demonstrated win                  |
+| Gym            | Competing methods and reproducible local observations                                                             | Training does not certify capability                    |
+| Specialist ASI | A mission-specific capability that beats Current and the best credible alternative on agreed fresh protected work | The browser example does not award this designation     |
+| SUCCESSOR Ω    | Retained methods, evidence, skills and operating memory after proof and explicit bounded authorization            | Local exports grant no execution or financial authority |
 
 ## Source and contract identities
 

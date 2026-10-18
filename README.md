@@ -1,7 +1,8 @@
-> **[Find your Alpha. Build your SUCCESSOR Ω. →](https://montrealai.github.io/AGIJobsv0/successor/alpha/)**
-> Reconcile two catalogs, inspect discrepancies, develop competing methods and keep a reusable tool with its evidence and project history.
-> **[Try a source-grounded mission →](https://montrealai.github.io/AGIJobsv0/successor/research/)** · [Français](https://montrealai.github.io/AGIJobsv0/successor/research/fr/) · [Flagship guide](docs/successor/FIND_YOUR_ALPHA.md).
+> **[Find your Alpha. Build your SUCCESSOR Ω. →](https://montrealai.github.io/AGIJobsv0/successor/computer/)** · [Français](https://montrealai.github.io/AGIJobsv0/successor/computer/fr/)
+> Develop and revise strategies, question unnecessary assumptions, and operate a real supplier desk with Computer Use. Keep the frozen method, evidence and reusable mission.
+> **[Computer Use · Level 3 · Level 4 guide](docs/successor/COMPUTER_USE_LEVELS.md)** · [Catalog laboratory](https://montrealai.github.io/AGIJobsv0/successor/alpha/) · [Source-grounded mission](https://montrealai.github.io/AGIJobsv0/successor/research/) · [Flagship guide](docs/successor/FIND_YOUR_ALPHA.md).
 > Free · No account, wallet or installation. Local results require further independent proof and explicit authorization before operational succession.
+> Browser practice is explicitly scripted; the reproducible Chromium laboratory uses actual keyboard, mouse and screenshots. Export an exact task for an operator-owned native Computer Use runtime. Prepared tasks and public synthetic cases do not establish live-model performance or independent Alpha.
 > The original [portable Atlas laboratory](https://montrealai.github.io/AGIJobsv0/successor/build/) and [reproduction guide](docs/successor/BUILD_YOUR_OMEGA.md) remain available, with their pinned historical contract snapshot.
 
 # AGI Jobs v0 (v2)

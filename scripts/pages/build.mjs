@@ -28,6 +28,10 @@ import {
 import { renderAlphaMarkPage } from './alpha-mark.mjs';
 import { renderSuccessorPage } from './successor.mjs';
 import { renderSourceMissionPage } from './source-mission.mjs';
+import {
+  renderComputerMissionPage,
+  renderComputerDesk,
+} from './computer-mission.mjs';
 import { verifySuccessorAlphaMirror } from './verify-successor-alpha.mjs';
 import { buildPhase6Site } from './phase6-build.mjs';
 import { buildEmpowermentSite } from './empowerment-build.mjs';
@@ -272,7 +276,7 @@ function chrome({
   )}"></script></head><body><a class="skip-link" href="#main">${
     language === 'fr' ? 'Aller au contenu' : 'Skip to content'
   }</a><header class="site-header" lang="en"><div class="header-inner"><a class="brand" href="${base}" aria-label="AGI Jobs home"><span class="brand-mark" aria-hidden="true">✧</span><span>AGI <strong>JOBS</strong><small>DEMO OBSERVATORY</small></span></a><button id="menu-toggle" class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav">Menu <span aria-hidden="true">☰</span></button><nav id="site-nav" aria-label="Primary navigation"><a class="nav-start" href="${base}start/">Start here</a><a href="${href(
-    'successor/alpha/'
+    'successor/computer/'
   )}">SUCCESSOR Ω</a><a href="${href('work/')}">Design a job</a><a href="${href(
     '#featured'
   )}">Featured demos</a><a ${
@@ -473,7 +477,7 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
   const setup = `git clone https://github.com/MontrealAI/AGIJobsv0.git\ncd AGIJobsv0\nnvm install\nnvm use\nnpm ci\nnpm run demo:aurora:local`;
   const body = `<main id="main"><section class="hero section-wrap"><div class="hero-copy"><p class="eyebrow"><span></span> AGI JOBS / THE MACHINE LABOR LAYER</p><h1>Intelligence,<br><em>put to work.</em></h1><p class="hero-description">Turn an idea into useful work. Describe what you need, let an authorized agent prepare a result, and have the work checked before accepting it.</p>${renderEcosystemHero(
     base
-  )}<div class="hero-actions"><a class="button primary" data-alpha-flagship href="${base}successor/alpha/">Find my Alpha <span aria-hidden="true">→</span></a><a class="text-link" href="${base}start/">Start here — we’ll guide you</a><a class="text-link" href="${base}start/example/">Try a simple example</a></div><p class="hero-note">Free · No account or wallet. <a href="${base}successor/alpha/?lang=fr" lang="fr">Trouver mon Alpha →</a></p><p class="hero-note"><a href="${base}successor/research/">Turn a public source into an evidence brief →</a></p>${renderHeroSpotlight(
+  )}<div class="hero-actions"><a class="button primary" data-alpha-flagship href="${base}successor/computer/">Find my Alpha <span aria-hidden="true">→</span></a><a class="text-link" href="${base}start/">Start here — we’ll guide you</a><a class="text-link" href="${base}start/example/">Try a simple example</a></div><p class="hero-note">Free · No account or wallet. <a href="${base}successor/computer/fr/" lang="fr">Trouver mon Alpha →</a></p><p class="hero-note">Computer Use · Develop better strategies · Question the approach</p><p class="hero-note"><a href="${base}successor/alpha/">Explore the strategy laboratory →</a> · <a href="${base}successor/research/">Create a source-linked evidence brief →</a></p>${renderHeroSpotlight(
     base
   )}</div>${orbit()}</section>${renderEcosystemIntro(
     base
@@ -575,6 +579,50 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
         canonical,
         language,
         body: renderSourceMissionPage(base, revision, language),
+      })
+    );
+  }
+  for (const language of ['en', 'fr']) {
+    const canonical =
+      language === 'en' ? 'successor/computer/' : 'successor/computer/fr/';
+    write(
+      canonical + 'index.html',
+      chrome({
+        title:
+          language === 'en'
+            ? 'SUCCESSOR Ω — Computer Use and better strategies'
+            : 'SUCCESSOR Ω — Agir et améliorer les stratégies',
+        description:
+          language === 'en'
+            ? 'Operate a supplier desk, construct and test strategies, question restrictive assumptions and prepare bounded model-driven Computer Use.'
+            : 'Utiliser un bureau fournisseurs, construire et tester des stratégies et remettre en question les hypothèses restrictives.',
+        base,
+        revision,
+        canonical,
+        language,
+        body: renderComputerMissionPage(base, revision, language),
+      })
+    );
+    const desk =
+      language === 'en'
+        ? 'successor/computer/desk/'
+        : 'successor/computer/desk/fr/';
+    write(
+      desk + 'index.html',
+      chrome({
+        title:
+          language === 'en'
+            ? 'SUCCESSOR Ω — Supplier delivery desk'
+            : 'SUCCESSOR Ω — Bureau de livraison',
+        description:
+          language === 'en'
+            ? 'A public synthetic supplier desk for bounded keyboard, mouse and screenshot work.'
+            : 'Un bureau fournisseurs fictif pour les tâches bornées par clavier, souris et captures.',
+        base,
+        revision,
+        canonical: desk,
+        language,
+        body: renderComputerDesk(base, revision, language),
       })
     );
   }
@@ -845,6 +893,7 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
       path.join(root, 'website/assets/site.js'),
       path.join(root, 'website/assets/successor.js'),
       path.join(root, 'website/assets/source-mission.js'),
+      path.join(root, 'website/assets/computer-mission.js'),
       path.join(root, 'website/assets/start.js'),
       path.join(root, 'website/assets/welcome-example.js'),
     ],
@@ -865,6 +914,10 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
   fs.copyFileSync(
     path.join(root, 'website/assets/source-mission.css'),
     path.join(output, 'assets/source-mission.css')
+  );
+  fs.copyFileSync(
+    path.join(root, 'website/assets/computer-mission.css'),
+    path.join(output, 'assets/computer-mission.css')
   );
   const deckRoot = 'demo/AGI-Jobs-Platform-at-Kardashev-II-Scale/';
   const dashboardRoutes = [
@@ -1097,6 +1150,10 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
       'successor/alpha/',
       'successor/research/',
       'successor/research/fr/',
+      'successor/computer/',
+      'successor/computer/fr/',
+      'successor/computer/desk/',
+      'successor/computer/desk/fr/',
     ],
     onboardingRoutes: { en: 'start/', fr: 'start/fr/' },
     onboardingExampleRoutes: { en: 'start/example/', fr: 'start/fr/example/' },

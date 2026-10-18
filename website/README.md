@@ -38,8 +38,17 @@ Mission Pack downloads preserve the constitution, sealed graph, findings, failur
 
 `successor.mjs` renders the EN/FR page; `successor.js` presents validated core results; `presentation-state.mjs` enforces local preview invalidation. The browser build explicitly imports only browser-safe modules and fails on Node-only dependencies. Proof custody, signatures, transactional storage and effect authorization remain backend concerns. `catalog.json` records the new `successorRoutes` separately from preserved demo command decks.
 
-The primary [Find your Alpha flagship](https://montrealai.github.io/AGIJobsv0/successor/alpha/)
-is a pinned Alpha mirror with current Jobs compiler parity. Its executable code,
+The primary [Find your Alpha flagship](https://montrealai.github.io/AGIJobsv0/successor/computer/)
+and [French edition](https://montrealai.github.io/AGIJobsv0/successor/computer/fr/)
+develop typed strategies, preserve failure-driven revisions and require explicit
+approval to examine a less restrictive formulation with unchanged actual requirements.
+The same supplier desk supports human use, explicitly scripted free practice,
+real native-protocol Chromium laboratory runs, and exact tasks for an owned Alpha
+Computer Use runtime. Local public evidence never qualifies a live model or grants
+production authority. See the [Computer Use guide](../docs/successor/COMPUTER_USE_LEVELS.md).
+
+The [catalog laboratory](https://montrealai.github.io/AGIJobsv0/successor/alpha/)
+remains a pinned Alpha mirror with current Jobs compiler parity. Its executable code,
 styles and embedded artwork stay exact; the verifier admits only the recorded
 navigation adaptations. The companion [source mission](https://montrealai.github.io/AGIJobsv0/successor/research/)
 uses the browser-safe native `source-mission.mjs` module for exact-passage briefs,

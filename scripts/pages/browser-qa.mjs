@@ -12,6 +12,7 @@ import { verifyAlphaMark } from './alpha-mark-qa.mjs';
 import { verifySuccessor } from './successor-qa.mjs';
 import { verifySuccessorAlpha } from './successor-alpha-qa.mjs';
 import { verifySourceMission } from './source-mission-qa.mjs';
+import { verifyComputerMission } from './computer-mission-qa.mjs';
 import { verifyPhase6 } from './phase6-qa.mjs';
 import { verifyOmniphoenix } from './omniphoenix-qa.mjs';
 import { verifyWorkPlanner } from './work-qa.mjs';
@@ -478,6 +479,7 @@ try {
   await verifySuccessor({ page, context, url, artifacts, a11y, checks });
   await verifySuccessorAlpha({ page, context, url, artifacts, a11y, checks });
   await verifySourceMission({ page, context, url, artifacts, a11y, checks });
+  await verifyComputerMission({ page, context, url, artifacts, a11y, checks });
   await verifyStart({ page, context, url, artifacts, a11y, checks });
   await verifyWorkPlanner({ page, context, url, artifacts, a11y, checks });
   await verifyAlphaMark({ page, context, url, artifacts, a11y, checks });

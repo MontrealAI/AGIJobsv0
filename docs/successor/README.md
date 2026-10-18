@@ -4,10 +4,15 @@ AGI Jobs are bounded work orders with evidence and acceptance criteria. The SUCC
 
 Start with one recurring decision and a credible alternative. Develop several candidates, inspect counterexamples, freeze one exact system and examine it. Keep the finding even when no candidate is better. A proof result, payment, knowledge admission and permission to act remain separate decisions.
 
-**[Find your Alpha →](https://montrealai.github.io/AGIJobsv0/successor/alpha/)**
-starts with useful catalog reconciliation, competing methods and a reusable tool.
+**[Find your Alpha →](https://montrealai.github.io/AGIJobsv0/successor/computer/)**
+starts with a Computer Use supplier desk: develop strategies, revise failures and
+examine unnecessary assumptions while preserving the actual mission requirements.
+The [Level 3 and Level 4 guide](COMPUTER_USE_LEVELS.md) explains free practice,
+the real Chromium laboratory and exact tasks for an operator-owned native runtime.
+The [catalog laboratory](https://montrealai.github.io/AGIJobsv0/successor/alpha/)
+retains useful catalog reconciliation, competing methods and a reusable tool.
 The companion **[source mission](https://montrealai.github.io/AGIJobsv0/successor/research/)**
-creates a traceable evidence brief from public text. Both are free browser paths.
+creates a traceable evidence brief from public text. All three offer free browser paths.
 See the [flagship guide](FIND_YOUR_ALPHA.md) for steps, source identities and limits.
 
 ## Run the local rehearsal

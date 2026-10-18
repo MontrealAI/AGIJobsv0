@@ -19,7 +19,7 @@ const {
   deploymentSnapshot,
 } = require('../../scripts/release/qualify-source-release.cjs');
 const sha = 'a'.repeat(40),
-  tag = 'source-v2.1.0-rc.14';
+  tag = 'source-v2.1.0-rc.15';
 function compilerArchiveFixture(contents = {}) {
   const compiler = require('../../config/solidity-compiler.json').longVersion;
   const payloads = {
@@ -386,10 +386,19 @@ test('workflow packages every declared immutable release asset', () => {
     'utf8'
   );
   assert.ok(workflow.includes(`TAG: ${tag}`));
-  assert.ok(workflow.includes('group: source-release-rc14-${{ github.ref }}'));
-  assert.ok(workflow.includes('name: source-rc14-${{ github.sha }}'));
-  assert.ok(expectedAssets(tag).includes('RELEASE_NOTES_SOURCE_RC14.md'));
-  for (const prior of ['RC7', 'RC8', 'RC9', 'RC10', 'RC11', 'RC12', 'RC13']) {
+  assert.ok(workflow.includes('group: source-release-rc15-${{ github.ref }}'));
+  assert.ok(workflow.includes('name: source-rc15-${{ github.sha }}'));
+  assert.ok(expectedAssets(tag).includes('RELEASE_NOTES_SOURCE_RC15.md'));
+  for (const prior of [
+    'RC7',
+    'RC8',
+    'RC9',
+    'RC10',
+    'RC11',
+    'RC12',
+    'RC13',
+    'RC14',
+  ]) {
     assert.ok(
       !expectedAssets(tag).includes(`RELEASE_NOTES_SOURCE_${prior}.md`)
     );
@@ -405,7 +414,7 @@ test('workflow packages every declared immutable release asset', () => {
   const notes = fs.readFileSync(
     path.resolve(
       __dirname,
-      '../../docs/production/RELEASE_NOTES_SOURCE_RC14.md'
+      '../../docs/production/RELEASE_NOTES_SOURCE_RC15.md'
     ),
     'utf8'
   );
@@ -501,6 +510,10 @@ test('standalone current guide keeps pinned links and current receipts retain ex
   const rendered = fs.readFileSync(
     path.join(target, 'mainnet-deployment-2026-10-18.md'),
     'utf8'
+  );
+  assert.equal(
+    hash(rendered),
+    'f35f728d821a1b30c81e0151d3df138b01db891a0764ef6f2b91f7a5da7c027d'
   );
   const base = `https://github.com/MontrealAI/AGIJobsv0/blob/${deploymentSnapshot.recordCommit}/docs/production/`;
   for (const targetPath of [
@@ -832,6 +845,8 @@ test('source API boundary allows only exact supported methods and routes', () =>
     ['GET', 'releases/tags/source-v2.1.0-rc.9'],
     ['GET', 'git/ref/tags/source-v2.1.0-rc.12'],
     ['GET', 'releases/tags/source-v2.1.0-rc.12'],
+    ['GET', 'git/ref/tags/source-v2.1.0-rc.14'],
+    ['GET', 'releases/tags/source-v2.1.0-rc.14'],
     ['GET', 'git/ref/tags/source-v2.1.0-rc.13'],
     ['GET', 'releases/tags/source-v2.1.0-rc.13'],
     ['GET', 'git/ref/tags/source-v2.1.0-rc.11'],
@@ -897,7 +912,7 @@ test('rc.14 consolidates flagship and deployment records without claiming rc.13 
     ),
     'utf8'
   );
-  assert.ok(notes.startsWith('# ' + tag));
+  assert.ok(notes.startsWith('# source-v2.1.0-rc.14'));
   assert.match(notes, /70dac8e5ce739978f5cd96d0fc190b6ebfcdf8d7/);
   assert.match(notes, /818b3a246871e4cd4dde86558dbb91ef82b15eef/);
   assert.match(notes, /Production approval remains \*\*false\*\*/);
@@ -910,4 +925,90 @@ test('rc.14 consolidates flagship and deployment records without claiming rc.13 
     'mainnet-deployment-receipts-2026-10-18.json',
   ])
     assert.ok(expectedAssets(tag).includes(asset));
+});
+
+test('rc.15 preserves the published rc.14 checksum receipt, notes and retained evidence bytes', () => {
+  // Independently downloaded from release 416750326 after publication. These
+  // are the immutable rc.14 payloads, not a new rc.15 producer's checksums.
+  const publishedReceipt = `43facdcacac7d2fe45bb2223969023f909bee1c59bc0f3b74c75487be9686d8c  compiler-provenance.json
+ce2db778b31e50f2085e5e269cc83fa4aa59daa807543bb80066737ed754f314  configuration-readback-2026-10-13.json
+2589882de18dbf7395b11e20fa1135966685671ecd8579433c1895f12a4b4c31  deployment-addresses.mainnet.json
+7565891a776b1d058342818dec51d4f13f46b10ee2a497e74f3203f9ac1c31ff  ethereum-mainnet-2026-10-12.json
+b4335f5763f73e8da664c3cd45ac7ca8fa6f0d3beb2780b209e50fd1e3def23f  jobs-mainnet-2026-10-18.json
+69fac1728be59752d4aadc66157f6e533273c5d9bef3b71d86a97530ce7db576  mainnet-deployment-receipts-2026-10-18.json
+995906a5a435cc0bb6ec53306d422c89f9488dcbfcc4097e9179e4e00cddbd04  provenance.json
+48b1584546fa588b961eff8534daba37d7fea69ad557c85c599757213a53efdf  solidity-compiler.json
+7cf35c789d6bc61f5e96a12542a8fd8dd1f1f38be2ab1b97d301f3304909c233  RELEASE_NOTES_SOURCE_RC14.md
+48944bcc484100c8e42df3af57d7f56c6a3bf845c0054de3142e3bab287d2e38  compiler-warnings-2026-10-13.md
+43c3fccf6e2ccd70ae95869cd50ddafd0ba882ffb1e2246ec114d0d8977fc5e2  mainnet-deployment-2026-10-12.md
+f35f728d821a1b30c81e0151d3df138b01db891a0764ef6f2b91f7a5da7c027d  mainnet-deployment-2026-10-18.md
+2f95601965ae6e2a01e8a09baabdc1fb6ab7408188b089f11c694207051e583c  compiler-evidence.zip
+7221fdbf9b4e29475debb4f557e8ce4682f7a92a4e561fbb0af0877405417365  source-v2.1.0-rc.14-source.zip
+`;
+  const hash = (bytes) =>
+    crypto.createHash('sha256').update(bytes).digest('hex');
+  assert.equal(
+    hash(publishedReceipt),
+    '1bb00255deb6175ac96bd3aa72020647131efd837ec9343b1dbc33c6e3c51c13'
+  );
+  const rows = publishedReceipt.trim().split('\n');
+  assert.equal(rows.length, 14);
+  const receipt = new Map(rows.map((row) => row.split('  ').reverse()));
+  assert.equal(receipt.size, 14);
+  assert.deepEqual(
+    [...receipt.keys()].sort(),
+    expectedAssets('source-v2.1.0-rc.14')
+      .filter((name) => name !== 'SHA256SUMS.txt')
+      .map((name) => name.replace('RC15.md', 'RC14.md'))
+      .sort()
+  );
+  const retainedFiles = {
+    'RELEASE_NOTES_SOURCE_RC14.md':
+      'docs/production/RELEASE_NOTES_SOURCE_RC14.md',
+    'configuration-readback-2026-10-13.json':
+      'docs/deployments/evidence/configuration-readback-2026-10-13.json',
+    'deployment-addresses.mainnet.json':
+      'docs/deployment-addresses.mainnet.json',
+    'ethereum-mainnet-2026-10-12.json':
+      'docs/deployments/ethereum-mainnet-2026-10-12.json',
+    'jobs-mainnet-2026-10-18.json': deploymentSnapshot.localPath,
+    'mainnet-deployment-receipts-2026-10-18.json':
+      'docs/production/mainnet-2026-10-18/deployment-receipts.json',
+    'solidity-compiler.json': 'config/solidity-compiler.json',
+    'compiler-warnings-2026-10-13.md':
+      'docs/production/compiler-warnings-2026-10-13.md',
+    'mainnet-deployment-2026-10-12.md':
+      'docs/production/mainnet-deployment-2026-10-12.md',
+  };
+  for (const [asset, file] of Object.entries(retainedFiles))
+    assert.equal(
+      hash(fs.readFileSync(path.resolve(__dirname, '../..', file))),
+      receipt.get(asset),
+      `${asset} must preserve the published rc.14 bytes`
+    );
+});
+
+test('rc.15 identifies computer-use evidence limits and preserves the exact-source publication boundary', () => {
+  const notes = fs.readFileSync(
+    path.resolve(
+      __dirname,
+      '../../docs/production/RELEASE_NOTES_SOURCE_RC15.md'
+    ),
+    'utf8'
+  );
+  assert.ok(notes.startsWith('# ' + tag));
+  assert.match(notes, /fecde507f770481bfd68efddcb92230a0d885b53/);
+  assert.match(
+    notes,
+    /7cf35c789d6bc61f5e96a12542a8fd8dd1f1f38be2ab1b97d301f3304909c233/
+  );
+  assert.match(notes, /Production approval remains \*\*false\*\*/);
+  assert.match(notes, /no same-task superiority/);
+  assert.match(notes, /INCUMBENT_RETAINED_PENDING_INDEPENDENT_REVIEW/);
+  assert.match(notes, /scripted native Responses/);
+  assert.match(notes, /not protected\nindependent holdouts/);
+  assert.match(notes, /all 15 required workflow paths/);
+  assert.match(notes, /14 checksummed payloads/);
+  assert.match(notes, /No fixture-proof asset is added/);
+  assert.equal(expectedAssets(tag).length, 15);
 });

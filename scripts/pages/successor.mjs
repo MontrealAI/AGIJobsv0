@@ -52,12 +52,16 @@ export function renderSuccessorPage(base, revision, language = 'en') {
         : 'Start with a useful advantage.'
     }</h2><p>${
     language === 'fr'
-      ? 'Réconciliez vos catalogues, examinez les écarts et conservez un outil réutilisable. Ou transformez un texte public en note de preuves traçable.'
-      : 'Reconcile catalogs, examine discrepancies and retain a reusable tool. Or turn public text into a traceable evidence brief.'
-  }</p><div class="omega-actions"><a class="button primary" href="${base}successor/alpha/${
-    language === 'fr' ? '?lang=fr' : ''
+      ? 'Développez des stratégies, examinez les hypothèses et utilisez un poste de travail avec Computer Use. Conservez les méthodes et les preuves pour la prochaine mission.'
+      : 'Develop strategies, examine assumptions and operate a work desk with Computer Use. Keep the methods and evidence for the next mission.'
+  }</p><div class="omega-actions"><a class="button primary" href="${base}successor/computer/${
+    language === 'fr' ? 'fr/' : ''
   }">${
     language === 'fr' ? 'Trouver mon Alpha' : 'Find my Alpha'
+  } →</a><a class="button secondary" href="${base}successor/alpha/${
+    language === 'fr' ? '?lang=fr' : ''
+  }">${
+    language === 'fr' ? 'Laboratoire de catalogues' : 'Catalog laboratory'
   } →</a><a class="button secondary" href="${base}successor/research/${
     language === 'fr' ? 'fr/' : ''
   }">${

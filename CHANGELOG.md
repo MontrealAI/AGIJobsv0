@@ -1,5 +1,17 @@
 # Changelog
 
+## v2.1.0-rc.15 — Develop the strategy. Preserve the mission.
+
+Source and evidence prerelease candidate (2026-10-18 UTC), building on immutable published rc.14.
+
+- Add a free English/French Computer Use mission with an interactive supplier desk, bounded typed strategy construction, failure-driven revisions, a frozen candidate and two distinct public fresh cases.
+- Make Level 3 strategy development and Level 4 outcome-preserving reframing executable and inspectable. Preserve actual quantities, deadlines, budget and recommendation scope; retain the incumbent pending independent review.
+- Show the disclosed synthetic USD 490-to-360 staged-delivery comparison alongside a credible conventional method that also reaches USD 360. Establish no independent AI Alpha or same-task superiority.
+- Export replay-checked mission evidence, an exact-bound native Alpha computer task, a standalone desk, a ChatGPT Work operator prompt and unsigned, unfunded native Jobs drafts. Keep the real-Chromium scripted protocol rehearsal separate from live-provider qualification and authority.
+- Require the new exact-source browser protocol workflow before publication, preserving every existing compiler, protected-source, historical-evidence, immutable snapshot and downloaded-asset gate. Retain 15 release assets and the published rc.14 notes unchanged.
+
+Production approval remains false. No provider credential or live model call enters GitHub Pages; no purchase, public deployment, funding, settlement or activation is performed.
+
 ## v2.1.0-rc.14 — Find your Alpha. Build your SUCCESSOR Ω.
 
 Source and evidence prerelease candidate (2026-10-18 UTC). The unpublished rc.13 proposal is retained in history; no rc.13 tag or release is claimed.
