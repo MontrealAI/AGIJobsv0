@@ -2,7 +2,7 @@
 
 ## The paired ecosystem and deployed contract directory
 
-The homepage features the shared Ethereum mainnet **$AGIALPHA** token and its full, selectable address near the introduction. The static [`ecosystem/` guide](https://montrealai.github.io/AGIJobsv0/ecosystem/) explains how AGI Alpha Agent and AGI Jobs can turn a selected idea into accountable work, follows an illustrative task and lists all **5 Alpha + 24 Jobs contract instances** with plain-language roles and explorer links.
+The homepage features the shared Ethereum mainnet **$AGIALPHA** token and its full, selectable address near the introduction. The static [`ecosystem/` guide](https://montrealai.github.io/AGIJobsv0/ecosystem/) explains how AGI Alpha Agent and AGI Jobs can turn a selected idea into accountable work, follows an illustrative task and lists all **5 Alpha + 25 Jobs contracts** from the current recorded suites, with plain-language roles and explorer links. The Jobs suite follows the exact October 18 snapshot published at commit `284351148d96c5390a655aec1f9db806284f2400`.
 
 `scripts/pages/ecosystem.mjs` renders the guide and homepage entries from [`website/data/ecosystem.json`](data/ecosystem.json). The directory pins the public deployment records by source revision and separates their dated evidence from current readiness guidance. `catalog.json` records `ecosystemRoute`, and `ecosystem/contracts.json` provides the same downloadable address directory. Update addresses only against the corresponding public deployment evidence; a new website or repository release is not a redeployment.
 
@@ -37,6 +37,16 @@ Choose a mission, inspect the constitution, run its bounded computation, inspect
 Mission Pack downloads preserve the constitution, sealed graph, findings, failure knowledge and replay recipe as bounded JSON. Restore verifies integrity, displays imported records as inert text, clears prior run outputs, and creates no active permission. A descendant declares a replacement supplier and starts unproven. Import accepts at most 2 MiB in this browser; imports do not execute programs or restore credentials. Editing a mission or assumption invalidates old previews/downloads, and late asynchronous operations cannot resurrect them. State stays in memory until explicit export; no confidential data, API key, wallet, analytics or production connection belongs in this public surface.
 
 `successor.mjs` renders the EN/FR page; `successor.js` presents validated core results; `presentation-state.mjs` enforces local preview invalidation. The browser build explicitly imports only browser-safe modules and fails on Node-only dependencies. Proof custody, signatures, transactional storage and effect authorization remain backend concerns. `catalog.json` records the new `successorRoutes` separately from preserved demo command decks.
+
+The primary [Find your Alpha flagship](https://montrealai.github.io/AGIJobsv0/successor/alpha/)
+is a pinned Alpha mirror with current Jobs compiler parity. Its executable code,
+styles and embedded artwork stay exact; the verifier admits only the recorded
+navigation adaptations. The companion [source mission](https://montrealai.github.io/AGIJobsv0/successor/research/)
+uses the browser-safe native `source-mission.mjs` module for exact-passage briefs,
+matched excerpt budgets, frozen methods, fresh-source checks and portable dossiers.
+See [the user and reproduction guide](../docs/successor/FIND_YOUR_ALPHA.md).
+The older portable Atlas page retains its historical address snapshot; use the
+current ecosystem directory for current recorded addresses.
 
 After a complete site build:
 

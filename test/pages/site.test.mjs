@@ -161,6 +161,13 @@ test('every demo has a unique route and all built local page/asset links resolve
     if (file.endsWith('experiments/culture/index.html')) {
       assert.equal(document.querySelectorAll('#root').length, 1);
       assert.ok(document.querySelector('noscript a'));
+    } else if (file.endsWith('successor/alpha/index.html')) {
+      assert.equal(document.querySelectorAll('main').length, 1, file);
+      const skip = document.querySelector('a.skip');
+      assert.ok(
+        skip && document.querySelector(skip.getAttribute('href')),
+        'Pinned Alpha main retains its working skip target'
+      );
     } else assert.equal(document.querySelectorAll('main#main').length, 1, file);
   }
   assert.deepEqual(missing, []);

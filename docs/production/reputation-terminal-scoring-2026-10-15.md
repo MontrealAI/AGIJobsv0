@@ -1,8 +1,11 @@
 # Reputation producer and terminal-scoring correction — 2026-10-15
 
-This candidate builds on the separately recorded positive-growth repair. It
-remains unmerged and is not deployment-approved. Earlier source releases,
-prebuilt demo bundles and qualification receipts remain unchanged.
+This correction builds on the separately recorded positive-growth repair. It
+is merged in source release `source-v2.1.0-rc.12`
+(`b936efe066dc1b1f7a2fcc18ab9950d77cdf96d5`) and is not deployment-approved.
+Earlier source releases, prebuilt demo bundles and qualification receipts
+remain unchanged. The dated test observations below retain their recorded
+source identities and do not claim a reproduced test of every later head.
 
 Registry payout amounts are already 18-decimal AGIALPHA base units. The old
 extra `1e12` conversion inflated the engine's payout input. Settlement now sends
@@ -83,8 +86,10 @@ and review remain mandatory for the final combined head. The compatibility recei
 
 Owner/governance, treasury, tax, signer and deployment limits remain unset.
 No Alpha EOA setting is inferred for Jobs. Exact unsigned deployment planning,
-complete actual-token fork/adversarial lifecycle qualification, historical
-obligation reconciliation and separately authorized commissioning remain open.
+complete actual-token fork/adversarial lifecycle qualification and separately
+authorized commissioning remain open. Previous deployments are outside this
+campaign's mutation scope; historical obligation reconciliation is not a
+prerequisite to a separate new deployment.
 External audit and Sepolia rehearsal are **NOT PERFORMED — OWNER-ACCEPTED
 OMISSION**; neither omission waives a technical defect or signing gate.
 No signatures, external transactions, funding or privileged host changes occur.

@@ -1,14 +1,36 @@
 'use strict';
 
 const fs = require('node:fs');
+const crypto = require('node:crypto');
 const { execFileSync } = require('node:child_process');
 const { setTimeout: delay } = require('node:timers/promises');
 const { requiredWorkflows } = require('./check-release-ci.js');
 
 const ownPath = '.github/workflows/source-release.yml';
-const releaseVersion = '2.1.0-rc.12';
+const releaseVersion = '2.1.0-rc.13';
 const deployedSourceBaseline = 'b4c5b66ea05a6bb27f1f1cb197f055c179bbd38e';
 const evidenceBaseline = '9c730e0188594089e27ed0589c2b5ca57eec5cf5';
+// Additive reference evidence: this is not an assertion that the deployed
+// compiler/source tree equals the source qualified for this release.
+const deploymentSnapshot = Object.freeze({
+  asset: 'jobs-mainnet-2026-10-18.json',
+  localPath: 'website/data/jobs-mainnet-2026-10-18.json',
+  repository: 'MontrealAI/AGIJobsv0',
+  recordCommit: '284351148d96c5390a655aec1f9db806284f2400',
+  recordPath: 'docs/production/mainnet-2026-10-18/deployment-snapshot.json',
+  sha256: 'b4335f5763f73e8da664c3cd45ac7ca8fa6f0d3beb2780b209e50fd1e3def23f',
+  deployedSourceCommit: '818b3a246871e4cd4dde86558dbb91ef82b15eef',
+  deployedSourceTree: 'b1c3bb0f4b8d64e0d23376d6b6ef3722c4c67b0d',
+  currentMainEquivalenceNotAssumed: true,
+  liveRecheckedByThisRelease: false,
+});
+
+function verifyDeploymentSnapshot(bytes) {
+  const hash = crypto.createHash('sha256').update(bytes).digest('hex');
+  if (hash !== deploymentSnapshot.sha256)
+    throw Error('Pinned deployment snapshot hash mismatch');
+  return deploymentSnapshot;
+}
 // Frozen combined economic source: percentage policy, terminal reputation,
 // preserved demos and BigInt dry-run correction. This exact ancestor binds
 // the final protected tree; fresh independent review remains a merge gate.
@@ -216,6 +238,9 @@ async function main() {
     ),
     version: JSON.parse(fs.readFileSync('package.json', 'utf8')).version,
   });
+  const deploymentSnapshots = [
+    verifyDeploymentSnapshot(fs.readFileSync(deploymentSnapshot.localPath)),
+  ];
   const deadline = Date.now() + 85 * 60000;
   while (Date.now() < deadline) {
     const [runs, checks] = await Promise.all([
@@ -233,13 +258,14 @@ async function main() {
           {
             schema: 'agijobsv0/source-release-provenance/1',
             repository,
-            tag: 'source-v2.1.0-rc.12',
+            tag: 'source-v2.1.0-rc.13',
             sha,
             tree: git('rev-parse', 'HEAD^{tree}'),
             recordedAt: new Date().toISOString(),
             productionApproved: false,
             artifactSigning: 'unsigned source and evidence only',
             sourceScope,
+            deploymentSnapshots,
             producer: {
               runId: process.env.GITHUB_RUN_ID,
               runAttempt: process.env.GITHUB_RUN_ATTEMPT,
@@ -288,6 +314,8 @@ module.exports = {
   requiredPaths,
   requiredChecks,
   verifySourceScope,
+  verifyDeploymentSnapshot,
+  deploymentSnapshot,
   compilerSourceBaseline,
   evidenceBaseline,
   deployedSourceBaseline,

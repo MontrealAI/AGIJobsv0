@@ -16,9 +16,10 @@ const {
   deployedSourceBaseline,
   preservedEvidencePaths,
   reviewedCompilerPaths,
+  deploymentSnapshot,
 } = require('../../scripts/release/qualify-source-release.cjs');
 const sha = 'a'.repeat(40),
-  tag = 'source-v2.1.0-rc.12';
+  tag = 'source-v2.1.0-rc.13';
 function compilerArchiveFixture(contents = {}) {
   const compiler = require('../../config/solidity-compiler.json').longVersion;
   const payloads = {
@@ -91,6 +92,7 @@ function assetFixture(t) {
       reviewedCompilerPaths,
       compiler: '0.8.37+commit.f401782d',
     },
+    deploymentSnapshots: [deploymentSnapshot],
   };
   const checksums = (dir) =>
     fs.writeFileSync(
@@ -112,6 +114,10 @@ function assetFixture(t) {
       path.join(directory, name),
       name === 'provenance.json'
         ? JSON.stringify(provenance)
+        : name === deploymentSnapshot.asset
+        ? fs.readFileSync(
+            path.resolve(__dirname, '../..', deploymentSnapshot.localPath)
+          )
         : `fixture:${name}`
     );
   }
@@ -194,13 +200,13 @@ function assetFixture(t) {
 }
 test('compiler and evidence assets must match the complete checksum inventory and producer', (t) => {
   const fixture = assetFixture(t);
-  assert.equal(expectedAssets(tag).length, 12);
+  assert.equal(expectedAssets(tag).length, 13);
   assert.equal(
     fs
       .readFileSync(path.join(fixture.downloaded, 'SHA256SUMS.txt'), 'utf8')
       .trim()
       .split('\n').length,
-    11
+    12
   );
   fixture.verify();
   fs.appendFileSync(
@@ -214,6 +220,29 @@ test('compiler and evidence assets must match the complete checksum inventory an
     path.join(fixture.downloaded, 'compiler-warnings-2026-10-13.md')
   );
   assert.throws(() => fixture.verify(), /inventory mismatch/);
+});
+test('recomputed checksums cannot substitute the pinned current deployment snapshot or its provenance', (t) => {
+  const fixture = assetFixture(t);
+  const snapshot = path.join(fixture.downloaded, deploymentSnapshot.asset);
+  fs.appendFileSync(snapshot, '\n');
+  fixture.checksums(fixture.downloaded);
+  assert.throws(() => fixture.verify(false), /snapshot hash mismatch/);
+  fs.copyFileSync(
+    path.join(fixture.directory, deploymentSnapshot.asset),
+    snapshot
+  );
+  const provenance = {
+    ...fixture.provenance,
+    deploymentSnapshots: [
+      { ...deploymentSnapshot, currentMainEquivalenceNotAssumed: false },
+    ],
+  };
+  fs.writeFileSync(
+    path.join(fixture.downloaded, 'provenance.json'),
+    JSON.stringify(provenance)
+  );
+  fixture.checksums(fixture.downloaded);
+  assert.throws(() => fixture.verify(false), /provenance identity mismatch/);
 });
 test('incomplete checksums, extra assets and changed published provenance fail closed', (t) => {
   const fixture = assetFixture(t);
@@ -357,10 +386,10 @@ test('workflow packages every declared immutable release asset', () => {
     'utf8'
   );
   assert.ok(workflow.includes(`TAG: ${tag}`));
-  assert.ok(workflow.includes('group: source-release-rc12-${{ github.ref }}'));
-  assert.ok(workflow.includes('name: source-rc12-${{ github.sha }}'));
-  assert.ok(expectedAssets(tag).includes('RELEASE_NOTES_SOURCE_RC12.md'));
-  for (const prior of ['RC7', 'RC8', 'RC9', 'RC10', 'RC11']) {
+  assert.ok(workflow.includes('group: source-release-rc13-${{ github.ref }}'));
+  assert.ok(workflow.includes('name: source-rc13-${{ github.sha }}'));
+  assert.ok(expectedAssets(tag).includes('RELEASE_NOTES_SOURCE_RC13.md'));
+  for (const prior of ['RC7', 'RC8', 'RC9', 'RC10', 'RC11', 'RC12']) {
     assert.ok(
       !expectedAssets(tag).includes(`RELEASE_NOTES_SOURCE_${prior}.md`)
     );
@@ -376,7 +405,7 @@ test('workflow packages every declared immutable release asset', () => {
   const notes = fs.readFileSync(
     path.resolve(
       __dirname,
-      '../../docs/production/RELEASE_NOTES_SOURCE_RC12.md'
+      '../../docs/production/RELEASE_NOTES_SOURCE_RC13.md'
     ),
     'utf8'
   );
@@ -729,6 +758,8 @@ test('source API boundary allows only exact supported methods and routes', () =>
     ['GET', 'git/ref/heads/other'],
     ['GET', 'git/ref/tags/source-v2.1.0-rc.9'],
     ['GET', 'releases/tags/source-v2.1.0-rc.9'],
+    ['GET', 'git/ref/tags/source-v2.1.0-rc.12'],
+    ['GET', 'releases/tags/source-v2.1.0-rc.12'],
     ['GET', 'git/ref/tags/source-v2.1.0-rc.11'],
     ['GET', 'releases/tags/source-v2.1.0-rc.11'],
     ['GET', 'git/ref/tags/source-v2.1.0-rc.10'],
@@ -753,8 +784,31 @@ test('rc.12 retains the exact published rc.11 notes and identifies its limits', 
   assert.match(pointer, /partial owner-report escaping/);
   assert.match(pointer, /history\/RELEASE_NOTES_SOURCE_RC11_PUBLISHED\.md/);
   const current = read('RELEASE_NOTES_SOURCE_RC12.md').toString('utf8');
-  assert.ok(current.startsWith(`# ${tag}`));
+  assert.ok(current.startsWith('# source-v2.1.0-rc.12'));
   assert.match(current, /11c26f28751cf9042e2795782edf225cee9e6828/);
   assert.match(current, /29721b96ab4443e213afecfd423422aef1b327fe/);
   assert.match(current, /Production approval remains \*\*false\*\*/);
+});
+
+test('rc.13 preserves published rc.12 notes and states the source-only boundary', () => {
+  const read = (name) =>
+    fs.readFileSync(path.resolve(__dirname, '../../docs/production', name));
+  assert.equal(
+    crypto
+      .createHash('sha256')
+      .update(read('RELEASE_NOTES_SOURCE_RC12.md'))
+      .digest('hex'),
+    '9e10de3df71a6035bdacd81483a6ce3ae7af15d6a1eff414dc024ba88f3d0ef5'
+  );
+  const current = read('RELEASE_NOTES_SOURCE_RC13.md').toString('utf8');
+  assert.ok(current.startsWith('# ' + tag));
+  assert.match(current, /bd45f34de1c1e58986aafb4b0e5c48bc155839ca/);
+  assert.match(current, /3c17153942251116ee51163055eb1a25d652454b/);
+  assert.match(current, /Production approval remains \*\*false\*\*/);
+  assert.match(
+    current,
+    /authorityComplete.*sourceVerificationComplete.*activationReady/
+  );
+  assert.match(current, /Ledger.*EIP-1193.*EIP-7702/);
+  assert.match(current, /Previous deployments remain outside/);
 });

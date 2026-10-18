@@ -27,6 +27,8 @@ import {
 } from './ecosystem.mjs';
 import { renderAlphaMarkPage } from './alpha-mark.mjs';
 import { renderSuccessorPage } from './successor.mjs';
+import { renderSourceMissionPage } from './source-mission.mjs';
+import { verifySuccessorAlphaMirror } from './verify-successor-alpha.mjs';
 import { buildPhase6Site } from './phase6-build.mjs';
 import { buildEmpowermentSite } from './empowerment-build.mjs';
 import { buildOmniphoenixSite } from './omniphoenix-build.mjs';
@@ -270,7 +272,7 @@ function chrome({
   )}"></script></head><body><a class="skip-link" href="#main">${
     language === 'fr' ? 'Aller au contenu' : 'Skip to content'
   }</a><header class="site-header" lang="en"><div class="header-inner"><a class="brand" href="${base}" aria-label="AGI Jobs home"><span class="brand-mark" aria-hidden="true">✧</span><span>AGI <strong>JOBS</strong><small>DEMO OBSERVATORY</small></span></a><button id="menu-toggle" class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav">Menu <span aria-hidden="true">☰</span></button><nav id="site-nav" aria-label="Primary navigation"><a class="nav-start" href="${base}start/">Start here</a><a href="${href(
-    'successor/'
+    'successor/alpha/'
   )}">SUCCESSOR Ω</a><a href="${href('work/')}">Design a job</a><a href="${href(
     '#featured'
   )}">Featured demos</a><a ${
@@ -338,6 +340,9 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
       'README.md',
       'demo/README.md',
       'docs/START_HERE.md',
+      'docs/DEPLOYED_ADDRESSES.md',
+      'docs/production/CURRENT_MAINNET_DEPLOYMENT.md',
+      'docs/production/RELEASE_NOTES_SOURCE_RC13.md',
       'docs/production/readiness-2026-10-03.md',
       'docs/production/readiness-2026-10-04.md',
       'docs/production/dependency-review-2026-10-04.md',
@@ -467,7 +472,7 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
   const setup = `git clone https://github.com/MontrealAI/AGIJobsv0.git\ncd AGIJobsv0\nnvm install\nnvm use\nnpm ci\nnpm run demo:aurora:local`;
   const body = `<main id="main"><section class="hero section-wrap"><div class="hero-copy"><p class="eyebrow"><span></span> AGI JOBS / THE MACHINE LABOR LAYER</p><h1>Intelligence,<br><em>put to work.</em></h1><p class="hero-description">Turn an idea into useful work. Describe what you need, let an authorized agent prepare a result, and have the work checked before accepting it.</p>${renderEcosystemHero(
     base
-  )}<div class="hero-actions"><a class="button primary" href="${base}start/">Start here — we’ll guide you <span aria-hidden="true">→</span></a><a class="text-link" href="${base}start/example/"><span class="play-icon" aria-hidden="true">▷</span> Try a simple example</a></div><p class="hero-note">No account or wallet needed. <a href="${base}start/fr/" lang="fr">Commencer en français →</a></p>${renderHeroSpotlight(
+  )}<div class="hero-actions"><a class="button primary" data-alpha-flagship href="${base}successor/alpha/">Find my Alpha <span aria-hidden="true">→</span></a><a class="text-link" href="${base}start/">Start here — we’ll guide you</a><a class="text-link" href="${base}start/example/">Try a simple example</a></div><p class="hero-note">Free · No account or wallet. <a href="${base}successor/alpha/?lang=fr" lang="fr">Trouver mon Alpha →</a></p><p class="hero-note"><a href="${base}successor/research/">Turn a public source into an evidence brief →</a></p>${renderHeroSpotlight(
     base
   )}</div>${orbit()}</section>${renderEcosystemIntro(
     base
@@ -535,7 +540,7 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
     chrome({
       title: 'AGI Alpha Agent + AGI Jobs · The shared ecosystem',
       description:
-        'Explore how AGI Alpha Agent and AGI Jobs can turn selected ideas into accountable work, with the shared AGIALPHA token and all 29 deployed Ethereum mainnet contract instances.',
+        'Explore how AGI Alpha Agent and AGI Jobs can turn selected ideas into accountable work, with the shared AGIALPHA token and all 30 current recorded Ethereum mainnet contracts.',
       base,
       revision,
       canonical: 'ecosystem/',
@@ -543,6 +548,35 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
     })
   );
   write('ecosystem/contracts.json', JSON.stringify(ecosystem, null, 2) + '\n');
+  verifySuccessorAlphaMirror();
+  for (const file of ['index.html', 'sources.json', 'provenance.json']) {
+    write(
+      'successor/alpha/' + file,
+      fs.readFileSync(path.join(root, 'website/successor-alpha', file), 'utf8')
+    );
+  }
+  for (const language of ['en', 'fr']) {
+    const canonical =
+      language === 'en' ? 'successor/research/' : 'successor/research/fr/';
+    write(
+      canonical + 'index.html',
+      chrome({
+        title:
+          language === 'en'
+            ? 'Find your Alpha — Source mission'
+            : 'Trouver votre Alpha — Mission documentaire',
+        description:
+          language === 'en'
+            ? 'Make a traceable evidence brief from public text, compare bounded workflows, test a frozen method on a new source and keep a reusable dossier.'
+            : 'Créer une note traçable à partir de textes publics, comparer des méthodes et conserver un dossier réutilisable.',
+        base,
+        revision,
+        canonical,
+        language,
+        body: renderSourceMissionPage(base, revision, language),
+      })
+    );
+  }
   write(
     'successor/build/index.html',
     fs.readFileSync(
@@ -809,6 +843,7 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
     entryPoints: [
       path.join(root, 'website/assets/site.js'),
       path.join(root, 'website/assets/successor.js'),
+      path.join(root, 'website/assets/source-mission.js'),
       path.join(root, 'website/assets/start.js'),
       path.join(root, 'website/assets/welcome-example.js'),
     ],
@@ -825,6 +860,10 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
   fs.copyFileSync(
     path.join(root, 'website/assets/successor.css'),
     path.join(output, 'assets/successor.css')
+  );
+  fs.copyFileSync(
+    path.join(root, 'website/assets/source-mission.css'),
+    path.join(output, 'assets/source-mission.css')
   );
   const deckRoot = 'demo/AGI-Jobs-Platform-at-Kardashev-II-Scale/';
   const dashboardRoutes = [
@@ -1050,7 +1089,14 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
 
     cultureStudioRoute: 'experiments/culture/',
     dashboardRoutes,
-    successorRoutes: ['successor/', 'successor/fr/', 'successor/build/'],
+    successorRoutes: [
+      'successor/',
+      'successor/fr/',
+      'successor/build/',
+      'successor/alpha/',
+      'successor/research/',
+      'successor/research/fr/',
+    ],
     onboardingRoutes: { en: 'start/', fr: 'start/fr/' },
     onboardingExampleRoutes: { en: 'start/example/', fr: 'start/fr/example/' },
     workRoute: 'work/',

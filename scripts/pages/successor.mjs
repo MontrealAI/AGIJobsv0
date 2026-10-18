@@ -46,7 +46,43 @@ export function renderSuccessorPage(base, revision, language = 'en') {
     t.chooseTitle
   )} ↓</a></div><div class="omega-emblem" aria-hidden="true"><span>Ω</span><small>MISSION · EVIDENCE · MEMORY</small></div></section>
     <p class="omega-boundary">${esc(t.boundary)}</p>
-    <p class="omega-boundary"><a href="${base}successor/build/${language === 'fr' ? '?lang=fr' : ''}">${language === 'fr' ? 'Construire votre Ω avec Alpha Agent + AGI Jobs →' : 'Build your Ω with Alpha Agent + AGI Jobs →'}</a></p>
+    <section class="omega-panel"><p class="eyebrow">ALPHA · GYM · SPECIALIST ASI · SUCCESSOR Ω</p><h2>${
+      language === 'fr'
+        ? 'Commencez par un avantage utile.'
+        : 'Start with a useful advantage.'
+    }</h2><p>${
+    language === 'fr'
+      ? 'Réconciliez vos catalogues, examinez les écarts et conservez un outil réutilisable. Ou transformez un texte public en note de preuves traçable.'
+      : 'Reconcile catalogs, examine discrepancies and retain a reusable tool. Or turn public text into a traceable evidence brief.'
+  }</p><div class="omega-actions"><a class="button primary" href="${base}successor/alpha/${
+    language === 'fr' ? '?lang=fr' : ''
+  }">${
+    language === 'fr' ? 'Trouver mon Alpha' : 'Find my Alpha'
+  } →</a><a class="button secondary" href="${base}successor/research/${
+    language === 'fr' ? 'fr/' : ''
+  }">${
+    language === 'fr'
+      ? 'Essayer une mission documentaire'
+      : 'Try a source mission'
+  } →</a></div><p class="omega-muted">${
+    language === 'fr'
+      ? 'Gratuit. Sans compte ni portefeuille. La preuve indépendante et l’autorisation restent des étapes distinctes.'
+      : 'Free. No account or wallet. Independent proof and authorization remain separate steps.'
+  }</p></section>
+    <p class="omega-boundary"><a href="${base}successor/build/${
+    language === 'fr' ? '?lang=fr' : ''
+  }">${
+    language === 'fr'
+      ? 'Construire votre Ω avec Alpha Agent + AGI Jobs →'
+      : 'Build your Ω with Alpha Agent + AGI Jobs →'
+  }</a></p>
+    <p class="omega-muted">${
+      language === 'fr'
+        ? 'Le laboratoire Atlas conserve son instantané historique. Consultez le répertoire actuel pour les contrats Alpha du 18 octobre et le déploiement Jobs enregistré.'
+        : 'The Atlas laboratory retains its historical snapshot. See the current directory for October 18 Alpha contracts and the recorded Jobs deployment.'
+    } <a href="${base}ecosystem/#contracts">${
+    language === 'fr' ? 'Répertoire actuel →' : 'Current contract directory →'
+  }</a></p>
     <section id="omega-mission" class="omega-panel" aria-labelledby="omega-mission-title"><p class="eyebrow">${esc(
       t.choose
     )}</p><h2 id="omega-mission-title">${esc(
