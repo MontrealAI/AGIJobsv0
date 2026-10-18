@@ -344,9 +344,11 @@ try {
   });
   const fallback = await noJS.newPage();
   await fallback.goto(url);
-  assert.equal(
-    await fallback.locator('[data-feature-launch]:visible').count(),
-    2
+  assert.deepEqual(
+    await fallback
+      .locator('[data-feature-launch]:visible')
+      .evaluateAll((links) => links.map((link) => link.dataset.featureLaunch)),
+    ['successor', 'culture', 'kardashev']
   );
   assert.equal(
     await fallback.locator('[data-demo-card]:visible').count(),
