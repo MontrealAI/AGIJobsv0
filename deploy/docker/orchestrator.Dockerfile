@@ -10,7 +10,8 @@ ENV \
     NPM_CONFIG_FETCH_RETRY_MAXTIMEOUT=300000 \
     NPM_CONFIG_FETCH_TIMEOUT=600000
 
-RUN apk upgrade --no-cache && apk add --no-cache python3 make g++
+# Refresh cached dependencies and require the CVE-2026-77214 fix.
+RUN apk upgrade --no-cache && apk add --no-cache python3 make g++ 'libexpat>=2.9.0-r0'
 COPY package*.json .npmrc ./
 COPY vendor/braces/braces-3.0.4-agi.1.tgz ./vendor/braces/braces-3.0.4-agi.1.tgz
 RUN --mount=type=cache,target=/root/.npm \
@@ -31,7 +32,7 @@ ENV \
     NPM_CONFIG_FETCH_RETRY_MAXTIMEOUT=300000 \
     NPM_CONFIG_FETCH_TIMEOUT=600000
 
-RUN apk upgrade --no-cache && apk add --no-cache python3 make g++
+RUN apk upgrade --no-cache && apk add --no-cache python3 make g++ 'libexpat>=2.9.0-r0'
 COPY package*.json .npmrc ./
 COPY vendor/braces/braces-3.0.4-agi.1.tgz ./vendor/braces/braces-3.0.4-agi.1.tgz
 RUN --mount=type=cache,target=/root/.npm \
