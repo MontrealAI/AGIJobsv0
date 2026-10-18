@@ -1,14 +1,14 @@
 # Changelog
 
-## v2.1.0-rc.13 — Find your Alpha. Build your SUCCESSOR Ω.
+## v2.1.0-rc.14 — Find your Alpha. Build your SUCCESSOR Ω.
 
-Source and evidence prerelease candidate (2026-10-18 UTC).
+Source and evidence prerelease candidate (2026-10-18 UTC). The unpublished rc.13 proposal is retained in history; no rc.13 tag or release is claimed.
 
 - Bring the free English/French Alpha laboratory into Jobs with an exact upstream source, executable-code and license inventory; retain competing approaches, outputs and reusable project history.
 - Add a guided public-source mission: state a goal, compare six extraction methods with exact source passages, freeze one method and check a distinct user-attested fresh source. Preserve mechanical-check limits and the institutional HOLD decision; keep the incumbent when improvement is unestablished.
 - Prepare four unsigned, unfunded source-mission work drafts with the native Jobs compiler, zero assigned budget and roles requiring an owner decision. The catalog handoff accepts an explicit AGIALPHA allowance; Manager USDC pricing remains a separate choice.
 - Update the public directory to the 18 October Alpha suite and 25-contract Jobs snapshot. Retain each exact deployment-source identity and observation limits; Jobs' current-source equivalence is not assumed. Preserve the 12 October deployment record as history.
-- Preserve the reviewed bounded creator handover/recovery tooling, explicit local callers, collateral and reputation corrections, compiler freeze, publication gates, prior release assets, demos and flowcharts. Add the exact pinned current Jobs snapshot as a separate hash-checked release asset and provenance record.
+- Preserve the reviewed bounded creator handover/recovery tooling, explicit local callers, collateral and reputation corrections, compiler freeze, publication gates, prior release assets, demos and flowcharts. Add the exact pinned current Jobs snapshot as a separate hash-checked release asset and provenance record, together with the standalone dated guide and 39 historical deployment receipts.
 
 Production approval remains false. Publication requires a new exact merged-source compiler archive and all required and observed main-push checks. This source release performs no public deployment, funding, settlement or activation.
 

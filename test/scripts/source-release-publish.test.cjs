@@ -19,7 +19,7 @@ const {
   deploymentSnapshot,
 } = require('../../scripts/release/qualify-source-release.cjs');
 const sha = 'a'.repeat(40),
-  tag = 'source-v2.1.0-rc.13';
+  tag = 'source-v2.1.0-rc.14';
 function compilerArchiveFixture(contents = {}) {
   const compiler = require('../../config/solidity-compiler.json').longVersion;
   const payloads = {
@@ -200,13 +200,13 @@ function assetFixture(t) {
 }
 test('compiler and evidence assets must match the complete checksum inventory and producer', (t) => {
   const fixture = assetFixture(t);
-  assert.equal(expectedAssets(tag).length, 13);
+  assert.equal(expectedAssets(tag).length, 15);
   assert.equal(
     fs
       .readFileSync(path.join(fixture.downloaded, 'SHA256SUMS.txt'), 'utf8')
       .trim()
       .split('\n').length,
-    12
+    14
   );
   fixture.verify();
   fs.appendFileSync(
@@ -386,10 +386,10 @@ test('workflow packages every declared immutable release asset', () => {
     'utf8'
   );
   assert.ok(workflow.includes(`TAG: ${tag}`));
-  assert.ok(workflow.includes('group: source-release-rc13-${{ github.ref }}'));
-  assert.ok(workflow.includes('name: source-rc13-${{ github.sha }}'));
-  assert.ok(expectedAssets(tag).includes('RELEASE_NOTES_SOURCE_RC13.md'));
-  for (const prior of ['RC7', 'RC8', 'RC9', 'RC10', 'RC11', 'RC12']) {
+  assert.ok(workflow.includes('group: source-release-rc14-${{ github.ref }}'));
+  assert.ok(workflow.includes('name: source-rc14-${{ github.sha }}'));
+  assert.ok(expectedAssets(tag).includes('RELEASE_NOTES_SOURCE_RC14.md'));
+  for (const prior of ['RC7', 'RC8', 'RC9', 'RC10', 'RC11', 'RC12', 'RC13']) {
     assert.ok(
       !expectedAssets(tag).includes(`RELEASE_NOTES_SOURCE_${prior}.md`)
     );
@@ -405,7 +405,7 @@ test('workflow packages every declared immutable release asset', () => {
   const notes = fs.readFileSync(
     path.resolve(
       __dirname,
-      '../../docs/production/RELEASE_NOTES_SOURCE_RC13.md'
+      '../../docs/production/RELEASE_NOTES_SOURCE_RC14.md'
     ),
     'utf8'
   );
@@ -430,10 +430,14 @@ test('workflow packages every declared immutable release asset', () => {
       ].includes(name)
     )
       continue;
-    assert.ok(
-      workflow.includes(`${name} "$out/"`),
-      `${name} missing from producer`
-    );
+    const newEvidence = {
+      'mainnet-deployment-2026-10-18.md': 'README.md',
+      'mainnet-deployment-receipts-2026-10-18.json': 'deployment-receipts.json',
+    };
+    const expectedCopy = newEvidence[name]
+      ? `cp docs/production/mainnet-2026-10-18/${newEvidence[name]} "$out/${name}"`
+      : `${name} "$out/"`;
+    assert.ok(workflow.includes(expectedCopy), `${name} missing from producer`);
   }
   assert.ok(
     workflow.includes('sha256sum -- *.json *.md *.zip > SHA256SUMS.txt')
@@ -444,6 +448,74 @@ test('workflow packages every declared immutable release asset', () => {
     )
   );
 });
+test('standalone current guide keeps pinned links and current receipts retain exact public bytes', (t) => {
+  const root = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'current-evidence-assets-')
+  );
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const sourceRoot = path.resolve(
+    __dirname,
+    '../../docs/production/mainnet-2026-10-18'
+  );
+  const guide = fs.readFileSync(path.join(sourceRoot, 'README.md'));
+  const receiptBytes = fs.readFileSync(
+    path.join(sourceRoot, 'deployment-receipts.json')
+  );
+  const hash = (bytes) =>
+    crypto.createHash('sha256').update(bytes).digest('hex');
+  assert.equal(
+    hash(guide),
+    '6ca6b642d227c7c9f060cd28e7ca81a57deb3750da5b6b86a97b3140ba04b9af'
+  );
+  assert.equal(
+    hash(receiptBytes),
+    '69fac1728be59752d4aadc66157f6e533273c5d9bef3b71d86a97530ce7db576'
+  );
+  const receipts = JSON.parse(receiptBytes);
+  assert.equal(receipts.sourceCommit, deploymentSnapshot.deployedSourceCommit);
+  assert.equal(receipts.operations.length, 39);
+  assert.deepEqual(
+    receipts.operations.map((operation) => operation.nonce),
+    Array.from({ length: 39 }, (_, index) => index + 308)
+  );
+  assert.ok(
+    receipts.operations.every((operation) => operation.receipt.status === 1)
+  );
+  const target = path.join(root, 'reports/source-release');
+  fs.mkdirSync(target, { recursive: true });
+  fs.writeFileSync(
+    path.join(target, 'mainnet-deployment-2026-10-18.md'),
+    guide
+  );
+  const workflow = fs.readFileSync(
+    path.resolve(__dirname, '../../.github/workflows/source-release.yml'),
+    'utf8'
+  );
+  const match = workflow.match(/node - <<'NODE'\n([\s\S]*?)\n {10}NODE/);
+  assert.ok(match, 'the actual producer must prepare the standalone guide');
+  const script = match[1]
+    .split('\n')
+    .map((line) => line.slice(10))
+    .join('\n');
+  execFileSync(process.execPath, ['-e', script], { cwd: root });
+  const rendered = fs.readFileSync(
+    path.join(target, 'mainnet-deployment-2026-10-18.md'),
+    'utf8'
+  );
+  const base = `https://github.com/MontrealAI/AGIJobsv0/blob/${deploymentSnapshot.recordCommit}/docs/production/`;
+  for (const targetPath of [
+    'mainnet-2026-10-18/deployment-snapshot.json',
+    'mainnet-2026-10-18/deployment-receipts.json',
+    'mainnet-deployment-2026-10-12.md',
+    'readiness.md',
+  ])
+    assert.ok(rendered.includes(`](${base}${targetPath})`));
+  assert.doesNotMatch(
+    rendered,
+    /\]\((?:deployment-(?:snapshot|receipts)\.json|\.\.\/)/
+  );
+});
+
 function fixture() {
   const state = {
     main: sha,
@@ -760,6 +832,8 @@ test('source API boundary allows only exact supported methods and routes', () =>
     ['GET', 'releases/tags/source-v2.1.0-rc.9'],
     ['GET', 'git/ref/tags/source-v2.1.0-rc.12'],
     ['GET', 'releases/tags/source-v2.1.0-rc.12'],
+    ['GET', 'git/ref/tags/source-v2.1.0-rc.13'],
+    ['GET', 'releases/tags/source-v2.1.0-rc.13'],
     ['GET', 'git/ref/tags/source-v2.1.0-rc.11'],
     ['GET', 'releases/tags/source-v2.1.0-rc.11'],
     ['GET', 'git/ref/tags/source-v2.1.0-rc.10'],
@@ -801,7 +875,7 @@ test('rc.13 preserves published rc.12 notes and states the source-only boundary'
     '9e10de3df71a6035bdacd81483a6ce3ae7af15d6a1eff414dc024ba88f3d0ef5'
   );
   const current = read('RELEASE_NOTES_SOURCE_RC13.md').toString('utf8');
-  assert.ok(current.startsWith('# ' + tag));
+  assert.ok(current.startsWith('# source-v2.1.0-rc.13'));
   assert.match(current, /bd45f34de1c1e58986aafb4b0e5c48bc155839ca/);
   assert.match(current, /3c17153942251116ee51163055eb1a25d652454b/);
   assert.match(current, /Production approval remains \*\*false\*\*/);
@@ -811,4 +885,29 @@ test('rc.13 preserves published rc.12 notes and states the source-only boundary'
   );
   assert.match(current, /Ledger.*EIP-1193.*EIP-7702/);
   assert.match(current, /Previous deployments remain outside/);
+  assert.match(current, /Unpublished proposal/);
+  assert.match(current, /not tagged or published/);
+});
+
+test('rc.14 consolidates flagship and deployment records without claiming rc.13 publication', () => {
+  const notes = fs.readFileSync(
+    path.resolve(
+      __dirname,
+      '../../docs/production/RELEASE_NOTES_SOURCE_RC14.md'
+    ),
+    'utf8'
+  );
+  assert.ok(notes.startsWith('# ' + tag));
+  assert.match(notes, /70dac8e5ce739978f5cd96d0fc190b6ebfcdf8d7/);
+  assert.match(notes, /818b3a246871e4cd4dde86558dbb91ef82b15eef/);
+  assert.match(notes, /Production approval remains \*\*false\*\*/);
+  assert.match(notes, /all eight managed modules remain paused/);
+  assert.match(notes, /rc\.13 was not tagged or published/);
+  assert.match(notes, /39 successful/);
+  for (const asset of [
+    deploymentSnapshot.asset,
+    'mainnet-deployment-2026-10-18.md',
+    'mainnet-deployment-receipts-2026-10-18.json',
+  ])
+    assert.ok(expectedAssets(tag).includes(asset));
 });

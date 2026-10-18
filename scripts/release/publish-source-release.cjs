@@ -24,7 +24,9 @@ function expectedAssets(tag) {
     deploymentSnapshot.asset,
     'configuration-readback-2026-10-13.json',
     'mainnet-deployment-2026-10-12.md',
-    'RELEASE_NOTES_SOURCE_RC13.md',
+    'mainnet-deployment-2026-10-18.md',
+    'mainnet-deployment-receipts-2026-10-18.json',
+    'RELEASE_NOTES_SOURCE_RC14.md',
     'compiler-warnings-2026-10-13.md',
     'solidity-compiler.json',
     'deployment-addresses.mainnet.json',
@@ -380,7 +382,7 @@ function producerId(value) {
 
 function sourceApiUrl(method, resource) {
   const allowed = {
-    GET: /^(?:git\/ref\/(?:heads\/main|tags\/source-v2\.1\.0-rc\.13)|releases\/tags\/source-v2\.1\.0-rc\.13|actions\/artifacts\/[1-9][0-9]*|actions\/runs\/[1-9][0-9]*\/attempts\/[1-9][0-9]*)$/,
+    GET: /^(?:git\/ref\/(?:heads\/main|tags\/source-v2\.1\.0-rc\.14)|releases\/tags\/source-v2\.1\.0-rc\.14|actions\/artifacts\/[1-9][0-9]*|actions\/runs\/[1-9][0-9]*\/attempts\/[1-9][0-9]*)$/,
     POST: /^(?:git\/refs|releases)$/,
     PATCH: /^releases\/[1-9][0-9]*$/,
   };
@@ -404,7 +406,7 @@ async function main() {
   if (
     repository !== 'MontrealAI/AGIJobsv0' ||
     !/^[a-f0-9]{40}$/.test(sha || '') ||
-    tag !== 'source-v2.1.0-rc.13' ||
+    tag !== 'source-v2.1.0-rc.14' ||
     !token
   )
     throw Error('Invalid source publication identity or authorization');
@@ -485,7 +487,7 @@ async function main() {
     api,
     verify,
     notes: fs.readFileSync(
-      'docs/production/RELEASE_NOTES_SOURCE_RC13.md',
+      'docs/production/RELEASE_NOTES_SOURCE_RC14.md',
       'utf8'
     ),
     upload: async () =>

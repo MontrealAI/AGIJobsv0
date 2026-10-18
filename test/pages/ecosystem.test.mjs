@@ -5,6 +5,7 @@ import { createHash } from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { JSDOM } from 'jsdom';
+import { getCreateAddress } from 'ethers';
 import {
   ecosystem,
   renderEcosystemHero,
@@ -146,6 +147,91 @@ test('the current Jobs directory binds all 25 addresses to the exact October 18 
       snapshot.contracts.map(({ name, address }) => [name, address])
     )
   );
+});
+
+test('the retained October 18 publication and receipts bind the snapshot source and all 25 creation addresses', () => {
+  const read = (file) => fs.readFileSync(path.join(root, file));
+  const snapshotBytes = read(
+    'docs/production/mainnet-2026-10-18/deployment-snapshot.json'
+  );
+  assert.deepEqual(
+    snapshotBytes,
+    read('website/data/jobs-mainnet-2026-10-18.json')
+  );
+  const snapshot = JSON.parse(snapshotBytes);
+  const receiptBytes = read(
+    'docs/production/mainnet-2026-10-18/deployment-receipts.json'
+  );
+  assert.equal(
+    createHash('sha256').update(receiptBytes).digest('hex'),
+    '69fac1728be59752d4aadc66157f6e533273c5d9bef3b71d86a97530ce7db576'
+  );
+  assert.equal(
+    createHash('sha256')
+      .update(read('docs/production/mainnet-2026-10-18/README.md'))
+      .digest('hex'),
+    '6ca6b642d227c7c9f060cd28e7ca81a57deb3750da5b6b86a97b3140ba04b9af'
+  );
+  const receipts = JSON.parse(receiptBytes),
+    operations = receipts.operations;
+  assert.equal(receipts.sourceCommit, snapshot.deployedSource.commit);
+  assert.equal(
+    receipts.originalReportSha256,
+    snapshot.evidenceHashes.completedDeploymentReportSha256
+  );
+  assert.equal(operations.length, 39);
+  assert.equal(new Set(operations.map((item) => item.hash)).size, 39);
+  assert.deepEqual(
+    operations.map((item) => item.nonce),
+    Array.from({ length: 39 }, (_, index) => 308 + index)
+  );
+  assert.ok(
+    operations.every(
+      (item) =>
+        item.chainId === 1 &&
+        item.receipt.status === 1 &&
+        item.receipt.hash === item.hash &&
+        item.receipt.blockNumber <= snapshot.finalizedStateAnchor.number &&
+        item.compilerInputSha256 ===
+          snapshot.deployedSource.originalCompilerInputSha256
+    )
+  );
+  const addresses = new Map(
+    snapshot.contracts.map((item) => [item.name, item.address])
+  );
+  const direct = operations.filter((item) => item.role.startsWith('create:'));
+  assert.equal(direct.length, 11);
+  for (const item of direct) {
+    assert.equal(item.receipt.contractAddress, addresses.get(item.name));
+    assert.equal(
+      getCreateAddress({ from: item.creator, nonce: item.nonce }),
+      item.address
+    );
+  }
+  const components = operations.filter((item) =>
+    item.role.startsWith('component:')
+  );
+  assert.equal(components.length, 14);
+  for (const [index, item] of components.entries())
+    assert.equal(
+      getCreateAddress({ from: addresses.get('Deployer'), nonce: index + 1 }),
+      addresses.get(item.role.slice(10))
+    );
+});
+
+test('the separate October 12 ecosystem archive retains the exact original 29-address snapshot', () => {
+  const bytes = fs.readFileSync(
+    path.join(root, 'website/data/ecosystem-2026-10-12.json')
+  );
+  assert.equal(
+    createHash('sha256').update(bytes).digest('hex'),
+    '91b98fe3c7aac7e245c5e25bd7e400b13ee22735d442db8a2c30a388b730484f'
+  );
+  const archive = JSON.parse(bytes);
+  assert.equal(archive.suites[0].recordDate, '2026-10-11');
+  assert.equal(archive.suites[1].recordDate, '2026-10-12');
+  assert.equal(archive.suites.flatMap((suite) => suite.contracts).length, 29);
+  assert.equal(ecosystem.suites.flatMap((suite) => suite.contracts).length, 30);
 });
 
 test('current ecosystem entry points promote the Alpha laboratory and keep the source mission and historical workshop accessible', () => {

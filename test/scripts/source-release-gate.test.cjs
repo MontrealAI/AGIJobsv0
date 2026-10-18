@@ -14,7 +14,7 @@ const sha = 'a'.repeat(40);
 function sourceFixture() {
   return {
     sha,
-    version: '2.1.0-rc.13',
+    version: '2.1.0-rc.14',
     compilerBaseline: 'b'.repeat(40),
     policy: {
       version: '0.8.37',
@@ -79,6 +79,7 @@ test('source release rejects missing review, old compiler, changed production se
     '2.1.0-rc.10',
     '2.1.0-rc.11',
     '2.1.0-rc.12',
+    '2.1.0-rc.13',
     '2.1.0',
   ])
     assert.throws(
@@ -103,7 +104,7 @@ test('source release rejects missing review, old compiler, changed production se
     );
   }
 });
-test('rc.13 source qualification agrees with both package version records', () => {
+test('rc.14 source qualification agrees with both package version records', () => {
   const packageJson = require('../../package.json');
   const lock = require('../../package-lock.json');
   for (const version of [
@@ -111,7 +112,7 @@ test('rc.13 source qualification agrees with both package version records', () =
     lock.version,
     lock.packages[''].version,
   ]) {
-    assert.equal(version, '2.1.0-rc.13');
+    assert.equal(version, '2.1.0-rc.14');
     assert.doesNotThrow(() =>
       verifySourceScope({ ...sourceFixture(), version })
     );
@@ -124,6 +125,12 @@ test('current deployment reference requires exact pinned bytes without changing 
     path.resolve(__dirname, '../..', deploymentSnapshot.localPath)
   );
   assert.deepEqual(verifyDeploymentSnapshot(bytes), deploymentSnapshot);
+  assert.deepEqual(
+    fs.readFileSync(
+      path.resolve(__dirname, '../..', deploymentSnapshot.recordPath)
+    ),
+    bytes
+  );
   assert.equal(deploymentSnapshot.currentMainEquivalenceNotAssumed, true);
   assert.equal(deploymentSnapshot.liveRecheckedByThisRelease, false);
   assert.equal(

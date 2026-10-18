@@ -2,7 +2,15 @@
 
 This is the stable entry point for deployment status. Dated reports describe the exact checks and limitations observed at the time; they are not perpetual production certifications.
 
-## Recorded Ethereum mainnet deployment — 12 October 2026
+## Latest Ethereum mainnet deployment — 18 October 2026
+
+The [new 25-contract record](mainnet-2026-10-18/README.md) publishes all addresses, exact deployed source `818b3a246871e4cd4dde86558dbb91ef82b15eef`, 39 successful historical deployment receipts and the finalized closeout. All **25 runtime/source comparisons** and **46 explicitly named state checks** passed at provider-finalized block **26,221,285** (18:37:11 UTC); canonicality/finality were rechecked, and readback completed at 18:55:20 UTC. Etherscan observations are separately timed.
+
+At that anchor, all **eight managed modules were paused**. Recorded ownership and the explicit governance/treasury getters match the intended addresses; the creator owns none of these 25 contracts. The configuration records 10% per-job collateral (1000 bps), a separate 1000 AGIALPHA eligibility stake, 5% fee, 1% burn, one-day commit/reveal windows and the pinned participant tax notice. Only the named getter list is a fresh state observation.
+
+This is a separate stack. The historical record below is retained and its fixed-stake statement applies to the old deployment only. Current main and the deployed source have separate whole-tree identities; neither this publication nor source rc.14 substitutes the exact deployed revision. No wallet/client routing change, funding, unpause, migration or activation is enabled. Production approval and activation readiness remain false. Bounded source and getter checks do not replace exhaustive authority review, independent security review, provider/worker commissioning or live acceptance.
+
+## Historical Ethereum mainnet deployment — 12 October 2026
 
 The [deployment record and address directory](mainnet-deployment-2026-10-12.md) now identify the existing mainnet stack, deployed from `b4c5b66ea05a6bb27f1f1cb197f055c179bbd38e` (`source-v2.1.0-rc.4`). The operator's saved readback reports 24 runtime-template matches, all eight managed modules paused under SystemPause, and Ledger control of SystemPause and three direct-owner modules. **All 24 contract sources have exact-match Etherscan verification**, including StakeManagerEscrow confirmed at 17:12 UTC on 12 October. The record keeps dated explorer evidence separate from runtime and operational approval. This is the AGIALPHA stack; it must not be confused with AGIJobManager/ENSJobPages and its USDC settlement.
 
@@ -47,6 +55,8 @@ The current contract commit entry point accepts an opaque hash without an expect
 The production release workflow enforces `npm run release:audit-dependencies` before publishing release artifacts. It audits all tracked npm and pnpm production lockfiles, preserves raw registry responses and exact input hashes, and fails on critical/high findings, malformed responses or unavailable audit evidence. A passing website deployment does not bypass this release gate. The rc.4 source candidate includes dependency updates and a provenance-checked maintained Braces depth patch; local full/production audits report no high or critical findings, while moderate and low findings remain. A registry audit does not certify a downstream patch. Exact-source integrity, adversarial/compatibility tests and final hosted qualification remain required, along with independent security review; forcing incompatible dependency versions is not remediation.
 
 ## Verification records
+
+- [Current paused mainnet deployment, 2026-10-18](mainnet-2026-10-18/README.md): exact deployed source, all 25 addresses, 39 deployment receipts and the bounded finalized closeout.
 
 - [Recorded mainnet deployment and explorer status, 2026-10-12](mainnet-deployment-2026-10-12.md): all 24 addresses, deployed source, paused governance evidence and remaining commissioning work.
 

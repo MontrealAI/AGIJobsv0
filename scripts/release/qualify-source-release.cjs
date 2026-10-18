@@ -7,7 +7,7 @@ const { setTimeout: delay } = require('node:timers/promises');
 const { requiredWorkflows } = require('./check-release-ci.js');
 
 const ownPath = '.github/workflows/source-release.yml';
-const releaseVersion = '2.1.0-rc.13';
+const releaseVersion = '2.1.0-rc.14';
 const deployedSourceBaseline = 'b4c5b66ea05a6bb27f1f1cb197f055c179bbd38e';
 const evidenceBaseline = '9c730e0188594089e27ed0589c2b5ca57eec5cf5';
 // Additive reference evidence: this is not an assertion that the deployed
@@ -241,6 +241,7 @@ async function main() {
   const deploymentSnapshots = [
     verifyDeploymentSnapshot(fs.readFileSync(deploymentSnapshot.localPath)),
   ];
+  verifyDeploymentSnapshot(fs.readFileSync(deploymentSnapshot.recordPath));
   const deadline = Date.now() + 85 * 60000;
   while (Date.now() < deadline) {
     const [runs, checks] = await Promise.all([
@@ -258,7 +259,7 @@ async function main() {
           {
             schema: 'agijobsv0/source-release-provenance/1',
             repository,
-            tag: 'source-v2.1.0-rc.13',
+            tag: 'source-v2.1.0-rc.14',
             sha,
             tree: git('rev-parse', 'HEAD^{tree}'),
             recordedAt: new Date().toISOString(),

@@ -1,5 +1,10 @@
 # source-v2.1.0-rc.13 — Find your Alpha. Build your SUCCESSOR Ω.
 
+**Unpublished proposal — historical preparation only.** This rc.13 identity was
+not tagged or published. The consolidated publication target is
+[source-v2.1.0-rc.14](RELEASE_NOTES_SOURCE_RC14.md); the original proposal text
+below is retained to explain its source history and grants no release approval.
+
 Start free with a reproducible laboratory, use public sources to develop a real
 mission, then retain the methods and evidence for reuse. This flagship brings the
 Alpha experience into AGI Jobs while preserving the difference between useful
