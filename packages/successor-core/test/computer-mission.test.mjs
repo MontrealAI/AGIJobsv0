@@ -295,6 +295,29 @@ test('freight can reverse a cheap-unit ranking and late final delivery cannot hi
   );
 });
 
+test('a feasible custom mission with no all-early incumbent retains a null incumbent and reviews its valid frozen allocation', async () => {
+  const mission = await createComputerMission({
+    requirements: {
+      earlyUnits: 0,
+      earlyDay: 1,
+      totalUnits: 40,
+      finalDay: 14,
+      budgetCents: 51000,
+    },
+  });
+  const report = await approved(mission);
+  assert.equal(report.development.baseline.plan, null);
+  assert.equal(report.development.baseline.check, null);
+  assert.equal(report.decision.retainedPlan, null);
+  assert.deepEqual(report.frozen.plan, plan({ laurentian: 40 }, 30000));
+  const review = await reviewObservedAllocation(report, observed(report));
+  assert.equal(review.accepted, true);
+  assert.equal(review.check.totals.earlyUnits, 0);
+  assert.equal(review.check.totals.costCents, 30000);
+  assert.equal(review.independentProof, false);
+  assert.equal(review.productionApproved, false);
+});
+
 test('only the declared finite operator grammar executes; arbitrary code and modified operators are refused', async () => {
   const mission = await createComputerMission();
   const programs = constructComputerStrategies({
@@ -511,6 +534,27 @@ test('recomputed hashes and self-reported powerful runtime names cannot make a f
   assert.equal(review.accepted, true);
   assert.equal(review.trustedComputerExecution, false);
   assert.equal(review.protectedQualification, false);
+});
+
+test('the bounded reviewer accepts the desk producer limit of 200 action records and rejects 201', async () => {
+  const report = await approved(await createComputerMission());
+  const result = observed(report);
+  result.actions = Array.from({ length: 200 }, (_, index) => ({
+    sequence: index + 1,
+    type: 'ALLOCATION_INPUT',
+    supplierId: 'stellar',
+    value: '10',
+    trustedUserEvent: false,
+  }));
+  const review = await reviewObservedAllocation(report, result);
+  assert.equal(review.accepted, true);
+  assert.equal(review.reportedExecution.actionCount, 200);
+  assert.equal(review.trustedComputerExecution, false);
+  result.actions.push({ ...result.actions[0], sequence: 201 });
+  await rejects(
+    () => reviewObservedAllocation(report, result),
+    'COMPUTER_OBSERVATION_LIMIT'
+  );
 });
 
 test('Alpha70 task uses the real bounded native wire and binds mission, program, plan, report and exact HTML bytes', async () => {

@@ -1326,7 +1326,7 @@ export async function reviewObservedAllocation(report, observed) {
   if (Object.hasOwn(observed, 'actions'))
     check(
       Array.isArray(observed.actions) &&
-        observed.actions.length <= 100 &&
+        observed.actions.length <= 200 &&
         new TextEncoder().encode(canonicalize(observed.actions)).byteLength <=
           128000,
       'COMPUTER_OBSERVATION_LIMIT',
@@ -1618,13 +1618,11 @@ export async function compileComputerMissionJobs(
     covers: [id],
     state: 'DRAFT',
   }));
-  const edges = definitions
-    .slice(1)
-    .map(([id], index) => ({
-      from: `${missionId}:${definitions[index][0]}`,
-      to: `${missionId}:${id}`,
-      kind: 'control',
-    }));
+  const edges = definitions.slice(1).map(([id], index) => ({
+    from: `${missionId}:${definitions[index][0]}`,
+    to: `${missionId}:${id}`,
+    kind: 'control',
+  }));
   const compiled = await compileJobs(mission, { jobs, edges, now });
   return freeze({
     ...compiled,

@@ -52,9 +52,9 @@ export function renderSuccessorPage(base, revision, language = 'en') {
         : 'Start with a useful advantage.'
     }</h2><p>${
     language === 'fr'
-      ? 'Développez des stratégies, examinez les hypothèses et utilisez un poste de travail avec Computer Use. Conservez les méthodes et les preuves pour la prochaine mission.'
-      : 'Develop strategies, examine assumptions and operate a work desk with Computer Use. Keep the methods and evidence for the next mission.'
-  }</p><div class="omega-actions"><a class="button primary" href="${base}successor/computer/${
+      ? 'Définissez une mission réelle, développez des stratégies et explorez une autre formulation avec Computer Use. Conservez les méthodes, les expériences et les preuves.'
+      : 'Define a real mission, develop strategies and explore a different formulation with Computer Use. Keep the methods, experiments and evidence.'
+  }</p><div class="omega-actions"><a class="button primary" href="${base}successor/mission/${
     language === 'fr' ? 'fr/' : ''
   }">${
     language === 'fr' ? 'Trouver mon Alpha' : 'Find my Alpha'

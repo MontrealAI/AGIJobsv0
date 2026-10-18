@@ -1,17 +1,61 @@
 # source-v2.1.0-rc.15 — Develop the strategy. Preserve the mission.
 
-Start with a concrete need, develop ways to meet it, and use a real browser desk
-to check the recommendation. The new free [Computer Use mission](https://montrealai.github.io/AGIJobsv0/successor/computer/)
-extends the SUCCESSOR Ω flagship with executable strategy search, explicit
-reframing, retained evidence and a separate worker handoff. It works without an
-account, wallet or API key.
+Bring a real business opportunity or a frontier mathematics question to
+[SUCCESSOR Ω Mission Studio](https://montrealai.github.io/AGIJobsv0/successor/mission/).
+Define the outcome worth pursuing, ground the work in public evidence, and retain
+the strategies and experiments needed to judge the next attempt. Mission Studio
+is the primary English/French flagship journey; it prepares an exact native
+Computer Use task and a reusable mission record without an account, wallet or
+API key.
 
 Production approval remains **false**. This is an unsigned source and evidence
 prerelease. Browser exports and native Jobs work orders remain unsigned,
-unfunded drafts. A checked allocation creates no purchasing, payment, computer,
+unfunded drafts. A mission record creates no purchasing, payment, computer,
 signing or blockchain authority.
 
-## A practical strategy laboratory
+## Start with work that matters to you
+
+The Studio starts from the user's actual mission: a business opportunity or a
+mathematics research question, the current approach, the best credible
+alternative, a hard outcome and its constraints, public source URLs and the
+evidence text supplied with them. The record distinguishes user-supplied
+evidence from an independently checked source. A URL or pasted excerpt alone
+does not establish correctness, permission, freshness or a successful result.
+
+Seal those inputs into one mission before preparing the experiment. Keep
+strategy candidates, comparisons, rejected attempts, proposed changes and
+results in the experiment and strategy ledger. Reuse that record for the next
+attempt while preserving the original mission identity. This supplies a
+concrete research workspace and handoff; it does not claim that a browser form
+has executed research, discovered a business advantage or solved a frontier
+mathematics problem.
+
+The Level 3 task asks a computer-using worker to develop and compare strategies,
+including the current approach and credible alternative, and retain the evidence
+for its choice. The Level 4 task makes a proposed reformulation explicit for an
+owner decision. The hard outcome and actual constraints remain binding; an
+unapproved change cannot quietly become the new mission. A mathematical
+conjecture, numerical example or model assertion remains a claim until the
+appropriate checks establish it. No mathematical breakthrough or independently
+proven AI Alpha is asserted by this release.
+
+The handoff uses the owned, exact-source Alpha70 native `ComputerTask` contract,
+a keyboard-and-mouse browser workspace with an explicit source URL allowlist,
+and a ChatGPT Work operator prompt. The package carries the sealed mission and
+reusable evidence record into a separately authorized worker session. Preparing
+or downloading it does not execute that session, authenticate a model's result
+or commission a provider. GitHub Pages accepts no API key and performs no live
+provider qualification. Four native Jobs drafts reserve **zero AGIALPHA** and
+remain unsigned and unfunded; review, funding and execution require separate
+owner decisions.
+
+## Reproduce a bounded strategy comparison
+
+The [supplier Computer Use laboratory](https://montrealai.github.io/AGIJobsv0/successor/computer/)
+is a secondary validation example. Its disclosed arithmetic and real browser
+protocol exercise make the distinction between a proposed strategy, an observed
+interaction and independent proof inspectable before using the separate Studio
+handoff for a real mission.
 
 The disclosed fictional buyer needs 40 units: at least 10 by day 7 and all 40 by
 day 14, within USD 510.00. Buying all 40 from Stellar costs USD 490.00. A staged
@@ -95,9 +139,10 @@ proof remains unestablished. Native Jobs compiler handoffs retain zero assigned
 funding and require owner decisions; AGIALPHA allowances and Manager USDC
 pricing stay separate.
 
-The new computer mission adds its own replay-checked report and native draft
-handoff to that research-to-usefulness journey. **Alpha** is the advantage worth
-pursuing. The **Gym** develops methods. **Specialist ASI** requires earned
+Mission Studio leads that research-to-usefulness journey; the supplier
+laboratory supplies a bounded validation example, and the retained catalog
+provides further experiences. **Alpha** is the advantage worth pursuing. The
+**Gym** develops methods. **Specialist ASI** requires earned
 mission-specific superiority on agreed fresh protected work. **SUCCESSOR Ω**
 preserves useful methods and memory after proof and explicit bounded
 authorization. This laboratory awards no Specialist ASI designation.

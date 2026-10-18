@@ -4,9 +4,26 @@ Start with a useful result that you can inspect and keep. The flagship connects
 method development, evidence and bounded work while preserving the current approach
 when improvement has not been established.
 
-## Try the free flagship
+## Start with a valuable real mission
 
-Open [Find your Alpha](https://montrealai.github.io/AGIJobsv0/successor/computer/)
+Open [SUCCESSOR Ω Mission Studio](https://montrealai.github.io/AGIJobsv0/successor/mission/)
+([Français](https://montrealai.github.io/AGIJobsv0/successor/mission/fr/)).
+Define the advantage worth pursuing, your current approach, the strongest credible
+alternative, the actual constraints and public evidence. Business transformation
+and frontier mathematics presets help you define an investigation; they do not
+supply invented breakthroughs.
+
+Prepare an exact mission for your own Computer Use runtime or an operator-led
+Work session. Discover, test, combine and revise strategies. Examine whether a
+fundamentally different formulation could serve the same actual outcome, with
+explicit owner approval before adopting it. Keep the strategy, experiments,
+failed attempts and evidence in a reusable mission record. See the
+[Mission Studio guide](MISSION_STUDIO.md) for the working desk, native worker
+handoff, evidence and reuse.
+
+## Reproduce Computer Use in the supporting laboratory
+
+Open the [Computer Use laboratory](https://montrealai.github.io/AGIJobsv0/successor/computer/)
 ([Français](https://montrealai.github.io/AGIJobsv0/successor/computer/fr/)).
 Start with a supplier mission: deliver ten units by day seven and forty by day
 fourteen. Discover and revise executable strategies, inspect their failures, freeze

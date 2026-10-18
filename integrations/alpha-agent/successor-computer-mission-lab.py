@@ -299,7 +299,8 @@ def run_fixture(args, out, bundle, worker, identity, source_identity, ComputerTa
                 "billing": "UNKNOWN_NOT_A_LIVE_PROVIDER_RUN", "review": review, "freshProtectedProof": False, "independentModelQualityEstablished": False,
                 "authority": [], "productionApproved": False, "settlementApproved": False}
     write(out / "evidence.json", evidence)
-    return {"accepted": review["accepted"], "browserExecuted": True, "liveProvider": False, "providerFixtureCalls": len(requests), "externalFetches": len(fetches), "workerTerminated": cleanup["groupClosed"], "injectedError": args.inject_error, "cost": None, "observedCostCents": observed_result["plan"]["costCents"], "incumbentQuotedCostCents": bundle["report"]["decision"]["retainedPlan"]["costCents"], "evidenceDirectory": str(out)}
+    retained_plan = bundle["report"]["decision"]["retainedPlan"]
+    return {"accepted": review["accepted"], "browserExecuted": True, "liveProvider": False, "providerFixtureCalls": len(requests), "externalFetches": len(fetches), "workerTerminated": cleanup["groupClosed"], "injectedError": args.inject_error, "cost": None, "observedCostCents": observed_result["plan"]["costCents"], "incumbentQuotedCostCents": retained_plan["costCents"] if retained_plan is not None else None, "evidenceDirectory": str(out)}
 
 
 def main():

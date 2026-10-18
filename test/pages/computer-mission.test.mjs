@@ -7,6 +7,7 @@ import {
   checkComputerPlan,
   runComputerMission,
   createAlphaComputerTask,
+  reviewObservedAllocation,
   COMPUTER_MISSION_LIMITS,
 } from '../../packages/successor-core/src/computer-mission.mjs';
 import { renderComputerDeskDocument } from '../../website/assets/computer-desk.mjs';
@@ -36,6 +37,45 @@ function submit(window, allocations) {
       .textContent.replace(/^SUCCESSOR_COMPUTER_RESULT\s+/, '')
   );
 }
+
+test('the actual desk remains reviewable after more than 100 edits and caps its observation at 200 events', async () => {
+  const mission = await createComputerMission();
+  const report = await runComputerMission(mission, {
+    formulationApproval: {
+      approved: true,
+      ownerLabel: 'Desk regression reviewer',
+      reason:
+        'Compare staged delivery while preserving every actual requirement.',
+    },
+  });
+  const { window } = desk(mission, {
+    formulation: report.formulation,
+    reportDigest: report.digest,
+    frozenProgramDigest: report.frozen.programDigest,
+  });
+  try {
+    const input = window.document.getElementById('cm-qty-stellar');
+    for (let edit = 0; edit < 205; edit++) {
+      input.value = String(edit % 11);
+      input.dispatchEvent(new window.Event('input', { bubbles: true }));
+    }
+    const result = submit(window, { stellar: 10, laurentian: 30 });
+    assert.equal(result.actions.length, 200);
+    assert.equal(result.actions[0].sequence, 1);
+    assert.equal(result.actions[199].sequence, 200);
+    assert.ok(
+      result.actions.every((event) => event.trustedUserEvent === false)
+    );
+    assert.equal(result.check.valid, true);
+    const review = await reviewObservedAllocation(report, result);
+    assert.equal(review.accepted, true);
+    assert.equal(review.reportedExecution.actionCount, 200);
+    assert.equal(review.trustedComputerExecution, false);
+    assert.equal(review.independentProof, false);
+  } finally {
+    window.close();
+  }
+});
 
 test('the actual desk calculates freight, deadlines and quantities and invalidates its previous observation on input edits', async () => {
   const mission = await createComputerMission({});
