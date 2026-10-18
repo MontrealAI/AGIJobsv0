@@ -1,6 +1,6 @@
 {
   "schema": "agijobs/ecosystem-directory/1",
-  "description": "Static public deployment directory. Source-pinned records; no live chain status is asserted.",
+  "description": "Static public deployment directory. New Jobs deployment observed 18 October 2026 remains paused; historical Alpha record retained. No live RPC status or activation approval.",
   "chainId": 1,
   "network": "Ethereum mainnet",
   "token": {
@@ -64,184 +64,205 @@
       "name": "AGI Jobs",
       "repository": "https://github.com/MontrealAI/AGIJobsv0",
       "website": "https://montrealai.github.io/AGIJobsv0/",
-      "recordDate": "2026-10-12",
-      "recordUrl": "https://github.com/MontrealAI/AGIJobsv0/blob/a1dea46d2f9dfa5680d11e24529f107d65cd4369/docs/deployments/ethereum-mainnet-2026-10-12.json",
-      "deploymentGuideUrl": "https://github.com/MontrealAI/AGIJobsv0/blob/a1dea46d2f9dfa5680d11e24529f107d65cd4369/docs/production/mainnet-deployment-2026-10-12.md",
-      "addressMapUrl": "https://github.com/MontrealAI/AGIJobsv0/blob/a1dea46d2f9dfa5680d11e24529f107d65cd4369/docs/deployment-addresses.mainnet.json",
+      "recordDate": "2026-10-18",
+      "recordUrl": "https://github.com/MontrealAI/AGIJobsv0/blob/284351148d96c5390a655aec1f9db806284f2400/docs/production/mainnet-2026-10-18/deployment-snapshot.json",
+      "deploymentGuideUrl": "https://github.com/MontrealAI/AGIJobsv0/blob/284351148d96c5390a655aec1f9db806284f2400/docs/production/mainnet-2026-10-18/README.md",
+      "addressMapUrl": "https://github.com/MontrealAI/AGIJobsv0/blob/284351148d96c5390a655aec1f9db806284f2400/docs/production/mainnet-2026-10-18/deployment-snapshot.json",
       "currentReadinessUrl": "https://github.com/MontrealAI/AGIJobsv0/blob/main/docs/production/readiness.md",
-      "sourceCommit": "b4c5b66ea05a6bb27f1f1cb197f055c179bbd38e",
-      "sourceUrl": "https://github.com/MontrealAI/AGIJobsv0/tree/b4c5b66ea05a6bb27f1f1cb197f055c179bbd38e",
-      "sourceNote": "Deployed source: source-v2.1.0-rc.4, commit b4c5b66ea05a6bb27f1f1cb197f055c179bbd38e. Newer documentation or release tags do not redeploy these instances.",
+      "sourceCommit": "818b3a246871e4cd4dde86558dbb91ef82b15eef",
+      "sourceUrl": "https://github.com/MontrealAI/AGIJobsv0/tree/818b3a246871e4cd4dde86558dbb91ef82b15eef",
+      "sourceNote": "Deployed from commit 818b3a246871e4cd4dde86558dbb91ef82b15eef (draft PR #3986), not current main. 25 exact-source/runtime matches and 46 named state checks; all eight managed modules paused at finalized block 26221285, observed 18 October 2026. No activation approval.",
       "contracts": [
         {
           "name": "Deployer",
-          "address": "0xeF1Be4B8251a9C4a584140C113508B95fd8B2543",
+          "address": "0x6CC341f43b5aeB8C54Bf73EA75301CE3449A1740",
           "kind": "coordination",
           "role": "Assembles the deployment and coordinates its initial configuration.",
-          "explorerUrl": "https://etherscan.io/address/0xeF1Be4B8251a9C4a584140C113508B95fd8B2543#code"
+          "explorerUrl": "https://etherscan.io/address/0x6CC341f43b5aeB8C54Bf73EA75301CE3449A1740#code"
         },
         {
           "name": "StakeManager",
-          "address": "0xFd970F60363984A6274342776D34423EC37b5432",
+          "address": "0x0b7E8E6aeEc675950E493E495D54d947E3B7bee1",
           "kind": "protocol",
           "role": "Holds participant stakes and job funds under the protocol rules.",
-          "explorerUrl": "https://etherscan.io/address/0xFd970F60363984A6274342776D34423EC37b5432#code"
+          "explorerUrl": "https://etherscan.io/address/0x0b7E8E6aeEc675950E493E495D54d947E3B7bee1#code"
         },
         {
           "name": "JobRegistry",
-          "address": "0x72Ec2CcC9403b643C4d6CA3eF05E06ca8faa3084",
+          "address": "0x8b230eB346369B2a3EFaaa615CbEb8e3b2f167e6",
           "kind": "protocol",
           "role": "Records assignments, deadlines, submitted work and job outcomes.",
-          "explorerUrl": "https://etherscan.io/address/0x72Ec2CcC9403b643C4d6CA3eF05E06ca8faa3084#code"
+          "explorerUrl": "https://etherscan.io/address/0x8b230eB346369B2a3EFaaa615CbEb8e3b2f167e6#code"
         },
         {
           "name": "ValidationModule",
-          "address": "0xCcfC0Adae434446D1809f0551b34990dE5fBe3eA",
+          "address": "0x84eBBAb4755726782F20Dc2d23FB968CA5200bF3",
           "kind": "protocol",
           "role": "Coordinates validator selection and commit/reveal review rounds.",
-          "explorerUrl": "https://etherscan.io/address/0xCcfC0Adae434446D1809f0551b34990dE5fBe3eA#code"
+          "explorerUrl": "https://etherscan.io/address/0x84eBBAb4755726782F20Dc2d23FB968CA5200bF3#code"
         },
         {
           "name": "ReputationEngine",
-          "address": "0x863B985A3a1a5fFf292178aC91Cd75d62F2b7664",
+          "address": "0x7e2F3cb2555052AE712c1904d0Ae1b522B018ce5",
           "kind": "protocol",
           "role": "Records the reputation effects of work and review outcomes.",
-          "explorerUrl": "https://etherscan.io/address/0x863B985A3a1a5fFf292178aC91Cd75d62F2b7664#code"
+          "explorerUrl": "https://etherscan.io/address/0x7e2F3cb2555052AE712c1904d0Ae1b522B018ce5#code"
         },
         {
           "name": "ArbitratorCommittee",
-          "address": "0xF8eBD86d66CDda12C3F881a38c5e5db4FeCeb2d1",
+          "address": "0x7E61d59476A929DCd4ba943a9aeB4c528D7536DC",
           "kind": "protocol",
           "role": "Coordinates committee decisions for escalated disputes.",
-          "explorerUrl": "https://etherscan.io/address/0xF8eBD86d66CDda12C3F881a38c5e5db4FeCeb2d1#code"
+          "explorerUrl": "https://etherscan.io/address/0x7E61d59476A929DCd4ba943a9aeB4c528D7536DC#code"
         },
         {
           "name": "DisputeModule",
-          "address": "0x946A84df069764f18eE4A472Cc67890d585AC6Bd",
+          "address": "0x6be805CEbA58A8922eDa4ce627a89bb073c07A5b",
           "kind": "protocol",
           "role": "Tracks challenges to job outcomes and their resolution.",
-          "explorerUrl": "https://etherscan.io/address/0x946A84df069764f18eE4A472Cc67890d585AC6Bd#code"
+          "explorerUrl": "https://etherscan.io/address/0x6be805CEbA58A8922eDa4ce627a89bb073c07A5b#code"
         },
         {
           "name": "CertificateNFT",
-          "address": "0xd3851E3525080d8914e282Cc89Ff40cD7D4be77D",
+          "address": "0x2651Bf7c343143BF12CF6d34590E9ECA5A1AbE4B",
           "kind": "protocol",
           "role": "Issues transferable certificates for completed work under its rules.",
-          "explorerUrl": "https://etherscan.io/address/0xd3851E3525080d8914e282Cc89Ff40cD7D4be77D#code"
+          "explorerUrl": "https://etherscan.io/address/0x2651Bf7c343143BF12CF6d34590E9ECA5A1AbE4B#code"
+        },
+        {
+          "name": "TaxPolicy",
+          "address": "0x680dD5f7107952F6b26b1dE620b8AC6BC241627C",
+          "kind": "protocol",
+          "role": "Records the participant tax-responsibility notice and acknowledgement rules.",
+          "explorerUrl": "https://etherscan.io/address/0x680dD5f7107952F6b26b1dE620b8AC6BC241627C#code"
         },
         {
           "name": "FeePool",
-          "address": "0xa6091C773f3e400124744cc2bb47f16D347cA091",
+          "address": "0x81686E65649B95F12CC50d5E3846343Ed0Cfae93",
           "kind": "protocol",
           "role": "Collects and distributes protocol fees under its configuration.",
-          "explorerUrl": "https://etherscan.io/address/0xa6091C773f3e400124744cc2bb47f16D347cA091#code"
+          "explorerUrl": "https://etherscan.io/address/0x81686E65649B95F12CC50d5E3846343Ed0Cfae93#code"
         },
         {
           "name": "IdentityRegistry",
-          "address": "0xFfE52FB27d66dcCCDF03376b400d6E399DeC3EEC",
+          "address": "0x217B7709FfeD0e4C7A9415be64e323c56E0F8773",
           "kind": "protocol",
           "role": "Checks participant identity and the names or aliases admitted by governance.",
-          "explorerUrl": "https://etherscan.io/address/0xFfE52FB27d66dcCCDF03376b400d6E399DeC3EEC#code"
+          "explorerUrl": "https://etherscan.io/address/0x217B7709FfeD0e4C7A9415be64e323c56E0F8773#code"
         },
         {
           "name": "PlatformRegistry",
-          "address": "0x1cfd99F0a4937BD279aBa93c1184a270FEe6FE21",
+          "address": "0x543693a69C3ddbcE8DB590235989E502cBb9FEdb",
           "kind": "protocol",
           "role": "Registers participating platforms and their protocol standing.",
-          "explorerUrl": "https://etherscan.io/address/0x1cfd99F0a4937BD279aBa93c1184a270FEe6FE21#code"
+          "explorerUrl": "https://etherscan.io/address/0x543693a69C3ddbcE8DB590235989E502cBb9FEdb#code"
         },
         {
           "name": "JobRouter",
-          "address": "0xb471BE24a09345C503eaA55B2A490f4d9488A37E",
+          "address": "0x4E3cb2036c3b67Ca48BBF868B937B87E9524e6b7",
           "kind": "protocol",
           "role": "Routes work through the configured platform relationships.",
-          "explorerUrl": "https://etherscan.io/address/0xb471BE24a09345C503eaA55B2A490f4d9488A37E#code"
+          "explorerUrl": "https://etherscan.io/address/0x4E3cb2036c3b67Ca48BBF868B937B87E9524e6b7#code"
         },
         {
           "name": "PlatformIncentives",
-          "address": "0x243c6D5B1104d76c7dfE31418b14Ea1a4DB2a0d0",
+          "address": "0x50e1aeD5f0bcf440154B0A779a6f6701D5A57bcF",
           "kind": "protocol",
           "role": "Coordinates configured platform participation incentives.",
-          "explorerUrl": "https://etherscan.io/address/0x243c6D5B1104d76c7dfE31418b14Ea1a4DB2a0d0#code"
+          "explorerUrl": "https://etherscan.io/address/0x50e1aeD5f0bcf440154B0A779a6f6701D5A57bcF#code"
         },
         {
           "name": "SystemPause",
-          "address": "0xcAEf0CD10Bf7DfB3894362D2Ddd69D26D771BCd2",
+          "address": "0x887782AE59A56D1E9923947A6784A4453193e303",
           "kind": "protocol",
           "role": "Provides coordinated pause controls for managed protocol components.",
-          "explorerUrl": "https://etherscan.io/address/0xcAEf0CD10Bf7DfB3894362D2Ddd69D26D771BCd2#code"
+          "explorerUrl": "https://etherscan.io/address/0x887782AE59A56D1E9923947A6784A4453193e303#code"
         },
         {
           "name": "JobRegistryConfiguration",
-          "address": "0x175B9087a8d088073C9896F0CbF7b072b6ED11Bf",
+          "address": "0x54deeE2A22b3D06965522530De78081d92Df43a9",
           "kind": "implementation",
           "role": "Fixed implementation of job configuration and administrative logic.",
-          "explorerUrl": "https://etherscan.io/address/0x175B9087a8d088073C9896F0CbF7b072b6ED11Bf#code"
+          "explorerUrl": "https://etherscan.io/address/0x54deeE2A22b3D06965522530De78081d92Df43a9#code"
         },
         {
           "name": "JobRegistryLifecycle",
-          "address": "0x4f40CE804DD40A87667bDD0e03d8D5A2bA402FB6",
+          "address": "0x1db3f79F669fCbA0c3bf02DD32696f6d498703E4",
           "kind": "implementation",
           "role": "Fixed implementation of job creation, application and submission logic.",
-          "explorerUrl": "https://etherscan.io/address/0x4f40CE804DD40A87667bDD0e03d8D5A2bA402FB6#code"
+          "explorerUrl": "https://etherscan.io/address/0x1db3f79F669fCbA0c3bf02DD32696f6d498703E4#code"
         },
         {
           "name": "JobRegistrySettlement",
-          "address": "0x70EBFBa633E1519c9b4a5A659A9137Fd31662d0e",
+          "address": "0x6674abC659c29b8D9A89F2C1E5ca9A5238e03cd0",
           "kind": "implementation",
           "role": "Fixed implementation of job finalization and settlement logic.",
-          "explorerUrl": "https://etherscan.io/address/0x70EBFBa633E1519c9b4a5A659A9137Fd31662d0e#code"
+          "explorerUrl": "https://etherscan.io/address/0x6674abC659c29b8D9A89F2C1E5ca9A5238e03cd0#code"
         },
         {
           "name": "StakeManagerConfiguration",
-          "address": "0x6D46fF00d11acF432E4E8f882EABB9C974F0d72E",
+          "address": "0x5108C2C2d5fc18C357c257488734C7F32b05Ee9b",
           "kind": "implementation",
           "role": "Fixed implementation of stake and economic parameter configuration.",
-          "explorerUrl": "https://etherscan.io/address/0x6D46fF00d11acF432E4E8f882EABB9C974F0d72E#code"
+          "explorerUrl": "https://etherscan.io/address/0x5108C2C2d5fc18C357c257488734C7F32b05Ee9b#code"
         },
         {
           "name": "StakeManagerStaking",
-          "address": "0x44dA2237A94B4b07B9C1e3E44742C9AF4AA77a7A",
+          "address": "0x1CD694F6ABbCCaB90bF7F8c87dEB22cD5B5D0Ff0",
           "kind": "implementation",
           "role": "Fixed implementation of participant stake operations.",
-          "explorerUrl": "https://etherscan.io/address/0x44dA2237A94B4b07B9C1e3E44742C9AF4AA77a7A#code"
+          "explorerUrl": "https://etherscan.io/address/0x1CD694F6ABbCCaB90bF7F8c87dEB22cD5B5D0Ff0#code"
         },
         {
           "name": "StakeManagerEscrow",
-          "address": "0x97A17aAC4F6bD865d9e38d53411526B3291e88ae",
+          "address": "0xc10978057A9F23976A29f27c78E795ED415b3E8E",
           "kind": "implementation",
           "role": "Fixed implementation of job funding, escrow and payout operations.",
-          "explorerUrl": "https://etherscan.io/address/0x97A17aAC4F6bD865d9e38d53411526B3291e88ae#code"
+          "explorerUrl": "https://etherscan.io/address/0xc10978057A9F23976A29f27c78E795ED415b3E8E#code"
         },
         {
           "name": "StakeManagerSlashing",
-          "address": "0xEbB4c5FB19fe64712Fe8996638bEf092aa8347F5",
+          "address": "0x11C066651558f0a4211ab5696A1e48b3553ef318",
           "kind": "implementation",
           "role": "Fixed implementation of penalties and related stake accounting.",
-          "explorerUrl": "https://etherscan.io/address/0xEbB4c5FB19fe64712Fe8996638bEf092aa8347F5#code"
+          "explorerUrl": "https://etherscan.io/address/0x11C066651558f0a4211ab5696A1e48b3553ef318#code"
         },
         {
           "name": "ValidationModuleConfiguration",
-          "address": "0x53221f2DF17EbD5F022DBa1eAcc856957074c723",
+          "address": "0xC9985d012e88CCD809D588BE5e2Cc77BeeabC561",
           "kind": "implementation",
           "role": "Fixed implementation of review parameters and administrative logic.",
-          "explorerUrl": "https://etherscan.io/address/0x53221f2DF17EbD5F022DBa1eAcc856957074c723#code"
+          "explorerUrl": "https://etherscan.io/address/0xC9985d012e88CCD809D588BE5e2Cc77BeeabC561#code"
         },
         {
           "name": "ValidationModuleVoting",
-          "address": "0x04af6F94C7F74933BEeE4f6D39ceC4B2d9f7A42A",
+          "address": "0x9c88Ee891144A0841012685A1D118C95Ec667c69",
           "kind": "implementation",
           "role": "Fixed implementation of commit/reveal voting and review completion.",
-          "explorerUrl": "https://etherscan.io/address/0x04af6F94C7F74933BEeE4f6D39ceC4B2d9f7A42A#code"
+          "explorerUrl": "https://etherscan.io/address/0x9c88Ee891144A0841012685A1D118C95Ec667c69#code"
         },
         {
           "name": "ValidationModuleSelection",
-          "address": "0x5454686c3F6866fA958A4D6Ea87c596E56BbA625",
+          "address": "0xDc7B5A7bc02C6Aa60b9E3BE527E74856097a7dcF",
           "kind": "implementation",
           "role": "Fixed implementation of validator selection logic.",
-          "explorerUrl": "https://etherscan.io/address/0x5454686c3F6866fA958A4D6Ea87c596E56BbA625#code"
+          "explorerUrl": "https://etherscan.io/address/0xDc7B5A7bc02C6Aa60b9E3BE527E74856097a7dcF#code"
         }
-      ]
+      ],
+      "status": "paused",
+      "observedAt": "2026-10-18T18:55:20.035Z",
+      "referenceBlock": 26221285,
+      "productionApproved": false,
+      "activationReady": false,
+      "historyUrl": "https://github.com/MontrealAI/AGIJobsv0/blob/af71b175fb4930cfe6b4f5bfc29987fa863bda05/docs/ECOSYSTEM.md#the-deployed-contract-directory"
+    }
+  ],
+  "history": [
+    {
+      "date": "2026-10-12",
+      "description": "Original 5 Alpha + 24 Jobs directory, preserved byte for byte.",
+      "recordUrl": "https://github.com/MontrealAI/AGIJobsv0/blob/af71b175fb4930cfe6b4f5bfc29987fa863bda05/docs/ECOSYSTEM.md#the-deployed-contract-directory",
+      "dataPath": "website/data/ecosystem-2026-10-12.json"
     }
   ]
 }

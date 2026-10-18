@@ -36,7 +36,15 @@ export function renderEcosystemHero(base) {
 }
 
 export function renderEcosystemIntro(base) {
-  return `<section class="section-wrap ecosystem-overview" aria-labelledby="ecosystem-overview-title"><div><p class="eyebrow">TWO COMPLEMENTARY SYSTEMS</p><h2 id="ecosystem-overview-title">A promising idea.<br>A clear path to useful work.</h2><p>AGI Alpha Agent helps explore ideas and develop a plan. AGI Jobs gives a defined task its evidence, review and payment rules. Together, they can turn a selected idea into accountable digital work.</p></div><div class="ecosystem-overview-actions"><p><strong>One shared $AGIALPHA token.</strong><br>Two recorded Ethereum mainnet deployments, with 29 contract instances you can inspect.</p><a class="button primary" href="${base}successor/build/">Build your SUCCESSOR Ω <span aria-hidden="true">→</span></a><a class="text-link" href="${base}ecosystem/">See how they work together <span aria-hidden="true">→</span></a><a class="text-link" href="${base}ecosystem/#contracts">Explore both deployed contract suites ↗</a></div></section>`;
+  const jobs = ecosystem.suites.find((suite) => suite.id === 'jobs');
+  const registry = jobs.contracts.find(
+    (contract) => contract.name === 'JobRegistry'
+  );
+  return `<section class="section-wrap ecosystem-overview" aria-labelledby="ecosystem-overview-title"><div><p class="eyebrow">TWO COMPLEMENTARY SYSTEMS</p><h2 id="ecosystem-overview-title">A promising idea.<br>A clear path to useful work.</h2><p>AGI Alpha Agent helps explore ideas and develop a plan. AGI Jobs gives a defined task its evidence, review and payment rules. Together, they can turn a selected idea into accountable digital work.</p></div><div class="ecosystem-overview-actions"><p><strong>One shared $AGIALPHA token.</strong><br>The new 25-contract Jobs stack is source-verified and paused; the retained Alpha record lists 5 instances.</p><a class="button primary" href="${base}successor/build/">Build your SUCCESSOR Ω <span aria-hidden="true">→</span></a><a class="text-link" href="${base}ecosystem/">See how they work together <span aria-hidden="true">→</span></a><a class="text-link" href="${base}ecosystem/#contracts">Inspect the new Jobs deployment and retained Alpha record ↗</a><a class="text-link" href="${escape(
+    registry.explorerUrl
+  )}">New JobRegistry on Etherscan ↗</a><a class="text-link" href="${escape(
+    jobs.deploymentGuideUrl
+  )}">18 October verification and paused-governance record ↗</a></div></section>`;
 }
 
 function contracts(items) {
@@ -65,7 +73,7 @@ export function renderEcosystemPage(base, guideURL) {
     <p class="eyebrow">AGI ALPHA AGENT + AGI JOBS</p>
     <h1>Ideas that can become<br><em>accountable work.</em></h1>
     <p class="ecosystem-lead">One system helps find a promising direction. The other gives useful work clear rules: what to deliver, how to check it, and when payment can happen. Their shared $AGIALPHA token connects the economic design of both deployed suites.</p>
-    <div class="hero-actions"><a class="button primary" href="#example">Follow a practical example <span aria-hidden="true">↓</span></a><a class="button secondary" href="#contracts">Inspect all 29 contracts</a></div>
+    <div class="hero-actions"><a class="button primary" href="#example">Follow a practical example <span aria-hidden="true">↓</span></a><a class="button secondary" href="#contracts">Inspect all 30 contracts</a></div>
   </header>
   <nav class="ecosystem-jump-links" aria-label="On this page"><a href="#together">Why use them together</a><a href="#example">An example</a><a href="#token">The shared token</a><a href="#contracts">Deployed contracts</a><a href="#readiness">Evidence and readiness</a></nav>
 
@@ -95,7 +103,7 @@ export function renderEcosystemPage(base, guideURL) {
     )}<p>Both deployment records name this same token address. The contracts use it for their configured funding, stake, fee and settlement operations. Each suite has its own rules and participant requirements.</p><a class="text-link" href="${escape(
     ecosystem.token.explorerUrl
   )}">Read the token’s explorer record ↗</a></div>
-    <p class="ecosystem-supporting">The token is a shared dependency of the two suites and is separate from the 29 contract instances listed below. The public examples and planning tools remain available without a wallet or token payment.</p>
+    <p class="ecosystem-supporting">The token is a shared dependency of the two suites and is separate from the 30 contract instances listed below. The public examples and planning tools remain available without a wallet or token payment.</p>
     <h3 class="ecosystem-subheading">How the connection works</h3><p>The pairing requires an operator to connect compatible job interfaces and admit the right identities. Sharing a token does not create an automatic bridge between the deployed markets.</p>
     <details class="ecosystem-details"><summary>For operators: market routing and identity admission</summary><div><p>The deployed Alpha MARK contract has an immutable connection to its Alpha job market. It cannot simply be pointed at the Jobs JobRegistry. A Jobs connection needs a separately configured and reviewed adapter or workflow.</p><p>The two systems also use different ENS identity namespaces. Jobs admission must explicitly enable the required Alpha identity aliases or another supported admission path; the shared token alone grants no participant role.</p><p>Use the exact deployed contract interfaces and source revisions when evaluating an integration. Current repository code may contain changes absent from the deployed instances.</p><div class="inline-links"><a href="${escape(
       alpha.deploymentGuideUrl
@@ -107,25 +115,29 @@ export function renderEcosystemPage(base, guideURL) {
   </section>
 
   <section id="contracts" class="ecosystem-section" aria-labelledby="contracts-title">
-    <p class="eyebrow">DEPLOYED ON ETHEREUM MAINNET</p><h2 id="contracts-title">Two suites.<br>29 contract instances.</h2><p class="ecosystem-lead">Explore the 5 Alpha instances and all 24 Jobs instances. Each full address links to its Etherscan contract page. These are components of two systems; the count is not a count of separate protocols.</p>
-    <p class="ecosystem-supporting">This directory follows the public deployment records dated 11 and 12 October 2026. Explorer source verification and deployment records identify the published contracts; they do not establish current ownership, pause state, security or readiness for funding.</p>
-    <div class="ecosystem-inventory-links"><a href="#alpha-contracts">Alpha · 5 instances ↓</a><a href="#jobs-contracts">Jobs · 14 main components ↓</a><a href="#jobs-implementations">Jobs · 10 fixed implementations ↓</a><a href="${base}ecosystem/contracts.json" download>Download the address directory ↓</a></div>
+    <p class="eyebrow">DEPLOYED ON ETHEREUM MAINNET</p><h2 id="contracts-title">Two suites.<br>30 contract instances.</h2><p class="ecosystem-lead">Explore the 5 Alpha instances and all 25 Jobs instances. Each full address links to its Etherscan contract page. These are components of two systems; the count is not a count of separate protocols.</p>
+    <p class="ecosystem-supporting">Jobs: 25 exact source/runtime matches and 46 named checks at finalized block 26,221,285; all eight managed modules paused on 18 October 2026. Alpha: retained record dated 11 October. These are dated observations, not live status, exhaustive authority proof, a security audit or readiness for funding.</p>
+    <div class="ecosystem-inventory-links"><a href="#alpha-contracts">Alpha · 5 instances ↓</a><a href="#jobs-contracts">Jobs · 15 main components ↓</a><a href="#jobs-implementations">Jobs · 10 fixed implementations ↓</a><a href="${base}ecosystem/contracts.json" download>Download the address directory ↓</a></div>
     <section id="alpha-contracts" class="ecosystem-contract-group" aria-labelledby="alpha-contracts-title"><div class="ecosystem-group-heading"><div><p class="eyebrow">AGI ALPHA AGENT / ASCENSION</p><h3 id="alpha-contracts-title">Ideas, admission, risk and funded work</h3><p>5 deployed contract instances · recorded 11 October 2026</p></div><a href="${escape(
       alpha.recordUrl
     )}">Inspect the pinned deployment record ↗</a></div>${contracts(
     alpha.contracts
   )}</section>
-    <section id="jobs-contracts" class="ecosystem-contract-group" aria-labelledby="jobs-contracts-title"><div class="ecosystem-group-heading"><div><p class="eyebrow">AGI JOBS / PROTOCOL AND COORDINATOR</p><h3 id="jobs-contracts-title">The work lifecycle and its controls</h3><p>13 protocol components + 1 deployment coordinator · recorded 12 October 2026</p></div><a href="${escape(
+    <section id="jobs-contracts" class="ecosystem-contract-group" aria-labelledby="jobs-contracts-title"><div class="ecosystem-group-heading"><div><p class="eyebrow">AGI JOBS / PROTOCOL AND COORDINATOR</p><h3 id="jobs-contracts-title">The work lifecycle and its controls</h3><p>14 protocol components + 1 deployment coordinator · recorded 18 October 2026</p></div><a href="${escape(
       jobs.recordUrl
     )}">Inspect the pinned deployment record ↗</a></div>${contracts(
     jobs.contracts.filter((contract) => contract.kind !== 'implementation')
   )}</section>
     <section id="jobs-implementations" class="ecosystem-contract-group" aria-labelledby="jobs-implementations-title"><div class="ecosystem-group-heading"><div><p class="eyebrow">AGI JOBS / INTERNAL IMPLEMENTATIONS</p><h3 id="jobs-implementations-title">The fixed logic behind three core components</h3><p>10 additional instances execute logic for JobRegistry, StakeManager and ValidationModule. Their addresses are fixed by the deployment; they are not ten extra user-facing markets.</p></div><a href="${escape(
       jobs.addressMapUrl
-    )}">Inspect the pinned address map ↗</a></div>${contracts(
+    )}">Inspect the pinned address and state record ↗</a></div>${contracts(
     jobs.contracts.filter((contract) => contract.kind === 'implementation')
   )}</section>
   </section>
+
+  <p class="ecosystem-supporting"><a href="${escape(
+    jobs.historyUrl
+  )}">Preserved 12 October directory: all 24 earlier Jobs addresses and their original evidence ↗</a>. The new directory does not migrate obligations, change approvals or select an active wallet route.</p>
 
   <section id="readiness" class="ecosystem-section" aria-labelledby="readiness-title">
     <p class="eyebrow">EVIDENCE AND NEXT STEPS</p><h2 id="readiness-title">Know what each record establishes.</h2><p class="ecosystem-lead">Both suites have recorded Ethereum mainnet deployments. Live operations also require the right deployed release, identities, configuration, independent review and commissioning.</p>
@@ -135,9 +147,9 @@ export function renderEcosystemPage(base, guideURL) {
     alpha.deploymentGuideUrl
   )}">Read the dated deployment guide ↗</a><a href="${escape(
     alpha.currentReadinessUrl
-  )}">Check the current Alpha readiness guidance ↗</a></article><article class="ecosystem-evidence-card"><h3>Jobs deployment</h3><p>The 12 October record lists 24 instances and dated exact-source explorer observations for all 24. That record does not approve production or open live intake. It is a dated publication, not a fresh chain-state check.</p><p>The deployed source is <a href="${escape(
+  )}">Check the current Alpha readiness guidance ↗</a></article><article class="ecosystem-evidence-card"><h3>Jobs deployment</h3><p>The 18 October record lists 25 instances, including TaxPolicy. All 25 source/runtime comparisons and 46 named finalized-state checks passed. All eight managed modules remain recorded as paused; the creator owns none of these 25 contracts. This does not open live intake or approve activation.</p><p>The deployed source is <a href="${escape(
     jobs.sourceUrl
-  )}">source-v2.1.0-rc.4</a>. A later source release or documentation update does not change those contracts.</p><a href="${escape(
+  )}">818b3a246871e4cd4dde86558dbb91ef82b15eef</a>, distinct from current main and the new source release. A website update does not change these contracts.</p><a href="${escape(
     jobs.deploymentGuideUrl
   )}">Read the dated deployment guide ↗</a><a href="${guideURL(
     'docs/production/readiness.md'

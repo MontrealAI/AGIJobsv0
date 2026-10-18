@@ -77,7 +77,7 @@ export async function verifyEcosystem({
     );
     assert.equal(
       await target.locator('[data-contract-name]:visible').count(),
-      29
+      30
     );
     assert.equal(
       await target.locator('#ecosystem-token-address').textContent(),
@@ -206,7 +206,7 @@ export async function verifyEcosystem({
       }
     }
     completed.push(
-      'no JavaScript: all 29 links, essential content, selectable token and hidden copy controls'
+      'no JavaScript: all 30 links, essential content, selectable token and hidden copy controls'
     );
     assert.equal(
       fallback.frames().length,

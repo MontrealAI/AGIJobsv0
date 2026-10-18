@@ -18,7 +18,7 @@ const {
   reviewedCompilerPaths,
 } = require('../../scripts/release/qualify-source-release.cjs');
 const sha = 'a'.repeat(40),
-  tag = 'source-v2.1.0-rc.12';
+  tag = 'source-v2.1.0-rc.14';
 function compilerArchiveFixture(contents = {}) {
   const compiler = require('../../config/solidity-compiler.json').longVersion;
   const payloads = {
@@ -194,13 +194,13 @@ function assetFixture(t) {
 }
 test('compiler and evidence assets must match the complete checksum inventory and producer', (t) => {
   const fixture = assetFixture(t);
-  assert.equal(expectedAssets(tag).length, 12);
+  assert.equal(expectedAssets(tag).length, 15);
   assert.equal(
     fs
       .readFileSync(path.join(fixture.downloaded, 'SHA256SUMS.txt'), 'utf8')
       .trim()
       .split('\n').length,
-    11
+    14
   );
   fixture.verify();
   fs.appendFileSync(
@@ -357,10 +357,10 @@ test('workflow packages every declared immutable release asset', () => {
     'utf8'
   );
   assert.ok(workflow.includes(`TAG: ${tag}`));
-  assert.ok(workflow.includes('group: source-release-rc12-${{ github.ref }}'));
-  assert.ok(workflow.includes('name: source-rc12-${{ github.sha }}'));
-  assert.ok(expectedAssets(tag).includes('RELEASE_NOTES_SOURCE_RC12.md'));
-  for (const prior of ['RC7', 'RC8', 'RC9', 'RC10', 'RC11']) {
+  assert.ok(workflow.includes('group: source-release-rc14-${{ github.ref }}'));
+  assert.ok(workflow.includes('name: source-rc14-${{ github.sha }}'));
+  assert.ok(expectedAssets(tag).includes('RELEASE_NOTES_SOURCE_RC14.md'));
+  for (const prior of ['RC7', 'RC8', 'RC9', 'RC10', 'RC11', 'RC12']) {
     assert.ok(
       !expectedAssets(tag).includes(`RELEASE_NOTES_SOURCE_${prior}.md`)
     );
@@ -376,7 +376,7 @@ test('workflow packages every declared immutable release asset', () => {
   const notes = fs.readFileSync(
     path.resolve(
       __dirname,
-      '../../docs/production/RELEASE_NOTES_SOURCE_RC12.md'
+      '../../docs/production/RELEASE_NOTES_SOURCE_RC14.md'
     ),
     'utf8'
   );
@@ -401,10 +401,15 @@ test('workflow packages every declared immutable release asset', () => {
       ].includes(name)
     )
       continue;
-    assert.ok(
-      workflow.includes(`${name} "$out/"`),
-      `${name} missing from producer`
-    );
+    const newEvidence = {
+      'mainnet-deployment-2026-10-18.md': 'README.md',
+      'mainnet-deployment-snapshot-2026-10-18.json': 'deployment-snapshot.json',
+      'mainnet-deployment-receipts-2026-10-18.json': 'deployment-receipts.json',
+    };
+    const expectedCopy = newEvidence[name]
+      ? `cp docs/production/mainnet-2026-10-18/${newEvidence[name]} "$out/${name}"`
+      : `${name} "$out/"`;
+    assert.ok(workflow.includes(expectedCopy), `${name} missing from producer`);
   }
   assert.ok(
     workflow.includes('sha256sum -- *.json *.md *.zip > SHA256SUMS.txt')
@@ -727,6 +732,10 @@ test('source API boundary allows only exact supported methods and routes', () =>
     ['GET', '//example.com'],
     ['GET', 'https://example.com'],
     ['GET', 'git/ref/heads/other'],
+    ['GET', 'git/ref/tags/source-v2.1.0-rc.12'],
+    ['GET', 'releases/tags/source-v2.1.0-rc.12'],
+    ['GET', 'git/ref/tags/source-v2.1.0-rc.13'],
+    ['GET', 'releases/tags/source-v2.1.0-rc.13'],
     ['GET', 'git/ref/tags/source-v2.1.0-rc.9'],
     ['GET', 'releases/tags/source-v2.1.0-rc.9'],
     ['GET', 'git/ref/tags/source-v2.1.0-rc.11'],
@@ -753,8 +762,31 @@ test('rc.12 retains the exact published rc.11 notes and identifies its limits', 
   assert.match(pointer, /partial owner-report escaping/);
   assert.match(pointer, /history\/RELEASE_NOTES_SOURCE_RC11_PUBLISHED\.md/);
   const current = read('RELEASE_NOTES_SOURCE_RC12.md').toString('utf8');
-  assert.ok(current.startsWith(`# ${tag}`));
+  assert.ok(current.startsWith('# source-v2.1.0-rc.12'));
   assert.match(current, /11c26f28751cf9042e2795782edf225cee9e6828/);
   assert.match(current, /29721b96ab4443e213afecfd423422aef1b327fe/);
   assert.match(current, /Production approval remains \*\*false\*\*/);
+});
+
+test('rc.14 preserves prior published notes and separates deployment evidence from release identity', () => {
+  const read = (name) =>
+    fs.readFileSync(path.resolve(__dirname, '../../docs/production', name));
+  assert.equal(
+    crypto
+      .createHash('sha256')
+      .update(read('RELEASE_NOTES_SOURCE_RC12.md'))
+      .digest('hex'),
+    '9e10de3df71a6035bdacd81483a6ce3ae7af15d6a1eff414dc024ba88f3d0ef5'
+  );
+  const notes = read('RELEASE_NOTES_SOURCE_RC14.md').toString('utf8');
+  assert.ok(notes.startsWith('# ' + tag));
+  assert.match(notes, /818b3a246871e4cd4dde86558dbb91ef82b15eef/);
+  assert.match(notes, /Production approval remains \*\*false\*\*/);
+  assert.match(notes, /all eight managed modules remain paused/);
+  for (const asset of [
+    'mainnet-deployment-2026-10-18.md',
+    'mainnet-deployment-snapshot-2026-10-18.json',
+    'mainnet-deployment-receipts-2026-10-18.json',
+  ])
+    assert.ok(expectedAssets(tag).includes(asset));
 });

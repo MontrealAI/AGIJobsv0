@@ -11,7 +11,7 @@
 
 **[0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA](https://etherscan.io/token/0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA)**
 
-**[See how they work together →](https://montrealai.github.io/AGIJobsv0/ecosystem/) · [Inspect both deployed suites: 5 Alpha + 24 Jobs instances](https://montrealai.github.io/AGIJobsv0/ecosystem/#contracts) · [Read the ecosystem guide and source evidence](docs/ECOSYSTEM.md)**
+**[See how they work together →](https://montrealai.github.io/AGIJobsv0/ecosystem/) · [Inspect both deployed suites: 5 retained Alpha + 25 new Jobs instances](https://montrealai.github.io/AGIJobsv0/ecosystem/#contracts) · [Read the ecosystem guide and source evidence](docs/ECOSYSTEM.md)**
 
 The pairing is strongest for bounded digital tasks with checkable outputs. A shared token does not create an automatic mainnet bridge: compatible job interfaces, admitted identities and operational commissioning remain necessary. The guide distinguishes recorded deployments from readiness for live work.
 
@@ -63,9 +63,11 @@ AGI Jobs v0 (v2) brings together job contracts, agent gateways, validators, oper
 
 **Seeing compiler warnings on Etherscan?** Read the [plain-language compiler update and existing-deployment guide](docs/production/compiler-warnings-2026-10-13.md). New builds use Solidity 0.8.37; existing addresses retain their original bytecode. The guide explains the four advisories, remaining dependency/tooling notices, and the steps needed before any replacement deployment.
 
-**Deployment status:** the [source-pinned mainnet directory](docs/ECOSYSTEM.md#the-deployed-contract-directory) identifies the recorded 24 Jobs instances and 5 Alpha instances, with full explorer links and separate readiness guidance. The four previously oversized Jobs contracts use [fixed implementations and staged deployment](docs/production/fixed-implementations.md). New releases and live operations require their own authorized signing, completed configuration, commissioning and passing gates. Local tests do not provide mainnet certification. All existing architectural diagrams and demonstration surfaces are retained.
+**Deployment status:** the [source-pinned mainnet directory](docs/ECOSYSTEM.md#the-deployed-contract-directory) identifies the new 25 Jobs instances and the retained 5 Alpha instances, with full explorer links and separate readiness guidance. The four previously oversized Jobs contracts use [fixed implementations and staged deployment](docs/production/fixed-implementations.md). New releases and live operations require their own authorized signing, completed configuration, commissioning and passing gates. Local tests do not provide mainnet certification. All existing architectural diagrams and demonstration surfaces are retained.
 
-**Latest mainnet evidence:** [24-contract deployment and configuration record](docs/production/mainnet-deployment-2026-10-12.md): 24/24 recorded explorer exact matches, Ledger handoff readback, and the later **88,888,888 AGIALPHA reward cap** observation. The eight operational modules remain recorded as paused. The deployed job stake is a **fixed 500 AGIALPHA**, not 10% of reward. [Source and timing limits](docs/production/mainnet-deployment-2026-10-12.md#latest-configuration-and-reward-policy).
+**Latest mainnet evidence — 18 October 2026:** [25-contract deployment and verification record](docs/production/mainnet-2026-10-18/README.md): **25/25 exact runtime/source matches**, **46/46 named finalized-state checks**, and **all eight managed modules paused**. Ledger-address governance and treasury roles are recorded; the creator owns none of these 25 contracts. The completed configuration uses **10% per-job collateral**, separate from the general stake floor. The exact deployed source is `818b3a246871e4cd4dde86558dbb91ef82b15eef`, not the current main tree. No live wallet route or operational activation is enabled.
+
+**Historical mainnet evidence:** the [12 October 24-contract stack](docs/production/mainnet-deployment-2026-10-12.md), its fixed 500 AGIALPHA job stake and later reward-cap observations remain unchanged. The new record does not migrate those obligations or approvals.
 
 ```mermaid
 flowchart LR

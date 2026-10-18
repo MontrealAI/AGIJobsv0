@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import { createHash } from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { JSDOM } from 'jsdom';
@@ -15,7 +16,7 @@ const contracts = ecosystem.suites.flatMap((suite) => suite.contracts);
 const address = /^0x[0-9a-fA-F]{40}$/;
 const token = '0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA';
 
-test('ecosystem directory keeps the canonical chain and token separate from 5 Alpha and 24 Jobs instances', () => {
+test('ecosystem directory keeps the canonical chain and token separate from 5 Alpha and 25 Jobs instances', () => {
   assert.equal(ecosystem.chainId, 1);
   assert.equal(ecosystem.network, 'Ethereum mainnet');
   assert.equal(ecosystem.token.symbol, 'AGIALPHA');
@@ -28,10 +29,10 @@ test('ecosystem directory keeps the canonical chain and token separate from 5 Al
   const alpha = ecosystem.suites.find((suite) => suite.id === 'alpha');
   const jobs = ecosystem.suites.find((suite) => suite.id === 'jobs');
   assert.equal(alpha.contracts.length, 5);
-  assert.equal(jobs.contracts.length, 24);
+  assert.equal(jobs.contracts.length, 25);
   assert.equal(
     jobs.contracts.filter((contract) => contract.kind === 'protocol').length,
-    13
+    14
   );
   assert.equal(
     jobs.contracts.filter((contract) => contract.kind === 'coordination')
@@ -45,7 +46,7 @@ test('ecosystem directory keeps the canonical chain and token separate from 5 Al
   );
   assert.equal(
     new Set(contracts.map((contract) => contract.address.toLowerCase())).size,
-    29
+    30
   );
   for (const contract of contracts) {
     assert.match(contract.address, address, contract.name);
@@ -77,7 +78,7 @@ test('the built no-JavaScript guide publishes every full address and the same do
   assert.equal(document.documentElement.lang, 'en');
   assert.equal(document.querySelectorAll('main').length, 1);
   assert.equal(document.querySelectorAll('h1').length, 1);
-  assert.equal(document.querySelectorAll('[data-contract-name]').length, 29);
+  assert.equal(document.querySelectorAll('[data-contract-name]').length, 30);
   for (const contract of contracts) {
     const entry = document.querySelector(
       `[data-contract-name="${contract.name}"]`
@@ -123,4 +124,86 @@ test('the repository guide and JSON retain identical full contract-to-explorer m
     );
   }
   assert.ok(guide.includes(`[${token}](${ecosystem.token.explorerUrl})`));
+});
+
+test('new Jobs directory is evidence-bound, paused and separate from the exact historical archive', () => {
+  const read = (name) =>
+    JSON.parse(fs.readFileSync(path.join(root, name), 'utf8'));
+  const snapshot = read(
+    'docs/production/mainnet-2026-10-18/deployment-snapshot.json'
+  );
+  const receipts = read(
+    'docs/production/mainnet-2026-10-18/deployment-receipts.json'
+  );
+  const history = read('website/data/ecosystem-2026-10-12.json');
+  const jobs = ecosystem.suites.find((suite) => suite.id === 'jobs');
+  assert.equal(jobs.sourceCommit, snapshot.deployedSource.commit);
+  assert.equal(jobs.sourceCommit, '818b3a246871e4cd4dde86558dbb91ef82b15eef');
+  assert.equal(jobs.status, 'paused');
+  assert.equal(jobs.productionApproved, false);
+  assert.equal(jobs.activationReady, false);
+  assert.equal(jobs.referenceBlock, snapshot.finalizedStateAnchor.number);
+  assert.equal(snapshot.finalizedStateAnchor.number, 26221285);
+  assert.equal(snapshot.stateSummary.stateChecksPassed, 46);
+  assert.equal(snapshot.stateSummary.allEightManagedModulesPaused, true);
+  assert.equal(snapshot.stateSummary.creatorOwnsAnyOf25, false);
+  assert.deepEqual(
+    ecosystem.suites.find((suite) => suite.id === 'alpha'),
+    history.suites.find((suite) => suite.id === 'alpha')
+  );
+  assert.equal(
+    createHash('sha256')
+      .update(
+        fs.readFileSync(
+          path.join(root, 'website/data/ecosystem-2026-10-12.json')
+        )
+      )
+      .digest('hex'),
+    '91b98fe3c7aac7e245c5e25bd7e400b13ee22735d442db8a2c30a388b730484f'
+  );
+  const oldJobs = history.suites.find((suite) => suite.id === 'jobs');
+  assert.equal(oldJobs.contracts.length, 24);
+  assert.equal(
+    oldJobs.sourceCommit,
+    'b4c5b66ea05a6bb27f1f1cb197f055c179bbd38e'
+  );
+  for (const contract of jobs.contracts) {
+    const record = snapshot.contracts.find(
+      (item) => item.name === contract.name
+    );
+    assert.equal(contract.address, record.address);
+    assert.equal(record.runtimeMatches, true);
+    assert.equal(
+      record.explorer.classification,
+      'verified-source-metadata-matches'
+    );
+    assert.equal(record.explorer.similarMatch, null);
+    assert.equal(
+      oldJobs.contracts.some((item) => item.address === contract.address),
+      false
+    );
+  }
+  assert.equal(receipts.operations.length, 39);
+  assert.deepEqual(
+    receipts.operations.map((item) => item.nonce),
+    Array.from({ length: 39 }, (_, i) => i + 308)
+  );
+  assert.ok(receipts.operations.every((item) => item.receipt.status === 1));
+  assert.ok(snapshot.observedStateChecks.every((item) => item.passed));
+  const home = fs.readFileSync(path.join(output, 'index.html'), 'utf8');
+  assert.ok(
+    home.includes(
+      jobs.contracts.find((item) => item.name === 'JobRegistry').explorerUrl
+    )
+  );
+  assert.match(home, /source-verified and paused/);
+  const guide = fs.readFileSync(
+    path.join(output, 'ecosystem/index.html'),
+    'utf8'
+  );
+  assert.ok(guide.includes(jobs.historyUrl));
+  assert.match(
+    guide,
+    /does not migrate obligations, change approvals or select an active wallet route/
+  );
 });

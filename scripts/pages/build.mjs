@@ -535,7 +535,7 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
     chrome({
       title: 'AGI Alpha Agent + AGI Jobs · The shared ecosystem',
       description:
-        'Explore how AGI Alpha Agent and AGI Jobs can turn selected ideas into accountable work, with the shared AGIALPHA token and all 29 deployed Ethereum mainnet contract instances.',
+        'Explore how AGI Alpha Agent and AGI Jobs can turn selected ideas into accountable work, with the shared AGIALPHA token and the 25-contract paused Jobs deployment and retained five-contract Alpha record.',
       base,
       revision,
       canonical: 'ecosystem/',

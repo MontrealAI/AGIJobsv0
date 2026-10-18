@@ -2,7 +2,15 @@
 
 This is the stable entry point for deployment status. Dated reports describe the exact checks and limitations observed at the time; they are not perpetual production certifications.
 
-## Recorded Ethereum mainnet deployment — 12 October 2026
+## Latest Ethereum mainnet deployment — 18 October 2026
+
+The [new 25-contract record](mainnet-2026-10-18/README.md) publishes all addresses, exact deployed source `818b3a246871e4cd4dde86558dbb91ef82b15eef`, 39 successful historical deployment receipts and the finalized closeout. All **25 runtime/source comparisons** and **46 explicitly named state checks** passed at provider-finalized block **26,221,285** (18:37:11 UTC); canonicality/finality were rechecked at 18:55:20 UTC. Etherscan observations are separately timed.
+
+All **eight managed modules remain paused**. Recorded ownership and the explicit governance/treasury getters match the intended addresses; the creator owns none of these 25 contracts. The configuration records 10% per-job collateral (1000 bps), a separate 1000 AGIALPHA eligibility stake, 5% fee, 1% burn, one-day commit/reveal windows and the pinned participant tax notice. Only the named getter list is a fresh state observation.
+
+This is a separate stack. The historical record below is retained and its fixed-stake statement applies to the old deployment only. Current main differs from deployed source in tooling; neither this publication nor source rc.14 substitutes a whole-tree deployment identity. No wallet/client routing change, funding, unpause, migration or activation is enabled. Production approval and activation readiness remain false. Bounded source and getter checks do not replace exhaustive authority review, independent security review, provider/worker commissioning or live acceptance.
+
+## Historical Ethereum mainnet deployment — 12 October 2026
 
 The [deployment record and address directory](mainnet-deployment-2026-10-12.md) now identify the existing mainnet stack, deployed from `b4c5b66ea05a6bb27f1f1cb197f055c179bbd38e` (`source-v2.1.0-rc.4`). The operator's saved readback reports 24 runtime-template matches, all eight managed modules paused under SystemPause, and Ledger control of SystemPause and three direct-owner modules. **All 24 contract sources have exact-match Etherscan verification**, including StakeManagerEscrow confirmed at 17:12 UTC on 12 October. The record keeps dated explorer evidence separate from runtime and operational approval. This is the AGIALPHA stack; it must not be confused with AGIJobManager/ENSJobPages and its USDC settlement.
 
