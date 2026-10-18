@@ -102,7 +102,8 @@ try {
     errors.push(request.url() + ': ' + request.failure()?.errorText)
   );
   page.on('request', (request) => {
-    if (!request.url().startsWith(origin) && !request.url().startsWith('data:'))
+    const target = new URL(request.url());
+    if (target.origin !== origin && target.protocol !== 'data:')
       requests.push(request.url());
   });
   await page.goto(url, { waitUntil: 'networkidle' });
