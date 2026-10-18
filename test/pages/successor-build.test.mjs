@@ -12,15 +12,19 @@ const directory=new URL('../../website/successor-build/',import.meta.url);
 const page=fs.readFileSync(new URL('index.html',directory),'utf8');
 const provenance=JSON.parse(fs.readFileSync(new URL('provenance.json',directory),'utf8'));
 const ecosystem=JSON.parse(fs.readFileSync(new URL('../../website/data/ecosystem.json',import.meta.url),'utf8'));
+// The byte-pinned workshop explicitly displays the 11–12 October records.
+const historicalEcosystem=JSON.parse(fs.readFileSync(new URL('../../website/data/ecosystem-2026-10-12.json',import.meta.url),'utf8'));
 
-test('portable workshop mirror retains exact source bytes, CSP and both deployment suites',()=>{
+test('portable workshop mirror retains exact source bytes, CSP and both dated deployment suites',()=>{
   assert.equal((page.match(/<main id="main">/g)||[]).length,1);
   assert.equal(createHash('sha256').update(page).digest('hex'),provenance.sha256);
   for(const content of [page.match(/<style>([\s\S]*?)<\/style>/)[1],page.match(/<script>([\s\S]*?)<\/script>/)[1]]){
     assert.ok(page.includes('sha256-'+createHash('sha256').update(content).digest('base64')));
   }
   assert.ok(page.includes("connect-src 'none'"));assert.ok(page.includes(ecosystem.token.address));
-  for(const c of ecosystem.suites.flatMap(s=>s.contracts))assert.ok(page.includes(`https://etherscan.io/address/${c.address}#code`),c.name);
+  assert.ok(page.includes('public 11–12 October 2026 records'));
+  assert.equal(historicalEcosystem.suites.flatMap(s=>s.contracts).length,29);
+  for(const c of historicalEcosystem.suites.flatMap(s=>s.contracts))assert.ok(page.includes(`https://etherscan.io/address/${c.address}#code`),c.name);
   for(const file of provenance.agijobsCompiler.files){
     const bytes=fs.readFileSync(new URL('../../'+file.path,import.meta.url));
     assert.equal(createHash('sha256').update(bytes).digest('hex'),file.sha256);
