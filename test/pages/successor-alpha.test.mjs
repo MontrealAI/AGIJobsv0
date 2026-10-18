@@ -61,6 +61,9 @@ test('recomputed mirror digests cannot disguise changes to the executable, artwo
     page => page.replace('Find your advantage', 'Certified Specialist ASI'),
     page => page.replaceAll('0x9eE41dF6d076Fa4F89b102b76DEf1c503a1e7C3A', '0x0000000000000000000000000000000000000001'),
     page => page.replace("connect-src 'none'", "connect-src *"),
+    page => page.replace('</script>', '</SCRIPT>'),
+    page => page.replace('<script>', '<script type="application/javascript">'),
+    page => page.replace('<style>', '<STYLE>'),
   ];
   for (const mutate of mutations) {
     const assets = readAssets();

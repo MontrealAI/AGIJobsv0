@@ -91,10 +91,17 @@ export function verifySuccessorAlphaAssets({ page, manifestRaw, provenance, comp
         'Flagship navigation must use explicit public HTTPS destinations');
     }
   }
-  const executable = page.match(/<script>([\s\S]*?)<\/script>/);
-  const style = installedMarkup.match(/<style>([\s\S]*?)<\/style>/);
-  requireThat(executable && style, 'Flagship executable or style content is missing');
-  for (const content of [executable[1], style[1]]) {
+  // The upstream digest above has already authenticated these exact bytes.
+  // Extract its fixed delimiters for CSP checks; this is not an HTML sanitizer.
+  const pinnedContent = (source, tag) => {
+    const opening = `<${tag}>`, closing = `</${tag}>`;
+    const start = source.indexOf(opening);
+    const end = source.indexOf(closing, start + opening.length);
+    requireThat(start >= 0 && end > start + opening.length,
+      'Flagship executable or style content is missing');
+    return source.slice(start + opening.length, end);
+  };
+  for (const content of [pinnedContent(page, 'script'), pinnedContent(installedMarkup, 'style')]) {
     const cspHash = createHash('sha256').update(content).digest('base64');
     requireThat(installedMarkup.includes(`'sha256-${cspHash}'`), 'Flagship CSP hash differs from installed bytes');
   }
