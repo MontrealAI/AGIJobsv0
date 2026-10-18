@@ -419,6 +419,9 @@
 .ecosystem-steps p {
   color: #c9c0d6;
 }
+.ecosystem-evidence-card p {
+  overflow-wrap: anywhere;
+}
 .ecosystem-role-card > a,
 .ecosystem-evidence-card > a {
   display: block;

@@ -63,6 +63,17 @@ export async function verifyEcosystem({
       true,
       `${label}: no horizontal overflow`
     );
+    assert.equal(
+      await target
+        .locator('.ecosystem-evidence-card p')
+        .evaluateAll((paragraphs) =>
+          paragraphs.every(
+            (paragraph) => paragraph.scrollWidth <= paragraph.clientWidth + 1
+          )
+        ),
+      true,
+      `${label}: full source revisions wrap inside their evidence cards`
+    );
   };
   const checkContracts = async (target) => {
     assert.deepEqual(
@@ -77,7 +88,7 @@ export async function verifyEcosystem({
     );
     assert.equal(
       await target.locator('[data-contract-name]:visible').count(),
-      29
+      30
     );
     assert.equal(
       await target.locator('#ecosystem-token-address').textContent(),
@@ -206,7 +217,7 @@ export async function verifyEcosystem({
       }
     }
     completed.push(
-      'no JavaScript: all 29 links, essential content, selectable token and hidden copy controls'
+      'no JavaScript: all 30 links, essential content, selectable token and hidden copy controls'
     );
     assert.equal(
       fallback.frames().length,

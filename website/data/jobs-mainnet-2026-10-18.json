@@ -1,0 +1,1257 @@
+{
+  "schema": "agi-jobs-public-deployment-closeout-snapshot-v1",
+  "network": "Ethereum Mainnet",
+  "chainId": 1,
+  "observedCompleteAt": "2026-10-18T18:55:20.035Z",
+  "deployedSource": {
+    "repository": "MontrealAI/AGIJobsv0",
+    "commit": "818b3a246871e4cd4dde86558dbb91ef82b15eef",
+    "tree": "b1c3bb0f4b8d64e0d23376d6b6ef3722c4c67b0d",
+    "compiler": "0.8.37+commit.f401782d",
+    "originalCompilerInputSha256": "a962576832d4540c4cd682f9251b6eed2a333c87a1ce5fa61ed5716e7091b891",
+    "currentMainEquivalenceNotAssumed": true
+  },
+  "finalizedStateAnchor": {
+    "number": 26221285,
+    "hash": "0x4bd7698479db125e9a7e4f031571fd2844224f822a630ba22b40aea48fb592e6",
+    "timestamp": 1792348631,
+    "isoTime": "2026-10-18T18:37:11.000Z",
+    "requestedTag": "finalized",
+    "initialAgeSeconds": 968.114000082016
+  },
+  "canonicalityRechecked": true,
+  "providerFinalizedStatusRechecked": true,
+  "sourceReadback": {
+    "method": "Etherscan v2 getsourcecode, chainid1",
+    "notBlockPinned": true,
+    "exactSourceMetadataMatches": 25,
+    "similarMatches": 0,
+    "unverified": 0,
+    "incomplete": 0
+  },
+  "stateSummary": {
+    "runtimeMatches": 25,
+    "totalContracts": 25,
+    "exactSourceMetadataMatches": 25,
+    "similarMatches": 0,
+    "unverified": 0,
+    "sourceComparisonIncomplete": 0,
+    "stateChecksPassed": 46,
+    "stateChecksTotal": 46,
+    "allEightManagedModulesPaused": true,
+    "creatorOwnsAnyOf25": false
+  },
+  "configuredAtDeployment": {
+    "token": "0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA",
+    "governance": "0xd76AD27a1Bcf8652e7e46BE603FA742FD1c10A99",
+    "authority": {
+      "feePoolGovernance": "0xa9eD0539c2fbc5C6BC15a2E168bd9BCd07c01201",
+      "feePoolTreasury": "0xd76AD27a1Bcf8652e7e46BE603FA742FD1c10A99",
+      "stakeManagerTreasury": "0xa9eD0539c2fbc5C6BC15a2E168bd9BCd07c01201"
+    },
+    "econ": {
+      "feePct": 5,
+      "burnPct": 1,
+      "employerSlashPct": 10,
+      "treasurySlashPct": 90,
+      "validatorSlashRewardPct": 0,
+      "commitWindow": 86400,
+      "revealWindow": 86400,
+      "minStake": "1000000000000000000000",
+      "jobStakeBps": 1000
+    },
+    "identity": {
+      "ens": "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e",
+      "nameWrapper": "0xD4416b13d2b3a9aBae7AcD5D6C2BbDBE25686401",
+      "clubRootNode": "0x39eb848f88bdfb0a6371096249dd451f56859dfe2cd3ddeab1e26d5bb68ede16",
+      "agentRootNode": "0x2c9c6189b2e92da4d0407e9deb38ff6870729ad063af7e8576cb7b7898c88e2d",
+      "validatorMerkleRoot": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "agentMerkleRoot": "0x0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "tax": {
+      "uri": "https://github.com/MontrealAI/AGIJobsv0/blob/d825fa884261be248e96d6910355df3d3d4c5691/docs/tax-policy.md",
+      "description": "I have read the linked AGI Jobs Participant Tax Responsibilities policy. I accept responsibility for the tax and reporting obligations applicable law imposes on me, including recordkeeping and obtaining independent advice as needed. I understand that no tax outcome or exemption is guaranteed and that mandatory legal duties and rights remain unchanged."
+    },
+    "pauseOnLaunch": true,
+    "configurationSha256": "80c663dd6880a611e6de002d5f0b92d8b5d7cd5cc2524c2b77362988d06420e1"
+  },
+  "contracts": [
+    {
+      "name": "Deployer",
+      "address": "0x6CC341f43b5aeB8C54Bf73EA75301CE3449A1740",
+      "source": "contracts/v2/Deployer.sol:Deployer",
+      "compiler": "0.8.37+commit.f401782d",
+      "compilerInputSha256": "a962576832d4540c4cd682f9251b6eed2a333c87a1ce5fa61ed5716e7091b891",
+      "runtimeKeccak256": "0x32e244c804fad21f616ac27f4e7a13a06e683d3f44219b2e1006d814e577894e",
+      "runtimeMatches": true,
+      "owner": "0xd76AD27a1Bcf8652e7e46BE603FA742FD1c10A99",
+      "explorer": {
+        "sourcePresent": true,
+        "similarMatch": null,
+        "constructorArgumentsMatch": true,
+        "sourceCodeSha256": "3d9b1e0aff4a6ce5d4ee5c7792f1208fe5aea24f957b4dd152cfb5947addc654",
+        "sourceContentMatch": true,
+        "settingsMatch": true,
+        "returnedSourceCount": 84,
+        "compilerMatches": true,
+        "contractNameMatches": true,
+        "nonProxy": true,
+        "classification": "verified-source-metadata-matches"
+      },
+      "explorerObservedAt": "2026-10-18T18:54:46.728Z",
+      "constructorArguments": "0x",
+      "constructorDecoded": []
+    },
+    {
+      "name": "StakeManagerConfiguration",
+      "address": "0x5108C2C2d5fc18C357c257488734C7F32b05Ee9b",
+      "source": "contracts/v2/implementation/StakeManagerConfiguration.sol:StakeManagerConfiguration",
+      "compiler": "0.8.37+commit.f401782d",
+      "compilerInputSha256": "a962576832d4540c4cd682f9251b6eed2a333c87a1ce5fa61ed5716e7091b891",
+      "runtimeKeccak256": "0x867b32aa35a946e10bbeab87164a9f291acfa05445da49806c880596da63a3ab",
+      "runtimeMatches": true,
+      "owner": "0xd76AD27a1Bcf8652e7e46BE603FA742FD1c10A99",
+      "explorer": {
+        "sourcePresent": true,
+        "similarMatch": null,
+        "constructorArgumentsMatch": true,
+        "sourceCodeSha256": "e287231c87b018f443556a80eb85d193930559c2c1627afeeef5a485826f657c",
+        "sourceContentMatch": true,
+        "settingsMatch": true,
+        "returnedSourceCount": 37,
+        "compilerMatches": true,
+        "contractNameMatches": true,
+        "nonProxy": true,
+        "classification": "verified-source-metadata-matches"
+      },
+      "explorerObservedAt": "2026-10-18T18:54:47.946Z",
+      "constructorArguments": "0x",
+      "constructorDecoded": []
+    },
+    {
+      "name": "StakeManagerStaking",
+      "address": "0x1CD694F6ABbCCaB90bF7F8c87dEB22cD5B5D0Ff0",
+      "source": "contracts/v2/implementation/StakeManagerStaking.sol:StakeManagerStaking",
+      "compiler": "0.8.37+commit.f401782d",
+      "compilerInputSha256": "a962576832d4540c4cd682f9251b6eed2a333c87a1ce5fa61ed5716e7091b891",
+      "runtimeKeccak256": "0x526416816e753ec5b6e092aaa61faa457475cf4815e34c939d5d62f1369abe8b",
+      "runtimeMatches": true,
+      "owner": "0xd76AD27a1Bcf8652e7e46BE603FA742FD1c10A99",
+      "explorer": {
+        "sourcePresent": true,
+        "similarMatch": null,
+        "constructorArgumentsMatch": true,
+        "sourceCodeSha256": "2d81b4e961a95ba70b07edebb30ea452a014bbf64b7d1402e92ff6c7d596ceb1",
+        "sourceContentMatch": true,
+        "settingsMatch": true,
+        "returnedSourceCount": 37,
+        "compilerMatches": true,
+        "contractNameMatches": true,
+        "nonProxy": true,
+        "classification": "verified-source-metadata-matches"
+      },
+      "explorerObservedAt": "2026-10-18T18:54:49.192Z",
+      "constructorArguments": "0x",
+      "constructorDecoded": []
+    },
+    {
+      "name": "StakeManagerEscrow",
+      "address": "0xc10978057A9F23976A29f27c78E795ED415b3E8E",
+      "source": "contracts/v2/implementation/StakeManagerEscrow.sol:StakeManagerEscrow",
+      "compiler": "0.8.37+commit.f401782d",
+      "compilerInputSha256": "a962576832d4540c4cd682f9251b6eed2a333c87a1ce5fa61ed5716e7091b891",
+      "runtimeKeccak256": "0xc89772c635ae6d22bff7a68a56a44a4ec8def40a503f095ddaeec9010c1444f8",
+      "runtimeMatches": true,
+      "owner": "0xd76AD27a1Bcf8652e7e46BE603FA742FD1c10A99",
+      "explorer": {
+        "sourcePresent": true,
+        "similarMatch": null,
+        "constructorArgumentsMatch": true,
+        "sourceCodeSha256": "cc2baef4fc09466de0da0bf603bbc67f04d77a340078ff5126300de5578d3dee",
+        "sourceContentMatch": true,
+        "settingsMatch": true,
+        "returnedSourceCount": 37,
+        "compilerMatches": true,
+        "contractNameMatches": true,
+        "nonProxy": true,
+        "classification": "verified-source-metadata-matches"
+      },
+      "explorerObservedAt": "2026-10-18T18:54:50.438Z",
+      "constructorArguments": "0x",
+      "constructorDecoded": []
+    },
+    {
+      "name": "StakeManagerSlashing",
+      "address": "0x11C066651558f0a4211ab5696A1e48b3553ef318",
+      "source": "contracts/v2/implementation/StakeManagerSlashing.sol:StakeManagerSlashing",
+      "compiler": "0.8.37+commit.f401782d",
+      "compilerInputSha256": "a962576832d4540c4cd682f9251b6eed2a333c87a1ce5fa61ed5716e7091b891",
+      "runtimeKeccak256": "0x178af1b97e5f6016efe00250b27ebc530075585feed33862e9b2d2c59da7ae35",
+      "runtimeMatches": true,
+      "owner": "0xd76AD27a1Bcf8652e7e46BE603FA742FD1c10A99",
+      "explorer": {
+        "sourcePresent": true,
+        "similarMatch": null,
+        "constructorArgumentsMatch": true,
+        "sourceCodeSha256": "5db715620a6d71c93e60d7caa2725b172cd8d20be205d7a942620eda428aac40",
+        "sourceContentMatch": true,
+        "settingsMatch": true,
+        "returnedSourceCount": 37,
+        "compilerMatches": true,
+        "contractNameMatches": true,
+        "nonProxy": true,
+        "classification": "verified-source-metadata-matches"
+      },
+      "explorerObservedAt": "2026-10-18T18:54:51.683Z",
+      "constructorArguments": "0x",
+      "constructorDecoded": []
+    },
+    {
+      "name": "StakeManager",
+      "address": "0x0b7E8E6aeEc675950E493E495D54d947E3B7bee1",
+      "source": "contracts/v2/StakeManager.sol:StakeManager",
+      "compiler": "0.8.37+commit.f401782d",
+      "compilerInputSha256": "a962576832d4540c4cd682f9251b6eed2a333c87a1ce5fa61ed5716e7091b891",
+      "runtimeKeccak256": "0x282acf2c5722ee3e238d6d200efc878c0c5903c3dd4e877cf6b894d24e34f820",
+      "runtimeMatches": true,
+      "owner": "0x887782AE59A56D1E9923947A6784A4453193e303",
+      "explorer": {
+        "sourcePresent": true,
+        "similarMatch": null,
+        "constructorArgumentsMatch": true,
+        "sourceCodeSha256": "fe1df1d47f746510160b0c8119e8f489435a582970314af385e4207bbb325837",
+        "sourceContentMatch": true,
+        "settingsMatch": true,
+        "returnedSourceCount": 37,
+        "compilerMatches": true,
+        "contractNameMatches": true,
+        "nonProxy": true,
+        "classification": "verified-source-metadata-matches"
+      },
+      "explorerObservedAt": "2026-10-18T18:54:52.931Z",
+      "constructorArguments": "0x00000000000000000000000000000000000000000000003635c9adc5dea00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006cc341f43b5aeb8c54bf73ea75301ce3449a17400000000000000000000000005108c2c2d5fc18c357c257488734c7f32b05ee9b0000000000000000000000001cd694f6abbccab90bf7f8c87deb22cd5b5d0ff0000000000000000000000000c10978057a9f23976a29f27c78e795ed415b3e8e00000000000000000000000011c066651558f0a4211ab5696a1e48b3553ef318",
+      "constructorDecoded": [
+        "1000000000000000000000",
+        0,
+        0,
+        "0x0000000000000000000000000000000000000000",
+        "0x0000000000000000000000000000000000000000",
+        "0x0000000000000000000000000000000000000000",
+        "0x6CC341f43b5aeB8C54Bf73EA75301CE3449A1740",
+        [
+          "0x5108C2C2d5fc18C357c257488734C7F32b05Ee9b",
+          "0x1CD694F6ABbCCaB90bF7F8c87dEB22cD5B5D0Ff0",
+          "0xc10978057A9F23976A29f27c78E795ED415b3E8E",
+          "0x11C066651558f0a4211ab5696A1e48b3553ef318"
+        ]
+      ]
+    },
+    {
+      "name": "JobRegistryConfiguration",
+      "address": "0x54deeE2A22b3D06965522530De78081d92Df43a9",
+      "source": "contracts/v2/implementation/JobRegistryConfiguration.sol:JobRegistryConfiguration",
+      "compiler": "0.8.37+commit.f401782d",
+      "compilerInputSha256": "a962576832d4540c4cd682f9251b6eed2a333c87a1ce5fa61ed5716e7091b891",
+      "runtimeKeccak256": "0xc3b6a8264adea70e7c4b9f96f35dc90d1cd512418a6934b66c3baadd754daf5f",
+      "runtimeMatches": true,
+      "owner": "0xd76AD27a1Bcf8652e7e46BE603FA742FD1c10A99",
+      "explorer": {
+        "sourcePresent": true,
+        "similarMatch": null,
+        "constructorArgumentsMatch": true,
+        "sourceCodeSha256": "5711215ee6cc95b22c944e391e22e672adea58419c7447829d8d06e179d8c5cb",
+        "sourceContentMatch": true,
+        "settingsMatch": true,
+        "returnedSourceCount": 31,
+        "compilerMatches": true,
+        "contractNameMatches": true,
+        "nonProxy": true,
+        "classification": "verified-source-metadata-matches"
+      },
+      "explorerObservedAt": "2026-10-18T18:54:54.181Z",
+      "constructorArguments": "0x",
+      "constructorDecoded": []
+    },
+    {
+      "name": "JobRegistryLifecycle",
+      "address": "0x1db3f79F669fCbA0c3bf02DD32696f6d498703E4",
+      "source": "contracts/v2/implementation/JobRegistryLifecycle.sol:JobRegistryLifecycle",
+      "compiler": "0.8.37+commit.f401782d",
+      "compilerInputSha256": "a962576832d4540c4cd682f9251b6eed2a333c87a1ce5fa61ed5716e7091b891",
+      "runtimeKeccak256": "0x6b390de15b89b4ddd068dcefd35f012a36a5412ed4f569cf7af5eb52535dc048",
+      "runtimeMatches": true,
+      "owner": "0xd76AD27a1Bcf8652e7e46BE603FA742FD1c10A99",
+      "explorer": {
+        "sourcePresent": true,
+        "similarMatch": null,
+        "constructorArgumentsMatch": true,
+        "sourceCodeSha256": "b969c7bb89062f799cbfcf2eb65fb9e74cdab9f78918c4b7ed6434c8fc9c9d5c",
+        "sourceContentMatch": true,
+        "settingsMatch": true,
+        "returnedSourceCount": 31,
+        "compilerMatches": true,
+        "contractNameMatches": true,
+        "nonProxy": true,
+        "classification": "verified-source-metadata-matches"
+      },
+      "explorerObservedAt": "2026-10-18T18:54:55.427Z",
+      "constructorArguments": "0x",
+      "constructorDecoded": []
+    },
+    {
+      "name": "JobRegistrySettlement",
+      "address": "0x6674abC659c29b8D9A89F2C1E5ca9A5238e03cd0",
+      "source": "contracts/v2/implementation/JobRegistrySettlement.sol:JobRegistrySettlement",
+      "compiler": "0.8.37+commit.f401782d",
+      "compilerInputSha256": "a962576832d4540c4cd682f9251b6eed2a333c87a1ce5fa61ed5716e7091b891",
+      "runtimeKeccak256": "0x1b55c1b83e6bc3f5d98595290458b6228419120d474416d6add595fc15346837",
+      "runtimeMatches": true,
+      "owner": "0xd76AD27a1Bcf8652e7e46BE603FA742FD1c10A99",
+      "explorer": {
+        "sourcePresent": true,
+        "similarMatch": null,
+        "constructorArgumentsMatch": true,
+        "sourceCodeSha256": "292a68626585b2c947be178c9caa5a35d1337f1964db02cdb3eaf6768dc0922b",
+        "sourceContentMatch": true,
+        "settingsMatch": true,
+        "returnedSourceCount": 31,
+        "compilerMatches": true,
+        "contractNameMatches": true,
+        "nonProxy": true,
+        "classification": "verified-source-metadata-matches"
+      },
+      "explorerObservedAt": "2026-10-18T18:54:56.673Z",
+      "constructorArguments": "0x",
+      "constructorDecoded": []
+    },
+    {
+      "name": "JobRegistry",
+      "address": "0x8b230eB346369B2a3EFaaa615CbEb8e3b2f167e6",
+      "source": "contracts/v2/JobRegistry.sol:JobRegistry",
+      "compiler": "0.8.37+commit.f401782d",
+      "compilerInputSha256": "a962576832d4540c4cd682f9251b6eed2a333c87a1ce5fa61ed5716e7091b891",
+      "runtimeKeccak256": "0x72f40e118c5668c1192094dd37b913771aace3afd81fda9b043efc27319ed5b0",
+      "runtimeMatches": true,
+      "owner": "0x887782AE59A56D1E9923947A6784A4453193e303",
+      "explorer": {
+        "sourcePresent": true,
+        "similarMatch": null,
+        "constructorArgumentsMatch": true,
+        "sourceCodeSha256": "9c1a55a2dbe01990ebe327c7db8ce41c36ca5dc8c5eed36889722889a9230738",
+        "sourceContentMatch": true,
+        "settingsMatch": true,
+        "returnedSourceCount": 31,
+        "compilerMatches": true,
+        "contractNameMatches": true,
+        "nonProxy": true,
+        "classification": "verified-source-metadata-matches"
+      },
+      "explorerObservedAt": "2026-10-18T18:54:57.915Z",
+      "constructorArguments": "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001c00000000000000000000000006cc341f43b5aeb8c54bf73ea75301ce3449a174000000000000000000000000054deee2a22b3d06965522530de78081d92df43a90000000000000000000000001db3f79f669fcba0c3bf02dd32696f6d498703e40000000000000000000000006674abc659c29b8d9a89f2c1e5ca9a5238e03cd00000000000000000000000000000000000000000000000000000000000000000",
+      "constructorDecoded": [
+        "0x0000000000000000000000000000000000000000",
+        "0x0000000000000000000000000000000000000000",
+        "0x0000000000000000000000000000000000000000",
+        "0x0000000000000000000000000000000000000000",
+        "0x0000000000000000000000000000000000000000",
+        "0x0000000000000000000000000000000000000000",
+        "0x0000000000000000000000000000000000000000",
+        0,
+        0,
+        [],
+        "0x6CC341f43b5aeB8C54Bf73EA75301CE3449A1740",
+        [
+          "0x54deeE2A22b3D06965522530De78081d92Df43a9",
+          "0x1db3f79F669fCbA0c3bf02DD32696f6d498703E4",
+          "0x6674abC659c29b8D9A89F2C1E5ca9A5238e03cd0"
+        ]
+      ]
+    },
+    {
+      "name": "ValidationModuleConfiguration",
+      "address": "0xC9985d012e88CCD809D588BE5e2Cc77BeeabC561",
+      "source": "contracts/v2/implementation/ValidationModuleConfiguration.sol:ValidationModuleConfiguration",
+      "compiler": "0.8.37+commit.f401782d",
+      "compilerInputSha256": "a962576832d4540c4cd682f9251b6eed2a333c87a1ce5fa61ed5716e7091b891",
+      "runtimeKeccak256": "0x76159d8c52d2f241f967d8a451c71935be94df439e1e029520683d11bf880cfc",
+      "runtimeMatches": true,
+      "owner": "0xd76AD27a1Bcf8652e7e46BE603FA742FD1c10A99",
+      "explorer": {
+        "sourcePresent": true,
+        "similarMatch": null,
+        "constructorArgumentsMatch": true,
+        "sourceCodeSha256": "582fcafd9614fb43dd7beace49ca533a808b44e5618e287fdbe4012bcdec1907",
+        "sourceContentMatch": true,
+        "settingsMatch": true,
+        "returnedSourceCount": 18,
+        "compilerMatches": true,
+        "contractNameMatches": true,
+        "nonProxy": true,
+        "classification": "verified-source-metadata-matches"
+      },
+      "explorerObservedAt": "2026-10-18T18:54:59.161Z",
+      "constructorArguments": "0x",
+      "constructorDecoded": []
+    },
+    {
+      "name": "ValidationModuleVoting",
+      "address": "0x9c88Ee891144A0841012685A1D118C95Ec667c69",
+      "source": "contracts/v2/implementation/ValidationModuleVoting.sol:ValidationModuleVoting",
+      "compiler": "0.8.37+commit.f401782d",
+      "compilerInputSha256": "a962576832d4540c4cd682f9251b6eed2a333c87a1ce5fa61ed5716e7091b891",
+      "runtimeKeccak256": "0x6e4c1c55ac7eb6f7e8b6cb7cdba21b75c4bcb90909d1da53cf23bc105c4c78d7",
+      "runtimeMatches": true,
+      "owner": "0xd76AD27a1Bcf8652e7e46BE603FA742FD1c10A99",
+      "explorer": {
+        "sourcePresent": true,
+        "similarMatch": null,
+        "constructorArgumentsMatch": true,
+        "sourceCodeSha256": "d88d81bb4928a705c03da79c9c6ad2224231ec593a5cff50def0dc1da0f865d3",
+        "sourceContentMatch": true,
+        "settingsMatch": true,
+        "returnedSourceCount": 18,
+        "compilerMatches": true,
+        "contractNameMatches": true,
+        "nonProxy": true,
+        "classification": "verified-source-metadata-matches"
+      },
+      "explorerObservedAt": "2026-10-18T18:55:00.418Z",
+      "constructorArguments": "0x",
+      "constructorDecoded": []
+    },
+    {
+      "name": "ValidationModuleSelection",
+      "address": "0xDc7B5A7bc02C6Aa60b9E3BE527E74856097a7dcF",
+      "source": "contracts/v2/implementation/ValidationModuleSelection.sol:ValidationModuleSelection",
+      "compiler": "0.8.37+commit.f401782d",
+      "compilerInputSha256": "a962576832d4540c4cd682f9251b6eed2a333c87a1ce5fa61ed5716e7091b891",
+      "runtimeKeccak256": "0x3479a750f5d0a6558213ce4e71d5ab7eb69bd610330174fdd1eee483ca750b4a",
+      "runtimeMatches": true,
+      "owner": "0xd76AD27a1Bcf8652e7e46BE603FA742FD1c10A99",
+      "explorer": {
+        "sourcePresent": true,
+        "similarMatch": null,
+        "constructorArgumentsMatch": true,
+        "sourceCodeSha256": "670956087cf865f9628e0335d037cb2f5bf6742555d67334039259d20860eed9",
+        "sourceContentMatch": true,
+        "settingsMatch": true,
+        "returnedSourceCount": 18,
+        "compilerMatches": true,
+        "contractNameMatches": true,
+        "nonProxy": true,
+        "classification": "verified-source-metadata-matches"
+      },
+      "explorerObservedAt": "2026-10-18T18:55:01.663Z",
+      "constructorArguments": "0x",
+      "constructorDecoded": []
+    },
+    {
+      "name": "ValidationModule",
+      "address": "0x84eBBAb4755726782F20Dc2d23FB968CA5200bF3",
+      "source": "contracts/v2/ValidationModule.sol:ValidationModule",
+      "compiler": "0.8.37+commit.f401782d",
+      "compilerInputSha256": "a962576832d4540c4cd682f9251b6eed2a333c87a1ce5fa61ed5716e7091b891",
+      "runtimeKeccak256": "0x426f1a6884c8d350478fe572bd0198001dd046a9fdea85b33893c925dbe0f3c8",
+      "runtimeMatches": true,
+      "owner": "0x887782AE59A56D1E9923947A6784A4453193e303",
+      "explorer": {
+        "sourcePresent": true,
+        "similarMatch": null,
+        "constructorArgumentsMatch": true,
+        "sourceCodeSha256": "0226d1988050911be41644064936fac6daedaaa05a4df1eebb09a988fe257da5",
+        "sourceContentMatch": true,
+        "settingsMatch": true,
+        "returnedSourceCount": 18,
+        "compilerMatches": true,
+        "contractNameMatches": true,
+        "nonProxy": true,
+        "classification": "verified-source-metadata-matches"
+      },
+      "explorerObservedAt": "2026-10-18T18:55:02.906Z",
+      "constructorArguments": "0x0000000000000000000000008b230eb346369b2a3efaaa615cbeb8e3b2f167e60000000000000000000000000b7e8e6aeec675950e493e495d54d947e3b7bee100000000000000000000000000000000000000000000000000000000000151800000000000000000000000000000000000000000000000000000000000015180000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000140000000000000000000000000c9985d012e88ccd809d588be5e2cc77beeabc5610000000000000000000000009c88ee891144a0841012685a1d118c95ec667c69000000000000000000000000dc7b5a7bc02c6aa60b9e3be527e74856097a7dcf0000000000000000000000000000000000000000000000000000000000000000",
+      "constructorDecoded": [
+        "0x8b230eB346369B2a3EFaaa615CbEb8e3b2f167e6",
+        "0x0b7E8E6aeEc675950E493E495D54d947E3B7bee1",
+        86400,
+        86400,
+        0,
+        0,
+        [],
+        [
+          "0xC9985d012e88CCD809D588BE5e2Cc77BeeabC561",
+          "0x9c88Ee891144A0841012685A1D118C95Ec667c69",
+          "0xDc7B5A7bc02C6Aa60b9E3BE527E74856097a7dcF"
+        ]
+      ]
+    },
+    {
+      "name": "ReputationEngine",
+      "address": "0x7e2F3cb2555052AE712c1904d0Ae1b522B018ce5",
+      "source": "contracts/v2/ReputationEngine.sol:ReputationEngine",
+      "compiler": "0.8.37+commit.f401782d",
+      "compilerInputSha256": "a962576832d4540c4cd682f9251b6eed2a333c87a1ce5fa61ed5716e7091b891",
+      "runtimeKeccak256": "0x14bcdda5d38b67771b9e0181ca745f9626b0995384b005a5a4aca2dd5a0f33ca",
+      "runtimeMatches": true,
+      "owner": "0x887782AE59A56D1E9923947A6784A4453193e303",
+      "explorer": {
+        "sourcePresent": true,
+        "similarMatch": null,
+        "constructorArgumentsMatch": true,
+        "sourceCodeSha256": "f39c375412ebe17ca299fb8679582b3ea0f64668a048ab59622cc21157860d65",
+        "sourceContentMatch": true,
+        "settingsMatch": true,
+        "returnedSourceCount": 9,
+        "compilerMatches": true,
+        "contractNameMatches": true,
+        "nonProxy": true,
+        "classification": "verified-source-metadata-matches"
+      },
+      "explorerObservedAt": "2026-10-18T18:55:04.097Z",
+      "constructorArguments": "0x0000000000000000000000000b7e8e6aeec675950e493e495d54d947e3b7bee1",
+      "constructorDecoded": [
+        "0x0b7E8E6aeEc675950E493E495D54d947E3B7bee1"
+      ]
+    },
+    {
+      "name": "ArbitratorCommittee",
+      "address": "0x7E61d59476A929DCd4ba943a9aeB4c528D7536DC",
+      "source": "contracts/v2/ArbitratorCommittee.sol:ArbitratorCommittee",
+      "compiler": "0.8.37+commit.f401782d",
+      "compilerInputSha256": "a962576832d4540c4cd682f9251b6eed2a333c87a1ce5fa61ed5716e7091b891",
+      "runtimeKeccak256": "0xb72c3e21720400b01a520fb8e1f6b3213bd1c8d5c313ac5dc426e6f57b155eb7",
+      "runtimeMatches": true,
+      "owner": "0x887782AE59A56D1E9923947A6784A4453193e303",
+      "explorer": {
+        "sourcePresent": true,
+        "similarMatch": null,
+        "constructorArgumentsMatch": true,
+        "sourceCodeSha256": "e80752bd0b396c5b6000e2a8063c45697ca0e3ffb3817ada1c31b541a23f6c5b",
+        "sourceContentMatch": true,
+        "settingsMatch": true,
+        "returnedSourceCount": 8,
+        "compilerMatches": true,
+        "contractNameMatches": true,
+        "nonProxy": true,
+        "classification": "verified-source-metadata-matches"
+      },
+      "explorerObservedAt": "2026-10-18T18:55:05.293Z",
+      "constructorArguments": "0x0000000000000000000000008b230eb346369b2a3efaaa615cbeb8e3b2f167e60000000000000000000000000000000000000000000000000000000000000000",
+      "constructorDecoded": [
+        "0x8b230eB346369B2a3EFaaa615CbEb8e3b2f167e6",
+        "0x0000000000000000000000000000000000000000"
+      ]
+    },
+    {
+      "name": "DisputeModule",
+      "address": "0x6be805CEbA58A8922eDa4ce627a89bb073c07A5b",
+      "source": "contracts/v2/modules/DisputeModule.sol:DisputeModule",
+      "compiler": "0.8.37+commit.f401782d",
+      "compilerInputSha256": "a962576832d4540c4cd682f9251b6eed2a333c87a1ce5fa61ed5716e7091b891",
+      "runtimeKeccak256": "0xb1cc6db22f9b38d334f3f3a34cc6542b1b93ff91cd5fa1457d611c70b232174c",
+      "runtimeMatches": true,
+      "owner": "0x887782AE59A56D1E9923947A6784A4453193e303",
+      "explorer": {
+        "sourcePresent": true,
+        "similarMatch": null,
+        "constructorArgumentsMatch": true,
+        "sourceCodeSha256": "d40e210a571104558eda2afc159a7070064e95a9b5ba53bf64bd90965c0aa622",
+        "sourceContentMatch": true,
+        "settingsMatch": true,
+        "returnedSourceCount": 32,
+        "compilerMatches": true,
+        "contractNameMatches": true,
+        "nonProxy": true,
+        "classification": "verified-source-metadata-matches"
+      },
+      "explorerObservedAt": "2026-10-18T18:55:06.541Z",
+      "constructorArguments": "0x0000000000000000000000008b230eb346369b2a3efaaa615cbeb8e3b2f167e6000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000007e61d59476a929dcd4ba943a9aeb4c528d7536dc0000000000000000000000006cc341f43b5aeb8c54bf73ea75301ce3449a1740",
+      "constructorDecoded": [
+        "0x8b230eB346369B2a3EFaaa615CbEb8e3b2f167e6",
+        0,
+        0,
+        "0x7E61d59476A929DCd4ba943a9aeB4c528D7536DC",
+        "0x6CC341f43b5aeB8C54Bf73EA75301CE3449A1740"
+      ]
+    },
+    {
+      "name": "CertificateNFT",
+      "address": "0x2651Bf7c343143BF12CF6d34590E9ECA5A1AbE4B",
+      "source": "contracts/v2/CertificateNFT.sol:CertificateNFT",
+      "compiler": "0.8.37+commit.f401782d",
+      "compilerInputSha256": "a962576832d4540c4cd682f9251b6eed2a333c87a1ce5fa61ed5716e7091b891",
+      "runtimeKeccak256": "0x1d80666c12df72f4dd1235ec74faf2839ae15c602a09f765b94214fbd2e5a946",
+      "runtimeMatches": true,
+      "owner": "0xd76AD27a1Bcf8652e7e46BE603FA742FD1c10A99",
+      "explorer": {
+        "sourcePresent": true,
+        "similarMatch": null,
+        "constructorArgumentsMatch": true,
+        "sourceCodeSha256": "171bb304e51b194a435cca68c53dd9f1a62ebd81840e959eaf9cd3bdc18d23e7",
+        "sourceContentMatch": true,
+        "settingsMatch": true,
+        "returnedSourceCount": 27,
+        "compilerMatches": true,
+        "contractNameMatches": true,
+        "nonProxy": true,
+        "classification": "verified-source-metadata-matches"
+      },
+      "explorerObservedAt": "2026-10-18T18:55:07.782Z",
+      "constructorArguments": "0x000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000004436572740000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000044345525400000000000000000000000000000000000000000000000000000000",
+      "constructorDecoded": [
+        "Cert",
+        "CERT"
+      ]
+    },
+    {
+      "name": "TaxPolicy",
+      "address": "0x680dD5f7107952F6b26b1dE620b8AC6BC241627C",
+      "source": "contracts/v2/TaxPolicy.sol:TaxPolicy",
+      "compiler": "0.8.37+commit.f401782d",
+      "compilerInputSha256": "a962576832d4540c4cd682f9251b6eed2a333c87a1ce5fa61ed5716e7091b891",
+      "runtimeKeccak256": "0x113cbf8a8bf391b27bf643cf2bbf91047a226c37f7b4e3be8f23c76f38fb6980",
+      "runtimeMatches": true,
+      "owner": "0xd76AD27a1Bcf8652e7e46BE603FA742FD1c10A99",
+      "explorer": {
+        "sourcePresent": true,
+        "similarMatch": null,
+        "constructorArgumentsMatch": true,
+        "sourceCodeSha256": "6c1194d1c92fa825957a0c43ff410bd2b7282ff22eeb318d3a1011da0a9b7bd2",
+        "sourceContentMatch": true,
+        "settingsMatch": true,
+        "returnedSourceCount": 6,
+        "compilerMatches": true,
+        "contractNameMatches": true,
+        "nonProxy": true,
+        "classification": "verified-source-metadata-matches"
+      },
+      "explorerObservedAt": "2026-10-18T18:55:08.934Z",
+      "constructorArguments": "0x000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000e0000000000000000000000000000000000000000000000000000000000000006868747470733a2f2f6769746875622e636f6d2f4d6f6e747265616c41492f4147494a6f627376302f626c6f622f643832356661383834323631626532343865393664363931303335356466336433643463353639312f646f63732f7461782d706f6c6963792e6d640000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000161492068617665207265616420746865206c696e6b656420414749204a6f6273205061727469636970616e742054617820526573706f6e736962696c697469657320706f6c6963792e20492061636365707420726573706f6e736962696c69747920666f72207468652074617820616e64207265706f7274696e67206f626c69676174696f6e73206170706c696361626c65206c617720696d706f736573206f6e206d652c20696e636c7564696e67207265636f72646b656570696e6720616e64206f627461696e696e6720696e646570656e64656e7420616476696365206173206e65656465642e204920756e6465727374616e642074686174206e6f20746178206f7574636f6d65206f72206578656d7074696f6e2069732067756172616e7465656420616e642074686174206d616e6461746f7279206c6567616c2064757469657320616e64207269676874732072656d61696e20756e6368616e6765642e00000000000000000000000000000000000000000000000000000000000000",
+      "constructorDecoded": [
+        "https://github.com/MontrealAI/AGIJobsv0/blob/d825fa884261be248e96d6910355df3d3d4c5691/docs/tax-policy.md",
+        "I have read the linked AGI Jobs Participant Tax Responsibilities policy. I accept responsibility for the tax and reporting obligations applicable law imposes on me, including recordkeeping and obtaining independent advice as needed. I understand that no tax outcome or exemption is guaranteed and that mandatory legal duties and rights remain unchanged."
+      ]
+    },
+    {
+      "name": "FeePool",
+      "address": "0x81686E65649B95F12CC50d5E3846343Ed0Cfae93",
+      "source": "contracts/v2/FeePool.sol:FeePool",
+      "compiler": "0.8.37+commit.f401782d",
+      "compilerInputSha256": "a962576832d4540c4cd682f9251b6eed2a333c87a1ce5fa61ed5716e7091b891",
+      "runtimeKeccak256": "0xa3fe6fbbe55dde398d3a9ffaeee34f338db3ea30eeaf9607d4580c09eae01d54",
+      "runtimeMatches": true,
+      "owner": "0x887782AE59A56D1E9923947A6784A4453193e303",
+      "explorer": {
+        "sourcePresent": true,
+        "similarMatch": null,
+        "constructorArgumentsMatch": true,
+        "sourceCodeSha256": "aa36e2a970d47424005aecdda3c35e9d82cee6c1a2123ece708008302e8f80f0",
+        "sourceContentMatch": true,
+        "settingsMatch": true,
+        "returnedSourceCount": 28,
+        "compilerMatches": true,
+        "contractNameMatches": true,
+        "nonProxy": true,
+        "classification": "verified-source-metadata-matches"
+      },
+      "explorerObservedAt": "2026-10-18T18:55:10.143Z",
+      "constructorArguments": "0x0000000000000000000000000b7e8e6aeec675950e493e495d54d947e3b7bee100000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000680dd5f7107952f6b26b1de620b8ac6bc241627c",
+      "constructorDecoded": [
+        "0x0b7E8E6aeEc675950E493E495D54d947E3B7bee1",
+        1,
+        "0x0000000000000000000000000000000000000000",
+        "0x680dD5f7107952F6b26b1dE620b8AC6BC241627C"
+      ]
+    },
+    {
+      "name": "IdentityRegistry",
+      "address": "0x217B7709FfeD0e4C7A9415be64e323c56E0F8773",
+      "source": "contracts/v2/IdentityRegistry.sol:IdentityRegistry",
+      "compiler": "0.8.37+commit.f401782d",
+      "compilerInputSha256": "a962576832d4540c4cd682f9251b6eed2a333c87a1ce5fa61ed5716e7091b891",
+      "runtimeKeccak256": "0xe22b8ef3c7bd7f6feaa6421fd9c88a7cbefd1fd2957f28fb4bc16bec41f57beb",
+      "runtimeMatches": true,
+      "owner": "0xd76AD27a1Bcf8652e7e46BE603FA742FD1c10A99",
+      "explorer": {
+        "sourcePresent": true,
+        "similarMatch": null,
+        "constructorArgumentsMatch": true,
+        "sourceCodeSha256": "615d2c3901da4c0cf3b70dabe358c05f789deef8bb7bb6f3bd5444bf1d3946df",
+        "sourceContentMatch": true,
+        "settingsMatch": true,
+        "returnedSourceCount": 14,
+        "compilerMatches": true,
+        "contractNameMatches": true,
+        "nonProxy": true,
+        "classification": "verified-source-metadata-matches"
+      },
+      "explorerObservedAt": "2026-10-18T18:55:11.339Z",
+      "constructorArguments": "0x00000000000000000000000000000000000c2e074ec69a0dfb2997ba6c7d2e1e000000000000000000000000d4416b13d2b3a9abae7acd5d6c2bbdbe256864010000000000000000000000007e2f3cb2555052ae712c1904d0ae1b522b018ce52c9c6189b2e92da4d0407e9deb38ff6870729ad063af7e8576cb7b7898c88e2d39eb848f88bdfb0a6371096249dd451f56859dfe2cd3ddeab1e26d5bb68ede16",
+      "constructorDecoded": [
+        "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e",
+        "0xD4416b13d2b3a9aBae7AcD5D6C2BbDBE25686401",
+        "0x7e2F3cb2555052AE712c1904d0Ae1b522B018ce5",
+        "0x2c9c6189b2e92da4d0407e9deb38ff6870729ad063af7e8576cb7b7898c88e2d",
+        "0x39eb848f88bdfb0a6371096249dd451f56859dfe2cd3ddeab1e26d5bb68ede16"
+      ]
+    },
+    {
+      "name": "PlatformRegistry",
+      "address": "0x543693a69C3ddbcE8DB590235989E502cBb9FEdb",
+      "source": "contracts/v2/PlatformRegistry.sol:PlatformRegistry",
+      "compiler": "0.8.37+commit.f401782d",
+      "compilerInputSha256": "a962576832d4540c4cd682f9251b6eed2a333c87a1ce5fa61ed5716e7091b891",
+      "runtimeKeccak256": "0x720b0e12b07047224566da661af4da54b666884231aa6996183176d8ee464622",
+      "runtimeMatches": true,
+      "owner": "0x887782AE59A56D1E9923947A6784A4453193e303",
+      "explorer": {
+        "sourcePresent": true,
+        "similarMatch": null,
+        "constructorArgumentsMatch": true,
+        "sourceCodeSha256": "1377a837c68c133a9ab12c4d685273a252d6aa6161cb8a12377bf6910f898898",
+        "sourceContentMatch": true,
+        "settingsMatch": true,
+        "returnedSourceCount": 10,
+        "compilerMatches": true,
+        "contractNameMatches": true,
+        "nonProxy": true,
+        "classification": "verified-source-metadata-matches"
+      },
+      "explorerObservedAt": "2026-10-18T18:55:12.556Z",
+      "constructorArguments": "0x0000000000000000000000000b7e8e6aeec675950e493e495d54d947e3b7bee10000000000000000000000007e2f3cb2555052ae712c1904d0ae1b522b018ce50000000000000000000000000000000000000000000000000000000000000000",
+      "constructorDecoded": [
+        "0x0b7E8E6aeEc675950E493E495D54d947E3B7bee1",
+        "0x7e2F3cb2555052AE712c1904d0Ae1b522B018ce5",
+        0
+      ]
+    },
+    {
+      "name": "JobRouter",
+      "address": "0x4E3cb2036c3b67Ca48BBF868B937B87E9524e6b7",
+      "source": "contracts/v2/modules/JobRouter.sol:JobRouter",
+      "compiler": "0.8.37+commit.f401782d",
+      "compilerInputSha256": "a962576832d4540c4cd682f9251b6eed2a333c87a1ce5fa61ed5716e7091b891",
+      "runtimeKeccak256": "0x42f43bf6adce6bd5fcdbf923506d31d6cb935853304c425c54d7d6c1d49e2797",
+      "runtimeMatches": true,
+      "owner": "0xd76AD27a1Bcf8652e7e46BE603FA742FD1c10A99",
+      "explorer": {
+        "sourcePresent": true,
+        "similarMatch": null,
+        "constructorArgumentsMatch": true,
+        "sourceCodeSha256": "7d4df24f7f0e009ae1bfef704803b07430d01d1d72bc4a49cbddf84c8469c3bf",
+        "sourceContentMatch": true,
+        "settingsMatch": true,
+        "returnedSourceCount": 5,
+        "compilerMatches": true,
+        "contractNameMatches": true,
+        "nonProxy": true,
+        "classification": "verified-source-metadata-matches"
+      },
+      "explorerObservedAt": "2026-10-18T18:55:13.711Z",
+      "constructorArguments": "0x000000000000000000000000543693a69c3ddbce8db590235989e502cbb9fedb",
+      "constructorDecoded": [
+        "0x543693a69C3ddbcE8DB590235989E502cBb9FEdb"
+      ]
+    },
+    {
+      "name": "PlatformIncentives",
+      "address": "0x50e1aeD5f0bcf440154B0A779a6f6701D5A57bcF",
+      "source": "contracts/v2/PlatformIncentives.sol:PlatformIncentives",
+      "compiler": "0.8.37+commit.f401782d",
+      "compilerInputSha256": "a962576832d4540c4cd682f9251b6eed2a333c87a1ce5fa61ed5716e7091b891",
+      "runtimeKeccak256": "0x1bf085b24fad225751b0f0d8c988fa882141d345667d8f913e517413a7af3307",
+      "runtimeMatches": true,
+      "owner": "0xd76AD27a1Bcf8652e7e46BE603FA742FD1c10A99",
+      "explorer": {
+        "sourcePresent": true,
+        "similarMatch": null,
+        "constructorArgumentsMatch": true,
+        "sourceCodeSha256": "988a6286f7d94d2c6f138a9dc1896d16a9de027d4cf31eec2b357a4e87eebf9b",
+        "sourceContentMatch": true,
+        "settingsMatch": true,
+        "returnedSourceCount": 12,
+        "compilerMatches": true,
+        "contractNameMatches": true,
+        "nonProxy": true,
+        "classification": "verified-source-metadata-matches"
+      },
+      "explorerObservedAt": "2026-10-18T18:55:14.911Z",
+      "constructorArguments": "0x0000000000000000000000000b7e8e6aeec675950e493e495d54d947e3b7bee1000000000000000000000000543693a69c3ddbce8db590235989e502cbb9fedb0000000000000000000000004e3cb2036c3b67ca48bbf868b937b87e9524e6b7",
+      "constructorDecoded": [
+        "0x0b7E8E6aeEc675950E493E495D54d947E3B7bee1",
+        "0x543693a69C3ddbcE8DB590235989E502cBb9FEdb",
+        "0x4E3cb2036c3b67Ca48BBF868B937B87E9524e6b7"
+      ]
+    },
+    {
+      "name": "SystemPause",
+      "address": "0x887782AE59A56D1E9923947A6784A4453193e303",
+      "source": "contracts/v2/SystemPause.sol:SystemPause",
+      "compiler": "0.8.37+commit.f401782d",
+      "compilerInputSha256": "a962576832d4540c4cd682f9251b6eed2a333c87a1ce5fa61ed5716e7091b891",
+      "runtimeKeccak256": "0xedb0f7444d52b1c49b0e73a15e749e1bd37a2eed97fbbcc0869b797dfad251b5",
+      "runtimeMatches": true,
+      "owner": "0xd76AD27a1Bcf8652e7e46BE603FA742FD1c10A99",
+      "explorer": {
+        "sourcePresent": true,
+        "similarMatch": null,
+        "constructorArgumentsMatch": true,
+        "sourceCodeSha256": "b31f3fb48a9d94306c487da5c1dbf7b2372443c386ef6c1266d03568b0f084c6",
+        "sourceContentMatch": true,
+        "settingsMatch": true,
+        "returnedSourceCount": 62,
+        "compilerMatches": true,
+        "contractNameMatches": true,
+        "nonProxy": true,
+        "classification": "verified-source-metadata-matches"
+      },
+      "explorerObservedAt": "2026-10-18T18:55:17.337Z",
+      "constructorArguments": "0x0000000000000000000000008b230eb346369b2a3efaaa615cbeb8e3b2f167e60000000000000000000000000b7e8e6aeec675950e493e495d54d947e3b7bee100000000000000000000000084ebbab4755726782f20dc2d23fb968ca5200bf30000000000000000000000006be805ceba58a8922eda4ce627a89bb073c07a5b000000000000000000000000543693a69c3ddbce8db590235989e502cbb9fedb00000000000000000000000081686e65649b95f12cc50d5e3846343ed0cfae930000000000000000000000007e2f3cb2555052ae712c1904d0ae1b522b018ce50000000000000000000000007e61d59476a929dcd4ba943a9aeb4c528d7536dc000000000000000000000000d76ad27a1bcf8652e7e46be603fa742fd1c10a99",
+      "constructorDecoded": [
+        "0x8b230eB346369B2a3EFaaa615CbEb8e3b2f167e6",
+        "0x0b7E8E6aeEc675950E493E495D54d947E3B7bee1",
+        "0x84eBBAb4755726782F20Dc2d23FB968CA5200bF3",
+        "0x6be805CEbA58A8922eDa4ce627a89bb073c07A5b",
+        "0x543693a69C3ddbcE8DB590235989E502cBb9FEdb",
+        "0x81686E65649B95F12CC50d5E3846343Ed0Cfae93",
+        "0x7e2F3cb2555052AE712c1904d0Ae1b522B018ce5",
+        "0x7E61d59476A929DCd4ba943a9aeB4c528D7536DC",
+        "0xd76AD27a1Bcf8652e7e46BE603FA742FD1c10A99"
+      ]
+    }
+  ],
+  "observedStateChecks": [
+    {
+      "contract": "Deployer",
+      "address": "0x6CC341f43b5aeB8C54Bf73EA75301CE3449A1740",
+      "function": "owner",
+      "args": [],
+      "actual": "0xd76AD27a1Bcf8652e7e46BE603FA742FD1c10A99",
+      "expected": "0xd76AD27a1Bcf8652e7e46BE603FA742FD1c10A99",
+      "passed": true
+    },
+    {
+      "contract": "StakeManagerConfiguration",
+      "address": "0x5108C2C2d5fc18C357c257488734C7F32b05Ee9b",
+      "function": "owner",
+      "args": [],
+      "actual": "0xd76AD27a1Bcf8652e7e46BE603FA742FD1c10A99",
+      "expected": "0xd76AD27a1Bcf8652e7e46BE603FA742FD1c10A99",
+      "passed": true
+    },
+    {
+      "contract": "StakeManagerStaking",
+      "address": "0x1CD694F6ABbCCaB90bF7F8c87dEB22cD5B5D0Ff0",
+      "function": "owner",
+      "args": [],
+      "actual": "0xd76AD27a1Bcf8652e7e46BE603FA742FD1c10A99",
+      "expected": "0xd76AD27a1Bcf8652e7e46BE603FA742FD1c10A99",
+      "passed": true
+    },
+    {
+      "contract": "StakeManagerEscrow",
+      "address": "0xc10978057A9F23976A29f27c78E795ED415b3E8E",
+      "function": "owner",
+      "args": [],
+      "actual": "0xd76AD27a1Bcf8652e7e46BE603FA742FD1c10A99",
+      "expected": "0xd76AD27a1Bcf8652e7e46BE603FA742FD1c10A99",
+      "passed": true
+    },
+    {
+      "contract": "StakeManagerSlashing",
+      "address": "0x11C066651558f0a4211ab5696A1e48b3553ef318",
+      "function": "owner",
+      "args": [],
+      "actual": "0xd76AD27a1Bcf8652e7e46BE603FA742FD1c10A99",
+      "expected": "0xd76AD27a1Bcf8652e7e46BE603FA742FD1c10A99",
+      "passed": true
+    },
+    {
+      "contract": "StakeManager",
+      "address": "0x0b7E8E6aeEc675950E493E495D54d947E3B7bee1",
+      "function": "owner",
+      "args": [],
+      "actual": "0x887782AE59A56D1E9923947A6784A4453193e303",
+      "expected": "0x887782AE59A56D1E9923947A6784A4453193e303",
+      "passed": true
+    },
+    {
+      "contract": "JobRegistryConfiguration",
+      "address": "0x54deeE2A22b3D06965522530De78081d92Df43a9",
+      "function": "owner",
+      "args": [],
+      "actual": "0xd76AD27a1Bcf8652e7e46BE603FA742FD1c10A99",
+      "expected": "0xd76AD27a1Bcf8652e7e46BE603FA742FD1c10A99",
+      "passed": true
+    },
+    {
+      "contract": "JobRegistryLifecycle",
+      "address": "0x1db3f79F669fCbA0c3bf02DD32696f6d498703E4",
+      "function": "owner",
+      "args": [],
+      "actual": "0xd76AD27a1Bcf8652e7e46BE603FA742FD1c10A99",
+      "expected": "0xd76AD27a1Bcf8652e7e46BE603FA742FD1c10A99",
+      "passed": true
+    },
+    {
+      "contract": "JobRegistrySettlement",
+      "address": "0x6674abC659c29b8D9A89F2C1E5ca9A5238e03cd0",
+      "function": "owner",
+      "args": [],
+      "actual": "0xd76AD27a1Bcf8652e7e46BE603FA742FD1c10A99",
+      "expected": "0xd76AD27a1Bcf8652e7e46BE603FA742FD1c10A99",
+      "passed": true
+    },
+    {
+      "contract": "JobRegistry",
+      "address": "0x8b230eB346369B2a3EFaaa615CbEb8e3b2f167e6",
+      "function": "owner",
+      "args": [],
+      "actual": "0x887782AE59A56D1E9923947A6784A4453193e303",
+      "expected": "0x887782AE59A56D1E9923947A6784A4453193e303",
+      "passed": true
+    },
+    {
+      "contract": "ValidationModuleConfiguration",
+      "address": "0xC9985d012e88CCD809D588BE5e2Cc77BeeabC561",
+      "function": "owner",
+      "args": [],
+      "actual": "0xd76AD27a1Bcf8652e7e46BE603FA742FD1c10A99",
+      "expected": "0xd76AD27a1Bcf8652e7e46BE603FA742FD1c10A99",
+      "passed": true
+    },
+    {
+      "contract": "ValidationModuleVoting",
+      "address": "0x9c88Ee891144A0841012685A1D118C95Ec667c69",
+      "function": "owner",
+      "args": [],
+      "actual": "0xd76AD27a1Bcf8652e7e46BE603FA742FD1c10A99",
+      "expected": "0xd76AD27a1Bcf8652e7e46BE603FA742FD1c10A99",
+      "passed": true
+    },
+    {
+      "contract": "ValidationModuleSelection",
+      "address": "0xDc7B5A7bc02C6Aa60b9E3BE527E74856097a7dcF",
+      "function": "owner",
+      "args": [],
+      "actual": "0xd76AD27a1Bcf8652e7e46BE603FA742FD1c10A99",
+      "expected": "0xd76AD27a1Bcf8652e7e46BE603FA742FD1c10A99",
+      "passed": true
+    },
+    {
+      "contract": "ValidationModule",
+      "address": "0x84eBBAb4755726782F20Dc2d23FB968CA5200bF3",
+      "function": "owner",
+      "args": [],
+      "actual": "0x887782AE59A56D1E9923947A6784A4453193e303",
+      "expected": "0x887782AE59A56D1E9923947A6784A4453193e303",
+      "passed": true
+    },
+    {
+      "contract": "ReputationEngine",
+      "address": "0x7e2F3cb2555052AE712c1904d0Ae1b522B018ce5",
+      "function": "owner",
+      "args": [],
+      "actual": "0x887782AE59A56D1E9923947A6784A4453193e303",
+      "expected": "0x887782AE59A56D1E9923947A6784A4453193e303",
+      "passed": true
+    },
+    {
+      "contract": "ArbitratorCommittee",
+      "address": "0x7E61d59476A929DCd4ba943a9aeB4c528D7536DC",
+      "function": "owner",
+      "args": [],
+      "actual": "0x887782AE59A56D1E9923947A6784A4453193e303",
+      "expected": "0x887782AE59A56D1E9923947A6784A4453193e303",
+      "passed": true
+    },
+    {
+      "contract": "DisputeModule",
+      "address": "0x6be805CEbA58A8922eDa4ce627a89bb073c07A5b",
+      "function": "owner",
+      "args": [],
+      "actual": "0x887782AE59A56D1E9923947A6784A4453193e303",
+      "expected": "0x887782AE59A56D1E9923947A6784A4453193e303",
+      "passed": true
+    },
+    {
+      "contract": "CertificateNFT",
+      "address": "0x2651Bf7c343143BF12CF6d34590E9ECA5A1AbE4B",
+      "function": "owner",
+      "args": [],
+      "actual": "0xd76AD27a1Bcf8652e7e46BE603FA742FD1c10A99",
+      "expected": "0xd76AD27a1Bcf8652e7e46BE603FA742FD1c10A99",
+      "passed": true
+    },
+    {
+      "contract": "TaxPolicy",
+      "address": "0x680dD5f7107952F6b26b1dE620b8AC6BC241627C",
+      "function": "owner",
+      "args": [],
+      "actual": "0xd76AD27a1Bcf8652e7e46BE603FA742FD1c10A99",
+      "expected": "0xd76AD27a1Bcf8652e7e46BE603FA742FD1c10A99",
+      "passed": true
+    },
+    {
+      "contract": "FeePool",
+      "address": "0x81686E65649B95F12CC50d5E3846343Ed0Cfae93",
+      "function": "owner",
+      "args": [],
+      "actual": "0x887782AE59A56D1E9923947A6784A4453193e303",
+      "expected": "0x887782AE59A56D1E9923947A6784A4453193e303",
+      "passed": true
+    },
+    {
+      "contract": "IdentityRegistry",
+      "address": "0x217B7709FfeD0e4C7A9415be64e323c56E0F8773",
+      "function": "owner",
+      "args": [],
+      "actual": "0xd76AD27a1Bcf8652e7e46BE603FA742FD1c10A99",
+      "expected": "0xd76AD27a1Bcf8652e7e46BE603FA742FD1c10A99",
+      "passed": true
+    },
+    {
+      "contract": "PlatformRegistry",
+      "address": "0x543693a69C3ddbcE8DB590235989E502cBb9FEdb",
+      "function": "owner",
+      "args": [],
+      "actual": "0x887782AE59A56D1E9923947A6784A4453193e303",
+      "expected": "0x887782AE59A56D1E9923947A6784A4453193e303",
+      "passed": true
+    },
+    {
+      "contract": "JobRouter",
+      "address": "0x4E3cb2036c3b67Ca48BBF868B937B87E9524e6b7",
+      "function": "owner",
+      "args": [],
+      "actual": "0xd76AD27a1Bcf8652e7e46BE603FA742FD1c10A99",
+      "expected": "0xd76AD27a1Bcf8652e7e46BE603FA742FD1c10A99",
+      "passed": true
+    },
+    {
+      "contract": "PlatformIncentives",
+      "address": "0x50e1aeD5f0bcf440154B0A779a6f6701D5A57bcF",
+      "function": "owner",
+      "args": [],
+      "actual": "0xd76AD27a1Bcf8652e7e46BE603FA742FD1c10A99",
+      "expected": "0xd76AD27a1Bcf8652e7e46BE603FA742FD1c10A99",
+      "passed": true
+    },
+    {
+      "contract": "SystemPause",
+      "address": "0x887782AE59A56D1E9923947A6784A4453193e303",
+      "function": "owner",
+      "args": [],
+      "actual": "0xd76AD27a1Bcf8652e7e46BE603FA742FD1c10A99",
+      "expected": "0xd76AD27a1Bcf8652e7e46BE603FA742FD1c10A99",
+      "passed": true
+    },
+    {
+      "contract": "StakeManager",
+      "address": "0x0b7E8E6aeEc675950E493E495D54d947E3B7bee1",
+      "function": "paused",
+      "args": [],
+      "actual": true,
+      "expected": true,
+      "passed": true
+    },
+    {
+      "contract": "JobRegistry",
+      "address": "0x8b230eB346369B2a3EFaaa615CbEb8e3b2f167e6",
+      "function": "paused",
+      "args": [],
+      "actual": true,
+      "expected": true,
+      "passed": true
+    },
+    {
+      "contract": "ValidationModule",
+      "address": "0x84eBBAb4755726782F20Dc2d23FB968CA5200bF3",
+      "function": "paused",
+      "args": [],
+      "actual": true,
+      "expected": true,
+      "passed": true
+    },
+    {
+      "contract": "ReputationEngine",
+      "address": "0x7e2F3cb2555052AE712c1904d0Ae1b522B018ce5",
+      "function": "paused",
+      "args": [],
+      "actual": true,
+      "expected": true,
+      "passed": true
+    },
+    {
+      "contract": "DisputeModule",
+      "address": "0x6be805CEbA58A8922eDa4ce627a89bb073c07A5b",
+      "function": "paused",
+      "args": [],
+      "actual": true,
+      "expected": true,
+      "passed": true
+    },
+    {
+      "contract": "PlatformRegistry",
+      "address": "0x543693a69C3ddbcE8DB590235989E502cBb9FEdb",
+      "function": "paused",
+      "args": [],
+      "actual": true,
+      "expected": true,
+      "passed": true
+    },
+    {
+      "contract": "FeePool",
+      "address": "0x81686E65649B95F12CC50d5E3846343Ed0Cfae93",
+      "function": "paused",
+      "args": [],
+      "actual": true,
+      "expected": true,
+      "passed": true
+    },
+    {
+      "contract": "ArbitratorCommittee",
+      "address": "0x7E61d59476A929DCd4ba943a9aeB4c528D7536DC",
+      "function": "paused",
+      "args": [],
+      "actual": true,
+      "expected": true,
+      "passed": true
+    },
+    {
+      "contract": "IdentityRegistry",
+      "address": "0x217B7709FfeD0e4C7A9415be64e323c56E0F8773",
+      "function": "pendingOwner",
+      "args": [],
+      "actual": "0x0000000000000000000000000000000000000000",
+      "expected": "0x0000000000000000000000000000000000000000",
+      "passed": true
+    },
+    {
+      "contract": "TaxPolicy",
+      "address": "0x680dD5f7107952F6b26b1dE620b8AC6BC241627C",
+      "function": "pendingOwner",
+      "args": [],
+      "actual": "0x0000000000000000000000000000000000000000",
+      "expected": "0x0000000000000000000000000000000000000000",
+      "passed": true
+    },
+    {
+      "contract": "StakeManager",
+      "address": "0x0b7E8E6aeEc675950E493E495D54d947E3B7bee1",
+      "function": "governance",
+      "args": [],
+      "actual": "0x887782AE59A56D1E9923947A6784A4453193e303",
+      "expected": "0x887782AE59A56D1E9923947A6784A4453193e303",
+      "passed": true
+    },
+    {
+      "contract": "JobRegistry",
+      "address": "0x8b230eB346369B2a3EFaaa615CbEb8e3b2f167e6",
+      "function": "governance",
+      "args": [],
+      "actual": "0x887782AE59A56D1E9923947A6784A4453193e303",
+      "expected": "0x887782AE59A56D1E9923947A6784A4453193e303",
+      "passed": true
+    },
+    {
+      "contract": "DisputeModule",
+      "address": "0x6be805CEbA58A8922eDa4ce627a89bb073c07A5b",
+      "function": "governance",
+      "args": [],
+      "actual": "0x887782AE59A56D1E9923947A6784A4453193e303",
+      "expected": "0x887782AE59A56D1E9923947A6784A4453193e303",
+      "passed": true
+    },
+    {
+      "contract": "SystemPause",
+      "address": "0x887782AE59A56D1E9923947A6784A4453193e303",
+      "function": "governance",
+      "args": [],
+      "actual": "0xd76AD27a1Bcf8652e7e46BE603FA742FD1c10A99",
+      "expected": "0xd76AD27a1Bcf8652e7e46BE603FA742FD1c10A99",
+      "passed": true
+    },
+    {
+      "contract": "StakeManager",
+      "address": "0x0b7E8E6aeEc675950E493E495D54d947E3B7bee1",
+      "function": "treasury",
+      "args": [],
+      "actual": "0xa9eD0539c2fbc5C6BC15a2E168bd9BCd07c01201",
+      "expected": "0xa9eD0539c2fbc5C6BC15a2E168bd9BCd07c01201",
+      "passed": true
+    },
+    {
+      "contract": "StakeManager",
+      "address": "0x0b7E8E6aeEc675950E493E495D54d947E3B7bee1",
+      "function": "treasuryAllowlist",
+      "args": [
+        "0xa9eD0539c2fbc5C6BC15a2E168bd9BCd07c01201"
+      ],
+      "actual": true,
+      "expected": true,
+      "passed": true
+    },
+    {
+      "contract": "FeePool",
+      "address": "0x81686E65649B95F12CC50d5E3846343Ed0Cfae93",
+      "function": "treasury",
+      "args": [],
+      "actual": "0xd76AD27a1Bcf8652e7e46BE603FA742FD1c10A99",
+      "expected": "0xd76AD27a1Bcf8652e7e46BE603FA742FD1c10A99",
+      "passed": true
+    },
+    {
+      "contract": "FeePool",
+      "address": "0x81686E65649B95F12CC50d5E3846343Ed0Cfae93",
+      "function": "treasuryAllowlist",
+      "args": [
+        "0xd76AD27a1Bcf8652e7e46BE603FA742FD1c10A99"
+      ],
+      "actual": true,
+      "expected": true,
+      "passed": true
+    },
+    {
+      "contract": "FeePool",
+      "address": "0x81686E65649B95F12CC50d5E3846343Ed0Cfae93",
+      "function": "governance",
+      "args": [],
+      "actual": "0xa9eD0539c2fbc5C6BC15a2E168bd9BCd07c01201",
+      "expected": "0xa9eD0539c2fbc5C6BC15a2E168bd9BCd07c01201",
+      "passed": true
+    },
+    {
+      "contract": "StakeManager",
+      "address": "0x0b7E8E6aeEc675950E493E495D54d947E3B7bee1",
+      "function": "treasuryAllowlist",
+      "args": [
+        "0x6c8B8897Fb6b08B4070387233B89b3E9A94eD00E"
+      ],
+      "actual": false,
+      "expected": false,
+      "passed": true
+    },
+    {
+      "contract": "FeePool",
+      "address": "0x81686E65649B95F12CC50d5E3846343Ed0Cfae93",
+      "function": "treasuryAllowlist",
+      "args": [
+        "0x6c8B8897Fb6b08B4070387233B89b3E9A94eD00E"
+      ],
+      "actual": false,
+      "expected": false,
+      "passed": true
+    }
+  ],
+  "evidenceHashes": {
+    "completedDeploymentReportSha256": "bad23bc71cde7a888f824b310d3ef7762ebc4ce6f1ac82eb8859521ff9986e7c",
+    "finalizedReadbackReportSha256": "ae80dd19133da0a3fbaacb4612f8a07df0c11fbd137615487311fb8ab5f8dec2",
+    "manualClosureManifestSha256": "d6430dee1c4059e1aec65448fc9112a7753178052acb0c7eff162c9fb7cda2ce"
+  },
+  "limitations": [
+    "All eight managed modules are paused; no activation has occurred in this closeout.",
+    "Bounded named runtime/source/owner/pending-owner/governance/treasury/pause checks, not exhaustive historical/indirect authority or security qualification.",
+    "ConfiguredAtDeployment economic/identity/tax fields are from the immutable completed deployment record; the final observation freshly rechecked only the explicitly listed state getters.",
+    "Old deployments and their obligations are not migrated or extinguished by this redeployment."
+  ]
+}

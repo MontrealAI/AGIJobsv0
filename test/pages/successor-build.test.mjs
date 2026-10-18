@@ -13,14 +13,27 @@ const page=fs.readFileSync(new URL('index.html',directory),'utf8');
 const provenance=JSON.parse(fs.readFileSync(new URL('provenance.json',directory),'utf8'));
 const ecosystem=JSON.parse(fs.readFileSync(new URL('../../website/data/ecosystem.json',import.meta.url),'utf8'));
 
-test('portable workshop mirror retains exact source bytes, CSP and both deployment suites',()=>{
+test('portable workshop mirror retains exact source bytes, CSP and its historical deployment suites',()=>{
   assert.equal((page.match(/<main id="main">/g)||[]).length,1);
   assert.equal(createHash('sha256').update(page).digest('hex'),provenance.sha256);
   for(const content of [page.match(/<style>([\s\S]*?)<\/style>/)[1],page.match(/<script>([\s\S]*?)<\/script>/)[1]]){
     assert.ok(page.includes('sha256-'+createHash('sha256').update(content).digest('base64')));
   }
   assert.ok(page.includes("connect-src 'none'"));assert.ok(page.includes(ecosystem.token.address));
-  for(const c of ecosystem.suites.flatMap(s=>s.contracts))assert.ok(page.includes(`https://etherscan.io/address/${c.address}#code`),c.name);
+  const historicalAlpha = [
+    '0x36f8C079fEEBC81c5AF30D71be5017037246a32e',
+    '0xFA4737Ba7cF111EBb0840aA300BC61D84d303449',
+    '0x06cb4D684628846B048d88CCf8C03c4Cfb74f149',
+    '0x86f84E173A7a1a4588f4e757552F20f7C58e61E8',
+    '0xa28dA507f7F9AFF8910f1F7cB5d5b8238F5Db625',
+  ];
+  assert.ok(page.includes('2026-10-11/manifest.json'));
+  for (const address of historicalAlpha) assert.ok(page.includes(`https://etherscan.io/address/${address}#code`), address);
+  const historicalJobs = JSON.parse(fs.readFileSync(new URL('../../docs/deployments/ethereum-mainnet-2026-10-12.json', import.meta.url), 'utf8'));
+  assert.equal(historicalJobs.contracts.length, 24);
+  for (const c of historicalJobs.contracts) assert.ok(page.includes(`https://etherscan.io/address/${c.address}#code`), c.name);
+  for (const c of ecosystem.suites.find(s => s.id === 'jobs').contracts) assert.ok(!page.includes(c.address), 'current Jobs addresses belong in the current directory, not the pinned historical mirror');
+  for (const c of ecosystem.suites.find(s => s.id === 'alpha').contracts) assert.ok(!page.includes(c.address), 'current Alpha addresses belong in the live directory, not the pinned historical mirror');
   for(const file of provenance.agijobsCompiler.files){
     const bytes=fs.readFileSync(new URL('../../'+file.path,import.meta.url));
     assert.equal(createHash('sha256').update(bytes).digest('hex'),file.sha256);

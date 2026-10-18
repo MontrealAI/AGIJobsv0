@@ -1,7 +1,8 @@
-> **[Build your own SUCCESSOR Ω with Alpha Agent + AGI Jobs →](https://montrealai.github.io/AGIJobsv0/successor/build/)**
-> Name your mission, run four candidate programs, compile 21 bounded job drafts, and keep the working lab offline.
-> English / Français · Large text · No account, wallet or installation. [Source and reproduction guide](docs/successor/BUILD_YOUR_OMEGA.md).
-> The example runs both projects’ code locally. Independent proof remains absent; admission stays on HOLD.
+> **[Find your Alpha. Build your SUCCESSOR Ω. →](https://montrealai.github.io/AGIJobsv0/successor/alpha/)**
+> Reconcile two catalogs, inspect discrepancies, develop competing methods and keep a reusable tool with its evidence and project history.
+> **[Try a source-grounded mission →](https://montrealai.github.io/AGIJobsv0/successor/research/)** · [Français](https://montrealai.github.io/AGIJobsv0/successor/research/fr/) · [Flagship guide](docs/successor/FIND_YOUR_ALPHA.md).
+> Free · No account, wallet or installation. Local results require further independent proof and explicit authorization before operational succession.
+> The original [portable Atlas laboratory](https://montrealai.github.io/AGIJobsv0/successor/build/) and [reproduction guide](docs/successor/BUILD_YOUR_OMEGA.md) remain available, with their pinned historical contract snapshot.
 
 # AGI Jobs v0 (v2)
 
@@ -11,7 +12,9 @@
 
 **[0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA](https://etherscan.io/token/0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA)**
 
-**[See how they work together →](https://montrealai.github.io/AGIJobsv0/ecosystem/) · [Inspect both deployed suites: 5 Alpha + 24 Jobs instances](https://montrealai.github.io/AGIJobsv0/ecosystem/#contracts) · [Read the ecosystem guide and source evidence](docs/ECOSYSTEM.md)**
+**[See how they work together →](https://montrealai.github.io/AGIJobsv0/ecosystem/) · [Inspect both current recorded suites: 5 Alpha + 25 Jobs contracts](https://montrealai.github.io/AGIJobsv0/ecosystem/#contracts) · [Read the ecosystem guide and source evidence](docs/ECOSYSTEM.md)**
+
+The current Jobs directory uses the [version-pinned October 18 deployment snapshot](https://github.com/MontrealAI/AGIJobsv0/blob/284351148d96c5390a655aec1f9db806284f2400/docs/production/mainnet-2026-10-18/deployment-snapshot.json): all 25 contracts and deployed-source provenance. The snapshot records paused managed modules; current repository source equivalence is not assumed.
 
 The pairing is strongest for bounded digital tasks with checkable outputs. A shared token does not create an automatic mainnet bridge: compatible job interfaces, admitted identities and operational commissioning remain necessary. The guide distinguishes recorded deployments from readiness for live work.
 
@@ -63,9 +66,9 @@ AGI Jobs v0 (v2) brings together job contracts, agent gateways, validators, oper
 
 **Seeing compiler warnings on Etherscan?** Read the [plain-language compiler update and existing-deployment guide](docs/production/compiler-warnings-2026-10-13.md). New builds use Solidity 0.8.37; existing addresses retain their original bytecode. The guide explains the four advisories, remaining dependency/tooling notices, and the steps needed before any replacement deployment.
 
-**Deployment status:** the [source-pinned mainnet directory](docs/ECOSYSTEM.md#the-deployed-contract-directory) identifies the recorded 24 Jobs instances and 5 Alpha instances, with full explorer links and separate readiness guidance. The four previously oversized Jobs contracts use [fixed implementations and staged deployment](docs/production/fixed-implementations.md). New releases and live operations require their own authorized signing, completed configuration, commissioning and passing gates. Local tests do not provide mainnet certification. All existing architectural diagrams and demonstration surfaces are retained.
+**Deployment status:** the [source-pinned mainnet directory](docs/ECOSYSTEM.md#the-deployed-contract-directory) identifies the current recorded 25 Jobs contracts and 5 Alpha contracts, with full explorer links and separate readiness guidance. The four previously oversized Jobs contracts use [fixed implementations and staged deployment](docs/production/fixed-implementations.md). Live operations require their own authorization, commissioning and passing gates. Local tests do not provide mainnet certification. All existing architectural diagrams and demonstration surfaces are retained.
 
-**Latest mainnet evidence:** [24-contract deployment and configuration record](docs/production/mainnet-deployment-2026-10-12.md): 24/24 recorded explorer exact matches, Ledger handoff readback, and the later **88,888,888 AGIALPHA reward cap** observation. The eight operational modules remain recorded as paused. The deployed job stake is a **fixed 500 AGIALPHA**, not 10% of reward. [Source and timing limits](docs/production/mainnet-deployment-2026-10-12.md#latest-configuration-and-reward-policy).
+**Latest mainnet evidence:** the [October 18 version-pinned record](https://github.com/MontrealAI/AGIJobsv0/blob/284351148d96c5390a655aec1f9db806284f2400/docs/production/mainnet-2026-10-18/deployment-snapshot.json) records 25/25 runtime matches, 25 exact source-metadata matches and 46/46 named state checks at finalized block 26221285. All eight managed modules were paused; the creator owned none of the 25 contracts. Deployment configuration records `jobStakeBps=1000` (10%); only the listed getters were freshly rechecked. The [October 12 record](docs/production/mainnet-deployment-2026-10-12.md) remains historical and is not this deployment's configuration. Deployed source identity and current repository source identity remain explicit and separate.
 
 ```mermaid
 flowchart LR

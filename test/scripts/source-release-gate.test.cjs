@@ -5,6 +5,8 @@ const {
   requiredPaths,
   requiredChecks,
   verifySourceScope,
+  verifyDeploymentSnapshot,
+  deploymentSnapshot,
   preservedEvidencePaths,
   reviewedCompilerPaths,
 } = require('../../scripts/release/qualify-source-release.cjs');
@@ -12,7 +14,7 @@ const sha = 'a'.repeat(40);
 function sourceFixture() {
   return {
     sha,
-    version: '2.1.0-rc.12',
+    version: '2.1.0-rc.14',
     compilerBaseline: 'b'.repeat(40),
     policy: {
       version: '0.8.37',
@@ -76,6 +78,8 @@ test('source release rejects missing review, old compiler, changed production se
     '2.1.0-rc.9',
     '2.1.0-rc.10',
     '2.1.0-rc.11',
+    '2.1.0-rc.12',
+    '2.1.0-rc.13',
     '2.1.0',
   ])
     assert.throws(
@@ -100,7 +104,7 @@ test('source release rejects missing review, old compiler, changed production se
     );
   }
 });
-test('rc.12 source qualification agrees with both package version records', () => {
+test('rc.14 source qualification agrees with both package version records', () => {
   const packageJson = require('../../package.json');
   const lock = require('../../package-lock.json');
   for (const version of [
@@ -108,11 +112,45 @@ test('rc.12 source qualification agrees with both package version records', () =
     lock.version,
     lock.packages[''].version,
   ]) {
-    assert.equal(version, '2.1.0-rc.12');
+    assert.equal(version, '2.1.0-rc.14');
     assert.doesNotThrow(() =>
       verifySourceScope({ ...sourceFixture(), version })
     );
   }
+});
+test('current deployment reference requires exact pinned bytes without changing source equivalence', () => {
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const bytes = fs.readFileSync(
+    path.resolve(__dirname, '../..', deploymentSnapshot.localPath)
+  );
+  assert.deepEqual(verifyDeploymentSnapshot(bytes), deploymentSnapshot);
+  assert.deepEqual(
+    fs.readFileSync(
+      path.resolve(__dirname, '../..', deploymentSnapshot.recordPath)
+    ),
+    bytes
+  );
+  assert.equal(deploymentSnapshot.currentMainEquivalenceNotAssumed, true);
+  assert.equal(deploymentSnapshot.liveRecheckedByThisRelease, false);
+  assert.equal(
+    deploymentSnapshot.recordCommit,
+    '284351148d96c5390a655aec1f9db806284f2400'
+  );
+  const snapshot = JSON.parse(bytes);
+  assert.equal(
+    snapshot.deployedSource.commit,
+    deploymentSnapshot.deployedSourceCommit
+  );
+  assert.equal(
+    snapshot.deployedSource.tree,
+    deploymentSnapshot.deployedSourceTree
+  );
+  assert.equal(snapshot.deployedSource.currentMainEquivalenceNotAssumed, true);
+  assert.throws(
+    () => verifyDeploymentSnapshot(Buffer.concat([bytes, Buffer.from('\n')])),
+    /snapshot hash mismatch/
+  );
 });
 test('every path-filtered dependency runs for every source publication trigger', () => {
   const fs = require('node:fs');

@@ -1,92 +1,17 @@
-# DEPLOYED_ADDRESSES.md — AGIJobs v2
+# Current deployed addresses
 
-**Existing Ethereum deployment:** use the [24-contract directory and current evidence](production/mainnet-deployment-2026-10-12.md) and the explicitly selected [mainnet address book](deployment-addresses.mainnet.json). The placeholders below are a template for a separately reviewed deployment, not the recorded mainnet addresses.
+**Ethereum mainnet, 18 October 2026: 25 Jobs contracts + 5 Alpha contracts.**
 
-> **Purpose:** Canonical registry of contract addresses and deployment metadata. Commit this file to the repo after each environment deployment.
+Use the [complete current address directory](ECOSYSTEM.md#the-deployed-contract-directory) or [browse all 30 explorer links](https://montrealai.github.io/AGIJobsv0/ecosystem/#contracts). The [current Jobs deployment guide](production/CURRENT_MAINNET_DEPLOYMENT.md) identifies the exact source, finalized-state observation, explorer comparisons and remaining operational gates.
 
----
+| Jobs contract    | Ethereum mainnet address                                                                                                   |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| JobRegistry      | [0x8b230eB346369B2a3EFaaa615CbEb8e3b2f167e6](https://etherscan.io/address/0x8b230eB346369B2a3EFaaa615CbEb8e3b2f167e6#code) |
+| StakeManager     | [0x0b7E8E6aeEc675950E493E495D54d947E3B7bee1](https://etherscan.io/address/0x0b7E8E6aeEc675950E493E495D54d947E3B7bee1#code) |
+| ValidationModule | [0x84eBBAb4755726782F20Dc2d23FB968CA5200bF3](https://etherscan.io/address/0x84eBBAb4755726782F20Dc2d23FB968CA5200bF3#code) |
+| TaxPolicy        | [0x680dD5f7107952F6b26b1dE620b8AC6BC241627C](https://etherscan.io/address/0x680dD5f7107952F6b26b1dE620b8AC6BC241627C#code) |
+| SystemPause      | [0x887782AE59A56D1E9923947A6784A4453193e303](https://etherscan.io/address/0x887782AE59A56D1E9923947A6784A4453193e303#code) |
 
-## Release
-- **Protocol:** AGIJobs **v2**
-- **Release tag:** v2.x.x
-- **Network:** <mainnet | sepolia | holesky>
-- **Chain ID:** <1 | 11155111 | 17000>
-- **Deployment date (UTC):** <YYYY-MM-DD>
-- **$AGIALPHA token:** `0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA`
-- **Governance (Safe) address:** <0x...>
-- **Safe threshold:** <e.g., 2-of-3>
-- **Defender Relayer ID / name:** <relayer-id-or-name>
-- **Deployer (EOA/Relayer):** <address if used>
-- **Etherscan org:** <link to org/verification page>
+The [immutable upstream snapshot](https://github.com/MontrealAI/AGIJobsv0/blob/284351148d96c5390a655aec1f9db806284f2400/docs/production/mainnet-2026-10-18/deployment-snapshot.json) and [exact local copy](../website/data/jobs-mainnet-2026-10-18.json) bind every current Jobs address to deployed source `818b3a246871e4cd4dde86558dbb91ef82b15eef`. Whole-tree equivalence with current main is not assumed. All eight managed modules were recorded as paused; production approval and activation remain false.
 
----
-
-## Contracts (v2)
-
-| Module/Contract      | Address        | Proxy | Impl Address   | Tx Hash      | Block # | Verified | Notes |
-|---|---|:--:|---|---|---:|:--:|---|
-| StakeManager         | <0x...>        | <Y/N>| <0x...>        | <0x...>      | <#>    | <Y/N>    |       |
-| ReputationEngine     | <0x...>        | <Y/N>| <0x...>        | <0x...>      | <#>    | <Y/N>    |       |
-| IdentityRegistry     | <0x...>        | <Y/N>| <0x...>        | <0x...>      | <#>    | <Y/N>    |       |
-| ValidationModule     | <0x...>        | <Y/N>| <0x...>        | <0x...>      | <#>    | <Y/N>    |       |
-| DisputeModule        | <0x...>        | <Y/N>| <0x...>        | <0x...>      | <#>    | <Y/N>    |       |
-| CertificateNFT       | <0x...>        | <Y/N>| <0x...>        | <0x...>      | <#>    | <Y/N>    |       |
-| JobRegistry          | <0x...>        | <Y/N>| <0x...>        | <0x...>      | <#>    | <Y/N>    |       |
-| FeePool *(if separate)* | <0x...>     | <Y/N>| <0x...>        | <0x...>      | <#>    | <Y/N>    |       |
-
-> If a contract is upgradeable, ensure **Proxy** is `Y` and **Impl Address** is filled. Use explorer "Read/Write as Proxy".
-
----
-
-## Parameters snapshot (post‑init)
-
-- **Fee %:** <e.g., 2%>
-- **Burn %:** <e.g., 50% of fees>
-- **Treasury address:** <0x... or “unset”> *(must be on allowlist before setting)*
-- **Treasury allowlist entries:** <addresses>
-- **Operators/Oracles:** <addresses and roles>
-- **Paused modules at T0:** <list or “none”>
-
----
-
-## Owner & roles snapshot
-
-```json
-{
-  "owner": "<0x... (Safe)>",
-  "role_holders": {
-    "PAUSER": ["<0x...>"],
-    "OPERATOR": ["<0x...>"],
-    "ORACLE": ["<0x...>"]
-  }
-}
-```
-
----
-
-## Explorer links
-
-- StakeManager: <https://etherscan.io/address/0x...>
-- ReputationEngine: <https://etherscan.io/address/0x...>
-- IdentityRegistry: <https://etherscan.io/address/0x...>
-- ValidationModule: <https://etherscan.io/address/0x...>
-- DisputeModule: <https://etherscan.io/address/0x...>
-- CertificateNFT: <https://etherscan.io/address/0x...>
-- JobRegistry: <https://etherscan.io/address/0x...>
-- FeePool (if separate): <https://etherscan.io/address/0x...>
-
----
-
-## Artifacts
-
-- **Proxy/Impl verification receipts:** `./reports/<network>/*verification*.json`
-- **Safe transaction hashes:** `./reports/<network>/*safe*.json`
-- **Owner plan outputs:** `./reports/<network>/owner-plan.json`
-- **Subgraph (if used):** <URL/commit>
-
----
-
-## Change history
-
-- YYYY‑MM‑DD — initial v2 deployment on <network> by <Safe tx link>.
-- YYYY‑MM‑DD — parameter update (fee %, treasury, allowlists) via <Safe tx link>.
+The existing [October 12 guide](production/mainnet-deployment-2026-10-12.md) and `deployment-addresses*.json` maps remain historical records. Select them explicitly for read-only inspection of the earlier stack. This directory does not repoint a client, migrate an obligation, approve a token, fund a job or send a transaction.

@@ -11,6 +11,8 @@ const {
   deployedSourceBaseline,
   preservedEvidencePaths,
   reviewedCompilerPaths,
+  deploymentSnapshot,
+  verifyDeploymentSnapshot,
 } = require('./qualify-source-release.cjs');
 
 function expectedAssets(tag) {
@@ -19,9 +21,12 @@ function expectedAssets(tag) {
     'provenance.json',
     `${tag}-source.zip`,
     'ethereum-mainnet-2026-10-12.json',
+    deploymentSnapshot.asset,
     'configuration-readback-2026-10-13.json',
     'mainnet-deployment-2026-10-12.md',
-    'RELEASE_NOTES_SOURCE_RC12.md',
+    'mainnet-deployment-2026-10-18.md',
+    'mainnet-deployment-receipts-2026-10-18.json',
+    'RELEASE_NOTES_SOURCE_RC14.md',
     'compiler-warnings-2026-10-13.md',
     'solidity-compiler.json',
     'deployment-addresses.mainnet.json',
@@ -69,6 +74,9 @@ function verifyDownloadedAssets({
   }
   if (seen.size !== expected.length - 1)
     throw Error('Incomplete remote checksums');
+  verifyDeploymentSnapshot(
+    fs.readFileSync(path.join(downloaded, deploymentSnapshot.asset))
+  );
   for (const name of expected) {
     if (
       !draft &&
@@ -99,6 +107,8 @@ function verifyDownloadedAssets({
     provenance.sourceScope?.evidenceBaseline !== evidenceBaseline ||
     provenance.sourceScope?.deployedSourceBaseline !== deployedSourceBaseline ||
     provenance.sourceScope?.compiler !== '0.8.37+commit.f401782d' ||
+    JSON.stringify(provenance.deploymentSnapshots) !==
+      JSON.stringify([deploymentSnapshot]) ||
     JSON.stringify(provenance.sourceScope?.preservedEvidencePaths) !==
       JSON.stringify(preservedEvidencePaths) ||
     JSON.stringify(provenance.sourceScope?.reviewedCompilerPaths) !==
@@ -324,7 +334,7 @@ async function publish({ sha, tag, notes, api, upload, verify }) {
       target_commitish: sha,
       draft: true,
       prerelease: true,
-      name: `${tag} — retained Alpha projects and corrected reputation`,
+      name: `${tag} — Find your Alpha. Build your SUCCESSOR Ω.`,
       body: `${notes.trim()}\n\n${marker}\n`,
     });
   }
@@ -372,7 +382,7 @@ function producerId(value) {
 
 function sourceApiUrl(method, resource) {
   const allowed = {
-    GET: /^(?:git\/ref\/(?:heads\/main|tags\/source-v2\.1\.0-rc\.12)|releases\/tags\/source-v2\.1\.0-rc\.12|actions\/artifacts\/[1-9][0-9]*|actions\/runs\/[1-9][0-9]*\/attempts\/[1-9][0-9]*)$/,
+    GET: /^(?:git\/ref\/(?:heads\/main|tags\/source-v2\.1\.0-rc\.14)|releases\/tags\/source-v2\.1\.0-rc\.14|actions\/artifacts\/[1-9][0-9]*|actions\/runs\/[1-9][0-9]*\/attempts\/[1-9][0-9]*)$/,
     POST: /^(?:git\/refs|releases)$/,
     PATCH: /^releases\/[1-9][0-9]*$/,
   };
@@ -396,7 +406,7 @@ async function main() {
   if (
     repository !== 'MontrealAI/AGIJobsv0' ||
     !/^[a-f0-9]{40}$/.test(sha || '') ||
-    tag !== 'source-v2.1.0-rc.12' ||
+    tag !== 'source-v2.1.0-rc.14' ||
     !token
   )
     throw Error('Invalid source publication identity or authorization');
@@ -477,7 +487,7 @@ async function main() {
     api,
     verify,
     notes: fs.readFileSync(
-      'docs/production/RELEASE_NOTES_SOURCE_RC12.md',
+      'docs/production/RELEASE_NOTES_SOURCE_RC14.md',
       'utf8'
     ),
     upload: async () =>
