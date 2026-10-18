@@ -8,7 +8,8 @@ COPY . .
 RUN npm run build
 
 FROM nginx:1.30.5-alpine3.24 AS runner
-RUN apk upgrade --no-cache
+# Refresh the cached package layer and require the CVE-2026-88806 fix.
+RUN apk upgrade --no-cache && apk add --no-cache 'libx11>=1.8.14-r0'
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /app/dist /usr/share/nginx/html
 EXPOSE 80
