@@ -18,27 +18,27 @@ paths:
   - website/assets
 
 paths-ignore:
-  - "**/node_modules/**"
-  - "**/dist/**"
-  - "**/.next/**"
-  - "**/coverage/**"
-  - "**/reports/**"
+  - '**/node_modules/**'
+  - '**/dist/**'
+  - '**/.next/**'
+  - '**/coverage/**'
+  - '**/reports/**'
   # Preserve the original documentation exclusion on every old source root.
   # The newly admitted fixed native integration engine lives under vendor/docs.
-  - "agent-gateway/**/docs/**"
-  - "apps/**/docs/**"
-  - "monitoring/**/docs/**"
-  - "orchestrator/**/docs/**"
-  - "packages/**/docs/**"
-  - "scripts/**/docs/**"
-  - "services/**/docs/**"
-  - "shared/**/docs/**"
-  - "tools/**/docs/**"
-  - "**/data/**"
-  - "**/deploy/**"
-  - "**/deployment/**"
-  - "**/deployments/**"
-  - "**/subgraph/generated/**"
-  - "**/subgraph/build/**"
-  - "**/subgraph/node_modules/**"
-  - "**/test/**"
+  - 'agent-gateway/**/docs/**'
+  - 'apps/**/docs/**'
+  - 'monitoring/**/docs/**'
+  - 'orchestrator/**/docs/**'
+  - 'packages/**/docs/**'
+  - 'scripts/**/docs/**'
+  - 'services/**/docs/**'
+  - 'shared/**/docs/**'
+  - 'tools/**/docs/**'
+  - '**/data/**'
+  - '**/deploy/**'
+  - '**/deployment/**'
+  - '**/deployments/**'
+  - '**/subgraph/generated/**'
+  - '**/subgraph/build/**'
+  - '**/subgraph/node_modules/**'
+  - '**/test/**'

@@ -5,9 +5,9 @@ on:
   push:
     branches:
       - main
-      - "fix/inherited-codeql-*"
+      - 'fix/inherited-codeql-*'
   schedule:
-    - cron: "30 2 * * *"
+    - cron: '30 2 * * *'
 
 permissions:
   contents: read
@@ -38,7 +38,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
-          node-version-file: ".nvmrc"
+          node-version-file: '.nvmrc'
           cache: npm
           cache-dependency-path: |
             package-lock.json
@@ -67,7 +67,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with:
-          python-version: "3.12"
+          python-version: '3.12'
 
       - name: Install Slither toolchain
         run: |
@@ -121,6 +121,10 @@ jobs:
     name: CodeQL analysis
     runs-on: ubuntu-24.04
     timeout-minutes: 90
+    env:
+      # Required native modules include long generated source/lock literals.
+      # Keep them in extraction; the unchanged SARIF gate requires every file.
+      CODEQL_EXTRACTOR_JAVASCRIPT_ALLOW_MINIFIED_FILES: 'true'
     steps:
       - name: Harden runner
         uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
@@ -136,7 +140,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
-          node-version-file: ".nvmrc"
+          node-version-file: '.nvmrc'
           cache: npm
           cache-dependency-path: |
             package-lock.json
@@ -196,12 +200,14 @@ jobs:
           assert(integration.every(file => admitted(file, expanded)), 'Integration closure is excluded');
           const browser = ['computer-receipt.mjs','computer-receipt-model.mjs','computer-receipt-copy.mjs','computer-desk.mjs','computer-desk-runtime-source.mjs','computer-mission.js','computer-mission-copy.mjs'].map(file => 'website/assets/' + file);
           assert(browser.every(file => admitted(file, expanded)), 'Native browser closure is excluded');
-          const requiredClosure = [...integration, ...browser];
-          assert(requiredClosure.every(file => files.includes(file)), 'Required integration/browser receiver source is absent from the immutable tree');
-          const requiredExtractedFiles = files.filter(file => /^(?:integrations\/alpha-agent|website\/assets)\//.test(file) && /\.(?:[cm]?[jt]sx?)$/i.test(file) && !/\.d\.[cm]?ts$/i.test(file) && admitted(file, expanded)).sort();
+          const analysis = ['scripts/release/publish-source-release-rc16.cjs','scripts/release/python-scanner-rc16.cjs','scripts/release/qualify-source-release-rc16.cjs','scripts/release/source-profile-rc16.cjs','scripts/release/verify-transformational-compatibility.mjs','scripts/pages/computer-receipt.mjs'];
+          assert(analysis.every(file => admitted(file, expanded)), 'Release and page analysis closure is excluded');
+          const requiredClosure = [...integration, ...browser, ...analysis];
+          assert(requiredClosure.every(file => files.includes(file)), 'Required receiver/release source is absent from the immutable tree');
+          const requiredExtractedFiles = [...files.filter(file => /^(?:integrations\/alpha-agent|website\/assets)\//.test(file) && /\.(?:[cm]?[jt]sx?)$/i.test(file) && !/\.d\.[cm]?ts$/i.test(file) && admitted(file, expanded)), ...analysis].sort();
           assert(requiredExtractedFiles.some(file => file.startsWith('integrations/alpha-agent/')), 'Integration executable source is absent');
           assert(requiredExtractedFiles.some(file => file.startsWith('website/assets/')), 'Browser executable source is absent');
-          assert(requiredClosure.every(file => requiredExtractedFiles.includes(file)), 'Required receiver closure is absent from mandatory extraction inventory');
+          assert(requiredClosure.every(file => requiredExtractedFiles.includes(file)), 'Required receiver/release closure is absent from mandatory extraction inventory');
           assert.equal(git('rev-parse','HEAD').trim(), source, 'CodeQL HEAD changed during source validation');
           assert.equal(git('rev-parse','HEAD^{tree}').trim(), tree, 'CodeQL tree changed during source validation');
           assert.equal(source, process.env.GITHUB_SHA, 'CodeQL final source differs from its run source');
@@ -251,7 +257,7 @@ jobs:
           const rules = [...new Set(components.flatMap(component => (component.rules || []).map(rule => rule.id)))].sort();
           const report = {schema:'agijobsv0/codeql-extraction/1', source:before.source, tree:before.tree, run:before.run, attempt:before.attempt, event:before.event, ref:before.ref, configSha256:before.configSha256, sarifSha256:crypto.createHash('sha256').update(raw).digest('hex'), successfulExtractionFiles:extracted, requiredExtractedFiles:before.requiredExtractedFiles, missingRequiredExtractedFiles:missing, ruleIds:rules, rawResultCount:(scan.results || []).length, resultDisposition:'REQUIRES_INDEPENDENT_FINAL_SOURCE_REVIEW'};
           fs.writeFileSync(folder + 'source-extraction.json', JSON.stringify(report,null,2) + '\n', {flag:'wx',mode:0o600});
-          assert.deepEqual(missing, [], 'Intended integration/browser source was not actually extracted');
+          assert.deepEqual(missing, [], 'Intended receiver/release source was not actually extracted');
           console.log(JSON.stringify({source:before.source, tree:before.tree, extractedFiles:extracted.length, requiredFiles:before.requiredExtractedFiles.length, rawResults:report.rawResultCount, independentResultReviewRequired:true}));
           NODE
 
