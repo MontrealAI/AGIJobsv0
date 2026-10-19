@@ -535,7 +535,27 @@ async function readPages(path, key, token) {
   throw Error('Refusing truncated qualification evidence');
 }
 
+function verifyQualificationIdentity(environment = process.env) {
+  const {
+    GITHUB_SHA: sha,
+    GITHUB_REPOSITORY: repository,
+    GH_TOKEN: token,
+    GITHUB_EVENT_NAME: event,
+    GITHUB_REF: ref,
+  } = environment;
+  if (
+    repository !== 'MontrealAI/AGIJobsv0' ||
+    !/^[a-f0-9]{40}$/.test(sha || '') ||
+    !token ||
+    event !== 'push' ||
+    ref !== 'refs/heads/main'
+  )
+    throw Error('Invalid exact-main qualification identity');
+  return { sha, repository };
+}
+
 async function main() {
+  verifyQualificationIdentity();
   verifyPublicationReview();
   const {
     GITHUB_SHA: sha,
@@ -665,6 +685,7 @@ async function main() {
 module.exports = {
   ...nativeGate,
   verifySourceProfile,
+  verifyQualificationIdentity,
   scannerReview,
   scannerReviewPath,
   scannerHistory,

@@ -248,6 +248,7 @@ test('complete source verifier accepts only finite release plumbing over the act
       p.profile.implementationBaseline,
       p.profile.integrationBaseline,
       p.profile.nativePinBaseline,
+      p.profile.scannerPolicy.producerCommit,
     ]),
     version: p.profile.releaseVersion,
     lock: afterLock,
@@ -537,6 +538,7 @@ test('actual Git integration transitions reject substituted security/runtime byt
     p.profile.implementationBaseline,
     p.profile.integrationBaseline,
     p.profile.nativePinBaseline,
+    p.profile.scannerPolicy.producerCommit,
   ]);
   const before = p.parseTree(
     r.git('ls-tree', '-rz', p.profile.implementationBaseline)

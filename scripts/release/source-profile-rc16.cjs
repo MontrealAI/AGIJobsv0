@@ -5,7 +5,7 @@
 const assert = require('node:assert/strict');
 const { createHash } = require('node:crypto');
 const integrationTransitionsSha256 =
-  'd9e73a37a3c67d4ce2aa3bce429865fde81f5b167d75191a142ab3d79c68b82f';
+  '1dc95fc534f9754d1b05fcbc3e62b75e4a0e905a6b12f97ba797b451c41d0175';
 const historical = require('./qualify-source-release.cjs');
 
 function freeze(value) {
@@ -95,19 +95,19 @@ const nativeCompatibility = freeze({
   },
 });
 const scannerPolicy = freeze({
-  producerCommit: 'b26a65456d5c06c901ba73d1e1620f7edb1a315a',
-  producerTree: 'f1f082a1af8375a7418d86556daeb65351757ad5',
+  producerCommit: '7a1fb9cb61161510b284b54c2d7003576cf2379b',
+  producerTree: 'a50b5b609f22fa06782ee564ad53fb49cb5d2364',
   historicalConfigPath: '.github/codeql/config.yml',
   historicalConfigSha256:
     '4b34450e1dcc0b489feea158d642a6b66261d9e935463928782219c8716c0892',
   configPath: '.github/codeql/config-integrations.yml',
   configSha256:
-    '18041680f9d2df3706e45bdf04e785457ee27573312998b999f51e893e7b59bb',
-  configBlob: '0759a4da80412a04830bed3e7f5727d07cbdeb35',
+    '07d7be878097a38520bcf09147b62c75064cb3d707317ad34e028c1f46ba8155',
+  configBlob: '4533ce4d7f681a6230399e25fb1d1f736c84b25b',
   workflowPath: '.github/workflows/static-analysis.yml',
   workflowSha256:
-    'c63eb465e33b49be07c812ec1d40c21b8c3f04c5e994bc9b687d75e1d01f6c35',
-  workflowBlob: 'a86b7fa495620d9dbac4f5ff4c5c5cbd8c8fe53e',
+    '5227e8df6bcf5e19a48b98a4e68b0633650c29b61aaaf8cd27c8c30f27a3984a',
+  workflowBlob: 'e4e7f01925b08418b4fec51c6306c102e57c3a94',
   archiveFiles: [
     'javascript.sarif',
     'source-extraction.json',
@@ -480,6 +480,7 @@ function verifySourceScope({ git, sha, version, lock, policy }) {
     profile.implementationBaseline,
     profile.integrationBaseline,
     profile.nativePinBaseline,
+    scannerPolicy.producerCommit,
   ])
     git('merge-base', '--is-ancestor', baseline, sha);
   requireValue(
@@ -520,6 +521,11 @@ function verifySourceScope({ git, sha, version, lock, policy }) {
       same(policy, compiler) &&
       same(readJSON(sha, 'config/solidity-compiler.json'), compiler),
     'Reviewed compiler policy differs'
+  );
+  requireValue(
+    text(git('rev-parse', `${scannerPolicy.producerCommit}^{tree}`)).trim() ===
+      scannerPolicy.producerTree,
+    'Reviewed scanner producer tree differs'
   );
   const baselineTree = parseTree(
     git('ls-tree', '-rz', profile.compilerSourceBaseline)

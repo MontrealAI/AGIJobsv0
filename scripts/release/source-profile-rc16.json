@@ -276,7 +276,7 @@
       "before": null,
       "after": {
         "mode": "100644",
-        "blob": "0759a4da80412a04830bed3e7f5727d07cbdeb35"
+        "blob": "4533ce4d7f681a6230399e25fb1d1f736c84b25b"
       }
     },
     {
@@ -342,7 +342,7 @@
       },
       "after": {
         "mode": "100644",
-        "blob": "a86b7fa495620d9dbac4f5ff4c5c5cbd8c8fe53e"
+        "blob": "e4e7f01925b08418b4fec51c6306c102e57c3a94"
       }
     },
     {
@@ -619,16 +619,16 @@
     "website/assets/computer-mission-copy.mjs"
   ],
   "scannerPolicy": {
-    "producerCommit": "b26a65456d5c06c901ba73d1e1620f7edb1a315a",
-    "producerTree": "f1f082a1af8375a7418d86556daeb65351757ad5",
+    "producerCommit": "7a1fb9cb61161510b284b54c2d7003576cf2379b",
+    "producerTree": "a50b5b609f22fa06782ee564ad53fb49cb5d2364",
     "historicalConfigPath": ".github/codeql/config.yml",
     "historicalConfigSha256": "4b34450e1dcc0b489feea158d642a6b66261d9e935463928782219c8716c0892",
     "configPath": ".github/codeql/config-integrations.yml",
-    "configSha256": "18041680f9d2df3706e45bdf04e785457ee27573312998b999f51e893e7b59bb",
-    "configBlob": "0759a4da80412a04830bed3e7f5727d07cbdeb35",
+    "configSha256": "07d7be878097a38520bcf09147b62c75064cb3d707317ad34e028c1f46ba8155",
+    "configBlob": "4533ce4d7f681a6230399e25fb1d1f736c84b25b",
     "workflowPath": ".github/workflows/static-analysis.yml",
-    "workflowSha256": "c63eb465e33b49be07c812ec1d40c21b8c3f04c5e994bc9b687d75e1d01f6c35",
-    "workflowBlob": "a86b7fa495620d9dbac4f5ff4c5c5cbd8c8fe53e",
+    "workflowSha256": "5227e8df6bcf5e19a48b98a4e68b0633650c29b61aaaf8cd27c8c30f27a3984a",
+    "workflowBlob": "e4e7f01925b08418b4fec51c6306c102e57c3a94",
     "archiveFiles": [
       "javascript.sarif",
       "source-extraction.json",

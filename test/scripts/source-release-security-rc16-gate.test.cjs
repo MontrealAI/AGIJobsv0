@@ -695,6 +695,8 @@ test('both real entrypoints reject a null notes record before network or publica
           GITHUB_REPOSITORY: 'MontrealAI/AGIJobsv0',
           GH_TOKEN: 'BENIGN_UNUSED_FIXTURE',
           TAG: 'source-v2.1.0-rc.16',
+          GITHUB_EVENT_NAME: 'push',
+          GITHUB_REF: 'refs/heads/main',
         },
       }
     );
@@ -703,4 +705,36 @@ test('both real entrypoints reject a null notes record before network or publica
     assert.ok(!result.stderr.includes('NETWORK_MUST_NOT_BE_USED'));
     assert.equal(fs.existsSync(path.join(root, 'reports')), false);
   }
+});
+
+test('rc16 CLI identity requires the exact repository main push before pending qualification', () => {
+  const {
+    verifyQualificationIdentity,
+  } = require('../../scripts/release/qualify-source-release-rc16.cjs');
+  const valid = {
+    GITHUB_SHA: 'a'.repeat(40),
+    GITHUB_REPOSITORY: 'MontrealAI/AGIJobsv0',
+    GH_TOKEN: 'BENIGN_UNUSED_IDENTITY_FIXTURE',
+    GITHUB_EVENT_NAME: 'push',
+    GITHUB_REF: 'refs/heads/main',
+  };
+  assert.deepEqual(verifyQualificationIdentity(valid), {
+    sha: valid.GITHUB_SHA,
+    repository: valid.GITHUB_REPOSITORY,
+  });
+  for (const change of [
+    { GITHUB_EVENT_NAME: 'pull_request' },
+    { GITHUB_EVENT_NAME: 'workflow_dispatch' },
+    { GITHUB_EVENT_NAME: undefined },
+    { GITHUB_REF: 'refs/heads/feature' },
+    { GITHUB_REF: 'refs/tags/source-v2.1.0-rc.16' },
+    { GITHUB_REF: undefined },
+    { GITHUB_REPOSITORY: 'foreign/repository' },
+    { GITHUB_SHA: 'a'.repeat(39) },
+    { GH_TOKEN: '' },
+  ])
+    assert.throws(
+      () => verifyQualificationIdentity({ ...valid, ...change }),
+      /exact-main qualification identity/
+    );
 });
