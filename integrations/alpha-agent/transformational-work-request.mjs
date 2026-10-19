@@ -53,7 +53,66 @@ const credentialKeys = new Set([
   'signingkey',
   'secret',
   'credentials',
+  'token',
+  'authorization',
+  'idtoken',
+  'sessiontoken',
+  'apisecret',
+  'secretkey',
+  'credential',
 ]);
+function publicURL(raw) {
+  let url;
+  try {
+    url = new URL(raw);
+  } catch {
+    need(false, 'TRANSFORMATION_PUBLIC_URL');
+  }
+  const host = url.hostname.toLowerCase();
+  need(
+    url.protocol === 'https:' &&
+      !url.username &&
+      !url.password &&
+      !url.hash &&
+      (!url.port || url.port === '443') &&
+      host.includes('.') &&
+      !/^[\d.]+$/.test(host) &&
+      !host.includes(':') &&
+      !host.startsWith('[') &&
+      !host.endsWith('.') &&
+      host.length <= 253 &&
+      host
+        .split('.')
+        .every((label) =>
+          /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(label)
+        ) &&
+      !/(^|\.)(localhost|local|internal|lan|home|test|invalid|example|onion)$/.test(
+        host
+      ),
+    'TRANSFORMATION_PUBLIC_URL'
+  );
+  for (const name of url.searchParams.keys()) {
+    const key = name.toLowerCase().replace(/[^a-z0-9]/g, '');
+    need(
+      !credentialKeys.has(key) &&
+        !['key', 'sig', 'signature'].includes(key) &&
+        !/^x(?:amz|goog)/.test(key),
+      'TRANSFORMATION_PRIVATE_INPUT'
+    );
+  }
+}
+function inertNativeAuthorization(value) {
+  return (
+    value &&
+    typeof value === 'object' &&
+    !Array.isArray(value) &&
+    Object.keys(value).sort().join('|') ===
+      'authority_expansion|binding|scope' &&
+    value.scope === 'local-bounded' &&
+    value.authority_expansion === false &&
+    (value.binding === null || hash(value.binding))
+  );
+}
 function read(raw) {
   need(
     typeof raw === 'string' && Buffer.byteLength(raw, 'utf8') <= MAX_BYTES,
@@ -61,29 +120,40 @@ function read(raw) {
   );
   const value = parseBounded(raw),
     decoded = canonical(value);
-  const pending = [value];
+  const pending = [{ item: value, path: [] }];
   while (pending.length) {
-    const item = pending.pop();
+    const { item, path } = pending.pop();
     if (item && typeof item === 'object') {
       for (const [name, child] of Object.entries(item)) {
+        const key = name.toLowerCase().replace(/[^a-z0-9]/g, '');
+        const nativeAuthorization =
+          key === 'authorization' &&
+          path.length === 0 &&
+          value.schema === 'transformational-intelligence/v1' &&
+          inertNativeAuthorization(child);
+        const publicRouteToken =
+          key === 'token' &&
+          path.length === 1 &&
+          path[0] === 'route' &&
+          value.schema === TRANSFORMATION_WORK_DRAFT_SCHEMA &&
+          child === route.token;
         need(
-          !credentialKeys.has(name.toLowerCase().replace(/[^a-z0-9]/g, '')) ||
+          !credentialKeys.has(key) ||
+            nativeAuthorization ||
+            publicRouteToken ||
             child === null ||
             child === '',
           'TRANSFORMATION_PRIVATE_INPUT'
         );
-        pending.push(child);
+        pending.push({ item: child, path: [...path, name] });
       }
+    } else if (typeof item === 'string') {
+      for (const match of item.matchAll(/https?:\/\/[^\s"'<>]+/gi))
+        publicURL(match[0]);
     }
   }
   need(
     !/(?:-----BEGIN [A-Z ]*PRIVATE KEY|\b(?:sk-(?:proj-)?|gh[pousr]_|github_pat_)[A-Za-z0-9_-]{16,}|\b(?:password|passwd|api[_-]?key|private[_-]?key|seed[_ -]?phrase|access[_-]?token)\s*[=:]\s*\S{6,}|\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b)/i.test(
-      decoded
-    ),
-    'TRANSFORMATION_PRIVATE_INPUT'
-  );
-  need(
-    !/https?:\/\/[^\s"<>]*(?:[?&#](?:token|key|sig|signature|secret|password|x-amz-[^=]*|x-goog-[^=]*)=|(?:localhost|127\.0\.0\.1|169\.254\.169\.254))|https?:\/\/[^\s/]+:[^\s@]+@/i.test(
       decoded
     ),
     'TRANSFORMATION_PRIVATE_INPUT'

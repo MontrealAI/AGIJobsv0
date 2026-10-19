@@ -46,6 +46,15 @@ cannot bypass the credential-field screen. These
 checks supplement operator source-rights review; they do not certify arbitrary
 content as public, truthful or non-personal.
 
+This bounded intake admits credential-free HTTPS references on default port 443
+to DNS names; literal IPv4/IPv6 addresses, alternate numeric IP encodings, local
+pseudo-domains, fragments, credential query fields and other ports are refused before the
+native callback. Public IP literals are also outside this profile. DNS names are
+not resolved or fetched here; source rights and network admission remain separate
+runtime checks. Native inert authorization metadata and the draft's fixed public
+AGIALPHA token address have explicit structural exceptions; a generic token or
+authorization string is not admitted as public campaign data.
+
 A future separately reviewed native charter with a positive AGIALPHA allowance
 can be presented to the conditional proposal interface:
 

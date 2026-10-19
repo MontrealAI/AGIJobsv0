@@ -376,6 +376,13 @@ test('decoded credential, private-address and duplicate-key inputs are rejected 
     'client.secret',
     'secret',
     'credentials',
+    'token',
+    'authorization',
+    'id_token',
+    'session_token',
+    'api_secret',
+    'secret_key',
+    'credential',
   ]) {
     const credential = await fixture((x) => {
       x.bindings.configuration = { [key]: 'synthetic-fixture-only' };
@@ -401,6 +408,86 @@ test('decoded credential, private-address and duplicate-key inputs are rejected 
       );
     }
   }
+  for (const privateValue of [
+    { value: 'synthetic-fixture-only' },
+    ['synthetic-fixture-only'],
+    123456,
+    false,
+  ]) {
+    const credential = await fixture((x) => {
+      x.bindings.configuration = { api_key: privateValue };
+    });
+    called = false;
+    await assert.rejects(
+      inspectTransformationWorkRequest(canonical(credential), {
+        ...options(credential),
+        inspectWorkRequest: async () => {
+          called = true;
+        },
+      }),
+      /PRIVATE_INPUT/
+    );
+    assert.equal(called, false);
+  }
+});
+
+test('only credential-free HTTPS DNS references are admitted before native callbacks', async () => {
+  for (const url of [
+    'http://192.168.1.10/',
+    'https://192.168.1.10/',
+    'https://10.0.0.1/',
+    'https://172.16.1.1/',
+    'https://127.0.0.2/',
+    'https://169.254.1.1/',
+    'https://2130706433/',
+    'https://0x7f000001/',
+    'https://0177.0.0.1/',
+    'https://[::1]/',
+    'https://[fc00::1]/',
+    'https://[fe80::1]/',
+    'https://[::ffff:192.168.1.1]/',
+    'https://localhost/',
+    'https://machine.local/',
+    'https://machine.lan/',
+    'https://machine.home/',
+    'https://github.com/?%74oken=synthetic',
+    'https://github.com/?api_secret=synthetic',
+    'https://github.com/\\?token=synthetic',
+    'https://github.com/#token=synthetic',
+    'https://user:synthetic@github.com/',
+    'https://8.8.8.8/',
+    'https://github.com:8443/',
+  ]) {
+    const request = await fixture((x) => {
+      x.bindings.configuration = { reference: url };
+    });
+    let called = false;
+    await assert.rejects(
+      inspectTransformationWorkRequest(canonical(request), {
+        ...options(request),
+        inspectWorkRequest: async () => {
+          called = true;
+        },
+      }),
+      /PRIVATE_INPUT|PUBLIC_URL/
+    );
+    assert.equal(called, false, url);
+  }
+  const publicRequest = await fixture((x) => {
+    x.bindings.configuration = {
+      reference:
+        'https://github.com/MontrealAI/AGI-Alpha-Agent-v0?tab=readme-ov-file',
+    };
+  });
+  assert.equal(
+    canonical(
+      await inspectTransformationWorkRequest(
+        canonical(publicRequest),
+        options(publicRequest)
+      )
+    ),
+    canonical(publicRequest)
+  );
 });
 
 test('evaluation, authorization and settlement cannot expand the imported campaign authority', async () => {
