@@ -1,0 +1,18 @@
+{
+  "schema": "rc16-canonical-selector-source-history/v1",
+  "local_original_commit": "c1e9fa98918b088ea0bb1f64f62521afdd3e4713",
+  "public_api_representation": "5db66e4788afd6edf1b44f32578b89f2bf1ab67c",
+  "exact_reviewed_tree": "678e5f3b572204497d29d4e62a043783a2c64b69",
+  "sole_public_parent_and_bundle_prerequisite": "5b5f55322d7e2b6e026b51d9659431eed327b4f4",
+  "source_proposal_branch": "integration/ti-canonical-selector-20261019-321a",
+  "canonical_PR": 4001,
+  "canonical_branch": "fix/inherited-codeql-final-python-rc16-20261019",
+  "identity_note": "Different API commit identity, identical independently reviewed source tree; actual original Git commit is retained in adjacent bundle and kept outside final-source ancestry.",
+  "bundle_file": "selector-c1e9.bundle",
+  "bundle_bytes": 1725,
+  "bundle_sha256": "5c139195e36ab881c5831f7e6501759571e0a4ee47cb3dc47be2b48b1ca0c055",
+  "bundle_git_blob": "78f35be3c3040996d09226406044ce2999647272",
+  "independent_static_review_sha256": "c687126367db17d3e3b656d89a20b7aab5613d6802f5df874d71fe300c952515",
+  "scope": "One metadata-only commit changing canonical27-source selector and two finite producer/profile records; no other source paths or sensitive data.",
+  "qualification": "All actual approvals null, final configured review and genuine required scanner/AS/CI/native/installed/release/live gates pending."
+}
