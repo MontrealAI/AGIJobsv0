@@ -48,6 +48,14 @@ For an existing ChatGPT Work session with browser or computer access:
    action records actually produced.
 4. Inspect the completed ledger and export it before leaving the page.
 
+**Keep your record before closing or reloading.** Update this session keeps the
+current tab's working record. Export the workspace to retain a file you can
+restore later. Large records remain available in full even when they exceed the
+native worker's handoff limit. In that case, use the operator handoff and restore
+the complete exported package in the public workspace. The instructions bind
+both the mission and workspace digests and require that exact package before
+work begins. Prepare a separate bounded mission if you need a native task.
+
 The copied task starts no session automatically. Your session's available tools,
 permissions and usage terms govern the execution. The site does not connect to
 your private computer or request a provider credential.
@@ -88,6 +96,13 @@ alpha-agent --home "$SUCCESSOR_OPERATOR_HOME" successor-computer run \
 Retain the actual run's task, screenshots, action records, provider identity and
 usage where available. A prepared task, model name or successful scripted fixture
 does not establish that this live provider run succeeded.
+
+The native Alpha task retains its 200,000-character HTML admission limit. Mission
+Studio disables native exports that exceed it and explains the available
+operator route. Portable mission and workspace files use a separate shared
+1,500,000-byte UTF-8 export/import bound, covering the maximum accepted fields
+even with JSON escaping. Source excerpts, ledgers and requirements are preserved
+in the exported record.
 
 Provider keys remain in your operator environment. They do not belong in the
 mission, source text, copied prompt, export, command arguments or repository.

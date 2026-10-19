@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  FRONTIER_COMPUTER_HTML_LIMIT,
+  FRONTIER_MISSION_LIMITS,
   FRONTIER_MISSION_PRESETS,
   createFrontierMission,
   verifyFrontierMission,
@@ -228,7 +230,10 @@ test('canonical export restores exact mission without executing embedded source 
     restoreFrontierMission('{"__proto__":{"proof":true}}')
   );
   await rejects(
-    () => restoreFrontierMission(' '.repeat(512001)),
+    () =>
+      restoreFrontierMission(
+        ' '.repeat(FRONTIER_MISSION_LIMITS.exportBytes + 1)
+      ),
     'FRONTIER_TEXT_INVALID'
   );
 });
@@ -279,6 +284,224 @@ test('a recorded strategy revision can be preserved without turning a user state
     () => verifyFrontierWorkspace(sealed, edited),
     'FRONTIER_WORKSPACE_TAMPERED'
   );
+});
+
+test('the native Alpha70 HTML boundary remains exactly 200000 characters', async () => {
+  assert.equal(FRONTIER_COMPUTER_HTML_LIMIT, 200000);
+  const sealed = await mission();
+  const boundary = `<html>${'x'.repeat(
+    FRONTIER_COMPUTER_HTML_LIMIT - 13
+  )}</html>`;
+  assert.equal(boundary.length, FRONTIER_COMPUTER_HTML_LIMIT);
+  const task = await createFrontierComputerTask(sealed, { html: boundary });
+  assert.equal(task.html, boundary);
+  await rejects(
+    () => createFrontierComputerTask(sealed, { html: `${boundary}x` }),
+    'FRONTIER_TEXT_INVALID'
+  );
+});
+
+test('maximum source and ledger records remain portable and immutable when native HTML exceeds its separate limit', async () => {
+  for (const character of ['x', '\u2028']) {
+    const custom = input();
+    let remaining = 64000;
+    custom.sources = Array.from({ length: 12 }, (_, index) => {
+      const count = Math.min(remaining, 12000);
+      remaining -= count;
+      const prefix = `https://arxiv.org/abs/${index}-`;
+      return {
+        id: `source-${index}`,
+        title: 't'.repeat(240),
+        url: prefix + 'u'.repeat(2048 - prefix.length),
+        text: character.repeat(count),
+      };
+    });
+    if (character === 'x') {
+      custom.title = 't'.repeat(240);
+      for (const key of [
+        'question',
+        'outcome',
+        'currentApproach',
+        'credibleAlternative',
+      ])
+        custom[key] = 'm'.repeat(6000);
+      custom.hardRequirements = Array.from({ length: 16 }, (_, index) =>
+        `${index}`.padEnd(1200, 'r')
+      );
+      custom.rights.license = 'l'.repeat(1000);
+    }
+    const sealed = await createFrontierMission(custom);
+    const blank = await createFrontierWorkspace(sealed);
+    const workspace = await sealFrontierWorkspace(sealed, {
+      ...blank,
+      strategyLedger: character.repeat(18000),
+      experimentLedger: character.repeat(18000),
+      evidenceLedger: character.repeat(18000),
+      reframing: {
+        proposal: 'p'.repeat(6000),
+        hardRequirementMapping: 'h'.repeat(6000),
+        status: 'PROPOSED',
+        ownerApproval: null,
+      },
+    });
+    const snapshot = canonicalize({ mission: sealed, workspace });
+    const exported = await exportFrontierWorkspace(sealed, workspace);
+    const restored = await restoreFrontierWorkspace(exported);
+    assert.deepEqual(restored, { mission: sealed, workspace });
+    assert.equal(canonicalize(restored), snapshot);
+    assert.equal(
+      restored.mission.sources.reduce(
+        (sum, source) => sum + source.text.length,
+        0
+      ),
+      64000
+    );
+    for (const key of ['strategyLedger', 'experimentLedger', 'evidenceLedger'])
+      assert.equal(restored.workspace[key].length, 18000);
+    assert.ok(Object.isFrozen(restored.mission.sources));
+    assert.ok(Object.isFrozen(restored.workspace));
+    const escapedRecord = exported.replace(
+      /[<>&\u2028\u2029]/g,
+      (part) => `\\u${part.charCodeAt(0).toString(16).padStart(4, '0')}`
+    );
+    const oversizedHTML = `<!doctype html><html><body><pre>${escapedRecord}</pre></body></html>`;
+    assert.ok(oversizedHTML.length > FRONTIER_COMPUTER_HTML_LIMIT);
+    await rejects(
+      () => createFrontierComputerTask(sealed, { html: oversizedHTML }),
+      'FRONTIER_TEXT_INVALID'
+    );
+    assert.equal(canonicalize({ mission: sealed, workspace }), snapshot);
+    assert.equal(await exportFrontierWorkspace(sealed, workspace), exported);
+    const tampered = JSON.parse(exported);
+    tampered.workspace.evidenceLedger = `changed${tampered.workspace.evidenceLedger.slice(
+      7
+    )}`;
+    await rejects(
+      () => restoreFrontierWorkspace(JSON.stringify(tampered)),
+      'FRONTIER_WORKSPACE_TAMPERED'
+    );
+  }
+});
+
+test('all field maxima round-trip within a derived portable bound for Unicode and worst JSON escaping', async () => {
+  assert.equal(FRONTIER_MISSION_LIMITS.exportBytes, 1500000);
+  const maximumFreeTextUnits =
+    240 +
+    4 * 6000 +
+    16 * 1200 +
+    12 * 240 +
+    64000 +
+    1000 +
+    3 * 18000 +
+    2 * 6000 +
+    240 +
+    2000;
+  assert.equal(maximumFreeTextUnits, 179560);
+  const conservativeEnvelopeBytes =
+    maximumFreeTextUnits * 6 + 12 * 2048 + 12 * 48 + 16000;
+  assert.ok(conservativeEnvelopeBytes < 1120000);
+  assert.ok(conservativeEnvelopeBytes < FRONTIER_MISSION_LIMITS.exportBytes);
+  for (const character of ['界', '\u0000', '"', '\\']) {
+    const custom = input();
+    custom.title = character.repeat(240);
+    for (const key of [
+      'question',
+      'outcome',
+      'currentApproach',
+      'credibleAlternative',
+    ])
+      custom[key] = character.repeat(6000);
+    custom.hardRequirements = Array.from({ length: 16 }, (_, index) =>
+      `${index}`.padEnd(1200, character)
+    );
+    custom.rights.license = character.repeat(1000);
+    let remaining = 64000;
+    custom.sources = Array.from({ length: 12 }, (_, index) => {
+      const count = Math.min(remaining, 12000);
+      remaining -= count;
+      const prefix = `https://arxiv.org/abs/${index}-`;
+      return {
+        id: `source-${index}`.padEnd(48, 's'),
+        title: character.repeat(240),
+        url: prefix + 'u'.repeat(2048 - prefix.length),
+        text: character.repeat(count),
+      };
+    });
+    const sealed = await createFrontierMission(custom);
+    const proposed = await proposeFrontierFormulation(
+      sealed,
+      await createFrontierWorkspace(sealed),
+      {
+        proposal: character.repeat(6000),
+        hardRequirementMapping: character.repeat(6000),
+      }
+    );
+    const approved = await approveFrontierFormulation(sealed, proposed, {
+      ownerLabel: character.repeat(240),
+      reason: character.repeat(2000),
+      hardRequirementsPreserved: true,
+    });
+    const workspace = await sealFrontierWorkspace(sealed, {
+      ...approved,
+      strategyLedger: character.repeat(18000),
+      experimentLedger: character.repeat(18000),
+      evidenceLedger: character.repeat(18000),
+    });
+    const snapshot = canonicalize({ mission: sealed, workspace });
+    const portableMission = await exportFrontierMission(sealed);
+    const portableWorkspace = await exportFrontierWorkspace(sealed, workspace);
+    const bytes = new TextEncoder().encode(portableWorkspace).byteLength;
+    assert.ok(bytes < conservativeEnvelopeBytes);
+    if (character === '界' || character === '\u0000') assert.ok(bytes > 512000);
+    assert.deepEqual(await restoreFrontierMission(portableMission), sealed);
+    const restored = await restoreFrontierWorkspace(portableWorkspace);
+    assert.deepEqual(restored, { mission: sealed, workspace });
+    assert.equal(canonicalize(restored), snapshot);
+    assert.ok(Object.isFrozen(restored.mission.sources));
+    assert.ok(Object.isFrozen(restored.workspace.reframing.ownerApproval));
+    assert.equal(
+      restored.workspace.provenance.classification,
+      'USER_ENTERED_UNVERIFIED'
+    );
+    assert.equal(restored.workspace.provenance.executionStatus, 'NOT_ATTESTED');
+    assert.equal(restored.workspace.provenance.independentProof, false);
+    assert.equal(restored.workspace.provenance.productionApproved, false);
+    assert.equal(restored.workspace.provenance.authorityCreated, 'NONE');
+    assert.equal(
+      await exportFrontierWorkspace(sealed, workspace),
+      portableWorkspace
+    );
+    assert.equal(canonicalize({ mission: sealed, workspace }), snapshot);
+  }
+});
+
+test('portable restore enforces the shared UTF8 byte cap before parsing or replay', async () => {
+  const cap = FRONTIER_MISSION_LIMITS.exportBytes;
+  const exactlyOneByteOver = JSON.stringify('界'.repeat((cap - 3) / 3) + 'aa');
+  assert.equal(
+    new TextEncoder().encode(exactlyOneByteOver).byteLength,
+    cap + 1
+  );
+  assert.ok(exactlyOneByteOver.length < cap);
+  await rejects(
+    () => restoreFrontierMission(exactlyOneByteOver),
+    'FRONTIER_EXPORT_LIMIT'
+  );
+  await rejects(
+    () => restoreFrontierWorkspace(exactlyOneByteOver),
+    'FRONTIER_EXPORT_LIMIT'
+  );
+  const sealed = await mission();
+  const oldArchive = await exportFrontierWorkspace(
+    sealed,
+    await createFrontierWorkspace(sealed)
+  );
+  assert.ok(new TextEncoder().encode(oldArchive).byteLength < 512000);
+  assert.equal(
+    (await restoreFrontierWorkspace(oldArchive)).mission.digest,
+    sealed.digest
+  );
+  assert.equal(FRONTIER_COMPUTER_HTML_LIMIT, 200000);
 });
 
 test('L4 requires a complete hard-requirement mapping and explicit attributable experiment approval', async () => {

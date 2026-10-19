@@ -49,6 +49,13 @@ provider qualification. Four native Jobs drafts reserve **zero AGIALPHA** and
 remain unsigned and unfunded; review, funding and execution require separate
 owner decisions.
 
+Large valid research records remain available for complete export and restore
+even when they exceed native task or browser-link capacity. The operator handoff
+then requires the exact exported package and both content digests. Native Alpha
+HTML admission stays at 200,000 characters; the separate bounded portable format
+supports all accepted field sizes and escaping with a shared UTF-8 export/import
+limit. The interface makes session-only updates and export-before-closing clear.
+
 ## Reproduce a bounded strategy comparison
 
 The [supplier Computer Use laboratory](https://montrealai.github.io/AGIJobsv0/successor/computer/)

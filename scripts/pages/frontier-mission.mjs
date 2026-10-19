@@ -171,7 +171,7 @@ export function renderFrontierMissionPage(base, revision, language = 'en') {
   )}${button(
     'download-desk',
     t.desk
-  )}</div><a class="fm-inline-link" href="https://github.com/MontrealAI/AGIJobsv0/blob/${esc(
+  )}</div><p id="fm-native-status" class="fm-help" role="status"></p><a class="fm-inline-link" href="https://github.com/MontrealAI/AGIJobsv0/blob/${esc(
     revision
   )}/docs/successor/COMPUTER_USE_LEVELS.md">${esc(
     t.runtimeGuide

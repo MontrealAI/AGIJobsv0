@@ -117,6 +117,16 @@ export const frontierMissionCopy = {
       'Download the native ComputerTask and its exact workspace HTML for the pinned Alpha runtime. Configure a current supported model, credentials, a digest-pinned worker image and an explicit execution permit in your own environment.',
     task: 'Download ComputerTask',
     desk: 'Download workspace HTML',
+    nativeReady:
+      'Native task ready for this complete workspace. No execution has started.',
+    nativeUnavailable:
+      'This complete workspace exceeds the owned runtime’s {limit}-character HTML limit. Your full record is intact and can still be exported and restored in the public workspace. Use the operator handoff, or prepare a separate bounded mission for the native runtime.',
+    deskRestoreRequired:
+      'This record is too large to embed in a workspace link. Export mission to keep the complete package, then open the workspace and use Restore a workspace to load that exact file before working. This link alone loads no mission or records.',
+    workRestoreRequired:
+      'REQUIRED BEFORE ANY WORK: this URL opens an empty workspace because the complete record exceeds the link capacity. Use Export mission in the studio to obtain the complete mission-and-workspace JSON package, then use Restore a workspace in the public desk to load that exact file. Verify BOTH content digests below. If the package is missing or either digest differs, STOP and request the exact package from the operator. Do not begin from an empty workspace or reconstruct missing records.',
+    missionBinding: 'Exact mission digest',
+    workspaceBinding: 'Exact workspace digest',
     runtimeGuide: 'Owned runtime guide',
     retainTitle: 'Keep the institution.',
     retainHelp:
@@ -222,6 +232,16 @@ export const frontierMissionCopy = {
       'Téléchargez la tâche ComputerTask native et son espace HTML exact pour l’environnement Alpha épinglé. Configurez un modèle pris en charge, les identifiants, une image épinglée par empreinte et un permis explicite dans votre propre environnement.',
     task: 'Télécharger ComputerTask',
     desk: 'Télécharger l’espace HTML',
+    nativeReady:
+      'Tâche native prête pour cet espace complet. Aucune exécution n’a commencé.',
+    nativeUnavailable:
+      'Cet espace complet dépasse la limite HTML de {limit} caractères de l’environnement détenu. Le dossier intégral reste intact et peut être exporté puis restauré dans l’espace public. Utilisez le transfert à l’opérateur ou préparez une mission limitée distincte pour l’environnement natif.',
+    deskRestoreRequired:
+      'Ce dossier est trop volumineux pour être intégré dans un lien. Utilisez Exporter la mission pour conserver le paquet complet, puis ouvrez l’espace et utilisez Restaurer un espace pour charger ce fichier exact avant de travailler. Ce lien seul ne charge aucune mission ni aucune trace.',
+    workRestoreRequired:
+      'OBLIGATOIRE AVANT TOUT TRAVAIL : cette URL ouvre un espace vide, car le dossier complet dépasse la capacité du lien. Utilisez Exporter la mission dans le studio pour obtenir le paquet JSON complet de la mission et de son espace, puis Restaurer un espace dans le bureau public pour charger ce fichier exact. Vérifiez les DEUX empreintes ci-dessous. Si le paquet manque ou si une empreinte diffère, ARRÊTEZ et demandez le paquet exact à l’opérateur. Ne commencez pas dans un espace vide et ne reconstituez pas les traces manquantes.',
+    missionBinding: 'Empreinte exacte de la mission',
+    workspaceBinding: 'Empreinte exacte de l’espace',
     runtimeGuide: 'Guide de l’environnement',
     retainTitle: 'Conservez l’institution.',
     retainHelp:

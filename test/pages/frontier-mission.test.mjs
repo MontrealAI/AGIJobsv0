@@ -6,6 +6,9 @@ import {
   FRONTIER_MISSION_PRESETS,
   createFrontierMission,
   createFrontierWorkspace,
+  sealFrontierWorkspace,
+  proposeFrontierFormulation,
+  approveFrontierFormulation,
   createFrontierComputerTask,
   importFrontierDeskDraft,
 } from '../../packages/successor-core/src/frontier-mission.mjs';
@@ -150,6 +153,96 @@ test('the real exported desk preserves hostile mission and source strings as ine
         .mission.sources[0].text,
       hostile
     );
+  } finally {
+    window.close();
+  }
+});
+
+test('a maximum-source Unicode workspace initializes and saves all real desk fields without truncating content or inheriting owner approval', async () => {
+  const pattern = '<>&\u2028\u2029数学🧪';
+  const fullText = (label, max) => {
+    const head = label + ': ',
+      end = ' END ' + label;
+    const size = max - head.length - end.length;
+    return (
+      head +
+      pattern.repeat(Math.floor(size / pattern.length)) +
+      'x'.repeat(size % pattern.length) +
+      end
+    );
+  };
+  const values = input();
+  values.title =
+    '</script><script>globalThis.frontierCapacityCompromised=true</script>';
+  values.sources = [12000, 12000, 12000, 12000, 12000, 4000].map(
+    (size, index) => ({
+      id: 'large-source-' + index,
+      title: 'Full supplied source ' + index,
+      url: 'https://www.example.org/large-source-' + index,
+      text: fullText('source-' + index, size),
+    })
+  );
+  const mission = await createFrontierMission(values);
+  let workspace = await sealFrontierWorkspace(mission, {
+    ...(await createFrontierWorkspace(mission)),
+    strategyLedger: fullText('strategy', 18000),
+    experimentLedger: fullText('experiments', 18000),
+    evidenceLedger: fullText('evidence', 18000),
+  });
+  workspace = await proposeFrontierFormulation(mission, workspace, {
+    proposal: fullText('proposal', 6000),
+    hardRequirementMapping: fullText('mapping', 6000),
+  });
+  workspace = await approveFrontierFormulation(mission, workspace, {
+    ownerLabel: 'Source package owner',
+    reason:
+      'Exact experiment only, with unverified claims and no operational authority.',
+    hardRequirementsPreserved: true,
+  });
+  const window = new JSDOM(
+    renderFrontierDeskDocument(mission, { language: 'fr', workspace }),
+    { runScripts: 'dangerously' }
+  ).window;
+  try {
+    const document = window.document;
+    assert.equal(window.frontierCapacityCompromised, undefined);
+    assert.deepEqual(
+      [...document.querySelectorAll('#fd-sources pre')].map(
+        (item) => item.textContent
+      ),
+      mission.sources.map((source) => source.text)
+    );
+    for (const [id, value] of [
+      ['strategy', workspace.strategyLedger],
+      ['experiments', workspace.experimentLedger],
+      ['evidence', workspace.evidenceLedger],
+      ['proposal', workspace.reframing.proposal],
+      ['mapping', workspace.reframing.hardRequirementMapping],
+    ])
+      assert.equal(document.getElementById('fd-' + id).value, value);
+    document.getElementById('fd-save').click();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    const draft = JSON.parse(document.getElementById('fd-result').textContent);
+    assert.equal(draft.strategyLedger, workspace.strategyLedger);
+    assert.equal(draft.experimentLedger, workspace.experimentLedger);
+    assert.equal(draft.evidenceLedger, workspace.evidenceLedger);
+    assert.equal(draft.reframing.proposal, workspace.reframing.proposal);
+    assert.equal(
+      draft.reframing.hardRequirementMapping,
+      workspace.reframing.hardRequirementMapping
+    );
+    const retained = await importFrontierDeskDraft(mission, draft);
+    assert.equal(retained.reframing.status, 'PROPOSED');
+    assert.equal(
+      retained.reframing.ownerApproval,
+      null,
+      'A native draft cannot replay a package owner attestation'
+    );
+    assert.equal(retained.provenance.classification, 'USER_ENTERED_UNVERIFIED');
+    assert.equal(retained.provenance.executionStatus, 'NOT_ATTESTED');
+    assert.equal(retained.provenance.independentProof, false);
+    assert.equal(retained.provenance.productionApproved, false);
+    assert.equal(retained.provenance.authorityCreated, 'NONE');
   } finally {
     window.close();
   }

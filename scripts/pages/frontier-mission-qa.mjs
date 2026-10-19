@@ -5,10 +5,21 @@ import http from 'node:http';
 import { createHash } from 'node:crypto';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import {
+  FRONTIER_MISSION_PRESETS,
+  FRONTIER_COMPUTER_HTML_LIMIT,
+  FRONTIER_MISSION_LIMITS,
+  createFrontierMission,
+  createFrontierWorkspace,
+  sealFrontierWorkspace,
+  proposeFrontierFormulation,
+  approveFrontierFormulation,
+  exportFrontierWorkspace,
   verifyFrontierMission,
   restoreFrontierWorkspace,
   importFrontierDeskDraft,
 } from '../../packages/successor-core/src/frontier-mission.mjs';
+
+import { renderFrontierDeskDocument } from '../../website/assets/frontier-desk.mjs';
 
 const route = 'successor/mission/';
 const read = async (page, selector) =>
@@ -106,6 +117,105 @@ async function editDuringAction(page, selector, value) {
     field.dispatchEvent(new Event('input', { bubbles: true }));
   }, value);
 }
+async function capacityWorkspace(kind = 'ascii') {
+  const portable = kind === 'portable',
+    unicode = kind !== 'ascii';
+  const pattern = portable ? '界' : unicode ? '<>&\u2028\u2029数学🧪' : 'q';
+  const payload = (label, max) => {
+    const head = label + ': ',
+      end = ' END ' + label;
+    const length = max - head.length - end.length;
+    return (
+      head +
+      pattern.repeat(Math.floor(length / pattern.length)) +
+      'x'.repeat(length % pattern.length) +
+      end
+    );
+  };
+  let remaining = 64000;
+  const sources = Array.from({ length: portable ? 12 : 6 }, (_, index) => {
+    const length = Math.min(remaining, 12000);
+    remaining -= length;
+    const prefix = 'https://www.example.org/capacity-source-' + index + '-';
+    return {
+      id: ('capacity-source-' + index).padEnd(portable ? 48 : 20, 's'),
+      title: portable
+        ? payload('source-title-' + index, 240)
+        : 'Exact supplied capacity source ' + index,
+      url: portable ? prefix.padEnd(2048, 'u') : prefix + 'record',
+      text: length ? payload('source-' + index, length) : '',
+    };
+  });
+  const input = {
+    ...structuredClone(FRONTIER_MISSION_PRESETS.business),
+    title: portable
+      ? payload('title', 240)
+      : 'Maximum valid ' + kind + ' research workspace',
+    question: payload('question', 6000),
+    outcome: payload('outcome', 6000),
+    currentApproach: payload('current', 6000),
+    credibleAlternative: payload('alternative', 6000),
+    sources,
+    rights: {
+      publicNonPersonal: true,
+      license: portable
+        ? payload('rights', 1000)
+        : 'Original public nonpersonal capacity QA content; use and packaging permitted.',
+    },
+  };
+  if (portable)
+    input.hardRequirements = Array.from({ length: 16 }, (_, index) =>
+      payload('requirement-' + index, 1200)
+    );
+  const mission = await createFrontierMission(input);
+  let workspace = await sealFrontierWorkspace(mission, {
+    ...(await createFrontierWorkspace(mission)),
+    strategyLedger: payload('strategy', 18000),
+    experimentLedger: payload('experiments', 18000),
+    evidenceLedger: payload('evidence', 18000),
+  });
+  workspace = await proposeFrontierFormulation(mission, workspace, {
+    proposal: payload('proposal', 6000),
+    hardRequirementMapping: payload('mapping', 6000),
+  });
+  workspace = await approveFrontierFormulation(mission, workspace, {
+    ownerLabel: portable ? payload('owner', 240) : 'QA capacity owner',
+    reason: portable
+      ? payload('reason', 2000)
+      : 'Exact formulation experiment only; recorded claims remain unverified.',
+    hardRequirementsPreserved: true,
+  });
+  const serialized = await exportFrontierWorkspace(mission, workspace);
+  assert.equal(
+    mission.sources.reduce((sum, item) => sum + item.text.length, 0),
+    64000
+  );
+  assert.ok(
+    Buffer.byteLength(serialized) < FRONTIER_MISSION_LIMITS.exportBytes,
+    'The regression imports a valid bounded package'
+  );
+  if (portable)
+    assert.ok(
+      Buffer.byteLength(serialized) > 512000,
+      'Actual Unicode file admission exceeds the previous broken portable limit'
+    );
+  assert.ok(
+    renderFrontierDeskDocument(mission, { workspace }).length >
+      FRONTIER_COMPUTER_HTML_LIMIT,
+    'The complete native HTML exceeds the actual Alpha limit'
+  );
+  const fragment = new URLSearchParams({
+    task: JSON.stringify(mission),
+    workspace: JSON.stringify(workspace),
+  }).toString();
+  assert.equal(
+    fragment.length > 400000,
+    unicode,
+    'Exercise native-only capacity and oversized public URL separately'
+  );
+  return { kind, mission, workspace, serialized, oversizedURL: unicode };
+}
+
 async function geometry(page, label) {
   const value = await page.evaluate(() => ({
     viewport: innerWidth,
@@ -354,7 +464,10 @@ export async function verifyFrontierMissionStudio({
       mission
     );
     provenance(originalPack.workspace);
-    for (const invalid of ['{', 'x'.repeat(512001)]) {
+    for (const invalid of [
+      '{',
+      'x'.repeat(FRONTIER_MISSION_LIMITS.exportBytes + 1),
+    ]) {
       await upload(page, '#fm-import', invalid, 'invalid-package.json');
       assert.deepEqual(await read(page, '#fm-mission-json'), mission);
       assert.equal(await page.locator('#fm-title').inputValue(), mission.title);
@@ -547,7 +660,10 @@ export async function verifyFrontierMissionStudio({
           await fresh.locator('#fd-strategy').inputValue(),
           strategy
         );
-        for (const invalid of ['{', 'x'.repeat(512001)]) {
+        for (const invalid of [
+          '{',
+          'x'.repeat(FRONTIER_MISSION_LIMITS.exportBytes + 1),
+        ]) {
           await upload(fresh, '#fd-import', invalid, 'invalid-package.json');
           await idleDesk(fresh);
           assert.deepEqual(await read(fresh, '#fd-result'), approved);
@@ -642,6 +758,291 @@ export async function verifyFrontierMissionStudio({
     );
     checks.push(
       'Mission Studio: sealed workspace restores in a fresh context; tampered requirements and fabricated provider proof are rejected; the real exported native desk produces unverified drafts and cannot self-approve an owner'
+    );
+
+    const capacityRecords = await Promise.all([
+      capacityWorkspace('ascii'),
+      capacityWorkspace('unicode'),
+      capacityWorkspace('portable'),
+    ]);
+    const capacityEvidence = [];
+    for (const language of ['en', 'fr']) {
+      await page.goto(url + route + (language === 'fr' ? 'fr/' : ''), {
+        waitUntil: 'networkidle',
+      });
+      await page
+        .locator('[data-frontier-mission][data-ready="true"]')
+        .waitFor();
+      await upload(page, '#fm-import', approvedFile.text);
+      await prepared(page);
+      assert.equal(await page.locator('#fm-download-task').isDisabled(), false);
+      assert.equal(await page.locator('#fm-download-desk').isDisabled(), false);
+      const initialSmallTask = JSON.parse(
+        (await download(page, '#fm-download-task')).text
+      );
+      assert.ok(initialSmallTask.goal.includes(mission.digest));
+      for (const record of capacityRecords) {
+        await upload(page, '#fm-import', record.serialized);
+        await prepared(page);
+        assert.deepEqual(await read(page, '#fm-mission-json'), record.mission);
+        for (const [selector, key] of [
+          ['#fm-question', 'question'],
+          ['#fm-outcome', 'outcome'],
+          ['#fm-current', 'currentApproach'],
+          ['#fm-alternative', 'credibleAlternative'],
+        ]) {
+          assert.equal(
+            await page.locator(selector).inputValue(),
+            record.mission[key]
+          );
+        }
+        assert.deepEqual(
+          await page
+            .locator('[data-source-text]')
+            .evaluateAll((fields) => fields.map((field) => field.value)),
+          record.mission.sources.map((source) => source.text)
+        );
+        assert.equal(
+          await page
+            .locator('[data-frontier-mission]')
+            .getAttribute('data-native-available'),
+          'false'
+        );
+        assert.equal(
+          await page
+            .locator('[data-frontier-mission]')
+            .getAttribute('data-desk-requires-import'),
+          String(record.oversizedURL)
+        );
+        assert.equal(
+          await page.locator('#fm-download-task').isDisabled(),
+          true
+        );
+        assert.equal(
+          await page.locator('#fm-download-desk').isDisabled(),
+          true
+        );
+        const reason = await page.locator('#fm-native-status').textContent();
+        assert.equal(await page.locator('#fm-native-status').isVisible(), true);
+        assert.match(reason, /200[,.\s]*000/u);
+        assert.match(
+          reason,
+          language === 'fr'
+            ? /limite|capacit|volumineux|dépasse/i
+            : /limit|capacity|large|exceed/i
+        );
+        assert.equal(
+          await page.locator('#fm-download-mission').isDisabled(),
+          false
+        );
+        assert.equal(
+          await page.locator('#fm-download-brief').isDisabled(),
+          false
+        );
+        const fullExport = await download(page, '#fm-download-mission');
+        if (record.kind === 'portable') {
+          await upload(
+            page,
+            '#fm-import',
+            'x'.repeat(FRONTIER_MISSION_LIMITS.exportBytes + 1),
+            'over-portable-limit.json'
+          );
+          assert.deepEqual(
+            await read(page, '#fm-mission-json'),
+            record.mission
+          );
+          assert.equal(
+            (await download(page, '#fm-download-mission')).text,
+            record.serialized
+          );
+          assert.equal(
+            await page.locator('#fm-download-task').isDisabled(),
+            true
+          );
+          assert.match(
+            await page.locator('#fm-status').textContent(),
+            /import size/i
+          );
+        }
+        assert.equal(
+          fullExport.text,
+          record.serialized,
+          'Every source, ledger, approval and digest survives the capacity fallback without truncation'
+        );
+        const restored = await restoreFrontierWorkspace(fullExport.text);
+        provenance(restored.workspace);
+        assert.equal(
+          restored.workspace.reframing.status,
+          'OWNER_APPROVED_FOR_EXPERIMENT'
+        );
+        const prompt = await page.locator('#fm-work-prompt').inputValue();
+        assert.ok(prompt.includes(record.mission.digest));
+        const publicURL = new URL(
+          await page.locator('#fm-public-desk').getAttribute('href'),
+          page.url()
+        );
+        if (record.oversizedURL) {
+          assert.equal(publicURL.hash, '');
+          assert.equal(
+            publicURL.pathname,
+            new URL(url).pathname +
+              route +
+              'desk/' +
+              (language === 'fr' ? 'fr/' : '')
+          );
+          const fallback = await page
+            .locator('#fm-desk-link-status')
+            .textContent();
+          assert.match(
+            fallback,
+            language === 'fr' ? /restaur|import/i : /restore|import/i
+          );
+          assert.ok(
+            prompt.includes(record.workspace.digest),
+            'The import-first instructions bind the complete workspace as well as the mission'
+          );
+          assert.match(
+            prompt,
+            language === 'fr' ? /restaur|import/i : /restore|import/i
+          );
+          assert.match(prompt, /stop|arrêt/i);
+        } else {
+          const fragment = new URLSearchParams(publicURL.hash.slice(1));
+          assert.deepEqual(JSON.parse(fragment.get('task')), record.mission);
+          assert.deepEqual(
+            JSON.parse(fragment.get('workspace')),
+            record.workspace
+          );
+        }
+        capacityEvidence.push({
+          language,
+          kind: record.kind,
+          sourceCharacters: 64000,
+          ledgerCharacters: 54000,
+          packageBytes: Buffer.byteLength(fullExport.text),
+          oversizedURL: record.oversizedURL,
+          nativeAvailable: false,
+          missionDigest: restored.mission.digest,
+          workspaceDigest: restored.workspace.digest,
+        });
+      }
+      await upload(page, '#fm-import', approvedFile.text);
+      await prepared(page);
+      assert.equal(await page.locator('#fm-download-task').isDisabled(), false);
+      assert.equal(await page.locator('#fm-download-desk').isDisabled(), false);
+      const recoveredTask = JSON.parse(
+        (await download(page, '#fm-download-task')).text
+      );
+      const recoveredHTML = (await download(page, '#fm-download-desk')).text;
+      assert.equal(recoveredTask.html, recoveredHTML);
+      assert.ok(recoveredHTML.length <= FRONTIER_COMPUTER_HTML_LIMIT);
+      assert.ok(recoveredTask.goal.includes(mission.digest));
+      assert.ok(
+        recoveredTask.goal.includes(
+          'sha256:' + createHash('sha256').update(recoveredHTML).digest('hex')
+        )
+      );
+      assert.deepEqual(
+        recoveredTask,
+        initialSmallTask,
+        'The same studio restores the exact small native task after both capacity fallbacks'
+      );
+      assert.equal(
+        await page
+          .locator('[data-frontier-mission]')
+          .getAttribute('data-native-available'),
+        'true'
+      );
+      assert.match(
+        await page.locator('#fm-native-status').textContent(),
+        language === 'fr' ? /prête/i : /ready/i
+      );
+      assert.equal(
+        await page.locator('#fm-desk-link-status').textContent(),
+        ''
+      );
+      await page.goto(
+        url + route + 'desk/' + (language === 'fr' ? 'fr/' : ''),
+        { waitUntil: 'networkidle' }
+      );
+      await idleDesk(page);
+      assert.equal(
+        await page.locator('#fd-save').isDisabled(),
+        true,
+        'A bare public URL never pretends the package is already loaded'
+      );
+      const fullRecord = capacityRecords.at(-1);
+      await upload(page, '#fd-import', fullRecord.serialized);
+      await idleDesk(page);
+      assert.deepEqual(await read(page, '#fd-result'), fullRecord.workspace);
+      assert.equal(
+        await page.locator('#fd-mission-digest').textContent(),
+        fullRecord.mission.digest
+      );
+      for (const [selector, key] of [
+        ['#fd-strategy', 'strategyLedger'],
+        ['#fd-experiments', 'experimentLedger'],
+        ['#fd-evidence', 'evidenceLedger'],
+      ])
+        assert.equal(
+          await page.locator(selector).inputValue(),
+          fullRecord.workspace[key]
+        );
+      assert.deepEqual(
+        await page.locator('#fd-sources pre').allTextContents(),
+        fullRecord.mission.sources
+          .filter((source) => source.text)
+          .map((source) => source.text)
+      );
+      assert.equal(
+        await page.locator('#fd-proposal').inputValue(),
+        fullRecord.workspace.reframing.proposal
+      );
+      assert.equal(
+        await page.locator('#fd-mapping').inputValue(),
+        fullRecord.workspace.reframing.hardRequirementMapping
+      );
+      assert.equal(
+        await page.locator('#fd-owner').inputValue(),
+        fullRecord.workspace.reframing.ownerApproval.ownerLabel
+      );
+      assert.equal(
+        await page.locator('#fd-reason').inputValue(),
+        fullRecord.workspace.reframing.ownerApproval.reason
+      );
+      assert.equal(await page.locator('#fd-preserve').isChecked(), true);
+      await upload(
+        page,
+        '#fd-import',
+        'x'.repeat(FRONTIER_MISSION_LIMITS.exportBytes + 1),
+        'over-portable-limit.json'
+      );
+      await idleDesk(page);
+      assert.deepEqual(await read(page, '#fd-result'), fullRecord.workspace);
+      assert.equal(
+        await page.locator('#fd-strategy').inputValue(),
+        fullRecord.workspace.strategyLedger
+      );
+      assert.match(
+        await page.locator('#fd-status').textContent(),
+        /import size/i
+      );
+      const deskExport = await download(page, '#fd-export');
+      await idleDesk(page);
+      assert.equal(
+        deskExport.text,
+        fullRecord.serialized,
+        'The direct desk preserves and exports the complete maximum valid Unicode workspace'
+      );
+      provenance((await restoreFrontierWorkspace(deskExport.text)).workspace);
+    }
+    fs.writeFileSync(
+      path.join(artifacts, 'frontier-mission-capacity-qa.json'),
+      JSON.stringify({ passed: true, records: capacityEvidence }, null, 2) +
+        '\n'
+    );
+    checks.push(
+      'Mission Studio: maximum valid 64000-character sources and complete ledgers, including a >512000-byte Unicode record, restore/export unchanged in EN/FR; oversized native HTML disables only native handoff, oversized URLs require the exact mission+workspace package, and returning to a small record restores exact native downloads'
     );
 
     for (const language of ['en', 'fr']) {

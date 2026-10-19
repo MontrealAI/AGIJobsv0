@@ -8,6 +8,8 @@ import {
 } from './frontier-desk.mjs';
 import {
   FRONTIER_MISSION_PRESETS,
+  FRONTIER_MISSION_LIMITS,
+  FRONTIER_COMPUTER_HTML_LIMIT,
   createFrontierMission,
   verifyFrontierMission,
   restoreFrontierMission,
@@ -42,7 +44,7 @@ function download(name, text, type = 'application/json') {
 async function readFile(input) {
   const file = input.files?.[0];
   if (!file) throw new Error('Choose a saved package.');
-  if (file.size > 512000)
+  if (file.size > FRONTIER_MISSION_LIMITS.exportBytes)
     throw new Error('The package exceeds the bounded import size.');
   return file.text();
 }
@@ -107,6 +109,13 @@ if (studio) {
     mission = null;
     workspace = null;
     nativeTask = null;
+    taskHTML = '';
+    $('download-task').disabled = true;
+    $('download-desk').disabled = true;
+    $('native-status').textContent = '';
+    $('desk-link-status').textContent = '';
+    delete studio.dataset.nativeAvailable;
+    delete studio.dataset.deskRequiresImport;
     $('results').hidden = true;
     if (hadPrepared) status(t.edited);
   }
@@ -222,6 +231,8 @@ if (studio) {
     studio.setAttribute('aria-busy', String(value));
     for (const control of studio.querySelectorAll('button,input,textarea'))
       control.disabled = value;
+    $('download-task').disabled = value || !nativeTask;
+    $('download-desk').disabled = value || !nativeTask;
   }
   async function present(
     nextMission,
@@ -235,50 +246,62 @@ if (studio) {
       language,
       workspace: checkedWorkspace,
     });
-    const task = await createFrontierComputerTask(checked, { html }),
+    const task =
+        html.length <= FRONTIER_COMPUTER_HTML_LIMIT
+          ? await createFrontierComputerTask(checked, { html })
+          : null,
       text = await exportFrontierBrief(checked),
       serialized = await exportFrontierWorkspace(checked, checkedWorkspace);
     const route = `${studio.dataset.base}successor/mission/desk/${
       language === 'fr' ? 'fr/' : ''
     }`;
     const link = new URL(route, window.location.href),
-      fragment = new URLSearchParams({ task: JSON.stringify(checked) });
+      fragment = new URLSearchParams({ task: JSON.stringify(checked) }),
+      emptyWorkspace = await createFrontierWorkspace(checked);
     if (
-      checkedWorkspace.strategyLedger !==
-        (await createFrontierWorkspace(checked)).strategyLedger ||
-      checkedWorkspace.experimentLedger !==
-        (await createFrontierWorkspace(checked)).experimentLedger ||
-      checkedWorkspace.evidenceLedger !==
-        (await createFrontierWorkspace(checked)).evidenceLedger ||
+      checkedWorkspace.strategyLedger !== emptyWorkspace.strategyLedger ||
+      checkedWorkspace.experimentLedger !== emptyWorkspace.experimentLedger ||
+      checkedWorkspace.evidenceLedger !== emptyWorkspace.evidenceLedger ||
       checkedWorkspace.reframing.status !== 'NOT_PROPOSED'
     )
       fragment.set('workspace', JSON.stringify(checkedWorkspace));
     link.hash = fragment.toString();
-    if (link.href.length > 400000)
-      throw new Error(
-        'The workspace link is too large. Export and restore this package directly in the mission workspace.'
-      );
+    const requiresImport = link.href.length > 400000;
+    if (requiresImport) link.hash = '';
     const publicLink = new URL(link.href);
     if (publicLink.protocol !== 'https:') {
       publicLink.protocol = 'https:';
       publicLink.hostname = 'montrealai.github.io';
       publicLink.port = '';
     }
-    const prompt = await buildFrontierWorkPrompt(checked, {
+    let prompt = await buildFrontierWorkPrompt(checked, {
       deskURL: publicLink.href,
     });
+    if (requiresImport)
+      prompt = `${t.workRestoreRequired}\n${t.missionBinding}: ${checked.digest}\n${t.workspaceBinding}: ${checkedWorkspace.digest}\n\n${prompt}`;
     if (request !== generation) return false;
     if (populateAfter) populate(checked);
     mission = checked;
     workspace = checkedWorkspace;
     nativeTask = task;
-    taskHTML = html;
+    taskHTML = task ? html : '';
     brief = text;
     workspaceExport = serialized;
     $('brief-output').textContent = text;
     $('work-prompt').value = prompt;
     $('mission-json').textContent = JSON.stringify(checked, null, 2);
     $('public-desk').href = link.href;
+    $('native-status').textContent = task
+      ? t.nativeReady
+      : t.nativeUnavailable.replace(
+          '{limit}',
+          new Intl.NumberFormat(language).format(FRONTIER_COMPUTER_HTML_LIMIT)
+        );
+    $('desk-link-status').textContent = requiresImport
+      ? `${t.deskRestoreRequired} ${t.missionBinding}: ${checked.digest} · ${t.workspaceBinding}: ${checkedWorkspace.digest}`
+      : '';
+    studio.dataset.nativeAvailable = String(!!task);
+    studio.dataset.deskRequiresImport = String(requiresImport);
     $('results').hidden = false;
     status(t.prepared);
     studio.dataset.ready = 'true';
@@ -344,7 +367,7 @@ if (studio) {
   $('download-desk').addEventListener(
     'click',
     () =>
-      mission &&
+      nativeTask &&
       download('successor-omega-workspace.html', taskHTML, 'text/html')
   );
   $('download-brief').addEventListener(
