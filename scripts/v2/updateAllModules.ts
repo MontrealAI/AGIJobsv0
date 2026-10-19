@@ -505,7 +505,7 @@ function formatSafeInputValue(value: unknown): string {
   if (value instanceof Uint8Array) {
     return ethers.hexlify(value);
   }
-  if (Array.isArray(value) || (typeof value === 'object' && value !== null)) {
+  if (typeof value === 'object') {
     return JSON.stringify(value, (_key, inner) =>
       typeof inner === 'bigint' ? inner.toString() : inner
     );

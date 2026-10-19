@@ -1,5 +1,6 @@
 // apps/onebox/app.js
-import errorsCatalog from '../../backend/errors/catalog.json' assert { type: 'json' };
+import errorsCatalog from '../../backend/errors/catalog.json' with { type: 'json' };
+import { element, planPreview, missingFields, simulationPreview, receiptMessage, receiptCard, runSteps, errorMessage } from './dom-rendering.js';
 import { buildOneboxUrl, normalisePrefix, parseOverrideParams } from './url-overrides.js';
 const $ = (selector) => document.querySelector(selector);
 const chat = $('#chat');
@@ -37,19 +38,10 @@ const formatLatency = (ms) => {
   return `${(ms / 1000).toFixed(2)}s`;
 };
 
-const renderRiskBadges = (risks) => {
-  if (!Array.isArray(risks) || risks.length === 0) {
-    return '<div class="risk-badges"><span class="risk-badge ok">No blockers detected</span></div>';
-  }
-  return `<div class="risk-badges">${risks
-    .map((risk) => `<span class="risk-badge">${risk}</span>`)
-    .join('')}</div>`;
-};
-
 const renderShortcutExamples = (examples) => {
   if (!shortcutsContainer) return;
   if (!Array.isArray(examples)) return;
-  shortcutsContainer.innerHTML = '';
+  shortcutsContainer.replaceChildren();
   if (box) {
     box.setAttribute('placeholder', examples.length > 0 ? examples[0] : defaultPlaceholder || '');
   }
@@ -70,57 +62,13 @@ const renderShortcutExamples = (examples) => {
 
 const COPY = {
   planning: 'Planning your workflow…',
-  planPreview: (summary, meta = {}) => {
-    const latency = formatLatency(meta.latencyMs);
-    const metaRow = latency
-      ? `<div class="meta-row"><span class="meta-chip">Plan ready in ${latency}</span></div>`
-      : '';
-    return `${metaRow}${summary}<div class="pill-row pill-row-confirm"><button class="primary-btn" id="plan-approve" type="button">YES — simulate</button><button class="ghost-btn" id="plan-cancel" type="button">NO</button></div>`;
-  },
-  missing: (fields) =>
-    `I still need a few details before we can simulate: <strong>${fields.join(', ')}</strong>.`,
+  planPreview: (summary, meta = {}) => planPreview(summary, formatLatency(meta.latencyMs)),
+  missing: missingFields,
   simulating: 'Running safety checks and estimating budget…',
-  simulationPreview: (sim, meta = {}) => {
-    const latency = formatLatency(meta.latencyMs);
-    const metaRow = latency
-      ? `<div class="meta-row"><span class="meta-chip">Checks ready in ${latency}</span></div>`
-      : '';
-    const budget = sim.estimatedBudget ? `${sim.estimatedBudget} AGIALPHA` : '—';
-    const feeSegments = [];
-    if (sim.feeAmount) {
-      feeSegments.push(
-        `protocol fee ${sim.feeAmount} AGIALPHA${
-          sim.feePct !== undefined && sim.feePct !== null ? ` (${sim.feePct}%)` : ''
-        }`
-      );
-    } else if (sim.feePct !== undefined && sim.feePct !== null) {
-      feeSegments.push(`protocol fee ${sim.feePct}%`);
-    }
-    if (sim.burnAmount) {
-      feeSegments.push(
-        `burn ${sim.burnAmount} AGIALPHA${
-          sim.burnPct !== undefined && sim.burnPct !== null ? ` (${sim.burnPct}%)` : ''
-        }`
-      );
-    } else if (sim.burnPct !== undefined && sim.burnPct !== null) {
-      feeSegments.push(`burn ${sim.burnPct}%`);
-    }
-    const feeSummary = feeSegments.length ? ` Fee projections: ${feeSegments.join('; ')}.` : '';
-    const risks = renderRiskBadges(sim.risks);
-    return `${metaRow}Est. budget <strong>${budget}</strong>.${feeSummary ? feeSummary : ''}${risks}<div class="pill-row pill-row-confirm"><button class="primary-btn" id="sim-approve" type="button">YES — execute</button><button class="ghost-btn" id="sim-cancel" type="button">NO</button></div>`;
-  },
+  simulationPreview: (sim, meta = {}) => simulationPreview(sim, formatLatency(meta.latencyMs)),
   executing: 'Executing the plan…',
   cancelled: 'Okay, cancelled. Adjust the details and try again.',
-  receipt: (receipt) =>
-    `🧾 <strong>Receipt ready.</strong><br>Plan: <code>${receipt.planHash ?? receipt.planId ?? '—'}</code>${
-      receipt.jobId ? `<br>Job: #${receipt.jobId}` : ''
-    }${receipt.cid ? `<br>CID: <code>${receipt.cid}</code>` : ''}${
-      receipt.url
-        ? `<br><a href="${receipt.url}" target="_blank" rel="noopener">Verify on chain</a>`
-        : receipt.tx
-        ? `<br>Tx: ${receipt.tx}`
-        : ''
-    }`,
+  receipt: receiptMessage,
   progressSteps: [
     'Planning orchestration…',
     'Simulating costs and guardrails…',
@@ -464,10 +412,10 @@ renderExpertDetails();
 renderRelayerStatus();
 updateGuardrailStat(null, 'pending');
 
-function addMessage(role, html) {
+function addMessage(role, content) {
   const node = document.createElement('div');
   node.className = `msg ${role === 'user' ? 'm-user' : 'm-assist'}`;
-  node.innerHTML = html;
+  node.append(content ?? '');
   chat.appendChild(node);
   chat.scrollTop = chat.scrollHeight;
   return node;
@@ -476,9 +424,9 @@ function addMessage(role, html) {
 function startProgress() {
   const node = document.createElement('div');
   node.className = 'msg m-assist';
-  node.innerHTML = `<ul class="progress">${COPY.progressSteps
-    .map((step) => `<li>${step}</li>`)
-    .join('')}</ul>`;
+  const list = element('ul', '', 'progress');
+  list.append(...COPY.progressSteps.map((step) => element('li', step)));
+  node.append(list);
   chat.appendChild(node);
   chat.scrollTop = chat.scrollHeight;
   const items = Array.from(node.querySelectorAll('li'));
@@ -526,37 +474,11 @@ function saveReceipts() {
 }
 
 function renderReceipts() {
-  receiptList.innerHTML = '';
-  if (!receipts.length) {
-    receiptsEmpty.style.display = 'block';
-    return;
-  }
-  receiptsEmpty.style.display = 'none';
+  receiptList.replaceChildren();
+  receiptsEmpty.style.display = receipts.length ? 'none' : 'block';
   receipts.forEach((receipt) => {
-    const item = document.createElement('li');
-    item.className = 'receipt-card';
-    const ts = new Date(receipt.timestamp).toLocaleString();
-    const txLabel = receipt.url
-      ? `<a href="${receipt.url}" target="_blank" rel="noopener">${truncate(receipt.tx || 'View')}</a>`
-      : receipt.tx
-      ? truncate(receipt.tx)
-      : '—';
-    item.innerHTML = `
-      <strong>Job #${receipt.jobId ?? '?'} · ${receipt.status ?? 'posted'}</strong>
-      <div class="receipt-meta">
-        <span>${ts}</span>
-        <span>Reward: ${receipt.reward ?? '—'} ${receipt.token ?? 'AGIALPHA'}</span>
-      </div>
-      <div>Tx: ${txLabel}</div>
-      ${receipt.cid ? `<div>CID: <code>${receipt.cid}</code></div>` : ''}
-    `;
-    receiptList.appendChild(item);
+    if (receipt && typeof receipt === 'object') receiptList.append(receiptCard(receipt));
   });
-}
-
-function truncate(value) {
-  if (!value) return '';
-  return value.length > 18 ? `${value.slice(0, 8)}…${value.slice(-6)}` : value;
 }
 
 function sleep(ms) {
@@ -671,9 +593,7 @@ async function pollRunStatus(runId, onUpdate) {
   for (let attempt = 0; attempt < 120; attempt += 1) {
     status = await api(`/onebox/status?run_id=${encodeURIComponent(runId)}`);
     lastRunStatus = status ?? null;
-    if (typeof onUpdate === 'function') {
-      onUpdate(status);
-    }
+    onUpdate(status);
     renderExpertDetails();
     if (!status || status.run.state === 'succeeded' || status.run.state === 'failed') {
       break;
@@ -683,22 +603,13 @@ async function pollRunStatus(runId, onUpdate) {
   return status;
 }
 
-function renderRunSteps(status) {
-  if (!status || !Array.isArray(status.steps)) {
-    return '';
-  }
-  return `<ul class="step-status">${status.steps
-    .map((step) => `<li class="state-${step.state}">[${step.kind}] ${step.name}</li>`)
-    .join('')}</ul>`;
-}
-
 async function executePlanWithUi(plan, progress, statusNode) {
   try {
-    statusNode.innerHTML = `${COPY.executing}`;
+    statusNode.textContent = COPY.executing;
     updateGuardrailStat(null, 'executing');
     const response = await executePlanRequest(plan);
     const runStatus = await pollRunStatus(response.run_id, (status) => {
-      statusNode.innerHTML = `${COPY.executing}<br>${renderRunSteps(status)}`;
+      statusNode.replaceChildren(COPY.executing, element('br'), runSteps(status));
     });
     if (runStatus && runStatus.run && runStatus.run.state === 'succeeded') {
       progress.complete();
@@ -724,7 +635,7 @@ async function executePlanWithUi(plan, progress, statusNode) {
   } catch (error) {
     progress.fail();
     updateGuardrailStat(null, 'error');
-    statusNode.innerHTML = `<span class="error-text">⚠️ ${error?.message || 'Execution failed.'}</span>`;
+    statusNode.replaceChildren(errorMessage(error?.message || 'Execution failed.'));
     handleError(error);
   }
 }
@@ -773,7 +684,7 @@ function handleError(error) {
   const entry = ERRORS[key];
   const friendly = entry && entry.message ? entry.message : key;
   const hint = entry && entry.hint ? ` ${entry.hint}` : '';
-  addMessage('assist', `<span class="error-text">⚠️ ${friendly}${hint}</span>`);
+  addMessage('assist', errorMessage(`${friendly}${hint}`));
 }
 
 function setModeLabel() {
@@ -790,21 +701,6 @@ function updateExpertPanelVisibility() {
     expertPanel.open = false;
     expertPanel.hidden = true;
   }
-}
-
-function resolveNetworkName(chainId) {
-  if (typeof chainId !== 'number') return null;
-  const names = {
-    1: 'Ethereum Mainnet',
-    5: 'Goerli Testnet',
-    10: 'OP Mainnet',
-    11155111: 'Sepolia Testnet',
-    42161: 'Arbitrum One',
-    8453: 'Base Mainnet',
-    84532: 'Base Sepolia',
-    137: 'Polygon PoS',
-  };
-  return names[chainId] || `Chain ${chainId}`;
 }
 
 function formatJson(value, fallback) {
@@ -889,7 +785,7 @@ form.addEventListener('submit', async (event) => {
           if (!simulation) {
             throw new Error('BLOCKED');
           }
-          simulationMsg.innerHTML = COPY.simulationPreview(simulation, simulation.__meta || {});
+          simulationMsg.replaceChildren(COPY.simulationPreview(simulation, simulation.__meta || {}));
           const simApprove = simulationMsg.querySelector('#sim-approve');
           const simCancel = simulationMsg.querySelector('#sim-cancel');
           simApprove?.addEventListener('click', () => {
@@ -911,7 +807,7 @@ form.addEventListener('submit', async (event) => {
           });
         } catch (error) {
           progress.fail();
-          simulationMsg.innerHTML = `<span class="error-text">⚠️ Simulation failed.</span>`;
+          simulationMsg.replaceChildren(errorMessage('Simulation failed.'));
           updateGuardrailStat(null, 'error');
           disableForm(false);
           handleError(error);

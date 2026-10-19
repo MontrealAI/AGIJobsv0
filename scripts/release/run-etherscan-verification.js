@@ -177,10 +177,16 @@ function resolveApiKey(explorerConfig) {
   return { key: null, source: null };
 }
 
-function writeConstructorArgsTempFile(argsArray, label) {
-  const tempFile = path.join(os.tmpdir(), `agijobs-verify-${label}-${Date.now()}.js`);
-  fs.writeFileSync(tempFile, `module.exports = ${JSON.stringify(argsArray, null, 2)};\n`);
-  return tempFile;
+function writeConstructorArgsTempFile(argsArray, _label) {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'agijobs-verify-args-'));
+  const tempFile = path.join(directory, 'constructor-args.cjs');
+  try {
+    fs.writeFileSync(tempFile, `module.exports = ${JSON.stringify(argsArray, null, 2)};\n`, { flag: 'wx', mode: 0o600 });
+    return tempFile;
+  } catch (error) {
+    fs.rmSync(directory, { recursive: true, force: true });
+    throw error;
+  }
 }
 
 function runHardhatVerify(
@@ -331,7 +337,9 @@ function main() {
         }
       }
 
-      const { status, alreadyVerified } = runHardhatVerify({
+      let verificationResult;
+      try {
+        verificationResult = runHardhatVerify({
         network: options.network,
         address,
         fullyQualified: contract.fullyQualified,
@@ -340,9 +348,10 @@ function main() {
         dryRun: options.dryRun,
       });
 
-      if (tempFile) {
-        fs.unlinkSync(tempFile);
+      } finally {
+        if (tempFile) fs.rmSync(path.dirname(tempFile), { recursive: true, force: true });
       }
+      const { status, alreadyVerified } = verificationResult;
 
       if (status !== 0) {
         summary.contracts.push({
@@ -372,4 +381,4 @@ function main() {
 }
 
 if (require.main === module) main();
-module.exports = { validateVerificationInventory, runHardhatVerify };
+module.exports = { validateVerificationInventory, runHardhatVerify, writeConstructorArgsTempFile };

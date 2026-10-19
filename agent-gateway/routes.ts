@@ -1,3 +1,4 @@
+import { logValue } from '../shared/logValue';
 import express from 'express';
 import { rateLimit } from 'express-rate-limit';
 import { ethers } from 'ethers';
@@ -19,7 +20,6 @@ import {
   GATEWAY_API_KEY,
   AUTH_MESSAGE,
   provider,
-  TOKEN_DECIMALS,
 } from './utils';
 import { postJob, listPostedJobs } from './employer';
 import { getRetrainingQueue, getSpawnRequests } from './learning';
@@ -94,9 +94,6 @@ import {
   finalizeStakeWithdrawal,
   withdrawStakeAmount,
   autoClaimRewards,
-  ROLE_AGENT,
-  ROLE_VALIDATOR,
-  ROLE_PLATFORM,
 } from './stakeCoordinator';
 import {
   parseBooleanFlag,
@@ -898,7 +895,7 @@ app.get('/jobs/:id', async (req: express.Request, res: express.Response) => {
     const onChain = await registry.jobs(jobId);
     chainJob = serialiseChainJob(onChain);
   } catch (err) {
-    console.warn('Failed to load job from registry', jobId, err);
+    console.warn('Failed to load job from registry', logValue(jobId), logValue(err));
   }
   const contributorSummaries = includeContributors
     ? listContributorSummaries({ jobId, includePrimary })

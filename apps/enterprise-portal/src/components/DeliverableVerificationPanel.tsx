@@ -106,7 +106,8 @@ export const DeliverableVerificationPanel = ({ events }: Props) => {
     try {
       let fetchedHash: string | undefined;
       let downloadedBytes: number | undefined;
-      const resolvedCid = cid ? resolveResourceUri(cid) ?? cid : undefined;
+      const resolvedCid = cid ? resolveResourceUri(cid) : undefined;
+      if (cid && !resolvedCid) throw new Error('Use an absolute HTTPS or supported IPFS deliverable URI.');
       if (resolvedCid) {
         const response = await fetch(resolvedCid);
         if (!response.ok) {
@@ -214,7 +215,7 @@ export const DeliverableVerificationPanel = ({ events }: Props) => {
             {verifying ? 'Verifying…' : 'Verify deliverable'}
           </button>
           {cid && (
-            <a className="tag purple" href={resolveResourceUri(cid) ?? cid} target="_blank" rel="noreferrer">
+            <a className="tag purple" href={resolveResourceUri(cid)} target="_blank" rel="noreferrer">
               Open deliverable
             </a>
           )}
@@ -257,7 +258,7 @@ export const DeliverableVerificationPanel = ({ events }: Props) => {
                     <td>
                       {submission.resultUri ? (
                         <a
-                          href={resolveResourceUri(submission.resultUri) ?? submission.resultUri}
+                          href={resolveResourceUri(submission.resultUri)}
                           target="_blank"
                           rel="noreferrer"
                         >

@@ -88,7 +88,6 @@ const HASH_EXEMPT = new Set(['txhash']);
 
 function describeType(value: unknown): string {
   if (value === null) return 'null';
-  if (value === undefined) return 'undefined';
   if (Array.isArray(value)) return 'array';
   if (value instanceof Date) return 'date';
   if (Buffer.isBuffer(value) || value instanceof Uint8Array) return 'bytes';
@@ -231,7 +230,7 @@ function sanitizeValue(value: unknown, path: string[]): SanitizeResult {
     return { value: result, hashes };
   }
 
-  if (value && typeof value === 'object') {
+  if (typeof value === 'object') {
     const record: Record<string, unknown> = {};
     for (const [key, val] of Object.entries(value)) {
       const entry = sanitizeValue(val, [...path, key]);

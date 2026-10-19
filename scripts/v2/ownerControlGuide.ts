@@ -1,3 +1,4 @@
+import { escapeMermaidLiteral } from './lib/mermaidLiteral';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { ethers } from 'ethers';
@@ -212,13 +213,13 @@ function buildModuleSummaries(
 }
 
 function renderMermaid(context: GuideContext): string {
-  const gov = context.governanceDefault ?? 'Governance TBD';
-  const owner = context.ownerDefault ?? 'Owner TBD';
+  const gov = escapeMermaidLiteral(context.governanceDefault ?? 'Governance TBD');
+  const owner = escapeMermaidLiteral(context.ownerDefault ?? 'Owner TBD');
   const nodes = context.modules
     .map((module, index) => {
       const nodeId = `M${index}`;
-      const caption = module.label.replace(/"/g, '\\"');
-      const target = module.controller?.replace(/"/g, '\\"') ?? 'Unassigned';
+      const caption = escapeMermaidLiteral(module.label);
+      const target = module.controller ? escapeMermaidLiteral(module.controller) : 'Unassigned';
       const className = module.type === 'governable'
         ? 'governable'
         : module.type === 'ownable2step'

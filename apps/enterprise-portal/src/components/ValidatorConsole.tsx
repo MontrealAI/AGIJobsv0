@@ -109,8 +109,7 @@ export const ValidatorConsole = ({
             const key = `${event.jobId.toString()}-${event.id}`;
             const decision = decisions[event.jobId.toString()];
             const resolvedUri =
-              resolveResourceUri(getResultUri(event) ?? '') ??
-              getResultUri(event);
+              resolveResourceUri(getResultUri(event) ?? '');
             return (
               <li key={key} className="review-card">
                 <div className="review-card__header">

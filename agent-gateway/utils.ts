@@ -376,11 +376,6 @@ export async function initWallets(): Promise<void> {
       orchestratorWallet = automationWallet;
     }
 
-    if (!orchestratorWallet) {
-      throw new Error(
-        'No orchestrator wallet available; configure ORCHESTRATOR_WALLET or BOT_WALLET so a wallet can be selected'
-      );
-    }
   } catch (err: any) {
     throw new Error(`Failed to initialize wallets: ${err.message}`);
   }

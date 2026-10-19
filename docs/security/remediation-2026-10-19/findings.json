@@ -1,0 +1,4526 @@
+{
+  "schema": "agijobsv0/codeql-remediation/1",
+  "baseline": {
+    "commit": "6a18192e915230440f288923b25814e4a87ed7c5",
+    "tree": "899508ecc40c33086a8d8a6198198ee7f441fa42",
+    "previousMain": "fecde507f770481bfd68efddcb92230a0d885b53",
+    "deployedJobsSource": "818b3a246871e4cd4dde86558dbb91ef82b15eef",
+    "original": {
+      "run": 39190559244,
+      "artifact": 12159908367,
+      "sha256": "c7dd344ab78de98d423d3294db17c1c7b810afa531df7416271f813096c25ba9"
+    },
+    "fresh": {
+      "run": 39191552445,
+      "attempt": 2,
+      "artifact": 12185570581,
+      "sha256": "034193954e5183c07469dd097cfdf0f7f1fd334bb39e656ffab6d919c03e16d6",
+      "event": "schedule rerun CodeQL job; full unchanged main source"
+    },
+    "comparison": {
+      "originalResults": 96,
+      "freshResults": 96,
+      "added": 0,
+      "removed": 0,
+      "matching": "rule ID + path + full region, preserving multiplicity; artifact-array indices and run metadata are not finding identities"
+    },
+    "counts": {
+      "high": 33,
+      "medium": 23,
+      "quality": 40
+    }
+  },
+  "findings": [
+    {
+      "id": "F001",
+      "rule": "js/polynomial-redos",
+      "severity": "high",
+      "securityScore": "7.5",
+      "location": {
+        "path": "apps/orchestrator/oneboxRouter.ts",
+        "region": {
+          "startLine": 100,
+          "startColumn": 17,
+          "endColumn": 55
+        }
+      },
+      "rawResultOrdinal": 1,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "f390bfe02f523c3c:1",
+        "primaryLocationStartColumnFingerprint": "14"
+      },
+      "dataflow": {
+        "reported": "This [regular expression](1) that depends on [a user-provided value](2) may run slow on strings starting with 'bearer ' and with many repetitions of '  '.",
+        "sourcesAndRelatedLocations": [
+          {
+            "path": "apps/orchestrator/oneboxRouter.ts",
+            "region": {
+              "startLine": 100,
+              "startColumn": 29,
+              "endColumn": 31
+            },
+            "role": "regular expression"
+          },
+          {
+            "path": "apps/orchestrator/oneboxRouter.ts",
+            "region": {
+              "startLine": 820,
+              "startColumn": 20,
+              "endColumn": 45
+            },
+            "role": "a user-provided value"
+          },
+          {
+            "path": "apps/orchestrator/oneboxRouter.ts",
+            "region": {
+              "startLine": 820,
+              "startColumn": 20,
+              "endColumn": 45
+            },
+            "role": null
+          },
+          {
+            "path": "apps/orchestrator/oneboxRouter.ts",
+            "region": {
+              "startLine": 100,
+              "startColumn": 41,
+              "endColumn": 54
+            },
+            "role": null
+          }
+        ],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F002",
+      "rule": "js/polynomial-redos",
+      "severity": "high",
+      "securityScore": "7.5",
+      "location": {
+        "path": "apps/orchestrator/oneboxRouter.ts",
+        "region": {
+          "startLine": 107,
+          "startColumn": 17,
+          "endColumn": 53
+        }
+      },
+      "rawResultOrdinal": 2,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "e082cc3130f62028:1",
+        "primaryLocationStartColumnFingerprint": "14"
+      },
+      "dataflow": {
+        "reported": "This [regular expression](1) that depends on [a user-provided value](2) may run slow on strings starting with 'hmac ' and with many repetitions of '  '.",
+        "sourcesAndRelatedLocations": [
+          {
+            "path": "apps/orchestrator/oneboxRouter.ts",
+            "region": {
+              "startLine": 107,
+              "startColumn": 27,
+              "endColumn": 29
+            },
+            "role": "regular expression"
+          },
+          {
+            "path": "apps/orchestrator/oneboxRouter.ts",
+            "region": {
+              "startLine": 820,
+              "startColumn": 20,
+              "endColumn": 45
+            },
+            "role": "a user-provided value"
+          },
+          {
+            "path": "apps/orchestrator/oneboxRouter.ts",
+            "region": {
+              "startLine": 820,
+              "startColumn": 20,
+              "endColumn": 45
+            },
+            "role": null
+          },
+          {
+            "path": "apps/orchestrator/oneboxRouter.ts",
+            "region": {
+              "startLine": 107,
+              "startColumn": 39,
+              "endColumn": 52
+            },
+            "role": null
+          }
+        ],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F003",
+      "rule": "js/polynomial-redos",
+      "severity": "high",
+      "securityScore": "7.5",
+      "location": {
+        "path": "packages/orchestrator/src/providers/openai.ts",
+        "region": {
+          "startLine": 99,
+          "startColumn": 19,
+          "endColumn": 38
+        }
+      },
+      "rawResultOrdinal": 3,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "e351048bf2119435:1",
+        "primaryLocationStartColumnFingerprint": "14"
+      },
+      "dataflow": {
+        "reported": "This [regular expression](1) that depends on [library input](2) may run slow on strings with many repetitions of ' '.\nThis [regular expression](3) that depends on [library input](2) may run slow on strings with many repetitions of ' '.",
+        "sourcesAndRelatedLocations": [
+          {
+            "path": "packages/orchestrator/src/providers/openai.ts",
+            "region": {
+              "startLine": 94,
+              "startColumn": 47,
+              "endColumn": 50
+            },
+            "role": "regular expression"
+          },
+          {
+            "path": "packages/orchestrator/src/llm.ts",
+            "region": {
+              "startLine": 25,
+              "startColumn": 39,
+              "endLine": 29,
+              "endColumn": 2
+            },
+            "role": "library input"
+          },
+          {
+            "path": "packages/orchestrator/src/providers/openai.ts",
+            "region": {
+              "startLine": 95,
+              "startColumn": 34,
+              "endColumn": 37
+            },
+            "role": "regular expression"
+          },
+          {
+            "path": "packages/orchestrator/src/llm.ts",
+            "region": {
+              "startLine": 25,
+              "startColumn": 39,
+              "endLine": 29,
+              "endColumn": 2
+            },
+            "role": null
+          },
+          {
+            "path": "packages/orchestrator/src/providers/openai.ts",
+            "region": {
+              "startLine": 99,
+              "startColumn": 19,
+              "endColumn": 23
+            },
+            "role": null
+          }
+        ],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F004",
+      "rule": "js/polynomial-redos",
+      "severity": "high",
+      "securityScore": "7.5",
+      "location": {
+        "path": "packages/orchestrator/src/providers/openai.ts",
+        "region": {
+          "startLine": 138,
+          "startColumn": 23,
+          "endColumn": 67
+        }
+      },
+      "rawResultOrdinal": 4,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "fc1a132b0bfad2c3:1",
+        "primaryLocationStartColumnFingerprint": "20"
+      },
+      "dataflow": {
+        "reported": "This [regular expression](1) that depends on [library input](2) may run slow on strings with many repetitions of '0'.",
+        "sourcesAndRelatedLocations": [
+          {
+            "path": "packages/orchestrator/src/providers/openai.ts",
+            "region": {
+              "startLine": 138,
+              "startColumn": 36,
+              "endColumn": 39
+            },
+            "role": "regular expression"
+          },
+          {
+            "path": "packages/orchestrator/src/llm.ts",
+            "region": {
+              "startLine": 25,
+              "startColumn": 39,
+              "endLine": 29,
+              "endColumn": 2
+            },
+            "role": "library input"
+          },
+          {
+            "path": "packages/orchestrator/src/llm.ts",
+            "region": {
+              "startLine": 25,
+              "startColumn": 39,
+              "endLine": 29,
+              "endColumn": 2
+            },
+            "role": null
+          },
+          {
+            "path": "packages/orchestrator/src/providers/openai.ts",
+            "region": {
+              "startLine": 138,
+              "startColumn": 23,
+              "endColumn": 27
+            },
+            "role": null
+          }
+        ],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F005",
+      "rule": "js/polynomial-redos",
+      "severity": "high",
+      "securityScore": "7.5",
+      "location": {
+        "path": "packages/orchestrator/src/providers/openai.ts",
+        "region": {
+          "startLine": 144,
+          "startColumn": 21,
+          "endColumn": 46
+        }
+      },
+      "rawResultOrdinal": 5,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "3ead7721e49fc021:1",
+        "primaryLocationStartColumnFingerprint": "18"
+      },
+      "dataflow": {
+        "reported": "This [regular expression](1) that depends on [library input](2) may run slow on strings with many repetitions of '0'.",
+        "sourcesAndRelatedLocations": [
+          {
+            "path": "packages/orchestrator/src/providers/openai.ts",
+            "region": {
+              "startLine": 144,
+              "startColumn": 34,
+              "endColumn": 37
+            },
+            "role": "regular expression"
+          },
+          {
+            "path": "packages/orchestrator/src/llm.ts",
+            "region": {
+              "startLine": 25,
+              "startColumn": 39,
+              "endLine": 29,
+              "endColumn": 2
+            },
+            "role": "library input"
+          },
+          {
+            "path": "packages/orchestrator/src/llm.ts",
+            "region": {
+              "startLine": 25,
+              "startColumn": 39,
+              "endLine": 29,
+              "endColumn": 2
+            },
+            "role": null
+          },
+          {
+            "path": "packages/orchestrator/src/providers/openai.ts",
+            "region": {
+              "startLine": 144,
+              "startColumn": 21,
+              "endColumn": 25
+            },
+            "role": null
+          }
+        ],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F006",
+      "rule": "js/polynomial-redos",
+      "severity": "high",
+      "securityScore": "7.5",
+      "location": {
+        "path": "packages/orchestrator/src/providers/openai.ts",
+        "region": {
+          "startLine": 146,
+          "startColumn": 21,
+          "endColumn": 47
+        }
+      },
+      "rawResultOrdinal": 6,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "6794f7fb2593a701:1",
+        "primaryLocationStartColumnFingerprint": "18"
+      },
+      "dataflow": {
+        "reported": "This [regular expression](1) that depends on [library input](2) may run slow on strings with many repetitions of '0'.",
+        "sourcesAndRelatedLocations": [
+          {
+            "path": "packages/orchestrator/src/providers/openai.ts",
+            "region": {
+              "startLine": 146,
+              "startColumn": 34,
+              "endColumn": 37
+            },
+            "role": "regular expression"
+          },
+          {
+            "path": "packages/orchestrator/src/llm.ts",
+            "region": {
+              "startLine": 25,
+              "startColumn": 39,
+              "endLine": 29,
+              "endColumn": 2
+            },
+            "role": "library input"
+          },
+          {
+            "path": "packages/orchestrator/src/llm.ts",
+            "region": {
+              "startLine": 25,
+              "startColumn": 39,
+              "endLine": 29,
+              "endColumn": 2
+            },
+            "role": null
+          },
+          {
+            "path": "packages/orchestrator/src/providers/openai.ts",
+            "region": {
+              "startLine": 146,
+              "startColumn": 21,
+              "endColumn": 25
+            },
+            "role": null
+          }
+        ],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F007",
+      "rule": "js/xss-through-dom",
+      "severity": "high",
+      "securityScore": "7.8",
+      "location": {
+        "path": "apps/console/src/components/GasPanel.tsx",
+        "region": {
+          "startLine": 366,
+          "startColumn": 22,
+          "endColumn": 38
+        }
+      },
+      "rawResultOrdinal": 7,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "1b6ad25037081a32:1",
+        "primaryLocationStartColumnFingerprint": "9"
+      },
+      "dataflow": {
+        "reported": "[DOM text](1) is reinterpreted as HTML without escaping meta-characters.",
+        "sourcesAndRelatedLocations": [
+          {
+            "path": "apps/console/src/components/GasPanel.tsx",
+            "region": {
+              "startLine": 342,
+              "startColumn": 56,
+              "endColumn": 74
+            },
+            "role": "DOM text"
+          },
+          {
+            "path": "apps/console/src/components/GasPanel.tsx",
+            "region": {
+              "startLine": 342,
+              "startColumn": 56,
+              "endColumn": 74
+            },
+            "role": null
+          }
+        ],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F008",
+      "rule": "js/xss-through-dom",
+      "severity": "high",
+      "securityScore": "7.8",
+      "location": {
+        "path": "apps/enterprise-portal/src/components/DeliverableVerificationPanel.tsx",
+        "region": {
+          "startLine": 217,
+          "startColumn": 45,
+          "endColumn": 75
+        }
+      },
+      "rawResultOrdinal": 8,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "3c453b5041d86c79:1",
+        "primaryLocationStartColumnFingerprint": "32"
+      },
+      "dataflow": {
+        "reported": "[DOM text](1) is reinterpreted as HTML without escaping meta-characters.",
+        "sourcesAndRelatedLocations": [
+          {
+            "path": "apps/enterprise-portal/src/components/DeliverableVerificationPanel.tsx",
+            "region": {
+              "startLine": 185,
+              "startColumn": 128,
+              "endColumn": 146
+            },
+            "role": "DOM text"
+          },
+          {
+            "path": "apps/enterprise-portal/src/components/DeliverableVerificationPanel.tsx",
+            "region": {
+              "startLine": 185,
+              "startColumn": 128,
+              "endColumn": 146
+            },
+            "role": null
+          }
+        ],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F009",
+      "rule": "js/xss-through-dom",
+      "severity": "high",
+      "securityScore": "7.8",
+      "location": {
+        "path": "apps/enterprise-portal/src/components/SlaViewer.tsx",
+        "region": {
+          "startLine": 81,
+          "startColumn": 26,
+          "endColumn": 72
+        }
+      },
+      "rawResultOrdinal": 9,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "effedbb24f08a1ad:1",
+        "primaryLocationStartColumnFingerprint": "9"
+      },
+      "dataflow": {
+        "reported": "[DOM text](1) is reinterpreted as HTML without escaping meta-characters.",
+        "sourcesAndRelatedLocations": [
+          {
+            "path": "apps/enterprise-portal/src/components/SlaViewer.tsx",
+            "region": {
+              "startLine": 60,
+              "startColumn": 39,
+              "endColumn": 57
+            },
+            "role": "DOM text"
+          },
+          {
+            "path": "apps/enterprise-portal/src/components/SlaViewer.tsx",
+            "region": {
+              "startLine": 60,
+              "startColumn": 39,
+              "endColumn": 57
+            },
+            "role": null
+          }
+        ],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F010",
+      "rule": "js/xss-through-dom",
+      "severity": "high",
+      "securityScore": "7.8",
+      "location": {
+        "path": "apps/onebox/app.js",
+        "region": {
+          "startLine": 470,
+          "startColumn": 20,
+          "endColumn": 24
+        }
+      },
+      "rawResultOrdinal": 10,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "6436d4544ce957c7:1",
+        "primaryLocationStartColumnFingerprint": "17"
+      },
+      "dataflow": {
+        "reported": "[DOM text](1) is reinterpreted as HTML without escaping meta-characters.\n[DOM text](2) is reinterpreted as HTML without escaping meta-characters.",
+        "sourcesAndRelatedLocations": [
+          {
+            "path": "apps/onebox/app.js",
+            "region": {
+              "startLine": 855,
+              "startColumn": 16,
+              "endColumn": 25
+            },
+            "role": "DOM text"
+          },
+          {
+            "path": "apps/onebox/app.js",
+            "region": {
+              "startLine": 990,
+              "startColumn": 47,
+              "endColumn": 65
+            },
+            "role": "DOM text"
+          },
+          {
+            "path": "apps/onebox/app.js",
+            "region": {
+              "startLine": 855,
+              "startColumn": 16,
+              "endColumn": 25
+            },
+            "role": null
+          },
+          {
+            "path": "apps/onebox/app.js",
+            "region": {
+              "startLine": 990,
+              "startColumn": 47,
+              "endColumn": 65
+            },
+            "role": null
+          }
+        ],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F011",
+      "rule": "js/xss-through-exception",
+      "severity": "medium",
+      "securityScore": "6.1",
+      "location": {
+        "path": "apps/onebox/app.js",
+        "region": {
+          "startLine": 727,
+          "startColumn": 28,
+          "endColumn": 105
+        }
+      },
+      "rawResultOrdinal": 11,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "f39f90272371f6c:1",
+        "primaryLocationStartColumnFingerprint": "23"
+      },
+      "dataflow": {
+        "reported": "[Exception text](1) is reinterpreted as HTML without escaping meta-characters.\n[Exception text](2) is reinterpreted as HTML without escaping meta-characters.",
+        "sourcesAndRelatedLocations": [
+          {
+            "path": "apps/onebox/app.js",
+            "region": {
+              "startLine": 944,
+              "startColumn": 18,
+              "endColumn": 33
+            },
+            "role": "Exception text"
+          },
+          {
+            "path": "apps/onebox/app.js",
+            "region": {
+              "startLine": 946,
+              "startColumn": 54,
+              "endColumn": 71
+            },
+            "role": "Exception text"
+          },
+          {
+            "path": "apps/onebox/app.js",
+            "region": {
+              "startLine": 944,
+              "startColumn": 18,
+              "endColumn": 33
+            },
+            "role": null
+          },
+          {
+            "path": "apps/onebox/app.js",
+            "region": {
+              "startLine": 946,
+              "startColumn": 54,
+              "endColumn": 71
+            },
+            "role": null
+          }
+        ],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F012",
+      "rule": "js/xss-through-exception",
+      "severity": "medium",
+      "securityScore": "6.1",
+      "location": {
+        "path": "apps/onebox-static/v2/app.js",
+        "region": {
+          "startLine": 522,
+          "startColumn": 25,
+          "endColumn": 32
+        }
+      },
+      "rawResultOrdinal": 12,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "55175819a18be95a:1",
+        "primaryLocationStartColumnFingerprint": "20"
+      },
+      "dataflow": {
+        "reported": "[Exception text](1) is reinterpreted as HTML without escaping meta-characters.",
+        "sourcesAndRelatedLocations": [
+          {
+            "path": "apps/onebox-static/v2/app.js",
+            "region": {
+              "startLine": 1116,
+              "startColumn": 16,
+              "endColumn": 35
+            },
+            "role": "Exception text"
+          },
+          {
+            "path": "apps/onebox-static/v2/app.js",
+            "region": {
+              "startLine": 1116,
+              "startColumn": 16,
+              "endColumn": 35
+            },
+            "role": null
+          }
+        ],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F013",
+      "rule": "js/path-injection",
+      "severity": "high",
+      "securityScore": "7.5",
+      "location": {
+        "path": "agent-gateway/jobPlanner.ts",
+        "region": {
+          "startLine": 248,
+          "startColumn": 42,
+          "endColumn": 50
+        }
+      },
+      "rawResultOrdinal": 13,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "7b7038ad85c9ff59:1",
+        "primaryLocationStartColumnFingerprint": "39"
+      },
+      "dataflow": {
+        "reported": "This path depends on a [user-provided value](1).\nThis path depends on a [user-provided value](2).\nThis path depends on a [user-provided value](3).",
+        "sourcesAndRelatedLocations": [
+          {
+            "path": "agent-gateway/routes.ts",
+            "region": {
+              "startLine": 1920,
+              "startColumn": 39,
+              "endColumn": 56
+            },
+            "role": "user-provided value"
+          },
+          {
+            "path": "agent-gateway/routes.ts",
+            "region": {
+              "startLine": 1937,
+              "startColumn": 40,
+              "endColumn": 48
+            },
+            "role": "user-provided value"
+          },
+          {
+            "path": "agent-gateway/routes.ts",
+            "region": {
+              "startLine": 1966,
+              "startColumn": 42,
+              "endColumn": 59
+            },
+            "role": "user-provided value"
+          },
+          {
+            "path": "agent-gateway/routes.ts",
+            "region": {
+              "startLine": 1920,
+              "startColumn": 39,
+              "endColumn": 56
+            },
+            "role": null
+          },
+          {
+            "path": "agent-gateway/routes.ts",
+            "region": {
+              "startLine": 1937,
+              "startColumn": 40,
+              "endColumn": 48
+            },
+            "role": null
+          },
+          {
+            "path": "agent-gateway/routes.ts",
+            "region": {
+              "startLine": 1966,
+              "startColumn": 42,
+              "endColumn": 59
+            },
+            "role": null
+          }
+        ],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F014",
+      "rule": "js/path-injection",
+      "severity": "high",
+      "securityScore": "7.5",
+      "location": {
+        "path": "agent-gateway/jobPlanner.ts",
+        "region": {
+          "startLine": 269,
+          "startColumn": 5,
+          "endColumn": 26
+        }
+      },
+      "rawResultOrdinal": 14,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "4a2c600d0c909a28:1",
+        "primaryLocationStartColumnFingerprint": "0"
+      },
+      "dataflow": {
+        "reported": "This path depends on a [user-provided value](1).",
+        "sourcesAndRelatedLocations": [
+          {
+            "path": "agent-gateway/routes.ts",
+            "region": {
+              "startLine": 1937,
+              "startColumn": 40,
+              "endColumn": 48
+            },
+            "role": "user-provided value"
+          },
+          {
+            "path": "agent-gateway/routes.ts",
+            "region": {
+              "startLine": 1937,
+              "startColumn": 40,
+              "endColumn": 48
+            },
+            "role": null
+          }
+        ],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F015",
+      "rule": "js/path-injection",
+      "severity": "high",
+      "securityScore": "7.5",
+      "location": {
+        "path": "apps/orchestrator/receiptStore.ts",
+        "region": {
+          "startLine": 35,
+          "startColumn": 22,
+          "endColumn": 30
+        }
+      },
+      "rawResultOrdinal": 15,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "398bfa96ee6afa7a:1",
+        "primaryLocationStartColumnFingerprint": "19"
+      },
+      "dataflow": {
+        "reported": "This path depends on a [user-provided value](1).",
+        "sourcesAndRelatedLocations": [
+          {
+            "path": "apps/orchestrator/oneboxRouter.ts",
+            "region": {
+              "startLine": 890,
+              "startColumn": 30,
+              "endColumn": 38
+            },
+            "role": "user-provided value"
+          },
+          {
+            "path": "apps/orchestrator/oneboxRouter.ts",
+            "region": {
+              "startLine": 890,
+              "startColumn": 30,
+              "endColumn": 38
+            },
+            "role": null
+          }
+        ],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F016",
+      "rule": "js/incomplete-sanitization",
+      "severity": "high",
+      "securityScore": "7.8",
+      "location": {
+        "path": "scripts/demo/catalog.cjs",
+        "region": {
+          "startLine": 80,
+          "startColumn": 7,
+          "endColumn": 24
+        }
+      },
+      "rawResultOrdinal": 16,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "dcc011154b4357d7:1",
+        "primaryLocationStartColumnFingerprint": "0"
+      },
+      "dataflow": {
+        "reported": "This does not escape backslash characters in the input.",
+        "sourcesAndRelatedLocations": [],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F017",
+      "rule": "js/incomplete-sanitization",
+      "severity": "high",
+      "securityScore": "7.8",
+      "location": {
+        "path": "scripts/demo/catalog.cjs",
+        "region": {
+          "startLine": 108,
+          "startColumn": 11,
+          "endColumn": 32
+        }
+      },
+      "rawResultOrdinal": 17,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "a2977af667ab6ea6:1",
+        "primaryLocationStartColumnFingerprint": "0"
+      },
+      "dataflow": {
+        "reported": "This does not escape backslash characters in the input.",
+        "sourcesAndRelatedLocations": [],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F018",
+      "rule": "js/incomplete-sanitization",
+      "severity": "high",
+      "securityScore": "7.8",
+      "location": {
+        "path": "scripts/v2/ownerControlGuide.ts",
+        "region": {
+          "startLine": 220,
+          "startColumn": 23,
+          "endColumn": 43
+        }
+      },
+      "rawResultOrdinal": 18,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "73008b4acfa1b646:1",
+        "primaryLocationStartColumnFingerprint": "16"
+      },
+      "dataflow": {
+        "reported": "This does not escape backslash characters in the input.",
+        "sourcesAndRelatedLocations": [],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F019",
+      "rule": "js/incomplete-sanitization",
+      "severity": "high",
+      "securityScore": "7.8",
+      "location": {
+        "path": "scripts/v2/ownerControlGuide.ts",
+        "region": {
+          "startLine": 221,
+          "startColumn": 22,
+          "endColumn": 48
+        }
+      },
+      "rawResultOrdinal": 19,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "5426e18b66d12c52:1",
+        "primaryLocationStartColumnFingerprint": "15"
+      },
+      "dataflow": {
+        "reported": "This does not escape backslash characters in the input.",
+        "sourcesAndRelatedLocations": [],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F020",
+      "rule": "js/incomplete-sanitization",
+      "severity": "high",
+      "securityScore": "7.8",
+      "location": {
+        "path": "scripts/v2/ownerControlSnapshot.ts",
+        "region": {
+          "startLine": 350,
+          "startColumn": 10,
+          "endColumn": 23
+        }
+      },
+      "rawResultOrdinal": 20,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "9afe6b5ab8649a56:1",
+        "primaryLocationStartColumnFingerprint": "7"
+      },
+      "dataflow": {
+        "reported": "This does not escape backslash characters in the input.",
+        "sourcesAndRelatedLocations": [],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F021",
+      "rule": "js/incomplete-sanitization",
+      "severity": "high",
+      "securityScore": "7.8",
+      "location": {
+        "path": "scripts/v2/ownerEmergencyRunbook.ts",
+        "region": {
+          "startLine": 478,
+          "startColumn": 38,
+          "endColumn": 50
+        }
+      },
+      "rawResultOrdinal": 21,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "aa3c4f47b706f500:1",
+        "primaryLocationStartColumnFingerprint": "29"
+      },
+      "dataflow": {
+        "reported": "This does not escape backslash characters in the input.",
+        "sourcesAndRelatedLocations": [],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F022",
+      "rule": "js/incomplete-sanitization",
+      "severity": "high",
+      "securityScore": "7.8",
+      "location": {
+        "path": "scripts/v2/renderOwnerMermaid.ts",
+        "region": {
+          "startLine": 475,
+          "startColumn": 12,
+          "endColumn": 25
+        }
+      },
+      "rawResultOrdinal": 22,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "3350158a5919f934:1",
+        "primaryLocationStartColumnFingerprint": "7"
+      },
+      "dataflow": {
+        "reported": "This does not escape backslash characters in the input.",
+        "sourcesAndRelatedLocations": [],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F023",
+      "rule": "js/missing-rate-limiting",
+      "severity": "high",
+      "securityScore": "7.5",
+      "location": {
+        "path": "services/notifications/server.js",
+        "region": {
+          "startLine": 28,
+          "startColumn": 27,
+          "endLine": 48,
+          "endColumn": 2
+        }
+      },
+      "rawResultOrdinal": 23,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "c41ac93733b124ba:1",
+        "primaryLocationStartColumnFingerprint": "26"
+      },
+      "dataflow": {
+        "reported": "This route handler performs [a file system access](1), but is not rate-limited.",
+        "sourcesAndRelatedLocations": [
+          {
+            "path": "services/notifications/server.js",
+            "region": {
+              "startLine": 30,
+              "startColumn": 24,
+              "endColumn": 54
+            },
+            "role": "a file system access"
+          }
+        ],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F024",
+      "rule": "js/prototype-polluting-assignment",
+      "severity": "medium",
+      "securityScore": "6.1",
+      "location": {
+        "path": "apps/orchestrator/submission.ts",
+        "region": {
+          "startLine": 46,
+          "startColumn": 5,
+          "endColumn": 14
+        }
+      },
+      "rawResultOrdinal": 24,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "b5fc05da4e6ebb2a:1",
+        "primaryLocationStartColumnFingerprint": "0"
+      },
+      "dataflow": {
+        "reported": "This assignment may alter Object.prototype if a malicious '__proto__' string is injected from [user controlled input](1).",
+        "sourcesAndRelatedLocations": [
+          {
+            "path": "apps/orchestrator/oneboxRouter.ts",
+            "region": {
+              "startLine": 890,
+              "startColumn": 30,
+              "endColumn": 38
+            },
+            "role": "user controlled input"
+          },
+          {
+            "path": "apps/orchestrator/oneboxRouter.ts",
+            "region": {
+              "startLine": 890,
+              "startColumn": 30,
+              "endColumn": 38
+            },
+            "role": null
+          }
+        ],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F025",
+      "rule": "js/insecure-temporary-file",
+      "severity": "high",
+      "securityScore": "7.0",
+      "location": {
+        "path": "scripts/release/run-etherscan-verification.js",
+        "region": {
+          "startLine": 182,
+          "startColumn": 20,
+          "endColumn": 28
+        }
+      },
+      "rawResultOrdinal": 25,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "521368669987976:1",
+        "primaryLocationStartColumnFingerprint": "17"
+      },
+      "dataflow": {
+        "reported": "Insecure creation of file in [the os temp dir](1).",
+        "sourcesAndRelatedLocations": [
+          {
+            "path": "scripts/release/run-etherscan-verification.js",
+            "region": {
+              "startLine": 181,
+              "startColumn": 30,
+              "endColumn": 41
+            },
+            "role": "the os temp dir"
+          },
+          {
+            "path": "scripts/release/run-etherscan-verification.js",
+            "region": {
+              "startLine": 181,
+              "startColumn": 30,
+              "endColumn": 41
+            },
+            "role": null
+          }
+        ],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F026",
+      "rule": "js/file-system-race",
+      "severity": "high",
+      "securityScore": "7.7",
+      "location": {
+        "path": "agent-gateway/agentFactory.ts",
+        "region": {
+          "startLine": 486,
+          "startColumn": 9,
+          "endLine": 490,
+          "endColumn": 4
+        }
+      },
+      "rawResultOrdinal": 26,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "30b370b5a1a71587:1",
+        "primaryLocationStartColumnFingerprint": "6"
+      },
+      "dataflow": {
+        "reported": "The file may have changed since it [was checked](1).",
+        "sourcesAndRelatedLocations": [
+          {
+            "path": "agent-gateway/agentFactory.ts",
+            "region": {
+              "startLine": 425,
+              "startColumn": 7,
+              "endColumn": 30
+            },
+            "role": "was checked"
+          }
+        ],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F027",
+      "rule": "js/file-system-race",
+      "severity": "high",
+      "securityScore": "7.7",
+      "location": {
+        "path": "scripts/anchor-logs.ts",
+        "region": {
+          "startLine": 83,
+          "startColumn": 17,
+          "endColumn": 56
+        }
+      },
+      "rawResultOrdinal": 27,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "b1e66b0add4ebd42:1",
+        "primaryLocationStartColumnFingerprint": "12"
+      },
+      "dataflow": {
+        "reported": "The file may have changed since it [was checked](1).",
+        "sourcesAndRelatedLocations": [
+          {
+            "path": "scripts/anchor-logs.ts",
+            "region": {
+              "startLine": 81,
+              "startColumn": 19,
+              "endColumn": 46
+            },
+            "role": "was checked"
+          }
+        ],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F028",
+      "rule": "js/file-system-race",
+      "severity": "high",
+      "securityScore": "7.7",
+      "location": {
+        "path": "scripts/ci/remap-coverage-paths.js",
+        "region": {
+          "startLine": 76,
+          "endColumn": 49
+        }
+      },
+      "rawResultOrdinal": 28,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "5f03a2085941a792:1",
+        "primaryLocationStartColumnFingerprint": "0"
+      },
+      "dataflow": {
+        "reported": "The file may have changed since it [was checked](1).",
+        "sourcesAndRelatedLocations": [
+          {
+            "path": "scripts/ci/remap-coverage-paths.js",
+            "region": {
+              "startLine": 10,
+              "startColumn": 6,
+              "endColumn": 33
+            },
+            "role": "was checked"
+          }
+        ],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F029",
+      "rule": "js/file-system-race",
+      "severity": "high",
+      "securityScore": "7.7",
+      "location": {
+        "path": "scripts/v2/ownerConfigAudit.ts",
+        "region": {
+          "startLine": 182,
+          "startColumn": 24,
+          "endColumn": 44
+        }
+      },
+      "rawResultOrdinal": 29,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "35593592e6c8cc8b:1",
+        "primaryLocationStartColumnFingerprint": "19"
+      },
+      "dataflow": {
+        "reported": "The file may have changed since it [was checked](1).",
+        "sourcesAndRelatedLocations": [
+          {
+            "path": "scripts/v2/ownerConfigAudit.ts",
+            "region": {
+              "startLine": 178,
+              "startColumn": 24,
+              "endColumn": 40
+            },
+            "role": "was checked"
+          }
+        ],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F030",
+      "rule": "js/remote-property-injection",
+      "severity": "high",
+      "securityScore": "7.5",
+      "location": {
+        "path": "apps/orchestrator/submission.ts",
+        "region": {
+          "startLine": 44,
+          "startColumn": 11,
+          "endColumn": 13
+        }
+      },
+      "rawResultOrdinal": 30,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "196269c9f1fbdaed:1",
+        "primaryLocationStartColumnFingerprint": "6"
+      },
+      "dataflow": {
+        "reported": "A property name to write to depends on a [user-provided value](1).",
+        "sourcesAndRelatedLocations": [
+          {
+            "path": "apps/orchestrator/oneboxRouter.ts",
+            "region": {
+              "startLine": 890,
+              "startColumn": 30,
+              "endColumn": 38
+            },
+            "role": "user-provided value"
+          },
+          {
+            "path": "apps/orchestrator/oneboxRouter.ts",
+            "region": {
+              "startLine": 890,
+              "startColumn": 30,
+              "endColumn": 38
+            },
+            "role": null
+          }
+        ],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F031",
+      "rule": "js/file-access-to-http",
+      "severity": "medium",
+      "securityScore": "6.5",
+      "location": {
+        "path": "agent-gateway/agentEndpoint.ts",
+        "region": {
+          "startLine": 22,
+          "startColumn": 13,
+          "endLine": 24,
+          "endColumn": 8
+        }
+      },
+      "rawResultOrdinal": 31,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "f0660282fd5f85ad:1",
+        "primaryLocationStartColumnFingerprint": "6"
+      },
+      "dataflow": {
+        "reported": "Outbound network request depends on [file data](1).\nOutbound network request depends on [file data](2).",
+        "sourcesAndRelatedLocations": [
+          {
+            "path": "agent-gateway/identity.ts",
+            "region": {
+              "startLine": 140,
+              "startColumn": 15,
+              "endColumn": 48
+            },
+            "role": "file data"
+          },
+          {
+            "path": "shared/spawnManager.ts",
+            "region": {
+              "startLine": 88,
+              "startColumn": 17,
+              "endColumn": 57
+            },
+            "role": "file data"
+          },
+          {
+            "path": "agent-gateway/identity.ts",
+            "region": {
+              "startLine": 140,
+              "startColumn": 15,
+              "endColumn": 48
+            },
+            "role": null
+          },
+          {
+            "path": "shared/spawnManager.ts",
+            "region": {
+              "startLine": 88,
+              "startColumn": 17,
+              "endColumn": 57
+            },
+            "role": null
+          }
+        ],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F032",
+      "rule": "js/file-access-to-http",
+      "severity": "medium",
+      "securityScore": "6.5",
+      "location": {
+        "path": "agent-gateway/telemetry.ts",
+        "region": {
+          "startLine": 549,
+          "startColumn": 15,
+          "endColumn": 25
+        }
+      },
+      "rawResultOrdinal": 32,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "a066467073968c2f:1",
+        "primaryLocationStartColumnFingerprint": "6"
+      },
+      "dataflow": {
+        "reported": "Outbound network request depends on [file data](1).",
+        "sourcesAndRelatedLocations": [
+          {
+            "path": "agent-gateway/security.ts",
+            "region": {
+              "startLine": 28,
+              "startColumn": 17,
+              "endColumn": 57
+            },
+            "role": "file data"
+          },
+          {
+            "path": "agent-gateway/security.ts",
+            "region": {
+              "startLine": 28,
+              "startColumn": 17,
+              "endColumn": 57
+            },
+            "role": null
+          }
+        ],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F033",
+      "rule": "js/file-access-to-http",
+      "severity": "medium",
+      "securityScore": "6.5",
+      "location": {
+        "path": "agent-gateway/telemetry.ts",
+        "region": {
+          "startLine": 1286,
+          "startColumn": 13,
+          "endColumn": 36
+        }
+      },
+      "rawResultOrdinal": 33,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "d30a35576a8dd7c:1",
+        "primaryLocationStartColumnFingerprint": "6"
+      },
+      "dataflow": {
+        "reported": "Outbound network request depends on [file data](1).\nOutbound network request depends on [file data](2).",
+        "sourcesAndRelatedLocations": [
+          {
+            "path": "agent-gateway/identity.ts",
+            "region": {
+              "startLine": 140,
+              "startColumn": 15,
+              "endColumn": 48
+            },
+            "role": "file data"
+          },
+          {
+            "path": "agent-gateway/telemetry.ts",
+            "region": {
+              "startLine": 1138,
+              "startColumn": 17,
+              "endColumn": 69
+            },
+            "role": "file data"
+          },
+          {
+            "path": "agent-gateway/identity.ts",
+            "region": {
+              "startLine": 140,
+              "startColumn": 15,
+              "endColumn": 48
+            },
+            "role": null
+          },
+          {
+            "path": "agent-gateway/telemetry.ts",
+            "region": {
+              "startLine": 1138,
+              "startColumn": 17,
+              "endColumn": 69
+            },
+            "role": null
+          }
+        ],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F034",
+      "rule": "js/file-access-to-http",
+      "severity": "medium",
+      "securityScore": "6.5",
+      "location": {
+        "path": "apps/orchestrator/execution.ts",
+        "region": {
+          "startLine": 608,
+          "startColumn": 11,
+          "endColumn": 18
+        }
+      },
+      "rawResultOrdinal": 34,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "6f9d11219582f2b5:1",
+        "primaryLocationStartColumnFingerprint": "0"
+      },
+      "dataflow": {
+        "reported": "Outbound network request depends on [file data](1).",
+        "sourcesAndRelatedLocations": [
+          {
+            "path": "apps/orchestrator/settlementJournal.ts",
+            "region": {
+              "startLine": 91,
+              "startColumn": 11,
+              "endColumn": 67
+            },
+            "role": "file data"
+          },
+          {
+            "path": "apps/orchestrator/settlementJournal.ts",
+            "region": {
+              "startLine": 91,
+              "startColumn": 11,
+              "endColumn": 67
+            },
+            "role": null
+          }
+        ],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F035",
+      "rule": "js/file-access-to-http",
+      "severity": "medium",
+      "securityScore": "6.5",
+      "location": {
+        "path": "apps/orchestrator/execution.ts",
+        "region": {
+          "startLine": 609,
+          "startColumn": 17,
+          "endColumn": 23
+        }
+      },
+      "rawResultOrdinal": 35,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "72eb1945e9cc714b:1",
+        "primaryLocationStartColumnFingerprint": "6"
+      },
+      "dataflow": {
+        "reported": "Outbound network request depends on [file data](1).",
+        "sourcesAndRelatedLocations": [
+          {
+            "path": "apps/orchestrator/settlementJournal.ts",
+            "region": {
+              "startLine": 91,
+              "startColumn": 11,
+              "endColumn": 67
+            },
+            "role": "file data"
+          },
+          {
+            "path": "apps/orchestrator/settlementJournal.ts",
+            "region": {
+              "startLine": 91,
+              "startColumn": 11,
+              "endColumn": 67
+            },
+            "role": null
+          }
+        ],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F036",
+      "rule": "js/file-access-to-http",
+      "severity": "medium",
+      "securityScore": "6.5",
+      "location": {
+        "path": "scripts/retrainAgent.ts",
+        "region": {
+          "startLine": 261,
+          "startColumn": 13,
+          "endLine": 265,
+          "endColumn": 9
+        }
+      },
+      "rawResultOrdinal": 36,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "893692d64c0a99d:1",
+        "primaryLocationStartColumnFingerprint": "6"
+      },
+      "dataflow": {
+        "reported": "Outbound network request depends on [file data](1).\nOutbound network request depends on [file data](2).",
+        "sourcesAndRelatedLocations": [
+          {
+            "path": "scripts/retrainAgent.ts",
+            "region": {
+              "startLine": 197,
+              "startColumn": 17,
+              "endColumn": 63
+            },
+            "role": "file data"
+          },
+          {
+            "path": "scripts/retrainAgent.ts",
+            "region": {
+              "startLine": 222,
+              "startColumn": 19,
+              "endColumn": 63
+            },
+            "role": "file data"
+          },
+          {
+            "path": "scripts/retrainAgent.ts",
+            "region": {
+              "startLine": 197,
+              "startColumn": 17,
+              "endColumn": 63
+            },
+            "role": null
+          },
+          {
+            "path": "scripts/retrainAgent.ts",
+            "region": {
+              "startLine": 222,
+              "startColumn": 19,
+              "endColumn": 63
+            },
+            "role": null
+          }
+        ],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F037",
+      "rule": "js/log-injection",
+      "severity": "medium",
+      "securityScore": "6.1",
+      "location": {
+        "path": "agent-gateway/apiHelpers.ts",
+        "region": {
+          "startLine": 119,
+          "startColumn": 59,
+          "endColumn": 69
+        }
+      },
+      "rawResultOrdinal": 37,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "60d7f75b4e6890bc:1",
+        "primaryLocationStartColumnFingerprint": "52"
+      },
+      "dataflow": {
+        "reported": "Log entry depends on a [user-provided value](1).\nLog entry depends on a [user-provided value](2).\nLog entry depends on a [user-provided value](3).\nLog entry depends on a [user-provided value](4).\nLog entry depends on a [user-provided value](5).\nLog entry depends on a [user-provided value](6).\nLog entry depends on a [user-provided value](7).",
+        "sourcesAndRelatedLocations": [
+          {
+            "path": "agent-gateway/routes.ts",
+            "region": {
+              "startLine": 590,
+              "startColumn": 47,
+              "endColumn": 63
+            },
+            "role": "user-provided value"
+          },
+          {
+            "path": "agent-gateway/routes.ts",
+            "region": {
+              "startLine": 646,
+              "startColumn": 47,
+              "endColumn": 63
+            },
+            "role": "user-provided value"
+          },
+          {
+            "path": "agent-gateway/routes.ts",
+            "region": {
+              "startLine": 675,
+              "startColumn": 47,
+              "endColumn": 63
+            },
+            "role": "user-provided value"
+          },
+          {
+            "path": "agent-gateway/routes.ts",
+            "region": {
+              "startLine": 722,
+              "startColumn": 47,
+              "endColumn": 63
+            },
+            "role": "user-provided value"
+          },
+          {
+            "path": "agent-gateway/routes.ts",
+            "region": {
+              "startLine": 760,
+              "startColumn": 47,
+              "endColumn": 63
+            },
+            "role": "user-provided value"
+          },
+          {
+            "path": "agent-gateway/routes.ts",
+            "region": {
+              "startLine": 790,
+              "startColumn": 47,
+              "endColumn": 63
+            },
+            "role": "user-provided value"
+          },
+          {
+            "path": "agent-gateway/routes.ts",
+            "region": {
+              "startLine": 830,
+              "startColumn": 47,
+              "endColumn": 63
+            },
+            "role": "user-provided value"
+          },
+          {
+            "path": "agent-gateway/routes.ts",
+            "region": {
+              "startLine": 590,
+              "startColumn": 47,
+              "endColumn": 63
+            },
+            "role": null
+          },
+          {
+            "path": "agent-gateway/routes.ts",
+            "region": {
+              "startLine": 646,
+              "startColumn": 47,
+              "endColumn": 63
+            },
+            "role": null
+          },
+          {
+            "path": "agent-gateway/routes.ts",
+            "region": {
+              "startLine": 675,
+              "startColumn": 47,
+              "endColumn": 63
+            },
+            "role": null
+          },
+          {
+            "path": "agent-gateway/routes.ts",
+            "region": {
+              "startLine": 722,
+              "startColumn": 47,
+              "endColumn": 63
+            },
+            "role": null
+          }
+        ],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F038",
+      "rule": "js/log-injection",
+      "severity": "medium",
+      "securityScore": "6.1",
+      "location": {
+        "path": "agent-gateway/operator.ts",
+        "region": {
+          "startLine": 298,
+          "startColumn": 73,
+          "endColumn": 79
+        }
+      },
+      "rawResultOrdinal": 38,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "3e756c916956e325:1",
+        "primaryLocationStartColumnFingerprint": "66"
+      },
+      "dataflow": {
+        "reported": "Log entry depends on a [user-provided value](1).",
+        "sourcesAndRelatedLocations": [
+          {
+            "path": "agent-gateway/routes.ts",
+            "region": {
+              "startLine": 1822,
+              "startColumn": 19,
+              "endColumn": 27
+            },
+            "role": "user-provided value"
+          },
+          {
+            "path": "agent-gateway/routes.ts",
+            "region": {
+              "startLine": 1822,
+              "startColumn": 19,
+              "endColumn": 27
+            },
+            "role": null
+          }
+        ],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F039",
+      "rule": "js/log-injection",
+      "severity": "medium",
+      "securityScore": "6.1",
+      "location": {
+        "path": "agent-gateway/operator.ts",
+        "region": {
+          "startLine": 305,
+          "startColumn": 9,
+          "endColumn": 21
+        }
+      },
+      "rawResultOrdinal": 39,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "83c13999519189de:1",
+        "primaryLocationStartColumnFingerprint": "0"
+      },
+      "dataflow": {
+        "reported": "Log entry depends on a [user-provided value](1).\nLog entry depends on a [user-provided value](2).",
+        "sourcesAndRelatedLocations": [
+          {
+            "path": "agent-gateway/routes.ts",
+            "region": {
+              "startLine": 1822,
+              "startColumn": 19,
+              "endColumn": 27
+            },
+            "role": "user-provided value"
+          },
+          {
+            "path": "agent-gateway/routes.ts",
+            "region": {
+              "startLine": 1886,
+              "startColumn": 20,
+              "endColumn": 33
+            },
+            "role": "user-provided value"
+          },
+          {
+            "path": "agent-gateway/routes.ts",
+            "region": {
+              "startLine": 1822,
+              "startColumn": 19,
+              "endColumn": 27
+            },
+            "role": null
+          },
+          {
+            "path": "agent-gateway/routes.ts",
+            "region": {
+              "startLine": 1886,
+              "startColumn": 20,
+              "endColumn": 33
+            },
+            "role": null
+          }
+        ],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F040",
+      "rule": "js/log-injection",
+      "severity": "medium",
+      "securityScore": "6.1",
+      "location": {
+        "path": "agent-gateway/stakeCoordinator.ts",
+        "region": {
+          "startLine": 277,
+          "startColumn": 51,
+          "endColumn": 67
+        }
+      },
+      "rawResultOrdinal": 40,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "64996a1a384dc0ae:1",
+        "primaryLocationStartColumnFingerprint": "46"
+      },
+      "dataflow": {
+        "reported": "Log entry depends on a [user-provided value](1).\nLog entry depends on a [user-provided value](2).\nLog entry depends on a [user-provided value](3).",
+        "sourcesAndRelatedLocations": [
+          {
+            "path": "agent-gateway/routes.ts",
+            "region": {
+              "startLine": 733,
+              "startColumn": 18,
+              "endColumn": 26
+            },
+            "role": "user-provided value"
+          },
+          {
+            "path": "agent-gateway/routes.ts",
+            "region": {
+              "startLine": 801,
+              "startColumn": 18,
+              "endColumn": 26
+            },
+            "role": "user-provided value"
+          },
+          {
+            "path": "agent-gateway/routes.ts",
+            "region": {
+              "startLine": 841,
+              "startColumn": 18,
+              "endColumn": 26
+            },
+            "role": "user-provided value"
+          },
+          {
+            "path": "agent-gateway/routes.ts",
+            "region": {
+              "startLine": 733,
+              "startColumn": 18,
+              "endColumn": 26
+            },
+            "role": null
+          },
+          {
+            "path": "agent-gateway/routes.ts",
+            "region": {
+              "startLine": 801,
+              "startColumn": 18,
+              "endColumn": 26
+            },
+            "role": null
+          },
+          {
+            "path": "agent-gateway/routes.ts",
+            "region": {
+              "startLine": 841,
+              "startColumn": 18,
+              "endColumn": 26
+            },
+            "role": null
+          }
+        ],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F041",
+      "rule": "js/log-injection",
+      "severity": "medium",
+      "securityScore": "6.1",
+      "location": {
+        "path": "agent-gateway/routes.ts",
+        "region": {
+          "startLine": 901,
+          "startColumn": 54,
+          "endColumn": 59
+        }
+      },
+      "rawResultOrdinal": 41,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "dbcfde1b854f38ef:1",
+        "primaryLocationStartColumnFingerprint": "49"
+      },
+      "dataflow": {
+        "reported": "Log entry depends on a [user-provided value](1).",
+        "sourcesAndRelatedLocations": [
+          {
+            "path": "agent-gateway/routes.ts",
+            "region": {
+              "startLine": 875,
+              "startColumn": 17,
+              "endColumn": 30
+            },
+            "role": "user-provided value"
+          },
+          {
+            "path": "agent-gateway/routes.ts",
+            "region": {
+              "startLine": 875,
+              "startColumn": 17,
+              "endColumn": 30
+            },
+            "role": null
+          }
+        ],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F042",
+      "rule": "js/log-injection",
+      "severity": "medium",
+      "securityScore": "6.1",
+      "location": {
+        "path": "services/culture-graph-indexer/scripts/healthcheck.mjs",
+        "region": {
+          "startLine": 16,
+          "startColumn": 63,
+          "endColumn": 74
+        }
+      },
+      "rawResultOrdinal": 42,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "3946fefc720af63b:1",
+        "primaryLocationStartColumnFingerprint": "60"
+      },
+      "dataflow": {
+        "reported": "Log entry depends on a [user-provided value](1).",
+        "sourcesAndRelatedLocations": [
+          {
+            "path": "services/culture-graph-indexer/scripts/healthcheck.mjs",
+            "region": {
+              "startLine": 15,
+              "startColumn": 22,
+              "endColumn": 25
+            },
+            "role": "user-provided value"
+          },
+          {
+            "path": "services/culture-graph-indexer/scripts/healthcheck.mjs",
+            "region": {
+              "startLine": 15,
+              "startColumn": 22,
+              "endColumn": 25
+            },
+            "role": null
+          }
+        ],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F043",
+      "rule": "js/log-injection",
+      "severity": "medium",
+      "securityScore": "6.1",
+      "location": {
+        "path": "services/notifications/server.js",
+        "region": {
+          "startLine": 58,
+          "startColumn": 43,
+          "endColumn": 51
+        }
+      },
+      "rawResultOrdinal": 43,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "da3d7dcdd938a051:1",
+        "primaryLocationStartColumnFingerprint": "38"
+      },
+      "dataflow": {
+        "reported": "Log entry depends on a [user-provided value](1).",
+        "sourcesAndRelatedLocations": [
+          {
+            "path": "services/notifications/server.js",
+            "region": {
+              "startLine": 52,
+              "startColumn": 21,
+              "endColumn": 29
+            },
+            "role": "user-provided value"
+          },
+          {
+            "path": "services/notifications/server.js",
+            "region": {
+              "startLine": 52,
+              "startColumn": 21,
+              "endColumn": 29
+            },
+            "role": null
+          }
+        ],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F044",
+      "rule": "js/user-controlled-bypass",
+      "severity": "high",
+      "securityScore": "7.8",
+      "location": {
+        "path": "agent-gateway/apiHelpers.ts",
+        "region": {
+          "startLine": 173,
+          "startColumn": 10,
+          "endColumn": 15
+        }
+      },
+      "rawResultOrdinal": 44,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "c98dc9a402e42d42:1",
+        "primaryLocationStartColumnFingerprint": "5"
+      },
+      "dataflow": {
+        "reported": "This condition guards a sensitive [action](1), but a [user-provided value](2) controls it.",
+        "sourcesAndRelatedLocations": [
+          {
+            "path": "agent-gateway/apiHelpers.ts",
+            "region": {
+              "startLine": 210,
+              "startColumn": 29,
+              "endLine": 211,
+              "endColumn": 49
+            },
+            "role": "action"
+          },
+          {
+            "path": "agent-gateway/routes.ts",
+            "region": {
+              "startLine": 1646,
+              "startColumn": 19,
+              "endColumn": 27
+            },
+            "role": "user-provided value"
+          },
+          {
+            "path": "agent-gateway/routes.ts",
+            "region": {
+              "startLine": 1646,
+              "startColumn": 19,
+              "endColumn": 27
+            },
+            "role": null
+          }
+        ],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F045",
+      "rule": "js/user-controlled-bypass",
+      "severity": "high",
+      "securityScore": "7.8",
+      "location": {
+        "path": "agent-gateway/apiHelpers.ts",
+        "region": {
+          "startLine": 206,
+          "startColumn": 42,
+          "endColumn": 69
+        }
+      },
+      "rawResultOrdinal": 45,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "33ca987846598110:1",
+        "primaryLocationStartColumnFingerprint": "37"
+      },
+      "dataflow": {
+        "reported": "This condition guards a sensitive [action](1), but a [user-provided value](2) controls it.",
+        "sourcesAndRelatedLocations": [
+          {
+            "path": "agent-gateway/apiHelpers.ts",
+            "region": {
+              "startLine": 210,
+              "startColumn": 29,
+              "endLine": 211,
+              "endColumn": 49
+            },
+            "role": "action"
+          },
+          {
+            "path": "agent-gateway/routes.ts",
+            "region": {
+              "startLine": 1646,
+              "startColumn": 19,
+              "endColumn": 27
+            },
+            "role": "user-provided value"
+          },
+          {
+            "path": "agent-gateway/routes.ts",
+            "region": {
+              "startLine": 1646,
+              "startColumn": 19,
+              "endColumn": 27
+            },
+            "role": null
+          }
+        ],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F046",
+      "rule": "js/user-controlled-bypass",
+      "severity": "high",
+      "securityScore": "7.8",
+      "location": {
+        "path": "agent-gateway/apiHelpers.ts",
+        "region": {
+          "startLine": 207,
+          "startColumn": 11,
+          "endColumn": 32
+        }
+      },
+      "rawResultOrdinal": 46,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "baa264a7c7fb7dc0:1",
+        "primaryLocationStartColumnFingerprint": "4"
+      },
+      "dataflow": {
+        "reported": "This condition guards a sensitive [action](1), but a [user-provided value](2) controls it.",
+        "sourcesAndRelatedLocations": [
+          {
+            "path": "agent-gateway/apiHelpers.ts",
+            "region": {
+              "startLine": 210,
+              "startColumn": 29,
+              "endLine": 211,
+              "endColumn": 49
+            },
+            "role": "action"
+          },
+          {
+            "path": "agent-gateway/routes.ts",
+            "region": {
+              "startLine": 1646,
+              "startColumn": 19,
+              "endColumn": 27
+            },
+            "role": "user-provided value"
+          },
+          {
+            "path": "agent-gateway/routes.ts",
+            "region": {
+              "startLine": 1646,
+              "startColumn": 19,
+              "endColumn": 27
+            },
+            "role": null
+          }
+        ],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F047",
+      "rule": "js/user-controlled-bypass",
+      "severity": "high",
+      "securityScore": "7.8",
+      "location": {
+        "path": "agent-gateway/routes.ts",
+        "region": {
+          "startLine": 203,
+          "startColumn": 7,
+          "endColumn": 16
+        }
+      },
+      "rawResultOrdinal": 47,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "3abebee5996c2dd8:1",
+        "primaryLocationStartColumnFingerprint": "4"
+      },
+      "dataflow": {
+        "reported": "This condition guards a sensitive [action](1), but a [user-provided value](2) controls it.",
+        "sourcesAndRelatedLocations": [
+          {
+            "path": "agent-gateway/routes.ts",
+            "region": {
+              "startLine": 209,
+              "startColumn": 25,
+              "endLine": 210,
+              "endColumn": 56
+            },
+            "role": "action"
+          },
+          {
+            "path": "agent-gateway/routes.ts",
+            "region": {
+              "startLine": 201,
+              "startColumn": 21,
+              "endColumn": 46
+            },
+            "role": "user-provided value"
+          },
+          {
+            "path": "agent-gateway/routes.ts",
+            "region": {
+              "startLine": 201,
+              "startColumn": 21,
+              "endColumn": 46
+            },
+            "role": null
+          }
+        ],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F048",
+      "rule": "js/user-controlled-bypass",
+      "severity": "high",
+      "securityScore": "7.8",
+      "location": {
+        "path": "agent-gateway/routes.ts",
+        "region": {
+          "startLine": 203,
+          "startColumn": 20,
+          "endColumn": 27
+        }
+      },
+      "rawResultOrdinal": 48,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "3abebee5996c2dd8:1",
+        "primaryLocationStartColumnFingerprint": "17"
+      },
+      "dataflow": {
+        "reported": "This condition guards a sensitive [action](1), but a [user-provided value](2) controls it.",
+        "sourcesAndRelatedLocations": [
+          {
+            "path": "agent-gateway/routes.ts",
+            "region": {
+              "startLine": 209,
+              "startColumn": 25,
+              "endLine": 210,
+              "endColumn": 56
+            },
+            "role": "action"
+          },
+          {
+            "path": "agent-gateway/routes.ts",
+            "region": {
+              "startLine": 202,
+              "startColumn": 19,
+              "endColumn": 42
+            },
+            "role": "user-provided value"
+          },
+          {
+            "path": "agent-gateway/routes.ts",
+            "region": {
+              "startLine": 202,
+              "startColumn": 19,
+              "endColumn": 42
+            },
+            "role": null
+          }
+        ],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F049",
+      "rule": "js/user-controlled-bypass",
+      "severity": "high",
+      "securityScore": "7.8",
+      "location": {
+        "path": "apps/onebox-static/app.mjs",
+        "region": {
+          "startLine": 1483,
+          "startColumn": 8,
+          "endColumn": 15
+        }
+      },
+      "rawResultOrdinal": 49,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "56ed5a835e67d820:1",
+        "primaryLocationStartColumnFingerprint": "5"
+      },
+      "dataflow": {
+        "reported": "This condition guards a sensitive [action](1), but a [user-provided value](2) controls it.",
+        "sourcesAndRelatedLocations": [
+          {
+            "path": "apps/onebox-static/app.mjs",
+            "region": {
+              "startLine": 1491,
+              "startColumn": 5,
+              "endLine": 1496,
+              "endColumn": 7
+            },
+            "role": "action"
+          },
+          {
+            "path": "apps/onebox-static/app.mjs",
+            "region": {
+              "startLine": 492,
+              "startColumn": 25,
+              "endColumn": 45
+            },
+            "role": "user-provided value"
+          },
+          {
+            "path": "apps/onebox-static/app.mjs",
+            "region": {
+              "startLine": 492,
+              "startColumn": 25,
+              "endColumn": 45
+            },
+            "role": null
+          }
+        ],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F050",
+      "rule": "js/http-to-file-access",
+      "severity": "medium",
+      "securityScore": "6.3",
+      "location": {
+        "path": "agent-gateway/employer.ts",
+        "region": {
+          "startLine": 54,
+          "startColumn": 5,
+          "endColumn": 37
+        }
+      },
+      "rawResultOrdinal": 50,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "909101fe9db0186c:1",
+        "primaryLocationStartColumnFingerprint": "0"
+      },
+      "dataflow": {
+        "reported": "Write to file system depends on [Untrusted data](1).",
+        "sourcesAndRelatedLocations": [
+          {
+            "path": "agent-gateway/routes.ts",
+            "region": {
+              "startLine": 1983,
+              "startColumn": 36,
+              "endColumn": 44
+            },
+            "role": "Untrusted data"
+          },
+          {
+            "path": "agent-gateway/routes.ts",
+            "region": {
+              "startLine": 1983,
+              "startColumn": 36,
+              "endColumn": 44
+            },
+            "role": null
+          }
+        ],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F051",
+      "rule": "js/http-to-file-access",
+      "severity": "medium",
+      "securityScore": "6.3",
+      "location": {
+        "path": "agent-gateway/jobPlanner.ts",
+        "region": {
+          "startLine": 270,
+          "startColumn": 5,
+          "endColumn": 34
+        }
+      },
+      "rawResultOrdinal": 51,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "ef5ebd2699005b6:1",
+        "primaryLocationStartColumnFingerprint": "0"
+      },
+      "dataflow": {
+        "reported": "Write to file system depends on [Untrusted data](1).",
+        "sourcesAndRelatedLocations": [
+          {
+            "path": "agent-gateway/routes.ts",
+            "region": {
+              "startLine": 1937,
+              "startColumn": 40,
+              "endColumn": 48
+            },
+            "role": "Untrusted data"
+          },
+          {
+            "path": "agent-gateway/routes.ts",
+            "region": {
+              "startLine": 1937,
+              "startColumn": 40,
+              "endColumn": 48
+            },
+            "role": null
+          }
+        ],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F052",
+      "rule": "js/http-to-file-access",
+      "severity": "medium",
+      "securityScore": "6.3",
+      "location": {
+        "path": "agent-gateway/telemetry.ts",
+        "region": {
+          "startLine": 1153,
+          "startColumn": 5,
+          "endColumn": 35
+        }
+      },
+      "rawResultOrdinal": 52,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "3adedaddf0882c8d:1",
+        "primaryLocationStartColumnFingerprint": "0"
+      },
+      "dataflow": {
+        "reported": "Write to file system depends on [Untrusted data](1).\nWrite to file system depends on [Untrusted data](2).",
+        "sourcesAndRelatedLocations": [
+          {
+            "path": "agent-gateway/routes.ts",
+            "region": {
+              "startLine": 1822,
+              "startColumn": 19,
+              "endColumn": 27
+            },
+            "role": "Untrusted data"
+          },
+          {
+            "path": "agent-gateway/routes.ts",
+            "region": {
+              "startLine": 1886,
+              "startColumn": 20,
+              "endColumn": 33
+            },
+            "role": "Untrusted data"
+          },
+          {
+            "path": "agent-gateway/routes.ts",
+            "region": {
+              "startLine": 1822,
+              "startColumn": 19,
+              "endColumn": 27
+            },
+            "role": null
+          },
+          {
+            "path": "agent-gateway/routes.ts",
+            "region": {
+              "startLine": 1886,
+              "startColumn": 20,
+              "endColumn": 33
+            },
+            "role": null
+          }
+        ],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F053",
+      "rule": "js/http-to-file-access",
+      "severity": "medium",
+      "securityScore": "6.3",
+      "location": {
+        "path": "agent-gateway/validationStore.ts",
+        "region": {
+          "startLine": 231,
+          "startColumn": 26,
+          "endColumn": 30
+        }
+      },
+      "rawResultOrdinal": 53,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "2fe36908df7d6167:1",
+        "primaryLocationStartColumnFingerprint": "21"
+      },
+      "dataflow": {
+        "reported": "Write to file system depends on [Untrusted data](1).\nWrite to file system depends on [Untrusted data](2).",
+        "sourcesAndRelatedLocations": [
+          {
+            "path": "agent-gateway/routes.ts",
+            "region": {
+              "startLine": 2045,
+              "startColumn": 40,
+              "endColumn": 48
+            },
+            "role": "Untrusted data"
+          },
+          {
+            "path": "agent-gateway/validator.ts",
+            "region": {
+              "startLine": 836,
+              "startColumn": 23,
+              "endColumn": 64
+            },
+            "role": "Untrusted data"
+          },
+          {
+            "path": "agent-gateway/routes.ts",
+            "region": {
+              "startLine": 2045,
+              "startColumn": 40,
+              "endColumn": 48
+            },
+            "role": null
+          },
+          {
+            "path": "agent-gateway/validator.ts",
+            "region": {
+              "startLine": 836,
+              "startColumn": 23,
+              "endColumn": 64
+            },
+            "role": null
+          }
+        ],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F054",
+      "rule": "js/http-to-file-access",
+      "severity": "medium",
+      "securityScore": "6.3",
+      "location": {
+        "path": "apps/orchestrator/receiptStore.ts",
+        "region": {
+          "startLine": 35,
+          "startColumn": 32,
+          "endColumn": 39
+        }
+      },
+      "rawResultOrdinal": 54,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "398bfa96ee6afa7a:1",
+        "primaryLocationStartColumnFingerprint": "29"
+      },
+      "dataflow": {
+        "reported": "Write to file system depends on [Untrusted data](1).\nWrite to file system depends on [Untrusted data](2).\nWrite to file system depends on [Untrusted data](3).\nWrite to file system depends on [Untrusted data](4).",
+        "sourcesAndRelatedLocations": [
+          {
+            "path": "apps/orchestrator/execution.ts",
+            "region": {
+              "startLine": 541,
+              "startColumn": 26,
+              "endColumn": 71
+            },
+            "role": "Untrusted data"
+          },
+          {
+            "path": "apps/orchestrator/execution.ts",
+            "region": {
+              "startLine": 593,
+              "startColumn": 26,
+              "endLine": 597,
+              "endColumn": 11
+            },
+            "role": "Untrusted data"
+          },
+          {
+            "path": "apps/orchestrator/execution.ts",
+            "region": {
+              "startLine": 606,
+              "startColumn": 26,
+              "endLine": 610,
+              "endColumn": 11
+            },
+            "role": "Untrusted data"
+          },
+          {
+            "path": "apps/orchestrator/oneboxRouter.ts",
+            "region": {
+              "startLine": 890,
+              "startColumn": 30,
+              "endColumn": 38
+            },
+            "role": "Untrusted data"
+          },
+          {
+            "path": "apps/orchestrator/execution.ts",
+            "region": {
+              "startLine": 541,
+              "startColumn": 26,
+              "endColumn": 71
+            },
+            "role": null
+          },
+          {
+            "path": "apps/orchestrator/execution.ts",
+            "region": {
+              "startLine": 593,
+              "startColumn": 26,
+              "endLine": 597,
+              "endColumn": 11
+            },
+            "role": null
+          },
+          {
+            "path": "apps/orchestrator/execution.ts",
+            "region": {
+              "startLine": 606,
+              "startColumn": 26,
+              "endLine": 610,
+              "endColumn": 11
+            },
+            "role": null
+          },
+          {
+            "path": "apps/orchestrator/oneboxRouter.ts",
+            "region": {
+              "startLine": 890,
+              "startColumn": 30,
+              "endColumn": 38
+            },
+            "role": null
+          }
+        ],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F055",
+      "rule": "js/http-to-file-access",
+      "severity": "medium",
+      "securityScore": "6.3",
+      "location": {
+        "path": "services/notifications/server.js",
+        "region": {
+          "startLine": 20,
+          "startColumn": 34,
+          "endColumn": 64
+        }
+      },
+      "rawResultOrdinal": 55,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "e0a9774e1d69507e:1",
+        "primaryLocationStartColumnFingerprint": "31"
+      },
+      "dataflow": {
+        "reported": "Write to file system depends on [Untrusted data](1).",
+        "sourcesAndRelatedLocations": [
+          {
+            "path": "services/notifications/server.js",
+            "region": {
+              "startLine": 52,
+              "startColumn": 21,
+              "endColumn": 29
+            },
+            "role": "Untrusted data"
+          },
+          {
+            "path": "services/notifications/server.js",
+            "region": {
+              "startLine": 52,
+              "startColumn": 21,
+              "endColumn": 29
+            },
+            "role": null
+          }
+        ],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F056",
+      "rule": "js/http-to-file-access",
+      "severity": "medium",
+      "securityScore": "6.3",
+      "location": {
+        "path": "shared/worldModel.ts",
+        "region": {
+          "startLine": 202,
+          "startColumn": 5,
+          "endColumn": 39
+        }
+      },
+      "rawResultOrdinal": 56,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "f7bedecf14c93fea:1",
+        "primaryLocationStartColumnFingerprint": "0"
+      },
+      "dataflow": {
+        "reported": "Write to file system depends on [Untrusted data](1).\nWrite to file system depends on [Untrusted data](2).\nWrite to file system depends on [Untrusted data](3).",
+        "sourcesAndRelatedLocations": [
+          {
+            "path": "apps/orchestrator/execution.ts",
+            "region": {
+              "startLine": 541,
+              "startColumn": 26,
+              "endColumn": 71
+            },
+            "role": "Untrusted data"
+          },
+          {
+            "path": "apps/orchestrator/execution.ts",
+            "region": {
+              "startLine": 593,
+              "startColumn": 26,
+              "endLine": 597,
+              "endColumn": 11
+            },
+            "role": "Untrusted data"
+          },
+          {
+            "path": "apps/orchestrator/execution.ts",
+            "region": {
+              "startLine": 606,
+              "startColumn": 26,
+              "endLine": 610,
+              "endColumn": 11
+            },
+            "role": "Untrusted data"
+          },
+          {
+            "path": "apps/orchestrator/execution.ts",
+            "region": {
+              "startLine": 541,
+              "startColumn": 26,
+              "endColumn": 71
+            },
+            "role": null
+          },
+          {
+            "path": "apps/orchestrator/execution.ts",
+            "region": {
+              "startLine": 593,
+              "startColumn": 26,
+              "endLine": 597,
+              "endColumn": 11
+            },
+            "role": null
+          },
+          {
+            "path": "apps/orchestrator/execution.ts",
+            "region": {
+              "startLine": 606,
+              "startColumn": 26,
+              "endLine": 610,
+              "endColumn": 11
+            },
+            "role": null
+          }
+        ],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F057",
+      "rule": "js/comparison-between-incompatible-types",
+      "severity": "quality",
+      "securityScore": null,
+      "location": {
+        "path": "scripts/config/index.js",
+        "region": {
+          "startLine": 407,
+          "startColumn": 36,
+          "endColumn": 41
+        }
+      },
+      "rawResultOrdinal": 57,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "bca186a161fb2de6:1",
+        "primaryLocationStartColumnFingerprint": "33"
+      },
+      "dataflow": {
+        "reported": "Variable 'value' is of type date, object or regular expression, but it is compared to [an expression](1) of type null.",
+        "sourcesAndRelatedLocations": [
+          {
+            "path": "scripts/config/index.js",
+            "region": {
+              "startLine": 407,
+              "startColumn": 46,
+              "endColumn": 50
+            },
+            "role": "an expression"
+          }
+        ],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F058",
+      "rule": "js/comparison-between-incompatible-types",
+      "severity": "quality",
+      "securityScore": null,
+      "location": {
+        "path": "scripts/v2/thermodynamicsReport.ts",
+        "region": {
+          "startLine": 204,
+          "startColumn": 36,
+          "endColumn": 41
+        }
+      },
+      "rawResultOrdinal": 58,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "c4b948fe9d6c7e85:1",
+        "primaryLocationStartColumnFingerprint": "33"
+      },
+      "dataflow": {
+        "reported": "Variable 'value' is of type date, object or regular expression, but it is compared to [an expression](1) of type null.",
+        "sourcesAndRelatedLocations": [
+          {
+            "path": "scripts/v2/thermodynamicsReport.ts",
+            "region": {
+              "startLine": 204,
+              "startColumn": 46,
+              "endColumn": 50
+            },
+            "role": "an expression"
+          }
+        ],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F059",
+      "rule": "js/comparison-between-incompatible-types",
+      "severity": "quality",
+      "securityScore": null,
+      "location": {
+        "path": "scripts/v2/thermodynamicsReport.ts",
+        "region": {
+          "startLine": 283,
+          "startColumn": 61,
+          "endColumn": 66
+        }
+      },
+      "rawResultOrdinal": 59,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "73ef358c0c4875ce:1",
+        "primaryLocationStartColumnFingerprint": "58"
+      },
+      "dataflow": {
+        "reported": "Variable 'value' is of type date, object or regular expression, but it is compared to [an expression](1) of type null.",
+        "sourcesAndRelatedLocations": [
+          {
+            "path": "scripts/v2/thermodynamicsReport.ts",
+            "region": {
+              "startLine": 283,
+              "startColumn": 71,
+              "endColumn": 75
+            },
+            "role": "an expression"
+          }
+        ],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F060",
+      "rule": "js/comparison-between-incompatible-types",
+      "severity": "quality",
+      "securityScore": null,
+      "location": {
+        "path": "scripts/v2/updateAllModules.ts",
+        "region": {
+          "startLine": 508,
+          "startColumn": 61,
+          "endColumn": 66
+        }
+      },
+      "rawResultOrdinal": 60,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "8a01e28d675a47fc:1",
+        "primaryLocationStartColumnFingerprint": "58"
+      },
+      "dataflow": {
+        "reported": "Variable 'value' is of type date, object or regular expression, but it is compared to [an expression](1) of type null.",
+        "sourcesAndRelatedLocations": [
+          {
+            "path": "scripts/v2/updateAllModules.ts",
+            "region": {
+              "startLine": 508,
+              "startColumn": 71,
+              "endColumn": 75
+            },
+            "role": "an expression"
+          }
+        ],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F061",
+      "rule": "js/unneeded-defensive-code",
+      "severity": "quality",
+      "securityScore": null,
+      "location": {
+        "path": "apps/onebox/app.js",
+        "region": {
+          "startLine": 674,
+          "startColumn": 9,
+          "endColumn": 39
+        }
+      },
+      "rawResultOrdinal": 61,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "1dadfce4e17bbd48:1",
+        "primaryLocationStartColumnFingerprint": "4"
+      },
+      "dataflow": {
+        "reported": "This guard always evaluates to true.",
+        "sourcesAndRelatedLocations": [],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F062",
+      "rule": "js/unneeded-defensive-code",
+      "severity": "quality",
+      "securityScore": null,
+      "location": {
+        "path": "scripts/config/index.js",
+        "region": {
+          "startLine": 2066,
+          "startColumn": 7,
+          "endColumn": 26
+        }
+      },
+      "rawResultOrdinal": 62,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "f3c0eaf1117d4b29:1",
+        "primaryLocationStartColumnFingerprint": "4"
+      },
+      "dataflow": {
+        "reported": "This guard always evaluates to false.",
+        "sourcesAndRelatedLocations": [],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F063",
+      "rule": "js/unneeded-defensive-code",
+      "severity": "quality",
+      "securityScore": null,
+      "location": {
+        "path": "scripts/config/index.js",
+        "region": {
+          "startLine": 2066,
+          "startColumn": 30,
+          "endColumn": 44
+        }
+      },
+      "rawResultOrdinal": 63,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "f3c0eaf1117d4b29:1",
+        "primaryLocationStartColumnFingerprint": "27"
+      },
+      "dataflow": {
+        "reported": "This guard always evaluates to false.",
+        "sourcesAndRelatedLocations": [],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F064",
+      "rule": "js/unneeded-defensive-code",
+      "severity": "quality",
+      "securityScore": null,
+      "location": {
+        "path": "scripts/verify-wiring.js",
+        "region": {
+          "startLine": 563,
+          "startColumn": 7,
+          "endColumn": 26
+        }
+      },
+      "rawResultOrdinal": 64,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "268792d5d07a558b:1",
+        "primaryLocationStartColumnFingerprint": "4"
+      },
+      "dataflow": {
+        "reported": "This guard always evaluates to false.",
+        "sourcesAndRelatedLocations": [],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F065",
+      "rule": "js/unneeded-defensive-code",
+      "severity": "quality",
+      "securityScore": null,
+      "location": {
+        "path": "shared/structuredLogger.ts",
+        "region": {
+          "startLine": 91,
+          "startColumn": 7,
+          "endColumn": 26
+        }
+      },
+      "rawResultOrdinal": 65,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "cfd0a349eb3696a2:1",
+        "primaryLocationStartColumnFingerprint": "4"
+      },
+      "dataflow": {
+        "reported": "This guard always evaluates to false.",
+        "sourcesAndRelatedLocations": [],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F066",
+      "rule": "js/unused-local-variable",
+      "severity": "quality",
+      "securityScore": null,
+      "location": {
+        "path": "agent-gateway/routes.ts",
+        "region": {
+          "startLine": 10,
+          "endLine": 23,
+          "endColumn": 18
+        }
+      },
+      "rawResultOrdinal": 66,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "dee59c76b608072b:1",
+        "primaryLocationStartColumnFingerprint": "0"
+      },
+      "dataflow": {
+        "reported": "Unused import TOKEN_DECIMALS.",
+        "sourcesAndRelatedLocations": [],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F067",
+      "rule": "js/unused-local-variable",
+      "severity": "quality",
+      "securityScore": null,
+      "location": {
+        "path": "agent-gateway/routes.ts",
+        "region": {
+          "startLine": 89,
+          "endLine": 100,
+          "endColumn": 29
+        }
+      },
+      "rawResultOrdinal": 67,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "e8153a2ea94db487:1",
+        "primaryLocationStartColumnFingerprint": "0"
+      },
+      "dataflow": {
+        "reported": "Unused imports ROLE_AGENT, ROLE_PLATFORM, ROLE_VALIDATOR.",
+        "sourcesAndRelatedLocations": [],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F068",
+      "rule": "js/unused-local-variable",
+      "severity": "quality",
+      "securityScore": null,
+      "location": {
+        "path": "apps/onebox/app.js",
+        "region": {
+          "startLine": 795,
+          "startColumn": 10,
+          "endColumn": 28
+        }
+      },
+      "rawResultOrdinal": 68,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "f2ab4a0f7615f021:1",
+        "primaryLocationStartColumnFingerprint": "9"
+      },
+      "dataflow": {
+        "reported": "Unused function resolveNetworkName.",
+        "sourcesAndRelatedLocations": [],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F069",
+      "rule": "js/unused-local-variable",
+      "severity": "quality",
+      "securityScore": null,
+      "location": {
+        "path": "apps/onebox-static/app.mjs",
+        "region": {
+          "startLine": 16,
+          "endLine": 25,
+          "endColumn": 20
+        }
+      },
+      "rawResultOrdinal": 69,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "773b450a1f1e35b4:1",
+        "primaryLocationStartColumnFingerprint": "0"
+      },
+      "dataflow": {
+        "reported": "Unused import summarizeAAMode.",
+        "sourcesAndRelatedLocations": [],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F070",
+      "rule": "js/unused-local-variable",
+      "severity": "quality",
+      "securityScore": null,
+      "location": {
+        "path": "apps/orchestrator/employer.ts",
+        "region": {
+          "startLine": 84,
+          "startColumn": 9,
+          "endColumn": 21
+        }
+      },
+      "rawResultOrdinal": 70,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "be6e8c9fde85ad29:1",
+        "primaryLocationStartColumnFingerprint": "6"
+      },
+      "dataflow": {
+        "reported": "Unused variable specWithUris.",
+        "sourcesAndRelatedLocations": [],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F071",
+      "rule": "js/unused-local-variable",
+      "severity": "quality",
+      "securityScore": null,
+      "location": {
+        "path": "apps/orchestrator/oneboxRouter.ts",
+        "region": {
+          "startLine": 1816,
+          "startColumn": 10,
+          "endColumn": 26
+        }
+      },
+      "rawResultOrdinal": 71,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "3d9823aefbe4398f:1",
+        "primaryLocationStartColumnFingerprint": "9"
+      },
+      "dataflow": {
+        "reported": "Unused function toSerializableId.",
+        "sourcesAndRelatedLocations": [],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F072",
+      "rule": "js/unused-local-variable",
+      "severity": "quality",
+      "securityScore": null,
+      "location": {
+        "path": "apps/orchestrator/oneboxRouter.ts",
+        "region": {
+          "startLine": 1983,
+          "startColumn": 10,
+          "endColumn": 25
+        }
+      },
+      "rawResultOrdinal": 72,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "9e296af1d9b0a35:1",
+        "primaryLocationStartColumnFingerprint": "9"
+      },
+      "dataflow": {
+        "reported": "Unused function computePlanHash.",
+        "sourcesAndRelatedLocations": [],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F073",
+      "rule": "js/unused-local-variable",
+      "severity": "quality",
+      "securityScore": null,
+      "location": {
+        "path": "packages/orchestrator/src/tools/governance.ts",
+        "region": {
+          "startLine": 451,
+          "startColumn": 10,
+          "endColumn": 31
+        }
+      },
+      "rawResultOrdinal": 73,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "d2132135018f82dd:1",
+        "primaryLocationStartColumnFingerprint": "9"
+      },
+      "dataflow": {
+        "reported": "Unused function normalizeBigNumberish.",
+        "sourcesAndRelatedLocations": [],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F074",
+      "rule": "js/unused-local-variable",
+      "severity": "quality",
+      "securityScore": null,
+      "location": {
+        "path": "scripts/owner-healthcheck.js",
+        "region": {
+          "startLine": 134,
+          "startColumn": 9,
+          "endColumn": 20
+        }
+      },
+      "rawResultOrdinal": 74,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "af2a2d4a229b712e:1",
+        "primaryLocationStartColumnFingerprint": "6"
+      },
+      "dataflow": {
+        "reported": "Unused variable systemPause.",
+        "sourcesAndRelatedLocations": [],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F075",
+      "rule": "js/unused-local-variable",
+      "severity": "quality",
+      "securityScore": null,
+      "location": {
+        "path": "scripts/phase6/apply-config-lib.ts",
+        "region": {
+          "startLine": 12,
+          "startColumn": 7,
+          "endColumn": 22
+        }
+      },
+      "rawResultOrdinal": 75,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "fa02a3b36908e20e:1",
+        "primaryLocationStartColumnFingerprint": "6"
+      },
+      "dataflow": {
+        "reported": "Unused variable ADDRESS_PATTERN.",
+        "sourcesAndRelatedLocations": [],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F076",
+      "rule": "js/unused-local-variable",
+      "severity": "quality",
+      "securityScore": null,
+      "location": {
+        "path": "scripts/v2/deploy.ts",
+        "region": {
+          "startLine": 303,
+          "startColumn": 9,
+          "endColumn": 18
+        }
+      },
+      "rawResultOrdinal": 76,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "c4f0a9b36dd50541:1",
+        "primaryLocationStartColumnFingerprint": "6"
+      },
+      "dataflow": {
+        "reported": "Unused variable moderator.",
+        "sourcesAndRelatedLocations": [],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F077",
+      "rule": "js/unused-local-variable",
+      "severity": "quality",
+      "securityScore": null,
+      "location": {
+        "path": "scripts/v2/deployDefaults.ts",
+        "region": {
+          "startLine": 147,
+          "startColumn": 7,
+          "endColumn": 17
+        }
+      },
+      "rawResultOrdinal": 77,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "50b2b3dd741ab8e1:1",
+        "primaryLocationStartColumnFingerprint": "6"
+      },
+      "dataflow": {
+        "reported": "Unused variable MAX_UINT96.",
+        "sourcesAndRelatedLocations": [],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F078",
+      "rule": "js/unused-local-variable",
+      "severity": "quality",
+      "securityScore": null,
+      "location": {
+        "path": "scripts/v2/lib/nationalSupplyChainTranscript.ts",
+        "region": {
+          "startLine": 213,
+          "startColumn": 11,
+          "endColumn": 16
+        }
+      },
+      "rawResultOrdinal": 78,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "56804cec4f6e742d:1",
+        "primaryLocationStartColumnFingerprint": "6"
+      },
+      "dataflow": {
+        "reported": "Unused variable jobId.",
+        "sourcesAndRelatedLocations": [],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F079",
+      "rule": "js/unused-local-variable",
+      "severity": "quality",
+      "securityScore": null,
+      "location": {
+        "path": "scripts/v2/thermodynamicsReport.ts",
+        "region": {
+          "startLine": 441,
+          "startColumn": 10,
+          "endColumn": 24
+        }
+      },
+      "rawResultOrdinal": 79,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "a3ddb372ca5f1e84:1",
+        "primaryLocationStartColumnFingerprint": "9"
+      },
+      "dataflow": {
+        "reported": "Unused function compareBoolean.",
+        "sourcesAndRelatedLocations": [],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F080",
+      "rule": "js/unused-local-variable",
+      "severity": "quality",
+      "securityScore": null,
+      "location": {
+        "path": "services/culture-graph-indexer/src/services/event-ingestion-service.ts",
+        "region": {
+          "startLine": 331,
+          "startColumn": 11,
+          "endColumn": 25
+        }
+      },
+      "rawResultOrdinal": 80,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "4d56e14ea8f2c572:1",
+        "primaryLocationStartColumnFingerprint": "6"
+      },
+      "dataflow": {
+        "reported": "Unused variable cultureAddress.",
+        "sourcesAndRelatedLocations": [],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F081",
+      "rule": "js/useless-assignment-to-local",
+      "severity": "quality",
+      "securityScore": null,
+      "location": {
+        "path": "agent-gateway/stakeCoordinator.ts",
+        "region": {
+          "startLine": 102,
+          "startColumn": 7,
+          "endColumn": 21
+        }
+      },
+      "rawResultOrdinal": 81,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "c27fe9557d4cc858:1",
+        "primaryLocationStartColumnFingerprint": "4"
+      },
+      "dataflow": {
+        "reported": "The initial value of allowance is unused, since it is always overwritten.",
+        "sourcesAndRelatedLocations": [],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F082",
+      "rule": "js/useless-assignment-to-local",
+      "severity": "quality",
+      "securityScore": null,
+      "location": {
+        "path": "agent-gateway/telemetry.ts",
+        "region": {
+          "startLine": 259,
+          "startColumn": 7,
+          "endColumn": 37
+        }
+      },
+      "rawResultOrdinal": 82,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "5c4d7671e5fb78b8:1",
+        "primaryLocationStartColumnFingerprint": "4"
+      },
+      "dataflow": {
+        "reported": "The initial value of algorithmicComplexity is unused, since it is always overwritten.",
+        "sourcesAndRelatedLocations": [],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F083",
+      "rule": "js/useless-assignment-to-local",
+      "severity": "quality",
+      "securityScore": null,
+      "location": {
+        "path": "apps/orchestrator/metrics.ts",
+        "region": {
+          "startLine": 165,
+          "startColumn": 7,
+          "endColumn": 37
+        }
+      },
+      "rawResultOrdinal": 83,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "5c4d7671e5fb78b8:1",
+        "primaryLocationStartColumnFingerprint": "4"
+      },
+      "dataflow": {
+        "reported": "The initial value of algorithmicComplexity is unused, since it is always overwritten.",
+        "sourcesAndRelatedLocations": [],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F084",
+      "rule": "js/useless-assignment-to-local",
+      "severity": "quality",
+      "securityScore": null,
+      "location": {
+        "path": "apps/orchestrator/validation.ts",
+        "region": {
+          "startLine": 257,
+          "startColumn": 7,
+          "endColumn": 43
+        }
+      },
+      "rawResultOrdinal": 84,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "176a8f3198b3c462:1",
+        "primaryLocationStartColumnFingerprint": "4"
+      },
+      "dataflow": {
+        "reported": "The initial value of bytes is unused, since it is always overwritten.",
+        "sourcesAndRelatedLocations": [],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F085",
+      "rule": "js/useless-assignment-to-local",
+      "severity": "quality",
+      "securityScore": null,
+      "location": {
+        "path": "apps/orchestrator/oneboxRouter.ts",
+        "region": {
+          "startLine": 1008,
+          "startColumn": 9,
+          "endColumn": 25
+        }
+      },
+      "rawResultOrdinal": 85,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "924ee23d43f68220:1",
+        "primaryLocationStartColumnFingerprint": "4"
+      },
+      "dataflow": {
+        "reported": "The initial value of httpStatus is unused, since it is always overwritten.",
+        "sourcesAndRelatedLocations": [],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F086",
+      "rule": "js/useless-assignment-to-local",
+      "severity": "quality",
+      "securityScore": null,
+      "location": {
+        "path": "scripts/v2/lib/randaoCoordinatorPlan.ts",
+        "region": {
+          "startLine": 129,
+          "startColumn": 7,
+          "endColumn": 48
+        }
+      },
+      "rawResultOrdinal": 86,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "5253fc279085103c:1",
+        "primaryLocationStartColumnFingerprint": "4"
+      },
+      "dataflow": {
+        "reported": "The initial value of desiredTokenAddress is unused, since it is always overwritten.",
+        "sourcesAndRelatedLocations": [],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F087",
+      "rule": "js/useless-assignment-to-local",
+      "severity": "quality",
+      "securityScore": null,
+      "location": {
+        "path": "scripts/v2/lib/randaoCoordinatorPlan.ts",
+        "region": {
+          "startLine": 137,
+          "startColumn": 5,
+          "endColumn": 34
+        }
+      },
+      "rawResultOrdinal": 87,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "430af700e03ee5c3:1",
+        "primaryLocationStartColumnFingerprint": "0"
+      },
+      "dataflow": {
+        "reported": "The value assigned to desiredTokenAddress here is unused.",
+        "sourcesAndRelatedLocations": [],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F088",
+      "rule": "js/useless-assignment-to-local",
+      "severity": "quality",
+      "securityScore": null,
+      "location": {
+        "path": "scripts/v2/ownerControlPlan.ts",
+        "region": {
+          "startLine": 422,
+          "startColumn": 7,
+          "endColumn": 26
+        }
+      },
+      "rawResultOrdinal": 88,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "fd32c20d40cda491:1",
+        "primaryLocationStartColumnFingerprint": "0"
+      },
+      "dataflow": {
+        "reported": "The value assigned to signer here is unused.",
+        "sourcesAndRelatedLocations": [],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F089",
+      "rule": "js/trivial-conditional",
+      "severity": "quality",
+      "securityScore": null,
+      "location": {
+        "path": "agent-gateway/utils.ts",
+        "region": {
+          "startLine": 379,
+          "startColumn": 9,
+          "endColumn": 28
+        }
+      },
+      "rawResultOrdinal": 89,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "bf4f2364fc516643:1",
+        "primaryLocationStartColumnFingerprint": "4"
+      },
+      "dataflow": {
+        "reported": "This negation always evaluates to false.",
+        "sourcesAndRelatedLocations": [],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F090",
+      "rule": "js/trivial-conditional",
+      "severity": "quality",
+      "securityScore": null,
+      "location": {
+        "path": "apps/enterprise-portal/src/hooks/useCertificates.ts",
+        "region": {
+          "startLine": 93,
+          "startColumn": 5,
+          "endColumn": 10
+        }
+      },
+      "rawResultOrdinal": 90,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "c8c5758cfab9c215:1",
+        "primaryLocationStartColumnFingerprint": "0"
+      },
+      "dataflow": {
+        "reported": "This use of variable 'value' always evaluates to true.",
+        "sourcesAndRelatedLocations": [],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F091",
+      "rule": "js/trivial-conditional",
+      "severity": "quality",
+      "securityScore": null,
+      "location": {
+        "path": "apps/onebox-static/lib.mjs",
+        "region": {
+          "startLine": 558,
+          "startColumn": 34,
+          "endColumn": 37
+        }
+      },
+      "rawResultOrdinal": 91,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "2f8f26c0ab5f9bb7:1",
+        "primaryLocationStartColumnFingerprint": "31"
+      },
+      "dataflow": {
+        "reported": "This use of variable 'err' always evaluates to true.",
+        "sourcesAndRelatedLocations": [],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F092",
+      "rule": "js/trivial-conditional",
+      "severity": "quality",
+      "securityScore": null,
+      "location": {
+        "path": "apps/onebox-static/v2/app.js",
+        "region": {
+          "startLine": 115,
+          "startColumn": 34,
+          "endColumn": 37
+        }
+      },
+      "rawResultOrdinal": 92,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "20271691ed049ac7:1",
+        "primaryLocationStartColumnFingerprint": "31"
+      },
+      "dataflow": {
+        "reported": "This use of variable 'err' always evaluates to true.",
+        "sourcesAndRelatedLocations": [],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F093",
+      "rule": "js/trivial-conditional",
+      "severity": "quality",
+      "securityScore": null,
+      "location": {
+        "path": "apps/orchestrator/identity.ts",
+        "region": {
+          "startLine": 105,
+          "startColumn": 9,
+          "endColumn": 25
+        }
+      },
+      "rawResultOrdinal": 93,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "8598f71c0423fa41:1",
+        "primaryLocationStartColumnFingerprint": "4"
+      },
+      "dataflow": {
+        "reported": "This use of variable 'skipVerification' always evaluates to false.",
+        "sourcesAndRelatedLocations": [],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F094",
+      "rule": "js/trivial-conditional",
+      "severity": "quality",
+      "securityScore": null,
+      "location": {
+        "path": "scripts/ci/check-toolchain-locks.js",
+        "region": {
+          "startLine": 23,
+          "startColumn": 7,
+          "endColumn": 36
+        }
+      },
+      "rawResultOrdinal": 94,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "b1e41c67b03394d7:1",
+        "primaryLocationStartColumnFingerprint": "4"
+      },
+      "dataflow": {
+        "reported": "This expression always evaluates to false.",
+        "sourcesAndRelatedLocations": [],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F095",
+      "rule": "js/trivial-conditional",
+      "severity": "quality",
+      "securityScore": null,
+      "location": {
+        "path": "scripts/v2/renderOwnerMermaid.ts",
+        "region": {
+          "startLine": 426,
+          "startColumn": 34,
+          "endColumn": 41
+        }
+      },
+      "rawResultOrdinal": 95,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "ca00d10152b7a83c:1",
+        "primaryLocationStartColumnFingerprint": "23"
+      },
+      "dataflow": {
+        "reported": "This use of variable 'current' always evaluates to true.",
+        "sourcesAndRelatedLocations": [],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    },
+    {
+      "id": "F096",
+      "rule": "js/trivial-conditional",
+      "severity": "quality",
+      "securityScore": null,
+      "location": {
+        "path": "shared/structuredLogger.ts",
+        "region": {
+          "startLine": 234,
+          "startColumn": 7,
+          "endColumn": 12
+        }
+      },
+      "rawResultOrdinal": 96,
+      "rawEvidence": "baseline/original-codeql.zip!/javascript.sarif",
+      "fingerprints": {
+        "primaryLocationLineHash": "f9bc2d68ecfdbe3e:1",
+        "primaryLocationStartColumnFingerprint": "4"
+      },
+      "dataflow": {
+        "reported": "This use of variable 'value' always evaluates to true.",
+        "sourcesAndRelatedLocations": [],
+        "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
+      },
+      "owner": "Codex remediation / Jobs maintainer review",
+      "disposition": "Unresolved",
+      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
+      "regressionEvidence": [],
+      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
+      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+    }
+  ],
+  "additionalFindings": [],
+  "riskAcceptance": [],
+  "qualification": {
+    "status": "in progress",
+    "productionApproved": false
+  }
+}

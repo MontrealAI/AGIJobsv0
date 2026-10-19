@@ -21,7 +21,7 @@ export const SlaViewer = () => {
   const [document, setDocument] = useState<SlaDocument>();
   const [error, setError] = useState<string>();
   const [loading, setLoading] = useState(false);
-  const resolvedInput = useMemo(() => resolveResourceUri(uri) ?? uri, [uri]);
+  const resolvedInput = useMemo(() => resolveResourceUri(uri), [uri]);
 
   const loadSla = async () => {
     setLoading(true);
@@ -78,7 +78,7 @@ export const SlaViewer = () => {
             <div>
               <div className="stat-label">Source</div>
               <div className="stat-value" style={{ fontSize: '0.85rem' }}>
-                <a href={resolveResourceUri(document.uri || uri) ?? uri} target="_blank" rel="noreferrer">
+                <a href={resolveResourceUri(document.uri || uri)} target="_blank" rel="noreferrer">
                   {document.uri || uri}
                 </a>
               </div>

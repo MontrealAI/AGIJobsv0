@@ -1,3 +1,4 @@
+import { logValue } from '../shared/logValue';
 import { Contract, ethers, Wallet } from 'ethers';
 import {
   stakeManager,
@@ -99,7 +100,7 @@ async function ensureTokenAllowance(
   if (!stakeManager) return null;
   if (minimum <= 0n) return null;
   const spender = (stakeManager as any).target as string;
-  let allowance = 0n;
+  let allowance: bigint;
   try {
     const current = await tokenContract.allowance(wallet.address, spender);
     allowance = BigInt(current.toString());
@@ -274,7 +275,7 @@ function formatAmount(value: bigint): string {
   try {
     return ethers.formatUnits(value, TOKEN_DECIMALS);
   } catch (err) {
-    console.warn('Failed to format token amount', value.toString(), err);
+    console.warn('Failed to format token amount', logValue(value.toString()), logValue(err));
     return value.toString();
   }
 }

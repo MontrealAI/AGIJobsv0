@@ -422,9 +422,7 @@ async function persistIdentityRecord(
   const directory = options.identityDir ?? IDENTITY_DIR;
   ensureDir(directory);
   const filePath = path.join(directory, `${blueprint.ensLabel}.json`);
-  if (fs.existsSync(filePath)) {
-    throw new Error(`Identity file already exists for ${blueprint.ensLabel}`);
-  }
+  if (!/^[a-z0-9-]{1,63}$/.test(blueprint.ensLabel)) throw new Error('Invalid identity label');
   const notes = [
     ...(Array.isArray(blueprint.metadata?.notes)
       ? blueprint.metadata.notes.filter((note) => typeof note === 'string')
@@ -486,7 +484,7 @@ async function persistIdentityRecord(
   await fs.promises.writeFile(
     filePath,
     JSON.stringify(record, null, 2),
-    'utf8'
+    { encoding: 'utf8', flag: 'wx', mode: 0o600 }
   );
   return filePath;
 }

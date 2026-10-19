@@ -1,3 +1,4 @@
+import { escapeMarkdownLiteral } from './lib/markdownLiteral';
 import { promises as fs } from 'fs';
 import path from 'path';
 import {
@@ -475,12 +476,10 @@ function renderMarkdown(runbook: EmergencyRunbook, includeMermaid: boolean): str
   runbook.ownerControl.modules.forEach((module) => {
     const notes =
       module.notes && module.notes.length > 0
-        ? module.notes.map((note) => note.replace(/\|/g, '\\|')).join('<br/>')
+        ? module.notes.map(escapeMarkdownLiteral).join('<br/>')
         : '';
     lines.push(
-      `| ${module.name} | ${module.type ?? ''} | ${module.address ?? ''} | ${
-        module.owner ?? ''
-      } | ${module.governance ?? ''} | ${module.skip ? 'yes' : ''} | ${notes} |`,
+      `| ${[module.name, module.type ?? '', module.address ?? '', module.owner ?? '', module.governance ?? '', module.skip ? 'yes' : ''].map(escapeMarkdownLiteral).join(' | ')} | ${notes} |`,
     );
   });
   lines.push('');

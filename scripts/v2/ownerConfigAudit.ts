@@ -175,17 +175,20 @@ async function computeFileSummary(relPath: string): Promise<FileSummary> {
     ? relPath
     : path.resolve(ROOT_DIR, relPath);
   try {
-    const stat = await fs.stat(absPath);
-    if (!stat.isFile()) {
-      return { path: path.relative(ROOT_DIR, absPath), exists: false };
-    }
-    const data = await fs.readFile(absPath);
+    const handle = await fs.open(absPath, 'r');
+    let stat;
+    let data: Buffer;
+    try {
+      stat = await handle.stat();
+      if (!stat.isFile()) return { path: path.relative(ROOT_DIR, absPath), exists: false };
+      data = await handle.readFile();
+    } finally { await handle.close(); }
     const hash = createHash('sha256').update(data).digest('hex');
     return {
       path: path.relative(ROOT_DIR, absPath),
       exists: true,
       hash,
-      size: stat.size,
+      size: data.length,
     };
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') {

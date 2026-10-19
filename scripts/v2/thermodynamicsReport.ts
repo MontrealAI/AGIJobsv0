@@ -201,7 +201,7 @@ function normaliseAddress(value: unknown): string | null {
     if (!trimmed) return null;
     return ethers.getAddress(trimmed);
   }
-  if (typeof value === 'object' && value !== null && 'toString' in value) {
+  if (typeof value === 'object' && 'toString' in value) {
     const str = (value as { toString(): string }).toString().trim();
     if (!str) return null;
     return ethers.getAddress(str);
@@ -280,7 +280,7 @@ function readRoleShareField(value: unknown): RoleShareField {
   if (value === null || value === '') {
     return { defined: true, value: null, raw: value };
   }
-  if (typeof value === 'object' && !Array.isArray(value) && value !== null) {
+  if (typeof value === 'object' && !Array.isArray(value)) {
     const maybeObject = value as Record<string, unknown>;
     if (maybeObject.wad !== undefined && maybeObject.wad !== null && maybeObject.wad !== '') {
       const str = String(maybeObject.wad).trim();
@@ -420,41 +420,6 @@ function compareRoleShare(
     parameter: label,
     configValue: configField.defined ? formatPercent(configField.value) : undefined,
     onChainValue: formatPercent(onChain),
-    status: 'skipped',
-  };
-
-  if (!configField.defined) {
-    result.status = 'config-missing';
-  } else if (onChain === null) {
-    result.status = 'contract-missing';
-  } else if (configField.value === null) {
-    result.status = 'config-missing';
-  } else if (configField.value === onChain) {
-    result.status = 'match';
-  } else {
-    result.status = 'drift';
-  }
-
-  section.checks.push(result);
-}
-
-function compareBoolean(
-  section: SectionResult,
-  label: string,
-  configField: BooleanField,
-  onChain: boolean | null
-): void {
-  const result: CheckResult = {
-    parameter: label,
-    configValue: configField.defined
-      ? configField.value === null
-        ? null
-        : configField.value
-        ? 'true'
-        : 'false'
-      : undefined,
-    onChainValue:
-      onChain === null ? null : onChain ? 'true' : 'false',
     status: 'skipped',
   };
 

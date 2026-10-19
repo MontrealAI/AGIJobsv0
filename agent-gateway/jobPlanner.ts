@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { Wallet } from 'ethers';
+import { containedFile, readContainedFile, writeContainedFile, ensurePrivateDirectory } from '../shared/containedFiles';
 import { postJob, EmployerJobSpec } from './employer';
 import { orchestratorWallet } from './utils';
 import { secureLogAction } from './security';
@@ -127,14 +128,8 @@ const planLocks = new Map<string, AsyncLock>();
 const planCache = new Map<string, JobPlanRecord>();
 const jobIndex = new Map<string, { planId: string; taskId: string }>();
 
-function ensureDir(dir: string): void {
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
-}
-
 function planPath(planId: string): string {
-  return path.join(PLAN_DIR, `${planId}.json`);
+  return containedFile(PLAN_DIR, `${normaliseIdentifier(planId, 'planId')}.json`);
 }
 
 function normaliseIdentifier(value: string, label: string): string {
@@ -145,7 +140,7 @@ function normaliseIdentifier(value: string, label: string): string {
   if (!trimmed) {
     throw new Error(`${label} is required`);
   }
-  if (!/^[a-z0-9-]+$/.test(trimmed)) {
+  if (!/^[a-z0-9-]{1,128}$/.test(trimmed)) {
     throw new Error(
       `${label} may only contain lowercase letters, numbers, and hyphens`
     );
@@ -243,10 +238,16 @@ function reindexPlan(plan: JobPlanRecord): void {
 }
 
 async function readPlan(planId: string): Promise<JobPlanRecord> {
-  ensureDir(PLAN_DIR);
-  const filePath = planPath(planId);
-  const raw = await fs.promises.readFile(filePath, 'utf8');
+  const identifier = normaliseIdentifier(planId, 'planId');
+  const raw = readContainedFile(PLAN_DIR, path.basename(planPath(identifier)));
+
   const parsed = JSON.parse(raw) as JobPlanRecord;
+  if (parsed.planId !== identifier) throw new Error('Persisted plan identifier does not match its filename');
+  if (!Array.isArray(parsed.tasks)) throw new Error('Persisted plan tasks must be an array');
+  for (const task of parsed.tasks) {
+    if (normaliseIdentifier(task.id, 'taskId') !== task.id) throw new Error('Invalid persisted task identifier');
+    for (const dependency of task.dependencies ?? []) normaliseIdentifier(dependency, 'dependency');
+  }
   parsed.tasks = (parsed.tasks || []).map((task) => ({
     ...task,
     dependencies: Array.isArray(task.dependencies) ? task.dependencies : [],
@@ -263,13 +264,9 @@ async function readPlan(planId: string): Promise<JobPlanRecord> {
 }
 
 async function savePlan(plan: JobPlanRecord): Promise<JobPlanRecord> {
-  ensureDir(PLAN_DIR);
+  ensurePrivateDirectory(PLAN_DIR);
   plan.updatedAt = new Date().toISOString();
-  await fs.promises.writeFile(
-    planPath(plan.planId),
-    JSON.stringify(plan, null, 2),
-    'utf8'
-  );
+  writeContainedFile(PLAN_DIR, path.basename(planPath(plan.planId)), JSON.stringify(plan, null, 2));
   planCache.set(plan.planId, plan);
   reindexPlan(plan);
   return plan;
@@ -346,7 +343,7 @@ export async function initJobPlanner(): Promise<void> {
     return;
   }
   initialising = (async () => {
-    ensureDir(PLAN_DIR);
+    ensurePrivateDirectory(PLAN_DIR);
     const files = await fs.promises.readdir(PLAN_DIR);
     for (const file of files) {
       if (!file.endsWith('.json')) {

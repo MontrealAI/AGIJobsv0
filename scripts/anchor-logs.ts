@@ -78,9 +78,13 @@ function readAuditEntries(
     .sort((a, b) => a.name.localeCompare(b.name));
 
   for (const entry of dirEntries) {
-    const stats = fs.statSync(entry.fullPath);
-    if (stats.mtimeMs < cutoff) continue;
-    const raw = fs.readFileSync(entry.fullPath, 'utf8');
+    const fd = fs.openSync(entry.fullPath, fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW);
+    let raw: string;
+    try {
+      const stats = fs.fstatSync(fd);
+      if (!stats.isFile() || stats.mtimeMs < cutoff) continue;
+      raw = fs.readFileSync(fd, 'utf8');
+    } finally { fs.closeSync(fd); }
     if (!raw) continue;
     const lines = raw
       .split(/\r?\n/)

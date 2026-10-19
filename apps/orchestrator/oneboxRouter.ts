@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { createHmac, createHash, randomUUID, timingSafeEqual } from 'node:crypto';
+import { createHmac, randomUUID, timingSafeEqual } from 'node:crypto';
 import express from 'express';
 import { PlanApprovalStore } from './planApprovals';
 import {
@@ -96,17 +96,28 @@ function timingSafeStringCompare(a: string, b: string): boolean {
   return timingSafeEqual(aBuffer, bBuffer);
 }
 
+function parseAuthorizationValue(header: string, scheme: string): string | null {
+  if (header.length > 8192) return null;
+  const value = header.trim();
+  let split = 0;
+  while (split < value.length && !/\s/u.test(value[split])) split += 1;
+  if (value.slice(0, split).toLowerCase() !== scheme) return null;
+  const credential = value.slice(split).trim();
+  return credential && !/[\r\n]/.test(credential) ? credential : null;
+}
+
 function isValidBearer(header: string, secret: string): boolean {
-  const match = /^Bearer\s+(.+)$/i.exec(header.trim());
-  if (!match) return false;
-  const token = match[1].trim();
+  const token = parseAuthorizationValue(header, 'bearer');
+  if (!token) return false;
   return timingSafeStringCompare(token, secret);
 }
 
 function isValidHmac(header: string, secret: string, req: express.Request): boolean {
-  const match = /^HMAC\s+(.+)$/i.exec(header.trim());
-  if (!match) return false;
-  const [timestampPart, signaturePart] = match[1].split(':');
+  const value = parseAuthorizationValue(header, 'hmac');
+  if (!value) return false;
+  const parts = value.split(':');
+  if (parts.length !== 2) return false;
+  const [timestampPart, signaturePart] = parts;
   if (!timestampPart || !signaturePart) return false;
 
   const timestamp = Number(timestampPart);
@@ -847,8 +858,8 @@ export function createOneboxRouter(service: OneboxService = new DefaultOneboxSer
   router.post('/plan', async (req, res) => {
     const start = now();
     const correlationId = getCorrelationId(req);
-    let intentType = 'unknown';
     let httpStatus = 200;
+    let intentType = 'unknown';
     try {
       const text = typeof req.body?.text === 'string' ? req.body.text : '';
       const expert = Boolean(req.body?.expert);
@@ -882,8 +893,8 @@ export function createOneboxRouter(service: OneboxService = new DefaultOneboxSer
   router.post('/execute', async (req, res) => {
     const start = now();
     const correlationId = getCorrelationId(req);
-    let intentType = 'unknown';
     let httpStatus = 200;
+    let intentType = 'unknown';
     let mode: 'wallet' | 'relayer' = 'relayer';
     let planHash: string | undefined;
     try {
@@ -937,8 +948,8 @@ export function createOneboxRouter(service: OneboxService = new DefaultOneboxSer
   router.get('/status', async (req, res) => {
     const start = now();
     const correlationId = getCorrelationId(req);
-    const intentType = 'status';
     let httpStatus = 200;
+    const intentType = 'status';
     const jobIdParam = req.query.jobId;
     const limitParam = req.query.limit;
     const jobId = jobIdParam !== undefined ? Number(jobIdParam) : undefined;
@@ -1005,7 +1016,6 @@ export function createOneboxRouter(service: OneboxService = new DefaultOneboxSer
 
   router.post('/governance/preview', async (req, res) => {
     const correlationId = getCorrelationId(req);
-    let httpStatus = 200;
     try {
       const body = (req.body ?? {}) as {
         key?: unknown;
@@ -1032,7 +1042,7 @@ export function createOneboxRouter(service: OneboxService = new DefaultOneboxSer
       });
       res.json(preview);
     } catch (error) {
-      httpStatus = statusFromError(error);
+      const httpStatus = statusFromError(error);
       const level: LogLevel = httpStatus >= 500 ? 'error' : 'warn';
       logEvent(level, 'onebox.governance.preview_error', {
         correlationId,
@@ -1813,13 +1823,6 @@ function normaliseJobId(value: unknown): bigint {
   throw new HttpError(400, 'Job id must be a positive integer.');
 }
 
-function toSerializableId(value: unknown): string {
-  if (typeof value === 'string') return value;
-  if (typeof value === 'number' && Number.isFinite(value)) return value.toString();
-  if (typeof value === 'bigint') return value.toString();
-  throw new HttpError(400, 'Job id must be serialisable.');
-}
-
 export function decodePackedJobMetadata(
   packed: unknown
 ): { state?: number; deadline?: bigint } {
@@ -1978,27 +1981,6 @@ function buildGatewayUrls(uri: string | undefined): string[] {
     `https://w3s.link/ipfs/${cid}`,
     `https://ipfs.io/ipfs/${cid}`,
   ];
-}
-
-function computePlanHash(envelope: IntentEnvelope): string {
-  const canonical = stableStringify(envelope);
-  return `0x${createHash('sha256').update(canonical).digest('hex')}`;
-}
-
-function stableStringify(value: unknown): string {
-  if (Array.isArray(value)) {
-    return `[${value.map((item) => stableStringify(item)).join(',')}]`;
-  }
-  if (value && typeof value === 'object') {
-    const entries = Object.entries(value as Record<string, unknown>)
-      .filter(([, v]) => v !== undefined)
-      .sort(([a], [b]) => a.localeCompare(b));
-    const content = entries
-      .map(([key, val]) => `${JSON.stringify(key)}:${stableStringify(val)}`)
-      .join(',');
-    return `{${content}}`;
-  }
-  return JSON.stringify(value);
 }
 
 function isZeroAddress(value: unknown): boolean {

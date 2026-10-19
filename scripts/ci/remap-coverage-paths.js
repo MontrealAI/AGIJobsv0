@@ -7,11 +7,6 @@ const path = require('path');
 const repoRoot = path.resolve(__dirname, '..', '..');
 const coverageFile = path.join(repoRoot, 'coverage', 'lcov.info');
 
-if (!fs.existsSync(coverageFile)) {
-  console.log('Coverage file not found; skipping path remap.');
-  process.exit(0);
-}
-
 const mappings = new Map([
   [
     'contracts/coverage/OwnerConfiguratorHarness.sol',
@@ -27,7 +22,15 @@ const mappings = new Map([
   ],
 ]);
 
-const original = fs.readFileSync(coverageFile, 'utf8');
+let coverageFd;
+try {
+  coverageFd = fs.openSync(coverageFile, fs.constants.O_RDWR | fs.constants.O_NOFOLLOW);
+} catch (error) {
+  if (error.code !== 'ENOENT') throw error;
+  console.log('Coverage file not found; skipping path remap.');
+  process.exit(0);
+}
+const original = fs.readFileSync(coverageFd, 'utf8');
 const lines = original.split(/\r?\n/);
 const remappedBlocks = [];
 let currentBlock = [];
@@ -73,5 +76,8 @@ const flattened = remappedBlocks
   )
   .join('\n');
 
-fs.writeFileSync(coverageFile, `${flattened}\n`);
+try {
+  fs.ftruncateSync(coverageFd, 0);
+  fs.writeSync(coverageFd, `${flattened}\n`, 0, 'utf8');
+} finally { fs.closeSync(coverageFd); }
 console.log('Remapped coverage paths for admin and governance modules.');

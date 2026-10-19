@@ -1,3 +1,4 @@
+import { logValue } from '../shared/logValue';
 import { Contract, JsonRpcProvider, Wallet, ethers } from 'ethers';
 import { EnergySample } from '../shared/energyMonitor';
 import { orchestratorWallet } from './utils';
@@ -295,14 +296,14 @@ class EnergyOracleOperator {
   private buildBaseAttestation(sample: EnergySample): BaseAttestation | null {
     const user = normalizeAddress(sample.agent);
     if (!user) {
-      console.warn('Skipping energy sample with invalid agent address', sample);
+      console.warn('Skipping energy sample with invalid agent address', logValue(sample));
       return null;
     }
     const jobId = parseBigInt(sample.jobId);
     if (jobId === null) {
       console.warn(
         'Skipping energy sample with non-numeric jobId',
-        sample.jobId
+        logValue(sample.jobId)
       );
       return null;
     }

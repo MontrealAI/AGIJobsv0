@@ -1,8 +1,17 @@
 const fs = require('fs/promises');
 const path = require('path');
 const express = require('express');
+const { rateLimit, ipKeyGenerator } = require('express-rate-limit');
 
 const app = express();
+app.set('trust proxy', false);
+app.use(rateLimit({
+  windowMs: 60_000,
+  limit: 120,
+  keyGenerator: (req) => ipKeyGenerator(req.socket.remoteAddress || 'unknown'),
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+}));
 app.use(express.json({ limit: process.env.NOTIFICATIONS_MAX_PAYLOAD || '512kb' }));
 
 const storageDir = process.env.NOTIFICATIONS_STORAGE_DIR || path.join(__dirname, '..', '..', 'storage', 'notifications');
@@ -50,12 +59,12 @@ app.get('/notifications', async (_req, res) => {
 app.post('/notify', async (req, res) => {
   try {
     const payload = req.body;
-    if (!payload || typeof payload !== 'object') {
+    if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
       res.status(400).json({ error: 'Payload must be a JSON object' });
       return;
     }
     const recorded = await appendNotification(payload);
-    console.info('Notification recorded', recorded);
+    console.info('Notification recorded', JSON.stringify(recorded));
     res.status(202).json({ ok: true });
   } catch (err) {
     console.error('Failed to record notification', err);

@@ -13,6 +13,6 @@ const request = http.get(url, (res) => {
 });
 
 request.on('error', (err) => {
-  console.error('Failed to contact indexer health endpoint:', err.message);
+  console.error('Failed to contact indexer health endpoint:', JSON.stringify(err.message));
   process.exit(1);
 });
