@@ -257,49 +257,49 @@ const compilerSourceBaseline =
   scannerReview?.sourceSha || 'REVIEW_REQUIRED_FOR_RC16';
 function verifyScannerReviewSource({ git, sha, review = scannerReview }) {
   if (!review) throw Error('rc16 scanner review is pending; no publication');
-  // The review is installed only in this existing notes file. Every other
-  // executable, producer, policy, dependency and source byte must stay at S1.
-  git('merge-base', '--is-ancestor', review.sourceSha, sha);
-  if (
-    String(git('rev-parse', `${review.sourceSha}^{tree}`)).trim() !==
-    review.sourceTree
-  )
-    throw Error('Reviewed scanner source tree differs');
-  const changed = String(
-    git('diff', '--name-only', '-z', review.sourceSha, sha, '--')
-  )
-    .split('\0')
-    .filter(Boolean);
-  if (changed.some((name) => name !== scannerReviewPath))
-    throw Error('Source changed beyond the reviewed scanner notes record');
-  for (const ref of [review.sourceSha, sha]) {
-    const entry = String(git('ls-tree', '-z', ref, '--', scannerReviewPath));
-    const [meta, name] = entry.split('\t');
-    if (
-      !/^100644 blob [a-f0-9]{40}$/.test(meta) ||
-      name !== scannerReviewPath + '\0'
-    )
-      throw Error('Scanner review notes must retain their regular-file mode');
-  }
-  const strip = (text) =>
-    text.replace(
-      /<!-- rc16-scanner-review\n[\s\S]*?\n-->/,
-      '<!-- rc16-scanner-review\nnull\n-->'
-    );
-  const before = String(
-    git('show', `${review.sourceSha}:${scannerReviewPath}`)
+  require('./source-scanner-review-bindings-rc16.cjs').verifyThreeSlotReviewBinding(
+    {
+      sourceSha: review.sourceSha,
+      sha,
+      review,
+      field: 'notesReview',
+      git,
+      parseNotes: parseScannerReview,
+      notesPath: scannerReviewPath,
+    }
   );
-  const after = String(git('show', `${sha}:${scannerReviewPath}`));
-  if (
-    parseScannerReview(before) !== null ||
-    canonical(parseScannerReview(after)) !== canonical(review) ||
-    strip(before) !== strip(after)
-  )
-    throw Error(
-      'Scanner review installation changed notes beyond its strict record'
-    );
   return review;
 }
+function verifyScannerReviewInstallBinding(options) {
+  const { sha, review, git, field = 'scannerReview' } = options;
+  const {
+    validateScannerReviewMetadata,
+    verifyThreeSlotReviewBinding,
+  } = require('./source-scanner-review-bindings-rc16.cjs');
+  validateScannerReviewMetadata(field, review, { git, target: sha });
+  // An S1 raw archive is checked against its separately installed review on S2.
+  // Its same-source parser stage still requires independent authenticated S1
+  // ZIP/run/artifact checks; installed production admission is always strict.
+  if (review.sourceCommit === sha) return;
+  if (typeof git !== 'function')
+    throw Error('Scanner review does not bind this source');
+  return verifyThreeSlotReviewBinding({
+    sourceSha: review.sourceCommit,
+    sha,
+    review,
+    field,
+    git,
+    parseNotes: parseScannerReview,
+    notesPath: scannerReviewPath,
+  });
+}
+function verifyScannerReviewBinding(options) {
+  return verifyScannerReviewInstallBinding({
+    ...options,
+    field: 'scannerReview',
+  });
+}
+
 const preservedEvidencePaths = [
   'docs/deployments/',
   'docs/deployment-addresses.json',
@@ -339,6 +339,7 @@ function verifySourceScope({
   policy,
   version,
   compilerBaseline = compilerSourceBaseline,
+  review = scannerReview,
 }) {
   if (!/^[a-f0-9]{40}$/.test(compilerBaseline))
     throw Error('A reviewed compiler source SHA is required');
@@ -365,14 +366,56 @@ function verifySourceScope({
     '--',
     ...preservedEvidencePaths
   );
-  git(
-    'diff',
-    '--exit-code',
-    compilerBaseline,
-    sha,
-    '--',
-    ...reviewedCompilerPaths
-  );
+  const compilerChanges = String(
+    git(
+      'diff',
+      '--no-ext-diff',
+      '--no-textconv',
+      '--name-only',
+      '-z',
+      compilerBaseline,
+      sha,
+      '--',
+      ...reviewedCompilerPaths
+    )
+  )
+    .split('\0')
+    .filter(Boolean);
+  if (compilerChanges.length) {
+    if (
+      compilerChanges.length !== 1 ||
+      compilerChanges[0] !== 'scripts/release/source-profile-rc16.json' ||
+      review?.sourceSha !== compilerBaseline
+    )
+      throw Error(
+        'Reviewed compiler source changed beyond validated review slots'
+      );
+    // The common relation proves exact two-value-span normalization, regular
+    // modes and every intermediate source byte; no whole-file exemption.
+    verifyScannerReviewSource({ git, sha, review });
+    const {
+      projectThreeSlotProfile,
+    } = require('./source-scanner-review-bindings-rc16.cjs');
+    const profilePath = 'scripts/release/source-profile-rc16.json';
+    if (
+      projectThreeSlotProfile(
+        String(git('show', `${compilerBaseline}:${profilePath}`))
+      ).projection !==
+      projectThreeSlotProfile(String(git('show', `${sha}:${profilePath}`)))
+        .projection
+    )
+      throw Error(
+        'Reviewed compiler profile changed beyond its exact validated review value spans'
+      );
+  } else
+    git(
+      'diff',
+      '--exit-code',
+      compilerBaseline,
+      sha,
+      '--',
+      ...reviewedCompilerPaths
+    );
   return {
     deployedSourceBaseline,
     evidenceBaseline,
@@ -391,6 +434,7 @@ const requiredPaths = [
 ]
   .map((name) => `.github/workflows/${name}`)
   .concat(nativeGate.requiredPaths)
+  .concat('.github/workflows/static-analysis-python-integrations.yml')
   .filter((name, index, all) => all.indexOf(name) === index);
 const requiredChecks = [
   ...new Set(
@@ -400,6 +444,7 @@ const requiredChecks = [
     ]
       .map((name) => name.split(' / ').slice(1).join(' / '))
       .concat(nativeGate.requiredChecks)
+      .concat('Python integration CodeQL analysis')
   ),
 ];
 
@@ -555,8 +600,11 @@ function verifyQualificationIdentity(environment = process.env) {
 }
 
 async function main() {
-  verifyQualificationIdentity();
-  verifyPublicationReview();
+  const { sha: qualificationSha } = verifyQualificationIdentity();
+  verifyPublicationReview(profile, {
+    git: gitSource,
+    target: qualificationSha,
+  });
   const {
     GITHUB_SHA: sha,
     GITHUB_REPOSITORY: repository,
@@ -613,6 +661,54 @@ async function main() {
       throw Error(`Source release refused: ${failures.join('; ')}`);
     if (state.ready && reviewedCodeql.ready) {
       assertPinnedAlphaCheckout(process.cwd(), sha);
+      const tree = git('rev-parse', 'HEAD^{tree}').trim();
+      const publisher = require('./publish-source-release-rc16.cjs');
+      const pythonScannerEvidence =
+        await require('./source-native-evidence-rc16.cjs').qualifyPythonEvidence(
+          {
+            sha,
+            tree,
+            provenance: { workflows: state.workflows },
+            api: async (method, resource) => {
+              const response = await fetch(
+                publisher.sourceApiUrl(method, resource, sha),
+                {
+                  method,
+                  headers: {
+                    Authorization: `Bearer ${token}`,
+                    Accept: 'application/vnd.github+json',
+                    'X-GitHub-Api-Version': '2022-11-28',
+                  },
+                  redirect: 'error',
+                  signal: AbortSignal.timeout(30000),
+                }
+              );
+              if (!response.ok)
+                throw Error(
+                  `Cannot authenticate Python producer: HTTP ${response.status}`
+                );
+              return response.json();
+            },
+            download: async (artifactId) =>
+              execFileSync(
+                'gh',
+                [
+                  'api',
+                  '--hostname',
+                  'github.com',
+                  `repos/${repository}/actions/artifacts/${publisher.producerId(
+                    artifactId
+                  )}/zip`,
+                ],
+                {
+                  maxBuffer: 128 * 1024 * 1024,
+                  stdio: ['ignore', 'pipe', 'pipe'],
+                  timeout: 30000,
+                }
+              ),
+          }
+        );
+      assertPinnedAlphaCheckout(process.cwd(), sha);
       fs.mkdirSync('reports/source-release-rc16', { recursive: true });
       fs.writeFileSync(
         'reports/source-release-rc16/provenance.json',
@@ -628,6 +724,7 @@ async function main() {
             artifactSigning: 'unsigned source and evidence only',
             sourceScope,
             sourceProfile,
+            pythonScannerEvidence,
             reviewedSourceCodeql: {
               sourceSha: compilerSourceBaseline,
               checks: scannerReview.codeqlChecks,
@@ -693,6 +790,8 @@ module.exports = {
   exactFields,
   parseScannerReview,
   verifyScannerReviewSource,
+  verifyScannerReviewInstallBinding,
+  verifyScannerReviewBinding,
   evaluate,
   evaluateCodeql,
   requiredPaths,

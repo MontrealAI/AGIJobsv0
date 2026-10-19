@@ -1,8 +1,8 @@
 {
   "schema": "agijobsv0/alpha-computer-browser-source/v1",
   "repository": "MontrealAI/AGI-Alpha-Agent-v0",
-  "commit": "dbaf5696d64ddcbf133f05d88d35496ebb85c3f0",
-  "tree": "30dc828703a6e9cd64103e0ebc965fc701e9bcf3",
+  "commit": "272b4de86bdc306ebf547750717983e467f5fcfd",
+  "tree": "7e3a171a3f4a256723d6b480c64104264021b456",
   "entry": "examples/successor-alpha/computer.mjs",
   "files": {
     "LICENSE": {

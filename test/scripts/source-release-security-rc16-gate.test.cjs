@@ -36,7 +36,7 @@ test('source scope preserves historical evidence and the reviewed compiler tree'
   const calls = [];
   const scope = verifySourceScope({
     ...sourceFixture(),
-    git: (...args) => calls.push(args),
+    git: (...args) => { calls.push(args); return ''; },
   });
   assert.equal(calls.filter(([command]) => command === 'merge-base').length, 3);
   assert.ok(
@@ -237,7 +237,7 @@ test('source publication requires every workflow and context on the exact main p
 });
 test('computer browser protocol qualification is mandatory on the exact main push', () => {
   const workflow = '.github/workflows/successor-computer.yml';
-  assert.equal(requiredPaths.length, 17);
+  assert.equal(requiredPaths.length, 18);
   assert.ok(requiredPaths.includes(workflow));
   const { runs, checks } = fixture();
   const others = runs.filter((run) => run.path !== workflow);
@@ -397,10 +397,9 @@ test('pending scanner review cannot be enabled through missing or malformed meta
     /Malformed/
   );
 });
-test('review installation permits only the exact existing notes block after the reviewed source', (t) => {
-  const source = 'b'.repeat(40),
-    tree = 'c'.repeat(40);
-  const review = {
+// Inert strict review metadata only; this is never authenticated scan proof.
+function inertScannerReviewMetadata(source, tree) {
+  return {
     schema: 'agijobsv0/rc16-scanner-review/1',
     sourceSha: source,
     sourceTree: tree,
@@ -440,6 +439,178 @@ test('review installation permits only the exact existing notes block after the 
       'https://github.com/MontrealAI/AGIJobsv0/pull/3991#issuecomment-1',
     ],
   };
+}
+test('compiler source admits only actual Git installs of validated profile review values', (t) => {
+  const fs = require('node:fs'),
+    os = require('node:os'),
+    path = require('node:path');
+  const { execFileSync } = require('node:child_process');
+  const sourceRoot = path.resolve(__dirname, '../..');
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'rc16-compiler-slots-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const env = Object.fromEntries(
+    Object.entries(process.env).filter(([name]) => !name.startsWith('GIT_'))
+  );
+  Object.assign(env, {
+    GIT_CONFIG_NOSYSTEM: '1',
+    GIT_CONFIG_GLOBAL: '/dev/null',
+    GIT_AUTHOR_NAME: 'Inert compiler fixture',
+    GIT_AUTHOR_EMAIL: 'fixture@example.invalid',
+    GIT_COMMITTER_NAME: 'Inert compiler fixture',
+    GIT_COMMITTER_EMAIL: 'fixture@example.invalid',
+    GIT_AUTHOR_DATE: '2026-10-19T00:00:00Z',
+    GIT_COMMITTER_DATE: '2026-10-19T00:00:00Z',
+  });
+  const command = (directory, args, input) =>
+    execFileSync(
+      'git',
+      [
+        '--no-replace-objects',
+        '-c',
+        'core.hooksPath=/dev/null',
+        '-c',
+        'core.fsmonitor=false',
+        '-C',
+        directory,
+        ...args,
+      ],
+      {
+        encoding: 'utf8',
+        env,
+        input,
+        maxBuffer: 32 * 1024 * 1024,
+        stdio: ['pipe', 'pipe', 'pipe'],
+      }
+    );
+  const git = (...args) => command(root, args);
+  git('init', '--quiet');
+  let objects = command(sourceRoot, [
+    'rev-parse',
+    '--git-path',
+    'objects',
+  ]).trim();
+  if (!path.isAbsolute(objects)) objects = path.resolve(sourceRoot, objects);
+  fs.writeFileSync(
+    path.join(root, '.git/objects/info/alternates'),
+    objects + '\n'
+  );
+  const parent = command(sourceRoot, ['rev-parse', 'HEAD']).trim();
+  git('read-tree', parent);
+  const commit = (base) =>
+    git(
+      'commit-tree',
+      git('write-tree').trim(),
+      '-p',
+      base,
+      '-m',
+      'INERT metadata only; not scanner proof'
+    ).trim();
+  const put = (name, bytes, mode = '100644') => {
+    const blob = command(root, ['hash-object', '-w', '--stdin'], bytes).trim();
+    git('update-index', '--add', '--cacheinfo', `${mode},${blob},${name}`);
+  };
+  const source = commit(parent);
+  const tree = git('rev-parse', source + '^{tree}').trim();
+  const review = inertScannerReviewMetadata(source, tree);
+  const profilePath = 'scripts/release/source-profile-rc16.json';
+  const beforeProfile = git('show', `${source}:${profilePath}`);
+  const beforeNotes = git('show', `${source}:${scannerReviewPath}`);
+  assert.equal(parseScannerReview(beforeNotes), null);
+  const originalProfile = JSON.parse(beforeProfile);
+  assert.equal(originalProfile.scannerReview, null);
+  assert.equal(originalProfile.pythonScannerReview, null);
+  const scannerSlot = {
+    sourceCommit: source,
+    results: [],
+    reviewEvidence: ['INERT Git metadata fixture; not authentic scanner proof'],
+  };
+  assert.equal(beforeProfile.split('"scannerReview": null').length, 2);
+  const installedProfile = beforeProfile.replace(
+    '"scannerReview": null',
+    '"scannerReview": ' + JSON.stringify(scannerSlot)
+  );
+  put(
+    scannerReviewPath,
+    beforeNotes.replace(
+      /<!-- rc16-scanner-review\nnull\n-->/,
+      '<!-- rc16-scanner-review\n' + JSON.stringify(review) + '\n-->'
+    )
+  );
+  const notesInstalled = commit(source);
+  put(profilePath, installedProfile);
+  const target = commit(notesInstalled);
+  assert.equal(
+    git('diff', '--name-only', source, target, '--', ...reviewedCompilerPaths),
+    profilePath + '\n'
+  );
+  const context = {
+    ...sourceFixture(),
+    git,
+    sha: target,
+    compilerBaseline: source,
+    review,
+  };
+  assert.equal(verifySourceScope(context).compilerSourceBaseline, source);
+  for (const [name, bytes, mode, expected] of [
+    [
+      profilePath,
+      installedProfile.replace(
+        originalProfile.implementationTree,
+        '0'.repeat(40)
+      ),
+      '100644',
+      /profile bytes|compiler/,
+    ],
+    [
+      profilePath,
+      installedProfile.replace('PENDING_FINAL_SOURCE_MAIN_PUSH', 'QUALIFIED'),
+      '100644',
+      /profile bytes|compiler/,
+    ],
+    [
+      'scripts/release/qualify-source-release-rc16.cjs',
+      '// INERT compiler source drift; never executed\n',
+      '100644',
+      /compiler source changed/,
+    ],
+    [profilePath, installedProfile, '100755', /regular-file mode/],
+    [
+      scannerReviewPath,
+      git('show', `${target}:${scannerReviewPath}`),
+      '100755',
+      /regular-file mode/,
+    ],
+  ]) {
+    git('read-tree', target);
+    put(name, bytes, mode);
+    assert.throws(
+      () => verifySourceScope({ ...context, sha: commit(target) }),
+      expected
+    );
+  }
+  const wrongOrigin = inertScannerReviewMetadata(
+    parent,
+    git('rev-parse', parent + '^{tree}').trim()
+  );
+  assert.deepEqual(
+    parseScannerReview(
+      beforeNotes.replace(
+        /<!-- rc16-scanner-review\nnull\n-->/,
+        '<!-- rc16-scanner-review\n' + JSON.stringify(wrongOrigin) + '\n-->'
+      )
+    ),
+    wrongOrigin
+  );
+  assert.throws(
+    () => verifySourceScope({ ...context, review: wrongOrigin }),
+    /compiler source changed/
+  );
+});
+
+test('review installation permits only the exact existing notes block after the reviewed source', (t) => {
+  const source = 'b'.repeat(40),
+    tree = 'c'.repeat(40);
+  const review = inertScannerReviewMetadata(source, tree);
   const block = (value) =>
     `notes\n<!-- rc16-scanner-review\n${JSON.stringify(value)}\n-->\n`;
   assert.deepEqual(parseScannerReview(block(review)), review);
@@ -453,16 +624,16 @@ test('review installation permits only the exact existing notes block after the 
       ),
     /canonical JSON/
   );
+  const profilePath = 'scripts/release/source-profile-rc16.json';
   const git = (command, ...args) =>
-    command === 'rev-parse'
-      ? tree
-      : command === 'diff'
-      ? scannerReviewPath + '\0'
-      : command === 'ls-tree'
-      ? '100644 blob ' + 'd'.repeat(40) + '\t' + scannerReviewPath + '\0'
-      : command === 'show'
-      ? block(args[0].startsWith(source + ':') ? null : review)
-      : '';
+    command === 'rev-parse' ? tree
+    : command === 'rev-list' ? `${sha} ${source}\n`
+    : command === 'diff' ? scannerReviewPath + '\0'
+    : command === 'ls-tree' ? '100644 blob ' + 'd'.repeat(40) + '\t' + args.at(-1) + '\0'
+    : command === 'show' ? args[0].endsWith(':' + profilePath)
+      ? JSON.stringify({scannerReview: null, pythonScannerReview: null})
+      : block(args[0].startsWith(source + ':') ? null : review)
+    : '';
   verifyScannerReviewSource({ git, sha, review });
   assert.throws(
     () =>
@@ -474,31 +645,31 @@ test('review installation permits only the exact existing notes block after the 
         sha,
         review,
       }),
-    /beyond/
+    /outside the exact|notes outer bytes/
   );
   assert.throws(
     () =>
       verifyScannerReviewSource({
         git: (command, ...args) =>
-          command === 'show' && args[0].startsWith(sha + ':')
+          command === 'show' && args[0] === sha + ':' + scannerReviewPath
             ? block(review) + 'changed text'
             : git(command, ...args),
         sha,
         review,
       }),
-    /beyond/
+    /outside the exact|notes outer bytes/
   );
   assert.throws(
     () =>
       verifyScannerReviewSource({
         git: (command, ...args) =>
-          command === 'show' && args[0].startsWith(sha + ':')
+          command === 'show' && args[0] === sha + ':' + scannerReviewPath
             ? block(review) + '\n'
             : git(command, ...args),
         sha,
         review,
       }),
-    /beyond/
+    /outside the exact|notes outer bytes/
   );
   assert.throws(
     () =>
@@ -527,6 +698,9 @@ test('review installation permits only the exact existing notes block after the 
   const file = path.join(root, scannerReviewPath);
   fs.mkdirSync(path.dirname(file), { recursive: true });
   fs.writeFileSync(file, block(null));
+  const profileFile = path.join(root, 'scripts/release/source-profile-rc16.json');
+  fs.mkdirSync(path.dirname(profileFile), {recursive: true});
+  fs.writeFileSync(profileFile, JSON.stringify({scannerReview: null, pythonScannerReview: null}));
   fs.chmodSync(file, 0o644);
   realGit('add', '.');
   realGit(
@@ -647,6 +821,9 @@ test('both real entrypoints reject a null notes record before network or publica
     'scripts/release/source-native-gates-rc16.cjs',
     'scripts/release/source-native-evidence-rc16.cjs',
     'scripts/release/source-scanner-gates-rc16.cjs',
+    'scripts/release/python-scanner-rc16.cjs',
+    'scripts/release/source-scanner-review-bindings-rc16.cjs',
+    'scripts/release/source-python-evidence-rc16.cjs',
     'integrations/alpha-agent/pinned-alpha-checkout.cjs',
     'ci/required-contexts.json',
     'ci/required-companion-contexts.json',

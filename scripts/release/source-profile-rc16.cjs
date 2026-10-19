@@ -5,7 +5,7 @@
 const assert = require('node:assert/strict');
 const { createHash } = require('node:crypto');
 const integrationTransitionsSha256 =
-  '1dc95fc534f9754d1b05fcbc3e62b75e4a0e905a6b12f97ba797b451c41d0175';
+  '411f3bfc1b01feced32b020aeaeb06f5942bac749d828709d2ddbdc1e39dc101';
 const historical = require('./qualify-source-release.cjs');
 
 function freeze(value) {
@@ -27,6 +27,10 @@ const anchors = Object.freeze({
   integrationTree: 'f1f082a1af8375a7418d86556daeb65351757ad5',
   nativePinBaseline: 'd943e0b2384cad09b2918fe532fca50f5837e65f',
   nativePinTree: 'b279cfcbd53c814db48bb4ab997199ea7ca9269c',
+  sourceConvergenceBaseline: '0b6d175a4ec8abf5b899e4a1b58a09e7045fe158',
+  sourceConvergenceTree: '9e8dff3e0863afa73e04757f77ca2bcb8c01dca2',
+  pythonScannerBaseline: 'e815eee150cd4d8121919a2a0f39c417e64ae864',
+  pythonScannerTree: '97091066c9e55c3ffee01b8eee563216ffde44f3',
 });
 const allowedNewPaths = Object.freeze([
   'scripts/release/source-profile-rc16.cjs',
@@ -46,6 +50,14 @@ const allowedNewPaths = Object.freeze([
   'scripts/release/source-scanner-gates-rc16.cjs',
   'test/scripts/source-release-integrated-rc16.test.cjs',
   'docs/production/RELEASE_NOTES_SOURCE_RC16.md',
+  'scripts/release/python-scanner-rc16.cjs',
+  'test/scripts/source-python-scanner-rc16.test.cjs',
+  'scripts/release/source-scanner-review-bindings-rc16.cjs',
+  'scripts/release/source-python-evidence-rc16.cjs',
+  'test/scripts/source-python-evidence-rc16.test.cjs',
+  'test/scripts/source-review-binding-rc16.test.cjs',
+  '.github/codeql/config-python-integrations.yml',
+  '.github/workflows/static-analysis-python-integrations.yml',
 ]);
 const allowedExistingPaths = Object.freeze([
   '.github/workflows/source-release.yml',
@@ -81,8 +93,8 @@ const websiteTransitions = freeze([
 const nativeCompatibility = freeze({
   schema: 'agijobsv0/transformational-native-compatibility/v1',
   repository: 'MontrealAI/AGI-Alpha-Agent-v0',
-  commit: 'dbaf5696d64ddcbf133f05d88d35496ebb85c3f0',
-  tree: '30dc828703a6e9cd64103e0ebc965fc701e9bcf3',
+  commit: '272b4de86bdc306ebf547750717983e467f5fcfd',
+  tree: '7e3a171a3f4a256723d6b480c64104264021b456',
   fixturePath: 'examples/transformational-intelligence/campaign.json',
   boundary: 'free-inspection-positive-payment-refused',
   files: {
@@ -95,8 +107,8 @@ const nativeCompatibility = freeze({
   },
 });
 const scannerPolicy = freeze({
-  producerCommit: '63cb53e8c71744f50df1f1614f6ec3140e89d3ed',
-  producerTree: 'a50b5b609f22fa06782ee564ad53fb49cb5d2364',
+  producerCommit: 'e815eee150cd4d8121919a2a0f39c417e64ae864',
+  producerTree: '97091066c9e55c3ffee01b8eee563216ffde44f3',
   historicalConfigPath: '.github/codeql/config.yml',
   historicalConfigSha256:
     '4b34450e1dcc0b489feea158d642a6b66261d9e935463928782219c8716c0892',
@@ -106,8 +118,8 @@ const scannerPolicy = freeze({
   configBlob: '4533ce4d7f681a6230399e25fb1d1f736c84b25b',
   workflowPath: '.github/workflows/static-analysis.yml',
   workflowSha256:
-    '5227e8df6bcf5e19a48b98a4e68b0633650c29b61aaaf8cd27c8c30f27a3984a',
-  workflowBlob: 'e4e7f01925b08418b4fec51c6306c102e57c3a94',
+    'c260479d7a7ffea7d981dd3912e91a6871457b5d22b3ca8260b5903f3d8a4a47',
+  workflowBlob: '092cc25629d783a7e4cb683ee030b5c4c626bd3b',
   archiveFiles: [
     'javascript.sarif',
     'source-extraction.json',
@@ -121,6 +133,8 @@ const scannerReceiverPaths = Object.freeze([
   'integrations/alpha-agent/pinned-alpha-checkout.cjs',
   'integrations/alpha-agent/transformational-work-request.mjs',
   'integrations/alpha-agent/vendor/alpha/docs/assets/successor/engine.mjs',
+  'integrations/alpha-agent/vendor/alpha-computer/examples/successor-alpha/computer.mjs',
+  'integrations/alpha-agent/vendor/alpha-computer/docs/assets/successor/engine.mjs',
   'website/assets/computer-receipt.mjs',
   'website/assets/computer-receipt-model.mjs',
   'website/assets/computer-receipt-copy.mjs',
@@ -135,6 +149,8 @@ const scannerRequiredPaths = Object.freeze([
   'integrations/alpha-agent/pinned-alpha-checkout.cjs',
   'integrations/alpha-agent/transformational-work-request.mjs',
   'integrations/alpha-agent/vendor/alpha/docs/assets/successor/engine.mjs',
+  'integrations/alpha-agent/vendor/alpha-computer/examples/successor-alpha/computer.mjs',
+  'integrations/alpha-agent/vendor/alpha-computer/docs/assets/successor/engine.mjs',
   'scripts/pages/build.mjs',
   'scripts/release/qualify-source-release-rc16.cjs',
   'scripts/release/publish-source-release-rc16.cjs',
@@ -150,6 +166,38 @@ const scannerRequiredPaths = Object.freeze([
   'website/assets/computer-mission.js',
   'website/assets/computer-mission-copy.mjs',
   'scripts/release/source-scanner-gates-rc16.cjs',
+  'scripts/release/python-scanner-rc16.cjs',
+  'scripts/pages/computer-receipt.mjs',
+  'scripts/release/source-scanner-review-bindings-rc16.cjs',
+  'scripts/release/source-python-evidence-rc16.cjs',
+]);
+const pythonScannerPolicy = freeze({
+  producerCommit: 'e815eee150cd4d8121919a2a0f39c417e64ae864',
+  producerTree: '97091066c9e55c3ffee01b8eee563216ffde44f3',
+  configPath: '.github/codeql/config-python-integrations.yml',
+  configSha256:
+    'eb5b425facefb419987bf537280d5144a477b65a205ccd71df3866b60b01e560',
+  configBlob: 'cdd0d5a0a1a0e691c3367bc5ce4429215f41381d',
+  workflowPath: '.github/workflows/static-analysis-python-integrations.yml',
+  workflowSha256:
+    '06cb537c0a1502132c600bdd158284c51bb7c9296a11f831cd929ed2662eb5a5',
+  workflowBlob: 'fcec3ad137968eb75f86049ebea79543c3f314fc',
+  archiveFiles: [
+    'python.sarif',
+    'source-extraction.json',
+    'source-scope-after.json',
+    'source-scope-before.json',
+  ],
+});
+const pythonScannerRequiredPaths = Object.freeze([
+  'integrations/alpha-agent/successor-computer-mission-lab.py',
+  'integrations/alpha-agent/successor-computer-worker-launch.py',
+  'integrations/alpha-agent/successor-frontier-mission-lab.py',
+  'integrations/alpha-agent/supplier-adapter-lab.py',
+  'integrations/alpha-agent/supplier-browser-lab.py',
+  'integrations/alpha-agent/supplier_browser_lab_support.py',
+  'integrations/alpha-agent/supplier_node_guard.py',
+  'integrations/alpha-agent/supplier_proof_guard.py',
 ]);
 const excludedCompilerPaths = new Set(
   historical.reviewedCompilerPaths
@@ -419,6 +467,9 @@ function validateProfile(value = profile) {
       'scannerReceiverPaths',
       'scannerPolicy',
       'scannerReview',
+      'pythonScannerPolicy',
+      'pythonScannerRequiredPaths',
+      'pythonScannerReview',
     ],
     'rc.16 profile fields differ'
   );
@@ -456,10 +507,43 @@ function validateProfile(value = profile) {
       same(value.scannerReceiverPaths, scannerReceiverPaths) &&
       same(value.nativeCompatibility, nativeCompatibility) &&
       same(value.scannerRequiredPaths, scannerRequiredPaths) &&
-      value.scannerReview === null,
+      value.scannerReview === null &&
+      same(value.pythonScannerPolicy, pythonScannerPolicy) &&
+      same(value.pythonScannerRequiredPaths, pythonScannerRequiredPaths) &&
+      value.pythonScannerReview === null,
     'Pending native or scanner policy differs; a separately reviewed gate update is required'
   );
   return value;
+}
+
+function verifyScannerProducerPin(git, releaseTree, policy) {
+  requireValue(
+    typeof git === 'function' && releaseTree instanceof Map,
+    'Immutable scanner producer inputs required'
+  );
+  requireValue(
+    text(git('rev-parse', `${policy.producerCommit}^{tree}`)).trim() ===
+      policy.producerTree,
+    'Reviewed scanner producer tree differs'
+  );
+  const scannerProducerTree = parseTree(
+    git('ls-tree', '-rz', policy.producerCommit)
+  );
+  for (const [name, blob, digest] of [
+    [policy.configPath, policy.configBlob, policy.configSha256],
+    [policy.workflowPath, policy.workflowBlob, policy.workflowSha256],
+  ])
+    requireValue(
+      releaseTree.get(name)?.mode === '100644' &&
+        releaseTree.get(name)?.blob === blob &&
+        scannerProducerTree.get(name)?.mode === '100644' &&
+        scannerProducerTree.get(name)?.blob === blob &&
+        createHash('sha256')
+          .update(git('show', `${policy.producerCommit}:${name}`))
+          .digest('hex') === digest,
+      'Reviewed scanner producer blob or digest differs: ' + name
+    );
+  return true;
 }
 
 function verifySourceScope({ git, sha, version, lock, policy }) {
@@ -480,6 +564,8 @@ function verifySourceScope({ git, sha, version, lock, policy }) {
     profile.implementationBaseline,
     profile.integrationBaseline,
     profile.nativePinBaseline,
+    profile.sourceConvergenceBaseline,
+    profile.pythonScannerBaseline,
     scannerPolicy.producerCommit,
   ])
     git('merge-base', '--is-ancestor', baseline, sha);
@@ -493,6 +579,19 @@ function verifySourceScope({ git, sha, version, lock, policy }) {
     text(git('rev-parse', `${profile.integrationBaseline}^{tree}`)).trim() ===
       profile.integrationTree,
     'Reviewed integration tree differs'
+  );
+  requireValue(
+    text(
+      git('rev-parse', `${profile.sourceConvergenceBaseline}^{tree}`)
+    ).trim() === profile.sourceConvergenceTree,
+    'Reviewed owner convergence tree differs'
+  );
+  requireValue(
+    text(git('rev-parse', `${profile.pythonScannerBaseline}^{tree}`)).trim() ===
+      profile.pythonScannerTree &&
+      profile.pythonScannerBaseline === pythonScannerPolicy.producerCommit &&
+      profile.pythonScannerTree === pythonScannerPolicy.producerTree,
+    'Reviewed Python scanner producer tree differs'
   );
   git(
     'merge-base',
@@ -544,14 +643,33 @@ function verifySourceScope({ git, sha, version, lock, policy }) {
       profile.nativePinTree,
     'Reviewed native pin tree differs'
   );
-  for (const [name, blob] of [
-    [scannerPolicy.configPath, scannerPolicy.configBlob],
-    [scannerPolicy.workflowPath, scannerPolicy.workflowBlob],
+  verifyScannerProducerPin(git, releaseTree, scannerPolicy);
+  // The separate Python producer is retained exactly without changing the
+  // direct implementation-to-release transition inventory above.
+  const pythonProducerTree = parseTree(
+    git('ls-tree', '-rz', profile.pythonScannerBaseline)
+  );
+  for (const [name, blob, digest] of [
+    [
+      pythonScannerPolicy.configPath,
+      pythonScannerPolicy.configBlob,
+      pythonScannerPolicy.configSha256,
+    ],
+    [
+      pythonScannerPolicy.workflowPath,
+      pythonScannerPolicy.workflowBlob,
+      pythonScannerPolicy.workflowSha256,
+    ],
   ])
     requireValue(
-      releaseTree.get(name)?.mode === '100644' &&
-        releaseTree.get(name)?.blob === blob,
-      'Reviewed scanner producer blob differs: ' + name
+      pythonProducerTree.get(name)?.mode === '100644' &&
+        pythonProducerTree.get(name)?.blob === blob &&
+        releaseTree.get(name)?.mode === '100644' &&
+        releaseTree.get(name)?.blob === blob &&
+        createHash('sha256')
+          .update(text(git('show', `${profile.pythonScannerBaseline}:${name}`)))
+          .digest('hex') === digest,
+      'Reviewed Python scanner producer blob or digest differs: ' + name
     );
   const releaseChanges = verifyReleaseDelta(implementationTree, releaseTree);
   const afterPackage = readJSON(sha, 'package.json'),
@@ -591,15 +709,70 @@ function verifySourceScope({ git, sha, version, lock, policy }) {
     scannerReceiverPaths: profile.scannerReceiverPaths,
     scannerPolicy: profile.scannerPolicy,
     scannerReview: null,
+    pythonScannerPolicy: profile.pythonScannerPolicy,
+    pythonScannerRequiredPaths: profile.pythonScannerRequiredPaths,
+    pythonScannerReview: null,
     productionApproved: false,
   };
 }
 
-function verifyPublicationReview() {
-  // The additive producer is preserved, but authentic final-source extraction
-  // and its finite independently reviewed result inventory are still pending.
+function validatePreparedProfile(value = profile, { git, target } = {}) {
+  validateProfile({ ...value, scannerReview: null, pythonScannerReview: null });
+  const {
+    validateScannerReviewMetadata,
+  } = require('./source-scanner-review-bindings-rc16.cjs');
+  for (const field of ['scannerReview', 'pythonScannerReview'])
+    if (value[field] !== null)
+      validateScannerReviewMetadata(field, value[field], { git, target });
+  return value;
+}
+function verifyPreparedPublicationReview(
+  value = profile,
+  { git, target } = {}
+) {
+  requireValue(
+    value?.scannerReview != null && value?.pythonScannerReview != null,
+    'rc.16 publication blocked: scannerReview is pending and Python scanner review is pending; actual JavaScript and Python extraction and independent finite result reviews are required'
+  );
+  validatePreparedProfile(value, { git, target });
+  requireValue(
+    typeof git === 'function' && /^[a-f0-9]{40}$/.test(target || ''),
+    'Immutable Git target is required for scanner review metadata admission'
+  );
+  requireValue(
+    same(
+      JSON.parse(
+        text(git('show', `${target}:scripts/release/source-profile-rc16.json`))
+      ),
+      value
+    ),
+    'rc.16 publication blocked: installed review profile differs from immutable Git source'
+  );
+  const {
+    verifyThreeSlotReviewBinding,
+  } = require('./source-scanner-review-bindings-rc16.cjs');
+  const {
+    parseScannerReview,
+    scannerReviewPath,
+  } = require('./qualify-source-release-rc16.cjs');
+  for (const field of ['scannerReview', 'pythonScannerReview'])
+    verifyThreeSlotReviewBinding({
+      sourceSha: value[field].sourceCommit,
+      sha: target,
+      review: value[field],
+      git,
+      field,
+      parseNotes: parseScannerReview,
+      notesPath: scannerReviewPath,
+    });
+  return { metadataAdmissionOnly: true, productionApproved: false };
+}
+function verifyPublicationReview(value = profile, context = {}) {
+  // Metadata admission preserves the owner correction; final authenticated
+  // source/result review and deliberate activation remain independently held.
+  verifyPreparedPublicationReview(value, context);
   throw Error(
-    'rc.16 publication blocked: scannerReview is pending; full integration extraction and independent finite result review are required'
+    'rc.16 publication blocked: scannerReview is pending final authenticated JavaScript and Python evidence review and gate activation'
   );
 }
 
@@ -620,6 +793,9 @@ module.exports = {
   applyLegacyWorkflowGuard,
   verifyLegacyWorkflow,
   validateProfile,
+  verifyScannerProducerPin,
   verifySourceScope,
+  validatePreparedProfile,
+  verifyPreparedPublicationReview,
   verifyPublicationReview,
 };

@@ -17,6 +17,12 @@ const {
   assertPinnedAlphaCheckout,
 } = require('../../integrations/alpha-agent/pinned-alpha-checkout.cjs');
 
+const {
+  verifyScannerReviewInstallBinding,
+  validateScannerReviewMetadata,
+  assertNoScannerErrorDiagnostics,
+} = require('./source-scanner-review-bindings-rc16.cjs');
+
 const ownPath = '.github/workflows/source-release-rc16.yml';
 const requiredPaths = [
   ...new Set([
@@ -188,49 +194,12 @@ function resultIdentity(result) {
   };
 }
 
-function verifyScannerReviewBinding({ sha, review, git }) {
-  assert(
-    /^[a-f0-9]{40}$/.test(sha || '') &&
-      /^[a-f0-9]{40}$/.test(review?.sourceCommit || ''),
-    'Scanner review requires exact source identities'
-  );
-  if (review.sourceCommit === sha) return;
-  // A review record cannot contain its own commit hash. Permit only the
-  // subsequent installation of that record, with every executable byte fixed.
-  assert.equal(
-    typeof git,
-    'function',
-    'Scanner review does not bind this source'
-  );
-  git('merge-base', '--is-ancestor', review.sourceCommit, sha);
-  const changed = git('diff', '--name-only', '-z', review.sourceCommit, sha)
-    .split('\0')
-    .filter(Boolean);
-  assert.deepEqual(
-    changed,
-    ['scripts/release/source-profile-rc16.json'],
-    'Source changed after scanner review beyond its record'
-  );
-  const before = JSON.parse(
-    git(
-      'show',
-      `${review.sourceCommit}:scripts/release/source-profile-rc16.json`
-    )
-  );
-  const after = JSON.parse(
-    git('show', `${sha}:scripts/release/source-profile-rc16.json`)
-  );
-  assert.equal(
-    canonical(after.scannerReview),
-    canonical(review),
-    'Installed scanner review differs'
-  );
-  after.scannerReview = before.scannerReview;
-  after.qualification = before.qualification;
-  assert.equal(
-    canonical(after),
-    canonical(before),
-    'Scanner review installation changed source/profile pins'
+function verifyScannerReviewBinding(options) {
+  return require('./qualify-source-release-rc16.cjs').verifyScannerReviewInstallBinding(
+    {
+      ...options,
+      field: 'scannerReview',
+    }
   );
 }
 
@@ -248,6 +217,7 @@ function verifyScannerAnalysis(
       run.invocations?.every((item) => item.executionSuccessful === true),
     'Scanner did not complete successfully'
   );
+  assertNoScannerErrorDiagnostics(run.invocations);
   assert(
     run.invocations.some((item) =>
       item.toolExecutionNotifications?.some(
@@ -364,7 +334,14 @@ function expectedReceiverSources(git, sha) {
   const omittedDirectory =
     /\/(?:node_modules|dist|\.next|coverage|reports|data|deploy|deployment|deployments|test)\//;
   const omittedSubgraph = /\/subgraph\/(?:generated|build|node_modules)\//;
-  return [...source.keys()]
+  const additional = profile.scannerRequiredPaths.filter(
+    (file) => !/^(?:integrations\/alpha-agent|website\/assets)\//.test(file)
+  );
+  assert(
+    additional.every((file) => source.has(file)),
+    'Required release/scanner source is absent from immutable Git inventory'
+  );
+  const dynamic = [...source.keys()]
     .filter(
       (file) =>
         /^(?:integrations\/alpha-agent|website\/assets)\//.test(file) &&
@@ -374,6 +351,7 @@ function expectedReceiverSources(git, sha) {
         !omittedSubgraph.test(file)
     )
     .sort();
+  return [...new Set([...dynamic, ...additional])].sort();
 }
 function verifyScannerProducerArchive(
   files,
@@ -647,6 +625,9 @@ module.exports = {
   verifyScannerResults,
   expectedReceiverSources,
   verifyScannerReviewBinding,
+  verifyScannerReviewInstallBinding,
+  validateScannerReviewMetadata,
+  assertNoScannerErrorDiagnostics,
   resultIdentity,
   extracted,
   readPages,

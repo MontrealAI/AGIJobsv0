@@ -8,7 +8,8 @@ const { execFileSync } = require('node:child_process');
 const {
   publish,
   expectedAssets,
-  verifyDownloadedAssets,
+  verifyJavaScriptAndNativeAssets: verifyDownloadedAssets,
+  verifyDownloadedAssets: verifyAllDownloadedAssets,
   readReviewedCodeql,
   readLatestCodeql,
   reviewedCodeqlPagePath,
@@ -543,6 +544,33 @@ function assetFixture(t) {
     downloaded,
     provenance,
     verify,
+    verifyAll: () =>
+      verifyAllDownloadedAssets({
+        directory,
+        downloaded,
+        draft: true,
+        ...provenance,
+        compilerArtifact,
+        compilerRun,
+        nativeArtifact,
+        nativeRun,
+        recordedCodeqlChecks,
+        latestCodeqlChecks: recordedCodeqlChecks,
+        finalCodeqlChecks: [
+          {
+            ...recordedCodeqlChecks[0],
+            id: 40,
+            head_sha: sha,
+            app: {
+              id: 57789,
+              slug: 'github-advanced-security',
+              owner: { id: 9919 },
+            },
+            html_url: 'https://github.com/MontrealAI/AGIJobsv0/runs/40',
+          },
+        ],
+        scannerEvidence,
+      }),
     checksums,
     compilerArtifact,
     compilerRun,
@@ -557,13 +585,13 @@ function assetFixture(t) {
 }
 test('compiler and evidence assets must match the complete checksum inventory and producer', (t) => {
   const fixture = assetFixture(t);
-  assert.equal(expectedAssets(tag).length, 21);
+  assert.equal(expectedAssets(tag).length, 24);
   assert.equal(
     fs
       .readFileSync(path.join(fixture.downloaded, 'SHA256SUMS.txt'), 'utf8')
       .trim()
       .split('\n').length,
-    20
+    23
   );
   fixture.verify();
   fs.appendFileSync(
@@ -988,6 +1016,9 @@ test('workflow packages every declared immutable release asset', () => {
         'codeql-evidence.zip',
         'codeql-reviewed-evidence.zip',
         'codeql-provenance.json',
+        'python-codeql-evidence.zip',
+        'python-codeql-reviewed-evidence.zip',
+        'python-codeql-provenance.json',
         'native-compatibility.zip',
         'native-provenance.json',
         'source-profile-rc16.json',
@@ -1561,6 +1592,7 @@ f35f728d821a1b30c81e0151d3df138b01db891a0764ef6f2b91f7a5da7c027d  mainnet-deploy
           name !== 'SHA256SUMS.txt' &&
           !name.startsWith('codeql-') &&
           !name.startsWith('native-') &&
+          !name.startsWith('python-codeql-') &&
           name !== 'source-profile-rc16.json'
       )
       .map((name) => name.replace('RC16.md', 'RC14.md'))
@@ -1614,7 +1646,7 @@ test('rc.15 identifies computer-use evidence limits and preserves the exact-sour
   assert.match(notes, /all 15 required workflow paths/);
   assert.match(notes, /14 checksummed payloads/);
   assert.match(notes, /No fixture-proof asset is added/);
-  assert.equal(expectedAssets(tag).length, 21);
+  assert.equal(expectedAssets(tag).length, 24);
 });
 
 test('rc.16 preserves rc.15 notes and states exact computer evidence, settlement and gate boundaries', () => {
@@ -1646,7 +1678,7 @@ test('rc.16 preserves rc.15 notes and states exact computer evidence, settlement
     'ENS configuration',
   ])
     assert.ok(notes.toLowerCase().includes(required.toLowerCase()), required);
-  assert.equal(expectedAssets(tag).length, 21);
+  assert.equal(expectedAssets(tag).length, 24);
   assert.ok(expectedAssets(tag).includes('RELEASE_NOTES_SOURCE_RC16.md'));
   assert.ok(!expectedAssets(tag).includes('RELEASE_NOTES_SOURCE_RC15.md'));
 });
@@ -2181,4 +2213,20 @@ test('additive native evidence and finite source claims remain bound after resea
       }),
     /different Alpha source/
   );
+});
+
+test('public readback always retains JavaScript/native validation and refuses absent authenticated Python evidence', (t) => {
+  // Existing retained JavaScript/native test data deliberately contains no
+  // successful Python scan. These two new payloads are invalid on purpose.
+  const fixture = assetFixture(t);
+  fixture.verify();
+  assert.throws(
+    () => fixture.verifyAll(),
+    /JSON|Unexpected|Retained|producer/i
+  );
+  fs.appendFileSync(
+    path.join(fixture.downloaded, 'solidity-compiler.json'),
+    'altered'
+  );
+  assert.throws(() => fixture.verifyAll(), /checksum mismatch/);
 });

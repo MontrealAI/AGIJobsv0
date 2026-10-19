@@ -5,6 +5,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { execFileSync } = require('node:child_process');
+const { createHash } = require('node:crypto');
 const p = require('../../scripts/release/source-profile-rc16.cjs');
 const ROOT = path.resolve(__dirname, '../..');
 const clone = (value) => JSON.parse(JSON.stringify(value));
@@ -102,6 +103,17 @@ function addReviewedIntegration(r) {
 function addReviewedWebsite(r) {
   for (const item of p.profile.websiteTransitions)
     r.put(item.path, command(ROOT, ['cat-file', 'blob', item.after.blob]));
+}
+
+function addReviewedPython(r) {
+  for (const name of [
+    p.profile.pythonScannerPolicy.configPath,
+    p.profile.pythonScannerPolicy.workflowPath,
+  ])
+    r.put(
+      name,
+      command(ROOT, ['show', `${p.profile.pythonScannerBaseline}:${name}`])
+    );
 }
 
 test('actual Git trees require the complete finite protected transition set', (t) => {
@@ -210,6 +222,7 @@ test('complete source verifier accepts only finite release plumbing over the act
   r.git('read-tree', p.profile.implementationBaseline);
   addReviewedWebsite(r);
   addReviewedIntegration(r);
+  addReviewedPython(r);
   const beforePackage = JSON.parse(
     r.git('show', `${p.profile.implementationBaseline}:package.json`)
   );
@@ -249,6 +262,8 @@ test('complete source verifier accepts only finite release plumbing over the act
       p.profile.integrationBaseline,
       p.profile.nativePinBaseline,
       p.profile.scannerPolicy.producerCommit,
+      p.profile.sourceConvergenceBaseline,
+      p.profile.pythonScannerBaseline,
     ]),
     version: p.profile.releaseVersion,
     lock: afterLock,
@@ -258,6 +273,11 @@ test('complete source verifier accepts only finite release plumbing over the act
   assert.equal(result.qualification, 'PENDING_FINAL_SOURCE_MAIN_PUSH');
   assert.equal(result.productionApproved, false);
   assert.equal(result.scannerReview, null);
+  assert.equal(result.pythonScannerReview, null);
+  assert.deepEqual(result.pythonScannerPolicy, p.profile.pythonScannerPolicy);
+  assert.equal(result.scannerRequiredPaths.length, 26);
+  assert.equal(result.scannerReceiverPaths.length, 14);
+  assert.equal(result.pythonScannerRequiredPaths.length, 8);
   assert.equal(result.protectedTransitions.length, 18);
   assert.deepEqual(result.websiteTransitions, p.websiteTransitions);
   assert.throws(
@@ -309,6 +329,42 @@ test('complete source verifier accepts only finite release plumbing over the act
     () => p.verifySourceScope({ ...args, sha: r.commit(args.sha) }),
     /regular file/
   );
+  for (const name of [
+    p.profile.pythonScannerPolicy.configPath,
+    p.profile.pythonScannerPolicy.workflowPath,
+  ]) {
+    for (const mode of ['100644', '100755']) {
+      r.git('read-tree', args.sha);
+      r.put(
+        name,
+        mode === '100644'
+          ? 'unreviewed Python producer bytes\n'
+          : command(ROOT, [
+              'show',
+              `${p.profile.pythonScannerBaseline}:${name}`,
+            ]),
+        mode
+      );
+      assert.throws(
+        () => p.verifySourceScope({ ...args, sha: r.commit(args.sha) }),
+        /Python scanner producer blob or digest/
+      );
+    }
+    r.git('read-tree', args.sha);
+    r.git('update-index', '--force-remove', name);
+    assert.throws(
+      () => p.verifySourceScope({ ...args, sha: r.commit(args.sha) }),
+      /Python scanner producer blob or digest/
+    );
+  }
+  r.git('read-tree', args.sha);
+  const missingProducer = r.commit([
+    p.profile.implementationBaseline,
+    p.profile.integrationBaseline,
+    p.profile.nativePinBaseline,
+    p.profile.sourceConvergenceBaseline,
+  ]);
+  assert.throws(() => p.verifySourceScope({ ...args, sha: missingProducer }));
 });
 
 test('actual Git website transitions admit only the two exact reviewed byte and mode changes', (t) => {
@@ -504,6 +560,32 @@ test('profile baseline, source pins and pending scanner boundary cannot silently
       value.scannerRequiredPaths.pop();
     },
     (value) => {
+      value.scannerRequiredPaths = value.scannerRequiredPaths.filter(
+        (name) => name !== 'scripts/release/python-scanner-rc16.cjs'
+      );
+    },
+    (value) => {
+      value.scannerReceiverPaths.pop();
+    },
+    (value) => {
+      value.sourceConvergenceBaseline = '0'.repeat(40);
+    },
+    (value) => {
+      value.sourceConvergenceTree = '0'.repeat(40);
+    },
+    (value) => {
+      value.pythonScannerBaseline = '0'.repeat(40);
+    },
+    (value) => {
+      value.pythonScannerPolicy.workflowSha256 = '0'.repeat(64);
+    },
+    (value) => {
+      value.pythonScannerRequiredPaths.pop();
+    },
+    (value) => {
+      value.pythonScannerReview = { approved: true };
+    },
+    (value) => {
       value.scannerReview = { approved: true };
     },
   ]) {
@@ -513,8 +595,115 @@ test('profile baseline, source pins and pending scanner boundary cannot silently
   }
   assert.throws(
     () => p.verifyPublicationReview(),
-    /publication blocked.*scannerReview/
+    /publication blocked.*scannerReview.*Python/
   );
+});
+
+test('Python producer paths and policy retain the exact independent owner contract', () => {
+  const owner = JSON.parse(
+    command(ROOT, [
+      'show',
+      `${p.profile.sourceConvergenceBaseline}:scripts/release/source-profile-rc16.json`,
+    ])
+  );
+  const originalProducer = 'ce08a583391e563566a0eaec6f89da3190c319db';
+  const formattedProducer = p.profile.pythonScannerBaseline;
+  const policy = p.profile.pythonScannerPolicy;
+  assert.equal(p.profile.pythonScannerBaseline, formattedProducer);
+  assert.equal(policy.producerCommit, formattedProducer);
+  const actualTree = command(ROOT, [
+    'rev-parse',
+    formattedProducer + '^{tree}',
+  ]).trim();
+  assert.equal(p.profile.pythonScannerTree, actualTree);
+  assert.equal(policy.producerTree, actualTree);
+  command(ROOT, [
+    'merge-base',
+    '--is-ancestor',
+    originalProducer,
+    formattedProducer,
+  ]);
+  const originalWorkflow = command(ROOT, [
+    'show',
+    `${originalProducer}:${policy.workflowPath}`,
+  ]);
+  const formattedWorkflow = command(ROOT, [
+    'show',
+    `${formattedProducer}:${policy.workflowPath}`,
+  ]);
+  let normalizedWorkflow = formattedWorkflow;
+  for (const [formatted, original] of [
+    [
+      "      - 'fix/inherited-codeql-*'\n",
+      '      - "fix/inherited-codeql-*"\n',
+    ],
+    ["    - cron: '30 2 * * *'\n", '    - cron: "30 2 * * *"\n'],
+    [
+      "          node-version-file: '.nvmrc'\n",
+      '          node-version-file: ".nvmrc"\n',
+    ],
+    [
+      "          python-version: '3.12'\n",
+      '          python-version: "3.12"\n',
+    ],
+  ]) {
+    assert.equal(normalizedWorkflow.split(formatted).length, 2);
+    normalizedWorkflow = normalizedWorkflow.replace(formatted, original);
+  }
+  assert.equal(normalizedWorkflow, originalWorkflow);
+  const runScripts = (workflow) => {
+    const lines = workflow.split('\n'),
+      scripts = [];
+    for (let i = 0; i < lines.length; i++) {
+      if (lines[i] !== '        run: |') continue;
+      const script = [];
+      for (
+        i++;
+        i < lines.length && (lines[i].startsWith('          ') || !lines[i]);
+        i++
+      )
+        script.push(lines[i].slice(10));
+      scripts.push(script.join('\n'));
+      i--;
+    }
+    return scripts;
+  };
+  assert.equal(runScripts(originalWorkflow).length, 3);
+  assert.deepEqual(runScripts(formattedWorkflow), runScripts(originalWorkflow));
+  assert.equal(
+    command(ROOT, ['show', `${formattedProducer}:${policy.configPath}`]),
+    command(ROOT, ['show', `${originalProducer}:${policy.configPath}`])
+  );
+  assert.deepEqual(policy, {
+    ...owner.pythonScannerPolicy,
+    producerCommit: formattedProducer,
+    producerTree: actualTree,
+    workflowSha256: createHash('sha256')
+      .update(formattedWorkflow)
+      .digest('hex'),
+    workflowBlob: command(ROOT, [
+      'rev-parse',
+      `${formattedProducer}:${policy.workflowPath}`,
+    ]).trim(),
+  });
+  assert.deepEqual(
+    p.profile.pythonScannerRequiredPaths,
+    owner.pythonScannerRequiredPaths
+  );
+  assert.equal(p.profile.pythonScannerReview, null);
+  assert.equal(p.allowedNewPaths.length, 25);
+  for (const name of [
+    'scripts/release/python-scanner-rc16.cjs',
+    'test/scripts/source-python-scanner-rc16.test.cjs',
+    '.github/codeql/config-python-integrations.yml',
+    '.github/workflows/static-analysis-python-integrations.yml',
+  ])
+    assert(p.allowedNewPaths.includes(name));
+  for (const name of owner.scannerRequiredPaths) {
+    assert(p.profile.scannerRequiredPaths.includes(name));
+    if (/^(?:integrations\/alpha-agent|website\/assets)\//.test(name))
+      assert(p.profile.scannerReceiverPaths.includes(name));
+  }
 });
 
 test('tree enumeration rejects links, gitlinks, duplicate paths and malformed Git identities', () => {
@@ -577,5 +766,46 @@ test('actual Git integration transitions reject substituted security/runtime byt
   assert.throws(
     () => p.verifyIntegrationTransitions(wrongBefore, after),
     /integration blob or mode/
+  );
+});
+
+test('scanner producer pins must name the same immutable workflow bytes as the release', (t) => {
+  const r = repository(t);
+  const configPath = '.github/codeql/fixture.yml';
+  const workflowPath = '.github/workflows/fixture.yml';
+  r.put(configPath, 'name: benign config\n');
+  r.put(workflowPath, 'name: benign selected workflow\n');
+  const selected = r.commit();
+  const releaseTree = p.parseTree(r.git('ls-tree', '-rz', selected));
+  const digest = (text) => createHash('sha256').update(text).digest('hex');
+  const policy = {
+    producerCommit: selected,
+    producerTree: r.git('rev-parse', `${selected}^{tree}`).trim(),
+    configPath,
+    workflowPath,
+    configBlob: releaseTree.get(configPath).blob,
+    workflowBlob: releaseTree.get(workflowPath).blob,
+    configSha256: digest(r.git('show', `${selected}:${configPath}`)),
+    workflowSha256: digest(r.git('show', `${selected}:${workflowPath}`)),
+  };
+  p.verifyScannerProducerPin(r.git, releaseTree, policy);
+  r.put(workflowPath, 'name: another legitimate revision\n');
+  const other = r.commit(selected);
+  assert.throws(
+    () =>
+      p.verifyScannerProducerPin(r.git, releaseTree, {
+        ...policy,
+        producerCommit: other,
+        producerTree: r.git('rev-parse', `${other}^{tree}`).trim(),
+      }),
+    /producer blob or digest/
+  );
+  assert.throws(
+    () =>
+      p.verifyScannerProducerPin(r.git, releaseTree, {
+        ...policy,
+        workflowSha256: '0'.repeat(64),
+      }),
+    /producer blob or digest/
   );
 });

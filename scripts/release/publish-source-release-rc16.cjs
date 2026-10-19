@@ -55,6 +55,7 @@ const gitSource = (...args) =>
   );
 const {
   verifyIntegratedScannerArchive,
+  expectedReceiverSources,
 } = require('./source-scanner-gates-rc16.cjs');
 
 function expectedAssets(tag) {
@@ -77,6 +78,9 @@ function expectedAssets(tag) {
     'codeql-evidence.zip',
     'codeql-reviewed-evidence.zip',
     'codeql-provenance.json',
+    'python-codeql-evidence.zip',
+    'python-codeql-reviewed-evidence.zip',
+    'python-codeql-provenance.json',
     'source-profile-rc16.json',
     'native-compatibility.zip',
     'native-provenance.json',
@@ -108,7 +112,7 @@ function reviewedCodeqlProof(proof) {
   return proof.checks;
 }
 
-function verifyDownloadedAssets({
+function verifyJavaScriptAndNativeAssets({
   downloaded,
   directory,
   draft,
@@ -315,6 +319,18 @@ function verifyDownloadedAssets({
       canonical(profile.scannerReceiverPaths) ||
     provenance.sourceProfile?.nativePinBaseline !== profile.nativePinBaseline ||
     provenance.sourceProfile?.nativePinTree !== profile.nativePinTree ||
+    provenance.sourceProfile?.sourceConvergenceBaseline !==
+      profile.sourceConvergenceBaseline ||
+    provenance.sourceProfile?.sourceConvergenceTree !==
+      profile.sourceConvergenceTree ||
+    provenance.sourceProfile?.pythonScannerBaseline !==
+      profile.pythonScannerBaseline ||
+    provenance.sourceProfile?.pythonScannerTree !== profile.pythonScannerTree ||
+    canonical(provenance.sourceProfile?.pythonScannerPolicy) !==
+      canonical(profile.pythonScannerPolicy) ||
+    canonical(provenance.sourceProfile?.pythonScannerRequiredPaths) !==
+      canonical(profile.pythonScannerRequiredPaths) ||
+    provenance.sourceProfile?.pythonScannerReview !== null ||
     provenance.sourceProfile?.scannerReview !== null ||
     provenance.sourceProfile?.productionApproved !== false
   )
@@ -338,6 +354,22 @@ function verifyDownloadedAssets({
     sha,
     tree,
     provenance,
+  });
+}
+
+// The existing JavaScript S1/S2 and native checks stay mandatory. Python
+// independently authenticates its retained archive after that complete path.
+function verifyDownloadedAssets(context) {
+  verifyJavaScriptAndNativeAssets(context);
+  return nativeEvidence.verifyPythonEvidence({
+    directory: context.downloaded,
+    finalObservation: context.pythonFinalObservation,
+    reviewedObservation: context.pythonReviewedObservation,
+    sha: context.sha,
+    tree: context.tree,
+    provenance: JSON.parse(
+      fs.readFileSync(path.join(context.downloaded, 'provenance.json'))
+    ),
   });
 }
 
@@ -410,6 +442,9 @@ function summarizeScannerSarif(bytes, requiredSources = []) {
           'builtinSuite:security-extended',
         ]),
     'Scanner tool, successful extraction or original query suites differ'
+  );
+  require('./source-scanner-review-bindings-rc16.cjs').assertNoScannerErrorDiagnostics(
+    run.invocations
   );
   const extracted = new Set();
   for (const invocation of run.invocations)
@@ -725,14 +760,7 @@ function scannerPolicyContext(git, sourceSha) {
     'Both native vendor engine closures are required'
   );
   return {
-    producerRequiredSources: tracked
-      .filter(
-        (name) =>
-          /^(?:integrations\/alpha-agent|website\/assets)\//.test(name) &&
-          /\.(?:[cm]?[jt]sx?)$/i.test(name) &&
-          !/\.d\.[cm]?ts$/i.test(name)
-      )
-      .sort(),
+    producerRequiredSources: expectedReceiverSources(git, sourceSha),
     requiredSources: [
       ...new Set([
         ...baseline.extractedPaths.filter((name) => tracked.includes(name)),
@@ -979,7 +1007,10 @@ function verifyScannerEvidence({
   return summary;
 }
 async function collectScannerEvidence() {
-  verifyPublicationReview();
+  verifyPublicationReview(profile, {
+    git: gitSource,
+    target: process.env.GITHUB_SHA,
+  });
   const repository = process.env.GITHUB_REPOSITORY,
     sha = process.env.GITHUB_SHA;
   const directory = path.resolve('reports/source-release-rc16');
@@ -1172,7 +1203,10 @@ function verifyCompilerArchive(files, read) {
 }
 
 function collectCompilerEvidence() {
-  verifyPublicationReview();
+  verifyPublicationReview(profile, {
+    git: gitSource,
+    target: process.env.GITHUB_SHA,
+  });
   const repository = process.env.GITHUB_REPOSITORY;
   const sha = process.env.GITHUB_SHA;
   const directory = path.resolve('reports/source-release-rc16');
@@ -1398,6 +1432,22 @@ function sourceApiUrl(method, resource, finalSha) {
               }`
           ).includes(resource)
       ));
+  const pythonScannerRoute =
+    method === 'GET' &&
+    (/^actions\/runs\/[1-9][0-9]*\/artifacts\?per_page=100&page=(?:[1-9]|1[0-9]|20)$/.test(
+      resource
+    ) ||
+      [profile.pythonScannerReview?.sourceCommit, finalSha].some(
+        (sourceSha) =>
+          /^[a-f0-9]{40}$/.test(sourceSha || '') &&
+          Array.from(
+            { length: 20 },
+            (_, index) =>
+              `actions/workflows/static-analysis-python-integrations.yml/runs?head_sha=${sourceSha}&per_page=100&page=${
+                index + 1
+              }`
+          ).includes(resource)
+      ));
   const reviewedResults =
     method === 'GET' &&
     [compilerSourceBaseline, finalSha].some(
@@ -1413,6 +1463,7 @@ function sourceApiUrl(method, resource, finalSha) {
     !Object.hasOwn(allowed, method) ||
     (!reviewedResults &&
       !scannerRoute &&
+      !pythonScannerRoute &&
       allowed[method].exec(resource)?.[0] !== resource)
   )
     throw Error('Unsupported source publication API route');
@@ -1420,7 +1471,10 @@ function sourceApiUrl(method, resource, finalSha) {
 }
 
 async function main() {
-  verifyPublicationReview();
+  verifyPublicationReview(profile, {
+    git: gitSource,
+    target: process.env.GITHUB_SHA,
+  });
   const {
     GITHUB_SHA: sha,
     GITHUB_REPOSITORY: repository,
@@ -1520,7 +1574,18 @@ async function main() {
       const native = JSON.parse(
         fs.readFileSync(path.join(downloaded, 'native-provenance.json'))
       );
-      const [nativeArtifact, nativeRun] = await Promise.all([
+      const pythonScanner = JSON.parse(
+        fs.readFileSync(path.join(downloaded, 'python-codeql-provenance.json'))
+      );
+      const {
+        readPythonScannerObservation,
+      } = require('./source-python-evidence-rc16.cjs');
+      const [
+        nativeArtifact,
+        nativeRun,
+        pythonFinalObservation,
+        pythonReviewedObservation,
+      ] = await Promise.all([
         api('GET', `actions/artifacts/${producerId(native.artifactId)}`),
         api(
           'GET',
@@ -1528,11 +1593,19 @@ async function main() {
             native.runAttempt
           )}`
         ),
+        readPythonScannerObservation(api, pythonScanner.final.producer, sha),
+        readPythonScannerObservation(
+          api,
+          pythonScanner.reviewed.producer,
+          profile.pythonScannerReview.sourceCommit
+        ),
       ]);
       verifyScannerReviewSource({ git, sha });
       verifyDownloadedAssets({
         nativeArtifact,
         nativeRun,
+        pythonFinalObservation,
+        pythonReviewedObservation,
         downloaded,
         directory,
         draft,
@@ -1633,6 +1706,7 @@ module.exports = {
   publish,
   assertTag,
   expectedAssets,
+  verifyJavaScriptAndNativeAssets,
   verifyDownloadedAssets,
   validateCompilerArtifact,
   verifyCompilerArchive,

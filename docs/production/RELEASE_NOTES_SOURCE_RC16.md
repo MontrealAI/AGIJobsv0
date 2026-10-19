@@ -152,7 +152,6 @@ null
 
 ## Additional TI source preparation — pending
 
-
 This is a pending source qualification profile, not a published release or a
 Mainnet deployment. It preserves source-v2.1.0-rc.15, its producer implementation,
 release assets and all historical deployment evidence. The additive profile
@@ -187,12 +186,43 @@ verification are still required.
 
 ## Explicit final-source preparation inputs
 
-The candidate now pins Alpha source `dbaf5696d64ddcbf133f05d88d35496ebb85c3f0`
-(tree `30dc828703a6e9cd64103e0ebc965fc701e9bcf3`) through the unchanged public
-receiver source inventory. Earlier observations retain their original source
+The candidate now pins Alpha source `272b4de86bdc306ebf547750717983e467f5fcfd`
+(tree `7e3a171a3f4a256723d6b480c64104264021b456`) with unchanged native file
+inventories. Earlier observations retain their original source
 identities. This pin is preparatory; final connected native/browser, hosted and
 compatible-release qualification remains required. Both the finite source profile
 and notes scanner review records remain null and independently block publication.
 The receiver-only extraction inventory and complete required SARIF inventory
-are separate mandatory inputs. The stronger preserved thirteen-receiver producer
-workflow is pinned exactly; no precursor workflow or historical scan qualifies it.
+are separate mandatory inputs. The producer requires fourteen receivers plus
+the exact enumerated release and page analysis closure; no precursor workflow
+or historical scan qualifies it.
+
+## Python scanner convergence — pending
+
+The integrated producer requires fourteen Computer/browser/TI receivers and the
+separate complete required SARIF source inventory. The official JavaScript
+extractor minified-file setting includes the required long generated modules;
+query suites, path exclusions, thresholds and retained four-record contract are
+preserved. Static source eligibility does not establish actual extraction.
+
+Python has its own pinned workflow/config, eight mandatory integration sentinels
+and the complete tracked integration Python source inventory. Qualification must
+authenticate complete successful non-overlay extraction, all unfiltered raw
+results and rule/config inventories, exact source/tree/run/attempt/artifact
+identities, the downloaded ZIP digest and independent source-bound dispositions.
+The original JavaScript reviewed/current archives remain required. The three
+Python assets extend the exact inventory to twenty-four assets, including
+twenty-three checksummed payloads. No successful Python scan fixture or initial
+rule/result inventory is invented.
+
+The JavaScript and Python profile review records remain null; notes review is
+also null, and all publication entrypoints fail before network effects. The
+owner shared-review installation correction is preserved. Reviewed S1 and
+current S2 Python ZIP bytes are independently authenticated against fresh
+current/latest workflow, exact attempt and artifact inventories, then both
+complete archives are revalidated during qualification, collection and remote
+readback. The actual independently reviewed source/results and metadata
+composition must still qualify before any gate activation. Authentic final-source
+scans/results,
+Advanced Security reconciliation and exact-head hosted/native/connected checks
+remain pending. This source convergence is not a qualification or release.

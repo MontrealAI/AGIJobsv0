@@ -25,7 +25,7 @@ from urllib.parse import urlencode
 from supplier_browser_lab_support import read_frame, write_frame, terminate_group, require_group_observation
 
 ROOT = Path(__file__).resolve().parents[2]
-ALPHA_COMMIT = "dbaf5696d64ddcbf133f05d88d35496ebb85c3f0"
+ALPHA_COMMIT = "272b4de86bdc306ebf547750717983e467f5fcfd"
 ENGINE = ROOT / "packages/successor-core/src/computer-mission.mjs"
 RENDERER = ROOT / "scripts/pages/computer-mission.mjs"
 DESK = ROOT / "website/assets/computer-desk.mjs"

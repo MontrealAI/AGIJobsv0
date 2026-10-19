@@ -12,6 +12,7 @@ const {
   sha256,
   canonical,
 } = require('./source-native-gates-rc16.cjs');
+const pythonEvidence = require('./source-python-evidence-rc16.cjs');
 const producerId = (value) => {
   assert(
     Number.isSafeInteger(value) && value > 0,
@@ -50,6 +51,7 @@ const gitSource = (...args) =>
         GIT_CONFIG_GLOBAL: '/dev/null',
         GIT_NO_REPLACE_OBJECTS: '1',
         GIT_OPTIONAL_LOCKS: '0',
+        GIT_NO_LAZY_FETCH: '1',
       },
     }
   );
@@ -117,7 +119,10 @@ function verifyRetainedProducer(
 }
 
 async function collectAdditionalEvidence() {
-  verifyPublicationReview(profile);
+  verifyPublicationReview(profile, {
+    git: gitSource,
+    target: process.env.GITHUB_SHA,
+  });
   const { GITHUB_SHA: sha, GITHUB_REPOSITORY: repository } = process.env;
   const directory = path.resolve('reports/source-release-rc16');
   const provenance = JSON.parse(
@@ -224,6 +229,34 @@ async function collectAdditionalEvidence() {
       { flag: 'wx' }
     );
   }
+  await retainPythonEvidence({
+    directory,
+    sha,
+    tree: provenance.tree,
+    provenance,
+    api: async (method, resource) => {
+      assert.equal(
+        method,
+        'GET',
+        'Python evidence uses read-only API requests'
+      );
+      return JSON.parse(
+        cli(
+          'api',
+          '--hostname',
+          'github.com',
+          `repos/${repository}/${resource}`
+        )
+      );
+    },
+    download: async (artifactId) =>
+      cli(
+        'api',
+        '--hostname',
+        'github.com',
+        `repos/${repository}/actions/artifacts/${producerId(artifactId)}/zip`
+      ),
+  });
   fs.copyFileSync(
     'scripts/release/source-profile-rc16.json',
     path.join(directory, 'source-profile-rc16.json'),
@@ -311,9 +344,174 @@ function verifyNativeEvidence({
   );
   return summary;
 }
+
+async function retainPythonEvidence({
+  directory,
+  sha,
+  tree,
+  provenance,
+  api,
+  download,
+}) {
+  const review = profile.pythonScannerReview;
+  const reviewedRef = pythonEvidence.pythonScannerReviewReference(review);
+  assert(
+    path.isAbsolute(directory),
+    'Absolute retained Python evidence directory required'
+  );
+  assert.equal(typeof api, 'function', 'Authenticated Python API required');
+  assert.equal(
+    typeof download,
+    'function',
+    'Authenticated Python archive downloader required'
+  );
+  const selected = provenance.workflows?.filter(
+    (run) => run.path === profile.pythonScannerPolicy.workflowPath
+  );
+  assert.equal(
+    selected?.length,
+    1,
+    'Missing or ambiguous qualified Python workflow'
+  );
+  const chosen = selected[0];
+  assert(
+    chosen.head_sha === sha && chosen.conclusion === 'success',
+    'Qualified Python source differs'
+  );
+  const run = await api(
+    'GET',
+    `actions/runs/${producerId(chosen.id)}/attempts/${producerId(
+      chosen.run_attempt
+    )}`
+  );
+  const artifacts = await pythonEvidence.readPythonScannerInventory(
+    api,
+    `actions/runs/${producerId(chosen.id)}/artifacts`,
+    'artifacts'
+  );
+  const name = `python-codeql-security-report-${sha}-${chosen.id}-${chosen.run_attempt}`;
+  const matches = artifacts.filter((artifact) => artifact.name === name);
+  assert.equal(
+    matches.length,
+    1,
+    'Missing or ambiguous qualified Python artifact'
+  );
+  assert.equal(run.id, chosen.id);
+  assert.equal(run.run_attempt, chosen.run_attempt);
+  const finalRef = pythonEvidence.pythonScannerReference(run, matches[0], sha);
+  const [finalObservation, reviewedObservation] = await Promise.all([
+    pythonEvidence.readPythonScannerObservation(api, finalRef, sha),
+    pythonEvidence.readPythonScannerObservation(
+      api,
+      reviewedRef,
+      review.sourceCommit
+    ),
+  ]);
+  for (const [file, observation] of [
+    ['python-codeql-evidence.zip', finalObservation],
+    ['python-codeql-reviewed-evidence.zip', reviewedObservation],
+  ]) {
+    const bytes = await download(observation.producer.artifactId);
+    assert(
+      Buffer.isBuffer(bytes) && bytes.length <= 128 * 1024 * 1024,
+      'Python archive download exceeds its byte bound'
+    );
+    assert.equal(
+      'sha256:' + sha256(bytes),
+      observation.producer.githubDigest,
+      'Downloaded Python archive differs from authenticated artifact'
+    );
+    fs.writeFileSync(path.join(directory, file), bytes, {
+      flag: 'wx',
+      mode: 0o600,
+    });
+  }
+  const proof = pythonEvidence.verifyPythonEvidenceArchives({
+    directory,
+    sha,
+    tree,
+    review,
+    finalObservation,
+    reviewedObservation,
+    git: gitSource,
+  });
+  if (provenance.pythonScannerEvidence !== undefined)
+    assert.equal(
+      canonical(proof),
+      canonical(provenance.pythonScannerEvidence),
+      'Python evidence differs from the qualified source and producer observations'
+    );
+  fs.writeFileSync(
+    path.join(directory, 'python-codeql-provenance.json'),
+    JSON.stringify(proof, null, 2) + '\n',
+    { flag: 'wx', mode: 0o600 }
+  );
+  return proof;
+}
+async function qualifyPythonEvidence(context) {
+  const os = require('node:os');
+  const directory = fs.mkdtempSync(
+    path.join(
+      process.env.RUNNER_TEMP || os.tmpdir(),
+      'rc16-python-qualification-'
+    )
+  );
+  try {
+    return await retainPythonEvidence({ ...context, directory });
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+}
+function verifyPythonEvidence({
+  directory,
+  sha,
+  tree,
+  provenance,
+  finalObservation,
+  reviewedObservation,
+}) {
+  const retained = JSON.parse(
+    fs.readFileSync(path.join(directory, 'python-codeql-provenance.json'))
+  );
+  const proof = pythonEvidence.verifyPythonEvidenceArchives({
+    directory,
+    sha,
+    tree,
+    review: profile.pythonScannerReview,
+    finalObservation,
+    reviewedObservation,
+    git: gitSource,
+  });
+  assert.equal(
+    canonical(retained),
+    canonical(proof),
+    'Remote Python scanner provenance differs from authenticated archive readback'
+  );
+  assert.equal(
+    canonical(provenance.pythonScannerEvidence),
+    canonical(proof),
+    'Remote Python scanner differs from qualification observations'
+  );
+  const qualified = provenance.workflows?.filter(
+    (run) => run.path === profile.pythonScannerPolicy.workflowPath
+  );
+  assert(
+    qualified?.length === 1 &&
+      qualified[0].id === finalObservation.run.id &&
+      qualified[0].run_attempt === finalObservation.run.run_attempt &&
+      qualified[0].head_sha === sha &&
+      qualified[0].conclusion === 'success',
+    'Remote Python scanner differs from the qualified run and attempt'
+  );
+  return proof;
+}
+
 module.exports = {
   collectAdditionalEvidence,
   verifyRetainedProducer,
   validateNativeReport,
   verifyNativeEvidence,
+  retainPythonEvidence,
+  qualifyPythonEvidence,
+  verifyPythonEvidence,
 };

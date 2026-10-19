@@ -235,8 +235,8 @@
   "nativeCompatibility": {
     "schema": "agijobsv0/transformational-native-compatibility/v1",
     "repository": "MontrealAI/AGI-Alpha-Agent-v0",
-    "commit": "dbaf5696d64ddcbf133f05d88d35496ebb85c3f0",
-    "tree": "30dc828703a6e9cd64103e0ebc965fc701e9bcf3",
+    "commit": "272b4de86bdc306ebf547750717983e467f5fcfd",
+    "tree": "7e3a171a3f4a256723d6b480c64104264021b456",
     "fixturePath": "examples/transformational-intelligence/campaign.json",
     "boundary": "free-inspection-positive-payment-refused",
     "files": {
@@ -251,6 +251,8 @@
     "integrations/alpha-agent/pinned-alpha-checkout.cjs",
     "integrations/alpha-agent/transformational-work-request.mjs",
     "integrations/alpha-agent/vendor/alpha/docs/assets/successor/engine.mjs",
+    "integrations/alpha-agent/vendor/alpha-computer/examples/successor-alpha/computer.mjs",
+    "integrations/alpha-agent/vendor/alpha-computer/docs/assets/successor/engine.mjs",
     "scripts/pages/build.mjs",
     "scripts/release/qualify-source-release-rc16.cjs",
     "scripts/release/publish-source-release-rc16.cjs",
@@ -265,7 +267,11 @@
     "website/assets/computer-desk-runtime-source.mjs",
     "website/assets/computer-mission.js",
     "website/assets/computer-mission-copy.mjs",
-    "scripts/release/source-scanner-gates-rc16.cjs"
+    "scripts/release/source-scanner-gates-rc16.cjs",
+    "scripts/release/python-scanner-rc16.cjs",
+    "scripts/pages/computer-receipt.mjs",
+    "scripts/release/source-scanner-review-bindings-rc16.cjs",
+    "scripts/release/source-python-evidence-rc16.cjs"
   ],
   "scannerReview": null,
   "integrationBaseline": "b26a65456d5c06c901ba73d1e1620f7edb1a315a",
@@ -342,7 +348,7 @@
       },
       "after": {
         "mode": "100644",
-        "blob": "e4e7f01925b08418b4fec51c6306c102e57c3a94"
+        "blob": "092cc25629d783a7e4cb683ee030b5c4c626bd3b"
       }
     },
     {
@@ -353,7 +359,7 @@
       },
       "after": {
         "mode": "100644",
-        "blob": "c605d05b1846e0bed5285265c3a23a69b649995b"
+        "blob": "d158e2b3da0d2fda746a3818ad4342a45278ca60"
       }
     },
     {
@@ -419,7 +425,7 @@
       },
       "after": {
         "mode": "100644",
-        "blob": "a0834a4eec43341cfbe40ca80981942a898e4d33"
+        "blob": "86a5310046dc6b4e6085c8f1f04d7bbabf44bd09"
       }
     },
     {
@@ -430,7 +436,7 @@
       },
       "after": {
         "mode": "100644",
-        "blob": "0dc320ab467d80141a5651a9ec6b8ece4d68b7a0"
+        "blob": "0a03f0138501ed31efaff02a6abfa57c230a8737"
       }
     },
     {
@@ -441,7 +447,7 @@
       },
       "after": {
         "mode": "100644",
-        "blob": "4b2604e880cce957094ac29d7a31b2ffe6526a05"
+        "blob": "c1676bebb8dc066249447e798c1e9684cac1fa05"
       }
     },
     {
@@ -468,7 +474,7 @@
       },
       "after": {
         "mode": "100644",
-        "blob": "56cf2b911d2411b0653f849b5434dc93b5784adc"
+        "blob": "1d05e83f85aee2e8527710958096e3474e0af13a"
       }
     },
     {
@@ -479,7 +485,7 @@
       },
       "after": {
         "mode": "100644",
-        "blob": "8582e7e569d1ef784d68b2f69638a260ea9c6d6b"
+        "blob": "4c01059e4d53b6787ec0b159065e72edd149c6ef"
       }
     },
     {
@@ -610,6 +616,8 @@
     "integrations/alpha-agent/pinned-alpha-checkout.cjs",
     "integrations/alpha-agent/transformational-work-request.mjs",
     "integrations/alpha-agent/vendor/alpha/docs/assets/successor/engine.mjs",
+    "integrations/alpha-agent/vendor/alpha-computer/examples/successor-alpha/computer.mjs",
+    "integrations/alpha-agent/vendor/alpha-computer/docs/assets/successor/engine.mjs",
     "website/assets/computer-receipt.mjs",
     "website/assets/computer-receipt-model.mjs",
     "website/assets/computer-receipt-copy.mjs",
@@ -619,16 +627,16 @@
     "website/assets/computer-mission-copy.mjs"
   ],
   "scannerPolicy": {
-    "producerCommit": "63cb53e8c71744f50df1f1614f6ec3140e89d3ed",
-    "producerTree": "a50b5b609f22fa06782ee564ad53fb49cb5d2364",
+    "producerCommit": "e815eee150cd4d8121919a2a0f39c417e64ae864",
+    "producerTree": "97091066c9e55c3ffee01b8eee563216ffde44f3",
     "historicalConfigPath": ".github/codeql/config.yml",
     "historicalConfigSha256": "4b34450e1dcc0b489feea158d642a6b66261d9e935463928782219c8716c0892",
     "configPath": ".github/codeql/config-integrations.yml",
     "configSha256": "07d7be878097a38520bcf09147b62c75064cb3d707317ad34e028c1f46ba8155",
     "configBlob": "4533ce4d7f681a6230399e25fb1d1f736c84b25b",
     "workflowPath": ".github/workflows/static-analysis.yml",
-    "workflowSha256": "5227e8df6bcf5e19a48b98a4e68b0633650c29b61aaaf8cd27c8c30f27a3984a",
-    "workflowBlob": "e4e7f01925b08418b4fec51c6306c102e57c3a94",
+    "workflowSha256": "c260479d7a7ffea7d981dd3912e91a6871457b5d22b3ca8260b5903f3d8a4a47",
+    "workflowBlob": "092cc25629d783a7e4cb683ee030b5c4c626bd3b",
     "archiveFiles": [
       "javascript.sarif",
       "source-extraction.json",
@@ -637,5 +645,36 @@
     ]
   },
   "nativePinBaseline": "d943e0b2384cad09b2918fe532fca50f5837e65f",
-  "nativePinTree": "b279cfcbd53c814db48bb4ab997199ea7ca9269c"
+  "nativePinTree": "b279cfcbd53c814db48bb4ab997199ea7ca9269c",
+  "sourceConvergenceBaseline": "0b6d175a4ec8abf5b899e4a1b58a09e7045fe158",
+  "sourceConvergenceTree": "9e8dff3e0863afa73e04757f77ca2bcb8c01dca2",
+  "pythonScannerBaseline": "e815eee150cd4d8121919a2a0f39c417e64ae864",
+  "pythonScannerTree": "97091066c9e55c3ffee01b8eee563216ffde44f3",
+  "pythonScannerPolicy": {
+    "producerCommit": "e815eee150cd4d8121919a2a0f39c417e64ae864",
+    "producerTree": "97091066c9e55c3ffee01b8eee563216ffde44f3",
+    "configPath": ".github/codeql/config-python-integrations.yml",
+    "configSha256": "eb5b425facefb419987bf537280d5144a477b65a205ccd71df3866b60b01e560",
+    "configBlob": "cdd0d5a0a1a0e691c3367bc5ce4429215f41381d",
+    "workflowPath": ".github/workflows/static-analysis-python-integrations.yml",
+    "workflowSha256": "06cb537c0a1502132c600bdd158284c51bb7c9296a11f831cd929ed2662eb5a5",
+    "workflowBlob": "fcec3ad137968eb75f86049ebea79543c3f314fc",
+    "archiveFiles": [
+      "python.sarif",
+      "source-extraction.json",
+      "source-scope-after.json",
+      "source-scope-before.json"
+    ]
+  },
+  "pythonScannerRequiredPaths": [
+    "integrations/alpha-agent/successor-computer-mission-lab.py",
+    "integrations/alpha-agent/successor-computer-worker-launch.py",
+    "integrations/alpha-agent/successor-frontier-mission-lab.py",
+    "integrations/alpha-agent/supplier-adapter-lab.py",
+    "integrations/alpha-agent/supplier-browser-lab.py",
+    "integrations/alpha-agent/supplier_browser_lab_support.py",
+    "integrations/alpha-agent/supplier_node_guard.py",
+    "integrations/alpha-agent/supplier_proof_guard.py"
+  ],
+  "pythonScannerReview": null
 }

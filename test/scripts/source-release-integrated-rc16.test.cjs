@@ -9,6 +9,7 @@ const {
   requiredPaths,
   requiredChecks,
   authenticCodeQL,
+  assertNoScannerErrorDiagnostics,
   validateProducer,
   verifyScannerArchive,
   verifyScannerProducerArchive,
@@ -300,15 +301,27 @@ test('scanner review installation permits only its own record and no executable 
   };
   const before = {
       scannerReview: null,
+      pythonScannerReview: null,
       qualification: 'pending',
       native: 'fixed',
     },
-    after = { ...before, scannerReview: review, qualification: 'reviewed' };
+    after = { ...before, scannerReview: review };
+  const profilePath = 'scripts/release/source-profile-rc16.json';
   const git = (command, ...args) =>
-    command === 'diff'
-      ? 'scripts/release/source-profile-rc16.json\0'
+    command === 'rev-list'
+      ? `${sha} ${review.sourceCommit}\n`
+      : command === 'rev-parse'
+      ? 'c'.repeat(40)
+      : command === 'ls-tree'
+      ? '100644 blob ' + 'd'.repeat(40) + '\t' + args.at(-1) + '\0'
+      : command === 'diff'
+      ? profilePath + '\0'
       : command === 'show'
-      ? JSON.stringify(args[0].startsWith(review.sourceCommit) ? before : after)
+      ? args[0].endsWith(':' + profilePath)
+        ? JSON.stringify(
+            args[0].startsWith(review.sourceCommit) ? before : after
+          )
+        : '<!-- rc16-scanner-review\nnull\n-->\n'
       : '';
   verifyScannerReviewBinding({ sha, review, git });
   assert.throws(
@@ -316,12 +329,12 @@ test('scanner review installation permits only its own record and no executable 
       verifyScannerReviewBinding({
         sha,
         review,
-        git: (command) =>
-          command === 'diff'
-            ? 'scripts/release/qualify-source-release-rc16.cjs\0'
-            : '',
+        git: (command, ...args) =>
+          command === 'show' && args[0] === sha + ':' + profilePath
+            ? JSON.stringify({ ...after, qualification: 'reviewed' })
+            : git(command, ...args),
       }),
-    /beyond its record/
+    /profile bytes outside/
   );
   assert.throws(
     () =>
@@ -329,11 +342,23 @@ test('scanner review installation permits only its own record and no executable 
         sha,
         review,
         git: (command, ...args) =>
-          command === 'show' && args[0].startsWith(sha)
+          command === 'diff'
+            ? 'scripts/release/qualify-source-release-rc16.cjs\0'
+            : git(command, ...args),
+      }),
+    /outside the exact two review metadata paths/
+  );
+  assert.throws(
+    () =>
+      verifyScannerReviewBinding({
+        sha,
+        review,
+        git: (command, ...args) =>
+          command === 'show' && args[0] === sha + ':' + profilePath
             ? JSON.stringify({ ...after, native: 'substituted' })
             : git(command, ...args),
       }),
-    /profile pins/
+    /profile bytes outside/
   );
 });
 test('retained readback cannot relabel another successful same-SHA run or attempt as qualified', () => {
@@ -426,7 +451,7 @@ test('retained readback cannot relabel another successful same-SHA run or attemp
 });
 test('rc.16 owns only its new tag/routes/assets and remains blocked pending actual security review', () => {
   const names = expectedAssets(profile.tag);
-  assert.equal(new Set(names).size, 21);
+  assert.equal(new Set(names).size, 24);
   for (const name of [
     'codeql-evidence.zip',
     'codeql-provenance.json',
@@ -484,8 +509,11 @@ test('mandatory scanner manifest is derived from actual pinned receiver Git sour
       encoding: 'utf8',
       maxBuffer: 32 * 1024 * 1024,
     });
-  const required = expectedReceiverSources(git, profile.nativePinBaseline);
-  assert.equal(required.length, 74);
+  const required = expectedReceiverSources(
+    git,
+    git('rev-parse', 'HEAD').trim()
+  );
+  assert.equal(required.length, 86);
   assert(profile.scannerReceiverPaths.every((file) => required.includes(file)));
   assert.equal(new Set(required).size, required.length);
 });
@@ -513,7 +541,7 @@ test('actual Git source and retained SARIF bind both mandatory extraction lists 
       full.requiredSources.includes(name)
     )
   );
-  assert(!required.includes('scripts/pages/build.mjs'));
+  assert(required.includes('scripts/pages/build.mjs'));
   assert(full.requiredSources.includes('scripts/pages/build.mjs'));
   // This is a labeled synthetic producer record over real immutable Git source
   // and retained historical SARIF. It does not establish a current scan.
@@ -660,10 +688,10 @@ test('actual Git source and retained SARIF bind both mandatory extraction lists 
       verify(records, {
         requiredSources: [
           ...profile.scannerReceiverPaths,
-          'scripts/pages/build.mjs',
+          'scripts/pages/absent-unreviewed-analysis.mjs',
         ],
       }),
-    /receiver source is absent/
+    /missing integration source extraction/
   );
   assert.throws(
     () =>
@@ -676,4 +704,32 @@ test('actual Git source and retained SARIF bind both mandatory extraction lists 
       }),
     /policy\/workflow bytes differ/
   );
+});
+
+test('test-only execution metadata rejects error diagnostics for both scanner languages', () => {
+  // Inert invocation metadata only; this is not a SARIF success fixture or
+  // authenticated scan evidence, and contains no hosted producer/run identity.
+  const label = 'SYNTHETIC_EXECUTION_METADATA_ONLY_NOT_SCAN_EVIDENCE';
+  const invocation = {
+    executionSuccessful: true,
+    toolExecutionNotifications: [
+      { level: 'note', message: { text: label } },
+      { level: 'warning', message: { text: label } },
+    ],
+  };
+  assertNoScannerErrorDiagnostics([invocation]);
+  for (const field of [
+    'toolExecutionNotifications',
+    'toolConfigurationNotifications',
+  ])
+    assert.throws(
+      () =>
+        assertNoScannerErrorDiagnostics([
+          {
+            ...invocation,
+            [field]: [{ level: 'error', message: { text: label } }],
+          },
+        ]),
+      /error diagnostic/
+    );
 });
