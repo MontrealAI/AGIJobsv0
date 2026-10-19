@@ -276,6 +276,157 @@ async function verifyBlockedFrameFallback({
     await context.close();
   }
 }
+async function verifyApprovalRevocation({
+  page,
+  url,
+  serialized,
+  approved,
+  language,
+}) {
+  await page.goto(url + route + 'desk/' + (language === 'fr' ? 'fr/' : ''), {
+    waitUntil: 'networkidle',
+  });
+  await idleDesk(page);
+  await page.locator('#fd-import').setInputFiles({
+    name: 'blank-original-mission.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(JSON.stringify(JSON.parse(serialized).mission)),
+  });
+  await page.waitForFunction(
+    () => document.getElementById('fd-import').value === ''
+  );
+  await idleDesk(page);
+  await page
+    .locator('#fd-proposal')
+    .fill('First proposal on a previously unapproved workspace.');
+  assert.doesNotMatch(
+    await page.locator('#fd-status').textContent(),
+    /previous approval|approbation précédente|ancienne approbation|approbation antérieure/i
+  );
+  const pending = async () => {
+    assert.equal(
+      await page.locator('#fd-approval-status').textContent(),
+      'PROPOSED'
+    );
+    const visible = await read(page, '#fd-result');
+    assert.equal(visible.kind, 'FrontierDeskDraft');
+    assert.equal(Object.hasOwn(visible.reframing, 'ownerApproval'), false);
+    assert.equal(
+      (await page.locator('#fd-result').textContent()).includes(
+        'OWNER_APPROVED_FOR_EXPERIMENT'
+      ),
+      false
+    );
+  };
+  const scenarios = [
+    { id: 'owner', revert: false },
+    { id: 'owner', revert: true },
+    { id: 'reason', revert: false },
+    { id: 'reason', revert: true },
+    { id: 'preserve', revert: false },
+    { id: 'preserve', revert: true },
+    { id: 'proposal', revert: true },
+    { id: 'mapping', revert: true },
+  ];
+  for (const scenario of scenarios)
+    for (const action of ['save', 'export']) {
+      await upload(page, '#fd-import', serialized);
+      await idleDesk(page);
+      assert.deepEqual(await read(page, '#fd-result'), approved);
+      const field = page.locator('#fd-' + scenario.id);
+      const original =
+        scenario.id === 'preserve'
+          ? await field.isChecked()
+          : await field.inputValue();
+      if (scenario.id === 'preserve') await field.uncheck();
+      else await field.fill(original + ' Changed for this regression.');
+      await pending();
+      if (scenario.revert) {
+        if (scenario.id === 'preserve') await field.check();
+        else await field.fill(original);
+        await pending();
+      }
+      let sealed;
+      if (action === 'save') {
+        await page.locator('#fd-save').click();
+        await idleDesk(page);
+        sealed = await read(page, '#fd-result');
+      } else {
+        const file = await download(page, '#fd-export');
+        await idleDesk(page);
+        sealed = (await restoreFrontierWorkspace(file.text)).workspace;
+      }
+      assert.equal(
+        sealed.reframing.status,
+        'PROPOSED',
+        language +
+          ' ' +
+          scenario.id +
+          ' ' +
+          action +
+          (scenario.revert ? ' reverted' : ' edited')
+      );
+      assert.equal(sealed.reframing.ownerApproval, null);
+      assert.equal(
+        await page.locator('#fd-approval-status').textContent(),
+        'PROPOSED'
+      );
+      assert.equal(
+        (await read(page, '#fd-result')).reframing.ownerApproval,
+        null
+      );
+      provenance(sealed);
+    }
+  await upload(page, '#fd-import', serialized);
+  await idleDesk(page);
+  const owner = page.locator('#fd-owner'),
+    originalOwner = await owner.inputValue();
+  await owner.fill(originalOwner + ' Revoked.');
+  await owner.fill(originalOwner);
+  await pending();
+  const renewedOwner = ('Fresh explicit ' + language + ' owner ').padEnd(
+    240,
+    'o'
+  );
+  const renewedReason = (
+    'A new exact ' +
+    language +
+    ' experiment decision; independent proof and operational authority remain absent. '
+  ).padEnd(2000, 'r');
+  assert.equal(await owner.getAttribute('maxlength'), '240');
+  assert.equal(
+    await page.locator('#fd-reason').getAttribute('maxlength'),
+    '2000'
+  );
+  await owner.fill(renewedOwner);
+  await page.locator('#fd-reason').fill(renewedReason);
+  await page.locator('#fd-preserve').check();
+  assert.equal(
+    await page.locator('#fd-preserve').isChecked(),
+    true,
+    'The checkbox input handler must not undo fresh attestation'
+  );
+  await page.locator('#fd-approve').click();
+  await idleDesk(page);
+  const renewed = await read(page, '#fd-result');
+  assert.equal(renewed.reframing.status, 'OWNER_APPROVED_FOR_EXPERIMENT');
+  assert.equal(renewed.reframing.ownerApproval.ownerLabel, renewedOwner);
+  assert.equal(renewed.reframing.ownerApproval.reason, renewedReason);
+  assert.notEqual(renewed.digest, approved.digest);
+  provenance(renewed);
+  const exported = await download(page, '#fd-export');
+  await idleDesk(page);
+  assert.deepEqual(
+    (await restoreFrontierWorkspace(exported.text)).workspace,
+    renewed
+  );
+  return {
+    language,
+    scenarios: scenarios.length,
+    terminalActions: ['save', 'export'],
+    reapproval: true,
+  };
+}
 async function capacityWorkspace(kind = 'ascii') {
   const portable = kind === 'portable',
     unicode = kind !== 'ascii';
@@ -707,7 +858,11 @@ export async function verifyFrontierMissionStudio({
       );
     await page.locator('#fd-approve').click();
     await idleDesk(page);
-    assert.equal((await read(page, '#fd-result')).reframing.status, 'PROPOSED');
+    assert.equal(
+      await page.locator('#fd-approval-status').textContent(),
+      'PROPOSED'
+    );
+    assert.equal((await read(page, '#fd-result')).kind, 'FrontierDeskDraft');
     await page.locator('#fd-preserve').check();
     await page.locator('#fd-approve').click();
     await idleDesk(page);
@@ -746,6 +901,7 @@ export async function verifyFrontierMissionStudio({
         'This approval must be cancelled if its exact mapping changes while hashing.'
       );
     await page.locator('#fd-preserve').check();
+    let pendingApprovalPreview;
     await holdDigests(page);
     try {
       await page.locator('#fd-approve').click();
@@ -758,6 +914,8 @@ export async function verifyFrontierMissionStudio({
         '#fd-mapping',
         'Changed while approval was pending; no approval may bind this mapping.'
       );
+      pendingApprovalPreview = await read(page, '#fd-result');
+      assert.equal(pendingApprovalPreview.kind, 'FrontierDeskDraft');
     } finally {
       await releaseDigests(page);
     }
@@ -765,8 +923,8 @@ export async function verifyFrontierMissionStudio({
     assert.equal(await page.locator('#fd-preserve').isChecked(), false);
     assert.deepEqual(
       await read(page, '#fd-result'),
-      changedMapping,
-      'A stale approval cannot overwrite the last saved workspace'
+      pendingApprovalPreview,
+      'A stale approval cannot overwrite the current unapproved draft'
     );
     assert.match(
       await page.locator('#fd-status').textContent(),
@@ -917,6 +1075,25 @@ export async function verifyFrontierMissionStudio({
     );
     checks.push(
       'Mission Studio: sealed workspace restores in a fresh context; tampered requirements and fabricated provider proof are rejected; the real exported native desk produces unverified drafts and cannot self-approve an owner'
+    );
+
+    const approvalRecords = [];
+    for (const language of ['en', 'fr'])
+      approvalRecords.push(
+        await verifyApprovalRevocation({
+          page,
+          url,
+          serialized: approvedFile.text,
+          approved,
+          language,
+        })
+      );
+    fs.writeFileSync(
+      path.join(artifacts, 'frontier-approval-revocation-qa.json'),
+      JSON.stringify({ passed: true, records: approvalRecords }, null, 2) + '\n'
+    );
+    checks.push(
+      'Mission Studio: owner, reason and preservation edits revoke approval through both Save and Export, including edit-and-revert of all approval/formulation controls; visible drafts stay pending until fresh explicit reapproval in EN/FR'
     );
 
     for (const language of ['en', 'fr']) {

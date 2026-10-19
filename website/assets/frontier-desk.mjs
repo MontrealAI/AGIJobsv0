@@ -72,7 +72,7 @@ export const frontierDeskCopy = {
     changed:
       'Changes pending. Update this session to bind this workspace, then export to keep it.',
     approvalReset:
-      'The formulation changed. Previous approval has been cleared.',
+      'Previous approval has been cleared. Review this draft and explicitly approve it again.',
     noProof: 'USER-ENTERED · UNVERIFIED',
     boundary:
       'A ledger is evidence of what was recorded. It is not independent proof of what happened, a solved theorem, an advantage or authorization to deploy, purchase or send messages.',
@@ -136,7 +136,7 @@ export const frontierDeskCopy = {
     changed:
       'Modifications en attente. Mettez à jour cette session pour lier cet espace, puis exportez-le pour le conserver.',
     approvalReset:
-      'La formulation a changé. L’approbation précédente a été retirée.',
+      'L’approbation précédente a été retirée. Révisez ce brouillon et approuvez-le explicitement à nouveau.',
     noProof: 'DÉCLARATIONS · NON VÉRIFIÉES',
     boundary:
       'Le journal démontre ce qui a été consigné. Il ne constitue pas une preuve indépendante des faits, un théorème résolu, un avantage ni une autorisation de déployer, acheter ou envoyer des messages.',
@@ -229,9 +229,9 @@ export function renderFrontierDeskMarkup(
     t.propose
   )}</button><div class="fm-grid-two fd-approval"><div class="fm-field"><label for="fd-owner">${escapeHTML(
     t.owner
-  )}</label><input id="fd-owner" maxlength="100"></div><div class="fm-field"><label for="fd-reason">${escapeHTML(
+  )}</label><input id="fd-owner" maxlength="240"></div><div class="fm-field"><label for="fd-reason">${escapeHTML(
     t.reason
-  )}</label><textarea id="fd-reason" maxlength="1000" rows="2"></textarea></div></div><label class="fm-check"><input id="fd-preserve" type="checkbox"><span>${escapeHTML(
+  )}</label><textarea id="fd-reason" maxlength="2000" rows="2"></textarea></div></div><label class="fm-check"><input id="fd-preserve" type="checkbox"><span>${escapeHTML(
     t.preserve
   )}</span></label><button type="button" class="fm-button fm-secondary" id="fd-approve">${escapeHTML(
     t.approve
@@ -262,7 +262,8 @@ export function initFrontierDesk(root, configuration = {}, callbacks = {}) {
   let mission = config.mission,
     workspace = config.workspace || null,
     editGeneration = 0,
-    activeGuard = null;
+    activeGuard = null,
+    approvalRevoked = false;
   const fixedProvenance = {
     classification: 'USER_ENTERED_UNVERIFIED',
     executionStatus: 'NOT_ATTESTED',
@@ -380,6 +381,7 @@ export function initFrontierDesk(root, configuration = {}, callbacks = {}) {
   function setWorkspace(next) {
     assertCurrent();
     workspace = next ? JSON.parse(JSON.stringify(next)) : null;
+    approvalRevoked = false;
     $('strategy').value = next?.strategyLedger || '';
     $('experiments').value = next?.experimentLedger || '';
     $('evidence').value = next?.evidenceLedger || '';
@@ -399,10 +401,16 @@ export function initFrontierDesk(root, configuration = {}, callbacks = {}) {
     next.experimentLedger = $('experiments').value;
     next.evidenceLedger = $('evidence').value;
     const proposal = $('proposal').value,
-      mapping = $('mapping').value;
+      mapping = $('mapping').value,
+      previousApproval = next.reframing.ownerApproval;
     if (
+      approvalRevoked ||
       proposal !== next.reframing.proposal ||
-      mapping !== next.reframing.hardRequirementMapping
+      mapping !== next.reframing.hardRequirementMapping ||
+      (previousApproval &&
+        ($('owner').value !== previousApproval.ownerLabel ||
+          $('reason').value !== previousApproval.reason ||
+          !$('preserve').checked))
     ) {
       next.reframing = {
         proposal,
@@ -430,6 +438,10 @@ export function initFrontierDesk(root, configuration = {}, callbacks = {}) {
   }
   async function act(handler, fallback) {
     if (activeGuard) return false;
+    // A focused editor can emit its pending change event when controls disable.
+    // Settle that edit before binding this action to the current generation.
+    root.querySelector('input:focus, textarea:focus')?.blur();
+    if (activeGuard) return false;
     activeGuard = {
       generation: editGeneration,
       missionDigest: mission?.digest,
@@ -453,20 +465,24 @@ export function initFrontierDesk(root, configuration = {}, callbacks = {}) {
       root.setAttribute('aria-busy', 'false');
     }
   }
-  function clearApproval() {
+  function clearApproval(event) {
     editGeneration++;
+    approvalRevoked = true;
     if (!workspace) return;
-    $('preserve').checked = false;
-    $('approval-status').textContent = t.approvalReset;
-    status(t.changed);
+    if (event.currentTarget !== $('preserve')) $('preserve').checked = false;
+    $('approval-status').textContent =
+      $('proposal').value || $('mapping').value ? 'PROPOSED' : 'NOT_PROPOSED';
+    showResult(draftEnvelope());
+    status(workspace.reframing.ownerApproval ? t.approvalReset : t.changed);
   }
   for (const id of ['strategy', 'experiments', 'evidence'])
     $(id).addEventListener('input', () => {
       editGeneration++;
       status(t.changed);
     });
-  for (const id of ['proposal', 'mapping'])
-    $(id).addEventListener('input', clearApproval);
+  for (const id of ['proposal', 'mapping', 'owner', 'reason', 'preserve'])
+    for (const event of ['input', 'change'])
+      $(id).addEventListener(event, clearApproval);
   $('save').addEventListener('click', () =>
     act(callbacks.onSave, () => {
       workspace = collect();
@@ -525,11 +541,6 @@ export function initFrontierDesk(root, configuration = {}, callbacks = {}) {
       );
     })
   );
-  for (const id of ['owner', 'reason', 'preserve'])
-    $(id).addEventListener('input', () => {
-      editGeneration++;
-      status(t.changed);
-    });
   const api = {
     runAction: (handler) => act(handler, () => {}),
     assertCurrent,

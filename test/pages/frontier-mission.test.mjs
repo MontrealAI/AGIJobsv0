@@ -12,7 +12,12 @@ import {
   createFrontierComputerTask,
   importFrontierDeskDraft,
 } from '../../packages/successor-core/src/frontier-mission.mjs';
-import { renderFrontierDeskDocument } from '../../website/assets/frontier-desk.mjs';
+import {
+  renderFrontierDeskDocument,
+  renderFrontierDeskMarkup,
+  initFrontierDesk,
+  safeFrontierJSON,
+} from '../../website/assets/frontier-desk.mjs';
 import { renderFrontierMissionPage } from '../../scripts/pages/frontier-mission.mjs';
 
 const input = (preset = 'business') => ({
@@ -121,6 +126,121 @@ test('the exported desk runs its real text controls and returns attributable dra
       );
   } finally {
     window.close();
+  }
+});
+
+test('public desk approval stays revoked after control edits are reverted, until an explicit sealed approval is supplied', async () => {
+  const mission = await sourceMission();
+  const proposed = await proposeFrontierFormulation(
+    mission,
+    await createFrontierWorkspace(mission),
+    {
+      proposal:
+        'Compare independent argument mapping while preserving every original requirement.',
+      hardRequirementMapping:
+        'All original requirements remain unchanged and must be checked separately.',
+    }
+  );
+  const approved = await approveFrontierFormulation(mission, proposed, {
+    ownerLabel: 'Original owner',
+    reason:
+      'Authorize only the exact experiment, without independent proof or operational authority.',
+    hardRequirementsPreserved: true,
+  });
+  for (const language of ['en', 'fr']) {
+    const window = new JSDOM(renderFrontierDeskMarkup(mission, { language }), {
+      runScripts: 'outside-only',
+    }).window;
+    try {
+      const api = window.eval(
+        '(' +
+          initFrontierDesk.toString() +
+          ')(document.querySelector("[data-frontier-desk]"),' +
+          safeFrontierJSON({ mission, workspace: approved, language }) +
+          ')'
+      );
+      const document = window.document;
+      assert.equal(document.getElementById('fd-owner').maxLength, 240);
+      assert.equal(document.getElementById('fd-reason').maxLength, 2000);
+      api.setWorkspace(await createFrontierWorkspace(mission));
+      document.getElementById('fd-proposal').value =
+        'First proposal on a previously unapproved workspace.';
+      document
+        .getElementById('fd-proposal')
+        .dispatchEvent(new window.Event('input', { bubbles: true }));
+      assert.doesNotMatch(
+        document.getElementById('fd-status').textContent,
+        /previous approval|approbation précédente|ancienne approbation|approbation antérieure/i
+      );
+      for (const id of ['owner', 'reason', 'preserve', 'proposal', 'mapping']) {
+        for (const eventName of ['input', 'change']) {
+          api.setWorkspace(approved);
+          const field = document.getElementById('fd-' + id);
+          const original = id === 'preserve' ? field.checked : field.value;
+          const edit = (value) => {
+            if (id === 'preserve') field.checked = value;
+            else field.value = value;
+            field.dispatchEvent(new window.Event(eventName, { bubbles: true }));
+          };
+          edit(id === 'preserve' ? false : original + ' Edited.');
+          for (const phase of ['edited', 'reverted']) {
+            if (phase === 'reverted') edit(original);
+            const draft = api.collect();
+            assert.equal(
+              draft.reframing.status,
+              'PROPOSED',
+              language + ' ' + id + ' ' + eventName + ' ' + phase
+            );
+            assert.equal(draft.reframing.ownerApproval, null);
+            assert.equal(
+              document.getElementById('fd-approval-status').textContent,
+              'PROPOSED'
+            );
+            const visible = JSON.parse(
+              document.getElementById('fd-result').textContent
+            );
+            assert.equal(visible.kind, 'FrontierDeskDraft');
+            assert.equal(
+              Object.hasOwn(visible.reframing, 'ownerApproval'),
+              false
+            );
+            assert.equal(
+              document
+                .getElementById('fd-result')
+                .textContent.includes('OWNER_APPROVED_FOR_EXPERIMENT'),
+              false
+            );
+            assert.equal(draft.provenance.independentProof, false);
+            assert.equal(draft.provenance.authorityCreated, 'NONE');
+          }
+          if (id === 'preserve')
+            assert.equal(
+              field.checked,
+              true,
+              'Checking the attestation must remain possible after revocation'
+            );
+        }
+      }
+      for (const id of ['owner', 'reason', 'preserve']) {
+        api.setWorkspace(approved);
+        const field = document.getElementById('fd-' + id);
+        if (id === 'preserve') field.checked = false;
+        else field.value += ' Changed without an input event.';
+        assert.equal(
+          api.collect().reframing.ownerApproval,
+          null,
+          'Collection must defensively compare ' + id
+        );
+      }
+      api.setWorkspace(approved);
+      assert.equal(
+        api.collect().reframing.status,
+        'OWNER_APPROVED_FOR_EXPERIMENT'
+      );
+      assert.equal(document.getElementById('fd-preserve').checked, true);
+    } finally {
+      window.close();
+    }
   }
 });
 

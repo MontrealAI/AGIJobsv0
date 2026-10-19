@@ -143,7 +143,9 @@ report an invented computation.
 unnecessarily restrictive, propose a different formulation and map every hard
 requirement to how it remains satisfied. Submit the exact proposal for an
 explicit owner decision before treating that formulation as approved for an
-experiment. Editing it invalidates the previous approval. The immutable mission
+experiment. Editing the formulation, requirement mapping or owner attestation
+controls clears the previous approval. Reverting an edit or rechecking the box
+leaves approval pending until a new explicit decision. The immutable mission
 requirements remain in the record.
 
 An owner label and approval are self-attested records. They grant no purchasing,
