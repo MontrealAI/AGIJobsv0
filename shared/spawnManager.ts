@@ -8,6 +8,7 @@ import {
   type TrainingRecord,
 } from './trainingRecords';
 import { readEnergySamples, type EnergySample } from './energyMonitor';
+import { MAX_AGENT_LABEL_LENGTH, validateAgentLabel } from './agentLabel';
 
 export interface SpawnRequest {
   category: string;
@@ -247,16 +248,17 @@ function generateUniqueLabel(
   categoryLabel: string,
   existing: Set<string>
 ): string {
-  let base = slugify(categoryLabel);
-  if (!base) {
-    base = 'agent';
-  }
+  const slug = slugify(categoryLabel) || 'agent';
+  const base = slug.slice(0, MAX_AGENT_LABEL_LENGTH).replace(/-+$/, '');
   let candidate = base;
   let counter = 2;
   while (existing.has(candidate.toLowerCase())) {
-    candidate = `${base}-${counter}`;
+    const suffix = `-${counter}`;
+    const prefix = base.slice(0, MAX_AGENT_LABEL_LENGTH - suffix.length).replace(/-+$/, '');
+    candidate = validateAgentLabel(`${prefix}${suffix}`);
     counter += 1;
   }
+  validateAgentLabel(candidate);
   existing.add(candidate.toLowerCase());
   return candidate;
 }
@@ -420,6 +422,7 @@ async function persistBlueprint(
   blueprint: AgentBlueprint,
   blueprintDir = BLUEPRINT_DIR
 ): Promise<string> {
+  validateAgentLabel(blueprint.ensLabel);
   ensureDir(blueprintDir);
   const timestamp = formatTimestamp(new Date(blueprint.createdAt));
   const file = path.join(
@@ -442,6 +445,8 @@ export async function createBlueprintForCandidate(
   candidate: SpawnCandidate,
   options: BlueprintOptions = {}
 ): Promise<AgentBlueprint> {
+  // Capture the validated value before any asynchronous work or wallet creation.
+  const ensLabel = validateAgentLabel(candidate.recommendedLabel);
   const now = options.now ?? new Date();
   const metrics = await buildBlueprintMetrics(candidate);
   const wallet = ethers.Wallet.createRandom();
@@ -449,8 +454,8 @@ export async function createBlueprintForCandidate(
     id: crypto.randomUUID(),
     category: candidate.category,
     categoryKey: candidate.categoryKey,
-    ensLabel: candidate.recommendedLabel,
-    ensName: `${candidate.recommendedLabel}.agent.agi.eth`,
+    ensLabel,
+    ensName: `${ensLabel}.agent.agi.eth`,
     createdAt: now.toISOString(),
     wallet: {
       address: wallet.address,
@@ -469,7 +474,7 @@ export async function createBlueprintForCandidate(
       tags: [
         'spawn-request',
         candidate.categoryKey,
-        candidate.recommendedLabel,
+        ensLabel,
       ],
       notes: buildBlueprintNotes(candidate),
     },

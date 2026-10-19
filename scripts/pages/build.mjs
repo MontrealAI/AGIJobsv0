@@ -961,6 +961,17 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
     logLevel: 'warning',
   });
   fs.copyFileSync(
+    path.join(root, 'integrations/alpha-agent/vendor/alpha-computer/LICENSE'),
+    path.join(output, 'assets/alpha-computer-LICENSE.txt')
+  );
+  fs.copyFileSync(
+    path.join(
+      root,
+      'integrations/alpha-agent/vendor/alpha-computer/source-manifest.json'
+    ),
+    path.join(output, 'assets/alpha-computer-source.json')
+  );
+  fs.copyFileSync(
     path.join(root, 'website/assets/successor.css'),
     path.join(output, 'assets/successor.css')
   );

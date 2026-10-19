@@ -23,6 +23,9 @@ const requiredPath = (name) => {
   return value;
 };
 function boundedUtf8(filename, maxBytes) {
+  assert(
+    Number.isSafeInteger(maxBytes) && maxBytes > 0 && maxBytes <= 8_388_608
+  );
   const fd = fs.openSync(
     filename,
     fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW | fs.constants.O_NONBLOCK
@@ -33,7 +36,31 @@ function boundedUtf8(filename, maxBytes) {
       stat.isFile() && stat.size <= maxBytes,
       'Input must be a bounded regular file'
     );
-    const bytes = fs.readFileSync(fd);
+    const chunk = Buffer.alloc(Math.min(maxBytes + 1, 64 * 1024));
+    const chunks = [];
+    let used = 0;
+    while (used <= maxBytes) {
+      const count = fs.readSync(
+        fd,
+        chunk,
+        0,
+        Math.min(chunk.length, maxBytes + 1 - used),
+        null
+      );
+      if (count === 0) break;
+      chunks.push(Buffer.from(chunk.subarray(0, count)));
+      used += count;
+    }
+    const after = fs.fstatSync(fd);
+    assert(
+      used <= maxBytes &&
+        used === stat.size &&
+        after.size === stat.size &&
+        after.mtimeMs === stat.mtimeMs &&
+        after.ctimeMs === stat.ctimeMs,
+      'Input grew or changed during bounded read'
+    );
+    const bytes = Buffer.concat(chunks, used);
     const text = bytes.toString('utf8');
     assert(
       Buffer.from(text, 'utf8').equals(bytes),
@@ -51,6 +78,75 @@ async function confirmed(operation) {
   return transaction;
 }
 
+async function observeMockGas(provider, firstBlock, lastBlock) {
+  assert(Number.isSafeInteger(firstBlock) && firstBlock >= 0);
+  assert(
+    Number.isSafeInteger(lastBlock) &&
+      lastBlock > firstBlock &&
+      lastBlock - firstBlock <= 1000
+  );
+  const quantity = (value) => {
+    assert(/^0x(?:0|[1-9a-f][0-9a-f]*)$/.test(value));
+    return BigInt(value);
+  };
+  const receipts = [];
+  let totalGasUsed = 0n;
+  let totalMockFeeWei = 0n;
+  for (let number = firstBlock + 1; number <= lastBlock; number++) {
+    const block = await provider.send('eth_getBlockByNumber', [
+      '0x' + number.toString(16),
+      false,
+    ]);
+    assert.equal(quantity(block.number), BigInt(number));
+    assert(/^0x[a-f0-9]{64}$/.test(block.hash));
+    assert(Array.isArray(block.transactions));
+    assert(block.transactions.length <= 1000);
+    for (const [index, hash] of block.transactions.entries()) {
+      assert(/^0x[a-f0-9]{64}$/.test(hash));
+      const receipt = await provider.send('eth_getTransactionReceipt', [hash]);
+      assert.equal(receipt.transactionHash, hash);
+      assert.equal(receipt.blockHash, block.hash);
+      assert.equal(quantity(receipt.blockNumber), BigInt(number));
+      assert.equal(quantity(receipt.transactionIndex), BigInt(index));
+      const status = quantity(receipt.status);
+      assert(status === 0n || status === 1n);
+      const gasUsed = quantity(receipt.gasUsed);
+      const price = quantity(receipt.effectiveGasPrice);
+      assert(gasUsed > 0n);
+      const fee = gasUsed * price;
+      totalGasUsed += gasUsed;
+      totalMockFeeWei += fee;
+      receipts.push({
+        transactionHash: hash,
+        blockHash: block.hash,
+        blockNumber: number,
+        transactionIndex: index,
+        status: Number(status),
+        gasUsed: gasUsed.toString(),
+        effectiveGasPriceWei: price.toString(),
+        mockFeeWei: fee.toString(),
+      });
+    }
+  }
+  assert(receipts.length > 0);
+  assert.equal(
+    new Set(receipts.map((receipt) => receipt.transactionHash)).size,
+    receipts.length
+  );
+  return {
+    classification: 'DISPOSABLE_MOCK_GAS_NOT_REAL_EXPENDITURE',
+    scope:
+      'all mined fixture transactions including deployment, setup and both job outcomes',
+    firstIncludedBlock: firstBlock + 1,
+    lastIncludedBlock: lastBlock,
+    receipts,
+    totalGasUsed: totalGasUsed.toString(),
+    totalMockFeeWei: totalMockFeeWei.toString(),
+    publicNetworkEstimate: false,
+    realAssetExpenditure: false,
+  };
+}
+
 async function assertDisposableNetwork(network, provider) {
   assert.equal(
     network.name,
@@ -65,14 +161,18 @@ async function assertDisposableNetwork(network, provider) {
 }
 
 async function main() {
-  const { ethers, artifacts, network } = require('hardhat');
-  await assertDisposableNetwork(network, ethers.provider);
-
+  const started = performance.now();
   const inputFile = requiredPath('FQR_DRAFT_FILE');
   const alphaRoot = requiredPath('FQR_ALPHA_SOURCE');
   const outputFile = requiredPath('FQR_EVIDENCE_FILE');
   assert(!fs.existsSync(outputFile), 'Evidence output must be new');
   assert.notEqual(outputFile, inputFile, 'Evidence cannot replace its input');
+  const raw = boundedUtf8(inputFile, 8_388_608);
+  const { ethers, artifacts, network } = require('hardhat');
+  await assertDisposableNetwork(network, ethers.provider);
+  const firstBlock = Number(
+    BigInt(await ethers.provider.send('eth_blockNumber'))
+  );
   const expectedAlphaCommit = process.env.FQR_ALPHA_COMMIT;
   assert(
     /^[0-9a-f]{40}$/.test(expectedAlphaCommit || ''),
@@ -113,7 +213,6 @@ async function main() {
   const { inspectComputerReceiptDraft } = await import(
     './four-repo-computer-receipt.mjs'
   );
-  const raw = boundedUtf8(inputFile, 8_388_608);
   const draft = await inspectComputerReceiptDraft(raw, {
     inspectAlphaReturn: inspectComputerReturn,
   });
@@ -259,6 +358,7 @@ async function main() {
     ),
   };
   const lifecycle = async (jobId, artifactHash, accepted) => {
+    const lifecycleStarted = performance.now();
     const deadline =
       (await ethers.provider.getBlock('latest')).timestamp + 3600;
     const created = await confirmed(
@@ -344,6 +444,7 @@ async function main() {
         state: 'Disputed',
         workerPayoutBaseUnits: '0',
         settlementPerformed: false,
+        elapsedMilliseconds: Math.ceil(performance.now() - lifecycleStarted),
       };
     }
     const finalized = await confirmed(
@@ -369,11 +470,17 @@ async function main() {
       state: 'Finalized',
       workerPayoutBaseUnits: delta.toString(),
       settlementPerformed: true,
+      elapsedMilliseconds: Math.ceil(performance.now() - lifecycleStarted),
     };
   };
   const accepted = await lifecycle(1, resultHash, true);
   const rejectedArtifact = JSON.stringify(returned);
   const rejected = await lifecycle(2, '0x' + sha256(rejectedArtifact), false);
+  const gasObservation = await observeMockGas(
+    ethers.provider,
+    firstBlock,
+    Number(BigInt(await ethers.provider.send('eth_blockNumber')))
+  );
   const evidence = {
     schema: 'agijobsv0/four-repo-disposable-computer-lifecycle/v1',
     scope: 'fresh-in-process-hardhat-31337',
@@ -398,6 +505,10 @@ async function main() {
     deployment,
     accepted,
     rejected,
+    gasObservation,
+    elapsedMilliseconds: Math.ceil(performance.now() - started),
+    timingScope:
+      'fixture main entry through local receipt collection; compilation and browser execution excluded',
     negativeChecks: [
       'Unbound native observation refused before fixture transaction',
       'Wrong exact result digest refused by receipt verifier',
@@ -435,7 +546,7 @@ async function main() {
   );
 }
 
-module.exports = { assertDisposableNetwork };
+module.exports = { assertDisposableNetwork, observeMockGas, boundedUtf8 };
 if (require.main === module)
   main().catch((error) => {
     console.error(error.message);

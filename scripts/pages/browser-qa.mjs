@@ -13,6 +13,7 @@ import { verifySuccessor } from './successor-qa.mjs';
 import { verifySuccessorAlpha } from './successor-alpha-qa.mjs';
 import { verifySourceMission } from './source-mission-qa.mjs';
 import { verifyComputerMission } from './computer-mission-qa.mjs';
+import { verifyComputerReceipt } from './computer-receipt-qa.mjs';
 import { verifyFrontierMissionStudio } from './frontier-mission-qa.mjs';
 import { verifyPhase6 } from './phase6-qa.mjs';
 import { verifyOmniphoenix } from './omniphoenix-qa.mjs';
@@ -483,6 +484,7 @@ try {
   await verifySuccessorAlpha({ page, context, url, artifacts, a11y, checks });
   await verifySourceMission({ page, context, url, artifacts, a11y, checks });
   await verifyComputerMission({ page, context, url, artifacts, a11y, checks });
+  await verifyComputerReceipt({ page, url, artifacts, checks });
   await verifyFrontierMissionStudio({
     page,
     context,

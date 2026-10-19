@@ -2,6 +2,7 @@ import { Contract, Wallet, ethers } from 'ethers';
 import { loadEnsConfig } from '../scripts/config';
 import { provider } from './utils';
 import { secureLogAction } from './security';
+import { validateAgentLabel } from '../shared/agentLabel';
 
 export type EnsSpace = 'agent' | 'club' | 'business';
 
@@ -41,7 +42,7 @@ function normaliseLabel(label: string): string {
   if (trimmed.includes('--')) {
     throw new Error('ENS label cannot contain consecutive hyphens');
   }
-  return trimmed;
+  return validateAgentLabel(trimmed);
 }
 
 const { config: ensConfig } = loadEnsConfig({
