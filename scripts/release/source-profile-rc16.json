@@ -415,14 +415,14 @@
   "nativeCompatibility": {
     "schema": "agijobsv0/transformational-native-compatibility/v1",
     "repository": "MontrealAI/AGI-Alpha-Agent-v0",
-    "commit": "124a3b636baa916fe6c4400e03e55198114dd212",
-    "tree": "dce26926d2a4282a1591dbce4bfd6c36ef4caaa9",
+    "commit": "dbaf5696d64ddcbf133f05d88d35496ebb85c3f0",
+    "tree": "30dc828703a6e9cd64103e0ebc965fc701e9bcf3",
     "fixturePath": "examples/transformational-intelligence/campaign.json",
     "boundary": "free-inspection-positive-payment-refused",
     "files": {
       "docs/assets/successor/engine.mjs": "38c4f38978bf9fc29f207bae3adee0755bc6530d04502a36c491cc430787e488",
-      "examples/transformational-intelligence/campaign.json": "a8a1e549d80c234e785fd4008f3b0e4f9f571c47cbb1e1cfef74414633cb4e19",
-      "examples/transformational-intelligence/inspector.mjs": "e7b584f2c79a7c574e5be60bbec4205c95c07bbd0d842ce7b0766a92b24cd2ea"
+      "examples/transformational-intelligence/campaign.json": "fa5f570e89c20cffd0df844869047a7c0594c5460c3e95df5ada44592ea4fd20",
+      "examples/transformational-intelligence/inspector.mjs": "b5f8e704aaab345f9d6503c854d38910ddfabbf98fe674c48b051097812b07f4"
     }
   },
   "scannerRequiredPaths": [
@@ -457,5 +457,75 @@
       "source-scope-before.json"
     ]
   },
-  "scannerReview": null
+  "scannerReview": null,
+  "nativePinBaseline": "38a96554bb0932ff343c27c99bd397b372e4212c",
+  "nativePinTree": "ae407c07b079174b45fe10697015de8ab132118b",
+  "nativePinTransitions": [
+    {
+      "path": ".github/workflows/successor-computer.yml",
+      "before": {
+        "mode": "100644",
+        "blob": "ba4d7159a3ba33a85bc3a7b877f6a09b77251938"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "c605d05b1846e0bed5285265c3a23a69b649995b"
+      }
+    },
+    {
+      "path": "integrations/alpha-agent/successor-computer-mission-lab.py",
+      "before": {
+        "mode": "100644",
+        "blob": "8a2bf3c2c1f9d3cfee695129c43ed11053f37651"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "4b2604e880cce957094ac29d7a31b2ffe6526a05"
+      }
+    },
+    {
+      "path": "integrations/alpha-agent/project-native-source.mjs",
+      "before": {
+        "mode": "100644",
+        "blob": "68cbbf1271625575ea37486e10593e09d105b247"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "a0834a4eec43341cfbe40ca80981942a898e4d33"
+      }
+    },
+    {
+      "path": "integrations/alpha-agent/vendor/alpha-computer/source-manifest.json",
+      "before": {
+        "mode": "100644",
+        "blob": "05816f76b3031f4f19e583d3b6e44441b08fa25d"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "8582e7e569d1ef784d68b2f69638a260ea9c6d6b"
+      }
+    },
+    {
+      "path": "integrations/alpha-agent/vendor/alpha-computer/source-identity.mjs",
+      "before": {
+        "mode": "100644",
+        "blob": "446b360f83601fc036d365323e63b432d37e219e"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "56cf2b911d2411b0653f849b5434dc93b5784adc"
+      }
+    },
+    {
+      "path": "integrations/alpha-agent/project-source-selector.mjs",
+      "before": {
+        "mode": "100644",
+        "blob": "a570c5bdd093926f3650b9da214150bb8b870af1"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "0dc320ab467d80141a5651a9ec6b8ece4d68b7a0"
+      }
+    }
+  ]
 }

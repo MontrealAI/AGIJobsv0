@@ -22,6 +22,8 @@ const anchors = Object.freeze({
   implementationTree: '6003d3d7286fe9fa4bf6875deefc01e579ce9dfc',
   integrationBaseline: 'b1e03ef48f517054802a513f0302ef06d285f17a',
   integrationTree: '9fd2d43a5075ed54b308ff381da92cb402d26319',
+  nativePinBaseline: '38a96554bb0932ff343c27c99bd397b372e4212c',
+  nativePinTree: 'ae407c07b079174b45fe10697015de8ab132118b',
 });
 const allowedNewPaths = Object.freeze([
   'scripts/release/source-profile-rc16.cjs',
@@ -44,17 +46,17 @@ const allowedExistingPaths = Object.freeze([
 const nativeCompatibility = freeze({
   schema: 'agijobsv0/transformational-native-compatibility/v1',
   repository: 'MontrealAI/AGI-Alpha-Agent-v0',
-  commit: '124a3b636baa916fe6c4400e03e55198114dd212',
-  tree: 'dce26926d2a4282a1591dbce4bfd6c36ef4caaa9',
+  commit: 'dbaf5696d64ddcbf133f05d88d35496ebb85c3f0',
+  tree: '30dc828703a6e9cd64103e0ebc965fc701e9bcf3',
   fixturePath: 'examples/transformational-intelligence/campaign.json',
   boundary: 'free-inspection-positive-payment-refused',
   files: {
     'docs/assets/successor/engine.mjs':
       '38c4f38978bf9fc29f207bae3adee0755bc6530d04502a36c491cc430787e488',
     'examples/transformational-intelligence/campaign.json':
-      'a8a1e549d80c234e785fd4008f3b0e4f9f571c47cbb1e1cfef74414633cb4e19',
+      'fa5f570e89c20cffd0df844869047a7c0594c5460c3e95df5ada44592ea4fd20',
     'examples/transformational-intelligence/inspector.mjs':
-      'e7b584f2c79a7c574e5be60bbec4205c95c07bbd0d842ce7b0766a92b24cd2ea',
+      'b5f8e704aaab345f9d6503c854d38910ddfabbf98fe674c48b051097812b07f4',
   },
 });
 const scannerRequiredPaths = Object.freeze([
@@ -112,6 +114,14 @@ const integrationPaths = Object.freeze([
   'website/assets/computer-receipt-copy.mjs',
   'website/assets/computer-receipt-model.mjs',
   'website/assets/computer-receipt.mjs',
+]);
+const nativePinPaths = Object.freeze([
+  '.github/workflows/successor-computer.yml',
+  'integrations/alpha-agent/project-native-source.mjs',
+  'integrations/alpha-agent/project-source-selector.mjs',
+  'integrations/alpha-agent/successor-computer-mission-lab.py',
+  'integrations/alpha-agent/vendor/alpha-computer/source-identity.mjs',
+  'integrations/alpha-agent/vendor/alpha-computer/source-manifest.json',
 ]);
 const excludedCompilerPaths = new Set(
   historical.reviewedCompilerPaths
@@ -263,6 +273,50 @@ function verifyIntegrationTransitions(beforeTree, afterTree, transitions) {
   return [...integrationPaths].sort();
 }
 
+function verifyNativePinTransitions(beforeTree, afterTree, transitions) {
+  requireValue(
+    beforeTree instanceof Map &&
+      afterTree instanceof Map &&
+      Array.isArray(transitions) &&
+      same(
+        transitions.map((item) => item.path).sort(),
+        [...nativePinPaths].sort()
+      ),
+    'Complete finite native pin transition paths differ'
+  );
+  for (const item of transitions) {
+    fields(
+      item,
+      ['path', 'before', 'after'],
+      'Malformed native pin transition'
+    );
+    for (const identity of [item.before, item.after]) {
+      if (identity === null) continue;
+      fields(identity, ['mode', 'blob'], 'Malformed native pin blob identity');
+      requireValue(
+        identity.mode === '100644' && /^[a-f0-9]{40}$/.test(identity.blob),
+        'Native pin source must retain reviewed regular blob modes'
+      );
+    }
+    requireValue(
+      item.after !== null &&
+        !same(item.before, item.after) &&
+        (item.before === null || item.before.mode === item.after.mode),
+      'Native pin deletion, unchanged transition or mode change is prohibited'
+    );
+    requireValue(
+      same(beforeTree.get(item.path) ?? null, item.before) &&
+        same(afterTree.get(item.path) ?? null, item.after),
+      'Reviewed native pin blob differs: ' + item.path
+    );
+  }
+  requireValue(
+    same(changedPaths(beforeTree, afterTree), [...nativePinPaths].sort()),
+    'Complete native pin transition inventory differs'
+  );
+  return [...nativePinPaths].sort();
+}
+
 function verifyReleaseDelta(beforeTree, afterTree) {
   const changes = changedPaths(beforeTree, afterTree);
   for (const name of changes) {
@@ -370,6 +424,7 @@ function validateProfile(value = profile) {
       ...Object.keys(anchors),
       'transitions',
       'integrationTransitions',
+      'nativePinTransitions',
       'nativeCompatibility',
       'scannerPolicy',
       'scannerRequiredPaths',
@@ -398,6 +453,8 @@ function validateProfile(value = profile) {
   requireValue(
     Array.isArray(value.integrationTransitions) &&
       value.integrationTransitions.length === 19 &&
+      Array.isArray(value.nativePinTransitions) &&
+      value.nativePinTransitions.length === 6 &&
       same(value.scannerPolicy, scannerPolicy) &&
       same(value.nativeCompatibility, nativeCompatibility) &&
       same(value.scannerRequiredPaths, scannerRequiredPaths) &&
@@ -424,6 +481,7 @@ function verifySourceScope({ git, sha, version, lock, policy }) {
     profile.securityPrerequisite,
     profile.implementationBaseline,
     profile.integrationBaseline,
+    profile.nativePinBaseline,
   ])
     git('merge-base', '--is-ancestor', baseline, sha);
   requireValue(
@@ -469,6 +527,9 @@ function verifySourceScope({ git, sha, version, lock, policy }) {
   const integrationTree = parseTree(
     git('ls-tree', '-rz', profile.integrationBaseline)
   );
+  const nativePinTree = parseTree(
+    git('ls-tree', '-rz', profile.nativePinBaseline)
+  );
   const releaseTree = parseTree(git('ls-tree', '-rz', sha));
   verifyProtectedTransitions(
     baselineTree,
@@ -511,7 +572,23 @@ function verifySourceScope({ git, sha, version, lock, policy }) {
         integrationTree.get(name)?.blob === blob,
       'Reviewed scanner producer blob differs: ' + name
     );
-  const releaseChanges = verifyReleaseDelta(integrationTree, releaseTree);
+  requireValue(
+    text(git('rev-parse', profile.nativePinBaseline + '^{tree}')).trim() ===
+      profile.nativePinTree,
+    'Native pin candidate tree differs'
+  );
+  git(
+    'merge-base',
+    '--is-ancestor',
+    profile.integrationBaseline,
+    profile.nativePinBaseline
+  );
+  verifyNativePinTransitions(
+    integrationTree,
+    nativePinTree,
+    profile.nativePinTransitions
+  );
+  const releaseChanges = verifyReleaseDelta(nativePinTree, releaseTree);
   const afterPackage = readJSON(sha, 'package.json'),
     afterLock = readJSON(sha, 'package-lock.json');
   verifyVersionOnly(
@@ -542,6 +619,7 @@ function verifySourceScope({ git, sha, version, lock, policy }) {
     compiler: compiler.longVersion,
     protectedTransitions: profile.transitions,
     integrationTransitions: profile.integrationTransitions,
+    nativePinTransitions: profile.nativePinTransitions,
     scannerPolicy: profile.scannerPolicy,
     releaseChanges,
     nativeCompatibility: profile.nativeCompatibility,
@@ -568,6 +646,7 @@ module.exports = {
   parseTree,
   verifyProtectedTransitions,
   verifyIntegrationTransitions,
+  verifyNativePinTransitions,
   verifyReleaseDelta,
   verifyVersionOnly,
   LEGACY_WORKFLOW_GUARD,

@@ -161,6 +161,10 @@ async function verifyDownloadedAssets({
     provenance.sourceScope?.integrationTree !== profile.integrationTree ||
     canonical(provenance.sourceScope?.integrationTransitions) !==
       canonical(profile.integrationTransitions) ||
+    provenance.sourceScope?.nativePinBaseline !== profile.nativePinBaseline ||
+    provenance.sourceScope?.nativePinTree !== profile.nativePinTree ||
+    canonical(provenance.sourceScope?.nativePinTransitions) !==
+      canonical(profile.nativePinTransitions) ||
     canonical(provenance.sourceScope?.scannerPolicy) !==
       canonical(profile.scannerPolicy) ||
     canonical(provenance.sourceScope?.scannerRequiredPaths) !==

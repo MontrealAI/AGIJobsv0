@@ -184,7 +184,7 @@ test('complete source verifier accepts only finite release plumbing over the act
     path.join(r.root, '.git/objects/info/alternates'),
     objects + '\n'
   );
-  r.git('read-tree', p.profile.integrationBaseline);
+  r.git('read-tree', p.profile.nativePinBaseline);
   const beforePackage = JSON.parse(
     r.git('show', `${p.profile.integrationBaseline}:package.json`)
   );
@@ -219,7 +219,7 @@ test('complete source verifier accepts only finite release plumbing over the act
   );
   const args = {
     git: r.git,
-    sha: r.commit(p.profile.integrationBaseline),
+    sha: r.commit(p.profile.nativePinBaseline),
     version: p.profile.releaseVersion,
     lock: afterLock,
     policy,
@@ -229,6 +229,7 @@ test('complete source verifier accepts only finite release plumbing over the act
   assert.equal(result.productionApproved, false);
   assert.equal(result.scannerReview, null);
   assert.equal(result.protectedTransitions.length, 18);
+  assert.equal(result.nativePinTransitions.length, 6);
   assert.throws(
     () => p.verifySourceScope({ ...args, version: p.profile.previousVersion }),
     /version/
@@ -438,4 +439,35 @@ test('actual integrated candidate has exactly nineteen finite receiver and produ
   );
   assert.equal(p.profile.scannerReview, null);
   assert.throws(() => p.verifyPublicationReview(), /pending/);
+});
+
+test('actual native pin candidate preserves the exact six source identity and generated selector transitions', () => {
+  const git = (...args) => command(ROOT, args);
+  assert.equal(
+    git('rev-parse', p.profile.nativePinBaseline + '^{tree}').trim(),
+    p.profile.nativePinTree
+  );
+  git(
+    'merge-base',
+    '--is-ancestor',
+    p.profile.integrationBaseline,
+    p.profile.nativePinBaseline
+  );
+  assert.equal(
+    p.verifyNativePinTransitions(
+      p.parseTree(git('ls-tree', '-rz', p.profile.integrationBaseline)),
+      p.parseTree(git('ls-tree', '-rz', p.profile.nativePinBaseline)),
+      p.profile.nativePinTransitions
+    ).length,
+    6
+  );
+  assert.equal(
+    p.profile.nativeCompatibility.commit,
+    'dbaf5696d64ddcbf133f05d88d35496ebb85c3f0'
+  );
+  assert.equal(
+    p.profile.nativeCompatibility.tree,
+    '30dc828703a6e9cd64103e0ebc965fc701e9bcf3'
+  );
+  assert.equal(p.profile.scannerReview, null);
 });
