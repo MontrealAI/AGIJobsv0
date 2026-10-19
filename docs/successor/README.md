@@ -4,11 +4,21 @@ AGI Jobs are bounded work orders with evidence and acceptance criteria. The SUCC
 
 Start with one recurring decision and a credible alternative. Develop several candidates, inspect counterexamples, freeze one exact system and examine it. Keep the finding even when no candidate is better. A proof result, payment, knowledge admission and permission to act remain separate decisions.
 
-**[Find your Alpha →](https://montrealai.github.io/AGIJobsv0/successor/alpha/)**
-starts with useful catalog reconciliation, competing methods and a reusable tool.
-The companion **[source mission](https://montrealai.github.io/AGIJobsv0/successor/research/)**
-creates a traceable evidence brief from public text. Both are free browser paths.
-See the [flagship guide](FIND_YOUR_ALPHA.md) for steps, source identities and limits.
+**[Open SUCCESSOR Ω Mission Studio →](https://montrealai.github.io/AGIJobsv0/successor/mission/)**
+starts with your real mission, current approach, credible alternative, actual
+requirements and public evidence. Business transformation and frontier mathematics
+presets help define work for an owned Computer Use runtime. Develop and improve
+strategies, propose a different formulation, and retain experiments and evidence.
+See the [Mission Studio guide](MISSION_STUDIO.md) for the working desk, exact
+native worker task and reusable record.
+
+The [Computer Use laboratory](https://montrealai.github.io/AGIJobsv0/successor/computer/)
+provides reproducible browser execution and bounded strategy-development checks.
+The [source mission](https://montrealai.github.io/AGIJobsv0/successor/research/)
+creates a traceable evidence brief from public text. The
+[catalog laboratory](https://montrealai.github.io/AGIJobsv0/successor/alpha/)
+remains a supporting reproducibility example. See the
+[research-to-usefulness guide](FIND_YOUR_ALPHA.md) for source identities and limits.
 
 ## Run the local rehearsal
 

@@ -1,8 +1,7 @@
-> **[Find your Alpha. Build your SUCCESSOR Ω. →](https://montrealai.github.io/AGIJobsv0/successor/alpha/)**
-> Reconcile two catalogs, inspect discrepancies, develop competing methods and keep a reusable tool with its evidence and project history.
-> **[Try a source-grounded mission →](https://montrealai.github.io/AGIJobsv0/successor/research/)** · [Français](https://montrealai.github.io/AGIJobsv0/successor/research/fr/) · [Flagship guide](docs/successor/FIND_YOUR_ALPHA.md).
-> Free · No account, wallet or installation. Local results require further independent proof and explicit authorization before operational succession.
-> The original [portable Atlas laboratory](https://montrealai.github.io/AGIJobsv0/successor/build/) and [reproduction guide](docs/successor/BUILD_YOUR_OMEGA.md) remain available, with their pinned historical contract snapshot.
+> **[SUCCESSOR Ω flagship — Build an advantage worth owning →](https://montrealai.github.io/AGIJobsv0/successor/mission/)** · [Français](https://montrealai.github.io/AGIJobsv0/successor/mission/fr/)
+> Start with a valuable real mission. Use Computer Use to investigate it, discover and improve strategies, and examine whether a different formulation could unlock a better outcome. Keep the mission, methods, experiments and evidence as models change.
+> **[Mission Studio guide](docs/successor/MISSION_STUDIO.md)** · [Native Computer Use and reproducible laboratory](docs/successor/COMPUTER_USE_LEVELS.md) · [Research-to-usefulness journey](docs/successor/FIND_YOUR_ALPHA.md).
+> Free mission workspace · No account or wallet. Prepare an exact task for your own Computer Use runtime or an operator-led Work session. Keep your current approach until a better one earns the change.
 
 # AGI Jobs v0 (v2)
 

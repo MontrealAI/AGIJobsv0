@@ -14,7 +14,11 @@ import { JSDOM } from 'jsdom';
 import createDOMPurify from 'dompurify';
 import { build as bundle } from 'esbuild';
 import { loadExperiences, renderExperience } from './experiences.mjs';
-import { renderFeaturedDemos, renderHeroSpotlight } from './featured.mjs';
+import {
+  renderFeaturedDemos,
+  renderHeroSpotlight,
+  renderSuccessorFlagship,
+} from './featured.mjs';
 import { renderWorkIntro, renderVision, renderWorkPage } from './work.mjs';
 import { renderReviewPage } from './review.mjs';
 import { renderStartPage } from './start.mjs';
@@ -28,6 +32,14 @@ import {
 import { renderAlphaMarkPage } from './alpha-mark.mjs';
 import { renderSuccessorPage } from './successor.mjs';
 import { renderSourceMissionPage } from './source-mission.mjs';
+import {
+  renderComputerMissionPage,
+  renderComputerDesk,
+} from './computer-mission.mjs';
+import {
+  renderFrontierMissionPage,
+  renderFrontierDesk,
+} from './frontier-mission.mjs';
 import { verifySuccessorAlphaMirror } from './verify-successor-alpha.mjs';
 import { buildPhase6Site } from './phase6-build.mjs';
 import { buildEmpowermentSite } from './empowerment-build.mjs';
@@ -271,11 +283,11 @@ function chrome({
     'assets/site.js'
   )}"></script></head><body><a class="skip-link" href="#main">${
     language === 'fr' ? 'Aller au contenu' : 'Skip to content'
-  }</a><header class="site-header" lang="en"><div class="header-inner"><a class="brand" href="${base}" aria-label="AGI Jobs home"><span class="brand-mark" aria-hidden="true">✧</span><span>AGI <strong>JOBS</strong><small>DEMO OBSERVATORY</small></span></a><button id="menu-toggle" class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav">Menu <span aria-hidden="true">☰</span></button><nav id="site-nav" aria-label="Primary navigation"><a class="nav-start" href="${base}start/">Start here</a><a href="${href(
-    'successor/alpha/'
-  )}">SUCCESSOR Ω</a><a href="${href('work/')}">Design a job</a><a href="${href(
-    '#featured'
-  )}">Featured demos</a><a ${
+  }</a><header class="site-header" lang="en"><div class="header-inner"><a class="brand" href="${base}" aria-label="AGI Jobs home"><span class="brand-mark" aria-hidden="true">✧</span><span>AGI <strong>JOBS</strong><small>DEMO OBSERVATORY</small></span></a><button id="menu-toggle" class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav">Menu <span aria-hidden="true">☰</span></button><nav id="site-nav" aria-label="Primary navigation"><a href="${href(
+    'successor/mission/'
+  )}">SUCCESSOR Ω</a><a class="nav-start" href="${base}start/">Start here</a><a href="${href(
+    'work/'
+  )}">Design a job</a><a href="${href('#featured')}">Featured demos</a><a ${
     active === 'catalog' ? 'aria-current="page"' : ''
   } href="${href('#explore')}">Explore demos</a><a href="${href(
     '#walkthrough'
@@ -471,13 +483,13 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
     )
     .join('');
   const setup = `git clone https://github.com/MontrealAI/AGIJobsv0.git\ncd AGIJobsv0\nnvm install\nnvm use\nnpm ci\nnpm run demo:aurora:local`;
-  const body = `<main id="main"><section class="hero section-wrap"><div class="hero-copy"><p class="eyebrow"><span></span> AGI JOBS / THE MACHINE LABOR LAYER</p><h1>Intelligence,<br><em>put to work.</em></h1><p class="hero-description">Turn an idea into useful work. Describe what you need, let an authorized agent prepare a result, and have the work checked before accepting it.</p>${renderEcosystemHero(
+  const body = `<main id="main"><section class="hero section-wrap flagship-home-hero"><div class="hero-copy"><p class="eyebrow"><span></span> SUCCESSOR Ω / THE FLAGSHIP</p><h1 class="flagship-hero-title">Find your Alpha. <br>Build your <em>SUCCESSOR Ω.</em></h1><p class="hero-description">Bring a high-value business opportunity or a frontier mathematics question. Discover, test, combine and improve strategies at Level 3; challenge restrictive formulations at Level 4; and prepare the next bounded step for Computer Use. Keep the mission, methods and evidence you develop.</p><div class="hero-actions"><a class="button primary" data-alpha-flagship href="${base}successor/mission/">Start my mission <span aria-hidden="true">→</span></a><a class="text-link" href="${base}successor/mission/fr/" lang="fr" hreflang="fr">Ouvrir en français →</a></div><p class="hero-note">Start free · No account, wallet or API key</p>${renderHeroSpotlight(
     base
-  )}<div class="hero-actions"><a class="button primary" data-alpha-flagship href="${base}successor/alpha/">Find my Alpha <span aria-hidden="true">→</span></a><a class="text-link" href="${base}start/">Start here — we’ll guide you</a><a class="text-link" href="${base}start/example/">Try a simple example</a></div><p class="hero-note">Free · No account or wallet. <a href="${base}successor/alpha/?lang=fr" lang="fr">Trouver mon Alpha →</a></p><p class="hero-note"><a href="${base}successor/research/">Turn a public source into an evidence brief →</a></p>${renderHeroSpotlight(
+  )}${renderEcosystemHero(
     base
-  )}</div>${orbit()}</section>${renderEcosystemIntro(
+  )}</div>${orbit()}</section>${renderSuccessorFlagship(
     base
-  )}${renderEcosystemMap()}${renderWorkIntro(
+  )}${renderEcosystemIntro(base)}${renderEcosystemMap()}${renderWorkIntro(
     base,
     guideURL
   )}${renderFeaturedDemos(
@@ -487,7 +499,7 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
     catalog.length
   }<span> /</span></strong><span>catalog entries</span></div><div><strong>${
     Object.keys(data.commands).length
-  }<span> /</span></strong><span>registered demo commands</span></div><div><strong>04<span> /</span></strong><span>local settlement starting points</span></div><a href="${repo}/actions/workflows/demo-gallery.yml"><span class="status-dot"></span><span>Evidence you can inspect<small>View the current demo test runs ↗</small></span></a></div><section class="section-wrap section" aria-labelledby="first-title"><div class="section-heading"><div><p class="eyebrow">A GOOD PLACE TO BEGIN</p><h2 id="first-title">Choose your first discovery.</h2></div><p>Three ways into the system.<br>One clear next step in every guide.</p></div><div class="feature-grid">${featureHTML}</div></section><section id="explore" class="section-wrap section" aria-labelledby="catalog-title"><div class="section-heading"><div><p class="eyebrow">THE COMPLETE COLLECTION</p><h2 id="catalog-title">Follow your curiosity.</h2></div><p>Every demo, design guide and supporting directory.<br>Original names and source remain one click away.</p></div><div class="catalog-controls"><div class="search-field"><label for="catalog-search">Search the collection</label><div><span aria-hidden="true">⌕</span><input id="catalog-search" type="search" placeholder="Try governance, learning, AURORA…" autocomplete="off"></div></div><div><label for="catalog-theme">Theme</label><select id="catalog-theme"><option value="">All themes</option>${Object.entries(
+  }<span> /</span></strong><span>registered demo commands</span></div><div><strong>04<span> /</span></strong><span>local settlement starting points</span></div><a href="${repo}/actions/workflows/demo-gallery.yml"><span class="status-dot"></span><span>Evidence you can inspect<small>View the current demo test runs ↗</small></span></a></div><section class="section-wrap section" aria-labelledby="first-title"><div class="section-heading"><div><p class="eyebrow">A GOOD PLACE TO BEGIN</p><h2 id="first-title">Choose your first discovery.</h2></div><p>Three ways into the system.<br>One clear next step in every guide.</p></div><div class="feature-grid">${featureHTML}</div><p class="hero-note">New to agent work? <a href="${base}start/example/">Try the guided introduction →</a></p></section><section id="explore" class="section-wrap section" aria-labelledby="catalog-title"><div class="section-heading"><div><p class="eyebrow">THE COMPLETE COLLECTION</p><h2 id="catalog-title">Follow your curiosity.</h2></div><p>Every demo, design guide and supporting directory.<br>Original names and source remain one click away.</p></div><div class="catalog-controls"><div class="search-field"><label for="catalog-search">Search the collection</label><div><span aria-hidden="true">⌕</span><input id="catalog-search" type="search" placeholder="Try governance, learning, AURORA…" autocomplete="off"></div></div><div><label for="catalog-theme">Theme</label><select id="catalog-theme"><option value="">All themes</option>${Object.entries(
     themes
   )
     .map(([key, label]) => `<option value="${key}">${label}</option>`)
@@ -518,9 +530,9 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
   write(
     'index.html',
     chrome({
-      title: 'Intelligence, put to work',
+      title: 'Find your Alpha. Build your SUCCESSOR Ω.',
       description:
-        'Design authorized computer-work jobs and explore the complete AGI Jobs collection: evidence, independent verification, settlement and large-scale coordination, with original guides and flowcharts.',
+        'Start your SUCCESSOR Ω mission: pursue a high-value business opportunity or frontier mathematics question, develop Level 3 strategies, examine Level 4 reformulations and prepare bounded Computer Use work. Keep the mission, methods and evidence.',
       base,
       revision,
       body,
@@ -575,6 +587,94 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
         canonical,
         language,
         body: renderSourceMissionPage(base, revision, language),
+      })
+    );
+  }
+  for (const language of ['en', 'fr']) {
+    const canonical =
+      language === 'en' ? 'successor/mission/' : 'successor/mission/fr/';
+    write(
+      canonical + 'index.html',
+      chrome({
+        title:
+          language === 'en'
+            ? 'SUCCESSOR Ω — Mission Studio: business transformation and frontier research'
+            : 'SUCCESSOR Ω — Missions de transformation et recherche de pointe',
+        description:
+          language === 'en'
+            ? 'Pursue a valuable real mission with Computer Use, strategy discovery, problem reformulation and reusable evidence.'
+            : 'Poursuivre une mission réelle avec Computer Use, découverte de stratégies, reformulation et preuves réutilisables.',
+        base,
+        revision,
+        canonical,
+        language,
+        body: renderFrontierMissionPage(base, revision, language),
+      })
+    );
+    const desk =
+      language === 'en'
+        ? 'successor/mission/desk/'
+        : 'successor/mission/desk/fr/';
+    write(
+      desk + 'index.html',
+      chrome({
+        title:
+          language === 'en'
+            ? 'SUCCESSOR Ω — Research and strategy workspace'
+            : 'SUCCESSOR Ω — Espace de recherche et de stratégie',
+        description:
+          language === 'en'
+            ? 'Operate a mission workspace with keyboard, mouse and screenshots; retain strategies, experiments, evidence and proposed reformulations.'
+            : 'Utiliser un espace de mission par clavier, souris et captures; conserver stratégies, expériences, sources et reformulations proposées.',
+        base,
+        revision,
+        canonical: desk,
+        language,
+        body: renderFrontierDesk(base, revision, language),
+      })
+    );
+  }
+  for (const language of ['en', 'fr']) {
+    const canonical =
+      language === 'en' ? 'successor/computer/' : 'successor/computer/fr/';
+    write(
+      canonical + 'index.html',
+      chrome({
+        title:
+          language === 'en'
+            ? 'SUCCESSOR Ω — Computer Use and better strategies'
+            : 'SUCCESSOR Ω — Agir et améliorer les stratégies',
+        description:
+          language === 'en'
+            ? 'Operate a supplier desk, construct and test strategies, question restrictive assumptions and prepare bounded model-driven Computer Use.'
+            : 'Utiliser un bureau fournisseurs, construire et tester des stratégies et remettre en question les hypothèses restrictives.',
+        base,
+        revision,
+        canonical,
+        language,
+        body: renderComputerMissionPage(base, revision, language),
+      })
+    );
+    const desk =
+      language === 'en'
+        ? 'successor/computer/desk/'
+        : 'successor/computer/desk/fr/';
+    write(
+      desk + 'index.html',
+      chrome({
+        title:
+          language === 'en'
+            ? 'SUCCESSOR Ω — Supplier delivery desk'
+            : 'SUCCESSOR Ω — Bureau de livraison',
+        description:
+          language === 'en'
+            ? 'A public synthetic supplier desk for bounded keyboard, mouse and screenshot work.'
+            : 'Un bureau fournisseurs fictif pour les tâches bornées par clavier, souris et captures.',
+        base,
+        revision,
+        canonical: desk,
+        language,
+        body: renderComputerDesk(base, revision, language),
       })
     );
   }
@@ -845,6 +945,8 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
       path.join(root, 'website/assets/site.js'),
       path.join(root, 'website/assets/successor.js'),
       path.join(root, 'website/assets/source-mission.js'),
+      path.join(root, 'website/assets/computer-mission.js'),
+      path.join(root, 'website/assets/frontier-mission.js'),
       path.join(root, 'website/assets/start.js'),
       path.join(root, 'website/assets/welcome-example.js'),
     ],
@@ -865,6 +967,14 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
   fs.copyFileSync(
     path.join(root, 'website/assets/source-mission.css'),
     path.join(output, 'assets/source-mission.css')
+  );
+  fs.copyFileSync(
+    path.join(root, 'website/assets/computer-mission.css'),
+    path.join(output, 'assets/computer-mission.css')
+  );
+  fs.copyFileSync(
+    path.join(root, 'website/assets/frontier-mission.css'),
+    path.join(output, 'assets/frontier-mission.css')
   );
   const deckRoot = 'demo/AGI-Jobs-Platform-at-Kardashev-II-Scale/';
   const dashboardRoutes = [
@@ -1097,6 +1207,14 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
       'successor/alpha/',
       'successor/research/',
       'successor/research/fr/',
+      'successor/mission/',
+      'successor/mission/fr/',
+      'successor/mission/desk/',
+      'successor/mission/desk/fr/',
+      'successor/computer/',
+      'successor/computer/fr/',
+      'successor/computer/desk/',
+      'successor/computer/desk/fr/',
     ],
     onboardingRoutes: { en: 'start/', fr: 'start/fr/' },
     onboardingExampleRoutes: { en: 'start/example/', fr: 'start/fr/example/' },

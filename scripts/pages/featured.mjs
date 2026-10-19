@@ -1,5 +1,6 @@
 // Browser experiences are linked directly; the existing catalog remains complete.
 export const featuredRoutes = {
+  successor: 'successor/mission/',
   culture: 'experiments/culture/',
   kardashev: 'experiments/kardashev-ii/',
 };
@@ -7,11 +8,23 @@ export const featuredRoutes = {
 export function renderHeroSpotlight(base) {
   return `<nav class="hero-spotlight" aria-label="Featured demo shortcuts">
     <span>IN THE SPOTLIGHT</span>
+    <a class="hero-flagship-shortcut" href="${base}${featuredRoutes.successor}">SUCCESSOR Ω <span aria-hidden="true">→</span></a>
     <a href="${base}${featuredRoutes.culture}">CULTURE Studio <span aria-hidden="true">↗</span></a>
     <a href="${base}${featuredRoutes.kardashev}">Kardashev II <span aria-hidden="true">↗</span></a>
     <a href="${base}experiments/alpha-agi-mark/">Alpha Mark <span aria-hidden="true">↗</span></a>
     <a href="${base}experiments/phase6/">Phase 6 <span aria-hidden="true">↗</span></a>
   </nav>`;
+}
+
+export function renderSuccessorFlagship(base) {
+  return `<section id="successor-flagship" class="section-wrap successor-feature" aria-labelledby="successor-feature-title">
+    <div class="successor-feature-frame">
+      <div class="successor-feature-heading"><div><p class="eyebrow">SUCCESSOR Ω / THE FLAGSHIP</p><h2 id="successor-feature-title">An advantage worth building.<br>A mission you can advance.</h2><p class="successor-feature-lead">Bring a high-value business opportunity or a frontier mathematics question. Compare and improve strategies, examine a different formulation and prepare bounded work for an agent using Computer Use. Keep the mission, methods and source evidence together.</p><div class="successor-feature-actions"><a class="button primary" data-feature-launch="successor" href="${base}${featuredRoutes.successor}">Start my mission <span aria-hidden="true">→</span></a><a class="text-link" href="${base}successor/mission/fr/" lang="fr" hreflang="fr">Ouvrir en français <span aria-hidden="true">→</span></a></div><p class="successor-feature-free">Free mission planning · No account, wallet or API key</p></div>
+      <div class="successor-feature-art" aria-hidden="true"><svg viewBox="0 0 450 300" focusable="false"><defs><radialGradient id="successor-feature-glow"><stop stop-color="#a06bd2" stop-opacity=".26"/><stop offset="1" stop-color="#a06bd2" stop-opacity="0"/></radialGradient><linearGradient id="successor-feature-edge"><stop stop-color="#d8b3f5"/><stop offset="1" stop-color="#efd69c"/></linearGradient></defs><ellipse cx="225" cy="150" rx="204" ry="143" fill="url(#successor-feature-glow)"/><g fill="none" stroke="#a382b9" stroke-opacity=".3"><ellipse cx="225" cy="150" rx="180" ry="74" transform="rotate(-22 225 150)"/><ellipse cx="225" cy="150" rx="125" ry="123"/><path d="M45 150H405M225 24V276" stroke-dasharray="2 9"/></g><g fill="none" stroke="url(#successor-feature-edge)" stroke-width="1.5"><path d="M225 150L111 77L83 203L225 150L342 83L369 214L225 150M111 77L342 83M83 203L369 214"/></g><g fill="#281936" stroke="#d2b0ed"><circle cx="111" cy="77" r="19"/><circle cx="342" cy="83" r="19"/><circle cx="83" cy="203" r="13"/><circle cx="369" cy="214" r="13"/></g><g fill="#b8e7d7"><circle cx="225" cy="28" r="4"/><circle cx="224" cy="274" r="4"/></g><circle cx="225" cy="150" r="64" fill="#24152f" stroke="#d5b4e1"/><circle cx="225" cy="150" r="74" fill="none" stroke="#d5b4e1" stroke-opacity=".3"/><text x="225" y="174" text-anchor="middle" fill="#efd69c" font-family="Georgia,serif" font-size="85">Ω</text><g fill="#efd69c" font-family="Georgia,serif" font-size="24" text-anchor="middle"><text x="111" y="84">α</text><text x="342" y="90">✧</text></g><g fill="#f0dfb9"><circle cx="37" cy="48" r="1.5"/><circle cx="408" cy="44" r="1.5"/><circle cx="409" cy="259" r="1.5"/><circle cx="44" cy="266" r="1.5"/></g></svg><span>OWN THE INSTITUTION. PRESERVE THE MISSION.</span></div></div>
+      <div class="successor-feature-steps"><article><span>01 / DEVELOP · LEVEL 3</span><h3>Improve the strategy.</h3><p>Discover, test, combine and improve strategies. Keep alternatives, failed attempts and the reasons behind the next candidate.</p></article><article><span>02 / REFRAME · LEVEL 4</span><h3>Question the approach.</h3><p>Explore a fundamentally different approach while preserving the outcome, evidence standards and constraints that actually matter.</p></article><article><span>03 / OPERATE · COMPUTER USE</span><h3>Put it to work. Keep the evidence.</h3><p>Prepare an exact task for your own Computer Use runtime. Bring back the sources, work and unresolved verification obligations.</p></article></div>
+      <p class="successor-feature-scope">Start with a bounded mission and public, non-personal inputs. Execute through your own environment. A prepared mission is a starting point for real work; independent proof and demonstrated value still have to be earned.</p>
+    </div>
+  </section>`;
 }
 
 function cultureArt() {

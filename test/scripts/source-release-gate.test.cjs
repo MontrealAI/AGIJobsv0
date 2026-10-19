@@ -14,7 +14,7 @@ const sha = 'a'.repeat(40);
 function sourceFixture() {
   return {
     sha,
-    version: '2.1.0-rc.14',
+    version: '2.1.0-rc.15',
     compilerBaseline: 'b'.repeat(40),
     policy: {
       version: '0.8.37',
@@ -80,6 +80,7 @@ test('source release rejects missing review, old compiler, changed production se
     '2.1.0-rc.11',
     '2.1.0-rc.12',
     '2.1.0-rc.13',
+    '2.1.0-rc.14',
     '2.1.0',
   ])
     assert.throws(
@@ -104,7 +105,7 @@ test('source release rejects missing review, old compiler, changed production se
     );
   }
 });
-test('rc.14 source qualification agrees with both package version records', () => {
+test('rc.15 source qualification agrees with both package version records', () => {
   const packageJson = require('../../package.json');
   const lock = require('../../package-lock.json');
   for (const version of [
@@ -112,7 +113,7 @@ test('rc.14 source qualification agrees with both package version records', () =
     lock.version,
     lock.packages[''].version,
   ]) {
-    assert.equal(version, '2.1.0-rc.14');
+    assert.equal(version, '2.1.0-rc.15');
     assert.doesNotThrow(() =>
       verifySourceScope({ ...sourceFixture(), version })
     );
@@ -218,6 +219,27 @@ test('source publication requires every workflow and context on the exact main p
   }
   assert.equal(evaluate(runs.slice(1), checks, sha).ready, false);
   assert.equal(evaluate(runs, checks.slice(1), sha).ready, false);
+});
+test('computer browser protocol qualification is mandatory on the exact main push', () => {
+  const workflow = '.github/workflows/successor-computer.yml';
+  assert.equal(requiredPaths.length, 15);
+  assert.ok(requiredPaths.includes(workflow));
+  const { runs, checks } = fixture();
+  const others = runs.filter((run) => run.path !== workflow);
+  const computer = runs.find((run) => run.path === workflow);
+  assert.equal(evaluate(others, checks, sha).ready, false);
+  for (const change of [
+    { head_sha: 'b'.repeat(40) },
+    { event: 'pull_request' },
+    { status: 'queued' },
+    { conclusion: 'skipped' },
+    { conclusion: 'failure' },
+  ])
+    assert.equal(
+      evaluate([...others, { ...computer, ...change }], checks, sha).ready,
+      false
+    );
+  assert.equal(evaluate([...others, computer], checks, sha).ready, true);
 });
 test('newer failures and pending attempts supersede older workflow success', () => {
   const { runs, checks } = fixture();

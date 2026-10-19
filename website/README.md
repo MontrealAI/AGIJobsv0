@@ -38,8 +38,30 @@ Mission Pack downloads preserve the constitution, sealed graph, findings, failur
 
 `successor.mjs` renders the EN/FR page; `successor.js` presents validated core results; `presentation-state.mjs` enforces local preview invalidation. The browser build explicitly imports only browser-safe modules and fails on Node-only dependencies. Proof custody, signatures, transactional storage and effect authorization remain backend concerns. `catalog.json` records the new `successorRoutes` separately from preserved demo command decks.
 
-The primary [Find your Alpha flagship](https://montrealai.github.io/AGIJobsv0/successor/alpha/)
-is a pinned Alpha mirror with current Jobs compiler parity. Its executable code,
+The primary [SUCCESSOR Ω Mission Studio](https://montrealai.github.io/AGIJobsv0/successor/mission/)
+and [French edition](https://montrealai.github.io/AGIJobsv0/successor/mission/fr/)
+start from a real business opportunity or frontier research direction. Users define
+the outcome, current approach, credible alternative, immutable hard requirements
+and exact public sources. The studio prepares a sealed mission, actual native
+Alpha ComputerTask, bound Work prompt and reusable strategy/experiment/evidence
+workspace. Execution and source claims remain attributable and unverified until
+separate review; a prepared task never becomes a completed research finding.
+See the [Mission Studio guide](../docs/successor/MISSION_STUDIO.md).
+
+The homepage headline, first navigation link, first action, spotlight shortcut and
+wide feature all lead to Mission Studio. Its English and French links work without
+JavaScript, before the broader demo collection. The original collection remains
+complete.
+
+The supporting [Computer Use laboratory](https://montrealai.github.io/AGIJobsv0/successor/computer/)
+constructs and revises typed programs, preserves failure lineage and requires
+approval before examining a less restrictive formulation with unchanged actual
+requirements. The supplier desk supports human use, explicitly scripted practice,
+real native-protocol Chromium laboratory runs and exact tasks for an owned Alpha
+runtime. See the [Computer Use guide](../docs/successor/COMPUTER_USE_LEVELS.md).
+
+The [catalog laboratory](https://montrealai.github.io/AGIJobsv0/successor/alpha/)
+remains a pinned Alpha mirror with current Jobs compiler parity. Its executable code,
 styles and embedded artwork stay exact; the verifier admits only the recorded
 navigation adaptations. The companion [source mission](https://montrealai.github.io/AGIJobsv0/successor/research/)
 uses the browser-safe native `source-mission.mjs` module for exact-passage briefs,

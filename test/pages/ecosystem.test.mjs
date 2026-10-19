@@ -234,7 +234,7 @@ test('the separate October 12 ecosystem archive retains the exact original 29-ad
   assert.equal(ecosystem.suites.flatMap((suite) => suite.contracts).length, 30);
 });
 
-test('current ecosystem entry points promote the Alpha laboratory and keep the source mission and historical workshop accessible', () => {
+test('current ecosystem entry points promote Mission Studio and keep the Computer Use laboratory, source mission and historical workshop accessible', () => {
   const base = '/AGIJobsv0/';
   const hero = new JSDOM(renderEcosystemHero(base)).window.document;
   const intro = new JSDOM(renderEcosystemIntro(base)).window.document;
@@ -242,16 +242,17 @@ test('current ecosystem entry points promote the Alpha laboratory and keep the s
     .document;
   assert.equal(
     hero.querySelector('.ecosystem-pair-link').getAttribute('href'),
-    `${base}successor/alpha/`
+    `${base}successor/mission/`
   );
   assert.equal(
     intro.querySelector('a.button.primary').getAttribute('href'),
-    `${base}successor/alpha/`
+    `${base}successor/mission/`
   );
   assert.equal(
     page.querySelector('#example a.button.primary').getAttribute('href'),
-    `${base}successor/alpha/`
+    `${base}successor/mission/`
   );
+  assert.ok(page.querySelector(`a[href="${base}successor/computer/"]`));
   assert.ok(page.querySelector(`a[href="${base}successor/research/"]`));
   assert.match(
     page.querySelector(`a[href="${base}successor/build/"]`).textContent,

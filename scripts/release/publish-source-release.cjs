@@ -26,7 +26,7 @@ function expectedAssets(tag) {
     'mainnet-deployment-2026-10-12.md',
     'mainnet-deployment-2026-10-18.md',
     'mainnet-deployment-receipts-2026-10-18.json',
-    'RELEASE_NOTES_SOURCE_RC14.md',
+    'RELEASE_NOTES_SOURCE_RC15.md',
     'compiler-warnings-2026-10-13.md',
     'solidity-compiler.json',
     'deployment-addresses.mainnet.json',
@@ -334,7 +334,7 @@ async function publish({ sha, tag, notes, api, upload, verify }) {
       target_commitish: sha,
       draft: true,
       prerelease: true,
-      name: `${tag} — Find your Alpha. Build your SUCCESSOR Ω.`,
+      name: `${tag} — Develop the strategy. Preserve the mission.`,
       body: `${notes.trim()}\n\n${marker}\n`,
     });
   }
@@ -382,7 +382,7 @@ function producerId(value) {
 
 function sourceApiUrl(method, resource) {
   const allowed = {
-    GET: /^(?:git\/ref\/(?:heads\/main|tags\/source-v2\.1\.0-rc\.14)|releases\/tags\/source-v2\.1\.0-rc\.14|actions\/artifacts\/[1-9][0-9]*|actions\/runs\/[1-9][0-9]*\/attempts\/[1-9][0-9]*)$/,
+    GET: /^(?:git\/ref\/(?:heads\/main|tags\/source-v2\.1\.0-rc\.15)|releases\/tags\/source-v2\.1\.0-rc\.15|actions\/artifacts\/[1-9][0-9]*|actions\/runs\/[1-9][0-9]*\/attempts\/[1-9][0-9]*)$/,
     POST: /^(?:git\/refs|releases)$/,
     PATCH: /^releases\/[1-9][0-9]*$/,
   };
@@ -406,7 +406,7 @@ async function main() {
   if (
     repository !== 'MontrealAI/AGIJobsv0' ||
     !/^[a-f0-9]{40}$/.test(sha || '') ||
-    tag !== 'source-v2.1.0-rc.14' ||
+    tag !== 'source-v2.1.0-rc.15' ||
     !token
   )
     throw Error('Invalid source publication identity or authorization');
@@ -487,7 +487,7 @@ async function main() {
     api,
     verify,
     notes: fs.readFileSync(
-      'docs/production/RELEASE_NOTES_SOURCE_RC14.md',
+      'docs/production/RELEASE_NOTES_SOURCE_RC15.md',
       'utf8'
     ),
     upload: async () =>

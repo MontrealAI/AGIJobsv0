@@ -14,7 +14,8 @@ This repository contains smart contracts, agent and validator services, operator
 
 | Your goal | Open this |
 | --- | --- |
-| Find a useful Alpha opportunity and retain a working capability | [SUCCESSOR Ω flagship](https://montrealai.github.io/AGIJobsv0/successor/alpha/) and [guide](successor/FIND_YOUR_ALPHA.md) |
+| Pursue a valuable real mission with Computer Use, strategy discovery and a better formulation | [SUCCESSOR Ω Mission Studio](https://montrealai.github.io/AGIJobsv0/successor/mission/) · [Français](https://montrealai.github.io/AGIJobsv0/successor/mission/fr/) · [Mission guide](successor/MISSION_STUDIO.md) |
+| Reproduce bounded keyboard, mouse and screenshot execution before a live worker | [Computer Use laboratory](https://montrealai.github.io/AGIJobsv0/successor/computer/) and [runtime guide](successor/COMPUTER_USE_LEVELS.md) |
 | Turn public source text into a traceable evidence brief | [Source mission](https://montrealai.github.io/AGIJobsv0/successor/research/) · [Français](https://montrealai.github.io/AGIJobsv0/successor/research/fr/) |
 | Rehearse SUCCESSOR Ω missions, proof boundaries and portable knowledge | [SUCCESSOR Ω guide](successor/README.md) |
 | Understand the architecture and its diagrams | [Repository overview](../README.md#architecture-panorama) |
