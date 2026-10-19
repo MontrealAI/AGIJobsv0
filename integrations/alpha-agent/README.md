@@ -5,6 +5,10 @@ It does not replace Alpha's MARK / AscensionJobMarket route, the legacy
 AGIJobManager, or the separate USDC Manager. Sharing a token symbol does not make
 markets interchangeable.
 
+Use **public, non-personal inputs only** for this integration's missions,
+assessment and qualification. A source being public does not make personal data
+eligible.
+
 Continue a native Alpha dossier with retained history using the
 [project receiver and bounded Jobs drafts](PROJECT_CONTINUITY.md). It preserves
 the original bytes and performs actual fixed public-data work; its AGIALPHA
@@ -66,12 +70,35 @@ flowchart LR
 
 ## Deployment identity matters
 
+The [current mainnet directory](../../docs/production/CURRENT_MAINNET_DEPLOYMENT.md)
+identifies the separate **18 October 2026** deployment: JobRegistry
+`0x8b230eB346369B2a3EFaaa615CbEb8e3b2f167e6`, deployed from
+`818b3a246871e4cd4dde86558dbb91ef82b15eef`. Its
+[dated snapshot](../../docs/production/mainnet-2026-10-18/deployment-snapshot.json)
+records 25 exact runtime/source comparisons, 46 named finalized-state checks and
+all eight managed modules paused. These are retained observations, not a fresh
+chain read or production approval. Current-main equivalence is not assumed.
+
 `jobregistry-v2.json` records the current source profile separately from the
 October 12 mainnet inventory. That inventory records registry
 `0x72Ec2CcC9403b643C4d6CA3eF05E06ca8faa3084` and 23 other instances built from
 `b4c5b66ea05a6bb27f1f1cb197f055c179bbd38e`. It explicitly does not approve
 production or open live intake. Zero addresses in the generic current config
 are not evidence that this historical deployment does not exist.
+
+The profile's October 12 inventory remains historical and pinned in the receiver
+source closure. The October 18 pointer does not replace that profile, install a
+trusted deployment, switch a client or grant authority. Treat all previous
+deployments as read-only. Any new reviewed profile requires its own exact-source,
+runtime, wiring, policy and admission evidence.
+
+For a separately authorized new creation, follow the
+[owner-operated Hardhat requirements](../../docs/deployment-v2-agialpha.md#owner-operated-deployment-requirements):
+Ubuntu Terminal, a local hidden prompt and a process-lifetime deployer key that
+is never stored, printed, passed in arguments or written to `.env`, history or
+logs. Ledger governance remains on Mac Studio. Live deployment, signing,
+funding, activation and on-chain authority changes require separate authorization;
+the approved ENS configuration work remains separate.
 
 The historical masked runtime-template SHA-256 is **not** a full deployed
 runtime Keccak-256 pin. Do not feed it into `runtimeKeccak256`. Independently
@@ -99,6 +126,55 @@ rejects duplicate or removed matching logs, and rechecks the block afterward.
 It never signs, submits, approves, deposits, acknowledges policy or settles.
 
 Run focused tests with `npm run alpha-agent:verify:test`.
+
+## Retain current Alpha computer evidence as an unfunded Jobs draft
+
+`four-repo-computer-receipt.mjs` is an additive, inert bridge for the current
+native Alpha `successor-alpha-computer-handoff/v1` and
+`successor-alpha-computer-return/v1` formats. It preserves the exact handoff,
+return and frozen supplier-mission report bytes. It does not replace the pinned
+CSV project receiver, its source selector or its historical deployment profile.
+
+Install the reviewed Alpha `inspectComputerReturn` function in application code
+as `inspectAlphaReturn`; imported JSON cannot select code or a checkout. Call
+`inspectComputerReceiptEvidence({handoffRaw, returnRaw, reportRaw},
+{inspectAlphaReturn})` for the shared market-independent inspection. It replays
+the native Jobs report, checks the exact shipped English/French desk HTML and
+networkless public/non-personal input scope, binds the project/task/source and
+exact observed result, and recomputes the frozen allocation against the real
+requirements. Interrupted, unclean, missing, altered or wrongly bound returns
+are rejected.
+
+`createComputerReceiptDraft` accepts the same raw inputs and
+`{amountBaseUnits, createdAt, inspectAlphaReturn}`. It returns a canonical
+`agijobsv0/four-repo-computer-draft/v1` with an explicit **18-decimal AGIALPHA
+unfunded proposal**. The native compiler's four sealed jobs still reserve zero;
+the proposed amount does not fund or modify those sealed budgets. Import with
+`inspectComputerReceiptDraft(raw, {inspectAlphaReturn})`, which rebuilds every
+binding and the native drafts. A Manager USDC wrapper must select its own route
+and budget; this bridge never converts USD quote prices, USDC or AGIALPHA.
+
+Consistent native receipt bytes do not authenticate their author, prove actual
+computer execution or satisfy independent acceptance. All outputs retain
+`trustedComputerExecution: false`, independent review required, no authority,
+and no settlement or production approval. A source-locked cross-repository
+runner must separately retain the actual browser observations and runtime
+evidence. A protocol fixture is not browser or live-model qualification.
+
+The regular `npm run site:test` includes the bounded adapter regression suite.
+For its separate native Alpha protocol-boundary test, use the repository's
+pinned Node toolchain and an explicitly reviewed current Alpha checkout:
+
+```bash
+node test/pages/four-repo-computer-receipt-native.mjs /absolute/reviewed/alpha-checkout
+```
+
+That test uses the real native Alpha inspector with labeled synthetic protocol
+receipts; it performs no browser, model, wallet or blockchain operation.
+An optional second argument selects a new absolute output directory for its
+four labeled protocol fixture files. No files are written by default, and an
+existing output directory is refused. Unknown model and human costs remain
+unknown in this fixture.
 
 ## Reproduce the disposable-chain acceptance
 
