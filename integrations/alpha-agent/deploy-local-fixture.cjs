@@ -225,7 +225,8 @@ async function main() {
   };
   fs.writeFileSync(
     process.env.ALPHA_FIXTURE_OUTPUT || '/tmp/agijobsv0-alpha-fixture.json',
-    JSON.stringify(result, null, 2) + '\n'
+    JSON.stringify(result, null, 2) + '\n',
+    { flag: 'wx', mode: 0o600 }
   );
   console.log(JSON.stringify(result, null, 2));
 }

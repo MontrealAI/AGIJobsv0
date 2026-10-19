@@ -128,7 +128,8 @@ async function main() {
   fs.writeFileSync(
     process.env.ALPHA_ACCEPTANCE_OUTPUT ||
       '/tmp/agijobsv0-alpha-acceptance.json',
-    JSON.stringify(evidence, null, 2) + '\n'
+    JSON.stringify(evidence, null, 2) + '\n',
+    { flag: 'wx', mode: 0o600 }
   );
   console.log(JSON.stringify(evidence, null, 2));
 }

@@ -746,7 +746,7 @@ test('actual Git integration transitions reject substituted security/runtime byt
     r.git('ls-tree', '-rz', p.profile.implementationBaseline)
   );
   const after = p.parseTree(r.git('ls-tree', '-rz', candidate));
-  assert.equal(p.verifyIntegrationTransitions(before, after).length, 36);
+  assert.equal(p.verifyIntegrationTransitions(before, after).length, 37);
   for (const transitions of [
     p.profile.integrationTransitions.slice(1),
     [...p.profile.integrationTransitions, p.profile.integrationTransitions[0]],

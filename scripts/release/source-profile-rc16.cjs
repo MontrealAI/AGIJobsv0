@@ -5,7 +5,7 @@
 const assert = require('node:assert/strict');
 const { createHash } = require('node:crypto');
 const integrationTransitionsSha256 =
-  '178dca9db29b37657c6e7451eb52cbb22a456367abc819044936360584c0ae43';
+  '6af6d4857cddcb6c9a561c9777ca9569860de2a598bcbd5870f2a976138d8784';
 const historical = require('./qualify-source-release.cjs');
 
 function freeze(value) {

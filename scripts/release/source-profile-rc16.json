@@ -385,6 +385,17 @@
       }
     },
     {
+      "path": "integrations/alpha-agent/complete-local-fixture.cjs",
+      "before": {
+        "mode": "100644",
+        "blob": "cdba941fde121b798a2c2f5d3390ec53d9b6cdba"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "47b5dda58205fbdcc61bc553debaa05b7cc4ad5e"
+      }
+    },
+    {
       "path": "integrations/alpha-agent/deploy-local-fixture.cjs",
       "before": {
         "mode": "100644",
@@ -392,7 +403,7 @@
       },
       "after": {
         "mode": "100644",
-        "blob": "4537a5fb8773ab4e50dd9fb498cfa98dc285b144"
+        "blob": "ef507f123ef805a1bac132d5b6445a9e151f851d"
       }
     },
     {
