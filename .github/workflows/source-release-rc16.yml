@@ -1,0 +1,156 @@
+name: Qualified rc.16 source release
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/release/source-scanner-gates-rc16.cjs'
+      - 'test/scripts/source-release-integrated-rc16.test.cjs'
+      - '.github/workflows/successor-computer.yml'
+      - 'integrations/alpha-agent/project-native-source.mjs'
+      - 'integrations/alpha-agent/project-source-selector.mjs'
+      - 'integrations/alpha-agent/successor-computer-mission-lab.py'
+      - 'integrations/alpha-agent/vendor/alpha-computer/source-identity.mjs'
+      - 'integrations/alpha-agent/vendor/alpha-computer/source-manifest.json'
+      - 'package.json'
+      - '.github/workflows/source-release-rc16.yml'
+      - '.github/workflows/transformational-compatibility.yml'
+      - 'scripts/release/qualify-source-release-rc16.cjs'
+      - 'scripts/release/publish-source-release-rc16.cjs'
+      - 'scripts/release/source-profile-rc16.cjs'
+      - 'scripts/release/source-profile-rc16.json'
+      - 'scripts/release/source-native-gates-rc16.cjs'
+      - 'scripts/release/source-native-evidence-rc16.cjs'
+      - 'scripts/release/verify-transformational-compatibility.mjs'
+      - 'docs/production/RELEASE_NOTES_SOURCE_RC16.md'
+      - 'test/scripts/source-profile-rc16.test.cjs'
+      - 'test/scripts/source-release-rc16.test.cjs'
+      - 'test/scripts/source-release-security-rc16-gate.test.cjs'
+      - 'test/scripts/source-release-security-rc16-publish.test.cjs'
+      - 'test/scripts/transformational-compatibility.test.mjs'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/release/source-scanner-gates-rc16.cjs'
+      - 'test/scripts/source-release-integrated-rc16.test.cjs'
+      - '.github/workflows/successor-computer.yml'
+      - 'integrations/alpha-agent/project-native-source.mjs'
+      - 'integrations/alpha-agent/project-source-selector.mjs'
+      - 'integrations/alpha-agent/successor-computer-mission-lab.py'
+      - 'integrations/alpha-agent/vendor/alpha-computer/source-identity.mjs'
+      - 'integrations/alpha-agent/vendor/alpha-computer/source-manifest.json'
+      - 'package.json'
+      - '.github/workflows/source-release-rc16.yml'
+      - '.github/workflows/transformational-compatibility.yml'
+      - 'scripts/release/qualify-source-release-rc16.cjs'
+      - 'scripts/release/publish-source-release-rc16.cjs'
+      - 'scripts/release/source-profile-rc16.cjs'
+      - 'scripts/release/source-profile-rc16.json'
+      - 'scripts/release/source-native-gates-rc16.cjs'
+      - 'scripts/release/source-native-evidence-rc16.cjs'
+      - 'scripts/release/verify-transformational-compatibility.mjs'
+      - 'docs/production/RELEASE_NOTES_SOURCE_RC16.md'
+      - 'test/scripts/source-profile-rc16.test.cjs'
+      - 'test/scripts/source-release-rc16.test.cjs'
+      - 'test/scripts/source-release-security-rc16-gate.test.cjs'
+      - 'test/scripts/source-release-security-rc16-publish.test.cjs'
+      - 'test/scripts/transformational-compatibility.test.mjs'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: source-release-rc16-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    outputs:
+      selected: ${{ steps.release-version.outputs.selected }}
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: '.nvmrc'
+      - name: Select the separately versioned rc.16 source profile
+        id: release-version
+        run: node -e "require('node:fs').appendFileSync(process.env.GITHUB_OUTPUT, 'selected=' + (require('./package.json').version === '2.1.0-rc.16') + '\n')"
+      - run: node --test test/scripts/source-profile-rc16.test.cjs test/scripts/source-release-rc16.test.cjs test/scripts/source-release-security-rc16-gate.test.cjs test/scripts/source-release-security-rc16-publish.test.cjs test/scripts/source-release-integrated-rc16.test.cjs test/scripts/transformational-compatibility.test.mjs
+
+  publish:
+    name: Publish qualified rc.16 source prerelease
+    needs: validate
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'MontrealAI/AGIJobsv0' && needs.validate.outputs.selected == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 95
+    permissions:
+      contents: write
+      actions: read
+      checks: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: source-v2.1.0-rc.16
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: '.nvmrc'
+      - name: Qualify actual exact-main workflows, scanner result and source profile
+        run: node scripts/release/qualify-source-release-rc16.cjs
+      - name: Retain the qualified compiler producer archive
+        run: node scripts/release/publish-source-release-rc16.cjs --collect-compiler-evidence
+      - name: Retain and reconcile complete reviewed and final raw scanner archives
+        run: node scripts/release/publish-source-release-rc16.cjs --collect-scanner-evidence
+      - name: Authenticate and inspect raw scanner and actual native producer archives
+        run: node scripts/release/publish-source-release-rc16.cjs --collect-additional-evidence
+      - name: Build checksummed source and immutable evidence assets
+        run: |
+          set -euo pipefail
+          out=reports/source-release-rc16
+          git archive --format=zip --prefix=AGIJobsv0/ "$GITHUB_SHA" > "$out/$TAG-source.zip"
+          cp docs/deployments/ethereum-mainnet-2026-10-12.json "$out/"
+          cp website/data/jobs-mainnet-2026-10-18.json "$out/"
+          cp docs/deployments/evidence/configuration-readback-2026-10-13.json "$out/"
+          cp docs/production/mainnet-deployment-2026-10-12.md "$out/"
+          cp docs/production/RELEASE_NOTES_SOURCE_RC16.md "$out/"
+          cp docs/production/mainnet-2026-10-18/README.md "$out/mainnet-deployment-2026-10-18.md"
+          cp docs/production/mainnet-2026-10-18/deployment-receipts.json "$out/mainnet-deployment-receipts-2026-10-18.json"
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const file = 'reports/source-release-rc16/mainnet-deployment-2026-10-18.md';
+          const base = 'https://github.com/MontrealAI/AGIJobsv0/blob/284351148d96c5390a655aec1f9db806284f2400/docs/production/';
+          let guide = fs.readFileSync(file, 'utf8');
+          for (const [relative, target] of Object.entries({
+            'deployment-snapshot.json': 'mainnet-2026-10-18/deployment-snapshot.json',
+            'deployment-receipts.json': 'mainnet-2026-10-18/deployment-receipts.json',
+            '../mainnet-deployment-2026-10-12.md': 'mainnet-deployment-2026-10-12.md',
+            '../readiness.md': 'readiness.md'
+          })) guide = guide.replaceAll('](' + relative + ')', '](' + base + target + ')');
+          fs.writeFileSync(file, guide);
+          NODE
+          cp docs/production/compiler-warnings-2026-10-13.md "$out/"
+          cp config/solidity-compiler.json "$out/"
+          cp docs/deployment-addresses.mainnet.json "$out/"
+          cd "$out"
+          sha256sum -- *.json *.md *.zip > SHA256SUMS.txt
+          sha256sum --check SHA256SUMS.txt
+      - name: Retain exact rc.16 producer evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: source-rc16-${{ github.sha }}
+          path: reports/source-release-rc16/
+          if-no-files-found: error
+          overwrite: true
+      - name: Publish only after complete semantic producer and remote-asset verification
+        run: node scripts/release/publish-source-release-rc16.cjs

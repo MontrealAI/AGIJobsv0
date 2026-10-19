@@ -1,0 +1,57 @@
+name: Native transformation compatibility
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: native-ti-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  native:
+    name: Pinned native transformation compatibility
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: jobs
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          path: jobs
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Checkout the exact reviewed native Alpha candidate
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          repository: MontrealAI/AGI-Alpha-Agent-v0
+          ref: dbaf5696d64ddcbf133f05d88d35496ebb85c3f0
+          path: alpha
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.23.3'
+      - name: Exercise bounded native and policy rejection cases
+        run: node --test test/scripts/transformational-compatibility.test.mjs test/pages/transformational-work-request.test.mjs test/pages/four-repo-alpha-source.test.mjs
+      - name: Verify real native free campaign and refusal semantics
+        run: |
+          set -euo pipefail
+          mkdir -p reports/native-ti
+          node scripts/release/verify-transformational-compatibility.mjs "$GITHUB_WORKSPACE/alpha" > reports/native-ti/native-compatibility.json
+          cat reports/native-ti/native-compatibility.json
+      - name: Retain source-bound actual native evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: native-ti-compatibility-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: jobs/reports/native-ti/native-compatibility.json
+          if-no-files-found: error
