@@ -5,7 +5,7 @@
 const assert = require('node:assert/strict');
 const { createHash } = require('node:crypto');
 const integrationTransitionsSha256 =
-  '94adc707906234bafa4bc54e3d272cffbdac6ada86945dd738aca2501edaecd5';
+  '178dca9db29b37657c6e7451eb52cbb22a456367abc819044936360584c0ae43';
 const historical = require('./qualify-source-release.cjs');
 
 function freeze(value) {
@@ -40,7 +40,7 @@ const allowedNewPaths = Object.freeze([
   'scripts/release/verify-transformational-compatibility.mjs',
   'test/scripts/source-profile-rc16.test.cjs',
   'test/scripts/source-release-rc16.test.cjs',
-  'test/scripts/transformational-compatibility.test.mjs',
+  'integrations/alpha-agent/tests/transformational-compatibility.test.mjs',
   '.github/workflows/source-release-rc16.yml',
   '.github/workflows/transformational-compatibility.yml',
   'scripts/release/source-native-gates-rc16.cjs',

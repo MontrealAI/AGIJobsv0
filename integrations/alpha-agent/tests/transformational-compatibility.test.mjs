@@ -11,9 +11,9 @@ import {
   readPinnedNativeFixture,
   resolvePinnedNativeRoot,
   validateNativeReport,
-} from '../../scripts/release/verify-transformational-compatibility.mjs';
+} from '../../../scripts/release/verify-transformational-compatibility.mjs';
 const require = createRequire(import.meta.url);
-const { profile } = require('../../scripts/release/source-profile-rc16.cjs');
+const { profile } = require('../../../scripts/release/source-profile-rc16.cjs');
 const jobsCommit = 'a'.repeat(40),
   jobsTree = 'b'.repeat(40);
 
@@ -252,7 +252,7 @@ test('native archive must retain the complete pinned free-inspection and refusal
 test('CI selects the same exact native source and emits retained real-parser evidence', () => {
   const workflow = fs.readFileSync(
     new URL(
-      '../../.github/workflows/transformational-compatibility.yml',
+      '../../../.github/workflows/transformational-compatibility.yml',
       import.meta.url
     ),
     'utf8'
