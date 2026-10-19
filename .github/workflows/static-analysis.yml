@@ -192,7 +192,7 @@ jobs:
           const oldFiles = files.filter(file => admitted(file, old));
           assert(oldFiles.length > 0 && oldFiles.every(file => admitted(file, expanded)), 'Previously admitted source was excluded');
           for (const root of old.paths) for (const tail of ['docs/probe.js','nested/docs/probe.js','lib/probe.js','node_modules/probe.js']) assert.equal(admitted(root + '/' + tail, expanded), admitted(root + '/' + tail, old));
-          const integration = ['four-repo-computer-lifecycle.cjs','four-repo-computer-receipt.mjs','pinned-alpha-checkout.cjs','transformational-work-request.mjs','vendor/alpha/docs/assets/successor/engine.mjs'].map(file => 'integrations/alpha-agent/' + file);
+          const integration = ['four-repo-computer-lifecycle.cjs','four-repo-computer-receipt.mjs','pinned-alpha-checkout.cjs','transformational-work-request.mjs','vendor/alpha-computer/examples/successor-alpha/computer.mjs','vendor/alpha-computer/docs/assets/successor/engine.mjs','vendor/alpha/docs/assets/successor/engine.mjs'].map(file => 'integrations/alpha-agent/' + file);
           assert(integration.every(file => admitted(file, expanded)), 'Integration closure is excluded');
           const browser = ['computer-receipt.mjs','computer-receipt-model.mjs','computer-receipt-copy.mjs','computer-desk.mjs','computer-desk-runtime-source.mjs','computer-mission.js','computer-mission-copy.mjs'].map(file => 'website/assets/' + file);
           assert(browser.every(file => admitted(file, expanded)), 'Native browser closure is excluded');

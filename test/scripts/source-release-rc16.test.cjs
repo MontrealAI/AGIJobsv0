@@ -424,10 +424,12 @@ test('retained readback cannot relabel another successful same-SHA run or attemp
 });
 test('rc.16 owns only its new tag/routes/assets and remains blocked pending actual security review', () => {
   const names = expectedAssets(profile.tag);
-  assert.equal(new Set(names).size, 20);
+  assert.equal(new Set(names).size, 22);
   for (const name of [
     'codeql-evidence.zip',
     'codeql-provenance.json',
+    'python-codeql-evidence.zip',
+    'python-codeql-provenance.json',
     'native-compatibility.zip',
     'native-provenance.json',
     'source-profile-rc16.json',

@@ -24,6 +24,10 @@ const anchors = Object.freeze({
   integrationTree: '9fd2d43a5075ed54b308ff381da92cb402d26319',
   nativePinBaseline: '38a96554bb0932ff343c27c99bd397b372e4212c',
   nativePinTree: 'ae407c07b079174b45fe10697015de8ab132118b',
+  sourceConvergenceBaseline: 'fb5d3603479906830e4f207cc25c9f2499c429d2',
+  sourceConvergenceTree: 'a57568af67ae780f2d9851e0569473f62a80da90',
+  pythonScannerBaseline: 'ce08a583391e563566a0eaec6f89da3190c319db',
+  pythonScannerTree: 'da44eb275fae8d01bd471fe2efef4a36982fc9d3',
 });
 const allowedNewPaths = Object.freeze([
   'scripts/release/source-profile-rc16.cjs',
@@ -31,6 +35,8 @@ const allowedNewPaths = Object.freeze([
   'scripts/release/qualify-source-release-rc16.cjs',
   'scripts/release/publish-source-release-rc16.cjs',
   'scripts/release/verify-transformational-compatibility.mjs',
+  'scripts/release/python-scanner-rc16.cjs',
+  'test/scripts/source-python-scanner-rc16.test.cjs',
   'test/scripts/source-profile-rc16.test.cjs',
   'test/scripts/source-release-rc16.test.cjs',
   'test/scripts/transformational-compatibility.test.mjs',
@@ -65,6 +71,8 @@ const scannerRequiredPaths = Object.freeze([
   'integrations/alpha-agent/pinned-alpha-checkout.cjs',
   'integrations/alpha-agent/transformational-work-request.mjs',
   'integrations/alpha-agent/vendor/alpha/docs/assets/successor/engine.mjs',
+  'integrations/alpha-agent/vendor/alpha-computer/examples/successor-alpha/computer.mjs',
+  'integrations/alpha-agent/vendor/alpha-computer/docs/assets/successor/engine.mjs',
   'website/assets/computer-receipt.mjs',
   'website/assets/computer-receipt-model.mjs',
   'website/assets/computer-receipt-copy.mjs',
@@ -85,8 +93,8 @@ const scannerPolicy = freeze({
   configBlob: '0759a4da80412a04830bed3e7f5727d07cbdeb35',
   workflowPath: '.github/workflows/static-analysis.yml',
   workflowSha256:
-    'd5974fce2bd468ce82209b10f03df8bb8162e7e65e0044bc1860795523373ccb',
-  workflowBlob: 'c7436fe742b7751b776eeb9ff82cd31f2508cb1a',
+    '1ff362acc7cfa238a3ef0661d1a437e2ee79ad992a41e1ce81d9bc2530d9741f',
+  workflowBlob: '7813a7c15e6d5637b44f731111c990a67ec0faaa',
   archiveFiles: [
     'javascript.sarif',
     'source-extraction.json',
@@ -122,6 +130,49 @@ const nativePinPaths = Object.freeze([
   'integrations/alpha-agent/successor-computer-mission-lab.py',
   'integrations/alpha-agent/vendor/alpha-computer/source-identity.mjs',
   'integrations/alpha-agent/vendor/alpha-computer/source-manifest.json',
+]);
+const sourceConvergencePaths = Object.freeze([
+  '.github/workflows/apps-images.yml',
+  '.github/workflows/contracts.yml',
+  '.github/workflows/culture-ci.yml',
+  '.github/workflows/escrow-replay-regression.yml',
+  '.github/workflows/pages.yml',
+  '.github/workflows/static-analysis.yml',
+  'docs/security/remediation-2026-10-19/README.md',
+  'shared/containedFiles.ts',
+  'test/security/inherited-codeql.test.cjs',
+]);
+const pythonScannerPaths = Object.freeze([
+  '.github/codeql/config-python-integrations.yml',
+  '.github/workflows/static-analysis-python-integrations.yml',
+]);
+const pythonScannerPolicy = freeze({
+  producerCommit: 'ce08a583391e563566a0eaec6f89da3190c319db',
+  producerTree: 'da44eb275fae8d01bd471fe2efef4a36982fc9d3',
+  configPath: '.github/codeql/config-python-integrations.yml',
+  configSha256:
+    'eb5b425facefb419987bf537280d5144a477b65a205ccd71df3866b60b01e560',
+  configBlob: 'cdd0d5a0a1a0e691c3367bc5ce4429215f41381d',
+  workflowPath: '.github/workflows/static-analysis-python-integrations.yml',
+  workflowSha256:
+    '52a2c3176448aa61699bf468fd1d864dde693259f1c97622d47cb88085f25f82',
+  workflowBlob: 'bfc677ed09b794c14a9bac11af68eea403a3e25b',
+  archiveFiles: [
+    'python.sarif',
+    'source-extraction.json',
+    'source-scope-after.json',
+    'source-scope-before.json',
+  ],
+});
+const pythonScannerRequiredPaths = Object.freeze([
+  'integrations/alpha-agent/successor-computer-mission-lab.py',
+  'integrations/alpha-agent/successor-computer-worker-launch.py',
+  'integrations/alpha-agent/successor-frontier-mission-lab.py',
+  'integrations/alpha-agent/supplier-adapter-lab.py',
+  'integrations/alpha-agent/supplier-browser-lab.py',
+  'integrations/alpha-agent/supplier_browser_lab_support.py',
+  'integrations/alpha-agent/supplier_node_guard.py',
+  'integrations/alpha-agent/supplier_proof_guard.py',
 ]);
 const excludedCompilerPaths = new Set(
   historical.reviewedCompilerPaths
@@ -317,6 +368,109 @@ function verifyNativePinTransitions(beforeTree, afterTree, transitions) {
   return [...nativePinPaths].sort();
 }
 
+function verifySourceConvergenceTransitions(
+  beforeTree,
+  afterTree,
+  transitions
+) {
+  requireValue(
+    beforeTree instanceof Map &&
+      afterTree instanceof Map &&
+      Array.isArray(transitions) &&
+      same(
+        transitions.map((item) => item.path).sort(),
+        [...sourceConvergencePaths].sort()
+      ),
+    'Complete finite source convergence transition paths differ'
+  );
+  for (const item of transitions) {
+    fields(
+      item,
+      ['path', 'before', 'after'],
+      'Malformed source convergence transition'
+    );
+    for (const identity of [item.before, item.after]) {
+      if (identity === null) continue;
+      fields(
+        identity,
+        ['mode', 'blob'],
+        'Malformed source convergence blob identity'
+      );
+      requireValue(
+        identity.mode === '100644' && /^[a-f0-9]{40}$/.test(identity.blob),
+        'Source convergence source must retain reviewed regular blob modes'
+      );
+    }
+    requireValue(
+      item.after !== null &&
+        !same(item.before, item.after) &&
+        (item.before === null || item.before.mode === item.after.mode),
+      'Source convergence deletion, unchanged transition or mode change is prohibited'
+    );
+    requireValue(
+      same(beforeTree.get(item.path) ?? null, item.before) &&
+        same(afterTree.get(item.path) ?? null, item.after),
+      'Reviewed source convergence blob differs: ' + item.path
+    );
+  }
+  requireValue(
+    same(
+      changedPaths(beforeTree, afterTree),
+      [...sourceConvergencePaths].sort()
+    ),
+    'Complete source convergence transition inventory differs'
+  );
+  return [...sourceConvergencePaths].sort();
+}
+
+function verifyPythonScannerTransitions(beforeTree, afterTree, transitions) {
+  requireValue(
+    beforeTree instanceof Map &&
+      afterTree instanceof Map &&
+      Array.isArray(transitions) &&
+      same(
+        transitions.map((item) => item.path).sort(),
+        [...pythonScannerPaths].sort()
+      ),
+    'Complete finite Python scanner transition paths differ'
+  );
+  for (const item of transitions) {
+    fields(
+      item,
+      ['path', 'before', 'after'],
+      'Malformed Python scanner transition'
+    );
+    for (const identity of [item.before, item.after]) {
+      if (identity === null) continue;
+      fields(
+        identity,
+        ['mode', 'blob'],
+        'Malformed Python scanner blob identity'
+      );
+      requireValue(
+        identity.mode === '100644' && /^[a-f0-9]{40}$/.test(identity.blob),
+        'Python scanner source must retain reviewed regular blob modes'
+      );
+    }
+    requireValue(
+      item.after !== null &&
+        !same(item.before, item.after) &&
+        (item.before === null || item.before.mode === item.after.mode),
+      'Python scanner deletion, unchanged transition or mode change is prohibited'
+    );
+    requireValue(
+      same(beforeTree.get(item.path) ?? null, item.before) &&
+        same(afterTree.get(item.path) ?? null, item.after),
+      'Reviewed Python scanner blob differs: ' + item.path
+    );
+  }
+  requireValue(
+    same(changedPaths(beforeTree, afterTree), [...pythonScannerPaths].sort()),
+    'Complete Python scanner transition inventory differs'
+  );
+  return [...pythonScannerPaths].sort();
+}
+
 function verifyReleaseDelta(beforeTree, afterTree) {
   const changes = changedPaths(beforeTree, afterTree);
   for (const name of changes) {
@@ -425,6 +579,11 @@ function validateProfile(value = profile) {
       'transitions',
       'integrationTransitions',
       'nativePinTransitions',
+      'sourceConvergenceTransitions',
+      'pythonScannerTransitions',
+      'pythonScannerPolicy',
+      'pythonScannerRequiredPaths',
+      'pythonScannerReview',
       'nativeCompatibility',
       'scannerPolicy',
       'scannerRequiredPaths',
@@ -455,6 +614,13 @@ function validateProfile(value = profile) {
       value.integrationTransitions.length === 19 &&
       Array.isArray(value.nativePinTransitions) &&
       value.nativePinTransitions.length === 6 &&
+      Array.isArray(value.sourceConvergenceTransitions) &&
+      value.sourceConvergenceTransitions.length === 9 &&
+      Array.isArray(value.pythonScannerTransitions) &&
+      value.pythonScannerTransitions.length === 2 &&
+      same(value.pythonScannerPolicy, pythonScannerPolicy) &&
+      same(value.pythonScannerRequiredPaths, pythonScannerRequiredPaths) &&
+      value.pythonScannerReview === null &&
       same(value.scannerPolicy, scannerPolicy) &&
       same(value.nativeCompatibility, nativeCompatibility) &&
       same(value.scannerRequiredPaths, scannerRequiredPaths) &&
@@ -482,6 +648,8 @@ function verifySourceScope({ git, sha, version, lock, policy }) {
     profile.implementationBaseline,
     profile.integrationBaseline,
     profile.nativePinBaseline,
+    profile.sourceConvergenceBaseline,
+    profile.pythonScannerBaseline,
   ])
     git('merge-base', '--is-ancestor', baseline, sha);
   requireValue(
@@ -530,6 +698,12 @@ function verifySourceScope({ git, sha, version, lock, policy }) {
   const nativePinTree = parseTree(
     git('ls-tree', '-rz', profile.nativePinBaseline)
   );
+  const sourceConvergenceTree = parseTree(
+    git('ls-tree', '-rz', profile.sourceConvergenceBaseline)
+  );
+  const pythonScannerTree = parseTree(
+    git('ls-tree', '-rz', profile.pythonScannerBaseline)
+  );
   const releaseTree = parseTree(git('ls-tree', '-rz', sha));
   verifyProtectedTransitions(
     baselineTree,
@@ -568,8 +742,8 @@ function verifySourceScope({ git, sha, version, lock, policy }) {
     [scannerPolicy.workflowPath, scannerPolicy.workflowBlob],
   ])
     requireValue(
-      integrationTree.get(name)?.mode === '100644' &&
-        integrationTree.get(name)?.blob === blob,
+      sourceConvergenceTree.get(name)?.mode === '100644' &&
+        sourceConvergenceTree.get(name)?.blob === blob,
       'Reviewed scanner producer blob differs: ' + name
     );
   requireValue(
@@ -588,7 +762,55 @@ function verifySourceScope({ git, sha, version, lock, policy }) {
     nativePinTree,
     profile.nativePinTransitions
   );
-  const releaseChanges = verifyReleaseDelta(nativePinTree, releaseTree);
+  requireValue(
+    text(
+      git('rev-parse', profile.sourceConvergenceBaseline + '^{tree}')
+    ).trim() === profile.sourceConvergenceTree,
+    'Converged source tree differs'
+  );
+  git(
+    'merge-base',
+    '--is-ancestor',
+    profile.nativePinBaseline,
+    profile.sourceConvergenceBaseline
+  );
+  git(
+    'merge-base',
+    '--is-ancestor',
+    'b26a65456d5c06c901ba73d1e1620f7edb1a315a',
+    profile.sourceConvergenceBaseline
+  );
+  verifySourceConvergenceTransitions(
+    nativePinTree,
+    sourceConvergenceTree,
+    profile.sourceConvergenceTransitions
+  );
+  requireValue(
+    text(git('rev-parse', profile.pythonScannerBaseline + '^{tree}')).trim() ===
+      profile.pythonScannerTree,
+    'Python scanner source tree differs'
+  );
+  git(
+    'merge-base',
+    '--is-ancestor',
+    profile.sourceConvergenceBaseline,
+    profile.pythonScannerBaseline
+  );
+  verifyPythonScannerTransitions(
+    sourceConvergenceTree,
+    pythonScannerTree,
+    profile.pythonScannerTransitions
+  );
+  for (const [name, blob] of [
+    [pythonScannerPolicy.configPath, pythonScannerPolicy.configBlob],
+    [pythonScannerPolicy.workflowPath, pythonScannerPolicy.workflowBlob],
+  ])
+    requireValue(
+      pythonScannerTree.get(name)?.mode === '100644' &&
+        pythonScannerTree.get(name)?.blob === blob,
+      'Reviewed Python scanner source differs: ' + name
+    );
+  const releaseChanges = verifyReleaseDelta(pythonScannerTree, releaseTree);
   const afterPackage = readJSON(sha, 'package.json'),
     afterLock = readJSON(sha, 'package-lock.json');
   verifyVersionOnly(
@@ -620,6 +842,11 @@ function verifySourceScope({ git, sha, version, lock, policy }) {
     protectedTransitions: profile.transitions,
     integrationTransitions: profile.integrationTransitions,
     nativePinTransitions: profile.nativePinTransitions,
+    sourceConvergenceTransitions: profile.sourceConvergenceTransitions,
+    pythonScannerTransitions: profile.pythonScannerTransitions,
+    pythonScannerPolicy: profile.pythonScannerPolicy,
+    pythonScannerRequiredPaths: profile.pythonScannerRequiredPaths,
+    pythonScannerReview: null,
     scannerPolicy: profile.scannerPolicy,
     releaseChanges,
     nativeCompatibility: profile.nativeCompatibility,
@@ -633,7 +860,7 @@ function verifyPublicationReview() {
   // The expanded producer is pinned, but actual final-source extraction and
   // finite reviewed current-result inventory have not been installed in this profile.
   throw Error(
-    'rc.16 publication blocked: scannerReview is pending; full integration extraction and independent finite result review are required'
+    'rc.16 publication blocked: scannerReview is pending and Python scanner review is pending; actual JavaScript and Python extraction and independent finite result reviews are required'
   );
 }
 
@@ -647,6 +874,8 @@ module.exports = {
   verifyProtectedTransitions,
   verifyIntegrationTransitions,
   verifyNativePinTransitions,
+  verifySourceConvergenceTransitions,
+  verifyPythonScannerTransitions,
   verifyReleaseDelta,
   verifyVersionOnly,
   LEGACY_WORKFLOW_GUARD,

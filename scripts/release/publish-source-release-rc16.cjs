@@ -38,6 +38,8 @@ const {
   verifyDeploymentSnapshot,
 } = require('./qualify-source-release-rc16.cjs');
 
+const { verifyPythonScannerArchive } = require('./python-scanner-rc16.cjs');
+
 function expectedAssets(tag) {
   return [
     'SHA256SUMS.txt',
@@ -57,6 +59,8 @@ function expectedAssets(tag) {
     'compiler-provenance.json',
     'codeql-evidence.zip',
     'codeql-provenance.json',
+    'python-codeql-evidence.zip',
+    'python-codeql-provenance.json',
     'native-compatibility.zip',
     'native-provenance.json',
     'source-profile-rc16.json',
@@ -75,6 +79,8 @@ async function verifyDownloadedAssets({
   compilerRun,
   scannerArtifact,
   scannerRun,
+  pythonScannerArtifact,
+  pythonScannerRun,
   nativeArtifact,
   nativeRun,
   codeqlChecks,
@@ -120,6 +126,8 @@ async function verifyDownloadedAssets({
         'compiler-provenance.json',
         'codeql-evidence.zip',
         'codeql-provenance.json',
+        'python-codeql-evidence.zip',
+        'python-codeql-provenance.json',
         'native-compatibility.zip',
         'native-provenance.json',
       ].includes(name)
@@ -165,6 +173,23 @@ async function verifyDownloadedAssets({
     provenance.sourceScope?.nativePinTree !== profile.nativePinTree ||
     canonical(provenance.sourceScope?.nativePinTransitions) !==
       canonical(profile.nativePinTransitions) ||
+    provenance.sourceScope?.sourceConvergenceBaseline !==
+      profile.sourceConvergenceBaseline ||
+    provenance.sourceScope?.sourceConvergenceTree !==
+      profile.sourceConvergenceTree ||
+    canonical(provenance.sourceScope?.sourceConvergenceTransitions) !==
+      canonical(profile.sourceConvergenceTransitions) ||
+    provenance.sourceScope?.pythonScannerBaseline !==
+      profile.pythonScannerBaseline ||
+    provenance.sourceScope?.pythonScannerTree !== profile.pythonScannerTree ||
+    canonical(provenance.sourceScope?.pythonScannerTransitions) !==
+      canonical(profile.pythonScannerTransitions) ||
+    canonical(provenance.sourceScope?.pythonScannerPolicy) !==
+      canonical(profile.pythonScannerPolicy) ||
+    canonical(provenance.sourceScope?.pythonScannerRequiredPaths) !==
+      canonical(profile.pythonScannerRequiredPaths) ||
+    canonical(provenance.sourceScope?.pythonScannerReview) !==
+      canonical(profile.pythonScannerReview) ||
     canonical(provenance.sourceScope?.scannerPolicy) !==
       canonical(profile.scannerPolicy) ||
     canonical(provenance.sourceScope?.scannerRequiredPaths) !==
@@ -260,6 +285,32 @@ async function verifyDownloadedAssets({
         ),
     'Actual current CodeQL result is missing or failing'
   );
+  const pythonScanner = verifyRetainedProducer(
+    downloaded,
+    'python-codeql',
+    pythonScannerArtifact,
+    pythonScannerRun,
+    sha,
+    provenance
+  );
+  const pythonZip = path.join(downloaded, 'python-codeql-evidence.zip');
+  const pythonSummary = verifyPythonScannerArchive(
+    zipFiles(pythonZip),
+    (name) => zipRead(pythonZip, name),
+    {
+      sha,
+      tree: provenance.tree,
+      producerRun: pythonScannerRun,
+      git: gitSource,
+      artifact: pythonScannerArtifact,
+      archiveSha256: digest(pythonZip),
+    }
+  );
+  assert.equal(
+    canonical(pythonScanner.summary),
+    canonical(pythonSummary),
+    'Remote Python scanner summary mismatch'
+  );
   const native = verifyRetainedProducer(
     downloaded,
     'native',
@@ -294,6 +345,12 @@ const additional = Object.freeze({
     artifact: (sha, run) =>
       `codeql-security-report-${sha}-${run.id}-${run.run_attempt}`,
     file: 'codeql-evidence.zip',
+  },
+  'python-codeql': {
+    workflow: '.github/workflows/static-analysis-python-integrations.yml',
+    artifact: (sha, run) =>
+      `python-codeql-security-report-${sha}-${run.id}-${run.run_attempt}`,
+    file: 'python-codeql-evidence.zip',
   },
   native: {
     workflow: '.github/workflows/transformational-compatibility.yml',
@@ -478,6 +535,19 @@ async function collectAdditionalEvidence() {
           tree: provenance.tree,
           producerRun: run,
           git: gitSource,
+        }
+      );
+    else if (kind === 'python-codeql')
+      summary = verifyPythonScannerArchive(
+        zipFiles(zip),
+        (name) => zipRead(zip, name),
+        {
+          sha,
+          tree: provenance.tree,
+          producerRun: run,
+          git: gitSource,
+          artifact,
+          archiveSha256: downloadedSha256,
         }
       );
     else {
@@ -688,11 +758,16 @@ async function main() {
       const native = JSON.parse(
         fs.readFileSync(path.join(downloaded, 'native-provenance.json'))
       );
+      const pythonScanner = JSON.parse(
+        fs.readFileSync(path.join(downloaded, 'python-codeql-provenance.json'))
+      );
       const [
         compilerArtifact,
         compilerRun,
         scannerArtifact,
         scannerRun,
+        pythonScannerArtifact,
+        pythonScannerRun,
         nativeArtifact,
         nativeRun,
         codeqlChecks,
@@ -705,6 +780,13 @@ async function main() {
           `actions/runs/${producerId(scanner.runId)}/attempts/${producerId(
             scanner.runAttempt
           )}`
+        ),
+        api('GET', `actions/artifacts/${producerId(pythonScanner.artifactId)}`),
+        api(
+          'GET',
+          `actions/runs/${producerId(
+            pythonScanner.runId
+          )}/attempts/${producerId(pythonScanner.runAttempt)}`
         ),
         api('GET', `actions/artifacts/${producerId(native.artifactId)}`),
         api(
@@ -731,6 +813,8 @@ async function main() {
         compilerRun,
         scannerArtifact,
         scannerRun,
+        pythonScannerArtifact,
+        pythonScannerRun,
         nativeArtifact,
         nativeRun,
         codeqlChecks,

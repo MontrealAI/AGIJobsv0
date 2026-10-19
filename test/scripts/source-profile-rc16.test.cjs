@@ -184,7 +184,7 @@ test('complete source verifier accepts only finite release plumbing over the act
     path.join(r.root, '.git/objects/info/alternates'),
     objects + '\n'
   );
-  r.git('read-tree', p.profile.nativePinBaseline);
+  r.git('read-tree', p.profile.pythonScannerBaseline);
   const beforePackage = JSON.parse(
     r.git('show', `${p.profile.integrationBaseline}:package.json`)
   );
@@ -219,7 +219,7 @@ test('complete source verifier accepts only finite release plumbing over the act
   );
   const args = {
     git: r.git,
-    sha: r.commit(p.profile.nativePinBaseline),
+    sha: r.commit(p.profile.pythonScannerBaseline),
     version: p.profile.releaseVersion,
     lock: afterLock,
     policy,
@@ -435,7 +435,7 @@ test('actual integrated candidate has exactly nineteen finite receiver and produ
   );
   assert.equal(
     after.get(p.profile.scannerPolicy.workflowPath).blob,
-    p.profile.scannerPolicy.workflowBlob
+    'c7436fe742b7751b776eeb9ff82cd31f2508cb1a'
   );
   assert.equal(p.profile.scannerReview, null);
   assert.throws(() => p.verifyPublicationReview(), /pending/);
@@ -470,4 +470,43 @@ test('actual native pin candidate preserves the exact six source identity and ge
     '30dc828703a6e9cd64103e0ebc965fc701e9bcf3'
   );
   assert.equal(p.profile.scannerReview, null);
+});
+
+test('converged storage and additive Python policy have exact finite source transitions', () => {
+  const git = (...args) => command(ROOT, args);
+  const native = p.parseTree(
+    git('ls-tree', '-rz', p.profile.nativePinBaseline)
+  );
+  const converged = p.parseTree(
+    git('ls-tree', '-rz', p.profile.sourceConvergenceBaseline)
+  );
+  const python = p.parseTree(
+    git('ls-tree', '-rz', p.profile.pythonScannerBaseline)
+  );
+  assert.equal(
+    p.verifySourceConvergenceTransitions(
+      native,
+      converged,
+      p.profile.sourceConvergenceTransitions
+    ).length,
+    9
+  );
+  assert.equal(
+    p.verifyPythonScannerTransitions(
+      converged,
+      python,
+      p.profile.pythonScannerTransitions
+    ).length,
+    2
+  );
+  assert.equal(
+    converged.get('shared/containedFiles.ts').blob,
+    'd17e3090c9a28580eafc265fb4958d24910ca0ef'
+  );
+  assert.equal(
+    converged.get(p.profile.scannerPolicy.workflowPath).blob,
+    p.profile.scannerPolicy.workflowBlob
+  );
+  assert.equal(p.profile.scannerRequiredPaths.length, 14);
+  assert.equal(p.profile.pythonScannerReview, null);
 });

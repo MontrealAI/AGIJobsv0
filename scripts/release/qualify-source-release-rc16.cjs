@@ -23,6 +23,7 @@ const requiredPaths = [
     ...historical.requiredPaths,
     '.github/workflows/security-remediation.yml',
     '.github/workflows/transformational-compatibility.yml',
+    '.github/workflows/static-analysis-python-integrations.yml',
   ]),
 ];
 const requiredChecks = [
@@ -31,6 +32,7 @@ const requiredChecks = [
     'CodeQL analysis',
     'Inherited security boundaries and browser regressions',
     'Pinned native transformation compatibility',
+    'Python integration CodeQL analysis',
   ]),
 ];
 const sha256 = (bytes) =>

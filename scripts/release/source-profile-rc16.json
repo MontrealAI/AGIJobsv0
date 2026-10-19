@@ -431,6 +431,8 @@
     "integrations/alpha-agent/pinned-alpha-checkout.cjs",
     "integrations/alpha-agent/transformational-work-request.mjs",
     "integrations/alpha-agent/vendor/alpha/docs/assets/successor/engine.mjs",
+    "integrations/alpha-agent/vendor/alpha-computer/examples/successor-alpha/computer.mjs",
+    "integrations/alpha-agent/vendor/alpha-computer/docs/assets/successor/engine.mjs",
     "website/assets/computer-receipt.mjs",
     "website/assets/computer-receipt-model.mjs",
     "website/assets/computer-receipt-copy.mjs",
@@ -448,8 +450,8 @@
     "configSha256": "18041680f9d2df3706e45bdf04e785457ee27573312998b999f51e893e7b59bb",
     "configBlob": "0759a4da80412a04830bed3e7f5727d07cbdeb35",
     "workflowPath": ".github/workflows/static-analysis.yml",
-    "workflowSha256": "d5974fce2bd468ce82209b10f03df8bb8162e7e65e0044bc1860795523373ccb",
-    "workflowBlob": "c7436fe742b7751b776eeb9ff82cd31f2508cb1a",
+    "workflowSha256": "1ff362acc7cfa238a3ef0661d1a437e2ee79ad992a41e1ce81d9bc2530d9741f",
+    "workflowBlob": "7813a7c15e6d5637b44f731111c990a67ec0faaa",
     "archiveFiles": [
       "javascript.sarif",
       "source-extraction.json",
@@ -527,5 +529,155 @@
         "blob": "0dc320ab467d80141a5651a9ec6b8ece4d68b7a0"
       }
     }
-  ]
+  ],
+  "sourceConvergenceBaseline": "fb5d3603479906830e4f207cc25c9f2499c429d2",
+  "sourceConvergenceTree": "a57568af67ae780f2d9851e0569473f62a80da90",
+  "sourceConvergenceTransitions": [
+    {
+      "path": ".github/workflows/apps-images.yml",
+      "before": {
+        "mode": "100644",
+        "blob": "1a3800d0e830877251f9ce90abf9c13e09892914"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "2f45074f1bbaa1b22219655856bed5eb3d1012b8"
+      }
+    },
+    {
+      "path": ".github/workflows/contracts.yml",
+      "before": {
+        "mode": "100644",
+        "blob": "8f6a1b8694bee9be36d7b64843a1d3b486412865"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "6837c4b9015357ad7724a6a00727f0fe98dd0ee5"
+      }
+    },
+    {
+      "path": ".github/workflows/culture-ci.yml",
+      "before": {
+        "mode": "100644",
+        "blob": "b5a693ca7c8f6f0d1a1274f3dc31dafb4e44c706"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "2ae2c1f341c7fafc793c4ce807241499c8116d48"
+      }
+    },
+    {
+      "path": ".github/workflows/escrow-replay-regression.yml",
+      "before": {
+        "mode": "100644",
+        "blob": "d3e4fb2d558c59e79f2c67a63f6cfd2673669995"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "5c08068670ad99788c3e007f3b2474cd719330df"
+      }
+    },
+    {
+      "path": ".github/workflows/pages.yml",
+      "before": {
+        "mode": "100644",
+        "blob": "b317b3572a6e6a7860fb400ea8072a1cc6182efa"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "fd8029ec0d7e90f1e996d603aa94d014f6daeded"
+      }
+    },
+    {
+      "path": ".github/workflows/static-analysis.yml",
+      "before": {
+        "mode": "100644",
+        "blob": "c7436fe742b7751b776eeb9ff82cd31f2508cb1a"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "7813a7c15e6d5637b44f731111c990a67ec0faaa"
+      }
+    },
+    {
+      "path": "docs/security/remediation-2026-10-19/README.md",
+      "before": {
+        "mode": "100644",
+        "blob": "0df3b3ba3deefe26146587dfde862650a94ea645"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "33dfe77d4d8d6071baca554f38614c8673914a45"
+      }
+    },
+    {
+      "path": "shared/containedFiles.ts",
+      "before": {
+        "mode": "100644",
+        "blob": "4ca549ba6cd9b34c73e778639eebf7ae30dda27d"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "d17e3090c9a28580eafc265fb4958d24910ca0ef"
+      }
+    },
+    {
+      "path": "test/security/inherited-codeql.test.cjs",
+      "before": {
+        "mode": "100644",
+        "blob": "4d740bc78dc1e533bee70654f9db48e8cfd43ed9"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "9e8742d4b3f468a7324a334e11667f23b95d5bb7"
+      }
+    }
+  ],
+  "pythonScannerBaseline": "ce08a583391e563566a0eaec6f89da3190c319db",
+  "pythonScannerTree": "da44eb275fae8d01bd471fe2efef4a36982fc9d3",
+  "pythonScannerTransitions": [
+    {
+      "path": ".github/codeql/config-python-integrations.yml",
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "blob": "cdd0d5a0a1a0e691c3367bc5ce4429215f41381d"
+      }
+    },
+    {
+      "path": ".github/workflows/static-analysis-python-integrations.yml",
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "blob": "bfc677ed09b794c14a9bac11af68eea403a3e25b"
+      }
+    }
+  ],
+  "pythonScannerReview": null,
+  "pythonScannerRequiredPaths": [
+    "integrations/alpha-agent/successor-computer-mission-lab.py",
+    "integrations/alpha-agent/successor-computer-worker-launch.py",
+    "integrations/alpha-agent/successor-frontier-mission-lab.py",
+    "integrations/alpha-agent/supplier-adapter-lab.py",
+    "integrations/alpha-agent/supplier-browser-lab.py",
+    "integrations/alpha-agent/supplier_browser_lab_support.py",
+    "integrations/alpha-agent/supplier_node_guard.py",
+    "integrations/alpha-agent/supplier_proof_guard.py"
+  ],
+  "pythonScannerPolicy": {
+    "producerCommit": "ce08a583391e563566a0eaec6f89da3190c319db",
+    "producerTree": "da44eb275fae8d01bd471fe2efef4a36982fc9d3",
+    "configPath": ".github/codeql/config-python-integrations.yml",
+    "configSha256": "eb5b425facefb419987bf537280d5144a477b65a205ccd71df3866b60b01e560",
+    "configBlob": "cdd0d5a0a1a0e691c3367bc5ce4429215f41381d",
+    "workflowPath": ".github/workflows/static-analysis-python-integrations.yml",
+    "workflowSha256": "52a2c3176448aa61699bf468fd1d864dde693259f1c97622d47cb88085f25f82",
+    "workflowBlob": "bfc677ed09b794c14a9bac11af68eea403a3e25b",
+    "archiveFiles": [
+      "python.sarif",
+      "source-extraction.json",
+      "source-scope-after.json",
+      "source-scope-before.json"
+    ]
+  }
 }

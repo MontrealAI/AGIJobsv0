@@ -63,6 +63,34 @@ another process with the same OS identity and arbitrary write access to its
 ancestors is outside that isolation boundary. No Node pathname helper can
 provide an OS security boundary against such a process.
 
+The contained-storage follow-up retains directory descriptors instead of
+reopening the configured pathname after checking it. It walks every ancestor
+relative to its verified parent descriptor with `O_DIRECTORY | O_NOFOLLOW`,
+then retains the final descriptor through file reads, temporary creation,
+exclusive linking or atomic renaming, and cleanup. On Linux, each descriptor
+path is checked against procfs and the opened directory's device/inode. Moving
+an ancestor or the private directory therefore leaves the operation attached
+to the original directory. Reads retain ownership, regular-file, single-link,
+size, stable-file and strict UTF-8 checks; writes remain private and exclusive
+until publication. A failed exclusive publication does not remove the existing
+record.
+
+This adapter requires Linux with a verifiable `/proc/self/fd` mount and fails
+closed when that capability is unavailable. Ubuntu CI and Linux Docker are the
+service targets for this slice. Native macOS and Windows service storage are
+not qualified; Docker on those hosts still uses its Linux container boundary.
+This helper is called by planner records, orchestrator receipts and world-model
+snapshots, not Ubuntu Hardhat deployer-key entry or Mac Ledger governance.
+It does not isolate a service from another process that can directly modify
+entries inside its private directory with the same OS authority.
+
+The additional contained-storage tests relocate only disposable private
+directories and verify original-inode reads, ancestor walks, publication and
+failure cleanup, descriptor release, permissions, bounded input and UTF-8.
+They do not contact another host, use an external target or perform a wallet
+operation. Original scanner queries, scope, the 96-result ledger and historical
+qualification are unchanged; the revised source requires fresh qualification.
+
 Report data is encoded in its Markdown or Mermaid context. Notifications apply
 a process-wide peer rate limit before JSON parsing. Console values use JSON
 encoding to prevent forged log lines. Constructor-argument files use unique
