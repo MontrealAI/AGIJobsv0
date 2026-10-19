@@ -5,7 +5,10 @@ import os from 'node:os';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
-import { assertPinnedAlphaCheckout } from '../../integrations/alpha-agent/pinned-alpha-checkout.cjs';
+import {
+  assertPinnedAlphaCheckout,
+  boundedSourceBlob,
+} from '../../integrations/alpha-agent/pinned-alpha-checkout.cjs';
 
 function checkout(t) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'jobs-alpha-source-'));
@@ -38,6 +41,97 @@ function checkout(t) {
   const commit = git('rev-parse', 'HEAD').trim();
   return { root, commit, git, write };
 }
+
+test('source hashing stops at maxBytes+1 after an injected append without whole-file allocation', (t) => {
+  const { root } = checkout(t),
+    file = path.join(root, 'examples/successor-workbench/engine.mjs');
+  fs.writeFileSync(file, '12345678');
+  const fd = fs.openSync(file, fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW);
+  const originalRead = fs.readSync,
+    originalReadFile = fs.readFileSync;
+  let injected = false,
+    totalRead = 0,
+    requested = 0;
+  try {
+    fs.readFileSync = (selected, ...args) => {
+      assert.notEqual(
+        typeof selected,
+        'number',
+        'Unbounded descriptor read is forbidden'
+      );
+      return originalReadFile(selected, ...args);
+    };
+    fs.readSync = (selected, buffer, offset, length, position) => {
+      if (selected === fd) {
+        if (!injected) {
+          fs.appendFileSync(file, 'x'.repeat(32));
+          injected = true;
+        }
+        requested += length;
+        const count = originalRead(selected, buffer, offset, length, position);
+        totalRead += count;
+        return count;
+      }
+      return originalRead(selected, buffer, offset, length, position);
+    };
+    assert.throws(
+      () => boundedSourceBlob(fd, 16),
+      /grew or changed during bounded source read/
+    );
+    assert.equal(injected, true);
+    assert.equal(totalRead, 17);
+    assert.equal(requested, 17);
+  } finally {
+    fs.readSync = originalRead;
+    fs.readFileSync = originalReadFile;
+    fs.closeSync(fd);
+  }
+});
+
+test('the actual source gate rejects small under-limit growth after its initial stat and closes the private descriptor', (t) => {
+  const { root, commit } = checkout(t),
+    file = path.join(root, 'examples/successor-workbench/engine.mjs');
+  const identity = fs.statSync(file),
+    originalStat = fs.fstatSync,
+    originalReadFile = fs.readFileSync,
+    originalClose = fs.closeSync;
+  let injected = false,
+    targetFd,
+    closed = false;
+  try {
+    fs.fstatSync = (fd, ...args) => {
+      const stat = originalStat(fd, ...args);
+      if (!injected && stat.dev === identity.dev && stat.ino === identity.ino) {
+        targetFd = fd;
+        fs.appendFileSync(file, '/*append*/');
+        injected = true;
+      }
+      return stat;
+    };
+    fs.readFileSync = (selected, ...args) => {
+      assert.notEqual(
+        typeof selected,
+        'number',
+        'Unbounded descriptor read is forbidden'
+      );
+      return originalReadFile(selected, ...args);
+    };
+    fs.closeSync = (fd) => {
+      if (fd === targetFd) closed = true;
+      return originalClose(fd);
+    };
+    assert.throws(
+      () => assertPinnedAlphaCheckout(root, commit),
+      /grew or changed during bounded source read/
+    );
+    assert.equal(injected, true);
+    assert.equal(closed, true);
+  } finally {
+    fs.fstatSync = originalStat;
+    fs.readFileSync = originalReadFile;
+    fs.closeSync = originalClose;
+  }
+});
 
 test('dirty shared native import is refused before any module executes', async (t) => {
   const { root, commit, git, write } = checkout(t);

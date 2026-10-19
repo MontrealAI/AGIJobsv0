@@ -5,6 +5,46 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { createHash } = require('node:crypto');
 const { execFileSync } = require('node:child_process');
+const MAX_SOURCE_BYTES = 256 * 1024 * 1024;
+
+function boundedSourceBlob(fd, maxBytes = MAX_SOURCE_BYTES) {
+  assert(
+    Number.isSafeInteger(maxBytes) &&
+      maxBytes > 0 &&
+      maxBytes <= MAX_SOURCE_BYTES,
+    'Alpha source byte bound is invalid'
+  );
+  const before = fs.fstatSync(fd);
+  assert(
+    before.isFile() && before.size <= maxBytes,
+    'Alpha source file exceeds the regular-file bound'
+  );
+  const blob = createHash('sha1').update(`blob ${before.size}\0`);
+  const chunk = Buffer.alloc(Math.min(64 * 1024, maxBytes + 1));
+  let used = 0;
+  while (used <= maxBytes) {
+    const count = fs.readSync(
+      fd,
+      chunk,
+      0,
+      Math.min(chunk.length, maxBytes + 1 - used),
+      null
+    );
+    if (count === 0) break;
+    used += count;
+    blob.update(chunk.subarray(0, count));
+  }
+  const after = fs.fstatSync(fd);
+  assert(
+    used <= maxBytes &&
+      used === before.size &&
+      ['dev', 'ino', 'mode', 'size', 'mtimeMs', 'ctimeMs'].every(
+        (key) => before[key] === after[key]
+      ),
+    'Alpha source grew or changed during bounded source read'
+  );
+  return { blob: blob.digest('hex'), stat: before };
+}
 
 // Check the whole tracked tree: the native inspector has transitive imports in
 // successor-workbench and build-successor, outside its own directory.
@@ -106,23 +146,7 @@ function assertPinnedAlphaCheckout(root, expectedCommit) {
       fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW | fs.constants.O_NONBLOCK
     );
     try {
-      const before = fs.fstatSync(fd);
-      assert(
-        before.isFile() && before.size <= 256 * 1024 * 1024,
-        'Alpha source file exceeds the regular-file bound'
-      );
-      const bytes = fs.readFileSync(fd),
-        after = fs.fstatSync(fd);
-      assert(
-        ['dev', 'ino', 'size', 'mtimeMs', 'ctimeMs'].every(
-          (key) => before[key] === after[key]
-        ) && bytes.length === before.size,
-        'Alpha source changed while being inspected'
-      );
-      const blob = createHash('sha1')
-        .update(`blob ${bytes.length}\0`)
-        .update(bytes)
-        .digest('hex');
+      const { blob, stat: before } = boundedSourceBlob(fd);
       assert(
         blob === header[2] &&
           Boolean(before.mode & 0o111) === (header[1] === '100755'),
@@ -148,4 +172,4 @@ function assertPinnedAlphaCheckout(root, expectedCommit) {
   return actualCommit;
 }
 
-module.exports = { assertPinnedAlphaCheckout };
+module.exports = { assertPinnedAlphaCheckout, boundedSourceBlob };
