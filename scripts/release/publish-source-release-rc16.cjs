@@ -156,6 +156,13 @@ async function verifyDownloadedAssets({
     provenance.sourceScope?.implementationTree !== profile.implementationTree ||
     canonical(provenance.sourceScope?.protectedTransitions) !==
       canonical(profile.transitions) ||
+    provenance.sourceScope?.integrationBaseline !==
+      profile.integrationBaseline ||
+    provenance.sourceScope?.integrationTree !== profile.integrationTree ||
+    canonical(provenance.sourceScope?.integrationTransitions) !==
+      canonical(profile.integrationTransitions) ||
+    canonical(provenance.sourceScope?.scannerPolicy) !==
+      canonical(profile.scannerPolicy) ||
     canonical(provenance.sourceScope?.nativeCompatibility) !==
       canonical(profile.nativeCompatibility) ||
     canonical(provenance.sourceScope?.scannerReview) !==
@@ -223,7 +230,13 @@ async function verifyDownloadedAssets({
   const scannerSummary = verifyScannerArchive(
     zipFiles(path.join(downloaded, 'codeql-evidence.zip')),
     (name) => zipRead(path.join(downloaded, 'codeql-evidence.zip'), name),
-    { baseline: scannerBaseline(), sha, git: gitSource }
+    {
+      baseline: scannerBaseline(),
+      sha,
+      tree: provenance.tree,
+      producerRun: scannerRun,
+      git: gitSource,
+    }
   );
   assert.equal(
     canonical(scanner.summary),
@@ -453,7 +466,13 @@ async function collectAdditionalEvidence() {
       summary = verifyScannerArchive(
         zipFiles(zip),
         (name) => zipRead(zip, name),
-        { baseline: scannerBaseline(), sha, git: gitSource }
+        {
+          baseline: scannerBaseline(),
+          sha,
+          tree: provenance.tree,
+          producerRun: run,
+          git: gitSource,
+        }
       );
     else {
       assert.deepEqual(

@@ -11,6 +11,7 @@ const {
   profile,
   verifySourceScope,
   verifyPublicationReview,
+  parseTree,
 } = require('./source-profile-rc16.cjs');
 const {
   assertPinnedAlphaCheckout,
@@ -233,23 +234,10 @@ function verifyScannerReviewBinding({ sha, review, git }) {
   );
 }
 
-function verifyScannerArchive(
-  files,
-  read,
-  {
-    baseline,
-    review = profile.scannerReview,
-    requiredSources = profile.scannerRequiredPaths,
-    sha,
-    git,
-  } = {}
+function verifyScannerAnalysis(
+  document,
+  { baseline, requiredSources = profile.scannerRequiredPaths } = {}
 ) {
-  assert.deepEqual(
-    [...files].sort(),
-    ['javascript.sarif'],
-    'Scanner archive inventory mismatch'
-  );
-  const document = JSON.parse(read('javascript.sarif'));
   assert(
     document.version === '2.1.0' && document.runs?.length === 1,
     'Exactly one SARIF run is required'
@@ -300,6 +288,26 @@ function verifyScannerArchive(
       requiredSources.every((file) => sources.includes(file)),
     'Scanner is missing integration source extraction'
   );
+  const actual = (run.results || [])
+    .map(resultIdentity)
+    .sort((a, b) => canonical(a).localeCompare(canonical(b)));
+  return { run, sources, actual };
+}
+
+function verifyScannerResults(
+  document,
+  {
+    baseline,
+    review = profile.scannerReview,
+    requiredSources = profile.scannerRequiredPaths,
+    sha,
+    git,
+  } = {}
+) {
+  const { run, sources, actual } = verifyScannerAnalysis(document, {
+    baseline,
+    requiredSources,
+  });
   assert(
     review &&
       Array.isArray(review.results) &&
@@ -308,9 +316,6 @@ function verifyScannerArchive(
     'Current scanner results require explicit source-bound review'
   );
   verifyScannerReviewBinding({ sha, review, git });
-  const actual = (run.results || [])
-    .map(resultIdentity)
-    .sort((a, b) => canonical(a).localeCompare(canonical(b)));
   const reviewed = review.results
     .map((item) => {
       assert(
@@ -341,6 +346,266 @@ function verifyScannerArchive(
     reviewEvidence: review.reviewEvidence,
     completeNonOverlay: true,
   };
+}
+
+function scannerArchiveInventory(files) {
+  assert.deepEqual(
+    [...files].sort(),
+    profile.scannerPolicy.archiveFiles,
+    'Scanner archive inventory mismatch'
+  );
+}
+function exactFields(value, fields, message) {
+  assert(value && typeof value === 'object' && !Array.isArray(value), message);
+  assert.deepEqual(Object.keys(value).sort(), [...fields].sort(), message);
+}
+function expectedReceiverSources(git, sha) {
+  const source = parseTree(git('ls-tree', '-rz', sha));
+  const omittedDirectory =
+    /\/(?:node_modules|dist|\.next|coverage|reports|data|deploy|deployment|deployments|test)\//;
+  const omittedSubgraph = /\/subgraph\/(?:generated|build|node_modules)\//;
+  return [...source.keys()]
+    .filter(
+      (file) =>
+        /^(?:integrations\/alpha-agent|website\/assets)\//.test(file) &&
+        /\.(?:[cm]?[jt]sx?)$/i.test(file) &&
+        !/\.d\.[cm]?ts$/i.test(file) &&
+        !omittedDirectory.test(file) &&
+        !omittedSubgraph.test(file)
+    )
+    .sort();
+}
+function verifyScannerProducerArchive(
+  files,
+  read,
+  {
+    baseline,
+    requiredSources = profile.scannerRequiredPaths,
+    sha,
+    tree,
+    producerRun,
+    git,
+  } = {}
+) {
+  scannerArchiveInventory(files);
+  assert(
+    typeof git === 'function' &&
+      /^[a-f0-9]{40}$/.test(sha || '') &&
+      /^[a-f0-9]{40}$/.test(tree || ''),
+    'Scanner archive requires external source/tree identities'
+  );
+  assert.equal(
+    git('rev-parse', sha + '^{tree}').trim(),
+    tree,
+    'Scanner archive tree differs from release Git source'
+  );
+  assert(
+    producerRun &&
+      Number.isSafeInteger(producerRun.id) &&
+      producerRun.id > 0 &&
+      Number.isSafeInteger(producerRun.run_attempt) &&
+      producerRun.run_attempt > 0 &&
+      producerRun.head_sha === sha &&
+      producerRun.path === profile.scannerPolicy.workflowPath &&
+      producerRun.event === 'push' &&
+      producerRun.head_branch === 'main' &&
+      producerRun.repository?.full_name === 'MontrealAI/AGIJobsv0' &&
+      producerRun.status === 'completed' &&
+      producerRun.conclusion === 'success',
+    'Scanner sidecars require the authenticated successful exact-main producer'
+  );
+  const raw = Buffer.from(read('javascript.sarif'));
+  const document = JSON.parse(raw);
+  const { run, sources, actual } = verifyScannerAnalysis(document, {
+    baseline,
+    requiredSources,
+  });
+  assert(
+    sources.every((file) => typeof file === 'string' && file),
+    'Malformed successful extraction diagnostic'
+  );
+  const before = JSON.parse(read('source-scope-before.json'));
+  const after = JSON.parse(read('source-scope-after.json'));
+  exactFields(
+    before,
+    [
+      'schema',
+      'source',
+      'tree',
+      'run',
+      'attempt',
+      'event',
+      'ref',
+      'historicalConfigSha256',
+      'configSha256',
+      'staticAdmittedBefore',
+      'staticAdditionalAdmitted',
+      'allPreviousPathsRetained',
+      'integrationClosureAdmitted',
+      'browserClosureAdmitted',
+      'requiredExtractedFiles',
+      'actualExtractionRequiresSARIF',
+    ],
+    'Scanner source scope fields differ'
+  );
+  assert.deepEqual(
+    after,
+    before,
+    'Scanner source/scope changed across analysis'
+  );
+  assert(
+    before.schema === 'agijobsv0/codeql-scope/2' &&
+      before.source === sha &&
+      before.tree === tree &&
+      before.run === producerRun.id &&
+      before.attempt === producerRun.run_attempt &&
+      before.event === 'push' &&
+      before.ref === 'refs/heads/main',
+    'Scanner source scope identity differs from authenticated producer'
+  );
+  const policy = profile.scannerPolicy;
+  for (const [name, expected] of [
+    [policy.historicalConfigPath, policy.historicalConfigSha256],
+    [policy.configPath, policy.configSha256],
+    [policy.workflowPath, policy.workflowSha256],
+  ])
+    assert.equal(
+      sha256(git('show', sha + ':' + name)),
+      expected,
+      'Scanner policy/workflow bytes differ from reviewed source: ' + name
+    );
+  assert.equal(before.historicalConfigSha256, policy.historicalConfigSha256);
+  assert.equal(before.configSha256, policy.configSha256);
+  assert(
+    before.allPreviousPathsRetained === true &&
+      before.integrationClosureAdmitted === true &&
+      before.browserClosureAdmitted === true &&
+      before.actualExtractionRequiresSARIF === true &&
+      Number.isSafeInteger(before.staticAdmittedBefore) &&
+      before.staticAdmittedBefore > 0 &&
+      Number.isSafeInteger(before.staticAdditionalAdmitted) &&
+      before.staticAdditionalAdmitted >= 0,
+    'Scanner static policy proof is incomplete'
+  );
+  const expectedSources = expectedReceiverSources(git, sha);
+  assert(
+    expectedSources.length > 0 &&
+      requiredSources.every((file) => expectedSources.includes(file)),
+    'Required receiver source is absent from release Git inventory'
+  );
+  assert.deepEqual(
+    before.requiredExtractedFiles,
+    expectedSources,
+    'Scanner required extraction inventory differs from release Git source'
+  );
+  assert(
+    expectedSources.every((file) => sources.includes(file)),
+    'Scanner is missing actual integration/browser extraction'
+  );
+  const record = JSON.parse(read('source-extraction.json'));
+  exactFields(
+    record,
+    [
+      'schema',
+      'source',
+      'tree',
+      'run',
+      'attempt',
+      'event',
+      'ref',
+      'configSha256',
+      'sarifSha256',
+      'successfulExtractionFiles',
+      'requiredExtractedFiles',
+      'missingRequiredExtractedFiles',
+      'ruleIds',
+      'rawResultCount',
+      'resultDisposition',
+    ],
+    'Scanner extraction record fields differ'
+  );
+  assert(
+    record.schema === 'agijobsv0/codeql-extraction/1' &&
+      record.source === sha &&
+      record.tree === tree &&
+      record.run === producerRun.id &&
+      record.attempt === producerRun.run_attempt &&
+      record.event === 'push' &&
+      record.ref === 'refs/heads/main' &&
+      record.configSha256 === policy.configSha256 &&
+      record.resultDisposition === 'REQUIRES_INDEPENDENT_FINAL_SOURCE_REVIEW',
+    'Scanner extraction record identity or review state differs'
+  );
+  assert.equal(
+    record.sarifSha256,
+    sha256(raw),
+    'Raw SARIF digest differs from extraction proof'
+  );
+  assert.deepEqual(
+    record.successfulExtractionFiles,
+    sources,
+    'Retained extraction inventory differs from raw SARIF'
+  );
+  assert.deepEqual(record.requiredExtractedFiles, expectedSources);
+  assert.deepEqual(
+    record.missingRequiredExtractedFiles,
+    [],
+    'Scanner extraction has missing required source'
+  );
+  const rules = [
+    ...new Set(
+      [run.tool.driver, ...(run.tool.extensions || [])].flatMap((component) =>
+        (component.rules || []).map((rule) => rule.id)
+      )
+    ),
+  ].sort();
+  assert.deepEqual(
+    record.ruleIds,
+    rules,
+    'Scanner extraction rule inventory differs from raw SARIF'
+  );
+  assert.equal(
+    record.rawResultCount,
+    (run.results || []).length,
+    'Scanner extraction raw result count differs'
+  );
+  return {
+    tool: run.tool.driver.semanticVersion,
+    extractedFiles: sources.length,
+    results: actual,
+    completeNonOverlay: true,
+    producer: {
+      source: sha,
+      tree,
+      runId: producerRun.id,
+      runAttempt: producerRun.run_attempt,
+      configSha256: policy.configSha256,
+      sarifSha256: sha256(raw),
+      requiredExtractedFiles: expectedSources,
+      successfulExtractionFiles: sources,
+      ruleIds: rules,
+      rawResultCount: record.rawResultCount,
+    },
+  };
+}
+function verifyScannerArchive(files, read, options = {}) {
+  scannerArchiveInventory(files);
+  const captured = new Map(
+    profile.scannerPolicy.archiveFiles.map((name) => [
+      name,
+      Buffer.from(read(name)),
+    ])
+  );
+  const checked = verifyScannerProducerArchive(
+    files,
+    (name) => captured.get(name),
+    options
+  );
+  const reviewed = verifyScannerResults(
+    JSON.parse(captured.get('javascript.sarif')),
+    options
+  );
+  return { ...checked, ...reviewed };
 }
 
 async function readPages(resource, key, token, fetchImpl = fetch) {
@@ -477,6 +742,9 @@ module.exports = {
   authenticCodeQL,
   validateProducer,
   verifyScannerArchive,
+  verifyScannerProducerArchive,
+  verifyScannerResults,
+  expectedReceiverSources,
   verifyScannerReviewBinding,
   resultIdentity,
   extracted,

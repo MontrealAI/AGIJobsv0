@@ -184,12 +184,12 @@ test('complete source verifier accepts only finite release plumbing over the act
     path.join(r.root, '.git/objects/info/alternates'),
     objects + '\n'
   );
-  r.git('read-tree', p.profile.implementationBaseline);
+  r.git('read-tree', p.profile.integrationBaseline);
   const beforePackage = JSON.parse(
-    r.git('show', `${p.profile.implementationBaseline}:package.json`)
+    r.git('show', `${p.profile.integrationBaseline}:package.json`)
   );
   const beforeLock = JSON.parse(
-    r.git('show', `${p.profile.implementationBaseline}:package-lock.json`)
+    r.git('show', `${p.profile.integrationBaseline}:package-lock.json`)
   );
   const afterPackage = clone(beforePackage),
     afterLock = clone(beforeLock);
@@ -201,7 +201,7 @@ test('complete source verifier accepts only finite release plumbing over the act
   r.put('package-lock.json', JSON.stringify(afterLock, null, 2) + '\n');
   const oldWorkflow = r.git(
     'show',
-    `${p.profile.implementationBaseline}:.github/workflows/source-release.yml`
+    `${p.profile.integrationBaseline}:.github/workflows/source-release.yml`
   );
   r.put(
     '.github/workflows/source-release.yml',
@@ -214,12 +214,12 @@ test('complete source verifier accepts only finite release plumbing over the act
   const policy = JSON.parse(
     r.git(
       'show',
-      `${p.profile.implementationBaseline}:config/solidity-compiler.json`
+      `${p.profile.integrationBaseline}:config/solidity-compiler.json`
     )
   );
   const args = {
     git: r.git,
-    sha: r.commit(p.profile.implementationBaseline),
+    sha: r.commit(p.profile.integrationBaseline),
     version: p.profile.releaseVersion,
     lock: afterLock,
     policy,
@@ -395,4 +395,47 @@ test('tree enumeration rejects links, gitlinks, duplicate paths and malformed Gi
     '100644 blob not-a-full-object\tfile\0',
   ])
     assert.throws(() => p.parseTree(raw));
+});
+test('actual integrated candidate has exactly nineteen finite receiver and producer transitions', () => {
+  const git = (...args) => command(ROOT, args);
+  assert.equal(
+    git('rev-parse', p.profile.integrationBaseline + '^{tree}').trim(),
+    p.profile.integrationTree
+  );
+  const before = p.parseTree(
+    git('ls-tree', '-rz', p.profile.implementationBaseline)
+  );
+  const after = p.parseTree(
+    git('ls-tree', '-rz', p.profile.integrationBaseline)
+  );
+  assert.equal(
+    p.verifyIntegrationTransitions(
+      before,
+      after,
+      p.profile.integrationTransitions
+    ).length,
+    19
+  );
+  git(
+    'merge-base',
+    '--is-ancestor',
+    p.profile.implementationBaseline,
+    p.profile.integrationBaseline
+  );
+  git(
+    'merge-base',
+    '--is-ancestor',
+    p.profile.scannerPolicy.producerCommit,
+    p.profile.integrationBaseline
+  );
+  assert.equal(
+    after.get(p.profile.scannerPolicy.configPath).blob,
+    p.profile.scannerPolicy.configBlob
+  );
+  assert.equal(
+    after.get(p.profile.scannerPolicy.workflowPath).blob,
+    p.profile.scannerPolicy.workflowBlob
+  );
+  assert.equal(p.profile.scannerReview, null);
+  assert.throws(() => p.verifyPublicationReview(), /pending/);
 });

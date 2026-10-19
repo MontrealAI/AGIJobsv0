@@ -11,6 +11,9 @@ const {
   authenticCodeQL,
   validateProducer,
   verifyScannerArchive,
+  verifyScannerProducerArchive,
+  verifyScannerResults,
+  expectedReceiverSources,
   verifyScannerReviewBinding,
   resultIdentity,
   extracted,
@@ -228,7 +231,7 @@ test('real retained SARIF parsing preserves full rules, coverage, result multipl
     })),
   };
   const verify = (doc = document, options = {}) =>
-    verifyScannerArchive(['javascript.sarif'], () => JSON.stringify(doc), {
+    verifyScannerResults(doc, {
       baseline,
       review,
       requiredSources: extracted(baseline).slice(0, 1),
@@ -450,4 +453,37 @@ test('rc.16 owns only its new tag/routes/assets and remains blocked pending actu
     (error) =>
       /publication blocked: scannerReview is pending/.test(error.stderr)
   );
+});
+test('four-record scanner contract requires external identities before reading reports', () => {
+  const unread = () => {
+    throw Error('Report must remain unread without valid external identity');
+  };
+  assert.throws(
+    () => verifyScannerProducerArchive(['javascript.sarif'], unread),
+    /inventory/
+  );
+  assert.throws(
+    () =>
+      verifyScannerProducerArchive(profile.scannerPolicy.archiveFiles, unread),
+    /external source/
+  );
+  assert.deepEqual(profile.scannerPolicy.archiveFiles, [
+    'javascript.sarif',
+    'source-extraction.json',
+    'source-scope-after.json',
+    'source-scope-before.json',
+  ]);
+  assert.equal(profile.scannerReview, null);
+});
+test('mandatory scanner manifest is derived from actual pinned receiver Git source', () => {
+  const root = path.resolve(__dirname, '../..');
+  const git = (...args) =>
+    execFileSync('git', ['--no-replace-objects', '-C', root, ...args], {
+      encoding: 'utf8',
+      maxBuffer: 32 * 1024 * 1024,
+    });
+  const required = expectedReceiverSources(git, profile.integrationBaseline);
+  assert.equal(required.length, 74);
+  assert(profile.scannerRequiredPaths.every((file) => required.includes(file)));
+  assert.equal(new Set(required).size, required.length);
 });

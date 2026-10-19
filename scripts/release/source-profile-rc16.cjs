@@ -20,6 +20,8 @@ const anchors = Object.freeze({
   securityPrerequisite: '62d4f2db2b9eeddb6156b486336555b1e6485d92',
   implementationBaseline: 'b88965ef6e90bf6f725934520e9be3161e91af62',
   implementationTree: '6003d3d7286fe9fa4bf6875deefc01e579ce9dfc',
+  integrationBaseline: 'b1e03ef48f517054802a513f0302ef06d285f17a',
+  integrationTree: '9fd2d43a5075ed54b308ff381da92cb402d26319',
 });
 const allowedNewPaths = Object.freeze([
   'scripts/release/source-profile-rc16.cjs',
@@ -61,6 +63,55 @@ const scannerRequiredPaths = Object.freeze([
   'integrations/alpha-agent/pinned-alpha-checkout.cjs',
   'integrations/alpha-agent/transformational-work-request.mjs',
   'integrations/alpha-agent/vendor/alpha/docs/assets/successor/engine.mjs',
+  'website/assets/computer-receipt.mjs',
+  'website/assets/computer-receipt-model.mjs',
+  'website/assets/computer-receipt-copy.mjs',
+  'website/assets/computer-desk.mjs',
+  'website/assets/computer-desk-runtime-source.mjs',
+  'website/assets/computer-mission.js',
+  'website/assets/computer-mission-copy.mjs',
+]);
+const scannerPolicy = freeze({
+  producerCommit: '838eb65c5b78ef8af271a442bd49136c9b86c38e',
+  producerTree: 'dba1dbde98996700c4460336e837d94c332bffa2',
+  historicalConfigPath: '.github/codeql/config.yml',
+  historicalConfigSha256:
+    '4b34450e1dcc0b489feea158d642a6b66261d9e935463928782219c8716c0892',
+  configPath: '.github/codeql/config-integrations.yml',
+  configSha256:
+    '18041680f9d2df3706e45bdf04e785457ee27573312998b999f51e893e7b59bb',
+  configBlob: '0759a4da80412a04830bed3e7f5727d07cbdeb35',
+  workflowPath: '.github/workflows/static-analysis.yml',
+  workflowSha256:
+    'd5974fce2bd468ce82209b10f03df8bb8162e7e65e0044bc1860795523373ccb',
+  workflowBlob: 'c7436fe742b7751b776eeb9ff82cd31f2508cb1a',
+  archiveFiles: [
+    'javascript.sarif',
+    'source-extraction.json',
+    'source-scope-after.json',
+    'source-scope-before.json',
+  ],
+});
+const integrationPaths = Object.freeze([
+  '.github/codeql/config-integrations.yml',
+  '.github/workflows/static-analysis.yml',
+  'integrations/alpha-agent/four-repo-computer-lifecycle.cjs',
+  'integrations/alpha-agent/generate-computer-source.mjs',
+  'integrations/alpha-agent/pinned-alpha-checkout.cjs',
+  'integrations/alpha-agent/README.md',
+  'integrations/alpha-agent/vendor/alpha-computer/examples/successor-alpha/learning.mjs',
+  'integrations/alpha-agent/vendor/alpha-computer/examples/successor-alpha/research.mjs',
+  'integrations/alpha-agent/vendor/alpha-computer/source-identity.mjs',
+  'integrations/alpha-agent/vendor/alpha-computer/source-manifest.json',
+  'scripts/pages/computer-receipt-qa.mjs',
+  'scripts/pages/computer-receipt.mjs',
+  'scripts/pages/run-computer-receipt-qa.mjs',
+  'test/pages/computer-receipt-fixture.mjs',
+  'test/pages/computer-receipt-workspace.test.mjs',
+  'test/pages/four-repo-alpha-source.test.mjs',
+  'website/assets/computer-receipt-copy.mjs',
+  'website/assets/computer-receipt-model.mjs',
+  'website/assets/computer-receipt.mjs',
 ]);
 const excludedCompilerPaths = new Set(
   historical.reviewedCompilerPaths
@@ -166,6 +217,50 @@ function verifyProtectedTransitions(beforeTree, afterTree, transitions) {
     'Complete protected transition inventory differs'
   );
   return actual;
+}
+
+function verifyIntegrationTransitions(beforeTree, afterTree, transitions) {
+  requireValue(
+    beforeTree instanceof Map &&
+      afterTree instanceof Map &&
+      Array.isArray(transitions) &&
+      same(
+        transitions.map((item) => item.path).sort(),
+        [...integrationPaths].sort()
+      ),
+    'Complete finite integration transition paths differ'
+  );
+  for (const item of transitions) {
+    fields(
+      item,
+      ['path', 'before', 'after'],
+      'Malformed integration transition'
+    );
+    for (const identity of [item.before, item.after]) {
+      if (identity === null) continue;
+      fields(identity, ['mode', 'blob'], 'Malformed integration blob identity');
+      requireValue(
+        identity.mode === '100644' && /^[a-f0-9]{40}$/.test(identity.blob),
+        'Integration source must retain reviewed regular blob modes'
+      );
+    }
+    requireValue(
+      item.after !== null &&
+        !same(item.before, item.after) &&
+        (item.before === null || item.before.mode === item.after.mode),
+      'Integration deletion, unchanged transition or mode change is prohibited'
+    );
+    requireValue(
+      same(beforeTree.get(item.path) ?? null, item.before) &&
+        same(afterTree.get(item.path) ?? null, item.after),
+      'Reviewed integration blob differs: ' + item.path
+    );
+  }
+  requireValue(
+    same(changedPaths(beforeTree, afterTree), [...integrationPaths].sort()),
+    'Complete integration transition inventory differs'
+  );
+  return [...integrationPaths].sort();
 }
 
 function verifyReleaseDelta(beforeTree, afterTree) {
@@ -274,7 +369,9 @@ function validateProfile(value = profile) {
       'qualification',
       ...Object.keys(anchors),
       'transitions',
+      'integrationTransitions',
       'nativeCompatibility',
+      'scannerPolicy',
       'scannerRequiredPaths',
       'scannerReview',
     ],
@@ -299,7 +396,10 @@ function validateProfile(value = profile) {
     'Exactly eighteen protected implementation transitions are required'
   );
   requireValue(
-    same(value.nativeCompatibility, nativeCompatibility) &&
+    Array.isArray(value.integrationTransitions) &&
+      value.integrationTransitions.length === 19 &&
+      same(value.scannerPolicy, scannerPolicy) &&
+      same(value.nativeCompatibility, nativeCompatibility) &&
       same(value.scannerRequiredPaths, scannerRequiredPaths) &&
       value.scannerReview === null,
     'Pending native or scanner policy differs; a separately reviewed gate update is required'
@@ -323,6 +423,7 @@ function verifySourceScope({ git, sha, version, lock, policy }) {
     profile.compilerSourceBaseline,
     profile.securityPrerequisite,
     profile.implementationBaseline,
+    profile.integrationBaseline,
   ])
     git('merge-base', '--is-ancestor', baseline, sha);
   requireValue(
@@ -365,19 +466,58 @@ function verifySourceScope({ git, sha, version, lock, policy }) {
   const implementationTree = parseTree(
     git('ls-tree', '-rz', profile.implementationBaseline)
   );
+  const integrationTree = parseTree(
+    git('ls-tree', '-rz', profile.integrationBaseline)
+  );
   const releaseTree = parseTree(git('ls-tree', '-rz', sha));
   verifyProtectedTransitions(
     baselineTree,
     implementationTree,
     profile.transitions
   );
-  const releaseChanges = verifyReleaseDelta(implementationTree, releaseTree);
+  requireValue(
+    text(git('rev-parse', profile.integrationBaseline + '^{tree}')).trim() ===
+      profile.integrationTree,
+    'Integrated candidate tree differs'
+  );
+  git(
+    'merge-base',
+    '--is-ancestor',
+    profile.implementationBaseline,
+    profile.integrationBaseline
+  );
+  git(
+    'merge-base',
+    '--is-ancestor',
+    scannerPolicy.producerCommit,
+    profile.integrationBaseline
+  );
+  requireValue(
+    text(git('rev-parse', scannerPolicy.producerCommit + '^{tree}')).trim() ===
+      scannerPolicy.producerTree,
+    'Reviewed scanner producer tree differs'
+  );
+  verifyIntegrationTransitions(
+    implementationTree,
+    integrationTree,
+    profile.integrationTransitions
+  );
+  for (const [name, blob] of [
+    [scannerPolicy.configPath, scannerPolicy.configBlob],
+    [scannerPolicy.workflowPath, scannerPolicy.workflowBlob],
+  ])
+    requireValue(
+      integrationTree.get(name)?.mode === '100644' &&
+        integrationTree.get(name)?.blob === blob,
+      'Reviewed scanner producer blob differs: ' + name
+    );
+  const releaseChanges = verifyReleaseDelta(integrationTree, releaseTree);
   const afterPackage = readJSON(sha, 'package.json'),
     afterLock = readJSON(sha, 'package-lock.json');
   verifyVersionOnly(
-    readJSON(profile.implementationBaseline, 'package.json'),
+    readJSON(profile.integrationBaseline, 'package.json'),
     afterPackage,
-    readJSON(profile.implementationBaseline, 'package-lock.json'),
+    readJSON(profile.integrationBaseline, 'package-lock.json'),
     afterLock
   );
   requireValue(
@@ -388,7 +528,7 @@ function verifySourceScope({ git, sha, version, lock, policy }) {
     text(
       git(
         'show',
-        `${profile.implementationBaseline}:.github/workflows/source-release.yml`
+        `${profile.integrationBaseline}:.github/workflows/source-release.yml`
       )
     ),
     text(git('show', `${sha}:.github/workflows/source-release.yml`))
@@ -401,6 +541,8 @@ function verifySourceScope({ git, sha, version, lock, policy }) {
     reviewedCompilerPaths: historical.reviewedCompilerPaths,
     compiler: compiler.longVersion,
     protectedTransitions: profile.transitions,
+    integrationTransitions: profile.integrationTransitions,
+    scannerPolicy: profile.scannerPolicy,
     releaseChanges,
     nativeCompatibility: profile.nativeCompatibility,
     scannerRequiredPaths: profile.scannerRequiredPaths,
@@ -410,7 +552,7 @@ function verifySourceScope({ git, sha, version, lock, policy }) {
 }
 
 function verifyPublicationReview() {
-  // The current scanner excludes integrations. No full extraction coverage or
+  // The expanded producer is pinned, but actual final-source extraction and
   // finite reviewed current-result inventory has been installed in this profile.
   throw Error(
     'rc.16 publication blocked: scannerReview is pending; full integration extraction and independent finite result review are required'
@@ -425,6 +567,7 @@ module.exports = {
   protectedPath,
   parseTree,
   verifyProtectedTransitions,
+  verifyIntegrationTransitions,
   verifyReleaseDelta,
   verifyVersionOnly,
   LEGACY_WORKFLOW_GUARD,

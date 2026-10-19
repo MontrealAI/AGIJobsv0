@@ -11,6 +11,8 @@
   "securityPrerequisite": "62d4f2db2b9eeddb6156b486336555b1e6485d92",
   "implementationBaseline": "b88965ef6e90bf6f725934520e9be3161e91af62",
   "implementationTree": "6003d3d7286fe9fa4bf6875deefc01e579ce9dfc",
+  "integrationBaseline": "b1e03ef48f517054802a513f0302ef06d285f17a",
+  "integrationTree": "9fd2d43a5075ed54b308ff381da92cb402d26319",
   "transitions": [
     {
       "path": "demo/README.md",
@@ -208,6 +210,208 @@
       }
     }
   ],
+  "integrationTransitions": [
+    {
+      "path": ".github/codeql/config-integrations.yml",
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "blob": "0759a4da80412a04830bed3e7f5727d07cbdeb35"
+      }
+    },
+    {
+      "path": ".github/workflows/static-analysis.yml",
+      "before": {
+        "mode": "100644",
+        "blob": "b26d2b4b94e8ef8f0f28f7b6c806acc288f500f8"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "c7436fe742b7751b776eeb9ff82cd31f2508cb1a"
+      }
+    },
+    {
+      "path": "integrations/alpha-agent/four-repo-computer-lifecycle.cjs",
+      "before": {
+        "mode": "100644",
+        "blob": "536f65f3c043732e6a33d2a87a8be348e41b6e94"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "ba589d5d555b9f4255e294fcafd2213ef7359593"
+      }
+    },
+    {
+      "path": "integrations/alpha-agent/generate-computer-source.mjs",
+      "before": {
+        "mode": "100644",
+        "blob": "e1140084b42cf84586751d2bb22ef5af90e1c1d9"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "068c5e0c30cecbfd41446ac717795227f97889c2"
+      }
+    },
+    {
+      "path": "integrations/alpha-agent/pinned-alpha-checkout.cjs",
+      "before": {
+        "mode": "100644",
+        "blob": "22a9c65e704757d31e3809932f78ad5eb5a0d6b8"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "35aa4d4a437f6cd617e29c4c65d025af907108af"
+      }
+    },
+    {
+      "path": "integrations/alpha-agent/README.md",
+      "before": {
+        "mode": "100644",
+        "blob": "551cf8cf5efa0dd9bb66bb46acbf92229f5d4c45"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "9ae38d15d833dcb174b3bac48d54990627409f01"
+      }
+    },
+    {
+      "path": "integrations/alpha-agent/vendor/alpha-computer/examples/successor-alpha/learning.mjs",
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "blob": "82665337daf74956c42b86d95056f47ede3e8f8d"
+      }
+    },
+    {
+      "path": "integrations/alpha-agent/vendor/alpha-computer/examples/successor-alpha/research.mjs",
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "blob": "759eb5ce3deb5cc1c20fe35ea29beaffa5bd8eba"
+      }
+    },
+    {
+      "path": "integrations/alpha-agent/vendor/alpha-computer/source-identity.mjs",
+      "before": {
+        "mode": "100644",
+        "blob": "8db9f4c48c58e0db9fb0059c9793c7674f546802"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "446b360f83601fc036d365323e63b432d37e219e"
+      }
+    },
+    {
+      "path": "integrations/alpha-agent/vendor/alpha-computer/source-manifest.json",
+      "before": {
+        "mode": "100644",
+        "blob": "270a57e4433c8a323aaee41d2a73f0cb242f5811"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "05816f76b3031f4f19e583d3b6e44441b08fa25d"
+      }
+    },
+    {
+      "path": "scripts/pages/computer-receipt-qa.mjs",
+      "before": {
+        "mode": "100644",
+        "blob": "129c6f7bc2f57c768729504267efec55dbefaaf0"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "9cfd7da14b3ce98e999c976833a7a97cdc248f28"
+      }
+    },
+    {
+      "path": "scripts/pages/computer-receipt.mjs",
+      "before": {
+        "mode": "100644",
+        "blob": "17f2fa9844feb928e58e74414a45fbc42c6347b4"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "530268f57680f9639ac72fcff277769df61294d8"
+      }
+    },
+    {
+      "path": "scripts/pages/run-computer-receipt-qa.mjs",
+      "before": {
+        "mode": "100644",
+        "blob": "db2232221b2c9e2010ddbac960b0d58aed43397a"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "170c7022127a8f8517b36629abdfa184d4c55ebe"
+      }
+    },
+    {
+      "path": "test/pages/computer-receipt-fixture.mjs",
+      "before": {
+        "mode": "100644",
+        "blob": "d65f8e3a979c6bd668e32ff2c72918d14216e368"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "53f92c8545adc7be518b834dad853c48fa1792f7"
+      }
+    },
+    {
+      "path": "test/pages/computer-receipt-workspace.test.mjs",
+      "before": {
+        "mode": "100644",
+        "blob": "5dd0b13aa6d334c8ea1b10f0b2f39ddf02f30180"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "f41eab1b681dd03353afe7516e7bc59b6a4124fd"
+      }
+    },
+    {
+      "path": "test/pages/four-repo-alpha-source.test.mjs",
+      "before": {
+        "mode": "100644",
+        "blob": "0c6f328ab571b0ffcf4681b40ddcdf99c9d3cb74"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "5e53bc68ed94d30833bde765516b5e60e2c2a520"
+      }
+    },
+    {
+      "path": "website/assets/computer-receipt-copy.mjs",
+      "before": {
+        "mode": "100644",
+        "blob": "3969618683eed2ad0784c8db3e16aceeb1ec9eb8"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "eaf1adb18eef687eb894c3adee3c41b8cdd44cc5"
+      }
+    },
+    {
+      "path": "website/assets/computer-receipt-model.mjs",
+      "before": {
+        "mode": "100644",
+        "blob": "9d04951779df563b2e3b0365ac4478ac43063aad"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "3bbe1111bafe7fb45fc0856958889f168d32a570"
+      }
+    },
+    {
+      "path": "website/assets/computer-receipt.mjs",
+      "before": {
+        "mode": "100644",
+        "blob": "4c04fdba150658978f0172d538f4e04b4deeb6a6"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "609223705b09e14da076d6525a0512b7242409fc"
+      }
+    }
+  ],
   "nativeCompatibility": {
     "schema": "agijobsv0/transformational-native-compatibility/v1",
     "repository": "MontrealAI/AGI-Alpha-Agent-v0",
@@ -226,7 +430,32 @@
     "integrations/alpha-agent/four-repo-computer-receipt.mjs",
     "integrations/alpha-agent/pinned-alpha-checkout.cjs",
     "integrations/alpha-agent/transformational-work-request.mjs",
-    "integrations/alpha-agent/vendor/alpha/docs/assets/successor/engine.mjs"
+    "integrations/alpha-agent/vendor/alpha/docs/assets/successor/engine.mjs",
+    "website/assets/computer-receipt.mjs",
+    "website/assets/computer-receipt-model.mjs",
+    "website/assets/computer-receipt-copy.mjs",
+    "website/assets/computer-desk.mjs",
+    "website/assets/computer-desk-runtime-source.mjs",
+    "website/assets/computer-mission.js",
+    "website/assets/computer-mission-copy.mjs"
   ],
+  "scannerPolicy": {
+    "producerCommit": "838eb65c5b78ef8af271a442bd49136c9b86c38e",
+    "producerTree": "dba1dbde98996700c4460336e837d94c332bffa2",
+    "historicalConfigPath": ".github/codeql/config.yml",
+    "historicalConfigSha256": "4b34450e1dcc0b489feea158d642a6b66261d9e935463928782219c8716c0892",
+    "configPath": ".github/codeql/config-integrations.yml",
+    "configSha256": "18041680f9d2df3706e45bdf04e785457ee27573312998b999f51e893e7b59bb",
+    "configBlob": "0759a4da80412a04830bed3e7f5727d07cbdeb35",
+    "workflowPath": ".github/workflows/static-analysis.yml",
+    "workflowSha256": "d5974fce2bd468ce82209b10f03df8bb8162e7e65e0044bc1860795523373ccb",
+    "workflowBlob": "c7436fe742b7751b776eeb9ff82cd31f2508cb1a",
+    "archiveFiles": [
+      "javascript.sarif",
+      "source-extraction.json",
+      "source-scope-after.json",
+      "source-scope-before.json"
+    ]
+  },
   "scannerReview": null
 }
