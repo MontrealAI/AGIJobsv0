@@ -1,5 +1,10 @@
 # Run bounded Alpha work for an AGI Jobs v0 commission
 
+For native paper-derived campaigns, see the
+[transformation campaign boundary](../../docs/successor/TRANSFORMATIONAL_WORK.md).
+The current native free campaign can be inspected; its zero currency cap cannot
+authorize positive AGIALPHA work.
+
 This integration identifies **AGI Jobs v0 JobRegistry v2 + $AGIALPHA** explicitly.
 It does not replace Alpha's MARK / AscensionJobMarket route, the legacy
 AGIJobManager, or the separate USDC Manager. Sharing a token symbol does not make
