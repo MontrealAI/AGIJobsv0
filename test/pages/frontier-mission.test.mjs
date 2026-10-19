@@ -124,6 +124,61 @@ test('the exported desk runs its real text controls and returns attributable dra
   }
 });
 
+test('the exported isolated reader offers the same exact source in a separate browser tab and returns focus without discarding work', async () => {
+  const mission = await sourceMission();
+  for (const language of ['en', 'fr']) {
+    const window = new JSDOM(
+      renderFrontierDeskDocument(mission, { language }),
+      {
+        runScripts: 'dangerously',
+        beforeParse(window) {
+          window.HTMLElement.prototype.scrollIntoView = () => {};
+        },
+      }
+    ).window;
+    try {
+      const document = window.document;
+      const field = document.getElementById('fd-strategy');
+      field.value =
+        'An unsaved original strategy draft remains while examining a permitted source.';
+      field.dispatchEvent(new window.Event('input', { bubbles: true }));
+      const link = document.querySelector('#fd-sources a');
+      link.closest('details').open = true;
+      link.click();
+      const frame = document.getElementById('fd-source-frame');
+      assert.equal(frame.getAttribute('src'), mission.sources[0].url);
+      assert.equal(frame.getAttribute('sandbox'), '');
+      assert.equal(frame.referrerPolicy, 'no-referrer');
+      const fallback = document.querySelector(
+        '#fd-source-viewer a[target="_blank"]'
+      );
+      assert.equal(fallback.href, mission.sources[0].url);
+      assert.equal(fallback.rel, 'noopener noreferrer');
+      assert.match(
+        fallback.textContent,
+        language === 'fr'
+          ? /source exacte.*onglet/i
+          : /exact source.*browser tab/i
+      );
+      assert.equal(
+        document.activeElement.id,
+        'fd-source-close',
+        'The native primary reader keeps its first keyboard action'
+      );
+      document.getElementById('fd-source-close').click();
+      assert.equal(document.getElementById('fd-source-viewer').hidden, true);
+      assert.equal(document.getElementById('fd-source-frame'), null);
+      assert.equal(document.activeElement, link);
+      assert.equal(
+        field.value,
+        'An unsaved original strategy draft remains while examining a permitted source.'
+      );
+    } finally {
+      window.close();
+    }
+  }
+});
+
 test('the real exported desk preserves hostile mission and source strings as inert data including script terminators', async () => {
   const values = input('mathematics');
   const hostile =

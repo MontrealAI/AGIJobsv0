@@ -69,6 +69,10 @@ describes the pinned runtime setup and authorization boundaries. Its supplier
 exercise is a transport qualification; it does not establish success on your new
 mission.
 
+If you open the downloaded desk directly in a normal browser and a source
+refuses embedding, use **Open exact source in a browser tab** in the reader.
+The native worker uses its isolated reader and closes extra tabs.
+
 In the directory containing your downloaded `successor-omega-computer-task.json`,
 choose an available computer-use model and an admitted image by immutable digest.
 Set `SUCCESSOR_COMPUTER_MODEL` and `SUCCESSOR_COMPUTER_IMAGE` to those reviewed

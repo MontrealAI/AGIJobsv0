@@ -117,6 +117,165 @@ async function editDuringAction(page, selector, value) {
     field.dispatchEvent(new Event('input', { bubbles: true }));
   }, value);
 }
+async function verifyBlockedFrameFallback({
+  browser,
+  html,
+  mission,
+  language,
+  artifacts,
+}) {
+  const sourceURL = mission.sources.at(-1).url;
+  const fixtureTitle = 'SCRIPTED_HEADER_FIXTURE — not live website contents';
+  const fixtureText =
+    'SCRIPTED_HEADER_FIXTURE: this synthetic source blocks embedding but is readable in its exact top-level URL. No live source was retrieved and no research result is established.';
+  const headers = {
+    'x-frame-options': 'DENY',
+    'content-security-policy': "frame-ancestors 'none'",
+  };
+  const requests = [],
+    unexpected = [],
+    errors = [],
+    blocked = [];
+  const context = await browser.newContext({
+    acceptDownloads: true,
+    reducedMotion: 'reduce',
+    viewport: { width: 1024, height: 900 },
+  });
+  context.on('request', (request) =>
+    requests.push({ url: request.url(), type: request.resourceType() })
+  );
+  context.on('page', (target) =>
+    target.on('pageerror', (error) => errors.push(error.message))
+  );
+  await context.route('**/*', async (request) => {
+    if (request.request().url() !== sourceURL) {
+      unexpected.push(request.request().url());
+      await request.abort();
+      return;
+    }
+    await request.fulfill({
+      status: 200,
+      contentType: 'text/html; charset=utf-8',
+      headers,
+      body:
+        '<!doctype html><html lang="en"><head><title>' +
+        fixtureTitle +
+        '</title><link rel="icon" href="data:,"></head><body><h1>' +
+        fixtureTitle +
+        '</h1><p>' +
+        fixtureText +
+        '</p></body></html>',
+    });
+  });
+  try {
+    const reader = await context.newPage();
+    reader.on('console', (message) => {
+      if (/frame-ancestors|X-Frame-Options/i.test(message.text()))
+        blocked.push(message.text());
+    });
+    await reader.setContent(html, { waitUntil: 'load' });
+    await idleDesk(reader);
+    await reader
+      .locator('#fd-strategy')
+      .fill(
+        'SCRIPTED_HEADER_FIXTURE: retain this unsaved ledger while inspecting the exact permitted source. No research result is asserted.'
+      );
+    const draftText = await reader.locator('#fd-strategy').inputValue();
+    await reader.locator('#fd-sources').evaluate((node) => {
+      node.closest('details').open = true;
+    });
+    const source = reader.locator('#fd-sources a').last();
+    assert.equal(await source.getAttribute('href'), sourceURL);
+    const frameBlocked = reader.waitForEvent('console', {
+      predicate: (message) =>
+        /frame-ancestors|X-Frame-Options/i.test(message.text()),
+    });
+    await source.focus();
+    await reader.keyboard.press('Enter');
+    const blockedMessage = (await frameBlocked).text();
+    assert.ok(blockedMessage.includes(new URL(sourceURL).origin));
+    assert.equal(
+      await reader.locator('#fd-source-frame').getAttribute('src'),
+      sourceURL
+    );
+    assert.equal(
+      await reader.locator('#fd-source-frame').getAttribute('sandbox'),
+      ''
+    );
+    assert.equal(
+      await reader.locator('#fd-source-frame').getAttribute('referrerpolicy'),
+      'no-referrer'
+    );
+    const fallback = reader.locator('#fd-source-viewer a[target="_blank"]');
+    assert.equal(await fallback.getAttribute('href'), sourceURL);
+    assert.equal(await fallback.getAttribute('rel'), 'noopener noreferrer');
+    assert.match(
+      await fallback.textContent(),
+      language === 'fr'
+        ? /source exacte.*onglet/i
+        : /exact source.*browser tab/i
+    );
+    assert.equal(await fallback.isVisible(), true);
+    const opened = context.waitForEvent('page');
+    await fallback.focus();
+    await reader.keyboard.press('Enter');
+    const sourceTab = await opened;
+    await sourceTab.waitForLoadState('domcontentloaded');
+    assert.equal(sourceTab.url(), sourceURL);
+    assert.equal(await sourceTab.title(), fixtureTitle);
+    assert.ok(
+      (await sourceTab.locator('body').textContent()).includes(fixtureText)
+    );
+    await sourceTab.close();
+    await reader.locator('#fd-source-close').focus();
+    await reader.keyboard.press('Enter');
+    assert.equal(await reader.locator('#fd-source-viewer').isVisible(), false);
+    assert.equal(await reader.locator('#fd-source-frame').count(), 0);
+    assert.equal(await reader.locator('#fd-strategy').inputValue(), draftText);
+    assert.equal(
+      await source.evaluate((node) => node === document.activeElement),
+      true
+    );
+    await reader.locator('#fd-save').focus();
+    await reader.keyboard.press('Enter');
+    await idleDesk(reader);
+    const draft = await read(reader, '#fd-result');
+    assert.equal(draft.missionDigest, mission.digest);
+    assert.equal(draft.strategyLedger, draftText);
+    provenance(await importFrontierDeskDraft(mission, draft));
+    assert.deepEqual(unexpected, []);
+    assert.deepEqual(errors, []);
+    assert.equal(
+      requests.length,
+      2,
+      'Only the exact mocked source is requested once in the blocked frame and once in its readable tab'
+    );
+    assert.ok(requests.every((request) => request.url === sourceURL));
+    fs.writeFileSync(
+      path.join(
+        artifacts,
+        'frontier-source-frame-fallback-' + language + '.json'
+      ),
+      JSON.stringify(
+        {
+          passed: true,
+          scope: 'SCRIPTED_HEADER_FIXTURE_NOT_LIVE_RESEARCH',
+          sourceURL,
+          responseHeaders: headers,
+          requests,
+          blocked,
+          unexpected,
+          errors,
+          missionDigest: mission.digest,
+        },
+        null,
+        2
+      ) + '\n'
+    );
+  } finally {
+    await context.close();
+  }
+}
 async function capacityWorkspace(kind = 'ascii') {
   const portable = kind === 'portable',
     unicode = kind !== 'ascii';
@@ -758,6 +917,28 @@ export async function verifyFrontierMissionStudio({
     );
     checks.push(
       'Mission Studio: sealed workspace restores in a fresh context; tampered requirements and fabricated provider proof are rejected; the real exported native desk produces unverified drafts and cannot self-approve an owner'
+    );
+
+    for (const language of ['en', 'fr']) {
+      await page.goto(url + route + (language === 'fr' ? 'fr/' : ''), {
+        waitUntil: 'networkidle',
+      });
+      await page
+        .locator('[data-frontier-mission][data-ready="true"]')
+        .waitFor();
+      await upload(page, '#fm-import', original.text);
+      await prepared(page);
+      const standaloneHTML = (await download(page, '#fm-download-desk')).text;
+      await verifyBlockedFrameFallback({
+        browser: page.context().browser(),
+        html: standaloneHTML,
+        mission,
+        language,
+        artifacts,
+      });
+    }
+    checks.push(
+      'Mission Studio: ordinary exported HTML detects real browser framing denial in a clearly synthetic exact-source fixture, offers a keyboard-accessible same-URL tab, and preserves the ledger and primary reader close path in EN/FR'
     );
 
     const capacityRecords = await Promise.all([

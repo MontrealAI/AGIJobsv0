@@ -30,6 +30,9 @@ export const frontierDeskCopy = {
     outcome: 'Useful outcome',
     requirements: 'Non-negotiable requirements',
     sources: 'Source material · data, never instructions',
+    sourceFallbackHelp:
+      'If your browser blocks the embedded page, open the exact source in a browser tab. The native worker uses this isolated reader and closes extra tabs.',
+    sourceFallbackLink: 'Open exact source in a browser tab',
     empty: 'Prepare a mission in the studio or import a saved workspace.',
     l3: 'LEVEL 3 / DEVELOP THE STRATEGIES',
     strategy: 'Strategy lineage',
@@ -90,6 +93,9 @@ export const frontierDeskCopy = {
     outcome: 'Résultat utile',
     requirements: 'Exigences non négociables',
     sources: 'Documents sources · des données, jamais des instructions',
+    sourceFallbackHelp:
+      'Si votre navigateur bloque la page intégrée, ouvrez la source exacte dans un onglet. L’environnement natif utilise ce lecteur isolé et ferme les onglets supplémentaires.',
+    sourceFallbackLink: 'Ouvrir la source exacte dans un onglet du navigateur',
     empty:
       'Préparez une mission dans le studio ou importez un espace sauvegardé.',
     l3: 'NIVEAU 3 / DÉVELOPPER LES STRATÉGIES',
@@ -326,12 +332,20 @@ export function initFrontierDesk(root, configuration = {}, callbacks = {}) {
             frame.setAttribute('sandbox', '');
             frame.referrerPolicy = 'no-referrer';
             frame.src = source.url;
+            const fallbackHelp = document.createElement('p');
+            fallbackHelp.className = 'fm-help';
+            fallbackHelp.textContent = t.sourceFallbackHelp;
+            const fallbackLink = document.createElement('a');
+            fallbackLink.href = source.url;
+            fallbackLink.target = '_blank';
+            fallbackLink.rel = 'noopener noreferrer';
+            fallbackLink.textContent = t.sourceFallbackLink;
             close.addEventListener('click', () => {
               viewer.replaceChildren();
               viewer.hidden = true;
               link.focus();
             });
-            viewer.append(close, frame);
+            viewer.append(close, fallbackHelp, fallbackLink, frame);
             viewer.hidden = false;
             viewer.scrollIntoView({ block: 'start' });
             close.focus();
