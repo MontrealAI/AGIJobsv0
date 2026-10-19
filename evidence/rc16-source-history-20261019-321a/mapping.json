@@ -1,0 +1,91 @@
+{
+  "schema": "agijobsv0/source-history-archive/v1",
+  "repository": "MontrealAI/AGIJobsv0",
+  "localReviewedCommit": "1d94da02724e450429420ceea85bf2467a3a8990",
+  "publicSourceCommit": "fb177b15adfb77de8ae697261797410cd11ac6f3",
+  "exactReviewedSourceTree": "dbb1dd08db3c2dc8ad87a890d6fa1f4d97a0a772",
+  "sourceBranch": "fix/inherited-codeql-strict-evidence-proposal-20261019-321a",
+  "publicSourceParents": [
+    "bfeab08248753287e83d287b898f399c94174b1c",
+    "8f11b17f6025834377f0fbe6d675e68dccd572ab"
+  ],
+  "representationReason": "Ordinary Git push could not authenticate; the connector creates a new commit identity while preserving the exact reviewed source tree.",
+  "archiveBranch": "evidence/rc16-source-history-20261019-321a",
+  "archiveIsFinalSourceAncestor": false,
+  "bundle": {
+    "path": "evidence/rc16-source-history-20261019-321a/history.bundle",
+    "bytes": 49178,
+    "sha256": "d9003a85d2c95a0865131094024f2fdcc95cd75da484e98497e91532e4b2a1d1",
+    "head": "1d94da02724e450429420ceea85bf2467a3a8990",
+    "ref": "refs/heads/fix/inherited-codeql-strict-evidence-proposal-20261019-321a",
+    "publicPrerequisites": [
+      "c84d6de35bed10012615931c0f15ba8a7b931974",
+      "cac9af812488f7f183db630ecd2a45da5a5019f0",
+      "bfeab08248753287e83d287b898f399c94174b1c",
+      "0b6d175a4ec8abf5b899e4a1b58a09e7045fe158",
+      "dce49ddba7ef0d2acf684fe922376b02e3d11813",
+      "27b654cfa2d02ddae5c9a0633f94461648bd0822",
+      "8f11b17f6025834377f0fbe6d675e68dccd572ab"
+    ],
+    "originalUnpublishedCommits": [
+      "29fa5492bb3257b9c040fdb7b7a8869cd892778a",
+      "58a40c195418d400bd6ca1ee500da4a83456f4e6",
+      "57605fb93dbbf71d7133c562c087436cc9dfa2e2",
+      "8c5bd5dd486b7442fa11d029a0182f98510b1361",
+      "fb7322eefacb7245e3f97bb5fa9d5b6e4e84ff2c",
+      "f59681be9ada1ddef9ea2fb13172b4bb5f808604",
+      "e815eee150cd4d8121919a2a0f39c417e64ae864",
+      "139bbddfa8a28d84cfe4149aa362bfcac647a4f2",
+      "b09d918cc5a00211b863c95e1ec409956cda01e7",
+      "6e15701133f6106efdcbf158a2cdb745d694d473",
+      "af77597e53e636e9998a21b769a4e970c2c01ce4",
+      "0f8e8775e10da00c7f2b9c41e0a5cf01251d8eea",
+      "5f5f413a05c8cd51976c10f8bc55ef479bfa02ad",
+      "b67613d0666ba743caa66ae312a05a1bee6d34a5",
+      "e101160de75ce2c1717d523f937a751403516fb7",
+      "1d94da02724e450429420ceea85bf2467a3a8990"
+    ]
+  },
+  "audit": {
+    "scope": "ACTUAL_UNPUBLISHED_REACHABLE_GIT_OBJECTS_EXCLUDING_PUBLIC_PREREQUISITES",
+    "unpublishedCommits": 16,
+    "gitObjects": 126,
+    "utf8SourceBlobVersions": 47,
+    "unexpectedOrSensitivePayloadPaths": 0,
+    "credentialMarkers": 0,
+    "intendedSourcePaths": [
+      ".github/workflows/source-release-rc16.yml",
+      ".github/workflows/static-analysis.yml",
+      ".github/workflows/successor-computer.yml",
+      ".github/workflows/transformational-compatibility.yml",
+      "docs/production/RELEASE_NOTES_SOURCE_RC16.md",
+      "integrations/alpha-agent/project-native-source.mjs",
+      "integrations/alpha-agent/project-source-selector.mjs",
+      "integrations/alpha-agent/successor-computer-mission-lab.py",
+      "integrations/alpha-agent/vendor/alpha-computer/source-identity.mjs",
+      "integrations/alpha-agent/vendor/alpha-computer/source-manifest.json",
+      "scripts/release/publish-source-release-rc16.cjs",
+      "scripts/release/python-scanner-rc16.cjs",
+      "scripts/release/qualify-source-release-rc16.cjs",
+      "scripts/release/source-native-evidence-rc16.cjs",
+      "scripts/release/source-profile-rc16.cjs",
+      "scripts/release/source-profile-rc16.json",
+      "scripts/release/source-python-evidence-rc16.cjs",
+      "scripts/release/source-scanner-gates-rc16.cjs",
+      "test/scripts/source-profile-rc16.test.cjs",
+      "test/scripts/source-python-evidence-rc16.test.cjs",
+      "test/scripts/source-release-integrated-rc16.test.cjs",
+      "test/scripts/source-release-rc16.test.cjs",
+      "test/scripts/source-release-security-rc16-gate.test.cjs",
+      "test/scripts/source-release-security-rc16-publish.test.cjs"
+    ]
+  },
+  "reviewEvidence": {
+    "independentStaticSha256": "7498703199aae04981fef00cfb6072b5450b0cdd921237b76e029a660a1df2f5",
+    "releaseLeadIntegratedStaticSha256": "4ada45ece7f5aed59429e3e363d096ff910a5e963af07a37c4b8fbe6ec4bba61"
+  },
+  "qualification": false,
+  "scannerReview": null,
+  "pythonScannerReview": null,
+  "scope": "Source-history retention and exact-tree identity mapping only; actual final-source scans, Advanced Security, CI, native/installed acceptance and publication gates remain required."
+}
