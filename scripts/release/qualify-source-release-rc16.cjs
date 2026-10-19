@@ -6,6 +6,30 @@ const { execFileSync } = require('node:child_process');
 const { setTimeout: delay } = require('node:timers/promises');
 const { requiredWorkflows } = require('./check-release-ci.js');
 
+const {
+  assertPinnedAlphaCheckout,
+} = require('../../integrations/alpha-agent/pinned-alpha-checkout.cjs');
+const gitSource = (...args) =>
+  execFileSync(
+    'git',
+    ['--no-replace-objects', '-c', 'core.fsmonitor=false', ...args],
+    {
+      encoding: 'utf8',
+      maxBuffer: 32 * 1024 * 1024,
+      env: {
+        ...Object.fromEntries(
+          Object.entries(process.env).filter(
+            ([name]) => !name.startsWith('GIT_')
+          )
+        ),
+        GIT_CONFIG_NOSYSTEM: '1',
+        GIT_CONFIG_GLOBAL: '/dev/null',
+        GIT_NO_REPLACE_OBJECTS: '1',
+        GIT_OPTIONAL_LOCKS: '0',
+        GIT_NO_LAZY_FETCH: '1',
+      },
+    }
+  );
 const ownPath = '.github/workflows/source-release-rc16.yml';
 const nativeGate = require('./source-native-gates-rc16.cjs');
 const {
@@ -524,13 +548,10 @@ async function main() {
     !token
   )
     throw Error('Invalid release identity or credentials');
-  const git = (...args) =>
-    execFileSync('git', ['--no-replace-objects', ...args], {
-      encoding: 'utf8',
-      maxBuffer: 16 * 1024 * 1024,
-    });
+  const git = (...args) => gitSource(...args);
   if (git('rev-parse', 'HEAD').trim() !== sha)
     throw Error('Checkout does not match release SHA');
+  assertPinnedAlphaCheckout(process.cwd(), sha);
   const sourceProfile = verifySourceProfile({
     git,
     sha,
@@ -571,6 +592,7 @@ async function main() {
     if (failures.length)
       throw Error(`Source release refused: ${failures.join('; ')}`);
     if (state.ready && reviewedCodeql.ready) {
+      assertPinnedAlphaCheckout(process.cwd(), sha);
       fs.mkdirSync('reports/source-release-rc16', { recursive: true });
       fs.writeFileSync(
         'reports/source-release-rc16/provenance.json',

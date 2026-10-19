@@ -184,3 +184,15 @@ tokens, unpause or change ENS. Ubuntu local hidden ephemeral deployer-key entry
 and Mac Studio Ledger governance remain unchanged. Original paper files/link
 remain immutable. Final merged-source, archive, compatible-release and live-site
 verification are still required.
+
+## Explicit final-source preparation inputs
+
+The candidate now pins Alpha source `dbaf5696d64ddcbf133f05d88d35496ebb85c3f0`
+(tree `30dc828703a6e9cd64103e0ebc965fc701e9bcf3`) through the unchanged public
+receiver source inventory. Earlier observations retain their original source
+identities. This pin is preparatory; final connected native/browser, hosted and
+compatible-release qualification remains required. Both the finite source profile
+and notes scanner review records remain null and independently block publication.
+The receiver-only extraction inventory and complete required SARIF inventory
+are separate mandatory inputs. The stronger preserved thirteen-receiver producer
+workflow is pinned exactly; no precursor workflow or historical scan qualifies it.

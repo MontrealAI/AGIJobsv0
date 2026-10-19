@@ -646,6 +646,7 @@ test('both real entrypoints reject a null notes record before network or publica
     'scripts/release/source-profile-rc16.json',
     'scripts/release/source-native-gates-rc16.cjs',
     'scripts/release/source-native-evidence-rc16.cjs',
+    'scripts/release/source-scanner-gates-rc16.cjs',
     'integrations/alpha-agent/pinned-alpha-checkout.cjs',
     'ci/required-contexts.json',
     'ci/required-companion-contexts.json',

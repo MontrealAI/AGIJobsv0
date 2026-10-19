@@ -4,6 +4,14 @@ on:
   push:
     branches: [main]
     paths:
+      - 'scripts/release/source-scanner-gates-rc16.cjs'
+      - 'test/scripts/source-release-integrated-rc16.test.cjs'
+      - '.github/workflows/successor-computer.yml'
+      - 'integrations/alpha-agent/project-native-source.mjs'
+      - 'integrations/alpha-agent/project-source-selector.mjs'
+      - 'integrations/alpha-agent/successor-computer-mission-lab.py'
+      - 'integrations/alpha-agent/vendor/alpha-computer/source-identity.mjs'
+      - 'integrations/alpha-agent/vendor/alpha-computer/source-manifest.json'
       - '.github/workflows/source-release-rc16.yml'
       - '.github/workflows/transformational-compatibility.yml'
       - 'scripts/release/qualify-source-release-rc16.cjs'
@@ -41,6 +49,14 @@ on:
       - '.github/workflows/pages.yml'
   pull_request:
     paths:
+      - 'scripts/release/source-scanner-gates-rc16.cjs'
+      - 'test/scripts/source-release-integrated-rc16.test.cjs'
+      - '.github/workflows/successor-computer.yml'
+      - 'integrations/alpha-agent/project-native-source.mjs'
+      - 'integrations/alpha-agent/project-source-selector.mjs'
+      - 'integrations/alpha-agent/successor-computer-mission-lab.py'
+      - 'integrations/alpha-agent/vendor/alpha-computer/source-identity.mjs'
+      - 'integrations/alpha-agent/vendor/alpha-computer/source-manifest.json'
       - '.github/workflows/source-release-rc16.yml'
       - '.github/workflows/transformational-compatibility.yml'
       - 'scripts/release/qualify-source-release-rc16.cjs'

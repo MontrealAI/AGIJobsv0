@@ -257,7 +257,15 @@
     "scripts/release/source-profile-rc16.cjs",
     "scripts/release/source-native-gates-rc16.cjs",
     "scripts/release/source-native-evidence-rc16.cjs",
-    "scripts/release/verify-transformational-compatibility.mjs"
+    "scripts/release/verify-transformational-compatibility.mjs",
+    "website/assets/computer-receipt.mjs",
+    "website/assets/computer-receipt-model.mjs",
+    "website/assets/computer-receipt-copy.mjs",
+    "website/assets/computer-desk.mjs",
+    "website/assets/computer-desk-runtime-source.mjs",
+    "website/assets/computer-mission.js",
+    "website/assets/computer-mission-copy.mjs",
+    "scripts/release/source-scanner-gates-rc16.cjs"
   ],
   "scannerReview": null,
   "integrationBaseline": "b26a65456d5c06c901ba73d1e1620f7edb1a315a",
@@ -279,7 +287,7 @@
       },
       "after": {
         "mode": "100644",
-        "blob": "8bf1b33d882ef8d47d819924fcde103040a906f9"
+        "blob": "a437359983b2d428b354f97c743a47b6da1b5bb7"
       }
     },
     {
@@ -290,7 +298,7 @@
       },
       "after": {
         "mode": "100644",
-        "blob": "13f37647c69915adb33ff76172b8452bc90c42b4"
+        "blob": "2b06e238f38f4133cc432a4e8620a194a92011e8"
       }
     },
     {
@@ -301,7 +309,7 @@
       },
       "after": {
         "mode": "100644",
-        "blob": "2355536fb301a0c8acae77904ba540a629e92c60"
+        "blob": "4682cb2b290f1b575c3d18e29c50081ccbd093de"
       }
     },
     {
@@ -312,7 +320,7 @@
       },
       "after": {
         "mode": "100644",
-        "blob": "5acc4bee48d34ed8e8035b1a95635dc8d6ec2e4e"
+        "blob": "1cbc0d58264a77d77d0bffb013385fc20d0e6616"
       }
     },
     {
@@ -323,7 +331,7 @@
       },
       "after": {
         "mode": "100644",
-        "blob": "f2d7b1936325e2c2dfe1235c9564812a3dc85e90"
+        "blob": "0a4338ea87a667e85c2dbb3426b8dc85e860b3e1"
       }
     },
     {
@@ -335,6 +343,17 @@
       "after": {
         "mode": "100644",
         "blob": "a86b7fa495620d9dbac4f5ff4c5c5cbd8c8fe53e"
+      }
+    },
+    {
+      "path": ".github/workflows/successor-computer.yml",
+      "before": {
+        "mode": "100644",
+        "blob": "ba4d7159a3ba33a85bc3a7b877f6a09b77251938"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "c605d05b1846e0bed5285265c3a23a69b649995b"
       }
     },
     {
@@ -393,6 +412,39 @@
       }
     },
     {
+      "path": "integrations/alpha-agent/project-native-source.mjs",
+      "before": {
+        "mode": "100644",
+        "blob": "68cbbf1271625575ea37486e10593e09d105b247"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "a0834a4eec43341cfbe40ca80981942a898e4d33"
+      }
+    },
+    {
+      "path": "integrations/alpha-agent/project-source-selector.mjs",
+      "before": {
+        "mode": "100644",
+        "blob": "a570c5bdd093926f3650b9da214150bb8b870af1"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "0dc320ab467d80141a5651a9ec6b8ece4d68b7a0"
+      }
+    },
+    {
+      "path": "integrations/alpha-agent/successor-computer-mission-lab.py",
+      "before": {
+        "mode": "100644",
+        "blob": "8a2bf3c2c1f9d3cfee695129c43ed11053f37651"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "4b2604e880cce957094ac29d7a31b2ffe6526a05"
+      }
+    },
+    {
       "path": "integrations/alpha-agent/vendor/alpha-computer/examples/successor-alpha/learning.mjs",
       "before": null,
       "after": {
@@ -416,7 +468,7 @@
       },
       "after": {
         "mode": "100644",
-        "blob": "446b360f83601fc036d365323e63b432d37e219e"
+        "blob": "56cf2b911d2411b0653f849b5434dc93b5784adc"
       }
     },
     {
@@ -427,7 +479,7 @@
       },
       "after": {
         "mode": "100644",
-        "blob": "05816f76b3031f4f19e583d3b6e44441b08fa25d"
+        "blob": "8582e7e569d1ef784d68b2f69638a260ea9c6d6b"
       }
     },
     {
@@ -551,5 +603,39 @@
         "blob": "609223705b09e14da076d6525a0512b7242409fc"
       }
     }
-  ]
+  ],
+  "scannerReceiverPaths": [
+    "integrations/alpha-agent/four-repo-computer-lifecycle.cjs",
+    "integrations/alpha-agent/four-repo-computer-receipt.mjs",
+    "integrations/alpha-agent/pinned-alpha-checkout.cjs",
+    "integrations/alpha-agent/transformational-work-request.mjs",
+    "integrations/alpha-agent/vendor/alpha/docs/assets/successor/engine.mjs",
+    "website/assets/computer-receipt.mjs",
+    "website/assets/computer-receipt-model.mjs",
+    "website/assets/computer-receipt-copy.mjs",
+    "website/assets/computer-desk.mjs",
+    "website/assets/computer-desk-runtime-source.mjs",
+    "website/assets/computer-mission.js",
+    "website/assets/computer-mission-copy.mjs"
+  ],
+  "scannerPolicy": {
+    "producerCommit": "b26a65456d5c06c901ba73d1e1620f7edb1a315a",
+    "producerTree": "f1f082a1af8375a7418d86556daeb65351757ad5",
+    "historicalConfigPath": ".github/codeql/config.yml",
+    "historicalConfigSha256": "4b34450e1dcc0b489feea158d642a6b66261d9e935463928782219c8716c0892",
+    "configPath": ".github/codeql/config-integrations.yml",
+    "configSha256": "18041680f9d2df3706e45bdf04e785457ee27573312998b999f51e893e7b59bb",
+    "configBlob": "0759a4da80412a04830bed3e7f5727d07cbdeb35",
+    "workflowPath": ".github/workflows/static-analysis.yml",
+    "workflowSha256": "c63eb465e33b49be07c812ec1d40c21b8c3f04c5e994bc9b687d75e1d01f6c35",
+    "workflowBlob": "a86b7fa495620d9dbac4f5ff4c5c5cbd8c8fe53e",
+    "archiveFiles": [
+      "javascript.sarif",
+      "source-extraction.json",
+      "source-scope-after.json",
+      "source-scope-before.json"
+    ]
+  },
+  "nativePinBaseline": "d943e0b2384cad09b2918fe532fca50f5837e65f",
+  "nativePinTree": "b279cfcbd53c814db48bb4ab997199ea7ca9269c"
 }

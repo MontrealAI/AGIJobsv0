@@ -32,6 +32,31 @@ const {
 } = require('../../integrations/alpha-agent/pinned-alpha-checkout.cjs');
 const nativeEvidence = require('./source-native-evidence-rc16.cjs');
 
+const gitSource = (...args) =>
+  execFileSync(
+    'git',
+    ['--no-replace-objects', '-c', 'core.fsmonitor=false', ...args],
+    {
+      encoding: 'utf8',
+      maxBuffer: 32 * 1024 * 1024,
+      env: {
+        ...Object.fromEntries(
+          Object.entries(process.env).filter(
+            ([name]) => !name.startsWith('GIT_')
+          )
+        ),
+        GIT_CONFIG_NOSYSTEM: '1',
+        GIT_CONFIG_GLOBAL: '/dev/null',
+        GIT_NO_REPLACE_OBJECTS: '1',
+        GIT_OPTIONAL_LOCKS: '0',
+        GIT_NO_LAZY_FETCH: '1',
+      },
+    }
+  );
+const {
+  verifyIntegratedScannerArchive,
+} = require('./source-scanner-gates-rc16.cjs');
+
 function expectedAssets(tag) {
   return [
     'SHA256SUMS.txt',
@@ -284,6 +309,12 @@ function verifyDownloadedAssets({
       canonical(profile.nativeCompatibility) ||
     canonical(provenance.sourceProfile?.scannerRequiredPaths) !==
       canonical(profile.scannerRequiredPaths) ||
+    canonical(provenance.sourceProfile?.scannerPolicy) !==
+      canonical(profile.scannerPolicy) ||
+    canonical(provenance.sourceProfile?.scannerReceiverPaths) !==
+      canonical(profile.scannerReceiverPaths) ||
+    provenance.sourceProfile?.nativePinBaseline !== profile.nativePinBaseline ||
+    provenance.sourceProfile?.nativePinTree !== profile.nativePinTree ||
     provenance.sourceProfile?.scannerReview !== null ||
     provenance.sourceProfile?.productionApproved !== false
   )
@@ -962,11 +993,7 @@ async function collectScannerEvidence() {
       scannerReview !== null,
     'Scanner evidence collection requires the installed reviewed source record'
   );
-  const git = (...args) =>
-    execFileSync('git', ['--no-replace-objects', ...args], {
-      encoding: 'utf8',
-      maxBuffer: 16 * 1024 * 1024,
-    });
+  const git = (...args) => gitSource(...args);
   verifyScannerReviewSource({ git, sha });
   const context = scannerPolicyContext(git, sha);
   const cli = (...args) =>
@@ -1054,6 +1081,13 @@ async function collectScannerEvidence() {
     finalContext,
     reviewedContext,
     ...context,
+  });
+  verifyIntegratedScannerArchive({
+    directory,
+    sha,
+    tree: git('rev-parse', `${sha}^{tree}`).trim(),
+    producerRun: current,
+    git,
   });
   fs.writeFileSync(
     path.join(directory, 'codeql-provenance.json'),
@@ -1406,11 +1440,7 @@ async function main() {
       stdio: ['ignore', 'pipe', 'pipe'],
       maxBuffer: 10 * 1024 * 1024,
     });
-  const git = (...args) =>
-    execFileSync('git', ['--no-replace-objects', ...args], {
-      encoding: 'utf8',
-      maxBuffer: 16 * 1024 * 1024,
-    });
+  const git = (...args) => gitSource(...args);
   if (git('rev-parse', 'HEAD').trim() !== sha)
     throw Error('Checkout identity mismatch');
   assertPinnedAlphaCheckout(process.cwd(), sha);
@@ -1448,6 +1478,7 @@ async function main() {
     return response.json();
   };
   const verify = async (draft) => {
+    assertPinnedAlphaCheckout(process.cwd(), sha);
     const downloaded = fs.mkdtempSync(
       path.join(
         process.env.RUNNER_TEMP || os.tmpdir(),
@@ -1531,6 +1562,20 @@ async function main() {
           ),
         },
       });
+      const finalScannerRun = await api(
+        'GET',
+        `actions/runs/${producerId(
+          scannerProof.final.runId
+        )}/attempts/${producerId(scannerProof.final.runAttempt)}`
+      );
+      verifyIntegratedScannerArchive({
+        directory: downloaded,
+        sha,
+        tree,
+        producerRun: finalScannerRun,
+        git,
+      });
+      assertPinnedAlphaCheckout(process.cwd(), sha);
     } finally {
       fs.rmSync(downloaded, { recursive: true, force: true });
     }
@@ -1568,6 +1613,7 @@ async function main() {
 module.exports = {
   ...nativeEvidence,
   collectScannerEvidence,
+  gitSource,
   summarizeScannerSarif,
   historicalScannerArchive,
   scannerExecutionContext,

@@ -5,7 +5,7 @@
 const assert = require('node:assert/strict');
 const { createHash } = require('node:crypto');
 const integrationTransitionsSha256 =
-  'bf75870493f451807e34103b66dc6c2b3106134ecae693717a0aa7560cb80156';
+  'd9e73a37a3c67d4ce2aa3bce429865fde81f5b167d75191a142ab3d79c68b82f';
 const historical = require('./qualify-source-release.cjs');
 
 function freeze(value) {
@@ -25,6 +25,8 @@ const anchors = Object.freeze({
   implementationTree: '6003d3d7286fe9fa4bf6875deefc01e579ce9dfc',
   integrationBaseline: 'b26a65456d5c06c901ba73d1e1620f7edb1a315a',
   integrationTree: 'f1f082a1af8375a7418d86556daeb65351757ad5',
+  nativePinBaseline: 'd943e0b2384cad09b2918fe532fca50f5837e65f',
+  nativePinTree: 'b279cfcbd53c814db48bb4ab997199ea7ca9269c',
 });
 const allowedNewPaths = Object.freeze([
   'scripts/release/source-profile-rc16.cjs',
@@ -41,6 +43,8 @@ const allowedNewPaths = Object.freeze([
   'scripts/release/source-native-evidence-rc16.cjs',
   'test/scripts/source-release-security-rc16-gate.test.cjs',
   'test/scripts/source-release-security-rc16-publish.test.cjs',
+  'scripts/release/source-scanner-gates-rc16.cjs',
+  'test/scripts/source-release-integrated-rc16.test.cjs',
   'docs/production/RELEASE_NOTES_SOURCE_RC16.md',
 ]);
 const allowedExistingPaths = Object.freeze([
@@ -90,6 +94,41 @@ const nativeCompatibility = freeze({
       'b5f8e704aaab345f9d6503c854d38910ddfabbf98fe674c48b051097812b07f4',
   },
 });
+const scannerPolicy = freeze({
+  producerCommit: 'b26a65456d5c06c901ba73d1e1620f7edb1a315a',
+  producerTree: 'f1f082a1af8375a7418d86556daeb65351757ad5',
+  historicalConfigPath: '.github/codeql/config.yml',
+  historicalConfigSha256:
+    '4b34450e1dcc0b489feea158d642a6b66261d9e935463928782219c8716c0892',
+  configPath: '.github/codeql/config-integrations.yml',
+  configSha256:
+    '18041680f9d2df3706e45bdf04e785457ee27573312998b999f51e893e7b59bb',
+  configBlob: '0759a4da80412a04830bed3e7f5727d07cbdeb35',
+  workflowPath: '.github/workflows/static-analysis.yml',
+  workflowSha256:
+    'c63eb465e33b49be07c812ec1d40c21b8c3f04c5e994bc9b687d75e1d01f6c35',
+  workflowBlob: 'a86b7fa495620d9dbac4f5ff4c5c5cbd8c8fe53e',
+  archiveFiles: [
+    'javascript.sarif',
+    'source-extraction.json',
+    'source-scope-after.json',
+    'source-scope-before.json',
+  ],
+});
+const scannerReceiverPaths = Object.freeze([
+  'integrations/alpha-agent/four-repo-computer-lifecycle.cjs',
+  'integrations/alpha-agent/four-repo-computer-receipt.mjs',
+  'integrations/alpha-agent/pinned-alpha-checkout.cjs',
+  'integrations/alpha-agent/transformational-work-request.mjs',
+  'integrations/alpha-agent/vendor/alpha/docs/assets/successor/engine.mjs',
+  'website/assets/computer-receipt.mjs',
+  'website/assets/computer-receipt-model.mjs',
+  'website/assets/computer-receipt-copy.mjs',
+  'website/assets/computer-desk.mjs',
+  'website/assets/computer-desk-runtime-source.mjs',
+  'website/assets/computer-mission.js',
+  'website/assets/computer-mission-copy.mjs',
+]);
 const scannerRequiredPaths = Object.freeze([
   'integrations/alpha-agent/four-repo-computer-lifecycle.cjs',
   'integrations/alpha-agent/four-repo-computer-receipt.mjs',
@@ -103,6 +142,14 @@ const scannerRequiredPaths = Object.freeze([
   'scripts/release/source-native-gates-rc16.cjs',
   'scripts/release/source-native-evidence-rc16.cjs',
   'scripts/release/verify-transformational-compatibility.mjs',
+  'website/assets/computer-receipt.mjs',
+  'website/assets/computer-receipt-model.mjs',
+  'website/assets/computer-receipt-copy.mjs',
+  'website/assets/computer-desk.mjs',
+  'website/assets/computer-desk-runtime-source.mjs',
+  'website/assets/computer-mission.js',
+  'website/assets/computer-mission-copy.mjs',
+  'scripts/release/source-scanner-gates-rc16.cjs',
 ]);
 const excludedCompilerPaths = new Set(
   historical.reviewedCompilerPaths
@@ -369,6 +416,8 @@ function validateProfile(value = profile) {
       'integrationTransitions',
       'nativeCompatibility',
       'scannerRequiredPaths',
+      'scannerReceiverPaths',
+      'scannerPolicy',
       'scannerReview',
     ],
     'rc.16 profile fields differ'
@@ -403,7 +452,9 @@ function validateProfile(value = profile) {
     'Exact reviewed website transition inventory differs'
   );
   requireValue(
-    same(value.nativeCompatibility, nativeCompatibility) &&
+    same(value.scannerPolicy, scannerPolicy) &&
+      same(value.scannerReceiverPaths, scannerReceiverPaths) &&
+      same(value.nativeCompatibility, nativeCompatibility) &&
       same(value.scannerRequiredPaths, scannerRequiredPaths) &&
       value.scannerReview === null,
     'Pending native or scanner policy differs; a separately reviewed gate update is required'
@@ -428,6 +479,7 @@ function verifySourceScope({ git, sha, version, lock, policy }) {
     profile.securityPrerequisite,
     profile.implementationBaseline,
     profile.integrationBaseline,
+    profile.nativePinBaseline,
   ])
     git('merge-base', '--is-ancestor', baseline, sha);
   requireValue(
@@ -481,6 +533,20 @@ function verifySourceScope({ git, sha, version, lock, policy }) {
     implementationTree,
     profile.transitions
   );
+  requireValue(
+    text(git('rev-parse', `${profile.nativePinBaseline}^{tree}`)).trim() ===
+      profile.nativePinTree,
+    'Reviewed native pin tree differs'
+  );
+  for (const [name, blob] of [
+    [scannerPolicy.configPath, scannerPolicy.configBlob],
+    [scannerPolicy.workflowPath, scannerPolicy.workflowBlob],
+  ])
+    requireValue(
+      releaseTree.get(name)?.mode === '100644' &&
+        releaseTree.get(name)?.blob === blob,
+      'Reviewed scanner producer blob differs: ' + name
+    );
   const releaseChanges = verifyReleaseDelta(implementationTree, releaseTree);
   const afterPackage = readJSON(sha, 'package.json'),
     afterLock = readJSON(sha, 'package-lock.json');
@@ -516,6 +582,8 @@ function verifySourceScope({ git, sha, version, lock, policy }) {
     releaseChanges,
     nativeCompatibility: profile.nativeCompatibility,
     scannerRequiredPaths: profile.scannerRequiredPaths,
+    scannerReceiverPaths: profile.scannerReceiverPaths,
+    scannerPolicy: profile.scannerPolicy,
     scannerReview: null,
     productionApproved: false,
   };

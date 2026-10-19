@@ -247,6 +247,7 @@ test('complete source verifier accepts only finite release plumbing over the act
     sha: r.commit([
       p.profile.implementationBaseline,
       p.profile.integrationBaseline,
+      p.profile.nativePinBaseline,
     ]),
     version: p.profile.releaseVersion,
     lock: afterLock,
@@ -535,12 +536,13 @@ test('actual Git integration transitions reject substituted security/runtime byt
   const candidate = r.commit([
     p.profile.implementationBaseline,
     p.profile.integrationBaseline,
+    p.profile.nativePinBaseline,
   ]);
   const before = p.parseTree(
     r.git('ls-tree', '-rz', p.profile.implementationBaseline)
   );
   const after = p.parseTree(r.git('ls-tree', '-rz', candidate));
-  assert.equal(p.verifyIntegrationTransitions(before, after).length, 27);
+  assert.equal(p.verifyIntegrationTransitions(before, after).length, 31);
   for (const transitions of [
     p.profile.integrationTransitions.slice(1),
     [...p.profile.integrationTransitions, p.profile.integrationTransitions[0]],
