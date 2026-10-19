@@ -46,6 +46,23 @@ function read(raw) {
   );
   const value = parseBounded(raw),
     decoded = canonical(value);
+  const pending = [value];
+  while (pending.length) {
+    const item = pending.pop();
+    if (item && typeof item === 'object') {
+      for (const [name, child] of Object.entries(item)) {
+        need(
+          !/^(?:password|passwd|api[_-]?key|private[_-]?key|seed[_ -]?phrase|access[_-]?token|client[_-]?secret|signing[_-]?key)$/i.test(
+            name
+          ) ||
+            typeof child !== 'string' ||
+            !child.trim(),
+          'TRANSFORMATION_PRIVATE_INPUT'
+        );
+        pending.push(child);
+      }
+    }
+  }
   need(
     !/(?:-----BEGIN [A-Z ]*PRIVATE KEY|\b(?:sk-(?:proj-)?|gh[pousr]_|github_pat_)[A-Za-z0-9_-]{16,}|\b(?:password|passwd|api[_-]?key|private[_-]?key|seed[_ -]?phrase|access[_-]?token)\s*[=:]\s*\S{6,}|\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b)/i.test(
       decoded

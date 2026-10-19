@@ -40,7 +40,9 @@ from an untrusted import would defeat the freshness check. Native object digests
 are plain 64-digit hex; Jobs byte identities have the explicit `sha256:` prefix.
 
 The adapter requires public-only charter data and refuses recognized credentials,
-private-address patterns and duplicate keys before native inspection. These
+decoded credential-bearing JSON fields, private-address patterns and duplicate
+keys before native inspection. Quoted or Unicode-escaped configuration keys
+cannot bypass the credential-field screen. These
 checks supplement operator source-rights review; they do not certify arbitrary
 content as public, truthful or non-personal.
 

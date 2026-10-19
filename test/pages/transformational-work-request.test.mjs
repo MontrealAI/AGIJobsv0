@@ -361,6 +361,40 @@ test('decoded credential, private-address and duplicate-key inputs are rejected 
     /Duplicate JSON key/
   );
   assert.equal(called, false);
+  for (const key of [
+    'api_key',
+    'API-KEY',
+    'private_key',
+    'password',
+    'access_token',
+    'seed phrase',
+    'client_secret',
+    'signing_key',
+  ]) {
+    const credential = await fixture((x) => {
+      x.bindings.configuration = { [key]: 'synthetic-fixture-only' };
+    });
+    called = false;
+    await assert.rejects(
+      inspectTransformationWorkRequest(canonical(credential), {
+        ...options(credential),
+        inspectWorkRequest: async () => {
+          called = true;
+        },
+      }),
+      /PRIVATE_INPUT/
+    );
+    assert.equal(called, false);
+    if (key === 'api_key') {
+      await assert.rejects(
+        inspectTransformationWorkRequest(
+          canonical(credential).replace('"api_key":', '"api\\u005fkey":'),
+          options(credential)
+        ),
+        /PRIVATE_INPUT/
+      );
+    }
+  }
 });
 
 test('evaluation, authorization and settlement cannot expand the imported campaign authority', async () => {

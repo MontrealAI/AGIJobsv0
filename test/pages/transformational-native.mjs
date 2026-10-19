@@ -17,6 +17,9 @@ const { inspectTransformationEnvelope } = await import(
     path.join(alphaRoot, 'examples/transformational-intelligence/inspector.mjs')
   ).href
 );
+const { digest } = await import(
+  pathToFileURL(path.join(alphaRoot, 'docs/assets/successor/engine.mjs')).href
+);
 const raw = fs.readFileSync(fixtureFile, 'utf8');
 const request = await inspectTransformationEnvelope(raw);
 const options = {
@@ -47,6 +50,19 @@ await assert.rejects(
   }),
   /STALE_BINDINGS/
 );
+const credential = JSON.parse(raw);
+credential.bindings.request.configuration.api_key = 'synthetic-fixture-only';
+credential.bindings_digest = await digest('ti-bindings', credential.bindings);
+credential.freeze = null;
+credential.result = null;
+credential.phase = 'queued';
+await assert.rejects(
+  inspectTransformationWorkRequest(JSON.stringify(credential), {
+    ...options,
+    expectedBindingsDigest: credential.bindings_digest,
+  }),
+  /PRIVATE_INPUT/
+);
 console.log(
   JSON.stringify({
     campaign: actual.campaign_id,
@@ -55,6 +71,7 @@ console.log(
     positiveAGIALPHARefused: true,
     staleBindingsRefused: true,
     authorityExpansionRefused: true,
+    credentialFieldsRefused: true,
     currencySpend: '0',
     chainOperations: 0,
     independentProof: false,
