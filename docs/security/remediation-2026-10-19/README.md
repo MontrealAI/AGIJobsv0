@@ -215,3 +215,17 @@ and omitted signed payloads. A client sending a signature without its message
 must supply that message (or remain unsigned); a digest alone cannot prove
 what was signed. This intentional rejection is not a new authorization role.
 Independent exact-head re-review must complete before final qualification.
+
+
+### Descriptor-relative write target follow-up
+
+The authenticated 1faf source scan (run39289598319) reports two high
+`js/path-injection` paths at the atomic link/rename calls, and the distinct
+Advanced Security check118232588788 fails. The write target now uses the
+existing `containedFile(anchor, filename)` checked return against the retained,
+verified directory descriptor, rather than rebuilding the target after an
+earlier discarded containment check. The strict filename rule, descriptor
+identity/lifetime, private permissions, atomic operations and original scanner
+configuration remain unchanged. This source correction is not a scanner
+clearance; the complete raw results, medium content flow, exact final source
+scan and required independent review remain publication gates.

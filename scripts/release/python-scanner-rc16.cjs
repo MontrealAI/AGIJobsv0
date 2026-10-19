@@ -144,7 +144,23 @@ function archiveInventory(files) {
     'Python scanner archive inventory differs'
   );
 }
-function producerIdentity({ sha, tree, producerRun, git }) {
+function reviewedBranch(branch) {
+  return (
+    branch === 'main' ||
+    (typeof branch === 'string' &&
+      /^fix\/inherited-codeql-[A-Za-z0-9][A-Za-z0-9._-]{0,233}$/.test(branch) &&
+      !branch.includes('..') &&
+      !branch.endsWith('.') &&
+      !branch.endsWith('.lock'))
+  );
+}
+function producerIdentity({
+  sha,
+  tree,
+  producerRun,
+  git,
+  sourceRole = 'final',
+}) {
   identity(sha, 'source identity');
   identity(tree, 'tree identity');
   assert.equal(
@@ -159,16 +175,25 @@ function producerIdentity({ sha, tree, producerRun, git }) {
   );
   positive(producerRun?.id, 'producer run');
   positive(producerRun?.run_attempt, 'producer attempt');
+  assert(
+    sourceRole === 'final' || sourceRole === 'reviewed',
+    'Python scanner source role differs'
+  );
+  assert(
+    sourceRole === 'reviewed'
+      ? reviewedBranch(producerRun.head_branch)
+      : producerRun.head_branch === 'main',
+    'Python scanner producer branch is not admitted for its source role'
+  );
   const expected = policy();
   assert(
     producerRun.head_sha === sha &&
       producerRun.path === expected.workflowPath &&
       producerRun.event === 'push' &&
-      producerRun.head_branch === 'main' &&
       producerRun.repository?.full_name === 'MontrealAI/AGIJobsv0' &&
       producerRun.status === 'completed' &&
       producerRun.conclusion === 'success',
-    'Python scanner requires the authenticated successful exact-main producer'
+    'Python scanner requires the authenticated successful source-bound producer'
   );
   return expected;
 }
@@ -313,10 +338,16 @@ function analysis(document) {
 function verifyPythonScannerProducerArchive(
   files,
   read,
-  { sha, tree, producerRun, git } = {}
+  { sha, tree, producerRun, git, sourceRole = 'final' } = {}
 ) {
   archiveInventory(files);
-  const expected = producerIdentity({ sha, tree, producerRun, git });
+  const expected = producerIdentity({
+    sha,
+    tree,
+    producerRun,
+    git,
+    sourceRole,
+  });
   assert.equal(typeof read, 'function', 'Python archive reader is absent');
   const captured = new Map(
     archiveFiles.map((name) => [name, Buffer.from(read(name))])
@@ -340,7 +371,7 @@ function verifyPythonScannerProducerArchive(
       before.run === producerRun.id &&
       before.attempt === producerRun.run_attempt &&
       before.event === 'push' &&
-      before.ref === 'refs/heads/main' &&
+      before.ref === 'refs/heads/' + producerRun.head_branch &&
       before.actualExtractionRequiresSARIF === true,
     'Python source scope differs from the authenticated producer'
   );
@@ -474,8 +505,22 @@ function references(value, message) {
 }
 function verifyPythonScannerArchive(files, read, options = {}) {
   archiveInventory(files);
-  const { sha, tree, producerRun, git, artifact, archiveSha256 } = options;
-  const expected = producerIdentity({ sha, tree, producerRun, git });
+  const {
+    sha,
+    tree,
+    producerRun,
+    git,
+    artifact,
+    archiveSha256,
+    sourceRole = 'final',
+  } = options;
+  const expected = producerIdentity({
+    sha,
+    tree,
+    producerRun,
+    git,
+    sourceRole,
+  });
   assert(
     hashPattern.test(archiveSha256 || ''),
     'Actual Python archive SHA256 is required'
@@ -487,6 +532,7 @@ function verifyPythonScannerArchive(files, read, options = {}) {
     sha,
     workflow: expected.workflowPath,
     name: artifactName,
+    sourceRole,
   });
   assert.equal(
     artifact.digest,

@@ -164,7 +164,7 @@ test('retained artifacts require successful exact-main authenticated producer id
       name: 'codeql-security-report',
       expired: false,
       digest: 'sha256:' + 'c'.repeat(64),
-      workflow_run: { id: 42, head_sha: sha },
+      workflow_run: { id: 42, head_sha: sha, head_branch: 'main' },
     };
   const verify = (a = artifact, r = producer) =>
     validateProducer({
@@ -381,7 +381,7 @@ test('retained readback cannot relabel another successful same-SHA run or attemp
       name: `codeql-security-report-${sha}-42-1`,
       expired: false,
       digest: 'sha256:' + digest,
-      workflow_run: { id: 42, head_sha: sha },
+      workflow_run: { id: 42, head_sha: sha, head_branch: 'main' },
     };
     fs.writeFileSync(path.join(directory, 'codeql-evidence.zip'), bytes);
     fs.writeFileSync(

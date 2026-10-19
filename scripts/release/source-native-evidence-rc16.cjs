@@ -404,7 +404,8 @@ async function retainPythonEvidence({
     pythonEvidence.readPythonScannerObservation(
       api,
       reviewedRef,
-      review.sourceCommit
+      review.sourceCommit,
+      { sourceRole: 'reviewed' }
     ),
   ]);
   for (const [file, observation] of [

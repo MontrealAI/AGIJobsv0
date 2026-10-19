@@ -370,7 +370,7 @@
       },
       "after": {
         "mode": "100644",
-        "blob": "33dfe77d4d8d6071baca554f38614c8673914a45"
+        "blob": "d9030fd9b28e21916eeb301400ba954600e8eb56"
       }
     },
     {
@@ -436,7 +436,7 @@
       },
       "after": {
         "mode": "100644",
-        "blob": "0a03f0138501ed31efaff02a6abfa57c230a8737"
+        "blob": "dcdc16bd519f455218236cc1f3a15a64d42b6b27"
       }
     },
     {
@@ -529,7 +529,7 @@
       },
       "after": {
         "mode": "100644",
-        "blob": "d17e3090c9a28580eafc265fb4958d24910ca0ef"
+        "blob": "31c26166958baad1d69e29248fa108ac95118699"
       }
     },
     {
@@ -627,8 +627,8 @@
     "website/assets/computer-mission-copy.mjs"
   ],
   "scannerPolicy": {
-    "producerCommit": "e815eee150cd4d8121919a2a0f39c417e64ae864",
-    "producerTree": "97091066c9e55c3ffee01b8eee563216ffde44f3",
+    "producerCommit": "bfeab08248753287e83d287b898f399c94174b1c",
+    "producerTree": "0fa407313f568cd7ebe56a791452233e240c49e6",
     "historicalConfigPath": ".github/codeql/config.yml",
     "historicalConfigSha256": "4b34450e1dcc0b489feea158d642a6b66261d9e935463928782219c8716c0892",
     "configPath": ".github/codeql/config-integrations.yml",
@@ -648,11 +648,11 @@
   "nativePinTree": "b279cfcbd53c814db48bb4ab997199ea7ca9269c",
   "sourceConvergenceBaseline": "0b6d175a4ec8abf5b899e4a1b58a09e7045fe158",
   "sourceConvergenceTree": "9e8dff3e0863afa73e04757f77ca2bcb8c01dca2",
-  "pythonScannerBaseline": "e815eee150cd4d8121919a2a0f39c417e64ae864",
-  "pythonScannerTree": "97091066c9e55c3ffee01b8eee563216ffde44f3",
+  "pythonScannerBaseline": "bfeab08248753287e83d287b898f399c94174b1c",
+  "pythonScannerTree": "0fa407313f568cd7ebe56a791452233e240c49e6",
   "pythonScannerPolicy": {
-    "producerCommit": "e815eee150cd4d8121919a2a0f39c417e64ae864",
-    "producerTree": "97091066c9e55c3ffee01b8eee563216ffde44f3",
+    "producerCommit": "bfeab08248753287e83d287b898f399c94174b1c",
+    "producerTree": "0fa407313f568cd7ebe56a791452233e240c49e6",
     "configPath": ".github/codeql/config-python-integrations.yml",
     "configSha256": "eb5b425facefb419987bf537280d5144a477b65a205ccd71df3866b60b01e560",
     "configBlob": "cdd0d5a0a1a0e691c3367bc5ce4429215f41381d",

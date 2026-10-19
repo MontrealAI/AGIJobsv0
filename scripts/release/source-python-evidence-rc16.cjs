@@ -46,7 +46,31 @@ function validatePythonScannerReference(ref, sha) {
   return ref;
 }
 
-function validRun(run, ref, sha) {
+function reviewedBranch(branch) {
+  return (
+    branch === 'main' ||
+    (typeof branch === 'string' &&
+      /^fix\/inherited-codeql-[A-Za-z0-9][A-Za-z0-9._-]{0,233}$/.test(branch) &&
+      !branch.includes('..') &&
+      !branch.endsWith('.') &&
+      !branch.endsWith('.lock'))
+  );
+}
+
+function observationBranch(run, sourceRole) {
+  assert(
+    sourceRole === 'final' || sourceRole === 'reviewed',
+    'Python evidence source role differs'
+  );
+  const branch = run?.head_branch;
+  assert(
+    sourceRole === 'reviewed' ? reviewedBranch(branch) : branch === 'main',
+    'Python evidence producer branch is not admitted for its source role'
+  );
+  return branch;
+}
+
+function validRun(run, ref, sha, branch = 'main') {
   return (
     run?.id === ref.runId &&
     run.run_attempt === ref.runAttempt &&
@@ -58,13 +82,13 @@ function validRun(run, ref, sha) {
     run.head_repository?.full_name === repository &&
     run.head_repository.id === repositoryId &&
     run.event === 'push' &&
-    run.head_branch === 'main' &&
+    run.head_branch === branch &&
     run.status === 'completed' &&
     run.conclusion === 'success'
   );
 }
 
-function validArtifact(artifact, ref, sha) {
+function validArtifact(artifact, ref, sha, branch = 'main') {
   return (
     artifact?.id === ref.artifactId &&
     artifact.name === ref.artifactName &&
@@ -74,7 +98,7 @@ function validArtifact(artifact, ref, sha) {
     artifact.size_in_bytes <= 128 * 1024 * 1024 &&
     artifact.workflow_run?.id === ref.runId &&
     artifact.workflow_run.head_sha === sha &&
-    artifact.workflow_run.head_branch === 'main' &&
+    artifact.workflow_run.head_branch === branch &&
     artifact.workflow_run.repository_id === repositoryId &&
     artifact.workflow_run.head_repository_id === repositoryId
   );
@@ -164,7 +188,12 @@ async function pages(api, prefix, key) {
   throw Error('Python producer pagination exceeds its bound');
 }
 
-async function readPythonScannerObservation(api, ref, sha) {
+async function readPythonScannerObservation(
+  api,
+  ref,
+  sha,
+  { sourceRole = 'final' } = {}
+) {
   assert.equal(
     typeof api,
     'function',
@@ -182,11 +211,12 @@ async function readPythonScannerObservation(api, ref, sha) {
     ),
     pages(api, `actions/runs/${ref.runId}/artifacts`, 'artifacts'),
   ]);
+  const branch = observationBranch(currentRun, sourceRole);
   assert(
-    validRun(currentRun, ref, sha) &&
-      validRun(run, ref, sha) &&
+    validRun(currentRun, ref, sha, branch) &&
+      validRun(run, ref, sha, branch) &&
       currentRun.run_number === run.run_number,
-    'Python run is stale, foreign, pending, unsuccessful or not a main push'
+    'Python run is stale, foreign, pending, unsuccessful or on another branch'
   );
   assert(
     runs.every(
@@ -199,13 +229,13 @@ async function readPythonScannerObservation(api, ref, sha) {
     'Foreign-head or malformed Python workflow inventory'
   );
   const ordered = runs
-    .filter((item) => item.event === 'push' && item.head_branch === 'main')
+    .filter((item) => item.event === 'push' && item.head_branch === branch)
     .sort(
       (a, b) => b.run_number - a.run_number || b.run_attempt - a.run_attempt
     );
   const latestRun = ordered[0];
   assert(
-    validRun(latestRun, ref, sha) &&
+    validRun(latestRun, ref, sha, branch) &&
       latestRun.run_number === run.run_number &&
       !(
         ordered[1]?.run_number === latestRun.run_number &&
@@ -215,7 +245,7 @@ async function readPythonScannerObservation(api, ref, sha) {
   );
   const matches = artifacts.filter((item) => item.name === ref.artifactName);
   assert(
-    matches.length === 1 && validArtifact(artifact, ref, sha),
+    matches.length === 1 && validArtifact(artifact, ref, sha, branch),
     'Python artifact identity differs from the authenticated producer'
   );
   assert.deepEqual(
@@ -235,7 +265,7 @@ async function readPythonScannerObservation(api, ref, sha) {
   };
 }
 
-function validateObservation(observation, sha) {
+function validateObservation(observation, sha, { sourceRole = 'final' } = {}) {
   assert(
     observation?.schema === 'agijobsv0/python-codeql-observation/1' &&
       observation.repository === repository &&
@@ -243,14 +273,15 @@ function validateObservation(observation, sha) {
     'Python observation source or schema differs'
   );
   const ref = validatePythonScannerReference(observation.producer, sha);
+  const branch = observationBranch(observation.currentRun, sourceRole);
   assert(
-    validRun(observation.currentRun, ref, sha) &&
-      validRun(observation.run, ref, sha) &&
-      validRun(observation.latestRun, ref, sha) &&
+    validRun(observation.currentRun, ref, sha, branch) &&
+      validRun(observation.run, ref, sha, branch) &&
+      validRun(observation.latestRun, ref, sha, branch) &&
       observation.currentRun.run_number === observation.run.run_number &&
       observation.latestRun.run_number === observation.run.run_number &&
-      validArtifact(observation.artifact, ref, sha),
-    'Python observation does not retain a successful current exact-main producer'
+      validArtifact(observation.artifact, ref, sha, branch),
+    'Python observation does not retain a successful current source-bound producer'
   );
   return ref;
 }
@@ -270,7 +301,9 @@ function pythonEvidenceContexts({
   const reviewedRef = pythonScannerReviewReference(review);
   const finalRef = validateObservation(finalObservation, sha);
   assert.deepEqual(
-    validateObservation(reviewedObservation, review.sourceCommit),
+    validateObservation(reviewedObservation, review.sourceCommit, {
+      sourceRole: 'reviewed',
+    }),
     reviewedRef,
     'Reviewed Python observation differs from the installed review producer'
   );
@@ -287,6 +320,7 @@ function pythonEvidenceContexts({
   git('merge-base', '--is-ancestor', review.sourceCommit, sha);
   return {
     reviewed: {
+      sourceRole: 'reviewed',
       sha: review.sourceCommit,
       tree: review.tree,
       producerRun: reviewedObservation.run,
@@ -296,6 +330,7 @@ function pythonEvidenceContexts({
       git,
     },
     final: {
+      sourceRole: 'final',
       sha,
       tree,
       producerRun: finalObservation.run,

@@ -197,6 +197,64 @@ test('synthetic Python metadata authenticates the current run, exact attempt and
   assert(f.calls.includes('actions/runs/7/attempts/2'));
 });
 
+test('SYNTHETIC_REVIEW_METADATA_ONLY_NOT_SCAN_EVIDENCE: reviewed Python branch role binds API envelopes and shared producer metadata', async () => {
+  const {
+    validateProducer,
+  } = require('../../scripts/release/source-scanner-gates-rc16.cjs');
+  const branch = 'fix/inherited-codeql-synthetic-metadata-only';
+  // Deliberately synthetic identifiers; no archive, SARIF or scan is created.
+  const f = metadata(source, 1_000_000_000_000_077);
+  for (const run of [f.data.current, f.data.attempt, ...f.data.runs])
+    run.head_branch = branch;
+  for (const artifact of [f.data.artifact, ...f.data.artifacts])
+    artifact.workflow_run.head_branch = branch;
+
+  const observed = await readPythonScannerObservation(f.api, f.ref, source, {
+    sourceRole: 'reviewed',
+  });
+  for (const run of [observed.currentRun, observed.run, observed.latestRun])
+    assert.equal(run.head_branch, branch);
+  assert.equal(observed.artifact.workflow_run.head_branch, branch);
+  assert.deepEqual(observed.producer, f.ref);
+  assert.equal(f.calls.length, 5);
+  await assert.rejects(readPythonScannerObservation(f.api, f.ref, source));
+  await assert.rejects(
+    readPythonScannerObservation(f.api, f.ref, source, { sourceRole: 'final' })
+  );
+
+  const producer = {
+    artifact: observed.artifact,
+    run: observed.run,
+    sha: source,
+    workflow,
+    name: f.ref.artifactName,
+  };
+  assert.doesNotThrow(() =>
+    validateProducer({ ...producer, sourceRole: 'reviewed' })
+  );
+  assert.throws(() => validateProducer(producer));
+  assert.throws(() => validateProducer({ ...producer, sourceRole: 'final' }));
+
+  // An otherwise matching artifact envelope must bind the observed run branch.
+  f.data.artifact.workflow_run.head_branch = 'main';
+  f.data.artifacts[0].workflow_run.head_branch = 'main';
+  await assert.rejects(
+    readPythonScannerObservation(f.api, f.ref, source, {
+      sourceRole: 'reviewed',
+    }),
+    /artifact identity differs/
+  );
+  assert.throws(
+    () =>
+      validateProducer({
+        ...producer,
+        artifact: f.data.artifact,
+        sourceRole: 'reviewed',
+      }),
+    /artifact identity mismatch/
+  );
+});
+
 test('Python references reject incomplete, nonnumeric or unbound metadata before API use', async () => {
   const f = metadata();
   for (const ref of [

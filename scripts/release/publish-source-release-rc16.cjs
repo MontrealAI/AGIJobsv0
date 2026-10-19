@@ -1597,7 +1597,8 @@ async function main() {
         readPythonScannerObservation(
           api,
           pythonScanner.reviewed.producer,
-          profile.pythonScannerReview.sourceCommit
+          profile.pythonScannerReview.sourceCommit,
+          { sourceRole: 'reviewed' }
         ),
       ]);
       verifyScannerReviewSource({ git, sha });

@@ -5,7 +5,7 @@
 const assert = require('node:assert/strict');
 const { createHash } = require('node:crypto');
 const integrationTransitionsSha256 =
-  '411f3bfc1b01feced32b020aeaeb06f5942bac749d828709d2ddbdc1e39dc101';
+  '85f1b7d9188e8bb6864387f035fed90ad84073a33ca920b647536accaf23b2d3';
 const historical = require('./qualify-source-release.cjs');
 
 function freeze(value) {
@@ -29,8 +29,8 @@ const anchors = Object.freeze({
   nativePinTree: 'b279cfcbd53c814db48bb4ab997199ea7ca9269c',
   sourceConvergenceBaseline: '0b6d175a4ec8abf5b899e4a1b58a09e7045fe158',
   sourceConvergenceTree: '9e8dff3e0863afa73e04757f77ca2bcb8c01dca2',
-  pythonScannerBaseline: 'e815eee150cd4d8121919a2a0f39c417e64ae864',
-  pythonScannerTree: '97091066c9e55c3ffee01b8eee563216ffde44f3',
+  pythonScannerBaseline: 'bfeab08248753287e83d287b898f399c94174b1c',
+  pythonScannerTree: '0fa407313f568cd7ebe56a791452233e240c49e6',
 });
 const allowedNewPaths = Object.freeze([
   'scripts/release/source-profile-rc16.cjs',
@@ -107,8 +107,8 @@ const nativeCompatibility = freeze({
   },
 });
 const scannerPolicy = freeze({
-  producerCommit: 'e815eee150cd4d8121919a2a0f39c417e64ae864',
-  producerTree: '97091066c9e55c3ffee01b8eee563216ffde44f3',
+  producerCommit: 'bfeab08248753287e83d287b898f399c94174b1c',
+  producerTree: '0fa407313f568cd7ebe56a791452233e240c49e6',
   historicalConfigPath: '.github/codeql/config.yml',
   historicalConfigSha256:
     '4b34450e1dcc0b489feea158d642a6b66261d9e935463928782219c8716c0892',
@@ -172,8 +172,8 @@ const scannerRequiredPaths = Object.freeze([
   'scripts/release/source-python-evidence-rc16.cjs',
 ]);
 const pythonScannerPolicy = freeze({
-  producerCommit: 'e815eee150cd4d8121919a2a0f39c417e64ae864',
-  producerTree: '97091066c9e55c3ffee01b8eee563216ffde44f3',
+  producerCommit: 'bfeab08248753287e83d287b898f399c94174b1c',
+  producerTree: '0fa407313f568cd7ebe56a791452233e240c49e6',
   configPath: '.github/codeql/config-python-integrations.yml',
   configSha256:
     'eb5b425facefb419987bf537280d5144a477b65a205ccd71df3866b60b01e560',

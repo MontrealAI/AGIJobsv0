@@ -109,7 +109,7 @@ export function writeContainedFile(directory: string, filename: string, body: st
   let created = false;
   try {
     const anchor = descriptorDirectory(directoryFd);
-    const target = path.join(anchor, filename);
+    const target = containedFile(anchor, filename);
     temporary = path.join(anchor, `tmp-${randomUUID()}.json`);
     fd = fs.openSync(temporary, fs.constants.O_CREAT | fs.constants.O_EXCL | fs.constants.O_WRONLY | fs.constants.O_NOFOLLOW, 0o600);
     created = true;

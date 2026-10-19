@@ -132,8 +132,27 @@ function evaluate(runs, checks, sha) {
   };
 }
 
-function validateProducer({ artifact, run, sha, workflow, name }) {
+function validateProducer({
+  artifact,
+  run,
+  sha,
+  workflow,
+  name,
+  sourceRole = 'final',
+}) {
   assert(/^[a-f0-9]{40}$/.test(sha), 'Invalid evidence source identity');
+  assert(
+    ['final', 'reviewed'].includes(sourceRole),
+    'Invalid evidence source role'
+  );
+  const branch = run?.head_branch;
+  const reviewedBranch =
+    branch === 'main' ||
+    (typeof branch === 'string' &&
+      /^fix\/inherited-codeql-[A-Za-z0-9][A-Za-z0-9._-]{0,233}$/.test(branch) &&
+      !branch.includes('..') &&
+      !branch.endsWith('.') &&
+      !branch.endsWith('.lock'));
   for (const value of [run?.id, run?.run_attempt, artifact?.id])
     assert(
       Number.isSafeInteger(value) && value > 0,
@@ -143,17 +162,18 @@ function validateProducer({ artifact, run, sha, workflow, name }) {
     run.head_sha === sha &&
       run.path === workflow &&
       run.event === 'push' &&
-      run.head_branch === 'main' &&
+      (sourceRole === 'reviewed' ? reviewedBranch : branch === 'main') &&
       run.repository?.full_name === 'MontrealAI/AGIJobsv0' &&
       run.status === 'completed' &&
       run.conclusion === 'success',
-    'Evidence producer must be the successful exact-main push'
+    'Evidence producer must be the successful exact-source push for its role'
   );
   assert(
     artifact.name === name &&
       artifact.expired === false &&
       artifact.workflow_run?.id === run.id &&
       artifact.workflow_run.head_sha === sha &&
+      artifact.workflow_run.head_branch === branch &&
       /^sha256:[a-f0-9]{64}$/.test(artifact.digest),
     'Evidence artifact identity mismatch'
   );
@@ -675,13 +695,36 @@ function verifyIntegratedScannerArchive({
       maxBuffer: 32 * 1024 * 1024,
     })
   ).runs[0];
-  return verifyScannerProducerArchive(files, read, {
+  const options = {
     baseline,
     sha,
     tree,
     producerRun,
     git,
     requiredSources: profile.scannerReceiverPaths,
-  });
+  };
+  const current = verifyScannerArchive(files, read, options);
+  const reviewedZip = path.join(directory, 'codeql-reviewed-evidence.zip');
+  const reviewedFiles = execFileSync('unzip', ['-Z1', reviewedZip], {
+    encoding: 'utf8',
+    maxBuffer: 8 * 1024 * 1024,
+  })
+    .trim()
+    .split('\n')
+    .filter((name) => !name.endsWith('/'))
+    .sort();
+  scannerArchiveInventory(reviewedFiles);
+  // The publisher independently authenticates both S1/S2 archives before this
+  // shared check. Bind both raw result multisets to the same installed S2
+  // profile review; S1 itself need not have the final main-push producer shape.
+  verifyScannerResults(
+    JSON.parse(
+      execFileSync('unzip', ['-p', reviewedZip, 'javascript.sarif'], {
+        maxBuffer: 32 * 1024 * 1024,
+      })
+    ),
+    options
+  );
+  return current;
 }
 module.exports.verifyIntegratedScannerArchive = verifyIntegratedScannerArchive;
