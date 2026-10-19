@@ -202,6 +202,15 @@ npx hardhat run --no-compile --network hardhat integrations/alpha-agent/four-rep
 
 The script rejects external RPCs, forks, other networks, substituted Alpha
 source, malformed drafts and existing evidence outputs before fixture writes.
+The Alpha pin covers its entire tracked checkout, including transitive native
+imports under `successor-workbench` and `build-successor`. Tracked modifications
+and nonignored untracked source files are refused before importing the inspector;
+tracked file bytes and modes are checked against the pinned Git objects, without
+replacement refs, hidden index flags, environment redirection or symlinked source.
+The same check runs again before writing lifecycle evidence. Normal ignored
+dependencies and report outputs remain usable. These checks bind the inspected
+checkout at those checkpoints; they do not establish a tamper-proof runtime or
+authenticate historical computer observations.
 `FQR_INPUT_CLASS` may record an external evidence label; it is not authenticated
 runtime proof. Protocol-only inputs must remain labeled
 `PROTOCOL_DOUBLE_NO_BROWSER`. No production key is required or authorized;

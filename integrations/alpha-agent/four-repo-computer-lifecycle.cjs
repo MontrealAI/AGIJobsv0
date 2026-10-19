@@ -4,12 +4,12 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
-const { execFileSync } = require('node:child_process');
 const { pathToFileURL } = require('node:url');
 const {
   deployImplementations,
 } = require('../../scripts/deploy/implementations.cjs');
 const { verifyReceipt } = require('./verify-receipt.cjs');
+const { assertPinnedAlphaCheckout } = require('./pinned-alpha-checkout.cjs');
 const { address: TOKEN } = require('../../config/agialpha.json');
 
 const sha256 = (value) =>
@@ -78,30 +78,9 @@ async function main() {
     /^[0-9a-f]{40}$/.test(expectedAlphaCommit || ''),
     'FQR_ALPHA_COMMIT must pin the reviewed checkout'
   );
-  const actualAlphaCommit = execFileSync(
-    'git',
-    ['-C', alphaRoot, 'rev-parse', 'HEAD'],
-    { encoding: 'utf8' }
-  ).trim();
-  assert.equal(
-    actualAlphaCommit,
-    expectedAlphaCommit,
-    'Alpha source revision differs from its explicit pin'
-  );
-  execFileSync(
-    'git',
-    [
-      '-C',
-      alphaRoot,
-      'diff',
-      '--exit-code',
-      'HEAD',
-      '--',
-      'alpha_factory_v1',
-      'examples/successor-alpha',
-      'docs/assets/successor/engine.mjs',
-    ],
-    { stdio: 'pipe' }
+  const actualAlphaCommit = assertPinnedAlphaCheckout(
+    alphaRoot,
+    expectedAlphaCommit
   );
   const alphaComputerFile = path.join(
     alphaRoot,
@@ -418,6 +397,7 @@ async function main() {
       'No external RPC, Mainnet, real token, production wallet or authority change',
     ],
   };
+  assertPinnedAlphaCheckout(alphaRoot, actualAlphaCommit);
   fs.writeFileSync(outputFile, JSON.stringify(evidence, null, 2) + '\n', {
     flag: 'wx',
     mode: 0o600,
