@@ -405,7 +405,7 @@ async function retainPythonEvidence({
       api,
       reviewedRef,
       review.sourceCommit,
-      { sourceRole: 'reviewed' }
+      { review }
     ),
   ]);
   for (const [file, observation] of [

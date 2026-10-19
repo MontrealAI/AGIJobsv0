@@ -4,6 +4,7 @@ import crypto from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { build } from 'esbuild';
+import { boundedSourceBlob } from './pinned-alpha-checkout.cjs';
 
 const target = fileURLToPath(
   new URL('./vendor/alpha-computer/', import.meta.url)
@@ -70,18 +71,37 @@ export async function computerSourceSnapshot(alphaRoot, commit) {
     const absolute = path.resolve(alphaRoot, relative);
     if (
       !absolute.startsWith(alphaRoot + path.sep) ||
-      fs.realpathSync(absolute) !== absolute ||
-      !fs.lstatSync(absolute).isFile()
+      fs.realpathSync(absolute) !== absolute
     )
       throw Error('Alpha source must be a contained regular Git file');
-    const object = git('rev-parse', `${commit}:${relative}`);
+    const treeEntry = git('ls-tree', '-z', commit, '--', relative);
+    const match = /^(100644|100755) blob ([a-f0-9]{40})\t([^\0]+)\0$/.exec(
+      treeEntry
+    );
+    if (!match || match[3] !== relative)
+      throw Error('Alpha source must be a regular Git blob');
+    const object = match[2];
     const bytes = execFileSync(
       'git',
       ['--no-replace-objects', '-C', alphaRoot, 'cat-file', 'blob', object],
       { maxBuffer: 8_388_608 }
     );
-    if (!bytes.equals(fs.readFileSync(absolute)))
-      throw Error(`Alpha source differs from selected Git object: ${relative}`);
+    const fd = fs.openSync(
+      absolute,
+      fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW | fs.constants.O_NONBLOCK
+    );
+    try {
+      const captured = boundedSourceBlob(fd, Math.max(bytes.length, 1), true);
+      const mode = captured.stat.mode & 0o111 ? '100755' : '100644';
+      if (
+        captured.blob !== object ||
+        mode !== match[1] ||
+        !bytes.equals(captured.bytes)
+      )
+        throw Error(`Alpha source differs from selected Git object: ${relative}`);
+    } finally {
+      fs.closeSync(fd);
+    }
     files.set(relative, bytes);
     manifest.files[relative] = {
       bytes: bytes.length,

@@ -1,5 +1,41 @@
 'use strict';
 const assert = require('node:assert/strict');
+const javascriptQualityPolicy = Object.freeze({
+  schema: 'agijobsv0/nonsecurity-quality-review/1',
+  disposition: 'Acknowledged nonsecurity quality',
+  ruleIds: Object.freeze([
+    'js/unused-local-variable',
+    'js/useless-assignment-to-local',
+  ]),
+});
+const pythonReviewSchema = 'agijobsv0/codeql-python-review/2';
+const pythonReviewedProducer = Object.freeze({
+  event: 'push',
+  headBranch: 'fix/inherited-codeql-ti-final-rc16-20261019',
+  ref: 'refs/heads/fix/inherited-codeql-ti-final-rc16-20261019',
+});
+const pythonFinalProducer = Object.freeze({
+  event: 'push',
+  headBranch: 'main',
+  ref: 'refs/heads/main',
+});
+function pythonReviewedProducerContext(review) {
+  assert.equal(
+    review?.schema,
+    pythonReviewSchema,
+    'Python review schema differs'
+  );
+  assert.deepEqual(
+    {
+      event: review.producerEvent,
+      headBranch: review.producerHeadBranch,
+      ref: review.producerRef,
+    },
+    pythonReviewedProducer,
+    'Reviewed Python producer must retain its exact approved premerge push branch and ref'
+  );
+  return pythonReviewedProducer;
+}
 const canonical = (value) =>
   value && typeof value === 'object'
     ? Array.isArray(value)
@@ -15,6 +51,93 @@ function exactFields(value, fields, message) {
   assert(value && typeof value === 'object' && !Array.isArray(value), message);
   assert.deepEqual(Object.keys(value).sort(), [...fields].sort(), message);
 }
+function validateJavascriptQualityMetadata(item, sourceCommit, git) {
+  assert(
+    item.disposition === javascriptQualityPolicy.disposition &&
+      javascriptQualityPolicy.ruleIds.includes(item.ruleId),
+    'Only the two explicitly reviewed nonsecurity quality rules are eligible'
+  );
+  const quality = item.qualityReview;
+  exactFields(
+    quality,
+    [
+      'schema',
+      'sourceBlob',
+      'ruleMetadataSha256',
+      'queryComponentSha256',
+      'codeqlConfigSummarySha256',
+      'behaviorAssessment',
+      'independentReviewEvidence',
+    ],
+    'Complete versioned nonsecurity quality review fields differ'
+  );
+  assert.equal(quality.schema, javascriptQualityPolicy.schema);
+  assert(/^[a-f0-9]{40}$/.test(quality.sourceBlob || ''));
+  for (const field of [
+    'ruleMetadataSha256',
+    'queryComponentSha256',
+    'codeqlConfigSummarySha256',
+  ])
+    assert(
+      /^[a-f0-9]{64}$/.test(quality[field] || ''),
+      'Quality review query/rule/config commitment is absent'
+    );
+  assert(
+    typeof quality.behaviorAssessment === 'string' &&
+      quality.behaviorAssessment.trim(),
+    'Case-specific behavior and side-effect assessment is required'
+  );
+  const references = (value, pattern) =>
+    Array.isArray(value) &&
+    value.length > 0 &&
+    new Set(value).size === value.length &&
+    value.every(
+      (reference) =>
+        typeof reference === 'string' &&
+        reference === reference.trim() &&
+        pattern.test(reference) &&
+        new URL(reference).href === reference
+    );
+  // These are commitments to evidence that an independent result reviewer must
+  // actually inspect. Their syntax is not proof that a finding is acceptable.
+  assert(
+    references(
+      quality.independentReviewEvidence,
+      /^https:\/\/github\.com\/MontrealAI\/AGIJobsv0\/pull\/[1-9][0-9]*#(?:pullrequestreview-|issuecomment-|discussion_r)[1-9][0-9]*$/
+    ),
+    'Quality review requires case-specific independent review references'
+  );
+  assert(
+    references(
+      item.regressionEvidence,
+      /^https:\/\/github\.com\/MontrealAI\/AGIJobsv0\/(?:actions\/runs\/[1-9][0-9]*(?:\/job\/[1-9][0-9]*)?|commit\/[a-f0-9]{40}|blob\/[a-f0-9]{40}\/[A-Za-z0-9_.@+-]+(?:\/[A-Za-z0-9_.@+-]+)*)$/
+    ),
+    'Quality review requires immutable source or actual behavior-test evidence references'
+  );
+  assert(
+    /^[a-f0-9]{40}$/.test(sourceCommit || '') &&
+      typeof item.path === 'string' &&
+      item.path &&
+      !/[\\\0\r\n]/.test(item.path) &&
+      !item.path.startsWith('/') &&
+      !item.path.startsWith(':') &&
+      item.path
+        .split('/')
+        .every((part) => part && part !== '.' && part !== '..'),
+    'Quality review source identity or repository path differs'
+  );
+  if (git) {
+    const entry = String(git('ls-tree', '-z', sourceCommit, '--', item.path));
+    const match = /^(100644|100755) blob ([a-f0-9]{40})\t([^\0]+)\0$/.exec(
+      entry
+    );
+    assert(
+      match && match[3] === item.path && match[2] === quality.sourceBlob,
+      'Quality review source blob or regular mode differs from immutable Git'
+    );
+  }
+  return quality;
+}
 function validateScannerReviewMetadata(field, review, { git, target } = {}) {
   const python = field === 'pythonScannerReview';
   assert(python || field === 'scannerReview', 'Unknown scanner review field');
@@ -25,6 +148,9 @@ function validateScannerReviewMetadata(field, review, { git, target } = {}) {
         'tree',
         'producerRunId',
         'producerRunAttempt',
+        'producerEvent',
+        'producerHeadBranch',
+        'producerRef',
         'artifactId',
         'artifactName',
         'archiveSha256',
@@ -70,6 +196,9 @@ function validateScannerReviewMetadata(field, review, { git, target } = {}) {
         'disposition',
         'justification',
         'regressionEvidence',
+        ...(!python && item.disposition === javascriptQualityPolicy.disposition
+          ? ['qualityReview']
+          : []),
       ],
       'Complete scanner result disposition fields differ'
     );
@@ -82,15 +211,19 @@ function validateScannerReviewMetadata(field, review, { git, target } = {}) {
         typeof item.region === 'object' &&
         !Array.isArray(item.region) &&
         /^[a-f0-9]{64}$/.test(item.resultSha256 || '') &&
-        item.disposition === 'Demonstrably false positive' &&
+        (item.disposition === 'Demonstrably false positive' ||
+          (!python &&
+            item.disposition === javascriptQualityPolicy.disposition)) &&
         typeof item.justification === 'string' &&
         item.justification.trim() &&
         references(item.regressionEvidence),
       'Every retained scanner result needs a complete disposition'
     );
+    if (!python && item.disposition === javascriptQualityPolicy.disposition)
+      validateJavascriptQualityMetadata(item, review.sourceCommit, git);
   }
   if (python) {
-    assert.equal(review.schema, 'agijobsv0/codeql-python-review/1');
+    pythonReviewedProducerContext(review);
     assert(
       /^[a-f0-9]{40}$/.test(review.tree || ''),
       'Python review tree identity is absent'
@@ -666,6 +799,12 @@ function verifyThreeSlotReviewBinding({
   return review;
 }
 module.exports = {
+  javascriptQualityPolicy,
+  validateJavascriptQualityMetadata,
+  pythonReviewSchema,
+  pythonReviewedProducer,
+  pythonFinalProducer,
+  pythonReviewedProducerContext,
   validateScannerReviewMetadata,
   verifyScannerReviewInstallBinding,
   assertNoScannerErrorDiagnostics,

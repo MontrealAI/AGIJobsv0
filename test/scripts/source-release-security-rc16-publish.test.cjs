@@ -1804,7 +1804,7 @@ function scannerApiFixture(change = {}) {
     name: producer.artifactName,
     digest: producer.githubDigest,
     expired: false,
-    workflow_run: { id: 40, head_sha: sha },
+    workflow_run: { id: 40, head_sha: sha, head_branch: 'main' },
   };
   const responses = {
     'actions/runs/40': run,
@@ -2229,4 +2229,186 @@ test('public readback always retains JavaScript/native validation and refuses ab
     'altered'
   );
   assert.throws(() => fixture.verifyAll(), /checksum mismatch/);
+});
+
+test('publisher authenticates retained local evidence before any tag, draft, upload or remote download', async (t) => {
+  // INERT_ORCHESTRATION_ONLY: execute the actual CLI main body with isolated
+  // prerequisite adapters and stop at an ordinary read/API or verifier refusal.
+  // No successful scanner report, authenticated evidence or publication exists.
+  const vm = require('node:vm');
+  const source = fs.readFileSync(
+    path.join(
+      __dirname,
+      '../../scripts/release/publish-source-release-rc16.cjs'
+    ),
+    'utf8'
+  );
+  const start = source.indexOf('async function main() {');
+  const end = source.indexOf('\nmodule.exports = {', start);
+  assert(
+    start >= 0 && end > start,
+    'The actual publisher CLI main is required'
+  );
+  const mainSource = source.slice(start, end);
+  for (const refusal of ['api', 'verifier']) {
+    await t.test(
+      refusal + ' refusal leaves publication effects untouched',
+      async () => {
+        const calls = [];
+        const directory = path.resolve('reports/source-release-rc16');
+        const marker = 'INERT_LOCAL_' + refusal.toUpperCase() + '_REFUSAL';
+        const metadata = {
+          'compiler-provenance.json': {
+            artifactId: 1,
+            runId: 2,
+            runAttempt: 1,
+          },
+          'provenance.json': { reviewedSourceCodeql: {} },
+          'codeql-provenance.json': {
+            final: { runId: 3, runAttempt: 1 },
+            reviewed: {},
+          },
+          'native-provenance.json': { artifactId: 4, runId: 5, runAttempt: 1 },
+          'python-codeql-provenance.json': {
+            final: { producer: {} },
+            reviewed: { producer: {} },
+          },
+        };
+        const context = {
+          process: {
+            env: {
+              GITHUB_SHA: sha,
+              GITHUB_REPOSITORY: 'MontrealAI/AGIJobsv0',
+              GH_TOKEN: 'INERT_NEVER_USED_FOR_NETWORK',
+              TAG: tag,
+            },
+            cwd: () => '/inert-publication-only',
+          },
+          path,
+          os,
+          AbortSignal,
+          console,
+          profile: { pythonScannerReview: { sourceCommit: 'b'.repeat(40) } },
+          scannerReview: { sourceSha: 'b'.repeat(40) },
+          verifyPublicationReview: () => ({
+            metadataAdmissionOnly: true,
+            productionApproved: false,
+          }),
+          gitSource: (...args) => {
+            assert.equal(args[0], 'rev-parse');
+            return args[1] === 'HEAD' ? sha : 'c'.repeat(40);
+          },
+          assertPinnedAlphaCheckout: () => calls.push('prerequisite pin check'),
+          verifySourceProfile: () => calls.push('prerequisite source check'),
+          verifyScannerReviewSource: () =>
+            calls.push('prerequisite metadata check'),
+          scannerPolicyContext: () => ({}),
+          expectedAssets,
+          fs: {
+            readdirSync: (requested) => {
+              assert.equal(requested, directory);
+              return expectedAssets(tag);
+            },
+            readFileSync: (requested) =>
+              JSON.stringify(metadata[path.basename(requested)] || {}),
+            mkdtempSync: () => {
+              calls.push('remote download directory');
+              throw Error('INERT_REMOTE_DOWNLOAD_MUST_REMAIN_UNREACHED');
+            },
+          },
+          execFileSync: () => {
+            calls.push('gh effect');
+            throw Error('INERT_GH_MUST_REMAIN_UNREACHED');
+          },
+          sourceApiUrl,
+          fetch: async (_url, options) => {
+            assert.equal(options.method, 'GET');
+            calls.push('local evidence GET');
+            if (refusal === 'api') throw Error(marker);
+            return { ok: true, json: async () => ({}) };
+          },
+          producerId:
+            require('../../scripts/release/publish-source-release-rc16.cjs')
+              .producerId,
+          readReviewedCodeql: async () => ({}),
+          readLatestCodeql: async () => [],
+          readScannerObservation: async () => ({}),
+          require: (name) => {
+            assert.equal(name, './source-python-evidence-rc16.cjs');
+            return { readPythonScannerObservation: async () => ({}) };
+          },
+          scannerExecutionContext: () => ({}),
+          verifyDownloadedAssets: (options) => {
+            assert.equal(refusal, 'verifier');
+            assert.equal(options.downloaded, directory);
+            assert.equal(options.directory, directory);
+            assert.equal(options.draft, true);
+            calls.push('full local evidence verifier');
+            throw Error(marker);
+          },
+          verifyIntegratedScannerArchive: () => {
+            throw Error('INERT_INTEGRATED_VERIFIER_MUST_REMAIN_UNREACHED');
+          },
+          publish: async () => {
+            calls.push('publication effect');
+            throw Error('INERT_PUBLICATION_MUST_REMAIN_UNREACHED');
+          },
+        };
+        const main = vm.runInNewContext('(' + mainSource + '\n)', context);
+        await assert.rejects(main(), new RegExp(marker));
+        assert(calls.includes('local evidence GET'));
+        assert.equal(
+          calls.includes('full local evidence verifier'),
+          refusal === 'verifier'
+        );
+        for (const effect of [
+          'publication effect',
+          'gh effect',
+          'remote download directory',
+        ])
+          assert.equal(
+            calls.includes(effect),
+            false,
+            effect + ' must remain untouched'
+          );
+      }
+    );
+  }
+});
+
+test('inert JavaScript observation binds the artifact branch for reviewed S1 and final-main S2', async () => {
+  // Synthetic API metadata only. No scanner archive, result review or actual
+  // authenticated observation is created or claimed by this test.
+  for (const [branch, finalSource] of [
+    ['fix/inherited-codeql-ti-final-rc16-20261019', false],
+    ['main', true],
+  ]) {
+    const fixture = scannerApiFixture();
+    fixture.producer.headBranch = branch;
+    fixture.run.head_branch = branch;
+    fixture.artifact.workflow_run.head_branch = branch;
+    const observation = await readScannerObservation(
+      fixture.api,
+      fixture.producer,
+      sha,
+      finalSource
+    );
+    assert.equal(observation.artifact.workflow_run.head_branch, branch);
+    for (const wrongBranch of [undefined, null, 'other-branch']) {
+      // Both direct metadata and the inventory share this same object, so their
+      // canonical equality still holds. The branch conjunction must refuse it.
+      fixture.artifact.workflow_run.head_branch = wrongBranch;
+      await assert.rejects(
+        readScannerObservation(fixture.api, fixture.producer, sha, finalSource),
+        /Scanner artifact identity differs/
+      );
+    }
+    if (!finalSource) {
+      fixture.artifact.workflow_run.head_branch = branch;
+      await assert.rejects(
+        readScannerObservation(fixture.api, fixture.producer, sha, true),
+        /Final scanner producer must be a main push/
+      );
+    }
+  }
 });

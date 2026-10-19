@@ -219,6 +219,8 @@ test('actual candidate history verifies all eighteen reviewed blobs without chan
 test('complete source verifier accepts only finite release plumbing over the actual pinned ancestor', (t) => {
   const r = repository(t);
   shareObjects(r);
+  const pending = pendingProfileFixture();
+  const runtime = profileFixtureRuntime(pending);
   r.git('read-tree', p.profile.implementationBaseline);
   addReviewedWebsite(r);
   addReviewedIntegration(r);
@@ -249,6 +251,10 @@ test('complete source verifier accepts only finite release plumbing over the act
     'docs/production/RELEASE_NOTES_SOURCE_RC16.md',
     '# Pending fixture only\n'
   );
+  r.put(
+    'scripts/release/source-profile-rc16.json',
+    JSON.stringify(pending, null, 2) + '\n'
+  );
   const policy = JSON.parse(
     r.git(
       'show',
@@ -269,7 +275,7 @@ test('complete source verifier accepts only finite release plumbing over the act
     lock: afterLock,
     policy,
   };
-  const result = p.verifySourceScope(args);
+  const result = runtime.verifySourceScope(args);
   assert.equal(result.qualification, 'PENDING_FINAL_SOURCE_MAIN_PUSH');
   assert.equal(result.productionApproved, false);
   assert.equal(result.scannerReview, null);
@@ -281,17 +287,17 @@ test('complete source verifier accepts only finite release plumbing over the act
   assert.equal(result.protectedTransitions.length, 18);
   assert.deepEqual(result.websiteTransitions, p.websiteTransitions);
   assert.throws(
-    () => p.verifySourceScope({ ...args, version: p.profile.previousVersion }),
+    () => runtime.verifySourceScope({ ...args, version: p.profile.previousVersion }),
     /version/
   );
   assert.throws(
     () =>
-      p.verifySourceScope({ ...args, policy: { ...policy, optimizerRuns: 1 } }),
+      runtime.verifySourceScope({ ...args, policy: { ...policy, optimizerRuns: 1 } }),
     /compiler/
   );
   assert.throws(
     () =>
-      p.verifySourceScope({ ...args, lock: { ...afterLock, injected: true } }),
+      runtime.verifySourceScope({ ...args, lock: { ...afterLock, injected: true } }),
     /identity/
   );
   const changes = [
@@ -314,19 +320,19 @@ test('complete source verifier accepts only finite release plumbing over the act
     r.git('read-tree', args.sha);
     r.put(name, bytes);
     assert.throws(
-      () => p.verifySourceScope({ ...args, sha: r.commit(args.sha) }),
+      () => runtime.verifySourceScope({ ...args, sha: r.commit(args.sha) }),
       /Unexpected implementation-to-release/
     );
   }
   r.git('read-tree', args.sha);
   r.put('docs/deployments/ethereum-mainnet-2026-10-12.json', '{}\n');
   assert.throws(() =>
-    p.verifySourceScope({ ...args, sha: r.commit(args.sha) })
+    runtime.verifySourceScope({ ...args, sha: r.commit(args.sha) })
   );
   r.git('read-tree', args.sha);
   r.put('scripts/release/source-profile-rc16.cjs', 'fixture\n', '100755');
   assert.throws(
-    () => p.verifySourceScope({ ...args, sha: r.commit(args.sha) }),
+    () => runtime.verifySourceScope({ ...args, sha: r.commit(args.sha) }),
     /regular file/
   );
   for (const name of [
@@ -346,14 +352,14 @@ test('complete source verifier accepts only finite release plumbing over the act
         mode
       );
       assert.throws(
-        () => p.verifySourceScope({ ...args, sha: r.commit(args.sha) }),
+        () => runtime.verifySourceScope({ ...args, sha: r.commit(args.sha) }),
         /Python scanner producer blob or digest/
       );
     }
     r.git('read-tree', args.sha);
     r.git('update-index', '--force-remove', name);
     assert.throws(
-      () => p.verifySourceScope({ ...args, sha: r.commit(args.sha) }),
+      () => runtime.verifySourceScope({ ...args, sha: r.commit(args.sha) }),
       /Python scanner producer blob or digest/
     );
   }
@@ -364,7 +370,7 @@ test('complete source verifier accepts only finite release plumbing over the act
     p.profile.nativePinBaseline,
     p.profile.sourceConvergenceBaseline,
   ]);
-  assert.throws(() => p.verifySourceScope({ ...args, sha: missingProducer }));
+  assert.throws(() => runtime.verifySourceScope({ ...args, sha: missingProducer }));
 });
 
 test('actual Git website transitions admit only the two exact reviewed byte and mode changes', (t) => {
@@ -532,7 +538,8 @@ test('legacy version selection preserves every historical workflow byte outside 
 });
 
 test('profile baseline, source pins and pending scanner boundary cannot silently advance', () => {
-  assert.equal(p.validateProfile(), p.profile);
+  const pending = pendingProfileFixture();
+  assert.equal(p.validateProfile(pending), pending);
   assert.ok(Object.isFrozen(p.profile.transitions[0].after));
   for (const modify of [
     (value) => {
@@ -589,12 +596,12 @@ test('profile baseline, source pins and pending scanner boundary cannot silently
       value.scannerReview = { approved: true };
     },
   ]) {
-    const altered = clone(p.profile);
+    const altered = clone(pending);
     modify(altered);
     assert.throws(() => p.validateProfile(altered));
   }
   assert.throws(
-    () => p.verifyPublicationReview(),
+    () => p.verifyPublicationReview(pending),
     /publication blocked.*scannerReview.*Python/
   );
 });
@@ -676,6 +683,12 @@ test('Python producer paths and policy retain the exact independent owner contra
   );
   assert.deepEqual(policy, {
     ...owner.pythonScannerPolicy,
+    reviewSchema: 'agijobsv0/codeql-python-review/2',
+    reviewedProducer: {
+      event: 'push',
+      headBranch: 'fix/inherited-codeql-ti-final-rc16-20261019',
+      ref: 'refs/heads/fix/inherited-codeql-ti-final-rc16-20261019',
+    },
     producerCommit: formattedProducer,
     producerTree: actualTree,
     workflowSha256: createHash('sha256')
@@ -690,7 +703,7 @@ test('Python producer paths and policy retain the exact independent owner contra
     p.profile.pythonScannerRequiredPaths,
     owner.pythonScannerRequiredPaths
   );
-  assert.equal(p.profile.pythonScannerReview, null);
+  assert.equal(pendingProfileFixture().pythonScannerReview, null);
   assert.equal(p.allowedNewPaths.length, 25);
   for (const name of [
     'scripts/release/python-scanner-rc16.cjs',
@@ -733,7 +746,7 @@ test('actual Git integration transitions reject substituted security/runtime byt
     r.git('ls-tree', '-rz', p.profile.implementationBaseline)
   );
   const after = p.parseTree(r.git('ls-tree', '-rz', candidate));
-  assert.equal(p.verifyIntegrationTransitions(before, after).length, 31);
+  assert.equal(p.verifyIntegrationTransitions(before, after).length, 36);
   for (const transitions of [
     p.profile.integrationTransitions.slice(1),
     [...p.profile.integrationTransitions, p.profile.integrationTransitions[0]],
@@ -807,5 +820,385 @@ test('scanner producer pins must name the same immutable workflow bytes as the r
         workflowSha256: '0'.repeat(64),
       }),
     /producer blob or digest/
+  );
+});
+
+// These fixtures exercise only review metadata admission. They contain no
+// scanner archive, SARIF report, authenticated API observation or authority.
+function pendingProfileFixture() {
+  return {
+    ...clone(p.profile),
+    scannerReview: null,
+    pythonScannerReview: null,
+  };
+}
+
+function profileFixtureRuntime(value) {
+  const { Module, createRequire } = require('node:module');
+  const filename = require.resolve(
+    '../../scripts/release/source-profile-rc16.cjs'
+  );
+  const originalRequire = createRequire(filename);
+  const runtime = new Module(filename, module);
+  runtime.filename = filename;
+  runtime.paths = Module._nodeModulePaths(path.dirname(filename));
+  // Compile the unchanged production function source with only its inert JSON
+  // input replaced. Do not mutate the live require cache or any predicates.
+  runtime.require = (name) =>
+    name === './source-profile-rc16.json'
+      ? clone(value)
+      : originalRequire(name);
+  runtime._compile(fs.readFileSync(filename, 'utf8'), filename);
+  return runtime.exports;
+}
+
+function inertProfileReviews(sourceCommit, tree) {
+  const {
+    scannerHistory,
+  } = require('../../scripts/release/qualify-source-release-rc16.cjs');
+  const policy = p.profile.pythonScannerPolicy;
+  assert.equal(policy.reviewSchema, 'agijobsv0/codeql-python-review/2');
+  assert.deepEqual(policy.reviewedProducer, {
+    event: 'push',
+    headBranch: 'fix/inherited-codeql-ti-final-rc16-20261019',
+    ref: 'refs/heads/fix/inherited-codeql-ti-final-rc16-20261019',
+  });
+  return {
+    notesReview: {
+      schema: 'agijobsv0/rc16-scanner-review/1',
+      sourceSha: sourceCommit,
+      sourceTree: tree,
+      producer: {
+        runId: 1,
+        runAttempt: 1,
+        runNumber: 1,
+        event: 'push',
+        headBranch: 'main',
+        artifactId: 2,
+        artifactName: `codeql-security-report-${sourceCommit}-1-1`,
+        githubDigest: 'sha256:' + 'a'.repeat(64),
+      },
+      summary: {
+        schema: 'agijobsv0/raw-codeql-summary/1',
+        toolSha256: 'a'.repeat(64),
+        queriesSha256: 'b'.repeat(64),
+        extractedPaths: ['INERT-METADATA-ONLY.js'],
+        results: [],
+        resultCount: 0,
+      },
+      resultReviews: [],
+      codeqlChecks: [
+        {
+          id: 3,
+          headSha: sourceCommit,
+          name: 'CodeQL',
+          appId: 57789,
+          appSlug: 'github-advanced-security',
+          status: 'completed',
+          conclusion: 'success',
+          url: 'https://github.com/MontrealAI/AGIJobsv0/runs/3',
+        },
+      ],
+      history: scannerHistory,
+      reviewLinks: [
+        'https://github.com/MontrealAI/AGIJobsv0/pull/3991#issuecomment-1',
+      ],
+    },
+    scannerReview: {
+      sourceCommit,
+      results: [],
+      reviewEvidence: ['INERT metadata only; not authenticated scan evidence'],
+    },
+    pythonScannerReview: {
+      schema: policy.reviewSchema,
+      sourceCommit,
+      tree,
+      producerRunId: 4,
+      producerRunAttempt: 1,
+      producerEvent: policy.reviewedProducer.event,
+      producerHeadBranch: policy.reviewedProducer.headBranch,
+      producerRef: policy.reviewedProducer.ref,
+      artifactId: 5,
+      artifactName: `python-codeql-security-report-${sourceCommit}-4-1`,
+      archiveSha256: 'c'.repeat(64),
+      rawRecords: Object.fromEntries(
+        [
+          'python.sarif',
+          'source-extraction.json',
+          'source-scope-after.json',
+          'source-scope-before.json',
+        ].map((name) => [name, 'd'.repeat(64)])
+      ),
+      toolComponents: [
+        { name: 'INERT-METADATA-ONLY', rules: [{ id: 'inert-metadata-only' }] },
+      ],
+      codeqlConfigSummary: { inertMetadataOnly: true },
+      successfulExtractionFiles: ['INERT-METADATA-ONLY.py'],
+      requiredExtractedFiles: ['INERT-METADATA-ONLY.py'],
+      ruleIds: ['inert-metadata-only'],
+      rawResultCount: 0,
+      results: [],
+      reviewEvidence: ['INERT metadata only; not authenticated scan evidence'],
+    },
+  };
+}
+
+function inertProfileHistory(t) {
+  const r = repository(t);
+  shareObjects(r);
+  const profilePath = 'scripts/release/source-profile-rc16.json';
+  const notesPath = 'docs/production/RELEASE_NOTES_SOURCE_RC16.md';
+  const selected = command(ROOT, ['rev-parse', 'HEAD']).trim();
+  const pending = pendingProfileFixture();
+  const liveNotes = command(ROOT, ['show', `${selected}:${notesPath}`]);
+  const marker = /<!-- rc16-scanner-review\n[\s\S]*?\n-->/g;
+  assert.equal([...liveNotes.matchAll(marker)].length, 1);
+  const notes = (value) =>
+    liveNotes.replace(
+      marker,
+      '<!-- rc16-scanner-review\n' + JSON.stringify(value, null, 2) + '\n-->'
+    );
+  r.git('read-tree', selected);
+  r.put(profilePath, JSON.stringify(pending, null, 2) + '\n');
+  r.put(notesPath, notes(null));
+  const base = r.commit(selected);
+  const tree = r.git('rev-parse', `${base}^{tree}`).trim();
+  const reviews = inertProfileReviews(base, tree);
+  const install = (records, parent = base, options = {}) => {
+    r.git('read-tree', parent);
+    const value = {
+      ...clone(pending),
+      scannerReview: records.scannerReview ?? null,
+      pythonScannerReview: records.pythonScannerReview ?? null,
+    };
+    r.put(
+      profilePath,
+      options.profile ?? JSON.stringify(value, null, 2) + '\n',
+      options.profileMode
+    );
+    r.put(
+      notesPath,
+      options.notes ?? notes(records.notesReview ?? null),
+      options.notesMode
+    );
+    for (const [name, bytes] of options.others ?? []) r.put(name, bytes);
+    return { target: r.commit(parent), value };
+  };
+  const scopeArgs = (target) => ({
+    git: r.git,
+    sha: target,
+    version: pending.releaseVersion,
+    lock: JSON.parse(r.git('show', `${target}:package-lock.json`)),
+    policy: JSON.parse(
+      r.git('show', `${target}:config/solidity-compiler.json`)
+    ),
+  });
+  return {
+    ...r,
+    base,
+    tree,
+    reviews,
+    pending,
+    install,
+    notes,
+    notesPath,
+    profilePath,
+    scopeArgs,
+  };
+}
+
+test('production metadata admission preserves the actual installed profile and exact review provenance without authorizing publication', (t) => {
+  const r = inertProfileHistory(t);
+  const installed = r.install(r.reviews);
+  const runtime = profileFixtureRuntime(installed.value);
+  const context = { git: r.git, target: installed.target };
+  assert.equal(
+    runtime.validatePreparedProfile(installed.value, context),
+    installed.value
+  );
+  assert.deepEqual(runtime.verifyPublicationReview(installed.value, context), {
+    metadataAdmissionOnly: true,
+    productionApproved: false,
+  });
+  const sourceProfile = JSON.parse(
+    JSON.stringify(runtime.verifySourceScope(r.scopeArgs(installed.target)))
+  );
+  assert.deepEqual(sourceProfile.scannerReview, installed.value.scannerReview);
+  assert.deepEqual(
+    sourceProfile.pythonScannerReview,
+    installed.value.pythonScannerReview
+  );
+  assert.equal(sourceProfile.productionApproved, false);
+  assert.equal(sourceProfile.qualification, 'PENDING_FINAL_SOURCE_MAIN_PUSH');
+  assert.throws(
+    () => runtime.validateProfile(installed.value),
+    /Pending native or scanner policy/
+  );
+
+  // Execute only the real publisher's finite-profile comparison block. The
+  // enclosing scanner/API/compiler/native authorization path is never entered.
+  const publisher = fs.readFileSync(
+    path.join(ROOT, 'scripts/release/publish-source-release-rc16.cjs'),
+    'utf8'
+  );
+  const start = publisher.indexOf(
+    "  if (\n    canonical(\n      JSON.parse(\n        fs.readFileSync(path.join(downloaded, 'source-profile-rc16.json'))"
+  );
+  const endMarker = "    throw Error('Remote finite source profile differs');";
+  assert(start > 0);
+  const end = publisher.indexOf(endMarker, start);
+  assert(end > start);
+  const comparison = publisher.slice(start, end + endMarker.length);
+  const downloaded = path.join(r.root, 'inert-retained-profile');
+  fs.mkdirSync(downloaded);
+  const asset = path.join(downloaded, 'source-profile-rc16.json');
+  fs.writeFileSync(asset, JSON.stringify(installed.value));
+  const {
+    canonical,
+  } = require('../../scripts/release/qualify-source-release-rc16.cjs');
+  const compare = (retained) =>
+    require('node:vm').runInNewContext(comparison, {
+      canonical,
+      fs,
+      path,
+      downloaded,
+      profile: runtime.profile,
+      provenance: { sourceProfile: retained },
+    });
+  assert.doesNotThrow(() => compare(sourceProfile));
+  for (const field of ['scannerReview', 'pythonScannerReview']) {
+    const altered = clone(sourceProfile);
+    altered[field] = null;
+    assert.throws(() => compare(altered), /finite source profile/);
+    altered[field] = { ...sourceProfile[field], sourceCommit: '0'.repeat(40) };
+    assert.throws(() => compare(altered), /finite source profile/);
+  }
+  const substitutedAsset = clone(installed.value);
+  substitutedAsset.scannerReview = null;
+  fs.writeFileSync(asset, JSON.stringify(substitutedAsset));
+  assert.throws(() => compare(sourceProfile), /finite source profile/);
+});
+
+test('partial review installations pass only strict finite source validation and refuse production admission before effects', (t) => {
+  const r = inertProfileHistory(t);
+  let calls = 0;
+  const noEffects = {
+    git() {
+      calls++;
+      throw Error('unexpected Git access');
+    },
+    target: r.base,
+  };
+  assert.throws(
+    () => p.verifyPublicationReview(r.pending, noEffects),
+    /scannerReview is pending/
+  );
+  for (const field of ['scannerReview', 'pythonScannerReview']) {
+    const partial = r.install({
+      notesReview: r.reviews.notesReview,
+      [field]: r.reviews[field],
+    });
+    const runtime = profileFixtureRuntime(partial.value);
+    assert.equal(
+      runtime.validatePreparedProfile(partial.value, {
+        git: r.git,
+        target: partial.target,
+      }),
+      partial.value
+    );
+    const scope = runtime.verifySourceScope(r.scopeArgs(partial.target));
+    assert.deepEqual(scope[field], partial.value[field]);
+    assert.equal(
+      scope[
+        field === 'scannerReview' ? 'pythonScannerReview' : 'scannerReview'
+      ],
+      null
+    );
+    assert.equal(scope.productionApproved, false);
+    assert.throws(
+      () => runtime.verifyPublicationReview(partial.value, noEffects),
+      /scannerReview is pending/
+    );
+    const complete = r.install(r.reviews, partial.target);
+    assert.deepEqual(
+      profileFixtureRuntime(complete.value).verifyPublicationReview(
+        complete.value,
+        { git: r.git, target: complete.target }
+      ),
+      {
+        metadataAdmissionOnly: true,
+        productionApproved: false,
+      }
+    );
+  }
+  assert.equal(calls, 0);
+});
+
+test('current profile admission rejects immutable metadata drift, modes, malformed serialization and hidden nonmetadata changes', (t) => {
+  const r = inertProfileHistory(t);
+  const installed = r.install(r.reviews);
+  const runtime = profileFixtureRuntime(installed.value);
+  const context = { git: r.git, target: installed.target };
+  for (const bad of [{}, { git: r.git }, { git: r.git, target: 'main' }])
+    assert.throws(
+      () => runtime.verifyPublicationReview(installed.value, bad),
+      /Immutable Git target/
+    );
+  const mismatch = clone(installed.value);
+  mismatch.scannerReview.reviewEvidence = ['Other inert metadata'];
+  assert.throws(
+    () => runtime.verifyPublicationReview(mismatch, context),
+    /installed review profile differs/
+  );
+  for (const field of ['qualification', 'implementationBaseline']) {
+    const altered = clone(installed.value);
+    altered[field] = field === 'qualification' ? 'QUALIFIED' : '0'.repeat(40);
+    const target = r.install(r.reviews, r.base, {
+      profile: JSON.stringify(altered, null, 2) + '\n',
+    }).target;
+    assert.throws(
+      () =>
+        profileFixtureRuntime(altered).verifySourceScope(r.scopeArgs(target)),
+      /pending status|immutable baseline/
+    );
+  }
+  for (const options of [
+    { profileMode: '100755' },
+    { notesMode: '100755' },
+    { notes: '# Changed outer prose\n' + r.notes(r.reviews.notesReview) },
+    {
+      others: [
+        [
+          'scripts/release/qualify-source-release-rc16.cjs',
+          'INERT changed executable content; never executed\n',
+        ],
+      ],
+    },
+    {
+      profile: JSON.stringify(installed.value).replace(
+        '"scannerReview":',
+        '"scannerReview":null,"scannerReview":'
+      ),
+    },
+  ]) {
+    const changed = r.install(r.reviews, r.base, options);
+    assert.throws(() =>
+      runtime.verifyPublicationReview(installed.value, {
+        git: r.git,
+        target: changed.target,
+      })
+    );
+    assert.throws(() => runtime.verifySourceScope(r.scopeArgs(changed.target)));
+  }
+  const changedPython = clone(r.reviews);
+  changedPython.pythonScannerReview.tree = '0'.repeat(40);
+  const wrongTree = r.install(changedPython);
+  assert.throws(
+    () =>
+      profileFixtureRuntime(wrongTree.value).verifyPublicationReview(
+        wrongTree.value,
+        { git: r.git, target: wrongTree.target }
+      ),
+    /tree differs/
   );
 });

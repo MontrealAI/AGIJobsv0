@@ -25,7 +25,107 @@ const {
   sourceApiUrl,
   verifyRetainedProducer,
 } = require('../../scripts/release/publish-source-release-rc16.cjs');
-const { profile } = require('../../scripts/release/source-profile-rc16.cjs');
+const {
+  profile,
+  validatePreparedProfile,
+} = require('../../scripts/release/source-profile-rc16.cjs');
+// Pending-only behavior uses copied metadata and unmodified production guards.
+// Validate any installed live records before constructing the inert fixture.
+function pendingProfileFixture() {
+  const root = path.resolve(__dirname, '../..');
+  const git = (...args) =>
+    execFileSync('git', ['--no-replace-objects', '-C', root, ...args], {
+      encoding: 'utf8',
+      maxBuffer: 32 * 1024 * 1024,
+    });
+  const target = git('rev-parse', 'HEAD').trim();
+  assert.equal(validatePreparedProfile(profile, { git, target }), profile);
+  const qualifier = require('../../scripts/release/qualify-source-release-rc16.cjs');
+  const notesReview = qualifier.parseScannerReview(
+    fs.readFileSync(path.join(root, qualifier.scannerReviewPath), 'utf8')
+  );
+  if (notesReview !== null)
+    qualifier.verifyScannerReviewSource({
+      git,
+      sha: target,
+      review: notesReview,
+    });
+  return {
+    ...structuredClone(profile),
+    scannerReview: null,
+    pythonScannerReview: null,
+  };
+}
+function pendingReleaseFixture(t) {
+  const pending = pendingProfileFixture();
+  const repository = path.resolve(__dirname, '../..');
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'rc16-pending-policy-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  for (const name of [
+    'scripts/release',
+    'integrations/alpha-agent/pinned-alpha-checkout.cjs',
+    'ci/required-contexts.json',
+    'ci/required-companion-contexts.json',
+  ]) {
+    const destination = path.join(root, name);
+    fs.mkdirSync(path.dirname(destination), { recursive: true });
+    fs.cpSync(path.join(repository, name), destination, { recursive: true });
+  }
+  fs.writeFileSync(
+    path.join(root, 'scripts/release/source-profile-rc16.json'),
+    JSON.stringify(pending, null, 2) + '\n'
+  );
+  const notes = path.join(root, 'docs/production/RELEASE_NOTES_SOURCE_RC16.md');
+  fs.mkdirSync(path.dirname(notes), { recursive: true });
+  fs.writeFileSync(notes, '<!-- rc16-scanner-review\nnull\n-->\n');
+  const env = Object.fromEntries(
+    Object.entries(process.env).filter(([name]) => !name.startsWith('GIT_'))
+  );
+  Object.assign(env, {
+    GIT_CONFIG_NOSYSTEM: '1',
+    GIT_CONFIG_GLOBAL: '/dev/null',
+  });
+  const git = (...args) =>
+    execFileSync(
+      'git',
+      ['-C', root, '-c', 'core.hooksPath=/dev/null', ...args],
+      {
+        encoding: 'utf8',
+        env,
+      }
+    );
+  git('init', '-q');
+  git('add', '.');
+  git(
+    '-c',
+    'user.name=Pending fixture',
+    '-c',
+    'user.email=fixture@example.invalid',
+    'commit',
+    '-qm',
+    'Inert pending metadata fixture; no scanner proof'
+  );
+  const source = git('rev-parse', 'HEAD').trim();
+  const offline = path.join(root, 'offline.cjs');
+  fs.writeFileSync(
+    offline,
+    'global.fetch = () => { throw Error("NETWORK_MUST_NOT_BE_USED"); };\n'
+  );
+  return {
+    root,
+    offline,
+    environment: {
+      ...env,
+      GITHUB_SHA: source,
+      GITHUB_REPOSITORY: 'MontrealAI/AGIJobsv0',
+      GITHUB_EVENT_NAME: 'push',
+      GITHUB_REF: 'refs/heads/main',
+      GH_TOKEN: 'INERT_PENDING_FIXTURE_NEVER_USED_FOR_NETWORK',
+      TAG: 'source-v2.1.0-rc.16',
+    },
+  };
+}
+
 const sha = 'a'.repeat(40);
 const actions = { id: 15368, slug: 'github-actions' };
 const security = {
@@ -449,7 +549,7 @@ test('retained readback cannot relabel another successful same-SHA run or attemp
     fs.rmSync(directory, { recursive: true, force: true });
   }
 });
-test('rc.16 owns only its new tag/routes/assets and remains blocked pending actual security review', () => {
+test('rc.16 owns only its new tag/routes/assets and remains blocked pending actual security review', (t) => {
   const names = expectedAssets(profile.tag);
   assert.equal(new Set(names).size, 24);
   for (const name of [
@@ -465,22 +565,33 @@ test('rc.16 owns only its new tag/routes/assets and remains blocked pending actu
     sourceApiUrl('GET', 'git/ref/tags/source-v2.1.0-rc.16').endsWith('rc.16')
   );
   assert.throws(() => sourceApiUrl('GET', 'git/ref/tags/source-v2.1.0-rc.15'));
+  const pending = pendingReleaseFixture(t);
   assert.throws(
     () =>
       execFileSync(
         process.execPath,
         [
-          path.resolve(
-            __dirname,
-            '../../scripts/release/publish-source-release-rc16.cjs'
+          '--require',
+          pending.offline,
+          path.join(
+            pending.root,
+            'scripts/release/publish-source-release-rc16.cjs'
           ),
         ],
-        { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }
+        {
+          cwd: pending.root,
+          env: pending.environment,
+          encoding: 'utf8',
+          stdio: ['ignore', 'pipe', 'pipe'],
+        }
       ),
     (error) =>
-      /publication blocked: scannerReview is pending/.test(error.stderr)
+      /publication blocked: scannerReview is pending/.test(error.stderr) &&
+      !error.stderr.includes('NETWORK_MUST_NOT_BE_USED')
   );
+  assert.equal(fs.existsSync(path.join(pending.root, 'reports')), false);
 });
+
 test('four-record scanner contract requires external identities before reading reports', () => {
   const unread = () => {
     throw Error('Report must remain unread without valid external identity');
@@ -500,7 +611,9 @@ test('four-record scanner contract requires external identities before reading r
     'source-scope-after.json',
     'source-scope-before.json',
   ]);
-  assert.equal(profile.scannerReview, null);
+  const pending = pendingProfileFixture();
+  assert.equal(pending.scannerReview, null);
+  assert.equal(pending.pythonScannerReview, null);
 });
 test('mandatory scanner manifest is derived from actual pinned receiver Git source', () => {
   const root = path.resolve(__dirname, '../..');
@@ -732,4 +845,433 @@ test('test-only execution metadata rejects error diagnostics for both scanner la
         ]),
       /error diagnostic/
     );
+});
+
+// Quality contract tests reuse authentic retained descriptors and raw results.
+// Only acknowledgement metadata and review-reference strings are synthetic.
+// No successful scan, independent review, API observation or release is made.
+function qualityAcknowledgementFixture(ruleId) {
+  const root = path.resolve(__dirname, '../..');
+  const bindings = require('../../scripts/release/source-scanner-review-bindings-rc16.cjs');
+  const gates = require('../../scripts/release/source-scanner-gates-rc16.cjs');
+  const ledger = JSON.parse(
+    fs.readFileSync(
+      path.join(root, 'docs/security/remediation-2026-10-19/findings.json'),
+      'utf8'
+    )
+  );
+  const archive = path.join(
+    root,
+    'docs/security/remediation-2026-10-19/baseline/fresh-codeql.zip'
+  );
+  assert.equal(sha256(fs.readFileSync(archive)), ledger.baseline.fresh.sha256);
+  const baseline = JSON.parse(
+    execFileSync('unzip', ['-p', archive, 'javascript.sarif'], {
+      maxBuffer: 32 * 1024 * 1024,
+      timeout: 30_000,
+    })
+  ).runs[0];
+  const run = structuredClone(baseline);
+  const raw = run.results.find((item) => item.ruleId === ruleId);
+  assert(raw, 'Both eligible rules must exist in the real retained baseline');
+  const sourceCommit = ledger.baseline.commit;
+  const env = {
+    ...Object.fromEntries(
+      Object.entries(process.env).filter(([name]) => !name.startsWith('GIT_'))
+    ),
+    GIT_CONFIG_NOSYSTEM: '1',
+    GIT_CONFIG_GLOBAL: '/dev/null',
+    GIT_NO_REPLACE_OBJECTS: '1',
+  };
+  const git = (...args) =>
+    execFileSync(
+      'git',
+      [
+        '--no-replace-objects',
+        '-c',
+        'core.fsmonitor=false',
+        '-C',
+        root,
+        ...args,
+      ],
+      { encoding: 'utf8', env, maxBuffer: 32 * 1024 * 1024 }
+    );
+  const identity = resultIdentity(raw);
+  const sourceEntry = git('ls-tree', '-z', sourceCommit, '--', identity.path);
+  const match = /^(100644|100755) blob ([a-f0-9]{40})\t([^\0]+)\0$/.exec(
+    sourceEntry
+  );
+  assert(match && match[3] === identity.path);
+  const component = run.tool.extensions[raw.rule.toolComponent.index];
+  const rule = component.rules[raw.rule.index];
+  const digest = (value) => sha256(gates.canonical(value));
+  const item = {
+    ...identity,
+    disposition: bindings.javascriptQualityPolicy.disposition,
+    justification:
+      'TEST-ONLY acknowledgement metadata; no actual finding disposition or behavioral acceptance is asserted.',
+    regressionEvidence: [
+      `https://github.com/MontrealAI/AGIJobsv0/blob/${sourceCommit}/${identity.path}`,
+    ],
+    qualityReview: {
+      schema: bindings.javascriptQualityPolicy.schema,
+      sourceBlob: match[2],
+      ruleMetadataSha256: digest(rule),
+      queryComponentSha256: digest(component),
+      codeqlConfigSummarySha256: digest(run.properties.codeqlConfigSummary),
+      behaviorAssessment: `TEST-ONLY ${ruleId} case: ${raw.message.text} Initializer and assignment side effects still require an independent real behavior review.`,
+      // Synthetic test reference syntax only; this test does not claim that
+      // this review exists or that its author approved the retained finding.
+      independentReviewEvidence: [
+        'https://github.com/MontrealAI/AGIJobsv0/pull/1#pullrequestreview-1',
+      ],
+    },
+  };
+  const review = {
+    sourceCommit,
+    results: [item],
+    reviewEvidence: [
+      'TEST-ONLY metadata; not an installed or authenticated result review',
+    ],
+  };
+  const verify = (selectedItem = item, options = {}) =>
+    gates.verifyAcknowledgedNonsecurityQuality(selectedItem, {
+      run,
+      baseline,
+      review,
+      git,
+      ...options,
+    });
+  return {
+    root,
+    bindings,
+    gates,
+    baseline,
+    run,
+    raw,
+    rule,
+    component,
+    item,
+    review,
+    git,
+    digest,
+    verify,
+  };
+}
+
+test('quality acknowledgement binds both real retained rules to descriptor, component, configuration and immutable source metadata only', () => {
+  for (const id of [
+    'js/unused-local-variable',
+    'js/useless-assignment-to-local',
+  ]) {
+    const f = qualityAcknowledgementFixture(id);
+    assert.deepEqual(
+      profile.scannerPolicy.qualityReview,
+      f.bindings.javascriptQualityPolicy
+    );
+    assert.equal(
+      f.bindings.validateJavascriptQualityMetadata(
+        f.item,
+        f.review.sourceCommit,
+        f.git
+      ),
+      f.item.qualityReview
+    );
+    assert.doesNotThrow(() =>
+      f.bindings.validateScannerReviewMetadata('scannerReview', f.review, {
+        git: f.git,
+        target: f.review.sourceCommit,
+      })
+    );
+    assert.deepEqual(f.verify(), {
+      metadataAcknowledgementOnly: true,
+      productionApproved: false,
+    });
+    assert.equal(f.run.results.length, 96);
+    assert.deepEqual(
+      f.run,
+      f.baseline,
+      'No retained raw result or scanner metadata was changed'
+    );
+  }
+});
+
+test('quality acknowledgement requires exact versioned metadata and independently reviewed evidence references', () => {
+  const f = qualityAcknowledgementFixture('js/unused-local-variable');
+  const changes = [
+    (item) => {
+      delete item.qualityReview;
+    },
+    (item) => {
+      item.qualityReview.schema = 'unreviewed';
+    },
+    (item) => {
+      item.qualityReview.approved = true;
+    },
+    (item) => {
+      delete item.qualityReview.behaviorAssessment;
+    },
+    (item) => {
+      item.qualityReview.behaviorAssessment = '  ';
+    },
+    (item) => {
+      item.qualityReview.independentReviewEvidence = [];
+    },
+    (item) => {
+      item.qualityReview.independentReviewEvidence = [
+        'https://github.com/example/foreign/pull/1#pullrequestreview-1',
+      ];
+    },
+    (item) => {
+      item.qualityReview.independentReviewEvidence = [
+        'https://github.com/MontrealAI/AGIJobsv0/issues/1#issuecomment-1',
+      ];
+    },
+    (item) => {
+      item.qualityReview.independentReviewEvidence[0] += '\n';
+    },
+    (item) => {
+      item.qualityReview.sourceBlob = '0'.repeat(40);
+    },
+    (item) => {
+      item.qualityReview.ruleMetadataSha256 = '0'.repeat(64);
+    },
+    (item) => {
+      item.qualityReview.queryComponentSha256 = '0'.repeat(64);
+    },
+    (item) => {
+      item.qualityReview.codeqlConfigSummarySha256 = '0'.repeat(64);
+    },
+    (item) => {
+      item.regressionEvidence = [];
+    },
+    (item) => {
+      item.regressionEvidence = [
+        'https://github.com/MontrealAI/AGIJobsv0/blob/main/source.js',
+      ];
+    },
+    (item) => {
+      item.regressionEvidence = [
+        `https://github.com/MontrealAI/AGIJobsv0/blob/${f.review.sourceCommit}`,
+      ];
+    },
+    (item) => {
+      item.regressionEvidence = [
+        `https://github.com/MontrealAI/AGIJobsv0/commit/${f.review.sourceCommit}/unexpected`,
+      ];
+    },
+    (item) => {
+      item.regressionEvidence = [
+        `https://github.com/MontrealAI/AGIJobsv0/blob/${f.review.sourceCommit}/source/../file.js`,
+      ];
+    },
+    (item) => {
+      item.regressionEvidence = [
+        `https://github.com/MontrealAI/AGIJobsv0/blob/${f.review.sourceCommit}/source/%2e%2e/file.js`,
+      ];
+    },
+    (item) => {
+      item.regressionEvidence[0] += '\n';
+    },
+  ];
+  for (const change of changes) {
+    const item = structuredClone(f.item);
+    change(item);
+    assert.throws(() => f.verify(item));
+  }
+  for (const reference of [
+    `https://github.com/MontrealAI/AGIJobsv0/commit/${f.review.sourceCommit}`,
+    'https://github.com/MontrealAI/AGIJobsv0/actions/runs/1/job/2',
+  ]) {
+    const item = structuredClone(f.item);
+    item.regressionEvidence = [reference];
+    assert.equal(
+      f.bindings.validateJavascriptQualityMetadata(
+        item,
+        f.review.sourceCommit,
+        f.git
+      ),
+      item.qualityReview
+    );
+  }
+});
+
+test('quality acknowledgement rejects unknown or security rule IDs and keeps Python and existing false-positive shapes separate', () => {
+  const f = qualityAcknowledgementFixture('js/unused-local-variable');
+  for (const ruleId of [
+    'js/unknown-quality',
+    'js/path-injection',
+    'js/code-injection',
+  ])
+    assert.throws(
+      () => f.verify({ ...f.item, ruleId }),
+      /Only the two explicitly reviewed/
+    );
+  const fp = structuredClone(f.item);
+  delete fp.qualityReview;
+  fp.disposition = 'Demonstrably false positive';
+  fp.regressionEvidence = ['Existing synthetic FP metadata remains unchanged'];
+  assert.doesNotThrow(() =>
+    f.bindings.validateScannerReviewMetadata(
+      'scannerReview',
+      {
+        ...f.review,
+        results: [fp],
+      },
+      { git: f.git, target: f.review.sourceCommit }
+    )
+  );
+  assert.throws(
+    () =>
+      f.bindings.validateScannerReviewMetadata('scannerReview', {
+        ...f.review,
+        results: [{ ...fp, qualityReview: f.item.qualityReview }],
+      }),
+    /Complete scanner result disposition fields differ/
+  );
+  const python = {
+    schema: 'agijobsv0/codeql-python-review/2',
+    sourceCommit: f.review.sourceCommit,
+    tree: f.git('rev-parse', f.review.sourceCommit + '^{tree}').trim(),
+    producerRunId: 1,
+    producerRunAttempt: 1,
+    producerEvent: 'push',
+    producerHeadBranch: 'fix/inherited-codeql-ti-final-rc16-20261019',
+    producerRef: 'refs/heads/fix/inherited-codeql-ti-final-rc16-20261019',
+    artifactId: 2,
+    artifactName: `python-codeql-security-report-${f.review.sourceCommit}-1-1`,
+    archiveSha256: 'a'.repeat(64),
+    rawRecords: Object.fromEntries(
+      [
+        'python.sarif',
+        'source-extraction.json',
+        'source-scope-after.json',
+        'source-scope-before.json',
+      ].map((name) => [name, 'b'.repeat(64)])
+    ),
+    toolComponents: [
+      { name: 'INERT-PYTHON-METADATA', rules: [{ id: 'py/inert' }] },
+    ],
+    codeqlConfigSummary: { inertMetadataOnly: true },
+    successfulExtractionFiles: ['INERT.py'],
+    requiredExtractedFiles: ['INERT.py'],
+    ruleIds: ['py/inert'],
+    rawResultCount: 1,
+    results: [f.item],
+    reviewEvidence: ['TEST-ONLY Python refusal metadata; no scanner evidence'],
+  };
+  assert.throws(
+    () =>
+      f.bindings.validateScannerReviewMetadata('pythonScannerReview', python, {
+        git: f.git,
+        target: f.review.sourceCommit,
+      }),
+    /Complete scanner result disposition fields differ/
+  );
+  const noExtraObject = structuredClone(f.item);
+  delete noExtraObject.qualityReview;
+  assert.throws(
+    () =>
+      f.bindings.validateScannerReviewMetadata(
+        'pythonScannerReview',
+        {
+          ...python,
+          results: [noExtraObject],
+        },
+        { git: f.git, target: f.review.sourceCommit }
+      ),
+    /Every retained scanner result needs a complete disposition/
+  );
+});
+
+test('quality acknowledgement refuses raw identity, query metadata, configuration and ambiguous descriptor drift', () => {
+  const f = qualityAcknowledgementFixture('js/useless-assignment-to-local');
+  for (const change of [
+    (item) => {
+      item.region.startLine++;
+    },
+    (item) => {
+      item.resultSha256 = '0'.repeat(64);
+    },
+    (item) => {
+      item.path = 'other/source.js';
+    },
+  ]) {
+    const item = structuredClone(f.item);
+    change(item);
+    assert.throws(() => f.verify(item));
+  }
+  for (const change of [
+    (run) => {
+      run.results.find((item) => item.ruleId === f.item.ruleId).locations[0]
+        .physicalLocation.region.startLine++;
+    },
+    (run) => {
+      run.tool.extensions[0].rules[f.raw.rule.index].shortDescription.text =
+        'Forged descriptor';
+    },
+    (run) => {
+      run.tool.extensions[0].semanticVersion = 'Forged query component';
+    },
+    (run) => {
+      run.properties.codeqlConfigSummary.queries.pop();
+    },
+  ]) {
+    const run = structuredClone(f.run);
+    change(run);
+    assert.throws(() => f.verify(f.item, { run }));
+  }
+  for (const change of [
+    (raw) => {
+      raw.ruleIndex = raw.rule.index;
+    },
+    (raw) => {
+      raw.rule.unreviewed = true;
+    },
+    (raw) => {
+      raw.rule.id = 'js/path-injection';
+    },
+    (raw) => {
+      raw.rule.toolComponent.name = 'Other component';
+    },
+    (raw) => {
+      raw.rule.toolComponent.index = 1;
+    },
+    (raw) => {
+      raw.rule.index = 100000;
+    },
+  ]) {
+    const run = structuredClone(f.run);
+    const raw = run.results.find((item) => item.ruleId === f.item.ruleId);
+    change(raw);
+    const item = structuredClone(f.item);
+    item.resultSha256 = f.digest(raw);
+    assert.throws(() => f.verify(item, { run }));
+  }
+  for (const change of [
+    (rule) => {
+      rule.properties.tags.push('security');
+    },
+    (rule) => {
+      rule.properties['security-severity'] = 0;
+    },
+    (rule) => {
+      rule.properties.tags = rule.properties.tags.filter(
+        (tag) => tag !== 'quality'
+      );
+    },
+  ]) {
+    const run = structuredClone(f.run),
+      baseline = structuredClone(f.baseline);
+    const rule = run.tool.extensions[0].rules[f.raw.rule.index];
+    change(rule);
+    baseline.tool.extensions[0] = structuredClone(run.tool.extensions[0]);
+    const item = structuredClone(f.item);
+    item.qualityReview.ruleMetadataSha256 = f.digest(rule);
+    item.qualityReview.queryComponentSha256 = f.digest(run.tool.extensions[0]);
+    assert.throws(
+      () => f.verify(item, { run, baseline }),
+      /trusted nonsecurity query metadata/
+    );
+  }
 });

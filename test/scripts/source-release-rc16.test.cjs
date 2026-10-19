@@ -22,7 +22,107 @@ const {
   sourceApiUrl,
   verifyRetainedProducer,
 } = require('../../scripts/release/publish-source-release-rc16.cjs');
-const { profile } = require('../../scripts/release/source-profile-rc16.cjs');
+const {
+  profile,
+  validatePreparedProfile,
+} = require('../../scripts/release/source-profile-rc16.cjs');
+// Pending-only behavior uses copied metadata and unmodified production guards.
+// Validate any installed live records before constructing the inert fixture.
+function pendingProfileFixture() {
+  const root = path.resolve(__dirname, '../..');
+  const git = (...args) =>
+    execFileSync('git', ['--no-replace-objects', '-C', root, ...args], {
+      encoding: 'utf8',
+      maxBuffer: 32 * 1024 * 1024,
+    });
+  const target = git('rev-parse', 'HEAD').trim();
+  assert.equal(validatePreparedProfile(profile, { git, target }), profile);
+  const qualifier = require('../../scripts/release/qualify-source-release-rc16.cjs');
+  const notesReview = qualifier.parseScannerReview(
+    fs.readFileSync(path.join(root, qualifier.scannerReviewPath), 'utf8')
+  );
+  if (notesReview !== null)
+    qualifier.verifyScannerReviewSource({
+      git,
+      sha: target,
+      review: notesReview,
+    });
+  return {
+    ...structuredClone(profile),
+    scannerReview: null,
+    pythonScannerReview: null,
+  };
+}
+function pendingReleaseFixture(t) {
+  const pending = pendingProfileFixture();
+  const repository = path.resolve(__dirname, '../..');
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'rc16-pending-policy-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  for (const name of [
+    'scripts/release',
+    'integrations/alpha-agent/pinned-alpha-checkout.cjs',
+    'ci/required-contexts.json',
+    'ci/required-companion-contexts.json',
+  ]) {
+    const destination = path.join(root, name);
+    fs.mkdirSync(path.dirname(destination), { recursive: true });
+    fs.cpSync(path.join(repository, name), destination, { recursive: true });
+  }
+  fs.writeFileSync(
+    path.join(root, 'scripts/release/source-profile-rc16.json'),
+    JSON.stringify(pending, null, 2) + '\n'
+  );
+  const notes = path.join(root, 'docs/production/RELEASE_NOTES_SOURCE_RC16.md');
+  fs.mkdirSync(path.dirname(notes), { recursive: true });
+  fs.writeFileSync(notes, '<!-- rc16-scanner-review\nnull\n-->\n');
+  const env = Object.fromEntries(
+    Object.entries(process.env).filter(([name]) => !name.startsWith('GIT_'))
+  );
+  Object.assign(env, {
+    GIT_CONFIG_NOSYSTEM: '1',
+    GIT_CONFIG_GLOBAL: '/dev/null',
+  });
+  const git = (...args) =>
+    execFileSync(
+      'git',
+      ['-C', root, '-c', 'core.hooksPath=/dev/null', ...args],
+      {
+        encoding: 'utf8',
+        env,
+      }
+    );
+  git('init', '-q');
+  git('add', '.');
+  git(
+    '-c',
+    'user.name=Pending fixture',
+    '-c',
+    'user.email=fixture@example.invalid',
+    'commit',
+    '-qm',
+    'Inert pending metadata fixture; no scanner proof'
+  );
+  const source = git('rev-parse', 'HEAD').trim();
+  const offline = path.join(root, 'offline.cjs');
+  fs.writeFileSync(
+    offline,
+    'global.fetch = () => { throw Error("NETWORK_MUST_NOT_BE_USED"); };\n'
+  );
+  return {
+    root,
+    offline,
+    environment: {
+      ...env,
+      GITHUB_SHA: source,
+      GITHUB_REPOSITORY: 'MontrealAI/AGIJobsv0',
+      GITHUB_EVENT_NAME: 'push',
+      GITHUB_REF: 'refs/heads/main',
+      GH_TOKEN: 'INERT_PENDING_FIXTURE_NEVER_USED_FOR_NETWORK',
+      TAG: 'source-v2.1.0-rc.16',
+    },
+  };
+}
+
 const sha = 'a'.repeat(40);
 const actions = { id: 15368, slug: 'github-actions' };
 const security = {
@@ -456,7 +556,7 @@ test('retained readback cannot relabel another successful same-SHA run or attemp
     fs.rmSync(directory, { recursive: true, force: true });
   }
 });
-test('rc.16 owns only its new tag/routes/assets and remains blocked pending actual security review', () => {
+test('rc.16 owns only its new tag/routes/assets and remains blocked pending actual security review', (t) => {
   const names = expectedAssets(profile.tag);
   assert.equal(new Set(names).size, 24);
   for (const name of [
@@ -475,21 +575,31 @@ test('rc.16 owns only its new tag/routes/assets and remains blocked pending actu
     sourceApiUrl('GET', 'git/ref/tags/source-v2.1.0-rc.16').endsWith('rc.16')
   );
   assert.throws(() => sourceApiUrl('GET', 'git/ref/tags/source-v2.1.0-rc.15'));
+  const pending = pendingReleaseFixture(t);
   assert.throws(
     () =>
       execFileSync(
         process.execPath,
         [
-          path.resolve(
-            __dirname,
-            '../../scripts/release/publish-source-release-rc16.cjs'
+          '--require',
+          pending.offline,
+          path.join(
+            pending.root,
+            'scripts/release/publish-source-release-rc16.cjs'
           ),
         ],
-        { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }
+        {
+          cwd: pending.root,
+          env: pending.environment,
+          encoding: 'utf8',
+          stdio: ['ignore', 'pipe', 'pipe'],
+        }
       ),
     (error) =>
-      /publication blocked: scannerReview is pending/.test(error.stderr)
+      /publication blocked: scannerReview is pending/.test(error.stderr) &&
+      !error.stderr.includes('NETWORK_MUST_NOT_BE_USED')
   );
+  assert.equal(fs.existsSync(path.join(pending.root, 'reports')), false);
 });
 
 test('test-only execution metadata rejects error diagnostics for both scanner languages', () => {
@@ -546,12 +656,16 @@ test('Python producer observation routes stay bound to the exact selected source
     assert.throws(() => route(resource), /Unsupported/);
 });
 
-test('pending Python evidence refuses before metadata, download or persistent output effects', async () => {
+test('pending Python evidence refuses before metadata, download or persistent output effects', async (t) => {
+  const pending = pendingReleaseFixture(t);
   const {
     retainPythonEvidence,
     qualifyPythonEvidence,
     collectAdditionalEvidence,
-  } = require('../../scripts/release/source-native-evidence-rc16.cjs');
+  } = require(path.join(
+    pending.root,
+    'scripts/release/source-native-evidence-rc16.cjs'
+  ));
   let effects = 0;
   const context = {
     sha,

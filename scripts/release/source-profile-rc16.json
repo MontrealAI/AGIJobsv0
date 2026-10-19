@@ -385,6 +385,17 @@
       }
     },
     {
+      "path": "integrations/alpha-agent/deploy-local-fixture.cjs",
+      "before": {
+        "mode": "100644",
+        "blob": "a77cc9b246445dff9072ecb39a1f4e130682d5c5"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "4537a5fb8773ab4e50dd9fb498cfa98dc285b144"
+      }
+    },
+    {
       "path": "integrations/alpha-agent/four-repo-computer-lifecycle.cjs",
       "before": {
         "mode": "100644",
@@ -403,7 +414,18 @@
       },
       "after": {
         "mode": "100644",
-        "blob": "068c5e0c30cecbfd41446ac717795227f97889c2"
+        "blob": "417fa22cece485b76497e0dfc01fb2daffb48c51"
+      }
+    },
+    {
+      "path": "integrations/alpha-agent/generate-project-source.mjs",
+      "before": {
+        "mode": "100644",
+        "blob": "76ea33505a80fa00f19d3650e8720d3c33612e68"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "c66efecb47ae351f9b655f75ab417bd7820f2414"
       }
     },
     {
@@ -437,6 +459,17 @@
       "after": {
         "mode": "100644",
         "blob": "dcdc16bd519f455218236cc1f3a15a64d42b6b27"
+      }
+    },
+    {
+      "path": "integrations/alpha-agent/project-transfer.mjs",
+      "before": {
+        "mode": "100644",
+        "blob": "7869865f4ab51ec2718a93033dd4d213156a8276"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "8ffce161abfe3f455f072cce0380678f6e98577c"
       }
     },
     {
@@ -519,6 +552,28 @@
       "after": {
         "mode": "100644",
         "blob": "170c7022127a8f8517b36629abdfa184d4c55ebe"
+      }
+    },
+    {
+      "path": "scripts/security/check-dependency-preservation.cjs",
+      "before": {
+        "mode": "100644",
+        "blob": "1a8dafc411064a2bb4fa39825c3aa772ccce5541"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "e697e1504a9649dfabfd8746a188bf66725f654b"
+      }
+    },
+    {
+      "path": "scripts/security/reviewed-source-jobs-handover-20261016.json",
+      "before": {
+        "mode": "100644",
+        "blob": "76320c069aa5f6bf9d72974f6e31828e17b39ffe"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "c9bf4842db826f23bb1c242e8fa59c7482131c2d"
       }
     },
     {
@@ -627,6 +682,11 @@
     "website/assets/computer-mission-copy.mjs"
   ],
   "scannerPolicy": {
+    "qualityReview": {
+      "schema": "agijobsv0/nonsecurity-quality-review/1",
+      "disposition": "Acknowledged nonsecurity quality",
+      "ruleIds": ["js/unused-local-variable", "js/useless-assignment-to-local"]
+    },
     "producerCommit": "bfeab08248753287e83d287b898f399c94174b1c",
     "producerTree": "0fa407313f568cd7ebe56a791452233e240c49e6",
     "historicalConfigPath": ".github/codeql/config.yml",
@@ -651,6 +711,12 @@
   "pythonScannerBaseline": "bfeab08248753287e83d287b898f399c94174b1c",
   "pythonScannerTree": "0fa407313f568cd7ebe56a791452233e240c49e6",
   "pythonScannerPolicy": {
+    "reviewSchema": "agijobsv0/codeql-python-review/2",
+    "reviewedProducer": {
+      "event": "push",
+      "headBranch": "fix/inherited-codeql-ti-final-rc16-20261019",
+      "ref": "refs/heads/fix/inherited-codeql-ti-final-rc16-20261019"
+    },
     "producerCommit": "bfeab08248753287e83d287b898f399c94174b1c",
     "producerTree": "0fa407313f568cd7ebe56a791452233e240c49e6",
     "configPath": ".github/codeql/config-python-integrations.yml",

@@ -11,6 +11,8 @@ const { createHash } = require('node:crypto');
 const { deflateRawSync } = require('node:zlib');
 const {
   pythonScannerReference,
+  validatePythonScannerReference,
+  pythonReviewedScannerReference,
   pythonScannerReviewReference,
   readPythonScannerObservation,
   pythonEvidenceContexts,
@@ -32,7 +34,8 @@ const rawNames = [
   'source-scope-before.json',
 ];
 
-function metadata(sha = source, id = 7) {
+const reviewedBranch = 'fix/inherited-codeql-ti-final-rc16-20261019';
+function metadata(sha = source, id = 7, headBranch = 'main') {
   const run = {
     id,
     run_attempt: 2,
@@ -42,7 +45,7 @@ function metadata(sha = source, id = 7) {
     repository: clone(repo),
     head_repository: clone(repo),
     event: 'push',
-    head_branch: 'main',
+    head_branch: headBranch,
     status: 'completed',
     conclusion: 'success',
   };
@@ -55,7 +58,7 @@ function metadata(sha = source, id = 7) {
     workflow_run: {
       id,
       head_sha: sha,
-      head_branch: 'main',
+      head_branch: headBranch,
       repository_id: repo.id,
       head_repository_id: repo.id,
     },
@@ -102,15 +105,27 @@ function metadata(sha = source, id = 7) {
     data,
     api,
     calls,
-    ref: pythonScannerReference(run, artifact, sha),
+    ref: validatePythonScannerReference(
+      {
+        runId: run.id,
+        runAttempt: run.run_attempt,
+        artifactId: artifact.id,
+        artifactName: artifact.name,
+        githubDigest: artifact.digest,
+      },
+      sha
+    ),
   };
 }
 
-function review(fixture) {
+function review(fixture, tree = reviewedTree) {
   return {
-    schema: 'agijobsv0/codeql-python-review/1',
-    sourceCommit: reviewedSource,
-    tree: reviewedTree,
+    schema: 'agijobsv0/codeql-python-review/2',
+    producerEvent: 'push',
+    producerHeadBranch: 'fix/inherited-codeql-ti-final-rc16-20261019',
+    producerRef: 'refs/heads/fix/inherited-codeql-ti-final-rc16-20261019',
+    sourceCommit: fixture.run.head_sha,
+    tree,
     producerRunId: fixture.run.id,
     producerRunAttempt: fixture.run.run_attempt,
     artifactId: fixture.artifact.id,
@@ -187,6 +202,7 @@ function ordinaryZip(records = rawNames.map((name) => ({ name }))) {
 
 test('synthetic Python metadata authenticates the current run, exact attempt and artifact inventory', async () => {
   const f = metadata();
+  assert.deepEqual(pythonScannerReference(f.run, f.artifact, source), f.ref);
   const observed = await readPythonScannerObservation(f.api, f.ref, source);
   assert.equal(observed.schema, 'agijobsv0/python-codeql-observation/1');
   assert.equal(observed.source, source);
@@ -197,62 +213,429 @@ test('synthetic Python metadata authenticates the current run, exact attempt and
   assert(f.calls.includes('actions/runs/7/attempts/2'));
 });
 
-test('SYNTHETIC_REVIEW_METADATA_ONLY_NOT_SCAN_EVIDENCE: reviewed Python branch role binds API envelopes and shared producer metadata', async () => {
-  const {
-    validateProducer,
-  } = require('../../scripts/release/source-scanner-gates-rc16.cjs');
-  const branch = 'fix/inherited-codeql-synthetic-metadata-only';
-  // Deliberately synthetic identifiers; no archive, SARIF or scan is created.
-  const f = metadata(source, 1_000_000_000_000_077);
-  for (const run of [f.data.current, f.data.attempt, ...f.data.runs])
-    run.head_branch = branch;
-  for (const artifact of [f.data.artifact, ...f.data.artifacts])
-    artifact.workflow_run.head_branch = branch;
-
-  const observed = await readPythonScannerObservation(f.api, f.ref, source, {
-    sourceRole: 'reviewed',
-  });
-  for (const run of [observed.currentRun, observed.run, observed.latestRun])
-    assert.equal(run.head_branch, branch);
-  assert.equal(observed.artifact.workflow_run.head_branch, branch);
-  assert.deepEqual(observed.producer, f.ref);
-  assert.equal(f.calls.length, 5);
-  await assert.rejects(readPythonScannerObservation(f.api, f.ref, source));
-  await assert.rejects(
-    readPythonScannerObservation(f.api, f.ref, source, { sourceRole: 'final' })
+test('reviewed Python prefix evidence requires its installed role context while final evidence remains main-only', async () => {
+  const retained = metadata(reviewedSource, 9, reviewedBranch);
+  const installed = review(retained);
+  assert.deepEqual(pythonScannerReviewReference(installed), retained.ref);
+  assert.deepEqual(
+    pythonReviewedScannerReference(
+      retained.run,
+      retained.artifact,
+      reviewedSource,
+      installed
+    ),
+    retained.ref
   );
-
-  const producer = {
-    artifact: observed.artifact,
-    run: observed.run,
-    sha: source,
-    workflow,
-    name: f.ref.artifactName,
-  };
-  assert.doesNotThrow(() =>
-    validateProducer({ ...producer, sourceRole: 'reviewed' })
+  const observed = await readPythonScannerObservation(
+    retained.api,
+    retained.ref,
+    reviewedSource,
+    { review: installed }
   );
-  assert.throws(() => validateProducer(producer));
-  assert.throws(() => validateProducer({ ...producer, sourceRole: 'final' }));
-
-  // An otherwise matching artifact envelope must bind the observed run branch.
-  f.data.artifact.workflow_run.head_branch = 'main';
-  f.data.artifacts[0].workflow_run.head_branch = 'main';
+  assert.equal(observed.run.head_branch, reviewedBranch);
+  assert.equal(observed.artifact.workflow_run.head_branch, reviewedBranch);
+  assert.equal(retained.calls.length, 5);
+  assert.throws(
+    () =>
+      pythonScannerReference(retained.run, retained.artifact, reviewedSource),
+    /same-repository main-push producer/
+  );
   await assert.rejects(
-    readPythonScannerObservation(f.api, f.ref, source, {
-      sourceRole: 'reviewed',
+    readPythonScannerObservation(retained.api, retained.ref, reviewedSource),
+    /Python run is stale, foreign, pending, unsuccessful or not a main push/
+  );
+  const main = metadata(reviewedSource, 9);
+  assert.throws(
+    () =>
+      pythonReviewedScannerReference(
+        main.run,
+        main.artifact,
+        reviewedSource,
+        installed
+      ),
+    /approved source and branch/
+  );
+  await assert.rejects(
+    readPythonScannerObservation(main.api, main.ref, reviewedSource, {
+      review: installed,
     }),
-    /artifact identity differs/
+    /Python run is stale, foreign, pending, unsuccessful or not a main push/
+  );
+});
+
+test('invalid installed Python review roles and identities refuse before any API access', async () => {
+  const changes = [
+    [
+      'old schema',
+      (value) => {
+        value.schema = 'agijobsv0/codeql-python-review/1';
+      },
+    ],
+    [
+      'pull request event',
+      (value) => {
+        value.producerEvent = 'pull_request';
+      },
+    ],
+    [
+      'dispatch event',
+      (value) => {
+        value.producerEvent = 'workflow_dispatch';
+      },
+    ],
+    [
+      'missing event',
+      (value) => {
+        delete value.producerEvent;
+      },
+    ],
+    [
+      'main branch',
+      (value) => {
+        value.producerHeadBranch = 'main';
+      },
+    ],
+    [
+      'different prefix branch',
+      (value) => {
+        value.producerHeadBranch = 'fix/inherited-codeql-other';
+      },
+    ],
+    [
+      'missing branch',
+      (value) => {
+        delete value.producerHeadBranch;
+      },
+    ],
+    [
+      'main ref',
+      (value) => {
+        value.producerRef = 'refs/heads/main';
+      },
+    ],
+    [
+      'tag ref',
+      (value) => {
+        value.producerRef = 'refs/tags/source-v2.1.0-rc.16';
+      },
+    ],
+    [
+      'missing ref',
+      (value) => {
+        delete value.producerRef;
+      },
+    ],
+    [
+      'different source',
+      (value) => {
+        value.sourceCommit = source;
+      },
+    ],
+    [
+      'different run',
+      (value) => {
+        value.producerRunId++;
+        value.artifactName = `python-codeql-security-report-${reviewedSource}-${value.producerRunId}-${value.producerRunAttempt}`;
+      },
+    ],
+    [
+      'different attempt',
+      (value) => {
+        value.producerRunAttempt++;
+        value.artifactName = `python-codeql-security-report-${reviewedSource}-${value.producerRunId}-${value.producerRunAttempt}`;
+      },
+    ],
+    [
+      'different artifact',
+      (value) => {
+        value.artifactId++;
+      },
+    ],
+    [
+      'different archive digest',
+      (value) => {
+        value.archiveSha256 = '0'.repeat(64);
+      },
+    ],
+  ];
+  for (const [name, change] of changes) {
+    const f = metadata(reviewedSource, 9, reviewedBranch);
+    const installed = review(f);
+    change(installed);
+    await assert.rejects(
+      readPythonScannerObservation(f.api, f.ref, reviewedSource, {
+        review: installed,
+      }),
+      undefined,
+      name
+    );
+    assert.equal(f.calls.length, 0, name);
+  }
+  const f = metadata(reviewedSource, 9, reviewedBranch);
+  await assert.rejects(
+    readPythonScannerObservation(f.api, f.ref, reviewedSource, { review: null })
+  );
+  assert.equal(f.calls.length, 0);
+});
+
+test('same-SHA Python S1 and S2 observations remain distinct roles with independent latest-branch selection', async () => {
+  const final = metadata(source, 7),
+    retained = metadata(source, 9, reviewedBranch);
+  // Higher-number runs on the other role's branch do not replace this role's
+  // latest selected producer, even though all runs have the identical SHA.
+  final.data.runs.push({ ...clone(retained.run), run_number: 100 });
+  retained.data.runs.push({ ...clone(final.run), run_number: 101 });
+  const installed = review(retained, sourceTree);
+  const finalObservation = await readPythonScannerObservation(
+    final.api,
+    final.ref,
+    source
+  );
+  const reviewedObservation = await readPythonScannerObservation(
+    retained.api,
+    retained.ref,
+    source,
+    { review: installed }
+  );
+  assert.equal(finalObservation.latestRun.id, final.run.id);
+  assert.equal(reviewedObservation.latestRun.id, retained.run.id);
+  const options = {
+    sha: source,
+    tree: sourceTree,
+    review: installed,
+    finalObservation,
+    reviewedObservation,
+    git: (...args) => {
+      if (args[0] === 'rev-parse') {
+        assert.equal(args[1], source + '^{tree}');
+        return sourceTree;
+      }
+      assert.deepEqual(args, ['merge-base', '--is-ancestor', source, source]);
+      return '';
+    },
+  };
+  const contexts = pythonEvidenceContexts(options);
+  assert.equal(contexts.reviewed.role, 'reviewed');
+  assert.equal(contexts.final.role, 'final');
+  assert.equal(contexts.reviewed.sha, contexts.final.sha);
+  assert.equal(contexts.reviewed.tree, contexts.final.tree);
+  assert.equal(contexts.reviewed.producerRun.id, 9);
+  assert.equal(contexts.final.producerRun.id, 7);
+  assert.notEqual(contexts.reviewed.artifact.id, contexts.final.artifact.id);
+  assert.throws(
+    () =>
+      pythonEvidenceContexts({
+        ...options,
+        finalObservation: reviewedObservation,
+      }),
+    /successful current exact-main producer/
   );
   assert.throws(
     () =>
-      validateProducer({
-        ...producer,
-        artifact: f.data.artifact,
-        sourceRole: 'reviewed',
+      pythonEvidenceContexts({
+        ...options,
+        reviewedObservation: finalObservation,
       }),
-    /artifact identity mismatch/
+    /Reviewed Python producer reference differs/
   );
+});
+
+test('both Python roles reject changed current, attempt, latest and artifact metadata', async () => {
+  const cases = [
+    [
+      'current branch',
+      (f, other) => {
+        f.data.current.head_branch = other;
+      },
+      /Python run is stale/,
+    ],
+    [
+      'attempt branch',
+      (f, other) => {
+        f.data.attempt.head_branch = other;
+      },
+      /Python run is stale/,
+    ],
+    [
+      'current event',
+      (f) => {
+        f.data.current.event = 'pull_request';
+      },
+      /Python run is stale/,
+    ],
+    [
+      'attempt event',
+      (f) => {
+        f.data.attempt.event = 'workflow_dispatch';
+      },
+      /Python run is stale/,
+    ],
+    [
+      'current repository',
+      (f) => {
+        f.data.current.repository.id++;
+      },
+      /Python run is stale/,
+    ],
+    [
+      'attempt repository',
+      (f) => {
+        f.data.attempt.repository.full_name = 'example/foreign';
+      },
+      /Python run is stale/,
+    ],
+    [
+      'current head repository',
+      (f) => {
+        f.data.current.head_repository.full_name = 'example/foreign';
+      },
+      /Python run is stale/,
+    ],
+    [
+      'attempt head repository',
+      (f) => {
+        f.data.attempt.head_repository.id++;
+      },
+      /Python run is stale/,
+    ],
+    [
+      'stale current attempt',
+      (f) => {
+        f.data.current.run_attempt++;
+      },
+      /Python run is stale/,
+    ],
+    [
+      'different run numbers',
+      (f) => {
+        f.data.attempt.run_number++;
+      },
+      /Python run is stale/,
+    ],
+    [
+      'latest branch',
+      (f, other) => {
+        f.data.runs[0].head_branch = other;
+      },
+      /newer or ambiguous Python workflow/,
+    ],
+    [
+      'latest repository',
+      (f) => {
+        f.data.runs[0].repository.id++;
+      },
+      /newer or ambiguous Python workflow/,
+    ],
+    [
+      'latest head repository',
+      (f) => {
+        f.data.runs[0].head_repository.full_name = 'example/foreign';
+      },
+      /newer or ambiguous Python workflow/,
+    ],
+    [
+      'latest attempt',
+      (f) => {
+        f.data.runs[0].run_attempt++;
+      },
+      /newer or ambiguous Python workflow/,
+    ],
+    [
+      'newer pending run',
+      (f) => {
+        f.data.runs.push({
+          ...clone(f.run),
+          id: 100,
+          run_number: 31,
+          status: 'queued',
+          conclusion: null,
+        });
+      },
+      /newer or ambiguous Python workflow/,
+    ],
+    [
+      'newer failed run',
+      (f) => {
+        f.data.runs.push({
+          ...clone(f.run),
+          id: 100,
+          run_number: 31,
+          conclusion: 'failure',
+        });
+      },
+      /newer or ambiguous Python workflow/,
+    ],
+    [
+      'newer completed run',
+      (f) => {
+        f.data.runs.push({ ...clone(f.run), id: 100, run_number: 31 });
+      },
+      /newer or ambiguous Python workflow/,
+    ],
+    [
+      'ambiguous latest runs',
+      (f) => {
+        f.data.runs.push({ ...clone(f.run), id: 100 });
+      },
+      /newer or ambiguous Python workflow/,
+    ],
+    [
+      'artifact branch',
+      (f, other) => {
+        f.data.artifact.workflow_run.head_branch = other;
+      },
+      /Python artifact identity differs/,
+    ],
+    [
+      'artifact repository',
+      (f) => {
+        f.data.artifact.workflow_run.repository_id++;
+      },
+      /Python artifact identity differs/,
+    ],
+    [
+      'artifact head repository',
+      (f) => {
+        f.data.artifact.workflow_run.head_repository_id++;
+      },
+      /Python artifact identity differs/,
+    ],
+    [
+      'artifact inventory branch',
+      (f, other) => {
+        f.data.artifacts[0].workflow_run.head_branch = other;
+      },
+      /Python artifact differs from authenticated inventory/,
+    ],
+    [
+      'ambiguous artifacts',
+      (f) => {
+        f.data.artifacts.push({ ...clone(f.artifact), id: 200 });
+      },
+      /Python artifact identity differs/,
+    ],
+  ];
+  for (const role of ['reviewed', 'final'])
+    for (const [name, change, message] of cases) {
+      const reviewed = role === 'reviewed';
+      const f = metadata(
+        reviewed ? reviewedSource : source,
+        reviewed ? 9 : 7,
+        reviewed ? reviewedBranch : 'main'
+      );
+      const installed = reviewed ? review(f) : undefined;
+      change(f, reviewed ? 'main' : reviewedBranch);
+      await assert.rejects(
+        readPythonScannerObservation(
+          f.api,
+          f.ref,
+          f.run.head_sha,
+          reviewed ? { review: installed } : {}
+        ),
+        message,
+        `${role}: ${name}`
+      );
+    }
 });
 
 test('Python references reject incomplete, nonnumeric or unbound metadata before API use', async () => {
@@ -404,7 +787,7 @@ test('Python workflow/artifact pagination is complete, stable, bounded and dupli
 
 test('reviewed S1 and current S2 contexts route to their own authenticated source identities', async () => {
   const current = metadata(source, 7),
-    retained = metadata(reviewedSource, 9);
+    retained = metadata(reviewedSource, 9, reviewedBranch);
   const finalObservation = await readPythonScannerObservation(
     current.api,
     current.ref,
@@ -413,7 +796,8 @@ test('reviewed S1 and current S2 contexts route to their own authenticated sourc
   const reviewedObservation = await readPythonScannerObservation(
     retained.api,
     retained.ref,
-    reviewedSource
+    reviewedSource,
+    { review: review(retained) }
   );
   const installedReview = review(retained),
     calls = [];
@@ -438,6 +822,8 @@ test('reviewed S1 and current S2 contexts route to their own authenticated sourc
     git,
   };
   const contexts = pythonEvidenceContexts(options);
+  assert.equal(contexts.reviewed.role, 'reviewed');
+  assert.equal(contexts.final.role, 'final');
   assert.equal(contexts.reviewed.sha, reviewedSource);
   assert.equal(contexts.reviewed.tree, reviewedTree);
   assert.equal(contexts.reviewed.producerRun.id, 9);
@@ -459,7 +845,7 @@ test('reviewed S1 and current S2 contexts route to their own authenticated sourc
   changed.archiveSha256 = '0'.repeat(64);
   assert.throws(
     () => pythonEvidenceContexts({ ...options, review: changed }),
-    /installed review producer/
+    /Reviewed Python producer reference differs/
   );
 });
 
@@ -480,7 +866,7 @@ test('Python archive verification refuses pending reviews and unretained reviewe
     /installed source-bound review/
   );
   const current = metadata(source, 7),
-    retained = metadata(reviewedSource, 9);
+    retained = metadata(reviewedSource, 9, reviewedBranch);
   const finalObservation = await readPythonScannerObservation(
     current.api,
     current.ref,
@@ -489,7 +875,8 @@ test('Python archive verification refuses pending reviews and unretained reviewe
   const reviewedObservation = await readPythonScannerObservation(
     retained.api,
     retained.ref,
-    reviewedSource
+    reviewedSource,
+    { review: review(retained) }
   );
   const options = {
     directory: root,
@@ -565,15 +952,16 @@ test('actual owner verifier refuses a retained S1 ordinary ZIP that contains no 
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
   const bytes = ordinaryZip(rawNames.map((name) => ({ name, deflate: true })));
   const current = metadata(source, 7),
-    retained = metadata(reviewedSource, 9);
+    retained = metadata(reviewedSource, 9, reviewedBranch);
   retained.artifact.digest =
     retained.data.artifact.digest =
     retained.data.artifacts[0].digest =
       'sha256:' + createHash('sha256').update(bytes).digest('hex');
-  retained.ref = pythonScannerReference(
+  retained.ref = pythonReviewedScannerReference(
     retained.run,
     retained.artifact,
-    reviewedSource
+    reviewedSource,
+    review(retained)
   );
   const finalObservation = await readPythonScannerObservation(
     current.api,
@@ -583,7 +971,8 @@ test('actual owner verifier refuses a retained S1 ordinary ZIP that contains no 
   const reviewedObservation = await readPythonScannerObservation(
     retained.api,
     retained.ref,
-    reviewedSource
+    reviewedSource,
+    { review: review(retained) }
   );
   fs.writeFileSync(
     path.join(root, 'python-codeql-reviewed-evidence.zip'),
@@ -610,5 +999,66 @@ test('actual owner verifier refuses a retained S1 ordinary ZIP that contains no 
   assert.equal(
     fs.existsSync(path.join(root, 'python-codeql-evidence.zip')),
     false
+  );
+});
+
+// Preserve the owner's shared-producer branch binding case using the stricter
+// root-approved immutable Python review context, rather than a generic prefix.
+test('SYNTHETIC_REVIEW_METADATA_ONLY_NOT_SCAN_EVIDENCE: reviewed Python branch role binds API envelopes and shared producer metadata', async () => {
+  const {
+    validateProducer,
+  } = require('../../scripts/release/source-scanner-gates-rc16.cjs');
+  const branch = reviewedBranch;
+  // Deliberately synthetic identifiers; no archive, SARIF or scan is created.
+  const f = metadata(source, 1_000_000_000_000_077, branch);
+  const installedReview = review(f, sourceTree);
+  for (const run of [f.data.current, f.data.attempt, ...f.data.runs])
+    run.head_branch = branch;
+  for (const artifact of [f.data.artifact, ...f.data.artifacts])
+    artifact.workflow_run.head_branch = branch;
+
+  const observed = await readPythonScannerObservation(f.api, f.ref, source, {
+    review: installedReview,
+  });
+  for (const run of [observed.currentRun, observed.run, observed.latestRun])
+    assert.equal(run.head_branch, branch);
+  assert.equal(observed.artifact.workflow_run.head_branch, branch);
+  assert.deepEqual(observed.producer, f.ref);
+  assert.equal(f.calls.length, 5);
+  await assert.rejects(readPythonScannerObservation(f.api, f.ref, source));
+  await assert.rejects(
+    readPythonScannerObservation(f.api, f.ref, source, { review: undefined })
+  );
+
+  const producer = {
+    artifact: observed.artifact,
+    run: observed.run,
+    sha: source,
+    workflow,
+    name: f.ref.artifactName,
+  };
+  assert.doesNotThrow(() =>
+    validateProducer({ ...producer, sourceRole: 'reviewed' })
+  );
+  assert.throws(() => validateProducer(producer));
+  assert.throws(() => validateProducer({ ...producer, sourceRole: 'final' }));
+
+  // An otherwise matching artifact envelope must bind the observed run branch.
+  f.data.artifact.workflow_run.head_branch = 'main';
+  f.data.artifacts[0].workflow_run.head_branch = 'main';
+  await assert.rejects(
+    readPythonScannerObservation(f.api, f.ref, source, {
+      review: installedReview,
+    }),
+    /artifact identity differs/
+  );
+  assert.throws(
+    () =>
+      validateProducer({
+        ...producer,
+        artifact: f.data.artifact,
+        sourceRole: 'reviewed',
+      }),
+    /artifact identity mismatch/
   );
 });

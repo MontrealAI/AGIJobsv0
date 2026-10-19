@@ -5,7 +5,7 @@
 const assert = require('node:assert/strict');
 const { createHash } = require('node:crypto');
 const integrationTransitionsSha256 =
-  '85f1b7d9188e8bb6864387f035fed90ad84073a33ca920b647536accaf23b2d3';
+  'd3440377f05fc34814acdf135d3669595c9a68a504f010188deffe7678d50375';
 const historical = require('./qualify-source-release.cjs');
 
 function freeze(value) {
@@ -107,6 +107,11 @@ const nativeCompatibility = freeze({
   },
 });
 const scannerPolicy = freeze({
+  qualityReview: {
+    schema: 'agijobsv0/nonsecurity-quality-review/1',
+    disposition: 'Acknowledged nonsecurity quality',
+    ruleIds: ['js/unused-local-variable', 'js/useless-assignment-to-local'],
+  },
   producerCommit: 'bfeab08248753287e83d287b898f399c94174b1c',
   producerTree: '0fa407313f568cd7ebe56a791452233e240c49e6',
   historicalConfigPath: '.github/codeql/config.yml',
@@ -172,6 +177,12 @@ const scannerRequiredPaths = Object.freeze([
   'scripts/release/source-python-evidence-rc16.cjs',
 ]);
 const pythonScannerPolicy = freeze({
+  reviewSchema: 'agijobsv0/codeql-python-review/2',
+  reviewedProducer: {
+    event: 'push',
+    headBranch: 'fix/inherited-codeql-ti-final-rc16-20261019',
+    ref: 'refs/heads/fix/inherited-codeql-ti-final-rc16-20261019',
+  },
   producerCommit: 'bfeab08248753287e83d287b898f399c94174b1c',
   producerTree: '0fa407313f568cd7ebe56a791452233e240c49e6',
   configPath: '.github/codeql/config-python-integrations.yml',
@@ -547,13 +558,13 @@ function verifyScannerProducerPin(git, releaseTree, policy) {
 }
 
 function verifySourceScope({ git, sha, version, lock, policy }) {
-  validateProfile();
   requireValue(
     typeof git === 'function' &&
       /^[a-f0-9]{40}$/.test(sha ?? '') &&
       version === profile.releaseVersion,
     'Invalid rc.16 source identity or version'
   );
+  validatePreparedProfile(profile, { git, target: sha });
   const readJSON = (ref, name) =>
     JSON.parse(text(git('show', `${ref}:${name}`)));
   for (const baseline of [
@@ -708,22 +719,57 @@ function verifySourceScope({ git, sha, version, lock, policy }) {
     scannerRequiredPaths: profile.scannerRequiredPaths,
     scannerReceiverPaths: profile.scannerReceiverPaths,
     scannerPolicy: profile.scannerPolicy,
-    scannerReview: null,
+    scannerReview: profile.scannerReview,
     pythonScannerPolicy: profile.pythonScannerPolicy,
     pythonScannerRequiredPaths: profile.pythonScannerRequiredPaths,
-    pythonScannerReview: null,
+    pythonScannerReview: profile.pythonScannerReview,
     productionApproved: false,
   };
 }
 
 function validatePreparedProfile(value = profile, { git, target } = {}) {
   validateProfile({ ...value, scannerReview: null, pythonScannerReview: null });
+  requireValue(
+    typeof git === 'function' && /^[a-f0-9]{40}$/.test(target || ''),
+    'Immutable Git target is required for scanner review metadata admission'
+  );
   const {
+    projectThreeSlotProfile,
     validateScannerReviewMetadata,
+    verifyThreeSlotReviewBinding,
   } = require('./source-scanner-review-bindings-rc16.cjs');
-  for (const field of ['scannerReview', 'pythonScannerReview'])
-    if (value[field] !== null)
+  const profilePath = 'scripts/release/source-profile-rc16.json';
+  const installed = parseTree(git('ls-tree', '-rz', target, '--', profilePath));
+  requireValue(
+    installed.get(profilePath)?.mode === '100644',
+    'Installed review profile must be a regular immutable Git file'
+  );
+  requireValue(
+    same(
+      projectThreeSlotProfile(text(git('show', `${target}:${profilePath}`)))
+        .profile,
+      value
+    ),
+    'rc.16 publication blocked: installed review profile differs from immutable Git source'
+  );
+  for (const field of ['scannerReview', 'pythonScannerReview']) {
+    if (value[field] !== null) {
       validateScannerReviewMetadata(field, value[field], { git, target });
+      const {
+        parseScannerReview,
+        scannerReviewPath,
+      } = require('./qualify-source-release-rc16.cjs');
+      verifyThreeSlotReviewBinding({
+        sourceSha: value[field].sourceCommit,
+        sha: target,
+        review: value[field],
+        git,
+        field,
+        parseNotes: parseScannerReview,
+        notesPath: scannerReviewPath,
+      });
+    }
+  }
   return value;
 }
 function verifyPreparedPublicationReview(
@@ -735,45 +781,12 @@ function verifyPreparedPublicationReview(
     'rc.16 publication blocked: scannerReview is pending and Python scanner review is pending; actual JavaScript and Python extraction and independent finite result reviews are required'
   );
   validatePreparedProfile(value, { git, target });
-  requireValue(
-    typeof git === 'function' && /^[a-f0-9]{40}$/.test(target || ''),
-    'Immutable Git target is required for scanner review metadata admission'
-  );
-  requireValue(
-    same(
-      JSON.parse(
-        text(git('show', `${target}:scripts/release/source-profile-rc16.json`))
-      ),
-      value
-    ),
-    'rc.16 publication blocked: installed review profile differs from immutable Git source'
-  );
-  const {
-    verifyThreeSlotReviewBinding,
-  } = require('./source-scanner-review-bindings-rc16.cjs');
-  const {
-    parseScannerReview,
-    scannerReviewPath,
-  } = require('./qualify-source-release-rc16.cjs');
-  for (const field of ['scannerReview', 'pythonScannerReview'])
-    verifyThreeSlotReviewBinding({
-      sourceSha: value[field].sourceCommit,
-      sha: target,
-      review: value[field],
-      git,
-      field,
-      parseNotes: parseScannerReview,
-      notesPath: scannerReviewPath,
-    });
   return { metadataAdmissionOnly: true, productionApproved: false };
 }
 function verifyPublicationReview(value = profile, context = {}) {
-  // Metadata admission preserves the owner correction; final authenticated
-  // source/result review and deliberate activation remain independently held.
-  verifyPreparedPublicationReview(value, context);
-  throw Error(
-    'rc.16 publication blocked: scannerReview is pending final authenticated JavaScript and Python evidence review and gate activation'
-  );
+  // This receipt admits only immutable review metadata. The callers still
+  // authenticate complete JavaScript/Python archives, API identities and CI.
+  return verifyPreparedPublicationReview(value, context);
 }
 
 module.exports = {

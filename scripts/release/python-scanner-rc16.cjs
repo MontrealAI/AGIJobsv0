@@ -3,6 +3,12 @@
 const assert = require('node:assert/strict');
 const { profile, parseTree } = require('./source-profile-rc16.cjs');
 const {
+  pythonReviewSchema,
+  pythonFinalProducer,
+  pythonReviewedProducer,
+  pythonReviewedProducerContext,
+} = require('./source-scanner-review-bindings-rc16.cjs');
+const {
   canonical,
   sha256,
   resultIdentity,
@@ -74,6 +80,9 @@ const reviewFields = Object.freeze([
   'tree',
   'producerRunId',
   'producerRunAttempt',
+  'producerEvent',
+  'producerHeadBranch',
+  'producerRef',
   'artifactId',
   'artifactName',
   'archiveSha256',
@@ -109,6 +118,8 @@ function normalized(value) {
 function policy() {
   const value = profile.pythonScannerPolicy;
   assert(value && typeof value === 'object', 'Python scanner policy is absent');
+  assert.equal(value.reviewSchema, pythonReviewSchema);
+  assert.deepEqual(value.reviewedProducer, pythonReviewedProducer);
   assert.equal(
     value.configPath,
     '.github/codeql/config-python-integrations.yml'
@@ -144,22 +155,20 @@ function archiveInventory(files) {
     'Python scanner archive inventory differs'
   );
 }
-function reviewedBranch(branch) {
-  return (
-    branch === 'main' ||
-    (typeof branch === 'string' &&
-      /^fix\/inherited-codeql-[A-Za-z0-9][A-Za-z0-9._-]{0,233}$/.test(branch) &&
-      !branch.includes('..') &&
-      !branch.endsWith('.') &&
-      !branch.endsWith('.lock'))
-  );
+function pythonProducerExecutionContext({ role = 'final', review } = {}) {
+  assert(['final', 'reviewed'].includes(role), 'Unknown Python producer role');
+  return role === 'final'
+    ? pythonFinalProducer
+    : pythonReviewedProducerContext(review);
 }
+
 function producerIdentity({
   sha,
   tree,
   producerRun,
   git,
-  sourceRole = 'final',
+  role = 'final',
+  review,
 }) {
   identity(sha, 'source identity');
   identity(tree, 'tree identity');
@@ -175,27 +184,33 @@ function producerIdentity({
   );
   positive(producerRun?.id, 'producer run');
   positive(producerRun?.run_attempt, 'producer attempt');
-  assert(
-    sourceRole === 'final' || sourceRole === 'reviewed',
-    'Python scanner source role differs'
-  );
-  assert(
-    sourceRole === 'reviewed'
-      ? reviewedBranch(producerRun.head_branch)
-      : producerRun.head_branch === 'main',
-    'Python scanner producer branch is not admitted for its source role'
-  );
   const expected = policy();
+  const execution = pythonProducerExecutionContext({ role, review });
+  if (role === 'reviewed') {
+    assert.equal(review.sourceCommit, sha, 'Reviewed Python source differs');
+    assert.equal(review.tree, tree, 'Reviewed Python source tree differs');
+    assert.equal(
+      review.producerRunId,
+      producerRun.id,
+      'Reviewed Python run differs'
+    );
+    assert.equal(
+      review.producerRunAttempt,
+      producerRun.run_attempt,
+      'Reviewed Python attempt differs'
+    );
+  }
   assert(
     producerRun.head_sha === sha &&
       producerRun.path === expected.workflowPath &&
-      producerRun.event === 'push' &&
+      producerRun.event === execution.event &&
+      producerRun.head_branch === execution.headBranch &&
       producerRun.repository?.full_name === 'MontrealAI/AGIJobsv0' &&
       producerRun.status === 'completed' &&
       producerRun.conclusion === 'success',
-    'Python scanner requires the authenticated successful source-bound producer'
+    'Python scanner requires the authenticated successful exact-main producer'
   );
-  return expected;
+  return { ...expected, execution };
 }
 
 function expectedPythonSources(git, sha) {
@@ -338,7 +353,7 @@ function analysis(document) {
 function verifyPythonScannerProducerArchive(
   files,
   read,
-  { sha, tree, producerRun, git, sourceRole = 'final' } = {}
+  { sha, tree, producerRun, git, role = 'final', review } = {}
 ) {
   archiveInventory(files);
   const expected = producerIdentity({
@@ -346,7 +361,8 @@ function verifyPythonScannerProducerArchive(
     tree,
     producerRun,
     git,
-    sourceRole,
+    role,
+    review,
   });
   assert.equal(typeof read, 'function', 'Python archive reader is absent');
   const captured = new Map(
@@ -370,8 +386,8 @@ function verifyPythonScannerProducerArchive(
       before.tree === tree &&
       before.run === producerRun.id &&
       before.attempt === producerRun.run_attempt &&
-      before.event === 'push' &&
-      before.ref === 'refs/heads/' + producerRun.head_branch &&
+      before.event === expected.execution.event &&
+      before.ref === expected.execution.ref &&
       before.actualExtractionRequiresSARIF === true,
     'Python source scope differs from the authenticated producer'
   );
@@ -485,6 +501,10 @@ function verifyPythonScannerProducerArchive(
       tree,
       runId: producerRun.id,
       runAttempt: producerRun.run_attempt,
+      role,
+      event: expected.execution.event,
+      headBranch: expected.execution.headBranch,
+      ref: expected.execution.ref,
       configPath: expected.configPath,
       configSha256: expected.configSha256,
       workflowPath: expected.workflowPath,
@@ -512,28 +532,39 @@ function verifyPythonScannerArchive(files, read, options = {}) {
     git,
     artifact,
     archiveSha256,
-    sourceRole = 'final',
+    role = 'final',
   } = options;
+  const review =
+    options.review === undefined ? profile.pythonScannerReview : options.review;
   const expected = producerIdentity({
     sha,
     tree,
     producerRun,
     git,
-    sourceRole,
+    role,
+    review,
   });
   assert(
     hashPattern.test(archiveSha256 || ''),
     'Actual Python archive SHA256 is required'
   );
   const artifactName = `python-codeql-security-report-${sha}-${producerRun.id}-${producerRun.run_attempt}`;
-  validateProducer({
-    artifact,
-    run: producerRun,
-    sha,
-    workflow: expected.workflowPath,
-    name: artifactName,
-    sourceRole,
-  });
+  if (role === 'final') {
+    validateProducer({
+      artifact,
+      run: producerRun,
+      sha,
+      workflow: expected.workflowPath,
+      name: artifactName,
+    });
+  } else {
+    require('./source-python-evidence-rc16.cjs').pythonReviewedScannerReference(
+      producerRun,
+      artifact,
+      sha,
+      review
+    );
+  }
   assert.equal(
     artifact.digest,
     'sha256:' + archiveSha256,
@@ -548,8 +579,6 @@ function verifyPythonScannerArchive(files, read, options = {}) {
     (name) => captured.get(name),
     options
   );
-  const review =
-    options.review === undefined ? profile.pythonScannerReview : options.review;
   exactFields(
     review,
     reviewFields,
@@ -557,7 +586,7 @@ function verifyPythonScannerArchive(files, read, options = {}) {
   );
   assert.equal(
     review.schema,
-    'agijobsv0/codeql-python-review/1',
+    pythonReviewSchema,
     'Python review schema differs'
   );
   verifyPythonScannerReviewBinding({ sha, review, git });
@@ -586,7 +615,7 @@ function verifyPythonScannerArchive(files, read, options = {}) {
       hashPattern.test(review.rawRecords[name] || ''),
       'Python review raw record digest is absent'
     );
-  if (review.sourceCommit === sha) {
+  if (role === 'reviewed') {
     assert.equal(review.producerRunId, producerRun.id);
     assert.equal(review.producerRunAttempt, producerRun.run_attempt);
     assert.equal(review.artifactId, artifact.id);
@@ -677,6 +706,9 @@ function verifyPythonScannerArchive(files, read, options = {}) {
     reviewTree: review.tree,
     reviewEvidence: review.reviewEvidence,
     reviewedProducer: {
+      event: review.producerEvent,
+      headBranch: review.producerHeadBranch,
+      ref: review.producerRef,
       source: review.sourceCommit,
       tree: review.tree,
       runId: review.producerRunId,
@@ -690,6 +722,7 @@ function verifyPythonScannerArchive(files, read, options = {}) {
 }
 
 module.exports = {
+  pythonProducerExecutionContext,
   expectedPythonSources,
   verifyPythonScannerProducerArchive,
   verifyPythonScannerArchive,

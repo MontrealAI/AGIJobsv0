@@ -140,8 +140,10 @@ original archive and original scanner configuration remain pinned and unchanged.
 The record below deliberately remains null. A future reviewed record may select
 an exact feature-complete source S1 only after its complete raw scan and authentic
 Advanced Security result are independently assessed. Installing that record may
-change only this block in these notes; every executable, producer, policy and
-source byte stays at S1. A fresh final-source main scan must have identical tool,
+change only the three independently validated review values: this exact notes
+block and the JavaScript/Python records in the finite profile. Their bounded
+monotonic installation preserves every other byte and regular-file mode;
+metadata admission alone is not publication approval. A fresh final-source main scan must have identical tool,
 queries, extraction and complete result identities. Both original reviewed and
 final raw archives stay with the release. No environment variable bypasses this
 review, and pending or failed authentic checks still block publication.
@@ -226,3 +228,24 @@ composition must still qualify before any gate activation. Authentic final-sourc
 scans/results,
 Advanced Security reconciliation and exact-head hosted/native/connected checks
 remain pending. This source convergence is not a qualification or release.
+
+## Truthful JavaScript quality review — pending
+
+The separately versioned `agijobsv0/nonsecurity-quality-review/1` contract permits
+an explicitly reviewed `Acknowledged nonsecurity quality` disposition only for
+`js/unused-local-variable` and `js/useless-assignment-to-local`. An accurate
+quality diagnostic is not labeled a false positive. Each individual retained
+case must bind the complete raw-result identity, immutable source blob, trusted
+query component, rule metadata and query selection. It must include a
+case-specific assessment of behavior and side effects, independent review
+references and immutable source or actual behavior-test evidence. References
+are commitments for the independent reviewer to inspect; their syntax does not
+establish that the behavior is acceptable.
+
+Neither a rule name nor a lower severity admits a result automatically. Every
+other JavaScript rule retains the existing strict adjudication, Python's policy
+is unchanged, and every raw result remains in the full compared multiset. The
+original 96-result ledger and rc.15 source stay immutable. This contract does
+not waive authentic Advanced Security success or any archive, API, extraction,
+source, main-push or publication check. Both actual profile review records and
+the notes review remain null until genuine evidence is independently reviewed.

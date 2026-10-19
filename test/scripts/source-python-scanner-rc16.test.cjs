@@ -18,7 +18,13 @@ const {
   expectedPythonSources,
   verifyPythonScannerProducerArchive,
   verifyPythonScannerReviewBinding,
+  pythonProducerExecutionContext,
 } = require('../../scripts/release/python-scanner-rc16.cjs');
+const pendingProfile = () => ({
+  ...structuredClone(profile),
+  scannerReview: null,
+  pythonScannerReview: null,
+});
 const git = (...args) =>
   execFileSync(
     'git',
@@ -50,8 +56,8 @@ test('Python evidence refuses incomplete archives and missing external identitie
   );
 });
 test('both scanner reviews remain pending and publication fails closed', () => {
-  assert.equal(profile.scannerReview, null);
-  assert.equal(profile.pythonScannerReview, null);
+  assert.equal(pendingProfile().scannerReview, null);
+  assert.equal(pendingProfile().pythonScannerReview, null);
   assert.throws(
     () =>
       verifyPythonScannerReviewBinding({
@@ -61,7 +67,10 @@ test('both scanner reviews remain pending and publication fails closed', () => {
       }),
     /review/i
   );
-  assert.throws(() => verifyPublicationReview(), /publication blocked/);
+  assert.throws(
+    () => verifyPublicationReview(pendingProfile()),
+    /publication blocked/
+  );
 });
 
 // These records exercise Git/profile metadata installation only. They are not
@@ -77,7 +86,10 @@ function reviewMetadataFixture() {
     reviewEvidence: [SYNTHETIC_REVIEW_METADATA_ONLY_NOT_SCAN_EVIDENCE],
   };
   const py = {
-    schema: 'agijobsv0/codeql-python-review/1',
+    schema: 'agijobsv0/codeql-python-review/2',
+    producerEvent: 'push',
+    producerHeadBranch: 'fix/inherited-codeql-ti-final-rc16-20261019',
+    producerRef: 'refs/heads/fix/inherited-codeql-ti-final-rc16-20261019',
     sourceCommit: source,
     tree,
     producerRunId: 1000000000000001,
@@ -196,8 +208,8 @@ test('synthetic review metadata permits simultaneous installation and both langu
       { sha: final, parents: [first], profile: both },
     ]);
   }
-  assert.equal(profile.scannerReview, null);
-  assert.equal(profile.pythonScannerReview, null);
+  assert.equal(pendingProfile().scannerReview, null);
+  assert.equal(pendingProfile().pythonScannerReview, null);
 });
 test('synthetic review metadata permits profile-only merge parents while preserving installed records', () => {
   const f = reviewMetadataFixture(),
@@ -328,7 +340,7 @@ test('synthetic dual-review lifecycle admits only installed source-bound metadat
   // admission only. Both actual archive validators and hosted checks remain
   // separate mandatory gates, and real profile records stay null.
   const f = reviewMetadataFixture();
-  f.base = structuredClone(profile);
+  f.base = pendingProfile();
   const first = 'b'.repeat(40),
     final = 'c'.repeat(40);
   const installed = {
@@ -336,7 +348,10 @@ test('synthetic dual-review lifecycle admits only installed source-bound metadat
     scannerReview: f.js,
     pythonScannerReview: f.py,
   };
-  assert.throws(() => verifyPublicationReview(profile), /blocked|pending/);
+  assert.throws(
+    () => verifyPublicationReview(pendingProfile()),
+    /blocked|pending/
+  );
   for (const slot of [null, 'scannerReview', 'pythonScannerReview']) {
     const nodes = [];
     if (slot)
@@ -400,6 +415,55 @@ test('synthetic dual-review lifecycle admits only installed source-bound metadat
       verifyPublicationReview(changed, { git, target: final })
     );
   }
-  assert.equal(profile.scannerReview, null);
-  assert.equal(profile.pythonScannerReview, null);
+  assert.equal(pendingProfile().scannerReview, null);
+  assert.equal(pendingProfile().pythonScannerReview, null);
+});
+
+test('inert Python producer contexts preserve approved premerge S1 and mandatory main S2 roles', () => {
+  const f = reviewMetadataFixture();
+  assert.deepEqual(pythonProducerExecutionContext(), {
+    event: 'push',
+    headBranch: 'main',
+    ref: 'refs/heads/main',
+  });
+  assert.deepEqual(
+    pythonProducerExecutionContext({ role: 'final', review: f.py }),
+    { event: 'push', headBranch: 'main', ref: 'refs/heads/main' }
+  );
+  assert.deepEqual(
+    pythonProducerExecutionContext({ role: 'reviewed', review: f.py }),
+    profile.pythonScannerPolicy.reviewedProducer
+  );
+  for (const mutate of [
+    (record) => {
+      record.producerEvent = 'workflow_dispatch';
+    },
+    (record) => {
+      record.producerHeadBranch = 'main';
+    },
+    (record) => {
+      record.producerHeadBranch += '-other';
+    },
+    (record) => {
+      record.producerRef = 'refs/heads/main';
+    },
+    (record) => {
+      record.schema = 'agijobsv0/codeql-python-review/1';
+    },
+  ]) {
+    const record = structuredClone(f.py);
+    mutate(record);
+    assert.throws(() =>
+      pythonProducerExecutionContext({ role: 'reviewed', review: record })
+    );
+  }
+  assert.throws(() => pythonProducerExecutionContext({ role: 'reviewed' }));
+  assert.throws(() =>
+    pythonProducerExecutionContext({ role: 'arbitrary', review: f.py })
+  );
+});
+
+test('the live installed review profile is independently bound to its actual immutable Git source', () => {
+  const target = git('rev-parse', 'HEAD').trim();
+  assert.equal(validateProfile(profile, { git, target }), profile);
 });

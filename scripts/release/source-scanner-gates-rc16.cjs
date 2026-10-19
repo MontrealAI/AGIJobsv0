@@ -21,6 +21,8 @@ const {
   verifyScannerReviewInstallBinding,
   validateScannerReviewMetadata,
   assertNoScannerErrorDiagnostics,
+  javascriptQualityPolicy,
+  validateJavascriptQualityMetadata,
 } = require('./source-scanner-review-bindings-rc16.cjs');
 
 const ownPath = '.github/workflows/source-release-rc16.yml';
@@ -309,12 +311,20 @@ function verifyScannerResults(
   const reviewed = review.results
     .map((item) => {
       assert(
-        item.disposition === 'Demonstrably false positive' &&
+        (item.disposition === 'Demonstrably false positive' ||
+          item.disposition === javascriptQualityPolicy.disposition) &&
           typeof item.justification === 'string' &&
           item.justification.trim() &&
           item.regressionEvidence?.length,
         'Every retained scanner result needs a complete disposition'
       );
+      if (item.disposition === javascriptQualityPolicy.disposition)
+        verifyAcknowledgedNonsecurityQuality(item, {
+          run,
+          baseline,
+          review,
+          git,
+        });
       return {
         ruleId: item.ruleId,
         path: item.path,
@@ -336,6 +346,105 @@ function verifyScannerResults(
     reviewEvidence: review.reviewEvidence,
     completeNonOverlay: true,
   };
+}
+
+function verifyAcknowledgedNonsecurityQuality(
+  item,
+  { run, baseline, review, git } = {}
+) {
+  assert.deepEqual(
+    profile.scannerPolicy.qualityReview,
+    javascriptQualityPolicy,
+    'Nonsecurity quality review policy differs'
+  );
+  assert.equal(
+    typeof git,
+    'function',
+    'Quality review requires immutable source bytes'
+  );
+  const quality = validateJavascriptQualityMetadata(
+    item,
+    review?.sourceCommit,
+    git
+  );
+  const matching = (run?.results || []).filter(
+    (raw) => sha256(canonical(raw)) === item.resultSha256
+  );
+  assert(
+    matching.length > 0,
+    'Quality review does not bind an actual raw result'
+  );
+  for (const raw of matching) {
+    assert.deepEqual(
+      resultIdentity(raw),
+      {
+        ruleId: item.ruleId,
+        path: item.path,
+        region: item.region,
+        resultSha256: item.resultSha256,
+      },
+      'Quality review full raw result identity differs'
+    );
+    const reference = raw.rule;
+    assert(
+      !Object.hasOwn(raw, 'ruleIndex'),
+      'Quality result has an unsupported competing driver-rule reference'
+    );
+    exactFields(
+      reference,
+      ['id', 'index', 'toolComponent'],
+      'Ambiguous quality rule reference'
+    );
+    exactFields(
+      reference.toolComponent,
+      ['index'],
+      'Ambiguous quality query component reference'
+    );
+    assert(
+      reference?.id === item.ruleId &&
+        Number.isSafeInteger(reference.index) &&
+        reference.index >= 0 &&
+        Number.isSafeInteger(reference.toolComponent?.index) &&
+        reference.toolComponent.index >= 0,
+      'Quality result must identify its actual trusted query component and rule'
+    );
+    const index = reference.toolComponent.index;
+    const component = run.tool?.extensions?.[index];
+    const trusted = baseline?.tool?.extensions?.[index];
+    assert(
+      component?.name === 'codeql/javascript-queries' &&
+        component.semanticVersion &&
+        canonical(component) === canonical(trusted),
+      'Quality query component differs from the trusted complete rule inventory'
+    );
+    const rule = component.rules?.[reference.index];
+    assert(
+      rule?.id === item.ruleId &&
+        rule.name === item.ruleId &&
+        rule.properties?.id === item.ruleId &&
+        rule.properties.kind === 'problem' &&
+        ['quality', 'maintainability', 'useless-code'].every((tag) =>
+          rule.properties.tags?.includes(tag)
+        ) &&
+        !rule.properties.tags.some((tag) => /^security(?:\/|$)/i.test(tag)) &&
+        !Object.hasOwn(rule.properties, 'security-severity'),
+      'Quality rule is missing its trusted nonsecurity query metadata'
+    );
+    assert.equal(sha256(canonical(rule)), quality.ruleMetadataSha256);
+    assert.equal(sha256(canonical(component)), quality.queryComponentSha256);
+    assert.deepEqual(
+      run.properties?.codeqlConfigSummary,
+      baseline.properties?.codeqlConfigSummary,
+      'Quality query selection differs from the trusted scanner configuration'
+    );
+    assert.equal(
+      sha256(canonical(run.properties?.codeqlConfigSummary)),
+      quality.codeqlConfigSummarySha256
+    );
+  }
+  // The complete result multiset and independent source/result review remain
+  // mandatory; this acknowledgement is never scanner or publication approval.
+  return { metadataAcknowledgementOnly: true, productionApproved: false };
 }
 
 function scannerArchiveInventory(files) {
@@ -643,6 +752,7 @@ module.exports = {
   verifyScannerArchive,
   verifyScannerProducerArchive,
   verifyScannerResults,
+  verifyAcknowledgedNonsecurityQuality,
   expectedReceiverSources,
   verifyScannerReviewBinding,
   verifyScannerReviewInstallBinding,

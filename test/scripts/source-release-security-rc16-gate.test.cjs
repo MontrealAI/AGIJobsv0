@@ -509,10 +509,40 @@ test('compiler source admits only actual Git installs of validated profile revie
     const blob = command(root, ['hash-object', '-w', '--stdin'], bytes).trim();
     git('update-index', '--add', '--cacheinfo', `${mode},${blob},${name}`);
   };
+  const profilePath = 'scripts/release/source-profile-rc16.json';
+  const liveProfile = git('show', `${parent}:${profilePath}`);
+  const liveNotes = git('show', `${parent}:${scannerReviewPath}`);
+  const liveGit = (...args) => command(sourceRoot, args);
+  const {
+    validatePreparedProfile,
+  } = require('../../scripts/release/source-profile-rc16.cjs');
+  validatePreparedProfile(JSON.parse(liveProfile), {
+    git: liveGit,
+    target: parent,
+  });
+  const liveReview = parseScannerReview(liveNotes);
+  if (liveReview !== null)
+    verifyScannerReviewSource({
+      git: liveGit,
+      sha: parent,
+      review: liveReview,
+    });
+  const {
+    projectThreeSlotProfile,
+  } = require('../../scripts/release/source-scanner-review-bindings-rc16.cjs');
+  // Only the disposable index is made pending; the real installed records
+  // above still pass their strict immutable-source validators when present.
+  put(profilePath, projectThreeSlotProfile(liveProfile).projection);
+  put(
+    scannerReviewPath,
+    liveNotes.replace(
+      /<!-- rc16-scanner-review\n[\s\S]*?\n-->/,
+      '<!-- rc16-scanner-review\nnull\n-->'
+    )
+  );
   const source = commit(parent);
   const tree = git('rev-parse', source + '^{tree}').trim();
   const review = inertScannerReviewMetadata(source, tree);
-  const profilePath = 'scripts/release/source-profile-rc16.json';
   const beforeProfile = git('show', `${source}:${profilePath}`);
   const beforeNotes = git('show', `${source}:${scannerReviewPath}`);
   assert.equal(parseScannerReview(beforeNotes), null);
@@ -811,6 +841,29 @@ test('both real entrypoints reject a null notes record before network or publica
   );
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
   const repository = path.resolve(__dirname, '../..');
+  const liveGit = (...args) =>
+    execFileSync('git', ['--no-replace-objects', '-C', repository, ...args], {
+      encoding: 'utf8',
+      maxBuffer: 32 * 1024 * 1024,
+    });
+  const target = liveGit('rev-parse', 'HEAD').trim();
+  const {
+    profile: liveProfile,
+    validatePreparedProfile,
+  } = require('../../scripts/release/source-profile-rc16.cjs');
+  assert.equal(
+    validatePreparedProfile(liveProfile, { git: liveGit, target }),
+    liveProfile
+  );
+  const liveReview = parseScannerReview(
+    fs.readFileSync(path.join(repository, scannerReviewPath), 'utf8')
+  );
+  if (liveReview !== null)
+    verifyScannerReviewSource({
+      git: liveGit,
+      sha: target,
+      review: liveReview,
+    });
   for (const name of [
     'scripts/release/qualify-source-release-rc16.cjs',
     'scripts/release/publish-source-release-rc16.cjs',
@@ -832,6 +885,19 @@ test('both real entrypoints reject a null notes record before network or publica
     fs.mkdirSync(path.dirname(target), { recursive: true });
     fs.copyFileSync(path.join(repository, name), target);
   }
+  const pendingProfilePath = path.join(
+    root,
+    'scripts/release/source-profile-rc16.json'
+  );
+  const pendingProfile = JSON.parse(
+    fs.readFileSync(pendingProfilePath, 'utf8')
+  );
+  pendingProfile.scannerReview = null;
+  pendingProfile.pythonScannerReview = null;
+  fs.writeFileSync(
+    pendingProfilePath,
+    JSON.stringify(pendingProfile, null, 2) + '\n'
+  );
   const notes = path.join(root, scannerReviewPath);
   fs.mkdirSync(path.dirname(notes), { recursive: true });
   fs.writeFileSync(notes, '<!-- rc16-scanner-review\nnull\n-->\n');

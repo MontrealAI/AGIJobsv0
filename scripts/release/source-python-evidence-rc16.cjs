@@ -6,6 +6,11 @@ const os = require('node:os');
 const path = require('node:path');
 const { createHash } = require('node:crypto');
 const { execFileSync } = require('node:child_process');
+const {
+  pythonReviewSchema,
+  pythonFinalProducer,
+  pythonReviewedProducerContext,
+} = require('./source-scanner-review-bindings-rc16.cjs');
 
 const repository = 'MontrealAI/AGIJobsv0';
 const repositoryId = 1031364470;
@@ -46,31 +51,7 @@ function validatePythonScannerReference(ref, sha) {
   return ref;
 }
 
-function reviewedBranch(branch) {
-  return (
-    branch === 'main' ||
-    (typeof branch === 'string' &&
-      /^fix\/inherited-codeql-[A-Za-z0-9][A-Za-z0-9._-]{0,233}$/.test(branch) &&
-      !branch.includes('..') &&
-      !branch.endsWith('.') &&
-      !branch.endsWith('.lock'))
-  );
-}
-
-function observationBranch(run, sourceRole) {
-  assert(
-    sourceRole === 'final' || sourceRole === 'reviewed',
-    'Python evidence source role differs'
-  );
-  const branch = run?.head_branch;
-  assert(
-    sourceRole === 'reviewed' ? reviewedBranch(branch) : branch === 'main',
-    'Python evidence producer branch is not admitted for its source role'
-  );
-  return branch;
-}
-
-function validRun(run, ref, sha, branch = 'main') {
+function validRun(run, ref, sha, expected = pythonFinalProducer) {
   return (
     run?.id === ref.runId &&
     run.run_attempt === ref.runAttempt &&
@@ -81,14 +62,14 @@ function validRun(run, ref, sha, branch = 'main') {
     run.repository.id === repositoryId &&
     run.head_repository?.full_name === repository &&
     run.head_repository.id === repositoryId &&
-    run.event === 'push' &&
-    run.head_branch === branch &&
+    run.event === expected.event &&
+    run.head_branch === expected.headBranch &&
     run.status === 'completed' &&
     run.conclusion === 'success'
   );
 }
 
-function validArtifact(artifact, ref, sha, branch = 'main') {
+function validArtifact(artifact, ref, sha, expected = pythonFinalProducer) {
   return (
     artifact?.id === ref.artifactId &&
     artifact.name === ref.artifactName &&
@@ -98,7 +79,7 @@ function validArtifact(artifact, ref, sha, branch = 'main') {
     artifact.size_in_bytes <= 128 * 1024 * 1024 &&
     artifact.workflow_run?.id === ref.runId &&
     artifact.workflow_run.head_sha === sha &&
-    artifact.workflow_run.head_branch === branch &&
+    artifact.workflow_run.head_branch === expected.headBranch &&
     artifact.workflow_run.repository_id === repositoryId &&
     artifact.workflow_run.head_repository_id === repositoryId
   );
@@ -122,12 +103,13 @@ function pythonScannerReference(run, artifact, sha) {
 
 function pythonScannerReviewReference(review) {
   assert(
-    review?.schema === 'agijobsv0/codeql-python-review/1' &&
+    review?.schema === pythonReviewSchema &&
       gitIdentity(review.sourceCommit) &&
       gitIdentity(review.tree) &&
       /^[a-f0-9]{64}$/.test(review.archiveSha256 || ''),
     'Python evidence requires the installed source-bound review'
   );
+  pythonReviewedProducerContext(review);
   exactFields(
     review.rawRecords,
     archiveFiles,
@@ -188,18 +170,43 @@ async function pages(api, prefix, key) {
   throw Error('Python producer pagination exceeds its bound');
 }
 
-async function readPythonScannerObservation(
-  api,
-  ref,
-  sha,
-  { sourceRole = 'final' } = {}
-) {
+function reviewedExpectation(review, ref, sha) {
+  const expected = pythonReviewedProducerContext(review);
+  assert.equal(
+    review.sourceCommit,
+    sha,
+    'Reviewed Python context source differs'
+  );
+  assert.deepEqual(
+    pythonScannerReviewReference(review),
+    ref,
+    'Reviewed Python producer reference differs'
+  );
+  return expected;
+}
+
+function pythonReviewedScannerReference(run, artifact, sha, review) {
+  const ref = pythonScannerReviewReference(review);
+  const expected = reviewedExpectation(review, ref, sha);
+  assert(
+    validRun(run, ref, sha, expected) &&
+      validArtifact(artifact, ref, sha, expected),
+    'Reviewed Python archive producer differs from its approved source and branch'
+  );
+  return ref;
+}
+
+async function readPythonScannerObservation(api, ref, sha, { review } = {}) {
   assert.equal(
     typeof api,
     'function',
     'Authenticated Python evidence API is required'
   );
   validatePythonScannerReference(ref, sha);
+  const expected =
+    review === undefined
+      ? pythonFinalProducer
+      : reviewedExpectation(review, ref, sha);
   const [currentRun, run, artifact, runs, artifacts] = await Promise.all([
     api('GET', `actions/runs/${ref.runId}`),
     api('GET', `actions/runs/${ref.runId}/attempts/${ref.runAttempt}`),
@@ -211,12 +218,11 @@ async function readPythonScannerObservation(
     ),
     pages(api, `actions/runs/${ref.runId}/artifacts`, 'artifacts'),
   ]);
-  const branch = observationBranch(currentRun, sourceRole);
   assert(
-    validRun(currentRun, ref, sha, branch) &&
-      validRun(run, ref, sha, branch) &&
+    validRun(currentRun, ref, sha, expected) &&
+      validRun(run, ref, sha, expected) &&
       currentRun.run_number === run.run_number,
-    'Python run is stale, foreign, pending, unsuccessful or on another branch'
+    'Python run is stale, foreign, pending, unsuccessful or not a main push'
   );
   assert(
     runs.every(
@@ -229,13 +235,17 @@ async function readPythonScannerObservation(
     'Foreign-head or malformed Python workflow inventory'
   );
   const ordered = runs
-    .filter((item) => item.event === 'push' && item.head_branch === branch)
+    .filter(
+      (item) =>
+        item.event === expected.event &&
+        item.head_branch === expected.headBranch
+    )
     .sort(
       (a, b) => b.run_number - a.run_number || b.run_attempt - a.run_attempt
     );
   const latestRun = ordered[0];
   assert(
-    validRun(latestRun, ref, sha, branch) &&
+    validRun(latestRun, ref, sha, expected) &&
       latestRun.run_number === run.run_number &&
       !(
         ordered[1]?.run_number === latestRun.run_number &&
@@ -245,7 +255,7 @@ async function readPythonScannerObservation(
   );
   const matches = artifacts.filter((item) => item.name === ref.artifactName);
   assert(
-    matches.length === 1 && validArtifact(artifact, ref, sha, branch),
+    matches.length === 1 && validArtifact(artifact, ref, sha, expected),
     'Python artifact identity differs from the authenticated producer'
   );
   assert.deepEqual(
@@ -265,7 +275,7 @@ async function readPythonScannerObservation(
   };
 }
 
-function validateObservation(observation, sha, { sourceRole = 'final' } = {}) {
+function validateObservation(observation, sha, { review } = {}) {
   assert(
     observation?.schema === 'agijobsv0/python-codeql-observation/1' &&
       observation.repository === repository &&
@@ -273,15 +283,18 @@ function validateObservation(observation, sha, { sourceRole = 'final' } = {}) {
     'Python observation source or schema differs'
   );
   const ref = validatePythonScannerReference(observation.producer, sha);
-  const branch = observationBranch(observation.currentRun, sourceRole);
+  const expected =
+    review === undefined
+      ? pythonFinalProducer
+      : reviewedExpectation(review, ref, sha);
   assert(
-    validRun(observation.currentRun, ref, sha, branch) &&
-      validRun(observation.run, ref, sha, branch) &&
-      validRun(observation.latestRun, ref, sha, branch) &&
+    validRun(observation.currentRun, ref, sha, expected) &&
+      validRun(observation.run, ref, sha, expected) &&
+      validRun(observation.latestRun, ref, sha, expected) &&
       observation.currentRun.run_number === observation.run.run_number &&
       observation.latestRun.run_number === observation.run.run_number &&
-      validArtifact(observation.artifact, ref, sha, branch),
-    'Python observation does not retain a successful current source-bound producer'
+      validArtifact(observation.artifact, ref, sha, expected),
+    'Python observation does not retain a successful current exact-main producer'
   );
   return ref;
 }
@@ -301,9 +314,7 @@ function pythonEvidenceContexts({
   const reviewedRef = pythonScannerReviewReference(review);
   const finalRef = validateObservation(finalObservation, sha);
   assert.deepEqual(
-    validateObservation(reviewedObservation, review.sourceCommit, {
-      sourceRole: 'reviewed',
-    }),
+    validateObservation(reviewedObservation, review.sourceCommit, { review }),
     reviewedRef,
     'Reviewed Python observation differs from the installed review producer'
   );
@@ -320,7 +331,7 @@ function pythonEvidenceContexts({
   git('merge-base', '--is-ancestor', review.sourceCommit, sha);
   return {
     reviewed: {
-      sourceRole: 'reviewed',
+      role: 'reviewed',
       sha: review.sourceCommit,
       tree: review.tree,
       producerRun: reviewedObservation.run,
@@ -330,7 +341,7 @@ function pythonEvidenceContexts({
       git,
     },
     final: {
-      sourceRole: 'final',
+      role: 'final',
       sha,
       tree,
       producerRun: finalObservation.run,
@@ -659,6 +670,7 @@ function verifyPythonEvidenceArchives(options) {
 }
 
 module.exports = {
+  pythonReviewedScannerReference,
   pythonScannerReference,
   pythonScannerReviewReference,
   validatePythonScannerReference,

@@ -26,14 +26,13 @@ async function main() {
     dispute,
     policy,
     identity,
-    feePool,
-    audit;
-  let owner, employer, agent, treasury, auditor;
+    feePool;
+  let owner, employer, agent;
   const reward = 100,
     stake = 200;
   const disputeFee = 1_000_000_000_000_000_000n;
 
-  [owner, employer, agent, treasury, auditor] = await ethers.getSigners();
+  [owner, employer, agent] = await ethers.getSigners();
   const artifact = await artifacts.readArtifact(
     'contracts/test/MockERC20.sol:MockERC20'
   );

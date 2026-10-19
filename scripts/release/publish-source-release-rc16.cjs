@@ -330,8 +330,10 @@ function verifyJavaScriptAndNativeAssets({
       canonical(profile.pythonScannerPolicy) ||
     canonical(provenance.sourceProfile?.pythonScannerRequiredPaths) !==
       canonical(profile.pythonScannerRequiredPaths) ||
-    provenance.sourceProfile?.pythonScannerReview !== null ||
-    provenance.sourceProfile?.scannerReview !== null ||
+    canonical(provenance.sourceProfile?.pythonScannerReview) !==
+      canonical(profile.pythonScannerReview) ||
+    canonical(provenance.sourceProfile?.scannerReview) !==
+      canonical(profile.scannerReview) ||
     provenance.sourceProfile?.productionApproved !== false
   )
     throw Error('Remote finite source profile differs');
@@ -915,6 +917,7 @@ async function readScannerObservation(api, producer, sha, finalSource = false) {
       artifact.digest === producer.githubDigest &&
       artifact.workflow_run?.id === producer.runId &&
       artifact.workflow_run?.head_sha === sha &&
+      artifact.workflow_run?.head_branch === producer.headBranch &&
       canonical(matches[0]) === canonical(artifact),
     'Scanner artifact identity differs from authenticated inventory'
   );
@@ -1531,6 +1534,117 @@ async function main() {
       throw Error(`GitHub ${method} ${resource}: HTTP ${response.status}`);
     return response.json();
   };
+  // Local preflight and remote readback use the same authenticated evidence
+  // path. Installed review metadata alone cannot reserve a release tag.
+  const verifyEvidence = async (downloaded, draft) => {
+    assertPinnedAlphaCheckout(process.cwd(), sha);
+    const compiler = JSON.parse(
+      fs.readFileSync(path.join(downloaded, 'compiler-provenance.json'), 'utf8')
+    );
+    const artifactId = producerId(compiler.artifactId);
+    const runId = producerId(compiler.runId);
+    const runAttempt = producerId(compiler.runAttempt);
+    const provenance = JSON.parse(
+      fs.readFileSync(path.join(downloaded, 'provenance.json'), 'utf8')
+    );
+    const [compilerArtifact, compilerRun, codeql, finalCodeqlChecks] =
+      await Promise.all([
+        api('GET', `actions/artifacts/${artifactId}`),
+        api('GET', `actions/runs/${runId}/attempts/${runAttempt}`),
+        readReviewedCodeql(api, provenance.reviewedSourceCodeql),
+        readLatestCodeql(api, sha),
+      ]);
+    const scannerProof = JSON.parse(
+      fs.readFileSync(path.join(downloaded, 'codeql-provenance.json'))
+    );
+    const [finalObservation, reviewedObservation] = await Promise.all([
+      readScannerObservation(api, scannerProof.final, sha, true),
+      readScannerObservation(
+        api,
+        scannerProof.reviewed,
+        scannerReview.sourceSha
+      ),
+    ]);
+    const native = JSON.parse(
+      fs.readFileSync(path.join(downloaded, 'native-provenance.json'))
+    );
+    const pythonScanner = JSON.parse(
+      fs.readFileSync(path.join(downloaded, 'python-codeql-provenance.json'))
+    );
+    const {
+      readPythonScannerObservation,
+    } = require('./source-python-evidence-rc16.cjs');
+    const [
+      nativeArtifact,
+      nativeRun,
+      pythonFinalObservation,
+      pythonReviewedObservation,
+    ] = await Promise.all([
+      api('GET', `actions/artifacts/${producerId(native.artifactId)}`),
+      api(
+        'GET',
+        `actions/runs/${producerId(native.runId)}/attempts/${producerId(
+          native.runAttempt
+        )}`
+      ),
+      readPythonScannerObservation(api, pythonScanner.final.producer, sha),
+      readPythonScannerObservation(
+        api,
+        pythonScanner.reviewed.producer,
+        profile.pythonScannerReview.sourceCommit,
+        { review: profile.pythonScannerReview }
+      ),
+    ]);
+    verifyScannerReviewSource({ git, sha });
+    verifyDownloadedAssets({
+      nativeArtifact,
+      nativeRun,
+      pythonFinalObservation,
+      pythonReviewedObservation,
+      downloaded,
+      directory,
+      draft,
+      sha,
+      tree,
+      tag,
+      repository,
+      compilerArtifact,
+      compilerRun,
+      ...codeql,
+      finalCodeqlChecks,
+      scannerEvidence: {
+        ...scannerContext,
+        finalObservation,
+        reviewedObservation,
+        finalContext: scannerExecutionContext(
+          git,
+          sha,
+          scannerProof.final,
+          scannerContext
+        ),
+        reviewedContext: scannerExecutionContext(
+          git,
+          scannerReview.sourceSha,
+          scannerProof.reviewed,
+          scannerContext
+        ),
+      },
+    });
+    const finalScannerRun = await api(
+      'GET',
+      `actions/runs/${producerId(
+        scannerProof.final.runId
+      )}/attempts/${producerId(scannerProof.final.runAttempt)}`
+    );
+    verifyIntegratedScannerArchive({
+      directory: downloaded,
+      sha,
+      tree,
+      producerRun: finalScannerRun,
+      git,
+    });
+    assertPinnedAlphaCheckout(process.cwd(), sha);
+  };
   const verify = async (draft) => {
     assertPinnedAlphaCheckout(process.cwd(), sha);
     const downloaded = fs.mkdtempSync(
@@ -1541,119 +1655,12 @@ async function main() {
     );
     try {
       cli('release', 'download', tag, '--dir', downloaded);
-      const compiler = JSON.parse(
-        fs.readFileSync(
-          path.join(downloaded, 'compiler-provenance.json'),
-          'utf8'
-        )
-      );
-      const artifactId = producerId(compiler.artifactId);
-      const runId = producerId(compiler.runId);
-      const runAttempt = producerId(compiler.runAttempt);
-      const provenance = JSON.parse(
-        fs.readFileSync(path.join(downloaded, 'provenance.json'), 'utf8')
-      );
-      const [compilerArtifact, compilerRun, codeql, finalCodeqlChecks] =
-        await Promise.all([
-          api('GET', `actions/artifacts/${artifactId}`),
-          api('GET', `actions/runs/${runId}/attempts/${runAttempt}`),
-          readReviewedCodeql(api, provenance.reviewedSourceCodeql),
-          readLatestCodeql(api, sha),
-        ]);
-      const scannerProof = JSON.parse(
-        fs.readFileSync(path.join(downloaded, 'codeql-provenance.json'))
-      );
-      const [finalObservation, reviewedObservation] = await Promise.all([
-        readScannerObservation(api, scannerProof.final, sha, true),
-        readScannerObservation(
-          api,
-          scannerProof.reviewed,
-          scannerReview.sourceSha
-        ),
-      ]);
-      const native = JSON.parse(
-        fs.readFileSync(path.join(downloaded, 'native-provenance.json'))
-      );
-      const pythonScanner = JSON.parse(
-        fs.readFileSync(path.join(downloaded, 'python-codeql-provenance.json'))
-      );
-      const {
-        readPythonScannerObservation,
-      } = require('./source-python-evidence-rc16.cjs');
-      const [
-        nativeArtifact,
-        nativeRun,
-        pythonFinalObservation,
-        pythonReviewedObservation,
-      ] = await Promise.all([
-        api('GET', `actions/artifacts/${producerId(native.artifactId)}`),
-        api(
-          'GET',
-          `actions/runs/${producerId(native.runId)}/attempts/${producerId(
-            native.runAttempt
-          )}`
-        ),
-        readPythonScannerObservation(api, pythonScanner.final.producer, sha),
-        readPythonScannerObservation(
-          api,
-          pythonScanner.reviewed.producer,
-          profile.pythonScannerReview.sourceCommit,
-          { sourceRole: 'reviewed' }
-        ),
-      ]);
-      verifyScannerReviewSource({ git, sha });
-      verifyDownloadedAssets({
-        nativeArtifact,
-        nativeRun,
-        pythonFinalObservation,
-        pythonReviewedObservation,
-        downloaded,
-        directory,
-        draft,
-        sha,
-        tree,
-        tag,
-        repository,
-        compilerArtifact,
-        compilerRun,
-        ...codeql,
-        finalCodeqlChecks,
-        scannerEvidence: {
-          ...scannerContext,
-          finalObservation,
-          reviewedObservation,
-          finalContext: scannerExecutionContext(
-            git,
-            sha,
-            scannerProof.final,
-            scannerContext
-          ),
-          reviewedContext: scannerExecutionContext(
-            git,
-            scannerReview.sourceSha,
-            scannerProof.reviewed,
-            scannerContext
-          ),
-        },
-      });
-      const finalScannerRun = await api(
-        'GET',
-        `actions/runs/${producerId(
-          scannerProof.final.runId
-        )}/attempts/${producerId(scannerProof.final.runAttempt)}`
-      );
-      verifyIntegratedScannerArchive({
-        directory: downloaded,
-        sha,
-        tree,
-        producerRun: finalScannerRun,
-        git,
-      });
-      assertPinnedAlphaCheckout(process.cwd(), sha);
+      await verifyEvidence(downloaded, draft);
     } finally {
       fs.rmSync(downloaded, { recursive: true, force: true });
     }
   };
+  await verifyEvidence(directory, true);
   const release = await publish({
     sha,
     tag,
