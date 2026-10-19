@@ -348,3 +348,19 @@ test('finalization rejects prototype keys and malformed IDs before a transaction
   assert.deepEqual(await submission.finalizeJob('42', wallet), { txHash: '0xfixture' });
   assert.equal(transactions, 1); assert.equal(saved['42'].completed, true);
 });
+
+test('audit/config descriptor checks refuse nonregular inputs without blocking on FIFOs', () => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'codeql-cli-fifo-'));
+  require('node:child_process').execFileSync('mkfifo', [path.join(directory, 'fifo.log')]);
+  const preamble = `const fs=require('fs'),path=require('path'),assert=require('assert/strict'),{createRequire}=require('module'),ts=require('typescript'),root=process.cwd();require('ts-node').register({transpileOnly:true,compilerOptions:{module:'commonjs'}});${loadTs.toString()};`;
+  const cases = [
+    `const m=loadTs('scripts/anchor-logs.ts',{dotenv:{config(){}}},{stopBefore:'\\nmain().catch',expose:['readAuditEntries']});assert.deepEqual(m.readAuditEntries(process.argv[1],1).entries,[]);`,
+    `const m=loadTs('scripts/v2/ownerConfigAudit.ts',{'../config':{}},{stopBefore:'\\nvoid main();',expose:['computeFileSummary']});m.computeFileSummary(path.join(process.argv[1],'fifo.log')).then(r=>assert.equal(r.exists,false));`,
+  ];
+  try {
+    for (const script of cases) {
+      const result = require('node:child_process').spawnSync(process.execPath, ['-e', preamble + script, directory], { cwd: root, timeout: 5000, encoding: 'utf8' });
+      assert.equal(result.status, 0, result.stderr);
+    }
+  } finally { fs.rmSync(directory, { recursive: true, force: true }); }
+});

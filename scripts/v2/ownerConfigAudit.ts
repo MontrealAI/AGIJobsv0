@@ -175,7 +175,7 @@ async function computeFileSummary(relPath: string): Promise<FileSummary> {
     ? relPath
     : path.resolve(ROOT_DIR, relPath);
   try {
-    const handle = await fs.open(absPath, 'r');
+    const handle = await fs.open(absPath, fs.constants.O_RDONLY | fs.constants.O_NONBLOCK);
     let stat;
     let data: Buffer;
     try {

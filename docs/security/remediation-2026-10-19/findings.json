@@ -1730,7 +1730,7 @@
       },
       "owner": "Codex remediation / Jobs maintainer review",
       "disposition": "Fixed",
-      "fixOrJustification": "Open no-follow once, use fstat and read on the same descriptor, and close it in finally. A pathname replacement cannot switch the bytes read after metadata validation.",
+      "fixOrJustification": "Open no-follow once, use fstat and read on the same descriptor, and close it in finally. A pathname replacement cannot switch the bytes read after metadata validation. Nonblocking open also prevents a FIFO from stalling the regular-file check; a bounded child-process regression exercises both actual CLI helpers.",
       "regressionEvidence": [
         {
           "path": "test/security/inherited-codeql.test.cjs",
@@ -1825,7 +1825,7 @@
       },
       "owner": "Codex remediation / Jobs maintainer review",
       "disposition": "Fixed",
-      "fixOrJustification": "Open once, obtain metadata and content through that handle, close in finally and report the actual content length.",
+      "fixOrJustification": "Open once, obtain metadata and content through that handle, close in finally and report the actual content length. Nonblocking open also prevents a FIFO from stalling the regular-file check; a bounded child-process regression exercises both actual CLI helpers.",
       "regressionEvidence": [
         {
           "path": "test/security/inherited-codeql.test.cjs",
@@ -2701,6 +2701,10 @@
         {
           "path": "test/security/inherited-codeql.test.cjs",
           "command": "node --test test/security/inherited-codeql.test.cjs"
+        },
+        {
+          "path": "test/gateway/stakeDeposit.test.js",
+          "command": "npx hardhat test --no-compile test/gateway/stakeDeposit.test.js"
         }
       ],
       "exposure": "Request, provider error, metadata and notification fields can contain CR/LF or terminal controls.",
@@ -4894,6 +4898,10 @@
         {
           "path": "docs/security/remediation-2026-10-19/README.md",
           "command": "npm run compile; npm run lint:ci; npm run webapp:typecheck; npx tsc --noEmit -p agent-gateway/tsconfig.json; npm run build:orchestrator; npm --prefix apps/enterprise-portal run typecheck; complete existing contracts/webapp/Pages CI"
+        },
+        {
+          "path": "test/gateway/stakeDeposit.test.js",
+          "command": "npx hardhat test --no-compile test/gateway/stakeDeposit.test.js"
         }
       ],
       "exposure": "Quality/maintainability result. No vulnerability is inferred from the scanner label. Existing behavior and guard preconditions were inspected individually.",

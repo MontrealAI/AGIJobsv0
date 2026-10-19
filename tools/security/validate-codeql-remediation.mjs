@@ -13,21 +13,26 @@ const key = result => {
   const loc = result.locations[0].physicalLocation;
   return JSON.stringify([result.ruleId, loc.artifactLocation.uri, loc.region]);
 };
-const results = [];
+const results = [], rawRuns = [];
 for (const [filename, expected] of [['original-codeql.zip', ledger.baseline.original.sha256], ['fresh-codeql.zip', ledger.baseline.fresh.sha256]]) {
   const file = path.join(directory, 'baseline', filename);
   assert.equal(sha256(fs.readFileSync(file)), expected, filename);
-  results.push(JSON.parse(execFileSync('unzip', ['-p', file, 'javascript.sarif'], { encoding: 'utf8', maxBuffer: 16 * 1024 * 1024 })).runs[0].results);
+  const run = JSON.parse(execFileSync('unzip', ['-p', file, 'javascript.sarif'], { encoding: 'utf8', maxBuffer: 16 * 1024 * 1024 })).runs[0];
+  rawRuns.push(run); results.push(run.results);
 }
 assert.deepEqual(results[0].map(key).sort(), results[1].map(key).sort(), 'fresh baseline must retain every result including duplicates');
 assert.equal(results[0].length, 96);
 assert.equal(ledger.findings.length, 96);
 const allowed = new Set(['Fixed', 'Already fixed on selected baseline', 'Demonstrably false positive', 'Unresolved']);
+const rules = new Map([rawRuns[0].tool.driver, ...rawRuns[0].tool.extensions].flatMap(component => component.rules ?? []).map(rule => [rule.id, rule]));
 const counts = {}, ids = new Set();
 for (const [index, finding] of ledger.findings.entries()) {
   assert.equal(finding.id, `F${String(index + 1).padStart(3, '0')}`);
   assert.ok(!ids.has(finding.id)); ids.add(finding.id);
   assert.equal(finding.rule, results[0][index].ruleId);
+  const score = rules.get(finding.rule).properties?.['security-severity'] ?? null;
+  assert.equal(finding.securityScore, score, `${finding.id}: scanner score changed`);
+  assert.equal(finding.severity, score === null ? 'quality' : Number(score) >= 7 ? 'high' : 'medium', `${finding.id}: scanner severity changed`);
   assert.equal(finding.location.path, results[0][index].locations[0].physicalLocation.artifactLocation.uri);
   assert.deepEqual(finding.location.region, results[0][index].locations[0].physicalLocation.region);
   assert.ok(allowed.has(finding.disposition), finding.id);

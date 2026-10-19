@@ -78,7 +78,7 @@ function readAuditEntries(
     .sort((a, b) => a.name.localeCompare(b.name));
 
   for (const entry of dirEntries) {
-    const fd = fs.openSync(entry.fullPath, fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW);
+    const fd = fs.openSync(entry.fullPath, fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW | fs.constants.O_NONBLOCK);
     let raw: string;
     try {
       const stats = fs.fstatSync(fd);
