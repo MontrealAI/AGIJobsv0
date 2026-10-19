@@ -208,7 +208,7 @@ jobs:
           console.log(JSON.stringify({schema:'agijobsv0/codeql-scope/2', source, tree, run, attempt, event:process.env.GITHUB_EVENT_NAME, ref:process.env.GITHUB_REF, historicalConfigSha256:hash(oldRaw), configSha256:hash(expandedRaw), staticAdmittedBefore:oldFiles.length, staticAdditionalAdmitted:files.filter(file => !admitted(file, old) && admitted(file, expanded)).length, allPreviousPathsRetained:true, integrationClosureAdmitted:true, browserClosureAdmitted:true, requiredExtractedFiles, actualExtractionRequiresSARIF:true}));
           NODE
           mkdir -p reports/security/codeql
-          node < "$RUNNER_TEMP/agijobs-codeql-source-check.cjs" > reports/security/codeql/source-scope-before.json
+          node < "$RUNNER_TEMP/agijobs-codeql-source-check.cjs" > "$RUNNER_TEMP/agijobs-codeql-source-before.json"
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
@@ -223,7 +223,9 @@ jobs:
           output: reports/security/codeql
 
       - name: Recheck exact source after CodeQL analysis
-        run: node < "$RUNNER_TEMP/agijobs-codeql-source-check.cjs" > reports/security/codeql/source-scope-after.json
+        run: |
+          cp "$RUNNER_TEMP/agijobs-codeql-source-before.json" reports/security/codeql/source-scope-before.json
+          node < "$RUNNER_TEMP/agijobs-codeql-source-check.cjs" > reports/security/codeql/source-scope-after.json
 
       - name: Retain and enforce actual complete source extraction
         run: |
