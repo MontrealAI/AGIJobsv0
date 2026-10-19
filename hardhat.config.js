@@ -20,6 +20,11 @@ subtask(TASK_TEST_GET_TEST_FILES).setAction(async (args, _hre, runSuper) => {
     if (file.startsWith(pageTests)) return false;
     if (
       file ===
+      path.join(__dirname, 'test', 'security', 'inherited-codeql.test.cjs')
+    )
+      return false;
+    if (
+      file ===
       path.join(__dirname, 'test', 'hamiltonian-monitor.config.test.js')
     )
       return false;

@@ -448,19 +448,6 @@ function normalizeDuration(value: unknown): bigint {
   throw new Error("Unsupported duration value");
 }
 
-function normalizeBigNumberish(
-  value: unknown,
-  fallback: string | number | bigint = 0n
-): string | number | bigint {
-  if (typeof value === "string" || typeof value === "number" || typeof value === "bigint") {
-    return value;
-  }
-  if (value === undefined || value === null) {
-    return fallback;
-  }
-  throw new Error("Unsupported numeric value");
-}
-
 function normalizeBytes32(value: unknown): string {
   if (typeof value !== "string") {
     throw new Error("Value must be a 32-byte hex string.");

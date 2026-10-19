@@ -1,5 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { ensurePrivateDirectory, readContainedFile, writeContainedFile } from '../../shared/containedFiles';
 
 export type ReceiptKind = 'PLAN' | 'EXECUTION';
 
@@ -19,10 +20,13 @@ export interface StoredReceiptEntry {
 const RECEIPT_DIR = path.resolve(process.cwd(), 'storage', 'receipts');
 
 async function ensureDirectory(): Promise<void> {
-  await fs.mkdir(RECEIPT_DIR, { recursive: true });
+  ensurePrivateDirectory(RECEIPT_DIR);
 }
 
 function safeFilename(entry: StoredReceiptEntry): string {
+  if (!entry || typeof entry.planHash !== 'string' || !entry.planHash || entry.planHash.length > 512) throw new Error('Invalid receipt plan hash');
+  if (entry.kind !== 'PLAN' && entry.kind !== 'EXECUTION') throw new Error('Invalid receipt kind');
+  if (typeof entry.createdAt !== 'string' || !Number.isFinite(Date.parse(entry.createdAt)) || new Date(entry.createdAt).toISOString() !== entry.createdAt) throw new Error('Receipt timestamp must be canonical ISO UTC');
   const slug = entry.planHash.replace(/[^a-z0-9_-]/gi, '_').slice(0, 64);
   const timestamp = entry.createdAt.replace(/[:.]/g, '-');
   return `${timestamp}-${entry.kind}-${slug}.json`;
@@ -30,9 +34,9 @@ function safeFilename(entry: StoredReceiptEntry): string {
 
 export async function saveReceipt(entry: StoredReceiptEntry): Promise<void> {
   await ensureDirectory();
-  const filePath = path.join(RECEIPT_DIR, safeFilename(entry));
+  const filename = safeFilename(entry);
   const payload = JSON.stringify(entry, null, 2);
-  await fs.writeFile(filePath, payload, 'utf8');
+  writeContainedFile(RECEIPT_DIR, filename, payload, true);
 }
 
 export async function listReceipts(options: {
@@ -42,16 +46,17 @@ export async function listReceipts(options: {
 }): Promise<StoredReceiptEntry[]> {
   const limit = options.limit && options.limit > 0 ? options.limit : 20;
   try {
+    await ensureDirectory();
     const files = await fs.readdir(RECEIPT_DIR);
     const entries: StoredReceiptEntry[] = [];
     const sorted = files
       .filter((file) => file.endsWith('.json'))
       .sort((a, b) => (a < b ? 1 : -1));
     for (const file of sorted) {
-      const filePath = path.join(RECEIPT_DIR, file);
       try {
-        const raw = await fs.readFile(filePath, 'utf8');
+        const raw = readContainedFile(RECEIPT_DIR, file);
         const parsed = JSON.parse(raw) as StoredReceiptEntry;
+        if (safeFilename(parsed) !== file) throw new Error('Receipt content does not match its filename');
         if (
           (options.planHash && parsed.planHash !== options.planHash) ||
           (options.jobId !== undefined && parsed.jobId !== options.jobId)

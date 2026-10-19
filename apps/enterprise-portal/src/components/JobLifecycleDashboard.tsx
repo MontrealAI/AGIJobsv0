@@ -45,7 +45,7 @@ const Timeline = ({ events }: { events: JobTimelineEvent[] }) => (
           : Array.isArray(args)
           ? (args[3] as string | undefined)
           : undefined;
-      const resolvedResultUri = resolveResourceUri(resultUri) ?? resultUri;
+      const resolvedResultUri = resolveResourceUri(resultUri);
       return (
         <div className="timeline-item" key={event.id}>
           <div
@@ -285,7 +285,7 @@ export const JobLifecycleDashboard = ({
                   <div>
                     URI:{' '}
                     <a
-                      href={resolvedSpecUri ?? selectedJob.specUri}
+                      href={resolvedSpecUri}
                       target="_blank"
                       rel="noreferrer"
                     >
@@ -370,7 +370,7 @@ export const JobLifecycleDashboard = ({
                         >
                           {metadata.attachments.map((attachment) => {
                             const resolvedAttachment =
-                              resolveResourceUri(attachment) ?? attachment;
+                              resolveResourceUri(attachment);
                             return (
                               <a
                                 key={attachment}
@@ -427,8 +427,7 @@ export const JobLifecycleDashboard = ({
                           {' '}
                           <a
                             href={
-                              resolveResourceUri(metadata.sla.uri) ??
-                              metadata.sla.uri
+                              resolveResourceUri(metadata.sla.uri)
                             }
                             target="_blank"
                             rel="noreferrer"
@@ -481,8 +480,7 @@ export const JobLifecycleDashboard = ({
                     URI:{' '}
                     <a
                       href={
-                        resolveResourceUri(selectedJob.resultUri) ??
-                        selectedJob.resultUri
+                        resolveResourceUri(selectedJob.resultUri)
                       }
                       target="_blank"
                       rel="noreferrer"

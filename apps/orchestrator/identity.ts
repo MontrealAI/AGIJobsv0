@@ -102,7 +102,6 @@ async function verifyEns(
       );
     }
   } catch (err) {
-    if (skipVerification) return;
     throw err;
   }
 }

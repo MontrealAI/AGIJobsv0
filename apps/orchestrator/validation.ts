@@ -254,7 +254,7 @@ export async function evaluateSubmission(
     };
   }
 
-  let bytes: Uint8Array = new Uint8Array();
+  let bytes: Uint8Array;
   let text: string | null = null;
   try {
     const artifact = await downloadArtifact(

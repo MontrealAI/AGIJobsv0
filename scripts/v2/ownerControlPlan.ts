@@ -414,12 +414,10 @@ async function executeModulePlan(plan: ModulePlan) {
 async function main() {
   const cli = parseArgs(process.argv.slice(2));
   let signerAddress: string | undefined;
-  let signer;
   let detectedChainId: number | undefined;
   try {
     const signers = await ethers.getSigners();
     if (signers.length > 0) {
-      signer = signers[0];
       signerAddress = await signers[0].getAddress();
     } else {
       console.warn(

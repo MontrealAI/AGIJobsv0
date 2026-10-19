@@ -204,8 +204,9 @@ The script rejects external RPCs, forks, other networks, substituted Alpha
 source, malformed drafts and existing evidence outputs before fixture writes.
 `FQR_INPUT_CLASS` may record an external evidence label; it is not authenticated
 runtime proof. Protocol-only inputs must remain labeled
-`PROTOCOL_DOUBLE_NO_BROWSER`. This rehearsal never loads a production key,
-contacts Mainnet or changes an existing deployment. The fixture's mock token
+`PROTOCOL_DOUBLE_NO_BROWSER`. No production key is required or authorized;
+the fixture uses only disposable Hardhat signers, contacts no Mainnet RPC and
+changes no existing deployment. The fixture's mock token
 uses 18-decimal base units, without implying real AGIALPHA revenue.
 
 ## Reproduce the disposable-chain acceptance

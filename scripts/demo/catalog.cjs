@@ -6,6 +6,7 @@ const { execFileSync } = require('node:child_process');
 const root = path.resolve(__dirname, '../..');
 const start = '<!-- demo-catalog:start -->';
 const end = '<!-- demo-catalog:end -->';
+const literal = (value) => value.replace(/[!-/:-@[-`{-~]/g, (character) => `&#${character.charCodeAt(0)};`);
 const quoteLink = (value) => value.split('/').map(encodeURIComponent).join('/');
 function inventory(base = root) {
   const files = execFileSync('git', ['ls-files', '-z', '--', 'demo'], {
@@ -77,7 +78,7 @@ function render(data) {
     );
     return (
       '| [' +
-      demo.name.replace(/\|/g, '\\|') +
+      literal(demo.name) +
       '](' +
       quoteLink(target) +
       ') | ' +
@@ -85,7 +86,7 @@ function render(data) {
       ' | ' +
       (commands
         .slice(0, 3)
-        .map((command) => '`' + command + '`')
+        .map((command) => literal(command))
         .join(', ') || 'Open the guide or source directory') +
       ' |'
     );
@@ -105,7 +106,7 @@ function render(data) {
       .map(
         (file) =>
           '- [' +
-          file.slice(5).replace(/\|/g, '\\|') +
+          literal(file.slice(5)) +
           '](' +
           quoteLink(file.slice(5)) +
           ')'

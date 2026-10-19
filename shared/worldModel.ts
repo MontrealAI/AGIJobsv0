@@ -1,3 +1,4 @@
+import { writeContainedFile } from './containedFiles';
 import { createHash } from 'crypto';
 import fs from 'fs';
 import path from 'path';
@@ -293,12 +294,7 @@ export async function persistWorldModelSnapshot(
   snapshot: WorldModelSnapshot
 ): Promise<void> {
   ensureDirectory(SNAPSHOT_DIR);
-  const filePath = path.join(SNAPSHOT_DIR, `${snapshot.jobId}.json`);
-  await fs.promises.writeFile(
-    filePath,
-    JSON.stringify(snapshot, null, 2),
-    'utf8'
-  );
+  writeContainedFile(SNAPSHOT_DIR, `${snapshot.jobId}.json`, JSON.stringify(snapshot, null, 2));
 }
 
 export function worldModelRoot(): string {

@@ -210,7 +210,7 @@ export function validateTranscript(transcript: unknown): TranscriptValidationSum
   const scenarios = ensureArray<unknown>(root.scenarios, 'scenarios must be a populated array.').map((entry, index) => {
     const record = ensureRecord<ScenarioEntry>(entry, `scenarios[${index}] must be an object.`);
     const title = ensureString(record.title, `scenarios[${index}] missing title.`);
-    const jobId = ensureString(record.jobId, `scenarios[${index}] missing jobId.`);
+    ensureString(record.jobId, `scenarios[${index}] missing jobId.`);
     const indices = ensureArray<number>(record.timelineIndices, `scenarios[${index}] missing timelineIndices.`);
     if (indices.length < 5) {
       throw new Error(`scenarios[${index}] should reference at least five timeline events.`);

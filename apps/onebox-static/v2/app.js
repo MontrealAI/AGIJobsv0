@@ -112,7 +112,7 @@ function collectErrorContext(err, state = { messages: [], codes: [], statuses: [
     }
   }
 
-  if (typeof err === 'object' && err) {
+  if (typeof err === 'object') {
     if ('message' in err && err.message) {
       pushUnique(state.messages, err.message);
     }

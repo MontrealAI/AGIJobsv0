@@ -144,7 +144,6 @@ async function ensureAgialphaToken(): Promise<void> {
   );
 }
 
-const MAX_UINT96 = (1n << 96n) - 1n;
 const DEFAULT_TAX_URI = 'ipfs://policy';
 const DEFAULT_TAX_DESCRIPTION =
   'All taxes on participants; contract and owner exempt';

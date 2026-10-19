@@ -256,7 +256,7 @@ function estimateAlgorithmicComplexity(
   const scale = Math.max(1, inputSizeBytes, outputSizeBytes);
   const ratio = estimatedOperations / scale;
 
-  let algorithmicComplexity = 'O(1)';
+  let algorithmicComplexity: string;
   if (ratio <= 2) {
     algorithmicComplexity = 'O(1)';
   } else if (ratio <= 10) {

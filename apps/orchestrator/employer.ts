@@ -81,7 +81,6 @@ export async function postJob(spec: PostJobSpec): Promise<{
   const { jsonUri, markdownUri, specHash } = await prepareJobArtifacts(
     metadata
   );
-  const specWithUris = { ...metadata, json: jsonUri, markdown: markdownUri };
 
   const provider = wallet.provider || new ethers.JsonRpcProvider(RPC_URL);
   const registry = new ethers.Contract(
