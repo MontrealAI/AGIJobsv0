@@ -181,6 +181,51 @@ four labeled protocol fixture files. No files are written by default, and an
 existing output directory is refused. Unknown model and human costs remain
 unknown in this fixture.
 
+### Continue in the public workspace
+
+The [English supplier workspace](https://montrealai.github.io/AGIJobsv0/successor/computer/)
+and [French workspace](https://montrealai.github.io/AGIJobsv0/successor/computer/fr/)
+now expose the same native adapters used by the source fixture:
+
+1. Construct and freeze a strategy above, approving a changed formulation
+   explicitly, or choose its saved report. In **Continue your Alpha project
+   through Computer Use**, import an existing Alpha project and review its
+   unchanged requirements. Confirm public nonpersonal inputs and the exact
+   handoff, then download `successor-computer-handoff.json` and its exact report.
+2. Import the handoff in Fleet. Runtime configuration and explicit execution
+   authorization remain separate. Export the actual native Computer Use return.
+3. Back in Jobs, select the exact handoff, native return and frozen report.
+   Enter a proposed AGIALPHA amount with up to 18 decimal places, explicitly
+   select chain 1 and inspect the displayed token. No deployment is selected.
+4. Prepare the unsigned, unfunded draft and save the computer workspace. Reopen
+   it to replay both native inspectors and recover the same original project,
+   raw observations and Alpha history. Imported observations stay historical;
+   provider execution, independent review and real value are not authenticated.
+
+En français : importez un projet Alpha et le rapport figé exact, examinez les
+exigences puis préparez la transmission native pour Fleet. Après l’exécution
+explicitement autorisée dans Fleet, rapportez la transmission, le retour natif
+et le même rapport. Choisissez le montant AGIALPHA et le réseau, puis enregistrez
+le brouillon non signé et l’espace complet pour le rouvrir. Aucun portefeuille,
+financement, déploiement, règlement ni pouvoir opérationnel n’est créé.
+
+The browser uses the canonical Jobs adapter and byte-exact native Alpha modules
+in the additive `vendor/alpha-computer/` closure. Its source manifest and Apache
+license are shipped with the site. Historical CSV source inventories are
+unchanged. Regenerate only from a reviewed exact clean Alpha checkout:
+
+```bash
+node integrations/alpha-agent/generate-computer-source.mjs /exact/alpha EXACT_COMMIT --check
+node scripts/pages/generate-computer-desk-runtime.mjs --check
+node --test test/pages/computer-receipt-workspace.test.mjs
+node scripts/pages/run-computer-receipt-qa.mjs
+```
+
+The DOM/browser tests deliberately use labeled `PROTOCOL_DOUBLE_NO_BROWSER`
+inputs to test import and download behavior. They do not qualify native browser
+execution. The checked desk runtime literal preserves exact task HTML through
+bundling; its bytes must equal the live `initComputerDesk` source.
+
 ### Rehearse the current draft through disposable modular contracts
 
 `four-repo-computer-lifecycle.cjs` commits the exact draft's SHA-256 as the job
@@ -190,6 +235,12 @@ identity and an operator-controlled validation stub. Successful work receives
 the separately finalized mock reward. Rejected work remains disputed, cannot
 finalize and receives no payout. This is a fixture of contract mechanics, not
 independent content acceptance or production readiness.
+
+The evidence measures elapsed fixture and per-job milliseconds, excluding
+compilation and browser execution. Its `gasObservation` retains concrete local
+transaction receipts with block/hash bindings, gas used, effective mock gas
+price and fee totals. These values describe the disposable chain only; they
+are neither public-network fee estimates nor real expenditure.
 
 Use Node **22.23.3**, npm **10.8.2**, a reviewed clean Alpha source pin and a new
 evidence filename. Compile with the normal Solidity 0.8.37 / via-IR / 200-run
