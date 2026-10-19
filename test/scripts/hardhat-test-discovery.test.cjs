@@ -244,3 +244,18 @@ test('isolated suites retain mandatory fresh-process CI registrations', () => {
     'aggregate Hardhat suite remains mandatory'
   );
 });
+
+test('security regressions stay isolated and mandatory in their source-bound workflow', async () => {
+  const file = 'test/security/inherited-codeql.test.cjs';
+  const { all, selected } = await discover();
+  assert.ok(all.includes(path.join(root, file)));
+  assert.ok(!selected.includes(path.join(root, file)));
+  const workflow = yaml.load(fs.readFileSync(path.join(root, '.github/workflows/security-remediation.yml'), 'utf8'));
+  const job = workflow.jobs.regressions;
+  assert.ok(job && !job.if && !job['continue-on-error']);
+  const step = job.steps.find((step) => (step.run || '').includes(`node --test ${file}`));
+  assert.ok(step && !step.if && !step['continue-on-error']);
+  assert.match(step.run, /set -eo pipefail/);
+  const install = job.steps.findIndex((step) => (step.run || '').includes('./scripts/ci/npm-ci.sh') && !step.if && !step['continue-on-error']);
+  assert.ok(install >= 0 && install < job.steps.indexOf(step));
+});

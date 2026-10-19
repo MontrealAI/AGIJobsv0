@@ -291,7 +291,7 @@ test('signed contributor payload survives actual protobuf encoding and real gRPC
   const helpers = loadTs('agent-gateway/apiHelpers.ts', { './utils': { provider: {}, TOKEN_DECIMALS: 18 }, './stakeCoordinator': {} });
   const rpc = loadTs('agent-gateway/grpc.ts', { './utils': {}, './deliverableStore': {}, './apiHelpers': helpers, './agentActions': {}, './stakeCoordinator': {}, './events': {}, './telemetry': {}, './jobSerialization': {} }, { expose: ['handleContributorParsing'] });
   const signer = ethers.Wallet.createRandom();
-  for (const payload of ['{"jobId":"42","work":"public evidence"}', '']) {
+  for (const payload of ['{"jobId":"42","work":"public evidence"}', '', 'Preuve signée — Montréal Ω']) {
     const signature = await signer.signMessage(payload);
     const input = { job_id: '42', contributors: [{ address: signer.address, signature, signed_payload: payload }] };
     const decoded = service.requestDeserialize(service.requestSerialize(input));
@@ -304,7 +304,35 @@ test('signed contributor payload survives actual protobuf encoding and real gRPC
     const missing = { ...decoded.contributors[0] }; delete missing.signed_payload;
     assert.throws(() => rpc.handleContributorParsing([missing]), /requires its signed payload/);
   }
+  const legacy = service.requestDeserialize(service.requestSerialize({ job_id: '42', contributors: [{ address: signer.address, role: 'agent', payload_digest: 'self-asserted', metadata_json: '{"legacy":true}' }] }));
+  const [unsigned] = rpc.handleContributorParsing(legacy.contributors);
+  assert.equal(unsigned.address, signer.address);
+  assert.equal(unsigned.signature, undefined);
+  assert.equal(unsigned.payloadDigest, 'self-asserted');
+  assert.deepEqual(unsigned.metadata, { legacy: true });
   assert.equal(rpc.handleContributorParsing([{ address: signer.address, payload_digest: 'self-asserted' }])[0].signature, undefined);
+});
+
+test('partial wiring expectations preserve null and never report an omitted dependency as a zero-address success', async () => {
+  const filename = path.join(root, 'scripts/verify-wiring.js'), module = { exports: {} };
+  const source = fs.readFileSync(filename, 'utf8').replace(/^#!.*\n/, '') + '\nmodule.exports = { normaliseExpectedValue, verifyModule };';
+  new Function('require', 'module', 'exports', '__dirname', source)(createRequire(filename), module, module.exports, path.dirname(filename));
+  const { normaliseExpectedValue, verifyModule } = module.exports;
+  assert.equal(normaliseExpectedValue(null, 'address', 'missing'), null);
+  assert.equal(normaliseExpectedValue(ethers.ZeroAddress, 'address', 'explicit'), ethers.ZeroAddress);
+  const output = [], originalLog = console.log;
+  let calls = 0;
+  console.log = (...args) => output.push(args.join(' '));
+  try {
+    const artifact = { at: async () => ({ dependency: async () => { calls++; return ethers.ZeroAddress; } }) };
+    const base = { key: 'fixture', displayName: 'Fixture', address: '0x1111111111111111111111111111111111111111', artifact };
+    await verifyModule({ ...base, checks: [{ getter: 'dependency', expected: () => null }] });
+    assert.equal(calls, 0);
+    assert.ok(output.some((line) => line.includes('expected value not provided; skipping')));
+    await verifyModule({ ...base, checks: [{ getter: 'dependency', expected: ethers.ZeroAddress }] });
+    assert.equal(calls, 1);
+    assert.ok(output.some((line) => line.includes(`Fixture.dependency = ${ethers.ZeroAddress}`)));
+  } finally { console.log = originalLog; }
 });
 
 test('audit log reading rejects symlinks and binds metadata plus bytes to one descriptor', () => {

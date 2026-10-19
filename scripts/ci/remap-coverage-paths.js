@@ -24,7 +24,10 @@ const mappings = new Map([
 
 let coverageFd;
 try {
-  coverageFd = fs.openSync(coverageFile, fs.constants.O_RDWR | fs.constants.O_NOFOLLOW);
+  coverageFd = fs.openSync(
+    coverageFile,
+    fs.constants.O_RDWR | fs.constants.O_NOFOLLOW
+  );
 } catch (error) {
   if (error.code !== 'ENOENT') throw error;
   console.log('Coverage file not found; skipping path remap.');
@@ -79,5 +82,7 @@ const flattened = remappedBlocks
 try {
   fs.ftruncateSync(coverageFd, 0);
   fs.writeSync(coverageFd, `${flattened}\n`, 0, 'utf8');
-} finally { fs.closeSync(coverageFd); }
+} finally {
+  fs.closeSync(coverageFd);
+}
 console.log('Remapped coverage paths for admin and governance modules.');

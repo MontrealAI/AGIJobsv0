@@ -33,10 +33,10 @@ const origin = `http://127.0.0.1:${server.address().port}`;
 const browser = await chromium.launch({ headless: true, executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE || undefined, args: ['--no-sandbox', '--disable-dev-shm-usage'] });
 try {
   const page = await browser.newPage(); page.on('pageerror', error => errors.push(error.message));
-  let mode = 'plan';
+  let mode = 'plan', metadataUri = 'JaVaScRiPt:globalThis.pwned=1';
   await page.route('**/*', async route => {
     const url = route.request().url();
-    if (url === 'https://metadata.example/sla.json') { requests.push(url); await route.fulfill({ json: { uri: 'JaVaScRiPt:globalThis.pwned=1', obligations: [hostile] } }); return; }
+    if (url === 'https://metadata.example/sla.json') { requests.push(url); await route.fulfill({ json: { uri: metadataUri, obligations: [hostile] } }); return; }
     if (url === 'https://metadata.example/bad.json') { requests.push(url); await route.fulfill({ json: { obligations: [{ html: hostile }] } }); return; }
     if (!url.startsWith(origin)) { requests.push(url); await route.abort(); return; }
     if (url.includes('/onebox/')) {
@@ -77,23 +77,42 @@ try {
   assert.equal(await page.evaluate(() => globalThis.pwned), undefined);
   checks.push('Legacy v2 error rendering is text/Node based and does not inject exception markup');
   await page.goto(origin + '/portal/'); await page.locator('#verify-cid').waitFor();
-  const invalid = ['javascript:globalThis.pwned=1', 'JaVaScRiPt:globalThis.pwned=1', 'java\nscript:globalThis.pwned=1', 'data:text/html,bad', 'javascript%3Aalert(1)', 'file:///etc/passwd', '//bad.test', 'https://user:pass@bad.test'];
+  const invalid = ['javascript:globalThis.pwned=1', 'JaVaScRiPt:globalThis.pwned=1', 'java\nscript:globalThis.pwned=1', 'data:text/html,bad', 'javascript%3Aalert(1)', '%6aavascript:alert(1)', 'file:///etc/passwd', 'ethereum:0x1', '//bad.test', 'https:bad.test', ' https://good.test', 'https://good.test\t@bad.test', 'https://user:pass@bad.test', 'https:\\bad.test', 'https://', 'ipfs://../escape', 'ipfs://bafyfixture/%2e%2e/x', 'ipfs://bafyfixture/%252e%252e/x', 'ipfs://bafyfixture/%2fescape', 'ipfs://bafyfixture/%5cescape', 'ipfs://bafyfixture/%00'];
   const slaInput = page.getByPlaceholder('https://gateway.ipfs.io/ipfs/.../sla.json');
+  assert.equal(await page.getByRole('link', { name: 'Open file', exact: true }).count(), 0);
+  await page.getByRole('button', { name: 'Load details', exact: true }).click();
+  assert.equal(await page.locator('#verify-cid').inputValue(), 'javascript:globalThis.pwned=1');
+  assert.equal(await page.getByRole('link', { name: 'Open deliverable', exact: true }).count(), 0);
+  await page.locator('#verify-agent').fill('0x1111111111111111111111111111111111111111');
+  await page.locator('#verify-hash').fill('0x' + '11'.repeat(32));
+  await page.locator('#verify-signature').fill('0x1234');
   for (const value of invalid) {
     const count = requests.length;
-    await page.locator('#verify-cid').fill(value); assert.equal(await page.locator('a[href^="javascript:"],a[href^="data:"],a[href^="file:"]').count(), 0);
+    await page.locator('#verify-cid').fill(value);
+    assert.equal(await page.getByRole('link', { name: 'Open deliverable', exact: true }).count(), 0);
+    await page.getByRole('button', { name: 'Verify deliverable', exact: true }).click();
+    await page.getByText('Use an absolute HTTPS or supported IPFS deliverable URI.', { exact: true }).waitFor();
     await slaInput.fill(value); await page.getByRole('button', { name: 'Fetch SLA', exact: true }).click();
     await page.getByText('Provide a valid SLA URI to fetch metadata.', { exact: true }).waitFor();
     assert.equal(requests.length, count);
   }
-  await slaInput.fill('https://metadata.example/sla.json'); await page.getByRole('button', { name: 'Fetch SLA', exact: true }).click();
-  await page.getByRole('heading', { name: 'Obligations', exact: true }).waitFor();
-  assert.equal(await page.locator('a[href^="javascript:"],img,svg').count(), 0);
-  assert.ok((await page.locator('body').innerText()).includes(hostile));
+  for (const value of invalid) {
+    metadataUri = value;
+    await slaInput.fill('https://metadata.example/sla.json'); await page.getByRole('button', { name: 'Fetch SLA', exact: true }).click();
+    await page.getByRole('heading', { name: 'Obligations', exact: true }).waitFor();
+    assert.equal(await page.locator('section').filter({ has: page.getByRole('heading', { name: 'SLA Evidence Viewer', exact: true }) }).locator('a').count(), 0);
+    assert.equal(await page.locator('img,svg,#sim-approve').count(), 0);
+    assert.ok((await page.locator('body').innerText()).includes(hostile));
+    assert.equal(await page.evaluate(() => globalThis.pwned), undefined);
+  }
   await slaInput.fill('https://metadata.example/bad.json'); await page.getByRole('button', { name: 'Fetch SLA', exact: true }).click();
   await page.getByText('SLA obligations must contain text values.', { exact: true }).waitFor();
+  metadataUri = 'ipfs://bafyfixture/sla.json';
   await slaInput.fill('https://metadata.example/sla.json'); await page.getByRole('button', { name: 'Fetch SLA', exact: true }).click();
   await page.getByRole('heading', { name: 'Obligations', exact: true }).waitFor();
+  assert.equal(await page.getByRole('link', { name: metadataUri, exact: true }).getAttribute('href'), 'https://ipfs.io/ipfs/bafyfixture/sla.json');
+  await page.locator('#verify-cid').fill('HTTPS://deliverables.example/report.json');
+  assert.equal(await page.getByRole('link', { name: 'Open deliverable' }).getAttribute('href'), 'https://deliverables.example/report.json');
   await page.locator('#verify-cid').fill('ipfs://bafyfixture/report.json');
   assert.equal(await page.getByRole('link', { name: 'Open deliverable' }).getAttribute('href'), 'https://ipfs.io/ipfs/bafyfixture/report.json');
   await page.locator('#paymaster-address').fill('0x1111111111111111111111111111111111111111'); await page.locator('#topup-amount').fill('1.5');
@@ -102,7 +121,7 @@ try {
   assert.equal(await page.evaluate(() => globalThis.pwned), undefined);
   checks.push('Actual React portal components: hostile typed and fetched metadata URLs rejected; HTTPS/IPFS retained; validated ethereum wallet links retained without wallet invocation');
   assert.deepEqual(errors, []);
-  fs.writeFileSync(path.join(out, 'result.json'), JSON.stringify({ passed: true, checks, csp, errors, requests, realWalletOperations: 0 }, null, 2) + '\n');
+  fs.writeFileSync(path.join(out, 'result.json'), JSON.stringify({ passed: true, checks, csp, errors, requests, portalRejectedTypedAndFetchedUrls: invalid, eventPrefillRejected: true, realWalletOperations: 0 }, null, 2) + '\n');
   console.log(JSON.stringify({ passed: true, checks, errors, realWalletOperations: 0 }));
 } finally { await browser.close(); await new Promise(resolve => server.close(resolve)); fs.rmSync(temporary, { recursive: true, force: true }); }
 

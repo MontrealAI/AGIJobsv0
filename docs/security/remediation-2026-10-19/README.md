@@ -122,9 +122,54 @@ file descriptors can still carry scanner taint; their actual guard/caller and
 browser/filesystem evidence is recorded without disabling or suppressing queries.
 The final scan must still be run on the exact final commit.
 
-Two additional findings are separately recorded: the adjacent world-model
-snapshot filename boundary, and an independently reported gRPC compatibility
-gap in the initial remediation. Both have focused regressions. The latter adds
+Three additional findings are separately recorded: the adjacent world-model
+snapshot filename boundary, an independently reported gRPC compatibility
+gap in the initial remediation, and an independently reported missing-value
+regression in a quality cleanup of the read-only wiring verifier. All have
+focused regressions. The gRPC correction adds
 optional contributor `signed_payload` field 8: send the exact UTF-8 EIP-191
 message (including an empty string when applicable). A signature with only an
 unverified digest is rejected. Historical evidence is not rewritten.
+
+
+## Portal comment reconciliation
+
+The original F008/F009 arbitrary-scheme fallbacks are fixed. The fresh scanner
+can still report the validated paths as `js/xss-through-dom`; this post-fix
+assessment is separate from the original finding disposition.
+
+- Deliverable: typed `event.target.value` → `setCid` → `cid` →
+  `resolveResourceUri` → `deliverableUrl` → conditional React `href`.
+  Event-derived `ResultSubmitted.meta.args.resultURI` (or `args[3]`) passes
+  through `toStringOrUndefined` and the same resolver for the table link;
+  “Load details” feeds `setCid`. Verification resolves the CID independently
+  before any fetch and rejects a nonempty invalid value.
+- SLA: typed value → `setUri` → `resolveResourceUri` → guarded fetch →
+  `response.json` → `parseSla` → `document`. Both fetched `document.uri` and
+  the typed fallback pass through the resolver again before the Source `href`.
+  Invalid values render in a text span. Metadata text arrays are validated and
+  rendered as React text; malformed objects produce a recoverable error.
+
+The resolver returns only canonical absolute HTTPS or a supported IPFS path
+appended to an independently validated HTTPS gateway. It rejects credentials,
+control/whitespace characters, backslashes, inappropriate/encoded schemes and
+encoded IPFS traversal or separators. React sets an attribute and escapes text;
+there is no raw-value fallback or HTML parser on either path. Retained taint
+through the IPFS segments cannot change the HTTPS scheme. These are justified
+post-fix scanner false positives, not evidence that the baseline was safe.
+HTTPS destinations remain external untrusted content; the policy does not
+endorse them or sanitize pages they serve.
+
+`test/security/browser-regressions.mjs` uses the actual React components and
+Chromium. Every hostile vector is exercised as typed input and fetched SLA
+metadata; the test checks absent navigable links, no invalid-input fetch,
+inert markup/controls, event-prefill handling and valid HTTPS/IPFS links.
+The same hosted artifact includes Onebox's built CSP and lifecycle checks.
+
+The gRPC contributor field is additive (`optional string signed_payload = 8`);
+existing field numbers and unsigned clients remain supported. Real protobuf
+round trips cover unsigned legacy metadata plus valid UTF-8, empty, altered
+and omitted signed payloads. A client sending a signature without its message
+must supply that message (or remain unsigned); a digest alone cannot prove
+what was signed. This intentional rejection is not a new authorization role.
+Independent exact-head re-review must complete before final qualification.

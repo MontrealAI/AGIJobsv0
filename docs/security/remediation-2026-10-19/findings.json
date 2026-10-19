@@ -645,7 +645,9 @@
         "JobLifecycleDashboard",
         "useCertificates",
         "useJobMetadata"
-      ]
+      ],
+      "currentSourceToSink": "Typed input event.target.value -> setCid -> cid -> resolveResourceUri -> validated HTTPS canonical URL or HTTPS IPFS gateway construction -> deliverableUrl -> conditional React <a href>. Adjacent event path: ResultSubmitted.meta.args.resultURI or args[3] -> toStringOrUndefined -> recentSubmissions -> resolveResourceUri -> conditional Open file link; Load details -> setCid uses the same validated path. Verification independently resolves cid before fetch and rejects a nonempty invalid value; there is no raw-value fallback.",
+      "postFixScannerAssessment": "The original arbitrary-scheme fallback defect is Fixed. The retained js/xss-through-dom result follows taint through IPFS path segments into the HTTPS gateway URL. All returns are HTTPS: raw input is never used as an href; absolute HTTPS is parsed/canonicalized without credentials, control/whitespace or backslashes; supported IPFS roots and decoded path segments are bounded/validated and the gateway independently passes the HTTPS policy. React creates an href attribute and escapes text rather than parsing markup. This retained scanner result is demonstrably false positive under that navigation-only policy; arbitrary external HTTPS content is not endorsed or sanitized."
     },
     {
       "id": "F009",
@@ -714,7 +716,9 @@
         "JobLifecycleDashboard",
         "useCertificates",
         "useJobMetadata"
-      ]
+      ],
+      "currentSourceToSink": "Typed input event.target.value -> setUri -> uri -> resolveResourceUri -> resolvedInput -> guarded fetch -> response.json -> parseSla -> document. Source display uses fetched document.uri || typed uri -> resolveResourceUri -> conditional React <a href>; invalid values use a React text span. Obligations/penalties/successCriteria must be arrays of strings and render as escaped React text. The scanner-reported typed-uri fallback path also goes through the validator before the href; there is no raw-value href fallback.",
+      "postFixScannerAssessment": "The original arbitrary-scheme fallback defect is Fixed. The retained js/xss-through-dom result propagates IPFS path taint through resolveResourceUri, but that branch can only build an independently validated HTTPS gateway URL. Mixed-case schemes, whitespace/control/backslashes, credentials, encoded schemes and encoded IPFS traversal/separators are rejected; malformed fetched JSON yields a recoverable error. Browser regressions exercise each hostile URL as typed input and fetched metadata and verify no active Source link, executable markup or forged controls. This post-fix scanner result is demonstrably false positive; HTTPS remote resources remain untrusted content."
     },
     {
       "id": "F010",
@@ -4247,16 +4251,16 @@
       },
       "owner": "Codex remediation / Jobs maintainer review",
       "disposition": "Fixed",
-      "fixOrJustification": "Remove a redundant missing-value return in the private normaliser; the sole caller skips missing expected config values before invoking it.",
+      "fixOrJustification": "Remove only the unreachable undefined comparison: verifyModule skips undefined before normalization. Preserve null as the missing-dependency sentinel so partial configurations are skipped rather than compared against the zero address. Independent re-review caught and corrected the initial overbroad guard removal (N003).",
       "regressionEvidence": [
         {
-          "path": "docs/security/remediation-2026-10-19/README.md",
-          "command": "npm run compile; npm run lint:ci; npm run webapp:typecheck; npx tsc --noEmit -p agent-gateway/tsconfig.json; npm run build:orchestrator; npm --prefix apps/enterprise-portal run typecheck; complete existing contracts/webapp/Pages CI"
+          "path": "test/security/inherited-codeql.test.cjs",
+          "command": "node --test test/security/inherited-codeql.test.cjs"
         }
       ],
       "exposure": "Quality/maintainability result. No vulnerability is inferred from the scanner label. Existing behavior and guard preconditions were inspected individually.",
       "guardsAndCallerAssumptions": [
-        "See the exact baseline location and corresponding source diff; existing semantic/type/lint/browser/contract gates remain enabled."
+        "verifyModule skips expectedRaw === undefined before normaliseExpectedValue; null can still come from resolveModuleAddress and must retain its distinct meaning. Explicit zero-address expectations remain comparisons."
       ]
     },
     {
@@ -5506,6 +5510,22 @@
       "exposure": "Initial remediation required signed contributor payloads but the gRPC request schema could not carry them.",
       "owner": "Codex remediation / Jobs maintainer review",
       "fixOrJustification": "Add optional signed_payload field 8 and map it to the verifier. Real protobuf serialization/deserialization tests cover valid, empty, altered and omitted signed messages without invoking an RPC wallet.",
+      "regressionEvidence": [
+        {
+          "path": "test/security/inherited-codeql.test.cjs",
+          "command": "node --test test/security/inherited-codeql.test.cjs"
+        }
+      ]
+    },
+    {
+      "id": "N003",
+      "disposition": "Fixed",
+      "severity": "medium",
+      "reportedBy": "Independent PR re-review 4314174529 at commit 8fd232c6fe75e5e9df814597f79f3a1f16a288a0",
+      "location": "scripts/verify-wiring.js:normaliseExpectedValue",
+      "exposure": "Initial F064 quality cleanup removed the reachable null sentinel along with the unreachable undefined comparison, changing read-only verification of partial configurations. No deployed configuration was changed.",
+      "owner": "Codex remediation / Jobs maintainer review",
+      "fixOrJustification": "Retain the null return, remove only the unreachable undefined comparison, and test the real verifyModule path: omitted dependencies skip without a getter call; explicitly configured zero addresses remain checked.",
       "regressionEvidence": [
         {
           "path": "test/security/inherited-codeql.test.cjs",
