@@ -137,6 +137,133 @@ test('contained paths support the filesystem root and reject sibling-prefix esca
   }
 });
 
+test('contained reads retain the original private directory across its relocation', () => {
+  const files = require('../../shared/containedFiles.ts');
+  const temporary = fs.mkdtempSync(path.join(os.tmpdir(), 'private-record-read-'));
+  const directory = path.join(temporary, 'records'), moved = path.join(temporary, 'retained');
+  const open = fs.openSync;
+  try {
+    files.writeContainedFile(directory, 'record.json', '{"value":"original Ω"}');
+    let relocated = false;
+    fs.openSync = (filename, ...args) => {
+      if (!relocated && typeof filename === 'string' && filename.startsWith('/proc/self/fd/') && filename.endsWith('/record.json')) {
+        relocated = true; fs.renameSync(directory, moved); fs.mkdirSync(directory, { mode: 0o700 });
+      }
+      return open(filename, ...args);
+    };
+    assert.equal(files.readContainedFile(directory, 'record.json'), '{"value":"original Ω"}');
+    assert.equal(relocated, true); assert.deepEqual(fs.readdirSync(directory), []);
+    assert.equal(fs.readFileSync(path.join(moved, 'record.json'), 'utf8'), '{"value":"original Ω"}');
+  } finally { fs.openSync = open; fs.rmSync(temporary, { recursive: true, force: true }); }
+});
+
+test('the private directory walk retains an opened parent while opening its child', () => {
+  const files = require('../../shared/containedFiles.ts');
+  const temporary = fs.mkdtempSync(path.join(os.tmpdir(), 'private-record-parent-'));
+  const parent = path.join(temporary, 'parent'), directory = path.join(parent, 'records'), moved = path.join(temporary, 'retained-parent');
+  const open = fs.openSync;
+  try {
+    files.writeContainedFile(directory, 'record.json', 'retained parent');
+    let relocated = false;
+    fs.openSync = (filename, ...args) => {
+      if (!relocated && typeof filename === 'string' && filename.startsWith('/proc/self/fd/') && filename.endsWith('/records')) {
+        relocated = true; fs.renameSync(parent, moved); fs.mkdirSync(parent, { mode: 0o700 });
+      }
+      return open(filename, ...args);
+    };
+    assert.equal(files.readContainedFile(directory, 'record.json'), 'retained parent');
+    assert.equal(relocated, true); assert.deepEqual(fs.readdirSync(parent), []);
+  } finally { fs.openSync = open; fs.rmSync(temporary, { recursive: true, force: true }); }
+});
+
+for (const exclusive of [false, true]) test('contained publication retains its directory during ' + (exclusive ? 'exclusive creation' : 'atomic replacement'), () => {
+  const files = require('../../shared/containedFiles.ts');
+  const temporary = fs.mkdtempSync(path.join(os.tmpdir(), 'private-record-publish-'));
+  const directory = path.join(temporary, 'records'), moved = path.join(temporary, 'retained');
+  const method = exclusive ? 'linkSync' : 'renameSync', operation = fs[method];
+  try {
+    files.ensurePrivateDirectory(directory);
+    let relocated = false;
+    fs[method] = (source, target, ...args) => {
+      if (!relocated && target.endsWith('/record.json')) {
+        relocated = true; fs.renameSync(directory, moved); fs.mkdirSync(directory, { mode: 0o700 });
+      }
+      return operation(source, target, ...args);
+    };
+    files.writeContainedFile(directory, 'record.json', 'published Ω', exclusive);
+    assert.equal(relocated, true); assert.deepEqual(fs.readdirSync(directory), []);
+    assert.equal(fs.readFileSync(path.join(moved, 'record.json'), 'utf8'), 'published Ω');
+    assert.deepEqual(fs.readdirSync(moved), ['record.json']);
+    assert.equal(fs.statSync(path.join(moved, 'record.json')).mode & 0o777, 0o600);
+    assert.equal(fs.statSync(path.join(moved, 'record.json')).nlink, 1);
+  } finally { fs[method] = operation; fs.rmSync(temporary, { recursive: true, force: true }); }
+});
+
+test('temporary creation and failed exclusive cleanup use the retained directory', () => {
+  const files = require('../../shared/containedFiles.ts');
+  const temporary = fs.mkdtempSync(path.join(os.tmpdir(), 'private-record-cleanup-'));
+  const directory = path.join(temporary, 'records'), moved = path.join(temporary, 'retained');
+  const open = fs.openSync;
+  try {
+    files.writeContainedFile(directory, 'record.json', 'existing');
+    let relocated = false;
+    fs.openSync = (filename, ...args) => {
+      if (!relocated && typeof filename === 'string' && filename.startsWith('/proc/self/fd/') && /\/tmp-[^/]+\.json$/.test(filename)) {
+        relocated = true; fs.renameSync(directory, moved); fs.mkdirSync(directory, { mode: 0o700 });
+      }
+      return open(filename, ...args);
+    };
+    assert.throws(() => files.writeContainedFile(directory, 'record.json', 'new', true), /EEXIST/);
+    assert.equal(relocated, true); assert.deepEqual(fs.readdirSync(directory), []);
+    assert.deepEqual(fs.readdirSync(moved), ['record.json']);
+    assert.equal(fs.readFileSync(path.join(moved, 'record.json'), 'utf8'), 'existing');
+  } finally { fs.openSync = open; fs.rmSync(temporary, { recursive: true, force: true }); }
+});
+
+test('unverifiable descriptor paths fail closed before storage creation and close their descriptors', () => {
+  const files = require('../../shared/containedFiles.ts');
+  const temporary = fs.mkdtempSync(path.join(os.tmpdir(), 'private-record-platform-'));
+  const statfs = fs.statfsSync, open = fs.openSync, close = fs.closeSync, descriptors = new Set();
+  try {
+    fs.statfsSync = (...args) => ({ ...statfs(...args), type: 0 });
+    fs.openSync = (...args) => { const fd = open(...args); descriptors.add(fd); return fd; };
+    fs.closeSync = (fd) => { descriptors.delete(fd); return close(fd); };
+    assert.throws(() => files.writeContainedFile(path.join(temporary, 'records'), 'record.json', 'unused'), /Linux procfs/);
+    assert.equal(descriptors.size, 0); assert.deepEqual(fs.readdirSync(temporary), []);
+    fs.statfsSync = statfs;
+    assert.throws(() => files.readContainedFile(path.join(temporary, 'records'), 'missing.json'), /ENOENT/);
+    files.writeContainedFile(path.join(temporary, 'records'), 'record.json', 'existing');
+    assert.throws(() => files.writeContainedFile(path.join(temporary, 'records'), 'record.json', 'unused', true), /EEXIST/);
+    assert.equal(descriptors.size, 0);
+  } finally { fs.statfsSync = statfs; fs.openSync = open; fs.closeSync = close; fs.rmSync(temporary, { recursive: true, force: true }); }
+});
+
+test('an exclusive temporary-name collision preserves the existing private entry', () => {
+  const files = loadTs('shared/containedFiles.ts', { 'node:crypto': { randomUUID: () => 'fixed-fixture' } });
+  const temporary = fs.mkdtempSync(path.join(os.tmpdir(), 'private-record-collision-'));
+  try {
+    fs.writeFileSync(path.join(temporary, 'tmp-fixed-fixture.json'), 'existing private entry', { mode: 0o600 });
+    assert.throws(() => files.writeContainedFile(temporary, 'record.json', 'unused'), /EEXIST/);
+    assert.equal(fs.readFileSync(path.join(temporary, 'tmp-fixed-fixture.json'), 'utf8'), 'existing private entry');
+    assert.deepEqual(fs.readdirSync(temporary), ['tmp-fixed-fixture.json']);
+  } finally { fs.rmSync(temporary, { recursive: true, force: true }); }
+});
+
+test('contained reads preserve private ownership, bounded exact UTF-8 and stable file bytes', () => {
+  const files = require('../../shared/containedFiles.ts');
+  const temporary = fs.mkdtempSync(path.join(os.tmpdir(), 'private-record-values-'));
+  try {
+    files.writeContainedFile(temporary, 'record.json', 'Ω');
+    assert.equal(files.readContainedFile(temporary, 'record.json', 2), 'Ω');
+    assert.throws(() => files.readContainedFile(temporary, 'record.json', 1), /Invalid storage file/);
+    fs.writeFileSync(path.join(temporary, 'record.json'), Buffer.from([255]));
+    assert.throws(() => files.readContainedFile(temporary, 'record.json'), /encoded data|encoding/i);
+    fs.chmodSync(path.join(temporary, 'record.json'), 0o666);
+    assert.throws(() => files.readContainedFile(temporary, 'record.json'), /Invalid storage file/);
+    assert.throws(() => files.readContainedFile(temporary, 'record.json', -1), /size limit/);
+  } finally { fs.rmSync(temporary, { recursive: true, force: true }); }
+});
+
 test('receipt writes validate response-derived fields, reject tampered persisted records and preserve valid receipts', async () => {
   const temporary = fs.mkdtempSync(path.join(os.tmpdir(), 'codeql-receipts-'));
   try {
