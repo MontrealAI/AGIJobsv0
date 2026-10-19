@@ -399,8 +399,8 @@ if (deskPage) {
       api.setWorkspace(sealed);
       api.status(
         language === 'fr'
-          ? 'Espace sauvegardé. Les déclarations restent non vérifiées.'
-          : 'Workspace saved. Recorded claims remain unverified.'
+          ? 'Session mise à jour. Les déclarations restent non vérifiées. Exportez l’espace pour le conserver avant de fermer ou de recharger la page.'
+          : 'Session updated. Recorded claims remain unverified. Export the workspace to keep it before closing or reloading.'
       );
     },
     async onPropose(api) {

@@ -53,16 +53,21 @@ export const frontierDeskCopy = {
     preserve:
       'I attest that the proposal preserves every original hard requirement. I approve an experiment on this exact formulation.',
     approve: 'Approve this formulation for an experiment',
-    save: 'Save the evidence workspace',
+    save: 'Update this session',
     export: 'Export the workspace',
+    persistence:
+      'This workspace is held only in this tab. Export it before closing or reloading; unexported changes will be lost.',
     import: 'Restore a workspace',
     result: 'Machine-readable workspace',
-    status: 'Ready for investigation. No work or experiment has been attested.',
-    saved: 'Workspace saved as unverified user-entered records.',
+    status:
+      'Ready for investigation. No work or experiment has been attested. Export this workspace before closing or reloading to keep your records.',
+    saved:
+      'Session updated. Records remain unverified. Export the workspace to keep it before closing or reloading.',
     proposed: 'Proposal recorded. Owner approval is pending.',
     approved:
       'Owner attestation recorded for this exact formulation. Independent proof remains absent.',
-    changed: 'Changes pending. Save to bind this workspace.',
+    changed:
+      'Changes pending. Update this session to bind this workspace, then export to keep it.',
     approvalReset:
       'The formulation changed. Previous approval has been cleared.',
     noProof: 'USER-ENTERED · UNVERIFIED',
@@ -70,7 +75,7 @@ export const frontierDeskCopy = {
       'A ledger is evidence of what was recorded. It is not independent proof of what happened, a solved theorem, an advantage or authorization to deploy, purchase or send messages.',
     back: 'Mission Studio',
     draft:
-      'Portable draft saved. Import it in the public workspace to validate and seal the content.',
+      'Portable draft ready in this session. Use Export the workspace to keep a file, then import it in the public workspace to validate and seal the content.',
     needsApproval:
       'Record a proposal and explicitly attest to the requirements before approving it.',
   },
@@ -109,17 +114,21 @@ export const frontierDeskCopy = {
     preserve:
       'J’atteste que la proposition préserve chaque exigence originale. J’approuve une expérience sur cette formulation exacte.',
     approve: 'Approuver cette formulation pour une expérience',
-    save: 'Sauvegarder l’espace de preuves',
+    save: 'Mettre à jour cette session',
     export: 'Exporter l’espace',
+    persistence:
+      'Cet espace reste uniquement dans cet onglet. Exportez-le avant de fermer ou de recharger la page; les modifications non exportées seront perdues.',
     import: 'Restaurer un espace',
     result: 'Espace lisible par machine',
     status:
-      'Prêt pour l’enquête. Aucun travail ni aucune expérience n’a été attesté.',
-    saved: 'Espace sauvegardé comme déclarations non vérifiées.',
+      'Prêt pour l’enquête. Aucun travail ni aucune expérience n’a été attesté. Exportez cet espace avant de fermer ou de recharger la page pour conserver vos traces.',
+    saved:
+      'Session mise à jour. Les déclarations restent non vérifiées. Exportez l’espace pour le conserver avant de fermer ou de recharger la page.',
     proposed: 'Proposition consignée. Approbation du propriétaire en attente.',
     approved:
       'Attestation du propriétaire consignée pour cette formulation exacte. Aucune preuve indépendante.',
-    changed: 'Modifications en attente. Sauvegardez pour lier cet espace.',
+    changed:
+      'Modifications en attente. Mettez à jour cette session pour lier cet espace, puis exportez-le pour le conserver.',
     approvalReset:
       'La formulation a changé. L’approbation précédente a été retirée.',
     noProof: 'DÉCLARATIONS · NON VÉRIFIÉES',
@@ -127,7 +136,7 @@ export const frontierDeskCopy = {
       'Le journal démontre ce qui a été consigné. Il ne constitue pas une preuve indépendante des faits, un théorème résolu, un avantage ni une autorisation de déployer, acheter ou envoyer des messages.',
     back: 'Studio de mission',
     draft:
-      'Brouillon portable sauvegardé. Importez-le dans l’espace public pour valider et lier son contenu.',
+      'Brouillon portable prêt dans cette session. Utilisez Exporter l’espace pour conserver un fichier, puis importez-le dans l’espace public pour valider et lier son contenu.',
     needsApproval:
       'Consignez une proposition et attestez explicitement du respect des exigences avant de l’approuver.',
   },
@@ -226,7 +235,9 @@ export function renderFrontierDeskMarkup(
     t.export
   )}</button><label class="fm-file" for="fd-import">${escapeHTML(
     t.import
-  )}<input id="fd-import" type="file" accept=".json,application/json"></label></div><p id="fd-status" role="status" tabindex="-1" class="fm-status">${escapeHTML(
+  )}<input id="fd-import" type="file" accept=".json,application/json"></label></div><p class="fm-help">${escapeHTML(
+    t.persistence
+  )}</p><p id="fd-status" role="status" tabindex="-1" class="fm-status">${escapeHTML(
     t.status
   )}</p><details class="fm-detail"><summary>${escapeHTML(
     t.result
