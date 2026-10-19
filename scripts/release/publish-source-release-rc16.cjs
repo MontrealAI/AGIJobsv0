@@ -272,7 +272,8 @@ async function verifyDownloadedAssets({
 const additional = Object.freeze({
   codeql: {
     workflow: '.github/workflows/static-analysis.yml',
-    artifact: () => 'codeql-security-report',
+    artifact: (sha, run) =>
+      `codeql-security-report-${sha}-${run.id}-${run.run_attempt}`,
     file: 'codeql-evidence.zip',
   },
   native: {

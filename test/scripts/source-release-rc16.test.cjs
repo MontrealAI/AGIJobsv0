@@ -341,7 +341,7 @@ test('retained readback cannot relabel another successful same-SHA run or attemp
       producer = run('.github/workflows/static-analysis.yml', 42);
     const artifact = {
       id: 9,
-      name: 'codeql-security-report',
+      name: `codeql-security-report-${sha}-42-1`,
       expired: false,
       digest: 'sha256:' + digest,
       workflow_run: { id: 42, head_sha: sha },
@@ -366,6 +366,30 @@ test('retained readback cannot relabel another successful same-SHA run or attemp
     verifyRetainedProducer(directory, 'codeql', artifact, producer, sha, {
       workflows: [producer],
     });
+    assert.throws(
+      () =>
+        verifyRetainedProducer(
+          directory,
+          'codeql',
+          { ...artifact, name: 'codeql-security-report' },
+          producer,
+          sha,
+          { workflows: [producer] }
+        ),
+      /artifact identity mismatch/
+    );
+    assert.throws(
+      () =>
+        verifyRetainedProducer(
+          directory,
+          'codeql',
+          { ...artifact, name: `codeql-security-report-${sha}-42-1` },
+          { ...producer, run_attempt: 2 },
+          sha,
+          { workflows: [{ ...producer, run_attempt: 2 }] }
+        ),
+      /artifact identity mismatch/
+    );
     assert.throws(
       () =>
         verifyRetainedProducer(directory, 'codeql', artifact, producer, sha, {

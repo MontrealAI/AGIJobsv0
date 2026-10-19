@@ -17,7 +17,10 @@ security owner must provide additive extraction coverage for the integration
 closure and an independently assessed complete current-result inventory. A green
 analysis workflow alone is insufficient: the exact main-push producer archive,
 tool/query/extraction scope, every retained result and the separate genuine
-GitHub Advanced Security CodeQL result must all verify. Native compatibility
+GitHub Advanced Security CodeQL result must all verify. Each raw scanner artifact
+must name its exact SHA, run and attempt;
+the existing constant-name scanner producer is refused until its owner updates
+that additive provenance field. Native compatibility
 likewise requires a pinned complete checkout, actual fixture inspection/refusal
 and source checks before and after execution.
 
