@@ -95,7 +95,7 @@ const nativeCompatibility = freeze({
   },
 });
 const scannerPolicy = freeze({
-  producerCommit: '7a1fb9cb61161510b284b54c2d7003576cf2379b',
+  producerCommit: '63cb53e8c71744f50df1f1614f6ec3140e89d3ed',
   producerTree: 'a50b5b609f22fa06782ee564ad53fb49cb5d2364',
   historicalConfigPath: '.github/codeql/config.yml',
   historicalConfigSha256:
