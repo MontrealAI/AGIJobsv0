@@ -41,6 +41,8 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: '22.23.3'
+      - name: Install locked dependencies
+        run: ./scripts/ci/npm-ci.sh
       - name: Exercise bounded native and policy rejection cases
         run: node --test integrations/alpha-agent/tests/transformational-compatibility.test.mjs test/pages/transformational-work-request.test.mjs test/pages/four-repo-alpha-source.test.mjs
       - name: Verify real native free campaign and refusal semantics
