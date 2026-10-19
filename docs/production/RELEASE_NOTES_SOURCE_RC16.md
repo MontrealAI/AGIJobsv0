@@ -106,7 +106,7 @@ release or an operational approval.
 
 ## Recorded deployments and owner-operated creation
 
-The [current deployment directory](CURRENT_MAINNET_DEPLOYMENT.md) identifies
+The [current deployment directory](https://github.com/MontrealAI/AGIJobsv0/blob/29fb6ca64cb74e6682a1c53ce5b2c8bf7ad76994/docs/production/CURRENT_MAINNET_DEPLOYMENT.md) identifies
 the separate 18 October mainnet source
 `818b3a246871e4cd4dde86558dbb91ef82b15eef`, rather than assuming it equals this
 release. Its retained snapshot records 25 exact source/runtime comparisons,
