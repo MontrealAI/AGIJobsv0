@@ -9,6 +9,17 @@ const {
   publish,
   expectedAssets,
   verifyDownloadedAssets,
+  readReviewedCodeql,
+  readLatestCodeql,
+  reviewedCodeqlPagePath,
+  verifyScannerArchive,
+  summarizeScannerSarif,
+  historicalScannerArchive,
+  scannerArchive,
+  readScannerObservation,
+  scannerPages,
+  scannerPolicyContext,
+  sourceApiUrl,
 } = require('../../scripts/release/publish-source-release.cjs');
 const {
   compilerSourceBaseline,
@@ -17,9 +28,10 @@ const {
   preservedEvidencePaths,
   reviewedCompilerPaths,
   deploymentSnapshot,
+  scannerHistory,
 } = require('../../scripts/release/qualify-source-release.cjs');
 const sha = 'a'.repeat(40),
-  tag = 'source-v2.1.0-rc.15';
+  tag = 'source-v2.1.0-rc.16';
 function compilerArchiveFixture(contents = {}) {
   const compiler = require('../../config/solidity-compiler.json').longVersion;
   const payloads = {
@@ -61,6 +73,157 @@ function compilerArchiveFixture(contents = {}) {
     ),
   };
 }
+function scannerDocument(
+  paths = [
+    'integrations/alpha-agent/native.mjs',
+    'website/assets/computer-receipt-model.mjs',
+  ]
+) {
+  return {
+    version: '2.1.0',
+    runs: [
+      {
+        tool: {
+          driver: {
+            name: 'CodeQL',
+            semanticVersion: '2.27.2',
+            rules: [{ id: 'js/test' }],
+          },
+        },
+        invocations: [
+          {
+            executionSuccessful: true,
+            toolExecutionNotifications: paths.map((uri) => ({
+              descriptor: { id: 'js/diagnostics/successfully-extracted-files' },
+              locations: [
+                {
+                  physicalLocation: {
+                    artifactLocation: { uri, uriBaseId: '%SRCROOT%' },
+                  },
+                },
+              ],
+            })),
+          },
+        ],
+        properties: {
+          codeqlConfigSummary: {
+            disableDefaultQueries: false,
+            queries: [
+              { type: 'builtinSuite', uses: 'security-extended' },
+              { type: 'builtinSuite', uses: 'security-and-quality' },
+            ],
+          },
+        },
+        results: [
+          {
+            ruleId: 'js/test',
+            message: { text: 'Benign test provenance only' },
+            locations: [
+              {
+                physicalLocation: {
+                  artifactLocation: { uri: paths[0], uriBaseId: '%SRCROOT%' },
+                  region: { startLine: 1 },
+                },
+              },
+            ],
+            codeFlows: [
+              {
+                threadFlows: [
+                  {
+                    locations: [
+                      { location: { message: { text: 'test flow' } } },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  };
+}
+function scannerContextFixture(
+  source = sha,
+  tree = 'c'.repeat(40),
+  run = 10,
+  headBranch = 'main',
+  required = [
+    'integrations/alpha-agent/native.mjs',
+    'website/assets/computer-receipt-model.mjs',
+  ]
+) {
+  return {
+    source,
+    tree,
+    run,
+    attempt: 2,
+    event: 'push',
+    ref: 'refs/heads/' + headBranch,
+    configSha256: 'e'.repeat(64),
+    requiredExtractedFiles: [...required].sort(),
+  };
+}
+function scannerArchiveFixture(
+  document = scannerDocument(),
+  context = scannerContextFixture()
+) {
+  const raw = JSON.stringify(document),
+    run = document.runs[0];
+  const identity = Object.fromEntries(
+    ['source', 'tree', 'run', 'attempt', 'event', 'ref', 'configSha256'].map(
+      (name) => [name, context[name]]
+    )
+  );
+  const before = {
+    schema: 'agijobsv0/codeql-scope/2',
+    ...identity,
+    historicalConfigSha256: scannerHistory.configSha256,
+    staticAdmittedBefore: 856,
+    staticAdditionalAdmitted: 100,
+    allPreviousPathsRetained: true,
+    integrationClosureAdmitted: true,
+    browserClosureAdmitted: true,
+    requiredExtractedFiles: context.requiredExtractedFiles,
+    actualExtractionRequiresSARIF: true,
+  };
+  const extracted = [
+    ...new Set(
+      run.invocations
+        .flatMap((invocation) => invocation.toolExecutionNotifications || [])
+        .flatMap((item) =>
+          item.locations.map(
+            (location) => location.physicalLocation.artifactLocation.uri
+          )
+        )
+    ),
+  ].sort();
+  const report = {
+    schema: 'agijobsv0/codeql-extraction/1',
+    ...identity,
+    sarifSha256: crypto.createHash('sha256').update(raw).digest('hex'),
+    successfulExtractionFiles: extracted,
+    requiredExtractedFiles: context.requiredExtractedFiles,
+    missingRequiredExtractedFiles: context.requiredExtractedFiles.filter(
+      (name) => !extracted.includes(name)
+    ),
+    ruleIds: [
+      ...new Set(
+        [run.tool.driver, ...(run.tool.extensions || [])].flatMap((component) =>
+          (component.rules || []).map((rule) => rule.id)
+        )
+      ),
+    ].sort(),
+    rawResultCount: run.results.length,
+    resultDisposition: 'REQUIRES_INDEPENDENT_FINAL_SOURCE_REVIEW',
+  };
+  return {
+    'javascript.sarif': raw,
+    'source-scope-before.json': JSON.stringify(before),
+    'source-scope-after.json': JSON.stringify(before),
+    'source-extraction.json': JSON.stringify(report),
+  };
+}
 function assetFixture(t) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'source-release-test-'));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
@@ -91,6 +254,21 @@ function assetFixture(t) {
       preservedEvidencePaths,
       reviewedCompilerPaths,
       compiler: '0.8.37+commit.f401782d',
+    },
+    reviewedSourceCodeql: {
+      sourceSha: compilerSourceBaseline,
+      checks: [
+        {
+          id: 9,
+          headSha: compilerSourceBaseline,
+          name: 'CodeQL',
+          appId: 57789,
+          appSlug: 'github-advanced-security',
+          status: 'completed',
+          conclusion: 'success',
+          url: 'https://github.com/MontrealAI/AGIJobsv0/runs/9',
+        },
+      ],
     },
     deploymentSnapshots: [deploymentSnapshot],
   };
@@ -173,9 +351,97 @@ function assetFixture(t) {
     path.join(directory, 'compiler-provenance.json'),
     JSON.stringify(compilerProvenance)
   );
+  const requiredSources = [
+    'integrations/alpha-agent/native.mjs',
+    'website/assets/computer-receipt-model.mjs',
+  ];
+  const finalContext = scannerContextFixture(
+    sha,
+    provenance.tree,
+    10,
+    'main',
+    requiredSources
+  );
+  const reviewedContext = scannerContextFixture(
+    'b'.repeat(40),
+    'd'.repeat(40),
+    20,
+    'fix/inherited-codeql-review',
+    requiredSources
+  );
+  const finalDigest = writeCompilerZip(
+    path.join(directory, 'codeql-evidence.zip'),
+    scannerArchiveFixture(scannerDocument(requiredSources), finalContext)
+  );
+  const reviewedDigest = writeCompilerZip(
+    path.join(directory, 'codeql-reviewed-evidence.zip'),
+    scannerArchiveFixture(scannerDocument(requiredSources), reviewedContext)
+  );
+  const producer = (source, id, digest) => ({
+    runId: id,
+    runAttempt: 2,
+    runNumber: 10,
+    event: 'push',
+    headBranch: id === 20 ? 'fix/inherited-codeql-review' : 'main',
+    artifactId: id + 1,
+    artifactName: `codeql-security-report-${source}-${id}-2`,
+    githubDigest: `sha256:${digest}`,
+  });
+  const summary = scannerArchive(
+    path.join(directory, 'codeql-evidence.zip'),
+    requiredSources,
+    finalContext
+  );
+  const review = {
+    sourceSha: 'b'.repeat(40),
+    sourceTree: reviewedContext.tree,
+    producer: producer('b'.repeat(40), 20, reviewedDigest),
+    summary,
+    codeqlChecks: provenance.reviewedSourceCodeql.checks,
+  };
+  provenance.scannerReview = review;
+  fs.writeFileSync(
+    path.join(directory, 'provenance.json'),
+    JSON.stringify(provenance)
+  );
+  const scannerProof = {
+    schema: 'agijobsv0/raw-codeql-provenance/1',
+    repository: provenance.repository,
+    sourceSha: sha,
+    final: producer(sha, 10, finalDigest),
+    reviewed: review.producer,
+    summary,
+    review,
+    history: scannerHistory,
+  };
+  fs.writeFileSync(
+    path.join(directory, 'codeql-provenance.json'),
+    JSON.stringify(scannerProof)
+  );
+  const scannerEvidence = {
+    requiredSources,
+    finalContext,
+    reviewedContext,
+    review,
+    finalObservation: { producer: scannerProof.final },
+    reviewedObservation: { producer: scannerProof.reviewed },
+  };
   checksums(directory);
   for (const name of expectedAssets(tag))
     fs.copyFileSync(path.join(directory, name), path.join(downloaded, name));
+  // These records model responses from the authenticated GitHub API, separate
+  // from the downloaded claims and their self-contained checksums.
+  const recordedCodeqlChecks = [
+    {
+      id: 9,
+      head_sha: compilerSourceBaseline,
+      name: 'CodeQL',
+      app: { id: 57789, slug: 'github-advanced-security' },
+      status: 'completed',
+      conclusion: 'success',
+      html_url: 'https://github.com/MontrealAI/AGIJobsv0/runs/9',
+    },
+  ];
   const verify = (draft = true, overrides = {}) =>
     verifyDownloadedAssets({
       directory,
@@ -184,6 +450,10 @@ function assetFixture(t) {
       ...provenance,
       compilerArtifact,
       compilerRun,
+      recordedCodeqlChecks,
+      latestCodeqlChecks: recordedCodeqlChecks,
+      finalCodeqlChecks: [],
+      scannerEvidence,
       ...overrides,
     });
   return {
@@ -196,17 +466,20 @@ function assetFixture(t) {
     compilerRun,
     compilerProvenance,
     writeCompilerZip,
+    recordedCodeqlChecks,
+    scannerEvidence,
+    scannerProof,
   };
 }
 test('compiler and evidence assets must match the complete checksum inventory and producer', (t) => {
   const fixture = assetFixture(t);
-  assert.equal(expectedAssets(tag).length, 15);
+  assert.equal(expectedAssets(tag).length, 18);
   assert.equal(
     fs
       .readFileSync(path.join(fixture.downloaded, 'SHA256SUMS.txt'), 'utf8')
       .trim()
       .split('\n').length,
-    14
+    17
   );
   fixture.verify();
   fs.appendFileSync(
@@ -221,6 +494,193 @@ test('compiler and evidence assets must match the complete checksum inventory an
   );
   assert.throws(() => fixture.verify(), /inventory mismatch/);
 });
+test('downloaded provenance cannot erase, replace or relabel the reviewed CodeQL result', (t) => {
+  const fixture = assetFixture(t);
+  for (const mutate of [
+    (value) => {
+      delete value.reviewedSourceCodeql;
+    },
+    (value) => {
+      value.reviewedSourceCodeql.sourceSha = 'f'.repeat(40);
+    },
+    (value) => {
+      value.reviewedSourceCodeql.checks = [];
+    },
+    (value) => {
+      value.reviewedSourceCodeql.checks[0].conclusion = 'failure';
+    },
+    (value) => {
+      value.reviewedSourceCodeql.checks[0].appSlug = 'github-actions';
+    },
+    (value) => {
+      value.reviewedSourceCodeql.checks[0].headSha = 'e'.repeat(40);
+    },
+    (value) => {
+      value.reviewedSourceCodeql.checks[0].url =
+        'https://example.invalid/result';
+    },
+    (value) => {
+      value.reviewedSourceCodeql.checks[0].id = 999999999;
+      value.reviewedSourceCodeql.checks[0].url =
+        'https://github.com/MontrealAI/AGIJobsv0/runs/999999999';
+    },
+  ]) {
+    const changed = JSON.parse(JSON.stringify(fixture.provenance));
+    mutate(changed);
+    fs.writeFileSync(
+      path.join(fixture.downloaded, 'provenance.json'),
+      JSON.stringify(changed)
+    );
+    fixture.checksums(fixture.downloaded);
+    assert.throws(() => fixture.verify(false), /reviewed CodeQL/);
+  }
+});
+test('readback authenticates recorded results and rejects an old success when the latest result fails or waits', (t) => {
+  const fixture = assetFixture(t);
+  const old = fixture.recordedCodeqlChecks[0];
+  const rerun = {
+    ...old,
+    id: 10,
+    html_url: 'https://github.com/MontrealAI/AGIJobsv0/runs/10',
+  };
+  // A real successful rerun need not use the same ID as the published proof.
+  fixture.verify(false, { latestCodeqlChecks: [rerun] });
+  for (const latest of [
+    [],
+    [{ ...rerun, conclusion: 'failure' }],
+    [{ ...rerun, status: 'in_progress', conclusion: null }],
+    [rerun, { ...old, conclusion: 'failure' }],
+  ])
+    assert.throws(
+      () => fixture.verify(false, { latestCodeqlChecks: latest }),
+      /authenticated GitHub checks/
+    );
+  for (const recorded of [
+    [],
+    [{ ...old, id: 11 }],
+    [{ ...old, head_sha: 'f'.repeat(40) }],
+    [{ ...old, app: { id: 15368, slug: 'github-actions' } }],
+    [{ ...old, conclusion: 'failure' }],
+    [{ ...old, html_url: 'https://example.invalid/result' }],
+    [old, old],
+  ])
+    assert.throws(
+      () => fixture.verify(false, { recordedCodeqlChecks: recorded }),
+      /authenticated GitHub checks/
+    );
+});
+
+test('publication readback refreshes optional final-SHA CodeQL and blocks a newly failed or pending result', (t) => {
+  const fixture = assetFixture(t);
+  const result = {
+    ...fixture.recordedCodeqlChecks[0],
+    id: 20,
+    head_sha: sha,
+    html_url: 'https://github.com/MontrealAI/AGIJobsv0/runs/20',
+  };
+  fixture.verify(false, { finalCodeqlChecks: [] });
+  fixture.verify(false, { finalCodeqlChecks: [result] });
+  for (const finalCodeqlChecks of [
+    undefined,
+    [{ ...result, conclusion: 'failure' }],
+    [{ ...result, status: 'queued', conclusion: null }],
+    [result, { ...result, id: 21, conclusion: 'failure' }],
+  ])
+    assert.throws(
+      () => fixture.verify(false, { finalCodeqlChecks }),
+      /authenticated GitHub checks/
+    );
+});
+
+test('authenticated CodeQL readback reads every bounded latest page independently of recorded IDs', async (t) => {
+  const fixture = assetFixture(t);
+  const seen = [];
+  const old = fixture.recordedCodeqlChecks[0];
+  const otherChecks = Array.from({ length: 100 }, (_, index) => ({
+    id: index + 100,
+    head_sha: compilerSourceBaseline,
+    name: 'other',
+  }));
+  const latest = {
+    ...old,
+    id: 10,
+    html_url: 'https://github.com/MontrealAI/AGIJobsv0/runs/10',
+  };
+  const result = await readReviewedCodeql(async (method, resource) => {
+    assert.equal(method, 'GET');
+    seen.push(resource);
+    if (resource === 'check-runs/9') return old;
+    if (resource === reviewedCodeqlPagePath(1))
+      return { total_count: 101, check_runs: otherChecks };
+    assert.equal(resource, reviewedCodeqlPagePath(2));
+    return { total_count: 101, check_runs: [latest] };
+  }, fixture.provenance.reviewedSourceCodeql);
+  assert.deepEqual(seen, [
+    'check-runs/9',
+    reviewedCodeqlPagePath(1),
+    reviewedCodeqlPagePath(2),
+  ]);
+  assert.deepEqual(result.recordedCodeqlChecks, [old]);
+  assert.equal(result.latestCodeqlChecks.length, 101);
+  fixture.verify(false, result);
+});
+
+test('authenticated CodeQL readback refuses incomplete, drifting, duplicate or excessive pages', async (t) => {
+  const fixture = assetFixture(t);
+  const old = fixture.recordedCodeqlChecks[0];
+  const full = Array.from({ length: 100 }, (_, index) => ({
+    id: index + 100,
+    head_sha: compilerSourceBaseline,
+  }));
+  for (const pages of [
+    [{ total_count: 2, check_runs: [old] }],
+    [{ total_count: 0, check_runs: [old] }],
+    [{ total_count: 2001, check_runs: full }],
+    [{ total_count: '1', check_runs: [old] }],
+    [{ total_count: 1, check_runs: [{ ...old, head_sha: 'f'.repeat(40) }] }],
+    [
+      { total_count: 101, check_runs: full },
+      { total_count: 102, check_runs: [old] },
+    ],
+    [
+      { total_count: 101, check_runs: full },
+      { total_count: 101, check_runs: [full[0]] },
+    ],
+    [{ total_count: 2, check_runs: [old, old] }],
+  ]) {
+    let index = 0;
+    await assert.rejects(
+      readReviewedCodeql(
+        async (_method, resource) =>
+          resource === 'check-runs/9' ? old : pages[index++],
+        fixture.provenance.reviewedSourceCodeql
+      ),
+      /authenticated reviewed CodeQL/
+    );
+  }
+});
+test('final-source readback uses its own exact source and preserves an absent main result', async () => {
+  const seen = [];
+  assert.deepEqual(
+    await readLatestCodeql(async (method, resource) => {
+      seen.push([method, resource]);
+      return { total_count: 0, check_runs: [] };
+    }, sha),
+    []
+  );
+  assert.deepEqual(seen, [['GET', reviewedCodeqlPagePath(1, sha)]]);
+  await assert.rejects(
+    readLatestCodeql(
+      async () => ({
+        total_count: 1,
+        check_runs: [{ id: 1, head_sha: 'f'.repeat(40) }],
+      }),
+      sha
+    ),
+    /authenticated reviewed CodeQL/
+  );
+});
+
 test('recomputed checksums cannot substitute the pinned current deployment snapshot or its provenance', (t) => {
   const fixture = assetFixture(t);
   const snapshot = path.join(fixture.downloaded, deploymentSnapshot.asset);
@@ -386,9 +846,9 @@ test('workflow packages every declared immutable release asset', () => {
     'utf8'
   );
   assert.ok(workflow.includes(`TAG: ${tag}`));
-  assert.ok(workflow.includes('group: source-release-rc15-${{ github.ref }}'));
-  assert.ok(workflow.includes('name: source-rc15-${{ github.sha }}'));
-  assert.ok(expectedAssets(tag).includes('RELEASE_NOTES_SOURCE_RC15.md'));
+  assert.ok(workflow.includes('group: source-release-rc16-${{ github.ref }}'));
+  assert.ok(workflow.includes('name: source-rc16-${{ github.sha }}'));
+  assert.ok(expectedAssets(tag).includes('RELEASE_NOTES_SOURCE_RC16.md'));
   for (const prior of [
     'RC7',
     'RC8',
@@ -398,6 +858,7 @@ test('workflow packages every declared immutable release asset', () => {
     'RC12',
     'RC13',
     'RC14',
+    'RC15',
   ]) {
     assert.ok(
       !expectedAssets(tag).includes(`RELEASE_NOTES_SOURCE_${prior}.md`)
@@ -414,7 +875,7 @@ test('workflow packages every declared immutable release asset', () => {
   const notes = fs.readFileSync(
     path.resolve(
       __dirname,
-      '../../docs/production/RELEASE_NOTES_SOURCE_RC15.md'
+      '../../docs/production/RELEASE_NOTES_SOURCE_RC16.md'
     ),
     'utf8'
   );
@@ -436,6 +897,9 @@ test('workflow packages every declared immutable release asset', () => {
         `${tag}-source.zip`,
         'compiler-evidence.zip',
         'compiler-provenance.json',
+        'codeql-evidence.zip',
+        'codeql-reviewed-evidence.zip',
+        'codeql-provenance.json',
       ].includes(name)
     )
       continue;
@@ -822,6 +1286,7 @@ test('source API boundary allows only exact supported methods and routes', () =>
     ['GET', `releases/tags/${tag}`],
     ['GET', 'actions/artifacts/123'],
     ['GET', 'actions/runs/456/attempts/2'],
+    ['GET', 'check-runs/9'],
     ['POST', 'git/refs'],
     ['POST', 'releases'],
     ['PATCH', 'releases/789'],
@@ -838,6 +1303,25 @@ test('source API boundary allows only exact supported methods and routes', () =>
     ['GET', 'actions/artifacts/1\n'],
     ['GET', 'actions/artifacts/0'],
     ['GET', 'actions/artifacts/1/extra'],
+    ['GET', 'check-runs/0'],
+    ['GET', 'check-runs/9?x=2'],
+    ['GET', 'check-runs/9/extra'],
+    [
+      'GET',
+      `commits/${'f'.repeat(40)}/check-runs?filter=latest&per_page=100&page=1`,
+    ],
+    [
+      'GET',
+      `commits/${compilerSourceBaseline}/check-runs?filter=latest&per_page=100&page=0`,
+    ],
+    [
+      'GET',
+      `commits/${compilerSourceBaseline}/check-runs?filter=latest&per_page=100&page=21`,
+    ],
+    [
+      'GET',
+      `commits/${compilerSourceBaseline}/check-runs?filter=all&per_page=100&page=1`,
+    ],
     ['GET', '//example.com'],
     ['GET', 'https://example.com'],
     ['GET', 'git/ref/heads/other'],
@@ -847,6 +1331,8 @@ test('source API boundary allows only exact supported methods and routes', () =>
     ['GET', 'releases/tags/source-v2.1.0-rc.12'],
     ['GET', 'git/ref/tags/source-v2.1.0-rc.14'],
     ['GET', 'releases/tags/source-v2.1.0-rc.14'],
+    ['GET', 'git/ref/tags/source-v2.1.0-rc.15'],
+    ['GET', 'releases/tags/source-v2.1.0-rc.15'],
     ['GET', 'git/ref/tags/source-v2.1.0-rc.13'],
     ['GET', 'releases/tags/source-v2.1.0-rc.13'],
     ['GET', 'git/ref/tags/source-v2.1.0-rc.11'],
@@ -858,6 +1344,27 @@ test('source API boundary allows only exact supported methods and routes', () =>
     ['GET', null],
   ])
     assert.throws(() => sourceApiUrl(method, resource), /Unsupported/);
+  for (let page = 1; page <= 20; page++) {
+    const resource = reviewedCodeqlPagePath(page);
+    if (/^[a-f0-9]{40}$/.test(compilerSourceBaseline))
+      assert.equal(
+        sourceApiUrl('GET', resource),
+        `https://api.github.com/repos/MontrealAI/AGIJobsv0/${resource}`
+      );
+    // The unreplaced release sentinel must not authorize an API source.
+    else assert.throws(() => sourceApiUrl('GET', resource), /Unsupported/);
+    const finalResource = reviewedCodeqlPagePath(page, sha);
+    assert.equal(
+      sourceApiUrl('GET', finalResource, sha),
+      `https://api.github.com/repos/MontrealAI/AGIJobsv0/${finalResource}`
+    );
+    assert.throws(
+      () => sourceApiUrl('GET', finalResource, 'f'.repeat(40)),
+      /Unsupported/
+    );
+  }
+  for (const page of [0, 21, '1', 1.5, null])
+    assert.throws(() => reviewedCodeqlPagePath(page), /Invalid/);
 });
 
 test('rc.12 retains the exact published rc.11 notes and identifies its limits', () => {
@@ -958,8 +1465,10 @@ f35f728d821a1b30c81e0151d3df138b01db891a0764ef6f2b91f7a5da7c027d  mainnet-deploy
   assert.deepEqual(
     [...receipt.keys()].sort(),
     expectedAssets('source-v2.1.0-rc.14')
-      .filter((name) => name !== 'SHA256SUMS.txt')
-      .map((name) => name.replace('RC15.md', 'RC14.md'))
+      .filter(
+        (name) => name !== 'SHA256SUMS.txt' && !name.startsWith('codeql-')
+      )
+      .map((name) => name.replace('RC16.md', 'RC14.md'))
       .sort()
   );
   const retainedFiles = {
@@ -996,7 +1505,7 @@ test('rc.15 identifies computer-use evidence limits and preserves the exact-sour
     ),
     'utf8'
   );
-  assert.ok(notes.startsWith('# ' + tag));
+  assert.ok(notes.startsWith('# source-v2.1.0-rc.15'));
   assert.match(notes, /fecde507f770481bfd68efddcb92230a0d885b53/);
   assert.match(
     notes,
@@ -1010,5 +1519,488 @@ test('rc.15 identifies computer-use evidence limits and preserves the exact-sour
   assert.match(notes, /all 15 required workflow paths/);
   assert.match(notes, /14 checksummed payloads/);
   assert.match(notes, /No fixture-proof asset is added/);
-  assert.equal(expectedAssets(tag).length, 15);
+  assert.equal(expectedAssets(tag).length, 18);
+});
+
+test('rc.16 preserves rc.15 notes and states exact computer evidence, settlement and gate boundaries', () => {
+  const root = path.resolve(__dirname, '../..');
+  const previous = fs.readFileSync(
+    path.join(root, 'docs/production/RELEASE_NOTES_SOURCE_RC15.md')
+  );
+  assert.equal(
+    crypto.createHash('sha256').update(previous).digest('hex'),
+    '0ce2c2652e95a984fd49242716b5b2bfb9b6c06bab00bd2f60829ff4d8195513'
+  );
+  const notes = fs.readFileSync(
+    path.join(root, 'docs/production/RELEASE_NOTES_SOURCE_RC16.md'),
+    'utf8'
+  );
+  assert.ok(notes.startsWith('# ' + tag));
+  for (const required of [
+    'Production approval remains false',
+    '96 scanner results',
+    'not 96 established vulnerabilities',
+    'separate CodeQL result check',
+    'PROTOCOL_DOUBLE_NO_BROWSER',
+    'unfunded proposal',
+    'four native sealed A0 jobs reserve zero',
+    'Mock',
+    'Previous deployments stay read-only',
+    'Ledger',
+    'Mac Studio',
+    'ENS configuration',
+  ])
+    assert.ok(notes.toLowerCase().includes(required.toLowerCase()), required);
+  assert.equal(expectedAssets(tag).length, 18);
+  assert.ok(expectedAssets(tag).includes('RELEASE_NOTES_SOURCE_RC16.md'));
+  assert.ok(!expectedAssets(tag).includes('RELEASE_NOTES_SOURCE_RC15.md'));
+});
+
+test('raw SARIF requires successful complete extraction and preserves every full result instance', () => {
+  const document = scannerDocument(),
+    required = [
+      'integrations/alpha-agent/native.mjs',
+      'website/assets/computer-receipt-model.mjs',
+    ];
+  const inspect = (value) =>
+    summarizeScannerSarif(JSON.stringify(value), required);
+  const baseline = inspect(document);
+  assert.equal(baseline.resultCount, 1);
+  const duplicate = structuredClone(document);
+  duplicate.runs[0].results.push(duplicate.runs[0].results[0]);
+  assert.equal(inspect(duplicate).resultCount, 2);
+  assert.deepEqual(inspect(duplicate).results, [
+    baseline.results[0],
+    baseline.results[0],
+  ]);
+  const changed = structuredClone(document);
+  changed.runs[0].results[0].codeFlows[0].threadFlows[0].locations[0].location.message.text +=
+    ' changed';
+  assert.notDeepEqual(inspect(changed).results, baseline.results);
+  for (const mutate of [
+    (doc) => {
+      doc.runs[0].invocations[0].executionSuccessful = false;
+    },
+    (doc) => {
+      doc.runs[0].invocations[0].toolExecutionNotifications.pop();
+    },
+    (doc) => {
+      doc.runs[0].properties.codeqlConfigSummary.queries.pop();
+    },
+    (doc) => {
+      doc.runs[0].results[0].suppressions = [{ kind: 'external' }];
+    },
+    (doc) => {
+      doc.runs[0].invocations[0].toolExecutionNotifications[0].locations[0].physicalLocation.artifactLocation.uri =
+        '../escape.mjs';
+    },
+    (doc) => {
+      doc.runs.push(doc.runs[0]);
+    },
+  ]) {
+    const value = structuredClone(document);
+    mutate(value);
+    assert.throws(() => inspect(value));
+  }
+  const contents = scannerArchiveFixture(document);
+  assert.throws(
+    () =>
+      verifyScannerArchive(
+        [...Object.keys(contents), 'javascript.sarif'],
+        (name) => contents[name],
+        required,
+        scannerContextFixture()
+      ),
+    /inventory/
+  );
+});
+
+test('downloaded scanner archives require installed review, authenticated producer and full reconciliation', (t) => {
+  const fixture = assetFixture(t);
+  fixture.verify();
+  for (const scannerEvidence of [
+    undefined,
+    { ...fixture.scannerEvidence, review: null },
+    { ...fixture.scannerEvidence, finalObservation: undefined },
+    { ...fixture.scannerEvidence, finalContext: undefined },
+    {
+      ...fixture.scannerEvidence,
+      reviewedContext: fixture.scannerEvidence.finalContext,
+    },
+    {
+      ...fixture.scannerEvidence,
+      review: {
+        ...fixture.scannerEvidence.review,
+        summary: { ...fixture.scannerEvidence.review.summary, resultCount: 0 },
+      },
+    },
+  ])
+    assert.throws(
+      () => fixture.verify(true, { scannerEvidence }),
+      /Scanner|scanner/
+    );
+  const file = path.join(fixture.downloaded, 'codeql-provenance.json');
+  const proof = JSON.parse(fs.readFileSync(file));
+  proof.final.runAttempt++;
+  fs.writeFileSync(file, JSON.stringify(proof));
+  fixture.checksums(fixture.downloaded);
+  fs.copyFileSync(file, path.join(fixture.directory, 'codeql-provenance.json'));
+  assert.throws(() => fixture.verify(false), /scanner|Scanner/);
+});
+
+function scannerApiFixture(change = {}) {
+  const producer = {
+    runId: 40,
+    runAttempt: 2,
+    runNumber: 12,
+    event: 'push',
+    headBranch: 'main',
+    artifactId: 41,
+    artifactName: `codeql-security-report-${sha}-40-2`,
+    githubDigest: 'sha256:' + 'a'.repeat(64),
+  };
+  const run = {
+    id: 40,
+    run_attempt: 2,
+    run_number: 12,
+    path: '.github/workflows/static-analysis.yml',
+    head_sha: sha,
+    repository: { full_name: 'MontrealAI/AGIJobsv0' },
+    head_repository: { full_name: 'MontrealAI/AGIJobsv0' },
+    event: 'push',
+    head_branch: 'main',
+    status: 'completed',
+    conclusion: 'success',
+  };
+  const artifact = {
+    id: 41,
+    name: producer.artifactName,
+    digest: producer.githubDigest,
+    expired: false,
+    workflow_run: { id: 40, head_sha: sha },
+  };
+  const responses = {
+    'actions/runs/40': run,
+    'actions/runs/40/attempts/2': run,
+    'actions/artifacts/41': artifact,
+    [`actions/workflows/static-analysis.yml/runs?head_sha=${sha}&per_page=100&page=1`]:
+      { total_count: 1, workflow_runs: [run] },
+    'actions/runs/40/artifacts?&per_page=100&page=1': {
+      total_count: 1,
+      artifacts: [artifact],
+    },
+    ...change,
+  };
+  return {
+    producer,
+    run,
+    artifact,
+    api: async (method, resource) => {
+      assert.equal(method, 'GET');
+      assert.ok(Object.hasOwn(responses, resource), resource);
+      return responses[resource];
+    },
+  };
+}
+test('scanner observation authenticates exact source, latest run/attempt and unique artifact', async () => {
+  const fixture = scannerApiFixture();
+  await readScannerObservation(fixture.api, fixture.producer, sha, true);
+  for (const change of [
+    { run_attempt: 3 },
+    { conclusion: 'failure' },
+    { status: 'in_progress' },
+    { head_sha: 'b'.repeat(40) },
+    { head_repository: { full_name: 'other/repo' } },
+    { event: 'pull_request' },
+    { head_branch: 'other' },
+  ]) {
+    const altered = scannerApiFixture({
+      'actions/runs/40': { ...fixture.run, ...change },
+    });
+    await assert.rejects(
+      readScannerObservation(altered.api, altered.producer, sha, true)
+    );
+  }
+  const newer = scannerApiFixture({
+    [`actions/workflows/static-analysis.yml/runs?head_sha=${sha}&per_page=100&page=1`]:
+      {
+        total_count: 2,
+        workflow_runs: [
+          fixture.run,
+          { ...fixture.run, id: 42, run_number: 13, conclusion: 'failure' },
+        ],
+      },
+  });
+  await assert.rejects(
+    readScannerObservation(newer.api, newer.producer, sha, true),
+    /supersedes/
+  );
+  for (const artifact of [
+    { ...fixture.artifact, expired: true },
+    { ...fixture.artifact, digest: 'sha256:' + 'b'.repeat(64) },
+    { ...fixture.artifact, workflow_run: { id: 40, head_sha: 'b'.repeat(40) } },
+  ]) {
+    const altered = scannerApiFixture({ 'actions/artifacts/41': artifact });
+    await assert.rejects(
+      readScannerObservation(altered.api, altered.producer, sha, true),
+      /artifact/
+    );
+  }
+});
+test('scanner producer pagination refuses missing, duplicate, drifting and overbound data', async () => {
+  for (const response of [
+    { total_count: 1, artifacts: [] },
+    { total_count: 2001, artifacts: [] },
+    { total_count: 2, artifacts: [{ id: 1 }, { id: 1 }] },
+  ])
+    await assert.rejects(
+      scannerPages(
+        async () => response,
+        'actions/runs/40/artifacts?',
+        'artifacts'
+      )
+    );
+  let page = 0;
+  await assert.rejects(
+    scannerPages(
+      async () =>
+        ++page === 1
+          ? {
+              total_count: 101,
+              artifacts: Array.from({ length: 100 }, (_, i) => ({ id: i + 1 })),
+            }
+          : { total_count: 102, artifacts: [{ id: 101 }] },
+      'actions/runs/40/artifacts?',
+      'artifacts'
+    ),
+    /pagination/
+  );
+});
+
+test('fully resealed scanner result changes cannot replace the installed independent review', (t) => {
+  const fixture = assetFixture(t),
+    changed = scannerDocument();
+  changed.runs[0].results[0].codeFlows[0].threadFlows[0].locations[0].location.message.text =
+    'Different benign test flow with the same primary location';
+  const zip = path.join(fixture.directory, 'codeql-evidence.zip');
+  const digest = fixture.writeCompilerZip(
+    zip,
+    scannerArchiveFixture(changed, fixture.scannerEvidence.finalContext)
+  );
+  fs.copyFileSync(zip, path.join(fixture.downloaded, 'codeql-evidence.zip'));
+  const proof = structuredClone(fixture.scannerProof);
+  proof.final.githubDigest = 'sha256:' + digest;
+  proof.summary = scannerArchive(
+    zip,
+    fixture.scannerEvidence.requiredSources,
+    fixture.scannerEvidence.finalContext
+  );
+  for (const directory of [fixture.directory, fixture.downloaded]) {
+    fs.writeFileSync(
+      path.join(directory, 'codeql-provenance.json'),
+      JSON.stringify(proof)
+    );
+    fixture.checksums(directory);
+  }
+  assert.throws(
+    () =>
+      fixture.verify(false, {
+        scannerEvidence: {
+          ...fixture.scannerEvidence,
+          finalObservation: { producer: proof.final },
+        },
+      }),
+    /reconciliation differs/
+  );
+});
+test('scanner evidence API routes stay source, workflow, page-size and page-count bounded', () => {
+  for (const resource of [
+    `actions/workflows/static-analysis.yml/runs?head_sha=${sha}&per_page=100&page=20`,
+    'actions/runs/40/artifacts?&per_page=100&page=20',
+    'actions/runs/40',
+  ])
+    assert.ok(sourceApiUrl('GET', resource, sha).endsWith(resource));
+  for (const resource of [
+    `actions/workflows/static-analysis.yml/runs?head_sha=${'f'.repeat(
+      40
+    )}&per_page=100&page=1`,
+    `actions/workflows/other.yml/runs?head_sha=${sha}&per_page=100&page=1`,
+    `actions/workflows/static-analysis.yml/runs?head_sha=${sha}&per_page=99&page=1`,
+    'actions/runs/40/artifacts?&per_page=100&page=21',
+    'actions/runs/40/artifacts?&per_page=100&page=0',
+  ])
+    assert.throws(() => sourceApiUrl('GET', resource, sha), /Unsupported/);
+});
+test('scanner observation rejects duplicate named artifacts and legitimate latest reruns remain usable', async () => {
+  const fixture = scannerApiFixture();
+  const duplicate = scannerApiFixture({
+    'actions/runs/40/artifacts?&per_page=100&page=1': {
+      total_count: 2,
+      artifacts: [fixture.artifact, { ...fixture.artifact, id: 43 }],
+    },
+  });
+  await assert.rejects(
+    readScannerObservation(duplicate.api, duplicate.producer, sha, true),
+    /artifact/
+  );
+  // Attempt2 is valid: the guard binds the currently successful attempt rather
+  // than prohibiting reruns. A later pending/failing attempt is tested above.
+  const result = await readScannerObservation(
+    fixture.api,
+    fixture.producer,
+    sha,
+    true
+  );
+  assert.equal(result.producer.runAttempt, 2);
+  await assert.rejects(
+    readScannerObservation(
+      fixture.api,
+      { ...fixture.producer, event: 'pull_request' },
+      sha
+    ),
+    /producer/
+  );
+});
+test('real retained 96-result SARIF supplies pinned historical scope, never current qualification', () => {
+  const root = path.resolve(__dirname, '../..');
+  const source = execFileSync('git', ['rev-parse', 'HEAD'], {
+    cwd: root,
+    encoding: 'utf8',
+  }).trim();
+  const context = scannerPolicyContext(
+    (...args) =>
+      execFileSync('git', ['--no-replace-objects', ...args], {
+        cwd: root,
+        encoding: 'utf8',
+      }),
+    source
+  );
+  const baseline = historicalScannerArchive(
+    path.join(
+      root,
+      'docs/security/remediation-2026-10-19/baseline/original-codeql.zip'
+    )
+  );
+  assert.equal(baseline.resultCount, 96);
+  assert.ok(
+    context.requiredSources.includes(
+      'website/assets/computer-receipt-model.mjs'
+    )
+  );
+  assert.ok(
+    context.requiredSources.includes(
+      'integrations/alpha-agent/vendor/alpha/docs/assets/successor/engine.mjs'
+    )
+  );
+  assert.ok(
+    context.requiredSources.includes(
+      'integrations/alpha-agent/vendor/alpha-computer/docs/assets/successor/engine.mjs'
+    )
+  );
+  assert.ok(
+    context.requiredSources.includes(
+      'integrations/alpha-agent/four-repo-computer-lifecycle.cjs'
+    )
+  );
+  assert.ok(!Object.hasOwn(context, 'qualified'));
+});
+
+test('four-file scanner evidence binds scope, extraction and actual SARIF to an independent execution context', () => {
+  const context = scannerContextFixture(),
+    document = scannerDocument(),
+    contents = scannerArchiveFixture(document, context);
+  const verify = (value = contents, expected = context) =>
+    verifyScannerArchive(
+      Object.keys(value),
+      (name) => value[name],
+      context.requiredExtractedFiles,
+      expected
+    );
+  const summary = verify();
+  assert.equal(summary.resultCount, 1);
+  for (const field of [
+    'source',
+    'tree',
+    'run',
+    'attempt',
+    'event',
+    'ref',
+    'configSha256',
+  ]) {
+    const expected = {
+      ...context,
+      [field]:
+        typeof context[field] === 'number'
+          ? context[field] + 1
+          : context[field] + 'different',
+    };
+    assert.throws(() => verify(contents, expected), /context|scope|identity/);
+  }
+  for (const mutate of [
+    (records) => {
+      records['source-scope-after.json'].run++;
+    },
+    (records) => {
+      records['source-scope-before.json'].historicalConfigSha256 = '0'.repeat(
+        64
+      );
+      records['source-scope-after.json'] = records['source-scope-before.json'];
+    },
+    (records) => {
+      records['source-extraction.json'].sarifSha256 = '0'.repeat(64);
+    },
+    (records) => {
+      records['source-extraction.json'].rawResultCount = 0;
+    },
+    (records) => {
+      records['source-extraction.json'].ruleIds = ['invented-rule'];
+    },
+    (records) => {
+      records['source-extraction.json'].successfulExtractionFiles.pop();
+    },
+    (records) => {
+      records['source-extraction.json'].missingRequiredExtractedFiles = [
+        'integrations/alpha-agent/native.mjs',
+      ];
+    },
+    (records) => {
+      records['source-extraction.json'].resultDisposition = 'APPROVED';
+    },
+    (records) => {
+      records['source-extraction.json'].extra = true;
+    },
+    (records) => {
+      records['source-scope-before.json'].requiredExtractedFiles = [];
+      records['source-scope-after.json'] = records['source-scope-before.json'];
+    },
+  ]) {
+    const records = Object.fromEntries(
+      Object.entries(contents)
+        .filter(([name]) => name.endsWith('.json'))
+        .map(([name, raw]) => [name, JSON.parse(raw)])
+    );
+    mutate(records);
+    assert.throws(() =>
+      verify({
+        ...contents,
+        ...Object.fromEntries(
+          Object.entries(records).map(([name, value]) => [
+            name,
+            JSON.stringify(value),
+          ])
+        ),
+      })
+    );
+  }
+  for (const name of Object.keys(contents)) {
+    const missing = { ...contents };
+    delete missing[name];
+    assert.throws(() => verify(missing), /inventory/);
+  }
+  assert.throws(() => verify({ ...contents, 'extra.json': '{}' }), /inventory/);
+  assert.throws(
+    () => verify({ 'javascript.sarif': contents['javascript.sarif'] }),
+    /inventory/
+  );
+  assert.throws(() => verify(contents, null), /context/);
 });

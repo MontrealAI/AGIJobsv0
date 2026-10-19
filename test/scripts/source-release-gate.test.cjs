@@ -2,6 +2,7 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const {
   evaluate,
+  evaluateCodeql,
   requiredPaths,
   requiredChecks,
   verifySourceScope,
@@ -9,12 +10,17 @@ const {
   deploymentSnapshot,
   preservedEvidencePaths,
   reviewedCompilerPaths,
+  scannerHistory,
+  scannerReview,
+  scannerReviewPath,
+  parseScannerReview,
+  verifyScannerReviewSource,
 } = require('../../scripts/release/qualify-source-release.cjs');
 const sha = 'a'.repeat(40);
 function sourceFixture() {
   return {
     sha,
-    version: '2.1.0-rc.15',
+    version: '2.1.0-rc.16',
     compilerBaseline: 'b'.repeat(40),
     policy: {
       version: '0.8.37',
@@ -65,7 +71,12 @@ test('source scope preserves historical evidence and the reviewed compiler tree'
   }
 });
 test('source release rejects missing review, old compiler, changed production settings and wrong version', () => {
-  for (const compilerBaseline of ['', 'REVIEW_REQUIRED', 'source-v2.1.0-rc.5'])
+  for (const compilerBaseline of [
+    '',
+    'REVIEW_REQUIRED',
+    'REVIEW_REQUIRED_FOR_RC16',
+    'source-v2.1.0-rc.5',
+  ])
     assert.throws(
       () => verifySourceScope({ ...sourceFixture(), compilerBaseline }),
       /reviewed compiler/
@@ -81,6 +92,7 @@ test('source release rejects missing review, old compiler, changed production se
     '2.1.0-rc.12',
     '2.1.0-rc.13',
     '2.1.0-rc.14',
+    '2.1.0-rc.15',
     '2.1.0',
   ])
     assert.throws(
@@ -105,7 +117,7 @@ test('source release rejects missing review, old compiler, changed production se
     );
   }
 });
-test('rc.15 source qualification agrees with both package version records', () => {
+test('rc.16 source qualification agrees with both package version records', () => {
   const packageJson = require('../../package.json');
   const lock = require('../../package-lock.json');
   for (const version of [
@@ -113,7 +125,7 @@ test('rc.15 source qualification agrees with both package version records', () =
     lock.version,
     lock.packages[''].version,
   ]) {
-    assert.equal(version, '2.1.0-rc.15');
+    assert.equal(version, '2.1.0-rc.16');
     assert.doesNotThrow(() =>
       verifySourceScope({ ...sourceFixture(), version })
     );
@@ -303,4 +315,382 @@ test('pending or failed additional workflows and untrusted contexts cannot quali
     ).ready,
     true
   );
+});
+
+function codeqlResult(change = {}) {
+  return {
+    id: 123,
+    name: 'CodeQL',
+    head_sha: sha,
+    app: { id: 57789, slug: 'github-advanced-security' },
+    status: 'completed',
+    conclusion: 'success',
+    html_url: 'https://github.com/MontrealAI/AGIJobsv0/runs/123',
+    ...change,
+  };
+}
+test('a successful Actions workflow cannot hide a failed or pending Advanced Security result', () => {
+  const { runs, checks } = fixture();
+  for (const change of [
+    { conclusion: 'failure' },
+    { conclusion: 'neutral' },
+    { conclusion: 'skipped' },
+    { status: 'in_progress', conclusion: null },
+  ])
+    assert.equal(
+      evaluate(runs, [...checks, codeqlResult(change)], sha).ready,
+      false
+    );
+  assert.equal(evaluate(runs, [...checks, codeqlResult()], sha).ready, true);
+});
+test('the reviewed code baseline requires its own authentic successful CodeQL result', () => {
+  assert.equal(evaluateCodeql([], sha).ready, false);
+  for (const change of [
+    { app: { id: 15368, slug: 'github-actions' } },
+    { app: { id: 57789, slug: 'another-app' } },
+    { app: { id: 999, slug: 'github-advanced-security' } },
+    { name: 'CodeQL analysis' },
+    { head_sha: 'b'.repeat(40) },
+    { id: 0 },
+    { id: '123' },
+    { html_url: 'https://example.invalid/result' },
+    { conclusion: 'failure' },
+    { status: 'queued', conclusion: null },
+  ])
+    assert.equal(evaluateCodeql([codeqlResult(change)], sha).ready, false);
+  const result = evaluateCodeql([codeqlResult()], sha);
+  assert.equal(result.ready, true);
+  assert.deepEqual(result.checks[0], {
+    id: 123,
+    headSha: sha,
+    name: 'CodeQL',
+    appId: 57789,
+    appSlug: 'github-advanced-security',
+    status: 'completed',
+    conclusion: 'success',
+    url: 'https://github.com/MontrealAI/AGIJobsv0/runs/123',
+  });
+});
+
+test('pending scanner review cannot be enabled through missing or malformed metadata', () => {
+  assert.throws(
+    () => verifyScannerReviewSource({ git: () => '', sha, review: null }),
+    /pending/
+  );
+  const block = (value) =>
+    `notes\n<!-- rc16-scanner-review\n${JSON.stringify(value)}\n-->\n`;
+  assert.equal(parseScannerReview(block(null)), null);
+  assert.throws(() => parseScannerReview('no record'), /Exactly one/);
+  assert.throws(
+    () => parseScannerReview('x'.repeat(8 * 1024 * 1024 + 1)),
+    /Bounded/
+  );
+  assert.throws(
+    () => parseScannerReview(block(null) + block(null)),
+    /Exactly one/
+  );
+  assert.throws(
+    () => parseScannerReview(block({ approved: true })),
+    /Malformed/
+  );
+});
+test('review installation permits only the exact existing notes block after the reviewed source', (t) => {
+  const source = 'b'.repeat(40),
+    tree = 'c'.repeat(40);
+  const review = {
+    schema: 'agijobsv0/rc16-scanner-review/1',
+    sourceSha: source,
+    sourceTree: tree,
+    producer: {
+      runId: 1,
+      runAttempt: 1,
+      runNumber: 1,
+      event: 'push',
+      headBranch: 'main',
+      artifactId: 2,
+      artifactName: `codeql-security-report-${source}-1-1`,
+      githubDigest: 'sha256:' + 'a'.repeat(64),
+    },
+    summary: {
+      schema: 'agijobsv0/raw-codeql-summary/1',
+      toolSha256: 'a'.repeat(64),
+      queriesSha256: 'b'.repeat(64),
+      extractedPaths: ['integrations/alpha-agent/native.mjs'],
+      results: [],
+      resultCount: 0,
+    },
+    resultReviews: [],
+    codeqlChecks: [
+      {
+        id: 3,
+        headSha: source,
+        name: 'CodeQL',
+        appId: 57789,
+        appSlug: 'github-advanced-security',
+        status: 'completed',
+        conclusion: 'success',
+        url: 'https://github.com/MontrealAI/AGIJobsv0/runs/3',
+      },
+    ],
+    history: scannerHistory,
+    reviewLinks: [
+      'https://github.com/MontrealAI/AGIJobsv0/pull/3991#issuecomment-1',
+    ],
+  };
+  const block = (value) =>
+    `notes\n<!-- rc16-scanner-review\n${JSON.stringify(value)}\n-->\n`;
+  assert.deepEqual(parseScannerReview(block(review)), review);
+  assert.throws(
+    () =>
+      parseScannerReview(
+        block(review).replace(
+          '"sourceSha":',
+          '"sourceSha":"' + review.sourceSha + '","sourceSha":'
+        )
+      ),
+    /canonical JSON/
+  );
+  const git = (command, ...args) =>
+    command === 'rev-parse'
+      ? tree
+      : command === 'diff'
+      ? scannerReviewPath + '\0'
+      : command === 'ls-tree'
+      ? '100644 blob ' + 'd'.repeat(40) + '\t' + scannerReviewPath + '\0'
+      : command === 'show'
+      ? block(args[0].startsWith(source + ':') ? null : review)
+      : '';
+  verifyScannerReviewSource({ git, sha, review });
+  assert.throws(
+    () =>
+      verifyScannerReviewSource({
+        git: (command, ...args) =>
+          command === 'diff'
+            ? 'scripts/release/qualify-source-release.cjs\0'
+            : git(command, ...args),
+        sha,
+        review,
+      }),
+    /beyond/
+  );
+  assert.throws(
+    () =>
+      verifyScannerReviewSource({
+        git: (command, ...args) =>
+          command === 'show' && args[0].startsWith(sha + ':')
+            ? block(review) + 'changed text'
+            : git(command, ...args),
+        sha,
+        review,
+      }),
+    /beyond/
+  );
+  assert.throws(
+    () =>
+      verifyScannerReviewSource({
+        git: (command, ...args) =>
+          command === 'show' && args[0].startsWith(sha + ':')
+            ? block(review) + '\n'
+            : git(command, ...args),
+        sha,
+        review,
+      }),
+    /beyond/
+  );
+  assert.throws(
+    () =>
+      verifyScannerReviewSource({
+        git: (command, ...args) =>
+          command === 'ls-tree'
+            ? '100755 blob ' + 'd'.repeat(40) + '\t' + scannerReviewPath + '\0'
+            : git(command, ...args),
+        sha,
+        review,
+      }),
+    /regular-file mode/
+  );
+  // Exercise the actual Git mode-only transition as well as the pure boundary.
+  const fs = require('node:fs'),
+    path = require('node:path'),
+    os = require('node:os');
+  const { execFileSync } = require('node:child_process');
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'scanner-review-mode-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const realGit = (...args) =>
+    execFileSync('git', ['--no-replace-objects', '-C', root, ...args], {
+      encoding: 'utf8',
+    });
+  realGit('init', '-q');
+  const file = path.join(root, scannerReviewPath);
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, block(null));
+  fs.chmodSync(file, 0o644);
+  realGit('add', '.');
+  realGit(
+    '-c',
+    'user.name=Fixture',
+    '-c',
+    'user.email=fixture@example.test',
+    'commit',
+    '-qm',
+    'Benign feature source'
+  );
+  const realReview = structuredClone(review);
+  realReview.sourceSha = realGit('rev-parse', 'HEAD').trim();
+  realReview.sourceTree = realGit('rev-parse', 'HEAD^{tree}').trim();
+  realReview.producer.artifactName = `codeql-security-report-${realReview.sourceSha}-1-1`;
+  realReview.codeqlChecks[0].headSha = realReview.sourceSha;
+  fs.writeFileSync(file, block(realReview));
+  realGit('add', '.');
+  realGit(
+    '-c',
+    'user.name=Fixture',
+    '-c',
+    'user.email=fixture@example.test',
+    'commit',
+    '-qm',
+    'Install benign review metadata'
+  );
+  verifyScannerReviewSource({
+    git: realGit,
+    sha: realGit('rev-parse', 'HEAD').trim(),
+    review: realReview,
+  });
+  fs.chmodSync(file, 0o755);
+  realGit('add', scannerReviewPath);
+  realGit(
+    '-c',
+    'user.name=Fixture',
+    '-c',
+    'user.email=fixture@example.test',
+    'commit',
+    '-qm',
+    'Mode-only negative fixture'
+  );
+  assert.throws(
+    () =>
+      verifyScannerReviewSource({
+        git: realGit,
+        sha: realGit('rev-parse', 'HEAD').trim(),
+        review: realReview,
+      }),
+    /regular-file mode/
+  );
+  const withResult = structuredClone(review);
+  withResult.summary.results = ['a'.repeat(64)];
+  withResult.summary.resultCount = 1;
+  withResult.resultReviews = [
+    {
+      sha256: 'a'.repeat(64),
+      disposition: 'quality-only',
+      rationale:
+        'Benign provenance fixture independently described for this test only.',
+      reviewLink: withResult.reviewLinks[0],
+    },
+  ];
+  assert.equal(parseScannerReview(block(withResult)).resultReviews.length, 1);
+  withResult.resultReviews[0].sha256 = 'b'.repeat(64);
+  assert.throws(() => parseScannerReview(block(withResult)), /Malformed/);
+  for (const mutate of [
+    (value) => {
+      value.history.findingsSha256 = '0'.repeat(64);
+    },
+    (value) => {
+      value.codeqlChecks[0].appId = 1;
+    },
+    (value) => {
+      value.producer.artifactName = 'codeql-security-report';
+    },
+    (value) => {
+      value.producer.event = 'pull_request';
+    },
+    (value) => {
+      value.summary.extractedPaths.push('../escape');
+    },
+    (value) => {
+      value.reviewLinks = [];
+    },
+    (value) => {
+      value.summary.resultCount = 1;
+    },
+    (value) => {
+      value.summary.results.push('a'.repeat(64));
+      value.summary.resultCount = 1;
+    },
+  ]) {
+    const value = structuredClone(review);
+    mutate(value);
+    assert.throws(() => parseScannerReview(block(value)), /Malformed/);
+  }
+});
+
+test('both real entrypoints reject a null notes record before network or publication', (t) => {
+  const fs = require('node:fs'),
+    os = require('node:os'),
+    path = require('node:path');
+  const { execFileSync, spawnSync } = require('node:child_process');
+  const root = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'source-release-pending-')
+  );
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const repository = path.resolve(__dirname, '../..');
+  for (const name of [
+    'scripts/release/qualify-source-release.cjs',
+    'scripts/release/publish-source-release.cjs',
+    'scripts/release/check-release-ci.js',
+    'ci/required-contexts.json',
+    'ci/required-companion-contexts.json',
+  ]) {
+    const target = path.join(root, name);
+    fs.mkdirSync(path.dirname(target), { recursive: true });
+    fs.copyFileSync(path.join(repository, name), target);
+  }
+  const notes = path.join(root, scannerReviewPath);
+  fs.mkdirSync(path.dirname(notes), { recursive: true });
+  fs.writeFileSync(notes, '<!-- rc16-scanner-review\nnull\n-->\n');
+  execFileSync('git', ['init', '-q', root]);
+  execFileSync('git', ['-C', root, 'add', '.']);
+  execFileSync('git', [
+    '-C',
+    root,
+    '-c',
+    'user.name=Fixture',
+    '-c',
+    'user.email=fixture@example.test',
+    'commit',
+    '-qm',
+    'Benign pending gate fixture',
+  ]);
+  const source = execFileSync('git', ['-C', root, 'rev-parse', 'HEAD'], {
+    encoding: 'utf8',
+  }).trim();
+  const preload = path.join(root, 'offline.cjs');
+  fs.writeFileSync(
+    preload,
+    'global.fetch = () => { throw Error("NETWORK_MUST_NOT_BE_USED"); };'
+  );
+  for (const name of [
+    'qualify-source-release.cjs',
+    'publish-source-release.cjs',
+  ]) {
+    const result = spawnSync(
+      process.execPath,
+      ['--require', preload, path.join(root, 'scripts/release', name)],
+      {
+        cwd: root,
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          GITHUB_SHA: source,
+          GITHUB_REPOSITORY: 'MontrealAI/AGIJobsv0',
+          GH_TOKEN: 'BENIGN_UNUSED_FIXTURE',
+          TAG: 'source-v2.1.0-rc.16',
+        },
+      }
+    );
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /scanner review is pending/);
+    assert.ok(!result.stderr.includes('NETWORK_MUST_NOT_BE_USED'));
+    assert.equal(fs.existsSync(path.join(root, 'reports')), false);
+  }
 });
