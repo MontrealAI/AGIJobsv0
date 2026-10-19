@@ -5,11 +5,13 @@ import os from 'node:os';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
+import { registerHooks } from 'node:module';
 import { loadPinnedAlphaComputer } from '../../integrations/alpha-agent/four-repo-computer-lifecycle.cjs';
 import {
   assertPinnedAlphaCheckout,
   verifyPinnedAlphaCheckout,
   boundedSourceBlob,
+  preparePinnedAlphaComputer,
 } from '../../integrations/alpha-agent/pinned-alpha-checkout.cjs';
 
 function checkout(t) {
@@ -50,7 +52,6 @@ test('the lifecycle imports the verified physical root when its configured symli
     aliases = fs.mkdtempSync(path.join(os.tmpdir(), 'jobs-alpha-alias-'));
   t.after(() => fs.rmSync(aliases, { recursive: true, force: true }));
   const configured = path.join(aliases, 'configured'),
-    marker = path.join(aliases, 'unreviewed-executed'),
     computerName = 'examples/successor-alpha/computer.mjs';
   for (const source of [reviewed, replacement]) {
     source.write(
@@ -63,39 +64,31 @@ test('the lifecycle imports the verified physical root when its configured symli
   const commit = reviewed.git('rev-parse', 'HEAD').trim();
   replacement.write(
     'examples/successor-workbench/engine.mjs',
-    `import fs from 'node:fs'; fs.writeFileSync(${JSON.stringify(
-      marker
-    )}, 'ran'); export const inspected = false;\n`
+    'export const inspected = false;\n'
   );
   fs.symlinkSync(reviewed.root, configured);
   const verified = verifyPinnedAlphaCheckout(configured, commit);
   assert.deepEqual(verified, { root: fs.realpathSync(reviewed.root), commit });
   assert.equal(Object.isFrozen(verified), true);
 
-  const originalOpen = fs.openSync;
-  let computerReads = 0,
-    retargeted = false;
+  const originalRealpath = fs.realpathSync;
+  let retargeted = false,
+    loaded;
   try {
-    fs.openSync = (filename, ...args) => {
-      if (
-        typeof filename === 'string' &&
-        filename.endsWith('/' + computerName) &&
-        ++computerReads === 2
-      ) {
-        // The guard's bounded descriptor check has finished; the actual
-        // lifecycle is now reading the source hash immediately before import.
+    fs.realpathSync = (filename, ...args) => {
+      const resolved = originalRealpath(filename, ...args);
+      if (filename === configured && !retargeted) {
         fs.unlinkSync(configured);
         fs.symlinkSync(replacement.root, configured);
         retargeted = true;
       }
-      return originalOpen(filename, ...args);
+      return resolved;
     };
-    const loaded = await loadPinnedAlphaComputer(configured, commit);
+    loaded = await loadPinnedAlphaComputer(configured, commit);
     assert.equal(retargeted, true);
     assert.equal(fs.realpathSync(configured), replacement.root);
     assert.equal(loaded.root, reviewed.root);
     assert.equal(loaded.commit, commit);
-    assert.equal(fs.existsSync(marker), false);
     assert.equal(loaded.computer.inspected, true);
     // Restoring the alias makes an end-only source check pass, so that check
     // cannot substitute for importing through the verified physical root.
@@ -104,7 +97,228 @@ test('the lifecycle imports the verified physical root when its configured symli
     assert.equal(assertPinnedAlphaCheckout(configured, commit), commit);
     assert.equal(assertPinnedAlphaCheckout(loaded.root, commit), commit);
   } finally {
-    fs.openSync = originalOpen;
+    loaded?.dispose();
+    fs.realpathSync = originalRealpath;
+  }
+});
+
+for (const relative of [
+  'examples/successor-alpha/computer.mjs',
+  'examples/successor-workbench/engine.mjs',
+]) {
+  test(
+    'captured module bytes survive a temporary before-load change to ' +
+      relative,
+    async (t) => {
+      const source = checkout(t);
+      source.write(
+        'examples/successor-alpha/computer.mjs',
+        "export { inspected } from '../successor-workbench/engine.mjs';\n"
+      );
+      source.write(
+        'examples/successor-workbench/engine.mjs',
+        'export const inspected = 1;\n'
+      );
+      source.git('add', '.');
+      source.git('commit', '--quiet', '-m', 'Reviewed native values');
+      const commit = source.git('rev-parse', 'HEAD').trim();
+      const snapshot = preparePinnedAlphaComputer(source.root, commit);
+      const original = fs.readFileSync(path.join(source.root, relative));
+      let changed = false;
+      const observer = registerHooks({
+        load(url, context, nextLoad) {
+          if (
+            url.startsWith('fqr-alpha-memory-') &&
+            url.endsWith('/' + relative)
+          ) {
+            changed = true;
+            fs.writeFileSync(
+              path.join(source.root, relative),
+              'export const inspected = 9;\n'
+            );
+            try {
+              return nextLoad(url, context);
+            } finally {
+              fs.writeFileSync(path.join(source.root, relative), original);
+            }
+          }
+          return nextLoad(url, context);
+        },
+      });
+      try {
+        const actual = await snapshot.load();
+        assert(changed);
+        assert.equal(actual.inspected, 1);
+        assert.equal(assertPinnedAlphaCheckout(source.root, commit), commit);
+      } finally {
+        observer.deregister();
+        snapshot.dispose();
+      }
+    }
+  );
+}
+
+test('a path-based control observes a changed export even when bytes are restored before the final check', async (t) => {
+  const source = checkout(t);
+  const name = 'examples/successor-alpha/computer.mjs';
+  source.write(name, 'export const inspected = 1;\n');
+  source.git('add', '.');
+  source.git('commit', '--quiet', '-m', 'Reviewed direct value');
+  const commit = source.git('rev-parse', 'HEAD').trim(),
+    file = path.join(source.root, name),
+    original = fs.readFileSync(file);
+  assert.equal(assertPinnedAlphaCheckout(source.root, commit), commit);
+  const target = pathToFileURL(file).href;
+  const observer = registerHooks({
+    load(url, context, nextLoad) {
+      if (url === target) {
+        fs.writeFileSync(file, 'export const inspected = 9;\n');
+        try {
+          return nextLoad(url, context);
+        } finally {
+          fs.writeFileSync(file, original);
+        }
+      }
+      return nextLoad(url, context);
+    },
+  });
+  try {
+    assert.equal((await import(target)).inspected, 9);
+    assert.equal(assertPinnedAlphaCheckout(source.root, commit), commit);
+  } finally {
+    observer.deregister();
+  }
+});
+
+test('snapshot capture stops at the initial size plus one after an append', (t) => {
+  const { root } = checkout(t),
+    file = path.join(root, 'examples/successor-alpha/computer.mjs');
+  const before = fs.statSync(file).size,
+    fd = fs.openSync(file, fs.constants.O_RDONLY),
+    original = fs.readSync;
+  let total = 0,
+    appended = false;
+  try {
+    fs.readSync = (selected, buffer, offset, length, position) => {
+      if (selected === fd && !appended) {
+        appended = true;
+        fs.appendFileSync(file, ' '.repeat(256));
+      }
+      const count = original(selected, buffer, offset, length, position);
+      if (selected === fd) total += count;
+      return count;
+    };
+    assert.throws(
+      () => boundedSourceBlob(fd, 8 * 1024 * 1024, true),
+      /grew or changed/
+    );
+    assert.equal(total, before + 1);
+  } finally {
+    fs.readSync = original;
+    fs.closeSync(fd);
+  }
+});
+
+for (const specifier of [
+  'node:fs',
+  'file:///fixture-unavailable.mjs',
+  'https://example.invalid/module.mjs',
+  'fixture-package',
+  '../build-successor/model.mjs?changed=1',
+  '../build-successor/model.mjs#changed',
+]) {
+  test(
+    'captured graph refuses an import outside its fixed module map: ' +
+      specifier,
+    async (t) => {
+      const source = checkout(t);
+      source.write(
+        'examples/successor-alpha/computer.mjs',
+        `import ${JSON.stringify(specifier)}; export const inspected = 1;\n`
+      );
+      source.git('add', '.');
+      source.git('commit', '--quiet', '-m', 'Unsupported source edge');
+      const snapshot = preparePinnedAlphaComputer(
+        source.root,
+        source.git('rev-parse', 'HEAD').trim()
+      );
+      try {
+        await assert.rejects(
+          snapshot.load(),
+          /captured relative imports|outside captured source/
+        );
+        await assert.rejects(snapshot.load(), /disposed/);
+      } finally {
+        snapshot.dispose();
+      }
+    }
+  );
+}
+
+test('lazy inspector imports use the captured graph until explicit disposal', async (t) => {
+  const source = checkout(t);
+  source.write(
+    'examples/successor-alpha/computer.mjs',
+    "export const inspect = async () => (await import('../successor-workbench/engine.mjs')).inspected; export const later = () => import('../build-successor/model.mjs');\n"
+  );
+  source.write(
+    'examples/successor-workbench/engine.mjs',
+    'export const inspected = 1;\n'
+  );
+  source.git('add', '.');
+  source.git('commit', '--quiet', '-m', 'Reviewed lazy inspector');
+  const snapshot = preparePinnedAlphaComputer(
+    source.root,
+    source.git('rev-parse', 'HEAD').trim()
+  );
+  try {
+    const module = await snapshot.load();
+    source.write(
+      'examples/successor-workbench/engine.mjs',
+      'export const inspected = 9;\n'
+    );
+    assert.equal(await module.inspect(), 1);
+    snapshot.dispose();
+    await assert.rejects(snapshot.load(), /disposed/);
+    await assert.rejects(module.later(), /scheme|protocol|unsupported/i);
+  } finally {
+    snapshot.dispose();
+  }
+});
+
+test('another snapshot hook cannot admit an absolute import from a captured parent', async (t) => {
+  const first = checkout(t),
+    second = checkout(t);
+  first.write(
+    'examples/successor-alpha/computer.mjs',
+    'export const inspect = url => import(url);\n'
+  );
+  second.write(
+    'examples/successor-alpha/computer.mjs',
+    'export const ownURL = import.meta.url;\n'
+  );
+  for (const source of [first, second]) {
+    source.git('add', '.');
+    source.git('commit', '--quiet', '-m', 'Separate reviewed snapshot');
+  }
+  const a = preparePinnedAlphaComputer(
+    first.root,
+    first.git('rev-parse', 'HEAD').trim()
+  );
+  const b = preparePinnedAlphaComputer(
+    second.root,
+    second.git('rev-parse', 'HEAD').trim()
+  );
+  try {
+    const moduleB = await b.load(),
+      moduleA = await a.load();
+    await assert.rejects(
+      moduleA.inspect(moduleB.ownURL),
+      /captured relative imports/
+    );
+  } finally {
+    b.dispose();
+    a.dispose();
   }
 });
 

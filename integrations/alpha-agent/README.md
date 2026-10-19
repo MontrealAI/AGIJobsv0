@@ -270,13 +270,21 @@ imports under `successor-workbench` and `build-successor`. Tracked modifications
 and nonignored untracked source files are refused before importing the inspector;
 tracked file bytes and modes are checked against the pinned Git objects, without
 replacement refs, hidden index flags, environment redirection or symlinked source.
-The guard returns the verified physical checkout root; the lifecycle uses that
-root for its bounded source-hash read, native import and final recheck, so changing
-the configured root symlink cannot select another module after verification.
+The guard retains the verified physical checkout root. During the same bounded,
+no-follow descriptor read that validates each Git blob, it captures the native
+ESM source strings from the fixed Alpha module scopes. The module graph is bounded
+to 8 MiB per module, 32 MiB in total and 256 modules. Its source hash comes from
+those captured bytes. Node loads a private, unique in-memory namespace with only
+captured relative imports; it never reopens the checkout for module execution.
+Configured aliases and later changes to entry or transitive source therefore
+cannot change the code loaded for this fixture. Builtin, package, network,
+absolute-file, query and fragment import edges are outside this pure graph.
+The loader remains installed through lazy inspector calls and closes in finally.
 The same check runs again before writing lifecycle evidence. Normal ignored
-dependencies and report outputs remain usable. These checks bind the inspected
-checkout at those checkpoints; they do not establish a tamper-proof runtime or
-authenticate historical computer observations.
+dependencies and report outputs remain usable. Checkout rechecks record source
+consistency; the private captured graph binds executed inspector code. This does
+not isolate an already compromised Node process or authenticate historical
+computer observations.
 `FQR_INPUT_CLASS` may record an external evidence label; it is not authenticated
 runtime proof. Protocol-only inputs must remain labeled
 `PROTOCOL_DOUBLE_NO_BROWSER`. No production key is required or authorized;
