@@ -17,6 +17,16 @@ const {
 const { profile } = require('./source-profile-rc16.cjs');
 const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex');
 
+export function resolvePinnedNativeRoot(alphaRoot, expectedCommit) {
+  assert(
+    path.isAbsolute(alphaRoot || ''),
+    'Supply the absolute pinned Alpha checkout'
+  );
+  const physicalRoot = fs.realpathSync(alphaRoot);
+  assertPinnedAlphaCheckout(physicalRoot, expectedCommit);
+  return physicalRoot;
+}
+
 export function validateNativeReport(
   report,
   { jobsCommit, jobsTree, native = profile.nativeCompatibility } = {}
@@ -68,10 +78,6 @@ export async function verifyNativeCompatibility(
   alphaRoot,
   { native = profile.nativeCompatibility } = {}
 ) {
-  assert(
-    path.isAbsolute(alphaRoot || ''),
-    'Supply the absolute pinned Alpha checkout'
-  );
   const jobsRoot = path.resolve(import.meta.dirname, '../..');
   const env = {
     ...Object.fromEntries(
@@ -98,7 +104,9 @@ export async function verifyNativeCompatibility(
   const jobsCommit = git('rev-parse', 'HEAD'),
     jobsTree = git('rev-parse', 'HEAD^{tree}');
   assertPinnedAlphaCheckout(jobsRoot, jobsCommit);
-  assertPinnedAlphaCheckout(alphaRoot, native.commit);
+  // Retain the verified physical checkout for every read/import and checkpoint.
+  // Reusing the configured alias could select other code after verification.
+  alphaRoot = resolvePinnedNativeRoot(alphaRoot, native.commit);
   const alphaTree = execFileSync(
     'git',
     [

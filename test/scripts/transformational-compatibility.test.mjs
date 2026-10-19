@@ -1,8 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { execFileSync } from 'node:child_process';
+import { pathToFileURL } from 'node:url';
 import { createRequire } from 'node:module';
-import { validateNativeReport } from '../../scripts/release/verify-transformational-compatibility.mjs';
+import {
+  resolvePinnedNativeRoot,
+  validateNativeReport,
+} from '../../scripts/release/verify-transformational-compatibility.mjs';
 const require = createRequire(import.meta.url);
 const { profile } = require('../../scripts/release/source-profile-rc16.cjs');
 const jobsCommit = 'a'.repeat(40),
@@ -29,6 +36,54 @@ function fixture() {
     executionAuthority: false,
   };
 }
+test('native imports retain the verified physical checkout when its configured alias changes', async () => {
+  const temporary = fs.mkdtempSync(path.join(os.tmpdir(), 'jobs-native-root-'));
+  try {
+    const reviewed = path.join(temporary, 'reviewed');
+    const replacement = path.join(temporary, 'replacement');
+    const alias = path.join(temporary, 'configured');
+    fs.mkdirSync(reviewed);
+    fs.mkdirSync(replacement);
+    fs.writeFileSync(
+      path.join(reviewed, 'inspector.mjs'),
+      'export const approved = true;\n'
+    );
+    fs.writeFileSync(
+      path.join(replacement, 'inspector.mjs'),
+      'export const approved = false;\n'
+    );
+    const git = (...args) =>
+      execFileSync('git', ['-C', reviewed, ...args], {
+        encoding: 'utf8',
+      }).trim();
+    git('init', '--quiet');
+    git('add', 'inspector.mjs');
+    git(
+      '-c',
+      'user.name=Native fixture',
+      '-c',
+      'user.email=native@example.invalid',
+      'commit',
+      '--quiet',
+      '-m',
+      'reviewed native fixture'
+    );
+    fs.symlinkSync(reviewed, alias, 'dir');
+    const physical = resolvePinnedNativeRoot(alias, git('rev-parse', 'HEAD'));
+    assert.equal(physical, fs.realpathSync(reviewed));
+    fs.unlinkSync(alias);
+    fs.symlinkSync(replacement, alias, 'dir');
+    const actual = await import(
+      pathToFileURL(path.join(physical, 'inspector.mjs')).href
+    );
+    assert.equal(actual.approved, true);
+    assert.throws(() =>
+      resolvePinnedNativeRoot(alias, git('rev-parse', 'HEAD'))
+    );
+  } finally {
+    fs.rmSync(temporary, { recursive: true, force: true });
+  }
+});
 test('native archive must retain the complete pinned free-inspection and refusal result', () => {
   assert.deepEqual(
     validateNativeReport(fixture(), { jobsCommit, jobsTree }),
