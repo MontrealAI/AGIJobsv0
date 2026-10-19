@@ -280,7 +280,7 @@ test('identity creation refuses an existing symlink or record and does not overw
   const factory = loadTs('agent-gateway/agentFactory.ts', {
     './agentRegistry': {}, './identity': {}, './security': {}, './utils': {}, './ensRegistrar': {}, '../shared/spawnManager': { spawnDefaults: { categoryCap: 3 } },
   }, { expose: ['persistIdentityRecord'] });
-  const blueprint = { ensName: 'fixture.agent.agi.eth', ensLabel: 'fixture', wallet: ethers.Wallet.createRandom(), metadata: {}, metrics: {}, spawn: {} };
+  const blueprint = { ensName: 'fixture.agent.agi.eth', ensLabel: 'fixture', wallet: { address: '0x' + '1'.repeat(40), privateKey: 'PUBLIC_TEST_SENTINEL_NOT_A_KEY' }, metadata: {}, metrics: {}, spawn: {} };
   try {
     const outside = path.join(directory, 'outside'); fs.writeFileSync(outside, 'original');
     fs.symlinkSync(outside, path.join(directory, 'fixture.json'));
@@ -418,4 +418,96 @@ test('audit/config descriptor checks refuse nonregular inputs without blocking o
       assert.equal(result.status, 0, result.stderr);
     }
   } finally { fs.rmSync(directory, { recursive: true, force: true }); }
+});
+
+
+test('spawn labels reserve collision suffixes inside the canonical 63-character bound', () => {
+  const spawn = loadTs('shared/spawnManager.ts', {
+    ethers: { ethers: {} }, './trainingRecords': {}, './energyMonitor': {},
+  }, { expose: ['generateUniqueLabel'] });
+  const labels = new Set();
+  const first = spawn.generateUniqueLabel('a'.repeat(1000), labels);
+  const second = spawn.generateUniqueLabel('a'.repeat(63), labels);
+  const third = spawn.generateUniqueLabel('a'.repeat(1000), labels);
+  assert.equal(first, 'a'.repeat(63));
+  assert.equal(second, 'a'.repeat(61) + '-2');
+  assert.equal(third, 'a'.repeat(61) + '-3');
+  for (const label of [first, second, third]) assert.match(label, /^[a-z0-9]+(?:-[a-z0-9]+)*$/);
+  const truncatedHyphen = spawn.generateUniqueLabel('a'.repeat(62) + '-long category', new Set());
+  assert.equal(truncatedHyphen, 'a'.repeat(62));
+  const collisions = new Set(['a'.repeat(63)]);
+  for (let index = 2; index <= 12; index++) {
+    const label = spawn.generateUniqueLabel('a'.repeat(63), collisions);
+    assert.equal(label.length, 63); assert.ok(label.endsWith('-' + index));
+  }
+  assert.equal(spawn.generateUniqueLabel('Public Analysis', new Set(['public-analysis'])), 'public-analysis-2');
+  assert.equal(spawn.generateUniqueLabel('Ω', new Set()), 'agent');
+});
+
+test('invalid spawn candidates fail before metrics, wallet creation, writes or request consumption', async () => {
+  const calls = { metrics: 0, wallet: 0, writes: 0, mkdir: 0, reads: 0 };
+  const fakeFs = { ...fs, existsSync: () => false, mkdirSync: () => { calls.mkdir++; },
+    promises: { ...fs.promises, readFile: async () => { calls.reads++; return '[]'; }, writeFile: async () => { calls.writes++; } } };
+  const spawn = loadTs('shared/spawnManager.ts', {
+    fs: fakeFs, ethers: { ethers: { ...ethers, Wallet: { createRandom: () => { calls.wallet++; throw Error('Wallet creation must not execute'); } } } },
+    './trainingRecords': { readTrainingRecords: async () => { calls.metrics++; return []; } },
+    './energyMonitor': { readEnergySamples: async () => [] },
+  });
+  for (const recommendedLabel of ['', 'a'.repeat(64), 'a'.repeat(63) + '-2', '../escape', 'bad--label', '-bad', 'bad-', 'UPPER', null, 42]) {
+    await assert.rejects(spawn.createBlueprintForCandidate({ recommendedLabel }, { persist: true, markConsumed: true }), /Invalid identity label/);
+    assert.deepEqual(calls, { metrics: 0, wallet: 0, writes: 0, mkdir: 0, reads: 0 });
+  }
+});
+
+test('valid bounded spawn blueprint keeps the exact generated label and name with a synthetic wallet', async () => {
+  let walletCalls = 0;
+  const spawn = loadTs('shared/spawnManager.ts', {
+    ethers: { ethers: { ...ethers, Wallet: { createRandom: () => { walletCalls++; return { address: '0x' + '1'.repeat(40), privateKey: 'PUBLIC_TEST_SENTINEL_NOT_A_KEY' }; } } } },
+    './trainingRecords': { readTrainingRecords: async () => [] }, './energyMonitor': { readEnergySamples: async () => [] },
+  }, { expose: ['generateUniqueLabel'] });
+  const label = spawn.generateUniqueLabel('a'.repeat(1000), new Set(['a'.repeat(63)]));
+  const candidate = { recommendedLabel: label, category: 'Public analysis', categoryKey: 'public-analysis', observed: 4, jobs: [], priority: 2, recencyHours: 1, saturationRatio: 0, lastSeen: '2026-10-19T00:00:00.000Z' };
+  const blueprint = await spawn.createBlueprintForCandidate(candidate, { persist: false, markConsumed: false });
+  assert.equal(walletCalls, 1); assert.equal(blueprint.ensLabel, label); assert.equal(blueprint.ensName, label + '.agent.agi.eth');
+  assert.ok(blueprint.metadata.tags.includes(label)); assert.equal(blueprint.persistedTo, undefined);
+});
+
+test('agent clone rejects invalid recommended or returned labels before sandbox, registration or persistence', async () => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'codeql-spawn-preflight-'));
+  const calls = { blueprint: 0, profiles: 0, register: 0, verify: 0, audit: 0, wallet: 0, identity: 0 };
+  let returnedLabel = 'a'.repeat(65);
+  const factory = loadTs('agent-gateway/agentFactory.ts', {
+    './agentRegistry': { listAgentProfiles: async () => { calls.profiles++; return []; } },
+    './identity': { registerIdentityFile: () => { calls.identity++; } },
+    './security': { secureLogAction: async () => { calls.audit++; } },
+    './utils': { walletManager: { register: () => { calls.wallet++; } } },
+    './ensRegistrar': { registerEnsSubdomain: async () => { calls.register++; throw Error('Registration must not execute'); }, verifyEnsRegistration: async () => { calls.verify++; return { matches: true }; } },
+    '../shared/spawnManager': { spawnDefaults: { categoryCap: 3 }, createBlueprintForCandidate: async () => { calls.blueprint++; return { ensLabel: returnedLabel, ensName: returnedLabel + '.agent.agi.eth', wallet: { address: '0x' + '1'.repeat(40), privateKey: 'PUBLIC_TEST_SENTINEL_NOT_A_KEY' } }; } },
+  }, { expose: ['cloneCandidate', 'persistIdentityRecord'] });
+  const options = { threshold: 1, allowSandboxFailure: true, identityDir: path.join(directory, 'identity'), sandboxDir: path.join(directory, 'sandbox') };
+  try {
+    for (const label of ['a'.repeat(65), '../escape', 'bad--label']) {
+      await assert.rejects(factory.cloneCandidate({ observed: 4, available: true, recommendedLabel: label }, options), /Invalid identity label/);
+      assert.equal(calls.blueprint, 0);
+    }
+    await assert.rejects(factory.cloneCandidate({ observed: 4, available: true, recommendedLabel: 'public' }, options), /Invalid identity label/);
+    assert.equal(calls.blueprint, 1);
+    await assert.rejects(factory.persistIdentityRecord({ ensLabel: returnedLabel }, null, {}, '', options), /Invalid identity label/);
+    assert.deepEqual(fs.readdirSync(directory), []);
+    assert.deepEqual({ ...calls, blueprint: 0 }, { blueprint: 0, profiles: 0, register: 0, verify: 0, audit: 0, wallet: 0, identity: 0 });
+  } finally { fs.rmSync(directory, { recursive: true, force: true }); }
+});
+
+test('ENS registration rejects oversized labels before wallet, contract or provider effects', async () => {
+  const calls = { wallet: 0, contract: 0, provider: 0 };
+  const registrar = loadTs('agent-gateway/ensRegistrar.ts', {
+    ethers: { ethers, Wallet: function () { calls.wallet++; throw Error('Wallet must not be created'); }, Contract: function () { calls.contract++; throw Error('Contract must not be created'); } },
+    '../scripts/config': { loadEnsConfig: () => ({ config: { roots: {} } }) },
+    './utils': { provider: new Proxy({}, { get() { calls.provider++; throw Error('Provider must not be used'); } }) }, './security': {},
+  });
+  assert.equal(registrar.ensureEnsLabel(' ' + 'A'.repeat(63) + ' '), 'a'.repeat(63));
+  for (const label of ['a'.repeat(64), 'a'.repeat(63) + '-2', '../escape', 'bad--label', '-bad', 'bad-']) {
+    await assert.rejects(registrar.registerEnsSubdomain({ label, targetPrivateKey: 'PUBLIC_TEST_SENTINEL_NOT_A_KEY' }), /label/i);
+    assert.deepEqual(calls, { wallet: 0, contract: 0, provider: 0 });
+  }
 });

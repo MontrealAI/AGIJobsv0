@@ -1,4 +1,5 @@
 import { computerMissionCopy } from './computer-mission-copy.mjs';
+import { mountComputerReceipt } from './computer-receipt.mjs';
 import {
   computerDeskConfiguration,
   initComputerDesk,
@@ -725,6 +726,10 @@ if (root) {
   try {
     initialMission = await createComputerMission();
     render();
+    mountComputerReceipt(root, {
+      getReport: () => (inputsChanged() ? null : report),
+      language,
+    });
     root.dataset.ready = 'true';
   } catch (error) {
     notify(`${t.error} ${error.message}`, true);

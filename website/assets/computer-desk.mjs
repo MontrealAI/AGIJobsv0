@@ -524,7 +524,7 @@ export const computerDeskCSS = `.computer-desk{color-scheme:dark;font-family:sys
 
 export function renderComputerDeskDocument(mission, options = {}) {
   const config = checkedConfig(mission, options);
-  const runtime = `(${initComputerDesk.toString()})(document.querySelector('[data-computer-desk]'));`;
+  const runtime = `(${computerDeskRuntimeSource})(document.querySelector('[data-computer-desk]'));`;
   return `<!doctype html><html lang="${
     config.language
   }"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SUCCESSOR Ω · Supplier desk</title><style>body{margin:0;background:#110b1c}${computerDeskCSS}</style></head><body><main>${renderComputerDeskMarkup(
@@ -532,3 +532,4 @@ export function renderComputerDeskDocument(mission, options = {}) {
     options
   )}</main><script>${runtime}</script></body></html>`;
 }
+import { computerDeskRuntimeSource } from './computer-desk-runtime-source.mjs';
