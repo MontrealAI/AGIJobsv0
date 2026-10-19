@@ -163,6 +163,8 @@ async function verifyDownloadedAssets({
       canonical(profile.integrationTransitions) ||
     canonical(provenance.sourceScope?.scannerPolicy) !==
       canonical(profile.scannerPolicy) ||
+    canonical(provenance.sourceScope?.scannerRequiredPaths) !==
+      canonical(profile.scannerRequiredPaths) ||
     canonical(provenance.sourceScope?.nativeCompatibility) !==
       canonical(profile.nativeCompatibility) ||
     canonical(provenance.sourceScope?.scannerReview) !==

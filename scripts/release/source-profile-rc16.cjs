@@ -553,7 +553,7 @@ function verifySourceScope({ git, sha, version, lock, policy }) {
 
 function verifyPublicationReview() {
   // The expanded producer is pinned, but actual final-source extraction and
-  // finite reviewed current-result inventory has been installed in this profile.
+  // finite reviewed current-result inventory have not been installed in this profile.
   throw Error(
     'rc.16 publication blocked: scannerReview is pending; full integration extraction and independent finite result review are required'
   );
