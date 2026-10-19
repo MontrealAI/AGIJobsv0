@@ -15,6 +15,7 @@ paths:
   - shared
   - tools
   - integrations/alpha-agent
+  - website/assets
 
 paths-ignore:
   - "**/node_modules/**"
