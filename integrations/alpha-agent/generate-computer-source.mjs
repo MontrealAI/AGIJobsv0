@@ -45,7 +45,8 @@ export async function computerSourceSnapshot(alphaRoot, commit) {
     throw Error('Alpha checkout differs from selected source');
   const result = await build({
     absWorkingDir: alphaRoot,
-    entryPoints: [entry],
+    entryPoints: [entry, 'examples/successor-alpha/learning.mjs'],
+    outdir: 'source-inventory-only',
     bundle: true,
     platform: 'browser',
     format: 'esm',

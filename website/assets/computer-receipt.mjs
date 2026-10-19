@@ -3,10 +3,10 @@ import {
   prepareSupplierComputerHandoff,
   createComputerWorkspace,
   inspectComputerWorkspace,
+  inspectAlphaProjectSource,
   PROPOSED_NETWORK,
 } from './computer-receipt-model.mjs';
 import { restoreComputerMissionReport } from '../../packages/successor-core/src/computer-mission.mjs';
-import { inspectProject } from '../../integrations/alpha-agent/vendor/alpha-computer/examples/successor-alpha/project.mjs';
 
 export function mountComputerReceipt(root, { getReport, language = 'en' }) {
   const section = root.querySelector('[data-computer-receipt]');
@@ -17,7 +17,16 @@ export function mountComputerReceipt(root, { getReport, language = 'en' }) {
     prepared = null,
     current = null,
     restored = null,
-    busy = false;
+    busy = false,
+    revision = 0;
+  for (const type of ['input', 'change'])
+    section.addEventListener(
+      type,
+      () => {
+        revision++;
+      },
+      true
+    );
   $('token').textContent = PROPOSED_NETWORK.token;
   const status = (text) => {
     $('status').textContent = text;
@@ -41,27 +50,81 @@ export function mountComputerReceipt(root, { getReport, language = 'en' }) {
       !$('amount').value;
     for (const id of ['draft-download', 'archive-download', 'history-download'])
       $(id).disabled = busy || !current;
+    $('alpha-download').disabled =
+      busy || !current?.originalAlphaArchives.length;
   }
-  async function file(id, max, fallback = null) {
-    const selected = $(id).files[0];
+  function capture() {
+    return {
+      revision,
+      controls: [...section.querySelectorAll('input,select')].map(
+        (control) => ({
+          id: control.id,
+          value: control.value,
+          checked: control.checked,
+          files: control.files ? [...control.files] : [],
+        })
+      ),
+    };
+  }
+  function unchanged(expected) {
+    const actual = capture();
+    if (
+      actual.revision !== expected.revision ||
+      actual.controls.length !== expected.controls.length ||
+      !actual.controls.every((control, index) => {
+        const prior = expected.controls[index];
+        return (
+          control.id === prior.id &&
+          control.value === prior.value &&
+          control.checked === prior.checked &&
+          control.files.length === prior.files.length &&
+          control.files.every((file, index) => file === prior.files[index])
+        );
+      })
+    )
+      throw Error('COMPUTER_INPUTS_CHANGED');
+  }
+  async function file(selected, max, fallback, guard) {
+    guard();
     if (!selected) {
       if (fallback !== null) return fallback;
       throw Error('FILE_REQUIRED');
     }
     if (selected.size > max) throw Error('FILE_SIZE');
-    return new TextDecoder('utf-8', { fatal: true }).decode(
-      await selected.arrayBuffer()
-    );
+    const raw = new TextDecoder('utf-8', {
+      fatal: true,
+      ignoreBOM: true,
+    }).decode(await selected.arrayBuffer());
+    guard();
+    return raw;
   }
   async function act(operation) {
     if (busy) return;
+    const expected = capture(),
+      selected = (id) =>
+        expected.controls.find((control) => control.id === 'cr-' + id),
+      guard = () => unchanged(expected);
+    const snapshot = {
+      guard,
+      checked: (id) => selected(id).checked,
+      value: (id) => selected(id).value,
+      hasFile: (id) => selected(id).files.length > 0,
+      file: (id, max, fallback = null) =>
+        file(selected(id).files[0], max, fallback, guard),
+    };
     busy = true;
     sync();
     try {
-      await operation();
-    } catch {
+      await operation(snapshot);
+    } catch (error) {
       if (restored) showWorkspace(restored);
-      status(t.error);
+      status(
+        error.message === 'COMPUTER_INPUTS_CHANGED'
+          ? t.changed
+          : error.message === 'COMPUTER_ALPHA_SOURCE_MISMATCH'
+          ? t.sourceMismatch
+          : t.error
+      );
     } finally {
       busy = false;
       sync();
@@ -103,7 +166,7 @@ export function mountComputerReceipt(root, { getReport, language = 'en' }) {
     ).replace(/\.?0+$/, '');
     $(
       'summary'
-    ).textContent = `${value.project.name}\n${value.project.id} · ${t.revision} ${value.project.revision}\n${displayAmount} AGIALPHA\n${t.networkName}\n${value.history.records.length} ${t.historicalRecords} · ${value.workspace.drafts.length} ${t.proposals}\n${t.inert}`;
+    ).textContent = `${value.project.name}\n${value.project.id} · ${t.revision} ${value.project.revision}\n${displayAmount} AGIALPHA\n${t.networkName}\n${value.history.records.length} ${t.historicalRecords} · ${value.workspace.drafts.length} ${t.proposals}\n${value.workspace.unmatchedHistoricalSourceCount} ${t.unmatchedHistoricalSources}\n${t.inspectorOnly}\n${t.inert}`;
     $('details').textContent = JSON.stringify(value.draft, null, 2);
   }
   for (const id of ['project', 'report'])
@@ -132,31 +195,34 @@ export function mountComputerReceipt(root, { getReport, language = 'en' }) {
   for (const id of ['public', 'approve-handoff', 'approve-draft'])
     $(id).addEventListener('change', sync);
   $('read').addEventListener('click', () =>
-    act(async () => {
-      reviewed = null;
-      prepared = null;
-      $('approve-handoff').checked = false;
-      const reportRaw = await file(
+    act(async (snapshot) => {
+      if (!snapshot.checked('public')) throw Error('PUBLIC_INPUTS_REQUIRED');
+      const reportRaw = await snapshot.file(
         'report',
         4_000_000,
         getReport() ? JSON.stringify(getReport()) : null
       );
-      const projectRaw = await file('project', 2_000_000);
+      const projectRaw = await snapshot.file('project', 2_000_000);
       const report = await restoreComputerMissionReport(reportRaw),
-        project = inspectProject(projectRaw);
+        { project } = await inspectAlphaProjectSource(projectRaw);
+      snapshot.guard();
       reviewed = { projectRaw, reportRaw };
+      prepared = null;
+      $('approve-handoff').checked = false;
       $('forward-summary').textContent = summary(project, report);
       status(t.ready);
     })
   );
   $('prepare').addEventListener('click', () =>
-    act(async () => {
-      prepared = await prepareSupplierComputerHandoff({
+    act(async (snapshot) => {
+      const value = await prepareSupplierComputerHandoff({
         ...reviewed,
-        approved: $('approve-handoff').checked,
-        publicNonpersonal: $('public').checked,
+        approved: snapshot.checked('approve-handoff'),
+        publicNonpersonal: snapshot.checked('public'),
         language,
       });
+      snapshot.guard();
+      prepared = value;
       status(t.forwardReady);
     })
   );
@@ -172,21 +238,23 @@ export function mountComputerReceipt(root, { getReport, language = 'en' }) {
       prepared && download('successor-computer-report.json', prepared.reportRaw)
   );
   $('create').addEventListener('click', () =>
-    act(async () => {
+    act(async (snapshot) => {
+      if (!snapshot.checked('public') || !snapshot.checked('approve-draft'))
+        throw Error('PUBLIC_INPUTS_AND_APPROVAL_REQUIRED');
       current = null;
       const previous = restored?.draft.original;
       const inputs = {
-        handoffRaw: await file(
+        handoffRaw: await snapshot.file(
           'native-handoff',
           4_000_000,
           prepared?.handoffRaw ?? previous?.handoffRaw ?? null
         ),
-        returnRaw: await file(
+        returnRaw: await snapshot.file(
           'native-return',
           4_000_000,
           previous?.returnRaw ?? null
         ),
-        reportRaw: await file(
+        reportRaw: await snapshot.file(
           'native-report',
           4_000_000,
           prepared?.reportRaw ?? previous?.reportRaw ?? null
@@ -194,16 +262,18 @@ export function mountComputerReceipt(root, { getReport, language = 'en' }) {
       };
       const value = await createComputerWorkspace({
         inputs,
-        amount: $('amount').value,
-        network: $('network').value === '1' ? PROPOSED_NETWORK : null,
-        approved: $('approve-draft').checked,
-        publicNonpersonal: $('public').checked,
+        amount: snapshot.value('amount'),
+        network: snapshot.value('network') === '1' ? PROPOSED_NETWORK : null,
+        approved: snapshot.checked('approve-draft'),
+        publicNonpersonal: snapshot.checked('public'),
         createdAt: new Date().toISOString(),
         priorWorkspaceRaw: restored?.raw ?? null,
-        priorHistoryRaw: $('native-history').files[0]
-          ? await file('native-history', 2_000_000)
+        projectSourceRaw: prepared?.projectSourceRaw ?? null,
+        priorHistoryRaw: snapshot.hasFile('native-history')
+          ? await snapshot.file('native-history', 2_000_000)
           : null,
       });
+      snapshot.guard();
       showWorkspace(value);
       status(t.checked);
     })
@@ -224,12 +294,17 @@ export function mountComputerReceipt(root, { getReport, language = 'en' }) {
       current &&
       download('successor-computer-history.json', current.workspace.historyRaw)
   );
+  $('alpha-download').addEventListener('click', () => {
+    const raw = current?.originalAlphaArchives.at(-1);
+    if (raw) download('successor-alpha-learning-archive.json', raw);
+  });
   $('reopen').addEventListener('change', () =>
-    act(async () => {
-      if (!$('public').checked) throw Error('PUBLIC_INPUTS_REQUIRED');
+    act(async (snapshot) => {
+      if (!snapshot.checked('public')) throw Error('PUBLIC_INPUTS_REQUIRED');
       const value = await inspectComputerWorkspace(
-        await file('reopen', 16_000_000)
+        await snapshot.file('reopen', 16_000_000)
       );
+      snapshot.guard();
       for (const id of [
         'native-handoff',
         'native-return',

@@ -9,13 +9,78 @@ import {
   digest,
 } from '../../integrations/alpha-agent/vendor/alpha-computer/docs/assets/successor/engine.mjs';
 import { exactDigest } from '../../integrations/alpha-agent/vendor/alpha-computer/examples/successor-alpha/continuity.mjs';
-import { inspectComputerReturn } from '../../integrations/alpha-agent/vendor/alpha-computer/examples/successor-alpha/computer.mjs';
-export async function protocolComputerAttempt(inputs, state = 'interrupted') {
+import {
+  inspectComputerReturn,
+  retainComputerHandoff,
+  importComputerReturn,
+  reviewComputerReturn,
+} from '../../integrations/alpha-agent/vendor/alpha-computer/examples/successor-alpha/computer.mjs';
+export async function protocolComputerLearningArchive(
+  inputs = protocolComputerInputs(),
+  { historicalSourceHash = null } = {}
+) {
+  const project = JSON.parse(JSON.parse(inputs.handoffRaw).projectRaw);
+  const attempts = [
+    inputs,
+    await protocolComputerAttempt(inputs, 'interrupted', {
+      sourceHash: historicalSourceHash,
+    }),
+    await protocolComputerAttempt(inputs, 'review'),
+  ];
+  let historyRaw = null;
+  for (const attempt of attempts) {
+    historyRaw = await retainComputerHandoff(project, attempt.handoffRaw, {
+      priorRecord: historyRaw,
+    });
+    historyRaw = await importComputerReturn(
+      project,
+      attempt.handoffRaw,
+      attempt.returnRaw,
+      { priorRecord: historyRaw }
+    );
+  }
+  historyRaw = await reviewComputerReturn(
+    project,
+    inputs.handoffRaw,
+    {
+      decision: 'useful',
+      note: 'Protocol-double owner review; no execution or independent proof claim.',
+      minutes: 1,
+      criterionResults: JSON.parse(
+        inputs.handoffRaw
+      ).strategy.successCriteria.map(() => true),
+    },
+    { priorRecord: historyRaw }
+  );
+  historyRaw = ' \n' + historyRaw + '\n';
+  const archiveRaw =
+    ' \n' +
+    JSON.stringify(
+      {
+        schema: 'successor-alpha-learning-archive/v2',
+        project,
+        records: [],
+        nativeHandoffRaw: null,
+        nativeContinuityRaw: null,
+        computerHistoryRaw: historyRaw,
+      },
+      null,
+      2
+    ) +
+    '\n';
+  return { archiveRaw, historyRaw, attempts };
+}
+export async function protocolComputerAttempt(
+  inputs,
+  state = 'interrupted',
+  { sourceHash = null } = {}
+) {
   if (!['interrupted', 'review'].includes(state))
     throw Error('Protocol fixture state');
   const handoff = JSON.parse(inputs.handoffRaw),
     returned = JSON.parse(inputs.returnRaw);
   handoff.attemptId = crypto.randomUUID();
+  if (sourceHash !== null) handoff.sourceHash = sourceHash;
   const handoffRaw = canonical(handoff),
     context = await digest('computer-handoff', handoff);
   const commitment = await digest('computer-task', {
@@ -26,6 +91,7 @@ export async function protocolComputerAttempt(inputs, state = 'interrupted') {
     execution_context: context,
   });
   returned.handoffSha256 = await exactDigest(handoffRaw);
+  returned.sourceHash = handoff.sourceHash;
   returned.executionContext = context;
   returned.taskCommitment = commitment;
   returned.receipt = {

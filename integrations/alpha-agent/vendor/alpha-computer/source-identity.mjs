@@ -1,8 +1,8 @@
 export default {
   "schema": "agijobsv0/alpha-computer-browser-source/v1",
   "repository": "MontrealAI/AGI-Alpha-Agent-v0",
-  "commit": "7cf97aa3b36354b9ae5ab72e70aa88364a910313",
-  "tree": "8ff159a8f91db5fb4363cc736aeb66e7eefc07ea",
+  "commit": "3616afd029a8ae4ffe6d995674ecc2417408761e",
+  "tree": "8c5a6bf2019cbc113816b51234f76a123a147f6f",
   "entry": "examples/successor-alpha/computer.mjs",
   "files": {
     "LICENSE": {
@@ -55,10 +55,20 @@ export default {
       "sha256": "09a673d124b9ddcf47e29250f1aad4fa737ce99cdc2364afbfb9911ec9579ea2",
       "gitBlob": "2dbddf39d71a030c8468c8fad844143904e9ec3c"
     },
+    "examples/successor-alpha/learning.mjs": {
+      "bytes": 3335,
+      "sha256": "6cc68c0f03559bb1f3af5489d975a45a0081822e09ef53c14986f1621a206d69",
+      "gitBlob": "82665337daf74956c42b86d95056f47ede3e8f8d"
+    },
     "examples/successor-alpha/project.mjs": {
       "bytes": 15189,
       "sha256": "9ea8c39f87d894e79c3e64cc66d3acea55ec30eb7737ef461b14abfb2aabde86",
       "gitBlob": "446b521d59213224fa40a86e9ca9904fdcf3191d"
+    },
+    "examples/successor-alpha/research.mjs": {
+      "bytes": 27959,
+      "sha256": "cac318319051de4dc1fdbe2d8a148416b3ceffe206d7fc64f111f2fe6f099c8a",
+      "gitBlob": "759eb5ce3deb5cc1c20fe35ea29beaffa5bd8eba"
     },
     "examples/successor-workbench/engine.mjs": {
       "bytes": 26854,

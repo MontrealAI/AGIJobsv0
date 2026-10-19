@@ -73,7 +73,9 @@ export function renderComputerReceipt(language = 'en', base = './') {
   )}${button('archive-download', t.archive)}${button(
     'history-download',
     t.history
-  )}</div><pre id="cr-summary" tabindex="0" class="cr-summary"></pre><details class="cm-detail"><summary>${esc(
+  )}${button('alpha-download', t.alphaArchive)}</div><p class="cm-help">${esc(
+    t.alphaRestore
+  )}</p><pre id="cr-summary" tabindex="0" class="cr-summary"></pre><details class="cm-detail"><summary>${esc(
     t.details
   )}</summary><pre tabindex="0"><code id="cr-details">{}</code></pre></details>${file(
     'reopen',
