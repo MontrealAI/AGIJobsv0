@@ -9,6 +9,7 @@ import {
   inspectComputerReceiptDraft,
 } from '../../integrations/alpha-agent/four-repo-computer-receipt.mjs';
 import * as alpha from '../../integrations/alpha-agent/vendor/alpha-computer/examples/successor-alpha/computer.mjs';
+import { inspectLearningArchive } from '../../integrations/alpha-agent/vendor/alpha-computer/examples/successor-alpha/learning.mjs';
 import {
   inspectProject,
   serializeProject,
@@ -20,6 +21,11 @@ export const ALPHA_COMPUTER_SOURCE = Object.freeze({
   commit: source.commit,
   tree: source.tree,
   sourceHash: source.files[source.entry].sha256,
+});
+export const COMPUTER_INSPECTOR_SOURCE = Object.freeze({
+  ...ALPHA_COMPUTER_SOURCE,
+  role: 'NATIVE_VALIDATION_IMPLEMENTATION_ONLY',
+  authenticatedProducer: false,
 });
 export const COMPUTER_WORKSPACE_SCHEMA = 'agijobsv0/computer-workspace/v1';
 export const PROPOSED_NETWORK = Object.freeze({
@@ -39,6 +45,77 @@ function confirmations({ approved, publicNonpersonal }) {
     approved === true && publicNonpersonal === true,
     'COMPUTER_PUBLIC_INPUTS_AND_EXPLICIT_APPROVAL_REQUIRED'
   );
+}
+async function inspectPinnedHandoff(raw) {
+  const checked = await alpha.inspectComputerHandoff(raw);
+  need(
+    checked.handoff.sourceHash === ALPHA_COMPUTER_SOURCE.sourceHash,
+    'COMPUTER_ALPHA_SOURCE_MISMATCH'
+  );
+  return checked;
+}
+async function historicalSourceDeclarations(history) {
+  return Promise.all(
+    history.records.map(async (record) => ({
+      handoffSha256: await digestBytes(record.handoffRaw),
+      declaredSourceHash: JSON.parse(record.handoffRaw).sourceHash,
+      matchesInstalledInspector:
+        JSON.parse(record.handoffRaw).sourceHash ===
+        ALPHA_COMPUTER_SOURCE.sourceHash,
+      authenticatedProducer: false,
+    }))
+  );
+}
+/** Accept Alpha's native complete export or a saved project without rewriting either source. */
+export async function inspectAlphaProjectSource(raw) {
+  need(
+    typeof raw === 'string' &&
+      new TextEncoder().encode(raw).length <= 2_000_000,
+    'COMPUTER_PROJECT_SOURCE_SIZE'
+  );
+  const value = JSON.parse(raw);
+  if (
+    [
+      'successor-alpha-learning-archive/v1',
+      'successor-alpha-learning-archive/v2',
+    ].includes(value?.schema)
+  ) {
+    const checked = await inspectLearningArchive(raw);
+    return {
+      project: checked.project,
+      projectRaw: serializeProject(checked.project),
+      sourceRaw: raw,
+      historyRaw: checked.checkedComputer ? checked.computerHistoryRaw : null,
+    };
+  }
+  const project = inspectProject(raw);
+  return {
+    project,
+    projectRaw: serializeProject(project),
+    sourceRaw: raw,
+    historyRaw: null,
+  };
+}
+async function inspectHistorySource(raw) {
+  need(
+    typeof raw === 'string' &&
+      raw.length > 0 &&
+      new TextEncoder().encode(raw).length <= 2_000_000,
+    'COMPUTER_WORKSPACE_HISTORY_SOURCE'
+  );
+  const value = JSON.parse(raw);
+  if (
+    [
+      'successor-alpha-learning-archive/v1',
+      'successor-alpha-learning-archive/v2',
+    ].includes(value?.schema)
+  ) {
+    const source = await inspectAlphaProjectSource(raw);
+    need(source.historyRaw !== null, 'COMPUTER_WORKSPACE_HISTORY_SOURCE');
+    return { historyRaw: source.historyRaw, projectSourceRaw: raw };
+  }
+  await alpha.inspectComputerHistory(raw);
+  return { historyRaw: raw, projectSourceRaw: null };
 }
 export async function mergeComputerHistorySources(
   leftRaw = null,
@@ -121,7 +198,8 @@ export async function prepareSupplierComputerHandoff({
 }) {
   confirmations({ approved, publicNonpersonal });
   need(['en', 'fr'].includes(language), 'COMPUTER_LANGUAGE');
-  const project = inspectProject(projectRaw);
+  const source = await inspectAlphaProjectSource(projectRaw),
+    project = source.project;
   const report = await restoreComputerMissionReport(reportRaw);
   const staged = report.formulation === 'actual_requirements';
   const goal = project.goal;
@@ -163,6 +241,7 @@ export async function prepareSupplierComputerHandoff({
     handoffRaw,
     reportRaw,
     projectRaw: serializeProject(project),
+    projectSourceRaw: source.sourceRaw,
     project: checked.project,
     report,
   };
@@ -177,9 +256,11 @@ export async function createComputerWorkspace({
   createdAt,
   priorHistoryRaw = null,
   priorWorkspaceRaw = null,
+  projectSourceRaw = null,
 }) {
   confirmations({ approved, publicNonpersonal });
   need(same(network, PROPOSED_NETWORK), 'COMPUTER_EXPLICIT_NETWORK_REQUIRED');
+  await inspectPinnedHandoff(inputs.handoffRaw);
   const draftRaw = await createComputerReceiptDraft(inputs, {
     amountBaseUnits: agialphaBaseUnits(amount),
     createdAt,
@@ -195,11 +276,44 @@ export async function createComputerWorkspace({
   if (prior) {
     need(prior.project.id === native.project.id, 'COMPUTER_WORKSPACE_PROJECT');
   }
-  const mergedHistory = await mergeComputerHistorySources(
+  const importedHistory =
+    priorHistoryRaw === null
+      ? null
+      : await inspectHistorySource(priorHistoryRaw);
+  const projectSource =
+    projectSourceRaw === null
+      ? null
+      : await inspectAlphaProjectSource(projectSourceRaw);
+  let mergedHistory = await mergeComputerHistorySources(
     prior?.workspace.historyRaw ?? null,
-    priorHistoryRaw
+    importedHistory?.historyRaw ?? null
+  );
+  mergedHistory = await mergeComputerHistorySources(
+    mergedHistory,
+    projectSource?.historyRaw ?? null
   );
   let project = native.project;
+  if (projectSource) {
+    if (alpha.projectContains(projectSource.project, project))
+      project = projectSource.project;
+    else
+      need(
+        alpha.projectContains(project, projectSource.project),
+        'COMPUTER_WORKSPACE_PROJECT'
+      );
+  }
+  if (importedHistory?.projectSourceRaw) {
+    const source = await inspectAlphaProjectSource(
+      importedHistory.projectSourceRaw
+    );
+    if (alpha.projectContains(source.project, project))
+      project = source.project;
+    else
+      need(
+        alpha.projectContains(project, source.project),
+        'COMPUTER_WORKSPACE_PROJECT'
+      );
+  }
   if (mergedHistory) {
     const merged = await alpha.inspectComputerHistory(mergedHistory);
     if (alpha.projectContains(merged.project, project))
@@ -227,19 +341,38 @@ export async function createComputerWorkspace({
   const historySources = [
     ...new Set([
       ...(prior?.workspace.historySources ?? []),
-      ...(priorHistoryRaw ? [priorHistoryRaw] : []),
+      ...(importedHistory ? [importedHistory.historyRaw] : []),
+      ...(projectSource?.historyRaw ? [projectSource.historyRaw] : []),
       historyRaw,
     ]),
   ];
   need(historySources.length <= 16, 'COMPUTER_WORKSPACE_HISTORY_BOUND');
+  const projectSources = [
+    ...new Set([
+      ...(prior?.workspace.projectSources ?? []),
+      ...(projectSource ? [projectSource.sourceRaw] : []),
+      ...(importedHistory?.projectSourceRaw
+        ? [importedHistory.projectSourceRaw]
+        : []),
+    ]),
+  ];
+  need(projectSources.length <= 8, 'COMPUTER_WORKSPACE_PROJECT_SOURCE_BOUND');
+  const sourceDeclarations = await historicalSourceDeclarations(
+    await alpha.inspectComputerHistory(historyRaw)
+  );
   const body = {
     schema: COMPUTER_WORKSPACE_SCHEMA,
-    source: ALPHA_COMPUTER_SOURCE,
+    inspectorSource: COMPUTER_INSPECTOR_SOURCE,
+    historicalSourceDeclarations: sourceDeclarations,
+    unmatchedHistoricalSourceCount: sourceDeclarations.filter(
+      (item) => !item.matchesInstalledInspector
+    ).length,
     network: PROPOSED_NETWORK,
     draftRaw,
     drafts,
     historyRaw,
     historySources,
+    projectSources,
     authority: 'none',
     settlement: 'not-connected',
     productionApproved: false,
@@ -266,12 +399,15 @@ export async function inspectComputerWorkspace(raw) {
     Object.keys(value).sort().join('|') ===
       [
         'schema',
-        'source',
+        'inspectorSource',
+        'historicalSourceDeclarations',
+        'unmatchedHistoricalSourceCount',
         'network',
         'draftRaw',
         'drafts',
         'historyRaw',
         'historySources',
+        'projectSources',
         'authority',
         'settlement',
         'productionApproved',
@@ -289,7 +425,7 @@ export async function inspectComputerWorkspace(raw) {
   );
   need(
     value.schema === COMPUTER_WORKSPACE_SCHEMA &&
-      same(value.source, ALPHA_COMPUTER_SOURCE) &&
+      same(value.inspectorSource, COMPUTER_INSPECTOR_SOURCE) &&
       same(value.network, PROPOSED_NETWORK) &&
       value.authority === 'none' &&
       value.settlement === 'not-connected' &&
@@ -299,11 +435,45 @@ export async function inspectComputerWorkspace(raw) {
   const draft = await inspectComputerReceiptDraft(value.draftRaw, {
     inspectAlphaReturn: alpha.inspectComputerReturn,
   });
+  await inspectPinnedHandoff(draft.original.handoffRaw);
   const native = await alpha.inspectComputerReturn(
     draft.original.handoffRaw,
     draft.original.returnRaw
   );
   const history = await alpha.inspectComputerHistory(value.historyRaw);
+  const sourceDeclarations = await historicalSourceDeclarations(history);
+  need(
+    same(value.historicalSourceDeclarations, sourceDeclarations) &&
+      value.unmatchedHistoricalSourceCount ===
+        sourceDeclarations.filter((item) => !item.matchesInstalledInspector)
+          .length,
+    'COMPUTER_WORKSPACE_SOURCE_DECLARATIONS'
+  );
+  need(
+    Array.isArray(value.projectSources) &&
+      value.projectSources.length <= 8 &&
+      new Set(value.projectSources).size === value.projectSources.length,
+    'COMPUTER_WORKSPACE_PROJECT_SOURCES'
+  );
+  const originalAlphaArchives = [];
+  for (const rawSource of value.projectSources) {
+    const source = await inspectAlphaProjectSource(rawSource);
+    if (
+      JSON.parse(rawSource).schema?.startsWith(
+        'successor-alpha-learning-archive/'
+      )
+    )
+      originalAlphaArchives.push(rawSource);
+    need(
+      alpha.projectContains(history.project, source.project),
+      'COMPUTER_WORKSPACE_PROJECT'
+    );
+    need(
+      source.historyRaw === null ||
+        value.historySources?.includes(source.historyRaw),
+      'COMPUTER_WORKSPACE_PROJECT_SOURCE_HISTORY'
+    );
+  }
   need(
     Array.isArray(value.historySources) &&
       value.historySources.length >= 1 &&
@@ -371,5 +541,12 @@ export async function inspectComputerWorkspace(raw) {
     ),
     'COMPUTER_WORKSPACE_HISTORY'
   );
-  return { raw, workspace: value, draft, history, project: history.project };
+  return {
+    raw,
+    workspace: value,
+    draft,
+    history,
+    project: history.project,
+    originalAlphaArchives,
+  };
 }

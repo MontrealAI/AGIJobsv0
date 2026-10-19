@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import http from 'node:http';
+import { createRequire } from 'node:module';
 import { chromium } from 'playwright';
 import { verifyComputerReceipt } from './computer-receipt-qa.mjs';
 const output = path.resolve('build/pages'),
@@ -52,6 +53,10 @@ try {
     args: ['--no-sandbox', '--disable-dev-shm-usage'],
   });
   const context = await browser.newContext({ acceptDownloads: true });
+  let walletCalls = 0;
+  await context.exposeBinding('__recordComputerWalletAttempt', () => {
+    walletCalls++;
+  });
   const page = await context.newPage(),
     checks = [],
     errors = [],
@@ -70,6 +75,7 @@ try {
       value: Object.freeze({
         request: async () => {
           globalThis.__walletCalls++;
+          await globalThis.__recordComputerWalletAttempt();
           throw Error('NO_WALLET_PERMISSION');
         },
       }),
@@ -83,11 +89,32 @@ try {
     checks,
   });
   if (errors.length) throw Error(errors.join('\n'));
-  if (
-    external.length ||
-    (await page.evaluate(() => globalThis.__walletCalls)) !== 0
-  )
+  if (external.length || walletCalls !== 0)
     throw Error('Unexpected network or wallet call');
+  fs.writeFileSync(
+    path.join(artifacts, 'computer-receipt-browser-run.json'),
+    JSON.stringify(
+      {
+        sourceRevision: manifest.revision,
+        scope: 'GUI_WITH_PROTOCOL_DOUBLE_INPUTS_NO_NATIVE_EXECUTION_CLAIM',
+        runtime: {
+          node: process.version,
+          nodeExecutable: process.execPath,
+          playwright: createRequire(import.meta.url)('playwright/package.json')
+            .version,
+          chromium: browser.version(),
+          executable:
+            process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE ||
+            chromium.executablePath(),
+        },
+        walletCallsAcrossAllNavigations: walletCalls,
+        externalRequests: external.length,
+        pageErrors: errors.length,
+      },
+      null,
+      2
+    ) + '\n'
+  );
   console.log(
     JSON.stringify({
       passed: true,
