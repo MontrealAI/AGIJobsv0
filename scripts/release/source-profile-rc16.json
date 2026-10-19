@@ -458,7 +458,7 @@
       },
       "after": {
         "mode": "100644",
-        "blob": "dcdc16bd519f455218236cc1f3a15a64d42b6b27"
+        "blob": "c5bcab8b7c658f71181e19400828be4f722404af"
       }
     },
     {
@@ -687,8 +687,8 @@
       "disposition": "Acknowledged nonsecurity quality",
       "ruleIds": ["js/unused-local-variable", "js/useless-assignment-to-local"]
     },
-    "producerCommit": "bfeab08248753287e83d287b898f399c94174b1c",
-    "producerTree": "0fa407313f568cd7ebe56a791452233e240c49e6",
+    "producerCommit": "5b5f55322d7e2b6e026b51d9659431eed327b4f4",
+    "producerTree": "dd4bfca4a1e5b08dc868e3e47bcab0598d7102b8",
     "historicalConfigPath": ".github/codeql/config.yml",
     "historicalConfigSha256": "4b34450e1dcc0b489feea158d642a6b66261d9e935463928782219c8716c0892",
     "configPath": ".github/codeql/config-integrations.yml",
@@ -708,8 +708,8 @@
   "nativePinTree": "b279cfcbd53c814db48bb4ab997199ea7ca9269c",
   "sourceConvergenceBaseline": "0b6d175a4ec8abf5b899e4a1b58a09e7045fe158",
   "sourceConvergenceTree": "9e8dff3e0863afa73e04757f77ca2bcb8c01dca2",
-  "pythonScannerBaseline": "bfeab08248753287e83d287b898f399c94174b1c",
-  "pythonScannerTree": "0fa407313f568cd7ebe56a791452233e240c49e6",
+  "pythonScannerBaseline": "5b5f55322d7e2b6e026b51d9659431eed327b4f4",
+  "pythonScannerTree": "dd4bfca4a1e5b08dc868e3e47bcab0598d7102b8",
   "pythonScannerPolicy": {
     "reviewSchema": "agijobsv0/codeql-python-review/2",
     "reviewedProducer": {
@@ -717,8 +717,8 @@
       "headBranch": "fix/inherited-codeql-ti-final-rc16-20261019",
       "ref": "refs/heads/fix/inherited-codeql-ti-final-rc16-20261019"
     },
-    "producerCommit": "bfeab08248753287e83d287b898f399c94174b1c",
-    "producerTree": "0fa407313f568cd7ebe56a791452233e240c49e6",
+    "producerCommit": "5b5f55322d7e2b6e026b51d9659431eed327b4f4",
+    "producerTree": "dd4bfca4a1e5b08dc868e3e47bcab0598d7102b8",
     "configPath": ".github/codeql/config-python-integrations.yml",
     "configSha256": "eb5b425facefb419987bf537280d5144a477b65a205ccd71df3866b60b01e560",
     "configBlob": "cdd0d5a0a1a0e691c3367bc5ce4429215f41381d",

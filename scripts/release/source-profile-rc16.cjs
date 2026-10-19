@@ -5,7 +5,7 @@
 const assert = require('node:assert/strict');
 const { createHash } = require('node:crypto');
 const integrationTransitionsSha256 =
-  'd3440377f05fc34814acdf135d3669595c9a68a504f010188deffe7678d50375';
+  '94adc707906234bafa4bc54e3d272cffbdac6ada86945dd738aca2501edaecd5';
 const historical = require('./qualify-source-release.cjs');
 
 function freeze(value) {
@@ -29,8 +29,8 @@ const anchors = Object.freeze({
   nativePinTree: 'b279cfcbd53c814db48bb4ab997199ea7ca9269c',
   sourceConvergenceBaseline: '0b6d175a4ec8abf5b899e4a1b58a09e7045fe158',
   sourceConvergenceTree: '9e8dff3e0863afa73e04757f77ca2bcb8c01dca2',
-  pythonScannerBaseline: 'bfeab08248753287e83d287b898f399c94174b1c',
-  pythonScannerTree: '0fa407313f568cd7ebe56a791452233e240c49e6',
+  pythonScannerBaseline: '5b5f55322d7e2b6e026b51d9659431eed327b4f4',
+  pythonScannerTree: 'dd4bfca4a1e5b08dc868e3e47bcab0598d7102b8',
 });
 const allowedNewPaths = Object.freeze([
   'scripts/release/source-profile-rc16.cjs',
@@ -112,8 +112,8 @@ const scannerPolicy = freeze({
     disposition: 'Acknowledged nonsecurity quality',
     ruleIds: ['js/unused-local-variable', 'js/useless-assignment-to-local'],
   },
-  producerCommit: 'bfeab08248753287e83d287b898f399c94174b1c',
-  producerTree: '0fa407313f568cd7ebe56a791452233e240c49e6',
+  producerCommit: '5b5f55322d7e2b6e026b51d9659431eed327b4f4',
+  producerTree: 'dd4bfca4a1e5b08dc868e3e47bcab0598d7102b8',
   historicalConfigPath: '.github/codeql/config.yml',
   historicalConfigSha256:
     '4b34450e1dcc0b489feea158d642a6b66261d9e935463928782219c8716c0892',
@@ -183,8 +183,8 @@ const pythonScannerPolicy = freeze({
     headBranch: 'fix/inherited-codeql-ti-final-rc16-20261019',
     ref: 'refs/heads/fix/inherited-codeql-ti-final-rc16-20261019',
   },
-  producerCommit: 'bfeab08248753287e83d287b898f399c94174b1c',
-  producerTree: '0fa407313f568cd7ebe56a791452233e240c49e6',
+  producerCommit: '5b5f55322d7e2b6e026b51d9659431eed327b4f4',
+  producerTree: 'dd4bfca4a1e5b08dc868e3e47bcab0598d7102b8',
   configPath: '.github/codeql/config-python-integrations.yml',
   configSha256:
     'eb5b425facefb419987bf537280d5144a477b65a205ccd71df3866b60b01e560',
