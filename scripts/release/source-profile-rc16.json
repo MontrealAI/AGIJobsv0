@@ -208,17 +208,41 @@
       }
     }
   ],
+  "websiteTransitions": [
+    {
+      "path": "docs/successor/TRANSFORMATIONAL_WORK.md",
+      "before": {
+        "mode": "100644",
+        "blob": "19c3a3cdacc6a13713f5075eedba7236b5089e7c"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "c6c97f21058842b5e6513d2c1dfb1fe2287255d6"
+      }
+    },
+    {
+      "path": "scripts/pages/build.mjs",
+      "before": {
+        "mode": "100644",
+        "blob": "67bac0b86418db9605c8775081247d167d2b3a42"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "b2fad292e6ea9afc740ecf6c6ff595bcee12fc0e"
+      }
+    }
+  ],
   "nativeCompatibility": {
     "schema": "agijobsv0/transformational-native-compatibility/v1",
     "repository": "MontrealAI/AGI-Alpha-Agent-v0",
-    "commit": "124a3b636baa916fe6c4400e03e55198114dd212",
-    "tree": "dce26926d2a4282a1591dbce4bfd6c36ef4caaa9",
+    "commit": "dbaf5696d64ddcbf133f05d88d35496ebb85c3f0",
+    "tree": "30dc828703a6e9cd64103e0ebc965fc701e9bcf3",
     "fixturePath": "examples/transformational-intelligence/campaign.json",
     "boundary": "free-inspection-positive-payment-refused",
     "files": {
       "docs/assets/successor/engine.mjs": "38c4f38978bf9fc29f207bae3adee0755bc6530d04502a36c491cc430787e488",
-      "examples/transformational-intelligence/campaign.json": "a8a1e549d80c234e785fd4008f3b0e4f9f571c47cbb1e1cfef74414633cb4e19",
-      "examples/transformational-intelligence/inspector.mjs": "e7b584f2c79a7c574e5be60bbec4205c95c07bbd0d842ce7b0766a92b24cd2ea"
+      "examples/transformational-intelligence/campaign.json": "fa5f570e89c20cffd0df844869047a7c0594c5460c3e95df5ada44592ea4fd20",
+      "examples/transformational-intelligence/inspector.mjs": "b5f8e704aaab345f9d6503c854d38910ddfabbf98fe674c48b051097812b07f4"
     }
   },
   "scannerRequiredPaths": [
@@ -226,7 +250,306 @@
     "integrations/alpha-agent/four-repo-computer-receipt.mjs",
     "integrations/alpha-agent/pinned-alpha-checkout.cjs",
     "integrations/alpha-agent/transformational-work-request.mjs",
-    "integrations/alpha-agent/vendor/alpha/docs/assets/successor/engine.mjs"
+    "integrations/alpha-agent/vendor/alpha/docs/assets/successor/engine.mjs",
+    "scripts/pages/build.mjs",
+    "scripts/release/qualify-source-release-rc16.cjs",
+    "scripts/release/publish-source-release-rc16.cjs",
+    "scripts/release/source-profile-rc16.cjs",
+    "scripts/release/source-native-gates-rc16.cjs",
+    "scripts/release/source-native-evidence-rc16.cjs",
+    "scripts/release/verify-transformational-compatibility.mjs"
   ],
-  "scannerReview": null
+  "scannerReview": null,
+  "integrationBaseline": "b26a65456d5c06c901ba73d1e1620f7edb1a315a",
+  "integrationTree": "f1f082a1af8375a7418d86556daeb65351757ad5",
+  "integrationTransitions": [
+    {
+      "path": ".github/codeql/config-integrations.yml",
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "blob": "0759a4da80412a04830bed3e7f5727d07cbdeb35"
+      }
+    },
+    {
+      "path": ".github/workflows/apps-images.yml",
+      "before": {
+        "mode": "100644",
+        "blob": "1a3800d0e830877251f9ce90abf9c13e09892914"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "8bf1b33d882ef8d47d819924fcde103040a906f9"
+      }
+    },
+    {
+      "path": ".github/workflows/contracts.yml",
+      "before": {
+        "mode": "100644",
+        "blob": "8f6a1b8694bee9be36d7b64843a1d3b486412865"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "13f37647c69915adb33ff76172b8452bc90c42b4"
+      }
+    },
+    {
+      "path": ".github/workflows/culture-ci.yml",
+      "before": {
+        "mode": "100644",
+        "blob": "b5a693ca7c8f6f0d1a1274f3dc31dafb4e44c706"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "2355536fb301a0c8acae77904ba540a629e92c60"
+      }
+    },
+    {
+      "path": ".github/workflows/escrow-replay-regression.yml",
+      "before": {
+        "mode": "100644",
+        "blob": "d3e4fb2d558c59e79f2c67a63f6cfd2673669995"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "5acc4bee48d34ed8e8035b1a95635dc8d6ec2e4e"
+      }
+    },
+    {
+      "path": ".github/workflows/pages.yml",
+      "before": {
+        "mode": "100644",
+        "blob": "b317b3572a6e6a7860fb400ea8072a1cc6182efa"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "f2d7b1936325e2c2dfe1235c9564812a3dc85e90"
+      }
+    },
+    {
+      "path": ".github/workflows/static-analysis.yml",
+      "before": {
+        "mode": "100644",
+        "blob": "b26d2b4b94e8ef8f0f28f7b6c806acc288f500f8"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "a86b7fa495620d9dbac4f5ff4c5c5cbd8c8fe53e"
+      }
+    },
+    {
+      "path": "docs/security/remediation-2026-10-19/README.md",
+      "before": {
+        "mode": "100644",
+        "blob": "0df3b3ba3deefe26146587dfde862650a94ea645"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "33dfe77d4d8d6071baca554f38614c8673914a45"
+      }
+    },
+    {
+      "path": "integrations/alpha-agent/README.md",
+      "before": {
+        "mode": "100644",
+        "blob": "551cf8cf5efa0dd9bb66bb46acbf92229f5d4c45"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "9ae38d15d833dcb174b3bac48d54990627409f01"
+      }
+    },
+    {
+      "path": "integrations/alpha-agent/four-repo-computer-lifecycle.cjs",
+      "before": {
+        "mode": "100644",
+        "blob": "536f65f3c043732e6a33d2a87a8be348e41b6e94"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "ba589d5d555b9f4255e294fcafd2213ef7359593"
+      }
+    },
+    {
+      "path": "integrations/alpha-agent/generate-computer-source.mjs",
+      "before": {
+        "mode": "100644",
+        "blob": "e1140084b42cf84586751d2bb22ef5af90e1c1d9"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "068c5e0c30cecbfd41446ac717795227f97889c2"
+      }
+    },
+    {
+      "path": "integrations/alpha-agent/pinned-alpha-checkout.cjs",
+      "before": {
+        "mode": "100644",
+        "blob": "22a9c65e704757d31e3809932f78ad5eb5a0d6b8"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "35aa4d4a437f6cd617e29c4c65d025af907108af"
+      }
+    },
+    {
+      "path": "integrations/alpha-agent/vendor/alpha-computer/examples/successor-alpha/learning.mjs",
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "blob": "82665337daf74956c42b86d95056f47ede3e8f8d"
+      }
+    },
+    {
+      "path": "integrations/alpha-agent/vendor/alpha-computer/examples/successor-alpha/research.mjs",
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "blob": "759eb5ce3deb5cc1c20fe35ea29beaffa5bd8eba"
+      }
+    },
+    {
+      "path": "integrations/alpha-agent/vendor/alpha-computer/source-identity.mjs",
+      "before": {
+        "mode": "100644",
+        "blob": "8db9f4c48c58e0db9fb0059c9793c7674f546802"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "446b360f83601fc036d365323e63b432d37e219e"
+      }
+    },
+    {
+      "path": "integrations/alpha-agent/vendor/alpha-computer/source-manifest.json",
+      "before": {
+        "mode": "100644",
+        "blob": "270a57e4433c8a323aaee41d2a73f0cb242f5811"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "05816f76b3031f4f19e583d3b6e44441b08fa25d"
+      }
+    },
+    {
+      "path": "scripts/pages/computer-receipt-qa.mjs",
+      "before": {
+        "mode": "100644",
+        "blob": "129c6f7bc2f57c768729504267efec55dbefaaf0"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "9cfd7da14b3ce98e999c976833a7a97cdc248f28"
+      }
+    },
+    {
+      "path": "scripts/pages/computer-receipt.mjs",
+      "before": {
+        "mode": "100644",
+        "blob": "17f2fa9844feb928e58e74414a45fbc42c6347b4"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "530268f57680f9639ac72fcff277769df61294d8"
+      }
+    },
+    {
+      "path": "scripts/pages/run-computer-receipt-qa.mjs",
+      "before": {
+        "mode": "100644",
+        "blob": "db2232221b2c9e2010ddbac960b0d58aed43397a"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "170c7022127a8f8517b36629abdfa184d4c55ebe"
+      }
+    },
+    {
+      "path": "shared/containedFiles.ts",
+      "before": {
+        "mode": "100644",
+        "blob": "4ca549ba6cd9b34c73e778639eebf7ae30dda27d"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "d17e3090c9a28580eafc265fb4958d24910ca0ef"
+      }
+    },
+    {
+      "path": "test/pages/computer-receipt-fixture.mjs",
+      "before": {
+        "mode": "100644",
+        "blob": "d65f8e3a979c6bd668e32ff2c72918d14216e368"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "53f92c8545adc7be518b834dad853c48fa1792f7"
+      }
+    },
+    {
+      "path": "test/pages/computer-receipt-workspace.test.mjs",
+      "before": {
+        "mode": "100644",
+        "blob": "5dd0b13aa6d334c8ea1b10f0b2f39ddf02f30180"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "f41eab1b681dd03353afe7516e7bc59b6a4124fd"
+      }
+    },
+    {
+      "path": "test/pages/four-repo-alpha-source.test.mjs",
+      "before": {
+        "mode": "100644",
+        "blob": "0c6f328ab571b0ffcf4681b40ddcdf99c9d3cb74"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "5e53bc68ed94d30833bde765516b5e60e2c2a520"
+      }
+    },
+    {
+      "path": "test/security/inherited-codeql.test.cjs",
+      "before": {
+        "mode": "100644",
+        "blob": "4d740bc78dc1e533bee70654f9db48e8cfd43ed9"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "9e8742d4b3f468a7324a334e11667f23b95d5bb7"
+      }
+    },
+    {
+      "path": "website/assets/computer-receipt-copy.mjs",
+      "before": {
+        "mode": "100644",
+        "blob": "3969618683eed2ad0784c8db3e16aceeb1ec9eb8"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "eaf1adb18eef687eb894c3adee3c41b8cdd44cc5"
+      }
+    },
+    {
+      "path": "website/assets/computer-receipt-model.mjs",
+      "before": {
+        "mode": "100644",
+        "blob": "9d04951779df563b2e3b0365ac4478ac43063aad"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "3bbe1111bafe7fb45fc0856958889f168d32a570"
+      }
+    },
+    {
+      "path": "website/assets/computer-receipt.mjs",
+      "before": {
+        "mode": "100644",
+        "blob": "4c04fdba150658978f0172d538f4e04b4deeb6a6"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "609223705b09e14da076d6525a0512b7242409fc"
+      }
+    }
+  ]
 }

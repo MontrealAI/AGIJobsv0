@@ -1,65 +1,431 @@
 'use strict';
 
-const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const path = require('node:path');
 const crypto = require('node:crypto');
 const { execFileSync } = require('node:child_process');
 const { setTimeout: delay } = require('node:timers/promises');
-const historical = require('./qualify-source-release.cjs');
-const {
-  profile,
-  verifySourceScope,
-  verifyPublicationReview,
-} = require('./source-profile-rc16.cjs');
-const {
-  assertPinnedAlphaCheckout,
-} = require('../../integrations/alpha-agent/pinned-alpha-checkout.cjs');
+const { requiredWorkflows } = require('./check-release-ci.js');
 
 const ownPath = '.github/workflows/source-release-rc16.yml';
-const requiredPaths = [
-  ...new Set([
-    ...historical.requiredPaths,
-    '.github/workflows/security-remediation.yml',
-    '.github/workflows/transformational-compatibility.yml',
-  ]),
-];
-const requiredChecks = [
-  ...new Set([
-    ...historical.requiredChecks,
-    'CodeQL analysis',
-    'Inherited security boundaries and browser regressions',
-    'Pinned native transformation compatibility',
-  ]),
-];
-const sha256 = (bytes) =>
-  crypto.createHash('sha256').update(bytes).digest('hex');
-const canonical = (value) =>
-  value && typeof value === 'object'
-    ? Array.isArray(value)
-      ? '[' + value.map(canonical).join(',') + ']'
-      : '{' +
-        Object.keys(value)
-          .sort()
-          .map((key) => JSON.stringify(key) + ':' + canonical(value[key]))
-          .join(',') +
-        '}'
-    : JSON.stringify(value);
+const nativeGate = require('./source-native-gates-rc16.cjs');
+const {
+  profile,
+  verifySourceScope: verifySourceProfile,
+  verifyPublicationReview,
+} = require('./source-profile-rc16.cjs');
+const releaseVersion = '2.1.0-rc.16';
+const deployedSourceBaseline = 'b4c5b66ea05a6bb27f1f1cb197f055c179bbd38e';
+const evidenceBaseline = '9c730e0188594089e27ed0589c2b5ca57eec5cf5';
+// Additive reference evidence: this is not an assertion that the deployed
+// compiler/source tree equals the source qualified for this release.
+const deploymentSnapshot = Object.freeze({
+  asset: 'jobs-mainnet-2026-10-18.json',
+  localPath: 'website/data/jobs-mainnet-2026-10-18.json',
+  repository: 'MontrealAI/AGIJobsv0',
+  recordCommit: '284351148d96c5390a655aec1f9db806284f2400',
+  recordPath: 'docs/production/mainnet-2026-10-18/deployment-snapshot.json',
+  sha256: 'b4335f5763f73e8da664c3cd45ac7ca8fa6f0d3beb2780b209e50fd1e3def23f',
+  deployedSourceCommit: '818b3a246871e4cd4dde86558dbb91ef82b15eef',
+  deployedSourceTree: 'b1c3bb0f4b8d64e0d23376d6b6ef3722c4c67b0d',
+  currentMainEquivalenceNotAssumed: true,
+  liveRecheckedByThisRelease: false,
+});
 
-function authenticCodeQL(check, sha) {
-  return (
-    check.head_sha === sha &&
-    check.name === 'CodeQL' &&
-    check.app?.id === 57789 &&
-    check.app.slug === 'github-advanced-security' &&
-    check.app.owner?.id === 9919
+function verifyDeploymentSnapshot(bytes) {
+  const hash = crypto.createHash('sha256').update(bytes).digest('hex');
+  if (hash !== deploymentSnapshot.sha256)
+    throw Error('Pinned deployment snapshot hash mismatch');
+  return deploymentSnapshot;
+}
+// Select the genuinely reviewed integrated security/compiler/tooling source
+// after its code is frozen. The pending marker deliberately prevents premature
+// publication; metadata selection cannot substitute for exact-source review.
+// Protected paths, compiler policy and historical evidence remain unchanged.
+const scannerReviewPath = 'docs/production/RELEASE_NOTES_SOURCE_RC16.md';
+const scannerHistory = Object.freeze({
+  configSha256:
+    '4b34450e1dcc0b489feea158d642a6b66261d9e935463928782219c8716c0892',
+  findingsSha256:
+    '3bb26ea360c74550cf8c3561085a742e55d058a03ca6658e74efb7e344bd7b0f',
+  originalArchiveSha256:
+    'c7dd344ab78de98d423d3294db17c1c7b810afa531df7416271f813096c25ba9',
+});
+const canonical = (value) =>
+  JSON.stringify(value, (_, item) =>
+    item && typeof item === 'object' && !Array.isArray(item)
+      ? Object.fromEntries(
+          Object.keys(item)
+            .sort()
+            .map((key) => [key, item[key]])
+        )
+      : item
   );
+function exactFields(value, names) {
+  return (
+    value &&
+    !Array.isArray(value) &&
+    typeof value === 'object' &&
+    canonical(Object.keys(value).sort()) === canonical([...names].sort())
+  );
+}
+function parseScannerReview(notes) {
+  if (typeof notes !== 'string' || Buffer.byteLength(notes) > 8 * 1024 * 1024)
+    throw Error('Bounded rc16 scanner review notes required');
+  const marker = /<!-- rc16-scanner-review\n([\s\S]*?)\n-->/g;
+  const matches = [...notes.matchAll(marker)];
+  if (matches.length !== 1)
+    throw Error('Exactly one rc16 scanner review block is required');
+  const review = JSON.parse(matches[0][1]);
+  // Require a normal JSON serialization (whitespace may differ), rejecting
+  // duplicate keys and alternate numeric/string spellings in approval metadata.
+  const compact = matches[0][1].replace(/"(?:\\.|[^"\\])*"|\s+/g, (token) =>
+    token[0] === '"' ? token : ''
+  );
+  if (compact !== JSON.stringify(review))
+    throw Error('Scanner review must use canonical JSON fields');
+  if (review === null) return null;
+  if (
+    !exactFields(review, [
+      'schema',
+      'sourceSha',
+      'sourceTree',
+      'producer',
+      'summary',
+      'resultReviews',
+      'codeqlChecks',
+      'history',
+      'reviewLinks',
+    ]) ||
+    review.schema !== 'agijobsv0/rc16-scanner-review/1' ||
+    !/^[a-f0-9]{40}$/.test(review.sourceSha || '') ||
+    !/^[a-f0-9]{40}$/.test(review.sourceTree || '') ||
+    canonical(review.history) !== canonical(scannerHistory) ||
+    !exactFields(review.producer, [
+      'runId',
+      'runAttempt',
+      'runNumber',
+      'event',
+      'headBranch',
+      'artifactId',
+      'artifactName',
+      'githubDigest',
+    ]) ||
+    !['runId', 'runAttempt', 'runNumber', 'artifactId'].every(
+      (key) =>
+        Number.isSafeInteger(review.producer[key]) && review.producer[key] > 0
+    ) ||
+    review.producer.event !== 'push' ||
+    typeof review.producer.headBranch !== 'string' ||
+    !review.producer.headBranch ||
+    review.producer.headBranch.length > 255 ||
+    review.producer.artifactName !==
+      `codeql-security-report-${review.sourceSha}-${review.producer.runId}-${review.producer.runAttempt}` ||
+    !/^sha256:[a-f0-9]{64}$/.test(review.producer.githubDigest || '') ||
+    !exactFields(review.summary, [
+      'schema',
+      'toolSha256',
+      'queriesSha256',
+      'extractedPaths',
+      'results',
+      'resultCount',
+    ]) ||
+    review.summary.schema !== 'agijobsv0/raw-codeql-summary/1' ||
+    !['toolSha256', 'queriesSha256'].every((key) =>
+      /^[a-f0-9]{64}$/.test(review.summary[key] || '')
+    ) ||
+    !Array.isArray(review.summary.extractedPaths) ||
+    !review.summary.extractedPaths.length ||
+    review.summary.extractedPaths.length > 100000 ||
+    !review.summary.extractedPaths.every(
+      (name) =>
+        typeof name === 'string' &&
+        name &&
+        !/[\\\r\n\0]/.test(name) &&
+        !name.startsWith('/') &&
+        name.split('/').every((part) => part && part !== '.' && part !== '..')
+    ) ||
+    canonical([...new Set(review.summary.extractedPaths)].sort()) !==
+      canonical(review.summary.extractedPaths) ||
+    !Array.isArray(review.summary.results) ||
+    review.summary.results.length > 100000 ||
+    !review.summary.results.every((digest) => /^[a-f0-9]{64}$/.test(digest)) ||
+    canonical([...review.summary.results].sort()) !==
+      canonical(review.summary.results) ||
+    review.summary.resultCount !== review.summary.results.length ||
+    !Array.isArray(review.reviewLinks) ||
+    !Array.isArray(review.resultReviews) ||
+    review.resultReviews.length !== review.summary.results.length ||
+    !review.resultReviews.every(
+      (item, index) =>
+        exactFields(item, [
+          'sha256',
+          'disposition',
+          'rationale',
+          'reviewLink',
+        ]) &&
+        item.sha256 === review.summary.results[index] &&
+        [
+          'source-corrected',
+          'reviewed-nonsecurity',
+          'reviewed-residual-risk',
+          'quality-only',
+        ].includes(item.disposition) &&
+        typeof item.rationale === 'string' &&
+        item.rationale.trim().length >= 20 &&
+        item.rationale.length <= 4000 &&
+        review.reviewLinks.includes(item.reviewLink)
+    ) ||
+    !review.reviewLinks.length ||
+    review.reviewLinks.length > 20 ||
+    new Set(review.reviewLinks).size !== review.reviewLinks.length ||
+    !review.reviewLinks.every(
+      (url) =>
+        typeof url === 'string' &&
+        /^https:\/\/github\.com\/MontrealAI\/AGIJobsv0\/pull\/[1-9][0-9]*#(?:issuecomment-|discussion_r)[1-9][0-9]*$/.test(
+          url
+        )
+    ) ||
+    !Array.isArray(review.codeqlChecks) ||
+    !review.codeqlChecks.length ||
+    review.codeqlChecks.length > 2000 ||
+    new Set(review.codeqlChecks.map((item) => item?.id)).size !==
+      review.codeqlChecks.length ||
+    !review.codeqlChecks.every(
+      (item) =>
+        exactFields(item, [
+          'id',
+          'headSha',
+          'name',
+          'appId',
+          'appSlug',
+          'status',
+          'conclusion',
+          'url',
+        ]) &&
+        Number.isSafeInteger(item.id) &&
+        item.id > 0 &&
+        item.headSha === review.sourceSha &&
+        item.name === 'CodeQL' &&
+        item.appId === 57789 &&
+        item.appSlug === 'github-advanced-security' &&
+        item.status === 'completed' &&
+        item.conclusion === 'success' &&
+        item.url === `https://github.com/MontrealAI/AGIJobsv0/runs/${item.id}`
+    )
+  )
+    throw Error('Malformed rc16 scanner review record');
+  const freeze = (value) => {
+    if (value && typeof value === 'object') {
+      Object.values(value).forEach(freeze);
+      Object.freeze(value);
+    }
+    return value;
+  };
+  return freeze(review);
+}
+const scannerReview = parseScannerReview(
+  fs.readFileSync(
+    require('node:path').join(__dirname, '../..', scannerReviewPath),
+    'utf8'
+  )
+);
+const compilerSourceBaseline =
+  scannerReview?.sourceSha || 'REVIEW_REQUIRED_FOR_RC16';
+function verifyScannerReviewSource({ git, sha, review = scannerReview }) {
+  if (!review) throw Error('rc16 scanner review is pending; no publication');
+  // The review is installed only in this existing notes file. Every other
+  // executable, producer, policy, dependency and source byte must stay at S1.
+  git('merge-base', '--is-ancestor', review.sourceSha, sha);
+  if (
+    String(git('rev-parse', `${review.sourceSha}^{tree}`)).trim() !==
+    review.sourceTree
+  )
+    throw Error('Reviewed scanner source tree differs');
+  const changed = String(
+    git('diff', '--name-only', '-z', review.sourceSha, sha, '--')
+  )
+    .split('\0')
+    .filter(Boolean);
+  if (changed.some((name) => name !== scannerReviewPath))
+    throw Error('Source changed beyond the reviewed scanner notes record');
+  for (const ref of [review.sourceSha, sha]) {
+    const entry = String(git('ls-tree', '-z', ref, '--', scannerReviewPath));
+    const [meta, name] = entry.split('\t');
+    if (
+      !/^100644 blob [a-f0-9]{40}$/.test(meta) ||
+      name !== scannerReviewPath + '\0'
+    )
+      throw Error('Scanner review notes must retain their regular-file mode');
+  }
+  const strip = (text) =>
+    text.replace(
+      /<!-- rc16-scanner-review\n[\s\S]*?\n-->/,
+      '<!-- rc16-scanner-review\nnull\n-->'
+    );
+  const before = String(
+    git('show', `${review.sourceSha}:${scannerReviewPath}`)
+  );
+  const after = String(git('show', `${sha}:${scannerReviewPath}`));
+  if (
+    parseScannerReview(before) !== null ||
+    canonical(parseScannerReview(after)) !== canonical(review) ||
+    strip(before) !== strip(after)
+  )
+    throw Error(
+      'Scanner review installation changed notes beyond its strict record'
+    );
+  return review;
+}
+const preservedEvidencePaths = [
+  'docs/deployments/',
+  'docs/deployment-addresses.json',
+  'docs/deployment-addresses.mainnet.json',
+  'docs/production/mainnet-deployment-2026-10-12.md',
+  'docs/production/escrow-verification-2026-10-12.md',
+  'docs/production/RELEASE_NOTES_SOURCE_RC5.md',
+  'scripts/verification/',
+];
+const reviewedCompilerPaths = [
+  'contracts/',
+  'scripts/deploy/',
+  'scripts/v2/',
+  'scripts/generate-constants.ts',
+  'scripts/generate-constants-impl.ts',
+  'scripts/ci/',
+  'hardhat.config.js',
+  'hardhat.coverage.config.js',
+  'foundry.toml',
+  'truffle-config.js',
+  'config/solidity-compiler.json',
+  'config/implementation-modules.json',
+  'config/foundry-toolchain.json',
+  'scripts/production/commissioning.cjs',
+  'scripts/production/rehearse.cjs',
+  'demo/',
+  '.github/workflows/release.yml',
+  'scripts/release/',
+  ':(exclude)scripts/release/qualify-source-release.cjs',
+  ':(exclude)scripts/release/publish-source-release.cjs',
+  'ci/',
+];
+
+function verifySourceScope({
+  git,
+  sha,
+  policy,
+  version,
+  compilerBaseline = compilerSourceBaseline,
+}) {
+  if (!/^[a-f0-9]{40}$/.test(compilerBaseline))
+    throw Error('A reviewed compiler source SHA is required');
+  if (
+    version !== releaseVersion ||
+    policy?.version !== '0.8.37' ||
+    policy.longVersion !== '0.8.37+commit.f401782d' ||
+    policy.evmVersion !== 'cancun' ||
+    policy.optimizerRuns !== 200 ||
+    policy.viaIR !== true
+  )
+    throw Error('Source release version or compiler policy mismatch');
+  for (const baseline of [
+    deployedSourceBaseline,
+    evidenceBaseline,
+    compilerBaseline,
+  ])
+    git('merge-base', '--is-ancestor', baseline, sha);
+  git(
+    'diff',
+    '--exit-code',
+    evidenceBaseline,
+    sha,
+    '--',
+    ...preservedEvidencePaths
+  );
+  git(
+    'diff',
+    '--exit-code',
+    compilerBaseline,
+    sha,
+    '--',
+    ...reviewedCompilerPaths
+  );
+  return {
+    deployedSourceBaseline,
+    evidenceBaseline,
+    compilerSourceBaseline: compilerBaseline,
+    preservedEvidencePaths,
+    reviewedCompilerPaths,
+    compiler: policy.longVersion,
+  };
+}
+const requiredPaths = [
+  ...requiredWorkflows,
+  'pages.yml',
+  'escrow-replay-regression.yml',
+  'actionlint.yml',
+  'successor-computer.yml',
+]
+  .map((name) => `.github/workflows/${name}`)
+  .concat(nativeGate.requiredPaths)
+  .filter((name, index, all) => all.indexOf(name) === index);
+const requiredChecks = [
+  ...new Set(
+    [
+      ...require('../../ci/required-contexts.json'),
+      ...require('../../ci/required-companion-contexts.json'),
+    ]
+      .map((name) => name.split(' / ').slice(1).join(' / '))
+      .concat(nativeGate.requiredChecks)
+  ),
+];
+
+// Code scanning's result check is a separate GitHub App from the Actions job.
+// Main pushes may not create it, so the reviewed PR source must supply its
+// successful result; any result observed on the final SHA also remains binding.
+function evaluateCodeql(checks, sha, required = true) {
+  const results = checks.filter(
+    (check) =>
+      check.head_sha === sha &&
+      check.name === 'CodeQL' &&
+      check.app?.id === 57789 &&
+      check.app?.slug === 'github-advanced-security'
+  );
+  const failures = [];
+  const pending = [];
+  if (required && !results.length)
+    pending.push('CodeQL (GitHub Advanced Security): missing');
+  for (const check of results) {
+    if (
+      !Number.isSafeInteger(check.id) ||
+      check.id < 1 ||
+      check.html_url !==
+        `https://github.com/MontrealAI/AGIJobsv0/runs/${check.id}`
+    )
+      failures.push('CodeQL (GitHub Advanced Security): malformed identity');
+    else if (check.status !== 'completed')
+      pending.push(`CodeQL (GitHub Advanced Security): ${check.status}`);
+    else if (check.conclusion !== 'success')
+      failures.push(`CodeQL (GitHub Advanced Security): ${check.conclusion}`);
+  }
+  return {
+    ready: !failures.length && !pending.length,
+    failures,
+    pending,
+    checks: results.map((check) => ({
+      id: check.id,
+      headSha: check.head_sha,
+      name: check.name,
+      appId: check.app.id,
+      appSlug: check.app.slug,
+      status: check.status,
+      conclusion: check.conclusion,
+      url: check.html_url,
+    })),
+  };
 }
 
 function evaluate(runs, checks, sha) {
-  const latest = new Map(),
-    failures = [],
-    pending = [];
+  const latest = new Map();
   for (const run of runs) {
     if (
       run.head_sha !== sha ||
@@ -77,277 +443,53 @@ function evaluate(runs, checks, sha) {
     )
       latest.set(run.path, run);
   }
-  for (const file of requiredPaths)
-    if (!latest.has(file)) pending.push(file + ': missing');
+  const failures = [],
+    pending = [];
+  for (const path of requiredPaths)
+    if (!latest.has(path)) pending.push(`${path}: missing`);
   for (const run of latest.values()) {
-    if (run.status !== 'completed') pending.push(run.path + ': ' + run.status);
+    if (run.status !== 'completed') pending.push(`${run.path}: ${run.status}`);
     else if (run.conclusion !== 'success')
-      failures.push(run.path + ': ' + run.conclusion);
+      failures.push(`${run.path}: ${run.conclusion}`);
   }
   const trusted = checks.filter(
-    (check) =>
-      check.head_sha === sha &&
-      check.app?.id === 15368 &&
-      check.app.slug === 'github-actions'
+    (c) => c.head_sha === sha && c.app?.slug === 'github-actions'
   );
-  for (const check of trusted) {
-    if (check.name === 'Publish qualified rc.16 source prerelease') continue;
-    if (check.status !== 'completed')
-      pending.push(check.name + ': ' + check.status);
-    else if (!['success', 'skipped', 'neutral'].includes(check.conclusion))
-      failures.push(check.name + ': ' + check.conclusion);
+  for (const c of trusted) {
+    if (c.name === 'Publish qualified rc.16 source prerelease') continue;
+    if (c.status !== 'completed') pending.push(`${c.name}: ${c.status}`);
+    else if (!['success', 'skipped', 'neutral'].includes(c.conclusion))
+      failures.push(`${c.name}: ${c.conclusion}`);
   }
   for (const name of requiredChecks) {
-    const matching = trusted.filter((check) => check.name === name);
-    if (!matching.length) pending.push(name + ': missing');
-    for (const check of matching) {
-      if (check.status !== 'completed')
-        pending.push(name + ': ' + check.status);
-      else if (check.conclusion !== 'success')
-        failures.push(name + ': ' + check.conclusion);
+    const matching = trusted.filter((c) => c.name === name);
+    if (!matching.length) pending.push(`${name}: missing`);
+    for (const c of matching) {
+      if (c.status !== 'completed') pending.push(`${name}: ${c.status}`);
+      else if (c.conclusion !== 'success')
+        failures.push(`${name}: ${c.conclusion}`);
     }
   }
-  const codeql = checks.filter((check) => authenticCodeQL(check, sha));
-  if (!codeql.length)
-    pending.push('GitHub Advanced Security CodeQL result: missing');
-  for (const check of codeql) {
-    if (check.status !== 'completed')
-      pending.push('CodeQL result: ' + check.status);
-    else if (check.conclusion !== 'success')
-      failures.push('CodeQL result: ' + check.conclusion);
-  }
+  const nativeState = nativeGate.evaluate(runs, checks, sha);
+  failures.push(...nativeState.failures);
+  pending.push(...nativeState.pending);
+  const codeql = evaluateCodeql(checks, sha, false);
+  failures.push(...codeql.failures);
+  pending.push(...codeql.pending);
   return {
     ready: !failures.length && !pending.length,
     failures,
     pending,
     workflows: [...latest.values()],
-    codeql,
+    codeql: nativeState.codeql,
   };
 }
 
-function validateProducer({ artifact, run, sha, workflow, name }) {
-  assert(/^[a-f0-9]{40}$/.test(sha), 'Invalid evidence source identity');
-  for (const value of [run?.id, run?.run_attempt, artifact?.id])
-    assert(
-      Number.isSafeInteger(value) && value > 0,
-      'Invalid evidence producer identity'
-    );
-  assert(
-    run.head_sha === sha &&
-      run.path === workflow &&
-      run.event === 'push' &&
-      run.head_branch === 'main' &&
-      run.repository?.full_name === 'MontrealAI/AGIJobsv0' &&
-      run.status === 'completed' &&
-      run.conclusion === 'success',
-    'Evidence producer must be the successful exact-main push'
-  );
-  assert(
-    artifact.name === name &&
-      artifact.expired === false &&
-      artifact.workflow_run?.id === run.id &&
-      artifact.workflow_run.head_sha === sha &&
-      /^sha256:[a-f0-9]{64}$/.test(artifact.digest),
-    'Evidence artifact identity mismatch'
-  );
-}
-
-function extracted(run) {
-  return [
-    ...new Set(
-      (run.invocations || []).flatMap((invocation) =>
-        (invocation.toolExecutionNotifications || [])
-          .filter(
-            (note) =>
-              note.descriptor?.id ===
-              'js/diagnostics/successfully-extracted-files'
-          )
-          .flatMap((note) =>
-            (note.locations || []).map(
-              (location) => location.physicalLocation?.artifactLocation?.uri
-            )
-          )
-      )
-    ),
-  ].sort();
-}
-function resultIdentity(result) {
-  const location = result.locations?.[0]?.physicalLocation;
-  assert(
-    typeof result.ruleId === 'string' &&
-      location?.artifactLocation?.uri &&
-      location.region,
-    'Malformed scanner result'
-  );
-  return {
-    ruleId: result.ruleId,
-    path: location.artifactLocation.uri,
-    region: location.region,
-    resultSha256: sha256(canonical(result)),
-  };
-}
-
-function verifyScannerReviewBinding({ sha, review, git }) {
-  assert(
-    /^[a-f0-9]{40}$/.test(sha || '') &&
-      /^[a-f0-9]{40}$/.test(review?.sourceCommit || ''),
-    'Scanner review requires exact source identities'
-  );
-  if (review.sourceCommit === sha) return;
-  // A review record cannot contain its own commit hash. Permit only the
-  // subsequent installation of that record, with every executable byte fixed.
-  assert.equal(
-    typeof git,
-    'function',
-    'Scanner review does not bind this source'
-  );
-  git('merge-base', '--is-ancestor', review.sourceCommit, sha);
-  const changed = git('diff', '--name-only', '-z', review.sourceCommit, sha)
-    .split('\0')
-    .filter(Boolean);
-  assert.deepEqual(
-    changed,
-    ['scripts/release/source-profile-rc16.json'],
-    'Source changed after scanner review beyond its record'
-  );
-  const before = JSON.parse(
-    git(
-      'show',
-      `${review.sourceCommit}:scripts/release/source-profile-rc16.json`
-    )
-  );
-  const after = JSON.parse(
-    git('show', `${sha}:scripts/release/source-profile-rc16.json`)
-  );
-  assert.equal(
-    canonical(after.scannerReview),
-    canonical(review),
-    'Installed scanner review differs'
-  );
-  after.scannerReview = before.scannerReview;
-  after.qualification = before.qualification;
-  assert.equal(
-    canonical(after),
-    canonical(before),
-    'Scanner review installation changed source/profile pins'
-  );
-}
-
-function verifyScannerArchive(
-  files,
-  read,
-  {
-    baseline,
-    review = profile.scannerReview,
-    requiredSources = profile.scannerRequiredPaths,
-    sha,
-    git,
-  } = {}
-) {
-  assert.deepEqual(
-    [...files].sort(),
-    ['javascript.sarif'],
-    'Scanner archive inventory mismatch'
-  );
-  const document = JSON.parse(read('javascript.sarif'));
-  assert(
-    document.version === '2.1.0' && document.runs?.length === 1,
-    'Exactly one SARIF run is required'
-  );
-  const run = document.runs[0];
-  assert(
-    run.tool?.driver?.name === 'CodeQL' &&
-      run.invocations?.every((item) => item.executionSuccessful === true),
-    'Scanner did not complete successfully'
-  );
-  assert(
-    run.invocations.some((item) =>
-      item.toolExecutionNotifications?.some(
-        (note) => note.descriptor?.id === 'codeql-action/overlay-disabled'
-      )
-    ),
-    'A complete non-overlay scan is required'
-  );
-  assert(
-    baseline?.tool?.driver?.semanticVersion === run.tool.driver.semanticVersion,
-    'Scanner tool identity changed'
-  );
-  const tools = (value) =>
-    [value.tool.driver, ...(value.tool.extensions || [])].map((item) => ({
-      name: item.name,
-      semanticVersion: item.semanticVersion || null,
-      rules: item.rules || [],
-    }));
-  assert.deepEqual(
-    tools(run),
-    tools(baseline),
-    'Scanner query/rule inventory changed'
-  );
-  assert.deepEqual(
-    run.properties?.codeqlConfigSummary,
-    baseline.properties?.codeqlConfigSummary,
-    'Scanner query suites changed'
-  );
-  const sources = extracted(run),
-    oldSources = extracted(baseline);
-  assert(
-    oldSources.length > 0 && oldSources.every((file) => sources.includes(file)),
-    'Scanner lost baseline source coverage'
-  );
-  assert(
-    Array.isArray(requiredSources) &&
-      requiredSources.length > 0 &&
-      requiredSources.every((file) => sources.includes(file)),
-    'Scanner is missing integration source extraction'
-  );
-  assert(
-    review &&
-      Array.isArray(review.results) &&
-      review.reviewEvidence &&
-      /^[a-f0-9]{40}$/.test(review.sourceCommit || ''),
-    'Current scanner results require explicit source-bound review'
-  );
-  verifyScannerReviewBinding({ sha, review, git });
-  const actual = (run.results || [])
-    .map(resultIdentity)
-    .sort((a, b) => canonical(a).localeCompare(canonical(b)));
-  const reviewed = review.results
-    .map((item) => {
-      assert(
-        item.disposition === 'Demonstrably false positive' &&
-          typeof item.justification === 'string' &&
-          item.justification.trim() &&
-          item.regressionEvidence?.length,
-        'Every retained scanner result needs a complete disposition'
-      );
-      return {
-        ruleId: item.ruleId,
-        path: item.path,
-        region: item.region,
-        resultSha256: item.resultSha256,
-      };
-    })
-    .sort((a, b) => canonical(a).localeCompare(canonical(b)));
-  assert.deepEqual(
-    actual,
-    reviewed,
-    'Current scanner results differ from the complete reviewed inventory'
-  );
-  return {
-    tool: run.tool.driver.semanticVersion,
-    extractedFiles: sources.length,
-    results: actual,
-    reviewSource: review.sourceCommit,
-    reviewEvidence: review.reviewEvidence,
-    completeNonOverlay: true,
-  };
-}
-
-async function readPages(resource, key, token, fetchImpl = fetch) {
+async function readPages(path, key, token) {
   const values = [];
   for (let page = 1; page <= 20; page++) {
-    const response = await fetchImpl(
-      `https://api.github.com/repos/MontrealAI/AGIJobsv0/${resource}&per_page=100&page=${page}`,
+    const response = await fetch(
+      `https://api.github.com/repos/MontrealAI/AGIJobsv0/${path}&per_page=100&page=${page}`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -358,131 +500,168 @@ async function readPages(resource, key, token, fetchImpl = fetch) {
         redirect: 'error',
       }
     );
-    assert(response.ok, 'Cannot authenticate GitHub qualification evidence');
+    if (!response.ok)
+      throw Error(`GitHub qualification HTTP ${response.status}`);
     const data = await response.json();
-    assert(Array.isArray(data[key]), 'Malformed qualification inventory');
+    if (!Array.isArray(data[key]))
+      throw Error('Malformed qualification response');
     values.push(...data[key]);
     if (data[key].length < 100) return values;
   }
-  throw Error('Refusing truncated qualification inventory');
+  throw Error('Refusing truncated qualification evidence');
 }
 
 async function main() {
+  verifyPublicationReview();
   const {
     GITHUB_SHA: sha,
     GITHUB_REPOSITORY: repository,
     GH_TOKEN: token,
   } = process.env;
-  assert(
-    repository === 'MontrealAI/AGIJobsv0' &&
-      /^[a-f0-9]{40}$/.test(sha || '') &&
-      token &&
-      process.env.GITHUB_EVENT_NAME === 'push' &&
-      process.env.GITHUB_REF === 'refs/heads/main',
-    'Invalid exact-main qualification identity'
-  );
-  const env = {
-    ...Object.fromEntries(
-      Object.entries(process.env).filter(([name]) => !name.startsWith('GIT_'))
-    ),
-    GIT_CONFIG_NOSYSTEM: '1',
-    GIT_CONFIG_GLOBAL: '/dev/null',
-    GIT_NO_REPLACE_OBJECTS: '1',
-    GIT_OPTIONAL_LOCKS: '0',
-  };
+  if (
+    repository !== 'MontrealAI/AGIJobsv0' ||
+    !/^[a-f0-9]{40}$/.test(sha || '') ||
+    !token
+  )
+    throw Error('Invalid release identity or credentials');
   const git = (...args) =>
-    execFileSync(
-      'git',
-      ['--no-replace-objects', '-c', 'core.fsmonitor=false', ...args],
-      { encoding: 'utf8', env, maxBuffer: 32 * 1024 * 1024 }
-    );
-  assert.equal(
-    git('rev-parse', 'HEAD').trim(),
+    execFileSync('git', ['--no-replace-objects', ...args], {
+      encoding: 'utf8',
+      maxBuffer: 16 * 1024 * 1024,
+    });
+  if (git('rev-parse', 'HEAD').trim() !== sha)
+    throw Error('Checkout does not match release SHA');
+  const sourceProfile = verifySourceProfile({
+    git,
     sha,
-    'Checkout/source mismatch'
-  );
-  assertPinnedAlphaCheckout(process.cwd(), sha);
+    policy: JSON.parse(fs.readFileSync('config/solidity-compiler.json')),
+    version: JSON.parse(fs.readFileSync('package.json')).version,
+    lock: JSON.parse(fs.readFileSync('package-lock.json')),
+  });
+  verifyScannerReviewSource({ git, sha });
   const sourceScope = verifySourceScope({
     git,
     sha,
-    version: JSON.parse(fs.readFileSync('package.json')).version,
-    lock: JSON.parse(fs.readFileSync('package-lock.json')),
-    policy: JSON.parse(fs.readFileSync('config/solidity-compiler.json')),
+    policy: JSON.parse(
+      fs.readFileSync('config/solidity-compiler.json', 'utf8')
+    ),
+    version: JSON.parse(fs.readFileSync('package.json', 'utf8')).version,
   });
-  verifyPublicationReview(profile);
+  const deploymentSnapshots = [
+    verifyDeploymentSnapshot(fs.readFileSync(deploymentSnapshot.localPath)),
+  ];
+  verifyDeploymentSnapshot(fs.readFileSync(deploymentSnapshot.recordPath));
   const deadline = Date.now() + 85 * 60000;
   while (Date.now() < deadline) {
-    const [runs, checks] = await Promise.all([
+    const [runs, checks, reviewedChecks] = await Promise.all([
       readPages(`actions/runs?head_sha=${sha}`, 'workflow_runs', token),
       readPages(`commits/${sha}/check-runs?filter=latest`, 'check_runs', token),
+      readPages(
+        `commits/${compilerSourceBaseline}/check-runs?filter=latest`,
+        'check_runs',
+        token
+      ),
     ]);
     const state = evaluate(runs, checks, sha);
-    if (state.failures.length)
-      throw Error('Source release refused: ' + state.failures.join('; '));
-    if (state.ready) {
-      assertPinnedAlphaCheckout(process.cwd(), sha);
-      const directory = path.resolve('reports/source-release-rc16');
-      fs.mkdirSync(directory, { recursive: true });
+    const reviewedCodeql = evaluateCodeql(
+      reviewedChecks,
+      compilerSourceBaseline
+    );
+    const failures = [...state.failures, ...reviewedCodeql.failures];
+    if (failures.length)
+      throw Error(`Source release refused: ${failures.join('; ')}`);
+    if (state.ready && reviewedCodeql.ready) {
+      fs.mkdirSync('reports/source-release-rc16', { recursive: true });
       fs.writeFileSync(
-        path.join(directory, 'provenance.json'),
+        'reports/source-release-rc16/provenance.json',
         JSON.stringify(
           {
-            schema: 'agijobsv0/source-release-provenance/2',
+            schema: 'agijobsv0/source-release-provenance/1',
             repository,
-            tag: profile.tag,
+            tag: 'source-v2.1.0-rc.16',
             sha,
             tree: git('rev-parse', 'HEAD^{tree}').trim(),
             recordedAt: new Date().toISOString(),
             productionApproved: false,
             artifactSigning: 'unsigned source and evidence only',
             sourceScope,
-            deploymentSnapshots: [
-              historical.verifyDeploymentSnapshot(
-                fs.readFileSync(historical.deploymentSnapshot.localPath)
-              ),
-            ],
+            sourceProfile,
+            reviewedSourceCodeql: {
+              sourceSha: compilerSourceBaseline,
+              checks: scannerReview.codeqlChecks,
+            },
+            scannerReview,
+            deploymentSnapshots,
             producer: {
-              workflow: ownPath,
               runId: process.env.GITHUB_RUN_ID,
               runAttempt: process.env.GITHUB_RUN_ATTEMPT,
+              workflow: ownPath,
             },
             requiredPaths,
             requiredChecks,
-            workflows: state.workflows,
-            checks,
-            authenticCodeQL: state.codeql,
+            workflows: state.workflows.map(
+              ({ id, path, head_sha, run_attempt, conclusion, html_url }) => ({
+                id,
+                path,
+                head_sha,
+                run_attempt,
+                conclusion,
+                html_url,
+              })
+            ),
+            checks: checks.map(
+              ({ id, name, head_sha, status, conclusion, details_url }) => ({
+                id,
+                name,
+                head_sha,
+                status,
+                conclusion,
+                details_url,
+              })
+            ),
           },
           null,
           2
-        ) + '\n',
-        { flag: 'wx' }
+        ) + '\n'
       );
-      console.log('Exact merged rc.16 candidate qualified: ' + sha);
+      console.log(
+        `Exact merged SHA qualified: ${sha}; ${state.workflows.length} workflows; ${requiredChecks.length} required contexts`
+      );
       return;
     }
-    console.log('Waiting for exact merged SHA: ' + state.pending.join('; '));
+    console.log(
+      `Waiting for exact merged SHA and reviewed source: ${[
+        ...state.pending,
+        ...reviewedCodeql.pending,
+      ].join('; ')}`
+    );
     await delay(30000);
   }
-  throw Error('Exact source qualification timed out; no publication');
+  throw Error('Exact merged SHA qualification timed out; no publication');
 }
 
 module.exports = {
-  ...historical,
-  verifySourceScope,
-  compilerSourceBaseline: profile.compilerSourceBaseline,
-  ownPath,
+  ...nativeGate,
+  verifySourceProfile,
+  scannerReview,
+  scannerReviewPath,
+  scannerHistory,
+  canonical,
+  exactFields,
+  parseScannerReview,
+  verifyScannerReviewSource,
+  evaluate,
+  evaluateCodeql,
   requiredPaths,
   requiredChecks,
-  evaluate,
-  authenticCodeQL,
-  validateProducer,
-  verifyScannerArchive,
-  verifyScannerReviewBinding,
-  resultIdentity,
-  extracted,
-  readPages,
-  sha256,
-  canonical,
+  verifySourceScope,
+  verifyDeploymentSnapshot,
+  deploymentSnapshot,
+  compilerSourceBaseline,
+  evidenceBaseline,
+  deployedSourceBaseline,
+  preservedEvidencePaths,
+  reviewedCompilerPaths,
 };
 if (require.main === module)
   main().catch((error) => {

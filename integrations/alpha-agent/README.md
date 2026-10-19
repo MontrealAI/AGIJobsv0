@@ -189,20 +189,25 @@ now expose the same native adapters used by the source fixture:
 
 1. Construct and freeze a strategy above, approving a changed formulation
    explicitly, or choose its saved report. In **Continue your Alpha project
-   through Computer Use**, import an existing Alpha project and review its
+   through Computer Use**, import Alpha's complete project archive (or its
+   saved project JSON) and review its
    unchanged requirements. Confirm public nonpersonal inputs and the exact
    handoff, then download `successor-computer-handoff.json` and its exact report.
 2. Import the handoff in Fleet. Runtime configuration and explicit execution
    authorization remain separate. Export the actual native Computer Use return.
 3. Back in Jobs, select the exact handoff, native return and frozen report.
+   Optionally import Alpha's complete archive or native history to retain
+   earlier interrupted attempts, completed returns and owner reviews.
    Enter a proposed AGIALPHA amount with up to 18 decimal places, explicitly
    select chain 1 and inspect the displayed token. No deployment is selected.
 4. Prepare the unsigned, unfunded draft and save the computer workspace. Reopen
    it to replay both native inspectors and recover the same original project,
-   raw observations and Alpha history. Imported observations stay historical;
+   raw observations and Alpha history. Exact complete Alpha archives are kept
+   in `projectSources`; their unchanged native histories are kept in
+   `historySources`. Imported observations stay historical;
    provider execution, independent review and real value are not authenticated.
 
-En français : importez un projet Alpha et le rapport figé exact, examinez les
+En français : importez l’archive Alpha complète ou un projet enregistré et le rapport figé exact, examinez les
 exigences puis préparez la transmission native pour Fleet. Après l’exécution
 explicitement autorisée dans Fleet, rapportez la transmission, le retour natif
 et le même rapport. Choisissez le montant AGIALPHA et le réseau, puis enregistrez
@@ -213,6 +218,13 @@ The browser uses the canonical Jobs adapter and byte-exact native Alpha modules
 in the additive `vendor/alpha-computer/` closure. Its source manifest and Apache
 license are shipped with the site. Historical CSV source inventories are
 unchanged. Regenerate only from a reviewed exact clean Alpha checkout:
+
+The current proposal's handoff must declare the installed Alpha computer
+module's source hash. Older history retains its exact declared source hashes,
+with derived matching indicators and an explicit unverified-producer label.
+The archive's `inspectorSource` identifies the installed validation code only;
+it does not authenticate a producer, execution or review. Source declarations
+and unmatched counts are derived from native records again when reopening.
 
 ```bash
 node integrations/alpha-agent/generate-computer-source.mjs /exact/alpha EXACT_COMMIT --check
@@ -263,10 +275,21 @@ imports under `successor-workbench` and `build-successor`. Tracked modifications
 and nonignored untracked source files are refused before importing the inspector;
 tracked file bytes and modes are checked against the pinned Git objects, without
 replacement refs, hidden index flags, environment redirection or symlinked source.
+The guard retains the verified physical checkout root. During the same bounded,
+no-follow descriptor read that validates each Git blob, it captures the native
+ESM source strings from the fixed Alpha module scopes. The module graph is bounded
+to 8 MiB per module, 32 MiB in total and 256 modules. Its source hash comes from
+those captured bytes. Node loads a private, unique in-memory namespace with only
+captured relative imports; it never reopens the checkout for module execution.
+Configured aliases and later changes to entry or transitive source therefore
+cannot change the code loaded for this fixture. Builtin, package, network,
+absolute-file, query and fragment import edges are outside this pure graph.
+The loader remains installed through lazy inspector calls and closes in finally.
 The same check runs again before writing lifecycle evidence. Normal ignored
-dependencies and report outputs remain usable. These checks bind the inspected
-checkout at those checkpoints; they do not establish a tamper-proof runtime or
-authenticate historical computer observations.
+dependencies and report outputs remain usable. Checkout rechecks record source
+consistency; the private captured graph binds executed inspector code. This does
+not isolate an already compromised Node process or authenticate historical
+computer observations.
 `FQR_INPUT_CLASS` may record an external evidence label; it is not authenticated
 runtime proof. Protocol-only inputs must remain labeled
 `PROTOCOL_DOUBLE_NO_BROWSER`. No production key is required or authorized;

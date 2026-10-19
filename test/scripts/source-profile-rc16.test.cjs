@@ -69,11 +69,39 @@ function repository(t) {
     command(root, [
       'commit-tree',
       git('write-tree').trim(),
-      ...(parent ? ['-p', parent] : []),
+      ...(parent
+        ? (Array.isArray(parent) ? parent : [parent]).flatMap((ref) => [
+            '-p',
+            ref,
+          ])
+        : []),
       '-m',
       'Synthetic qualification fixture',
     ]).trim();
   return { root, git, put, commit };
+}
+
+function shareObjects(r) {
+  let objects = command(ROOT, ['rev-parse', '--git-path', 'objects']).trim();
+  if (!path.isAbsolute(objects)) objects = path.resolve(ROOT, objects);
+  fs.writeFileSync(
+    path.join(r.root, '.git/objects/info/alternates'),
+    objects + '\n'
+  );
+}
+
+function addReviewedIntegration(r) {
+  for (const item of p.profile.integrationTransitions)
+    r.put(
+      item.path,
+      command(ROOT, ['cat-file', 'blob', item.after.blob]),
+      item.after.mode
+    );
+}
+
+function addReviewedWebsite(r) {
+  for (const item of p.profile.websiteTransitions)
+    r.put(item.path, command(ROOT, ['cat-file', 'blob', item.after.blob]));
 }
 
 test('actual Git trees require the complete finite protected transition set', (t) => {
@@ -178,13 +206,10 @@ test('actual candidate history verifies all eighteen reviewed blobs without chan
 
 test('complete source verifier accepts only finite release plumbing over the actual pinned ancestor', (t) => {
   const r = repository(t);
-  let objects = command(ROOT, ['rev-parse', '--git-path', 'objects']).trim();
-  if (!path.isAbsolute(objects)) objects = path.resolve(ROOT, objects);
-  fs.writeFileSync(
-    path.join(r.root, '.git/objects/info/alternates'),
-    objects + '\n'
-  );
+  shareObjects(r);
   r.git('read-tree', p.profile.implementationBaseline);
+  addReviewedWebsite(r);
+  addReviewedIntegration(r);
   const beforePackage = JSON.parse(
     r.git('show', `${p.profile.implementationBaseline}:package.json`)
   );
@@ -219,7 +244,10 @@ test('complete source verifier accepts only finite release plumbing over the act
   );
   const args = {
     git: r.git,
-    sha: r.commit(p.profile.implementationBaseline),
+    sha: r.commit([
+      p.profile.implementationBaseline,
+      p.profile.integrationBaseline,
+    ]),
     version: p.profile.releaseVersion,
     lock: afterLock,
     policy,
@@ -229,6 +257,7 @@ test('complete source verifier accepts only finite release plumbing over the act
   assert.equal(result.productionApproved, false);
   assert.equal(result.scannerReview, null);
   assert.equal(result.protectedTransitions.length, 18);
+  assert.deepEqual(result.websiteTransitions, p.websiteTransitions);
   assert.throws(
     () => p.verifySourceScope({ ...args, version: p.profile.previousVersion }),
     /version/
@@ -278,6 +307,94 @@ test('complete source verifier accepts only finite release plumbing over the act
     () => p.verifySourceScope({ ...args, sha: r.commit(args.sha) }),
     /regular file/
   );
+});
+
+test('actual Git website transitions admit only the two exact reviewed byte and mode changes', (t) => {
+  const r = repository(t);
+  shareObjects(r);
+  r.git('read-tree', p.profile.implementationBaseline);
+  addReviewedWebsite(r);
+  addReviewedIntegration(r);
+  const after = r.commit(p.profile.implementationBaseline);
+  const beforeTree = p.parseTree(
+    r.git('ls-tree', '-rz', p.profile.implementationBaseline)
+  );
+  const afterTree = p.parseTree(r.git('ls-tree', '-rz', after));
+  const paths = p.websiteTransitions.map((item) => item.path);
+  assert.deepEqual(
+    p.verifyReleaseDelta(beforeTree, afterTree),
+    [
+      ...paths,
+      ...p.profile.integrationTransitions.map((item) => item.path),
+    ].sort()
+  );
+  assert.throws(
+    () => p.verifyReleaseDelta(beforeTree, beforeTree),
+    /website blob or mode/
+  );
+  for (const inventory of [
+    p.websiteTransitions.slice(1),
+    [...p.websiteTransitions, p.websiteTransitions[0]],
+    [...p.websiteTransitions, { path: 'docs/unreviewed.md' }],
+    p.websiteTransitions.toReversed(),
+  ])
+    assert.throws(
+      () => p.verifyWebsiteTransitions(beforeTree, afterTree, inventory),
+      /inventory/
+    );
+  const wrongBefore = new Map(beforeTree);
+  wrongBefore.set(paths[0], { mode: '100644', blob: '0'.repeat(40) });
+  assert.throws(
+    () => p.verifyReleaseDelta(wrongBefore, afterTree),
+    /website blob or mode/
+  );
+  for (const name of paths) {
+    for (const mode of ['100644', '100755']) {
+      r.git('read-tree', after);
+      r.put(
+        name,
+        mode === '100755'
+          ? command(ROOT, [
+              'cat-file',
+              'blob',
+              p.websiteTransitions.find((item) => item.path === name).after
+                .blob,
+            ])
+          : 'unreviewed website bytes\n',
+        mode
+      );
+      assert.throws(
+        () =>
+          p.verifyReleaseDelta(
+            beforeTree,
+            p.parseTree(r.git('ls-tree', '-rz', r.commit(after)))
+          ),
+        /website blob or mode/
+      );
+    }
+    r.git('read-tree', after);
+    r.git('update-index', '--force-remove', name);
+    assert.throws(
+      () =>
+        p.verifyReleaseDelta(
+          beforeTree,
+          p.parseTree(r.git('ls-tree', '-rz', r.commit(after)))
+        ),
+      /website blob or mode/
+    );
+  }
+  for (const name of ['docs/extra.md', 'scripts/pages/extra.mjs']) {
+    r.git('read-tree', after);
+    r.put(name, 'not reviewed\n');
+    assert.throws(
+      () =>
+        p.verifyReleaseDelta(
+          beforeTree,
+          p.parseTree(r.git('ls-tree', '-rz', r.commit(after)))
+        ),
+      /Unexpected implementation-to-release/
+    );
+  }
 });
 
 test('version-only normalization rejects dependency, scripts, resolutions and configuration changes', () => {
@@ -370,6 +487,18 @@ test('profile baseline, source pins and pending scanner boundary cannot silently
       value.nativeCompatibility.commit = '0'.repeat(40);
     },
     (value) => {
+      value.integrationTransitions.pop();
+    },
+    (value) => {
+      value.integrationTransitions[0].after.blob = '0'.repeat(40);
+    },
+    (value) => {
+      value.websiteTransitions.pop();
+    },
+    (value) => {
+      value.websiteTransitions[0].after.blob = '0'.repeat(40);
+    },
+    (value) => {
       value.scannerRequiredPaths.pop();
     },
     (value) => {
@@ -395,4 +524,54 @@ test('tree enumeration rejects links, gitlinks, duplicate paths and malformed Gi
     '100644 blob not-a-full-object\tfile\0',
   ])
     assert.throws(() => p.parseTree(raw));
+});
+
+test('actual Git integration transitions reject substituted security/runtime bytes and inventory drift', (t) => {
+  const r = repository(t);
+  shareObjects(r);
+  r.git('read-tree', p.profile.implementationBaseline);
+  addReviewedWebsite(r);
+  addReviewedIntegration(r);
+  const candidate = r.commit([
+    p.profile.implementationBaseline,
+    p.profile.integrationBaseline,
+  ]);
+  const before = p.parseTree(
+    r.git('ls-tree', '-rz', p.profile.implementationBaseline)
+  );
+  const after = p.parseTree(r.git('ls-tree', '-rz', candidate));
+  assert.equal(p.verifyIntegrationTransitions(before, after).length, 27);
+  for (const transitions of [
+    p.profile.integrationTransitions.slice(1),
+    [...p.profile.integrationTransitions, p.profile.integrationTransitions[0]],
+    p.profile.integrationTransitions.toReversed(),
+  ])
+    assert.throws(
+      () => p.verifyIntegrationTransitions(before, after, transitions),
+      /inventory/
+    );
+  const selected = p.profile.integrationTransitions.find(
+    (item) => item.path === 'shared/containedFiles.ts'
+  );
+  for (const [bytes, mode] of [
+    ['changed unreviewed storage source\n', '100644'],
+    [command(ROOT, ['cat-file', 'blob', selected.after.blob]), '100755'],
+  ]) {
+    r.git('read-tree', candidate);
+    r.put(selected.path, bytes, mode);
+    assert.throws(
+      () =>
+        p.verifyReleaseDelta(
+          before,
+          p.parseTree(r.git('ls-tree', '-rz', r.commit(candidate)))
+        ),
+      /integration blob or mode/
+    );
+  }
+  const wrongBefore = new Map(before);
+  wrongBefore.set(selected.path, { mode: '100644', blob: '0'.repeat(40) });
+  assert.throws(
+    () => p.verifyIntegrationTransitions(wrongBefore, after),
+    /integration blob or mode/
+  );
 });

@@ -13,6 +13,7 @@ import {
 import {
   protocolComputerInputs,
   protocolComputerAttempt,
+  protocolComputerLearningArchive,
 } from './computer-receipt-fixture.mjs';
 import {
   createComputerWorkspace,
@@ -21,12 +22,16 @@ import {
   agialphaBaseUnits,
   PROPOSED_NETWORK,
   ALPHA_COMPUTER_SOURCE,
+  inspectAlphaProjectSource,
+  mergeComputerHistorySources,
 } from '../../website/assets/computer-receipt-model.mjs';
 import {
   inspectComputerHandoff,
   retainComputerHandoff,
   importComputerReturn,
+  inspectComputerReturn,
 } from '../../integrations/alpha-agent/vendor/alpha-computer/examples/successor-alpha/computer.mjs';
+import { createComputerReceiptDraft } from '../../integrations/alpha-agent/four-repo-computer-receipt.mjs';
 import { initComputerDesk } from '../../website/assets/computer-desk.mjs';
 import { computerDeskRuntimeSource } from '../../website/assets/computer-desk-runtime-source.mjs';
 import { renderComputerReceipt } from '../../scripts/pages/computer-receipt.mjs';
@@ -130,6 +135,61 @@ test('same native project, original bytes and history survive save/reopen withou
   );
 });
 
+test('complete native Alpha exports preserve exact archive bytes, owner review and all attempts through forward and proposal reopen', async () => {
+  const { archiveRaw, historyRaw, attempts } =
+    await protocolComputerLearningArchive(inputs);
+  const checked = await inspectAlphaProjectSource(archiveRaw);
+  assert.equal(checked.sourceRaw, archiveRaw);
+  assert.equal(checked.historyRaw, historyRaw);
+  const prepared = await prepareSupplierComputerHandoff({
+    projectRaw: archiveRaw,
+    reportRaw: inputs.reportRaw,
+    approved: true,
+    publicNonpersonal: true,
+  });
+  assert.equal(prepared.projectSourceRaw, archiveRaw);
+  assert.equal(prepared.projectRaw, JSON.parse(inputs.handoffRaw).projectRaw);
+  for (const source of [
+    { projectSourceRaw: archiveRaw },
+    { priorHistoryRaw: archiveRaw },
+  ]) {
+    const workspace = await createComputerWorkspace({
+      ...options,
+      inputs: attempts[2],
+      ...source,
+    });
+    const restored = await inspectComputerWorkspace(workspace.raw);
+    assert(restored.workspace.projectSources.includes(archiveRaw));
+    assert.deepEqual(restored.originalAlphaArchives, [archiveRaw]);
+    assert(restored.workspace.historySources.includes(historyRaw));
+    assert.equal(restored.history.records.length, 3);
+    assert.equal(restored.history.records[0].review.decision, 'useful');
+    assert.equal(restored.history.records[1].returnRaw, attempts[1].returnRaw);
+    assert.equal(restored.history.records[2].review, null);
+    const continued = await createComputerWorkspace({
+      ...options,
+      inputs: attempts[2],
+      priorWorkspaceRaw: workspace.raw,
+      amount: '8',
+    });
+    assert(continued.workspace.projectSources.includes(archiveRaw));
+    assert.equal(continued.history.records[0].review.decision, 'useful');
+  }
+  const modified = JSON.parse(archiveRaw);
+  modified.authority = 'owner';
+  await assert.rejects(inspectAlphaProjectSource(JSON.stringify(modified)));
+  const workspace = await createComputerWorkspace({
+    ...options,
+    projectSourceRaw: archiveRaw,
+  });
+  const { sha256, ...body } = JSON.parse(workspace.raw);
+  body.historySources = body.historySources.filter((raw) => raw !== historyRaw);
+  await assert.rejects(
+    inspectComputerWorkspace(await seal(body)),
+    /PROJECT_SOURCE_HISTORY/
+  );
+});
+
 test('explicit 18-decimal amount and network cannot become a rounded amount, alternate route or permission', async () => {
   assert.equal(agialphaBaseUnits('0.000000000000000001'), '1');
   for (const value of [
@@ -186,6 +246,13 @@ test('complete original, interrupted and recovered native attempts and exact sou
     createComputerWorkspace({ ...options, priorHistoryRaw: '' }),
     /HISTORY_SOURCE/
   );
+  await assert.rejects(
+    createComputerWorkspace({
+      ...options,
+      priorHistoryRaw: ' '.repeat(2_000_001),
+    }),
+    /HISTORY_SOURCE/
+  );
 });
 
 test('resealing an archive cannot replace native history, observed output, token or authority', async () => {
@@ -212,6 +279,109 @@ test('resealing an archive cannot replace native history, observed output, token
     mutate(body);
     await assert.rejects(inspectComputerWorkspace(await seal(body)));
   }
+});
+
+test('a consistently rebound unknown Alpha source cannot acquire the installed source label through a draft, retained history or complete archive', async () => {
+  const foreign = await protocolComputerAttempt(inputs, 'review', {
+    sourceHash: 'f'.repeat(64),
+  });
+  const native = await inspectComputerReturn(
+    foreign.handoffRaw,
+    foreign.returnRaw
+  );
+  assert.equal(
+    native.handoff.sourceHash,
+    'f'.repeat(64),
+    'Native wire validity alone does not authenticate the claimed producer source'
+  );
+  await assert.rejects(
+    createComputerWorkspace({ ...options, inputs: foreign }),
+    /ALPHA_SOURCE_MISMATCH/
+  );
+  let historyRaw = await retainComputerHandoff(
+    native.project,
+    foreign.handoffRaw
+  );
+  historyRaw = await importComputerReturn(
+    native.project,
+    foreign.handoffRaw,
+    foreign.returnRaw,
+    { priorRecord: historyRaw }
+  );
+  assert.equal(await mergeComputerHistorySources(null, historyRaw), historyRaw);
+  const archiveRaw = canonicalize({
+    schema: 'successor-alpha-learning-archive/v2',
+    project: native.project,
+    records: [],
+    nativeHandoffRaw: null,
+    nativeContinuityRaw: null,
+    computerHistoryRaw: historyRaw,
+  });
+  assert.equal(
+    (await inspectAlphaProjectSource(archiveRaw)).historyRaw,
+    historyRaw
+  );
+  const historical = await createComputerWorkspace({
+    ...options,
+    priorHistoryRaw: archiveRaw,
+  });
+  assert.equal(historical.workspace.unmatchedHistoricalSourceCount, 1);
+  assert.equal(historical.history.records.length, 2);
+  assert(historical.workspace.projectSources.includes(archiveRaw));
+  assert(historical.workspace.historySources.includes(historyRaw));
+  const declaration = historical.workspace.historicalSourceDeclarations.find(
+    (item) => !item.matchesInstalledInspector
+  );
+  assert.equal(declaration.declaredSourceHash, 'f'.repeat(64));
+  assert.equal(declaration.authenticatedProducer, false);
+  assert.equal(
+    historical.workspace.inspectorSource.role,
+    'NATIVE_VALIDATION_IMPLEMENTATION_ONLY'
+  );
+  for (const mutate of [
+    (body) => {
+      body.historicalSourceDeclarations[0].matchesInstalledInspector = true;
+    },
+    (body) => {
+      body.historicalSourceDeclarations[0].authenticatedProducer = true;
+    },
+    (body) => {
+      body.historicalSourceDeclarations[0].declaredSourceHash =
+        ALPHA_COMPUTER_SOURCE.sourceHash;
+    },
+    (body) => {
+      body.unmatchedHistoricalSourceCount = 0;
+    },
+    (body) => {
+      body.inspectorSource.role = 'AUTHENTICATED_PRODUCER';
+    },
+  ]) {
+    const { sha256, ...body } = JSON.parse(historical.raw);
+    mutate(body);
+    await assert.rejects(inspectComputerWorkspace(await seal(body)));
+  }
+  const foreignDraft = await createComputerReceiptDraft(foreign, {
+    amountBaseUnits: '7000000000000000001',
+    createdAt: options.createdAt,
+    inspectAlphaReturn: inspectComputerReturn,
+  });
+  assert.equal(
+    JSON.parse(foreignDraft).bindings.alphaSourceHash,
+    'f'.repeat(64)
+  );
+  const { sha256, ...body } = JSON.parse(
+    (await createComputerWorkspace(options)).raw
+  );
+  Object.assign(body, {
+    draftRaw: foreignDraft,
+    drafts: [foreignDraft],
+    historyRaw,
+    historySources: [historyRaw],
+  });
+  await assert.rejects(
+    inspectComputerWorkspace(await seal(body)),
+    /ALPHA_SOURCE_MISMATCH/
+  );
 });
 
 test('browser-bundled native inspectors produce byte-identical drafts and archives to native source', async (t) => {
@@ -245,6 +415,12 @@ test('browser-bundled native inspectors produce byte-identical drafts and archiv
   assert.equal(
     (await browser.inspectComputerWorkspace(native.raw)).workspace.draftRaw,
     native.workspace.draftRaw
+  );
+  const { archiveRaw } = await protocolComputerLearningArchive(inputs);
+  const sourceOptions = { ...options, projectSourceRaw: archiveRaw };
+  assert.equal(
+    (await browser.createComputerWorkspace(sourceOptions)).raw,
+    (await createComputerWorkspace(sourceOptions)).raw
   );
   const bad = {
     ...inputs,
@@ -303,7 +479,8 @@ test('DOM controls require public confirmation and explicit choices, retain exac
   assert.equal($('read').disabled, true);
   $('public').checked = true;
   event('public');
-  file('project', JSON.parse(inputs.handoffRaw).projectRaw);
+  const { archiveRaw } = await protocolComputerLearningArchive(inputs);
+  file('project', archiveRaw);
   file('report', inputs.reportRaw);
   $('read').click();
   await wait(
@@ -339,7 +516,13 @@ test('DOM controls require public confirmation and explicit choices, retain exac
   );
   $('archive-download').click();
   const raw = await downloaded.text();
-  await inspectComputerWorkspace(raw);
+  assert(
+    (await inspectComputerWorkspace(raw)).workspace.projectSources.includes(
+      archiveRaw
+    )
+  );
+  $('alpha-download').click();
+  assert.equal(await downloaded.text(), archiveRaw);
   file('reopen', raw);
   await wait(() => !$('archive-download').disabled && !$('public').checked);
   assert.equal($('approve-draft').checked, false);
@@ -359,6 +542,53 @@ test('DOM controls require public confirmation and explicit choices, retain exac
     await downloaded.text(),
     raw,
     'Failed import preserves the last complete exact workspace'
+  );
+  file('native-return', '\ufeff' + inputs.returnRaw);
+  $('approve-draft').checked = true;
+  event('approve-draft');
+  $('create').click();
+  await wait(
+    () =>
+      !$('archive-download').disabled &&
+      $('status').textContent.startsWith('The selected files')
+  );
+  $('archive-download').click();
+  assert.equal(
+    await downloaded.text(),
+    raw,
+    'A UTF-8 BOM is preserved and rejected by the native parser'
+  );
+  let release;
+  Object.defineProperty($('native-return'), 'files', {
+    configurable: true,
+    value: [
+      {
+        size: new TextEncoder().encode(inputs.returnRaw).length,
+        arrayBuffer: () =>
+          new Promise((resolve) => {
+            release = resolve;
+          }),
+      },
+    ],
+  });
+  event('native-return');
+  $('public').checked = true;
+  event('public');
+  $('approve-draft').checked = true;
+  event('approve-draft');
+  $('create').click();
+  await wait(() => typeof release === 'function');
+  $('public').checked = false;
+  event('public');
+  release(new TextEncoder().encode(inputs.returnRaw).buffer);
+  await wait(() =>
+    $('status').textContent.startsWith('The files or choices changed')
+  );
+  $('archive-download').click();
+  assert.equal(
+    await downloaded.text(),
+    raw,
+    'Consent revocation during a pending read cannot publish a replacement'
   );
   $('amount').value = '8';
   event('amount', 'input');

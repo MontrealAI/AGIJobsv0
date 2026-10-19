@@ -3,6 +3,9 @@
 // This profile authenticates a finite pending candidate. It cannot qualify CI,
 // scanner findings, a native release set, publication, or deployed contracts.
 const assert = require('node:assert/strict');
+const { createHash } = require('node:crypto');
+const integrationTransitionsSha256 =
+  'bf75870493f451807e34103b66dc6c2b3106134ecae693717a0aa7560cb80156';
 const historical = require('./qualify-source-release.cjs');
 
 function freeze(value) {
@@ -20,6 +23,8 @@ const anchors = Object.freeze({
   securityPrerequisite: '62d4f2db2b9eeddb6156b486336555b1e6485d92',
   implementationBaseline: 'b88965ef6e90bf6f725934520e9be3161e91af62',
   implementationTree: '6003d3d7286fe9fa4bf6875deefc01e579ce9dfc',
+  integrationBaseline: 'b26a65456d5c06c901ba73d1e1620f7edb1a315a',
+  integrationTree: 'f1f082a1af8375a7418d86556daeb65351757ad5',
 });
 const allowedNewPaths = Object.freeze([
   'scripts/release/source-profile-rc16.cjs',
@@ -32,6 +37,10 @@ const allowedNewPaths = Object.freeze([
   'test/scripts/transformational-compatibility.test.mjs',
   '.github/workflows/source-release-rc16.yml',
   '.github/workflows/transformational-compatibility.yml',
+  'scripts/release/source-native-gates-rc16.cjs',
+  'scripts/release/source-native-evidence-rc16.cjs',
+  'test/scripts/source-release-security-rc16-gate.test.cjs',
+  'test/scripts/source-release-security-rc16-publish.test.cjs',
   'docs/production/RELEASE_NOTES_SOURCE_RC16.md',
 ]);
 const allowedExistingPaths = Object.freeze([
@@ -39,20 +48,46 @@ const allowedExistingPaths = Object.freeze([
   'package.json',
   'package-lock.json',
 ]);
+// These two reviewed entry additions are authenticated by exact Git bytes,
+// rather than granting an editable website or documentation path exception.
+const websiteTransitions = freeze([
+  {
+    path: 'docs/successor/TRANSFORMATIONAL_WORK.md',
+    before: {
+      mode: '100644',
+      blob: '19c3a3cdacc6a13713f5075eedba7236b5089e7c',
+    },
+    after: {
+      mode: '100644',
+      blob: 'c6c97f21058842b5e6513d2c1dfb1fe2287255d6',
+    },
+  },
+  {
+    path: 'scripts/pages/build.mjs',
+    before: {
+      mode: '100644',
+      blob: '67bac0b86418db9605c8775081247d167d2b3a42',
+    },
+    after: {
+      mode: '100644',
+      blob: 'b2fad292e6ea9afc740ecf6c6ff595bcee12fc0e',
+    },
+  },
+]);
 const nativeCompatibility = freeze({
   schema: 'agijobsv0/transformational-native-compatibility/v1',
   repository: 'MontrealAI/AGI-Alpha-Agent-v0',
-  commit: '124a3b636baa916fe6c4400e03e55198114dd212',
-  tree: 'dce26926d2a4282a1591dbce4bfd6c36ef4caaa9',
+  commit: 'dbaf5696d64ddcbf133f05d88d35496ebb85c3f0',
+  tree: '30dc828703a6e9cd64103e0ebc965fc701e9bcf3',
   fixturePath: 'examples/transformational-intelligence/campaign.json',
   boundary: 'free-inspection-positive-payment-refused',
   files: {
     'docs/assets/successor/engine.mjs':
       '38c4f38978bf9fc29f207bae3adee0755bc6530d04502a36c491cc430787e488',
     'examples/transformational-intelligence/campaign.json':
-      'a8a1e549d80c234e785fd4008f3b0e4f9f571c47cbb1e1cfef74414633cb4e19',
+      'fa5f570e89c20cffd0df844869047a7c0594c5460c3e95df5ada44592ea4fd20',
     'examples/transformational-intelligence/inspector.mjs':
-      'e7b584f2c79a7c574e5be60bbec4205c95c07bbd0d842ce7b0766a92b24cd2ea',
+      'b5f8e704aaab345f9d6503c854d38910ddfabbf98fe674c48b051097812b07f4',
   },
 });
 const scannerRequiredPaths = Object.freeze([
@@ -61,6 +96,13 @@ const scannerRequiredPaths = Object.freeze([
   'integrations/alpha-agent/pinned-alpha-checkout.cjs',
   'integrations/alpha-agent/transformational-work-request.mjs',
   'integrations/alpha-agent/vendor/alpha/docs/assets/successor/engine.mjs',
+  'scripts/pages/build.mjs',
+  'scripts/release/qualify-source-release-rc16.cjs',
+  'scripts/release/publish-source-release-rc16.cjs',
+  'scripts/release/source-profile-rc16.cjs',
+  'scripts/release/source-native-gates-rc16.cjs',
+  'scripts/release/source-native-evidence-rc16.cjs',
+  'scripts/release/verify-transformational-compatibility.mjs',
 ]);
 const excludedCompilerPaths = new Set(
   historical.reviewedCompilerPaths
@@ -168,7 +210,56 @@ function verifyProtectedTransitions(beforeTree, afterTree, transitions) {
   return actual;
 }
 
+function verifyWebsiteTransitions(
+  beforeTree,
+  afterTree,
+  transitions = profile.websiteTransitions
+) {
+  requireValue(
+    beforeTree instanceof Map &&
+      afterTree instanceof Map &&
+      same(transitions, websiteTransitions),
+    'Exact reviewed website transition inventory differs'
+  );
+  for (const item of websiteTransitions)
+    requireValue(
+      same(beforeTree.get(item.path) ?? null, item.before) &&
+        same(afterTree.get(item.path) ?? null, item.after),
+      'Reviewed website blob or mode differs: ' + item.path
+    );
+  return websiteTransitions.map((item) => item.path);
+}
+
+function verifyIntegrationTransitions(
+  beforeTree,
+  afterTree,
+  transitions = profile.integrationTransitions
+) {
+  requireValue(
+    beforeTree instanceof Map &&
+      afterTree instanceof Map &&
+      Array.isArray(transitions) &&
+      createHash('sha256').update(JSON.stringify(transitions)).digest('hex') ===
+        integrationTransitionsSha256,
+    'Exact reviewed integration transition inventory differs'
+  );
+  for (const item of transitions) {
+    requireValue(
+      !protectedPath(item.path),
+      'Protected implementation change cannot become an integration exception'
+    );
+    requireValue(
+      same(beforeTree.get(item.path) ?? null, item.before) &&
+        same(afterTree.get(item.path) ?? null, item.after),
+      'Reviewed integration blob or mode differs: ' + item.path
+    );
+  }
+  return transitions.map((item) => item.path);
+}
+
 function verifyReleaseDelta(beforeTree, afterTree) {
+  const websitePaths = verifyWebsiteTransitions(beforeTree, afterTree);
+  const integrationPaths = verifyIntegrationTransitions(beforeTree, afterTree);
   const changes = changedPaths(beforeTree, afterTree);
   for (const name of changes) {
     const before = beforeTree.get(name),
@@ -178,7 +269,7 @@ function verifyReleaseDelta(beforeTree, afterTree) {
         !before && after?.mode === '100644',
         'Release addition is not a new regular file: ' + name
       );
-    else {
+    else if (!websitePaths.includes(name) && !integrationPaths.includes(name)) {
       requireValue(
         allowedExistingPaths.includes(name),
         'Unexpected implementation-to-release change: ' + name
@@ -274,6 +365,8 @@ function validateProfile(value = profile) {
       'qualification',
       ...Object.keys(anchors),
       'transitions',
+      'websiteTransitions',
+      'integrationTransitions',
       'nativeCompatibility',
       'scannerRequiredPaths',
       'scannerReview',
@@ -297,6 +390,17 @@ function validateProfile(value = profile) {
   requireValue(
     Array.isArray(value.transitions) && value.transitions.length === 18,
     'Exactly eighteen protected implementation transitions are required'
+  );
+  requireValue(
+    Array.isArray(value.integrationTransitions) &&
+      createHash('sha256')
+        .update(JSON.stringify(value.integrationTransitions))
+        .digest('hex') === integrationTransitionsSha256,
+    'Exact reviewed integration transition inventory differs'
+  );
+  requireValue(
+    same(value.websiteTransitions, websiteTransitions),
+    'Exact reviewed website transition inventory differs'
   );
   requireValue(
     same(value.nativeCompatibility, nativeCompatibility) &&
@@ -323,6 +427,7 @@ function verifySourceScope({ git, sha, version, lock, policy }) {
     profile.compilerSourceBaseline,
     profile.securityPrerequisite,
     profile.implementationBaseline,
+    profile.integrationBaseline,
   ])
     git('merge-base', '--is-ancestor', baseline, sha);
   requireValue(
@@ -330,6 +435,11 @@ function verifySourceScope({ git, sha, version, lock, policy }) {
       git('rev-parse', `${profile.implementationBaseline}^{tree}`)
     ).trim() === profile.implementationTree,
     'Candidate implementation tree differs'
+  );
+  requireValue(
+    text(git('rev-parse', `${profile.integrationBaseline}^{tree}`)).trim() ===
+      profile.integrationTree,
+    'Reviewed integration tree differs'
   );
   git(
     'merge-base',
@@ -401,6 +511,8 @@ function verifySourceScope({ git, sha, version, lock, policy }) {
     reviewedCompilerPaths: historical.reviewedCompilerPaths,
     compiler: compiler.longVersion,
     protectedTransitions: profile.transitions,
+    websiteTransitions: profile.websiteTransitions,
+    integrationTransitions: profile.integrationTransitions,
     releaseChanges,
     nativeCompatibility: profile.nativeCompatibility,
     scannerRequiredPaths: profile.scannerRequiredPaths,
@@ -410,8 +522,8 @@ function verifySourceScope({ git, sha, version, lock, policy }) {
 }
 
 function verifyPublicationReview() {
-  // The current scanner excludes integrations. No full extraction coverage or
-  // finite reviewed current-result inventory has been installed in this profile.
+  // The additive producer is preserved, but authentic final-source extraction
+  // and its finite independently reviewed result inventory are still pending.
   throw Error(
     'rc.16 publication blocked: scannerReview is pending; full integration extraction and independent finite result review are required'
   );
@@ -422,9 +534,12 @@ module.exports = {
   anchors,
   allowedNewPaths,
   allowedExistingPaths,
+  websiteTransitions,
   protectedPath,
   parseTree,
   verifyProtectedTransitions,
+  verifyWebsiteTransitions,
+  verifyIntegrationTransitions,
   verifyReleaseDelta,
   verifyVersionOnly,
   LEGACY_WORKFLOW_GUARD,

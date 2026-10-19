@@ -1,7 +1,15 @@
 export const computerReceiptCopy = {
   en: {
+    sourceMismatch:
+      'This proposal’s handoff does not declare the installed Alpha computer source. Prepare a compatible handoff first. The earlier workspace is preserved.',
+    unmatchedHistoricalSources:
+      'historical source declarations differ from the installed inspector',
+    inspectorOnly:
+      'The pinned source identifies the installed inspector only. Every historical producer remains unverified, including matching source declarations.',
+    changed:
+      'The files or choices changed while checking. Review them and confirm again. The earlier workspace is preserved.',
     nativeHistory:
-      'Complete native Alpha history JSON (optional; preserve earlier attempts)',
+      'Complete Alpha archive or native history JSON (optional; preserve earlier attempts)',
     proposals: 'retained proposals',
     revision: 'revision',
     cycles: 'historical cycles',
@@ -15,7 +23,7 @@ export const computerReceiptCopy = {
     intro:
       'Carry the same project and frozen supplier strategy into an explicitly configured Fleet runtime. Bring back its exact native return and prepare an unsigned AGIALPHA proposal. Files stay in this page; export before closing.',
     forward: '1 / Prepare the exact handoff',
-    project: 'Saved Alpha project JSON',
+    project: 'Complete Alpha archive or saved project JSON',
     report: 'Frozen strategy report JSON (or use the current study above)',
     read: 'Review selected project and report',
     prepare: 'Prepare native Alpha handoff',
@@ -44,6 +52,9 @@ export const computerReceiptCopy = {
     draft: 'Download unsigned AGIALPHA draft',
     archive: 'Save project, history and draft',
     history: 'Download native Alpha history',
+    alphaArchive: 'Download original complete Alpha workspace',
+    alphaRestore:
+      'To continue in Alpha, reopen the original complete workspace, then import the latest native Alpha history. The original archive stays unchanged.',
     reopen: 'Reopen a saved computer workspace',
     restored:
       'Saved workspace rechecked. Its exact project, historical return and draft are restored. No execution permission, funding or current proof was imported.',
@@ -58,8 +69,16 @@ export const computerReceiptCopy = {
       'Create or restore a frozen strategy report above, or choose its JSON file.',
   },
   fr: {
+    sourceMismatch:
+      'La transmission proposée ne déclare pas la source Computer Use Alpha installée. Préparez d’abord une transmission compatible. L’espace précédent est conservé.',
+    unmatchedHistoricalSources:
+      'déclarations de source historiques diffèrent de l’inspecteur installé',
+    inspectorOnly:
+      'La source figée identifie uniquement l’inspecteur installé. Chaque producteur historique reste non vérifié, même si sa déclaration de source correspond.',
+    changed:
+      'Les fichiers ou les choix ont changé pendant le contrôle. Examinez-les et confirmez à nouveau. L’espace précédent est conservé.',
     nativeHistory:
-      'Historique Alpha natif complet · JSON (facultatif; conserver les essais antérieurs)',
+      'Archive Alpha complète ou historique natif · JSON (facultatif; conserver les essais antérieurs)',
     proposals: 'propositions conservées',
     revision: 'révision',
     cycles: 'cycles historiques',
@@ -73,7 +92,7 @@ export const computerReceiptCopy = {
     intro:
       'Transmettez le même projet et la stratégie fournisseur figée à un runtime Fleet configuré explicitement. Rapportez son retour natif exact et préparez une proposition AGIALPHA non signée. Les fichiers restent dans cette page; exportez avant de fermer.',
     forward: '1 / Préparer la transmission exacte',
-    project: 'Projet Alpha enregistré · JSON',
+    project: 'Archive Alpha complète ou projet enregistré · JSON',
     report: 'Rapport stratégique figé · JSON (ou étude actuelle ci-dessus)',
     read: 'Examiner le projet et le rapport choisis',
     prepare: 'Préparer la transmission Alpha native',
@@ -102,6 +121,9 @@ export const computerReceiptCopy = {
     draft: 'Télécharger le brouillon AGIALPHA non signé',
     archive: 'Enregistrer le projet, l’historique et le brouillon',
     history: 'Télécharger l’historique Alpha natif',
+    alphaArchive: 'Télécharger l’espace Alpha complet original',
+    alphaRestore:
+      'Pour continuer dans Alpha, rouvrez l’espace complet original, puis importez le dernier historique Alpha natif. L’archive originale reste inchangée.',
     reopen: 'Rouvrir un espace Computer Use enregistré',
     restored:
       'Espace enregistré contrôlé à nouveau. Le projet exact, le retour historique et le brouillon sont restaurés. Aucune permission, aucun financement ni preuve actuelle n’est importé.',

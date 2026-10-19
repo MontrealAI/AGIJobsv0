@@ -3,22 +3,41 @@ name: Qualified rc.16 source release
 on:
   pull_request:
     paths:
-      - '.github/workflows/source-release*.yml'
-      - '.github/workflows/transformational-compatibility.yml'
-      - 'scripts/release/*rc16*'
-      - 'scripts/release/verify-transformational-compatibility.mjs'
-      - 'test/scripts/*rc16*'
-      - 'test/scripts/transformational-compatibility.test.mjs'
       - 'package.json'
-      - 'package-lock.json'
+      - '.github/workflows/source-release-rc16.yml'
+      - '.github/workflows/transformational-compatibility.yml'
+      - 'scripts/release/qualify-source-release-rc16.cjs'
+      - 'scripts/release/publish-source-release-rc16.cjs'
+      - 'scripts/release/source-profile-rc16.cjs'
+      - 'scripts/release/source-profile-rc16.json'
+      - 'scripts/release/source-native-gates-rc16.cjs'
+      - 'scripts/release/source-native-evidence-rc16.cjs'
+      - 'scripts/release/verify-transformational-compatibility.mjs'
+      - 'docs/production/RELEASE_NOTES_SOURCE_RC16.md'
+      - 'test/scripts/source-profile-rc16.test.cjs'
+      - 'test/scripts/source-release-rc16.test.cjs'
+      - 'test/scripts/source-release-security-rc16-gate.test.cjs'
+      - 'test/scripts/source-release-security-rc16-publish.test.cjs'
+      - 'test/scripts/transformational-compatibility.test.mjs'
   push:
     branches: [main]
     paths:
       - 'package.json'
-      - '.github/workflows/source-release*.yml'
+      - '.github/workflows/source-release-rc16.yml'
       - '.github/workflows/transformational-compatibility.yml'
-      - 'scripts/release/*rc16*'
+      - 'scripts/release/qualify-source-release-rc16.cjs'
+      - 'scripts/release/publish-source-release-rc16.cjs'
+      - 'scripts/release/source-profile-rc16.cjs'
+      - 'scripts/release/source-profile-rc16.json'
+      - 'scripts/release/source-native-gates-rc16.cjs'
+      - 'scripts/release/source-native-evidence-rc16.cjs'
       - 'scripts/release/verify-transformational-compatibility.mjs'
+      - 'docs/production/RELEASE_NOTES_SOURCE_RC16.md'
+      - 'test/scripts/source-profile-rc16.test.cjs'
+      - 'test/scripts/source-release-rc16.test.cjs'
+      - 'test/scripts/source-release-security-rc16-gate.test.cjs'
+      - 'test/scripts/source-release-security-rc16-publish.test.cjs'
+      - 'test/scripts/transformational-compatibility.test.mjs'
 
 permissions:
   contents: read
@@ -44,7 +63,7 @@ jobs:
       - name: Select the separately versioned rc.16 source profile
         id: release-version
         run: node -e "require('node:fs').appendFileSync(process.env.GITHUB_OUTPUT, 'selected=' + (require('./package.json').version === '2.1.0-rc.16') + '\n')"
-      - run: node --test test/scripts/source-profile-rc16.test.cjs test/scripts/source-release-rc16.test.cjs test/scripts/transformational-compatibility.test.mjs
+      - run: node --test test/scripts/source-profile-rc16.test.cjs test/scripts/source-release-rc16.test.cjs test/scripts/source-release-security-rc16-gate.test.cjs test/scripts/source-release-security-rc16-publish.test.cjs test/scripts/transformational-compatibility.test.mjs
 
   publish:
     name: Publish qualified rc.16 source prerelease
@@ -75,6 +94,8 @@ jobs:
         run: node scripts/release/qualify-source-release-rc16.cjs
       - name: Retain the qualified compiler producer archive
         run: node scripts/release/publish-source-release-rc16.cjs --collect-compiler-evidence
+      - name: Retain and reconcile complete reviewed and final raw scanner archives
+        run: node scripts/release/publish-source-release-rc16.cjs --collect-scanner-evidence
       - name: Authenticate and inspect raw scanner and actual native producer archives
         run: node scripts/release/publish-source-release-rc16.cjs --collect-additional-evidence
       - name: Build checksummed source and immutable evidence assets

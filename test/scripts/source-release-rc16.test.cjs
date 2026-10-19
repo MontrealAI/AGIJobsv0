@@ -30,6 +30,8 @@ const security = {
   owner: { id: 9919 },
 };
 const resultCheck = () => ({
+  id: 123,
+  html_url: 'https://github.com/MontrealAI/AGIJobsv0/runs/123',
   name: 'CodeQL',
   head_sha: sha,
   app: structuredClone(security),
@@ -421,7 +423,7 @@ test('retained readback cannot relabel another successful same-SHA run or attemp
 });
 test('rc.16 owns only its new tag/routes/assets and remains blocked pending actual security review', () => {
   const names = expectedAssets(profile.tag);
-  assert.equal(new Set(names).size, 20);
+  assert.equal(new Set(names).size, 21);
   for (const name of [
     'codeql-evidence.zip',
     'codeql-provenance.json',

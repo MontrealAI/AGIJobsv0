@@ -2,7 +2,11 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import AxeBuilder from '@axe-core/playwright';
-import { protocolComputerInputs } from '../../test/pages/computer-receipt-fixture.mjs';
+import {
+  protocolComputerInputs,
+  protocolComputerAttempt,
+  protocolComputerLearningArchive,
+} from '../../test/pages/computer-receipt-fixture.mjs';
 import { inspectComputerWorkspace } from '../../website/assets/computer-receipt-model.mjs';
 import { inspectComputerHandoff } from '../../integrations/alpha-agent/vendor/alpha-computer/examples/successor-alpha/computer.mjs';
 import {
@@ -24,6 +28,10 @@ async function download(page, id) {
 export async function verifyComputerReceipt({ page, url, artifacts, checks }) {
   const inputs = protocolComputerInputs(),
     project = JSON.parse(JSON.parse(inputs.handoffRaw).projectRaw);
+  const { archiveRaw: alphaArchiveRaw, historyRaw: nativeHistoryRaw } =
+    await protocolComputerLearningArchive(inputs, {
+      historicalSourceHash: 'f'.repeat(64),
+    });
   for (const language of ['en', 'fr']) {
     await page.goto(
       url + 'successor/computer/' + (language === 'fr' ? 'fr/' : ''),
@@ -32,7 +40,7 @@ export async function verifyComputerReceipt({ page, url, artifacts, checks }) {
     await page.locator('[data-computer-receipt][data-ready="true"]').waitFor();
     assert.equal(await page.locator('#cr-read').isDisabled(), true);
     await page.locator('#cr-public').check();
-    await upload(page, 'project', JSON.stringify(project));
+    await upload(page, 'project', alphaArchiveRaw);
     await upload(page, 'report', inputs.reportRaw);
     await page.locator('#cr-read').click();
     await page.waitForFunction(
@@ -57,6 +65,7 @@ export async function verifyComputerReceipt({ page, url, artifacts, checks }) {
       ['native-report', inputs.reportRaw],
     ])
       await upload(page, id, raw);
+    await upload(page, 'native-history', nativeHistoryRaw);
     await page.locator('#cr-amount').fill('7.000000000000000001');
     await page.locator('#cr-network').selectOption('1');
     await page.locator('#cr-approve-draft').check();
@@ -70,6 +79,32 @@ export async function verifyComputerReceipt({ page, url, artifacts, checks }) {
     );
     assert.equal(workspace.project.id, project.id);
     assert.equal(workspace.draft.independentProof, false);
+    assert.equal(workspace.history.records.length, 3);
+    assert(workspace.workspace.historySources.includes(nativeHistoryRaw));
+    assert(workspace.workspace.projectSources.includes(alphaArchiveRaw));
+    assert.equal(await download(page, 'alpha-download'), alphaArchiveRaw);
+    assert.equal(
+      workspace.workspace.inspectorSource.role,
+      'NATIVE_VALIDATION_IMPLEMENTATION_ONLY'
+    );
+    assert.equal(workspace.workspace.unmatchedHistoricalSourceCount, 1);
+    assert.equal(
+      workspace.workspace.historicalSourceDeclarations.filter(
+        (item) => !item.matchesInstalledInspector
+      ).length,
+      1
+    );
+    assert(
+      workspace.workspace.historicalSourceDeclarations.every(
+        (item) => item.authenticatedProducer === false
+      )
+    );
+    assert.equal(workspace.history.records[0].review.decision, 'useful');
+    assert(
+      workspace.history.records
+        .slice(1)
+        .every((record) => record.review === null)
+    );
     for (const width of [320, 390, 1440]) {
       await page.setViewportSize({ width, height: 1000 });
       assert.equal(
@@ -122,6 +157,49 @@ export async function verifyComputerReceipt({ page, url, artifacts, checks }) {
     );
     assert.equal(await download(page, 'archive-download'), raw);
     assert.equal(await page.locator('[data-computer-receipt] img').count(), 0);
+    const foreign = await protocolComputerAttempt(inputs, 'review', {
+      sourceHash: 'e'.repeat(64),
+    });
+    await upload(page, 'native-handoff', foreign.handoffRaw);
+    await upload(page, 'native-return', foreign.returnRaw);
+    await page.locator('#cr-approve-draft').check();
+    await page.locator('#cr-create').click();
+    await page.waitForFunction(
+      (message) => document.getElementById('cr-status').textContent === message,
+      computerReceiptCopy[language].sourceMismatch
+    );
+    assert.equal(await download(page, 'archive-download'), raw);
+    await upload(page, 'native-handoff', inputs.handoffRaw);
+    await upload(page, 'native-return', inputs.returnRaw);
+    await page.evaluate(() => {
+      const original = File.prototype.arrayBuffer;
+      File.prototype.arrayBuffer = async function () {
+        if (this.name === 'native-return.json') {
+          const file = this;
+          await new Promise((resolve) => {
+            globalThis.releaseComputerInput = resolve;
+          });
+          return original.call(file);
+        }
+        return original.call(this);
+      };
+    });
+    await page.locator('#cr-approve-draft').check();
+    await page.locator('#cr-create').click();
+    await page.waitForFunction(
+      () => typeof globalThis.releaseComputerInput === 'function'
+    );
+    await page.evaluate(() => {
+      const confirmation = document.getElementById('cr-public');
+      confirmation.checked = false;
+      confirmation.dispatchEvent(new Event('change', { bubbles: true }));
+      globalThis.releaseComputerInput();
+    });
+    await page.waitForFunction(
+      (message) => document.getElementById('cr-status').textContent === message,
+      computerReceiptCopy[language].changed
+    );
+    assert.equal(await download(page, 'archive-download'), raw);
   }
   checks.push(
     'Native computer workspace: EN/FR same-project handoff, exact native return, explicit 18-decimal AGIALPHA proposal and save/reopen; forged archives rejected. Inputs are labeled protocol doubles, not native execution proof.'
@@ -134,6 +212,13 @@ export async function verifyComputerReceipt({ page, url, artifacts, checks }) {
         scope: 'GUI_WITH_PROTOCOL_DOUBLE_INPUTS_NO_NATIVE_EXECUTION_CLAIM',
         languages: ['en', 'fr'],
         projectId: project.id,
+        retainedNativeAttempts: 3,
+        exactNativeHistorySourceRetained: true,
+        exactCompleteAlphaArchiveRetained: true,
+        historicalOwnerReviewRetained: true,
+        pendingReadConsentRevocationRejected: true,
+        unknownHistoricalSourceRetainedWithoutProducerAttestation: true,
+        unknownCurrentSourceRejected: true,
         authority: 'none',
       },
       null,
