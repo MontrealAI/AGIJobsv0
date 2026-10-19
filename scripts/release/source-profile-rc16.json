@@ -1,0 +1,232 @@
+{
+  "schema": "agijobsv0/source-release-profile/v1",
+  "repository": "MontrealAI/AGIJobsv0",
+  "releaseVersion": "2.1.0-rc.16",
+  "previousVersion": "2.1.0-rc.15",
+  "tag": "source-v2.1.0-rc.16",
+  "qualification": "PENDING_FINAL_SOURCE_MAIN_PUSH",
+  "compilerSourceBaseline": "3c17153942251116ee51163055eb1a25d652454b",
+  "evidenceBaseline": "9c730e0188594089e27ed0589c2b5ca57eec5cf5",
+  "deployedSourceBaseline": "b4c5b66ea05a6bb27f1f1cb197f055c179bbd38e",
+  "securityPrerequisite": "62d4f2db2b9eeddb6156b486336555b1e6485d92",
+  "implementationBaseline": "b88965ef6e90bf6f725934520e9be3161e91af62",
+  "implementationTree": "6003d3d7286fe9fa4bf6875deefc01e579ce9dfc",
+  "transitions": [
+    {
+      "path": "demo/README.md",
+      "before": {
+        "mode": "100644",
+        "blob": "1c2ca27bdbfe15c30db9e7a788894a4a9306a30b"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "20be1350595c4f8f36124fd224e3903fe527b381"
+      }
+    },
+    {
+      "path": "hardhat.config.js",
+      "before": {
+        "mode": "100644",
+        "blob": "b89721670274f47d2907836dfac0bdde70e230b8"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "8d201a5f8af39ccefa4970e6839584abcc1720ba"
+      }
+    },
+    {
+      "path": "scripts/ci/check-toolchain-locks.js",
+      "before": {
+        "mode": "100755",
+        "blob": "011994a14e8d19e54e015d6dddfffe70d5dca76f"
+      },
+      "after": {
+        "mode": "100755",
+        "blob": "2cb163c56369e3290935d0b35363ccc2a425995d"
+      }
+    },
+    {
+      "path": "scripts/ci/remap-coverage-paths.js",
+      "before": {
+        "mode": "100755",
+        "blob": "e91f246fbd7e2780fe00d7b68b5d2e27ac26f9a9"
+      },
+      "after": {
+        "mode": "100755",
+        "blob": "cf363bca7bfecf5a8064a1d9ebe5a73aabba807b"
+      }
+    },
+    {
+      "path": "scripts/release/run-etherscan-verification.js",
+      "before": {
+        "mode": "100755",
+        "blob": "f0d4c9a83ddfa1bc79451972e9d04f869f199032"
+      },
+      "after": {
+        "mode": "100755",
+        "blob": "d52ab289a95ac4f6d15bf96946acfeba84920a14"
+      }
+    },
+    {
+      "path": "scripts/v2/deploy.ts",
+      "before": {
+        "mode": "100644",
+        "blob": "ec8bc02db483e595653dfdb91f1467ce8d764637"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "8406f07eae73cbdbe5b432d57c1b3904d514e23c"
+      }
+    },
+    {
+      "path": "scripts/v2/deployDefaults.ts",
+      "before": {
+        "mode": "100644",
+        "blob": "74f4f260a0bdd3207ddf328a724e9ee4d6412112"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "163f913b03e388825f2543f8f2315aebe272abe3"
+      }
+    },
+    {
+      "path": "scripts/v2/lib/mermaidLiteral.ts",
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "blob": "6accedcb3da8c092811741afd3d05a6c37f62323"
+      }
+    },
+    {
+      "path": "scripts/v2/lib/nationalSupplyChainTranscript.ts",
+      "before": {
+        "mode": "100644",
+        "blob": "bf0b57c32bc1a633be630f629cce7dd57978a418"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "99684f946e0d8437bda678863a86a90bd5d1d66d"
+      }
+    },
+    {
+      "path": "scripts/v2/lib/randaoCoordinatorPlan.ts",
+      "before": {
+        "mode": "100644",
+        "blob": "2e0f0e74e8fc0bb1488f982516dc2fa4a25e16b3"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "33bfa0a701c53e51d0f2bd1bcf71783752ac356d"
+      }
+    },
+    {
+      "path": "scripts/v2/ownerConfigAudit.ts",
+      "before": {
+        "mode": "100644",
+        "blob": "58631dc15603fbbbf89ef8a0c62b48aa8c8dad32"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "7d7c395d49b77239f4d701e7a4ab75ac3a706dda"
+      }
+    },
+    {
+      "path": "scripts/v2/ownerControlGuide.ts",
+      "before": {
+        "mode": "100644",
+        "blob": "395a432e4d6ce0cfecc820f71539b604fa2dd4f3"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "a569965764428e25191bc6dc6555e580fb2a9012"
+      }
+    },
+    {
+      "path": "scripts/v2/ownerControlPlan.ts",
+      "before": {
+        "mode": "100644",
+        "blob": "55667d98ae8c32df5925e26f9c7d77637aebe50b"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "c7c30bcd108431eb74e0e59cf10e2c2e1ee35382"
+      }
+    },
+    {
+      "path": "scripts/v2/ownerControlSnapshot.ts",
+      "before": {
+        "mode": "100644",
+        "blob": "6b158113f63366a4af6b9a856a32d0a67b883877"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "75d5f26d9f63b5abcc56b627fb0617927e56ac29"
+      }
+    },
+    {
+      "path": "scripts/v2/ownerEmergencyRunbook.ts",
+      "before": {
+        "mode": "100644",
+        "blob": "f33f72925800992208e00c50466117a7df91f22d"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "7ad91a5139de9a5f4bf2dfcfd018850b47d16115"
+      }
+    },
+    {
+      "path": "scripts/v2/renderOwnerMermaid.ts",
+      "before": {
+        "mode": "100644",
+        "blob": "7928338f46dfb69664da424b4461ee7143718f2d"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "da7910f5d4a5e26aae1a168a4da8bf2461de5876"
+      }
+    },
+    {
+      "path": "scripts/v2/thermodynamicsReport.ts",
+      "before": {
+        "mode": "100644",
+        "blob": "599f62a7e87402f078f62c68a0c31ac60c8626ab"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "b2a00ba6b58dfd72ed39285c3508f420ffed7fd1"
+      }
+    },
+    {
+      "path": "scripts/v2/updateAllModules.ts",
+      "before": {
+        "mode": "100644",
+        "blob": "354ba1e3f81a4f2dff545b16fd31f39da46f77b0"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "02c823c6e76ac6414cb8f8fb88883e4a1baeb717"
+      }
+    }
+  ],
+  "nativeCompatibility": {
+    "schema": "agijobsv0/transformational-native-compatibility/v1",
+    "repository": "MontrealAI/AGI-Alpha-Agent-v0",
+    "commit": "124a3b636baa916fe6c4400e03e55198114dd212",
+    "tree": "dce26926d2a4282a1591dbce4bfd6c36ef4caaa9",
+    "fixturePath": "examples/transformational-intelligence/campaign.json",
+    "boundary": "free-inspection-positive-payment-refused",
+    "files": {
+      "docs/assets/successor/engine.mjs": "38c4f38978bf9fc29f207bae3adee0755bc6530d04502a36c491cc430787e488",
+      "examples/transformational-intelligence/campaign.json": "a8a1e549d80c234e785fd4008f3b0e4f9f571c47cbb1e1cfef74414633cb4e19",
+      "examples/transformational-intelligence/inspector.mjs": "e7b584f2c79a7c574e5be60bbec4205c95c07bbd0d842ce7b0766a92b24cd2ea"
+    }
+  },
+  "scannerRequiredPaths": [
+    "integrations/alpha-agent/four-repo-computer-lifecycle.cjs",
+    "integrations/alpha-agent/four-repo-computer-receipt.mjs",
+    "integrations/alpha-agent/pinned-alpha-checkout.cjs",
+    "integrations/alpha-agent/transformational-work-request.mjs",
+    "integrations/alpha-agent/vendor/alpha/docs/assets/successor/engine.mjs"
+  ],
+  "scannerReview": null
+}

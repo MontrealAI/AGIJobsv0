@@ -556,5 +556,5 @@
     "alpha-agent:project:test": "node --test integrations/alpha-agent/tests/alpha-project-source.test.mjs integrations/alpha-agent/tests/alpha-project-name.test.mjs integrations/alpha-agent/tests/alpha-project-transfer.test.mjs integrations/alpha-agent/tests/alpha-project-receipt.test.cjs"
   },
   "type": "commonjs",
-  "version": "2.1.0-rc.15"
+  "version": "2.1.0-rc.16"
 }
