@@ -54,6 +54,9 @@ not resolved or fetched here; source rights and network admission remain separat
 runtime checks. Native inert authorization metadata and the draft's fixed public
 AGIALPHA token address have explicit structural exceptions; a generic token or
 authorization string is not admitted as public campaign data.
+Credential families are conservatively matched within normalized field names,
+including header/provider prefixes and token suffixes; public computational
+`tokens` budgets remain distinct from credential-shaped `token` fields.
 
 A future separately reviewed native charter with a positive AGIALPHA allowance
 can be presented to the conditional proposal interface:

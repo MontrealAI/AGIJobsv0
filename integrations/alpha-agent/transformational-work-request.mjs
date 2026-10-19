@@ -61,6 +61,12 @@ const credentialKeys = new Set([
   'secretkey',
   'credential',
 ]);
+const credentialKey = (key) =>
+  credentialKeys.has(key) ||
+  /password|passwd|apikey|privatekey|seedphrase|authorization|clientsecret|signingkey|secret|credential/.test(
+    key
+  ) ||
+  key.endsWith('token');
 function publicURL(raw) {
   let url;
   try {
@@ -94,7 +100,7 @@ function publicURL(raw) {
   for (const name of url.searchParams.keys()) {
     const key = name.toLowerCase().replace(/[^a-z0-9]/g, '');
     need(
-      !credentialKeys.has(key) &&
+      !credentialKey(key) &&
         !['key', 'sig', 'signature'].includes(key) &&
         !/^x(?:amz|goog)/.test(key),
       'TRANSFORMATION_PRIVATE_INPUT'
@@ -138,7 +144,7 @@ function read(raw) {
           value.schema === TRANSFORMATION_WORK_DRAFT_SCHEMA &&
           child === route.token;
         need(
-          !credentialKeys.has(key) ||
+          !credentialKey(key) ||
             nativeAuthorization ||
             publicRouteToken ||
             child === null ||

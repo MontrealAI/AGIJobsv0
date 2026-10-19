@@ -383,6 +383,12 @@ test('decoded credential, private-address and duplicate-key inputs are rejected 
     'api_secret',
     'secret_key',
     'credential',
+    'x-api-key',
+    'x-auth-token',
+    'proxy-authorization',
+    'aws_secret_access_key',
+    'api_token',
+    'x-amz-security-token',
   ]) {
     const credential = await fixture((x) => {
       x.bindings.configuration = { [key]: 'synthetic-fixture-only' };
@@ -452,6 +458,8 @@ test('only credential-free HTTPS DNS references are admitted before native callb
     'https://machine.home/',
     'https://github.com/?%74oken=synthetic',
     'https://github.com/?api_secret=synthetic',
+    'https://github.com/?x-api-key=synthetic',
+    'https://github.com/?aws_secret_access_key=synthetic',
     'https://github.com/\\?token=synthetic',
     'https://github.com/#token=synthetic',
     'https://user:synthetic@github.com/',
