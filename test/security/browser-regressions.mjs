@@ -4,9 +4,11 @@ import path from 'node:path';
 import os from 'node:os';
 import http from 'node:http';
 import { createRequire } from 'node:module';
+import { pathToFileURL } from 'node:url';
 import { chromium } from 'playwright';
 import { build } from 'esbuild';
 
+async function main() {
 const require = createRequire(import.meta.url), root = path.resolve(import.meta.dirname, '../..');
 const temporary = fs.mkdtempSync(path.join(os.tmpdir(), 'codeql-browser-'));
 const out = path.join(root, 'reports/security/remediation-browser'); fs.mkdirSync(out, { recursive: true });
@@ -35,6 +37,7 @@ try {
   await page.route('**/*', async route => {
     const url = route.request().url();
     if (url === 'https://metadata.example/sla.json') { requests.push(url); await route.fulfill({ json: { uri: 'JaVaScRiPt:globalThis.pwned=1', obligations: [hostile] } }); return; }
+    if (url === 'https://metadata.example/bad.json') { requests.push(url); await route.fulfill({ json: { obligations: [{ html: hostile }] } }); return; }
     if (!url.startsWith(origin)) { requests.push(url); await route.abort(); return; }
     if (url.includes('/onebox/')) {
       requests.push(url);
@@ -87,6 +90,10 @@ try {
   await page.getByRole('heading', { name: 'Obligations', exact: true }).waitFor();
   assert.equal(await page.locator('a[href^="javascript:"],img,svg').count(), 0);
   assert.ok((await page.locator('body').innerText()).includes(hostile));
+  await slaInput.fill('https://metadata.example/bad.json'); await page.getByRole('button', { name: 'Fetch SLA', exact: true }).click();
+  await page.getByText('SLA obligations must contain text values.', { exact: true }).waitFor();
+  await slaInput.fill('https://metadata.example/sla.json'); await page.getByRole('button', { name: 'Fetch SLA', exact: true }).click();
+  await page.getByRole('heading', { name: 'Obligations', exact: true }).waitFor();
   await page.locator('#verify-cid').fill('ipfs://bafyfixture/report.json');
   assert.equal(await page.getByRole('link', { name: 'Open deliverable' }).getAttribute('href'), 'https://ipfs.io/ipfs/bafyfixture/report.json');
   await page.locator('#paymaster-address').fill('0x1111111111111111111111111111111111111111'); await page.locator('#topup-amount').fill('1.5');
@@ -98,3 +105,6 @@ try {
   fs.writeFileSync(path.join(out, 'result.json'), JSON.stringify({ passed: true, checks, csp, errors, requests, realWalletOperations: 0 }, null, 2) + '\n');
   console.log(JSON.stringify({ passed: true, checks, errors, realWalletOperations: 0 }));
 } finally { await browser.close(); await new Promise(resolve => server.close(resolve)); fs.rmSync(temporary, { recursive: true, force: true }); }
+
+}
+if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) await main();

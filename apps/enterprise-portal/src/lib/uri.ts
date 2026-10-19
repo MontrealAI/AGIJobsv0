@@ -11,18 +11,23 @@ export const resolveResourceUri = (value?: string, gateway = 'https://ipfs.io/ip
         const decoded = decodeURIComponent(segment);
         if (decoded === '.' || decoded === '..' || /[\u0000-\u001f\u007f%\\/?#]/u.test(decoded)) return undefined;
       }
-      const base = resolveResourceUri(gateway);
+      const base = httpsResource(gateway);
       if (!base || !base.endsWith('/')) return undefined;
       return `${base}${root}${segments.length ? '/' + segments.join('/') : ''}`;
     } catch { return undefined; }
   }
+  return httpsResource(value);
+};
+
+function httpsResource(value: string): string | undefined {
+  if (typeof value !== 'string' || !value || value.length > 8192 || /[\s\u0000-\u001f\u007f\\]/u.test(value)) return undefined;
   if (!/^https:\/\//i.test(value)) return undefined;
   try {
     const url = new URL(value);
     if (url.protocol !== 'https:' || !url.hostname || url.username || url.password) return undefined;
     return url.href;
   } catch { return undefined; }
-};
+}
 
 export const isIpfsUri = (value?: string): boolean => {
   if (!value) return false;

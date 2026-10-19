@@ -49,7 +49,7 @@ signatures from an exact managed wallet. A wallet principal cannot become an
 operator or select a different managed wallet. Contributor role, label,
 metadata and unsigned digests are evidence annotations; they are never
 authorization credentials. Supplied contributor signatures require the signed
-payload and matching recovered address. A valid signature attests to that
+payload and matching recovered address. Existing stored signatures remain historical annotations; this change does not re-verify or upgrade them. A valid signature attests to that
 payload, not to a new job-specific permission or a production approval.
 
 Plan identifiers are validated at the filesystem boundary, including identifiers
@@ -103,4 +103,28 @@ activation is involved. Security browser results are written to
 The PR qualification record must identify the exact final commit/tree, hosted
 complete push scan and artifact digest, test results and independent review.
 An intermediate run or a PR-only result set cannot qualify the final source.
-The ledger is still **under qualification** until those records are complete.
+The exact-commit PR qualification record and hosted artifacts determine whether
+those checks are complete; an uncommitted working tree cannot qualify a commit.
+
+The 96 original results have these source dispositions (scanner severity is
+unchanged):
+
+| Severity | Fixed | Already fixed on baseline | False positive | Unresolved |
+| --- | ---: | ---: | ---: | ---: |
+| High | 28 | 0 | 5 | 0 |
+| Medium | 11 | 1 | 11 | 0 |
+| Quality | 40 | 0 | 0 | 0 |
+
+The first complete candidate push scan at `642d857…` retains 24 reported results:
+11 high and 13 medium, with no quality results. Its archive and per-result
+reconciliation are retained in the ledger. Validated URL helpers and contained
+file descriptors can still carry scanner taint; their actual guard/caller and
+browser/filesystem evidence is recorded without disabling or suppressing queries.
+The final scan must still be run on the exact final commit.
+
+Two additional findings are separately recorded: the adjacent world-model
+snapshot filename boundary, and an independently reported gRPC compatibility
+gap in the initial remediation. Both have focused regressions. The latter adds
+optional contributor `signed_payload` field 8: send the exact UTF-8 EIP-191
+message (including an empty string when applicable). A signature with only an
+unverified digest is rejected. Historical evidence is not rewritten.

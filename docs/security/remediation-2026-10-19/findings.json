@@ -93,11 +93,24 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Replace overlapping authentication regexes with a bounded linear scheme/credential parser. Bearer/HMAC verification still uses timing-safe comparison; extra HMAC fields are rejected.",
+      "regressionEvidence": [
+        {
+          "path": "test/security/inherited-codeql.test.cjs",
+          "command": "node --test test/security/inherited-codeql.test.cjs"
+        },
+        {
+          "path": "apps/orchestrator/__tests__/oneboxRouter.test.ts",
+          "command": "npm run build:orchestrator && node --test apps/orchestrator/dist/apps/orchestrator/__tests__/*.test.js"
+        }
+      ],
+      "exposure": "Untrusted HTTP Authorization headers reach the Onebox middleware before protected routes.",
+      "guardsAndCallerAssumptions": [
+        "parseAuthorizationValue",
+        "isValidBearer",
+        "isValidHmac"
+      ]
     },
     {
       "id": "F002",
@@ -161,11 +174,24 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Replace overlapping authentication regexes with a bounded linear scheme/credential parser. Bearer/HMAC verification still uses timing-safe comparison; extra HMAC fields are rejected.",
+      "regressionEvidence": [
+        {
+          "path": "test/security/inherited-codeql.test.cjs",
+          "command": "node --test test/security/inherited-codeql.test.cjs"
+        },
+        {
+          "path": "apps/orchestrator/__tests__/oneboxRouter.test.ts",
+          "command": "npm run build:orchestrator && node --test apps/orchestrator/dist/apps/orchestrator/__tests__/*.test.js"
+        }
+      ],
+      "exposure": "Untrusted HTTP Authorization headers reach the Onebox middleware before protected routes.",
+      "guardsAndCallerAssumptions": [
+        "parseAuthorizationValue",
+        "isValidBearer",
+        "isValidHmac"
+      ]
     },
     {
       "id": "F003",
@@ -240,11 +266,20 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Normalize whitespace once for job-ID grammar; anchor numeric reward/deadline matches at word boundaries so the engine cannot retry at every position of the same long digit/whitespace run. Existing ordinary intent forms are preserved.",
+      "regressionEvidence": [
+        {
+          "path": "test/security/inherited-codeql.test.cjs",
+          "command": "node --test test/security/inherited-codeql.test.cjs"
+        }
+      ],
+      "exposure": "Planner/library text is externally supplied. A bounded child-process test exercises 100,000-character hostile inputs.",
+      "guardsAndCallerAssumptions": [
+        "extractJobId",
+        "extractReward",
+        "extractDeadline"
+      ]
     },
     {
       "id": "F004",
@@ -310,11 +345,20 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Normalize whitespace once for job-ID grammar; anchor numeric reward/deadline matches at word boundaries so the engine cannot retry at every position of the same long digit/whitespace run. Existing ordinary intent forms are preserved.",
+      "regressionEvidence": [
+        {
+          "path": "test/security/inherited-codeql.test.cjs",
+          "command": "node --test test/security/inherited-codeql.test.cjs"
+        }
+      ],
+      "exposure": "Planner/library text is externally supplied. A bounded child-process test exercises 100,000-character hostile inputs.",
+      "guardsAndCallerAssumptions": [
+        "extractJobId",
+        "extractReward",
+        "extractDeadline"
+      ]
     },
     {
       "id": "F005",
@@ -380,11 +424,20 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Normalize whitespace once for job-ID grammar; anchor numeric reward/deadline matches at word boundaries so the engine cannot retry at every position of the same long digit/whitespace run. Existing ordinary intent forms are preserved.",
+      "regressionEvidence": [
+        {
+          "path": "test/security/inherited-codeql.test.cjs",
+          "command": "node --test test/security/inherited-codeql.test.cjs"
+        }
+      ],
+      "exposure": "Planner/library text is externally supplied. A bounded child-process test exercises 100,000-character hostile inputs.",
+      "guardsAndCallerAssumptions": [
+        "extractJobId",
+        "extractReward",
+        "extractDeadline"
+      ]
     },
     {
       "id": "F006",
@@ -450,11 +503,20 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Normalize whitespace once for job-ID grammar; anchor numeric reward/deadline matches at word boundaries so the engine cannot retry at every position of the same long digit/whitespace run. Existing ordinary intent forms are preserved.",
+      "regressionEvidence": [
+        {
+          "path": "test/security/inherited-codeql.test.cjs",
+          "command": "node --test test/security/inherited-codeql.test.cjs"
+        }
+      ],
+      "exposure": "Planner/library text is externally supplied. A bounded child-process test exercises 100,000-character hostile inputs.",
+      "guardsAndCallerAssumptions": [
+        "extractJobId",
+        "extractReward",
+        "extractDeadline"
+      ]
     },
     {
       "id": "F007",
@@ -500,11 +562,21 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Demonstrably false positive",
+      "fixOrJustification": "GasPanel constructs a fixed ethereum: scheme only after ethers.isAddress and parseUnits/toQuantity validation. React renders attributes as attributes. No arbitrary scheme or markup can be supplied; valid wallet deep links remain supported.",
+      "regressionEvidence": [
+        {
+          "path": "test/security/browser-regressions.mjs",
+          "command": "node test/security/browser-regressions.mjs"
+        }
+      ],
+      "exposure": "Typed address and amount reach an ethereum link. Tests inspect href without invoking a wallet.",
+      "guardsAndCallerAssumptions": [
+        "GasPanel topUpResult useMemo",
+        "ethers.isAddress",
+        "ethers.parseUnits",
+        "ethers.toQuantity"
+      ]
     },
     {
       "id": "F008",
@@ -550,11 +622,30 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Restrict resource resolution to absolute HTTPS and supported IPFS paths, independently validate the gateway, and remove raw-input fallback links/fetches at all shared consumers. Malformed SLA array values fail with a recoverable error. The scanner continues propagating taint through the validator; actual React/browser tests prove rejected values have no navigable href or fetch.",
+      "regressionEvidence": [
+        {
+          "path": "test/security/inherited-codeql.test.cjs",
+          "command": "node --test test/security/inherited-codeql.test.cjs"
+        },
+        {
+          "path": "test/security/browser-regressions.mjs",
+          "command": "node test/security/browser-regressions.mjs"
+        }
+      ],
+      "exposure": "Typed deliverable/SLA values, on-chain event strings and fetched metadata can supply URLs.",
+      "guardsAndCallerAssumptions": [
+        "apps/enterprise-portal/src/lib/uri.ts:resolveResourceUri",
+        "httpsResource",
+        "DeliverableVerificationPanel",
+        "SlaViewer",
+        "CertificateGallery",
+        "ValidatorConsole",
+        "JobLifecycleDashboard",
+        "useCertificates",
+        "useJobMetadata"
+      ]
     },
     {
       "id": "F009",
@@ -600,11 +691,30 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Restrict resource resolution to absolute HTTPS and supported IPFS paths, independently validate the gateway, and remove raw-input fallback links/fetches at all shared consumers. Malformed SLA array values fail with a recoverable error. The scanner continues propagating taint through the validator; actual React/browser tests prove rejected values have no navigable href or fetch.",
+      "regressionEvidence": [
+        {
+          "path": "test/security/inherited-codeql.test.cjs",
+          "command": "node --test test/security/inherited-codeql.test.cjs"
+        },
+        {
+          "path": "test/security/browser-regressions.mjs",
+          "command": "node test/security/browser-regressions.mjs"
+        }
+      ],
+      "exposure": "Typed deliverable/SLA values, on-chain event strings and fetched metadata can supply URLs.",
+      "guardsAndCallerAssumptions": [
+        "apps/enterprise-portal/src/lib/uri.ts:resolveResourceUri",
+        "httpsResource",
+        "DeliverableVerificationPanel",
+        "SlaViewer",
+        "CertificateGallery",
+        "ValidatorConsole",
+        "JobLifecycleDashboard",
+        "useCertificates",
+        "useJobMetadata"
+      ]
     },
     {
       "id": "F010",
@@ -668,11 +778,26 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Remove dynamic innerHTML paths. User text, summaries, missing fields, simulation fields, exceptions, run steps and stored receipts use text nodes; only application code constructs approval controls. Receipt URLs receive separate HTTPS validation. Static packaging preserves the CSP and includes every imported helper/catalog.",
+      "regressionEvidence": [
+        {
+          "path": "test/security/inherited-codeql.test.cjs",
+          "command": "node --test test/security/inherited-codeql.test.cjs"
+        },
+        {
+          "path": "test/security/browser-regressions.mjs",
+          "command": "node test/security/browser-regressions.mjs"
+        }
+      ],
+      "exposure": "Both user-controlled text and malicious server/persisted responses reached HTML templates. This is a confirmed rendering defect.",
+      "guardsAndCallerAssumptions": [
+        "apps/onebox/dom-rendering.js",
+        "addMessage",
+        "executePlanWithUi",
+        "renderReceipts",
+        "apps/onebox/scripts/build.mjs"
+      ]
     },
     {
       "id": "F011",
@@ -736,11 +861,26 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Remove dynamic innerHTML paths. User text, summaries, missing fields, simulation fields, exceptions, run steps and stored receipts use text nodes; only application code constructs approval controls. Receipt URLs receive separate HTTPS validation. Static packaging preserves the CSP and includes every imported helper/catalog.",
+      "regressionEvidence": [
+        {
+          "path": "test/security/inherited-codeql.test.cjs",
+          "command": "node --test test/security/inherited-codeql.test.cjs"
+        },
+        {
+          "path": "test/security/browser-regressions.mjs",
+          "command": "node test/security/browser-regressions.mjs"
+        }
+      ],
+      "exposure": "Both user-controlled text and malicious server/persisted responses reached HTML templates. This is a confirmed rendering defect.",
+      "guardsAndCallerAssumptions": [
+        "apps/onebox/dom-rendering.js",
+        "addMessage",
+        "executePlanWithUi",
+        "renderReceipts",
+        "apps/onebox/scripts/build.mjs"
+      ]
     },
     {
       "id": "F012",
@@ -786,11 +926,20 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Demonstrably false positive",
+      "fixOrJustification": "appendMessage/appendNote assign strings to textContent. appendChild is reached only for an actual Node supplied by application code. An exception message is a string, not a DOM Node. The legacy browser error path is exercised with hostile server text.",
+      "regressionEvidence": [
+        {
+          "path": "test/security/browser-regressions.mjs",
+          "command": "node test/security/browser-regressions.mjs"
+        }
+      ],
+      "exposure": "The reported exception message reaches a text branch, not HTML parsing. No executable sink is reachable on this flow.",
+      "guardsAndCallerAssumptions": [
+        "apps/onebox-static/v2/app.js:appendMessage",
+        "appendNote",
+        "content instanceof Node"
+      ]
     },
     {
       "id": "F013",
@@ -872,11 +1021,21 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Enforce the identifier allowlist again at the file boundary, not only public callers. Persisted planId must equal the requested filename identity. Reject symlink/nonregular/hardlinked records and unsafe directories; use bounded descriptor reads and private exclusive temporary files for atomic writes.",
+      "regressionEvidence": [
+        {
+          "path": "test/security/inherited-codeql.test.cjs",
+          "command": "node --test test/security/inherited-codeql.test.cjs"
+        }
+      ],
+      "exposure": "Public IDs already had an allowlist, so an arbitrary remote traversal was not established. Tampered persisted identity was an unchecked assumption and is now rejected.",
+      "guardsAndCallerAssumptions": [
+        "jobPlanner.planPath",
+        "readPlan",
+        "savePlan",
+        "shared/containedFiles.ts"
+      ]
     },
     {
       "id": "F014",
@@ -922,11 +1081,21 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Enforce the identifier allowlist again at the file boundary, not only public callers. Persisted planId must equal the requested filename identity. Reject symlink/nonregular/hardlinked records and unsafe directories; use bounded descriptor reads and private exclusive temporary files for atomic writes.",
+      "regressionEvidence": [
+        {
+          "path": "test/security/inherited-codeql.test.cjs",
+          "command": "node --test test/security/inherited-codeql.test.cjs"
+        }
+      ],
+      "exposure": "Public IDs already had an allowlist, so an arbitrary remote traversal was not established. Tampered persisted identity was an unchecked assumption and is now rejected.",
+      "guardsAndCallerAssumptions": [
+        "jobPlanner.planPath",
+        "readPlan",
+        "savePlan",
+        "shared/containedFiles.ts"
+      ]
     },
     {
       "id": "F015",
@@ -972,11 +1141,25 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Validate receipt kind, bounded plan hash and canonical ISO UTC timestamp before constructing a filename. Use contained exclusive creation and verify record identity on reads. Repeated writes cannot overwrite an existing historical receipt.",
+      "regressionEvidence": [
+        {
+          "path": "test/security/inherited-codeql.test.cjs",
+          "command": "node --test test/security/inherited-codeql.test.cjs"
+        },
+        {
+          "path": "test/security/browser-regressions.mjs",
+          "command": "node test/security/browser-regressions.mjs"
+        }
+      ],
+      "exposure": "Some fields are response-derived; normal callers generate timestamps, but storage now validates at its own boundary instead of relying on those callers. No historical receipt is rewritten.",
+      "guardsAndCallerAssumptions": [
+        "receiptStore.safeFilename",
+        "saveReceipt",
+        "listReceipts",
+        "writeContainedFile"
+      ]
     },
     {
       "id": "F016",
@@ -1003,11 +1186,23 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Encode all ASCII Markdown/HTML punctuation in data labels rather than escaping only pipes. Commands and links retain readable literal values without allowing backslashes or brackets to escape their intended context. Regenerate the catalog from unchanged tracked demos.",
+      "regressionEvidence": [
+        {
+          "path": "test/security/inherited-codeql.test.cjs",
+          "command": "node --test test/security/inherited-codeql.test.cjs"
+        },
+        {
+          "path": "test/scripts/demo-catalog.test.cjs",
+          "command": "node --test test/scripts/demo-catalog.test.cjs; node scripts/demo/catalog.cjs --check; npm run site:build; npm run site:test"
+        }
+      ],
+      "exposure": "Demo names and registered commands originate in the repository catalog and may contain Markdown metacharacters.",
+      "guardsAndCallerAssumptions": [
+        "scripts/demo/catalog.cjs:literal",
+        "quoteLink"
+      ]
     },
     {
       "id": "F017",
@@ -1034,11 +1229,23 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Encode all ASCII Markdown/HTML punctuation in data labels rather than escaping only pipes. Commands and links retain readable literal values without allowing backslashes or brackets to escape their intended context. Regenerate the catalog from unchanged tracked demos.",
+      "regressionEvidence": [
+        {
+          "path": "test/security/inherited-codeql.test.cjs",
+          "command": "node --test test/security/inherited-codeql.test.cjs"
+        },
+        {
+          "path": "test/scripts/demo-catalog.test.cjs",
+          "command": "node --test test/scripts/demo-catalog.test.cjs; node scripts/demo/catalog.cjs --check; npm run site:build; npm run site:test"
+        }
+      ],
+      "exposure": "Demo names and registered commands originate in the repository catalog and may contain Markdown metacharacters.",
+      "guardsAndCallerAssumptions": [
+        "scripts/demo/catalog.cjs:literal",
+        "quoteLink"
+      ]
     },
     {
       "id": "F018",
@@ -1065,11 +1272,24 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Use Mermaid numeric entities for label metacharacters, including quotes, backslashes, brackets and control/newline characters. Apply the same rule to adjacent owner/governance labels. Graph topology stays application-defined.",
+      "regressionEvidence": [
+        {
+          "path": "test/security/inherited-codeql.test.cjs",
+          "command": "node --test test/security/inherited-codeql.test.cjs"
+        },
+        {
+          "path": "test/scripts/owner-report-markdown.test.cjs",
+          "command": "node --test test/scripts/owner-report-markdown.test.cjs test/scripts/verification-evidence.test.cjs"
+        }
+      ],
+      "exposure": "CLI/configuration label data is intentionally displayed in owner diagrams; it must not create new graph syntax.",
+      "guardsAndCallerAssumptions": [
+        "scripts/v2/lib/mermaidLiteral.ts",
+        "ownerControlGuide.renderMermaid",
+        "renderOwnerMermaid.escapeLabel"
+      ]
     },
     {
       "id": "F019",
@@ -1096,11 +1316,24 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Use Mermaid numeric entities for label metacharacters, including quotes, backslashes, brackets and control/newline characters. Apply the same rule to adjacent owner/governance labels. Graph topology stays application-defined.",
+      "regressionEvidence": [
+        {
+          "path": "test/security/inherited-codeql.test.cjs",
+          "command": "node --test test/security/inherited-codeql.test.cjs"
+        },
+        {
+          "path": "test/scripts/owner-report-markdown.test.cjs",
+          "command": "node --test test/scripts/owner-report-markdown.test.cjs test/scripts/verification-evidence.test.cjs"
+        }
+      ],
+      "exposure": "CLI/configuration label data is intentionally displayed in owner diagrams; it must not create new graph syntax.",
+      "guardsAndCallerAssumptions": [
+        "scripts/v2/lib/mermaidLiteral.ts",
+        "ownerControlGuide.renderMermaid",
+        "renderOwnerMermaid.escapeLabel"
+      ]
     },
     {
       "id": "F020",
@@ -1127,11 +1360,24 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Reuse complete Markdown literal encoding for report cell data instead of pipe-only escaping; escape adjacent runbook columns and preserve application-supplied line breaks.",
+      "regressionEvidence": [
+        {
+          "path": "test/security/inherited-codeql.test.cjs",
+          "command": "node --test test/security/inherited-codeql.test.cjs"
+        },
+        {
+          "path": "test/scripts/owner-report-markdown.test.cjs",
+          "command": "node --test test/scripts/owner-report-markdown.test.cjs test/scripts/verification-evidence.test.cjs"
+        }
+      ],
+      "exposure": "Owner report configuration and notes can contain Markdown/HTML syntax. They should be report data, not formatting instructions.",
+      "guardsAndCallerAssumptions": [
+        "scripts/v2/lib/markdownLiteral.ts",
+        "ownerControlSnapshot.escapeMarkdown",
+        "ownerEmergencyRunbook critical modules"
+      ]
     },
     {
       "id": "F021",
@@ -1158,11 +1404,24 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Reuse complete Markdown literal encoding for report cell data instead of pipe-only escaping; escape adjacent runbook columns and preserve application-supplied line breaks.",
+      "regressionEvidence": [
+        {
+          "path": "test/security/inherited-codeql.test.cjs",
+          "command": "node --test test/security/inherited-codeql.test.cjs"
+        },
+        {
+          "path": "test/scripts/owner-report-markdown.test.cjs",
+          "command": "node --test test/scripts/owner-report-markdown.test.cjs test/scripts/verification-evidence.test.cjs"
+        }
+      ],
+      "exposure": "Owner report configuration and notes can contain Markdown/HTML syntax. They should be report data, not formatting instructions.",
+      "guardsAndCallerAssumptions": [
+        "scripts/v2/lib/markdownLiteral.ts",
+        "ownerControlSnapshot.escapeMarkdown",
+        "ownerEmergencyRunbook critical modules"
+      ]
     },
     {
       "id": "F022",
@@ -1189,11 +1448,24 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Use Mermaid numeric entities for label metacharacters, including quotes, backslashes, brackets and control/newline characters. Apply the same rule to adjacent owner/governance labels. Graph topology stays application-defined.",
+      "regressionEvidence": [
+        {
+          "path": "test/security/inherited-codeql.test.cjs",
+          "command": "node --test test/security/inherited-codeql.test.cjs"
+        },
+        {
+          "path": "test/scripts/owner-report-markdown.test.cjs",
+          "command": "node --test test/scripts/owner-report-markdown.test.cjs test/scripts/verification-evidence.test.cjs"
+        }
+      ],
+      "exposure": "CLI/configuration label data is intentionally displayed in owner diagrams; it must not create new graph syntax.",
+      "guardsAndCallerAssumptions": [
+        "scripts/v2/lib/mermaidLiteral.ts",
+        "ownerControlGuide.renderMermaid",
+        "renderOwnerMermaid.escapeLabel"
+      ]
     },
     {
       "id": "F023",
@@ -1231,11 +1503,20 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Install a process-wide peer rate limiter before JSON parsing and filesystem work, covering both read and write routes. Derive the peer from the socket and ignore caller-supplied forwarding headers. Existing health/read/write APIs remain available within the budget.",
+      "regressionEvidence": [
+        {
+          "path": "test/security/inherited-codeql.test.cjs",
+          "command": "node --test test/security/inherited-codeql.test.cjs"
+        }
+      ],
+      "exposure": "The notification service previously permitted unlimited unauthenticated filesystem work. This fixes work budgeting; it does not add a new authentication claim.",
+      "guardsAndCallerAssumptions": [
+        "services/notifications/server.js global rateLimit",
+        "trust proxy false",
+        "120 requests per minute per peer"
+      ]
     },
     {
       "id": "F024",
@@ -1281,11 +1562,24 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Require a canonical uint256 job identifier before constructing a transaction or accessing state; use an own-property check for stored state. Invalid prototype keys cannot reach contract or state mutation.",
+      "regressionEvidence": [
+        {
+          "path": "test/security/inherited-codeql.test.cjs",
+          "command": "node --test test/security/inherited-codeql.test.cjs"
+        },
+        {
+          "path": "apps/orchestrator/__tests__/computerWork.test.ts",
+          "command": "npm run build:orchestrator && node --test apps/orchestrator/dist/apps/orchestrator/__tests__/*.test.js"
+        }
+      ],
+      "exposure": "The actual contract ABI already rejects nonnumeric identifiers, so a successful arbitrary prototype write through the deployed contract was not established. The exported helper now rejects hostile keys at its own boundary as well.",
+      "guardsAndCallerAssumptions": [
+        "apps/orchestrator/submission.ts:finalizeJob",
+        "uint256 identifier validation",
+        "Object.prototype.hasOwnProperty.call"
+      ]
     },
     {
       "id": "F025",
@@ -1331,11 +1625,23 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Use mkdtemp for a unique private directory; create constructor arguments exclusively at mode 0600 and clean the directory in finally on success/failure. No predictable shared temporary filename remains.",
+      "regressionEvidence": [
+        {
+          "path": "test/security/inherited-codeql.test.cjs",
+          "command": "node --test test/security/inherited-codeql.test.cjs"
+        },
+        {
+          "path": "test/scripts/verification-evidence.test.cjs",
+          "command": "node --test test/scripts/verification-evidence.test.cjs"
+        }
+      ],
+      "exposure": "The CLI writes code consumed by Hardhat. A predictable shared temp filename could be precreated or replaced.",
+      "guardsAndCallerAssumptions": [
+        "writeConstructorArgsTempFile",
+        "runHardhatVerify caller cleanup"
+      ]
     },
     {
       "id": "F026",
@@ -1373,11 +1679,20 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Replace exists-then-write with atomic exclusive creation (wx, 0600), validate the label, and preserve any existing record or symlink target.",
+      "regressionEvidence": [
+        {
+          "path": "test/security/inherited-codeql.test.cjs",
+          "command": "node --test test/security/inherited-codeql.test.cjs"
+        }
+      ],
+      "exposure": "Identity persistence contains wallet material; concurrent local creation must not overwrite it. Tests use ephemeral fixture identities only.",
+      "guardsAndCallerAssumptions": [
+        "agentFactory.persistIdentityRecord",
+        "flag wx",
+        "mode 0600"
+      ]
     },
     {
       "id": "F027",
@@ -1414,11 +1729,18 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Open no-follow once, use fstat and read on the same descriptor, and close it in finally. A pathname replacement cannot switch the bytes read after metadata validation.",
+      "regressionEvidence": [
+        {
+          "path": "test/security/inherited-codeql.test.cjs",
+          "command": "node --test test/security/inherited-codeql.test.cjs"
+        }
+      ],
+      "exposure": "The CLI enumerates a configured audit-log directory; a local leaf replacement could previously invalidate the stat/read assumption.",
+      "guardsAndCallerAssumptions": [
+        "scripts/anchor-logs.ts:readAuditEntries"
+      ]
     },
     {
       "id": "F028",
@@ -1454,11 +1776,18 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Open the coverage file no-follow once and use the same descriptor for reading, truncation and rewriting at offset zero. Missing-file handling occurs on open.",
+      "regressionEvidence": [
+        {
+          "path": "test/security/inherited-codeql.test.cjs",
+          "command": "node --test test/security/inherited-codeql.test.cjs"
+        }
+      ],
+      "exposure": "This is an operator/CI-owned coverage file, not an HTTP-selected path. A real pathname-swap regression proves an outside symlink target remains unchanged.",
+      "guardsAndCallerAssumptions": [
+        "scripts/ci/remap-coverage-paths.js"
+      ]
     },
     {
       "id": "F029",
@@ -1495,11 +1824,18 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Open once, obtain metadata and content through that handle, close in finally and report the actual content length.",
+      "regressionEvidence": [
+        {
+          "path": "test/security/inherited-codeql.test.cjs",
+          "command": "node --test test/security/inherited-codeql.test.cjs"
+        }
+      ],
+      "exposure": "Owner config reporting reads operator-selected files. The finding concerns inconsistent stat/read identity, not a remote arbitrary-file interface.",
+      "guardsAndCallerAssumptions": [
+        "ownerConfigAudit.computeFileSummary"
+      ]
     },
     {
       "id": "F030",
@@ -1545,11 +1881,24 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Require a canonical uint256 job identifier before constructing a transaction or accessing state; use an own-property check for stored state. Invalid prototype keys cannot reach contract or state mutation.",
+      "regressionEvidence": [
+        {
+          "path": "test/security/inherited-codeql.test.cjs",
+          "command": "node --test test/security/inherited-codeql.test.cjs"
+        },
+        {
+          "path": "apps/orchestrator/__tests__/computerWork.test.ts",
+          "command": "npm run build:orchestrator && node --test apps/orchestrator/dist/apps/orchestrator/__tests__/*.test.js"
+        }
+      ],
+      "exposure": "The actual contract ABI already rejects nonnumeric identifiers, so a successful arbitrary prototype write through the deployed contract was not established. The exported helper now rejects hostile keys at its own boundary as well.",
+      "guardsAndCallerAssumptions": [
+        "apps/orchestrator/submission.ts:finalizeJob",
+        "uint256 identifier validation",
+        "Object.prototype.hasOwnProperty.call"
+      ]
     },
     {
       "id": "F031",
@@ -1614,11 +1963,24 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Demonstrably false positive",
+      "fixOrJustification": "Trace identity.label and spawn-description data through the selected task payload to the configured agent endpoint. runAgentTask builds an explicit profile and sends work/context by design; this is not an API for choosing arbitrary local files. Endpoint registration requires operator authority and validates HTTP(S). Response limits, no redirects and timeout remain enforced.",
+      "regressionEvidence": [
+        {
+          "path": "test/security/run-authorisation.cjs",
+          "command": "node test/security/run-authorisation.cjs"
+        },
+        {
+          "path": "test/taskExecution.test.ts",
+          "command": "npx hardhat test --no-compile test/taskExecution.test.ts"
+        }
+      ],
+      "exposure": "The reported source is file-backed public identity/description metadata, not privateKey bytes. Agent payload/destination selection is an operator-controlled workflow.",
+      "guardsAndCallerAssumptions": [
+        "agent-gateway/taskExecution.ts:runAgentTask explicit profile",
+        "routes POST /agents operatorAuthMiddleware",
+        "agentEndpoint redirect error and size/time limits"
+      ]
     },
     {
       "id": "F032",
@@ -1664,11 +2026,24 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Demonstrably false positive",
+      "fixOrJustification": "Quarantine/anomaly data is intentionally sent as a JSON notification only to the configured registration whose wallet matches the affected address. Source data does not select the destination. Registration is operator-only.",
+      "regressionEvidence": [
+        {
+          "path": "test/security/inherited-codeql.test.cjs",
+          "command": "node --test test/security/inherited-codeql.test.cjs"
+        },
+        {
+          "path": "test/security/run-authorisation.cjs",
+          "command": "node test/security/run-authorisation.cjs"
+        }
+      ],
+      "exposure": "The file-to-HTTP trace is through quarantine/anomaly contents; no arbitrary file read or unauthorised endpoint registration is exposed.",
+      "guardsAndCallerAssumptions": [
+        "telemetry.notifyAgentOfAnomaly",
+        "agents configured map",
+        "wallet equality before notification"
+      ]
     },
     {
       "id": "F033",
@@ -1732,11 +2107,20 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Demonstrably false positive",
+      "fixOrJustification": "The telemetry queue supplies the JSON samples body; ENERGY_ORACLE_URL/TOKEN are process configuration. Identity lookup contributes only signer address/ENS, and any signature is produced through the configured signer. The queued body does not choose a URL or a filename.",
+      "regressionEvidence": [
+        {
+          "path": "test/security/inherited-codeql.test.cjs",
+          "command": "node --test test/security/inherited-codeql.test.cjs"
+        }
+      ],
+      "exposure": "Intentional telemetry export to an operator-configured oracle, with no arbitrary local-file-read API on this flow.",
+      "guardsAndCallerAssumptions": [
+        "telemetry.sendToOracle",
+        "buildTelemetryEnvelope",
+        "resolveSignerMetadata"
+      ]
     },
     {
       "id": "F034",
@@ -1782,11 +2166,25 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Demonstrably false positive",
+      "fixOrJustification": "Follow settlementJournal.jobId through parent-job metadata into the JSON/Markdown artifact publication body and Content-Type. Pinning URL and authentication come from pinning configuration. ensureBlob serializes the provided artifact; it does not interpret strings as local filenames. Publishing these work artifacts is the intended operation.",
+      "regressionEvidence": [
+        {
+          "path": "apps/orchestrator/__tests__/computerWork.test.ts",
+          "command": "npm run build:orchestrator && node --test apps/orchestrator/dist/apps/orchestrator/__tests__/*.test.js"
+        },
+        {
+          "path": "apps/orchestrator/__tests__/ipfs.test.ts",
+          "command": "npm run build:orchestrator && node --test apps/orchestrator/dist/apps/orchestrator/__tests__/*.test.js"
+        }
+      ],
+      "exposure": "The reported local data is the settlement job ID/work artifact, not secret file contents. This conclusion assumes the documented operator-owned journal and pinning configuration.",
+      "guardsAndCallerAssumptions": [
+        "execution.ensureBlob",
+        "pinViaPinner",
+        "buildPinningCandidates",
+        "service settlement/subtask handoff"
+      ]
     },
     {
       "id": "F035",
@@ -1832,11 +2230,25 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Demonstrably false positive",
+      "fixOrJustification": "Follow settlementJournal.jobId through parent-job metadata into the JSON/Markdown artifact publication body and Content-Type. Pinning URL and authentication come from pinning configuration. ensureBlob serializes the provided artifact; it does not interpret strings as local filenames. Publishing these work artifacts is the intended operation.",
+      "regressionEvidence": [
+        {
+          "path": "apps/orchestrator/__tests__/computerWork.test.ts",
+          "command": "npm run build:orchestrator && node --test apps/orchestrator/dist/apps/orchestrator/__tests__/*.test.js"
+        },
+        {
+          "path": "apps/orchestrator/__tests__/ipfs.test.ts",
+          "command": "npm run build:orchestrator && node --test apps/orchestrator/dist/apps/orchestrator/__tests__/*.test.js"
+        }
+      ],
+      "exposure": "The reported local data is the settlement job ID/work artifact, not secret file contents. This conclusion assumes the documented operator-owned journal and pinning configuration.",
+      "guardsAndCallerAssumptions": [
+        "execution.ensureBlob",
+        "pinViaPinner",
+        "buildPinningCandidates",
+        "service settlement/subtask handoff"
+      ]
     },
     {
       "id": "F036",
@@ -1901,11 +2313,19 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Demonstrably false positive",
+      "fixOrJustification": "Only the selected identity label is sent in a fixed JSON reload envelope to ORCHESTRATOR_CONTROL_URL (default localhost). Identity file bytes and privateKey are not sent. A hostile label remains body data and cannot select the destination.",
+      "regressionEvidence": [
+        {
+          "path": "test/security/inherited-codeql.test.cjs",
+          "command": "node --test test/security/inherited-codeql.test.cjs"
+        }
+      ],
+      "exposure": "Intentional local/operator-controlled reload notification after a CLI training action.",
+      "guardsAndCallerAssumptions": [
+        "scripts/retrainAgent.ts:notifyOrchestratorReload",
+        "reason/label/timestamp allowlist"
+      ]
     },
     {
       "id": "F037",
@@ -2032,11 +2452,24 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Encode untrusted console arguments as one JSON value; control characters and terminal escapes cannot create raw extra log lines. Notification records are JSON-encoded before console output.",
+      "regressionEvidence": [
+        {
+          "path": "test/security/inherited-codeql.test.cjs",
+          "command": "node --test test/security/inherited-codeql.test.cjs"
+        }
+      ],
+      "exposure": "Request, provider error, metadata and notification fields can contain CR/LF or terminal controls.",
+      "guardsAndCallerAssumptions": [
+        "shared/logValue.ts",
+        "apiHelpers.resolveAgentAddress",
+        "operator.buildBaseAttestation",
+        "stakeCoordinator.formatAmount",
+        "routes registry-read warning",
+        "healthcheck error output",
+        "notifications console output"
+      ]
     },
     {
       "id": "F038",
@@ -2082,11 +2515,24 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Encode untrusted console arguments as one JSON value; control characters and terminal escapes cannot create raw extra log lines. Notification records are JSON-encoded before console output.",
+      "regressionEvidence": [
+        {
+          "path": "test/security/inherited-codeql.test.cjs",
+          "command": "node --test test/security/inherited-codeql.test.cjs"
+        }
+      ],
+      "exposure": "Request, provider error, metadata and notification fields can contain CR/LF or terminal controls.",
+      "guardsAndCallerAssumptions": [
+        "shared/logValue.ts",
+        "apiHelpers.resolveAgentAddress",
+        "operator.buildBaseAttestation",
+        "stakeCoordinator.formatAmount",
+        "routes registry-read warning",
+        "healthcheck error output",
+        "notifications console output"
+      ]
     },
     {
       "id": "F039",
@@ -2150,11 +2596,24 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Encode untrusted console arguments as one JSON value; control characters and terminal escapes cannot create raw extra log lines. Notification records are JSON-encoded before console output.",
+      "regressionEvidence": [
+        {
+          "path": "test/security/inherited-codeql.test.cjs",
+          "command": "node --test test/security/inherited-codeql.test.cjs"
+        }
+      ],
+      "exposure": "Request, provider error, metadata and notification fields can contain CR/LF or terminal controls.",
+      "guardsAndCallerAssumptions": [
+        "shared/logValue.ts",
+        "apiHelpers.resolveAgentAddress",
+        "operator.buildBaseAttestation",
+        "stakeCoordinator.formatAmount",
+        "routes registry-read warning",
+        "healthcheck error output",
+        "notifications console output"
+      ]
     },
     {
       "id": "F040",
@@ -2236,11 +2695,24 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Encode untrusted console arguments as one JSON value; control characters and terminal escapes cannot create raw extra log lines. Notification records are JSON-encoded before console output.",
+      "regressionEvidence": [
+        {
+          "path": "test/security/inherited-codeql.test.cjs",
+          "command": "node --test test/security/inherited-codeql.test.cjs"
+        }
+      ],
+      "exposure": "Request, provider error, metadata and notification fields can contain CR/LF or terminal controls.",
+      "guardsAndCallerAssumptions": [
+        "shared/logValue.ts",
+        "apiHelpers.resolveAgentAddress",
+        "operator.buildBaseAttestation",
+        "stakeCoordinator.formatAmount",
+        "routes registry-read warning",
+        "healthcheck error output",
+        "notifications console output"
+      ]
     },
     {
       "id": "F041",
@@ -2286,11 +2758,24 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Encode untrusted console arguments as one JSON value; control characters and terminal escapes cannot create raw extra log lines. Notification records are JSON-encoded before console output.",
+      "regressionEvidence": [
+        {
+          "path": "test/security/inherited-codeql.test.cjs",
+          "command": "node --test test/security/inherited-codeql.test.cjs"
+        }
+      ],
+      "exposure": "Request, provider error, metadata and notification fields can contain CR/LF or terminal controls.",
+      "guardsAndCallerAssumptions": [
+        "shared/logValue.ts",
+        "apiHelpers.resolveAgentAddress",
+        "operator.buildBaseAttestation",
+        "stakeCoordinator.formatAmount",
+        "routes registry-read warning",
+        "healthcheck error output",
+        "notifications console output"
+      ]
     },
     {
       "id": "F042",
@@ -2336,11 +2821,24 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Encode untrusted console arguments as one JSON value; control characters and terminal escapes cannot create raw extra log lines. Notification records are JSON-encoded before console output.",
+      "regressionEvidence": [
+        {
+          "path": "test/security/inherited-codeql.test.cjs",
+          "command": "node --test test/security/inherited-codeql.test.cjs"
+        }
+      ],
+      "exposure": "Request, provider error, metadata and notification fields can contain CR/LF or terminal controls.",
+      "guardsAndCallerAssumptions": [
+        "shared/logValue.ts",
+        "apiHelpers.resolveAgentAddress",
+        "operator.buildBaseAttestation",
+        "stakeCoordinator.formatAmount",
+        "routes registry-read warning",
+        "healthcheck error output",
+        "notifications console output"
+      ]
     },
     {
       "id": "F043",
@@ -2386,11 +2884,24 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Encode untrusted console arguments as one JSON value; control characters and terminal escapes cannot create raw extra log lines. Notification records are JSON-encoded before console output.",
+      "regressionEvidence": [
+        {
+          "path": "test/security/inherited-codeql.test.cjs",
+          "command": "node --test test/security/inherited-codeql.test.cjs"
+        }
+      ],
+      "exposure": "Request, provider error, metadata and notification fields can contain CR/LF or terminal controls.",
+      "guardsAndCallerAssumptions": [
+        "shared/logValue.ts",
+        "apiHelpers.resolveAgentAddress",
+        "operator.buildBaseAttestation",
+        "stakeCoordinator.formatAmount",
+        "routes registry-read warning",
+        "healthcheck error output",
+        "notifications console output"
+      ]
     },
     {
       "id": "F044",
@@ -2446,11 +2957,25 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Demonstrably false positive",
+      "fixOrJustification": "The array guard determines whether optional contributor annotations exist. Contributor addresses/roles/metadata/digests never enter the HTTP/gRPC principal maps or managed-wallet/operator decisions. Missing signatures remain unsigned annotations; supplying a signature now requires verified payload evidence.",
+      "regressionEvidence": [
+        {
+          "path": "test/security/inherited-codeql.test.cjs",
+          "command": "node --test test/security/inherited-codeql.test.cjs"
+        },
+        {
+          "path": "test/security/run-authorisation.cjs",
+          "command": "node test/security/run-authorisation.cjs"
+        }
+      ],
+      "exposure": "Caller controls optional evidence presence, not a security principal. HTTP/gRPC authentication is performed independently first.",
+      "guardsAndCallerAssumptions": [
+        "apiHelpers.parseContributors",
+        "routes authenticatedPrincipals WeakMap",
+        "grpc authenticated principal and exact-wallet checks",
+        "deliverableStore.listContributorSummaries non-authorising analytics"
+      ]
     },
     {
       "id": "F045",
@@ -2506,11 +3031,25 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Reject supplied signatures without their signed payload and invalid contributor addresses; verify recovered address against the claimed contributor. Add optional protobuf signed_payload field 8 and map it to the same verifier, preserving valid signed gRPC evidence including an empty signed message. Unsigned role/digest metadata remains non-authorising.",
+      "regressionEvidence": [
+        {
+          "path": "test/security/inherited-codeql.test.cjs",
+          "command": "node --test test/security/inherited-codeql.test.cjs"
+        },
+        {
+          "path": "test/security/run-authorisation.cjs",
+          "command": "node test/security/run-authorisation.cjs"
+        }
+      ],
+      "exposure": "No contributor-to-operator escalation was demonstrated. A real evidence-integrity gap existed: an unverifiable signature could previously be retained when payload was omitted. The initial remediation also exposed a gRPC transport compatibility gap, corrected with a real wire-format regression.",
+      "guardsAndCallerAssumptions": [
+        "apiHelpers.parseContributors",
+        "agent_gateway.proto DeliverableContributor.signed_payload",
+        "grpc.handleContributorParsing",
+        "verifyMessage and recovered-address equality"
+      ]
     },
     {
       "id": "F046",
@@ -2566,11 +3105,25 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Reject supplied signatures without their signed payload and invalid contributor addresses; verify recovered address against the claimed contributor. Add optional protobuf signed_payload field 8 and map it to the same verifier, preserving valid signed gRPC evidence including an empty signed message. Unsigned role/digest metadata remains non-authorising.",
+      "regressionEvidence": [
+        {
+          "path": "test/security/inherited-codeql.test.cjs",
+          "command": "node --test test/security/inherited-codeql.test.cjs"
+        },
+        {
+          "path": "test/security/run-authorisation.cjs",
+          "command": "node test/security/run-authorisation.cjs"
+        }
+      ],
+      "exposure": "No contributor-to-operator escalation was demonstrated. A real evidence-integrity gap existed: an unverifiable signature could previously be retained when payload was omitted. The initial remediation also exposed a gRPC transport compatibility gap, corrected with a real wire-format regression.",
+      "guardsAndCallerAssumptions": [
+        "apiHelpers.parseContributors",
+        "agent_gateway.proto DeliverableContributor.signed_payload",
+        "grpc.handleContributorParsing",
+        "verifyMessage and recovered-address equality"
+      ]
     },
     {
       "id": "F047",
@@ -2626,11 +3179,24 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Demonstrably false positive",
+      "fixOrJustification": "Both headers must be present before attempting verification; neither is sufficient for authorisation. A valid signature over the current unexpired nonce must recover the same address and match an existing managed wallet. Success consumes/rotates the nonce. Only the API-key path produces an operator principal; managed signatures are restricted to their own wallet downstream.",
+      "regressionEvidence": [
+        {
+          "path": "test/security/run-authorisation.cjs",
+          "command": "node test/security/run-authorisation.cjs"
+        }
+      ],
+      "exposure": "User-supplied address/signature bytes are cryptographically checked, not trusted as an operator flag. These two results are separate header-source traces to the same verifier.",
+      "guardsAndCallerAssumptions": [
+        "routes.authMiddleware",
+        "refreshExpiredNonce",
+        "AUTH_CHALLENGE_TTL_MS",
+        "rotateNonce",
+        "authoriseWallet",
+        "operatorAuthMiddleware",
+        "grpc equivalent principal checks"
+      ]
     },
     {
       "id": "F048",
@@ -2686,11 +3252,24 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Demonstrably false positive",
+      "fixOrJustification": "Both headers must be present before attempting verification; neither is sufficient for authorisation. A valid signature over the current unexpired nonce must recover the same address and match an existing managed wallet. Success consumes/rotates the nonce. Only the API-key path produces an operator principal; managed signatures are restricted to their own wallet downstream.",
+      "regressionEvidence": [
+        {
+          "path": "test/security/run-authorisation.cjs",
+          "command": "node test/security/run-authorisation.cjs"
+        }
+      ],
+      "exposure": "User-supplied address/signature bytes are cryptographically checked, not trusted as an operator flag. These two results are separate header-source traces to the same verifier.",
+      "guardsAndCallerAssumptions": [
+        "routes.authMiddleware",
+        "refreshExpiredNonce",
+        "AUTH_CHALLENGE_TTL_MS",
+        "rotateNonce",
+        "authoriseWallet",
+        "operatorAuthMiddleware",
+        "grpc equivalent principal checks"
+      ]
     },
     {
       "id": "F049",
@@ -2746,11 +3325,28 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Demonstrably false positive",
+      "fixOrJustification": "The configured executor URL guard is client endpoint-availability UX, not a server security boundary. The request still requires the configured credentials and server middleware/approval verification. Removing a client guard cannot manufacture server authorisation.",
+      "regressionEvidence": [
+        {
+          "path": "test/security/browser-regressions.mjs",
+          "command": "node test/security/browser-regressions.mjs"
+        },
+        {
+          "path": "apps/orchestrator/__tests__/oneboxRouter.test.ts",
+          "command": "npm run build:orchestrator && node --test apps/orchestrator/dist/apps/orchestrator/__tests__/*.test.js"
+        },
+        {
+          "path": "apps/onebox-static/test/auth-helpers.test.mjs",
+          "command": "node --test apps/onebox-static/test/auth-helpers.test.mjs"
+        }
+      ],
+      "exposure": "Client settings choose which operator endpoint to contact; this is not an operator privilege switch.",
+      "guardsAndCallerAssumptions": [
+        "onebox-static executeICS",
+        "computeAuthHeaders",
+        "createOneboxRouter auth and PlanApprovalStore"
+      ]
     },
     {
       "id": "F050",
@@ -2796,11 +3392,24 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Demonstrably false positive",
+      "fixOrJustification": "The operator-only employer API intentionally persists its posted-job record as JSON to the fixed JOB_LEDGER path. Description/metadata content is not a filename or executable code. The deployed registry ABI and receipt parsing remain unchanged.",
+      "regressionEvidence": [
+        {
+          "path": "test/security/run-authorisation.cjs",
+          "command": "node test/security/run-authorisation.cjs"
+        },
+        {
+          "path": "test/gateway/submissionContract.test.js",
+          "command": "npx hardhat test --no-compile test/gateway/submissionContract.test.js"
+        }
+      ],
+      "exposure": "An authorised request can influence the intended JSON record, not choose an arbitrary write path. The service-owned filesystem remains a required local boundary.",
+      "guardsAndCallerAssumptions": [
+        "routes POST /employer/jobs operatorAuthMiddleware",
+        "employer.writeJobLedger",
+        "fixed EMPLOYER_DIR/JOB_LEDGER"
+      ]
     },
     {
       "id": "F051",
@@ -2846,11 +3455,19 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Apply the same validated persisted-identity and contained atomic write boundary as F014. The data remains inert JSON; tainted content reaching a fixed private descriptor is expected persistence, not arbitrary code execution.",
+      "regressionEvidence": [
+        {
+          "path": "test/security/inherited-codeql.test.cjs",
+          "command": "node --test test/security/inherited-codeql.test.cjs"
+        }
+      ],
+      "exposure": "Shared root cause with the plan write-path finding; tracked as a separate scanner result.",
+      "guardsAndCallerAssumptions": [
+        "jobPlanner.savePlan",
+        "writeContainedFile"
+      ]
     },
     {
       "id": "F052",
@@ -2914,11 +3531,24 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Demonstrably false positive",
+      "fixOrJustification": "Authenticated, wallet-bound telemetry is intentionally serialized to the fixed TELEMETRY_OUTBOX. The sample cannot select the filesystem destination, and JSON content is not interpreted as code.",
+      "regressionEvidence": [
+        {
+          "path": "test/security/run-authorisation.cjs",
+          "command": "node test/security/run-authorisation.cjs"
+        },
+        {
+          "path": "test/security/inherited-codeql.test.cjs",
+          "command": "node --test test/security/inherited-codeql.test.cjs"
+        }
+      ],
+      "exposure": "The scanner reports remote-derived record content, not a caller-controlled path. Storage ancestors must be service-owned.",
+      "guardsAndCallerAssumptions": [
+        "telemetry.persistQueue",
+        "fixed TELEMETRY_OUTBOX",
+        "routes telemetry authoriseWallet"
+      ]
     },
     {
       "id": "F053",
@@ -2982,11 +3612,23 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Already fixed on selected baseline",
+      "fixOrJustification": "The selected baseline already contains canonical job/address validation, a private owner-checked storage root, no-follow bounded reads, bounded inert JSON, exclusive temporary creation, fsync/rename and record locks. Retain those guards and their existing adversarial regressions. No untrusted path or executable file type is supplied by the reported HTTP body.",
+      "regressionEvidence": [
+        {
+          "path": "test/v2/ValidationStoreSafety.test.js",
+          "command": "node test/security/run-authorisation.cjs"
+        }
+      ],
+      "exposure": "Existing remediation in commits 3228bfb4/c19c1bdd/cfea3c1c and retained through a1c22020 predates this baseline. The generic remote-data-to-write query still reports intentional validated JSON persistence.",
+      "guardsAndCallerAssumptions": [
+        "validationStore.ensureStorageRoot",
+        "record identity validation",
+        "serialiseRecord bounds",
+        "readRecordText O_NOFOLLOW/O_NONBLOCK",
+        "writeRecord wx/fsync/rename",
+        "record lock"
+      ]
     },
     {
       "id": "F054",
@@ -3090,11 +3732,25 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Validate receipt kind, bounded plan hash and canonical ISO UTC timestamp before constructing a filename. Use contained exclusive creation and verify record identity on reads. Repeated writes cannot overwrite an existing historical receipt.",
+      "regressionEvidence": [
+        {
+          "path": "test/security/inherited-codeql.test.cjs",
+          "command": "node --test test/security/inherited-codeql.test.cjs"
+        },
+        {
+          "path": "test/security/browser-regressions.mjs",
+          "command": "node test/security/browser-regressions.mjs"
+        }
+      ],
+      "exposure": "Some fields are response-derived; normal callers generate timestamps, but storage now validates at its own boundary instead of relying on those callers. No historical receipt is rewritten.",
+      "guardsAndCallerAssumptions": [
+        "receiptStore.safeFilename",
+        "saveReceipt",
+        "listReceipts",
+        "writeContainedFile"
+      ]
     },
     {
       "id": "F055",
@@ -3140,11 +3796,20 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Demonstrably false positive",
+      "fixOrJustification": "Notification payloads are intentionally JSON-encoded and appended to a fixed service-configured log. Request keys cannot choose filenames or escape a JSON record; the separate missing-rate-limit finding is fixed.",
+      "regressionEvidence": [
+        {
+          "path": "test/security/inherited-codeql.test.cjs",
+          "command": "node --test test/security/inherited-codeql.test.cjs"
+        }
+      ],
+      "exposure": "The test proves traversal-looking fields and embedded newlines stay within one inert JSON log record.",
+      "guardsAndCallerAssumptions": [
+        "notifications.appendNotification",
+        "fixed logFile",
+        "JSON.stringify before append"
+      ]
     },
     {
       "id": "F056",
@@ -3230,11 +3895,21 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Demonstrably false positive",
+      "fixOrJustification": "The reported observation append uses a fixed OBSERVATIONS_PATH and JSON.stringify; response data influences content, not destination or executable code. Adjacent snapshot persistence did accept a job-derived filename: that separate boundary defect is fixed and recorded as N001.",
+      "regressionEvidence": [
+        {
+          "path": "test/security/inherited-codeql.test.cjs",
+          "command": "node --test test/security/inherited-codeql.test.cjs"
+        }
+      ],
+      "exposure": "Orchestrated response/metrics content is intended learning data. Do not conflate the fixed-path append alert with the separately verified snapshot traversal gap.",
+      "guardsAndCallerAssumptions": [
+        "worldModel.recordWorldModelObservation",
+        "fixed OBSERVATIONS_PATH",
+        "JSONL serialization",
+        "persistWorldModelSnapshot contained write"
+      ]
     },
     {
       "id": "F057",
@@ -3271,11 +3946,18 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Remove a repeated null comparison after the function already returns for null/undefined/empty inputs; preserve object raw/amount handling.",
+      "regressionEvidence": [
+        {
+          "path": "docs/security/remediation-2026-10-19/README.md",
+          "command": "npm run compile; npm run lint:ci; npm run webapp:typecheck; npx tsc --noEmit -p agent-gateway/tsconfig.json; npm run build:orchestrator; npm --prefix apps/enterprise-portal run typecheck; complete existing contracts/webapp/Pages CI"
+        }
+      ],
+      "exposure": "Quality/maintainability result. No vulnerability is inferred from the scanner label. Existing behavior and guard preconditions were inspected individually.",
+      "guardsAndCallerAssumptions": [
+        "See the exact baseline location and corresponding source diff; existing semantic/type/lint/browser/contract gates remain enabled."
+      ]
     },
     {
       "id": "F058",
@@ -3312,11 +3994,18 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Remove a repeated null comparison after normaliseAddress already returns for null/undefined; preserve address and toString validation.",
+      "regressionEvidence": [
+        {
+          "path": "docs/security/remediation-2026-10-19/README.md",
+          "command": "npm run compile; npm run lint:ci; npm run webapp:typecheck; npx tsc --noEmit -p agent-gateway/tsconfig.json; npm run build:orchestrator; npm --prefix apps/enterprise-portal run typecheck; complete existing contracts/webapp/Pages CI"
+        }
+      ],
+      "exposure": "Quality/maintainability result. No vulnerability is inferred from the scanner label. Existing behavior and guard preconditions were inspected individually.",
+      "guardsAndCallerAssumptions": [
+        "See the exact baseline location and corresponding source diff; existing semantic/type/lint/browser/contract gates remain enabled."
+      ]
     },
     {
       "id": "F059",
@@ -3353,11 +4042,18 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Remove a repeated null comparison after the preceding null/empty sentinel return; preserve structured WAD parsing.",
+      "regressionEvidence": [
+        {
+          "path": "docs/security/remediation-2026-10-19/README.md",
+          "command": "npm run compile; npm run lint:ci; npm run webapp:typecheck; npx tsc --noEmit -p agent-gateway/tsconfig.json; npm run build:orchestrator; npm --prefix apps/enterprise-portal run typecheck; complete existing contracts/webapp/Pages CI"
+        }
+      ],
+      "exposure": "Quality/maintainability result. No vulnerability is inferred from the scanner label. Existing behavior and guard preconditions were inspected individually.",
+      "guardsAndCallerAssumptions": [
+        "See the exact baseline location and corresponding source diff; existing semantic/type/lint/browser/contract gates remain enabled."
+      ]
     },
     {
       "id": "F060",
@@ -3394,11 +4090,18 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Remove redundant array/null branches after null and byte-array early returns; preserve JSON encoding and bigint handling.",
+      "regressionEvidence": [
+        {
+          "path": "docs/security/remediation-2026-10-19/README.md",
+          "command": "npm run compile; npm run lint:ci; npm run webapp:typecheck; npx tsc --noEmit -p agent-gateway/tsconfig.json; npm run build:orchestrator; npm --prefix apps/enterprise-portal run typecheck; complete existing contracts/webapp/Pages CI"
+        }
+      ],
+      "exposure": "Quality/maintainability result. No vulnerability is inferred from the scanner label. Existing behavior and guard preconditions were inspected individually.",
+      "guardsAndCallerAssumptions": [
+        "See the exact baseline location and corresponding source diff; existing semantic/type/lint/browser/contract gates remain enabled."
+      ]
     },
     {
       "id": "F061",
@@ -3425,11 +4128,18 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Call the internally supplied poll callback directly; every internal caller supplies the callback and no public API contract changes.",
+      "regressionEvidence": [
+        {
+          "path": "docs/security/remediation-2026-10-19/README.md",
+          "command": "npm run compile; npm run lint:ci; npm run webapp:typecheck; npx tsc --noEmit -p agent-gateway/tsconfig.json; npm run build:orchestrator; npm --prefix apps/enterprise-portal run typecheck; complete existing contracts/webapp/Pages CI"
+        }
+      ],
+      "exposure": "Quality/maintainability result. No vulnerability is inferred from the scanner label. Existing behavior and guard preconditions were inspected individually.",
+      "guardsAndCallerAssumptions": [
+        "See the exact baseline location and corresponding source diff; existing semantic/type/lint/browser/contract gates remain enabled."
+      ]
     },
     {
       "id": "F062",
@@ -3456,11 +4166,18 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Remove the unreachable undefined branch from private normaliseAgentType: its sole caller already filters undefined/null values before calling it.",
+      "regressionEvidence": [
+        {
+          "path": "docs/security/remediation-2026-10-19/README.md",
+          "command": "npm run compile; npm run lint:ci; npm run webapp:typecheck; npx tsc --noEmit -p agent-gateway/tsconfig.json; npm run build:orchestrator; npm --prefix apps/enterprise-portal run typecheck; complete existing contracts/webapp/Pages CI"
+        }
+      ],
+      "exposure": "Quality/maintainability result. No vulnerability is inferred from the scanner label. Existing behavior and guard preconditions were inspected individually.",
+      "guardsAndCallerAssumptions": [
+        "See the exact baseline location and corresponding source diff; existing semantic/type/lint/browser/contract gates remain enabled."
+      ]
     },
     {
       "id": "F063",
@@ -3487,11 +4204,18 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Same private-call invariant as F062, separately retaining the second null-source result. Invalid values continue to fail normalisation.",
+      "regressionEvidence": [
+        {
+          "path": "docs/security/remediation-2026-10-19/README.md",
+          "command": "npm run compile; npm run lint:ci; npm run webapp:typecheck; npx tsc --noEmit -p agent-gateway/tsconfig.json; npm run build:orchestrator; npm --prefix apps/enterprise-portal run typecheck; complete existing contracts/webapp/Pages CI"
+        }
+      ],
+      "exposure": "Quality/maintainability result. No vulnerability is inferred from the scanner label. Existing behavior and guard preconditions were inspected individually.",
+      "guardsAndCallerAssumptions": [
+        "See the exact baseline location and corresponding source diff; existing semantic/type/lint/browser/contract gates remain enabled."
+      ]
     },
     {
       "id": "F064",
@@ -3518,11 +4242,18 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Remove a redundant missing-value return in the private normaliser; the sole caller skips missing expected config values before invoking it.",
+      "regressionEvidence": [
+        {
+          "path": "docs/security/remediation-2026-10-19/README.md",
+          "command": "npm run compile; npm run lint:ci; npm run webapp:typecheck; npx tsc --noEmit -p agent-gateway/tsconfig.json; npm run build:orchestrator; npm --prefix apps/enterprise-portal run typecheck; complete existing contracts/webapp/Pages CI"
+        }
+      ],
+      "exposure": "Quality/maintainability result. No vulnerability is inferred from the scanner label. Existing behavior and guard preconditions were inspected individually.",
+      "guardsAndCallerAssumptions": [
+        "See the exact baseline location and corresponding source diff; existing semantic/type/lint/browser/contract gates remain enabled."
+      ]
     },
     {
       "id": "F065",
@@ -3549,11 +4280,18 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Use the final typeof result for undefined instead of a redundant dedicated return; the result remains the same string.",
+      "regressionEvidence": [
+        {
+          "path": "docs/security/remediation-2026-10-19/README.md",
+          "command": "npm run compile; npm run lint:ci; npm run webapp:typecheck; npx tsc --noEmit -p agent-gateway/tsconfig.json; npm run build:orchestrator; npm --prefix apps/enterprise-portal run typecheck; complete existing contracts/webapp/Pages CI"
+        }
+      ],
+      "exposure": "Quality/maintainability result. No vulnerability is inferred from the scanner label. Existing behavior and guard preconditions were inspected individually.",
+      "guardsAndCallerAssumptions": [
+        "See the exact baseline location and corresponding source diff; existing semantic/type/lint/browser/contract gates remain enabled."
+      ]
     },
     {
       "id": "F066",
@@ -3580,11 +4318,18 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Remove the unused TOKEN_DECIMALS import; no token precision, amount calculation or API behavior changes.",
+      "regressionEvidence": [
+        {
+          "path": "docs/security/remediation-2026-10-19/README.md",
+          "command": "npm run compile; npm run lint:ci; npm run webapp:typecheck; npx tsc --noEmit -p agent-gateway/tsconfig.json; npm run build:orchestrator; npm --prefix apps/enterprise-portal run typecheck; complete existing contracts/webapp/Pages CI"
+        }
+      ],
+      "exposure": "Quality/maintainability result. No vulnerability is inferred from the scanner label. Existing behavior and guard preconditions were inspected individually.",
+      "guardsAndCallerAssumptions": [
+        "See the exact baseline location and corresponding source diff; existing semantic/type/lint/browser/contract gates remain enabled."
+      ]
     },
     {
       "id": "F067",
@@ -3611,11 +4356,18 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Remove the unused ROLE_AGENT/ROLE_PLATFORM/ROLE_VALIDATOR imports; role parsing and authorisation helpers are unchanged.",
+      "regressionEvidence": [
+        {
+          "path": "docs/security/remediation-2026-10-19/README.md",
+          "command": "npm run compile; npm run lint:ci; npm run webapp:typecheck; npx tsc --noEmit -p agent-gateway/tsconfig.json; npm run build:orchestrator; npm --prefix apps/enterprise-portal run typecheck; complete existing contracts/webapp/Pages CI"
+        }
+      ],
+      "exposure": "Quality/maintainability result. No vulnerability is inferred from the scanner label. Existing behavior and guard preconditions were inspected individually.",
+      "guardsAndCallerAssumptions": [
+        "See the exact baseline location and corresponding source diff; existing semantic/type/lint/browser/contract gates remain enabled."
+      ]
     },
     {
       "id": "F068",
@@ -3642,11 +4394,18 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Remove the unused private network-name helper; active UI network/status behavior is unchanged.",
+      "regressionEvidence": [
+        {
+          "path": "docs/security/remediation-2026-10-19/README.md",
+          "command": "npm run compile; npm run lint:ci; npm run webapp:typecheck; npx tsc --noEmit -p agent-gateway/tsconfig.json; npm run build:orchestrator; npm --prefix apps/enterprise-portal run typecheck; complete existing contracts/webapp/Pages CI"
+        }
+      ],
+      "exposure": "Quality/maintainability result. No vulnerability is inferred from the scanner label. Existing behavior and guard preconditions were inspected individually.",
+      "guardsAndCallerAssumptions": [
+        "See the exact baseline location and corresponding source diff; existing semantic/type/lint/browser/contract gates remain enabled."
+      ]
     },
     {
       "id": "F069",
@@ -3673,11 +4432,18 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Remove the unused summarizeAAMode import; wallet and account-abstraction routing are unchanged.",
+      "regressionEvidence": [
+        {
+          "path": "docs/security/remediation-2026-10-19/README.md",
+          "command": "npm run compile; npm run lint:ci; npm run webapp:typecheck; npx tsc --noEmit -p agent-gateway/tsconfig.json; npm run build:orchestrator; npm --prefix apps/enterprise-portal run typecheck; complete existing contracts/webapp/Pages CI"
+        }
+      ],
+      "exposure": "Quality/maintainability result. No vulnerability is inferred from the scanner label. Existing behavior and guard preconditions were inspected individually.",
+      "guardsAndCallerAssumptions": [
+        "See the exact baseline location and corresponding source diff; existing semantic/type/lint/browser/contract gates remain enabled."
+      ]
     },
     {
       "id": "F070",
@@ -3704,11 +4470,18 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Remove an unused object copy after artifact publication; prepareJobArtifacts still executes and its actual URIs/hash are retained.",
+      "regressionEvidence": [
+        {
+          "path": "docs/security/remediation-2026-10-19/README.md",
+          "command": "npm run compile; npm run lint:ci; npm run webapp:typecheck; npx tsc --noEmit -p agent-gateway/tsconfig.json; npm run build:orchestrator; npm --prefix apps/enterprise-portal run typecheck; complete existing contracts/webapp/Pages CI"
+        }
+      ],
+      "exposure": "Quality/maintainability result. No vulnerability is inferred from the scanner label. Existing behavior and guard preconditions were inspected individually.",
+      "guardsAndCallerAssumptions": [
+        "See the exact baseline location and corresponding source diff; existing semantic/type/lint/browser/contract gates remain enabled."
+      ]
     },
     {
       "id": "F071",
@@ -3735,11 +4508,18 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Remove the unused private toSerializableId helper; active job-ID validators remain intact.",
+      "regressionEvidence": [
+        {
+          "path": "docs/security/remediation-2026-10-19/README.md",
+          "command": "npm run compile; npm run lint:ci; npm run webapp:typecheck; npx tsc --noEmit -p agent-gateway/tsconfig.json; npm run build:orchestrator; npm --prefix apps/enterprise-portal run typecheck; complete existing contracts/webapp/Pages CI"
+        }
+      ],
+      "exposure": "Quality/maintainability result. No vulnerability is inferred from the scanner label. Existing behavior and guard preconditions were inspected individually.",
+      "guardsAndCallerAssumptions": [
+        "See the exact baseline location and corresponding source diff; existing semantic/type/lint/browser/contract gates remain enabled."
+      ]
     },
     {
       "id": "F072",
@@ -3766,11 +4546,18 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Remove unused computePlanHash/stableStringify helpers and their now-unused createHash import. The active PlanApprovalStore hash binding is unchanged.",
+      "regressionEvidence": [
+        {
+          "path": "docs/security/remediation-2026-10-19/README.md",
+          "command": "npm run compile; npm run lint:ci; npm run webapp:typecheck; npx tsc --noEmit -p agent-gateway/tsconfig.json; npm run build:orchestrator; npm --prefix apps/enterprise-portal run typecheck; complete existing contracts/webapp/Pages CI"
+        }
+      ],
+      "exposure": "Quality/maintainability result. No vulnerability is inferred from the scanner label. Existing behavior and guard preconditions were inspected individually.",
+      "guardsAndCallerAssumptions": [
+        "See the exact baseline location and corresponding source diff; existing semantic/type/lint/browser/contract gates remain enabled."
+      ]
     },
     {
       "id": "F073",
@@ -3797,11 +4584,18 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Remove the unused private normalizeBigNumberish helper; active governance parameter validators remain intact.",
+      "regressionEvidence": [
+        {
+          "path": "docs/security/remediation-2026-10-19/README.md",
+          "command": "npm run compile; npm run lint:ci; npm run webapp:typecheck; npx tsc --noEmit -p agent-gateway/tsconfig.json; npm run build:orchestrator; npm --prefix apps/enterprise-portal run typecheck; complete existing contracts/webapp/Pages CI"
+        }
+      ],
+      "exposure": "Quality/maintainability result. No vulnerability is inferred from the scanner label. Existing behavior and guard preconditions were inspected individually.",
+      "guardsAndCallerAssumptions": [
+        "See the exact baseline location and corresponding source diff; existing semantic/type/lint/browser/contract gates remain enabled."
+      ]
     },
     {
       "id": "F074",
@@ -3828,11 +4622,18 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Remove only the unused local binding while preserving SystemPause.attach evaluation and all behavior.",
+      "regressionEvidence": [
+        {
+          "path": "docs/security/remediation-2026-10-19/README.md",
+          "command": "npm run compile; npm run lint:ci; npm run webapp:typecheck; npx tsc --noEmit -p agent-gateway/tsconfig.json; npm run build:orchestrator; npm --prefix apps/enterprise-portal run typecheck; complete existing contracts/webapp/Pages CI"
+        }
+      ],
+      "exposure": "Quality/maintainability result. No vulnerability is inferred from the scanner label. Existing behavior and guard preconditions were inspected individually.",
+      "guardsAndCallerAssumptions": [
+        "See the exact baseline location and corresponding source diff; existing semantic/type/lint/browser/contract gates remain enabled."
+      ]
     },
     {
       "id": "F075",
@@ -3859,11 +4660,18 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Remove the unused ADDRESS_PATTERN constant; active phase-6 address validation remains unchanged.",
+      "regressionEvidence": [
+        {
+          "path": "docs/security/remediation-2026-10-19/README.md",
+          "command": "npm run compile; npm run lint:ci; npm run webapp:typecheck; npx tsc --noEmit -p agent-gateway/tsconfig.json; npm run build:orchestrator; npm --prefix apps/enterprise-portal run typecheck; complete existing contracts/webapp/Pages CI"
+        }
+      ],
+      "exposure": "Quality/maintainability result. No vulnerability is inferred from the scanner label. Existing behavior and guard preconditions were inspected individually.",
+      "guardsAndCallerAssumptions": [
+        "See the exact baseline location and corresponding source diff; existing semantic/type/lint/browser/contract gates remain enabled."
+      ]
     },
     {
       "id": "F076",
@@ -3890,11 +4698,18 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Remove unused moderator CLI locals; they were not passed to any deployment call. No constructor, economics, deployment source pin or argument changes.",
+      "regressionEvidence": [
+        {
+          "path": "docs/security/remediation-2026-10-19/README.md",
+          "command": "npm run compile; npm run lint:ci; npm run webapp:typecheck; npx tsc --noEmit -p agent-gateway/tsconfig.json; npm run build:orchestrator; npm --prefix apps/enterprise-portal run typecheck; complete existing contracts/webapp/Pages CI"
+        }
+      ],
+      "exposure": "Quality/maintainability result. No vulnerability is inferred from the scanner label. Existing behavior and guard preconditions were inspected individually.",
+      "guardsAndCallerAssumptions": [
+        "See the exact baseline location and corresponding source diff; existing semantic/type/lint/browser/contract gates remain enabled."
+      ]
     },
     {
       "id": "F077",
@@ -3921,11 +4736,18 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Remove unused MAX_UINT96; active parameter bounds and deploy defaults are unchanged.",
+      "regressionEvidence": [
+        {
+          "path": "docs/security/remediation-2026-10-19/README.md",
+          "command": "npm run compile; npm run lint:ci; npm run webapp:typecheck; npx tsc --noEmit -p agent-gateway/tsconfig.json; npm run build:orchestrator; npm --prefix apps/enterprise-portal run typecheck; complete existing contracts/webapp/Pages CI"
+        }
+      ],
+      "exposure": "Quality/maintainability result. No vulnerability is inferred from the scanner label. Existing behavior and guard preconditions were inspected individually.",
+      "guardsAndCallerAssumptions": [
+        "See the exact baseline location and corresponding source diff; existing semantic/type/lint/browser/contract gates remain enabled."
+      ]
     },
     {
       "id": "F078",
@@ -3952,11 +4774,18 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Remove only the unused jobId binding; retain ensureString(record.jobId, ...) validation and its failure behavior.",
+      "regressionEvidence": [
+        {
+          "path": "docs/security/remediation-2026-10-19/README.md",
+          "command": "npm run compile; npm run lint:ci; npm run webapp:typecheck; npx tsc --noEmit -p agent-gateway/tsconfig.json; npm run build:orchestrator; npm --prefix apps/enterprise-portal run typecheck; complete existing contracts/webapp/Pages CI"
+        }
+      ],
+      "exposure": "Quality/maintainability result. No vulnerability is inferred from the scanner label. Existing behavior and guard preconditions were inspected individually.",
+      "guardsAndCallerAssumptions": [
+        "See the exact baseline location and corresponding source diff; existing semantic/type/lint/browser/contract gates remain enabled."
+      ]
     },
     {
       "id": "F079",
@@ -3983,11 +4812,18 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Remove the unused private compareBoolean formatter; live report generation is unchanged.",
+      "regressionEvidence": [
+        {
+          "path": "docs/security/remediation-2026-10-19/README.md",
+          "command": "npm run compile; npm run lint:ci; npm run webapp:typecheck; npx tsc --noEmit -p agent-gateway/tsconfig.json; npm run build:orchestrator; npm --prefix apps/enterprise-portal run typecheck; complete existing contracts/webapp/Pages CI"
+        }
+      ],
+      "exposure": "Quality/maintainability result. No vulnerability is inferred from the scanner label. Existing behavior and guard preconditions were inspected individually.",
+      "guardsAndCallerAssumptions": [
+        "See the exact baseline location and corresponding source diff; existing semantic/type/lint/browser/contract gates remain enabled."
+      ]
     },
     {
       "id": "F080",
@@ -4014,11 +4850,18 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Remove an unused lowercased cultureAddress local; actual log filters and ingestion behavior are unchanged.",
+      "regressionEvidence": [
+        {
+          "path": "docs/security/remediation-2026-10-19/README.md",
+          "command": "npm run compile; npm run lint:ci; npm run webapp:typecheck; npx tsc --noEmit -p agent-gateway/tsconfig.json; npm run build:orchestrator; npm --prefix apps/enterprise-portal run typecheck; complete existing contracts/webapp/Pages CI"
+        }
+      ],
+      "exposure": "Quality/maintainability result. No vulnerability is inferred from the scanner label. Existing behavior and guard preconditions were inspected individually.",
+      "guardsAndCallerAssumptions": [
+        "See the exact baseline location and corresponding source diff; existing semantic/type/lint/browser/contract gates remain enabled."
+      ]
     },
     {
       "id": "F081",
@@ -4045,11 +4888,18 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Declare allowance without a dead initializer; the awaited read always assigns it or the catch rethrows before use.",
+      "regressionEvidence": [
+        {
+          "path": "docs/security/remediation-2026-10-19/README.md",
+          "command": "npm run compile; npm run lint:ci; npm run webapp:typecheck; npx tsc --noEmit -p agent-gateway/tsconfig.json; npm run build:orchestrator; npm --prefix apps/enterprise-portal run typecheck; complete existing contracts/webapp/Pages CI"
+        }
+      ],
+      "exposure": "Quality/maintainability result. No vulnerability is inferred from the scanner label. Existing behavior and guard preconditions were inspected individually.",
+      "guardsAndCallerAssumptions": [
+        "See the exact baseline location and corresponding source diff; existing semantic/type/lint/browser/contract gates remain enabled."
+      ]
     },
     {
       "id": "F082",
@@ -4076,11 +4926,18 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Remove a dead complexity initializer; every branch still assigns exactly the same complexity class.",
+      "regressionEvidence": [
+        {
+          "path": "docs/security/remediation-2026-10-19/README.md",
+          "command": "npm run compile; npm run lint:ci; npm run webapp:typecheck; npx tsc --noEmit -p agent-gateway/tsconfig.json; npm run build:orchestrator; npm --prefix apps/enterprise-portal run typecheck; complete existing contracts/webapp/Pages CI"
+        }
+      ],
+      "exposure": "Quality/maintainability result. No vulnerability is inferred from the scanner label. Existing behavior and guard preconditions were inspected individually.",
+      "guardsAndCallerAssumptions": [
+        "See the exact baseline location and corresponding source diff; existing semantic/type/lint/browser/contract gates remain enabled."
+      ]
     },
     {
       "id": "F083",
@@ -4107,11 +4964,18 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Same complete-branch invariant as F082 in the orchestrator metrics implementation.",
+      "regressionEvidence": [
+        {
+          "path": "docs/security/remediation-2026-10-19/README.md",
+          "command": "npm run compile; npm run lint:ci; npm run webapp:typecheck; npx tsc --noEmit -p agent-gateway/tsconfig.json; npm run build:orchestrator; npm --prefix apps/enterprise-portal run typecheck; complete existing contracts/webapp/Pages CI"
+        }
+      ],
+      "exposure": "Quality/maintainability result. No vulnerability is inferred from the scanner label. Existing behavior and guard preconditions were inspected individually.",
+      "guardsAndCallerAssumptions": [
+        "See the exact baseline location and corresponding source diff; existing semantic/type/lint/browser/contract gates remain enabled."
+      ]
     },
     {
       "id": "F084",
@@ -4138,11 +5002,18 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Declare bytes without a discarded empty-array allocation; download success assigns it and the failure branch returns before use.",
+      "regressionEvidence": [
+        {
+          "path": "docs/security/remediation-2026-10-19/README.md",
+          "command": "npm run compile; npm run lint:ci; npm run webapp:typecheck; npx tsc --noEmit -p agent-gateway/tsconfig.json; npm run build:orchestrator; npm --prefix apps/enterprise-portal run typecheck; complete existing contracts/webapp/Pages CI"
+        }
+      ],
+      "exposure": "Quality/maintainability result. No vulnerability is inferred from the scanner label. Existing behavior and guard preconditions were inspected individually.",
+      "guardsAndCallerAssumptions": [
+        "See the exact baseline location and corresponding source diff; existing semantic/type/lint/browser/contract gates remain enabled."
+      ]
     },
     {
       "id": "F085",
@@ -4169,11 +5040,18 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Limit httpStatus to the governance-preview catch where it is used. Other routes retain mutable status variables used by success/finally metrics.",
+      "regressionEvidence": [
+        {
+          "path": "docs/security/remediation-2026-10-19/README.md",
+          "command": "npm run compile; npm run lint:ci; npm run webapp:typecheck; npx tsc --noEmit -p agent-gateway/tsconfig.json; npm run build:orchestrator; npm --prefix apps/enterprise-portal run typecheck; complete existing contracts/webapp/Pages CI"
+        }
+      ],
+      "exposure": "Quality/maintainability result. No vulnerability is inferred from the scanner label. Existing behavior and guard preconditions were inspected individually.",
+      "guardsAndCallerAssumptions": [
+        "See the exact baseline location and corresponding source diff; existing semantic/type/lint/browser/contract gates remain enabled."
+      ]
     },
     {
       "id": "F086",
@@ -4200,11 +5078,18 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Remove an unused desiredTokenAddress initializer; active token metadata and action construction are unchanged.",
+      "regressionEvidence": [
+        {
+          "path": "docs/security/remediation-2026-10-19/README.md",
+          "command": "npm run compile; npm run lint:ci; npm run webapp:typecheck; npx tsc --noEmit -p agent-gateway/tsconfig.json; npm run build:orchestrator; npm --prefix apps/enterprise-portal run typecheck; complete existing contracts/webapp/Pages CI"
+        }
+      ],
+      "exposure": "Quality/maintainability result. No vulnerability is inferred from the scanner label. Existing behavior and guard preconditions were inspected individually.",
+      "guardsAndCallerAssumptions": [
+        "See the exact baseline location and corresponding source diff; existing semantic/type/lint/browser/contract gates remain enabled."
+      ]
     },
     {
       "id": "F087",
@@ -4231,11 +5116,18 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Remove the corresponding unused assignment; the desired token still controls the exact existing metadata lookup/action.",
+      "regressionEvidence": [
+        {
+          "path": "docs/security/remediation-2026-10-19/README.md",
+          "command": "npm run compile; npm run lint:ci; npm run webapp:typecheck; npx tsc --noEmit -p agent-gateway/tsconfig.json; npm run build:orchestrator; npm --prefix apps/enterprise-portal run typecheck; complete existing contracts/webapp/Pages CI"
+        }
+      ],
+      "exposure": "Quality/maintainability result. No vulnerability is inferred from the scanner label. Existing behavior and guard preconditions were inspected individually.",
+      "guardsAndCallerAssumptions": [
+        "See the exact baseline location and corresponding source diff; existing semantic/type/lint/browser/contract gates remain enabled."
+      ]
     },
     {
       "id": "F088",
@@ -4262,11 +5154,18 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Remove an unused signer binding and assignment; retain the same selected signerAddress read and existing read-only fallback.",
+      "regressionEvidence": [
+        {
+          "path": "docs/security/remediation-2026-10-19/README.md",
+          "command": "npm run compile; npm run lint:ci; npm run webapp:typecheck; npx tsc --noEmit -p agent-gateway/tsconfig.json; npm run build:orchestrator; npm --prefix apps/enterprise-portal run typecheck; complete existing contracts/webapp/Pages CI"
+        }
+      ],
+      "exposure": "Quality/maintainability result. No vulnerability is inferred from the scanner label. Existing behavior and guard preconditions were inspected individually.",
+      "guardsAndCallerAssumptions": [
+        "See the exact baseline location and corresponding source diff; existing semantic/type/lint/browser/contract gates remain enabled."
+      ]
     },
     {
       "id": "F089",
@@ -4293,11 +5192,18 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Remove an unreachable guard after wallet selection either assigns the configured/automation wallet or already throws. Wallet selection/routing is unchanged.",
+      "regressionEvidence": [
+        {
+          "path": "docs/security/remediation-2026-10-19/README.md",
+          "command": "npm run compile; npm run lint:ci; npm run webapp:typecheck; npx tsc --noEmit -p agent-gateway/tsconfig.json; npm run build:orchestrator; npm --prefix apps/enterprise-portal run typecheck; complete existing contracts/webapp/Pages CI"
+        }
+      ],
+      "exposure": "Quality/maintainability result. No vulnerability is inferred from the scanner label. Existing behavior and guard preconditions were inspected individually.",
+      "guardsAndCallerAssumptions": [
+        "See the exact baseline location and corresponding source diff; existing semantic/type/lint/browser/contract gates remain enabled."
+      ]
     },
     {
       "id": "F090",
@@ -4324,11 +5230,18 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Remove repeated truthiness after the helper already returns for falsy input; retain the object/toString checks.",
+      "regressionEvidence": [
+        {
+          "path": "docs/security/remediation-2026-10-19/README.md",
+          "command": "npm run compile; npm run lint:ci; npm run webapp:typecheck; npx tsc --noEmit -p agent-gateway/tsconfig.json; npm run build:orchestrator; npm --prefix apps/enterprise-portal run typecheck; complete existing contracts/webapp/Pages CI"
+        }
+      ],
+      "exposure": "Quality/maintainability result. No vulnerability is inferred from the scanner label. Existing behavior and guard preconditions were inspected individually.",
+      "guardsAndCallerAssumptions": [
+        "See the exact baseline location and corresponding source diff; existing semantic/type/lint/browser/contract gates remain enabled."
+      ]
     },
     {
       "id": "F091",
@@ -4355,11 +5268,18 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Remove repeated truthiness after null/undefined have already returned in error-context collection; preserve primitive handling.",
+      "regressionEvidence": [
+        {
+          "path": "docs/security/remediation-2026-10-19/README.md",
+          "command": "npm run compile; npm run lint:ci; npm run webapp:typecheck; npx tsc --noEmit -p agent-gateway/tsconfig.json; npm run build:orchestrator; npm --prefix apps/enterprise-portal run typecheck; complete existing contracts/webapp/Pages CI"
+        }
+      ],
+      "exposure": "Quality/maintainability result. No vulnerability is inferred from the scanner label. Existing behavior and guard preconditions were inspected individually.",
+      "guardsAndCallerAssumptions": [
+        "See the exact baseline location and corresponding source diff; existing semantic/type/lint/browser/contract gates remain enabled."
+      ]
     },
     {
       "id": "F092",
@@ -4386,11 +5306,18 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Same early-return invariant as F091 in the legacy v2 error-context collector.",
+      "regressionEvidence": [
+        {
+          "path": "docs/security/remediation-2026-10-19/README.md",
+          "command": "npm run compile; npm run lint:ci; npm run webapp:typecheck; npx tsc --noEmit -p agent-gateway/tsconfig.json; npm run build:orchestrator; npm --prefix apps/enterprise-portal run typecheck; complete existing contracts/webapp/Pages CI"
+        }
+      ],
+      "exposure": "Quality/maintainability result. No vulnerability is inferred from the scanner label. Existing behavior and guard preconditions were inspected individually.",
+      "guardsAndCallerAssumptions": [
+        "See the exact baseline location and corresponding source diff; existing semantic/type/lint/browser/contract gates remain enabled."
+      ]
     },
     {
       "id": "F093",
@@ -4417,11 +5344,18 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Remove the impossible skipVerification branch in catch; skipVerification already returns before entering try. Verification errors still propagate.",
+      "regressionEvidence": [
+        {
+          "path": "docs/security/remediation-2026-10-19/README.md",
+          "command": "npm run compile; npm run lint:ci; npm run webapp:typecheck; npx tsc --noEmit -p agent-gateway/tsconfig.json; npm run build:orchestrator; npm --prefix apps/enterprise-portal run typecheck; complete existing contracts/webapp/Pages CI"
+        }
+      ],
+      "exposure": "Quality/maintainability result. No vulnerability is inferred from the scanner label. Existing behavior and guard preconditions were inspected individually.",
+      "guardsAndCallerAssumptions": [
+        "See the exact baseline location and corresponding source diff; existing semantic/type/lint/browser/contract gates remain enabled."
+      ]
     },
     {
       "id": "F094",
@@ -4448,11 +5382,18 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Remove a redundant private-helper missing-input branch; the sole caller already rejects missing engine/pin values. Existing toolchain preflight remains strict.",
+      "regressionEvidence": [
+        {
+          "path": "docs/security/remediation-2026-10-19/README.md",
+          "command": "npm run compile; npm run lint:ci; npm run webapp:typecheck; npx tsc --noEmit -p agent-gateway/tsconfig.json; npm run build:orchestrator; npm --prefix apps/enterprise-portal run typecheck; complete existing contracts/webapp/Pages CI"
+        }
+      ],
+      "exposure": "Quality/maintainability result. No vulnerability is inferred from the scanner label. Existing behavior and guard preconditions were inspected individually.",
+      "guardsAndCallerAssumptions": [
+        "See the exact baseline location and corresponding source diff; existing semantic/type/lint/browser/contract gates remain enabled."
+      ]
     },
     {
       "id": "F095",
@@ -4479,11 +5420,18 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Use current/expected controller values directly under the existing truthy guard; the rendered mismatch text is unchanged.",
+      "regressionEvidence": [
+        {
+          "path": "docs/security/remediation-2026-10-19/README.md",
+          "command": "npm run compile; npm run lint:ci; npm run webapp:typecheck; npx tsc --noEmit -p agent-gateway/tsconfig.json; npm run build:orchestrator; npm --prefix apps/enterprise-portal run typecheck; complete existing contracts/webapp/Pages CI"
+        }
+      ],
+      "exposure": "Quality/maintainability result. No vulnerability is inferred from the scanner label. Existing behavior and guard preconditions were inspected individually.",
+      "guardsAndCallerAssumptions": [
+        "See the exact baseline location and corresponding source diff; existing semantic/type/lint/browser/contract gates remain enabled."
+      ]
     },
     {
       "id": "F096",
@@ -4510,17 +5458,583 @@
         "completeThreadFlows": "See the complete codeFlows of rawResultOrdinal in rawEvidence; none are omitted from the preserved SARIF."
       },
       "owner": "Codex remediation / Jobs maintainer review",
-      "disposition": "Unresolved",
-      "fixOrJustification": "Candidate implementation under qualification; no risk acceptance or closure is implied.",
-      "regressionEvidence": [],
-      "blocker": "Exact-final-commit full scan, test qualification and independent review pending.",
-      "nextAction": "Finish individual assessment and validate the candidate against the full original and fresh main baselines."
+      "disposition": "Fixed",
+      "fixOrJustification": "Remove repeated truthiness after sanitizeValue already handles null/undefined; preserve recursive JSON sanitisation and hashing.",
+      "regressionEvidence": [
+        {
+          "path": "docs/security/remediation-2026-10-19/README.md",
+          "command": "npm run compile; npm run lint:ci; npm run webapp:typecheck; npx tsc --noEmit -p agent-gateway/tsconfig.json; npm run build:orchestrator; npm --prefix apps/enterprise-portal run typecheck; complete existing contracts/webapp/Pages CI"
+        }
+      ],
+      "exposure": "Quality/maintainability result. No vulnerability is inferred from the scanner label. Existing behavior and guard preconditions were inspected individually.",
+      "guardsAndCallerAssumptions": [
+        "See the exact baseline location and corresponding source diff; existing semantic/type/lint/browser/contract gates remain enabled."
+      ]
     }
   ],
-  "additionalFindings": [],
+  "additionalFindings": [
+    {
+      "id": "N001",
+      "disposition": "Fixed",
+      "severity": "high",
+      "reportedBy": "Adjacent filesystem-boundary review while assessing F056",
+      "location": "shared/worldModel.ts:persistWorldModelSnapshot",
+      "exposure": "A job-derived snapshot identifier was interpolated into a filename without its own boundary validation. No claim of unauthorised remote exploitation is made.",
+      "owner": "Codex remediation / Jobs maintainer review",
+      "fixOrJustification": "Use the shared contained-file boundary for snapshot JSON writes. Reject traversal and unsafe/nonregular filesystem assumptions; preserve valid snapshots.",
+      "regressionEvidence": [
+        {
+          "path": "test/security/inherited-codeql.test.cjs",
+          "command": "node --test test/security/inherited-codeql.test.cjs"
+        }
+      ]
+    },
+    {
+      "id": "N002",
+      "disposition": "Fixed",
+      "severity": "medium",
+      "reportedBy": "Independent PR review 4313853008 at commit 642d857938d10a4652954f9a5dea458444009804",
+      "location": "agent-gateway/protos/agent_gateway.proto:DeliverableContributor and grpc.handleContributorParsing",
+      "exposure": "Initial remediation required signed contributor payloads but the gRPC request schema could not carry them.",
+      "owner": "Codex remediation / Jobs maintainer review",
+      "fixOrJustification": "Add optional signed_payload field 8 and map it to the verifier. Real protobuf serialization/deserialization tests cover valid, empty, altered and omitted signed messages without invoking an RPC wallet.",
+      "regressionEvidence": [
+        {
+          "path": "test/security/inherited-codeql.test.cjs",
+          "command": "node --test test/security/inherited-codeql.test.cjs"
+        }
+      ]
+    }
+  ],
   "riskAcceptance": [],
   "qualification": {
-    "status": "in progress",
-    "productionApproved": false
+    "status": "Individual source dispositions recorded; final commit/tree, full scan and independent review are externally bound in the PR qualification record.",
+    "productionApproved": false,
+    "independentReviewRequired": true,
+    "noRiskAcceptance": true
+  },
+  "dispositionCounts": {
+    "high": {
+      "Fixed": 28,
+      "Demonstrably false positive": 5
+    },
+    "medium": {
+      "Fixed": 11,
+      "Demonstrably false positive": 11,
+      "Already fixed on selected baseline": 1
+    },
+    "quality": {
+      "Fixed": 40
+    }
+  },
+  "scanReconciliation": {
+    "preliminaryCandidate": {
+      "commit": "642d857938d10a4652954f9a5dea458444009804",
+      "tree": "05cced539d314dc2698dc583d85641ca89faf394",
+      "event": "push",
+      "run": 39252164723,
+      "artifact": 12184989956,
+      "sha256": "12982450abea65e611b3c3e0cea0f99590e1cf8a94e7b27719fbf0191611bfc3",
+      "rawEvidence": "baseline/candidate-642d857-codeql.zip",
+      "results": 24,
+      "high": 11,
+      "medium": 13,
+      "quality": 0,
+      "notFinalQualification": true,
+      "findings": [
+        {
+          "id": "C001",
+          "rawResultOrdinal": 1,
+          "rule": "js/xss-through-dom",
+          "location": {
+            "path": "apps/console/src/components/GasPanel.tsx",
+            "region": {
+              "startLine": 366,
+              "startColumn": 22,
+              "endColumn": 38
+            }
+          },
+          "originalFindings": [
+            "F007"
+          ],
+          "classification": "Retained location with original or corrected guards",
+          "currentResultDisposition": "Demonstrably false positive",
+          "justification": "See each linked original finding for the exact guards, dataflow and regression evidence. A fixed original defect can retain a post-fix scanner result through an unmodeled validator.",
+          "additionalFindings": []
+        },
+        {
+          "id": "C002",
+          "rawResultOrdinal": 2,
+          "rule": "js/xss-through-dom",
+          "location": {
+            "path": "apps/enterprise-portal/src/components/DeliverableVerificationPanel.tsx",
+            "region": {
+              "startLine": 218,
+              "startColumn": 45,
+              "endColumn": 68
+            }
+          },
+          "originalFindings": [
+            "F008"
+          ],
+          "classification": "Retained location with original or corrected guards",
+          "currentResultDisposition": "Demonstrably false positive",
+          "justification": "See each linked original finding for the exact guards, dataflow and regression evidence. A fixed original defect can retain a post-fix scanner result through an unmodeled validator.",
+          "additionalFindings": []
+        },
+        {
+          "id": "C003",
+          "rawResultOrdinal": 3,
+          "rule": "js/xss-through-dom",
+          "location": {
+            "path": "apps/enterprise-portal/src/components/SlaViewer.tsx",
+            "region": {
+              "startLine": 81,
+              "startColumn": 26,
+              "endColumn": 65
+            }
+          },
+          "originalFindings": [
+            "F009"
+          ],
+          "classification": "Retained location with original or corrected guards",
+          "currentResultDisposition": "Demonstrably false positive",
+          "justification": "See each linked original finding for the exact guards, dataflow and regression evidence. A fixed original defect can retain a post-fix scanner result through an unmodeled validator.",
+          "additionalFindings": []
+        },
+        {
+          "id": "C004",
+          "rawResultOrdinal": 4,
+          "rule": "js/xss-through-exception",
+          "location": {
+            "path": "apps/onebox-static/v2/app.js",
+            "region": {
+              "startLine": 522,
+              "startColumn": 25,
+              "endColumn": 32
+            }
+          },
+          "originalFindings": [
+            "F012"
+          ],
+          "classification": "Retained location with original or corrected guards",
+          "currentResultDisposition": "Demonstrably false positive",
+          "justification": "See each linked original finding for the exact guards, dataflow and regression evidence. A fixed original defect can retain a post-fix scanner result through an unmodeled validator.",
+          "additionalFindings": []
+        },
+        {
+          "id": "C005",
+          "rawResultOrdinal": 5,
+          "rule": "js/path-injection",
+          "location": {
+            "path": "shared/containedFiles.ts",
+            "region": {
+              "startLine": 61,
+              "startColumn": 43,
+              "endColumn": 49
+            }
+          },
+          "originalFindings": [
+            "F015",
+            "F054"
+          ],
+          "classification": "Moved/shared validated sink",
+          "currentResultDisposition": "Demonstrably false positive",
+          "justification": "Contained private descriptor/atomic-link/rename sink with validated filename and ownership assumptions; tests cover traversal, symlink/FIFO/hardlink and pathname replacement.",
+          "additionalFindings": []
+        },
+        {
+          "id": "C006",
+          "rawResultOrdinal": 6,
+          "rule": "js/path-injection",
+          "location": {
+            "path": "shared/containedFiles.ts",
+            "region": {
+              "startLine": 62,
+              "startColumn": 35,
+              "endColumn": 41
+            }
+          },
+          "originalFindings": [
+            "F014",
+            "F051"
+          ],
+          "classification": "Moved/shared validated sink",
+          "currentResultDisposition": "Demonstrably false positive",
+          "justification": "Contained private descriptor/atomic-link/rename sink with validated filename and ownership assumptions; tests cover traversal, symlink/FIFO/hardlink and pathname replacement.",
+          "additionalFindings": [
+            "N001"
+          ]
+        },
+        {
+          "id": "C007",
+          "rawResultOrdinal": 7,
+          "rule": "js/file-access-to-http",
+          "location": {
+            "path": "agent-gateway/agentEndpoint.ts",
+            "region": {
+              "startLine": 22,
+              "startColumn": 13,
+              "endLine": 24,
+              "endColumn": 8
+            }
+          },
+          "originalFindings": [
+            "F031"
+          ],
+          "classification": "Retained location with original or corrected guards",
+          "currentResultDisposition": "Demonstrably false positive",
+          "justification": "See each linked original finding for the exact guards, dataflow and regression evidence. A fixed original defect can retain a post-fix scanner result through an unmodeled validator.",
+          "additionalFindings": []
+        },
+        {
+          "id": "C008",
+          "rawResultOrdinal": 8,
+          "rule": "js/file-access-to-http",
+          "location": {
+            "path": "agent-gateway/telemetry.ts",
+            "region": {
+              "startLine": 549,
+              "startColumn": 15,
+              "endColumn": 25
+            }
+          },
+          "originalFindings": [
+            "F032"
+          ],
+          "classification": "Retained location with original or corrected guards",
+          "currentResultDisposition": "Demonstrably false positive",
+          "justification": "See each linked original finding for the exact guards, dataflow and regression evidence. A fixed original defect can retain a post-fix scanner result through an unmodeled validator.",
+          "additionalFindings": []
+        },
+        {
+          "id": "C009",
+          "rawResultOrdinal": 9,
+          "rule": "js/file-access-to-http",
+          "location": {
+            "path": "agent-gateway/telemetry.ts",
+            "region": {
+              "startLine": 1286,
+              "startColumn": 13,
+              "endColumn": 36
+            }
+          },
+          "originalFindings": [
+            "F033"
+          ],
+          "classification": "Retained location with original or corrected guards",
+          "currentResultDisposition": "Demonstrably false positive",
+          "justification": "See each linked original finding for the exact guards, dataflow and regression evidence. A fixed original defect can retain a post-fix scanner result through an unmodeled validator.",
+          "additionalFindings": []
+        },
+        {
+          "id": "C010",
+          "rawResultOrdinal": 10,
+          "rule": "js/file-access-to-http",
+          "location": {
+            "path": "apps/orchestrator/execution.ts",
+            "region": {
+              "startLine": 608,
+              "startColumn": 11,
+              "endColumn": 18
+            }
+          },
+          "originalFindings": [
+            "F034"
+          ],
+          "classification": "Retained location with original or corrected guards",
+          "currentResultDisposition": "Demonstrably false positive",
+          "justification": "See each linked original finding for the exact guards, dataflow and regression evidence. A fixed original defect can retain a post-fix scanner result through an unmodeled validator.",
+          "additionalFindings": []
+        },
+        {
+          "id": "C011",
+          "rawResultOrdinal": 11,
+          "rule": "js/file-access-to-http",
+          "location": {
+            "path": "apps/orchestrator/execution.ts",
+            "region": {
+              "startLine": 609,
+              "startColumn": 17,
+              "endColumn": 23
+            }
+          },
+          "originalFindings": [
+            "F035"
+          ],
+          "classification": "Retained location with original or corrected guards",
+          "currentResultDisposition": "Demonstrably false positive",
+          "justification": "See each linked original finding for the exact guards, dataflow and regression evidence. A fixed original defect can retain a post-fix scanner result through an unmodeled validator.",
+          "additionalFindings": []
+        },
+        {
+          "id": "C012",
+          "rawResultOrdinal": 12,
+          "rule": "js/file-access-to-http",
+          "location": {
+            "path": "scripts/retrainAgent.ts",
+            "region": {
+              "startLine": 261,
+              "startColumn": 13,
+              "endLine": 265,
+              "endColumn": 9
+            }
+          },
+          "originalFindings": [
+            "F036"
+          ],
+          "classification": "Retained location with original or corrected guards",
+          "currentResultDisposition": "Demonstrably false positive",
+          "justification": "See each linked original finding for the exact guards, dataflow and regression evidence. A fixed original defect can retain a post-fix scanner result through an unmodeled validator.",
+          "additionalFindings": []
+        },
+        {
+          "id": "C013",
+          "rawResultOrdinal": 13,
+          "rule": "js/user-controlled-bypass",
+          "location": {
+            "path": "agent-gateway/apiHelpers.ts",
+            "region": {
+              "startLine": 174,
+              "startColumn": 10,
+              "endColumn": 15
+            }
+          },
+          "originalFindings": [
+            "F044"
+          ],
+          "classification": "Retained location with original or corrected guards",
+          "currentResultDisposition": "Demonstrably false positive",
+          "justification": "See each linked original finding for the exact guards, dataflow and regression evidence. A fixed original defect can retain a post-fix scanner result through an unmodeled validator.",
+          "additionalFindings": []
+        },
+        {
+          "id": "C014",
+          "rawResultOrdinal": 14,
+          "rule": "js/user-controlled-bypass",
+          "location": {
+            "path": "agent-gateway/apiHelpers.ts",
+            "region": {
+              "startLine": 207,
+              "startColumn": 42,
+              "endColumn": 69
+            }
+          },
+          "originalFindings": [
+            "F045"
+          ],
+          "classification": "Retained location with original or corrected guards",
+          "currentResultDisposition": "Demonstrably false positive",
+          "justification": "See each linked original finding for the exact guards, dataflow and regression evidence. A fixed original defect can retain a post-fix scanner result through an unmodeled validator.",
+          "additionalFindings": []
+        },
+        {
+          "id": "C015",
+          "rawResultOrdinal": 15,
+          "rule": "js/user-controlled-bypass",
+          "location": {
+            "path": "agent-gateway/apiHelpers.ts",
+            "region": {
+              "startLine": 208,
+              "startColumn": 11,
+              "endColumn": 32
+            }
+          },
+          "originalFindings": [
+            "F046"
+          ],
+          "classification": "Retained location with original or corrected guards",
+          "currentResultDisposition": "Demonstrably false positive",
+          "justification": "See each linked original finding for the exact guards, dataflow and regression evidence. A fixed original defect can retain a post-fix scanner result through an unmodeled validator.",
+          "additionalFindings": []
+        },
+        {
+          "id": "C016",
+          "rawResultOrdinal": 16,
+          "rule": "js/user-controlled-bypass",
+          "location": {
+            "path": "agent-gateway/routes.ts",
+            "region": {
+              "startLine": 200,
+              "startColumn": 7,
+              "endColumn": 16
+            }
+          },
+          "originalFindings": [
+            "F047"
+          ],
+          "classification": "Retained location with original or corrected guards",
+          "currentResultDisposition": "Demonstrably false positive",
+          "justification": "See each linked original finding for the exact guards, dataflow and regression evidence. A fixed original defect can retain a post-fix scanner result through an unmodeled validator.",
+          "additionalFindings": []
+        },
+        {
+          "id": "C017",
+          "rawResultOrdinal": 17,
+          "rule": "js/user-controlled-bypass",
+          "location": {
+            "path": "agent-gateway/routes.ts",
+            "region": {
+              "startLine": 200,
+              "startColumn": 20,
+              "endColumn": 27
+            }
+          },
+          "originalFindings": [
+            "F048"
+          ],
+          "classification": "Retained location with original or corrected guards",
+          "currentResultDisposition": "Demonstrably false positive",
+          "justification": "See each linked original finding for the exact guards, dataflow and regression evidence. A fixed original defect can retain a post-fix scanner result through an unmodeled validator.",
+          "additionalFindings": []
+        },
+        {
+          "id": "C018",
+          "rawResultOrdinal": 18,
+          "rule": "js/user-controlled-bypass",
+          "location": {
+            "path": "apps/onebox-static/app.mjs",
+            "region": {
+              "startLine": 1482,
+              "startColumn": 8,
+              "endColumn": 15
+            }
+          },
+          "originalFindings": [
+            "F049"
+          ],
+          "classification": "Retained location with original or corrected guards",
+          "currentResultDisposition": "Demonstrably false positive",
+          "justification": "See each linked original finding for the exact guards, dataflow and regression evidence. A fixed original defect can retain a post-fix scanner result through an unmodeled validator.",
+          "additionalFindings": []
+        },
+        {
+          "id": "C019",
+          "rawResultOrdinal": 19,
+          "rule": "js/http-to-file-access",
+          "location": {
+            "path": "agent-gateway/employer.ts",
+            "region": {
+              "startLine": 54,
+              "startColumn": 5,
+              "endColumn": 37
+            }
+          },
+          "originalFindings": [
+            "F050"
+          ],
+          "classification": "Retained location with original or corrected guards",
+          "currentResultDisposition": "Demonstrably false positive",
+          "justification": "See each linked original finding for the exact guards, dataflow and regression evidence. A fixed original defect can retain a post-fix scanner result through an unmodeled validator.",
+          "additionalFindings": []
+        },
+        {
+          "id": "C020",
+          "rawResultOrdinal": 20,
+          "rule": "js/http-to-file-access",
+          "location": {
+            "path": "agent-gateway/telemetry.ts",
+            "region": {
+              "startLine": 1153,
+              "startColumn": 5,
+              "endColumn": 35
+            }
+          },
+          "originalFindings": [
+            "F052"
+          ],
+          "classification": "Retained location with original or corrected guards",
+          "currentResultDisposition": "Demonstrably false positive",
+          "justification": "See each linked original finding for the exact guards, dataflow and regression evidence. A fixed original defect can retain a post-fix scanner result through an unmodeled validator.",
+          "additionalFindings": []
+        },
+        {
+          "id": "C021",
+          "rawResultOrdinal": 21,
+          "rule": "js/http-to-file-access",
+          "location": {
+            "path": "agent-gateway/validationStore.ts",
+            "region": {
+              "startLine": 231,
+              "startColumn": 26,
+              "endColumn": 30
+            }
+          },
+          "originalFindings": [
+            "F053"
+          ],
+          "classification": "Retained location with original or corrected guards",
+          "currentResultDisposition": "Already fixed on selected baseline",
+          "justification": "See each linked original finding for the exact guards, dataflow and regression evidence. A fixed original defect can retain a post-fix scanner result through an unmodeled validator.",
+          "additionalFindings": []
+        },
+        {
+          "id": "C022",
+          "rawResultOrdinal": 22,
+          "rule": "js/http-to-file-access",
+          "location": {
+            "path": "services/notifications/server.js",
+            "region": {
+              "startLine": 29,
+              "startColumn": 34,
+              "endColumn": 64
+            }
+          },
+          "originalFindings": [
+            "F055"
+          ],
+          "classification": "Retained location with original or corrected guards",
+          "currentResultDisposition": "Demonstrably false positive",
+          "justification": "See each linked original finding for the exact guards, dataflow and regression evidence. A fixed original defect can retain a post-fix scanner result through an unmodeled validator.",
+          "additionalFindings": []
+        },
+        {
+          "id": "C023",
+          "rawResultOrdinal": 23,
+          "rule": "js/http-to-file-access",
+          "location": {
+            "path": "shared/containedFiles.ts",
+            "region": {
+              "startLine": 57,
+              "startColumn": 26,
+              "endColumn": 30
+            }
+          },
+          "originalFindings": [
+            "F051",
+            "F054"
+          ],
+          "classification": "Moved/shared validated sink",
+          "currentResultDisposition": "Demonstrably false positive",
+          "justification": "Contained private descriptor/atomic-link/rename sink with validated filename and ownership assumptions; tests cover traversal, symlink/FIFO/hardlink and pathname replacement.",
+          "additionalFindings": [
+            "N001"
+          ]
+        },
+        {
+          "id": "C024",
+          "rawResultOrdinal": 24,
+          "rule": "js/http-to-file-access",
+          "location": {
+            "path": "shared/worldModel.ts",
+            "region": {
+              "startLine": 203,
+              "startColumn": 5,
+              "endColumn": 39
+            }
+          },
+          "originalFindings": [
+            "F056"
+          ],
+          "classification": "Retained location with original or corrected guards",
+          "currentResultDisposition": "Demonstrably false positive",
+          "justification": "See each linked original finding for the exact guards, dataflow and regression evidence. A fixed original defect can retain a post-fix scanner result through an unmodeled validator.",
+          "additionalFindings": [
+            "N001"
+          ]
+        }
+      ]
+    },
+    "finalQualification": "See the exact-final-commit PR qualification record and complete push-scan artifacts. A different commit or a PR-only scan is not accepted."
   }
 }

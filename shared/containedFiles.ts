@@ -12,6 +12,7 @@ export function ensurePrivateDirectory(directory: string): void {
     catch (error) { if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error; }
     const stat = fs.lstatSync(current);
     if (!stat.isDirectory() || stat.isSymbolicLink()) throw new Error('Storage directory must not be a symlink');
+    if ((stat.mode & 0o022) !== 0 && (stat.mode & 0o1000) === 0) throw new Error('Storage ancestor must not be writable by other users');
   }
   const stat = fs.statSync(absolute);
   if ((stat.mode & 0o022) !== 0 || (process.getuid && stat.uid !== process.getuid())) {
@@ -31,7 +32,7 @@ export function containedFile(directory: string, filename: string): string {
 
 export function readContainedFile(directory: string, filename: string, maxBytes = 4 * 1024 * 1024): string {
   ensurePrivateDirectory(directory);
-  const fd = fs.openSync(containedFile(directory, filename), fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW);
+  const fd = fs.openSync(containedFile(directory, filename), fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW | fs.constants.O_NONBLOCK);
   try {
     const stat = fs.fstatSync(fd);
     if (!stat.isFile() || stat.nlink !== 1 || stat.size > maxBytes) throw new Error('Invalid storage file');

@@ -29,6 +29,7 @@ export async function finalizeJob(
   jobId: string | number,
   wallet: Wallet
 ): Promise<{ txHash: string }> {
+  if (typeof jobId === 'number' && !Number.isSafeInteger(jobId)) throw new Error('Job ID must be a safe integer or decimal string');
   const id = jobId.toString();
   if (!/^(0|[1-9][0-9]{0,77})$/.test(id) || BigInt(id) >= 2n ** 256n) {
     throw new Error('Job ID must be a uint256 decimal identifier');

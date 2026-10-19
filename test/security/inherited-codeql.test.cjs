@@ -12,7 +12,10 @@ require('ts-node').register({ transpileOnly: true, compilerOptions: { module: 'c
 const root = path.resolve(__dirname, '../..');
 function loadTs(relative, dependencies = {}, options = {}) {
   const filename = path.join(root, relative);
-  const compiled = ts.transpileModule(fs.readFileSync(filename, 'utf8'), {
+  let source = fs.readFileSync(filename, 'utf8');
+  if (options.stopBefore) { const end = source.indexOf(options.stopBefore); assert.ok(end >= 0, 'CLI entrypoint boundary must exist'); source = source.slice(0, end); }
+  if (options.expose) source += `\nexport { ${options.expose.join(', ')} };\n`;
+  const compiled = ts.transpileModule(source, {
     compilerOptions: { target: ts.ScriptTarget.ES2020, module: ts.ModuleKind.CommonJS, esModuleInterop: true, jsx: ts.JsxEmit.React },
     fileName: filename,
   }).outputText;
@@ -101,6 +104,9 @@ test('contained storage rejects traversal, symlinks and hardlinks, including rep
     assert.throws(() => files.writeContainedFile(directory, 'good.json', 'overwritten', true), /EEXIST/);
     assert.equal(fs.statSync(path.join(directory, 'good.json')).mode & 0o777, 0o600);
     assert.equal(fs.readdirSync(directory).filter((file) => file.startsWith('tmp-')).length, 0);
+    require('node:child_process').execFileSync('mkfifo', [path.join(directory, 'fifo.json')]);
+    const fifo = require('node:child_process').spawnSync(process.execPath, ['-r', 'ts-node/register/transpile-only', '-e', 'try { require("./shared/containedFiles.ts").readContainedFile(process.argv[1],"fifo.json");process.exit(1); } catch(error) { if(!error.message.includes("Invalid storage file"))process.exit(2); }', directory], { cwd: root, timeout: 5000, encoding: 'utf8' });
+    assert.equal(fifo.status, 0, fifo.stderr);
   } finally { fs.rmSync(temporary, { recursive: true, force: true }); }
 });
 
@@ -211,4 +217,134 @@ test('world-model snapshots cannot use response-derived job IDs to escape their 
     assert.deepEqual(JSON.parse(fs.readFileSync(path.join(temporary, 'storage/world-model/snapshots/42.json'), 'utf8')), { jobId: '42', observations: [] });
     assert.equal(fs.existsSync(path.join(temporary, 'storage/outside.json')), false);
   } finally { fs.rmSync(temporary, { recursive: true, force: true }); }
+});
+
+test('telemetry and retraining exports use configured destinations and JSON bodies, not file-derived network targets', async () => {
+  const oldFetch = global.fetch, saved = { oracle: process.env.ENERGY_ORACLE_URL, signature: process.env.ENERGY_ORACLE_REQUIRE_SIGNATURE, reload: process.env.ORCHESTRATOR_CONTROL_URL };
+  const calls = [], address = '0x1111111111111111111111111111111111111111';
+  process.env.ENERGY_ORACLE_URL = 'https://oracle.example/telemetry';
+  process.env.ENERGY_ORACLE_REQUIRE_SIGNATURE = 'false';
+  process.env.ORCHESTRATOR_CONTROL_URL = 'https://control.example/reload';
+  global.fetch = async (url, options) => { calls.push({ url, options }); return { ok: true }; };
+  try {
+    const telemetry = loadTs('agent-gateway/telemetry.ts', {
+      './utils': { orchestratorWallet: null, agents: new Map([['configured', { wallet: address, url: 'https://worker.example/notify' }]]), FETCH_TIMEOUT_MS: 1000 },
+      './operator': { isOracleContractConfigured: () => false }, './identity': {}, './security': {}, './auditAnchoring': {},
+    }, { expose: ['sendToOracle', 'notifyAgentOfAnomaly'] });
+    const payload = { reason: 'line\nnext', url: 'https://untrusted.example/escape' };
+    telemetry.notifyAgentOfAnomaly(address, payload);
+    await telemetry.sendToOracle([{ jobId: '42', agent: address, energyEstimate: 1 }]);
+    const retrain = loadTs('scripts/retrainAgent.ts', {}, { stopBefore: '\nmain().catch', expose: ['notifyOrchestratorReload'] });
+    await retrain.notifyOrchestratorReload('https://untrusted.example/escape\nlabel');
+    assert.deepEqual(calls.map(call => call.url), ['https://worker.example/notify', 'https://oracle.example/telemetry', 'https://control.example/reload']);
+    assert.deepEqual(JSON.parse(calls[0].options.body), payload);
+    assert.deepEqual(Object.keys(JSON.parse(calls[1].options.body)).sort(), ['samples', 'submittedAt']);
+    assert.deepEqual(Object.keys(JSON.parse(calls[2].options.body)).sort(), ['label', 'reason', 'timestamp']);
+  } finally {
+    global.fetch = oldFetch;
+    for (const [key, value] of [['ENERGY_ORACLE_URL', saved.oracle], ['ENERGY_ORACLE_REQUIRE_SIGNATURE', saved.signature], ['ORCHESTRATOR_CONTROL_URL', saved.reload]]) {
+      if (value === undefined) delete process.env[key]; else process.env[key] = value;
+    }
+  }
+});
+
+test('identity creation refuses an existing symlink or record and does not overwrite wallet material', async () => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'codeql-identity-'));
+  const factory = loadTs('agent-gateway/agentFactory.ts', {
+    './agentRegistry': {}, './identity': {}, './security': {}, './utils': {}, './ensRegistrar': {}, '../shared/spawnManager': { spawnDefaults: { categoryCap: 3 } },
+  }, { expose: ['persistIdentityRecord'] });
+  const blueprint = { ensName: 'fixture.agent.agi.eth', ensLabel: 'fixture', wallet: ethers.Wallet.createRandom(), metadata: {}, metrics: {}, spawn: {} };
+  try {
+    const outside = path.join(directory, 'outside'); fs.writeFileSync(outside, 'original');
+    fs.symlinkSync(outside, path.join(directory, 'fixture.json'));
+    await assert.rejects(factory.persistIdentityRecord(blueprint, null, { passed: true }, 'sandbox', { identityDir: directory }), /EEXIST/);
+    assert.equal(fs.readFileSync(outside, 'utf8'), 'original');
+    fs.unlinkSync(path.join(directory, 'fixture.json'));
+    const file = await factory.persistIdentityRecord(blueprint, null, { passed: true }, 'sandbox', { identityDir: directory });
+    assert.equal(fs.statSync(file).mode & 0o777, 0o600);
+    await assert.rejects(factory.persistIdentityRecord(blueprint, null, { passed: true }, 'sandbox', { identityDir: directory }), /EEXIST/);
+    await assert.rejects(factory.persistIdentityRecord({ ...blueprint, ensLabel: '../escape' }, null, { passed: true }, 'sandbox', { identityDir: directory }), /Invalid identity label/);
+  } finally { fs.rmSync(directory, { recursive: true, force: true }); }
+});
+
+test('coverage remapping reads and rewrites the same opened inode if its pathname is replaced', () => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'codeql-coverage-'));
+  const coverage = path.join(directory, 'coverage'); fs.mkdirSync(coverage);
+  const file = path.join(coverage, 'lcov.info'), outside = path.join(directory, 'outside'), held = path.join(coverage, 'held.info');
+  fs.writeFileSync(file, 'SF:contracts/coverage/GovernorHarness.sol\nend_of_record\n'); fs.writeFileSync(outside, 'unchanged');
+  const filename = path.join(root, 'scripts/ci/remap-coverage-paths.js'), module = { exports: {} }, read = fs.readFileSync;
+  fs.readFileSync = (value, ...args) => {
+    if (typeof value === 'number' && !fs.existsSync(held)) { fs.renameSync(file, held); fs.symlinkSync(outside, file); }
+    return read(value, ...args);
+  };
+  try {
+    new Function('require', 'module', '__dirname', read(filename, 'utf8').replace(/^#!.*\n/, ''))(require, module, path.join(directory, 'scripts/ci'));
+    assert.equal(read(outside, 'utf8'), 'unchanged');
+    assert.ok(read(held, 'utf8').includes('contracts/v2/governance/AGIGovernor.sol'));
+  } finally { fs.readFileSync = read; fs.rmSync(directory, { recursive: true, force: true }); }
+});
+
+test('signed contributor payload survives actual protobuf encoding and real gRPC request mapping', async () => {
+  const loader = require('@grpc/proto-loader');
+  const definitions = loader.loadSync(path.join(root, 'agent-gateway/protos/agent_gateway.proto'), { keepCase: true, longs: String, enums: String, defaults: false, oneofs: true });
+  const service = definitions['agentgateway.v1.AgentGateway'].SubmitResult;
+  const helpers = loadTs('agent-gateway/apiHelpers.ts', { './utils': { provider: {}, TOKEN_DECIMALS: 18 }, './stakeCoordinator': {} });
+  const rpc = loadTs('agent-gateway/grpc.ts', { './utils': {}, './deliverableStore': {}, './apiHelpers': helpers, './agentActions': {}, './stakeCoordinator': {}, './events': {}, './telemetry': {}, './jobSerialization': {} }, { expose: ['handleContributorParsing'] });
+  const signer = ethers.Wallet.createRandom();
+  for (const payload of ['{"jobId":"42","work":"public evidence"}', '']) {
+    const signature = await signer.signMessage(payload);
+    const input = { job_id: '42', contributors: [{ address: signer.address, signature, signed_payload: payload }] };
+    const decoded = service.requestDeserialize(service.requestSerialize(input));
+    assert.equal(decoded.contributors[0].signed_payload, payload);
+    const [contributor] = rpc.handleContributorParsing(decoded.contributors);
+    assert.equal(contributor.signature, signature);
+    assert.equal(contributor.payloadDigest, ethers.hashMessage(payload));
+    const altered = { ...decoded.contributors[0], signed_payload: payload + 'tampered' };
+    assert.throws(() => rpc.handleContributorParsing([altered]), /verification failed/);
+    const missing = { ...decoded.contributors[0] }; delete missing.signed_payload;
+    assert.throws(() => rpc.handleContributorParsing([missing]), /requires its signed payload/);
+  }
+  assert.equal(rpc.handleContributorParsing([{ address: signer.address, payload_digest: 'self-asserted' }])[0].signature, undefined);
+});
+
+test('audit log reading rejects symlinks and binds metadata plus bytes to one descriptor', () => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'codeql-audit-')), file = path.join(directory, 'events.log'), held = path.join(directory, 'held');
+  const audit = loadTs('scripts/anchor-logs.ts', { dotenv: { config() {} } }, { stopBefore: '\nmain().catch', expose: ['readAuditEntries'] });
+  fs.writeFileSync(file, 'original event\n');
+  const stat = fs.fstatSync;
+  fs.fstatSync = (fd, ...args) => { if (!fs.existsSync(held)) { fs.renameSync(file, held); fs.writeFileSync(file, 'different file\n'); } return stat(fd, ...args); };
+  try { assert.deepEqual(audit.readAuditEntries(directory, 1).entries, ['original event']); }
+  finally { fs.fstatSync = stat; }
+  try {
+    fs.unlinkSync(file); fs.symlinkSync(held, file);
+    assert.throws(() => audit.readAuditEntries(directory, 1), /ELOOP/);
+  } finally { fs.rmSync(directory, { recursive: true, force: true }); }
+});
+
+test('owner configuration hash and size come from the same opened file after pathname replacement', async () => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'codeql-config-')), file = path.join(directory, 'config.json'), held = path.join(directory, 'held.json');
+  const audit = loadTs('scripts/v2/ownerConfigAudit.ts', { '../config': {} }, { stopBefore: '\nvoid main();', expose: ['computeFileSummary'] });
+  fs.writeFileSync(file, 'original');
+  const open = fs.promises.open;
+  fs.promises.open = async (...args) => { const handle = await open(...args); fs.renameSync(file, held); fs.writeFileSync(file, 'different and longer'); return handle; };
+  try {
+    const summary = await audit.computeFileSummary(file);
+    assert.equal(summary.hash, require('node:crypto').createHash('sha256').update('original').digest('hex'));
+    assert.equal(summary.size, 8);
+  } finally { fs.promises.open = open; fs.rmSync(directory, { recursive: true, force: true }); }
+});
+
+test('finalization rejects prototype keys and malformed IDs before a transaction or state write', async () => {
+  let transactions = 0, saved;
+  const state = {};
+  const submission = loadTs('apps/orchestrator/submission.ts', {
+    ethers: { ethers: { ...ethers, Contract: class { async finalize() { transactions += 1; return { hash: '0xfixture', wait: async () => ({}) }; } } } },
+    './config': { JOB_REGISTRY_ADDRESS: '0x1111111111111111111111111111111111111111' },
+    './execution': { loadState: () => state, saveState: value => { saved = value; } },
+  });
+  const wallet = { provider: {}, connect: () => ({}) };
+  for (const id of ['__proto__', 'constructor', '../1', '-1', '1.5', '01', (2n ** 256n).toString(), Number.MAX_SAFE_INTEGER + 1]) await assert.rejects(submission.finalizeJob(id, wallet), /Job ID/);
+  assert.equal(transactions, 0); assert.equal(saved, undefined); assert.equal(Object.prototype.completed, undefined);
+  assert.deepEqual(await submission.finalizeJob('42', wallet), { txHash: '0xfixture' });
+  assert.equal(transactions, 1); assert.equal(saved['42'].completed, true);
 });

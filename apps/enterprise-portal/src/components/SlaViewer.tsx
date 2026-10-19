@@ -5,14 +5,21 @@ import type { SlaDocument } from '../types';
 import { resolveResourceUri } from '../lib/uri';
 
 const parseSla = (payload: unknown): SlaDocument => {
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) throw new Error('SLA metadata must be a JSON object.');
   const record = payload as Record<string, unknown>;
+  const strings = (field: string): string[] => {
+    const value = record[field];
+    if (value === undefined) return [];
+    if (!Array.isArray(value) || value.some((item) => typeof item !== 'string')) throw new Error(`SLA ${field} must contain text values.`);
+    return value as string[];
+  };
   return {
     uri: String(record.uri ?? ''),
     version: Number(record.version ?? 1),
     issuedAt: Number(record.issuedAt ?? Math.floor(Date.now() / 1000)),
-    obligations: Array.isArray(record.obligations) ? (record.obligations as string[]) : [],
-    penalties: Array.isArray(record.penalties) ? (record.penalties as string[]) : [],
-    successCriteria: Array.isArray(record.successCriteria) ? (record.successCriteria as string[]) : []
+    obligations: strings('obligations'),
+    penalties: strings('penalties'),
+    successCriteria: strings('successCriteria')
   };
 };
 
@@ -78,9 +85,9 @@ export const SlaViewer = () => {
             <div>
               <div className="stat-label">Source</div>
               <div className="stat-value" style={{ fontSize: '0.85rem' }}>
-                <a href={resolveResourceUri(document.uri || uri)} target="_blank" rel="noreferrer">
+                {resolveResourceUri(document.uri || uri) ? <a href={resolveResourceUri(document.uri || uri)} target="_blank" rel="noreferrer">
                   {document.uri || uri}
-                </a>
+                </a> : <span>{document.uri || uri}</span>}
               </div>
             </div>
           </div>

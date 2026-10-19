@@ -64,6 +64,7 @@ interface ProtoContributor {
   signature?: string;
   payload_digest?: string;
   metadata_json?: string;
+  signed_payload?: string;
 }
 
 interface SubmitResultRequestMessage {
@@ -796,6 +797,7 @@ function handleContributorParsing(
       label: entry.label,
       signature: entry.signature,
       payloadDigest: entry.payload_digest,
+      payload: entry.signed_payload,
       metadata,
     };
   });

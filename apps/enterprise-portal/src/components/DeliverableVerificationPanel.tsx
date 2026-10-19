@@ -46,6 +46,7 @@ export const DeliverableVerificationPanel = ({ events }: Props) => {
   const [computedHash, setComputedHash] = useState<string>();
   const [payloadBytes, setPayloadBytes] = useState<number>();
   const readablePayloadSize = formatBytes(payloadBytes);
+  const deliverableUrl = resolveResourceUri(cid);
 
   const recentSubmissions = useMemo(() => {
     return events
@@ -214,8 +215,8 @@ export const DeliverableVerificationPanel = ({ events }: Props) => {
           <button className="primary" type="submit" disabled={verifying}>
             {verifying ? 'Verifying…' : 'Verify deliverable'}
           </button>
-          {cid && (
-            <a className="tag purple" href={resolveResourceUri(cid)} target="_blank" rel="noreferrer">
+          {deliverableUrl && (
+            <a className="tag purple" href={deliverableUrl} target="_blank" rel="noreferrer">
               Open deliverable
             </a>
           )}
@@ -256,7 +257,7 @@ export const DeliverableVerificationPanel = ({ events }: Props) => {
                     <td>{submission.worker ? `${submission.worker.slice(0, 6)}…${submission.worker.slice(-4)}` : '—'}</td>
                     <td>{submission.timestamp ? new Date(submission.timestamp * 1000).toLocaleString() : '—'}</td>
                     <td>
-                      {submission.resultUri ? (
+                      {resolveResourceUri(submission.resultUri) ? (
                         <a
                           href={resolveResourceUri(submission.resultUri)}
                           target="_blank"
