@@ -6063,6 +6063,51 @@
         }
       ]
     },
-    "finalQualification": "See the exact-final-commit PR qualification record and complete push-scan artifacts. A different commit or a PR-only scan is not accepted."
+    "finalQualification": "See the exact-final-commit PR qualification record and complete push-scan artifacts. A different commit or a PR-only scan is not accepted.",
+    "sourceDefensiveFollowup": {
+      "basisCommit": "940a8f1376efca9fc44759053a8739f0371b0ce9",
+      "basisCheck": 118079674284,
+      "basisFullScan": {
+        "run": 39258054507,
+        "artifact": 12188576373,
+        "sha256": "333f54340fcd6621f5f7f39f0d6d86400c8ffce4615f69d8934f5c7cac8c5f3e",
+        "results": 24,
+        "high": 11,
+        "medium": 13,
+        "quality": 0
+      },
+      "sourceChanges": [
+        {
+          "findings": [
+            "F008",
+            "F009"
+          ],
+          "path": "apps/enterprise-portal/src/lib/uri.ts",
+          "change": "Encode each decoded and validated IPFS path segment with encodeURIComponent, then canonicalize the completed URL through the existing HTTPS policy. Preserve Unicode and encoded filenames, traversal/scheme rejection and all guarded consumers."
+        },
+        {
+          "findings": [
+            "F014",
+            "F015",
+            "F051",
+            "F054"
+          ],
+          "path": "shared/containedFiles.ts",
+          "change": "Add a separator-bounded startsWith check on the resolved absolute file path, including filesystem root support. Retain the filename allowlist, direct-child dirname check, private directories, no-follow descriptors and exclusive/atomic write behavior."
+        }
+      ],
+      "intentionalContentWrite": "The js/http-to-file-access flow into fs.writeFileSync(fd, body) remains unchanged and requires its existing evidence-backed assessment. Encoding data or changing write APIs merely to break scanner taint is not part of this follow-up.",
+      "regressionEvidence": [
+        {
+          "path": "test/security/inherited-codeql.test.cjs",
+          "command": "node --test test/security/inherited-codeql.test.cjs"
+        },
+        {
+          "path": "test/security/browser-regressions.mjs",
+          "command": "node test/security/browser-regressions.mjs"
+        }
+      ],
+      "qualification": "Pending independent source review and fresh full-source CodeQL plus required CI on the exact follow-up commit. The basis scan does not qualify these changes, and no alert disappearance or production approval is claimed."
+    }
   }
 }

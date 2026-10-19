@@ -60,6 +60,22 @@ test('portal URL policy rejects script, encoded scheme, whitespace and path conf
   assert.equal(resolveResourceUri('ipfs://bafytest', 'javascript:bad'), undefined);
 });
 
+test('IPFS resource paths preserve Unicode and encoded filenames as canonical HTTPS path segments', () => {
+  const { resolveResourceUri } = loadTs('apps/enterprise-portal/src/lib/uri.ts');
+  const expected = 'https://ipfs.io/ipfs/bafytest/Montr%C3%A9al/%CE%A9%20report%22%3Cfinal%3E.json';
+  for (const value of ['ipfs://bafytest/Montréal/Ω%20report"<final>.json', 'ipfs://bafytest/Montr%C3%A9al/%CE%A9%20report%22%3Cfinal%3E.json']) {
+    const result = resolveResourceUri(value);
+    assert.equal(result, expected);
+    const url = new URL(result);
+    assert.equal(url.protocol, 'https:');
+    assert.equal(decodeURIComponent(url.pathname), '/ipfs/bafytest/Montréal/Ω report"<final>.json');
+    assert.equal(url.search, ''); assert.equal(url.hash, '');
+  }
+  for (const value of ['ipfs://bafytest/%E0%A4%A', 'ipfs://bafytest/\ud800', 'ipfs://bafytest/%0a', 'ipfs://bafytest/%23fragment', 'ipfs://bafytest/%3Fquery', 'ipfs://bafytest/%2e%2e/sibling', 'ipfs://bafytest/%252fescape']) {
+    assert.equal(resolveResourceUri(value), undefined, value);
+  }
+});
+
 test('contributor evidence verifies its actual payload and never manufactures an authority principal', async () => {
   const { parseContributors } = loadTs('agent-gateway/apiHelpers.ts', {
     './utils': { TOKEN_DECIMALS: 18, provider: {} },
@@ -108,6 +124,17 @@ test('contained storage rejects traversal, symlinks and hardlinks, including rep
     const fifo = require('node:child_process').spawnSync(process.execPath, ['-r', 'ts-node/register/transpile-only', '-e', 'try { require("./shared/containedFiles.ts").readContainedFile(process.argv[1],"fifo.json");process.exit(1); } catch(error) { if(!error.message.includes("Invalid storage file"))process.exit(2); }', directory], { cwd: root, timeout: 5000, encoding: 'utf8' });
     assert.equal(fifo.status, 0, fifo.stderr);
   } finally { fs.rmSync(temporary, { recursive: true, force: true }); }
+});
+
+test('contained paths support the filesystem root and reject sibling-prefix escapes', () => {
+  const { containedFile } = require('../../shared/containedFiles.ts');
+  const filesystemRoot = path.parse(process.cwd()).root;
+  assert.equal(containedFile(filesystemRoot, 'record.json'), path.join(filesystemRoot, 'record.json'));
+  const directory = path.join(filesystemRoot, 'records');
+  assert.equal(containedFile(directory + path.sep, 'record.json'), path.join(directory, 'record.json'));
+  for (const filename of ['../records-sibling/record.json', path.join(filesystemRoot, 'records-sibling', 'record.json')]) {
+    assert.throws(() => containedFile(directory, filename), /Invalid storage filename|Storage path escapes/);
+  }
 });
 
 test('receipt writes validate response-derived fields, reject tampered persisted records and preserve valid receipts', async () => {

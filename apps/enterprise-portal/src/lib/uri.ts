@@ -7,13 +7,15 @@ export const resolveResourceUri = (value?: string, gateway = 'https://ipfs.io/ip
     const [root, ...segments] = resource.split('/');
     if (!/^[a-z0-9]{1,128}$/i.test(root)) return undefined;
     try {
+      const encodedSegments: string[] = [];
       for (const segment of segments) {
         const decoded = decodeURIComponent(segment);
         if (decoded === '.' || decoded === '..' || /[\u0000-\u001f\u007f%\\/?#]/u.test(decoded)) return undefined;
+        encodedSegments.push(encodeURIComponent(decoded));
       }
       const base = httpsResource(gateway);
       if (!base || !base.endsWith('/')) return undefined;
-      return `${base}${root}${segments.length ? '/' + segments.join('/') : ''}`;
+      return httpsResource(`${base}${root}${encodedSegments.length ? '/' + encodedSegments.join('/') : ''}`);
     } catch { return undefined; }
   }
   return httpsResource(value);

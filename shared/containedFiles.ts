@@ -26,6 +26,8 @@ export function containedFile(directory: string, filename: string): string {
   }
   const root = path.resolve(directory);
   const file = path.resolve(root, filename);
+  const prefix = root.endsWith(path.sep) ? root : root + path.sep;
+  if (!file.startsWith(prefix)) throw new Error('Storage path escapes its directory');
   if (path.dirname(file) !== root) throw new Error('Storage path escapes its directory');
   return file;
 }

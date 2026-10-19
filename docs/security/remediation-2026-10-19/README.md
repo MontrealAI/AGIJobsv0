@@ -160,6 +160,20 @@ post-fix scanner false positives, not evidence that the baseline was safe.
 HTTPS destinations remain external untrusted content; the policy does not
 endorse them or sanitize pages they serve.
 
+A source follow-up to `940a8f1376efca9fc44759053a8739f0371b0ce9` additionally
+encodes each decoded, validated IPFS path segment and canonicalizes the completed
+HTTPS URL. It adds a separator-bounded containment check on resolved file paths,
+including filesystem root support, while preserving the existing filename,
+direct-child, private-directory, no-follow and exclusive/atomic-write checks.
+Regressions cover Unicode/encoded filenames, invalid URI encodings and
+root/sibling path boundaries. The ledger retains the exact prior full-scan
+identity; fresh full-source CodeQL, required CI and independent review of the
+follow-up commit are pending. No alert disappearance is claimed.
+
+The intentional inert-JSON content flow into the private file descriptor remains
+unchanged. Its `js/http-to-file-access` assessment is separate from URL and path
+containment, and no encoding or write-API change is used to evade that result.
+
 `test/security/browser-regressions.mjs` uses the actual React components and
 Chromium. Every hostile vector is exercised as typed input and fetched SLA
 metadata; the test checks absent navigable links, no invalid-input fetch,
