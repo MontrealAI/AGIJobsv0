@@ -48,7 +48,7 @@ function boundedSourceBlob(fd, maxBytes = MAX_SOURCE_BYTES) {
 
 // Check the whole tracked tree: the native inspector has transitive imports in
 // successor-workbench and build-successor, outside its own directory.
-function assertPinnedAlphaCheckout(root, expectedCommit) {
+function verifyPinnedAlphaCheckout(root, expectedCommit) {
   assert(
     path.isAbsolute(root || ''),
     'Alpha source requires an absolute reviewed path'
@@ -169,7 +169,17 @@ function assertPinnedAlphaCheckout(root, expectedCommit) {
     0,
     'Alpha checkout contains nonignored untracked source'
   );
-  return actualCommit;
+  // Consumers must retain this verified physical path. Reusing the configured
+  // alias after this check would permit a root symlink to select other code.
+  return Object.freeze({ root, commit: actualCommit });
 }
 
-module.exports = { assertPinnedAlphaCheckout, boundedSourceBlob };
+function assertPinnedAlphaCheckout(root, expectedCommit) {
+  return verifyPinnedAlphaCheckout(root, expectedCommit).commit;
+}
+
+module.exports = {
+  assertPinnedAlphaCheckout,
+  verifyPinnedAlphaCheckout,
+  boundedSourceBlob,
+};

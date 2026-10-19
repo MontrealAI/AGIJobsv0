@@ -9,7 +9,10 @@ const {
   deployImplementations,
 } = require('../../scripts/deploy/implementations.cjs');
 const { verifyReceipt } = require('./verify-receipt.cjs');
-const { assertPinnedAlphaCheckout } = require('./pinned-alpha-checkout.cjs');
+const {
+  assertPinnedAlphaCheckout,
+  verifyPinnedAlphaCheckout,
+} = require('./pinned-alpha-checkout.cjs');
 const { address: TOKEN } = require('../../config/agialpha.json');
 
 const sha256 = (value) =>
@@ -160,10 +163,21 @@ async function assertDisposableNetwork(network, provider) {
   assert(!metadata.forkedNetwork, 'A fork is not a fresh disposable fixture');
 }
 
+async function loadPinnedAlphaComputer(configuredRoot, expectedCommit) {
+  const source = verifyPinnedAlphaCheckout(configuredRoot, expectedCommit);
+  const computerFile = path.join(
+    source.root,
+    'examples/successor-alpha/computer.mjs'
+  );
+  const sourceHash = sha256(boundedUtf8(computerFile, 8_388_608));
+  const computer = await import(pathToFileURL(computerFile).href);
+  return Object.freeze({ ...source, sourceHash, computer });
+}
+
 async function main() {
   const started = performance.now();
   const inputFile = requiredPath('FQR_DRAFT_FILE');
-  const alphaRoot = requiredPath('FQR_ALPHA_SOURCE');
+  const configuredAlphaRoot = requiredPath('FQR_ALPHA_SOURCE');
   const outputFile = requiredPath('FQR_EVIDENCE_FILE');
   assert(!fs.existsSync(outputFile), 'Evidence output must be new');
   assert.notEqual(outputFile, inputFile, 'Evidence cannot replace its input');
@@ -178,27 +192,19 @@ async function main() {
     /^[0-9a-f]{40}$/.test(expectedAlphaCommit || ''),
     'FQR_ALPHA_COMMIT must pin the reviewed checkout'
   );
-  const actualAlphaCommit = assertPinnedAlphaCheckout(
-    alphaRoot,
+  const alphaSource = await loadPinnedAlphaComputer(
+    configuredAlphaRoot,
     expectedAlphaCommit
   );
-  const alphaComputerFile = path.join(
-    alphaRoot,
-    'examples/successor-alpha/computer.mjs'
-  );
-  const { inspectComputerReturn } = await import(
-    pathToFileURL(alphaComputerFile).href
-  );
+  const { root: alphaRoot, commit: actualAlphaCommit } = alphaSource;
+  const { inspectComputerReturn } = alphaSource.computer;
   const { inspectComputerReceiptDraft } = await import(
     './four-repo-computer-receipt.mjs'
   );
   const draft = await inspectComputerReceiptDraft(raw, {
     inspectAlphaReturn: inspectComputerReturn,
   });
-  assert.equal(
-    draft.bindings.alphaSourceHash,
-    sha256(fs.readFileSync(alphaComputerFile))
-  );
+  assert.equal(draft.bindings.alphaSourceHash, alphaSource.sourceHash);
   assert.equal(draft.route.backend, 'agijobsv0-jobregistry-v2');
   assert.equal(draft.route.asset, 'AGIALPHA');
   assert.equal(draft.route.decimals, 18);
@@ -526,7 +532,12 @@ async function main() {
   );
 }
 
-module.exports = { assertDisposableNetwork, observeMockGas, boundedUtf8 };
+module.exports = {
+  assertDisposableNetwork,
+  observeMockGas,
+  boundedUtf8,
+  loadPinnedAlphaComputer,
+};
 if (require.main === module)
   main().catch((error) => {
     console.error(error.message);

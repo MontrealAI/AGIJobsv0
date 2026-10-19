@@ -270,6 +270,9 @@ imports under `successor-workbench` and `build-successor`. Tracked modifications
 and nonignored untracked source files are refused before importing the inspector;
 tracked file bytes and modes are checked against the pinned Git objects, without
 replacement refs, hidden index flags, environment redirection or symlinked source.
+The guard returns the verified physical checkout root; the lifecycle uses that
+root for its bounded source-hash read, native import and final recheck, so changing
+the configured root symlink cannot select another module after verification.
 The same check runs again before writing lifecycle evidence. Normal ignored
 dependencies and report outputs remain usable. These checks bind the inspected
 checkout at those checkpoints; they do not establish a tamper-proof runtime or

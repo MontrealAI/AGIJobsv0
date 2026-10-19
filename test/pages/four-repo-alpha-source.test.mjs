@@ -5,8 +5,10 @@ import os from 'node:os';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
+import { loadPinnedAlphaComputer } from '../../integrations/alpha-agent/four-repo-computer-lifecycle.cjs';
 import {
   assertPinnedAlphaCheckout,
+  verifyPinnedAlphaCheckout,
   boundedSourceBlob,
 } from '../../integrations/alpha-agent/pinned-alpha-checkout.cjs';
 
@@ -41,6 +43,70 @@ function checkout(t) {
   const commit = git('rev-parse', 'HEAD').trim();
   return { root, commit, git, write };
 }
+
+test('the lifecycle imports the verified physical root when its configured symlink is retargeted before import', async (t) => {
+  const reviewed = checkout(t),
+    replacement = checkout(t),
+    aliases = fs.mkdtempSync(path.join(os.tmpdir(), 'jobs-alpha-alias-'));
+  t.after(() => fs.rmSync(aliases, { recursive: true, force: true }));
+  const configured = path.join(aliases, 'configured'),
+    marker = path.join(aliases, 'unreviewed-executed'),
+    computerName = 'examples/successor-alpha/computer.mjs';
+  for (const source of [reviewed, replacement]) {
+    source.write(
+      computerName,
+      "export { inspected } from '../successor-workbench/engine.mjs';\n"
+    );
+  }
+  reviewed.git('add', '.');
+  reviewed.git('commit', '--quiet', '-m', 'Reviewed native export');
+  const commit = reviewed.git('rev-parse', 'HEAD').trim();
+  replacement.write(
+    'examples/successor-workbench/engine.mjs',
+    `import fs from 'node:fs'; fs.writeFileSync(${JSON.stringify(
+      marker
+    )}, 'ran'); export const inspected = false;\n`
+  );
+  fs.symlinkSync(reviewed.root, configured);
+  const verified = verifyPinnedAlphaCheckout(configured, commit);
+  assert.deepEqual(verified, { root: fs.realpathSync(reviewed.root), commit });
+  assert.equal(Object.isFrozen(verified), true);
+
+  const originalOpen = fs.openSync;
+  let computerReads = 0,
+    retargeted = false;
+  try {
+    fs.openSync = (filename, ...args) => {
+      if (
+        typeof filename === 'string' &&
+        filename.endsWith('/' + computerName) &&
+        ++computerReads === 2
+      ) {
+        // The guard's bounded descriptor check has finished; the actual
+        // lifecycle is now reading the source hash immediately before import.
+        fs.unlinkSync(configured);
+        fs.symlinkSync(replacement.root, configured);
+        retargeted = true;
+      }
+      return originalOpen(filename, ...args);
+    };
+    const loaded = await loadPinnedAlphaComputer(configured, commit);
+    assert.equal(retargeted, true);
+    assert.equal(fs.realpathSync(configured), replacement.root);
+    assert.equal(loaded.root, reviewed.root);
+    assert.equal(loaded.commit, commit);
+    assert.equal(fs.existsSync(marker), false);
+    assert.equal(loaded.computer.inspected, true);
+    // Restoring the alias makes an end-only source check pass, so that check
+    // cannot substitute for importing through the verified physical root.
+    fs.unlinkSync(configured);
+    fs.symlinkSync(reviewed.root, configured);
+    assert.equal(assertPinnedAlphaCheckout(configured, commit), commit);
+    assert.equal(assertPinnedAlphaCheckout(loaded.root, commit), commit);
+  } finally {
+    fs.openSync = originalOpen;
+  }
+});
 
 test('source hashing stops at maxBytes+1 after an injected append without whole-file allocation', (t) => {
   const { root } = checkout(t),
