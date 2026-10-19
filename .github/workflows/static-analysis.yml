@@ -196,9 +196,12 @@ jobs:
           assert(integration.every(file => admitted(file, expanded)), 'Integration closure is excluded');
           const browser = ['computer-receipt.mjs','computer-receipt-model.mjs','computer-receipt-copy.mjs','computer-desk.mjs','computer-desk-runtime-source.mjs','computer-mission.js','computer-mission-copy.mjs'].map(file => 'website/assets/' + file);
           assert(browser.every(file => admitted(file, expanded)), 'Native browser closure is excluded');
+          const requiredClosure = [...integration, ...browser];
+          assert(requiredClosure.every(file => files.includes(file)), 'Required integration/browser receiver source is absent from the immutable tree');
           const requiredExtractedFiles = files.filter(file => /^(?:integrations\/alpha-agent|website\/assets)\//.test(file) && /\.(?:[cm]?[jt]sx?)$/i.test(file) && !/\.d\.[cm]?ts$/i.test(file) && admitted(file, expanded)).sort();
           assert(requiredExtractedFiles.some(file => file.startsWith('integrations/alpha-agent/')), 'Integration executable source is absent');
           assert(requiredExtractedFiles.some(file => file.startsWith('website/assets/')), 'Browser executable source is absent');
+          assert(requiredClosure.every(file => requiredExtractedFiles.includes(file)), 'Required receiver closure is absent from mandatory extraction inventory');
           assert.equal(git('rev-parse','HEAD').trim(), source, 'CodeQL HEAD changed during source validation');
           assert.equal(git('rev-parse','HEAD^{tree}').trim(), tree, 'CodeQL tree changed during source validation');
           assert.equal(source, process.env.GITHUB_SHA, 'CodeQL final source differs from its run source');
