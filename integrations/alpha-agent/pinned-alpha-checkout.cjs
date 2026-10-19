@@ -135,7 +135,11 @@ function assertPinnedAlphaCheckout(root, expectedCommit) {
   const sourceFiles = git('ls-files', '--others', '--exclude-standard', '-z')
     .split('\0')
     .filter(Boolean)
-    .filter((name) => /\.(?:[cm]?[jt]sx?|json|node|wasm|py|sh)$/i.test(name));
+    .filter(
+      (name) =>
+        name.endsWith('/') ||
+        /\.(?:[cm]?[jt]sx?|json|node|wasm|py|sh)$/i.test(name)
+    );
   assert.equal(
     sourceFiles.length,
     0,

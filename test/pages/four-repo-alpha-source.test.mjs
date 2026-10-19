@@ -104,6 +104,23 @@ test('unknown nonignored source is refused while normal ignored dependencies and
   );
 });
 
+test('embedded nonignored repositories cannot hide source behind an untracked directory entry', (t) => {
+  const { root, commit, git, write } = checkout(t);
+  write('node_modules/installed/engine.mjs', 'export const installed = true;');
+  git('-C', 'node_modules/installed', 'init', '--quiet');
+  assert.equal(assertPinnedAlphaCheckout(root, commit), commit);
+  write('plugin/evil.mjs', 'export const unexpected = true;');
+  git('-C', 'plugin', 'init', '--quiet');
+  assert.equal(
+    git('ls-files', '--others', '--exclude-standard', '-z'),
+    'plugin/\0'
+  );
+  assert.throws(
+    () => assertPinnedAlphaCheckout(root, commit),
+    /untracked source/
+  );
+});
+
 test('missing, abbreviated and stale checkout identities fail closed', (t) => {
   const { root, commit } = checkout(t);
   for (const pin of [undefined, '', commit.slice(0, 12), '0'.repeat(40)])
