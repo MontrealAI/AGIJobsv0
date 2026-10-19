@@ -626,7 +626,19 @@ test('mandatory scanner manifest is derived from actual pinned receiver Git sour
     git,
     git('rev-parse', 'HEAD').trim()
   );
-  assert.equal(required.length, 86);
+  const prior = expectedReceiverSources(
+    git,
+    '5db66e4788afd6edf1b44f32578b89f2bf1ab67c'
+  );
+  assert.equal(prior.length, 86);
+  assert.deepEqual(
+    required,
+    [
+      ...prior,
+      'integrations/alpha-agent/tests/transformational-compatibility.test.mjs',
+    ].sort()
+  );
+  assert.equal(required.length, 87);
   assert(profile.scannerReceiverPaths.every((file) => required.includes(file)));
   assert.equal(new Set(required).size, required.length);
 });
