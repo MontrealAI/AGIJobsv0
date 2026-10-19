@@ -52,7 +52,8 @@ pseudo-domains, fragments, credential query fields and other ports are refused b
 native callback. Public IP literals are also outside this profile. DNS names are
 not resolved or fetched here; source rights and network admission remain separate
 runtime checks. Native inert authorization metadata and the draft's fixed public
-AGIALPHA token address have explicit structural exceptions; a generic token or
+AGIALPHA token address and exact public authorization-commitment digest have
+explicit structural exceptions; a generic token or
 authorization string is not admitted as public campaign data.
 Credential families are conservatively matched within normalized field names,
 including header/provider prefixes and token suffixes; public computational

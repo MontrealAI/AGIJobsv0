@@ -143,10 +143,17 @@ function read(raw) {
           path[0] === 'route' &&
           value.schema === TRANSFORMATION_WORK_DRAFT_SCHEMA &&
           child === route.token;
+        const publicAuthorizationBinding =
+          name === 'authorizationBinding' &&
+          path.length === 1 &&
+          path[0] === 'bindings' &&
+          value.schema === TRANSFORMATION_WORK_DRAFT_SCHEMA &&
+          (child === null || hash(child));
         need(
           !credentialKey(key) ||
             nativeAuthorization ||
             publicRouteToken ||
+            publicAuthorizationBinding ||
             child === null ||
             child === '',
           'TRANSFORMATION_PRIVATE_INPUT'

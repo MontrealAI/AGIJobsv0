@@ -106,7 +106,9 @@ test('an installed inspector preserves the native free revision-zero campaign wi
 });
 
 test('a policy-double positive charter yields an inert exact-18-decimal proposal bound to every native object and source', async () => {
-  const request = await fixture(),
+  const request = await fixture((x) => {
+      x.authorization.binding = sha('public authorization commitment');
+    }),
     original = JSON.stringify(request, null, 2);
   const raw = await createTransformationWorkDraft(original, options(request));
   const draft = await inspectTransformationWorkDraft(raw, options(request));
@@ -122,6 +124,10 @@ test('a policy-double positive charter yields an inert exact-18-decimal proposal
     request.evaluation.instrument_digest
   );
   assert.equal(draft.bindings.measurementEpoch, 1);
+  assert.equal(
+    draft.bindings.authorizationBinding,
+    request.authorization.binding
+  );
   assert.equal(
     draft.bindings.adapterSha256,
     byteDigest(
@@ -324,6 +330,9 @@ test('rehashed edits cannot grant authority or alter token, budget, epoch, sourc
       x.bindings.measurementEpoch++;
     },
     (x) => {
+      x.bindings.authorizationBinding = '0'.repeat(64);
+    },
+    (x) => {
       x.bindings.adapterSha256 = 'sha256:' + '0'.repeat(64);
     },
     (x) => {
@@ -389,6 +398,7 @@ test('decoded credential, private-address and duplicate-key inputs are rejected 
     'aws_secret_access_key',
     'api_token',
     'x-amz-security-token',
+    'authorizationBinding',
   ]) {
     const credential = await fixture((x) => {
       x.bindings.configuration = { [key]: 'synthetic-fixture-only' };
