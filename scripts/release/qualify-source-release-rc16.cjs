@@ -190,50 +190,319 @@ function resultIdentity(result) {
   };
 }
 
-function verifyScannerReviewBinding({ sha, review, git }) {
+// Review records are installed after their scan, so both language slots may be
+// added together or in either order. All other source/profile bytes stay fixed.
+function validateScannerReviewMetadata(field, review, { git, target } = {}) {
+  const python = field === 'pythonScannerReview';
+  assert(python || field === 'scannerReview', 'Unknown scanner review field');
+  const fields = python
+    ? [
+        'schema',
+        'sourceCommit',
+        'tree',
+        'producerRunId',
+        'producerRunAttempt',
+        'artifactId',
+        'artifactName',
+        'archiveSha256',
+        'rawRecords',
+        'toolComponents',
+        'codeqlConfigSummary',
+        'successfulExtractionFiles',
+        'requiredExtractedFiles',
+        'ruleIds',
+        'rawResultCount',
+        'results',
+        'reviewEvidence',
+      ]
+    : ['sourceCommit', 'results', 'reviewEvidence'];
+  exactFields(review, fields, 'Complete scanner review metadata fields differ');
   assert(
-    /^[a-f0-9]{40}$/.test(sha || '') &&
-      /^[a-f0-9]{40}$/.test(review?.sourceCommit || ''),
+    /^[a-f0-9]{40}$/.test(review.sourceCommit || ''),
     'Scanner review requires exact source identities'
   );
+  const references = (value) =>
+    Array.isArray(value) &&
+    value.length > 0 &&
+    value.every((item) => typeof item === 'string' && item.trim());
+  assert(
+    references(review.reviewEvidence) ||
+      (!python &&
+        typeof review.reviewEvidence === 'string' &&
+        review.reviewEvidence.trim()),
+    'Scanner review evidence is absent'
+  );
+  assert(
+    Array.isArray(review.results),
+    'Scanner review result inventory is absent'
+  );
+  for (const item of review.results) {
+    exactFields(
+      item,
+      [
+        'ruleId',
+        'path',
+        'region',
+        'resultSha256',
+        'disposition',
+        'justification',
+        'regressionEvidence',
+      ],
+      'Complete scanner result disposition fields differ'
+    );
+    assert(
+      typeof item.ruleId === 'string' &&
+        item.ruleId &&
+        typeof item.path === 'string' &&
+        item.path &&
+        item.region &&
+        typeof item.region === 'object' &&
+        !Array.isArray(item.region) &&
+        /^[a-f0-9]{64}$/.test(item.resultSha256 || '') &&
+        item.disposition === 'Demonstrably false positive' &&
+        typeof item.justification === 'string' &&
+        item.justification.trim() &&
+        references(item.regressionEvidence),
+      'Every retained scanner result needs a complete disposition'
+    );
+  }
+  if (python) {
+    assert.equal(review.schema, 'agijobsv0/codeql-python-review/1');
+    assert(
+      /^[a-f0-9]{40}$/.test(review.tree || ''),
+      'Python review tree identity is absent'
+    );
+    for (const value of [
+      review.producerRunId,
+      review.producerRunAttempt,
+      review.artifactId,
+    ])
+      assert(
+        Number.isSafeInteger(value) && value > 0,
+        'Python review producer identity is absent'
+      );
+    assert.equal(
+      review.artifactName,
+      `python-codeql-security-report-${review.sourceCommit}-${review.producerRunId}-${review.producerRunAttempt}`
+    );
+    assert(
+      /^[a-f0-9]{64}$/.test(review.archiveSha256 || ''),
+      'Python review archive identity is absent'
+    );
+    const files = [
+      'python.sarif',
+      'source-extraction.json',
+      'source-scope-after.json',
+      'source-scope-before.json',
+    ];
+    exactFields(
+      review.rawRecords,
+      files,
+      'Python review raw record inventory differs'
+    );
+    assert(
+      files.every((name) =>
+        /^[a-f0-9]{64}$/.test(review.rawRecords[name] || '')
+      ),
+      'Python review raw record digest is absent'
+    );
+    assert(
+      Array.isArray(review.toolComponents) &&
+        review.toolComponents.length > 0 &&
+        review.toolComponents.every(
+          (component) =>
+            component &&
+            typeof component.name === 'string' &&
+            component.name &&
+            Array.isArray(component.rules)
+        ),
+      'Python review complete tool/rule metadata is absent'
+    );
+    const rules = review.toolComponents.flatMap((component) =>
+      component.rules.map((rule) => rule.id)
+    );
+    assert(
+      rules.length > 0 &&
+        rules.every((rule) => typeof rule === 'string' && rule),
+      'Python review rule metadata is absent'
+    );
+    assert.deepEqual(
+      review.ruleIds,
+      [...new Set(rules)].sort(),
+      'Python review rule metadata differs'
+    );
+    assert(
+      review.codeqlConfigSummary &&
+        typeof review.codeqlConfigSummary === 'object' &&
+        !Array.isArray(review.codeqlConfigSummary) &&
+        Object.keys(review.codeqlConfigSummary).length > 0,
+      'Python review config summary is absent'
+    );
+    for (const name of [
+      'successfulExtractionFiles',
+      'requiredExtractedFiles',
+    ]) {
+      assert(
+        Array.isArray(review[name]) &&
+          review[name].length > 0 &&
+          review[name].every((file) => typeof file === 'string' && file),
+        'Python review extraction inventory is absent'
+      );
+      assert.deepEqual(
+        review[name],
+        [...new Set(review[name])].sort(),
+        'Python review extraction inventory is not complete and normalized'
+      );
+    }
+    assert(
+      review.requiredExtractedFiles.every((file) =>
+        review.successfulExtractionFiles.includes(file)
+      ),
+      'Python review is missing required extraction'
+    );
+    assert(
+      Number.isSafeInteger(review.rawResultCount) &&
+        review.rawResultCount >= 0 &&
+        review.rawResultCount === review.results.length,
+      'Python review raw result multiplicity differs'
+    );
+    assert.equal(
+      typeof git,
+      'function',
+      'Python review requires immutable Git source'
+    );
+    assert.equal(
+      git('rev-parse', review.sourceCommit + '^{tree}').trim(),
+      review.tree,
+      'Python review tree differs from its Git source'
+    );
+  }
+  if (git && target)
+    git('merge-base', '--is-ancestor', review.sourceCommit, target);
+}
+
+function verifyScannerReviewInstallBinding({
+  sha,
+  review,
+  git,
+  field = 'scannerReview',
+}) {
+  assert(
+    /^[a-f0-9]{40}$/.test(sha || ''),
+    'Scanner review requires exact source identities'
+  );
+  // Preserve the original same-source parser API; archive wrappers still bind
+  // the producer, raw reports, exact result multiset and independent review.
+  validateScannerReviewMetadata(field, review, { git, target: sha });
   if (review.sourceCommit === sha) return;
-  // A review record cannot contain its own commit hash. Permit only the
-  // subsequent installation of that record, with every executable byte fixed.
   assert.equal(
     typeof git,
     'function',
     'Scanner review does not bind this source'
   );
   git('merge-base', '--is-ancestor', review.sourceCommit, sha);
-  const changed = git('diff', '--name-only', '-z', review.sourceCommit, sha)
-    .split('\0')
-    .filter(Boolean);
+  const profilePath = 'scripts/release/source-profile-rc16.json';
+  const slots = ['scannerReview', 'pythonScannerReview'];
+  const profiles = new Map();
+  const readProfile = (commit) => {
+    if (!profiles.has(commit))
+      profiles.set(commit, JSON.parse(git('show', `${commit}:${profilePath}`)));
+    return profiles.get(commit);
+  };
   assert.deepEqual(
-    changed,
-    ['scripts/release/source-profile-rc16.json'],
-    'Source changed after scanner review beyond its record'
-  );
-  const before = JSON.parse(
-    git(
-      'show',
-      `${review.sourceCommit}:scripts/release/source-profile-rc16.json`
-    )
-  );
-  const after = JSON.parse(
-    git('show', `${sha}:scripts/release/source-profile-rc16.json`)
-  );
-  assert.equal(
-    canonical(after.scannerReview),
-    canonical(review),
+    readProfile(sha)[field],
+    review,
     'Installed scanner review differs'
   );
-  after.scannerReview = before.scannerReview;
-  after.qualification = before.qualification;
-  assert.equal(
-    canonical(after),
-    canonical(before),
-    'Scanner review installation changed source/profile pins'
+  const raw = git(
+    'rev-list',
+    '--parents',
+    '--reverse',
+    '--ancestry-path',
+    '--max-count=65',
+    `${review.sourceCommit}..${sha}`
   );
+  const rows = raw
+    .trim()
+    .split('\n')
+    .filter(Boolean)
+    .map((line) => line.trim().split(/\s+/));
+  assert(
+    rows.length > 0 && rows.length <= 64,
+    'Scanner review installation history is absent or exceeds its bound'
+  );
+  const commits = new Set([review.sourceCommit]);
+  for (const row of rows) {
+    assert(
+      row.length > 1 &&
+        row.every((value) => /^[a-f0-9]{40}$/.test(value)) &&
+        !commits.has(row[0]),
+      'Malformed scanner review installation history'
+    );
+    commits.add(row[0]);
+  }
+  assert(
+    commits.has(sha),
+    'Scanner review installation history does not reach this source'
+  );
+  for (const [commit, ...parents] of rows) {
+    const relevant = parents.filter((parent) => commits.has(parent));
+    assert(
+      relevant.length > 0,
+      'Scanner review installation history is disconnected'
+    );
+    for (const parent of relevant) {
+      const changed = git(
+        'diff',
+        '--no-ext-diff',
+        '--no-textconv',
+        '--name-only',
+        '-z',
+        parent,
+        commit,
+        '--'
+      )
+        .split('\0')
+        .filter(Boolean);
+      assert(
+        changed.length === 0 ||
+          (changed.length === 1 && changed[0] === profilePath),
+        'Source changed after scanner review beyond its record'
+      );
+      const before = readProfile(parent),
+        after = readProfile(commit);
+      for (const slot of slots) {
+        assert(
+          Object.hasOwn(before, slot) && Object.hasOwn(after, slot),
+          'Both scanner review slots must remain explicit'
+        );
+        if (canonical(before[slot]) !== canonical(after[slot]))
+          assert(
+            before[slot] === null && after[slot] !== null,
+            'An installed scanner review cannot be replaced or removed'
+          );
+        if (after[slot] !== null)
+          validateScannerReviewMetadata(slot, after[slot], {
+            git,
+            target: commit,
+          });
+      }
+      const projected = { ...after };
+      for (const slot of slots) projected[slot] = before[slot];
+      assert.deepEqual(
+        projected,
+        before,
+        'Scanner review installation changed other profile pins or qualification'
+      );
+    }
+  }
+}
+
+function verifyScannerReviewBinding(options) {
+  return verifyScannerReviewInstallBinding({
+    ...options,
+    field: 'scannerReview',
+  });
 }
 
 function verifyScannerAnalysis(
@@ -748,6 +1017,7 @@ module.exports = {
   verifyScannerResults,
   expectedReceiverSources,
   verifyScannerReviewBinding,
+  verifyScannerReviewInstallBinding,
   resultIdentity,
   extracted,
   readPages,

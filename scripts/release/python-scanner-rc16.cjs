@@ -7,6 +7,7 @@ const {
   sha256,
   resultIdentity,
   validateProducer,
+  verifyScannerReviewInstallBinding,
 } = require('./qualify-source-release-rc16.cjs');
 
 const archiveFiles = Object.freeze([
@@ -196,58 +197,11 @@ function expectedPythonSources(git, sha) {
     .sort();
 }
 
-function verifyPythonScannerReviewBinding({ sha, review, git }) {
-  identity(sha, 'review target identity');
-  identity(review?.sourceCommit, 'review source identity');
-  identity(review?.tree, 'review tree identity');
-  assert.equal(
-    typeof git,
-    'function',
-    'Python review requires immutable Git source'
-  );
-  assert.equal(
-    git('rev-parse', review.sourceCommit + '^{tree}').trim(),
-    review.tree,
-    'Python review tree differs from its Git source'
-  );
-  if (review.sourceCommit === sha) return;
-  git('merge-base', '--is-ancestor', review.sourceCommit, sha);
-  assert.deepEqual(
-    git(
-      'diff',
-      '--no-ext-diff',
-      '--no-textconv',
-      '--name-only',
-      '-z',
-      review.sourceCommit,
-      sha,
-      '--'
-    )
-      .split('\0')
-      .filter(Boolean),
-    [sourceProfilePath],
-    'Source changed after Python review beyond its installed record'
-  );
-  const before = JSON.parse(
-    git('show', review.sourceCommit + ':' + sourceProfilePath)
-  );
-  const after = JSON.parse(git('show', sha + ':' + sourceProfilePath));
-  assert.equal(
-    before.pythonScannerReview,
-    null,
-    'Python review installation must start from a null review'
-  );
-  assert.deepEqual(
-    after.pythonScannerReview,
-    review,
-    'Installed Python review differs'
-  );
-  after.pythonScannerReview = before.pythonScannerReview;
-  assert.deepEqual(
-    after,
-    before,
-    'Python review installation changed other profile fields or source pins'
-  );
+function verifyPythonScannerReviewBinding(options) {
+  return verifyScannerReviewInstallBinding({
+    ...options,
+    field: 'pythonScannerReview',
+  });
 }
 
 function analysis(document) {

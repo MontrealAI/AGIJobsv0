@@ -298,12 +298,15 @@ test('scanner review installation permits only its own record and no executable 
   };
   const before = {
       scannerReview: null,
+      pythonScannerReview: null,
       qualification: 'pending',
       native: 'fixed',
     },
-    after = { ...before, scannerReview: review, qualification: 'reviewed' };
+    after = { ...before, scannerReview: review };
   const git = (command, ...args) =>
-    command === 'diff'
+    command === 'rev-list'
+      ? `${sha} ${review.sourceCommit}\n`
+      : command === 'diff'
       ? 'scripts/release/source-profile-rc16.json\0'
       : command === 'show'
       ? JSON.stringify(args[0].startsWith(review.sourceCommit) ? before : after)
@@ -314,10 +317,22 @@ test('scanner review installation permits only its own record and no executable 
       verifyScannerReviewBinding({
         sha,
         review,
-        git: (command) =>
+        git: (command, ...args) =>
+          command === 'show' && args[0].startsWith(sha)
+            ? JSON.stringify({ ...after, qualification: 'reviewed' })
+            : git(command, ...args),
+      }),
+    /qualification/
+  );
+  assert.throws(
+    () =>
+      verifyScannerReviewBinding({
+        sha,
+        review,
+        git: (command, ...args) =>
           command === 'diff'
             ? 'scripts/release/qualify-source-release-rc16.cjs\0'
-            : '',
+            : git(command, ...args),
       }),
     /beyond its record/
   );
