@@ -176,6 +176,38 @@ four labeled protocol fixture files. No files are written by default, and an
 existing output directory is refused. Unknown model and human costs remain
 unknown in this fixture.
 
+### Rehearse the current draft through disposable modular contracts
+
+`four-repo-computer-lifecycle.cjs` commits the exact draft's SHA-256 as the job
+specification and the exact native Alpha return's SHA-256 as the result. It uses
+the actual modular JobRegistry and StakeManager with a mock token, permissive
+identity and an operator-controlled validation stub. Successful work receives
+the separately finalized mock reward. Rejected work remains disputed, cannot
+finalize and receives no payout. This is a fixture of contract mechanics, not
+independent content acceptance or production readiness.
+
+Use Node **22.23.3**, npm **10.8.2**, a reviewed clean Alpha source pin and a new
+evidence filename. Compile with the normal Solidity 0.8.37 / via-IR / 200-run
+profile, then run only on the fresh in-process `hardhat` network:
+
+```bash
+npm ci --ignore-scripts --no-audit
+npm run compile
+FQR_DRAFT_FILE=/absolute/evidence/jobs-agialpha-draft.json \
+FQR_ALPHA_SOURCE=/absolute/reviewed/alpha-checkout \
+FQR_ALPHA_COMMIT=REPLACE_WITH_EXACT_REVIEWED_40_HEX_COMMIT \
+FQR_EVIDENCE_FILE=/absolute/evidence/new-jobs-local-lifecycle.json \
+npx hardhat run --no-compile --network hardhat integrations/alpha-agent/four-repo-computer-lifecycle.cjs
+```
+
+The script rejects external RPCs, forks, other networks, substituted Alpha
+source, malformed drafts and existing evidence outputs before fixture writes.
+`FQR_INPUT_CLASS` may record an external evidence label; it is not authenticated
+runtime proof. Protocol-only inputs must remain labeled
+`PROTOCOL_DOUBLE_NO_BROWSER`. This rehearsal never loads a production key,
+contacts Mainnet or changes an existing deployment. The fixture's mock token
+uses 18-decimal base units, without implying real AGIALPHA revenue.
+
 ## Reproduce the disposable-chain acceptance
 
 The retained `fixtures/local-acceptance.json` records a real local assignment,
