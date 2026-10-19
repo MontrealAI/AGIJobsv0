@@ -6,6 +6,7 @@ import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 import { registerHooks } from 'node:module';
+import { randomUUID } from 'node:crypto';
 import { loadPinnedAlphaComputer } from '../../integrations/alpha-agent/four-repo-computer-lifecycle.cjs';
 import {
   assertPinnedAlphaCheckout,
@@ -111,6 +112,7 @@ for (const relative of [
       relative,
     async (t) => {
       const source = checkout(t);
+      const sentinel = '__fqrChangedModule_' + randomUUID().replaceAll('-', '');
       source.write(
         'examples/successor-alpha/computer.mjs',
         "export { inspected } from '../successor-workbench/engine.mjs';\n"
@@ -134,7 +136,9 @@ for (const relative of [
             changed = true;
             fs.writeFileSync(
               path.join(source.root, relative),
-              'export const inspected = 9;\n'
+              `globalThis[${JSON.stringify(
+                sentinel
+              )}] = true; export const inspected = 9;\n`
             );
             try {
               return nextLoad(url, context);
@@ -149,10 +153,12 @@ for (const relative of [
         const actual = await snapshot.load();
         assert(changed);
         assert.equal(actual.inspected, 1);
+        assert.equal(Object.hasOwn(globalThis, sentinel), false);
         assert.equal(assertPinnedAlphaCheckout(source.root, commit), commit);
       } finally {
         observer.deregister();
         snapshot.dispose();
+        delete globalThis[sentinel];
       }
     }
   );
@@ -169,10 +175,16 @@ test('a path-based control observes a changed export even when bytes are restore
     original = fs.readFileSync(file);
   assert.equal(assertPinnedAlphaCheckout(source.root, commit), commit);
   const target = pathToFileURL(file).href;
+  const sentinel = '__fqrPathControl_' + randomUUID().replaceAll('-', '');
   const observer = registerHooks({
     load(url, context, nextLoad) {
       if (url === target) {
-        fs.writeFileSync(file, 'export const inspected = 9;\n');
+        fs.writeFileSync(
+          file,
+          `globalThis[${JSON.stringify(
+            sentinel
+          )}] = true; export const inspected = 9;\n`
+        );
         try {
           return nextLoad(url, context);
         } finally {
@@ -184,9 +196,11 @@ test('a path-based control observes a changed export even when bytes are restore
   });
   try {
     assert.equal((await import(target)).inspected, 9);
+    assert.equal(globalThis[sentinel], true);
     assert.equal(assertPinnedAlphaCheckout(source.root, commit), commit);
   } finally {
     observer.deregister();
+    delete globalThis[sentinel];
   }
 });
 
