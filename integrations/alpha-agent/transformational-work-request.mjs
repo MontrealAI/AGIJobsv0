@@ -39,6 +39,21 @@ const need = (condition, code) => {
 const same = (a, b) => canonical(a) === canonical(b);
 const hash = (value) =>
   typeof value === 'string' && /^[0-9a-f]{64}$/.test(value);
+const credentialKeys = new Set([
+  'password',
+  'passwd',
+  'apikey',
+  'privatekey',
+  'seedphrase',
+  'accesstoken',
+  'refreshtoken',
+  'bearertoken',
+  'authtoken',
+  'clientsecret',
+  'signingkey',
+  'secret',
+  'credentials',
+]);
 function read(raw) {
   need(
     typeof raw === 'string' && Buffer.byteLength(raw, 'utf8') <= MAX_BYTES,
@@ -52,11 +67,9 @@ function read(raw) {
     if (item && typeof item === 'object') {
       for (const [name, child] of Object.entries(item)) {
         need(
-          !/^(?:password|passwd|api[_-]?key|private[_-]?key|seed[_ -]?phrase|access[_-]?token|client[_-]?secret|signing[_-]?key)$/i.test(
-            name
-          ) ||
-            typeof child !== 'string' ||
-            !child.trim(),
+          !credentialKeys.has(name.toLowerCase().replace(/[^a-z0-9]/g, '')) ||
+            child === null ||
+            child === '',
           'TRANSFORMATION_PRIVATE_INPUT'
         );
         pending.push(child);

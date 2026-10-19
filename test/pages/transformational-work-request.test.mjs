@@ -370,6 +370,12 @@ test('decoded credential, private-address and duplicate-key inputs are rejected 
     'seed phrase',
     'client_secret',
     'signing_key',
+    'refresh_token',
+    'bearerToken',
+    'auth-token',
+    'client.secret',
+    'secret',
+    'credentials',
   ]) {
     const credential = await fixture((x) => {
       x.bindings.configuration = { [key]: 'synthetic-fixture-only' };
