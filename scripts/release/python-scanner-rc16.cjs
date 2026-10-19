@@ -8,6 +8,7 @@ const {
   resultIdentity,
   validateProducer,
   verifyScannerReviewInstallBinding,
+  assertNoScannerErrorDiagnostics,
 } = require('./qualify-source-release-rc16.cjs');
 
 const archiveFiles = Object.freeze([
@@ -222,6 +223,7 @@ function analysis(document) {
       run.invocations.every((item) => item.executionSuccessful === true),
     'Python scanner did not complete successfully'
   );
+  assertNoScannerErrorDiagnostics(run.invocations);
   assert(
     run.invocations.some((item) =>
       item.toolExecutionNotifications?.some(

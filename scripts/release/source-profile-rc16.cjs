@@ -28,6 +28,8 @@ const anchors = Object.freeze({
   sourceConvergenceTree: 'a57568af67ae780f2d9851e0569473f62a80da90',
   pythonScannerBaseline: 'ce08a583391e563566a0eaec6f89da3190c319db',
   pythonScannerTree: 'da44eb275fae8d01bd471fe2efef4a36982fc9d3',
+  javascriptExtractorBaseline: 'fdfd8155f2fa7f11625556f75251c233823c492f',
+  javascriptExtractorTree: '34e4cbbc18bf127b4fbb3a9641969012b732f4d9',
 });
 const allowedNewPaths = Object.freeze([
   'scripts/release/source-profile-rc16.cjs',
@@ -89,12 +91,12 @@ const scannerPolicy = freeze({
     '4b34450e1dcc0b489feea158d642a6b66261d9e935463928782219c8716c0892',
   configPath: '.github/codeql/config-integrations.yml',
   configSha256:
-    '18041680f9d2df3706e45bdf04e785457ee27573312998b999f51e893e7b59bb',
-  configBlob: '0759a4da80412a04830bed3e7f5727d07cbdeb35',
+    '07d7be878097a38520bcf09147b62c75064cb3d707317ad34e028c1f46ba8155',
+  configBlob: '4533ce4d7f681a6230399e25fb1d1f736c84b25b',
   workflowPath: '.github/workflows/static-analysis.yml',
   workflowSha256:
-    '1ff362acc7cfa238a3ef0661d1a437e2ee79ad992a41e1ce81d9bc2530d9741f',
-  workflowBlob: '7813a7c15e6d5637b44f731111c990a67ec0faaa',
+    '2b4228cdcaeb5e57730818958329d15a357028dec7e77c83a4f38b9fb0609da4',
+  workflowBlob: 'ba3056630cae4131292764ba313ea7bd9678bd25',
   archiveFiles: [
     'javascript.sarif',
     'source-extraction.json',
@@ -145,6 +147,15 @@ const sourceConvergencePaths = Object.freeze([
 const pythonScannerPaths = Object.freeze([
   '.github/codeql/config-python-integrations.yml',
   '.github/workflows/static-analysis-python-integrations.yml',
+]);
+const javascriptExtractorPaths = Object.freeze([
+  '.github/codeql/config-integrations.yml',
+  '.github/workflows/apps-images.yml',
+  '.github/workflows/contracts.yml',
+  '.github/workflows/culture-ci.yml',
+  '.github/workflows/escrow-replay-regression.yml',
+  '.github/workflows/pages.yml',
+  '.github/workflows/static-analysis.yml',
 ]);
 const pythonScannerPolicy = freeze({
   producerCommit: 'ce08a583391e563566a0eaec6f89da3190c319db',
@@ -471,6 +482,55 @@ function verifyPythonScannerTransitions(beforeTree, afterTree, transitions) {
   return [...pythonScannerPaths].sort();
 }
 
+function verifyJavaScriptExtractorTransitions(
+  beforeTree,
+  afterTree,
+  transitions
+) {
+  requireValue(
+    beforeTree instanceof Map &&
+      afterTree instanceof Map &&
+      Array.isArray(transitions) &&
+      same(
+        transitions.map((item) => item.path).sort(),
+        [...javascriptExtractorPaths].sort()
+      ),
+    'Complete finite JavaScript extractor transition paths differ'
+  );
+  for (const item of transitions) {
+    fields(
+      item,
+      ['path', 'before', 'after'],
+      'Malformed JavaScript extractor transition'
+    );
+    for (const identity of [item.before, item.after]) {
+      fields(
+        identity,
+        ['mode', 'blob'],
+        'Malformed JavaScript extractor blob identity'
+      );
+      requireValue(
+        identity.mode === '100644' && /^[a-f0-9]{40}$/.test(identity.blob),
+        'JavaScript extractor source must retain its regular blob modes'
+      );
+    }
+    requireValue(
+      !same(item.before, item.after) &&
+        same(beforeTree.get(item.path) ?? null, item.before) &&
+        same(afterTree.get(item.path) ?? null, item.after),
+      'Reviewed JavaScript extractor blob differs: ' + item.path
+    );
+  }
+  requireValue(
+    same(
+      changedPaths(beforeTree, afterTree),
+      [...javascriptExtractorPaths].sort()
+    ),
+    'Complete JavaScript extractor transition inventory differs'
+  );
+  return [...javascriptExtractorPaths].sort();
+}
+
 function verifyReleaseDelta(beforeTree, afterTree) {
   const changes = changedPaths(beforeTree, afterTree);
   for (const name of changes) {
@@ -565,7 +625,7 @@ function verifyLegacyWorkflow(before, after) {
   return true;
 }
 
-function validateProfile(value = profile) {
+function validateProfile(value = profile, { git, target } = {}) {
   fields(
     value,
     [
@@ -581,6 +641,7 @@ function validateProfile(value = profile) {
       'nativePinTransitions',
       'sourceConvergenceTransitions',
       'pythonScannerTransitions',
+      'javascriptExtractorTransitions',
       'pythonScannerPolicy',
       'pythonScannerRequiredPaths',
       'pythonScannerReview',
@@ -618,26 +679,54 @@ function validateProfile(value = profile) {
       value.sourceConvergenceTransitions.length === 9 &&
       Array.isArray(value.pythonScannerTransitions) &&
       value.pythonScannerTransitions.length === 2 &&
+      Array.isArray(value.javascriptExtractorTransitions) &&
+      value.javascriptExtractorTransitions.length === 7 &&
       same(value.pythonScannerPolicy, pythonScannerPolicy) &&
       same(value.pythonScannerRequiredPaths, pythonScannerRequiredPaths) &&
-      value.pythonScannerReview === null &&
       same(value.scannerPolicy, scannerPolicy) &&
       same(value.nativeCompatibility, nativeCompatibility) &&
-      same(value.scannerRequiredPaths, scannerRequiredPaths) &&
-      value.scannerReview === null,
+      same(value.scannerRequiredPaths, scannerRequiredPaths),
     'Pending native or scanner policy differs; a separately reviewed gate update is required'
   );
+  for (const field of ['scannerReview', 'pythonScannerReview']) {
+    if (value[field] === null) continue;
+    requireValue(
+      typeof git === 'function' && /^[a-f0-9]{40}$/.test(target || ''),
+      'Installed scanner reviews require immutable final Git source'
+    );
+    // Load after module initialization: the qualifier imports this profile.
+    const {
+      validateScannerReviewMetadata,
+    } = require('./qualify-source-release-rc16.cjs');
+    validateScannerReviewMetadata(field, value[field], { git, target });
+  }
   return value;
 }
 
+function bindInstalledScannerReviews(value, { git, target }) {
+  for (const field of ['scannerReview', 'pythonScannerReview']) {
+    if (value[field] === null) continue;
+    const {
+      verifyScannerReviewInstallBinding,
+    } = require('./qualify-source-release-rc16.cjs');
+    verifyScannerReviewInstallBinding({
+      sha: target,
+      review: value[field],
+      git,
+      field,
+    });
+  }
+}
+
 function verifySourceScope({ git, sha, version, lock, policy }) {
-  validateProfile();
+  validateProfile(profile, { git, target: sha });
   requireValue(
     typeof git === 'function' &&
       /^[a-f0-9]{40}$/.test(sha ?? '') &&
       version === profile.releaseVersion,
     'Invalid rc.16 source identity or version'
   );
+  bindInstalledScannerReviews(profile, { git, target: sha });
   const readJSON = (ref, name) =>
     JSON.parse(text(git('show', `${ref}:${name}`)));
   for (const baseline of [
@@ -650,6 +739,7 @@ function verifySourceScope({ git, sha, version, lock, policy }) {
     profile.nativePinBaseline,
     profile.sourceConvergenceBaseline,
     profile.pythonScannerBaseline,
+    profile.javascriptExtractorBaseline,
   ])
     git('merge-base', '--is-ancestor', baseline, sha);
   requireValue(
@@ -704,6 +794,9 @@ function verifySourceScope({ git, sha, version, lock, policy }) {
   const pythonScannerTree = parseTree(
     git('ls-tree', '-rz', profile.pythonScannerBaseline)
   );
+  const javascriptExtractorTree = parseTree(
+    git('ls-tree', '-rz', profile.javascriptExtractorBaseline)
+  );
   const releaseTree = parseTree(git('ls-tree', '-rz', sha));
   verifyProtectedTransitions(
     baselineTree,
@@ -742,8 +835,8 @@ function verifySourceScope({ git, sha, version, lock, policy }) {
     [scannerPolicy.workflowPath, scannerPolicy.workflowBlob],
   ])
     requireValue(
-      sourceConvergenceTree.get(name)?.mode === '100644' &&
-        sourceConvergenceTree.get(name)?.blob === blob,
+      javascriptExtractorTree.get(name)?.mode === '100644' &&
+        javascriptExtractorTree.get(name)?.blob === blob,
       'Reviewed scanner producer blob differs: ' + name
     );
   requireValue(
@@ -810,7 +903,32 @@ function verifySourceScope({ git, sha, version, lock, policy }) {
         pythonScannerTree.get(name)?.blob === blob,
       'Reviewed Python scanner source differs: ' + name
     );
-  const releaseChanges = verifyReleaseDelta(pythonScannerTree, releaseTree);
+  requireValue(
+    text(
+      git('rev-parse', profile.javascriptExtractorBaseline + '^{tree}')
+    ).trim() === profile.javascriptExtractorTree,
+    'JavaScript extractor source tree differs'
+  );
+  for (const baseline of [
+    profile.pythonScannerBaseline,
+    'c84d6de35bed10012615931c0f15ba8a7b931974',
+    '27b654cfa2d02ddae5c9a0633f94461648bd0822',
+  ])
+    git(
+      'merge-base',
+      '--is-ancestor',
+      baseline,
+      profile.javascriptExtractorBaseline
+    );
+  verifyJavaScriptExtractorTransitions(
+    pythonScannerTree,
+    javascriptExtractorTree,
+    profile.javascriptExtractorTransitions
+  );
+  const releaseChanges = verifyReleaseDelta(
+    javascriptExtractorTree,
+    releaseTree
+  );
   const afterPackage = readJSON(sha, 'package.json'),
     afterLock = readJSON(sha, 'package-lock.json');
   verifyVersionOnly(
@@ -844,24 +962,38 @@ function verifySourceScope({ git, sha, version, lock, policy }) {
     nativePinTransitions: profile.nativePinTransitions,
     sourceConvergenceTransitions: profile.sourceConvergenceTransitions,
     pythonScannerTransitions: profile.pythonScannerTransitions,
+    javascriptExtractorTransitions: profile.javascriptExtractorTransitions,
     pythonScannerPolicy: profile.pythonScannerPolicy,
     pythonScannerRequiredPaths: profile.pythonScannerRequiredPaths,
-    pythonScannerReview: null,
+    pythonScannerReview: profile.pythonScannerReview,
     scannerPolicy: profile.scannerPolicy,
     releaseChanges,
     nativeCompatibility: profile.nativeCompatibility,
     scannerRequiredPaths: profile.scannerRequiredPaths,
-    scannerReview: null,
+    scannerReview: profile.scannerReview,
     productionApproved: false,
   };
 }
 
-function verifyPublicationReview() {
-  // The expanded producer is pinned, but actual final-source extraction and
-  // finite reviewed current-result inventory have not been installed in this profile.
-  throw Error(
+function verifyPublicationReview(value = profile, { git, target } = {}) {
+  requireValue(
+    value?.scannerReview != null && value?.pythonScannerReview != null,
     'rc.16 publication blocked: scannerReview is pending and Python scanner review is pending; actual JavaScript and Python extraction and independent finite result reviews are required'
   );
+  validateProfile(value, { git, target });
+  requireValue(
+    same(
+      JSON.parse(
+        text(git('show', `${target}:scripts/release/source-profile-rc16.json`))
+      ),
+      value
+    ),
+    'rc.16 publication blocked: installed review profile differs from immutable Git source'
+  );
+  bindInstalledScannerReviews(value, { git, target });
+  // Metadata admission only. Authenticated archives, complete extraction,
+  // raw rule/result inventories and independent dispositions remain mandatory.
+  return { metadataAdmissionOnly: true, productionApproved: false };
 }
 
 module.exports = {
@@ -876,6 +1008,7 @@ module.exports = {
   verifyNativePinTransitions,
   verifySourceConvergenceTransitions,
   verifyPythonScannerTransitions,
+  verifyJavaScriptExtractorTransitions,
   verifyReleaseDelta,
   verifyVersionOnly,
   LEGACY_WORKFLOW_GUARD,

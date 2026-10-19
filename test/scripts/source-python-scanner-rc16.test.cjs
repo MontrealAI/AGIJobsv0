@@ -6,6 +6,7 @@ const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 const {
   profile,
+  validateProfile,
   verifyPublicationReview,
 } = require('../../scripts/release/source-profile-rc16.cjs');
 const {
@@ -313,4 +314,85 @@ test('synthetic review metadata refuses an unbounded installation history', () =
       profile: both,
     });
   assert.throws(() => verifyMetadataBoth(f, nodes), /exceeds its bound/);
+});
+
+test('synthetic dual-review lifecycle admits only installed source-bound metadata with fixed profile pins', () => {
+  // SYNTHETIC_REVIEW_METADATA_ONLY_NOT_SCAN_EVIDENCE: this exercises profile
+  // admission only. Both actual archive validators and hosted checks remain
+  // separate mandatory gates, and real profile records stay null.
+  const f = reviewMetadataFixture();
+  f.base = structuredClone(profile);
+  const first = 'b'.repeat(40),
+    final = 'c'.repeat(40);
+  const installed = {
+    ...f.base,
+    scannerReview: f.js,
+    pythonScannerReview: f.py,
+  };
+  assert.throws(() => verifyPublicationReview(profile), /blocked|pending/);
+  for (const slot of [null, 'scannerReview', 'pythonScannerReview']) {
+    const nodes = [];
+    if (slot)
+      nodes.push({
+        sha: first,
+        parents: [f.source],
+        profile: { ...f.base, [slot]: slot === 'scannerReview' ? f.js : f.py },
+      });
+    nodes.push({
+      sha: final,
+      parents: [slot ? first : f.source],
+      profile: installed,
+    });
+    const git = metadataGit(f, nodes);
+    if (slot) {
+      validateProfile(nodes[0].profile, { git, target: first });
+      assert.throws(
+        () => verifyPublicationReview(nodes[0].profile, { git, target: first }),
+        /blocked|pending/
+      );
+    }
+    validateProfile(installed, { git, target: final });
+    assert.deepEqual(
+      verifyPublicationReview(installed, { git, target: final }),
+      {
+        metadataAdmissionOnly: true,
+        productionApproved: false,
+      }
+    );
+  }
+  assert.throws(
+    () => verifyPublicationReview(installed),
+    /Git|source|identity/
+  );
+  assert.throws(
+    () =>
+      verifyPublicationReview(installed, {
+        git: metadataGit(f, []),
+        target: f.source,
+      }),
+    /installed|profile|differ/
+  );
+  for (const alter of [
+    (value) => {
+      value.pythonScannerReview = { ...f.py, arbitraryApproval: true };
+    },
+    (value) => {
+      value.qualification = 'SYNTHETIC_CHANGED_QUALIFICATION';
+    },
+    (value) => {
+      value.compilerSourceBaseline = 'f'.repeat(40);
+    },
+  ]) {
+    const changed = structuredClone(installed);
+    alter(changed);
+    const git = metadataGit(f, [
+      { sha: final, parents: [f.source], profile: changed },
+    ]);
+    assert.throws(() => validateProfile(changed, { git, target: final }));
+    assert.throws(() =>
+      verifyPublicationReview(changed, { git, target: final })
+    );
+  }
+  assert.equal(profile.scannerReview, null);
+  assert.equal(profile.pythonScannerReview, null);
 });

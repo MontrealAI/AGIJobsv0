@@ -1,6 +1,7 @@
 'use strict';
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
+const crypto = require('node:crypto');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
@@ -184,7 +185,7 @@ test('complete source verifier accepts only finite release plumbing over the act
     path.join(r.root, '.git/objects/info/alternates'),
     objects + '\n'
   );
-  r.git('read-tree', p.profile.pythonScannerBaseline);
+  r.git('read-tree', p.profile.javascriptExtractorBaseline);
   const beforePackage = JSON.parse(
     r.git('show', `${p.profile.integrationBaseline}:package.json`)
   );
@@ -219,7 +220,7 @@ test('complete source verifier accepts only finite release plumbing over the act
   );
   const args = {
     git: r.git,
-    sha: r.commit(p.profile.pythonScannerBaseline),
+    sha: r.commit(p.profile.javascriptExtractorBaseline),
     version: p.profile.releaseVersion,
     lock: afterLock,
     policy,
@@ -365,6 +366,12 @@ test('profile baseline, source pins and pending scanner boundary cannot silently
       value.implementationBaseline = '0'.repeat(40);
     },
     (value) => {
+      value.javascriptExtractorBaseline = '0'.repeat(40);
+    },
+    (value) => {
+      value.javascriptExtractorTransitions.pop();
+    },
+    (value) => {
       value.qualification = 'QUALIFIED';
     },
     (value) => {
@@ -431,7 +438,7 @@ test('actual integrated candidate has exactly nineteen finite receiver and produ
   );
   assert.equal(
     after.get(p.profile.scannerPolicy.configPath).blob,
-    p.profile.scannerPolicy.configBlob
+    '0759a4da80412a04830bed3e7f5727d07cbdeb35'
   );
   assert.equal(
     after.get(p.profile.scannerPolicy.workflowPath).blob,
@@ -505,8 +512,87 @@ test('converged storage and additive Python policy have exact finite source tran
   );
   assert.equal(
     converged.get(p.profile.scannerPolicy.workflowPath).blob,
-    p.profile.scannerPolicy.workflowBlob
+    '7813a7c15e6d5637b44f731111c990a67ec0faaa'
   );
   assert.equal(p.profile.scannerRequiredPaths.length, 14);
+  assert.equal(p.profile.pythonScannerReview, null);
+});
+
+test('final JavaScript extractor anchor preserves exact policy and workflow admissions', () => {
+  const git = (...args) => command(ROOT, args);
+  const before = p.parseTree(
+    git('ls-tree', '-rz', p.profile.pythonScannerBaseline)
+  );
+  const after = p.parseTree(
+    git('ls-tree', '-rz', p.profile.javascriptExtractorBaseline)
+  );
+  assert.equal(
+    git('rev-parse', p.profile.javascriptExtractorBaseline + '^{tree}').trim(),
+    p.profile.javascriptExtractorTree
+  );
+  for (const baseline of [
+    p.profile.pythonScannerBaseline,
+    'c84d6de35bed10012615931c0f15ba8a7b931974',
+    '27b654cfa2d02ddae5c9a0633f94461648bd0822',
+  ])
+    git(
+      'merge-base',
+      '--is-ancestor',
+      baseline,
+      p.profile.javascriptExtractorBaseline
+    );
+  assert.deepEqual(
+    p.verifyJavaScriptExtractorTransitions(
+      before,
+      after,
+      p.profile.javascriptExtractorTransitions
+    ),
+    p.profile.javascriptExtractorTransitions.map((item) => item.path).sort()
+  );
+  assert.equal(
+    after.get(p.profile.scannerPolicy.configPath).blob,
+    p.profile.scannerPolicy.configBlob
+  );
+  assert.equal(
+    after.get(p.profile.scannerPolicy.workflowPath).blob,
+    p.profile.scannerPolicy.workflowBlob
+  );
+  assert.equal(p.profile.javascriptExtractorTransitions.length, 7);
+  const priorConfig = git(
+    'show',
+    p.profile.pythonScannerBaseline + ':' + p.profile.scannerPolicy.configPath
+  );
+  const finalConfig = git(
+    'show',
+    p.profile.javascriptExtractorBaseline +
+      ':' +
+      p.profile.scannerPolicy.configPath
+  );
+  assert.equal(finalConfig, priorConfig.replaceAll('"', "'"));
+  assert.equal(
+    crypto.createHash('sha256').update(finalConfig).digest('hex'),
+    p.profile.scannerPolicy.configSha256
+  );
+  const finalWorkflow = git(
+    'show',
+    p.profile.javascriptExtractorBaseline +
+      ':' +
+      p.profile.scannerPolicy.workflowPath
+  );
+  assert.equal(
+    finalWorkflow.match(/CODEQL_EXTRACTOR_JAVASCRIPT_ALLOW_MINIFIED_FILES/g)
+      ?.length,
+    1
+  );
+  assert.match(
+    finalWorkflow,
+    /CODEQL_EXTRACTOR_JAVASCRIPT_ALLOW_MINIFIED_FILES: ['"]true['"]/
+  );
+  assert.equal(
+    crypto.createHash('sha256').update(finalWorkflow).digest('hex'),
+    p.profile.scannerPolicy.workflowSha256
+  );
+  assert.equal(p.profile.scannerRequiredPaths.length, 14);
+  assert.equal(p.profile.scannerReview, null);
   assert.equal(p.profile.pythonScannerReview, null);
 });

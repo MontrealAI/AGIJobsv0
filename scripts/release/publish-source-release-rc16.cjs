@@ -184,6 +184,12 @@ async function verifyDownloadedAssets({
     provenance.sourceScope?.pythonScannerTree !== profile.pythonScannerTree ||
     canonical(provenance.sourceScope?.pythonScannerTransitions) !==
       canonical(profile.pythonScannerTransitions) ||
+    provenance.sourceScope?.javascriptExtractorBaseline !==
+      profile.javascriptExtractorBaseline ||
+    provenance.sourceScope?.javascriptExtractorTree !==
+      profile.javascriptExtractorTree ||
+    canonical(provenance.sourceScope?.javascriptExtractorTransitions) !==
+      canonical(profile.javascriptExtractorTransitions) ||
     canonical(provenance.sourceScope?.pythonScannerPolicy) !==
       canonical(profile.pythonScannerPolicy) ||
     canonical(provenance.sourceScope?.pythonScannerRequiredPaths) !==
@@ -457,8 +463,8 @@ function verifyRetainedProducer(
 }
 
 async function collectAdditionalEvidence() {
-  verifyPublicationReview(profile);
   const { GITHUB_SHA: sha, GITHUB_REPOSITORY: repository } = process.env;
+  verifyPublicationReview(profile, { git: gitSource, target: sha });
   const directory = path.resolve('reports/source-release-rc16');
   const provenance = JSON.parse(
     fs.readFileSync(path.join(directory, 'provenance.json'))
@@ -685,13 +691,13 @@ function sourceApiUrl(method, resource) {
 }
 
 async function main() {
-  verifyPublicationReview(profile);
   const {
     GITHUB_SHA: sha,
     GITHUB_REPOSITORY: repository,
     GH_TOKEN: token,
     TAG: tag,
   } = process.env;
+  verifyPublicationReview(profile, { git: gitSource, target: sha });
   if (
     repository !== 'MontrealAI/AGIJobsv0' ||
     !/^[a-f0-9]{40}$/.test(sha || '') ||

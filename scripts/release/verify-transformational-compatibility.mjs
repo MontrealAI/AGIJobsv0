@@ -16,6 +16,63 @@ const {
 } = require('../../integrations/alpha-agent/pinned-alpha-checkout.cjs');
 const { profile } = require('./source-profile-rc16.cjs');
 const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex');
+const NATIVE_FIXTURE_PATH =
+  'examples/transformational-intelligence/campaign.json';
+export const NATIVE_FIXTURE_MAX_BYTES = 2_000_000;
+const GIT_METADATA_MAX_BYTES = 32 * 1024 * 1024;
+
+function sanitizedGitEnvironment() {
+  return {
+    ...Object.fromEntries(
+      Object.entries(process.env).filter(([name]) => !name.startsWith('GIT_'))
+    ),
+    GIT_CONFIG_NOSYSTEM: '1',
+    GIT_CONFIG_GLOBAL: '/dev/null',
+    GIT_NO_REPLACE_OBJECTS: '1',
+    GIT_OPTIONAL_LOCKS: '0',
+    GIT_NO_LAZY_FETCH: '1',
+  };
+}
+
+export function readPinnedNativeFixture(alphaRoot, expectedCommit) {
+  assert(
+    path.isAbsolute(alphaRoot || '') &&
+      /^[a-f0-9]{40}$/.test(expectedCommit || ''),
+    'Native fixture requires an absolute checkout and exact Git commit'
+  );
+  let bytes;
+  try {
+    bytes = execFileSync(
+      'git',
+      [
+        '--no-replace-objects',
+        '--no-pager',
+        '-c',
+        'core.fsmonitor=false',
+        '-C',
+        alphaRoot,
+        'cat-file',
+        'blob',
+        `${expectedCommit}:${NATIVE_FIXTURE_PATH}`,
+      ],
+      {
+        env: sanitizedGitEnvironment(),
+        maxBuffer: NATIVE_FIXTURE_MAX_BYTES + 1,
+        timeout: 10_000,
+        stdio: ['ignore', 'pipe', 'pipe'],
+      }
+    );
+  } catch (error) {
+    if (error.code === 'ENOBUFS')
+      throw Error('Native fixture exceeds intake bound', { cause: error });
+    throw error;
+  }
+  assert(
+    bytes.length <= NATIVE_FIXTURE_MAX_BYTES,
+    'Native fixture exceeds intake bound'
+  );
+  return bytes;
+}
 
 export function resolvePinnedNativeRoot(alphaRoot, expectedCommit) {
   assert(
@@ -79,15 +136,7 @@ export async function verifyNativeCompatibility(
   { native = profile.nativeCompatibility } = {}
 ) {
   const jobsRoot = path.resolve(import.meta.dirname, '../..');
-  const env = {
-    ...Object.fromEntries(
-      Object.entries(process.env).filter(([name]) => !name.startsWith('GIT_'))
-    ),
-    GIT_CONFIG_NOSYSTEM: '1',
-    GIT_CONFIG_GLOBAL: '/dev/null',
-    GIT_NO_REPLACE_OBJECTS: '1',
-    GIT_OPTIONAL_LOCKS: '0',
-  };
+  const env = sanitizedGitEnvironment();
   const git = (...args) =>
     execFileSync(
       'git',
@@ -99,7 +148,7 @@ export async function verifyNativeCompatibility(
         jobsRoot,
         ...args,
       ],
-      { encoding: 'utf8', env }
+      { encoding: 'utf8', env, maxBuffer: GIT_METADATA_MAX_BYTES }
     ).trim();
   const jobsCommit = git('rev-parse', 'HEAD'),
     jobsTree = git('rev-parse', 'HEAD^{tree}');
@@ -118,24 +167,22 @@ export async function verifyNativeCompatibility(
       'rev-parse',
       'HEAD^{tree}',
     ],
-    { encoding: 'utf8', env }
+    { encoding: 'utf8', env, maxBuffer: GIT_METADATA_MAX_BYTES }
   ).trim();
   assert.equal(alphaTree, native.tree, 'Alpha tree differs from its pin');
+  assert.equal(native.fixturePath, NATIVE_FIXTURE_PATH);
+  const fixtureBytes = readPinnedNativeFixture(alphaRoot, native.commit);
   for (const [name, expected] of Object.entries(native.files))
     assert.equal(
-      sha256(fs.readFileSync(path.join(alphaRoot, name))),
+      sha256(
+        name === NATIVE_FIXTURE_PATH
+          ? fixtureBytes
+          : fs.readFileSync(path.join(alphaRoot, name))
+      ),
       expected,
       'Pinned native bytes differ: ' + name
     );
-  const fixture = path.join(
-    alphaRoot,
-    'examples/transformational-intelligence/campaign.json'
-  );
-  assert(
-    fs.statSync(fixture).size <= 2_000_000,
-    'Native fixture exceeds intake bound'
-  );
-  const raw = fs.readFileSync(fixture, 'utf8');
+  const raw = fixtureBytes.toString('utf8');
   const { inspectTransformationEnvelope } = await import(
     pathToFileURL(
       path.join(

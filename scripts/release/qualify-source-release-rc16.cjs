@@ -505,6 +505,19 @@ function verifyScannerReviewBinding(options) {
   });
 }
 
+function assertNoScannerErrorDiagnostics(invocations) {
+  assert(
+    Array.isArray(invocations) &&
+      invocations.every((invocation) =>
+        ['toolExecutionNotifications', 'toolConfigurationNotifications'].every(
+          (field) =>
+            !(invocation[field] || []).some((note) => note.level === 'error')
+        )
+      ),
+    'Scanner execution reported an error diagnostic'
+  );
+}
+
 function verifyScannerAnalysis(
   document,
   { baseline, requiredSources = profile.scannerRequiredPaths } = {}
@@ -519,6 +532,7 @@ function verifyScannerAnalysis(
       run.invocations?.every((item) => item.executionSuccessful === true),
     'Scanner did not complete successfully'
   );
+  assertNoScannerErrorDiagnostics(run.invocations);
   assert(
     run.invocations.some((item) =>
       item.toolExecutionNotifications?.some(
@@ -635,7 +649,19 @@ function expectedReceiverSources(git, sha) {
   const omittedDirectory =
     /\/(?:node_modules|dist|\.next|coverage|reports|data|deploy|deployment|deployments|test)\//;
   const omittedSubgraph = /\/subgraph\/(?:generated|build|node_modules)\//;
-  return [...source.keys()]
+  const additional = [
+    'scripts/release/publish-source-release-rc16.cjs',
+    'scripts/release/python-scanner-rc16.cjs',
+    'scripts/release/qualify-source-release-rc16.cjs',
+    'scripts/release/source-profile-rc16.cjs',
+    'scripts/release/verify-transformational-compatibility.mjs',
+    'scripts/pages/computer-receipt.mjs',
+  ];
+  assert(
+    additional.every((file) => source.has(file)),
+    'Required release/scanner source is absent from immutable Git inventory'
+  );
+  const dynamic = [...source.keys()]
     .filter(
       (file) =>
         /^(?:integrations\/alpha-agent|website\/assets)\//.test(file) &&
@@ -645,6 +671,7 @@ function expectedReceiverSources(git, sha) {
         !omittedSubgraph.test(file)
     )
     .sort();
+  return [...new Set([...dynamic, ...additional])].sort();
 }
 function verifyScannerProducerArchive(
   files,
@@ -945,7 +972,7 @@ async function main() {
     lock: JSON.parse(fs.readFileSync('package-lock.json')),
     policy: JSON.parse(fs.readFileSync('config/solidity-compiler.json')),
   });
-  verifyPublicationReview(profile);
+  verifyPublicationReview(profile, { git, target: sha });
   const deadline = Date.now() + 85 * 60000;
   while (Date.now() < deadline) {
     const [runs, checks] = await Promise.all([
@@ -1018,6 +1045,8 @@ module.exports = {
   expectedReceiverSources,
   verifyScannerReviewBinding,
   verifyScannerReviewInstallBinding,
+  validateScannerReviewMetadata,
+  assertNoScannerErrorDiagnostics,
   resultIdentity,
   extracted,
   readPages,

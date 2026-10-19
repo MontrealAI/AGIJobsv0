@@ -14,6 +14,7 @@ const {
   verifyScannerProducerArchive,
   verifyScannerResults,
   expectedReceiverSources,
+  assertNoScannerErrorDiagnostics,
   verifyScannerReviewBinding,
   resultIdentity,
   extracted,
@@ -499,8 +500,50 @@ test('mandatory scanner manifest is derived from actual pinned receiver Git sour
       encoding: 'utf8',
       maxBuffer: 32 * 1024 * 1024,
     });
-  const required = expectedReceiverSources(git, profile.integrationBaseline);
-  assert.equal(required.length, 74);
+  const source = git('rev-parse', 'HEAD').trim();
+  const required = expectedReceiverSources(git, source);
+  assert.equal(required.length, 80);
+  for (const file of [
+    'scripts/release/publish-source-release-rc16.cjs',
+    'scripts/release/python-scanner-rc16.cjs',
+    'scripts/release/qualify-source-release-rc16.cjs',
+    'scripts/release/source-profile-rc16.cjs',
+    'scripts/release/verify-transformational-compatibility.mjs',
+    'scripts/pages/computer-receipt.mjs',
+  ])
+    assert(required.includes(file));
+  assert.throws(
+    () => expectedReceiverSources(git, profile.integrationBaseline),
+    /Required release\/scanner source is absent/
+  );
   assert(profile.scannerRequiredPaths.every((file) => required.includes(file)));
   assert.equal(new Set(required).size, required.length);
+});
+
+test('test-only execution metadata rejects error diagnostics for both scanner languages', () => {
+  // Inert invocation metadata only; this is not a SARIF success fixture or
+  // authenticated scan evidence, and contains no hosted producer/run identity.
+  const label = 'SYNTHETIC_EXECUTION_METADATA_ONLY_NOT_SCAN_EVIDENCE';
+  const invocation = {
+    executionSuccessful: true,
+    toolExecutionNotifications: [
+      { level: 'note', message: { text: label } },
+      { level: 'warning', message: { text: label } },
+    ],
+  };
+  assertNoScannerErrorDiagnostics([invocation]);
+  for (const field of [
+    'toolExecutionNotifications',
+    'toolConfigurationNotifications',
+  ])
+    assert.throws(
+      () =>
+        assertNoScannerErrorDiagnostics([
+          {
+            ...invocation,
+            [field]: [{ level: 'error', message: { text: label } }],
+          },
+        ]),
+      /error diagnostic/
+    );
 });

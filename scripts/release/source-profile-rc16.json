@@ -447,11 +447,11 @@
     "historicalConfigPath": ".github/codeql/config.yml",
     "historicalConfigSha256": "4b34450e1dcc0b489feea158d642a6b66261d9e935463928782219c8716c0892",
     "configPath": ".github/codeql/config-integrations.yml",
-    "configSha256": "18041680f9d2df3706e45bdf04e785457ee27573312998b999f51e893e7b59bb",
-    "configBlob": "0759a4da80412a04830bed3e7f5727d07cbdeb35",
+    "configSha256": "07d7be878097a38520bcf09147b62c75064cb3d707317ad34e028c1f46ba8155",
+    "configBlob": "4533ce4d7f681a6230399e25fb1d1f736c84b25b",
     "workflowPath": ".github/workflows/static-analysis.yml",
-    "workflowSha256": "1ff362acc7cfa238a3ef0661d1a437e2ee79ad992a41e1ce81d9bc2530d9741f",
-    "workflowBlob": "7813a7c15e6d5637b44f731111c990a67ec0faaa",
+    "workflowSha256": "2b4228cdcaeb5e57730818958329d15a357028dec7e77c83a4f38b9fb0609da4",
+    "workflowBlob": "ba3056630cae4131292764ba313ea7bd9678bd25",
     "archiveFiles": [
       "javascript.sarif",
       "source-extraction.json",
@@ -679,5 +679,86 @@
       "source-scope-after.json",
       "source-scope-before.json"
     ]
-  }
+  },
+  "javascriptExtractorBaseline": "fdfd8155f2fa7f11625556f75251c233823c492f",
+  "javascriptExtractorTree": "34e4cbbc18bf127b4fbb3a9641969012b732f4d9",
+  "javascriptExtractorTransitions": [
+    {
+      "path": ".github/codeql/config-integrations.yml",
+      "before": {
+        "mode": "100644",
+        "blob": "0759a4da80412a04830bed3e7f5727d07cbdeb35"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "4533ce4d7f681a6230399e25fb1d1f736c84b25b"
+      }
+    },
+    {
+      "path": ".github/workflows/apps-images.yml",
+      "before": {
+        "mode": "100644",
+        "blob": "2f45074f1bbaa1b22219655856bed5eb3d1012b8"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "a437359983b2d428b354f97c743a47b6da1b5bb7"
+      }
+    },
+    {
+      "path": ".github/workflows/contracts.yml",
+      "before": {
+        "mode": "100644",
+        "blob": "6837c4b9015357ad7724a6a00727f0fe98dd0ee5"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "2b06e238f38f4133cc432a4e8620a194a92011e8"
+      }
+    },
+    {
+      "path": ".github/workflows/culture-ci.yml",
+      "before": {
+        "mode": "100644",
+        "blob": "2ae2c1f341c7fafc793c4ce807241499c8116d48"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "4682cb2b290f1b575c3d18e29c50081ccbd093de"
+      }
+    },
+    {
+      "path": ".github/workflows/escrow-replay-regression.yml",
+      "before": {
+        "mode": "100644",
+        "blob": "5c08068670ad99788c3e007f3b2474cd719330df"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "1cbc0d58264a77d77d0bffb013385fc20d0e6616"
+      }
+    },
+    {
+      "path": ".github/workflows/pages.yml",
+      "before": {
+        "mode": "100644",
+        "blob": "fd8029ec0d7e90f1e996d603aa94d014f6daeded"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "0a4338ea87a667e85c2dbb3426b8dc85e860b3e1"
+      }
+    },
+    {
+      "path": ".github/workflows/static-analysis.yml",
+      "before": {
+        "mode": "100644",
+        "blob": "7813a7c15e6d5637b44f731111c990a67ec0faaa"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "ba3056630cae4131292764ba313ea7bd9678bd25"
+      }
+    }
+  ]
 }
