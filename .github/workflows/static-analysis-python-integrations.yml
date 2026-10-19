@@ -1,0 +1,165 @@
+name: static-analysis-python-integrations
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - "fix/inherited-codeql-*"
+  schedule:
+    - cron: "30 2 * * *"
+
+permissions:
+  contents: read
+  actions: write
+  security-events: write
+
+concurrency:
+  group: static-analysis-python-integrations-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  codeql-python:
+    name: Python integration CodeQL analysis
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: ".nvmrc"
+
+      - name: Setup Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.12"
+
+      - name: Validate complete Python source scope and exact scan identity
+        run: |
+          cat > "$RUNNER_TEMP/agijobs-python-codeql-source-check.cjs" <<'NODE'
+          const assert = require('node:assert/strict');
+          const fs = require('node:fs'), cp = require('node:child_process'), crypto = require('node:crypto');
+          const configPath = '.github/codeql/config-python-integrations.yml';
+          const workflowPath = '.github/workflows/static-analysis-python-integrations.yml';
+          const hash = raw => crypto.createHash('sha256').update(raw).digest('hex');
+          const configRaw = fs.readFileSync(configPath);
+          const workflowRaw = fs.readFileSync(workflowPath);
+          const expectedConfig = 'name: agijobsv0-codeql-python-integrations\n\nqueries:\n  - uses: security-extended\n  - uses: security-and-quality\n\npaths:\n  - integrations/alpha-agent\n';
+          assert.equal(configRaw.toString('utf8'), expectedConfig, 'Complete Python source policy or standard query suites changed');
+          const admitted = file => file.startsWith('integrations/alpha-agent/') && /\.py$/i.test(file);
+          const env = {...Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith('GIT_'))), GIT_CONFIG_NOSYSTEM:'1', GIT_CONFIG_GLOBAL:'/dev/null', GIT_NO_REPLACE_OBJECTS:'1'};
+          const git = (...args) => cp.execFileSync('git', ['--no-replace-objects', '-c', 'core.fsmonitor=false', ...args], {encoding:'utf8', env, maxBuffer:32*1024*1024});
+          const source = git('rev-parse','HEAD').trim(), tree = git('rev-parse',source + '^{tree}').trim();
+          assert.match(source,/^[a-f0-9]{40}$/); assert.match(tree,/^[a-f0-9]{40}$/);
+          assert.equal(source,process.env.GITHUB_SHA,'Python CodeQL checkout differs from its run source');
+          assert.equal(git('diff','--no-ext-diff','--no-textconv','--name-only',source,'--').trim(),'','Tracked source differs before scanning');
+          const run = Number(process.env.GITHUB_RUN_ID), attempt = Number(process.env.GITHUB_RUN_ATTEMPT);
+          assert(Number.isSafeInteger(run) && run > 0 && Number.isSafeInteger(attempt) && attempt > 0);
+          const files = git('ls-tree','-r','--name-only','-z',source).split('\0').filter(Boolean);
+          for (const row of git('ls-tree','-r','-z',source).split('\0').filter(Boolean)) {
+            const at = row.indexOf('\t'), header = /^(100644|100755) blob ([a-f0-9]{40})$/.exec(row.slice(0,at)), name = row.slice(at + 1);
+            assert(header && !name.startsWith('/') && name.split('/').every(part => part && part !== '.' && part !== '..'),'Tracked source must have a regular Git identity');
+            let parent = '.';
+            for (const part of name.split('/').slice(0,-1)) { parent += '/' + part; assert(fs.lstatSync(parent).isDirectory(),'Tracked source ancestor is not a real directory'); }
+            assert(fs.lstatSync(name).isFile(),'Tracked source is not a regular file');
+            const fd = fs.openSync(name,fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW | fs.constants.O_NONBLOCK);
+            try {
+              const before = fs.fstatSync(fd); assert(before.isFile() && before.size <= 256*1024*1024,'Tracked source exceeds file bound');
+              const bytes = Buffer.alloc(before.size); let offset = 0;
+              while (offset < bytes.length) { const read = fs.readSync(fd,bytes,offset,bytes.length - offset,offset); assert(read > 0,'Tracked source was truncated'); offset += read; }
+              assert.equal(fs.readSync(fd,Buffer.alloc(1),0,1,before.size),0,'Tracked source grew during read');
+              const after = fs.fstatSync(fd);
+              assert(['dev','ino','size','mtimeMs','ctimeMs','mode'].every(key => before[key] === after[key]),'Tracked source changed while read');
+              assert.equal(crypto.createHash('sha1').update('blob ' + bytes.length + '\0').update(bytes).digest('hex'),header[2],'Tracked source bytes differ from its Git blob');
+              assert.equal(Boolean(before.mode & 0o111),header[1] === '100755','Tracked source executable mode differs');
+            } finally { fs.closeSync(fd); }
+          }
+          assert(files.includes(configPath) && files.includes(workflowPath),'Python scanner policy and workflow must be tracked in the immutable source');
+          assert.deepEqual(git('ls-files','--others','--exclude-standard','-z').split('\0').filter(Boolean).filter(admitted),[],'Nonignored untracked Python scan source is present');
+          const requiredSentinelFiles = ['successor-computer-mission-lab.py','successor-computer-worker-launch.py','successor-frontier-mission-lab.py','supplier-adapter-lab.py','supplier-browser-lab.py','supplier_browser_lab_support.py','supplier_node_guard.py','supplier_proof_guard.py'].map(file => 'integrations/alpha-agent/' + file).sort();
+          assert(requiredSentinelFiles.every(file => files.includes(file)),'Required Python integration receiver source is absent from the immutable tree');
+          const requiredExtractedFiles = files.filter(admitted).sort();
+          assert(requiredExtractedFiles.length > 0,'Python integration source is absent');
+          assert(requiredSentinelFiles.every(file => requiredExtractedFiles.includes(file)),'Required Python receiver source is absent from the mandatory extraction inventory');
+          assert.equal(git('rev-parse','HEAD').trim(),source,'Python CodeQL HEAD changed during source validation');
+          assert.equal(git('rev-parse','HEAD^{tree}').trim(),tree,'Python CodeQL tree changed during source validation');
+          assert.equal(source,process.env.GITHUB_SHA,'Python CodeQL final source differs from its run source');
+          console.log(JSON.stringify({schema:'agijobsv0/codeql-python-scope/1',source,tree,run,attempt,event:process.env.GITHUB_EVENT_NAME,ref:process.env.GITHUB_REF,configPath,configSha256:hash(configRaw),workflowPath,workflowSha256:hash(workflowRaw),requiredSentinelFiles,requiredExtractedFiles,actualExtractionRequiresSARIF:true}));
+          NODE
+          mkdir -p reports/security/codeql-python
+          node < "$RUNNER_TEMP/agijobs-python-codeql-source-check.cjs" > "$RUNNER_TEMP/agijobs-python-codeql-source-before.json"
+
+      - name: Initialize Python CodeQL
+        uses: github/codeql-action/init@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
+        with:
+          languages: python
+          config-file: .github/codeql/config-python-integrations.yml
+
+      - name: Perform Python CodeQL analysis
+        uses: github/codeql-action/analyze@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
+        with:
+          output: reports/security/codeql-python
+
+      - name: Recheck exact source after Python CodeQL analysis
+        run: |
+          cp "$RUNNER_TEMP/agijobs-python-codeql-source-before.json" reports/security/codeql-python/source-scope-before.json
+          node < "$RUNNER_TEMP/agijobs-python-codeql-source-check.cjs" > reports/security/codeql-python/source-scope-after.json
+
+      - name: Retain and enforce actual complete Python extraction
+        run: |
+          node <<'NODE'
+          const assert = require('node:assert/strict');
+          const fs = require('node:fs'), crypto = require('node:crypto');
+          const folder = 'reports/security/codeql-python/';
+          const before = JSON.parse(fs.readFileSync(folder + 'source-scope-before.json','utf8'));
+          const after = JSON.parse(fs.readFileSync(folder + 'source-scope-after.json','utf8'));
+          assert.deepEqual(after,before,'Source identity/scope changed across actual Python analysis');
+          assert.equal(before.source,process.env.GITHUB_SHA);
+          assert.equal(before.run,Number(process.env.GITHUB_RUN_ID));
+          assert.equal(before.attempt,Number(process.env.GITHUB_RUN_ATTEMPT));
+          assert.equal(before.schema,'agijobsv0/codeql-python-scope/1');
+          assert.equal(before.actualExtractionRequiresSARIF,true);
+          assert(before.requiredSentinelFiles.every(file => before.requiredExtractedFiles.includes(file)),'Required Python receivers are missing from the mandatory extraction inventory');
+          const raw = fs.readFileSync(folder + 'python.sarif');
+          const sarif = JSON.parse(raw);
+          assert.equal(sarif.version,'2.1.0','Unexpected Python SARIF version');
+          assert(Array.isArray(sarif.runs) && sarif.runs.length === 1,'Expected complete Python SARIF run');
+          const scan = sarif.runs[0];
+          assert.equal(scan.tool?.driver?.name,'CodeQL','Expected the complete CodeQL Python report');
+          assert(Array.isArray(scan.invocations) && scan.invocations.length > 0 && scan.invocations.every(invocation => invocation.executionSuccessful === true),'Python scanner did not complete successfully');
+          assert(scan.invocations.some(invocation => (invocation.toolExecutionNotifications || []).some(item => item.descriptor?.id === 'codeql-action/overlay-disabled')),'Expected a complete non-overlay Python analysis');
+          assert(Array.isArray(scan.results),'Expected complete Python SARIF result array');
+          const extracted = [...new Set(scan.invocations.flatMap(invocation => invocation.toolExecutionNotifications || []).filter(item => item.descriptor?.id === 'py/diagnostics/successfully-extracted-files').flatMap(item => (item.locations || []).map(location => location.physicalLocation?.artifactLocation?.uri)).filter(Boolean))].sort();
+          assert(extracted.length > 0,'Actual successfully-extracted Python diagnostics are absent');
+          const missing = before.requiredExtractedFiles.filter(file => !extracted.includes(file));
+          const components = [scan.tool.driver,...(scan.tool.extensions || [])];
+          const rules = [...new Set(components.flatMap(component => (component.rules || []).map(rule => rule.id)))].sort();
+          assert(rules.length > 0 && rules.every(rule => typeof rule === 'string' && rule.length > 0),'Actual Python rule inventory is absent');
+          const report = {schema:'agijobsv0/codeql-python-extraction/1',source:before.source,tree:before.tree,run:before.run,attempt:before.attempt,event:before.event,ref:before.ref,configPath:before.configPath,configSha256:before.configSha256,workflowPath:before.workflowPath,workflowSha256:before.workflowSha256,sarifSha256:crypto.createHash('sha256').update(raw).digest('hex'),successfulExtractionFiles:extracted,requiredSentinelFiles:before.requiredSentinelFiles,requiredExtractedFiles:before.requiredExtractedFiles,missingRequiredExtractedFiles:missing,ruleIds:rules,rawResultCount:scan.results.length,resultDisposition:'REQUIRES_INDEPENDENT_FINAL_SOURCE_REVIEW'};
+          fs.writeFileSync(folder + 'source-extraction.json',JSON.stringify(report,null,2) + '\n',{flag:'wx',mode:0o600});
+          assert.deepEqual(missing,[],'Intended Python integration source was not actually extracted');
+          console.log(JSON.stringify({source:before.source,tree:before.tree,extractedFiles:extracted.length,requiredFiles:before.requiredExtractedFiles.length,rawResults:report.rawResultCount,independentResultReviewRequired:true}));
+          NODE
+
+      - name: Upload Python CodeQL artefacts
+        if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: python-codeql-security-report-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            reports/security/codeql-python/python.sarif
+            reports/security/codeql-python/source-scope-before.json
+            reports/security/codeql-python/source-scope-after.json
+            reports/security/codeql-python/source-extraction.json
+          if-no-files-found: error
