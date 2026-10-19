@@ -30,6 +30,8 @@ const anchors = Object.freeze({
   pythonScannerTree: 'da44eb275fae8d01bd471fe2efef4a36982fc9d3',
   javascriptExtractorBaseline: 'fdfd8155f2fa7f11625556f75251c233823c492f',
   javascriptExtractorTree: '34e4cbbc18bf127b4fbb3a9641969012b732f4d9',
+  alphaPinBaseline: 'bc1564b16ca3b96acfe79b8147a6c3afe0a1532d',
+  alphaPinTree: 'e9d9352217262c03079842ca56d9fa86b764b78a',
 });
 const allowedNewPaths = Object.freeze([
   'scripts/release/source-profile-rc16.cjs',
@@ -54,8 +56,8 @@ const allowedExistingPaths = Object.freeze([
 const nativeCompatibility = freeze({
   schema: 'agijobsv0/transformational-native-compatibility/v1',
   repository: 'MontrealAI/AGI-Alpha-Agent-v0',
-  commit: 'dbaf5696d64ddcbf133f05d88d35496ebb85c3f0',
-  tree: '30dc828703a6e9cd64103e0ebc965fc701e9bcf3',
+  commit: 'c6459bdfb509b10f0d757eb332775902a4bb04b7',
+  tree: 'c25ac996e27eb317c795809f923431f9e4ab4933',
   fixturePath: 'examples/transformational-intelligence/campaign.json',
   boundary: 'free-inspection-positive-payment-refused',
   files: {
@@ -642,6 +644,7 @@ function validateProfile(value = profile, { git, target } = {}) {
       'sourceConvergenceTransitions',
       'pythonScannerTransitions',
       'javascriptExtractorTransitions',
+      'alphaPinTransitions',
       'pythonScannerPolicy',
       'pythonScannerRequiredPaths',
       'pythonScannerReview',
@@ -681,6 +684,8 @@ function validateProfile(value = profile, { git, target } = {}) {
       value.pythonScannerTransitions.length === 2 &&
       Array.isArray(value.javascriptExtractorTransitions) &&
       value.javascriptExtractorTransitions.length === 7 &&
+      Array.isArray(value.alphaPinTransitions) &&
+      value.alphaPinTransitions.length === 6 &&
       same(value.pythonScannerPolicy, pythonScannerPolicy) &&
       same(value.pythonScannerRequiredPaths, pythonScannerRequiredPaths) &&
       same(value.scannerPolicy, scannerPolicy) &&
@@ -740,6 +745,7 @@ function verifySourceScope({ git, sha, version, lock, policy }) {
     profile.sourceConvergenceBaseline,
     profile.pythonScannerBaseline,
     profile.javascriptExtractorBaseline,
+    profile.alphaPinBaseline,
   ])
     git('merge-base', '--is-ancestor', baseline, sha);
   requireValue(
@@ -796,6 +802,9 @@ function verifySourceScope({ git, sha, version, lock, policy }) {
   );
   const javascriptExtractorTree = parseTree(
     git('ls-tree', '-rz', profile.javascriptExtractorBaseline)
+  );
+  const alphaPinTree = parseTree(
+    git('ls-tree', '-rz', profile.alphaPinBaseline)
   );
   const releaseTree = parseTree(git('ls-tree', '-rz', sha));
   verifyProtectedTransitions(
@@ -925,10 +934,23 @@ function verifySourceScope({ git, sha, version, lock, policy }) {
     javascriptExtractorTree,
     profile.javascriptExtractorTransitions
   );
-  const releaseChanges = verifyReleaseDelta(
-    javascriptExtractorTree,
-    releaseTree
+  requireValue(
+    text(git('rev-parse', profile.alphaPinBaseline + '^{tree}')).trim() ===
+      profile.alphaPinTree,
+    'Final Alpha pin source tree differs'
   );
+  git(
+    'merge-base',
+    '--is-ancestor',
+    profile.javascriptExtractorBaseline,
+    profile.alphaPinBaseline
+  );
+  verifyNativePinTransitions(
+    javascriptExtractorTree,
+    alphaPinTree,
+    profile.alphaPinTransitions
+  );
+  const releaseChanges = verifyReleaseDelta(alphaPinTree, releaseTree);
   const afterPackage = readJSON(sha, 'package.json'),
     afterLock = readJSON(sha, 'package-lock.json');
   verifyVersionOnly(
@@ -963,6 +985,7 @@ function verifySourceScope({ git, sha, version, lock, policy }) {
     sourceConvergenceTransitions: profile.sourceConvergenceTransitions,
     pythonScannerTransitions: profile.pythonScannerTransitions,
     javascriptExtractorTransitions: profile.javascriptExtractorTransitions,
+    alphaPinTransitions: profile.alphaPinTransitions,
     pythonScannerPolicy: profile.pythonScannerPolicy,
     pythonScannerRequiredPaths: profile.pythonScannerRequiredPaths,
     pythonScannerReview: profile.pythonScannerReview,

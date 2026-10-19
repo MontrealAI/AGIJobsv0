@@ -190,6 +190,10 @@ async function verifyDownloadedAssets({
       profile.javascriptExtractorTree ||
     canonical(provenance.sourceScope?.javascriptExtractorTransitions) !==
       canonical(profile.javascriptExtractorTransitions) ||
+    provenance.sourceScope?.alphaPinBaseline !== profile.alphaPinBaseline ||
+    provenance.sourceScope?.alphaPinTree !== profile.alphaPinTree ||
+    canonical(provenance.sourceScope?.alphaPinTransitions) !==
+      canonical(profile.alphaPinTransitions) ||
     canonical(provenance.sourceScope?.pythonScannerPolicy) !==
       canonical(profile.pythonScannerPolicy) ||
     canonical(provenance.sourceScope?.pythonScannerRequiredPaths) !==

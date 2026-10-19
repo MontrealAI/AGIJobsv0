@@ -185,7 +185,7 @@ test('complete source verifier accepts only finite release plumbing over the act
     path.join(r.root, '.git/objects/info/alternates'),
     objects + '\n'
   );
-  r.git('read-tree', p.profile.javascriptExtractorBaseline);
+  r.git('read-tree', p.profile.alphaPinBaseline);
   const beforePackage = JSON.parse(
     r.git('show', `${p.profile.integrationBaseline}:package.json`)
   );
@@ -220,7 +220,7 @@ test('complete source verifier accepts only finite release plumbing over the act
   );
   const args = {
     git: r.git,
-    sha: r.commit(p.profile.javascriptExtractorBaseline),
+    sha: r.commit(p.profile.alphaPinBaseline),
     version: p.profile.releaseVersion,
     lock: afterLock,
     policy,
@@ -372,6 +372,12 @@ test('profile baseline, source pins and pending scanner boundary cannot silently
       value.javascriptExtractorTransitions.pop();
     },
     (value) => {
+      value.alphaPinBaseline = '0'.repeat(40);
+    },
+    (value) => {
+      value.alphaPinTransitions.pop();
+    },
+    (value) => {
       value.qualification = 'QUALIFIED';
     },
     (value) => {
@@ -468,12 +474,19 @@ test('actual native pin candidate preserves the exact six source identity and ge
     ).length,
     6
   );
+  const historicalManifest = JSON.parse(
+    git(
+      'show',
+      p.profile.nativePinBaseline +
+        ':integrations/alpha-agent/vendor/alpha-computer/source-manifest.json'
+    )
+  );
   assert.equal(
-    p.profile.nativeCompatibility.commit,
+    historicalManifest.commit,
     'dbaf5696d64ddcbf133f05d88d35496ebb85c3f0'
   );
   assert.equal(
-    p.profile.nativeCompatibility.tree,
+    historicalManifest.tree,
     '30dc828703a6e9cd64103e0ebc965fc701e9bcf3'
   );
   assert.equal(p.profile.scannerReview, null);
@@ -515,6 +528,57 @@ test('converged storage and additive Python policy have exact finite source tran
     '7813a7c15e6d5637b44f731111c990a67ec0faaa'
   );
   assert.equal(p.profile.scannerRequiredPaths.length, 14);
+  assert.equal(p.profile.pythonScannerReview, null);
+});
+
+test('final Alpha pin extends the reviewed extractor tree through exactly six identity files', () => {
+  const git = (...args) => command(ROOT, args);
+  const before = p.parseTree(
+    git('ls-tree', '-rz', p.profile.javascriptExtractorBaseline)
+  );
+  const after = p.parseTree(git('ls-tree', '-rz', p.profile.alphaPinBaseline));
+  assert.equal(
+    git('rev-parse', p.profile.alphaPinBaseline + '^{tree}').trim(),
+    p.profile.alphaPinTree
+  );
+  git(
+    'merge-base',
+    '--is-ancestor',
+    p.profile.javascriptExtractorBaseline,
+    p.profile.alphaPinBaseline
+  );
+  assert.equal(
+    p.verifyNativePinTransitions(before, after, p.profile.alphaPinTransitions)
+      .length,
+    6
+  );
+  const manifest = JSON.parse(
+    git(
+      'show',
+      p.profile.alphaPinBaseline +
+        ':integrations/alpha-agent/vendor/alpha-computer/source-manifest.json'
+    )
+  );
+  assert.equal(manifest.commit, p.profile.nativeCompatibility.commit);
+  assert.equal(manifest.tree, p.profile.nativeCompatibility.tree);
+  assert.equal(
+    p.profile.nativeCompatibility.commit,
+    'c6459bdfb509b10f0d757eb332775902a4bb04b7'
+  );
+  assert.equal(
+    p.profile.nativeCompatibility.tree,
+    'c25ac996e27eb317c795809f923431f9e4ab4933'
+  );
+  const nativeWorkflow = git(
+    'show',
+    'HEAD:.github/workflows/transformational-compatibility.yml'
+  );
+  const alphaCheckout =
+    /repository: MontrealAI\/AGI-Alpha-Agent-v0\s+ref: ([a-f0-9]{40})/.exec(
+      nativeWorkflow
+    );
+  assert.equal(alphaCheckout?.[1], p.profile.nativeCompatibility.commit);
+  assert.equal(p.profile.scannerReview, null);
   assert.equal(p.profile.pythonScannerReview, null);
 });
 
