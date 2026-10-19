@@ -88,7 +88,6 @@ const reviewFields = Object.freeze([
 ]);
 const hashPattern = /^[a-f0-9]{64}$/;
 const gitPattern = /^[a-f0-9]{40}$/;
-const sourceProfilePath = 'scripts/release/source-profile-rc16.json';
 
 function exactFields(value, fields, message) {
   assert(value && typeof value === 'object' && !Array.isArray(value), message);
