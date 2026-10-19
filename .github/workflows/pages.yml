@@ -6,6 +6,7 @@ on:
     paths:
       - '.github/workflows/source-release.yml'
       - 'scripts/release/qualify-source-release.cjs'
+      - 'docs/production/RELEASE_NOTES_SOURCE_RC16.md'
       - 'scripts/release/publish-source-release.cjs'
       - '**/*.md'
       - '**/*.mmd'
@@ -28,6 +29,7 @@ on:
     paths:
       - '.github/workflows/source-release.yml'
       - 'scripts/release/qualify-source-release.cjs'
+      - 'docs/production/RELEASE_NOTES_SOURCE_RC16.md'
       - 'scripts/release/publish-source-release.cjs'
       - '**/*.md'
       - '**/*.mmd'
