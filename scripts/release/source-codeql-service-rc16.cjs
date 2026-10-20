@@ -199,12 +199,16 @@ async function readJob(api, sha, policy, id, attempt, final) {
     canonical(selected), 'CodeQL service job API observations differ');
   return selected;
 }
-function projectAnalysis(value, sha, uploadId) {
+function projectAnalysis(value, sha, uploadId, policy) {
   assert(
     positive(value?.id) && value.commit_sha === sha &&
       value.ref === 'refs/heads/main' && value.sarif_id === uploadId &&
       value.url === apiRoot + 'code-scanning/analyses/' + value.id &&
       value.error === '' && value.warning === '' &&
+      value.analysis_key === policy.workflowPath + ':' + policy.jobKey &&
+      typeof value.category === 'string' &&
+      (value.category === value.analysis_key ||
+        value.category.startsWith(value.analysis_key + '/')) &&
       Number.isSafeInteger(value.results_count) && value.results_count >= 0 &&
       positive(value.rules_count) && value.tool?.name === 'CodeQL',
     'CodeQL upload does not have a successful exact-main service analysis'
@@ -227,7 +231,7 @@ function projectAnalysis(value, sha, uploadId) {
     tool,
   };
 }
-async function readProcessedUpload(api, sha, uploadId) {
+async function readProcessedUpload(api, sha, uploadId, policy) {
   assert(uuid(uploadId), 'Pinned analyze SARIF upload ID is absent or invalid');
   const status = await api('GET', 'code-scanning/sarifs/' + uploadId);
   const analysesUrl = apiRoot + 'code-scanning/analyses?sarif_id=' + uploadId;
@@ -249,7 +253,7 @@ async function readProcessedUpload(api, sha, uploadId) {
       assert(positive(value?.id) && !seen.has(value.id),
         'Duplicate CodeQL upload analysis identity');
       seen.add(value.id);
-      values.push(projectAnalysis(value, sha, uploadId));
+      values.push(projectAnalysis(value, sha, uploadId, policy));
     }
     if (response.length < 100) break;
     assert(page < 20, 'CodeQL upload analysis inventory exceeds its bound');
@@ -258,7 +262,7 @@ async function readProcessedUpload(api, sha, uploadId) {
     'Single-language CodeQL upload must have exactly one processed analysis');
   const selected = values[0];
   const detail = await api('GET', 'code-scanning/analyses/' + selected.id);
-  assert.equal(canonical(projectAnalysis(detail, sha, uploadId)),
+  assert.equal(canonical(projectAnalysis(detail, sha, uploadId, policy)),
     canonical(selected), 'CodeQL service analysis observations differ');
   return {
     upload: { id: uploadId, processingStatus: 'complete', analysesUrl },
@@ -381,11 +385,12 @@ function validateReceipt(receipt, {
       canonical(receipt.analysis) === canonical(service.analysis),
     'CodeQL service receipt is not bound to the exact observed source and producer'
   );
-  fields(receipt.rawSarif, ['path', 'bytes', 'sha256'],
+  fields(receipt.rawSarif, ['path', 'bytes', 'sha256', 'tool'],
     'Original raw SARIF receipt fields differ');
   assert(receipt.rawSarif.path === policies[language].rawPath &&
     positive(receipt.rawSarif.bytes) && receipt.rawSarif.bytes <= maxRawBytes &&
-    digest(receipt.rawSarif.sha256),
+    digest(receipt.rawSarif.sha256) &&
+    canonical(receipt.rawSarif.tool) === canonical(service.analysis.tool),
     'Original raw SARIF digest binding is absent');
 }
 function projectArtifact(value, language, sha, run) {
@@ -417,7 +422,9 @@ async function observeLanguage({
     run.head_sha === sha && run.path === policy.workflowPath &&
       run.event === 'push' && run.head_branch === 'main'
   ).sort((a, b) => b.run_number - a.run_number || b.run_attempt - a.run_attempt);
-  assert(latest.length > 0, 'Exact-main CodeQL service producer is absent');
+  assert(latest.length > 0 && latest.every((run) =>
+    positive(run.run_number) && positive(run.run_attempt)),
+    'Exact-main CodeQL service producer is absent or malformed');
   const selected = latest[0];
   assert(positive(selected.id) && positive(selected.run_attempt),
     'CodeQL service producer identity is malformed');
@@ -468,10 +475,43 @@ async function observeLanguage({
   const captured = readReceiptZip(zip);
   assert(uuid(captured.value.upload?.id),
     'Service receipt lacks the pinned analyze upload ID');
-  const service = await readProcessedUpload(api, sha, captured.value.upload.id);
+  const service = await readProcessedUpload(api, sha, captured.value.upload.id, policy);
   validateReceipt(captured.value, {
     language, sha, tree, source, run: current, job, service,
   });
+  const [finalRun, finalAttempt, finalRuns, finalArtifacts, finalDetail] =
+    await Promise.all([
+      api('GET', 'actions/runs/' + current.id),
+      api('GET', 'actions/runs/' + current.id + '/attempts/' + current.run_attempt),
+      pages(api, 'actions/workflows/' + policy.workflowPath.split('/').pop() +
+        '/runs?head_sha=' + sha, 'workflow_runs'),
+      pages(api, 'actions/runs/' + current.id + '/artifacts?', 'artifacts'),
+      api('GET', 'actions/artifacts/' + artifact.id),
+    ]);
+  for (const run of [finalRun, finalAttempt])
+    validRun(run, sha, policy, current.id, current.run_attempt, true);
+  const finalLatest = finalRuns.filter((run) =>
+    run.head_sha === sha && run.path === policy.workflowPath &&
+      run.event === 'push' && run.head_branch === 'main'
+  ).sort((a, b) => b.run_number - a.run_number || b.run_attempt - a.run_attempt);
+  const finalMatching = finalArtifacts.filter((item) => item.name === artifact.name);
+  const finalJob = await readJob(
+    api, sha, policy, current.id, current.run_attempt, true
+  );
+  assert(finalRun.run_number === current.run_number &&
+    finalAttempt.run_number === current.run_number &&
+    finalLatest.length > 0 && finalLatest.every((run) =>
+      positive(run.run_number) && positive(run.run_attempt)) &&
+    finalLatest[0].id === current.id &&
+    finalLatest[0].run_attempt === current.run_attempt &&
+    finalLatest[0].run_number === current.run_number &&
+    finalMatching.length === 1 &&
+    canonical(projectArtifact(finalMatching[0], language, sha, finalRun)) ===
+      canonical(artifact) &&
+    canonical(projectArtifact(finalDetail, language, sha, finalRun)) ===
+      canonical(artifact) &&
+    canonical(finalJob) === canonical(job),
+    'CodeQL service producer or artifact changed during authenticated observation');
   const result = {
     language, source: sha, tree,
     producer: {
@@ -543,6 +583,19 @@ function assertFinalServices(proof, { sha, tree } = {}) {
   );
   return proof;
 }
+function rawTool(raw) {
+  const document = JSON.parse(raw.toString('utf8'));
+  assert(Array.isArray(document.runs) && document.runs.length === 1 &&
+    document.runs[0].tool?.driver?.name === 'CodeQL',
+    'Original CodeQL raw tool identity required');
+  const driver = document.runs[0].tool.driver;
+  return {
+    name: 'CodeQL',
+    version: text(driver.semanticVersion, 'raw tool version', { limit: 256 }),
+    guid: driver.guid === undefined || driver.guid === null
+      ? null : text(driver.guid, 'raw tool GUID', { limit: 256 }),
+  };
+}
 function verifyRawBinding(proof, language, raw) {
   assertFinalServices(proof, { sha: proof?.source, tree: proof?.tree });
   assert(Object.hasOwn(policies, language) && Buffer.isBuffer(raw) &&
@@ -550,7 +603,9 @@ function verifyRawBinding(proof, language, raw) {
     'Original complete raw SARIF bytes required');
   const expected = proof.languages[language].receipt.rawSarif;
   assert(raw.length === expected.bytes && sha256(raw) === expected.sha256 &&
-    expected.path === policies[language].rawPath,
+    expected.path === policies[language].rawPath &&
+    canonical(rawTool(raw)) === canonical(expected.tool) &&
+    canonical(expected.tool) === canonical(proof.languages[language].analysis.tool),
     'Original raw SARIF differs from its authenticated processed upload receipt');
   return true;
 }
@@ -623,17 +678,20 @@ async function capture(language, output) {
   assert.equal(current.run_number, currentAttempt.run_number,
     'CodeQL service capture run observations differ');
   const job = await readJob(api, sha, policy, id, attempt, false);
-  const service = await readProcessedUpload(api, sha, env.SARIF_UPLOAD_ID);
+  const service = await readProcessedUpload(api, sha, env.SARIF_UPLOAD_ID, policy);
   const raw = fs.readFileSync(policy.rawPath);
   assert(raw.length > 0 && raw.length <= maxRawBytes,
     'Bounded original raw SARIF is required for service capture');
+  const tool = rawTool(raw);
+  assert.equal(canonical(tool), canonical(service.analysis.tool),
+    'Processed CodeQL service tool differs from original raw report');
   const value = {
     schema: receiptSchema, repository, language, source: sha, tree,
     event: 'push', ref: 'refs/heads/main',
     run: { id, attempt, number: current.run_number,
       workflowPath: policy.workflowPath },
     job, sourceFiles: source,
-    rawSarif: { path: policy.rawPath, bytes: raw.length, sha256: sha256(raw) },
+    rawSarif: { path: policy.rawPath, bytes: raw.length, sha256: sha256(raw), tool },
     upload: service.upload, analysis: service.analysis,
   };
   const bytes = Buffer.from(JSON.stringify(value, null, 2) + '\n');
