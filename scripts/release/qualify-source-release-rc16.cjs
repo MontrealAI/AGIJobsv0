@@ -1,6 +1,7 @@
 'use strict';
 
 const fs = require('node:fs');
+const path = require('node:path');
 const crypto = require('node:crypto');
 const { execFileSync } = require('node:child_process');
 const { setTimeout: delay } = require('node:timers/promises');
@@ -805,15 +806,16 @@ async function main() {
           }
         );
       assertPinnedAlphaCheckout(process.cwd(), sha);
-      fs.mkdirSync('reports/source-release-rc16', { recursive: true });
+      const directory = nativeGate.releaseOutputDirectory();
+      fs.mkdirSync(directory, { recursive: true });
       const serviceBytes = JSON.stringify(processedCodeql, null, 2) + '\n';
       fs.writeFileSync(
-        'reports/source-release-rc16/codeql-service-evidence.json',
+        path.join(directory, 'codeql-service-evidence.json'),
         serviceBytes,
         { flag: 'wx', mode: 0o600 }
       );
       fs.writeFileSync(
-        'reports/source-release-rc16/provenance.json',
+        path.join(directory, 'provenance.json'),
         JSON.stringify(
           {
             schema: 'agijobsv0/source-release-provenance/1',

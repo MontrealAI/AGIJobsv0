@@ -276,8 +276,23 @@
     "scripts/release/source-python-evidence-rc16.cjs"
   ],
   "scannerReview": {
-    "sourceCommit": "689a34e3b70659984d537af5410977a4eaa77e77",
+    "sourceCommit": "d8544f8173b3c01faa88d50e7145ec455bc5e170",
     "results": [
+      {
+        "ruleId": "js/xss-through-exception",
+        "path": "apps/onebox-static/v2/app.js",
+        "region": {
+          "startLine": 522,
+          "startColumn": 25,
+          "endColumn": 32
+        },
+        "resultSha256": "188d758e9102e8fc5d487a2742ffd5a95f716069a72d76481522f1cc2e703c40",
+        "disposition": "Demonstrably false positive",
+        "justification": "Both complete exception traces end at appendMessage with an interpolated template string. Current appendMessage519-522 sends strings to textContent and reaches appendChild only for the mutually exclusive Node branch; this exception flow cannot supply a Node. This proves only the reported exception-to-Node sink is unreachable, not safety of unrelated Node callers.",
+        "regressionEvidence": [
+          "https://github.com/MontrealAI/AGIJobsv0/blob/d8544f8173b3c01faa88d50e7145ec455bc5e170/apps/onebox-static/v2/app.js"
+        ]
+      },
       {
         "ruleId": "js/xss-through-dom",
         "path": "apps/console/src/components/GasPanel.tsx",
@@ -286,11 +301,11 @@
           "startColumn": 22,
           "endColumn": 38
         },
-        "resultSha256": "83b31af7e0b36486b38c60fe2709377cc6ffd3c152fdad6c083ebcf9789596fc",
+        "resultSha256": "0d2c41e60a14f55b431532d30deb21b19cdc4752a9af90a0b5c22c05c08f44cd",
         "disposition": "Demonstrably false positive",
         "justification": "Input342 reaches useMemo220, but ethers.isAddress222 admits the paymaster address and parseUnits229/toQuantity230 normalize the amount before the fixed ethereum: URI is assigned to a React href366. Neither reported trace constructs an arbitrary HTML string or arbitrary URL scheme. This is renderer/link-context evidence, not transaction authorization or wallet execution.",
         "regressionEvidence": [
-          "https://github.com/MontrealAI/AGIJobsv0/blob/689a34e3b70659984d537af5410977a4eaa77e77/apps/console/src/components/GasPanel.tsx"
+          "https://github.com/MontrealAI/AGIJobsv0/blob/d8544f8173b3c01faa88d50e7145ec455bc5e170/apps/console/src/components/GasPanel.tsx"
         ]
       },
       {
@@ -301,11 +316,11 @@
           "startColumn": 21,
           "endColumn": 31
         },
-        "resultSha256": "445d7d9e337a3efbc7f19bc0a839465dc6cf80f8a597675916ad2f48aa2b2b48",
+        "resultSha256": "74c0c8e604490864ad7e62e6d2c0a89e4a722d9813593669effa6f443af2e10d",
         "disposition": "Demonstrably false positive",
         "justification": "All four reported DOM-record traces end at link.href313. The selected application's present243-245 and imported/hash restoration51-71/525 validate missions through verifyFrontierMission359-398, whose deterministic replay applies exactPublicURL74-118: canonical credential-free HTTPS with constrained host/port/query. Text is assigned through textContent and the link has noopener/noreferrer. The exported renderer is not a universal sanitizer; the finding is resolved only for this verified application/build-record chain, without asserting remote content or DNS trust.",
         "regressionEvidence": [
-          "https://github.com/MontrealAI/AGIJobsv0/blob/689a34e3b70659984d537af5410977a4eaa77e77/website/assets/frontier-desk.mjs"
+          "https://github.com/MontrealAI/AGIJobsv0/blob/d8544f8173b3c01faa88d50e7145ec455bc5e170/website/assets/frontier-desk.mjs"
         ]
       },
       {
@@ -316,11 +331,11 @@
           "startColumn": 25,
           "endColumn": 35
         },
-        "resultSha256": "2f45bb7374065c99d22879c03cf17d15740d6204698ba314bc7732c9d9d43f3c",
+        "resultSha256": "057425cb4476380e3ec9929bf32ac957cc148cb61009e395e175f575b08e9eb7",
         "disposition": "Demonstrably false positive",
         "justification": "All four traces to iframe.src335 use the same verified mission/source-URL chain validated by the selected application before rendering. The iframe independently receives an empty sandbox333 and no-referrer policy334. This rejects the reported executable-URL/HTML interpretation in the selected app; external HTTPS content remains untrusted and sandboxed.",
         "regressionEvidence": [
-          "https://github.com/MontrealAI/AGIJobsv0/blob/689a34e3b70659984d537af5410977a4eaa77e77/website/assets/frontier-desk.mjs"
+          "https://github.com/MontrealAI/AGIJobsv0/blob/d8544f8173b3c01faa88d50e7145ec455bc5e170/website/assets/frontier-desk.mjs"
         ]
       },
       {
@@ -331,11 +346,11 @@
           "startColumn": 33,
           "endColumn": 43
         },
-        "resultSha256": "e7516956ee9414c892a9031d6ded0fb6adbe0eccfd24a1767cc499ce9fb44576",
+        "resultSha256": "1324c3e4a8d01d7e92370095da830757bb6106b6a0b204eafda4e7e969faf4e8",
         "disposition": "Demonstrably false positive",
         "justification": "All four traces to fallbackLink.href340 use the same verified canonical HTTPS mission source chain used by the selected application's verified mission renderer. This separately created fallback link uses noopener/noreferrer342 and textContent343. It is retained as a separate full result; no claim of external-source authenticity is made.",
         "regressionEvidence": [
-          "https://github.com/MontrealAI/AGIJobsv0/blob/689a34e3b70659984d537af5410977a4eaa77e77/website/assets/frontier-desk.mjs"
+          "https://github.com/MontrealAI/AGIJobsv0/blob/d8544f8173b3c01faa88d50e7145ec455bc5e170/website/assets/frontier-desk.mjs"
         ]
       },
       {
@@ -346,11 +361,11 @@
           "startColumn": 30,
           "endColumn": 45
         },
-        "resultSha256": "9b86f6c3dfbe34a27f9163b46de3bbdf7f986a5e5e14fd564214960fd5e137a2",
+        "resultSha256": "e617abbc08ed6deb4ff522068694cc4132ca7a1f66354b63dfd71db99a3b45ae",
         "disposition": "Demonstrably false positive",
         "justification": "All three traces begin at the build-owned lab-data table. Current renderExperience110-135 reads tracked files, builds nonbinary downloads as examples/<sha16>-<ASCII-sanitized-basename>, and prefixes only a validated absolute SITE_BASE_PATH95-100. Binary fallback uses the fixed GitHub HTTPS sourceURL387-388 with per-segment path encoding. The escaped JSON table264-266 is not selected by runtime search/file content; that content is rendered with textContent. No runtime admission of an arbitrary download URL is established.",
         "regressionEvidence": [
-          "https://github.com/MontrealAI/AGIJobsv0/blob/689a34e3b70659984d537af5410977a4eaa77e77/website/assets/source-lab.js"
+          "https://github.com/MontrealAI/AGIJobsv0/blob/d8544f8173b3c01faa88d50e7145ec455bc5e170/website/assets/source-lab.js"
         ]
       },
       {
@@ -361,41 +376,11 @@
           "startColumn": 30,
           "endColumn": 43
         },
-        "resultSha256": "45171308c20c856cdf35a0030a53803db4333bcbd1964466bc445302e6f1d6ef",
+        "resultSha256": "b7de97e2d9ba0613accedc6b40603528011b20ebbd662a3d133c87f93d5472f0",
         "disposition": "Demonstrably false positive",
         "justification": "The three traces to source-lab original href81 use source.source, constructed by the fixed HTTPS GitHub repository/revision sourceURL387-388 with every file path segment encoded. loadExperiences requires tracked source paths and escapes the serialized build table. User search and source content do not choose this URL. This is the build-owned link flow only, not a general claim about arbitrary imported tables.",
         "regressionEvidence": [
-          "https://github.com/MontrealAI/AGIJobsv0/blob/689a34e3b70659984d537af5410977a4eaa77e77/website/assets/source-lab.js"
-        ]
-      },
-      {
-        "ruleId": "js/xss-through-exception",
-        "path": "apps/onebox-static/v2/app.js",
-        "region": {
-          "startLine": 522,
-          "startColumn": 25,
-          "endColumn": 32
-        },
-        "resultSha256": "ecf9292068e73fe1886b5a8b25bc1f1cc147c7750896582c314eeea457e7415f",
-        "disposition": "Demonstrably false positive",
-        "justification": "Both complete exception traces end at appendMessage with an interpolated template string. Current appendMessage519-522 sends strings to textContent and reaches appendChild only for the mutually exclusive Node branch; this exception flow cannot supply a Node. This proves only the reported exception-to-Node sink is unreachable, not safety of unrelated Node callers.",
-        "regressionEvidence": [
-          "https://github.com/MontrealAI/AGIJobsv0/blob/689a34e3b70659984d537af5410977a4eaa77e77/apps/onebox-static/v2/app.js"
-        ]
-      },
-      {
-        "ruleId": "js/bad-code-sanitization",
-        "path": "integrations/alpha-agent/tests/alpha-project-transfer.test.mjs",
-        "region": {
-          "startLine": 232,
-          "startColumn": 442,
-          "endColumn": 466
-        },
-        "resultSha256": "3b75f2692caba0cae134af3d539279caf1ead00f567bc9b51f03022f7ccb5ea5",
-        "disposition": "Demonstrably false positive",
-        "justification": "The reported JSON.stringify code construction at test232 receives only fixed import.meta.url-relative module URLs and the frozen source-count value; Node -e receives that fixed test program, not HTML or externally supplied module source. It asserts immutable manifest behavior. This does not endorse JSON.stringify as a general code sanitizer and does not execute this test in the review lane.",
-        "regressionEvidence": [
-          "https://github.com/MontrealAI/AGIJobsv0/blob/689a34e3b70659984d537af5410977a4eaa77e77/integrations/alpha-agent/tests/alpha-project-transfer.test.mjs"
+          "https://github.com/MontrealAI/AGIJobsv0/blob/d8544f8173b3c01faa88d50e7145ec455bc5e170/website/assets/source-lab.js"
         ]
       },
       {
@@ -406,11 +391,11 @@
           "startColumn": 74,
           "endColumn": 82
         },
-        "resultSha256": "c28640aa27c4b798e2c5f24dfef4a6c89dfb723650a646a00af804c3025f110e",
+        "resultSha256": "1c9e60e34cedb0317aa92026bd9b0c85f492002f81910bc9b001151540a02eb6",
         "disposition": "Demonstrably false positive",
         "justification": "The modulo at research192 is mathematically biased. Its output is a disclosed public synthetic revision label in PUBLIC-LEFT/PUBLIC-RIGHT example rows, not a key, authentication nonce, secret or protected holdout. The current module explicitly labels its post-freeze generator publicSynthetic/protected:false and local_engineering_only. Therefore the cryptographic-security consequence does not apply to this specific public sampling use; distribution quality and independence limitations remain.",
         "regressionEvidence": [
-          "https://github.com/MontrealAI/AGIJobsv0/blob/689a34e3b70659984d537af5410977a4eaa77e77/integrations/alpha-agent/vendor/alpha-computer/examples/successor-alpha/research.mjs"
+          "https://github.com/MontrealAI/AGIJobsv0/blob/d8544f8173b3c01faa88d50e7145ec455bc5e170/integrations/alpha-agent/vendor/alpha-computer/examples/successor-alpha/research.mjs"
         ]
       },
       {
@@ -421,26 +406,131 @@
           "startColumn": 77,
           "endColumn": 85
         },
-        "resultSha256": "f5dbbf686d62e21c5e2e02e1c467619f6d8a7f6025948289161fa959116921e6",
+        "resultSha256": "dab1e8208ee0365dbcf8d2615d6d7ccd8bec49afd295f51182b7545a75b33184",
         "disposition": "Demonstrably false positive",
         "justification": "The separate modulo at research193 has the same bounded public revision-label purpose as the companion public revision-label sampling operation, with distinct raw record/hash preserved. Biased distribution is acknowledged rather than disputed; no cryptographic key/secret/security nonce or independently protected evaluation is supplied by the value. Current output declares public synthetic, unprotected local evaluation.",
         "regressionEvidence": [
-          "https://github.com/MontrealAI/AGIJobsv0/blob/689a34e3b70659984d537af5410977a4eaa77e77/integrations/alpha-agent/vendor/alpha-computer/examples/successor-alpha/research.mjs"
+          "https://github.com/MontrealAI/AGIJobsv0/blob/d8544f8173b3c01faa88d50e7145ec455bc5e170/integrations/alpha-agent/vendor/alpha-computer/examples/successor-alpha/research.mjs"
         ]
       },
       {
-        "ruleId": "js/insecure-temporary-file",
-        "path": "integrations/alpha-agent/artifact-commitment.cjs",
+        "ruleId": "js/bad-code-sanitization",
+        "path": "integrations/alpha-agent/tests/alpha-project-transfer.test.mjs",
         "region": {
-          "startLine": 10,
-          "startColumn": 5,
-          "endColumn": 13
+          "startLine": 232,
+          "startColumn": 442,
+          "endColumn": 466
         },
-        "resultSha256": "b88c96c776bb5c5981e1f25ee2398e7253d29fbd47f47bf4df9badb55e7085be",
+        "resultSha256": "5b0140d43899cd2de48a4b49852c3e681fa027fca0a8315f6cb5a94898b5f13a",
         "disposition": "Demonstrably false positive",
-        "justification": "The exact artifact-commitment sink opens an operator-selected existing report using O_RDONLY|O_NONBLOCK, then fstat checks regularity and bounded <=8MiB captured bytes, hashes those bytes and closes the FD. It has no create/truncate/write flags, so the reported insecure temporary-file creation does not occur. This reader does allow operator-selected symlink paths and is not claimed to provide immutable-source isolation or authenticate a report by itself.",
+        "justification": "The reported JSON.stringify code construction at test232 receives only fixed import.meta.url-relative module URLs and the frozen source-count value; Node -e receives that fixed test program, not HTML or externally supplied module source. It asserts immutable manifest behavior. This does not endorse JSON.stringify as a general code sanitizer and does not execute this test in the review lane.",
         "regressionEvidence": [
-          "https://github.com/MontrealAI/AGIJobsv0/blob/689a34e3b70659984d537af5410977a4eaa77e77/integrations/alpha-agent/artifact-commitment.cjs"
+          "https://github.com/MontrealAI/AGIJobsv0/blob/d8544f8173b3c01faa88d50e7145ec455bc5e170/integrations/alpha-agent/tests/alpha-project-transfer.test.mjs"
+        ]
+      },
+      {
+        "ruleId": "js/user-controlled-bypass",
+        "path": "agent-gateway/apiHelpers.ts",
+        "region": {
+          "startLine": 174,
+          "startColumn": 10,
+          "endColumn": 15
+        },
+        "resultSha256": "c6932e6e82ab89e74f1491d082242072666fb165f8e439c1780239bbd2cc14f4",
+        "disposition": "Demonstrably false positive",
+        "justification": "The tainted condition apiHelpers174 filters non-object contributor entries; rejected entries are discarded, not accepted with a verified signature or authority. Retained entries require a normalized Ethereum address, and accepted nonempty signatures use the shared payload/recovered-address verification. HTTP authentication and authoriseWallet1654 precede this optional annotation parser; gRPC uses its independent principal/wallet checks before mapping to the same helper. No privileged action is enabled by skipping an invalid annotation.",
+        "regressionEvidence": [
+          "https://github.com/MontrealAI/AGIJobsv0/blob/d8544f8173b3c01faa88d50e7145ec455bc5e170/agent-gateway/apiHelpers.ts"
+        ]
+      },
+      {
+        "ruleId": "js/user-controlled-bypass",
+        "path": "agent-gateway/apiHelpers.ts",
+        "region": {
+          "startLine": 207,
+          "startColumn": 42,
+          "endColumn": 69
+        },
+        "resultSha256": "b1b47f5588fa7d9b64675ac971fcc1dba3e5161356e1025e8157819ee04e9c10",
+        "disposition": "Demonstrably false positive",
+        "justification": "The apiHelpers207 condition distinguishes optional signed annotations from unsigned/digest-only annotations; the sensitive action marked by the query is verification itself. Accepted nonempty string signatures require payload and recovered address equality and only then retain signature/hash. Missing/blank/non-string signatures follow the unsigned annotation path and are not represented as verified signatures or gateway principals. This does not reject every malformed signature-on-presence or establish job-specific approval; those limitations remain explicit.",
+        "regressionEvidence": [
+          "https://github.com/MontrealAI/AGIJobsv0/blob/d8544f8173b3c01faa88d50e7145ec455bc5e170/agent-gateway/apiHelpers.ts"
+        ]
+      },
+      {
+        "ruleId": "js/user-controlled-bypass",
+        "path": "agent-gateway/apiHelpers.ts",
+        "region": {
+          "startLine": 208,
+          "startColumn": 11,
+          "endColumn": 32
+        },
+        "resultSha256": "4ee98a805ed644dcfaf996196c01c97b58f7b1c2189f1aaccd862ff11805345d",
+        "disposition": "Demonstrably false positive",
+        "justification": "For an accepted nonempty signature, apiHelpers208 requires an actual payload; the absent branch throws227 rather than accepting signed evidence. The payload is canonicalized, verifyMessage must recover the normalized contributor, and gRPC signed_payload is passed unmodified at800 to this shared helper. Gateway principal/wallet authorization is independent. Unsigned annotations remain permitted and no arbitrary signed message is upgraded to job-specific authorization.",
+        "regressionEvidence": [
+          "https://github.com/MontrealAI/AGIJobsv0/blob/d8544f8173b3c01faa88d50e7145ec455bc5e170/agent-gateway/apiHelpers.ts"
+        ]
+      },
+      {
+        "ruleId": "js/user-controlled-bypass",
+        "path": "agent-gateway/routes.ts",
+        "region": {
+          "startLine": 200,
+          "startColumn": 7,
+          "endColumn": 16
+        },
+        "resultSha256": "2fd3286b2a65ff6717f53a5f5de8494dd8dcf5b3fb0370e9f5c870bb05608f0d",
+        "disposition": "Demonstrably false positive",
+        "justification": "The signature-presence predicate routes200 is only a prerequisite to verification206-218. Without the separately configured operator key, verification must recover the declared managed wallet, then stores a server-owned WeakMap principal and rotates the bounded challenge; absence/failure reaches401. Wallet authorization is subsequently enforced independently. User control of header presence cannot grant the sensitive action.",
+        "regressionEvidence": [
+          "https://github.com/MontrealAI/AGIJobsv0/blob/d8544f8173b3c01faa88d50e7145ec455bc5e170/agent-gateway/routes.ts"
+        ]
+      },
+      {
+        "ruleId": "js/user-controlled-bypass",
+        "path": "agent-gateway/routes.ts",
+        "region": {
+          "startLine": 200,
+          "startColumn": 20,
+          "endColumn": 27
+        },
+        "resultSha256": "ea534b4e5d7ee5dcabdc19667f70ba581e7df4525da4eae46f96bf62f67d9b76",
+        "disposition": "Demonstrably false positive",
+        "justification": "This is the distinct address-presence diagnostic at routes200 column20. An address string merely enables the verification attempt; recovered identity must equal it and existing managed-wallet membership, and server-owned principal authorization remains required. Missing/invalid evidence returns401. Both line200 results remain separately bound and reviewed.",
+        "regressionEvidence": [
+          "https://github.com/MontrealAI/AGIJobsv0/blob/d8544f8173b3c01faa88d50e7145ec455bc5e170/agent-gateway/routes.ts"
+        ]
+      },
+      {
+        "ruleId": "js/user-controlled-bypass",
+        "path": "apps/onebox-static/app.mjs",
+        "region": {
+          "startLine": 1482,
+          "startColumn": 8,
+          "endColumn": 15
+        },
+        "resultSha256": "3c2b80420d5db7d13166b314097865629f5d7ceb65924c686c495cf693a4a9e9",
+        "disposition": "Demonstrably false positive",
+        "justification": "Both full traces (70 and72 locations) reach a client endpoint-availability guard before executeICS fetch. Endpoint presence is not server authorization: the actual provided router819-850 fails closed without configured secret/authorization and validates bearer/HMAC before all handlers. URL configuration is limited to HTTP(S) and base overrides clear the page-memory token. This does not qualify arbitrary remote services, infer legacy ICS compatibility with the built-in intent/planHash endpoint, or establish unconditional per-action consent in all legacy plans.",
+        "regressionEvidence": [
+          "https://github.com/MontrealAI/AGIJobsv0/blob/d8544f8173b3c01faa88d50e7145ec455bc5e170/apps/onebox-static/app.mjs"
+        ]
+      },
+      {
+        "ruleId": "js/user-controlled-bypass",
+        "path": "packages/successor-core/src/frontier-mission.mjs",
+        "region": {
+          "startLine": 431,
+          "startColumn": 7,
+          "endColumn": 40
+        },
+        "resultSha256": "0653440202bbbc33963f77077dfd6d24bd48d2029e9513a76239a455b769e136",
+        "disposition": "Demonstrably false positive",
+        "justification": "The source-controlled kind predicate frontier-mission431 selects a direct mission object versus a supported export envelope; both accepted branches call verifyFrontierMission. That verifier checks exact shape, reconstructs the bounded mission/source permissions and requires deterministic canonical equality. The discriminator does not bypass the verifier or authorize execution, resource allocation, wallet actions or claims.",
+        "regressionEvidence": [
+          "https://github.com/MontrealAI/AGIJobsv0/blob/d8544f8173b3c01faa88d50e7145ec455bc5e170/packages/successor-core/src/frontier-mission.mjs"
         ]
       },
       {
@@ -452,11 +542,11 @@
           "endLine": 166,
           "endColumn": 6
         },
-        "resultSha256": "ff38f4729100cd9044b7e7a8fae5248feaaaca3f725464c48f9043ab5a921a39",
+        "resultSha256": "786ac76a517c4d8e59d7d6689b05300d68211e61b6c2e3562eef05f6cf03a594",
         "disposition": "Demonstrably false positive",
         "justification": "The pathname lstat is redundant to the safety boundary. The subsequent open uses O_RDONLY|O_NOFOLLOW|O_NONBLOCK; boundedSourceBlob validates the actual retained FD's regularity/size/stability and exact immutable Git blob+mode before capturing bytes. preparePinnedAlphaComputer uses only the private captured source map and closed relative import edges, not mutable module paths. Replacement cannot admit nonmatching source bytes; no universal mutable-path race immunity is claimed.",
         "regressionEvidence": [
-          "https://github.com/MontrealAI/AGIJobsv0/blob/689a34e3b70659984d537af5410977a4eaa77e77/integrations/alpha-agent/pinned-alpha-checkout.cjs"
+          "https://github.com/MontrealAI/AGIJobsv0/blob/d8544f8173b3c01faa88d50e7145ec455bc5e170/integrations/alpha-agent/pinned-alpha-checkout.cjs"
         ]
       },
       {
@@ -468,11 +558,131 @@
           "endLine": 535,
           "endColumn": 7
         },
-        "resultSha256": "efdbdd57e6141ac97fb7db757ac4b94ddb75341ae4600fdc4174f7b4a7ef2565",
+        "resultSha256": "10d6f47f0198f250107dd17a233e80dbab5d3a1ba5815c5081930b178ec8fd3c",
         "disposition": "Demonstrably false positive",
         "justification": "The earlier existsSync187 is not the creation boundary: the final evidence write532-535 uses atomic exclusive flag wx and mode0600 after the pinned source check. An existing final entry is refused independently of the earlier predicate. This narrowly resolves the reported existence-check/write clobber race; it does not promise broader parent-directory isolation against the operator.",
         "regressionEvidence": [
-          "https://github.com/MontrealAI/AGIJobsv0/blob/689a34e3b70659984d537af5410977a4eaa77e77/integrations/alpha-agent/four-repo-computer-lifecycle.cjs"
+          "https://github.com/MontrealAI/AGIJobsv0/blob/d8544f8173b3c01faa88d50e7145ec455bc5e170/integrations/alpha-agent/four-repo-computer-lifecycle.cjs"
+        ]
+      },
+      {
+        "ruleId": "js/http-to-file-access",
+        "path": "agent-gateway/employer.ts",
+        "region": {
+          "startLine": 54,
+          "startColumn": 5,
+          "endColumn": 37
+        },
+        "resultSha256": "34b2d40974233af18d9e586788618553cd5cf9b6943484d6e41141c8dfd53017",
+        "disposition": "Demonstrably false positive",
+        "justification": "All four flows preserve authenticated employer request fields as serialized job-ledger content. The route1977 requires operator authority; postJob confirms its own JobCreated receipt before appending a selected record. The destination JOB_LEDGER29-30 is module-fixed, not selected by those HTTP fields. Intentional application ledger persistence is established; no generalized confidentiality, retention, concurrency or filesystem isolation claim follows.",
+        "regressionEvidence": [
+          "https://github.com/MontrealAI/AGIJobsv0/blob/d8544f8173b3c01faa88d50e7145ec455bc5e170/agent-gateway/employer.ts"
+        ]
+      },
+      {
+        "ruleId": "js/http-to-file-access",
+        "path": "agent-gateway/telemetry.ts",
+        "region": {
+          "startLine": 1153,
+          "startColumn": 5,
+          "endColumn": 35
+        },
+        "resultSha256": "61eed4d0941ec58bf3af818ab35a93d779290e0bc687ddbe50a2eefd92cce00b",
+        "disposition": "Demonstrably false positive",
+        "justification": "All four flows retain HTTP telemetry as sample content in the fixed TELEMETRY_OUTBOX36-37 via publishEnergySample1300-1303/persistQueue1149-1154. The route's authentication and matching-wallet authorization precede sample publication. HTTP body/jobId fields do not become the destination filename. This is intentional queued telemetry persistence, with data/retention policy remaining deployment-specific.",
+        "regressionEvidence": [
+          "https://github.com/MontrealAI/AGIJobsv0/blob/d8544f8173b3c01faa88d50e7145ec455bc5e170/agent-gateway/telemetry.ts"
+        ]
+      },
+      {
+        "ruleId": "js/http-to-file-access",
+        "path": "agent-gateway/validationStore.ts",
+        "region": {
+          "startLine": 231,
+          "startColumn": 26,
+          "endColumn": 30
+        },
+        "resultSha256": "7e8e7a9711413d96e0a08878fce769d7f902101c06ca3e9c2180d73b14eb7a49",
+        "disposition": "Demonstrably false positive",
+        "justification": "All four traces (30/70/72/71 locations) are retained: the route's parsed approval and fetched evaluation preview become bounded plain JSON record content. recordPath116-132 restricts uint256 job ID and Ethereum address, serialiseRecord bounds nodes/depth/bytes/plain data, and writeRecord230-235 uses a random exclusive0600 FD then rename. Neither the response preview nor boolean selects an unconstrained path. This resolves intentional constrained data persistence only, not general storage durability or confidentiality.",
+        "regressionEvidence": [
+          "https://github.com/MontrealAI/AGIJobsv0/blob/d8544f8173b3c01faa88d50e7145ec455bc5e170/agent-gateway/validationStore.ts"
+        ]
+      },
+      {
+        "ruleId": "js/http-to-file-access",
+        "path": "scripts/release/emit-codeql-review-rc16.cjs",
+        "region": {
+          "startLine": 244,
+          "startColumn": 32,
+          "endColumn": 35
+        },
+        "resultSha256": "fac140fb675f275f35fed1de6497ca5a19d3da0a52a8dddedfba58a0e040f77d",
+        "disposition": "Demonstrably false positive",
+        "justification": "All three complete 21-location flows and both related locations show the acquired original artifact ZIP bytes reaching the fixed private original.zip at emitter244. The content taint is real and intentional. The collector job admits only the exact reviewed branch push; immutable source/run/current-attempt/completed producer/upload-job metadata and exact artifact name/source/size/GitHub digest are authenticated before one acquisition. Actual downloaded size and SHA256 must match that metadata at341-342 before rawFiles writes. mkdtemp239 plus chmod0700 creates a private directory, the filename is a fixed literal241, and wx/0600 prevents clobbering an existing file. The file is reopened read-only/no-follow, unlinked, and its retained descriptor is used by fixed /usr/bin/unzip -Z1/-p calls only; closed four-member inventory, byte bounds and captured ZIP hash are checked. Report bytes are never executed or used to select a destination. Credentials go only to the fixed GitHub API, not the signed transfer or logs. This is an intended authenticated inert-download write, not arbitrary remote file selection or execution. It does not certify hypothetical parser defects, hostile same-UID runner processes or broader archive-processing safety.",
+        "regressionEvidence": [
+          "https://github.com/MontrealAI/AGIJobsv0/blob/d8544f8173b3c01faa88d50e7145ec455bc5e170/scripts/release/emit-codeql-review-rc16.cjs"
+        ]
+      },
+      {
+        "ruleId": "js/http-to-file-access",
+        "path": "scripts/release/source-codeql-service-rc16.cjs",
+        "region": {
+          "startLine": 703,
+          "startColumn": 30,
+          "endColumn": 35
+        },
+        "resultSha256": "4e32f9ae413ca0858afef71790a81c87d29ca12649dfa0f5104ecdc84cd9d157",
+        "disposition": "Demonstrably false positive",
+        "justification": "Fresh current-source static review confirms the fixed admitted receipt path, projected inert JSON, exact source/config/run/job/upload/analysis checks, bounded serialization and held-descriptor write. All three complete raw flows reach the expected receipt write via authenticated exact-repository GET metadata: current run object, current.run_number, and selected CodeQL job.id through complete bounded inventories and projectJob. Network metadata never chooses an output filename: capture admits exactly reports/security/codeql-service-<admitted language>/codeql-service-receipt.json and exact main-push SHA/run/attempt/workflow/job identity. The receipt is a closed object assembled from fixed source identities, projected validated run/job/upload/analysis fields, source blob digests and the bounded original SARIF hash/tool identity, serialized as JSON and capped at256KiB. The fixed file is opened O_WRONLY|O_CREAT|O_EXCL|O_NOFOLLOW0600 and written through its held descriptor. It is inert metadata, never code; downstream observeFinalServices authenticates fresh successful exact-main producer/job/artifact identities and original ZIP digest, parses the one-member receipt ZIP, validates it against fresh processed-upload/analysis and source identities, repeats final API observations, freezes and WeakSet-brands the proof before assertFinalServices/verifyRawBinding can trust it. It does not trust a file merely because it is local. Limits: no successful final-source main capture is claimed; parent-directory traversal is not universally descriptor protected, and this disposition does not claim safety under hostile hosted-runner filesystem control.",
+        "regressionEvidence": [
+          "https://github.com/MontrealAI/AGIJobsv0/blob/d8544f8173b3c01faa88d50e7145ec455bc5e170/scripts/release/source-codeql-service-rc16.cjs"
+        ]
+      },
+      {
+        "ruleId": "js/http-to-file-access",
+        "path": "services/notifications/server.js",
+        "region": {
+          "startLine": 29,
+          "startColumn": 34,
+          "endColumn": 64
+        },
+        "resultSha256": "cedbd22910763c8241f1a1d91f6c7aced1deefaacf25daed6052c788ff2ceaac",
+        "disposition": "Demonstrably false positive",
+        "justification": "Both traces accurately show JSON notification content reaching appendNotification. Destination storageDir/logFile17-18 is configured/fixed, never request-controlled, and JSON.stringify prevents content from acting as a path or command. The service intentionally accepts public notifications, bounds body parsing and peer work, and listens0.0.0.0 without caller authentication. No private/authenticated-service, retention or ingress-policy guarantee is asserted; the reported flow is intended inert fixed-log persistence rather than arbitrary file access.",
+        "regressionEvidence": [
+          "https://github.com/MontrealAI/AGIJobsv0/blob/d8544f8173b3c01faa88d50e7145ec455bc5e170/services/notifications/server.js"
+        ]
+      },
+      {
+        "ruleId": "js/http-to-file-access",
+        "path": "shared/containedFiles.ts",
+        "region": {
+          "startLine": 116,
+          "startColumn": 26,
+          "endColumn": 30
+        },
+        "resultSha256": "22e060be81b1533f967a807187b0582f71f9e7c1b7ab76f8a29a7c56f10d9703",
+        "disposition": "Demonstrably false positive",
+        "justification": "All four flow variants are intentional planner/receipt data persistence: request/response fields become serialized content after normal identifiers/receipt structure, not arbitrary output paths. writeContainedFile67-76/104-119 validates a single filename and retains the verified private directory FD; target112 uses containedFile(anchor,filename), exclusive0600 temporary creation and descriptor-anchored publication. All inbound IPFS/HTTP CID variants remain data. This does not claim confidentiality or authorization for arbitrary destinations outside the checked callers.",
+        "regressionEvidence": [
+          "https://github.com/MontrealAI/AGIJobsv0/blob/d8544f8173b3c01faa88d50e7145ec455bc5e170/shared/containedFiles.ts"
+        ]
+      },
+      {
+        "ruleId": "js/http-to-file-access",
+        "path": "shared/worldModel.ts",
+        "region": {
+          "startLine": 203,
+          "startColumn": 5,
+          "endColumn": 39
+        },
+        "resultSha256": "b1adf4e301698af94d5614a40d42124b8092e13bfb58ea7dc20e7b821039b693",
+        "disposition": "Demonstrably false positive",
+        "justification": "All four response-to-file variants produce selected output CID/URL observation fields and append their JSON content to the module-fixed OBSERVATIONS_PATH105-107/201-204. The remote values do not select a filesystem destination or trigger execution. This is intended observation recording, not an arbitrary file-write capability; broader retention, disclosure and external-content authenticity are not attested.",
+        "regressionEvidence": [
+          "https://github.com/MontrealAI/AGIJobsv0/blob/d8544f8173b3c01faa88d50e7145ec455bc5e170/shared/worldModel.ts"
         ]
       },
       {
@@ -484,11 +694,11 @@
           "endLine": 24,
           "endColumn": 8
         },
-        "resultSha256": "b89662daeea98c7fc9a770cd0f264b02259870b23172b7c7cedc67e38d38d952",
+        "resultSha256": "b61ec519194f8f138db3cbcfe7923c07b8ab8af56311bde879f68cbbf74afb84",
         "disposition": "Demonstrably false positive",
         "justification": "All four identity-file-to-HTTP traces reach intentional provider workload transfer. identity317-324 explicitly projects address/ENS/label/role/metadata and excludes stored privateKey/wallet; taskExecution395-416 selects job/analysis/profile/projected identity/context/recent memory without serializing TaskExecutionContext.wallet. The endpoint is profile metadata from local configured identity/manifest. Arbitrary metadata/context is intentionally transmitted, so deployment data policy remains necessary; no unexpected whole private-key file upload is established by these traces.",
         "regressionEvidence": [
-          "https://github.com/MontrealAI/AGIJobsv0/blob/689a34e3b70659984d537af5410977a4eaa77e77/agent-gateway/agentEndpoint.ts"
+          "https://github.com/MontrealAI/AGIJobsv0/blob/d8544f8173b3c01faa88d50e7145ec455bc5e170/agent-gateway/agentEndpoint.ts"
         ]
       },
       {
@@ -499,11 +709,11 @@
           "startColumn": 15,
           "endColumn": 25
         },
-        "resultSha256": "89c5afdb109d3bc6b0977a6ea36c2c9f862d5e521fc1a12e1a23260c8b308b9c",
+        "resultSha256": "f2cafad5155066b019a868ede77492031dccfcf9fa2aa143aed224148d70a778",
         "disposition": "Demonstrably false positive",
         "justification": "Both full quarantine-state traces reach the selected anomaly notification, not a whole file upload. telemetry644-652 projects agent/job/anomaly/count/time plus a quarantined boolean; notifyAgentOfAnomaly523-524 selects only matching-wallet registered recipients before posting that JSON at549. This is intentional health notification to configured recipients; it does not authenticate arbitrary endpoint operators or certify their retention policies.",
         "regressionEvidence": [
-          "https://github.com/MontrealAI/AGIJobsv0/blob/689a34e3b70659984d537af5410977a4eaa77e77/agent-gateway/telemetry.ts"
+          "https://github.com/MontrealAI/AGIJobsv0/blob/d8544f8173b3c01faa88d50e7145ec455bc5e170/agent-gateway/telemetry.ts"
         ]
       },
       {
@@ -514,11 +724,11 @@
           "startColumn": 13,
           "endColumn": 36
         },
-        "resultSha256": "3d7e11fd5ebd7cfcea5d8bd867515eea800bd3c72445c71580eff7b068ac74a2",
+        "resultSha256": "ae14519390afffdf8c611a16e7111e73be3e903da7287c7285d8531951a959b8",
         "disposition": "Demonstrably false positive",
         "justification": "The four file-to-HTTP variants combine restored telemetry samples with explicitly projected signer address/ENS1174-1183 and the selected timestamp/digest/signature envelope1197-1245. The body1286 is sent intentionally to operator-configured ENERGY_ORACLE_URL28/1278; no whole identity/private-key object is serialized. Stored telemetry is intentionally exported, not confidential arbitrary file content; recipient data policy remains a deployment limit.",
         "regressionEvidence": [
-          "https://github.com/MontrealAI/AGIJobsv0/blob/689a34e3b70659984d537af5410977a4eaa77e77/agent-gateway/telemetry.ts"
+          "https://github.com/MontrealAI/AGIJobsv0/blob/d8544f8173b3c01faa88d50e7145ec455bc5e170/agent-gateway/telemetry.ts"
         ]
       },
       {
@@ -529,11 +739,11 @@
           "startColumn": 11,
           "endColumn": 18
         },
-        "resultSha256": "808e6e46a6505950a197dcad5825b3396cc2ba6f9a504e6698308df060c99af3",
+        "resultSha256": "23df92937fb7023bfa03ecb6a5d2da55e31aa2f5ee1a493f3b91dbc54c4f5213",
         "disposition": "Demonstrably false positive",
         "justification": "Both full journal-to-HTTP traces reach the headers608 of an intentional IPFS specification publication after restored settlement reconciliation and finalized-success gating1136-1165. spawnSubtasks1339-1347 selects explicit parent/description/createdBy metadata, which prepareJobArtifacts35-42 serializes as the intended job specification for the configured pin provider. The raw settlement journal is not uploaded; no live IPFS persistence or external-provider assurance is inferred.",
         "regressionEvidence": [
-          "https://github.com/MontrealAI/AGIJobsv0/blob/689a34e3b70659984d537af5410977a4eaa77e77/apps/orchestrator/execution.ts"
+          "https://github.com/MontrealAI/AGIJobsv0/blob/d8544f8173b3c01faa88d50e7145ec455bc5e170/apps/orchestrator/execution.ts"
         ]
       },
       {
@@ -544,26 +754,26 @@
           "startColumn": 17,
           "endColumn": 23
         },
-        "resultSha256": "e836796465bde79af4aca2158ba2062a6e70aead3b6d1496e02ba84169348f2d",
+        "resultSha256": "177bfe0dd26ca1c50bf03cc8cdffabb6da7e6e31b068cc5657fd05ffbeef6772",
         "disposition": "Demonstrably false positive",
         "justification": "This separate body sink at execution609 has its own two complete flows. The same finalized-success and explicit subtask metadata projection as the companion headers sink at execution608 produces an intended job-spec publication through configured provider code; body and headers remain distinct raw diagnostics. No raw-journal export or arbitrary private-file read is shown, and provider/data-policy limitations remain.",
         "regressionEvidence": [
-          "https://github.com/MontrealAI/AGIJobsv0/blob/689a34e3b70659984d537af5410977a4eaa77e77/apps/orchestrator/execution.ts"
+          "https://github.com/MontrealAI/AGIJobsv0/blob/d8544f8173b3c01faa88d50e7145ec455bc5e170/apps/orchestrator/execution.ts"
         ]
       },
       {
         "ruleId": "js/file-access-to-http",
         "path": "scripts/release/qualify-source-release-rc16.cjs",
         "region": {
-          "startLine": 595,
+          "startLine": 596,
           "startColumn": 7,
           "endColumn": 92
         },
-        "resultSha256": "4806a1e8bbbbf01c225914bc737a82edb863f92c73ff7f7e729c0500d0bc2025",
+        "resultSha256": "fe4553dd33c8dc35431c05171dcff718b309bf12e371c645ad7b12c11e289079",
         "disposition": "Demonstrably false positive",
-        "justification": "Both complete current flows were independently reread against the exact 689 qualifier source. Notes parsing96-148 validates an exact record and lowercase40-hex source identity; source/install binding259-279 runs before the call. Only compilerSourceBaseline identifier reaches the fixed GitHub repository commits/<SHA>/check-runs GET via readPages591-604/720-722, not the notes body or arbitrary file bytes. Redirects are refused and actual processed-main service proof plus reviewed-source AS remain mandatory. This resolves the specific intended identifier lookup, without approving future metadata or source changes.",
+        "justification": "Both complete current flows were independently reread against the exact d854 qualifier source. parseScannerReview97-149 admits the complete record and lowercase40-hex sourceSha; compilerSourceBaseline258-259 is that public source identifier. main637-673 validates exact-main identity, publication/profile/source and strict source-bound notes before readPages592-605/718-724 uses the identifier only in the fixed GitHub repository commits/<SHA>/check-runs GET. The notes body, arbitrary file bytes and private file contents are not uploaded. Redirects are refused; GH_TOKEN authorizes the intended metadata request. Current null review slots fail closed before this lookup, while genuine processed-main service evidence and current reviewed-source Advanced Security remain mandatory. This resolves the reported public identifier transfer only, without approving future source changes or final-source publication.",
         "regressionEvidence": [
-          "https://github.com/MontrealAI/AGIJobsv0/blob/689a34e3b70659984d537af5410977a4eaa77e77/scripts/release/qualify-source-release-rc16.cjs"
+          "https://github.com/MontrealAI/AGIJobsv0/blob/d8544f8173b3c01faa88d50e7145ec455bc5e170/scripts/release/qualify-source-release-rc16.cjs"
         ]
       },
       {
@@ -575,236 +785,26 @@
           "endLine": 265,
           "endColumn": 9
         },
-        "resultSha256": "ac8b6720557cbe50005b25280b7a9caa7757fc2f5cea0146cda5f5b30d866418",
+        "resultSha256": "34be44294bba81bd81a00a79b7cef37aa187780657b6058cb3786ab599f5e367",
         "disposition": "Demonstrably false positive",
         "justification": "All four identity-file traces end at notifyOrchestratorReload's explicit reason/label/timestamp JSON261-265 to operator-configured ORCHESTRATOR_CONTROL_URL255-256 (localhost default). The loaded identity is projected to its selected label; no whole identity record, wallet or private key is included. This intentional control notification is not blanket permission to export identity-file contents or an assurance about arbitrary configured receiver policy.",
         "regressionEvidence": [
-          "https://github.com/MontrealAI/AGIJobsv0/blob/689a34e3b70659984d537af5410977a4eaa77e77/scripts/retrainAgent.ts"
+          "https://github.com/MontrealAI/AGIJobsv0/blob/d8544f8173b3c01faa88d50e7145ec455bc5e170/scripts/retrainAgent.ts"
         ]
       },
       {
-        "ruleId": "js/user-controlled-bypass",
-        "path": "agent-gateway/apiHelpers.ts",
+        "ruleId": "js/insecure-temporary-file",
+        "path": "integrations/alpha-agent/artifact-commitment.cjs",
         "region": {
-          "startLine": 174,
-          "startColumn": 10,
-          "endColumn": 15
-        },
-        "resultSha256": "b3f8d710355360313ebe31b920a807c21321327facca03017cc64f1d6ac619bc",
-        "disposition": "Demonstrably false positive",
-        "justification": "The tainted condition apiHelpers174 filters non-object contributor entries; rejected entries are discarded, not accepted with a verified signature or authority. Retained entries require a normalized Ethereum address, and accepted nonempty signatures use the shared payload/recovered-address verification. HTTP authentication and authoriseWallet1654 precede this optional annotation parser; gRPC uses its independent principal/wallet checks before mapping to the same helper. No privileged action is enabled by skipping an invalid annotation.",
-        "regressionEvidence": [
-          "https://github.com/MontrealAI/AGIJobsv0/blob/689a34e3b70659984d537af5410977a4eaa77e77/agent-gateway/apiHelpers.ts"
-        ]
-      },
-      {
-        "ruleId": "js/user-controlled-bypass",
-        "path": "agent-gateway/apiHelpers.ts",
-        "region": {
-          "startLine": 207,
-          "startColumn": 42,
-          "endColumn": 69
-        },
-        "resultSha256": "eb8d1644934679ed9a346fcf211eb36c3ff722409dc3b50dd456fe464162764f",
-        "disposition": "Demonstrably false positive",
-        "justification": "The apiHelpers207 condition distinguishes optional signed annotations from unsigned/digest-only annotations; the sensitive action marked by the query is verification itself. Accepted nonempty string signatures require payload and recovered address equality and only then retain signature/hash. Missing/blank/non-string signatures follow the unsigned annotation path and are not represented as verified signatures or gateway principals. This does not reject every malformed signature-on-presence or establish job-specific approval; those limitations remain explicit.",
-        "regressionEvidence": [
-          "https://github.com/MontrealAI/AGIJobsv0/blob/689a34e3b70659984d537af5410977a4eaa77e77/agent-gateway/apiHelpers.ts"
-        ]
-      },
-      {
-        "ruleId": "js/user-controlled-bypass",
-        "path": "agent-gateway/apiHelpers.ts",
-        "region": {
-          "startLine": 208,
-          "startColumn": 11,
-          "endColumn": 32
-        },
-        "resultSha256": "905abb518729f2ee3f23dee6441fbd0ae049fb34f4c2ebe69bbbb0c9c330117d",
-        "disposition": "Demonstrably false positive",
-        "justification": "For an accepted nonempty signature, apiHelpers208 requires an actual payload; the absent branch throws227 rather than accepting signed evidence. The payload is canonicalized, verifyMessage must recover the normalized contributor, and gRPC signed_payload is passed unmodified at800 to this shared helper. Gateway principal/wallet authorization is independent. Unsigned annotations remain permitted and no arbitrary signed message is upgraded to job-specific authorization.",
-        "regressionEvidence": [
-          "https://github.com/MontrealAI/AGIJobsv0/blob/689a34e3b70659984d537af5410977a4eaa77e77/agent-gateway/apiHelpers.ts"
-        ]
-      },
-      {
-        "ruleId": "js/user-controlled-bypass",
-        "path": "agent-gateway/routes.ts",
-        "region": {
-          "startLine": 200,
-          "startColumn": 7,
-          "endColumn": 16
-        },
-        "resultSha256": "f328e91e8d1bd994880e65ded4c6749dc1f083ce5931a84a4887fd31f321201b",
-        "disposition": "Demonstrably false positive",
-        "justification": "The signature-presence predicate routes200 is only a prerequisite to verification206-218. Without the separately configured operator key, verification must recover the declared managed wallet, then stores a server-owned WeakMap principal and rotates the bounded challenge; absence/failure reaches401. Wallet authorization is subsequently enforced independently. User control of header presence cannot grant the sensitive action.",
-        "regressionEvidence": [
-          "https://github.com/MontrealAI/AGIJobsv0/blob/689a34e3b70659984d537af5410977a4eaa77e77/agent-gateway/routes.ts"
-        ]
-      },
-      {
-        "ruleId": "js/user-controlled-bypass",
-        "path": "agent-gateway/routes.ts",
-        "region": {
-          "startLine": 200,
-          "startColumn": 20,
-          "endColumn": 27
-        },
-        "resultSha256": "429fc0cff3a6a57ad7bf0dfc73654a43ff88cbdbfb539382ba488eba169c1d10",
-        "disposition": "Demonstrably false positive",
-        "justification": "This is the distinct address-presence diagnostic at routes200 column20. An address string merely enables the verification attempt; recovered identity must equal it and existing managed-wallet membership, and server-owned principal authorization remains required. Missing/invalid evidence returns401. Both line200 results remain separately bound and reviewed.",
-        "regressionEvidence": [
-          "https://github.com/MontrealAI/AGIJobsv0/blob/689a34e3b70659984d537af5410977a4eaa77e77/agent-gateway/routes.ts"
-        ]
-      },
-      {
-        "ruleId": "js/user-controlled-bypass",
-        "path": "apps/onebox-static/app.mjs",
-        "region": {
-          "startLine": 1482,
-          "startColumn": 8,
-          "endColumn": 15
-        },
-        "resultSha256": "61f898923bd39c74c3e389a31c73079c11515d17bccd4f81d130d87300e26bac",
-        "disposition": "Demonstrably false positive",
-        "justification": "Both full traces (70 and72 locations) reach a client endpoint-availability guard before executeICS fetch. Endpoint presence is not server authorization: the actual provided router819-850 fails closed without configured secret/authorization and validates bearer/HMAC before all handlers. URL configuration is limited to HTTP(S) and base overrides clear the page-memory token. This does not qualify arbitrary remote services, infer legacy ICS compatibility with the built-in intent/planHash endpoint, or establish unconditional per-action consent in all legacy plans.",
-        "regressionEvidence": [
-          "https://github.com/MontrealAI/AGIJobsv0/blob/689a34e3b70659984d537af5410977a4eaa77e77/apps/onebox-static/app.mjs"
-        ]
-      },
-      {
-        "ruleId": "js/user-controlled-bypass",
-        "path": "packages/successor-core/src/frontier-mission.mjs",
-        "region": {
-          "startLine": 431,
-          "startColumn": 7,
-          "endColumn": 40
-        },
-        "resultSha256": "366a3c8b3f8d931b0b6e11db1b1746c6cc1fffa7d1ef265614f8f0352926b5d4",
-        "disposition": "Demonstrably false positive",
-        "justification": "The source-controlled kind predicate frontier-mission431 selects a direct mission object versus a supported export envelope; both accepted branches call verifyFrontierMission. That verifier checks exact shape, reconstructs the bounded mission/source permissions and requires deterministic canonical equality. The discriminator does not bypass the verifier or authorize execution, resource allocation, wallet actions or claims.",
-        "regressionEvidence": [
-          "https://github.com/MontrealAI/AGIJobsv0/blob/689a34e3b70659984d537af5410977a4eaa77e77/packages/successor-core/src/frontier-mission.mjs"
-        ]
-      },
-      {
-        "ruleId": "js/http-to-file-access",
-        "path": "agent-gateway/employer.ts",
-        "region": {
-          "startLine": 54,
+          "startLine": 10,
           "startColumn": 5,
-          "endColumn": 37
+          "endColumn": 13
         },
-        "resultSha256": "2ef3f39bbeaa21492092841ebeb1a357b3e50b8e118e6a0d87ac0dbaac53397b",
+        "resultSha256": "12437a114051caa5bb15e0e73494aecc09e5f4b46413c3882069a502ebf5c8d4",
         "disposition": "Demonstrably false positive",
-        "justification": "All four flows preserve authenticated employer request fields as serialized job-ledger content. The route1977 requires operator authority; postJob confirms its own JobCreated receipt before appending a selected record. The destination JOB_LEDGER29-30 is module-fixed, not selected by those HTTP fields. Intentional application ledger persistence is established; no generalized confidentiality, retention, concurrency or filesystem isolation claim follows.",
+        "justification": "The exact artifact-commitment sink opens an operator-selected existing report using O_RDONLY|O_NONBLOCK, then fstat checks regularity and bounded <=8MiB captured bytes, hashes those bytes and closes the FD. It has no create/truncate/write flags, so the reported insecure temporary-file creation does not occur. This reader does allow operator-selected symlink paths and is not claimed to provide immutable-source isolation or authenticate a report by itself.",
         "regressionEvidence": [
-          "https://github.com/MontrealAI/AGIJobsv0/blob/689a34e3b70659984d537af5410977a4eaa77e77/agent-gateway/employer.ts"
-        ]
-      },
-      {
-        "ruleId": "js/http-to-file-access",
-        "path": "agent-gateway/telemetry.ts",
-        "region": {
-          "startLine": 1153,
-          "startColumn": 5,
-          "endColumn": 35
-        },
-        "resultSha256": "d9664fac8b74f457aadbd6468021538dfea31e39603f901549231ef43dd1393b",
-        "disposition": "Demonstrably false positive",
-        "justification": "All four flows retain HTTP telemetry as sample content in the fixed TELEMETRY_OUTBOX36-37 via publishEnergySample1300-1303/persistQueue1149-1154. The route's authentication and matching-wallet authorization precede sample publication. HTTP body/jobId fields do not become the destination filename. This is intentional queued telemetry persistence, with data/retention policy remaining deployment-specific.",
-        "regressionEvidence": [
-          "https://github.com/MontrealAI/AGIJobsv0/blob/689a34e3b70659984d537af5410977a4eaa77e77/agent-gateway/telemetry.ts"
-        ]
-      },
-      {
-        "ruleId": "js/http-to-file-access",
-        "path": "agent-gateway/validationStore.ts",
-        "region": {
-          "startLine": 231,
-          "startColumn": 26,
-          "endColumn": 30
-        },
-        "resultSha256": "71bda75e290dc50b846d89852befbef62529d5603a66de76fb3c3680887a0283",
-        "disposition": "Demonstrably false positive",
-        "justification": "All four traces (30/70/72/71 locations) are retained: the route's parsed approval and fetched evaluation preview become bounded plain JSON record content. recordPath116-132 restricts uint256 job ID and Ethereum address, serialiseRecord bounds nodes/depth/bytes/plain data, and writeRecord230-235 uses a random exclusive0600 FD then rename. Neither the response preview nor boolean selects an unconstrained path. This resolves intentional constrained data persistence only, not general storage durability or confidentiality.",
-        "regressionEvidence": [
-          "https://github.com/MontrealAI/AGIJobsv0/blob/689a34e3b70659984d537af5410977a4eaa77e77/agent-gateway/validationStore.ts"
-        ]
-      },
-      {
-        "ruleId": "js/http-to-file-access",
-        "path": "scripts/release/emit-codeql-review-rc16.cjs",
-        "region": {
-          "startLine": 244,
-          "startColumn": 32,
-          "endColumn": 35
-        },
-        "resultSha256": "d36da8dd406be527b50683b9df742a06b100ae5e19c189fd77f51711c4abfef3",
-        "disposition": "Demonstrably false positive",
-        "justification": "All three complete 21-location flows and both related locations show the acquired original artifact ZIP bytes reaching the fixed private original.zip at emitter244. The content taint is real and intentional. The collector job admits only the exact reviewed branch push; immutable source/run/current-attempt/completed producer/upload-job metadata and exact artifact name/source/size/GitHub digest are authenticated before one acquisition. Actual downloaded size and SHA256 must match that metadata at341-342 before rawFiles writes. mkdtemp239 plus chmod0700 creates a private directory, the filename is a fixed literal241, and wx/0600 prevents clobbering an existing file. The file is reopened read-only/no-follow, unlinked, and its retained descriptor is used by fixed /usr/bin/unzip -Z1/-p calls only; closed four-member inventory, byte bounds and captured ZIP hash are checked. Report bytes are never executed or used to select a destination. Credentials go only to the fixed GitHub API, not the signed transfer or logs. This is an intended authenticated inert-download write, not arbitrary remote file selection or execution. It does not certify hypothetical parser defects, hostile same-UID runner processes or broader archive-processing safety.",
-        "regressionEvidence": [
-          "https://github.com/MontrealAI/AGIJobsv0/blob/689a34e3b70659984d537af5410977a4eaa77e77/scripts/release/emit-codeql-review-rc16.cjs"
-        ]
-      },
-      {
-        "ruleId": "js/http-to-file-access",
-        "path": "scripts/release/source-codeql-service-rc16.cjs",
-        "region": {
-          "startLine": 703,
-          "startColumn": 30,
-          "endColumn": 35
-        },
-        "resultSha256": "bbbc1ae24aef35144cbdc990422cb7be291414729643c1285d815b7f56c4806a",
-        "disposition": "Demonstrably false positive",
-        "justification": "Fresh current-source static review confirms the fixed admitted receipt path, projected inert JSON, exact source/config/run/job/upload/analysis checks, bounded serialization and held-descriptor write. All three complete raw flows reach the expected receipt write via authenticated exact-repository GET metadata: current run object, current.run_number, and selected CodeQL job.id through complete bounded inventories and projectJob. Network metadata never chooses an output filename: capture admits exactly reports/security/codeql-service-<admitted language>/codeql-service-receipt.json and exact main-push SHA/run/attempt/workflow/job identity. The receipt is a closed object assembled from fixed source identities, projected validated run/job/upload/analysis fields, source blob digests and the bounded original SARIF hash/tool identity, serialized as JSON and capped at256KiB. The fixed file is opened O_WRONLY|O_CREAT|O_EXCL|O_NOFOLLOW0600 and written through its held descriptor. It is inert metadata, never code; downstream observeFinalServices authenticates fresh successful exact-main producer/job/artifact identities and original ZIP digest, parses the one-member receipt ZIP, validates it against fresh processed-upload/analysis and source identities, repeats final API observations, freezes and WeakSet-brands the proof before assertFinalServices/verifyRawBinding can trust it. It does not trust a file merely because it is local. Limits: no successful final-source main capture is claimed; parent-directory traversal is not universally descriptor protected, and this disposition does not claim safety under hostile hosted-runner filesystem control.",
-        "regressionEvidence": [
-          "https://github.com/MontrealAI/AGIJobsv0/blob/689a34e3b70659984d537af5410977a4eaa77e77/scripts/release/source-codeql-service-rc16.cjs"
-        ]
-      },
-      {
-        "ruleId": "js/http-to-file-access",
-        "path": "services/notifications/server.js",
-        "region": {
-          "startLine": 29,
-          "startColumn": 34,
-          "endColumn": 64
-        },
-        "resultSha256": "6f22f86b4c15e36a7c9eed273995f4d7e3ed3b53afc8d96c3cc6c63c0a4fb938",
-        "disposition": "Demonstrably false positive",
-        "justification": "Both traces accurately show JSON notification content reaching appendNotification. Destination storageDir/logFile17-18 is configured/fixed, never request-controlled, and JSON.stringify prevents content from acting as a path or command. The service intentionally accepts public notifications, bounds body parsing and peer work, and listens0.0.0.0 without caller authentication. No private/authenticated-service, retention or ingress-policy guarantee is asserted; the reported flow is intended inert fixed-log persistence rather than arbitrary file access.",
-        "regressionEvidence": [
-          "https://github.com/MontrealAI/AGIJobsv0/blob/689a34e3b70659984d537af5410977a4eaa77e77/services/notifications/server.js"
-        ]
-      },
-      {
-        "ruleId": "js/http-to-file-access",
-        "path": "shared/containedFiles.ts",
-        "region": {
-          "startLine": 116,
-          "startColumn": 26,
-          "endColumn": 30
-        },
-        "resultSha256": "59d08907c00f8f4ff2d944e44539c3b0c6c51dcf8008bfa86ea1574a7ee360fe",
-        "disposition": "Demonstrably false positive",
-        "justification": "All four flow variants are intentional planner/receipt data persistence: request/response fields become serialized content after normal identifiers/receipt structure, not arbitrary output paths. writeContainedFile67-76/104-119 validates a single filename and retains the verified private directory FD; target112 uses containedFile(anchor,filename), exclusive0600 temporary creation and descriptor-anchored publication. All inbound IPFS/HTTP CID variants remain data. This does not claim confidentiality or authorization for arbitrary destinations outside the checked callers.",
-        "regressionEvidence": [
-          "https://github.com/MontrealAI/AGIJobsv0/blob/689a34e3b70659984d537af5410977a4eaa77e77/shared/containedFiles.ts"
-        ]
-      },
-      {
-        "ruleId": "js/http-to-file-access",
-        "path": "shared/worldModel.ts",
-        "region": {
-          "startLine": 203,
-          "startColumn": 5,
-          "endColumn": 39
-        },
-        "resultSha256": "21f1a54122beaa9146fbb963d56a279788a55575dc17b3316cb315982fe5c561",
-        "disposition": "Demonstrably false positive",
-        "justification": "All four response-to-file variants produce selected output CID/URL observation fields and append their JSON content to the module-fixed OBSERVATIONS_PATH105-107/201-204. The remote values do not select a filesystem destination or trigger execution. This is intended observation recording, not an arbitrary file-write capability; broader retention, disclosure and external-content authenticity are not attested.",
-        "regressionEvidence": [
-          "https://github.com/MontrealAI/AGIJobsv0/blob/689a34e3b70659984d537af5410977a4eaa77e77/shared/worldModel.ts"
+          "https://github.com/MontrealAI/AGIJobsv0/blob/d8544f8173b3c01faa88d50e7145ec455bc5e170/integrations/alpha-agent/artifact-commitment.cjs"
         ]
       },
       {
@@ -815,73 +815,21 @@
           "startColumn": 3,
           "endColumn": 20
         },
-        "resultSha256": "3667062a60e45cf91c7ba7a50e94b44e3ede1d3fa0013129f76a6b8690141970",
+        "resultSha256": "91d490dc6b886f767d282c392e9710e45b958b7b4edb98f1b8976b2dedca456d",
         "disposition": "Acknowledged nonsecurity quality",
         "justification": "The current raw diagnostic is accurate and limited to an unused local binding. scannerReviewPath is an unused destructured export from the fixed relative qualifier module. The publisher still uses scannerReview and verifies source/review bindings through its active calls. Reading the unused string binding creates no output, network request, subprocess or authority. Requiring the module still performs its ordinary source-bound notes parsing; this review does not remove that evaluation.",
         "regressionEvidence": [
-          "https://github.com/MontrealAI/AGIJobsv0/blob/689a34e3b70659984d537af5410977a4eaa77e77/scripts/release/publish-source-release-rc16.cjs"
+          "https://github.com/MontrealAI/AGIJobsv0/blob/d8544f8173b3c01faa88d50e7145ec455bc5e170/scripts/release/publish-source-release-rc16.cjs"
         ],
         "qualityReview": {
           "schema": "agijobsv0/nonsecurity-quality-review/1",
-          "sourceBlob": "7d28b17cf5f90aa4cd3ab3989ba658982ec9c48e",
+          "sourceBlob": "2e7f347efbc39c5c8a7e578a1ce7517903da6a8a",
           "ruleMetadataSha256": "6dc9454a4aba05bdb4b6e0a84952160a3738cbc51c4bcdfa248b5765a705d008",
-          "queryComponentSha256": "0456fa4df8b336036b92fd368f7f38fe9d7274f32bff96503d4a1c2ffaec1175",
+          "queryComponentSha256": "4b36d5a82a6213d968f020438cce407855e04b38a9515ec2547f1ac4a65b7149",
           "codeqlConfigSummarySha256": "e54d1848b96dc1093cbf6acc90ad9fdcc8f30d7c7d2c98cc6f41632cdb794d3f",
           "behaviorAssessment": "scannerReviewPath is an unused destructured export from the fixed relative qualifier module. The publisher still uses scannerReview and verifies source/review bindings through its active calls. Reading the unused string binding creates no output, network request, subprocess or authority. Requiring the module still performs its ordinary source-bound notes parsing; this review does not remove that evaluation.",
           "independentReviewEvidence": [
-            "https://github.com/MontrealAI/AGIJobsv0/pull/4004#issuecomment-6297099570"
-          ]
-        }
-      },
-      {
-        "ruleId": "js/unused-local-variable",
-        "path": "scripts/release/source-native-gates-rc16.cjs",
-        "region": {
-          "startLine": 4,
-          "startColumn": 7,
-          "endColumn": 9
-        },
-        "resultSha256": "d803ffaa776608d4fb3f553261297c52d2fa3ebfcb29125b9c925638e87f13bb",
-        "disposition": "Acknowledged nonsecurity quality",
-        "justification": "The current raw diagnostic is accurate and limited to an unused local binding. fs is an unused binding to Node's fixed node:fs built-in. This declaration does not call a filesystem operation; later historical/native evidence verification remains explicit. Acknowledging the unused binding neither removes module evaluation nor authorizes an extra file access.",
-        "regressionEvidence": [
-          "https://github.com/MontrealAI/AGIJobsv0/blob/689a34e3b70659984d537af5410977a4eaa77e77/scripts/release/source-native-gates-rc16.cjs"
-        ],
-        "qualityReview": {
-          "schema": "agijobsv0/nonsecurity-quality-review/1",
-          "sourceBlob": "02fc38e6908404dadbd7e4e001a2595cfc545f85",
-          "ruleMetadataSha256": "6dc9454a4aba05bdb4b6e0a84952160a3738cbc51c4bcdfa248b5765a705d008",
-          "queryComponentSha256": "0456fa4df8b336036b92fd368f7f38fe9d7274f32bff96503d4a1c2ffaec1175",
-          "codeqlConfigSummarySha256": "e54d1848b96dc1093cbf6acc90ad9fdcc8f30d7c7d2c98cc6f41632cdb794d3f",
-          "behaviorAssessment": "fs is an unused binding to Node's fixed node:fs built-in. This declaration does not call a filesystem operation; later historical/native evidence verification remains explicit. Acknowledging the unused binding neither removes module evaluation nor authorizes an extra file access.",
-          "independentReviewEvidence": [
-            "https://github.com/MontrealAI/AGIJobsv0/pull/4004#issuecomment-6297099570"
-          ]
-        }
-      },
-      {
-        "ruleId": "js/unused-local-variable",
-        "path": "scripts/release/source-native-gates-rc16.cjs",
-        "region": {
-          "startLine": 5,
-          "startColumn": 7,
-          "endColumn": 11
-        },
-        "resultSha256": "a813107868fdeed906f7d434f50f20f18e765af22c39b99ef49f8185a7b5acc5",
-        "disposition": "Acknowledged nonsecurity quality",
-        "justification": "The current raw diagnostic is accurate and limited to an unused local binding. path is an unused binding to the fixed node:path built-in. The declaration does not construct or traverse a pathname. Historical exports and current evidence gates remain unchanged; no behavior correction is claimed.",
-        "regressionEvidence": [
-          "https://github.com/MontrealAI/AGIJobsv0/blob/689a34e3b70659984d537af5410977a4eaa77e77/scripts/release/source-native-gates-rc16.cjs"
-        ],
-        "qualityReview": {
-          "schema": "agijobsv0/nonsecurity-quality-review/1",
-          "sourceBlob": "02fc38e6908404dadbd7e4e001a2595cfc545f85",
-          "ruleMetadataSha256": "6dc9454a4aba05bdb4b6e0a84952160a3738cbc51c4bcdfa248b5765a705d008",
-          "queryComponentSha256": "0456fa4df8b336036b92fd368f7f38fe9d7274f32bff96503d4a1c2ffaec1175",
-          "codeqlConfigSummarySha256": "e54d1848b96dc1093cbf6acc90ad9fdcc8f30d7c7d2c98cc6f41632cdb794d3f",
-          "behaviorAssessment": "path is an unused binding to the fixed node:path built-in. The declaration does not construct or traverse a pathname. Historical exports and current evidence gates remain unchanged; no behavior correction is claimed.",
-          "independentReviewEvidence": [
-            "https://github.com/MontrealAI/AGIJobsv0/pull/4004#issuecomment-6297099570"
+            "https://github.com/MontrealAI/AGIJobsv0/pull/4005#issuecomment-6300064255"
           ]
         }
       },
@@ -893,21 +841,21 @@
           "startColumn": 9,
           "endColumn": 21
         },
-        "resultSha256": "e9f00e2c109d4b5e03441e4e6febbda43d9e9581746baeb91a98d6a29a47d5db",
+        "resultSha256": "795a26efffcc96188e3901031147bd91e6559574020a80215742b072c15cbc3b",
         "disposition": "Acknowledged nonsecurity quality",
         "justification": "The current raw diagnostic is accurate and limited to an unused local binding. execFileSync is destructured from the fixed node:child_process built-in but is never invoked in this module. Merely retaining the unused function binding starts no process. The actual native/source verification calls and subprocess policies in other modules remain required.",
         "regressionEvidence": [
-          "https://github.com/MontrealAI/AGIJobsv0/blob/689a34e3b70659984d537af5410977a4eaa77e77/scripts/release/source-native-gates-rc16.cjs"
+          "https://github.com/MontrealAI/AGIJobsv0/blob/d8544f8173b3c01faa88d50e7145ec455bc5e170/scripts/release/source-native-gates-rc16.cjs"
         ],
         "qualityReview": {
           "schema": "agijobsv0/nonsecurity-quality-review/1",
-          "sourceBlob": "02fc38e6908404dadbd7e4e001a2595cfc545f85",
+          "sourceBlob": "3c857923b165abf1cfe5ca56bf61d7d0c80e3b79",
           "ruleMetadataSha256": "6dc9454a4aba05bdb4b6e0a84952160a3738cbc51c4bcdfa248b5765a705d008",
-          "queryComponentSha256": "0456fa4df8b336036b92fd368f7f38fe9d7274f32bff96503d4a1c2ffaec1175",
+          "queryComponentSha256": "4b36d5a82a6213d968f020438cce407855e04b38a9515ec2547f1ac4a65b7149",
           "codeqlConfigSummarySha256": "e54d1848b96dc1093cbf6acc90ad9fdcc8f30d7c7d2c98cc6f41632cdb794d3f",
           "behaviorAssessment": "execFileSync is destructured from the fixed node:child_process built-in but is never invoked in this module. Merely retaining the unused function binding starts no process. The actual native/source verification calls and subprocess policies in other modules remain required.",
           "independentReviewEvidence": [
-            "https://github.com/MontrealAI/AGIJobsv0/pull/4004#issuecomment-6297099570"
+            "https://github.com/MontrealAI/AGIJobsv0/pull/4005#issuecomment-6300064255"
           ]
         }
       },
@@ -919,21 +867,21 @@
           "startColumn": 21,
           "endColumn": 26
         },
-        "resultSha256": "42dfebde337343d1989ee07cc567686b1b9d46ab72a2c26c35338a48bc01bca9",
+        "resultSha256": "17c17b3682d58b21bd85fd8e62339bdbcdba4d34e3ae340fd632c22152f5a1d0",
         "disposition": "Acknowledged nonsecurity quality",
         "justification": "The current raw diagnostic is accurate and limited to an unused local binding. delay is the unused setTimeout export from fixed node:timers/promises. Binding the function schedules no timer and performs no asynchronous operation. The module's qualification evaluation remains synchronous in its active decision functions.",
         "regressionEvidence": [
-          "https://github.com/MontrealAI/AGIJobsv0/blob/689a34e3b70659984d537af5410977a4eaa77e77/scripts/release/source-native-gates-rc16.cjs"
+          "https://github.com/MontrealAI/AGIJobsv0/blob/d8544f8173b3c01faa88d50e7145ec455bc5e170/scripts/release/source-native-gates-rc16.cjs"
         ],
         "qualityReview": {
           "schema": "agijobsv0/nonsecurity-quality-review/1",
-          "sourceBlob": "02fc38e6908404dadbd7e4e001a2595cfc545f85",
+          "sourceBlob": "3c857923b165abf1cfe5ca56bf61d7d0c80e3b79",
           "ruleMetadataSha256": "6dc9454a4aba05bdb4b6e0a84952160a3738cbc51c4bcdfa248b5765a705d008",
-          "queryComponentSha256": "0456fa4df8b336036b92fd368f7f38fe9d7274f32bff96503d4a1c2ffaec1175",
+          "queryComponentSha256": "4b36d5a82a6213d968f020438cce407855e04b38a9515ec2547f1ac4a65b7149",
           "codeqlConfigSummarySha256": "e54d1848b96dc1093cbf6acc90ad9fdcc8f30d7c7d2c98cc6f41632cdb794d3f",
           "behaviorAssessment": "delay is the unused setTimeout export from fixed node:timers/promises. Binding the function schedules no timer and performs no asynchronous operation. The module's qualification evaluation remains synchronous in its active decision functions.",
           "independentReviewEvidence": [
-            "https://github.com/MontrealAI/AGIJobsv0/pull/4004#issuecomment-6297099570"
+            "https://github.com/MontrealAI/AGIJobsv0/pull/4005#issuecomment-6300064255"
           ]
         }
       },
@@ -945,21 +893,21 @@
           "startColumn": 3,
           "endColumn": 26
         },
-        "resultSha256": "5da4780399d349f12da34b7e25b9171212e091d80c1f178094b65fac0c998203",
+        "resultSha256": "a15f7f987ec09509f656d666c6e583872bf156f665f6477178d63f5c2deff447",
         "disposition": "Acknowledged nonsecurity quality",
         "justification": "The current raw diagnostic is accurate and limited to an unused local binding. verifyPublicationReview is an unused destructured function from the fixed relative source-profile module. This binding does not invoke or waive publication review. Current source-scope verification remains exported and active; publication entrypoints separately require the profile/three-slot review before effects. Required module initialization remains intact.",
         "regressionEvidence": [
-          "https://github.com/MontrealAI/AGIJobsv0/blob/689a34e3b70659984d537af5410977a4eaa77e77/scripts/release/source-native-gates-rc16.cjs"
+          "https://github.com/MontrealAI/AGIJobsv0/blob/d8544f8173b3c01faa88d50e7145ec455bc5e170/scripts/release/source-native-gates-rc16.cjs"
         ],
         "qualityReview": {
           "schema": "agijobsv0/nonsecurity-quality-review/1",
-          "sourceBlob": "02fc38e6908404dadbd7e4e001a2595cfc545f85",
+          "sourceBlob": "3c857923b165abf1cfe5ca56bf61d7d0c80e3b79",
           "ruleMetadataSha256": "6dc9454a4aba05bdb4b6e0a84952160a3738cbc51c4bcdfa248b5765a705d008",
-          "queryComponentSha256": "0456fa4df8b336036b92fd368f7f38fe9d7274f32bff96503d4a1c2ffaec1175",
+          "queryComponentSha256": "4b36d5a82a6213d968f020438cce407855e04b38a9515ec2547f1ac4a65b7149",
           "codeqlConfigSummarySha256": "e54d1848b96dc1093cbf6acc90ad9fdcc8f30d7c7d2c98cc6f41632cdb794d3f",
           "behaviorAssessment": "verifyPublicationReview is an unused destructured function from the fixed relative source-profile module. This binding does not invoke or waive publication review. Current source-scope verification remains exported and active; publication entrypoints separately require the profile/three-slot review before effects. Required module initialization remains intact.",
           "independentReviewEvidence": [
-            "https://github.com/MontrealAI/AGIJobsv0/pull/4004#issuecomment-6297099570"
+            "https://github.com/MontrealAI/AGIJobsv0/pull/4005#issuecomment-6300064255"
           ]
         }
       },
@@ -971,21 +919,21 @@
           "startColumn": 3,
           "endColumn": 28
         },
-        "resultSha256": "7715597fc9ff4d0d6e881e21ad331803e5a256397e33b66deceacb808ebfd18d",
+        "resultSha256": "70a563de64638f32dcbc951b8ab8cdef69674922356bb4f60dc0debb92dca00b",
         "disposition": "Acknowledged nonsecurity quality",
         "justification": "The current raw diagnostic is accurate and limited to an unused local binding. assertPinnedAlphaCheckout is an unused destructured function from the fixed relative pinned-alpha-checkout module. No Alpha preparation, import, checkout or native action is performed by reading this function binding. Existing actual native compatibility and source identity checks remain separate required gates.",
         "regressionEvidence": [
-          "https://github.com/MontrealAI/AGIJobsv0/blob/689a34e3b70659984d537af5410977a4eaa77e77/scripts/release/source-native-gates-rc16.cjs"
+          "https://github.com/MontrealAI/AGIJobsv0/blob/d8544f8173b3c01faa88d50e7145ec455bc5e170/scripts/release/source-native-gates-rc16.cjs"
         ],
         "qualityReview": {
           "schema": "agijobsv0/nonsecurity-quality-review/1",
-          "sourceBlob": "02fc38e6908404dadbd7e4e001a2595cfc545f85",
+          "sourceBlob": "3c857923b165abf1cfe5ca56bf61d7d0c80e3b79",
           "ruleMetadataSha256": "6dc9454a4aba05bdb4b6e0a84952160a3738cbc51c4bcdfa248b5765a705d008",
-          "queryComponentSha256": "0456fa4df8b336036b92fd368f7f38fe9d7274f32bff96503d4a1c2ffaec1175",
+          "queryComponentSha256": "4b36d5a82a6213d968f020438cce407855e04b38a9515ec2547f1ac4a65b7149",
           "codeqlConfigSummarySha256": "e54d1848b96dc1093cbf6acc90ad9fdcc8f30d7c7d2c98cc6f41632cdb794d3f",
           "behaviorAssessment": "assertPinnedAlphaCheckout is an unused destructured function from the fixed relative pinned-alpha-checkout module. No Alpha preparation, import, checkout or native action is performed by reading this function binding. Existing actual native compatibility and source identity checks remain separate required gates.",
           "independentReviewEvidence": [
-            "https://github.com/MontrealAI/AGIJobsv0/pull/4004#issuecomment-6297099570"
+            "https://github.com/MontrealAI/AGIJobsv0/pull/4005#issuecomment-6300064255"
           ]
         }
       },
@@ -997,21 +945,21 @@
           "startColumn": 21,
           "endColumn": 26
         },
-        "resultSha256": "43660b4b2ef7d5377fca3360af490aa7b111e3497bd99816c1c5dd4589ddcf08",
+        "resultSha256": "788a723ca50a6b8bd5827b775ec40deb0650aad8659b9f7f53194a2d804afe38",
         "disposition": "Acknowledged nonsecurity quality",
         "justification": "The current raw diagnostic is accurate and limited to an unused local binding. delay is an unused alias for fixed node:timers/promises setTimeout in the scanner gate module. The declaration schedules no timer; scanner archive validation uses its explicit active functions. Acknowledging this quality diagnostic does not alter wait policies or scan admission.",
         "regressionEvidence": [
-          "https://github.com/MontrealAI/AGIJobsv0/blob/689a34e3b70659984d537af5410977a4eaa77e77/scripts/release/source-scanner-gates-rc16.cjs"
+          "https://github.com/MontrealAI/AGIJobsv0/blob/d8544f8173b3c01faa88d50e7145ec455bc5e170/scripts/release/source-scanner-gates-rc16.cjs"
         ],
         "qualityReview": {
           "schema": "agijobsv0/nonsecurity-quality-review/1",
           "sourceBlob": "6c72c824a971b3222f432a26be6efab2bbcdf5e8",
           "ruleMetadataSha256": "6dc9454a4aba05bdb4b6e0a84952160a3738cbc51c4bcdfa248b5765a705d008",
-          "queryComponentSha256": "0456fa4df8b336036b92fd368f7f38fe9d7274f32bff96503d4a1c2ffaec1175",
+          "queryComponentSha256": "4b36d5a82a6213d968f020438cce407855e04b38a9515ec2547f1ac4a65b7149",
           "codeqlConfigSummarySha256": "e54d1848b96dc1093cbf6acc90ad9fdcc8f30d7c7d2c98cc6f41632cdb794d3f",
           "behaviorAssessment": "delay is an unused alias for fixed node:timers/promises setTimeout in the scanner gate module. The declaration schedules no timer; scanner archive validation uses its explicit active functions. Acknowledging this quality diagnostic does not alter wait policies or scan admission.",
           "independentReviewEvidence": [
-            "https://github.com/MontrealAI/AGIJobsv0/pull/4004#issuecomment-6297099570"
+            "https://github.com/MontrealAI/AGIJobsv0/pull/4005#issuecomment-6300064255"
           ]
         }
       },
@@ -1023,21 +971,21 @@
           "startColumn": 3,
           "endColumn": 26
         },
-        "resultSha256": "ac7d3ba4c90d4ada8371e525355fcb80bfb6596356243d21814d3e3fda0db5ee",
+        "resultSha256": "42b0f6a054394dbc13513a91e6c925fa23323eb498bf2b7f4d67bba9bc713b89",
         "disposition": "Acknowledged nonsecurity quality",
         "justification": "The current raw diagnostic is accurate and limited to an unused local binding. verifyPublicationReview is an unused function binding from the fixed relative profile module in scanner gates. It is not called here and this binding alone provides no review approval. Active full-archive/source-binding checks and separate publication entrypoint verification remain mandatory, and ordinary required-module evaluation is preserved.",
         "regressionEvidence": [
-          "https://github.com/MontrealAI/AGIJobsv0/blob/689a34e3b70659984d537af5410977a4eaa77e77/scripts/release/source-scanner-gates-rc16.cjs"
+          "https://github.com/MontrealAI/AGIJobsv0/blob/d8544f8173b3c01faa88d50e7145ec455bc5e170/scripts/release/source-scanner-gates-rc16.cjs"
         ],
         "qualityReview": {
           "schema": "agijobsv0/nonsecurity-quality-review/1",
           "sourceBlob": "6c72c824a971b3222f432a26be6efab2bbcdf5e8",
           "ruleMetadataSha256": "6dc9454a4aba05bdb4b6e0a84952160a3738cbc51c4bcdfa248b5765a705d008",
-          "queryComponentSha256": "0456fa4df8b336036b92fd368f7f38fe9d7274f32bff96503d4a1c2ffaec1175",
+          "queryComponentSha256": "4b36d5a82a6213d968f020438cce407855e04b38a9515ec2547f1ac4a65b7149",
           "codeqlConfigSummarySha256": "e54d1848b96dc1093cbf6acc90ad9fdcc8f30d7c7d2c98cc6f41632cdb794d3f",
           "behaviorAssessment": "verifyPublicationReview is an unused function binding from the fixed relative profile module in scanner gates. It is not called here and this binding alone provides no review approval. Active full-archive/source-binding checks and separate publication entrypoint verification remain mandatory, and ordinary required-module evaluation is preserved.",
           "independentReviewEvidence": [
-            "https://github.com/MontrealAI/AGIJobsv0/pull/4004#issuecomment-6297099570"
+            "https://github.com/MontrealAI/AGIJobsv0/pull/4005#issuecomment-6300064255"
           ]
         }
       },
@@ -1049,28 +997,27 @@
           "startColumn": 3,
           "endColumn": 28
         },
-        "resultSha256": "49d7899706c896f3b48b04587a1c56dd165e0cbe8c7cb508dcf8ce70c58db6af",
+        "resultSha256": "f8b537c4d70c2ab4a4228bcd6db782792d0abd6cd796d91c3b0f67889a45034e",
         "disposition": "Acknowledged nonsecurity quality",
         "justification": "The current raw diagnostic is accurate and limited to an unused local binding. assertPinnedAlphaCheckout is an unused function binding from the fixed relative pinned checkout module in scanner gates. Reading it performs no native checkout or execution. Current scanner extraction/result/source checks remain active; actual native acceptance still requires its own original workflow.",
         "regressionEvidence": [
-          "https://github.com/MontrealAI/AGIJobsv0/blob/689a34e3b70659984d537af5410977a4eaa77e77/scripts/release/source-scanner-gates-rc16.cjs"
+          "https://github.com/MontrealAI/AGIJobsv0/blob/d8544f8173b3c01faa88d50e7145ec455bc5e170/scripts/release/source-scanner-gates-rc16.cjs"
         ],
         "qualityReview": {
           "schema": "agijobsv0/nonsecurity-quality-review/1",
           "sourceBlob": "6c72c824a971b3222f432a26be6efab2bbcdf5e8",
           "ruleMetadataSha256": "6dc9454a4aba05bdb4b6e0a84952160a3738cbc51c4bcdfa248b5765a705d008",
-          "queryComponentSha256": "0456fa4df8b336036b92fd368f7f38fe9d7274f32bff96503d4a1c2ffaec1175",
+          "queryComponentSha256": "4b36d5a82a6213d968f020438cce407855e04b38a9515ec2547f1ac4a65b7149",
           "codeqlConfigSummarySha256": "e54d1848b96dc1093cbf6acc90ad9fdcc8f30d7c7d2c98cc6f41632cdb794d3f",
           "behaviorAssessment": "assertPinnedAlphaCheckout is an unused function binding from the fixed relative pinned checkout module in scanner gates. Reading it performs no native checkout or execution. Current scanner extraction/result/source checks remain active; actual native acceptance still requires its own original workflow.",
           "independentReviewEvidence": [
-            "https://github.com/MontrealAI/AGIJobsv0/pull/4004#issuecomment-6297099570"
+            "https://github.com/MontrealAI/AGIJobsv0/pull/4005#issuecomment-6300064255"
           ]
         }
       }
     ],
     "reviewEvidence": [
-      "https://github.com/MontrealAI/AGIJobsv0/pull/4004#issuecomment-6297099570",
-      "https://github.com/MontrealAI/AGIJobsv0/pull/4004#issuecomment-6296330899"
+      "https://github.com/MontrealAI/AGIJobsv0/pull/4005#issuecomment-6300064255"
     ]
   },
   "integrationBaseline": "b26a65456d5c06c901ba73d1e1620f7edb1a315a",
@@ -1629,21 +1576,21 @@
   ],
   "pythonScannerReview": {
     "schema": "agijobsv0/codeql-python-review/2",
-    "sourceCommit": "689a34e3b70659984d537af5410977a4eaa77e77",
-    "tree": "b404541f60ef7a927e085299c7159864a15ff53f",
-    "producerRunId": 39461253659,
+    "sourceCommit": "d8544f8173b3c01faa88d50e7145ec455bc5e170",
+    "tree": "14140fc8a3ce95e0ca5b15a421dc97ed190ec735",
+    "producerRunId": 39482430425,
     "producerRunAttempt": 1,
     "producerEvent": "push",
     "producerHeadBranch": "fix/processed-codeql-release-proof-20261020",
     "producerRef": "refs/heads/fix/processed-codeql-release-proof-20261020",
-    "artifactId": 12283091974,
-    "artifactName": "python-codeql-security-report-689a34e3b70659984d537af5410977a4eaa77e77-39461253659-1",
-    "archiveSha256": "ee77cd10997ca47f965928e28b98a99e16a25c56a7b1f21292a0d9a152d4e1e8",
+    "artifactId": 12292131689,
+    "artifactName": "python-codeql-security-report-d8544f8173b3c01faa88d50e7145ec455bc5e170-39482430425-1",
+    "archiveSha256": "f907a32971a76bc31408ee89619504eab7c33fd781e201d6b27b07b61315fd38",
     "rawRecords": {
-      "python.sarif": "b94a6ad9f518f03e7d398867925dfbd3c4929ff141c99c5a487bc16f1b9df323",
-      "source-extraction.json": "094a3a516a1d5f3402f02dbe5cfa5a9ddf4768d2ec7f5068779d09253aa24e18",
-      "source-scope-after.json": "39d825da585fdb3662dc6792c48b916a7573d65f820dd83e59bbc43adcf4fcc5",
-      "source-scope-before.json": "39d825da585fdb3662dc6792c48b916a7573d65f820dd83e59bbc43adcf4fcc5"
+      "python.sarif": "947cf95462fffc9a2e33239381eb7b943414291609e9a06ed5bd08f298b5f2d2",
+      "source-extraction.json": "d1f32eec3bc3613b2a11d01ad9331e3fcfed1a41aca792edea8bbd4d435a5e84",
+      "source-scope-after.json": "be43ce88a4bce75818001bc11653feb44d1f468a37ba5cf6f7f7ed1837ed4c0c",
+      "source-scope-before.json": "be43ce88a4bce75818001bc11653feb44d1f468a37ba5cf6f7f7ed1837ed4c0c"
     },
     "toolComponents": [
       {
@@ -7657,8 +7604,7 @@
     "rawResultCount": 0,
     "results": [],
     "reviewEvidence": [
-      "https://github.com/MontrealAI/AGIJobsv0/pull/4004#issuecomment-6296683983",
-      "https://github.com/MontrealAI/AGIJobsv0/pull/4004#issuecomment-6296330899"
+      "https://github.com/MontrealAI/AGIJobsv0/pull/4005#issuecomment-6299575988"
     ]
   }
 }

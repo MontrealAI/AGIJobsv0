@@ -11,6 +11,7 @@ const {
   validateProducer,
   sha256,
   canonical,
+  releaseOutputDirectory,
 } = require('./source-native-gates-rc16.cjs');
 const pythonEvidence = require('./source-python-evidence-rc16.cjs');
 const producerId = (value) => {
@@ -124,7 +125,7 @@ async function collectAdditionalEvidence() {
     target: process.env.GITHUB_SHA,
   });
   const { GITHUB_SHA: sha, GITHUB_REPOSITORY: repository } = process.env;
-  const directory = path.resolve('reports/source-release-rc16');
+  const directory = releaseOutputDirectory();
   const provenance = JSON.parse(
     fs.readFileSync(path.join(directory, 'provenance.json'))
   );
@@ -508,6 +509,7 @@ function verifyPythonEvidence({
 }
 
 module.exports = {
+  releaseOutputDirectory,
   collectAdditionalEvidence,
   verifyRetainedProducer,
   validateNativeReport,

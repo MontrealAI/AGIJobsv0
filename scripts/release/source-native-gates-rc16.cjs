@@ -54,6 +54,36 @@ const canonical = (value) =>
         '}'
     : JSON.stringify(value);
 
+function releaseOutputDirectory({
+  directory = process.env.SOURCE_RELEASE_OUTPUT,
+  root = process.cwd(),
+} = {}) {
+  assert(
+    typeof directory === 'string' && path.isAbsolute(directory),
+    'Explicit private release output directory required'
+  );
+  const physicalRoot = fs.realpathSync(root);
+  assert(
+    fs.realpathSync(directory) === directory,
+    'Physical release output directory required'
+  );
+  const relative = path.relative(physicalRoot, directory);
+  assert(
+    relative === '..' ||
+      relative.startsWith('..' + path.sep) ||
+      path.isAbsolute(relative),
+    'Release output must be outside the source checkout'
+  );
+  const stat = fs.lstatSync(directory);
+  assert(
+    stat.isDirectory() &&
+      stat.uid === process.getuid() &&
+      (stat.mode & 0o077) === 0,
+    'Owned private release output directory required'
+  );
+  return directory;
+}
+
 function authenticCodeQL(check, sha) {
   return (
     check.head_sha === sha &&
@@ -367,4 +397,5 @@ module.exports = {
   readPages,
   sha256,
   canonical,
+  releaseOutputDirectory,
 };
