@@ -1,0 +1,25 @@
+{
+  "rawResultsExact": false,
+  "rawResultCount": 45,
+  "allPrimaryRulePathRegionMatch": true,
+  "fullOriginalResultRecordsEqualAfterVerifiedRuleAndArtifactIndexSubstitution": true,
+  "allOriginalArtifactRecordsEqualAfterVerifiedSelfIndexSubstitution": true,
+  "allCompleteDescriptorRecordsAndOtherToolFieldsEqualIgnoringOnlyVerifiedArrays": true,
+  "originalReferenceCounts": {
+    "prior": {
+      "rules": 45,
+      "artifacts": 2217
+    },
+    "current": {
+      "rules": 45,
+      "artifacts": 2217
+    }
+  },
+  "artifactCount": 907,
+  "actualRawBytesPreserved": true,
+  "existingStrictGateWouldReject": true,
+  "gateWaiver": false,
+  "qualification": "HOLD_PENDING_SOUND_SOURCE_REPAIR",
+  "source": "d9b3ac51d8497848108fb6e938298deef09856a9",
+  "run": 39443782763
+}
