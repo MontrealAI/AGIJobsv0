@@ -48,12 +48,12 @@ jobs:
       - name: Verify real native free campaign and refusal semantics
         run: |
           set -euo pipefail
-          mkdir -p reports/native-ti
-          node scripts/release/verify-transformational-compatibility.mjs "$GITHUB_WORKSPACE/alpha" > reports/native-ti/native-compatibility.json
-          cat reports/native-ti/native-compatibility.json
+          mkdir -p "$RUNNER_TEMP/native-ti"
+          node scripts/release/verify-transformational-compatibility.mjs "$GITHUB_WORKSPACE/alpha" > "$RUNNER_TEMP/native-ti/native-compatibility.json"
+          cat "$RUNNER_TEMP/native-ti/native-compatibility.json"
       - name: Retain source-bound actual native evidence
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: native-ti-compatibility-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
-          path: jobs/reports/native-ti/native-compatibility.json
+          path: ${{ runner.temp }}/native-ti/native-compatibility.json
           if-no-files-found: error
