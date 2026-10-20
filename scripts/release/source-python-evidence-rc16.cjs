@@ -589,6 +589,19 @@ function semanticSummary(summary) {
   return semantic;
 }
 
+// Compare checked summaries without rewriting either original report. The
+// archive verifier validates both originals and their references before this
+// complete-record comparison; duplicate descriptor IDs remain order-sensitive.
+function verifyPythonSemanticSummary(summary, reviewed) {
+  const { verifyPythonToolComponents } = require('./python-scanner-rc16.cjs');
+  verifyPythonToolComponents(reviewed.toolComponents, summary.toolComponents);
+  assert.deepEqual(
+    { ...summary, toolComponents: reviewed.toolComponents },
+    reviewed,
+    'Current/reviewed complete Python scanner semantics differ'
+  );
+}
+
 function verifyPythonEvidenceArchives(options) {
   const {
     directory,
@@ -640,11 +653,7 @@ function verifyPythonEvidenceArchives(options) {
     });
   }
   const summary = semanticSummary(checked.final);
-  assert.deepEqual(
-    summary,
-    semanticSummary(checked.reviewed),
-    'Current/reviewed complete Python scanner semantics differ'
-  );
+  verifyPythonSemanticSummary(summary, semanticSummary(checked.reviewed));
   return {
     schema: 'agijobsv0/raw-python-codeql-provenance/1',
     repository,
@@ -678,5 +687,6 @@ module.exports = {
   readPythonScannerObservation,
   pythonEvidenceContexts,
   pythonArchiveInventory,
+  verifyPythonSemanticSummary,
   verifyPythonEvidenceArchives,
 };
