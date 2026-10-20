@@ -1,0 +1,24 @@
+{
+  "schema": "agijobsv0/original-hosted-validation/1",
+  "source": "689a34e3b70659984d537af5410977a4eaa77e77",
+  "tree": "b404541f60ef7a927e085299c7159864a15ff53f",
+  "runId": 39461265765,
+  "attempt": 1,
+  "jobId": 118761035882,
+  "jobConclusion": "success",
+  "tests": 160,
+  "pass": 160,
+  "fail": 0,
+  "skipped": 0,
+  "log": {
+    "bytes": 745132,
+    "sha256": "a160aa1ddcc51a83bbaf460acb2e7d7f526c3708d0665f9c88299c73f152333d",
+    "gitBlob": "e3c2b8930a4dd15673caf7f9d480acead365e215"
+  },
+  "configuredReview": {
+    "commentId": 6296330899,
+    "reviewedCommit": "689a34e3b7",
+    "disposition": "No major issues"
+  },
+  "limits": "Original normal hosted validation only; fresh scanner outputs and complete current-source result reviews, strict installation, full CI, final-main service/native/publication gates remain required."
+}
