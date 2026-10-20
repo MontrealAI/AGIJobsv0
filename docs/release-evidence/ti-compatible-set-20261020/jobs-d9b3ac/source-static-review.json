@@ -1,0 +1,80 @@
+{
+  "schema": "agijobsv0/descriptor-comparison-source-static-review/1",
+  "result": "CLEAR_IN_BOUNDED_SOURCE_SCOPE",
+  "source": "d9b3ac51d8497848108fb6e938298deef09856a9",
+  "tree": "bf6aea8ab2e8e6cccc55cb899b2352fe05b238c4",
+  "soleParent": "e67afa3ceac8dea12ffbcbe9e814fc9f17d651a4",
+  "inventory": [
+    {
+      "path": "docs/production/RELEASE_NOTES_SOURCE_RC16.md",
+      "blob": "450ea3ae2af3bcd741f83a4547a05832ede5569e",
+      "bytes": 101560,
+      "sha256": "350176fd7e2cc2119c2b3bc28912767830709c1ed5189af0d3ae52864ceeaf59"
+    },
+    {
+      "path": "scripts/release/python-scanner-rc16.cjs",
+      "blob": "72c727f295e7a62bfe0ab21c1a024f5515361c52",
+      "bytes": 28950,
+      "sha256": "5c3a57282451724ba3abfc947141558d52914e8f27485326607e76e7c009f02a"
+    },
+    {
+      "path": "scripts/release/source-profile-rc16.json",
+      "blob": "81c718d236c6f0fc64f7b2307b643e00bd07ab25",
+      "bytes": 25666,
+      "sha256": "927edf31767eb510cb237eaba05801fd95a2010535551b39138829964a48bc06"
+    },
+    {
+      "path": "test/scripts/source-python-scanner-rc16.test.cjs",
+      "blob": "716a295b5e7a7c63b4d99f26deb32f159632b2b5",
+      "bytes": 21549,
+      "sha256": "9f46c04aac7b07a5691d38a6e223e19989260cf2d94617e18e66a935361b1b78"
+    }
+  ],
+  "comparison": {
+    "completeRecordCopiesOnly": true,
+    "componentOrderAndEveryOtherFieldExact": true,
+    "uniqueIdArraysOnly": true,
+    "duplicateIdOriginalOrderFallback": true,
+    "multiplicityAndAbsentFieldsPreserved": true,
+    "rawAndActualOrderedReviewEvidenceUnchanged": true
+  },
+  "references": {
+    "validatedBeforeExtractionAndComparison": true,
+    "originalResultIndexIdGuidAndComponentBindings": true,
+    "invocationDescriptorsAssociatedRulesAndOverrides": true,
+    "metricReferences": true,
+    "unsupportedTaxaRelationshipsExternalConversionClosed": true,
+    "intentionallyRejectsHierarchicalAndIndexOnlyForms": true
+  },
+  "retainedOriginalMetadata": {
+    "c3AndE67All140DirectIndexedReferencesResolve": true,
+    "allOtherToolFieldsAndCompleteDescriptorMultisetsEqual": true,
+    "independentMathematicalProjectionEqual": true,
+    "actualOrderedArraysRemainDifferent": true,
+    "oldReviewNotAdoptedForNewCode": true
+  },
+  "tests": {
+    "sourceInspected": true,
+    "syntheticMetadataExplicit": true,
+    "permutationFullRecordFieldComponentOrderMultiplicityAndNonmutationCases": true,
+    "duplicateIdStrictFallbackCases": true,
+    "referenceMismatchAndUnsupportedSurfaceCases": true,
+    "testsExecuted": false
+  },
+  "preservation": {
+    "finiteInverseReconstructsEntireOriginalModule": true,
+    "allOtherOriginalProducerArchiveResultErrorExtractionServiceBindingsRetained": true,
+    "threeReviewSlotsNull": true,
+    "qualification": "PENDING_FINAL_SOURCE_MAIN_PUSH"
+  },
+  "limits": {
+    "sourceOnly": true,
+    "productionFunctionsOrTestsExecuted": false,
+    "originalZipGET": false,
+    "codeScanningApiCalls": false,
+    "sourceRefReviewMutation": false,
+    "fullSarifResolverClaimed": false,
+    "freshSourceScansAndResultReviewsStillRequired": true,
+    "hostedCIThreeSlotBindingAndFinalMainServicesStillRequired": true
+  }
+}

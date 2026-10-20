@@ -1,0 +1,20 @@
+{
+  "schema": "agijobsv0/source-validation-observation/v1",
+  "source": "d9b3ac51d8497848108fb6e938298deef09856a9",
+  "tree": "bf6aea8ab2e8e6cccc55cb899b2352fe05b238c4",
+  "run": 39443801203,
+  "attempt": 1,
+  "job": 118700260179,
+  "conclusion": "success",
+  "tests": 154,
+  "passed": 154,
+  "failed": 0,
+  "skipped": 0,
+  "threeSlots": "NULL_PENDING_FRESH_SOURCE_RESULT_REVIEWS",
+  "logBytes": 742680,
+  "logSha256": "25f2e8a37d88927e7808474413c412c7380478812f992024bf837a506c72e5d2",
+  "originalPublisher": "EXPECTED_PR_SKIP",
+  "finalMainQualification": false,
+  "releasePublished": false,
+  "observedAt": "2026-10-20T15:01:34.087Z"
+}
