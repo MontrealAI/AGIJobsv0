@@ -1,7 +1,6 @@
 'use strict';
 const fs = require('node:fs');
 const path = require('node:path');
-const os = require('node:os');
 const assert = require('node:assert/strict');
 const { execFileSync } = require('node:child_process');
 const {
@@ -12,6 +11,7 @@ const {
   validateProducer,
   sha256,
   canonical,
+  releaseOutputDirectory,
 } = require('./source-native-gates-rc16.cjs');
 const pythonEvidence = require('./source-python-evidence-rc16.cjs');
 const producerId = (value) => {
@@ -125,10 +125,7 @@ async function collectAdditionalEvidence() {
     target: process.env.GITHUB_SHA,
   });
   const { GITHUB_SHA: sha, GITHUB_REPOSITORY: repository } = process.env;
-  const directory = path.resolve(
-    process.env.RUNNER_TEMP || os.tmpdir(),
-    'source-release-rc16'
-  );
+  const directory = releaseOutputDirectory();
   const provenance = JSON.parse(
     fs.readFileSync(path.join(directory, 'provenance.json'))
   );
@@ -454,6 +451,7 @@ async function retainPythonEvidence({
   return proof;
 }
 async function qualifyPythonEvidence(context) {
+  const os = require('node:os');
   const directory = fs.mkdtempSync(
     path.join(
       process.env.RUNNER_TEMP || os.tmpdir(),
@@ -511,6 +509,7 @@ function verifyPythonEvidence({
 }
 
 module.exports = {
+  releaseOutputDirectory,
   collectAdditionalEvidence,
   verifyRetainedProducer,
   validateNativeReport,

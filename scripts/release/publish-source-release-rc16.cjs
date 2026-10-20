@@ -33,6 +33,7 @@ const {
   assertPinnedAlphaCheckout,
 } = require('../../integrations/alpha-agent/pinned-alpha-checkout.cjs');
 const nativeEvidence = require('./source-native-evidence-rc16.cjs');
+const { releaseOutputDirectory } = nativeEvidence;
 const serviceEvidence = require('./source-codeql-service-rc16.cjs');
 
 const gitSource = (...args) =>
@@ -1135,10 +1136,7 @@ async function collectScannerEvidence() {
   });
   const repository = process.env.GITHUB_REPOSITORY,
     sha = process.env.GITHUB_SHA;
-  const directory = path.resolve(
-    process.env.RUNNER_TEMP || os.tmpdir(),
-    'source-release-rc16'
-  );
+  const directory = releaseOutputDirectory();
   const provenance = JSON.parse(
     fs.readFileSync(path.join(directory, 'provenance.json'))
   );
@@ -1356,10 +1354,7 @@ function collectCompilerEvidence() {
   });
   const repository = process.env.GITHUB_REPOSITORY;
   const sha = process.env.GITHUB_SHA;
-  const directory = path.resolve(
-    process.env.RUNNER_TEMP || os.tmpdir(),
-    'source-release-rc16'
-  );
+  const directory = releaseOutputDirectory();
   const provenance = JSON.parse(
     fs.readFileSync(path.join(directory, 'provenance.json'))
   );
@@ -1662,10 +1657,7 @@ async function main() {
   verifyScannerReviewSource({ git, sha });
   const scannerContext = scannerPolicyContext(git, sha);
   const tree = git('rev-parse', 'HEAD^{tree}').trim();
-  const directory = path.resolve(
-    process.env.RUNNER_TEMP || os.tmpdir(),
-    'source-release-rc16'
-  );
+  const directory = releaseOutputDirectory();
   const files = fs.readdirSync(directory).sort();
   const expected = expectedAssets(tag);
   if (JSON.stringify(files) !== JSON.stringify(expected))

@@ -22,6 +22,7 @@ const {
   scannerPages,
   scannerPolicyContext,
   sourceApiUrl,
+  releaseOutputDirectory,
 } = require('../../scripts/release/publish-source-release-rc16.cjs');
 const {
   compilerSourceBaseline,
@@ -1125,8 +1126,8 @@ test('standalone current guide keeps pinned links and current receipts retain ex
   assert.ok(
     receipts.operations.every((operation) => operation.receipt.status === 1)
   );
-  const target = path.join(root, 'reports/source-release-rc16');
-  fs.mkdirSync(target, { recursive: true });
+  const target = path.join(root, 'producer-assets');
+  fs.mkdirSync(target, { mode: 0o700 });
   fs.writeFileSync(
     path.join(target, 'mainnet-deployment-2026-10-18.md'),
     guide
@@ -1141,7 +1142,10 @@ test('standalone current guide keeps pinned links and current receipts retain ex
     .split('\n')
     .map((line) => line.slice(10))
     .join('\n');
-  execFileSync(process.execPath, ['-e', script], { cwd: root });
+  execFileSync(process.execPath, ['-e', script], {
+    cwd: root,
+    env: { ...process.env, SOURCE_RELEASE_OUTPUT: target },
+  });
   const rendered = fs.readFileSync(
     path.join(target, 'mainnet-deployment-2026-10-18.md'),
     'utf8'
@@ -2304,7 +2308,7 @@ test('publisher authenticates retained local evidence before any tag, draft, upl
       refusal + ' refusal leaves publication effects untouched',
       async () => {
         const calls = [];
-        const directory = path.resolve('reports/source-release-rc16');
+        const directory = path.join(os.tmpdir(), 'inert-rc16-output-' + refusal);
         const marker = 'INERT_LOCAL_' + refusal.toUpperCase() + '_REFUSAL';
         const inertService = Object.freeze({ inertOrchestrationOnly: true });
         const metadata = {
@@ -2331,6 +2335,7 @@ test('publisher authenticates retained local evidence before any tag, draft, upl
               GITHUB_REPOSITORY: 'MontrealAI/AGIJobsv0',
               GH_TOKEN: 'INERT_NEVER_USED_FOR_NETWORK',
               TAG: tag,
+              SOURCE_RELEASE_OUTPUT: directory,
             },
             cwd: () => '/inert-publication-only',
           },
@@ -2353,6 +2358,7 @@ test('publisher authenticates retained local evidence before any tag, draft, upl
           verifyScannerReviewSource: () =>
             calls.push('prerequisite metadata check'),
           scannerPolicyContext: () => ({}),
+          releaseOutputDirectory: () => directory,
           expectedAssets,
           fs: {
             readdirSync: (requested) => {
@@ -2507,4 +2513,30 @@ test('published readback requires the exact versioned lossless comparison receip
     fixture.checksums(directory);
   }
   fixture.verify();
+});
+
+function outputDirectoryFixture(t) {
+  const root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'rc16-output-path-')));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const checkout = path.join(root, 'checkout'), directory = path.join(root, 'producer');
+  fs.mkdirSync(checkout, { mode: 0o700 });
+  fs.mkdirSync(directory, { mode: 0o700 });
+  return { root: checkout, directory };
+}
+test('release output accepts an existing owned private directory outside the checkout', (t) => {
+  const fixture = outputDirectoryFixture(t);
+  assert.equal(releaseOutputDirectory(fixture), fixture.directory);
+});
+test('release output refuses missing and nonprivate directory metadata', (t) => {
+  const fixture = outputDirectoryFixture(t);
+  assert.throws(() => releaseOutputDirectory({ ...fixture, directory: null }), /Explicit private/);
+  fs.chmodSync(fixture.directory, 0o755);
+  assert.throws(() => releaseOutputDirectory(fixture), /Owned private/);
+});
+test('release output refuses an otherwise private directory inside the checkout', (t) => {
+  const fixture = outputDirectoryFixture(t);
+  assert.throws(() => releaseOutputDirectory({ ...fixture, directory: fixture.root }), /outside/);
+  const child = path.join(fixture.root, 'producer');
+  fs.mkdirSync(child, { mode: 0o700 });
+  assert.throws(() => releaseOutputDirectory({ ...fixture, directory: child }), /outside/);
 });

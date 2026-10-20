@@ -2,7 +2,6 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
-const os = require('node:os');
 const crypto = require('node:crypto');
 const { execFileSync } = require('node:child_process');
 const { setTimeout: delay } = require('node:timers/promises');
@@ -807,10 +806,7 @@ async function main() {
           }
         );
       assertPinnedAlphaCheckout(process.cwd(), sha);
-      const directory = path.resolve(
-        process.env.RUNNER_TEMP || os.tmpdir(),
-        'source-release-rc16'
-      );
+      const directory = nativeGate.releaseOutputDirectory();
       fs.mkdirSync(directory, { recursive: true });
       const serviceBytes = JSON.stringify(processedCodeql, null, 2) + '\n';
       fs.writeFileSync(
