@@ -1,0 +1,294 @@
+{
+  "schema": "agijobsv0/current-s1-python-complete-raw-review/1",
+  "result": "PASS_COMPLETE_CURRENT_S1_PYTHON_REPORT_AND_CUSTODY",
+  "reviewer": "/root/jobs_owner",
+  "role": "Fresh current-source Python raw scanner evidence review; no publication or review-slot installation",
+  "observedAt": "2026-10-20T11:34:19.070Z",
+  "source": {
+    "commit": "c0761b4f129911ef4f700932a331db159032f6e7",
+    "tree": "e8e2cb3c80629c352cd7cc71bc68d48da5384bd6",
+    "parent": "85966d5f8be90d9b948d11a7f98b6231049f01c5",
+    "repository": "MontrealAI/AGIJobsv0",
+    "repositoryId": 1031364470,
+    "pr": 4003,
+    "ref": "refs/heads/fix/processed-codeql-release-proof-20261020",
+    "producerSourceAncestor": "cb30d7453b36eaca040c139e06fd9668b300c5f4",
+    "producerSourceTree": "19d86f484ed11de23bb54d11b193ea868d2de88e",
+    "completeGitTreeEntries": 6290,
+    "gitTreeTruncated": false
+  },
+  "producer": {
+    "workflow": ".github/workflows/static-analysis-python-integrations.yml",
+    "workflowId": 389700583,
+    "run": 39413714405,
+    "attempt": 1,
+    "runNumber": 40,
+    "event": "push",
+    "headBranch": "fix/processed-codeql-release-proof-20261020",
+    "status": "completed",
+    "conclusion": "success",
+    "codeqlJob": {
+      "id": 118597505393,
+      "name": "Python integration CodeQL analysis",
+      "status": "completed",
+      "conclusion": "success",
+      "uploadStep": "Upload Python CodeQL artefacts",
+      "uploadStepConclusion": "success"
+    },
+    "collectorJob": {
+      "id": 118599045960,
+      "name": "Complete Python CodeQL review bytes",
+      "status": "completed",
+      "conclusion": "success",
+      "retentionStep": "Retain complete original CodeQL review bytes",
+      "retentionStepConclusion": "success"
+    }
+  },
+  "artifact": {
+    "id": 12259909326,
+    "name": "python-codeql-security-report-c0761b4f129911ef4f700932a331db159032f6e7-39413714405-1",
+    "bytes": 106953,
+    "githubDigest": "sha256:6de2ff450b83fc9e13cc2ba5b999a7e5ce200ba85a1148f6eecd28bde558e2fa",
+    "sha256": "6de2ff450b83fc9e13cc2ba5b999a7e5ce200ba85a1148f6eecd28bde558e2fa",
+    "expired": false,
+    "runId": 39413714405,
+    "source": "c0761b4f129911ef4f700932a331db159032f6e7",
+    "headBranch": "fix/processed-codeql-release-proof-20261020"
+  },
+  "transport": {
+    "protocol": "AGIJOBS_CODEQL_REVIEW_V1",
+    "schema": "agijobsv0/codeql-review-byte-log/1",
+    "records": 80,
+    "chunkRecords": 78,
+    "streams": 5,
+    "rawFiles": 4,
+    "chunkBytes": 12288,
+    "manifestSha256": "33a51b3d8f85a287ee29a3b88e3ca5faf109eae50aa74a00ed486c24ce90d3ff",
+    "manifestAndFooterSourceIdentityEqual": true,
+    "footerHashDefinition": "SHA256 of UTF8 JSON.stringify(manifest record), excluding prefix/newline",
+    "footer": {
+      "manifestSha256": "33a51b3d8f85a287ee29a3b88e3ca5faf109eae50aa74a00ed486c24ce90d3ff",
+      "streamCount": 5,
+      "rawFileCount": 4,
+      "acquisitionCount": 1,
+      "reviewStatus": "UNAPPROVED_REQUIRES_FULL_REVIEW_AND_FINAL_PRODUCER_SUCCESS"
+    },
+    "allChunkIndexesCountsSizesCanonicalBase64AndDigestsVerified": true,
+    "completeLog": {
+      "bytes": 1262678,
+      "sha256": "6110437b1812d8de25c8d4ac24ad078ff458267646ac12cd73251ffb1c3f9294"
+    },
+    "reviewerOriginalArtifactZipGETs": 0,
+    "rootOriginalArtifactZipGETs": 0,
+    "ciCollectorSoleOriginalArtifactAcquisitionCount": 1
+  },
+  "exactOriginalStreams": [
+    {
+      "name": "original.zip",
+      "bytes": 106953,
+      "sha256": "6de2ff450b83fc9e13cc2ba5b999a7e5ce200ba85a1148f6eecd28bde558e2fa",
+      "allChunksAuthenticated": true
+    },
+    {
+      "name": "python.sarif",
+      "bytes": 788624,
+      "sha256": "42a5f57e9676071bf6f0e9e5b7eef73d01655baf969ade3c7802ecbe4f1d1098",
+      "allChunksAuthenticated": true
+    },
+    {
+      "name": "source-extraction.json",
+      "bytes": 13261,
+      "sha256": "65a3893a84ff428e4d2a05aaa616ffaf3136bd6ae09af7d3b80960008ba4786a",
+      "allChunksAuthenticated": true
+    },
+    {
+      "name": "source-scope-after.json",
+      "bytes": 1541,
+      "sha256": "fcfb4895c5e1abc105ac713440b7d2f5a8aa76d94dd3d8fb843521e2a9abb6e1",
+      "allChunksAuthenticated": true
+    },
+    {
+      "name": "source-scope-before.json",
+      "bytes": 1541,
+      "sha256": "fcfb4895c5e1abc105ac713440b7d2f5a8aa76d94dd3d8fb843521e2a9abb6e1",
+      "allChunksAuthenticated": true
+    }
+  ],
+  "immutableSourceFiles": [
+    {
+      "role": "config",
+      "path": ".github/codeql/config-python-integrations.yml",
+      "blob": "cdd0d5a0a1a0e691c3367bc5ce4429215f41381d",
+      "bytes": 149,
+      "sha256": "eb5b425facefb419987bf537280d5144a477b65a205ccd71df3866b60b01e560"
+    },
+    {
+      "role": "workflow",
+      "path": ".github/workflows/static-analysis-python-integrations.yml",
+      "blob": "0d1220ce9b561ae8feeee9e47bb6a0ff4226c3c0",
+      "sha256": "5b08a73d05cea31c09e8bf23a34b742c2fd85a47b7fbea52a94f70fd9c3ce077",
+      "bytes": 15239
+    },
+    {
+      "role": "collector",
+      "path": "scripts/release/emit-codeql-review-rc16.cjs",
+      "blob": "95c96fecba7e1bee728f190b4a0c1dc0da2fc979",
+      "sha256": "f72e89026b0c0b5d5638fef2cf9c7678f6fac5850afb5de439aa9d309411b6db",
+      "bytes": 16264
+    }
+  ],
+  "rawReview": {
+    "sarifVersion": "2.1.0",
+    "completeRunCount": 1,
+    "tool": {
+      "name": "CodeQL",
+      "version": "2.27.2",
+      "completeCanonicalSha256": "00c093f87f1862050a1e9a7a4b222aa1ec36939ee5f88a0bdec844453ade854e"
+    },
+    "completeOrderedRules": 172,
+    "distinctRuleIds": 172,
+    "completeOrderedRulesCanonicalSha256": "b9e55f2b1e9a9b67862bbc98389f750fc8328b81cc600344fda6d88746864f24",
+    "allRawResults": 0,
+    "completeResultsCanonicalSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "rawResultDispositions": [],
+    "queryConfigSummary": {
+      "disableDefaultQueries": false,
+      "queries": [
+        {
+          "type": "builtinSuite",
+          "uses": "security-extended"
+        },
+        {
+          "type": "builtinSuite",
+          "uses": "security-and-quality"
+        }
+      ]
+    },
+    "queryConfigSummaryCanonicalSha256": "e54d1848b96dc1093cbf6acc90ad9fdcc8f30d7c7d2c98cc6f41632cdb794d3f",
+    "successfulInvocations": 1,
+    "overlayDisabled": true,
+    "notificationLevels": {
+      "none": 133,
+      "note": 5
+    },
+    "errorOrWarningNotifications": 0,
+    "exactBeforeAfterScopeRawBytesEqual": true,
+    "allRawSidecarSourceTreeRunAttemptEventRefConfigWorkflowAndSarifDigestsVerified": true,
+    "sidecarDisposition": "REQUIRES_INDEPENDENT_FINAL_SOURCE_REVIEW",
+    "completeActualSuccessfullyExtractedUriSetCount": 79,
+    "completeExtractionUriSetCanonicalSha256": "f176c1882be84ad80385367f11d9bd54b2a9e281cad0e93b789f04c067ef8df1",
+    "pythonModuleCountClaimedFrom79": false,
+    "actualGitPythonModuleCount": 8,
+    "mandatoryPythonReceiverCount": 8,
+    "allActualModulesAndMandatoryReceiversActuallyExtracted": true,
+    "requiredExtractedFilesCanonicalSha256": "70639cccdf1804abcb7c43f7ac23e5e38853d94d9827de3a10fbfccf68c4423e",
+    "missingRequired": [],
+    "pythonSourceInventory": [
+      {
+        "path": "integrations/alpha-agent/successor-computer-mission-lab.py",
+        "blob": "c1676bebb8dc066249447e798c1e9684cac1fa05",
+        "mode": "100644",
+        "bytes": 28746
+      },
+      {
+        "path": "integrations/alpha-agent/successor-computer-worker-launch.py",
+        "blob": "1ef297c6bcd59bb522d0facf0c2268142427ae50",
+        "mode": "100644",
+        "bytes": 1907
+      },
+      {
+        "path": "integrations/alpha-agent/successor-frontier-mission-lab.py",
+        "blob": "c36f5eacbe5556072afd864c3c25d6e98ae5b8ff",
+        "mode": "100644",
+        "bytes": 26147
+      },
+      {
+        "path": "integrations/alpha-agent/supplier-adapter-lab.py",
+        "blob": "1c65832419af9b519e2ee81a3942ea42de86fe44",
+        "mode": "100644",
+        "bytes": 12093
+      },
+      {
+        "path": "integrations/alpha-agent/supplier-browser-lab.py",
+        "blob": "a670c8e42101826129beb5750498f33fbdd90aa6",
+        "mode": "100644",
+        "bytes": 10859
+      },
+      {
+        "path": "integrations/alpha-agent/supplier_browser_lab_support.py",
+        "blob": "d81f7fe743889b3b2f7d40011954660a34f3c2a4",
+        "mode": "100644",
+        "bytes": 3434
+      },
+      {
+        "path": "integrations/alpha-agent/supplier_node_guard.py",
+        "blob": "5b4b17188d7bba3bcbb8e950c161dfda54dfce4c",
+        "mode": "100644",
+        "bytes": 3424
+      },
+      {
+        "path": "integrations/alpha-agent/supplier_proof_guard.py",
+        "blob": "914aecc7c78944d7d07033c9701f29c3f9b4080e",
+        "mode": "100644",
+        "bytes": 4217
+      }
+    ]
+  },
+  "apiReobservation": {
+    "afterCollectorCompletion": true,
+    "currentRunAndExactAttemptCompletedSuccess": true,
+    "currentAttemptCompleteJobs": 2,
+    "producerAndCollectorHeadShaRunAttemptJobAndStepBindingsVerified": true,
+    "completeSourceRunInventoryEntries": 23,
+    "completeSourceRunInventoryTotal": 23,
+    "matchingWorkflowSourceBranchPushRuns": 1,
+    "latestCurrentSourceRun": 39413714405,
+    "latestAttempt": 1,
+    "completeRunArtifactInventoryTotal": 1,
+    "completeRunArtifactInventoryEntries": 1,
+    "uniqueOriginalArtifactDigestSizeAndSourceBindingVerified": true,
+    "postReviewPrHeadRunAttemptAndArtifactStable": true,
+    "sourceCommitTreeAndRegularFileBlobsReadFromAuthenticatedGitAPI": true,
+    "reviewerDirectArtifactMetadataRoute": "Unsupported by connector (400); no artifact download or transport workaround used",
+    "reviewerWorkflowSpecificRunListRoute": "Unsupported by connector (400); complete authenticated repository run list filtered to exact source/workflow/push/branch",
+    "equivalentAuthenticatedArtifactObservation": "Complete authenticated current-run artifact list with one entry; every artifact identity, size, digest, expiry, repository/head-repository and source/run/branch field checked",
+    "collectorDirectArtifactMetadataAuthenticatedBeforeAndAfterItsSoleAcquisition": true
+  },
+  "historicalComparison": {
+    "purpose": "Digest references for scoped tool/rules/config/extraction continuity only; not approval for current source",
+    "historicalSource": "f2a8d2382b9a40814579f7a8be44046f247e0fd7",
+    "historicalRun": 39356262848,
+    "historicalAttempt": 1,
+    "historicalArchiveSha256": "9a762e7a2374ba903436653dc9bcd2ff022724accc8c26861022b3b266fe3a0a",
+    "historicalRawSarifSha256": "4d5a94761cd0d4c6fbe274f923036b9647150d4ff60d2a31c249301e1e65eef8",
+    "currentAndHistoricalRawArchiveBytesEqual": false,
+    "currentAndHistoricalRawSarifBytesEqual": false,
+    "completeToolOrderedRulesAndExtractionSetCanonicalDigestsEqual": true,
+    "configBytesUnchanged": true,
+    "workflowBytesChangedToTheExactlyReviewedCurrentProducer": true,
+    "historicalApprovalReused": false,
+    "wholeSarifEqualityClaimed": false,
+    "noncoreSarifTelemetryEquivalenceAsserted": false
+  },
+  "custody": {
+    "byteBundleGitBlob": "b24b7ce0dea43354ac8fa5b709f5fc999fe41069",
+    "byteBundleBytes": 1236194,
+    "byteBundleSha256": "1bcb7416e99dbd66bcbafa9f319ad923e4bd8759af0de8b88a30e0f9e7c846ea",
+    "byteBundleExactAuthenticatedAPIReadback": true,
+    "byteBundleContainsAll80RecordsAndCompleteOriginalZipPlusAllFourRawFiles": true,
+    "persistenceState": "Unreferenced objects; root must commit to isolated Jobs evidence custody branch",
+    "suggestedBundlePath": "docs/release-evidence/ti-compatible-set-20261020/current-s1/jobs-c076-python-complete-byte-records.json",
+    "suggestedReceiptPath": "docs/release-evidence/ti-compatible-set-20261020/current-s1/jobs-c076-python-complete-raw-review.json"
+  },
+  "limits": {
+    "productSourcePoliciesQueriesTestsNativeCodeNotExecutedByReviewer": true,
+    "noSourceSlotsRefsSettingsRunsAlertsChanged": true,
+    "noDuplicateOriginalArtifactAcquisition": true,
+    "currentSourceOnlyNoFutureHeadApproval": true,
+    "allThreeLiveReviewSlotsRemainNull": true,
+    "javascriptReportAndNewFindingsOutsideThisPythonReview": true,
+    "finalActualMainS2RawServiceAndAllReleaseGatesRemainRequired": true,
+    "releaseQualificationOrPublicationClaimed": false,
+    "rootSoleMergerPublisher": true
+  }
+}

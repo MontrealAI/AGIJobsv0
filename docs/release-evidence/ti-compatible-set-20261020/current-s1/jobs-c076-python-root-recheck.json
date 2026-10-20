@@ -1,0 +1,129 @@
+{
+  "schema": "agijobsv0/current-s1-python-root-recheck/1",
+  "review": {
+    "observedAt": "2026-10-20T11:36:18.579Z",
+    "source": "c0761b4f129911ef4f700932a331db159032f6e7",
+    "tree": "e8e2cb3c80629c352cd7cc71bc68d48da5384bd6",
+    "rawSha256": "42a5f57e9676071bf6f0e9e5b7eef73d01655baf969ade3c7802ecbe4f1d1098",
+    "completeResultCount": 0,
+    "toolSha256": "00c093f87f1862050a1e9a7a4b222aa1ec36939ee5f88a0bdec844453ade854e",
+    "orderedRuleCount": 172,
+    "rulesSha256": "b9e55f2b1e9a9b67862bbc98389f750fc8328b81cc600344fda6d88746864f24",
+    "resultsSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "extractedCount": 79,
+    "extractedSha256": "f176c1882be84ad80385367f11d9bd54b2a9e281cad0e93b789f04c067ef8df1",
+    "actualModules": [
+      "integrations/alpha-agent/successor-computer-mission-lab.py",
+      "integrations/alpha-agent/successor-computer-worker-launch.py",
+      "integrations/alpha-agent/successor-frontier-mission-lab.py",
+      "integrations/alpha-agent/supplier-adapter-lab.py",
+      "integrations/alpha-agent/supplier-browser-lab.py",
+      "integrations/alpha-agent/supplier_browser_lab_support.py",
+      "integrations/alpha-agent/supplier_node_guard.py",
+      "integrations/alpha-agent/supplier_proof_guard.py"
+    ],
+    "requiredSha256": "70639cccdf1804abcb7c43f7ac23e5e38853d94d9827de3a10fbfccf68c4423e",
+    "beforeAfterBytesEqual": true,
+    "invocations": [
+      {
+        "success": true
+      }
+    ],
+    "notificationLevels": {
+      "none": 133,
+      "note": 5
+    },
+    "runProperties": {
+      "semmle.formatSpecifier": "sarif-latest",
+      "metricResults": [
+        {
+          "rule": {
+            "id": "py/summary/lines-of-user-code",
+            "index": 48,
+            "toolComponent": {
+              "index": 0
+            }
+          },
+          "ruleId": "py/summary/lines-of-user-code",
+          "value": 1590,
+          "baseline": 1596
+        },
+        {
+          "rule": {
+            "id": "py/summary/lines-of-code",
+            "index": 49,
+            "toolComponent": {
+              "index": 0
+            }
+          },
+          "ruleId": "py/summary/lines-of-code",
+          "value": 1590
+        }
+      ],
+      "codeqlConfigSummary": {
+        "disableDefaultQueries": false,
+        "queries": [
+          {
+            "type": "builtinSuite",
+            "uses": "security-extended"
+          },
+          {
+            "type": "builtinSuite",
+            "uses": "security-and-quality"
+          }
+        ]
+      },
+      "jobRunUuid": "c497d8e6-a10f-4f9e-8cde-b5fdebac31ec"
+    }
+  },
+  "protocol": {
+    "records": 80,
+    "manifestSha256": "33a51b3d8f85a287ee29a3b88e3ca5faf109eae50aa74a00ed486c24ce90d3ff",
+    "streams": [
+      {
+        "name": "original.zip",
+        "bytes": 106953,
+        "sha256": "6de2ff450b83fc9e13cc2ba5b999a7e5ce200ba85a1148f6eecd28bde558e2fa",
+        "chunks": 9
+      },
+      {
+        "name": "python.sarif",
+        "bytes": 788624,
+        "sha256": "42a5f57e9676071bf6f0e9e5b7eef73d01655baf969ade3c7802ecbe4f1d1098",
+        "chunks": 65
+      },
+      {
+        "name": "source-extraction.json",
+        "bytes": 13261,
+        "sha256": "65a3893a84ff428e4d2a05aaa616ffaf3136bd6ae09af7d3b80960008ba4786a",
+        "chunks": 2
+      },
+      {
+        "name": "source-scope-after.json",
+        "bytes": 1541,
+        "sha256": "fcfb4895c5e1abc105ac713440b7d2f5a8aa76d94dd3d8fb843521e2a9abb6e1",
+        "chunks": 1
+      },
+      {
+        "name": "source-scope-before.json",
+        "bytes": 1541,
+        "sha256": "fcfb4895c5e1abc105ac713440b7d2f5a8aa76d94dd3d8fb843521e2a9abb6e1",
+        "chunks": 1
+      }
+    ]
+  },
+  "peerReceipt": {
+    "blob": "a3659749b7e39b0ecc4c7e9260d9ba96090f6618",
+    "sha256": "3e01341bbd71b7a892da8926e1517f367bdbeea1ce3103789a82bf4db165d918",
+    "bytes": 12179
+  },
+  "completeByteBundle": {
+    "blob": "b24b7ce0dea43354ac8fa5b709f5fc999fe41069",
+    "bytes": 1236194,
+    "sha256": "1bcb7416e99dbd66bcbafa9f319ad923e4bd8759af0de8b88a30e0f9e7c846ea"
+  },
+  "rootOriginalZipGets": 0,
+  "acquisition": "Original ZIP acquired solely by actual CI collector, then original ZIP and all four complete raw files reconstructed from bounded log records.",
+  "scope": "Independent source/byte metadata and complete zero-result Python review, not a JavaScript disposition, native approval, final S2 proof or release qualification.",
+  "reviewSlotsChanged": false
+}
