@@ -1,0 +1,266 @@
+{
+  "schema": "agijobsv0/current-review-source-comparison/v1",
+  "priorSource": "c0761b4f129911ef4f700932a331db159032f6e7",
+  "priorTree": "e8e2cb3c80629c352cd7cc71bc68d48da5384bd6",
+  "currentSource": "c3e943189a00bffa2e4dda265c6bd010b4930944",
+  "currentTree": "e0a252f91288f798c7ede5f72c2ba2869316d927",
+  "completeTreesVerified": true,
+  "delta": [
+    {
+      "path": "scripts/release/source-codeql-service-rc16.cjs",
+      "before": {
+        "path": "scripts/release/source-codeql-service-rc16.cjs",
+        "mode": "100644",
+        "type": "blob",
+        "sha": "e4e71ab00762d3b07c12ec56e62412e7b0774149",
+        "size": 32968,
+        "url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/git/blobs/e4e71ab00762d3b07c12ec56e62412e7b0774149"
+      },
+      "after": {
+        "path": "scripts/release/source-codeql-service-rc16.cjs",
+        "mode": "100644",
+        "type": "blob",
+        "sha": "aa6944cbde23b8903616fec0f58e2a30ed3c0a87",
+        "size": 36771,
+        "url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/git/blobs/aa6944cbde23b8903616fec0f58e2a30ed3c0a87"
+      }
+    },
+    {
+      "path": "test/scripts/source-codeql-service-fixture-rc16.cjs",
+      "before": {
+        "path": "test/scripts/source-codeql-service-fixture-rc16.cjs",
+        "mode": "100644",
+        "type": "blob",
+        "sha": "54b8a0dd275045fa8921f9e066747af929742401",
+        "size": 7940,
+        "url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/git/blobs/54b8a0dd275045fa8921f9e066747af929742401"
+      },
+      "after": {
+        "path": "test/scripts/source-codeql-service-fixture-rc16.cjs",
+        "mode": "100644",
+        "type": "blob",
+        "sha": "d07d870faee8a2ee40ce4925ab5ee0436278dc31",
+        "size": 7971,
+        "url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/git/blobs/d07d870faee8a2ee40ce4925ab5ee0436278dc31"
+      }
+    },
+    {
+      "path": "test/scripts/source-codeql-service-rc16.test.cjs",
+      "before": {
+        "path": "test/scripts/source-codeql-service-rc16.test.cjs",
+        "mode": "100644",
+        "type": "blob",
+        "sha": "8e5c73ce6c980b4e399502b39d19962a6aa805e5",
+        "size": 2485,
+        "url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/git/blobs/8e5c73ce6c980b4e399502b39d19962a6aa805e5"
+      },
+      "after": {
+        "path": "test/scripts/source-codeql-service-rc16.test.cjs",
+        "mode": "100644",
+        "type": "blob",
+        "sha": "c64e1938d2fa3967acf8e8b100668cbc05d2bb49",
+        "size": 3220,
+        "url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/git/blobs/c64e1938d2fa3967acf8e8b100668cbc05d2bb49"
+      }
+    }
+  ],
+  "resultSources": [
+    {
+      "path": "apps/onebox-static/v2/app.js",
+      "mode": "100644",
+      "blob": "796ed7504b1501c273e85b5e5c607f68678c134e",
+      "bytes": 37589,
+      "identical": true
+    },
+    {
+      "path": "apps/console/src/components/GasPanel.tsx",
+      "mode": "100644",
+      "blob": "f60fea2375d3f5d513298d6a27d8f022a1e95bf3",
+      "bytes": 11453,
+      "identical": true
+    },
+    {
+      "path": "website/assets/frontier-desk.mjs",
+      "mode": "100644",
+      "blob": "7bd53230655d1f02277e860b7940501266e6dd68",
+      "bytes": 27126,
+      "identical": true
+    },
+    {
+      "path": "website/assets/source-lab.js",
+      "mode": "100644",
+      "blob": "f851e6b0d8fa51e743b6949fe8248b93c09f3e08",
+      "bytes": 4382,
+      "identical": true
+    },
+    {
+      "path": "integrations/alpha-agent/vendor/alpha-computer/examples/successor-alpha/research.mjs",
+      "mode": "100644",
+      "blob": "759eb5ce3deb5cc1c20fe35ea29beaffa5bd8eba",
+      "bytes": 27959,
+      "identical": true
+    },
+    {
+      "path": "integrations/alpha-agent/tests/alpha-project-transfer.test.mjs",
+      "mode": "100644",
+      "blob": "71b9e252396ea347a1bde13b0448779c1e7922bb",
+      "bytes": 22500,
+      "identical": true
+    },
+    {
+      "path": "agent-gateway/apiHelpers.ts",
+      "mode": "100644",
+      "blob": "f4657f23277495558c3f17f13d1cfbffa4323eab",
+      "bytes": 7011,
+      "identical": true
+    },
+    {
+      "path": "agent-gateway/routes.ts",
+      "mode": "100644",
+      "blob": "b2670fd4b6c4b6f55dc41f91b7bbbfb3883dea0c",
+      "bytes": 61524,
+      "identical": true
+    },
+    {
+      "path": "apps/onebox-static/app.mjs",
+      "mode": "100644",
+      "blob": "42b80603704daa0772cd29cdcb6d80ccc536a00d",
+      "bytes": 68748,
+      "identical": true
+    },
+    {
+      "path": "packages/successor-core/src/frontier-mission.mjs",
+      "mode": "100644",
+      "blob": "5916c3fc8e86b1d6f62794c9e65405c96e451f44",
+      "bytes": 41799,
+      "identical": true
+    },
+    {
+      "path": "integrations/alpha-agent/pinned-alpha-checkout.cjs",
+      "mode": "100644",
+      "blob": "35aa4d4a437f6cd617e29c4c65d025af907108af",
+      "bytes": 9696,
+      "identical": true
+    },
+    {
+      "path": "integrations/alpha-agent/four-repo-computer-lifecycle.cjs",
+      "mode": "100644",
+      "blob": "ba589d5d555b9f4255e294fcafd2213ef7359593",
+      "bytes": 19851,
+      "identical": true
+    },
+    {
+      "path": "agent-gateway/employer.ts",
+      "mode": "100644",
+      "blob": "dcac9782d00ba88f05ff8af1407437ff2c68e0e5",
+      "bytes": 4427,
+      "identical": true
+    },
+    {
+      "path": "agent-gateway/telemetry.ts",
+      "mode": "100644",
+      "blob": "d0a245d0442cd858ae9c553d6bcf6717709f8336",
+      "bytes": 38439,
+      "identical": true
+    },
+    {
+      "path": "agent-gateway/validationStore.ts",
+      "mode": "100644",
+      "blob": "1be9d3590cd0cff4455568f2b393a809b892fef2",
+      "bytes": 17451,
+      "identical": true
+    },
+    {
+      "path": "scripts/release/emit-codeql-review-rc16.cjs",
+      "mode": "100644",
+      "blob": "95c96fecba7e1bee728f190b4a0c1dc0da2fc979",
+      "bytes": 16264,
+      "identical": true
+    },
+    {
+      "path": "scripts/release/source-codeql-service-rc16.cjs",
+      "mode": "100644",
+      "blob": "aa6944cbde23b8903616fec0f58e2a30ed3c0a87",
+      "bytes": 36771,
+      "identical": false
+    },
+    {
+      "path": "services/notifications/server.js",
+      "mode": "100644",
+      "blob": "43ba84d43f57cf870dcd126d265b7bc6029d09d5",
+      "bytes": 2730,
+      "identical": true
+    },
+    {
+      "path": "shared/containedFiles.ts",
+      "mode": "100644",
+      "blob": "31c26166958baad1d69e29248fa108ac95118699",
+      "bytes": 6181,
+      "identical": true
+    },
+    {
+      "path": "shared/worldModel.ts",
+      "mode": "100644",
+      "blob": "6735156887b86d5ce79a693d84f3019801ee857f",
+      "bytes": 8426,
+      "identical": true
+    },
+    {
+      "path": "agent-gateway/agentEndpoint.ts",
+      "mode": "100644",
+      "blob": "1533e96bd62c15d63bc516f23adb9fdb879d3417",
+      "bytes": 2628,
+      "identical": true
+    },
+    {
+      "path": "apps/orchestrator/execution.ts",
+      "mode": "100644",
+      "blob": "306ef3c51f6992738a023428bed068465c699ba9",
+      "bytes": 33584,
+      "identical": true
+    },
+    {
+      "path": "scripts/release/qualify-source-release-rc16.cjs",
+      "mode": "100644",
+      "blob": "31c25ea3123a20958ecfd096d1aa07b25573d048",
+      "bytes": 30904,
+      "identical": true
+    },
+    {
+      "path": "scripts/retrainAgent.ts",
+      "mode": "100644",
+      "blob": "97b0e964c1dffab9be5bb72e3fddcdbf106616b8",
+      "bytes": 10360,
+      "identical": true
+    },
+    {
+      "path": "integrations/alpha-agent/artifact-commitment.cjs",
+      "mode": "100644",
+      "blob": "5656e85a0b58ba7dbdec3c9c832b32e9709a8ddb",
+      "bytes": 1565,
+      "identical": true
+    },
+    {
+      "path": "scripts/release/publish-source-release-rc16.cjs",
+      "mode": "100644",
+      "blob": "f485dc01e75010a826d4082974433deae3743734",
+      "bytes": 63194,
+      "identical": true
+    },
+    {
+      "path": "scripts/release/source-native-gates-rc16.cjs",
+      "mode": "100644",
+      "blob": "02fc38e6908404dadbd7e4e001a2595cfc545f85",
+      "bytes": 11153,
+      "identical": true
+    },
+    {
+      "path": "scripts/release/source-scanner-gates-rc16.cjs",
+      "mode": "100644",
+      "blob": "8a9d77c757047dacea404bb05861d28fad84ac39",
+      "bytes": 26271,
+      "identical": true
+    }
+  ],
+  "scope": "Historical source comparison only; fresh complete raw results, current-source assessment and review installation remain required."
+}

@@ -1,0 +1,38 @@
+{
+  "schema": "agijobsv0/current-helper-source-assessment/v1",
+  "source": "c3e943189a00bffa2e4dda265c6bd010b4930944",
+  "tree": "e0a252f91288f798c7ede5f72c2ba2869316d927",
+  "reviewer": "existing independent Jobs source-assessment lane /root/jobs_owner",
+  "files": [
+    {
+      "path": "scripts/release/source-codeql-service-rc16.cjs",
+      "blob": "aa6944cbde23b8903616fec0f58e2a30ed3c0a87",
+      "bytes": 36771
+    },
+    {
+      "path": "test/scripts/source-codeql-service-fixture-rc16.cjs",
+      "blob": "d07d870faee8a2ee40ce4925ab5ee0436278dc31",
+      "bytes": 7971
+    },
+    {
+      "path": "test/scripts/source-codeql-service-rc16.test.cjs",
+      "blob": "c64e1938d2fa3967acf8e8b100668cbc05d2bb49",
+      "bytes": 3220
+    }
+  ],
+  "sourceAssessment": "CLEAR_IN_BOUNDED_SCOPE",
+  "finding": {
+    "rule": "js/http-to-file-access",
+    "path": "scripts/release/source-codeql-service-rc16.cjs",
+    "line": 703,
+    "historicalRawResult": "4e32f9ae413ca0858afef71790a81c87d29ca12649dfa0f5104ecdc84cd9d157",
+    "assessment": "Authenticated projected inert JSON is written to the exact admitted fixed reports/security/codeql-service-<javascript|python>/codeql-service-receipt.json destination through O_EXCL|O_NOFOLLOW mode0600 held descriptor. Network fields do not select a path or code. Downstream original artifact digest, exact source/config/run/job/upload/analysis binding, repeated independent API observation and WeakSet-branded proof remain. This supports a fresh source assessment of the reported flow, pending actual current complete raw-result matching.",
+    "limit": "Hosted-runner parent directories remain trusted; no universal hostile-filesystem isolation claim."
+  },
+  "delta": "Exactly three regular leaves differ from c076. All pre-CLI helper production bytes reconstruct c076 after removing only status.errors === null ||. Remaining helper change is finite literal diagnostic catch. Fixture/test changes are explicitly synthetic metadata only.",
+  "executed": false,
+  "codeScanningApiCalled": false,
+  "rawResultApproval": false,
+  "releaseQualification": false,
+  "recordedAt": "2026-10-20T13:54:07.688Z"
+}
