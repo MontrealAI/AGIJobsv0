@@ -1,0 +1,49 @@
+{
+  "schema": "jobs/actual-final-main-publication-failure/1",
+  "asOf": "2026-10-20T21:13:55.216Z",
+  "source": "d023a717bd01cad92b51b86a69d64d1fef8e51a0",
+  "tree": "d12a01aeb823ba667ba5e6d15df2c9cfa633d674",
+  "run": 39494233776,
+  "attempt": 1,
+  "job": 118878025830,
+  "failedStep": "Qualify actual exact-main workflows, scanner result and source profile",
+  "message": "Current/reviewed complete Python scanner semantics differ",
+  "all21OtherMainGroupsAnd37ContextsPassed": true,
+  "releaseNotCreated": true,
+  "originalLog": {
+    "bytes": 3224697,
+    "gitBlob": "5a958c9728b016ed31a2019334fec7fbd42d63c6",
+    "sha256": "7a4635142cba09062bf4fec22f3b88ec8f3af37ed3a629e339ddb45e817417a5"
+  },
+  "parts": [
+    {
+      "path": "docs/release-evidence/ti-compatible-set-20261020/jobs-d023a71/publisher-attempt-1-failure-part-1.log",
+      "bytes": 900000,
+      "gitBlob": "de99284ce2e593b1c13491e84eb9c0a2d7a91764",
+      "sha256": "0d32068eade83d2c111926664b5a96caf90ef833da65d37570b771389643f9e4"
+    },
+    {
+      "path": "docs/release-evidence/ti-compatible-set-20261020/jobs-d023a71/publisher-attempt-1-failure-part-2.log",
+      "bytes": 900000,
+      "gitBlob": "800653545d16272c54fec01feaae491a7cdcfd1e",
+      "sha256": "9e5ff4e6021072829efc3ccee4508bac4122dd279dbb60252ce96ab75802b496"
+    },
+    {
+      "path": "docs/release-evidence/ti-compatible-set-20261020/jobs-d023a71/publisher-attempt-1-failure-part-3.log",
+      "bytes": 900000,
+      "gitBlob": "6f6cf0f0cee1fc75a136da77e51339e3b7c89139",
+      "sha256": "f26ecf4a35afb8030097c947c48763f3aa52e5631b4b46e96eaac24ed82e0938"
+    },
+    {
+      "path": "docs/release-evidence/ti-compatible-set-20261020/jobs-d023a71/publisher-attempt-1-failure-part-4.log",
+      "bytes": 524697,
+      "gitBlob": "e38cebeb06d11c3ee4cf44d16d8d406b99ea5991",
+      "sha256": "8bc0f72beac20683b1a88cb75806ea5dabc984a44afc36bce825cd00e416df2d"
+    }
+  ],
+  "failureNotWaived": true,
+  "unchangedPublisherNotRetried": true,
+  "sourceFinding": "Raw Python archive owner compares complete toolComponents by strict array order, while the original independent-review verifier admits only full-record unique-ID descriptor permutations and preserves duplicate ordering. Parent archive comparison bypasses that already-required component equivalence function.",
+  "actualRawMainDriftFullyReconciled": false,
+  "disposition": "Fix the parent comparison to apply the existing full-component predicate while strictly comparing all other semantic fields and preserving original raw archives. Fresh all-null source baseline, original hosted scans/CI and independent source/current-data review required; no claim of actual whole-report equality."
+}
