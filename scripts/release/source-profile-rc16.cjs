@@ -111,6 +111,7 @@ const nativeCompatibility = freeze({
   },
 });
 const scannerPolicy = freeze({
+  referenceTransportSchema: 'agijobsv0/codeql-lossless-reference-transport/1',
   reviewedProducer: {
     event: 'push',
     headBranch: 'fix/processed-codeql-release-proof-20261020',

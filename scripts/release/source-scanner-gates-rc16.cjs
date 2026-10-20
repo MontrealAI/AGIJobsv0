@@ -239,6 +239,378 @@ function verifyScannerReviewBinding(options) {
   );
 }
 
+const referenceTransportSchema =
+  'agijobsv0/codeql-lossless-reference-transport/1';
+
+function scannerToolReferenceMap(source, reference) {
+  const copy = JSON.parse(JSON.stringify(source));
+  const original = [source.driver, ...(source.extensions || [])];
+  const target = [reference.driver, ...(reference.extensions || [])];
+  const moved = [copy.driver, ...(copy.extensions || [])];
+  assert.equal(original.length, target.length, 'Scanner component count differs');
+  const maps = [];
+  for (let component = 0; component < original.length; component++) {
+    const byKind = {};
+    for (const kind of ['rules', 'notifications']) {
+      const values = original[component][kind];
+      const expected = target[component][kind];
+      if (values === undefined || expected === undefined) {
+        assert.equal(values, expected, 'Scanner descriptor field presence differs');
+        byKind[kind] = [];
+        continue;
+      }
+      assert(
+        Array.isArray(values) && Array.isArray(expected),
+        'Scanner descriptor arrays are malformed'
+      );
+      assert.equal(values.length, expected.length, 'Scanner descriptor count differs');
+      for (const records of [values, expected])
+        for (const record of records)
+          assert(
+            record && typeof record.id === 'string' && record.id,
+            'Scanner descriptor requires a readable ID'
+          );
+      const unique = [values, expected].every(
+        (records) => new Set(records.map((record) => record.id)).size === records.length
+      );
+      let permutation;
+      if (unique) {
+        const positions = new Map(
+          expected.map((record, index) => [canonical(record), index])
+        );
+        permutation = values.map((record) => {
+          const index = positions.get(canonical(record));
+          assert(index !== undefined, 'Complete scanner descriptor record differs');
+          return index;
+        });
+      } else {
+        // Duplicate IDs can be distinguished by ordinal. Preserve their order.
+        assert.deepEqual(values, expected, 'Duplicate descriptor order differs');
+        permutation = values.map((_, index) => index);
+      }
+      assert.equal(new Set(permutation).size, values.length, 'Descriptor map is not bijective');
+      const ordered = new Array(values.length);
+      permutation.forEach((to, from) => { ordered[to] = moved[component][kind][from]; });
+      moved[component][kind] = ordered;
+      byKind[kind] = permutation;
+    }
+    maps.push(byKind);
+  }
+  assert.deepEqual(copy, reference, 'Complete scanner tool metadata differs');
+  return { tool: copy, maps };
+}
+
+function reindexScannerRun(source, reference) {
+  const object = (value, label) => {
+    assert(
+      value && typeof value === 'object' && !Array.isArray(value),
+      'Malformed scanner ' + label
+    );
+    return value;
+  };
+  const array = (value, label) => {
+    assert(value === undefined || Array.isArray(value), 'Malformed scanner ' + label);
+    return value || [];
+  };
+  const empty = (value, label) =>
+    assert.equal(array(value, label).length, 0, 'Unsupported scanner ' + label);
+  object(source, 'run');
+  object(reference, 'reference run');
+  // SARIF-scheme strings can address arbitrary log table coordinates. This
+  // closed profile does not interpret them, including embedded message links.
+  const rejectPointers = (value) => {
+    if (typeof value === 'string') {
+      assert(!/sarif:/i.test(value), 'Unsupported SARIF-scheme reference');
+      return;
+    }
+    if (value && typeof value === 'object')
+      for (const item of Object.values(value)) rejectPointers(item);
+  };
+  rejectPointers(source);
+  rejectPointers(reference);
+  // Preserve only the exact index-free annotation observed in genuine CodeQL
+  // thread-flow steps. This is opaque metadata, not taxonomy resolution.
+  const validateFlowAnnotations = (run) => {
+    const owners = new WeakSet();
+    for (const result of array(run.results, 'results'))
+      for (const flow of array(object(result, 'result').codeFlows, 'code flows'))
+        for (const thread of array(object(flow, 'code flow').threadFlows, 'thread flows'))
+          for (const step of array(object(thread, 'thread flow').locations, 'thread-flow locations'))
+            owners.add(object(step, 'thread-flow location'));
+    const visit = (value) => {
+      if (!value || typeof value !== 'object') return;
+      if (Array.isArray(value)) { value.forEach(visit); return; }
+      for (const [key, item] of Object.entries(value)) {
+        if (key === 'taxa') {
+          const entries = array(item, 'taxa');
+          if (entries.length) {
+            assert(
+              owners.has(value) && entries.length === 1,
+              'Unsupported scanner taxa context or multiplicity'
+            );
+            const annotation = entries[0];
+            exactFields(
+              annotation, ['id', 'properties'],
+              'Unsupported CodeQL flow annotation fields'
+            );
+            assert.equal(annotation.id, 'Config', 'Unsupported CodeQL flow annotation ID');
+            exactFields(
+              annotation.properties, ['CodeQL/DataflowRole'],
+              'Unsupported CodeQL flow annotation properties'
+            );
+            assert.equal(
+              annotation.properties['CodeQL/DataflowRole'], 'step',
+              'Unsupported CodeQL flow annotation role'
+            );
+          }
+        }
+        // Include every property bag in admission even though the later
+        // reference locator admits only the separate metric extension there.
+        visit(item);
+      }
+    };
+    visit(run);
+  };
+  validateFlowAnnotations(source);
+  validateFlowAnnotations(reference);
+  const tool = scannerToolReferenceMap(
+    object(source.tool, 'tool'),
+    object(reference.tool, 'reference tool')
+  );
+  const components = [source.tool.driver, ...(source.tool.extensions || [])];
+  for (const component of components) {
+    empty(component.taxa, 'component taxa');
+    for (const kind of ['rules', 'notifications'])
+      for (const descriptor of array(component[kind], kind))
+        empty(descriptor.relationships, 'descriptor relationships');
+  }
+  for (const key of ['taxonomies', 'translations', 'policies'])
+    empty(source[key], key);
+  assert(
+    source.conversion === undefined && source.externalPropertyFileReferences === undefined,
+    'Unsupported external or converted scanner references'
+  );
+  const changes = new WeakMap();
+  const remember = (value, key, next) => {
+    object(value, 'reference owner');
+    const fields = changes.get(value) || {};
+    assert(
+      !Object.hasOwn(fields, key) || fields[key] === next,
+      'Conflicting scanner reference mappings'
+    );
+    fields[key] = next;
+    changes.set(value, fields);
+  };
+  const artifactKey = (artifact, index) => {
+    exactFields(artifact, ['location'], 'Unsupported scanner artifact fields');
+    exactFields(
+      artifact.location,
+      ['uri', 'uriBaseId', 'index'],
+      'Unsupported scanner artifact location fields'
+    );
+    assert.equal(artifact.location.index, index, 'Artifact self-index differs');
+    assert(
+      typeof artifact.location.uri === 'string' && artifact.location.uri &&
+        typeof artifact.location.uriBaseId === 'string' && artifact.location.uriBaseId,
+      'Scanner artifact URI identity is absent'
+    );
+    return canonical([artifact.location.uri, artifact.location.uriBaseId]);
+  };
+  assert.equal(
+    source.artifacts === undefined,
+    reference.artifacts === undefined,
+    'Scanner artifact table presence differs'
+  );
+  const artifacts = array(source.artifacts, 'artifacts');
+  const referenceArtifacts = array(reference.artifacts, 'reference artifacts');
+  assert.equal(artifacts.length, referenceArtifacts.length, 'Artifact count differs');
+  const sourceKeys = artifacts.map(artifactKey);
+  const targetKeys = referenceArtifacts.map(artifactKey);
+  assert(
+    new Set(sourceKeys).size === artifacts.length &&
+      new Set(targetKeys).size === referenceArtifacts.length,
+    'Ambiguous duplicate scanner artifact identity'
+  );
+  const targetPositions = new Map(targetKeys.map((key, index) => [key, index]));
+  const artifactMap = sourceKeys.map((key) => {
+    const index = targetPositions.get(key);
+    assert(index !== undefined, 'Complete scanner artifact inventory differs');
+    return index;
+  });
+  assert.equal(new Set(artifactMap).size, artifacts.length, 'Artifact map is not bijective');
+  artifacts.forEach((artifact, index) =>
+    remember(artifact.location, 'index', artifactMap[index])
+  );
+  let descriptors = 0;
+  let artifactReferences = 0;
+  const componentFor = (value) => {
+    if (value === undefined) return 0;
+    object(value, 'component reference');
+    let index;
+    if (value.index !== undefined) {
+      assert(
+        Number.isSafeInteger(value.index) && value.index >= 0 &&
+          value.index < components.length - 1,
+        'Scanner extension index is invalid'
+      );
+      index = value.index + 1;
+      remember(value, 'index', value.index);
+    } else {
+      assert(typeof value.guid === 'string' && value.guid, 'Unsupported component reference');
+      const matches = components
+        .map((component, at) => component.guid === value.guid ? at : -1)
+        .filter((at) => at >= 0);
+      assert.equal(matches.length, 1, 'Scanner component GUID is ambiguous');
+      index = matches[0];
+    }
+    for (const key of ['name', 'guid'])
+      if (value[key] !== undefined)
+        assert.equal(value[key], components[index][key], 'Scanner component identity differs');
+    return index;
+  };
+  const descriptor = (value, kind, fallback) => {
+    object(value, 'descriptor reference');
+    assert(typeof value.id === 'string' && value.id, 'Readable descriptor ID required');
+    const component = componentFor(value.toolComponent);
+    const records = array(components[component][kind], kind);
+    if (value.index !== undefined && fallback !== undefined)
+      assert.equal(value.index, fallback, 'Competing scanner rule indices disagree');
+    const index = value.index ?? fallback;
+    if (index === undefined) {
+      // An ID-only reference has no ordinal to transport. Retain it verbatim;
+      // where metadata is present it must resolve uniquely.
+      const matches = records.filter((record) => record.id === value.id);
+      assert(records.length === 0 || matches.length === 1, 'Ambiguous ID-only descriptor');
+      if (value.guid !== undefined && matches.length)
+        assert.equal(value.guid, matches[0].guid, 'Descriptor GUID differs');
+      descriptors++;
+      return undefined;
+    }
+    assert(
+      Number.isSafeInteger(index) && index >= 0 && index < records.length,
+      'Scanner descriptor ordinal is invalid'
+    );
+    const record = records[index];
+    assert.equal(value.id, record.id, 'Scanner descriptor ordinal and ID disagree');
+    if (value.guid !== undefined)
+      assert.equal(value.guid, record.guid, 'Scanner descriptor GUID differs');
+    const next = tool.maps[component][kind][index];
+    if (value.index !== undefined) remember(value, 'index', next);
+    descriptors++;
+    return next;
+  };
+  const rule = (record) => {
+    object(record, 'rule-bearing record');
+    const value = record.rule === undefined ? { id: record.ruleId } : record.rule;
+    object(value, 'rule reference');
+    if (record.ruleId !== undefined)
+      assert.equal(record.ruleId, value.id, 'Scanner result rule IDs disagree');
+    const next = descriptor(value, 'rules', record.ruleIndex);
+    if (record.ruleIndex !== undefined) remember(record, 'ruleIndex', next);
+  };
+  for (const invocation of array(source.invocations, 'invocations')) {
+    for (const key of ['toolExecutionNotifications', 'toolConfigurationNotifications'])
+      for (const notification of array(invocation[key], key)) {
+        if (notification.descriptor !== undefined)
+          descriptor(notification.descriptor, 'notifications');
+        if (notification.associatedRule !== undefined)
+          descriptor(notification.associatedRule, 'rules');
+      }
+    for (const [key, kind] of [
+      ['ruleConfigurationOverrides', 'rules'],
+      ['notificationConfigurationOverrides', 'notifications'],
+    ])
+      for (const override of array(invocation[key], key))
+        descriptor(override.descriptor, kind);
+  }
+  for (const result of array(source.results, 'results')) rule(result);
+  for (const metric of array(source.properties?.metricResults, 'metric results')) rule(metric);
+  const location = (value) => {
+    object(value, 'artifact location');
+    if (value.index === undefined) return;
+    assert(
+      Number.isSafeInteger(value.index) && value.index >= 0 &&
+        value.index < artifacts.length,
+      'Scanner artifact reference index is invalid'
+    );
+    const expected = artifacts[value.index].location;
+    assert(
+      value.uri === expected.uri && value.uriBaseId === expected.uriBaseId,
+      'Scanner artifact reference URI and ordinal disagree'
+    );
+    remember(value, 'index', artifactMap[value.index]);
+    artifactReferences++;
+  };
+  const locate = (value) => {
+    if (!value || typeof value !== 'object') return;
+    if (Array.isArray(value)) { value.forEach(locate); return; }
+    for (const [key, item] of Object.entries(value)) {
+      if (key === 'properties') continue;
+      if (key === 'artifactLocation' || key === 'analysisTarget') location(item);
+      locate(item);
+    }
+  };
+  locate(source);
+  // CodeQL's metric extension is the only admitted reference-bearing property
+  // bag. Other property values remain unchanged and unknown indices fail closed.
+  locate(source.properties?.metricResults);
+  const copy = JSON.parse(JSON.stringify(source));
+  const apply = (original, moved) => {
+    if (!original || typeof original !== 'object') return;
+    const fields = changes.get(original) || {};
+    for (const [key, value] of Object.entries(original)) {
+      if (key === 'index' || /Index$/.test(key))
+        assert(Object.hasOwn(fields, key), 'Unsupported indexed scanner reference surface');
+      apply(value, moved[key]);
+    }
+    for (const [key, value] of Object.entries(fields)) moved[key] = value;
+  };
+  apply(source, copy);
+  copy.tool = tool.tool;
+  if (source.artifacts !== undefined) {
+    const ordered = new Array(artifacts.length);
+    artifactMap.forEach((to, from) => { ordered[to] = copy.artifacts[from]; });
+    copy.artifacts = ordered;
+    assert.deepEqual(copy.artifacts, reference.artifacts, 'Complete transported artifact records differ');
+  }
+  return { run: copy, descriptorMaps: tool.maps, artifactMap, descriptors, artifactReferences };
+}
+
+function transportScannerRun(source, reference) {
+  assert.equal(
+    profile.scannerPolicy.referenceTransportSchema,
+    referenceTransportSchema,
+    'Versioned scanner reference transport policy is absent'
+  );
+  const checkedReference = reindexScannerRun(reference, reference);
+  const forward = reindexScannerRun(source, reference);
+  const backward = reindexScannerRun(forward.run, source);
+  assert.deepEqual(backward.run, source, 'Scanner reference transport is not lossless');
+  return {
+    run: forward.run,
+    witness: {
+      schema: referenceTransportSchema,
+      sourceRunSha256: sha256(canonical(source)),
+      referenceRunSha256: sha256(canonical(reference)),
+      transportedRunSha256: sha256(canonical(forward.run)),
+      inverseRunSha256: sha256(canonical(backward.run)),
+      sourceToolSha256: sha256(canonical(source.tool)),
+      referenceToolSha256: sha256(canonical(reference.tool)),
+      descriptorPermutations: forward.descriptorMaps,
+      artifactPermutation: forward.artifactMap,
+      sourceDescriptorReferences: forward.descriptors,
+      sourceArtifactReferences: forward.artifactReferences,
+      referenceDescriptorReferences: checkedReference.descriptors,
+      referenceArtifactReferences: checkedReference.artifactReferences,
+      rawResultHashes: source.results.map((result) => sha256(canonical(result))).sort(),
+      transportedResultHashes: forward.run.results
+        .map((result) => sha256(canonical(result))).sort(),
+      inverseReconstructsEntireOriginalRun: true,
+      originalReportsUnchanged: true,
+    },
+  };
+}
+
 function verifyScannerAnalysis(
   document,
   { baseline, requiredSources = profile.scannerReceiverPaths } = {}
@@ -266,17 +638,7 @@ function verifyScannerAnalysis(
     baseline?.tool?.driver?.semanticVersion === run.tool.driver.semanticVersion,
     'Scanner tool identity changed'
   );
-  const tools = (value) =>
-    [value.tool.driver, ...(value.tool.extensions || [])].map((item) => ({
-      name: item.name,
-      semanticVersion: item.semanticVersion || null,
-      rules: item.rules || [],
-    }));
-  assert.deepEqual(
-    tools(run),
-    tools(baseline),
-    'Scanner query/rule inventory changed'
-  );
+  scannerToolReferenceMap(run.tool, baseline.tool);
   assert.deepEqual(
     run.properties?.codeqlConfigSummary,
     baseline.properties?.codeqlConfigSummary,
@@ -308,9 +670,10 @@ function verifyScannerResults(
     requiredSources = profile.scannerReceiverPaths,
     sha,
     git,
+    reviewedDocument,
   } = {}
 ) {
-  const { run, sources, actual } = verifyScannerAnalysis(document, {
+  const { run, sources, actual: rawActual } = verifyScannerAnalysis(document, {
     baseline,
     requiredSources,
   });
@@ -322,6 +685,25 @@ function verifyScannerResults(
     'Current scanner results require explicit source-bound review'
   );
   verifyScannerReviewBinding({ sha, review, git });
+  // Preserve the original same-source raw parser API. Actual release wrappers
+  // always supply the independently authenticated ORIGINAL S1 report; a later
+  // source cannot compare against the S1 ledger without that mandatory input.
+  const hasReviewedDocument = reviewedDocument !== undefined;
+  assert(
+    hasReviewedDocument
+      ? reviewedDocument?.version === '2.1.0' &&
+          Array.isArray(reviewedDocument.runs) &&
+          reviewedDocument.runs.length === 1
+      : sha === review.sourceCommit,
+    'Original authenticated reviewed scanner report is required'
+  );
+  const comparison = hasReviewedDocument
+    ? transportScannerRun(run, reviewedDocument.runs[0])
+    : null;
+  const comparedRun = comparison ? comparison.run : run;
+  const actual = comparedRun.results
+    .map(resultIdentity)
+    .sort((a, b) => canonical(a).localeCompare(canonical(b)));
   const reviewed = review.results
     .map((item) => {
       assert(
@@ -334,7 +716,7 @@ function verifyScannerResults(
       );
       if (item.disposition === javascriptQualityPolicy.disposition)
         verifyAcknowledgedNonsecurityQuality(item, {
-          run,
+          run: comparedRun,
           baseline,
           review,
           git,
@@ -355,7 +737,9 @@ function verifyScannerResults(
   return {
     tool: run.tool.driver.semanticVersion,
     extractedFiles: sources.length,
-    results: actual,
+    results: rawActual,
+    comparedResults: actual,
+    referenceTransport: comparison ? comparison.witness : null,
     reviewSource: review.sourceCommit,
     reviewEvidence: review.reviewEvidence,
     completeNonOverlay: true,
@@ -427,10 +811,10 @@ function verifyAcknowledgedNonsecurityQuality(
     const trusted = baseline?.tool?.extensions?.[index];
     assert(
       component?.name === 'codeql/javascript-queries' &&
-        component.semanticVersion &&
-        canonical(component) === canonical(trusted),
+        component.semanticVersion && trusted,
       'Quality query component differs from the trusted complete rule inventory'
     );
+    scannerToolReferenceMap({ driver: component }, { driver: trusted });
     const rule = component.rules?.[reference.index];
     assert(
       rule?.id === item.ruleId &&
@@ -754,6 +1138,8 @@ async function readPages(resource, key, token, fetchImpl = fetch) {
 }
 
 module.exports = {
+  referenceTransportSchema,
+  transportScannerRun,
   ...historical,
   verifySourceScope,
   compilerSourceBaseline: profile.compilerSourceBaseline,
@@ -819,7 +1205,19 @@ function verifyIntegratedScannerArchive({
       maxBuffer: 32 * 1024 * 1024,
     })
   ).runs[0];
+  const reviewedZip = path.join(directory, 'codeql-reviewed-evidence.zip');
+  const reviewedFiles = execFileSync('unzip', ['-Z1', reviewedZip], {
+    encoding: 'utf8',
+    maxBuffer: 8 * 1024 * 1024,
+  }).trim().split('\n').filter((name) => !name.endsWith('/')).sort();
+  scannerArchiveInventory(reviewedFiles);
+  const reviewedDocument = JSON.parse(
+    execFileSync('unzip', ['-p', reviewedZip, 'javascript.sarif'], {
+      maxBuffer: 32 * 1024 * 1024,
+    })
+  );
   const options = {
+    reviewedDocument,
     baseline,
     sha,
     tree,
@@ -828,27 +1226,9 @@ function verifyIntegratedScannerArchive({
     requiredSources: profile.scannerReceiverPaths,
   };
   const current = verifyScannerArchive(files, read, options);
-  const reviewedZip = path.join(directory, 'codeql-reviewed-evidence.zip');
-  const reviewedFiles = execFileSync('unzip', ['-Z1', reviewedZip], {
-    encoding: 'utf8',
-    maxBuffer: 8 * 1024 * 1024,
-  })
-    .trim()
-    .split('\n')
-    .filter((name) => !name.endsWith('/'))
-    .sort();
-  scannerArchiveInventory(reviewedFiles);
-  // The publisher independently authenticates both S1/S2 archives before this
-  // shared check. Bind both raw result multisets to the same installed S2
-  // profile review; S1 itself need not have the final main-push producer shape.
-  verifyScannerResults(
-    JSON.parse(
-      execFileSync('unzip', ['-p', reviewedZip, 'javascript.sarif'], {
-        maxBuffer: 32 * 1024 * 1024,
-      })
-    ),
-    options
-  );
+  // The publisher authenticates both ORIGINAL archives and producer contexts.
+  // Preserve actual S1 hashes; compare S2 copies only after reversible transport.
+  verifyScannerResults(reviewedDocument, options);
   return current;
 }
 module.exports.verifyIntegratedScannerArchive = verifyIntegratedScannerArchive;

@@ -48,6 +48,7 @@ async function syntheticServiceProof({
   sha = 'a'.repeat(40), tree = 'c'.repeat(40),
   javascriptRaw = Buffer.from('synthetic raw metadata only'),
   pythonRaw = Buffer.from('synthetic raw metadata only'),
+  uploadErrors = [],
 } = {}) {
   const source = Buffer.from('synthetic source metadata only\n');
   const blob = 'd'.repeat(40);
@@ -154,7 +155,7 @@ async function syntheticServiceProof({
       { total_count: 1, artifacts: [artifact] });
     responses.set('actions/artifacts/' + artifact.id, artifact);
     responses.set('code-scanning/sarifs/' + uploadId, {
-      processing_status: 'complete', analyses_url: upload.analysesUrl, errors: [],
+      processing_status: 'complete', analyses_url: upload.analysesUrl, errors: uploadErrors,
     });
     responses.set('code-scanning/analyses?sarif_id=' + uploadId +
       '&per_page=100&page=1', [analysis]);

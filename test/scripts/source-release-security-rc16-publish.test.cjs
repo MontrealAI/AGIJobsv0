@@ -15,6 +15,7 @@ const {
   reviewedCodeqlPagePath,
   verifyScannerArchive,
   summarizeScannerSarif,
+  compareScannerReports,
   historicalScannerArchive,
   scannerArchive,
   readScannerObservation,
@@ -444,12 +445,17 @@ function assetFixture(t) {
     JSON.stringify(provenance)
   );
   const scannerProof = {
-    schema: 'agijobsv0/raw-codeql-provenance/1',
+    schema: 'agijobsv0/raw-codeql-provenance/2',
     repository: provenance.repository,
     sourceSha: sha,
     final: producer(sha, 10, finalDigest),
     reviewed: review.producer,
     summary,
+    comparison: compareScannerReports(
+      JSON.stringify(scannerDocument(requiredSources)),
+      JSON.stringify(scannerDocument(requiredSources)),
+      requiredSources
+    ),
     review,
     history: scannerHistory,
   };
@@ -2474,4 +2480,31 @@ test('inert JavaScript observation binds the artifact branch for reviewed S1 and
       );
     }
   }
+});
+
+test('published readback requires the exact versioned lossless comparison receipt', (t) => {
+  const fixture = assetFixture(t);
+  fixture.verify();
+  const original = structuredClone(fixture.scannerProof);
+  for (const change of [
+    (value) => { delete value.comparison; },
+    (value) => { value.schema = 'agijobsv0/raw-codeql-provenance/1'; },
+    (value) => { value.comparison.witness.inverseReconstructsEntireOriginalRun = false; },
+    (value) => { value.comparison.actualSummary.results = []; },
+    (value) => { value.comparison.transportedSummary.results = []; },
+    (value) => { value.comparison.witness.sourceRunSha256 = '0'.repeat(64); },
+  ]) {
+    const value = structuredClone(original);
+    change(value);
+    for (const directory of [fixture.directory, fixture.downloaded]) {
+      fs.writeFileSync(path.join(directory, 'codeql-provenance.json'), JSON.stringify(value));
+      fixture.checksums(directory);
+    }
+    assert.throws(() => fixture.verify(), /scanner|reconciliation|provenance/i);
+  }
+  for (const directory of [fixture.directory, fixture.downloaded]) {
+    fs.writeFileSync(path.join(directory, 'codeql-provenance.json'), JSON.stringify(original));
+    fixture.checksums(directory);
+  }
+  fixture.verify();
 });

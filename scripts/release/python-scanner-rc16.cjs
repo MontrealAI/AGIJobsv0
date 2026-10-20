@@ -244,6 +244,229 @@ function verifyPythonScannerReviewBinding(options) {
   });
 }
 
+// Compare complete descriptors without changing the retained report or review.
+// An ordinal is meaningful in its original array, so validate references first.
+function verifyPythonToolComponents(reviewed, actual) {
+  assert(
+    Array.isArray(reviewed) && Array.isArray(actual),
+    'Python tool component arrays are absent'
+  );
+  const left = normalized(reviewed);
+  const right = normalized(actual);
+  assert.equal(
+    left.length,
+    right.length,
+    'Python tool component count differs'
+  );
+  for (let index = 0; index < left.length; index++) {
+    for (const key of ['rules', 'notifications']) {
+      const arrays = [left[index][key], right[index][key]];
+      for (const values of arrays)
+        assert(
+          values === undefined ||
+            (Array.isArray(values) &&
+              values.every(
+                (value) => typeof value?.id === 'string' && value.id
+              )),
+          'Malformed Python descriptor inventory'
+        );
+      // Duplicate IDs are legal SARIF and can be disambiguated by index.
+      // Preserve strict ordering whenever either array contains duplicates.
+      if (
+        arrays.every(
+          (values) =>
+            Array.isArray(values) &&
+            new Set(values.map((value) => value.id)).size === values.length
+        )
+      )
+        for (const values of arrays)
+          values.sort((a, b) => {
+            const x = canonical(a);
+            const y = canonical(b);
+            return x < y ? -1 : x > y ? 1 : 0;
+          });
+    }
+  }
+  assert.deepEqual(
+    left,
+    right,
+    'Python scan differs from the complete independently reviewed toolComponents'
+  );
+}
+
+// This is a deliberately closed current-CodeQL profile, not a general SARIF
+// resolver. Require readable direct IDs and explicit descriptor ordinals.
+// Unsupported reference forms fail closed before any order-independent compare.
+function validatePythonDescriptorReferences(run) {
+  const object = (value, label) => {
+    assert(
+      value && typeof value === 'object' && !Array.isArray(value),
+      'Malformed Python ' + label
+    );
+    return value;
+  };
+  const array = (value, label) => {
+    assert(
+      value === undefined || Array.isArray(value),
+      'Malformed Python ' + label
+    );
+    return value || [];
+  };
+  const empty = (value, label) =>
+    assert.equal(
+      array(value, label).length,
+      0,
+      'Unsupported Python descriptor reference surface: ' + label
+    );
+  const driver = object(run.tool?.driver, 'tool driver');
+  const extensions = array(run.tool.extensions, 'tool extensions');
+  const components = [driver, ...extensions];
+  for (const component of components) {
+    object(component, 'tool component');
+    empty(component.taxa, 'component taxa');
+    for (const kind of ['rules', 'notifications'])
+      for (const descriptor of array(component[kind], kind)) {
+        object(descriptor, 'descriptor');
+        assert(
+          typeof descriptor.id === 'string' && descriptor.id,
+          'Python descriptor requires a readable ID'
+        );
+        empty(descriptor.relationships, 'descriptor relationships');
+      }
+  }
+  for (const key of ['taxonomies', 'translations', 'policies'])
+    empty(run[key], key);
+  assert(
+    run.conversion === undefined &&
+      run.externalPropertyFileReferences === undefined,
+    'Unsupported Python external or converted descriptor references'
+  );
+  const componentFor = (reference) => {
+    if (reference === undefined) return driver;
+    object(reference, 'tool component reference');
+    let component;
+    if (reference.index !== undefined) {
+      assert(
+        Number.isSafeInteger(reference.index) && reference.index >= 0,
+        'Python extension index is invalid'
+      );
+      component = extensions[reference.index];
+    } else {
+      assert(
+        typeof reference.guid === 'string' && reference.guid,
+        'Unsupported Python component reference without index or GUID'
+      );
+      const matches = components.filter(
+        (candidate) => candidate.guid === reference.guid
+      );
+      assert.equal(matches.length, 1, 'Python component GUID is ambiguous');
+      component = matches[0];
+    }
+    object(component, 'resolved tool component');
+    for (const key of ['name', 'guid'])
+      if (reference[key] !== undefined)
+        assert.equal(
+          reference[key],
+          component[key],
+          'Python component reference ' + key + ' differs'
+        );
+    return component;
+  };
+  const resolve = (reference, kind, fallbackIndex) => {
+    object(reference, 'descriptor reference');
+    assert(
+      typeof reference.id === 'string' && reference.id,
+      'Python descriptor reference requires a readable ID'
+    );
+    if (reference.index !== undefined && fallbackIndex !== undefined)
+      assert.equal(
+        reference.index,
+        fallbackIndex,
+        'Python result rule indices disagree'
+      );
+    const index = reference.index ?? fallbackIndex;
+    assert(
+      Number.isSafeInteger(index) && index >= 0,
+      'Unsupported Python descriptor reference without an explicit ordinal'
+    );
+    const component = componentFor(reference.toolComponent);
+    const descriptor = array(component[kind], kind)[index];
+    object(descriptor, 'resolved descriptor');
+    assert.equal(
+      reference.id,
+      descriptor.id,
+      'Python descriptor ordinal and ID disagree'
+    );
+    if (reference.guid !== undefined)
+      assert.equal(
+        reference.guid,
+        descriptor.guid,
+        'Python descriptor ordinal and GUID disagree'
+      );
+  };
+  const rule = (item) => {
+    object(item, 'rule-bearing record');
+    if (item.ruleIndex !== undefined)
+      assert(
+        Number.isSafeInteger(item.ruleIndex) && item.ruleIndex >= 0,
+        'Python result rule index is invalid'
+      );
+    if (item.ruleId !== undefined)
+      assert(
+        typeof item.ruleId === 'string' && item.ruleId,
+        'Python result rule ID is absent'
+      );
+    const reference =
+      item.rule === undefined ? { id: item.ruleId } : item.rule;
+    object(reference, 'rule reference');
+    if (item.ruleId !== undefined)
+      assert.equal(
+        reference.id,
+        item.ruleId,
+        'Python result rule IDs disagree'
+      );
+    resolve(reference, 'rules', item.ruleIndex);
+  };
+  for (const invocation of array(run.invocations, 'invocations')) {
+    object(invocation, 'invocation');
+    for (const key of [
+      'toolExecutionNotifications',
+      'toolConfigurationNotifications',
+    ])
+      for (const note of array(invocation[key], key)) {
+        object(note, 'notification');
+        if (note.descriptor !== undefined)
+          resolve(note.descriptor, 'notifications');
+        if (note.associatedRule !== undefined)
+          resolve(note.associatedRule, 'rules');
+      }
+    for (const [key, kind] of [
+      ['ruleConfigurationOverrides', 'rules'],
+      ['notificationConfigurationOverrides', 'notifications'],
+    ])
+      for (const override of array(invocation[key], key))
+        resolve(object(override, 'configuration override').descriptor, kind);
+  }
+  for (const result of array(run.results, 'results')) rule(result);
+  for (const metric of array(run.properties?.metricResults, 'metric results'))
+    rule(metric);
+  // Taxa on cached or inline thread-flow locations use a different resolution
+  // domain. Do not silently accept them through the ordinary rules resolver.
+  const noTaxa = (value) => {
+    if (!value || typeof value !== 'object') return;
+    if (Array.isArray(value)) {
+      for (const item of value) noTaxa(item);
+      return;
+    }
+    for (const [key, item] of Object.entries(value)) {
+      if (key === 'taxa') empty(item, 'result or thread-flow taxa');
+      else if (key !== 'properties') noTaxa(item);
+    }
+  };
+  noTaxa(run.results);
+  noTaxa(run.threadFlowLocations);
+}
+
 function analysis(document) {
   assert(
     document.version === '2.1.0' &&
@@ -280,6 +503,7 @@ function analysis(document) {
     run.tool.extensions === undefined || Array.isArray(run.tool.extensions),
     'Python scanner tool extensions are malformed'
   );
+  validatePythonDescriptorReferences(run);
   const toolComponents = [run.tool.driver, ...(run.tool.extensions || [])].map(
     (component) => {
       assert(
@@ -627,8 +851,8 @@ function verifyPythonScannerArchive(files, read, options = {}) {
       'Current Python raw records differ from the reviewed records'
     );
   }
+  verifyPythonToolComponents(review.toolComponents, checked.toolComponents);
   for (const field of [
-    'toolComponents',
     'codeqlConfigSummary',
     'successfulExtractionFiles',
     'requiredExtractedFiles',
@@ -722,6 +946,8 @@ function verifyPythonScannerArchive(files, read, options = {}) {
 }
 
 module.exports = {
+  verifyPythonToolComponents,
+  validatePythonDescriptorReferences,
   pythonProducerExecutionContext,
   expectedPythonSources,
   verifyPythonScannerProducerArchive,

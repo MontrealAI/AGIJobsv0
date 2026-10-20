@@ -549,13 +549,67 @@ function summarizeScannerSarif(bytes, requiredSources = []) {
     resultCount: results.length,
   };
 }
+// Both inputs remain original authenticated report bytes. Only this explicit
+// comparison object uses reversible copies in the reviewed report coordinates.
+function compareScannerReports(actualRaw, reviewedRaw, requiredSources = []) {
+  const actualSummary = summarizeScannerSarif(actualRaw, requiredSources);
+  const reviewedSummary = summarizeScannerSarif(reviewedRaw, requiredSources);
+  const actual = JSON.parse(actualRaw);
+  const reviewed = JSON.parse(reviewedRaw);
+  const { run, witness } =
+    require('./source-scanner-gates-rc16.cjs').transportScannerRun(
+      actual.runs[0],
+      reviewed.runs[0]
+    );
+  const transportedSummary = summarizeScannerSarif(
+    JSON.stringify({ ...actual, runs: [run] }),
+    requiredSources
+  );
+  scannerRequire(
+    canonical(witness.rawResultHashes) === canonical(actualSummary.results) &&
+      canonical(witness.transportedResultHashes) === canonical(transportedSummary.results),
+    'Scanner transport and raw summary identities disagree'
+  );
+  return {
+    schema: 'agijobsv0/codeql-lossless-reference-transport/1',
+    actualSummary,
+    reviewedSummary,
+    transportedSummary,
+    witness,
+  };
+}
+
+function scannerEvidencePair(directory, requiredSources, finalContext, reviewedContext) {
+  let actualRaw;
+  let reviewedRaw;
+  const summary = scannerArchive(
+    path.join(directory, 'codeql-evidence.zip'),
+    requiredSources,
+    finalContext,
+    { captureRaw: (raw) => { actualRaw = Buffer.from(raw); } }
+  );
+  const reviewed = scannerArchive(
+    path.join(directory, 'codeql-reviewed-evidence.zip'),
+    requiredSources,
+    reviewedContext,
+    { captureRaw: (raw) => { reviewedRaw = Buffer.from(raw); } }
+  );
+  const comparison = compareScannerReports(actualRaw, reviewedRaw, requiredSources);
+  scannerRequire(
+    canonical(summary) === canonical(comparison.actualSummary) &&
+      canonical(reviewed) === canonical(comparison.reviewedSummary),
+    'Scanner comparison does not retain the validated original reports'
+  );
+  return { summary, reviewed, comparison };
+}
+
 const scannerFiles = [
   'javascript.sarif',
   'source-scope-before.json',
   'source-scope-after.json',
   'source-extraction.json',
 ].sort();
-function verifyScannerArchive(files, read, requiredSources, context) {
+function verifyScannerArchive(files, read, requiredSources, context, capture = {}) {
   scannerRequire(
     canonical([...files].sort()) === canonical(scannerFiles),
     'Raw scanner archive inventory differs'
@@ -686,6 +740,7 @@ function verifyScannerArchive(files, read, requiredSources, context) {
       report.resultDisposition === 'REQUIRES_INDEPENDENT_FINAL_SOURCE_REVIEW',
     'Scanner extraction report does not match actual complete SARIF'
   );
+  if (capture.captureRaw) capture.captureRaw(Buffer.from(raw));
   return summary;
 }
 function readScannerZip(file, verify) {
@@ -709,9 +764,9 @@ function readScannerZip(file, verify) {
     })
   );
 }
-function scannerArchive(file, requiredSources, context) {
+function scannerArchive(file, requiredSources, context, capture) {
   return readScannerZip(file, (files, read) =>
-    verifyScannerArchive(files, read, requiredSources, context)
+    verifyScannerArchive(files, read, requiredSources, context, capture)
   );
 }
 // Historical archives predate the new producer records. This separate helper
@@ -1001,10 +1056,11 @@ function verifyScannerEvidence({
         'final',
         'reviewed',
         'summary',
+        'comparison',
         'review',
         'history',
       ]) &&
-      proof.schema === 'agijobsv0/raw-codeql-provenance/1' &&
+      proof.schema === 'agijobsv0/raw-codeql-provenance/2' &&
       proof.repository === 'MontrealAI/AGIJobsv0' &&
       proof.sourceSha === sha &&
       canonical(proof.review) === canonical(review) &&
@@ -1024,22 +1080,6 @@ function verifyScannerEvidence({
       reviewedContext.event === proof.reviewed?.event &&
       reviewedContext.ref === 'refs/heads/' + proof.reviewed?.headBranch,
     'Scanner execution context differs from authenticated producer'
-  );
-  const summary = scannerArchive(
-    path.join(directory, 'codeql-evidence.zip'),
-    requiredSources,
-    finalContext
-  );
-  const reviewed = scannerArchive(
-    path.join(directory, 'codeql-reviewed-evidence.zip'),
-    requiredSources,
-    reviewedContext
-  );
-  scannerRequire(
-    canonical(summary) === canonical(review.summary) &&
-      canonical(reviewed) === canonical(review.summary) &&
-      canonical(proof.summary) === canonical(summary),
-    'Complete scanner tool/query/extraction/result reconciliation differs'
   );
   for (const [key, observation, file, sourceSha] of [
     ['final', finalObservation, 'codeql-evidence.zip', sha],
@@ -1075,6 +1115,16 @@ function verifyScannerEvidence({
   scannerRequire(
     canonical(proof.reviewed) === canonical(review.producer),
     'Reviewed scanner producer changed'
+  );
+  const { summary, reviewed, comparison } = scannerEvidencePair(
+    directory, requiredSources, finalContext, reviewedContext
+  );
+  scannerRequire(
+    canonical(reviewed) === canonical(review.summary) &&
+      canonical(comparison.transportedSummary) === canonical(review.summary) &&
+      canonical(proof.summary) === canonical(summary) &&
+      canonical(proof.comparison) === canonical(comparison),
+    'Complete original and transported scanner reconciliation differs'
   );
   return summary;
 }
@@ -1157,17 +1207,17 @@ async function collectScannerEvidence() {
       mode: 0o600,
     });
   }
+  const pair = scannerEvidencePair(
+    directory, context.requiredSources, finalContext, reviewedContext
+  );
   const proof = {
-    schema: 'agijobsv0/raw-codeql-provenance/1',
+    schema: 'agijobsv0/raw-codeql-provenance/2',
     repository,
     sourceSha: sha,
     final,
     reviewed,
-    summary: scannerArchive(
-      path.join(directory, 'codeql-evidence.zip'),
-      context.requiredSources,
-      finalContext
-    ),
+    summary: pair.summary,
+    comparison: pair.comparison,
     review: scannerReview,
     history: scannerHistory,
   };
@@ -1804,6 +1854,7 @@ module.exports = {
   collectScannerEvidence,
   gitSource,
   summarizeScannerSarif,
+  compareScannerReports,
   historicalScannerArchive,
   scannerExecutionContext,
   verifyScannerArchive,
