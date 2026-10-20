@@ -1,0 +1,33 @@
+{
+  "schema": "agijobsv0/validation-result/1",
+  "source": "8f633cde97ef5a291823e01bbe691e8afd170150",
+  "tree": "1a47148d81807c20ec3b103cbcbb18dbe5c077f0",
+  "run": 39449952300,
+  "attempt": 1,
+  "job": 118721797349,
+  "conclusion": "failure",
+  "tests": {
+    "total": 158,
+    "passed": 156,
+    "failed": 2,
+    "skipped": 0
+  },
+  "log": {
+    "path": "docs/release-evidence/ti-compatible-set-20261020/jobs-8f633c/validation.log",
+    "bytes": 747651,
+    "sha256": "e66041284885d0c95eab1353ced47067abe3b7d0291415b0b74b472491b0d3b7"
+  },
+  "failures": [
+    {
+      "test": "real retained SARIF parsing preserves full rules, coverage, result multiplicity and reviewed source",
+      "observed": "Unsupported scanner result or thread-flow taxa"
+    },
+    {
+      "test": "actual Git source and retained SARIF bind both mandatory extraction lists and stronger producer bytes",
+      "observed": "Ambiguous ID-only descriptor"
+    }
+  ],
+  "qualification": false,
+  "childRepair": "562af17e55d2a24bb206e222a6c6f73d933d56b6",
+  "childQualification": "pending fresh checks and review"
+}
