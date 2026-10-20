@@ -59,3 +59,18 @@ test('raw binding refuses metadata without independent API observation', () => {
     /Positive authenticated/
   );
 });
+
+test('complete upload accepts null as an empty errors representation', async () => {
+  const { syntheticServiceProof } =
+    require('./source-codeql-service-fixture-rc16.cjs');
+  const proof = await syntheticServiceProof({ uploadErrors: null });
+  assert.doesNotThrow(() => service.assertFinalServices(proof, { sha }));
+});
+
+test('complete upload still rejects reported or malformed processing errors', async () => {
+  const { syntheticServiceProof } =
+    require('./source-codeql-service-fixture-rc16.cjs');
+  for (const uploadErrors of [['synthetic processing error'], '', {}, false, 0])
+    await assert.rejects(syntheticServiceProof({ uploadErrors }),
+      /CodeQL SARIF upload processing has not completed successfully/);
+});

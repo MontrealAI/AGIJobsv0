@@ -238,7 +238,7 @@ async function readProcessedUpload(api, sha, uploadId, policy) {
   assert(
     status?.processing_status === 'complete' &&
       status.analyses_url === analysesUrl &&
-      (status.errors === undefined ||
+      (status.errors === undefined || status.errors === null ||
         Array.isArray(status.errors) && status.errors.length === 0),
     'CodeQL SARIF upload processing has not completed successfully'
   );
