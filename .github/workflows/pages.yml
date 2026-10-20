@@ -47,6 +47,15 @@ on:
       - 'package-lock.json'
       - '.nvmrc'
       - '.github/workflows/pages.yml'
+      # Keep exact-source release qualification and required workflows co-admitted.
+      - 'scripts/release/**'
+      - 'test/scripts/**'
+      - '.github/codeql/**'
+      - '.github/workflows/static-analysis*.yml'
+      - 'ci/**'
+      - 'config/**'
+      - 'integrations/alpha-agent/**'
+      - '.github/workflows/**'
   pull_request:
     paths:
       - 'scripts/release/source-scanner-gates-rc16.cjs'
@@ -92,6 +101,15 @@ on:
       - 'package-lock.json'
       - '.nvmrc'
       - '.github/workflows/pages.yml'
+      # Keep exact-source release qualification and required workflows co-admitted.
+      - 'scripts/release/**'
+      - 'test/scripts/**'
+      - '.github/codeql/**'
+      - '.github/workflows/static-analysis*.yml'
+      - 'ci/**'
+      - 'config/**'
+      - 'integrations/alpha-agent/**'
+      - '.github/workflows/**'
   workflow_dispatch:
 
 permissions:

@@ -33,6 +33,17 @@ on:
       - 'scripts/verification/**'
       - 'docs/deployments/evidence/escrow-*.json'
       - '.github/workflows/escrow-replay-regression.yml'
+      # Keep exact-source release qualification and required workflows co-admitted.
+      - 'scripts/release/**'
+      - 'test/scripts/**'
+      - '.github/codeql/**'
+      - '.github/workflows/static-analysis*.yml'
+      - 'package-lock.json'
+      - '.nvmrc'
+      - 'ci/**'
+      - 'config/**'
+      - 'integrations/alpha-agent/**'
+      - '.github/workflows/**'
   push:
     branches: [main]
     paths:
@@ -67,6 +78,17 @@ on:
       - 'docs/deployments/evidence/escrow-*.json'
       - '.github/workflows/escrow-replay-regression.yml'
 
+      # Keep exact-source release qualification and required workflows co-admitted.
+      - 'scripts/release/**'
+      - 'test/scripts/**'
+      - '.github/codeql/**'
+      - '.github/workflows/static-analysis*.yml'
+      - 'package-lock.json'
+      - '.nvmrc'
+      - 'ci/**'
+      - 'config/**'
+      - 'integrations/alpha-agent/**'
+      - '.github/workflows/**'
 permissions:
   contents: read
 
