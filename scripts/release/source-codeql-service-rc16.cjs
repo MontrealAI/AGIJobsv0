@@ -715,7 +715,52 @@ module.exports = {
   isServiceApiResource,
 };
 if (require.main === module)
-  main().catch(() => {
+  main().catch((error) => {
     console.error('CodeQL processed service receipt capture failed; no qualification');
+    // Emit only a closed diagnostic code, never API bodies, headers or error text.
+    const failures = [
+      ['Unsupported CodeQL service capture arguments', 'CAPTURE_ARGUMENTS'],
+      ['Invalid exact-main CodeQL service capture identity', 'CAPTURE_IDENTITY'],
+      ['CodeQL service capture checkout source differs', 'CHECKOUT_SOURCE'],
+      ['Immutable CodeQL service source identity required', 'SOURCE_IDENTITY'],
+      ['CodeQL service tree differs from immutable Git source', 'SOURCE_TREE'],
+      ['CodeQL service source blob is absent or unbounded', 'SOURCE_BLOB'],
+      ['CodeQL service source changed before receipt capture', 'SOURCE_BYTES'],
+      ['Unsupported CodeQL service capture API route', 'API_ROUTE'],
+      ['Cannot authenticate CodeQL service capture metadata', 'API_RESPONSE'],
+      ['CodeQL service metadata response exceeds its bound', 'API_SIZE'],
+      ['CodeQL service producer is not the exact required main push', 'PRODUCER_IDENTITY'],
+      ['CodeQL service capture run observations differ', 'RUN_OBSERVATIONS'],
+      ['Malformed CodeQL service inventory count', 'INVENTORY_COUNT'],
+      ['Incomplete CodeQL service inventory', 'INVENTORY_SHAPE'],
+      ['Duplicate CodeQL service inventory identity', 'INVENTORY_DUPLICATE'],
+      ['Truncated CodeQL service inventory', 'INVENTORY_TRUNCATED'],
+      ['CodeQL service inventory exceeds its page bound', 'INVENTORY_BOUND'],
+      ['CodeQL service job is absent or ambiguous', 'JOB_SELECTION'],
+      ['CodeQL service job does not match its exact producer attempt', 'JOB_IDENTITY'],
+      ['Pinned CodeQL analyze step did not succeed in the receipt producer', 'ANALYZE_STATUS'],
+      ['CodeQL service job API observations differ', 'JOB_OBSERVATIONS'],
+      ['Pinned analyze SARIF upload ID is absent or invalid', 'UPLOAD_ID'],
+      ['CodeQL SARIF upload processing has not completed successfully', 'UPLOAD_PROCESSING'],
+      ['Malformed CodeQL upload analysis inventory', 'ANALYSIS_INVENTORY'],
+      ['Duplicate CodeQL upload analysis identity', 'ANALYSIS_DUPLICATE'],
+      ['CodeQL upload analysis inventory exceeds its bound', 'ANALYSIS_BOUND'],
+      ['Single-language CodeQL upload must have exactly one processed analysis', 'ANALYSIS_COUNT'],
+      ['CodeQL upload does not have a successful exact-main service analysis', 'ANALYSIS_IDENTITY'],
+      ['CodeQL service analysis observations differ', 'ANALYSIS_OBSERVATIONS'],
+      ['Original CodeQL raw tool identity required', 'RAW_TOOL'],
+      ['Bounded original raw SARIF is required for service capture', 'RAW_SARIF'],
+      ['Processed CodeQL service tool differs from original raw report', 'TOOL_BINDING'],
+      ['CodeQL service receipt exceeds its bound', 'RECEIPT_SIZE'],
+    ];
+    const message = typeof error?.message === 'string' ? error.message : '';
+    const matched = failures.find(([prefix]) =>
+      message === prefix || message.startsWith(prefix + '\n')
+    );
+    const code = matched ? matched[1] :
+      error?.name === 'TimeoutError' ? 'TRANSPORT_TIMEOUT' :
+      error?.name === 'TypeError' ? 'CAPTURE_TYPE' :
+      error?.name === 'SyntaxError' ? 'CAPTURE_JSON' : 'UNCLASSIFIED';
+    console.error('CodeQL service capture failure code: ' + code);
     process.exitCode = 1;
   });
