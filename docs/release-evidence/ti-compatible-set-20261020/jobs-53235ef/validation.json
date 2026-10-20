@@ -1,0 +1,29 @@
+{
+  "schema": "agijobsv0/validation-result/1",
+  "source": "53235ef944416bf8491fb44a1c7d8f193e509be7",
+  "tree": "4ee8b09928bf861f0f7fbd8f4bec0f88c802b531",
+  "run": 39456601942,
+  "attempt": 1,
+  "job": 118745003989,
+  "conclusion": "success",
+  "tests": {
+    "total": 158,
+    "passed": 158,
+    "failed": 0,
+    "skipped": 0
+  },
+  "log": {
+    "bytes": 744354,
+    "sha256": "d72094660cc00b9ea3657e19375662d1d53d39d65d63e99afcbcebfe5fd250a2"
+  },
+  "configuredReview": {
+    "firstRequest": 6295652799,
+    "errorComment": 6295660158,
+    "error": "Unknown error",
+    "oneUnchangedRetry": 6295703502,
+    "currentClearReceipt": 6295769818,
+    "reviewedHead": "53235ef944"
+  },
+  "qualification": false,
+  "remaining": "Full current CI, original S1/S2 archive comparison, normal merge and genuine exact-main processed services/native/publication remain mandatory."
+}
