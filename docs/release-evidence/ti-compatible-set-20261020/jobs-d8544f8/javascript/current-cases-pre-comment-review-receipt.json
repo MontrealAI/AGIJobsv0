@@ -1,0 +1,44 @@
+{
+  "schema": "fresh-current-javascript-case-review-precomment-custody/v1",
+  "status": "PRE_COMMENT_NOT_INSTALLABLE",
+  "source": "d8544f8173b3c01faa88d50e7145ec455bc5e170",
+  "tree": "14140fc8a3ce95e0ca5b15a421dc97ed190ec735",
+  "independentReviewerRole": "/root/installed_acceptance — independent read-only current source/report case reviewer",
+  "conclusion": "PASS_STATIC_CASE_REVIEW",
+  "caseCount": 43,
+  "falsePositiveCount": 35,
+  "nonsecurityQualityCount": 8,
+  "holdCount": 0,
+  "currentOriginalPacket": {
+    "runId": 39482430424,
+    "attempt": 1,
+    "codeqlJob": 118834137073,
+    "slitherJob": 118834136990,
+    "collectorJob": 118839993292,
+    "artifact": 12292242713,
+    "archiveSha256": "83dacda4329cf43a4171807434acc2acf2d980f934678ac7d975cd2468b54a2e",
+    "rawSarifSha256": "19ffc43175b741196433889f5c9c131f31b672028a8389daf1f370db3f372e7d",
+    "rawToolSha256": "591e88d26b82c20c7f11f207b86cbf0edf5c2a8f9cc6bf8aa22c5d1270ea3dbf",
+    "orderedResultsSha256": "3210ee106deb6d4905bab027c685a24ac56de3f8fbb2b527c55a2698a1bf348c",
+    "sortedResultMultisetSha256": "82f8872745e0e162922d5ac9edb6b2b292bf92d30a44585e0452dd794473320f"
+  },
+  "preCommentCommitments": {
+    "cases": {
+      "bytes": 46479,
+      "sha256": "84e28ce89c646f6f7d420274427202a7f81030a82e3878f62adf3b1852bc54f0",
+      "blob": "bc35272ad29126e5fd8baed5d44bd3590b1f45e2"
+    },
+    "notes": {
+      "bytes": 66143,
+      "sha256": "1ce572a7df17c72c41492e5be5d5967656017b0e34fa3acdc5d4cc660df9ebb9",
+      "blob": "26819b44d73ff734b519bbb6edce100f2546f512"
+    }
+  },
+  "scope": "Complete fresh current43 results and source reassessment; historical prose freshly revalidated, no historical approval transfer. Actual fresh reference fields intentionally absent; later genuine independent PR comment and strict atomic three-slot installation required.",
+  "noProjectExecution": true,
+  "noScannerExecution": true,
+  "noArchiveGetOrExtraction": true,
+  "noCodeScanningApi": true,
+  "noSourceInstallation": true,
+  "noFinalMainOrReleaseQualification": true
+}
