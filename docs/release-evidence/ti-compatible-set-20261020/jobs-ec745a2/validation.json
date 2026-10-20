@@ -1,0 +1,22 @@
+{
+  "schema": "agijobsv0/original-hosted-validation/1",
+  "source": "ec745a2045cdc3d5e48f6917a6ed8227c84d394d",
+  "tree": "2390e38d2c5ade29f11cf6656b8f0732cba2fe5a",
+  "runId": 39467535319,
+  "attempt": 1,
+  "jobId": 118782733047,
+  "conclusion": "success",
+  "tests": 160,
+  "pass": 160,
+  "fail": 0,
+  "skipped": 0,
+  "configuredReview": {
+    "summary": 6291968100,
+    "receipt": 6297247184,
+    "source": "ec745a2045cdc3d5e48f6917a6ed8227c84d394d",
+    "completedAt": "2026-10-20T17:41:20.461503Z",
+    "hasFindings": false,
+    "hasUnresolvedFindings": false
+  },
+  "limits": "Original installed-candidate validation and configured review only. Independent source installation review clear; full childCI/S1-S2reconciliation/mainservices/native/archive/publication remain mandatory."
+}
