@@ -1,0 +1,22 @@
+{
+  "schema": "agijobsv0/validation-result/1",
+  "source": "562af17e55d2a24bb206e222a6c6f73d933d56b6",
+  "tree": "ac85dec951e7975424d4d0b40b4fce4f89e85c1d",
+  "run": 39452017901,
+  "attempt": 1,
+  "job": 118729020903,
+  "conclusion": "success",
+  "tests": {
+    "total": 158,
+    "passed": 158,
+    "failed": 0,
+    "skipped": 0
+  },
+  "log": {
+    "path": "docs/release-evidence/ti-compatible-set-20261020/jobs-562af17e/validation.log",
+    "bytes": 744323,
+    "sha256": "a6faa057bc08285c362003d5752f479d8f0723a50185abba25518292bf0c92c6"
+  },
+  "qualification": false,
+  "remaining": "Original authentic scans, complete fresh result review, strict review installation, all current CI and final-main processed service/release gates remain mandatory."
+}
