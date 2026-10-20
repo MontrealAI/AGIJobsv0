@@ -1,0 +1,853 @@
+{
+  "schema": "agijobsv0/original-javascript-collector-failure-and-recovery/1",
+  "observedAt": "2026-10-20T17:10:42.403Z",
+  "source": "689a34e3b70659984d537af5410977a4eaa77e77",
+  "tree": "b404541f60ef7a927e085299c7159864a15ff53f",
+  "run": 39461253608,
+  "failedAttempt": 1,
+  "originalCodeqlJob": 118760990249,
+  "originalSlitherJob": 118760990638,
+  "failedCollectorJob": 118764295764,
+  "actualRun": {
+    "id": 39461253608,
+    "name": "static-analysis",
+    "node_id": "WFR_kwLOPXlfds8AAAAJMBLx6A",
+    "head_branch": "fix/processed-codeql-release-proof-20261020",
+    "head_sha": "689a34e3b70659984d537af5410977a4eaa77e77",
+    "path": ".github/workflows/static-analysis.yml",
+    "display_title": "fix(release): preserve exact index-free CodeQL flow annotation",
+    "run_number": 4156,
+    "event": "push",
+    "status": "completed",
+    "conclusion": "failure",
+    "workflow_id": 196965516,
+    "check_suite_id": 106935819817,
+    "check_suite_node_id": "CS_kwDOPXlfds8AAAAY5d8eKQ",
+    "url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/actions/runs/39461253608",
+    "html_url": "https://github.com/MontrealAI/AGIJobsv0/actions/runs/39461253608",
+    "pull_requests": [
+      {
+        "url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/pulls/4004",
+        "id": 4936452006,
+        "number": 4004,
+        "head": {
+          "ref": "fix/processed-codeql-release-proof-20261020",
+          "sha": "689a34e3b70659984d537af5410977a4eaa77e77",
+          "repo": {
+            "id": 1031364470,
+            "url": "https://api.github.com/repos/MontrealAI/AGIJobsv0",
+            "name": "AGIJobsv0"
+          }
+        },
+        "base": {
+          "ref": "main",
+          "sha": "b9ddbd9d7d0b5d5c3e472b978e0967036033ed10",
+          "repo": {
+            "id": 1031364470,
+            "url": "https://api.github.com/repos/MontrealAI/AGIJobsv0",
+            "name": "AGIJobsv0"
+          }
+        }
+      }
+    ],
+    "created_at": "2026-10-20T16:52:33Z",
+    "updated_at": "2026-10-20T17:07:30Z",
+    "actor": {
+      "login": "MontrealAI",
+      "id": 24208299,
+      "node_id": "MDQ6VXNlcjI0MjA4Mjk5",
+      "avatar_url": "https://avatars.githubusercontent.com/u/24208299?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/MontrealAI",
+      "html_url": "https://github.com/MontrealAI",
+      "followers_url": "https://api.github.com/users/MontrealAI/followers",
+      "following_url": "https://api.github.com/users/MontrealAI/following{/other_user}",
+      "gists_url": "https://api.github.com/users/MontrealAI/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/MontrealAI/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/MontrealAI/subscriptions",
+      "organizations_url": "https://api.github.com/users/MontrealAI/orgs",
+      "repos_url": "https://api.github.com/users/MontrealAI/repos",
+      "events_url": "https://api.github.com/users/MontrealAI/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/MontrealAI/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "run_attempt": 1,
+    "referenced_workflows": [],
+    "run_started_at": "2026-10-20T16:52:33Z",
+    "triggering_actor": {
+      "login": "MontrealAI",
+      "id": 24208299,
+      "node_id": "MDQ6VXNlcjI0MjA4Mjk5",
+      "avatar_url": "https://avatars.githubusercontent.com/u/24208299?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/MontrealAI",
+      "html_url": "https://github.com/MontrealAI",
+      "followers_url": "https://api.github.com/users/MontrealAI/followers",
+      "following_url": "https://api.github.com/users/MontrealAI/following{/other_user}",
+      "gists_url": "https://api.github.com/users/MontrealAI/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/MontrealAI/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/MontrealAI/subscriptions",
+      "organizations_url": "https://api.github.com/users/MontrealAI/orgs",
+      "repos_url": "https://api.github.com/users/MontrealAI/repos",
+      "events_url": "https://api.github.com/users/MontrealAI/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/MontrealAI/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "jobs_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/actions/runs/39461253608/jobs",
+    "logs_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/actions/runs/39461253608/logs",
+    "check_suite_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/check-suites/106935819817",
+    "artifacts_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/actions/runs/39461253608/artifacts",
+    "cancel_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/actions/runs/39461253608/cancel",
+    "rerun_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/actions/runs/39461253608/rerun",
+    "previous_attempt_url": null,
+    "workflow_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/actions/workflows/196965516",
+    "head_commit": {
+      "id": "689a34e3b70659984d537af5410977a4eaa77e77",
+      "tree_id": "b404541f60ef7a927e085299c7159864a15ff53f",
+      "message": "fix(release): preserve exact index-free CodeQL flow annotation",
+      "timestamp": "2026-10-20T16:52:21Z",
+      "author": {
+        "name": "MONTREAL.AI",
+        "email": "info@montreal.ai"
+      },
+      "committer": {
+        "name": "MONTREAL.AI",
+        "email": "info@montreal.ai"
+      }
+    },
+    "repository": {
+      "id": 1031364470,
+      "node_id": "R_kgDOPXlfdg",
+      "name": "AGIJobsv0",
+      "full_name": "MontrealAI/AGIJobsv0",
+      "private": false,
+      "owner": {
+        "login": "MontrealAI",
+        "id": 24208299,
+        "node_id": "MDQ6VXNlcjI0MjA4Mjk5",
+        "avatar_url": "https://avatars.githubusercontent.com/u/24208299?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/MontrealAI",
+        "html_url": "https://github.com/MontrealAI",
+        "followers_url": "https://api.github.com/users/MontrealAI/followers",
+        "following_url": "https://api.github.com/users/MontrealAI/following{/other_user}",
+        "gists_url": "https://api.github.com/users/MontrealAI/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/MontrealAI/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/MontrealAI/subscriptions",
+        "organizations_url": "https://api.github.com/users/MontrealAI/orgs",
+        "repos_url": "https://api.github.com/users/MontrealAI/repos",
+        "events_url": "https://api.github.com/users/MontrealAI/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/MontrealAI/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "html_url": "https://github.com/MontrealAI/AGIJobsv0",
+      "description": "The Operating System for AGI Work.",
+      "fork": false,
+      "url": "https://api.github.com/repos/MontrealAI/AGIJobsv0",
+      "forks_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/forks",
+      "keys_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/keys{/key_id}",
+      "collaborators_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/collaborators{/collaborator}",
+      "teams_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/teams",
+      "hooks_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/hooks",
+      "issue_events_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/issues/events{/number}",
+      "events_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/events",
+      "assignees_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/assignees{/user}",
+      "branches_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/branches{/branch}",
+      "tags_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/tags",
+      "blobs_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/git/blobs{/sha}",
+      "git_tags_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/git/tags{/sha}",
+      "git_refs_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/git/refs{/sha}",
+      "trees_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/git/trees{/sha}",
+      "statuses_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/statuses/{sha}",
+      "languages_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/languages",
+      "stargazers_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/stargazers",
+      "contributors_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/contributors",
+      "subscribers_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/subscribers",
+      "subscription_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/subscription",
+      "commits_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/commits{/sha}",
+      "git_commits_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/git/commits{/sha}",
+      "comments_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/comments{/number}",
+      "issue_comment_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/issues/comments{/number}",
+      "contents_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/contents/{+path}",
+      "compare_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/compare/{base}...{head}",
+      "merges_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/merges",
+      "archive_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/{archive_format}{/ref}",
+      "downloads_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/downloads",
+      "issues_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/issues{/number}",
+      "pulls_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/pulls{/number}",
+      "milestones_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/milestones{/number}",
+      "notifications_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/notifications{?since,all,participating}",
+      "labels_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/labels{/name}",
+      "releases_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/releases{/id}",
+      "deployments_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/deployments"
+    },
+    "head_repository": {
+      "id": 1031364470,
+      "node_id": "R_kgDOPXlfdg",
+      "name": "AGIJobsv0",
+      "full_name": "MontrealAI/AGIJobsv0",
+      "private": false,
+      "owner": {
+        "login": "MontrealAI",
+        "id": 24208299,
+        "node_id": "MDQ6VXNlcjI0MjA4Mjk5",
+        "avatar_url": "https://avatars.githubusercontent.com/u/24208299?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/MontrealAI",
+        "html_url": "https://github.com/MontrealAI",
+        "followers_url": "https://api.github.com/users/MontrealAI/followers",
+        "following_url": "https://api.github.com/users/MontrealAI/following{/other_user}",
+        "gists_url": "https://api.github.com/users/MontrealAI/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/MontrealAI/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/MontrealAI/subscriptions",
+        "organizations_url": "https://api.github.com/users/MontrealAI/orgs",
+        "repos_url": "https://api.github.com/users/MontrealAI/repos",
+        "events_url": "https://api.github.com/users/MontrealAI/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/MontrealAI/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "html_url": "https://github.com/MontrealAI/AGIJobsv0",
+      "description": "The Operating System for AGI Work.",
+      "fork": false,
+      "url": "https://api.github.com/repos/MontrealAI/AGIJobsv0",
+      "forks_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/forks",
+      "keys_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/keys{/key_id}",
+      "collaborators_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/collaborators{/collaborator}",
+      "teams_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/teams",
+      "hooks_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/hooks",
+      "issue_events_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/issues/events{/number}",
+      "events_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/events",
+      "assignees_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/assignees{/user}",
+      "branches_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/branches{/branch}",
+      "tags_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/tags",
+      "blobs_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/git/blobs{/sha}",
+      "git_tags_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/git/tags{/sha}",
+      "git_refs_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/git/refs{/sha}",
+      "trees_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/git/trees{/sha}",
+      "statuses_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/statuses/{sha}",
+      "languages_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/languages",
+      "stargazers_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/stargazers",
+      "contributors_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/contributors",
+      "subscribers_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/subscribers",
+      "subscription_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/subscription",
+      "commits_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/commits{/sha}",
+      "git_commits_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/git/commits{/sha}",
+      "comments_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/comments{/number}",
+      "issue_comment_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/issues/comments{/number}",
+      "contents_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/contents/{+path}",
+      "compare_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/compare/{base}...{head}",
+      "merges_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/merges",
+      "archive_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/{archive_format}{/ref}",
+      "downloads_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/downloads",
+      "issues_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/issues{/number}",
+      "pulls_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/pulls{/number}",
+      "milestones_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/milestones{/number}",
+      "notifications_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/notifications{?since,all,participating}",
+      "labels_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/labels{/name}",
+      "releases_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/releases{/id}",
+      "deployments_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/deployments"
+    }
+  },
+  "actualJobs": {
+    "total_count": 3,
+    "jobs": [
+      {
+        "id": 118760990249,
+        "run_id": 39461253608,
+        "workflow_name": "static-analysis",
+        "head_branch": "fix/processed-codeql-release-proof-20261020",
+        "run_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/actions/runs/39461253608",
+        "run_attempt": 1,
+        "node_id": "CR_kwDOPXlfds8AAAAbprTmKQ",
+        "head_sha": "689a34e3b70659984d537af5410977a4eaa77e77",
+        "url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/actions/jobs/118760990249",
+        "html_url": "https://github.com/MontrealAI/AGIJobsv0/actions/runs/39461253608/job/118760990249",
+        "status": "completed",
+        "conclusion": "success",
+        "created_at": "2026-10-20T16:52:34Z",
+        "started_at": "2026-10-20T16:54:05Z",
+        "completed_at": "2026-10-20T16:59:17Z",
+        "name": "CodeQL analysis",
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1,
+            "started_at": "2026-10-20T16:54:06Z",
+            "completed_at": "2026-10-20T16:54:08Z"
+          },
+          {
+            "name": "Pre Harden runner",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2,
+            "started_at": "2026-10-20T16:54:08Z",
+            "completed_at": "2026-10-20T16:54:12Z"
+          },
+          {
+            "name": "Harden runner",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3,
+            "started_at": "2026-10-20T16:54:12Z",
+            "completed_at": "2026-10-20T16:54:12Z"
+          },
+          {
+            "name": "Checkout",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4,
+            "started_at": "2026-10-20T16:54:12Z",
+            "completed_at": "2026-10-20T16:54:24Z"
+          },
+          {
+            "name": "Setup Node",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5,
+            "started_at": "2026-10-20T16:54:24Z",
+            "completed_at": "2026-10-20T16:54:32Z"
+          },
+          {
+            "name": "Install dependencies",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 6,
+            "started_at": "2026-10-20T16:54:32Z",
+            "completed_at": "2026-10-20T16:56:34Z"
+          },
+          {
+            "name": "Validate additive source scope and exact scan identity",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 7,
+            "started_at": "2026-10-20T16:56:34Z",
+            "completed_at": "2026-10-20T16:56:35Z"
+          },
+          {
+            "name": "Initialize CodeQL",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 8,
+            "started_at": "2026-10-20T16:56:35Z",
+            "completed_at": "2026-10-20T16:56:45Z"
+          },
+          {
+            "name": "Perform CodeQL analysis",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 9,
+            "started_at": "2026-10-20T16:56:45Z",
+            "completed_at": "2026-10-20T16:59:08Z"
+          },
+          {
+            "name": "Recheck exact source after CodeQL analysis",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 10,
+            "started_at": "2026-10-20T16:59:08Z",
+            "completed_at": "2026-10-20T16:59:09Z"
+          },
+          {
+            "name": "Retain and enforce actual complete source extraction",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 11,
+            "started_at": "2026-10-20T16:59:09Z",
+            "completed_at": "2026-10-20T16:59:09Z"
+          },
+          {
+            "name": "Upload CodeQL artefacts",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 12,
+            "started_at": "2026-10-20T16:59:09Z",
+            "completed_at": "2026-10-20T16:59:11Z"
+          },
+          {
+            "name": "Retain exact processed CodeQL service receipt",
+            "status": "completed",
+            "conclusion": "skipped",
+            "number": 13,
+            "started_at": "2026-10-20T16:59:11Z",
+            "completed_at": "2026-10-20T16:59:11Z"
+          },
+          {
+            "name": "Upload exact processed CodeQL service receipt",
+            "status": "completed",
+            "conclusion": "skipped",
+            "number": 14,
+            "started_at": "2026-10-20T16:59:11Z",
+            "completed_at": "2026-10-20T16:59:11Z"
+          },
+          {
+            "name": "Post Perform CodeQL analysis",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 24,
+            "started_at": "2026-10-20T16:59:11Z",
+            "completed_at": "2026-10-20T16:59:11Z"
+          },
+          {
+            "name": "Post Initialize CodeQL",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 25,
+            "started_at": "2026-10-20T16:59:11Z",
+            "completed_at": "2026-10-20T16:59:12Z"
+          },
+          {
+            "name": "Post Setup Node",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 26,
+            "started_at": "2026-10-20T16:59:12Z",
+            "completed_at": "2026-10-20T16:59:13Z"
+          },
+          {
+            "name": "Post Checkout",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 27,
+            "started_at": "2026-10-20T16:59:13Z",
+            "completed_at": "2026-10-20T16:59:13Z"
+          },
+          {
+            "name": "Post Harden runner",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 28,
+            "started_at": "2026-10-20T16:59:13Z",
+            "completed_at": "2026-10-20T16:59:14Z"
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 29,
+            "started_at": "2026-10-20T16:59:14Z",
+            "completed_at": "2026-10-20T16:59:14Z"
+          }
+        ],
+        "check_run_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/check-runs/118760990249",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "runner_id": 1000244250,
+        "runner_name": "GitHub Actions 1000244250",
+        "runner_group_id": 0,
+        "runner_group_name": "GitHub Actions"
+      },
+      {
+        "id": 118760990638,
+        "run_id": 39461253608,
+        "workflow_name": "static-analysis",
+        "head_branch": "fix/processed-codeql-release-proof-20261020",
+        "run_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/actions/runs/39461253608",
+        "run_attempt": 1,
+        "node_id": "CR_kwDOPXlfds8AAAAbprTnrg",
+        "head_sha": "689a34e3b70659984d537af5410977a4eaa77e77",
+        "url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/actions/jobs/118760990638",
+        "html_url": "https://github.com/MontrealAI/AGIJobsv0/actions/runs/39461253608/job/118760990638",
+        "status": "completed",
+        "conclusion": "success",
+        "created_at": "2026-10-20T16:52:34Z",
+        "started_at": "2026-10-20T16:54:05Z",
+        "completed_at": "2026-10-20T17:01:12Z",
+        "name": "Slither static analysis",
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1,
+            "started_at": "2026-10-20T16:54:06Z",
+            "completed_at": "2026-10-20T16:54:08Z"
+          },
+          {
+            "name": "Pre Harden runner",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2,
+            "started_at": "2026-10-20T16:54:08Z",
+            "completed_at": "2026-10-20T16:54:14Z"
+          },
+          {
+            "name": "Harden runner",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3,
+            "started_at": "2026-10-20T16:54:14Z",
+            "completed_at": "2026-10-20T16:54:14Z"
+          },
+          {
+            "name": "Checkout",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4,
+            "started_at": "2026-10-20T16:54:14Z",
+            "completed_at": "2026-10-20T16:54:23Z"
+          },
+          {
+            "name": "Setup Node",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5,
+            "started_at": "2026-10-20T16:54:23Z",
+            "completed_at": "2026-10-20T16:54:32Z"
+          },
+          {
+            "name": "Cache Hardhat compilers",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 6,
+            "started_at": "2026-10-20T16:54:32Z",
+            "completed_at": "2026-10-20T16:54:33Z"
+          },
+          {
+            "name": "Preflight toolchain locks",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 7,
+            "started_at": "2026-10-20T16:54:33Z",
+            "completed_at": "2026-10-20T16:54:34Z"
+          },
+          {
+            "name": "Install dependencies",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 8,
+            "started_at": "2026-10-20T16:54:34Z",
+            "completed_at": "2026-10-20T16:56:33Z"
+          },
+          {
+            "name": "Prepare security reports directory",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 9,
+            "started_at": "2026-10-20T16:56:33Z",
+            "completed_at": "2026-10-20T16:56:33Z"
+          },
+          {
+            "name": "Test Slither severity policy",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 10,
+            "started_at": "2026-10-20T16:56:33Z",
+            "completed_at": "2026-10-20T16:56:34Z"
+          },
+          {
+            "name": "Setup Python",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 11,
+            "started_at": "2026-10-20T16:56:34Z",
+            "completed_at": "2026-10-20T16:56:35Z"
+          },
+          {
+            "name": "Install Slither toolchain",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 12,
+            "started_at": "2026-10-20T16:56:35Z",
+            "completed_at": "2026-10-20T16:56:48Z"
+          },
+          {
+            "name": "Install solc versions (with mirror fallback)",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 13,
+            "started_at": "2026-10-20T16:56:48Z",
+            "completed_at": "2026-10-20T16:56:49Z"
+          },
+          {
+            "name": "Warm Hardhat build cache",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 14,
+            "started_at": "2026-10-20T16:56:49Z",
+            "completed_at": "2026-10-20T16:58:08Z"
+          },
+          {
+            "name": "Run Slither static analysis",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 15,
+            "started_at": "2026-10-20T16:58:08Z",
+            "completed_at": "2026-10-20T17:00:45Z"
+          },
+          {
+            "name": "Enforce Slither high severity policy",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 16,
+            "started_at": "2026-10-20T17:00:45Z",
+            "completed_at": "2026-10-20T17:00:45Z"
+          },
+          {
+            "name": "Upload SARIF to security tab",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 17,
+            "started_at": "2026-10-20T17:00:45Z",
+            "completed_at": "2026-10-20T17:01:04Z"
+          },
+          {
+            "name": "Upload Slither artefacts",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 18,
+            "started_at": "2026-10-20T17:01:04Z",
+            "completed_at": "2026-10-20T17:01:06Z"
+          },
+          {
+            "name": "Post Upload SARIF to security tab",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 31,
+            "started_at": "2026-10-20T17:01:06Z",
+            "completed_at": "2026-10-20T17:01:06Z"
+          },
+          {
+            "name": "Post Setup Python",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 32,
+            "started_at": "2026-10-20T17:01:06Z",
+            "completed_at": "2026-10-20T17:01:06Z"
+          },
+          {
+            "name": "Post Cache Hardhat compilers",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 33,
+            "started_at": "2026-10-20T17:01:06Z",
+            "completed_at": "2026-10-20T17:01:06Z"
+          },
+          {
+            "name": "Post Setup Node",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 34,
+            "started_at": "2026-10-20T17:01:06Z",
+            "completed_at": "2026-10-20T17:01:06Z"
+          },
+          {
+            "name": "Post Checkout",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 35,
+            "started_at": "2026-10-20T17:01:06Z",
+            "completed_at": "2026-10-20T17:01:07Z"
+          },
+          {
+            "name": "Post Harden runner",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 36,
+            "started_at": "2026-10-20T17:01:07Z",
+            "completed_at": "2026-10-20T17:01:08Z"
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 37,
+            "started_at": "2026-10-20T17:01:08Z",
+            "completed_at": "2026-10-20T17:01:08Z"
+          }
+        ],
+        "check_run_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/check-runs/118760990638",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "runner_id": 1000244251,
+        "runner_name": "GitHub Actions 1000244251",
+        "runner_group_id": 0,
+        "runner_group_name": "GitHub Actions"
+      },
+      {
+        "id": 118764295764,
+        "run_id": 39461253608,
+        "workflow_name": "static-analysis",
+        "head_branch": "fix/processed-codeql-release-proof-20261020",
+        "run_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/actions/runs/39461253608",
+        "run_attempt": 1,
+        "node_id": "CR_kwDOPXlfds8AAAAbpudWVA",
+        "head_sha": "689a34e3b70659984d537af5410977a4eaa77e77",
+        "url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/actions/jobs/118764295764",
+        "html_url": "https://github.com/MontrealAI/AGIJobsv0/actions/runs/39461253608/job/118764295764",
+        "status": "completed",
+        "conclusion": "failure",
+        "created_at": "2026-10-20T16:59:18Z",
+        "started_at": "2026-10-20T17:06:55Z",
+        "completed_at": "2026-10-20T17:07:29Z",
+        "name": "Complete JavaScript CodeQL review bytes",
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1,
+            "started_at": "2026-10-20T17:06:56Z",
+            "completed_at": "2026-10-20T17:06:57Z"
+          },
+          {
+            "name": "Pre Harden runner",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2,
+            "started_at": "2026-10-20T17:06:57Z",
+            "completed_at": "2026-10-20T17:07:04Z"
+          },
+          {
+            "name": "Harden runner",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3,
+            "started_at": "2026-10-20T17:07:04Z",
+            "completed_at": "2026-10-20T17:07:04Z"
+          },
+          {
+            "name": "Checkout exact review source",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4,
+            "started_at": "2026-10-20T17:07:04Z",
+            "completed_at": "2026-10-20T17:07:24Z"
+          },
+          {
+            "name": "Setup Node",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5,
+            "started_at": "2026-10-20T17:07:24Z",
+            "completed_at": "2026-10-20T17:07:24Z"
+          },
+          {
+            "name": "Retain complete original CodeQL review bytes",
+            "status": "completed",
+            "conclusion": "failure",
+            "number": 6,
+            "started_at": "2026-10-20T17:07:24Z",
+            "completed_at": "2026-10-20T17:07:25Z"
+          },
+          {
+            "name": "Post Setup Node",
+            "status": "completed",
+            "conclusion": "skipped",
+            "number": 10,
+            "started_at": "2026-10-20T17:07:25Z",
+            "completed_at": "2026-10-20T17:07:25Z"
+          },
+          {
+            "name": "Post Checkout exact review source",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 11,
+            "started_at": "2026-10-20T17:07:25Z",
+            "completed_at": "2026-10-20T17:07:25Z"
+          },
+          {
+            "name": "Post Harden runner",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 12,
+            "started_at": "2026-10-20T17:07:25Z",
+            "completed_at": "2026-10-20T17:07:27Z"
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 13,
+            "started_at": "2026-10-20T17:07:27Z",
+            "completed_at": "2026-10-20T17:07:27Z"
+          }
+        ],
+        "check_run_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/check-runs/118764295764",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "runner_id": 1000244299,
+        "runner_name": "GitHub Actions 1000244299",
+        "runner_group_id": 0,
+        "runner_group_name": "GitHub Actions"
+      }
+    ]
+  },
+  "actualArtifacts": {
+    "artifacts": [
+      {
+        "id": 12283137776,
+        "name": "slither-security-report",
+        "size_in_bytes": 154002,
+        "url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/actions/artifacts/12283137776",
+        "archive_download_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/actions/artifacts/12283137776/zip",
+        "expired": false,
+        "created_at": "2026-10-20T17:01:05Z",
+        "expires_at": "2027-01-18T16:52:33Z",
+        "updated_at": "2026-10-20T17:01:05Z",
+        "digest": "sha256:f2ec9feeba786db2f3e5a83243326333908dab4f593374550a50c943cdfa5957",
+        "workflow_run": {
+          "id": 39461253608,
+          "repository_id": 1031364470,
+          "head_repository_id": 1031364470,
+          "head_branch": "fix/processed-codeql-release-proof-20261020",
+          "head_sha": "689a34e3b70659984d537af5410977a4eaa77e77"
+        }
+      },
+      {
+        "id": 12282234099,
+        "name": "codeql-security-report-689a34e3b70659984d537af5410977a4eaa77e77-39461253608-1",
+        "size_in_bytes": 200521,
+        "url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/actions/artifacts/12282234099",
+        "archive_download_url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/actions/artifacts/12282234099/zip",
+        "expired": false,
+        "created_at": "2026-10-20T16:59:11Z",
+        "expires_at": "2027-01-18T16:52:33Z",
+        "updated_at": "2026-10-20T16:59:11Z",
+        "digest": "sha256:e386ec1e55e9915d43b30554c7bc00ef2de8d4022146a27c54d5ce0e2941c5cb",
+        "workflow_run": {
+          "id": 39461253608,
+          "repository_id": 1031364470,
+          "head_repository_id": 1031364470,
+          "head_branch": "fix/processed-codeql-release-proof-20261020",
+          "head_sha": "689a34e3b70659984d537af5410977a4eaa77e77"
+        }
+      }
+    ]
+  },
+  "log": {
+    "bytes": 27105,
+    "sha256": "6925092731b3ed53c1129c7bde9a5b8e4078373725a2e6f01973e4fa24413ef6",
+    "gitBlob": "7ce9ef37c4f2a700eebdc9f29227ee3b127a2e5c",
+    "byteFrameRecords": 0
+  },
+  "observation": "Original CodeQL and Slither producers succeeded. Collector exited1 with only its fixed generic refusal message and no emitted byte manifest/chunks/footer. No raw packet or result approval is available. Exact failing predicate/response and acquisition phase are not established by this log.",
+  "collectorSource": {
+    "gitBlob": "95c96fecba7e1bee728f190b4a0c1dc0da2fc979",
+    "bytes": 16264,
+    "sha256": "f72e89026b0c0b5d5638fef2cf9c7678f6fac5850afb5de439aa9d309411b6db"
+  },
+  "sourceInspection": "Collector independently requires exact source/run/current-attempt/producer/artifact/upload identities before acquisition, and repeats observations before emitting bytes. Retrying collector alone cannot be assumed to preserve a coherent current-attempt producer/archive; new producer bytes must be earned.",
+  "oneRecoveryAdmission": {
+    "kind": "One unchanged original CodeQL producer job plus its dependent byte collector",
+    "upstreamJob": 118760990249,
+    "noSourceOrWorkflowOrQueryChanges": true,
+    "noScopeOrTimeoutOrAssertionRelaxation": true,
+    "noHistoricalApprovalTransfer": true,
+    "requiredResult": "Fresh original producer/current-attempt artifact/collector terminal success, complete authentic packet and new independent current-source result review. Inspect actual attempt2 outcome; no blind further retries.",
+    "officialBehavior": "GitHub documented job rerun includes dependent jobs: https://docs.github.com/en/rest/actions/workflow-runs#re-run-a-job-from-a-workflow-run"
+  },
+  "limits": "Failed original evidence remains retained. This is recovery admission, not success or qualification. Python fresh689 attempt1 remains separately authenticated. Full exact-source CI, strict three-slot installation, final-main services/native/publication and final public installed journey/live gates remain mandatory."
+}
