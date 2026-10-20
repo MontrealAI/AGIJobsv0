@@ -1,0 +1,167 @@
+{
+  "schema": "agijobsv0/scanner-original-taxonomy-admission-hold/1",
+  "disposition": "HOLD",
+  "observedAt": "2026-10-20T16:53:34.009Z",
+  "reviewedSource": "562af17e55d2a24bb206e222a6c6f73d933d56b6",
+  "candidateSource": "53235ef944416bf8491fb44a1c7d8f193e509be7",
+  "candidateTree": "4ee8b09928bf861f0f7fbd8f4bec0f88c802b531",
+  "gateBlob": "27845bee64e68b75aaaefa8ec860303f2c0d50f1",
+  "reviewedRawSarifBlob": "4c8785bd82ae2c5689a2f1139f7c98c5dec7a455",
+  "candidateRawSarifBlob": "ed32d45772d324a72789666b6da8e047589629c1",
+  "candidateCustodyCommit": "f70c6cdcb92eff95d6154e091cbb162ba18f2383",
+  "observations": [
+    {
+      "report": "reviewed562",
+      "path": "$.runs[0].results[0].codeFlows[0].threadFlows[0].locations[7].taxa",
+      "value": [
+        {
+          "id": "Config",
+          "properties": {
+            "CodeQL/DataflowRole": "step"
+          }
+        }
+      ],
+      "canonicalSha256": "6339aa8791e258798fb184fffc819aecb4ca1a5ea698f57ae775c935c5b110dc"
+    },
+    {
+      "report": "reviewed562",
+      "path": "$.runs[0].results[0].codeFlows[1].threadFlows[0].locations[7].taxa",
+      "value": [
+        {
+          "id": "Config",
+          "properties": {
+            "CodeQL/DataflowRole": "step"
+          }
+        }
+      ],
+      "canonicalSha256": "6339aa8791e258798fb184fffc819aecb4ca1a5ea698f57ae775c935c5b110dc"
+    },
+    {
+      "report": "reviewed562",
+      "path": "$.runs[0].results[11].codeFlows[0].threadFlows[0].locations[12].taxa",
+      "value": [
+        {
+          "id": "Config",
+          "properties": {
+            "CodeQL/DataflowRole": "step"
+          }
+        }
+      ],
+      "canonicalSha256": "6339aa8791e258798fb184fffc819aecb4ca1a5ea698f57ae775c935c5b110dc"
+    },
+    {
+      "report": "reviewed562",
+      "path": "$.runs[0].results[12].codeFlows[0].threadFlows[0].locations[10].taxa",
+      "value": [
+        {
+          "id": "Config",
+          "properties": {
+            "CodeQL/DataflowRole": "step"
+          }
+        }
+      ],
+      "canonicalSha256": "6339aa8791e258798fb184fffc819aecb4ca1a5ea698f57ae775c935c5b110dc"
+    },
+    {
+      "report": "reviewed562",
+      "path": "$.runs[0].results[16].codeFlows[0].threadFlows[0].locations[17].taxa",
+      "value": [
+        {
+          "id": "Config",
+          "properties": {
+            "CodeQL/DataflowRole": "step"
+          }
+        }
+      ],
+      "canonicalSha256": "6339aa8791e258798fb184fffc819aecb4ca1a5ea698f57ae775c935c5b110dc"
+    },
+    {
+      "report": "candidate532",
+      "path": "$.runs[0].results[0].codeFlows[0].threadFlows[0].locations[7].taxa",
+      "value": [
+        {
+          "id": "Config",
+          "properties": {
+            "CodeQL/DataflowRole": "step"
+          }
+        }
+      ],
+      "canonicalSha256": "6339aa8791e258798fb184fffc819aecb4ca1a5ea698f57ae775c935c5b110dc"
+    },
+    {
+      "report": "candidate532",
+      "path": "$.runs[0].results[0].codeFlows[1].threadFlows[0].locations[7].taxa",
+      "value": [
+        {
+          "id": "Config",
+          "properties": {
+            "CodeQL/DataflowRole": "step"
+          }
+        }
+      ],
+      "canonicalSha256": "6339aa8791e258798fb184fffc819aecb4ca1a5ea698f57ae775c935c5b110dc"
+    },
+    {
+      "report": "candidate532",
+      "path": "$.runs[0].results[11].codeFlows[0].threadFlows[0].locations[12].taxa",
+      "value": [
+        {
+          "id": "Config",
+          "properties": {
+            "CodeQL/DataflowRole": "step"
+          }
+        }
+      ],
+      "canonicalSha256": "6339aa8791e258798fb184fffc819aecb4ca1a5ea698f57ae775c935c5b110dc"
+    },
+    {
+      "report": "candidate532",
+      "path": "$.runs[0].results[12].codeFlows[0].threadFlows[0].locations[10].taxa",
+      "value": [
+        {
+          "id": "Config",
+          "properties": {
+            "CodeQL/DataflowRole": "step"
+          }
+        }
+      ],
+      "canonicalSha256": "6339aa8791e258798fb184fffc819aecb4ca1a5ea698f57ae775c935c5b110dc"
+    },
+    {
+      "report": "candidate532",
+      "path": "$.runs[0].results[16].codeFlows[0].threadFlows[0].locations[17].taxa",
+      "value": [
+        {
+          "id": "Config",
+          "properties": {
+            "CodeQL/DataflowRole": "step"
+          }
+        }
+      ],
+      "canonicalSha256": "6339aa8791e258798fb184fffc819aecb4ca1a5ea698f57ae775c935c5b110dc"
+    }
+  ],
+  "reason": "Current gate unconditionally requires result/thread-flow taxa to be empty. Both authentic originals contain five exact nonempty index-free flow annotations, so source admission fails before a release comparison may qualify.",
+  "diagnosticOnly": {
+    "projectFunctionsInvoked": false,
+    "retainingExactAnnotationsVerbatimIsNotCurrentPolicyPass": true,
+    "results": 45,
+    "artifactCount": 907,
+    "movedArtifactOrdinals": 75,
+    "artifactPermutationSha256": "5fb609146bb4916c57f8d13e160a3a5ff5702141232a12e6602851468943e327",
+    "orderedResultArraySha256": "bbeff4c317423510949448acd633aead1ab04b7eef4510423ff4f0d7b4fea2ef",
+    "resultHashMultisetSha256": "8098693c78141a858968c557a5634fb73e856b6e75ad7ed672cfac8a135586f3",
+    "originalCandidateRunSha256": "6935b4410035894ee339708f13bf6d05e6fb69e7ba50cf0f35db3dcfd243fe3f",
+    "referenceRunSha256": "18eecce6e27039168690aa52035c7f3053783d81ab38e0dba00e066cd43bad7f",
+    "comparedCandidateRunSha256": "08fd8b5a9bc6500b3a9d628a98e33602ae6d390a9b46547ce8a3fdb368f50e4a",
+    "inverseReconstructsEntireOriginal": true,
+    "rawTelemetryAndNotificationOrderPreserved": true
+  },
+  "nextAction": {
+    "owner": "Jobs source/review lane",
+    "source": "689a34e3b70659984d537af5410977a4eaa77e77",
+    "tree": "b404541f60ef7a927e085299c7159864a15ff53f",
+    "requires": "Fresh all-null executable cycle; exact annotation source repair, genuine scans and complete fresh result/source reviews, full original CI, strict installation and final-main/native/publication gates."
+  },
+  "limits": "Read-only original data/hash observations and independent pure-data diagnostics only. No project code, functions, tests, scanners, reproductions, CodeScanning API or archive GET invoked. No old approval transfers to the changed executable source."
+}
