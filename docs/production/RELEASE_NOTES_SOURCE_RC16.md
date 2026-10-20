@@ -1456,6 +1456,47 @@ Advanced Security, three-slot binding, exact-main, native and publication gates
 remain required. Both profile review records and this notes marker are null
 until fresh genuine source-bound evidence is independently reviewed.
 
+## Lossless JavaScript reference transport — pending fresh qualification
+
+The original d9 JavaScript report is held because rule and artifact ordinals
+changed across genuine reports. Its complete original archive, report, sidecars,
+collector log and observed comparison hold remain at
+[045c0ca4](https://github.com/MontrealAI/AGIJobsv0/tree/045c0ca421b60a8de7da28de03c68a484da912d1/docs/release-evidence/ti-compatible-set-20261020/jobs-d9b3ac/javascript/).
+No original report, prior review or failed result is replaced or relabeled.
+
+The fixed `agijobsv0/codeql-lossless-reference-transport/1` policy explicitly
+versions cross-scan comparison. The actual four-file producer archives and
+processed-service bindings remain unchanged. Both original producer identities,
+archive digests, source/extraction records and report bytes are authenticated
+before comparison. The original fresh reviewed S1 report supplies table
+coordinates; installed review metadata is not a substitute for those tables.
+
+Only copies of the later report are transported through proven complete
+descriptor and artifact bijections. Component order and all non-array tool
+fields stay exact. Unique-ID descriptor arrays can permute only when complete
+records agree; duplicate IDs retain strict original order. The closed artifact
+profile requires complete unique URI/base identities and correct self-indices.
+Every admitted original result, notification, associated-rule, override, metric
+and artifact reference is checked. Ambiguous or unsupported indexed, taxonomy,
+relationship, external and converted forms fail closed. Inverse transport must
+reconstruct the entire original later run object exactly; current telemetry and
+result ordering remain intact.
+
+`resultIdentity` and `summarizeScannerSarif` continue to describe actual raw
+results. The version-2 provenance separately retains the actual later summary,
+the actual S1 summary, transported comparison summary, original raw-result
+hashes, full permutation witness and inverse proof. Complete transported results
+must match the exact S1 raw-result multiset, including every flow, fingerprint,
+message and repeated instance. Existing S1 tool, query, extraction, quality-case,
+immutable source and notes commitments remain required. Collection and published
+asset readback independently repeat the same authenticated comparison.
+
+This is a new executable source proposal with all three review slots null.
+Fresh genuine scans, independent complete source/result review, normal finite
+installation, all exact-source CI, final-main services and original publication
+checks remain required. No signing, chain write, result suppression, severity
+admission, uploader substitution or three-slot binder relaxation is included.
+
 <!-- rc16-scanner-review
 null
 -->

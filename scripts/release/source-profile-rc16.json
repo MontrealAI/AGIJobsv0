@@ -789,7 +789,8 @@
       "event": "push",
       "headBranch": "fix/processed-codeql-release-proof-20261020",
       "ref": "refs/heads/fix/processed-codeql-release-proof-20261020"
-    }
+    },
+    "referenceTransportSchema": "agijobsv0/codeql-lossless-reference-transport/1"
   },
   "nativePinBaseline": "d943e0b2384cad09b2918fe532fca50f5837e65f",
   "nativePinTree": "b279cfcbd53c814db48bb4ab997199ea7ca9269c",

@@ -1322,3 +1322,146 @@ test('quality acknowledgement refuses raw identity, query metadata, configuratio
     );
   }
 });
+
+function referenceTransportMetadataOnly() {
+  // Benign metadata unit input; never a successful scanner or review fixture.
+  const location = (index) => ({
+    uri: 'metadata/public-' + index + '.txt',
+    uriBaseId: '%SRCROOT%',
+    index,
+  });
+  return {
+    tool: {
+      driver: {
+        name: 'CodeQL',
+        semanticVersion: 'SYNTHETIC_METADATA_ONLY',
+        rules: [{ id: 'metadata/a', name: 'first' }, { id: 'metadata/b', name: 'second' }],
+        notifications: [{ id: 'metadata/note-a' }, { id: 'metadata/note-b' }],
+      },
+    },
+    artifacts: [0, 1, 2].map((index) => ({ location: location(index) })),
+    invocations: [
+      {
+        executionSuccessful: true,
+        toolExecutionNotifications: [
+          {
+            descriptor: { id: 'metadata/note-a', index: 0 },
+            locations: [{ physicalLocation: { artifactLocation: location(0) } }],
+          },
+        ],
+        toolConfigurationNotifications: [
+          { associatedRule: { id: 'metadata/b', index: 1 } },
+        ],
+        ruleConfigurationOverrides: [
+          { descriptor: { id: 'metadata/a', index: 0 } },
+        ],
+      },
+    ],
+    properties: {
+      metricResults: [{ ruleId: 'metadata/b', rule: { id: 'metadata/b', index: 1 } }],
+    },
+    results: [
+      {
+        ruleId: 'metadata/a',
+        rule: { id: 'metadata/a', index: 0 },
+        message: { text: 'SYNTHETIC_METADATA_ONLY' },
+        locations: [
+          { physicalLocation: { artifactLocation: location(0), region: { startLine: 1 } } },
+        ],
+        codeFlows: [
+          { threadFlows: [{ locations: [{ location: { physicalLocation: { artifactLocation: location(1) } } }] }] },
+        ],
+        relatedLocations: [{ physicalLocation: { artifactLocation: location(2) } }],
+        partialFingerprints: { testOnly: 'complete-field-preserved' },
+      },
+    ],
+  };
+}
+function permutedReferenceMetadataOnly(original) {
+  const value = structuredClone(original);
+  value.tool.driver.rules.reverse();
+  value.tool.driver.notifications.reverse();
+  value.artifacts.reverse();
+  value.artifacts.forEach((artifact, index) => { artifact.location.index = index; });
+  value.invocations[0].toolExecutionNotifications[0].descriptor.index = 1;
+  value.invocations[0].toolExecutionNotifications[0].locations[0]
+    .physicalLocation.artifactLocation.index = 2;
+  value.invocations[0].toolConfigurationNotifications[0].associatedRule.index = 0;
+  value.invocations[0].ruleConfigurationOverrides[0].descriptor.index = 1;
+  value.properties.metricResults[0].rule.index = 0;
+  value.results[0].rule.index = 1;
+  value.results[0].locations[0].physicalLocation.artifactLocation.index = 2;
+  value.results[0].relatedLocations[0].physicalLocation.artifactLocation.index = 0;
+  return value;
+}
+test('versioned reference transport preserves original reports and exact complete reviewed hashes', () => {
+  const { transportScannerRun } =
+    require('../../scripts/release/source-scanner-gates-rc16.cjs');
+  const reference = referenceTransportMetadataOnly();
+  const actual = permutedReferenceMetadataOnly(reference);
+  const before = structuredClone([actual, reference]);
+  assert.notEqual(resultIdentity(actual.results[0]).resultSha256,
+    resultIdentity(reference.results[0]).resultSha256);
+  const comparison = transportScannerRun(actual, reference);
+  assert.deepEqual(comparison.run, reference);
+  assert.deepEqual([actual, reference], before);
+  assert.equal(comparison.witness.schema,
+    'agijobsv0/codeql-lossless-reference-transport/1');
+  assert.equal(comparison.witness.inverseReconstructsEntireOriginalRun, true);
+  assert.equal(comparison.witness.sourceRunSha256,
+    comparison.witness.inverseRunSha256);
+  assert.deepEqual(comparison.witness.transportedResultHashes,
+    [resultIdentity(reference.results[0]).resultSha256]);
+  assert.deepEqual(comparison.witness.rawResultHashes,
+    [resultIdentity(actual.results[0]).resultSha256]);
+});
+test('reference transport keeps every flow field and repeated result in its comparison', () => {
+  const { transportScannerRun } =
+    require('../../scripts/release/source-scanner-gates-rc16.cjs');
+  const reference = referenceTransportMetadataOnly();
+  const changed = permutedReferenceMetadataOnly(reference);
+  changed.results[0].partialFingerprints.testOnly = 'changed-complete-field';
+  changed.results.push(structuredClone(changed.results[0]));
+  const comparison = transportScannerRun(changed, reference);
+  assert.equal(comparison.run.results.length, 2);
+  assert.notDeepEqual(comparison.witness.transportedResultHashes,
+    [resultIdentity(reference.results[0]).resultSha256]);
+  assert.equal(comparison.witness.rawResultHashes.length, 2);
+  assert.equal(comparison.witness.transportedResultHashes.length, 2);
+  assert.equal(comparison.run.results[0].partialFingerprints.testOnly,
+    'changed-complete-field');
+});
+test('reference transport rejects record changes, ambiguous tables and unsupported indices', () => {
+  const { transportScannerRun } =
+    require('../../scripts/release/source-scanner-gates-rc16.cjs');
+  const reference = referenceTransportMetadataOnly();
+  for (const change of [
+    (value) => { value.tool.driver.rules[0].name = 'changed-full-record'; },
+    (value) => { value.tool.driver.semanticVersion = 'different'; },
+    (value) => { value.artifacts[0].extra = 'unsupported-full-artifact-field'; },
+    (value) => { value.artifacts[0].location.index = 1; },
+    (value) => { value.artifacts[0].location.uri = value.artifacts[1].location.uri; },
+    (value) => { value.results[0].rule.index = 0; },
+    (value) => { value.results[0].locations[0].physicalLocation.artifactLocation.index = 0; },
+    (value) => { value.results[0].properties = { index: 0 }; },
+    (value) => { value.results[0].taxa = [{ id: 'metadata/unsupported', index: 0 }]; },
+    (value) => { value.tool.driver.rules[0].relationships = [{ target: { id: 'metadata/a', index: 0 } }]; },
+    (value) => { value.conversion = {}; },
+  ]) {
+    const value = permutedReferenceMetadataOnly(reference);
+    change(value);
+    assert.throws(() => transportScannerRun(value, reference));
+  }
+  const duplicate = referenceTransportMetadataOnly();
+  duplicate.tool.driver.rules.forEach((rule) => { rule.id = 'metadata/duplicate'; });
+  duplicate.results[0].ruleId = duplicate.results[0].rule.id = 'metadata/duplicate';
+  duplicate.properties.metricResults[0].ruleId =
+    duplicate.properties.metricResults[0].rule.id = 'metadata/duplicate';
+  duplicate.invocations[0].toolConfigurationNotifications[0].associatedRule.id =
+    duplicate.invocations[0].ruleConfigurationOverrides[0].descriptor.id =
+      'metadata/duplicate';
+  assert.doesNotThrow(() => transportScannerRun(duplicate, structuredClone(duplicate)));
+  const reversed = structuredClone(duplicate);
+  reversed.tool.driver.rules.reverse();
+  assert.throws(() => transportScannerRun(reversed, duplicate));
+});
