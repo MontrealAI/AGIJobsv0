@@ -1,0 +1,118 @@
+{
+  "schema": "superseded-source-capture/v1",
+  "status": "HOLD_SUPERSEDED_NOT_APPROVED",
+  "manifest": {
+    "schema": "agijobsv0/codeql-review-byte-log/1",
+    "type": "manifest",
+    "repository": "MontrealAI/AGIJobsv0",
+    "language": "python",
+    "source": "4be317e72c4de22efc0626e1754321f115533632",
+    "tree": "e4186023910204f7294d9fedb3919ed52663701d",
+    "ref": "refs/heads/fix/processed-codeql-release-proof-20261020",
+    "workflow": ".github/workflows/static-analysis-python-integrations.yml",
+    "sourceFiles": {
+      "workflow": {
+        "path": ".github/workflows/static-analysis-python-integrations.yml",
+        "blob": "0d1220ce9b561ae8feeee9e47bb6a0ff4226c3c0",
+        "sha256": "5b08a73d05cea31c09e8bf23a34b742c2fd85a47b7fbea52a94f70fd9c3ce077"
+      },
+      "collector": {
+        "path": "scripts/release/emit-codeql-review-rc16.cjs",
+        "blob": "95c96fecba7e1bee728f190b4a0c1dc0da2fc979",
+        "sha256": "f72e89026b0c0b5d5638fef2cf9c7678f6fac5850afb5de439aa9d309411b6db"
+      }
+    },
+    "run": {
+      "id": 39479414338,
+      "attempt": 1,
+      "number": 66,
+      "source": "4be317e72c4de22efc0626e1754321f115533632",
+      "branch": "fix/processed-codeql-release-proof-20261020",
+      "event": "push",
+      "workflow": ".github/workflows/static-analysis-python-integrations.yml",
+      "status": "in_progress",
+      "conclusion": null
+    },
+    "producerJob": {
+      "id": 118823753951,
+      "runId": 39479414338,
+      "attempt": 1,
+      "source": "4be317e72c4de22efc0626e1754321f115533632",
+      "key": "codeql-python",
+      "name": "Python integration CodeQL analysis",
+      "status": "completed",
+      "conclusion": "success",
+      "uploadStepId": "codeql_raw"
+    },
+    "collectorJob": {
+      "id": 118824273668,
+      "runId": 39479414338,
+      "attempt": 1,
+      "source": "4be317e72c4de22efc0626e1754321f115533632",
+      "key": "codeql-review-bytes",
+      "name": "Complete Python CodeQL review bytes",
+      "status": "in_progress",
+      "conclusion": null
+    },
+    "artifact": {
+      "id": 12291561219,
+      "name": "python-codeql-security-report-4be317e72c4de22efc0626e1754321f115533632-39479414338-1",
+      "bytes": 107021,
+      "githubDigest": "sha256:93f696f8e294b9af0ac8de422c7f59929313ce423f6fa9df6e9f9536d869d6fd",
+      "source": "4be317e72c4de22efc0626e1754321f115533632",
+      "runId": 39479414338,
+      "headBranch": "fix/processed-codeql-release-proof-20261020"
+    },
+    "acquisitionCount": 1,
+    "chunkBytes": 12288,
+    "reviewStatus": "UNAPPROVED_REQUIRES_FULL_REVIEW_AND_FINAL_PRODUCER_SUCCESS",
+    "streams": [
+      {
+        "name": "original.zip",
+        "bytes": 107021,
+        "sha256": "93f696f8e294b9af0ac8de422c7f59929313ce423f6fa9df6e9f9536d869d6fd",
+        "chunks": 9
+      },
+      {
+        "name": "python.sarif",
+        "bytes": 788624,
+        "sha256": "e8fed52cf788c9bdf9ce49682e96e58e78cdc0bf7c5a5b2abbb39e962d70578d",
+        "chunks": 65
+      },
+      {
+        "name": "source-extraction.json",
+        "bytes": 13261,
+        "sha256": "ac473a191a754d535ad4dc76ded4906b6b3443798a1673425f27783ddddd23b4",
+        "chunks": 2
+      },
+      {
+        "name": "source-scope-after.json",
+        "bytes": 1541,
+        "sha256": "2a3da9954374633caba67771ada2f44af7ea6194bf72af0ea999d1d7be856163",
+        "chunks": 1
+      },
+      {
+        "name": "source-scope-before.json",
+        "bytes": 1541,
+        "sha256": "2a3da9954374633caba67771ada2f44af7ea6194bf72af0ea999d1d7be856163",
+        "chunks": 1
+      }
+    ]
+  },
+  "footer": {
+    "schema": "agijobsv0/codeql-review-byte-log/1",
+    "type": "complete",
+    "repository": "MontrealAI/AGIJobsv0",
+    "language": "python",
+    "source": "4be317e72c4de22efc0626e1754321f115533632",
+    "tree": "e4186023910204f7294d9fedb3919ed52663701d",
+    "ref": "refs/heads/fix/processed-codeql-release-proof-20261020",
+    "manifestSha256": "f573c3c551f9c820e5a8cf76f2b25a38b2b2b719c01c083f8ff923078008be62",
+    "streamCount": 5,
+    "rawFileCount": 4,
+    "acquisitionCount": 1,
+    "reviewStatus": "UNAPPROVED_REQUIRES_FULL_REVIEW_AND_FINAL_PRODUCER_SUCCESS"
+  },
+  "completeLogBytes": 1261181,
+  "completeLogSha256": "38e1ff138fa00e4412d8439fd7cde8c1255a83f9f2daa1e445994eb1ddc01fef"
+}

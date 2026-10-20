@@ -1,0 +1,118 @@
+{
+  "schema": "superseded-source-capture/v1",
+  "status": "HOLD_SUPERSEDED_NOT_APPROVED",
+  "manifest": {
+    "schema": "agijobsv0/codeql-review-byte-log/1",
+    "type": "manifest",
+    "repository": "MontrealAI/AGIJobsv0",
+    "language": "javascript",
+    "source": "4be317e72c4de22efc0626e1754321f115533632",
+    "tree": "e4186023910204f7294d9fedb3919ed52663701d",
+    "ref": "refs/heads/fix/processed-codeql-release-proof-20261020",
+    "workflow": ".github/workflows/static-analysis.yml",
+    "sourceFiles": {
+      "workflow": {
+        "path": ".github/workflows/static-analysis.yml",
+        "blob": "da884644bf8b483c5ab6a643ce491c40b87898f6",
+        "sha256": "8b577905c4b4e2a173180a8883262869de7e5f9861a7dd6d1f36e316519e60ce"
+      },
+      "collector": {
+        "path": "scripts/release/emit-codeql-review-rc16.cjs",
+        "blob": "95c96fecba7e1bee728f190b4a0c1dc0da2fc979",
+        "sha256": "f72e89026b0c0b5d5638fef2cf9c7678f6fac5850afb5de439aa9d309411b6db"
+      }
+    },
+    "run": {
+      "id": 39479414366,
+      "attempt": 1,
+      "number": 4161,
+      "source": "4be317e72c4de22efc0626e1754321f115533632",
+      "branch": "fix/processed-codeql-release-proof-20261020",
+      "event": "push",
+      "workflow": ".github/workflows/static-analysis.yml",
+      "status": "in_progress",
+      "conclusion": null
+    },
+    "producerJob": {
+      "id": 118823756338,
+      "runId": 39479414366,
+      "attempt": 1,
+      "source": "4be317e72c4de22efc0626e1754321f115533632",
+      "key": "codeql",
+      "name": "CodeQL analysis",
+      "status": "completed",
+      "conclusion": "success",
+      "uploadStepId": "codeql_raw"
+    },
+    "collectorJob": {
+      "id": 118826345498,
+      "runId": 39479414366,
+      "attempt": 1,
+      "source": "4be317e72c4de22efc0626e1754321f115533632",
+      "key": "codeql-review-bytes",
+      "name": "Complete JavaScript CodeQL review bytes",
+      "status": "in_progress",
+      "conclusion": null
+    },
+    "artifact": {
+      "id": 12290318192,
+      "name": "codeql-security-report-4be317e72c4de22efc0626e1754321f115533632-39479414366-1",
+      "bytes": 201623,
+      "githubDigest": "sha256:ed446a67e55b975ab91d24582b857eae444c3b44da806b3d7757a4ff29074532",
+      "source": "4be317e72c4de22efc0626e1754321f115533632",
+      "runId": 39479414366,
+      "headBranch": "fix/processed-codeql-release-proof-20261020"
+    },
+    "acquisitionCount": 1,
+    "chunkBytes": 12288,
+    "reviewStatus": "UNAPPROVED_REQUIRES_FULL_REVIEW_AND_FINAL_PRODUCER_SUCCESS",
+    "streams": [
+      {
+        "name": "original.zip",
+        "bytes": 201623,
+        "sha256": "ed446a67e55b975ab91d24582b857eae444c3b44da806b3d7757a4ff29074532",
+        "chunks": 17
+      },
+      {
+        "name": "javascript.sarif",
+        "bytes": 2123682,
+        "sha256": "aaed103560cbdb5d847c5b90cec00639ac3ae052d8b812616743d5e9cce7ed84",
+        "chunks": 173
+      },
+      {
+        "name": "source-extraction.json",
+        "bytes": 52235,
+        "sha256": "5e84e78691096543af9f5b8a53f301abad0ebedacbc153099ea1671186ea4099",
+        "chunks": 5
+      },
+      {
+        "name": "source-scope-after.json",
+        "bytes": 5620,
+        "sha256": "7b1cf58e784f37899b8255c3b3eb4c03f59ac2a119328549e4fe98ab0a10511e",
+        "chunks": 1
+      },
+      {
+        "name": "source-scope-before.json",
+        "bytes": 5620,
+        "sha256": "7b1cf58e784f37899b8255c3b3eb4c03f59ac2a119328549e4fe98ab0a10511e",
+        "chunks": 1
+      }
+    ]
+  },
+  "footer": {
+    "schema": "agijobsv0/codeql-review-byte-log/1",
+    "type": "complete",
+    "repository": "MontrealAI/AGIJobsv0",
+    "language": "javascript",
+    "source": "4be317e72c4de22efc0626e1754321f115533632",
+    "tree": "e4186023910204f7294d9fedb3919ed52663701d",
+    "ref": "refs/heads/fix/processed-codeql-release-proof-20261020",
+    "manifestSha256": "6e8f9c37d31f24459e81d93d78d484b208128923842d2592eb1e626a4a5e620a",
+    "streamCount": 5,
+    "rawFileCount": 4,
+    "acquisitionCount": 1,
+    "reviewStatus": "UNAPPROVED_REQUIRES_FULL_REVIEW_AND_FINAL_PRODUCER_SUCCESS"
+  },
+  "completeLogBytes": 3253428,
+  "completeLogSha256": "f8d703ec4458cd64f15b4637e80f4b9936b7641cd38f1987eacb617832042ce4"
+}
