@@ -3,7 +3,7 @@ import { RECEIVER_SOURCE_LOCK_JSON } from './project-source-selector.mjs';
 
 export const ALPHA_NATIVE_SOURCE = freezeSource({
   "repository": "MontrealAI/AGI-Alpha-Agent-v0",
-  "commit": "dbaf5696d64ddcbf133f05d88d35496ebb85c3f0",
+  "commit": "272b4de86bdc306ebf547750717983e467f5fcfd",
   "license": "Apache-2.0; vendored agijobs compiler retains MIT provenance",
   "files": [
     {

@@ -3,6 +3,9 @@
 // This profile authenticates a finite pending candidate. It cannot qualify CI,
 // scanner findings, a native release set, publication, or deployed contracts.
 const assert = require('node:assert/strict');
+const { createHash } = require('node:crypto');
+const integrationTransitionsSha256 =
+  '2c2787ce6d6cb749e893afc734b861d001aaaa819dff7c2ae5a6311b9bc92043';
 const historical = require('./qualify-source-release.cjs');
 
 function freeze(value) {
@@ -20,10 +23,14 @@ const anchors = Object.freeze({
   securityPrerequisite: '62d4f2db2b9eeddb6156b486336555b1e6485d92',
   implementationBaseline: 'b88965ef6e90bf6f725934520e9be3161e91af62',
   implementationTree: '6003d3d7286fe9fa4bf6875deefc01e579ce9dfc',
-  integrationBaseline: 'b1e03ef48f517054802a513f0302ef06d285f17a',
-  integrationTree: '9fd2d43a5075ed54b308ff381da92cb402d26319',
-  nativePinBaseline: '38a96554bb0932ff343c27c99bd397b372e4212c',
-  nativePinTree: 'ae407c07b079174b45fe10697015de8ab132118b',
+  integrationBaseline: 'b26a65456d5c06c901ba73d1e1620f7edb1a315a',
+  integrationTree: 'f1f082a1af8375a7418d86556daeb65351757ad5',
+  nativePinBaseline: 'd943e0b2384cad09b2918fe532fca50f5837e65f',
+  nativePinTree: 'b279cfcbd53c814db48bb4ab997199ea7ca9269c',
+  sourceConvergenceBaseline: '0b6d175a4ec8abf5b899e4a1b58a09e7045fe158',
+  sourceConvergenceTree: '9e8dff3e0863afa73e04757f77ca2bcb8c01dca2',
+  pythonScannerBaseline: '5b5f55322d7e2b6e026b51d9659431eed327b4f4',
+  pythonScannerTree: 'dd4bfca4a1e5b08dc868e3e47bcab0598d7102b8',
 });
 const allowedNewPaths = Object.freeze([
   'scripts/release/source-profile-rc16.cjs',
@@ -33,21 +40,61 @@ const allowedNewPaths = Object.freeze([
   'scripts/release/verify-transformational-compatibility.mjs',
   'test/scripts/source-profile-rc16.test.cjs',
   'test/scripts/source-release-rc16.test.cjs',
-  'test/scripts/transformational-compatibility.test.mjs',
+  'integrations/alpha-agent/tests/transformational-compatibility.test.mjs',
   '.github/workflows/source-release-rc16.yml',
   '.github/workflows/transformational-compatibility.yml',
+  'scripts/release/source-native-gates-rc16.cjs',
+  'scripts/release/source-native-evidence-rc16.cjs',
+  'test/scripts/source-release-security-rc16-gate.test.cjs',
+  'test/scripts/source-release-security-rc16-publish.test.cjs',
+  'scripts/release/source-scanner-gates-rc16.cjs',
+  'test/scripts/source-release-integrated-rc16.test.cjs',
   'docs/production/RELEASE_NOTES_SOURCE_RC16.md',
+  'scripts/release/python-scanner-rc16.cjs',
+  'test/scripts/source-python-scanner-rc16.test.cjs',
+  'scripts/release/source-scanner-review-bindings-rc16.cjs',
+  'scripts/release/source-python-evidence-rc16.cjs',
+  'test/scripts/source-python-evidence-rc16.test.cjs',
+  'test/scripts/source-review-binding-rc16.test.cjs',
+  '.github/codeql/config-python-integrations.yml',
+  '.github/workflows/static-analysis-python-integrations.yml',
 ]);
 const allowedExistingPaths = Object.freeze([
   '.github/workflows/source-release.yml',
   'package.json',
   'package-lock.json',
 ]);
+// These two reviewed entry additions are authenticated by exact Git bytes,
+// rather than granting an editable website or documentation path exception.
+const websiteTransitions = freeze([
+  {
+    path: 'docs/successor/TRANSFORMATIONAL_WORK.md',
+    before: {
+      mode: '100644',
+      blob: '19c3a3cdacc6a13713f5075eedba7236b5089e7c',
+    },
+    after: {
+      mode: '100644',
+      blob: 'c6c97f21058842b5e6513d2c1dfb1fe2287255d6',
+    },
+  },
+  {
+    path: 'scripts/pages/build.mjs',
+    before: {
+      mode: '100644',
+      blob: '67bac0b86418db9605c8775081247d167d2b3a42',
+    },
+    after: {
+      mode: '100644',
+      blob: 'b2fad292e6ea9afc740ecf6c6ff595bcee12fc0e',
+    },
+  },
+]);
 const nativeCompatibility = freeze({
   schema: 'agijobsv0/transformational-native-compatibility/v1',
   repository: 'MontrealAI/AGI-Alpha-Agent-v0',
-  commit: 'dbaf5696d64ddcbf133f05d88d35496ebb85c3f0',
-  tree: '30dc828703a6e9cd64103e0ebc965fc701e9bcf3',
+  commit: '272b4de86bdc306ebf547750717983e467f5fcfd',
+  tree: '7e3a171a3f4a256723d6b480c64104264021b456',
   fixturePath: 'examples/transformational-intelligence/campaign.json',
   boundary: 'free-inspection-positive-payment-refused',
   files: {
@@ -59,12 +106,40 @@ const nativeCompatibility = freeze({
       'b5f8e704aaab345f9d6503c854d38910ddfabbf98fe674c48b051097812b07f4',
   },
 });
-const scannerRequiredPaths = Object.freeze([
+const scannerPolicy = freeze({
+  qualityReview: {
+    schema: 'agijobsv0/nonsecurity-quality-review/1',
+    disposition: 'Acknowledged nonsecurity quality',
+    ruleIds: ['js/unused-local-variable', 'js/useless-assignment-to-local'],
+  },
+  producerCommit: '5b5f55322d7e2b6e026b51d9659431eed327b4f4',
+  producerTree: 'dd4bfca4a1e5b08dc868e3e47bcab0598d7102b8',
+  historicalConfigPath: '.github/codeql/config.yml',
+  historicalConfigSha256:
+    '4b34450e1dcc0b489feea158d642a6b66261d9e935463928782219c8716c0892',
+  configPath: '.github/codeql/config-integrations.yml',
+  configSha256:
+    '07d7be878097a38520bcf09147b62c75064cb3d707317ad34e028c1f46ba8155',
+  configBlob: '4533ce4d7f681a6230399e25fb1d1f736c84b25b',
+  workflowPath: '.github/workflows/static-analysis.yml',
+  workflowSha256:
+    'c260479d7a7ffea7d981dd3912e91a6871457b5d22b3ca8260b5903f3d8a4a47',
+  workflowBlob: '092cc25629d783a7e4cb683ee030b5c4c626bd3b',
+  archiveFiles: [
+    'javascript.sarif',
+    'source-extraction.json',
+    'source-scope-after.json',
+    'source-scope-before.json',
+  ],
+});
+const scannerReceiverPaths = Object.freeze([
   'integrations/alpha-agent/four-repo-computer-lifecycle.cjs',
   'integrations/alpha-agent/four-repo-computer-receipt.mjs',
   'integrations/alpha-agent/pinned-alpha-checkout.cjs',
   'integrations/alpha-agent/transformational-work-request.mjs',
   'integrations/alpha-agent/vendor/alpha/docs/assets/successor/engine.mjs',
+  'integrations/alpha-agent/vendor/alpha-computer/examples/successor-alpha/computer.mjs',
+  'integrations/alpha-agent/vendor/alpha-computer/docs/assets/successor/engine.mjs',
   'website/assets/computer-receipt.mjs',
   'website/assets/computer-receipt-model.mjs',
   'website/assets/computer-receipt-copy.mjs',
@@ -73,55 +148,67 @@ const scannerRequiredPaths = Object.freeze([
   'website/assets/computer-mission.js',
   'website/assets/computer-mission-copy.mjs',
 ]);
-const scannerPolicy = freeze({
-  producerCommit: '838eb65c5b78ef8af271a442bd49136c9b86c38e',
-  producerTree: 'dba1dbde98996700c4460336e837d94c332bffa2',
-  historicalConfigPath: '.github/codeql/config.yml',
-  historicalConfigSha256:
-    '4b34450e1dcc0b489feea158d642a6b66261d9e935463928782219c8716c0892',
-  configPath: '.github/codeql/config-integrations.yml',
+const scannerRequiredPaths = Object.freeze([
+  'integrations/alpha-agent/four-repo-computer-lifecycle.cjs',
+  'integrations/alpha-agent/four-repo-computer-receipt.mjs',
+  'integrations/alpha-agent/pinned-alpha-checkout.cjs',
+  'integrations/alpha-agent/transformational-work-request.mjs',
+  'integrations/alpha-agent/vendor/alpha/docs/assets/successor/engine.mjs',
+  'integrations/alpha-agent/vendor/alpha-computer/examples/successor-alpha/computer.mjs',
+  'integrations/alpha-agent/vendor/alpha-computer/docs/assets/successor/engine.mjs',
+  'scripts/pages/build.mjs',
+  'scripts/release/qualify-source-release-rc16.cjs',
+  'scripts/release/publish-source-release-rc16.cjs',
+  'scripts/release/source-profile-rc16.cjs',
+  'scripts/release/source-native-gates-rc16.cjs',
+  'scripts/release/source-native-evidence-rc16.cjs',
+  'scripts/release/verify-transformational-compatibility.mjs',
+  'website/assets/computer-receipt.mjs',
+  'website/assets/computer-receipt-model.mjs',
+  'website/assets/computer-receipt-copy.mjs',
+  'website/assets/computer-desk.mjs',
+  'website/assets/computer-desk-runtime-source.mjs',
+  'website/assets/computer-mission.js',
+  'website/assets/computer-mission-copy.mjs',
+  'scripts/release/source-scanner-gates-rc16.cjs',
+  'scripts/release/python-scanner-rc16.cjs',
+  'scripts/pages/computer-receipt.mjs',
+  'scripts/release/source-scanner-review-bindings-rc16.cjs',
+  'scripts/release/source-python-evidence-rc16.cjs',
+]);
+const pythonScannerPolicy = freeze({
+  reviewSchema: 'agijobsv0/codeql-python-review/2',
+  reviewedProducer: {
+    event: 'push',
+    headBranch: 'fix/inherited-codeql-ti-final-rc16-20261019',
+    ref: 'refs/heads/fix/inherited-codeql-ti-final-rc16-20261019',
+  },
+  producerCommit: '5b5f55322d7e2b6e026b51d9659431eed327b4f4',
+  producerTree: 'dd4bfca4a1e5b08dc868e3e47bcab0598d7102b8',
+  configPath: '.github/codeql/config-python-integrations.yml',
   configSha256:
-    '18041680f9d2df3706e45bdf04e785457ee27573312998b999f51e893e7b59bb',
-  configBlob: '0759a4da80412a04830bed3e7f5727d07cbdeb35',
-  workflowPath: '.github/workflows/static-analysis.yml',
+    'eb5b425facefb419987bf537280d5144a477b65a205ccd71df3866b60b01e560',
+  configBlob: 'cdd0d5a0a1a0e691c3367bc5ce4429215f41381d',
+  workflowPath: '.github/workflows/static-analysis-python-integrations.yml',
   workflowSha256:
-    'd5974fce2bd468ce82209b10f03df8bb8162e7e65e0044bc1860795523373ccb',
-  workflowBlob: 'c7436fe742b7751b776eeb9ff82cd31f2508cb1a',
+    '06cb537c0a1502132c600bdd158284c51bb7c9296a11f831cd929ed2662eb5a5',
+  workflowBlob: 'fcec3ad137968eb75f86049ebea79543c3f314fc',
   archiveFiles: [
-    'javascript.sarif',
+    'python.sarif',
     'source-extraction.json',
     'source-scope-after.json',
     'source-scope-before.json',
   ],
 });
-const integrationPaths = Object.freeze([
-  '.github/codeql/config-integrations.yml',
-  '.github/workflows/static-analysis.yml',
-  'integrations/alpha-agent/four-repo-computer-lifecycle.cjs',
-  'integrations/alpha-agent/generate-computer-source.mjs',
-  'integrations/alpha-agent/pinned-alpha-checkout.cjs',
-  'integrations/alpha-agent/README.md',
-  'integrations/alpha-agent/vendor/alpha-computer/examples/successor-alpha/learning.mjs',
-  'integrations/alpha-agent/vendor/alpha-computer/examples/successor-alpha/research.mjs',
-  'integrations/alpha-agent/vendor/alpha-computer/source-identity.mjs',
-  'integrations/alpha-agent/vendor/alpha-computer/source-manifest.json',
-  'scripts/pages/computer-receipt-qa.mjs',
-  'scripts/pages/computer-receipt.mjs',
-  'scripts/pages/run-computer-receipt-qa.mjs',
-  'test/pages/computer-receipt-fixture.mjs',
-  'test/pages/computer-receipt-workspace.test.mjs',
-  'test/pages/four-repo-alpha-source.test.mjs',
-  'website/assets/computer-receipt-copy.mjs',
-  'website/assets/computer-receipt-model.mjs',
-  'website/assets/computer-receipt.mjs',
-]);
-const nativePinPaths = Object.freeze([
-  '.github/workflows/successor-computer.yml',
-  'integrations/alpha-agent/project-native-source.mjs',
-  'integrations/alpha-agent/project-source-selector.mjs',
+const pythonScannerRequiredPaths = Object.freeze([
   'integrations/alpha-agent/successor-computer-mission-lab.py',
-  'integrations/alpha-agent/vendor/alpha-computer/source-identity.mjs',
-  'integrations/alpha-agent/vendor/alpha-computer/source-manifest.json',
+  'integrations/alpha-agent/successor-computer-worker-launch.py',
+  'integrations/alpha-agent/successor-frontier-mission-lab.py',
+  'integrations/alpha-agent/supplier-adapter-lab.py',
+  'integrations/alpha-agent/supplier-browser-lab.py',
+  'integrations/alpha-agent/supplier_browser_lab_support.py',
+  'integrations/alpha-agent/supplier_node_guard.py',
+  'integrations/alpha-agent/supplier_proof_guard.py',
 ]);
 const excludedCompilerPaths = new Set(
   historical.reviewedCompilerPaths
@@ -229,95 +316,56 @@ function verifyProtectedTransitions(beforeTree, afterTree, transitions) {
   return actual;
 }
 
-function verifyIntegrationTransitions(beforeTree, afterTree, transitions) {
+function verifyWebsiteTransitions(
+  beforeTree,
+  afterTree,
+  transitions = profile.websiteTransitions
+) {
   requireValue(
     beforeTree instanceof Map &&
       afterTree instanceof Map &&
-      Array.isArray(transitions) &&
-      same(
-        transitions.map((item) => item.path).sort(),
-        [...integrationPaths].sort()
-      ),
-    'Complete finite integration transition paths differ'
+      same(transitions, websiteTransitions),
+    'Exact reviewed website transition inventory differs'
   );
-  for (const item of transitions) {
-    fields(
-      item,
-      ['path', 'before', 'after'],
-      'Malformed integration transition'
-    );
-    for (const identity of [item.before, item.after]) {
-      if (identity === null) continue;
-      fields(identity, ['mode', 'blob'], 'Malformed integration blob identity');
-      requireValue(
-        identity.mode === '100644' && /^[a-f0-9]{40}$/.test(identity.blob),
-        'Integration source must retain reviewed regular blob modes'
-      );
-    }
-    requireValue(
-      item.after !== null &&
-        !same(item.before, item.after) &&
-        (item.before === null || item.before.mode === item.after.mode),
-      'Integration deletion, unchanged transition or mode change is prohibited'
-    );
+  for (const item of websiteTransitions)
     requireValue(
       same(beforeTree.get(item.path) ?? null, item.before) &&
         same(afterTree.get(item.path) ?? null, item.after),
-      'Reviewed integration blob differs: ' + item.path
+      'Reviewed website blob or mode differs: ' + item.path
     );
-  }
-  requireValue(
-    same(changedPaths(beforeTree, afterTree), [...integrationPaths].sort()),
-    'Complete integration transition inventory differs'
-  );
-  return [...integrationPaths].sort();
+  return websiteTransitions.map((item) => item.path);
 }
 
-function verifyNativePinTransitions(beforeTree, afterTree, transitions) {
+function verifyIntegrationTransitions(
+  beforeTree,
+  afterTree,
+  transitions = profile.integrationTransitions
+) {
   requireValue(
     beforeTree instanceof Map &&
       afterTree instanceof Map &&
       Array.isArray(transitions) &&
-      same(
-        transitions.map((item) => item.path).sort(),
-        [...nativePinPaths].sort()
-      ),
-    'Complete finite native pin transition paths differ'
+      createHash('sha256').update(JSON.stringify(transitions)).digest('hex') ===
+        integrationTransitionsSha256,
+    'Exact reviewed integration transition inventory differs'
   );
   for (const item of transitions) {
-    fields(
-      item,
-      ['path', 'before', 'after'],
-      'Malformed native pin transition'
-    );
-    for (const identity of [item.before, item.after]) {
-      if (identity === null) continue;
-      fields(identity, ['mode', 'blob'], 'Malformed native pin blob identity');
-      requireValue(
-        identity.mode === '100644' && /^[a-f0-9]{40}$/.test(identity.blob),
-        'Native pin source must retain reviewed regular blob modes'
-      );
-    }
     requireValue(
-      item.after !== null &&
-        !same(item.before, item.after) &&
-        (item.before === null || item.before.mode === item.after.mode),
-      'Native pin deletion, unchanged transition or mode change is prohibited'
+      !protectedPath(item.path),
+      'Protected implementation change cannot become an integration exception'
     );
     requireValue(
       same(beforeTree.get(item.path) ?? null, item.before) &&
         same(afterTree.get(item.path) ?? null, item.after),
-      'Reviewed native pin blob differs: ' + item.path
+      'Reviewed integration blob or mode differs: ' + item.path
     );
   }
-  requireValue(
-    same(changedPaths(beforeTree, afterTree), [...nativePinPaths].sort()),
-    'Complete native pin transition inventory differs'
-  );
-  return [...nativePinPaths].sort();
+  return transitions.map((item) => item.path);
 }
 
 function verifyReleaseDelta(beforeTree, afterTree) {
+  const websitePaths = verifyWebsiteTransitions(beforeTree, afterTree);
+  const integrationPaths = verifyIntegrationTransitions(beforeTree, afterTree);
   const changes = changedPaths(beforeTree, afterTree);
   for (const name of changes) {
     const before = beforeTree.get(name),
@@ -327,7 +375,7 @@ function verifyReleaseDelta(beforeTree, afterTree) {
         !before && after?.mode === '100644',
         'Release addition is not a new regular file: ' + name
       );
-    else {
+    else if (!websitePaths.includes(name) && !integrationPaths.includes(name)) {
       requireValue(
         allowedExistingPaths.includes(name),
         'Unexpected implementation-to-release change: ' + name
@@ -423,12 +471,16 @@ function validateProfile(value = profile) {
       'qualification',
       ...Object.keys(anchors),
       'transitions',
+      'websiteTransitions',
       'integrationTransitions',
-      'nativePinTransitions',
       'nativeCompatibility',
-      'scannerPolicy',
       'scannerRequiredPaths',
+      'scannerReceiverPaths',
+      'scannerPolicy',
       'scannerReview',
+      'pythonScannerPolicy',
+      'pythonScannerRequiredPaths',
+      'pythonScannerReview',
     ],
     'rc.16 profile fields differ'
   );
@@ -452,26 +504,67 @@ function validateProfile(value = profile) {
   );
   requireValue(
     Array.isArray(value.integrationTransitions) &&
-      value.integrationTransitions.length === 19 &&
-      Array.isArray(value.nativePinTransitions) &&
-      value.nativePinTransitions.length === 6 &&
-      same(value.scannerPolicy, scannerPolicy) &&
+      createHash('sha256')
+        .update(JSON.stringify(value.integrationTransitions))
+        .digest('hex') === integrationTransitionsSha256,
+    'Exact reviewed integration transition inventory differs'
+  );
+  requireValue(
+    same(value.websiteTransitions, websiteTransitions),
+    'Exact reviewed website transition inventory differs'
+  );
+  requireValue(
+    same(value.scannerPolicy, scannerPolicy) &&
+      same(value.scannerReceiverPaths, scannerReceiverPaths) &&
       same(value.nativeCompatibility, nativeCompatibility) &&
       same(value.scannerRequiredPaths, scannerRequiredPaths) &&
-      value.scannerReview === null,
+      value.scannerReview === null &&
+      same(value.pythonScannerPolicy, pythonScannerPolicy) &&
+      same(value.pythonScannerRequiredPaths, pythonScannerRequiredPaths) &&
+      value.pythonScannerReview === null,
     'Pending native or scanner policy differs; a separately reviewed gate update is required'
   );
   return value;
 }
 
+function verifyScannerProducerPin(git, releaseTree, policy) {
+  requireValue(
+    typeof git === 'function' && releaseTree instanceof Map,
+    'Immutable scanner producer inputs required'
+  );
+  requireValue(
+    text(git('rev-parse', `${policy.producerCommit}^{tree}`)).trim() ===
+      policy.producerTree,
+    'Reviewed scanner producer tree differs'
+  );
+  const scannerProducerTree = parseTree(
+    git('ls-tree', '-rz', policy.producerCommit)
+  );
+  for (const [name, blob, digest] of [
+    [policy.configPath, policy.configBlob, policy.configSha256],
+    [policy.workflowPath, policy.workflowBlob, policy.workflowSha256],
+  ])
+    requireValue(
+      releaseTree.get(name)?.mode === '100644' &&
+        releaseTree.get(name)?.blob === blob &&
+        scannerProducerTree.get(name)?.mode === '100644' &&
+        scannerProducerTree.get(name)?.blob === blob &&
+        createHash('sha256')
+          .update(git('show', `${policy.producerCommit}:${name}`))
+          .digest('hex') === digest,
+      'Reviewed scanner producer blob or digest differs: ' + name
+    );
+  return true;
+}
+
 function verifySourceScope({ git, sha, version, lock, policy }) {
-  validateProfile();
   requireValue(
     typeof git === 'function' &&
       /^[a-f0-9]{40}$/.test(sha ?? '') &&
       version === profile.releaseVersion,
     'Invalid rc.16 source identity or version'
   );
+  validatePreparedProfile(profile, { git, target: sha });
   const readJSON = (ref, name) =>
     JSON.parse(text(git('show', `${ref}:${name}`)));
   for (const baseline of [
@@ -482,6 +575,9 @@ function verifySourceScope({ git, sha, version, lock, policy }) {
     profile.implementationBaseline,
     profile.integrationBaseline,
     profile.nativePinBaseline,
+    profile.sourceConvergenceBaseline,
+    profile.pythonScannerBaseline,
+    scannerPolicy.producerCommit,
   ])
     git('merge-base', '--is-ancestor', baseline, sha);
   requireValue(
@@ -489,6 +585,24 @@ function verifySourceScope({ git, sha, version, lock, policy }) {
       git('rev-parse', `${profile.implementationBaseline}^{tree}`)
     ).trim() === profile.implementationTree,
     'Candidate implementation tree differs'
+  );
+  requireValue(
+    text(git('rev-parse', `${profile.integrationBaseline}^{tree}`)).trim() ===
+      profile.integrationTree,
+    'Reviewed integration tree differs'
+  );
+  requireValue(
+    text(
+      git('rev-parse', `${profile.sourceConvergenceBaseline}^{tree}`)
+    ).trim() === profile.sourceConvergenceTree,
+    'Reviewed owner convergence tree differs'
+  );
+  requireValue(
+    text(git('rev-parse', `${profile.pythonScannerBaseline}^{tree}`)).trim() ===
+      profile.pythonScannerTree &&
+      profile.pythonScannerBaseline === pythonScannerPolicy.producerCommit &&
+      profile.pythonScannerTree === pythonScannerPolicy.producerTree,
+    'Reviewed Python scanner producer tree differs'
   );
   git(
     'merge-base',
@@ -518,17 +632,16 @@ function verifySourceScope({ git, sha, version, lock, policy }) {
       same(readJSON(sha, 'config/solidity-compiler.json'), compiler),
     'Reviewed compiler policy differs'
   );
+  requireValue(
+    text(git('rev-parse', `${scannerPolicy.producerCommit}^{tree}`)).trim() ===
+      scannerPolicy.producerTree,
+    'Reviewed scanner producer tree differs'
+  );
   const baselineTree = parseTree(
     git('ls-tree', '-rz', profile.compilerSourceBaseline)
   );
   const implementationTree = parseTree(
     git('ls-tree', '-rz', profile.implementationBaseline)
-  );
-  const integrationTree = parseTree(
-    git('ls-tree', '-rz', profile.integrationBaseline)
-  );
-  const nativePinTree = parseTree(
-    git('ls-tree', '-rz', profile.nativePinBaseline)
   );
   const releaseTree = parseTree(git('ls-tree', '-rz', sha));
   verifyProtectedTransitions(
@@ -537,64 +650,45 @@ function verifySourceScope({ git, sha, version, lock, policy }) {
     profile.transitions
   );
   requireValue(
-    text(git('rev-parse', profile.integrationBaseline + '^{tree}')).trim() ===
-      profile.integrationTree,
-    'Integrated candidate tree differs'
+    text(git('rev-parse', `${profile.nativePinBaseline}^{tree}`)).trim() ===
+      profile.nativePinTree,
+    'Reviewed native pin tree differs'
   );
-  git(
-    'merge-base',
-    '--is-ancestor',
-    profile.implementationBaseline,
-    profile.integrationBaseline
+  verifyScannerProducerPin(git, releaseTree, scannerPolicy);
+  // The separate Python producer is retained exactly without changing the
+  // direct implementation-to-release transition inventory above.
+  const pythonProducerTree = parseTree(
+    git('ls-tree', '-rz', profile.pythonScannerBaseline)
   );
-  git(
-    'merge-base',
-    '--is-ancestor',
-    scannerPolicy.producerCommit,
-    profile.integrationBaseline
-  );
-  requireValue(
-    text(git('rev-parse', scannerPolicy.producerCommit + '^{tree}')).trim() ===
-      scannerPolicy.producerTree,
-    'Reviewed scanner producer tree differs'
-  );
-  verifyIntegrationTransitions(
-    implementationTree,
-    integrationTree,
-    profile.integrationTransitions
-  );
-  for (const [name, blob] of [
-    [scannerPolicy.configPath, scannerPolicy.configBlob],
-    [scannerPolicy.workflowPath, scannerPolicy.workflowBlob],
+  for (const [name, blob, digest] of [
+    [
+      pythonScannerPolicy.configPath,
+      pythonScannerPolicy.configBlob,
+      pythonScannerPolicy.configSha256,
+    ],
+    [
+      pythonScannerPolicy.workflowPath,
+      pythonScannerPolicy.workflowBlob,
+      pythonScannerPolicy.workflowSha256,
+    ],
   ])
     requireValue(
-      integrationTree.get(name)?.mode === '100644' &&
-        integrationTree.get(name)?.blob === blob,
-      'Reviewed scanner producer blob differs: ' + name
+      pythonProducerTree.get(name)?.mode === '100644' &&
+        pythonProducerTree.get(name)?.blob === blob &&
+        releaseTree.get(name)?.mode === '100644' &&
+        releaseTree.get(name)?.blob === blob &&
+        createHash('sha256')
+          .update(text(git('show', `${profile.pythonScannerBaseline}:${name}`)))
+          .digest('hex') === digest,
+      'Reviewed Python scanner producer blob or digest differs: ' + name
     );
-  requireValue(
-    text(git('rev-parse', profile.nativePinBaseline + '^{tree}')).trim() ===
-      profile.nativePinTree,
-    'Native pin candidate tree differs'
-  );
-  git(
-    'merge-base',
-    '--is-ancestor',
-    profile.integrationBaseline,
-    profile.nativePinBaseline
-  );
-  verifyNativePinTransitions(
-    integrationTree,
-    nativePinTree,
-    profile.nativePinTransitions
-  );
-  const releaseChanges = verifyReleaseDelta(nativePinTree, releaseTree);
+  const releaseChanges = verifyReleaseDelta(implementationTree, releaseTree);
   const afterPackage = readJSON(sha, 'package.json'),
     afterLock = readJSON(sha, 'package-lock.json');
   verifyVersionOnly(
-    readJSON(profile.integrationBaseline, 'package.json'),
+    readJSON(profile.implementationBaseline, 'package.json'),
     afterPackage,
-    readJSON(profile.integrationBaseline, 'package-lock.json'),
+    readJSON(profile.implementationBaseline, 'package-lock.json'),
     afterLock
   );
   requireValue(
@@ -605,7 +699,7 @@ function verifySourceScope({ git, sha, version, lock, policy }) {
     text(
       git(
         'show',
-        `${profile.integrationBaseline}:.github/workflows/source-release.yml`
+        `${profile.implementationBaseline}:.github/workflows/source-release.yml`
       )
     ),
     text(git('show', `${sha}:.github/workflows/source-release.yml`))
@@ -618,23 +712,81 @@ function verifySourceScope({ git, sha, version, lock, policy }) {
     reviewedCompilerPaths: historical.reviewedCompilerPaths,
     compiler: compiler.longVersion,
     protectedTransitions: profile.transitions,
+    websiteTransitions: profile.websiteTransitions,
     integrationTransitions: profile.integrationTransitions,
-    nativePinTransitions: profile.nativePinTransitions,
-    scannerPolicy: profile.scannerPolicy,
     releaseChanges,
     nativeCompatibility: profile.nativeCompatibility,
     scannerRequiredPaths: profile.scannerRequiredPaths,
-    scannerReview: null,
+    scannerReceiverPaths: profile.scannerReceiverPaths,
+    scannerPolicy: profile.scannerPolicy,
+    scannerReview: profile.scannerReview,
+    pythonScannerPolicy: profile.pythonScannerPolicy,
+    pythonScannerRequiredPaths: profile.pythonScannerRequiredPaths,
+    pythonScannerReview: profile.pythonScannerReview,
     productionApproved: false,
   };
 }
 
-function verifyPublicationReview() {
-  // The expanded producer is pinned, but actual final-source extraction and
-  // finite reviewed current-result inventory have not been installed in this profile.
-  throw Error(
-    'rc.16 publication blocked: scannerReview is pending; full integration extraction and independent finite result review are required'
+function validatePreparedProfile(value = profile, { git, target } = {}) {
+  validateProfile({ ...value, scannerReview: null, pythonScannerReview: null });
+  requireValue(
+    typeof git === 'function' && /^[a-f0-9]{40}$/.test(target || ''),
+    'Immutable Git target is required for scanner review metadata admission'
   );
+  const {
+    projectThreeSlotProfile,
+    validateScannerReviewMetadata,
+    verifyThreeSlotReviewBinding,
+  } = require('./source-scanner-review-bindings-rc16.cjs');
+  const profilePath = 'scripts/release/source-profile-rc16.json';
+  const installed = parseTree(git('ls-tree', '-rz', target, '--', profilePath));
+  requireValue(
+    installed.get(profilePath)?.mode === '100644',
+    'Installed review profile must be a regular immutable Git file'
+  );
+  requireValue(
+    same(
+      projectThreeSlotProfile(text(git('show', `${target}:${profilePath}`)))
+        .profile,
+      value
+    ),
+    'rc.16 publication blocked: installed review profile differs from immutable Git source'
+  );
+  for (const field of ['scannerReview', 'pythonScannerReview']) {
+    if (value[field] !== null) {
+      validateScannerReviewMetadata(field, value[field], { git, target });
+      const {
+        parseScannerReview,
+        scannerReviewPath,
+      } = require('./qualify-source-release-rc16.cjs');
+      verifyThreeSlotReviewBinding({
+        sourceSha: value[field].sourceCommit,
+        sha: target,
+        review: value[field],
+        git,
+        field,
+        parseNotes: parseScannerReview,
+        notesPath: scannerReviewPath,
+      });
+    }
+  }
+  return value;
+}
+function verifyPreparedPublicationReview(
+  value = profile,
+  { git, target } = {}
+) {
+  requireValue(
+    value?.scannerReview != null && value?.pythonScannerReview != null,
+    'rc.16 publication blocked: scannerReview is pending and Python scanner review is pending; actual JavaScript and Python extraction and independent finite result reviews are required'
+  );
+  validatePreparedProfile(value, { git, target });
+  return { metadataAdmissionOnly: true, productionApproved: false };
+}
+function verifyPublicationReview(value = profile, context = {}) {
+  // This receipt admits only immutable review metadata. The callers still
+  // authenticate complete JavaScript/Python archives, API identities and CI.
+  return verifyPreparedPublicationReview(value, context);
 }
 
 module.exports = {
@@ -642,17 +794,21 @@ module.exports = {
   anchors,
   allowedNewPaths,
   allowedExistingPaths,
+  websiteTransitions,
   protectedPath,
   parseTree,
   verifyProtectedTransitions,
+  verifyWebsiteTransitions,
   verifyIntegrationTransitions,
-  verifyNativePinTransitions,
   verifyReleaseDelta,
   verifyVersionOnly,
   LEGACY_WORKFLOW_GUARD,
   applyLegacyWorkflowGuard,
   verifyLegacyWorkflow,
   validateProfile,
+  verifyScannerProducerPin,
   verifySourceScope,
+  validatePreparedProfile,
+  verifyPreparedPublicationReview,
   verifyPublicationReview,
 };

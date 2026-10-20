@@ -7,13 +7,109 @@ import { execFileSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 import { createRequire } from 'node:module';
 import {
+  NATIVE_FIXTURE_MAX_BYTES,
+  readPinnedNativeFixture,
   resolvePinnedNativeRoot,
   validateNativeReport,
-} from '../../scripts/release/verify-transformational-compatibility.mjs';
+} from '../../../scripts/release/verify-transformational-compatibility.mjs';
 const require = createRequire(import.meta.url);
-const { profile } = require('../../scripts/release/source-profile-rc16.cjs');
+const { profile } = require('../../../scripts/release/source-profile-rc16.cjs');
 const jobsCommit = 'a'.repeat(40),
   jobsTree = 'b'.repeat(40);
+
+function fixtureRepository(t) {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'jobs-native-fixture-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const env = Object.fromEntries(
+    Object.entries(process.env).filter(([name]) => !name.startsWith('GIT_'))
+  );
+  Object.assign(env, {
+    GIT_CONFIG_NOSYSTEM: '1',
+    GIT_CONFIG_GLOBAL: '/dev/null',
+    GIT_AUTHOR_NAME: 'Bounded fixture',
+    GIT_AUTHOR_EMAIL: 'fixture@example.invalid',
+    GIT_COMMITTER_NAME: 'Bounded fixture',
+    GIT_COMMITTER_EMAIL: 'fixture@example.invalid',
+  });
+  const git = (...args) =>
+    execFileSync(
+      'git',
+      [
+        '--no-replace-objects',
+        '-c',
+        'core.hooksPath=/dev/null',
+        '-C',
+        root,
+        ...args,
+      ],
+      { encoding: 'utf8', env, maxBuffer: 1024 * 1024 }
+    ).trim();
+  git('init', '--quiet');
+  const commit = (bytes) => {
+    const file = path.join(
+      root,
+      'examples/transformational-intelligence/campaign.json'
+    );
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, bytes);
+    git('add', '.');
+    git('commit', '--quiet', '-m', 'Benign public fixture input');
+    return git('rev-parse', 'HEAD');
+  };
+  return { root, git, commit };
+}
+
+test('native fixture intake returns the exact selected Git bytes independently of later revisions', (t) => {
+  const repository = fixtureRepository(t);
+  const selected = Buffer.from('{"public":"première version"}\n\n');
+  const commit = repository.commit(selected);
+  repository.commit('{"public":"later version"}\n');
+  const bytes = readPinnedNativeFixture(repository.root, commit);
+  assert(Buffer.isBuffer(bytes));
+  assert.deepEqual(bytes, selected);
+  assert.notEqual(commit, repository.git('rev-parse', 'HEAD'));
+});
+
+test('native fixture intake accepts the exact byte limit and refuses larger committed objects', (t) => {
+  const repository = fixtureRepository(t);
+  assert.equal(NATIVE_FIXTURE_MAX_BYTES, 2_000_000);
+  const prefix = Buffer.from('{"public":"');
+  const suffix = Buffer.from('"}\n');
+  for (const length of [2_000_000, 2_000_001, 2_008_192]) {
+    const bytes = Buffer.concat([
+      prefix,
+      Buffer.alloc(length - prefix.length - suffix.length, 'x'),
+      suffix,
+    ]);
+    const commit = repository.commit(bytes);
+    if (length === 2_000_000)
+      assert.deepEqual(readPinnedNativeFixture(repository.root, commit), bytes);
+    else
+      assert.throws(
+        () => readPinnedNativeFixture(repository.root, commit),
+        /Native fixture exceeds intake bound/
+      );
+  }
+});
+
+test('native fixture intake requires an exact commit and an existing selected fixture', (t) => {
+  const repository = fixtureRepository(t);
+  fs.writeFileSync(path.join(repository.root, 'README.md'), 'Public fixture\n');
+  repository.git('add', '.');
+  repository.git('commit', '--quiet', '-m', 'No campaign fixture yet');
+  const commit = repository.git('rev-parse', 'HEAD');
+  assert.throws(() => readPinnedNativeFixture(repository.root, commit));
+  for (const ref of ['HEAD', commit + '^', '0'.repeat(39), undefined])
+    assert.throws(
+      () => readPinnedNativeFixture(repository.root, ref),
+      /exact Git commit/
+    );
+  assert.throws(
+    () => readPinnedNativeFixture('.', commit),
+    /absolute checkout/
+  );
+});
+
 function fixture() {
   return {
     schema: 'agijobsv0/native-ti-compatibility/1',
@@ -156,7 +252,7 @@ test('native archive must retain the complete pinned free-inspection and refusal
 test('CI selects the same exact native source and emits retained real-parser evidence', () => {
   const workflow = fs.readFileSync(
     new URL(
-      '../../.github/workflows/transformational-compatibility.yml',
+      '../../../.github/workflows/transformational-compatibility.yml',
       import.meta.url
     ),
     'utf8'

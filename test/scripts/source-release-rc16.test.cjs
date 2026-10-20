@@ -9,11 +9,9 @@ const {
   requiredPaths,
   requiredChecks,
   authenticCodeQL,
+  assertNoScannerErrorDiagnostics,
   validateProducer,
   verifyScannerArchive,
-  verifyScannerProducerArchive,
-  verifyScannerResults,
-  expectedReceiverSources,
   verifyScannerReviewBinding,
   resultIdentity,
   extracted,
@@ -24,7 +22,107 @@ const {
   sourceApiUrl,
   verifyRetainedProducer,
 } = require('../../scripts/release/publish-source-release-rc16.cjs');
-const { profile } = require('../../scripts/release/source-profile-rc16.cjs');
+const {
+  profile,
+  validatePreparedProfile,
+} = require('../../scripts/release/source-profile-rc16.cjs');
+// Pending-only behavior uses copied metadata and unmodified production guards.
+// Validate any installed live records before constructing the inert fixture.
+function pendingProfileFixture() {
+  const root = path.resolve(__dirname, '../..');
+  const git = (...args) =>
+    execFileSync('git', ['--no-replace-objects', '-C', root, ...args], {
+      encoding: 'utf8',
+      maxBuffer: 32 * 1024 * 1024,
+    });
+  const target = git('rev-parse', 'HEAD').trim();
+  assert.equal(validatePreparedProfile(profile, { git, target }), profile);
+  const qualifier = require('../../scripts/release/qualify-source-release-rc16.cjs');
+  const notesReview = qualifier.parseScannerReview(
+    fs.readFileSync(path.join(root, qualifier.scannerReviewPath), 'utf8')
+  );
+  if (notesReview !== null)
+    qualifier.verifyScannerReviewSource({
+      git,
+      sha: target,
+      review: notesReview,
+    });
+  return {
+    ...structuredClone(profile),
+    scannerReview: null,
+    pythonScannerReview: null,
+  };
+}
+function pendingReleaseFixture(t) {
+  const pending = pendingProfileFixture();
+  const repository = path.resolve(__dirname, '../..');
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'rc16-pending-policy-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  for (const name of [
+    'scripts/release',
+    'integrations/alpha-agent/pinned-alpha-checkout.cjs',
+    'ci/required-contexts.json',
+    'ci/required-companion-contexts.json',
+  ]) {
+    const destination = path.join(root, name);
+    fs.mkdirSync(path.dirname(destination), { recursive: true });
+    fs.cpSync(path.join(repository, name), destination, { recursive: true });
+  }
+  fs.writeFileSync(
+    path.join(root, 'scripts/release/source-profile-rc16.json'),
+    JSON.stringify(pending, null, 2) + '\n'
+  );
+  const notes = path.join(root, 'docs/production/RELEASE_NOTES_SOURCE_RC16.md');
+  fs.mkdirSync(path.dirname(notes), { recursive: true });
+  fs.writeFileSync(notes, '<!-- rc16-scanner-review\nnull\n-->\n');
+  const env = Object.fromEntries(
+    Object.entries(process.env).filter(([name]) => !name.startsWith('GIT_'))
+  );
+  Object.assign(env, {
+    GIT_CONFIG_NOSYSTEM: '1',
+    GIT_CONFIG_GLOBAL: '/dev/null',
+  });
+  const git = (...args) =>
+    execFileSync(
+      'git',
+      ['-C', root, '-c', 'core.hooksPath=/dev/null', ...args],
+      {
+        encoding: 'utf8',
+        env,
+      }
+    );
+  git('init', '-q');
+  git('add', '.');
+  git(
+    '-c',
+    'user.name=Pending fixture',
+    '-c',
+    'user.email=fixture@example.invalid',
+    'commit',
+    '-qm',
+    'Inert pending metadata fixture; no scanner proof'
+  );
+  const source = git('rev-parse', 'HEAD').trim();
+  const offline = path.join(root, 'offline.cjs');
+  fs.writeFileSync(
+    offline,
+    'global.fetch = () => { throw Error("NETWORK_MUST_NOT_BE_USED"); };\n'
+  );
+  return {
+    root,
+    offline,
+    environment: {
+      ...env,
+      GITHUB_SHA: source,
+      GITHUB_REPOSITORY: 'MontrealAI/AGIJobsv0',
+      GITHUB_EVENT_NAME: 'push',
+      GITHUB_REF: 'refs/heads/main',
+      GH_TOKEN: 'INERT_PENDING_FIXTURE_NEVER_USED_FOR_NETWORK',
+      TAG: 'source-v2.1.0-rc.16',
+    },
+  };
+}
+
 const sha = 'a'.repeat(40);
 const actions = { id: 15368, slug: 'github-actions' };
 const security = {
@@ -33,6 +131,8 @@ const security = {
   owner: { id: 9919 },
 };
 const resultCheck = () => ({
+  id: 123,
+  html_url: 'https://github.com/MontrealAI/AGIJobsv0/runs/123',
   name: 'CodeQL',
   head_sha: sha,
   app: structuredClone(security),
@@ -121,6 +221,16 @@ test('all inherited and added workflows/checks plus the authentic separate CodeQ
       );
     },
     (x) => {
+      x.runs = x.runs.filter(
+        (item) => !item.path.endsWith('static-analysis-python-integrations.yml')
+      );
+    },
+    (x) => {
+      x.checks.find(
+        (check) => check.name === 'Python integration CodeQL analysis'
+      ).conclusion = 'skipped';
+    },
+    (x) => {
       x.runs[0].event = 'pull_request';
     },
     (x) => {
@@ -154,7 +264,7 @@ test('retained artifacts require successful exact-main authenticated producer id
       name: 'codeql-security-report',
       expired: false,
       digest: 'sha256:' + 'c'.repeat(64),
-      workflow_run: { id: 42, head_sha: sha },
+      workflow_run: { id: 42, head_sha: sha, head_branch: 'main' },
     };
   const verify = (a = artifact, r = producer) =>
     validateProducer({
@@ -231,7 +341,7 @@ test('real retained SARIF parsing preserves full rules, coverage, result multipl
     })),
   };
   const verify = (doc = document, options = {}) =>
-    verifyScannerResults(doc, {
+    verifyScannerArchive(['javascript.sarif'], () => JSON.stringify(doc), {
       baseline,
       review,
       requiredSources: extracted(baseline).slice(0, 1),
@@ -298,15 +408,27 @@ test('scanner review installation permits only its own record and no executable 
   };
   const before = {
       scannerReview: null,
+      pythonScannerReview: null,
       qualification: 'pending',
       native: 'fixed',
     },
-    after = { ...before, scannerReview: review, qualification: 'reviewed' };
+    after = { ...before, scannerReview: review };
+  const profilePath = 'scripts/release/source-profile-rc16.json';
   const git = (command, ...args) =>
-    command === 'diff'
-      ? 'scripts/release/source-profile-rc16.json\0'
+    command === 'rev-list'
+      ? `${sha} ${review.sourceCommit}\n`
+      : command === 'rev-parse'
+      ? 'c'.repeat(40)
+      : command === 'ls-tree'
+      ? '100644 blob ' + 'd'.repeat(40) + '\t' + args.at(-1) + '\0'
+      : command === 'diff'
+      ? profilePath + '\0'
       : command === 'show'
-      ? JSON.stringify(args[0].startsWith(review.sourceCommit) ? before : after)
+      ? args[0].endsWith(':' + profilePath)
+        ? JSON.stringify(
+            args[0].startsWith(review.sourceCommit) ? before : after
+          )
+        : '<!-- rc16-scanner-review\nnull\n-->\n'
       : '';
   verifyScannerReviewBinding({ sha, review, git });
   assert.throws(
@@ -314,12 +436,12 @@ test('scanner review installation permits only its own record and no executable 
       verifyScannerReviewBinding({
         sha,
         review,
-        git: (command) =>
-          command === 'diff'
-            ? 'scripts/release/qualify-source-release-rc16.cjs\0'
-            : '',
+        git: (command, ...args) =>
+          command === 'show' && args[0] === sha + ':' + profilePath
+            ? JSON.stringify({ ...after, qualification: 'reviewed' })
+            : git(command, ...args),
       }),
-    /beyond its record/
+    /profile bytes outside/
   );
   assert.throws(
     () =>
@@ -327,11 +449,23 @@ test('scanner review installation permits only its own record and no executable 
         sha,
         review,
         git: (command, ...args) =>
-          command === 'show' && args[0].startsWith(sha)
+          command === 'diff'
+            ? 'scripts/release/qualify-source-release-rc16.cjs\0'
+            : git(command, ...args),
+      }),
+    /outside the exact two review metadata paths/
+  );
+  assert.throws(
+    () =>
+      verifyScannerReviewBinding({
+        sha,
+        review,
+        git: (command, ...args) =>
+          command === 'show' && args[0] === sha + ':' + profilePath
             ? JSON.stringify({ ...after, native: 'substituted' })
             : git(command, ...args),
       }),
-    /profile pins/
+    /profile bytes outside/
   );
 });
 test('retained readback cannot relabel another successful same-SHA run or attempt as qualified', () => {
@@ -347,7 +481,7 @@ test('retained readback cannot relabel another successful same-SHA run or attemp
       name: `codeql-security-report-${sha}-42-1`,
       expired: false,
       digest: 'sha256:' + digest,
-      workflow_run: { id: 42, head_sha: sha },
+      workflow_run: { id: 42, head_sha: sha, head_branch: 'main' },
     };
     fs.writeFileSync(path.join(directory, 'codeql-evidence.zip'), bytes);
     fs.writeFileSync(
@@ -422,12 +556,15 @@ test('retained readback cannot relabel another successful same-SHA run or attemp
     fs.rmSync(directory, { recursive: true, force: true });
   }
 });
-test('rc.16 owns only its new tag/routes/assets and remains blocked pending actual security review', () => {
+test('rc.16 owns only its new tag/routes/assets and remains blocked pending actual security review', (t) => {
   const names = expectedAssets(profile.tag);
-  assert.equal(new Set(names).size, 20);
+  assert.equal(new Set(names).size, 24);
   for (const name of [
     'codeql-evidence.zip',
     'codeql-provenance.json',
+    'codeql-reviewed-evidence.zip',
+    'python-codeql-evidence.zip',
+    'python-codeql-provenance.json',
     'native-compatibility.zip',
     'native-provenance.json',
     'source-profile-rc16.json',
@@ -438,52 +575,193 @@ test('rc.16 owns only its new tag/routes/assets and remains blocked pending actu
     sourceApiUrl('GET', 'git/ref/tags/source-v2.1.0-rc.16').endsWith('rc.16')
   );
   assert.throws(() => sourceApiUrl('GET', 'git/ref/tags/source-v2.1.0-rc.15'));
+  const pending = pendingReleaseFixture(t);
   assert.throws(
     () =>
       execFileSync(
         process.execPath,
         [
-          path.resolve(
-            __dirname,
-            '../../scripts/release/publish-source-release-rc16.cjs'
+          '--require',
+          pending.offline,
+          path.join(
+            pending.root,
+            'scripts/release/publish-source-release-rc16.cjs'
           ),
         ],
-        { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }
+        {
+          cwd: pending.root,
+          env: pending.environment,
+          encoding: 'utf8',
+          stdio: ['ignore', 'pipe', 'pipe'],
+        }
       ),
     (error) =>
-      /publication blocked: scannerReview is pending/.test(error.stderr)
+      /publication blocked: scannerReview is pending/.test(error.stderr) &&
+      !error.stderr.includes('NETWORK_MUST_NOT_BE_USED')
   );
+  assert.equal(fs.existsSync(path.join(pending.root, 'reports')), false);
 });
-test('four-record scanner contract requires external identities before reading reports', () => {
-  const unread = () => {
-    throw Error('Report must remain unread without valid external identity');
+
+test('test-only execution metadata rejects error diagnostics for both scanner languages', () => {
+  // Inert invocation metadata only; this is not a SARIF success fixture or
+  // authenticated scan evidence, and contains no hosted producer/run identity.
+  const label = 'SYNTHETIC_EXECUTION_METADATA_ONLY_NOT_SCAN_EVIDENCE';
+  const invocation = {
+    executionSuccessful: true,
+    toolExecutionNotifications: [
+      { level: 'note', message: { text: label } },
+      { level: 'warning', message: { text: label } },
+    ],
   };
-  assert.throws(
-    () => verifyScannerProducerArchive(['javascript.sarif'], unread),
-    /inventory/
-  );
-  assert.throws(
-    () =>
-      verifyScannerProducerArchive(profile.scannerPolicy.archiveFiles, unread),
-    /external source/
-  );
-  assert.deepEqual(profile.scannerPolicy.archiveFiles, [
-    'javascript.sarif',
-    'source-extraction.json',
-    'source-scope-after.json',
-    'source-scope-before.json',
-  ]);
-  assert.equal(profile.scannerReview, null);
+  assertNoScannerErrorDiagnostics([invocation]);
+  for (const field of [
+    'toolExecutionNotifications',
+    'toolConfigurationNotifications',
+  ])
+    assert.throws(
+      () =>
+        assertNoScannerErrorDiagnostics([
+          {
+            ...invocation,
+            [field]: [{ level: 'error', message: { text: label } }],
+          },
+        ]),
+      /error diagnostic/
+    );
 });
-test('mandatory scanner manifest is derived from actual pinned receiver Git source', () => {
+
+test('Python producer observation routes stay bound to the exact selected source and bounded pages', () => {
+  const route = (resource) => sourceApiUrl('GET', resource, sha);
+  for (const page of [1, 20]) {
+    assert(
+      route(
+        `actions/workflows/static-analysis-python-integrations.yml/runs?head_sha=${sha}&per_page=100&page=${page}`
+      ).endsWith(`page=${page}`)
+    );
+    assert(
+      route(`actions/runs/42/artifacts?per_page=100&page=${page}`).endsWith(
+        `page=${page}`
+      )
+    );
+  }
+  for (const resource of [
+    `actions/workflows/static-analysis-python-integrations.yml/runs?head_sha=${'b'.repeat(
+      40
+    )}&per_page=100&page=1`,
+    `actions/workflows/static-analysis-python-integrations.yml/runs?head_sha=${sha}&per_page=100&page=21`,
+    `actions/workflows/foreign.yml/runs?head_sha=${sha}&per_page=100&page=1`,
+    'actions/runs/42/artifacts?per_page=100&page=0',
+    'actions/runs/42/artifacts?per_page=100&page=21',
+  ])
+    assert.throws(() => route(resource), /Unsupported/);
+});
+
+test('pending Python evidence refuses before metadata, download or persistent output effects', async (t) => {
+  const pending = pendingReleaseFixture(t);
+  const {
+    retainPythonEvidence,
+    qualifyPythonEvidence,
+    collectAdditionalEvidence,
+  } = require(path.join(
+    pending.root,
+    'scripts/release/source-native-evidence-rc16.cjs'
+  ));
+  let effects = 0;
+  const context = {
+    sha,
+    tree: 'b'.repeat(40),
+    provenance: { workflows: [] },
+    directory: path.resolve(os.tmpdir(), 'benign-uncreated-python-evidence'),
+    api: async () => {
+      effects++;
+      throw Error('MUST_NOT_BE_USED');
+    },
+    download: async () => {
+      effects++;
+      throw Error('MUST_NOT_BE_USED');
+    },
+  };
+  await assert.rejects(retainPythonEvidence(context), /review/i);
+  await assert.rejects(qualifyPythonEvidence(context), /review/i);
+  await assert.rejects(collectAdditionalEvidence(), /scannerReview is pending/);
+  assert.equal(effects, 0);
+  assert.equal(fs.existsSync(context.directory), false);
+});
+
+test('every production admission supplies its immutable Git target before the pending hold', (t) => {
+  // Intercept admission only to inspect context, then reject unconditionally.
+  // No review record, successful scan, publication approval or effect is made.
   const root = path.resolve(__dirname, '../..');
+  const temporary = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'rc16-admission-context-')
+  );
+  t.after(() => fs.rmSync(temporary, { recursive: true, force: true }));
   const git = (...args) =>
     execFileSync('git', ['--no-replace-objects', '-C', root, ...args], {
       encoding: 'utf8',
-      maxBuffer: 32 * 1024 * 1024,
-    });
-  const required = expectedReceiverSources(git, profile.integrationBaseline);
-  assert.equal(required.length, 74);
-  assert(profile.scannerRequiredPaths.every((file) => required.includes(file)));
-  assert.equal(new Set(required).size, required.length);
+    }).trim();
+  const target = git('rev-parse', 'HEAD');
+  const tree = git('rev-parse', `${target}^{tree}`);
+  const policyPath = path.join(root, 'scripts/release/source-profile-rc16.cjs');
+  const preload = path.join(temporary, 'inspect-context.cjs');
+  const marker = 'INERT_CONTEXT_VERIFIED_PUBLICATION_REFUSED';
+  fs.writeFileSync(
+    preload,
+    `
+    const assert = require('node:assert/strict');
+    const policyPath = ${JSON.stringify(policyPath)};
+    const original = require(policyPath);
+    require.cache[policyPath].exports = {
+      ...original,
+      verifyPublicationReview(value, context) {
+        assert.equal(value, original.profile);
+        assert.equal(context?.target, ${JSON.stringify(target)});
+        assert.equal(typeof context.git, 'function');
+        assert.equal(context.git('rev-parse', context.target + '^{tree}').trim(), ${JSON.stringify(
+          tree
+        )});
+        assert.deepEqual(JSON.parse(context.git('show', context.target + ':scripts/release/source-profile-rc16.json')), value);
+        throw Error(${JSON.stringify(marker)});
+      }
+    };
+  `,
+    { mode: 0o600 }
+  );
+  const qualifier = path.join(
+    root,
+    'scripts/release/qualify-source-release-rc16.cjs'
+  );
+  const publisher = path.join(
+    root,
+    'scripts/release/publish-source-release-rc16.cjs'
+  );
+  const { spawnSync } = require('node:child_process');
+  for (const args of [
+    [qualifier],
+    [publisher],
+    [publisher, '--collect-scanner-evidence'],
+    [publisher, '--collect-compiler-evidence'],
+    [publisher, '--collect-additional-evidence'],
+  ]) {
+    const result = spawnSync(
+      process.execPath,
+      ['--require', preload, ...args],
+      {
+        cwd: root,
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          GITHUB_SHA: target,
+          GITHUB_REPOSITORY: 'MontrealAI/AGIJobsv0',
+          GITHUB_EVENT_NAME: 'push',
+          GITHUB_REF: 'refs/heads/main',
+          GH_TOKEN: 'INERT_TEST_VALUE_NEVER_USED_FOR_NETWORK',
+          TAG: 'source-v2.1.0-rc.16',
+        },
+        timeout: 10000,
+      }
+    );
+    assert.equal(result.status, 1, `${args.join(' ')} must remain refused`);
+    assert.match(result.stderr, new RegExp(marker));
+  }
 });

@@ -1,9 +1,9 @@
 {
   "schemaVersion": 2,
   "dependencyBaseline": "7b21ce05b0b18b46162da66c2f528334101f6f40",
-  "reviewedSourceCheckpoint": "3c17153942251116ee51163055eb1a25d652454b",
-  "transitionCount": 61,
-  "scope": "Retain all 54 prior reviewed transitions and before-blobs, the corrected reputation/percentage-collateral contracts, exact native receiver selection and immutable deployment evidence. Review complete literal-text escaping, import-safe renderer exports and CLI guards in the three owner reports, plus the explicitly inventoried new Markdown literal helper (absent at dependency baseline). No protected-path exemption, dependency, compiler or network change. Fresh independent exact-head source review, CodeQL and full integrated qualification remain mandatory; production approval remains false. Additional independently reviewed tooling: journal new-campaign creation/authority handover, source-bound receipts, cooperative sender exclusion, explicit separate fee/treasury roles and signer-free activation evidence. Solidity, compiler, numeric economics and historical deployment evidence remain unchanged. Additional correction: bounded-only authority/explorer observations, explicit role-separated disposable callers and exact local process/config/address binding. Public activation remains unqualified.",
+  "reviewedSourceCheckpoint": "1faf4b89e4e1e73c734d232af4a3c3888122da8b",
+  "transitionCount": 73,
+  "scope": "Retain all 54 prior reviewed transitions and before-blobs, the corrected reputation/percentage-collateral contracts, exact native receiver selection and immutable deployment evidence. Review complete literal-text escaping, import-safe renderer exports and CLI guards in the three owner reports, plus the explicitly inventoried new Markdown literal helper (absent at dependency baseline). No protected-path exemption, dependency, compiler or network change. Fresh independent exact-head source review, CodeQL and full integrated qualification remain mandatory; production approval remains false. Additional independently reviewed tooling: journal new-campaign creation/authority handover, source-bound receipts, cooperative sender exclusion, explicit separate fee/treasury roles and signer-free activation evidence. Solidity, compiler, numeric economics and historical deployment evidence remain unchanged. Additional correction: bounded-only authority/explorer observations, explicit role-separated disposable callers and exact local process/config/address binding. Public activation remains unqualified. Finite inherited-security reconciliation proposal: retain the original dependency baseline and all 61 prior before-blobs; bind the public security checkpoint 1faf4b89e4e1e73c734d232af4a3c3888122da8b, which contains PR base 6a18192e915230440f288923b25814e4a87ed7c5. Update three prior after-blobs and add twelve exact protected transitions for the existing owner-report literal encoding, same-handle report read, guarded quality cleanups and standalone Node security-test discovery separation. The original all-96 findings ledger and its individual dispositions remain unchanged. This proposal requires independent review before adoption; no scanner clearance, final-source qualification, deployment or production authority is conferred. Protected-path predicates, schema, environment admission, selected dependency identities and every downstream gate remain unchanged.",
   "transitions": [
     {
       "path": "config/README.md",
@@ -163,7 +163,7 @@
     {
       "path": "scripts/config/index.js",
       "before": "dd0166385e2eda90e02763c71888264160837d4d",
-      "after": "d7b79574d7ec42826c94f1dfd5f400cbd51aee9a"
+      "after": "1d231c4e45e49d9b64b4422a1960b02de9452ef8"
     },
     {
       "path": "scripts/deploy/authority-audit.cjs",
@@ -218,12 +218,12 @@
     {
       "path": "scripts/v2/deploy.ts",
       "before": "bd064473dee1a034b4f193f2e31c33213393b395",
-      "after": "ec8bc02db483e595653dfdb91f1467ce8d764637"
+      "after": "8406f07eae73cbdbe5b432d57c1b3904d514e23c"
     },
     {
       "path": "scripts/v2/deployDefaults.ts",
       "before": "07b7e1859a4ea386c2f84a31cf8cbb5c4a1f28ca",
-      "after": "74f4f260a0bdd3207ddf328a724e9ee4d6412112"
+      "after": "163f913b03e388825f2543f8f2315aebe272abe3"
     },
     {
       "path": "scripts/v2/lib/deployment-candidate.cjs",
@@ -309,6 +309,66 @@
       "path": "test/v2/invariant/ReputationGrowthInvariant.t.sol",
       "before": null,
       "after": "83e9faaa7191e0c83974014672c13b9da316d896"
+    },
+    {
+      "path": "hardhat.config.js",
+      "before": "b89721670274f47d2907836dfac0bdde70e230b8",
+      "after": "8d201a5f8af39ccefa4970e6839584abcc1720ba"
+    },
+    {
+      "path": "scripts/v2/lib/mermaidLiteral.ts",
+      "before": null,
+      "after": "6accedcb3da8c092811741afd3d05a6c37f62323"
+    },
+    {
+      "path": "scripts/v2/lib/nationalSupplyChainTranscript.ts",
+      "before": "bf0b57c32bc1a633be630f629cce7dd57978a418",
+      "after": "99684f946e0d8437bda678863a86a90bd5d1d66d"
+    },
+    {
+      "path": "scripts/v2/lib/randaoCoordinatorPlan.ts",
+      "before": "2e0f0e74e8fc0bb1488f982516dc2fa4a25e16b3",
+      "after": "33bfa0a701c53e51d0f2bd1bcf71783752ac356d"
+    },
+    {
+      "path": "scripts/v2/ownerConfigAudit.ts",
+      "before": "58631dc15603fbbbf89ef8a0c62b48aa8c8dad32",
+      "after": "7d7c395d49b77239f4d701e7a4ab75ac3a706dda"
+    },
+    {
+      "path": "scripts/v2/ownerControlGuide.ts",
+      "before": "395a432e4d6ce0cfecc820f71539b604fa2dd4f3",
+      "after": "a569965764428e25191bc6dc6555e580fb2a9012"
+    },
+    {
+      "path": "scripts/v2/ownerControlPlan.ts",
+      "before": "55667d98ae8c32df5925e26f9c7d77637aebe50b",
+      "after": "c7c30bcd108431eb74e0e59cf10e2c2e1ee35382"
+    },
+    {
+      "path": "scripts/v2/ownerControlSnapshot.ts",
+      "before": "6b158113f63366a4af6b9a856a32d0a67b883877",
+      "after": "75d5f26d9f63b5abcc56b627fb0617927e56ac29"
+    },
+    {
+      "path": "scripts/v2/ownerEmergencyRunbook.ts",
+      "before": "f33f72925800992208e00c50466117a7df91f22d",
+      "after": "7ad91a5139de9a5f4bf2dfcfd018850b47d16115"
+    },
+    {
+      "path": "scripts/v2/renderOwnerMermaid.ts",
+      "before": "7928338f46dfb69664da424b4461ee7143718f2d",
+      "after": "da7910f5d4a5e26aae1a168a4da8bf2461de5876"
+    },
+    {
+      "path": "scripts/v2/thermodynamicsReport.ts",
+      "before": "599f62a7e87402f078f62c68a0c31ac60c8626ab",
+      "after": "b2a00ba6b58dfd72ed39285c3508f420ffed7fd1"
+    },
+    {
+      "path": "scripts/v2/updateAllModules.ts",
+      "before": "354ba1e3f81a4f2dff545b16fd31f39da46f77b0",
+      "after": "02c823c6e76ac6414cb8f8fb88883e4a1baeb717"
     }
   ]
 }

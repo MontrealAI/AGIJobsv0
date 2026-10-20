@@ -77,6 +77,7 @@ def terminate_group(process):
         try:
             os.killpg(process.pid, sig)
         except ProcessLookupError:
+            # The group was absent; still check live membership independently below.
             pass
         deadline = time.monotonic() + (1 if sig == signal.SIGTERM else 5)
         while time.monotonic() < deadline:

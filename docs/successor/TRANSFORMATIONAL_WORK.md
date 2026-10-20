@@ -13,6 +13,35 @@ exercise future market-boundary behavior only. They do not establish native paid
 campaign support, authorize spending, or complete the paper's wider research
 program.
 
+## First steps — source preview
+
+1. Open the [free Alpha TI workspace](https://montrealai.github.io/AGI-Alpha-Agent-v0/transformational-intelligence/).
+   Start with public, non-personal material, compare the proposed methods and save your project.
+   Follow the workspace’s separate local instructions when you need a native result.
+2. Continue **the same saved project** with the [Fleet project guide](https://github.com/MontrealAI/AGI-Fleet-Linux/blob/main/docs/transformational-project.md).
+   Preserve its identifier, original files and complete request, result and review history.
+3. Jobs can inspect that native campaign as inert evidence. Both native currency caps are zero.
+   Jobs refuses positive AGIALPHA proposals; Manager’s USDC route stays separate. The free comparison needs no payment;
+   importing a project does not commission work or authorize execution.
+
+This remains a source preview until the final compatible release set is qualified.
+Check the guides and evidence supplied with the versions you actually use.
+
+## Premiers pas — aperçu des sources
+
+1. Ouvrez l’[espace Alpha TI gratuit](https://montrealai.github.io/AGI-Alpha-Agent-v0/transformational-intelligence/).
+   Choisissez des données publiques non personnelles, comparez les méthodes proposées et enregistrez votre projet.
+   Pour un résultat natif, suivez les instructions locales distinctes présentées dans cet espace.
+2. Poursuivez **le même projet enregistré** avec le [guide Fleet](https://github.com/MontrealAI/AGI-Fleet-Linux/blob/main/docs/transformational-project.md).
+   Conservez son identifiant, les fichiers d’origine et tout l’historique des demandes, résultats et revues.
+3. Jobs peut inspecter cette campagne native comme preuve inerte. Les deux plafonds monétaires natifs sont zéro.
+   Jobs refuse les propositions AGIALPHA positives; le parcours USDC de Manager reste distinct.
+   La comparaison gratuite n’exige aucun paiement.
+   Importer un projet ne commande aucun travail et ne donne aucune permission d’exécution.
+
+Il s’agit d’un aperçu des sources, en attendant la qualification des versions compatibles.
+Consultez les guides et les preuves fournis avec les versions réellement utilisées.
+
 The specification is the owner's attached manuscript, with exact SHA-256 inputs:
 
 | Input                                  | SHA-256                                                            |
