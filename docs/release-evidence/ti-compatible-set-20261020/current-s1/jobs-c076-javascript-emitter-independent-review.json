@@ -1,0 +1,85 @@
+{
+  "schema": "agijobsv0/current-js-emitter-security-result-review/1",
+  "sourceCommit": "c0761b4f129911ef4f700932a331db159032f6e7",
+  "sourceTree": "e8e2cb3c80629c352cd7cc71bc68d48da5384bd6",
+  "reviewer": "/root/jobs_owner",
+  "observedAt": "2026-10-20T11:51:53.000Z",
+  "scope": "Independent fresh static audit of current raw security result22; no source change or query suppression",
+  "rawSarif": {
+    "blob": "51a154536095560a815954adf0240863c855820a",
+    "bytes": 2092553,
+    "sha256": "011f433fd6646956fd7840d24f1da1b4e106505b04b60bb6a3baabfae162924e",
+    "run": 39413714418,
+    "attempt": 1,
+    "artifact": 12261421127
+  },
+  "record": {
+    "ruleId": "js/http-to-file-access",
+    "path": "scripts/release/emit-codeql-review-rc16.cjs",
+    "region": {
+      "startLine": 244,
+      "startColumn": 32,
+      "endColumn": 35
+    },
+    "resultSha256": "fac140fb675f275f35fed1de6497ca5a19d3da0a52a8dddedfba58a0e040f77d",
+    "disposition": "Demonstrably false positive",
+    "justification": "All three complete 21-location flows and both related locations show the acquired original artifact ZIP bytes reaching the fixed private original.zip at emitter244. The content taint is real and intentional. The collector job admits only the exact reviewed branch push; immutable source/run/current-attempt/completed producer/upload-job metadata and exact artifact name/source/size/GitHub digest are authenticated before one acquisition. Actual downloaded size and SHA256 must match that metadata at341-342 before rawFiles writes. mkdtemp239 plus chmod0700 creates a private directory, the filename is a fixed literal241, and wx/0600 prevents clobbering an existing file. The file is reopened read-only/no-follow, unlinked, and its retained descriptor is used by fixed /usr/bin/unzip -Z1/-p calls only; closed four-member inventory, byte bounds and captured ZIP hash are checked. Report bytes are never executed or used to select a destination. Credentials go only to the fixed GitHub API, not the signed transfer or logs. This is an intended authenticated inert-download write, not arbitrary remote file selection or execution. It does not certify hypothetical parser defects, hostile same-UID runner processes or broader archive-processing safety.",
+    "regressionEvidence": [
+      "https://github.com/MontrealAI/AGIJobsv0/blob/c0761b4f129911ef4f700932a331db159032f6e7/scripts/release/emit-codeql-review-rc16.cjs",
+      "https://github.com/MontrealAI/AGIJobsv0/actions/runs/39413714418/job/118603097284"
+    ]
+  },
+  "fullFlowCustody": {
+    "codeFlows": 3,
+    "threadFlowLocations": [
+      21,
+      21,
+      21
+    ],
+    "all63LocationsReviewed": true,
+    "relatedLocations": 2,
+    "fullCodeFlowsCanonicalSha256": "6c83a919921d11627cf8951add76a55a6ddb1eee9bc293f06127802e0450d926",
+    "fullRelatedLocationsCanonicalSha256": "d5f0575677c565ad2ed88249cead1c970f1ded9a5a353e3a58f55ccc23b38f21",
+    "allFlowSourcePaths": [
+      "scripts/release/emit-codeql-review-rc16.cjs"
+    ],
+    "immutableSource": {
+      "path": "scripts/release/emit-codeql-review-rc16.cjs",
+      "blob": "95c96fecba7e1bee728f190b4a0c1dc0da2fc979",
+      "mode": "100644",
+      "bytes": 16264,
+      "sha256": "f72e89026b0c0b5d5638fef2cf9c7678f6fac5850afb5de439aa9d309411b6db",
+      "exactAuthenticatedAPIReadback": true
+    },
+    "reviewedRegions": [
+      "20-98: bounded response, finite policy and API GET allowlist",
+      "116-204: exact current/latest run-attempt-job-artifact/source authentication",
+      "234-280: fixed private/exclusive file, held read-only FD, closed inventory and byte preservation",
+      "285-345: exact workflow/source, sole original acquisition, original size/hash and API reobservation"
+    ]
+  },
+  "actualExistingHostedEvidence": {
+    "workflow": ".github/workflows/static-analysis.yml",
+    "workflowBlob": "da884644bf8b483c5ab6a643ce491c40b87898f6",
+    "workflowSha256": "8b577905c4b4e2a173180a8883262869de7e5f9861a7dd6d1f36e316519e60ce",
+    "run": 39413714418,
+    "attempt": 1,
+    "codeqlJob": 118597591826,
+    "collectorJob": 118603097284,
+    "slitherJob": 118597591630,
+    "allThreeJobsCompletedSuccess": true,
+    "collectorNormalByteRetentionStepSucceeded": true,
+    "positiveNormalExecutionOnlyNotHostileScenario": true,
+    "rootHasAuthenticatedComplete197Record5StreamTransport": true,
+    "byteBundleGitBlob": "a4b89ba3a77dd4b878f08c7d8368a1c0fff9959b",
+    "byteBundleSha256": "98490265b493de73c3828561ead3bf93df7d9c5a7039d64d78f6e2b5ab8a01a8"
+  },
+  "limits": {
+    "noOriginalZipAcquisitionByReviewer": true,
+    "noAnalyzedCodeTestsScenariosOrScannersExecutedByReviewer": true,
+    "noSourceSlotQueryPolicyRunAlertOrRefChange": true,
+    "noReleaseQualificationOrFutureHeadApproval": true,
+    "serviceHelper23AndQuality35to44ReviewedByRootSeparately": true,
+    "allThreeReviewSlotsRemainNull": true
+  }
+}
