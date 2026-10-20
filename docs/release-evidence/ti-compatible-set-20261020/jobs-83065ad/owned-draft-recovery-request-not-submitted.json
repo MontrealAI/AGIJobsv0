@@ -1,0 +1,45 @@
+{
+  "status": "OPERATOR_RECOVERY_PREPARED_NOT_SUBMITTED",
+  "repository": "MontrealAI/AGIJobsv0",
+  "source": "83065adf18a6ee987f8fa479a496a052d35db682",
+  "tree": "77ded62b991e8cca28bfd849593153f61ac72d86",
+  "originalRun": 39509956774,
+  "originalAttempt": 1,
+  "publisherJob": 118928443075,
+  "existingTagMustNotMove": true,
+  "actualReleasePresent": false,
+  "actualFailure": "GitHub POST releases: HTTP 422",
+  "diagnosis": {
+    "inference": true,
+    "rawResponseBodyUnavailable": true,
+    "notesCharacters": 186226,
+    "bodyCharactersWithMarker": 186300,
+    "likelyReason": "Full notes include machine review metadata; request body exceeds reported125000-character GitHub release-body limit. Original API adapter records status only, so exact server validation cause is not confirmed."
+  },
+  "fullNotes": {
+    "path": "docs/production/RELEASE_NOTES_SOURCE_RC16.md",
+    "bytes": 186240,
+    "gitBlob": "46bc7625b8b56ff17b8d2bcdeaf435a9c362f8d1",
+    "sha256": "df3e883e49e1385cba1f3206dceeeedff8563b0d14bd80c84cc67aa47421fc62",
+    "preservedInExpectedReleaseAsset": true
+  },
+  "operatorRequired": [
+    "Verify repository release immutability is enabled before publication.",
+    "Create only an owned DRAFT prerelease at the already-reserved exact tag/source using the bounded payload. Do not publish manually, move/delete tag, alter source, replace evidence or change gates.",
+    "Authenticate actual draft API identity/owned marker/source; only after this materially changed prerequisite rerun the ORIGINAL failed publisher job. Require original all25-asset upload/readback/semantic/native checks and actual immutable published release readback."
+  ],
+  "draftRequest": {
+    "method": "POST",
+    "resource": "repos/MontrealAI/AGIJobsv0/releases",
+    "json": {
+      "tag_name": "source-v2.1.0-rc.16",
+      "target_commitish": "83065adf18a6ee987f8fa479a496a052d35db682",
+      "draft": true,
+      "prerelease": true,
+      "name": "source-v2.1.0-rc.16 — Develop the strategy. Preserve the mission.",
+      "body": "# source-v2.1.0-rc.16\n\nQualified source snapshot: `83065adf18a6ee987f8fa479a496a052d35db682`, tree `77ded62b991e8cca28bfd849593153f61ac72d86`.\n\nComplete release notes and their source-bound review records are preserved without truncation in the `RELEASE_NOTES_SOURCE_RC16.md` release asset and [the exact source file](https://github.com/MontrealAI/AGIJobsv0/blob/83065adf18a6ee987f8fa479a496a052d35db682/docs/production/RELEASE_NOTES_SOURCE_RC16.md). Authenticate all release assets with `SHA256SUMS.txt`, `provenance.json` and `source-profile-rc16.json`.\n\nThe original publisher must upload and re-download all 25 expected assets, complete every original semantic/native verification, and verify the unchanged tag before publication. Software publication does not activate production deployments or authorize transactions.\n\n<!-- agijobs-source-release:83065adf18a6ee987f8fa479a496a052d35db682 -->\n"
+    }
+  },
+  "boundedDraftBodyBytes": 898,
+  "checksWaived": false
+}
