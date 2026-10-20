@@ -1,0 +1,25 @@
+{
+  "schema": "agijobsv0/installed-source-hosted-validation/v1",
+  "source": "e67afa3ceac8dea12ffbcbe9e814fc9f17d651a4",
+  "tree": "9d18a3c3079650a2d740385149b3deceefaa8f01",
+  "reviewSource": "c3e943189a00bffa2e4dda265c6bd010b4930944",
+  "run": 39438238554,
+  "attempt": 1,
+  "job": 118680892241,
+  "conclusion": "SUCCESS",
+  "tests": 150,
+  "pass": 150,
+  "fail": 0,
+  "skipped": 0,
+  "strictThreeSlotBinder": "UNCHANGED_AND_PASSED",
+  "configuredFullReview": {
+    "commentId": 6293156922,
+    "source": "e67afa3ceac8dea12ffbcbe9e814fc9f17d651a4",
+    "conclusion": "CLEAR"
+  },
+  "remainingOriginalWorkflows": "PENDING",
+  "normalMerge": "NOT_DONE",
+  "finalMainServiceProof": "NOT_YET_CAPTURED_FOR_NEW_FINAL_SOURCE",
+  "release": "NOT_PUBLISHED",
+  "observedAt": "2026-10-20T14:35:38.245Z"
+}
