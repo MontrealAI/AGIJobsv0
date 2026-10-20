@@ -9,7 +9,6 @@ import {
 import { keccak256, toUtf8Bytes } from 'ethers';
 
 export const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
-const ADDRESS_PATTERN = /^0x[0-9a-fA-F]{40}$/;
 
 export interface DecentralizedInfraEntry {
   layer?: string;

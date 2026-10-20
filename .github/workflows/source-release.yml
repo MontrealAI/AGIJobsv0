@@ -27,6 +27,8 @@ jobs:
   validate:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
+    outputs:
+      selected: ${{ steps.release-version.outputs.selected }}
     steps:
       - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
         with:
@@ -34,12 +36,16 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version-file: '.nvmrc'
-      - run: node --test test/scripts/source-release-gate.test.cjs test/scripts/source-release-publish.test.cjs
+      - name: Select historical rc.15 source version
+        id: release-version
+        run: node -e "require('node:fs').appendFileSync(process.env.GITHUB_OUTPUT, 'selected=' + (require('./package.json').version === '2.1.0-rc.15') + '\n')"
+      - if: steps.release-version.outputs.selected == 'true'
+        run: node --test test/scripts/source-release-gate.test.cjs test/scripts/source-release-publish.test.cjs
 
   publish:
     name: Publish qualified source prerelease
     needs: validate
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'MontrealAI/AGIJobsv0'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'MontrealAI/AGIJobsv0' && needs.validate.outputs.selected == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 95
     permissions:

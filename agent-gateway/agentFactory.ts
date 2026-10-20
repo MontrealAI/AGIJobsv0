@@ -11,6 +11,7 @@ import {
   spawnDefaults,
 } from '../shared/spawnManager';
 import { walletManager } from './utils';
+import { validateAgentLabel } from '../shared/agentLabel';
 import {
   registerEnsSubdomain,
   verifyEnsRegistration,
@@ -419,12 +420,10 @@ async function persistIdentityRecord(
     ensRegistration?: EnsRegistrationResult;
   }
 ): Promise<string> {
+  const ensLabel = validateAgentLabel(blueprint.ensLabel);
   const directory = options.identityDir ?? IDENTITY_DIR;
+  const filePath = path.join(directory, `${ensLabel}.json`);
   ensureDir(directory);
-  const filePath = path.join(directory, `${blueprint.ensLabel}.json`);
-  if (fs.existsSync(filePath)) {
-    throw new Error(`Identity file already exists for ${blueprint.ensLabel}`);
-  }
   const notes = [
     ...(Array.isArray(blueprint.metadata?.notes)
       ? blueprint.metadata.notes.filter((note) => typeof note === 'string')
@@ -486,7 +485,7 @@ async function persistIdentityRecord(
   await fs.promises.writeFile(
     filePath,
     JSON.stringify(record, null, 2),
-    'utf8'
+    { encoding: 'utf8', flag: 'wx', mode: 0o600 }
   );
   return filePath;
 }
@@ -503,12 +502,14 @@ async function cloneCandidate(
     return null;
   }
 
+  validateAgentLabel(candidate.recommendedLabel);
   const blueprint = await createBlueprintForCandidate(candidate, {
     persist: options.dryRun ? false : options.persist ?? true,
     markConsumed: options.dryRun ? false : options.markConsumed ?? true,
     blueprintDir: options.blueprintDir,
   });
 
+  validateAgentLabel(blueprint.ensLabel);
   const template = await selectTemplateProfile(candidate.categoryKey);
   const sandbox = runSandboxTrials(blueprint, template);
   const sandboxPath = await persistSandboxReport(
@@ -550,12 +551,13 @@ async function cloneCandidate(
   let ensRegistration: EnsRegistrationResult | undefined;
   try {
     ensRegistration = await registerEnsSubdomain({
-      label: blueprint.ensLabel,
+      label: validateAgentLabel(blueprint.ensLabel),
       ensName: blueprint.ensName,
       targetAddress: blueprint.wallet.address,
       targetPrivateKey: blueprint.wallet.privateKey,
     });
 
+    validateAgentLabel(ensRegistration.label);
     if (
       ensRegistration.label !== blueprint.ensLabel ||
       ensRegistration.ensName.toLowerCase() !== blueprint.ensName.toLowerCase()

@@ -222,7 +222,7 @@ try:
     send({"operation": "start", "html": html})
     observation = read()
     action_count = 0
-    for turn in range(task.max_turns):
+    for _unused_turn in range(task.max_turns):
         advice = advisor.next(task, observation)
         if advice["done"]:
             break

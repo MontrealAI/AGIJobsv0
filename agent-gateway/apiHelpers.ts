@@ -2,6 +2,7 @@ import { ethers } from 'ethers';
 import { DeliverableContributor } from './deliverableStore';
 import { provider, TOKEN_DECIMALS } from './utils';
 import { ROLE_AGENT, ROLE_PLATFORM, ROLE_VALIDATOR } from './stakeCoordinator';
+import { logValue } from '../shared/logValue';
 
 export function parseBooleanFlag(value: unknown): boolean {
   if (typeof value === 'boolean') {
@@ -116,7 +117,7 @@ export async function resolveAgentAddress(raw: string): Promise<string | null> {
         return ethers.getAddress(resolved);
       }
     } catch (err) {
-      console.warn('ENS resolve failed for agent lookup', identifier, err);
+      console.warn('ENS resolve failed for agent lookup', logValue(identifier), logValue(err));
     }
   }
   if (ethers.isAddress(identifier)) {
@@ -181,7 +182,7 @@ export function parseContributors(
     try {
       normalised = ethers.getAddress(address);
     } catch {
-      normalised = address.toLowerCase();
+      throw new Error('Contributor address must be a valid Ethereum address');
     }
     const contributor: DeliverableContributor = { address: normalised };
     const ens = (entry as { ens?: unknown }).ens;
@@ -223,10 +224,7 @@ export function parseContributors(
           );
         }
       } else {
-        contributor.signature = signature;
-        if (typeof payloadDigest === 'string' && payloadDigest.trim().length > 0) {
-          contributor.payloadDigest = payloadDigest.trim();
-        }
+        throw new Error('Contributor signature requires its signed payload');
       }
     } else if (
       typeof payloadDigest === 'string' &&

@@ -560,7 +560,7 @@ function resolveExpected(check) {
 }
 
 function normaliseExpectedValue(value, type, label) {
-  if (value === undefined || value === null) {
+  if (value === null) {
     return null;
   }
   if (type === 'address') {

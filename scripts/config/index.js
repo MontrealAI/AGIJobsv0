@@ -404,7 +404,7 @@ function normaliseTokenAmount(value, label, { max, decimals = 18 } = {}) {
   }
 
   let amount;
-  if (typeof value === 'object' && value !== null) {
+  if (typeof value === 'object') {
     if (value.raw !== undefined) {
       amount = BigInt(value.raw);
     } else if (value.amount !== undefined) {
@@ -2063,9 +2063,6 @@ function normaliseAddressBooleanMap(value, label, { allowZero = false } = {}) {
 }
 
 function normaliseAgentType(value, label) {
-  if (value === undefined || value === null) {
-    throw new Error(`${label} agent type is undefined`);
-  }
   if (typeof value === 'number') {
     if (value !== 0 && value !== 1) {
       throw new Error(`${label} agent type must be 0 (Human) or 1 (AI)`);

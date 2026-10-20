@@ -1,0 +1,1430 @@
+# source-v2.1.0-rc.16 — Retain computer evidence across the SUCCESSOR journey
+
+This source prerelease adds a reviewable bridge from a current native Alpha
+computer handoff and return to a project-bound AGIALPHA proposal. The exact
+handoff, returned observation and frozen Jobs mission report remain together.
+The separate Manager adapter selects its own USDC route; no token conversion or
+interchangeable market is implied.
+
+**Production approval remains false.** Source publication does not activate a
+worker, submit a job, sign or fund a transaction, unpause a deployment, migrate
+an old obligation or change on-chain authority.
+
+## Evidence that stays with the project
+
+The additive `integrations/alpha-agent/four-repo-computer-receipt.mjs` uses a
+code-installed current Alpha inspector and Jobs' native report replay,
+allocation checker and compiler. Imported content cannot select executable
+code, a checkout, provider or callback. The bridge binds the exact project,
+task, execution context, source, frozen mission/program and observed result;
+the shipped English or French desk must match the report. Only the declared
+networkless public, non-personal scope is supported. Public availability or an
+input-rights label alone does not independently verify those rights.
+
+`inspectComputerReceiptEvidence` provides the common market-independent
+inspection. Jobs' `createComputerReceiptDraft` then selects the explicit
+18-decimal AGIALPHA JobRegistry route and retains the requested amount as an
+**unfunded proposal**. The four native sealed A0 jobs reserve zero base units.
+No displayed USD supplier cost is converted to AGIALPHA or USDC. Draft import
+rebuilds the original bindings and compiler output.
+
+Returned receipt consistency is historical evidence. It does not establish a
+trusted signer, actual browser execution, independent model quality, protected
+evaluation or marketplace acceptance. `trustedComputerExecution`,
+`independentProof`, settlement approval and production approval remain false;
+authority remains none. Interrupted, unclean, altered or wrongly bound returns
+cannot be promoted into accepted drafts. Independent review remains required.
+
+The existing pinned CSV project receiver, source inventories and live-runtime
+refusal remain separate. An AGIALPHA proposal does not install a deployment
+profile or grant a computer permission.
+
+## Reproducible fixture boundaries
+
+The adapter has focused malformed-input, authority, exact-byte, allocation,
+budget and clock regressions. Its native Alpha protocol test uses the real
+current inspector with explicitly labeled synthetic protocol receipts; it is
+not browser execution. Optional fixture exports are opt-in, refuse existing
+output directories and retain `PROTOCOL_DOUBLE_NO_BROWSER`; unknown model and
+human costs stay unknown.
+
+The separate disposable Hardhat lifecycle rehearsal binds the exact draft hash
+as the contract specification and the exact native return hash as the result.
+It uses actual modular Jobs contracts with a mock token, permissive identity
+and an operator-controlled validation stub. Successful fixture validation and
+separate employer finalization pay only mock base units. Rejected work remains
+disputed, cannot finalize and receives zero worker payout. These mechanics do
+not establish independent content validation, real revenue or production
+settlement readiness. The rehearsal refuses external RPCs and forks.
+
+Actual browser evidence, when retained by a separately qualified source-locked
+cross-repository runner, keeps its own source/runtime identities, negative cases,
+cleanup observations and artifact hashes. A protocol fixture cannot substitute
+for it. Scripted advice does not demonstrate autonomous strategy discovery or
+transformational intelligence; a reframing must preserve the original outcome
+and every real acceptance constraint.
+
+## Inherited scanner results and exact-source qualification
+
+The inherited baseline consists of 96 scanner results: 33 high, 23 medium and
+40 quality reports. These are reported results requiring individual source
+assessment, not 96 established vulnerabilities. The complete findings ledger
+and preserved raw archives remain under
+`docs/security/remediation-2026-10-19/`; use the exact released source and its
+qualification record for dispositions and current scan results. A lower count
+or a successful analysis workflow does not establish that each reported flow
+is safe. No count in an earlier candidate qualifies a later source revision.
+
+Publication requires the exact merged commit's configured required checks and
+observed main workflows, including the separate CodeQL result check. A failed
+required result is not waived by successful workflow runs. Scanner queries,
+coverage, security gates and preserved evidence stay enabled. The compiler
+source baseline must identify the genuinely reviewed integrated source; merely
+changing a hash cannot supply that review or qualification.
+
+The result check belongs to GitHub Advanced Security, separately from the
+GitHub Actions analysis job. The reviewed PR source must have that authentic
+successful result, retained by source SHA/check ID/application identity in the
+release provenance. Any pending or failed authentic result observed on the
+final merged SHA also blocks publication. Main pushes may not create a separate
+result check, so absence there cannot substitute for the reviewed PR evidence.
+Publication readback authenticates each recorded check ID against GitHub and
+reads the complete latest result set for that exact reviewed source. A newer
+failure or pending result blocks readback even if an older recorded result
+succeeded; a successful rerun may retain the original authentic evidence.
+Both draft and published readback also refresh the exact final source's latest
+checks, blocking any present failed or pending authentic CodeQL result while
+preserving main pushes that do not create this separate service check.
+
+The qualified producer retains its own source SHA/tree, compiler producer
+identity, provenance and downloaded artifact checksums. The 24 release assets
+comprise 23 checksummed payloads plus `SHA256SUMS.txt`, including this source
+archive and these rc.16 notes. Historical source releases and their tags,
+notes, checksums and deployment records remain immutable. A qualified source
+prerelease is unsigned source/evidence publication, not a signed production
+release or an operational approval.
+
+## Recorded deployments and owner-operated creation
+
+The [current deployment directory](https://github.com/MontrealAI/AGIJobsv0/blob/29fb6ca64cb74e6682a1c53ce5b2c8bf7ad76994/docs/production/CURRENT_MAINNET_DEPLOYMENT.md) identifies
+the separate 18 October mainnet source
+`818b3a246871e4cd4dde86558dbb91ef82b15eef`, rather than assuming it equals this
+release. Its retained snapshot records 25 exact source/runtime comparisons,
+46 named state checks and all eight managed modules paused at the recorded
+finalized anchor. This release performs no fresh live chain read. The 12 October
+inventory remains historical and unchanged. Previous deployments stay read-only.
+
+For a separately authorized new creation, preserve Ubuntu Terminal and Hardhat
+with local hidden, ephemeral deployer-key entry. Never store or print a key,
+pass it in command arguments or place it in `.env`, history or logs. Ledger
+governance remains on Mac Studio; complete authority handover must leave the
+deployer no residual system privileges. These requirements do not claim that
+every inherited entrypoint already implements a qualified hidden-prompt route.
+Qualify the exact selected operator source before use.
+
+Live deployment, signing, funding, activation and on-chain authority changes
+retain separate authorization. The already-approved ENS configuration work
+remains a separate workstream.
+
+The raw scanner archive is retained separately from the Advanced Security result.
+Publication requires the latest successful final-source static-analysis main push,
+its exact SHA/run/attempt artifact, authenticated GitHub metadata and digest, and
+complete extraction of the existing scope plus the integration/native/vendor and
+canonical website GUI modules. Each raw archive contains exactly the SARIF, both
+source-scope checkpoints and the extraction report; their source, tree, run,
+attempt, event, configuration and actual SARIF-derived data must agree. Every
+raw result, including quality reports, must
+be reconciled against an independently reviewed full scan. The 96-result ledger,
+original archive and original scanner configuration remain pinned and unchanged.
+
+The record below deliberately remains null. A future reviewed record may select
+an exact feature-complete source S1 only after its complete raw scan and authentic
+Advanced Security result are independently assessed. Installing that record may
+change only the three independently validated review values: this exact notes
+block and the JavaScript/Python records in the finite profile. Their bounded
+monotonic installation preserves every other byte and regular-file mode;
+metadata admission alone is not publication approval. A fresh final-source main scan must have identical tool,
+queries, extraction and complete result identities. Both original reviewed and
+final raw archives stay with the release. No environment variable bypasses this
+review, and pending or failed authentic checks still block publication.
+
+<!-- rc16-scanner-review
+{
+  "schema": "agijobsv0/rc16-scanner-review/1",
+  "sourceSha": "f2a8d2382b9a40814579f7a8be44046f247e0fd7",
+  "sourceTree": "651310e14930967b1be1de86143b88657f3fe53a",
+  "producer": {
+    "runId": 39356262852,
+    "runAttempt": 1,
+    "runNumber": 4127,
+    "event": "push",
+    "headBranch": "fix/inherited-codeql-ti-final-rc16-20261019",
+    "artifactId": 12236768212,
+    "artifactName": "codeql-security-report-f2a8d2382b9a40814579f7a8be44046f247e0fd7-39356262852-1",
+    "githubDigest": "sha256:f7963609c0ccacde2bb6e949ae572201312f111f67411c5c8799355d8ceaf5c7"
+  },
+  "summary": {
+    "schema": "agijobsv0/raw-codeql-summary/1",
+    "toolSha256": "d390b601d2daa2d7b0938378e8e579668746fbd31a4bd688df77a5f982bba7f4",
+    "queriesSha256": "e54d1848b96dc1093cbf6acc90ad9fdcc8f30d7c7d2c98cc6f41632cdb794d3f",
+    "extractedPaths": [
+      "agent-gateway/agentActions.ts",
+      "agent-gateway/agentEndpoint.ts",
+      "agent-gateway/agentFactory.ts",
+      "agent-gateway/agentRegistry.ts",
+      "agent-gateway/apiHelpers.ts",
+      "agent-gateway/attestation.ts",
+      "agent-gateway/auditAnchoring.ts",
+      "agent-gateway/certificateMetadata.ts",
+      "agent-gateway/deliverableStore.ts",
+      "agent-gateway/employer.ts",
+      "agent-gateway/ensRegistrar.ts",
+      "agent-gateway/events.ts",
+      "agent-gateway/grpc.ts",
+      "agent-gateway/identity.ts",
+      "agent-gateway/index.ts",
+      "agent-gateway/ipfs-runtime.cjs",
+      "agent-gateway/ipfsClient.ts",
+      "agent-gateway/jobMetadata.ts",
+      "agent-gateway/jobPlanner.ts",
+      "agent-gateway/jobSerialization.ts",
+      "agent-gateway/learning.ts",
+      "agent-gateway/operator.ts",
+      "agent-gateway/opportunities.ts",
+      "agent-gateway/opportunityBacktest.ts",
+      "agent-gateway/orchestrator.ts",
+      "agent-gateway/performanceDashboard.ts",
+      "agent-gateway/requestBudget.ts",
+      "agent-gateway/routes.ts",
+      "agent-gateway/security.ts",
+      "agent-gateway/stakeCoordinator.ts",
+      "agent-gateway/systemHealth.ts",
+      "agent-gateway/taskExecution.ts",
+      "agent-gateway/telemetry.ts",
+      "agent-gateway/thermodynamics.ts",
+      "agent-gateway/tsconfig.json",
+      "agent-gateway/types/index.ts",
+      "agent-gateway/types/ipfs-http-client.d.ts",
+      "agent-gateway/utils.ts",
+      "agent-gateway/validationContext.ts",
+      "agent-gateway/validationRound.ts",
+      "agent-gateway/validationStore.ts",
+      "agent-gateway/validator.ts",
+      "agent-gateway/wallet.ts",
+      "apps/console/index.html",
+      "apps/console/package-lock.json",
+      "apps/console/package.json",
+      "apps/console/src/App.tsx",
+      "apps/console/src/components/ConnectionPanel.tsx",
+      "apps/console/src/components/GasPanel.tsx",
+      "apps/console/src/components/GovernanceActionForm.tsx",
+      "apps/console/src/components/PoliciesPanel.tsx",
+      "apps/console/src/components/ReceiptsViewer.tsx",
+      "apps/console/src/context/ApiContext.tsx",
+      "apps/console/src/main.tsx",
+      "apps/console/src/types.ts",
+      "apps/console/tsconfig.json",
+      "apps/console/tsconfig.node.json",
+      "apps/console/vite.config.ts",
+      "apps/enterprise-portal/.eslintrc.js",
+      "apps/enterprise-portal/next-env.d.ts",
+      "apps/enterprise-portal/next.config.mjs",
+      "apps/enterprise-portal/package-lock.json",
+      "apps/enterprise-portal/package.json",
+      "apps/enterprise-portal/src/app/layout.tsx",
+      "apps/enterprise-portal/src/app/page.tsx",
+      "apps/enterprise-portal/src/app/solving-governance/page.tsx",
+      "apps/enterprise-portal/src/components/AgentInbox.tsx",
+      "apps/enterprise-portal/src/components/CertificateGallery.tsx",
+      "apps/enterprise-portal/src/components/ConnectionPanel.tsx",
+      "apps/enterprise-portal/src/components/ConversationalJobCreator.tsx",
+      "apps/enterprise-portal/src/components/DeliverableVerificationPanel.tsx",
+      "apps/enterprise-portal/src/components/JobLifecycleDashboard.helpers.ts",
+      "apps/enterprise-portal/src/components/JobLifecycleDashboard.tsx",
+      "apps/enterprise-portal/src/components/JobSubmissionForm.tsx",
+      "apps/enterprise-portal/src/components/LanguageSelector.tsx",
+      "apps/enterprise-portal/src/components/PortalPage.tsx",
+      "apps/enterprise-portal/src/components/SetupChecklist.tsx",
+      "apps/enterprise-portal/src/components/SlaViewer.tsx",
+      "apps/enterprise-portal/src/components/SmartNotificationPanel.tsx",
+      "apps/enterprise-portal/src/components/SolvingGovernanceExperience.tsx",
+      "apps/enterprise-portal/src/components/SpecificationPublication.tsx",
+      "apps/enterprise-portal/src/components/SupportHelpCenter.tsx",
+      "apps/enterprise-portal/src/components/ValidatorConsole.tsx",
+      "apps/enterprise-portal/src/components/ValidatorLogPanel.tsx",
+      "apps/enterprise-portal/src/components/__tests__/JobLifecycleDashboard.test.ts",
+      "apps/enterprise-portal/src/context/LanguageContext.tsx",
+      "apps/enterprise-portal/src/context/Web3Context.tsx",
+      "apps/enterprise-portal/src/hooks/useCertificates.ts",
+      "apps/enterprise-portal/src/hooks/useJobFeed.helpers.test.ts",
+      "apps/enterprise-portal/src/hooks/useJobFeed.helpers.ts",
+      "apps/enterprise-portal/src/hooks/useJobFeed.ts",
+      "apps/enterprise-portal/src/hooks/useJobMetadata.ts",
+      "apps/enterprise-portal/src/lib/__tests__/jobStatus.test.ts",
+      "apps/enterprise-portal/src/lib/abis/certificateNft.ts",
+      "apps/enterprise-portal/src/lib/abis/erc20.ts",
+      "apps/enterprise-portal/src/lib/abis/jobRegistry.ts",
+      "apps/enterprise-portal/src/lib/abis/stakeManager.ts",
+      "apps/enterprise-portal/src/lib/abis/taxPolicy.ts",
+      "apps/enterprise-portal/src/lib/abis/validationModule.ts",
+      "apps/enterprise-portal/src/lib/config.ts",
+      "apps/enterprise-portal/src/lib/contracts.ts",
+      "apps/enterprise-portal/src/lib/crypto.ts",
+      "apps/enterprise-portal/src/lib/i18n.ts",
+      "apps/enterprise-portal/src/lib/jobSpecPublication.ts",
+      "apps/enterprise-portal/src/lib/jobStatus.ts",
+      "apps/enterprise-portal/src/lib/time.ts",
+      "apps/enterprise-portal/src/lib/uri.ts",
+      "apps/enterprise-portal/src/types/index.ts",
+      "apps/enterprise-portal/tsconfig.json",
+      "apps/enterprise-portal/tsconfig.test.json",
+      "apps/mission-control/__mocks__/react-markdown.tsx",
+      "apps/mission-control/__tests__/CreateBookWizard.test.tsx",
+      "apps/mission-control/__tests__/StartArenaWizard.test.tsx",
+      "apps/mission-control/app/api/arena/launch/route.ts",
+      "apps/mission-control/app/api/graphql/route.ts",
+      "apps/mission-control/app/api/ipfs/route.ts",
+      "apps/mission-control/app/api/orchestration/dashboard/route.ts",
+      "apps/mission-control/app/api/orchestrator/route.ts",
+      "apps/mission-control/app/api/summary/route.ts",
+      "apps/mission-control/app/artifact-graph/page.tsx",
+      "apps/mission-control/app/create-book/page.tsx",
+      "apps/mission-control/app/layout.tsx",
+      "apps/mission-control/app/orchestration-dashboard/page.tsx",
+      "apps/mission-control/app/owner-control/page.tsx",
+      "apps/mission-control/app/page.tsx",
+      "apps/mission-control/app/providers.tsx",
+      "apps/mission-control/app/scoreboard/page.tsx",
+      "apps/mission-control/app/start-arena/page.tsx",
+      "apps/mission-control/components/ArtifactGraph.tsx",
+      "apps/mission-control/components/CreateBookWizard.tsx",
+      "apps/mission-control/components/MermaidDiagram.tsx",
+      "apps/mission-control/components/NavigationShell.tsx",
+      "apps/mission-control/components/OrchestrationDashboardView.tsx",
+      "apps/mission-control/components/OwnerControlPanel.tsx",
+      "apps/mission-control/components/QuickStats.tsx",
+      "apps/mission-control/components/ScoreboardView.tsx",
+      "apps/mission-control/components/StartArenaWizard.tsx",
+      "apps/mission-control/components/SystemStatusBanner.tsx",
+      "apps/mission-control/context/SystemStatusContext.tsx",
+      "apps/mission-control/cypress.config.ts",
+      "apps/mission-control/cypress/e2e/createBook.cy.ts",
+      "apps/mission-control/cypress/e2e/startArena.cy.ts",
+      "apps/mission-control/cypress/support/e2e.ts",
+      "apps/mission-control/jest.config.ts",
+      "apps/mission-control/jest.setup.ts",
+      "apps/mission-control/lib/apolloClient.ts",
+      "apps/mission-control/lib/orchestrator.ts",
+      "apps/mission-control/next-env.d.ts",
+      "apps/mission-control/next.config.js",
+      "apps/mission-control/package.json",
+      "apps/mission-control/postcss.config.js",
+      "apps/mission-control/tailwind.config.ts",
+      "apps/mission-control/tsconfig.json",
+      "apps/mission-control/tsconfig.test.json",
+      "apps/mission-control/types/custom-matchers.d.ts",
+      "apps/mission-control/types/orchestration-dashboard.ts",
+      "apps/onebox-static/app.js",
+      "apps/onebox-static/app.mjs",
+      "apps/onebox-static/config.js",
+      "apps/onebox-static/config.mjs",
+      "apps/onebox-static/index.html",
+      "apps/onebox-static/lib.js",
+      "apps/onebox-static/lib.mjs",
+      "apps/onebox-static/mission-fixture.mjs",
+      "apps/onebox-static/mission-view.mjs",
+      "apps/onebox-static/pin-payload.mjs",
+      "apps/onebox-static/preview-model.mjs",
+      "apps/onebox-static/scripts/build.mjs",
+      "apps/onebox-static/scripts/publish.mjs",
+      "apps/onebox-static/scripts/verify-sri.mjs",
+      "apps/onebox-static/sse-parser.mjs",
+      "apps/onebox-static/v2/app.js",
+      "apps/onebox-static/v2/index.html",
+      "apps/onebox/app.js",
+      "apps/onebox/config.mjs",
+      "apps/onebox/dom-rendering.js",
+      "apps/onebox/index.html",
+      "apps/onebox/next-env.d.ts",
+      "apps/onebox/next.config.mjs",
+      "apps/onebox/package-lock.json",
+      "apps/onebox/package.json",
+      "apps/onebox/scripts/build.mjs",
+      "apps/onebox/scripts/publish.mjs",
+      "apps/onebox/scripts/verify-sri.mjs",
+      "apps/onebox/src/app/layout.tsx",
+      "apps/onebox/src/app/page.tsx",
+      "apps/onebox/src/components/ChatWindow.tsx",
+      "apps/onebox/src/components/GovernanceCockpit.tsx",
+      "apps/onebox/src/components/MermaidDiagram.tsx",
+      "apps/onebox/src/components/MissionPulse.tsx",
+      "apps/onebox/src/components/OnboardingModal.tsx",
+      "apps/onebox/src/components/OneBoxMissionPanel.tsx",
+      "apps/onebox/src/components/ReceiptsPanel.tsx",
+      "apps/onebox/src/components/receiptTypes.ts",
+      "apps/onebox/src/lib/defaultMessages.ts",
+      "apps/onebox/src/lib/environment.ts",
+      "apps/onebox/src/lib/governanceScenario.ts",
+      "apps/onebox/src/lib/governanceSnapshot.ts",
+      "apps/onebox/src/lib/orchestratorHealth.ts",
+      "apps/onebox/tsconfig.json",
+      "apps/onebox/url-overrides.js",
+      "apps/operator/pm2.config.js",
+      "apps/operator/telemetry.ts",
+      "apps/operator/tsconfig.json",
+      "apps/orchestrator/__tests__/computerWork.test.ts",
+      "apps/orchestrator/__tests__/energyPolicy.test.ts",
+      "apps/orchestrator/__tests__/ipfs.test.ts",
+      "apps/orchestrator/__tests__/oneboxRouter.test.ts",
+      "apps/orchestrator/__tests__/planApprovals.test.ts",
+      "apps/orchestrator/__tests__/successorComputerWork.test.ts",
+      "apps/orchestrator/__tests__/trendScoring.test.ts",
+      "apps/orchestrator/__tests__/types.d.ts",
+      "apps/orchestrator/agentPolicy.ts",
+      "apps/orchestrator/agents.ts",
+      "apps/orchestrator/anchoring.ts",
+      "apps/orchestrator/artifactSource.ts",
+      "apps/orchestrator/attestation.ts",
+      "apps/orchestrator/audit.ts",
+      "apps/orchestrator/bidding.ts",
+      "apps/orchestrator/computerWork.ts",
+      "apps/orchestrator/config.ts",
+      "apps/orchestrator/disputes.ts",
+      "apps/orchestrator/employer.ts",
+      "apps/orchestrator/energyPolicy.ts",
+      "apps/orchestrator/execution.ts",
+      "apps/orchestrator/gateway.ts",
+      "apps/orchestrator/identity.ts",
+      "apps/orchestrator/jobClassifier.ts",
+      "apps/orchestrator/jobGraph.json",
+      "apps/orchestrator/learning.ts",
+      "apps/orchestrator/main.ts",
+      "apps/orchestrator/metrics.ts",
+      "apps/orchestrator/monitor.ts",
+      "apps/orchestrator/onebox-server.ts",
+      "apps/orchestrator/oneboxMetrics.ts",
+      "apps/orchestrator/oneboxRouter.ts",
+      "apps/orchestrator/ownerConsole.ts",
+      "apps/orchestrator/pipeline.ts",
+      "apps/orchestrator/pipelines.json",
+      "apps/orchestrator/planApprovals.ts",
+      "apps/orchestrator/receiptStore.ts",
+      "apps/orchestrator/service.ts",
+      "apps/orchestrator/settlementJournal.ts",
+      "apps/orchestrator/signing.ts",
+      "apps/orchestrator/state.json",
+      "apps/orchestrator/submission.ts",
+      "apps/orchestrator/successor-runtime.cjs",
+      "apps/orchestrator/successorComputerWork.ts",
+      "apps/orchestrator/successorSettlement.ts",
+      "apps/orchestrator/trendScoring.ts",
+      "apps/orchestrator/tsconfig.json",
+      "apps/orchestrator/types/orchestrator.d.ts",
+      "apps/orchestrator/validation.ts",
+      "apps/validator-ui/__tests__/error.test.tsx",
+      "apps/validator-ui/__tests__/jobs-api.test.ts",
+      "apps/validator-ui/components/Toast.tsx",
+      "apps/validator-ui/lib/commit.ts",
+      "apps/validator-ui/lib/ens.ts",
+      "apps/validator-ui/lib/error.tsx",
+      "apps/validator-ui/next-env.d.ts",
+      "apps/validator-ui/next.config.js",
+      "apps/validator-ui/package-lock.json",
+      "apps/validator-ui/package.json",
+      "apps/validator-ui/pages/_app.tsx",
+      "apps/validator-ui/pages/api/jobs.ts",
+      "apps/validator-ui/pages/attest.tsx",
+      "apps/validator-ui/pages/index.tsx",
+      "apps/validator-ui/tsconfig.json",
+      "apps/validator-ui/vitest.config.ts",
+      "apps/validator/evidence.ts",
+      "apps/validator/index.ts",
+      "apps/validator/persona.json",
+      "apps/validator/review-admission.cjs",
+      "apps/validator/runtime.ts",
+      "apps/validator/tsconfig.json",
+      "integrations/alpha-agent/artifact-commitment.cjs",
+      "integrations/alpha-agent/complete-local-fixture.cjs",
+      "integrations/alpha-agent/deploy-local-fixture.cjs",
+      "integrations/alpha-agent/fixtures/large-local-acceptance.json",
+      "integrations/alpha-agent/fixtures/local-acceptance.json",
+      "integrations/alpha-agent/fixtures/reviewed-artifact.json",
+      "integrations/alpha-agent/fixtures/work-spec.json",
+      "integrations/alpha-agent/four-repo-computer-lifecycle.cjs",
+      "integrations/alpha-agent/four-repo-computer-receipt.mjs",
+      "integrations/alpha-agent/generate-computer-source.mjs",
+      "integrations/alpha-agent/generate-project-source.mjs",
+      "integrations/alpha-agent/jobregistry-v2.json",
+      "integrations/alpha-agent/pinned-alpha-checkout.cjs",
+      "integrations/alpha-agent/project-cli.mjs",
+      "integrations/alpha-agent/project-name.mjs",
+      "integrations/alpha-agent/project-native-source.mjs",
+      "integrations/alpha-agent/project-receipt.cjs",
+      "integrations/alpha-agent/project-source-policy.mjs",
+      "integrations/alpha-agent/project-source-selector.mjs",
+      "integrations/alpha-agent/project-transfer.mjs",
+      "integrations/alpha-agent/supplier-browser-lab-summary.json",
+      "integrations/alpha-agent/supplier-browser-proof/acceptance.json",
+      "integrations/alpha-agent/supplier-browser-proof/artifact.json",
+      "integrations/alpha-agent/supplier-browser-proof/browser-evidence.json",
+      "integrations/alpha-agent/supplier-browser-proof/fixture-identity.json",
+      "integrations/alpha-agent/supplier-browser-proof/negative-acceptance.json",
+      "integrations/alpha-agent/supplier-browser-proof/negative-browser-evidence.json",
+      "integrations/alpha-agent/supplier-browser-proof/negative-node-cleanup.json",
+      "integrations/alpha-agent/supplier-browser-proof/node-cleanup.json",
+      "integrations/alpha-agent/supplier-browser-proof/node-identity.json",
+      "integrations/alpha-agent/tests/alpha-project-name.test.mjs",
+      "integrations/alpha-agent/tests/alpha-project-receipt.test.cjs",
+      "integrations/alpha-agent/tests/alpha-project-source.test.mjs",
+      "integrations/alpha-agent/tests/alpha-project-transfer.test.mjs",
+      "integrations/alpha-agent/tests/transformational-compatibility.test.mjs",
+      "integrations/alpha-agent/transformational-work-request.mjs",
+      "integrations/alpha-agent/vendor/alpha-computer/docs/assets/successor/engine.mjs",
+      "integrations/alpha-agent/vendor/alpha-computer/examples/build-successor/model.mjs",
+      "integrations/alpha-agent/vendor/alpha-computer/examples/build-successor/vendor/agijobs/compiler.mjs",
+      "integrations/alpha-agent/vendor/alpha-computer/examples/build-successor/vendor/agijobs/domain.mjs",
+      "integrations/alpha-agent/vendor/alpha-computer/examples/build-successor/vendor/agijobs/integrity.mjs",
+      "integrations/alpha-agent/vendor/alpha-computer/examples/build-successor/vendor/agijobs/templates.mjs",
+      "integrations/alpha-agent/vendor/alpha-computer/examples/successor-alpha/computer.mjs",
+      "integrations/alpha-agent/vendor/alpha-computer/examples/successor-alpha/continuity.mjs",
+      "integrations/alpha-agent/vendor/alpha-computer/examples/successor-alpha/engine.mjs",
+      "integrations/alpha-agent/vendor/alpha-computer/examples/successor-alpha/learning.mjs",
+      "integrations/alpha-agent/vendor/alpha-computer/examples/successor-alpha/project.mjs",
+      "integrations/alpha-agent/vendor/alpha-computer/examples/successor-alpha/research.mjs",
+      "integrations/alpha-agent/vendor/alpha-computer/examples/successor-workbench/engine.mjs",
+      "integrations/alpha-agent/vendor/alpha-computer/source-identity.mjs",
+      "integrations/alpha-agent/vendor/alpha-computer/source-manifest.json",
+      "integrations/alpha-agent/vendor/alpha/docs/assets/successor/engine.mjs",
+      "integrations/alpha-agent/vendor/alpha/examples/alpha-discovery/engine.mjs",
+      "integrations/alpha-agent/vendor/alpha/examples/build-successor/model.mjs",
+      "integrations/alpha-agent/vendor/alpha/examples/build-successor/vendor/agijobs/compiler.mjs",
+      "integrations/alpha-agent/vendor/alpha/examples/build-successor/vendor/agijobs/domain.mjs",
+      "integrations/alpha-agent/vendor/alpha/examples/build-successor/vendor/agijobs/integrity.mjs",
+      "integrations/alpha-agent/vendor/alpha/examples/build-successor/vendor/agijobs/provenance.json",
+      "integrations/alpha-agent/vendor/alpha/examples/build-successor/vendor/agijobs/templates.mjs",
+      "integrations/alpha-agent/vendor/alpha/examples/successor-project/engine.mjs",
+      "integrations/alpha-agent/vendor/alpha/examples/successor-workbench/engine.mjs",
+      "integrations/alpha-agent/vendor/alpha/examples/successor-workbench/mission-record.mjs",
+      "integrations/alpha-agent/verify-receipt.cjs",
+      "monitoring/alertmanager/alerts.yaml",
+      "monitoring/grafana/dashboard-agi-ops.json",
+      "monitoring/onchain/address-map.sample.json",
+      "monitoring/onchain/parameter-change-sentinel.json",
+      "monitoring/onchain/pause-governance-sentinel.json",
+      "monitoring/onchain/role-rotation-sentinel.json",
+      "monitoring/prometheus/prometheus.yml",
+      "monitoring/prometheus/rules.yaml",
+      "packages/onebox-orchestrator/package.json",
+      "packages/onebox-orchestrator/src/ics/parser.ts",
+      "packages/onebox-orchestrator/src/ics/schema.ts",
+      "packages/onebox-orchestrator/src/ics/types.ts",
+      "packages/onebox-orchestrator/src/index.ts",
+      "packages/onebox-orchestrator/src/planner/client.ts",
+      "packages/onebox-orchestrator/src/router/registry.ts",
+      "packages/onebox-orchestrator/tsconfig.json",
+      "packages/onebox-sdk/package-lock.json",
+      "packages/onebox-sdk/package.json",
+      "packages/onebox-sdk/src/index.ts",
+      "packages/onebox-sdk/src/shardRegistry.ts",
+      "packages/onebox-sdk/src/types.ts",
+      "packages/onebox-sdk/tsconfig.json",
+      "packages/orchestrator/package-lock.json",
+      "packages/orchestrator/package.json",
+      "packages/orchestrator/src/attestation/index.ts",
+      "packages/orchestrator/src/chain/addresses.ts",
+      "packages/orchestrator/src/chain/contracts.ts",
+      "packages/orchestrator/src/chain/metadata.ts",
+      "packages/orchestrator/src/chain/provider.ts",
+      "packages/orchestrator/src/chain/providers/aa.ts",
+      "packages/orchestrator/src/chain/providers/bundler.ts",
+      "packages/orchestrator/src/chain/providers/metaTx.ts",
+      "packages/orchestrator/src/chain/providers/paymaster.ts",
+      "packages/orchestrator/src/chain/providers/relayer.ts",
+      "packages/orchestrator/src/chain/providers/signer.ts",
+      "packages/orchestrator/src/chain/providers/userOperation.ts",
+      "packages/orchestrator/src/ics.ts",
+      "packages/orchestrator/src/index.ts",
+      "packages/orchestrator/src/llm.ts",
+      "packages/orchestrator/src/policy/index.ts",
+      "packages/orchestrator/src/providers/openai.test.mjs",
+      "packages/orchestrator/src/providers/openai.ts",
+      "packages/orchestrator/src/router.ts",
+      "packages/orchestrator/src/tools/common.ts",
+      "packages/orchestrator/src/tools/dispute.ts",
+      "packages/orchestrator/src/tools/governance.ts",
+      "packages/orchestrator/src/tools/job.ts",
+      "packages/orchestrator/src/tools/stake.ts",
+      "packages/orchestrator/src/tools/validation.ts",
+      "packages/orchestrator/tsconfig.json",
+      "packages/orchestrator/tsconfig.test.json",
+      "packages/storage/ipfs/index.js",
+      "packages/storage/package.json",
+      "packages/successor-core/BOM.json",
+      "packages/successor-core/bin/successor.mjs",
+      "packages/successor-core/package.json",
+      "packages/successor-core/schemas/successor-domain.schema.json",
+      "packages/successor-core/src/authority.mjs",
+      "packages/successor-core/src/bridges.mjs",
+      "packages/successor-core/src/compiler.mjs",
+      "packages/successor-core/src/computer-mission.mjs",
+      "packages/successor-core/src/discovery.mjs",
+      "packages/successor-core/src/domain.mjs",
+      "packages/successor-core/src/examination.mjs",
+      "packages/successor-core/src/frontier-mission.mjs",
+      "packages/successor-core/src/institution.mjs",
+      "packages/successor-core/src/integrity.mjs",
+      "packages/successor-core/src/invoice.mjs",
+      "packages/successor-core/src/journeys.mjs",
+      "packages/successor-core/src/json-file.mjs",
+      "packages/successor-core/src/pack.mjs",
+      "packages/successor-core/src/presentation-state.mjs",
+      "packages/successor-core/src/proof-harness.mjs",
+      "packages/successor-core/src/proof-rehearsal.mjs",
+      "packages/successor-core/src/proof.mjs",
+      "packages/successor-core/src/proposer.mjs",
+      "packages/successor-core/src/runtime.mjs",
+      "packages/successor-core/src/signatures.mjs",
+      "packages/successor-core/src/source-mission.mjs",
+      "packages/successor-core/src/store.mjs",
+      "packages/successor-core/src/templates.mjs",
+      "packages/successor-core/src/underwriting.mjs",
+      "packages/successor-core/src/workbenches.mjs",
+      "scripts/agents/analyze.ts",
+      "scripts/agents/spawn.ts",
+      "scripts/aggregate-events.ts",
+      "scripts/anchor-logs.ts",
+      "scripts/audit/check-freeze.js",
+      "scripts/audit/drills/validator-misbehaves.ts",
+      "scripts/audit/final-readiness.ts",
+      "scripts/audit/package-kit.ts",
+      "scripts/check-burnable.ts",
+      "scripts/check-coverage.js",
+      "scripts/check-node.js",
+      "scripts/ci/abi-targets.js",
+      "scripts/ci/check-abi-diff.js",
+      "scripts/ci/check-access-control-coverage.js",
+      "scripts/ci/check-ci-companion-contexts.ts",
+      "scripts/ci/check-ci-required-contexts.ts",
+      "scripts/ci/check-ci-status-wall.ts",
+      "scripts/ci/check-coverage-threshold.mjs",
+      "scripts/ci/check-lock-integrity.js",
+      "scripts/ci/check-signers.js",
+      "scripts/ci/check-solidity-build.cjs",
+      "scripts/ci/check-summary-needs.js",
+      "scripts/ci/check-toolchain-locks.js",
+      "scripts/ci/enforce-branch-protection.ts",
+      "scripts/ci/ensure-cypress-binary.js",
+      "scripts/ci/ensure-tag-signature.js",
+      "scripts/ci/export-abis.js",
+      "scripts/ci/remap-coverage-paths.js",
+      "scripts/ci/render-owner-assurance.ts",
+      "scripts/ci/run-coverage.js",
+      "scripts/ci/solidity-policy.cjs",
+      "scripts/ci/update-ci-required-contexts.ts",
+      "scripts/ci/utils/workflow.ts",
+      "scripts/ci/validate-ics-fixture.mjs",
+      "scripts/ci/verify-branch-protection.ts",
+      "scripts/compute-namehash.js",
+      "scripts/config/__tests__/networkAliases.test.ts",
+      "scripts/config/index.d.ts",
+      "scripts/config/index.js",
+      "scripts/constants.ts",
+      "scripts/culture/utils.ts",
+      "scripts/demo/catalog.cjs",
+      "scripts/demo/helios-clean.cjs",
+      "scripts/deploy-v2.ts",
+      "scripts/deploy.culture.ts",
+      "scripts/diagnostics/reputation-growth-fixed.cjs",
+      "scripts/diagnostics/reputation-growth-repro.cjs",
+      "scripts/docker/container-catalog.json",
+      "scripts/docker/gateway-smoke.cjs",
+      "scripts/docker/hardhat.fixtures.config.cjs",
+      "scripts/energy-dashboard.ts",
+      "scripts/etherscan/addresses.sample.json",
+      "scripts/generate-constants-impl.ts",
+      "scripts/generate-constants.mts",
+      "scripts/generate-constants.ts",
+      "scripts/generated/protocol-defaults.ts",
+      "scripts/hamiltonian-tracker.ts",
+      "scripts/identity/manageEnsKeys.ts",
+      "scripts/lib/w3up-upload.mjs",
+      "scripts/monitor/energy-telemetry-daemon.ts",
+      "scripts/monitor/ens-monitor.js",
+      "scripts/monitor/hamiltonian-state.ts",
+      "scripts/monitor/reward-burn-dashboard.ts",
+      "scripts/monitor/thermostat-kpis.ts",
+      "scripts/monitoring/render-sentinels.ts",
+      "scripts/monitoring/sentinel-utils.ts",
+      "scripts/monitoring/validate-sentinels.ts",
+      "scripts/observability-smoke-check.js",
+      "scripts/onebox-static/release.mjs",
+      "scripts/orchestration/operations-cli.ts",
+      "scripts/owner-healthcheck.js",
+      "scripts/owner.pause.ts",
+      "scripts/owner.setParams.ts",
+      "scripts/owner.setRoles.ts",
+      "scripts/package-runtime-assets.cjs",
+      "scripts/pages/alpha-mark-browser-qa.mjs",
+      "scripts/pages/alpha-mark-qa.mjs",
+      "scripts/pages/alpha-mark.mjs",
+      "scripts/pages/atlas-qa.mjs",
+      "scripts/pages/browser-qa.mjs",
+      "scripts/pages/build.mjs",
+      "scripts/pages/celestial-qa.mjs",
+      "scripts/pages/computer-mission-qa.mjs",
+      "scripts/pages/computer-mission.mjs",
+      "scripts/pages/computer-receipt-qa.mjs",
+      "scripts/pages/computer-receipt.mjs",
+      "scripts/pages/culture-qa.mjs",
+      "scripts/pages/ecosystem-map-qa.mjs",
+      "scripts/pages/ecosystem-map.mjs",
+      "scripts/pages/ecosystem-qa.mjs",
+      "scripts/pages/ecosystem.mjs",
+      "scripts/pages/empowerment-browser-qa.mjs",
+      "scripts/pages/empowerment-build.mjs",
+      "scripts/pages/empowerment-bundle.mjs",
+      "scripts/pages/experiences.mjs",
+      "scripts/pages/featured.mjs",
+      "scripts/pages/frontier-mission-qa.mjs",
+      "scripts/pages/frontier-mission.mjs",
+      "scripts/pages/generate-computer-desk-runtime.mjs",
+      "scripts/pages/governance-qa.mjs",
+      "scripts/pages/iconic-qa.mjs",
+      "scripts/pages/mermaid-qa.mjs",
+      "scripts/pages/omega-build.mjs",
+      "scripts/pages/omega-qa.mjs",
+      "scripts/pages/omniphoenix-build.mjs",
+      "scripts/pages/omniphoenix-download-qa.mjs",
+      "scripts/pages/omniphoenix-qa.mjs",
+      "scripts/pages/phase6-browser-qa.mjs",
+      "scripts/pages/phase6-build.mjs",
+      "scripts/pages/phase6-qa.mjs",
+      "scripts/pages/polaris-build.mjs",
+      "scripts/pages/polaris-qa.mjs",
+      "scripts/pages/reading.mjs",
+      "scripts/pages/review-qa.mjs",
+      "scripts/pages/review.mjs",
+      "scripts/pages/run-computer-receipt-qa.mjs",
+      "scripts/pages/source-mission-qa.mjs",
+      "scripts/pages/source-mission.mjs",
+      "scripts/pages/start-browser-qa.mjs",
+      "scripts/pages/start-completion-qa.mjs",
+      "scripts/pages/start-qa.mjs",
+      "scripts/pages/start-recovery-qa.mjs",
+      "scripts/pages/start-visual-qa.mjs",
+      "scripts/pages/start.mjs",
+      "scripts/pages/successor-alpha-qa.mjs",
+      "scripts/pages/successor-qa.mjs",
+      "scripts/pages/successor.mjs",
+      "scripts/pages/vendor/alpha-successor/engine.mjs",
+      "scripts/pages/vendor/alpha-successor/model-provenance.json",
+      "scripts/pages/vendor/alpha-successor/model.mjs",
+      "scripts/pages/vendor/alpha-successor/provenance.json",
+      "scripts/pages/verify-successor-alpha.mjs",
+      "scripts/pages/verify-successor-build.mjs",
+      "scripts/pages/welcome-example-qa.mjs",
+      "scripts/pages/welcome-example.mjs",
+      "scripts/pages/work-qa.mjs",
+      "scripts/pages/work.mjs",
+      "scripts/pages/zenith-build.mjs",
+      "scripts/pages/zenith-qa.mjs",
+      "scripts/phase6/apply-config-lib.ts",
+      "scripts/phase6/apply-config-safety.ts",
+      "scripts/phase6/apply-config.ts",
+      "scripts/phase6/config-validation.ts",
+      "scripts/phase6/export-abi.cjs",
+      "scripts/pin_to_ipfs.mjs",
+      "scripts/production/commissioning.cjs",
+      "scripts/production/evidence.cjs",
+      "scripts/production/rehearse.cjs",
+      "scripts/registerEns.ts",
+      "scripts/release/audit-dependencies.cjs",
+      "scripts/release/check-contract-size.js",
+      "scripts/release/check-release-ci.js",
+      "scripts/release/generate-manifest.js",
+      "scripts/release/generate-release-notes.js",
+      "scripts/release/publish-source-release-rc16.cjs",
+      "scripts/release/publish-source-release.cjs",
+      "scripts/release/python-scanner-rc16.cjs",
+      "scripts/release/qualify-source-release-rc16.cjs",
+      "scripts/release/qualify-source-release.cjs",
+      "scripts/release/render-manifest-summary.js",
+      "scripts/release/run-etherscan-verification.js",
+      "scripts/release/source-native-evidence-rc16.cjs",
+      "scripts/release/source-native-gates-rc16.cjs",
+      "scripts/release/source-profile-rc16.cjs",
+      "scripts/release/source-profile-rc16.json",
+      "scripts/release/source-python-evidence-rc16.cjs",
+      "scripts/release/source-scanner-gates-rc16.cjs",
+      "scripts/release/source-scanner-review-bindings-rc16.cjs",
+      "scripts/release/validate-manifest.js",
+      "scripts/release/verify-transformational-compatibility.mjs",
+      "scripts/retrainAgent.ts",
+      "scripts/run-coverage.js",
+      "scripts/run-hardhat-tests.cjs",
+      "scripts/run-wire-verify.js",
+      "scripts/run.arena.sample.ts",
+      "scripts/security/check-dependency-preservation.cjs",
+      "scripts/security/reviewed-source-jobs-handover-20261016.json",
+      "scripts/security/reviewed-source-pr3967.json",
+      "scripts/security/reviewed-source-rc10.json",
+      "scripts/security/reviewed-source-rc11.json",
+      "scripts/security/run-tabletop.ts",
+      "scripts/security/verify-braces-patch.cjs",
+      "scripts/seed.culture.ts",
+      "scripts/shards/deploy-queue.ts",
+      "scripts/shards/deploy-registry.ts",
+      "scripts/shards/manage-shards.ts",
+      "scripts/stake-adjuster.ts",
+      "scripts/subgraph-e2e.js",
+      "scripts/thermostat-tick.ts",
+      "scripts/train/updateModels.ts",
+      "scripts/transfer-ownership.ts",
+      "scripts/types/better-sqlite3.d.ts",
+      "scripts/types/js-yaml.d.ts",
+      "scripts/utils/parseDuration.d.ts",
+      "scripts/utils/parseDuration.js",
+      "scripts/utils/sandbox.ts",
+      "scripts/v2/__tests__/agiOsFirstClassDemo.test.ts",
+      "scripts/v2/__tests__/demoAddressBook.test.ts",
+      "scripts/v2/__tests__/demoHardhatOwnerMatrixConfig.test.ts",
+      "scripts/v2/__tests__/ownerParameterMatrix.test.ts",
+      "scripts/v2/agiLaborMarketGrandDemo.ts",
+      "scripts/v2/agiOperatingSystemDemo.ts",
+      "scripts/v2/agiOsFirstClassDemo.ts",
+      "scripts/v2/apply-secure-defaults.ts",
+      "scripts/v2/asiGlobalDemo.ts",
+      "scripts/v2/asiGlobalKit.ts",
+      "scripts/v2/asiTakeoffDemo.ts",
+      "scripts/v2/asiTakeoffKit.ts",
+      "scripts/v2/attestEns.ts",
+      "scripts/v2/auditIdentityRegistry.ts",
+      "scripts/v2/configureEns.ts",
+      "scripts/v2/crossValidateNationalSupplyChainTranscript.ts",
+      "scripts/v2/demoHardhatOwnerMatrixConfig.ts",
+      "scripts/v2/deploy.ts",
+      "scripts/v2/deployAttestation.ts",
+      "scripts/v2/deployDefaults.ts",
+      "scripts/v2/deployment-checklist.ts",
+      "scripts/v2/generate-oneclick-env.ts",
+      "scripts/v2/initializeInstaller.ts",
+      "scripts/v2/inspectPlatformRegistry.ts",
+      "scripts/v2/launchAgiLaborMarketControlRoom.ts",
+      "scripts/v2/launchNationalSupplyChainControlRoom.ts",
+      "scripts/v2/launchRedenominationControlRoom.ts",
+      "scripts/v2/lib/agialphaToken.json",
+      "scripts/v2/lib/asiTakeoffKit.ts",
+      "scripts/v2/lib/demoAddressBook.ts",
+      "scripts/v2/lib/deployment-candidate.cjs",
+      "scripts/v2/lib/disputeModulePlan.ts",
+      "scripts/v2/lib/energyOraclePlan.ts",
+      "scripts/v2/lib/feePoolPlan.ts",
+      "scripts/v2/lib/hardhatDemoBootstrap.ts",
+      "scripts/v2/lib/identityRegistryPlan.ts",
+      "scripts/v2/lib/jobRegistryPlan.ts",
+      "scripts/v2/lib/markdownLiteral.ts",
+      "scripts/v2/lib/mermaidLiteral.ts",
+      "scripts/v2/lib/nationalSupplyChainTranscript.ts",
+      "scripts/v2/lib/nationalSupplyChainTranscriptSchema.ts",
+      "scripts/v2/lib/oneclick-config.cjs",
+      "scripts/v2/lib/ownerControlVerification.ts",
+      "scripts/v2/lib/platformIncentivesPlan.ts",
+      "scripts/v2/lib/platformRegistryInspector.ts",
+      "scripts/v2/lib/platformRegistryPlan.ts",
+      "scripts/v2/lib/prebuilt/CertificateNFT.json",
+      "scripts/v2/lib/prebuilt/DisputeModule.json",
+      "scripts/v2/lib/prebuilt/FeePool.json",
+      "scripts/v2/lib/prebuilt/IdentityRegistry.json",
+      "scripts/v2/lib/prebuilt/ImplementationModules.json",
+      "scripts/v2/lib/prebuilt/JobRegistry.json",
+      "scripts/v2/lib/prebuilt/QuadraticVoting.json",
+      "scripts/v2/lib/prebuilt/ReputationEngine.json",
+      "scripts/v2/lib/prebuilt/StakeManager.json",
+      "scripts/v2/lib/prebuilt/ValidationModule.json",
+      "scripts/v2/lib/randaoCoordinatorPlan.ts",
+      "scripts/v2/lib/reserved-output.cjs",
+      "scripts/v2/lib/rewardEnginePlan.ts",
+      "scripts/v2/lib/runtime-network.cjs",
+      "scripts/v2/lib/stakeManagerPlan.ts",
+      "scripts/v2/lib/taxPolicyPlan.ts",
+      "scripts/v2/lib/thermostatPlan.ts",
+      "scripts/v2/lib/types.ts",
+      "scripts/v2/lib/utils.ts",
+      "scripts/v2/migrateGovernanceTimelock.ts",
+      "scripts/v2/migrateValidationModule.ts",
+      "scripts/v2/nationalSupplyChainGrandDemo.ts",
+      "scripts/v2/oneclick-deploy.ts",
+      "scripts/v2/oneclick-stack.ts",
+      "scripts/v2/oneclick-wizard.ts",
+      "scripts/v2/owner-config-wizard.ts",
+      "scripts/v2/owner-dashboard.ts",
+      "scripts/v2/ownerChangeTicket.ts",
+      "scripts/v2/ownerCommandCenter.ts",
+      "scripts/v2/ownerComplianceReport.ts",
+      "scripts/v2/ownerConfigAudit.ts",
+      "scripts/v2/ownerControlAtlas.ts",
+      "scripts/v2/ownerControlBlueprint.ts",
+      "scripts/v2/ownerControlDoctor.ts",
+      "scripts/v2/ownerControlGuide.ts",
+      "scripts/v2/ownerControlPlan.ts",
+      "scripts/v2/ownerControlPulse.ts",
+      "scripts/v2/ownerControlQuickstart.ts",
+      "scripts/v2/ownerControlSnapshot.ts",
+      "scripts/v2/ownerControlSurface.ts",
+      "scripts/v2/ownerControlTemplate.ts",
+      "scripts/v2/ownerEmergencyRunbook.ts",
+      "scripts/v2/ownerHamiltonianAudit.ts",
+      "scripts/v2/ownerMissionControl.ts",
+      "scripts/v2/ownerParameterMatrix.ts",
+      "scripts/v2/ownerUpgradeQueue.ts",
+      "scripts/v2/ownerUpgradeStatus.ts",
+      "scripts/v2/pauseTest.ts",
+      "scripts/v2/plan-deploy.ts",
+      "scripts/v2/redenominationPlaybook.ts",
+      "scripts/v2/renderOwnerMermaid.ts",
+      "scripts/v2/rewardEngineReport.ts",
+      "scripts/v2/rotateGovernance.ts",
+      "scripts/v2/run-owner-plan.js",
+      "scripts/v2/systemPauseAction.ts",
+      "scripts/v2/testnetDryRun.ts",
+      "scripts/v2/thermodynamicsReport.ts",
+      "scripts/v2/truffle-migration-wizard.ts",
+      "scripts/v2/truffle-preflight.ts",
+      "scripts/v2/updateAllModules.ts",
+      "scripts/v2/updateEnergyOracle.ts",
+      "scripts/v2/updateFeePool.ts",
+      "scripts/v2/updateHamiltonianMonitor.ts",
+      "scripts/v2/updateIdentityRegistry.ts",
+      "scripts/v2/updateJobRegistry.ts",
+      "scripts/v2/updatePlatformIncentives.ts",
+      "scripts/v2/updatePlatformRegistry.ts",
+      "scripts/v2/updateRandaoCoordinator.ts",
+      "scripts/v2/updateRewardEngine.ts",
+      "scripts/v2/updateStakeManager.ts",
+      "scripts/v2/updateSystemPause.ts",
+      "scripts/v2/updateTaxPolicy.ts",
+      "scripts/v2/updateThermodynamics.ts",
+      "scripts/v2/updateThermostat.ts",
+      "scripts/v2/validateNationalSupplyChainTranscript.ts",
+      "scripts/v2/verifyOwnerControl.ts",
+      "scripts/validate-config.js",
+      "scripts/validator/cli.ts",
+      "scripts/validator/commit.ts",
+      "scripts/validator/reveal.ts",
+      "scripts/verify-agialpha.ts",
+      "scripts/verify-wiring.js",
+      "services/alpha-bridge/src/server.js",
+      "services/arena/jest.config.ts",
+      "services/arena/package.json",
+      "services/arena/src/arena.service.ts",
+      "services/arena/src/database.ts",
+      "services/arena/src/difficulty.ts",
+      "services/arena/src/elo.ts",
+      "services/arena/src/index.ts",
+      "services/arena/src/ipfs.ts",
+      "services/arena/src/jobs.client.ts",
+      "services/arena/src/moderation.ts",
+      "services/arena/src/monitoring.ts",
+      "services/arena/src/observability.ts",
+      "services/arena/src/qd.ts",
+      "services/arena/src/types.ts",
+      "services/arena/src/utils.ts",
+      "services/arena/src/validators.ts",
+      "services/arena/tsconfig.build.json",
+      "services/arena/tsconfig.json",
+      "services/culture-graph-indexer/package-lock.json",
+      "services/culture-graph-indexer/package.json",
+      "services/culture-graph-indexer/scripts/healthcheck.mjs",
+      "services/culture-graph-indexer/src/cli/generate-weekly-metrics.ts",
+      "services/culture-graph-indexer/src/config.ts",
+      "services/culture-graph-indexer/src/contracts.ts",
+      "services/culture-graph-indexer/src/db/prisma.ts",
+      "services/culture-graph-indexer/src/graphql/resolvers.ts",
+      "services/culture-graph-indexer/src/graphql/schema.ts",
+      "services/culture-graph-indexer/src/index.ts",
+      "services/culture-graph-indexer/src/server.ts",
+      "services/culture-graph-indexer/src/services/checksum-service.ts",
+      "services/culture-graph-indexer/src/services/data-integrity-service.ts",
+      "services/culture-graph-indexer/src/services/event-ingestion-service.ts",
+      "services/culture-graph-indexer/src/services/influence-service.ts",
+      "services/culture-graph-indexer/src/services/networkx-validator.ts",
+      "services/culture-graph-indexer/src/services/types.ts",
+      "services/culture-graph-indexer/tsconfig.json",
+      "services/culture-graph-indexer/vitest.config.ts",
+      "services/notifications/server.js",
+      "shared/agentLabel.ts",
+      "shared/auditLogger.ts",
+      "shared/containedFiles.ts",
+      "shared/efficiencyMetrics.ts",
+      "shared/energyInsights.ts",
+      "shared/energyMonitor.ts",
+      "shared/energyTrends.ts",
+      "shared/logValue.ts",
+      "shared/opportunityModel.ts",
+      "shared/spawnManager.ts",
+      "shared/structuredLogger.ts",
+      "shared/trainingRecords.ts",
+      "shared/validationProtocol.ts",
+      "shared/worldModel.ts",
+      "tools/security/slither-allowlist.json",
+      "tools/security/validate-codeql-remediation.mjs",
+      "tools/security/validate-slither.mjs",
+      "website/assets/alpha-mark-model.mjs",
+      "website/assets/alpha-mark.js",
+      "website/assets/computer-desk-runtime-source.mjs",
+      "website/assets/computer-desk.mjs",
+      "website/assets/computer-mission-copy.mjs",
+      "website/assets/computer-mission.js",
+      "website/assets/computer-receipt-copy.mjs",
+      "website/assets/computer-receipt-model.mjs",
+      "website/assets/computer-receipt.mjs",
+      "website/assets/diagram-source.mjs",
+      "website/assets/diagrams.js",
+      "website/assets/frontier-desk.mjs",
+      "website/assets/frontier-mission-copy.mjs",
+      "website/assets/frontier-mission.js",
+      "website/assets/lifecycle.mjs",
+      "website/assets/review-model.mjs",
+      "website/assets/review.js",
+      "website/assets/site.js",
+      "website/assets/source-lab.js",
+      "website/assets/source-mission-copy.mjs",
+      "website/assets/source-mission.js",
+      "website/assets/source-model.mjs",
+      "website/assets/start-state.mjs",
+      "website/assets/start.js",
+      "website/assets/successor-copy.mjs",
+      "website/assets/successor.js",
+      "website/assets/welcome-example.js",
+      "website/assets/work-model.mjs",
+      "website/assets/work.js"
+    ],
+    "results": [
+      "0e933c4474fa710742686500a5a45a14632f158a5137d6611c81ea4f4ae21fd4",
+      "1676a4dccf4ce896805605e8d60b53ee7325247b1bf22f92bf2c625de15a9f99",
+      "1a09f9aef73ed6aaab6343c87259769cbee9465ecaab2689858462d9b2d61fec",
+      "1aaf067df146ba044691fda82efaf3e612c22f31d1e1880250b9d0634abf5d07",
+      "1aea93b30deeca95ce3d8a272eb69f19dfbec667297783257f8f3c44b18934fa",
+      "1f968a5e5f02789458f1623071991f4863d592bbc4a8d7f111045a4835a157e0",
+      "21f1a54122beaa9146fbb963d56a279788a55575dc17b3316cb315982fe5c561",
+      "264bbae7562a23a9cc4ef1f294becb549d30c30452cf9c5837cfe77a51cf2410",
+      "2ef3f39bbeaa21492092841ebeb1a357b3e50b8e118e6a0d87ac0dbaac53397b",
+      "2f45bb7374065c99d22879c03cf17d15740d6204698ba314bc7732c9d9d43f3c",
+      "366a3c8b3f8d931b0b6e11db1b1746c6cc1fffa7d1ef265614f8f0352926b5d4",
+      "3b75f2692caba0cae134af3d539279caf1ead00f567bc9b51f03022f7ccb5ea5",
+      "3d7e11fd5ebd7cfcea5d8bd867515eea800bd3c72445c71580eff7b068ac74a2",
+      "429fc0cff3a6a57ad7bf0dfc73654a43ff88cbdbfb539382ba488eba169c1d10",
+      "445d7d9e337a3efbc7f19bc0a839465dc6cf80f8a597675916ad2f48aa2b2b48",
+      "45171308c20c856cdf35a0030a53803db4333bcbd1964466bc445302e6f1d6ef",
+      "61f898923bd39c74c3e389a31c73079c11515d17bccd4f81d130d87300e26bac",
+      "6325952e9dbe856417659b95860e0743ec7c33ce2c902dbac69eb94c3e5ee914",
+      "6505d1e8e4489b7f2611db1c8e7f19e3c517409611039d8f919b3d7728456a01",
+      "71bda75e290dc50b846d89852befbef62529d5603a66de76fb3c3680887a0283",
+      "7fd7fc59d0b56b251559f9994acbf5ebb0b98dce566c7f2c0e96a493d113d834",
+      "808e6e46a6505950a197dcad5825b3396cc2ba6f9a504e6698308df060c99af3",
+      "83b31af7e0b36486b38c60fe2709377cc6ffd3c152fdad6c083ebcf9789596fc",
+      "89c5afdb109d3bc6b0977a6ea36c2c9f862d5e521fc1a12e1a23260c8b308b9c",
+      "905abb518729f2ee3f23dee6441fbd0ae049fb34f4c2ebe69bbbb0c9c330117d",
+      "9b86f6c3dfbe34a27f9163b46de3bbdf7f986a5e5e14fd564214960fd5e137a2",
+      "a8a15403fe33c03a383fcfd62985cf57a09fe42a18c65df018042a342f47df19",
+      "ac8b6720557cbe50005b25280b7a9caa7757fc2f5cea0146cda5f5b30d866418",
+      "b3f8d710355360313ebe31b920a807c21321327facca03017cc64f1d6ac619bc",
+      "b88c96c776bb5c5981e1f25ee2398e7253d29fbd47f47bf4df9badb55e7085be",
+      "b89662daeea98c7fc9a770cd0f264b02259870b23172b7c7cedc67e38d38d952",
+      "bc6b477f93b1ffed3a0598851bf2c1386488bc2db1dd9385c5d96680823387fd",
+      "c28640aa27c4b798e2c5f24dfef4a6c89dfb723650a646a00af804c3025f110e",
+      "d9664fac8b74f457aadbd6468021538dfea31e39603f901549231ef43dd1393b",
+      "e7516956ee9414c892a9031d6ded0fb6adbe0eccfd24a1767cc499ce9fb44576",
+      "e836796465bde79af4aca2158ba2062a6e70aead3b6d1496e02ba84169348f2d",
+      "eb8d1644934679ed9a346fcf211eb36c3ff722409dc3b50dd456fe464162764f",
+      "ec5278d8ab68d6cea226042ec064ccf0fe18b2ddece657726c203a7c46f838cf",
+      "ecf9292068e73fe1886b5a8b25bc1f1cc147c7750896582c314eeea457e7415f",
+      "efdbdd57e6141ac97fb7db757ac4b94ddb75341ae4600fdc4174f7b4a7ef2565",
+      "f328e91e8d1bd994880e65ded4c6749dc1f083ce5931a84a4887fd31f321201b",
+      "f5dbbf686d62e21c5e2e02e1c467619f6d8a7f6025948289161fa959116921e6",
+      "ff38f4729100cd9044b7e7a8fae5248feaaaca3f725464c48f9043ab5a921a39"
+    ],
+    "resultCount": 43
+  },
+  "resultReviews": [
+    {
+      "sha256": "0e933c4474fa710742686500a5a45a14632f158a5137d6611c81ea4f4ae21fd4",
+      "disposition": "quality-only",
+      "rationale": "Exact actual-source binding `verifyPublicationReview` in `scripts/release/source-native-gates-rc16.cjs` at line13: The reported import binding is not used as an executable reference in this module. Other lexical matches, where present, are module-specifier text or unrelated object property names. This is an accurate unused-binding quality note. The CommonJS require expression remains executed; the import uses a Node builtin or a directly exported plain property, rather than a deferred call or getter. This assessment does not remove an import, change source or claim an uninvoked verification function supplied a gate.",
+      "reviewLink": "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282707246"
+    },
+    {
+      "sha256": "1676a4dccf4ce896805605e8d60b53ee7325247b1bf22f92bf2c625de15a9f99",
+      "disposition": "quality-only",
+      "rationale": "Exact actual-source binding `verifyPublicationReview` in `scripts/release/source-scanner-gates-rc16.cjs` at line13: The reported import binding is not used as an executable reference in this module. Other lexical matches, where present, are module-specifier text or unrelated object property names. This is an accurate unused-binding quality note. The CommonJS require expression remains executed; the import uses a Node builtin or a directly exported plain property, rather than a deferred call or getter. This assessment does not remove an import, change source or claim an uninvoked verification function supplied a gate.",
+      "reviewLink": "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282707246"
+    },
+    {
+      "sha256": "1a09f9aef73ed6aaab6343c87259769cbee9465ecaab2689858462d9b2d61fec",
+      "disposition": "quality-only",
+      "rationale": "Exact actual-source binding `delay` in `scripts/release/source-native-gates-rc16.cjs` at line8: The reported import binding is not used as an executable reference in this module. Other lexical matches, where present, are module-specifier text or unrelated object property names. This is an accurate unused-binding quality note. The CommonJS require expression remains executed; the import uses a Node builtin or a directly exported plain property, rather than a deferred call or getter. This assessment does not remove an import, change source or claim an uninvoked verification function supplied a gate.",
+      "reviewLink": "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282707246"
+    },
+    {
+      "sha256": "1aaf067df146ba044691fda82efaf3e612c22f31d1e1880250b9d0634abf5d07",
+      "disposition": "quality-only",
+      "rationale": "Exact actual-source binding `scannerReviewPath` in `scripts/release/publish-source-release-rc16.cjs` at line18: The reported import binding is not used as an executable reference in this module. Other lexical matches, where present, are module-specifier text or unrelated object property names. This is an accurate unused-binding quality note. The CommonJS require expression remains executed; the import uses a Node builtin or a directly exported plain property, rather than a deferred call or getter. This assessment does not remove an import, change source or claim an uninvoked verification function supplied a gate.",
+      "reviewLink": "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282707246"
+    },
+    {
+      "sha256": "1aea93b30deeca95ce3d8a272eb69f19dfbec667297783257f8f3c44b18934fa",
+      "disposition": "quality-only",
+      "rationale": "Exact actual-source binding `fs` in `scripts/release/source-native-gates-rc16.cjs` at line4: The reported import binding is not used as an executable reference in this module. Other lexical matches, where present, are module-specifier text or unrelated object property names. This is an accurate unused-binding quality note. The CommonJS require expression remains executed; the import uses a Node builtin or a directly exported plain property, rather than a deferred call or getter. This assessment does not remove an import, change source or claim an uninvoked verification function supplied a gate.",
+      "reviewLink": "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282707246"
+    },
+    {
+      "sha256": "1f968a5e5f02789458f1623071991f4863d592bbc4a8d7f111045a4835a157e0",
+      "disposition": "reviewed-nonsecurity",
+      "rationale": "Operator planner normalised ID426/269 and receiptStore26-39 validated filename -> retained private FD32-59/whitelist67-76 -> random exclusive mode0600 temp114 -> descriptor-anchored link/rename118-119. Limits: Inbound HTTP/IPFS bytes become serialized content, not an unconstrained destination filename. The fixed contained-file writer intentionally persists the selected record. The content dataflow is retained as reported; this case-specific disposition addresses the inferred security concern under the documented application purpose, not a universal confidentiality, authentication or retention guarantee.",
+      "reviewLink": "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282707246"
+    },
+    {
+      "sha256": "21f1a54122beaa9146fbb963d56a279788a55575dc17b3316cb315982fe5c561",
+      "disposition": "reviewed-nonsecurity",
+      "rationale": "HTTP CID/string result165-183 is converted to observation content and appended as JSONL201-204 at fixed OBSERVATIONS_PATH105-107. Limits: Intentional response-content persistence, not remote control of a filesystem path or arbitrary source-file copy. The content dataflow is retained as reported; this case-specific disposition addresses the inferred security concern under the documented application purpose, not a universal confidentiality, authentication or retention guarantee.",
+      "reviewLink": "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282707246"
+    },
+    {
+      "sha256": "264bbae7562a23a9cc4ef1f294becb549d30c30452cf9c5837cfe77a51cf2410",
+      "disposition": "quality-only",
+      "rationale": "Exact actual-source binding `assertPinnedAlphaCheckout` in `scripts/release/source-scanner-gates-rc16.cjs` at line17: The reported import binding is not used as an executable reference in this module. Other lexical matches, where present, are module-specifier text or unrelated object property names. This is an accurate unused-binding quality note. The CommonJS require expression remains executed; the import uses a Node builtin or a directly exported plain property, rather than a deferred call or getter. This assessment does not remove an import, change source or claim an uninvoked verification function supplied a gate.",
+      "reviewLink": "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282707246"
+    },
+    {
+      "sha256": "2ef3f39bbeaa21492092841ebeb1a357b3e50b8e118e6a0d87ac0dbaac53397b",
+      "disposition": "reviewed-nonsecurity",
+      "rationale": "operatorAuth route1977 -> confirmed job record113-127 -> appendJSON employer54 at fixed configured JOB_LEDGER29-30. Limits: HTTP-derived bytes influence serialized content, not filesystem destination. Intended authenticated job-ledger persistence. The content dataflow is retained as reported; this case-specific disposition addresses the inferred security concern under the documented application purpose, not a universal confidentiality, authentication or retention guarantee.",
+      "reviewLink": "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282707246"
+    },
+    {
+      "sha256": "2f45bb7374065c99d22879c03cf17d15740d6204698ba314bc7732c9d9d43f3c",
+      "disposition": "reviewed-nonsecurity",
+      "rationale": "Same closed import/replay validation as ordinal2; iframe.src335 receives canonical validated HTTPS source. iframe has empty sandbox331 and no-referrer policy. Limits: Defensible source/iframe XSS-context exception. External source content remains untrusted and sandboxed.",
+      "reviewLink": "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282707246"
+    },
+    {
+      "sha256": "366a3c8b3f8d931b0b6e11db1b1746c6cc1fffa7d1ef265614f8f0352926b5d4",
+      "disposition": "reviewed-nonsecurity",
+      "rationale": "Select direct mission JSON versus a supported mission-export envelope. User-selected format does not skip mission verification: both accepted representations reach the same verifier. This is a pure preparation/restore path; it does not start a model, browser, network, wallet or production operation. Enforcement: Bounded canonical JSON parse precedes branch; direct and envelope routes both call verifyFrontierMission. Same schema/kind/shape/source checks and deterministic canonical replay/digest comparison apply to both branches. Replay validates input shape, bounded content, rights attestation, source identities, URLs and aggregate sizes. Seal authenticates content equality, not truth; source retrieval status remains NOT_RETRIEVED. UI explicitly labels restored content bindings as verified while claims remain unverified. Limits: Rights and provenance statements remain user attestations; digest equality is not independent factual verification. The raw source is URL hash input, not a previously trusted record.",
+      "reviewLink": "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282707246"
+    },
+    {
+      "sha256": "3b75f2692caba0cae134af3d539279caf1ead00f567bc9b51f03022f7ccb5ea5",
+      "disposition": "reviewed-nonsecurity",
+      "rationale": "alpha-project-transfer.test.mjs232 constructs Node -e module source only from JSON.stringify of two fixed import.meta.url-relative module URLs and the frozen SOURCE_PATHS length. It is not embedded in HTML and has no user/external source input on that construction. Limits: Not a universal endorsement of JSON.stringify as a code sanitizer; the specific inputs are fixed source/test identities.",
+      "reviewLink": "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282707246"
+    },
+    {
+      "sha256": "3d7e11fd5ebd7cfcea5d8bd867515eea800bd3c72445c71580eff7b068ac74a2",
+      "disposition": "reviewed-nonsecurity",
+      "rationale": "Identity read is projected to public signer address/ENS1174-1183. samples/time/signature envelope1197-1245, including persisted outbox1138, is intentionally sent to configured ENERGY_ORACLE_URL1278/1286. Limits: No stored private key or whole identity object is sent. Public address/signature/telemetry delivery is intentional; live destination data policy remains deployment-specific. The content dataflow is retained as reported; this case-specific disposition addresses the inferred security concern under the documented application purpose, not a universal confidentiality, authentication or retention guarantee.",
+      "reviewLink": "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282707246"
+    },
+    {
+      "sha256": "429fc0cff3a6a57ad7bf0dfc73654a43ff88cbdbfb539382ba488eba169c1d10",
+      "disposition": "reviewed-nonsecurity",
+      "rationale": "Require declared signer address before attempting challenge verification. User-provided address presence is an input prerequisite. Authentication uses recovered identity and stored managed-wallet membership, and authorization separately binds the selected wallet. Enforcement: Declared address is checked against cryptographically recovered address and managed-wallet lookup, not accepted from the request. Server-side principal cannot select another managed wallet or elevate itself to operator. Limits: Raw25 remains a distinct diagnostic (different start column/source flow) from raw24.",
+      "reviewLink": "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282707246"
+    },
+    {
+      "sha256": "445d7d9e337a3efbc7f19bc0a839465dc6cf80f8a597675916ad2f48aa2b2b48",
+      "disposition": "reviewed-nonsecurity",
+      "rationale": "frontier-desk source URL href313 comes from embedded fd-config. frontier-mission.js restorePackage46-70 and present243-245 verify imported mission/workspace before render; canonical frontier verifier359-398 reconstructs the mission and compares canonical equality. exactPublicURL74-120 requires canonical HTTPS, no credentials/control characters/fragments/non443 port/literal IP/local domain and rejects sensitive query names. Limits: Defensible renderer-context exception for this URL flow; no claim of DNS/network trust or external content accuracy.",
+      "reviewLink": "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282707246"
+    },
+    {
+      "sha256": "45171308c20c856cdf35a0030a53803db4333bcbd1964466bc445302e6f1d6ef",
+      "disposition": "reviewed-nonsecurity",
+      "rationale": "source-lab.js81 links source.url from the same tracked build-owned table as ordinal5; build.mjs fixes HTTPS GitHub repository/revision and per-segment encodes the source path. Limits: No arbitrary URI scheme/HTML source was established in the reported build graph.",
+      "reviewLink": "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282707246"
+    },
+    {
+      "sha256": "61f898923bd39c74c3e389a31c73079c11515d17bccd4f81d130d87300e26bac",
+      "disposition": "reviewed-nonsecurity",
+      "rationale": "Client availability/configuration guard before an HTTP POST to the selected endpoint. The diagnostic marks endpoint presence as guarding fetch. That predicate establishes a destination, not server authorization; the provided TypeScript endpoint enforces its own authentication before handler access. A user can configure a server, but that does not make a missing/invalid token acceptable to the built-in server. Enforcement: Base URL parsing limits it to HTTP(S) without embedded credentials/query/fragment. API token remains page-memory data and auth header is added separately from endpoint presence. Base URL change clears prior token; existing session token is not evidence of an authorization bypass. Runtime base change also clears prior token. All built-in TypeScript router handlers are behind configured-secret, missing-header and bearer/HMAC validation checks. Built-in /execute additionally requires intent object and planHash before service invocation. Limits: This proof covers the provided TypeScript server. Arbitrary configured remote services are not authenticated or qualified by a client URL check. Legacy executeICS sends an ICS-shaped request, while the built-in TypeScript /execute expects a job-intent/planHash shape. No successful legacy execution against that endpoint is inferred. Legacy confirmFlow returns true when ics.confirm is absent/false. Do not claim unconditional per-action user consent across all legacy backend plans; this is separate from the reported endpoint-presence predicate. Two raw codeFlows (70 and72 thread locations) are retained, not deduplicated. No production execution is claimed.",
+      "reviewLink": "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282707246"
+    },
+    {
+      "sha256": "6325952e9dbe856417659b95860e0743ec7c33ce2c902dbac69eb94c3e5ee914",
+      "disposition": "quality-only",
+      "rationale": "Exact actual-source binding `execFileSync` in `scripts/release/source-native-gates-rc16.cjs` at line7: The reported import binding is not used as an executable reference in this module. Other lexical matches, where present, are module-specifier text or unrelated object property names. This is an accurate unused-binding quality note. The CommonJS require expression remains executed; the import uses a Node builtin or a directly exported plain property, rather than a deferred call or getter. This assessment does not remove an import, change source or claim an uninvoked verification function supplied a gate.",
+      "reviewLink": "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282707246"
+    },
+    {
+      "sha256": "6505d1e8e4489b7f2611db1c8e7f19e3c517409611039d8f919b3d7728456a01",
+      "disposition": "reviewed-nonsecurity",
+      "rationale": "Notes read251 -> strict exact-field parseScannerReview95-124 + source binding258 -> validated 40-lowercase-hex source SHA. Only that identifier enters the fixed GitHub repository commits/<SHA>/check-runs GET557/561/649. Limits: No notes/review body or arbitrary local file content is uploaded. Strong specific application-exception argument; authentic CodeQL gate remains mandatory. The content dataflow is retained as reported; this case-specific disposition addresses the inferred security concern under the documented application purpose, not a universal confidentiality, authentication or retention guarantee. The actual authentic CodeQL118411754521 warning at qualifier line561 is this same raw case; its presence is retained despite the service conclusion being SUCCESS.",
+      "reviewLink": "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282707246"
+    },
+    {
+      "sha256": "71bda75e290dc50b846d89852befbef62529d5603a66de76fb3c3680887a0283",
+      "disposition": "reviewed-nonsecurity",
+      "rationale": "Validation route parsed boolean/normalized32-byte salt -> bounded plain JSON serialiseRecord147-188. recordPath116-132 uses strict uint256 job/address identifiers; exclusive mode0600 temporary file230 -> atomic rename235. Limits: Request content is persisted through constrained filenames and private exclusive temp creation, not arbitrary path selection. The content dataflow is retained as reported; this case-specific disposition addresses the inferred security concern under the documented application purpose, not a universal confidentiality, authentication or retention guarantee.",
+      "reviewLink": "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282707246"
+    },
+    {
+      "sha256": "7fd7fc59d0b56b251559f9994acbf5ebb0b98dce566c7f2c0e96a493d113d834",
+      "disposition": "quality-only",
+      "rationale": "Exact actual-source binding `delay` in `scripts/release/source-scanner-gates-rc16.cjs` at line8: The reported import binding is not used as an executable reference in this module. Other lexical matches, where present, are module-specifier text or unrelated object property names. This is an accurate unused-binding quality note. The CommonJS require expression remains executed; the import uses a Node builtin or a directly exported plain property, rather than a deferred call or getter. This assessment does not remove an import, change source or claim an uninvoked verification function supplied a gate.",
+      "reviewLink": "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282707246"
+    },
+    {
+      "sha256": "808e6e46a6505950a197dcad5825b3396cc2ba6f9a504e6698308df060c99af3",
+      "disposition": "reviewed-nonsecurity",
+      "rationale": "Restored settlement journal state91 is reconciled to finalized success1136-1165; subtask preparation1339-1347 projects explicit parent/description/createdBy, then employer.prepareJobArtifacts35-42 publishes the selected job specification through configured IPFS pin608. Limits: The raw settlement journal is not uploaded; intentional selected job-spec content is published. No IPFS persistence or live-provider assurance is inferred. The content dataflow is retained as reported; this case-specific disposition addresses the inferred security concern under the documented application purpose, not a universal confidentiality, authentication or retention guarantee.",
+      "reviewLink": "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282707246"
+    },
+    {
+      "sha256": "83b31af7e0b36486b38c60fe2709377cc6ffd3c152fdad6c083ebcf9789596fc",
+      "disposition": "reviewed-nonsecurity",
+      "rationale": "GasPanel input342 reaches state148/useMemo218 and React href366. ethers.isAddress(paymasterAddress) gates the address; parseUnits and toQuantity normalize the amount; generated URI has fixed ethereum: prefix. JSX property/text handling does not insert an arbitrary HTML string. Limits: No arbitrary URI scheme or executable HTML is established in the reported flow. This does not attest transaction approval or execution.",
+      "reviewLink": "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282707246"
+    },
+    {
+      "sha256": "89c5afdb109d3bc6b0977a6ea36c2c9f862d5e521fc1a12e1a23260c8b308b9c",
+      "disposition": "reviewed-nonsecurity",
+      "rationale": "Quarantine state -> health data -> telemetry644-652 projects quarantined boolean plus anomaly/job/count fields, then matching-wallet configured agent socket/URL523-549. Limits: Not a whole quarantine-file upload. The reported body flow is intentional health notification to the configured recipient, not evidence of arbitrary private-file exfiltration. The content dataflow is retained as reported; this case-specific disposition addresses the inferred security concern under the documented application purpose, not a universal confidentiality, authentication or retention guarantee.",
+      "reviewLink": "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282707246"
+    },
+    {
+      "sha256": "905abb518729f2ee3f23dee6441fbd0ae049fb34f4c2ebe69bbbb0c9c330117d",
+      "disposition": "reviewed-nonsecurity",
+      "rationale": "Require the signed payload when a contributor signature is supplied in the accepted signed form. The false branch rejects rather than accepts a signed annotation. Both HTTP and gRPC parse contributors only after their separate principal/wallet checks. Enforcement: Missing payload throws; existing payload is canonicalized, verified, and compared to normalized contributor address. Empty payload remains distinct from absent payload. gRPC adapter passes signed_payload through to the same shared verification helper. Current documented wire contract requires exact signed payload and rejects a signature with only an unverified digest. Limits: The optional-signature/malformed-value boundary in case22 still applies. Historical records are not reverified or upgraded by this helper; no formal disposition is made.",
+      "reviewLink": "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282707246"
+    },
+    {
+      "sha256": "9b86f6c3dfbe34a27f9163b46de3bbdf7f986a5e5e14fd564214960fd5e137a2",
+      "disposition": "reviewed-nonsecurity",
+      "rationale": "source-lab.js78 takes source.download from build-owned #lab-data, not a runtime user-imported source table. experiences.mjs109-141 builds a nonbinary download examples/<sha16>-<ASCII-sanitized-basename> from tracked sources; binary fallback sourceURL is fixed immutable HTTPS GitHub URL from build.mjs387-388. loadExperiences requires tracked step.source; template JSON is escaped. Limits: User search/imported file content is written as textContent and cannot choose this build-owned URL. No runtime external source-table admission was found.",
+      "reviewLink": "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282707246"
+    },
+    {
+      "sha256": "a8a15403fe33c03a383fcfd62985cf57a09fe42a18c65df018042a342f47df19",
+      "disposition": "reviewed-nonsecurity",
+      "rationale": "notifications server fixed storageDir/logFile17-18 -> appendJSON27-29. /notify59-68 deliberately accepts JSON object notifications; parser512kb15 and peer rate120/min8-14 bound requests. It does not authenticate callers; listen binds0.0.0.0. Limits: The query accurately follows HTTP content to an intentional fixed JSONL sink; no path-control defect is established. Do not claim the service is private/authenticated or that rate limiting proves retention/ingress policy. Intended deployment access and retention remain explicit operational limits, not evidence that this reported write is unauthorized arbitrary file access. The content dataflow is retained as reported; this case-specific disposition addresses the inferred security concern under the documented application purpose, not a universal confidentiality, authentication or retention guarantee.",
+      "reviewLink": "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282707246"
+    },
+    {
+      "sha256": "ac8b6720557cbe50005b25280b7a9caa7757fc2f5cea0146cda5f5b30d866418",
+      "disposition": "reviewed-nonsecurity",
+      "rationale": "Identity label353 is projected into reload reason/label/timestamp at retrain261-265, sent to operator-configured control URL (default localhost). Limits: No whole identity record or private key is sent. Intentional local/operator control notification, not general permission to export identity-file contents. The content dataflow is retained as reported; this case-specific disposition addresses the inferred security concern under the documented application purpose, not a universal confidentiality, authentication or retention guarantee.",
+      "reviewLink": "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282707246"
+    },
+    {
+      "sha256": "b3f8d710355360313ebe31b920a807c21321327facca03017cc64f1d6ac619bc",
+      "disposition": "reviewed-nonsecurity",
+      "rationale": "Filter unsupported contributor metadata entries before address normalization and optional content verification. The user controls optional annotation presence, not gateway authorization. Discarding a non-object means no contributor signature or attribution is retained for that entry. The flagged action is cryptographic verification itself, not a privileged action after skipped verification. Enforcement: Discarded entry cannot become a contributor; valid entries require a normalized Ethereum address. A retained nonempty string signature requires payload verification and recovered-address equality. Gateway authority established independently of contributor metadata. Limits: This is not evidence that every unsigned attribution is true. Attribution model remains explicitly historical/annotation-only.",
+      "reviewLink": "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282707246"
+    },
+    {
+      "sha256": "b88c96c776bb5c5981e1f25ee2398e7253d29fbd47f47bf4df9badb55e7085be",
+      "disposition": "reviewed-nonsecurity",
+      "rationale": "artifact-commitment.cjs10 opens an operator-selected report with O_RDONLY|O_NONBLOCK. Same-descriptor fstat requires a regular file, bounded capture is <=8MiB+1, resultHash hashes captured bytes, and finally closes it. It never creates/truncates/writes the path. Limits: The reported insecure temporary-file creation does not occur at this read-only sink. This general report reader does allow operator-selected symlink paths and does not claim immutable-source isolation.",
+      "reviewLink": "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282707246"
+    },
+    {
+      "sha256": "b89662daeea98c7fc9a770cd0f264b02259870b23172b7c7cedc67e38d38d952",
+      "disposition": "reviewed-nonsecurity",
+      "rationale": "Local identity.ts317-324 explicitly projects address/ENS/label/role/metadata, excluding stored privateKey/wallet. ensureIdentity397-424 returns that projection; TaskExecutionContext.wallet is not included in payload. agentRegistry334/358-359 obtains the provider endpoint from operator-owned local identity/config metadata.url. taskExecution395-416 intentionally sends selected job/analysis, profile metadata/configMetadata, projected identity, context and per-agent prior-result memory; default memory provider341-359 is the only production context registration, other registerContextProvider callers are tests. POST /agents routes527-571 has operator-only registration and HTTP(S) validation but belongs to a separate notification registry, not this provider endpoint admission. Limits: A file-to-HTTP information flow is accurate, but no unexpected private-key/wallet upload or weaker-principal recipient selection was found in the ordinary chain. An application-specific exception is defensible for intentional operator-configured workload transfer. Arbitrary metadata/context remains transmitted; no global confidentiality or live-provider data-policy certification follows. The content dataflow is retained as reported; this case-specific disposition addresses the inferred security concern under the documented application purpose, not a universal confidentiality, authentication or retention guarantee.",
+      "reviewLink": "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282707246"
+    },
+    {
+      "sha256": "bc6b477f93b1ffed3a0598851bf2c1386488bc2db1dd9385c5d96680823387fd",
+      "disposition": "quality-only",
+      "rationale": "Exact actual-source binding `assertPinnedAlphaCheckout` in `scripts/release/source-native-gates-rc16.cjs` at line16: The reported import binding is not used as an executable reference in this module. Other lexical matches, where present, are module-specifier text or unrelated object property names. This is an accurate unused-binding quality note. The CommonJS require expression remains executed; the import uses a Node builtin or a directly exported plain property, rather than a deferred call or getter. This assessment does not remove an import, change source or claim an uninvoked verification function supplied a gate.",
+      "reviewLink": "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282707246"
+    },
+    {
+      "sha256": "c28640aa27c4b798e2c5f24dfef4a6c89dfb723650a646a00af804c3025f110e",
+      "disposition": "reviewed-nonsecurity",
+      "rationale": "The modulo arithmetic is biased, but the selected outputs are disclosed public synthetic revision labels. Complete reviewed module and its selected callers show no use as cryptographic key, secret, authentication token, security nonce, protected holdout or on-chain authority. Public synthetic sampling and any distribution quality remain local evaluation limitations, not a demonstrated real-world or independently protected evaluation.",
+      "reviewLink": "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282707246"
+    },
+    {
+      "sha256": "d9664fac8b74f457aadbd6468021538dfea31e39603f901549231ef43dd1393b",
+      "disposition": "reviewed-nonsecurity",
+      "rationale": "Authenticated and wallet-authorized telemetry routes1817/1830 -> enriched sample1881-1886 -> publish1300 -> fixed outbox JSON1151-1154. Limits: Incoming telemetry becomes content at a fixed configured destination; no request-controlled path is established. The content dataflow is retained as reported; this case-specific disposition addresses the inferred security concern under the documented application purpose, not a universal confidentiality, authentication or retention guarantee.",
+      "reviewLink": "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282707246"
+    },
+    {
+      "sha256": "e7516956ee9414c892a9031d6ded0fb6adbe0eccfd24a1767cc499ce9fb44576",
+      "disposition": "reviewed-nonsecurity",
+      "rationale": "Same closed import/replay validation as ordinal2; fallback href340 receives the replayed canonical HTTPS source, with text/property rendering and noreferrer/noopener links. Limits: No arbitrary executable scheme/HTML is established in this specific fallback flow.",
+      "reviewLink": "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282707246"
+    },
+    {
+      "sha256": "e836796465bde79af4aca2158ba2062a6e70aead3b6d1496e02ba84169348f2d",
+      "disposition": "reviewed-nonsecurity",
+      "rationale": "Same recovered finalized-success -> explicit child job parent/description/createdBy -> configured IPFS specification publication chain as ordinal17; separate result at execution609 is retained distinctly. Limits: Same application-purpose reasoning, with raw finding multiplicity preserved rather than merged. The content dataflow is retained as reported; this case-specific disposition addresses the inferred security concern under the documented application purpose, not a universal confidentiality, authentication or retention guarantee.",
+      "reviewLink": "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282707246"
+    },
+    {
+      "sha256": "eb8d1644934679ed9a346fcf211eb36c3ff722409dc3b50dd456fe464162764f",
+      "disposition": "reviewed-nonsecurity",
+      "rationale": "Distinguish optional signed contributor annotations from unsigned/digest-only annotations. Source and documented model permit unsigned annotations. Omitting optional evidence does not omit managed-wallet authorization and does not attach an unverified signature as verified. Enforcement: Nonempty string signature must have payload and matching recovered contributor address; otherwise throws. Optional digest-only branch retains no signature. Current documented model: role/label/metadata/unsigned digests are evidence annotations, not authorization. Signature attests payload, not new job-specific permission. Limits: Blank or non-string supplied signature values take the unsigned/digest-only path; this helper does not reject every explicitly malformed signature value. If policy requires reject-on-presence rather than optional nonempty-string evidence, owner should clarify or correct that input contract. The checked payload is arbitrary contributor message content; it is not required to bind a job ID/resultHash. Do not claim job-specific independent approval.",
+      "reviewLink": "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282707246"
+    },
+    {
+      "sha256": "ec5278d8ab68d6cea226042ec064ccf0fe18b2ddece657726c203a7c46f838cf",
+      "disposition": "quality-only",
+      "rationale": "Exact actual-source binding `path` in `scripts/release/source-native-gates-rc16.cjs` at line5: The reported import binding is not used as an executable reference in this module. Other lexical matches, where present, are module-specifier text or unrelated object property names. This is an accurate unused-binding quality note. The CommonJS require expression remains executed; the import uses a Node builtin or a directly exported plain property, rather than a deferred call or getter. This assessment does not remove an import, change source or claim an uninvoked verification function supplied a gate.",
+      "reviewLink": "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282707246"
+    },
+    {
+      "sha256": "ecf9292068e73fe1886b5a8b25bc1f1cc147c7750896582c314eeea457e7415f",
+      "disposition": "reviewed-nonsecurity",
+      "rationale": "Onebox raw flows take settings1116 through fetch plan error777/catch805/friendlyError806 into template string at807. appendMessage516 uses typeof content===string -> textContent520; reported appendChild(content)522 is only the mutually exclusive content instanceof Node branch. Limits: Both reported exception flows pass strings, so the reported Node sink is unreachable for those flows. No generic claim for unrelated Node callers.",
+      "reviewLink": "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282707246"
+    },
+    {
+      "sha256": "efdbdd57e6141ac97fb7db757ac4b94ddb75341ae4600fdc4174f7b4a7ef2565",
+      "disposition": "reviewed-nonsecurity",
+      "rationale": "Lifecycle exists check187 precedes final evidence write532-535, but final write itself uses exclusive wx mode0600 after final pinned-source check531. Limits: Existing-target clobber is rejected by atomic exclusive creation, independent of the earlier existence check. No same-user directory isolation or broader filesystem guarantee is claimed.",
+      "reviewLink": "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282707246"
+    },
+    {
+      "sha256": "f328e91e8d1bd994880e65ded4c6749dc1f083ce5931a84a4887fd31f321201b",
+      "disposition": "reviewed-nonsecurity",
+      "rationale": "Attempt challenge authentication only when both necessary headers exist. Header presence starts verification. It does not grant acceptance or choose the server-side principal. Both signature and recovered managed-wallet checks remain mandatory unless the separately configured operator key authenticates. Enforcement: Principal is kept in server-owned WeakMap; current challenge is bounded by five-minute TTL. Nonempty header is insufficient: EIP-191 verification must recover declared address and exact existing managed wallet; successful challenge is rotated; otherwise401. Wallet operation must match the principal; operator-only routes separately require configured operator key. Limits: Raw24 is separate from raw25 despite the shared line200. Preserve both records.",
+      "reviewLink": "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282707246"
+    },
+    {
+      "sha256": "f5dbbf686d62e21c5e2e02e1c467619f6d8a7f6025948289161fa959116921e6",
+      "disposition": "reviewed-nonsecurity",
+      "rationale": "The modulo arithmetic is biased, but the selected outputs are disclosed public synthetic revision labels. Complete reviewed module and its selected callers show no use as cryptographic key, secret, authentication token, security nonce, protected holdout or on-chain authority. Public synthetic sampling and any distribution quality remain local evaluation limitations, not a demonstrated real-world or independently protected evaluation.",
+      "reviewLink": "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282707246"
+    },
+    {
+      "sha256": "ff38f4729100cd9044b7e7a8fae5248feaaaca3f725464c48f9043ab5a921a39",
+      "disposition": "reviewed-nonsecurity",
+      "rationale": "pinned-alpha-checkout.cjs163-166 retains a redundant pathname lstat then opens NOFOLLOW|NONBLOCK. boundedSourceBlob14-65 validates the actual FD regularity/size/stability (dev/ino/mode/size/mtime/ctime), captured bytes are matched to exact immutable Git blob+mode193-199, FD closes in finally. Canonical root219 is retained; preparation229-305 imports only private captured ESM map with relative closed edges, without reopening mutable module paths. Limits: The pathname precheck is not the safety boundary. Returned executable bytes are the independently validated, Git-matched FD capture; no general mutable-path race immunity claim.",
+      "reviewLink": "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282707246"
+    }
+  ],
+  "codeqlChecks": [
+    {
+      "id": 118411754521,
+      "name": "CodeQL",
+      "headSha": "f2a8d2382b9a40814579f7a8be44046f247e0fd7",
+      "appId": 57789,
+      "appSlug": "github-advanced-security",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/MontrealAI/AGIJobsv0/runs/118411754521"
+    }
+  ],
+  "history": {
+    "configSha256": "4b34450e1dcc0b489feea158d642a6b66261d9e935463928782219c8716c0892",
+    "findingsSha256": "3bb26ea360c74550cf8c3561085a742e55d058a03ca6658e74efb7e344bd7b0f",
+    "originalArchiveSha256": "c7dd344ab78de98d423d3294db17c1c7b810afa531df7416271f813096c25ba9"
+  },
+  "reviewLinks": [
+    "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282707246",
+    "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282692265",
+    "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282618052"
+  ]
+}
+-->
+
+## Additional TI source preparation — pending
+
+This is a pending source qualification profile, not a published release or a
+Mainnet deployment. It preserves source-v2.1.0-rc.15, its producer implementation,
+release assets and all historical deployment evidence. The additive profile
+enumerates the eighteen existing reviewed-source transitions rather than
+exempting compiler, deployment or release directories.
+
+The new native transformation boundary retains complete public campaigns as
+inert evidence. Its actual native route is free inspection. Native v1 currency
+caps are zero; positive AGIALPHA commissioning is refused. Positive policy
+doubles do not establish paid native support, independent proof, an executable
+job graph or settlement authority. USDC and AGIALPHA remain separate.
+
+Publication is deliberately blocked while the scanner review is pending. The
+security owner must provide additive extraction coverage for the integration
+closure and an independently assessed complete current-result inventory. A green
+analysis workflow alone is insufficient: the exact main-push producer archive,
+tool/query/extraction scope, every retained result and the separate genuine
+GitHub Advanced Security CodeQL result must all verify. Each raw scanner artifact
+must name its exact SHA, run and attempt;
+the separately reviewed attempt-bound producer is preserved; its final-source
+actual extraction and full result review remain required. Native compatibility
+likewise requires a pinned complete checkout, actual fixture inspection/refusal
+and source checks before and after execution.
+
+Every required workflow and context, observed additional workflow, compiler
+archive, raw scanner/native artifact and remote release asset remains a gate.
+The pending source profile grants no permission to deploy, sign, fund, approve
+tokens, unpause or change ENS. Ubuntu local hidden ephemeral deployer-key entry
+and Mac Studio Ledger governance remain unchanged. Original paper files/link
+remain immutable. Final merged-source, archive, compatible-release and live-site
+verification are still required.
+
+## Explicit final-source preparation inputs
+
+The candidate now pins Alpha source `272b4de86bdc306ebf547750717983e467f5fcfd`
+(tree `7e3a171a3f4a256723d6b480c64104264021b456`) with unchanged native file
+inventories. Earlier observations retain their original source
+identities. This pin is preparatory; final connected native/browser, hosted and
+compatible-release qualification remains required. Both the finite source profile
+and notes scanner review records remain null and independently block publication.
+The receiver-only extraction inventory and complete required SARIF inventory
+are separate mandatory inputs. The producer requires fourteen receivers plus
+the exact enumerated release and page analysis closure; no precursor workflow
+or historical scan qualifies it.
+
+## Python scanner convergence — pending
+
+The integrated producer requires fourteen Computer/browser/TI receivers and the
+separate complete required SARIF source inventory. The official JavaScript
+extractor minified-file setting includes the required long generated modules;
+query suites, path exclusions, thresholds and retained four-record contract are
+preserved. Static source eligibility does not establish actual extraction.
+
+Python has its own pinned workflow/config, eight mandatory integration sentinels
+and the complete tracked integration Python source inventory. Qualification must
+authenticate complete successful non-overlay extraction, all unfiltered raw
+results and rule/config inventories, exact source/tree/run/attempt/artifact
+identities, the downloaded ZIP digest and independent source-bound dispositions.
+The original JavaScript reviewed/current archives remain required. The three
+Python assets extend the exact inventory to twenty-four assets, including
+twenty-three checksummed payloads. No successful Python scan fixture or initial
+rule/result inventory is invented.
+
+The JavaScript and Python profile review records remain null; notes review is
+also null, and all publication entrypoints fail before network effects. The
+owner shared-review installation correction is preserved. Reviewed S1 and
+current S2 Python ZIP bytes are independently authenticated against fresh
+current/latest workflow, exact attempt and artifact inventories, then both
+complete archives are revalidated during qualification, collection and remote
+readback. The actual independently reviewed source/results and metadata
+composition must still qualify before any gate activation. Authentic final-source
+scans/results,
+Advanced Security reconciliation and exact-head hosted/native/connected checks
+remain pending. This source convergence is not a qualification or release.
+
+## Truthful JavaScript quality review — pending
+
+The separately versioned `agijobsv0/nonsecurity-quality-review/1` contract permits
+an explicitly reviewed `Acknowledged nonsecurity quality` disposition only for
+`js/unused-local-variable` and `js/useless-assignment-to-local`. An accurate
+quality diagnostic is not labeled a false positive. Each individual retained
+case must bind the complete raw-result identity, immutable source blob, trusted
+query component, rule metadata and query selection. It must include a
+case-specific assessment of behavior and side effects, independent review
+references and immutable source or actual behavior-test evidence. References
+are commitments for the independent reviewer to inspect; their syntax does not
+establish that the behavior is acceptable.
+
+Neither a rule name nor a lower severity admits a result automatically. Every
+other JavaScript rule retains the existing strict adjudication, Python's policy
+is unchanged, and every raw result remains in the full compared multiset. The
+original 96-result ledger and rc.15 source stay immutable. This contract does
+not waive authentic Advanced Security success or any archive, API, extraction,
+source, main-push or publication check. Both actual profile review records and
+the notes review remain null until genuine evidence is independently reviewed.

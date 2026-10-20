@@ -126,7 +126,6 @@ export async function buildRandaoCoordinatorPlan(
 
   const currentTokenAddress = ethers.getAddress(currentToken);
   const currentTokenMetadata = await fetchTokenMetadata(randao, currentTokenAddress);
-  let desiredTokenAddress = currentTokenAddress;
   let desiredTokenMetadata = currentTokenMetadata;
 
   const actions: PlannedAction[] = [];
@@ -134,7 +133,6 @@ export async function buildRandaoCoordinatorPlan(
 
   if (config.token !== undefined) {
     const desired = ethers.getAddress(config.token);
-    desiredTokenAddress = desired;
     if (desired !== currentTokenAddress) {
       desiredTokenMetadata = await fetchTokenMetadata(randao, desired);
       actions.push({

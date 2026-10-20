@@ -122,7 +122,7 @@ export async function inspectProjectTransfer(raw, options = {}) {
   return { transfer, project, originalProject: project, spec, lastRecord, receiptStatus: 'no-rpc-receipt-attached', operationalAuthority: [], productionQualified: false };
 }
 export async function runProjectTransfer(raw, options = {}) {
-  const { transfer, project, spec, lastRecord } = await inspectProjectTransfer(raw, options);
+  const { transfer, spec, lastRecord } = await inspectProjectTransfer(raw, options);
   fail(transfer.history.length < MAX_HISTORY, 'JOBS_PROJECT_HISTORY_LIMIT');
   const pack = await run(adaptExecutionSpec(spec).spec, { sourceHash: await sourceHash() });
   const recordRaw = canonical(await replay(lastRecord, pack, transfer.history.length));

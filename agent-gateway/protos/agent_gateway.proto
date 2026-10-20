@@ -30,6 +30,8 @@ message DeliverableContributor {
   string signature = 5;
   string payload_digest = 6;
   string metadata_json = 7;
+  // Exact UTF-8 message signed with EIP-191. Omission is distinct from "".
+  optional string signed_payload = 8;
 }
 
 message ContributorContribution {

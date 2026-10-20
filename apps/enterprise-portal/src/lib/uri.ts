@@ -1,18 +1,39 @@
 export const resolveResourceUri = (value?: string, gateway = 'https://ipfs.io/ipfs/'):
   | string
   | undefined => {
-  if (!value) return undefined;
-  if (value.startsWith('ipfs://')) {
-    const path = value.slice(7);
-    const normalised = path.replace(/^ipfs\//, '');
-    return `${gateway}${normalised}`;
+  if (typeof value !== 'string' || !value || value.length > 8192 || /[\s\u0000-\u001f\u007f\\]/u.test(value)) return undefined;
+  if (/^ipfs:\/\//i.test(value)) {
+    const resource = value.slice(7).replace(/^ipfs\//i, '');
+    const [root, ...segments] = resource.split('/');
+    if (!/^[a-z0-9]{1,128}$/i.test(root)) return undefined;
+    try {
+      const encodedSegments: string[] = [];
+      for (const segment of segments) {
+        const decoded = decodeURIComponent(segment);
+        if (decoded === '.' || decoded === '..' || /[\u0000-\u001f\u007f%\\/?#]/u.test(decoded)) return undefined;
+        encodedSegments.push(encodeURIComponent(decoded));
+      }
+      const base = httpsResource(gateway);
+      if (!base || !base.endsWith('/')) return undefined;
+      return httpsResource(`${base}${root}${encodedSegments.length ? '/' + encodedSegments.join('/') : ''}`);
+    } catch { return undefined; }
   }
-  return value;
+  return httpsResource(value);
 };
+
+function httpsResource(value: string): string | undefined {
+  if (typeof value !== 'string' || !value || value.length > 8192 || /[\s\u0000-\u001f\u007f\\]/u.test(value)) return undefined;
+  if (!/^https:\/\//i.test(value)) return undefined;
+  try {
+    const url = new URL(value);
+    if (url.protocol !== 'https:' || !url.hostname || url.username || url.password) return undefined;
+    return url.href;
+  } catch { return undefined; }
+}
 
 export const isIpfsUri = (value?: string): boolean => {
   if (!value) return false;
-  return value.startsWith('ipfs://');
+  return /^ipfs:\/\//i.test(value);
 };
 
 export const displayResourceUri = (value?: string): string | undefined => {

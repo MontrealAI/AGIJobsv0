@@ -21,7 +21,6 @@ import {
   pinBlob,
   pinJSON,
   formatError,
-  summarizeAAMode,
 } from "./lib.mjs";
 
 const {

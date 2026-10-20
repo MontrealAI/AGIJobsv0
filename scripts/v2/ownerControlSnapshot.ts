@@ -1,3 +1,4 @@
+import { escapeMarkdownLiteral } from './lib/markdownLiteral';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { createHash } from 'crypto';
@@ -347,7 +348,7 @@ async function copyWithHash(source: string, destination: string): Promise<string
 }
 
 function escapeMarkdown(value: string): string {
-  return value.replace(/\|/g, '\\|');
+  return escapeMarkdownLiteral(value);
 }
 
 function renderSubsystemMarkdown(

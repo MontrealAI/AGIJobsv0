@@ -1,0 +1,80 @@
+name: Inherited security regressions
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - 'fix/inherited-codeql-*'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-regressions-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  regressions:
+    name: Inherited security boundaries and browser regressions
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+        with:
+          egress-policy: audit
+      - name: Checkout
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+      - name: Install locked dependencies
+        run: |
+          ./scripts/ci/npm-ci.sh
+          NPM_CI_PROJECT_ROOT=apps/enterprise-portal ./scripts/ci/npm-ci.sh --prefix apps/enterprise-portal
+      - name: Bind evidence to checkout
+        run: |
+          mkdir -p reports/security/remediation
+          node -e 'const fs=require("fs"),{execFileSync}=require("child_process");fs.writeFileSync("reports/security/remediation/source.json",JSON.stringify({commit:execFileSync("git",["rev-parse","HEAD"]).toString().trim(),tree:execFileSync("git",["rev-parse","HEAD^{tree}"]).toString().trim(),event:process.env.GITHUB_EVENT_NAME,run:process.env.GITHUB_RUN_ID,attempt:process.env.GITHUB_RUN_ATTEMPT},null,2)+"\n")'
+      - name: Test security and report boundaries
+        run: |
+          set -eo pipefail
+          node --test test/security/inherited-codeql.test.cjs test/scripts/verification-evidence.test.cjs test/scripts/owner-report-markdown.test.cjs 2>&1 | tee reports/security/remediation/security-tests.log
+      - name: Test authentication, authorization and existing storage defenses
+        run: |
+          set -eo pipefail
+          cp config/ens.json "$RUNNER_TEMP/remediation-ens.json"
+          trap 'cp "$RUNNER_TEMP/remediation-ens.json" config/ens.json' EXIT
+          node test/security/run-authorisation.cjs 2>&1 | tee reports/security/remediation/authorization-tests.log
+      - name: Type check changed applications
+        run: |
+          npx --no-install tsc --noEmit -p agent-gateway/tsconfig.json
+          npx --no-install tsc --noEmit -p apps/orchestrator/tsconfig.json
+          npm --prefix apps/enterprise-portal run typecheck
+      - name: Build actual Onebox and verify integrity
+        run: |
+          node apps/onebox/scripts/build.mjs
+          node apps/onebox/scripts/verify-sri.mjs
+      - name: Install browser
+        run: npx playwright install --with-deps chromium
+      - name: Test actual CSP, hostile responses and real React components
+        run: |
+          set -eo pipefail
+          node test/security/browser-regressions.mjs 2>&1 | tee reports/security/remediation/browser-tests.log
+      - name: Validate all-result ledger and protected records
+        run: node tools/security/validate-codeql-remediation.mjs --require-closed
+      - name: Retain source-bound qualification
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: inherited-security-regressions
+          path: |
+            reports/security/remediation/
+            reports/security/remediation-browser/
+          if-no-files-found: error

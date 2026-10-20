@@ -8,6 +8,28 @@ import { SOURCE_PATHS, SOURCE_SELECTOR_PATH, pendingSourceSelection, readSourceS
 import { canonical } from './vendor/alpha/docs/assets/successor/engine.mjs';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 function fail(ok, code) { if (!ok) throw Error(code); }
+// Keep verification inside the existing attested source inventory.
+function boundedSourceBlob(fd, expectedBytes) {
+  const code = 'JOBS_SOURCE_BYTES_CHANGED';
+  fail(Number.isSafeInteger(expectedBytes) && expectedBytes >= 0 && expectedBytes <= 10_000_000, code);
+  const before = fs.fstatSync(fd);
+  fail(before.isFile() && before.size === expectedBytes, code);
+  const limit = expectedBytes + 1;
+  const chunk = Buffer.alloc(Math.min(64 * 1024, limit));
+  const chunks = [];
+  const blob = createHash('sha1').update(`blob ${expectedBytes}\0`);
+  let used = 0;
+  while (used < limit) {
+    const count = fs.readSync(fd, chunk, 0, Math.min(chunk.length, limit - used), null);
+    if (count === 0) break;
+    used += count;
+    blob.update(chunk.subarray(0, count));
+    chunks.push(Buffer.from(chunk.subarray(0, count)));
+  }
+  const after = fs.fstatSync(fd);
+  fail(used === expectedBytes && ['dev','ino','mode','size','mtimeMs','ctimeMs'].every(key => before[key] === after[key]), code);
+  return { bytes: Buffer.concat(chunks, used), stat: before, blob: blob.digest('hex') };
+}
 function git(...args) {
   const env = { ...process.env };
   for (const name of Object.keys(env)) if (name.startsWith('GIT_')) delete env[name];
@@ -27,7 +49,15 @@ export function sourceSnapshot(commit) {
     const match = /^(100644|100755) blob ([0-9a-f]{40})\t([^\0]+)\0$/.exec(entry);
     fail(match && match[3] === relative, 'JOBS_SOURCE_REGULAR_BLOB');
     const expected = git('cat-file','blob',match[2]), file = path.join(root,relative);
-    fail(fs.lstatSync(file).isFile() && fs.realpathSync(file) === file && fs.readFileSync(file).equals(expected), 'JOBS_SOURCE_BYTES_CHANGED');
+    fail(fs.realpathSync(file) === file, 'JOBS_SOURCE_BYTES_CHANGED');
+    const fd = fs.openSync(file, fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW | fs.constants.O_NONBLOCK);
+    try {
+      const captured = boundedSourceBlob(fd, expected.length);
+      const mode = captured.stat.mode & 0o111 ? '100755' : '100644';
+      fail(captured.blob === match[2] && mode === match[1] && captured.bytes.equals(expected), 'JOBS_SOURCE_BYTES_CHANGED');
+    } finally {
+      fs.closeSync(fd);
+    }
     return { path: relative, sha256: createHash('sha256').update(expected).digest('hex') };
   });
   return readSourceSelection(canonical({ ...pendingSourceSelection(), status: 'pinned', commit, tree, files }));

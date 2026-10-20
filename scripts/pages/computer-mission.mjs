@@ -1,4 +1,5 @@
 import { computerMissionCopy } from '../../website/assets/computer-mission-copy.mjs';
+import { renderComputerReceipt } from './computer-receipt.mjs';
 import {
   defaultComputerDeskMission,
   renderComputerDeskMarkup,
@@ -302,6 +303,7 @@ export function renderComputerMissionPage(base, revision, language = 'en') {
   )}<p class="cm-help">${esc(t.restoreHelp)}</p><p class="cm-help">${esc(
     t.local
   )}</p></div></div></section>
+    ${renderComputerReceipt(language, base)}
     <section class="cm-next"><p class="cm-eyebrow">ALPHA · GYM · SPECIALIST ASI · SUCCESSOR Ω</p><h2>${esc(
       t.next
     )}</h2><p>${esc(

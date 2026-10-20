@@ -20,9 +20,6 @@ function readFileTrim(relPath) {
 }
 
 function satisfiesNvmrc(engineValue, nvmrcVersion) {
-  if (!engineValue || !nvmrcVersion) {
-    return false;
-  }
   const trimmedEngine = engineValue.trim();
   if (trimmedEngine === nvmrcVersion) {
     return true;

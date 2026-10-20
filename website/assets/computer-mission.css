@@ -832,3 +832,41 @@
     padding-top: 15px;
   }
 }
+.cr-section > .cm-card {
+  margin-top: 24px;
+}
+.cm-page .cr-confirm {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 18px 0;
+  line-height: 1.6;
+}
+.cr-confirm input {
+  flex: 0 0 auto;
+  margin-top: 6px;
+}
+.cr-summary {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font: inherit;
+  max-width: 100%;
+}
+.cr-section .cm-input-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.cr-section select {
+  width: 100%;
+  max-width: 100%;
+  padding: 11px 13px;
+  border: 1px solid #977da9;
+  border-radius: 5px;
+  background: #130d1c;
+  color: #f8f1ff;
+  font: inherit;
+}
+@media (max-width: 640px) {
+  .cr-section .cm-input-grid {
+    grid-template-columns: 1fr;
+  }
+}

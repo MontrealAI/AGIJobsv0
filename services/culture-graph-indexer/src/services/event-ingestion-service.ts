@@ -328,7 +328,6 @@ export class EventIngestionService {
     }
 
     const shouldSkipDuplicates = !options.force && !reorgBuffer && cursor;
-    const cultureAddress = this.config.cultureRegistryAddress.toLowerCase();
     const arenaAddress = this.config.selfPlayArenaAddress?.toLowerCase();
 
     if (cursor && (options.force || reorgBuffer > 0)) {

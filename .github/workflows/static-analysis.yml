@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - main
+      - 'fix/inherited-codeql-*'
   schedule:
     - cron: '30 2 * * *'
 
@@ -120,6 +121,10 @@ jobs:
     name: CodeQL analysis
     runs-on: ubuntu-24.04
     timeout-minutes: 90
+    env:
+      # Required native modules include long generated source/lock literals.
+      # Keep them in extraction; the unchanged SARIF gate requires every file.
+      CODEQL_EXTRACTOR_JAVASCRIPT_ALLOW_MINIFIED_FILES: 'true'
     steps:
       - name: Harden runner
         uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
@@ -144,11 +149,78 @@ jobs:
       - name: Install dependencies
         run: ./scripts/ci/npm-ci.sh --no-audit --prefer-offline --progress=false
 
+      - name: Validate additive source scope and exact scan identity
+        run: |
+          cat > "$RUNNER_TEMP/agijobs-codeql-source-check.cjs" <<'NODE'
+          const assert = require('node:assert/strict');
+          const fs = require('node:fs'), cp = require('node:child_process'), crypto = require('node:crypto');
+          const yaml = require('js-yaml'), matcher = require('minimatch');
+          const match = typeof matcher === 'function' ? matcher : matcher.minimatch;
+          const hash = raw => crypto.createHash('sha256').update(raw).digest('hex');
+          const oldRaw = fs.readFileSync('.github/codeql/config.yml', 'utf8');
+          const expandedRaw = fs.readFileSync('.github/codeql/config-integrations.yml', 'utf8');
+          assert.equal(hash(oldRaw), '4b34450e1dcc0b489feea158d642a6b66261d9e935463928782219c8716c0892', 'Historical CodeQL policy changed');
+          const old = yaml.load(oldRaw), expanded = yaml.load(expandedRaw);
+          assert.deepEqual(expanded.paths, [...old.paths, 'integrations/alpha-agent', 'website/assets']);
+          assert.deepEqual(expanded['paths-ignore'], old['paths-ignore'].flatMap(pattern => pattern === '**/docs/**' ? old.paths.map(root => root + '/**/docs/**') : [pattern]));
+          assert.deepEqual({...expanded, paths: old.paths, 'paths-ignore': old['paths-ignore']}, old, 'Query suites/defaults and all other policy must remain unchanged');
+          const admitted = (file, policy) => policy.paths.some(root => file === root || file.startsWith(root + '/')) && !policy['paths-ignore'].some(pattern => match(file, pattern, {dot:true}));
+          const env = {...Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith('GIT_'))), GIT_CONFIG_NOSYSTEM:'1', GIT_CONFIG_GLOBAL:'/dev/null', GIT_NO_REPLACE_OBJECTS:'1'};
+          const git = (...args) => cp.execFileSync('git', ['--no-replace-objects', '-c', 'core.fsmonitor=false', ...args], {encoding:'utf8', env, maxBuffer:32*1024*1024});
+          const source = git('rev-parse','HEAD').trim(), tree = git('rev-parse', source + '^{tree}').trim();
+          assert.match(source,/^[a-f0-9]{40}$/); assert.match(tree,/^[a-f0-9]{40}$/);
+          assert.equal(source, process.env.GITHUB_SHA, 'CodeQL checkout differs from its run source');
+          assert.equal(git('diff','--no-ext-diff','--no-textconv','--name-only',source,'--').trim(), '', 'Tracked source differs before scanning');
+          const run = Number(process.env.GITHUB_RUN_ID), attempt = Number(process.env.GITHUB_RUN_ATTEMPT);
+          assert(Number.isSafeInteger(run) && run > 0 && Number.isSafeInteger(attempt) && attempt > 0);
+          const files = git('ls-tree','-r','--name-only','-z',source).split('\0').filter(Boolean);
+          for (const row of git('ls-tree','-r','-z',source).split('\0').filter(Boolean)) {
+            const at = row.indexOf('\t'), header = /^(100644|100755) blob ([a-f0-9]{40})$/.exec(row.slice(0, at)), name = row.slice(at + 1);
+            assert(header && !name.startsWith('/') && name.split('/').every(part => part && part !== '.' && part !== '..'), 'Tracked source must have a regular Git identity');
+            let parent = '.';
+            for (const part of name.split('/').slice(0,-1)) { parent += '/' + part; assert(fs.lstatSync(parent).isDirectory(), 'Tracked source ancestor is not a real directory'); }
+            assert(fs.lstatSync(name).isFile(), 'Tracked source is not a regular file');
+            const fd = fs.openSync(name, fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW | fs.constants.O_NONBLOCK);
+            try {
+              const before = fs.fstatSync(fd); assert(before.isFile() && before.size <= 256*1024*1024, 'Tracked source exceeds file bound');
+              const bytes = Buffer.alloc(before.size); let offset = 0;
+              while (offset < bytes.length) { const read = fs.readSync(fd, bytes, offset, bytes.length - offset, offset); assert(read > 0, 'Tracked source was truncated'); offset += read; }
+              assert.equal(fs.readSync(fd, Buffer.alloc(1), 0, 1, before.size), 0, 'Tracked source grew during read');
+              const after = fs.fstatSync(fd);
+              assert(['dev','ino','size','mtimeMs','ctimeMs','mode'].every(key => before[key] === after[key]), 'Tracked source changed while read');
+              assert.equal(crypto.createHash('sha1').update('blob ' + bytes.length + '\0').update(bytes).digest('hex'), header[2], 'Tracked source bytes differ from its Git blob');
+              assert.equal(Boolean(before.mode & 0o111), header[1] === '100755', 'Tracked source executable mode differs');
+            } finally { fs.closeSync(fd); }
+          }
+          assert.deepEqual(git('ls-files','--others','--exclude-standard','-z').split('\0').filter(Boolean).filter(file => admitted(file, expanded)), [], 'Nonignored untracked scan source is present');
+          const oldFiles = files.filter(file => admitted(file, old));
+          assert(oldFiles.length > 0 && oldFiles.every(file => admitted(file, expanded)), 'Previously admitted source was excluded');
+          for (const root of old.paths) for (const tail of ['docs/probe.js','nested/docs/probe.js','lib/probe.js','node_modules/probe.js']) assert.equal(admitted(root + '/' + tail, expanded), admitted(root + '/' + tail, old));
+          const integration = ['four-repo-computer-lifecycle.cjs','four-repo-computer-receipt.mjs','pinned-alpha-checkout.cjs','transformational-work-request.mjs','vendor/alpha-computer/examples/successor-alpha/computer.mjs','vendor/alpha-computer/docs/assets/successor/engine.mjs','vendor/alpha/docs/assets/successor/engine.mjs'].map(file => 'integrations/alpha-agent/' + file);
+          assert(integration.every(file => admitted(file, expanded)), 'Integration closure is excluded');
+          const browser = ['computer-receipt.mjs','computer-receipt-model.mjs','computer-receipt-copy.mjs','computer-desk.mjs','computer-desk-runtime-source.mjs','computer-mission.js','computer-mission-copy.mjs'].map(file => 'website/assets/' + file);
+          assert(browser.every(file => admitted(file, expanded)), 'Native browser closure is excluded');
+          const analysis = ["scripts/pages/build.mjs","scripts/release/qualify-source-release-rc16.cjs","scripts/release/publish-source-release-rc16.cjs","scripts/release/source-profile-rc16.cjs","scripts/release/source-native-gates-rc16.cjs","scripts/release/source-native-evidence-rc16.cjs","scripts/release/verify-transformational-compatibility.mjs","scripts/release/source-scanner-gates-rc16.cjs","scripts/release/python-scanner-rc16.cjs","scripts/pages/computer-receipt.mjs","scripts/release/source-scanner-review-bindings-rc16.cjs","scripts/release/source-python-evidence-rc16.cjs"];
+          assert(analysis.every(file => admitted(file, expanded)), 'Release and page analysis closure is excluded');
+          const requiredClosure = [...integration, ...browser, ...analysis];
+          assert(requiredClosure.every(file => files.includes(file)), 'Required receiver/release source is absent from the immutable tree');
+          const requiredExtractedFiles = [...files.filter(file => /^(?:integrations\/alpha-agent|website\/assets)\//.test(file) && /\.(?:[cm]?[jt]sx?)$/i.test(file) && !/\.d\.[cm]?ts$/i.test(file) && admitted(file, expanded)), ...analysis].sort();
+          assert(requiredExtractedFiles.some(file => file.startsWith('integrations/alpha-agent/')), 'Integration executable source is absent');
+          assert(requiredExtractedFiles.some(file => file.startsWith('website/assets/')), 'Browser executable source is absent');
+          assert(requiredClosure.every(file => requiredExtractedFiles.includes(file)), 'Required receiver/release closure is absent from mandatory extraction inventory');
+          assert.equal(git('rev-parse','HEAD').trim(), source, 'CodeQL HEAD changed during source validation');
+          assert.equal(git('rev-parse','HEAD^{tree}').trim(), tree, 'CodeQL tree changed during source validation');
+          assert.equal(source, process.env.GITHUB_SHA, 'CodeQL final source differs from its run source');
+          console.log(JSON.stringify({schema:'agijobsv0/codeql-scope/2', source, tree, run, attempt, event:process.env.GITHUB_EVENT_NAME, ref:process.env.GITHUB_REF, historicalConfigSha256:hash(oldRaw), configSha256:hash(expandedRaw), staticAdmittedBefore:oldFiles.length, staticAdditionalAdmitted:files.filter(file => !admitted(file, old) && admitted(file, expanded)).length, allPreviousPathsRetained:true, integrationClosureAdmitted:true, browserClosureAdmitted:true, requiredExtractedFiles, actualExtractionRequiresSARIF:true}));
+          NODE
+          mkdir -p reports/security/codeql
+          node < "$RUNNER_TEMP/agijobs-codeql-source-check.cjs" > "$RUNNER_TEMP/agijobs-codeql-source-before.json"
+
       - name: Initialize CodeQL
         uses: github/codeql-action/init@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
         with:
           languages: javascript
-          config-file: .github/codeql/config.yml
+          config-file: .github/codeql/config-integrations.yml
           build-mode: none
 
       - name: Perform CodeQL analysis
@@ -156,10 +228,43 @@ jobs:
         with:
           output: reports/security/codeql
 
+      - name: Recheck exact source after CodeQL analysis
+        run: |
+          cp "$RUNNER_TEMP/agijobs-codeql-source-before.json" reports/security/codeql/source-scope-before.json
+          node < "$RUNNER_TEMP/agijobs-codeql-source-check.cjs" > reports/security/codeql/source-scope-after.json
+
+      - name: Retain and enforce actual complete source extraction
+        run: |
+          node <<'NODE'
+          const assert = require('node:assert/strict');
+          const fs = require('node:fs'), crypto = require('node:crypto');
+          const folder = 'reports/security/codeql/';
+          const before = JSON.parse(fs.readFileSync(folder + 'source-scope-before.json','utf8'));
+          const after = JSON.parse(fs.readFileSync(folder + 'source-scope-after.json','utf8'));
+          assert.deepEqual(after, before, 'Source identity/scope changed across actual analysis');
+          assert.equal(before.source, process.env.GITHUB_SHA);
+          assert.equal(before.run, Number(process.env.GITHUB_RUN_ID));
+          assert.equal(before.attempt, Number(process.env.GITHUB_RUN_ATTEMPT));
+          const raw = fs.readFileSync(folder + 'javascript.sarif');
+          const sarif = JSON.parse(raw);
+          assert(Array.isArray(sarif.runs) && sarif.runs.length === 1, 'Expected complete JavaScript SARIF run');
+          const scan = sarif.runs[0];
+          assert(scan.invocations?.some(invocation => invocation.executionSuccessful === true) && scan.invocations.every(invocation => invocation.executionSuccessful !== false), 'Scanner did not complete successfully');
+          const extracted = [...new Set(scan.invocations.flatMap(invocation => invocation.toolExecutionNotifications || []).filter(item => item.descriptor?.id === 'js/diagnostics/successfully-extracted-files').flatMap(item => (item.locations || []).map(location => location.physicalLocation?.artifactLocation?.uri)).filter(Boolean))].sort();
+          assert(extracted.length > 0, 'Actual successfully-extracted-file diagnostics are absent');
+          const missing = before.requiredExtractedFiles.filter(file => !extracted.includes(file));
+          const components = [scan.tool.driver, ...(scan.tool.extensions || [])];
+          const rules = [...new Set(components.flatMap(component => (component.rules || []).map(rule => rule.id)))].sort();
+          const report = {schema:'agijobsv0/codeql-extraction/1', source:before.source, tree:before.tree, run:before.run, attempt:before.attempt, event:before.event, ref:before.ref, configSha256:before.configSha256, sarifSha256:crypto.createHash('sha256').update(raw).digest('hex'), successfulExtractionFiles:extracted, requiredExtractedFiles:before.requiredExtractedFiles, missingRequiredExtractedFiles:missing, ruleIds:rules, rawResultCount:(scan.results || []).length, resultDisposition:'REQUIRES_INDEPENDENT_FINAL_SOURCE_REVIEW'};
+          fs.writeFileSync(folder + 'source-extraction.json', JSON.stringify(report,null,2) + '\n', {flag:'wx',mode:0o600});
+          assert.deepEqual(missing, [], 'Intended receiver/release source was not actually extracted');
+          console.log(JSON.stringify({source:before.source, tree:before.tree, extractedFiles:extracted.length, requiredFiles:before.requiredExtractedFiles.length, rawResults:report.rawResultCount, independentResultReviewRequired:true}));
+          NODE
+
       - name: Upload CodeQL artefacts
         if: ${{ always() }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: codeql-security-report
+          name: codeql-security-report-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: reports/security/codeql
           if-no-files-found: warn

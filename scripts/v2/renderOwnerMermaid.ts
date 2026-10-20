@@ -1,3 +1,4 @@
+import { escapeMermaidLiteral } from './lib/mermaidLiteral';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { ethers, network } from 'hardhat';
@@ -423,9 +424,7 @@ async function collectModuleInsights(
       if (!addressesEqual(expected.address, current)) {
         status = 'mismatch';
         notes.push(
-          `On-chain controller ${current ?? 'unknown'} differs from expected ${
-            expected.address ?? 'unknown'
-          }`
+          `On-chain controller ${current} differs from expected ${expected.address}`
         );
       }
     } else if (expected.address && !current) {
@@ -472,7 +471,7 @@ function renderMermaid(
   let pendingIndex = 0;
 
   function escapeLabel(value: string): string {
-    return value.replace(/"/g, '\\"');
+    return escapeMermaidLiteral(value);
   }
 
   function ensureOwnerNode(address: string | null | undefined, label?: string): string {

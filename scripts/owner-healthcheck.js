@@ -131,7 +131,7 @@ async function checkOwnerControls() {
   const feePool = FeePool.attach(addresses.feePool);
   const taxPolicy = TaxPolicy.attach(addresses.taxPolicy);
   const identity = IdentityRegistry.attach(addresses.identityRegistry);
-  const systemPause = SystemPause.attach(addresses.systemPause);
+  SystemPause.attach(addresses.systemPause);
 
   const modCert = await ModCertificateNFT.deploy('Cert', 'CRT');
   await modCert.waitForDeployment();

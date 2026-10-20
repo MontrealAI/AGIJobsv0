@@ -90,13 +90,14 @@ function resolveMeta(meta?: MetaOptions) {
 }
 
 export function extractJobId(text: string): number | null {
+  const normalized = text.replace(/\s+/gu, ' ');
   const directPatterns = [
-    /\b(?:job|jobs)\s*(?:id|number|no\.)?\s*#?\s*(\d+)/i,
-    /\bid\s*(?:number|no\.)?\s*#?\s*(\d+)/i,
+    /\b(?:job|jobs) ?(?:(?:id|number|no\.) ?)?#? ?(\d+)/i,
+    /\bid ?(?:(?:number|no\.) ?)?#? ?(\d+)/i,
   ];
 
   for (const pattern of directPatterns) {
-    const match = text.match(pattern);
+    const match = normalized.match(pattern);
     if (match?.[1]) {
       return Number.parseInt(match[1], 10);
     }
@@ -135,15 +136,15 @@ function extractEnsSubdomain(text: string): string | null {
 }
 
 function extractReward(text: string): string | null {
-  const rewardMatch = text.match(/(\d+(?:\.\d+)?)\s*(agi[a-z]*)/i);
+  const rewardMatch = text.match(/\b(\d+(?:\.\d+)?)\s*(agi[a-z]*)/i);
   if (!rewardMatch) return null;
   return rewardMatch[1];
 }
 
 function extractDeadline(text: string): number | null {
-  const daysMatch = text.match(/(\d+)\s*day/);
+  const daysMatch = text.match(/\b(\d+)\s*day/);
   if (daysMatch) return Number.parseInt(daysMatch[1], 10);
-  const weekMatch = text.match(/(\d+)\s*week/);
+  const weekMatch = text.match(/\b(\d+)\s*week/);
   if (weekMatch) return Number.parseInt(weekMatch[1], 10) * 7;
   if (text.includes("next week")) return 7;
   return null;

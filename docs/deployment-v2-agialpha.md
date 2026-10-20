@@ -6,7 +6,17 @@ Use this guide for a **new deployment**. Existing deployments are not upgraded b
 
 Start with the [current readiness report](production/readiness.md). A source prerelease is useful for review and rehearsal, but is not authorization to commission a production service. The signing, dependency, independent review and commissioning gates still apply.
 
-**Looking for the stack already deployed on Ethereum?** Use the [mainnet address directory and status record](production/mainnet-deployment-2026-10-12.md). Do not run a new deployment to refresh documentation or retry explorer verification. The example configuration files below remain templates, not the address directory or instructions to replace the existing stack.
+**Looking for the stack already deployed on Ethereum?** Use the [current mainnet directory and dated status record](production/CURRENT_MAINNET_DEPLOYMENT.md), which identifies the 18 October deployment separately from the preserved [12 October historical record](production/mainnet-deployment-2026-10-12.md). Do not run a new deployment to refresh documentation or retry explorer verification. The example configuration files below remain templates, not the address directory or instructions to replace the existing stack. Treat all previous deployments as read-only.
+
+## Owner-operated deployment requirements
+
+Use public, non-personal inputs only for mission preparation, assessment and qualification. Public availability alone does not make personal data eligible.
+
+For a separately authorized new deployment, preserve the owner's Ubuntu Terminal / Hardhat creation route. The owner enters the deployer's private key locally through a hidden prompt, only for the lifetime of that process. Never store or print the key, pass it in command arguments, or write it to `.env` files, shell history or logs. Governance stays on the Mac Studio's Ledger at `0xd76AD27a1Bcf8652e7e46BE603FA742FD1c10A99`; creation does not move that governance key to Ubuntu. Retain complete authority handover and verify that the deployer has no residual system privileges.
+
+These are operator requirements, not a claim that this main-branch CLI has a qualified hidden-prompt signer. The recorded 18 October deployment used source `818b3a246871e4cd4dde86558dbb91ef82b15eef` on [draft PR #3986](https://github.com/MontrealAI/AGIJobsv0/pull/3986); its source and operator evidence remain separate from current-main qualification. Before any new creation, qualify the exact selected source and its hidden, ephemeral key-entry route without using a real key in tests. Do not substitute the legacy environment-key setup or an external manual-signing route for this requirement.
+
+Live deployment, signing, funding, activation and changes to on-chain authority each require separate authorization. Keep the already-approved ENS configuration work in its own workstream; this guide adds no ENS configuration action or authorization.
 
 ## 1. Choose the right operation
 

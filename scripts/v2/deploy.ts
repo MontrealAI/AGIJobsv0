@@ -299,9 +299,6 @@ export async function deployOneClickModules() {
   const disputeWindowArg = getArg('disputeWindow');
   const disputeWindow =
     typeof disputeWindowArg === 'string' ? Number(disputeWindowArg) : 0;
-  const moderatorArg = getArg('moderator');
-  const moderator =
-    typeof moderatorArg === 'string' ? moderatorArg : ethers.ZeroAddress;
   const dispute = await Dispute.deploy(
     await registry.getAddress(),
     appealFee,

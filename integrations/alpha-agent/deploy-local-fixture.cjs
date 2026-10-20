@@ -26,14 +26,13 @@ async function main() {
     dispute,
     policy,
     identity,
-    feePool,
-    audit;
-  let owner, employer, agent, treasury, auditor;
+    feePool;
+  let owner, employer, agent;
   const reward = 100,
     stake = 200;
   const disputeFee = 1_000_000_000_000_000_000n;
 
-  [owner, employer, agent, treasury, auditor] = await ethers.getSigners();
+  [owner, employer, agent] = await ethers.getSigners();
   const artifact = await artifacts.readArtifact(
     'contracts/test/MockERC20.sol:MockERC20'
   );
@@ -226,7 +225,8 @@ async function main() {
   };
   fs.writeFileSync(
     process.env.ALPHA_FIXTURE_OUTPUT || '/tmp/agijobsv0-alpha-fixture.json',
-    JSON.stringify(result, null, 2) + '\n'
+    JSON.stringify(result, null, 2) + '\n',
+    { flag: 'wx', mode: 0o600 }
   );
   console.log(JSON.stringify(result, null, 2));
 }

@@ -73,6 +73,7 @@ describe('gateway current stake deposits', function () {
       '../shared/auditLogger': {
         recordAuditEvent: async (event) => calls.audit.push(event),
       },
+      '../shared/logValue': require('../../shared/logValue'),
     };
     const module = { exports: {} };
     new Function('require', 'module', 'exports', compiled.outputText)(

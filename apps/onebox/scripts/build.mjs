@@ -11,7 +11,7 @@ const templatePath = path.join(appDir, "index.html");
 const configModuleUrl = pathToFileURL(path.join(appDir, "config.mjs"));
 
 const hashedAssets = ["app.js", "styles.css"];
-const passthroughAssets = ["url-overrides.js"];
+const passthroughAssets = ["url-overrides.js", "dom-rendering.js"];
 const errorCatalogSource = path.resolve(__dirname, "../../..", "storage", "errors", "onebox.json");
 
 const fingerprint = (buffer) =>
@@ -29,7 +29,8 @@ const manifest = {};
 
 for (const asset of hashedAssets) {
   const sourcePath = path.join(appDir, asset);
-  const buffer = await fs.readFile(sourcePath);
+  let buffer = await fs.readFile(sourcePath);
+  if (asset === "app.js") buffer = Buffer.from(buffer.toString("utf8").replace("../../backend/errors/catalog.json", "./storage/errors/onebox.json"));
   const ext = path.extname(asset);
   const base = path.basename(asset, ext);
   const hashedName = `${base}.${fingerprint(buffer)}${ext}`;

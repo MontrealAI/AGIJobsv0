@@ -90,7 +90,6 @@ const normalizeAddress = (value: unknown): string | undefined => {
   if (!value) return undefined;
   if (typeof value === 'string' && value.length > 0) return value;
   if (
-    value &&
     typeof value === 'object' &&
     'toString' in (value as { toString?: () => string })
   ) {
@@ -528,7 +527,7 @@ const assembleBadge = async (params: {
   const metadataCid = extractCidFromUri(metadataURI);
   const metadataGatewayURI =
     metadataURI && metadataURI.trim().length > 0
-      ? resolveResourceUri(metadataURI) ?? metadataURI
+      ? resolveResourceUri(metadataURI)
       : undefined;
   const deliverableUri =
     metadataDetail?.deliverableUri ??

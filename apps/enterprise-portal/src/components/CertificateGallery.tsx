@@ -57,21 +57,19 @@ export const CertificateGallery = () => {
         {certificates.map((certificate) => {
           const metadataLink =
             certificate.metadataGatewayURI ??
-            resolveResourceUri(certificate.metadataURI) ??
-            certificate.metadataURI;
+            resolveResourceUri(certificate.metadataURI);
           const metadataLabel =
             displayResourceUri(certificate.metadataURI) ??
             certificate.metadataURI;
           const deliverableLink = certificate.deliverableUri
-            ? resolveResourceUri(certificate.deliverableUri) ??
-              certificate.deliverableUri
+            ? resolveResourceUri(certificate.deliverableUri)
             : undefined;
           const deliverableLabel = certificate.deliverableUri
             ? displayResourceUri(certificate.deliverableUri) ??
               certificate.deliverableUri
             : undefined;
           const slaLink = certificate.slaUri
-            ? resolveResourceUri(certificate.slaUri) ?? certificate.slaUri
+            ? resolveResourceUri(certificate.slaUri)
             : undefined;
           const issuedAt = new Date(
             certificate.issuedAt * 1000

@@ -523,7 +523,9 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
     'docs/production/readiness.md'
   )}">Production readiness ↗</a><a href="${guideURL(
     'docs/production/rehearsal.md'
-  )}">Rehearsal guide ↗</a></div></div></section>${renderVision(
+  )}">Rehearsal guide ↗</a><a href="${guideURL(
+    'docs/successor/TRANSFORMATIONAL_WORK.md'
+  )}">Free TI project · source preview / <span lang="fr">Projet TI gratuit · aperçu des sources</span> ↗</a></div></div></section>${renderVision(
     base,
     guideURL
   )}${renderReading(guideURL)}</main>`;
@@ -960,6 +962,17 @@ export async function buildSite(destination = path.join(root, 'build/pages')) {
     legalComments: 'linked',
     logLevel: 'warning',
   });
+  fs.copyFileSync(
+    path.join(root, 'integrations/alpha-agent/vendor/alpha-computer/LICENSE'),
+    path.join(output, 'assets/alpha-computer-LICENSE.txt')
+  );
+  fs.copyFileSync(
+    path.join(
+      root,
+      'integrations/alpha-agent/vendor/alpha-computer/source-manifest.json'
+    ),
+    path.join(output, 'assets/alpha-computer-source.json')
+  );
   fs.copyFileSync(
     path.join(root, 'website/assets/successor.css'),
     path.join(output, 'assets/successor.css')

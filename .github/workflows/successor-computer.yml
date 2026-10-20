@@ -29,7 +29,7 @@ jobs:
         uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
         with:
           repository: MontrealAI/AGI-Alpha-Agent-v0
-          ref: 70dac8e5ce739978f5cd96d0fc190b6ebfcdf8d7
+          ref: 272b4de86bdc306ebf547750717983e467f5fcfd
           path: .computer-lab-alpha
           persist-credentials: false
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020

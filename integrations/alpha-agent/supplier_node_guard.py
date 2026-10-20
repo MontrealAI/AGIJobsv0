@@ -42,6 +42,7 @@ if mode == "cleanup":
         try:
             os.killpg(pid, sig)
         except ProcessLookupError:
+            # The group was absent; still check live membership independently below.
             pass
         end = time.monotonic() + seconds
         while time.monotonic() < end:

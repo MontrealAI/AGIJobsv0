@@ -1,9 +1,18 @@
 # Run bounded Alpha work for an AGI Jobs v0 commission
 
+For native paper-derived campaigns, see the
+[transformation campaign boundary](../../docs/successor/TRANSFORMATIONAL_WORK.md).
+The current native free campaign can be inspected; its zero currency cap cannot
+authorize positive AGIALPHA work.
+
 This integration identifies **AGI Jobs v0 JobRegistry v2 + $AGIALPHA** explicitly.
 It does not replace Alpha's MARK / AscensionJobMarket route, the legacy
 AGIJobManager, or the separate USDC Manager. Sharing a token symbol does not make
 markets interchangeable.
+
+Use **public, non-personal inputs only** for this integration's missions,
+assessment and qualification. A source being public does not make personal data
+eligible.
 
 Continue a native Alpha dossier with retained history using the
 [project receiver and bounded Jobs drafts](PROJECT_CONTINUITY.md). It preserves
@@ -66,12 +75,35 @@ flowchart LR
 
 ## Deployment identity matters
 
+The [current mainnet directory](../../docs/production/CURRENT_MAINNET_DEPLOYMENT.md)
+identifies the separate **18 October 2026** deployment: JobRegistry
+`0x8b230eB346369B2a3EFaaa615CbEb8e3b2f167e6`, deployed from
+`818b3a246871e4cd4dde86558dbb91ef82b15eef`. Its
+[dated snapshot](../../docs/production/mainnet-2026-10-18/deployment-snapshot.json)
+records 25 exact runtime/source comparisons, 46 named finalized-state checks and
+all eight managed modules paused. These are retained observations, not a fresh
+chain read or production approval. Current-main equivalence is not assumed.
+
 `jobregistry-v2.json` records the current source profile separately from the
 October 12 mainnet inventory. That inventory records registry
 `0x72Ec2CcC9403b643C4d6CA3eF05E06ca8faa3084` and 23 other instances built from
 `b4c5b66ea05a6bb27f1f1cb197f055c179bbd38e`. It explicitly does not approve
 production or open live intake. Zero addresses in the generic current config
 are not evidence that this historical deployment does not exist.
+
+The profile's October 12 inventory remains historical and pinned in the receiver
+source closure. The October 18 pointer does not replace that profile, install a
+trusted deployment, switch a client or grant authority. Treat all previous
+deployments as read-only. Any new reviewed profile requires its own exact-source,
+runtime, wiring, policy and admission evidence.
+
+For a separately authorized new creation, follow the
+[owner-operated Hardhat requirements](../../docs/deployment-v2-agialpha.md#owner-operated-deployment-requirements):
+Ubuntu Terminal, a local hidden prompt and a process-lifetime deployer key that
+is never stored, printed, passed in arguments or written to `.env`, history or
+logs. Ledger governance remains on Mac Studio. Live deployment, signing,
+funding, activation and on-chain authority changes require separate authorization;
+the approved ENS configuration work remains separate.
 
 The historical masked runtime-template SHA-256 is **not** a full deployed
 runtime Keccak-256 pin. Do not feed it into `runtimeKeccak256`. Independently
@@ -99,6 +131,171 @@ rejects duplicate or removed matching logs, and rechecks the block afterward.
 It never signs, submits, approves, deposits, acknowledges policy or settles.
 
 Run focused tests with `npm run alpha-agent:verify:test`.
+
+## Retain current Alpha computer evidence as an unfunded Jobs draft
+
+`four-repo-computer-receipt.mjs` is an additive, inert bridge for the current
+native Alpha `successor-alpha-computer-handoff/v1` and
+`successor-alpha-computer-return/v1` formats. It preserves the exact handoff,
+return and frozen supplier-mission report bytes. It does not replace the pinned
+CSV project receiver, its source selector or its historical deployment profile.
+
+Install the reviewed Alpha `inspectComputerReturn` function in application code
+as `inspectAlphaReturn`; imported JSON cannot select code or a checkout. Call
+`inspectComputerReceiptEvidence({handoffRaw, returnRaw, reportRaw},
+{inspectAlphaReturn})` for the shared market-independent inspection. It replays
+the native Jobs report, checks the exact shipped English/French desk HTML and
+networkless public/non-personal input scope, binds the project/task/source and
+exact observed result, and recomputes the frozen allocation against the real
+requirements. Interrupted, unclean, missing, altered or wrongly bound returns
+are rejected.
+
+`createComputerReceiptDraft` accepts the same raw inputs and
+`{amountBaseUnits, createdAt, inspectAlphaReturn}`. It returns a canonical
+`agijobsv0/four-repo-computer-draft/v1` with an explicit **18-decimal AGIALPHA
+unfunded proposal**. The native compiler's four sealed jobs still reserve zero;
+the proposed amount does not fund or modify those sealed budgets. Import with
+`inspectComputerReceiptDraft(raw, {inspectAlphaReturn})`, which rebuilds every
+binding and the native drafts. A Manager USDC wrapper must select its own route
+and budget; this bridge never converts USD quote prices, USDC or AGIALPHA.
+
+Consistent native receipt bytes do not authenticate their author, prove actual
+computer execution or satisfy independent acceptance. All outputs retain
+`trustedComputerExecution: false`, independent review required, no authority,
+and no settlement or production approval. A source-locked cross-repository
+runner must separately retain the actual browser observations and runtime
+evidence. A protocol fixture is not browser or live-model qualification.
+
+The regular `npm run site:test` includes the bounded adapter regression suite.
+For its separate native Alpha protocol-boundary test, use the repository's
+pinned Node toolchain and an explicitly reviewed current Alpha checkout:
+
+```bash
+node test/pages/four-repo-computer-receipt-native.mjs /absolute/reviewed/alpha-checkout
+```
+
+That test uses the real native Alpha inspector with labeled synthetic protocol
+receipts; it performs no browser, model, wallet or blockchain operation.
+An optional second argument selects a new absolute output directory for its
+four labeled protocol fixture files. No files are written by default, and an
+existing output directory is refused. Unknown model and human costs remain
+unknown in this fixture.
+
+### Continue in the public workspace
+
+The [English supplier workspace](https://montrealai.github.io/AGIJobsv0/successor/computer/)
+and [French workspace](https://montrealai.github.io/AGIJobsv0/successor/computer/fr/)
+now expose the same native adapters used by the source fixture:
+
+1. Construct and freeze a strategy above, approving a changed formulation
+   explicitly, or choose its saved report. In **Continue your Alpha project
+   through Computer Use**, import Alpha's complete project archive (or its
+   saved project JSON) and review its
+   unchanged requirements. Confirm public nonpersonal inputs and the exact
+   handoff, then download `successor-computer-handoff.json` and its exact report.
+2. Import the handoff in Fleet. Runtime configuration and explicit execution
+   authorization remain separate. Export the actual native Computer Use return.
+3. Back in Jobs, select the exact handoff, native return and frozen report.
+   Optionally import Alpha's complete archive or native history to retain
+   earlier interrupted attempts, completed returns and owner reviews.
+   Enter a proposed AGIALPHA amount with up to 18 decimal places, explicitly
+   select chain 1 and inspect the displayed token. No deployment is selected.
+4. Prepare the unsigned, unfunded draft and save the computer workspace. Reopen
+   it to replay both native inspectors and recover the same original project,
+   raw observations and Alpha history. Exact complete Alpha archives are kept
+   in `projectSources`; their unchanged native histories are kept in
+   `historySources`. Imported observations stay historical;
+   provider execution, independent review and real value are not authenticated.
+
+En français : importez l’archive Alpha complète ou un projet enregistré et le rapport figé exact, examinez les
+exigences puis préparez la transmission native pour Fleet. Après l’exécution
+explicitement autorisée dans Fleet, rapportez la transmission, le retour natif
+et le même rapport. Choisissez le montant AGIALPHA et le réseau, puis enregistrez
+le brouillon non signé et l’espace complet pour le rouvrir. Aucun portefeuille,
+financement, déploiement, règlement ni pouvoir opérationnel n’est créé.
+
+The browser uses the canonical Jobs adapter and byte-exact native Alpha modules
+in the additive `vendor/alpha-computer/` closure. Its source manifest and Apache
+license are shipped with the site. Historical CSV source inventories are
+unchanged. Regenerate only from a reviewed exact clean Alpha checkout:
+
+The current proposal's handoff must declare the installed Alpha computer
+module's source hash. Older history retains its exact declared source hashes,
+with derived matching indicators and an explicit unverified-producer label.
+The archive's `inspectorSource` identifies the installed validation code only;
+it does not authenticate a producer, execution or review. Source declarations
+and unmatched counts are derived from native records again when reopening.
+
+```bash
+node integrations/alpha-agent/generate-computer-source.mjs /exact/alpha EXACT_COMMIT --check
+node scripts/pages/generate-computer-desk-runtime.mjs --check
+node --test test/pages/computer-receipt-workspace.test.mjs
+node scripts/pages/run-computer-receipt-qa.mjs
+```
+
+The DOM/browser tests deliberately use labeled `PROTOCOL_DOUBLE_NO_BROWSER`
+inputs to test import and download behavior. They do not qualify native browser
+execution. The checked desk runtime literal preserves exact task HTML through
+bundling; its bytes must equal the live `initComputerDesk` source.
+
+### Rehearse the current draft through disposable modular contracts
+
+`four-repo-computer-lifecycle.cjs` commits the exact draft's SHA-256 as the job
+specification and the exact native Alpha return's SHA-256 as the result. It uses
+the actual modular JobRegistry and StakeManager with a mock token, permissive
+identity and an operator-controlled validation stub. Successful work receives
+the separately finalized mock reward. Rejected work remains disputed, cannot
+finalize and receives no payout. This is a fixture of contract mechanics, not
+independent content acceptance or production readiness.
+
+The evidence measures elapsed fixture and per-job milliseconds, excluding
+compilation and browser execution. Its `gasObservation` retains concrete local
+transaction receipts with block/hash bindings, gas used, effective mock gas
+price and fee totals. These values describe the disposable chain only; they
+are neither public-network fee estimates nor real expenditure.
+
+Use Node **22.23.3**, npm **10.8.2**, a reviewed clean Alpha source pin and a new
+evidence filename. Compile with the normal Solidity 0.8.37 / via-IR / 200-run
+profile, then run only on the fresh in-process `hardhat` network:
+
+```bash
+npm ci --ignore-scripts --no-audit
+npm run compile
+FQR_DRAFT_FILE=/absolute/evidence/jobs-agialpha-draft.json \
+FQR_ALPHA_SOURCE=/absolute/reviewed/alpha-checkout \
+FQR_ALPHA_COMMIT=REPLACE_WITH_EXACT_REVIEWED_40_HEX_COMMIT \
+FQR_EVIDENCE_FILE=/absolute/evidence/new-jobs-local-lifecycle.json \
+npx hardhat run --no-compile --network hardhat integrations/alpha-agent/four-repo-computer-lifecycle.cjs
+```
+
+The script rejects external RPCs, forks, other networks, substituted Alpha
+source, malformed drafts and existing evidence outputs before fixture writes.
+The Alpha pin covers its entire tracked checkout, including transitive native
+imports under `successor-workbench` and `build-successor`. Tracked modifications
+and nonignored untracked source files are refused before importing the inspector;
+tracked file bytes and modes are checked against the pinned Git objects, without
+replacement refs, hidden index flags, environment redirection or symlinked source.
+The guard retains the verified physical checkout root. During the same bounded,
+no-follow descriptor read that validates each Git blob, it captures the native
+ESM source strings from the fixed Alpha module scopes. The module graph is bounded
+to 8 MiB per module, 32 MiB in total and 256 modules. Its source hash comes from
+those captured bytes. Node loads a private, unique in-memory namespace with only
+captured relative imports; it never reopens the checkout for module execution.
+Configured aliases and later changes to entry or transitive source therefore
+cannot change the code loaded for this fixture. Builtin, package, network,
+absolute-file, query and fragment import edges are outside this pure graph.
+The loader remains installed through lazy inspector calls and closes in finally.
+The same check runs again before writing lifecycle evidence. Normal ignored
+dependencies and report outputs remain usable. Checkout rechecks record source
+consistency; the private captured graph binds executed inspector code. This does
+not isolate an already compromised Node process or authenticate historical
+computer observations.
+`FQR_INPUT_CLASS` may record an external evidence label; it is not authenticated
+runtime proof. Protocol-only inputs must remain labeled
+`PROTOCOL_DOUBLE_NO_BROWSER`. No production key is required or authorized;
+the fixture uses only disposable Hardhat signers, contacts no Mainnet RPC and
+changes no existing deployment. The fixture's mock token
+uses 18-decimal base units, without implying real AGIALPHA revenue.
 
 ## Reproduce the disposable-chain acceptance
 
