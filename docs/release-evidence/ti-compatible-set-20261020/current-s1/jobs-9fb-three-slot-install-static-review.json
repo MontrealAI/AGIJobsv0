@@ -1,0 +1,105 @@
+{
+  "schema": "agijobsv0/three-slot-install-static-review/1",
+  "result": "STATIC_PASS",
+  "reviewer": "existing Jobs owner lane; independent of root metadata assembly",
+  "source": {
+    "repository": "MontrealAI/AGIJobsv0",
+    "reviewedS1": "c0761b4f129911ef4f700932a331db159032f6e7",
+    "reviewedS1Tree": "e8e2cb3c80629c352cd7cc71bc68d48da5384bd6",
+    "candidate": "9fbda3bf3db075ce056aa0015204295ca3537007",
+    "candidateTree": "3046998597d9e1d36245df893cd067917c5bb036",
+    "soleParent": "c0761b4f129911ef4f700932a331db159032f6e7",
+    "treeEntries": 6290,
+    "truncated": false
+  },
+  "metadata": [
+    {
+      "path": "scripts/release/source-profile-rc16.json",
+      "baseBlob": "81c718d236c6f0fc64f7b2307b643e00bd07ab25",
+      "blob": "0e3ebacde983a064278642ea5342755e7943933e",
+      "bytes": 921826,
+      "sha256": "823d9ec25144d6bf32bda060a70e36c1750ddae8ee83d328afac9e0f66510a68"
+    },
+    {
+      "path": "docs/production/RELEASE_NOTES_SOURCE_RC16.md",
+      "baseBlob": "45d039abd61f4536586e873ae3b16f89f9025cd7",
+      "blob": "b890d8db3c550e17f8645c84a6c32358a4147314",
+      "bytes": 178885,
+      "sha256": "aa20d3191380de709ad384b38c2bda64a985649ca341281c533b1ac829d32133"
+    }
+  ],
+  "byteScope": {
+    "exactlyTwoRegular100644LeavesChanged": true,
+    "allOtherGitLeavesUnchanged": true,
+    "inverseThreeValueReplacementReconstructsAllC076Bytes": true,
+    "strictSingleNotesMarker": true,
+    "canonicalMetadata": true,
+    "slots": [
+      "notesReview",
+      "scannerReview",
+      "pythonScannerReview"
+    ],
+    "onlyNullToRecord": true
+  },
+  "javascript": {
+    "all45CompleteCurrentResultHashesExact": true,
+    "notesSortedMultiplicityAndExactRationaleJoins": true,
+    "caseSpecificSecurityFalsePositives": 35,
+    "acknowledgedQuality": 10,
+    "all10QualityCurrentGitBlobAndCompleteRuleQueryConfigCommitmentsExact": true,
+    "independent33AndEmitter22RecordsMatchFreshReceiptsExactly": true,
+    "completeToolAndQueryDigestsExact": true,
+    "actualExtractionURIs": 832,
+    "mandatorySourcePaths": 89,
+    "fullReviewEvidenceCommit": "903667965c86e54c929cf4624cc4c35d967f5e93"
+  },
+  "python": {
+    "closedSchema": true,
+    "originalArtifactId": 12259909326,
+    "producerRun": 39413714405,
+    "attempt": 1,
+    "archiveSha256": "6de2ff450b83fc9e13cc2ba5b999a7e5ce200ba85a1148f6eecd28bde558e2fa",
+    "allFourRawDigestsAndSidecarBindingsExact": true,
+    "completeToolComponentsEqualDocumentedProductionNormalization": true,
+    "normalization": "Retain every component field and full rule; absent component.rules becomes an empty array.",
+    "completeRules": 172,
+    "rawResults": 0,
+    "actualExtractionURIs": 79,
+    "allActualTrackedMandatoryPythonModules": 8,
+    "configAndWorkflowBindingsExact": true,
+    "fullReviewEvidenceCommit": "a943e252bc6df185f7d984b21ff32d056993cad4"
+  },
+  "advancedSecurity": {
+    "completeCheckInventory": 97,
+    "checkId": 118598802817,
+    "headSha": "c0761b4f129911ef4f700932a331db159032f6e7",
+    "name": "CodeQL",
+    "appId": 57789,
+    "appSlug": "github-advanced-security",
+    "ownerId": 9919,
+    "status": "completed",
+    "conclusion": "success"
+  },
+  "binderAssessment": {
+    "scope": "Static read of unchanged production binder and authenticated Git metadata, not execution.",
+    "oneConnectedTopologicalEdgeWithin64Bound": true,
+    "sameS1SourceAndTree": true,
+    "actualInstalledRecordsEqualCandidateValues": true,
+    "onlyThreeCanonicalNullToRecordTransitions": true,
+    "allOuterPinsPoliciesQueriesGatesAndHistoricalRecordsPreserved": true
+  },
+  "qualification": {
+    "value": "PENDING_FINAL_SOURCE_MAIN_PUSH",
+    "candidateHostedChecksStillRequired": true,
+    "actualFinalMainRawAndProcessedServiceProofsStillRequired": true,
+    "futureHeadApproval": false
+  },
+  "limits": {
+    "localRuntimeOrTestsExecuted": false,
+    "productionBinderExecuted": false,
+    "originalArtifactZipGET": false,
+    "newSecurityScenario": false,
+    "sourceRefSlotAlertSettingsMutation": false,
+    "releaseOrMainQualification": false
+  }
+}
