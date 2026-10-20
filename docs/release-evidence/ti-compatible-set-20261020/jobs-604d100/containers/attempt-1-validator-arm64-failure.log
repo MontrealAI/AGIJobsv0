@@ -1,0 +1,769 @@
+﻿2026-10-20T20:14:40.2992504Z Current runner version: '2.338.0'
+2026-10-20T20:14:40.3027551Z ##[group]Runner Image Provisioner
+2026-10-20T20:14:40.3028713Z Hosted Compute Agent
+2026-10-20T20:14:40.3029360Z Version: 20261015.610
+2026-10-20T20:14:40.3030054Z Commit: 267fdb4e8bbec4ab5ea31367f3a00d5c480c7656
+2026-10-20T20:14:40.3030950Z Build Date: 2026-10-14T17:06:54Z
+2026-10-20T20:14:40.3031704Z Worker ID: {4f329546-00fd-46c5-b2e7-7bc6d32234ab}
+2026-10-20T20:14:40.3032485Z Region: centralus
+2026-10-20T20:14:40.3033122Z Cloud: Azure
+2026-10-20T20:14:40.3033763Z ##[endgroup]
+2026-10-20T20:14:40.3036682Z ##[group]Operating System
+2026-10-20T20:14:40.3037394Z Ubuntu
+2026-10-20T20:14:40.3037913Z 24.04.5
+2026-10-20T20:14:40.3038581Z LTS
+2026-10-20T20:14:40.3039118Z ##[endgroup]
+2026-10-20T20:14:40.3039813Z ##[group]Runner Image
+2026-10-20T20:14:40.3040445Z Image: ubuntu-24.04-arm
+2026-10-20T20:14:40.3041046Z Version: 20261018.154.1
+2026-10-20T20:14:40.3042582Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24-arm64/20261018.154/images/ubuntu/Ubuntu2404-Arm64-Readme.md
+2026-10-20T20:14:40.3044345Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24-arm64%2F20261018.154
+2026-10-20T20:14:40.3045325Z ##[endgroup]
+2026-10-20T20:14:40.3047040Z ##[group]GITHUB_TOKEN Permissions
+2026-10-20T20:14:40.3050255Z Contents: read
+2026-10-20T20:14:40.3050868Z Metadata: read
+2026-10-20T20:14:40.3051631Z Packages: write
+2026-10-20T20:14:40.3052207Z ##[endgroup]
+2026-10-20T20:14:40.3055177Z Secret source: Actions
+2026-10-20T20:14:40.3056544Z Cache mode: write
+2026-10-20T20:14:40.3057698Z Prepare workflow directory
+2026-10-20T20:14:40.3467968Z Prepare all required actions
+2026-10-20T20:14:40.3520718Z Getting action download info
+2026-10-20T20:14:40.6121654Z Download action repository 'actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955' (SHA:08eba0b27e820071cde6df949e0beb9ba4906955)
+2026-10-20T20:14:40.8297404Z Download action repository 'docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435' (SHA:e468171a9de216ec08956ac3ada2f0791b6bd435)
+2026-10-20T20:14:41.3461814Z Download action repository 'docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef' (SHA:5e57cd118135c172c3672efd75eb46360885c0ef)
+2026-10-20T20:14:41.9204666Z Download action repository 'actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020' (SHA:49933ea5288caeca8642d1e84afbd3f7d6820020)
+2026-10-20T20:14:42.1256322Z Download action repository 'docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83' (SHA:263435318d21b8e681c14492fe198d362a7d2c83)
+2026-10-20T20:14:42.6873978Z Download action repository 'actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02' (SHA:ea165f8d65b6e75b540449e92b4886f43607fa02)
+2026-10-20T20:14:43.0842221Z Complete job name: native (validator-runner, arm64)
+2026-10-20T20:14:43.1721795Z ##[group]Run actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+2026-10-20T20:14:43.1722875Z with:
+2026-10-20T20:14:43.1723329Z   repository: MontrealAI/AGIJobsv0
+2026-10-20T20:14:43.1726316Z   token: ***
+2026-10-20T20:14:43.1726824Z   ssh-strict: true
+2026-10-20T20:14:43.1727123Z   ssh-user: git
+2026-10-20T20:14:43.1727411Z   persist-credentials: true
+2026-10-20T20:14:43.1727812Z   clean: true
+2026-10-20T20:14:43.1728116Z   sparse-checkout-cone-mode: true
+2026-10-20T20:14:43.1728560Z   fetch-depth: 1
+2026-10-20T20:14:43.1728874Z   fetch-tags: false
+2026-10-20T20:14:43.1729199Z   show-progress: true
+2026-10-20T20:14:43.1729572Z   lfs: false
+2026-10-20T20:14:43.1729825Z   submodules: false
+2026-10-20T20:14:43.1730588Z   set-safe-directory: true
+2026-10-20T20:14:43.1731499Z ##[endgroup]
+2026-10-20T20:14:43.2627082Z Syncing repository: MontrealAI/AGIJobsv0
+2026-10-20T20:14:43.2629032Z ##[group]Getting Git version info
+2026-10-20T20:14:43.2629882Z Working directory is '/home/runner/work/AGIJobsv0/AGIJobsv0'
+2026-10-20T20:14:43.2630834Z [command]/usr/bin/git version
+2026-10-20T20:14:43.2896509Z git version 2.55.0
+2026-10-20T20:14:43.2916076Z ##[endgroup]
+2026-10-20T20:14:43.2930105Z Temporarily overriding HOME='/home/runner/work/_temp/df2e82cb-5883-4c7f-8994-40e4e3cb1c04' before making global git config changes
+2026-10-20T20:14:43.2931689Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-20T20:14:43.2934685Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/AGIJobsv0/AGIJobsv0
+2026-10-20T20:14:43.3077953Z Deleting the contents of '/home/runner/work/AGIJobsv0/AGIJobsv0'
+2026-10-20T20:14:43.3082570Z ##[group]Initializing the repository
+2026-10-20T20:14:43.3087814Z [command]/usr/bin/git init /home/runner/work/AGIJobsv0/AGIJobsv0
+2026-10-20T20:14:43.3656905Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-10-20T20:14:43.3658162Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-10-20T20:14:43.3659072Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-10-20T20:14:43.3659939Z hint: call:
+2026-10-20T20:14:43.3660494Z hint:
+2026-10-20T20:14:43.3661271Z hint: 	git config --global init.defaultBranch <name>
+2026-10-20T20:14:43.3661974Z hint:
+2026-10-20T20:14:43.3662572Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-10-20T20:14:43.3663635Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-10-20T20:14:43.3664334Z hint:
+2026-10-20T20:14:43.3665038Z hint: 	git branch -m <name>
+2026-10-20T20:14:43.3665563Z hint:
+2026-10-20T20:14:43.3666420Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-10-20T20:14:43.3667620Z Initialized empty Git repository in /home/runner/work/AGIJobsv0/AGIJobsv0/.git/
+2026-10-20T20:14:43.3671413Z [command]/usr/bin/git remote add origin https://github.com/MontrealAI/AGIJobsv0
+2026-10-20T20:14:43.4545381Z ##[endgroup]
+2026-10-20T20:14:43.4546423Z ##[group]Disabling automatic garbage collection
+2026-10-20T20:14:43.4551597Z [command]/usr/bin/git config --local gc.auto 0
+2026-10-20T20:14:43.4761874Z ##[endgroup]
+2026-10-20T20:14:43.4762963Z ##[group]Setting up auth
+2026-10-20T20:14:43.4763577Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-20T20:14:43.4796174Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-20T20:14:43.5267946Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-20T20:14:43.5298339Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-20T20:14:43.5521421Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-10-20T20:14:43.5722359Z ##[endgroup]
+2026-10-20T20:14:43.5722865Z ##[group]Fetching the repository
+2026-10-20T20:14:43.5730668Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +886e20f84ea29f926000e48c456b7bdf9ee3e6aa:refs/remotes/pull/4005/merge
+2026-10-20T20:14:49.2265023Z From https://github.com/MontrealAI/AGIJobsv0
+2026-10-20T20:14:49.2265932Z  * [new ref]         886e20f84ea29f926000e48c456b7bdf9ee3e6aa -> pull/4005/merge
+2026-10-20T20:14:49.2268184Z ##[endgroup]
+2026-10-20T20:14:49.2268634Z ##[group]Determining the checkout info
+2026-10-20T20:14:49.2270638Z ##[endgroup]
+2026-10-20T20:14:49.2276150Z [command]/usr/bin/git sparse-checkout disable
+2026-10-20T20:14:49.2335970Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-10-20T20:14:49.2369695Z ##[group]Checking out the ref
+2026-10-20T20:14:49.2396997Z [command]/usr/bin/git checkout --progress --force refs/remotes/pull/4005/merge
+2026-10-20T20:14:49.7396283Z Note: switching to 'refs/remotes/pull/4005/merge'.
+2026-10-20T20:14:49.7396645Z 
+2026-10-20T20:14:49.7396859Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-10-20T20:14:49.7397878Z changes and commit them, and you can discard any commits you make in this
+2026-10-20T20:14:49.7398340Z state without impacting any branches by switching back to a branch.
+2026-10-20T20:14:49.7398770Z 
+2026-10-20T20:14:49.7399007Z If you want to create a new branch to retain commits you create, you may
+2026-10-20T20:14:49.7399458Z do so (now or later) by using -c with the switch command. Example:
+2026-10-20T20:14:49.7399718Z 
+2026-10-20T20:14:49.7399834Z   git switch -c <new-branch-name>
+2026-10-20T20:14:49.7400008Z 
+2026-10-20T20:14:49.7400109Z Or undo this operation with:
+2026-10-20T20:14:49.7400275Z 
+2026-10-20T20:14:49.7400367Z   git switch -
+2026-10-20T20:14:49.7400511Z 
+2026-10-20T20:14:49.7400728Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-10-20T20:14:49.7401039Z 
+2026-10-20T20:14:49.7401382Z HEAD is now at 886e20f Merge 604d10094f3b7fede53406ae0e40f9f489155a3b into 5cd671e6f3f3a29e12cede966842f4bc99ece59f
+2026-10-20T20:14:49.7452508Z ##[endgroup]
+2026-10-20T20:14:49.7492903Z [command]/usr/bin/git log -1 --format=%H
+2026-10-20T20:14:49.7523381Z 886e20f84ea29f926000e48c456b7bdf9ee3e6aa
+2026-10-20T20:14:49.7788878Z ##[group]Run docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435
+2026-10-20T20:14:49.7789352Z with:
+2026-10-20T20:14:49.7789557Z   driver: docker-container
+2026-10-20T20:14:49.7789766Z   install: false
+2026-10-20T20:14:49.7789940Z   use: true
+2026-10-20T20:14:49.7790108Z   keep-state: false
+2026-10-20T20:14:49.7790298Z   cache-binary: true
+2026-10-20T20:14:49.7790524Z   cleanup: true
+2026-10-20T20:14:49.7790706Z ##[endgroup]
+2026-10-20T20:14:50.0227837Z (node:2225) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-10-20T20:14:50.0275102Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-10-20T20:14:50.0278073Z ##[group]Docker info
+2026-10-20T20:14:50.0298264Z [command]/usr/bin/docker version
+2026-10-20T20:14:50.1190558Z Client: Docker Engine - Community
+2026-10-20T20:14:50.1191324Z  Version:           28.0.4
+2026-10-20T20:14:50.1191997Z  API version:       1.48
+2026-10-20T20:14:50.1192610Z  Go version:        go1.23.7
+2026-10-20T20:14:50.1193059Z  Git commit:        b8034c0
+2026-10-20T20:14:50.1193473Z  Built:             Tue Mar 25 15:07:55 2025
+2026-10-20T20:14:50.1193873Z  OS/Arch:           linux/arm64
+2026-10-20T20:14:50.1194230Z  Context:           default
+2026-10-20T20:14:50.1194525Z 
+2026-10-20T20:14:50.1194871Z Server: Docker Engine - Community
+2026-10-20T20:14:50.1195234Z  Engine:
+2026-10-20T20:14:50.1195576Z   Version:          28.0.4
+2026-10-20T20:14:50.1196271Z   API version:      1.48 (minimum version 1.24)
+2026-10-20T20:14:50.1196898Z   Go version:       go1.23.7
+2026-10-20T20:14:50.1197291Z   Git commit:       6430e49
+2026-10-20T20:14:50.1197874Z   Built:            Tue Mar 25 15:07:55 2025
+2026-10-20T20:14:50.1198295Z   OS/Arch:          linux/arm64
+2026-10-20T20:14:50.1198673Z   Experimental:     false
+2026-10-20T20:14:50.1199057Z  containerd:
+2026-10-20T20:14:50.1199380Z   Version:          v2.4.2
+2026-10-20T20:14:50.1199806Z   GitCommit:        b7a25261e029d68978bbf290df0a62fc819b3c51
+2026-10-20T20:14:50.1200251Z  runc:
+2026-10-20T20:14:50.1200600Z   Version:          1.5.2
+2026-10-20T20:14:50.1200958Z   GitCommit:        v1.5.2-0-g29dd3dc2
+2026-10-20T20:14:50.1201378Z  docker-init:
+2026-10-20T20:14:50.1201693Z   Version:          0.19.0
+2026-10-20T20:14:50.1202049Z   GitCommit:        de40ad0
+2026-10-20T20:14:50.1228343Z [command]/usr/bin/docker info
+2026-10-20T20:14:50.3322813Z Client: Docker Engine - Community
+2026-10-20T20:14:50.3323288Z  Version:    28.0.4
+2026-10-20T20:14:50.3323485Z  Context:    default
+2026-10-20T20:14:50.3323673Z  Debug Mode: false
+2026-10-20T20:14:50.3323856Z  Plugins:
+2026-10-20T20:14:50.3324155Z   buildx: Docker Buildx (Docker Inc.)
+2026-10-20T20:14:50.3324445Z     Version:  v0.38.0
+2026-10-20T20:14:50.3324738Z     Path:     /usr/libexec/docker/cli-plugins/docker-buildx
+2026-10-20T20:14:50.3325902Z   compose: Docker Compose (Docker Inc.)
+2026-10-20T20:14:50.3326144Z     Version:  v2.38.2
+2026-10-20T20:14:50.3326405Z     Path:     /usr/libexec/docker/cli-plugins/docker-compose
+2026-10-20T20:14:50.3326638Z 
+2026-10-20T20:14:50.3326704Z Server:
+2026-10-20T20:14:50.3326859Z  Containers: 0
+2026-10-20T20:14:50.3327024Z   Running: 0
+2026-10-20T20:14:50.3327205Z   Paused: 0
+2026-10-20T20:14:50.3327363Z   Stopped: 0
+2026-10-20T20:14:50.3327525Z  Images: 6
+2026-10-20T20:14:50.3327709Z  Server Version: 28.0.4
+2026-10-20T20:14:50.3328002Z  Storage Driver: overlay2
+2026-10-20T20:14:50.3328281Z   Backing Filesystem: extfs
+2026-10-20T20:14:50.3328620Z   Supports d_type: true
+2026-10-20T20:14:50.3328906Z   Using metacopy: false
+2026-10-20T20:14:50.3329220Z   Native Overlay Diff: false
+2026-10-20T20:14:50.3329451Z   userxattr: false
+2026-10-20T20:14:50.3329642Z  Logging Driver: json-file
+2026-10-20T20:14:50.3329847Z  Cgroup Driver: systemd
+2026-10-20T20:14:50.3330039Z  Cgroup Version: 2
+2026-10-20T20:14:50.3330218Z  Plugins:
+2026-10-20T20:14:50.3330403Z   Volume: local
+2026-10-20T20:14:50.3330623Z   Network: bridge host ipvlan macvlan null overlay
+2026-10-20T20:14:50.3331416Z   Log: awslogs fluentd gcplogs gelf journald json-file local splunk syslog
+2026-10-20T20:14:50.3331800Z  Swarm: inactive
+2026-10-20T20:14:50.3331996Z  Runtimes: runc io.containerd.runc.v2
+2026-10-20T20:14:50.3332324Z  Default Runtime: runc
+2026-10-20T20:14:50.3332618Z  Init Binary: docker-init
+2026-10-20T20:14:50.3332973Z  containerd version: b7a25261e029d68978bbf290df0a62fc819b3c51
+2026-10-20T20:14:50.3333288Z  runc version: v1.5.2-0-g29dd3dc2
+2026-10-20T20:14:50.3333524Z  init version: de40ad0
+2026-10-20T20:14:50.3333713Z  Security Options:
+2026-10-20T20:14:50.3333886Z   apparmor
+2026-10-20T20:14:50.3334040Z   seccomp
+2026-10-20T20:14:50.3334197Z    Profile: builtin
+2026-10-20T20:14:50.3334375Z   cgroupns
+2026-10-20T20:14:50.3334543Z  Kernel Version: 7.0.0-1017-azure
+2026-10-20T20:14:50.3334788Z  Operating System: Ubuntu 24.04.5 LTS
+2026-10-20T20:14:50.3335029Z  OSType: linux
+2026-10-20T20:14:50.3335202Z  Architecture: aarch64
+2026-10-20T20:14:50.3335405Z  CPUs: 4
+2026-10-20T20:14:50.3335593Z  Total Memory: 15.57GiB
+2026-10-20T20:14:50.3336222Z  Name: runnervm05w4h
+2026-10-20T20:14:50.3336482Z  ID: a4d2c437-7c81-4cba-9432-3d54dc0b17de
+2026-10-20T20:14:50.3336741Z  Docker Root Dir: /var/lib/docker
+2026-10-20T20:14:50.3336975Z  Debug Mode: false
+2026-10-20T20:14:50.3337176Z  Username: githubactions
+2026-10-20T20:14:50.3337395Z  Experimental: false
+2026-10-20T20:14:50.3337593Z  Insecure Registries:
+2026-10-20T20:14:50.3342306Z   ::1/128
+2026-10-20T20:14:50.3342514Z   127.0.0.0/8
+2026-10-20T20:14:50.3342711Z  Live Restore Enabled: false
+2026-10-20T20:14:50.3342872Z 
+2026-10-20T20:14:50.3343355Z ##[endgroup]
+2026-10-20T20:14:50.4073751Z ##[group]Buildx version
+2026-10-20T20:14:50.4096737Z [command]/usr/bin/docker buildx version
+2026-10-20T20:14:50.4595102Z github.com/docker/buildx v0.38.0 0dbe87f36ed472fe36b6796c3f70b4210a731fc5
+2026-10-20T20:14:50.4628539Z ##[endgroup]
+2026-10-20T20:14:50.4774366Z ##[group]Inspecting default docker context
+2026-10-20T20:14:50.4916295Z [
+2026-10-20T20:14:50.4916875Z   {
+2026-10-20T20:14:50.4917570Z     "Name": "default",
+2026-10-20T20:14:50.4917880Z     "Metadata": {},
+2026-10-20T20:14:50.4918080Z     "Endpoints": {
+2026-10-20T20:14:50.4918258Z       "docker": {
+2026-10-20T20:14:50.4918469Z         "Host": "unix:///var/run/docker.sock",
+2026-10-20T20:14:50.4918748Z         "SkipTLSVerify": false
+2026-10-20T20:14:50.4918956Z       }
+2026-10-20T20:14:50.4919104Z     },
+2026-10-20T20:14:50.4919270Z     "TLSMaterial": {},
+2026-10-20T20:14:50.4919457Z     "Storage": {
+2026-10-20T20:14:50.4919641Z       "MetadataPath": "<IN MEMORY>",
+2026-10-20T20:14:50.4919876Z       "TLSPath": "<IN MEMORY>"
+2026-10-20T20:14:50.4920075Z     }
+2026-10-20T20:14:50.4920226Z   }
+2026-10-20T20:14:50.4920378Z ]
+2026-10-20T20:14:50.4920870Z ##[endgroup]
+2026-10-20T20:14:50.4921203Z ##[group]Creating a new builder instance
+2026-10-20T20:14:50.6129853Z [command]/usr/bin/docker buildx create --name builder-a1240614-c1fb-4c93-b57d-534d96579b4f --driver docker-container --buildkitd-flags --allow-insecure-entitlement security.insecure --allow-insecure-entitlement network.host --use
+2026-10-20T20:14:50.7104913Z builder-a1240614-c1fb-4c93-b57d-534d96579b4f
+2026-10-20T20:14:50.7137343Z ##[endgroup]
+2026-10-20T20:14:50.7137733Z ##[group]Booting builder
+2026-10-20T20:14:50.7170777Z [command]/usr/bin/docker buildx inspect --bootstrap --builder builder-a1240614-c1fb-4c93-b57d-534d96579b4f
+2026-10-20T20:14:50.7651042Z #1 [internal] booting buildkit
+2026-10-20T20:14:50.9160299Z #1 pulling image moby/buildkit:buildx-stable-1
+2026-10-20T20:14:55.8899101Z #1 pulling image moby/buildkit:buildx-stable-1 5.1s done
+2026-10-20T20:14:56.0419458Z #1 creating container buildx_buildkit_builder-a1240614-c1fb-4c93-b57d-534d96579b4f0
+2026-10-20T20:14:56.2080033Z #1 creating container buildx_buildkit_builder-a1240614-c1fb-4c93-b57d-534d96579b4f0 0.3s done
+2026-10-20T20:14:56.2389675Z #1 DONE 5.4s
+2026-10-20T20:14:56.2747137Z Name:          builder-a1240614-c1fb-4c93-b57d-534d96579b4f
+2026-10-20T20:14:56.2748684Z Driver:        docker-container
+2026-10-20T20:14:56.2749081Z Last Activity: 2026-10-20 20:14:50 +0000 UTC
+2026-10-20T20:14:56.2749279Z 
+2026-10-20T20:14:56.2749348Z Nodes:
+2026-10-20T20:14:56.2749581Z Name:                  builder-a1240614-c1fb-4c93-b57d-534d96579b4f0
+2026-10-20T20:14:56.2749932Z Endpoint:              unix:///var/run/docker.sock
+2026-10-20T20:14:56.2750204Z Status:                running
+2026-10-20T20:14:56.2750814Z BuildKit daemon flags: --allow-insecure-entitlement security.insecure --allow-insecure-entitlement network.host
+2026-10-20T20:14:56.2751525Z BuildKit version:      v0.33.1
+2026-10-20T20:14:56.2751808Z Platforms:             linux/arm64, linux/arm/v7, linux/arm/v6
+2026-10-20T20:14:56.2752105Z Labels:
+2026-10-20T20:14:56.2752353Z  org.mobyproject.buildkit.worker.executor:         oci
+2026-10-20T20:14:56.2752759Z  org.mobyproject.buildkit.worker.hostname:         0dda41c23fa4
+2026-10-20T20:14:56.2753225Z  org.mobyproject.buildkit.worker.network:          host
+2026-10-20T20:14:56.2753645Z  org.mobyproject.buildkit.worker.oci.process-mode: sandbox
+2026-10-20T20:14:56.2754097Z  org.mobyproject.buildkit.worker.selinux.enabled:  false
+2026-10-20T20:14:56.2754518Z  org.mobyproject.buildkit.worker.snapshotter:      overlayfs
+2026-10-20T20:14:56.2754859Z GC Policy rule#0:
+2026-10-20T20:14:56.2755061Z  All:            false
+2026-10-20T20:14:56.2755409Z  Filters:        type==source.local type==exec.cachemount type==source.git.checkout
+2026-10-20T20:14:56.2756061Z  Keep Duration:  48h0m0s
+2026-10-20T20:14:56.2756327Z  Max Used Space: 488.3MiB
+2026-10-20T20:14:56.2756532Z GC Policy rule#1:
+2026-10-20T20:14:56.2756709Z  All:            false
+2026-10-20T20:14:56.2756900Z  Keep Duration:  1440h0m0s
+2026-10-20T20:14:56.2757105Z  Reserved Space: 9.313GiB
+2026-10-20T20:14:56.2757308Z  Max Used Space: 93.13GiB
+2026-10-20T20:14:56.2757507Z  Min Free Space: 27.01GiB
+2026-10-20T20:14:56.2757713Z GC Policy rule#2:
+2026-10-20T20:14:56.2757887Z  All:            false
+2026-10-20T20:14:56.2758090Z  Reserved Space: 9.313GiB
+2026-10-20T20:14:56.2758296Z  Max Used Space: 93.13GiB
+2026-10-20T20:14:56.2758499Z  Min Free Space: 27.01GiB
+2026-10-20T20:14:56.2758704Z GC Policy rule#3:
+2026-10-20T20:14:56.2758884Z  All:            true
+2026-10-20T20:14:56.2759073Z  Reserved Space: 9.313GiB
+2026-10-20T20:14:56.2759277Z  Max Used Space: 93.13GiB
+2026-10-20T20:14:56.2759477Z  Min Free Space: 27.01GiB
+2026-10-20T20:14:56.2790984Z ##[endgroup]
+2026-10-20T20:14:56.3636451Z ##[group]Inspect builder
+2026-10-20T20:14:56.3636749Z {
+2026-10-20T20:14:56.3636913Z   "nodes": [
+2026-10-20T20:14:56.3637076Z     {
+2026-10-20T20:14:56.3637308Z       "name": "builder-a1240614-c1fb-4c93-b57d-534d96579b4f0",
+2026-10-20T20:14:56.3637651Z       "endpoint": "unix:///var/run/docker.sock",
+2026-10-20T20:14:56.3637914Z       "status": "running",
+2026-10-20T20:14:56.3638385Z       "buildkitd-flags": "--allow-insecure-entitlement security.insecure --allow-insecure-entitlement network.host",
+2026-10-20T20:14:56.3639535Z       "buildkit": "v0.33.1",
+2026-10-20T20:14:56.3639817Z       "platforms": "linux/arm64,linux/arm/v7,linux/arm/v6",
+2026-10-20T20:14:56.3640104Z       "features": {
+2026-10-20T20:14:56.3640414Z         "Automatically load images to the Docker Engine image store": true,
+2026-10-20T20:14:56.3640765Z         "Cache export": true,
+2026-10-20T20:14:56.3641008Z         "Direct push": true,
+2026-10-20T20:14:56.3641231Z         "Docker exporter": true,
+2026-10-20T20:14:56.3641468Z         "Multi-platform build": true,
+2026-10-20T20:14:56.3641715Z         "OCI exporter": true
+2026-10-20T20:14:56.3641912Z       },
+2026-10-20T20:14:56.3642066Z       "labels": {
+2026-10-20T20:14:56.3642309Z         "org.mobyproject.buildkit.worker.executor": "oci",
+2026-10-20T20:14:56.3642688Z         "org.mobyproject.buildkit.worker.hostname": "0dda41c23fa4",
+2026-10-20T20:14:56.3643073Z         "org.mobyproject.buildkit.worker.network": "host",
+2026-10-20T20:14:56.3643478Z         "org.mobyproject.buildkit.worker.oci.process-mode": "sandbox",
+2026-10-20T20:14:56.3644115Z         "org.mobyproject.buildkit.worker.selinux.enabled": "false",
+2026-10-20T20:14:56.3644558Z         "org.mobyproject.buildkit.worker.snapshotter": "overlayfs"
+2026-10-20T20:14:56.3644873Z       },
+2026-10-20T20:14:56.3645036Z       "gcPolicy": [
+2026-10-20T20:14:56.3645210Z         {
+2026-10-20T20:14:56.3645368Z           "all": false,
+2026-10-20T20:14:56.3645555Z           "filter": [
+2026-10-20T20:14:56.3646383Z             "type==source.local type==exec.cachemount type==source.git.checkout"
+2026-10-20T20:14:56.3646734Z           ],
+2026-10-20T20:14:56.3646915Z           "keepDuration": "48h0m0s",
+2026-10-20T20:14:56.3647154Z           "maxUsedSpace": "488.3MiB"
+2026-10-20T20:14:56.3647368Z         },
+2026-10-20T20:14:56.3647522Z         {
+2026-10-20T20:14:56.3647679Z           "all": false,
+2026-10-20T20:14:56.3647882Z           "keepDuration": "1440h0m0s",
+2026-10-20T20:14:56.3648136Z           "reservedSpace": "9.313GiB",
+2026-10-20T20:14:56.3648376Z           "maxUsedSpace": "93.13GiB",
+2026-10-20T20:14:56.3648625Z           "minFreeSpace": "27.01GiB"
+2026-10-20T20:14:56.3648842Z         },
+2026-10-20T20:14:56.3648995Z         {
+2026-10-20T20:14:56.3649156Z           "all": false,
+2026-10-20T20:14:56.3649370Z           "reservedSpace": "9.313GiB",
+2026-10-20T20:14:56.3649607Z           "maxUsedSpace": "93.13GiB",
+2026-10-20T20:14:56.3649840Z           "minFreeSpace": "27.01GiB"
+2026-10-20T20:14:56.3650060Z         },
+2026-10-20T20:14:56.3650216Z         {
+2026-10-20T20:14:56.3650376Z           "all": true,
+2026-10-20T20:14:56.3650582Z           "reservedSpace": "9.313GiB",
+2026-10-20T20:14:56.3650821Z           "maxUsedSpace": "93.13GiB",
+2026-10-20T20:14:56.3651061Z           "minFreeSpace": "27.01GiB"
+2026-10-20T20:14:56.3651281Z         }
+2026-10-20T20:14:56.3651440Z       ]
+2026-10-20T20:14:56.3651592Z     }
+2026-10-20T20:14:56.3651754Z   ],
+2026-10-20T20:14:56.3651975Z   "name": "builder-a1240614-c1fb-4c93-b57d-534d96579b4f",
+2026-10-20T20:14:56.3652288Z   "driver": "docker-container",
+2026-10-20T20:14:56.3652539Z   "lastActivity": "2026-10-20T20:14:50.000Z"
+2026-10-20T20:14:56.3652777Z }
+2026-10-20T20:14:56.3653170Z ##[endgroup]
+2026-10-20T20:14:56.3653513Z ##[group]BuildKit version
+2026-10-20T20:14:56.3653779Z builder-a1240614-c1fb-4c93-b57d-534d96579b4f0: v0.33.1
+2026-10-20T20:14:56.3654179Z ##[endgroup]
+2026-10-20T20:14:56.3825259Z ##[group]Run echo "REPO_OWNER_LC=$(echo 'MontrealAI' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_ENV"
+2026-10-20T20:14:56.3826301Z [36;1mecho "REPO_OWNER_LC=$(echo 'MontrealAI' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_ENV"[0m
+2026-10-20T20:14:56.4014299Z shell: /usr/bin/bash -e {0}
+2026-10-20T20:14:56.4014635Z ##[endgroup]
+2026-10-20T20:14:56.4278431Z ##[group]Run docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83
+2026-10-20T20:14:56.4278937Z with:
+2026-10-20T20:14:56.4279124Z   context: .
+2026-10-20T20:14:56.4279642Z   file: deploy/docker/attester.Dockerfile
+2026-10-20T20:14:56.4279899Z   platforms: linux/arm64
+2026-10-20T20:14:56.4280096Z   load: true
+2026-10-20T20:14:56.4280259Z   push: false
+2026-10-20T20:14:56.4280430Z   provenance: false
+2026-10-20T20:14:56.4280611Z   sbom: false
+2026-10-20T20:14:56.4280797Z   tags: agi-smoke:validator-runner
+2026-10-20T20:14:56.4281087Z   cache-from: type=gha,scope=validator-runner-arm64
+2026-10-20T20:14:56.4281493Z   cache-to: type=gha,scope=validator-runner-arm64,mode=max
+2026-10-20T20:14:56.4281819Z   no-cache: false
+2026-10-20T20:14:56.4281993Z   pull: false
+2026-10-20T20:14:56.4284429Z   github-token: ***
+2026-10-20T20:14:56.4284618Z env:
+2026-10-20T20:14:56.4284796Z   REPO_OWNER_LC: montrealai
+2026-10-20T20:14:56.4285000Z ##[endgroup]
+2026-10-20T20:14:56.6715897Z (node:2716) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-10-20T20:14:56.6716789Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-10-20T20:14:56.6733196Z ##[group]GitHub Actions runtime token ACs
+2026-10-20T20:14:56.6742555Z refs/pull/4005/merge: read/write
+2026-10-20T20:14:56.6743061Z refs/heads/main: read
+2026-10-20T20:14:56.6743621Z ##[endgroup]
+2026-10-20T20:14:56.6744167Z ##[group]Docker info
+2026-10-20T20:14:56.6780596Z [command]/usr/bin/docker version
+2026-10-20T20:14:56.6948777Z Client: Docker Engine - Community
+2026-10-20T20:14:56.6949675Z  Version:           28.0.4
+2026-10-20T20:14:56.6950189Z  API version:       1.48
+2026-10-20T20:14:56.6950491Z  Go version:        go1.23.7
+2026-10-20T20:14:56.6950796Z  Git commit:        b8034c0
+2026-10-20T20:14:56.6951203Z  Built:             Tue Mar 25 15:07:55 2025
+2026-10-20T20:14:56.6951507Z  OS/Arch:           linux/arm64
+2026-10-20T20:14:56.6951842Z  Context:           default
+2026-10-20T20:14:56.6952038Z 
+2026-10-20T20:14:56.6952158Z Server: Docker Engine - Community
+2026-10-20T20:14:56.6952440Z  Engine:
+2026-10-20T20:14:56.6952767Z   Version:          28.0.4
+2026-10-20T20:14:56.6953072Z   API version:      1.48 (minimum version 1.24)
+2026-10-20T20:14:56.6953511Z   Go version:       go1.23.7
+2026-10-20T20:14:56.6953812Z   Git commit:       6430e49
+2026-10-20T20:14:56.6954138Z   Built:            Tue Mar 25 15:07:55 2025
+2026-10-20T20:14:56.6954495Z   OS/Arch:          linux/arm64
+2026-10-20T20:14:56.6954776Z   Experimental:     false
+2026-10-20T20:14:56.6955066Z  containerd:
+2026-10-20T20:14:56.6955376Z   Version:          v2.4.2
+2026-10-20T20:14:56.6955894Z   GitCommit:        b7a25261e029d68978bbf290df0a62fc819b3c51
+2026-10-20T20:14:56.6956348Z  runc:
+2026-10-20T20:14:56.6956604Z   Version:          1.5.2
+2026-10-20T20:14:56.6956889Z   GitCommit:        v1.5.2-0-g29dd3dc2
+2026-10-20T20:14:56.6957239Z  docker-init:
+2026-10-20T20:14:56.6957522Z   Version:          0.19.0
+2026-10-20T20:14:56.6957816Z   GitCommit:        de40ad0
+2026-10-20T20:14:56.6988338Z [command]/usr/bin/docker info
+2026-10-20T20:14:56.7420289Z Client: Docker Engine - Community
+2026-10-20T20:14:56.7432182Z  Version:    28.0.4
+2026-10-20T20:14:56.7432966Z  Context:    default
+2026-10-20T20:14:56.7433331Z  Debug Mode: false
+2026-10-20T20:14:56.7433746Z  Plugins:
+2026-10-20T20:14:56.7434150Z   buildx: Docker Buildx (Docker Inc.)
+2026-10-20T20:14:56.7434459Z     Version:  v0.38.0
+2026-10-20T20:14:56.7434762Z     Path:     /usr/libexec/docker/cli-plugins/docker-buildx
+2026-10-20T20:14:56.7435251Z   compose: Docker Compose (Docker Inc.)
+2026-10-20T20:14:56.7435586Z     Version:  v2.38.2
+2026-10-20T20:14:56.7436188Z     Path:     /usr/libexec/docker/cli-plugins/docker-compose
+2026-10-20T20:14:56.7436439Z 
+2026-10-20T20:14:56.7436554Z Server:
+2026-10-20T20:14:56.7436770Z  Containers: 1
+2026-10-20T20:14:56.7437044Z   Running: 1
+2026-10-20T20:14:56.7437312Z   Paused: 0
+2026-10-20T20:14:56.7438097Z   Stopped: 0
+2026-10-20T20:14:56.7438385Z  Images: 7
+2026-10-20T20:14:56.7438610Z  Server Version: 28.0.4
+2026-10-20T20:14:56.7438955Z  Storage Driver: overlay2
+2026-10-20T20:14:56.7439270Z   Backing Filesystem: extfs
+2026-10-20T20:14:56.7439854Z   Supports d_type: true
+2026-10-20T20:14:56.7440135Z   Using metacopy: false
+2026-10-20T20:14:56.7440401Z   Native Overlay Diff: false
+2026-10-20T20:14:56.7440720Z   userxattr: false
+2026-10-20T20:14:56.7441008Z  Logging Driver: json-file
+2026-10-20T20:14:56.7441279Z  Cgroup Driver: systemd
+2026-10-20T20:14:56.7441595Z  Cgroup Version: 2
+2026-10-20T20:14:56.7441836Z  Plugins:
+2026-10-20T20:14:56.7442165Z   Volume: local
+2026-10-20T20:14:56.7442447Z   Network: bridge host ipvlan macvlan null overlay
+2026-10-20T20:14:56.7442878Z   Log: awslogs fluentd gcplogs gelf journald json-file local splunk syslog
+2026-10-20T20:14:56.7443327Z  Swarm: inactive
+2026-10-20T20:14:56.7443601Z  Runtimes: runc io.containerd.runc.v2
+2026-10-20T20:14:56.7443968Z  Default Runtime: runc
+2026-10-20T20:14:56.7444287Z  Init Binary: docker-init
+2026-10-20T20:14:56.7444626Z  containerd version: b7a25261e029d68978bbf290df0a62fc819b3c51
+2026-10-20T20:14:56.7445055Z  runc version: v1.5.2-0-g29dd3dc2
+2026-10-20T20:14:56.7445355Z  init version: de40ad0
+2026-10-20T20:14:56.7446070Z  Security Options:
+2026-10-20T20:14:56.7446425Z   apparmor
+2026-10-20T20:14:56.7446648Z   seccomp
+2026-10-20T20:14:56.7446900Z    Profile: builtin
+2026-10-20T20:14:56.7447135Z   cgroupns
+2026-10-20T20:14:56.7447349Z  Kernel Version: 7.0.0-1017-azure
+2026-10-20T20:14:56.7447713Z  Operating System: Ubuntu 24.04.5 LTS
+2026-10-20T20:14:56.7447998Z  OSType: linux
+2026-10-20T20:14:56.7448251Z  Architecture: aarch64
+2026-10-20T20:14:56.7448514Z  CPUs: 4
+2026-10-20T20:14:56.7448756Z  Total Memory: 15.57GiB
+2026-10-20T20:14:56.7449083Z  Name: runnervm05w4h
+2026-10-20T20:14:56.7449360Z  ID: a4d2c437-7c81-4cba-9432-3d54dc0b17de
+2026-10-20T20:14:56.7449692Z  Docker Root Dir: /var/lib/docker
+2026-10-20T20:14:56.7449982Z  Debug Mode: false
+2026-10-20T20:14:56.7450246Z  Username: githubactions
+2026-10-20T20:14:56.7450581Z  Experimental: false
+2026-10-20T20:14:56.7450820Z  Insecure Registries:
+2026-10-20T20:14:56.7451107Z   ::1/128
+2026-10-20T20:14:56.7451401Z   127.0.0.0/8
+2026-10-20T20:14:56.7451650Z  Live Restore Enabled: false
+2026-10-20T20:14:56.7451863Z 
+2026-10-20T20:14:56.7452384Z ##[endgroup]
+2026-10-20T20:14:56.7452821Z ##[group]Proxy configuration
+2026-10-20T20:14:56.7453161Z No proxy configuration found
+2026-10-20T20:14:56.7453624Z ##[endgroup]
+2026-10-20T20:14:56.8068840Z ##[group]Buildx version
+2026-10-20T20:14:56.8092613Z [command]/usr/bin/docker buildx version
+2026-10-20T20:14:56.8567141Z github.com/docker/buildx v0.38.0 0dbe87f36ed472fe36b6796c3f70b4210a731fc5
+2026-10-20T20:14:56.8599279Z ##[endgroup]
+2026-10-20T20:14:56.8599963Z ##[group]Builder info
+2026-10-20T20:14:56.9506884Z {
+2026-10-20T20:14:56.9507732Z   "nodes": [
+2026-10-20T20:14:56.9508470Z     {
+2026-10-20T20:14:56.9509104Z       "name": "builder-a1240614-c1fb-4c93-b57d-534d96579b4f0",
+2026-10-20T20:14:56.9509800Z       "endpoint": "unix:///var/run/docker.sock",
+2026-10-20T20:14:56.9510338Z       "status": "running",
+2026-10-20T20:14:56.9513972Z       "buildkitd-flags": "--allow-insecure-entitlement security.insecure --allow-insecure-entitlement network.host",
+2026-10-20T20:14:56.9517064Z       "buildkit": "v0.33.1",
+2026-10-20T20:14:56.9520338Z       "platforms": "linux/arm64,linux/arm/v7,linux/arm/v6",
+2026-10-20T20:14:56.9521712Z       "features": {
+2026-10-20T20:14:56.9522746Z         "Automatically load images to the Docker Engine image store": true,
+2026-10-20T20:14:56.9526332Z         "Cache export": true,
+2026-10-20T20:14:56.9527045Z         "Direct push": true,
+2026-10-20T20:14:56.9527561Z         "Docker exporter": true,
+2026-10-20T20:14:56.9528115Z         "Multi-platform build": true,
+2026-10-20T20:14:56.9528642Z         "OCI exporter": true
+2026-10-20T20:14:56.9529119Z       },
+2026-10-20T20:14:56.9529602Z       "labels": {
+2026-10-20T20:14:56.9530542Z         "org.mobyproject.buildkit.worker.executor": "oci",
+2026-10-20T20:14:56.9531301Z         "org.mobyproject.buildkit.worker.hostname": "0dda41c23fa4",
+2026-10-20T20:14:56.9531984Z         "org.mobyproject.buildkit.worker.network": "host",
+2026-10-20T20:14:56.9532859Z         "org.mobyproject.buildkit.worker.oci.process-mode": "sandbox",
+2026-10-20T20:14:56.9533606Z         "org.mobyproject.buildkit.worker.selinux.enabled": "false",
+2026-10-20T20:14:56.9534455Z         "org.mobyproject.buildkit.worker.snapshotter": "overlayfs"
+2026-10-20T20:14:56.9535068Z       },
+2026-10-20T20:14:56.9535504Z       "gcPolicy": [
+2026-10-20T20:14:56.9536449Z         {
+2026-10-20T20:14:56.9536942Z           "all": false,
+2026-10-20T20:14:56.9537350Z           "filter": [
+2026-10-20T20:14:56.9537856Z             "type==source.local type==exec.cachemount type==source.git.checkout"
+2026-10-20T20:14:56.9538595Z           ],
+2026-10-20T20:14:56.9539009Z           "keepDuration": "48h0m0s",
+2026-10-20T20:14:56.9539509Z           "maxUsedSpace": "488.3MiB"
+2026-10-20T20:14:56.9539948Z         },
+2026-10-20T20:14:56.9540315Z         {
+2026-10-20T20:14:56.9540819Z           "all": false,
+2026-10-20T20:14:56.9541244Z           "keepDuration": "1440h0m0s",
+2026-10-20T20:14:56.9541983Z           "reservedSpace": "9.313GiB",
+2026-10-20T20:14:56.9635302Z           "maxUsedSpace": "93.13GiB",
+2026-10-20T20:14:56.9636172Z           "minFreeSpace": "27.01GiB"
+2026-10-20T20:14:56.9638077Z         },
+2026-10-20T20:14:56.9638271Z         {
+2026-10-20T20:14:56.9638431Z           "all": false,
+2026-10-20T20:14:56.9638643Z           "reservedSpace": "9.313GiB",
+2026-10-20T20:14:56.9638887Z           "maxUsedSpace": "93.13GiB",
+2026-10-20T20:14:56.9639128Z           "minFreeSpace": "27.01GiB"
+2026-10-20T20:14:56.9639342Z         },
+2026-10-20T20:14:56.9639491Z         {
+2026-10-20T20:14:56.9639647Z           "all": true,
+2026-10-20T20:14:56.9639840Z           "reservedSpace": "9.313GiB",
+2026-10-20T20:14:56.9640080Z           "maxUsedSpace": "93.13GiB",
+2026-10-20T20:14:56.9640539Z           "minFreeSpace": "27.01GiB"
+2026-10-20T20:14:56.9640766Z         }
+2026-10-20T20:14:56.9640918Z       ]
+2026-10-20T20:14:56.9641063Z     }
+2026-10-20T20:14:56.9641215Z   ],
+2026-10-20T20:14:56.9641425Z   "name": "builder-a1240614-c1fb-4c93-b57d-534d96579b4f",
+2026-10-20T20:14:56.9641724Z   "driver": "docker-container",
+2026-10-20T20:14:56.9641955Z   "lastActivity": "2026-10-20T20:14:50.000Z"
+2026-10-20T20:14:56.9642193Z }
+2026-10-20T20:14:56.9642992Z ##[endgroup]
+2026-10-20T20:14:57.0130196Z [command]/usr/bin/docker buildx build --cache-from type=gha,scope=validator-runner-arm64 --cache-to type=gha,scope=validator-runner-arm64,mode=max --file deploy/docker/attester.Dockerfile --iidfile /home/runner/work/_temp/docker-actions-toolkit-pxRkE0/build-iidfile-860f1074d3.txt --platform linux/arm64 --attest type=provenance,disabled=true --attest type=sbom,disabled=true --tag agi-smoke:validator-runner --load --metadata-file /home/runner/work/_temp/docker-actions-toolkit-pxRkE0/build-metadata-a1ce455e34.json .
+2026-10-20T20:14:57.2785790Z #0 building with "builder-a1240614-c1fb-4c93-b57d-534d96579b4f" instance using docker-container driver
+2026-10-20T20:14:57.2786351Z 
+2026-10-20T20:14:57.2792606Z #1 [internal] load build definition from attester.Dockerfile
+2026-10-20T20:14:57.2793115Z #1 transferring dockerfile: 486B done
+2026-10-20T20:14:57.2793473Z #1 DONE 0.0s
+2026-10-20T20:14:57.2793624Z 
+2026-10-20T20:14:57.2793958Z #2 [auth] library/node:pull token for registry-1.docker.io
+2026-10-20T20:14:57.4293274Z #2 DONE 0.0s
+2026-10-20T20:14:57.4293433Z 
+2026-10-20T20:14:57.4293630Z #3 [internal] load metadata for docker.io/library/node:22.23.3-alpine3.23
+2026-10-20T20:14:57.8232829Z #3 DONE 0.7s
+2026-10-20T20:14:57.9628859Z 
+2026-10-20T20:14:57.9629281Z #4 [internal] load .dockerignore
+2026-10-20T20:14:57.9629581Z #4 transferring context: 837B done
+2026-10-20T20:14:57.9629804Z #4 DONE 0.0s
+2026-10-20T20:14:57.9629906Z 
+2026-10-20T20:14:57.9629984Z #5 [internal] load build context
+2026-10-20T20:14:57.9630632Z #5 DONE 0.0s
+2026-10-20T20:14:57.9630753Z 
+2026-10-20T20:14:57.9631119Z #6 [1/7] FROM docker.io/library/node:22.23.3-alpine3.23@sha256:baf676f7d0e552f3231945c2f979055ca121bce128c152f7a34e6bd1728b1c5a
+2026-10-20T20:14:57.9632368Z #6 resolve docker.io/library/node:22.23.3-alpine3.23@sha256:baf676f7d0e552f3231945c2f979055ca121bce128c152f7a34e6bd1728b1c5a done
+2026-10-20T20:14:57.9632880Z #6 DONE 0.0s
+2026-10-20T20:14:57.9632979Z 
+2026-10-20T20:14:57.9633102Z #7 importing cache manifest from gha:5407842999036242512
+2026-10-20T20:14:57.9633371Z #7 DONE 0.1s
+2026-10-20T20:14:58.0636364Z 
+2026-10-20T20:14:58.0636983Z #5 [internal] load build context
+2026-10-20T20:14:58.0637853Z #5 transferring context: 1.30MB 0.1s done
+2026-10-20T20:14:58.2168115Z #5 DONE 0.1s
+2026-10-20T20:14:58.2168911Z 
+2026-10-20T20:14:58.2169428Z #6 [1/7] FROM docker.io/library/node:22.23.3-alpine3.23@sha256:baf676f7d0e552f3231945c2f979055ca121bce128c152f7a34e6bd1728b1c5a
+2026-10-20T20:14:58.2171166Z #6 sha256:c9c0ca6bfd7d4ff7b4520535fe7f3363a95b75a25eb04eeea6fe4261335131f8 446B / 446B 0.1s done
+2026-10-20T20:14:58.2171831Z #6 sha256:ce5317b758bf55618c74f9e1714d7413aab693999ba33f6d91c05135f9a49de1 1.26MB / 1.26MB 0.1s done
+2026-10-20T20:14:58.2172464Z #6 sha256:58e81ca35cf2666857b0cc88774bcdd82f4fb8f2a3acd9a658b2f25d68ec8d4e 2.10MB / 55.46MB 0.2s
+2026-10-20T20:14:58.2173088Z #6 sha256:ace1621be7ff15b54252f68393ac33181df7f3e095e36a5d9a9892031b357d31 4.19MB / 4.19MB 0.2s done
+2026-10-20T20:14:58.4531583Z #6 sha256:58e81ca35cf2666857b0cc88774bcdd82f4fb8f2a3acd9a658b2f25d68ec8d4e 36.70MB / 55.46MB 0.3s
+2026-10-20T20:14:58.4532276Z #6 extracting sha256:ace1621be7ff15b54252f68393ac33181df7f3e095e36a5d9a9892031b357d31 0.1s done
+2026-10-20T20:14:58.4533983Z #6 sha256:58e81ca35cf2666857b0cc88774bcdd82f4fb8f2a3acd9a658b2f25d68ec8d4e 55.46MB / 55.46MB 0.5s
+2026-10-20T20:14:58.7665190Z #6 sha256:58e81ca35cf2666857b0cc88774bcdd82f4fb8f2a3acd9a658b2f25d68ec8d4e 55.46MB / 55.46MB 0.6s done
+2026-10-20T20:14:58.7666525Z #6 extracting sha256:58e81ca35cf2666857b0cc88774bcdd82f4fb8f2a3acd9a658b2f25d68ec8d4e
+2026-10-20T20:14:59.2987588Z #6 extracting sha256:58e81ca35cf2666857b0cc88774bcdd82f4fb8f2a3acd9a658b2f25d68ec8d4e 0.7s done
+2026-10-20T20:14:59.2988545Z #6 DONE 1.3s
+2026-10-20T20:14:59.4748692Z 
+2026-10-20T20:14:59.4749496Z #6 [1/7] FROM docker.io/library/node:22.23.3-alpine3.23@sha256:baf676f7d0e552f3231945c2f979055ca121bce128c152f7a34e6bd1728b1c5a
+2026-10-20T20:14:59.4750232Z #6 extracting sha256:ce5317b758bf55618c74f9e1714d7413aab693999ba33f6d91c05135f9a49de1 0.0s done
+2026-10-20T20:14:59.4750836Z #6 extracting sha256:c9c0ca6bfd7d4ff7b4520535fe7f3363a95b75a25eb04eeea6fe4261335131f8 done
+2026-10-20T20:14:59.4751242Z #6 DONE 1.4s
+2026-10-20T20:14:59.4751339Z 
+2026-10-20T20:14:59.4751419Z #8 [2/7] WORKDIR /srv/app
+2026-10-20T20:15:00.1106083Z #8 DONE 0.8s
+2026-10-20T20:15:00.2627438Z 
+2026-10-20T20:15:00.2628202Z #9 [3/7] RUN apk upgrade --no-cache && apk add --no-cache python3 make g++
+2026-10-20T20:15:00.5607064Z #9 0.449 (1/3) Upgrading libcrypto3 (3.5.8-r0 -> 3.5.9-r0)
+2026-10-20T20:15:00.7849120Z #9 0.484 (2/3) Upgrading libssl3 (3.5.8-r0 -> 3.5.9-r0)
+2026-10-20T20:15:00.7849486Z #9 0.503 (3/3) Upgrading zlib (1.3.2-r0 -> 1.3.2-r1)
+2026-10-20T20:15:00.7849801Z #9 0.522 OK: 11.1 MiB in 18 packages
+2026-10-20T20:15:01.0337838Z #9 0.922 ( 1/29) Installing libstdc++-dev (15.2.0-r2)
+2026-10-20T20:15:01.1379592Z #9 1.026 ( 2/29) Installing jansson (2.14.1-r0)
+2026-10-20T20:15:01.2442521Z #9 1.039 ( 3/29) Installing zstd-libs (1.5.7-r2)
+2026-10-20T20:15:01.2442964Z #9 1.054 ( 4/29) Installing binutils (2.45.1-r0)
+2026-10-20T20:15:01.2443251Z #9 1.132 ( 5/29) Installing libgomp (15.2.0-r2)
+2026-10-20T20:15:01.4834931Z #9 1.146 ( 6/29) Installing libatomic (15.2.0-r2)
+2026-10-20T20:15:01.4835456Z #9 1.158 ( 7/29) Installing gmp (6.3.0-r4)
+2026-10-20T20:15:01.4835998Z #9 1.172 ( 8/29) Installing isl26 (0.26-r1)
+2026-10-20T20:15:01.4836413Z #9 1.193 ( 9/29) Installing mpfr4 (4.2.2-r0)
+2026-10-20T20:15:01.4836767Z #9 1.208 (10/29) Installing mpc1 (1.3.1-r1)
+2026-10-20T20:15:01.4837776Z #9 1.221 (11/29) Installing gcc (15.2.0-r2)
+2026-10-20T20:15:01.8749041Z #9 1.763 (12/29) Installing musl-dev (1.2.5-r23)
+2026-10-20T20:15:02.0849945Z #9 1.822 (13/29) Installing g++ (15.2.0-r2)
+2026-10-20T20:15:02.1243193Z #9 2.012 (14/29) Installing make (4.4.1-r3)
+2026-10-20T20:15:02.2288561Z #9 2.026 (15/29) Installing libexpat (2.9.0-r0)
+2026-10-20T20:15:02.2288931Z #9 2.039 (16/29) Installing libbz2 (1.0.8-r6)
+2026-10-20T20:15:02.2289222Z #9 2.052 (17/29) Installing libffi (3.5.2-r0)
+2026-10-20T20:15:02.2289487Z #9 2.064 (18/29) Installing gdbm (1.26-r0)
+2026-10-20T20:15:02.2289750Z #9 2.077 (19/29) Installing xz-libs (5.8.4-r0)
+2026-10-20T20:15:02.2290028Z #9 2.090 (20/29) Installing mpdecimal (4.0.1-r0)
+2026-10-20T20:15:02.2290362Z #9 2.103 (21/29) Installing ncurses-terminfo-base (6.5_p20251123-r0)
+2026-10-20T20:15:02.2290725Z #9 2.117 (22/29) Installing libncursesw (6.5_p20251123-r0)
+2026-10-20T20:15:02.4320095Z #9 2.131 (23/29) Installing libpanelw (6.5_p20251123-r0)
+2026-10-20T20:15:02.4320504Z #9 2.143 (24/29) Installing readline (8.3.1-r0)
+2026-10-20T20:15:02.4320808Z #9 2.158 (25/29) Installing sqlite-libs (3.53.4-r0)
+2026-10-20T20:15:02.4321100Z #9 2.179 (26/29) Installing python3 (3.12.15-r0)
+2026-10-20T20:15:02.4321436Z #9 2.320 (27/29) Installing python3-pycache-pyc0 (3.12.15-r0)
+2026-10-20T20:15:02.6712794Z #9 2.402 (28/29) Installing pyc (3.12.15-r0)
+2026-10-20T20:15:02.6713156Z #9 2.402 (29/29) Installing python3-pyc (3.12.15-r0)
+2026-10-20T20:15:02.6713457Z #9 2.402 Executing busybox-1.37.0-r30.trigger
+2026-10-20T20:15:02.6713728Z #9 2.409 OK: 275.7 MiB in 47 packages
+2026-10-20T20:15:03.8368982Z #9 DONE 3.7s
+2026-10-20T20:15:04.0379749Z 
+2026-10-20T20:15:04.0380217Z #10 [4/7] COPY package*.json ./
+2026-10-20T20:15:04.0380493Z #10 DONE 0.0s
+2026-10-20T20:15:04.0380594Z 
+2026-10-20T20:15:04.0380827Z #11 [5/7] COPY vendor/braces/braces-3.0.4-agi.1.tgz ./vendor/braces/braces-3.0.4-agi.1.tgz
+2026-10-20T20:15:04.0381215Z #11 DONE 0.0s
+2026-10-20T20:15:04.0381319Z 
+2026-10-20T20:15:04.0381664Z #12 [6/7] RUN npm ci --omit=dev     && rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx /root/.npm
+2026-10-20T20:15:06.0392798Z #12 2.152 npm warn skipping integrity check for git dependency ssh://git@github.com/dmarcos/three-bmfont-text.git
+2026-10-20T20:15:07.5894657Z #12 3.702 npm warn deprecated yaeti@0.0.6: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
+2026-10-20T20:15:09.0582804Z #12 5.171 npm warn deprecated phin@3.7.1: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
+2026-10-20T20:15:09.6582909Z #12 5.769 npm warn deprecated mkdirp-promise@5.0.1: This package is broken and no longer maintained. 'mkdirp' itself supports promises now, please switch to that.
+2026-10-20T20:15:09.8523668Z #12 5.964 npm warn deprecated request@2.88.2: request has been deprecated, see https://github.com/request/request/issues/3142
+2026-10-20T20:15:10.0363588Z #12 6.149 npm warn deprecated multiaddr@7.5.0: This module is deprecated, please upgrade to @multiformats/multiaddr
+2026-10-20T20:15:10.2471113Z #12 6.359 npm warn deprecated har-validator@5.1.5: this library is no longer supported
+2026-10-20T20:15:10.4819633Z #12 6.594 npm warn deprecated multibase@0.6.1: This module has been superseded by the multiformats module
+2026-10-20T20:15:10.5942868Z #12 6.707 npm warn deprecated multicodec@0.5.7: This module has been superseded by the multiformats module
+2026-10-20T20:15:15.0247017Z #12 11.14 npm warn deprecated multibase@1.0.1: This module has been superseded by the multiformats module
+2026-10-20T20:15:15.1996463Z #12 11.19 npm warn deprecated multibase@1.0.1: This module has been superseded by the multiformats module
+2026-10-20T20:15:15.1997616Z #12 11.31 npm warn deprecated uuid@3.4.0: Please upgrade  to version 7 or higher.  Older versions may use Math.random() in certain circumstances, which is known to be problematic.  See https://v8.dev/blog/math-random for details.
+2026-10-20T20:15:15.4744335Z #12 11.59 npm warn deprecated multicodec@1.0.4: This module has been superseded by the multiformats module
+2026-10-20T20:15:15.8110452Z #12 11.92 npm warn deprecated multicodec@1.0.4: This module has been superseded by the multiformats module
+2026-10-20T20:15:16.0569696Z #12 12.02 npm warn deprecated multibase@0.7.0: This module has been superseded by the multiformats module
+2026-10-20T20:15:16.0761089Z #12 12.19 npm warn deprecated multibase@0.7.0: This module has been superseded by the multiformats module
+2026-10-20T20:15:17.7980163Z #12 13.91 npm warn deprecated ipfs-core-utils@0.18.1: js-IPFS has been deprecated in favour of Helia - please see https://github.com/ipfs/js-ipfs/issues/4336 for details
+2026-10-20T20:15:18.0190010Z #12 14.13 npm warn deprecated cids@0.7.5: This module has been superseded by the multiformats module
+2026-10-20T20:15:19.5049072Z #12 15.62 npm warn deprecated glob@10.5.0: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+2026-10-20T20:15:19.6612385Z #12 15.62 npm warn deprecated cids@0.8.3: This module has been superseded by the multiformats module
+2026-10-20T20:15:21.1804286Z #12 17.29 npm warn deprecated @pinata/sdk@2.1.0: Please install the new IPFS SDK at pinata-web3. More information at https://docs.pinata.cloud/web3/sdk
+2026-10-20T20:15:21.6331604Z #12 17.75 npm warn deprecated ipfs-core-types@0.14.1: js-IPFS has been deprecated in favour of Helia - please see https://github.com/ipfs/js-ipfs/issues/4336 for details
+2026-10-20T20:15:29.5470866Z #12 25.66 npm warn deprecated ipfs-http-client@60.0.1: js-IPFS has been deprecated in favour of Helia - please see https://github.com/ipfs/js-ipfs/issues/4336 for details
+2026-10-20T20:15:46.3766038Z #12 42.49 npm error code ECONNRESET
+2026-10-20T20:15:46.3766934Z #12 42.49 npm error syscall read
+2026-10-20T20:15:46.5274356Z #12 42.49 npm error errno -104
+2026-10-20T20:15:46.5274680Z #12 42.49 npm error network read ECONNRESET
+2026-10-20T20:15:46.5275048Z #12 42.49 npm error network This is a problem related to network connectivity.
+2026-10-20T20:15:46.5275568Z #12 42.49 npm error network In most cases you are behind a proxy or have bad network settings.
+2026-10-20T20:15:46.5276146Z #12 42.49 npm error network
+2026-10-20T20:15:46.5276467Z #12 42.49 npm error network If you are behind a proxy, please make sure that the
+2026-10-20T20:15:46.5276936Z #12 42.49 npm error network 'proxy' config is set properly.  See: 'npm help config'
+2026-10-20T20:15:46.5277289Z #12 42.49 npm notice
+2026-10-20T20:15:46.5277582Z #12 42.49 npm notice New major version of npm available! 10.9.9 -> 12.2.0
+2026-10-20T20:15:46.5278033Z #12 42.49 npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.0
+2026-10-20T20:15:46.5278450Z #12 42.49 npm notice To update run: npm install -g npm@12.2.0
+2026-10-20T20:15:46.5278734Z #12 42.49 npm notice
+2026-10-20T20:15:46.5279142Z #12 42.49 npm error A complete log of this run can be found in: /root/.npm/_logs/2026-10-20T20_15_04_000Z-debug-0.log
+2026-10-20T20:15:47.0707961Z #12 ERROR: process "/bin/sh -c npm ci --omit=dev     && rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx /root/.npm" did not complete successfully: exit code: 152
+2026-10-20T20:15:47.1268959Z ------
+2026-10-20T20:15:47.1269511Z  > [6/7] RUN npm ci --omit=dev     && rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx /root/.npm:
+2026-10-20T20:15:47.1270143Z 42.49 npm error network In most cases you are behind a proxy or have bad network settings.
+2026-10-20T20:15:47.1270532Z 42.49 npm error network
+2026-10-20T20:15:47.1270833Z 42.49 npm error network If you are behind a proxy, please make sure that the
+2026-10-20T20:15:47.1271290Z 42.49 npm error network 'proxy' config is set properly.  See: 'npm help config'
+2026-10-20T20:15:47.1271638Z 42.49 npm notice
+2026-10-20T20:15:47.1272368Z 42.49 npm notice New major version of npm available! 10.9.9 -> 12.2.0
+2026-10-20T20:15:47.1272838Z 42.49 npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.0
+2026-10-20T20:15:47.1273240Z 42.49 npm notice To update run: npm install -g npm@12.2.0
+2026-10-20T20:15:47.1273724Z 42.49 npm notice
+2026-10-20T20:15:47.1274101Z 42.49 npm error A complete log of this run can be found in: /root/.npm/_logs/2026-10-20T20_15_04_000Z-debug-0.log
+2026-10-20T20:15:47.1274530Z ------
+2026-10-20T20:15:47.1343746Z attester.Dockerfile:6
+2026-10-20T20:15:47.1344371Z --------------------
+2026-10-20T20:15:47.1345087Z    5 |     COPY vendor/braces/braces-3.0.4-agi.1.tgz ./vendor/braces/braces-3.0.4-agi.1.tgz
+2026-10-20T20:15:47.1345956Z    6 | >>> RUN npm ci --omit=dev \
+2026-10-20T20:15:47.1346591Z    7 | >>>     && rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx /root/.npm
+2026-10-20T20:15:47.1347244Z    8 |     COPY deploy/docker/entrypoints/attester.mjs ./entrypoint.mjs
+2026-10-20T20:15:47.1347729Z --------------------
+2026-10-20T20:15:47.1348576Z ERROR: failed to build: failed to solve: process "/bin/sh -c npm ci --omit=dev     && rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx /root/.npm" did not complete successfully: exit code: 152
+2026-10-20T20:15:47.1452128Z ##[group]Reference
+2026-10-20T20:15:47.2408467Z builder-a1240614-c1fb-4c93-b57d-534d96579b4f/builder-a1240614-c1fb-4c93-b57d-534d96579b4f0/vn5ugjd6011pzetej79gb5apc
+2026-10-20T20:15:47.2427720Z ##[endgroup]
+2026-10-20T20:15:47.2428252Z ##[group]Check build summary support
+2026-10-20T20:15:47.2428634Z Build summary supported!
+2026-10-20T20:15:47.2428957Z ##[endgroup]
+2026-10-20T20:15:47.2451674Z ##[error]buildx failed with: ERROR: failed to build: failed to solve: process "/bin/sh -c npm ci --omit=dev     && rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx /root/.npm" did not complete successfully: exit code: 152
+2026-10-20T20:15:47.2659416Z Post job cleanup.
+2026-10-20T20:15:47.5100396Z ##[group]Generating build summary
+2026-10-20T20:15:47.5103786Z exporting build record to /home/runner/work/_temp/docker-actions-toolkit-IR4QFb/export
+2026-10-20T20:15:47.5117888Z (node:3135) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-10-20T20:15:47.5118941Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-10-20T20:15:47.6790735Z [command]/usr/bin/docker buildx history export --builder builder-a1240614-c1fb-4c93-b57d-534d96579b4f --output /home/runner/work/_temp/docker-actions-toolkit-IR4QFb/export/MontrealAI~AGIJobsv0~VN5UGJ.dockerbuild vn5ugjd6011pzetej79gb5apc --finalize
+2026-10-20T20:15:47.8312369Z Build record written to /home/runner/work/_temp/docker-actions-toolkit-IR4QFb/export/MontrealAI~AGIJobsv0~VN5UGJ.dockerbuild (22.02 KB)
+2026-10-20T20:15:47.8338407Z Uploading MontrealAI~AGIJobsv0~VN5UGJ.dockerbuild to blob storage
+2026-10-20T20:15:48.1498263Z Beginning upload of artifact content to blob storage
+2026-10-20T20:15:48.1574291Z (node:3135) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+2026-10-20T20:15:48.1583352Z Uploaded bytes 22547
+2026-10-20T20:15:48.3408490Z Finished uploading artifact content to blob storage!
+2026-10-20T20:15:48.3412291Z SHA256 hash of uploaded artifact is b840faf9983094012afd5857a1436665731ec30b686a357f79e0c4db8f57eb5a
+2026-10-20T20:15:48.3413366Z Finalizing artifact upload
+2026-10-20T20:15:48.7011029Z Artifact successfully finalized (12295481058)
+2026-10-20T20:15:48.7012371Z Artifact download URL: https://github.com/MontrealAI/AGIJobsv0/actions/runs/39489448707/artifacts/12295481058
+2026-10-20T20:15:48.7039335Z Writing summary
+2026-10-20T20:15:48.7051306Z ##[endgroup]
+2026-10-20T20:15:48.7051842Z ##[group]Removing temp folder /home/runner/work/_temp/docker-actions-toolkit-pxRkE0
+2026-10-20T20:15:48.7053410Z ##[endgroup]
+2026-10-20T20:15:48.7053751Z ##[group]Post cache
+2026-10-20T20:15:48.7054922Z State not set
+2026-10-20T20:15:48.7055364Z ##[endgroup]
+2026-10-20T20:15:48.7250905Z Post job cleanup.
+2026-10-20T20:15:48.9708394Z ##[group]Removing builder
+2026-10-20T20:15:48.9712657Z (node:3276) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-10-20T20:15:48.9713296Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-10-20T20:15:49.0657306Z [command]/usr/bin/docker buildx rm builder-a1240614-c1fb-4c93-b57d-534d96579b4f
+2026-10-20T20:15:52.2484835Z builder-a1240614-c1fb-4c93-b57d-534d96579b4f removed
+2026-10-20T20:15:52.2532516Z ##[endgroup]
+2026-10-20T20:15:52.2533054Z ##[group]Cleaning up certificates
+2026-10-20T20:15:52.2534214Z ##[endgroup]
+2026-10-20T20:15:52.2535067Z ##[group]Post cache
+2026-10-20T20:15:52.2537325Z State not set
+2026-10-20T20:15:52.2537821Z ##[endgroup]
+2026-10-20T20:15:52.2745158Z Post job cleanup.
+2026-10-20T20:15:52.3498941Z [command]/usr/bin/git version
+2026-10-20T20:15:52.3540811Z git version 2.55.0
+2026-10-20T20:15:52.3582599Z Temporarily overriding HOME='/home/runner/work/_temp/1a793707-84bc-450a-bccb-1c94e925921a' before making global git config changes
+2026-10-20T20:15:52.3583521Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-20T20:15:52.3587898Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/AGIJobsv0/AGIJobsv0
+2026-10-20T20:15:52.3634145Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-20T20:15:52.3668744Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-20T20:15:52.3921998Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-20T20:15:52.3947016Z http.https://github.com/.extraheader
+2026-10-20T20:15:52.3952396Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-10-20T20:15:52.3992010Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-20T20:15:52.4381784Z Cleaning up orphan processes
+2026-10-20T20:15:52.4705175Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955, docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83, docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/

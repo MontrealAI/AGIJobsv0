@@ -1,0 +1,17 @@
+{
+  "asOf": "2026-10-20T20:28:07.604Z",
+  "source": "604d10094f3b7fede53406ae0e40f9f489155a3b",
+  "tree": "d12a01aeb823ba667ba5e6d15df2c9cfa633d674",
+  "run": 39489448707,
+  "attempt": 1,
+  "failedJob": 118858379647,
+  "name": "native (validator-runner, arm64)",
+  "failure": "npm ci --omit=dev inside existing Docker build failed with read ECONNRESET before runtime checks",
+  "evidence": {
+    "bytes": 56007,
+    "gitBlob": "4f33f7c210b845bfb3445fc27cbdb0d435297215",
+    "sha256": "408e9feb9663a386803c5f2d55f51cebd7515f6a6652eb2ec46b18e49c5166fc"
+  },
+  "disposition": "Unqualified; preserve failure. Eligible for one targeted original-job retry after fresh branch/run preflight; do not alter source/checks or ignore failure.",
+  "retryIssued": false
+}
