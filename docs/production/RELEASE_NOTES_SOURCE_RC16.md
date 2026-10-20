@@ -97,8 +97,8 @@ checks, blocking any present failed or pending authentic CodeQL result while
 preserving main pushes that do not create this separate service check.
 
 The qualified producer retains its own source SHA/tree, compiler producer
-identity, provenance and downloaded artifact checksums. The 18 release assets
-comprise 17 checksummed payloads plus `SHA256SUMS.txt`, including this source
+identity, provenance and downloaded artifact checksums. The 24 release assets
+comprise 23 checksummed payloads plus `SHA256SUMS.txt`, including this source
 archive and these rc.16 notes. Historical source releases and their tags,
 notes, checksums and deployment records remain immutable. A qualified source
 prerelease is unsigned source/evidence publication, not a signed production
