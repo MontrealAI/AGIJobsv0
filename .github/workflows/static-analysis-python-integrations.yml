@@ -6,6 +6,7 @@ on:
     branches:
       - main
       - 'fix/inherited-codeql-*'
+      - 'fix/processed-codeql-release-proof-20261020'
   schedule:
     - cron: '30 2 * * *'
 
@@ -107,6 +108,7 @@ jobs:
           config-file: .github/codeql/config-python-integrations.yml
 
       - name: Perform Python CodeQL analysis
+        id: codeql_analyze
         uses: github/codeql-action/analyze@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
         with:
           output: reports/security/codeql-python
@@ -162,4 +164,19 @@ jobs:
             reports/security/codeql-python/source-scope-before.json
             reports/security/codeql-python/source-scope-after.json
             reports/security/codeql-python/source-extraction.json
+          if-no-files-found: error
+
+      - name: Retain exact processed CodeQL service receipt
+        if: ${{ success() && github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'MontrealAI/AGIJobsv0' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SARIF_UPLOAD_ID: ${{ steps.codeql_analyze.outputs.sarif-id }}
+        run: node scripts/release/source-codeql-service-rc16.cjs --capture --language python --output reports/security/codeql-service-python/codeql-service-receipt.json
+
+      - name: Upload exact processed CodeQL service receipt
+        if: ${{ success() && github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'MontrealAI/AGIJobsv0' }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: codeql-service-receipt-python-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: reports/security/codeql-service-python/codeql-service-receipt.json
           if-no-files-found: error

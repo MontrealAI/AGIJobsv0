@@ -6,6 +6,7 @@ on:
     branches:
       - main
       - 'fix/inherited-codeql-*'
+      - 'fix/processed-codeql-release-proof-20261020'
   schedule:
     - cron: '30 2 * * *'
 
@@ -200,7 +201,7 @@ jobs:
           assert(integration.every(file => admitted(file, expanded)), 'Integration closure is excluded');
           const browser = ['computer-receipt.mjs','computer-receipt-model.mjs','computer-receipt-copy.mjs','computer-desk.mjs','computer-desk-runtime-source.mjs','computer-mission.js','computer-mission-copy.mjs'].map(file => 'website/assets/' + file);
           assert(browser.every(file => admitted(file, expanded)), 'Native browser closure is excluded');
-          const analysis = ["scripts/pages/build.mjs","scripts/release/qualify-source-release-rc16.cjs","scripts/release/publish-source-release-rc16.cjs","scripts/release/source-profile-rc16.cjs","scripts/release/source-native-gates-rc16.cjs","scripts/release/source-native-evidence-rc16.cjs","scripts/release/verify-transformational-compatibility.mjs","scripts/release/source-scanner-gates-rc16.cjs","scripts/release/python-scanner-rc16.cjs","scripts/pages/computer-receipt.mjs","scripts/release/source-scanner-review-bindings-rc16.cjs","scripts/release/source-python-evidence-rc16.cjs"];
+          const analysis = ["scripts/pages/build.mjs","scripts/release/qualify-source-release-rc16.cjs","scripts/release/publish-source-release-rc16.cjs","scripts/release/source-profile-rc16.cjs","scripts/release/source-native-gates-rc16.cjs","scripts/release/source-native-evidence-rc16.cjs","scripts/release/verify-transformational-compatibility.mjs","scripts/release/source-scanner-gates-rc16.cjs","scripts/release/python-scanner-rc16.cjs","scripts/pages/computer-receipt.mjs","scripts/release/source-scanner-review-bindings-rc16.cjs","scripts/release/source-python-evidence-rc16.cjs","scripts/release/source-codeql-service-rc16.cjs"];
           assert(analysis.every(file => admitted(file, expanded)), 'Release and page analysis closure is excluded');
           const requiredClosure = [...integration, ...browser, ...analysis];
           assert(requiredClosure.every(file => files.includes(file)), 'Required receiver/release source is absent from the immutable tree');
@@ -224,6 +225,7 @@ jobs:
           build-mode: none
 
       - name: Perform CodeQL analysis
+        id: codeql_analyze
         uses: github/codeql-action/analyze@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
         with:
           output: reports/security/codeql
@@ -268,3 +270,18 @@ jobs:
           name: codeql-security-report-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: reports/security/codeql
           if-no-files-found: warn
+
+      - name: Retain exact processed CodeQL service receipt
+        if: ${{ success() && github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'MontrealAI/AGIJobsv0' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SARIF_UPLOAD_ID: ${{ steps.codeql_analyze.outputs.sarif-id }}
+        run: node scripts/release/source-codeql-service-rc16.cjs --capture --language javascript --output reports/security/codeql-service-javascript/codeql-service-receipt.json
+
+      - name: Upload exact processed CodeQL service receipt
+        if: ${{ success() && github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'MontrealAI/AGIJobsv0' }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: codeql-service-receipt-javascript-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: reports/security/codeql-service-javascript/codeql-service-receipt.json
+          if-no-files-found: error
