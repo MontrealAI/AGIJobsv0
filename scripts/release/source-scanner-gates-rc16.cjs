@@ -328,6 +328,51 @@ function reindexScannerRun(source, reference) {
   };
   rejectPointers(source);
   rejectPointers(reference);
+  // Preserve only the exact index-free annotation observed in genuine CodeQL
+  // thread-flow steps. This is opaque metadata, not taxonomy resolution.
+  const validateFlowAnnotations = (run) => {
+    const owners = new WeakSet();
+    for (const result of array(run.results, 'results'))
+      for (const flow of array(object(result, 'result').codeFlows, 'code flows'))
+        for (const thread of array(object(flow, 'code flow').threadFlows, 'thread flows'))
+          for (const step of array(object(thread, 'thread flow').locations, 'thread-flow locations'))
+            owners.add(object(step, 'thread-flow location'));
+    const visit = (value) => {
+      if (!value || typeof value !== 'object') return;
+      if (Array.isArray(value)) { value.forEach(visit); return; }
+      for (const [key, item] of Object.entries(value)) {
+        if (key === 'taxa') {
+          const entries = array(item, 'taxa');
+          if (entries.length) {
+            assert(
+              owners.has(value) && entries.length === 1,
+              'Unsupported scanner taxa context or multiplicity'
+            );
+            const annotation = entries[0];
+            exactFields(
+              annotation, ['id', 'properties'],
+              'Unsupported CodeQL flow annotation fields'
+            );
+            assert.equal(annotation.id, 'Config', 'Unsupported CodeQL flow annotation ID');
+            exactFields(
+              annotation.properties, ['CodeQL/DataflowRole'],
+              'Unsupported CodeQL flow annotation properties'
+            );
+            assert.equal(
+              annotation.properties['CodeQL/DataflowRole'], 'step',
+              'Unsupported CodeQL flow annotation role'
+            );
+          }
+        }
+        // Include every property bag in admission even though the later
+        // reference locator admits only the separate metric extension there.
+        visit(item);
+      }
+    };
+    visit(run);
+  };
+  validateFlowAnnotations(source);
+  validateFlowAnnotations(reference);
   const tool = scannerToolReferenceMap(
     object(source.tool, 'tool'),
     object(reference.tool, 'reference tool')
@@ -502,7 +547,6 @@ function reindexScannerRun(source, reference) {
     for (const [key, item] of Object.entries(value)) {
       if (key === 'properties') continue;
       if (key === 'artifactLocation' || key === 'analysisTarget') location(item);
-      if (key === 'taxa') empty(item, 'result or thread-flow taxa');
       locate(item);
     }
   };

@@ -1478,3 +1478,55 @@ test('reference transport rejects record changes, ambiguous tables and unsupport
   reversed.tool.driver.rules.reverse();
   assert.throws(() => transportScannerRun(reversed, duplicate));
 });
+
+test('reference transport preserves the exact index-free CodeQL flow annotation', () => {
+  const { transportScannerRun } =
+    require('../../scripts/release/source-scanner-gates-rc16.cjs');
+  const reference = referenceTransportMetadataOnly();
+  reference.results[0].codeFlows[0].threadFlows[0].locations[0].taxa = [
+    { id: 'Config', properties: { 'CodeQL/DataflowRole': 'step' } },
+  ];
+  const actual = permutedReferenceMetadataOnly(reference);
+  const before = structuredClone([actual, reference]);
+  const comparison = transportScannerRun(actual, reference);
+  assert.deepEqual(comparison.run, reference);
+  assert.deepEqual([actual, reference], before);
+  assert.equal(comparison.witness.inverseReconstructsEntireOriginalRun, true);
+  assert.deepEqual(comparison.witness.transportedResultHashes,
+    [resultIdentity(reference.results[0]).resultSha256]);
+});
+test('flow annotation admission is exact and checks both originals including property bags', () => {
+  const { transportScannerRun } =
+    require('../../scripts/release/source-scanner-gates-rc16.cjs');
+  const annotation = () => [{ id: 'Config', properties: { 'CodeQL/DataflowRole': 'step' } }];
+  for (const change of [
+    (value) => { value[0].id = 'metadata/other'; },
+    (value) => { value[0].index = 0; },
+    (value) => { value[0].toolComponent = { index: 0 }; },
+    (value) => { value[0].properties['CodeQL/DataflowRole'] = 'metadata/other'; },
+    (value) => { value[0].properties.extra = 'metadata-only'; },
+    (value) => { value.push(structuredClone(value[0])); },
+  ]) {
+    for (const selected of ['actual', 'reference']) {
+      const reference = referenceTransportMetadataOnly();
+      const actual = permutedReferenceMetadataOnly(reference);
+      const target = selected === 'actual' ? actual : reference;
+      const value = annotation();
+      change(value);
+      target.results[0].codeFlows[0].threadFlows[0].locations[0].taxa = value;
+      assert.throws(() => transportScannerRun(actual, reference));
+    }
+  }
+  for (const selected of ['actual', 'reference']) {
+    for (const inProperties of [false, true]) {
+      const reference = referenceTransportMetadataOnly();
+      const actual = permutedReferenceMetadataOnly(reference);
+      const target = selected === 'actual' ? actual : reference;
+      const owner = inProperties
+        ? (target.results[0].properties = {})
+        : target.results[0];
+      owner.taxa = annotation();
+      assert.throws(() => transportScannerRun(actual, reference));
+    }
+  }
+});
