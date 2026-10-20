@@ -27,6 +27,7 @@ const {
 } = require('../../scripts/release/publish-source-release-rc16.cjs');
 const {
   profile,
+  parseTree,
   validatePreparedProfile,
 } = require('../../scripts/release/source-profile-rc16.cjs');
 // Pending-only behavior uses copied metadata and unmodified production guards.
@@ -575,10 +576,11 @@ test('retained readback cannot relabel another successful same-SHA run or attemp
 });
 test('rc.16 owns only its new tag/routes/assets and remains blocked pending actual security review', (t) => {
   const names = expectedAssets(profile.tag);
-  assert.equal(new Set(names).size, 24);
+  assert.equal(new Set(names).size, 25);
   for (const name of [
     'codeql-evidence.zip',
     'codeql-provenance.json',
+    'codeql-service-evidence.json',
     'native-compatibility.zip',
     'native-provenance.json',
     'source-profile-rc16.json',
@@ -650,19 +652,28 @@ test('mandatory scanner manifest is derived from actual pinned receiver Git sour
     git,
     git('rev-parse', 'HEAD').trim()
   );
-  const prior = expectedReceiverSources(
-    git,
-    '5db66e4788afd6edf1b44f32578b89f2bf1ab67c'
+  const priorSource = '5db66e4788afd6edf1b44f32578b89f2bf1ab67c';
+  const priorProfile = JSON.parse(
+    git('show', priorSource + ':scripts/release/source-profile-rc16.json')
   );
+  // Apply the unchanged manifest algorithm to the actual historical policy.
+  // Current sources still require both new helpers through the production call.
+  const priorManifest = require('node:vm').runInNewContext(
+    '(' + expectedReceiverSources.toString() + ')',
+    { profile: priorProfile, parseTree, assert }
+  );
+  const prior = [...priorManifest(git, priorSource)];
   assert.equal(prior.length, 86);
   assert.deepEqual(
     required,
     [
       ...prior,
       'integrations/alpha-agent/tests/transformational-compatibility.test.mjs',
+      'scripts/release/emit-codeql-review-rc16.cjs',
+      'scripts/release/source-codeql-service-rc16.cjs',
     ].sort()
   );
-  assert.equal(required.length, 87);
+  assert.equal(required.length, 89);
   assert(profile.scannerReceiverPaths.every((file) => required.includes(file)));
   assert.equal(new Set(required).size, required.length);
 });

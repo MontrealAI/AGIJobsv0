@@ -623,13 +623,13 @@ function assetFixture(t) {
 }
 test('compiler and evidence assets must match the complete checksum inventory and producer', (t) => {
   const fixture = assetFixture(t);
-  assert.equal(expectedAssets(tag).length, 24);
+  assert.equal(expectedAssets(tag).length, 25);
   assert.equal(
     fs
       .readFileSync(path.join(fixture.downloaded, 'SHA256SUMS.txt'), 'utf8')
       .trim()
       .split('\n').length,
-    23
+    24
   );
   fixture.verify();
   fs.appendFileSync(
@@ -1058,6 +1058,7 @@ test('workflow packages every declared immutable release asset', () => {
         'codeql-evidence.zip',
         'codeql-reviewed-evidence.zip',
         'codeql-provenance.json',
+        'codeql-service-evidence.json',
         'python-codeql-evidence.zip',
         'python-codeql-reviewed-evidence.zip',
         'python-codeql-provenance.json',
@@ -1688,7 +1689,7 @@ test('rc.15 identifies computer-use evidence limits and preserves the exact-sour
   assert.match(notes, /all 15 required workflow paths/);
   assert.match(notes, /14 checksummed payloads/);
   assert.match(notes, /No fixture-proof asset is added/);
-  assert.equal(expectedAssets(tag).length, 24);
+  assert.equal(expectedAssets(tag).length, 25);
 });
 
 test('rc.16 preserves rc.15 notes and states exact computer evidence, settlement and gate boundaries', () => {
@@ -1720,7 +1721,7 @@ test('rc.16 preserves rc.15 notes and states exact computer evidence, settlement
     'ENS configuration',
   ])
     assert.ok(notes.toLowerCase().includes(required.toLowerCase()), required);
-  assert.equal(expectedAssets(tag).length, 24);
+  assert.equal(expectedAssets(tag).length, 25);
   assert.ok(expectedAssets(tag).includes('RELEASE_NOTES_SOURCE_RC16.md'));
   assert.ok(!expectedAssets(tag).includes('RELEASE_NOTES_SOURCE_RC15.md'));
 });
@@ -2299,6 +2300,7 @@ test('publisher authenticates retained local evidence before any tag, draft, upl
         const calls = [];
         const directory = path.resolve('reports/source-release-rc16');
         const marker = 'INERT_LOCAL_' + refusal.toUpperCase() + '_REFUSAL';
+        const inertService = Object.freeze({ inertOrchestrationOnly: true });
         const metadata = {
           'compiler-provenance.json': {
             artifactId: 1,
@@ -2374,7 +2376,21 @@ test('publisher authenticates retained local evidence before any tag, draft, upl
               .producerId,
           readReviewedCodeql: async () => ({}),
           readLatestCodeql: async () => [],
+          historicalReviewedCodeql,
           readScannerObservation: async () => ({}),
+          // These inert adapters only reach the existing refusing verifier.
+          // They supply no authenticated service proof or publication approval.
+          readCodeqlServiceAsset: () => inertService,
+          serviceEvidence: {
+            observeFinalServices: async () => {
+              calls.push('inert service observation');
+              return inertService;
+            },
+            assertFinalServices: (value) => {
+              assert.equal(value, inertService);
+              calls.push('inert service assertion');
+            },
+          },
           require: (name) => {
             assert.equal(name, './source-python-evidence-rc16.cjs');
             return { readPythonScannerObservation: async () => ({}) };
@@ -2403,6 +2419,11 @@ test('publisher authenticates retained local evidence before any tag, draft, upl
           calls.includes('full local evidence verifier'),
           refusal === 'verifier'
         );
+        for (const step of [
+          'inert service observation',
+          'inert service assertion',
+        ])
+          assert.equal(calls.includes(step), refusal === 'verifier');
         for (const effect of [
           'publication effect',
           'gh effect',
@@ -2449,7 +2470,7 @@ test('inert JavaScript observation binds the artifact branch for reviewed S1 and
       fixture.artifact.workflow_run.head_branch = branch;
       await assert.rejects(
         readScannerObservation(fixture.api, fixture.producer, sha, true),
-        /Final scanner producer must be a main push/
+        /Scanner producer differs from its exact finite source role/
       );
     }
   }
