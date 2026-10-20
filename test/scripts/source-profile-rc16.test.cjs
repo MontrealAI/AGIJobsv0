@@ -281,7 +281,7 @@ test('complete source verifier accepts only finite release plumbing over the act
   assert.equal(result.scannerReview, null);
   assert.equal(result.pythonScannerReview, null);
   assert.deepEqual(result.pythonScannerPolicy, p.profile.pythonScannerPolicy);
-  assert.equal(result.scannerRequiredPaths.length, 26);
+  assert.equal(result.scannerRequiredPaths.length, 28);
   assert.equal(result.scannerReceiverPaths.length, 14);
   assert.equal(result.pythonScannerRequiredPaths.length, 8);
   assert.equal(result.protectedTransitions.length, 18);
@@ -606,7 +606,7 @@ test('profile baseline, source pins and pending scanner boundary cannot silently
   );
 });
 
-test('Python producer paths and policy retain the exact independent owner contract', () => {
+test('Python producer retains original owner bytes plus exact service evidence additions', () => {
   const owner = JSON.parse(
     command(ROOT, [
       'show',
@@ -638,7 +638,36 @@ test('Python producer paths and policy retain the exact independent owner contra
     'show',
     `${formattedProducer}:${policy.workflowPath}`,
   ]);
-  let normalizedWorkflow = formattedWorkflow;
+  // Normalize only the exact additive service-receipt steps, analyze output ID
+  // and approved new push branch before checking the original owner bytes.
+  const reviewSuffix = "\n  codeql-review-bytes:\n    name: Complete Python CodeQL review bytes\n    needs: codeql-python\n    if: ${{ success() && github.event_name == 'push' && github.ref == 'refs/heads/fix/processed-codeql-release-proof-20261020' && github.repository == 'MontrealAI/AGIJobsv0' }}\n    runs-on: ubuntu-24.04\n    timeout-minutes: 10\n    permissions:\n      contents: read\n      actions: read\n    steps:\n      - name: Harden runner\n        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a\n        with:\n          egress-policy: audit\n      - name: Checkout exact review source\n        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955\n        with:\n          fetch-depth: 1\n          persist-credentials: false\n      - name: Setup Node\n        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020\n        with:\n          node-version-file: '.nvmrc'\n      - name: Retain complete original CodeQL review bytes\n        env:\n          GH_TOKEN: ${{ github.token }}\n          CODEQL_REVIEW_ARTIFACT_ID: ${{ needs.codeql-python.outputs.raw_artifact_id }}\n        run: node scripts/release/emit-codeql-review-rc16.cjs --language python\n";
+  assert.ok(formattedWorkflow.endsWith(reviewSuffix));
+  let withoutReviewJob = formattedWorkflow.slice(0, -reviewSuffix.length);
+  for (const addition of [
+    "    outputs:\n      raw_artifact_id: ${{ steps.codeql_raw.outputs.artifact-id }}\n",
+    "        id: codeql_raw\n",
+  ]) {
+    assert.equal(withoutReviewJob.split(addition).length, 2);
+    withoutReviewJob = withoutReviewJob.replace(addition, '');
+  }
+  const serviceSuffix = "\n      - name: Retain exact processed CodeQL service receipt\n        if: ${{ success() && github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'MontrealAI/AGIJobsv0' }}\n        env:\n          GH_TOKEN: ${{ github.token }}\n          SARIF_UPLOAD_ID: ${{ steps.codeql_analyze.outputs.sarif-id }}\n        run: node scripts/release/source-codeql-service-rc16.cjs --capture --language python --output reports/security/codeql-service-python/codeql-service-receipt.json\n\n      - name: Upload exact processed CodeQL service receipt\n        if: ${{ success() && github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'MontrealAI/AGIJobsv0' }}\n        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02\n        with:\n          name: codeql-service-receipt-python-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}\n          path: reports/security/codeql-service-python/codeql-service-receipt.json\n          if-no-files-found: error\n";
+  assert.ok(withoutReviewJob.endsWith(serviceSuffix));
+  let retainedOriginal = withoutReviewJob.slice(0, -serviceSuffix.length);
+  for (const addition of [
+    "        id: codeql_analyze\n",
+    "      - 'fix/processed-codeql-release-proof-20261020'\n",
+  ]) {
+    assert.equal(retainedOriginal.split(addition).length, 2);
+    retainedOriginal = retainedOriginal.replace(addition, '');
+  }
+  assert.equal(
+    retainedOriginal,
+    command(ROOT, [
+      'show',
+      '7d7a2c19072c211282a9b18b6dc71a85ee1d8abe:' + policy.workflowPath,
+    ])
+  );
+  let normalizedWorkflow = retainedOriginal;
   for (const [formatted, original] of [
     [
       "      - 'fix/inherited-codeql-*'\n",
@@ -686,8 +715,8 @@ test('Python producer paths and policy retain the exact independent owner contra
     reviewSchema: 'agijobsv0/codeql-python-review/2',
     reviewedProducer: {
       event: 'push',
-      headBranch: 'fix/inherited-codeql-ti-final-rc16-20261019',
-      ref: 'refs/heads/fix/inherited-codeql-ti-final-rc16-20261019',
+      headBranch: 'fix/processed-codeql-release-proof-20261020',
+      ref: 'refs/heads/fix/processed-codeql-release-proof-20261020',
     },
     producerCommit: formattedProducer,
     producerTree: actualTree,
@@ -704,8 +733,9 @@ test('Python producer paths and policy retain the exact independent owner contra
     owner.pythonScannerRequiredPaths
   );
   assert.equal(pendingProfileFixture().pythonScannerReview, null);
-  assert.equal(p.allowedNewPaths.length, 25);
+  assert.equal(p.allowedNewPaths.length, 29);
   for (const name of [
+    'scripts/release/emit-codeql-review-rc16.cjs',
     'scripts/release/python-scanner-rc16.cjs',
     'test/scripts/source-python-scanner-rc16.test.cjs',
     '.github/codeql/config-python-integrations.yml',
@@ -860,8 +890,8 @@ function inertProfileReviews(sourceCommit, tree) {
   assert.equal(policy.reviewSchema, 'agijobsv0/codeql-python-review/2');
   assert.deepEqual(policy.reviewedProducer, {
     event: 'push',
-    headBranch: 'fix/inherited-codeql-ti-final-rc16-20261019',
-    ref: 'refs/heads/fix/inherited-codeql-ti-final-rc16-20261019',
+    headBranch: 'fix/processed-codeql-release-proof-20261020',
+    ref: 'refs/heads/fix/processed-codeql-release-proof-20261020',
   });
   return {
     notesReview: {

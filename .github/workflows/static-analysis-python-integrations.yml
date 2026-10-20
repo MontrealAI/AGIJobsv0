@@ -6,6 +6,7 @@ on:
     branches:
       - main
       - 'fix/inherited-codeql-*'
+      - 'fix/processed-codeql-release-proof-20261020'
   schedule:
     - cron: '30 2 * * *'
 
@@ -20,6 +21,8 @@ concurrency:
 
 jobs:
   codeql-python:
+    outputs:
+      raw_artifact_id: ${{ steps.codeql_raw.outputs.artifact-id }}
     name: Python integration CodeQL analysis
     runs-on: ubuntu-24.04
     timeout-minutes: 90
@@ -107,6 +110,7 @@ jobs:
           config-file: .github/codeql/config-python-integrations.yml
 
       - name: Perform Python CodeQL analysis
+        id: codeql_analyze
         uses: github/codeql-action/analyze@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
         with:
           output: reports/security/codeql-python
@@ -153,6 +157,7 @@ jobs:
           NODE
 
       - name: Upload Python CodeQL artefacts
+        id: codeql_raw
         if: ${{ always() }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
@@ -163,3 +168,47 @@ jobs:
             reports/security/codeql-python/source-scope-after.json
             reports/security/codeql-python/source-extraction.json
           if-no-files-found: error
+
+      - name: Retain exact processed CodeQL service receipt
+        if: ${{ success() && github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'MontrealAI/AGIJobsv0' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SARIF_UPLOAD_ID: ${{ steps.codeql_analyze.outputs.sarif-id }}
+        run: node scripts/release/source-codeql-service-rc16.cjs --capture --language python --output reports/security/codeql-service-python/codeql-service-receipt.json
+
+      - name: Upload exact processed CodeQL service receipt
+        if: ${{ success() && github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'MontrealAI/AGIJobsv0' }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: codeql-service-receipt-python-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: reports/security/codeql-service-python/codeql-service-receipt.json
+          if-no-files-found: error
+
+  codeql-review-bytes:
+    name: Complete Python CodeQL review bytes
+    needs: codeql-python
+    if: ${{ success() && github.event_name == 'push' && github.ref == 'refs/heads/fix/processed-codeql-release-proof-20261020' && github.repository == 'MontrealAI/AGIJobsv0' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+        with:
+          egress-policy: audit
+      - name: Checkout exact review source
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: '.nvmrc'
+      - name: Retain complete original CodeQL review bytes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CODEQL_REVIEW_ARTIFACT_ID: ${{ needs.codeql-python.outputs.raw_artifact_id }}
+        run: node scripts/release/emit-codeql-review-rc16.cjs --language python

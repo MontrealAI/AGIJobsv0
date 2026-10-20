@@ -5,7 +5,7 @@
 const assert = require('node:assert/strict');
 const { createHash } = require('node:crypto');
 const integrationTransitionsSha256 =
-  '2c2787ce6d6cb749e893afc734b861d001aaaa819dff7c2ae5a6311b9bc92043';
+  '1363ebe715ffc6405f70261924ff41313073f72dd0d03bd68440235cac78af02';
 const historical = require('./qualify-source-release.cjs');
 
 function freeze(value) {
@@ -29,10 +29,14 @@ const anchors = Object.freeze({
   nativePinTree: 'b279cfcbd53c814db48bb4ab997199ea7ca9269c',
   sourceConvergenceBaseline: '0b6d175a4ec8abf5b899e4a1b58a09e7045fe158',
   sourceConvergenceTree: '9e8dff3e0863afa73e04757f77ca2bcb8c01dca2',
-  pythonScannerBaseline: '5b5f55322d7e2b6e026b51d9659431eed327b4f4',
-  pythonScannerTree: 'dd4bfca4a1e5b08dc868e3e47bcab0598d7102b8',
+  pythonScannerBaseline: 'cb30d7453b36eaca040c139e06fd9668b300c5f4',
+  pythonScannerTree: '19d86f484ed11de23bb54d11b193ea868d2de88e',
 });
 const allowedNewPaths = Object.freeze([
+  'scripts/release/emit-codeql-review-rc16.cjs',
+  'scripts/release/source-codeql-service-rc16.cjs',
+  'test/scripts/source-codeql-service-rc16.test.cjs',
+  'test/scripts/source-codeql-service-fixture-rc16.cjs',
   'scripts/release/source-profile-rc16.cjs',
   'scripts/release/source-profile-rc16.json',
   'scripts/release/qualify-source-release-rc16.cjs',
@@ -107,13 +111,18 @@ const nativeCompatibility = freeze({
   },
 });
 const scannerPolicy = freeze({
+  reviewedProducer: {
+    event: 'push',
+    headBranch: 'fix/processed-codeql-release-proof-20261020',
+    ref: 'refs/heads/fix/processed-codeql-release-proof-20261020',
+  },
   qualityReview: {
     schema: 'agijobsv0/nonsecurity-quality-review/1',
     disposition: 'Acknowledged nonsecurity quality',
     ruleIds: ['js/unused-local-variable', 'js/useless-assignment-to-local'],
   },
-  producerCommit: '5b5f55322d7e2b6e026b51d9659431eed327b4f4',
-  producerTree: 'dd4bfca4a1e5b08dc868e3e47bcab0598d7102b8',
+  producerCommit: 'cb30d7453b36eaca040c139e06fd9668b300c5f4',
+  producerTree: '19d86f484ed11de23bb54d11b193ea868d2de88e',
   historicalConfigPath: '.github/codeql/config.yml',
   historicalConfigSha256:
     '4b34450e1dcc0b489feea158d642a6b66261d9e935463928782219c8716c0892',
@@ -123,8 +132,8 @@ const scannerPolicy = freeze({
   configBlob: '4533ce4d7f681a6230399e25fb1d1f736c84b25b',
   workflowPath: '.github/workflows/static-analysis.yml',
   workflowSha256:
-    'c260479d7a7ffea7d981dd3912e91a6871457b5d22b3ca8260b5903f3d8a4a47',
-  workflowBlob: '092cc25629d783a7e4cb683ee030b5c4c626bd3b',
+    '8b577905c4b4e2a173180a8883262869de7e5f9861a7dd6d1f36e316519e60ce',
+  workflowBlob: 'da884644bf8b483c5ab6a643ce491c40b87898f6',
   archiveFiles: [
     'javascript.sarif',
     'source-extraction.json',
@@ -149,6 +158,8 @@ const scannerReceiverPaths = Object.freeze([
   'website/assets/computer-mission-copy.mjs',
 ]);
 const scannerRequiredPaths = Object.freeze([
+  'scripts/release/emit-codeql-review-rc16.cjs',
+  'scripts/release/source-codeql-service-rc16.cjs',
   'integrations/alpha-agent/four-repo-computer-lifecycle.cjs',
   'integrations/alpha-agent/four-repo-computer-receipt.mjs',
   'integrations/alpha-agent/pinned-alpha-checkout.cjs',
@@ -180,19 +191,19 @@ const pythonScannerPolicy = freeze({
   reviewSchema: 'agijobsv0/codeql-python-review/2',
   reviewedProducer: {
     event: 'push',
-    headBranch: 'fix/inherited-codeql-ti-final-rc16-20261019',
-    ref: 'refs/heads/fix/inherited-codeql-ti-final-rc16-20261019',
+    headBranch: 'fix/processed-codeql-release-proof-20261020',
+    ref: 'refs/heads/fix/processed-codeql-release-proof-20261020',
   },
-  producerCommit: '5b5f55322d7e2b6e026b51d9659431eed327b4f4',
-  producerTree: 'dd4bfca4a1e5b08dc868e3e47bcab0598d7102b8',
+  producerCommit: 'cb30d7453b36eaca040c139e06fd9668b300c5f4',
+  producerTree: '19d86f484ed11de23bb54d11b193ea868d2de88e',
   configPath: '.github/codeql/config-python-integrations.yml',
   configSha256:
     'eb5b425facefb419987bf537280d5144a477b65a205ccd71df3866b60b01e560',
   configBlob: 'cdd0d5a0a1a0e691c3367bc5ce4429215f41381d',
   workflowPath: '.github/workflows/static-analysis-python-integrations.yml',
   workflowSha256:
-    '06cb537c0a1502132c600bdd158284c51bb7c9296a11f831cd929ed2662eb5a5',
-  workflowBlob: 'fcec3ad137968eb75f86049ebea79543c3f314fc',
+    '5b08a73d05cea31c09e8bf23a34b742c2fd85a47b7fbea52a94f70fd9c3ce077',
+  workflowBlob: '0d1220ce9b561ae8feeee9e47bb6a0ff4226c3c0',
   archiveFiles: [
     'python.sarif',
     'source-extraction.json',

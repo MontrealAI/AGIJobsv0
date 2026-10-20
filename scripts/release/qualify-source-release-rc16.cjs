@@ -32,6 +32,7 @@ const gitSource = (...args) =>
   );
 const ownPath = '.github/workflows/source-release-rc16.yml';
 const nativeGate = require('./source-native-gates-rc16.cjs');
+const serviceEvidence = require('./source-codeql-service-rc16.cjs');
 const {
   profile,
   verifySourceScope: verifySourceProfile,
@@ -257,6 +258,14 @@ const compilerSourceBaseline =
   scannerReview?.sourceSha || 'REVIEW_REQUIRED_FOR_RC16';
 function verifyScannerReviewSource({ git, sha, review = scannerReview }) {
   if (!review) throw Error('rc16 scanner review is pending; no publication');
+  const role = profile.scannerPolicy.reviewedProducer;
+  if (
+    role?.event !== 'push' ||
+    role.ref !== 'refs/heads/' + role.headBranch ||
+    review.producer?.event !== role.event ||
+    review.producer?.headBranch !== role.headBranch
+  )
+    throw Error('Reviewed scanner source differs from its exact finite producer role');
   require('./source-scanner-review-bindings-rc16.cjs').verifyThreeSlotReviewBinding(
     {
       sourceSha: review.sourceSha,
@@ -493,7 +502,31 @@ function evaluateCodeql(checks, sha, required = true) {
   };
 }
 
-function evaluate(runs, checks, sha) {
+const historicalReviewedCodeql = Object.freeze({
+  sourceSha: 'f2a8d2382b9a40814579f7a8be44046f247e0fd7',
+  checkId: 118411754521,
+});
+
+// Retained f2 evidence remains a separate historical prerequisite. It never
+// approves changed producer, verifier or installation bytes.
+function verifyHistoricalReviewedCodeql(check) {
+  if (!check || typeof check !== 'object' || Array.isArray(check))
+    throw Error('Historical f2 Advanced Security prerequisite is not authenticated');
+  const observed = evaluateCodeql([check], historicalReviewedCodeql.sourceSha);
+  if (
+    check?.id !== historicalReviewedCodeql.checkId ||
+    check?.head_sha !== historicalReviewedCodeql.sourceSha ||
+    !observed.ready ||
+    observed.checks.length !== 1
+  )
+    throw Error('Historical f2 Advanced Security prerequisite is not authenticated');
+  return {
+    sourceSha: historicalReviewedCodeql.sourceSha,
+    check: observed.checks[0],
+  };
+}
+
+function evaluate(runs, checks, sha, processedCodeql) {
   const latest = new Map();
   for (const run of runs) {
     if (
@@ -539,7 +572,7 @@ function evaluate(runs, checks, sha) {
         failures.push(`${name}: ${c.conclusion}`);
     }
   }
-  const nativeState = nativeGate.evaluate(runs, checks, sha);
+  const nativeState = nativeGate.evaluate(runs, checks, sha, processedCodeql);
   failures.push(...nativeState.failures);
   pending.push(...nativeState.pending);
   const codeql = evaluateCodeql(checks, sha, false);
@@ -551,6 +584,7 @@ function evaluate(runs, checks, sha) {
     pending,
     workflows: [...latest.values()],
     codeql: nativeState.codeql,
+    processedCodeql: nativeState.processedCodeql,
   };
 }
 
@@ -640,9 +674,47 @@ async function main() {
     verifyDeploymentSnapshot(fs.readFileSync(deploymentSnapshot.localPath)),
   ];
   verifyDeploymentSnapshot(fs.readFileSync(deploymentSnapshot.recordPath));
+  const tree = git('rev-parse', 'HEAD^{tree}').trim();
+  const publisher = require('./publish-source-release-rc16.cjs');
+  const qualificationApi = async (method, resource) => {
+    const response = await fetch(publisher.sourceApiUrl(method, resource, sha), {
+      method,
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/vnd.github+json',
+        'X-GitHub-Api-Version': '2022-11-28',
+      },
+      redirect: 'error',
+      signal: AbortSignal.timeout(30000),
+    });
+    if (!response.ok)
+      throw Error(`Cannot authenticate CodeQL service evidence: HTTP ${response.status}`);
+    return response.json();
+  };
+  const downloadServiceReceipt = async (artifactId) => {
+    try {
+      return execFileSync(
+        'gh',
+        [
+          'api',
+          '--hostname',
+          'github.com',
+          `repos/${repository}/actions/artifacts/${publisher.producerId(artifactId)}/zip`,
+        ],
+        {
+          maxBuffer: 4 * 1024 * 1024,
+          stdio: ['ignore', 'pipe', 'pipe'],
+          timeout: 30000,
+        }
+      );
+    } catch {
+      throw Error('Cannot retrieve authenticated CodeQL service receipt');
+    }
+  };
+  let retainedServiceEvidence;
   const deadline = Date.now() + 85 * 60000;
   while (Date.now() < deadline) {
-    const [runs, checks, reviewedChecks] = await Promise.all([
+    const [runs, checks, reviewedChecks, historicalCodeqlCheck] = await Promise.all([
       readPages(`actions/runs?head_sha=${sha}`, 'workflow_runs', token),
       readPages(`commits/${sha}/check-runs?filter=latest`, 'check_runs', token),
       readPages(
@@ -650,8 +722,33 @@ async function main() {
         'check_runs',
         token
       ),
+      qualificationApi('GET', `check-runs/${historicalReviewedCodeql.checkId}`),
     ]);
-    const state = evaluate(runs, checks, sha);
+    const historicalReviewedSourceCodeql =
+      verifyHistoricalReviewedCodeql(historicalCodeqlCheck);
+    const preliminary = evaluate(runs, checks, sha);
+    const serviceProducerPaths = [
+      profile.scannerPolicy.workflowPath,
+      profile.pythonScannerPolicy.workflowPath,
+    ];
+    let processedCodeql;
+    if (serviceProducerPaths.every((path) =>
+      preliminary.workflows.some((run) =>
+        run.path === path && run.status === 'completed' && run.conclusion === 'success'
+      )
+    )) {
+      processedCodeql = await serviceEvidence.observeFinalServices({
+        api: qualificationApi,
+        download: downloadServiceReceipt,
+        git,
+        sha,
+        tree,
+        runs,
+        retained: retainedServiceEvidence,
+      });
+      retainedServiceEvidence = processedCodeql;
+    }
+    const state = evaluate(runs, checks, sha, processedCodeql);
     const reviewedCodeql = evaluateCodeql(
       reviewedChecks,
       compilerSourceBaseline
@@ -661,8 +758,7 @@ async function main() {
       throw Error(`Source release refused: ${failures.join('; ')}`);
     if (state.ready && reviewedCodeql.ready) {
       assertPinnedAlphaCheckout(process.cwd(), sha);
-      const tree = git('rev-parse', 'HEAD^{tree}').trim();
-      const publisher = require('./publish-source-release-rc16.cjs');
+      serviceEvidence.assertFinalServices(processedCodeql, { sha, tree });
       const pythonScannerEvidence =
         await require('./source-native-evidence-rc16.cjs').qualifyPythonEvidence(
           {
@@ -710,6 +806,12 @@ async function main() {
         );
       assertPinnedAlphaCheckout(process.cwd(), sha);
       fs.mkdirSync('reports/source-release-rc16', { recursive: true });
+      const serviceBytes = JSON.stringify(processedCodeql, null, 2) + '\n';
+      fs.writeFileSync(
+        'reports/source-release-rc16/codeql-service-evidence.json',
+        serviceBytes,
+        { flag: 'wx', mode: 0o600 }
+      );
       fs.writeFileSync(
         'reports/source-release-rc16/provenance.json',
         JSON.stringify(
@@ -725,6 +827,14 @@ async function main() {
             sourceScope,
             sourceProfile,
             pythonScannerEvidence,
+            processedCodeqlServiceEvidence: {
+              schema: 'agijobsv0/codeql-service-asset/1',
+              source: sha,
+              tree,
+              file: 'codeql-service-evidence.json',
+              sha256: crypto.createHash('sha256').update(serviceBytes).digest('hex'),
+            },
+            historicalReviewedSourceCodeql,
             reviewedSourceCodeql: {
               sourceSha: compilerSourceBaseline,
               checks: scannerReview.codeqlChecks,
@@ -794,6 +904,8 @@ module.exports = {
   verifyScannerReviewBinding,
   evaluate,
   evaluateCodeql,
+  historicalReviewedCodeql,
+  verifyHistoricalReviewedCodeql,
   requiredPaths,
   requiredChecks,
   verifySourceScope,

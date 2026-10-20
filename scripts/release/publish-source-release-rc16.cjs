@@ -14,6 +14,8 @@ const {
   deploymentSnapshot,
   verifyDeploymentSnapshot,
   evaluateCodeql,
+  historicalReviewedCodeql,
+  verifyHistoricalReviewedCodeql,
   scannerReview,
   scannerReviewPath,
   scannerHistory,
@@ -31,6 +33,7 @@ const {
   assertPinnedAlphaCheckout,
 } = require('../../integrations/alpha-agent/pinned-alpha-checkout.cjs');
 const nativeEvidence = require('./source-native-evidence-rc16.cjs');
+const serviceEvidence = require('./source-codeql-service-rc16.cjs');
 
 const gitSource = (...args) =>
   execFileSync(
@@ -78,6 +81,7 @@ function expectedAssets(tag) {
     'codeql-evidence.zip',
     'codeql-reviewed-evidence.zip',
     'codeql-provenance.json',
+    'codeql-service-evidence.json',
     'python-codeql-evidence.zip',
     'python-codeql-reviewed-evidence.zip',
     'python-codeql-provenance.json',
@@ -125,6 +129,8 @@ function verifyJavaScriptAndNativeAssets({
   recordedCodeqlChecks,
   latestCodeqlChecks,
   finalCodeqlChecks,
+  historicalCodeqlCheck,
+  processedCodeqlServices,
   scannerEvidence,
   nativeArtifact,
   nativeRun,
@@ -207,6 +213,12 @@ function verifyJavaScriptAndNativeAssets({
         canonical(expectedScannerReview.codeqlChecks))
   )
     throw Error('Downloaded scanner review or reviewed CodeQL IDs differ');
+  const historicalProof = verifyHistoricalReviewedCodeql(historicalCodeqlCheck);
+  if (
+    canonical(provenance.historicalReviewedSourceCodeql) !==
+      canonical(historicalProof)
+  )
+    throw Error('Remote historical f2 Advanced Security evidence differs from authenticated readback');
   const reviewedCodeql = provenance.reviewedSourceCodeql;
   const claimedChecks = reviewedCodeqlProof(reviewedCodeql);
   const recorded = evaluateCodeql(
@@ -341,7 +353,6 @@ function verifyJavaScriptAndNativeAssets({
     require('./source-native-gates-rc16.cjs').authenticCodeQL(check, sha)
   );
   if (
-    !genuineFinal.length ||
     genuineFinal.some(
       (check) => check.status !== 'completed' || check.conclusion !== 'success'
     )
@@ -349,6 +360,17 @@ function verifyJavaScriptAndNativeAssets({
     throw Error(
       'Remote final CodeQL result does not match authenticated GitHub checks'
     );
+  serviceEvidence.assertFinalServices(processedCodeqlServices, { sha, tree });
+  const retainedService = readCodeqlServiceAsset(downloaded, provenance, { sha, tree });
+  if (canonical(retainedService) !== canonical(processedCodeqlServices))
+    throw Error('Remote processed CodeQL service evidence differs from authenticated readback');
+  serviceEvidence.verifyRawBinding(
+    processedCodeqlServices,
+    'javascript',
+    execFileSync('unzip', ['-p', path.join(downloaded, 'codeql-evidence.zip'), 'javascript.sarif'], {
+      maxBuffer: 32 * 1024 * 1024,
+    })
+  );
   nativeEvidence.verifyNativeEvidence({
     directory: downloaded,
     artifact: nativeArtifact,
@@ -363,7 +385,7 @@ function verifyJavaScriptAndNativeAssets({
 // independently authenticates its retained archive after that complete path.
 function verifyDownloadedAssets(context) {
   verifyJavaScriptAndNativeAssets(context);
-  return nativeEvidence.verifyPythonEvidence({
+  const python = nativeEvidence.verifyPythonEvidence({
     directory: context.downloaded,
     finalObservation: context.pythonFinalObservation,
     reviewedObservation: context.pythonReviewedObservation,
@@ -373,6 +395,37 @@ function verifyDownloadedAssets(context) {
       fs.readFileSync(path.join(context.downloaded, 'provenance.json'))
     ),
   });
+  serviceEvidence.verifyRawBinding(
+    context.processedCodeqlServices,
+    'python',
+    execFileSync('unzip', ['-p', path.join(context.downloaded, 'python-codeql-evidence.zip'), 'python.sarif'], {
+      maxBuffer: 32 * 1024 * 1024,
+    })
+  );
+  return python;
+}
+
+function readCodeqlServiceAsset(directory, provenance, { sha, tree }) {
+  const bytes = fs.readFileSync(path.join(directory, 'codeql-service-evidence.json'));
+  if (bytes.length > 4 * 1024 * 1024)
+    throw Error('CodeQL service evidence exceeds its byte bound');
+  const text = bytes.toString('utf8');
+  if (!Buffer.from(text).equals(bytes))
+    throw Error('CodeQL service evidence must be exact UTF8');
+  const retained = JSON.parse(text);
+  if (JSON.stringify(retained, null, 2) + '\n' !== text)
+    throw Error('CodeQL service evidence must use its bounded canonical serialization');
+  const reference = provenance.processedCodeqlServiceEvidence;
+  if (
+    !exactFields(reference, ['schema', 'source', 'tree', 'file', 'sha256']) ||
+    reference.schema !== 'agijobsv0/codeql-service-asset/1' ||
+    reference.source !== sha ||
+    reference.tree !== tree ||
+    reference.file !== 'codeql-service-evidence.json' ||
+    reference.sha256 !== crypto.createHash('sha256').update(bytes).digest('hex')
+  )
+    throw Error('CodeQL service asset differs from qualified source provenance');
+  return retained;
 }
 
 const scannerWorkflow = '.github/workflows/static-analysis.yml';
@@ -844,11 +897,16 @@ async function scannerPages(api, prefix, key) {
 }
 async function readScannerObservation(api, producer, sha, finalSource = false) {
   validateScannerProducer(producer, sha);
-  if (finalSource)
-    scannerRequire(
-      producer.event === 'push' && producer.headBranch === 'main',
-      'Final scanner producer must be a main push'
-    );
+  const role = finalSource
+    ? { event: 'push', headBranch: 'main', ref: 'refs/heads/main' }
+    : profile.scannerPolicy.reviewedProducer;
+  scannerRequire(
+    role?.event === 'push' &&
+      role.ref === 'refs/heads/' + role.headBranch &&
+      producer.event === role.event &&
+      producer.headBranch === role.headBranch,
+    'Scanner producer differs from its exact finite source role'
+  );
   const [current, attempt, artifact, runs, artifacts] = await Promise.all([
     api('GET', `actions/runs/${producer.runId}`),
     api(
@@ -994,6 +1052,17 @@ function verifyScannerEvidence({
   ]) {
     const producer = proof[key];
     validateScannerProducer(producer, sourceSha);
+    const role =
+      key === 'final'
+        ? { event: 'push', headBranch: 'main', ref: 'refs/heads/main' }
+        : profile.scannerPolicy.reviewedProducer;
+    scannerRequire(
+      role?.event === 'push' &&
+        role.ref === 'refs/heads/' + role.headBranch &&
+        producer.event === role.event &&
+        producer.headBranch === role.headBranch,
+      'Scanner archive producer differs from its exact finite source role'
+    );
     scannerRequire(
       canonical(producer) === canonical(observation?.producer) &&
         producer.githubDigest ===
@@ -1123,6 +1192,28 @@ async function collectScannerEvidence() {
     producerRun: current,
     git,
   });
+  const retainedService = readCodeqlServiceAsset(directory, provenance, {
+    sha,
+    tree: git('rev-parse', `${sha}^{tree}`).trim(),
+  });
+  const processedCodeqlServices = await serviceEvidence.observeFinalServices({
+    api,
+    git,
+    sha,
+    tree: git('rev-parse', `${sha}^{tree}`).trim(),
+    runs: provenance.workflows,
+    retained: retainedService,
+  });
+  serviceEvidence.assertFinalServices(processedCodeqlServices, { sha });
+  if (canonical(processedCodeqlServices) !== canonical(retainedService))
+    throw Error('Collected CodeQL service evidence differs from authenticated readback');
+  serviceEvidence.verifyRawBinding(
+    processedCodeqlServices,
+    'javascript',
+    execFileSync('unzip', ['-p', path.join(directory, 'codeql-evidence.zip'), 'javascript.sarif'], {
+      maxBuffer: 32 * 1024 * 1024,
+    })
+  );
   fs.writeFileSync(
     path.join(directory, 'codeql-provenance.json'),
     JSON.stringify(proof, null, 2) + '\n',
@@ -1451,6 +1542,9 @@ function sourceApiUrl(method, resource, finalSha) {
               }`
           ).includes(resource)
       ));
+  const serviceRoute =
+    method === 'GET' &&
+    serviceEvidence.isServiceApiResource(resource, finalSha);
   const reviewedResults =
     method === 'GET' &&
     [compilerSourceBaseline, finalSha].some(
@@ -1465,6 +1559,7 @@ function sourceApiUrl(method, resource, finalSha) {
     typeof resource !== 'string' ||
     !Object.hasOwn(allowed, method) ||
     (!reviewedResults &&
+      !serviceRoute &&
       !scannerRoute &&
       !pythonScannerRoute &&
       allowed[method].exec(resource)?.[0] !== resource)
@@ -1547,12 +1642,13 @@ async function main() {
     const provenance = JSON.parse(
       fs.readFileSync(path.join(downloaded, 'provenance.json'), 'utf8')
     );
-    const [compilerArtifact, compilerRun, codeql, finalCodeqlChecks] =
+    const [compilerArtifact, compilerRun, codeql, finalCodeqlChecks, historicalCodeqlCheck] =
       await Promise.all([
         api('GET', `actions/artifacts/${artifactId}`),
         api('GET', `actions/runs/${runId}/attempts/${runAttempt}`),
         readReviewedCodeql(api, provenance.reviewedSourceCodeql),
         readLatestCodeql(api, sha),
+        api('GET', `check-runs/${historicalReviewedCodeql.checkId}`),
       ]);
     const scannerProof = JSON.parse(
       fs.readFileSync(path.join(downloaded, 'codeql-provenance.json'))
@@ -1595,6 +1691,16 @@ async function main() {
         { review: profile.pythonScannerReview }
       ),
     ]);
+    const retainedService = readCodeqlServiceAsset(downloaded, provenance, { sha, tree });
+    const processedCodeqlServices = await serviceEvidence.observeFinalServices({
+      api,
+      git,
+      sha,
+      tree,
+      runs: provenance.workflows,
+      retained: retainedService,
+    });
+    serviceEvidence.assertFinalServices(processedCodeqlServices, { sha, tree });
     verifyScannerReviewSource({ git, sha });
     verifyDownloadedAssets({
       nativeArtifact,
@@ -1612,6 +1718,8 @@ async function main() {
       compilerRun,
       ...codeql,
       finalCodeqlChecks,
+      historicalCodeqlCheck,
+      processedCodeqlServices,
       scannerEvidence: {
         ...scannerContext,
         finalObservation,
@@ -1716,6 +1824,7 @@ module.exports = {
   expectedAssets,
   verifyJavaScriptAndNativeAssets,
   verifyDownloadedAssets,
+  readCodeqlServiceAsset,
   validateCompilerArtifact,
   verifyCompilerArchive,
 };

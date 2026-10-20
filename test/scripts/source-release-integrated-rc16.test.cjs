@@ -1,11 +1,11 @@
-const { test } = require('node:test');
+const { test, before } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const os = require('node:os');
 const { execFileSync } = require('node:child_process');
 const {
-  evaluate,
+  evaluate: evaluateGate,
   requiredPaths,
   requiredChecks,
   authenticCodeQL,
@@ -27,6 +27,7 @@ const {
 } = require('../../scripts/release/publish-source-release-rc16.cjs');
 const {
   profile,
+  parseTree,
   validatePreparedProfile,
 } = require('../../scripts/release/source-profile-rc16.cjs');
 // Pending-only behavior uses copied metadata and unmodified production guards.
@@ -127,6 +128,18 @@ function pendingReleaseFixture(t) {
 }
 
 const sha = 'a'.repeat(40);
+const { syntheticServiceProof } =
+  require('./source-codeql-service-fixture-rc16.cjs');
+let processedCodeql;
+before(async () => {
+  processedCodeql = await syntheticServiceProof({ sha });
+});
+function evaluate(runs, checks, source, ...proof) {
+  return evaluateGate(
+    runs, checks, source, proof.length ? proof[0] : processedCodeql
+  );
+}
+
 const actions = { id: 15368, slug: 'github-actions' };
 const security = {
   id: 57789,
@@ -156,6 +169,7 @@ const run = (workflow, id = 1) => ({
 });
 function evidence() {
   return {
+    processedCodeql,
     runs: requiredPaths.map((file, index) => run(file, index + 1)),
     checks: [
       ...requiredChecks.map((name) => ({
@@ -169,7 +183,14 @@ function evidence() {
     ],
   };
 }
-test('all inherited and added workflows/checks plus the authentic separate CodeQL result are mandatory', () => {
+test('positive processed proof is mandatory when final AS results are absent', () => {
+  const { runs, checks } = evidence();
+  const actionsOnly = checks.filter((check) => check.app?.id !== 57789);
+  assert.equal(evaluateGate(runs, actionsOnly, sha).ready, false);
+  assert.equal(evaluateGate(runs, actionsOnly, sha, {}).ready, false);
+  assert.equal(evaluate(runs, actionsOnly, sha).ready, true);
+});
+test('all workflows/checks, positive processed proof and observed genuine CodeQL results remain binding', () => {
   const valid = evidence();
   assert.equal(evaluate(valid.runs, valid.checks, sha).ready, true);
   assert.equal(
@@ -197,15 +218,19 @@ test('all inherited and added workflows/checks plus the authentic separate CodeQ
   for (const mutate of [
     (x) => {
       x.checks.pop();
+      x.processedCodeql = undefined;
     },
     (x) => {
       x.checks.at(-1).app = actions;
+      x.processedCodeql = undefined;
     },
     (x) => {
       x.checks.at(-1).head_sha = 'b'.repeat(40);
+      x.processedCodeql = undefined;
     },
     (x) => {
       x.checks.at(-1).app.owner.id = 1;
+      x.processedCodeql = undefined;
     },
     (x) => {
       x.checks.at(-1).conclusion = 'failure';
@@ -243,7 +268,7 @@ test('all inherited and added workflows/checks plus the authentic separate CodeQ
   ]) {
     const changed = evidence();
     mutate(changed);
-    assert.equal(evaluate(changed.runs, changed.checks, sha).ready, false);
+    assert.equal(evaluate(changed.runs, changed.checks, sha, changed.processedCodeql).ready, false);
   }
   assert.equal(
     authenticCodeQL({ ...resultCheck(), app: { ...security, id: 1 } }, sha),
@@ -551,10 +576,11 @@ test('retained readback cannot relabel another successful same-SHA run or attemp
 });
 test('rc.16 owns only its new tag/routes/assets and remains blocked pending actual security review', (t) => {
   const names = expectedAssets(profile.tag);
-  assert.equal(new Set(names).size, 24);
+  assert.equal(new Set(names).size, 25);
   for (const name of [
     'codeql-evidence.zip',
     'codeql-provenance.json',
+    'codeql-service-evidence.json',
     'native-compatibility.zip',
     'native-provenance.json',
     'source-profile-rc16.json',
@@ -626,19 +652,28 @@ test('mandatory scanner manifest is derived from actual pinned receiver Git sour
     git,
     git('rev-parse', 'HEAD').trim()
   );
-  const prior = expectedReceiverSources(
-    git,
-    '5db66e4788afd6edf1b44f32578b89f2bf1ab67c'
+  const priorSource = '5db66e4788afd6edf1b44f32578b89f2bf1ab67c';
+  const priorProfile = JSON.parse(
+    git('show', priorSource + ':scripts/release/source-profile-rc16.json')
   );
+  // Apply the unchanged manifest algorithm to the actual historical policy.
+  // Current sources still require both new helpers through the production call.
+  const priorManifest = require('node:vm').runInNewContext(
+    '(' + expectedReceiverSources.toString() + ')',
+    { profile: priorProfile, parseTree, assert }
+  );
+  const prior = [...priorManifest(git, priorSource)];
   assert.equal(prior.length, 86);
   assert.deepEqual(
     required,
     [
       ...prior,
       'integrations/alpha-agent/tests/transformational-compatibility.test.mjs',
+      'scripts/release/emit-codeql-review-rc16.cjs',
+      'scripts/release/source-codeql-service-rc16.cjs',
     ].sort()
   );
-  assert.equal(required.length, 87);
+  assert.equal(required.length, 89);
   assert(profile.scannerReceiverPaths.every((file) => required.includes(file)));
   assert.equal(new Set(required).size, required.length);
 });
@@ -1148,8 +1183,8 @@ test('quality acknowledgement rejects unknown or security rule IDs and keeps Pyt
     producerRunId: 1,
     producerRunAttempt: 1,
     producerEvent: 'push',
-    producerHeadBranch: 'fix/inherited-codeql-ti-final-rc16-20261019',
-    producerRef: 'refs/heads/fix/inherited-codeql-ti-final-rc16-20261019',
+    producerHeadBranch: 'fix/processed-codeql-release-proof-20261020',
+    producerRef: 'refs/heads/fix/processed-codeql-release-proof-20261020',
     artifactId: 2,
     artifactName: `python-codeql-security-report-${f.review.sourceCommit}-1-1`,
     archiveSha256: 'a'.repeat(64),

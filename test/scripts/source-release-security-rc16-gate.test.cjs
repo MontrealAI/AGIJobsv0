@@ -1,7 +1,7 @@
-const { test } = require('node:test');
+const { test, before } = require('node:test');
 const assert = require('node:assert/strict');
 const {
-  evaluate,
+  evaluate: evaluateGate,
   evaluateCodeql,
   requiredPaths,
   requiredChecks,
@@ -17,6 +17,18 @@ const {
   verifyScannerReviewSource,
 } = require('../../scripts/release/qualify-source-release-rc16.cjs');
 const sha = 'a'.repeat(40);
+const { syntheticServiceProof } =
+  require('./source-codeql-service-fixture-rc16.cjs');
+let processedCodeql;
+before(async () => {
+  processedCodeql = await syntheticServiceProof({ sha });
+});
+function evaluate(runs, checks, source, ...proof) {
+  return evaluateGate(
+    runs, checks, source, proof.length ? proof[0] : processedCodeql
+  );
+}
+
 function sourceFixture() {
   return {
     sha,
@@ -215,6 +227,13 @@ function fixture() {
     ],
   };
 }
+test('positive processed proof is mandatory when final AS results are absent', () => {
+  const { runs, checks } = fixture();
+  const actionsOnly = checks.filter((check) => check.app?.id !== 57789);
+  assert.equal(evaluateGate(runs, actionsOnly, sha).ready, false);
+  assert.equal(evaluateGate(runs, actionsOnly, sha, {}).ready, false);
+  assert.equal(evaluate(runs, actionsOnly, sha).ready, true);
+});
 test('source publication requires every workflow and context on the exact main push', () => {
   const { runs, checks } = fixture();
   assert.equal(evaluate(runs, checks, sha).ready, true);
@@ -408,7 +427,7 @@ function inertScannerReviewMetadata(source, tree) {
       runAttempt: 1,
       runNumber: 1,
       event: 'push',
-      headBranch: 'main',
+      headBranch: 'fix/processed-codeql-release-proof-20261020',
       artifactId: 2,
       artifactName: `codeql-security-report-${source}-1-1`,
       githubDigest: 'sha256:' + 'a'.repeat(64),
@@ -872,6 +891,7 @@ test('both real entrypoints reject a null notes record before network or publica
     'scripts/release/source-profile-rc16.cjs',
     'scripts/release/source-profile-rc16.json',
     'scripts/release/source-native-gates-rc16.cjs',
+    'scripts/release/source-codeql-service-rc16.cjs',
     'scripts/release/source-native-evidence-rc16.cjs',
     'scripts/release/source-scanner-gates-rc16.cjs',
     'scripts/release/python-scanner-rc16.cjs',
