@@ -16,6 +16,8 @@ const {
 } = require('../../scripts/release/qualify-source-release-rc16.cjs');
 const {
   expectedPythonSources,
+  verifyPythonToolComponents,
+  validatePythonDescriptorReferences,
   verifyPythonScannerProducerArchive,
   verifyPythonScannerReviewBinding,
   pythonProducerExecutionContext,
@@ -466,4 +468,206 @@ test('inert Python producer contexts preserve approved premerge S1 and mandatory
 test('the live installed review profile is independently bound to its actual immutable Git source', () => {
   const target = git('rev-parse', 'HEAD').trim();
   assert.equal(validateProfile(profile, { git, target }), profile);
+});
+
+function descriptorMetadataOnly() {
+  return {
+    tool: {
+      driver: {
+        name: 'SYNTHETIC_METADATA_ONLY',
+        rules: [{ id: 'metadata/rule-a' }, { id: 'metadata/rule-b' }],
+        notifications: [
+          { id: 'metadata/note-a' },
+          { id: 'metadata/note-b' },
+        ],
+      },
+      extensions: [
+        {
+          name: 'SYNTHETIC_EXTENSION_ONLY',
+          guid: 'metadata-component-guid',
+          rules: [{ id: 'metadata/extension-rule' }],
+          notifications: [{ id: 'metadata/extension-note' }],
+        },
+      ],
+    },
+    invocations: [
+      {
+        toolExecutionNotifications: [
+          { descriptor: { id: 'metadata/note-b', index: 1 } },
+        ],
+        toolConfigurationNotifications: [
+          { associatedRule: { id: 'metadata/rule-a', index: 0 } },
+        ],
+        ruleConfigurationOverrides: [
+          { descriptor: { id: 'metadata/rule-b', index: 1 } },
+        ],
+        notificationConfigurationOverrides: [
+          { descriptor: { id: 'metadata/note-a', index: 0 } },
+        ],
+      },
+    ],
+    results: [
+      {
+        ruleId: 'metadata/rule-b',
+        ruleIndex: 1,
+        rule: { id: 'metadata/rule-b', index: 1 },
+      },
+    ],
+    properties: {
+      metricResults: [
+        {
+          ruleId: 'metadata/extension-rule',
+          rule: {
+            id: 'metadata/extension-rule',
+            index: 0,
+            toolComponent: {
+              index: 0,
+              name: 'SYNTHETIC_EXTENSION_ONLY',
+              guid: 'metadata-component-guid',
+            },
+          },
+        },
+      ],
+    },
+  };
+}
+test('descriptor metadata comparison preserves full records and original arrays', () => {
+  // Metadata unit inputs only: not a successful scan or disposition fixture.
+  const left = [
+    {
+      name: 'SYNTHETIC_METADATA_ONLY',
+      rules: [
+        { id: 'metadata/a', properties: { detail: 'complete-a' } },
+        { id: 'metadata/b', properties: { detail: 'complete-b' } },
+      ],
+      notifications: [{ id: 'metadata/x' }, { id: 'metadata/y' }],
+    },
+  ];
+  const right = structuredClone(left);
+  right[0].rules.reverse();
+  right[0].notifications.reverse();
+  const before = structuredClone([left, right]);
+  verifyPythonToolComponents(left, right);
+  assert.deepEqual([left, right], before);
+  for (const change of [
+    (value) => {
+      value[0].rules[0].properties.detail = 'changed-complete-record';
+    },
+    (value) => {
+      value[0].rules.push(structuredClone(value[0].rules[0]));
+    },
+    (value) => {
+      delete value[0].notifications;
+    },
+    (value) => {
+      value[0].name = 'changed-component';
+    },
+  ]) {
+    const changed = structuredClone(right);
+    change(changed);
+    assert.throws(() => verifyPythonToolComponents(left, changed));
+  }
+  assert.throws(() =>
+    verifyPythonToolComponents(
+      [{ name: 'a', rules: [] }, { name: 'b', rules: [] }],
+      [{ name: 'b', rules: [] }, { name: 'a', rules: [] }]
+    )
+  );
+});
+test('duplicate descriptor IDs retain strict ordering and multiplicity', () => {
+  for (const key of ['rules', 'notifications']) {
+    const left = [
+      {
+        name: 'SYNTHETIC_METADATA_ONLY',
+        [key]: [
+          { id: 'metadata/duplicate', name: 'first' },
+          { id: 'metadata/duplicate', name: 'second' },
+        ],
+      },
+    ];
+    verifyPythonToolComponents(left, structuredClone(left));
+    const reversed = structuredClone(left);
+    reversed[0][key].reverse();
+    assert.throws(() => verifyPythonToolComponents(left, reversed));
+    const missing = structuredClone(left);
+    missing[0][key].pop();
+    assert.throws(() => verifyPythonToolComponents(left, missing));
+  }
+});
+test('descriptor metadata references bind original ordinals and components', () => {
+  const value = descriptorMetadataOnly();
+  const before = structuredClone(value);
+  validatePythonDescriptorReferences(value);
+  assert.deepEqual(value, before);
+  const guidOnlyComponent = structuredClone(value);
+  delete guidOnlyComponent.properties.metricResults[0].rule.toolComponent.index;
+  validatePythonDescriptorReferences(guidOnlyComponent);
+  const legacy = structuredClone(value);
+  delete legacy.results[0].rule;
+  validatePythonDescriptorReferences(legacy);
+});
+test('descriptor metadata refuses inconsistent or unsupported reference forms', () => {
+  for (const change of [
+    (value) => {
+      value.results[0].ruleIndex = 0;
+    },
+    (value) => {
+      value.results[0].ruleId = 'metadata/different';
+    },
+    (value) => {
+      value.invocations[0].toolExecutionNotifications[0].descriptor.index = 0;
+    },
+    (value) => {
+      value.invocations[0].toolConfigurationNotifications[0].associatedRule.id =
+        'metadata/different';
+    },
+    (value) => {
+      value.invocations[0].ruleConfigurationOverrides[0].descriptor.index = 0;
+    },
+    (value) => {
+      value.invocations[0].notificationConfigurationOverrides[0].descriptor.id =
+        'metadata/different';
+    },
+    (value) => {
+      value.properties.metricResults[0].rule.toolComponent.index = 1;
+    },
+    (value) => {
+      value.properties.metricResults[0].rule.toolComponent.name = 'different';
+    },
+    (value) => {
+      value.properties.metricResults[0].rule.toolComponent.guid = 'different';
+    },
+    (value) => {
+      value.properties.metricResults[0].rule.guid = 'missing-descriptor-guid';
+    },
+    (value) => {
+      delete value.properties.metricResults[0].rule.id;
+    },
+    (value) => {
+      delete value.properties.metricResults[0].rule.index;
+    },
+    (value) => {
+      value.tool.driver.rules[0].relationships = [
+        { target: { id: 'metadata/rule-b', index: 1 } },
+      ];
+    },
+    (value) => {
+      value.results[0].taxa = [{ id: 'metadata/unsupported', index: 0 }];
+    },
+    (value) => {
+      value.threadFlowLocations = [
+        { taxa: [{ id: 'metadata/unsupported', index: 0 }] },
+      ];
+    },
+    (value) => {
+      value.taxonomies = [{ name: 'unsupported' }];
+    },
+    (value) => {
+      value.conversion = { tool: { driver: { name: 'unsupported' } } };
+    },
+  ]) {
+    const changed = descriptorMetadataOnly();
+    change(changed);
+    assert.throws(() => validatePythonDescriptorReferences(changed));
+  }
 });
