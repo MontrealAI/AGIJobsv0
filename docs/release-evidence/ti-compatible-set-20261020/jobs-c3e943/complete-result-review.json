@@ -1,0 +1,119 @@
+{
+  "schema": "agijobsv0/current-source-complete-result-review/1",
+  "result": "SUPPORTED_CURRENT_45_JS_CASES_AND_PYTHON_ZERO_RESULTS",
+  "reviewer": "Existing independent Jobs owner lane",
+  "source": "c3e943189a00bffa2e4dda265c6bd010b4930944",
+  "tree": "e0a252f91288f798c7ede5f72c2ba2869316d927",
+  "evidenceCommit": "49e239d62e5128d203b938deb9d76e0b34ccfe2a",
+  "scope": {
+    "sourceOnly": true,
+    "fullCurrentReportsRead": true,
+    "oldApprovalsNotAdopted": true,
+    "reviewInstallationPerformed": false,
+    "releaseQualification": false
+  },
+  "javascript": {
+    "artifactId": 12268788723,
+    "producerRun": 39433246747,
+    "attempt": 1,
+    "producerAndCollectorFinal": "SUCCESS",
+    "originalZipBytes": 200533,
+    "originalZipGithubSha256": "fec49821ca3e2c30042fe1bb9b91f844b9f96cbfe845c08031faa5649116a5a1",
+    "sarifBlob": "792eb3e4ce9c4f780bfab1d2e8e86f6c4d071281",
+    "rawRecords": {
+      "javascript.sarif": {
+        "bytes": 2092553,
+        "sha256": "77dc363ae8563c1d275d21ce0aabe4d80f425b62ebba178929999e8545083027"
+      },
+      "source-extraction.json": {
+        "bytes": 52235,
+        "sha256": "177e741847872866ca2436f4f55446ddd4439fdf02a92d1d714e9872cba48d49"
+      },
+      "source-scope-after.json": {
+        "bytes": 5620,
+        "sha256": "c3fc4a3725051c7f5e0a5b5ac1c93f5c4da736e6c41a20ad37161b113072c7c2"
+      },
+      "source-scope-before.json": {
+        "bytes": 5620,
+        "sha256": "c3fc4a3725051c7f5e0a5b5ac1c93f5c4da736e6c41a20ad37161b113072c7c2"
+      }
+    },
+    "toolSha256": "591e88d26b82c20c7f11f207b86cbf0edf5c2a8f9cc6bf8aa22c5d1270ea3dbf",
+    "queryConfigSha256": "e54d1848b96dc1093cbf6acc90ad9fdcc8f30d7c7d2c98cc6f41632cdb794d3f",
+    "ruleCount": 201,
+    "resultCount": 45,
+    "fullResultMultisetSha256": "8098693c78141a858968c557a5634fb73e856b6e75ad7ed672cfac8a135586f3",
+    "completeRawResultsArrayExactlyEqualsC076": true,
+    "completeCodeFlows": 79,
+    "completeFlowLocations": 2081,
+    "physicalLocationSourceFiles": 42,
+    "primaryResultSourceFiles": 28,
+    "changedRawLocationSourceOnly": "scripts/release/source-codeql-service-rc16.cjs",
+    "dispositions": {
+      "demonstrablyFalsePositive": 35,
+      "acknowledgedNonsecurityQuality": 10,
+      "hold": 0
+    },
+    "reviewedCaseRecordBlob": "d7c0500d6aad5c210fb79eb43d7f2a8d63cf5cac",
+    "reviewedCaseRecordSha256": "740335c482ddac573804bf9041f2210cad8fa17467d257428b5033690f423cac",
+    "all45IdentitiesRationalesEvidenceAndLimitsSupportedAtCurrentSource": true,
+    "all10QualityGitRuleQueryConfigCommitmentsVerified": true,
+    "extractedUris": 832,
+    "mandatoryExtracted": 89,
+    "fixedReceiversExtracted": 14,
+    "noErrorWarningDiagnostics": true
+  },
+  "python": {
+    "artifactId": 12269496280,
+    "producerRun": 39433246811,
+    "attempt": 1,
+    "producerAndCollectorFinal": "SUCCESS",
+    "originalZipBytes": 107029,
+    "originalZipGithubSha256": "d9f2ef70db33d3e20500beb5676398e43572343d2dacb4679bff810b24afe497",
+    "rawRecords": {
+      "python.sarif": {
+        "bytes": 788624,
+        "sha256": "d4c3ef2be0273bf1f2109b6c18029c799c38e3fc2c56e4f17e0cbffadff39665"
+      },
+      "source-extraction.json": {
+        "bytes": 13261,
+        "sha256": "7318d5831b71f9de9f895ad47d9ea88b0fc25ec8f3b298f1f9744c7fd4c6798e"
+      },
+      "source-scope-after.json": {
+        "bytes": 1541,
+        "sha256": "56842b92f4746329a336a33b97db6c057cd038120fe2fccc33656c707faa5d31"
+      },
+      "source-scope-before.json": {
+        "bytes": 1541,
+        "sha256": "56842b92f4746329a336a33b97db6c057cd038120fe2fccc33656c707faa5d31"
+      }
+    },
+    "actualOrderedToolSha256": "302b2c4fc1ca4e22b035abb0f8a61b6203ada209f07e038f2bddbc9986003953",
+    "ruleCount": 172,
+    "resultCount": 0,
+    "extractedUris": 79,
+    "actualTrackedMandatoryModules": 8,
+    "noErrorWarningDiagnostics": true,
+    "historicalComparison": "Every full rule and notification multiset and all other component fields match c076; query-component rule/notification array order differs. Preserve actual current ordered metadata and strict future comparisons."
+  },
+  "bindings": {
+    "bothCompleteProducerRunAttemptJobAndArtifactMetadataIndependentlyReobserved": true,
+    "bothRawFourFileDigestsAndSidecarsVerified": true,
+    "currentWorkflowConfigCollectorGitBindingsVerified": true,
+    "completeSourceTreeDeltaExactlyThreeRegularFiles": true,
+    "allOtherGitLeavesEqualC076": true,
+    "currentHelperFreshSourceAssessment": "Fixed admitted destination; authenticated projected inert JSON; exclusive held-descriptor write; downstream receipt/digest/API reobservation and WeakSet proof retained.",
+    "historicalHostedReferences": "Retained source-continuity evidence only; no new c3 per-case runtime claim."
+  },
+  "limits": {
+    "sourceAndResultReviewOnly": true,
+    "wholeSarifHistoricalEqualityClaimed": false,
+    "rootOwnsIndexedCollectorAndOriginalZipByteReconstruction": true,
+    "reviewerOriginalZipAcquisitions": 0,
+    "projectTestsScannersReproductionsExecuted": 0,
+    "codeScanningApiCalls": 0,
+    "writesOrSourceRefSlotMutations": 0,
+    "hostileHostedRunnerParentDirectorySafetyClaimed": false,
+    "currentCIThreeSlotBinderAndFinalMainProcessedServicesStillRequired": true
+  }
+}

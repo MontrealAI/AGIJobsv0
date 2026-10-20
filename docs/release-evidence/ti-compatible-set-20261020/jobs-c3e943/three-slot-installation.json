@@ -1,0 +1,39 @@
+{
+  "schema": "agijobsv0/strict-three-slot-installation-receipt/v1",
+  "reviewSource": "c3e943189a00bffa2e4dda265c6bd010b4930944",
+  "reviewTree": "e0a252f91288f798c7ede5f72c2ba2869316d927",
+  "installedCommit": "e67afa3ceac8dea12ffbcbe9e814fc9f17d651a4",
+  "installedTree": "9d18a3c3079650a2d740385149b3deceefaa8f01",
+  "soleParent": "c3e943189a00bffa2e4dda265c6bd010b4930944",
+  "edits": [
+    {
+      "path": "scripts/release/source-profile-rc16.json",
+      "sha": "8d94760f40b448fee6575ade308bc03dba308ba1",
+      "size": 923388,
+      "sha256": "33df358236296691a159f732d883b37b86cb2a200049e85c10a96e1998abe1cd",
+      "mode": "100644",
+      "type": "blob"
+    },
+    {
+      "path": "docs/production/RELEASE_NOTES_SOURCE_RC16.md",
+      "sha": "0d8e23b2b81a37905e67831ea3cd2a579426d505",
+      "size": 179388,
+      "sha256": "9e08937b008e3d8b106b69102981d8d8904ef4ca45b3cb31a1629e0ae44c95ca",
+      "mode": "100644",
+      "type": "blob"
+    }
+  ],
+  "normalFastForward": true,
+  "outerBytesLiteralInverseVerified": true,
+  "allOtherLeavesIdentical": true,
+  "peerFullReceipt": {
+    "blob": "50b3349d44780095ee252bcde0c7840a6942d649",
+    "bytes": 5233,
+    "sha256": "b83f78c2e71af4bc13083bfa771206d698e5840e272b2fb1e6ebac8d788979a8"
+  },
+  "reviewComment": 6293006697,
+  "hostedThreeSlotBinder": "PENDING_CURRENT_INSTALLED_SOURCE_CI",
+  "finalMainServices": "NOT_YET_CAPTURED_FOR_NEW_FINAL_SOURCE",
+  "publication": "NOT_QUALIFIED",
+  "finalJourney": "NOT_RUN"
+}
