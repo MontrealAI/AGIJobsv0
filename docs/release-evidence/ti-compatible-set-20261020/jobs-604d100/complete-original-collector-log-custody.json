@@ -1,0 +1,68 @@
+[
+  {
+    "schema": "original-ordered-collector-log/v1",
+    "source": "604d10094f3b7fede53406ae0e40f9f489155a3b",
+    "tree": "d12a01aeb823ba667ba5e6d15df2c9cfa633d674",
+    "language": "javascript",
+    "runId": 39489441506,
+    "attempt": 1,
+    "jobId": 118861061694,
+    "bytes": 3208734,
+    "sha256": "927e86578d3e01c25bdf9d1aeea88a2973819fd3c4dcd22126e18e89e5080281",
+    "gitBlob": "7afe97885678ece357757540d27b265c393d98ae",
+    "parts": [
+      {
+        "path": "docs/release-evidence/ti-compatible-set-20261020/jobs-604d100/javascript/collector-log-part-1.log",
+        "bytes": 900002,
+        "sha256": "da662deec94ba07d3aeb3a5a153c5fa434ca0e657d0e5d607ba204e9456027f0",
+        "gitBlob": "3a636cd3fd3ac3ff8571350892eac66d75774b1b"
+      },
+      {
+        "path": "docs/release-evidence/ti-compatible-set-20261020/jobs-604d100/javascript/collector-log-part-2.log",
+        "bytes": 900000,
+        "sha256": "2e2ccb3942cd650b4f297c33456e49e3ba53f3a03889d72ebc58729bac8e4e09",
+        "gitBlob": "25b812cda11759c320ff81a288019db4d6ac9b1a"
+      },
+      {
+        "path": "docs/release-evidence/ti-compatible-set-20261020/jobs-604d100/javascript/collector-log-part-3.log",
+        "bytes": 900002,
+        "sha256": "b2b4a891b1204c0094631ffe3d2261f253fc78b6141435f740962ab7af4650ec",
+        "gitBlob": "fdafd0c0c75eb4602764aba2ba3274c7a36ac164"
+      },
+      {
+        "path": "docs/release-evidence/ti-compatible-set-20261020/jobs-604d100/javascript/collector-log-part-4.log",
+        "bytes": 508730,
+        "sha256": "c1c4d83383fa8323e1c0af6a3e3935b49cf6c30a80abde86e070baf794e2ccaa",
+        "gitBlob": "107d0c2117db4749b5ce31671226cff9e644d3b2"
+      }
+    ],
+    "concatenation": "Exact part bytes in array order without separator/normalization"
+  },
+  {
+    "schema": "original-ordered-collector-log/v1",
+    "source": "604d10094f3b7fede53406ae0e40f9f489155a3b",
+    "tree": "d12a01aeb823ba667ba5e6d15df2c9cfa633d674",
+    "language": "python",
+    "runId": 39489441249,
+    "attempt": 1,
+    "jobId": 118858970653,
+    "bytes": 1260398,
+    "sha256": "de665c3ccd56ad1456db4499a687a264a338ccefc653a51c0bb8ca8230fa695a",
+    "gitBlob": "54ac2672750e1af53a804778176c461df03cdbba",
+    "parts": [
+      {
+        "path": "docs/release-evidence/ti-compatible-set-20261020/jobs-604d100/python/collector-log-part-1.log",
+        "bytes": 900002,
+        "sha256": "469e63f7a63f4d33d5d59ae201735a8aa1dd6d7cd762b10af940aa79c2db2e04",
+        "gitBlob": "4c7dcfec413042fbf66f275929a4023de4b61357"
+      },
+      {
+        "path": "docs/release-evidence/ti-compatible-set-20261020/jobs-604d100/python/collector-log-part-2.log",
+        "bytes": 360396,
+        "sha256": "bd47f17fb5ab99c719bc725f76d5e498d2f623e0cb00b4a2a43ed73a9bf13fbf",
+        "gitBlob": "dea6139403d67a5d06785df3a2efe78d259864b1"
+      }
+    ],
+    "concatenation": "Exact part bytes in array order without separator/normalization"
+  }
+]
