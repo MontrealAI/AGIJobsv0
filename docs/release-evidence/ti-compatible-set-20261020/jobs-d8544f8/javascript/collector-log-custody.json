@@ -1,0 +1,39 @@
+{
+  "schema": "ordered-original-collector-log-custody/v1",
+  "source": "d8544f8173b3c01faa88d50e7145ec455bc5e170",
+  "runId": 39482430424,
+  "attempt": 1,
+  "jobId": 118839993292,
+  "language": "javascript",
+  "encoding": "UTF-8",
+  "concatenation": "Concatenate part file bytes in this exact array order without separator; no normalization",
+  "bytes": 3209112,
+  "sha256": "49338fe06d92a07d765fed7ec3f82b985f067036b22383f6089e7db9b7aaa362",
+  "gitBlob": "c8e567c396bc96acf0f1c3bda813217e6900b2cd",
+  "parts": [
+    {
+      "path": "docs/release-evidence/ti-compatible-set-20261020/jobs-d8544f8/javascript/collector-log-part-1.log",
+      "bytes": 900002,
+      "sha256": "f42bfb5ab802f9461be35f0f55b604ab8a609e189bff5f4be5931b8a9f7fb1d9",
+      "gitBlob": "e5f498a578e1d04bf3f4ee2073c394495172d14f"
+    },
+    {
+      "path": "docs/release-evidence/ti-compatible-set-20261020/jobs-d8544f8/javascript/collector-log-part-2.log",
+      "bytes": 900000,
+      "sha256": "e7db300a64f312ad917065a311d47c9c9bbc38d56d82934c11b4e0373e1787ec",
+      "gitBlob": "20c0fae66264eeac837b0467b63ba7424123cee4"
+    },
+    {
+      "path": "docs/release-evidence/ti-compatible-set-20261020/jobs-d8544f8/javascript/collector-log-part-3.log",
+      "bytes": 900002,
+      "sha256": "802b8801e1512d6be0c8ac021e0bec0bc12edd65723639d0ad38db28aa4367b0",
+      "gitBlob": "19e5f93164f46d81007a861e7a3360226616cf85"
+    },
+    {
+      "path": "docs/release-evidence/ti-compatible-set-20261020/jobs-d8544f8/javascript/collector-log-part-4.log",
+      "bytes": 509108,
+      "sha256": "22e16b88cab5fa88120eccfbadff30e251472d4b27fa1ecef1d9c24eade34037",
+      "gitBlob": "564068a66ae4aef59f22433d68b3be0c71ab3f08"
+    }
+  ]
+}
