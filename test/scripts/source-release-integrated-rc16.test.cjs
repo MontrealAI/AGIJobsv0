@@ -367,6 +367,18 @@ test('real retained SARIF parsing preserves full rules, coverage, result multipl
       ...options,
     });
   assert.equal(verify().results.length, 96);
+  assert.equal(verify().referenceTransport, null);
+  for (const reviewedDocument of [
+    null,
+    {},
+    { runs: [] },
+    { version: '2.1.0', runs: [baseline, baseline] },
+  ]) {
+    assert.throws(
+      () => verify(document, { reviewedDocument }),
+      /Original authenticated reviewed scanner report is required/
+    );
+  }
   assert.throws(
     () =>
       verify(document, { review: { ...review, sourceCommit: 'b'.repeat(40) } }),
@@ -1447,6 +1459,7 @@ test('reference transport rejects record changes, ambiguous tables and unsupport
     (value) => { value.results[0].taxa = [{ id: 'metadata/unsupported', index: 0 }]; },
     (value) => { value.tool.driver.rules[0].relationships = [{ target: { id: 'metadata/a', index: 0 } }]; },
     (value) => { value.conversion = {}; },
+    (value) => { value.results[0].message.text = 'METADATA_ONLY SARIF:unsupported-scheme'; },
   ]) {
     const value = permutedReferenceMetadataOnly(reference);
     change(value);

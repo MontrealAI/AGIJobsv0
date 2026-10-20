@@ -1478,7 +1478,8 @@ records agree; duplicate IDs retain strict original order. The closed artifact
 profile requires complete unique URI/base identities and correct self-indices.
 Every admitted original result, notification, associated-rule, override, metric
 and artifact reference is checked. Ambiguous or unsupported indexed, taxonomy,
-relationship, external and converted forms fail closed. Inverse transport must
+relationship, external, converted and SARIF-scheme string-reference forms fail
+closed. Inverse transport must
 reconstruct the entire original later run object exactly; current telemetry and
 result ordering remain intact.
 
@@ -1494,7 +1495,9 @@ asset readback independently repeat the same authenticated comparison.
 This is a new executable source proposal with all three review slots null.
 Fresh genuine scans, independent complete source/result review, normal finite
 installation, all exact-source CI, final-main services and original publication
-checks remain required. No signing, chain write, result suppression, severity
+checks remain required. The standalone same-source raw parser remains a raw
+parser; every actual cross-source release comparison requires the authenticated
+original S1 report and the full transport proof. No signing, chain write, result suppression, severity
 admission, uploader substitution or three-slot binder relaxation is included.
 
 <!-- rc16-scanner-review

@@ -316,6 +316,18 @@ function reindexScannerRun(source, reference) {
     assert.equal(array(value, label).length, 0, 'Unsupported scanner ' + label);
   object(source, 'run');
   object(reference, 'reference run');
+  // SARIF-scheme strings can address arbitrary log table coordinates. This
+  // closed profile does not interpret them, including embedded message links.
+  const rejectPointers = (value) => {
+    if (typeof value === 'string') {
+      assert(!/sarif:/i.test(value), 'Unsupported SARIF-scheme reference');
+      return;
+    }
+    if (value && typeof value === 'object')
+      for (const item of Object.values(value)) rejectPointers(item);
+  };
+  rejectPointers(source);
+  rejectPointers(reference);
   const tool = scannerToolReferenceMap(
     object(source.tool, 'tool'),
     object(reference.tool, 'reference tool')
@@ -582,7 +594,6 @@ function verifyScannerAnalysis(
     baseline?.tool?.driver?.semanticVersion === run.tool.driver.semanticVersion,
     'Scanner tool identity changed'
   );
-  reindexScannerRun(run, run);
   scannerToolReferenceMap(run.tool, baseline.tool);
   assert.deepEqual(
     run.properties?.codeqlConfigSummary,
@@ -630,13 +641,23 @@ function verifyScannerResults(
     'Current scanner results require explicit source-bound review'
   );
   verifyScannerReviewBinding({ sha, review, git });
-  // Archive wrappers supply the independently authenticated ORIGINAL S1 report.
-  // Same-source unit/parser callers can use the actual document itself.
-  const reference = reviewedDocument?.runs?.[0] ||
-    (sha === review.sourceCommit ? run : null);
-  assert(reference, 'Original authenticated reviewed scanner report is required');
-  const comparison = transportScannerRun(run, reference);
-  const actual = comparison.run.results
+  // Preserve the original same-source raw parser API. Actual release wrappers
+  // always supply the independently authenticated ORIGINAL S1 report; a later
+  // source cannot compare against the S1 ledger without that mandatory input.
+  const hasReviewedDocument = reviewedDocument !== undefined;
+  assert(
+    hasReviewedDocument
+      ? reviewedDocument?.version === '2.1.0' &&
+          Array.isArray(reviewedDocument.runs) &&
+          reviewedDocument.runs.length === 1
+      : sha === review.sourceCommit,
+    'Original authenticated reviewed scanner report is required'
+  );
+  const comparison = hasReviewedDocument
+    ? transportScannerRun(run, reviewedDocument.runs[0])
+    : null;
+  const comparedRun = comparison ? comparison.run : run;
+  const actual = comparedRun.results
     .map(resultIdentity)
     .sort((a, b) => canonical(a).localeCompare(canonical(b)));
   const reviewed = review.results
@@ -651,7 +672,7 @@ function verifyScannerResults(
       );
       if (item.disposition === javascriptQualityPolicy.disposition)
         verifyAcknowledgedNonsecurityQuality(item, {
-          run: comparison.run,
+          run: comparedRun,
           baseline,
           review,
           git,
@@ -674,7 +695,7 @@ function verifyScannerResults(
     extractedFiles: sources.length,
     results: rawActual,
     comparedResults: actual,
-    referenceTransport: comparison.witness,
+    referenceTransport: comparison ? comparison.witness : null,
     reviewSource: review.sourceCommit,
     reviewEvidence: review.reviewEvidence,
     completeNonOverlay: true,
