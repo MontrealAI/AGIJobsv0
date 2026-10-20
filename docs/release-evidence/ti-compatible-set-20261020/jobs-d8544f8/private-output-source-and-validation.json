@@ -1,0 +1,80 @@
+{
+  "schema": "jobs-private-output-source-fix/v1",
+  "source": "d8544f8173b3c01faa88d50e7145ec455bc5e170",
+  "tree": "14140fc8a3ce95e0ca5b15a421dc97ed190ec735",
+  "parent": "4be317e72c4de22efc0626e1754321f115533632",
+  "parentTree": "e4186023910204f7294d9fedb3919ed52663701d",
+  "changed": [
+    {
+      "path": "scripts/release/publish-source-release-rc16.cjs",
+      "bytes": 65356,
+      "sha": "2e7f347efbc39c5c8a7e578a1ce7517903da6a8a",
+      "sha256": "9fa3d04c2490ddb713fe8aef5dcd2ffabb4e61de73903b2bb05ac9b7478940e7",
+      "mode": "100644",
+      "type": "blob"
+    },
+    {
+      "path": "scripts/release/qualify-source-release-rc16.cjs",
+      "bytes": 30968,
+      "sha": "ab4f85cd38c7c1f9825da416b8c210d7f1a8de8f",
+      "sha256": "4a7534e92467a693cb96f4292ffb77d24bf3e5753cf098275e0fc9b452234a5e",
+      "mode": "100644",
+      "type": "blob"
+    },
+    {
+      "path": "scripts/release/source-native-evidence-rc16.cjs",
+      "bytes": 14541,
+      "sha": "b27ac5a85cb7650519db1d9da4e9ec381d13c616",
+      "sha256": "73483f60ca244ece7436908a36843d29e128829b1af6e7d5256f311a56064e6c",
+      "mode": "100644",
+      "type": "blob"
+    },
+    {
+      "path": "scripts/release/source-native-gates-rc16.cjs",
+      "bytes": 12054,
+      "sha": "3c857923b165abf1cfe5ca56bf61d7d0c80e3b79",
+      "sha256": "4fc84995239318a797af13ffad915bf0a1197d31670c369b8d517ee6437479a7",
+      "mode": "100644",
+      "type": "blob"
+    },
+    {
+      "path": ".github/workflows/source-release-rc16.yml",
+      "bytes": 9777,
+      "sha": "af73f3dcbaaf6569ab1a99a3b5fbfb7093f62afa",
+      "sha256": "2684dff16d17f2fe5ca643629899a6e38ad1653f880324d8dd09e7ce76395d56",
+      "mode": "100644",
+      "type": "blob"
+    },
+    {
+      "path": "test/scripts/source-release-security-rc16-publish.test.cjs",
+      "bytes": 85098,
+      "sha": "b7d9df4584ac871933dedf8f3aa21e4da68bde26",
+      "sha256": "3ddd803bbdecd3d3a85a7d57ffba25bd478f1cefd7353b53f3467b3e7016a13c",
+      "mode": "100644",
+      "type": "blob"
+    }
+  ],
+  "unchangedLeaves": 5179,
+  "validation": {
+    "localRuntime": "Node v24.19.0; syntax and benign selected tests only, not hosted runtime qualification",
+    "tests": {
+      "command": "node --test --test-name-pattern='standalone current guide|publisher authenticates retained local evidence|release output' test/scripts/source-release-security-rc16-publish.test.cjs",
+      "passed": 7,
+      "failed": 0
+    },
+    "syntaxChecks": 5,
+    "yaml": "Parsed using primary runtime PyYAML; validate=10 minutes; publish=95 minutes",
+    "earlierPreparationFailures": [
+      "Two local YAML validation assertions used incorrect job keys. Actual YAML parse succeeded; corrected validate/publish key assertions passed."
+    ]
+  },
+  "reviewSlots": "All three NULL; fresh source scanners and independent review required",
+  "negativeFindingsRetained": {
+    "source": "4be317e72c4de22efc0626e1754321f115533632",
+    "temporaryPath": 4329063149,
+    "guideHarness": 4329043500,
+    "publisherHarness": 4329043526
+  },
+  "publication": "No tag/release created by failed 5cd publisher; no new publisher retry before fixes qualify",
+  "originalAssertionsRetained": true
+}
