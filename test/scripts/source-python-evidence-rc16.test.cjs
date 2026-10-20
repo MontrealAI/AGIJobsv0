@@ -17,6 +17,7 @@ const {
   readPythonScannerObservation,
   pythonEvidenceContexts,
   pythonArchiveInventory,
+  verifyPythonSemanticSummary,
   verifyPythonEvidenceArchives,
 } = require('../../scripts/release/source-python-evidence-rc16.cjs');
 
@@ -1061,4 +1062,68 @@ test('SYNTHETIC_REVIEW_METADATA_ONLY_NOT_SCAN_EVIDENCE: reviewed Python branch r
       }),
     /artifact identity mismatch/
   );
+});
+
+// Ordinary component/outer metadata only, not a SARIF report, scan result,
+// independent review, source admission or successful archive qualification.
+function ordinaryPythonComparisonMetadata() {
+  return {
+    scope: 'UNQUALIFIED_ORDINARY_METADATA_ONLY',
+    toolComponents: [
+      {
+        name: 'ordinary first component',
+        rules: [
+          { id: 'ordinary-b', text: 'all B metadata' },
+          { id: 'ordinary-a', text: 'all A metadata' },
+        ],
+        notifications: [
+          { id: 'ordinary-note-b', text: 'all note B metadata' },
+          { id: 'ordinary-note-a', text: 'all note A metadata' },
+        ],
+      },
+      { name: 'ordinary second component', rules: [], notifications: [] },
+    ],
+    outerMetadata: { values: ['left', 'right'], retained: true },
+  };
+}
+
+test('ordinary Python comparison metadata accepts complete unique-ID reordering without changing originals', () => {
+  const reviewed = ordinaryPythonComparisonMetadata();
+  const current = clone(reviewed);
+  current.toolComponents[0].rules.reverse();
+  current.toolComponents[0].notifications.reverse();
+  const before = clone({ reviewed, current });
+  verifyPythonSemanticSummary(current, reviewed);
+  assert.deepEqual({ reviewed, current }, before);
+});
+
+test('ordinary Python comparison metadata retains full records, component positions and duplicate ordering', () => {
+  const reviewed = ordinaryPythonComparisonMetadata();
+  const changedRecord = clone(reviewed);
+  changedRecord.toolComponents[0].rules[0].text = 'changed ordinary metadata';
+  assert.throws(() => verifyPythonSemanticSummary(changedRecord, reviewed), /complete independently reviewed toolComponents/);
+  const movedComponent = clone(reviewed);
+  movedComponent.toolComponents.reverse();
+  assert.throws(() => verifyPythonSemanticSummary(movedComponent, reviewed), /complete independently reviewed toolComponents/);
+  const duplicate = clone(reviewed);
+  duplicate.toolComponents[0].rules[1].id = duplicate.toolComponents[0].rules[0].id;
+  const reorderedDuplicate = clone(duplicate);
+  reorderedDuplicate.toolComponents[0].rules.reverse();
+  assert.throws(() => verifyPythonSemanticSummary(reorderedDuplicate, duplicate), /complete independently reviewed toolComponents/);
+  const lostMultiplicity = clone(reviewed);
+  lostMultiplicity.toolComponents[0].rules.pop();
+  assert.throws(() => verifyPythonSemanticSummary(lostMultiplicity, reviewed), /complete independently reviewed toolComponents/);
+});
+
+test('ordinary Python comparison metadata compares every remaining outer field exactly', () => {
+  const reviewed = ordinaryPythonComparisonMetadata();
+  for (const change of [
+    (value) => { value.outerMetadata.values.reverse(); },
+    (value) => { value.newOuterMetadata = 'not silently ignored'; },
+    (value) => { delete value.outerMetadata; },
+  ]) {
+    const current = clone(reviewed);
+    change(current);
+    assert.throws(() => verifyPythonSemanticSummary(current, reviewed), /complete Python scanner semantics differ/);
+  }
 });
