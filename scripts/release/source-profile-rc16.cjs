@@ -5,7 +5,7 @@
 const assert = require('node:assert/strict');
 const { createHash } = require('node:crypto');
 const integrationTransitionsSha256 =
-  'ef84123247ae9ce6f83efb772c86eaf748bf202d654a558187990bee1137ba29';
+  '1363ebe715ffc6405f70261924ff41313073f72dd0d03bd68440235cac78af02';
 const historical = require('./qualify-source-release.cjs');
 
 function freeze(value) {
@@ -29,10 +29,11 @@ const anchors = Object.freeze({
   nativePinTree: 'b279cfcbd53c814db48bb4ab997199ea7ca9269c',
   sourceConvergenceBaseline: '0b6d175a4ec8abf5b899e4a1b58a09e7045fe158',
   sourceConvergenceTree: '9e8dff3e0863afa73e04757f77ca2bcb8c01dca2',
-  pythonScannerBaseline: '2d9d63883b8dc487c0fddda77082f376763817e6',
-  pythonScannerTree: '6e45b8c28d47d8b888d6375a6aa6c8f68d05b452',
+  pythonScannerBaseline: 'cb30d7453b36eaca040c139e06fd9668b300c5f4',
+  pythonScannerTree: '19d86f484ed11de23bb54d11b193ea868d2de88e',
 });
 const allowedNewPaths = Object.freeze([
+  'scripts/release/emit-codeql-review-rc16.cjs',
   'scripts/release/source-codeql-service-rc16.cjs',
   'test/scripts/source-codeql-service-rc16.test.cjs',
   'test/scripts/source-codeql-service-fixture-rc16.cjs',
@@ -120,8 +121,8 @@ const scannerPolicy = freeze({
     disposition: 'Acknowledged nonsecurity quality',
     ruleIds: ['js/unused-local-variable', 'js/useless-assignment-to-local'],
   },
-  producerCommit: '2d9d63883b8dc487c0fddda77082f376763817e6',
-  producerTree: '6e45b8c28d47d8b888d6375a6aa6c8f68d05b452',
+  producerCommit: 'cb30d7453b36eaca040c139e06fd9668b300c5f4',
+  producerTree: '19d86f484ed11de23bb54d11b193ea868d2de88e',
   historicalConfigPath: '.github/codeql/config.yml',
   historicalConfigSha256:
     '4b34450e1dcc0b489feea158d642a6b66261d9e935463928782219c8716c0892',
@@ -131,8 +132,8 @@ const scannerPolicy = freeze({
   configBlob: '4533ce4d7f681a6230399e25fb1d1f736c84b25b',
   workflowPath: '.github/workflows/static-analysis.yml',
   workflowSha256:
-    'ef3b52f9e7d5375f6a2f5496ec8bdd0e9a034bf8d0609b3c57b029d5822236f5',
-  workflowBlob: '2018162a5dbba2231c03aa6bbe7843f8b89e5da0',
+    '8b577905c4b4e2a173180a8883262869de7e5f9861a7dd6d1f36e316519e60ce',
+  workflowBlob: 'da884644bf8b483c5ab6a643ce491c40b87898f6',
   archiveFiles: [
     'javascript.sarif',
     'source-extraction.json',
@@ -157,6 +158,7 @@ const scannerReceiverPaths = Object.freeze([
   'website/assets/computer-mission-copy.mjs',
 ]);
 const scannerRequiredPaths = Object.freeze([
+  'scripts/release/emit-codeql-review-rc16.cjs',
   'scripts/release/source-codeql-service-rc16.cjs',
   'integrations/alpha-agent/four-repo-computer-lifecycle.cjs',
   'integrations/alpha-agent/four-repo-computer-receipt.mjs',
@@ -192,16 +194,16 @@ const pythonScannerPolicy = freeze({
     headBranch: 'fix/processed-codeql-release-proof-20261020',
     ref: 'refs/heads/fix/processed-codeql-release-proof-20261020',
   },
-  producerCommit: '2d9d63883b8dc487c0fddda77082f376763817e6',
-  producerTree: '6e45b8c28d47d8b888d6375a6aa6c8f68d05b452',
+  producerCommit: 'cb30d7453b36eaca040c139e06fd9668b300c5f4',
+  producerTree: '19d86f484ed11de23bb54d11b193ea868d2de88e',
   configPath: '.github/codeql/config-python-integrations.yml',
   configSha256:
     'eb5b425facefb419987bf537280d5144a477b65a205ccd71df3866b60b01e560',
   configBlob: 'cdd0d5a0a1a0e691c3367bc5ce4429215f41381d',
   workflowPath: '.github/workflows/static-analysis-python-integrations.yml',
   workflowSha256:
-    'bdd2eb220edf1a3cb0da2bd67e2bcb8da298189235da7434b3fd01ce8e08c37d',
-  workflowBlob: '9f3527a86dd691466b433b5ccf2913c32d46fd5f',
+    '5b08a73d05cea31c09e8bf23a34b742c2fd85a47b7fbea52a94f70fd9c3ce077',
+  workflowBlob: '0d1220ce9b561ae8feeee9e47bb6a0ff4226c3c0',
   archiveFiles: [
     'python.sarif',
     'source-extraction.json',
