@@ -752,6 +752,14 @@ if (require.main === module)
       ['Bounded original raw SARIF is required for service capture', 'RAW_SARIF'],
       ['Processed CodeQL service tool differs from original raw report', 'TOOL_BINDING'],
       ['CodeQL service receipt exceeds its bound', 'RECEIPT_SIZE'],
+      ['Invalid CodeQL service tool version', 'TEXT_TOOL_VERSION'],
+      ['Invalid CodeQL service tool GUID', 'TEXT_TOOL_GUID'],
+      ['Invalid CodeQL service analysis key', 'TEXT_ANALYSIS_KEY'],
+      ['Invalid CodeQL service category', 'TEXT_CATEGORY'],
+      ['Invalid CodeQL service environment', 'TEXT_ENVIRONMENT'],
+      ['Invalid CodeQL service analysis creation time', 'TEXT_ANALYSIS_TIME'],
+      ['Invalid CodeQL service raw tool version', 'TEXT_RAW_TOOL_VERSION'],
+      ['Invalid CodeQL service raw tool GUID', 'TEXT_RAW_TOOL_GUID'],
     ];
     const message = typeof error?.message === 'string' ? error.message : '';
     const matched = failures.find(([prefix]) =>
