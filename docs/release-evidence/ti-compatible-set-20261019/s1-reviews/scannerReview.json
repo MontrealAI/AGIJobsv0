@@ -1,0 +1,832 @@
+{
+  "sourceCommit": "f2a8d2382b9a40814579f7a8be44046f247e0fd7",
+  "results": [
+    {
+      "ruleId": "js/xss-through-dom",
+      "path": "apps/console/src/components/GasPanel.tsx",
+      "region": {
+        "startLine": 366,
+        "startColumn": 22,
+        "endColumn": 38
+      },
+      "resultSha256": "83b31af7e0b36486b38c60fe2709377cc6ffd3c152fdad6c083ebcf9789596fc",
+      "disposition": "Demonstrably false positive",
+      "justification": "GasPanel input342 reaches state148/useMemo218 and React href366. ethers.isAddress(paymasterAddress) gates the address; parseUnits and toQuantity normalize the amount; generated URI has fixed ethereum: prefix. JSX property/text handling does not insert an arbitrary HTML string. Limits: No arbitrary URI scheme or executable HTML is established in the reported flow. This does not attest transaction approval or execution.",
+      "regressionEvidence": [
+        "https://github.com/MontrealAI/AGIJobsv0/blob/f2a8d2382b9a40814579f7a8be44046f247e0fd7/apps/console/src/components/GasPanel.tsx",
+        "https://github.com/MontrealAI/AGIJobsv0/blob/4a760692e539e53be31b30b00b13c33421275f43/docs/release-evidence/ti-compatible-set-20261019/jobs-final-s1-static-source-review.json"
+      ]
+    },
+    {
+      "ruleId": "js/xss-through-dom",
+      "path": "website/assets/frontier-desk.mjs",
+      "region": {
+        "startLine": 313,
+        "startColumn": 21,
+        "endColumn": 31
+      },
+      "resultSha256": "445d7d9e337a3efbc7f19bc0a839465dc6cf80f8a597675916ad2f48aa2b2b48",
+      "disposition": "Demonstrably false positive",
+      "justification": "frontier-desk source URL href313 comes from embedded fd-config. frontier-mission.js restorePackage46-70 and present243-245 verify imported mission/workspace before render; canonical frontier verifier359-398 reconstructs the mission and compares canonical equality. exactPublicURL74-120 requires canonical HTTPS, no credentials/control characters/fragments/non443 port/literal IP/local domain and rejects sensitive query names. Limits: Defensible renderer-context exception for this URL flow; no claim of DNS/network trust or external content accuracy.",
+      "regressionEvidence": [
+        "https://github.com/MontrealAI/AGIJobsv0/blob/f2a8d2382b9a40814579f7a8be44046f247e0fd7/website/assets/frontier-desk.mjs",
+        "https://github.com/MontrealAI/AGIJobsv0/blob/4a760692e539e53be31b30b00b13c33421275f43/docs/release-evidence/ti-compatible-set-20261019/jobs-final-s1-static-source-review.json"
+      ]
+    },
+    {
+      "ruleId": "js/xss-through-dom",
+      "path": "website/assets/frontier-desk.mjs",
+      "region": {
+        "startLine": 335,
+        "startColumn": 25,
+        "endColumn": 35
+      },
+      "resultSha256": "2f45bb7374065c99d22879c03cf17d15740d6204698ba314bc7732c9d9d43f3c",
+      "disposition": "Demonstrably false positive",
+      "justification": "Same closed import/replay validation as ordinal2; iframe.src335 receives canonical validated HTTPS source. iframe has empty sandbox331 and no-referrer policy. Limits: Defensible source/iframe XSS-context exception. External source content remains untrusted and sandboxed.",
+      "regressionEvidence": [
+        "https://github.com/MontrealAI/AGIJobsv0/blob/f2a8d2382b9a40814579f7a8be44046f247e0fd7/website/assets/frontier-desk.mjs",
+        "https://github.com/MontrealAI/AGIJobsv0/blob/4a760692e539e53be31b30b00b13c33421275f43/docs/release-evidence/ti-compatible-set-20261019/jobs-final-s1-static-source-review.json"
+      ]
+    },
+    {
+      "ruleId": "js/xss-through-dom",
+      "path": "website/assets/frontier-desk.mjs",
+      "region": {
+        "startLine": 340,
+        "startColumn": 33,
+        "endColumn": 43
+      },
+      "resultSha256": "e7516956ee9414c892a9031d6ded0fb6adbe0eccfd24a1767cc499ce9fb44576",
+      "disposition": "Demonstrably false positive",
+      "justification": "Same closed import/replay validation as ordinal2; fallback href340 receives the replayed canonical HTTPS source, with text/property rendering and noreferrer/noopener links. Limits: No arbitrary executable scheme/HTML is established in this specific fallback flow.",
+      "regressionEvidence": [
+        "https://github.com/MontrealAI/AGIJobsv0/blob/f2a8d2382b9a40814579f7a8be44046f247e0fd7/website/assets/frontier-desk.mjs",
+        "https://github.com/MontrealAI/AGIJobsv0/blob/4a760692e539e53be31b30b00b13c33421275f43/docs/release-evidence/ti-compatible-set-20261019/jobs-final-s1-static-source-review.json"
+      ]
+    },
+    {
+      "ruleId": "js/xss-through-dom",
+      "path": "website/assets/source-lab.js",
+      "region": {
+        "startLine": 78,
+        "startColumn": 30,
+        "endColumn": 45
+      },
+      "resultSha256": "9b86f6c3dfbe34a27f9163b46de3bbdf7f986a5e5e14fd564214960fd5e137a2",
+      "disposition": "Demonstrably false positive",
+      "justification": "source-lab.js78 takes source.download from build-owned #lab-data, not a runtime user-imported source table. experiences.mjs109-141 builds a nonbinary download examples/<sha16>-<ASCII-sanitized-basename> from tracked sources; binary fallback sourceURL is fixed immutable HTTPS GitHub URL from build.mjs387-388. loadExperiences requires tracked step.source; template JSON is escaped. Limits: User search/imported file content is written as textContent and cannot choose this build-owned URL. No runtime external source-table admission was found.",
+      "regressionEvidence": [
+        "https://github.com/MontrealAI/AGIJobsv0/blob/f2a8d2382b9a40814579f7a8be44046f247e0fd7/website/assets/source-lab.js",
+        "https://github.com/MontrealAI/AGIJobsv0/blob/4a760692e539e53be31b30b00b13c33421275f43/docs/release-evidence/ti-compatible-set-20261019/jobs-final-s1-static-source-review.json"
+      ]
+    },
+    {
+      "ruleId": "js/xss-through-dom",
+      "path": "website/assets/source-lab.js",
+      "region": {
+        "startLine": 81,
+        "startColumn": 30,
+        "endColumn": 43
+      },
+      "resultSha256": "45171308c20c856cdf35a0030a53803db4333bcbd1964466bc445302e6f1d6ef",
+      "disposition": "Demonstrably false positive",
+      "justification": "source-lab.js81 links source.url from the same tracked build-owned table as ordinal5; build.mjs fixes HTTPS GitHub repository/revision and per-segment encodes the source path. Limits: No arbitrary URI scheme/HTML source was established in the reported build graph.",
+      "regressionEvidence": [
+        "https://github.com/MontrealAI/AGIJobsv0/blob/f2a8d2382b9a40814579f7a8be44046f247e0fd7/website/assets/source-lab.js",
+        "https://github.com/MontrealAI/AGIJobsv0/blob/4a760692e539e53be31b30b00b13c33421275f43/docs/release-evidence/ti-compatible-set-20261019/jobs-final-s1-static-source-review.json"
+      ]
+    },
+    {
+      "ruleId": "js/xss-through-exception",
+      "path": "apps/onebox-static/v2/app.js",
+      "region": {
+        "startLine": 522,
+        "startColumn": 25,
+        "endColumn": 32
+      },
+      "resultSha256": "ecf9292068e73fe1886b5a8b25bc1f1cc147c7750896582c314eeea457e7415f",
+      "disposition": "Demonstrably false positive",
+      "justification": "Onebox raw flows take settings1116 through fetch plan error777/catch805/friendlyError806 into template string at807. appendMessage516 uses typeof content===string -> textContent520; reported appendChild(content)522 is only the mutually exclusive content instanceof Node branch. Limits: Both reported exception flows pass strings, so the reported Node sink is unreachable for those flows. No generic claim for unrelated Node callers.",
+      "regressionEvidence": [
+        "https://github.com/MontrealAI/AGIJobsv0/blob/f2a8d2382b9a40814579f7a8be44046f247e0fd7/apps/onebox-static/v2/app.js",
+        "https://github.com/MontrealAI/AGIJobsv0/blob/4a760692e539e53be31b30b00b13c33421275f43/docs/release-evidence/ti-compatible-set-20261019/jobs-final-s1-static-source-review.json"
+      ]
+    },
+    {
+      "ruleId": "js/bad-code-sanitization",
+      "path": "integrations/alpha-agent/tests/alpha-project-transfer.test.mjs",
+      "region": {
+        "startLine": 232,
+        "startColumn": 442,
+        "endColumn": 466
+      },
+      "resultSha256": "3b75f2692caba0cae134af3d539279caf1ead00f567bc9b51f03022f7ccb5ea5",
+      "disposition": "Demonstrably false positive",
+      "justification": "alpha-project-transfer.test.mjs232 constructs Node -e module source only from JSON.stringify of two fixed import.meta.url-relative module URLs and the frozen SOURCE_PATHS length. It is not embedded in HTML and has no user/external source input on that construction. Limits: Not a universal endorsement of JSON.stringify as a code sanitizer; the specific inputs are fixed source/test identities.",
+      "regressionEvidence": [
+        "https://github.com/MontrealAI/AGIJobsv0/blob/f2a8d2382b9a40814579f7a8be44046f247e0fd7/integrations/alpha-agent/tests/alpha-project-transfer.test.mjs",
+        "https://github.com/MontrealAI/AGIJobsv0/blob/4a760692e539e53be31b30b00b13c33421275f43/docs/release-evidence/ti-compatible-set-20261019/jobs-final-s1-static-source-review.json"
+      ]
+    },
+    {
+      "ruleId": "js/biased-cryptographic-random",
+      "path": "integrations/alpha-agent/vendor/alpha-computer/examples/successor-alpha/research.mjs",
+      "region": {
+        "startLine": 192,
+        "startColumn": 74,
+        "endColumn": 82
+      },
+      "resultSha256": "c28640aa27c4b798e2c5f24dfef4a6c89dfb723650a646a00af804c3025f110e",
+      "disposition": "Demonstrably false positive",
+      "justification": "The modulo arithmetic is biased, but the selected outputs are disclosed public synthetic revision labels. Complete reviewed module and its selected callers show no use as cryptographic key, secret, authentication token, security nonce, protected holdout or on-chain authority. Public synthetic sampling and any distribution quality remain local evaluation limitations, not a demonstrated real-world or independently protected evaluation.",
+      "regressionEvidence": [
+        "https://github.com/MontrealAI/AGIJobsv0/blob/f2a8d2382b9a40814579f7a8be44046f247e0fd7/integrations/alpha-agent/vendor/alpha-computer/examples/successor-alpha/research.mjs",
+        "https://github.com/MontrealAI/AGIJobsv0/blob/4a760692e539e53be31b30b00b13c33421275f43/docs/release-evidence/ti-compatible-set-20261019/jobs-final-s1-static-source-review.json"
+      ]
+    },
+    {
+      "ruleId": "js/biased-cryptographic-random",
+      "path": "integrations/alpha-agent/vendor/alpha-computer/examples/successor-alpha/research.mjs",
+      "region": {
+        "startLine": 193,
+        "startColumn": 77,
+        "endColumn": 85
+      },
+      "resultSha256": "f5dbbf686d62e21c5e2e02e1c467619f6d8a7f6025948289161fa959116921e6",
+      "disposition": "Demonstrably false positive",
+      "justification": "The modulo arithmetic is biased, but the selected outputs are disclosed public synthetic revision labels. Complete reviewed module and its selected callers show no use as cryptographic key, secret, authentication token, security nonce, protected holdout or on-chain authority. Public synthetic sampling and any distribution quality remain local evaluation limitations, not a demonstrated real-world or independently protected evaluation.",
+      "regressionEvidence": [
+        "https://github.com/MontrealAI/AGIJobsv0/blob/f2a8d2382b9a40814579f7a8be44046f247e0fd7/integrations/alpha-agent/vendor/alpha-computer/examples/successor-alpha/research.mjs",
+        "https://github.com/MontrealAI/AGIJobsv0/blob/4a760692e539e53be31b30b00b13c33421275f43/docs/release-evidence/ti-compatible-set-20261019/jobs-final-s1-static-source-review.json"
+      ]
+    },
+    {
+      "ruleId": "js/insecure-temporary-file",
+      "path": "integrations/alpha-agent/artifact-commitment.cjs",
+      "region": {
+        "startLine": 10,
+        "startColumn": 5,
+        "endColumn": 13
+      },
+      "resultSha256": "b88c96c776bb5c5981e1f25ee2398e7253d29fbd47f47bf4df9badb55e7085be",
+      "disposition": "Demonstrably false positive",
+      "justification": "artifact-commitment.cjs10 opens an operator-selected report with O_RDONLY|O_NONBLOCK. Same-descriptor fstat requires a regular file, bounded capture is <=8MiB+1, resultHash hashes captured bytes, and finally closes it. It never creates/truncates/writes the path. Limits: The reported insecure temporary-file creation does not occur at this read-only sink. This general report reader does allow operator-selected symlink paths and does not claim immutable-source isolation.",
+      "regressionEvidence": [
+        "https://github.com/MontrealAI/AGIJobsv0/blob/f2a8d2382b9a40814579f7a8be44046f247e0fd7/integrations/alpha-agent/artifact-commitment.cjs",
+        "https://github.com/MontrealAI/AGIJobsv0/blob/4a760692e539e53be31b30b00b13c33421275f43/docs/release-evidence/ti-compatible-set-20261019/jobs-final-s1-static-source-review.json"
+      ]
+    },
+    {
+      "ruleId": "js/file-system-race",
+      "path": "integrations/alpha-agent/pinned-alpha-checkout.cjs",
+      "region": {
+        "startLine": 163,
+        "startColumn": 16,
+        "endLine": 166,
+        "endColumn": 6
+      },
+      "resultSha256": "ff38f4729100cd9044b7e7a8fae5248feaaaca3f725464c48f9043ab5a921a39",
+      "disposition": "Demonstrably false positive",
+      "justification": "pinned-alpha-checkout.cjs163-166 retains a redundant pathname lstat then opens NOFOLLOW|NONBLOCK. boundedSourceBlob14-65 validates the actual FD regularity/size/stability (dev/ino/mode/size/mtime/ctime), captured bytes are matched to exact immutable Git blob+mode193-199, FD closes in finally. Canonical root219 is retained; preparation229-305 imports only private captured ESM map with relative closed edges, without reopening mutable module paths. Limits: The pathname precheck is not the safety boundary. Returned executable bytes are the independently validated, Git-matched FD capture; no general mutable-path race immunity claim.",
+      "regressionEvidence": [
+        "https://github.com/MontrealAI/AGIJobsv0/blob/f2a8d2382b9a40814579f7a8be44046f247e0fd7/integrations/alpha-agent/pinned-alpha-checkout.cjs",
+        "https://github.com/MontrealAI/AGIJobsv0/blob/4a760692e539e53be31b30b00b13c33421275f43/docs/release-evidence/ti-compatible-set-20261019/jobs-final-s1-static-source-review.json"
+      ]
+    },
+    {
+      "ruleId": "js/file-system-race",
+      "path": "integrations/alpha-agent/four-repo-computer-lifecycle.cjs",
+      "region": {
+        "startLine": 532,
+        "startColumn": 5,
+        "endLine": 535,
+        "endColumn": 7
+      },
+      "resultSha256": "efdbdd57e6141ac97fb7db757ac4b94ddb75341ae4600fdc4174f7b4a7ef2565",
+      "disposition": "Demonstrably false positive",
+      "justification": "Lifecycle exists check187 precedes final evidence write532-535, but final write itself uses exclusive wx mode0600 after final pinned-source check531. Limits: Existing-target clobber is rejected by atomic exclusive creation, independent of the earlier existence check. No same-user directory isolation or broader filesystem guarantee is claimed.",
+      "regressionEvidence": [
+        "https://github.com/MontrealAI/AGIJobsv0/blob/f2a8d2382b9a40814579f7a8be44046f247e0fd7/integrations/alpha-agent/four-repo-computer-lifecycle.cjs",
+        "https://github.com/MontrealAI/AGIJobsv0/blob/4a760692e539e53be31b30b00b13c33421275f43/docs/release-evidence/ti-compatible-set-20261019/jobs-final-s1-static-source-review.json"
+      ]
+    },
+    {
+      "ruleId": "js/file-access-to-http",
+      "path": "agent-gateway/agentEndpoint.ts",
+      "region": {
+        "startLine": 22,
+        "startColumn": 13,
+        "endLine": 24,
+        "endColumn": 8
+      },
+      "resultSha256": "b89662daeea98c7fc9a770cd0f264b02259870b23172b7c7cedc67e38d38d952",
+      "disposition": "Demonstrably false positive",
+      "justification": "Local identity.ts317-324 explicitly projects address/ENS/label/role/metadata, excluding stored privateKey/wallet. ensureIdentity397-424 returns that projection; TaskExecutionContext.wallet is not included in payload. agentRegistry334/358-359 obtains the provider endpoint from operator-owned local identity/config metadata.url. taskExecution395-416 intentionally sends selected job/analysis, profile metadata/configMetadata, projected identity, context and per-agent prior-result memory; default memory provider341-359 is the only production context registration, other registerContextProvider callers are tests. POST /agents routes527-571 has operator-only registration and HTTP(S) validation but belongs to a separate notification registry, not this provider endpoint admission. Limits: A file-to-HTTP information flow is accurate, but no unexpected private-key/wallet upload or weaker-principal recipient selection was found in the ordinary chain. An application-specific exception is defensible for intentional operator-configured workload transfer. Arbitrary metadata/context remains transmitted; no global confidentiality or live-provider data-policy certification follows. The content dataflow is retained as reported; this case-specific disposition addresses the inferred security concern under the documented application purpose, not a universal confidentiality, authentication or retention guarantee.",
+      "regressionEvidence": [
+        "https://github.com/MontrealAI/AGIJobsv0/blob/f2a8d2382b9a40814579f7a8be44046f247e0fd7/agent-gateway/agentEndpoint.ts",
+        "https://github.com/MontrealAI/AGIJobsv0/blob/4a760692e539e53be31b30b00b13c33421275f43/docs/release-evidence/ti-compatible-set-20261019/jobs-final-s1-static-source-review.json"
+      ]
+    },
+    {
+      "ruleId": "js/file-access-to-http",
+      "path": "agent-gateway/telemetry.ts",
+      "region": {
+        "startLine": 549,
+        "startColumn": 15,
+        "endColumn": 25
+      },
+      "resultSha256": "89c5afdb109d3bc6b0977a6ea36c2c9f862d5e521fc1a12e1a23260c8b308b9c",
+      "disposition": "Demonstrably false positive",
+      "justification": "Quarantine state -> health data -> telemetry644-652 projects quarantined boolean plus anomaly/job/count fields, then matching-wallet configured agent socket/URL523-549. Limits: Not a whole quarantine-file upload. The reported body flow is intentional health notification to the configured recipient, not evidence of arbitrary private-file exfiltration. The content dataflow is retained as reported; this case-specific disposition addresses the inferred security concern under the documented application purpose, not a universal confidentiality, authentication or retention guarantee.",
+      "regressionEvidence": [
+        "https://github.com/MontrealAI/AGIJobsv0/blob/f2a8d2382b9a40814579f7a8be44046f247e0fd7/agent-gateway/telemetry.ts",
+        "https://github.com/MontrealAI/AGIJobsv0/blob/4a760692e539e53be31b30b00b13c33421275f43/docs/release-evidence/ti-compatible-set-20261019/jobs-final-s1-static-source-review.json"
+      ]
+    },
+    {
+      "ruleId": "js/file-access-to-http",
+      "path": "agent-gateway/telemetry.ts",
+      "region": {
+        "startLine": 1286,
+        "startColumn": 13,
+        "endColumn": 36
+      },
+      "resultSha256": "3d7e11fd5ebd7cfcea5d8bd867515eea800bd3c72445c71580eff7b068ac74a2",
+      "disposition": "Demonstrably false positive",
+      "justification": "Identity read is projected to public signer address/ENS1174-1183. samples/time/signature envelope1197-1245, including persisted outbox1138, is intentionally sent to configured ENERGY_ORACLE_URL1278/1286. Limits: No stored private key or whole identity object is sent. Public address/signature/telemetry delivery is intentional; live destination data policy remains deployment-specific. The content dataflow is retained as reported; this case-specific disposition addresses the inferred security concern under the documented application purpose, not a universal confidentiality, authentication or retention guarantee.",
+      "regressionEvidence": [
+        "https://github.com/MontrealAI/AGIJobsv0/blob/f2a8d2382b9a40814579f7a8be44046f247e0fd7/agent-gateway/telemetry.ts",
+        "https://github.com/MontrealAI/AGIJobsv0/blob/4a760692e539e53be31b30b00b13c33421275f43/docs/release-evidence/ti-compatible-set-20261019/jobs-final-s1-static-source-review.json"
+      ]
+    },
+    {
+      "ruleId": "js/file-access-to-http",
+      "path": "apps/orchestrator/execution.ts",
+      "region": {
+        "startLine": 608,
+        "startColumn": 11,
+        "endColumn": 18
+      },
+      "resultSha256": "808e6e46a6505950a197dcad5825b3396cc2ba6f9a504e6698308df060c99af3",
+      "disposition": "Demonstrably false positive",
+      "justification": "Restored settlement journal state91 is reconciled to finalized success1136-1165; subtask preparation1339-1347 projects explicit parent/description/createdBy, then employer.prepareJobArtifacts35-42 publishes the selected job specification through configured IPFS pin608. Limits: The raw settlement journal is not uploaded; intentional selected job-spec content is published. No IPFS persistence or live-provider assurance is inferred. The content dataflow is retained as reported; this case-specific disposition addresses the inferred security concern under the documented application purpose, not a universal confidentiality, authentication or retention guarantee.",
+      "regressionEvidence": [
+        "https://github.com/MontrealAI/AGIJobsv0/blob/f2a8d2382b9a40814579f7a8be44046f247e0fd7/apps/orchestrator/execution.ts",
+        "https://github.com/MontrealAI/AGIJobsv0/blob/4a760692e539e53be31b30b00b13c33421275f43/docs/release-evidence/ti-compatible-set-20261019/jobs-final-s1-static-source-review.json"
+      ]
+    },
+    {
+      "ruleId": "js/file-access-to-http",
+      "path": "apps/orchestrator/execution.ts",
+      "region": {
+        "startLine": 609,
+        "startColumn": 17,
+        "endColumn": 23
+      },
+      "resultSha256": "e836796465bde79af4aca2158ba2062a6e70aead3b6d1496e02ba84169348f2d",
+      "disposition": "Demonstrably false positive",
+      "justification": "Same recovered finalized-success -> explicit child job parent/description/createdBy -> configured IPFS specification publication chain as ordinal17; separate result at execution609 is retained distinctly. Limits: Same application-purpose reasoning, with raw finding multiplicity preserved rather than merged. The content dataflow is retained as reported; this case-specific disposition addresses the inferred security concern under the documented application purpose, not a universal confidentiality, authentication or retention guarantee.",
+      "regressionEvidence": [
+        "https://github.com/MontrealAI/AGIJobsv0/blob/f2a8d2382b9a40814579f7a8be44046f247e0fd7/apps/orchestrator/execution.ts",
+        "https://github.com/MontrealAI/AGIJobsv0/blob/4a760692e539e53be31b30b00b13c33421275f43/docs/release-evidence/ti-compatible-set-20261019/jobs-final-s1-static-source-review.json"
+      ]
+    },
+    {
+      "ruleId": "js/file-access-to-http",
+      "path": "scripts/release/qualify-source-release-rc16.cjs",
+      "region": {
+        "startLine": 561,
+        "startColumn": 7,
+        "endColumn": 92
+      },
+      "resultSha256": "6505d1e8e4489b7f2611db1c8e7f19e3c517409611039d8f919b3d7728456a01",
+      "disposition": "Demonstrably false positive",
+      "justification": "Notes read251 -> strict exact-field parseScannerReview95-124 + source binding258 -> validated 40-lowercase-hex source SHA. Only that identifier enters the fixed GitHub repository commits/<SHA>/check-runs GET557/561/649. Limits: No notes/review body or arbitrary local file content is uploaded. Strong specific application-exception argument; authentic CodeQL gate remains mandatory. The content dataflow is retained as reported; this case-specific disposition addresses the inferred security concern under the documented application purpose, not a universal confidentiality, authentication or retention guarantee. The actual authentic CodeQL118411754521 warning at qualifier line561 is this same raw case; its presence is retained despite the service conclusion being SUCCESS.",
+      "regressionEvidence": [
+        "https://github.com/MontrealAI/AGIJobsv0/blob/f2a8d2382b9a40814579f7a8be44046f247e0fd7/scripts/release/qualify-source-release-rc16.cjs",
+        "https://github.com/MontrealAI/AGIJobsv0/blob/4a760692e539e53be31b30b00b13c33421275f43/docs/release-evidence/ti-compatible-set-20261019/jobs-final-s1-static-source-review.json"
+      ]
+    },
+    {
+      "ruleId": "js/file-access-to-http",
+      "path": "scripts/retrainAgent.ts",
+      "region": {
+        "startLine": 261,
+        "startColumn": 13,
+        "endLine": 265,
+        "endColumn": 9
+      },
+      "resultSha256": "ac8b6720557cbe50005b25280b7a9caa7757fc2f5cea0146cda5f5b30d866418",
+      "disposition": "Demonstrably false positive",
+      "justification": "Identity label353 is projected into reload reason/label/timestamp at retrain261-265, sent to operator-configured control URL (default localhost). Limits: No whole identity record or private key is sent. Intentional local/operator control notification, not general permission to export identity-file contents. The content dataflow is retained as reported; this case-specific disposition addresses the inferred security concern under the documented application purpose, not a universal confidentiality, authentication or retention guarantee.",
+      "regressionEvidence": [
+        "https://github.com/MontrealAI/AGIJobsv0/blob/f2a8d2382b9a40814579f7a8be44046f247e0fd7/scripts/retrainAgent.ts",
+        "https://github.com/MontrealAI/AGIJobsv0/blob/4a760692e539e53be31b30b00b13c33421275f43/docs/release-evidence/ti-compatible-set-20261019/jobs-final-s1-static-source-review.json"
+      ]
+    },
+    {
+      "ruleId": "js/user-controlled-bypass",
+      "path": "agent-gateway/apiHelpers.ts",
+      "region": {
+        "startLine": 174,
+        "startColumn": 10,
+        "endColumn": 15
+      },
+      "resultSha256": "b3f8d710355360313ebe31b920a807c21321327facca03017cc64f1d6ac619bc",
+      "disposition": "Demonstrably false positive",
+      "justification": "Filter unsupported contributor metadata entries before address normalization and optional content verification. The user controls optional annotation presence, not gateway authorization. Discarding a non-object means no contributor signature or attribution is retained for that entry. The flagged action is cryptographic verification itself, not a privileged action after skipped verification. Enforcement: Discarded entry cannot become a contributor; valid entries require a normalized Ethereum address. A retained nonempty string signature requires payload verification and recovered-address equality. Gateway authority established independently of contributor metadata. Limits: This is not evidence that every unsigned attribution is true. Attribution model remains explicitly historical/annotation-only.",
+      "regressionEvidence": [
+        "https://github.com/MontrealAI/AGIJobsv0/blob/f2a8d2382b9a40814579f7a8be44046f247e0fd7/agent-gateway/apiHelpers.ts",
+        "https://github.com/MontrealAI/AGIJobsv0/blob/4a760692e539e53be31b30b00b13c33421275f43/docs/release-evidence/ti-compatible-set-20261019/jobs-final-s1-static-source-review.json"
+      ]
+    },
+    {
+      "ruleId": "js/user-controlled-bypass",
+      "path": "agent-gateway/apiHelpers.ts",
+      "region": {
+        "startLine": 207,
+        "startColumn": 42,
+        "endColumn": 69
+      },
+      "resultSha256": "eb8d1644934679ed9a346fcf211eb36c3ff722409dc3b50dd456fe464162764f",
+      "disposition": "Demonstrably false positive",
+      "justification": "Distinguish optional signed contributor annotations from unsigned/digest-only annotations. Source and documented model permit unsigned annotations. Omitting optional evidence does not omit managed-wallet authorization and does not attach an unverified signature as verified. Enforcement: Nonempty string signature must have payload and matching recovered contributor address; otherwise throws. Optional digest-only branch retains no signature. Current documented model: role/label/metadata/unsigned digests are evidence annotations, not authorization. Signature attests payload, not new job-specific permission. Limits: Blank or non-string supplied signature values take the unsigned/digest-only path; this helper does not reject every explicitly malformed signature value. If policy requires reject-on-presence rather than optional nonempty-string evidence, owner should clarify or correct that input contract. The checked payload is arbitrary contributor message content; it is not required to bind a job ID/resultHash. Do not claim job-specific independent approval.",
+      "regressionEvidence": [
+        "https://github.com/MontrealAI/AGIJobsv0/blob/f2a8d2382b9a40814579f7a8be44046f247e0fd7/agent-gateway/apiHelpers.ts",
+        "https://github.com/MontrealAI/AGIJobsv0/blob/4a760692e539e53be31b30b00b13c33421275f43/docs/release-evidence/ti-compatible-set-20261019/jobs-final-s1-static-source-review.json"
+      ]
+    },
+    {
+      "ruleId": "js/user-controlled-bypass",
+      "path": "agent-gateway/apiHelpers.ts",
+      "region": {
+        "startLine": 208,
+        "startColumn": 11,
+        "endColumn": 32
+      },
+      "resultSha256": "905abb518729f2ee3f23dee6441fbd0ae049fb34f4c2ebe69bbbb0c9c330117d",
+      "disposition": "Demonstrably false positive",
+      "justification": "Require the signed payload when a contributor signature is supplied in the accepted signed form. The false branch rejects rather than accepts a signed annotation. Both HTTP and gRPC parse contributors only after their separate principal/wallet checks. Enforcement: Missing payload throws; existing payload is canonicalized, verified, and compared to normalized contributor address. Empty payload remains distinct from absent payload. gRPC adapter passes signed_payload through to the same shared verification helper. Current documented wire contract requires exact signed payload and rejects a signature with only an unverified digest. Limits: The optional-signature/malformed-value boundary in case22 still applies. Historical records are not reverified or upgraded by this helper; no formal disposition is made.",
+      "regressionEvidence": [
+        "https://github.com/MontrealAI/AGIJobsv0/blob/f2a8d2382b9a40814579f7a8be44046f247e0fd7/agent-gateway/apiHelpers.ts",
+        "https://github.com/MontrealAI/AGIJobsv0/blob/4a760692e539e53be31b30b00b13c33421275f43/docs/release-evidence/ti-compatible-set-20261019/jobs-final-s1-static-source-review.json"
+      ]
+    },
+    {
+      "ruleId": "js/user-controlled-bypass",
+      "path": "agent-gateway/routes.ts",
+      "region": {
+        "startLine": 200,
+        "startColumn": 7,
+        "endColumn": 16
+      },
+      "resultSha256": "f328e91e8d1bd994880e65ded4c6749dc1f083ce5931a84a4887fd31f321201b",
+      "disposition": "Demonstrably false positive",
+      "justification": "Attempt challenge authentication only when both necessary headers exist. Header presence starts verification. It does not grant acceptance or choose the server-side principal. Both signature and recovered managed-wallet checks remain mandatory unless the separately configured operator key authenticates. Enforcement: Principal is kept in server-owned WeakMap; current challenge is bounded by five-minute TTL. Nonempty header is insufficient: EIP-191 verification must recover declared address and exact existing managed wallet; successful challenge is rotated; otherwise401. Wallet operation must match the principal; operator-only routes separately require configured operator key. Limits: Raw24 is separate from raw25 despite the shared line200. Preserve both records.",
+      "regressionEvidence": [
+        "https://github.com/MontrealAI/AGIJobsv0/blob/f2a8d2382b9a40814579f7a8be44046f247e0fd7/agent-gateway/routes.ts",
+        "https://github.com/MontrealAI/AGIJobsv0/blob/4a760692e539e53be31b30b00b13c33421275f43/docs/release-evidence/ti-compatible-set-20261019/jobs-final-s1-static-source-review.json"
+      ]
+    },
+    {
+      "ruleId": "js/user-controlled-bypass",
+      "path": "agent-gateway/routes.ts",
+      "region": {
+        "startLine": 200,
+        "startColumn": 20,
+        "endColumn": 27
+      },
+      "resultSha256": "429fc0cff3a6a57ad7bf0dfc73654a43ff88cbdbfb539382ba488eba169c1d10",
+      "disposition": "Demonstrably false positive",
+      "justification": "Require declared signer address before attempting challenge verification. User-provided address presence is an input prerequisite. Authentication uses recovered identity and stored managed-wallet membership, and authorization separately binds the selected wallet. Enforcement: Declared address is checked against cryptographically recovered address and managed-wallet lookup, not accepted from the request. Server-side principal cannot select another managed wallet or elevate itself to operator. Limits: Raw25 remains a distinct diagnostic (different start column/source flow) from raw24.",
+      "regressionEvidence": [
+        "https://github.com/MontrealAI/AGIJobsv0/blob/f2a8d2382b9a40814579f7a8be44046f247e0fd7/agent-gateway/routes.ts",
+        "https://github.com/MontrealAI/AGIJobsv0/blob/4a760692e539e53be31b30b00b13c33421275f43/docs/release-evidence/ti-compatible-set-20261019/jobs-final-s1-static-source-review.json"
+      ]
+    },
+    {
+      "ruleId": "js/user-controlled-bypass",
+      "path": "apps/onebox-static/app.mjs",
+      "region": {
+        "startLine": 1482,
+        "startColumn": 8,
+        "endColumn": 15
+      },
+      "resultSha256": "61f898923bd39c74c3e389a31c73079c11515d17bccd4f81d130d87300e26bac",
+      "disposition": "Demonstrably false positive",
+      "justification": "Client availability/configuration guard before an HTTP POST to the selected endpoint. The diagnostic marks endpoint presence as guarding fetch. That predicate establishes a destination, not server authorization; the provided TypeScript endpoint enforces its own authentication before handler access. A user can configure a server, but that does not make a missing/invalid token acceptable to the built-in server. Enforcement: Base URL parsing limits it to HTTP(S) without embedded credentials/query/fragment. API token remains page-memory data and auth header is added separately from endpoint presence. Base URL change clears prior token; existing session token is not evidence of an authorization bypass. Runtime base change also clears prior token. All built-in TypeScript router handlers are behind configured-secret, missing-header and bearer/HMAC validation checks. Built-in /execute additionally requires intent object and planHash before service invocation. Limits: This proof covers the provided TypeScript server. Arbitrary configured remote services are not authenticated or qualified by a client URL check. Legacy executeICS sends an ICS-shaped request, while the built-in TypeScript /execute expects a job-intent/planHash shape. No successful legacy execution against that endpoint is inferred. Legacy confirmFlow returns true when ics.confirm is absent/false. Do not claim unconditional per-action user consent across all legacy backend plans; this is separate from the reported endpoint-presence predicate. Two raw codeFlows (70 and72 thread locations) are retained, not deduplicated. No production execution is claimed.",
+      "regressionEvidence": [
+        "https://github.com/MontrealAI/AGIJobsv0/blob/f2a8d2382b9a40814579f7a8be44046f247e0fd7/apps/onebox-static/app.mjs",
+        "https://github.com/MontrealAI/AGIJobsv0/blob/4a760692e539e53be31b30b00b13c33421275f43/docs/release-evidence/ti-compatible-set-20261019/jobs-final-s1-static-source-review.json"
+      ]
+    },
+    {
+      "ruleId": "js/user-controlled-bypass",
+      "path": "packages/successor-core/src/frontier-mission.mjs",
+      "region": {
+        "startLine": 431,
+        "startColumn": 7,
+        "endColumn": 40
+      },
+      "resultSha256": "366a3c8b3f8d931b0b6e11db1b1746c6cc1fffa7d1ef265614f8f0352926b5d4",
+      "disposition": "Demonstrably false positive",
+      "justification": "Select direct mission JSON versus a supported mission-export envelope. User-selected format does not skip mission verification: both accepted representations reach the same verifier. This is a pure preparation/restore path; it does not start a model, browser, network, wallet or production operation. Enforcement: Bounded canonical JSON parse precedes branch; direct and envelope routes both call verifyFrontierMission. Same schema/kind/shape/source checks and deterministic canonical replay/digest comparison apply to both branches. Replay validates input shape, bounded content, rights attestation, source identities, URLs and aggregate sizes. Seal authenticates content equality, not truth; source retrieval status remains NOT_RETRIEVED. UI explicitly labels restored content bindings as verified while claims remain unverified. Limits: Rights and provenance statements remain user attestations; digest equality is not independent factual verification. The raw source is URL hash input, not a previously trusted record.",
+      "regressionEvidence": [
+        "https://github.com/MontrealAI/AGIJobsv0/blob/f2a8d2382b9a40814579f7a8be44046f247e0fd7/packages/successor-core/src/frontier-mission.mjs",
+        "https://github.com/MontrealAI/AGIJobsv0/blob/4a760692e539e53be31b30b00b13c33421275f43/docs/release-evidence/ti-compatible-set-20261019/jobs-final-s1-static-source-review.json"
+      ]
+    },
+    {
+      "ruleId": "js/http-to-file-access",
+      "path": "agent-gateway/employer.ts",
+      "region": {
+        "startLine": 54,
+        "startColumn": 5,
+        "endColumn": 37
+      },
+      "resultSha256": "2ef3f39bbeaa21492092841ebeb1a357b3e50b8e118e6a0d87ac0dbaac53397b",
+      "disposition": "Demonstrably false positive",
+      "justification": "operatorAuth route1977 -> confirmed job record113-127 -> appendJSON employer54 at fixed configured JOB_LEDGER29-30. Limits: HTTP-derived bytes influence serialized content, not filesystem destination. Intended authenticated job-ledger persistence. The content dataflow is retained as reported; this case-specific disposition addresses the inferred security concern under the documented application purpose, not a universal confidentiality, authentication or retention guarantee.",
+      "regressionEvidence": [
+        "https://github.com/MontrealAI/AGIJobsv0/blob/f2a8d2382b9a40814579f7a8be44046f247e0fd7/agent-gateway/employer.ts",
+        "https://github.com/MontrealAI/AGIJobsv0/blob/4a760692e539e53be31b30b00b13c33421275f43/docs/release-evidence/ti-compatible-set-20261019/jobs-final-s1-static-source-review.json"
+      ]
+    },
+    {
+      "ruleId": "js/http-to-file-access",
+      "path": "agent-gateway/telemetry.ts",
+      "region": {
+        "startLine": 1153,
+        "startColumn": 5,
+        "endColumn": 35
+      },
+      "resultSha256": "d9664fac8b74f457aadbd6468021538dfea31e39603f901549231ef43dd1393b",
+      "disposition": "Demonstrably false positive",
+      "justification": "Authenticated and wallet-authorized telemetry routes1817/1830 -> enriched sample1881-1886 -> publish1300 -> fixed outbox JSON1151-1154. Limits: Incoming telemetry becomes content at a fixed configured destination; no request-controlled path is established. The content dataflow is retained as reported; this case-specific disposition addresses the inferred security concern under the documented application purpose, not a universal confidentiality, authentication or retention guarantee.",
+      "regressionEvidence": [
+        "https://github.com/MontrealAI/AGIJobsv0/blob/f2a8d2382b9a40814579f7a8be44046f247e0fd7/agent-gateway/telemetry.ts",
+        "https://github.com/MontrealAI/AGIJobsv0/blob/4a760692e539e53be31b30b00b13c33421275f43/docs/release-evidence/ti-compatible-set-20261019/jobs-final-s1-static-source-review.json"
+      ]
+    },
+    {
+      "ruleId": "js/http-to-file-access",
+      "path": "agent-gateway/validationStore.ts",
+      "region": {
+        "startLine": 231,
+        "startColumn": 26,
+        "endColumn": 30
+      },
+      "resultSha256": "71bda75e290dc50b846d89852befbef62529d5603a66de76fb3c3680887a0283",
+      "disposition": "Demonstrably false positive",
+      "justification": "Validation route parsed boolean/normalized32-byte salt -> bounded plain JSON serialiseRecord147-188. recordPath116-132 uses strict uint256 job/address identifiers; exclusive mode0600 temporary file230 -> atomic rename235. Limits: Request content is persisted through constrained filenames and private exclusive temp creation, not arbitrary path selection. The content dataflow is retained as reported; this case-specific disposition addresses the inferred security concern under the documented application purpose, not a universal confidentiality, authentication or retention guarantee.",
+      "regressionEvidence": [
+        "https://github.com/MontrealAI/AGIJobsv0/blob/f2a8d2382b9a40814579f7a8be44046f247e0fd7/agent-gateway/validationStore.ts",
+        "https://github.com/MontrealAI/AGIJobsv0/blob/4a760692e539e53be31b30b00b13c33421275f43/docs/release-evidence/ti-compatible-set-20261019/jobs-final-s1-static-source-review.json"
+      ]
+    },
+    {
+      "ruleId": "js/http-to-file-access",
+      "path": "services/notifications/server.js",
+      "region": {
+        "startLine": 29,
+        "startColumn": 34,
+        "endColumn": 64
+      },
+      "resultSha256": "a8a15403fe33c03a383fcfd62985cf57a09fe42a18c65df018042a342f47df19",
+      "disposition": "Demonstrably false positive",
+      "justification": "notifications server fixed storageDir/logFile17-18 -> appendJSON27-29. /notify59-68 deliberately accepts JSON object notifications; parser512kb15 and peer rate120/min8-14 bound requests. It does not authenticate callers; listen binds0.0.0.0. Limits: The query accurately follows HTTP content to an intentional fixed JSONL sink; no path-control defect is established. Do not claim the service is private/authenticated or that rate limiting proves retention/ingress policy. Intended deployment access and retention remain explicit operational limits, not evidence that this reported write is unauthorized arbitrary file access. The content dataflow is retained as reported; this case-specific disposition addresses the inferred security concern under the documented application purpose, not a universal confidentiality, authentication or retention guarantee.",
+      "regressionEvidence": [
+        "https://github.com/MontrealAI/AGIJobsv0/blob/f2a8d2382b9a40814579f7a8be44046f247e0fd7/services/notifications/server.js",
+        "https://github.com/MontrealAI/AGIJobsv0/blob/4a760692e539e53be31b30b00b13c33421275f43/docs/release-evidence/ti-compatible-set-20261019/jobs-final-s1-static-source-review.json"
+      ]
+    },
+    {
+      "ruleId": "js/http-to-file-access",
+      "path": "shared/containedFiles.ts",
+      "region": {
+        "startLine": 116,
+        "startColumn": 26,
+        "endColumn": 30
+      },
+      "resultSha256": "1f968a5e5f02789458f1623071991f4863d592bbc4a8d7f111045a4835a157e0",
+      "disposition": "Demonstrably false positive",
+      "justification": "Operator planner normalised ID426/269 and receiptStore26-39 validated filename -> retained private FD32-59/whitelist67-76 -> random exclusive mode0600 temp114 -> descriptor-anchored link/rename118-119. Limits: Inbound HTTP/IPFS bytes become serialized content, not an unconstrained destination filename. The fixed contained-file writer intentionally persists the selected record. The content dataflow is retained as reported; this case-specific disposition addresses the inferred security concern under the documented application purpose, not a universal confidentiality, authentication or retention guarantee.",
+      "regressionEvidence": [
+        "https://github.com/MontrealAI/AGIJobsv0/blob/f2a8d2382b9a40814579f7a8be44046f247e0fd7/shared/containedFiles.ts",
+        "https://github.com/MontrealAI/AGIJobsv0/blob/4a760692e539e53be31b30b00b13c33421275f43/docs/release-evidence/ti-compatible-set-20261019/jobs-final-s1-static-source-review.json"
+      ]
+    },
+    {
+      "ruleId": "js/http-to-file-access",
+      "path": "shared/worldModel.ts",
+      "region": {
+        "startLine": 203,
+        "startColumn": 5,
+        "endColumn": 39
+      },
+      "resultSha256": "21f1a54122beaa9146fbb963d56a279788a55575dc17b3316cb315982fe5c561",
+      "disposition": "Demonstrably false positive",
+      "justification": "HTTP CID/string result165-183 is converted to observation content and appended as JSONL201-204 at fixed OBSERVATIONS_PATH105-107. Limits: Intentional response-content persistence, not remote control of a filesystem path or arbitrary source-file copy. The content dataflow is retained as reported; this case-specific disposition addresses the inferred security concern under the documented application purpose, not a universal confidentiality, authentication or retention guarantee.",
+      "regressionEvidence": [
+        "https://github.com/MontrealAI/AGIJobsv0/blob/f2a8d2382b9a40814579f7a8be44046f247e0fd7/shared/worldModel.ts",
+        "https://github.com/MontrealAI/AGIJobsv0/blob/4a760692e539e53be31b30b00b13c33421275f43/docs/release-evidence/ti-compatible-set-20261019/jobs-final-s1-static-source-review.json"
+      ]
+    },
+    {
+      "ruleId": "js/unused-local-variable",
+      "path": "scripts/release/publish-source-release-rc16.cjs",
+      "region": {
+        "startLine": 18,
+        "startColumn": 3,
+        "endColumn": 20
+      },
+      "resultSha256": "1aaf067df146ba044691fda82efaf3e612c22f31d1e1880250b9d0634abf5d07",
+      "disposition": "Acknowledged nonsecurity quality",
+      "justification": "Exact actual-source binding `scannerReviewPath` in `scripts/release/publish-source-release-rc16.cjs` at line18: The reported import binding is not used as an executable reference in this module. Other lexical matches, where present, are module-specifier text or unrelated object property names. This is an accurate unused-binding quality note. The CommonJS require expression remains executed; the import uses a Node builtin or a directly exported plain property, rather than a deferred call or getter. This assessment does not remove an import, change source or claim an uninvoked verification function supplied a gate.",
+      "regressionEvidence": [
+        "https://github.com/MontrealAI/AGIJobsv0/blob/f2a8d2382b9a40814579f7a8be44046f247e0fd7/scripts/release/publish-source-release-rc16.cjs",
+        "https://github.com/MontrealAI/AGIJobsv0/blob/4a760692e539e53be31b30b00b13c33421275f43/docs/release-evidence/ti-compatible-set-20261019/jobs-final-s1-static-source-review.json"
+      ],
+      "qualityReview": {
+        "schema": "agijobsv0/nonsecurity-quality-review/1",
+        "sourceBlob": "22357d83f723141c981fb07d7ab5275e6a90e348",
+        "ruleMetadataSha256": "6dc9454a4aba05bdb4b6e0a84952160a3738cbc51c4bcdfa248b5765a705d008",
+        "queryComponentSha256": "0456fa4df8b336036b92fd368f7f38fe9d7274f32bff96503d4a1c2ffaec1175",
+        "codeqlConfigSummarySha256": "e54d1848b96dc1093cbf6acc90ad9fdcc8f30d7c7d2c98cc6f41632cdb794d3f",
+        "behaviorAssessment": "Exact actual-source binding `scannerReviewPath` in `scripts/release/publish-source-release-rc16.cjs` at line18: The reported import binding is not used as an executable reference in this module. Other lexical matches, where present, are module-specifier text or unrelated object property names. This is an accurate unused-binding quality note. The CommonJS require expression remains executed; the import uses a Node builtin or a directly exported plain property, rather than a deferred call or getter. This assessment does not remove an import, change source or claim an uninvoked verification function supplied a gate.",
+        "independentReviewEvidence": [
+          "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282707246",
+          "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282692265",
+          "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282618052"
+        ]
+      }
+    },
+    {
+      "ruleId": "js/unused-local-variable",
+      "path": "scripts/release/source-native-gates-rc16.cjs",
+      "region": {
+        "startLine": 4,
+        "startColumn": 7,
+        "endColumn": 9
+      },
+      "resultSha256": "1aea93b30deeca95ce3d8a272eb69f19dfbec667297783257f8f3c44b18934fa",
+      "disposition": "Acknowledged nonsecurity quality",
+      "justification": "Exact actual-source binding `fs` in `scripts/release/source-native-gates-rc16.cjs` at line4: The reported import binding is not used as an executable reference in this module. Other lexical matches, where present, are module-specifier text or unrelated object property names. This is an accurate unused-binding quality note. The CommonJS require expression remains executed; the import uses a Node builtin or a directly exported plain property, rather than a deferred call or getter. This assessment does not remove an import, change source or claim an uninvoked verification function supplied a gate.",
+      "regressionEvidence": [
+        "https://github.com/MontrealAI/AGIJobsv0/blob/f2a8d2382b9a40814579f7a8be44046f247e0fd7/scripts/release/source-native-gates-rc16.cjs",
+        "https://github.com/MontrealAI/AGIJobsv0/blob/4a760692e539e53be31b30b00b13c33421275f43/docs/release-evidence/ti-compatible-set-20261019/jobs-final-s1-static-source-review.json"
+      ],
+      "qualityReview": {
+        "schema": "agijobsv0/nonsecurity-quality-review/1",
+        "sourceBlob": "ab7eab0f86d6bef62e03e3aefa49cdf248db0542",
+        "ruleMetadataSha256": "6dc9454a4aba05bdb4b6e0a84952160a3738cbc51c4bcdfa248b5765a705d008",
+        "queryComponentSha256": "0456fa4df8b336036b92fd368f7f38fe9d7274f32bff96503d4a1c2ffaec1175",
+        "codeqlConfigSummarySha256": "e54d1848b96dc1093cbf6acc90ad9fdcc8f30d7c7d2c98cc6f41632cdb794d3f",
+        "behaviorAssessment": "Exact actual-source binding `fs` in `scripts/release/source-native-gates-rc16.cjs` at line4: The reported import binding is not used as an executable reference in this module. Other lexical matches, where present, are module-specifier text or unrelated object property names. This is an accurate unused-binding quality note. The CommonJS require expression remains executed; the import uses a Node builtin or a directly exported plain property, rather than a deferred call or getter. This assessment does not remove an import, change source or claim an uninvoked verification function supplied a gate.",
+        "independentReviewEvidence": [
+          "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282707246",
+          "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282692265",
+          "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282618052"
+        ]
+      }
+    },
+    {
+      "ruleId": "js/unused-local-variable",
+      "path": "scripts/release/source-native-gates-rc16.cjs",
+      "region": {
+        "startLine": 5,
+        "startColumn": 7,
+        "endColumn": 11
+      },
+      "resultSha256": "ec5278d8ab68d6cea226042ec064ccf0fe18b2ddece657726c203a7c46f838cf",
+      "disposition": "Acknowledged nonsecurity quality",
+      "justification": "Exact actual-source binding `path` in `scripts/release/source-native-gates-rc16.cjs` at line5: The reported import binding is not used as an executable reference in this module. Other lexical matches, where present, are module-specifier text or unrelated object property names. This is an accurate unused-binding quality note. The CommonJS require expression remains executed; the import uses a Node builtin or a directly exported plain property, rather than a deferred call or getter. This assessment does not remove an import, change source or claim an uninvoked verification function supplied a gate.",
+      "regressionEvidence": [
+        "https://github.com/MontrealAI/AGIJobsv0/blob/f2a8d2382b9a40814579f7a8be44046f247e0fd7/scripts/release/source-native-gates-rc16.cjs",
+        "https://github.com/MontrealAI/AGIJobsv0/blob/4a760692e539e53be31b30b00b13c33421275f43/docs/release-evidence/ti-compatible-set-20261019/jobs-final-s1-static-source-review.json"
+      ],
+      "qualityReview": {
+        "schema": "agijobsv0/nonsecurity-quality-review/1",
+        "sourceBlob": "ab7eab0f86d6bef62e03e3aefa49cdf248db0542",
+        "ruleMetadataSha256": "6dc9454a4aba05bdb4b6e0a84952160a3738cbc51c4bcdfa248b5765a705d008",
+        "queryComponentSha256": "0456fa4df8b336036b92fd368f7f38fe9d7274f32bff96503d4a1c2ffaec1175",
+        "codeqlConfigSummarySha256": "e54d1848b96dc1093cbf6acc90ad9fdcc8f30d7c7d2c98cc6f41632cdb794d3f",
+        "behaviorAssessment": "Exact actual-source binding `path` in `scripts/release/source-native-gates-rc16.cjs` at line5: The reported import binding is not used as an executable reference in this module. Other lexical matches, where present, are module-specifier text or unrelated object property names. This is an accurate unused-binding quality note. The CommonJS require expression remains executed; the import uses a Node builtin or a directly exported plain property, rather than a deferred call or getter. This assessment does not remove an import, change source or claim an uninvoked verification function supplied a gate.",
+        "independentReviewEvidence": [
+          "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282707246",
+          "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282692265",
+          "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282618052"
+        ]
+      }
+    },
+    {
+      "ruleId": "js/unused-local-variable",
+      "path": "scripts/release/source-native-gates-rc16.cjs",
+      "region": {
+        "startLine": 7,
+        "startColumn": 9,
+        "endColumn": 21
+      },
+      "resultSha256": "6325952e9dbe856417659b95860e0743ec7c33ce2c902dbac69eb94c3e5ee914",
+      "disposition": "Acknowledged nonsecurity quality",
+      "justification": "Exact actual-source binding `execFileSync` in `scripts/release/source-native-gates-rc16.cjs` at line7: The reported import binding is not used as an executable reference in this module. Other lexical matches, where present, are module-specifier text or unrelated object property names. This is an accurate unused-binding quality note. The CommonJS require expression remains executed; the import uses a Node builtin or a directly exported plain property, rather than a deferred call or getter. This assessment does not remove an import, change source or claim an uninvoked verification function supplied a gate.",
+      "regressionEvidence": [
+        "https://github.com/MontrealAI/AGIJobsv0/blob/f2a8d2382b9a40814579f7a8be44046f247e0fd7/scripts/release/source-native-gates-rc16.cjs",
+        "https://github.com/MontrealAI/AGIJobsv0/blob/4a760692e539e53be31b30b00b13c33421275f43/docs/release-evidence/ti-compatible-set-20261019/jobs-final-s1-static-source-review.json"
+      ],
+      "qualityReview": {
+        "schema": "agijobsv0/nonsecurity-quality-review/1",
+        "sourceBlob": "ab7eab0f86d6bef62e03e3aefa49cdf248db0542",
+        "ruleMetadataSha256": "6dc9454a4aba05bdb4b6e0a84952160a3738cbc51c4bcdfa248b5765a705d008",
+        "queryComponentSha256": "0456fa4df8b336036b92fd368f7f38fe9d7274f32bff96503d4a1c2ffaec1175",
+        "codeqlConfigSummarySha256": "e54d1848b96dc1093cbf6acc90ad9fdcc8f30d7c7d2c98cc6f41632cdb794d3f",
+        "behaviorAssessment": "Exact actual-source binding `execFileSync` in `scripts/release/source-native-gates-rc16.cjs` at line7: The reported import binding is not used as an executable reference in this module. Other lexical matches, where present, are module-specifier text or unrelated object property names. This is an accurate unused-binding quality note. The CommonJS require expression remains executed; the import uses a Node builtin or a directly exported plain property, rather than a deferred call or getter. This assessment does not remove an import, change source or claim an uninvoked verification function supplied a gate.",
+        "independentReviewEvidence": [
+          "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282707246",
+          "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282692265",
+          "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282618052"
+        ]
+      }
+    },
+    {
+      "ruleId": "js/unused-local-variable",
+      "path": "scripts/release/source-native-gates-rc16.cjs",
+      "region": {
+        "startLine": 8,
+        "startColumn": 21,
+        "endColumn": 26
+      },
+      "resultSha256": "1a09f9aef73ed6aaab6343c87259769cbee9465ecaab2689858462d9b2d61fec",
+      "disposition": "Acknowledged nonsecurity quality",
+      "justification": "Exact actual-source binding `delay` in `scripts/release/source-native-gates-rc16.cjs` at line8: The reported import binding is not used as an executable reference in this module. Other lexical matches, where present, are module-specifier text or unrelated object property names. This is an accurate unused-binding quality note. The CommonJS require expression remains executed; the import uses a Node builtin or a directly exported plain property, rather than a deferred call or getter. This assessment does not remove an import, change source or claim an uninvoked verification function supplied a gate.",
+      "regressionEvidence": [
+        "https://github.com/MontrealAI/AGIJobsv0/blob/f2a8d2382b9a40814579f7a8be44046f247e0fd7/scripts/release/source-native-gates-rc16.cjs",
+        "https://github.com/MontrealAI/AGIJobsv0/blob/4a760692e539e53be31b30b00b13c33421275f43/docs/release-evidence/ti-compatible-set-20261019/jobs-final-s1-static-source-review.json"
+      ],
+      "qualityReview": {
+        "schema": "agijobsv0/nonsecurity-quality-review/1",
+        "sourceBlob": "ab7eab0f86d6bef62e03e3aefa49cdf248db0542",
+        "ruleMetadataSha256": "6dc9454a4aba05bdb4b6e0a84952160a3738cbc51c4bcdfa248b5765a705d008",
+        "queryComponentSha256": "0456fa4df8b336036b92fd368f7f38fe9d7274f32bff96503d4a1c2ffaec1175",
+        "codeqlConfigSummarySha256": "e54d1848b96dc1093cbf6acc90ad9fdcc8f30d7c7d2c98cc6f41632cdb794d3f",
+        "behaviorAssessment": "Exact actual-source binding `delay` in `scripts/release/source-native-gates-rc16.cjs` at line8: The reported import binding is not used as an executable reference in this module. Other lexical matches, where present, are module-specifier text or unrelated object property names. This is an accurate unused-binding quality note. The CommonJS require expression remains executed; the import uses a Node builtin or a directly exported plain property, rather than a deferred call or getter. This assessment does not remove an import, change source or claim an uninvoked verification function supplied a gate.",
+        "independentReviewEvidence": [
+          "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282707246",
+          "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282692265",
+          "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282618052"
+        ]
+      }
+    },
+    {
+      "ruleId": "js/unused-local-variable",
+      "path": "scripts/release/source-native-gates-rc16.cjs",
+      "region": {
+        "startLine": 13,
+        "startColumn": 3,
+        "endColumn": 26
+      },
+      "resultSha256": "0e933c4474fa710742686500a5a45a14632f158a5137d6611c81ea4f4ae21fd4",
+      "disposition": "Acknowledged nonsecurity quality",
+      "justification": "Exact actual-source binding `verifyPublicationReview` in `scripts/release/source-native-gates-rc16.cjs` at line13: The reported import binding is not used as an executable reference in this module. Other lexical matches, where present, are module-specifier text or unrelated object property names. This is an accurate unused-binding quality note. The CommonJS require expression remains executed; the import uses a Node builtin or a directly exported plain property, rather than a deferred call or getter. This assessment does not remove an import, change source or claim an uninvoked verification function supplied a gate.",
+      "regressionEvidence": [
+        "https://github.com/MontrealAI/AGIJobsv0/blob/f2a8d2382b9a40814579f7a8be44046f247e0fd7/scripts/release/source-native-gates-rc16.cjs",
+        "https://github.com/MontrealAI/AGIJobsv0/blob/4a760692e539e53be31b30b00b13c33421275f43/docs/release-evidence/ti-compatible-set-20261019/jobs-final-s1-static-source-review.json"
+      ],
+      "qualityReview": {
+        "schema": "agijobsv0/nonsecurity-quality-review/1",
+        "sourceBlob": "ab7eab0f86d6bef62e03e3aefa49cdf248db0542",
+        "ruleMetadataSha256": "6dc9454a4aba05bdb4b6e0a84952160a3738cbc51c4bcdfa248b5765a705d008",
+        "queryComponentSha256": "0456fa4df8b336036b92fd368f7f38fe9d7274f32bff96503d4a1c2ffaec1175",
+        "codeqlConfigSummarySha256": "e54d1848b96dc1093cbf6acc90ad9fdcc8f30d7c7d2c98cc6f41632cdb794d3f",
+        "behaviorAssessment": "Exact actual-source binding `verifyPublicationReview` in `scripts/release/source-native-gates-rc16.cjs` at line13: The reported import binding is not used as an executable reference in this module. Other lexical matches, where present, are module-specifier text or unrelated object property names. This is an accurate unused-binding quality note. The CommonJS require expression remains executed; the import uses a Node builtin or a directly exported plain property, rather than a deferred call or getter. This assessment does not remove an import, change source or claim an uninvoked verification function supplied a gate.",
+        "independentReviewEvidence": [
+          "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282707246",
+          "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282692265",
+          "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282618052"
+        ]
+      }
+    },
+    {
+      "ruleId": "js/unused-local-variable",
+      "path": "scripts/release/source-native-gates-rc16.cjs",
+      "region": {
+        "startLine": 16,
+        "startColumn": 3,
+        "endColumn": 28
+      },
+      "resultSha256": "bc6b477f93b1ffed3a0598851bf2c1386488bc2db1dd9385c5d96680823387fd",
+      "disposition": "Acknowledged nonsecurity quality",
+      "justification": "Exact actual-source binding `assertPinnedAlphaCheckout` in `scripts/release/source-native-gates-rc16.cjs` at line16: The reported import binding is not used as an executable reference in this module. Other lexical matches, where present, are module-specifier text or unrelated object property names. This is an accurate unused-binding quality note. The CommonJS require expression remains executed; the import uses a Node builtin or a directly exported plain property, rather than a deferred call or getter. This assessment does not remove an import, change source or claim an uninvoked verification function supplied a gate.",
+      "regressionEvidence": [
+        "https://github.com/MontrealAI/AGIJobsv0/blob/f2a8d2382b9a40814579f7a8be44046f247e0fd7/scripts/release/source-native-gates-rc16.cjs",
+        "https://github.com/MontrealAI/AGIJobsv0/blob/4a760692e539e53be31b30b00b13c33421275f43/docs/release-evidence/ti-compatible-set-20261019/jobs-final-s1-static-source-review.json"
+      ],
+      "qualityReview": {
+        "schema": "agijobsv0/nonsecurity-quality-review/1",
+        "sourceBlob": "ab7eab0f86d6bef62e03e3aefa49cdf248db0542",
+        "ruleMetadataSha256": "6dc9454a4aba05bdb4b6e0a84952160a3738cbc51c4bcdfa248b5765a705d008",
+        "queryComponentSha256": "0456fa4df8b336036b92fd368f7f38fe9d7274f32bff96503d4a1c2ffaec1175",
+        "codeqlConfigSummarySha256": "e54d1848b96dc1093cbf6acc90ad9fdcc8f30d7c7d2c98cc6f41632cdb794d3f",
+        "behaviorAssessment": "Exact actual-source binding `assertPinnedAlphaCheckout` in `scripts/release/source-native-gates-rc16.cjs` at line16: The reported import binding is not used as an executable reference in this module. Other lexical matches, where present, are module-specifier text or unrelated object property names. This is an accurate unused-binding quality note. The CommonJS require expression remains executed; the import uses a Node builtin or a directly exported plain property, rather than a deferred call or getter. This assessment does not remove an import, change source or claim an uninvoked verification function supplied a gate.",
+        "independentReviewEvidence": [
+          "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282707246",
+          "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282692265",
+          "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282618052"
+        ]
+      }
+    },
+    {
+      "ruleId": "js/unused-local-variable",
+      "path": "scripts/release/source-scanner-gates-rc16.cjs",
+      "region": {
+        "startLine": 8,
+        "startColumn": 21,
+        "endColumn": 26
+      },
+      "resultSha256": "7fd7fc59d0b56b251559f9994acbf5ebb0b98dce566c7f2c0e96a493d113d834",
+      "disposition": "Acknowledged nonsecurity quality",
+      "justification": "Exact actual-source binding `delay` in `scripts/release/source-scanner-gates-rc16.cjs` at line8: The reported import binding is not used as an executable reference in this module. Other lexical matches, where present, are module-specifier text or unrelated object property names. This is an accurate unused-binding quality note. The CommonJS require expression remains executed; the import uses a Node builtin or a directly exported plain property, rather than a deferred call or getter. This assessment does not remove an import, change source or claim an uninvoked verification function supplied a gate.",
+      "regressionEvidence": [
+        "https://github.com/MontrealAI/AGIJobsv0/blob/f2a8d2382b9a40814579f7a8be44046f247e0fd7/scripts/release/source-scanner-gates-rc16.cjs",
+        "https://github.com/MontrealAI/AGIJobsv0/blob/4a760692e539e53be31b30b00b13c33421275f43/docs/release-evidence/ti-compatible-set-20261019/jobs-final-s1-static-source-review.json"
+      ],
+      "qualityReview": {
+        "schema": "agijobsv0/nonsecurity-quality-review/1",
+        "sourceBlob": "cf5a00dc5d13b48beff3e5399c7d9b573deb2085",
+        "ruleMetadataSha256": "6dc9454a4aba05bdb4b6e0a84952160a3738cbc51c4bcdfa248b5765a705d008",
+        "queryComponentSha256": "0456fa4df8b336036b92fd368f7f38fe9d7274f32bff96503d4a1c2ffaec1175",
+        "codeqlConfigSummarySha256": "e54d1848b96dc1093cbf6acc90ad9fdcc8f30d7c7d2c98cc6f41632cdb794d3f",
+        "behaviorAssessment": "Exact actual-source binding `delay` in `scripts/release/source-scanner-gates-rc16.cjs` at line8: The reported import binding is not used as an executable reference in this module. Other lexical matches, where present, are module-specifier text or unrelated object property names. This is an accurate unused-binding quality note. The CommonJS require expression remains executed; the import uses a Node builtin or a directly exported plain property, rather than a deferred call or getter. This assessment does not remove an import, change source or claim an uninvoked verification function supplied a gate.",
+        "independentReviewEvidence": [
+          "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282707246",
+          "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282692265",
+          "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282618052"
+        ]
+      }
+    },
+    {
+      "ruleId": "js/unused-local-variable",
+      "path": "scripts/release/source-scanner-gates-rc16.cjs",
+      "region": {
+        "startLine": 13,
+        "startColumn": 3,
+        "endColumn": 26
+      },
+      "resultSha256": "1676a4dccf4ce896805605e8d60b53ee7325247b1bf22f92bf2c625de15a9f99",
+      "disposition": "Acknowledged nonsecurity quality",
+      "justification": "Exact actual-source binding `verifyPublicationReview` in `scripts/release/source-scanner-gates-rc16.cjs` at line13: The reported import binding is not used as an executable reference in this module. Other lexical matches, where present, are module-specifier text or unrelated object property names. This is an accurate unused-binding quality note. The CommonJS require expression remains executed; the import uses a Node builtin or a directly exported plain property, rather than a deferred call or getter. This assessment does not remove an import, change source or claim an uninvoked verification function supplied a gate.",
+      "regressionEvidence": [
+        "https://github.com/MontrealAI/AGIJobsv0/blob/f2a8d2382b9a40814579f7a8be44046f247e0fd7/scripts/release/source-scanner-gates-rc16.cjs",
+        "https://github.com/MontrealAI/AGIJobsv0/blob/4a760692e539e53be31b30b00b13c33421275f43/docs/release-evidence/ti-compatible-set-20261019/jobs-final-s1-static-source-review.json"
+      ],
+      "qualityReview": {
+        "schema": "agijobsv0/nonsecurity-quality-review/1",
+        "sourceBlob": "cf5a00dc5d13b48beff3e5399c7d9b573deb2085",
+        "ruleMetadataSha256": "6dc9454a4aba05bdb4b6e0a84952160a3738cbc51c4bcdfa248b5765a705d008",
+        "queryComponentSha256": "0456fa4df8b336036b92fd368f7f38fe9d7274f32bff96503d4a1c2ffaec1175",
+        "codeqlConfigSummarySha256": "e54d1848b96dc1093cbf6acc90ad9fdcc8f30d7c7d2c98cc6f41632cdb794d3f",
+        "behaviorAssessment": "Exact actual-source binding `verifyPublicationReview` in `scripts/release/source-scanner-gates-rc16.cjs` at line13: The reported import binding is not used as an executable reference in this module. Other lexical matches, where present, are module-specifier text or unrelated object property names. This is an accurate unused-binding quality note. The CommonJS require expression remains executed; the import uses a Node builtin or a directly exported plain property, rather than a deferred call or getter. This assessment does not remove an import, change source or claim an uninvoked verification function supplied a gate.",
+        "independentReviewEvidence": [
+          "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282707246",
+          "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282692265",
+          "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282618052"
+        ]
+      }
+    },
+    {
+      "ruleId": "js/unused-local-variable",
+      "path": "scripts/release/source-scanner-gates-rc16.cjs",
+      "region": {
+        "startLine": 17,
+        "startColumn": 3,
+        "endColumn": 28
+      },
+      "resultSha256": "264bbae7562a23a9cc4ef1f294becb549d30c30452cf9c5837cfe77a51cf2410",
+      "disposition": "Acknowledged nonsecurity quality",
+      "justification": "Exact actual-source binding `assertPinnedAlphaCheckout` in `scripts/release/source-scanner-gates-rc16.cjs` at line17: The reported import binding is not used as an executable reference in this module. Other lexical matches, where present, are module-specifier text or unrelated object property names. This is an accurate unused-binding quality note. The CommonJS require expression remains executed; the import uses a Node builtin or a directly exported plain property, rather than a deferred call or getter. This assessment does not remove an import, change source or claim an uninvoked verification function supplied a gate.",
+      "regressionEvidence": [
+        "https://github.com/MontrealAI/AGIJobsv0/blob/f2a8d2382b9a40814579f7a8be44046f247e0fd7/scripts/release/source-scanner-gates-rc16.cjs",
+        "https://github.com/MontrealAI/AGIJobsv0/blob/4a760692e539e53be31b30b00b13c33421275f43/docs/release-evidence/ti-compatible-set-20261019/jobs-final-s1-static-source-review.json"
+      ],
+      "qualityReview": {
+        "schema": "agijobsv0/nonsecurity-quality-review/1",
+        "sourceBlob": "cf5a00dc5d13b48beff3e5399c7d9b573deb2085",
+        "ruleMetadataSha256": "6dc9454a4aba05bdb4b6e0a84952160a3738cbc51c4bcdfa248b5765a705d008",
+        "queryComponentSha256": "0456fa4df8b336036b92fd368f7f38fe9d7274f32bff96503d4a1c2ffaec1175",
+        "codeqlConfigSummarySha256": "e54d1848b96dc1093cbf6acc90ad9fdcc8f30d7c7d2c98cc6f41632cdb794d3f",
+        "behaviorAssessment": "Exact actual-source binding `assertPinnedAlphaCheckout` in `scripts/release/source-scanner-gates-rc16.cjs` at line17: The reported import binding is not used as an executable reference in this module. Other lexical matches, where present, are module-specifier text or unrelated object property names. This is an accurate unused-binding quality note. The CommonJS require expression remains executed; the import uses a Node builtin or a directly exported plain property, rather than a deferred call or getter. This assessment does not remove an import, change source or claim an uninvoked verification function supplied a gate.",
+        "independentReviewEvidence": [
+          "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282707246",
+          "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282692265",
+          "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282618052"
+        ]
+      }
+    }
+  ],
+  "reviewEvidence": [
+    "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282707246",
+    "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282692265",
+    "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282618052"
+  ]
+}

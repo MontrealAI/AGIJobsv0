@@ -1,0 +1,106 @@
+{
+  "schema": "agijobsv0/final-s1-proposed-review-records-audit/1",
+  "source": "f2a8d2382b9a40814579f7a8be44046f247e0fd7",
+  "tree": "651310e14930967b1be1de86143b88657f3fe53a",
+  "files": [
+    {
+      "name": "scannerReview.proposed.json",
+      "bytes": 73561,
+      "sha256": "50c5ccd64119eb3d540e1e60e48d19e0a2bf2d45ebdd5216b2dcf2bd3aca5570",
+      "topLevelFields": [
+        "sourceCommit",
+        "results",
+        "reviewEvidence"
+      ]
+    },
+    {
+      "name": "pythonScannerReview.proposed.json",
+      "bytes": 817071,
+      "sha256": "cbc285a3fc62cc7e5a63b74bef0d335f318d8b793a60f727de55f46a85ec476a",
+      "topLevelFields": [
+        "schema",
+        "sourceCommit",
+        "tree",
+        "producerRunId",
+        "producerRunAttempt",
+        "producerEvent",
+        "producerHeadBranch",
+        "producerRef",
+        "artifactId",
+        "artifactName",
+        "archiveSha256",
+        "rawRecords",
+        "toolComponents",
+        "codeqlConfigSummary",
+        "successfulExtractionFiles",
+        "requiredExtractedFiles",
+        "ruleIds",
+        "rawResultCount",
+        "results",
+        "reviewEvidence"
+      ]
+    },
+    {
+      "name": "notesReview.proposed.json",
+      "bytes": 83543,
+      "sha256": "0992bfc09da97387f10de184e7a755720d27edc80c77efeb9a49c84f9fa20213",
+      "topLevelFields": [
+        "schema",
+        "sourceSha",
+        "sourceTree",
+        "producer",
+        "summary",
+        "resultReviews",
+        "codeqlChecks",
+        "history",
+        "reviewLinks"
+      ]
+    }
+  ],
+  "decisionEvidence": "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282707246",
+  "technicalPeerEvidence": "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282692265",
+  "reviewRole": "SEPARATE_AGENT_TECHNICAL_REVIEW_SAME_WORKSPACE_SHARED_GITHUB_IDENTITY",
+  "counts": {
+    "javascriptSecurityFalsePositives": 33,
+    "javascriptAccurateQuality": 10,
+    "pythonRawResults": 0,
+    "javascriptExtracted": 830,
+    "javascriptRequired": 87,
+    "pythonExtracted": 79,
+    "pythonRequired": 8
+  },
+  "authenticCodeqlCheck": 118411754521,
+  "distinctSlitherCheck": 118422027293,
+  "codeqlAnnotations": {
+    "file": "/workspace/scratch/ededf14e8d03/restored-public-evidence/jobs-f2-approved-s1-codeql-annotations.json",
+    "bytes": 4517,
+    "sha256": "ae0b2d5770f75bc614a7fd1f66ca4cf8111424338b0c3527047bcf86123ca339",
+    "count": 11,
+    "actualCases": [
+      19,
+      34,
+      35,
+      36,
+      37,
+      38,
+      39,
+      40,
+      41,
+      42,
+      43
+    ]
+  },
+  "auditMethod": "Independent JSON/byte/hash/source-schema comparison with Python standard library; no target-module import or product validator execution.",
+  "installedSourceSlotsRemainNull": true,
+  "sourceCheckoutClean": true,
+  "publicationLimit": "These proposed records are technical review inputs for the primary owner. Do not merge the separate evidence-only custody commit into the metadata-only S1-to-S2 chain. Primary must preserve strict allowed-slot-only changes and regular100644 modes, verify allthree records normally, and earn actual finalmainS2/raw/API/AS/requiredCI/native/release gates.",
+  "executed": {
+    "targetCode": false,
+    "scanners": false,
+    "fixtures": false,
+    "transactions": false,
+    "sourceEdits": false,
+    "slotInstallation": false,
+    "refChanges": false
+  }
+}

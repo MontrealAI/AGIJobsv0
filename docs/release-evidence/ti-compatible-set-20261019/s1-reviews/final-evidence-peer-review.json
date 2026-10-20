@@ -1,0 +1,1372 @@
+{
+  "schema": "agijobsv0/final-s1-independent-technical-evidence-peer/1",
+  "reviewedAt": "2026-10-20T03:31:52.279941+00:00",
+  "source": "f2a8d2382b9a40814579f7a8be44046f247e0fd7",
+  "tree": "651310e14930967b1be1de86143b88657f3fe53a",
+  "role": "SEPARATE_AGENT_TECHNICAL_REVIEW_SAME_WORKSPACE_SHARED_GITHUB_IDENTITY",
+  "rootReport": {
+    "publicCommit": "4a760692e539e53be31b30b00b13c33421275f43",
+    "publicTree": "67499e02377ba97218c341042a152bb127d458de",
+    "path": "docs/release-evidence/ti-compatible-set-20261019/jobs-final-s1-static-source-review.json",
+    "blob": "7b3b9f50eaf54a9076a0d8197ba901df5d3a6db6",
+    "bytes": 102977,
+    "sha256": "593b86e40afe19ac6241c6e9c7204b5ebe956b3f16729d3726f271b0d0f69444",
+    "publicBytesExactlyEqualLocallyRetained": true,
+    "evidenceURL": "https://github.com/MontrealAI/AGIJobsv0/pull/4001#issuecomment-6282618052"
+  },
+  "rootReportPublicBytesExactlyEqualRetained": true,
+  "actualCasesMatched": [
+    {
+      "ordinal": 1,
+      "ruleId": "js/xss-through-dom",
+      "path": "apps/console/src/components/GasPanel.tsx",
+      "region": {
+        "startLine": 366,
+        "startColumn": 22,
+        "endColumn": 38
+      },
+      "resultSha256": "83b31af7e0b36486b38c60fe2709377cc6ffd3c152fdad6c083ebcf9789596fc",
+      "assessmentClass": "SOURCE_SPECIFIC_RENDERER_GUARD"
+    },
+    {
+      "ordinal": 2,
+      "ruleId": "js/xss-through-dom",
+      "path": "website/assets/frontier-desk.mjs",
+      "region": {
+        "startLine": 313,
+        "startColumn": 21,
+        "endColumn": 31
+      },
+      "resultSha256": "445d7d9e337a3efbc7f19bc0a839465dc6cf80f8a597675916ad2f48aa2b2b48",
+      "assessmentClass": "SOURCE_SPECIFIC_IMPORT_VALIDATION"
+    },
+    {
+      "ordinal": 3,
+      "ruleId": "js/xss-through-dom",
+      "path": "website/assets/frontier-desk.mjs",
+      "region": {
+        "startLine": 335,
+        "startColumn": 25,
+        "endColumn": 35
+      },
+      "resultSha256": "2f45bb7374065c99d22879c03cf17d15740d6204698ba314bc7732c9d9d43f3c",
+      "assessmentClass": "SOURCE_SPECIFIC_IMPORT_VALIDATION"
+    },
+    {
+      "ordinal": 4,
+      "ruleId": "js/xss-through-dom",
+      "path": "website/assets/frontier-desk.mjs",
+      "region": {
+        "startLine": 340,
+        "startColumn": 33,
+        "endColumn": 43
+      },
+      "resultSha256": "e7516956ee9414c892a9031d6ded0fb6adbe0eccfd24a1767cc499ce9fb44576",
+      "assessmentClass": "SOURCE_SPECIFIC_IMPORT_VALIDATION"
+    },
+    {
+      "ordinal": 5,
+      "ruleId": "js/xss-through-dom",
+      "path": "website/assets/source-lab.js",
+      "region": {
+        "startLine": 78,
+        "startColumn": 30,
+        "endColumn": 45
+      },
+      "resultSha256": "9b86f6c3dfbe34a27f9163b46de3bbdf7f986a5e5e14fd564214960fd5e137a2",
+      "assessmentClass": "SOURCE_SPECIFIC_BUILD_GRAPH"
+    },
+    {
+      "ordinal": 6,
+      "ruleId": "js/xss-through-dom",
+      "path": "website/assets/source-lab.js",
+      "region": {
+        "startLine": 81,
+        "startColumn": 30,
+        "endColumn": 43
+      },
+      "resultSha256": "45171308c20c856cdf35a0030a53803db4333bcbd1964466bc445302e6f1d6ef",
+      "assessmentClass": "SOURCE_SPECIFIC_BUILD_GRAPH"
+    },
+    {
+      "ordinal": 7,
+      "ruleId": "js/xss-through-exception",
+      "path": "apps/onebox-static/v2/app.js",
+      "region": {
+        "startLine": 522,
+        "startColumn": 25,
+        "endColumn": 32
+      },
+      "resultSha256": "ecf9292068e73fe1886b5a8b25bc1f1cc147c7750896582c314eeea457e7415f",
+      "assessmentClass": "SOURCE_SPECIFIC_BRANCH_PROOF"
+    },
+    {
+      "ordinal": 8,
+      "ruleId": "js/bad-code-sanitization",
+      "path": "integrations/alpha-agent/tests/alpha-project-transfer.test.mjs",
+      "region": {
+        "startLine": 232,
+        "startColumn": 442,
+        "endColumn": 466
+      },
+      "resultSha256": "3b75f2692caba0cae134af3d539279caf1ead00f567bc9b51f03022f7ccb5ea5",
+      "assessmentClass": "SOURCE_SPECIFIC_FIXED_TEST_INPUT"
+    },
+    {
+      "ordinal": 9,
+      "ruleId": "js/biased-cryptographic-random",
+      "path": "integrations/alpha-agent/vendor/alpha-computer/examples/successor-alpha/research.mjs",
+      "region": {
+        "startLine": 192,
+        "startColumn": 74,
+        "endColumn": 82
+      },
+      "resultSha256": "c28640aa27c4b798e2c5f24dfef4a6c89dfb723650a646a00af804c3025f110e",
+      "assessmentClass": "PUBLIC_SYNTHETIC_LABEL_CONTEXT_NOT_CRYPTOGRAPHIC_AUTHORITY"
+    },
+    {
+      "ordinal": 10,
+      "ruleId": "js/biased-cryptographic-random",
+      "path": "integrations/alpha-agent/vendor/alpha-computer/examples/successor-alpha/research.mjs",
+      "region": {
+        "startLine": 193,
+        "startColumn": 77,
+        "endColumn": 85
+      },
+      "resultSha256": "f5dbbf686d62e21c5e2e02e1c467619f6d8a7f6025948289161fa959116921e6",
+      "assessmentClass": "PUBLIC_SYNTHETIC_LABEL_CONTEXT_NOT_CRYPTOGRAPHIC_AUTHORITY"
+    },
+    {
+      "ordinal": 11,
+      "ruleId": "js/insecure-temporary-file",
+      "path": "integrations/alpha-agent/artifact-commitment.cjs",
+      "region": {
+        "startLine": 10,
+        "startColumn": 5,
+        "endColumn": 13
+      },
+      "resultSha256": "b88c96c776bb5c5981e1f25ee2398e7253d29fbd47f47bf4df9badb55e7085be",
+      "assessmentClass": "SOURCE_SPECIFIC_OPEN_MODE"
+    },
+    {
+      "ordinal": 12,
+      "ruleId": "js/file-system-race",
+      "path": "integrations/alpha-agent/pinned-alpha-checkout.cjs",
+      "region": {
+        "startLine": 163,
+        "startColumn": 16,
+        "endLine": 166,
+        "endColumn": 6
+      },
+      "resultSha256": "ff38f4729100cd9044b7e7a8fae5248feaaaca3f725464c48f9043ab5a921a39",
+      "assessmentClass": "SOURCE_SPECIFIC_AUTHORITATIVE_FD"
+    },
+    {
+      "ordinal": 13,
+      "ruleId": "js/file-system-race",
+      "path": "integrations/alpha-agent/four-repo-computer-lifecycle.cjs",
+      "region": {
+        "startLine": 532,
+        "startColumn": 5,
+        "endLine": 535,
+        "endColumn": 7
+      },
+      "resultSha256": "efdbdd57e6141ac97fb7db757ac4b94ddb75341ae4600fdc4174f7b4a7ef2565",
+      "assessmentClass": "SOURCE_SPECIFIC_ATOMIC_CREATE"
+    },
+    {
+      "ordinal": 14,
+      "ruleId": "js/file-access-to-http",
+      "path": "agent-gateway/agentEndpoint.ts",
+      "region": {
+        "startLine": 22,
+        "startColumn": 13,
+        "endLine": 24,
+        "endColumn": 8
+      },
+      "resultSha256": "b89662daeea98c7fc9a770cd0f264b02259870b23172b7c7cedc67e38d38d952",
+      "assessmentClass": "INTENTIONAL_PROVIDER_WORKLOAD_TRANSFER"
+    },
+    {
+      "ordinal": 15,
+      "ruleId": "js/file-access-to-http",
+      "path": "agent-gateway/telemetry.ts",
+      "region": {
+        "startLine": 549,
+        "startColumn": 15,
+        "endColumn": 25
+      },
+      "resultSha256": "89c5afdb109d3bc6b0977a6ea36c2c9f862d5e521fc1a12e1a23260c8b308b9c",
+      "assessmentClass": "INTENTIONAL_PUBLIC_HEALTH_PROJECTION"
+    },
+    {
+      "ordinal": 16,
+      "ruleId": "js/file-access-to-http",
+      "path": "agent-gateway/telemetry.ts",
+      "region": {
+        "startLine": 1286,
+        "startColumn": 13,
+        "endColumn": 36
+      },
+      "resultSha256": "3d7e11fd5ebd7cfcea5d8bd867515eea800bd3c72445c71580eff7b068ac74a2",
+      "assessmentClass": "INTENTIONAL_SIGNED_TELEMETRY_PROJECTION"
+    },
+    {
+      "ordinal": 17,
+      "ruleId": "js/file-access-to-http",
+      "path": "apps/orchestrator/execution.ts",
+      "region": {
+        "startLine": 608,
+        "startColumn": 11,
+        "endColumn": 18
+      },
+      "resultSha256": "808e6e46a6505950a197dcad5825b3396cc2ba6f9a504e6698308df060c99af3",
+      "assessmentClass": "INTENTIONAL_JOB_SPEC_PUBLICATION"
+    },
+    {
+      "ordinal": 18,
+      "ruleId": "js/file-access-to-http",
+      "path": "apps/orchestrator/execution.ts",
+      "region": {
+        "startLine": 609,
+        "startColumn": 17,
+        "endColumn": 23
+      },
+      "resultSha256": "e836796465bde79af4aca2158ba2062a6e70aead3b6d1496e02ba84169348f2d",
+      "assessmentClass": "INTENTIONAL_JOB_SPEC_PUBLICATION"
+    },
+    {
+      "ordinal": 19,
+      "ruleId": "js/file-access-to-http",
+      "path": "scripts/release/qualify-source-release-rc16.cjs",
+      "region": {
+        "startLine": 561,
+        "startColumn": 7,
+        "endColumn": 92
+      },
+      "resultSha256": "6505d1e8e4489b7f2611db1c8e7f19e3c517409611039d8f919b3d7728456a01",
+      "assessmentClass": "SOURCE_SPECIFIC_FIXED_API_PROJECTION"
+    },
+    {
+      "ordinal": 20,
+      "ruleId": "js/file-access-to-http",
+      "path": "scripts/retrainAgent.ts",
+      "region": {
+        "startLine": 261,
+        "startColumn": 13,
+        "endLine": 265,
+        "endColumn": 9
+      },
+      "resultSha256": "ac8b6720557cbe50005b25280b7a9caa7757fc2f5cea0146cda5f5b30d866418",
+      "assessmentClass": "INTENTIONAL_RELOAD_CONTROL_PROJECTION"
+    },
+    {
+      "ordinal": 21,
+      "ruleId": "js/user-controlled-bypass",
+      "path": "agent-gateway/apiHelpers.ts",
+      "region": {
+        "startLine": 174,
+        "startColumn": 10,
+        "endColumn": 15
+      },
+      "resultSha256": "b3f8d710355360313ebe31b920a807c21321327facca03017cc64f1d6ac619bc",
+      "assessmentClass": "SOURCE_SPECIFIC_CALLER_AND_OPTIONAL_ANNOTATION_REVIEW"
+    },
+    {
+      "ordinal": 22,
+      "ruleId": "js/user-controlled-bypass",
+      "path": "agent-gateway/apiHelpers.ts",
+      "region": {
+        "startLine": 207,
+        "startColumn": 42,
+        "endColumn": 69
+      },
+      "resultSha256": "eb8d1644934679ed9a346fcf211eb36c3ff722409dc3b50dd456fe464162764f",
+      "assessmentClass": "SOURCE_SPECIFIC_CALLER_AND_OPTIONAL_ANNOTATION_REVIEW"
+    },
+    {
+      "ordinal": 23,
+      "ruleId": "js/user-controlled-bypass",
+      "path": "agent-gateway/apiHelpers.ts",
+      "region": {
+        "startLine": 208,
+        "startColumn": 11,
+        "endColumn": 32
+      },
+      "resultSha256": "905abb518729f2ee3f23dee6441fbd0ae049fb34f4c2ebe69bbbb0c9c330117d",
+      "assessmentClass": "SOURCE_SPECIFIC_CALLER_AND_OPTIONAL_ANNOTATION_REVIEW"
+    },
+    {
+      "ordinal": 24,
+      "ruleId": "js/user-controlled-bypass",
+      "path": "agent-gateway/routes.ts",
+      "region": {
+        "startLine": 200,
+        "startColumn": 7,
+        "endColumn": 16
+      },
+      "resultSha256": "f328e91e8d1bd994880e65ded4c6749dc1f083ce5931a84a4887fd31f321201b",
+      "assessmentClass": "SOURCE_SPECIFIC_CALLER_AND_OPTIONAL_ANNOTATION_REVIEW"
+    },
+    {
+      "ordinal": 25,
+      "ruleId": "js/user-controlled-bypass",
+      "path": "agent-gateway/routes.ts",
+      "region": {
+        "startLine": 200,
+        "startColumn": 20,
+        "endColumn": 27
+      },
+      "resultSha256": "429fc0cff3a6a57ad7bf0dfc73654a43ff88cbdbfb539382ba488eba169c1d10",
+      "assessmentClass": "SOURCE_SPECIFIC_CALLER_AND_OPTIONAL_ANNOTATION_REVIEW"
+    },
+    {
+      "ordinal": 26,
+      "ruleId": "js/user-controlled-bypass",
+      "path": "apps/onebox-static/app.mjs",
+      "region": {
+        "startLine": 1482,
+        "startColumn": 8,
+        "endColumn": 15
+      },
+      "resultSha256": "61f898923bd39c74c3e389a31c73079c11515d17bccd4f81d130d87300e26bac",
+      "assessmentClass": "SOURCE_SPECIFIC_CALLER_AND_OPTIONAL_ANNOTATION_REVIEW"
+    },
+    {
+      "ordinal": 27,
+      "ruleId": "js/user-controlled-bypass",
+      "path": "packages/successor-core/src/frontier-mission.mjs",
+      "region": {
+        "startLine": 431,
+        "startColumn": 7,
+        "endColumn": 40
+      },
+      "resultSha256": "366a3c8b3f8d931b0b6e11db1b1746c6cc1fffa7d1ef265614f8f0352926b5d4",
+      "assessmentClass": "SOURCE_SPECIFIC_CALLER_AND_OPTIONAL_ANNOTATION_REVIEW"
+    },
+    {
+      "ordinal": 28,
+      "ruleId": "js/http-to-file-access",
+      "path": "agent-gateway/employer.ts",
+      "region": {
+        "startLine": 54,
+        "startColumn": 5,
+        "endColumn": 37
+      },
+      "resultSha256": "2ef3f39bbeaa21492092841ebeb1a357b3e50b8e118e6a0d87ac0dbaac53397b",
+      "assessmentClass": "INTENTIONAL_FIXED_DESTINATION_PERSISTENCE"
+    },
+    {
+      "ordinal": 29,
+      "ruleId": "js/http-to-file-access",
+      "path": "agent-gateway/telemetry.ts",
+      "region": {
+        "startLine": 1153,
+        "startColumn": 5,
+        "endColumn": 35
+      },
+      "resultSha256": "d9664fac8b74f457aadbd6468021538dfea31e39603f901549231ef43dd1393b",
+      "assessmentClass": "INTENTIONAL_FIXED_DESTINATION_PERSISTENCE"
+    },
+    {
+      "ordinal": 30,
+      "ruleId": "js/http-to-file-access",
+      "path": "agent-gateway/validationStore.ts",
+      "region": {
+        "startLine": 231,
+        "startColumn": 26,
+        "endColumn": 30
+      },
+      "resultSha256": "71bda75e290dc50b846d89852befbef62529d5603a66de76fb3c3680887a0283",
+      "assessmentClass": "INTENTIONAL_BOUNDED_RECORD_PERSISTENCE"
+    },
+    {
+      "ordinal": 31,
+      "ruleId": "js/http-to-file-access",
+      "path": "services/notifications/server.js",
+      "region": {
+        "startLine": 29,
+        "startColumn": 34,
+        "endColumn": 64
+      },
+      "resultSha256": "a8a15403fe33c03a383fcfd62985cf57a09fe42a18c65df018042a342f47df19",
+      "assessmentClass": "INTENTIONAL_NOTIFICATION_LOG_INGESTION"
+    },
+    {
+      "ordinal": 32,
+      "ruleId": "js/http-to-file-access",
+      "path": "shared/containedFiles.ts",
+      "region": {
+        "startLine": 116,
+        "startColumn": 26,
+        "endColumn": 30
+      },
+      "resultSha256": "1f968a5e5f02789458f1623071991f4863d592bbc4a8d7f111045a4835a157e0",
+      "assessmentClass": "INTENTIONAL_CONTAINED_RECORD_PERSISTENCE"
+    },
+    {
+      "ordinal": 33,
+      "ruleId": "js/http-to-file-access",
+      "path": "shared/worldModel.ts",
+      "region": {
+        "startLine": 203,
+        "startColumn": 5,
+        "endColumn": 39
+      },
+      "resultSha256": "21f1a54122beaa9146fbb963d56a279788a55575dc17b3316cb315982fe5c561",
+      "assessmentClass": "INTENTIONAL_OBSERVATION_PERSISTENCE"
+    },
+    {
+      "ordinal": 34,
+      "ruleId": "js/unused-local-variable",
+      "path": "scripts/release/publish-source-release-rc16.cjs",
+      "region": {
+        "startLine": 18,
+        "startColumn": 3,
+        "endColumn": 20
+      },
+      "resultSha256": "1aaf067df146ba044691fda82efaf3e612c22f31d1e1880250b9d0634abf5d07",
+      "assessmentClass": "ACCURATE_NONSECURITY_UNUSED_BINDING_QUALITY_NOTE"
+    },
+    {
+      "ordinal": 35,
+      "ruleId": "js/unused-local-variable",
+      "path": "scripts/release/source-native-gates-rc16.cjs",
+      "region": {
+        "startLine": 4,
+        "startColumn": 7,
+        "endColumn": 9
+      },
+      "resultSha256": "1aea93b30deeca95ce3d8a272eb69f19dfbec667297783257f8f3c44b18934fa",
+      "assessmentClass": "ACCURATE_NONSECURITY_UNUSED_BINDING_QUALITY_NOTE"
+    },
+    {
+      "ordinal": 36,
+      "ruleId": "js/unused-local-variable",
+      "path": "scripts/release/source-native-gates-rc16.cjs",
+      "region": {
+        "startLine": 5,
+        "startColumn": 7,
+        "endColumn": 11
+      },
+      "resultSha256": "ec5278d8ab68d6cea226042ec064ccf0fe18b2ddece657726c203a7c46f838cf",
+      "assessmentClass": "ACCURATE_NONSECURITY_UNUSED_BINDING_QUALITY_NOTE"
+    },
+    {
+      "ordinal": 37,
+      "ruleId": "js/unused-local-variable",
+      "path": "scripts/release/source-native-gates-rc16.cjs",
+      "region": {
+        "startLine": 7,
+        "startColumn": 9,
+        "endColumn": 21
+      },
+      "resultSha256": "6325952e9dbe856417659b95860e0743ec7c33ce2c902dbac69eb94c3e5ee914",
+      "assessmentClass": "ACCURATE_NONSECURITY_UNUSED_BINDING_QUALITY_NOTE"
+    },
+    {
+      "ordinal": 38,
+      "ruleId": "js/unused-local-variable",
+      "path": "scripts/release/source-native-gates-rc16.cjs",
+      "region": {
+        "startLine": 8,
+        "startColumn": 21,
+        "endColumn": 26
+      },
+      "resultSha256": "1a09f9aef73ed6aaab6343c87259769cbee9465ecaab2689858462d9b2d61fec",
+      "assessmentClass": "ACCURATE_NONSECURITY_UNUSED_BINDING_QUALITY_NOTE"
+    },
+    {
+      "ordinal": 39,
+      "ruleId": "js/unused-local-variable",
+      "path": "scripts/release/source-native-gates-rc16.cjs",
+      "region": {
+        "startLine": 13,
+        "startColumn": 3,
+        "endColumn": 26
+      },
+      "resultSha256": "0e933c4474fa710742686500a5a45a14632f158a5137d6611c81ea4f4ae21fd4",
+      "assessmentClass": "ACCURATE_NONSECURITY_UNUSED_BINDING_QUALITY_NOTE"
+    },
+    {
+      "ordinal": 40,
+      "ruleId": "js/unused-local-variable",
+      "path": "scripts/release/source-native-gates-rc16.cjs",
+      "region": {
+        "startLine": 16,
+        "startColumn": 3,
+        "endColumn": 28
+      },
+      "resultSha256": "bc6b477f93b1ffed3a0598851bf2c1386488bc2db1dd9385c5d96680823387fd",
+      "assessmentClass": "ACCURATE_NONSECURITY_UNUSED_BINDING_QUALITY_NOTE"
+    },
+    {
+      "ordinal": 41,
+      "ruleId": "js/unused-local-variable",
+      "path": "scripts/release/source-scanner-gates-rc16.cjs",
+      "region": {
+        "startLine": 8,
+        "startColumn": 21,
+        "endColumn": 26
+      },
+      "resultSha256": "7fd7fc59d0b56b251559f9994acbf5ebb0b98dce566c7f2c0e96a493d113d834",
+      "assessmentClass": "ACCURATE_NONSECURITY_UNUSED_BINDING_QUALITY_NOTE"
+    },
+    {
+      "ordinal": 42,
+      "ruleId": "js/unused-local-variable",
+      "path": "scripts/release/source-scanner-gates-rc16.cjs",
+      "region": {
+        "startLine": 13,
+        "startColumn": 3,
+        "endColumn": 26
+      },
+      "resultSha256": "1676a4dccf4ce896805605e8d60b53ee7325247b1bf22f92bf2c625de15a9f99",
+      "assessmentClass": "ACCURATE_NONSECURITY_UNUSED_BINDING_QUALITY_NOTE"
+    },
+    {
+      "ordinal": 43,
+      "ruleId": "js/unused-local-variable",
+      "path": "scripts/release/source-scanner-gates-rc16.cjs",
+      "region": {
+        "startLine": 17,
+        "startColumn": 3,
+        "endColumn": 28
+      },
+      "resultSha256": "264bbae7562a23a9cc4ef1f294becb549d30c30452cf9c5837cfe77a51cf2410",
+      "assessmentClass": "ACCURATE_NONSECURITY_UNUSED_BINDING_QUALITY_NOTE"
+    }
+  ],
+  "rawResultCount": 43,
+  "rawResultMultiplicityPreserved": true,
+  "actualSourceLocations": 40,
+  "completeCurrentSourceAndCallerBindings": [
+    {
+      "path": "agent-gateway/README.md",
+      "gitBlob": "6c31c828dfe8e750f2e102fade1403268280ea3c",
+      "gitMode": "100644",
+      "bytes": 20567,
+      "sha256": "b06d993a4253a2c7e8a64ea351918226e7c8a3f33790190cd52a81ab419974bb",
+      "actualSarifLocation": false,
+      "supportingCallerOrModel": true
+    },
+    {
+      "path": "agent-gateway/agentActions.ts",
+      "gitBlob": "e690c5b682c40ba103c8b2ab347baabaa9d570fd",
+      "gitMode": "100644",
+      "bytes": 8869,
+      "sha256": "c85305ef9c6e34983041342fffc05446594756f71dfb7c361e04af799da3c214",
+      "actualSarifLocation": false,
+      "supportingCallerOrModel": true
+    },
+    {
+      "path": "agent-gateway/agentEndpoint.ts",
+      "gitBlob": "1533e96bd62c15d63bc516f23adb9fdb879d3417",
+      "gitMode": "100644",
+      "bytes": 2628,
+      "sha256": "ca5e6b66bd523fefd34159bd5bd530246e679b14297f06398063c8087bb18bb2",
+      "actualSarifLocation": true,
+      "supportingCallerOrModel": false
+    },
+    {
+      "path": "agent-gateway/agentRegistry.ts",
+      "gitBlob": "47eb8902283a0228f1e875745b993e87c20976db",
+      "gitMode": "100644",
+      "bytes": 18821,
+      "sha256": "1e06ef8ff789cc04042b9d501dcca8d25dde775639a3d1868884dd61cc195ab8",
+      "actualSarifLocation": false,
+      "supportingCallerOrModel": true
+    },
+    {
+      "path": "agent-gateway/apiHelpers.ts",
+      "gitBlob": "f4657f23277495558c3f17f13d1cfbffa4323eab",
+      "gitMode": "100644",
+      "bytes": 7011,
+      "sha256": "7d6d7b765c5c6dd3a30ef8cd3df4643e6d64da7aaa9099dbc84723792ed0aafe",
+      "actualSarifLocation": true,
+      "supportingCallerOrModel": true
+    },
+    {
+      "path": "agent-gateway/deliverableStore.ts",
+      "gitBlob": "683bffb721155875a5521db5ac5f1801c04a59d2",
+      "gitMode": "100644",
+      "bytes": 30694,
+      "sha256": "8ed06cfa9236a93de72d92039e8e5c1e05865f6eeb72fe8892095a6c905dd9ff",
+      "actualSarifLocation": false,
+      "supportingCallerOrModel": true
+    },
+    {
+      "path": "agent-gateway/employer.ts",
+      "gitBlob": "dcac9782d00ba88f05ff8af1407437ff2c68e0e5",
+      "gitMode": "100644",
+      "bytes": 4427,
+      "sha256": "e630fa0b7c75cbaaa0fdcae7ce801939a0a4a4e5783e27da7ec3a182001a99ac",
+      "actualSarifLocation": true,
+      "supportingCallerOrModel": false
+    },
+    {
+      "path": "agent-gateway/grpc.ts",
+      "gitBlob": "1a3bd59a11ba285721042e2a26c62ddf84412bd8",
+      "gitMode": "100644",
+      "bytes": 40071,
+      "sha256": "82a72d30c39d85a1d22b24982886f2dc19ca24cd9696c1a94b727797eb91365c",
+      "actualSarifLocation": false,
+      "supportingCallerOrModel": true
+    },
+    {
+      "path": "agent-gateway/identity.ts",
+      "gitBlob": "850e5180f70a12616b3fe863b4a28bbba0d21871",
+      "gitMode": "100644",
+      "bytes": 12151,
+      "sha256": "38b4ae911972f07b7dc79fd8b1875b01ad08d547d3afaf3845c59ed9b8de653a",
+      "actualSarifLocation": true,
+      "supportingCallerOrModel": true
+    },
+    {
+      "path": "agent-gateway/jobPlanner.ts",
+      "gitBlob": "a30961751b5b22c0caff5ecaf1e58c49c8f41f6f",
+      "gitMode": "100644",
+      "bytes": 22553,
+      "sha256": "519620253d8c4eea4a35072bdb3bf0248ad1c27bde78d02a2aa34e3afb6dfbca",
+      "actualSarifLocation": true,
+      "supportingCallerOrModel": false
+    },
+    {
+      "path": "agent-gateway/orchestrator.ts",
+      "gitBlob": "ba187e097514af0938cf80cb8c0a22681c7bcfb3",
+      "gitMode": "100644",
+      "bytes": 16884,
+      "sha256": "429f58a18407a8c8d9cd8da68502e1761d20a393ebe2b79f85a74afa9faffbf9",
+      "actualSarifLocation": true,
+      "supportingCallerOrModel": true
+    },
+    {
+      "path": "agent-gateway/routes.ts",
+      "gitBlob": "b2670fd4b6c4b6f55dc41f91b7bbbfb3883dea0c",
+      "gitMode": "100644",
+      "bytes": 61524,
+      "sha256": "c920b58d89d30847bad909a3d390ff33a1cf9893fee2f558db8dc5291646bbd5",
+      "actualSarifLocation": true,
+      "supportingCallerOrModel": true
+    },
+    {
+      "path": "agent-gateway/security.ts",
+      "gitBlob": "61058487ed990a7d8fc35b487282794d8bb1187d",
+      "gitMode": "100644",
+      "bytes": 4441,
+      "sha256": "88a1fa254263ca07223abb3994950cae9bf7bfe22a88fc2b8e56941c1ec32e7b",
+      "actualSarifLocation": true,
+      "supportingCallerOrModel": false
+    },
+    {
+      "path": "agent-gateway/taskExecution.ts",
+      "gitBlob": "251a2b80dcdba128a22314eb365639394cc4339e",
+      "gitMode": "100644",
+      "bytes": 25448,
+      "sha256": "7a3a40483f9b05f0b5fed340de425a186c7d4dca9d39cae3214b687ada96b6aa",
+      "actualSarifLocation": true,
+      "supportingCallerOrModel": true
+    },
+    {
+      "path": "agent-gateway/telemetry.ts",
+      "gitBlob": "d0a245d0442cd858ae9c553d6bcf6717709f8336",
+      "gitMode": "100644",
+      "bytes": 38439,
+      "sha256": "50f8469c38de0052f38fe0f3cae4bac75984c3df1925e5ad92068abbbe3ec6b3",
+      "actualSarifLocation": true,
+      "supportingCallerOrModel": false
+    },
+    {
+      "path": "agent-gateway/utils.ts",
+      "gitBlob": "2f78ad1457d714f8c9e577e7815fa4fcdda1e483",
+      "gitMode": "100644",
+      "bytes": 28653,
+      "sha256": "966fbf2b06406cb5f88dfad908aeda594e9443af029145e2604a3277e464072c",
+      "actualSarifLocation": true,
+      "supportingCallerOrModel": false
+    },
+    {
+      "path": "agent-gateway/validationStore.ts",
+      "gitBlob": "1be9d3590cd0cff4455568f2b393a809b892fef2",
+      "gitMode": "100644",
+      "bytes": 17451,
+      "sha256": "1fd3a573497a66d737fd9b1d01d6273a7d4298158d10205367464b5cd7427533",
+      "actualSarifLocation": true,
+      "supportingCallerOrModel": false
+    },
+    {
+      "path": "agent-gateway/validator.ts",
+      "gitBlob": "457f22649a18abdf372d2130267fc4495b5cd6bd",
+      "gitMode": "100644",
+      "bytes": 56406,
+      "sha256": "7195443a19b12ab44608f5c5cf2c30711bd98ca07c55ba855be8818e7dee7eea",
+      "actualSarifLocation": true,
+      "supportingCallerOrModel": false
+    },
+    {
+      "path": "apps/console/src/components/GasPanel.tsx",
+      "gitBlob": "f60fea2375d3f5d513298d6a27d8f022a1e95bf3",
+      "gitMode": "100644",
+      "bytes": 11453,
+      "sha256": "196c23433e00780d90025c874afba865e96a96087356681df3f0d1e5a034f076",
+      "actualSarifLocation": true,
+      "supportingCallerOrModel": false
+    },
+    {
+      "path": "apps/onebox-static/app.mjs",
+      "gitBlob": "42b80603704daa0772cd29cdcb6d80ccc536a00d",
+      "gitMode": "100644",
+      "bytes": 68748,
+      "sha256": "25a7f48dbeef5400a75d13e335d24d65de9c990b8d1fc00d6cca61ff86e09121",
+      "actualSarifLocation": true,
+      "supportingCallerOrModel": true
+    },
+    {
+      "path": "apps/onebox-static/config.mjs",
+      "gitBlob": "4d6391624464f9d1883a7c2ce2dbd58108d63559",
+      "gitMode": "100644",
+      "bytes": 2348,
+      "sha256": "0daf4191dcde0ffec6f3797da3960c6650eb1ccad15b8dd56a315f85063bd815",
+      "actualSarifLocation": false,
+      "supportingCallerOrModel": true
+    },
+    {
+      "path": "apps/onebox-static/v2/app.js",
+      "gitBlob": "796ed7504b1501c273e85b5e5c607f68678c134e",
+      "gitMode": "100644",
+      "bytes": 37589,
+      "sha256": "872dd4e7db9e2da9ac5387ff70a174413da8843be7c387adc9ef0ebb01a9e171",
+      "actualSarifLocation": true,
+      "supportingCallerOrModel": false
+    },
+    {
+      "path": "apps/orchestrator/employer.ts",
+      "gitBlob": "d9d8faef4d477e668aae57a8533e0827a2979c37",
+      "gitMode": "100644",
+      "bytes": 4072,
+      "sha256": "62b08e76d89521fca091580d57f4bd6624b8e867327ba8c83cfa49aa508ae52d",
+      "actualSarifLocation": true,
+      "supportingCallerOrModel": false
+    },
+    {
+      "path": "apps/orchestrator/execution.ts",
+      "gitBlob": "306ef3c51f6992738a023428bed068465c699ba9",
+      "gitMode": "100644",
+      "bytes": 33584,
+      "sha256": "3554e5a70b344022c65612e44bd92c4ec36c285044353521f242de4bf7324aa5",
+      "actualSarifLocation": true,
+      "supportingCallerOrModel": false
+    },
+    {
+      "path": "apps/orchestrator/onebox-server.ts",
+      "gitBlob": "3c75ff6815b9caf2046e4024f94e07a2ea13f355",
+      "gitMode": "100644",
+      "bytes": 2014,
+      "sha256": "9792ef058afa8fd3d46aa62ebd30cf61bd54573f30e28c0c8cfabe8dc6f5ec07",
+      "actualSarifLocation": false,
+      "supportingCallerOrModel": true
+    },
+    {
+      "path": "apps/orchestrator/oneboxRouter.ts",
+      "gitBlob": "e2f62ea909ce84257669ed547a93118962904b2c",
+      "gitMode": "100644",
+      "bytes": 64162,
+      "sha256": "65db47b91344080aaaf13571f0dc9d891ae4478d87ad389d2a6eb068dda71001",
+      "actualSarifLocation": true,
+      "supportingCallerOrModel": true
+    },
+    {
+      "path": "apps/orchestrator/receiptStore.ts",
+      "gitBlob": "19d3b05f9b0854a789f4f7155ebdd40271f2aaae",
+      "gitMode": "100644",
+      "bytes": 2981,
+      "sha256": "0e2701b22834d66fee692725c0f2c8401302aa72cc7d76dfaa3512a86b8239ad",
+      "actualSarifLocation": true,
+      "supportingCallerOrModel": false
+    },
+    {
+      "path": "apps/orchestrator/service.ts",
+      "gitBlob": "fdafdcd64f06dedb23e3a203e761e810d2923036",
+      "gitMode": "100644",
+      "bytes": 62138,
+      "sha256": "edf8ede165a83f8bac19c723a98dc54b68fcdbb238a66e16a945e9fc584e47df",
+      "actualSarifLocation": true,
+      "supportingCallerOrModel": false
+    },
+    {
+      "path": "apps/orchestrator/settlementJournal.ts",
+      "gitBlob": "6f86bca0c8a316e1498c8dc2eba58cc6b9178a08",
+      "gitMode": "100644",
+      "bytes": 3876,
+      "sha256": "8a6cba89c2e814bb44906741f79af19f8c2ef20f71a8eb7235eabce18aba9b6a",
+      "actualSarifLocation": true,
+      "supportingCallerOrModel": false
+    },
+    {
+      "path": "docs/agent-gateway.md",
+      "gitBlob": "d1c99ed825408ec58fadafcfbe9752ed291fc600",
+      "gitMode": "100644",
+      "bytes": 6527,
+      "sha256": "2114e1f9784e72ca6593a594ab27cef74cf626a93fdffef641d71abfce172d9a",
+      "actualSarifLocation": false,
+      "supportingCallerOrModel": true
+    },
+    {
+      "path": "docs/gateway-setup.md",
+      "gitBlob": "8fef64fb9e8d84d79884d91a997d2c961986d14b",
+      "gitMode": "100644",
+      "bytes": 24003,
+      "sha256": "2eb568a8f75e987d512c3f13c9bd6db781646d70d76077872d8b5d4988fface6",
+      "actualSarifLocation": false,
+      "supportingCallerOrModel": true
+    },
+    {
+      "path": "docs/onebox-owner-operations.md",
+      "gitBlob": "4bdc3c62e46599f06ce427e502df1bab5d252683",
+      "gitMode": "100644",
+      "bytes": 8193,
+      "sha256": "0e0faaa94c084ed0b5fc3d6041e78501947bb4a047a5d75c01952418f76f755b",
+      "actualSarifLocation": false,
+      "supportingCallerOrModel": true
+    },
+    {
+      "path": "docs/production/rehearsal.md",
+      "gitBlob": "d91cf6ff823207d74f833ef60bdbbb653dc61c6e",
+      "gitMode": "100644",
+      "bytes": 6343,
+      "sha256": "8a12368643c0bbdd8cfc76f3445b72ea983d82a018cdb844ab7510a14dc4e874",
+      "actualSarifLocation": false,
+      "supportingCallerOrModel": true
+    },
+    {
+      "path": "docs/security/remediation-2026-10-19/README.md",
+      "gitBlob": "d9030fd9b28e21916eeb301400ba954600e8eb56",
+      "gitMode": "100644",
+      "bytes": 13594,
+      "sha256": "a678590787aee7be58f00fb4691905ca1f8e7d07fbf3819d37b04fad85fa1a54",
+      "actualSarifLocation": false,
+      "supportingCallerOrModel": true
+    },
+    {
+      "path": "integrations/alpha-agent/artifact-commitment.cjs",
+      "gitBlob": "5656e85a0b58ba7dbdec3c9c832b32e9709a8ddb",
+      "gitMode": "100644",
+      "bytes": 1565,
+      "sha256": "6e650ce58b8e4078a86198c31fa23bf57d97e4992d3cce854592b008dd65322c",
+      "actualSarifLocation": true,
+      "supportingCallerOrModel": false
+    },
+    {
+      "path": "integrations/alpha-agent/complete-local-fixture.cjs",
+      "gitBlob": "47b5dda58205fbdcc61bc553debaa05b7cc4ad5e",
+      "gitMode": "100644",
+      "bytes": 4906,
+      "sha256": "2cc9fc2261051366c491fc17abf6aa1846cb37c5641283cabb0f2eedc199eb10",
+      "actualSarifLocation": true,
+      "supportingCallerOrModel": false
+    },
+    {
+      "path": "integrations/alpha-agent/four-repo-computer-lifecycle.cjs",
+      "gitBlob": "ba589d5d555b9f4255e294fcafd2213ef7359593",
+      "gitMode": "100644",
+      "bytes": 19851,
+      "sha256": "582bfd92eb01ca2c1a5ee3ab65371f0d45a936cba0ecbe08076a838dc09a4658",
+      "actualSarifLocation": true,
+      "supportingCallerOrModel": false
+    },
+    {
+      "path": "integrations/alpha-agent/pinned-alpha-checkout.cjs",
+      "gitBlob": "35aa4d4a437f6cd617e29c4c65d025af907108af",
+      "gitMode": "100644",
+      "bytes": 9696,
+      "sha256": "75b111f5732423063ef50fa9bf3f33bc035f19060ddd7270c80d35e9091c4eff",
+      "actualSarifLocation": true,
+      "supportingCallerOrModel": false
+    },
+    {
+      "path": "integrations/alpha-agent/tests/alpha-project-transfer.test.mjs",
+      "gitBlob": "71b9e252396ea347a1bde13b0448779c1e7922bb",
+      "gitMode": "100644",
+      "bytes": 22500,
+      "sha256": "e34d38250d11322f3ed03a6a99004e7f221d513a95d7147dd069fb5d53c583e3",
+      "actualSarifLocation": true,
+      "supportingCallerOrModel": false
+    },
+    {
+      "path": "integrations/alpha-agent/vendor/alpha-computer/examples/successor-alpha/engine.mjs",
+      "gitBlob": "2dbddf39d71a030c8468c8fad844143904e9ec3c",
+      "gitMode": "100644",
+      "bytes": 26409,
+      "sha256": "09a673d124b9ddcf47e29250f1aad4fa737ce99cdc2364afbfb9911ec9579ea2",
+      "actualSarifLocation": false,
+      "supportingCallerOrModel": true
+    },
+    {
+      "path": "integrations/alpha-agent/vendor/alpha-computer/examples/successor-alpha/learning.mjs",
+      "gitBlob": "82665337daf74956c42b86d95056f47ede3e8f8d",
+      "gitMode": "100644",
+      "bytes": 3335,
+      "sha256": "6cc68c0f03559bb1f3af5489d975a45a0081822e09ef53c14986f1621a206d69",
+      "actualSarifLocation": false,
+      "supportingCallerOrModel": true
+    },
+    {
+      "path": "integrations/alpha-agent/vendor/alpha-computer/examples/successor-alpha/research.mjs",
+      "gitBlob": "759eb5ce3deb5cc1c20fe35ea29beaffa5bd8eba",
+      "gitMode": "100644",
+      "bytes": 27959,
+      "sha256": "cac318319051de4dc1fdbe2d8a148416b3ceffe206d7fc64f111f2fe6f099c8a",
+      "actualSarifLocation": true,
+      "supportingCallerOrModel": true
+    },
+    {
+      "path": "packages/successor-core/src/frontier-mission.mjs",
+      "gitBlob": "5916c3fc8e86b1d6f62794c9e65405c96e451f44",
+      "gitMode": "100644",
+      "bytes": 41799,
+      "sha256": "b32457b69332641865115a43949ab5a67ac5340edf92703c67ecd141e89409c1",
+      "actualSarifLocation": true,
+      "supportingCallerOrModel": true
+    },
+    {
+      "path": "scripts/pages/build.mjs",
+      "gitBlob": "b2fad292e6ea9afc740ecf6c6ff595bcee12fc0e",
+      "gitMode": "100644",
+      "bytes": 57432,
+      "sha256": "3bac1c36bc75f05505e20353d4a81bc242d41f7478ea92113fb7585c3b2fcb78",
+      "actualSarifLocation": false,
+      "supportingCallerOrModel": true
+    },
+    {
+      "path": "scripts/pages/experiences.mjs",
+      "gitBlob": "a81febdf27e1d875468f8164e2c0cee9e7ec7fc2",
+      "gitMode": "100644",
+      "bytes": 17162,
+      "sha256": "ddadcf714e9a4666feacd9189bff73c21a41eae2806c32fe86601cb05df1f0fe",
+      "actualSarifLocation": false,
+      "supportingCallerOrModel": true
+    },
+    {
+      "path": "scripts/release/publish-source-release-rc16.cjs",
+      "gitBlob": "22357d83f723141c981fb07d7ab5275e6a90e348",
+      "gitMode": "100644",
+      "bytes": 58566,
+      "sha256": "3c88182dda345a9f0e3e51778b3a54d80edba250e2d4ddc8124b011795ab27bd",
+      "actualSarifLocation": true,
+      "supportingCallerOrModel": false
+    },
+    {
+      "path": "scripts/release/qualify-source-release-rc16.cjs",
+      "gitBlob": "e296233348db0e36a6a0969be3e21d099ec34b83",
+      "gitMode": "100644",
+      "bytes": 26759,
+      "sha256": "f761a33de5cc40c3c1f54b7d64f7906522be417d6d696f446440448b318354c6",
+      "actualSarifLocation": true,
+      "supportingCallerOrModel": false
+    },
+    {
+      "path": "scripts/release/source-native-gates-rc16.cjs",
+      "gitBlob": "ab7eab0f86d6bef62e03e3aefa49cdf248db0542",
+      "gitMode": "100644",
+      "bytes": 10830,
+      "sha256": "2beb4ca99aac30f7131223dbc05aa8bc379f4bc153b41948129c0f7f6d88a55f",
+      "actualSarifLocation": true,
+      "supportingCallerOrModel": false
+    },
+    {
+      "path": "scripts/release/source-scanner-gates-rc16.cjs",
+      "gitBlob": "cf5a00dc5d13b48beff3e5399c7d9b573deb2085",
+      "gitMode": "100644",
+      "bytes": 25732,
+      "sha256": "57b801704baae4b501132ff4e719cc38d44bdead3048de342bf54abf2e8f2d17",
+      "actualSarifLocation": true,
+      "supportingCallerOrModel": false
+    },
+    {
+      "path": "scripts/retrainAgent.ts",
+      "gitBlob": "97b0e964c1dffab9be5bb72e3fddcdbf106616b8",
+      "gitMode": "100644",
+      "bytes": 10360,
+      "sha256": "011370e9e9b36cd2901f0c0466862ecd658a79a1f64ec1f6adee794c3f7e4aff",
+      "actualSarifLocation": true,
+      "supportingCallerOrModel": false
+    },
+    {
+      "path": "services/notifications/server.js",
+      "gitBlob": "43ba84d43f57cf870dcd126d265b7bc6029d09d5",
+      "gitMode": "100644",
+      "bytes": 2730,
+      "sha256": "7ab7c231ab43988b267aaae3a6176aca18f308f559578ff467b1304ce7fc1b91",
+      "actualSarifLocation": true,
+      "supportingCallerOrModel": false
+    },
+    {
+      "path": "shared/containedFiles.ts",
+      "gitBlob": "31c26166958baad1d69e29248fa108ac95118699",
+      "gitMode": "100644",
+      "bytes": 6181,
+      "sha256": "cf9158717817a74fc65d4c25b79a808892e9ad98171c6190d80c65a73631c2d8",
+      "actualSarifLocation": true,
+      "supportingCallerOrModel": false
+    },
+    {
+      "path": "shared/worldModel.ts",
+      "gitBlob": "6735156887b86d5ce79a693d84f3019801ee857f",
+      "gitMode": "100644",
+      "bytes": 8426,
+      "sha256": "1251459dd040c043f21dce0594f9e59d338feab8ed7c81fd9dc8bcaea79697af",
+      "actualSarifLocation": true,
+      "supportingCallerOrModel": false
+    },
+    {
+      "path": "website/assets/frontier-desk.mjs",
+      "gitBlob": "7bd53230655d1f02277e860b7940501266e6dd68",
+      "gitMode": "100644",
+      "bytes": 27126,
+      "sha256": "77a455026b815bab4938ba44ebfa5d21b650cc8dfc55b74a9f76bbe03327ceb5",
+      "actualSarifLocation": true,
+      "supportingCallerOrModel": false
+    },
+    {
+      "path": "website/assets/frontier-mission.js",
+      "gitBlob": "b4afa4363936bca11f3797a27dbdbccb81f15eca",
+      "gitMode": "100644",
+      "bytes": 18790,
+      "sha256": "8f9202b8e65d2048311c4f2c09961fad2dc2b35d89a08b13ef2effbacff611bb",
+      "actualSarifLocation": true,
+      "supportingCallerOrModel": true
+    },
+    {
+      "path": "website/assets/source-lab.js",
+      "gitBlob": "f851e6b0d8fa51e743b6949fe8248b93c09f3e08",
+      "gitMode": "100644",
+      "bytes": 4382,
+      "sha256": "c06bba8b64807b7ce5d3819aae58f8dd6dd716ff9a672e48868e03909ea79564",
+      "actualSarifLocation": true,
+      "supportingCallerOrModel": false
+    }
+  ],
+  "producerObservation": {
+    "path": "authenticated-producer-observation.json",
+    "sha256": "621dba06d66e03c637e72ad32ce8954428b7ae21381cc6e67c4996dabe1e21f6"
+  },
+  "archives": [
+    {
+      "language": "javascript",
+      "zip": {
+        "path": "/workspace/scratch/ededf14e8d03/restored-public-evidence/jobs-f2-approved-s1-javascript.zip",
+        "bytes": 198703,
+        "sha256": "f7963609c0ccacde2bb6e949ae572201312f111f67411c5c8799355d8ceaf5c7",
+        "exactFourMemberInventory": true,
+        "allCrcVerified": true,
+        "members": [
+          {
+            "name": "javascript.sarif",
+            "bytes": 2052645,
+            "sha256": "490ec3b4f13861b5e280cf14773e7630d38d8094338a84df2987193480da0750",
+            "crc32": "d4967484",
+            "encrypted": false,
+            "compression": 8
+          },
+          {
+            "name": "source-extraction.json",
+            "bytes": 52025,
+            "sha256": "ecc4586183c998ccb5fc92180e76e0e6c6cac9c283f4b01b4c2fffe7c4f16af8",
+            "crc32": "25e6e8ae",
+            "encrypted": false,
+            "compression": 8
+          },
+          {
+            "name": "source-scope-after.json",
+            "bytes": 5525,
+            "sha256": "3af00d102ccb6a334b5ce9ffbbbee0bde0a816c66ef1bd13b3314caa5bef36e8",
+            "crc32": "87f7ef7b",
+            "encrypted": false,
+            "compression": 8
+          },
+          {
+            "name": "source-scope-before.json",
+            "bytes": 5525,
+            "sha256": "3af00d102ccb6a334b5ce9ffbbbee0bde0a816c66ef1bd13b3314caa5bef36e8",
+            "crc32": "87f7ef7b",
+            "encrypted": false,
+            "compression": 8
+          }
+        ]
+      },
+      "resultCount": 43,
+      "rawResultCount": 43,
+      "ruleCounts": {
+        "js/xss-through-dom": 6,
+        "js/xss-through-exception": 1,
+        "js/bad-code-sanitization": 1,
+        "js/biased-cryptographic-random": 2,
+        "js/insecure-temporary-file": 1,
+        "js/file-system-race": 2,
+        "js/file-access-to-http": 7,
+        "js/user-controlled-bypass": 7,
+        "js/http-to-file-access": 6,
+        "js/unused-local-variable": 10
+      },
+      "driver": {
+        "name": "CodeQL",
+        "semanticVersion": "2.27.2"
+      },
+      "toolComponents": [
+        {
+          "name": "codeql/javascript-queries",
+          "version": null,
+          "semanticVersion": "2.4.7+a7057b836bf29767461026718b14d20790b9085f",
+          "guid": null,
+          "ruleCount": 201,
+          "properties": null
+        },
+        {
+          "name": "codeql/javascript-all",
+          "version": null,
+          "semanticVersion": "2.10.3+a7057b836bf29767461026718b14d20790b9085f",
+          "guid": null,
+          "ruleCount": 0,
+          "properties": null
+        },
+        {
+          "name": "codeql/threat-models",
+          "version": null,
+          "semanticVersion": "1.0.59+a7057b836bf29767461026718b14d20790b9085f",
+          "guid": null,
+          "ruleCount": 0,
+          "properties": null
+        }
+      ],
+      "scopeKeys": [
+        "schema",
+        "source",
+        "tree",
+        "run",
+        "attempt",
+        "event",
+        "ref",
+        "historicalConfigSha256",
+        "configSha256",
+        "staticAdmittedBefore",
+        "staticAdditionalAdmitted",
+        "allPreviousPathsRetained",
+        "integrationClosureAdmitted",
+        "browserClosureAdmitted",
+        "requiredExtractedFiles",
+        "actualExtractionRequiresSARIF"
+      ],
+      "scopeContext": {
+        "schema": "agijobsv0/codeql-scope/2",
+        "source": "f2a8d2382b9a40814579f7a8be44046f247e0fd7",
+        "tree": "651310e14930967b1be1de86143b88657f3fe53a",
+        "run": 39356262852,
+        "attempt": 1,
+        "event": "push",
+        "ref": "refs/heads/fix/inherited-codeql-ti-final-rc16-20261019",
+        "configPath": null,
+        "configSha256": "07d7be878097a38520bcf09147b62c75064cb3d707317ad34e028c1f46ba8155",
+        "workflowPath": null,
+        "workflowSha256": null
+      },
+      "scopeBeforeAfterSemanticEqual": true,
+      "extraction": {
+        "schema": "agijobsv0/codeql-extraction/1",
+        "source": "f2a8d2382b9a40814579f7a8be44046f247e0fd7",
+        "tree": "651310e14930967b1be1de86143b88657f3fe53a",
+        "run": 39356262852,
+        "attempt": 1,
+        "event": "push",
+        "ref": "refs/heads/fix/inherited-codeql-ti-final-rc16-20261019",
+        "configSha256": "07d7be878097a38520bcf09147b62c75064cb3d707317ad34e028c1f46ba8155",
+        "sarifSha256": "490ec3b4f13861b5e280cf14773e7630d38d8094338a84df2987193480da0750",
+        "successfulExtractionFiles": 830,
+        "requiredExtractedFiles": 87,
+        "missingRequiredExtractedFiles": 0,
+        "ruleIds": 201,
+        "rawResultCount": 43,
+        "resultDisposition": "REQUIRES_INDEPENDENT_FINAL_SOURCE_REVIEW"
+      },
+      "invocations": [
+        {
+          "executionSuccessful": true,
+          "notificationCount": 1643,
+          "errorNotificationCount": 0
+        }
+      ]
+    },
+    {
+      "language": "python",
+      "zip": {
+        "path": "/workspace/scratch/ededf14e8d03/restored-public-evidence/jobs-f2-approved-s1-python.zip",
+        "bytes": 106983,
+        "sha256": "9a762e7a2374ba903436653dc9bcd2ff022724accc8c26861022b3b266fe3a0a",
+        "exactFourMemberInventory": true,
+        "allCrcVerified": true,
+        "members": [
+          {
+            "name": "source-scope-before.json",
+            "bytes": 1541,
+            "sha256": "165e01c7897781cdc19a65976c61927293182fb2b5ead3cf26501832f30fae8c",
+            "crc32": "364dea0f",
+            "encrypted": false,
+            "compression": 8
+          },
+          {
+            "name": "python.sarif",
+            "bytes": 788624,
+            "sha256": "4d5a94761cd0d4c6fbe274f923036b9647150d4ff60d2a31c249301e1e65eef8",
+            "crc32": "4095c97f",
+            "encrypted": false,
+            "compression": 8
+          },
+          {
+            "name": "source-extraction.json",
+            "bytes": 13261,
+            "sha256": "a62c630008c2047fc9b24fa0c1936d4649246c53354a75b7cfcec28079790f37",
+            "crc32": "95d87802",
+            "encrypted": false,
+            "compression": 8
+          },
+          {
+            "name": "source-scope-after.json",
+            "bytes": 1541,
+            "sha256": "165e01c7897781cdc19a65976c61927293182fb2b5ead3cf26501832f30fae8c",
+            "crc32": "364dea0f",
+            "encrypted": false,
+            "compression": 8
+          }
+        ]
+      },
+      "resultCount": 0,
+      "rawResultCount": 0,
+      "ruleCounts": {},
+      "driver": {
+        "name": "CodeQL",
+        "semanticVersion": "2.27.2"
+      },
+      "toolComponents": [
+        {
+          "name": "codeql/python-queries",
+          "version": null,
+          "semanticVersion": "1.8.12+a7057b836bf29767461026718b14d20790b9085f",
+          "guid": null,
+          "ruleCount": 172,
+          "properties": null
+        },
+        {
+          "name": "codeql/python-all",
+          "version": null,
+          "semanticVersion": "7.2.7+a7057b836bf29767461026718b14d20790b9085f",
+          "guid": null,
+          "ruleCount": 0,
+          "properties": null
+        },
+        {
+          "name": "codeql/threat-models",
+          "version": null,
+          "semanticVersion": "1.0.59+a7057b836bf29767461026718b14d20790b9085f",
+          "guid": null,
+          "ruleCount": 0,
+          "properties": null
+        }
+      ],
+      "scopeKeys": [
+        "schema",
+        "source",
+        "tree",
+        "run",
+        "attempt",
+        "event",
+        "ref",
+        "configPath",
+        "configSha256",
+        "workflowPath",
+        "workflowSha256",
+        "requiredSentinelFiles",
+        "requiredExtractedFiles",
+        "actualExtractionRequiresSARIF"
+      ],
+      "scopeContext": {
+        "schema": "agijobsv0/codeql-python-scope/1",
+        "source": "f2a8d2382b9a40814579f7a8be44046f247e0fd7",
+        "tree": "651310e14930967b1be1de86143b88657f3fe53a",
+        "run": 39356262848,
+        "attempt": 1,
+        "event": "push",
+        "ref": "refs/heads/fix/inherited-codeql-ti-final-rc16-20261019",
+        "configPath": ".github/codeql/config-python-integrations.yml",
+        "configSha256": "eb5b425facefb419987bf537280d5144a477b65a205ccd71df3866b60b01e560",
+        "workflowPath": ".github/workflows/static-analysis-python-integrations.yml",
+        "workflowSha256": "06cb537c0a1502132c600bdd158284c51bb7c9296a11f831cd929ed2662eb5a5"
+      },
+      "scopeBeforeAfterSemanticEqual": true,
+      "extraction": {
+        "schema": "agijobsv0/codeql-python-extraction/1",
+        "source": "f2a8d2382b9a40814579f7a8be44046f247e0fd7",
+        "tree": "651310e14930967b1be1de86143b88657f3fe53a",
+        "run": 39356262848,
+        "attempt": 1,
+        "event": "push",
+        "ref": "refs/heads/fix/inherited-codeql-ti-final-rc16-20261019",
+        "configPath": ".github/codeql/config-python-integrations.yml",
+        "configSha256": "eb5b425facefb419987bf537280d5144a477b65a205ccd71df3866b60b01e560",
+        "workflowPath": ".github/workflows/static-analysis-python-integrations.yml",
+        "workflowSha256": "06cb537c0a1502132c600bdd158284c51bb7c9296a11f831cd929ed2662eb5a5",
+        "sarifSha256": "4d5a94761cd0d4c6fbe274f923036b9647150d4ff60d2a31c249301e1e65eef8",
+        "successfulExtractionFiles": 79,
+        "requiredSentinelFiles": 8,
+        "requiredExtractedFiles": 8,
+        "missingRequiredExtractedFiles": 0,
+        "ruleIds": 172,
+        "rawResultCount": 0,
+        "resultDisposition": "REQUIRES_INDEPENDENT_FINAL_SOURCE_REVIEW"
+      },
+      "invocations": [
+        {
+          "executionSuccessful": true,
+          "notificationCount": 138,
+          "errorNotificationCount": 0
+        }
+      ]
+    }
+  ],
+  "pythonReview": {
+    "resultCount": 0,
+    "extractedFiles": 79,
+    "requiredFiles": 8,
+    "missingFiles": [],
+    "ruleCount": 172
+  },
+  "authenticCodeqlChecks": [
+    {
+      "id": 118411754521,
+      "name": "CodeQL",
+      "headSha": "f2a8d2382b9a40814579f7a8be44046f247e0fd7",
+      "appId": 57789,
+      "appSlug": "github-advanced-security",
+      "appOwnerId": 9919,
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/MontrealAI/AGIJobsv0/runs/118411754521",
+      "completedAt": "2026-10-20T01:57:46Z",
+      "outputTitle": "11 new alerts including 1 medium severity security vulnerability",
+      "outputSummary": "### New alerts in code changed by this pull request\n\nSecurity Alerts:\n * 1 medium\n\nOther Alerts:\n * 10 notes\n\nSee annotations below for details.\n\n[View all branch alerts](/MontrealAI/AGIJobsv0/security/code-scanning?query=pr%3A4000+tool%3ACodeQL+is%3Aopen)."
+    }
+  ],
+  "technicalResult": "EXACT_ACTUAL_FINAL_RAW_PRODUCER_POLICY_EXTRACTION_AND_SOURCE_CASE_BINDINGS_VERIFIED",
+  "dispositionLimit": "This evidence-peer receipt alone does not promote source-specific security candidates to the literal final false-positive disposition. The33 semantic decisions remain with the explicit case reviewer; the10 accurate nonsecurity quality notes remain accurate.",
+  "executed": {
+    "targetModules": false,
+    "scanners": false,
+    "nativeFixtures": false,
+    "transactions": false,
+    "slotInstallation": false,
+    "refChanges": false
+  },
+  "remaining": [
+    "Explicit final33 case-specific semantic determinations under the existing policy.",
+    "Primary-owned normal installation of allthree matching review records.",
+    "FinalmainS2 actual raw archive/requiredCI/authenticAS/live publication checks."
+  ]
+}

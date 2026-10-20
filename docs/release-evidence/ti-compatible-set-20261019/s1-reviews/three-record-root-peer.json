@@ -1,0 +1,14 @@
+{
+  "schema": "jobs-final-s1-three-record-root-peer/v1",
+  "source": "f2a8d2382b9a40814579f7a8be44046f247e0fd7",
+  "javascript43RawRulePathRegionHashesAndDispositionsExact": true,
+  "quality10SourceBlobsExact": true,
+  "notesSortedFullResultMultiplicityAndActualToolHashExact": true,
+  "python4RawMemberDigestsAnd4ToolComponentsAndExtractionExact": true,
+  "pythonToolNormalization": "Actual python-scanner-rc16.cjs283-293 explicitly supplies empty rules arrays when omitted; peer follows that unchanged normalization.",
+  "authenticCodeqlRecord": 118411754521,
+  "distinctSlitherRecordExcluded": 118422027293,
+  "slotsInstalled": false,
+  "refsMoved": false,
+  "executed": "Standard-library JSON/ZIP/hash and source text reads only, no target module or validator execution."
+}

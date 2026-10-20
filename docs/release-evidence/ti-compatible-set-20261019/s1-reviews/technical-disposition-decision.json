@@ -1,0 +1,585 @@
+{
+  "schema": "jobs-final-s1-technical-disposition-decision/v1",
+  "source": "f2a8d2382b9a40814579f7a8be44046f247e0fd7",
+  "tree": "651310e14930967b1be1de86143b88657f3fe53a",
+  "producer": {
+    "run": 39356262852,
+    "attempt": 1,
+    "event": "push",
+    "ref": "refs/heads/fix/inherited-codeql-ti-final-rc16-20261019",
+    "artifactId": 12236768212,
+    "artifactSha256": "f7963609c0ccacde2bb6e949ae572201312f111f67411c5c8799355d8ceaf5c7",
+    "sarifSha256": "490ec3b4f13861b5e280cf14773e7630d38d8094338a84df2987193480da0750"
+  },
+  "decidedAt": "2026-10-20T03:33:40.738260+00:00",
+  "sourceReportCommit": "4a760692e539e53be31b30b00b13c33421275f43",
+  "sourceReportSha256": "593b86e40afe19ac6241c6e9c7204b5ebe956b3f16729d3726f271b0d0f69444",
+  "reviewRole": "SEPARATE_AGENT_TECHNICAL_REVIEW_SAME_WORKSPACE_SHARED_GITHUB_IDENTITY",
+  "decisions": [
+    {
+      "ordinal": 1,
+      "rawCanonicalSha256": "83b31af7e0b36486b38c60fe2709377cc6ffd3c152fdad6c083ebcf9789596fc",
+      "ruleId": "js/xss-through-dom",
+      "path": "apps/console/src/components/GasPanel.tsx",
+      "region": {
+        "startLine": 366,
+        "startColumn": 22,
+        "endColumn": 38
+      },
+      "disposition": "Demonstrably false positive",
+      "caseEvidenceOrdinal": 1
+    },
+    {
+      "ordinal": 2,
+      "rawCanonicalSha256": "445d7d9e337a3efbc7f19bc0a839465dc6cf80f8a597675916ad2f48aa2b2b48",
+      "ruleId": "js/xss-through-dom",
+      "path": "website/assets/frontier-desk.mjs",
+      "region": {
+        "startLine": 313,
+        "startColumn": 21,
+        "endColumn": 31
+      },
+      "disposition": "Demonstrably false positive",
+      "caseEvidenceOrdinal": 2
+    },
+    {
+      "ordinal": 3,
+      "rawCanonicalSha256": "2f45bb7374065c99d22879c03cf17d15740d6204698ba314bc7732c9d9d43f3c",
+      "ruleId": "js/xss-through-dom",
+      "path": "website/assets/frontier-desk.mjs",
+      "region": {
+        "startLine": 335,
+        "startColumn": 25,
+        "endColumn": 35
+      },
+      "disposition": "Demonstrably false positive",
+      "caseEvidenceOrdinal": 3
+    },
+    {
+      "ordinal": 4,
+      "rawCanonicalSha256": "e7516956ee9414c892a9031d6ded0fb6adbe0eccfd24a1767cc499ce9fb44576",
+      "ruleId": "js/xss-through-dom",
+      "path": "website/assets/frontier-desk.mjs",
+      "region": {
+        "startLine": 340,
+        "startColumn": 33,
+        "endColumn": 43
+      },
+      "disposition": "Demonstrably false positive",
+      "caseEvidenceOrdinal": 4
+    },
+    {
+      "ordinal": 5,
+      "rawCanonicalSha256": "9b86f6c3dfbe34a27f9163b46de3bbdf7f986a5e5e14fd564214960fd5e137a2",
+      "ruleId": "js/xss-through-dom",
+      "path": "website/assets/source-lab.js",
+      "region": {
+        "startLine": 78,
+        "startColumn": 30,
+        "endColumn": 45
+      },
+      "disposition": "Demonstrably false positive",
+      "caseEvidenceOrdinal": 5
+    },
+    {
+      "ordinal": 6,
+      "rawCanonicalSha256": "45171308c20c856cdf35a0030a53803db4333bcbd1964466bc445302e6f1d6ef",
+      "ruleId": "js/xss-through-dom",
+      "path": "website/assets/source-lab.js",
+      "region": {
+        "startLine": 81,
+        "startColumn": 30,
+        "endColumn": 43
+      },
+      "disposition": "Demonstrably false positive",
+      "caseEvidenceOrdinal": 6
+    },
+    {
+      "ordinal": 7,
+      "rawCanonicalSha256": "ecf9292068e73fe1886b5a8b25bc1f1cc147c7750896582c314eeea457e7415f",
+      "ruleId": "js/xss-through-exception",
+      "path": "apps/onebox-static/v2/app.js",
+      "region": {
+        "startLine": 522,
+        "startColumn": 25,
+        "endColumn": 32
+      },
+      "disposition": "Demonstrably false positive",
+      "caseEvidenceOrdinal": 7
+    },
+    {
+      "ordinal": 8,
+      "rawCanonicalSha256": "3b75f2692caba0cae134af3d539279caf1ead00f567bc9b51f03022f7ccb5ea5",
+      "ruleId": "js/bad-code-sanitization",
+      "path": "integrations/alpha-agent/tests/alpha-project-transfer.test.mjs",
+      "region": {
+        "startLine": 232,
+        "startColumn": 442,
+        "endColumn": 466
+      },
+      "disposition": "Demonstrably false positive",
+      "caseEvidenceOrdinal": 8
+    },
+    {
+      "ordinal": 9,
+      "rawCanonicalSha256": "c28640aa27c4b798e2c5f24dfef4a6c89dfb723650a646a00af804c3025f110e",
+      "ruleId": "js/biased-cryptographic-random",
+      "path": "integrations/alpha-agent/vendor/alpha-computer/examples/successor-alpha/research.mjs",
+      "region": {
+        "startLine": 192,
+        "startColumn": 74,
+        "endColumn": 82
+      },
+      "disposition": "Demonstrably false positive",
+      "caseEvidenceOrdinal": 9
+    },
+    {
+      "ordinal": 10,
+      "rawCanonicalSha256": "f5dbbf686d62e21c5e2e02e1c467619f6d8a7f6025948289161fa959116921e6",
+      "ruleId": "js/biased-cryptographic-random",
+      "path": "integrations/alpha-agent/vendor/alpha-computer/examples/successor-alpha/research.mjs",
+      "region": {
+        "startLine": 193,
+        "startColumn": 77,
+        "endColumn": 85
+      },
+      "disposition": "Demonstrably false positive",
+      "caseEvidenceOrdinal": 10
+    },
+    {
+      "ordinal": 11,
+      "rawCanonicalSha256": "b88c96c776bb5c5981e1f25ee2398e7253d29fbd47f47bf4df9badb55e7085be",
+      "ruleId": "js/insecure-temporary-file",
+      "path": "integrations/alpha-agent/artifact-commitment.cjs",
+      "region": {
+        "startLine": 10,
+        "startColumn": 5,
+        "endColumn": 13
+      },
+      "disposition": "Demonstrably false positive",
+      "caseEvidenceOrdinal": 11
+    },
+    {
+      "ordinal": 12,
+      "rawCanonicalSha256": "ff38f4729100cd9044b7e7a8fae5248feaaaca3f725464c48f9043ab5a921a39",
+      "ruleId": "js/file-system-race",
+      "path": "integrations/alpha-agent/pinned-alpha-checkout.cjs",
+      "region": {
+        "startLine": 163,
+        "startColumn": 16,
+        "endLine": 166,
+        "endColumn": 6
+      },
+      "disposition": "Demonstrably false positive",
+      "caseEvidenceOrdinal": 12
+    },
+    {
+      "ordinal": 13,
+      "rawCanonicalSha256": "efdbdd57e6141ac97fb7db757ac4b94ddb75341ae4600fdc4174f7b4a7ef2565",
+      "ruleId": "js/file-system-race",
+      "path": "integrations/alpha-agent/four-repo-computer-lifecycle.cjs",
+      "region": {
+        "startLine": 532,
+        "startColumn": 5,
+        "endLine": 535,
+        "endColumn": 7
+      },
+      "disposition": "Demonstrably false positive",
+      "caseEvidenceOrdinal": 13
+    },
+    {
+      "ordinal": 14,
+      "rawCanonicalSha256": "b89662daeea98c7fc9a770cd0f264b02259870b23172b7c7cedc67e38d38d952",
+      "ruleId": "js/file-access-to-http",
+      "path": "agent-gateway/agentEndpoint.ts",
+      "region": {
+        "startLine": 22,
+        "startColumn": 13,
+        "endLine": 24,
+        "endColumn": 8
+      },
+      "disposition": "Demonstrably false positive",
+      "caseEvidenceOrdinal": 14
+    },
+    {
+      "ordinal": 15,
+      "rawCanonicalSha256": "89c5afdb109d3bc6b0977a6ea36c2c9f862d5e521fc1a12e1a23260c8b308b9c",
+      "ruleId": "js/file-access-to-http",
+      "path": "agent-gateway/telemetry.ts",
+      "region": {
+        "startLine": 549,
+        "startColumn": 15,
+        "endColumn": 25
+      },
+      "disposition": "Demonstrably false positive",
+      "caseEvidenceOrdinal": 15
+    },
+    {
+      "ordinal": 16,
+      "rawCanonicalSha256": "3d7e11fd5ebd7cfcea5d8bd867515eea800bd3c72445c71580eff7b068ac74a2",
+      "ruleId": "js/file-access-to-http",
+      "path": "agent-gateway/telemetry.ts",
+      "region": {
+        "startLine": 1286,
+        "startColumn": 13,
+        "endColumn": 36
+      },
+      "disposition": "Demonstrably false positive",
+      "caseEvidenceOrdinal": 16
+    },
+    {
+      "ordinal": 17,
+      "rawCanonicalSha256": "808e6e46a6505950a197dcad5825b3396cc2ba6f9a504e6698308df060c99af3",
+      "ruleId": "js/file-access-to-http",
+      "path": "apps/orchestrator/execution.ts",
+      "region": {
+        "startLine": 608,
+        "startColumn": 11,
+        "endColumn": 18
+      },
+      "disposition": "Demonstrably false positive",
+      "caseEvidenceOrdinal": 17
+    },
+    {
+      "ordinal": 18,
+      "rawCanonicalSha256": "e836796465bde79af4aca2158ba2062a6e70aead3b6d1496e02ba84169348f2d",
+      "ruleId": "js/file-access-to-http",
+      "path": "apps/orchestrator/execution.ts",
+      "region": {
+        "startLine": 609,
+        "startColumn": 17,
+        "endColumn": 23
+      },
+      "disposition": "Demonstrably false positive",
+      "caseEvidenceOrdinal": 18
+    },
+    {
+      "ordinal": 19,
+      "rawCanonicalSha256": "6505d1e8e4489b7f2611db1c8e7f19e3c517409611039d8f919b3d7728456a01",
+      "ruleId": "js/file-access-to-http",
+      "path": "scripts/release/qualify-source-release-rc16.cjs",
+      "region": {
+        "startLine": 561,
+        "startColumn": 7,
+        "endColumn": 92
+      },
+      "disposition": "Demonstrably false positive",
+      "caseEvidenceOrdinal": 19
+    },
+    {
+      "ordinal": 20,
+      "rawCanonicalSha256": "ac8b6720557cbe50005b25280b7a9caa7757fc2f5cea0146cda5f5b30d866418",
+      "ruleId": "js/file-access-to-http",
+      "path": "scripts/retrainAgent.ts",
+      "region": {
+        "startLine": 261,
+        "startColumn": 13,
+        "endLine": 265,
+        "endColumn": 9
+      },
+      "disposition": "Demonstrably false positive",
+      "caseEvidenceOrdinal": 20
+    },
+    {
+      "ordinal": 21,
+      "rawCanonicalSha256": "b3f8d710355360313ebe31b920a807c21321327facca03017cc64f1d6ac619bc",
+      "ruleId": "js/user-controlled-bypass",
+      "path": "agent-gateway/apiHelpers.ts",
+      "region": {
+        "startLine": 174,
+        "startColumn": 10,
+        "endColumn": 15
+      },
+      "disposition": "Demonstrably false positive",
+      "caseEvidenceOrdinal": 21
+    },
+    {
+      "ordinal": 22,
+      "rawCanonicalSha256": "eb8d1644934679ed9a346fcf211eb36c3ff722409dc3b50dd456fe464162764f",
+      "ruleId": "js/user-controlled-bypass",
+      "path": "agent-gateway/apiHelpers.ts",
+      "region": {
+        "startLine": 207,
+        "startColumn": 42,
+        "endColumn": 69
+      },
+      "disposition": "Demonstrably false positive",
+      "caseEvidenceOrdinal": 22
+    },
+    {
+      "ordinal": 23,
+      "rawCanonicalSha256": "905abb518729f2ee3f23dee6441fbd0ae049fb34f4c2ebe69bbbb0c9c330117d",
+      "ruleId": "js/user-controlled-bypass",
+      "path": "agent-gateway/apiHelpers.ts",
+      "region": {
+        "startLine": 208,
+        "startColumn": 11,
+        "endColumn": 32
+      },
+      "disposition": "Demonstrably false positive",
+      "caseEvidenceOrdinal": 23
+    },
+    {
+      "ordinal": 24,
+      "rawCanonicalSha256": "f328e91e8d1bd994880e65ded4c6749dc1f083ce5931a84a4887fd31f321201b",
+      "ruleId": "js/user-controlled-bypass",
+      "path": "agent-gateway/routes.ts",
+      "region": {
+        "startLine": 200,
+        "startColumn": 7,
+        "endColumn": 16
+      },
+      "disposition": "Demonstrably false positive",
+      "caseEvidenceOrdinal": 24
+    },
+    {
+      "ordinal": 25,
+      "rawCanonicalSha256": "429fc0cff3a6a57ad7bf0dfc73654a43ff88cbdbfb539382ba488eba169c1d10",
+      "ruleId": "js/user-controlled-bypass",
+      "path": "agent-gateway/routes.ts",
+      "region": {
+        "startLine": 200,
+        "startColumn": 20,
+        "endColumn": 27
+      },
+      "disposition": "Demonstrably false positive",
+      "caseEvidenceOrdinal": 25
+    },
+    {
+      "ordinal": 26,
+      "rawCanonicalSha256": "61f898923bd39c74c3e389a31c73079c11515d17bccd4f81d130d87300e26bac",
+      "ruleId": "js/user-controlled-bypass",
+      "path": "apps/onebox-static/app.mjs",
+      "region": {
+        "startLine": 1482,
+        "startColumn": 8,
+        "endColumn": 15
+      },
+      "disposition": "Demonstrably false positive",
+      "caseEvidenceOrdinal": 26
+    },
+    {
+      "ordinal": 27,
+      "rawCanonicalSha256": "366a3c8b3f8d931b0b6e11db1b1746c6cc1fffa7d1ef265614f8f0352926b5d4",
+      "ruleId": "js/user-controlled-bypass",
+      "path": "packages/successor-core/src/frontier-mission.mjs",
+      "region": {
+        "startLine": 431,
+        "startColumn": 7,
+        "endColumn": 40
+      },
+      "disposition": "Demonstrably false positive",
+      "caseEvidenceOrdinal": 27
+    },
+    {
+      "ordinal": 28,
+      "rawCanonicalSha256": "2ef3f39bbeaa21492092841ebeb1a357b3e50b8e118e6a0d87ac0dbaac53397b",
+      "ruleId": "js/http-to-file-access",
+      "path": "agent-gateway/employer.ts",
+      "region": {
+        "startLine": 54,
+        "startColumn": 5,
+        "endColumn": 37
+      },
+      "disposition": "Demonstrably false positive",
+      "caseEvidenceOrdinal": 28
+    },
+    {
+      "ordinal": 29,
+      "rawCanonicalSha256": "d9664fac8b74f457aadbd6468021538dfea31e39603f901549231ef43dd1393b",
+      "ruleId": "js/http-to-file-access",
+      "path": "agent-gateway/telemetry.ts",
+      "region": {
+        "startLine": 1153,
+        "startColumn": 5,
+        "endColumn": 35
+      },
+      "disposition": "Demonstrably false positive",
+      "caseEvidenceOrdinal": 29
+    },
+    {
+      "ordinal": 30,
+      "rawCanonicalSha256": "71bda75e290dc50b846d89852befbef62529d5603a66de76fb3c3680887a0283",
+      "ruleId": "js/http-to-file-access",
+      "path": "agent-gateway/validationStore.ts",
+      "region": {
+        "startLine": 231,
+        "startColumn": 26,
+        "endColumn": 30
+      },
+      "disposition": "Demonstrably false positive",
+      "caseEvidenceOrdinal": 30
+    },
+    {
+      "ordinal": 31,
+      "rawCanonicalSha256": "a8a15403fe33c03a383fcfd62985cf57a09fe42a18c65df018042a342f47df19",
+      "ruleId": "js/http-to-file-access",
+      "path": "services/notifications/server.js",
+      "region": {
+        "startLine": 29,
+        "startColumn": 34,
+        "endColumn": 64
+      },
+      "disposition": "Demonstrably false positive",
+      "caseEvidenceOrdinal": 31
+    },
+    {
+      "ordinal": 32,
+      "rawCanonicalSha256": "1f968a5e5f02789458f1623071991f4863d592bbc4a8d7f111045a4835a157e0",
+      "ruleId": "js/http-to-file-access",
+      "path": "shared/containedFiles.ts",
+      "region": {
+        "startLine": 116,
+        "startColumn": 26,
+        "endColumn": 30
+      },
+      "disposition": "Demonstrably false positive",
+      "caseEvidenceOrdinal": 32
+    },
+    {
+      "ordinal": 33,
+      "rawCanonicalSha256": "21f1a54122beaa9146fbb963d56a279788a55575dc17b3316cb315982fe5c561",
+      "ruleId": "js/http-to-file-access",
+      "path": "shared/worldModel.ts",
+      "region": {
+        "startLine": 203,
+        "startColumn": 5,
+        "endColumn": 39
+      },
+      "disposition": "Demonstrably false positive",
+      "caseEvidenceOrdinal": 33
+    },
+    {
+      "ordinal": 34,
+      "rawCanonicalSha256": "1aaf067df146ba044691fda82efaf3e612c22f31d1e1880250b9d0634abf5d07",
+      "ruleId": "js/unused-local-variable",
+      "path": "scripts/release/publish-source-release-rc16.cjs",
+      "region": {
+        "startLine": 18,
+        "startColumn": 3,
+        "endColumn": 20
+      },
+      "disposition": "Acknowledged nonsecurity quality",
+      "caseEvidenceOrdinal": 34
+    },
+    {
+      "ordinal": 35,
+      "rawCanonicalSha256": "1aea93b30deeca95ce3d8a272eb69f19dfbec667297783257f8f3c44b18934fa",
+      "ruleId": "js/unused-local-variable",
+      "path": "scripts/release/source-native-gates-rc16.cjs",
+      "region": {
+        "startLine": 4,
+        "startColumn": 7,
+        "endColumn": 9
+      },
+      "disposition": "Acknowledged nonsecurity quality",
+      "caseEvidenceOrdinal": 35
+    },
+    {
+      "ordinal": 36,
+      "rawCanonicalSha256": "ec5278d8ab68d6cea226042ec064ccf0fe18b2ddece657726c203a7c46f838cf",
+      "ruleId": "js/unused-local-variable",
+      "path": "scripts/release/source-native-gates-rc16.cjs",
+      "region": {
+        "startLine": 5,
+        "startColumn": 7,
+        "endColumn": 11
+      },
+      "disposition": "Acknowledged nonsecurity quality",
+      "caseEvidenceOrdinal": 36
+    },
+    {
+      "ordinal": 37,
+      "rawCanonicalSha256": "6325952e9dbe856417659b95860e0743ec7c33ce2c902dbac69eb94c3e5ee914",
+      "ruleId": "js/unused-local-variable",
+      "path": "scripts/release/source-native-gates-rc16.cjs",
+      "region": {
+        "startLine": 7,
+        "startColumn": 9,
+        "endColumn": 21
+      },
+      "disposition": "Acknowledged nonsecurity quality",
+      "caseEvidenceOrdinal": 37
+    },
+    {
+      "ordinal": 38,
+      "rawCanonicalSha256": "1a09f9aef73ed6aaab6343c87259769cbee9465ecaab2689858462d9b2d61fec",
+      "ruleId": "js/unused-local-variable",
+      "path": "scripts/release/source-native-gates-rc16.cjs",
+      "region": {
+        "startLine": 8,
+        "startColumn": 21,
+        "endColumn": 26
+      },
+      "disposition": "Acknowledged nonsecurity quality",
+      "caseEvidenceOrdinal": 38
+    },
+    {
+      "ordinal": 39,
+      "rawCanonicalSha256": "0e933c4474fa710742686500a5a45a14632f158a5137d6611c81ea4f4ae21fd4",
+      "ruleId": "js/unused-local-variable",
+      "path": "scripts/release/source-native-gates-rc16.cjs",
+      "region": {
+        "startLine": 13,
+        "startColumn": 3,
+        "endColumn": 26
+      },
+      "disposition": "Acknowledged nonsecurity quality",
+      "caseEvidenceOrdinal": 39
+    },
+    {
+      "ordinal": 40,
+      "rawCanonicalSha256": "bc6b477f93b1ffed3a0598851bf2c1386488bc2db1dd9385c5d96680823387fd",
+      "ruleId": "js/unused-local-variable",
+      "path": "scripts/release/source-native-gates-rc16.cjs",
+      "region": {
+        "startLine": 16,
+        "startColumn": 3,
+        "endColumn": 28
+      },
+      "disposition": "Acknowledged nonsecurity quality",
+      "caseEvidenceOrdinal": 40
+    },
+    {
+      "ordinal": 41,
+      "rawCanonicalSha256": "7fd7fc59d0b56b251559f9994acbf5ebb0b98dce566c7f2c0e96a493d113d834",
+      "ruleId": "js/unused-local-variable",
+      "path": "scripts/release/source-scanner-gates-rc16.cjs",
+      "region": {
+        "startLine": 8,
+        "startColumn": 21,
+        "endColumn": 26
+      },
+      "disposition": "Acknowledged nonsecurity quality",
+      "caseEvidenceOrdinal": 41
+    },
+    {
+      "ordinal": 42,
+      "rawCanonicalSha256": "1676a4dccf4ce896805605e8d60b53ee7325247b1bf22f92bf2c625de15a9f99",
+      "ruleId": "js/unused-local-variable",
+      "path": "scripts/release/source-scanner-gates-rc16.cjs",
+      "region": {
+        "startLine": 13,
+        "startColumn": 3,
+        "endColumn": 26
+      },
+      "disposition": "Acknowledged nonsecurity quality",
+      "caseEvidenceOrdinal": 42
+    },
+    {
+      "ordinal": 43,
+      "rawCanonicalSha256": "264bbae7562a23a9cc4ef1f294becb549d30c30452cf9c5837cfe77a51cf2410",
+      "ruleId": "js/unused-local-variable",
+      "path": "scripts/release/source-scanner-gates-rc16.cjs",
+      "region": {
+        "startLine": 17,
+        "startColumn": 3,
+        "endColumn": 28
+      },
+      "disposition": "Acknowledged nonsecurity quality",
+      "caseEvidenceOrdinal": 43
+    }
+  ],
+  "formalSlotsInstalled": false,
+  "refsMoved": false
+}
