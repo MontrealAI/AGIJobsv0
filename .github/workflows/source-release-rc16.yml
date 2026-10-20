@@ -35,6 +35,11 @@ on:
       - '.github/workflows/source-release.yml'
       - 'package-lock.json'
       - '.nvmrc'
+      # Include transitive qualification policies, source guards and required workflows.
+      - 'ci/**'
+      - 'config/**'
+      - 'integrations/alpha-agent/**'
+      - '.github/workflows/**'
   push:
     branches: [main]
     paths:
@@ -70,6 +75,11 @@ on:
       - '.github/workflows/source-release.yml'
       - 'package-lock.json'
       - '.nvmrc'
+      # Include transitive qualification policies, source guards and required workflows.
+      - 'ci/**'
+      - 'config/**'
+      - 'integrations/alpha-agent/**'
+      - '.github/workflows/**'
 
 permissions:
   contents: read
