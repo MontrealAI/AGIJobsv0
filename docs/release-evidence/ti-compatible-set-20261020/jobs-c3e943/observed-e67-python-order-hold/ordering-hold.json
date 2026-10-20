@@ -1,0 +1,114 @@
+{
+  "schema": "agijobsv0/observed-python-descriptor-order-hold/v1",
+  "reviewedSource": "c3e943189a00bffa2e4dda265c6bd010b4930944",
+  "candidateSource": "e67afa3ceac8dea12ffbcbe9e814fc9f17d651a4",
+  "run": 39438226252,
+  "collectorJob": 118685094049,
+  "artifact": {
+    "id": 12274615094,
+    "name": "python-codeql-security-report-e67afa3ceac8dea12ffbcbe9e814fc9f17d651a4-39438226252-1",
+    "bytes": 106960,
+    "githubDigest": "sha256:4a1b20525db87fc81d8b432e0ca27f0a3770db05e5a5d8fb1076fc1511dc431b",
+    "source": "e67afa3ceac8dea12ffbcbe9e814fc9f17d651a4",
+    "runId": 39438226252,
+    "headBranch": "fix/processed-codeql-release-proof-20261020"
+  },
+  "strictOrderedCurrentComparison": "FAIL",
+  "fullDescriptorMultisetsAndEveryOtherFieldEqual": true,
+  "descriptorReferenceCount": 140,
+  "actualOrdinalIdBindingsVerified": true,
+  "diff": [
+    {
+      "component": 0,
+      "name": "CodeQL",
+      "orderedSame": true,
+      "otherFieldsSame": true,
+      "arrays": [
+        {
+          "key": "rules",
+          "priorCount": 0,
+          "currentCount": 0,
+          "fullRecordMultisetEqual": true,
+          "idsUnique": true
+        },
+        {
+          "key": "notifications",
+          "priorCount": 5,
+          "currentCount": 5,
+          "fullRecordMultisetEqual": true,
+          "idsUnique": true
+        }
+      ]
+    },
+    {
+      "component": 1,
+      "name": "codeql/python-queries",
+      "orderedSame": false,
+      "otherFieldsSame": true,
+      "arrays": [
+        {
+          "key": "rules",
+          "priorCount": 172,
+          "currentCount": 172,
+          "fullRecordMultisetEqual": true,
+          "idsUnique": true
+        },
+        {
+          "key": "notifications",
+          "priorCount": 2,
+          "currentCount": 2,
+          "fullRecordMultisetEqual": true,
+          "idsUnique": true
+        }
+      ]
+    },
+    {
+      "component": 2,
+      "name": "codeql/python-all",
+      "orderedSame": true,
+      "otherFieldsSame": true,
+      "arrays": [
+        {
+          "key": "rules",
+          "priorCount": 0,
+          "currentCount": 0,
+          "fullRecordMultisetEqual": true,
+          "idsUnique": true
+        },
+        {
+          "key": "notifications",
+          "priorCount": null,
+          "currentCount": null,
+          "fullRecordMultisetEqual": true,
+          "idsUnique": true
+        }
+      ]
+    },
+    {
+      "component": 3,
+      "name": "codeql/threat-models",
+      "orderedSame": true,
+      "otherFieldsSame": true,
+      "arrays": [
+        {
+          "key": "rules",
+          "priorCount": 0,
+          "currentCount": 0,
+          "fullRecordMultisetEqual": true,
+          "idsUnique": true
+        },
+        {
+          "key": "notifications",
+          "priorCount": null,
+          "currentCount": null,
+          "fullRecordMultisetEqual": true,
+          "idsUnique": true
+        }
+      ]
+    }
+  ],
+  "originalRuleAndNotificationOrderRetained": true,
+  "sourceFix": "PENDING_REVIEW",
+  "qualification": "BLOCKED_NO_WAIVER",
+  "observedAt": "2026-10-20T14:45:33.912Z"
+}
