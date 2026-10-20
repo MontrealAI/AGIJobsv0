@@ -144,7 +144,7 @@ jobs:
       - name: Build checksummed source and immutable evidence assets
         run: |
           set -euo pipefail
-          out=reports/source-release-rc16
+          out="$RUNNER_TEMP/source-release-rc16"
           git archive --format=zip --prefix=AGIJobsv0/ "$GITHUB_SHA" > "$out/$TAG-source.zip"
           cp docs/deployments/ethereum-mainnet-2026-10-12.json "$out/"
           cp website/data/jobs-mainnet-2026-10-18.json "$out/"
@@ -155,7 +155,7 @@ jobs:
           cp docs/production/mainnet-2026-10-18/deployment-receipts.json "$out/mainnet-deployment-receipts-2026-10-18.json"
           node - <<'NODE'
           const fs = require('node:fs');
-          const file = 'reports/source-release-rc16/mainnet-deployment-2026-10-18.md';
+          const file = require('node:path').join(process.env.RUNNER_TEMP, 'source-release-rc16/mainnet-deployment-2026-10-18.md');
           const base = 'https://github.com/MontrealAI/AGIJobsv0/blob/284351148d96c5390a655aec1f9db806284f2400/docs/production/';
           let guide = fs.readFileSync(file, 'utf8');
           for (const [relative, target] of Object.entries({
@@ -176,7 +176,7 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: source-rc16-${{ github.sha }}
-          path: reports/source-release-rc16/
+          path: ${{ runner.temp }}/source-release-rc16/
           if-no-files-found: error
           overwrite: true
       - name: Publish only after complete semantic producer and remote-asset verification

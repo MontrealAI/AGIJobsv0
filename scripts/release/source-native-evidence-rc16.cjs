@@ -1,6 +1,7 @@
 'use strict';
 const fs = require('node:fs');
 const path = require('node:path');
+const os = require('node:os');
 const assert = require('node:assert/strict');
 const { execFileSync } = require('node:child_process');
 const {
@@ -124,7 +125,10 @@ async function collectAdditionalEvidence() {
     target: process.env.GITHUB_SHA,
   });
   const { GITHUB_SHA: sha, GITHUB_REPOSITORY: repository } = process.env;
-  const directory = path.resolve('reports/source-release-rc16');
+  const directory = path.resolve(
+    process.env.RUNNER_TEMP || os.tmpdir(),
+    'source-release-rc16'
+  );
   const provenance = JSON.parse(
     fs.readFileSync(path.join(directory, 'provenance.json'))
   );
@@ -450,7 +454,6 @@ async function retainPythonEvidence({
   return proof;
 }
 async function qualifyPythonEvidence(context) {
-  const os = require('node:os');
   const directory = fs.mkdtempSync(
     path.join(
       process.env.RUNNER_TEMP || os.tmpdir(),

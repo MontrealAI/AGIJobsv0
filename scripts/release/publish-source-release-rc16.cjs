@@ -1135,7 +1135,10 @@ async function collectScannerEvidence() {
   });
   const repository = process.env.GITHUB_REPOSITORY,
     sha = process.env.GITHUB_SHA;
-  const directory = path.resolve('reports/source-release-rc16');
+  const directory = path.resolve(
+    process.env.RUNNER_TEMP || os.tmpdir(),
+    'source-release-rc16'
+  );
   const provenance = JSON.parse(
     fs.readFileSync(path.join(directory, 'provenance.json'))
   );
@@ -1353,7 +1356,10 @@ function collectCompilerEvidence() {
   });
   const repository = process.env.GITHUB_REPOSITORY;
   const sha = process.env.GITHUB_SHA;
-  const directory = path.resolve('reports/source-release-rc16');
+  const directory = path.resolve(
+    process.env.RUNNER_TEMP || os.tmpdir(),
+    'source-release-rc16'
+  );
   const provenance = JSON.parse(
     fs.readFileSync(path.join(directory, 'provenance.json'))
   );
@@ -1656,7 +1662,10 @@ async function main() {
   verifyScannerReviewSource({ git, sha });
   const scannerContext = scannerPolicyContext(git, sha);
   const tree = git('rev-parse', 'HEAD^{tree}').trim();
-  const directory = path.resolve('reports/source-release-rc16');
+  const directory = path.resolve(
+    process.env.RUNNER_TEMP || os.tmpdir(),
+    'source-release-rc16'
+  );
   const files = fs.readdirSync(directory).sort();
   const expected = expectedAssets(tag);
   if (JSON.stringify(files) !== JSON.stringify(expected))
