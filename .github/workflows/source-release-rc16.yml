@@ -27,6 +27,14 @@ on:
       - 'test/scripts/source-release-security-rc16-gate.test.cjs'
       - 'test/scripts/source-release-security-rc16-publish.test.cjs'
       - 'integrations/alpha-agent/tests/transformational-compatibility.test.mjs'
+      # Cover shared release helpers, their tests, scanner policies and runtime inputs.
+      - 'scripts/release/**'
+      - 'test/scripts/**'
+      - '.github/codeql/**'
+      - '.github/workflows/static-analysis*.yml'
+      - '.github/workflows/source-release.yml'
+      - 'package-lock.json'
+      - '.nvmrc'
   push:
     branches: [main]
     paths:
@@ -54,6 +62,14 @@ on:
       - 'test/scripts/source-release-security-rc16-gate.test.cjs'
       - 'test/scripts/source-release-security-rc16-publish.test.cjs'
       - 'integrations/alpha-agent/tests/transformational-compatibility.test.mjs'
+      # Cover shared release helpers, their tests, scanner policies and runtime inputs.
+      - 'scripts/release/**'
+      - 'test/scripts/**'
+      - '.github/codeql/**'
+      - '.github/workflows/static-analysis*.yml'
+      - '.github/workflows/source-release.yml'
+      - 'package-lock.json'
+      - '.nvmrc'
 
 permissions:
   contents: read
