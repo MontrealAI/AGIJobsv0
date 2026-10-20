@@ -1,0 +1,35 @@
+{
+  "sha": "604d10094f3b7fede53406ae0e40f9f489155a3b",
+  "node_id": "C_kwDOPXlfdtoAKDYwNGQxMDA5NGYzYjdmZWRlNTM0MDZhZTBlNDBmOWY0ODkxNTVhM2I",
+  "url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/git/commits/604d10094f3b7fede53406ae0e40f9f489155a3b",
+  "html_url": "https://github.com/MontrealAI/AGIJobsv0/commit/604d10094f3b7fede53406ae0e40f9f489155a3b",
+  "author": {
+    "name": "MONTREAL.AI",
+    "email": "info@montreal.ai",
+    "date": "2026-10-20T19:57:50Z"
+  },
+  "committer": {
+    "name": "MONTREAL.AI",
+    "email": "info@montreal.ai",
+    "date": "2026-10-20T19:57:50Z"
+  },
+  "tree": {
+    "sha": "d12a01aeb823ba667ba5e6d15df2c9cfa633d674",
+    "url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/git/trees/d12a01aeb823ba667ba5e6d15df2c9cfa633d674"
+  },
+  "message": "Install freshly reviewed d854 JavaScript Python and notes evidence",
+  "parents": [
+    {
+      "sha": "d8544f8173b3c01faa88d50e7145ec455bc5e170",
+      "url": "https://api.github.com/repos/MontrealAI/AGIJobsv0/git/commits/d8544f8173b3c01faa88d50e7145ec455bc5e170",
+      "html_url": "https://github.com/MontrealAI/AGIJobsv0/commit/d8544f8173b3c01faa88d50e7145ec455bc5e170"
+    }
+  ],
+  "verification": {
+    "verified": false,
+    "reason": "unsigned",
+    "signature": null,
+    "payload": null,
+    "verified_at": null
+  }
+}
