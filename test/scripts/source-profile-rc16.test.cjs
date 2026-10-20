@@ -281,7 +281,7 @@ test('complete source verifier accepts only finite release plumbing over the act
   assert.equal(result.scannerReview, null);
   assert.equal(result.pythonScannerReview, null);
   assert.deepEqual(result.pythonScannerPolicy, p.profile.pythonScannerPolicy);
-  assert.equal(result.scannerRequiredPaths.length, 26);
+  assert.equal(result.scannerRequiredPaths.length, 27);
   assert.equal(result.scannerReceiverPaths.length, 14);
   assert.equal(result.pythonScannerRequiredPaths.length, 8);
   assert.equal(result.protectedTransitions.length, 18);
@@ -606,7 +606,7 @@ test('profile baseline, source pins and pending scanner boundary cannot silently
   );
 });
 
-test('Python producer paths and policy retain the exact independent owner contract', () => {
+test('Python producer retains original owner bytes plus exact service evidence additions', () => {
   const owner = JSON.parse(
     command(ROOT, [
       'show',
@@ -638,7 +638,26 @@ test('Python producer paths and policy retain the exact independent owner contra
     'show',
     `${formattedProducer}:${policy.workflowPath}`,
   ]);
-  let normalizedWorkflow = formattedWorkflow;
+  // Normalize only the exact additive service-receipt steps, analyze output ID
+  // and approved new push branch before checking the original owner bytes.
+  const serviceSuffix = "\n      - name: Retain exact processed CodeQL service receipt\n        if: ${{ success() && github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'MontrealAI/AGIJobsv0' }}\n        env:\n          GH_TOKEN: ${{ github.token }}\n          SARIF_UPLOAD_ID: ${{ steps.codeql_analyze.outputs.sarif-id }}\n        run: node scripts/release/source-codeql-service-rc16.cjs --capture --language python --output reports/security/codeql-service-python/codeql-service-receipt.json\n\n      - name: Upload exact processed CodeQL service receipt\n        if: ${{ success() && github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'MontrealAI/AGIJobsv0' }}\n        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02\n        with:\n          name: codeql-service-receipt-python-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}\n          path: reports/security/codeql-service-python/codeql-service-receipt.json\n          if-no-files-found: error\n";
+  assert.ok(formattedWorkflow.endsWith(serviceSuffix));
+  let retainedOriginal = formattedWorkflow.slice(0, -serviceSuffix.length);
+  for (const addition of [
+    "        id: codeql_analyze\n",
+    "      - 'fix/processed-codeql-release-proof-20261020'\n",
+  ]) {
+    assert.equal(retainedOriginal.split(addition).length, 2);
+    retainedOriginal = retainedOriginal.replace(addition, '');
+  }
+  assert.equal(
+    retainedOriginal,
+    command(ROOT, [
+      'show',
+      '7d7a2c19072c211282a9b18b6dc71a85ee1d8abe:' + policy.workflowPath,
+    ])
+  );
+  let normalizedWorkflow = retainedOriginal;
   for (const [formatted, original] of [
     [
       "      - 'fix/inherited-codeql-*'\n",
@@ -704,7 +723,7 @@ test('Python producer paths and policy retain the exact independent owner contra
     owner.pythonScannerRequiredPaths
   );
   assert.equal(pendingProfileFixture().pythonScannerReview, null);
-  assert.equal(p.allowedNewPaths.length, 25);
+  assert.equal(p.allowedNewPaths.length, 28);
   for (const name of [
     'scripts/release/python-scanner-rc16.cjs',
     'test/scripts/source-python-scanner-rc16.test.cjs',
