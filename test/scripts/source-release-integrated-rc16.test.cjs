@@ -1,11 +1,11 @@
-const { test } = require('node:test');
+const { test, before } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const os = require('node:os');
 const { execFileSync } = require('node:child_process');
 const {
-  evaluate,
+  evaluate: evaluateGate,
   requiredPaths,
   requiredChecks,
   authenticCodeQL,
@@ -127,6 +127,18 @@ function pendingReleaseFixture(t) {
 }
 
 const sha = 'a'.repeat(40);
+const { syntheticServiceProof } =
+  require('./source-codeql-service-fixture-rc16.cjs');
+let processedCodeql;
+before(async () => {
+  processedCodeql = await syntheticServiceProof({ sha });
+});
+function evaluate(runs, checks, source, ...proof) {
+  return evaluateGate(
+    runs, checks, source, proof.length ? proof[0] : processedCodeql
+  );
+}
+
 const actions = { id: 15368, slug: 'github-actions' };
 const security = {
   id: 57789,
@@ -156,6 +168,7 @@ const run = (workflow, id = 1) => ({
 });
 function evidence() {
   return {
+    processedCodeql,
     runs: requiredPaths.map((file, index) => run(file, index + 1)),
     checks: [
       ...requiredChecks.map((name) => ({
@@ -169,7 +182,14 @@ function evidence() {
     ],
   };
 }
-test('all inherited and added workflows/checks plus the authentic separate CodeQL result are mandatory', () => {
+test('positive processed proof is mandatory when final AS results are absent', () => {
+  const { runs, checks } = evidence();
+  const actionsOnly = checks.filter((check) => check.app?.id !== 57789);
+  assert.equal(evaluateGate(runs, actionsOnly, sha).ready, false);
+  assert.equal(evaluateGate(runs, actionsOnly, sha, {}).ready, false);
+  assert.equal(evaluate(runs, actionsOnly, sha).ready, true);
+});
+test('all workflows/checks, positive processed proof and observed genuine CodeQL results remain binding', () => {
   const valid = evidence();
   assert.equal(evaluate(valid.runs, valid.checks, sha).ready, true);
   assert.equal(
@@ -197,15 +217,19 @@ test('all inherited and added workflows/checks plus the authentic separate CodeQ
   for (const mutate of [
     (x) => {
       x.checks.pop();
+      x.processedCodeql = undefined;
     },
     (x) => {
       x.checks.at(-1).app = actions;
+      x.processedCodeql = undefined;
     },
     (x) => {
       x.checks.at(-1).head_sha = 'b'.repeat(40);
+      x.processedCodeql = undefined;
     },
     (x) => {
       x.checks.at(-1).app.owner.id = 1;
+      x.processedCodeql = undefined;
     },
     (x) => {
       x.checks.at(-1).conclusion = 'failure';
@@ -243,7 +267,7 @@ test('all inherited and added workflows/checks plus the authentic separate CodeQ
   ]) {
     const changed = evidence();
     mutate(changed);
-    assert.equal(evaluate(changed.runs, changed.checks, sha).ready, false);
+    assert.equal(evaluate(changed.runs, changed.checks, sha, changed.processedCodeql).ready, false);
   }
   assert.equal(
     authenticCodeQL({ ...resultCheck(), app: { ...security, id: 1 } }, sha),
@@ -1148,8 +1172,8 @@ test('quality acknowledgement rejects unknown or security rule IDs and keeps Pyt
     producerRunId: 1,
     producerRunAttempt: 1,
     producerEvent: 'push',
-    producerHeadBranch: 'fix/inherited-codeql-ti-final-rc16-20261019',
-    producerRef: 'refs/heads/fix/inherited-codeql-ti-final-rc16-20261019',
+    producerHeadBranch: 'fix/processed-codeql-release-proof-20261020',
+    producerRef: 'refs/heads/fix/processed-codeql-release-proof-20261020',
     artifactId: 2,
     artifactName: `python-codeql-security-report-${f.review.sourceCommit}-1-1`,
     archiveSha256: 'a'.repeat(64),

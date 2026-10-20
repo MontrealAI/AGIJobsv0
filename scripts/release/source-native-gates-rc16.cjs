@@ -22,6 +22,8 @@ const {
   assertNoScannerErrorDiagnostics,
 } = require('./source-scanner-review-bindings-rc16.cjs');
 
+const serviceEvidence = require('./source-codeql-service-rc16.cjs');
+
 const ownPath = '.github/workflows/source-release-rc16.yml';
 const requiredPaths = [
   ...new Set([
@@ -62,7 +64,7 @@ function authenticCodeQL(check, sha) {
   );
 }
 
-function evaluate(runs, checks, sha) {
+function evaluate(runs, checks, sha, processedCodeql) {
   const latest = new Map(),
     failures = [],
     pending = [];
@@ -114,8 +116,15 @@ function evaluate(runs, checks, sha) {
     }
   }
   const codeql = checks.filter((check) => authenticCodeQL(check, sha));
-  if (!codeql.length)
-    pending.push('GitHub Advanced Security CodeQL result: missing');
+  if (processedCodeql === undefined) {
+    pending.push('Processed exact-main CodeQL service evidence: missing');
+  } else {
+    try {
+      serviceEvidence.assertFinalServices(processedCodeql, { sha });
+    } catch {
+      failures.push('Processed exact-main CodeQL service evidence: invalid');
+    }
+  }
   for (const check of codeql) {
     if (check.status !== 'completed')
       pending.push('CodeQL result: ' + check.status);
@@ -128,6 +137,7 @@ function evaluate(runs, checks, sha) {
     pending,
     workflows: [...latest.values()],
     codeql,
+    processedCodeql,
   };
 }
 

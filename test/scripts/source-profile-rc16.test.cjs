@@ -686,8 +686,8 @@ test('Python producer paths and policy retain the exact independent owner contra
     reviewSchema: 'agijobsv0/codeql-python-review/2',
     reviewedProducer: {
       event: 'push',
-      headBranch: 'fix/inherited-codeql-ti-final-rc16-20261019',
-      ref: 'refs/heads/fix/inherited-codeql-ti-final-rc16-20261019',
+      headBranch: 'fix/processed-codeql-release-proof-20261020',
+      ref: 'refs/heads/fix/processed-codeql-release-proof-20261020',
     },
     producerCommit: formattedProducer,
     producerTree: actualTree,
@@ -860,8 +860,8 @@ function inertProfileReviews(sourceCommit, tree) {
   assert.equal(policy.reviewSchema, 'agijobsv0/codeql-python-review/2');
   assert.deepEqual(policy.reviewedProducer, {
     event: 'push',
-    headBranch: 'fix/inherited-codeql-ti-final-rc16-20261019',
-    ref: 'refs/heads/fix/inherited-codeql-ti-final-rc16-20261019',
+    headBranch: 'fix/processed-codeql-release-proof-20261020',
+    ref: 'refs/heads/fix/processed-codeql-release-proof-20261020',
   });
   return {
     notesReview: {

@@ -5,7 +5,7 @@
 const assert = require('node:assert/strict');
 const { createHash } = require('node:crypto');
 const integrationTransitionsSha256 =
-  '2c2787ce6d6cb749e893afc734b861d001aaaa819dff7c2ae5a6311b9bc92043';
+  'ef84123247ae9ce6f83efb772c86eaf748bf202d654a558187990bee1137ba29';
 const historical = require('./qualify-source-release.cjs');
 
 function freeze(value) {
@@ -29,10 +29,13 @@ const anchors = Object.freeze({
   nativePinTree: 'b279cfcbd53c814db48bb4ab997199ea7ca9269c',
   sourceConvergenceBaseline: '0b6d175a4ec8abf5b899e4a1b58a09e7045fe158',
   sourceConvergenceTree: '9e8dff3e0863afa73e04757f77ca2bcb8c01dca2',
-  pythonScannerBaseline: '5b5f55322d7e2b6e026b51d9659431eed327b4f4',
-  pythonScannerTree: 'dd4bfca4a1e5b08dc868e3e47bcab0598d7102b8',
+  pythonScannerBaseline: '2d9d63883b8dc487c0fddda77082f376763817e6',
+  pythonScannerTree: '6e45b8c28d47d8b888d6375a6aa6c8f68d05b452',
 });
 const allowedNewPaths = Object.freeze([
+  'scripts/release/source-codeql-service-rc16.cjs',
+  'test/scripts/source-codeql-service-rc16.test.cjs',
+  'test/scripts/source-codeql-service-fixture-rc16.cjs',
   'scripts/release/source-profile-rc16.cjs',
   'scripts/release/source-profile-rc16.json',
   'scripts/release/qualify-source-release-rc16.cjs',
@@ -107,13 +110,18 @@ const nativeCompatibility = freeze({
   },
 });
 const scannerPolicy = freeze({
+  reviewedProducer: {
+    event: 'push',
+    headBranch: 'fix/processed-codeql-release-proof-20261020',
+    ref: 'refs/heads/fix/processed-codeql-release-proof-20261020',
+  },
   qualityReview: {
     schema: 'agijobsv0/nonsecurity-quality-review/1',
     disposition: 'Acknowledged nonsecurity quality',
     ruleIds: ['js/unused-local-variable', 'js/useless-assignment-to-local'],
   },
-  producerCommit: '5b5f55322d7e2b6e026b51d9659431eed327b4f4',
-  producerTree: 'dd4bfca4a1e5b08dc868e3e47bcab0598d7102b8',
+  producerCommit: '2d9d63883b8dc487c0fddda77082f376763817e6',
+  producerTree: '6e45b8c28d47d8b888d6375a6aa6c8f68d05b452',
   historicalConfigPath: '.github/codeql/config.yml',
   historicalConfigSha256:
     '4b34450e1dcc0b489feea158d642a6b66261d9e935463928782219c8716c0892',
@@ -123,8 +131,8 @@ const scannerPolicy = freeze({
   configBlob: '4533ce4d7f681a6230399e25fb1d1f736c84b25b',
   workflowPath: '.github/workflows/static-analysis.yml',
   workflowSha256:
-    'c260479d7a7ffea7d981dd3912e91a6871457b5d22b3ca8260b5903f3d8a4a47',
-  workflowBlob: '092cc25629d783a7e4cb683ee030b5c4c626bd3b',
+    'ef3b52f9e7d5375f6a2f5496ec8bdd0e9a034bf8d0609b3c57b029d5822236f5',
+  workflowBlob: '2018162a5dbba2231c03aa6bbe7843f8b89e5da0',
   archiveFiles: [
     'javascript.sarif',
     'source-extraction.json',
@@ -149,6 +157,7 @@ const scannerReceiverPaths = Object.freeze([
   'website/assets/computer-mission-copy.mjs',
 ]);
 const scannerRequiredPaths = Object.freeze([
+  'scripts/release/source-codeql-service-rc16.cjs',
   'integrations/alpha-agent/four-repo-computer-lifecycle.cjs',
   'integrations/alpha-agent/four-repo-computer-receipt.mjs',
   'integrations/alpha-agent/pinned-alpha-checkout.cjs',
@@ -180,19 +189,19 @@ const pythonScannerPolicy = freeze({
   reviewSchema: 'agijobsv0/codeql-python-review/2',
   reviewedProducer: {
     event: 'push',
-    headBranch: 'fix/inherited-codeql-ti-final-rc16-20261019',
-    ref: 'refs/heads/fix/inherited-codeql-ti-final-rc16-20261019',
+    headBranch: 'fix/processed-codeql-release-proof-20261020',
+    ref: 'refs/heads/fix/processed-codeql-release-proof-20261020',
   },
-  producerCommit: '5b5f55322d7e2b6e026b51d9659431eed327b4f4',
-  producerTree: 'dd4bfca4a1e5b08dc868e3e47bcab0598d7102b8',
+  producerCommit: '2d9d63883b8dc487c0fddda77082f376763817e6',
+  producerTree: '6e45b8c28d47d8b888d6375a6aa6c8f68d05b452',
   configPath: '.github/codeql/config-python-integrations.yml',
   configSha256:
     'eb5b425facefb419987bf537280d5144a477b65a205ccd71df3866b60b01e560',
   configBlob: 'cdd0d5a0a1a0e691c3367bc5ce4429215f41381d',
   workflowPath: '.github/workflows/static-analysis-python-integrations.yml',
   workflowSha256:
-    '06cb537c0a1502132c600bdd158284c51bb7c9296a11f831cd929ed2662eb5a5',
-  workflowBlob: 'fcec3ad137968eb75f86049ebea79543c3f314fc',
+    'bdd2eb220edf1a3cb0da2bd67e2bcb8da298189235da7434b3fd01ce8e08c37d',
+  workflowBlob: '9f3527a86dd691466b433b5ccf2913c32d46fd5f',
   archiveFiles: [
     'python.sarif',
     'source-extraction.json',

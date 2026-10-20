@@ -86,8 +86,8 @@ function reviewRecords(sourceSha, tree) {
     pythonScannerReview: {
       schema: 'agijobsv0/codeql-python-review/2',
       producerEvent: 'push',
-      producerHeadBranch: 'fix/inherited-codeql-ti-final-rc16-20261019',
-      producerRef: 'refs/heads/fix/inherited-codeql-ti-final-rc16-20261019',
+      producerHeadBranch: 'fix/processed-codeql-release-proof-20261020',
+      producerRef: 'refs/heads/fix/processed-codeql-release-proof-20261020',
       sourceCommit: sourceSha,
       tree,
       producerRunId: 4,

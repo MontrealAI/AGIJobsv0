@@ -11,8 +11,8 @@ const javascriptQualityPolicy = Object.freeze({
 const pythonReviewSchema = 'agijobsv0/codeql-python-review/2';
 const pythonReviewedProducer = Object.freeze({
   event: 'push',
-  headBranch: 'fix/inherited-codeql-ti-final-rc16-20261019',
-  ref: 'refs/heads/fix/inherited-codeql-ti-final-rc16-20261019',
+  headBranch: 'fix/processed-codeql-release-proof-20261020',
+  ref: 'refs/heads/fix/processed-codeql-release-proof-20261020',
 });
 const pythonFinalProducer = Object.freeze({
   event: 'push',

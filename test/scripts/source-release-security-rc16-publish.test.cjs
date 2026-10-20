@@ -1,4 +1,4 @@
-const { test } = require('node:test');
+const { test, before } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -30,10 +30,21 @@ const {
   reviewedCompilerPaths,
   deploymentSnapshot,
   scannerHistory,
+  historicalReviewedCodeql,
+  verifyHistoricalReviewedCodeql,
 } = require('../../scripts/release/qualify-source-release-rc16.cjs');
 const { profile } = require('../../scripts/release/source-profile-rc16.cjs');
 const sha = 'a'.repeat(40),
   tag = 'source-v2.1.0-rc.16';
+const { syntheticServiceProof } =
+  require('./source-codeql-service-fixture-rc16.cjs');
+let processedCodeqlServices;
+before(async () => {
+  processedCodeqlServices = await syntheticServiceProof({
+    sha, tree: 'c'.repeat(40),
+    javascriptRaw: Buffer.from(JSON.stringify(scannerDocument())),
+  });
+});
 function compilerArchiveFixture(contents = {}) {
   const compiler = require('../../config/solidity-compiler.json').longVersion;
   const payloads = {
@@ -233,7 +244,26 @@ function assetFixture(t) {
   const downloaded = path.join(root, 'downloaded');
   fs.mkdirSync(directory);
   fs.mkdirSync(downloaded);
+  const serviceBytes = JSON.stringify(processedCodeqlServices, null, 2) + '\n';
+  // This models the retained existing historical f2 API record only. It is
+  // never a new-source scan, installed review or release evidence fixture.
+  const historicalCodeqlCheck = {
+    id: historicalReviewedCodeql.checkId,
+    head_sha: historicalReviewedCodeql.sourceSha,
+    name: 'CodeQL',
+    app: { id: 57789, slug: 'github-advanced-security' },
+    status: 'completed', conclusion: 'success',
+    html_url: 'https://github.com/MontrealAI/AGIJobsv0/runs/' +
+      historicalReviewedCodeql.checkId,
+  };
   const provenance = {
+    historicalReviewedSourceCodeql:
+      verifyHistoricalReviewedCodeql(historicalCodeqlCheck),
+    processedCodeqlServiceEvidence: {
+      schema: 'agijobsv0/codeql-service-asset/1',
+      source: sha, tree: 'c'.repeat(40), file: 'codeql-service-evidence.json',
+      sha256: crypto.createHash('sha256').update(serviceBytes).digest('hex'),
+    },
     sha,
     tree: 'c'.repeat(40),
     tag,
@@ -297,7 +327,9 @@ function assetFixture(t) {
     if (name === 'SHA256SUMS.txt') continue;
     fs.writeFileSync(
       path.join(directory, name),
-      name === 'provenance.json'
+      name === 'codeql-service-evidence.json'
+        ? serviceBytes
+        : name === 'provenance.json'
         ? JSON.stringify(provenance)
         : name === deploymentSnapshot.asset
         ? fs.readFileSync(
@@ -373,7 +405,7 @@ function assetFixture(t) {
     'b'.repeat(40),
     'd'.repeat(40),
     20,
-    'fix/inherited-codeql-review',
+    profile.scannerPolicy.reviewedProducer.headBranch,
     requiredSources
   );
   const finalDigest = writeCompilerZip(
@@ -389,7 +421,7 @@ function assetFixture(t) {
     runAttempt: 2,
     runNumber: 10,
     event: 'push',
-    headBranch: id === 20 ? 'fix/inherited-codeql-review' : 'main',
+    headBranch: id === 20 ? profile.scannerPolicy.reviewedProducer.headBranch : 'main',
     artifactId: id + 1,
     artifactName: `codeql-security-report-${source}-${id}-2`,
     githubDigest: `sha256:${digest}`,
@@ -537,6 +569,8 @@ function assetFixture(t) {
         },
       ],
       scannerEvidence,
+      processedCodeqlServices,
+      historicalCodeqlCheck,
       ...overrides,
     });
   return {
@@ -570,6 +604,8 @@ function assetFixture(t) {
           },
         ],
         scannerEvidence,
+        processedCodeqlServices,
+        historicalCodeqlCheck,
       }),
     checksums,
     compilerArtifact,
@@ -581,6 +617,8 @@ function assetFixture(t) {
     recordedCodeqlChecks,
     scannerEvidence,
     scannerProof,
+    processedCodeqlServices,
+    historicalCodeqlCheck,
   };
 }
 test('compiler and evidence assets must match the complete checksum inventory and producer', (t) => {
@@ -682,7 +720,7 @@ test('readback authenticates recorded results and rejects an old success when th
     );
 });
 
-test('publication readback requires final-SHA CodeQL and blocks a newly failed or pending result', (t) => {
+test('publication readback requires processed main proof and blocks any observed failed or pending AS result', (t) => {
   const fixture = assetFixture(t);
   const result = {
     ...fixture.recordedCodeqlChecks[0],
@@ -691,10 +729,14 @@ test('publication readback requires final-SHA CodeQL and blocks a newly failed o
     head_sha: sha,
     html_url: 'https://github.com/MontrealAI/AGIJobsv0/runs/20',
   };
-  assert.throws(
-    () => fixture.verify(false, { finalCodeqlChecks: [] }),
-    /authenticated GitHub checks/
-  );
+  fixture.verify(false, { finalCodeqlChecks: [] });
+  for (const processedCodeqlServices of [undefined, {}])
+    assert.throws(
+      () => fixture.verify(false, {
+        finalCodeqlChecks: [], processedCodeqlServices,
+      }),
+      /Positive authenticated/
+    );
   fixture.verify(false, { finalCodeqlChecks: [result] });
   for (const finalCodeqlChecks of [
     undefined,
@@ -2380,7 +2422,7 @@ test('inert JavaScript observation binds the artifact branch for reviewed S1 and
   // Synthetic API metadata only. No scanner archive, result review or actual
   // authenticated observation is created or claimed by this test.
   for (const [branch, finalSource] of [
-    ['fix/inherited-codeql-ti-final-rc16-20261019', false],
+    ['fix/processed-codeql-release-proof-20261020', false],
     ['main', true],
   ]) {
     const fixture = scannerApiFixture();

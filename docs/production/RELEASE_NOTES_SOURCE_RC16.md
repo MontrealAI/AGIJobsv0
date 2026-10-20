@@ -1,5 +1,7 @@
 # source-v2.1.0-rc.16 — Retain computer evidence across the SUCCESSOR journey
 
+The processed-main service-proof correction is a pending source proposal. Its new verifier and producer bytes require fresh genuine scans, independent source/result review, and normal three-slot review installation before publication. The previously installed f2 notes review is retained below as history, and its complete JavaScript/Python profile records remain at the immutable parent [7d7a2c19](https://github.com/MontrealAI/AGIJobsv0/blob/7d7a2c19072c211282a9b18b6dc71a85ee1d8abe/scripts/release/source-profile-rc16.json). Historical f2 and canonical 34bc evidence does not qualify the new source. The exact historical f2 Advanced Security check remains an additional authenticated prerequisite, separately from mandatory genuine success for the new reviewed S1.
+
 This source prerelease adds a reviewable bridge from a current native Alpha
 computer handoff and return to a project-bound AGIALPHA proposal. The exact
 handoff, returned observation and frozen Jobs mission report remain together.
@@ -148,7 +150,7 @@ queries, extraction and complete result identities. Both original reviewed and
 final raw archives stay with the release. No environment variable bypasses this
 review, and pending or failed authentic checks still block publication.
 
-<!-- rc16-scanner-review
+<!-- rc16-scanner-review-history-f2
 {
   "schema": "agijobsv0/rc16-scanner-review/1",
   "sourceSha": "f2a8d2382b9a40814579f7a8be44046f247e0fd7",
@@ -1428,3 +1430,7 @@ original 96-result ledger and rc.15 source stay immutable. This contract does
 not waive authentic Advanced Security success or any archive, API, extraction,
 source, main-push or publication check. Both actual profile review records and
 the notes review remain null until genuine evidence is independently reviewed.
+
+<!-- rc16-scanner-review
+null
+-->
