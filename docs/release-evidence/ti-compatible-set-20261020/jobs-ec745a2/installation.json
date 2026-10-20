@@ -1,0 +1,84 @@
+{
+  "schema": "agijobsv0/strict-review-installation-custody/1",
+  "source": "ec745a2045cdc3d5e48f6917a6ed8227c84d394d",
+  "tree": "2390e38d2c5ade29f11cf6656b8f0732cba2fe5a",
+  "soleReviewedParent": "689a34e3b70659984d537af5410977a4eaa77e77",
+  "reviewedTree": "b404541f60ef7a927e085299c7159864a15ff53f",
+  "normalFastForward": true,
+  "allLeavesVerified": 5185,
+  "changedFiles": [
+    {
+      "path": "scripts/release/source-profile-rc16.json",
+      "bytes": 913250,
+      "gitBlob": "7e4dc0a4f0cd5b2c3abc49a7457e5d7df6695c58",
+      "sha256": "640d9b7daa7e34ab3f28318a7ce37adf8fd9aa5ad80ae1f3d2e5612bb11978c1"
+    },
+    {
+      "path": "docs/production/RELEASE_NOTES_SOURCE_RC16.md",
+      "bytes": 186004,
+      "gitBlob": "8fba3a40791bb32b44f4bc4850dc3adfe379195a",
+      "sha256": "29d33c84035ef5fc2e22893a772c571245a5cd9f3ccd2004bd80d8dea5f307b3"
+    }
+  ],
+  "sourceCodeUnchanged": true,
+  "outerBytesInverseExact": true,
+  "slots": {
+    "javascript": {
+      "source": "689a34e3b70659984d537af5410977a4eaa77e77",
+      "results": 45,
+      "reviewEvidence": [
+        "https://github.com/MontrealAI/AGIJobsv0/pull/4004#issuecomment-6297099570",
+        "https://github.com/MontrealAI/AGIJobsv0/pull/4004#issuecomment-6296330899"
+      ]
+    },
+    "python": {
+      "source": "689a34e3b70659984d537af5410977a4eaa77e77",
+      "results": 0,
+      "reviewEvidence": [
+        "https://github.com/MontrealAI/AGIJobsv0/pull/4004#issuecomment-6296683983",
+        "https://github.com/MontrealAI/AGIJobsv0/pull/4004#issuecomment-6296330899"
+      ]
+    },
+    "notes": {
+      "source": "689a34e3b70659984d537af5410977a4eaa77e77",
+      "tree": "b404541f60ef7a927e085299c7159864a15ff53f",
+      "producer": {
+        "runId": 39461253608,
+        "runAttempt": 2,
+        "runNumber": 4156,
+        "event": "push",
+        "headBranch": "fix/processed-codeql-release-proof-20261020",
+        "artifactId": 12283843672,
+        "artifactName": "codeql-security-report-689a34e3b70659984d537af5410977a4eaa77e77-39461253608-2",
+        "githubDigest": "sha256:ef26fbd30dd5595f2921da8adc35d063a05a1d7dcee80cdcbc591055a303846f"
+      },
+      "codeqlChecks": [
+        {
+          "id": 118762310795,
+          "headSha": "689a34e3b70659984d537af5410977a4eaa77e77",
+          "name": "CodeQL",
+          "appId": 57789,
+          "appSlug": "github-advanced-security",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/MontrealAI/AGIJobsv0/runs/118762310795"
+        }
+      ]
+    }
+  },
+  "allBaseline23WorkflowGroupsSuccess": true,
+  "allBaseline103Checks": {
+    "success": 97,
+    "expectedSkip": 6
+  },
+  "correctedTaxaThread": {
+    "id": "PRRT_kwDOPXlfds6uZwKx",
+    "resolved": true,
+    "sourceDispositionComment": 6297143795
+  },
+  "currentConfiguredReviewRequest": {
+    "id": 6297163694
+  },
+  "observedAt": "2026-10-20T17:37:30.899Z",
+  "limits": "Metadata-only monotonic installation, not installed-candidate/main/release qualification. Independent strict-installation review and all original full child CI/current configured review are pending. Normal merge, actual final-main services/native/API/archive/publication, final public installed journey/live observation remain mandatory."
+}
