@@ -1,0 +1,337 @@
+{
+  "schema": "current-source-unapproved-capture/v1",
+  "status": "UNAPPROVED_REQUIRES_INDEPENDENT_CURRENT_SOURCE_REVIEW",
+  "manifest": {
+    "schema": "agijobsv0/codeql-review-byte-log/1",
+    "type": "manifest",
+    "repository": "MontrealAI/AGIJobsv0",
+    "language": "python",
+    "source": "d8544f8173b3c01faa88d50e7145ec455bc5e170",
+    "tree": "14140fc8a3ce95e0ca5b15a421dc97ed190ec735",
+    "ref": "refs/heads/fix/processed-codeql-release-proof-20261020",
+    "workflow": ".github/workflows/static-analysis-python-integrations.yml",
+    "sourceFiles": {
+      "workflow": {
+        "path": ".github/workflows/static-analysis-python-integrations.yml",
+        "blob": "0d1220ce9b561ae8feeee9e47bb6a0ff4226c3c0",
+        "sha256": "5b08a73d05cea31c09e8bf23a34b742c2fd85a47b7fbea52a94f70fd9c3ce077"
+      },
+      "collector": {
+        "path": "scripts/release/emit-codeql-review-rc16.cjs",
+        "blob": "95c96fecba7e1bee728f190b4a0c1dc0da2fc979",
+        "sha256": "f72e89026b0c0b5d5638fef2cf9c7678f6fac5850afb5de439aa9d309411b6db"
+      }
+    },
+    "run": {
+      "id": 39482430425,
+      "attempt": 1,
+      "number": 68,
+      "source": "d8544f8173b3c01faa88d50e7145ec455bc5e170",
+      "branch": "fix/processed-codeql-release-proof-20261020",
+      "event": "push",
+      "workflow": ".github/workflows/static-analysis-python-integrations.yml",
+      "status": "in_progress",
+      "conclusion": null
+    },
+    "producerJob": {
+      "id": 118834136462,
+      "runId": 39482430425,
+      "attempt": 1,
+      "source": "d8544f8173b3c01faa88d50e7145ec455bc5e170",
+      "key": "codeql-python",
+      "name": "Python integration CodeQL analysis",
+      "status": "completed",
+      "conclusion": "success",
+      "uploadStepId": "codeql_raw"
+    },
+    "collectorJob": {
+      "id": 118835706294,
+      "runId": 39482430425,
+      "attempt": 1,
+      "source": "d8544f8173b3c01faa88d50e7145ec455bc5e170",
+      "key": "codeql-review-bytes",
+      "name": "Complete Python CodeQL review bytes",
+      "status": "in_progress",
+      "conclusion": null
+    },
+    "artifact": {
+      "id": 12292131689,
+      "name": "python-codeql-security-report-d8544f8173b3c01faa88d50e7145ec455bc5e170-39482430425-1",
+      "bytes": 106964,
+      "githubDigest": "sha256:f907a32971a76bc31408ee89619504eab7c33fd781e201d6b27b07b61315fd38",
+      "source": "d8544f8173b3c01faa88d50e7145ec455bc5e170",
+      "runId": 39482430425,
+      "headBranch": "fix/processed-codeql-release-proof-20261020"
+    },
+    "acquisitionCount": 1,
+    "chunkBytes": 12288,
+    "reviewStatus": "UNAPPROVED_REQUIRES_FULL_REVIEW_AND_FINAL_PRODUCER_SUCCESS",
+    "streams": [
+      {
+        "name": "original.zip",
+        "bytes": 106964,
+        "sha256": "f907a32971a76bc31408ee89619504eab7c33fd781e201d6b27b07b61315fd38",
+        "chunks": 9
+      },
+      {
+        "name": "python.sarif",
+        "bytes": 788624,
+        "sha256": "947cf95462fffc9a2e33239381eb7b943414291609e9a06ed5bd08f298b5f2d2",
+        "chunks": 65
+      },
+      {
+        "name": "source-extraction.json",
+        "bytes": 13261,
+        "sha256": "d1f32eec3bc3613b2a11d01ad9331e3fcfed1a41aca792edea8bbd4d435a5e84",
+        "chunks": 2
+      },
+      {
+        "name": "source-scope-after.json",
+        "bytes": 1541,
+        "sha256": "be43ce88a4bce75818001bc11653feb44d1f468a37ba5cf6f7f7ed1837ed4c0c",
+        "chunks": 1
+      },
+      {
+        "name": "source-scope-before.json",
+        "bytes": 1541,
+        "sha256": "be43ce88a4bce75818001bc11653feb44d1f468a37ba5cf6f7f7ed1837ed4c0c",
+        "chunks": 1
+      }
+    ]
+  },
+  "footer": {
+    "schema": "agijobsv0/codeql-review-byte-log/1",
+    "type": "complete",
+    "repository": "MontrealAI/AGIJobsv0",
+    "language": "python",
+    "source": "d8544f8173b3c01faa88d50e7145ec455bc5e170",
+    "tree": "14140fc8a3ce95e0ca5b15a421dc97ed190ec735",
+    "ref": "refs/heads/fix/processed-codeql-release-proof-20261020",
+    "manifestSha256": "8bf30df3757309cc157e9a1a26e912ab68c3c6b6214e7c1d3fc943ac211b695e",
+    "streamCount": 5,
+    "rawFileCount": 4,
+    "acquisitionCount": 1,
+    "reviewStatus": "UNAPPROVED_REQUIRES_FULL_REVIEW_AND_FINAL_PRODUCER_SUCCESS"
+  },
+  "finalRun": {
+    "id": 39482430425,
+    "status": "completed",
+    "conclusion": "success",
+    "headSha": "d8544f8173b3c01faa88d50e7145ec455bc5e170",
+    "event": "push",
+    "headBranch": "fix/processed-codeql-release-proof-20261020",
+    "attempt": 1
+  },
+  "producerAndCollectorJobs": {
+    "jobs": [
+      {
+        "id": 118834136462,
+        "name": "Python integration CodeQL analysis",
+        "status": "completed",
+        "conclusion": "success",
+        "run_id": 39482430425,
+        "logs_url": null,
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1
+          },
+          {
+            "name": "Pre Harden runner",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2
+          },
+          {
+            "name": "Harden runner",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3
+          },
+          {
+            "name": "Checkout",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4
+          },
+          {
+            "name": "Setup Node",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5
+          },
+          {
+            "name": "Setup Python",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 6
+          },
+          {
+            "name": "Validate complete Python source scope and exact scan identity",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 7
+          },
+          {
+            "name": "Initialize Python CodeQL",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 8
+          },
+          {
+            "name": "Perform Python CodeQL analysis",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 9
+          },
+          {
+            "name": "Recheck exact source after Python CodeQL analysis",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 10
+          },
+          {
+            "name": "Retain and enforce actual complete Python extraction",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 11
+          },
+          {
+            "name": "Upload Python CodeQL artefacts",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 12
+          },
+          {
+            "name": "Retain exact processed CodeQL service receipt",
+            "status": "completed",
+            "conclusion": "skipped",
+            "number": 13
+          },
+          {
+            "name": "Upload exact processed CodeQL service receipt",
+            "status": "completed",
+            "conclusion": "skipped",
+            "number": 14
+          },
+          {
+            "name": "Post Perform Python CodeQL analysis",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 23
+          },
+          {
+            "name": "Post Initialize Python CodeQL",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 24
+          },
+          {
+            "name": "Post Setup Python",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 25
+          },
+          {
+            "name": "Post Setup Node",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 26
+          },
+          {
+            "name": "Post Checkout",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 27
+          },
+          {
+            "name": "Post Harden runner",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 28
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 29
+          }
+        ]
+      },
+      {
+        "id": 118835706294,
+        "name": "Complete Python CodeQL review bytes",
+        "status": "completed",
+        "conclusion": "success",
+        "run_id": 39482430425,
+        "logs_url": null,
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1
+          },
+          {
+            "name": "Pre Harden runner",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2
+          },
+          {
+            "name": "Harden runner",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3
+          },
+          {
+            "name": "Checkout exact review source",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4
+          },
+          {
+            "name": "Setup Node",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5
+          },
+          {
+            "name": "Retain complete original CodeQL review bytes",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 6
+          },
+          {
+            "name": "Post Setup Node",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 10
+          },
+          {
+            "name": "Post Checkout exact review source",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 11
+          },
+          {
+            "name": "Post Harden runner",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 12
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 13
+          }
+        ]
+      }
+    ]
+  },
+  "completeLogBytes": 1261306,
+  "completeLogSha256": "98c8b4b44e72130b8126bbf22c1c6466b54fe81a7bd2d07b38a8b0e9d82a2fa0"
+}
