@@ -1,0 +1,40 @@
+{
+  "failure": {
+    "asOf": "2026-10-20T20:28:07.604Z",
+    "source": "604d10094f3b7fede53406ae0e40f9f489155a3b",
+    "tree": "d12a01aeb823ba667ba5e6d15df2c9cfa633d674",
+    "run": 39489448707,
+    "attempt": 1,
+    "failedJob": 118858379647,
+    "name": "native (validator-runner, arm64)",
+    "failure": "npm ci --omit=dev inside existing Docker build failed with read ECONNRESET before runtime checks",
+    "evidence": {
+      "bytes": 56007,
+      "gitBlob": "6c6a182c69fbda7b9093d10fab5883d95a917286",
+      "sha256": "408e9feb9663a386803c5f2d55f51cebd7515f6a6652eb2ec46b18e49c5166fc"
+    },
+    "disposition": "Unqualified; preserve failure. Eligible for one targeted original-job retry after fresh branch/run preflight; do not alter source/checks or ignore failure.",
+    "retryIssued": false,
+    "correction": "Git blob computed from UTF-8 bytes; earlier observational JSON passed a string into byte-only helper. Original retained log bytes and SHA256 were correct."
+  },
+  "retry": {
+    "at": "2026-10-20T20:33:58.965Z",
+    "source": "604d10094f3b7fede53406ae0e40f9f489155a3b",
+    "run": 39489448707,
+    "oldAttempt": 1,
+    "failedJob": 118858379647,
+    "reason": "Original npm dependency download read ECONNRESET; failure log retained930db4f; one targeted job retry, unchanged source/checks."
+  },
+  "retryResult": {
+    "content": [
+      {
+        "type": "text",
+        "text": "Action completed."
+      }
+    ],
+    "structuredContent": {
+      "success": true
+    },
+    "isError": false
+  }
+}
