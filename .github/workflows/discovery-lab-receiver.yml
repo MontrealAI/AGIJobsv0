@@ -29,7 +29,7 @@ jobs:
           git rev-parse HEAD > "$RUNNER_TEMP/discovery-lab/source-commit.txt"
           node --version > "$RUNNER_TEMP/discovery-lab/node-version.txt"
           sha256sum integrations/alpha-agent/discovery-lab-contract.mjs integrations/alpha-agent/discovery-lab-work-request.mjs integrations/alpha-agent/discovery-lab-work-request.test.mjs integrations/alpha-agent/fixtures/discovery-lab-request.json > "$RUNNER_TEMP/discovery-lab/SHA256SUMS.txt"
-          node --test --test-reporter=tap integrations/alpha-agent/discovery-lab-work-request.test.mjs > "$RUNNER_TEMP/discovery-lab/policy.tap"
+          node --test --test-reporter=tap integrations/alpha-agent/discovery-lab-work-request.test.mjs test/security/discovery-protected-scope.test.mjs > "$RUNNER_TEMP/discovery-lab/policy.tap"
           cat "$RUNNER_TEMP/discovery-lab/policy.tap"
       - name: Verify the candidate-only finite source inventory from actual tracked inputs
         run: |
@@ -44,7 +44,7 @@ jobs:
               raise ValueError('Untracked source cannot enter candidate qualification')
           actual = subprocess.check_output(['git', 'ls-files', '--cached', '-z']).decode().rstrip('\0').split('\0')
           digest = lambda path: hashlib.sha256((root / path).read_bytes()).hexdigest()
-          selected = policy['select'](manifest_sha256=digest(policy['MANIFEST']), verifier_sha256=digest(policy['VERIFIER']))
+          selected = policy['select'](manifest_sha256=digest(policy['MANIFEST']), verifier_sha256=digest(policy['VERIFIER']), scope_verifier_sha256=digest(policy['SCOPE_VERIFIER']))
           result = policy['validate_source'](root, selected, paths=actual)
           result['sourceCommit'] = subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode().strip()
           result['sourceTree'] = subprocess.check_output(['git', 'rev-parse', 'HEAD^{tree}']).decode().strip()

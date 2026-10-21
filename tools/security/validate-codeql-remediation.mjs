@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
+import { validateDiscoveryProtectedScope } from './discovery-protected-scope.mjs';
 
 const root = path.resolve(import.meta.dirname, '../..');
 const directory = path.join(root, 'docs/security/remediation-2026-10-19');
@@ -53,10 +54,10 @@ assert.equal(git('show', `${ledger.baseline.commit}:.github/codeql/config.yml`),
 const protectedPath = file => /^(contracts\/|config\/|deployment-config\/|deployment\/|deployments\/)/.test(file) || /(?:compiler-evidence|compiler-provenance|mainnet-deployment|deployment-addresses|configuration-readback|solidity-compiler|ethereum-mainnet)/.test(file) || (/receipts/i.test(file) && /\.json$/.test(file));
 const protectedFiles = git('ls-tree', '-r', '--name-only', ledger.baseline.commit).split('\n').filter(protectedPath);
 const changes = git('diff', '--name-only', ledger.baseline.commit, 'HEAD').split('\n').filter(Boolean);
-assert.deepEqual(changes.filter(protectedPath), [], 'protected source or deployment evidence changed');
+const discoveryScope = validateDiscoveryProtectedScope(root, ledger.baseline.commit, changes.filter(protectedPath));
 assert.equal(git('diff', '--name-only', 'HEAD'), '', 'uncommitted tracked changes cannot be bound to HEAD qualification');
 assert.equal(ledger.qualification.productionApproved, false);
-const result = { commit: git('rev-parse', 'HEAD'), tree: git('rev-parse', 'HEAD^{tree}'), baselineResults: 96, counts, protectedFiles: protectedFiles.length, unchangedQueryConfiguration: true, productionApproved: false };
+const result = { commit: git('rev-parse', 'HEAD'), tree: git('rev-parse', 'HEAD^{tree}'), baselineResults: 96, counts, protectedFiles: protectedFiles.length, unchangedQueryConfiguration: true, discoveryScope, productionApproved: false };
 const out = path.join(root, 'reports/security/remediation'); fs.mkdirSync(out, { recursive: true });
 fs.writeFileSync(path.join(out, 'ledger-validation.json'), JSON.stringify(result, null, 2) + '\n');
 console.log(JSON.stringify(result));

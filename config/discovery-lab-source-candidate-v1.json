@@ -16,7 +16,7 @@
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "f1a92f4ab84cee0f75dc5466656cbe48186d965c8a3450a1cd9ca2f40b72d9ad"
+        "sha256": "1d745e792b5e3f167be5c5d00e5b94c4aaff5aedba576dc07d66ceeebe0271ff"
       },
       "reason": "Explicit additive Discovery Lab source and tests; no historical source exemption or publication qualification."
     },
@@ -32,7 +32,7 @@
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "0deedbcaf0ba9ab869b50e00aca1c8f38ee1077531bea88c36d612fc7ce0dc73"
+        "sha256": "46e407daaf771596192920420e2b90736956c3f0ee3940de43f2bbdc04f42893"
       },
       "reason": "Explicit additive Discovery Lab source and tests; no historical source exemption or publication qualification."
     },
@@ -80,9 +80,30 @@
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "4bc9b6895a478b1ddcc9b2b21e904201d0912fa6d3553bf1415e5271b6a7715a"
+        "sha256": "627627fc5b0bd4273b56fa392ad4e24c1145f1661451ff629f60a8c02ea87e58"
       },
       "reason": "Explicit additive Discovery Lab source and tests; no historical source exemption or publication qualification."
+    },
+    "test/security/discovery-protected-scope.test.mjs": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "725d0fd5683e491aff69d34e64dda4392924aefb9bac7889cba830f834b86927"
+      },
+      "reason": "Finite explicit three-configuration protected-scope proof and independent adversarial tests; no scanner or publication waiver."
+    }
+  },
+  "transitions": {
+    "tools/security/validate-codeql-remediation.mjs": {
+      "before": {
+        "blob": "9657ecd2c072276276079e55fde51c5b66b8b37c",
+        "mode": "100644"
+      },
+      "after": {
+        "mode": "100644",
+        "sha256": "a9bea3725ba78204609bb7f446d1b79ead911137d1ff4486177dba64a235f175"
+      },
+      "reason": "Replace blanket no-change assertion only with exact three additive configurations plus complete source-package proof; preserve the96 findings and every deployed-source/scanner gate."
     }
   }
 }

@@ -16,7 +16,9 @@ MANIFEST = 'config/discovery-lab-source-candidate-v1.json'
 BASELINE = 'config/discovery-lab-source-baseline-v1.json'
 BASELINE_SHA256 = 'd7225ecab094653482593057be4b018e0c61dfb7c1c592baa134dc668fa81a65'
 VERIFIER = 'scripts/release/discovery-lab-profile.py'
-ALLOWED = {'integrations/alpha-agent/discovery-lab-work-request.test.mjs', 'integrations/alpha-agent/discovery-lab-native-test.mjs', 'integrations/alpha-agent/discovery-lab-work-request.mjs', '.github/workflows/discovery-lab-receiver.yml', 'docs/successor/DISCOVERY_LAB.md', 'scripts/release/test-discovery-lab-profile.py', 'integrations/alpha-agent/fixtures/discovery-lab-request.json', 'integrations/alpha-agent/discovery-lab-contract.mjs', 'config/discovery-lab-alpha-source.json'}
+SCOPE_VERIFIER = 'tools/security/discovery-protected-scope.mjs'
+TRANSITIONS = {'tools/security/validate-codeql-remediation.mjs': {'mode': '100644', 'blob': '9657ecd2c072276276079e55fde51c5b66b8b37c'}}
+ALLOWED = {'test/security/discovery-protected-scope.test.mjs', 'integrations/alpha-agent/discovery-lab-work-request.test.mjs', 'integrations/alpha-agent/discovery-lab-native-test.mjs', 'integrations/alpha-agent/discovery-lab-work-request.mjs', '.github/workflows/discovery-lab-receiver.yml', 'docs/successor/DISCOVERY_LAB.md', 'scripts/release/test-discovery-lab-profile.py', 'integrations/alpha-agent/fixtures/discovery-lab-request.json', 'integrations/alpha-agent/discovery-lab-contract.mjs', 'config/discovery-lab-alpha-source.json'}
 CLAIMS = {'sourcePackageOnly': True, 'releaseQualified': False,
           'releaseIdentity': None, 'publicationApproved': False, 'executionApproved': False}
 sha = lambda raw: hashlib.sha256(raw).hexdigest()
@@ -65,19 +67,20 @@ def tree_digest(entries):
             result += mode.encode() + b' ' + name.encode('utf8') + b'\0' + bytes.fromhex(digest)
         return hashlib.sha1(b'tree ' + str(len(result)).encode() + b'\0' + result).hexdigest()
     return encode(root)
-def select(*, manifest_sha256, verifier_sha256, published=False):
+def select(*, manifest_sha256, verifier_sha256, scope_verifier_sha256, published=False):
     require(not published, 'Discovery Lab candidate cannot qualify publication')
     require(all(isinstance(value, str) and re.fullmatch('[0-9a-f]{64}', value)
-                for value in (manifest_sha256, verifier_sha256)), 'Externally reviewed policy pins are required')
-    return {'profile': PROFILE, 'manifestSha256': manifest_sha256, 'verifierSha256': verifier_sha256, **CLAIMS}
+                for value in (manifest_sha256, verifier_sha256, scope_verifier_sha256)), 'Externally reviewed policy pins are required')
+    return {'profile': PROFILE, 'manifestSha256': manifest_sha256, 'verifierSha256': verifier_sha256, 'scopeVerifierSha256': scope_verifier_sha256, **CLAIMS}
 def inventory(root, selection):
     require(same(selection, select(manifest_sha256=selection.get('manifestSha256'),
-            verifier_sha256=selection.get('verifierSha256'))), 'Candidate selection or claims differ')
+            verifier_sha256=selection.get('verifierSha256'), scope_verifier_sha256=selection.get('scopeVerifierSha256'))), 'Candidate selection or claims differ')
     require(sha(read(root, VERIFIER)[1]) == selection['verifierSha256'], 'Candidate verifier pin differs')
+    require(sha(read(root, SCOPE_VERIFIER)[1]) == selection['scopeVerifierSha256'], 'Candidate scope verifier pin differs')
     manifest_raw = read(root, MANIFEST)[1]
     require(sha(manifest_raw) == selection['manifestSha256'], 'Candidate manifest pin differs')
     manifest = strict_json(manifest_raw)
-    require(set(manifest) == {'schema', 'repository', 'profile', 'baseCommit', 'baseTree', 'claims', 'changes'}, 'Candidate fields differ')
+    require(set(manifest) == {'schema', 'repository', 'profile', 'baseCommit', 'baseTree', 'claims', 'changes', 'transitions'}, 'Candidate fields differ')
     require(manifest['schema'] == 'successor/discovery-lab-source-candidate/v1'
             and manifest['repository'] == REPOSITORY and manifest['profile'] == PROFILE
             and manifest['baseCommit'] == BASE_COMMIT and manifest['baseTree'] == BASE_TREE
@@ -98,8 +101,20 @@ def inventory(root, selection):
         require(isinstance(after, dict) and set(after) == {'mode', 'sha256'} and after['mode'] == '100644'
                 and isinstance(after['sha256'], str) and re.fullmatch('[0-9a-f]{64}', after['sha256']), 'Candidate added input identity differs')
         expected[name] = dict(after)
+    transitions = manifest['transitions']
+    require(isinstance(transitions, dict) and set(transitions) == set(TRANSITIONS), 'Only the exact reviewed validator transition is admitted')
+    for name, before in TRANSITIONS.items():
+        item = transitions[name]
+        require(isinstance(item, dict) and set(item) == {'before', 'after', 'reason'}
+                and same(item['before'], before) and same(expected.get(name), before)
+                and isinstance(item['reason'], str) and item['reason'].strip(), 'Validator before-source proof differs')
+        after = item['after']
+        require(isinstance(after, dict) and set(after) == {'mode', 'sha256'} and after['mode'] == '100644'
+                and isinstance(after['sha256'], str) and re.fullmatch('[0-9a-f]{64}', after['sha256']), 'Validator after-source proof differs')
+        expected[name] = dict(after)
     expected[MANIFEST] = {'mode': '100644', 'sha256': selection['manifestSha256']}
     expected[VERIFIER] = {'mode': '100644', 'sha256': selection['verifierSha256']}
+    expected[SCOPE_VERIFIER] = {'mode': '100644', 'sha256': selection['scopeVerifierSha256']}
     expected[BASELINE] = {'mode': '100644', 'sha256': BASELINE_SHA256}
     return expected
 def validate_source(root, selection, paths=None):
@@ -118,6 +133,7 @@ if __name__ == '__main__':
     parser.add_argument('--root', type=pathlib.Path, default=ROOT)
     parser.add_argument('--manifest-sha256', required=True)
     parser.add_argument('--verifier-sha256', required=True)
+    parser.add_argument('--scope-verifier-sha256', required=True)
     args = parser.parse_args()
     print(json.dumps(validate_source(args.root, select(manifest_sha256=args.manifest_sha256,
-            verifier_sha256=args.verifier_sha256))))
+            verifier_sha256=args.verifier_sha256, scope_verifier_sha256=args.scope_verifier_sha256))))
