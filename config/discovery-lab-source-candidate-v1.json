@@ -16,7 +16,7 @@
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "70e442d13888216a2e3b202c53050fd0d2b6706152ab7e3af271be2b81e55f1f"
+        "sha256": "3879cd8adfd4f1eebce35027a6461147adf3e04c4088b0123c7f3346ef9d6188"
       },
       "reason": "Explicit additive Discovery Lab source and tests; no historical source exemption or publication qualification."
     },
@@ -24,7 +24,7 @@
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "28977aad08ce59893f93b75dc9d6d218fc1e5eec70f008a08e9aff131fe7d3ec"
+        "sha256": "ce3c4d2d78a06fe3ff2573e918be87b032d4a3ff7f39e5cdb7dd6832d3569445"
       },
       "reason": "Explicit native compatibility harness/source pin; authenticated Alpha code only, no execution or publication approval."
     },
@@ -32,7 +32,7 @@
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "2cb747a3325bb046893fbfc77889ab631c9e4b21f84f42977e9c8b460a1bba24"
+        "sha256": "8002abb17585e4733e616408164ca108324c7627780498ac7a03cb7b420ca7ec"
       },
       "reason": "Explicit additive Discovery Lab source and tests; no historical source exemption or publication qualification."
     },
@@ -40,7 +40,7 @@
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "44231eae9f3ea5b3c56aa25417978f867d4f21b6309eab0501190b9e20959c6d"
+        "sha256": "9d2c99031d0b5c7ecd98ab3495c25ff48671eac3e94397b730ff93158bc21b71"
       },
       "reason": "Explicit additive Discovery Lab source and tests; no historical source exemption or publication qualification."
     },
@@ -48,7 +48,7 @@
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "cb355a544b39c3a03b0e7fbb69eec7e6a8463db66ec7bec363c0f86e39af93cf"
+        "sha256": "21265da0be01079dbc5d83572fae716d4dd4cdcfb39b876c96ff01cb793216ee"
       },
       "reason": "Explicit native compatibility harness/source pin; authenticated Alpha code only, no execution or publication approval."
     },

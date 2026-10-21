@@ -131,11 +131,12 @@ export async function qualifyDiscoveryLabReceiver(alphaRoot,{retainedWorkspace=n
     function limitsFor(record) {
       const out=Object.fromEntries(RESOURCE_KEYS.map(key=>[key,0]));
       for(let item=record;item;item=item.parent) for(const key of ['acquisitions','search','checking','installations'])out[key]+=item.charter.budget[key];
-      out.checking+=DISCOVERY_LAB_ADMISSION_CHECKS;
+      out.checking+=DISCOVERY_LAB_ADMISSION_CHECKS+contract.DISCOVERY_LAB_INSPECTION_CHECKS;
       return {...out,memoryBytes:8_000_000,storageBytes:8_000_000,workerCapacity:4,elapsedMs:120_000};
     }
-    async function receive(record,stage='evolve',change=null) {
-      const request=await history.workRequest(record,ROUTE,limitsFor(record));request.stage=stage;
+    async function receive(record,stage='evolve',change=null,limitChange=null) {
+      const limits=limitsFor(record);if(limitChange)limitChange(limits);
+      const request=await history.workRequest(record,ROUTE,limits);request.stage=stage;
       request.inputArtifacts=record.artifacts.slice(0,STAGES.indexOf(stage)).map(artifact=>artifact.digest);
       if(change) {change(request);request.payloadDigest=await contract.payloadDigest(request.payload);}
       const expectedBindings=Object.fromEntries(BINDING_KEYS.map(key=>[key,record.bindings[key]]));
@@ -148,6 +149,14 @@ export async function qualifyDiscoveryLabReceiver(alphaRoot,{retainedWorkspace=n
       assert.equal(receipt.commission.capBaseUnits,'0');assert.equal(receipt.checker.nativeWithinResourceEnvelope,true);
       outcomes.push({case:'accepted-'+stage,receipt});
     }
+    const missingInspectionReserve=await receive(initial,'evolve',null,limits=>{
+      limits.checking-=contract.DISCOVERY_LAB_INSPECTION_CHECKS;
+    });
+    assert.equal(missingInspectionReserve.state,'inconclusive');
+    assert.equal(missingInspectionReserve.checker.report.resourceUsed.checking,contract.DISCOVERY_LAB_INSPECTION_CHECKS);
+    assert.equal(missingInspectionReserve.checker.report.resourceUsed.search,0);
+    assert.ok(missingInspectionReserve.checker.report.reasons.includes('CONSERVATIVE_REPLAY_CHECK_INCOMPLETE'));
+    outcomes.push({case:'missing-inspection-reserve',receipt:missingInspectionReserve});
     const tampered=await receive(initial,'learn',request=>{request.payload.result.stages[0].program.errorBound+=1;});
     assert.notEqual(tampered.state,'local-checked');outcomes.push({case:'rehashed-invalid-measurement',receipt:tampered});
     const negative=retained ? retained.find(record=>record.state==='rejected') : await campaign({...structuredClone(runtime.DEFAULT_CHARTER),noise:1,accuracy:0},initial);

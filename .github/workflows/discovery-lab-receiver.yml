@@ -55,7 +55,7 @@ jobs:
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
         with:
           repository: MontrealAI/AGI-Alpha-Agent-v0
-          ref: 1665cb83f09bde3962f80942e2f1e54b789d9708
+          ref: daa8e3d8f0fbad4a5bc9b25393f566601b0baf31
           path: build/discovery-alpha
           persist-credentials: false
           sparse-checkout: |
