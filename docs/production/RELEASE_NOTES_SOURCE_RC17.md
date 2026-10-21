@@ -37,7 +37,9 @@ republish the previous producer under a new identity.
   `d27d752cf552bc7f45108c962b6501d912d1e715`. The finite inventory binds every
   before/after blob and mode, with no general runtime-path exception.
 - Require actual extraction of all six affected gateway source files in fresh
-  JavaScript scanner evidence. Review the exact branch producer context and
+  JavaScript scanner evidence, in addition to the unchanged producer's declared
+  receiver list. Both raw extraction and exact producer sidecars are verified.
+  Review the exact branch producer context and
   complete current raw findings; earlier candidate archives remain historical.
 
 See [operator telemetry](../operator-telemetry.md) for rejection retention,
