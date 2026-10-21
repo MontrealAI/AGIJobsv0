@@ -117,6 +117,11 @@ function addReviewedPython(r) {
 }
 
 function addCurrentReleaseMetadata(r) {
+  const toolchain = p.profile.javascriptToolchain.transition;
+  r.put(
+    toolchain.path,
+    command(ROOT, ['cat-file', 'blob', toolchain.after.blob])
+  );
   for (const item of p.profile.telemetryRuntime.transitions)
     r.put(item.path, command(ROOT, ['cat-file', 'blob', item.after.blob]));
   for (const [name, identity] of Object.entries(p.previousReleaseRecords))
@@ -208,12 +213,15 @@ test('historical telemetry proof composes only with the exact discovery follow-u
   );
   assert.equal(historical.transitions.length, 11);
   assert.equal(followup.transitions.length, 4);
-  assert.deepEqual(followup.transitions.map((item) => item.path), [
-    '.github/workflows/ci.yml',
-    'test/gateway/telemetryRecovery.test.cjs',
-    'test/scripts/hardhat-test-discovery.test.cjs',
-    'test/scripts/telemetryRecovery.test.cjs',
-  ]);
+  assert.deepEqual(
+    followup.transitions.map((item) => item.path),
+    [
+      '.github/workflows/ci.yml',
+      'test/gateway/telemetryRecovery.test.cjs',
+      'test/scripts/hardhat-test-discovery.test.cjs',
+      'test/scripts/telemetryRecovery.test.cjs',
+    ]
+  );
   const removed = followup.transitions[1];
   const added = followup.transitions[3];
   assert.equal(removed.after, null);
@@ -227,17 +235,37 @@ test('historical telemetry proof composes only with the exact discovery follow-u
   assert.equal(scope.durability.tree, scope.tree);
   for (const field of ['historical', 'followup', 'durability']) {
     for (const mutate of [
-      (proof) => { proof.source = proof.baseline; },
-      (proof) => { proof.tree = '0'.repeat(40); },
-      (proof) => { proof.transitions.pop(); },
-      (proof) => { proof.transitions.reverse(); },
-      (proof) => { proof.transitions.push({ ...proof.transitions[0], path: 'agent-gateway/unreviewed.ts' }); },
-      (proof) => { proof.transitions[0].after.blob = '0'.repeat(40); },
-      (proof) => { proof.transitions[0].after.mode = '100755'; },
+      (proof) => {
+        proof.source = proof.baseline;
+      },
+      (proof) => {
+        proof.tree = '0'.repeat(40);
+      },
+      (proof) => {
+        proof.transitions.pop();
+      },
+      (proof) => {
+        proof.transitions.reverse();
+      },
+      (proof) => {
+        proof.transitions.push({
+          ...proof.transitions[0],
+          path: 'agent-gateway/unreviewed.ts',
+        });
+      },
+      (proof) => {
+        proof.transitions[0].after.blob = '0'.repeat(40);
+      },
+      (proof) => {
+        proof.transitions[0].after.mode = '100755';
+      },
     ]) {
       const changed = clone(scope);
       mutate(changed[field]);
-      assert.throws(() => p.validateTelemetryRuntime(changed), /scope commitment/);
+      assert.throws(
+        () => p.validateTelemetryRuntime(changed),
+        /scope commitment/
+      );
     }
     const proof = scope[field];
     for (const name of ['baseline', 'source']) {
@@ -245,14 +273,24 @@ test('historical telemetry proof composes only with the exact discovery follow-u
         args[0] === 'rev-parse' && args[1] === `${proof[name]}^{tree}`
           ? '0'.repeat(40)
           : git(...args);
-      assert.throws(() => p.verifyTelemetryOrigin(alteredTree), /immutable origin/);
+      assert.throws(
+        () => p.verifyTelemetryOrigin(alteredTree),
+        /immutable origin/
+      );
     }
     const wrongAncestry = (...args) => {
-      if (args[0] === 'merge-base' && args[2] === proof.baseline && args[3] === proof.source)
+      if (
+        args[0] === 'merge-base' &&
+        args[2] === proof.baseline &&
+        args[3] === proof.source
+      )
         throw new Error('injected nonancestor');
       return git(...args);
     };
-    assert.throws(() => p.verifyTelemetryOrigin(wrongAncestry), /injected nonancestor/);
+    assert.throws(
+      () => p.verifyTelemetryOrigin(wrongAncestry),
+      /injected nonancestor/
+    );
   }
   const extraRuntime = 'agent-gateway/unreviewed.ts';
   const extraBlob = '0'.repeat(40);
@@ -263,28 +301,52 @@ test('historical telemetry proof composes only with the exact discovery follow-u
         ? result + `100644 blob ${extraBlob}\t${extraRuntime}\0`
         : result;
     };
-    assert.throws(() => p.verifyTelemetryOrigin(unexpectedFile), /transition inventory/);
+    assert.throws(
+      () => p.verifyTelemetryOrigin(unexpectedFile),
+      /transition inventory/
+    );
   }
   const discovery = followup.transitions[2];
   const beforeTree = p.parseTree(git('ls-tree', '-rz', followup.baseline));
   const afterTree = p.parseTree(git('ls-tree', '-rz', followup.source));
   for (const item of followup.transitions) {
-    for (const [key, original] of [['before', beforeTree], ['after', afterTree]]) {
-      for (const replacement of [null, { mode: '100644', blob: '0'.repeat(40) }, { mode: '100755', blob: item[key]?.blob || extraBlob }]) {
+    for (const [key, original] of [
+      ['before', beforeTree],
+      ['after', afterTree],
+    ]) {
+      for (const replacement of [
+        null,
+        { mode: '100644', blob: '0'.repeat(40) },
+        { mode: '100755', blob: item[key]?.blob || extraBlob },
+      ]) {
         if (JSON.stringify(replacement) === JSON.stringify(item[key])) continue;
         const changed = new Map(original);
         if (replacement === null) changed.delete(item.path);
         else changed.set(item.path, replacement);
         const corrupted = (...args) => {
-          if (args[0] === 'ls-tree' && args[2] === followup[key === 'before' ? 'baseline' : 'source'])
-            return [...changed].map(([name, identity]) => `${identity.mode} blob ${identity.blob}\t${name}\0`).join('');
+          if (
+            args[0] === 'ls-tree' &&
+            args[2] === followup[key === 'before' ? 'baseline' : 'source']
+          )
+            return [...changed]
+              .map(
+                ([name, identity]) =>
+                  `${identity.mode} blob ${identity.blob}\t${name}\0`
+              )
+              .join('');
           return git(...args);
         };
-        assert.throws(() => p.verifyTelemetryOrigin(corrupted), /blob or mode|transition inventory/);
+        assert.throws(
+          () => p.verifyTelemetryOrigin(corrupted),
+          /blob or mode|transition inventory/
+        );
       }
     }
   }
-  assert.equal(discovery.after.blob, git('hash-object', 'test/scripts/hardhat-test-discovery.test.cjs').trim());
+  assert.equal(
+    discovery.after.blob,
+    git('hash-object', 'test/scripts/hardhat-test-discovery.test.cjs').trim()
+  );
 });
 
 test('telemetry durability admits only its two exact paths after the preserved isolation proof', () => {
@@ -294,36 +356,63 @@ test('telemetry durability admits only its two exact paths after the preserved i
     createHash('sha256').update(JSON.stringify(scope.followup)).digest('hex'),
     'e2a605cfc233ba1cad6061b514aaadc2175a067cd67a1696012a04f3a3bb7137'
   );
-  assert.deepEqual(scope.durability.transitions.map((item) => item.path), [
-    'agent-gateway/telemetryQueue.ts',
-    'test/scripts/telemetryRecovery.test.cjs',
-  ]);
+  assert.deepEqual(
+    scope.durability.transitions.map((item) => item.path),
+    [
+      'agent-gateway/telemetryQueue.ts',
+      'test/scripts/telemetryRecovery.test.cjs',
+    ]
+  );
   const before = p.parseTree(git('ls-tree', '-rz', scope.durability.baseline));
   const after = p.parseTree(git('ls-tree', '-rz', scope.durability.source));
   for (const item of scope.durability.transitions) {
     assert.deepEqual(item.before, before.get(item.path));
     assert.deepEqual(item.after, after.get(item.path));
     assert.equal(item.after.blob, git('hash-object', item.path).trim());
-    for (const [side, original] of [['before', before], ['after', after]]) {
-      for (const replacement of [null, { mode: '100644', blob: '0'.repeat(40) }, { mode: '100755', blob: item[side].blob }]) {
+    for (const [side, original] of [
+      ['before', before],
+      ['after', after],
+    ]) {
+      for (const replacement of [
+        null,
+        { mode: '100644', blob: '0'.repeat(40) },
+        { mode: '100755', blob: item[side].blob },
+      ]) {
         const changed = new Map(original);
         if (replacement === null) changed.delete(item.path);
         else changed.set(item.path, replacement);
         const corrupted = (...args) => {
-          if (args[0] === 'ls-tree' && args[2] === scope.durability[side === 'before' ? 'baseline' : 'source'])
-            return [...changed].map(([name, identity]) => `${identity.mode} blob ${identity.blob}\t${name}\0`).join('');
+          if (
+            args[0] === 'ls-tree' &&
+            args[2] ===
+              scope.durability[side === 'before' ? 'baseline' : 'source']
+          )
+            return [...changed]
+              .map(
+                ([name, identity]) =>
+                  `${identity.mode} blob ${identity.blob}\t${name}\0`
+              )
+              .join('');
           return git(...args);
         };
-        assert.throws(() => p.verifyTelemetryOrigin(corrupted), /blob or mode|transition inventory/);
+        assert.throws(
+          () => p.verifyTelemetryOrigin(corrupted),
+          /blob or mode|transition inventory/
+        );
       }
     }
   }
   const final = new Map(after);
   const oldQueue = scope.durability.transitions[0];
   final.set(oldQueue.path, oldQueue.before);
-  assert.throws(() => p.verifyTelemetryTransitions(
-    p.parseTree(git('ls-tree', '-rz', scope.baseline)), final
-  ), /blob or mode/);
+  assert.throws(
+    () =>
+      p.verifyTelemetryTransitions(
+        p.parseTree(git('ls-tree', '-rz', scope.baseline)),
+        final
+      ),
+    /blob or mode/
+  );
   assert.equal(p.verifyTelemetryOrigin(git), scope);
 });
 
@@ -338,7 +427,10 @@ function finiteTelemetryAdmission(t, p) {
     'scripts/release/source-profile-rc17.json',
     JSON.stringify(pending, null, 2) + '\n'
   );
-  const source = r.commit(p.profile.telemetryRuntime.source);
+  const source = r.commit([
+    p.profile.telemetryRuntime.source,
+    p.profile.javascriptToolchain.source,
+  ]);
   const args = (sha) => ({
     git: r.git,
     sha,
@@ -346,7 +438,10 @@ function finiteTelemetryAdmission(t, p) {
     lock: JSON.parse(r.git('show', `${sha}:package-lock.json`)),
     policy: JSON.parse(r.git('show', `${sha}:config/solidity-compiler.json`)),
   });
-  assert.equal(runtime.verifySourceScope(args(source)).productionApproved, false);
+  assert.equal(
+    runtime.verifySourceScope(args(source)).productionApproved,
+    false
+  );
   r.put(
     'agent-gateway/unreviewed-runtime.ts',
     'export const unreviewed = true;\n'
@@ -366,7 +461,11 @@ function finiteTelemetryAdmission(t, p) {
   r.git('read-tree', source);
   r.put(
     'test/gateway/telemetryRecovery.test.cjs',
-    command(ROOT, ['cat-file', 'blob', p.profile.telemetryRuntime.historical.transitions.at(-1).after.blob])
+    command(ROOT, [
+      'cat-file',
+      'blob',
+      p.profile.telemetryRuntime.historical.transitions.at(-1).after.blob,
+    ])
   );
   const restoredOldSuite = r.commit(source);
   assert.throws(
@@ -692,7 +791,7 @@ test('actual Git website transitions admit only the two exact reviewed byte and 
   );
   assert.throws(
     () => p.verifyReleaseDelta(beforeTree, beforeTree),
-    /website blob or mode|release trigger/
+    /website blob or mode|release trigger|toolchain workflow/
   );
   for (const inventory of [
     p.websiteTransitions.slice(1),
@@ -1119,6 +1218,153 @@ test('actual Git integration transitions reject substituted security/runtime byt
   );
 });
 
+test('JavaScript toolchain proof pins one complete workflow transition and preserves all historical policies', () => {
+  const proof = p.profile.javascriptToolchain;
+  const git = (...args) => command(ROOT, args);
+  const after = p.parseTree(git('ls-tree', '-rz', proof.source));
+  const baselineProfile = JSON.parse(
+    git('show', `${proof.baseline}:scripts/release/source-profile-rc17.json`)
+  );
+  assert.equal(p.verifyJavascriptToolchainOrigin(git), proof);
+  assert.deepEqual(proof.historicalPolicy, baselineProfile.scannerPolicy);
+  const oldWorkflow = git('show', `${proof.baseline}:${proof.transition.path}`);
+  const pinnedWorkflow = git(
+    'show',
+    `${proof.source}:${proof.transition.path}`
+  );
+  const environment =
+    "        env:\n          # Preserve the reviewed producer's toolcache diagnostics.\n          CODEQL_ACTION_CLEANUP_TOOLCACHE_BUNDLES: 'false'\n";
+  const tools = '          tools: ' + proof.bundle.url + '\n';
+  assert.equal(pinnedWorkflow.split(environment).length, 2);
+  assert.equal(pinnedWorkflow.split(tools).length, 2);
+  assert.equal(
+    pinnedWorkflow.replace(environment, '').replace(tools, ''),
+    oldWorkflow
+  );
+  const normalized = p.normalizeJavascriptToolchain(after);
+  assert.deepEqual(
+    normalized.get(proof.transition.path),
+    proof.transition.before
+  );
+  assert.equal(normalized.size, after.size);
+  assert(
+    p
+      .verifyReleaseDelta(
+        p.parseTree(git('ls-tree', '-rz', p.profile.implementationBaseline)),
+        after
+      )
+      .includes(proof.transition.path)
+  );
+  assert.equal(p.profile.integrationTransitions.length, 43);
+  assert.deepEqual(
+    p.profile.integrationTransitions,
+    baselineProfile.integrationTransitions
+  );
+  for (const [name, identity] of after)
+    if (name !== proof.transition.path)
+      assert.deepEqual(normalized.get(name), identity);
+  assert.deepEqual(
+    p.profile.telemetryRuntime,
+    baselineProfile.telemetryRuntime
+  );
+  assert.deepEqual(
+    p.profile.pythonScannerPolicy,
+    baselineProfile.pythonScannerPolicy
+  );
+  for (const mutate of [
+    (value) => {
+      value.baselineTree = '0'.repeat(40);
+    },
+    (value) => {
+      value.source = value.baseline;
+    },
+    (value) => {
+      value.transition.path = '.github/workflows/another.yml';
+    },
+    (value) => {
+      value.transition.after.blob = '0'.repeat(40);
+    },
+    (value) => {
+      value.transition.after.mode = '100755';
+    },
+    (value) => {
+      value.historicalPolicy.workflowSha256 = '0'.repeat(64);
+    },
+    (value) => {
+      value.bundle.version = '2.27.3';
+    },
+    (value) => {
+      value.bundle.url += '?unreviewed';
+    },
+    (value) => {
+      value.cleanupToolcacheBundles = true;
+    },
+  ]) {
+    const changed = clone(proof);
+    mutate(changed);
+    assert.throws(
+      () => p.validateJavascriptToolchain(changed),
+      /proof commitment/
+    );
+  }
+  for (const replacement of [
+    null,
+    proof.transition.before,
+    { mode: '100755', blob: proof.transition.after.blob },
+  ]) {
+    const changed = new Map(after);
+    if (replacement === null) changed.delete(proof.transition.path);
+    else changed.set(proof.transition.path, replacement);
+    assert.throws(
+      () => p.normalizeJavascriptToolchain(changed),
+      /workflow blob or mode/
+    );
+  }
+  for (const source of [
+    proof.historicalPolicy.producerCommit,
+    proof.baseline,
+    proof.source,
+  ]) {
+    const wrongTree = (...args) =>
+      args[0] === 'rev-parse' && args[1] === `${source}^{tree}`
+        ? '0'.repeat(40)
+        : git(...args);
+    assert.throws(
+      () => p.verifyJavascriptToolchainOrigin(wrongTree),
+      /immutable source tree/
+    );
+  }
+  const extraSource = (...args) => {
+    const output = git(...args);
+    return args[0] === 'ls-tree' && args[2] === proof.source
+      ? output +
+          `100644 blob ${'0'.repeat(40)}\t.github/workflows/unreviewed.yml\0`
+      : output;
+  };
+  assert.throws(
+    () => p.verifyJavascriptToolchainOrigin(extraSource),
+    /finite JavaScript workflow transition/
+  );
+  const wrongAncestry = (...args) => {
+    if (args[0] === 'merge-base') throw new Error('injected nonancestor');
+    return git(...args);
+  };
+  assert.throws(
+    () => p.verifyJavascriptToolchainOrigin(wrongAncestry),
+    /injected nonancestor/
+  );
+  const changedHistoricalConfig = (...args) =>
+    args[0] === 'show' &&
+    args[1] ===
+      `${proof.baseline}:${proof.historicalPolicy.historicalConfigPath}`
+      ? 'substituted historical query policy\n'
+      : git(...args);
+  assert.throws(
+    () => p.verifyJavascriptToolchainOrigin(changedHistoricalConfig),
+    /historical CodeQL configuration/
+  );
+});
+
 test('scanner producer pins must name the same immutable workflow bytes as the release', (t) => {
   const r = repository(t);
   const configPath = '.github/codeql/fixture.yml';
@@ -1408,6 +1654,14 @@ test('production metadata admission preserves the actual installed profile and e
     40
   );
   assert.throws(() => compare(substitutedRuntime), /finite source profile/);
+  const omittedToolchain = clone(sourceProfile);
+  delete omittedToolchain.javascriptToolchain;
+  assert.throws(() => compare(omittedToolchain), /finite source profile/);
+  const substitutedToolchain = clone(sourceProfile);
+  substitutedToolchain.javascriptToolchain.transition.after.blob = '0'.repeat(
+    40
+  );
+  assert.throws(() => compare(substitutedToolchain), /finite source profile/);
   for (const field of ['scannerReview', 'pythonScannerReview']) {
     const altered = clone(sourceProfile);
     altered[field] = null;

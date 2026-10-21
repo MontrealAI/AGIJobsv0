@@ -78,6 +78,32 @@ See [operator telemetry](../operator-telemetry.md) for rejection retention,
 explicit truncation/eviction and crash-reconciliation limits. This is source
 qualification, not an assertion about any deployed runtime.
 
+## Reproducible JavaScript scanner producer
+
+- Preserve the complete previous JavaScript policy, including producer
+  `cb30d7453b36eaca040c139e06fd9668b300c5f4`, tree
+  `19d86f484ed11de23bb54d11b193ea868d2de88e`, and its original workflow/config
+  hashes. Preserve all telemetry proofs and the Python producer unchanged.
+- Bind exactly one workflow transition from candidate
+  `6170074553344f52f5257b0f8cacc77ad2634d45`, tree
+  `026da1e4d818bfeac898eb2cf4ba393ffa90de6d`, to producer origin
+  `24f5f20785758c11edd765bea894f08ce745b047`, tree
+  `4906643b9c715a4bc0a6ad30b5e06d9e1a276681`.
+- Select the official JavaScript CodeQL `2.27.2` bundle URL in the existing
+  pinned initialization action. Freeze that action's optional toolcache disk
+  cleanup behavior at its reviewed value for this initialization step. Query
+  suites, extraction inventories, diagnostics, findings and strict complete
+  metadata comparisons remain enforced. Python retains its own producer.
+- The recorded upstream bundle asset digest is provenance information; this
+  URL selection does not add download checksum enforcement. Fresh authenticated
+  raw archives and the unchanged strict scanner gate must prove the resulting
+  tool, pack, extraction and complete result identities.
+- Advance only the active JavaScript producer source/tree and workflow
+  blob/digest. Validate the complete one-file origin, historical and current
+  workflow/config identities and source ancestry. Normalize only that proved
+  workflow transition before comparing the unchanged 43-entry integration
+  inventory; admit no general workflow exception.
+
 ## Qualification and review
 
 This candidate is not qualified for publication. Fresh independent notes,

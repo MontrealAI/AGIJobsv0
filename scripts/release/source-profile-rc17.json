@@ -781,16 +781,16 @@
         "js/useless-assignment-to-local"
       ]
     },
-    "producerCommit": "cb30d7453b36eaca040c139e06fd9668b300c5f4",
-    "producerTree": "19d86f484ed11de23bb54d11b193ea868d2de88e",
+    "producerCommit": "24f5f20785758c11edd765bea894f08ce745b047",
+    "producerTree": "4906643b9c715a4bc0a6ad30b5e06d9e1a276681",
     "historicalConfigPath": ".github/codeql/config.yml",
     "historicalConfigSha256": "4b34450e1dcc0b489feea158d642a6b66261d9e935463928782219c8716c0892",
     "configPath": ".github/codeql/config-integrations.yml",
     "configSha256": "07d7be878097a38520bcf09147b62c75064cb3d707317ad34e028c1f46ba8155",
     "configBlob": "4533ce4d7f681a6230399e25fb1d1f736c84b25b",
     "workflowPath": ".github/workflows/static-analysis.yml",
-    "workflowSha256": "8b577905c4b4e2a173180a8883262869de7e5f9861a7dd6d1f36e316519e60ce",
-    "workflowBlob": "da884644bf8b483c5ab6a643ce491c40b87898f6",
+    "workflowSha256": "51d61187c7425ea23d27d7e43ada934fe301778e99c8ae03108d5f94d1ced8fb",
+    "workflowBlob": "24572633149841e9fd7c0cb9e7f8bda42cbffa0b",
     "archiveFiles": [
       "javascript.sarif",
       "source-extraction.json",
@@ -1169,5 +1169,62 @@
         }
       ]
     }
+  },
+  "javascriptToolchain": {
+    "schema": "agijobsv0/javascript-codeql-toolchain-pin/v1",
+    "baseline": "6170074553344f52f5257b0f8cacc77ad2634d45",
+    "baselineTree": "026da1e4d818bfeac898eb2cf4ba393ffa90de6d",
+    "source": "24f5f20785758c11edd765bea894f08ce745b047",
+    "tree": "4906643b9c715a4bc0a6ad30b5e06d9e1a276681",
+    "transition": {
+      "path": ".github/workflows/static-analysis.yml",
+      "before": {
+        "mode": "100644",
+        "blob": "da884644bf8b483c5ab6a643ce491c40b87898f6"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "24572633149841e9fd7c0cb9e7f8bda42cbffa0b"
+      }
+    },
+    "historicalPolicy": {
+      "qualityReview": {
+        "schema": "agijobsv0/nonsecurity-quality-review/1",
+        "disposition": "Acknowledged nonsecurity quality",
+        "ruleIds": [
+          "js/unused-local-variable",
+          "js/useless-assignment-to-local"
+        ]
+      },
+      "producerCommit": "cb30d7453b36eaca040c139e06fd9668b300c5f4",
+      "producerTree": "19d86f484ed11de23bb54d11b193ea868d2de88e",
+      "historicalConfigPath": ".github/codeql/config.yml",
+      "historicalConfigSha256": "4b34450e1dcc0b489feea158d642a6b66261d9e935463928782219c8716c0892",
+      "configPath": ".github/codeql/config-integrations.yml",
+      "configSha256": "07d7be878097a38520bcf09147b62c75064cb3d707317ad34e028c1f46ba8155",
+      "configBlob": "4533ce4d7f681a6230399e25fb1d1f736c84b25b",
+      "workflowPath": ".github/workflows/static-analysis.yml",
+      "workflowSha256": "8b577905c4b4e2a173180a8883262869de7e5f9861a7dd6d1f36e316519e60ce",
+      "workflowBlob": "da884644bf8b483c5ab6a643ce491c40b87898f6",
+      "archiveFiles": [
+        "javascript.sarif",
+        "source-extraction.json",
+        "source-scope-after.json",
+        "source-scope-before.json"
+      ],
+      "reviewedProducer": {
+        "event": "push",
+        "headBranch": "fix/inherited-codeql-telemetry-runtime-20261021",
+        "ref": "refs/heads/fix/inherited-codeql-telemetry-runtime-20261021"
+      },
+      "referenceTransportSchema": "agijobsv0/codeql-lossless-reference-transport/1"
+    },
+    "bundle": {
+      "version": "2.27.2",
+      "url": "https://github.com/github/codeql-action/releases/download/codeql-bundle-v2.27.2/codeql-bundle-linux64.tar.gz",
+      "upstreamAssetId": 603160654,
+      "upstreamAssetSha256": "f002864be6dd8d5d7bdb123aaf7291ec8e291012bd9f70b6d2362f730db52aeb"
+    },
+    "cleanupToolcacheBundles": false
   }
 }
