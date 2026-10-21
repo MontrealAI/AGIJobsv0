@@ -327,14 +327,16 @@ test('telemetry durability admits only its two exact paths after the preserved i
   assert.equal(p.verifyTelemetryOrigin(git), scope);
 });
 
-test('finite telemetry admission preserves the rejection of an extra runtime file and altered CI commands', (t) => {
+function finiteTelemetryAdmission(t, p) {
+  const pending = pendingProfileFixture(p.profile);
+  const runtime = profileFixtureRuntime(pending);
   const r = repository(t);
   shareObjects(r);
   r.git('read-tree', p.profile.telemetryRuntime.source);
   addCurrentReleaseMetadata(r);
   r.put(
     'scripts/release/source-profile-rc17.json',
-    JSON.stringify(p.profile, null, 2) + '\n'
+    JSON.stringify(pending, null, 2) + '\n'
   );
   const source = r.commit(p.profile.telemetryRuntime.source);
   const args = (sha) => ({
@@ -344,21 +346,21 @@ test('finite telemetry admission preserves the rejection of an extra runtime fil
     lock: JSON.parse(r.git('show', `${sha}:package-lock.json`)),
     policy: JSON.parse(r.git('show', `${sha}:config/solidity-compiler.json`)),
   });
-  assert.equal(p.verifySourceScope(args(source)).productionApproved, false);
+  assert.equal(runtime.verifySourceScope(args(source)).productionApproved, false);
   r.put(
     'agent-gateway/unreviewed-runtime.ts',
     'export const unreviewed = true;\n'
   );
   const extra = r.commit(source);
   assert.throws(
-    () => p.verifySourceScope(args(extra)),
+    () => runtime.verifySourceScope(args(extra)),
     /Unexpected implementation-to-release change: agent-gateway\/unreviewed-runtime.ts/
   );
   r.git('read-tree', source);
   r.put('.github/workflows/ci.yml', 'name: substituted CI\n');
   const alteredCI = r.commit(source);
   assert.throws(
-    () => p.verifySourceScope(args(alteredCI)),
+    () => runtime.verifySourceScope(args(alteredCI)),
     /Exact telemetry runtime blob or mode differs/
   );
   r.git('read-tree', source);
@@ -368,10 +370,29 @@ test('finite telemetry admission preserves the rejection of an extra runtime fil
   );
   const restoredOldSuite = r.commit(source);
   assert.throws(
-    () => p.verifySourceScope(args(restoredOldSuite)),
+    () => runtime.verifySourceScope(args(restoredOldSuite)),
     /Unexpected implementation-to-release change: test\/gateway\/telemetryRecovery.test.cjs/
   );
-  assert.throws(() => p.verifyPublicationReview(), /pending/);
+  assert.throws(() => runtime.verifyPublicationReview(), /pending/);
+}
+
+test('finite telemetry admission preserves the rejection of an extra runtime file and altered CI commands', (t) => {
+  finiteTelemetryAdmission(t, p);
+});
+
+test('finite telemetry admission remains independent of installed inert review metadata', (t) => {
+  const source = command(ROOT, ['rev-parse', 'HEAD']).trim();
+  const tree = command(ROOT, ['rev-parse', `${source}^{tree}`]).trim();
+  const reviews = inertProfileReviews(source, tree);
+  const installed = {
+    ...clone(p.profile),
+    scannerReview: reviews.scannerReview,
+    pythonScannerReview: reviews.pythonScannerReview,
+  };
+  const runtime = profileFixtureRuntime(installed);
+  assert.notEqual(runtime.profile.scannerReview, null);
+  assert.notEqual(runtime.profile.pythonScannerReview, null);
+  finiteTelemetryAdmission(t, runtime);
 });
 
 test('actual Git trees require the complete finite protected transition set', (t) => {
@@ -1141,9 +1162,9 @@ test('scanner producer pins must name the same immutable workflow bytes as the r
 
 // These fixtures exercise only review metadata admission. They contain no
 // scanner archive, SARIF report, authenticated API observation or authority.
-function pendingProfileFixture() {
+function pendingProfileFixture(value = p.profile) {
   return {
-    ...clone(p.profile),
+    ...clone(value),
     scannerReview: null,
     pythonScannerReview: null,
   };
