@@ -7,7 +7,7 @@ const { createHash } = require('node:crypto');
 const integrationTransitionsSha256 =
   '1363ebe715ffc6405f70261924ff41313073f72dd0d03bd68440235cac78af02';
 const telemetryRuntimeSha256 =
-  'ff6f82ddd6738d3a0e7481fdd4cd1fc065853b68bc1a20e1defbfaccefea792c';
+  '86f6baf11e9f7ba74d43b59bb02987482fce055cbfdeeea1f0ec94d42113120b';
 const historical = require('./qualify-source-release.cjs');
 
 function freeze(value) {

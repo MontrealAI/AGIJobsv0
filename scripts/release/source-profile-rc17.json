@@ -843,8 +843,8 @@
   "telemetryRuntime": {
     "baseline": "d27d752cf552bc7f45108c962b6501d912d1e715",
     "baselineTree": "be4aaad8bdd34f7b33ee42a5d2fae577892fd016",
-    "source": "9dbdba4048b5d85273e61803ffef8f474088c57a",
-    "tree": "42c46b733a38dd47c0ab0688a9fd65b0ed708a1d",
+    "source": "4ccd0ae1b5e9459a3be7880ff4e5b7831f6a8109",
+    "tree": "620c85433451b8b6e3b18df6e42e8e9d694bab6e",
     "transitions": [
       {
         "path": ".github/workflows/ci.yml",
@@ -854,7 +854,7 @@
         },
         "after": {
           "mode": "100644",
-          "blob": "2a49b0c2acddf02f98255b46d82531e02e50fb63"
+          "blob": "1b32c2d03bf61107aa5ecd6664e5346cb73c1fe3"
         }
       },
       {
@@ -951,7 +951,7 @@
         }
       },
       {
-        "path": "test/gateway/telemetryRecovery.test.cjs",
+        "path": "test/scripts/telemetryRecovery.test.cjs",
         "before": null,
         "after": {
           "mode": "100644",

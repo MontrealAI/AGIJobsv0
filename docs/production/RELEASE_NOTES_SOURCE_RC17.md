@@ -29,11 +29,13 @@ republish the previous producer under a new identity.
   rejection evidence before removing invalid restored records, and continue
   with later valid work. Valid transport failures remain retryable failures.
 - Require the deterministic telemetry regressions in the existing CI Tests job.
+  Keep the suite in the established isolated Node test directory so native
+  Hardhat/Mocha discovery does not load it a second time.
   Add no endpoint privilege, scanner exclusion or conditional test bypass.
 - Pin the exact eight-file correction plus that additive CI step and
   two existing test-loader adaptations for the pure validation module to source
-  `9dbdba4048b5d85273e61803ffef8f474088c57a`, tree
-  `42c46b733a38dd47c0ab0688a9fd65b0ed708a1d`, over the publisher parent
+  `4ccd0ae1b5e9459a3be7880ff4e5b7831f6a8109`, tree
+  `620c85433451b8b6e3b18df6e42e8e9d694bab6e`, over the publisher parent
   `d27d752cf552bc7f45108c962b6501d912d1e715`. The finite inventory binds every
   before/after blob and mode, with no general runtime-path exception.
 - Require actual extraction of all six affected gateway source files in fresh
