@@ -14,6 +14,11 @@ const same = (a, b) => canonical(a) === canonical(b);
 const need = (condition, code) => { if (!condition) throw Object.assign(Error(code), { code }); };
 const exact = (value, names) => value && typeof value === 'object' && !Array.isArray(value)
   && Object.keys(value).length === names.length && names.every(name => Object.hasOwn(value, name));
+const exhausted = reason => /(?:BUDGET_EXHAUSTED|SEARCH_TRUNCATED|CHECK_INCOMPLETE)$/.test(reason);
+function freezeData(value) {
+  if (value && typeof value === 'object') { Object.values(value).forEach(freezeData); Object.freeze(value); }
+  return value;
+}
 const identifier = value => typeof value === 'string' && /^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$/.test(value);
 
 export function discoveryLabReceiverCapabilities() {
@@ -40,7 +45,8 @@ function checkReport(value) {
   need(exact(value, ['accepted', 'resourceUsed', 'reasons']) && typeof value.accepted === 'boolean'
     && Array.isArray(value.reasons) && value.reasons.length <= 32
     && value.reasons.every(reason => typeof reason === 'string' && reason.length > 0 && reason.length <= 500)
-    && (value.accepted || value.reasons.length > 0), 'DISCOVERY_LAB_CHECKER_REPORT');
+    && (value.accepted || value.reasons.length > 0)
+    && !(value.accepted && value.reasons.some(exhausted)), 'DISCOVERY_LAB_CHECKER_REPORT');
   validateResources(value.resourceUsed);
   return JSON.parse(canonical(value));
 }
@@ -49,17 +55,26 @@ function checkReport(value) {
 export async function inspectDiscoveryLabWorkRequest(raw, {
   expectedBindings, expectedCommission, inspectCampaign,
 } = {}) {
+  const bindingSnapshot = canonical(expectedBindings), commissionSnapshot = canonical(expectedCommission);
+  const frozenBindings = freezeData(JSON.parse(bindingSnapshot));
+  const frozenCommission = freezeData(JSON.parse(commissionSnapshot));
+  const contextUnchanged = () => need(canonical(expectedBindings) === bindingSnapshot
+    && canonical(expectedCommission) === commissionSnapshot, 'DISCOVERY_LAB_CONTEXT_CHANGED');
   const request = await parseWorkRequest(raw);
-  currentContext(request, expectedBindings, expectedCommission);
+  contextUnchanged();
+  currentContext(request, frozenBindings, frozenCommission);
   need(typeof inspectCampaign === 'function', 'DISCOVERY_LAB_INSPECTOR_REQUIRED');
   const requestSnapshot = canonical(request);
-  const report = checkReport(await inspectCampaign(request.payload,
-    { request:JSON.parse(requestSnapshot), limits:{...request.resourceLimits} }));
+  const checkedRequest = freezeData(JSON.parse(requestSnapshot));
+  const report = checkReport(await inspectCampaign(checkedRequest.payload,
+    freezeData({ request:checkedRequest, limits:checkedRequest.resourceLimits })));
+  contextUnchanged();
   need(canonical(request) === requestSnapshot, 'DISCOVERY_LAB_CHECKER_MUTATED_INPUT');
   const withinResourceEnvelope = RESOURCE_KEYS.every(key => report.resourceUsed[key] <= request.resourceLimits[key]);
-  const state = !withinResourceEnvelope ? 'inconclusive' : report.accepted ? 'local-checked' : 'local-rejected';
+  const incomplete = !report.accepted && report.reasons.some(exhausted);
+  const state = !withinResourceEnvelope || incomplete ? 'inconclusive' : report.accepted ? 'local-checked' : 'local-rejected';
   return { schema:DISCOVERY_LAB_ADMISSION_SCHEMA, state, original:raw, requestSha256:sha(raw),
-    bindings:JSON.parse(canonical(expectedBindings)), commission:{...request.commission},
+    bindings:JSON.parse(bindingSnapshot), commission:{...request.commission},
     stage:request.stage, inputArtifacts:[...request.inputArtifacts], payloadDigest:request.payloadDigest,
     source:{...source}, checker:{report, withinResourceEnvelope},
     lifecycle:{commission:'DRAFT_NOT_SUBMITTED', reservedBaseUnits:'0', execution:'unprovisioned',

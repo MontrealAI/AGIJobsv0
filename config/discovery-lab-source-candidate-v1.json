@@ -1,0 +1,72 @@
+{
+  "schema": "successor/discovery-lab-source-candidate/v1",
+  "repository": "MontrealAI/AGIJobsv0",
+  "profile": "discovery-lab-source-candidate-v1",
+  "baseCommit": "83065adf18a6ee987f8fa479a496a052d35db682",
+  "baseTree": "77ded62b991e8cca28bfd849593153f61ac72d86",
+  "claims": {
+    "sourcePackageOnly": true,
+    "releaseQualified": false,
+    "releaseIdentity": null,
+    "publicationApproved": false,
+    "executionApproved": false
+  },
+  "changes": {
+    ".github/workflows/discovery-lab-receiver.yml": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "e27f49263d3fa6c2cc77020ce52d4f7a4f4a0695b843387f60f4ac0a5d227e1a"
+      },
+      "reason": "Explicit additive six-stage Discovery Lab receiver, strict shared contract, transport-policy verification and public source evidence; no old path exemption or publication qualification."
+    },
+    "docs/successor/DISCOVERY_LAB.md": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "286dab505b713c7d5f8490534696338b1db63bc38008425ea97ffe635c62613e"
+      },
+      "reason": "Explicit additive six-stage Discovery Lab receiver, strict shared contract, transport-policy verification and public source evidence; no old path exemption or publication qualification."
+    },
+    "integrations/alpha-agent/discovery-lab-contract.mjs": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "bfa38a9312a90730f7f35eaed3d5d5dcca2b1c0cc7e51657413670145d2da2e3"
+      },
+      "reason": "Explicit additive six-stage Discovery Lab receiver, strict shared contract, transport-policy verification and public source evidence; no old path exemption or publication qualification."
+    },
+    "integrations/alpha-agent/discovery-lab-work-request.mjs": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "5f072f2cf0ee282513dd258994fb8c2a005a887f44f0d67eb1d2bda7c3e69579"
+      },
+      "reason": "Explicit additive six-stage Discovery Lab receiver, strict shared contract, transport-policy verification and public source evidence; no old path exemption or publication qualification."
+    },
+    "integrations/alpha-agent/discovery-lab-work-request.test.mjs": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "1453af03f959f277aafb492bcc4d801dae1e3508f745cdaf93eee78b2cf6e509"
+      },
+      "reason": "Explicit additive six-stage Discovery Lab receiver, strict shared contract, transport-policy verification and public source evidence; no old path exemption or publication qualification."
+    },
+    "integrations/alpha-agent/fixtures/discovery-lab-request.json": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "891e11f3fed142db55e36934b4f1b5869200973216bfdd9257789fd66fb0a82f"
+      },
+      "reason": "Explicit additive six-stage Discovery Lab receiver, strict shared contract, transport-policy verification and public source evidence; no old path exemption or publication qualification."
+    },
+    "scripts/release/test-discovery-lab-profile.py": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "38b3fdd45d3b08b6315cdf2fb71b89649392de7b001134fb57d5445ee00e70e0"
+      },
+      "reason": "Explicit additive six-stage Discovery Lab receiver, strict shared contract, transport-policy verification and public source evidence; no old path exemption or publication qualification."
+    }
+  }
+}

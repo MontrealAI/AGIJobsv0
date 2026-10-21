@@ -66,12 +66,14 @@ export async function payloadDigest(value) {
         .map(value => value.toString(16).padStart(2, '0')).join('');
 }
 export function validateResources(value) {
+    canonical(value);
     if (!exact(value, RESOURCE_KEYS) || !RESOURCE_KEYS.every(key => nonnegative(value[key]))) {
         throw Error('Invalid Discovery Lab resource vector.');
     }
     return JSON.parse(canonical(value));
 }
 export function validateBindings(value) {
+    canonical(value);
     if (!exact(value, BINDING_KEYS)
         || typeof value.missionId !== 'string'
         || !/^capability-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(value.missionId)

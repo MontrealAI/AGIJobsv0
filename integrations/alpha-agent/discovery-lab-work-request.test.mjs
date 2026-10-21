@@ -3,7 +3,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { canonical, payloadDigest, BINDING_KEYS, RESOURCE_KEYS, STAGES } from './discovery-lab-contract.mjs';
+import { canonical, payloadDigest, validateBindings, validateResources, BINDING_KEYS, RESOURCE_KEYS, STAGES } from './discovery-lab-contract.mjs';
 import { discoveryLabReceiverCapabilities, inspectDiscoveryLabWorkRequest, receiveDiscoveryLabWorkRequest }
   from './discovery-lab-work-request.mjs';
 const ROUTE = 'jobs-agialpha', CURRENCY = 'AGIALPHA18';
@@ -92,7 +92,7 @@ test('incomplete, unsafe or authority-bearing checker reports are rejected',asyn
 test('checker mutation cannot rewrite the request being inspected',async()=>{
   const f=fixture(); f.options.inspectCampaign=async(payload)=>{
     payload.changed=true;return {accepted:true,resourceUsed:Object.fromEntries(RESOURCE_KEYS.map(k=>[k,0])),reasons:[]};
-  }; await rejects(f,'DISCOVERY_LAB_CHECKER_MUTATED_INPUT');
+  }; await assert.rejects(inspect(f), TypeError);
 });
 test('unsupported schemas and external modes stay explicit without invoking a checker',async()=>{
   const f=fixture(); let calls=0; f.options.inspectCampaign=async()=>{calls++;};
@@ -117,4 +117,35 @@ test('direct-object data never invokes getters or hides symbol, non-enumerable o
   assert.throws(()=>canonical(Object.defineProperty({},'hidden',{value:1})));
   const extra=[1]; extra.silent=2; assert.throws(()=>canonical(extra));
   assert.throws(()=>canonical(Object.create({inherited:1})));
+});
+
+for (const reason of ['BUDGET_EXHAUSTED','stage:SEARCH_TRUNCATED','CHECK_INCOMPLETE'])
+test('incomplete checking at the resource cap remains inconclusive: '+reason,async()=>{
+  const f=fixture(); f.request.resourceLimits.checking=1;
+  f.options.inspectCampaign=async()=>({accepted:false,resourceUsed:{...Object.fromEntries(RESOURCE_KEYS.map(k=>[k,0])),checking:1},reasons:[reason]});
+  assert.equal((await inspect(f)).state,'inconclusive');
+});
+for (const target of ['expectedBindings','expectedCommission'])
+test('trusted context cannot change while the installed checker is suspended: '+target,async()=>{
+  const f=fixture(); let resumed; const suspended=new Promise(resolve=>{resumed=resolve;});
+  let entered; const started=new Promise(resolve=>{entered=resolve;});
+  f.options.inspectCampaign=async()=>{entered(); await suspended; return {accepted:true,resourceUsed:Object.fromEntries(RESOURCE_KEYS.map(k=>[k,0])),reasons:[]};};
+  const pending=inspect(f); await started;
+  if(target==='expectedBindings') f.options.expectedBindings.sourceDigest='a'.repeat(64);
+  else f.options.expectedCommission.branch='changed';
+  resumed(); await assert.rejects(pending,error=>error.code==='DISCOVERY_LAB_CONTEXT_CHANGED');
+});
+test('checker receives a deeply frozen request, payload and limits',async()=>{
+  const f=fixture(); const prior=f.options.inspectCampaign;
+  f.options.inspectCampaign=async(payload,ctx)=>{assert.ok(Object.isFrozen(payload));assert.ok(Object.isFrozen(ctx));
+    assert.ok(Object.isFrozen(ctx.request.commission));assert.ok(Object.isFrozen(ctx.limits));return prior();};
+  assert.equal((await inspect(f)).state,'local-rejected');
+});
+
+test('direct binding and resource validators reject getters before reading values',()=>{
+  const f=fixture();let invoked=false;
+  const bindings={...f.options.expectedBindings};Object.defineProperty(bindings,'sourceDigest',{enumerable:true,get(){invoked=true;return 'a'.repeat(64);}});
+  assert.throws(()=>validateBindings(bindings));assert.equal(invoked,false);
+  const resources={...f.request.resourceLimits};Object.defineProperty(resources,'checking',{enumerable:true,get(){invoked=true;return 1;}});
+  assert.throws(()=>validateResources(resources));assert.equal(invoked,false);
 });

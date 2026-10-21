@@ -1,0 +1,41 @@
+name: Discovery Lab receiver policy
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  policy:
+    name: Discovery Lab zero-cap receiver policy
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.23.3'
+      - name: Check exact source and run transport-policy regressions
+        env:
+          EXPECTED_SOURCE: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SOURCE"
+          mkdir -p "$RUNNER_TEMP/discovery-lab"
+          git rev-parse HEAD > "$RUNNER_TEMP/discovery-lab/source-commit.txt"
+          node --version > "$RUNNER_TEMP/discovery-lab/node-version.txt"
+          sha256sum integrations/alpha-agent/discovery-lab-contract.mjs integrations/alpha-agent/discovery-lab-work-request.mjs integrations/alpha-agent/discovery-lab-work-request.test.mjs integrations/alpha-agent/fixtures/discovery-lab-request.json > "$RUNNER_TEMP/discovery-lab/SHA256SUMS.txt"
+          node --test --test-reporter=tap integrations/alpha-agent/discovery-lab-work-request.test.mjs > "$RUNNER_TEMP/discovery-lab/policy.tap"
+          cat "$RUNNER_TEMP/discovery-lab/policy.tap"
+      - name: Retain actual policy evidence (not native lab qualification)
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: discovery-lab-policy-${{ github.event.pull_request.head.sha || github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/discovery-lab
+          if-no-files-found: error
+
