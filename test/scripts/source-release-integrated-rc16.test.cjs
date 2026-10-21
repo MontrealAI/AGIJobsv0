@@ -688,12 +688,17 @@ test('mandatory scanner manifest is derived from actual pinned receiver Git sour
     required,
     [
       ...prior,
+      ...profile.telemetryRuntime.transitions
+        .map((item) => item.path)
+        .filter(
+          (file) => file.startsWith('agent-gateway/') && file.endsWith('.ts')
+        ),
       'integrations/alpha-agent/tests/transformational-compatibility.test.mjs',
       'scripts/release/emit-codeql-review-rc16.cjs',
       'scripts/release/source-codeql-service-rc16.cjs',
     ].sort()
   );
-  assert.equal(required.length, 89);
+  assert.equal(required.length, 95);
   assert(profile.scannerReceiverPaths.every((file) => required.includes(file)));
   assert.equal(new Set(required).size, required.length);
 });
@@ -1203,8 +1208,8 @@ test('quality acknowledgement rejects unknown or security rule IDs and keeps Pyt
     producerRunId: 1,
     producerRunAttempt: 1,
     producerEvent: 'push',
-    producerHeadBranch: 'fix/processed-codeql-release-proof-20261020',
-    producerRef: 'refs/heads/fix/processed-codeql-release-proof-20261020',
+    producerHeadBranch: 'fix/inherited-codeql-telemetry-runtime-20261021',
+    producerRef: 'refs/heads/fix/inherited-codeql-telemetry-runtime-20261021',
     artifactId: 2,
     artifactName: `python-codeql-security-report-${f.review.sourceCommit}-1-1`,
     archiveSha256: 'a'.repeat(64),

@@ -6,6 +6,8 @@ const assert = require('node:assert/strict');
 const { createHash } = require('node:crypto');
 const integrationTransitionsSha256 =
   '1363ebe715ffc6405f70261924ff41313073f72dd0d03bd68440235cac78af02';
+const telemetryRuntimeSha256 =
+  'ae229070a3b22137e7fd23c21b8b8025644e039626843822979dba1b101474ab';
 const historical = require('./qualify-source-release.cjs');
 
 function freeze(value) {
@@ -117,8 +119,8 @@ const scannerPolicy = freeze({
   referenceTransportSchema: 'agijobsv0/codeql-lossless-reference-transport/1',
   reviewedProducer: {
     event: 'push',
-    headBranch: 'fix/processed-codeql-release-proof-20261020',
-    ref: 'refs/heads/fix/processed-codeql-release-proof-20261020',
+    headBranch: 'fix/inherited-codeql-telemetry-runtime-20261021',
+    ref: 'refs/heads/fix/inherited-codeql-telemetry-runtime-20261021',
   },
   qualityReview: {
     schema: 'agijobsv0/nonsecurity-quality-review/1',
@@ -146,6 +148,12 @@ const scannerPolicy = freeze({
   ],
 });
 const scannerReceiverPaths = Object.freeze([
+  'agent-gateway/grpc.ts',
+  'agent-gateway/operator.ts',
+  'agent-gateway/routes.ts',
+  'agent-gateway/telemetry.ts',
+  'agent-gateway/telemetryQueue.ts',
+  'agent-gateway/telemetrySample.ts',
   'integrations/alpha-agent/four-repo-computer-lifecycle.cjs',
   'integrations/alpha-agent/four-repo-computer-receipt.mjs',
   'integrations/alpha-agent/pinned-alpha-checkout.cjs',
@@ -162,6 +170,12 @@ const scannerReceiverPaths = Object.freeze([
   'website/assets/computer-mission-copy.mjs',
 ]);
 const scannerRequiredPaths = Object.freeze([
+  'agent-gateway/grpc.ts',
+  'agent-gateway/operator.ts',
+  'agent-gateway/routes.ts',
+  'agent-gateway/telemetry.ts',
+  'agent-gateway/telemetryQueue.ts',
+  'agent-gateway/telemetrySample.ts',
   'scripts/release/emit-codeql-review-rc16.cjs',
   'scripts/release/source-codeql-service-rc16.cjs',
   'integrations/alpha-agent/four-repo-computer-lifecycle.cjs',
@@ -195,8 +209,8 @@ const pythonScannerPolicy = freeze({
   reviewSchema: 'agijobsv0/codeql-python-review/2',
   reviewedProducer: {
     event: 'push',
-    headBranch: 'fix/processed-codeql-release-proof-20261020',
-    ref: 'refs/heads/fix/processed-codeql-release-proof-20261020',
+    headBranch: 'fix/inherited-codeql-telemetry-runtime-20261021',
+    ref: 'refs/heads/fix/inherited-codeql-telemetry-runtime-20261021',
   },
   producerCommit: 'cb30d7453b36eaca040c139e06fd9668b300c5f4',
   producerTree: '19d86f484ed11de23bb54d11b193ea868d2de88e',
@@ -378,6 +392,91 @@ function verifyIntegrationTransitions(
   return transitions.map((item) => item.path);
 }
 
+// This finite scope proposal does not install a review or qualify publication.
+// Its actual source, complete nine-file delta and every blob/mode are bound.
+function validateTelemetryRuntime(value = profile.telemetryRuntime) {
+  fields(
+    value,
+    ['baseline', 'baselineTree', 'source', 'tree', 'transitions'],
+    'Malformed telemetry runtime scope'
+  );
+  requireValue(
+    createHash('sha256').update(JSON.stringify(value)).digest('hex') ===
+      telemetryRuntimeSha256,
+    'Exact telemetry runtime scope commitment differs'
+  );
+  requireValue(
+    ['baseline', 'baselineTree', 'source', 'tree'].every((field) =>
+      /^[a-f0-9]{40}$/.test(value[field] || '')
+    ) &&
+      Array.isArray(value.transitions) &&
+      value.transitions.length === 9,
+    'Exact telemetry runtime source and nine transitions are required'
+  );
+  const seen = new Set();
+  for (const item of value.transitions) {
+    fields(item, ['path', 'before', 'after'], 'Malformed telemetry transition');
+    requireValue(
+      typeof item.path === 'string' &&
+        !protectedPath(item.path) &&
+        !seen.has(item.path),
+      'Protected or duplicate telemetry runtime transition'
+    );
+    seen.add(item.path);
+    for (const identity of [item.before, item.after]) {
+      if (identity === null) continue;
+      fields(identity, ['mode', 'blob'], 'Malformed telemetry blob identity');
+      requireValue(
+        identity.mode === '100644' && /^[a-f0-9]{40}$/.test(identity.blob),
+        'Telemetry source must retain its exact regular file mode'
+      );
+    }
+    requireValue(
+      item.after !== null && !same(item.before, item.after),
+      'Telemetry source deletion or unchanged transition is prohibited'
+    );
+  }
+  return value;
+}
+
+function verifyTelemetryTransitions(
+  beforeTree,
+  afterTree,
+  value = profile.telemetryRuntime
+) {
+  validateTelemetryRuntime(value);
+  requireValue(
+    beforeTree instanceof Map && afterTree instanceof Map,
+    'Telemetry runtime inputs must be complete tree maps'
+  );
+  for (const item of value.transitions)
+    requireValue(
+      same(beforeTree.get(item.path) ?? null, item.before) &&
+        same(afterTree.get(item.path) ?? null, item.after),
+      'Exact telemetry runtime blob or mode differs: ' + item.path
+    );
+  return value.transitions.map((item) => item.path);
+}
+
+function verifyTelemetryOrigin(git, value = profile.telemetryRuntime) {
+  validateTelemetryRuntime(value);
+  requireValue(
+    text(git('rev-parse', `${value.source}^{tree}`)).trim() === value.tree &&
+      text(git('rev-parse', `${value.baseline}^{tree}`)).trim() ===
+        value.baselineTree,
+    'Telemetry source or baseline tree differs from its immutable origin'
+  );
+  git('merge-base', '--is-ancestor', value.baseline, value.source);
+  const before = parseTree(git('ls-tree', '-rz', value.baseline));
+  const after = parseTree(git('ls-tree', '-rz', value.source));
+  const paths = verifyTelemetryTransitions(before, after, value);
+  requireValue(
+    same(changedPaths(before, after), [...paths].sort()),
+    'Complete telemetry runtime origin transition inventory differs'
+  );
+  return value;
+}
+
 const releaseTriggerTransitions = freeze([
   {
     path: '.github/workflows/apps-images.yml',
@@ -469,7 +568,7 @@ const previousReleaseRecords = freeze({
 });
 const releaseChangelog = freeze({
   before: { mode: '100644', blob: '9d08b12d9c10dbeb59edcac19b02243f23a6d1c1' },
-  after: { mode: '100644', blob: 'a21f8f1b067d439369ba8a99637623351ab9d0f7' },
+  after: { mode: '100644', blob: '862a0a221178006cc1ab2e0d5324b09f25698356' },
 });
 function verifyReleaseDelta(beforeTree, afterTree) {
   const normalized = new Map(afterTree);
@@ -482,6 +581,7 @@ function verifyReleaseDelta(beforeTree, afterTree) {
   }
   const websitePaths = verifyWebsiteTransitions(beforeTree, normalized);
   const integrationPaths = verifyIntegrationTransitions(beforeTree, normalized);
+  const telemetryPaths = verifyTelemetryTransitions(beforeTree, afterTree);
   requireValue(
     same(beforeTree.get('CHANGELOG.md'), releaseChangelog.before) &&
       same(afterTree.get('CHANGELOG.md'), releaseChangelog.after),
@@ -501,7 +601,11 @@ function verifyReleaseDelta(beforeTree, afterTree) {
         !before && after?.mode === '100644',
         'Release addition is not a new regular file: ' + name
       );
-    else if (!websitePaths.includes(name) && !integrationPaths.includes(name)) {
+    else if (
+      !websitePaths.includes(name) &&
+      !integrationPaths.includes(name) &&
+      !telemetryPaths.includes(name)
+    ) {
       requireValue(
         allowedExistingPaths.includes(name),
         'Unexpected implementation-to-release change: ' + name
@@ -599,6 +703,7 @@ function validateProfile(value = profile) {
       'transitions',
       'websiteTransitions',
       'integrationTransitions',
+      'telemetryRuntime',
       'nativeCompatibility',
       'scannerRequiredPaths',
       'scannerReceiverPaths',
@@ -624,6 +729,7 @@ function validateProfile(value = profile) {
       value[name] === expected,
       'rc.16 immutable baseline differs: ' + name
     );
+  validateTelemetryRuntime(value.telemetryRuntime);
   requireValue(
     Array.isArray(value.transitions) && value.transitions.length === 18,
     'Exactly eighteen protected implementation transitions are required'
@@ -704,8 +810,10 @@ function verifySourceScope({ git, sha, version, lock, policy }) {
     profile.sourceConvergenceBaseline,
     profile.pythonScannerBaseline,
     scannerPolicy.producerCommit,
+    profile.telemetryRuntime.source,
   ])
     git('merge-base', '--is-ancestor', baseline, sha);
+  verifyTelemetryOrigin(git);
   requireValue(
     text(
       git('rev-parse', `${profile.implementationBaseline}^{tree}`)
@@ -840,6 +948,7 @@ function verifySourceScope({ git, sha, version, lock, policy }) {
     protectedTransitions: profile.transitions,
     websiteTransitions: profile.websiteTransitions,
     integrationTransitions: profile.integrationTransitions,
+    telemetryRuntime: profile.telemetryRuntime,
     releaseChanges,
     nativeCompatibility: profile.nativeCompatibility,
     scannerRequiredPaths: profile.scannerRequiredPaths,
@@ -929,6 +1038,9 @@ module.exports = {
   verifyProtectedTransitions,
   verifyWebsiteTransitions,
   verifyIntegrationTransitions,
+  validateTelemetryRuntime,
+  verifyTelemetryTransitions,
+  verifyTelemetryOrigin,
   verifyReleaseDelta,
   verifyVersionOnly,
   LEGACY_WORKFLOW_GUARD,

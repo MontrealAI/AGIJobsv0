@@ -2241,6 +2241,10 @@ test('additive native evidence and finite source claims remain bound after resea
       value.sourceProfile.integrationTransitions[0].after.blob = '0'.repeat(40);
     },
     (value) => {
+      value.sourceProfile.telemetryRuntime.transitions[0].after.blob =
+        '0'.repeat(40);
+    },
+    (value) => {
       value.sourceProfile.integrationBaseline = '0'.repeat(40);
     },
     (value) => {
@@ -2491,7 +2495,7 @@ test('inert JavaScript observation binds the artifact branch for reviewed S1 and
   // Synthetic API metadata only. No scanner archive, result review or actual
   // authenticated observation is created or claimed by this test.
   for (const [branch, finalSource] of [
-    ['fix/processed-codeql-release-proof-20261020', false],
+    ['fix/inherited-codeql-telemetry-runtime-20261021', false],
     ['main', true],
   ]) {
     const fixture = scannerApiFixture();
@@ -2522,6 +2526,13 @@ test('inert JavaScript observation binds the artifact branch for reviewed S1 and
       );
     }
   }
+  const historical = scannerApiFixture();
+  historical.producer.headBranch =
+    'fix/processed-codeql-release-proof-20261020';
+  await assert.rejects(
+    readScannerObservation(historical.api, historical.producer, sha, false),
+    /Scanner producer differs from its exact finite source role/
+  );
 });
 
 test('published readback requires the exact versioned lossless comparison receipt', (t) => {

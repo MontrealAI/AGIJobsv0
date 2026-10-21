@@ -1,7 +1,7 @@
 # source-v2.1.0-rc.17 — Resume owned source drafts safely
 
-This source prerelease candidate repairs publication only. It preserves the
-current runtime, contracts, deployment and ENS records, historical rc.16
+This source prerelease candidate repairs publication and telemetry recovery.
+It preserves contracts, deployment and ENS records, historical rc.16
 notes/profile, reserved rc.16 tag and unpublished rc.16 draft. It does not
 republish the previous producer under a new identity.
 
@@ -19,6 +19,29 @@ republish the previous producer under a new identity.
 - Preserve exact main-push/source identity, fresh scanner and independent
   review bindings, compiler/native semantics, all 25 uploaded/downloaded
   evidence assets, immutable tag checks and guarded final publication.
+
+## Telemetry correction and finite source scope
+
+- Validate supported numeric fields at shared ingress and before submission.
+  HTTP and gRPC preflight the complete request before telemetry-report or
+  sample-publication side effects. Omitted numeric fields retain their defaults.
+- Preserve acknowledged successful prefixes. Retain bounded, observable
+  rejection evidence before removing invalid restored records, and continue
+  with later valid work. Valid transport failures remain retryable failures.
+- Require the deterministic telemetry regressions in the existing CI Tests job.
+  Add no endpoint privilege, scanner exclusion or conditional test bypass.
+- Pin the exact eight-file correction plus that additive CI step to source
+  `c1d1748cda8211840499ddfebf6cda85234d239a`, tree
+  `19656f0b4bbdf2fba9e226d1dd8beb5730666dca`, over the publisher parent
+  `d27d752cf552bc7f45108c962b6501d912d1e715`. The finite inventory binds every
+  before/after blob and mode, with no general runtime-path exception.
+- Require actual extraction of all six affected gateway source files in fresh
+  JavaScript scanner evidence. Review the exact branch producer context and
+  complete current raw findings; earlier candidate archives remain historical.
+
+See [operator telemetry](../operator-telemetry.md) for rejection retention,
+explicit truncation/eviction and crash-reconciliation limits. This is source
+qualification, not an assertion about any deployed runtime.
 
 ## Qualification and review
 
