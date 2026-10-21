@@ -63,6 +63,16 @@ class DiscoverySourceProfile(unittest.TestCase):
         data=json.loads((ROOT/P['BASELINE']).read_bytes());first=next(iter(data['entries']))
         data['entries'][first]['blob']='a'*40
         self.replaced(P['BASELINE'],(json.dumps(data)+'\n').encode(),self.rejection)
+    def test_semantically_identical_baseline_bytes_require_the_reviewed_pin(self):
+        raw=(ROOT/P['BASELINE']).read_bytes()
+        variants=[raw+b' '*100000, (json.dumps(json.loads(raw),indent=1)+'\n').encode()]
+        for changed in variants:
+            self.assertTrue(changed!=raw)
+            self.assertEqual(json.loads(changed),json.loads(raw))
+            def rejected(options):
+                with self.assertRaisesRegex(ValueError,'baseline.*byte|Baseline.*byte'):
+                    P['inventory'](ROOT,options)
+            self.replaced(P['BASELINE'],changed,rejected)
     def test_existing_code_cannot_be_added_as_an_allowed_change(self):
         self.changed_manifest(lambda m:m['changes'].update({'package.json':{'before':None,'after':{'mode':'100644','sha256':'a'*64},'reason':'unreviewed dependency change'}}))
     def test_existing_source_mutation_is_refused_without_a_path_exemption(self):
