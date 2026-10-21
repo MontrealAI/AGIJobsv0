@@ -16,7 +16,7 @@ class DiscoverySourceProfile(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.selection = P['select'](manifest_sha256=sha((ROOT/P['MANIFEST']).read_bytes()),
-            verifier_sha256=sha((ROOT/P['VERIFIER']).read_bytes()))
+            verifier_sha256=sha((ROOT/P['VERIFIER']).read_bytes()), scope_verifier_sha256=sha((ROOT/P['SCOPE_VERIFIER']).read_bytes()))
         cls.expected = P['inventory'](ROOT, cls.selection)
     def verify(self, paths=None, selection=None):
         return P['validate_source'](ROOT, selection or self.selection,
@@ -43,11 +43,11 @@ class DiscoverySourceProfile(unittest.TestCase):
         self.assertEqual(P['tree_digest'](baseline['entries']),P['BASE_TREE'])
     def test_publication_selection_is_always_refused(self):
         with self.assertRaises(ValueError): P['select'](manifest_sha256=self.selection['manifestSha256'],
-            verifier_sha256=self.selection['verifierSha256'],published=True)
+            verifier_sha256=self.selection['verifierSha256'],scope_verifier_sha256=self.selection['scopeVerifierSha256'],published=True)
     def test_policy_pins_are_mandatory_and_exact(self):
-        for key in ['manifestSha256','verifierSha256']:
+        for key in ['manifestSha256','verifierSha256','scopeVerifierSha256']:
             self.rejection({**self.selection,key:'a'*64})
-        with self.assertRaises(ValueError):P['select'](manifest_sha256=None,verifier_sha256='b'*64)
+        with self.assertRaises(ValueError):P['select'](manifest_sha256=None,verifier_sha256='b'*64,scope_verifier_sha256='c'*64)
     def test_missing_or_unexpected_source_is_refused(self):
         with self.assertRaises(ValueError):self.verify(paths=set(self.expected)-{next(iter(self.expected))})
         with self.assertRaises(ValueError):self.verify(paths=set(self.expected)|{'arbitrary-new-runtime.mjs'})

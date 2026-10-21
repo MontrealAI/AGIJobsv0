@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {assessDiscoveryProtectedAdditions, DISCOVERY_PROTECTED_ADDITIONS as paths} from '../../tools/security/discovery-protected-scope.mjs';
+import {assessDiscoveryProtectedAdditions, DISCOVERY_PROTECTED_ADDITIONS as paths, assertReviewedDiscoveryPolicy, REVIEWED_DISCOVERY_POLICY, validateDiscoveryProtectedScope} from '../../tools/security/discovery-protected-scope.mjs';
 const input = () => ({changes:[...paths], historicalEntries:{'config/ens.json':{mode:'100644', type:'blob', blob:'a'.repeat(40)}},
   currentEntries:Object.fromEntries(paths.map(name => [name, {mode:'100644', type:'blob', blob:'b'.repeat(40)}]))});
 test('exactly the three additive regular configuration inputs receive finite admission', () => {
@@ -30,4 +30,14 @@ test('symlinks, executable modes, absent blobs and malformed identities are refu
     const value = input(); value.currentEntries[paths[0]] = entry;
     assert.throws(() => assessDiscoveryProtectedAdditions(value), /regular immutable/);
   }
+});
+
+test('fixed reviewed policy pins reject rehashed descendant manifest and verifier substitutions', () => {
+  assert.doesNotThrow(() => assertReviewedDiscoveryPolicy({...REVIEWED_DISCOVERY_POLICY, validateDiscoveryProtectedScope}));
+  assert.throws(() => assertReviewedDiscoveryPolicy({...REVIEWED_DISCOVERY_POLICY, manifest:'f'.repeat(64)}), /manifest differs/);
+  assert.throws(() => assertReviewedDiscoveryPolicy({...REVIEWED_DISCOVERY_POLICY, verifier:'f'.repeat(64)}), /verifier differs/);
+});
+
+test('empty protected delta cannot bypass required Discovery configuration presence', () => {
+  assert.throws(() => validateDiscoveryProtectedScope(process.cwd(), 'HEAD', []), /Only the three/);
 });

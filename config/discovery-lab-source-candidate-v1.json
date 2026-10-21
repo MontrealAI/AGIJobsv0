@@ -16,7 +16,7 @@
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "7ad561fb6d33f8e8828614d83da430362090f6fdf053496428ea043221844321"
+        "sha256": "1d745e792b5e3f167be5c5d00e5b94c4aaff5aedba576dc07d66ceeebe0271ff"
       },
       "reason": "Explicit additive Discovery Lab source and tests; no historical source exemption or publication qualification."
     },
@@ -32,7 +32,7 @@
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "e4c6493bf8e384469ef0ceb1ac9055998aca0ac5d847dd6f4304ac4e431a67b9"
+        "sha256": "46e407daaf771596192920420e2b90736956c3f0ee3940de43f2bbdc04f42893"
       },
       "reason": "Explicit additive Discovery Lab source and tests; no historical source exemption or publication qualification."
     },
@@ -80,23 +80,15 @@
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "2a4351b5fba4113c05c78fce36dd6870122123fc5e7c0f5d0ea9993e10d3d6e1"
+        "sha256": "627627fc5b0bd4273b56fa392ad4e24c1145f1661451ff629f60a8c02ea87e58"
       },
       "reason": "Explicit additive Discovery Lab source and tests; no historical source exemption or publication qualification."
-    },
-    "tools/security/discovery-protected-scope.mjs": {
-      "before": null,
-      "after": {
-        "mode": "100644",
-        "sha256": "d2d631f5c854e7e6bdf841cfd63971e7b87d5f600e027fe04da3b996ac1e6f1a"
-      },
-      "reason": "Finite explicit three-configuration protected-scope proof and independent adversarial tests; no scanner or publication waiver."
     },
     "test/security/discovery-protected-scope.test.mjs": {
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "4636142a819dcbded875a9259e3c6dc8fb44b082b058cd425af1fdfb446204a2"
+        "sha256": "725d0fd5683e491aff69d34e64dda4392924aefb9bac7889cba830f834b86927"
       },
       "reason": "Finite explicit three-configuration protected-scope proof and independent adversarial tests; no scanner or publication waiver."
     }

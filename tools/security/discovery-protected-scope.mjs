@@ -11,6 +11,11 @@ export const DISCOVERY_PROTECTED_ADDITIONS = Object.freeze([
   'config/discovery-lab-source-candidate-v1.json'
 ]);
 export const DISCOVERY_SCOPE_ORIGIN = '285034830b6cddc47c7e1002ee85a8b008b9763d';
+export const REVIEWED_DISCOVERY_POLICY = Object.freeze({manifest:'ec51bd530870b2efc15cacd798143a534f1d601fcc0bea2e08524a14b5f1bfe3', verifier:'f2b52a77f73131baf3a8004201c403488846860581bc45feea375a557ea8fb81'});
+export function assertReviewedDiscoveryPolicy(pins) {
+  assert.equal(pins.manifest, REVIEWED_DISCOVERY_POLICY.manifest, 'Discovery manifest differs from independently reviewed fixed bytes');
+  assert.equal(pins.verifier, REVIEWED_DISCOVERY_POLICY.verifier, 'Discovery verifier differs from independently reviewed fixed bytes');
+}
 const BASE_COMMIT = '83065adf18a6ee987f8fa479a496a052d35db682';
 const BASE_TREE = '77ded62b991e8cca28bfd849593153f61ac72d86';
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
@@ -37,9 +42,8 @@ function entries(root, ref) {
   }));
 }
 
-/** Preserve the old empty-delta rule except for this complete reviewed candidate. */
+/** This installed Discovery gate always requires the complete reviewed candidate. */
 export function validateDiscoveryProtectedScope(root, baselineCommit, changes) {
-  if (changes.length === 0) return {admitted:[], sourcePackageOnly:true, releaseQualified:false};
   const historicalEntries = entries(root, baselineCommit), currentEntries = entries(root, 'HEAD');
   const admitted = assessDiscoveryProtectedAdditions({changes, historicalEntries, currentEntries});
   assert.equal(git(root, 'rev-parse', BASE_COMMIT + '^{tree}'), BASE_TREE);
@@ -50,13 +54,14 @@ export function validateDiscoveryProtectedScope(root, baselineCommit, changes) {
   const manifest = 'config/discovery-lab-source-candidate-v1.json';
   const verifier = 'scripts/release/discovery-lab-profile.py';
   const pins = {};
-  for (const [key, name] of [['manifest', manifest], ['verifier', verifier]]) {
+  for (const [key, name] of [['manifest', manifest], ['verifier', verifier], ['scopeVerifier', 'tools/security/discovery-protected-scope.mjs']]) {
     const current = fs.readFileSync(path.join(root, name));
     const immutable = execFileSync('git', ['--no-replace-objects', '-C', root, 'show', 'HEAD:' + name],
       {maxBuffer:16 * 1024 * 1024, timeout:30_000});
     assert.ok(current.equals(immutable), `Installed scope policy differs from immutable HEAD: ${name}`);
     pins[key] = sha(immutable);
   }
+  assertReviewedDiscoveryPolicy(pins);
   // Reuse the separately reviewed finite verifier; observe actual tracked inputs,
   // not its expected set. The profile checks all baseline blobs/modes, each new
   // byte and the single exact validator transition, and can never publish.
@@ -65,16 +70,16 @@ export function validateDiscoveryProtectedScope(root, baselineCommit, changes) {
   const script = `import hashlib,json,pathlib,runpy,subprocess,sys
 root=pathlib.Path(sys.argv[1]); policy=runpy.run_path(str(root/'scripts/release/discovery-lab-profile.py'))
 actual=subprocess.check_output(['git','-C',str(root),'ls-files','--cached','-z']).decode().rstrip('\\0').split('\\0')
-selection=policy['select'](manifest_sha256=sys.argv[2],verifier_sha256=sys.argv[3])
+selection=policy['select'](manifest_sha256=sys.argv[2],verifier_sha256=sys.argv[3],scope_verifier_sha256=sys.argv[4])
 print(json.dumps(policy['validate_source'](root,selection,paths=actual),sort_keys=True))`;
   const env = {...process.env, PYTHONPATH:'', PYTHONNOUSERSITE:'1', PYTHONDONTWRITEBYTECODE:'1'};
-  const result = JSON.parse(execFileSync('python3', ['-I', '-c', script, root, pins.manifest, pins.verifier],
+  const result = JSON.parse(execFileSync('python3', ['-I', '-c', script, root, pins.manifest, pins.verifier, pins.scopeVerifier],
     {env, encoding:'utf8', maxBuffer:1_000_000, timeout:60_000}));
   assert.equal(result.repository, 'MontrealAI/AGIJobsv0');
   assert.equal(result.baseCommit, BASE_COMMIT); assert.equal(result.baseTree, BASE_TREE);
   assert.equal(result.sourcePackageOnly, true); assert.equal(result.releaseQualified, false);
   assert.equal(result.releaseIdentity, null); assert.equal(result.publicationApproved, false);
   assert.equal(result.executionApproved, false);
-  return {admitted, origin:DISCOVERY_SCOPE_ORIGIN, manifestSha256:pins.manifest, verifierSha256:pins.verifier,
+  return {admitted, origin:DISCOVERY_SCOPE_ORIGIN, manifestSha256:pins.manifest, verifierSha256:pins.verifier, scopeVerifierSha256:pins.scopeVerifier,
     inputCount:result.inputCount, sourcePackageOnly:true, releaseQualified:false, publicationApproved:false, executionApproved:false};
 }

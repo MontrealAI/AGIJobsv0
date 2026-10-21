@@ -44,7 +44,7 @@ jobs:
               raise ValueError('Untracked source cannot enter candidate qualification')
           actual = subprocess.check_output(['git', 'ls-files', '--cached', '-z']).decode().rstrip('\0').split('\0')
           digest = lambda path: hashlib.sha256((root / path).read_bytes()).hexdigest()
-          selected = policy['select'](manifest_sha256=digest(policy['MANIFEST']), verifier_sha256=digest(policy['VERIFIER']))
+          selected = policy['select'](manifest_sha256=digest(policy['MANIFEST']), verifier_sha256=digest(policy['VERIFIER']), scope_verifier_sha256=digest(policy['SCOPE_VERIFIER']))
           result = policy['validate_source'](root, selected, paths=actual)
           result['sourceCommit'] = subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode().strip()
           result['sourceTree'] = subprocess.check_output(['git', 'rev-parse', 'HEAD^{tree}']).decode().strip()
