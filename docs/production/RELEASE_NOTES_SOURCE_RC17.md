@@ -106,9 +106,9 @@ qualification, not an assertion about any deployed runtime.
 
 ## Qualification and review
 
-This candidate is not qualified for publication. Fresh independent notes,
-JavaScript and Python scanner reviews must bind its actual source and retained
-producer evidence. Historical rc.16 approvals do not approve changed source.
+Publication requires fresh independent notes, JavaScript and Python scanner
+reviews bound to the actual source and retained producer evidence. Historical
+rc.16 approvals do not approve changed source.
 The ordinary existing workflow must qualify the final merged main SHA, using
 all existing required workflows, checks, semantic and native gates.
 
