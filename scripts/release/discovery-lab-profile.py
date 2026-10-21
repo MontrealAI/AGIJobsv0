@@ -16,7 +16,8 @@ MANIFEST = 'config/discovery-lab-source-candidate-v1.json'
 BASELINE = 'config/discovery-lab-source-baseline-v1.json'
 BASELINE_SHA256 = 'd7225ecab094653482593057be4b018e0c61dfb7c1c592baa134dc668fa81a65'
 VERIFIER = 'scripts/release/discovery-lab-profile.py'
-ALLOWED = {'integrations/alpha-agent/discovery-lab-work-request.test.mjs', 'integrations/alpha-agent/discovery-lab-native-test.mjs', 'integrations/alpha-agent/discovery-lab-work-request.mjs', '.github/workflows/discovery-lab-receiver.yml', 'docs/successor/DISCOVERY_LAB.md', 'scripts/release/test-discovery-lab-profile.py', 'integrations/alpha-agent/fixtures/discovery-lab-request.json', 'integrations/alpha-agent/discovery-lab-contract.mjs', 'config/discovery-lab-alpha-source.json'}
+TRANSITIONS = {'tools/security/validate-codeql-remediation.mjs': {'mode': '100644', 'blob': '9657ecd2c072276276079e55fde51c5b66b8b37c'}}
+ALLOWED = {'tools/security/discovery-protected-scope.mjs', 'test/security/discovery-protected-scope.test.mjs', 'integrations/alpha-agent/discovery-lab-work-request.test.mjs', 'integrations/alpha-agent/discovery-lab-native-test.mjs', 'integrations/alpha-agent/discovery-lab-work-request.mjs', '.github/workflows/discovery-lab-receiver.yml', 'docs/successor/DISCOVERY_LAB.md', 'scripts/release/test-discovery-lab-profile.py', 'integrations/alpha-agent/fixtures/discovery-lab-request.json', 'integrations/alpha-agent/discovery-lab-contract.mjs', 'config/discovery-lab-alpha-source.json'}
 CLAIMS = {'sourcePackageOnly': True, 'releaseQualified': False,
           'releaseIdentity': None, 'publicationApproved': False, 'executionApproved': False}
 sha = lambda raw: hashlib.sha256(raw).hexdigest()
@@ -77,7 +78,7 @@ def inventory(root, selection):
     manifest_raw = read(root, MANIFEST)[1]
     require(sha(manifest_raw) == selection['manifestSha256'], 'Candidate manifest pin differs')
     manifest = strict_json(manifest_raw)
-    require(set(manifest) == {'schema', 'repository', 'profile', 'baseCommit', 'baseTree', 'claims', 'changes'}, 'Candidate fields differ')
+    require(set(manifest) == {'schema', 'repository', 'profile', 'baseCommit', 'baseTree', 'claims', 'changes', 'transitions'}, 'Candidate fields differ')
     require(manifest['schema'] == 'successor/discovery-lab-source-candidate/v1'
             and manifest['repository'] == REPOSITORY and manifest['profile'] == PROFILE
             and manifest['baseCommit'] == BASE_COMMIT and manifest['baseTree'] == BASE_TREE
@@ -97,6 +98,17 @@ def inventory(root, selection):
         after = item['after']
         require(isinstance(after, dict) and set(after) == {'mode', 'sha256'} and after['mode'] == '100644'
                 and isinstance(after['sha256'], str) and re.fullmatch('[0-9a-f]{64}', after['sha256']), 'Candidate added input identity differs')
+        expected[name] = dict(after)
+    transitions = manifest['transitions']
+    require(isinstance(transitions, dict) and set(transitions) == set(TRANSITIONS), 'Only the exact reviewed validator transition is admitted')
+    for name, before in TRANSITIONS.items():
+        item = transitions[name]
+        require(isinstance(item, dict) and set(item) == {'before', 'after', 'reason'}
+                and same(item['before'], before) and same(expected.get(name), before)
+                and isinstance(item['reason'], str) and item['reason'].strip(), 'Validator before-source proof differs')
+        after = item['after']
+        require(isinstance(after, dict) and set(after) == {'mode', 'sha256'} and after['mode'] == '100644'
+                and isinstance(after['sha256'], str) and re.fullmatch('[0-9a-f]{64}', after['sha256']), 'Validator after-source proof differs')
         expected[name] = dict(after)
     expected[MANIFEST] = {'mode': '100644', 'sha256': selection['manifestSha256']}
     expected[VERIFIER] = {'mode': '100644', 'sha256': selection['verifierSha256']}

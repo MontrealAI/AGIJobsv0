@@ -33,7 +33,7 @@ class DiscoverySourceProfile(unittest.TestCase):
     def changed_manifest(self, change):
         manifest=json.loads((ROOT/P['MANIFEST']).read_bytes()); change(manifest)
         self.replaced(P['MANIFEST'],(json.dumps(manifest)+'\n').encode(),self.rejection,repin=True)
-    def test_exact_candidate_preserves_all_old_bytes_and_claims_no_release(self):
+    def test_exact_candidate_preserves_all_unrelated_old_bytes_and_claims_no_release(self):
         with patch('subprocess.check_output',side_effect=AssertionError('Package validation must remain offline')):
             result=self.verify()
         self.assertFalse(result['releaseQualified']);self.assertFalse(result['publicationApproved'])
@@ -89,6 +89,15 @@ class DiscoverySourceProfile(unittest.TestCase):
         for name in ['../outside','/absolute','a/../b','a\\b']:
             with self.assertRaises(ValueError):P['read'](ROOT,name)
         with self.assertRaises(ValueError):P['tree_digest']({'a':{'mode':'100644','blob':'1'*40},'a/b':{'mode':'100644','blob':'2'*40}})
+
+    def test_validator_transition_requires_exact_single_path_and_original_git_blob(self):
+        self.changed_manifest(lambda m:m['transitions'].clear())
+        self.changed_manifest(lambda m:m['transitions'].update({'package.json': next(iter(m['transitions'].values()))}))
+        self.changed_manifest(lambda m:m['transitions']['tools/security/validate-codeql-remediation.mjs']['before'].update({'blob':'a'*40}))
+        self.changed_manifest(lambda m:m['transitions']['tools/security/validate-codeql-remediation.mjs']['after'].update({'mode':'100755'}))
+    def test_validator_transition_bytes_remain_bound_to_the_reviewed_manifest(self):
+        name='tools/security/validate-codeql-remediation.mjs'
+        self.replaced(name,(ROOT/name).read_bytes()+b'\n',self.rejection)
 
     def test_real_staged_directory_enumeration_refuses_a_rogue_file(self):
         with tempfile.TemporaryDirectory(prefix='discovery-inventory-probe-') as folder:

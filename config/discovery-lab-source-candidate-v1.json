@@ -16,7 +16,7 @@
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "f1a92f4ab84cee0f75dc5466656cbe48186d965c8a3450a1cd9ca2f40b72d9ad"
+        "sha256": "7ad561fb6d33f8e8828614d83da430362090f6fdf053496428ea043221844321"
       },
       "reason": "Explicit additive Discovery Lab source and tests; no historical source exemption or publication qualification."
     },
@@ -32,7 +32,7 @@
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "0deedbcaf0ba9ab869b50e00aca1c8f38ee1077531bea88c36d612fc7ce0dc73"
+        "sha256": "e4c6493bf8e384469ef0ceb1ac9055998aca0ac5d847dd6f4304ac4e431a67b9"
       },
       "reason": "Explicit additive Discovery Lab source and tests; no historical source exemption or publication qualification."
     },
@@ -80,9 +80,38 @@
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "4bc9b6895a478b1ddcc9b2b21e904201d0912fa6d3553bf1415e5271b6a7715a"
+        "sha256": "2a4351b5fba4113c05c78fce36dd6870122123fc5e7c0f5d0ea9993e10d3d6e1"
       },
       "reason": "Explicit additive Discovery Lab source and tests; no historical source exemption or publication qualification."
+    },
+    "tools/security/discovery-protected-scope.mjs": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "d2d631f5c854e7e6bdf841cfd63971e7b87d5f600e027fe04da3b996ac1e6f1a"
+      },
+      "reason": "Finite explicit three-configuration protected-scope proof and independent adversarial tests; no scanner or publication waiver."
+    },
+    "test/security/discovery-protected-scope.test.mjs": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "4636142a819dcbded875a9259e3c6dc8fb44b082b058cd425af1fdfb446204a2"
+      },
+      "reason": "Finite explicit three-configuration protected-scope proof and independent adversarial tests; no scanner or publication waiver."
+    }
+  },
+  "transitions": {
+    "tools/security/validate-codeql-remediation.mjs": {
+      "before": {
+        "blob": "9657ecd2c072276276079e55fde51c5b66b8b37c",
+        "mode": "100644"
+      },
+      "after": {
+        "mode": "100644",
+        "sha256": "a9bea3725ba78204609bb7f446d1b79ead911137d1ff4486177dba64a235f175"
+      },
+      "reason": "Replace blanket no-change assertion only with exact three additive configurations plus complete source-package proof; preserve the96 findings and every deployed-source/scanner gate."
     }
   }
 }
