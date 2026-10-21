@@ -20,11 +20,19 @@ The initial synthetic mode permits zero currency caps, zero reservations, no sub
 ## Qualification checklist
 
 - [ ] Freeze exact shared schema, native inspector and source pins with Alpha.
-- [ ] Implement additive `integrations/alpha-agent/discovery-lab-work-request.mjs` and deterministic regressions.
-- [ ] Exercise all six stage discriminators, strict fields, source/context drift, unsupported receivers, route exclusivity and money/authority refusal.
+- [x] Implement additive `integrations/alpha-agent/discovery-lab-work-request.mjs` and deterministic regressions.
+- [x] Exercise all six stage discriminators, strict fields, source/context drift, unsupported receivers, route exclusivity and money/authority refusal.
 - [ ] Test against the real installed Alpha implementation, not only a policy double.
 - [ ] Obtain independent review and exact-source existing CI qualification.
 - [ ] Reconcile current main and existing owner work; review any required new finite release profile explicitly.
 - [ ] Publish through supported mechanisms and verify public entry point and source identity.
 
 This document records work in progress. No checks, qualified release, executor competence, production approval or external operation are implied by the checklist.
+
+## Current source checks
+
+The new receiver calls an installed `inspectCampaign(payload, {request, limits})` checker and validates its exact `accepted`, `resourceUsed` and `reasons` report. The caller supplies current `expectedBindings` and `expectedCommission` independently of the imported request. All seven mission/source bindings plus the commission id, branch and route must match. Actual checker resource use is retained; excess use yields an inconclusive result. A locally checked result grants no imported capability acceptance, submission, payment or execution authority.
+
+Thirty transport-policy regression cases pass per route on Node 22.23.3 and Node 24.19.0, including all six stages, stale identities, wrong route, nonzero money, unsupported schemas, unprovisioned execution, strict object data, checker mutation and resource overrun. Their deliberately non-semantic transport fixture and checker doubles do not qualify the native lab. Real installed Alpha compatibility, independent source review and required exact-source release qualification remain pending.
+
+The shared contract is copied byte-for-byte from the in-development [Alpha #4851](https://github.com/MontrealAI/AGI-Alpha-Agent-v0/pull/4851) source under Apache-2.0 (SPDX retained), SHA-256 `04adf29001c9b471b05e751f92b3a292d4fe35c4f6ce0ea54d9cd63a6076adce`. A final immutable upstream commit and native checker pin are still required.
