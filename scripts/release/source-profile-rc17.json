@@ -846,8 +846,8 @@
   "telemetryRuntime": {
     "baseline": "d27d752cf552bc7f45108c962b6501d912d1e715",
     "baselineTree": "be4aaad8bdd34f7b33ee42a5d2fae577892fd016",
-    "source": "b7f60ff52b87101ecf06681c41b7e13109f63e31",
-    "tree": "a69606184d7f839e8e256b1eed229d98b776ebaa",
+    "source": "02d73fcdbe2a4827eb4e47c980f25fd31c5efc31",
+    "tree": "23067b5924f8d9ef81e7d3b99244ba44d07fd66a",
     "transitions": [
       {
         "path": ".github/workflows/ci.yml",
@@ -909,7 +909,7 @@
         "before": null,
         "after": {
           "mode": "100644",
-          "blob": "0b34646c7df99660eee90bcfae3049ac9c4a6b39"
+          "blob": "dae7b081ce344acd3c7cd87aae240069a0499df8"
         }
       },
       {
@@ -969,7 +969,7 @@
         "before": null,
         "after": {
           "mode": "100644",
-          "blob": "8b09a7cbf775586ecad7957dfbcba49085b2bb1d"
+          "blob": "438526676642a67be0c65504aa939b6fdc9d3124"
         }
       }
     ],
@@ -1135,6 +1135,36 @@
           "after": {
             "mode": "100644",
             "blob": "8b09a7cbf775586ecad7957dfbcba49085b2bb1d"
+          }
+        }
+      ]
+    },
+    "durability": {
+      "baseline": "b7f60ff52b87101ecf06681c41b7e13109f63e31",
+      "baselineTree": "a69606184d7f839e8e256b1eed229d98b776ebaa",
+      "source": "02d73fcdbe2a4827eb4e47c980f25fd31c5efc31",
+      "tree": "23067b5924f8d9ef81e7d3b99244ba44d07fd66a",
+      "transitions": [
+        {
+          "path": "agent-gateway/telemetryQueue.ts",
+          "before": {
+            "mode": "100644",
+            "blob": "0b34646c7df99660eee90bcfae3049ac9c4a6b39"
+          },
+          "after": {
+            "mode": "100644",
+            "blob": "dae7b081ce344acd3c7cd87aae240069a0499df8"
+          }
+        },
+        {
+          "path": "test/scripts/telemetryRecovery.test.cjs",
+          "before": {
+            "mode": "100644",
+            "blob": "8b09a7cbf775586ecad7957dfbcba49085b2bb1d"
+          },
+          "after": {
+            "mode": "100644",
+            "blob": "438526676642a67be0c65504aa939b6fdc9d3124"
           }
         }
       ]

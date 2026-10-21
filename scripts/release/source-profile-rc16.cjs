@@ -7,7 +7,7 @@ const { createHash } = require('node:crypto');
 const integrationTransitionsSha256 =
   '1363ebe715ffc6405f70261924ff41313073f72dd0d03bd68440235cac78af02';
 const telemetryRuntimeSha256 =
-  '07951603325076f35340e2514267bde0fa47d567e3114757febb41ef5841129b';
+  'e0d4553adeb20a21871297fed43b0682846571e6cbe7e9a5554fa2e6072df982';
 const historical = require('./qualify-source-release.cjs');
 
 function freeze(value) {
@@ -392,10 +392,13 @@ function verifyIntegrationTransitions(
   return transitions.map((item) => item.path);
 }
 
-// The aggregate composes the untouched historical proof with one exact follow-up.
-// Neither proof installs a review or qualifies publication.
+// The aggregate composes the untouched historical and isolation proofs with
+// one exact two-path durability correction.
+// These proofs do not install a review or qualify publication.
 const historicalTelemetryRuntimeSha256 =
   'ff6f82ddd6738d3a0e7481fdd4cd1fc065853b68bc1a20e1defbfaccefea792c';
+const isolationTelemetryRuntimeSha256 =
+  'e2a605cfc233ba1cad6061b514aaadc2175a067cd67a1696012a04f3a3bb7137';
 function telemetryProof(value) {
   const { baseline, baselineTree, source, tree, transitions } = value;
   return { baseline, baselineTree, source, tree, transitions };
@@ -442,7 +445,7 @@ function validateTelemetryProof(value, count, allowDeletion = false) {
 function validateTelemetryRuntime(value = profile.telemetryRuntime) {
   fields(
     value,
-    ['baseline', 'baselineTree', 'source', 'tree', 'transitions', 'historical', 'followup'],
+    ['baseline', 'baselineTree', 'source', 'tree', 'transitions', 'historical', 'followup', 'durability'],
     'Malformed telemetry runtime scope'
   );
   requireValue(
@@ -459,13 +462,21 @@ function validateTelemetryRuntime(value = profile.telemetryRuntime) {
   );
   validateTelemetryProof(value.followup, 4, true);
   requireValue(
+    createHash('sha256').update(JSON.stringify(value.followup)).digest('hex') ===
+      isolationTelemetryRuntimeSha256,
+    'Historical four-path isolation proof commitment differs'
+  );
+  validateTelemetryProof(value.durability, 2);
+  requireValue(
     value.baseline === value.historical.baseline &&
       value.baselineTree === value.historical.baselineTree &&
       value.followup.baseline === value.historical.source &&
       value.followup.baselineTree === value.historical.tree &&
-      value.followup.source === value.source &&
-      value.followup.tree === value.tree,
-    'Telemetry historical proof and finite follow-up do not compose'
+      value.durability.baseline === value.followup.source &&
+      value.durability.baselineTree === value.followup.tree &&
+      value.durability.source === value.source &&
+      value.durability.tree === value.tree,
+    'Telemetry historical, isolation and durability proofs do not compose'
   );
   return value;
 }
@@ -492,7 +503,7 @@ function verifyTelemetryTransitions(
 }
 function verifyTelemetryOrigin(git, value = profile.telemetryRuntime) {
   validateTelemetryRuntime(value);
-  for (const proof of [value.historical, value.followup, value]) {
+  for (const proof of [value.historical, value.followup, value.durability, value]) {
     requireValue(
       text(git('rev-parse', `${proof.source}^{tree}`)).trim() === proof.tree &&
         text(git('rev-parse', `${proof.baseline}^{tree}`)).trim() ===

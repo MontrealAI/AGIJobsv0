@@ -221,9 +221,11 @@ test('historical telemetry proof composes only with the exact discovery follow-u
   assert.deepEqual(removed.before, added.after);
   assert.equal(followup.baseline, historical.source);
   assert.equal(followup.baselineTree, historical.tree);
-  assert.equal(followup.source, scope.source);
-  assert.equal(followup.tree, scope.tree);
-  for (const field of ['historical', 'followup']) {
+  assert.equal(followup.source, scope.durability.baseline);
+  assert.equal(followup.tree, scope.durability.baselineTree);
+  assert.equal(scope.durability.source, scope.source);
+  assert.equal(scope.durability.tree, scope.tree);
+  for (const field of ['historical', 'followup', 'durability']) {
     for (const mutate of [
       (proof) => { proof.source = proof.baseline; },
       (proof) => { proof.tree = '0'.repeat(40); },
@@ -254,7 +256,7 @@ test('historical telemetry proof composes only with the exact discovery follow-u
   }
   const extraRuntime = 'agent-gateway/unreviewed.ts';
   const extraBlob = '0'.repeat(40);
-  for (const proof of [historical, followup]) {
+  for (const proof of [historical, followup, scope.durability]) {
     const unexpectedFile = (...args) => {
       const result = git(...args);
       return args[0] === 'ls-tree' && args[2] === proof.source
@@ -283,6 +285,46 @@ test('historical telemetry proof composes only with the exact discovery follow-u
     }
   }
   assert.equal(discovery.after.blob, git('hash-object', 'test/scripts/hardhat-test-discovery.test.cjs').trim());
+});
+
+test('telemetry durability admits only its two exact paths after the preserved isolation proof', () => {
+  const scope = p.profile.telemetryRuntime;
+  const git = (...args) => command(ROOT, args);
+  assert.equal(
+    createHash('sha256').update(JSON.stringify(scope.followup)).digest('hex'),
+    'e2a605cfc233ba1cad6061b514aaadc2175a067cd67a1696012a04f3a3bb7137'
+  );
+  assert.deepEqual(scope.durability.transitions.map((item) => item.path), [
+    'agent-gateway/telemetryQueue.ts',
+    'test/scripts/telemetryRecovery.test.cjs',
+  ]);
+  const before = p.parseTree(git('ls-tree', '-rz', scope.durability.baseline));
+  const after = p.parseTree(git('ls-tree', '-rz', scope.durability.source));
+  for (const item of scope.durability.transitions) {
+    assert.deepEqual(item.before, before.get(item.path));
+    assert.deepEqual(item.after, after.get(item.path));
+    assert.equal(item.after.blob, git('hash-object', item.path).trim());
+    for (const [side, original] of [['before', before], ['after', after]]) {
+      for (const replacement of [null, { mode: '100644', blob: '0'.repeat(40) }, { mode: '100755', blob: item[side].blob }]) {
+        const changed = new Map(original);
+        if (replacement === null) changed.delete(item.path);
+        else changed.set(item.path, replacement);
+        const corrupted = (...args) => {
+          if (args[0] === 'ls-tree' && args[2] === scope.durability[side === 'before' ? 'baseline' : 'source'])
+            return [...changed].map(([name, identity]) => `${identity.mode} blob ${identity.blob}\t${name}\0`).join('');
+          return git(...args);
+        };
+        assert.throws(() => p.verifyTelemetryOrigin(corrupted), /blob or mode|transition inventory/);
+      }
+    }
+  }
+  const final = new Map(after);
+  const oldQueue = scope.durability.transitions[0];
+  final.set(oldQueue.path, oldQueue.before);
+  assert.throws(() => p.verifyTelemetryTransitions(
+    p.parseTree(git('ls-tree', '-rz', scope.baseline)), final
+  ), /blob or mode/);
+  assert.equal(p.verifyTelemetryOrigin(git), scope);
 });
 
 test('finite telemetry admission preserves the rejection of an extra runtime file and altered CI commands', (t) => {

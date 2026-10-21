@@ -46,10 +46,28 @@ republish the previous producer under a new identity.
   dedicated list. That list requires discovery before filtering, exclusion
   from Mocha, and exactly one unconditional fresh Node invocation after the
   locked dependency install. The native discovery rule remains unchanged.
-- Verify both complete immutable origin trees, every before/after/current
-  blob and mode, ancestry and the exact composition into the twelve-transition
-  aggregate. The aggregate does not conceal the historical deletion or broaden
-  runtime paths. Historical records remain under their original identities.
+- Preserve that four-path isolation proof unchanged under commitment
+  `e2a605cfc233ba1cad6061b514aaadc2175a067cd67a1696012a04f3a3bb7137`.
+  Its evidence and the `1f7375c9f86cafb97674b95c92e8a1b7270f8a78` candidate
+  remain historical; they do not approve a changed runtime.
+- Bind a separate two-path durability correction from that isolation origin
+  to source `02d73fcdbe2a4827eb4e47c980f25fd31c5efc31`, tree
+  `23067b5924f8d9ef81e7d3b99244ba44d07fd66a`. Only the queue module and its
+  recovery suite change. After creating the telemetry directory, sync each
+  containing ancestor through the filesystem root before creating a temporary
+  file. Repeat these barriers on all writes, retries and new instances, so a
+  failed ancestor sync cannot disappear behind an already-created directory.
+  Keep file sync, atomic rename and final queue-directory sync before success;
+  propagate barrier failures without accepting the pending enqueue. Retain the
+  earlier 23 cases, extend their durability-order assertion, and append first
+  creation and parent-barrier retry/restart cases.
+- Verify the complete immutable trees at every endpoint and all four exact
+  historical, isolation, durability and aggregate comparisons. Bind every
+  before/after/current blob and mode, ancestry and composition into the
+  twelve-transition aggregate. The aggregate does not conceal the historical
+  deletion or broaden runtime paths. Historical records retain their original
+  source identities; changed queue code requires fresh exact-source scanner
+  evidence and renewed case-specific review.
 - Require actual extraction of all six affected gateway source files in fresh
   JavaScript scanner evidence, in addition to the unchanged producer's declared
   receiver list. Both raw extraction and exact producer sidecars are verified.
