@@ -2,6 +2,12 @@ import { logValue } from '../shared/logValue';
 import { Contract, JsonRpcProvider, Wallet, ethers } from 'ethers';
 import { EnergySample } from '../shared/energyMonitor';
 import { orchestratorWallet } from './utils';
+import {
+  ENERGY_SCALING,
+  VALUE_SCALING,
+  parseTelemetryInteger as parseBigInt,
+  validateEnergySample,
+} from './telemetrySample';
 
 type BaseAttestation = Omit<EnergyOracleAttestation, 'nonce'>;
 
@@ -23,6 +29,7 @@ export interface OperatorSubmissionResult {
   processed: number;
   success: boolean;
   error?: Error;
+  rejected?: { index: number; error: Error };
 }
 
 const ENERGY_ORACLE_ADDRESS = process.env.ENERGY_ORACLE_ADDRESS || '';
@@ -43,16 +50,6 @@ const EPOCH_DURATION_SEC = ensurePositiveInt(
   Number(process.env.TELEMETRY_EPOCH_DURATION_SEC ?? '86400'),
   86400
 );
-const ENERGY_SCALING = Number.isFinite(
-  Number(process.env.TELEMETRY_ENERGY_SCALING)
-)
-  ? Number(process.env.TELEMETRY_ENERGY_SCALING)
-  : 1;
-const VALUE_SCALING = Number.isFinite(
-  Number(process.env.TELEMETRY_VALUE_SCALING)
-)
-  ? Number(process.env.TELEMETRY_VALUE_SCALING)
-  : 1_000_000;
 const ROLE_ID = clampUint8(Number(process.env.TELEMETRY_ROLE ?? '2'));
 
 const ENERGY_ORACLE_ABI = [
@@ -146,10 +143,20 @@ class EnergyOracleOperator {
     }
     let processed = 0;
     for (const sample of samples) {
-      const base = this.buildBaseAttestation(sample);
-      if (!base) {
-        processed += 1;
-        continue;
+      let base: BaseAttestation;
+      try {
+        validateEnergySample(sample, this.config);
+        const converted = this.buildBaseAttestation(sample);
+        if (!converted) throw new Error('Invalid telemetry attestation identity');
+        base = converted;
+      } catch (err) {
+        const error = err instanceof Error ? err : new Error(String(err));
+        return {
+          processed,
+          success: false,
+          error,
+          rejected: { index: processed, error },
+        };
       }
       try {
         await this.submitWithRetry(base);
@@ -300,9 +307,9 @@ class EnergyOracleOperator {
       return null;
     }
     const jobId = parseBigInt(sample.jobId);
-    if (jobId === null) {
+    if (jobId === null || jobId < 0n || jobId >= (1n << 256n)) {
       console.warn(
-        'Skipping energy sample with non-numeric jobId',
+        'Rejecting energy sample with invalid jobId',
         logValue(sample.jobId)
       );
       return null;
@@ -362,33 +369,6 @@ function normalizeAddress(value: string | undefined): string | null {
   } catch {
     return null;
   }
-}
-
-function parseBigInt(value: unknown): bigint | null {
-  if (typeof value === 'bigint') {
-    return value;
-  }
-  if (typeof value === 'number') {
-    if (!Number.isFinite(value)) return null;
-    return BigInt(Math.round(value));
-  }
-  if (typeof value === 'string') {
-    const trimmed = value.trim();
-    if (!trimmed) return null;
-    try {
-      if (trimmed.startsWith('0x') || trimmed.startsWith('-0x')) {
-        return BigInt(trimmed);
-      }
-      const asNumber = Number(trimmed);
-      if (Number.isFinite(asNumber)) {
-        return BigInt(Math.round(asNumber));
-      }
-      return BigInt(trimmed);
-    } catch {
-      return null;
-    }
-  }
-  return null;
 }
 
 function toScaledBigInt(value: unknown, scale: number): bigint {

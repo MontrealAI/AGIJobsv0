@@ -134,8 +134,9 @@ these paths to match your deployment layout.
 ## Operational notes
 
 - Telemetry samples are persisted in `storage/telemetry/telemetry-queue.json`.
-  The queue is truncated only after the corresponding attestation has been
-  accepted on-chain.
+  Successful submissions remove only their acknowledged prefix. Invalid
+  restored records leave the active queue only after rejection evidence has
+  been saved separately; they are never counted as submitted attestations.
 - `EnergySample` fields are converted to contract fields as follows:
   `energyEstimate` → `energy`, `cpuTimeMs`/`gpuTimeMs` → `uPre`/`uPost`, and
   `efficiencyScore` → `value` (after scaling). Degeneracy defaults to `1` unless
@@ -148,3 +149,44 @@ these paths to match your deployment layout.
   at least one of these targets for production usage.
 - Use `DEBUG=agent-telemetry` (or a process manager specific setting) to enable
   verbose logging while diagnosing connectivity issues.
+
+## Sample validation and recovery
+
+The shared publication boundary validates every supplied numeric `EnergySample`
+field before queue writes. HTTP and gRPC also preflight every sample in the
+request before recording a telemetry report or publishing any sample. Invalid
+HTTP samples return `400` with `INVALID_TELEMETRY_SAMPLE`; gRPC returns
+`INVALID_ARGUMENT`. Wallet authorization is unchanged.
+
+Numeric sample fields accept finite, nonnegative JSON numbers. Omitted fields
+retain their existing zero/default behavior. Rounding, scaling, epoch selection
+and degeneracy defaults are unchanged for valid samples. Validation checks the
+contract's integer bounds, including combined rounded CPU/GPU time, scaled
+energy (`int256`) and scaled efficiency (`uint256`). Metadata `degeneracy`,
+`runs` and `attempts` retain their existing numeric-string conversion and
+positive-candidate/default selection; malformed or out-of-range supplied
+candidates are rejected.
+
+Restored records are revalidated before either contract or HTTP submission.
+Conversion errors return an explicit rejection plus the count of earlier
+successful submissions. The queue saves that successful prefix first, saves
+the rejected record, and then continues with later valid work. Transport or
+signing failures remain retryable failures and do not quarantine valid samples.
+
+Rejection evidence is stored in
+`storage/telemetry/telemetry-rejections.json`, with private file permissions,
+a timestamp, reason, SHA-256 digest and a UTF-8 JSON prefix. The journal retains
+at most 128 entries and 1 MiB; the oldest entries are evicted when either bound
+is reached, with a cumulative `evicted` count and an error log. Each sample
+prefix is limited to 32 KiB, with `originalBytes` and `truncated` recorded.
+Nonfinite restored numbers use explicit `rejectedNumber` markers in the
+evidence JSON; the digest covers this evidence encoding. Review or export
+evidence before it ages out. A quarantine write failure retains the rejected
+record in the active queue and reports an error.
+
+Queue writes are serialized and atomically replaced to preserve concurrent
+ingestion. A failed acknowledgement write is retried before further submission
+in the same process. Remote submission and local persistence are not one
+transaction: a crash after remote acceptance but before its local checkpoint
+can still require reconciliation. This change does not claim exactly-once
+delivery across that failure window.
