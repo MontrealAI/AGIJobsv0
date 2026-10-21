@@ -108,8 +108,26 @@ export class TelemetryQueue {
     await this.serial(() => this.loadUnlocked());
   }
 
+  private async ensureDurableDirectory(directory: string): Promise<void> {
+    await fs.promises.mkdir(directory, { recursive: true, mode: 0o700 });
+    // Existing entries may be from an earlier failed checkpoint. Repeat the
+    // entire parent chain on retries and after a process restart.
+    let parent = path.dirname(path.resolve(directory));
+    for (;;) {
+      const handle = await fs.promises.open(parent, 'r');
+      try {
+        await handle.sync();
+      } finally {
+        await handle.close();
+      }
+      const next = path.dirname(parent);
+      if (next === parent) break;
+      parent = next;
+    }
+  }
+
   private async writeAtomic(file: string, text: string): Promise<void> {
-    await fs.promises.mkdir(this.directory, { recursive: true, mode: 0o700 });
+    await this.ensureDurableDirectory(this.directory);
     const temporary = `${file}.${crypto.randomUUID()}.tmp`;
     try {
       const handle = await fs.promises.open(temporary, 'wx', 0o600);

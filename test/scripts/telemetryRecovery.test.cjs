@@ -629,7 +629,12 @@ test('queue replacements sync the directory and propagate a failed durability ch
           writeFile: (...values) => handle.writeFile(...values),
           close: () => handle.close(),
           sync: async () => {
-            const kind = file === directory ? 'directory' : 'file';
+            const kind =
+              file === directory
+                ? 'directory'
+                : file.endsWith('.tmp')
+                ? 'file'
+                : 'ancestor';
             events.push('sync:' + kind);
             if (kind === 'directory' && failDirectorySync)
               throw new Error('synthetic directory sync failure');
@@ -652,7 +657,11 @@ test('queue replacements sync the directory and propagate a failed durability ch
   );
   const queue = new IsolatedQueue(directory);
   await queue.enqueue(sample('first'));
-  assert.deepEqual(events, ['sync:file', 'rename', 'sync:directory']);
+  assert.equal(events[0], 'sync:ancestor');
+  assert.deepEqual(
+    events.filter((event) => event !== 'sync:ancestor'),
+    ['sync:file', 'rename', 'sync:directory']
+  );
   failDirectorySync = true;
   await assert.rejects(queue.flush(accept), /synthetic directory sync failure/);
   failDirectorySync = false;
@@ -662,6 +671,130 @@ test('queue replacements sync the directory and propagate a failed durability ch
     )
   );
   assert.deepEqual(read(outbox), []);
+});
+
+test('first nested queue creation checkpoints every containing parent before file effects', async (t) => {
+  const { directory } = sandbox(t);
+  const target = path.join(directory, 'new-parent', 'deeper', 'telemetry');
+  const events = [];
+  const isolatedFs = {
+    ...fs,
+    promises: {
+      ...fs.promises,
+      open: async (file, ...args) => {
+        const handle = await fs.promises.open(file, ...args);
+        return {
+          writeFile: async (...values) => {
+            events.push('write');
+            await handle.writeFile(...values);
+          },
+          sync: async () => {
+            events.push(file.endsWith('.tmp') ? 'file' : file);
+            await handle.sync();
+          },
+          close: () => handle.close(),
+        };
+      },
+      rename: async (...args) => {
+        events.push('rename');
+        await fs.promises.rename(...args);
+      },
+    },
+  };
+  const { TelemetryQueue: IsolatedQueue } = loadTs(
+    'agent-gateway/telemetryQueue.ts',
+    { fs: isolatedFs, './telemetrySample': validation }
+  );
+  const queue = new IsolatedQueue(target);
+  assert.equal(fs.existsSync(target), false);
+  await queue.enqueue(sample('nested'));
+  const writeIndex = events.indexOf('write');
+  for (const parent of [
+    path.join(directory, 'new-parent', 'deeper'),
+    path.join(directory, 'new-parent'),
+    directory,
+    path.parse(directory).root,
+  ]) {
+    assert.ok(
+      events.indexOf(parent) >= 0 && events.indexOf(parent) < writeIndex,
+      `parent entry not checkpointed before file write: ${parent}`
+    );
+  }
+  assert.deepEqual(events.slice(writeIndex), [
+    'write',
+    'file',
+    'rename',
+    target,
+  ]);
+  assert.equal(queue.length, 1);
+  assert.deepEqual(read(path.join(target, 'telemetry-queue.json')), [
+    sample('nested'),
+  ]);
+});
+
+test('failed parent barriers reject first enqueue and repeat across nested retries and restarts', async (t) => {
+  const { directory } = sandbox(t);
+  for (const restart of [false, true])
+    for (const barrier of ['immediate', 'outer', 'root']) {
+      const outer = path.join(directory, `${restart}-${barrier}`);
+      const target = path.join(outer, 'nested', 'telemetry');
+      const failedParent =
+        barrier === 'immediate'
+          ? path.dirname(target)
+          : barrier === 'outer'
+          ? directory
+          : path.parse(directory).root;
+      let fail = true,
+        attempted = 0,
+        closed = 0;
+      const isolatedFs = {
+        ...fs,
+        promises: {
+          ...fs.promises,
+          open: async (file, ...args) => {
+            const handle = await fs.promises.open(file, ...args);
+            return {
+              writeFile: (...values) => handle.writeFile(...values),
+              sync: async () => {
+                if (file === failedParent) {
+                  attempted++;
+                  if (fail)
+                    throw new Error('synthetic parent durability failure');
+                }
+                await handle.sync();
+              },
+              close: async () => {
+                if (file === failedParent) closed++;
+                await handle.close();
+              },
+            };
+          },
+        },
+      };
+      const { TelemetryQueue: IsolatedQueue } = loadTs(
+        'agent-gateway/telemetryQueue.ts',
+        { fs: isolatedFs, './telemetrySample': validation }
+      );
+      let queue = new IsolatedQueue(target);
+      await assert.rejects(
+        queue.enqueue(sample('retry')),
+        /synthetic parent durability failure/
+      );
+      assert.equal(queue.length, 0);
+      assert.equal(fs.existsSync(target), true);
+      const outbox = path.join(target, 'telemetry-queue.json');
+      assert.equal(fs.existsSync(outbox), false);
+      assert.deepEqual(fs.readdirSync(target), []);
+      assert.equal(attempted, 1);
+      assert.equal(closed, 1);
+      fail = false;
+      if (restart) queue = new IsolatedQueue(target);
+      await queue.enqueue(sample('retry'));
+      assert.equal(attempted, 2);
+      assert.equal(closed, 2);
+      assert.equal(queue.length, 1);
+      assert.deepEqual(read(outbox), [sample('retry')]);
+    }
 });
 
 test('public telemetry functions use the defensive durable queue with an isolated contract adapter', async (t) => {
