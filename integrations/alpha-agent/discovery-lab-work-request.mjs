@@ -41,14 +41,14 @@ function currentContext(request, expectedBindings, expectedCommission) {
 }
 
 function checkReport(value) {
-  canonical(value);
+  value = JSON.parse(canonical(value));
   need(exact(value, ['accepted', 'resourceUsed', 'reasons']) && typeof value.accepted === 'boolean'
     && Array.isArray(value.reasons) && value.reasons.length <= 32
     && value.reasons.every(reason => typeof reason === 'string' && reason.length > 0 && reason.length <= 500)
     && (value.accepted || value.reasons.length > 0)
     && !(value.accepted && value.reasons.some(exhausted)), 'DISCOVERY_LAB_CHECKER_REPORT');
   validateResources(value.resourceUsed);
-  return JSON.parse(canonical(value));
+  return value;
 }
 
 // Admission uses 10,000 declared checking units. Byte units count encoded input,

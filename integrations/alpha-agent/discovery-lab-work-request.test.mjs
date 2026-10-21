@@ -305,3 +305,31 @@ test('trusted context acquisition failures also retain receiver-owned failed-att
     &&failure.resourceUsed.checking===DISCOVERY_LAB_ADMISSION_CHECKS&&failure.resourceUsed.memoryBytes>0
     &&failure.nativeResourceReservation===null&&failure.authority==='none');
 });
+
+test('checker report validation uses captured fields without original property reads',async()=>{
+  const f=fixture();let gets=0;
+  const report=new Proxy({accepted:true,resourceUsed:Object.fromEntries(RESOURCE_KEYS.map(key=>[key,0])),reasons:[]},
+    {get(target,key){if(key==='then')return undefined;gets++;throw Error('Original report field was read');}});
+  f.options.inspectCampaign=async()=>report;
+  const r=await inspect(f);assert.equal(r.state,'local-checked');assert.equal(gets,0);assert.equal(r.authority,'none');
+});
+test('checker report retains the resource snapshot that passed validation',async()=>{
+  const f=fixture(),target=Object.fromEntries(RESOURCE_KEYS.map(key=>[key,0]));let passes=0;
+  const resources=new Proxy(target,{
+    ownKeys(value){passes++;return Reflect.ownKeys(value);},
+    get(value,key){return key==='checking'&&passes>=3?-5000:Reflect.get(value,key);},
+    getOwnPropertyDescriptor(value,key){const d=Reflect.getOwnPropertyDescriptor(value,key);
+      return key==='checking'&&passes>=3?{...d,value:-5000}:d;}
+  });
+  f.options.inspectCampaign=async()=>({accepted:true,resourceUsed:resources,reasons:[]});
+  const r=await inspect(f);assert.equal(r.state,'local-checked');assert.equal(passes,1);
+  assert.equal(r.resources.checkerUsed.checking,0);assert.equal(r.resources.totalUsed.checking,DISCOVERY_LAB_ADMISSION_CHECKS);
+});
+test('unknown checker-report fields captured first cannot disappear before exact validation',async()=>{
+  const f=fixture();let scans=0;
+  const target={accepted:true,resourceUsed:Object.fromEntries(RESOURCE_KEYS.map(key=>[key,0])),reasons:[],authority:'approved'};
+  const report=new Proxy(target,{ownKeys(value){return ++scans===1?Reflect.ownKeys(value):Reflect.ownKeys(value).filter(key=>key!=='authority');}});
+  f.options.inspectCampaign=async()=>report;
+  await assert.rejects(inspect(f),error=>error.code==='DISCOVERY_LAB_CHECKER_REPORT'
+    &&error.resourceUsed.checking===DISCOVERY_LAB_ADMISSION_CHECKS&&error.authority==='none');
+});
