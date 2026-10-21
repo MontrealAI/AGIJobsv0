@@ -85,6 +85,27 @@ export function capturePinnedAlpha(root) {
     dispose:()=>fs.rmSync(directory,{recursive:true,force:true})};
 }
 
+export function assertStrongerSuccessor(initial,stronger) {
+  assert.equal(stronger?.state,'accepted');
+  assert.ok(hash(initial.campaignDigest) && hash(stronger.campaignDigest),'Unique current campaign identities are required');
+  assert.notEqual(stronger.resultDigest,initial.resultDigest,'A distinct retained accepted successor is required');
+  let ancestor=stronger.parent, matched=false;
+  for(let depth=0;ancestor&&depth<8;depth++,ancestor=ancestor.parent) {
+    if(ancestor.campaignDigest===initial.campaignDigest && ancestor.resultDigest===initial.resultDigest && canonical(ancestor.bindings)===canonical(initial.bindings)) {matched=true;break;}
+  }
+  assert.ok(matched,'The stronger campaign must descend from the exact source-bound predecessor');
+  assert.equal(stronger.bindings.missionId,initial.bindings.missionId);
+  assert.ok(stronger.bindings.revision>initial.bindings.revision);
+  assert.equal(stronger.charter.purpose,initial.charter.purpose);
+  assert.ok(stronger.charter.controls>=initial.charter.controls && stronger.charter.memory>=initial.charter.memory);
+  assert.ok(initial.charter.operations.every(operation=>stronger.charter.operations.includes(operation)));
+  assert.ok(stronger.charter.controls>initial.charter.controls || stronger.charter.memory>initial.charter.memory
+    ||stronger.charter.operations.some(operation=>!initial.charter.operations.includes(operation)),'A real monotone extension is required');
+  assert.equal(stronger.result.reuse.priorPurposePreservedOnOldSlice,true);
+  assert.equal(stronger.result.reuse.acceptedPredecessorPreserved,true);
+  assert.ok(stronger.result.reuse.retainedFactors.length>0,'Actual retained factor evidence is required');
+}
+
 export async function qualifyDiscoveryLabReceiver(alphaRoot,{retainedWorkspace=null}={}) {
   const installed = capturePinnedAlpha(alphaRoot);
   try {
@@ -95,7 +116,7 @@ export async function qualifyDiscoveryLabReceiver(alphaRoot,{retainedWorkspace=n
     let saved=retainedWorkspace ? await workspace.parseWorkspace(canonical(retainedWorkspace)) : await workspace.createWorkspace();
     const retained=retainedWorkspace ? (await workspace.inspectWorkspace(saved)).discovery.campaigns : null;
     async function campaign(charter,parent=null) {
-      const attempt=await history.startPayload(saved,charter,installed.sources,parent?.resultDigest||null);
+      const attempt=await history.startPayload(saved,charter,installed.sources,parent?.campaignDigest||null);
       saved=await workspace.recordDiscoveryEvent(saved,'lab-started',attempt);
       const started=performance.now(),result=runtime.runCampaign(charter,{parent:parent?.result||null});
       const verified=history.verifyForRecording(charter,result,parent?.result||null);
@@ -133,7 +154,7 @@ export async function qualifyDiscoveryLabReceiver(alphaRoot,{retainedWorkspace=n
     const exhausted=retained ? retained.find(record=>record.state==='inconclusive') : await campaign({...structuredClone(runtime.DEFAULT_CHARTER),budget:{...runtime.DEFAULT_CHARTER.budget,search:0}},initial);
     assert.equal(exhausted.state,'inconclusive');await assert.rejects(history.workRequest(exhausted,ROUTE,limitsFor(exhausted)));
     const stronger=retained ? retained.filter(record=>record.state==='accepted').at(-1) : await campaign({...structuredClone(runtime.DEFAULT_CHARTER),controls:4,memory:16,operations:['flip-z','flip-w']},initial);
-    assert.notEqual(stronger.resultDigest,initial.resultDigest,'A distinct retained accepted successor is required');
+    assertStrongerSuccessor(initial,stronger);
     assert.equal(stronger.state,'accepted');const successorReceipt=await receive(stronger);
     assert.equal(successorReceipt.state,'local-checked');outcomes.push({case:'stronger-successor',receipt:successorReceipt});
     const reloaded=await workspace.parseWorkspace(canonical(saved)),view=await workspace.inspectWorkspace(reloaded);

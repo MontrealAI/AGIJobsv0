@@ -58,6 +58,12 @@ const zeroResources = () => Object.fromEntries(RESOURCE_KEYS.map(key => [key, 0]
 const byteLength = value => Buffer.byteLength(value, 'utf8');
 const elapsed = start => Math.max(0, Math.ceil(performance.now() - start));
 const fits = (used, limits) => RESOURCE_KEYS.every(key => used[key] <= limits[key]);
+// Every variable field below is an ASCII status/boolean or validated safe integer.
+// Their digit lengths let the final timer update preserve exact receipt bytes
+// without another expensive full serialization after that measurement.
+const vectorDigits = vector => RESOURCE_KEYS.reduce((sum, key) => sum + String(vector[key]).length, 0);
+const admissionVariableBytes = result => result.state.length + String(result.checker.withinResourceEnvelope).length
+  + vectorDigits(result.resources.receiverUsed) + vectorDigits(result.resources.totalUsed);
 function totalResources(receiver, checker = zeroResources(), nativeWall = 0) {
   const exact = Object.fromEntries(RESOURCE_KEYS.map(key => [key, BigInt(receiver[key]) + BigInt(checker[key])]));
   if (RESOURCE_KEYS.some(key => exact[key] > BigInt(Number.MAX_SAFE_INTEGER))) {
@@ -143,16 +149,33 @@ async function inspectRequest(raw, {
     result.state = !reservationAvailable || !nativeWithinResourceEnvelope || !result.checker.withinResourceEnvelope || incomplete ? 'inconclusive'
       : checkerReport.accepted ? 'local-checked' : 'local-rejected';
     // State and measured elapsed digits can alter the serialized receipt length.
+    let serializedBytes, serializedVariables;
     for (let i = 0; i < 8; i++) {
-      const bytes = byteLength(JSON.stringify(result));
+      serializedVariables = admissionVariableBytes(result);
+      const bytes = serializedBytes = byteLength(JSON.stringify(result));
       if (result.resources.receiverUsed.storageBytes === bytes) break;
       result.resources.receiverUsed.storageBytes = bytes;
       result.resources.receiverUsed.memoryBytes = workingBytes + bytes;
       receiver.storageBytes = bytes; receiver.memoryBytes = workingBytes + bytes;
       result.resources.totalUsed = totalResources(result.resources.receiverUsed, result.resources.checkerUsed, nativeWall);
     }
-    result.checker.withinResourceEnvelope = fits(result.resources.totalUsed, request.resourceLimits);
-    if (!result.checker.withinResourceEnvelope) result.state = 'inconclusive';
+    const settleFinalSample = () => {
+      receiver.elapsedMs = elapsed(started);
+      result.resources.receiverUsed.elapsedMs = receiver.elapsedMs;
+      for (let i = 0; i < 8; i++) {
+        result.resources.totalUsed = totalResources(result.resources.receiverUsed, result.resources.checkerUsed, nativeWall);
+        result.checker.withinResourceEnvelope = fits(result.resources.totalUsed, request.resourceLimits);
+        if (!result.checker.withinResourceEnvelope) result.state = 'inconclusive';
+        const bytes = serializedBytes - serializedVariables + admissionVariableBytes(result);
+        if (result.resources.receiverUsed.storageBytes === bytes) return;
+        result.resources.receiverUsed.storageBytes = receiver.storageBytes = bytes;
+        result.resources.receiverUsed.memoryBytes = receiver.memoryBytes = workingBytes + bytes;
+      }
+      need(false, 'DISCOVERY_LAB_RECEIPT_DID_NOT_CONVERGE');
+    };
+    // Charge all full JSON serialization and byte-count convergence first, then
+    // the bounded scalar reconciliation itself. No full stringify follows.
+    settleFinalSample(); settleFinalSample();
     return result;
   } catch (error) {
     receiver.elapsedMs = elapsed(started);
@@ -190,10 +213,22 @@ export async function receiveDiscoveryLabWorkRequest(raw, options = {}) {
   used.memoryBytes += byteLength(canonical(input)); used.elapsedMs = elapsed(started);
   const result = {state, reason:state === 'unsupported' ? 'DISCOVERY_LAB_UNSUPPORTED_SCHEMA' : 'DISCOVERY_LAB_EXECUTION_UNPROVISIONED',
     requestSha256:sha(raw), resourceUsed:{...used}, authority:'none'};
+  let serializedBytes, serializedVariables;
   for (let i = 0; i < 8; i++) {
-    const bytes = byteLength(JSON.stringify(result));
+    serializedVariables = vectorDigits(result.resourceUsed);
+    const bytes = serializedBytes = byteLength(JSON.stringify(result));
     if (result.resourceUsed.storageBytes === bytes) break;
     result.resourceUsed.storageBytes = bytes; result.resourceUsed.memoryBytes = used.memoryBytes + bytes;
   }
+  const settleFinalSample = () => {
+    result.resourceUsed.elapsedMs = elapsed(started);
+    for (let i = 0; i < 8; i++) {
+      const bytes = serializedBytes - serializedVariables + vectorDigits(result.resourceUsed);
+      if (result.resourceUsed.storageBytes === bytes) return;
+      result.resourceUsed.storageBytes = bytes; result.resourceUsed.memoryBytes = used.memoryBytes + bytes;
+    }
+    need(false, 'DISCOVERY_LAB_RECEIPT_DID_NOT_CONVERGE');
+  };
+  settleFinalSample(); settleFinalSample();
   return result;
 }

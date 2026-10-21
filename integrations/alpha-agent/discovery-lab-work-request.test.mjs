@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { canonical, payloadDigest, validateBindings, validateResources, BINDING_KEYS, RESOURCE_KEYS, STAGES } from './discovery-lab-contract.mjs';
-import { DISCOVERY_LAB_ADMISSION_CHECKS, discoveryLabReceiverCapabilities, inspectDiscoveryLabWorkRequest, receiveDiscoveryLabWorkRequest }
+import { DISCOVERY_LAB_ADMISSION_SCHEMA, DISCOVERY_LAB_ADMISSION_CHECKS, discoveryLabReceiverCapabilities, inspectDiscoveryLabWorkRequest, receiveDiscoveryLabWorkRequest }
   from './discovery-lab-work-request.mjs';
 const ROUTE = 'jobs-agialpha', CURRENCY = 'AGIALPHA18';
 const original = JSON.parse(readFileSync(new URL('./fixtures/discovery-lab-request.json', import.meta.url), 'utf8'));
@@ -216,4 +216,46 @@ test('native helper exports can be imported from a stdin module without executin
   const script=`const helper=await import(${JSON.stringify(new URL('./discovery-lab-native-test.mjs',import.meta.url).href)});
     if(typeof helper.boundedSource!=='function')throw Error('missing helper');`;
   assert.equal(execFileSync(process.execPath,['--input-type=module','-'],{input:script,encoding:'utf8'}),'');
+});
+
+for(const mode of ['supported','unsupported'])
+test('final receipt serialization is included in measured elapsed cost: '+mode,async()=>{
+  const f=fixture();f.request.resourceLimits.elapsedMs=100;
+  f.request.payload.padding='x'.repeat(20_000);f.request.payloadDigest=await payloadDigest(f.request.payload);
+  f.options.inspectCampaign=async()=>({accepted:true,resourceUsed:Object.fromEntries(RESOURCE_KEYS.map(key=>[key,0])),reasons:[]});
+  if(mode==='unsupported')f.request.schema='unsupported/v1';
+  let clock=0;const stringify=JSON.stringify,descriptor=Object.getOwnPropertyDescriptor(performance,'now');
+  Object.defineProperty(performance,'now',{configurable:true,value:()=>clock});
+  JSON.stringify=function(value,...rest){const encoded=stringify.call(this,value,...rest);
+    if(value?.schema===DISCOVERY_LAB_ADMISSION_SCHEMA&&value.state==='local-checked'
+      ||mode==='unsupported'&&value?.state==='unsupported')clock+=101;
+    return encoded;
+  };
+  let result,finished;
+  try{result=await receiveDiscoveryLabWorkRequest(canonical(f.request),f.options);finished=clock;}
+  finally{JSON.stringify=stringify;if(descriptor)Object.defineProperty(performance,'now',descriptor);else delete performance.now;}
+  assert.ok(finished>100,'instrumented final receipt serialization crossed the cap');
+  const charged=mode==='supported'?result.resources.receiverUsed:result.resourceUsed;
+  assert.ok(charged.elapsedMs>=finished,'final serialization must remain charged');
+  assert.equal(charged.storageBytes,Buffer.byteLength(JSON.stringify(result)));
+  if(mode==='supported'){assert.equal(result.state,'inconclusive');assert.equal(result.checker.withinResourceEnvelope,false);}
+});
+
+test('shared-workspace evidence requires a source-bound monotone successor and preserved purpose',async()=>{
+  const {assertStrongerSuccessor}=await import('./discovery-lab-native-test.mjs');
+  const bindings=fixture().options.expectedBindings;
+  const initial={state:'accepted',campaignDigest:'3'.repeat(64),resultDigest:'1'.repeat(64),bindings,
+    charter:{purpose:'finite-test-purpose',controls:3,memory:8,operations:['flip-z']}};
+  const successor={state:'accepted',campaignDigest:'4'.repeat(64),resultDigest:'2'.repeat(64),parent:initial,bindings:{...bindings,revision:bindings.revision+1},
+    charter:{...initial.charter,controls:4,memory:16,operations:['flip-z','flip-w']},
+    result:{reuse:{priorPurposePreservedOnOldSlice:true,acceptedPredecessorPreserved:true,retainedFactors:['capacity']}}};
+  assert.doesNotThrow(()=>assertStrongerSuccessor(initial,successor));
+  assert.throws(()=>assertStrongerSuccessor(initial,{...successor,parent:null}));
+  assert.throws(()=>assertStrongerSuccessor(initial,{...successor,parent:{...initial,campaignDigest:'5'.repeat(64)}}));
+  assert.throws(()=>assertStrongerSuccessor({...initial,campaignDigest:null},successor));
+  assert.throws(()=>assertStrongerSuccessor(initial,{...successor,parent:{...initial,bindings:{...bindings,sourceDigest:'a'.repeat(64)}}}));
+  assert.throws(()=>assertStrongerSuccessor(initial,{...successor,charter:initial.charter}));
+  assert.throws(()=>assertStrongerSuccessor(initial,{...successor,charter:{...successor.charter,memory:1}}));
+  assert.throws(()=>assertStrongerSuccessor(initial,{...successor,charter:{...successor.charter,operations:['flip-w']}}));
+  assert.throws(()=>assertStrongerSuccessor(initial,{...successor,result:{reuse:{...successor.result.reuse,priorPurposePreservedOnOldSlice:false}}}));
 });
