@@ -3,7 +3,7 @@
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { canonical, parseBounded, parseWorkRequest, validateBindings, validateResources,
-  BINDING_KEYS, RESOURCE_KEYS, REQUEST_SCHEMA, STAGES } from './discovery-lab-contract.mjs';
+  BINDING_KEYS, RESOURCE_KEYS, REQUEST_SCHEMA, STAGES, MAX_INPUT_BYTES } from './discovery-lab-contract.mjs';
 
 export const DISCOVERY_LAB_ADMISSION_SCHEMA = 'agijobsv0/discovery-lab-admission/v1';
 const ROUTE = 'jobs-agialpha', CURRENCY = 'AGIALPHA18';
@@ -57,6 +57,21 @@ export const DISCOVERY_LAB_ADMISSION_CHECKS = 10_000;
 const zeroResources = () => Object.fromEntries(RESOURCE_KEYS.map(key => [key, 0]));
 const byteLength = value => Buffer.byteLength(value, 'utf8');
 const elapsed = start => Math.max(0, Math.ceil(performance.now() - start));
+function initialResources(raw, started) {
+  const used = zeroResources(); used.checking = DISCOVERY_LAB_ADMISSION_CHECKS;
+  if (typeof raw === 'string' && raw.length > MAX_INPUT_BYTES) {
+    // Reject in constant time before any UTF-8 traversal/allocation. The
+    // observed logical UTF-16 footprint is explicit; this is not VM heap use.
+    used.memoryBytes = 2 * raw.length; used.elapsedMs = elapsed(started);
+    throw Object.assign(Error('DISCOVERY_LAB_INPUT_TOO_LARGE'), {code:'DISCOVERY_LAB_INPUT_TOO_LARGE',
+      resourceUsed:used, resourceAccounting:'current-failed-attempt-charge',
+      resourceMemoryAccounting:'logical-UTF16-code-unit-bytes; UTF8-not-scanned',
+      nativeResourceReservation:null, authority:'none'});
+  }
+  used.memoryBytes = typeof raw === 'string' ? byteLength(raw) : 0;
+  return used;
+}
+
 const fits = (used, limits) => RESOURCE_KEYS.every(key => used[key] <= limits[key]);
 // Every variable field below is an ASCII status/boolean or validated safe integer.
 // Their digit lengths let the final timer update preserve exact receipt bytes
@@ -64,6 +79,19 @@ const fits = (used, limits) => RESOURCE_KEYS.every(key => used[key] <= limits[ke
 const vectorDigits = vector => RESOURCE_KEYS.reduce((sum, key) => sum + String(vector[key]).length, 0);
 const admissionVariableBytes = result => result.state.length + String(result.checker.withinResourceEnvelope).length
   + vectorDigits(result.resources.receiverUsed) + vectorDigits(result.resources.totalUsed);
+function ownedFailure(error) {
+  // Never mutate an inspector's frozen/sealed error or invoke diagnostic getters.
+  const failure = new Error('DISCOVERY_LAB_INSPECTION_FAILED', {cause:error});
+  try {
+    for (const [key, limit] of [['message', 512], ['code', 128]]) {
+      const descriptor = Object.getOwnPropertyDescriptor(Object(error), key);
+      if (descriptor && Object.hasOwn(descriptor, 'value') && typeof descriptor.value === 'string'
+          && descriptor.value.length <= limit) failure[key] = descriptor.value;
+    }
+  } catch { /* Opaque thrown objects remain available only as the cause. */ }
+  return failure;
+}
+
 function totalResources(receiver, checker = zeroResources(), nativeWall = 0) {
   const exact = Object.fromEntries(RESOURCE_KEYS.map(key => [key, BigInt(receiver[key]) + BigInt(checker[key])]));
   if (RESOURCE_KEYS.some(key => exact[key] > BigInt(Number.MAX_SAFE_INTEGER))) {
@@ -79,14 +107,11 @@ function totalResources(receiver, checker = zeroResources(), nativeWall = 0) {
 }
 
 /** The caller supplies the installed checker and its independently frozen current context. */
-async function inspectRequest(raw, {
-  expectedBindings, expectedCommission, inspectCampaign,
-} = {}, started = performance.now()) {
-  const receiver = zeroResources();
-  receiver.checking = DISCOVERY_LAB_ADMISSION_CHECKS;
-  receiver.memoryBytes = typeof raw === 'string' ? byteLength(raw) : 0;
+async function inspectRequest(raw, options = {}, started = performance.now()) {
+  const receiver = initialResources(raw, started);
   let checkerReport = null, nativeWall = 0, nativeInvoked = false, nativeLimits = null;
   try {
+    const {expectedBindings, expectedCommission, inspectCampaign} = options;
     const bindingSnapshot = canonical(expectedBindings), commissionSnapshot = canonical(expectedCommission);
     const frozenBindings = freezeData(JSON.parse(bindingSnapshot));
     const frozenCommission = freezeData(JSON.parse(commissionSnapshot));
@@ -178,8 +203,8 @@ async function inspectRequest(raw, {
     settleFinalSample(); settleFinalSample();
     return result;
   } catch (error) {
+    const failure = ownedFailure(error);
     receiver.elapsedMs = elapsed(started);
-    const failure = error instanceof Error ? error : Error('DISCOVERY_LAB_INSPECTION_FAILED');
     try { failure.resourceUsed = totalResources(receiver, checkerReport?.resourceUsed || zeroResources(), nativeWall); }
     catch (overflow) {
       failure.resourceUsed = {...receiver};
@@ -201,12 +226,11 @@ export async function inspectDiscoveryLabWorkRequest(raw, options = {}) {
 
 /** Probe unsupported schema/mode explicitly; malformed or stale supported requests still reject. */
 export async function receiveDiscoveryLabWorkRequest(raw, options = {}) {
-  const started = performance.now(), used = zeroResources();
-  used.checking = DISCOVERY_LAB_ADMISSION_CHECKS;
-  used.memoryBytes = typeof raw === 'string' ? byteLength(raw) : 0;
+  const started = performance.now(), used = initialResources(raw, started);
   let input;
   try { input = parseBounded(raw); }
-  catch (error) { used.elapsedMs = elapsed(started); error.resourceUsed = used; error.authority = 'none'; throw error; }
+  catch (error) { used.elapsedMs = elapsed(started); const failure = ownedFailure(error);
+    failure.resourceUsed = used; failure.authority = 'none'; throw failure; }
   const state = input?.schema !== REQUEST_SCHEMA ? 'unsupported'
     : input.executionMode !== 'synthetic-local' ? 'unprovisioned' : null;
   if (!state) { input = null; return inspectRequest(raw, options, started); }

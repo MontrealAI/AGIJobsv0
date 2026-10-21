@@ -16,7 +16,7 @@
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "84066fe6ab0426ae10029eb1d36b58385d868f0ec48af7fc612f7caa6ab677c0"
+        "sha256": "70e442d13888216a2e3b202c53050fd0d2b6706152ab7e3af271be2b81e55f1f"
       },
       "reason": "Explicit additive Discovery Lab source and tests; no historical source exemption or publication qualification."
     },
@@ -24,7 +24,7 @@
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "fdc0de1c7baf871e33453d32a5629f4954fecc950ec2b94b55220ddcd1267fe2"
+        "sha256": "28977aad08ce59893f93b75dc9d6d218fc1e5eec70f008a08e9aff131fe7d3ec"
       },
       "reason": "Explicit native compatibility harness/source pin; authenticated Alpha code only, no execution or publication approval."
     },
@@ -32,7 +32,7 @@
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "e1e3119b9c0002bcdaeeaef431fd397c353d1cb7046acc0e4f3287d918dd7b7e"
+        "sha256": "2cb747a3325bb046893fbfc77889ab631c9e4b21f84f42977e9c8b460a1bba24"
       },
       "reason": "Explicit additive Discovery Lab source and tests; no historical source exemption or publication qualification."
     },
@@ -40,7 +40,7 @@
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "bfa38a9312a90730f7f35eaed3d5d5dcca2b1c0cc7e51657413670145d2da2e3"
+        "sha256": "44231eae9f3ea5b3c56aa25417978f867d4f21b6309eab0501190b9e20959c6d"
       },
       "reason": "Explicit additive Discovery Lab source and tests; no historical source exemption or publication qualification."
     },
@@ -48,7 +48,7 @@
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "3e4c38cc8bb8f880c351f92da02b305bcfb181d6367a35534378edf137854621"
+        "sha256": "cb355a544b39c3a03b0e7fbb69eec7e6a8463db66ec7bec363c0f86e39af93cf"
       },
       "reason": "Explicit native compatibility harness/source pin; authenticated Alpha code only, no execution or publication approval."
     },
@@ -56,7 +56,7 @@
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "b9f09af3a53b43c8e94af5501764dfd1c52a8f8b43bfd02303efe5a4c2b8a085"
+        "sha256": "5a89c56757878ead56c3a6cefa96f9d34246a4c5ad79f8c0dc62b224ee410688"
       },
       "reason": "Explicit additive Discovery Lab source and tests; no historical source exemption or publication qualification."
     },
@@ -64,7 +64,7 @@
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "85fb69577b2c78fef1de8a24c922cff10a7062c254594bfc948b5c1e1caced4d"
+        "sha256": "47fae2b7eecd5ec2af4874c6b0a5df9d2a80148240bc70cee5c074346ae973c2"
       },
       "reason": "Explicit additive Discovery Lab source and tests; no historical source exemption or publication qualification."
     },

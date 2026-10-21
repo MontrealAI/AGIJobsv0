@@ -95,7 +95,8 @@ test('incomplete, unsafe or authority-bearing checker reports are rejected',asyn
 test('checker mutation cannot rewrite the request being inspected',async()=>{
   const f=fixture(); f.options.inspectCampaign=async(payload)=>{
     payload.changed=true;return {accepted:true,resourceUsed:Object.fromEntries(RESOURCE_KEYS.map(k=>[k,0])),reasons:[]};
-  }; await assert.rejects(inspect(f), TypeError);
+  }; await assert.rejects(inspect(f), error=>error.cause instanceof TypeError && error.authority==='none'
+    && error.resourceUsed.checking===DISCOVERY_LAB_ADMISSION_CHECKS);
 });
 test('unsupported schemas and external modes stay explicit without invoking a checker',async()=>{
   const f=fixture(); let calls=0; f.options.inspectCampaign=async()=>{calls++;};
@@ -250,6 +251,7 @@ test('shared-workspace evidence requires a source-bound monotone successor and p
     charter:{...initial.charter,controls:4,memory:16,operations:['flip-z','flip-w']},
     result:{reuse:{priorPurposePreservedOnOldSlice:true,acceptedPredecessorPreserved:true,retainedFactors:['capacity']}}};
   assert.doesNotThrow(()=>assertStrongerSuccessor(initial,successor));
+  assert.throws(()=>assertStrongerSuccessor(initial,{...successor,campaignDigest:initial.campaignDigest}));
   assert.throws(()=>assertStrongerSuccessor(initial,{...successor,parent:null}));
   assert.throws(()=>assertStrongerSuccessor(initial,{...successor,parent:{...initial,campaignDigest:'5'.repeat(64)}}));
   assert.throws(()=>assertStrongerSuccessor({...initial,campaignDigest:null},successor));
@@ -258,4 +260,48 @@ test('shared-workspace evidence requires a source-bound monotone successor and p
   assert.throws(()=>assertStrongerSuccessor(initial,{...successor,charter:{...successor.charter,memory:1}}));
   assert.throws(()=>assertStrongerSuccessor(initial,{...successor,charter:{...successor.charter,operations:['flip-w']}}));
   assert.throws(()=>assertStrongerSuccessor(initial,{...successor,result:{reuse:{...successor.result.reuse,priorPurposePreservedOnOldSlice:false}}}));
+});
+
+test('hardened inspector failures retain receiver-owned accounting and the original cause',async()=>{
+  for(const harden of [Object.freeze,Object.seal,Object.preventExtensions]){
+    const f=fixture(),original=harden(Error('installed inspector interrupted'));
+    f.options.inspectCampaign=async()=>{throw original;};
+    await assert.rejects(inspect(f),failure=>failure!==original&&failure.cause===original
+      &&failure.message==='installed inspector interrupted'
+      &&failure.resourceUsed.checking===DISCOVERY_LAB_ADMISSION_CHECKS&&failure.resourceUsed.memoryBytes>0
+      &&failure.nativeResourceReservation.checking>0
+      &&failure.resourceAccounting==='receiver-charge-retained; native-budget-reservation-unresolved'
+      &&failure.authority==='none');
+    assert.equal(Object.hasOwn(original,'resourceUsed'),false);
+  }
+  let invoked=false;const original=Error('opaque');
+  Object.defineProperty(original,'message',{get(){invoked=true;throw Error('getter must not run');}});Object.freeze(original);
+  const f=fixture();f.options.inspectCampaign=async()=>{throw original;};
+  await assert.rejects(inspect(f),failure=>failure.cause===original&&failure.resourceUsed.checking===DISCOVERY_LAB_ADMISSION_CHECKS
+    &&failure.nativeResourceReservation.checking>0&&failure.authority==='none');
+  assert.equal(invoked,false);
+});
+
+test('oversized raw input is refused before any UTF8 accounting scan or native call',async()=>{
+  const raw='x'.repeat(2_000_001),f=fixture();let calls=0;f.options.inspectCampaign=async()=>{calls++;};
+  const byteLength=Buffer.byteLength,encode=TextEncoder.prototype.encode;
+  Buffer.byteLength=function(value,...rest){if(value===raw)throw Error('oversized Buffer scan');return byteLength.call(this,value,...rest);};
+  TextEncoder.prototype.encode=function(value,...rest){if(value===raw)throw Error('oversized TextEncoder scan');return encode.call(this,value,...rest);};
+  try{
+    for(const receive of [receiveDiscoveryLabWorkRequest,inspectDiscoveryLabWorkRequest]){
+      await assert.rejects(receive(raw,f.options),failure=>failure.code==='DISCOVERY_LAB_INPUT_TOO_LARGE'
+        &&failure.resourceUsed.checking===DISCOVERY_LAB_ADMISSION_CHECKS&&failure.resourceUsed.memoryBytes===2*raw.length
+        &&failure.resourceMemoryAccounting==='logical-UTF16-code-unit-bytes; UTF8-not-scanned'
+        &&failure.nativeResourceReservation===null&&failure.authority==='none');
+    }
+  }finally{Buffer.byteLength=byteLength;TextEncoder.prototype.encode=encode;}
+  assert.equal(calls,0);
+});
+
+test('trusted context acquisition failures also retain receiver-owned failed-attempt accounting',async()=>{
+  const f=fixture(),original=Object.freeze(Error('context unavailable'));
+  const options={get expectedBindings(){throw original;}};
+  await assert.rejects(inspectDiscoveryLabWorkRequest(canonical(f.request),options),failure=>failure.cause===original
+    &&failure.resourceUsed.checking===DISCOVERY_LAB_ADMISSION_CHECKS&&failure.resourceUsed.memoryBytes>0
+    &&failure.nativeResourceReservation===null&&failure.authority==='none');
 });

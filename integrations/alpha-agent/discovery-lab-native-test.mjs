@@ -88,6 +88,7 @@ export function capturePinnedAlpha(root) {
 export function assertStrongerSuccessor(initial,stronger) {
   assert.equal(stronger?.state,'accepted');
   assert.ok(hash(initial.campaignDigest) && hash(stronger.campaignDigest),'Unique current campaign identities are required');
+  assert.notEqual(stronger.campaignDigest,initial.campaignDigest,'A distinct stronger campaign identity is required');
   assert.notEqual(stronger.resultDigest,initial.resultDigest,'A distinct retained accepted successor is required');
   let ancestor=stronger.parent, matched=false;
   for(let depth=0;ancestor&&depth<8;depth++,ancestor=ancestor.parent) {
