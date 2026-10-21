@@ -7,7 +7,7 @@ const { createHash } = require('node:crypto');
 const integrationTransitionsSha256 =
   '1363ebe715ffc6405f70261924ff41313073f72dd0d03bd68440235cac78af02';
 const telemetryRuntimeSha256 =
-  'ae229070a3b22137e7fd23c21b8b8025644e039626843822979dba1b101474ab';
+  'ff6f82ddd6738d3a0e7481fdd4cd1fc065853b68bc1a20e1defbfaccefea792c';
 const historical = require('./qualify-source-release.cjs');
 
 function freeze(value) {
@@ -393,7 +393,7 @@ function verifyIntegrationTransitions(
 }
 
 // This finite scope proposal does not install a review or qualify publication.
-// Its actual source, complete nine-file delta and every blob/mode are bound.
+// Its actual source, complete eleven-file delta and every blob/mode are bound.
 function validateTelemetryRuntime(value = profile.telemetryRuntime) {
   fields(
     value,
@@ -410,8 +410,8 @@ function validateTelemetryRuntime(value = profile.telemetryRuntime) {
       /^[a-f0-9]{40}$/.test(value[field] || '')
     ) &&
       Array.isArray(value.transitions) &&
-      value.transitions.length === 9,
-    'Exact telemetry runtime source and nine transitions are required'
+      value.transitions.length === 11,
+    'Exact telemetry runtime source and eleven transitions are required'
   );
   const seen = new Set();
   for (const item of value.transitions) {

@@ -54,6 +54,7 @@ async function gateway(wallets) {
     },
     './apiHelpers': { resolveAgentAddress: async (address) => address },
     './requestBudget': require('../../agent-gateway/requestBudget'),
+    './telemetrySample': require('../../agent-gateway/telemetrySample'),
     './agentActions': {},
     './deliverableStore': {
       recordHeartbeat: (record) => {

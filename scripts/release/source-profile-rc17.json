@@ -843,8 +843,8 @@
   "telemetryRuntime": {
     "baseline": "d27d752cf552bc7f45108c962b6501d912d1e715",
     "baselineTree": "be4aaad8bdd34f7b33ee42a5d2fae577892fd016",
-    "source": "c1d1748cda8211840499ddfebf6cda85234d239a",
-    "tree": "19656f0b4bbdf2fba9e226d1dd8beb5730666dca",
+    "source": "9dbdba4048b5d85273e61803ffef8f474088c57a",
+    "tree": "42c46b733a38dd47c0ab0688a9fd65b0ed708a1d",
     "transitions": [
       {
         "path": ".github/workflows/ci.yml",
@@ -926,6 +926,28 @@
         "after": {
           "mode": "100644",
           "blob": "bd324cfa1f06236147fd6869fd296b49e64f0aba"
+        }
+      },
+      {
+        "path": "test/gateway/authPrincipal.test.js",
+        "before": {
+          "mode": "100644",
+          "blob": "bd3789d060d1ecb7b89c7c93a9b320e53c65746b"
+        },
+        "after": {
+          "mode": "100644",
+          "blob": "831b88894bbceb3f4a6b9bd900130db46c415a29"
+        }
+      },
+      {
+        "path": "test/gateway/submissionContract.test.js",
+        "before": {
+          "mode": "100644",
+          "blob": "81a4ad7e8cd4d65b51e424f210691ff4198b9e17"
+        },
+        "after": {
+          "mode": "100644",
+          "blob": "e9c1af3d056310f9e6388ff4a04035ebb6a96752"
         }
       },
       {

@@ -30,9 +30,10 @@ republish the previous producer under a new identity.
   with later valid work. Valid transport failures remain retryable failures.
 - Require the deterministic telemetry regressions in the existing CI Tests job.
   Add no endpoint privilege, scanner exclusion or conditional test bypass.
-- Pin the exact eight-file correction plus that additive CI step to source
-  `c1d1748cda8211840499ddfebf6cda85234d239a`, tree
-  `19656f0b4bbdf2fba9e226d1dd8beb5730666dca`, over the publisher parent
+- Pin the exact eight-file correction plus that additive CI step and
+  two existing test-loader adaptations for the pure validation module to source
+  `9dbdba4048b5d85273e61803ffef8f474088c57a`, tree
+  `42c46b733a38dd47c0ab0688a9fd65b0ed708a1d`, over the publisher parent
   `d27d752cf552bc7f45108c962b6501d912d1e715`. The finite inventory binds every
   before/after blob and mode, with no general runtime-path exception.
 - Require actual extraction of all six affected gateway source files in fresh

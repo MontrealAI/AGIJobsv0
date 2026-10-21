@@ -133,7 +133,7 @@ test('telemetry scope binds its genuine complete origin and rejects inventory, b
   const before = p.parseTree(git('ls-tree', '-rz', scope.baseline));
   const after = p.parseTree(git('ls-tree', '-rz', scope.source));
   const paths = p.verifyTelemetryTransitions(before, after);
-  assert.equal(paths.length, 9);
+  assert.equal(paths.length, 11);
   assert.equal(
     paths.filter((name) => name.startsWith('agent-gateway/')).length,
     6
@@ -197,7 +197,7 @@ test('telemetry scope binds its genuine complete origin and rejects inventory, b
   );
 });
 
-test('finite telemetry admission preserves the rejection of a tenth runtime file and altered CI commands', (t) => {
+test('finite telemetry admission preserves the rejection of an extra runtime file and altered CI commands', (t) => {
   const r = repository(t);
   shareObjects(r);
   r.git('read-tree', p.profile.telemetryRuntime.source);
