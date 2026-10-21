@@ -32,12 +32,24 @@ republish the previous producer under a new identity.
   Keep the suite in the established isolated Node test directory so native
   Hardhat/Mocha discovery does not load it a second time.
   Add no endpoint privilege, scanner exclusion or conditional test bypass.
-- Pin the exact eight-file correction plus that additive CI step and
-  two existing test-loader adaptations for the pure validation module to source
-  `4ccd0ae1b5e9459a3be7880ff4e5b7831f6a8109`, tree
-  `620c85433451b8b6e3b18df6e42e8e9d694bab6e`, over the publisher parent
-  `d27d752cf552bc7f45108c962b6501d912d1e715`. The finite inventory binds every
-  before/after blob and mode, with no general runtime-path exception.
+- Preserve the original eleven-transition proof unchanged: publisher parent
+  `d27d752cf552bc7f45108c962b6501d912d1e715`, tree
+  `be4aaad8bdd34f7b33ee42a5d2fae577892fd016`, to telemetry origin
+  `9dbdba4048b5d85273e61803ffef8f474088c57a`, tree
+  `42c46b733a38dd47c0ab0688a9fd65b0ed708a1d`, with historical commitment
+  `ff6f82ddd6738d3a0e7481fdd4cd1fc065853b68bc1a20e1defbfaccefea792c`.
+- Bind a separate four-path follow-up from that historical origin to source
+  `b7f60ff52b87101ecf06681c41b7e13109f63e31`, tree
+  `a69606184d7f839e8e256b1eed229d98b776ebaa`: replace the mandatory CI suite
+  path, delete its old gateway path, add its scripts path with the exact same
+  test blob, and register the scripts path in the discovery regression's
+  dedicated list. That list requires discovery before filtering, exclusion
+  from Mocha, and exactly one unconditional fresh Node invocation after the
+  locked dependency install. The native discovery rule remains unchanged.
+- Verify both complete immutable origin trees, every before/after/current
+  blob and mode, ancestry and the exact composition into the twelve-transition
+  aggregate. The aggregate does not conceal the historical deletion or broaden
+  runtime paths. Historical records remain under their original identities.
 - Require actual extraction of all six affected gateway source files in fresh
   JavaScript scanner evidence, in addition to the unchanged producer's declared
   receiver list. Both raw extraction and exact producer sidecars are verified.

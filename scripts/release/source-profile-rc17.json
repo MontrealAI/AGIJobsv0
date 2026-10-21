@@ -776,7 +776,10 @@
     "qualityReview": {
       "schema": "agijobsv0/nonsecurity-quality-review/1",
       "disposition": "Acknowledged nonsecurity quality",
-      "ruleIds": ["js/unused-local-variable", "js/useless-assignment-to-local"]
+      "ruleIds": [
+        "js/unused-local-variable",
+        "js/useless-assignment-to-local"
+      ]
     },
     "producerCommit": "cb30d7453b36eaca040c139e06fd9668b300c5f4",
     "producerTree": "19d86f484ed11de23bb54d11b193ea868d2de88e",
@@ -843,8 +846,8 @@
   "telemetryRuntime": {
     "baseline": "d27d752cf552bc7f45108c962b6501d912d1e715",
     "baselineTree": "be4aaad8bdd34f7b33ee42a5d2fae577892fd016",
-    "source": "4ccd0ae1b5e9459a3be7880ff4e5b7831f6a8109",
-    "tree": "620c85433451b8b6e3b18df6e42e8e9d694bab6e",
+    "source": "b7f60ff52b87101ecf06681c41b7e13109f63e31",
+    "tree": "a69606184d7f839e8e256b1eed229d98b776ebaa",
     "transitions": [
       {
         "path": ".github/workflows/ci.yml",
@@ -951,6 +954,17 @@
         }
       },
       {
+        "path": "test/scripts/hardhat-test-discovery.test.cjs",
+        "before": {
+          "mode": "100644",
+          "blob": "25707f312769272f1f88a6d12b1c709ac07d0ae9"
+        },
+        "after": {
+          "mode": "100644",
+          "blob": "491f41a628672b817995f4ef5e4a0959c80db940"
+        }
+      },
+      {
         "path": "test/scripts/telemetryRecovery.test.cjs",
         "before": null,
         "after": {
@@ -958,6 +972,172 @@
           "blob": "8b09a7cbf775586ecad7957dfbcba49085b2bb1d"
         }
       }
-    ]
+    ],
+    "historical": {
+      "baseline": "d27d752cf552bc7f45108c962b6501d912d1e715",
+      "baselineTree": "be4aaad8bdd34f7b33ee42a5d2fae577892fd016",
+      "source": "9dbdba4048b5d85273e61803ffef8f474088c57a",
+      "tree": "42c46b733a38dd47c0ab0688a9fd65b0ed708a1d",
+      "transitions": [
+        {
+          "path": ".github/workflows/ci.yml",
+          "before": {
+            "mode": "100644",
+            "blob": "9dd4242442010d65ad2d6328494b13aa813b06f8"
+          },
+          "after": {
+            "mode": "100644",
+            "blob": "2a49b0c2acddf02f98255b46d82531e02e50fb63"
+          }
+        },
+        {
+          "path": "agent-gateway/grpc.ts",
+          "before": {
+            "mode": "100644",
+            "blob": "1a3bd59a11ba285721042e2a26c62ddf84412bd8"
+          },
+          "after": {
+            "mode": "100644",
+            "blob": "372babae69016980584217053e8e0d5631472bb5"
+          }
+        },
+        {
+          "path": "agent-gateway/operator.ts",
+          "before": {
+            "mode": "100644",
+            "blob": "c994de63bd1b4f18eeb756001fafd127245bb2b6"
+          },
+          "after": {
+            "mode": "100644",
+            "blob": "2a09ee0ffd4d73124f1fec59d519533157dfe204"
+          }
+        },
+        {
+          "path": "agent-gateway/routes.ts",
+          "before": {
+            "mode": "100644",
+            "blob": "b2670fd4b6c4b6f55dc41f91b7bbbfb3883dea0c"
+          },
+          "after": {
+            "mode": "100644",
+            "blob": "3ba1337dd5c4cfa6f3ce9f6819cae2701e701af5"
+          }
+        },
+        {
+          "path": "agent-gateway/telemetry.ts",
+          "before": {
+            "mode": "100644",
+            "blob": "d0a245d0442cd858ae9c553d6bcf6717709f8336"
+          },
+          "after": {
+            "mode": "100644",
+            "blob": "42bdd6a33d84f666b1ae7e89fcbfab54e21f20d4"
+          }
+        },
+        {
+          "path": "agent-gateway/telemetryQueue.ts",
+          "before": null,
+          "after": {
+            "mode": "100644",
+            "blob": "0b34646c7df99660eee90bcfae3049ac9c4a6b39"
+          }
+        },
+        {
+          "path": "agent-gateway/telemetrySample.ts",
+          "before": null,
+          "after": {
+            "mode": "100644",
+            "blob": "7809789c04e84dd9d5d5fdac40336b84cb6b6492"
+          }
+        },
+        {
+          "path": "docs/operator-telemetry.md",
+          "before": {
+            "mode": "100644",
+            "blob": "f50a122157a7f21cd98c24c7d12abd0fabdac7a8"
+          },
+          "after": {
+            "mode": "100644",
+            "blob": "bd324cfa1f06236147fd6869fd296b49e64f0aba"
+          }
+        },
+        {
+          "path": "test/gateway/authPrincipal.test.js",
+          "before": {
+            "mode": "100644",
+            "blob": "bd3789d060d1ecb7b89c7c93a9b320e53c65746b"
+          },
+          "after": {
+            "mode": "100644",
+            "blob": "831b88894bbceb3f4a6b9bd900130db46c415a29"
+          }
+        },
+        {
+          "path": "test/gateway/submissionContract.test.js",
+          "before": {
+            "mode": "100644",
+            "blob": "81a4ad7e8cd4d65b51e424f210691ff4198b9e17"
+          },
+          "after": {
+            "mode": "100644",
+            "blob": "e9c1af3d056310f9e6388ff4a04035ebb6a96752"
+          }
+        },
+        {
+          "path": "test/gateway/telemetryRecovery.test.cjs",
+          "before": null,
+          "after": {
+            "mode": "100644",
+            "blob": "8b09a7cbf775586ecad7957dfbcba49085b2bb1d"
+          }
+        }
+      ]
+    },
+    "followup": {
+      "baseline": "9dbdba4048b5d85273e61803ffef8f474088c57a",
+      "baselineTree": "42c46b733a38dd47c0ab0688a9fd65b0ed708a1d",
+      "source": "b7f60ff52b87101ecf06681c41b7e13109f63e31",
+      "tree": "a69606184d7f839e8e256b1eed229d98b776ebaa",
+      "transitions": [
+        {
+          "path": ".github/workflows/ci.yml",
+          "before": {
+            "mode": "100644",
+            "blob": "2a49b0c2acddf02f98255b46d82531e02e50fb63"
+          },
+          "after": {
+            "mode": "100644",
+            "blob": "1b32c2d03bf61107aa5ecd6664e5346cb73c1fe3"
+          }
+        },
+        {
+          "path": "test/gateway/telemetryRecovery.test.cjs",
+          "before": {
+            "mode": "100644",
+            "blob": "8b09a7cbf775586ecad7957dfbcba49085b2bb1d"
+          },
+          "after": null
+        },
+        {
+          "path": "test/scripts/hardhat-test-discovery.test.cjs",
+          "before": {
+            "mode": "100644",
+            "blob": "25707f312769272f1f88a6d12b1c709ac07d0ae9"
+          },
+          "after": {
+            "mode": "100644",
+            "blob": "491f41a628672b817995f4ef5e4a0959c80db940"
+          }
+        },
+        {
+          "path": "test/scripts/telemetryRecovery.test.cjs",
+          "before": null,
+          "after": {
+            "mode": "100644",
+            "blob": "8b09a7cbf775586ecad7957dfbcba49085b2bb1d"
+          }
+        }
+      ]
+    }
   }
 }

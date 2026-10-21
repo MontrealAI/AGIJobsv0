@@ -133,7 +133,7 @@ test('telemetry scope binds its genuine complete origin and rejects inventory, b
   const before = p.parseTree(git('ls-tree', '-rz', scope.baseline));
   const after = p.parseTree(git('ls-tree', '-rz', scope.source));
   const paths = p.verifyTelemetryTransitions(before, after);
-  assert.equal(paths.length, 11);
+  assert.equal(paths.length, 12);
   assert.equal(
     paths.filter((name) => name.startsWith('agent-gateway/')).length,
     6
@@ -197,6 +197,94 @@ test('telemetry scope binds its genuine complete origin and rejects inventory, b
   );
 });
 
+test('historical telemetry proof composes only with the exact discovery follow-up', () => {
+  const scope = p.profile.telemetryRuntime;
+  const historical = scope.historical;
+  const followup = scope.followup;
+  const git = (...args) => command(ROOT, args);
+  assert.equal(
+    createHash('sha256').update(JSON.stringify(historical)).digest('hex'),
+    'ff6f82ddd6738d3a0e7481fdd4cd1fc065853b68bc1a20e1defbfaccefea792c'
+  );
+  assert.equal(historical.transitions.length, 11);
+  assert.equal(followup.transitions.length, 4);
+  assert.deepEqual(followup.transitions.map((item) => item.path), [
+    '.github/workflows/ci.yml',
+    'test/gateway/telemetryRecovery.test.cjs',
+    'test/scripts/hardhat-test-discovery.test.cjs',
+    'test/scripts/telemetryRecovery.test.cjs',
+  ]);
+  const removed = followup.transitions[1];
+  const added = followup.transitions[3];
+  assert.equal(removed.after, null);
+  assert.equal(added.before, null);
+  assert.deepEqual(removed.before, added.after);
+  assert.equal(followup.baseline, historical.source);
+  assert.equal(followup.baselineTree, historical.tree);
+  assert.equal(followup.source, scope.source);
+  assert.equal(followup.tree, scope.tree);
+  for (const field of ['historical', 'followup']) {
+    for (const mutate of [
+      (proof) => { proof.source = proof.baseline; },
+      (proof) => { proof.tree = '0'.repeat(40); },
+      (proof) => { proof.transitions.pop(); },
+      (proof) => { proof.transitions.reverse(); },
+      (proof) => { proof.transitions.push({ ...proof.transitions[0], path: 'agent-gateway/unreviewed.ts' }); },
+      (proof) => { proof.transitions[0].after.blob = '0'.repeat(40); },
+      (proof) => { proof.transitions[0].after.mode = '100755'; },
+    ]) {
+      const changed = clone(scope);
+      mutate(changed[field]);
+      assert.throws(() => p.validateTelemetryRuntime(changed), /scope commitment/);
+    }
+    const proof = scope[field];
+    for (const name of ['baseline', 'source']) {
+      const alteredTree = (...args) =>
+        args[0] === 'rev-parse' && args[1] === `${proof[name]}^{tree}`
+          ? '0'.repeat(40)
+          : git(...args);
+      assert.throws(() => p.verifyTelemetryOrigin(alteredTree), /immutable origin/);
+    }
+    const wrongAncestry = (...args) => {
+      if (args[0] === 'merge-base' && args[2] === proof.baseline && args[3] === proof.source)
+        throw new Error('injected nonancestor');
+      return git(...args);
+    };
+    assert.throws(() => p.verifyTelemetryOrigin(wrongAncestry), /injected nonancestor/);
+  }
+  const extraRuntime = 'agent-gateway/unreviewed.ts';
+  const extraBlob = '0'.repeat(40);
+  for (const proof of [historical, followup]) {
+    const unexpectedFile = (...args) => {
+      const result = git(...args);
+      return args[0] === 'ls-tree' && args[2] === proof.source
+        ? result + `100644 blob ${extraBlob}\t${extraRuntime}\0`
+        : result;
+    };
+    assert.throws(() => p.verifyTelemetryOrigin(unexpectedFile), /transition inventory/);
+  }
+  const discovery = followup.transitions[2];
+  const beforeTree = p.parseTree(git('ls-tree', '-rz', followup.baseline));
+  const afterTree = p.parseTree(git('ls-tree', '-rz', followup.source));
+  for (const item of followup.transitions) {
+    for (const [key, original] of [['before', beforeTree], ['after', afterTree]]) {
+      for (const replacement of [null, { mode: '100644', blob: '0'.repeat(40) }, { mode: '100755', blob: item[key]?.blob || extraBlob }]) {
+        if (JSON.stringify(replacement) === JSON.stringify(item[key])) continue;
+        const changed = new Map(original);
+        if (replacement === null) changed.delete(item.path);
+        else changed.set(item.path, replacement);
+        const corrupted = (...args) => {
+          if (args[0] === 'ls-tree' && args[2] === followup[key === 'before' ? 'baseline' : 'source'])
+            return [...changed].map(([name, identity]) => `${identity.mode} blob ${identity.blob}\t${name}\0`).join('');
+          return git(...args);
+        };
+        assert.throws(() => p.verifyTelemetryOrigin(corrupted), /blob or mode|transition inventory/);
+      }
+    }
+  }
+  assert.equal(discovery.after.blob, git('hash-object', 'test/scripts/hardhat-test-discovery.test.cjs').trim());
+});
+
 test('finite telemetry admission preserves the rejection of an extra runtime file and altered CI commands', (t) => {
   const r = repository(t);
   shareObjects(r);
@@ -230,6 +318,16 @@ test('finite telemetry admission preserves the rejection of an extra runtime fil
   assert.throws(
     () => p.verifySourceScope(args(alteredCI)),
     /Exact telemetry runtime blob or mode differs/
+  );
+  r.git('read-tree', source);
+  r.put(
+    'test/gateway/telemetryRecovery.test.cjs',
+    command(ROOT, ['cat-file', 'blob', p.profile.telemetryRuntime.historical.transitions.at(-1).after.blob])
+  );
+  const restoredOldSuite = r.commit(source);
+  assert.throws(
+    () => p.verifySourceScope(args(restoredOldSuite)),
+    /Unexpected implementation-to-release change: test\/gateway\/telemetryRecovery.test.cjs/
   );
   assert.throws(() => p.verifyPublicationReview(), /pending/);
 });

@@ -7,7 +7,7 @@ const { createHash } = require('node:crypto');
 const integrationTransitionsSha256 =
   '1363ebe715ffc6405f70261924ff41313073f72dd0d03bd68440235cac78af02';
 const telemetryRuntimeSha256 =
-  '86f6baf11e9f7ba74d43b59bb02987482fce055cbfdeeea1f0ec94d42113120b';
+  '07951603325076f35340e2514267bde0fa47d567e3114757febb41ef5841129b';
 const historical = require('./qualify-source-release.cjs');
 
 function freeze(value) {
@@ -392,26 +392,27 @@ function verifyIntegrationTransitions(
   return transitions.map((item) => item.path);
 }
 
-// This finite scope proposal does not install a review or qualify publication.
-// Its actual source, complete eleven-file delta and every blob/mode are bound.
-function validateTelemetryRuntime(value = profile.telemetryRuntime) {
+// The aggregate composes the untouched historical proof with one exact follow-up.
+// Neither proof installs a review or qualifies publication.
+const historicalTelemetryRuntimeSha256 =
+  'ff6f82ddd6738d3a0e7481fdd4cd1fc065853b68bc1a20e1defbfaccefea792c';
+function telemetryProof(value) {
+  const { baseline, baselineTree, source, tree, transitions } = value;
+  return { baseline, baselineTree, source, tree, transitions };
+}
+function validateTelemetryProof(value, count, allowDeletion = false) {
   fields(
     value,
     ['baseline', 'baselineTree', 'source', 'tree', 'transitions'],
-    'Malformed telemetry runtime scope'
-  );
-  requireValue(
-    createHash('sha256').update(JSON.stringify(value)).digest('hex') ===
-      telemetryRuntimeSha256,
-    'Exact telemetry runtime scope commitment differs'
+    'Malformed telemetry runtime proof'
   );
   requireValue(
     ['baseline', 'baselineTree', 'source', 'tree'].every((field) =>
       /^[a-f0-9]{40}$/.test(value[field] || '')
     ) &&
       Array.isArray(value.transitions) &&
-      value.transitions.length === 11,
-    'Exact telemetry runtime source and eleven transitions are required'
+      value.transitions.length === count,
+    'Exact telemetry runtime source and finite transition count are required'
   );
   const seen = new Set();
   for (const item of value.transitions) {
@@ -432,19 +433,43 @@ function validateTelemetryRuntime(value = profile.telemetryRuntime) {
       );
     }
     requireValue(
-      item.after !== null && !same(item.before, item.after),
+      (allowDeletion || item.after !== null) && !same(item.before, item.after),
       'Telemetry source deletion or unchanged transition is prohibited'
     );
   }
   return value;
 }
-
-function verifyTelemetryTransitions(
-  beforeTree,
-  afterTree,
-  value = profile.telemetryRuntime
-) {
-  validateTelemetryRuntime(value);
+function validateTelemetryRuntime(value = profile.telemetryRuntime) {
+  fields(
+    value,
+    ['baseline', 'baselineTree', 'source', 'tree', 'transitions', 'historical', 'followup'],
+    'Malformed telemetry runtime scope'
+  );
+  requireValue(
+    createHash('sha256').update(JSON.stringify(value)).digest('hex') ===
+      telemetryRuntimeSha256,
+    'Exact telemetry runtime scope commitment differs'
+  );
+  validateTelemetryProof(telemetryProof(value), 12);
+  validateTelemetryProof(value.historical, 11);
+  requireValue(
+    createHash('sha256').update(JSON.stringify(value.historical)).digest('hex') ===
+      historicalTelemetryRuntimeSha256,
+    'Historical eleven-transition telemetry proof commitment differs'
+  );
+  validateTelemetryProof(value.followup, 4, true);
+  requireValue(
+    value.baseline === value.historical.baseline &&
+      value.baselineTree === value.historical.baselineTree &&
+      value.followup.baseline === value.historical.source &&
+      value.followup.baselineTree === value.historical.tree &&
+      value.followup.source === value.source &&
+      value.followup.tree === value.tree,
+    'Telemetry historical proof and finite follow-up do not compose'
+  );
+  return value;
+}
+function verifyTelemetryProofTransitions(beforeTree, afterTree, value) {
   requireValue(
     beforeTree instanceof Map && afterTree instanceof Map,
     'Telemetry runtime inputs must be complete tree maps'
@@ -457,23 +482,32 @@ function verifyTelemetryTransitions(
     );
   return value.transitions.map((item) => item.path);
 }
-
+function verifyTelemetryTransitions(
+  beforeTree,
+  afterTree,
+  value = profile.telemetryRuntime
+) {
+  validateTelemetryRuntime(value);
+  return verifyTelemetryProofTransitions(beforeTree, afterTree, value);
+}
 function verifyTelemetryOrigin(git, value = profile.telemetryRuntime) {
   validateTelemetryRuntime(value);
-  requireValue(
-    text(git('rev-parse', `${value.source}^{tree}`)).trim() === value.tree &&
-      text(git('rev-parse', `${value.baseline}^{tree}`)).trim() ===
-        value.baselineTree,
-    'Telemetry source or baseline tree differs from its immutable origin'
-  );
-  git('merge-base', '--is-ancestor', value.baseline, value.source);
-  const before = parseTree(git('ls-tree', '-rz', value.baseline));
-  const after = parseTree(git('ls-tree', '-rz', value.source));
-  const paths = verifyTelemetryTransitions(before, after, value);
-  requireValue(
-    same(changedPaths(before, after), [...paths].sort()),
-    'Complete telemetry runtime origin transition inventory differs'
-  );
+  for (const proof of [value.historical, value.followup, value]) {
+    requireValue(
+      text(git('rev-parse', `${proof.source}^{tree}`)).trim() === proof.tree &&
+        text(git('rev-parse', `${proof.baseline}^{tree}`)).trim() ===
+          proof.baselineTree,
+      'Telemetry source or baseline tree differs from its immutable origin'
+    );
+    git('merge-base', '--is-ancestor', proof.baseline, proof.source);
+    const before = parseTree(git('ls-tree', '-rz', proof.baseline));
+    const after = parseTree(git('ls-tree', '-rz', proof.source));
+    const paths = verifyTelemetryProofTransitions(before, after, proof);
+    requireValue(
+      same(changedPaths(before, after), [...paths].sort()),
+      'Complete telemetry runtime origin transition inventory differs'
+    );
+  }
   return value;
 }
 
