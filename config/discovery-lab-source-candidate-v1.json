@@ -16,17 +16,25 @@
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "e27f49263d3fa6c2cc77020ce52d4f7a4f4a0695b843387f60f4ac0a5d227e1a"
+        "sha256": "7a518b44eed0ae4fd448e43971424fc00e347933f54fadf1c055d80ba5dc6f4a"
       },
-      "reason": "Explicit additive six-stage Discovery Lab receiver, strict shared contract, transport-policy verification and public source evidence; no old path exemption or publication qualification."
+      "reason": "Explicit additive Discovery Lab source and tests; no historical source exemption or publication qualification."
+    },
+    "config/discovery-lab-alpha-source.json": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "d09f8c816fe2666fbebada535704a087d841a59d76d1bcf7143513a2ba4e2bda"
+      },
+      "reason": "Explicit native compatibility harness/source pin; authenticated Alpha code only, no execution or publication approval."
     },
     "docs/successor/DISCOVERY_LAB.md": {
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "286dab505b713c7d5f8490534696338b1db63bc38008425ea97ffe635c62613e"
+        "sha256": "26ed31e50e110102813016ef322847c04d17922f26afd0c01c93440d8ec47b57"
       },
-      "reason": "Explicit additive six-stage Discovery Lab receiver, strict shared contract, transport-policy verification and public source evidence; no old path exemption or publication qualification."
+      "reason": "Explicit additive Discovery Lab source and tests; no historical source exemption or publication qualification."
     },
     "integrations/alpha-agent/discovery-lab-contract.mjs": {
       "before": null,
@@ -34,23 +42,31 @@
         "mode": "100644",
         "sha256": "bfa38a9312a90730f7f35eaed3d5d5dcca2b1c0cc7e51657413670145d2da2e3"
       },
-      "reason": "Explicit additive six-stage Discovery Lab receiver, strict shared contract, transport-policy verification and public source evidence; no old path exemption or publication qualification."
+      "reason": "Explicit additive Discovery Lab source and tests; no historical source exemption or publication qualification."
+    },
+    "integrations/alpha-agent/discovery-lab-native-test.mjs": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "da1bf489aee36127ba0d4284b90a2f55831e47e1f57bac5c9bebdaf17d841a53"
+      },
+      "reason": "Explicit native compatibility harness/source pin; authenticated Alpha code only, no execution or publication approval."
     },
     "integrations/alpha-agent/discovery-lab-work-request.mjs": {
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "5f072f2cf0ee282513dd258994fb8c2a005a887f44f0d67eb1d2bda7c3e69579"
+        "sha256": "05656865e5a9d84ff910b3d02a1fa3aefe5cf86e46a249324e22cd7c58e59a44"
       },
-      "reason": "Explicit additive six-stage Discovery Lab receiver, strict shared contract, transport-policy verification and public source evidence; no old path exemption or publication qualification."
+      "reason": "Explicit additive Discovery Lab source and tests; no historical source exemption or publication qualification."
     },
     "integrations/alpha-agent/discovery-lab-work-request.test.mjs": {
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "1453af03f959f277aafb492bcc4d801dae1e3508f745cdaf93eee78b2cf6e509"
+        "sha256": "74b92ed3e9870d259a3c63789ca153c588ef09504bbd41d10eb75f77a90d5c76"
       },
-      "reason": "Explicit additive six-stage Discovery Lab receiver, strict shared contract, transport-policy verification and public source evidence; no old path exemption or publication qualification."
+      "reason": "Explicit additive Discovery Lab source and tests; no historical source exemption or publication qualification."
     },
     "integrations/alpha-agent/fixtures/discovery-lab-request.json": {
       "before": null,
@@ -58,15 +74,15 @@
         "mode": "100644",
         "sha256": "891e11f3fed142db55e36934b4f1b5869200973216bfdd9257789fd66fb0a82f"
       },
-      "reason": "Explicit additive six-stage Discovery Lab receiver, strict shared contract, transport-policy verification and public source evidence; no old path exemption or publication qualification."
+      "reason": "Explicit additive Discovery Lab source and tests; no historical source exemption or publication qualification."
     },
     "scripts/release/test-discovery-lab-profile.py": {
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "38b3fdd45d3b08b6315cdf2fb71b89649392de7b001134fb57d5445ee00e70e0"
+        "sha256": "1af4997dff5c5d8da9cb872f41846b1c635595872c28b6804d815f68b64c28af"
       },
-      "reason": "Explicit additive six-stage Discovery Lab receiver, strict shared contract, transport-policy verification and public source evidence; no old path exemption or publication qualification."
+      "reason": "Explicit additive Discovery Lab source and tests; no historical source exemption or publication qualification."
     }
   }
 }

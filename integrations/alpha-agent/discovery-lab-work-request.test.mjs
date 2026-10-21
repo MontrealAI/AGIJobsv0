@@ -3,8 +3,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import { canonical, payloadDigest, validateBindings, validateResources, BINDING_KEYS, RESOURCE_KEYS, STAGES } from './discovery-lab-contract.mjs';
-import { discoveryLabReceiverCapabilities, inspectDiscoveryLabWorkRequest, receiveDiscoveryLabWorkRequest }
+import { DISCOVERY_LAB_ADMISSION_CHECKS, discoveryLabReceiverCapabilities, inspectDiscoveryLabWorkRequest, receiveDiscoveryLabWorkRequest }
   from './discovery-lab-work-request.mjs';
 const ROUTE = 'jobs-agialpha', CURRENCY = 'AGIALPHA18';
 const original = JSON.parse(readFileSync(new URL('./fixtures/discovery-lab-request.json', import.meta.url), 'utf8'));
@@ -31,7 +32,9 @@ for (const stage of STAGES) test('all six discriminators receive an actual curre
   const policyDouble = f.options.inspectCampaign;
   f.options.inspectCampaign = async (payload, context) => {
     calls++; assert.deepEqual(payload, f.request.payload); assert.equal(context.request.stage, stage);
-    assert.deepEqual(context.limits, f.request.resourceLimits); return policyDouble();
+    assert.ok(context.limits.checking < f.request.resourceLimits.checking);
+    assert.ok(context.limits.memoryBytes < f.request.resourceLimits.memoryBytes);
+    assert.ok(context.limits.storageBytes < f.request.resourceLimits.storageBytes); return policyDouble();
   };
   const r = await inspect(f); assert.equal(calls,1); assert.equal(r.state,'local-rejected');
   assert.equal(r.original,canonical(f.request)); assert.equal(r.lifecycle.commission,'DRAFT_NOT_SUBMITTED');
@@ -76,7 +79,7 @@ test('a semantic checker result still grants no imported capability or operation
   assert.equal(r.capabilityAcceptance,'not-granted-by-import'); assert.equal(r.lifecycle.execution,'unprovisioned');
 });
 test('checker work beyond a resource limit remains charged and inconclusive',async()=>{
-  const f=fixture(); f.request.resourceLimits.checking=0;
+  const f=fixture(); f.request.resourceLimits.checking=DISCOVERY_LAB_ADMISSION_CHECKS;
   f.options.inspectCampaign=async()=>({accepted:true,
     resourceUsed:{...Object.fromEntries(RESOURCE_KEYS.map(k=>[k,0])),checking:1},reasons:[]});
   const r=await inspect(f); assert.equal(r.state,'inconclusive');
@@ -121,7 +124,7 @@ test('direct-object data never invokes getters or hides symbol, non-enumerable o
 
 for (const reason of ['BUDGET_EXHAUSTED','stage:SEARCH_TRUNCATED','CHECK_INCOMPLETE'])
 test('incomplete checking at the resource cap remains inconclusive: '+reason,async()=>{
-  const f=fixture(); f.request.resourceLimits.checking=1;
+  const f=fixture(); f.request.resourceLimits.checking=DISCOVERY_LAB_ADMISSION_CHECKS+1;
   f.options.inspectCampaign=async()=>({accepted:false,resourceUsed:{...Object.fromEntries(RESOURCE_KEYS.map(k=>[k,0])),checking:1},reasons:[reason]});
   assert.equal((await inspect(f)).state,'inconclusive');
 });
@@ -148,4 +151,69 @@ test('direct binding and resource validators reject getters before reading value
   assert.throws(()=>validateBindings(bindings));assert.equal(invoked,false);
   const resources={...f.request.resourceLimits};Object.defineProperty(resources,'checking',{enumerable:true,get(){invoked=true;return 1;}});
   assert.throws(()=>validateResources(resources));assert.equal(invoked,false);
+});
+
+test('input/copy/receipt bytes and declared admission units are charged before checker work',async()=>{
+  const f=fixture();let limits;const prior=f.options.inspectCampaign;
+  f.options.inspectCampaign=async(payload,ctx)=>{limits=ctx.limits;return prior();};
+  const r=await inspect(f);assert.equal(r.resources.receiverUsed.checking,DISCOVERY_LAB_ADMISSION_CHECKS);
+  assert.equal(r.resources.receiverUsed.storageBytes,Buffer.byteLength(JSON.stringify(r)));
+  assert.ok(r.resources.receiverUsed.memoryBytes>Buffer.byteLength(r.original));
+  assert.ok(r.resources.receiverUsed.elapsedMs>=0);
+  assert.equal(limits.checking,f.request.resourceLimits.checking-DISCOVERY_LAB_ADMISSION_CHECKS);
+  assert.equal(r.resources.totalUsed.storageBytes,r.resources.receiverUsed.storageBytes);
+});
+test('insufficient receiver reservation stops before native work and remains inconclusive',async()=>{
+  const f=fixture();f.request.resourceLimits.storageBytes=0;let calls=0;
+  f.options.inspectCampaign=async()=>{calls++;};const r=await inspect(f);
+  assert.equal(r.state,'inconclusive');assert.equal(r.reason,'RECEIVER_RESERVATION_UNAVAILABLE');
+  assert.equal(r.resources.reservationAvailable,false);assert.equal(r.checker.report,null);assert.equal(calls,0);
+  assert.ok(r.resources.totalUsed.storageBytes>0);
+});
+test('failed trusted-context admission retains current receiver charges',async()=>{
+  const f=fixture();f.options.expectedBindings.sourceDigest='a'.repeat(64);
+  await assert.rejects(inspect(f),error=>error.code==='DISCOVERY_LAB_STALE_BINDINGS'
+    && error.resourceUsed.checking===DISCOVERY_LAB_ADMISSION_CHECKS && error.resourceUsed.memoryBytes>0
+    && error.resourceAccounting==='current-failed-attempt-charge' && error.authority==='none');
+});
+test('an inspector exception retains its unresolved native resource reservation',async()=>{
+  const f=fixture();f.options.inspectCampaign=async()=>{throw Error('synthetic interruption');};
+  await assert.rejects(inspect(f),error=>error.nativeResourceReservation.checking>0
+    && error.resourceAccounting==='receiver-charge-retained; native-budget-reservation-unresolved'
+    && error.resourceUsed.checking===DISCOVERY_LAB_ADMISSION_CHECKS);
+});
+
+for (const key of ['memoryBytes','storageBytes'])
+test('unused receiver reserve cannot enlarge the inspector allowance: '+key,async()=>{
+  const f=fixture();f.options.inspectCampaign=async(payload,ctx)=>({accepted:true,
+    resourceUsed:{...Object.fromEntries(RESOURCE_KEYS.map(k=>[k,0])),[key]:ctx.limits[key]+1},reasons:[]});
+  const r=await inspect(f);assert.equal(r.state,'inconclusive');
+  assert.equal(r.checker.nativeWithinResourceEnvelope,false);assert.equal(r.reason,'NATIVE_RESOURCE_ENVELOPE_EXCEEDED');
+  assert.ok(r.resources.totalUsed[key]<=f.request.resourceLimits[key]);
+});
+test('resource sums cannot overflow the strict safe-integer vector or discard component costs',async()=>{
+  const f=fixture();f.request.resourceLimits=Object.fromEntries(RESOURCE_KEYS.map(k=>[k,Number.MAX_SAFE_INTEGER]));
+  f.options.inspectCampaign=async()=>({accepted:true,resourceUsed:{...Object.fromEntries(RESOURCE_KEYS.map(k=>[k,0])),checking:Number.MAX_SAFE_INTEGER},reasons:[]});
+  await assert.rejects(inspect(f),error=>error.code==='DISCOVERY_LAB_RESOURCE_OVERFLOW'
+    &&error.resourceUsed.checking===DISCOVERY_LAB_ADMISSION_CHECKS
+    &&error.checkerResourceUsed.checking===Number.MAX_SAFE_INTEGER
+    &&error.resourceTotalsExact.checking===(BigInt(Number.MAX_SAFE_INTEGER)+BigInt(DISCOVERY_LAB_ADMISSION_CHECKS)).toString());
+});
+
+test('unsupported and unprovisioned probes retain their admission costs',async()=>{
+  const f=fixture();f.request.schema='unsupported/v1';
+  const r=await receiveDiscoveryLabWorkRequest(canonical(f.request),f.options);
+  assert.equal(r.resourceUsed.checking,DISCOVERY_LAB_ADMISSION_CHECKS);
+  assert.equal(r.resourceUsed.storageBytes,Buffer.byteLength(JSON.stringify(r)));
+  assert.ok(r.resourceUsed.memoryBytes>Buffer.byteLength(canonical(f.request)));
+});
+test('malformed receiver probes retain current failed-attempt charges',async()=>{
+  await assert.rejects(receiveDiscoveryLabWorkRequest('{"bad":'),error=>error.resourceUsed.checking===DISCOVERY_LAB_ADMISSION_CHECKS
+    &&error.resourceUsed.memoryBytes>0&&error.authority==='none');
+});
+
+test('native helper exports can be imported from a stdin module without executing its CLI',()=>{
+  const script=`const helper=await import(${JSON.stringify(new URL('./discovery-lab-native-test.mjs',import.meta.url).href)});
+    if(typeof helper.boundedSource!=='function')throw Error('missing helper');`;
+  assert.equal(execFileSync(process.execPath,['--input-type=module','-'],{input:script,encoding:'utf8'}),'');
 });

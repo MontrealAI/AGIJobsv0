@@ -10,7 +10,7 @@ jobs:
   policy:
     name: Discovery Lab zero-cap receiver policy
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
         with:
@@ -31,11 +31,48 @@ jobs:
           sha256sum integrations/alpha-agent/discovery-lab-contract.mjs integrations/alpha-agent/discovery-lab-work-request.mjs integrations/alpha-agent/discovery-lab-work-request.test.mjs integrations/alpha-agent/fixtures/discovery-lab-request.json > "$RUNNER_TEMP/discovery-lab/SHA256SUMS.txt"
           node --test --test-reporter=tap integrations/alpha-agent/discovery-lab-work-request.test.mjs > "$RUNNER_TEMP/discovery-lab/policy.tap"
           cat "$RUNNER_TEMP/discovery-lab/policy.tap"
-      - name: Retain actual policy evidence (not native lab qualification)
+      - name: Verify the candidate-only finite source inventory from actual tracked inputs
+        run: |
+          set -euo pipefail
+          python3 scripts/release/test-discovery-lab-profile.py > "$RUNNER_TEMP/discovery-lab/source-profile-tests.txt" 2>&1
+          cat "$RUNNER_TEMP/discovery-lab/source-profile-tests.txt"
+          python3 - <<'PYCODE' > "$RUNNER_TEMP/discovery-lab/source-profile.json"
+          import hashlib, json, pathlib, runpy, subprocess
+          root = pathlib.Path.cwd()
+          policy = runpy.run_path(str(root / 'scripts/release/discovery-lab-profile.py'))
+          if subprocess.check_output(['git', 'ls-files', '--others', '--exclude-standard', '-z']):
+              raise ValueError('Untracked source cannot enter candidate qualification')
+          actual = subprocess.check_output(['git', 'ls-files', '--cached', '-z']).decode().rstrip('\0').split('\0')
+          digest = lambda path: hashlib.sha256((root / path).read_bytes()).hexdigest()
+          selected = policy['select'](manifest_sha256=digest(policy['MANIFEST']), verifier_sha256=digest(policy['VERIFIER']))
+          result = policy['validate_source'](root, selected, paths=actual)
+          result['sourceCommit'] = subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode().strip()
+          result['sourceTree'] = subprocess.check_output(['git', 'rev-parse', 'HEAD^{tree}']).decode().strip()
+          print(json.dumps(result, sort_keys=True))
+          PYCODE
+          sha256sum config/discovery-lab-source-candidate-v1.json config/discovery-lab-source-baseline-v1.json scripts/release/discovery-lab-profile.py scripts/release/test-discovery-lab-profile.py .github/workflows/discovery-lab-receiver.yml docs/successor/DISCOVERY_LAB.md >> "$RUNNER_TEMP/discovery-lab/SHA256SUMS.txt"
+      - name: Capture the exact reviewed Alpha implementation
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          repository: MontrealAI/AGI-Alpha-Agent-v0
+          ref: 91ee90a2d093043b9dff7d115320b181e89cdd46
+          path: build/discovery-alpha
+          persist-credentials: false
+          sparse-checkout: |
+            examples/successor-capability
+            examples/successor-workbench
+            docs/assets/successor
+            docs/successor/capabilities
+            scripts
+      - name: Run actual pinned synthetic campaign and native admission
+        run: |
+          set -euo pipefail
+          node integrations/alpha-agent/discovery-lab-native-test.mjs "$GITHUB_WORKSPACE/build/discovery-alpha" > "$RUNNER_TEMP/discovery-lab/native-evidence.json"
+          sha256sum integrations/alpha-agent/discovery-lab-native-test.mjs config/discovery-lab-alpha-source.json >> "$RUNNER_TEMP/discovery-lab/SHA256SUMS.txt"
+      - name: Retain exact-source policy and actual local native evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: discovery-lab-policy-${{ github.event.pull_request.head.sha || github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/discovery-lab
           if-no-files-found: error
-

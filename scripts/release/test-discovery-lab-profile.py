@@ -4,6 +4,7 @@ import hashlib
 import json
 import pathlib
 import runpy
+import tempfile
 import unittest
 from unittest.mock import patch
 ROOT = pathlib.Path(__file__).resolve().parents[2]
@@ -78,5 +79,15 @@ class DiscoverySourceProfile(unittest.TestCase):
         for name in ['../outside','/absolute','a/../b','a\\b']:
             with self.assertRaises(ValueError):P['read'](ROOT,name)
         with self.assertRaises(ValueError):P['tree_digest']({'a':{'mode':'100644','blob':'1'*40},'a/b':{'mode':'100644','blob':'2'*40}})
+
+    def test_real_staged_directory_enumeration_refuses_a_rogue_file(self):
+        with tempfile.TemporaryDirectory(prefix='discovery-inventory-probe-') as folder:
+            root=pathlib.Path(folder);(root/'retained.txt').write_bytes(b'retained')
+            fixture={'retained.txt':{'mode':'100644','sha256':sha(b'retained')}}
+            with patch.dict(G,{'inventory':lambda root,selection:fixture}):
+                P['validate_source'](root,self.selection)
+                (root/'rogue-runtime.mjs').write_text('unreviewed extra source')
+                with self.assertRaisesRegex(ValueError,'unexpected inputs'):
+                    P['validate_source'](root,self.selection)
 
 if __name__=='__main__':unittest.main()

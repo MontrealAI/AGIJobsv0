@@ -15,7 +15,7 @@ PROFILE = 'discovery-lab-source-candidate-v1'
 MANIFEST = 'config/discovery-lab-source-candidate-v1.json'
 BASELINE = 'config/discovery-lab-source-baseline-v1.json'
 VERIFIER = 'scripts/release/discovery-lab-profile.py'
-ALLOWED = {'integrations/alpha-agent/discovery-lab-work-request.mjs', 'docs/successor/DISCOVERY_LAB.md', 'integrations/alpha-agent/fixtures/discovery-lab-request.json', 'integrations/alpha-agent/discovery-lab-contract.mjs', 'scripts/release/test-discovery-lab-profile.py', '.github/workflows/discovery-lab-receiver.yml', 'integrations/alpha-agent/discovery-lab-work-request.test.mjs'}
+ALLOWED = {'integrations/alpha-agent/discovery-lab-work-request.test.mjs', 'integrations/alpha-agent/discovery-lab-native-test.mjs', 'integrations/alpha-agent/discovery-lab-work-request.mjs', '.github/workflows/discovery-lab-receiver.yml', 'docs/successor/DISCOVERY_LAB.md', 'scripts/release/test-discovery-lab-profile.py', 'integrations/alpha-agent/fixtures/discovery-lab-request.json', 'integrations/alpha-agent/discovery-lab-contract.mjs', 'config/discovery-lab-alpha-source.json'}
 CLAIMS = {'sourcePackageOnly': True, 'releaseQualified': False,
           'releaseIdentity': None, 'publicationApproved': False, 'executionApproved': False}
 sha = lambda raw: hashlib.sha256(raw).hexdigest()

@@ -51,43 +51,149 @@ function checkReport(value) {
   return JSON.parse(canonical(value));
 }
 
+// Admission uses 10,000 declared checking units. Byte units count encoded input,
+// immutable copies and the serialized receipt; they are not VM heap measurements.
+export const DISCOVERY_LAB_ADMISSION_CHECKS = 10_000;
+const zeroResources = () => Object.fromEntries(RESOURCE_KEYS.map(key => [key, 0]));
+const byteLength = value => Buffer.byteLength(value, 'utf8');
+const elapsed = start => Math.max(0, Math.ceil(performance.now() - start));
+const fits = (used, limits) => RESOURCE_KEYS.every(key => used[key] <= limits[key]);
+function totalResources(receiver, checker = zeroResources(), nativeWall = 0) {
+  const exact = Object.fromEntries(RESOURCE_KEYS.map(key => [key, BigInt(receiver[key]) + BigInt(checker[key])]));
+  if (RESOURCE_KEYS.some(key => exact[key] > BigInt(Number.MAX_SAFE_INTEGER))) {
+    throw Object.assign(Error('DISCOVERY_LAB_RESOURCE_OVERFLOW'), {code:'DISCOVERY_LAB_RESOURCE_OVERFLOW',
+      resourceTotalsExact:Object.fromEntries(RESOURCE_KEYS.map(key => [key, exact[key].toString()]))});
+  }
+  const total = Object.fromEntries(RESOURCE_KEYS.map(key => [key, Number(exact[key])]));
+  // Current wall time already includes native execution; never charge it twice.
+  const elapsedExact = BigInt(Math.ceil(Math.max(0, receiver.elapsedMs - nativeWall))) + BigInt(checker.elapsedMs);
+  need(elapsedExact <= BigInt(Number.MAX_SAFE_INTEGER), 'DISCOVERY_LAB_RESOURCE_OVERFLOW');
+  total.elapsedMs = Math.max(receiver.elapsedMs, Number(elapsedExact));
+  return total;
+}
+
 /** The caller supplies the installed checker and its independently frozen current context. */
-export async function inspectDiscoveryLabWorkRequest(raw, {
+async function inspectRequest(raw, {
   expectedBindings, expectedCommission, inspectCampaign,
-} = {}) {
-  const bindingSnapshot = canonical(expectedBindings), commissionSnapshot = canonical(expectedCommission);
-  const frozenBindings = freezeData(JSON.parse(bindingSnapshot));
-  const frozenCommission = freezeData(JSON.parse(commissionSnapshot));
-  const contextUnchanged = () => need(canonical(expectedBindings) === bindingSnapshot
-    && canonical(expectedCommission) === commissionSnapshot, 'DISCOVERY_LAB_CONTEXT_CHANGED');
-  const request = await parseWorkRequest(raw);
-  contextUnchanged();
-  currentContext(request, frozenBindings, frozenCommission);
-  need(typeof inspectCampaign === 'function', 'DISCOVERY_LAB_INSPECTOR_REQUIRED');
-  const requestSnapshot = canonical(request);
-  const checkedRequest = freezeData(JSON.parse(requestSnapshot));
-  const report = checkReport(await inspectCampaign(checkedRequest.payload,
-    freezeData({ request:checkedRequest, limits:checkedRequest.resourceLimits })));
-  contextUnchanged();
-  need(canonical(request) === requestSnapshot, 'DISCOVERY_LAB_CHECKER_MUTATED_INPUT');
-  const withinResourceEnvelope = RESOURCE_KEYS.every(key => report.resourceUsed[key] <= request.resourceLimits[key]);
-  const incomplete = !report.accepted && report.reasons.some(exhausted);
-  const state = !withinResourceEnvelope || incomplete ? 'inconclusive' : report.accepted ? 'local-checked' : 'local-rejected';
-  return { schema:DISCOVERY_LAB_ADMISSION_SCHEMA, state, original:raw, requestSha256:sha(raw),
-    bindings:JSON.parse(bindingSnapshot), commission:{...request.commission},
-    stage:request.stage, inputArtifacts:[...request.inputArtifacts], payloadDigest:request.payloadDigest,
-    source:{...source}, checker:{report, withinResourceEnvelope},
-    lifecycle:{commission:'DRAFT_NOT_SUBMITTED', reservedBaseUnits:'0', execution:'unprovisioned',
-      review:'separate-review-required', settlement:'not-connected'},
-    capabilityAcceptance:'not-granted-by-import', authority:'none' };
+} = {}, started = performance.now()) {
+  const receiver = zeroResources();
+  receiver.checking = DISCOVERY_LAB_ADMISSION_CHECKS;
+  receiver.memoryBytes = typeof raw === 'string' ? byteLength(raw) : 0;
+  let checkerReport = null, nativeWall = 0, nativeInvoked = false, nativeLimits = null;
+  try {
+    const bindingSnapshot = canonical(expectedBindings), commissionSnapshot = canonical(expectedCommission);
+    const frozenBindings = freezeData(JSON.parse(bindingSnapshot));
+    const frozenCommission = freezeData(JSON.parse(commissionSnapshot));
+    receiver.memoryBytes += 2 * (byteLength(bindingSnapshot) + byteLength(commissionSnapshot));
+    const contextUnchanged = () => need(canonical(expectedBindings) === bindingSnapshot
+      && canonical(expectedCommission) === commissionSnapshot, 'DISCOVERY_LAB_CONTEXT_CHANGED');
+    const request = await parseWorkRequest(raw);
+    const requestSnapshot = canonical(request);
+    receiver.memoryBytes += 2 * byteLength(requestSnapshot);
+    contextUnchanged();
+    currentContext(request, frozenBindings, frozenCommission);
+    need(typeof inspectCampaign === 'function', 'DISCOVERY_LAB_INSPECTOR_REQUIRED');
+    let workingBytes = receiver.memoryBytes;
+    receiver.memoryBytes = workingBytes;
+    receiver.elapsedMs = elapsed(started);
+    // JSON escaping can double retained raw bytes; reasons may use control escapes.
+    const receiptReservationBytes = 2 * byteLength(raw) + 131_072;
+    const reservedReceiver = {...receiver, memoryBytes:workingBytes + byteLength(requestSnapshot) + receiptReservationBytes,
+      storageBytes:receiptReservationBytes};
+    const reservationAvailable = fits(reservedReceiver, request.resourceLimits);
+    if (reservationAvailable) {
+      nativeLimits = Object.fromEntries(RESOURCE_KEYS.map(key => [key, request.resourceLimits[key] - reservedReceiver[key]]));
+      const checkedRequest = freezeData(JSON.parse(requestSnapshot));
+      workingBytes += byteLength(requestSnapshot); receiver.memoryBytes = workingBytes;
+      const nativeStarted = performance.now(); nativeInvoked = true;
+      try {
+        checkerReport = checkReport(await inspectCampaign(checkedRequest.payload,
+          freezeData({request:checkedRequest, limits:{...nativeLimits}})));
+      } finally { nativeWall = performance.now() - nativeStarted; }
+      contextUnchanged();
+      need(canonical(request) === requestSnapshot, 'DISCOVERY_LAB_CHECKER_MUTATED_INPUT');
+    }
+    receiver.elapsedMs = elapsed(started);
+    const incomplete = checkerReport && !checkerReport.accepted && checkerReport.reasons.some(exhausted);
+    const nativeWithinResourceEnvelope = Boolean(checkerReport && fits(checkerReport.resourceUsed, nativeLimits));
+    const result = {schema:DISCOVERY_LAB_ADMISSION_SCHEMA, state:'inconclusive', original:raw, requestSha256:sha(raw),
+      bindings:JSON.parse(bindingSnapshot), commission:{...request.commission}, stage:request.stage,
+      inputArtifacts:[...request.inputArtifacts], payloadDigest:request.payloadDigest, source:{...source},
+      checker:{report:checkerReport, withinResourceEnvelope:false, nativeWithinResourceEnvelope},
+      resources:{units:'declared-admission-checks-and-encoded-bytes; elapsedMs measured',
+        receiverUsed:{...receiver}, checkerUsed:checkerReport?.resourceUsed || zeroResources(), totalUsed:zeroResources(),
+        receiverReservation:reservedReceiver, nativeLimits, reservationAvailable},
+      reason:!reservationAvailable ? 'RECEIVER_RESERVATION_UNAVAILABLE' : !nativeWithinResourceEnvelope ? 'NATIVE_RESOURCE_ENVELOPE_EXCEEDED' : null,
+      lifecycle:{commission:'DRAFT_NOT_SUBMITTED', reservedBaseUnits:'0', execution:'unprovisioned',
+        review:'separate-review-required', settlement:'not-connected'},
+      capabilityAcceptance:'not-granted-by-import', authority:'none'};
+    // Resolve receipt byte counts after inserting their own bounded integer fields.
+    for (let i = 0; i < 8; i++) {
+      const bytes = byteLength(JSON.stringify(result));
+      if (result.resources.receiverUsed.storageBytes === bytes) break;
+      result.resources.receiverUsed.storageBytes = bytes;
+      result.resources.receiverUsed.memoryBytes = workingBytes + bytes;
+      receiver.storageBytes = bytes; receiver.memoryBytes = workingBytes + bytes;
+      result.resources.totalUsed = totalResources(result.resources.receiverUsed, result.resources.checkerUsed, nativeWall);
+    }
+    receiver.elapsedMs = elapsed(started);
+    result.resources.receiverUsed.elapsedMs = receiver.elapsedMs;
+    result.resources.totalUsed = totalResources(result.resources.receiverUsed, result.resources.checkerUsed, nativeWall);
+    result.checker.withinResourceEnvelope = fits(result.resources.totalUsed, request.resourceLimits);
+    result.state = !reservationAvailable || !nativeWithinResourceEnvelope || !result.checker.withinResourceEnvelope || incomplete ? 'inconclusive'
+      : checkerReport.accepted ? 'local-checked' : 'local-rejected';
+    // State and measured elapsed digits can alter the serialized receipt length.
+    for (let i = 0; i < 8; i++) {
+      const bytes = byteLength(JSON.stringify(result));
+      if (result.resources.receiverUsed.storageBytes === bytes) break;
+      result.resources.receiverUsed.storageBytes = bytes;
+      result.resources.receiverUsed.memoryBytes = workingBytes + bytes;
+      receiver.storageBytes = bytes; receiver.memoryBytes = workingBytes + bytes;
+      result.resources.totalUsed = totalResources(result.resources.receiverUsed, result.resources.checkerUsed, nativeWall);
+    }
+    result.checker.withinResourceEnvelope = fits(result.resources.totalUsed, request.resourceLimits);
+    if (!result.checker.withinResourceEnvelope) result.state = 'inconclusive';
+    return result;
+  } catch (error) {
+    receiver.elapsedMs = elapsed(started);
+    const failure = error instanceof Error ? error : Error('DISCOVERY_LAB_INSPECTION_FAILED');
+    try { failure.resourceUsed = totalResources(receiver, checkerReport?.resourceUsed || zeroResources(), nativeWall); }
+    catch (overflow) {
+      failure.resourceUsed = {...receiver};
+      failure.checkerResourceUsed = checkerReport?.resourceUsed || zeroResources();
+      failure.resourceTotalsExact = overflow.resourceTotalsExact;
+    }
+    failure.resourceAccounting = failure.resourceTotalsExact ? 'component-charges-retained; total-exceeds-safe-integer-range'
+      : nativeInvoked && !checkerReport
+      ? 'receiver-charge-retained; native-budget-reservation-unresolved' : 'current-failed-attempt-charge';
+    failure.nativeResourceReservation = nativeInvoked && !checkerReport ? nativeLimits : null;
+    failure.authority = 'none';
+    throw failure;
+  }
+}
+
+export async function inspectDiscoveryLabWorkRequest(raw, options = {}) {
+  return inspectRequest(raw, options, performance.now());
 }
 
 /** Probe unsupported schema/mode explicitly; malformed or stale supported requests still reject. */
 export async function receiveDiscoveryLabWorkRequest(raw, options = {}) {
-  const input = parseBounded(raw);
-  if (input?.schema !== REQUEST_SCHEMA) return { state:'unsupported', reason:'DISCOVERY_LAB_UNSUPPORTED_SCHEMA',
-    requestSha256:sha(raw), authority:'none' };
-  if (input.executionMode !== 'synthetic-local') return { state:'unprovisioned', reason:'DISCOVERY_LAB_EXECUTION_UNPROVISIONED',
-    requestSha256:sha(raw), authority:'none' };
-  return inspectDiscoveryLabWorkRequest(raw, options);
+  const started = performance.now(), used = zeroResources();
+  used.checking = DISCOVERY_LAB_ADMISSION_CHECKS;
+  used.memoryBytes = typeof raw === 'string' ? byteLength(raw) : 0;
+  let input;
+  try { input = parseBounded(raw); }
+  catch (error) { used.elapsedMs = elapsed(started); error.resourceUsed = used; error.authority = 'none'; throw error; }
+  const state = input?.schema !== REQUEST_SCHEMA ? 'unsupported'
+    : input.executionMode !== 'synthetic-local' ? 'unprovisioned' : null;
+  if (!state) { input = null; return inspectRequest(raw, options, started); }
+  used.memoryBytes += byteLength(canonical(input)); used.elapsedMs = elapsed(started);
+  const result = {state, reason:state === 'unsupported' ? 'DISCOVERY_LAB_UNSUPPORTED_SCHEMA' : 'DISCOVERY_LAB_EXECUTION_UNPROVISIONED',
+    requestSha256:sha(raw), resourceUsed:{...used}, authority:'none'};
+  for (let i = 0; i < 8; i++) {
+    const bytes = byteLength(JSON.stringify(result));
+    if (result.resourceUsed.storageBytes === bytes) break;
+    result.resourceUsed.storageBytes = bytes; result.resourceUsed.memoryBytes = used.memoryBytes + bytes;
+  }
+  return result;
 }
