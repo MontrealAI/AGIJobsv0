@@ -100,6 +100,7 @@ const dedicated = [
   ['lint', 'test/scripts/alpha-supplier-proof.test.cjs'],
   ['lint', 'test/scripts/omni-stack-mode.test.cjs'],
   ['tests', 'test/scripts/polaris-quorum.test.cjs'],
+  ['tests', 'test/scripts/telemetryRecovery.test.cjs'],
   ['tests', 'test/pages/zenith-reconciliation.test.mjs'],
   ['tests', 'test/scripts/omega-pipeline.test.cjs'],
   ['tests', 'test/scripts/hardhat-test-discovery.test.cjs'],
