@@ -1,0 +1,831 @@
+{
+  "schema": "agijobsv0/source-release-profile/v1",
+  "repository": "MontrealAI/AGIJobsv0",
+  "releaseVersion": "2.1.0-rc.17",
+  "previousVersion": "2.1.0-rc.15",
+  "tag": "source-v2.1.0-rc.17",
+  "qualification": "PENDING_FINAL_SOURCE_MAIN_PUSH",
+  "compilerSourceBaseline": "3c17153942251116ee51163055eb1a25d652454b",
+  "evidenceBaseline": "9c730e0188594089e27ed0589c2b5ca57eec5cf5",
+  "deployedSourceBaseline": "b4c5b66ea05a6bb27f1f1cb197f055c179bbd38e",
+  "securityPrerequisite": "62d4f2db2b9eeddb6156b486336555b1e6485d92",
+  "implementationBaseline": "b88965ef6e90bf6f725934520e9be3161e91af62",
+  "implementationTree": "6003d3d7286fe9fa4bf6875deefc01e579ce9dfc",
+  "transitions": [
+    {
+      "path": "demo/README.md",
+      "before": {
+        "mode": "100644",
+        "blob": "1c2ca27bdbfe15c30db9e7a788894a4a9306a30b"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "20be1350595c4f8f36124fd224e3903fe527b381"
+      }
+    },
+    {
+      "path": "hardhat.config.js",
+      "before": {
+        "mode": "100644",
+        "blob": "b89721670274f47d2907836dfac0bdde70e230b8"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "8d201a5f8af39ccefa4970e6839584abcc1720ba"
+      }
+    },
+    {
+      "path": "scripts/ci/check-toolchain-locks.js",
+      "before": {
+        "mode": "100755",
+        "blob": "011994a14e8d19e54e015d6dddfffe70d5dca76f"
+      },
+      "after": {
+        "mode": "100755",
+        "blob": "2cb163c56369e3290935d0b35363ccc2a425995d"
+      }
+    },
+    {
+      "path": "scripts/ci/remap-coverage-paths.js",
+      "before": {
+        "mode": "100755",
+        "blob": "e91f246fbd7e2780fe00d7b68b5d2e27ac26f9a9"
+      },
+      "after": {
+        "mode": "100755",
+        "blob": "cf363bca7bfecf5a8064a1d9ebe5a73aabba807b"
+      }
+    },
+    {
+      "path": "scripts/release/run-etherscan-verification.js",
+      "before": {
+        "mode": "100755",
+        "blob": "f0d4c9a83ddfa1bc79451972e9d04f869f199032"
+      },
+      "after": {
+        "mode": "100755",
+        "blob": "d52ab289a95ac4f6d15bf96946acfeba84920a14"
+      }
+    },
+    {
+      "path": "scripts/v2/deploy.ts",
+      "before": {
+        "mode": "100644",
+        "blob": "ec8bc02db483e595653dfdb91f1467ce8d764637"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "8406f07eae73cbdbe5b432d57c1b3904d514e23c"
+      }
+    },
+    {
+      "path": "scripts/v2/deployDefaults.ts",
+      "before": {
+        "mode": "100644",
+        "blob": "74f4f260a0bdd3207ddf328a724e9ee4d6412112"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "163f913b03e388825f2543f8f2315aebe272abe3"
+      }
+    },
+    {
+      "path": "scripts/v2/lib/mermaidLiteral.ts",
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "blob": "6accedcb3da8c092811741afd3d05a6c37f62323"
+      }
+    },
+    {
+      "path": "scripts/v2/lib/nationalSupplyChainTranscript.ts",
+      "before": {
+        "mode": "100644",
+        "blob": "bf0b57c32bc1a633be630f629cce7dd57978a418"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "99684f946e0d8437bda678863a86a90bd5d1d66d"
+      }
+    },
+    {
+      "path": "scripts/v2/lib/randaoCoordinatorPlan.ts",
+      "before": {
+        "mode": "100644",
+        "blob": "2e0f0e74e8fc0bb1488f982516dc2fa4a25e16b3"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "33bfa0a701c53e51d0f2bd1bcf71783752ac356d"
+      }
+    },
+    {
+      "path": "scripts/v2/ownerConfigAudit.ts",
+      "before": {
+        "mode": "100644",
+        "blob": "58631dc15603fbbbf89ef8a0c62b48aa8c8dad32"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "7d7c395d49b77239f4d701e7a4ab75ac3a706dda"
+      }
+    },
+    {
+      "path": "scripts/v2/ownerControlGuide.ts",
+      "before": {
+        "mode": "100644",
+        "blob": "395a432e4d6ce0cfecc820f71539b604fa2dd4f3"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "a569965764428e25191bc6dc6555e580fb2a9012"
+      }
+    },
+    {
+      "path": "scripts/v2/ownerControlPlan.ts",
+      "before": {
+        "mode": "100644",
+        "blob": "55667d98ae8c32df5925e26f9c7d77637aebe50b"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "c7c30bcd108431eb74e0e59cf10e2c2e1ee35382"
+      }
+    },
+    {
+      "path": "scripts/v2/ownerControlSnapshot.ts",
+      "before": {
+        "mode": "100644",
+        "blob": "6b158113f63366a4af6b9a856a32d0a67b883877"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "75d5f26d9f63b5abcc56b627fb0617927e56ac29"
+      }
+    },
+    {
+      "path": "scripts/v2/ownerEmergencyRunbook.ts",
+      "before": {
+        "mode": "100644",
+        "blob": "f33f72925800992208e00c50466117a7df91f22d"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "7ad91a5139de9a5f4bf2dfcfd018850b47d16115"
+      }
+    },
+    {
+      "path": "scripts/v2/renderOwnerMermaid.ts",
+      "before": {
+        "mode": "100644",
+        "blob": "7928338f46dfb69664da424b4461ee7143718f2d"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "da7910f5d4a5e26aae1a168a4da8bf2461de5876"
+      }
+    },
+    {
+      "path": "scripts/v2/thermodynamicsReport.ts",
+      "before": {
+        "mode": "100644",
+        "blob": "599f62a7e87402f078f62c68a0c31ac60c8626ab"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "b2a00ba6b58dfd72ed39285c3508f420ffed7fd1"
+      }
+    },
+    {
+      "path": "scripts/v2/updateAllModules.ts",
+      "before": {
+        "mode": "100644",
+        "blob": "354ba1e3f81a4f2dff545b16fd31f39da46f77b0"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "02c823c6e76ac6414cb8f8fb88883e4a1baeb717"
+      }
+    }
+  ],
+  "websiteTransitions": [
+    {
+      "path": "docs/successor/TRANSFORMATIONAL_WORK.md",
+      "before": {
+        "mode": "100644",
+        "blob": "19c3a3cdacc6a13713f5075eedba7236b5089e7c"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "c6c97f21058842b5e6513d2c1dfb1fe2287255d6"
+      }
+    },
+    {
+      "path": "scripts/pages/build.mjs",
+      "before": {
+        "mode": "100644",
+        "blob": "67bac0b86418db9605c8775081247d167d2b3a42"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "b2fad292e6ea9afc740ecf6c6ff595bcee12fc0e"
+      }
+    }
+  ],
+  "nativeCompatibility": {
+    "schema": "agijobsv0/transformational-native-compatibility/v1",
+    "repository": "MontrealAI/AGI-Alpha-Agent-v0",
+    "commit": "272b4de86bdc306ebf547750717983e467f5fcfd",
+    "tree": "7e3a171a3f4a256723d6b480c64104264021b456",
+    "fixturePath": "examples/transformational-intelligence/campaign.json",
+    "boundary": "free-inspection-positive-payment-refused",
+    "files": {
+      "docs/assets/successor/engine.mjs": "38c4f38978bf9fc29f207bae3adee0755bc6530d04502a36c491cc430787e488",
+      "examples/transformational-intelligence/campaign.json": "fa5f570e89c20cffd0df844869047a7c0594c5460c3e95df5ada44592ea4fd20",
+      "examples/transformational-intelligence/inspector.mjs": "b5f8e704aaab345f9d6503c854d38910ddfabbf98fe674c48b051097812b07f4"
+    }
+  },
+  "scannerRequiredPaths": [
+    "scripts/release/emit-codeql-review-rc16.cjs",
+    "scripts/release/source-codeql-service-rc16.cjs",
+    "integrations/alpha-agent/four-repo-computer-lifecycle.cjs",
+    "integrations/alpha-agent/four-repo-computer-receipt.mjs",
+    "integrations/alpha-agent/pinned-alpha-checkout.cjs",
+    "integrations/alpha-agent/transformational-work-request.mjs",
+    "integrations/alpha-agent/vendor/alpha/docs/assets/successor/engine.mjs",
+    "integrations/alpha-agent/vendor/alpha-computer/examples/successor-alpha/computer.mjs",
+    "integrations/alpha-agent/vendor/alpha-computer/docs/assets/successor/engine.mjs",
+    "scripts/pages/build.mjs",
+    "scripts/release/qualify-source-release-rc16.cjs",
+    "scripts/release/publish-source-release-rc16.cjs",
+    "scripts/release/source-profile-rc16.cjs",
+    "scripts/release/source-native-gates-rc16.cjs",
+    "scripts/release/source-native-evidence-rc16.cjs",
+    "scripts/release/verify-transformational-compatibility.mjs",
+    "website/assets/computer-receipt.mjs",
+    "website/assets/computer-receipt-model.mjs",
+    "website/assets/computer-receipt-copy.mjs",
+    "website/assets/computer-desk.mjs",
+    "website/assets/computer-desk-runtime-source.mjs",
+    "website/assets/computer-mission.js",
+    "website/assets/computer-mission-copy.mjs",
+    "scripts/release/source-scanner-gates-rc16.cjs",
+    "scripts/release/python-scanner-rc16.cjs",
+    "scripts/pages/computer-receipt.mjs",
+    "scripts/release/source-scanner-review-bindings-rc16.cjs",
+    "scripts/release/source-python-evidence-rc16.cjs"
+  ],
+  "scannerReview": null,
+  "integrationBaseline": "b26a65456d5c06c901ba73d1e1620f7edb1a315a",
+  "integrationTree": "f1f082a1af8375a7418d86556daeb65351757ad5",
+  "integrationTransitions": [
+    {
+      "path": ".github/codeql/config-integrations.yml",
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "blob": "4533ce4d7f681a6230399e25fb1d1f736c84b25b"
+      }
+    },
+    {
+      "path": ".github/workflows/apps-images.yml",
+      "before": {
+        "mode": "100644",
+        "blob": "1a3800d0e830877251f9ce90abf9c13e09892914"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "14cab78934e4b7fd6aeb1f717e6ccbce588b2594"
+      }
+    },
+    {
+      "path": ".github/workflows/contracts.yml",
+      "before": {
+        "mode": "100644",
+        "blob": "8f6a1b8694bee9be36d7b64843a1d3b486412865"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "7d35388b5ccf8e9b9e21cab9a13eb918d9555f68"
+      }
+    },
+    {
+      "path": ".github/workflows/culture-ci.yml",
+      "before": {
+        "mode": "100644",
+        "blob": "b5a693ca7c8f6f0d1a1274f3dc31dafb4e44c706"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "861d287aa1fd21e2d99455d8e3a4d5f922fd18e8"
+      }
+    },
+    {
+      "path": ".github/workflows/escrow-replay-regression.yml",
+      "before": {
+        "mode": "100644",
+        "blob": "d3e4fb2d558c59e79f2c67a63f6cfd2673669995"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "3a3bb2f3f19808415572e92014f14c63a1d1de71"
+      }
+    },
+    {
+      "path": ".github/workflows/pages.yml",
+      "before": {
+        "mode": "100644",
+        "blob": "b317b3572a6e6a7860fb400ea8072a1cc6182efa"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "e6bebe9ccdfab552420b89cbfc7e8eec49073bd3"
+      }
+    },
+    {
+      "path": ".github/workflows/production-rehearsal.yml",
+      "before": {
+        "mode": "100644",
+        "blob": "0ddc4c6e1cb1ecbcf6936a313773fbf15a6f6a75"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "e1fa3f4a6b4548d08855c3f9204fedb6a3ee9b6e"
+      }
+    },
+    {
+      "path": ".github/workflows/static-analysis.yml",
+      "before": {
+        "mode": "100644",
+        "blob": "b26d2b4b94e8ef8f0f28f7b6c806acc288f500f8"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "da884644bf8b483c5ab6a643ce491c40b87898f6"
+      }
+    },
+    {
+      "path": ".github/workflows/successor-computer.yml",
+      "before": {
+        "mode": "100644",
+        "blob": "ba4d7159a3ba33a85bc3a7b877f6a09b77251938"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "d158e2b3da0d2fda746a3818ad4342a45278ca60"
+      }
+    },
+    {
+      "path": ".github/workflows/torch-tests.yml",
+      "before": {
+        "mode": "100644",
+        "blob": "d6524f9a693b0ca14fe2fe2ed2d36616725ae78c"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "787b12a259b865b42c7f346ee84768ca2014bfd5"
+      }
+    },
+    {
+      "path": "docs/security/remediation-2026-10-19/README.md",
+      "before": {
+        "mode": "100644",
+        "blob": "0df3b3ba3deefe26146587dfde862650a94ea645"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "d9030fd9b28e21916eeb301400ba954600e8eb56"
+      }
+    },
+    {
+      "path": "integrations/alpha-agent/README.md",
+      "before": {
+        "mode": "100644",
+        "blob": "551cf8cf5efa0dd9bb66bb46acbf92229f5d4c45"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "9ae38d15d833dcb174b3bac48d54990627409f01"
+      }
+    },
+    {
+      "path": "integrations/alpha-agent/complete-local-fixture.cjs",
+      "before": {
+        "mode": "100644",
+        "blob": "cdba941fde121b798a2c2f5d3390ec53d9b6cdba"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "47b5dda58205fbdcc61bc553debaa05b7cc4ad5e"
+      }
+    },
+    {
+      "path": "integrations/alpha-agent/deploy-local-fixture.cjs",
+      "before": {
+        "mode": "100644",
+        "blob": "a77cc9b246445dff9072ecb39a1f4e130682d5c5"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "ef507f123ef805a1bac132d5b6445a9e151f851d"
+      }
+    },
+    {
+      "path": "integrations/alpha-agent/four-repo-computer-lifecycle.cjs",
+      "before": {
+        "mode": "100644",
+        "blob": "536f65f3c043732e6a33d2a87a8be348e41b6e94"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "ba589d5d555b9f4255e294fcafd2213ef7359593"
+      }
+    },
+    {
+      "path": "integrations/alpha-agent/generate-computer-source.mjs",
+      "before": {
+        "mode": "100644",
+        "blob": "e1140084b42cf84586751d2bb22ef5af90e1c1d9"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "417fa22cece485b76497e0dfc01fb2daffb48c51"
+      }
+    },
+    {
+      "path": "integrations/alpha-agent/generate-project-source.mjs",
+      "before": {
+        "mode": "100644",
+        "blob": "76ea33505a80fa00f19d3650e8720d3c33612e68"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "c66efecb47ae351f9b655f75ab417bd7820f2414"
+      }
+    },
+    {
+      "path": "integrations/alpha-agent/pinned-alpha-checkout.cjs",
+      "before": {
+        "mode": "100644",
+        "blob": "22a9c65e704757d31e3809932f78ad5eb5a0d6b8"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "35aa4d4a437f6cd617e29c4c65d025af907108af"
+      }
+    },
+    {
+      "path": "integrations/alpha-agent/project-native-source.mjs",
+      "before": {
+        "mode": "100644",
+        "blob": "68cbbf1271625575ea37486e10593e09d105b247"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "86a5310046dc6b4e6085c8f1f04d7bbabf44bd09"
+      }
+    },
+    {
+      "path": "integrations/alpha-agent/project-source-selector.mjs",
+      "before": {
+        "mode": "100644",
+        "blob": "a570c5bdd093926f3650b9da214150bb8b870af1"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "c5bcab8b7c658f71181e19400828be4f722404af"
+      }
+    },
+    {
+      "path": "integrations/alpha-agent/project-transfer.mjs",
+      "before": {
+        "mode": "100644",
+        "blob": "7869865f4ab51ec2718a93033dd4d213156a8276"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "8ffce161abfe3f455f072cce0380678f6e98577c"
+      }
+    },
+    {
+      "path": "integrations/alpha-agent/successor-computer-mission-lab.py",
+      "before": {
+        "mode": "100644",
+        "blob": "8a2bf3c2c1f9d3cfee695129c43ed11053f37651"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "c1676bebb8dc066249447e798c1e9684cac1fa05"
+      }
+    },
+    {
+      "path": "integrations/alpha-agent/supplier-browser-lab.py",
+      "before": {
+        "mode": "100644",
+        "blob": "bac8ea5cbf2ae4ef383bfed2844e35e0654c5d6a"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "a670c8e42101826129beb5750498f33fbdd90aa6"
+      }
+    },
+    {
+      "path": "integrations/alpha-agent/supplier_browser_lab_support.py",
+      "before": {
+        "mode": "100644",
+        "blob": "367ad183129a2e6dc9d02b31ad841a95b12bea2d"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "d81f7fe743889b3b2f7d40011954660a34f3c2a4"
+      }
+    },
+    {
+      "path": "integrations/alpha-agent/supplier_node_guard.py",
+      "before": {
+        "mode": "100644",
+        "blob": "3ab6d62b972864eaab5d4acb07c5122af64e2458"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "5b4b17188d7bba3bcbb8e950c161dfda54dfce4c"
+      }
+    },
+    {
+      "path": "integrations/alpha-agent/supplier_proof_guard.py",
+      "before": {
+        "mode": "100644",
+        "blob": "0207057328179a39aa23db9af25add4b1b151a44"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "914aecc7c78944d7d07033c9701f29c3f9b4080e"
+      }
+    },
+    {
+      "path": "integrations/alpha-agent/vendor/alpha-computer/examples/successor-alpha/learning.mjs",
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "blob": "82665337daf74956c42b86d95056f47ede3e8f8d"
+      }
+    },
+    {
+      "path": "integrations/alpha-agent/vendor/alpha-computer/examples/successor-alpha/research.mjs",
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "blob": "759eb5ce3deb5cc1c20fe35ea29beaffa5bd8eba"
+      }
+    },
+    {
+      "path": "integrations/alpha-agent/vendor/alpha-computer/source-identity.mjs",
+      "before": {
+        "mode": "100644",
+        "blob": "8db9f4c48c58e0db9fb0059c9793c7674f546802"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "1d05e83f85aee2e8527710958096e3474e0af13a"
+      }
+    },
+    {
+      "path": "integrations/alpha-agent/vendor/alpha-computer/source-manifest.json",
+      "before": {
+        "mode": "100644",
+        "blob": "270a57e4433c8a323aaee41d2a73f0cb242f5811"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "4c01059e4d53b6787ec0b159065e72edd149c6ef"
+      }
+    },
+    {
+      "path": "scripts/pages/computer-receipt-qa.mjs",
+      "before": {
+        "mode": "100644",
+        "blob": "129c6f7bc2f57c768729504267efec55dbefaaf0"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "9cfd7da14b3ce98e999c976833a7a97cdc248f28"
+      }
+    },
+    {
+      "path": "scripts/pages/computer-receipt.mjs",
+      "before": {
+        "mode": "100644",
+        "blob": "17f2fa9844feb928e58e74414a45fbc42c6347b4"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "530268f57680f9639ac72fcff277769df61294d8"
+      }
+    },
+    {
+      "path": "scripts/pages/run-computer-receipt-qa.mjs",
+      "before": {
+        "mode": "100644",
+        "blob": "db2232221b2c9e2010ddbac960b0d58aed43397a"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "170c7022127a8f8517b36629abdfa184d4c55ebe"
+      }
+    },
+    {
+      "path": "scripts/security/check-dependency-preservation.cjs",
+      "before": {
+        "mode": "100644",
+        "blob": "1a8dafc411064a2bb4fa39825c3aa772ccce5541"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "e697e1504a9649dfabfd8746a188bf66725f654b"
+      }
+    },
+    {
+      "path": "scripts/security/reviewed-source-jobs-handover-20261016.json",
+      "before": {
+        "mode": "100644",
+        "blob": "76320c069aa5f6bf9d72974f6e31828e17b39ffe"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "c9bf4842db826f23bb1c242e8fa59c7482131c2d"
+      }
+    },
+    {
+      "path": "shared/containedFiles.ts",
+      "before": {
+        "mode": "100644",
+        "blob": "4ca549ba6cd9b34c73e778639eebf7ae30dda27d"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "31c26166958baad1d69e29248fa108ac95118699"
+      }
+    },
+    {
+      "path": "test/pages/computer-receipt-fixture.mjs",
+      "before": {
+        "mode": "100644",
+        "blob": "d65f8e3a979c6bd668e32ff2c72918d14216e368"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "53f92c8545adc7be518b834dad853c48fa1792f7"
+      }
+    },
+    {
+      "path": "test/pages/computer-receipt-workspace.test.mjs",
+      "before": {
+        "mode": "100644",
+        "blob": "5dd0b13aa6d334c8ea1b10f0b2f39ddf02f30180"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "f41eab1b681dd03353afe7516e7bc59b6a4124fd"
+      }
+    },
+    {
+      "path": "test/pages/four-repo-alpha-source.test.mjs",
+      "before": {
+        "mode": "100644",
+        "blob": "0c6f328ab571b0ffcf4681b40ddcdf99c9d3cb74"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "5e53bc68ed94d30833bde765516b5e60e2c2a520"
+      }
+    },
+    {
+      "path": "test/security/inherited-codeql.test.cjs",
+      "before": {
+        "mode": "100644",
+        "blob": "4d740bc78dc1e533bee70654f9db48e8cfd43ed9"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "9e8742d4b3f468a7324a334e11667f23b95d5bb7"
+      }
+    },
+    {
+      "path": "website/assets/computer-receipt-copy.mjs",
+      "before": {
+        "mode": "100644",
+        "blob": "3969618683eed2ad0784c8db3e16aceeb1ec9eb8"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "eaf1adb18eef687eb894c3adee3c41b8cdd44cc5"
+      }
+    },
+    {
+      "path": "website/assets/computer-receipt-model.mjs",
+      "before": {
+        "mode": "100644",
+        "blob": "9d04951779df563b2e3b0365ac4478ac43063aad"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "3bbe1111bafe7fb45fc0856958889f168d32a570"
+      }
+    },
+    {
+      "path": "website/assets/computer-receipt.mjs",
+      "before": {
+        "mode": "100644",
+        "blob": "4c04fdba150658978f0172d538f4e04b4deeb6a6"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "609223705b09e14da076d6525a0512b7242409fc"
+      }
+    }
+  ],
+  "scannerReceiverPaths": [
+    "integrations/alpha-agent/four-repo-computer-lifecycle.cjs",
+    "integrations/alpha-agent/four-repo-computer-receipt.mjs",
+    "integrations/alpha-agent/pinned-alpha-checkout.cjs",
+    "integrations/alpha-agent/transformational-work-request.mjs",
+    "integrations/alpha-agent/vendor/alpha/docs/assets/successor/engine.mjs",
+    "integrations/alpha-agent/vendor/alpha-computer/examples/successor-alpha/computer.mjs",
+    "integrations/alpha-agent/vendor/alpha-computer/docs/assets/successor/engine.mjs",
+    "website/assets/computer-receipt.mjs",
+    "website/assets/computer-receipt-model.mjs",
+    "website/assets/computer-receipt-copy.mjs",
+    "website/assets/computer-desk.mjs",
+    "website/assets/computer-desk-runtime-source.mjs",
+    "website/assets/computer-mission.js",
+    "website/assets/computer-mission-copy.mjs"
+  ],
+  "scannerPolicy": {
+    "qualityReview": {
+      "schema": "agijobsv0/nonsecurity-quality-review/1",
+      "disposition": "Acknowledged nonsecurity quality",
+      "ruleIds": ["js/unused-local-variable", "js/useless-assignment-to-local"]
+    },
+    "producerCommit": "cb30d7453b36eaca040c139e06fd9668b300c5f4",
+    "producerTree": "19d86f484ed11de23bb54d11b193ea868d2de88e",
+    "historicalConfigPath": ".github/codeql/config.yml",
+    "historicalConfigSha256": "4b34450e1dcc0b489feea158d642a6b66261d9e935463928782219c8716c0892",
+    "configPath": ".github/codeql/config-integrations.yml",
+    "configSha256": "07d7be878097a38520bcf09147b62c75064cb3d707317ad34e028c1f46ba8155",
+    "configBlob": "4533ce4d7f681a6230399e25fb1d1f736c84b25b",
+    "workflowPath": ".github/workflows/static-analysis.yml",
+    "workflowSha256": "8b577905c4b4e2a173180a8883262869de7e5f9861a7dd6d1f36e316519e60ce",
+    "workflowBlob": "da884644bf8b483c5ab6a643ce491c40b87898f6",
+    "archiveFiles": [
+      "javascript.sarif",
+      "source-extraction.json",
+      "source-scope-after.json",
+      "source-scope-before.json"
+    ],
+    "reviewedProducer": {
+      "event": "push",
+      "headBranch": "fix/processed-codeql-release-proof-20261020",
+      "ref": "refs/heads/fix/processed-codeql-release-proof-20261020"
+    },
+    "referenceTransportSchema": "agijobsv0/codeql-lossless-reference-transport/1"
+  },
+  "nativePinBaseline": "d943e0b2384cad09b2918fe532fca50f5837e65f",
+  "nativePinTree": "b279cfcbd53c814db48bb4ab997199ea7ca9269c",
+  "sourceConvergenceBaseline": "0b6d175a4ec8abf5b899e4a1b58a09e7045fe158",
+  "sourceConvergenceTree": "9e8dff3e0863afa73e04757f77ca2bcb8c01dca2",
+  "pythonScannerBaseline": "cb30d7453b36eaca040c139e06fd9668b300c5f4",
+  "pythonScannerTree": "19d86f484ed11de23bb54d11b193ea868d2de88e",
+  "pythonScannerPolicy": {
+    "reviewSchema": "agijobsv0/codeql-python-review/2",
+    "reviewedProducer": {
+      "event": "push",
+      "headBranch": "fix/processed-codeql-release-proof-20261020",
+      "ref": "refs/heads/fix/processed-codeql-release-proof-20261020"
+    },
+    "producerCommit": "cb30d7453b36eaca040c139e06fd9668b300c5f4",
+    "producerTree": "19d86f484ed11de23bb54d11b193ea868d2de88e",
+    "configPath": ".github/codeql/config-python-integrations.yml",
+    "configSha256": "eb5b425facefb419987bf537280d5144a477b65a205ccd71df3866b60b01e560",
+    "configBlob": "cdd0d5a0a1a0e691c3367bc5ce4429215f41381d",
+    "workflowPath": ".github/workflows/static-analysis-python-integrations.yml",
+    "workflowSha256": "5b08a73d05cea31c09e8bf23a34b742c2fd85a47b7fbea52a94f70fd9c3ce077",
+    "workflowBlob": "0d1220ce9b561ae8feeee9e47bb6a0ff4226c3c0",
+    "archiveFiles": [
+      "python.sarif",
+      "source-extraction.json",
+      "source-scope-after.json",
+      "source-scope-before.json"
+    ]
+  },
+  "pythonScannerRequiredPaths": [
+    "integrations/alpha-agent/successor-computer-mission-lab.py",
+    "integrations/alpha-agent/successor-computer-worker-launch.py",
+    "integrations/alpha-agent/successor-frontier-mission-lab.py",
+    "integrations/alpha-agent/supplier-adapter-lab.py",
+    "integrations/alpha-agent/supplier-browser-lab.py",
+    "integrations/alpha-agent/supplier_browser_lab_support.py",
+    "integrations/alpha-agent/supplier_node_guard.py",
+    "integrations/alpha-agent/supplier_proof_guard.py"
+  ],
+  "pythonScannerReview": null
+}

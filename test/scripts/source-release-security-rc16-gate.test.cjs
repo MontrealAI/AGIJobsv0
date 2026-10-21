@@ -17,22 +17,26 @@ const {
   verifyScannerReviewSource,
 } = require('../../scripts/release/qualify-source-release-rc16.cjs');
 const sha = 'a'.repeat(40);
-const { syntheticServiceProof } =
-  require('./source-codeql-service-fixture-rc16.cjs');
+const {
+  syntheticServiceProof,
+} = require('./source-codeql-service-fixture-rc16.cjs');
 let processedCodeql;
 before(async () => {
   processedCodeql = await syntheticServiceProof({ sha });
 });
 function evaluate(runs, checks, source, ...proof) {
   return evaluateGate(
-    runs, checks, source, proof.length ? proof[0] : processedCodeql
+    runs,
+    checks,
+    source,
+    proof.length ? proof[0] : processedCodeql
   );
 }
 
 function sourceFixture() {
   return {
     sha,
-    version: '2.1.0-rc.16',
+    version: '2.1.0-rc.17',
     compilerBaseline: 'b'.repeat(40),
     policy: {
       version: '0.8.37',
@@ -48,7 +52,10 @@ test('source scope preserves historical evidence and the reviewed compiler tree'
   const calls = [];
   const scope = verifySourceScope({
     ...sourceFixture(),
-    git: (...args) => { calls.push(args); return ''; },
+    git: (...args) => {
+      calls.push(args);
+      return '';
+    },
   });
   assert.equal(calls.filter(([command]) => command === 'merge-base').length, 3);
   assert.ok(
@@ -137,7 +144,7 @@ test('rc.16 source qualification agrees with both package version records', () =
     lock.version,
     lock.packages[''].version,
   ]) {
-    assert.equal(version, '2.1.0-rc.16');
+    assert.equal(version, '2.1.0-rc.17');
     assert.doesNotThrow(() =>
       verifySourceScope({ ...sourceFixture(), version })
     );
@@ -528,7 +535,7 @@ test('compiler source admits only actual Git installs of validated profile revie
     const blob = command(root, ['hash-object', '-w', '--stdin'], bytes).trim();
     git('update-index', '--add', '--cacheinfo', `${mode},${blob},${name}`);
   };
-  const profilePath = 'scripts/release/source-profile-rc16.json';
+  const profilePath = 'scripts/release/source-profile-rc17.json';
   const liveProfile = git('show', `${parent}:${profilePath}`);
   const liveNotes = git('show', `${parent}:${scannerReviewPath}`);
   const liveGit = (...args) => command(sourceRoot, args);
@@ -673,16 +680,21 @@ test('review installation permits only the exact existing notes block after the 
       ),
     /canonical JSON/
   );
-  const profilePath = 'scripts/release/source-profile-rc16.json';
+  const profilePath = 'scripts/release/source-profile-rc17.json';
   const git = (command, ...args) =>
-    command === 'rev-parse' ? tree
-    : command === 'rev-list' ? `${sha} ${source}\n`
-    : command === 'diff' ? scannerReviewPath + '\0'
-    : command === 'ls-tree' ? '100644 blob ' + 'd'.repeat(40) + '\t' + args.at(-1) + '\0'
-    : command === 'show' ? args[0].endsWith(':' + profilePath)
-      ? JSON.stringify({scannerReview: null, pythonScannerReview: null})
-      : block(args[0].startsWith(source + ':') ? null : review)
-    : '';
+    command === 'rev-parse'
+      ? tree
+      : command === 'rev-list'
+      ? `${sha} ${source}\n`
+      : command === 'diff'
+      ? scannerReviewPath + '\0'
+      : command === 'ls-tree'
+      ? '100644 blob ' + 'd'.repeat(40) + '\t' + args.at(-1) + '\0'
+      : command === 'show'
+      ? args[0].endsWith(':' + profilePath)
+        ? JSON.stringify({ scannerReview: null, pythonScannerReview: null })
+        : block(args[0].startsWith(source + ':') ? null : review)
+      : '';
   verifyScannerReviewSource({ git, sha, review });
   assert.throws(
     () =>
@@ -747,9 +759,15 @@ test('review installation permits only the exact existing notes block after the 
   const file = path.join(root, scannerReviewPath);
   fs.mkdirSync(path.dirname(file), { recursive: true });
   fs.writeFileSync(file, block(null));
-  const profileFile = path.join(root, 'scripts/release/source-profile-rc16.json');
-  fs.mkdirSync(path.dirname(profileFile), {recursive: true});
-  fs.writeFileSync(profileFile, JSON.stringify({scannerReview: null, pythonScannerReview: null}));
+  const profileFile = path.join(
+    root,
+    'scripts/release/source-profile-rc17.json'
+  );
+  fs.mkdirSync(path.dirname(profileFile), { recursive: true });
+  fs.writeFileSync(
+    profileFile,
+    JSON.stringify({ scannerReview: null, pythonScannerReview: null })
+  );
   fs.chmodSync(file, 0o644);
   realGit('add', '.');
   realGit(
@@ -889,7 +907,7 @@ test('both real entrypoints reject a null notes record before network or publica
     'scripts/release/check-release-ci.js',
     'scripts/release/qualify-source-release.cjs',
     'scripts/release/source-profile-rc16.cjs',
-    'scripts/release/source-profile-rc16.json',
+    'scripts/release/source-profile-rc17.json',
     'scripts/release/source-native-gates-rc16.cjs',
     'scripts/release/source-codeql-service-rc16.cjs',
     'scripts/release/source-native-evidence-rc16.cjs',
@@ -907,7 +925,7 @@ test('both real entrypoints reject a null notes record before network or publica
   }
   const pendingProfilePath = path.join(
     root,
-    'scripts/release/source-profile-rc16.json'
+    'scripts/release/source-profile-rc17.json'
   );
   const pendingProfile = JSON.parse(
     fs.readFileSync(pendingProfilePath, 'utf8')
@@ -957,7 +975,7 @@ test('both real entrypoints reject a null notes record before network or publica
           GITHUB_SHA: source,
           GITHUB_REPOSITORY: 'MontrealAI/AGIJobsv0',
           GH_TOKEN: 'BENIGN_UNUSED_FIXTURE',
-          TAG: 'source-v2.1.0-rc.16',
+          TAG: 'source-v2.1.0-rc.17',
           GITHUB_EVENT_NAME: 'push',
           GITHUB_REF: 'refs/heads/main',
         },

@@ -1,5 +1,17 @@
 # Changelog
 
+## v2.1.0-rc.17 — Resume owned source drafts safely
+
+Publication-only source prerelease candidate (2026-10-21 UTC).
+
+- Bound the UTF-8 GitHub description while retaining complete checksummed notes.
+- Discover and authenticate owned drafts without duplicate release creation.
+- Retain bounded, credential-redacted API validation details on failure.
+- Require fresh exact-source review, scanner, compiler, native and all 25 asset checks.
+- Preserve the rc.16 tag, unpublished draft, notes/profile and historical deployments.
+
+Production approval remains false. No runtime, contract, deployment, ENS, signing, funding or authority change is made.
+
 ## v2.1.0-rc.15 — Develop the strategy. Preserve the mission.
 
 Source and evidence prerelease candidate (2026-10-18 UTC), building on immutable published rc.14.

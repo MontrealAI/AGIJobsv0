@@ -39,7 +39,7 @@ const {
   verifySourceScope: verifySourceProfile,
   verifyPublicationReview,
 } = require('./source-profile-rc16.cjs');
-const releaseVersion = '2.1.0-rc.16';
+const releaseVersion = '2.1.0-rc.17';
 const deployedSourceBaseline = 'b4c5b66ea05a6bb27f1f1cb197f055c179bbd38e';
 const evidenceBaseline = '9c730e0188594089e27ed0589c2b5ca57eec5cf5';
 // Additive reference evidence: this is not an assertion that the deployed
@@ -67,7 +67,7 @@ function verifyDeploymentSnapshot(bytes) {
 // after its code is frozen. The pending marker deliberately prevents premature
 // publication; metadata selection cannot substitute for exact-source review.
 // Protected paths, compiler policy and historical evidence remain unchanged.
-const scannerReviewPath = 'docs/production/RELEASE_NOTES_SOURCE_RC16.md';
+const scannerReviewPath = 'docs/production/RELEASE_NOTES_SOURCE_RC17.md';
 const scannerHistory = Object.freeze({
   configSha256:
     '4b34450e1dcc0b489feea158d642a6b66261d9e935463928782219c8716c0892',
@@ -266,7 +266,9 @@ function verifyScannerReviewSource({ git, sha, review = scannerReview }) {
     review.producer?.event !== role.event ||
     review.producer?.headBranch !== role.headBranch
   )
-    throw Error('Reviewed scanner source differs from its exact finite producer role');
+    throw Error(
+      'Reviewed scanner source differs from its exact finite producer role'
+    );
   require('./source-scanner-review-bindings-rc16.cjs').verifyThreeSlotReviewBinding(
     {
       sourceSha: review.sourceSha,
@@ -394,7 +396,7 @@ function verifySourceScope({
   if (compilerChanges.length) {
     if (
       compilerChanges.length !== 1 ||
-      compilerChanges[0] !== 'scripts/release/source-profile-rc16.json' ||
+      compilerChanges[0] !== 'scripts/release/source-profile-rc17.json' ||
       review?.sourceSha !== compilerBaseline
     )
       throw Error(
@@ -406,7 +408,7 @@ function verifySourceScope({
     const {
       projectThreeSlotProfile,
     } = require('./source-scanner-review-bindings-rc16.cjs');
-    const profilePath = 'scripts/release/source-profile-rc16.json';
+    const profilePath = 'scripts/release/source-profile-rc17.json';
     if (
       projectThreeSlotProfile(
         String(git('show', `${compilerBaseline}:${profilePath}`))
@@ -512,7 +514,9 @@ const historicalReviewedCodeql = Object.freeze({
 // approves changed producer, verifier or installation bytes.
 function verifyHistoricalReviewedCodeql(check) {
   if (!check || typeof check !== 'object' || Array.isArray(check))
-    throw Error('Historical f2 Advanced Security prerequisite is not authenticated');
+    throw Error(
+      'Historical f2 Advanced Security prerequisite is not authenticated'
+    );
   const observed = evaluateCodeql([check], historicalReviewedCodeql.sourceSha);
   if (
     check?.id !== historicalReviewedCodeql.checkId ||
@@ -520,7 +524,9 @@ function verifyHistoricalReviewedCodeql(check) {
     !observed.ready ||
     observed.checks.length !== 1
   )
-    throw Error('Historical f2 Advanced Security prerequisite is not authenticated');
+    throw Error(
+      'Historical f2 Advanced Security prerequisite is not authenticated'
+    );
   return {
     sourceSha: historicalReviewedCodeql.sourceSha,
     check: observed.checks[0],
@@ -559,7 +565,7 @@ function evaluate(runs, checks, sha, processedCodeql) {
     (c) => c.head_sha === sha && c.app?.slug === 'github-actions'
   );
   for (const c of trusted) {
-    if (c.name === 'Publish qualified rc.16 source prerelease') continue;
+    if (c.name === 'Publish qualified rc.17 source prerelease') continue;
     if (c.status !== 'completed') pending.push(`${c.name}: ${c.status}`);
     else if (!['success', 'skipped', 'neutral'].includes(c.conclusion))
       failures.push(`${c.name}: ${c.conclusion}`);
@@ -678,18 +684,23 @@ async function main() {
   const tree = git('rev-parse', 'HEAD^{tree}').trim();
   const publisher = require('./publish-source-release-rc16.cjs');
   const qualificationApi = async (method, resource) => {
-    const response = await fetch(publisher.sourceApiUrl(method, resource, sha), {
-      method,
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: 'application/vnd.github+json',
-        'X-GitHub-Api-Version': '2022-11-28',
-      },
-      redirect: 'error',
-      signal: AbortSignal.timeout(30000),
-    });
+    const response = await fetch(
+      publisher.sourceApiUrl(method, resource, sha),
+      {
+        method,
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/vnd.github+json',
+          'X-GitHub-Api-Version': '2022-11-28',
+        },
+        redirect: 'error',
+        signal: AbortSignal.timeout(30000),
+      }
+    );
     if (!response.ok)
-      throw Error(`Cannot authenticate CodeQL service evidence: HTTP ${response.status}`);
+      throw Error(
+        `Cannot authenticate CodeQL service evidence: HTTP ${response.status}`
+      );
     return response.json();
   };
   const downloadServiceReceipt = async (artifactId) => {
@@ -700,7 +711,9 @@ async function main() {
           'api',
           '--hostname',
           'github.com',
-          `repos/${repository}/actions/artifacts/${publisher.producerId(artifactId)}/zip`,
+          `repos/${repository}/actions/artifacts/${publisher.producerId(
+            artifactId
+          )}/zip`,
         ],
         {
           maxBuffer: 4 * 1024 * 1024,
@@ -715,29 +728,43 @@ async function main() {
   let retainedServiceEvidence;
   const deadline = Date.now() + 85 * 60000;
   while (Date.now() < deadline) {
-    const [runs, checks, reviewedChecks, historicalCodeqlCheck] = await Promise.all([
-      readPages(`actions/runs?head_sha=${sha}`, 'workflow_runs', token),
-      readPages(`commits/${sha}/check-runs?filter=latest`, 'check_runs', token),
-      readPages(
-        `commits/${compilerSourceBaseline}/check-runs?filter=latest`,
-        'check_runs',
-        token
-      ),
-      qualificationApi('GET', `check-runs/${historicalReviewedCodeql.checkId}`),
-    ]);
-    const historicalReviewedSourceCodeql =
-      verifyHistoricalReviewedCodeql(historicalCodeqlCheck);
+    const [runs, checks, reviewedChecks, historicalCodeqlCheck] =
+      await Promise.all([
+        readPages(`actions/runs?head_sha=${sha}`, 'workflow_runs', token),
+        readPages(
+          `commits/${sha}/check-runs?filter=latest`,
+          'check_runs',
+          token
+        ),
+        readPages(
+          `commits/${compilerSourceBaseline}/check-runs?filter=latest`,
+          'check_runs',
+          token
+        ),
+        qualificationApi(
+          'GET',
+          `check-runs/${historicalReviewedCodeql.checkId}`
+        ),
+      ]);
+    const historicalReviewedSourceCodeql = verifyHistoricalReviewedCodeql(
+      historicalCodeqlCheck
+    );
     const preliminary = evaluate(runs, checks, sha);
     const serviceProducerPaths = [
       profile.scannerPolicy.workflowPath,
       profile.pythonScannerPolicy.workflowPath,
     ];
     let processedCodeql;
-    if (serviceProducerPaths.every((path) =>
-      preliminary.workflows.some((run) =>
-        run.path === path && run.status === 'completed' && run.conclusion === 'success'
+    if (
+      serviceProducerPaths.every((path) =>
+        preliminary.workflows.some(
+          (run) =>
+            run.path === path &&
+            run.status === 'completed' &&
+            run.conclusion === 'success'
+        )
       )
-    )) {
+    ) {
       processedCodeql = await serviceEvidence.observeFinalServices({
         api: qualificationApi,
         download: downloadServiceReceipt,
@@ -820,7 +847,7 @@ async function main() {
           {
             schema: 'agijobsv0/source-release-provenance/1',
             repository,
-            tag: 'source-v2.1.0-rc.16',
+            tag: 'source-v2.1.0-rc.17',
             sha,
             tree: git('rev-parse', 'HEAD^{tree}').trim(),
             recordedAt: new Date().toISOString(),
@@ -834,7 +861,10 @@ async function main() {
               source: sha,
               tree,
               file: 'codeql-service-evidence.json',
-              sha256: crypto.createHash('sha256').update(serviceBytes).digest('hex'),
+              sha256: crypto
+                .createHash('sha256')
+                .update(serviceBytes)
+                .digest('hex'),
             },
             historicalReviewedSourceCodeql,
             reviewedSourceCodeql: {

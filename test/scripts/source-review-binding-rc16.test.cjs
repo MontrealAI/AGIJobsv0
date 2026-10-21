@@ -16,8 +16,8 @@ const {
   parseScannerReview,
   scannerHistory,
 } = require('../../scripts/release/qualify-source-release-rc16.cjs');
-const notesPath = 'docs/production/RELEASE_NOTES_SOURCE_RC16.md';
-const profilePath = 'scripts/release/source-profile-rc16.json';
+const notesPath = 'docs/production/RELEASE_NOTES_SOURCE_RC17.md';
+const profilePath = 'scripts/release/source-profile-rc17.json';
 const slots = ['notesReview', 'scannerReview', 'pythonScannerReview'];
 const clone = (value) => JSON.parse(JSON.stringify(value));
 const empty = () => Object.fromEntries(slots.map((slot) => [slot, null]));

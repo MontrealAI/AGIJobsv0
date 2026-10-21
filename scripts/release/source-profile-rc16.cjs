@@ -15,7 +15,7 @@ function freeze(value) {
   }
   return value;
 }
-const profile = freeze(require('./source-profile-rc16.json'));
+const profile = freeze(require('./source-profile-rc17.json'));
 const anchors = Object.freeze({
   compilerSourceBaseline: '3c17153942251116ee51163055eb1a25d652454b',
   evidenceBaseline: '9c730e0188594089e27ed0589c2b5ca57eec5cf5',
@@ -39,6 +39,7 @@ const allowedNewPaths = Object.freeze([
   'test/scripts/source-codeql-service-fixture-rc16.cjs',
   'scripts/release/source-profile-rc16.cjs',
   'scripts/release/source-profile-rc16.json',
+  'scripts/release/source-profile-rc17.json',
   'scripts/release/qualify-source-release-rc16.cjs',
   'scripts/release/publish-source-release-rc16.cjs',
   'scripts/release/verify-transformational-compatibility.mjs',
@@ -54,6 +55,7 @@ const allowedNewPaths = Object.freeze([
   'scripts/release/source-scanner-gates-rc16.cjs',
   'test/scripts/source-release-integrated-rc16.test.cjs',
   'docs/production/RELEASE_NOTES_SOURCE_RC16.md',
+  'docs/production/RELEASE_NOTES_SOURCE_RC17.md',
   'scripts/release/python-scanner-rc16.cjs',
   'test/scripts/source-python-scanner-rc16.test.cjs',
   'scripts/release/source-scanner-review-bindings-rc16.cjs',
@@ -67,6 +69,7 @@ const allowedExistingPaths = Object.freeze([
   '.github/workflows/source-release.yml',
   'package.json',
   'package-lock.json',
+  'CHANGELOG.md',
 ]);
 // These two reviewed entry additions are authenticated by exact Git bytes,
 // rather than granting an editable website or documentation path exception.
@@ -375,9 +378,120 @@ function verifyIntegrationTransitions(
   return transitions.map((item) => item.path);
 }
 
+const releaseTriggerTransitions = freeze([
+  {
+    path: '.github/workflows/apps-images.yml',
+    before: {
+      mode: '100644',
+      blob: '14cab78934e4b7fd6aeb1f717e6ccbce588b2594',
+    },
+    after: {
+      mode: '100644',
+      blob: 'ca04e6c0f35ccbb9a2a3083649decb576088f5bd',
+    },
+  },
+  {
+    path: '.github/workflows/contracts.yml',
+    before: {
+      mode: '100644',
+      blob: '7d35388b5ccf8e9b9e21cab9a13eb918d9555f68',
+    },
+    after: {
+      mode: '100644',
+      blob: 'f9250dcb52ca99e904efc48a6c3d2de211a717c5',
+    },
+  },
+  {
+    path: '.github/workflows/culture-ci.yml',
+    before: {
+      mode: '100644',
+      blob: '861d287aa1fd21e2d99455d8e3a4d5f922fd18e8',
+    },
+    after: {
+      mode: '100644',
+      blob: '91ce8db0e44c6f77dc349ce7f76714c4807c2100',
+    },
+  },
+  {
+    path: '.github/workflows/escrow-replay-regression.yml',
+    before: {
+      mode: '100644',
+      blob: '3a3bb2f3f19808415572e92014f14c63a1d1de71',
+    },
+    after: {
+      mode: '100644',
+      blob: 'b61c8ac0bb530afac74de5e367e9cb3ca46b74c6',
+    },
+  },
+  {
+    path: '.github/workflows/pages.yml',
+    before: {
+      mode: '100644',
+      blob: 'e6bebe9ccdfab552420b89cbfc7e8eec49073bd3',
+    },
+    after: {
+      mode: '100644',
+      blob: '5eba7f3aeb6e19fd645672488914110205b3c28c',
+    },
+  },
+  {
+    path: '.github/workflows/production-rehearsal.yml',
+    before: {
+      mode: '100644',
+      blob: 'e1fa3f4a6b4548d08855c3f9204fedb6a3ee9b6e',
+    },
+    after: {
+      mode: '100644',
+      blob: 'f263f8979070da4bbbb4f066ed6159a78db462f5',
+    },
+  },
+  {
+    path: '.github/workflows/torch-tests.yml',
+    before: {
+      mode: '100644',
+      blob: '787b12a259b865b42c7f346ee84768ca2014bfd5',
+    },
+    after: {
+      mode: '100644',
+      blob: '0d7f44ad10d966ece8e8ee3e391ae61db10dd7d9',
+    },
+  },
+]);
+const previousReleaseRecords = freeze({
+  'docs/production/RELEASE_NOTES_SOURCE_RC16.md': {
+    mode: '100644',
+    blob: '46bc7625b8b56ff17b8d2bcdeaf435a9c362f8d1',
+  },
+  'scripts/release/source-profile-rc16.json': {
+    mode: '100644',
+    blob: 'fa13b44bbc29302db81ebe098f4d9906f60746fa',
+  },
+});
+const releaseChangelog = freeze({
+  before: { mode: '100644', blob: '9d08b12d9c10dbeb59edcac19b02243f23a6d1c1' },
+  after: { mode: '100644', blob: 'a21f8f1b067d439369ba8a99637623351ab9d0f7' },
+});
 function verifyReleaseDelta(beforeTree, afterTree) {
-  const websitePaths = verifyWebsiteTransitions(beforeTree, afterTree);
-  const integrationPaths = verifyIntegrationTransitions(beforeTree, afterTree);
+  const normalized = new Map(afterTree);
+  for (const item of releaseTriggerTransitions) {
+    requireValue(
+      same(afterTree.get(item.path), item.after),
+      'Exact additive release trigger differs: ' + item.path
+    );
+    normalized.set(item.path, item.before);
+  }
+  const websitePaths = verifyWebsiteTransitions(beforeTree, normalized);
+  const integrationPaths = verifyIntegrationTransitions(beforeTree, normalized);
+  requireValue(
+    same(beforeTree.get('CHANGELOG.md'), releaseChangelog.before) &&
+      same(afterTree.get('CHANGELOG.md'), releaseChangelog.after),
+    'Exact release-only changelog transition differs'
+  );
+  for (const [name, identity] of Object.entries(previousReleaseRecords))
+    requireValue(
+      same(afterTree.get(name), identity),
+      'Historical rc.16 release record changed: ' + name
+    );
   const changes = changedPaths(beforeTree, afterTree);
   for (const name of changes) {
     const before = beforeTree.get(name),
@@ -499,9 +613,9 @@ function validateProfile(value = profile) {
   requireValue(
     value.schema === 'agijobsv0/source-release-profile/v1' &&
       value.repository === 'MontrealAI/AGIJobsv0' &&
-      value.releaseVersion === '2.1.0-rc.16' &&
+      value.releaseVersion === '2.1.0-rc.17' &&
       value.previousVersion === '2.1.0-rc.15' &&
-      value.tag === 'source-v2.1.0-rc.16' &&
+      value.tag === 'source-v2.1.0-rc.17' &&
       value.qualification === 'PENDING_FINAL_SOURCE_MAIN_PUSH',
     'rc.16 profile identity or pending status differs'
   );
@@ -750,7 +864,7 @@ function validatePreparedProfile(value = profile, { git, target } = {}) {
     validateScannerReviewMetadata,
     verifyThreeSlotReviewBinding,
   } = require('./source-scanner-review-bindings-rc16.cjs');
-  const profilePath = 'scripts/release/source-profile-rc16.json';
+  const profilePath = 'scripts/release/source-profile-rc17.json';
   const installed = parseTree(git('ls-tree', '-rz', target, '--', profilePath));
   requireValue(
     installed.get(profilePath)?.mode === '100644',
@@ -805,6 +919,9 @@ module.exports = {
   profile,
   anchors,
   allowedNewPaths,
+  previousReleaseRecords,
+  releaseTriggerTransitions,
+  releaseChangelog,
   allowedExistingPaths,
   websiteTransitions,
   protectedPath,

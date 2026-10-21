@@ -102,7 +102,7 @@ function evaluate(runs, checks, sha, processedCodeql) {
       check.app.slug === 'github-actions'
   );
   for (const check of trusted) {
-    if (check.name === 'Publish qualified rc.16 source prerelease') continue;
+    if (check.name === 'Publish qualified rc.17 source prerelease') continue;
     if (check.status !== 'completed')
       pending.push(check.name + ': ' + check.status);
     else if (!['success', 'skipped', 'neutral'].includes(check.conclusion))

@@ -116,6 +116,14 @@ function addReviewedPython(r) {
     );
 }
 
+function addCurrentReleaseMetadata(r) {
+  for (const [name, identity] of Object.entries(p.previousReleaseRecords))
+    r.put(name, command(ROOT, ['cat-file', 'blob', identity.blob]));
+  for (const item of p.releaseTriggerTransitions)
+    r.put(item.path, fs.readFileSync(path.join(ROOT, item.path)));
+  r.put('CHANGELOG.md', fs.readFileSync(path.join(ROOT, 'CHANGELOG.md')));
+}
+
 test('actual Git trees require the complete finite protected transition set', (t) => {
   const r = repository(t);
   const beforeIdentity = r.put('contracts/Example.sol', 'before\n');
@@ -225,6 +233,7 @@ test('complete source verifier accepts only finite release plumbing over the act
   addReviewedWebsite(r);
   addReviewedIntegration(r);
   addReviewedPython(r);
+  addCurrentReleaseMetadata(r);
   const beforePackage = JSON.parse(
     r.git('show', `${p.profile.implementationBaseline}:package.json`)
   );
@@ -248,11 +257,11 @@ test('complete source verifier accepts only finite release plumbing over the act
     p.applyLegacyWorkflowGuard(oldWorkflow)
   );
   r.put(
-    'docs/production/RELEASE_NOTES_SOURCE_RC16.md',
+    'docs/production/RELEASE_NOTES_SOURCE_RC17.md',
     '# Pending fixture only\n'
   );
   r.put(
-    'scripts/release/source-profile-rc16.json',
+    'scripts/release/source-profile-rc17.json',
     JSON.stringify(pending, null, 2) + '\n'
   );
   const policy = JSON.parse(
@@ -287,17 +296,27 @@ test('complete source verifier accepts only finite release plumbing over the act
   assert.equal(result.protectedTransitions.length, 18);
   assert.deepEqual(result.websiteTransitions, p.websiteTransitions);
   assert.throws(
-    () => runtime.verifySourceScope({ ...args, version: p.profile.previousVersion }),
+    () =>
+      runtime.verifySourceScope({
+        ...args,
+        version: p.profile.previousVersion,
+      }),
     /version/
   );
   assert.throws(
     () =>
-      runtime.verifySourceScope({ ...args, policy: { ...policy, optimizerRuns: 1 } }),
+      runtime.verifySourceScope({
+        ...args,
+        policy: { ...policy, optimizerRuns: 1 },
+      }),
     /compiler/
   );
   assert.throws(
     () =>
-      runtime.verifySourceScope({ ...args, lock: { ...afterLock, injected: true } }),
+      runtime.verifySourceScope({
+        ...args,
+        lock: { ...afterLock, injected: true },
+      }),
     /identity/
   );
   const changes = [
@@ -370,7 +389,9 @@ test('complete source verifier accepts only finite release plumbing over the act
     p.profile.nativePinBaseline,
     p.profile.sourceConvergenceBaseline,
   ]);
-  assert.throws(() => runtime.verifySourceScope({ ...args, sha: missingProducer }));
+  assert.throws(() =>
+    runtime.verifySourceScope({ ...args, sha: missingProducer })
+  );
 });
 
 test('actual Git website transitions admit only the two exact reviewed byte and mode changes', (t) => {
@@ -379,6 +400,7 @@ test('actual Git website transitions admit only the two exact reviewed byte and 
   r.git('read-tree', p.profile.implementationBaseline);
   addReviewedWebsite(r);
   addReviewedIntegration(r);
+  addCurrentReleaseMetadata(r);
   const after = r.commit(p.profile.implementationBaseline);
   const beforeTree = p.parseTree(
     r.git('ls-tree', '-rz', p.profile.implementationBaseline)
@@ -389,12 +411,14 @@ test('actual Git website transitions admit only the two exact reviewed byte and 
     p.verifyReleaseDelta(beforeTree, afterTree),
     [
       ...paths,
+      ...Object.keys(p.previousReleaseRecords),
+      'CHANGELOG.md',
       ...p.profile.integrationTransitions.map((item) => item.path),
     ].sort()
   );
   assert.throws(
     () => p.verifyReleaseDelta(beforeTree, beforeTree),
-    /website blob or mode/
+    /website blob or mode|release trigger/
   );
   for (const inventory of [
     p.websiteTransitions.slice(1),
@@ -484,7 +508,7 @@ test('version-only normalization rejects dependency, scripts, resolutions and co
   afterPackage.version =
     afterLock.version =
     afterLock.packages[''].version =
-      '2.1.0-rc.16';
+      '2.1.0-rc.17';
   assert.equal(
     p.verifyVersionOnly(beforePackage, afterPackage, beforeLock, afterLock),
     true
@@ -527,7 +551,7 @@ test('legacy version selection preserves every historical workflow byte outside 
       'qualify-source-release.cjs',
       'qualify-source-release-rc16.cjs'
     ),
-    guarded.replace('source-v2.1.0-rc.15', 'source-v2.1.0-rc.16'),
+    guarded.replace('source-v2.1.0-rc.15', 'source-v2.1.0-rc.17'),
     guarded.replace("selected == 'true'", "selected != 'true'"),
     guarded + '\n',
   ])
@@ -640,21 +664,23 @@ test('Python producer retains original owner bytes plus exact service evidence a
   ]);
   // Normalize only the exact additive service-receipt steps, analyze output ID
   // and approved new push branch before checking the original owner bytes.
-  const reviewSuffix = "\n  codeql-review-bytes:\n    name: Complete Python CodeQL review bytes\n    needs: codeql-python\n    if: ${{ success() && github.event_name == 'push' && github.ref == 'refs/heads/fix/processed-codeql-release-proof-20261020' && github.repository == 'MontrealAI/AGIJobsv0' }}\n    runs-on: ubuntu-24.04\n    timeout-minutes: 10\n    permissions:\n      contents: read\n      actions: read\n    steps:\n      - name: Harden runner\n        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a\n        with:\n          egress-policy: audit\n      - name: Checkout exact review source\n        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955\n        with:\n          fetch-depth: 1\n          persist-credentials: false\n      - name: Setup Node\n        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020\n        with:\n          node-version-file: '.nvmrc'\n      - name: Retain complete original CodeQL review bytes\n        env:\n          GH_TOKEN: ${{ github.token }}\n          CODEQL_REVIEW_ARTIFACT_ID: ${{ needs.codeql-python.outputs.raw_artifact_id }}\n        run: node scripts/release/emit-codeql-review-rc16.cjs --language python\n";
+  const reviewSuffix =
+    "\n  codeql-review-bytes:\n    name: Complete Python CodeQL review bytes\n    needs: codeql-python\n    if: ${{ success() && github.event_name == 'push' && github.ref == 'refs/heads/fix/processed-codeql-release-proof-20261020' && github.repository == 'MontrealAI/AGIJobsv0' }}\n    runs-on: ubuntu-24.04\n    timeout-minutes: 10\n    permissions:\n      contents: read\n      actions: read\n    steps:\n      - name: Harden runner\n        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a\n        with:\n          egress-policy: audit\n      - name: Checkout exact review source\n        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955\n        with:\n          fetch-depth: 1\n          persist-credentials: false\n      - name: Setup Node\n        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020\n        with:\n          node-version-file: '.nvmrc'\n      - name: Retain complete original CodeQL review bytes\n        env:\n          GH_TOKEN: ${{ github.token }}\n          CODEQL_REVIEW_ARTIFACT_ID: ${{ needs.codeql-python.outputs.raw_artifact_id }}\n        run: node scripts/release/emit-codeql-review-rc16.cjs --language python\n";
   assert.ok(formattedWorkflow.endsWith(reviewSuffix));
   let withoutReviewJob = formattedWorkflow.slice(0, -reviewSuffix.length);
   for (const addition of [
-    "    outputs:\n      raw_artifact_id: ${{ steps.codeql_raw.outputs.artifact-id }}\n",
-    "        id: codeql_raw\n",
+    '    outputs:\n      raw_artifact_id: ${{ steps.codeql_raw.outputs.artifact-id }}\n',
+    '        id: codeql_raw\n',
   ]) {
     assert.equal(withoutReviewJob.split(addition).length, 2);
     withoutReviewJob = withoutReviewJob.replace(addition, '');
   }
-  const serviceSuffix = "\n      - name: Retain exact processed CodeQL service receipt\n        if: ${{ success() && github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'MontrealAI/AGIJobsv0' }}\n        env:\n          GH_TOKEN: ${{ github.token }}\n          SARIF_UPLOAD_ID: ${{ steps.codeql_analyze.outputs.sarif-id }}\n        run: node scripts/release/source-codeql-service-rc16.cjs --capture --language python --output reports/security/codeql-service-python/codeql-service-receipt.json\n\n      - name: Upload exact processed CodeQL service receipt\n        if: ${{ success() && github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'MontrealAI/AGIJobsv0' }}\n        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02\n        with:\n          name: codeql-service-receipt-python-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}\n          path: reports/security/codeql-service-python/codeql-service-receipt.json\n          if-no-files-found: error\n";
+  const serviceSuffix =
+    "\n      - name: Retain exact processed CodeQL service receipt\n        if: ${{ success() && github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'MontrealAI/AGIJobsv0' }}\n        env:\n          GH_TOKEN: ${{ github.token }}\n          SARIF_UPLOAD_ID: ${{ steps.codeql_analyze.outputs.sarif-id }}\n        run: node scripts/release/source-codeql-service-rc16.cjs --capture --language python --output reports/security/codeql-service-python/codeql-service-receipt.json\n\n      - name: Upload exact processed CodeQL service receipt\n        if: ${{ success() && github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'MontrealAI/AGIJobsv0' }}\n        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02\n        with:\n          name: codeql-service-receipt-python-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}\n          path: reports/security/codeql-service-python/codeql-service-receipt.json\n          if-no-files-found: error\n";
   assert.ok(withoutReviewJob.endsWith(serviceSuffix));
   let retainedOriginal = withoutReviewJob.slice(0, -serviceSuffix.length);
   for (const addition of [
-    "        id: codeql_analyze\n",
+    '        id: codeql_analyze\n',
     "      - 'fix/processed-codeql-release-proof-20261020'\n",
   ]) {
     assert.equal(retainedOriginal.split(addition).length, 2);
@@ -733,7 +759,13 @@ test('Python producer retains original owner bytes plus exact service evidence a
     owner.pythonScannerRequiredPaths
   );
   assert.equal(pendingProfileFixture().pythonScannerReview, null);
-  assert.equal(p.allowedNewPaths.length, 29);
+  assert.equal(p.allowedNewPaths.length, 31);
+  assert(
+    p.allowedNewPaths.includes('scripts/release/source-profile-rc17.json')
+  );
+  assert(
+    p.allowedNewPaths.includes('docs/production/RELEASE_NOTES_SOURCE_RC17.md')
+  );
   for (const name of [
     'scripts/release/emit-codeql-review-rc16.cjs',
     'scripts/release/python-scanner-rc16.cjs',
@@ -795,6 +827,7 @@ test('actual Git integration transitions reject substituted security/runtime byt
   ]) {
     r.git('read-tree', candidate);
     r.put(selected.path, bytes, mode);
+    addCurrentReleaseMetadata(r);
     assert.throws(
       () =>
         p.verifyReleaseDelta(
@@ -875,7 +908,7 @@ function profileFixtureRuntime(value) {
   // Compile the unchanged production function source with only its inert JSON
   // input replaced. Do not mutate the live require cache or any predicates.
   runtime.require = (name) =>
-    name === './source-profile-rc16.json'
+    name === './source-profile-rc17.json'
       ? clone(value)
       : originalRequire(name);
   runtime._compile(fs.readFileSync(filename, 'utf8'), filename);
@@ -976,8 +1009,8 @@ function inertProfileReviews(sourceCommit, tree) {
 function inertProfileHistory(t) {
   const r = repository(t);
   shareObjects(r);
-  const profilePath = 'scripts/release/source-profile-rc16.json';
-  const notesPath = 'docs/production/RELEASE_NOTES_SOURCE_RC16.md';
+  const profilePath = 'scripts/release/source-profile-rc17.json';
+  const notesPath = 'docs/production/RELEASE_NOTES_SOURCE_RC17.md';
   const selected = command(ROOT, ['rev-parse', 'HEAD']).trim();
   const pending = pendingProfileFixture();
   const liveNotes = command(ROOT, ['show', `${selected}:${notesPath}`]);
@@ -1072,7 +1105,7 @@ test('production metadata admission preserves the actual installed profile and e
     'utf8'
   );
   const start = publisher.indexOf(
-    "  if (\n    canonical(\n      JSON.parse(\n        fs.readFileSync(path.join(downloaded, 'source-profile-rc16.json'))"
+    "  if (\n    canonical(\n      JSON.parse(\n        fs.readFileSync(path.join(downloaded, 'source-profile-rc17.json'))"
   );
   const endMarker = "    throw Error('Remote finite source profile differs');";
   assert(start > 0);
@@ -1081,7 +1114,7 @@ test('production metadata admission preserves the actual installed profile and e
   const comparison = publisher.slice(start, end + endMarker.length);
   const downloaded = path.join(r.root, 'inert-retained-profile');
   fs.mkdirSync(downloaded);
-  const asset = path.join(downloaded, 'source-profile-rc16.json');
+  const asset = path.join(downloaded, 'source-profile-rc17.json');
   fs.writeFileSync(asset, JSON.stringify(installed.value));
   const {
     canonical,
@@ -1231,4 +1264,30 @@ test('current profile admission rejects immutable metadata drift, modes, malform
       ),
     /tree differs/
   );
+});
+
+test('rc17 release additions preserve every rc16 record and exact trigger-only delta', () => {
+  const git = (...args) => command(ROOT, args);
+  for (const [name, identity] of Object.entries(p.previousReleaseRecords)) {
+    assert.equal(git('rev-parse', `HEAD:${name}`).trim(), identity.blob);
+    assert.equal(
+      git(
+        'rev-parse',
+        `83065adf18a6ee987f8fa479a496a052d35db682:${name}`
+      ).trim(),
+      identity.blob
+    );
+  }
+  assert.equal(p.releaseTriggerTransitions.length, 7);
+  const needle = "      - 'docs/production/RELEASE_NOTES_SOURCE_RC17.md'\n";
+  for (const item of p.releaseTriggerTransitions) {
+    const before = git('cat-file', 'blob', item.before.blob);
+    const after = git('cat-file', 'blob', item.after.blob);
+    assert.equal(after.replaceAll(needle, ''), before);
+    assert.equal(
+      after.split(needle).length - 1,
+      before.split(needle.replace('RC17', 'RC16')).length - 1
+    );
+    assert.equal(git('rev-parse', `HEAD:${item.path}`).trim(), item.after.blob);
+  }
 });

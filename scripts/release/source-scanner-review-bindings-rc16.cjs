@@ -357,7 +357,7 @@ function verifyScannerReviewInstallBinding({
     'Scanner review does not bind this source'
   );
   git('merge-base', '--is-ancestor', review.sourceCommit, sha);
-  const profilePath = 'scripts/release/source-profile-rc16.json';
+  const profilePath = 'scripts/release/source-profile-rc17.json';
   const slots = ['scannerReview', 'pythonScannerReview'];
   const profiles = new Map();
   const readProfile = (commit) => {
@@ -593,9 +593,9 @@ function verifyThreeSlotReviewBinding({
   field,
   git,
   parseNotes,
-  notesPath = 'docs/production/RELEASE_NOTES_SOURCE_RC16.md',
+  notesPath = 'docs/production/RELEASE_NOTES_SOURCE_RC17.md',
 }) {
-  const profilePath = 'scripts/release/source-profile-rc16.json';
+  const profilePath = 'scripts/release/source-profile-rc17.json';
   const slots = ['notesReview', 'scannerReview', 'pythonScannerReview'];
   const identity = (value) => /^[a-f0-9]{40}$/.test(value || '');
   assert(
@@ -604,7 +604,7 @@ function verifyThreeSlotReviewBinding({
       slots.includes(field) &&
       typeof git === 'function' &&
       typeof parseNotes === 'function' &&
-      notesPath === 'docs/production/RELEASE_NOTES_SOURCE_RC16.md',
+      notesPath === 'docs/production/RELEASE_NOTES_SOURCE_RC17.md',
     'Exact three-slot review source, field, Git and strict notes parser required'
   );
   assert(

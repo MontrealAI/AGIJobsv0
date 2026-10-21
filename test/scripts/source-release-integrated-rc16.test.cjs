@@ -73,10 +73,10 @@ function pendingReleaseFixture(t) {
     fs.cpSync(path.join(repository, name), destination, { recursive: true });
   }
   fs.writeFileSync(
-    path.join(root, 'scripts/release/source-profile-rc16.json'),
+    path.join(root, 'scripts/release/source-profile-rc17.json'),
     JSON.stringify(pending, null, 2) + '\n'
   );
-  const notes = path.join(root, 'docs/production/RELEASE_NOTES_SOURCE_RC16.md');
+  const notes = path.join(root, 'docs/production/RELEASE_NOTES_SOURCE_RC17.md');
   fs.mkdirSync(path.dirname(notes), { recursive: true });
   fs.writeFileSync(notes, '<!-- rc16-scanner-review\nnull\n-->\n');
   const env = Object.fromEntries(
@@ -122,21 +122,25 @@ function pendingReleaseFixture(t) {
       GITHUB_EVENT_NAME: 'push',
       GITHUB_REF: 'refs/heads/main',
       GH_TOKEN: 'INERT_PENDING_FIXTURE_NEVER_USED_FOR_NETWORK',
-      TAG: 'source-v2.1.0-rc.16',
+      TAG: 'source-v2.1.0-rc.17',
     },
   };
 }
 
 const sha = 'a'.repeat(40);
-const { syntheticServiceProof } =
-  require('./source-codeql-service-fixture-rc16.cjs');
+const {
+  syntheticServiceProof,
+} = require('./source-codeql-service-fixture-rc16.cjs');
 let processedCodeql;
 before(async () => {
   processedCodeql = await syntheticServiceProof({ sha });
 });
 function evaluate(runs, checks, source, ...proof) {
   return evaluateGate(
-    runs, checks, source, proof.length ? proof[0] : processedCodeql
+    runs,
+    checks,
+    source,
+    proof.length ? proof[0] : processedCodeql
   );
 }
 
@@ -206,7 +210,7 @@ test('all workflows/checks, positive processed proof and observed genuine CodeQL
         ...valid.checks,
         {
           head_sha: sha,
-          name: 'Publish qualified rc.16 source prerelease',
+          name: 'Publish qualified rc.17 source prerelease',
           app: actions,
           status: 'in_progress',
         },
@@ -268,7 +272,11 @@ test('all workflows/checks, positive processed proof and observed genuine CodeQL
   ]) {
     const changed = evidence();
     mutate(changed);
-    assert.equal(evaluate(changed.runs, changed.checks, sha, changed.processedCodeql).ready, false);
+    assert.equal(
+      evaluate(changed.runs, changed.checks, sha, changed.processedCodeql)
+        .ready,
+      false
+    );
   }
   assert.equal(
     authenticCodeQL({ ...resultCheck(), app: { ...security, id: 1 } }, sha),
@@ -443,7 +451,7 @@ test('scanner review installation permits only its own record and no executable 
       native: 'fixed',
     },
     after = { ...before, scannerReview: review };
-  const profilePath = 'scripts/release/source-profile-rc16.json';
+  const profilePath = 'scripts/release/source-profile-rc17.json';
   const git = (command, ...args) =>
     command === 'rev-list'
       ? `${sha} ${review.sourceCommit}\n`
@@ -595,12 +603,12 @@ test('rc.16 owns only its new tag/routes/assets and remains blocked pending actu
     'codeql-service-evidence.json',
     'native-compatibility.zip',
     'native-provenance.json',
-    'source-profile-rc16.json',
-    'RELEASE_NOTES_SOURCE_RC16.md',
+    'source-profile-rc17.json',
+    'RELEASE_NOTES_SOURCE_RC17.md',
   ])
     assert(names.includes(name));
   assert(
-    sourceApiUrl('GET', 'git/ref/tags/source-v2.1.0-rc.16').endsWith('rc.16')
+    sourceApiUrl('GET', 'git/ref/tags/source-v2.1.0-rc.17').endsWith('rc.17')
   );
   assert.throws(() => sourceApiUrl('GET', 'git/ref/tags/source-v2.1.0-rc.15'));
   const pending = pendingReleaseFixture(t);
@@ -1347,7 +1355,10 @@ function referenceTransportMetadataOnly() {
       driver: {
         name: 'CodeQL',
         semanticVersion: 'SYNTHETIC_METADATA_ONLY',
-        rules: [{ id: 'metadata/a', name: 'first' }, { id: 'metadata/b', name: 'second' }],
+        rules: [
+          { id: 'metadata/a', name: 'first' },
+          { id: 'metadata/b', name: 'second' },
+        ],
         notifications: [{ id: 'metadata/note-a' }, { id: 'metadata/note-b' }],
       },
     },
@@ -1358,7 +1369,9 @@ function referenceTransportMetadataOnly() {
         toolExecutionNotifications: [
           {
             descriptor: { id: 'metadata/note-a', index: 0 },
-            locations: [{ physicalLocation: { artifactLocation: location(0) } }],
+            locations: [
+              { physicalLocation: { artifactLocation: location(0) } },
+            ],
           },
         ],
         toolConfigurationNotifications: [
@@ -1370,7 +1383,9 @@ function referenceTransportMetadataOnly() {
       },
     ],
     properties: {
-      metricResults: [{ ruleId: 'metadata/b', rule: { id: 'metadata/b', index: 1 } }],
+      metricResults: [
+        { ruleId: 'metadata/b', rule: { id: 'metadata/b', index: 1 } },
+      ],
     },
     results: [
       {
@@ -1378,12 +1393,31 @@ function referenceTransportMetadataOnly() {
         rule: { id: 'metadata/a', index: 0 },
         message: { text: 'SYNTHETIC_METADATA_ONLY' },
         locations: [
-          { physicalLocation: { artifactLocation: location(0), region: { startLine: 1 } } },
+          {
+            physicalLocation: {
+              artifactLocation: location(0),
+              region: { startLine: 1 },
+            },
+          },
         ],
         codeFlows: [
-          { threadFlows: [{ locations: [{ location: { physicalLocation: { artifactLocation: location(1) } } }] }] },
+          {
+            threadFlows: [
+              {
+                locations: [
+                  {
+                    location: {
+                      physicalLocation: { artifactLocation: location(1) },
+                    },
+                  },
+                ],
+              },
+            ],
+          },
         ],
-        relatedLocations: [{ physicalLocation: { artifactLocation: location(2) } }],
+        relatedLocations: [
+          { physicalLocation: { artifactLocation: location(2) } },
+        ],
         partialFingerprints: { testOnly: 'complete-field-preserved' },
       },
     ],
@@ -1394,10 +1428,11 @@ function permutedReferenceMetadataOnly(original) {
   value.tool.driver.rules.reverse();
   value.tool.driver.notifications.reverse();
   value.artifacts.reverse();
-  value.artifacts.forEach((artifact, index) => { artifact.location.index = index; });
+  value.artifacts.forEach((artifact, index) => {
+    artifact.location.index = index;
+  });
   value.invocations[0].toolExecutionNotifications[0].descriptor.index = 1;
-  value.invocations[0].toolExecutionNotifications[0].locations[0]
-    .physicalLocation.artifactLocation.index = 2;
+  value.invocations[0].toolExecutionNotifications[0].locations[0].physicalLocation.artifactLocation.index = 2;
   value.invocations[0].toolConfigurationNotifications[0].associatedRule.index = 0;
   value.invocations[0].ruleConfigurationOverrides[0].descriptor.index = 1;
   value.properties.metricResults[0].rule.index = 0;
@@ -1407,81 +1442,127 @@ function permutedReferenceMetadataOnly(original) {
   return value;
 }
 test('versioned reference transport preserves original reports and exact complete reviewed hashes', () => {
-  const { transportScannerRun } =
-    require('../../scripts/release/source-scanner-gates-rc16.cjs');
+  const {
+    transportScannerRun,
+  } = require('../../scripts/release/source-scanner-gates-rc16.cjs');
   const reference = referenceTransportMetadataOnly();
   const actual = permutedReferenceMetadataOnly(reference);
   const before = structuredClone([actual, reference]);
-  assert.notEqual(resultIdentity(actual.results[0]).resultSha256,
-    resultIdentity(reference.results[0]).resultSha256);
+  assert.notEqual(
+    resultIdentity(actual.results[0]).resultSha256,
+    resultIdentity(reference.results[0]).resultSha256
+  );
   const comparison = transportScannerRun(actual, reference);
   assert.deepEqual(comparison.run, reference);
   assert.deepEqual([actual, reference], before);
-  assert.equal(comparison.witness.schema,
-    'agijobsv0/codeql-lossless-reference-transport/1');
+  assert.equal(
+    comparison.witness.schema,
+    'agijobsv0/codeql-lossless-reference-transport/1'
+  );
   assert.equal(comparison.witness.inverseReconstructsEntireOriginalRun, true);
-  assert.equal(comparison.witness.sourceRunSha256,
-    comparison.witness.inverseRunSha256);
-  assert.deepEqual(comparison.witness.transportedResultHashes,
-    [resultIdentity(reference.results[0]).resultSha256]);
-  assert.deepEqual(comparison.witness.rawResultHashes,
-    [resultIdentity(actual.results[0]).resultSha256]);
+  assert.equal(
+    comparison.witness.sourceRunSha256,
+    comparison.witness.inverseRunSha256
+  );
+  assert.deepEqual(comparison.witness.transportedResultHashes, [
+    resultIdentity(reference.results[0]).resultSha256,
+  ]);
+  assert.deepEqual(comparison.witness.rawResultHashes, [
+    resultIdentity(actual.results[0]).resultSha256,
+  ]);
 });
 test('reference transport keeps every flow field and repeated result in its comparison', () => {
-  const { transportScannerRun } =
-    require('../../scripts/release/source-scanner-gates-rc16.cjs');
+  const {
+    transportScannerRun,
+  } = require('../../scripts/release/source-scanner-gates-rc16.cjs');
   const reference = referenceTransportMetadataOnly();
   const changed = permutedReferenceMetadataOnly(reference);
   changed.results[0].partialFingerprints.testOnly = 'changed-complete-field';
   changed.results.push(structuredClone(changed.results[0]));
   const comparison = transportScannerRun(changed, reference);
   assert.equal(comparison.run.results.length, 2);
-  assert.notDeepEqual(comparison.witness.transportedResultHashes,
-    [resultIdentity(reference.results[0]).resultSha256]);
+  assert.notDeepEqual(comparison.witness.transportedResultHashes, [
+    resultIdentity(reference.results[0]).resultSha256,
+  ]);
   assert.equal(comparison.witness.rawResultHashes.length, 2);
   assert.equal(comparison.witness.transportedResultHashes.length, 2);
-  assert.equal(comparison.run.results[0].partialFingerprints.testOnly,
-    'changed-complete-field');
+  assert.equal(
+    comparison.run.results[0].partialFingerprints.testOnly,
+    'changed-complete-field'
+  );
 });
 test('reference transport rejects record changes, ambiguous tables and unsupported indices', () => {
-  const { transportScannerRun } =
-    require('../../scripts/release/source-scanner-gates-rc16.cjs');
+  const {
+    transportScannerRun,
+  } = require('../../scripts/release/source-scanner-gates-rc16.cjs');
   const reference = referenceTransportMetadataOnly();
   for (const change of [
-    (value) => { value.tool.driver.rules[0].name = 'changed-full-record'; },
-    (value) => { value.tool.driver.semanticVersion = 'different'; },
-    (value) => { value.artifacts[0].extra = 'unsupported-full-artifact-field'; },
-    (value) => { value.artifacts[0].location.index = 1; },
-    (value) => { value.artifacts[0].location.uri = value.artifacts[1].location.uri; },
-    (value) => { value.results[0].rule.index = 0; },
-    (value) => { value.results[0].locations[0].physicalLocation.artifactLocation.index = 0; },
-    (value) => { value.results[0].properties = { index: 0 }; },
-    (value) => { value.results[0].taxa = [{ id: 'metadata/unsupported', index: 0 }]; },
-    (value) => { value.tool.driver.rules[0].relationships = [{ target: { id: 'metadata/a', index: 0 } }]; },
-    (value) => { value.conversion = {}; },
-    (value) => { value.results[0].message.text = 'METADATA_ONLY SARIF:unsupported-scheme'; },
+    (value) => {
+      value.tool.driver.rules[0].name = 'changed-full-record';
+    },
+    (value) => {
+      value.tool.driver.semanticVersion = 'different';
+    },
+    (value) => {
+      value.artifacts[0].extra = 'unsupported-full-artifact-field';
+    },
+    (value) => {
+      value.artifacts[0].location.index = 1;
+    },
+    (value) => {
+      value.artifacts[0].location.uri = value.artifacts[1].location.uri;
+    },
+    (value) => {
+      value.results[0].rule.index = 0;
+    },
+    (value) => {
+      value.results[0].locations[0].physicalLocation.artifactLocation.index = 0;
+    },
+    (value) => {
+      value.results[0].properties = { index: 0 };
+    },
+    (value) => {
+      value.results[0].taxa = [{ id: 'metadata/unsupported', index: 0 }];
+    },
+    (value) => {
+      value.tool.driver.rules[0].relationships = [
+        { target: { id: 'metadata/a', index: 0 } },
+      ];
+    },
+    (value) => {
+      value.conversion = {};
+    },
+    (value) => {
+      value.results[0].message.text = 'METADATA_ONLY SARIF:unsupported-scheme';
+    },
   ]) {
     const value = permutedReferenceMetadataOnly(reference);
     change(value);
     assert.throws(() => transportScannerRun(value, reference));
   }
   const duplicate = referenceTransportMetadataOnly();
-  duplicate.tool.driver.rules.forEach((rule) => { rule.id = 'metadata/duplicate'; });
-  duplicate.results[0].ruleId = duplicate.results[0].rule.id = 'metadata/duplicate';
+  duplicate.tool.driver.rules.forEach((rule) => {
+    rule.id = 'metadata/duplicate';
+  });
+  duplicate.results[0].ruleId = duplicate.results[0].rule.id =
+    'metadata/duplicate';
   duplicate.properties.metricResults[0].ruleId =
     duplicate.properties.metricResults[0].rule.id = 'metadata/duplicate';
   duplicate.invocations[0].toolConfigurationNotifications[0].associatedRule.id =
     duplicate.invocations[0].ruleConfigurationOverrides[0].descriptor.id =
       'metadata/duplicate';
-  assert.doesNotThrow(() => transportScannerRun(duplicate, structuredClone(duplicate)));
+  assert.doesNotThrow(() =>
+    transportScannerRun(duplicate, structuredClone(duplicate))
+  );
   const reversed = structuredClone(duplicate);
   reversed.tool.driver.rules.reverse();
   assert.throws(() => transportScannerRun(reversed, duplicate));
 });
 
 test('reference transport preserves the exact index-free CodeQL flow annotation', () => {
-  const { transportScannerRun } =
-    require('../../scripts/release/source-scanner-gates-rc16.cjs');
+  const {
+    transportScannerRun,
+  } = require('../../scripts/release/source-scanner-gates-rc16.cjs');
   const reference = referenceTransportMetadataOnly();
   reference.results[0].codeFlows[0].threadFlows[0].locations[0].taxa = [
     { id: 'Config', properties: { 'CodeQL/DataflowRole': 'step' } },
@@ -1492,20 +1573,36 @@ test('reference transport preserves the exact index-free CodeQL flow annotation'
   assert.deepEqual(comparison.run, reference);
   assert.deepEqual([actual, reference], before);
   assert.equal(comparison.witness.inverseReconstructsEntireOriginalRun, true);
-  assert.deepEqual(comparison.witness.transportedResultHashes,
-    [resultIdentity(reference.results[0]).resultSha256]);
+  assert.deepEqual(comparison.witness.transportedResultHashes, [
+    resultIdentity(reference.results[0]).resultSha256,
+  ]);
 });
 test('flow annotation admission is exact and checks both originals including property bags', () => {
-  const { transportScannerRun } =
-    require('../../scripts/release/source-scanner-gates-rc16.cjs');
-  const annotation = () => [{ id: 'Config', properties: { 'CodeQL/DataflowRole': 'step' } }];
+  const {
+    transportScannerRun,
+  } = require('../../scripts/release/source-scanner-gates-rc16.cjs');
+  const annotation = () => [
+    { id: 'Config', properties: { 'CodeQL/DataflowRole': 'step' } },
+  ];
   for (const change of [
-    (value) => { value[0].id = 'metadata/other'; },
-    (value) => { value[0].index = 0; },
-    (value) => { value[0].toolComponent = { index: 0 }; },
-    (value) => { value[0].properties['CodeQL/DataflowRole'] = 'metadata/other'; },
-    (value) => { value[0].properties.extra = 'metadata-only'; },
-    (value) => { value.push(structuredClone(value[0])); },
+    (value) => {
+      value[0].id = 'metadata/other';
+    },
+    (value) => {
+      value[0].index = 0;
+    },
+    (value) => {
+      value[0].toolComponent = { index: 0 };
+    },
+    (value) => {
+      value[0].properties['CodeQL/DataflowRole'] = 'metadata/other';
+    },
+    (value) => {
+      value[0].properties.extra = 'metadata-only';
+    },
+    (value) => {
+      value.push(structuredClone(value[0]));
+    },
   ]) {
     for (const selected of ['actual', 'reference']) {
       const reference = referenceTransportMetadataOnly();
