@@ -592,6 +592,78 @@ test('tampered retained rejection records fail closed without dropping the activ
   assert.deepEqual(read(outbox), [invalid, sample()]);
 });
 
+test('truncated rejection prefixes are integrity checked before later work is removed', async (t) => {
+  const { directory, outbox, rejects, queue } = sandbox(t);
+  const large = { cpuTimeMs: null, metadata: { evidence: 'Ω'.repeat(40000) } };
+  fs.writeFileSync(outbox, JSON.stringify([large]));
+  await queue.flush(accept);
+  const journal = read(rejects);
+  const record = journal.records[0];
+  assert.equal(record.truncated, true);
+  assert.equal(
+    record.prefixSha256,
+    crypto.createHash('sha256').update(record.sampleJsonPrefix).digest('hex')
+  );
+  record.sampleJsonPrefix = 'x' + record.sampleJsonPrefix.slice(1);
+  fs.writeFileSync(rejects, JSON.stringify(journal));
+  const pending = [{ cpuTimeMs: null }, sample()];
+  fs.writeFileSync(outbox, JSON.stringify(pending));
+  await assert.rejects(
+    new TelemetryQueue(directory).flush(accept),
+    /Invalid telemetry rejection journal/
+  );
+  assert.deepEqual(read(outbox), pending);
+});
+
+test('queue replacements sync the directory and propagate a failed durability checkpoint', async (t) => {
+  const { directory, outbox } = sandbox(t);
+  const events = [];
+  let failDirectorySync = false;
+  const isolatedFs = {
+    ...fs,
+    promises: {
+      ...fs.promises,
+      open: async (file, ...args) => {
+        const handle = await fs.promises.open(file, ...args);
+        return {
+          writeFile: (...values) => handle.writeFile(...values),
+          close: () => handle.close(),
+          sync: async () => {
+            const kind = file === directory ? 'directory' : 'file';
+            events.push('sync:' + kind);
+            if (kind === 'directory' && failDirectorySync)
+              throw new Error('synthetic directory sync failure');
+            await handle.sync();
+          },
+        };
+      },
+      rename: async (...args) => {
+        events.push('rename');
+        await fs.promises.rename(...args);
+      },
+    },
+  };
+  const { TelemetryQueue: IsolatedQueue } = loadTs(
+    'agent-gateway/telemetryQueue.ts',
+    {
+      fs: isolatedFs,
+      './telemetrySample': validation,
+    }
+  );
+  const queue = new IsolatedQueue(directory);
+  await queue.enqueue(sample('first'));
+  assert.deepEqual(events, ['sync:file', 'rename', 'sync:directory']);
+  failDirectorySync = true;
+  await assert.rejects(queue.flush(accept), /synthetic directory sync failure/);
+  failDirectorySync = false;
+  await queue.flush(() =>
+    assert.fail(
+      'successful prefix must be checkpointed before another submission'
+    )
+  );
+  assert.deepEqual(read(outbox), []);
+});
+
 test('public telemetry functions use the defensive durable queue with an isolated contract adapter', async (t) => {
   const { directory } = sandbox(t);
   const gateway = path.join(directory, 'agent-gateway');

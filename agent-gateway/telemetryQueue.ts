@@ -16,6 +16,7 @@ const MAX_SAMPLE_BYTES = 32 * 1024;
 
 interface RejectedSample {
   sha256: string;
+  prefixSha256: string;
   rejectedAt: string;
   reason: string;
   originalBytes: number;
@@ -34,6 +35,8 @@ function validRejection(record: RejectedSample): boolean {
     !record ||
     typeof record.sha256 !== 'string' ||
     !/^[a-f0-9]{64}$/.test(record.sha256) ||
+    typeof record.prefixSha256 !== 'string' ||
+    !/^[a-f0-9]{64}$/.test(record.prefixSha256) ||
     typeof record.rejectedAt !== 'string' ||
     record.rejectedAt.length > 64 ||
     !Number.isFinite(Date.parse(record.rejectedAt)) ||
@@ -48,6 +51,8 @@ function validRejection(record: RejectedSample): boolean {
   const prefix = Buffer.from(record.sampleJsonPrefix);
   return (
     prefix.length <= MAX_SAMPLE_BYTES &&
+    crypto.createHash('sha256').update(prefix).digest('hex') ===
+      record.prefixSha256 &&
     (record.truncated
       ? record.originalBytes > prefix.length
       : record.originalBytes === prefix.length &&
@@ -115,6 +120,12 @@ export class TelemetryQueue {
         await handle.close();
       }
       await fs.promises.rename(temporary, file);
+      const directory = await fs.promises.open(this.directory, 'r');
+      try {
+        await directory.sync();
+      } finally {
+        await directory.close();
+      }
     } finally {
       await fs.promises
         .unlink(temporary)
@@ -170,10 +181,26 @@ export class TelemetryQueue {
         records: [],
       };
       try {
-        const stat = await fs.promises.stat(this.rejects);
-        if (stat.size > MAX_REJECT_BYTES)
+        const handle = await fs.promises.open(this.rejects, 'r');
+        const bytes = Buffer.alloc(MAX_REJECT_BYTES + 1);
+        let length = 0;
+        try {
+          while (length < bytes.length) {
+            const { bytesRead } = await handle.read(
+              bytes,
+              length,
+              bytes.length - length,
+              null
+            );
+            if (bytesRead === 0) break;
+            length += bytesRead;
+          }
+        } finally {
+          await handle.close();
+        }
+        if (length > MAX_REJECT_BYTES)
           throw new Error('Telemetry rejection journal exceeds its bound');
-        journal = JSON.parse(await fs.promises.readFile(this.rejects, 'utf8'));
+        journal = JSON.parse(bytes.subarray(0, length).toString('utf8'));
         if (
           journal.schema !== REJECT_SCHEMA ||
           !Number.isSafeInteger(journal.evicted) ||
@@ -195,8 +222,16 @@ export class TelemetryQueue {
       );
       const sha256 = crypto.createHash('sha256').update(raw).digest('hex');
       if (!journal.records.some((record) => record.sha256 === sha256)) {
+        const sampleJsonPrefix = new TextDecoder().decode(
+          raw.subarray(0, MAX_SAMPLE_BYTES),
+          { stream: raw.length > MAX_SAMPLE_BYTES }
+        );
         journal.records.push({
           sha256,
+          prefixSha256: crypto
+            .createHash('sha256')
+            .update(sampleJsonPrefix)
+            .digest('hex'),
           rejectedAt: new Date().toISOString(),
           reason:
             error instanceof EnergySampleInputError
@@ -204,10 +239,7 @@ export class TelemetryQueue {
               : 'Telemetry attestation conversion failed',
           originalBytes: raw.length,
           truncated: raw.length > MAX_SAMPLE_BYTES,
-          sampleJsonPrefix: new TextDecoder().decode(
-            raw.subarray(0, MAX_SAMPLE_BYTES),
-            { stream: raw.length > MAX_SAMPLE_BYTES }
-          ),
+          sampleJsonPrefix,
         });
       }
       const before = journal.evicted;
