@@ -76,27 +76,15 @@ CHANGES = {'.github/codeql/config-discovery-installed-python.yml': {'after': {'m
                                                           'mode': '100644'},
                                                'reason': 'Dispatch rc18 to additional installed checks while '
                                                          'preserving the original rc17 suite and publisher'},
- 'config/discovery-installed-alpha-transition-v1.json': {'after': {'mode': '100644',
-                                                                   'sha256': '18069c3d2c6a95ce336bbfea1ec3da96fbb9a155fc01804ed2e209eaf0f0f4e9'},
+ 'config/discovery-installed-alpha-transition-v1.json': {'after': {'mode': '100644', 'sha256': '0deb6eb67ee8e10d54d17ba6e3146b581c13909eb44bc9f801328adae7e9e47a'},
                                                          'before': None,
-                                                         'reason': 'Implement separately gated source-bound '
-                                                                   'installed archive, immutable Alpha '
-                                                                   'transition, operator, retained mission '
-                                                                   'evidence and release qualification'},
- 'config/discovery-installed-alpha-v1.json': {'after': {'mode': '100644',
-                                                        'sha256': '01e32d5283b6858c977659701ab32c24a846b502adf1d1363c9f066d633e9207'},
+                                                         'reason': 'Install the unchanged separately generated Alpha61532 transition from immutable UNSET pin01e32 and exact predecessor Jobs treeb082 with its original M/V/scope identities; retain raw case-specific source review and no publication or installed-compatibility approval'},
+ 'config/discovery-installed-alpha-v1.json': {'after': {'mode': '100644', 'sha256': '7b6ac047905dc27da219cb2608a92b590380bb2781d155afe15734af1173b0f3'},
                                               'before': None,
-                                              'reason': 'Implement separately gated source-bound installed '
-                                                        'archive, immutable Alpha transition, operator, '
-                                                        'retained mission evidence and release '
-                                                        'qualification'},
- 'config/discovery-installed-browser-input-v1.json': {'after': {'mode': '100644',
-                                                                'sha256': '44198eadbd1634b5eb89ce478e7235e04285dbcb5c81d1be104dee9059312ea0'},
+                                              'reason': 'Install the separately reviewed exact Alpha61532 source pin and all43 captured source identities under review cd3966b4c547e890b1e2a7a2b1d9201ee89265f66595f98ead959cc952fabeee; retain pending original producer/native compatibility and false publication/execution authority'},
+ 'config/discovery-installed-browser-input-v1.json': {'after': {'mode': '100644', 'sha256': '3d1729b76bede5f93d4c8c7fdcdf7d5bfb8855dc7881a92606866cb55c885a26'},
                                                       'before': None,
-                                                      'reason': 'Implement separately gated source-bound '
-                                                                'installed archive, immutable Alpha '
-                                                                'transition, operator, retained mission '
-                                                                'evidence and release qualification'},
+                                                      'reason': 'Select only the successful exact Alpha61532 original browser packet and all11 raw member identities from common17 transport e31e74d1a5144973e6a22006dbe29ea628a80386, with exact custody/artifact metadata; retain same-mission native and fresh public qualification requirements without rebuilding originals'},
  'config/discovery-installed-module-graph-origin-v1.json': {'after': {'mode': '100644',
                                                                       'sha256': 'e3c62ccb5e8cb591a09d9857bbc5892edd530b7bada50b9d90bc234d5c88dd23'},
                                                             'before': None,
@@ -490,7 +478,27 @@ CHANGES = {'.github/codeql/config-discovery-installed-python.yml': {'after': {'m
  'reason': 'Patch only the CULTURE indexer Fastify5.12.5 to5.12.6 for GHSA-389g-gv7q-r4x8 and '
            'transitive ip-address10.7.3 to10.7.4 for GHSA-rxp7-6hxx-x8q5, with matching npm/pnpm '
            'lock records; preserve existing strict high/critical and failed-command audit checks, '
-           'protected contract/compiler identities and legacy release bodies'}}
+           'protected contract/compiler identities and legacy release bodies'},
+ 'apps/console/Dockerfile': {'before': {'blob': '1b8750888b261d5ab8091f95c601ab3d4bfb200a', 'mode': '100644'},
+ 'after': {'mode': '100644',
+           'sha256': 'b3e3025fa3c0b177be45c1a837d7295fbae2d4b3b0ab6098ac5001a6dd27d48c'},
+ 'reason': 'Patch only the console nginx runner to official1.30.6-alpine3.24 '
+           'digest47928bf67eb62a1863cb08d9ecb52d3e704304ba614eaee17884204677702951 and require '
+           'nginx>=1.30.6-r0 for CVE-2026-15176/CVE-2026-93479/CVE-2026-97205; preserve libx11 '
+           'minimum and strict OS scan while checking nginx configuration and built static index'},
+ '.github/workflows/dependency-repair.yml': {'before': {'blob': '1107d44e44ea9ab1b9467eb42eacb7c7e515bbb8', 'mode': '100644'},
+ 'after': {'mode': '100644',
+           'sha256': '93f18da95feae6ed73fa39911f3e41bd7bb4dffb1d60aa336256813bc4979be6'},
+ 'reason': 'Trigger the existing exact-head all22 production dependency audit and compatibility '
+           'workflow for the three named CULTURE indexer manifest/npm lock and workspace pnpm lock '
+           'paths; preserve all existing surfaces, commands, thresholds, failed-command rejection '
+           'and evidence retention'},
+ 'test/scripts/dependency-audit.test.cjs': {'before': {'blob': '90f14f656ca7b6d0e47e182601cfc7c8c0bcb40f', 'mode': '100644'},
+ 'after': {'mode': '100644',
+           'sha256': 'c600c0f1ecdfb54922d12a7ec8352811e55e0ab2c4df7fdc06ee610f3e1fcb41'},
+ 'reason': 'Retain existing strict audit failure and dependency-input controls and prove the three '
+           'named CULTURE inputs select the existing exact-head production-audit surface and '
+           'all-lock command without continue-on-error'}}
 # END FIXED DISCOVERY INSTALLED DELTA
 DENIALS = {'releaseQualified': False, 'publicationApproved': False,
            'executionApproved': False, 'settlementApproved': False}

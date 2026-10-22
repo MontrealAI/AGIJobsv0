@@ -5,6 +5,9 @@ on:
     paths:
       - 'package.json'
       - 'package-lock.json'
+      - 'demo/CULTURE-v0/indexers/culture-graph-indexer/package.json'
+      - 'demo/CULTURE-v0/indexers/culture-graph-indexer/package-lock.json'
+      - 'demo/CULTURE-v0/pnpm-lock.yaml'
       - 'scripts/security/**'
       - 'scripts/release/audit-dependencies.cjs'
       - 'vendor/braces/**'
